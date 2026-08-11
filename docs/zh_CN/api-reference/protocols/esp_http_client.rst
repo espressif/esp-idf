@@ -70,7 +70,7 @@ HTTP 基本请求
 HTTPS 请求
 -----------
 
-ESP HTTP 客户端支持使用 **mbedTLS** 的 SSL 连接，需将 ``url`` 配置为以 ``https`` 开头，或将 ``transport_type`` 设置为 ``HTTP_TRANSPORT_OVER_SSL``。可以通过 :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` 来配置 HTTPS 支持（默认启用）。
+ESP HTTP 客户端支持使用 **mbedTLS** 的 SSL 连接，需将 ``url`` 配置为以 ``https`` 开头，或将 ``transport_type`` 设置为 ``HTTP_TRANSPORT_OVER_SSL``。可以通过 :menuitem:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` 来配置 HTTPS 支持（默认启用）。
 
 .. note::
 
@@ -146,9 +146,9 @@ ESP HTTP 客户端具有保存和检索来自服务器的 HTTP 响应头的功�
 
 要启用响应头保存功能，必须配置以下 Kconfig 选项：
 
-    * :ref:`CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS`：启用响应头保存（默认禁用以节省内存）。
-    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`：要保存的响应头的最大数量（默认值：10）。
-    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`：响应头键和值的最大大小（单位：字节，默认值：各 128 字节）。
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS`：启用响应头保存（默认禁用以节省内存）。
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`：要保存的响应头的最大数量（默认值：10）。
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`：响应头键和值的最大大小（单位：字节，默认值：各 128 字节）。
 
 用法
 ^^^^^

@@ -34,11 +34,11 @@ Additionally, the secure storage provides interfaces for performing the followin
 
 .. only:: SOC_HMAC_SUPPORTED
 
-  TEE secure storage also supports ECDSA signing with keys derived via PBKDF2 (Password-Based Key Derivation Function 2), using an HMAC key programmed in eFuse along with a user-provided salt. This mechanism enables ECDSA signing on the P-256 curve without requiring storage of the actual private keys. The eFuse HMAC key ID for the PBKDF2 operations is specified via the :ref:`CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID` option.
+  TEE secure storage also supports ECDSA signing with keys derived via PBKDF2 (Password-Based Key Derivation Function 2), using an HMAC key programmed in eFuse along with a user-provided salt. This mechanism enables ECDSA signing on the P-256 curve without requiring storage of the actual private keys. The eFuse HMAC key ID for the PBKDF2 operations is specified via the :menuitem:`CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID` option.
 
   .. important::
 
-    - The eFuse HMAC key ID used for PBKDF2-based signing **CANNOT** be the same as the one used for deriving TEE secure storage encryption keys (i.e., :ref:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`).
+    - The eFuse HMAC key ID used for PBKDF2-based signing **CANNOT** be the same as the one used for deriving TEE secure storage encryption keys (i.e., :menuitem:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`).
     - This eFuse ID is also exclusive to the TEE and **CANNOT** be used by the REE for any purpose.
 
 Internals
@@ -62,16 +62,16 @@ Currently, TEE secure storage supports storing the following cryptographic keys:
 
 All assets related to TEE secure storage are protected by the APM peripheral and are inaccessible to the REE application. Any direct access attempts will result in a system fault. Future updates are planned to add support for additional key types and general-purpose data storage.
 
-The TEE Secure Storage feature supports two modes for determining how the NVS encryption keys are derived (see :ref:`CONFIG_SECURE_TEE_SEC_STG_MODE`):
+The TEE Secure Storage feature supports two modes for determining how the NVS encryption keys are derived (see :menuitem:`CONFIG_SECURE_TEE_SEC_STG_MODE`):
 
   - **Development** Mode: Encryption keys are embedded (constant for all instances) in the ESP-TEE firmware.
-  - **Release** Mode: Encryption keys are derived via the HMAC peripheral (or software-based HMAC implementation) using a key stored in eFuse, specified by :ref:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
+  - **Release** Mode: Encryption keys are derived via the HMAC peripheral (or software-based HMAC implementation) using a key stored in eFuse, specified by :menuitem:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID`.
 
 .. only:: SOC_HMAC_SUPPORTED
 
   .. note::
 
-      - The valid range for :ref:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, this config is set to ``-1`` and must be configured before building the TEE application.
+      - The valid range for :menuitem:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, this config is set to ``-1`` and must be configured before building the TEE application.
 
       - The following commands can be used to generate and program the HMAC key into the required eFuse block:
 
@@ -87,7 +87,7 @@ The TEE Secure Storage feature supports two modes for determining how the NVS en
 
   .. note::
 
-      - The valid range for :ref:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID` is from ``0`` (:cpp:enumerator:`esp_efuse_block_t::EFUSE_BLK_KEY0`) to ``5`` (:cpp:enumerator:`esp_efuse_block_t::EFUSE_BLK_KEY5`). By default, this config is set to ``-1`` and must be configured before building the TEE application.
+      - The valid range for :menuitem:`CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID` is from ``0`` (:cpp:enumerator:`esp_efuse_block_t::EFUSE_BLK_KEY0`) to ``5`` (:cpp:enumerator:`esp_efuse_block_t::EFUSE_BLK_KEY5`). By default, this config is set to ``-1`` and must be configured before building the TEE application.
 
       - The following commands can be used to generate and program the USER purpose key into the required eFuse block:
 

@@ -84,7 +84,7 @@ For the output PDM signals, the pulse density decides the output analog voltage 
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into Light-sleep, thus potentially changing the sample rate of the sigma-delta modulator.
+When power management is enabled (i.e., :menuitem:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into Light-sleep, thus potentially changing the sample rate of the sigma-delta modulator.
 
 However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates an SDM channel instance that has selected :cpp:enumerator:`SDM_CLK_SRC_APB` as its clock source, the driver guarantees that the power management lock is acquired when enabling the channel by :cpp:func:`sdm_channel_enable`. Likewise, the driver releases the lock when :cpp:func:`sdm_channel_disable` is called for that channel.
 
@@ -93,7 +93,7 @@ However, the driver can prevent the system from changing APB frequency by acquir
 IRAM Safe
 ^^^^^^^^^
 
-There is a Kconfig option :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` that can put commonly-used IO control functions into IRAM as well. So that these functions can also be executable when the cache is disabled. These IO control functions are listed as follows:
+There is a Kconfig option :menuitem:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` that can put commonly-used IO control functions into IRAM as well. So that these functions can also be executable when the cache is disabled. These IO control functions are listed as follows:
 
 - :cpp:func:`sdm_channel_set_pulse_density`
 
@@ -115,8 +115,8 @@ The following functions can also be used in an interrupt context:
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` controls where to place the SDM channel control functions (IRAM or Flash), see :ref:`sdm-iram-safe` for more information.
-- :ref:`CONFIG_SDM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option increases the firmware binary size.
+- :menuitem:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` controls where to place the SDM channel control functions (IRAM or Flash), see :ref:`sdm-iram-safe` for more information.
+- :menuitem:`CONFIG_SDM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option increases the firmware binary size.
 
 .. _convert_to_analog_signal:
 

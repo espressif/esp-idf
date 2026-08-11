@@ -93,7 +93,7 @@ Check the example under :example:`protocols/http_server/persistent_sockets`. Thi
 WebSocket Server
 ----------------
 
-The HTTP server component provides WebSocket support. The WebSocket feature can be enabled in menuconfig using the :ref:`CONFIG_HTTPD_WS_SUPPORT` option.
+The HTTP server component provides WebSocket support. The WebSocket feature can be enabled in menuconfig using the :menuitem:`CONFIG_HTTPD_WS_SUPPORT` option.
 
 :example:`protocols/http_server/ws_echo_server` demonstrates how to create a WebSocket echo server using the HTTP server, which starts on a local network and requires a WebSocket client for interaction, echoing back received WebSocket frames.
 
@@ -105,7 +105,7 @@ The HTTP server component provides a pre-handshake callback for WebSocket endpoi
 
 The pre-handshake callback can be used for authentication, authorization, or other checks. If the callback returns :c:macro:`ESP_OK`, the WebSocket handshake will proceed. If the callback returns any other value, the handshake will be aborted and the connection will be closed.
 
-To use the WebSocket pre-handshake callback, you must enable :ref:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` in your project configuration.
+To use the WebSocket pre-handshake callback, you must enable :menuitem:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` in your project configuration.
 
 WebSocket Post-Handshake Callback
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -114,7 +114,7 @@ Similar to the pre-handshake callback, the HTTP server component also provides a
 
 At this point the connection has been upgraded to WebSocket, and the server has responded with the WebSocket handshake response. This post handshake callback can be used for logging, sending initial messages, or other setup tasks.
 
-To use the WebSocket post-handshake callback, you must enable :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in your project configuration.
+To use the WebSocket post-handshake callback, you must enable :menuitem:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in your project configuration.
 
 .. code-block:: c
 

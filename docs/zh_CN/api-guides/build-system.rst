@@ -434,7 +434,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
 - ``IDF_TARGET``：项目的硬件目标名称。
 - ``PROJECT_VER``：项目版本号。
 
-  * 如果设置 :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，将会使用 :ref:`CONFIG_APP_PROJECT_VER` 的值。
+  * 如果设置 :menuitem:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，将会使用 :menuitem:`CONFIG_APP_PROJECT_VER` 的值。
   * 或者，如果在项目 CMakeLists.txt 文件中设置了 ``PROJECT_VER`` 变量，则该变量值可以使用。
   * 或者，如果 ``PROJECT_DIR/version.txt`` 文件存在，其内容会用作 ``PROJECT_VER`` 的值。
   * 或者，如果在 CMakeLists.txt 文件中将 ``VERSION`` 参数传递给 ``project()`` 调用，形式为 ``project(... VERSION x.y.z.w )``，那么 ``VERSION`` 参数将用作为 ``PROJECT_VER`` 的值。``VERSION`` 参数必须符合 `cmake 标准 <https://cmake.org/cmake/help/v3.22/command/project.html>`_。
@@ -1340,7 +1340,7 @@ ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用�
 
 .. only:: esp32
 
-   .. note:: IDF 构建系统只能为其构建的源文件设置编译器标志。当使用外部 CMakeLists.txt 文件并启用 PSRAM 时，记得在 C 编译器参数中添加 ``mfix-esp32-psram-cache-issue``。参见:ref:`CONFIG_SPIRAM_CACHE_WORKAROUND` 了解更多信息。
+   .. note:: IDF 构建系统只能为其构建的源文件设置编译器标志。当使用外部 CMakeLists.txt 文件并启用 PSRAM 时，记得在 C 编译器参数中添加 ``mfix-esp32-psram-cache-issue``。参见:menuitem:`CONFIG_SPIRAM_CACHE_WORKAROUND` 了解更多信息。
 
 
 .. _cmake_buildsystem_api:

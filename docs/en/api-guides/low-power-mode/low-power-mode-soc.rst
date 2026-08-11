@@ -16,7 +16,7 @@ DFS
 
 Dynamic Frequency Scaling (DFS) is a fundamental feature of the power management mechanism integrated into ESP-IDF. DFS adjusts the Advanced Peripheral Bus (APB) frequency and CPU frequency based on the application's holding of power locks. When holding a high-performance lock, it utilizes high frequency, while in idle states without holding power locks, it switches to low frequency to reduce power consumption, thereby minimizing the power consumption of running applications as much as possible.
 
-The frequency adjustment mechanism of DFS operates based on the maximum frequency demand dictated by held power locks. Additionally, the values of :ref:`CONFIG_FREERTOS_HZ` also influence the frequency adjustments of DFS. Higher values lead to a higher frequency of task scheduling, then the system can also more quickly re-adjust the clock frequencies according to the system requirements. For further details regarding the frequency adjustment mechanism, please refer to :doc:`Power Management <../../api-reference/system/power_management>`.
+The frequency adjustment mechanism of DFS operates based on the maximum frequency demand dictated by held power locks. Additionally, the values of :menuitem:`CONFIG_FREERTOS_HZ` also influence the frequency adjustments of DFS. Higher values lead to a higher frequency of task scheduling, then the system can also more quickly re-adjust the clock frequencies according to the system requirements. For further details regarding the frequency adjustment mechanism, please refer to :doc:`Power Management <../../api-reference/system/power_management>`.
 
 The following graph illustrates the ideal current situation during the operation of the DFS mechanism.
 
@@ -50,7 +50,7 @@ Light-sleep Mode
 
 Light-sleep mode is a low power mode preset in the {IDF_TARGET_NAME}. Users can switch to Light-sleep mode by calling :cpp:func:`esp_light_sleep_start` interface. Upon entering sleep, the chip will shut down unnecessary power domains and apply clock gating to modules not in use, based on the current operational states of peripherals. The {IDF_TARGET_NAME} supports various wake-up sources. Please refer to :doc:`Sleep Modes <../../api-reference/system/sleep_modes>` for more information. When the chip wakes up from Light-sleep mode, the CPU continues running from the context it was in before entering sleep, and the operational states of peripherals remain unaffected. To effectively reduce chip power consumption under Light-sleep mode, it is highly recommended that users utilize Auto Light-sleep mode described below.
 
-Auto Light-sleep mode is a low power mode provided by ESP-IDF :doc:`Power Management <../../api-reference/system/power_management>` component that leverages FreeRTOS's Tickless IDLE feature. When the application releases all power locks and all FreeRTOS tasks are in a blocked or suspended state, the system automatically calculates the next time point when an event will wake the operating system. If this calculated time point exceeds a set duration (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`), the ``esp_pm`` component automatically configures the timer wake-up source and enters light sleep to reduce power consumption. To enable this mode, users need to set the ``light_sleep_enable`` field to true in :cpp:type:`esp_pm_config_t` when configuring DFS. For more details, please refer to `DFS Configuration`_.
+Auto Light-sleep mode is a low power mode provided by ESP-IDF :doc:`Power Management <../../api-reference/system/power_management>` component that leverages FreeRTOS's Tickless IDLE feature. When the application releases all power locks and all FreeRTOS tasks are in a blocked or suspended state, the system automatically calculates the next time point when an event will wake the operating system. If this calculated time point exceeds a set duration (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`), the ``esp_pm`` component automatically configures the timer wake-up source and enters light sleep to reduce power consumption. To enable this mode, users need to set the ``light_sleep_enable`` field to true in :cpp:type:`esp_pm_config_t` when configuring DFS. For more details, please refer to `DFS Configuration`_.
 
 .. code-block:: text
 
@@ -165,11 +165,11 @@ Common Configuration Options
 
 .. only:: esp32 or esp32s3
 
-  - single/dual core operation mode (:ref:`CONFIG_FREERTOS_UNICORE`)
+  - single/dual core operation mode (:menuitem:`CONFIG_FREERTOS_UNICORE`)
       For multi-core chips, the single core operation mode can be selected.
 
 
-  - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+  - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
       This parameter denotes the frequency of the system's periodic task scheduling.
 
 
@@ -189,7 +189,7 @@ DFS offers the following configurable options:
 
 Specific configuration steps are as follows:
 
-1. Enable :ref:`CONFIG_PM_ENABLE`
+1. Enable :menuitem:`CONFIG_PM_ENABLE`
 2. Configure ``max_freq_mhz`` and ``min_freq_mhz`` as follows:
 
   ::
@@ -211,10 +211,10 @@ Recommended Configuration
   * - Configuration Name
     - Configuration Status
 
-  * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+  * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
     - ON
 
-  * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+  * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
     - 1000
 
   * - ``max_freq_mhz``
@@ -239,10 +239,10 @@ This section introduces the recommended configuration and configuration steps fo
 
       The configuration options below are briefly introduced. For more detailed information, please click the link behind each option.
 
-- Minimum IDLE Tick count before entering sleep state (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
-- Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
-- Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
-- RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+- Minimum IDLE Tick count before entering sleep state (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+- Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
+- Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
+- RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
 
   .. list-table::
     :header-rows: 1
@@ -260,16 +260,16 @@ This section introduces the recommended configuration and configuration steps fo
       - Low
       - Small
 
-- Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+- Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
 
 .. only:: SOC_PM_SUPPORT_MAC_BB_PD
 
-    - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+    - Power down MAC and baseband (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
 
 
 .. only:: SOC_PM_SUPPORT_CPU_PD
 
-    - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+    - Power down CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
 
     .. only:: esp32p4
 
@@ -277,14 +277,14 @@ This section introduces the recommended configuration and configuration steps fo
 
 .. only:: SOC_PM_SUPPORT_TAGMEM_PD
 
-    - Power down I/D-cache tag memory (:ref:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
+    - Power down I/D-cache tag memory (:menuitem:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
 
 
 .. only:: SOC_PM_SUPPORT_VDDSDIO_PD
 
     .. only:: SOC_PM_SUPPORT_VDDSDIO_PD and not SOC_PM_FLASH_KEEP_POWER_IN_LSLP
 
-        - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+        - Power down flash in light sleep (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
 
             .. only:: SOC_SPIRAM_SUPPORTED
 
@@ -292,7 +292,7 @@ This section introduces the recommended configuration and configuration steps fo
 
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
-    - Power down Digital Peripheral modules and all child power domains under the TOP power domain in light sleep (:ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`)
+    - Power down Digital Peripheral modules and all child power domains under the TOP power domain in light sleep (:menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`)
 
 .. only:: SOC_PM_SUPPORT_RTC_PERIPH_PD
 
@@ -309,23 +309,23 @@ This section introduces the recommended configuration and configuration steps fo
       * - Configuration Name
         - Configuration Description
 
-      * - :ref:`CONFIG_PM_SLP_IRAM_OPT`
+      * - :menuitem:`CONFIG_PM_SLP_IRAM_OPT`
         - When this option is enabled, the software flow for entering and exiting light/deep sleep is linked to on-chip RAM, which shortens the sleep transition time but consumes more on-chip RAM resources. When this option is disabled, the light/deep sleep software flow is compiled into flash memory instead, resulting in longer sleep transition time but saving on-chip RAM resources.
 
-      * - :ref:`CONFIG_PM_RTOS_IDLE_OPT`
+      * - :menuitem:`CONFIG_PM_RTOS_IDLE_OPT`
         - In auto light sleep mode, when this option is enabled, the FreeRTOS system tick, IDLE task hook functions, and the FreeRTOS tickless idle software context are linked to on-chip RAM. Otherwise, they will be linked to flash memory.
 
-      * - :ref:`CONFIG_ESP_PERIPH_CTRL_FUNC_IN_IRAM`
+      * - :menuitem:`CONFIG_ESP_PERIPH_CTRL_FUNC_IN_IRAM`
         - When this option is enabled, the software implementation related to peripheral clock and reset control will be linked to on-chip RAM.  Otherwise, it will be linked to flash memory.
 
-      * - :ref:`CONFIG_ESP_REGI2C_CTRL_FUNC_IN_IRAM`
+      * - :menuitem:`CONFIG_ESP_REGI2C_CTRL_FUNC_IN_IRAM`
         - When this option is enabled, the software implementation related to Analog I2C read/write access will be linked to on-chip RAM. Otherwise, it will be linked to flash memory.
 
 Configuration Steps:
 
 1. Configure wake-up sources (refer to :doc:`Sleep Modes <../../api-reference/system/sleep_modes>` for details)
-2. Enable :ref:`CONFIG_PM_ENABLE`
-3. Enable :ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`
+2. Enable :menuitem:`CONFIG_PM_ENABLE`
+3. Enable :menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`
 4. Configure DFS parameters
 5. ``light_sleep_enable`` = true, detailed as follows:
 
@@ -354,40 +354,40 @@ Recommended Configuration
    * - Configuration Name
      - Configuration Status
 
-   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+   * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - OFF
 
-   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - Internal 150 kHz OSC
 
-   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - Power down MAC and baseband (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - Power down CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - Power down flash in light sleep (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -411,37 +411,37 @@ Recommended Configuration
    * - Configuration Name
      - Configuration Status
 
-   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+   * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - ON
 
-   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - Internal 150 kHz OSC
 
-   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - Power down MAC and baseband (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - Power down CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - ON
 
    * - ``max_freq_mhz``
@@ -457,7 +457,7 @@ Recommended Configuration
       Configurations not mentioned in the above table are set to default.
 
   .. note::
-      On {IDF_TARGET_NAME}, SPI flash need remains powered during light sleep and :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
+      On {IDF_TARGET_NAME}, SPI flash need remains powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
 
 .. only:: esp32s3
 
@@ -468,43 +468,43 @@ Recommended Configuration
    * - Configuration Name
      - Configuration Status
 
-   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+   * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - OFF
 
-   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - Internal 150 kHz OSC
 
-   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - Power down MAC and baseband (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - Power down CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - Power down I/D-cache tag memory (:ref:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
+   * - Power down I/D-cache tag memory (:menuitem:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
      - ON
 
-   * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - Power down flash in light sleep (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -528,40 +528,40 @@ Recommended Configuration
    * - Configuration Name
      - Configuration Status
 
-   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+   * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - OFF
 
-   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - Internal 150 kHz OSC
 
-   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - Power down MAC and baseband (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - Power down CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - Power down flash in light sleep (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -585,28 +585,28 @@ Recommended Configuration
     * - Configuration Name
       - Configuration Status
 
-    * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+    * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
       - ON
 
-    * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+    * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
       - ON
 
-    * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+    * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
       - 1000
 
-    * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+    * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
       - 3
 
-    * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+    * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
       - OFF
 
-    * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+    * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
       - OFF
 
-    * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+    * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
       - Internal 150 kHz OSC
 
-    * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+    * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
       - ON
 
     * - ``max_freq_mhz``
@@ -630,34 +630,34 @@ Recommended Configuration
    * - Configuration Name
      - Configuration Status
 
-   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+   * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - OFF
 
-   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - Internal 150 kHz OSC
 
-   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - Power down flash in light sleep (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``

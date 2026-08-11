@@ -162,7 +162,7 @@ By default, QEMU uses the ``qemu_flash.bin`` file in the build directory as the 
 
 The provided flash image must meet the following requirements for proper emulation:
 
-- The flash file size matches the value specified by :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+- The flash file size matches the value specified by :menuitem:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 - The flash file includes all required binaries, such as the bootloader, partition table, and application firmware, placed at their respective memory offsets.
 
 
@@ -183,4 +183,4 @@ For more available QEMU options, please refer to the `official QEMU documentatio
 Emulating Secure Boot
 ~~~~~~~~~~~~~~~~~~~~~
 
-QEMU supports emulation of secure boot v2 scheme. Please keep :ref:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` enabled to include signed bootloader image into the QEMU image artifact.
+QEMU supports emulation of secure boot v2 scheme. Please keep :menuitem:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` enabled to include signed bootloader image into the QEMU image artifact.

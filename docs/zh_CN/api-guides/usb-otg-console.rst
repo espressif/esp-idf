@@ -48,7 +48,7 @@ USB OTG 控制台
 软件配置
 ========
 
-使用 menuconfig 工具中的 ``CONFIG_ESP_CONSOLE_USB_CDC`` 选项可启用 USB 控制台功能（请参阅 :ref:`CONFIG_ESP_CONSOLE_UART`）。
+使用 menuconfig 工具中的 ``CONFIG_ESP_CONSOLE_USB_CDC`` 选项可启用 USB 控制台功能（请参阅 :menuitem:`CONFIG_ESP_CONSOLE_UART`）。
 
 启用该选项后，按常规方式构建项目。
 
@@ -107,7 +107,7 @@ USB 控制台功能有一些限制。开发中的应用程序类型和工作流�
 
 4. 在试图优化应用程序内存使用时，请牢记：USB CDC 驱动程序保留了一定量的 RAM 并增加了应用程序代码大小。
 
-5. 默认情况下，当使用 USB CDC 时，低级别的 ``esp_rom_printf`` 功能和 ``ESP_EARLY_LOG`` 功能都被禁用。可以通过 :ref:`CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF` 选项启用这些功能。启用此选项后，可以使用 ``esp_rom_printf`` 功能，但 IRAM 的使用量也随之增加。请注意，与 UART 相比，通过 USB CDC 使用 ``esp_rom_printf`` 和 ``ESP_EARLY_LOG`` 功能的成本要高得多，因此日志记录机制在中断处理程序中尤其不适用于“printf 调试”。
+5. 默认情况下，当使用 USB CDC 时，低级别的 ``esp_rom_printf`` 功能和 ``ESP_EARLY_LOG`` 功能都被禁用。可以通过 :menuitem:`CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF` 选项启用这些功能。启用此选项后，可以使用 ``esp_rom_printf`` 功能，但 IRAM 的使用量也随之增加。请注意，与 UART 相比，通过 USB CDC 使用 ``esp_rom_printf`` 和 ``ESP_EARLY_LOG`` 功能的成本要高得多，因此日志记录机制在中断处理程序中尤其不适用于“printf 调试”。
 
 6. 如果在开发一个使用 TinyUSB 协议栈的应用程序时，无法使用 USB 控制台功能，其主要原因可能如下：
 

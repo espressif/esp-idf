@@ -23,7 +23,7 @@ The ESP-IDF FreeRTOS provides the following APIs to manage thread local variable
 - :cpp:func:`pvTaskGetThreadLocalStoragePointer`
 - :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback`
 
-In this case, the maximum number of variables that can be allocated is limited by :ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS`. Variables are kept in the task control block (TCB) and accessed by their index. Note that index 0 is reserved for ESP-IDF internal uses.
+In this case, the maximum number of variables that can be allocated is limited by :menuitem:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS`. Variables are kept in the task control block (TCB) and accessed by their index. Note that index 0 is reserved for ESP-IDF internal uses.
 
 Using the APIs above, you can allocate thread local variables of an arbitrary size, and assign them to any number of tasks. Different tasks can have different sets of TLS variables.
 

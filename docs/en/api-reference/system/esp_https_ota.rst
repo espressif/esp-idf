@@ -43,13 +43,13 @@ Partial Image Download over HTTPS
 
 To use the partial image download feature, you need to:
 
-* **Enable the component-level configuration**: Enable :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
+* **Enable the component-level configuration**: Enable :menuitem:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
 
 * **Enable the feature in your application**: Set the ``partial_http_download`` field in :cpp:struct:`esp_https_ota_config_t` configuration structure
 
 When this configuration is enabled, firmware image will be downloaded in multiple HTTP requests of specified sizes. Maximum content length of each request can be specified by setting ``max_http_request_size`` to the required value.
 
-This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`) can be set to a lower value which is not possible without enabling this configuration.
+This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:menuitem:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`) can be set to a lower value which is not possible without enabling this configuration.
 
 Default value of mbedTLS Rx buffer size is set to 16 KB. By using ``partial_http_download`` with ``max_http_request_size`` of 4 KB, size of mbedTLS Rx buffer can be reduced to 4 KB. With this configuration, memory saving of around 12 KB is expected.
 

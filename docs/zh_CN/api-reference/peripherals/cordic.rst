@@ -299,7 +299,7 @@ Kconfig 选项
 
 以下 Kconfig 选项可用于配置 CORDIC 驱动：
 
-- :ref:`CONFIG_CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM` - 计算函数放入 IRAM。
+- :menuitem:`CONFIG_CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM` - 计算函数放入 IRAM。
 
 API 参考
 ============

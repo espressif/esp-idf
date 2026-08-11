@@ -116,7 +116,7 @@ ESP-IDF 安装完成后，EIM 命令行界面会打印一条命令提示，该�
 
     .. attention::
 
-        如果使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组）或 ESP32-DevKitM-1（板载 ESP32-MINI-1/1U 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
+        如果使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组）或 ESP32-DevKitM-1（板载 ESP32-MINI-1/1U 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式 (:menuitem:`CONFIG_FREERTOS_UNICORE`)。
 
 .. note::
 
@@ -133,14 +133,8 @@ ESP-IDF 安装完成后，EIM 命令行界面会打印一条命令提示，该�
 
     如需使用 USB 烧录 {IDF_TARGET_NAME}，请将控制台的输出通道改为 USB。对于 {IDF_TARGET_NAME}，默认的控制台输出通道为 UART。
 
-    1. 前往选项 ``Channel for console output``。
+    1. 将 :menuitem:`CONFIG_ESP_CONSOLE_UART` 从默认选项 UART 改为 ``USB CDC``。
 
-        ``Component config`` > ``ESP System Settings`` > ``Channel for console output``
-
-    2. 将默认选项 UART 改为：
-
-        ``USB CDC``
-
-    3. 保存设置，退出 ``menuconfig`` 界面。
+    2. 保存设置，退出 ``menuconfig`` 界面。
 
 .. include:: start-project.rst

@@ -50,8 +50,8 @@ ESP-TLS 在客户端提供了多种验证 TLS 服务器的选项，如验证对�
         * ``cacert_bytes`` - CA 证书大小（以字节为单位）。
     * **use_global_ca_store**： ``global_ca_store`` 可一次性完成初始化及设置，并用于验证 ESP-TLS 连接的服务器，注意需要在这些服务器各自的 :cpp:type:`esp_tls_cfg_t` 结构体中设置 ``use_global_ca_store = true``。有关初始化和设置 ``global_ca_store`` 的不同 API，请参阅文末的 API 参考。
     * **crt_bundle_attach**：ESP x509 证书包 API 提供了便捷的服务器验证方法，即打包一组自定义的 x509 根证书，用于 TLS 服务器验证，详情请参阅 :doc:`ESP x509 证书包 </api-reference/protocols/esp_crt_bundle>`。
-    * **psk_hint_key**：要使用预共享密钥验证服务器，必须在 ESP-TLS menuconfig 中启用 :ref:`CONFIG_ESP_TLS_PSK_VERIFICATION`，然后向结构体 :cpp:type:`esp_tls_cfg_t` 提供指向 PSK 提示和密钥的指针。若未选择有关服务器验证的其他选项，ESP-TLS 将仅用 PSK 验证服务器。
-    * **跳过服务器验证**：该选项并不安全，仅供测试使用。在 ESP-TLS menuconfig 中启用 :ref:`CONFIG_ESP_TLS_INSECURE` 和 :ref:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` 可启用该选项，此时，若未在 :cpp:type:`esp_tls_cfg_t` 结构体选择其他服务器验证选项，ESP-TLS 将默认跳过服务器验证。
+    * **psk_hint_key**：要使用预共享密钥验证服务器，必须在 ESP-TLS menuconfig 中启用 :menuitem:`CONFIG_ESP_TLS_PSK_VERIFICATION`，然后向结构体 :cpp:type:`esp_tls_cfg_t` 提供指向 PSK 提示和密钥的指针。若未选择有关服务器验证的其他选项，ESP-TLS 将仅用 PSK 验证服务器。
+    * **跳过服务器验证**：该选项并不安全，仅供测试使用。在 ESP-TLS menuconfig 中启用 :menuitem:`CONFIG_ESP_TLS_INSECURE` 和 :menuitem:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` 可启用该选项，此时，若未在 :cpp:type:`esp_tls_cfg_t` 结构体选择其他服务器验证选项，ESP-TLS 将默认跳过服务器验证。
 
       .. warning::
 
@@ -83,7 +83,7 @@ SNI 是 TLS 协议的一个扩展，它能让客户端在 TLS 握手过程中，
 ESP-TLS 服务器证书选择回调
 ----------------------------------
 
-使用 MbedTLS 协议栈时，ESP-TLS 组件支持设置服务器证书选择回调函数。此时，在服务器握手期间可选择使用哪个服务器证书，该回调可获取客户端发送的 "Client Hello" 消息中提供的 TLS 扩展（ALPN、SPI 等），并基于此选择传输哪个服务器证书给客户端。要启用此功能，请在 ESP-TLS menuconfig 中启用 :ref:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK`。
+使用 MbedTLS 协议栈时，ESP-TLS 组件支持设置服务器证书选择回调函数。此时，在服务器握手期间可选择使用哪个服务器证书，该回调可获取客户端发送的 "Client Hello" 消息中提供的 TLS 扩展（ALPN、SPI 等），并基于此选择传输哪个服务器证书给客户端。要启用此功能，请在 ESP-TLS menuconfig 中启用 :menuitem:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK`。
 
 证书选择回调可在结构体 :cpp:type:`esp_tls_cfg_t` 中配置，具体如下：
 
@@ -135,10 +135,10 @@ ESP-TLS 组件支持通过 :cpp:func:`esp_tls_register_stack` API 注册自定�
 
    可选函数（如果不支持，可以为 NULL）：
 
-   * ``get_client_session`` - 获取客户端会话票据（须启用 :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`）
-   * ``free_client_session`` - 释放客户端会话（须启用 :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`）
-   * ``server_session_ticket_ctx_init`` - 初始化服务器会话票据上下文（须启用 :ref:`CONFIG_ESP_TLS_SERVER_SESSION_TICKETS`）
-   * ``server_session_ticket_ctx_free`` - 释放服务器会话票据上下文（须启用 :ref:`CONFIG_ESP_TLS_SERVER_SESSION_TICKETS`）
+   * ``get_client_session`` - 获取客户端会话票据（须启用 :menuitem:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`）
+   * ``free_client_session`` - 释放客户端会话（须启用 :menuitem:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`）
+   * ``server_session_ticket_ctx_init`` - 初始化服务器会话票据上下文（须启用 :menuitem:`CONFIG_ESP_TLS_SERVER_SESSION_TICKETS`）
+   * ``server_session_ticket_ctx_free`` - 释放服务器会话票据上下文（须启用 :menuitem:`CONFIG_ESP_TLS_SERVER_SESSION_TICKETS`）
    * ``server_session_create`` - 创建服务器会话（服务器端，如果提供了 server_session_init，该接口可以为 NULL）
    * ``server_session_init`` - 初始化服务器会话（服务器端，如果提供了 server_session_create，该接口可以为 NULL）
    * ``server_session_continue_async`` - 继续服务器端的异步握手（服务器端，如果提供了 server_session_create，该接口可以为 NULL）
@@ -219,7 +219,7 @@ ESP-TLS 支持通过 PSA Crypto 不透明驱动接口在 ESP32 系列芯片上�
 
 1) 在工程中添加 `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ 作为依赖，详情请参阅 `如何在 ESP-IDF 中使用 esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_。
 
-2) 启用 menuconfig 选项 :ref:`CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED`：
+2) 启用 menuconfig 选项 :menuitem:`CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED`：
 
    .. code-block:: none
 
@@ -343,7 +343,7 @@ ESP-TLS 支持客户端会话恢复，可以在后续与同一服务器连接时
 
 要启用和使用客户端会话票据的步骤如下：
 
-1. 启用 Kconfig 选项 :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`。
+1. 启用 Kconfig 选项 :menuitem:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`。
 2. 在成功建立 TLS 连接（并完成握手）后，使用 :cpp:func:`esp_tls_get_client_session` 获取会话票据。
 
     * **对于 TLS 1.3**：会话票据可能在握手后由服务器随时发送，因此应用程序应定期或在特定的应用层交互之后调用 :cpp:func:`esp_tls_get_client_session`，确保获取最新的票据。TLS 协议栈接收并处理的每个新票据都会覆盖之前的票据，用于后续的会话恢复。

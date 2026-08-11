@@ -139,7 +139,7 @@ The digital ID printed in the dump information is defined in the ``soc/soc_etm_s
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source, and power off the ETM peripheral before going to sleep. As a result, the existing connection between events and tasks will be lost, and the ETM channels can't work correctly after wake up. So by default, the driver will acquire a power management lock internally to forbid the system from powering off the ETM peripheral.
+When power management is enabled, i.e., :menuitem:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source, and power off the ETM peripheral before going to sleep. As a result, the existing connection between events and tasks will be lost, and the ETM channels can't work correctly after wake up. So by default, the driver will acquire a power management lock internally to forbid the system from powering off the ETM peripheral.
 
 .. only:: SOC_ETM_SUPPORT_SLEEP_RETENTION
 
@@ -161,7 +161,7 @@ The ETM core driver is thread-safe.
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_ETM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option increases the firmware binary size as well.
+- :menuitem:`CONFIG_ETM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option increases the firmware binary size as well.
 
 API Reference
 -------------

@@ -50,8 +50,8 @@ ESP-TLS provides multiple options for TLS server verification on the client side
         * ``cacert_bytes`` - the size of the CA certificate in bytes.
     * **use_global_ca_store**: The ``global_ca_store`` can be initialized and set at once. Then it can be used to verify the server for all the ESP-TLS connections which have set ``use_global_ca_store = true`` in their respective :cpp:type:`esp_tls_cfg_t` structure. See the API Reference section below for information regarding different APIs used for initializing and setting up the ``global_ca_store``.
     * **crt_bundle_attach**: The ESP x509 Certificate Bundle API provides an easy way to include a bundle of custom x509 root certificates for TLS server verification. More details can be found at :doc:`ESP x509 Certificate Bundle </api-reference/protocols/esp_crt_bundle>`.
-    * **psk_hint_key**: To use pre-shared keys for server verification, :ref:`CONFIG_ESP_TLS_PSK_VERIFICATION` should be enabled in the ESP-TLS menuconfig. Then the pointer to the PSK hint and key should be provided to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the PSK for server verification only when no other option regarding server verification is selected.
-    * **skip server verification**: This is an insecure option provided in the ESP-TLS for testing purposes. The option can be set by enabling :ref:`CONFIG_ESP_TLS_INSECURE` and :ref:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` in the ESP-TLS menuconfig. When this option is enabled the ESP-TLS will skip server verification by default when no other options for server verification are selected in the :cpp:type:`esp_tls_cfg_t` structure.
+    * **psk_hint_key**: To use pre-shared keys for server verification, :menuitem:`CONFIG_ESP_TLS_PSK_VERIFICATION` should be enabled in the ESP-TLS menuconfig. Then the pointer to the PSK hint and key should be provided to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the PSK for server verification only when no other option regarding server verification is selected.
+    * **skip server verification**: This is an insecure option provided in the ESP-TLS for testing purposes. The option can be set by enabling :menuitem:`CONFIG_ESP_TLS_INSECURE` and :menuitem:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` in the ESP-TLS menuconfig. When this option is enabled the ESP-TLS will skip server verification by default when no other options for server verification are selected in the :cpp:type:`esp_tls_cfg_t` structure.
 
       .. warning::
 
@@ -83,7 +83,7 @@ Example:
 ESP-TLS Server Cert Selection Hook
 ----------------------------------
 
-The ESP-TLS component provides an option to set the server certification selection hook when using the MbedTLS stack. This provides an ability to configure and use a certificate selection callback during server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI. To enable this feature, please enable  :ref:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK` in the ESP-TLS menuconfig.
+The ESP-TLS component provides an option to set the server certification selection hook when using the MbedTLS stack. This provides an ability to configure and use a certificate selection callback during server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI. To enable this feature, please enable  :menuitem:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK` in the ESP-TLS menuconfig.
 
 The certificate selection callback can be configured in the :cpp:type:`esp_tls_cfg_t` structure as follows:
 
@@ -219,7 +219,7 @@ To enable the secure element support, and use it in your project for TLS connect
 
 1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ as a dependency in your project. For details, please refer to `how to use esp-cryptoauthlib with ESP-IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_.
 
-2) Enable the menuconfig option :ref:`CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED`:
+2) Enable the menuconfig option :menuitem:`CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED`:
 
    .. code-block:: none
 
@@ -343,7 +343,7 @@ The mechanism for session resumption differs slightly between TLS versions:
 
 To enable and use client session tickets:
 
-1. Enable the Kconfig option :ref:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`.
+1. Enable the Kconfig option :menuitem:`CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS`.
 2. After a successful TLS connection (and handshake completion), retrieve the session ticket using :cpp:func:`esp_tls_get_client_session`.
 
     * **For TLS 1.3**: Since session tickets can arrive from the server at any point after the handshake, an application might need to call :cpp:func:`esp_tls_get_client_session` periodically or after specific application-level exchanges if it wants to ensure it has the most recent ticket. Each new ticket received and processed by the TLS stack supersedes the previous one for future resumption attempts.

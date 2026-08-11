@@ -57,7 +57,7 @@ See :example:`cxx/pthread` for an example of creating threads in C++. Specifical
 Exception Handling
 ------------------
 
-Support for C++ Exceptions in ESP-IDF is disabled by default, but can be enabled using the :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS` option.
+Support for C++ Exceptions in ESP-IDF is disabled by default, but can be enabled using the :menuitem:`CONFIG_COMPILER_CXX_EXCEPTIONS` option.
 
 If an exception is thrown, but there is no ``catch`` block, the program is terminated by the ``abort`` function, and the backtrace is printed. See :doc:`fatal-errors` for more information about backtraces.
 
@@ -72,7 +72,7 @@ Enabling exception handling normally increases application binary size by a few 
 
 Additionally, it may be necessary to reserve some amount of RAM for the exception emergency memory pool. Memory from this pool is used if it is not possible to allocate an exception object from the heap.
 
-The amount of memory in the emergency pool can be set using the :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
+The amount of memory in the emergency pool can be set using the :menuitem:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
 
 Some additional stack memory (around 200 bytes) is also used if and only if a C++ Exception is actually thrown, because it requires calling some functions from the top of the stack to initiate exception handling.
 
@@ -89,7 +89,7 @@ If an exception is thrown, the run time of the code that unwinds the stack is or
 Runtime Type Information (RTTI)
 -------------------------------
 
-Support for RTTI in ESP-IDF is disabled by default, but can be enabled using :ref:`CONFIG_COMPILER_CXX_RTTI` option.
+Support for RTTI in ESP-IDF is disabled by default, but can be enabled using :menuitem:`CONFIG_COMPILER_CXX_RTTI` option.
 
 Enabling this option compiles all C++ files with RTTI support enabled, which allows using ``dynamic_cast`` conversion and ``typeid`` operator. Enabling this option typically increases the binary size by tens of kB.
 

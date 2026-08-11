@@ -88,11 +88,11 @@ The second method is preferable when writing longer code segments in RTC fast me
             esp_rom_printf(fmt_str, wake_count++);
         }
 
-    The RTC memory area where the data will be placed can be configured via the menuconfig option :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTCDATA_IN_FAST_MEM`. This option allows keeping slow memory area for ULP programs. Once it is enabled, the data marked with ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` are placed in the RTC fast memory segment; otherwise, it goes to RTC slow memory (the default option). This option depends on the :ref:`CONFIG_FREERTOS_UNICORE` option because RTC fast memory can be accessed only by PRO_CPU.
+    The RTC memory area where the data will be placed can be configured via the menuconfig option :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTCDATA_IN_FAST_MEM`. This option allows keeping slow memory area for ULP programs. Once it is enabled, the data marked with ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` are placed in the RTC fast memory segment; otherwise, it goes to RTC slow memory (the default option). This option depends on the :menuitem:`CONFIG_FREERTOS_UNICORE` option because RTC fast memory can be accessed only by PRO_CPU.
 
     .. only:: esp32
 
-        This option depends on the :ref:`CONFIG_FREERTOS_UNICORE` because RTC fast memory can be accessed only by PRO_CPU.
+        This option depends on the :menuitem:`CONFIG_FREERTOS_UNICORE` because RTC fast memory can be accessed only by PRO_CPU.
 
         The attributes ``RTC_FAST_ATTR`` and ``RTC_SLOW_ATTR`` can be used to specify data that is forcefully placed into RTC fast memory and RTC slow memory, respectively. Any access to data marked with ``RTC_FAST_ATTR`` is allowed by PRO_CPU only.
 
@@ -145,7 +145,7 @@ However, any string constants used in this way must be declared as arrays and ma
 
 The second approach is advisable when incorporating strings or more complex code segments.
 
-You can enable the Kconfig option :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` to reduce wake-up time. See more information in :doc:`Fast boot from Deep-sleep <bootloader>`.
+You can enable the Kconfig option :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` to reduce wake-up time. See more information in :doc:`Fast boot from Deep-sleep <bootloader>`.
 
 All of the above functions are declared in :component_file:`esp_hw_support/include/esp_sleep.h`.
 

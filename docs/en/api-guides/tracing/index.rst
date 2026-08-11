@@ -65,11 +65,11 @@ To enable SEGGER SystemView tracing for FreeRTOS system analysis:
 
 1. Add the ``espressif/esp_sysview`` dependency to your project's ``idf_component.yml``.
 
-2. Select the external trace library by enabling :ref:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>`.
+2. Select the external trace library by enabling :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>`.
 
-3. Select the apptrace transport by enabling :ref:`CONFIG_ESP_TRACE_TRANSPORT_APPTRACE <CONFIG_ESP_TRACE_TRANSPORT_APPTRACE>`.
+3. Select the apptrace transport by enabling :menuitem:`CONFIG_ESP_TRACE_TRANSPORT_APPTRACE <CONFIG_ESP_TRACE_TRANSPORT_APPTRACE>`.
 
-4. Set the data destination to JTAG by enabling :ref:`CONFIG_APPTRACE_DEST_JTAG <CONFIG_APPTRACE_DEST_JTAG>`.
+4. Set the data destination to JTAG by enabling :menuitem:`CONFIG_APPTRACE_DEST_JTAG <CONFIG_APPTRACE_DEST_JTAG>`.
 
 5. Build and flash your application:
 

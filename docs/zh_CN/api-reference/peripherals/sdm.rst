@@ -84,7 +84,7 @@ SDM 通道完成任务后，请调用 :cpp:func:`sdm_del_channel` 回收相应�
 电源管理
 ^^^^^^^^
 
-启用电源管理（即启用 :ref:`CONFIG_PM_ENABLE`）时，在进入 Light-sleep 模式前，系统会调整 APB 频率，这可能会改变 Sigma-Delta 调制器的采样率。
+启用电源管理（即启用 :menuitem:`CONFIG_PM_ENABLE`）时，在进入 Light-sleep 模式前，系统会调整 APB 频率，这可能会改变 Sigma-Delta 调制器的采样率。
 
 但是，通过获取类型为 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 的电源管理锁，驱动程序可以防止系统改变 APB 频率。每当驱动程序创建 SDM 通道，且该通道选择 :cpp:enumerator:`SDM_CLK_SRC_APB` 作为其时钟源时，在通过 :cpp:func:`sdm_channel_enable` 启用通道的过程中，驱动程序会确保获取类型为 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 的电源管理锁。反之，调用 :cpp:func:`sdm_channel_disable` 禁用通道时，驱动程序释放该锁。
 
@@ -93,7 +93,7 @@ SDM 通道完成任务后，请调用 :cpp:func:`sdm_del_channel` 回收相应�
 IRAM 安全
 ^^^^^^^^^
 
-Kconfig 选项 :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` 支持将常用的 IO 控制函数存放在 IRAM 中，以保证在禁用 cache 时可以正常使用函数。IO 控制函数如下所示：
+Kconfig 选项 :menuitem:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` 支持将常用的 IO 控制函数存放在 IRAM 中，以保证在禁用 cache 时可以正常使用函数。IO 控制函数如下所示：
 
 - :cpp:func:`sdm_channel_set_pulse_density`
 
@@ -115,8 +115,8 @@ Kconfig 选项 :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` 支持将常用的 IO 控制�
 Kconfig 选项
 ^^^^^^^^^^^^
 
-- :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` 控制 SDM 通道控制函数的存放位置（IRAM 或 flash）。更多信息请参阅 :ref:`sdm-iram-safe`。
-- :ref:`CONFIG_SDM_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用此选项将增加固件的二进制文件大小。
+- :menuitem:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` 控制 SDM 通道控制函数的存放位置（IRAM 或 flash）。更多信息请参阅 :ref:`sdm-iram-safe`。
+- :menuitem:`CONFIG_SDM_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用此选项将增加固件的二进制文件大小。
 
 .. _convert_to_analog_signal:
 

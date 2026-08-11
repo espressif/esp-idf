@@ -327,8 +327,8 @@ The following Kconfig options affect interrupt handler behavior when the cache i
 
 .. list::
 
-    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`, see :ref:`cam-thread-safety` for details.
-    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`, see :ref:`cam-thread-safety` for details.
+    :SOC_MIPI_CSI_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`, see :ref:`cam-thread-safety` for details.
+    :SOC_ISP_DVP_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`, see :ref:`cam-thread-safety` for details.
 
 .. _cam-iram-safe:
 
@@ -341,8 +341,8 @@ The following Kconfig options:
 
 .. list::
 
-    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`
-    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`
+    :SOC_MIPI_CSI_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`
+    :SOC_ISP_DVP_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`
 
 -  Enable the interrupt being serviced even when the cache is disabled.
 -  Place all functions used by the ISR into IRAM.

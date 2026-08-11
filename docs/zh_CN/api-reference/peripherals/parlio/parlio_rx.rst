@@ -336,7 +336,7 @@ ISR 上下文接收
 电源管理
 ^^^^^^^^
 
-当电源管理 :ref:`CONFIG_PM_ENABLE` 被启用的时候，系统在进入睡眠前可能会调整或禁用时钟源，会导致 RX 单元内部的时间基准无法按预期工作。
+当电源管理 :menuitem:`CONFIG_PM_ENABLE` 被启用的时候，系统在进入睡眠前可能会调整或禁用时钟源，会导致 RX 单元内部的时间基准无法按预期工作。
 
 为了防止这种情况发生，RX 单元驱动内部创建了一个电源管理锁。锁的类型会根据不同的时钟源来设置。驱动程序将在 :cpp:func:`parlio_rx_unit_enable` 中拿锁，并在 :cpp:func:`parlio_rx_unit_disable` 中释放锁。这意味着，无论电源管理策略如何，在这两个函数之间系统不会进入睡眠模式，时钟源也不会被禁用或调整频率，任何 RX 事务都可以保证正常工作。
 
@@ -352,7 +352,7 @@ ISR 上下文接收
 关于 Cache 安全
 ^^^^^^^^^^^^^^^
 
-在文件系统进行 Flash 读写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致 RX 单元的中断处理程序在此期间无法响应，从而使用户的回调函数无法及时执行。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :ref:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` 选项。
+在文件系统进行 Flash 读写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致 RX 单元的中断处理程序在此期间无法响应，从而使用户的回调函数无法及时执行。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :menuitem:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` 选项。
 
 .. note::
 
@@ -362,16 +362,16 @@ ISR 上下文接收
 
     .. note::
 
-        当启用了以下选项时，系统在进行 Flash 读写操作时不会自动禁用 Cache, 因此无需启用 :ref:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE`。
+        当启用了以下选项时，系统在进行 Flash 读写操作时不会自动禁用 Cache, 因此无需启用 :menuitem:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE`。
 
         .. list::
-            :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`
-            :SOC_SPIRAM_XIP_SUPPORTED: - :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`
+            :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND`
+            :SOC_SPIRAM_XIP_SUPPORTED: - :menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM`
 
 关于性能
 ^^^^^^^^
 
-为了提升中断处理的实时响应能力，RX 单元驱动提供了 :ref:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令时可能出现的缓存丢失带来的延迟。
+为了提升中断处理的实时响应能力，RX 单元驱动提供了 :menuitem:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令时可能出现的缓存丢失带来的延迟。
 
 .. note::
 
@@ -382,7 +382,7 @@ ISR 上下文接收
 其他 Kconfig 选项
 ^^^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_PARLIO_ENABLE_DEBUG_LOG` 选项允许强制启用 RX 单元驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。此选项与 TX 单元驱动程序共用。
+- :menuitem:`CONFIG_PARLIO_ENABLE_DEBUG_LOG` 选项允许强制启用 RX 单元驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。此选项与 TX 单元驱动程序共用。
 
 关于资源消耗
 ^^^^^^^^^^^^
@@ -392,8 +392,8 @@ ISR 上下文接收
 - 编译器优化等级设置为 ``-Os``，以确保代码尺寸最小化。
 - 默认日志等级设置为 ``ESP_LOG_INFO``，以平衡调试信息和性能。
 - 关闭以下驱动优化选项：
-    - :ref:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` - 中断处理程序不放入 IRAM。
-    - :ref:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
+    - :menuitem:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` - 中断处理程序不放入 IRAM。
+    - :menuitem:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
 
 **注意，以下数据不是精确值，仅供参考，在不同型号的芯片和不同版本的 IDF 上，数据会有所出入。**
 

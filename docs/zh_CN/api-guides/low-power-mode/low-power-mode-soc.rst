@@ -16,7 +16,7 @@ DFS
 
 Dynamic Frequency Scaling (DFS) 即动态频率切换，是 ESP-IDF 中集成的电源管理机制的基础功能。DFS 可以根据应用程序持有电源锁的情况，调整外围总线 (APB) 频率和 CPU 频率。持有高性能锁就使用高频，空闲状态不持有电源锁时则使用低频来降低功耗，以此来尽可能减少运行应用程序的功耗。
 
-DFS 的调频机制即根据持有电源锁的最大频率需求来调整频率，同时，`CONFIG_FREERTOS_HZ` 的数值也会对 DFS 调频产生影响。:ref:`CONFIG_FREERTOS_HZ` 值越大，即系统任务调度的频率越高，意味着系统能更及时地根据需求调整频率。有关调频机制的详细信息，请参见 :doc:`电源管理 <../../api-reference/system/power_management>`。
+DFS 的调频机制即根据持有电源锁的最大频率需求来调整频率，同时，`CONFIG_FREERTOS_HZ` 的数值也会对 DFS 调频产生影响。:menuitem:`CONFIG_FREERTOS_HZ` 值越大，即系统任务调度的频率越高，意味着系统能更及时地根据需求调整频率。有关调频机制的详细信息，请参见 :doc:`电源管理 <../../api-reference/system/power_management>`。
 
 下图为 DFS 调频机制运行的理想电流情况。
 
@@ -50,7 +50,7 @@ Light-sleep 模式
 
 Light-sleep 模式是 {IDF_TARGET_NAME} 预设的一种低功耗模式，用户可以通过调用 :cpp:func:`esp_light_sleep_start` 接口主动切换至 Light-sleep 模式，进入睡眠后，芯片将根据当前各外设的工作状态，关闭不必要的电源域和对睡眠期间不使用的模块进行时钟门控。{IDF_TARGET_NAME} 支持多种唤醒源，详见 :doc:`睡眠模式 <../../api-reference/system/sleep_modes>`，当芯片从 Light-sleep 模式唤醒后，CPU 会接着入睡时的上下文继续运行，外设的工作状态也不会被破坏。为充分利用 Light-sleep 模式以降低芯片功耗，更推荐用户使用下述的 Auto Light-sleep 模式。
 
-Auto Light-sleep 模式是 ESP-IDF :doc:`电源管理 <../../api-reference/system/power_management>` 组件基于 FreeRTOS 的 Tickless IDLE 功能提供的一种低功耗模式。当应用程序释放所有电源锁，FreeRTOS 的所有任务都进入阻塞态或挂起态时，系统会自动获取下一个有就绪事件需要唤醒操作系统的时间点，当判定此时间点距当前超过设定时间（:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`）后，``esp_pm`` 组件会自动配置定时器唤醒源并进入 light sleep 以降低功耗。用户在配置 DFS 时置真 :cpp:type:`esp_pm_config_t` 中的 ``light_sleep_enable`` 字段即可启用该模式，详见下文中的 `DFS 配置`_。
+Auto Light-sleep 模式是 ESP-IDF :doc:`电源管理 <../../api-reference/system/power_management>` 组件基于 FreeRTOS 的 Tickless IDLE 功能提供的一种低功耗模式。当应用程序释放所有电源锁，FreeRTOS 的所有任务都进入阻塞态或挂起态时，系统会自动获取下一个有就绪事件需要唤醒操作系统的时间点，当判定此时间点距当前超过设定时间（:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`）后，``esp_pm`` 组件会自动配置定时器唤醒源并进入 light sleep 以降低功耗。用户在配置 DFS 时置真 :cpp:type:`esp_pm_config_t` 中的 ``light_sleep_enable`` 字段即可启用该模式，详见下文中的 `DFS 配置`_。
 
 .. code-block:: text
 
@@ -165,11 +165,11 @@ Deep-sleep 模式可以用于低功耗的传感器应用，或是大部分时间
 
 .. only:: esp32 or esp32s3
 
-  - 单双核工作模式 (:ref:`CONFIG_FREERTOS_UNICORE`)
+  - 单双核工作模式 (:menuitem:`CONFIG_FREERTOS_UNICORE`)
       对于多核心芯片，可以选择单核工作模式。
 
 
-  - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+  - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
       该参数表示系统周期任务调度的频率。
 
 
@@ -189,7 +189,7 @@ DFS 有如下可配置选项：
 
 具体配置方法如下：
 
-1. 使能 :ref:`CONFIG_PM_ENABLE`
+1. 使能 :menuitem:`CONFIG_PM_ENABLE`
 2. 配置 ``max_freq_mhz`` 和 ``min_freq_mhz``，方式如下：
 
   ::
@@ -211,10 +211,10 @@ DFS 有如下可配置选项：
   * - 配置名称
     - 设置情况
 
-  * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+  * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
     - ON
 
-  * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+  * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
     - 1000
 
   * - ``max_freq_mhz``
@@ -239,10 +239,10 @@ Light-sleep 模式配置
 
       下文为 Auto Light-sleep 模式配置选项的简单介绍，点击相应链接获取详细内容。
 
-- 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
-- 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
-- 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
-- RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+- 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+- 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
+- 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
+- RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
 
   .. list-table::
     :header-rows: 1
@@ -260,16 +260,16 @@ Light-sleep 模式配置
       - 低
       - 小
 
-- 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+- 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
 
 .. only:: SOC_PM_SUPPORT_MAC_BB_PD
 
-    - 关闭 MAC 和基带 (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+    - 关闭 MAC 和基带 (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
 
 
 .. only:: SOC_PM_SUPPORT_CPU_PD
 
-    - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+    - 关闭 CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
 
     .. only:: esp32p4
 
@@ -277,14 +277,14 @@ Light-sleep 模式配置
 
 .. only:: SOC_PM_SUPPORT_TAGMEM_PD
 
-    - 关闭指令和数据缓存中的标签存储器 (I/D-cache tag memory) (:ref:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
+    - 关闭指令和数据缓存中的标签存储器 (I/D-cache tag memory) (:menuitem:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
 
 
 .. only:: SOC_PM_SUPPORT_VDDSDIO_PD
 
     .. only:: SOC_PM_SUPPORT_VDDSDIO_PD and not SOC_PM_FLASH_KEEP_POWER_IN_LSLP
 
-        - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+        - 在 light sleep 状态关闭 flash 供电 (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
 
             .. only:: SOC_SPIRAM_SUPPORTED
 
@@ -292,7 +292,7 @@ Light-sleep 模式配置
 
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
-    - 关闭数字外设模块及 TOP 电源域下的所有子电源域 (:ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`)
+    - 关闭数字外设模块及 TOP 电源域下的所有子电源域 (:menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`)
 
 .. only:: SOC_PM_SUPPORT_RTC_PERIPH_PD
 
@@ -300,7 +300,7 @@ Light-sleep 模式配置
 
 .. only:: esp32c2
 
-    - 减少 Power Managemet 模块片内 RAM 内存资源使用量 (:ref:`CONFIG_PM_SLEEP_FUNC_IN_IRAM`)，当 :ref:`CONFIG_PM_SLEEP_FUNC_IN_IRAM` 禁止时，下面表格中选项分别用于控制 Power Management 模块各部分组件启用或禁止片内 RAM 优化
+    - 减少 Power Managemet 模块片内 RAM 内存资源使用量 (:menuitem:`CONFIG_PM_SLEEP_FUNC_IN_IRAM`)，当 :menuitem:`CONFIG_PM_SLEEP_FUNC_IN_IRAM` 禁止时，下面表格中选项分别用于控制 Power Management 模块各部分组件启用或禁止片内 RAM 优化
 
     .. list-table::
       :header-rows: 1
@@ -309,23 +309,23 @@ Light-sleep 模式配置
       * - 配置项
         - 描述
 
-      * - :ref:`CONFIG_PM_SLP_IRAM_OPT`
+      * - :menuitem:`CONFIG_PM_SLP_IRAM_OPT`
         - 使能该选项后执行 light / deep sleep 软件流程上下文被链接到片内 RAM 空间，这意味着系统进出睡眠时间变短，消耗更多的片内 RAM 资源；禁止该选项，light / deep sleep 软件流程上下文将被编译到 Flash 空间，这意味着系统进出睡眠时间变长，但会节约片内 RAM 资源。
 
-      * - :ref:`CONFIG_PM_RTOS_IDLE_OPT`
+      * - :menuitem:`CONFIG_PM_RTOS_IDLE_OPT`
         - auto light sleep 模式下，使能该选项后，FreeRTOS 系统滴答，IDLE 任务回调函数及 FreeRTOS Tickless idle 软件上下文被链接到片内 RAM 空间，反之将被链接到 Flash 空间。
 
-      * - :ref:`CONFIG_ESP_PERIPH_CTRL_FUNC_IN_IRAM`
+      * - :menuitem:`CONFIG_ESP_PERIPH_CTRL_FUNC_IN_IRAM`
         - 使能该选项后外设时钟及复位控制相关的软件实现将被链接到片内 RAM 空间，反之将被链接到 Flash 空间。
 
-      * - :ref:`CONFIG_ESP_REGI2C_CTRL_FUNC_IN_IRAM`
+      * - :menuitem:`CONFIG_ESP_REGI2C_CTRL_FUNC_IN_IRAM`
         - 使能该选项后 Analog I2C 读写访问相关的软件实现将被链接到片内 RAM 空间，反之被链接到 Flash 空间。
 
 配置方法：
 
 1. 配置唤醒源（详见 :doc:`睡眠模式 <../../api-reference/system/sleep_modes>`）
-2. 使能 :ref:`CONFIG_PM_ENABLE`
-3. 使能 :ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`
+2. 使能 :menuitem:`CONFIG_PM_ENABLE`
+3. 使能 :menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`
 4. 配置 DFS 参数
 5. ``light_sleep_enable`` = true，具体如下：
 
@@ -354,40 +354,40 @@ Light-sleep 模式配置
    * - 配置名称
      - 设置情况
 
-   * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+   * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - ON
 
-   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - ON
 
-   * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - 内部 150 kHz 振荡器
 
-   * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - 关闭 MAC 和基带 (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - 关闭 MAC 和基带 (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - 关闭 CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - 在 light sleep 状态关闭 flash 供电 (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -411,37 +411,37 @@ Light-sleep 模式配置
    * - 配置名称
      - 设置情况
 
-   * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+   * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - ON
 
-   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - 内部 150 kHz 振荡器
 
-   * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - 关闭 MAC 和基带 (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - 关闭 MAC 和基带 (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - 关闭 CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - ON
 
    * - ``max_freq_mhz``
@@ -457,7 +457,7 @@ Light-sleep 模式配置
       上表中不涉及的配置均是默认。
 
   .. note::
-      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，不提供 :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`。
+      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，不提供 :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`。
 
 .. only:: esp32s3
 
@@ -468,43 +468,43 @@ Light-sleep 模式配置
    * - 配置名称
      - 设置情况
 
-   * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+   * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - OFF
 
-   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - 内部 150 kHz 振荡器
 
-   * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - 关闭 MAC 和基带 (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - 关闭 MAC 和基带 (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - 关闭 CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - 关闭指令和数据缓存中的标签存储器 (I/D-cache tag memory)  (:ref:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
+   * - 关闭指令和数据缓存中的标签存储器 (I/D-cache tag memory)  (:menuitem:`CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP`)
      - ON
 
-   * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - 在 light sleep 状态关闭 flash 供电 (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -528,40 +528,40 @@ Light-sleep 模式配置
    * - 配置名称
      - 设置情况
 
-   * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+   * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - OFF
 
-   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - 内部 150 kHz 振荡器
 
-   * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - 关闭 MAC 和基带 (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+   * - 关闭 MAC 和基带 (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
      - ON
 
-   * - 关闭 CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+   * - 关闭 CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
      - ON
 
-   * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - 在 light sleep 状态关闭 flash 供电 (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``
@@ -585,28 +585,28 @@ Light-sleep 模式配置
     * - 配置名称
       - 设置情况
 
-    * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+    * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
       - ON
 
-    * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+    * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
       - ON
 
-    * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+    * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
       - 1000
 
-    * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+    * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
       - 3
 
-    * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+    * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
       - OFF
 
-    * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+    * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
       - OFF
 
-    * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+    * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
       - 内部 150 kHz 振荡器
 
-    * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+    * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
       - ON
 
     * - ``max_freq_mhz``
@@ -630,34 +630,34 @@ Light-sleep 模式配置
    * - 配置名称
      - 设置情况
 
-   * - 启用电源管理组件 (:ref:`CONFIG_PM_ENABLE`)
+   * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
      - ON
 
-   * - 启用 Tickless IDLE 模式 (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+   * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
      - ON
 
-   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
      - 1000
 
-   * - 进入睡眠模式前最小 IDLE Tick 数 (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
      - 3
 
-   * - 将 light sleep 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
      - OFF
 
-   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
      - OFF
 
-   * - RTC 慢速时钟源 (:ref:`CONFIG_RTC_CLK_SRC`)
+   * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - 内部 150 kHz 振荡器
 
-   * - 芯片休眠时禁用所有 GPIO (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+   * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
 
-   * - 在 light sleep 状态关闭 flash 供电 (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+   * - 在 light sleep 状态关闭 flash 供电 (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
 
-   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
      - OFF
 
    * - ``max_freq_mhz``

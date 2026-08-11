@@ -43,7 +43,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码，:
 
 此外，如果出现找不到匹配的 ``ESP_ERR_`` 值的情况，函数 :cpp:func:`esp_err_to_name_r` 则会尝试将错误码作为一种 `标准 POSIX 错误代码 <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_ 进行解释。具体过程为：POSIX 错误代码（例如 ``ENOENT``， ``ENOMEM``）定义在 ``errno.h`` 文件中，可以通过 ``errno`` 变量获得，进而调用 ``strerror_r`` 函数实现。在 ESP-IDF 中，``errno`` 是一个基于线程的局部变量，即每个 FreeRTOS 任务都有自己的 ``errno`` 副本，通过函数修改 ``errno`` 也只会作用于当前任务中的 ``errno`` 变量值。
 
-该功能（即在无法匹配 ``ESP_ERR_`` 值时，尝试用标准 POSIX 解释错误码）默认启用。用户也可以禁用该功能，从而减小应用程序的二进制文件大小，详情可见 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`。注意，该功能对禁用并不影响 :cpp:func:`esp_err_to_name` 和 :cpp:func:`esp_err_to_name_r` 函数的定义，用户仍可调用这两个函数转化错误码。在这种情况下， :cpp:func:`esp_err_to_name` 函数在遇到无法匹配错误码的情况会返回 ``UNKNOWN ERROR``，而 :cpp:func:`esp_err_to_name_r` 函数会返回 ``Unknown error 0xXXXX(YYYYY)``，其中 ``0xXXXX`` 和 ``YYYYY`` 分别代表错误代码的十六进制和十进制表示。
+该功能（即在无法匹配 ``ESP_ERR_`` 值时，尝试用标准 POSIX 解释错误码）默认启用。用户也可以禁用该功能，从而减小应用程序的二进制文件大小，详情可见 :menuitem:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`。注意，该功能对禁用并不影响 :cpp:func:`esp_err_to_name` 和 :cpp:func:`esp_err_to_name_r` 函数的定义，用户仍可调用这两个函数转化错误码。在这种情况下， :cpp:func:`esp_err_to_name` 函数在遇到无法匹配错误码的情况会返回 ``UNKNOWN ERROR``，而 :cpp:func:`esp_err_to_name_r` 函数会返回 ``Unknown error 0xXXXX(YYYYY)``，其中 ``0xXXXX`` 和 ``YYYYY`` 分别代表错误代码的十六进制和十进制表示。
 
 .. _esp-error-check-macro:
 
@@ -85,7 +85,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码，:
 
     如果使用 :doc:`tools/idf-monitor`，则最后一行回溯结果中的地址将会被自动解析为相应的文件名和行号。
 
-- 第一行打印错误代码的十六进制表示，及该错误在源代码中的标识符。这个标识符取决于 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 选项的设定。最后，第一行还会打印程序中该错误发生的具体位置。
+- 第一行打印错误代码的十六进制表示，及该错误在源代码中的标识符。这个标识符取决于 :menuitem:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 选项的设定。最后，第一行还会打印程序中该错误发生的具体位置。
 
 - 下面几行显示了程序中调用 :c:macro:`ESP_ERROR_CHECK` 宏的具体位置，以及传递给该宏的参数。
 
@@ -122,7 +122,7 @@ ESP-IDF 提供了一组宏来处理可恢复的错误，定义在 ``esp_check.h`
 
 - **ESP_RETURN_ON_ERROR_CLEANUP**：检测到错误时，在执行清理代码后从函数返回。该宏尤其适用于在返回错误码之前需要释放资源的情况。该宏会对返回 :cpp:type:`esp_err_t` 的表达式进行求值；若结果不为 :c:macro:`ESP_OK`，则会先执行可变参数提供的清理代码（例如释放资源或记录日志），然后从当前函数返回该错误码。
 
-这些宏的默认行为可通过 Kconfig 进行配置：如果启用了 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 选项，错误信息将不会被包含在应用程序二进制文件中，也不会被打印出来。
+这些宏的默认行为可通过 Kconfig 进行配置：如果启用了 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 选项，错误信息将不会被包含在应用程序二进制文件中，也不会被打印出来。
 
 .. _check_macros_examples:
 

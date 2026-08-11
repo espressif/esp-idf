@@ -17,15 +17,15 @@
 
 .. only:: esp32
 
-    :ref:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` = Main crystal (`CONFIG_BTDM_CTRL_LPCLK_SEL_MAIN_XTAL`)
+    :menuitem:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` = Main crystal (`CONFIG_BTDM_CTRL_LPCLK_SEL_MAIN_XTAL`)
 
 .. only:: esp32c3 or esp32s3
 
-    :ref:`CONFIG_BT_CTRL_LOW_POWER_CLOCK` = Main crystal (`CONFIG_BT_CTRL_LPCLK_SEL_MAIN_XTAL`)
+    :menuitem:`CONFIG_BT_CTRL_LOW_POWER_CLOCK` = Main crystal (`CONFIG_BT_CTRL_LPCLK_SEL_MAIN_XTAL`)
 
 .. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
-    :ref:`CONFIG_BT_LE_LP_CLK_SRC` = Use main XTAL as RTC clock source (`CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL`)
+    :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use main XTAL as RTC clock source (`CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL`)
 
 选择主晶振后，light-sleep 模式下主晶振电源不会关闭，因此电流消耗更高。有关使用主晶振与 32 kHz 外部晶振在 light-sleep 模式下的典型电流消耗，请参考 :example_file:`Power Save README <bluetooth/nimble/power_save/README.md>` 。
 
@@ -38,19 +38,19 @@
 
 .. only:: esp32
 
-    :ref:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` = External 32 kHz crystal/oscillator (`CONFIG_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL`)
+    :menuitem:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` = External 32 kHz crystal/oscillator (`CONFIG_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL`)
 
 .. only:: esp32c3 or esp32s3
 
-    :ref:`CONFIG_BT_CTRL_LOW_POWER_CLOCK` = External 32 kHz crystal/oscillator (`CONFIG_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL`)
+    :menuitem:`CONFIG_BT_CTRL_LOW_POWER_CLOCK` = External 32 kHz crystal/oscillator (`CONFIG_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL`)
 
 .. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
-    :ref:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
+    :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
 
 **配置路径 2：**
 
-:ref:`CONFIG_RTC_CLK_SRC` = External 32 kHz crystal (`CONFIG_RTC_CLK_SRC_EXT_CRYS`)
+:menuitem:`CONFIG_RTC_CLK_SRC` = External 32 kHz crystal (`CONFIG_RTC_CLK_SRC_EXT_CRYS`)
 
 **注意：** 即使在 menuconfig 中选择了 32 kHz 外部晶振，如果低功耗蓝牙初始化时未检测到外部晶振，系统会自动切换为主晶振，可能导致 light-sleep 电流高于预期。
 
@@ -63,7 +63,7 @@
 
     **配置路径 1：**
 
-    :ref:`CONFIG_BT_CTRL_LOW_POWER_CLOCK` = Internal 136kHz RC oscillator (`CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW`)
+    :menuitem:`CONFIG_BT_CTRL_LOW_POWER_CLOCK` = Internal 136kHz RC oscillator (`CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW`)
 
     一般来说，136 kHz RC 振荡器难以满足低功耗蓝牙的精度要求，仅适用于对时钟精度要求不高的场景，如传统广播 (ADV) 或扫描 (SCAN)。它不支持以中心角色或外设角色建立连接。
 
@@ -77,13 +77,13 @@
 
     **配置路径 1：**
 
-    :ref:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
+    :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
 
 .. only:: not esp32
 
     **配置路径 2：**
 
-    :ref:`CONFIG_RTC_CLK_SRC` = Internal 136 kHz RC oscillator (`CONFIG_RTC_CLK_SRC_INT_RC`)
+    :menuitem:`CONFIG_RTC_CLK_SRC` = Internal 136 kHz RC oscillator (`CONFIG_RTC_CLK_SRC_INT_RC`)
 
 .. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
@@ -96,8 +96,8 @@
 
     **配置路径：**
 
-      - :ref:`CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE` = y
-      - :ref:`CONFIG_BT_LE_LL_PEER_SCA` = 3000
+      - :menuitem:`CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE` = y
+      - :menuitem:`CONFIG_BT_LE_LL_PEER_SCA` = 3000
 
     **注意：** 使用 136 kHz RC 振荡器可能偶发连接断开或连接失败。
 

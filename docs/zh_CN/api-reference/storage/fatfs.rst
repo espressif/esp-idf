@@ -81,23 +81,23 @@ FatFs 组件提供了便利的封装函数，用于通过 VFS 层挂载文件系
 
 FatFs 组件提供以下配置选项：
 
-* ``CONFIG_FATFS_LONG_FILENAMES`` - 选择 FatFs 库如何处理长文件名 (LFN) 支持。可用选项包括 :ref:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` 以禁用 LFN 支持并将名称限制为 `8.3 格式 <https://en.wikipedia.org/wiki/8.3_filename>`_ （仅 SFN）， :ref:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在堆上（默认），以及 :ref:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在栈上。详细信息请参阅 `FatFs 文件名 <http://elm-chan.org/fsw/ff/doc/filename.html>`_。
-* :ref:`CONFIG_FATFS_VOLUME_COUNT` - 设置逻辑 FatFs 卷的数量。增加此值可能会增加基础内存使用量。
-* :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - 如果启用，FatFs 库在分配内部缓冲区时优先使用外部 RAM。如果外部 RAM 分配失败，则回退到内部 RAM。这可能会对热 I/O 路径产生明显的性能开销。禁用此选项可优先考虑性能；启用可减少内部 RAM 使用量。
-* :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - 如果启用，FatFs 库首先尝试在支持 DMA、缓存对齐的内存中分配堆工作缓冲区，以便 SDMMC 传输避免额外的拷贝。此选项在使用 PSRAM 和 SDMMC DMA 的目标芯片上（例如 ESP32-P4）非常有用。如果同时启用此选项和 :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`，FatFs 库会先尝试支持 DMA 的 RAM，然后是外部 RAM，最后是内部 RAM。
-* :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` - 如果启用，FatFs 库会单独分配实例缓冲区，并根据每个已挂载卷的逻辑扇区大小调整其大小。当多个 FatFs 实例使用不同的逻辑扇区大小时，此选项非常有用，因为它可以减少内存使用量。如果禁用，所有实例都使用为最大配置逻辑扇区大小调整大小的缓冲区。
-* :ref:`CONFIG_FATFS_PER_FILE_CACHE` - 如果启用，每个打开的文件使用单独的缓存缓冲区。这提高了 I/O 性能，但当多个文件打开时会增加 RAM 使用量。如果禁用，则使用单个共享缓存，这减少了 RAM 使用量，但可能会增加存储读写操作。
-* :ref:`CONFIG_FATFS_USE_FASTSEEK` - 如果启用，POSIX :cpp:func:`lseek` 运行更快。快速定位不适用于以写入模式打开的文件。要使用快速查找，请以只读模式打开文件，或关闭后以只读模式重新打开。
-* :ref:`CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE` - 设置当 :ref:`CONFIG_FATFS_USE_FASTSEEK` 启用时快速查找使用的 CLMT（簇链接映射表）缓冲区大小。较大的缓冲区可以改善较大文件上的查找行为，但会使用更多 RAM。
-* :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` - 设置通过 VFS 使用的默认 stdio 文件缓冲区块大小。此选项主要与基于 stdio 的 I/O（例如 ``fread``/``fgets``）相关，不是直接 POSIX ``read``/``write`` 路径的主要调整参数。较大的值可以提高缓冲读取吞吐量，但会增加堆使用量。
-* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - 如果启用，FatFs 库会在每次调用 :cpp:func:`write`、:cpp:func:`pwrite`、:cpp:func:`link`、:cpp:func:`truncate` 和 :cpp:func:`ftruncate` 后自动调用 :cpp:func:`f_sync`。此选项提高了文件一致性和大小报告的准确性，但由于会触发频繁的磁盘操作而降低了性能。
-* :ref:`CONFIG_FATFS_LINK_LOCK` - 如果启用，此选项保证 :cpp:func:`link` 函数的 API 线程安全。禁用此选项可以帮助执行频繁小文件操作（例如文件日志记录）的应用程序。禁用时，:cpp:func:`link` 执行的拷贝是非原子的。在这种情况下，从另一个任务在同一卷上对大文件使用 :cpp:func:`link` 不保证线程安全。
-* 其他相关选项包括 :ref:`CONFIG_FATFS_FS_LOCK`、:ref:`CONFIG_FATFS_TIMEOUT_MS` 和 ``CONFIG_FATFS_CHOOSE_CODEPAGE`` （特别是 ``CONFIG_FATFS_CODEPAGE_DYNAMIC`` 对代码大小的影响）。其他选项包括 ``CONFIG_FATFS_SECTOR_SIZE``、``CONFIG_FATFS_MAX_LFN``、``CONFIG_FATFS_API_ENCODING`` 和 ``CONFIG_FATFS_USE_STRFUNC_CHOICE``。
+* ``CONFIG_FATFS_LONG_FILENAMES`` - 选择 FatFs 库如何处理长文件名 (LFN) 支持。可用选项包括 :menuitem:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` 以禁用 LFN 支持并将名称限制为 `8.3 格式 <https://en.wikipedia.org/wiki/8.3_filename>`_ （仅 SFN）， :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在堆上（默认），以及 :menuitem:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在栈上。详细信息请参阅 `FatFs 文件名 <http://elm-chan.org/fsw/ff/doc/filename.html>`_。
+* :menuitem:`CONFIG_FATFS_VOLUME_COUNT` - 设置逻辑 FatFs 卷的数量。增加此值可能会增加基础内存使用量。
+* :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - 如果启用，FatFs 库在分配内部缓冲区时优先使用外部 RAM。如果外部 RAM 分配失败，则回退到内部 RAM。这可能会对热 I/O 路径产生明显的性能开销。禁用此选项可优先考虑性能；启用可减少内部 RAM 使用量。
+* :menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - 如果启用，FatFs 库首先尝试在支持 DMA、缓存对齐的内存中分配堆工作缓冲区，以便 SDMMC 传输避免额外的拷贝。此选项在使用 PSRAM 和 SDMMC DMA 的目标芯片上（例如 ESP32-P4）非常有用。如果同时启用此选项和 :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`，FatFs 库会先尝试支持 DMA 的 RAM，然后是外部 RAM，最后是内部 RAM。
+* :menuitem:`CONFIG_FATFS_USE_DYN_BUFFERS` - 如果启用，FatFs 库会单独分配实例缓冲区，并根据每个已挂载卷的逻辑扇区大小调整其大小。当多个 FatFs 实例使用不同的逻辑扇区大小时，此选项非常有用，因为它可以减少内存使用量。如果禁用，所有实例都使用为最大配置逻辑扇区大小调整大小的缓冲区。
+* :menuitem:`CONFIG_FATFS_PER_FILE_CACHE` - 如果启用，每个打开的文件使用单独的缓存缓冲区。这提高了 I/O 性能，但当多个文件打开时会增加 RAM 使用量。如果禁用，则使用单个共享缓存，这减少了 RAM 使用量，但可能会增加存储读写操作。
+* :menuitem:`CONFIG_FATFS_USE_FASTSEEK` - 如果启用，POSIX :cpp:func:`lseek` 运行更快。快速定位不适用于以写入模式打开的文件。要使用快速查找，请以只读模式打开文件，或关闭后以只读模式重新打开。
+* :menuitem:`CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE` - 设置当 :menuitem:`CONFIG_FATFS_USE_FASTSEEK` 启用时快速查找使用的 CLMT（簇链接映射表）缓冲区大小。较大的缓冲区可以改善较大文件上的查找行为，但会使用更多 RAM。
+* :menuitem:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` - 设置通过 VFS 使用的默认 stdio 文件缓冲区块大小。此选项主要与基于 stdio 的 I/O（例如 ``fread``/``fgets``）相关，不是直接 POSIX ``read``/``write`` 路径的主要调整参数。较大的值可以提高缓冲读取吞吐量，但会增加堆使用量。
+* :menuitem:`CONFIG_FATFS_IMMEDIATE_FSYNC` - 如果启用，FatFs 库会在每次调用 :cpp:func:`write`、:cpp:func:`pwrite`、:cpp:func:`link`、:cpp:func:`truncate` 和 :cpp:func:`ftruncate` 后自动调用 :cpp:func:`f_sync`。此选项提高了文件一致性和大小报告的准确性，但由于会触发频繁的磁盘操作而降低了性能。
+* :menuitem:`CONFIG_FATFS_LINK_LOCK` - 如果启用，此选项保证 :cpp:func:`link` 函数的 API 线程安全。禁用此选项可以帮助执行频繁小文件操作（例如文件日志记录）的应用程序。禁用时，:cpp:func:`link` 执行的拷贝是非原子的。在这种情况下，从另一个任务在同一卷上对大文件使用 :cpp:func:`link` 不保证线程安全。
+* 其他相关选项包括 :menuitem:`CONFIG_FATFS_FS_LOCK`、:menuitem:`CONFIG_FATFS_TIMEOUT_MS` 和 ``CONFIG_FATFS_CHOOSE_CODEPAGE`` （特别是 ``CONFIG_FATFS_CODEPAGE_DYNAMIC`` 对代码大小的影响）。其他选项包括 ``CONFIG_FATFS_SECTOR_SIZE``、``CONFIG_FATFS_MAX_LFN``、``CONFIG_FATFS_API_ENCODING`` 和 ``CONFIG_FATFS_USE_STRFUNC_CHOICE``。
 
 这些选项控制 FatFs 库如何计算和报告可用空间：
 
-* :ref:`CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT` - 如果设置为 1，FatFs 库忽略空闲簇计数。默认值为 0。
-* :ref:`CONFIG_FATFS_DONT_TRUST_LAST_ALLOC` - 如果设置为 1，FatFs 库忽略上次分配编号。默认值为 0。
+* :menuitem:`CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT` - 如果设置为 1，FatFs 库忽略空闲簇计数。默认值为 0。
+* :menuitem:`CONFIG_FATFS_DONT_TRUST_LAST_ALLOC` - 如果设置为 1，FatFs 库忽略上次分配编号。默认值为 0。
 
 .. note::
 
@@ -324,9 +324,9 @@ exFAT 使用不同的元数据布局。除了 FAT 区域外，它还需要一个
 
 影响行为的主要变量是：
 
-* 缓冲区位置和大小（:ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`、:ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`、:ref:`CONFIG_FATFS_USE_DYN_BUFFERS`、:ref:`CONFIG_FATFS_PER_FILE_CACHE` 和应用程序 I/O 缓冲区大小）。
+* 缓冲区位置和大小（:menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`、:menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`、:menuitem:`CONFIG_FATFS_USE_DYN_BUFFERS`、:menuitem:`CONFIG_FATFS_PER_FILE_CACHE` 和应用程序 I/O 缓冲区大小）。
 * 磨损均衡逻辑扇区大小和模式（``CONFIG_WL_SECTOR_SIZE_*`` 和 ``CONFIG_WL_SECTOR_MODE_*``）。
-* 同步策略（:ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`）。
+* 同步策略（:menuitem:`CONFIG_FATFS_IMMEDIATE_FSYNC`）。
 * 工作负载模式（事务大小、顺序访问与随机访问、读取与写入比率）。
 
 优化 I/O 性能
@@ -334,15 +334,15 @@ exFAT 使用不同的元数据布局。除了 FAT 区域外，它还需要一个
 
 对于面向吞吐量的工作负载：
 
-* 除非一致性要求需要，否则保持禁用 :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`。
-* 如果峰值速度是最高优先级，请禁用 :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`，以便缓冲区保留在内部 RAM 中。
+* 除非一致性要求需要，否则保持禁用 :menuitem:`CONFIG_FATFS_IMMEDIATE_FSYNC`。
+* 如果峰值速度是最高优先级，请禁用 :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`，以便缓冲区保留在内部 RAM 中。
 * 优先选择较大的读写事务大小，而不是许多小操作。
 * 尽可能将事务大小与活动扇区大小（例如 512 B 或 4096 B）对齐，并在需要时填充写入以减少部分扇区开销。
 * 对于带磨损均衡的 SPI flash，当 RAM 预算允许时，优先选择 ``CONFIG_WL_SECTOR_SIZE_4096``，因为它通常更高效。
 * 如果使用 512 字节的 WL 扇区，当应用程序可以接受 flash 扇区擦除期间更高的断电风险时，请使用 ``CONFIG_WL_SECTOR_MODE_PERF``。
 * 在热路径上尽可能优先选择 POSIX ``read``/``write`` 而不是 ``fread``/``fwrite``。有关更广泛的速度指导，请参阅 :doc:`最大化执行速度 <../../api-guides/performance/speed>`。
-* 在 SDMMC DMA 目标（例如带有 PSRAM 的 ESP32-P4）上，启用 :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` 以减少额外的缓冲区拷贝。
-* 对于具有长反向查找的读取密集型工作负载，启用 :ref:`CONFIG_FATFS_USE_FASTSEEK`。
+* 在 SDMMC DMA 目标（例如带有 PSRAM 的 ESP32-P4）上，启用 :menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` 以减少额外的缓冲区拷贝。
+* 对于具有长反向查找的读取密集型工作负载，启用 :menuitem:`CONFIG_FATFS_USE_FASTSEEK`。
 
 .. note::
 
@@ -351,14 +351,14 @@ exFAT 使用不同的元数据布局。除了 FAT 区域外，它还需要一个
 优化内存使用
 ^^^^^^^^^^^^^^^^^^^
 
-* 当减少 RAM 使用是优先事项时，禁用 :ref:`CONFIG_FATFS_PER_FILE_CACHE` 以使用单个共享缓存。
+* 当减少 RAM 使用是优先事项时，禁用 :menuitem:`CONFIG_FATFS_PER_FILE_CACHE` 以使用单个共享缓存。
 * 尽可能低地调整 ``esp_vfs_fat_mount_config_t.max_files`` （参见 :ref:`挂载和使用 FatFs <fatfs-mount-and-use>`）；每个同时打开的文件都会增加 RAM 使用量。
-* 如果启用了 :ref:`CONFIG_FATFS_PER_FILE_CACHE`，优先选择 ``CONFIG_WL_SECTOR_SIZE_512`` 以减少每文件缓存大小。
-* 如果禁用了 :ref:`CONFIG_FATFS_PER_FILE_CACHE`，``CONFIG_WL_SECTOR_SIZE_4096`` 可能是更好的权衡。
-* 在支持外部 RAM 的目标上启用 :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` 以减少内部 RAM 压力，但预计 I/O 性能会降低。
+* 如果启用了 :menuitem:`CONFIG_FATFS_PER_FILE_CACHE`，优先选择 ``CONFIG_WL_SECTOR_SIZE_512`` 以减少每文件缓存大小。
+* 如果禁用了 :menuitem:`CONFIG_FATFS_PER_FILE_CACHE`，``CONFIG_WL_SECTOR_SIZE_4096`` 可能是更好的权衡。
+* 在支持外部 RAM 的目标上启用 :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` 以减少内部 RAM 压力，但预计 I/O 性能会降低。
 * 当 SFN (8.3) 文件名可接受时，考虑使用 ``CONFIG_FATFS_LONG_FILENAMES = CONFIG_FATFS_LFN_NONE``。
 * 如果需要长文件名，将 ``CONFIG_FATFS_MAX_LFN`` 减小到满足需求的最小值。
-* 启用 :ref:`CONFIG_FATFS_USE_DYN_BUFFERS`，以便每个挂载的卷使用根据其实际扇区大小调整大小的缓冲区。
+* 启用 :menuitem:`CONFIG_FATFS_USE_DYN_BUFFERS`，以便每个挂载的卷使用根据其实际扇区大小调整大小的缓冲区。
 
 优化存储效率
 ^^^^^^^^^^^^^^^^^^^^^^^^^

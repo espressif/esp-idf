@@ -45,19 +45,19 @@ Configure the Flash
 
 The flash related configurations are under ``Serial flasher config`` menu.
 
-1. Flash type used on the board. For Octal flash, select :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`. For Quad flash, uncheck this configuration.
-2. Flash line mode. Select a line mode in :ref:`CONFIG_ESPTOOLPY_FLASHMODE`. The higher the line mode is, the faster the SPI speed is. See terminology above about the line mode.
-3. Flash sample mode. Select a sample mode in :ref:`CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE`. DDR mode is faster than SDR mode. See terminology above about SDR and DDR mode.
-4. Flash speed. Select a Flash frequency in :ref:`CONFIG_ESPTOOLPY_FLASHFREQ`.
-5. Flash size. Flash size, in megabytes. Select a flash size in :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`.
+1. Flash type used on the board. For Octal flash, select :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH`. For Quad flash, uncheck this configuration.
+2. Flash line mode. Select a line mode in :menuitem:`CONFIG_ESPTOOLPY_FLASHMODE`. The higher the line mode is, the faster the SPI speed is. See terminology above about the line mode.
+3. Flash sample mode. Select a sample mode in :menuitem:`CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE`. DDR mode is faster than SDR mode. See terminology above about SDR and DDR mode.
+4. Flash speed. Select a Flash frequency in :menuitem:`CONFIG_ESPTOOLPY_FLASHFREQ`.
+5. Flash size. Flash size, in megabytes. Select a flash size in :menuitem:`CONFIG_ESPTOOLPY_FLASHSIZE`.
 
 Configure the PSRAM
 ^^^^^^^^^^^^^^^^^^^
 
-To enable PSRAM, please enable the :ref:`CONFIG_SPIRAM` under ``Component config / Hardware Settings`` menu. Then all the PSRAM related configurations will be visible under ``SPI RAM config`` menu.
+To enable PSRAM, enable :menuitem:`CONFIG_SPIRAM`. The related configuration options will then become visible.
 
-1. PSRAM type used on the board. Select a type in :ref:`CONFIG_SPIRAM_MODE` for Quad or Octal PSRAM.
-2. PSRAM speed. Select a PSRAM frequency in :ref:`CONFIG_SPIRAM_SPEED`.
+1. PSRAM type used on the board. Select a type in :menuitem:`CONFIG_SPIRAM_MODE` for Quad or Octal PSRAM.
+2. PSRAM speed. Select a PSRAM frequency in :menuitem:`CONFIG_SPIRAM_SPEED`.
 
 .. note::
 
@@ -89,7 +89,7 @@ All Supported Modes and Speeds
 
     120 MHz DDR mode is an experimental feature. You will only see it when:
 
-    - :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` is enabled
+    - :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES` is enabled
 
     With above step, you will find 120 MHz option is visible.
 
@@ -101,7 +101,7 @@ All Supported Modes and Speeds
 
 .. note::
 
-    The PSRAM requires a phase point calibration algorithm when operating at 120M. The phase point setting is related to the temperature at startup. When the temperature increases / decreases significantly during the operation of the chip, the PSRAM may experience read/write errors. To solve this problem, you can enable dynamic adjustment of the PSRAM phase point based on the temperature value with :ref:`CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR`. This creates a task that measures the temperature every :ref:`CONFIG_SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND` seconds and adjusts the PSRAM phase point accordingly.
+    The PSRAM requires a phase point calibration algorithm when operating at 120M. The phase point setting is related to the temperature at startup. When the temperature increases / decreases significantly during the operation of the chip, the PSRAM may experience read/write errors. To solve this problem, you can enable dynamic adjustment of the PSRAM phase point based on the temperature value with :menuitem:`CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR`. This creates a task that measures the temperature every :menuitem:`CONFIG_SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND` seconds and adjusts the PSRAM phase point accordingly.
 
 F8R8 Hardware
 ^^^^^^^^^^^^^
@@ -245,7 +245,7 @@ Error Handling
 
    The first stage (ROM) bootloader relies on an eFuse bit ``FLASH_TYPE`` to reset the flash into the default mode (SPI mode). If this bit is not burnt and the flash is working in OPI mode, the first stage (ROM) bootloader may not be able to read from the flash and load the following images.
 
-2. If you enabled :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`, and there's an error log saying:
+2. If you enabled :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH`, and there's an error log saying:
 
     .. code-block:: c
 

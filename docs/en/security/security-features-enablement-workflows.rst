@@ -97,13 +97,13 @@ In this case, all the eFuses related to Flash Encryption are written with help o
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-        If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
+        If :menuitem:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
         .. code-block:: bash
 
             espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
-        else if :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
+        else if :menuitem:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
 
         .. code-block:: bash
 
@@ -118,13 +118,13 @@ In this case, all the eFuses related to Flash Encryption are written with help o
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-        If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
+        If :menuitem:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
         .. code-block:: bash
 
             espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
-        else if :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
+        else if :menuitem:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
 
         .. code-block:: bash
 
@@ -336,12 +336,12 @@ In this case, all the eFuses related to Flash Encryption are written with help o
 
     .. list::
 
-        - :ref:`Enable Flash Encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
-        :esp32: - :ref:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable Flash Encryption hardware in ROM download mode).
-        :esp32: - :ref:`Select UART ROM download mode (permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3)). The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
-        :not esp32: - :ref:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable Flash Encryption hardware in ROM download mode).
-        :not esp32: - :ref:`Select UART ROM download mode (permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
-        - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
+        - :menuitem:`Enable Flash Encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
+        :esp32: - :menuitem:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable Flash Encryption hardware in ROM download mode).
+        :esp32: - :menuitem:`Select UART ROM download mode (permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :menuitem:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3)). The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
+        :not esp32: - :menuitem:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable Flash Encryption hardware in ROM download mode).
+        :not esp32: - :menuitem:`Select UART ROM download mode (permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
+        - :menuitem:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
         - Save the configuration and exit.
 
 7. Build, Encrypt and Flash the binaries
@@ -579,7 +579,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
 6. Configure the project
 
-    By default, the first stage (ROM) bootloader would only verify the :ref:`second-stage-bootloader`. The second stage bootloader would verify the app partition only when the :ref:`CONFIG_SECURE_BOOT` option is enabled (and :ref:`CONFIG_SECURE_BOOT_VERSION` is set to ``SECURE_BOOT_V2_ENABLED``) while building the bootloader.
+    By default, the first stage (ROM) bootloader would only verify the :ref:`second-stage-bootloader`. The second stage bootloader would verify the app partition only when the :menuitem:`CONFIG_SECURE_BOOT` option is enabled (and :menuitem:`CONFIG_SECURE_BOOT_VERSION` is set to ``SECURE_BOOT_V2_ENABLED``) while building the bootloader.
 
     A) Open the :ref:`project-configuration-menu`, in ``Security features`` set ``Enable hardware Secure Boot in bootloader`` to enable Secure Boot.
 
@@ -591,7 +591,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
         The ``Secure Boot v2`` option will be selected and the ``App Signing Scheme`` will be set to {IDF_TARGET_SBV2_DEFAULT_SCHEME} by default.
 
-    B) Disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` for the project in the :ref:`project-configuration-menu`. This shall make sure that all the generated binaries are secure padded and unsigned. This step is done to avoid generating signed binaries as we are going to manually sign the binaries using ``espsecure`` tool.
+    B) Disable the option :menuitem:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` for the project in the :ref:`project-configuration-menu`. This shall make sure that all the generated binaries are secure padded and unsigned. This step is done to avoid generating signed binaries as we are going to manually sign the binaries using ``espsecure`` tool.
 
 7. Build, Sign and Flash the binaries
 
@@ -727,11 +727,11 @@ The details about NVS encryption and related schemes can be found at :doc:`NVS E
 
     4. Configure the project
 
-        * Enable `NVS Encryption` by enabling :ref:`CONFIG_NVS_ENCRYPTION`.
+        * Enable `NVS Encryption` by enabling :menuitem:`CONFIG_NVS_ENCRYPTION`.
 
-        * Enable the HMAC based NVS encryption by setting :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` to ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC``.
+        * Enable the HMAC based NVS encryption by setting :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` to ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC``.
 
-        * Set the HMAC efuse key ID at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` to the one in which the eFuse key was burned in Step 2.
+        * Set the HMAC efuse key ID at :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` to the one in which the eFuse key was burned in Step 2.
 
     5. Flash NVS partition
 
@@ -776,8 +776,8 @@ In this case we generate NVS Encryption keys on a host. This key is then flashed
 
 3. Configure the project
 
-    * Enable `NVS Encryption` by enabling :ref:`CONFIG_NVS_ENCRYPTION`.
-    * Set NVS to use Flash Encryption based scheme by setting :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` to ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC``.
+    * Enable `NVS Encryption` by enabling :menuitem:`CONFIG_NVS_ENCRYPTION`.
+    * Set NVS to use Flash Encryption based scheme by setting :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` to ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC``.
 
 4. Flash NVS partition and NVS encryption keys
 

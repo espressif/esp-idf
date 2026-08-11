@@ -159,7 +159,7 @@
 
 .. important::
 
-    flash 芯片的硬件设计各不相同，因此启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 选项暂停 flash 时应仔细且系统地进行测试。如果想在量产过程中使用挂起功能，请联系 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
+    flash 芯片的硬件设计各不相同，因此启用 :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 选项暂停 flash 时应仔细且系统地进行测试。如果想在量产过程中使用挂起功能，请联系 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
 
 .. code-block:: c
 
@@ -232,7 +232,7 @@
 
 - 步骤 5：在 cache 被禁用时，通过 ``linker.lf`` 文件把要使用的所有芯片驱动程序放入内部 RAM 中。详情请参阅 :doc:`/api-guides/linker-script-generation`。请确保 ``linker.lf`` 包含了你添加的所有源文件。
 
-- 步骤 6：在项目中添加一个新的组件，例如 ``custom_chip_driver``。在 ``custom_chip_driver/chip_drivers.c`` 文件中将芯片对象列在 ``default_registered_chips`` 下。启用 :ref:`CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST` 配置选项，防止编译和链接由 ESP-IDF 提供的默认芯片驱动程序列表 ``default_registered_chips``；相反，链接器会搜索由你自定义的同名结构体 ``default_registered_chips``。详情请参阅 :example_file:`storage/custom_flash_driver/components/custom_chip_driver/chip_drivers.c`。
+- 步骤 6：在项目中添加一个新的组件，例如 ``custom_chip_driver``。在 ``custom_chip_driver/chip_drivers.c`` 文件中将芯片对象列在 ``default_registered_chips`` 下。启用 :menuitem:`CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST` 配置选项，防止编译和链接由 ESP-IDF 提供的默认芯片驱动程序列表 ``default_registered_chips``；相反，链接器会搜索由你自定义的同名结构体 ``default_registered_chips``。详情请参阅 :example_file:`storage/custom_flash_driver/components/custom_chip_driver/chip_drivers.c`。
 
 - 步骤 7：构建项目，你将看到新的 flash 驱动程序。
 

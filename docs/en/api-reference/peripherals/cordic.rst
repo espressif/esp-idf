@@ -299,7 +299,7 @@ Kconfig Options
 
 The following Kconfig option configures the CORDIC driver:
 
-- :ref:`CONFIG_CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM` - Place calculation control functions in IRAM.
+- :menuitem:`CONFIG_CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM` - Place calculation control functions in IRAM.
 
 API Reference
 =============

@@ -106,11 +106,11 @@ ESP-NOW 数据可以从 Station 或 SoftAP 接口发送。确保在发送 ESP-NO
 
 .. only:: esp32c2
 
-    配对设备的最大数量是 20，其中加密设备的数量不超过 4，默认值是 2。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
+    配对设备的最大数量是 20，其中加密设备的数量不超过 4，默认值是 2。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :menuitem:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
 .. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6 or esp32c5
 
-    配对设备的最大数量是 20，其中加密设备的数量不超过 17，默认值是 7。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
+    配对设备的最大数量是 20，其中加密设备的数量不超过 17，默认值是 7。如果想要修改加密设备的数量，在 Wi-Fi menuconfig 设置 :menuitem:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
 发送 ESP-NOW 数据
 -----------------

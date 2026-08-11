@@ -118,7 +118,7 @@
 
     1. 退出监视器。
     2. 返回 ``menuconfig``。
-    3. 进入 ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_XTAL_FREQ` 设置为 26 MHz。
+    3. 将 :menuitem:`CONFIG_XTAL_FREQ` 设置为 26 MHz。
     4. 重新 ``编译和烧录`` 应用程序。
 
     在当前的 ESP-IDF 版本中，{IDF_TARGET_NAME} 支持的主晶振频率如下：

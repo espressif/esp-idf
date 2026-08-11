@@ -580,7 +580,7 @@ The typical transaction duration for one byte of data is given below.
 - Polling Transaction via DMA: {IDF_TARGET_MAX_TRANS_TIME_POLL_DMA} µs.
 - Polling Transaction via CPU: {IDF_TARGET_MAX_TRANS_TIME_POLL_CPU} µs.
 
-Note that these data are tested with :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` enabled. SPI transaction related code are placed in the internal memory. If this option is turned off (for example, for internal memory optimization), the transaction duration may be affected.
+Note that these data are tested with :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` enabled. SPI transaction related code are placed in the internal memory. If this option is turned off (for example, for internal memory optimization), the transaction duration may be affected.
 
 SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
@@ -636,11 +636,11 @@ The transfer speed calculation of other phases (Command, Address, Dummy) is simi
 Cache Missing
 ^^^^^^^^^^^^^
 
-The default config puts only the ISR into the IRAM. Other SPI-related functions, including the driver itself and the callback, might suffer from cache misses and need to wait until the code is read from flash. Select :ref:`CONFIG_SPI_MASTER_IN_IRAM` to put the whole SPI driver into IRAM and put the entire callback(s) and its callee functions into IRAM to prevent cache missing.
+The default config puts only the ISR into the IRAM. Other SPI-related functions, including the driver itself and the callback, might suffer from cache misses and need to wait until the code is read from flash. Select :menuitem:`CONFIG_SPI_MASTER_IN_IRAM` to put the whole SPI driver into IRAM and put the entire callback(s) and its callee functions into IRAM to prevent cache missing.
 
 .. note::
 
-    SPI driver implementation is based on FreeRTOS APIs, to use :ref:`CONFIG_SPI_MASTER_IN_IRAM`, you should enable :ref:`CONFIG_FREERTOS_IN_IRAM`.
+    SPI driver implementation is based on FreeRTOS APIs, to use :menuitem:`CONFIG_SPI_MASTER_IN_IRAM`, you should enable :menuitem:`CONFIG_FREERTOS_IN_IRAM`.
 
 For an interrupt transaction, the overall cost is **20+8n/Fspi[MHz]** [µs] for n bytes transferred in one transaction. Hence, the transferring speed is: **n/(20+8n/Fspi)**. An example of transferring speed at 8 MHz clock speed is given in the following table.
 
@@ -681,7 +681,7 @@ For an interrupt transaction, the overall cost is **20+8n/Fspi[MHz]** [µs] for 
 
 When a transaction length is short, the cost of the transaction interval is high. If possible, try to squash several short transactions into one transaction to achieve a higher transfer speed.
 
-Please note that the ISR is disabled during flash operation by default. To keep sending transactions during flash operations, enable :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :c:macro:`ESP_INTR_FLAG_IRAM` in the member :cpp:member:`spi_bus_config_t::intr_flags`. In this case, all the transactions queued before starting flash operations are handled by the ISR in parallel. Also note that the callback of each Device and their ``callee`` functions should be in IRAM, or your callback will crash due to cache missing. For more details, see :ref:`iram-safe-interrupt-handlers`.
+Please note that the ISR is disabled during flash operation by default. To keep sending transactions during flash operations, enable :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :c:macro:`ESP_INTR_FLAG_IRAM` in the member :cpp:member:`spi_bus_config_t::intr_flags`. In this case, all the transactions queued before starting flash operations are handled by the ISR in parallel. Also note that the callback of each Device and their ``callee`` functions should be in IRAM, or your callback will crash due to cache missing. For more details, see :ref:`iram-safe-interrupt-handlers`.
 
 .. only:: esp32h2
 

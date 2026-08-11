@@ -13,7 +13,7 @@
     - 新的驱动位于 ``esp_driver_touch_sens`` 组件中，包含路径为 ``driver/touch_sens.h``。
     - 旧版驱动仍然可用，其包含路径为 ``driver/touch_sensor.h``。
 
-    尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/touch_sensor.h``。但是，引用 ``driver/touch_sensor.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_TOUCH_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
+    尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/touch_sensor.h``。但是，引用 ``driver/touch_sensor.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :menuitem:`CONFIG_TOUCH_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
 
     使用方法上的主要更新如下所示：
 
@@ -57,5 +57,5 @@
 
     尽管我们推荐使用新的驱动 API，但旧版驱动仍然可用，其头文件引用路径为 ``driver/twai.h``。继续使用旧版驱动请注意：
 
-    - 新旧驱动不互相兼容，不可混合使用，否则将在启动时打印警告，甚至崩溃并重启。可打开配置项 :ref:`CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK` 以屏蔽该检查。
+    - 新旧驱动不互相兼容，不可混合使用，否则将在启动时打印警告，甚至崩溃并重启。可打开配置项 :menuitem:`CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK` 以屏蔽该检查。
     - 旧版驱动将不再添加新特性（如 TWAIFD）的支持。

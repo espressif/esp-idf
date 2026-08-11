@@ -18,11 +18,11 @@
 
     **重大变更：** 无法像使用 Newlib 时那样，为特定任务重新定义 ``stdin``、 ``stdout`` 和 ``stderr``。这些流是全局的，并在所有任务之间共享。这是符合 POSIX 标准的行为。
 
-:ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` 是默认启用的，通过提供全局 ``stdin``、 ``stdout``、 ``stderr`` 的线程本地副本以及 ``getreent()`` 实现，为 Newlib 提供有限兼容性。如果使用 Newlib 头文件构建的库操作 ``struct reent`` 的内部字段，可能会导致任务栈损坏。请注意，只有 Newlib 库本身才应该操作 ``struct reent`` 字段。
+:menuitem:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` 是默认启用的，通过提供全局 ``stdin``、 ``stdout``、 ``stderr`` 的线程本地副本以及 ``getreent()`` 实现，为 Newlib 提供有限兼容性。如果使用 Newlib 头文件构建的库操作 ``struct reent`` 的内部字段，可能会导致任务栈损坏。请注意，只有 Newlib 库本身才应该操作 ``struct reent`` 字段。
 
-如果你没有链接使用 Newlib 头文件构建的外部库，可以禁用 :ref:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` 来节省少量内存。
+如果你没有链接使用 Newlib 头文件构建的外部库，可以禁用 :menuitem:`CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY` 来节省少量内存。
 
-Newlib 仍然在 ESP-IDF 工具链中维护。如需切换使用 Newlib，可在 menuconfig 中通过 :ref:`CONFIG_LIBC` 选项选择 LIBC_NEWLIB。
+Newlib 仍然在 ESP-IDF 工具链中维护。如需切换使用 Newlib，可在 menuconfig 中通过 :menuitem:`CONFIG_LIBC` 选项选择 LIBC_NEWLIB。
 
 Newlib 与 Picolibc 对比
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,7 +68,7 @@ Newlib 与 Picolibc 对比
 
 .. note::
 
-    即使启用 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 选项（禁用浮点格式化），使用 Picolibc 的应用程序仍比 Newlib 小 6%（224,592 v.s. 239,888 字节）。
+    即使启用 :menuitem:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 选项（禁用浮点格式化），使用 Picolibc 的应用程序仍比 Newlib 小 6%（224,592 v.s. 239,888 字节）。
 
 Xtensa
 ------
@@ -171,7 +171,7 @@ GPIO 唤醒 API 变更
 引导加载程序
 ------------
 
-已移除使用无优化等级 (-O0, `CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE`) 编译引导加载程序的选项。在大多数芯片上，使用 -O0 编译引导加载程序已无法成功，因为 IRAM 段会溢出。对于调试目的，推荐使用 -Og (:ref:`CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG<CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG>`) 优化等级，它在优化效果与可调试性之间提供了良好的平衡。
+已移除使用无优化等级 (-O0, `CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE`) 编译引导加载程序的选项。在大多数芯片上，使用 -O0 编译引导加载程序已无法成功，因为 IRAM 段会溢出。对于调试目的，推荐使用 -Og (:menuitem:`CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG`) 优化等级，它在优化效果与可调试性之间提供了良好的平衡。
 
 时间管理
 --------
@@ -205,7 +205,7 @@ App 追踪
 
 此前，应用程序跟踪功能会在配置目标传输方式时自动启用。现在必须在配置任何目标传输方式前，通过选择跟踪传输方式显式启用应用程序跟踪功能。
 
-如需启用应用程序跟踪，请在 menuconfig 中依次进入 ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` 并选择 ``ESP-IDF apptrace``。之后，可以在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中进行配置。
+如需启用应用程序跟踪，请将 :menuitem:`CONFIG_ESP_TRACE_TRANSPORT` 设置为 ``ESP-IDF apptrace``。随后将显示相关的应用层跟踪配置。
 
 如果要在独立模式下使用 apptrace 而不使用库（例如禁用 SEGGER SystemView 时），需要在 sdkconfig 文件中设置以下配置：
 
@@ -238,7 +238,7 @@ API 更改
 
 所有 apptrace API 中的目标参数已被移除。
 
-默认目标现在在 menuconfig 中的 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 下配置，并且可以在运行时通过提供带有自定义跟踪配置的回调来更改。
+默认目标现在通过 :menuitem:`CONFIG_APPTRACE_DESTINATION` 进行配置，并且可以在运行时通过提供带有自定义跟踪配置的回调来更改。
 
 UART 目标配置已简化：
 
@@ -279,9 +279,9 @@ SystemView 配置在 menuconfig 中的位置已变更。仅当项目在 ``idf_co
     dependencies:
       espressif/esp_sysview: ^1
 
-随后在 menuconfig 中依次选择：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``。
+随后启用 :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL`。
 
-之后，可通过 ``Component config`` > ``SEGGER SystemView Configuration`` 查看 SystemView 配置选项。
+之后，将显示 SystemView 配置选项。
 
 SystemView 不再拥有独立的传输目标配置。它与应用程序跟踪传输方式（JTAG 或 UART）共享配置。
 
@@ -319,7 +319,7 @@ FreeRTOS
 内存布局
 ^^^^^^^^^^^^
 
-- 为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认存储位置已从 IRAM 更改为 flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。这项变更可显著节省 IRAM 空间，但可能会对性能造成轻微影响。如果应用对性能有严苛要求，可通过启用新选项 :ref:`CONFIG_FREERTOS_IN_IRAM` 恢复原先配置。
+- 为了减少 IRAM 的使用，大多数 FreeRTOS 函数的默认存储位置已从 IRAM 更改为 flash。因此，``CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。这项变更可显著节省 IRAM 空间，但可能会对性能造成轻微影响。如果应用对性能有严苛要求，可通过启用新选项 :menuitem:`CONFIG_FREERTOS_IN_IRAM` 恢复原先配置。
 - 启用 ``CONFIG_FREERTOS_IN_IRAM`` 前，建议进行性能测试以评估对具体应用场景的实际影响。flash 和 IRAM 配置的性能差异取决于 flash 缓存效率、API 调用模式和系统负载等因素。
 - ``components/freertos/test_apps/freertos/performance/test_freertos_api_performance.c`` 中提供了基准性能测试。该测试测量常用 FreeRTOS API 的执行时长，可帮助开发者根据目标硬件和应用需求评估内存布局方案带来的性能影响。
 - 当启用 ``CONFIG_ESP_PANIC_HANDLER_IRAM`` 时，任务快照函数会自动存入 IRAM，确保在系统崩溃处理期间仍可调用。
@@ -339,7 +339,7 @@ FreeRTOS
 内存布局
 ^^^^^^^^^^
 
-为了减少 IRAM 的使用，`esp_ringbuf` 函数的默认位置已从 IRAM 更改为 flash。因此，``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。此举可节省大量 IRAM，但可能会对性能造成轻微影响。对于性能要求严苛的应用程序，可通过启用新增的 :ref:`CONFIG_RINGBUF_IN_IRAM` 选项来恢复之前的行为。
+为了减少 IRAM 的使用，`esp_ringbuf` 函数的默认位置已从 IRAM 更改为 flash。因此，``CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`` 选项已被移除。此举可节省大量 IRAM，但可能会对性能造成轻微影响。对于性能要求严苛的应用程序，可通过启用新增的 :menuitem:`CONFIG_RINGBUF_IN_IRAM` 选项来恢复之前的行为。
 
 Log
 ---
@@ -376,7 +376,7 @@ OTA 更新
 
 ESP HTTPS OTA 的分段下载功能已移至配置选项下，以便在未使用分段下载时减少内存占用。
 
-如果要在 OTA 应用中使用分段下载功能，需要在 menuconfig 中启用组件级配置 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` (``Component config`` > ``ESP HTTPS OTA`` > ``Enable partial HTTP download for OTA``)。
+如果要在 OTA 应用中使用分段下载功能，需要启用 :menuitem:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD`。
 
 已移除的废弃 API
 ^^^^^^^^^^^^^^^^^^^^
@@ -423,12 +423,12 @@ gcov 配置选项已从应用程序级别追踪菜单移至专用的 ``GNU Code 
 LibC
 ------
 
-:ref:`CONFIG_COMPILER_ASSERT_NDEBUG_EVALUATE` 的默认值已改为 `n`。这意味着当设置了 ``NDEBUG`` 时，断言将不再对断言内的表达式进行求值。此更改将默认行为恢复为与 C 语言标准一致。
+:menuitem:`CONFIG_COMPILER_ASSERT_NDEBUG_EVALUATE` 的默认值已改为 `n`。这意味着当设置了 ``NDEBUG`` 时，断言将不再对断言内的表达式进行求值。此更改将默认行为恢复为与 C 语言标准一致。
 
 ULP
 ---
 
-LP-Core 在深度睡眠期间遇到异常时，将唤醒主 CPU。此功能默认启用，若不需要此行为，可以通过 :ref:`CONFIG_ULP_TRAP_WAKEUP` Kconfig 配置选项禁用。
+LP-Core 在深度睡眠期间遇到异常时，将唤醒主 CPU。此功能默认启用，若不需要此行为，可以通过 :menuitem:`CONFIG_ULP_TRAP_WAKEUP` Kconfig 配置选项禁用。
 
 堆
 ----

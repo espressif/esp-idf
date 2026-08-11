@@ -259,7 +259,7 @@ ESP-IDF 使用 Astyle 来格式化源代码。配置存储在 :project_file:`too
 
     当断言一个类型为 ``esp_err_t`` 的值等于 ``ESP_OK`` 时，应使用 :ref:`esp-error-check-macro` 而不是 ``assert()``。
 
-可以将 ESP-IDF 项目配置为禁用断言（详见 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`）。此时在 ``assert()`` 语句中调用的函数不应有副作用。
+可以将 ESP-IDF 项目配置为禁用断言（详见 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`）。此时在 ``assert()`` 语句中调用的函数不应有副作用。
 
 当断言功能被禁用时，还需要采用特定的技术手段来避免出现“变量定义但未使用”的警告，这种警告通常由以下代码模式引起：
 

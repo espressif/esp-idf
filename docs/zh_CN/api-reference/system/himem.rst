@@ -13,7 +13,7 @@ ESP32 仍可使用大于等于 4 MiB 大小的 SPI RAM 芯片。不过，这些�
 使用注意事项
 --------------
 
-使用 Himem API 前，必须在 menuconfig 中启用 :ref:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`，并在 :ref:`CONFIG_SPIRAM_BANKSWITCH_RESERVE` 中设置为此预留的储存体数量。这会减少由 ``malloc()`` 等函数分配的外部内存量，但允许使用 Himem API 将任何剩余内存映射到预留的存储体中。
+使用 Himem API 前，必须在 menuconfig 中启用 :menuitem:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`，并在 :menuitem:`CONFIG_SPIRAM_BANKSWITCH_RESERVE` 中设置为此预留的储存体数量。这会减少由 ``malloc()`` 等函数分配的外部内存量，但允许使用 Himem API 将任何剩余内存映射到预留的存储体中。
 
 Himem API 可以看作是存储体切换方案的一个抽象。具体而言，该 API 允许声明一个或多个地址空间存储体（在 API 中称为“regions”），以及一个或多个需映射到此范围的内存存储体。
 

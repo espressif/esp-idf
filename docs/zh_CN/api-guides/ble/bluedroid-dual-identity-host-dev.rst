@@ -8,7 +8,7 @@ Bluedroid 双本地身份 Host 开发说明
 
 当同一部手机通过两个不同的**本地身份**（例如来自两个扩展广播集的 Public 地址与固定的 Static Random 地址）连接到 ESP32 外围设备时，默认 Bluedroid Host 会将两条链路视为同一对端。Bond、LTK 与 NVS 区段可能相互覆盖。
 
-启用 :ref:`BT_BLE_PERIPH_PSEUDO_ADDR_BOND <CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND>`\ 后，Host 会为每条链路派生内部 **伪地址 (pseudo address)** ``f(local_identity, peer)``。应用层对同一手机会看到两个不同的 ``remote_bda``，而 SMP 与控制器仍使用空口真实对端身份。
+启用 :menuitem:`BT_BLE_PERIPH_PSEUDO_ADDR_BOND <CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND>`\ 后，Host 会为每条链路派生内部 **伪地址 (pseudo address)** ``f(local_identity, peer)``。应用层对同一手机会看到两个不同的 ``remote_bda``，而 SMP 与控制器仍使用空口真实对端身份。
 
 示例
 ----

@@ -159,7 +159,7 @@ The flash driver in the application is used to read, write, erase, and save data
 
 .. important::
 
-    Flash work for suspend (i.e., enabling :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`) should be tested carefully and systematically due to different flash hardware design. If you want to use the suspend feature for mass production, please contact `Espressif's business team <https://www.espressif.com/en/contact-us/sales-questions>`_.
+    Flash work for suspend (i.e., enabling :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND`) should be tested carefully and systematically due to different flash hardware design. If you want to use the suspend feature for mass production, please contact `Espressif's business team <https://www.espressif.com/en/contact-us/sales-questions>`_.
 
 .. code-block:: c
 
@@ -232,7 +232,7 @@ The flash driver in the application is used to read, write, erase, and save data
 
 - Step 5: The ``linker.lf`` is used to put every chip driver that you are going to use whilst cache is disabled into internal RAM. See :doc:`/api-guides/linker-script-generation` for more details. Make sure this file covers all the source files that you add.
 
-- Step 6: Add a new component in your project, e.g., ``custom_chip_driver``. List your chip object under ``default_registered_chips`` in ``custom_chip_driver/chip_drivers.c``. Then enable the :ref:`CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST` configuration option. This prevents compilation and linking of the default chip driver list (``default_registered_chips``) provided by ESP-IDF. Instead, the linker searches for the structure of the same name (``default_registered_chips``) that must be provided by you. You can refer to :example_file:`storage/custom_flash_driver/components/custom_chip_driver/chip_drivers.c`.
+- Step 6: Add a new component in your project, e.g., ``custom_chip_driver``. List your chip object under ``default_registered_chips`` in ``custom_chip_driver/chip_drivers.c``. Then enable the :menuitem:`CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST` configuration option. This prevents compilation and linking of the default chip driver list (``default_registered_chips``) provided by ESP-IDF. Instead, the linker searches for the structure of the same name (``default_registered_chips``) that must be provided by you. You can refer to :example_file:`storage/custom_flash_driver/components/custom_chip_driver/chip_drivers.c`.
 
 - Step 7: Build your project, and you will see the new flash driver in use.
 

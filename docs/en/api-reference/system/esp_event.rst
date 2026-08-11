@@ -210,7 +210,7 @@ The general rule is that, for handlers that match a certain posted event during 
 Event Loop Profiling
 --------------------
 
-A configuration option :ref:`CONFIG_ESP_EVENT_LOOP_PROFILING` can be enabled in order to activate statistics collection for all event loops created. The function :cpp:func:`esp_event_dump` can be used to output the collected statistics to a file stream. More details on the information included in the dump can be found in the :cpp:func:`esp_event_dump` API Reference.
+A configuration option :menuitem:`CONFIG_ESP_EVENT_LOOP_PROFILING` can be enabled in order to activate statistics collection for all event loops created. The function :cpp:func:`esp_event_dump` can be used to output the collected statistics to a file stream. More details on the information included in the dump can be found in the :cpp:func:`esp_event_dump` API Reference.
 
 Application Examples
 --------------------

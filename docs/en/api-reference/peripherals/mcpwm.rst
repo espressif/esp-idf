@@ -983,7 +983,7 @@ If you don't want to process the captured value in the capture event callback fu
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the PLL and APB frequency before going into Light-sleep, thus potentially changing the period of an MCPWM timers' counting step and leading to inaccurate time-keeping.
+When power management is enabled (i.e., :menuitem:`CONFIG_PM_ENABLE` is on), the system will adjust the PLL and APB frequency before going into Light-sleep, thus potentially changing the period of an MCPWM timers' counting step and leading to inaccurate time-keeping.
 
 However, the driver can prevent the system from going into Light-sleep by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_NO_LIGHT_SLEEP`. Whenever the driver creates an MCPWM timer instance that has selected PLL as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_timer_enable`. On the contrary, the driver releases the lock when :cpp:func:`mcpwm_timer_disable` is called for that timer.
 
@@ -1014,7 +1014,7 @@ IRAM Safe
 
 By default, the MCPWM interrupt will be deferred when the Cache is disabled for reasons like writing/erasing Flash. Thus the event callback functions will not get executed in time, which is not expected in a real-time application.
 
-There is a Kconfig option :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE` that:
+There is a Kconfig option :menuitem:`CONFIG_MCPWM_ISR_CACHE_SAFE` that:
 
 * enables the interrupt to be serviced even when the cache is disabled
 * places all functions used by the ISR into IRAM [2]_
@@ -1022,7 +1022,7 @@ There is a Kconfig option :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE` that:
 
 This allows the interrupt to run while the cache is disabled but comes at the cost of increased IRAM consumption.
 
-There is another Kconfig option :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So, these functions can also be executable when the cache is disabled. The IO control function is as follows:
+There is another Kconfig option :menuitem:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So, these functions can also be executable when the cache is disabled. The IO control function is as follows:
 
 - :cpp:func:`mcpwm_comparator_set_compare_value`
 - :cpp:func:`mcpwm_timer_set_period`
@@ -1048,9 +1048,9 @@ Other functions that are not related to :ref:`mcpwm-resource-allocation-and-init
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE` controls whether the default ISR handler can work when the cache is disabled, see :ref:`mcpwm-iram-safe` for more information.
-- :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` controls where to place the MCPWM control functions (IRAM or flash), see :ref:`mcpwm-iram-safe` for more information.
-- :ref:`CONFIG_MCPWM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option will increase the firmware binary size.
+- :menuitem:`CONFIG_MCPWM_ISR_CACHE_SAFE` controls whether the default ISR handler can work when the cache is disabled, see :ref:`mcpwm-iram-safe` for more information.
+- :menuitem:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` controls where to place the MCPWM control functions (IRAM or flash), see :ref:`mcpwm-iram-safe` for more information.
+- :menuitem:`CONFIG_MCPWM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option will increase the firmware binary size.
 
 Application Examples
 --------------------

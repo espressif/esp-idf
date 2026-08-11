@@ -3,7 +3,7 @@
 从 PSRAM 执行代码功能
 ----------------------
 
-选择 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 配置以启用此模式。在此模式下，代码从 PSRAM 执行，在大多数情况下，缓存不会在写入 API 期间被禁用。
+选择 :menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 配置以启用此模式。在此模式下，代码从 PSRAM 执行，在大多数情况下，缓存不会在写入 API 期间被禁用。
 
 在此模式下，flash ``.text`` 段（用于指令）和 flash ``.rodata`` 段（用于只读数据）将在启动时加载到 PSRAM。相应的虚拟地址将映射到 PSRAM。您无需确保在 flash 被擦除/编程时执行的代码/数据位于 IRAM 中。
 

@@ -61,7 +61,7 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      -
    * - Ctrl + C
      - Interrupt running application
-     - Pause IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` option to be enabled.
+     - Pause IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :menuitem:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` option to be enabled.
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
@@ -73,7 +73,7 @@ IDF Monitor automatically colors the output based on the log level. This feature
 
 The automatic coloring is enabled by default. To disable it, use the command line option ``--disable-auto-color``.
 
-The coloring is done based on the log level followed by optional timestamp and tag. For option to enable coloring on the {IDF_TARGET_NAME} side, see :ref:`CONFIG_LOG_COLORS`.
+The coloring is done based on the log level followed by optional timestamp and tag. For option to enable coloring on the {IDF_TARGET_NAME} side, see :menuitem:`CONFIG_LOG_COLORS`.
 
 For more details on the log, see :doc:`Logging <../../api-reference/system/log>`.
 
@@ -275,9 +275,9 @@ Launching GDB with GDBStub
 
 GDBStub is a useful runtime debugging feature that runs on the target and connects to the host over the serial port to receive debugging commands. GDBStub supports commands such as reading memory and variables, examining call stack frames etc. Although GDBStub is less versatile than JTAG debugging, it does not require any special hardware (such as a JTAG to USB bridge) as communication is done entirely over the serial port.
 
-A target can be configured to run GDBStub in the background by setting the :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`. GDBStub will run in the background until a ``Ctrl+C`` message is sent over the serial port and causes the GDBStub to break (i.e., stop the execution of) the program, thus allowing GDBStub to handle debugging commands.
+A target can be configured to run GDBStub in the background by setting the :menuitem:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`. GDBStub will run in the background until a ``Ctrl+C`` message is sent over the serial port and causes the GDBStub to break (i.e., stop the execution of) the program, thus allowing GDBStub to handle debugging commands.
 
-Furthermore, the panic handler can be configured to run GDBStub on a crash by setting the :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on panic``. When a crash occurs, GDBStub will output a special string pattern over the serial port to indicate that it is running.
+Furthermore, the panic handler can be configured to run GDBStub on a crash by setting the :menuitem:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on panic``. When a crash occurs, GDBStub will output a special string pattern over the serial port to indicate that it is running.
 
 In both cases (i.e., sending the ``Ctrl+C`` message, or receiving the special string pattern), IDF Monitor will automatically launch GDB in order to allow the user to send debugging commands. After GDB exits, the target is reset via the RTS serial line. If this line is not connected, users can reset their target (by pressing the board's Reset button).
 
@@ -409,7 +409,7 @@ The following issues are currently known:
 
 - Autocoloring cannot detect the log level if the message contains new lines. In this case, the IDF Monitor will only color the first line of the message.
 
-  To work around this issue, enable :ref:`CONFIG_LOG_COLORS` in menuconfig. Please note that this might have some impact on binary size and performance.
+  To work around this issue, enable :menuitem:`CONFIG_LOG_COLORS` in menuconfig. Please note that this might have some impact on binary size and performance.
 
 - On Windows, if the terminal is closed without first closing the IDF Monitor, some drivers may fail to release the serial port. To release the port, you may need to unplug and replug the USB cable, or in some cases even restart the computer. This issue has been observed with the CH9102 USB-to-UART bridge. Other drivers, such as CP210x and CH340, should work fine.
 

@@ -6,7 +6,7 @@
 概述
 --------
 
-ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log V1** 和 **Log V2**，可通过 :ref:`CONFIG_LOG_VERSION` 参数进行选择。本文档概述了这两个日志系统版本的特性、配置及使用方法，并比较了二者的性能表现。
+ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log V1** 和 **Log V2**，可通过 :menuitem:`CONFIG_LOG_VERSION` 参数进行选择。本文档概述了这两个日志系统版本的特性、配置及使用方法，并比较了二者的性能表现。
 
 - **Log V1**：默认的原始实现方式，具备简洁性，针对早期日志和 DRAM 日志进行了优化，但 flash 占用较高，缺乏灵活性。
 - **Log V2**：增强的实现方式，更加灵活，降低了 flash 占用，并集中处理日志格式，但需要更多的堆栈。
@@ -62,9 +62,9 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
 
 通过日志级别设置，可以选择将哪些日志包含在二进制文件中，并决定这些日志在运行时的可见性。日志级别设置包括以下两种：
 
-- **日志级别**：指定在运行时显示哪些级别的日志。引导加载程序的 **日志级别** 通过 :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` 配置，而应用程序的 **日志级别** 通过 :ref:`CONFIG_LOG_DEFAULT_LEVEL` 设置。通过函数 ``esp_log_get_default_level`` 能够获取当前日志级别。
+- **日志级别**：指定在运行时显示哪些级别的日志。引导加载程序的 **日志级别** 通过 :menuitem:`CONFIG_BOOTLOADER_LOG_LEVEL` 配置，而应用程序的 **日志级别** 通过 :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` 设置。通过函数 ``esp_log_get_default_level`` 能够获取当前日志级别。
 
-- **最高日志级别**：指定将哪些日志级别包含在二进制文件中。高于此级别的日志会在编译时丢弃，不包含在最终镜像中。对于应用程序，**最高日志级别** 可以设置得高于 **日志级别**，从而在二进制文件中包含额外的日志，必要时，便可通过 :cpp:func:`esp_log_level_set` 启用这些日志以帮助调试。使用 :ref:`CONFIG_LOG_MAXIMUM_LEVEL` 选项可以为应用程序启用此功能。引导加载程序不支持此功能，其 **最高日志级别** 始终与 **日志级别** 相同。
+- **最高日志级别**：指定将哪些日志级别包含在二进制文件中。高于此级别的日志会在编译时丢弃，不包含在最终镜像中。对于应用程序，**最高日志级别** 可以设置得高于 **日志级别**，从而在二进制文件中包含额外的日志，必要时，便可通过 :cpp:func:`esp_log_level_set` 启用这些日志以帮助调试。使用 :menuitem:`CONFIG_LOG_MAXIMUM_LEVEL` 选项可以为应用程序启用此功能。引导加载程序不支持此功能，其 **最高日志级别** 始终与 **日志级别** 相同。
 
 例如，如果将 **日志级别** 设置为 **Warning**，**最高日志级别** 设置为 **Debug**，则二进制文件会包含 **Error**、**Warning**、**Info** 和 **Debug** 级别的日志。然而，在运行时仅输出 **Error** 和 **Warning** 级别的日志，除非通过 :cpp:func:`esp_log_level_set` 显式更改日志级别。根据具体需求，日志级别可以提高或降低。
 
@@ -95,7 +95,7 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
 
 仅应用程序支持在运行时更改日志级别，启动引导加载程序不支持此功能。
 
-默认情况下，系统启动时会启用 **日志级别** 以下的所有日志级别。可以使用函数 :cpp:func:`esp_log_level_set` 全局或按模块设置 **日志级别**。模块可通过标签识别，这些标签是人类可读以零结尾的 ASCII 字符串。此功能依赖于 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`，此选项默认启用。如无需此功能，可以将其禁用，以减少代码量并提升性能。
+默认情况下，系统启动时会启用 **日志级别** 以下的所有日志级别。可以使用函数 :cpp:func:`esp_log_level_set` 全局或按模块设置 **日志级别**。模块可通过标签识别，这些标签是人类可读以零结尾的 ASCII 字符串。此功能依赖于 :menuitem:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`，此选项默认启用。如无需此功能，可以将其禁用，以减少代码量并提升性能。
 
 例如，将所有组件的日志级别设置为 ``ERROR`` （全局设置）：
 
@@ -103,7 +103,7 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
 
    esp_log_level_set("*", ESP_LOG_ERROR);
 
-根据模块（标签）调整日志输出的功能依赖于 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`，该选项默认启用。如不需要此功能，可以将其禁用，以减少代码量并提升性能。
+根据模块（标签）调整日志输出的功能依赖于 :menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL`，该选项默认启用。如不需要此功能，可以将其禁用，以减少代码量并提升性能。
 
 例如，仅将 Wi-Fi 组件的日志级别设置为 ``WARNING`` （特定模块设置）：
 
@@ -190,24 +190,24 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
 
 日志系统支持以下格式选项，并且同时适用于应用程序和引导加载程序：
 
-- **Color**：增加颜色代码，全局增强日志的可见性。由 :ref:`CONFIG_LOG_COLORS` 控制，默认情况下禁用，因为 ESP-IDF 监视工具 `idf.py monitor` 可以通过 **级别名称** 检测日志级别并应用标准的 IDF 颜色方案。
+- **Color**：增加颜色代码，全局增强日志的可见性。由 :menuitem:`CONFIG_LOG_COLORS` 控制，默认情况下禁用，因为 ESP-IDF 监视工具 `idf.py monitor` 可以通过 **级别名称** 检测日志级别并应用标准的 IDF 颜色方案。
 
-  - 对于 **Log V2**，选项 :ref:`CONFIG_LOG_COLORS_SUPPORT` 支持在运行时为特定日志、文件或组件添加颜色输出，即使全局颜色已禁用。此时要为特定上下文启用颜色，请使用 ``ESP_LOG_COLOR_DISABLED``。
+  - 对于 **Log V2**，选项 :menuitem:`CONFIG_LOG_COLORS_SUPPORT` 支持在运行时为特定日志、文件或组件添加颜色输出，即使全局颜色已禁用。此时要为特定上下文启用颜色，请使用 ``ESP_LOG_COLOR_DISABLED``。
 
   .. note::
 
-    IDF Monitor 需要依据上述日志消息格式，才能自动为日志添加颜色高亮效果。对格式的最低要求是：日志级别名称后接时间戳，且每条日志消息必须以换行符结尾。例如，``I (56): Log message\n``。如果未遵循此格式（例如禁用了时间戳），自动日志着色将失效。在这种情况下，建议在 menuconfig 中启用 :ref:`CONFIG_LOG_COLORS` 配置项。此外还有一个限制，即对于多行日志消息，只有第一行会被正确着色。
+    IDF Monitor 需要依据上述日志消息格式，才能自动为日志添加颜色高亮效果。对格式的最低要求是：日志级别名称后接时间戳，且每条日志消息必须以换行符结尾。例如，``I (56): Log message\n``。如果未遵循此格式（例如禁用了时间戳），自动日志着色将失效。在这种情况下，建议在 menuconfig 中启用 :menuitem:`CONFIG_LOG_COLORS` 配置项。此外还有一个限制，即对于多行日志消息，只有第一行会被正确着色。
 
 - **Level Name**：表示日志详细级别的单个字母（I, W, E, D, V），显示在每条日志消息的开头，用于识别日志级别。这在禁用颜色时非常有用，例如在禁用颜色时 ESP-IDF 监视工具就会使用该信息。
 
-- **Timestamp**：为日志消息全局添加时间戳。由 :ref:`CONFIG_LOG_TIMESTAMP_SOURCE` 控制。
+- **Timestamp**：为日志消息全局添加时间戳。由 :menuitem:`CONFIG_LOG_TIMESTAMP_SOURCE` 控制。
 
   - **None**：不显示时间戳。在日志分析或调试中，当时间不关键时非常有用，还能够节省处理性能和内存。仅适用于 **Log V2**。
   - **Milliseconds since boot** `(18532)` （默认）：通过 RTOS 时钟 tick 计数乘以 tick 周期得出。
   - **System time (HH:MM:SS.sss)** `14:31:18.532`：以小时、分钟、秒和毫秒显示时间。
   - **System time (YY-MM-DD HH:MM:SS.sss)** `(2023-08-15 14:31:18.532)`：同上，还包括日期。
   - **Unix time in milliseconds** `(1692099078532)`：以毫秒显示 Unix 时间。
-  - 对于 **Log V2**，选项 :ref:`CONFIG_LOG_TIMESTAMP_SUPPORT` 支持在运行时为特定日志、文件或组件添加时间戳输出，即使全局时间戳已禁用。要为特定上下文启用 **Milliseconds since boot** 时间戳，请使用 ``ESP_LOG_TIMESTAMP_DISABLED``。
+  - 对于 **Log V2**，选项 :menuitem:`CONFIG_LOG_TIMESTAMP_SUPPORT` 支持在运行时为特定日志、文件或组件添加时间戳输出，即使全局时间戳已禁用。要为特定上下文启用 **Milliseconds since boot** 时间戳，请使用 ``ESP_LOG_TIMESTAMP_DISABLED``。
 
 - **Tag**：显示用户定义的源模块标识符。
 
@@ -226,15 +226,15 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
   - 默认为 ``0``，即启用所有格式化项，如颜色、时间戳、标记和末尾换行。
   - 定义为 ``1`` 时，为指定范围禁用所有的格式化项。
 
-- **ESP_LOG_COLOR_DISABLED**：要求启用 :ref:`CONFIG_LOG_COLORS_SUPPORT`。
+- **ESP_LOG_COLOR_DISABLED**：要求启用 :menuitem:`CONFIG_LOG_COLORS_SUPPORT`。
 
-  - 如果全局颜色 (:ref:`CONFIG_LOG_COLORS`) 已禁用，则定义为 ``0``，以启用指定范围的颜色输出。
-  - 如果启用了全局颜色 (:ref:`CONFIG_LOG_COLORS`)，则定义为 ``1``，表示禁用指定范围的颜色输出。
+  - 如果全局颜色 (:menuitem:`CONFIG_LOG_COLORS`) 已禁用，则定义为 ``0``，以启用指定范围的颜色输出。
+  - 如果启用了全局颜色 (:menuitem:`CONFIG_LOG_COLORS`)，则定义为 ``1``，表示禁用指定范围的颜色输出。
 
-- **ESP_LOG_TIMESTAMP_DISABLED**：要求启用 :ref:`CONFIG_LOG_TIMESTAMP_SUPPORT`。
+- **ESP_LOG_TIMESTAMP_DISABLED**：要求启用 :menuitem:`CONFIG_LOG_TIMESTAMP_SUPPORT`。
 
-  - 如果已禁用全局时间戳（:ref:`CONFIG_LOG_TIMESTAMP_SOURCE`），则定义为 ``0``，以启用指定范围的时间戳输出。
-  - 如果全局时间戳（:ref:`CONFIG_LOG_TIMESTAMP_SOURCE`）已启用，则定义为 ``1``，表示禁用指定范围的时间戳输出。
+  - 如果已禁用全局时间戳（:menuitem:`CONFIG_LOG_TIMESTAMP_SOURCE`），则定义为 ``0``，以启用指定范围的时间戳输出。
+  - 如果全局时间戳（:menuitem:`CONFIG_LOG_TIMESTAMP_SOURCE`）已启用，则定义为 ``1``，表示禁用指定范围的时间戳输出。
 
 - **ESP_LOG_MODE_BINARY_EN**：要求启用 ``CONFIG_LOG_MODE_BINARY`` 或 ``CONFIG_BOOTLOADER_LOG_MODE_BINARY`` 配置项。
 
@@ -295,7 +295,7 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
 
 下列三种设置可在运行时全局更改日志级别，或为单个模块（标签）更改日志级别：
 
-- **Dynamic Log Level Control** （:ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`，默认已启用）：动态日志级别控制。启用后，可以通过 :cpp:func:`esp_log_level_set` 函数在运行时更改日志级别。该功能提高了灵活性，但也增加了内存和性能开销。如需考虑二进制文件的大小，并且无需在运行时动态更改日志级别，建议禁用此选项，特别是在 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL` 设置为 **None** 时，以尽量减小程序大小。
+- **Dynamic Log Level Control** （:menuitem:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`，默认已启用）：动态日志级别控制。启用后，可以通过 :cpp:func:`esp_log_level_set` 函数在运行时更改日志级别。该功能提高了灵活性，但也增加了内存和性能开销。如需考虑二进制文件的大小，并且无需在运行时动态更改日志级别，建议禁用此选项，特别是在 :menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL` 设置为 **None** 时，以尽量减小程序大小。
 
   如果你的应用程序不需要动态调整日志级别，禁用此选项可以提高效率：
 
@@ -307,7 +307,7 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
 
   - 提高日志操作性能，最多提高 10 倍。
 
-- **Tag-Level Checks** （:ref:`CONFIG_LOG_TAG_LEVEL_IMPL`，默认值为 **Cache + Linked List**）：标签级别检查，决定了如何检查每个标签的日志级别，影响内存使用和查找速度：
+- **Tag-Level Checks** （:menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL`，默认值为 **Cache + Linked List**）：标签级别检查，决定了如何检查每个标签的日志级别，影响内存使用和查找速度：
 
   - **None**：完全禁用按标签进行日志级别检查，能够减少开销，但失去了运行时的灵活性。
 
@@ -315,21 +315,21 @@ ESP-IDF 提供了一套灵活的日志系统，包括两个可配置版本 **Log
 
 - **Cache + Linked List** （默认）：缓存 + 链表，通过缓存与链表结合的方式进行日志标签级别检查，实现了内存占用和运行速度之间的平衡。缓存用于存储最近访问的日志标签及其对应的日志级别，加速了常用标签的查找。这是因为缓存方式会比较标签指针，与执行完整字符串相比速度更快。对不常用标签，通过链表进行日志级别查找。注意，使用动态标签定义时，此选项可能无法正常工作，因为它依赖缓存中的标签指针比较，不适用于动态定义的标签。此混合方法利用了常用标签的缓存速度优势和不常用标签的链表存储效率，提升了日志级别查找的总体效率。选择此选项会自动启用 **Dynamic Log Level Control**。
 
-有一些缓存配置可以平衡内存使用和查找性能。这些配置决定了日志标签级别的存储和访问方式，详见 :ref:`CONFIG_LOG_TAG_LEVEL_CACHE_IMPL`。
+有一些缓存配置可以平衡内存使用和查找性能。这些配置决定了日志标签级别的存储和访问方式，详见 :menuitem:`CONFIG_LOG_TAG_LEVEL_CACHE_IMPL`。
 
     - **Array**：数组方式，实现简单，不进行重新排序，适合注重简洁性的低内存应用。
 
-    - **Binary Min-Heap** （默认配置）最小二叉堆，优化的实现方式，支持快速查找并自动重新排序，适用于具有充足内存的高性能应用。其容量由 **缓存大小** (:ref:`CONFIG_LOG_TAG_LEVEL_IMPL_CACHE_SIZE`) 定义，默认包含 31 个条目。
+    - **Binary Min-Heap** （默认配置）最小二叉堆，优化的实现方式，支持快速查找并自动重新排序，适用于具有充足内存的高性能应用。其容量由 **缓存大小** (:menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL_CACHE_SIZE`) 定义，默认包含 31 个条目。
 
     缓存容量越大，查找常用日志标签的性能越高，但内存消耗也会增加。相反，缓存容量越小越节省内存，但可能导致不常用的日志标签被更频繁地移除。
 
-- **Master Log Level** （:ref:`CONFIG_LOG_MASTER_LEVEL`，默认禁用）：这是一个可选设置，专为特定调试场景设计。此设置启用后，会在生成时间戳和标签缓存查找之前，启用全局 master 日志级别检查。这一选项适用于编译大量日志的情况，可以在运行时有选择地启用或禁用日志，同时在不需要日志输出时尽量减少对性能的影响。
+- **Master Log Level** （:menuitem:`CONFIG_LOG_MASTER_LEVEL`，默认禁用）：这是一个可选设置，专为特定调试场景设计。此设置启用后，会在生成时间戳和标签缓存查找之前，启用全局 master 日志级别检查。这一选项适用于编译大量日志的情况，可以在运行时有选择地启用或禁用日志，同时在不需要日志输出时尽量减少对性能的影响。
 
   例如，通常可以在在时间紧迫或 CPU 密集型操作期间临时禁用日志，并在之后重新启用日志。
 
   .. note:: 对于 **Log V1**，此功能可能会基于已编译日志的数量而显著增加程序大小。对于 **Log V2** 影响很小，因为检查已集成到了日志处理程序中。
 
-  如果启用此功能，master 日志级别默认为 :ref:`CONFIG_LOG_DEFAULT_LEVEL`，并可在运行时通过 :cpp:func:`esp_log_set_level_master` 进行调整。此全局检查优先于 ``esp_log_get_default_level``。
+  如果启用此功能，master 日志级别默认为 :menuitem:`CONFIG_LOG_DEFAULT_LEVEL`，并可在运行时通过 :cpp:func:`esp_log_set_level_master` 进行调整。此全局检查优先于 ``esp_log_get_default_level``。
 
   以下代码片段演示了此功能的原理。将 **Master Log Level** 设置为 ``ESP_LOG_NONE``，会在全局范围内禁用所有日志。此时，:cpp:func:`esp_log_level_set` 不会影响日志输出。但是，当 **Master Log Level** 调整为更高级别后，日志会按照 :cpp:func:`esp_log_level_set` 的配置打印出来：
 
@@ -665,13 +665,13 @@ buffer 日志需特殊处理
 
     在 IRAM 与 DRAM 共用同一内存池的芯片上，这也会减少相应的可用堆空间（约 1.2 KB）。
 
-    为消除该开销，请禁用 :ref:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE` （默认启用）。禁用后：
+    为消除该开销，请禁用 :menuitem:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE` （默认启用）。禁用后：
 
     - ``ESP_DRAM_LOGx`` 和 ``ESP_EARLY_LOGx`` 直接展开为 ``esp_rom_printf()`` （真正的 ROM 函数，无需 IRAM 开销），完全绕过 ``esp_log()`` 处理流程。
     - 在受限环境中，普通的 ``ESP_LOGx`` 调用将使用标准 ``vprintf`` 函数。如果 ``vprintf`` 位于 flash 中，此类调用可能导致崩溃。对于必须在缓存被禁用时或在 ISR 中使用的日志，请使用 ``ESP_DRAM_LOGx``。
     - ``esp_rom_vprintf`` 不会被引用，因此链接器会将其从二进制文件中排除。
 
-    若启用 :ref:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE`，则保留原始 **Log V2** 行为：所有受限环境的日志都通过 ``esp_log()`` 路由，并使用 ``esp_rom_vprintf`` 作为早期/DRAM 日志的格式化函数。
+    若启用 :menuitem:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE`，则保留原始 **Log V2** 行为：所有受限环境的日志都通过 ``esp_log()`` 路由，并使用 ``esp_rom_vprintf`` 作为早期/DRAM 日志的格式化函数。
 
 通过 JTAG 将日志记录到主机
 ------------------------------

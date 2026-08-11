@@ -68,7 +68,7 @@
 任务
 ^^^^^^^
 
-如果启用了选项 :ref:`CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS` ，则可以使用 FreeRTOS API :cpp:func:`vTaskGetRunTimeStats` 来获取各个 FreeRTOS 任务运行时占用处理器的时间。
+如果启用了选项 :menuitem:`CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS` ，则可以使用 FreeRTOS API :cpp:func:`vTaskGetRunTimeStats` 来获取各个 FreeRTOS 任务运行时占用处理器的时间。
 
 :ref:`SEGGER SystemView <app_trace-system-behaviour-analysis-with-segger-systemview>` 是一款出色的工具，可将任务执行情况可视化，也可用于排查系统整体的性能问题或改进方向。
 
@@ -79,11 +79,11 @@
 
 .. list::
 
-    :esp32: - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` 为 80 MHz。该值为默认值 40 MHz 的两倍，这意味着从 flash 加载或执行代码的速度也将翻倍。在更改此设置之前，应事先确认连接 {IDF_TARGET_NAME} 和 flash 的板或模块在温度限制范围内支持 80 MHz 的操作。相关信息参见硬件数据手册。
-    - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHMODE` 为 QIO 或 QOUT 模式（四线 I/O 模式）。相较于默认的 DIO 模式，在这两种模式下，从 flash 加载或执行代码的速度几乎翻倍。如果两种模式都支持，QIO 会稍微快于 QOUT。请注意，flash 芯片以及 {IDF_TARGET_NAME} 与 flash 芯片之间的电气连接都必须支持四线 I/O 模式，否则 SoC 将无法正常工作。
-    - 设置 :ref:`CONFIG_COMPILER_OPTIMIZATION` 为 ``Optimize for performance (-O2)`` 。相较于默认设置，这可能会略微增加二进制文件大小，但几乎必然会提高某些代码的性能。请注意，如果代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本未发现的错误。
-    :SOC_ASSIST_DEBUG_SUPPORTED: - 禁用 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 可能会小幅提高代码性能，尤其是在设备上出现大量中断的情况下。
-    :esp32: - 如果应用程序是基于 ESP32 rev. 3 (ECO3) 的项目并且使用 PSRAM，设置 :ref:`CONFIG_ESP32_REV_MIN` 为 ``3`` 将禁用 PSRAM 的错误修复工作，可以减小代码大小并提高整体性能。
+    :esp32: - 设置 :menuitem:`CONFIG_ESPTOOLPY_FLASHFREQ` 为 80 MHz。该值为默认值 40 MHz 的两倍，这意味着从 flash 加载或执行代码的速度也将翻倍。在更改此设置之前，应事先确认连接 {IDF_TARGET_NAME} 和 flash 的板或模块在温度限制范围内支持 80 MHz 的操作。相关信息参见硬件数据手册。
+    - 设置 :menuitem:`CONFIG_ESPTOOLPY_FLASHMODE` 为 QIO 或 QOUT 模式（四线 I/O 模式）。相较于默认的 DIO 模式，在这两种模式下，从 flash 加载或执行代码的速度几乎翻倍。如果两种模式都支持，QIO 会稍微快于 QOUT。请注意，flash 芯片以及 {IDF_TARGET_NAME} 与 flash 芯片之间的电气连接都必须支持四线 I/O 模式，否则 SoC 将无法正常工作。
+    - 设置 :menuitem:`CONFIG_COMPILER_OPTIMIZATION` 为 ``Optimize for performance (-O2)`` 。相较于默认设置，这可能会略微增加二进制文件大小，但几乎必然会提高某些代码的性能。请注意，如果代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本未发现的错误。
+    :SOC_ASSIST_DEBUG_SUPPORTED: - 禁用 :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 可能会小幅提高代码性能，尤其是在设备上出现大量中断的情况下。
+    :esp32: - 如果应用程序是基于 ESP32 rev. 3 (ECO3) 的项目并且使用 PSRAM，设置 :menuitem:`CONFIG_ESP32_REV_MIN` 为 ``3`` 将禁用 PSRAM 的错误修复工作，可以减小代码大小并提高整体性能。
     :SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。尽管 {IDF_TARGET_NAME} 具备单精度浮点运算器，但是浮点运算总是慢于整数运算。因此可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
     :not SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。{IDF_TARGET_NAME} 通过软件模拟进行浮点运算，因此速度非常慢。可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
     - 避免使用双精度浮点运算 ``double``。{IDF_TARGET_NAME} 通过软件模拟进行双精度浮点运算，因此速度非常慢。可以考虑使用基于整数的表示方法或单精度浮点数。
@@ -98,11 +98,11 @@
 
     .. list::
 
-        :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`.
-        :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`.
-        :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`.
-        :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`.
-        :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+        :esp32s2: - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`.
+        :esp32s2: - :menuitem:`CONFIG_ESP32S2_DATA_CACHE_SIZE`.
+        :esp32s3: - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`.
+        :esp32s3: - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_SIZE`.
+        :esp32p4: - :menuitem:`CONFIG_CACHE_L2_CACHE_SIZE`.
 
 
     .. note::
@@ -114,7 +114,7 @@
 
     .. note::
 
-        在 {IDF_TARGET_NAME} 上，可以通过 Kconfig 选项 :ref:`CONFIG_CACHE_L2_CACHE_SIZE` 来配置 L2 cache 大小。
+        在 {IDF_TARGET_NAME} 上，可以通过 Kconfig 选项 :menuitem:`CONFIG_CACHE_L2_CACHE_SIZE` 来配置 L2 cache 大小。
         将 L2 cache 大小设为最小，则可用 RAM 大小达到最大，但也可能提高“cache 缺失”的频率。
         将 L2 cache 大小设为最大，则“cache 缺失”的频率可能降低，但可用 RAM 大小也随之减少。
 
@@ -125,10 +125,10 @@
 
 .. list::
 
-    - 通过调低应用日志默认等级 :ref:`CONFIG_LOG_DEFAULT_LEVEL` （引导加载程序日志等级的相应配置为 :ref:`CONFIG_BOOTLOADER_LOG_LEVEL`）来减少日志输出量。这样做不仅可以减小二进制文件大小，还可以节省一些 CPU 用于格式化字符串的时间。
-    :not SOC_USB_OTG_SUPPORTED: - 增加 :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。
-    :SOC_USB_OTG_SUPPORTED: - 增加 :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。如果使用内置 USB-CDC 作为串口控制台，那么串口传输速率不会受配置的波特率影响。
-    - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以减少内存使用，并且将应用程序中的日志操作速度提高约 10 倍。
+    - 通过调低应用日志默认等级 :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` （引导加载程序日志等级的相应配置为 :menuitem:`CONFIG_BOOTLOADER_LOG_LEVEL`）来减少日志输出量。这样做不仅可以减小二进制文件大小，还可以节省一些 CPU 用于格式化字符串的时间。
+    :not SOC_USB_OTG_SUPPORTED: - 增加 :menuitem:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。
+    :SOC_USB_OTG_SUPPORTED: - 增加 :menuitem:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。如果使用内置 USB-CDC 作为串口控制台，那么串口传输速率不会受配置的波特率影响。
+    - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :menuitem:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以减少内存使用，并且将应用程序中的日志操作速度提高约 10 倍。
 
 不建议的选项
 ^^^^^^^^^^^^^^^^^^
@@ -137,7 +137,7 @@
 
 .. list::
 
-   - 禁用 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 。这也会略微减小固件二进制文件大小。然而，它可能导致出现更严重的 bug，甚至出现安全性 bug。如果为了优化特定函数而必须禁用该选项，可以考虑在该源文件的顶部单独添加 ``#define NDEBUG`` 。
+   - 禁用 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 。这也会略微减小固件二进制文件大小。然而，它可能导致出现更严重的 bug，甚至出现安全性 bug。如果为了优化特定函数而必须禁用该选项，可以考虑在该源文件的顶部单独添加 ``#define NDEBUG`` 。
 
 .. _speed-targeted-optimizations:
 
@@ -155,7 +155,7 @@
 
     -  针对不需要放置在 IRAM 中的单个源文件，可以重新启用跳转表优化。这将提高大型 ``switch cases`` 代码中的热路径性能。关于如何在编译单个源文件时添加 -fjump-tables -ftree-switch-conversion 选项，参见 :ref:`component_build_control`。
 
-    - 许多 ESP-IDF 组件和驱动程序提供了配置选项，用于将性能关键的函数放置在 IRAM 中以降低延迟并提高速度。这些选项通常以 ``CONFIG_*_IN_IRAM``、``CONFIG_*_ISR_IN_IRAM`` 或 ``CONFIG_*_IRAM_OPT`` 命名。例如，FreeRTOS 函数的 :ref:`CONFIG_FREERTOS_IN_IRAM`，Wi-Fi 操作的 :ref:`CONFIG_ESP_WIFI_IRAM_OPT`，UART 中断处理的 :ref:`CONFIG_UART_ISR_IN_IRAM`，以及 SPI 操作的 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM`。这些选项通过增加 IRAM 占用换取速度提升，因此应根据应用的性能需求和可用 IRAM 空间有选择地使用。
+    - 许多 ESP-IDF 组件和驱动程序提供了配置选项，用于将性能关键的函数放置在 IRAM 中以降低延迟并提高速度。这些选项通常以 ``CONFIG_*_IN_IRAM``、``CONFIG_*_ISR_IN_IRAM`` 或 ``CONFIG_*_IRAM_OPT`` 命名。例如，FreeRTOS 函数的 :menuitem:`CONFIG_FREERTOS_IN_IRAM`，Wi-Fi 操作的 :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT`，UART 中断处理的 :menuitem:`CONFIG_UART_ISR_IN_IRAM`，以及 SPI 操作的 :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM`。这些选项通过增加 IRAM 占用换取速度提升，因此应根据应用的性能需求和可用 IRAM 空间有选择地使用。
 
 减少启动时间
 ----------------------------
@@ -164,12 +164,12 @@
 
 .. list::
 
-   - 最小化 :ref:`CONFIG_LOG_DEFAULT_LEVEL` 和 :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` 可以大幅减少启动时间。如要在应用程序启动后获取更多日志，可以设置 :ref:`CONFIG_LOG_MAXIMUM_LEVEL`，然后调用 :cpp:func:`esp_log_level_set` 来恢复更高级别的日志输出。示例 :example:`system/startup_time` 的主函数展示了如何实现这一点。
-   :SOC_RTC_FAST_MEM_SUPPORTED: - 如果使用 Deep-sleep 模式，启用 :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 可以加快从睡眠中唤醒的速度。请注意，启用该选项后在唤醒时将不会执行安全启动验证，需要考量安全风险。
-   - 设置 :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` 可以在每次上电复位启动时跳过二进制文件验证，节省的时间取决于二进制文件大小和 flash 设置。请注意，如果 flash 意外损坏，此设置将有一定风险。更多关于使用该选项的解释和建议，参见 :ref:`项目配置 <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` 。
-   - 禁用 RTC 慢速时钟校准可以节省一小部分启动时间。设置 :ref:`CONFIG_RTC_CLK_CAL_CYCLES` 为 0 可以实现该操作。设置后，以 RTC 慢速时钟为时钟源的固件部分精确度将降低。
-   :SOC_SPIRAM_SUPPORTED: - 使用外部内存（启用 :ref:`CONFIG_SPIRAM`）时，启用外部内存 (:ref:`CONFIG_SPIRAM_MEMTEST`) 测试可能会大大增加启动时间（每测试 4 MB 的内存大约增加 1 秒）。禁用内存测试将减少启动时间，但将无法对外部存储器进行测试。
-   :SOC_SPIRAM_SUPPORTED: - 使用外部内存（启用 :ref:`CONFIG_SPIRAM`）时，所有用作堆的内存（包括外部内存）都将被设为默认值，所以启用全面的 poisoning 将增加启动时间（每设置 4 MiB 的内存大约增加 300 毫秒）。
+   - 最小化 :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` 和 :menuitem:`CONFIG_BOOTLOADER_LOG_LEVEL` 可以大幅减少启动时间。如要在应用程序启动后获取更多日志，可以设置 :menuitem:`CONFIG_LOG_MAXIMUM_LEVEL`，然后调用 :cpp:func:`esp_log_level_set` 来恢复更高级别的日志输出。示例 :example:`system/startup_time` 的主函数展示了如何实现这一点。
+   :SOC_RTC_FAST_MEM_SUPPORTED: - 如果使用 Deep-sleep 模式，启用 :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 可以加快从睡眠中唤醒的速度。请注意，启用该选项后在唤醒时将不会执行安全启动验证，需要考量安全风险。
+   - 设置 :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` 可以在每次上电复位启动时跳过二进制文件验证，节省的时间取决于二进制文件大小和 flash 设置。请注意，如果 flash 意外损坏，此设置将有一定风险。更多关于使用该选项的解释和建议，参见 :menuitem:`项目配置 <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` 。
+   - 禁用 RTC 慢速时钟校准可以节省一小部分启动时间。设置 :menuitem:`CONFIG_RTC_CLK_CAL_CYCLES` 为 0 可以实现该操作。设置后，以 RTC 慢速时钟为时钟源的固件部分精确度将降低。
+   :SOC_SPIRAM_SUPPORTED: - 使用外部内存（启用 :menuitem:`CONFIG_SPIRAM`）时，启用外部内存 (:menuitem:`CONFIG_SPIRAM_MEMTEST`) 测试可能会大大增加启动时间（每测试 4 MB 的内存大约增加 1 秒）。禁用内存测试将减少启动时间，但将无法对外部存储器进行测试。
+   :SOC_SPIRAM_SUPPORTED: - 使用外部内存（启用 :menuitem:`CONFIG_SPIRAM`）时，所有用作堆的内存（包括外部内存）都将被设为默认值，所以启用全面的 poisoning 将增加启动时间（每设置 4 MiB 的内存大约增加 300 毫秒）。
 
 示例项目 :example:`system/startup_time` 预配了优化启动时间的设置，文件 :example_file:`system/startup_time/sdkconfig.defaults` 包含了所有相关设置。可以将这些设置追加到项目中 ``sdkconfig`` 文件的末尾并合并，但请事先阅读每个设置的相关说明。
 
@@ -201,7 +201,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
         - :ref:`app-main-task` 中执行 app_main 函数的主任务优先级最低 (1)。
         - 系统任务 :doc:`/api-reference/system/esp_timer` 用于管理定时器事件并执行回调函数，优先级较高 (22, ``ESP_TASK_TIMER_PRIO``)。
-        - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1, :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）。
+        - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1, :menuitem:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）。
         - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``)。仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用此配置。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
         - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``)。
         :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` 任务优先级较高 (23).
@@ -215,21 +215,21 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
     .. list::
 
-        - :ref:`app-main-task` 中执行 app_main 函数的主任务优先级最低 (1) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_ESP_MAIN_TASK_AFFINITY>` ）。
+        - :ref:`app-main-task` 中执行 app_main 函数的主任务优先级最低 (1) 且默认固定在核 0 上执行（ :menuitem:`可配置 <CONFIG_ESP_MAIN_TASK_AFFINITY>` ）。
         - 系统任务 :doc:`/api-reference/system/esp_timer` 用于管理定时器事件并执行回调函数，优先级较高 (22, ``ESP_TASK_TIMER_PRIO``) 且固定在核 0 上执行。
-        - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1， :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）且固定在核 0 上执行。
+        - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1， :menuitem:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）且固定在核 0 上执行。
         - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``) 且固定在核 0 上执行。此配置仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
-        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``) 且并未固定在特定内核上执行（ :ref:`可配置 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ）。
-        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` 任务优先级较高 (23) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_ESP_WIFI_TASK_CORE_ID>` ）。
+        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``) 且并未固定在特定内核上执行（ :menuitem:`可配置 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ）。
+        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` 任务优先级较高 (23) 且默认固定在核 0 上执行（ :menuitem:`可配置 <CONFIG_ESP_WIFI_TASK_CORE_ID>` ）。
         :SOC_WIFI_SUPPORTED: - 使用 Wi-Fi Protected Setup (WPS)、WPA2 EAP-TLS、Device Provisioning Protocol (DPP) 或 BSS Transition Management (BTM) 等功能时，Wi-Fi wpa_supplicant 组件可能会创建优先级较低的专用任务 (2)，这些任务并未固定在特定内核上执行。
-        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) 且默认固定在核 0 上执行（ :ref:`可配置 <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>` ）。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为最高优先级的任务之一并分配给单个 CPU 执行。
-        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 任务优先级较高 (21) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>` ）.
+        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) 且默认固定在核 0 上执行（ :menuitem:`可配置 <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>` ）。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为最高优先级的任务之一并分配给单个 CPU 执行。
+        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 任务优先级较高 (21) 且默认固定在核 0 上执行（ :menuitem:`可配置 <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>` ）.
         :esp32: - 使用 :doc:`/api-reference/bluetooth/index` 时会创建多个任务:
                - 堆栈事件回调任务 ("BTC") 优先级较高 (19)。
                - 堆栈 BTU 层任务优先级较高 (20)。
                - Host HCI 主任务优先级较高 (22)。
 
-               所有 Bluedroid 任务默认固定在同一个核心上执行，即核 0（ :ref:`可配置 <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>` ）。
+               所有 Bluedroid 任务默认固定在同一个核心上执行，即核 0（ :menuitem:`可配置 <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>` ）。
 
         - 以太网驱动程序会创建一个 MAC 任务，用于接收以太网帧。如果使用默认配置 ``ETH_MAC_DEFAULT_CONFIG`` ，则该任务为中高优先级 (15) 且并未固定在特定内核上执行。可以在以太网 MAC 初始化时输入自定义 :cpp:class:`eth_mac_config_t` 结构体来更改此设置。
         - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__ 。
@@ -254,7 +254,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
 .. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    默认配置下，除了个别例外，尤其是 lwIP TCP/IP 任务，大多数内置任务都固定在核 0 上执行。因此，应用程序可以方便地将高优先级任务放置在核 1 上执行。优先级大于等于 19 的应用程序任务在核 1 上运行时可以确保不会被任何内置任务抢占。为了进一步隔离各个 CPU 上运行的任务，配置 :ref:`lwIP 任务 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ，可以使 lwIP 任务仅在核 0 上运行，而非其他内核，这可能会根据其他任务的运行情况减少总 TCP/IP 吞吐量。
+    默认配置下，除了个别例外，尤其是 lwIP TCP/IP 任务，大多数内置任务都固定在核 0 上执行。因此，应用程序可以方便地将高优先级任务放置在核 1 上执行。优先级大于等于 19 的应用程序任务在核 1 上运行时可以确保不会被任何内置任务抢占。为了进一步隔离各个 CPU 上运行的任务，配置 :menuitem:`lwIP 任务 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ，可以使 lwIP 任务仅在核 0 上运行，而非其他内核，这可能会根据其他任务的运行情况减少总 TCP/IP 吞吐量。
 
     .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
 
@@ -311,7 +311,7 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 
     - 读取/写入请求的最大大小等于 FatFS 簇大小（分配单元大小）。
     - 为了获得更好的性能，建议使用 ``read`` 和 ``write``，而非 ``fread`` 和 ``fwrite``。
-    - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小。Newlib 的默认值为 128 字节，但可将其增加到 4096、8192 或 16384 字节。为此，可以使用 ``setvbuf`` 函数对特定文件指针进行局部设置，或者通过修改 :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 设置来进行全局修改。
+    - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小。Newlib 的默认值为 128 字节，但可将其增加到 4096、8192 或 16384 字节。为此，可以使用 ``setvbuf`` 函数对特定文件指针进行局部设置，或者通过修改 :menuitem:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 设置来进行全局修改。
 
         .. note::
 

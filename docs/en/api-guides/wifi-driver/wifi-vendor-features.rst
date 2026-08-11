@@ -222,7 +222,7 @@ By default, all Wi-Fi management frames are processed by the Wi-Fi driver, and t
 
     To use Wi-Fi CSI, the following steps need to be done.
 
-        - Select Wi-Fi CSI in menuconfig. Go to ``Menuconfig`` > ``Components config`` > ``Wi-Fi`` > ``Wi-Fi CSI (Channel State Information)``.
+        - Enable :menuitem:`CONFIG_ESP_WIFI_CSI_ENABLED`.
         - Set CSI receiving callback function by calling API :cpp:func:`esp_wifi_set_csi_rx_cb()`.
         - Configure CSI by calling API :cpp:func:`esp_wifi_set_csi_config()`.
         - Enable CSI by calling API :cpp:func:`esp_wifi_set_csi()`.

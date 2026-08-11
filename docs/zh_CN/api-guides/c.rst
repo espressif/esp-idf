@@ -6,7 +6,7 @@ C 支持
 ESP-IDF 主要使用 C 语言编写，并提供 C API。ESP-IDF 可以使用以下 C 标准函数库的实现之一：
 
 - `Picolibc <https://keithp.com/picolibc/>`_ (默认)
-- `Newlib <https://sourceware.org/newlib/>`_ (通过 :ref:`CONFIG_LIBC_NEWLIB<CONFIG_LIBC_NEWLIB>` Kconfig 选项启用)
+- `Newlib <https://sourceware.org/newlib/>`_ (通过 :menuitem:`CONFIG_LIBC_NEWLIB` Kconfig 选项启用)
 
 Picolibc 的版本号记录在 :component_file:`esp_libc/sbom_picolibc.yml` 文件中，Newlib 的版本号记录在 :component_file:`esp_libc/sbom_newlibc.yml` 文件中。
 

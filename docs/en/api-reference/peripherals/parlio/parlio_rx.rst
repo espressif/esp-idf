@@ -336,7 +336,7 @@ For applications requiring very low latency, the RX unit driver provides :cpp:fu
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management :ref:`CONFIG_PM_ENABLE` is enabled, the system may adjust or disable the clock source before entering sleep, causing the RX unit's internal time base to not work as expected.
+When power management :menuitem:`CONFIG_PM_ENABLE` is enabled, the system may adjust or disable the clock source before entering sleep, causing the RX unit's internal time base to not work as expected.
 
 To prevent this, the RX unit driver internally creates a power management lock. The type of lock is set according to different clock sources. The driver will acquire the lock in :cpp:func:`parlio_rx_unit_enable` and release the lock in :cpp:func:`parlio_rx_unit_disable`. This means that regardless of the power management policy, the system will not enter sleep mode, and the clock source will not be disabled or adjusted between these two functions, ensuring that any RX transaction can work normally.
 
@@ -352,7 +352,7 @@ The driver uses critical sections to ensure atomic operations on registers. Key 
 Cache Safety
 ^^^^^^^^^^^^
 
-When the file system performs Flash read/write operations, the system temporarily disables the Cache function to avoid errors when loading instructions and data from Flash. This will cause the RX unit's interrupt handler to be unresponsive during this period, preventing user callback functions from being executed in time. If you want the interrupt handler to run normally while the Cache is disabled, you can enable the :ref:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` option.
+When the file system performs Flash read/write operations, the system temporarily disables the Cache function to avoid errors when loading instructions and data from Flash. This will cause the RX unit's interrupt handler to be unresponsive during this period, preventing user callback functions from being executed in time. If you want the interrupt handler to run normally while the Cache is disabled, you can enable the :menuitem:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` option.
 
 .. note::
 
@@ -362,16 +362,16 @@ When the file system performs Flash read/write operations, the system temporaril
 
     .. note::
 
-        When the following options are enabled, the Cache will not be disabled automatically during Flash read/write operations. You don't have to enable the :ref:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE`.
+        When the following options are enabled, the Cache will not be disabled automatically during Flash read/write operations. You don't have to enable the :menuitem:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE`.
 
         .. list::
-            :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`
-            :SOC_SPIRAM_XIP_SUPPORTED: - :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`
+            :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND`
+            :SOC_SPIRAM_XIP_SUPPORTED: - :menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM`
 
 Performance
 ^^^^^^^^^^^
 
-To improve the real-time response capability of interrupt handling, the RX unit driver provides the :ref:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` option. Enabling this option will place the interrupt handler in internal RAM, reducing the latency caused by cache misses when loading instructions from Flash.
+To improve the real-time response capability of interrupt handling, the RX unit driver provides the :menuitem:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` option. Enabling this option will place the interrupt handler in internal RAM, reducing the latency caused by cache misses when loading instructions from Flash.
 
 .. note::
 
@@ -382,7 +382,7 @@ And please also take care that, when the :cpp:member:`parlio_receive_config_t::f
 Other Kconfig Options
 ^^^^^^^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_PARLIO_ENABLE_DEBUG_LOG` option allows forcing the enablement of all debug logs of the RX unit driver, regardless of the global log level setting. Enabling this option can help developers obtain more detailed log information during debugging, making it easier to locate and solve problems. This option is shared with the TX unit driver.
+- :menuitem:`CONFIG_PARLIO_ENABLE_DEBUG_LOG` option allows forcing the enablement of all debug logs of the RX unit driver, regardless of the global log level setting. Enabling this option can help developers obtain more detailed log information during debugging, making it easier to locate and solve problems. This option is shared with the TX unit driver.
 
 Resource Consumption
 ^^^^^^^^^^^^^^^^^^^^
@@ -392,8 +392,8 @@ Use the :doc:`/api-guides/tools/idf-size` tool to view the code and data consump
 - The compiler optimization level is set to ``-Os`` to ensure the minimum code size.
 - The default log level is set to ``ESP_LOG_INFO`` to balance debugging information and performance.
 - The following driver optimization options are disabled:
-    - :ref:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` - The interrupt handler is not placed in IRAM.
-    - :ref:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` - The Cache safety option is not enabled.
+    - :menuitem:`CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM` - The interrupt handler is not placed in IRAM.
+    - :menuitem:`CONFIG_PARLIO_RX_ISR_CACHE_SAFE` - The Cache safety option is not enabled.
 
 **Note that the following data is not precise and is for reference only. The data may vary on different chip models and different versions of IDF.**
 

@@ -78,26 +78,26 @@ The following configuration options reduces the final binary size of almost any 
 
 .. list::
 
-    - Set :ref:`CONFIG_COMPILER_OPTIMIZATION` to ``Optimize for size (-Os)``. In some cases, ``Optimize for performance (-O2)`` will also reduce the binary size compared to the default. Note that if your code contains C or C++ Undefined Behavior then increasing the compiler optimization level may expose bugs that otherwise do not happen.
-    - Set :ref:`CONFIG_COMPILER_LTO_LINKTIME` to enable link-time optimization, and enable LTO at compile time for some of the components (either by setting :ref:`CONFIG_COMPILER_LTO_COMPILETIME`, or by adding the ``-flto=auto`` compile option to specific components). When used together with optimization for size, this option can reduce the binary size. ``idf.py size``, ``idf.py size-components``, and ``idf.py size-files`` all report accurate sizes for LTO-enabled builds. Note that enabling LTO has a few downsides:
+    - Set :menuitem:`CONFIG_COMPILER_OPTIMIZATION` to ``Optimize for size (-Os)``. In some cases, ``Optimize for performance (-O2)`` will also reduce the binary size compared to the default. Note that if your code contains C or C++ Undefined Behavior then increasing the compiler optimization level may expose bugs that otherwise do not happen.
+    - Set :menuitem:`CONFIG_COMPILER_LTO_LINKTIME` to enable link-time optimization, and enable LTO at compile time for some of the components (either by setting :menuitem:`CONFIG_COMPILER_LTO_COMPILETIME`, or by adding the ``-flto=auto`` compile option to specific components). When used together with optimization for size, this option can reduce the binary size. ``idf.py size``, ``idf.py size-components``, and ``idf.py size-files`` all report accurate sizes for LTO-enabled builds. Note that enabling LTO has a few downsides:
 
         - Enabling LTO increases the build time.
         - Enabling LTO can increase the stack usage of your tasks. Inlining across translation units replaces several small stack frames with fewer but larger ones, so the peak stack depth along a call path may grow. The effect is usually small, but it can be significant for applications with deep call chains that span many LTO-optimized components. After enabling LTO, check the stack high water mark of your tasks (for example, with :cpp:func:`uxTaskGetStackHighWaterMark`) and raise the stack sizes of the affected tasks if necessary.
         - LTO must not be enabled for components with custom :doc:`linker fragments <../linker-script-generation>`. This is because LTO merges the code from multiple object files into one, so the linker fragment is not able to control the placement of individual functions and variables.
         - Enabling LTO may make the code more difficult to debug.
-    - Reduce the compiled-in log output by lowering the app :ref:`CONFIG_LOG_DEFAULT_LEVEL`. If the :ref:`CONFIG_LOG_MAXIMUM_LEVEL` is changed from the default then this setting controls the binary size instead. Reducing compiled-in logging reduces the number of strings in the binary, and also the code size of the calls to logging functions.
-    - If your application does not require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` and changing :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`. It reduces IRAM usage by approximately 260 bytes, DRAM usage by approximately 264 bytes, and flash usage by approximately 1 KB compared to the default option, it also speeds up logging.
-    - Set the :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` to ``Silent``. This avoids compiling in a dedicated assertion string and source file name for each assert that may fail. It is still possible to find the failed assert in the code by looking at the memory address where the assertion failed.
-    - Besides the :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`, you can disable or silent the assertion for the HAL component separately by setting :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL`. In the bootloader, ESP-IDF lowers the HAL assertion level to be silent even if :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` is set to full-assertion level. This is to reduce the bootloader size.
-    - Setting :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` removes specific error messages for particular internal ESP-IDF error check macros. This may make it harder to debug some error conditions by reading the log output.
-    :esp32: - If the binary needs to run on only certain revision(s) of ESP32, increasing :ref:`CONFIG_ESP32_REV_MIN` to match can result in a reduced binary size. This will make a large difference if setting ESP32 minimum revision 3, and PSRAM is enabled.
-    :esp32c3: - If the binary needs to run on only certain revision(s) of ESP32-C3, increasing :ref:`CONFIG_ESP32C3_REV_MIN` to match can result in a reduced binary size. This is particularly true if setting ESP32-C3 minimum revision 3 and using Wi-Fi, as some functionality was moved to ROM code.
-    - Do not enable :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS`, :ref:`CONFIG_COMPILER_CXX_RTTI`, or set the :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` to Overall. All of these options are already disabled by default, but they have a large impact on binary size.
-    - Disabling :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` removes the lookup table to translate user-friendly names for error values (see :doc:`/api-guides/error-handling`) in error logs, etc. This saves some binary size, but error values will be printed as integers only.
-    - Setting :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``Silent reboot`` saves a small amount of binary size, however this is **only** recommended if no one will use UART output to debug the device.
-    :CONFIG_IDF_TARGET_ARCH_RISCV: - Setting :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` reduces binary size by replacing inlined prologues/epilogues with library calls.
-    - If the application binary uses only one of the security versions of the protocomm component, then the support for others can be disabled to save some code size. The support can be disabled through :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` or :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` respectively.
-    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - Enable :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` to reduce binary size by using compressed function prologues/epilogues. Read the :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` notes carefully before enabling this option!
+    - Reduce the compiled-in log output by lowering the app :menuitem:`CONFIG_LOG_DEFAULT_LEVEL`. If the :menuitem:`CONFIG_LOG_MAXIMUM_LEVEL` is changed from the default then this setting controls the binary size instead. Reducing compiled-in logging reduces the number of strings in the binary, and also the code size of the calls to logging functions.
+    - If your application does not require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :menuitem:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` and changing :menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL`. It reduces IRAM usage by approximately 260 bytes, DRAM usage by approximately 264 bytes, and flash usage by approximately 1 KB compared to the default option, it also speeds up logging.
+    - Set the :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` to ``Silent``. This avoids compiling in a dedicated assertion string and source file name for each assert that may fail. It is still possible to find the failed assert in the code by looking at the memory address where the assertion failed.
+    - Besides the :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`, you can disable or silent the assertion for the HAL component separately by setting :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL`. In the bootloader, ESP-IDF lowers the HAL assertion level to be silent even if :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` is set to full-assertion level. This is to reduce the bootloader size.
+    - Setting :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` removes specific error messages for particular internal ESP-IDF error check macros. This may make it harder to debug some error conditions by reading the log output.
+    :esp32: - If the binary needs to run on only certain revision(s) of ESP32, increasing :menuitem:`CONFIG_ESP32_REV_MIN` to match can result in a reduced binary size. This will make a large difference if setting ESP32 minimum revision 3, and PSRAM is enabled.
+    :esp32c3: - If the binary needs to run on only certain revision(s) of ESP32-C3, increasing :menuitem:`CONFIG_ESP32C3_REV_MIN` to match can result in a reduced binary size. This is particularly true if setting ESP32-C3 minimum revision 3 and using Wi-Fi, as some functionality was moved to ROM code.
+    - Do not enable :menuitem:`CONFIG_COMPILER_CXX_EXCEPTIONS`, :menuitem:`CONFIG_COMPILER_CXX_RTTI`, or set the :menuitem:`CONFIG_COMPILER_STACK_CHECK_MODE` to Overall. All of these options are already disabled by default, but they have a large impact on binary size.
+    - Disabling :menuitem:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` removes the lookup table to translate user-friendly names for error values (see :doc:`/api-guides/error-handling`) in error logs, etc. This saves some binary size, but error values will be printed as integers only.
+    - Setting :menuitem:`CONFIG_ESP_SYSTEM_PANIC` to ``Silent reboot`` saves a small amount of binary size, however this is **only** recommended if no one will use UART output to debug the device.
+    :CONFIG_IDF_TARGET_ARCH_RISCV: - Setting :menuitem:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` reduces binary size by replacing inlined prologues/epilogues with library calls.
+    - If the application binary uses only one of the security versions of the protocomm component, then the support for others can be disabled to save some code size. The support can be disabled through :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` or :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` respectively.
+    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - Enable :menuitem:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` to reduce binary size by using compressed function prologues/epilogues. Read the :menuitem:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` notes carefully before enabling this option!
 
 .. note::
 
@@ -115,17 +115,17 @@ The following binary size optimizations apply to a particular component or a fun
     Wi-Fi
     @@@@@
 
-    - Disabling :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` will save some Wi-Fi binary size if WPA3 support is not needed. Note that WPA3 is mandatory for new Wi-Fi device certifications.
-    - Disabling :ref:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` will save some Wi-Fi binary size if soft-AP support is not needed.
-    - Disabling :ref:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` will save some Wi-Fi binary size if enterprise support is not needed.
-    - Disabling :ref:`CONFIG_ESP_WIFI_ENABLE_SAE_H2E` will save some Wi-Fi binary size if hash-to-element authentication method of WPA3-SAE is not needed. Note that hash-to-element is faster, more secure and immune to side channel attacks than the default authentication method of hunting-and-pecking.
+    - Disabling :menuitem:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` will save some Wi-Fi binary size if WPA3 support is not needed. Note that WPA3 is mandatory for new Wi-Fi device certifications.
+    - Disabling :menuitem:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` will save some Wi-Fi binary size if soft-AP support is not needed.
+    - Disabling :menuitem:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` will save some Wi-Fi binary size if enterprise support is not needed.
+    - Disabling :menuitem:`CONFIG_ESP_WIFI_ENABLE_SAE_H2E` will save some Wi-Fi binary size if hash-to-element authentication method of WPA3-SAE is not needed. Note that hash-to-element is faster, more secure and immune to side channel attacks than the default authentication method of hunting-and-pecking.
 
 .. only:: esp32
 
     ADC
     @@@
 
-    - Disabling ADC calibration features :ref:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE`, :ref:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE`, :ref:`CONFIG_ADC_CALI_LUT_ENABLE` will save a small amount of binary size if ADC driver is used, at expense of accuracy.
+    - Disabling ADC calibration features :menuitem:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE`, :menuitem:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE`, :menuitem:`CONFIG_ADC_CALI_LUT_ENABLE` will save a small amount of binary size if ADC driver is used, at expense of accuracy.
 
 .. only:: SOC_BT_SUPPORTED
 
@@ -136,15 +136,15 @@ The following binary size optimizations apply to a particular component or a fun
 
     .. list::
 
-        :esp32: - Set :ref:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` to 1 if only one Bluetooth LE connection is needed.
-        - Set :ref:`CONFIG_BT_NIMBLE_MAX_CONNECTIONS` to 1 if only one Bluetooth LE connection is needed.
-        - Disable either :ref:`CONFIG_BT_NIMBLE_ROLE_CENTRAL` or :ref:`CONFIG_BT_NIMBLE_ROLE_OBSERVER` if these roles are not needed.
-        - Reducing :ref:`CONFIG_BT_NIMBLE_LOG_LEVEL` can reduce binary size. Note that if the overall log level has been reduced as described above in :ref:`reducing-overall-size` then this also reduces the NimBLE log level.
+        :esp32: - Set :menuitem:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` to 1 if only one Bluetooth LE connection is needed.
+        - Set :menuitem:`CONFIG_BT_NIMBLE_MAX_CONNECTIONS` to 1 if only one Bluetooth LE connection is needed.
+        - Disable either :menuitem:`CONFIG_BT_NIMBLE_ROLE_CENTRAL` or :menuitem:`CONFIG_BT_NIMBLE_ROLE_OBSERVER` if these roles are not needed.
+        - Reducing :menuitem:`CONFIG_BT_NIMBLE_LOG_LEVEL` can reduce binary size. Note that if the overall log level has been reduced as described above in :ref:`reducing-overall-size` then this also reduces the NimBLE log level.
 
 lwIP IPv6
 @@@@@@@@@
 
-- Setting :ref:`CONFIG_LWIP_IPV6` to ``false`` will reduce the size of the lwIP TCP/IP stack, at the cost of only supporting IPv4.
+- Setting :menuitem:`CONFIG_LWIP_IPV6` to ``false`` will reduce the size of the lwIP TCP/IP stack, at the cost of only supporting IPv4.
 
   .. note::
 
@@ -153,7 +153,7 @@ lwIP IPv6
 lwIP IPv4
 @@@@@@@@@
 
-- If IPv4 connectivity is not required, setting :ref:`CONFIG_LWIP_IPV4` to ``false`` will reduce the size of the lwIP, supporting IPv6-only TCP/IP stack.
+- If IPv4 connectivity is not required, setting :menuitem:`CONFIG_LWIP_IPV4` to ``false`` will reduce the size of the lwIP, supporting IPv6-only TCP/IP stack.
 
     .. note::
 
@@ -164,7 +164,7 @@ lwIP IPv4
 Picolibc instead of Newlib
 @@@@@@@@@@@@@@@@@@@@@@@@@@
 
-By default, ESP-IDF uses the Picolibc C library. Newlib is also supported and can be selected with :ref:`CONFIG_LIBC_NEWLIB<CONFIG_LIBC_NEWLIB>`.
+By default, ESP-IDF uses the Picolibc C library. Newlib is also supported and can be selected with :menuitem:`CONFIG_LIBC_NEWLIB`.
 
 Picolibc C library provides smaller ``printf`` family functions and can reduce the binary size by up to 30 KB, depending on your application.
 
@@ -177,13 +177,13 @@ By default, ESP-IDF uses Newlib "full" formatting for I/O functions (``printf()`
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-    Enabling the config option :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` will switch Newlib to the "Nano" formatting mode. This is smaller in code size, and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it does not need to be included in the binary at all.
+    Enabling the config option :menuitem:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` will switch Newlib to the "Nano" formatting mode. This is smaller in code size, and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it does not need to be included in the binary at all.
 
     The exact difference in binary size depends on which features the firmware uses, but 25 KB ~ 50 KB is typical.
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-    Disabling the config option :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` will switch Newlib to the "full" formatting mode. This will reduce the binary size, as {IDF_TARGET_NAME} has the full formatting version of the functions in ROM, so it does not need to be included in the binary at all.
+    Disabling the config option :menuitem:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` will switch Newlib to the "full" formatting mode. This will reduce the binary size, as {IDF_TARGET_NAME} has the full formatting version of the functions in ROM, so it does not need to be included in the binary at all.
 
 Enabling "Nano" formatting reduces the stack usage of each function that calls ``printf()`` or another string formatting function, see :ref:`optimize-stack-sizes`.
 
@@ -194,7 +194,7 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
 
     .. note::
 
-        :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}.
+        :menuitem:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}.
 
 
 .. _Newlib documentation: https://sourceware.org/newlib/docs.html
@@ -202,7 +202,7 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
 libstdc++
 @@@@@@@@@
 
-- Enable :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` or :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` to observe the impact on your application's binary size.
+- Enable :menuitem:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR` or :menuitem:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD` to observe the impact on your application's binary size.
 
 .. _minimizing_binary_mbedtls:
 
@@ -215,23 +215,23 @@ These include:
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
-    - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
-    - :ref:`CONFIG_MBEDTLS_SHA512_C`
-    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
-    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
-    - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
-    - :ref:`CONFIG_MBEDTLS_SSL_ALPN`
-    - :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
-    - :ref:`CONFIG_MBEDTLS_CCM_C`
-    - :ref:`CONFIG_MBEDTLS_GCM_C`
-    - :ref:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
-    - :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
-    - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
-    - Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed.
-    - Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`).
-    - Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is already pulling in mbedTLS error strings through using :cpp:func:`mbedtls_strerror`.
-    :esp32h2: - For {IDF_TARGET_NAME} v1.2 and above, consider disabling :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` and :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM` as the software countermeasures for the ECDSA sign operation are not required.
+    - :menuitem:`CONFIG_MBEDTLS_HAVE_TIME`
+    - :menuitem:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
+    - :menuitem:`CONFIG_MBEDTLS_SHA512_C`
+    - :menuitem:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
+    - :menuitem:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
+    - :menuitem:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
+    - :menuitem:`CONFIG_MBEDTLS_SSL_ALPN`
+    - :menuitem:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
+    - :menuitem:`CONFIG_MBEDTLS_CCM_C`
+    - :menuitem:`CONFIG_MBEDTLS_GCM_C`
+    - :menuitem:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
+    - :menuitem:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
+    - :menuitem:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
+    - Change :menuitem:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed.
+    - Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :menuitem:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`).
+    - Consider disabling :menuitem:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is already pulling in mbedTLS error strings through using :cpp:func:`mbedtls_strerror`.
+    :esp32h2: - For {IDF_TARGET_NAME} v1.2 and above, consider disabling :menuitem:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` and :menuitem:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM` as the software countermeasures for the ECDSA sign operation are not required.
     :SOC_AES_SUPPORT_DMA: - Consider disabling :ref:CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM if the application does not involve or require performance optimization for operations that involve small data lengths, such as NVS encryption/decryption or TLS communication when performed on small data segments.
 
 The help text for each option has some more information for reference.
@@ -247,10 +247,10 @@ The help text for each option has some more information for reference.
 
 .. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 
-    Enabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from mbedTLS library inside the chip ROM.
+    Enabling the config option :menuitem:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from mbedTLS library inside the chip ROM.
     This option is available only when the selected target and minimum chip revision support the ROM mbedTLS crypto library.
 
-    Disabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from the ESP-IDF mbedtls component library. This will increase the binary size (flash footprint).
+    Disabling the config option :menuitem:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from the ESP-IDF mbedtls component library. This will increase the binary size (flash footprint).
 
 .. note::
 
@@ -261,10 +261,10 @@ VFS
 
 :doc:`/api-reference/storage/vfs` feature in ESP-IDF allows multiple filesystem drivers and file-like peripheral drivers to be accessed using standard I/O functions (``open``, ``read``, ``write``, etc.) and C library functions (``fopen``, ``fread``, ``fwrite``, etc.). When filesystem or file-like peripheral driver functionality is not used in the application, this feature can be fully or partially disabled. VFS component provides the following configuration options:
 
-* :ref:`CONFIG_VFS_SUPPORT_TERMIOS` — can be disabled if the application does not use ``termios`` family of functions. Currently, these functions are implemented only for UART VFS driver. Most applications can disable this option. Disabling this option reduces the code size by about 1.8 KB.
-* :ref:`CONFIG_VFS_SUPPORT_SELECT` — can be disabled if the application does not use the ``select`` function with file descriptors. Currently, only the UART and eventfd VFS drivers implement ``select`` support. Note that when this option is disabled, ``select`` can still be used for socket file descriptors. Disabling this option reduces the code size by about 2.7 KB.
-* :ref:`CONFIG_VFS_SUPPORT_DIR` — can be disabled if the application does not use directory-related functions, such as ``readdir`` (see the description of this option for the complete list). Applications that only open, read and write specific files and do not need to enumerate or create directories can disable this option, reducing the code size by 0.5 KB or more, depending on the filesystem drivers in use.
-* :ref:`CONFIG_VFS_SUPPORT_IO` — can be disabled if the application does not use filesystems or file-like peripheral drivers. This disables all VFS functionality, including the three options mentioned above. When this option is disabled, :doc:`/api-reference/system/console` can not be used. Note that the application can still use standard I/O functions with socket file descriptors when this option is disabled. Compared to the default configuration, disabling this option reduces code size by about 9.4 KB.
+* :menuitem:`CONFIG_VFS_SUPPORT_TERMIOS` — can be disabled if the application does not use ``termios`` family of functions. Currently, these functions are implemented only for UART VFS driver. Most applications can disable this option. Disabling this option reduces the code size by about 1.8 KB.
+* :menuitem:`CONFIG_VFS_SUPPORT_SELECT` — can be disabled if the application does not use the ``select`` function with file descriptors. Currently, only the UART and eventfd VFS drivers implement ``select`` support. Note that when this option is disabled, ``select`` can still be used for socket file descriptors. Disabling this option reduces the code size by about 2.7 KB.
+* :menuitem:`CONFIG_VFS_SUPPORT_DIR` — can be disabled if the application does not use directory-related functions, such as ``readdir`` (see the description of this option for the complete list). Applications that only open, read and write specific files and do not need to enumerate or create directories can disable this option, reducing the code size by 0.5 KB or more, depending on the filesystem drivers in use.
+* :menuitem:`CONFIG_VFS_SUPPORT_IO` — can be disabled if the application does not use filesystems or file-like peripheral drivers. This disables all VFS functionality, including the three options mentioned above. When this option is disabled, :doc:`/api-reference/system/console` can not be used. Note that the application can still use standard I/O functions with socket file descriptors when this option is disabled. Compared to the default configuration, disabling this option reduces code size by about 9.4 KB.
 
 .. only:: CONFIG_ESP_ROM_HAS_HAL_SYSTIMER or CONFIG_ESP_ROM_HAS_HAL_WDT
 
@@ -273,16 +273,16 @@ VFS
 
     .. list::
 
-        :CONFIG_ESP_ROM_HAS_HAL_SYSTIMER: * Enabling :ref:`CONFIG_HAL_SYSTIMER_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the systimer HAL driver of ROM implementation.
-        :CONFIG_ESP_ROM_HAS_HAL_WDT: * Enabling :ref:`CONFIG_HAL_WDT_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the watchdog HAL driver of ROM implementation.
+        :CONFIG_ESP_ROM_HAS_HAL_SYSTIMER: * Enabling :menuitem:`CONFIG_HAL_SYSTIMER_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the systimer HAL driver of ROM implementation.
+        :CONFIG_ESP_ROM_HAS_HAL_WDT: * Enabling :menuitem:`CONFIG_HAL_WDT_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the watchdog HAL driver of ROM implementation.
 
     Heap
     @@@@
 
     .. list::
 
-        * Enabling :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH` can reduce the IRAM usage and binary size by placing the entirety of the heap functionalities in flash memory.
-        :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * Enabling :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the TLSF library of ROM implementation.
+        * Enabling :menuitem:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH` can reduce the IRAM usage and binary size by placing the entirety of the heap functionalities in flash memory.
+        :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * Enabling :menuitem:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the TLSF library of ROM implementation.
 
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
@@ -292,8 +292,8 @@ VFS
 
     For targets that support USB-Serial-JTAG, both the USB-Serial-JTAG and UART console output are enabled by default. If you only need one console, you can reduce the binary size and RAM usage by doing the following:
 
-    1. Disable the secondary console by setting :ref:`CONFIG_ESP_CONSOLE_SECONDARY` to ``CONFIG_ESP_CONSOLE_SECONDARY_NONE``.
-    2. Set :ref:`CONFIG_ESP_CONSOLE_UART` to use one of the following:
+    1. Disable the secondary console by setting :menuitem:`CONFIG_ESP_CONSOLE_SECONDARY` to ``CONFIG_ESP_CONSOLE_SECONDARY_NONE``.
+    2. Set :menuitem:`CONFIG_ESP_CONSOLE_UART` to use one of the following:
 
         * ``UART`` reduces the binary size by around 2.5 KB.
         * ``USB-Serial-JTAG`` reduces the binary size by around 10 KB and DRAM usage by around 1.5 KB.

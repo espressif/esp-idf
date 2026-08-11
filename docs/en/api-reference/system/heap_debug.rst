@@ -35,7 +35,7 @@ Users can use allocation and free detection hooks to be notified of every succes
 - Providing a definition of :cpp:func:`esp_heap_trace_alloc_hook` allows you to be notified of every successful memory allocation operation.
 - Providing a definition of :cpp:func:`esp_heap_trace_free_hook` allows you to be notified of every successful memory-free operations.
 
-This feature can be enabled by setting the :ref:`CONFIG_HEAP_USE_HOOKS` option. :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` have weak declarations (e.g., ``__attribute__((weak))``), thus it is not necessary to provide declarations for both hooks. Given that it is technically possible to allocate and free memory from an ISR (**though strongly discouraged from doing so**), the :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` can potentially be called from an ISR.
+This feature can be enabled by setting the :menuitem:`CONFIG_HEAP_USE_HOOKS` option. :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` have weak declarations (e.g., ``__attribute__((weak))``), thus it is not necessary to provide declarations for both hooks. Given that it is technically possible to allocate and free memory from an ISR (**though strongly discouraged from doing so**), the :cpp:func:`esp_heap_trace_alloc_hook` and :cpp:func:`esp_heap_trace_free_hook` can potentially be called from an ISR.
 
 It is not recommended to perform (or call API functions to perform) blocking operations or memory allocation/free operations in the hook functions. In general, the best practice is to keep the implementation concise and leave the heavy computation outside of the hook functions.
 
@@ -67,7 +67,7 @@ Memory Allocation Failed Hook
 
 Users can use :cpp:func:`heap_caps_register_failed_alloc_callback` to register a callback that is invoked every time an allocation operation fails.
 
-Additionally, users can enable the :ref:`CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS`, which will automatically trigger a system abort if any allocation operation fails.
+Additionally, users can enable the :menuitem:`CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS`, which will automatically trigger a system abort if any allocation operation fails.
 
 The example below shows how to register an allocation failure callback:
 
@@ -111,7 +111,7 @@ Three levels of corruption detection are available. Each one providing a finer l
 Assertions
 ^^^^^^^^^^
 
-The heap implementation (:component_file:`heap/multi_heap.c`, etc.) includes numerous assertions that will fail if the heap memory is corrupted. To detect heap corruption most effectively, ensure that assertions are enabled in the project configuration via the :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` option.
+The heap implementation (:component_file:`heap/multi_heap.c`, etc.) includes numerous assertions that will fail if the heap memory is corrupted. To detect heap corruption most effectively, ensure that assertions are enabled in the project configuration via the :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` option.
 
 If a heap integrity assertion fails, a line will be printed like ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c``. The memory address printed is the address of the heap structure that has corrupt content.
 
@@ -135,7 +135,7 @@ Configuration
 
 Temporarily increasing the heap corruption detection level can give more detailed information about heap corruption errors.
 
-In the project configuration menu, under ``Component config``, there is a menu ``Heap memory debugging``. The option :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of the following three levels:
+In the project configuration menu, under ``Component config``, there is a menu ``Heap memory debugging``. The option :menuitem:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of the following three levels:
 
 
 Basic (No Poisoning)
@@ -202,12 +202,12 @@ Kernel Address Sanitizer (KASAN)
 
 KASAN is a compiler-assisted heap and DRAM memory safety checker. When enabled, GCC instruments memory loads and stores with runtime checks against a shadow memory region. Violations (buffer overflows, underflows, use-after-free, etc.) are reported at the point of access.
 
-Enable it under ``Component config`` > ``Compiler options`` > ``Enable Kernel Address Sanitizer (KASAN)`` (see :ref:`CONFIG_COMPILER_KASAN`). The option is currently marked experimental: turn on ``Make experimental features visible`` (see :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`) first.
+Enable :menuitem:`CONFIG_COMPILER_KASAN`. The option is currently marked experimental, so enable :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES` first.
 
 KASAN is most useful during development and debugging:
 
-- Detects out-of-bounds heap accesses via configurable allocation redzones (see :ref:`CONFIG_KASAN_HEAP_REDZONE_SIZE`)
-- Can catch use-after-free when the freed-block quarantine is enabled (see :ref:`CONFIG_KASAN_QUARANTINE_SIZE`)
+- Detects out-of-bounds heap accesses via configurable allocation redzones (see :menuitem:`CONFIG_KASAN_HEAP_REDZONE_SIZE`)
+- Can catch use-after-free when the freed-block quarantine is enabled (see :menuitem:`CONFIG_KASAN_QUARANTINE_SIZE`)
 - Instruments most application and component code; low-level HAL/ROM/bootloader code is excluded automatically
 
 Trade-offs to keep in mind:
@@ -216,7 +216,7 @@ Trade-offs to keep in mind:
 - Shadow memory reserves roughly 42–64 KiB of internal DRAM (target-dependent)
 - Runtime overhead is significant; do not enable in production firmware
 
-KASAN uses its own heap hooks and redzone scheme. Do not enable heap poisoning at the same time — leave :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` at ``Basic (no poisoning)`` (the default).
+KASAN uses its own heap hooks and redzone scheme. Do not enable heap poisoning at the same time — leave :menuitem:`CONFIG_HEAP_CORRUPTION_DETECTION` at ``Basic (no poisoning)`` (the default).
 
 For deliberate fault injection and regression testing, see the ``kasan_test`` application under ``tools/test_apps/system/kasan_test``.
 
@@ -226,11 +226,11 @@ For deliberate fault injection and regression testing, see the ``kasan_test`` ap
 Heap Task Tracking
 ------------------
 
-The Heap Task Tracking can be enabled via the menuconfig: ``Component config`` > ``Heap memory debugging`` > ``Enable heap task tracking`` (see :ref:`CONFIG_HEAP_TASK_TRACKING`).
+Heap Task Tracking can be enabled with :menuitem:`CONFIG_HEAP_TASK_TRACKING`.
 
 The feature allows users to track the heap memory usage of each task created since startup and provides a series of statistics that can be accessed via getter functions or simply dumped into the stream of the user's choosing. This feature is useful for identifying memory usage patterns and potential memory leaks.
 
-An additional configuration can be enabled by the user via the menuconfig: ``Component config`` > ``Heap memory debugging`` > ``Keep information about the memory usage of deleted tasks`` (see :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`) to keep the statistics collected for a given task even after it is deleted.
+The :menuitem:`CONFIG_HEAP_TRACK_DELETED_TASKS` option can be enabled to keep the statistics collected for a given task even after it is deleted.
 
 .. note::
 
@@ -300,7 +300,7 @@ The :cpp:func:`heap_caps_print_single_task_stat_overview` API prints an overview
   │          task_name │ ALIVE   │                    0 │              7152 │               1 │
   └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
 
-:cpp:func:`heap_caps_print_all_task_stat_overview` prints an overview of heap usage for all tasks (including the deleted tasks if :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled).
+:cpp:func:`heap_caps_print_all_task_stat_overview` prints an overview of heap usage for all tasks (including the deleted tasks if :menuitem:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled).
 
 .. code-block:: text
 
@@ -362,7 +362,7 @@ Getting the Statistics And Information
 
 :cpp:func:`heap_caps_get_single_task_stat` allows the user to access information of a specific task. The information retrieved by calling this API is identical to the one dumped using :cpp:func:`heap_caps_print_single_task_stat`.
 
-:cpp:func:`heap_caps_get_all_task_stat` allows the user to access an overview of the information of all tasks (including the deleted tasks if :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled). The information retrieved by calling this API is identical to the one dumped using :cpp:func:`heap_caps_print_all_task_stat`.
+:cpp:func:`heap_caps_get_all_task_stat` allows the user to access an overview of the information of all tasks (including the deleted tasks if :menuitem:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled). The information retrieved by calling this API is identical to the one dumped using :cpp:func:`heap_caps_print_all_task_stat`.
 
 Each getter function requires a pointer to the data structure that will be used by the heap task tracking to gather the statistics and information of a given task (or all tasks). This data structure contains pointers to arrays that the user can allocate statically or dynamically.
 
@@ -401,7 +401,7 @@ Standalone Mode
 
 Once you have identified the code which you think is leaking:
 
-- Enable the :ref:`CONFIG_HEAP_TRACING_DEST` option.
+- Enable the :menuitem:`CONFIG_HEAP_TRACING_DEST` option.
 - Call the function :cpp:func:`heap_trace_init_standalone` early in the program, to register a buffer that can be used to record the memory trace.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs or frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
 - Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing. This state will stop the tracing of both allocations and frees.
@@ -564,11 +564,11 @@ In ``HEAP_TRACE_ALL``:
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+    The depth of the call stack recorded for each trace entry can be configured with :menuitem:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    By default, the call stack depth for each trace entry is 0: no caller PCs are recorded (allocation address, size, and related fields are still traced). Enable ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` to walk the stack, then configure the depth under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+    By default, the call stack depth for each trace entry is 0: no caller PCs are recorded (allocation address, size, and related fields are still traced). Enable :menuitem:`CONFIG_ESP_SYSTEM_USE_FRAME_POINTER` to walk the stack, then configure the depth with :menuitem:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 Finally, the total number of the 'leaked' bytes (bytes allocated but not freed while the trace is running) is printed together with the total number of allocations it represents.
 
@@ -577,28 +577,29 @@ Using hashmap for increased performance
 
 By default, the heap tracing uses a statically allocated doubly-linked list to store the trace records. This has the disadvantage of causing runtime performance issues as the list gets fuller since the more items are in the list, the more time consuming it is to find a given item. This problem makes the use of the doubly linked list particularly inefficient if the user wishes to store a very large amount of records (to the point where the feature is simply no longer usable as the time it takes to retrieve an item in the list prevents the user application from executing properly).
 
-For this reason, the option to use a hashmap mechanism to store records is available by enabling ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP` in the project configuration menu, allowing users to track significant amounts of records without suffering from drastic performance loss.
+For this reason, the option to use a hashmap mechanism to store records is available by enabling :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP`, allowing users to track significant amounts of records without suffering from drastic performance loss.
 
 Each hashmap entry is a singly linked list of records sharing the same hash ID.
 
-Each record hash ID is calculated based on the pointer to the memory they track. The hash function used is based on the Fowler-Noll-Vo hash function modified to ensure an even spread of all records in the range [0, hashmap size[ where hashmap size can be defined by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` in the project configuration menu.
+Each record hash ID is calculated based on the pointer to the memory they track. The hash function used is based on the Fowler-Noll-Vo hash function modified to ensure an even spread of all records in the range [0, hashmap size[ where hashmap size can be defined with :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE`.
 
 .. note::
 
   .. list::
 
-    - The option :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` defines the number of entries in the hashmap. The total number of records that can be stored is still defined by the user when calling :cpp:func:`heap_trace_init_standalone`. If ``N`` is the maximum number of records and ``H`` the number of entries in the hashmap, Then each entry will contain at max ``N / H`` records.
+    - The option :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` defines the number of entries in the hashmap. The total number of records that can be stored is still defined by the user when calling :cpp:func:`heap_trace_init_standalone`. If ``N`` is the maximum number of records and ``H`` the number of entries in the hashmap, Then each entry will contain at max ``N / H`` records.
     - The hashmap complements the doubly-linked list and does not replace it. This means that the hashmap usage can create a significant memory overhead.
-    :SOC_SPIRAM_SUPPORTED: - The memory used to store the hashmap is dynamically allocated (in internal memory by default) but by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM`, the user can force the hashmap in external memory (this option is available under the condition that :ref:`CONFIG_SPIRAM` is enabled).
+    :SOC_SPIRAM_SUPPORTED: - The memory used to store the hashmap is dynamically allocated (in internal memory by default), but :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` can force the hashmap into external memory (this option is available when :menuitem:`CONFIG_SPIRAM` is enabled).
 
 Host-Based Mode
 ^^^^^^^^^^^^^^^
 
 Once you have identified the code which you think is leaking:
 
-- In the project configuration menu, navigate to ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
-- In the project configuration menu, navigate to ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` > ``Data Destination`` :ref:`CONFIG_APPTRACE_DESTINATION` and select ``JTAG``.
-- In the project configuration menu, navigate to ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` and select ``SEGGER SystemView``.
+- Set :menuitem:`CONFIG_HEAP_TRACING_DEST` to ``Host-Based``.
+- Set :menuitem:`CONFIG_APPTRACE_DESTINATION` to ``JTAG``.
+- Add the ``espressif/esp_sysview`` managed-component dependency to ``idf_component.yml``.
+- Enable :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL`.
 - Call the function :cpp:func:`heap_trace_init_tohost` early in the program, to initialize the JTAG heap tracing module.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all memory allocation and free calls in the system. Call this immediately before the piece of code which you suspect is leaking memory.
 
@@ -776,11 +777,11 @@ Enabling heap tracing in menuconfig increases the code size of your program, and
 
 When heap tracing is running, heap allocation or free operations are substantially slower than when heap tracing is stopped. Increasing the depth of stack frames recorded for each allocation (see above) also increases this performance impact.
 
-To mitigate the performance loss when the heap tracing is enabled and active, enable :ref:`CONFIG_HEAP_TRACE_HASH_MAP`. With this configuration enabled, a hash map mechanism will be used to handle the heap trace records, thus considerably decreasing the heap allocation or free execution time. The size of the hash map can be modified by setting the value of :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE`.
+To mitigate the performance loss when the heap tracing is enabled and active, enable :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP`. With this configuration enabled, a hash map mechanism will be used to handle the heap trace records, thus considerably decreasing the heap allocation or free execution time. The size of the hash map can be modified by setting the value of :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE`.
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-  By default, the hash map is placed into internal RAM. It can also be placed into external RAM if :ref:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` is enabled. In order to enable this configuration, make sure to enable :ref:`CONFIG_SPIRAM` and :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
+  By default, the hash map is placed into internal RAM. It can also be placed into external RAM if :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` is enabled. In order to enable this configuration, make sure to enable :menuitem:`CONFIG_SPIRAM` and :menuitem:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
 
 False-Positive Memory Leaks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

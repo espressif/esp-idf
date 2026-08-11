@@ -346,7 +346,7 @@ Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议�
 1. ESP-BLE-MESH 辅助程序
 -------------------------
 
-辅助程序指的是 ESP-BLE-MESH 协议栈中可选的功能。辅助程序的设计通常通过 :ref:`CONFIG_BLE_MESH` 来实现代码的裁剪。
+辅助程序指的是 ESP-BLE-MESH 协议栈中可选的功能。辅助程序的设计通常通过 :menuitem:`CONFIG_BLE_MESH` 来实现代码的裁剪。
 
 3.1 特性
 ^^^^^^^^

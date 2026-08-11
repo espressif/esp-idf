@@ -11,7 +11,7 @@
 日志
 ----
 
-**Log V2** 是 ESP-IDF v5.5 版本提供的增强型可选日志功能。它与 **Log V1** 完全兼容，项目无需修改即可继续使用 **Log V1**。开发者可以通过 Kconfig 选项 :ref:`CONFIG_LOG_VERSION` 启用 **Log V2**。未来的 ESP-IDF 版本可能默认使用 **Log V2**。
+**Log V2** 是 ESP-IDF v5.5 版本提供的增强型可选日志功能。它与 **Log V1** 完全兼容，项目无需修改即可继续使用 **Log V1**。开发者可以通过 Kconfig 选项 :menuitem:`CONFIG_LOG_VERSION` 启用 **Log V2**。未来的 ESP-IDF 版本可能默认使用 **Log V2**。
 
 **特性**
 

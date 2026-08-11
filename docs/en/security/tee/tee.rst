@@ -131,25 +131,25 @@ For {IDF_TARGET_NAME}, a list of secure services can be found at this :component
 Usage
 -----
 
-#. **Enable ESP-TEE**: In the :ref:`Project Configuration <project-configuration-guide>` menu, go to :ref:`esp-tee-trusted-execution-environment-` and set the option :ref:`CONFIG_SECURE_ENABLE_TEE`.
+#. **Enable ESP-TEE**: In the :ref:`Project Configuration <project-configuration-guide>` menu, go to :ref:`esp-tee-trusted-execution-environment-` and set the option :menuitem:`CONFIG_SECURE_ENABLE_TEE`.
 
 #. **Configure the TEE logging**:
 
-   - Set :ref:`CONFIG_SECURE_TEE_DEBUG_MODE` to enable logging for TEE.
+   - Set :menuitem:`CONFIG_SECURE_TEE_DEBUG_MODE` to enable logging for TEE.
 
-   - Set :ref:`CONFIG_SECURE_TEE_LOG_LEVEL` to select the logging verbosity level.
+   - Set :menuitem:`CONFIG_SECURE_TEE_LOG_LEVEL` to select the logging verbosity level.
 
 #. **Configure the TEE memory regions**:
 
-   - Set :ref:`CONFIG_SECURE_TEE_IRAM_SIZE` to configure the TEE IRAM size
+   - Set :menuitem:`CONFIG_SECURE_TEE_IRAM_SIZE` to configure the TEE IRAM size
 
-   - Set :ref:`CONFIG_SECURE_TEE_DRAM_SIZE` to configure the TEE DRAM size
+   - Set :menuitem:`CONFIG_SECURE_TEE_DRAM_SIZE` to configure the TEE DRAM size
 
-   - Set :ref:`CONFIG_SECURE_TEE_STACK_SIZE` and :ref:`CONFIG_SECURE_TEE_INTR_STACK_SIZE` to configure the TEE task and interrupt stack from the reserved DRAM
+   - Set :menuitem:`CONFIG_SECURE_TEE_STACK_SIZE` and :menuitem:`CONFIG_SECURE_TEE_INTR_STACK_SIZE` to configure the TEE task and interrupt stack from the reserved DRAM
 
 #. **Configure the partition table**:
 
-   - Select one of the simple predefined partition tables under :ref:`CONFIG_PARTITION_TABLE_TYPE` - *Single factory app, no OTA, TEE* or *Two OTA definitions, TEE*
+   - Select one of the simple predefined partition tables under :menuitem:`CONFIG_PARTITION_TABLE_TYPE` - *Single factory app, no OTA, TEE* or *Two OTA definitions, TEE*
 
    - Alternatively, select the *Custom partition table CSV* option and define your own layout as per the guidelines provided in the :ref:`tee-external-memory` section.
 

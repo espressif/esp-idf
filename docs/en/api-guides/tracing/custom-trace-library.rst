@@ -64,7 +64,7 @@ For transports that need a complex driver or network stack, keep the runtime cal
 FreeRTOS Trace Hooks
 --------------------
 
-To capture FreeRTOS events, the external component implementing a trace encoder should provide an ``esp_trace_freertos_impl.h`` header, defining the desired trace macros (``traceTASK_SWITCHED_IN()``, ``traceISR_ENTER()``, and so on). ``esp_trace`` includes this header when :ref:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>` is enabled.
+To capture FreeRTOS events, the external component implementing a trace encoder should provide an ``esp_trace_freertos_impl.h`` header, defining the desired trace macros (``traceTASK_SWITCHED_IN()``, ``traceISR_ENTER()``, and so on). ``esp_trace`` includes this header when :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>` is enabled.
 
 Application Example
 -------------------

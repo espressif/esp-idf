@@ -439,83 +439,83 @@ Increasing the size or number of the buffers mentioned above properly can improv
 
 **RX direction:**
 
- - :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`
+ - :menuitem:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`
     This parameter indicates the number of DMA buffer at the hardware layer. Increasing this parameter will increase the sender's one-time receiving throughput, thereby improving the Wi-Fi protocol stack ability to handle burst traffic.
 
- - :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`
+ - :menuitem:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`
     This parameter indicates the number of RX buffer in the Wi-Fi layer. Increasing this parameter will improve the performance of packet reception. This parameter needs to match the RX buffer size of the LwIP layer.
 
- - :ref:`CONFIG_ESP_WIFI_RX_BA_WIN`
-    This parameter indicates the size of the AMPDU BA Window at the receiving end. This parameter should be configured to the smaller value between twice of :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM` and :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`.
+ - :menuitem:`CONFIG_ESP_WIFI_RX_BA_WIN`
+    This parameter indicates the size of the AMPDU BA Window at the receiving end. This parameter should be configured to the smaller value between twice of :menuitem:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM` and :menuitem:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`.
 
- - :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`
+ - :menuitem:`CONFIG_LWIP_TCP_WND_DEFAULT`
     This parameter represents the RX buffer size of the LwIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_RX_BUFFER_NUM (KB) to reach a high and stable performance. Meanwhile, in case of multiple streams, this value needs to be reduced proportionally.
 
 **TX direction:**
 
- - :ref:`CONFIG_ESP_WIFI_TX_BUFFER`
+ - :menuitem:`CONFIG_ESP_WIFI_TX_BUFFER`
     This parameter indicates the type of TX buffer, it is recommended to configure it as a dynamic buffer, which can make full use of memory.
 
- - :ref:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`
+ - :menuitem:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`
     This parameter indicates the number of TX buffer on the Wi-Fi layer. Increasing this parameter will improve the performance of packet sending. The parameter value needs to match the TX buffer size of the LwIP layer.
 
- - :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
+ - :menuitem:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
     This parameter represents the TX buffer size of the LwIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_TX_BUFFER_NUM (KB) to reach a high and stable performance. In case of multiple streams, this value needs to be reduced proportionally.
 
 **Throughput optimization by placing code in IRAM:**
 
 .. only:: esp32 or esp32s2
 
-    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT`
         If this option is enabled, some Wi-Fi functions are moved to IRAM, improving throughput. This increases IRAM usage by 15 kB.
 
-    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
         If this option is enabled, some Wi-Fi RX functions are moved to IRAM, improving throughput. This increases IRAM usage by 16 kB.
 
- - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
+ - :menuitem:`CONFIG_LWIP_IRAM_OPTIMIZATION`
     If this option is enabled, some LwIP functions are moved to IRAM, improving throughput. This increases IRAM usage by 13 kB.
 
 .. only:: esp32c6
 
-    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT`
         If this option is enabled, some Wi-Fi functions are moved to IRAM, improving throughput. This increases IRAM usage by 13 kB.
 
-    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
         If this option is enabled, some Wi-Fi RX functions are moved to IRAM, improving throughput. This increases IRAM usage by 7 kB.
 
-    - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
+    - :menuitem:`CONFIG_LWIP_IRAM_OPTIMIZATION`
         If this option is enabled, some LwIP functions are moved to IRAM, improving throughput. This increases IRAM usage by 14 kB.
 
 .. only:: esp32s2
 
     **CACHE:**
 
-     - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
+     - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
         Configure the size of the instruction Cache.
 
-     - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_SIZE`
+     - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_SIZE`
         Configure the width of the instruction Cache bus.
 
 .. only:: esp32s3
 
     **CACHE:**
 
-     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
         Configure the size of the instruction Cache.
 
-     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE`
         Configure the size of the instruction Cache bus.
 
-     - :ref:`CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS`
+     - :menuitem:`CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS`
         Configure the associated ways of the instruction Cache.
 
-     - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
         Configure the size of the Data Cache.
 
-     - :ref:`CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE`
         Configure the line size of the Data Cache.
 
-     - :ref:`CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS`
+     - :menuitem:`CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS`
         Configure the associated ways of the Data Cache.
 
 .. note::
@@ -1109,7 +1109,7 @@ The parameters not mentioned in the following table should be set to the default
     Using PSRAM
     ++++++++++++++++++++++++++++
 
-    PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, and increasing this parameter can improve performance.
+    PSRAM is generally used when the application takes up a lot of memory. In this mode, the :menuitem:`CONFIG_ESP_WIFI_TX_BUFFER` is forced to be static. :menuitem:`CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, and increasing this parameter can improve performance.
     The following are the recommended ranks for using PSRAM:
 
     .. only:: esp32
@@ -1572,11 +1572,11 @@ Disconnected State Sleep
 
 Disconnected state is the duration without Wi-Fi connection between :cpp:func:`esp_wifi_start` to :cpp:func:`esp_wifi_stop`.
 
-Currently, {IDF_TARGET_NAME} Wi-Fi supports sleep mode in disconnected state if running at station mode. This feature could be configured by Menuconfig choice :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE`.
+Currently, {IDF_TARGET_NAME} Wi-Fi supports sleep mode in disconnected state if running at station mode. This feature could be configured by Menuconfig choice :menuitem:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE`.
 
-If :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` is enabled, RF, PHY and BB would be turned off in disconnected state when IDLE. The current would be same with current at modem-sleep.
+If :menuitem:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` is enabled, RF, PHY and BB would be turned off in disconnected state when IDLE. The current would be same with current at modem-sleep.
 
-The choice :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` would be selected by default, while it would be selected forcefully in Menuconfig at coexistence mode.
+The choice :menuitem:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` would be selected by default, while it would be selected forcefully in Menuconfig at coexistence mode.
 
 .. _connectionless-module-power-save:
 

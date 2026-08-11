@@ -28,10 +28,10 @@ When using IPCs in a task context, users need to consider the following:
 - IPC callbacks should ideally be simple and short. An IPC callback **must never block or yield**.
 - The IPC tasks are created at the highest possible priority (i.e., ``configMAX_PRIORITIES - 1``).
 
-    - If :ref:`CONFIG_ESP_IPC_USES_CALLERS_PRIORITY` is enabled, the target core's IPC task will be lowered to the current priority of the target core before executing the callback.
-    - If :ref:`CONFIG_ESP_IPC_USES_CALLERS_PRIORITY` is disabled, the target core will always execute the callback at the highest possible priority.
+    - If :menuitem:`CONFIG_ESP_IPC_USES_CALLERS_PRIORITY` is enabled, the target core's IPC task will be lowered to the current priority of the target core before executing the callback.
+    - If :menuitem:`CONFIG_ESP_IPC_USES_CALLERS_PRIORITY` is disabled, the target core will always execute the callback at the highest possible priority.
 
-- Depending on the complexity of the callback, users may need to configure the stack size of the IPC task via :ref:`CONFIG_ESP_IPC_TASK_STACK_SIZE`.
+- Depending on the complexity of the callback, users may need to configure the stack size of the IPC task via :menuitem:`CONFIG_ESP_IPC_TASK_STACK_SIZE`.
 - The IPC feature is internally protected by a mutex. Therefore, simultaneous IPC calls from two or more calling core's are serialized on a first come first serve basis.
 
 API Usage
@@ -62,15 +62,15 @@ When using IPCs in High Priority Interrupt context, users need to consider the f
 .. list::
 
     :CONFIG_IDF_TARGET_ARCH_XTENSA: - Since the callback is executed in a High Priority Interrupt context, the callback must be written entirely in assembly. See the API Usage below for more details regarding writing assembly callbacks.
-    - The priority of the reserved High Priority Interrupt is dependent on the :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` option.
+    - The priority of the reserved High Priority Interrupt is dependent on the :menuitem:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` option.
 
 When the callback executes, users need to consider the following:
 
 .. list::
 
     - The calling core will disable interrupts of priority level 3 and lower.
-    :CONFIG_IDF_TARGET_ARCH_XTENSA: - Although the priority of the reserved interrupt depends on :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`, during the execution of IPC ISR callback, the target core will disable interrupts of priority level 5 and lower regardless of what :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` is set to.
-    :CONFIG_IDF_TARGET_ARCH_RISCV: - Although the priority of the reserved interrupt depends on :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`, during the execution of IPC ISR callback, the target core will disable all interrupts.
+    :CONFIG_IDF_TARGET_ARCH_XTENSA: - Although the priority of the reserved interrupt depends on :menuitem:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`, during the execution of IPC ISR callback, the target core will disable interrupts of priority level 5 and lower regardless of what :menuitem:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` is set to.
+    :CONFIG_IDF_TARGET_ARCH_RISCV: - Although the priority of the reserved interrupt depends on :menuitem:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`, during the execution of IPC ISR callback, the target core will disable all interrupts.
 
 API Usage
 ^^^^^^^^^

@@ -346,7 +346,7 @@ We have provided a series of application examples for customer development, and 
 3. Auxiliary Routine
 ---------------------
 
-Auxiliary routine refers to optional functions in the ESP-BLE-MESH protocol stack. The design of the auxiliary routine generally implement the truncation of code through :ref:`CONFIG_BLE_MESH`.
+Auxiliary routine refers to optional functions in the ESP-BLE-MESH protocol stack. The design of the auxiliary routine generally implement the truncation of code through :menuitem:`CONFIG_BLE_MESH`.
 
 3.1 Features
 ^^^^^^^^^^^^

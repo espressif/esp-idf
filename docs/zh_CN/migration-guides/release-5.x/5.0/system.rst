@@ -117,7 +117,7 @@ ESP 镜像中关于 SPI 速度的枚举成员已重新更名：
     - 以结构体的形式传递配置。
     - 可将该函数配置为订阅空闲任务。
 
-- 原先的配置选项 ``CONFIG_ESP_TASK_WDT`` 重新命名为 :ref:`CONFIG_ESP_TASK_WDT_INIT` 并引入了一个新选项 :ref:`CONFIG_ESP_TASK_WDT_EN`。
+- 原先的配置选项 ``CONFIG_ESP_TASK_WDT`` 重新命名为 :menuitem:`CONFIG_ESP_TASK_WDT_INIT` 并引入了一个新选项 :menuitem:`CONFIG_ESP_TASK_WDT_EN`。
 
 FreeRTOS
 --------
@@ -128,7 +128,7 @@ FreeRTOS
 在以往版本中，ESP-IDF 默认设置 ``configENABLE_BACKWARD_COMPATIBILITY`` 选项，因此可使用 FreeRTOS v8.0.0 之前的函数名称和数据类型。该选项现在已默认禁用，因此默认情况下不再支持以往的 FreeRTOS 名称或类型。用户可以选择以下一种解决方式：
 
 - 更新代码，删除以往的 FreeRTOS 名称或类型。
-- 启用 :ref:`CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY` 以显式调用这些名称或类型。
+- 启用 :menuitem:`CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY` 以显式调用这些名称或类型。
 
 任务快照
 ^^^^^^^^^^
@@ -169,6 +169,6 @@ FreeRTOS 移植相关的宏
 芯片版本
 ^^^^^^^^^^^^^
 
-在应用程序开始加载时，引导加载程序会检查芯片版本。只有当版本为 ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功加载。
+在应用程序开始加载时，引导加载程序会检查芯片版本。只有当版本为 ``>=`` :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功加载。
 
-在 OTA 升级时，会检查应用程序头部中的版本需求和芯片版本是否符合条件。只有当版本为 ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功更新。
+在 OTA 升级时，会检查应用程序头部中的版本需求和芯片版本是否符合条件。只有当版本为 ``>=`` :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功更新。

@@ -52,7 +52,7 @@ MAC 地址
 
     .. note::
 
-        在 ESP32-P4 上，:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为单个通用管理型 MAC 地址。
+        在 ESP32-P4 上，:menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为单个通用管理型 MAC 地址。
 
 .. only:: (not esp32s2) and (not esp32p4) and (not esp32h2) and (not esp32h21) and (not esp32h4) and (not esp32s31)
 
@@ -78,7 +78,7 @@ MAC 地址
 
     .. note::
 
-        :ref:`配置选项 <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` 配置了乐鑫提供的全局 MAC 地址的数量。
+        :menuitem:`配置选项 <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` 配置了乐鑫提供的全局 MAC 地址的数量。
 
 .. only:: esp32s31
 
@@ -104,7 +104,7 @@ MAC 地址
 
     .. note::
 
-        {IDF_TARGET_NAME} 在 eFuse 中仅提供两个全局管理型 MAC 地址，因此 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 默认为两个。其中的“四个”选项仅在使用客户自定义基准 MAC 范围时可用（参见 :ref:`自定义基准 MAC <MAC-Address-Allocation>`），且该范围内每个设备需分配 4 个全局管理型 MAC 地址。若在使用乐鑫 eFuse 默认基准 MAC 时选择“四个”，SoftAP 和以太网会占用 base+1/+3 的全局 MAC 槽位，而这些槽位在本芯片上并未分配，可能与蓝牙 MAC 发生冲突。
+        {IDF_TARGET_NAME} 在 eFuse 中仅提供两个全局管理型 MAC 地址，因此 :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 默认为两个。其中的“四个”选项仅在使用客户自定义基准 MAC 范围时可用（参见 :ref:`自定义基准 MAC <MAC-Address-Allocation>`），且该范围内每个设备需分配 4 个全局管理型 MAC 地址。若在使用乐鑫 eFuse 默认基准 MAC 时选择“四个”，SoftAP 和以太网会占用 base+1/+3 的全局 MAC 槽位，而这些槽位在本芯片上并未分配，可能与蓝牙 MAC 发生冲突。
 
 .. only:: esp32h2 or esp32h21 or esp32h4
 
@@ -121,7 +121,7 @@ MAC 地址
 
     .. note::
 
-        {IDF_TARGET_NAME} 在 eFuse 中仅提供一个全局管理型 MAC 地址（MAC_FACTORY），以及用于构造 IEEE 802.15.4 EUI-64 的 MAC_EXT 字段。:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为 1。蓝牙直接复用基准 MAC —— 由于 {IDF_TARGET_NAME} 没有 Wi-Fi，BT 偏移不会生效，因此不需要第二个全局 MAC 槽位。
+        {IDF_TARGET_NAME} 在 eFuse 中仅提供一个全局管理型 MAC 地址（MAC_FACTORY），以及用于构造 IEEE 802.15.4 EUI-64 的 MAC_EXT 字段。:menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为 1。蓝牙直接复用基准 MAC —— 由于 {IDF_TARGET_NAME} 没有 Wi-Fi，BT 偏移不会生效，因此不需要第二个全局 MAC 槽位。
 
 .. only:: esp32s2
 
@@ -144,7 +144,7 @@ MAC 地址
 
     .. note::
 
-        :ref:`配置选项 <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` 配置了乐鑫提供的全局 MAC 地址的数量。
+        :menuitem:`配置选项 <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` 配置了乐鑫提供的全局 MAC 地址的数量。
 
 .. only:: not SOC_EMAC_SUPPORTED
 
@@ -162,7 +162,7 @@ MAC 地址
 
 乐鑫已将默认的基准 MAC 地址预烧录至 eFuse {IDF_TARGET_BASE_MAC_BLOCK} 中。如需设置自定义基准 MAC 地址，请在初始化任一网络接口或调用 :cpp:func:`esp_read_mac` 函数前调用 :cpp:func:`esp_base_mac_addr_set` 函数。自定义基准 MAC 地址可以存储在任何支持的存储设备中（例如 flash、NVS）。
 
-分配自定义基准 MAC 地址时，应避免 MAC 地址重叠。请根据上面的表格配置选项 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES`，设置可从自定义基准 MAC 地址生成的有效全局 MAC 地址。
+分配自定义基准 MAC 地址时，应避免 MAC 地址重叠。请根据上面的表格配置选项 :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES`，设置可从自定义基准 MAC 地址生成的有效全局 MAC 地址。
 
 .. note::
 
@@ -292,7 +292,7 @@ SDK 版本
 
 若需手动设置版本，需要在项目的 ``CMakeLists.txt`` 文件中设置 ``PROJECT_VER`` 变量，即在 ``CMakeLists.txt`` 文件中，在包含 ``project.cmake`` 之前添加 ``set(PROJECT_VER "0.1.0.1")``。
 
-如果设置了 :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，则将使用 :ref:`CONFIG_APP_PROJECT_VER` 的值。否则，如果在项目中未设置 ``PROJECT_VER`` 变量，则该变量将从 ``$(PROJECT_PATH)/version.txt`` 文件（若有）中检索，或使用 git 命令 ``git describe`` 检索。如果两者都不可用，则 ``PROJECT_VER`` 将被设置为 “1”。应用程序可通过调用 :cpp:func:`esp_app_get_description` 或 :cpp:func:`esp_ota_get_partition_description` 函数来获取应用程序的版本信息。
+如果设置了 :menuitem:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，则将使用 :menuitem:`CONFIG_APP_PROJECT_VER` 的值。否则，如果在项目中未设置 ``PROJECT_VER`` 变量，则该变量将从 ``$(PROJECT_PATH)/version.txt`` 文件（若有）中检索，或使用 git 命令 ``git describe`` 检索。如果两者都不可用，则 ``PROJECT_VER`` 将被设置为 “1”。应用程序可通过调用 :cpp:func:`esp_app_get_description` 或 :cpp:func:`esp_ota_get_partition_description` 函数来获取应用程序的版本信息。
 
 应用示例
 --------------

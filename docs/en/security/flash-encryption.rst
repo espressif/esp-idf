@@ -89,7 +89,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
            * If an odd number of bits are set (e.g., ``0b0000001`` or ``0b0000111``), this indicates the contents of flash are encrypted. The contents will need to be transparently decrypted when read.
            * If an even number of bits are set (e.g., ``0b0000000`` or ``0b0000011``), this indicates the contents of flash are unencrypted (i.e., plain text).
 
-           With each successive unencrypted flash update (e.g., flashing a new unencrypted binary) and encryption of the flash (via the :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` option), the next MSB of ``{IDF_TARGET_CRYPT_CNT}`` is set.
+           With each successive unencrypted flash update (e.g., flashing a new unencrypted binary) and encryption of the flash (via the :menuitem:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` option), the next MSB of ``{IDF_TARGET_CRYPT_CNT}`` is set.
          - 7
 
 
@@ -264,7 +264,7 @@ Assuming that the eFuse values are in their default states and the second stage 
 
     If the check passes, the process of key generation is skipped and the same key is used for the flash encryption process.
 
-  4. Otherwise, if using an eFuse-based key, second stage bootloader uses RNG (random) module to generate an 256-bit or 512-bit key, depending on the value of :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two ``BLOCK_KEYN`` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two ``BLOCK_KEYN`` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. Whereas if using a Key Manager-based key, second stage bootloader writes the key recovery info to the flash memory at the address 0x0, followed by programming the ``KM_XTS_KEY_LENGTH_256`` and the ``FORCE_USE_KEY_MANAGER_KEY`` eFuses. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  4. Otherwise, if using an eFuse-based key, second stage bootloader uses RNG (random) module to generate an 256-bit or 512-bit key, depending on the value of :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two ``BLOCK_KEYN`` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two ``BLOCK_KEYN`` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. Whereas if using a Key Manager-based key, second stage bootloader writes the key recovery info to the flash memory at the address 0x0, followed by programming the ``KM_XTS_KEY_LENGTH_256`` and the ``FORCE_USE_KEY_MANAGER_KEY`` eFuses. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
   5. Flash encryption block encrypts the flash contents – the second stage bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -290,7 +290,7 @@ Assuming that the eFuse values are in their default states and the second stage 
 
   2. Second stage bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see **{IDF_TARGET_NAME} Technical Reference Manual** > **eFuse Controller (eFuse)** > **Auto Encryption Block** [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  3. Second stage bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, second stage bootloader uses RNG (random) module to generate a 256-bit or 512-bit key, depending on the value of :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two ``BLOCK_KEYN`` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Second stage bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, second stage bootloader uses RNG (random) module to generate a 256-bit or 512-bit key, depending on the value of :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two ``BLOCK_KEYN`` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
   4. Flash encryption block encrypts the flash contents - the second stage bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -361,7 +361,7 @@ Assuming that the eFuse values are in their default states and the second stage 
 
   2. The second stage bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
-  3. The second stage bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for ``BLOCK_KEY0`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the release mode. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
+  3. The second stage bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for ``BLOCK_KEY0`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the release mode. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
 
   4. Flash encryption block encrypts the flash contents - the second stage bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -412,13 +412,13 @@ To test flash encryption process, take the following steps:
 
   .. list::
 
-    - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
-    - :ref:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**development mode** by default).
-    :esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default). Note that for the ESP32 target, the choice is only available when :ref:`CONFIG_ESP32_REV_MIN` level is set to 3 (ESP32 V3).
-    :not esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default).
-    :SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS: - Set :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`.
-    :SOC_KEY_MANAGER_SUPPORTED: - :ref:`Select the key source for the Flash Encryption key <CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE>`.
-    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
+    - :menuitem:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
+    - :menuitem:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**development mode** by default).
+    :esp32: - :menuitem:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default). Note that for the ESP32 target, the choice is only available when :menuitem:`CONFIG_ESP32_REV_MIN` level is set to 3 (ESP32 V3).
+    :not esp32: - :menuitem:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default).
+    :SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS: - Set :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`.
+    :SOC_KEY_MANAGER_SUPPORTED: - :menuitem:`Select the key source for the Flash Encryption key <CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE>`.
+    - :menuitem:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
     - Save the configuration and exit.
 
   Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
@@ -497,13 +497,13 @@ To use a host generated key and program it into the eFuses of the device, take t
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-      If :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
+      If :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
       .. code-block:: bash
 
           idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
-      else if :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
+      else if :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
 
       .. code-block:: bash
 
@@ -518,13 +518,13 @@ To use a host generated key and program it into the eFuses of the device, take t
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-      If :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
+      If :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
       .. code-block:: bash
 
           idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
-      else if :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
+      else if :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
 
       .. code-block:: bash
 
@@ -600,9 +600,9 @@ To use a host generated key and program it into the eFuses of the device, take t
 
 4. In :ref:`project-configuration-menu`, do the following:
 
-   - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
-   - :ref:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**development mode** by default)
-   - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
+   - :menuitem:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
+   - :menuitem:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**development mode** by default)
+   - :menuitem:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
    - Save the configuration and exit.
 
   Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
@@ -631,13 +631,13 @@ To use a host generated key and program it into the eFuses of the device, take t
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-        If :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
+        If :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
         .. code-block:: bash
 
             idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
-        else if :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
+        else if :menuitem:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
 
         .. code-block:: bash
 
@@ -667,10 +667,10 @@ To use a host generated key and program it into the eFuses of the device, take t
 
   5. In :ref:`project-configuration-menu`, do the following:
 
-     - :ref:`Enable Flash Encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
-     - :ref:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**development mode** by default)
-     - :ref:`Select Flash Encryption key source as the Key Manager <CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE>`
-     - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
+     - :menuitem:`Enable Flash Encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
+     - :menuitem:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**development mode** by default)
+     - :menuitem:`Select Flash Encryption key source as the Key Manager <CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE>`
+     - :menuitem:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
      - Save the configuration and exit.
 
     Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
@@ -730,13 +730,13 @@ To use this mode (first-time enable with Release selected), take the following s
 
   .. list::
 
-    - :ref:`Enable Flash Encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
-    :esp32: - :ref:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
-    :esp32: - :ref:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
-    :not esp32: - :ref:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
-    :not esp32: - :ref:`Select UART ROM download mode (Permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
-    :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - :ref:`Select enable XTS-AES's pseudo rounds function <CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC>`. This option is selected by default and its strength is configured to level low considering the performance impact on the flash encryption/decryption operations. Please refer to :ref:`xts-aes-pseudo-round-func` for more information regarding the performance impact per security level.
-    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
+    - :menuitem:`Enable Flash Encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
+    :esp32: - :menuitem:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
+    :esp32: - :menuitem:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :menuitem:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
+    :not esp32: - :menuitem:`Select release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
+    :not esp32: - :menuitem:`Select UART ROM download mode (Permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
+    :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - :menuitem:`Select enable XTS-AES's pseudo rounds function <CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC>`. This option is selected by default and its strength is configured to level low considering the performance impact on the flash encryption/decryption operations. Please refer to :ref:`xts-aes-pseudo-round-func` for more information regarding the performance impact per security level.
+    - :menuitem:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
     - Save the configuration and exit.
 
     Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
@@ -760,14 +760,14 @@ For subsequent plaintext field updates, use :ref:`OTA scheme <updating-encrypted
 
 .. note::
 
-    If you have pre-generated the flash encryption key and stored a copy, and the UART download mode is not permanently disabled via :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` {IDF_TARGET_ESP32_V3_ONLY}, then it is possible to update the flash locally by pre-encrypting the files and then flashing the ciphertext. See :ref:`manual-encryption`.
+    If you have pre-generated the flash encryption key and stored a copy, and the UART download mode is not permanently disabled via :menuitem:`CONFIG_SECURE_UART_ROM_DL_MODE` {IDF_TARGET_ESP32_V3_ONLY}, then it is possible to update the flash locally by pre-encrypting the files and then flashing the ciphertext. See :ref:`manual-encryption`.
 
 .. _flash-enc-transition-dev-to-release:
 
 Transitioning from Development to Release Mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If flash encryption was enabled in :ref:`flash-enc-development-mode`, the device remains in Development mode until the corresponding release eFuses are burned. Selecting **Release mode** in menuconfig (:ref:`CONFIG_SECURE_FLASH_ENCRYPTION_MODE`) only updates the build configuration; it does **not** burn the eFuses.
+If flash encryption was enabled in :ref:`flash-enc-development-mode`, the device remains in Development mode until the corresponding release eFuses are burned. Selecting **Release mode** in menuconfig (:menuitem:`CONFIG_SECURE_FLASH_ENCRYPTION_MODE`) only updates the build configuration; it does **not** burn the eFuses.
 To permanently transition the device to Release mode, you must explicitly call :cpp:func:`esp_flash_encryption_set_release_mode` once in your application code to burn the relevant eFuses.
 
 .. code-block:: c
@@ -790,8 +790,8 @@ When using Flash Encryption in production:
 .. list::
 
    - Do not reuse the same flash encryption key between multiple devices. This means that an attacker who copies encrypted data from one device cannot transfer it to a second device.
-   :esp32: - When using ESP32 V3, if the UART ROM Download Mode is not needed for a production device then it should be disabled to provide an extra level of protection. Do this by calling :cpp:func:`esp_efuse_disable_rom_download_mode` during application startup. Alternatively, configure the project :ref:`CONFIG_ESP32_REV_MIN` level to 3 (targeting ESP32 V3 only) and select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)". The ability to disable ROM Download Mode is not available on earlier ESP32 versions.
-   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to updating SPI config, changing baud rate, basic flash write, and returning a summary of the currently enabled security features with the `get-security-info` command. The default behaviour is to set Secure Download Mode on first boot in release mode. To disable Download Mode entirely, select :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
+   :esp32: - When using ESP32 V3, if the UART ROM Download Mode is not needed for a production device then it should be disabled to provide an extra level of protection. Do this by calling :cpp:func:`esp_efuse_disable_rom_download_mode` during application startup. Alternatively, configure the project :menuitem:`CONFIG_ESP32_REV_MIN` level to 3 (targeting ESP32 V3 only) and select the :menuitem:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)". The ability to disable ROM Download Mode is not available on earlier ESP32 versions.
+   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to updating SPI config, changing baud rate, basic flash write, and returning a summary of the currently enabled security features with the `get-security-info` command. The default behaviour is to set Secure Download Mode on first boot in release mode. To disable Download Mode entirely, select :menuitem:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
    - Enable :doc:`Secure Boot <secure-boot-v2>` as an extra layer of protection, and to prevent an attacker from selectively corrupting any part of the flash before boot.
 
 Enable Flash Encryption Externally
@@ -995,7 +995,7 @@ OTA Updates
 
 OTA updates to encrypted partitions will automatically write encrypted data if the function :cpp:func:`esp_partition_write` is used.
 
-Before building the application image for OTA updating of an already encrypted device, enable the option :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` in project configuration menu.
+Before building the application image for OTA updating of an already encrypted device, enable the option :menuitem:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` in project configuration menu.
 
 For general information about ESP-IDF OTA updates, please refer to :doc:`OTA <../api-reference/system/ota>`.
 
@@ -1024,7 +1024,7 @@ If flash encryption was enabled accidentally, flashing of plaintext data will so
 
   For flash encryption in development mode, encryption can be disabled by burning the ``{IDF_TARGET_CRYPT_CNT}`` eFuse. It can only be done one time per chip by taking the following steps:
 
-#. In :ref:`project-configuration-menu`, disable :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`, then save and exit.
+#. In :ref:`project-configuration-menu`, disable :menuitem:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`, then save and exit.
 #. Open project configuration menu again and **double-check** that you have disabled this option! If this option is left enabled, the bootloader will immediately re-enable encryption when it boots.
 #. With flash encryption disabled, build and flash the new bootloader and application by running ``idf.py flash``.
 #. Use ``idf.py`` to disable the ``{IDF_TARGET_CRYPT_CNT}`` by running:
@@ -1094,13 +1094,13 @@ It is recommended to use flash encryption in combination with Secure Boot. Howev
 
 .. only:: esp32
 
-    - :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Re-flashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the {IDF_TARGET_NAME} (refer to :ref:`Secure Boot <secure-boot-reflashable>`). In such configuration, ``idf.py bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial re-flashing steps it is necessary to re-flash this file before flashing other plaintext data.
+    - :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :menuitem:`Re-flashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the {IDF_TARGET_NAME} (refer to :ref:`Secure Boot <secure-boot-reflashable>`). In such configuration, ``idf.py bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial re-flashing steps it is necessary to re-flash this file before flashing other plaintext data.
 
-    - :ref:`Re-flashing via Pregenerated Flash Encryption Key <pregenerated-flash-encryption-key>` is still possible, provided the bootloader is not re-flashed. Re-flashing the bootloader requires the same :ref:`Re-flashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
+    - :ref:`Re-flashing via Pregenerated Flash Encryption Key <pregenerated-flash-encryption-key>` is still possible, provided the bootloader is not re-flashed. Re-flashing the bootloader requires the same :menuitem:`Re-flashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND and SOC_ECDSA_SUPPORT_CURVE_P384
 
-  - It is recommended that the required strength of the :ref:`xts-aes-pseudo-round-func` should be set during the first boot when flash encryption release mode is enabled. If your workflow needs to update the function's strength after the first boot, you should enable :ref:`CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA` to avoid write-protecting this bit during boot.
+  - It is recommended that the required strength of the :ref:`xts-aes-pseudo-round-func` should be set during the first boot when flash encryption release mode is enabled. If your workflow needs to update the function's strength after the first boot, you should enable :menuitem:`CONFIG_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA` to avoid write-protecting this bit during boot.
 
 .. _flash-encryption-advanced-features:
 
@@ -1376,7 +1376,7 @@ The following sections provide some reference information about the operation of
   {IDF_TARGET_NAME} incorporates a pseudo-round function in the XTS-AES peripheral, thus enabling the peripheral to randomly insert pseudo-rounds before and after the original operation rounds and also generate a pseudo key to perform these dummy operations.
   These operations do not alter the original result, but they increase the complexity to perform side channel analysis attacks by randomizing the power profile.
 
-  :ref:`CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH` can be used to select the strength of the pseudo-round function. Increasing the strength improves the security provided, but would slow down the XTS-AES operations.
+  :menuitem:`CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH` can be used to select the strength of the pseudo-round function. Increasing the strength improves the security provided, but would slow down the XTS-AES operations.
 
   .. list-table:: Performance impact on XTS-AES operations per strength level
       :widths: 10 10

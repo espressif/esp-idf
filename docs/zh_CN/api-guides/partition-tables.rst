@@ -6,13 +6,13 @@
 概述
 ----
 
-每片 {IDF_TARGET_NAME} 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储数据等）。因此，我们在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。
+每片 {IDF_TARGET_NAME} 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储数据等）。因此，我们在 flash 的 :menuitem:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。
 
-分区表的长度为 0xC00 字节，最多可以保存 95 条分区表条目。MD5 校验和附加在分区表之后，用于在运行时验证分区表的完整性。分区表占据了整个 flash 扇区，大小为 0x1000 (4 KB)。因此，它后面的任何分区至少需要位于（:ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>`） + 0x1000 处。
+分区表的长度为 0xC00 字节，最多可以保存 95 条分区表条目。MD5 校验和附加在分区表之后，用于在运行时验证分区表的完整性。分区表占据了整个 flash 扇区，大小为 0x1000 (4 KB)。因此，它后面的任何分区至少需要位于（:menuitem:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>`） + 0x1000 处。
 
 分区表中的每个条目都包括以下几个部分：Name（标签）、Type（app、data 等）、SubType 以及在 flash 中的偏移量（分区的加载地址）。
 
-在使用分区表时，最简单的方法就是打开项目配置菜单 (``idf.py menuconfig``)，并在 :ref:`CONFIG_PARTITION_TABLE_TYPE` 下选择一个预定义的分区表：
+在使用分区表时，最简单的方法就是打开项目配置菜单 (``idf.py menuconfig``)，并在 :menuitem:`CONFIG_PARTITION_TABLE_TYPE` 下选择一个预定义的分区表：
 
 * "Single factory app, no OTA"
 * "Factory app, two OTA definitions"
@@ -71,7 +71,7 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
 
 * 字段之间的空格会被忽略，任何以 ``#`` 开头的行（注释）也会被忽略。
 * CSV 文件中的每个非注释行均为一个分区定义。
-* 如需调整 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 参数值，请同步更新 CSV 文件中所有固定 ``Offset`` 值，防止与新分区表位置产生冲突。也可将 ``Offset`` 字段留空，此时 ``gen_esp32part.py`` 工具将基于当前分区表偏移量和对齐要求，自动计算出正确的偏移地址。
+* 如需调整 :menuitem:`CONFIG_PARTITION_TABLE_OFFSET` 参数值，请同步更新 CSV 文件中所有固定 ``Offset`` 值，防止与新分区表位置产生冲突。也可将 ``Offset`` 字段留空，此时 ``gen_esp32part.py`` 工具将基于当前分区表偏移量和对齐要求，自动计算出正确的偏移地址。
 
 下面是一个包含引导加载程序和分区表分区的 CSV 分区表示例：
 
@@ -86,7 +86,7 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
     factory,          app,             factory,  ,        1M,
     recoveryBloader,  bootloader,      recovery, N/A,     N/A,
 
-``gen_esp32part.py`` 工具将根据所选的 Kconfig 选项将每个 ``N/A`` 替换为适当的值：引导加载程序的偏移地址为 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}，分区表的偏移地址见 :ref:`CONFIG_PARTITION_TABLE_OFFSET`。
+``gen_esp32part.py`` 工具将根据所选的 Kconfig 选项将每个 ``N/A`` 替换为适当的值：引导加载程序的偏移地址为 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}，分区表的偏移地址见 :menuitem:`CONFIG_PARTITION_TABLE_OFFSET`。
 
 Name 字段
 ~~~~~~~~~
@@ -117,7 +117,7 @@ Type 字段可以指定为名称或数字 0～254（或者十六进制 0x00-0xFE
 SubType 字段
 ~~~~~~~~~~~~
 
-{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4, esp32c5, esp32c61 = "尚未更新"}
+{IDF_TARGET_ESP_PHY_REF:default = ":menuitem:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4, esp32c5, esp32c61 = "尚未更新"}
 
 SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP-IDF 仅仅规定了 ``app`` 和 ``data`` 两种分区类型的子类型含义。
 
@@ -149,11 +149,11 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
     - ``ota`` (0x01)，是一个临时的引导加载程序分区，在 OTA 更新期间可用于下载新的引导加载程序镜像。工具会忽略此子类型的大小，你可以将其留空或使用 ``N/A``。你只能指定一个偏移量，或者将其留空，工具将根据先前使用的分区的偏移量进行计算。
     - ``recovery`` (0x02)，这是用于安全执行引导加载程序 OTA 更新的恢复引导加载程序分区。``gen_esp32part.py`` 工具会自动确定该分区的地址和大小，因此可以将这些字段留空或使用 ``N/A`` 作为占位符。该分区地址必须与 Kconfig 选项定义的 eFuse 字段相匹配。如果正常的引导加载程序加载路径失败，则一级 (ROM) 引导加载程序会尝试加载 eFuse 字段指定地址的恢复分区。
 
-    引导加载程序类型的大小由 ``gen_esp32part.py`` 工具根据指定的 ``--offset`` （分区表偏移量）和 ``--primary-partition-offset`` 参数计算得出。具体来说，引导加载程序的大小定义为 (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH})。此计算得出的大小适用于引导加载程序的所有子类型。
+    引导加载程序类型的大小由 ``gen_esp32part.py`` 工具根据指定的 ``--offset`` （分区表偏移量）和 ``--primary-partition-offset`` 参数计算得出。具体来说，引导加载程序的大小定义为 (:menuitem:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH})。此计算得出的大小适用于引导加载程序的所有子类型。
 
 * 当 Type 定义为 ``partition_table`` 时，可以将 SubType 字段指定为：
 
-    - ``primary`` (0x00)，是主分区表，位于 flash 的 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 地址处。工具会自动确定此子类型的适当大小和偏移量，因此为此子类型指定的任何大小或偏移量将被忽略。你可以将这些字段留空或使用 ``N/A`` 作为占位符。
+    - ``primary`` (0x00)，是主分区表，位于 flash 的 :menuitem:`CONFIG_PARTITION_TABLE_OFFSET` 地址处。工具会自动确定此子类型的适当大小和偏移量，因此为此子类型指定的任何大小或偏移量将被忽略。你可以将这些字段留空或使用 ``N/A`` 作为占位符。
     - ``ota`` (0x01)，是一个临时的分区表分区，在 OTA 更新期间可用于下载新的分区表镜像。工具会忽略此子类型的大小，你可以将其留空或使用 ``N/A``。你可以指定一个偏移量，或者将其留空，工具将根据先前分配的分区的偏移量进行计算。
 
     ``partition_table`` 的大小固定为 ``0x1000``，适用于 ``partition_table`` 的所有子类型。
@@ -226,7 +226,7 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 
 .. note::
 
-    如果你希望分区表中各个分区的偏移地址是相对于分区表本身的位置 (由 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 指定)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。这样，在更改分区表的偏移地址时，留空的分区偏移地址会自动做出相应的改变。而如果你在某个分区采用了固定的偏移值，就可能与分区表发生冲突，导致报错。
+    如果你希望分区表中各个分区的偏移地址是相对于分区表本身的位置 (由 :menuitem:`CONFIG_PARTITION_TABLE_OFFSET` 指定)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。这样，在更改分区表的偏移地址时，留空的分区偏移地址会自动做出相应的改变。而如果你在某个分区采用了固定的偏移值，就可能与分区表发生冲突，导致报错。
 
 Flags 字段
 ~~~~~~~~~~
@@ -301,11 +301,11 @@ MD5 校验和
 
 .. only:: esp32
 
-    用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。对于 :ref:`ESP-IDF v3.1 版本前的引导加载程序 <CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS>`，因为它不支持 MD5 校验，所以无法正常启动并报错 ``invalid magic number 0xebeb``，此时用户可以使用此选项关闭 MD5 校验。
+    用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :menuitem:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。对于 :menuitem:`ESP-IDF v3.1 版本前的引导加载程序 <CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS>`，因为它不支持 MD5 校验，所以无法正常启动并报错 ``invalid magic number 0xebeb``，此时用户可以使用此选项关闭 MD5 校验。
 
 .. only:: not esp32
 
-    用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
+    用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :menuitem:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
 
 
 烧写分区表

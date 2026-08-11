@@ -80,7 +80,7 @@ Wi-Fi AMSDU
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more memory. Select :ref:`CONFIG_ESP_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_SPIRAM`.
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more memory. Select :menuitem:`CONFIG_ESP_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :menuitem:`CONFIG_SPIRAM`.
 
 Wi-Fi Fragment
 -------------------------

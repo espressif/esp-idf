@@ -142,7 +142,7 @@ As the temperature sensor does not use the APB clock, it will keep working no ma
 
     By default, the temperature sensor interrupt will be deferred when the cache is disabled for reasons like writing/erasing flash. Thus the event callback functions will not get executed in time, which is not expected in a real-time application.
 
-    There is a Kconfig option :ref:`CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE` that will:
+    There is a Kconfig option :menuitem:`CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE` that will:
 
     1. Enable the interrupt that is being serviced even when the cache is disabled.
     2. Place all functions that are used by the ISR into IRAM.

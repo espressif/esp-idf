@@ -23,7 +23,7 @@ Configurations
 Destination
 ^^^^^^^^^^^
 
-The :ref:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` option enables or disables core dump, and selects the core dump destination if enabled. When a crash occurs, the generated core dump file can either be saved to flash, or output to a connected host over UART.
+The :menuitem:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` option enables or disables core dump, and selects the core dump destination if enabled. When a crash occurs, the generated core dump file can either be saved to flash, or output to a connected host over UART.
 
 
 Format & Size
@@ -31,7 +31,7 @@ Format & Size
 
 Core dump files are generated in ELF format, which contains extended features and allows comprehensive information regarding erroneous tasks and crashed software to be saved. The ELF format is flexible and can be extended in future revisions to save additional information.
 
-The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump. Crashed task registers and the stack are always saved, regardless of this configuration option. Other tasks are included in order of their priority (starting with the highest-priority ready task).
+The :menuitem:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump. Crashed task registers and the stack are always saved, regardless of this configuration option. Other tasks are included in order of their priority (starting with the highest-priority ready task).
 
 Data Integrity Check
 ^^^^^^^^^^^^^^^^^^^^
@@ -41,7 +41,7 @@ Core dump files include a SHA256 checksum that verifies the integrity of the fil
 Reserved Stack Size
 ^^^^^^^^^^^^^^^^^^^
 
-Core dump routines run from a separate stack due to core dump itself needing to parse and save all other task stacks. The :ref:`CONFIG_ESP_COREDUMP_STACK_SIZE` option controls the size of the core dump's stack in number of bytes.
+Core dump routines run from a separate stack due to core dump itself needing to parse and save all other task stacks. The :menuitem:`CONFIG_ESP_COREDUMP_STACK_SIZE` option controls the size of the core dump's stack in number of bytes.
 
 Setting this option to 0 bytes will cause the core dump routines to run from the ISR stack, thus saving a bit of memory. Setting the option greater than zero will cause a separate stack to be instantiated.
 
@@ -55,7 +55,7 @@ Setting this option to 0 bytes will cause the core dump routines to run from the
     Core Dump Memory Regions
     ^^^^^^^^^^^^^^^^^^^^^^^^
 
-    By default, core dumps typically save CPU registers, tasks data and summary of the panic reason. When the :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` option is selected, ``.bss`` and ``.data`` sections and ``heap`` data will also be part of the dump.
+    By default, core dumps typically save CPU registers, tasks data and summary of the panic reason. When the :menuitem:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` option is selected, ``.bss`` and ``.data`` sections and ``heap`` data will also be part of the dump.
 
     For a better debugging experience, it is recommended to dump these sections. However, this will result in a larger coredump file. The required additional storage space may vary based on the amount of DRAM the application uses.
 
@@ -113,13 +113,13 @@ or
 Core Dump to UART
 -----------------
 
-When the core dump file is output to UART, the output file is Base64-encoded. The :ref:`CONFIG_ESP_COREDUMP_DECODE` option allows for selecting whether the output file is automatically decoded by the ESP-IDF monitor or kept encoded for manual decoding.
+When the core dump file is output to UART, the output file is Base64-encoded. The :menuitem:`CONFIG_ESP_COREDUMP_DECODE` option allows for selecting whether the output file is automatically decoded by the ESP-IDF monitor or kept encoded for manual decoding.
 
 
 Automatic Decoding
 ^^^^^^^^^^^^^^^^^^
 
-If :ref:`CONFIG_ESP_COREDUMP_DECODE` is set to automatically decode the UART core dump, ESP-IDF monitor will automatically decode the data, translate any function addresses to source code lines, and display it in the monitor. The output to ESP-IDF monitor would resemble the following output:
+If :menuitem:`CONFIG_ESP_COREDUMP_DECODE` is set to automatically decode the UART core dump, ESP-IDF monitor will automatically decode the data, translate any function addresses to source code lines, and display it in the monitor. The output to ESP-IDF monitor would resemble the following output:
 
 .. code-block:: none
 
@@ -169,12 +169,12 @@ If :ref:`CONFIG_ESP_COREDUMP_DECODE` is set to automatically decode the UART cor
     ===================== ESP32 CORE DUMP END =====================
     ===============================================================
 
-The :ref:`CONFIG_ESP_COREDUMP_UART_DELAY` allows for an optional delay to be added before the core dump file is output to UART.
+The :menuitem:`CONFIG_ESP_COREDUMP_UART_DELAY` allows for an optional delay to be added before the core dump file is output to UART.
 
 Manual Decoding
 ^^^^^^^^^^^^^^^
 
-If you set :ref:`CONFIG_ESP_COREDUMP_DECODE` to no decoding, then the raw  Base64-encoded body of core dump is output to UART between the following header and footer of the UART output:
+If you set :menuitem:`CONFIG_ESP_COREDUMP_DECODE` to no decoding, then the raw  Base64-encoded body of core dump is output to UART between the following header and footer of the UART output:
 
 .. code-block:: none
 
@@ -241,7 +241,7 @@ Supported Notations and RAM Regions
 Example
 ^^^^^^^
 
-1. In :ref:`project-configuration-menu`, enable :ref:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART>`, then save and exit.
+1. In :ref:`project-configuration-menu`, enable :menuitem:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART>`, then save and exit.
 
 2. In your project, create a global variable in the DRAM area, such as:
 

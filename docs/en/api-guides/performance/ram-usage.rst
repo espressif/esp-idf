@@ -40,8 +40,8 @@ To minimize static memory use:
 .. list::
 
    - Constant data can be stored in flash memory instead of RAM, thus it is recommended to declare structures, buffers, or other variables as ``const``. This approach may require modifying firmware functions to accept ``const *`` arguments instead of mutable pointer arguments. These changes can also help reduce the stack usage of certain functions.
-   :SOC_BT_SUPPORTED: - If using Bluedroid, setting the option :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` will cause Bluedroid to allocate memory on initialization and free it on deinitialization. This does not necessarily reduce the peak memory usage, but changes it from static memory usage to runtime memory usage.
-   - If using OpenThread, enabling the option :ref:`CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT` will cause OpenThread to allocate message pool buffers from PSRAM, which will reduce static memory use.
+   :SOC_BT_SUPPORTED: - If using Bluedroid, setting the option :menuitem:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` will cause Bluedroid to allocate memory on initialization and free it on deinitialization. This does not necessarily reduce the peak memory usage, but changes it from static memory usage to runtime memory usage.
+   - If using OpenThread, enabling the option :menuitem:`CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT` will cause OpenThread to allocate message pool buffers from PSRAM, which will reduce static memory use.
 
 .. _optimize-stack-sizes:
 
@@ -60,17 +60,17 @@ Configuration Options for Stack Overflow Detection
    Hardware Stack Guard
    ~~~~~~~~~~~~~~~~~~~~
 
-   The Hardware Stack Guard is a reliable method for detecting stack overflow. This method uses the hardware's Debug Assistant module to monitor the CPU's stack pointer register. A panic is immediately triggered if the stack pointer register goes beyond the bounds of the current stack (see :ref:`Hardware-Stack-Guard` for more details). The Hardware Stack Guard can be enabled via the :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` option.
+   The Hardware Stack Guard is a reliable method for detecting stack overflow. This method uses the hardware's Debug Assistant module to monitor the CPU's stack pointer register. A panic is immediately triggered if the stack pointer register goes beyond the bounds of the current stack (see :ref:`Hardware-Stack-Guard` for more details). The Hardware Stack Guard can be enabled via the :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` option.
 
 End of Stack Watchpoint
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The End of Stack Watchpoint feature places a CPU watchpoint at the end of the current stack. If that word is overwritten (such as in a stack overflow), a panic is triggered immediately. End of Stack Watchpoints can be enabled via the :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` option, but can only be used if debugger watchpoints are not already being used.
+The End of Stack Watchpoint feature places a CPU watchpoint at the end of the current stack. If that word is overwritten (such as in a stack overflow), a panic is triggered immediately. End of Stack Watchpoints can be enabled via the :menuitem:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` option, but can only be used if debugger watchpoints are not already being used.
 
 Stack Canary Bytes
 ~~~~~~~~~~~~~~~~~~
 
-The Stack Canary Bytes feature adds a set of magic bytes at the end of each task's stack, and checks if those magic bytes have changed on every context switch. If those magic bytes are overwritten, a panic is triggered. Stack Canary Bytes can be enabled via the :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` option.
+The Stack Canary Bytes feature adds a set of magic bytes at the end of each task's stack, and checks if those magic bytes have changed on every context switch. If those magic bytes are overwritten, a panic is triggered. Stack Canary Bytes can be enabled via the :menuitem:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` option.
 
 .. note::
 
@@ -78,7 +78,7 @@ The Stack Canary Bytes feature adds a set of magic bytes at the end of each task
 
    .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-      Recommended and default option is :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` which avoids this disadvantage.
+      Recommended and default option is :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` which avoids this disadvantage.
 
 Run-time Methods to Determine Stack Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -104,7 +104,7 @@ Reducing Stack Sizes
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-   If the application uses external RAM, enabling :ref:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` can move task stacks created by :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` to PSRAM, reducing internal RAM usage. This option has restrictions for tasks that run while the flash cache is disabled; see :ref:`task-stack-in-external-ram` for details.
+   If the application uses external RAM, enabling :menuitem:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` can move task stacks created by :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` to PSRAM, reducing internal RAM usage. This option has restrictions for tasks that run while the flash cache is disabled; see :ref:`task-stack-in-external-ram` for details.
 
 Reducing Task Count
 ^^^^^^^^^^^^^^^^^^^
@@ -127,15 +127,15 @@ The default stack sizes for these tasks are usually set conservatively high to a
 
 .. list::
 
-   - :ref:`app-main-task` has stack size :ref:`CONFIG_ESP_MAIN_TASK_STACK_SIZE`.
-   - :doc:`/api-reference/system/esp_timer` system task which executes callbacks has stack size :ref:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`.
-   - FreeRTOS Timer Task to handle FreeRTOS timer callbacks has stack size :ref:`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH`.
-   - :doc:`/api-reference/system/esp_event` system task to execute callbacks for the default system event loop has stack size :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`.
-   - :doc:`/api-guides/lwip` TCP/IP task has stack size :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`.
-   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/index` have task stack sizes :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`, :ref:`CONFIG_BT_BTU_TASK_STACK_SIZE`.
-   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` has task stack size :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`.
+   - :ref:`app-main-task` has stack size :menuitem:`CONFIG_ESP_MAIN_TASK_STACK_SIZE`.
+   - :doc:`/api-reference/system/esp_timer` system task which executes callbacks has stack size :menuitem:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`.
+   - FreeRTOS Timer Task to handle FreeRTOS timer callbacks has stack size :menuitem:`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH`.
+   - :doc:`/api-reference/system/esp_event` system task to execute callbacks for the default system event loop has stack size :menuitem:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`.
+   - :doc:`/api-guides/lwip` TCP/IP task has stack size :menuitem:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`.
+   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/index` have task stack sizes :menuitem:`CONFIG_BT_BTC_TASK_STACK_SIZE`, :menuitem:`CONFIG_BT_BTU_TASK_STACK_SIZE`.
+   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` has task stack size :menuitem:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`.
    - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the task stack size is 4 KB. This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
-   - FreeRTOS idle task stack size is configured by :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.
+   - FreeRTOS idle task stack size is configured by :menuitem:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.
    - To see how to optimize RAM usage when using ``mDNS``, please check `Minimizing RAM Usage <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#minimizing-ram-usage>`__.
 
 .. note::
@@ -155,12 +155,12 @@ There are some ESP-IDF configuration options that can reduce heap usage at runti
 
    - lwIP documentation has a section to configure :ref:`lwip-ram-usage`.
    :SOC_WIFI_SUPPORTED: - :ref:`wifi-buffer-usage` describes options to either reduce the number of static buffers or reduce the maximum number of dynamic buffers in use, so as to minimize memory usage at a possible cost of performance. Note that static Wi-Fi buffers are still allocated from the heap when Wi-Fi is initialized, and will be freed if Wi-Fi is deinitialized.
-   :esp32: - The Ethernet driver allocates DMA buffers for the internal Ethernet MAC when it is initialized - configuration options are :ref:`CONFIG_ETH_DMA_BUFFER_SIZE`, :ref:`CONFIG_ETH_DMA_RX_BUFFER_NUM`, :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`.
+   :esp32: - The Ethernet driver allocates DMA buffers for the internal Ethernet MAC when it is initialized - configuration options are :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE`, :menuitem:`CONFIG_ETH_DMA_RX_BUFFER_NUM`, :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`.
    - Several Mbed TLS configuration options can be used to reduce heap memory usage. See the :ref:`reducing_ram_usage_mbedtls` docs for details.
-   :esp32: - In single-core mode only, it is possible to use IRAM as byte-accessible memory added to the regular heap by enabling :ref:`CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`. Note that this option carries a performance penalty, and the risk of security issues caused by executable data. If this option is enabled, then it is possible to set other options to prefer certain buffers allocated from this memory: :ref:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`, :ref:`NimBLE <CONFIG_BT_NIMBLE_MEM_ALLOC_MODE>`.
-   :esp32: - Reduce :ref:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` if using Bluetooth LE.
-   :esp32: - Reduce :ref:`CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN` if using Bluetooth Classic.
-   :CONFIG_IDF_TARGET_ARCH_RISCV and not esp32c2 and not esp32c3: - Enabling :ref:`CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY` forces libstdc++ lock-free ``std::shared_ptr`` reference counting instead of a mutex-based implementation, avoiding an embedded mutex in each control block and saving about 88 bytes of heap per ``shared_ptr``. All C++ object files and linked libraries must use the same setting; see the config help for ABI details.
+   :esp32: - In single-core mode only, it is possible to use IRAM as byte-accessible memory added to the regular heap by enabling :menuitem:`CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`. Note that this option carries a performance penalty, and the risk of security issues caused by executable data. If this option is enabled, then it is possible to set other options to prefer certain buffers allocated from this memory: :menuitem:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`, :menuitem:`NimBLE <CONFIG_BT_NIMBLE_MEM_ALLOC_MODE>`.
+   :esp32: - Reduce :menuitem:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` if using Bluetooth LE.
+   :esp32: - Reduce :menuitem:`CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN` if using Bluetooth Classic.
+   :CONFIG_IDF_TARGET_ARCH_RISCV and not esp32c2 and not esp32c3: - Enabling :menuitem:`CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY` forces libstdc++ lock-free ``std::shared_ptr`` reference counting instead of a mutex-based implementation, avoiding an embedded mutex in each control block and saving about 88 bytes of heap per ``shared_ptr``. All C++ object files and linked libraries must use the same setting; see the config help for ABI details.
 
 .. note::
 
@@ -183,30 +183,30 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
 .. list::
 
-    - Disable :ref:`CONFIG_FREERTOS_IN_IRAM` if enabled to place FreeRTOS functions in flash instead of IRAM. By default, FreeRTOS functions are already placed in Flash to save IRAM.
-    - Disable :ref:`CONFIG_RINGBUF_IN_IRAM` if enabled to place ring buffer functions in Flash instead of IRAM. By default, ring buffer functions are already placed in Flash to save IRAM.
-    - Enable :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`. This option is not safe to use if the ISR ringbuf functions are used from an IRAM interrupt context, e.g., if :ref:`CONFIG_UART_ISR_IN_IRAM` is enabled. For the ESP-IDF drivers where this is the case, you can get an error at run-time when installing the driver in question.
-    :SOC_WIFI_SUPPORTED: - Disabling Wi-Fi options :ref:`CONFIG_ESP_WIFI_IRAM_OPT` and/or :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` options frees available IRAM at the cost of Wi-Fi performance.
-    :CONFIG_ESP_ROM_HAS_SPI_FLASH: - Enabling :ref:`CONFIG_SPI_FLASH_ROM_IMPL` frees some IRAM but means that esp_flash bugfixes and new flash chip support are not available, see :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom` for details.
-    :esp32: - If the application uses PSRAM and is based on ESP32 rev. 3 (ECO3), setting :ref:`CONFIG_ESP32_REV_MIN` to ``3`` disables PSRAM bug workarounds, saving 10 KB or more of IRAM.
-    - Disabling :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` prevents posting ``esp_event`` events from :ref:`iram-safe-interrupt-handlers` but saves some IRAM.
-    :SOC_GPSPI_SUPPORTED: - Disabling :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but saves some IRAM.
-    :SOC_GPSPI_SUPPORTED: - Disabling :ref:`CONFIG_SPI_SLAVE_ISR_IN_IRAM` prevents spi_slave interrupts from being serviced while writing to flash, which saves some IRAM.
-    - Setting :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` to disable assertion for HAL component saves some IRAM, especially for HAL code who calls ``HAL_ASSERT`` a lot and resides in IRAM.
+    - Disable :menuitem:`CONFIG_FREERTOS_IN_IRAM` if enabled to place FreeRTOS functions in flash instead of IRAM. By default, FreeRTOS functions are already placed in Flash to save IRAM.
+    - Disable :menuitem:`CONFIG_RINGBUF_IN_IRAM` if enabled to place ring buffer functions in Flash instead of IRAM. By default, ring buffer functions are already placed in Flash to save IRAM.
+    - Enable :menuitem:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`. This option is not safe to use if the ISR ringbuf functions are used from an IRAM interrupt context, e.g., if :menuitem:`CONFIG_UART_ISR_IN_IRAM` is enabled. For the ESP-IDF drivers where this is the case, you can get an error at run-time when installing the driver in question.
+    :SOC_WIFI_SUPPORTED: - Disabling Wi-Fi options :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT` and/or :menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT` options frees available IRAM at the cost of Wi-Fi performance.
+    :CONFIG_ESP_ROM_HAS_SPI_FLASH: - Enabling :menuitem:`CONFIG_SPI_FLASH_ROM_IMPL` frees some IRAM but means that esp_flash bugfixes and new flash chip support are not available, see :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom` for details.
+    :esp32: - If the application uses PSRAM and is based on ESP32 rev. 3 (ECO3), setting :menuitem:`CONFIG_ESP32_REV_MIN` to ``3`` disables PSRAM bug workarounds, saving 10 KB or more of IRAM.
+    - Disabling :menuitem:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` prevents posting ``esp_event`` events from :ref:`iram-safe-interrupt-handlers` but saves some IRAM.
+    :SOC_GPSPI_SUPPORTED: - Disabling :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but saves some IRAM.
+    :SOC_GPSPI_SUPPORTED: - Disabling :menuitem:`CONFIG_SPI_SLAVE_ISR_IN_IRAM` prevents spi_slave interrupts from being serviced while writing to flash, which saves some IRAM.
+    - Setting :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` to disable assertion for HAL component saves some IRAM, especially for HAL code who calls ``HAL_ASSERT`` a lot and resides in IRAM.
     - Refer to the sdkconfig menu ``Auto-detect Flash chips``, and you can disable flash drivers which you do not need to save some IRAM.
-    :SOC_GPSPI_SUPPORTED: - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
-    :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
-    - Disable :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM` if no ISRs that run while cache is disabled (i.e. IRAM ISRs) use libc lock APIs.
-    :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - Disable :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` to save approximately 1000 bytes of IRAM, at the cost of reduced performance.
-    :SOC_SPIRAM_SUPPORTED: - Enable :ref:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM` to force ``esp_event`` to place event loop related allocations in external RAM instead of internal RAM.
-    :not CONFIG_ESP_ROM_HAS_VPRINTF_FUNC: - When using **Log V2**, disable :ref:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE` to remove ``esp_rom_vprintf`` from IRAM, saving about 1.2 KB. This means ``ESP_LOGx`` will no longer safely fall back to ROM-based printing in ISRs or with cache disabled. Use ``ESP_DRAM_LOGx`` explicitly for constrained-environment logging. See :doc:`/api-reference/system/log` for details.
+    :SOC_GPSPI_SUPPORTED: - Enable :menuitem:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
+    :esp32c2: - Enable :menuitem:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
+    - Disable :menuitem:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM` if no ISRs that run while cache is disabled (i.e. IRAM ISRs) use libc lock APIs.
+    :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - Disable :menuitem:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` to save approximately 1000 bytes of IRAM, at the cost of reduced performance.
+    :SOC_SPIRAM_SUPPORTED: - Enable :menuitem:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM` to force ``esp_event`` to place event loop related allocations in external RAM instead of internal RAM.
+    :not CONFIG_ESP_ROM_HAS_VPRINTF_FUNC: - When using **Log V2**, disable :menuitem:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE` to remove ``esp_rom_vprintf`` from IRAM, saving about 1.2 KB. This means ``ESP_LOGx`` will no longer safely fall back to ROM-based printing in ISRs or with cache disabled. Use ``ESP_DRAM_LOGx`` explicitly for constrained-environment logging. See :doc:`/api-reference/system/log` for details.
 
 .. only:: esp32
 
    Using SRAM1 for IRAM
    ^^^^^^^^^^^^^^^^^^^^
 
-   The SRAM1 memory area is normally used for DRAM, but it is possible to use parts of it for IRAM with :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`. This memory would previously be reserved for DRAM data usage (e.g., ``.bss``) by the ESP-IDF second stage bootloader and later added to the heap. After this option was introduced, the bootloader DRAM size was reduced to a value closer to what it normally actually needs.
+   The SRAM1 memory area is normally used for DRAM, but it is possible to use parts of it for IRAM with :menuitem:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`. This memory would previously be reserved for DRAM data usage (e.g., ``.bss``) by the ESP-IDF second stage bootloader and later added to the heap. After this option was introduced, the bootloader DRAM size was reduced to a value closer to what it normally actually needs.
 
    To use this option, ESP-IDF should be able to recognize that the new SRAM1 area is also a valid load address for an image segment. If the second stage bootloader was compiled before this option existed, then the bootloader will not be able to load the app that has code placed in this new extended IRAM area. This would typically happen if you are doing an OTA update, where only the app would be updated.
 
@@ -218,7 +218,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
    .. warning::
 
-      Apps compiled with :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM` may fail to boot, if used together with a second stage bootloader that was compiled before this config option was introduced. If you are using an older bootloader and updating over OTA, please test carefully before pushing any updates.
+      Apps compiled with :menuitem:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM` may fail to boot, if used together with a second stage bootloader that was compiled before this config option was introduced. If you are using an older bootloader and updating over OTA, please test carefully before pushing any updates.
 
    Any memory that ends up unused for static IRAM will be added to the heap.
 
@@ -237,9 +237,9 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
     User ISR callbacks and involved variables have to be in internal RAM if they are also used in interrupt contexts.
 
-    Placing additional code into IRAM will exacerbate IRAM usage. For this reason, there is :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`, which can alleviate the aforementioned kinds of IRAM usage. By enabling this feature, the Cache will not be disabled when SPI flash driver APIs and SPI flash driver-based APIs are used. Therefore, code and data in flash can be executed or accessed normally, but with some minor delay. See :ref:`auto-suspend` for more details about this feature.
+    Placing additional code into IRAM will exacerbate IRAM usage. For this reason, there is :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND`, which can alleviate the aforementioned kinds of IRAM usage. By enabling this feature, the Cache will not be disabled when SPI flash driver APIs and SPI flash driver-based APIs are used. Therefore, code and data in flash can be executed or accessed normally, but with some minor delay. See :ref:`auto-suspend` for more details about this feature.
 
-    IRAM usage for flash driver can be declined with :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` enabled. Please refer to :ref:`internal_memory_saving_for_flash_driver` for more detailed information.
+    IRAM usage for flash driver can be declined with :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND` enabled. Please refer to :ref:`internal_memory_saving_for_flash_driver` for more detailed information.
 
     Regarding the flash suspend feature usage, and corresponding response time delay, please also see this example :example:`system/flash_suspend`.
 
@@ -249,22 +249,22 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     Putting C Library in Flash
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    When compiling for ESP32 revisions older than ECO3 (:ref:`CONFIG_ESP32_REV_MIN`), the PSRAM Cache bug workaround (:ref:`CONFIG_SPIRAM_CACHE_WORKAROUND`) option is enabled, and the C library functions normally located in ROM are recompiled with the workaround and placed into IRAM instead. For most applications, it is safe to move many of the C library functions into flash, reclaiming some IRAM. Corresponding options include:
+    When compiling for ESP32 revisions older than ECO3 (:menuitem:`CONFIG_ESP32_REV_MIN`), the PSRAM Cache bug workaround (:menuitem:`CONFIG_SPIRAM_CACHE_WORKAROUND`) option is enabled, and the C library functions normally located in ROM are recompiled with the workaround and placed into IRAM instead. For most applications, it is safe to move many of the C library functions into flash, reclaiming some IRAM. Corresponding options include:
 
     .. list::
 
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBJMP_IN_IRAM`: affects the functions ``longjmp`` and ``setjump``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBMATH_IN_IRAM`: affects the functions ``abs``, ``div``, ``labs``, ``ldiv``, ``quorem``, ``fpclassify`` and ``nan``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM`: affects the functions ``utoa``, ``itoa``, ``atoi``, ``atol``, ``strtol``, and ``strtoul``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBIO_IN_IRAM`: affects the functions ``wcrtomb``, ``fvwrite``, ``wbuf``, ``wsetup``, ``fputwc``, ``wctomb_r``, ``ungetc``, ``makebuf``, ``fflush``, ``refill``, and ``sccl``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBTIME_IN_IRAM`: affects the functions ``asctime``, ``asctime_r``, ``ctime``, ``ctime_r``, ``lcltime``, ``lcltime_r``, ``gmtime``, ``gmtime_r``, ``strftime``, ``mktime``, ``tzset_r``, ``tzset``, ``time``, ``gettzinfo``, ``systimes``, ``month_lengths``, ``timelocal``, ``tzvars``, ``tzlock``, ``tzcalc_limits``, and ``strptime``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBCHAR_IN_IRAM`: affects the functions ``ctype_``, ``toupper``, ``tolower``, ``toascii``, ``strupr``, ``bzero``, ``isalnum``, ``isalpha``, ``isascii``, ``isblank``, ``iscntrl``, ``isdigit``, ``isgraph``, ``islower``, ``isprint``, ``ispunct``, ``isspace``, and ``isupper``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBMEM_IN_IRAM`: affects the functions ``memccpy``, ``memchr``, ``memmove``, and ``memrchr``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBSTR_IN_IRAM`: affects the functions ``strcasecmp``, ``strcasestr``, ``strchr``, ``strcoll``, ``strcpy``, ``strcspn``, ``strdup``, ``strdup_r``, ``strlcat``, ``strlcpy``, ``strlen``, ``strlwr``, ``strncasecmp``, ``strncat``, ``strncmp``, ``strncpy``, ``strndup``, ``strndup_r``, ``strrchr``, ``strsep``, ``strspn``, ``strstr``, ``strtok_r, and ``strupr``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBRAND_IN_IRAM`: affects the functions ``srand``, ``rand``, and ``rand_r``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBENV_IN_IRAM`: affects the functions ``environ``, ``envlock``, and ``getenv_r``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBFILE_IN_IRAM`: affects the functions ``lock``, ``isatty``, ``fclose``, ``open``, ``close``, ``creat``, ``read``, ``rshift``, ``sbrk``, ``stdio``, ``syssbrk``, ``sysclose``, ``sysopen``, ``creat``, ``sysread``, ``syswrite``, ``impure``, ``fwalk``, and ``findfp``.
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM`: affects the functions ``raise`` and ``system``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBJMP_IN_IRAM`: affects the functions ``longjmp`` and ``setjump``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBMATH_IN_IRAM`: affects the functions ``abs``, ``div``, ``labs``, ``ldiv``, ``quorem``, ``fpclassify`` and ``nan``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM`: affects the functions ``utoa``, ``itoa``, ``atoi``, ``atol``, ``strtol``, and ``strtoul``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBIO_IN_IRAM`: affects the functions ``wcrtomb``, ``fvwrite``, ``wbuf``, ``wsetup``, ``fputwc``, ``wctomb_r``, ``ungetc``, ``makebuf``, ``fflush``, ``refill``, and ``sccl``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBTIME_IN_IRAM`: affects the functions ``asctime``, ``asctime_r``, ``ctime``, ``ctime_r``, ``lcltime``, ``lcltime_r``, ``gmtime``, ``gmtime_r``, ``strftime``, ``mktime``, ``tzset_r``, ``tzset``, ``time``, ``gettzinfo``, ``systimes``, ``month_lengths``, ``timelocal``, ``tzvars``, ``tzlock``, ``tzcalc_limits``, and ``strptime``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBCHAR_IN_IRAM`: affects the functions ``ctype_``, ``toupper``, ``tolower``, ``toascii``, ``strupr``, ``bzero``, ``isalnum``, ``isalpha``, ``isascii``, ``isblank``, ``iscntrl``, ``isdigit``, ``isgraph``, ``islower``, ``isprint``, ``ispunct``, ``isspace``, and ``isupper``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBMEM_IN_IRAM`: affects the functions ``memccpy``, ``memchr``, ``memmove``, and ``memrchr``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBSTR_IN_IRAM`: affects the functions ``strcasecmp``, ``strcasestr``, ``strchr``, ``strcoll``, ``strcpy``, ``strcspn``, ``strdup``, ``strdup_r``, ``strlcat``, ``strlcpy``, ``strlen``, ``strlwr``, ``strncasecmp``, ``strncat``, ``strncmp``, ``strncpy``, ``strndup``, ``strndup_r``, ``strrchr``, ``strsep``, ``strspn``, ``strstr``, ``strtok_r, and ``strupr``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBRAND_IN_IRAM`: affects the functions ``srand``, ``rand``, and ``rand_r``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBENV_IN_IRAM`: affects the functions ``environ``, ``envlock``, and ``getenv_r``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBFILE_IN_IRAM`: affects the functions ``lock``, ``isatty``, ``fclose``, ``open``, ``close``, ``creat``, ``read``, ``rshift``, ``sbrk``, ``stdio``, ``syssbrk``, ``sysclose``, ``sysopen``, ``creat``, ``sysread``, ``syswrite``, ``impure``, ``fwalk``, and ``findfp``.
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM`: affects the functions ``raise`` and ``system``.
 
     The exact amount of IRAM saved will depend on how much C library code is actually used by the application. In addition, the following options may be used to move more of the C library code into flash, however note that this may result in reduced performance. Be careful not to use the C library function allocated with :c:macro:`ESP_INTR_FLAG_IRAM` flag from interrupts when cache is disabled, refer to :ref:`iram-safe-interrupt-handlers` for more details. For these reasons, the functions ``itoa``, ``memcmp``, ``memcpy``, ``memset``, ``strcat``, ``strcmp``, and ``strlen`` are always put in IRAM.
 
@@ -286,8 +286,8 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
    .. list::
 
-      :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
-      :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`
-      :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
-      :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
-      :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`
+      :esp32s2: - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
+      :esp32s2: - :menuitem:`CONFIG_ESP32S2_DATA_CACHE_SIZE`
+      :esp32s3: - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+      :esp32s3: - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+      :esp32p4: - :menuitem:`CONFIG_CACHE_L2_CACHE_SIZE`

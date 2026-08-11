@@ -1117,7 +1117,7 @@ These functions can be called from different RTOS tasks without protection by ex
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_ISP_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled.
+- :menuitem:`CONFIG_ISP_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled.
 
 .. _isp-iram-safe:
 
@@ -1126,7 +1126,7 @@ IRAM Safe
 
 By default, the ISP interrupt will be deferred when the cache is disabled because of writing or erasing the flash.
 
-Kconfig option :ref:`CONFIG_ISP_ISR_IRAM_SAFE` will:
+Kconfig option :menuitem:`CONFIG_ISP_ISR_IRAM_SAFE` will:
 
 -  Enable the interrupt being serviced even when the cache is disabled
 -  Place all functions that used by the ISR into IRAM
@@ -1134,7 +1134,7 @@ Kconfig option :ref:`CONFIG_ISP_ISR_IRAM_SAFE` will:
 
 This allows the interrupt to run while the cache is disabled, but comes at the cost of increased IRAM consumption. With this option enabled, the ISR callbacks will be running when cache is disabled. Therefore you should make sure the callbacks and its involved context are IRAM-safe as well.
 
-Kconfig option :ref:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` will:
+Kconfig option :menuitem:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` will:
 
 - Place some of the ISP control functions into IRAM, including:
 

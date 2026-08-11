@@ -8,7 +8,7 @@ A static analyzer is a tool that checks source code for errors and vulnerabiliti
 GNU Static Analyzer
 -------------------
 
-The GNU Static Analyzer is distributed with GCC (refer to `GCC documentation <https://gcc.gnu.org/onlinedocs/gcc/Static-Analyzer-Options.html>`_). It can be enabled with :ref:`CONFIG_COMPILER_STATIC_ANALYZER` to perform code checks during application builds.
+The GNU Static Analyzer is distributed with GCC (refer to `GCC documentation <https://gcc.gnu.org/onlinedocs/gcc/Static-Analyzer-Options.html>`_). It can be enabled with :menuitem:`CONFIG_COMPILER_STATIC_ANALYZER` to perform code checks during application builds.
 
 Suppressing Warnings
 ^^^^^^^^^^^^^^^^^^^^

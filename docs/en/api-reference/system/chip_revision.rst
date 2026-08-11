@@ -99,7 +99,7 @@ Compatibility Checks of ESP-IDF
 
 When building an application that needs to support multiple revisions of a particular chip, the minimum and maximum chip revision numbers supported by the build are specified via Kconfig.
 
-The minimum chip revision can be configured via the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` option. Specifying the minimum chip revision will limit the software to only run on a chip revisions that are high enough to support some features or bugfixes.
+The minimum chip revision can be configured via the :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` option. Specifying the minimum chip revision will limit the software to only run on a chip revisions that are high enough to support some features or bugfixes.
 
 The maximum chip revision cannot be configured and is automatically determined by the current ESP-IDF version being used. ESP-IDF will refuse to boot any chip revision exceeding the maximum chip revision. Given that it is impossible for a particular ESP-IDF version to foresee all future chip revisions, the maximum chip revision is usually set to ``maximum supported MAJOR version + 99``. The "Ignore Maximum Revision" eFuse can be set to bypass the maximum revision limitation. However, the software is not guaranteed to work if the maximum revision is ignored.
 
@@ -119,7 +119,7 @@ Troubleshooting
 To resolve this issue,
 
 - Use a chip with the required minimum revision or higher.
-- Lower the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` value and rebuild the image so that it is compatible with the chip revision being used.
+- Lower the :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` value and rebuild the image so that it is compatible with the chip revision being used.
 
 2. If application does not match minimum and maximum chip revisions, a reboot occurs. The following message will be printed:
 
@@ -134,8 +134,8 @@ Representing Revision Requirements of a Binary Image
 
 For the chip revision, the second stage bootloader and the application binary images contain the :cpp:type:`esp_image_header_t` header, which stores information specifying the chip revisions that the image is permitted to run on. This header has 3 fields related to the chip revisions:
 
-- ``min_chip_rev`` - Minimum chip MAJOR revision required by image (but for ESP32-C3 it is MINOR revision). Its value is determined by :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN`.
-- ``min_chip_rev_full`` - Minimum chip MINOR revision required by image in format: ``major * 100 + minor``. Its value is determined by :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN`.
+- ``min_chip_rev`` - Minimum chip MAJOR revision required by image (but for ESP32-C3 it is MINOR revision). Its value is determined by :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN`.
+- ``min_chip_rev_full`` - Minimum chip MINOR revision required by image in format: ``major * 100 + minor``. Its value is determined by :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN`.
 - ``max_chip_rev_full`` - Maximum chip revision required by image in format: ``major * 100 + minor``. Its value is determined by ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``. It can not be changed by user. Only Espressif can change it when a new version will be supported in ESP-IDF.
 
 For the eFuse revision, the requirements are stored in :cpp:type:`esp_app_desc_t`, which is contained in the application binary image. We only check the application image because the eFuse block revision mostly affects the ADC calibration, which does not really matter in the bootloader. There are 2 fields related to eFuse block revisions:

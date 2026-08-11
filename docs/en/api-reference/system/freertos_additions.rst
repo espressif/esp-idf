@@ -391,8 +391,8 @@ ESP-IDF Tick and Idle Hooks
 
 FreeRTOS allows applications to provide a tick hook and an idle hook at compile time:
 
-- FreeRTOS tick hook can be enabled via the :ref:`CONFIG_FREERTOS_USE_TICK_HOOK` option. The application must provide the ``void vApplicationTickHook( void )`` callback.
-- FreeRTOS idle hook can be enabled via the :ref:`CONFIG_FREERTOS_USE_IDLE_HOOK` option. The application must provide the ``void vApplicationIdleHook( void )`` callback.
+- FreeRTOS tick hook can be enabled via the :menuitem:`CONFIG_FREERTOS_USE_TICK_HOOK` option. The application must provide the ``void vApplicationTickHook( void )`` callback.
+- FreeRTOS idle hook can be enabled via the :menuitem:`CONFIG_FREERTOS_USE_IDLE_HOOK` option. The application must provide the ``void vApplicationIdleHook( void )`` callback.
 
 However, the FreeRTOS tick hook and idle hook have the following draw backs:
 

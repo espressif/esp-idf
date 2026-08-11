@@ -26,9 +26,9 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 
 多数配置可通过 menuconfig 完成。CMake 会根据配置信息生成及嵌入证书包。
 
- * :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`：自动创建并附加证书包。
- * :ref:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`：决定添加证书列表中的哪些证书。
- * :ref:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH`：指定要在证书包中嵌入的其他证书的路径。
+ * :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`：自动创建并附加证书包。
+ * :menuitem:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`：决定添加证书列表中的哪些证书。
+ * :menuitem:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH`：指定要在证书包中嵌入的其他证书的路径。
 
 要在使用 ESP-TLS 时启用证书包，将函数指针指向证书包的 attach 函数：
 
@@ -75,7 +75,7 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 定期同步
 -------------
 
-证书包会与 Mozilla 的 NSS 根证书商店定期同步。在 ESP-IDF 的次要版本或补丁版本中，为了保证兼容性，会将上游证书包中已弃用的证书添加到弃用列表。如有需要，可以通过 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST` 将弃用证书加入默认证书包。这些弃用证书将在下一个 ESP-IDF 主要版本中移除。
+证书包会与 Mozilla 的 NSS 根证书商店定期同步。在 ESP-IDF 的次要版本或补丁版本中，为了保证兼容性，会将上游证书包中已弃用的证书添加到弃用列表。如有需要，可以通过 :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST` 将弃用证书加入默认证书包。这些弃用证书将在下一个 ESP-IDF 主要版本中移除。
 
 交叉签名证书支持
 ----------------
@@ -83,7 +83,7 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 概述
 ^^^^
 
-启用配置选项 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 时，ESP x509 证书包 API 将支持验证包含交叉签名根证书的证书链。
+启用配置选项 :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 时，ESP x509 证书包 API 将支持验证包含交叉签名根证书的证书链。
 
 即使证书链中包含交叉签名根证书，验证过程中也能从证书包中智能匹配候选的证书颁发机构 (CA)，从而提高与各类服务器证书的互操作性。
 
@@ -102,11 +102,11 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 使用方法
 ^^^^^^^^
 
-除了在项目配置中启用 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 外，应用无需额外更改。握手过程中，证书包会自动提供候选的 CA。
+除了在项目配置中启用 :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 外，应用无需额外更改。握手过程中，证书包会自动提供候选的 CA。
 
 .. note::
 
-    如果启用了 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY`，其内部会使用 ``MBEDTLS_X509_TRUSTED_CERT_CALLBACK``。在此情况下，用户 **不应** 自行提供受信任证书回调函数，因为证书包会自动处理。
+    如果启用了 :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY`，其内部会使用 ``MBEDTLS_X509_TRUSTED_CERT_CALLBACK``。在此情况下，用户 **不应** 自行提供受信任证书回调函数，因为证书包会自动处理。
 
 应用示例
 ---------

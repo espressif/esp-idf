@@ -11,7 +11,7 @@ IDF FreeRTOS Upgrade
 
 The IDF FreeRTOS kernel (which is a dual-core SMP implementation of FreeRTOS) has been upgraded to be based on Vanilla FreeRTOS v10.5.1. With this upgrade, the design and implementation of IDF FreeRTOS has also been changed significantly. As a result, users should take note of the following changes to kernel behavior and API:
 
-- When enabling single-core mode via the :ref:`CONFIG_FREERTOS_UNICORE` option, the kernel's behavior will now be identical to Vanilla FreeRTOS (see :ref:`freertos-idf-single-core` for more details).
+- When enabling single-core mode via the :menuitem:`CONFIG_FREERTOS_UNICORE` option, the kernel's behavior will now be identical to Vanilla FreeRTOS (see :ref:`freertos-idf-single-core` for more details).
 - For SMP related APIs that were added by IDF FreeRTOS, checks on ``xCoreID`` arguments are now stricter. Providing out of range values for ``xCoreID`` arguments will now trigger an assert.
 - The following SMP related APIs are now deprecated and replaced due to naming consistency reasons:
 
@@ -39,4 +39,4 @@ The Task Snapshot API has been made private due to a lack of a practical way for
 Panic Handler Behavior
 ----------------------
 
-The choice ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` in the configuration option :ref:`CONFIG_ESP_SYSTEM_PANIC` has been made dependent on whether the ``esp_gdbstub`` component is included in the build. When trimming the list of components in the build using ``set(COMPONENTS main)``, ``esp_gdbstub`` component has to be added to this list of components to make the ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` option available.
+The choice ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` in the configuration option :menuitem:`CONFIG_ESP_SYSTEM_PANIC` has been made dependent on whether the ``esp_gdbstub`` component is included in the build. When trimming the list of components in the build using ``set(COMPONENTS main)``, ``esp_gdbstub`` component has to be added to this list of components to make the ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` option available.

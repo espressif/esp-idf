@@ -118,7 +118,7 @@ SPI Flash Size
 
 The SPI flash size is configured by writing a field in the ESP-IDF second stage bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by ``esptool`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+By default, the SPI flash size is detected by ``esptool`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :menuitem:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
@@ -254,16 +254,16 @@ The delay is used by some long operations which requires the master to wait or p
 
 The top API wraps these the chip driver and OS functions into an entire component, and also provides some argument checking.
 
-OS functions can also help to avoid a watchdog timeout when erasing large flash areas. During this time, the CPU is occupied with the flash erasing task. This stops other tasks from being executed. Among these tasks is the idle task to feed the watchdog timer (WDT). If the configuration option :ref:`CONFIG_ESP_TASK_WDT_PANIC` is selected and the flash operation time is longer than the watchdog timeout period, the system will reboot.
+OS functions can also help to avoid a watchdog timeout when erasing large flash areas. During this time, the CPU is occupied with the flash erasing task. This stops other tasks from being executed. Among these tasks is the idle task to feed the watchdog timer (WDT). If the configuration option :menuitem:`CONFIG_ESP_TASK_WDT_PANIC` is selected and the flash operation time is longer than the watchdog timeout period, the system will reboot.
 
 It is pretty hard to totally eliminate this risk, because the erasing time varies with different flash chips, making it hard to be compatible in flash drivers. Therefore, users need to pay attention to it. Please use the following guidelines:
 
-1. It is recommended to enable the :ref:`CONFIG_SPI_FLASH_YIELD_DURING_ERASE` option to allow the scheduler to re-schedule during erasing flash memory. Besides, following parameters can also be used.
+1. It is recommended to enable the :menuitem:`CONFIG_SPI_FLASH_YIELD_DURING_ERASE` option to allow the scheduler to re-schedule during erasing flash memory. Besides, following parameters can also be used.
 
-- Increase :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_TICKS` or decrease :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS` in menuconfig.
-- You can also increase :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` in menuconfig for a larger watchdog timeout period. However, with larger watchdog timeout period, previously detected timeouts may no longer be detected.
+- Increase :menuitem:`CONFIG_SPI_FLASH_ERASE_YIELD_TICKS` or decrease :menuitem:`CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS` in menuconfig.
+- You can also increase :menuitem:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` in menuconfig for a larger watchdog timeout period. However, with larger watchdog timeout period, previously detected timeouts may no longer be detected.
 
-2. Please be aware of the consequences of enabling the :ref:`CONFIG_ESP_TASK_WDT_PANIC` option when doing long-running SPI flash operations which triggers the panic handler when it times out. However, this option can also help dealing with unexpected exceptions in your application. Please decide whether this is needed to be enabled according to actual condition.
+2. Please be aware of the consequences of enabling the :menuitem:`CONFIG_ESP_TASK_WDT_PANIC` option when doing long-running SPI flash operations which triggers the panic handler when it times out. However, this option can also help dealing with unexpected exceptions in your application. Please decide whether this is needed to be enabled according to actual condition.
 
 3. During your development, please carefully review the actual flash operation according to the specific requirements and time limits on erasing flash memory of your projects. Always allow reasonable redundancy based on your specific product requirements when configuring the flash erasing timeout threshold, thus improving the reliability of your product.
 
@@ -285,7 +285,7 @@ Once the flash operation is complete, the function on CPU A sets another flag, `
 
 Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``).
 
-In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
+In a single core environment (:menuitem:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
@@ -294,13 +294,13 @@ In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need 
     Internal Memory Saving For Flash Driver
     ---------------------------------------
 
-    The ESP-IDF provides options to optimize the usage of IRAM by selectively placing certain functions into flash memory via turning off :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`. It allows SPI flash operation functions to be executed from flash memory instead of IRAM. Thus it saves IRAM memory for other significant time-critical functions or tasks.
+    The ESP-IDF provides options to optimize the usage of IRAM by selectively placing certain functions into flash memory via turning off :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`. It allows SPI flash operation functions to be executed from flash memory instead of IRAM. Thus it saves IRAM memory for other significant time-critical functions or tasks.
 
     However, this has some implications for flash itself. Functions placed into flash memory may have slightly increased execution times compared to those placed in IRAM. Applications with strict timing requirements or those heavily reliant on SPI flash operations may need to evaluate the trade-offs before enabling this option.
 
     .. note::
 
-        :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` should not be turned off when :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` is not enabled, otherwise it will cause critical crash. As for flash suspend feature, please refer to :ref:`auto-suspend` for more information.
+        :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` should not be turned off when :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND` is not enabled, otherwise it will cause critical crash. As for flash suspend feature, please refer to :ref:`auto-suspend` for more information.
 
     Resource Consumption
     ^^^^^^^^^^^^^^^^^^^^
@@ -309,7 +309,7 @@ In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need 
 
     **Note that the following data are not exact values and are for reference only; they may differ on different chip models.**
 
-    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is enabled:
+    Resource consumption when :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is enabled:
 
     .. list-table:: Resource Consumption
        :widths: 20 10 10 10 10 10 10 10 10 10
@@ -346,7 +346,7 @@ In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need 
          - 247
          - 247
 
-    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is disabled:
+    Resource consumption when :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is disabled:
 
     .. list-table:: Resource Consumption
        :widths: 20 10 10 10 10 10 10 10 10 10

@@ -45,19 +45,19 @@ SPI Flash 和片外 SPI RAM 配置
 
 在 ``Serial flasher config`` 菜单下，可以找到 flash 相关的配置。
 
-1. 选择在板上使用的 flash 类型。如果是八线 flash，请选择 :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`；如果是四线 flash，则不必选择此配置。
-2. 选择 flash 的行模式。在 :ref:`CONFIG_ESPTOOLPY_FLASHMODE` 中选择行模式，线模式越高，SPI 速度越快。有关行模式的术语，请参阅上述术语表。
-3. 选择 flash 的采样模式。在 :ref:`CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE` 中选择采样模式，DDR 模式比 SDR 模式速度更快。有关 SDR 和 DDR 模式的术语，请参阅上述术语表。
-4. 选择 flash 的速度。在 :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` 中选择 flash 频率。
-5. 选择 flash 的大小。在 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` 中选择 flash 的大小，以兆字节为单位。
+1. 选择在板上使用的 flash 类型。如果是八线 flash，请选择 :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH`；如果是四线 flash，则不必选择此配置。
+2. 选择 flash 的行模式。在 :menuitem:`CONFIG_ESPTOOLPY_FLASHMODE` 中选择行模式，线模式越高，SPI 速度越快。有关行模式的术语，请参阅上述术语表。
+3. 选择 flash 的采样模式。在 :menuitem:`CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE` 中选择采样模式，DDR 模式比 SDR 模式速度更快。有关 SDR 和 DDR 模式的术语，请参阅上述术语表。
+4. 选择 flash 的速度。在 :menuitem:`CONFIG_ESPTOOLPY_FLASHFREQ` 中选择 flash 频率。
+5. 选择 flash 的大小。在 :menuitem:`CONFIG_ESPTOOLPY_FLASHSIZE` 中选择 flash 的大小，以兆字节为单位。
 
 配置 PSRAM
 ^^^^^^^^^^
 
-要启动 PSRAM，请在 ``Component config / Hardware Settings`` 菜单下启用 :ref:`CONFIG_SPIRAM`。在 ``SPI RAM config`` 菜单下可以看到所有与 PSRAM 相关的配置。
+要启用 PSRAM，请启用 :menuitem:`CONFIG_SPIRAM`。随后将显示所有与 PSRAM 相关的配置。
 
-1. 选择在板上使用的 PSRAM 类型。在 :ref:`CONFIG_SPIRAM_MODE` 中可以选择四线或八线 PSRAM。
-2. 选择 PSRAM 的速度。在 :ref:`CONFIG_SPIRAM_SPEED` 中选择 PSRAM 的频率。
+1. 选择在板上使用的 PSRAM 类型。在 :menuitem:`CONFIG_SPIRAM_MODE` 中可以选择四线或八线 PSRAM。
+2. 选择 PSRAM 的速度。在 :menuitem:`CONFIG_SPIRAM_SPEED` 中选择 PSRAM 的频率。
 
 .. note::
 
@@ -89,7 +89,7 @@ SPI Flash 和片外 SPI RAM 配置
 
     120 MHz DDR 模式为实验性功能，仅在启用下述选项时才能实现：
 
-     - :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
+     - :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
 
     通过上述步骤，就能看到 120 MHz 的选项。
 
@@ -101,7 +101,7 @@ SPI Flash 和片外 SPI RAM 配置
 
 .. note::
 
-    PSRAM 在 120M 运行时需要相位点校准算法。相位点设置与启动时的温度有关。当芯片运行期间温度大幅上升（下降）时，PSRAM 可能会出现读写错误。为解决这一问题，可以使能 :ref:`CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR`，根据温度值动态调整 PSRAM 相位点。这将创建一个任务，每隔 :ref:`CONFIG_SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND` 秒测量一次温度，并相应调整 PSRAM 相位点。
+    PSRAM 在 120M 运行时需要相位点校准算法。相位点设置与启动时的温度有关。当芯片运行期间温度大幅上升（下降）时，PSRAM 可能会出现读写错误。为解决这一问题，可以使能 :menuitem:`CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR`，根据温度值动态调整 PSRAM 相位点。这将创建一个任务，每隔 :menuitem:`CONFIG_SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND` 秒测量一次温度，并相应调整 PSRAM 相位点。
 
 F8R8 硬件
 ^^^^^^^^^
@@ -245,7 +245,7 @@ F4R4 硬件
 
    一级 (ROM) 引导加载程序可通过 eFuse 位 ``FLASH_TYPE`` 将 flash 复位为默认模式（SPI 模式）。如果未烧录此位，且 flash 处于 OPI 模式，则一级 (ROM) 引导加载程序可能无法从 flash 中读取并加载以下图像。
 
-2. 如果启用 :ref:`CONFIG_ESPTOOLPY_OCT_FLASH` 后出现如下错误日志：
+2. 如果启用 :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH` 后出现如下错误日志：
 
     .. code-block:: c
 

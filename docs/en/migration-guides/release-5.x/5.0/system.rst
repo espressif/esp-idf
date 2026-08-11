@@ -117,7 +117,7 @@ Task Watchdog Timers
     - Configuration is now passed as a configuration structure.
     - The function will now handle subscribing of the idle tasks if configured to do so.
 
-- The former ``CONFIG_ESP_TASK_WDT`` configuration option has been renamed to :ref:`CONFIG_ESP_TASK_WDT_INIT` and a new :ref:`CONFIG_ESP_TASK_WDT_EN` option has been introduced.
+- The former ``CONFIG_ESP_TASK_WDT`` configuration option has been renamed to :menuitem:`CONFIG_ESP_TASK_WDT_INIT` and a new :menuitem:`CONFIG_ESP_TASK_WDT_EN` option has been introduced.
 
 FreeRTOS
 --------
@@ -128,7 +128,7 @@ Legacy API and Data Types
 Previously, the ``configENABLE_BACKWARD_COMPATIBILITY`` option was set by default, thus allowing pre FreeRTOS v8.0.0 function names and data types to be used. The ``configENABLE_BACKWARD_COMPATIBILITY`` is now disabled by default, thus legacy FreeRTOS names/types are no longer supported by default. Users should do one of the following:
 
 - Update their code to remove usage of legacy FreeRTOS names/types.
-- Enable the :ref:`CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY` to explicitly allow the usage of legacy names/types.
+- Enable the :menuitem:`CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY` to explicitly allow the usage of legacy names/types.
 
 Tasks Snapshot
 ^^^^^^^^^^^^^^
@@ -169,6 +169,6 @@ Bootloader Support
 Chip Revision
 ^^^^^^^^^^^^^
 
-The bootloader checks the chip revision at the beginning of the application loading. The application can only be loaded if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
+The bootloader checks the chip revision at the beginning of the application loading. The application can only be loaded if the version is ``>=`` :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
 
-During the OTA upgrade, the version requirements and chip revision in the application header are checked for compatibility. The application can only be updated if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
+During the OTA upgrade, the version requirements and chip revision in the application header are checked for compatibility. The application can only be updated if the version is ``>=`` :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and ``<`` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.

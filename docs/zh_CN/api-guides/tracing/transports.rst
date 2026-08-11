@@ -45,7 +45,7 @@
 
 1. **主机端：** 应用程序跟踪通过 JTAG 来完成，因此需要在主机上安装并运行 OpenOCD。详细信息请参阅 :doc:`JTAG 调试 </api-guides/jtag-debugging/index>`。
 
-2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。**重要提示：** 须首先通过 ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` 并选择 ``ESP-IDF apptrace`` 启用应用程序跟踪。之后，可以在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中进行详细配置，例如配置跟踪数据的传输目标。对于 UART 接口，需定义端口号、波特率、TX 和 RX 管脚及其他相关参数。当选择任何跟踪库（例如 SEGGER SystemView）时，这些配置也将同步用于该库。
+2. **目标端：** 在 menuconfig 中开启应用程序跟踪功能。**重要提示：** 须首先将 :menuitem:`CONFIG_ESP_TRACE_TRANSPORT` 设置为 ``ESP-IDF apptrace``。随后将显示相关的应用层跟踪配置，例如跟踪数据的传输目标。对于 UART 接口，需定义端口号、波特率、TX 和 RX 管脚及其他相关参数。当选择任何跟踪库（例如 SEGGER SystemView）时，这些配置也将同步用于该库。
 
 .. note::
 
@@ -53,15 +53,15 @@
 
 以下为前述未提及的另外几个 menuconfig 选项：
 
-1. *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`)。使用 JTAG 接口时，此选项是必选项。在该模式下，跟踪数据以 16 KB 数据块的形式暴露给主机。在后验模式中，一个块被填充后会被暴露给主机，同时之前的块不再可用。也就是说，跟踪数据以 16 KB 的粒度进行覆盖。发生 Panic 时，当前输入块的最新数据将会被暴露给主机，主机可以读取数据以进行后续分析。如果系统发生 Panic 时，仍有少量数据还没来得及暴露给主机，那么之前收集的 16 KB 数据将丢失，主机只能获取少部分的最新跟踪数据，从而可能无法诊断问题。此 menuconfig 选项有助于避免此类情况，它可以控制发生 Panic 时刷新数据的阈值。例如，可以设置需要不少于 512 字节的最新跟踪数据，如果在发生 Panic 时待处理的数据少于 512 字节，则数据不会被刷新，也不会覆盖之前的 16 KB 数据。该选项仅在后验模式和使用 JTAG 工作时可发挥作用。
+1. *Threshold for flushing last trace data to host on panic* (:menuitem:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`)。使用 JTAG 接口时，此选项是必选项。在该模式下，跟踪数据以 16 KB 数据块的形式暴露给主机。在后验模式中，一个块被填充后会被暴露给主机，同时之前的块不再可用。也就是说，跟踪数据以 16 KB 的粒度进行覆盖。发生 Panic 时，当前输入块的最新数据将会被暴露给主机，主机可以读取数据以进行后续分析。如果系统发生 Panic 时，仍有少量数据还没来得及暴露给主机，那么之前收集的 16 KB 数据将丢失，主机只能获取少部分的最新跟踪数据，从而可能无法诊断问题。此 menuconfig 选项有助于避免此类情况，它可以控制发生 Panic 时刷新数据的阈值。例如，可以设置需要不少于 512 字节的最新跟踪数据，如果在发生 Panic 时待处理的数据少于 512 字节，则数据不会被刷新，也不会覆盖之前的 16 KB 数据。该选项仅在后验模式和使用 JTAG 工作时可发挥作用。
 
-2. *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`)。该选项仅在流模式下才可发挥作用，它可用于控制跟踪模块在发生 Panic 时等待主机读取最新数据的最长时间。
+2. *Timeout for flushing last trace data to host on panic* (:menuitem:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`)。该选项仅在流模式下才可发挥作用，它可用于控制跟踪模块在发生 Panic 时等待主机读取最新数据的最长时间。
 
-3. *Internal Sync Lock* (:ref:`CONFIG_APPTRACE_LOCK_ENABLE`)。启用此选项可使用锁保护跟踪缓冲区的写入操作，防止多个任务并发生成跟踪数据时发生数据损坏。
+3. *Internal Sync Lock* (:menuitem:`CONFIG_APPTRACE_LOCK_ENABLE`)。启用此选项可使用锁保护跟踪缓冲区的写入操作，防止多个任务并发生成跟踪数据时发生数据损坏。
 
-4. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`)。缓冲区的大小取决于通过 UART 传输的数据量。
+4. *UART RX/TX ring buffer size* (:menuitem:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`)。缓冲区的大小取决于通过 UART 传输的数据量。
 
-5. *UART TX message size* (:ref:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`)。要传输的单条消息的最大尺寸。
+5. *UART TX message size* (:menuitem:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`)。要传输的单条消息的最大尺寸。
 
 
 如何使用此库
@@ -78,8 +78,8 @@
 
    在 menuconfig 中禁用跟踪库并启用应用层跟踪传输：
 
-   - ``Component config`` > ``ESP Trace Configuration`` > ``Trace library``：选择 ``None``
-   - ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport``：选择 ``ESP-IDF apptrace``
+   - 将 :menuitem:`CONFIG_ESP_TRACE_LIBRARY` 设置为 ``None``
+   - 将 :menuitem:`CONFIG_ESP_TRACE_TRANSPORT` 设置为 ``ESP-IDF apptrace``
 
    也可在 ``sdkconfig.defaults`` 中设置以下选项以强制启用独立模式：
 
@@ -89,7 +89,7 @@
       CONFIG_ESP_TRACE_LIB_NONE=y
       CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
 
-   通过上述任一方式启用独立应用层跟踪传输后，即可在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中配置目标传输。
+   通过上述任一方式启用独立应用层跟踪传输后，即可通过 :menuitem:`CONFIG_APPTRACE_DESTINATION` 配置目标传输。
 
 2. 通过 ``esp_apptrace_get_user_params()`` 进行运行时配置
 
@@ -365,7 +365,7 @@ ESP-IDF 的日志库会默认使用类 vprintf 的函数将格式化的字符串
 
 为了使用跟踪模块来记录日志，需要执行以下步骤：
 
-1. 在 menuconfig 中开启应用程序跟踪功能。须首先通过 ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` 并选择 ``ESP-IDF apptrace`` 启用应用程序跟踪。之后，可以在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中进行详细配置。
+1. 将 :menuitem:`CONFIG_ESP_TRACE_TRANSPORT` 设置为 ``ESP-IDF apptrace`` 以启用应用程序跟踪。随后将显示相关的应用层跟踪配置。
 2. 在目标端，需要安装特殊的类 vprintf 函数 :cpp:func:`esp_apptrace_vprintf`，该函数负责将日志数据发送给主机，使用方法为 ``esp_log_set_vprintf(esp_apptrace_vprintf);``。如需将日志数据再次重定向给 UART，请使用 ``esp_log_set_vprintf(vprintf);``。
 3. 按照 :ref:`app_trace-application-specific-tracing` 章节中的第 4-6 步进行操作（OpenOCD 设置和跟踪数据收集）。
 4. 打印接收到的日志记录，请在终端运行以下命令：``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``。

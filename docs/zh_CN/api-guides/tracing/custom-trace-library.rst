@@ -64,7 +64,7 @@
 FreeRTOS 跟踪钩子
 -----------------
 
-为捕获 FreeRTOS 事件，外部组件需提供 ``esp_trace_freertos_impl.h`` 头文件，其中定义所需的跟踪宏（``traceTASK_SWITCHED_IN()``、``traceISR_ENTER()`` 等）。启用 :ref:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>` 时，``esp_trace`` 会包含该头文件。
+为捕获 FreeRTOS 事件，外部组件需提供 ``esp_trace_freertos_impl.h`` 头文件，其中定义所需的跟踪宏（``traceTASK_SWITCHED_IN()``、``traceISR_ENTER()`` 等）。启用 :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>` 时，``esp_trace`` 会包含该头文件。
 
 应用示例
 --------

@@ -565,7 +565,7 @@ The factory function :cpp:func:`jpeg_new_decoder_engine`, :cpp:func:`jpeg_decode
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is set), the system needs to adjust or stop the source clock of JPEG to enter Light-sleep, thus potentially changing the JPEG decoder or encoder process. This might lead to unexpected behavior in hardware calculation. To prevent such issues, entering Light-sleep is disabled for the time when JPEG encoder or decoder is working.
+When power management is enabled (i.e., :menuitem:`CONFIG_PM_ENABLE` is set), the system needs to adjust or stop the source clock of JPEG to enter Light-sleep, thus potentially changing the JPEG decoder or encoder process. This might lead to unexpected behavior in hardware calculation. To prevent such issues, entering Light-sleep is disabled for the time when JPEG encoder or decoder is working.
 
 Whenever the user is decoding or encoding via JPEG (i.e., calling :cpp:func:`jpeg_encoder_process` or :cpp:func:`jpeg_decoder_process`), the driver guarantees that the power management lock is acquired by setting it to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_CPU_FREQ_MAX`. Once the encoding or decoding is finished, the driver releases the lock and the system can enter Light-sleep.
 
@@ -592,7 +592,7 @@ Please note the following when using it:
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_JPEG_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
+- :menuitem:`CONFIG_JPEG_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
 
 Maintainers' Notes
 ------------------

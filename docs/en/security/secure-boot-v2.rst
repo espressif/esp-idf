@@ -41,11 +41,11 @@ Secure Boot v2
 
 .. only:: esp32
 
-    ``Secure Boot v2`` and ``RSA App Signing Scheme`` options are available for ESP32 from chip revision v3.0 onwards. To use these options in menuconfig, set :ref:`CONFIG_ESP32_REV_MIN` greater than or equal to `v3.0`.
+    ``Secure Boot v2`` and ``RSA App Signing Scheme`` options are available for ESP32 from chip revision v3.0 onwards. To use these options in menuconfig, set :menuitem:`CONFIG_ESP32_REV_MIN` greater than or equal to `v3.0`.
 
 .. only:: esp32c3
 
-    ``Secure Boot v2`` is available for ESP32-C3 from chip revision v0.3 (ECO3) onwards. To use these options in menuconfig, set :ref:`CONFIG_ESP32C3_REV_MIN` greater than or equal to `v0.3 (ECO3)`.
+    ``Secure Boot v2`` is available for ESP32-C3 from chip revision v0.3 (ECO3) onwards. To use these options in menuconfig, set :menuitem:`CONFIG_ESP32C3_REV_MIN` greater than or equal to `v0.3 (ECO3)`.
 
 
 .. note::
@@ -56,13 +56,13 @@ Secure Boot v2
 
     .. warning::
 
-        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is not functional for certain input vectors and is therefore **not recommended**. Please use the RSA based Secure Boot V2 scheme instead. To use the ECDSA based scheme regardless of this limitation, enable :ref:`CONFIG_SECURE_BOOT_INSECURE` and :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
+        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is not functional for certain input vectors and is therefore **not recommended**. Please use the RSA based Secure Boot V2 scheme instead. To use the ECDSA based scheme regardless of this limitation, enable :menuitem:`CONFIG_SECURE_BOOT_INSECURE` and :menuitem:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
 
 .. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and not SOC_SECURE_BOOT_V2_RSA
 
     .. warning::
 
-        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is vulnerable for certain input vectors and is therefore **not recommended for production**. To use the ECDSA based Secure Boot V2 scheme regardless of this limitation, enable :ref:`CONFIG_SECURE_BOOT_INSECURE` and :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
+        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is vulnerable for certain input vectors and is therefore **not recommended for production**. To use the ECDSA based Secure Boot V2 scheme regardless of this limitation, enable :menuitem:`CONFIG_SECURE_BOOT_INSECURE` and :menuitem:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
 
 Background
 ----------
@@ -358,7 +358,7 @@ In the Secure Boot v2 scheme, the application image is padded to the flash MMU p
 .. list::
 
     - Default flash MMU page size is 64 KB
-    :SOC_MMU_PAGE_SIZE_CONFIGURABLE: - {IDF_TARGET_NAME} supports configurable flash MMU page size, and ``CONFIG_MMU_PAGE_SIZE`` gets set based on the :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`
+    :SOC_MMU_PAGE_SIZE_CONFIGURABLE: - {IDF_TARGET_NAME} supports configurable flash MMU page size, and ``CONFIG_MMU_PAGE_SIZE`` gets set based on the :menuitem:`CONFIG_ESPTOOLPY_FLASHSIZE`
     - Secure padding is applied through the option ``--secure-pad-v2`` in the ``elf2image`` conversion using ``esptool``
 
 The following table explains the Secure Boot v2 signed image with secure padding and signature block appended:
@@ -420,7 +420,7 @@ An image is verified if the public key stored in any signature block is valid fo
 Verifying Data Partitions
 --------------------------
 
-The Secure Boot v2 signature verification can also verify data partition images during OTA updates. Enable :ref:`CONFIG_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED``.
+The Secure Boot v2 signature verification can also verify data partition images during OTA updates. Enable :menuitem:`CONFIG_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED``.
 
 Data partition images must be signed using ``idf.py secure-sign-data`` with the same signing key and follow the same format as application images. The verification uses the public key digest(s) stored in eFuse and follows the process described in :ref:`verify_image`.
 
@@ -432,7 +432,7 @@ Bootloader Size
 
 Enabling Secure Boot and/or flash encryption will increase the size of the bootloader, which might require updating the partition table offset. See :ref:`bootloader-size`.
 
-When :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` is disabled, the bootloader will use the ``--pad-to-size`` option in ``elf2image`` command of ``esptool`` for sector padding, with a size of 4 KB per sector.
+When :menuitem:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` is disabled, the bootloader will use the ``--pad-to-size`` option in ``elf2image`` command of ``esptool`` for sector padding, with a size of 4 KB per sector.
 
 
 .. _efuse-usage:
@@ -466,7 +466,7 @@ eFuse Usage
 
     - SECURE_BOOT_AGGRESSIVE_REVOKE - Enables aggressive revocation of keys. The key is revoked as soon as verification with this key fails.
 
-    To ensure no trusted keys can be added later by an attacker, each unused key digest slot should be revoked with KEY_REVOKEX. It will be checked during app startup in :cpp:func:`esp_secure_boot_init_checks` and fixed unless :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` is enabled.
+    To ensure no trusted keys can be added later by an attacker, each unused key digest slot should be revoked with KEY_REVOKEX. It will be checked during app startup in :cpp:func:`esp_secure_boot_init_checks` and fixed unless :menuitem:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` is enabled.
 
 The key(s) must be readable in order to give software access to it. If the key(s) is read-protected then the software reads the key(s) as all zeros and the signature verification process will fail, and the boot process will be aborted.
 
@@ -480,7 +480,7 @@ How To Enable Secure Boot v2
 
 .. only:: esp32
 
-    2. For ESP32, Secure Boot v2 is available only ESP32 chip revision v3.0 onwards. To view the ``Secure Boot v2`` option, the chip revision should be changed to ESP32 chip revision v3.0. To change the chip revision, set ``Minimum Supported ESP32 Revision`` to v3.0 in ``Component Config`` > ``ESP32- Specific``.
+    2. For ESP32, Secure Boot v2 is available only ESP32 chip revision v3.0 onwards. To view the ``Secure Boot v2`` option, set :menuitem:`CONFIG_ESP32_REV_MIN` to v3.0.
 
     3. Specify the path to the Secure Boot signing key, relative to the project directory.
 
@@ -564,9 +564,9 @@ The following keys must not be read-protected on the device as the software need
     :SOC_SECURE_BOOT_SUPPORTED:* Secure boot public key digest
     * User data
 
-When Secure Boot is enabled, it shall disable the ability to read-protect further eFuses by default. If you want keep the ability to read-protect an eFuse later in the application (e.g, a key mentioned in the above list of read-protected keys), then you need to enable the config :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS` at the same time when you enable Secure Boot.
+When Secure Boot is enabled, it shall disable the ability to read-protect further eFuses by default. If you want keep the ability to read-protect an eFuse later in the application (e.g, a key mentioned in the above list of read-protected keys), then you need to enable the config :menuitem:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS` at the same time when you enable Secure Boot.
 
-Ideally, it is strongly recommended that all such keys must been burned before enabling secure boot. However, if you need to enable :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`, make sure that you burn the eFuse {IDF_TARGET_EFUSE_WR_DIS_RD_DIS}, using :cpp:func:`esp_efuse_write_field_bit`, once all the read-protected eFuse keys have been programmed.
+Ideally, it is strongly recommended that all such keys must been burned before enabling secure boot. However, if you need to enable :menuitem:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`, make sure that you burn the eFuse {IDF_TARGET_EFUSE_WR_DIS_RD_DIS}, using :cpp:func:`esp_efuse_write_field_bit`, once all the read-protected eFuse keys have been programmed.
 
 .. note::
 
@@ -633,7 +633,7 @@ Signing Using ``idf.py``
 
 For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine (which is the default ESP-IDF Secure Boot configuration). The ``espsecure`` command line program can be used to sign app images and partition table data for Secure Boot, on a remote system.
 
-To use remote signing, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. The private signing key does not need to be present on the build system.
+To use remote signing, disable the option :menuitem:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. The private signing key does not need to be present on the build system.
 
 After the app image and partition table are built, the build system will print signing steps using ``idf.py``:
 
@@ -653,7 +653,7 @@ Signing Using Pre-calculated Signatures
 
 If you have valid pre-calculated signatures generated for an image and their corresponding public keys, you can use these signatures to generate a signature sector and append it to the image. Note that the pre-calculated signature should be calculated over all bytes in the image including the secure-padding bytes.
 
-In such cases, the firmware image should be built by disabling the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES`. This image will be secure-padded and to generate a signed binary use the following command:
+In such cases, the firmware image should be built by disabling the option :menuitem:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES`. This image will be secure-padded and to generate a signed binary use the following command:
 
 .. code-block::
 
@@ -667,7 +667,7 @@ Signing Using an External Hardware Security Module (HSM)
 
 For security reasons, you might also use an external Hardware Security Module (HSM) to store your private signing key, which cannot be accessed directly but has an interface to generate the signature of a binary file and its corresponding public key.
 
-In such cases, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. This secure-padded image then can be used to supply the external HSM for generating a signature. Refer to `Signing using an External HSM <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espsecure/index.html#remote-signing-using-an-external-hsm>`_ to generate a signed image.
+In such cases, disable the option :menuitem:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. This secure-padded image then can be used to supply the external HSM for generating a signature. Refer to `Signing using an External HSM <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espsecure/index.html#remote-signing-using-an-external-hsm>`_ to generate a signed image.
 
 .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
@@ -741,7 +741,7 @@ Secure Boot Best Practices
 
     .. note::
 
-        Enabling the config :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` keeps the unused digest slots un-revoked in both cases: at runtime in the **app**, and in the **bootloader** when secure boot is enabled during the first boot up. Note that leaving unused key slots un-revoked could pose a security risk, unless the debug and download interfaces are completely disabled and remote interfaces are fully audited for security risks.
+        Enabling the config :menuitem:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` keeps the unused digest slots un-revoked in both cases: at runtime in the **app**, and in the **bootloader** when secure boot is enabled during the first boot up. Note that leaving unused key slots un-revoked could pose a security risk, unless the debug and download interfaces are completely disabled and remote interfaces are fully audited for security risks.
 
     Conservative Approach
     ~~~~~~~~~~~~~~~~~~~~~~
@@ -770,7 +770,7 @@ Secure Boot Best Practices
 
     ROM code has an additional feature of revoking a public key digest if the signature verification fails.
 
-    To enable this feature, you need to burn ``SECURE_BOOT_AGGRESSIVE_REVOKE`` eFuse or enable :ref:`CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE`.
+    To enable this feature, you need to burn ``SECURE_BOOT_AGGRESSIVE_REVOKE`` eFuse or enable :menuitem:`CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE`.
 
     Key revocation is not applicable unless Secure Boot is successfully enabled. Also, a key is not revoked in case of an invalid signature block or invalid image digest, it is only revoked in case the signature verification fails, i.e., revoke key only if failure in step 3 of :ref:`verify_image`.
 
@@ -784,7 +784,7 @@ Technical Details
 
 The following sections contain low-level reference descriptions of various Secure Boot elements.
 
-Secure Boot is integrated into the ESP-IDF build system, so ``idf.py build`` will sign an app image, and ``idf.py bootloader`` will produce a signed bootloader if :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` is enabled.
+Secure Boot is integrated into the ESP-IDF build system, so ``idf.py build`` will sign an app image, and ``idf.py bootloader`` will produce a signed bootloader if :menuitem:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` is enabled.
 
 However, it is possible to use the ``idf.py`` or the ``openssl`` tool to generate standalone signatures and verify them. Using ``idf.py`` is recommended, but in case you need to generate or verify signatures in non-ESP-IDF environments, you could also use the ``openssl`` commands as the Secure Boot v2 signature generation is compliant with the standard signing algorithms.
 
@@ -926,7 +926,7 @@ How To Enable Signed App Verification
 
 .. only:: esp32
 
-    2. Ensure ``App Signing Scheme`` is ``RSA``. For the ESP32 chip revision v3.0 chip, select :ref:`CONFIG_ESP32_REV_MIN` to ``v3.0`` to get the ``RSA`` option available.
+    2. Ensure ``App Signing Scheme`` is ``RSA``. For the ESP32 chip revision v3.0 chip, select :menuitem:`CONFIG_ESP32_REV_MIN` to ``v3.0`` to get the ``RSA`` option available.
 
 .. only:: SOC_SECURE_BOOT_V2_RSA and not SOC_SECURE_BOOT_V2_ECC
 
@@ -941,7 +941,7 @@ How To Enable Signed App Verification
     2. Choose ``App Signing Scheme``. Either ``RSA`` or ``ECDSA (v2)``.
 
 
-3. Enable :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`.
+3. Enable :menuitem:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`.
 
 4. By default, ``Sign binaries during build`` will be enabled by selecting the ``Require signed app images`` option, which will sign binary files as a part of the build process. The file named in ``Secure Boot private signing key`` will be used to sign the image.
 

@@ -7,7 +7,7 @@ JTAG 调试
 
 .. note::
 
-    也可以使用 ``idf.py monitor`` 来调试 {IDF_TARGET_NAME}，免于设置 JTAG 或 OpenOCD。请参阅 :doc:`../../api-guides/tools/idf-monitor` 和 :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`。
+    也可以使用 ``idf.py monitor`` 来调试 {IDF_TARGET_NAME}，免于设置 JTAG 或 OpenOCD。请参阅 :doc:`../../api-guides/tools/idf-monitor` 和 :menuitem:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`。
 
 .. highlight:: none
 

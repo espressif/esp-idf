@@ -118,7 +118,7 @@ SPI flash 容量
 
 SPI flash 容量由引导加载程序镜像头部（烧录偏移量为 0x1000）的一个字段进行配置。
 
-默认情况下，引导加载程序被写入 flash 时，``esptool`` 会自动检测 SPI flash 容量，同时使用正确容量更新引导加载程序的头部。也可以在工程配置中设置 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
+默认情况下，引导加载程序被写入 flash 时，``esptool`` 会自动检测 SPI flash 容量，同时使用正确容量更新引导加载程序的头部。也可以在工程配置中设置 :menuitem:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
 
 如需在运行时覆盖已配置的 flash 容量，请配置 ``g_rom_flashchip`` 结构中的 ``chip_size``。``esp_flash_*`` 函数使用此容量（于软件和 ROM 中）进行边界检查。
 
@@ -254,16 +254,16 @@ OS 函数层目前支持访问锁和延迟的方法。
 
 顶层 API 将芯片驱动和 OS 函数封装成一个完整的组件，并提供参数检查。
 
-使用 OS 函数还可以在一定程度上避免在擦除大块 flash 区域时出现看门狗超时的情况。在这段时间内，CPU 将被 flash 擦除任务占用，从而阻止其他任务的执行，包括为看门狗定时器 (WDT) 供电的空闲任务。若已选中配置选项 :ref:`CONFIG_ESP_TASK_WDT_PANIC`，并且 flash 操作时间长于看门狗的超时时间，系统将重新启动。
+使用 OS 函数还可以在一定程度上避免在擦除大块 flash 区域时出现看门狗超时的情况。在这段时间内，CPU 将被 flash 擦除任务占用，从而阻止其他任务的执行，包括为看门狗定时器 (WDT) 供电的空闲任务。若已选中配置选项 :menuitem:`CONFIG_ESP_TASK_WDT_PANIC`，并且 flash 操作时间长于看门狗的超时时间，系统将重新启动。
 
 不过，由于不同的 flash 芯片擦除时间不同，flash 驱动几乎无法兼容，很难完全规避超时的风险，这一点需要格外注意。请遵照以下指南：
 
-1. 建议启用 :ref:`CONFIG_SPI_FLASH_YIELD_DURING_ERASE` 选项，允许调度器在擦除 flash 时进行重新调度。此外，还可以使用下列参数。
+1. 建议启用 :menuitem:`CONFIG_SPI_FLASH_YIELD_DURING_ERASE` 选项，允许调度器在擦除 flash 时进行重新调度。此外，还可以使用下列参数。
 
-- 在 menuconfig 中增加 :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_TICKS` 或减少 :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS` 的时间。
-- 在 menuconfig 中增加 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 的时间，以设置更长的看门狗超时周期。然而，看门狗超时周期拉长后，可能无法再检测到以前可检测到的超时。
+- 在 menuconfig 中增加 :menuitem:`CONFIG_SPI_FLASH_ERASE_YIELD_TICKS` 或减少 :menuitem:`CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS` 的时间。
+- 在 menuconfig 中增加 :menuitem:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 的时间，以设置更长的看门狗超时周期。然而，看门狗超时周期拉长后，可能无法再检测到以前可检测到的超时。
 
-1. 请注意，在进行长时间的 SPI flash 操作时，启用 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 选项将会在超时时触发紧急处理程序。不过，启用该选项也可以帮助处理应用程序中的意外异常，请根据实际情况决定是否需要启用这个选项。
+1. 请注意，在进行长时间的 SPI flash 操作时，启用 :menuitem:`CONFIG_ESP_TASK_WDT_PANIC` 选项将会在超时时触发紧急处理程序。不过，启用该选项也可以帮助处理应用程序中的意外异常，请根据实际情况决定是否需要启用这个选项。
 
 2. 在开发过程中，请根据项目对擦除 flash 的具体要求和时间限制，谨慎进行 flash 操作。在配置 flash 擦除超时周期时，请在实际产品要求的基础上留出合理的冗余时间，从而提高产品的可靠性。
 
@@ -285,7 +285,7 @@ flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
 
 另外，所有 API 函数均受互斥量 ``s_flash_op_mutex`` 保护。
 
-在单核环境中（启用 :ref:`CONFIG_FREERTOS_UNICORE`），需要禁用上述两个 cache，以防发生 CPU 间通信。
+在单核环境中（启用 :menuitem:`CONFIG_FREERTOS_UNICORE`），需要禁用上述两个 cache，以防发生 CPU 间通信。
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
@@ -294,13 +294,13 @@ flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
     flash 驱动的内部存储优化
     -----------------------------
 
-    ESP-IDF 提供了优化 IRAM 使用的选项。通过禁用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 选项，可以选择性地将某些函数地放入 flash，使 SPI flash 操作函数在 flash 中执行，而不是从 IRAM 中执行。这种方式能够节省 IRAM 内存，用于其他对时间敏感的函数或任务。
+    ESP-IDF 提供了优化 IRAM 使用的选项。通过禁用 :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 选项，可以选择性地将某些函数地放入 flash，使 SPI flash 操作函数在 flash 中执行，而不是从 IRAM 中执行。这种方式能够节省 IRAM 内存，用于其他对时间敏感的函数或任务。
 
     然而，这种方式对 flash 性能具有一定的影响。与 IRAM 中的函数相比，放在 flash 中的函数执行时间可能略有增加。因此对于具有严格时序要求或严重依赖 SPI flash 操作的应用程序，采取此方式前需进行权衡。
 
     .. note::
 
-        未启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 时，不应禁用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`，否则会导致严重崩溃。关于 flash 挂起功能，请参阅 :ref:`auto-suspend`。
+        未启用 :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 时，不应禁用 :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`，否则会导致严重崩溃。关于 flash 挂起功能，请参阅 :ref:`auto-suspend`。
 
     资源消耗
     ^^^^^^^^^^^^
@@ -309,7 +309,7 @@ flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
 
     **请注意，以下数据并非精确值，仅供参考；不同芯片型号可能会有所差异。**
 
-    启用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 时的资源消耗如下表所示：
+    启用 :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 时的资源消耗如下表所示：
 
     .. list-table:: 选项启用时的资源消耗
        :widths: 20 10 10 10 10 10 10 10 10 10
@@ -346,7 +346,7 @@ flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
          - 247
          - 247
 
-    禁用 :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 时的资源消耗如下表所示：
+    禁用 :menuitem:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` 时的资源消耗如下表所示：
 
     .. list-table:: 选项禁用时的资源消耗
        :widths: 20 10 10 10 10 10 10 10 10 10

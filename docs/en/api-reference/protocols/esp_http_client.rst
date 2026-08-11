@@ -71,7 +71,7 @@ A secure element (ATECC608) can be used for the underlying TLS connection in the
 HTTPS Request
 -------------
 
-ESP HTTP client supports SSL connections using **mbedTLS**, with the ``url`` configuration starting with ``https`` scheme or ``transport_type`` set to ``HTTP_TRANSPORT_OVER_SSL``. HTTPS support can be configured via :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` (enabled by default).
+ESP HTTP client supports SSL connections using **mbedTLS**, with the ``url`` configuration starting with ``https`` scheme or ``transport_type`` set to ``HTTP_TRANSPORT_OVER_SSL``. HTTPS support can be configured via :menuitem:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` (enabled by default).
 
 .. note::
 
@@ -147,9 +147,9 @@ Configuration
 
 To enable response header saving, the following Kconfig options must be configured:
 
-    * :ref:`CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS`: Enable saving of response headers (disabled by default to conserve memory).
-    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`: Maximum number of response headers to save (default: 10).
-    * :ref:`CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`: Maximum size in bytes for both header key and value (default: 128 bytes each).
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS`: Enable saving of response headers (disabled by default to conserve memory).
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`: Maximum number of response headers to save (default: 10).
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`: Maximum size in bytes for both header key and value (default: 128 bytes each).
 
 Usage
 ^^^^^

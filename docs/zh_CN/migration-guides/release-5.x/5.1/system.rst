@@ -11,7 +11,7 @@ FreeRTOS
     动态内存分配
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    过去，FreeRTOS 通常使用 ``malloc()`` 函数来分配动态内存。因此，如果应用程序允许 ``malloc()`` 从外部 RAM 分配内存（通过将 :ref:`CONFIG_SPIRAM_USE` 选项配置为 ``CONFIG_SPIRAM_USE_MALLOC``），FreeRTOS 就有可能从外部 RAM 分配动态内存，并且具体位置由堆分配器确定。
+    过去，FreeRTOS 通常使用 ``malloc()`` 函数来分配动态内存。因此，如果应用程序允许 ``malloc()`` 从外部 RAM 分配内存（通过将 :menuitem:`CONFIG_SPIRAM_USE` 选项配置为 ``CONFIG_SPIRAM_USE_MALLOC``），FreeRTOS 就有可能从外部 RAM 分配动态内存，并且具体位置由堆分配器确定。
 
     .. note::
 
@@ -23,7 +23,7 @@ FreeRTOS
 
     .. warning::
 
-        如果你之前使用 :ref:`CONFIG_SPIRAM_USE` 将 FreeRTOS 对象放置在外部内存中，这个更改则会导致内部内存的使用增加，因为现在 FreeRTOS 对象将被分配到内部内存中。
+        如果你之前使用 :menuitem:`CONFIG_SPIRAM_USE` 将 FreeRTOS 对象放置在外部内存中，这个更改则会导致内部内存的使用增加，因为现在 FreeRTOS 对象将被分配到内部内存中。
 
     现在将 FreeRTOS 任务/对象放置在外部内存中，需要显示地设置，可采用以下方法之一：
 

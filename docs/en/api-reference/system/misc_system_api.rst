@@ -52,7 +52,7 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
     .. note::
 
-        On ESP32-P4, :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` is fixed to one universally administered MAC address.
+        On ESP32-P4, :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` is fixed to one universally administered MAC address.
 
 .. only:: (not esp32s2) and (not esp32p4) and (not esp32h2) and (not esp32h21) and (not esp32h4) and (not esp32s31)
 
@@ -78,7 +78,7 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
     .. note::
 
-        The :ref:`configuration <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` configures the number of universally administered MAC addresses that are provided by Espressif.
+        The :menuitem:`configuration <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` configures the number of universally administered MAC addresses that are provided by Espressif.
 
 .. only:: esp32s31
 
@@ -104,7 +104,7 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
     .. note::
 
-        {IDF_TARGET_NAME} only provides two universally administered MAC addresses in eFuse, so :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` defaults to two. The "Four" option may only be used when a customer-provided custom base MAC range is used (see :ref:`Custom Base MAC <MAC-Address-Allocation>`), where four universally administered MAC addresses are allocated per device. Using "Four" with the default Espressif eFuse base MAC leads to SoftAP and Ethernet consuming global MAC slots (base+1/+3) that are not allocated on this chip and may collide with the Bluetooth MAC.
+        {IDF_TARGET_NAME} only provides two universally administered MAC addresses in eFuse, so :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` defaults to two. The "Four" option may only be used when a customer-provided custom base MAC range is used (see :ref:`Custom Base MAC <MAC-Address-Allocation>`), where four universally administered MAC addresses are allocated per device. Using "Four" with the default Espressif eFuse base MAC leads to SoftAP and Ethernet consuming global MAC slots (base+1/+3) that are not allocated on this chip and may collide with the Bluetooth MAC.
 
 .. only:: esp32h2 or esp32h21 or esp32h4
 
@@ -121,7 +121,7 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
     .. note::
 
-        {IDF_TARGET_NAME} provides a single universally administered MAC address in eFuse (MAC_FACTORY) plus the MAC_EXT field used to build the IEEE 802.15.4 EUI-64. :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` is fixed to one. Bluetooth reuses the base MAC as-is — the BT offset is not applied because {IDF_TARGET_NAME} has no Wi-Fi, so no second universal MAC slot is required.
+        {IDF_TARGET_NAME} provides a single universally administered MAC address in eFuse (MAC_FACTORY) plus the MAC_EXT field used to build the IEEE 802.15.4 EUI-64. :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` is fixed to one. Bluetooth reuses the base MAC as-is — the BT offset is not applied because {IDF_TARGET_NAME} has no Wi-Fi, so no second universal MAC slot is required.
 
 .. only:: esp32s2
 
@@ -144,7 +144,7 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
     .. note::
 
-        The :ref:`configuration <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` configures the number of universally administered MAC addresses that are provided by Espressif.
+        The :menuitem:`configuration <CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES>` configures the number of universally administered MAC addresses that are provided by Espressif.
 
 .. only:: not SOC_EMAC_SUPPORTED
 
@@ -162,7 +162,7 @@ Custom Base MAC
 
 The default base MAC is pre-programmed by Espressif in eFuse {IDF_TARGET_BASE_MAC_BLOCK}. To set a custom base MAC instead, call the function :cpp:func:`esp_iface_mac_addr_set` with the ``ESP_MAC_BASE`` argument (or :cpp:func:`esp_base_mac_addr_set`) before initializing any network interfaces or calling the :cpp:func:`esp_read_mac` function. The custom MAC address can be stored in any supported storage device (e.g., flash, NVS).
 
-The custom base MAC addresses should be allocated such that derived MAC addresses will not overlap. Based on the table above, users can configure the option :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` to set the number of valid universal MAC addresses that can be derived from the custom base MAC.
+The custom base MAC addresses should be allocated such that derived MAC addresses will not overlap. Based on the table above, users can configure the option :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` to set the number of valid universal MAC addresses that can be derived from the custom base MAC.
 
 .. note::
 
@@ -292,7 +292,7 @@ The application version is stored in :cpp:class:`esp_app_desc_t` structure. It i
 
 To set the version in your project manually, you need to set the ``PROJECT_VER`` variable in the ``CMakeLists.txt`` of your project. In application ``CMakeLists.txt``, put ``set(PROJECT_VER "0.1.0.1")`` before including ``project.cmake``.
 
-If the :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise, if the ``PROJECT_VER`` variable is not set in the project, it will be retrieved either from the ``$(PROJECT_PATH)/version.txt`` file (if present) or using git command ``git describe``. If neither is available, ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_app_get_description` or :cpp:func:`esp_ota_get_partition_description` functions.
+If the :menuitem:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :menuitem:`CONFIG_APP_PROJECT_VER` will be used. Otherwise, if the ``PROJECT_VER`` variable is not set in the project, it will be retrieved either from the ``$(PROJECT_PATH)/version.txt`` file (if present) or using git command ``git describe``. If neither is available, ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_app_get_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
 Application Examples
 --------------------

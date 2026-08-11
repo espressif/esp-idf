@@ -327,8 +327,8 @@ Kconfig 选项
 
 .. list::
 
-    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
-    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
+    :SOC_MIPI_CSI_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
+    :SOC_ISP_DVP_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
 
 .. _cam-iram-safe:
 
@@ -341,8 +341,8 @@ IRAM 安全
 
 .. list::
 
-    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`
-    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`
+    :SOC_MIPI_CSI_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`
+    :SOC_ISP_DVP_SUPPORTED: - :menuitem:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`
 
 - 即使 cache 被禁用也能启用中断服务
 - 将 ISR 使用的所有函数放入 IRAM

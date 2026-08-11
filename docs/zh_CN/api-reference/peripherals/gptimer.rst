@@ -311,7 +311,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
 关于低功耗
 ----------
 
-当启用电源管理 :ref:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或禁用时钟源，从而导致 GPTimer 的计时出错。
+当启用电源管理 :menuitem:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或禁用时钟源，从而导致 GPTimer 的计时出错。
 
 为了防止这种情况发生， GPTimer 驱动内部创建了一个电源管理锁。当调用 :cpp:func:`gptimer_enable` 函数后，该锁将被激活，确保系统不会进入睡眠模式，从而保持定时器的正确工作。如果需要降低功耗，可以调用 :cpp:func:`gptimer_disable` 函数来释放电源管理锁，使系统能够进入睡眠模式。但是，这样做会导致定时器停止计数，因此在唤醒后需要重新启动定时器。
 
@@ -338,7 +338,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
 关于 Cache 安全
 ---------------
 
-在文件系统进行 Flash 读写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致 GPTimer 的中断处理程序在此期间无法响应，从而使用户的回调函数无法及时执行。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :ref:`CONFIG_GPTIMER_ISR_CACHE_SAFE` 选项。
+在文件系统进行 Flash 读写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致 GPTimer 的中断处理程序在此期间无法响应，从而使用户的回调函数无法及时执行。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :menuitem:`CONFIG_GPTIMER_ISR_CACHE_SAFE` 选项。
 
 .. note::
 
@@ -347,18 +347,18 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
 关于性能
 --------
 
-为了提升中断处理的实时响应能力， GPTimer 驱动提供了 :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令时可能出现的缓存丢失带来的延迟。
+为了提升中断处理的实时响应能力， GPTimer 驱动提供了 :menuitem:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令时可能出现的缓存丢失带来的延迟。
 
 .. note::
 
     但是，中断处理程序调用的用户回调函数和用户上下文数据仍然可能位于 Flash 中，缓存缺失的问题还是会存在，这需要用户自己将回调函数和数据放入内部 RAM 中，比如使用 :c:macro:`IRAM_ATTR` 和 :c:macro:`DRAM_ATTR`。
 
-前文还提到， GPTimer 驱动允许部分函数在中断上下文中使用。:ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` 选项可以将这些函数放入 IRAM 中，一来，可以避免缓存缺失带来的性能损失，二来，这些函数在 Cache 关闭期间也能使用。
+前文还提到， GPTimer 驱动允许部分函数在中断上下文中使用。:menuitem:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` 选项可以将这些函数放入 IRAM 中，一来，可以避免缓存缺失带来的性能损失，二来，这些函数在 Cache 关闭期间也能使用。
 
 其他 Kconfig 选项
 -----------------
 
-- :ref:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` 选项允许强制启用 GPTimer 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。
+- :menuitem:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` 选项允许强制启用 GPTimer 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。
 
 关于资源消耗
 ------------
@@ -368,9 +368,9 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
 - 编译器优化等级设置为 ``-Os``，以确保代码尺寸最小化。
 - 默认日志等级设置为 ``ESP_LOG_INFO``，以平衡调试信息和性能。
 - 关闭以下驱动优化选项：
-    - :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` - 中断处理程序不放入 IRAM。
-    - :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` - 控制函数不放入 IRAM。
-    - :ref:`CONFIG_GPTIMER_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
+    - :menuitem:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` - 中断处理程序不放入 IRAM。
+    - :menuitem:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` - 控制函数不放入 IRAM。
+    - :menuitem:`CONFIG_GPTIMER_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
 
 **注意，以下数据不是精确值，仅供参考，在不同型号的芯片上，数据会有所出入。**
 

@@ -15,7 +15,7 @@ ULP LP 内核协处理器具有以下功能：
 
 .. only:: SOC_LP_CORE_HAS_PMP
 
-    在支持的芯片上，LP 内核提供 RISC-V 物理内存保护（PMP）。启用 :ref:`CONFIG_ULP_LP_CORE_MEMPROT` 后，LP 内核启动时会配置默认拒绝访问的 PMP 布局：LP RAM 分为可执行区（代码与只读数据）与可读写区（可写数据、栈与共享内存），LP 外设地址空间为可读写；启用 :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT` 时还会为 HP UART MMIO 增加相应条目。PMP 不能与 :ref:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM` 同时启用。未落入允许区域的访问将触发加载、存储或取指访问异常。
+    在支持的芯片上，LP 内核提供 RISC-V 物理内存保护（PMP）。启用 :menuitem:`CONFIG_ULP_LP_CORE_MEMPROT` 后，LP 内核启动时会配置默认拒绝访问的 PMP 布局：LP RAM 分为可执行区（代码与只读数据）与可读写区（可写数据、栈与共享内存），LP 外设地址空间为可读写；启用 :menuitem:`CONFIG_ULP_HP_UART_CONSOLE_PRINT` 时还会为 HP UART MMIO 增加相应条目。PMP 不能与 :menuitem:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM` 同时启用。未落入允许区域的访问将触发加载、存储或取指访问异常。
 
 编译 ULP LP 内核代码
 --------------------
@@ -109,7 +109,7 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 若想编译和构建项目，请执行以下操作：
 
-1. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED`，并在 ``ULP Coprocessor types`` 菜单中勾选 :ref:`CONFIG_ULP_COPROC_TYPE_LP_CORE`。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP 内核代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
+1. 启用 :menuitem:`CONFIG_ULP_COPROC_ENABLED`，并勾选 :menuitem:`CONFIG_ULP_COPROC_TYPE_LP_CORE`。:menuitem:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP 内核代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
 
 2. 按照常规步骤构建应用程序（例如 ``idf.py app``）。
 
@@ -209,13 +209,13 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 从 HP 内存运行 LP 内核
 ~~~~~~~~~~~~~~~~~~~~~~
 
-:ref:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM` 允许将 LP 内核应用的大部分代码和数据放到预留的 HP SRAM 中，而不是仅放在 LP RAM 中。当应用程序过大、无法完全放入 LP RAM 时，这种方式会很有用，同时仍然会将 LP 复位和处理程序代码保留在 LP 内存中。
+:menuitem:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM` 允许将 LP 内核应用的大部分代码和数据放到预留的 HP SRAM 中，而不是仅放在 LP RAM 中。当应用程序过大、无法完全放入 LP RAM 时，这种方式会很有用，同时仍然会将 LP 复位和处理程序代码保留在 LP 内存中。
 
-启用该选项后，:ref:`CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES` 会在 HP SRAM 顶部预留一段专供 LP 内核使用的内存窗口。在调用 :cpp:func:`ulp_lp_core_load_binary` 时，位于 LP 内存的段仍会加载到预留的 LP 区域，而映射到 HP 内存窗口的代码段和数据段则会复制到预留的 HP SRAM 区域。
+启用该选项后，:menuitem:`CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES` 会在 HP SRAM 顶部预留一段专供 LP 内核使用的内存窗口。在调用 :cpp:func:`ulp_lp_core_load_binary` 时，位于 LP 内存的段仍会加载到预留的 LP 区域，而映射到 HP 内存窗口的代码段和数据段则会复制到预留的 HP SRAM 区域。
 
 该模式有一个重要限制：芯片进入 Deep-sleep 后，LP 内核无法继续运行，因为该睡眠模式下 HP SRAM 会被断电。因此，这种模式适用于 LP 内核只需要在 HP 系统保持上电时运行的场景；如果应用需要在 Deep-sleep 期间继续运行，则应继续使用默认的纯 LP 内存模式。
 
-:ref:`CONFIG_ULP_LP_CORE_MEMPROT` 不能与 HP 内存模式同时启用。
+:menuitem:`CONFIG_ULP_LP_CORE_MEMPROT` 不能与 HP 内存模式同时启用。
 
 ULP LP 内核程序流程
 -------------------
@@ -312,7 +312,7 @@ ULP LP 内核的时钟源来自系统时钟 ``LP_FAST_CLK``，详情请参见 `�
 
     * 使用 LP UART 打印：LP 内核可以访问 LP UART 外设，在主 CPU 处于睡眠状态时独立打印信息。有关使用此驱动程序的示例，请参阅 :example:`system/ulp/lp_core/lp_uart/lp_uart_print`。
 
-* 通过 :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`，将 :cpp:func:`lp_core_printf` 路由到 HP-Core 控制台 UART，可以轻松地将 LP 内核信息打印到已经连接的 HP-Core 控制台 UART。此方法的缺点是需要主 CPU 处于唤醒状态，并且由于 LP 内核与 HP 内未同步，输出可能会交错。
+* 通过 :menuitem:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`，将 :cpp:func:`lp_core_printf` 路由到 HP-Core 控制台 UART，可以轻松地将 LP 内核信息打印到已经连接的 HP-Core 控制台 UART。此方法的缺点是需要主 CPU 处于唤醒状态，并且由于 LP 内核与 HP 内未同步，输出可能会交错。
 
 * 通过共享变量共享程序状态：如 :ref:`ulp-lp-core-access-variables` 所述，主 CPU 和 ULP 内核都可以轻松访问 RTC 内存中的全局变量。若想了解 ULP 内核的运行状态，可以将状态信息从 ULP 写入变量中，并通过主 CPU 读取信息。这种方法的缺点在于它需要主 CPU 一直处于唤醒状态，而这通常很难实现。另外，若主 CPU 一直处于唤醒状态，可能会掩盖某些问题，因为部分问题只会在特定电源域断电时发生。
 

@@ -88,11 +88,11 @@ Deep-sleep 唤醒存根
             esp_rom_printf(fmt_str, wake_count++);
         }
 
-    这些数据被存放在 RTC 内存区域中，可以通过名为 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTCDATA_IN_FAST_MEM` 的 menuconfig 选项进行配置，且此选项允许为 ULP 程序保留慢速内存区域。在默认选项中，这些数据被放入 RTC 慢速内存中，一旦启用上述选项，标记有 ``RTC_DATA_ATTR`` 和 ``RTC_RODATA_ATTR`` 的数据将被放入 RTC 快速内存中。此选项依赖于 :ref:`CONFIG_FREERTOS_UNICORE` 选项，因为 RTC 快速内存只能由 PRO_CPU 访问。
+    这些数据被存放在 RTC 内存区域中，可以通过名为 :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTCDATA_IN_FAST_MEM` 的 menuconfig 选项进行配置，且此选项允许为 ULP 程序保留慢速内存区域。在默认选项中，这些数据被放入 RTC 慢速内存中，一旦启用上述选项，标记有 ``RTC_DATA_ATTR`` 和 ``RTC_RODATA_ATTR`` 的数据将被放入 RTC 快速内存中。此选项依赖于 :menuitem:`CONFIG_FREERTOS_UNICORE` 选项，因为 RTC 快速内存只能由 PRO_CPU 访问。
 
     .. only:: esp32
 
-        此选项依赖于 :ref:`CONFIG_FREERTOS_UNICORE` 选项，因为只有 PRO_CPU 才能访问 RTC 快速内存。
+        此选项依赖于 :menuitem:`CONFIG_FREERTOS_UNICORE` 选项，因为只有 PRO_CPU 才能访问 RTC 快速内存。
 
         ``RTC_FAST_ATTR`` 和 ``RTC_SLOW_ATTR`` 属性可分别用于指定被强制放入 RTC 快速内存和 RTC 慢速内存中的数据。对标记为 ``RTC_FAST_ATTR`` 的数据的任何访问都仅由 PRO_CPU 允许。
 
@@ -145,7 +145,7 @@ Deep-sleep 唤醒存根
 
 在包含字符串或更复杂的代码段时，建议使用第二种方法。
 
-启用 Kconfig 选项 :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 可以减少唤醒时间。更多信息请参阅 :doc:`从 Deep-sleep 模式快速启动 <bootloader>`。
+启用 Kconfig 选项 :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 可以减少唤醒时间。更多信息请参阅 :doc:`从 Deep-sleep 模式快速启动 <bootloader>`。
 
 上述所有函数在 :component_file:`esp_hw_support/include/esp_sleep.h` 中声明。
 

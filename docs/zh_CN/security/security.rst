@@ -126,7 +126,7 @@ flash 加密最佳实践
 
     {IDF_TARGET_NAME} 可以通过架构或 PMS 等特定外设实现 **内存保护**，强制执行和监控内存以及某些外设的权限属性。使用相应外设，ESP-IDF 应用程序启动代码可以配置数据内存的读取/写入权限以及指令内存的读取/执行权限。如有任何操作尝试违反这些权限属性，如写入指令内存区域，将触发违规中断，导致系统 panic。
 
-    使用该功能需启用配置选项 :ref:`CONFIG_ESP_SYSTEM_MEMPROT`，该选项默认启用。请注意，该功能的 API 是 **私有** 的，仅供 ESP-IDF 代码使用。
+    使用该功能需启用配置选项 :menuitem:`CONFIG_ESP_SYSTEM_MEMPROT`，该选项默认启用。请注意，该功能的 API 是 **私有** 的，仅供 ESP-IDF 代码使用。
 
     .. note::
 
@@ -144,7 +144,7 @@ flash 加密最佳实践
 
         {IDF_TARGET_NAME} 支持针对 DPA 相关安全攻击的保护机制。DPA 保护通过动态调整加密外设的时钟频率，在其运行期间模糊了功耗轨迹。时钟变化范围会根据配置的 DPA 安全级别改变。详情请参阅 **《{IDF_TARGET_NAME} 技术参考手册》** [`PDF <{IDF_TARGET_TRM_CN_URL}>`__]。
 
-        通过 :ref:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` 可以调整 DPA 级别。级别越高安全性越强，但也可能会影响性能。默认启用最低级别 DPA 保护，可以根据安全需求修改。
+        通过 :menuitem:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` 可以调整 DPA 级别。级别越高安全性越强，但也可能会影响性能。默认启用最低级别 DPA 保护，可以根据安全需求修改。
 
         .. note::
 
@@ -158,7 +158,7 @@ flash 加密最佳实践
         {IDF_TARGET_NAME} 在 AES 外设中集成了伪轮次功能，使该外设能够在原始操作轮次前后随机插入伪轮次，并生成一个伪密钥来执行这些虚拟操作。
         这些操作不会改变原始结果，但能够通过随机化功耗特征，提高实施侧信道分析攻击的复杂性。
 
-        可以使用 :ref:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` 选择伪轮次功能的强度。提高强度会增强该功能所提供的安全性，但会减缓加密/解密操作的速度。
+        可以使用 :menuitem:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` 选择伪轮次功能的强度。提高强度会增强该功能所提供的安全性，但会减缓加密/解密操作的速度。
 
 
         .. list-table:: 伪轮次功能的不同强度对 AES 操作性能的影响
@@ -210,7 +210,7 @@ UART 下载模式
     * 要启用安全 UART 下载模式，也可以调用 :cpp:func:`esp_efuse_enable_rom_secure_download_mode`。
     * 该模式下，禁止执行通过 UART 下载模式下载的任意代码。
     * 该模式将限制部分涉及更新 SPI 配置的命令，如更改波特率、基本的 flash 写入以及通过 ``get-security-info`` 返回当前启用的安全功能摘要。
-    * 要完全禁用安全 UART 下载模式，可以将 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 设置为建议选项 ``Permanently disable ROM Download Mode``，或者在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
+    * 要完全禁用安全 UART 下载模式，可以将 :menuitem:`CONFIG_SECURE_UART_ROM_DL_MODE` 设置为建议选项 ``Permanently disable ROM Download Mode``，或者在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
 
     .. important::
 
@@ -269,7 +269,7 @@ UART 下载模式
     其他相关建议：
 
     - 请考虑启用 :ref:`ota_rollback`，将成功连接至 OTA 更新服务器作为取消回滚过程的检查点，从而确保更新后的固件成功连接至 OTA 更新服务器。否则，回滚过程将导致设备回退到之前的固件版本。
-    - 如果计划启用 :ref:`CONFIG_MBEDTLS_HAVE_TIME_DATE` 选项，请确保具备时间同步机制 (SNTP) 和足够的受信任证书。
+    - 如果计划启用 :menuitem:`CONFIG_MBEDTLS_HAVE_TIME_DATE` 选项，请确保具备时间同步机制 (SNTP) 和足够的受信任证书。
 
 产品安全
 ----------------

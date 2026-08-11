@@ -406,7 +406,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 2.4 How to Achieve the Transmission of Messages Without Packet Loss?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Acknowledged message is needed if users want to transmit messages without packet loss. The default time to wait for corresponding response is set in :ref:`CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT`. If the sender waits for the response until the timer expires, the corresponding timeout event would be triggered.
+    Acknowledged message is needed if users want to transmit messages without packet loss. The default time to wait for corresponding response is set in :menuitem:`CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT`. If the sender waits for the response until the timer expires, the corresponding timeout event would be triggered.
 
 .. note::
 
@@ -609,7 +609,7 @@ You can find meaning of errors or warnings when they appear at the bottom of ESP
 5.5 What Is the Meaning of Warning  ``No free slots for new incoming segmented messages``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    When the node has no space for receiving new segmented message, this warning will appear. Users can make the space larger through the configuration :ref:`CONFIG_BLE_MESH_RX_SEG_MSG_COUNT`.
+    When the node has no space for receiving new segmented message, this warning will appear. Users can make the space larger through the configuration :menuitem:`CONFIG_BLE_MESH_RX_SEG_MSG_COUNT`.
 
 5.6 What Is the Meaning of Error ``Model not bound to Appkey 0x0000``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

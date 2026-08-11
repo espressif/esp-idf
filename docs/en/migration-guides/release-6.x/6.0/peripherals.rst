@@ -204,7 +204,7 @@ UART
 
         - ESP-IDF will not provide updates, bug fixes, or security patches for the legacy driver timely.
         - Users are strongly recommended to migrate to the new I2C drivers: ``driver/i2c_master.h`` and ``driver/i2c_slave.h``.
-        - To temporarily suppress the compile-time warning, enable ``Component config`` > ``Legacy Driver Configurations`` > ``Legacy I2C Driver Configurations`` > ``Suppress legacy driver deprecated warning`` in menuconfig.
+        - To temporarily suppress the compile-time warning, enable :menuitem:`CONFIG_I2C_SUPPRESS_DEPRECATE_WARN`.
 
     The new I2C drivers provide improved slave and master functionality. For details, please refer to the :ref:`I2C Migration Guide <migration_guide_i2c_driver_5_2>` and the :doc:`I2C Driver Programming Guide <../../../api-reference/peripherals/i2c>`.
 
@@ -351,17 +351,17 @@ Migration example:
 SPI
 ---
 
-- The :ref:`CONFIG_SPI_MASTER_IN_IRAM` option is now invisible by default in menuconfig and depends on :ref:`CONFIG_FREERTOS_IN_IRAM`. This change was made to prevent potential crashes when SPI functions in IRAM call FreeRTOS functions that are placed in flash.
+- The :menuitem:`CONFIG_SPI_MASTER_IN_IRAM` option is now invisible by default in menuconfig and depends on :menuitem:`CONFIG_FREERTOS_IN_IRAM`. This change was made to prevent potential crashes when SPI functions in IRAM call FreeRTOS functions that are placed in flash.
 - To enable SPI master IRAM optimization:
 
     1. Navigate to ``Component config`` → ``FreeRTOS`` → ``Port`` in menuconfig.
-    2. Enable ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`).
+    2. Enable ``Place FreeRTOS functions in IRAM`` (:menuitem:`CONFIG_FREERTOS_IN_IRAM`).
     3. Navigate to ``Component config`` → ``ESP-Driver:SPI Configurations`` in menuconfig.
-    4. Enable ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`).
+    4. Enable ``Place transmitting functions of SPI master into IRAM`` (:menuitem:`CONFIG_SPI_MASTER_IN_IRAM`).
 
     .. note::
 
-        Note that enabling :ref:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
+        Note that enabling :menuitem:`CONFIG_FREERTOS_IN_IRAM` will increase IRAM usage. Consider this trade-off when optimizing for SPI performance.
 
 - Deprecated HSPI and VSPI related IOMUX pin macros on ESP32 and ESP32S2 have been removed.
 
@@ -373,7 +373,7 @@ Deprecated header file ``esp_spiram.h`` has been removed. Please use ``esp_psram
 SPI Flash Driver
 ----------------
 
-- Deprecated ``enum`` type ``esp_flash_speed_t`` has been removed. The main flash speed is controlled by :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` option.
+- Deprecated ``enum`` type ``esp_flash_speed_t`` has been removed. The main flash speed is controlled by :menuitem:`CONFIG_ESPTOOLPY_FLASHFREQ` option.
 - Deprecated header file ``esp_spi_flash.h`` has been removed. Please use ``spi_flash_mmap.h`` instead.
 - Deprecated API ``spi_flash_dump_counters`` has been removed. Please use :cpp:func:`esp_flash_dump_counters` instead.
 - Deprecated API ``spi_flash_get_counters`` has been removed. Please use :cpp:func:`esp_flash_get_counters` instead.
@@ -437,4 +437,4 @@ You can add this dependency to your project by running ``idf.py add-dependency "
 
     TWAI has provided a new driver interface in version 5.5, which supports more flexible configurations and richer features. The legacy driver is not recommended to be used anymore. Please refer to the 5.5 migration guide :doc:`TWAI migration guide <../../release-5.x/5.5/peripherals>` and the new driver programming guide :doc:`TWAI driver programming guide <../../../api-reference/peripherals/twai>` for migration.
 
-    If you still need to use the legacy driver, you can enable the configuration option :ref:`CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN` to close the deprecation warnings.
+    If you still need to use the legacy driver, you can enable the configuration option :menuitem:`CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN` to close the deprecation warnings.

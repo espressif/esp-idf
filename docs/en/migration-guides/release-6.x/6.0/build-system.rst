@@ -19,7 +19,7 @@ If you encounter an orphan section error during linking, you can resolve it usin
 
 1. Remove the code or data that causes the orphan section, if it's unused or unnecessary.
 2. Explicitly place the orphan section using a :ref:`linker fragment file <ldgen-linker-fragment-files>`.
-3. Suppress errors by setting :ref:`CONFIG_COMPILER_ORPHAN_SECTIONS` to ``warning`` or ``place``.
+3. Suppress errors by setting :menuitem:`CONFIG_COMPILER_ORPHAN_SECTIONS` to ``warning`` or ``place``.
 
 .. warning::
 
@@ -83,4 +83,4 @@ ESP-IDF v6 uses esp-idf-kconfig v3, which introduces several changes in the conf
 Compiler Options
 ----------------
 
-The default compiler warnings will be considered as errors. The configuration option :ref:`CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS` has been changed to N.
+The default compiler warnings will be considered as errors. The configuration option :menuitem:`CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS` has been changed to N.

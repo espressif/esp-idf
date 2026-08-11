@@ -241,7 +241,7 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 关于低功耗
 ^^^^^^^^^^^^^^^^
 
-当启用电源管理时（即开启 :ref:`CONFIG_PM_ENABLE`），系统在进入睡眠前可能会调整或禁用时钟源。因此，UHCI 内部的 FIFO 可能无法正常工作。
+当启用电源管理时（即开启 :menuitem:`CONFIG_PM_ENABLE`），系统在进入睡眠前可能会调整或禁用时钟源。因此，UHCI 内部的 FIFO 可能无法正常工作。
 
 通过创建电源管理锁，驱动程序可以避免上述问题. 驱动会根据不同的时钟源设置锁的类型. 驱动程序将在 :cpp:func:`uhci_receive` 或 :cpp:func:`uhci_transmit` 中获取锁，并在事务完成中断中释放锁。这意味着，这两个函数之间的任何 UHCI 事务都能保证正常稳定运行。
 
@@ -250,7 +250,7 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 
 默认情况下，当由于写入或擦除主 Flash 导致缓存被禁用时，UHCI 所依赖的中断会被延迟. 因此，事务完成中断可能无法及时处理，这在实时应用中是不可接受的。更糟糕的是，当 UHCI 事务依赖 **乒乓** 中断来连续编码或复制 UHCI 缓冲区时，延迟的中断可能会导致不可预测的结果。
 
-通过启用 Kconfig 选项 :ref:`CONFIG_UHCI_ISR_CACHE_SAFE`，可实现以下功能：
+通过启用 Kconfig 选项 :menuitem:`CONFIG_UHCI_ISR_CACHE_SAFE`，可实现以下功能：
 
 1. 即使缓存被禁用，中断也能被及时处理。
 2. 将 ISR 使用的所有函数放入 IRAM [1]_
@@ -265,7 +265,7 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 
 **请注意以下数据仅供参考，不同芯片型号可能会有所不同.**
 
-启用 :ref:`CONFIG_UHCI_ISR_CACHE_SAFE` 时的资源消耗：
+启用 :menuitem:`CONFIG_UHCI_ISR_CACHE_SAFE` 时的资源消耗：
 
 .. list-table:: 资源消耗
     :widths: 10 10 10 10 10 10 10 10 10
@@ -290,7 +290,7 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
       - 175
       - 175
 
-禁用 :ref:`CONFIG_UHCI_ISR_CACHE_SAFE` 时的资源消耗：
+禁用 :menuitem:`CONFIG_UHCI_ISR_CACHE_SAFE` 时的资源消耗：
 
 .. list-table:: 资源消耗
     :widths: 10 10 10 10 10 10 10 10 10 10
@@ -320,7 +320,7 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 关于性能
 ^^^^^^^^
 
-为了提升中断处理的实时响应能力， UHCI 驱动提供了 :ref:`CONFIG_UHCI_ISR_HANDLER_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令时可能出现的缓存丢失带来的延迟。
+为了提升中断处理的实时响应能力， UHCI 驱动提供了 :menuitem:`CONFIG_UHCI_ISR_HANDLER_IN_IRAM` 选项。启用该选项后，中断处理程序将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令时可能出现的缓存丢失带来的延迟。
 
 .. note::
 
@@ -334,7 +334,7 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 其他 Kconfig 选项
 ^^^^^^^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_UHCI_ENABLE_DEBUG_LOG` 选项允许强制启用 UHCI 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题，但会增加固件二进制文件的大小。
+- :menuitem:`CONFIG_UHCI_ENABLE_DEBUG_LOG` 选项允许强制启用 UHCI 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题，但会增加固件二进制文件的大小。
 
 应用示例
 --------------------

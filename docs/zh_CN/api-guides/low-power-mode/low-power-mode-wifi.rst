@@ -274,24 +274,24 @@ Deep-sleep 模式在 Wi-Fi 场景下与纯系统下基本相同，详情可以�
 
 - 功耗类：
 
-  - Max Wi-Fi TX power (dBm) (:ref:`CONFIG_ESP_PHY_MAX_WIFI_TX_POWER`)
+  - Max Wi-Fi TX power (dBm) (:menuitem:`CONFIG_ESP_PHY_MAX_WIFI_TX_POWER`)
 
 - 速度优化类：
 
-  - Wi-Fi IRAM 速度优化 (:ref:`CONFIG_ESP_WIFI_IRAM_OPT`)
-  - Wi-Fi RX IRAM 速度优化 (:ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`)
-  - Wi-Fi Sleep IRAM 速度优化 (:ref:`CONFIG_ESP_WIFI_SLP_IRAM_OPT`)
+  - Wi-Fi IRAM 速度优化 (:menuitem:`CONFIG_ESP_WIFI_IRAM_OPT`)
+  - Wi-Fi RX IRAM 速度优化 (:menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT`)
+  - Wi-Fi Sleep IRAM 速度优化 (:menuitem:`CONFIG_ESP_WIFI_SLP_IRAM_OPT`)
 
 
 - Wi-Fi 协议类：
 
-  - Minimum active time (:ref:`CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME`)
+  - Minimum active time (:menuitem:`CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME`)
 
-  - Maximum keep alive time (:ref:`CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME`)
+  - Maximum keep alive time (:menuitem:`CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME`)
 
-  - 周期性发送无条件 ARP (:ref:`CONFIG_LWIP_ESP_GRATUITOUS_ARP`)
+  - 周期性发送无条件 ARP (:menuitem:`CONFIG_LWIP_ESP_GRATUITOUS_ARP`)
 
-  - 丢失 beacon 时睡眠优化 (:ref:`CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT`)
+  - 丢失 beacon 时睡眠优化 (:menuitem:`CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT`)
 
 
 .. _Modem-sleep Mode Configuration:

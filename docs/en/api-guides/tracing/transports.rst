@@ -45,7 +45,7 @@ Using of this feature depends on two components:
 
 1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging </api-guides/jtag-debugging/index>` for details.
 
-2. **Target side:** Application tracing functionality can be enabled in menuconfig. **Important:** You must first enable application tracing by going to ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` and selecting ``ESP-IDF apptrace``. After that, configuration can be done at ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing``. Here you can configure the destination for the trace data. For UART interfaces, users have to define port number, baud rate, TX and RX pins numbers, and additional UART-related parameters. When any trace library is selected (for example SEGGER SystemView), these settings will be used for the library as well.
+2. **Target side:** Application tracing functionality can be enabled in menuconfig. **Important:** You must first set :menuitem:`CONFIG_ESP_TRACE_TRANSPORT` to ``ESP-IDF apptrace``. The related application-level tracing options will then become available. Here you can configure the destination for the trace data. For UART interfaces, users have to define port number, baud rate, TX and RX pins numbers, and additional UART-related parameters. When any trace library is selected (for example SEGGER SystemView), these settings will be used for the library as well.
 
 .. note::
 
@@ -53,15 +53,15 @@ Using of this feature depends on two components:
 
 There are some additional menuconfig options not mentioned above:
 
-1. *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In this mode, trace data is exposed to the host in 16 KB blocks. In post-mortem mode, when one block is filled, it is exposed to the host and the previous one becomes unavailable. In other words, the trace data is overwritten in 16 KB granularity. On panic, the latest data from the current input block is exposed to the host and the host can read them for post-analysis. System panic may occur when a very small amount of data are not exposed to the host yet. In this case, the previous 16 KB of collected data will be lost and the host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of apanic. For example, you can decide that it needs no less than 512 bytes of the recent trace data, so if there is less than 512 bytes of pending data at the moment of panic, they will not be flushed and will not overwrite the previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
+1. *Threshold for flushing last trace data to host on panic* (:menuitem:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In this mode, trace data is exposed to the host in 16 KB blocks. In post-mortem mode, when one block is filled, it is exposed to the host and the previous one becomes unavailable. In other words, the trace data is overwritten in 16 KB granularity. On panic, the latest data from the current input block is exposed to the host and the host can read them for post-analysis. System panic may occur when a very small amount of data are not exposed to the host yet. In this case, the previous 16 KB of collected data will be lost and the host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of apanic. For example, you can decide that it needs no less than 512 bytes of the recent trace data, so if there is less than 512 bytes of pending data at the moment of panic, they will not be flushed and will not overwrite the previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
 
-2. *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and it controls the maximum time that the tracing module will wait for the host to read the last data in case of panic.
+2. *Timeout for flushing last trace data to host on panic* (:menuitem:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and it controls the maximum time that the tracing module will wait for the host to read the last data in case of panic.
 
-3. *Internal Sync Lock* (:ref:`CONFIG_APPTRACE_LOCK_ENABLE`). Enable this option to protect trace buffer writes with locks, preventing data corruption when multiple tasks generate trace data concurrently.
+3. *Internal Sync Lock* (:menuitem:`CONFIG_APPTRACE_LOCK_ENABLE`). Enable this option to protect trace buffer writes with locks, preventing data corruption when multiple tasks generate trace data concurrently.
 
-4. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`). The size of the buffer depends on the amount of data transferred through the UART.
+4. *UART RX/TX ring buffer size* (:menuitem:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`). The size of the buffer depends on the amount of data transferred through the UART.
 
-5. *UART TX message size* (:ref:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`). The maximum size of the single message to transfer.
+5. *UART TX message size* (:menuitem:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`). The maximum size of the single message to transfer.
 
 
 How to Use This Library
@@ -78,8 +78,8 @@ Quick Start Summary
 
    In menuconfig, disable the trace library and enable the Application Level Tracing transport:
 
-   - ``Component config`` > ``ESP Trace Configuration`` > ``Trace library``: select ``None``
-   - ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport``: select ``ESP-IDF apptrace``
+   - Set :menuitem:`CONFIG_ESP_TRACE_LIBRARY` to ``None``
+   - Set :menuitem:`CONFIG_ESP_TRACE_TRANSPORT` to ``ESP-IDF apptrace``
 
    Alternatively, set these options in ``sdkconfig.defaults`` to enforce standalone mode:
 
@@ -89,7 +89,7 @@ Quick Start Summary
       CONFIG_ESP_TRACE_LIB_NONE=y
       CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y
 
-   Configure the destination in ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing``.
+   Configure the destination with :menuitem:`CONFIG_APPTRACE_DESTINATION`.
 
 2. Runtime configuration via ``esp_apptrace_get_user_params()``
 
@@ -365,7 +365,7 @@ How to Use It
 
 In order to use logging via trace module, you need to perform the following steps:
 
-1. Enable application tracing in menuconfig by going to ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` and selecting ``ESP-IDF apptrace``. After that, configuration can be done at ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing``.
+1. Enable application tracing by setting :menuitem:`CONFIG_ESP_TRACE_TRANSPORT` to ``ESP-IDF apptrace``. The related application-level tracing options will then become available.
 2. On the target side, the special vprintf-like function :cpp:func:`esp_apptrace_vprintf` needs to be installed. It sends log data to the host. An example is ``esp_log_set_vprintf(esp_apptrace_vprintf);``. To send log data to UART again, use ``esp_log_set_vprintf(vprintf);``.
 3. Follow instructions in items 4-6 in `Application Specific Tracing`_ (OpenOCD setup and trace collection).
 4. To print out collected log records, run the following command in terminal: ``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``.

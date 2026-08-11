@@ -7,7 +7,7 @@ This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and d
 
 .. note::
 
-    You can also debug your {IDF_TARGET_NAME} without needing to setup JTAG or OpenOCD by using ``idf.py monitor``. See: :doc:`../../api-guides/tools/idf-monitor` and :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`.
+    You can also debug your {IDF_TARGET_NAME} without needing to setup JTAG or OpenOCD by using ``idf.py monitor``. See: :doc:`../../api-guides/tools/idf-monitor` and :menuitem:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`.
 
 .. highlight:: none
 

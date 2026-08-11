@@ -256,7 +256,7 @@ This mode allocates two "bounce buffers" from internal memory and a main frame b
 
 .. note::
 
-    For optimal performance in this mode, it is highly recommended to enable the "PSRAM XIP (Execute In Place)" feature by turning on the Kconfig option: :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`. This allows the CPU to fetch instructions and read-only data directly from PSRAM instead of the main flash. Additionally, the external memory cache remains active even when writing to the main flash via SPI 1, making it feasible to display an OTA progress bar during your application updates.
+    For optimal performance in this mode, it is highly recommended to enable the "PSRAM XIP (Execute In Place)" feature by turning on the Kconfig option: :menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM`. This allows the CPU to fetch instructions and read-only data directly from PSRAM instead of the main flash. Additionally, the external memory cache remains active even when writing to the main flash via SPI 1, making it feasible to display an OTA progress bar during your application updates.
 
 .. note::
 
@@ -310,7 +310,7 @@ This mode is similar to :ref:`bounce_buffer_with_single_psram_frame_buffer`, but
     .. note::
 
         In a well-designed embedded application, situations where the DMA cannot deliver data as fast as the LCD consumes it should be avoided. However, such scenarios can theoretically occur. In the {IDF_TARGET_NAME} hardware, this results in the LCD outputting dummy bytes while the DMA waits for data. If the DMA were to run in a continuous stream, it could cause a desynchronization between the LCD address from which the DMA reads data and the address from which the LCD peripheral outputs data, leading to a **permanently** shifted image.
-        To prevent this, you can either enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, allowing the driver to automatically restart the DMA during the VBlank interrupt, or call :cpp:func:`esp_lcd_rgb_panel_restart` to manually restart the DMA. Note that :cpp:func:`esp_lcd_rgb_panel_restart` does not restart the DMA immediately; instead, the DMA will be restarted at the next VSYNC event.
+        To prevent this, you can either enable the :menuitem:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, allowing the driver to automatically restart the DMA during the VBlank interrupt, or call :cpp:func:`esp_lcd_rgb_panel_restart` to manually restart the DMA. Note that :cpp:func:`esp_lcd_rgb_panel_restart` does not restart the DMA immediately; instead, the DMA will be restarted at the next VSYNC event.
 
 API Reference
 -------------

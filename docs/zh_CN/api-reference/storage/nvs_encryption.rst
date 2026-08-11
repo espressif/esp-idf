@@ -12,7 +12,7 @@ NVS 加密
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    根据要使用的具体方案，可以选择启用 :ref:`CONFIG_NVS_ENCRYPTION` 和 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` 或 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` 实现 NVS 加密。
+    根据要使用的具体方案，可以选择启用 :menuitem:`CONFIG_NVS_ENCRYPTION` 和 :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` 或 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` 实现 NVS 加密。
 
 .. _nvs_encr_flash_enc_scheme:
 
@@ -120,13 +120,13 @@ NVS 密钥分区
 
         注意，此方案使用一个 eFuse 块来存储获取加密密钥所需的 HMAC 密钥。
 
-    - NVS 加密启用时后，可用 API 函数 :cpp:func:`nvs_flash_init` 来初始化加密的默认 NVS 分区。该 API 函数首先检查 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 处是否存在一个 HMAC 密钥。
+    - NVS 加密启用时后，可用 API 函数 :cpp:func:`nvs_flash_init` 来初始化加密的默认 NVS 分区。该 API 函数首先检查 :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 处是否存在一个 HMAC 密钥。
 
     .. note::
 
-        :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 配置的有效范围为 ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) 到 ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`)。默认情况下该配置为 ``-1``，须在构建用户应用程序之前进行修改。
+        :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 配置的有效范围为 ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) 到 ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`)。默认情况下该配置为 ``-1``，须在构建用户应用程序之前进行修改。
 
-    - 如果找不到密钥，会内部生成一个密钥，并储存在 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 指定的 eFuse 块中。
+    - 如果找不到密钥，会内部生成一个密钥，并储存在 :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 指定的 eFuse 块中。
     - 如果找到用于 :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP` 的密钥，该密钥也会用于 XTS 加密密钥的生成。
     - 如果指定的 eFuse 块被 :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP` 以外目的的密钥占用，则会引发错误。
 
@@ -146,13 +146,13 @@ NVS API 函数 ``nvs_get_*`` 或 ``nvs_set_*`` 也可用于读取和写入加密
 
 **加密默认的 NVS 分区**
 
-- 要为默认 NVS 分区启用加密，无需额外的步骤。在启用 :ref:`CONFIG_NVS_ENCRYPTION` 时，API 函数 :cpp:func:`nvs_flash_init` 会根据使用的方案（由 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置）在内部执行一些额外步骤，为默认的 NVS 分区启用加密。
+- 要为默认 NVS 分区启用加密，无需额外的步骤。在启用 :menuitem:`CONFIG_NVS_ENCRYPTION` 时，API 函数 :cpp:func:`nvs_flash_init` 会根据使用的方案（由 :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置）在内部执行一些额外步骤，为默认的 NVS 分区启用加密。
 
 - 在基于 flash 加密的方案中，加密密钥由找到的第一个 :ref:`nvs_encr_key_partition` 生成。
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    在 HMAC 方案中，密钥由 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 中烧录的 HMAC 密钥生成（参考 API 文档以了解更多详细信息）。
+    在 HMAC 方案中，密钥由 :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 中烧录的 HMAC 密钥生成（参考 API 文档以了解更多详细信息）。
 
 另外，还可使用 API 函数 :cpp:func:`nvs_flash_secure_init` 为默认 NVS 分区启用加密。
 
@@ -211,7 +211,7 @@ NVS API 函数 ``nvs_get_*`` 或 ``nvs_set_*`` 也可用于读取和写入加密
 .. only:: SOC_HMAC_SUPPORTED
 
     .. note::
-        在采用基于 HMAC 的方案时，可以在不启用任何 NVS 加密的配置选项的情况下开始上述工作流：:ref:`CONFIG_NVS_ENCRYPTION`，:ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> `CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC` 和 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`，以使用 :cpp:func:`nvs_flash_secure_init` API 加密默认分区及自定义的 NVS 分区。
+        在采用基于 HMAC 的方案时，可以在不启用任何 NVS 加密的配置选项的情况下开始上述工作流：:menuitem:`CONFIG_NVS_ENCRYPTION`，:menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> `CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC` 和 :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`，以使用 :cpp:func:`nvs_flash_secure_init` API 加密默认分区及自定义的 NVS 分区。
 
 
 NVS Security Provider
@@ -225,7 +225,7 @@ NVS Security Provider
 
 .. note::
 
-    如果不希望使用 :component: `nvs_sec_provider` 组件的默认实现，而使用自定义方式生成或者保护 NVS 加密密钥，请选择 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` 配置项。
+    如果不希望使用 :component: `nvs_sec_provider` 组件的默认实现，而使用自定义方式生成或者保护 NVS 加密密钥，请选择 :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` 配置项。
 
 API 参考
 -------------

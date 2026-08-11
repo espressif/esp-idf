@@ -41,9 +41,9 @@ Enabling Protocomm Security Version
 
 The protocomm component provides a project configuration menu to enable/disable support of respective security versions. The respective configuration options are as follows:
 
-    * Support ``protocomm_security0``, with no security: :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, this option is enabled by default.
-    * Support ``protocomm_security1`` with Curve25519 key exchange + AES-CTR encryption/decryption: :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1`, this option is enabled by default.
-    * Support ``protocomm_security2`` with SRP6a-based key exchange + AES-GCM encryption/decryption: :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`.
+    * Support ``protocomm_security0``, with no security: :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, this option is enabled by default.
+    * Support ``protocomm_security1`` with Curve25519 key exchange + AES-CTR encryption/decryption: :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1`, this option is enabled by default.
+    * Support ``protocomm_security2`` with SRP6a-based key exchange + AES-GCM encryption/decryption: :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`.
 
 .. note::
 

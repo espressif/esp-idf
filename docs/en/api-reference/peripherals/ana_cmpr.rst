@@ -240,7 +240,7 @@ The callback runs in interrupt context, so keep it short and non-blocking.
 
 .. note::
 
-    If :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` is enabled, place the callback and any accessed data in internal RAM.
+    If :menuitem:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` is enabled, place the callback and any accessed data in internal RAM.
 
 Scenario 2: Compare a Signal Against an External Reference
 ==========================================================
@@ -535,16 +535,16 @@ While enabled, only a limited set of runtime control functions are intended to b
 Power Management
 ----------------
 
-When :ref:`CONFIG_PM_ENABLE` is enabled, sleep and clock changes can affect the comparator. The driver uses a power management lock internally when needed, so enabling the comparator can prevent light sleep while the unit is active.
+When :menuitem:`CONFIG_PM_ENABLE` is enabled, sleep and clock changes can affect the comparator. The driver uses a power management lock internally when needed, so enabling the comparator can prevent light sleep while the unit is active.
 
 If power consumption matters, structure your application so the comparator is only enabled when needed.
 
 IRAM Safe
 ---------
 
-If you need comparator interrupts to keep working while the cache is disabled, enable :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`.
+If you need comparator interrupts to keep working while the cache is disabled, enable :menuitem:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`.
 
-If you also need the runtime control functions to remain callable in that situation, enable :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`.
+If you also need the runtime control functions to remain callable in that situation, enable :menuitem:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`.
 
 The following control APIs can be placed in IRAM:
 
@@ -569,11 +569,11 @@ Kconfig Options
 
 The most relevant Kconfig options are:
 
-- :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`
+- :menuitem:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`
     Keeps the default ISR path available when cache is disabled. Enable this if comparator interrupts must work in cache-off windows.
-- :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`
+- :menuitem:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`
     Places ISR-callable runtime control APIs in IRAM, so they remain callable when cache is disabled.
-- :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG`
+- :menuitem:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG`
     Enables driver debug logs for troubleshooting and bring-up. This increases binary size and log verbosity.
 
 Examples

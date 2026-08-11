@@ -68,7 +68,7 @@ The :doc:`/api-guides/tracing/transports` allows measuring code execution with m
 Tasks
 ^^^^^
 
-If the option :ref:`CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS` is enabled, then the FreeRTOS API :cpp:func:`vTaskGetRunTimeStats` can be used to retrieve runtime information about the processor time used by each FreeRTOS task.
+If the option :menuitem:`CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS` is enabled, then the FreeRTOS API :cpp:func:`vTaskGetRunTimeStats` can be used to retrieve runtime information about the processor time used by each FreeRTOS task.
 
 :ref:`SEGGER SystemView <app_trace-system-behaviour-analysis-with-segger-systemview>` is an excellent tool for visualizing task execution and looking for performance issues or improvements in the system as a whole.
 
@@ -79,11 +79,11 @@ The following optimizations improve the execution of nearly all code, including 
 
 .. list::
 
-    :esp32: - Set :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` to 80 MHz. This is double the 40 MHz default value and doubles the speed at which code is loaded or executed from flash. You should verify that the board or module that connects the {IDF_TARGET_NAME} to the flash chip is rated for 80 MHz operation at the relevant temperature ranges before changing this setting. This information is contained in the hardware datasheet(s).
-    - Set :ref:`CONFIG_ESPTOOLPY_FLASHMODE` to QIO or QOUT mode (Quad I/O). Both almost double the speed at which code is loaded or executed from flash compared to the default DIO mode. QIO is slightly faster than QOUT if both are supported. Note that both the flash chip model, and the electrical connections between the {IDF_TARGET_NAME} and the flash chip must support quad I/O modes or the SoC will not work correctly.
-    - Set :ref:`CONFIG_COMPILER_OPTIMIZATION` to ``Optimize for performance (-O2)`` . This may slightly increase binary size compared to the default setting, but almost certainly increases the performance of some code. Note that if your code contains C or C++ Undefined Behavior, then increasing the compiler optimization level may expose bugs that otherwise are not seen.
-    :SOC_ASSIST_DEBUG_SUPPORTED: - Set :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` to disabled. This may slightly increase the performance of some code, especially in cases where a lot of interrupts occur on the device.
-    :esp32: - If the application uses PSRAM and is based on ESP32 rev. 3 (ECO3), setting :ref:`CONFIG_ESP32_REV_MIN` to ``3`` disables PSRAM bug workarounds, reducing the code size and improving overall performance.
+    :esp32: - Set :menuitem:`CONFIG_ESPTOOLPY_FLASHFREQ` to 80 MHz. This is double the 40 MHz default value and doubles the speed at which code is loaded or executed from flash. You should verify that the board or module that connects the {IDF_TARGET_NAME} to the flash chip is rated for 80 MHz operation at the relevant temperature ranges before changing this setting. This information is contained in the hardware datasheet(s).
+    - Set :menuitem:`CONFIG_ESPTOOLPY_FLASHMODE` to QIO or QOUT mode (Quad I/O). Both almost double the speed at which code is loaded or executed from flash compared to the default DIO mode. QIO is slightly faster than QOUT if both are supported. Note that both the flash chip model, and the electrical connections between the {IDF_TARGET_NAME} and the flash chip must support quad I/O modes or the SoC will not work correctly.
+    - Set :menuitem:`CONFIG_COMPILER_OPTIMIZATION` to ``Optimize for performance (-O2)`` . This may slightly increase binary size compared to the default setting, but almost certainly increases the performance of some code. Note that if your code contains C or C++ Undefined Behavior, then increasing the compiler optimization level may expose bugs that otherwise are not seen.
+    :SOC_ASSIST_DEBUG_SUPPORTED: - Set :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` to disabled. This may slightly increase the performance of some code, especially in cases where a lot of interrupts occur on the device.
+    :esp32: - If the application uses PSRAM and is based on ESP32 rev. 3 (ECO3), setting :menuitem:`CONFIG_ESP32_REV_MIN` to ``3`` disables PSRAM bug workarounds, reducing the code size and improving overall performance.
     :SOC_CPU_HAS_FPU: - Avoid using floating point arithmetic ``float``. Even though {IDF_TARGET_NAME} has a single precision hardware floating point unit, floating point calculations are always slower than integer calculations. If possible then use fixed point representations, a different method of integer representation, or convert part of the calculation to be integer only before switching to floating point.
     :not SOC_CPU_HAS_FPU: - Avoid using floating point arithmetic ``float``. On {IDF_TARGET_NAME} these calculations are emulated in software and are very slow. If possible, use fixed point representations, a different method of integer representation, or convert part of the calculation to be integer only before switching to floating point.
     - Avoid using double precision floating point arithmetic ``double``. These calculations are emulated in software and are very slow. If possible then use an integer-based representation, or single-precision floating point.
@@ -98,11 +98,11 @@ The following optimizations improve the execution of nearly all code, including 
 
     .. list::
 
-        :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`.
-        :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`.
-        :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`.
-        :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`.
-        :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+        :esp32s2: - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`.
+        :esp32s2: - :menuitem:`CONFIG_ESP32S2_DATA_CACHE_SIZE`.
+        :esp32s3: - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`.
+        :esp32s3: - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_SIZE`.
+        :esp32p4: - :menuitem:`CONFIG_CACHE_L2_CACHE_SIZE`.
 
 
     .. note::
@@ -114,7 +114,7 @@ The following optimizations improve the execution of nearly all code, including 
 
     .. note::
 
-        On {IDF_TARGET_NAME}, the L2 cache size is configurable via the Kconfig option :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+        On {IDF_TARGET_NAME}, the L2 cache size is configurable via the Kconfig option :menuitem:`CONFIG_CACHE_L2_CACHE_SIZE`.
         Setting the L2 cache size to its smallest value will maximize the available RAM while also potentially augmenting the frequency of "cache misses".
         Setting the L2 cache size to its largest value will potentially lower the frequency of "cache misses" at the cost of reducing the available RAM.
 
@@ -125,10 +125,10 @@ Although standard output is buffered, it is possible for an application to be li
 
 .. list::
 
-    - Reduce the volume of log output by lowering the app :ref:`CONFIG_LOG_DEFAULT_LEVEL` (the equivalent bootloader setting is :ref:`CONFIG_BOOTLOADER_LOG_LEVEL`). This also reduces the binary size, and saves some CPU time spent on string formatting.
-    :not SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`.
-    :SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`. However, if you are using internal USB-CDC, the serial throughput is not dependent on the configured baud rate.
-    - If your application does not require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` and changing :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`. It helps to reduce memory usage and also contributes to speeding up log operations in your application about 10 times.
+    - Reduce the volume of log output by lowering the app :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` (the equivalent bootloader setting is :menuitem:`CONFIG_BOOTLOADER_LOG_LEVEL`). This also reduces the binary size, and saves some CPU time spent on string formatting.
+    :not SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :menuitem:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`.
+    :SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :menuitem:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`. However, if you are using internal USB-CDC, the serial throughput is not dependent on the configured baud rate.
+    - If your application does not require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :menuitem:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` and changing :menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL`. It helps to reduce memory usage and also contributes to speeding up log operations in your application about 10 times.
 
 Not Recommended
 ^^^^^^^^^^^^^^^
@@ -137,7 +137,7 @@ The following options also increase execution speed, but are not recommended as 
 
 .. list::
 
-   - Set :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` to disabled. This also reduces firmware binary size by a small amount. However, it may increase the severity of bugs in the firmware including security-related bugs. If it is necessary to do this to optimize a particular function, consider adding ``#define NDEBUG`` at the top of that single source file instead.
+   - Set :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` to disabled. This also reduces firmware binary size by a small amount. However, it may increase the severity of bugs in the firmware including security-related bugs. If it is necessary to do this to optimize a particular function, consider adding ``#define NDEBUG`` at the top of that single source file instead.
 
 .. _speed-targeted-optimizations:
 
@@ -155,7 +155,7 @@ The following changes increase the speed of a chosen part of the firmware applic
 
     -  Jump table optimizations can be re-enabled for individual source files that do not need to be placed in IRAM. For hot paths in large ``switch cases``, this improves performance. For instructions on how to add the ``-fjump-tables`` and ``-ftree-switch-conversion`` options when compiling individual source files, see :ref:`component_build_control`.
 
-    - Many ESP-IDF components and drivers provide configuration options to place performance-critical functions in IRAM for reduced latency and improved speed. These options typically have names like ``CONFIG_*_IN_IRAM``, ``CONFIG_*_ISR_IN_IRAM``, or ``CONFIG_*_IRAM_OPT``. Some examples are :ref:`CONFIG_FREERTOS_IN_IRAM` for FreeRTOS functions, :ref:`CONFIG_ESP_WIFI_IRAM_OPT` for Wi-Fi operations, :ref:`CONFIG_UART_ISR_IN_IRAM` for UART interrupt handling, and :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` for SPI operations. These options trade IRAM usage for speed, so they should be used selectively based on your application's performance requirements and available IRAM space.
+    - Many ESP-IDF components and drivers provide configuration options to place performance-critical functions in IRAM for reduced latency and improved speed. These options typically have names like ``CONFIG_*_IN_IRAM``, ``CONFIG_*_ISR_IN_IRAM``, or ``CONFIG_*_IRAM_OPT``. Some examples are :menuitem:`CONFIG_FREERTOS_IN_IRAM` for FreeRTOS functions, :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT` for Wi-Fi operations, :menuitem:`CONFIG_UART_ISR_IN_IRAM` for UART interrupt handling, and :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` for SPI operations. These options trade IRAM usage for speed, so they should be used selectively based on your application's performance requirements and available IRAM space.
 
 Improving Startup Time
 ----------------------
@@ -164,12 +164,12 @@ In addition to the overall performance improvements shown above, the following o
 
 .. list::
 
-   - Minimizing the :ref:`CONFIG_LOG_DEFAULT_LEVEL` and :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` has a large impact on startup time. To enable more logging after the app starts up, set the :ref:`CONFIG_LOG_MAXIMUM_LEVEL` as well, and then call :cpp:func:`esp_log_level_set` to restore higher level logs. The :example:`system/startup_time` main function shows how to do this.
-   :SOC_RTC_FAST_MEM_SUPPORTED: - If using Deep-sleep mode, setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` allows a faster wake from sleep. Note that if using Secure Boot, this represents a security compromise, as Secure Boot validation are not be performed on wake.
-   - Setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` skips verifying the binary on every boot from the power-on reset. How much time this saves depends on the binary size and the flash settings. Note that this setting carries some risk if the flash becomes corrupt unexpectedly. Read the help text of the :ref:`config item <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` for an explanation and recommendations if using this option.
-   - It is possible to save a small amount of time during boot by disabling RTC slow clock calibration. To do so, set :ref:`CONFIG_RTC_CLK_CAL_CYCLES` to 0. Any part of the firmware that uses RTC slow clock as a timing source will be less accurate as a result.
-   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:ref:`CONFIG_SPIRAM` enabled), enabling memory test on the external memory (:ref:`CONFIG_SPIRAM_MEMTEST`) can have a large impact on startup time (approximately 1 second per 4 MB of memory tested). Disabling the memory tests will reduce startup time at the expense of testing the external memory.
-   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:ref:`CONFIG_SPIRAM` enabled), enabling comprehensive poisoning will increase the startup time (approximately 300 milliseconds per 4 MiB of memory set) since all the memory used as heap (including the external memory) will be set to a default value.
+   - Minimizing the :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` and :menuitem:`CONFIG_BOOTLOADER_LOG_LEVEL` has a large impact on startup time. To enable more logging after the app starts up, set the :menuitem:`CONFIG_LOG_MAXIMUM_LEVEL` as well, and then call :cpp:func:`esp_log_level_set` to restore higher level logs. The :example:`system/startup_time` main function shows how to do this.
+   :SOC_RTC_FAST_MEM_SUPPORTED: - If using Deep-sleep mode, setting :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` allows a faster wake from sleep. Note that if using Secure Boot, this represents a security compromise, as Secure Boot validation are not be performed on wake.
+   - Setting :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` skips verifying the binary on every boot from the power-on reset. How much time this saves depends on the binary size and the flash settings. Note that this setting carries some risk if the flash becomes corrupt unexpectedly. Read the help text of the :menuitem:`config item <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` for an explanation and recommendations if using this option.
+   - It is possible to save a small amount of time during boot by disabling RTC slow clock calibration. To do so, set :menuitem:`CONFIG_RTC_CLK_CAL_CYCLES` to 0. Any part of the firmware that uses RTC slow clock as a timing source will be less accurate as a result.
+   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:menuitem:`CONFIG_SPIRAM` enabled), enabling memory test on the external memory (:menuitem:`CONFIG_SPIRAM_MEMTEST`) can have a large impact on startup time (approximately 1 second per 4 MB of memory tested). Disabling the memory tests will reduce startup time at the expense of testing the external memory.
+   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:menuitem:`CONFIG_SPIRAM` enabled), enabling comprehensive poisoning will increase the startup time (approximately 300 milliseconds per 4 MiB of memory set) since all the memory used as heap (including the external memory) will be set to a default value.
 
 The example project :example:`system/startup_time` is pre-configured to optimize startup time. The file :example_file:`system/startup_time/sdkconfig.defaults` contain all of these settings. You can append these to the end of your project's own ``sdkconfig`` file to merge the settings, but please read the documentation for each setting first.
 
@@ -201,7 +201,7 @@ Common priorities are:
 
         - :ref:`app-main-task` that executes app_main function has minimum priority (1).
         - :doc:`/api-reference/system/esp_timer` system task to manage timer events and execute callbacks has high priority (22, ``ESP_TASK_TIMER_PRIO``)
-        - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`).
+        - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :menuitem:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`).
         - :doc:`/api-reference/system/esp_event` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``). This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`. It is possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
         - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``).
         :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` task has high priority (23).
@@ -215,21 +215,21 @@ Common priorities are:
 
     .. list::
 
-        - :ref:`app-main-task` that executes app_main function has minimum priority (1). This task is pinned to Core 0 by default (:ref:`configurable<CONFIG_ESP_MAIN_TASK_AFFINITY>`).
+        - :ref:`app-main-task` that executes app_main function has minimum priority (1). This task is pinned to Core 0 by default (:menuitem:`configurable <CONFIG_ESP_MAIN_TASK_AFFINITY>`).
         - :doc:`/api-reference/system/esp_timer` system task to manage high precision timer events and execute callbacks has high priority (22, ``ESP_TASK_TIMER_PRIO``). This task is pinned to Core 0.
-        - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`). This task is pinned to Core 0.
+        - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :menuitem:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`). This task is pinned to Core 0.
         - :doc:`/api-reference/system/esp_event` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``) and it is pinned to Core 0. This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`, it is possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
-        - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``) and is not pinned to any core (:ref:`configurable<CONFIG_LWIP_TCPIP_TASK_AFFINITY>`).
-        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` task has high priority (23) and is pinned to Core 0 by default (:ref:`configurable<CONFIG_ESP_WIFI_TASK_CORE_ID>`).
+        - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``) and is not pinned to any core (:menuitem:`configurable <CONFIG_LWIP_TCPIP_TASK_AFFINITY>`).
+        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` task has high priority (23) and is pinned to Core 0 by default (:menuitem:`configurable <CONFIG_ESP_WIFI_TASK_CORE_ID>`).
         :SOC_WIFI_SUPPORTED: - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2) and are not pinned to any core.
-        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) and is pinned to Core 0 by default (:ref:`configurable <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>`). The Bluetooth Controller needs to respond to requests with low latency, so it should always be among the highest priority task assigned to a single CPU.
-        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` task has high priority (21) and is pinned to Core 0 by default (:ref:`configurable <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>`).
+        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) and is pinned to Core 0 by default (:menuitem:`configurable <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>`). The Bluetooth Controller needs to respond to requests with low latency, so it should always be among the highest priority task assigned to a single CPU.
+        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` task has high priority (21) and is pinned to Core 0 by default (:menuitem:`configurable <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>`).
         :esp32: - :doc:`/api-reference/bluetooth/index` creates multiple tasks when used:
                - Stack event callback task ("BTC") has high priority (19).
                - Stack BTU layer task has high priority (20).
                - Host HCI host task has high priority (22).
 
-               All Bluedroid Tasks are pinned to the same core, which is Core 0 by default (:ref:`configurable <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>`).
+               All Bluedroid Tasks are pinned to the same core, which is Core 0 by default (:menuitem:`configurable <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>`).
 
         - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the priority is medium-high (15) and the task is not pinned to any core. These settings can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
         - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__.
@@ -254,7 +254,7 @@ Choosing Task Priorities of the Application
 
 .. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    With a few exceptions, most importantly the lwIP TCP/IP task, in the default configuration most built-in tasks are pinned to Core 0. This makes it quite easy for the application to place high priority tasks on Core 1. Using priority 19 or higher guarantees that an application task can run on Core 1 without being preempted by any built-in task. To further isolate the tasks running on each CPU, configure the :ref:`lwIP task <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` to only run on Core 0 instead of either core, which may reduce total TCP/IP throughput depending on what other tasks are running.
+    With a few exceptions, most importantly the lwIP TCP/IP task, in the default configuration most built-in tasks are pinned to Core 0. This makes it quite easy for the application to place high priority tasks on Core 1. Using priority 19 or higher guarantees that an application task can run on Core 1 without being preempted by any built-in task. To further isolate the tasks running on each CPU, configure the :menuitem:`lwIP task <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` to only run on Core 0 instead of either core, which may reduce total TCP/IP throughput depending on what other tasks are running.
 
     .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
 

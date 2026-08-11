@@ -1117,7 +1117,7 @@ ISP HIST 控制器完成亮度统计后，将动态生成特定事件。若想�
 Kconfig 选项
 ^^^^^^^^^^^^
 
-- :ref:`CONFIG_ISP_ISR_IRAM_SAFE` 控制默认的 ISR 句柄在 cache 被禁用时是否可以正常工作。
+- :menuitem:`CONFIG_ISP_ISR_IRAM_SAFE` 控制默认的 ISR 句柄在 cache 被禁用时是否可以正常工作。
 
 .. _isp-iram-safe:
 
@@ -1126,7 +1126,7 @@ IRAM 安全
 
 默认情况下，当 cache 因写入或擦除 flash 等原因而被禁用时，ISP 的中断将会延迟。
 
-Kconfig 选项 :ref:`CONFIG_ISP_ISR_IRAM_SAFE` 支持：
+Kconfig 选项 :menuitem:`CONFIG_ISP_ISR_IRAM_SAFE` 支持：
 
 - 即使 cache 被禁用也能启用中断
 - 将 ISR 使用的所有函数放入 IRAM
@@ -1134,7 +1134,7 @@ Kconfig 选项 :ref:`CONFIG_ISP_ISR_IRAM_SAFE` 支持：
 
 启用上述 Kconfig 选项，保证 cache 被禁用时中断可以正常运行，但这会增加 IRAM 使用量。启用此选项后，当 cache 被禁用时，ISR 回调函数将继续运行。因此，必须确保回调函数及其上下文也是 IRAM 安全的。
 
-Kconfig 选项 :ref:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` 支持：
+Kconfig 选项 :menuitem:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` 支持：
 
 - 将一些 ISP 控制函数放入 IRAM，函数列表请参见：
 

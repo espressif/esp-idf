@@ -274,24 +274,24 @@ Common Configuration Options
 
 - Power consumption related:
 
-  - Max Wi-Fi TX power (dBm) (:ref:`CONFIG_ESP_PHY_MAX_WIFI_TX_POWER`)
+  - Max Wi-Fi TX power (dBm) (:menuitem:`CONFIG_ESP_PHY_MAX_WIFI_TX_POWER`)
 
 - Speed optimization related:
 
-  - Wi-Fi IRAM speed optimization (:ref:`CONFIG_ESP_WIFI_IRAM_OPT`)
-  - Wi-Fi RX IRAM speed optimization (:ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`)
-  - Wi-Fi Sleep IRAM speed optimization (:ref:`CONFIG_ESP_WIFI_SLP_IRAM_OPT`)
+  - Wi-Fi IRAM speed optimization (:menuitem:`CONFIG_ESP_WIFI_IRAM_OPT`)
+  - Wi-Fi RX IRAM speed optimization (:menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT`)
+  - Wi-Fi Sleep IRAM speed optimization (:menuitem:`CONFIG_ESP_WIFI_SLP_IRAM_OPT`)
 
 
 - Wi-Fi Protocol related:
 
-  - Minimum active time (:ref:`CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME`)
+  - Minimum active time (:menuitem:`CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME`)
 
-  - Maximum keep alive time (:ref:`CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME`)
+  - Maximum keep alive time (:menuitem:`CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME`)
 
-  - Send gratuitous ARP periodically (:ref:`CONFIG_LWIP_ESP_GRATUITOUS_ARP`)
+  - Send gratuitous ARP periodically (:menuitem:`CONFIG_LWIP_ESP_GRATUITOUS_ARP`)
 
-  - Wi-Fi sleep optimize when beacon lost (:ref:`CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT`)
+  - Wi-Fi sleep optimize when beacon lost (:menuitem:`CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT`)
 
 
 .. _Modem-sleep Mode Configuration:

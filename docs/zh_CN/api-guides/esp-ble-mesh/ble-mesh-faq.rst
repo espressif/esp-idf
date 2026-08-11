@@ -406,7 +406,7 @@ ESP-BLE-MESH 常见问题手册
 2.4 如何实现消息传输不丢包？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    如果用户要实现消息传输不丢包，则需有应答的消息。等待应答的默认时间在 :ref:`CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT` 中设置。如果发送端等待应答超时，就会触发对应的超时事件。
+    如果用户要实现消息传输不丢包，则需有应答的消息。等待应答的默认时间在 :menuitem:`CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT` 中设置。如果发送端等待应答超时，就会触发对应的超时事件。
 
 .. note::
 
@@ -609,7 +609,7 @@ ESP-BLE-MESH 常见问题手册
 5.5  ``No free slots for new incoming segmented messages`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    当节点没有空间来接收新的分段消息时，会出现该警告。用户可以通过配置 :ref:`CONFIG_BLE_MESH_RX_SEG_MSG_COUNT` 扩大空间。
+    当节点没有空间来接收新的分段消息时，会出现该警告。用户可以通过配置 :menuitem:`CONFIG_BLE_MESH_RX_SEG_MSG_COUNT` 扩大空间。
 
 5.6  ``Model not bound to AppKey 0x0000`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

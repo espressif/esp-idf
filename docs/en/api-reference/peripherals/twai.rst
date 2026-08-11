@@ -371,7 +371,7 @@ When recovery completes, the :cpp:member:`twai_event_callbacks_t::on_state_chang
 Power Management
 ----------------
 
-When power management is enabled via :ref:`CONFIG_PM_ENABLE`, the system may adjust or disable clock sources before entering sleep mode, which could cause TWAI to malfunction. To prevent this, the driver manages a power management lock internally. This lock is acquired when calling :cpp:func:`twai_node_enable`, ensuring the system does not enter sleep mode and TWAI remains functional. To allow the system to enter a low-power state, call :cpp:func:`twai_node_disable` to release the lock. During sleep, the TWAI controller will also stop functioning.
+When power management is enabled via :menuitem:`CONFIG_PM_ENABLE`, the system may adjust or disable clock sources before entering sleep mode, which could cause TWAI to malfunction. To prevent this, the driver manages a power management lock internally. This lock is acquired when calling :cpp:func:`twai_node_enable`, ensuring the system does not enter sleep mode and TWAI remains functional. To allow the system to enter a low-power state, call :cpp:func:`twai_node_disable` to release the lock. During sleep, the TWAI controller will also stop functioning.
 
 .. only:: SOC_TWAI_SUPPORT_SLEEP_RETENTION
 
@@ -380,12 +380,12 @@ When power management is enabled via :ref:`CONFIG_PM_ENABLE`, the system may adj
 
     {IDF_TARGET_NAME} supports powering down the TWAI controller during **Light Sleep** to further reduce power consumption and automatically restore after waking up. This means the application does not need to reconfigure TWAI after **Light Sleep** wake up.
 
-    Enable the option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`, and set :cpp:member:`twai_onchip_node_config_t::flags::sleep_allow_pd` to ``true`` when initializing the TWAI node to enable this feature. Otherwise, the TWAI controller will remain powered during **Light Sleep**. This feature helps reduce power consumption during light sleep but requires additional storage to save register configurations.
+    Enable the option :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`, and set :cpp:member:`twai_onchip_node_config_t::flags::sleep_allow_pd` to ``true`` when initializing the TWAI node to enable this feature. Otherwise, the TWAI controller will remain powered during **Light Sleep**. This feature helps reduce power consumption during light sleep but requires additional storage to save register configurations.
 
 Cache Safety
 ------------
 
-During Flash write operations, the system temporarily disables cache to prevent instruction and data fetch errors from Flash. This can cause interrupt handlers stored in Flash to become unresponsive. If you want interrupt routines to remain operational during cache-disabled periods, enable the :ref:`CONFIG_TWAI_ISR_CACHE_SAFE` option.
+During Flash write operations, the system temporarily disables cache to prevent instruction and data fetch errors from Flash. This can cause interrupt handlers stored in Flash to become unresponsive. If you want interrupt routines to remain operational during cache-disabled periods, enable the :menuitem:`CONFIG_TWAI_ISR_CACHE_SAFE` option.
 
 .. note::
 
@@ -399,9 +399,9 @@ The driver guarantees thread safety for all public TWAI APIs. You can safely cal
 Performance
 -----------
 
-To improve the real-time performance of interrupt handling, the driver provides the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option. When enabled, the TWAI ISR (Interrupt Service Routine) and receive operations are placed in internal RAM, reducing latency caused by instruction fetching from Flash.
+To improve the real-time performance of interrupt handling, the driver provides the :menuitem:`CONFIG_TWAI_ISR_IN_IRAM` option. When enabled, the TWAI ISR (Interrupt Service Routine) and receive operations are placed in internal RAM, reducing latency caused by instruction fetching from Flash.
 
-For applications that require high-performance transmit operations, the driver provides the :ref:`CONFIG_TWAI_IO_FUNC_IN_IRAM` option to place transmit functions in IRAM. This is particularly beneficial for time-critical applications that frequently call :cpp:func:`twai_node_transmit` from user tasks.
+For applications that require high-performance transmit operations, the driver provides the :menuitem:`CONFIG_TWAI_IO_FUNC_IN_IRAM` option to place transmit functions in IRAM. This is particularly beneficial for time-critical applications that frequently call :cpp:func:`twai_node_transmit` from user tasks.
 
 .. note::
 
@@ -416,8 +416,8 @@ You can inspect the Flash and memory usage of the TWAI driver using the :doc:`/a
 - Default log level is set to ``ESP_LOG_INFO`` to balance debugging information and performance.
 - The following driver optimization options are disabled:
 
-    - :ref:`CONFIG_TWAI_ISR_IN_IRAM` – ISR is not placed in IRAM.
-    - :ref:`CONFIG_TWAI_ISR_CACHE_SAFE` – Cache safety option is disabled.
+    - :menuitem:`CONFIG_TWAI_ISR_IN_IRAM` – ISR is not placed in IRAM.
+    - :menuitem:`CONFIG_TWAI_ISR_CACHE_SAFE` – Cache safety option is disabled.
 
 **The following resource usage data is for reference only. Actual values may vary across different target chips.**
 
@@ -431,7 +431,7 @@ You can inspect the Flash and memory usage of the TWAI driver using the :doc:`/a
 | soc             | 64         | 0     | 0    | 0     | 0     | 64    | 64      | 0     |
 +-----------------+------------+-------+------+-------+-------+-------+---------+-------+
 
-Resource Usage with :ref:`CONFIG_TWAI_ISR_IN_IRAM` Enabled:
+Resource Usage with :menuitem:`CONFIG_TWAI_ISR_IN_IRAM` Enabled:
 
 +-----------------+------------+-------+------+-------+-------+-------+---------+-------+
 | Component Layer | Total Size | DIRAM | .bss | .data | .text | Flash | .rodata | .text |
@@ -448,7 +448,7 @@ Additionally, each TWAI handle dynamically allocates approximately ``168`` + 4 *
 Other Kconfig Options
 ---------------------
 
-- :ref:`CONFIG_TWAI_ENABLE_DEBUG_LOG`: This option forces all debug logs of the TWAI driver to be enabled regardless of the global log level settings. Enabling this can help developers obtain more detailed log information during debugging, making it easier to locate and resolve issues.
+- :menuitem:`CONFIG_TWAI_ENABLE_DEBUG_LOG`: This option forces all debug logs of the TWAI driver to be enabled regardless of the global log level settings. Enabling this can help developers obtain more detailed log information during debugging, making it easier to locate and resolve issues.
 
 Application Examples
 ====================
