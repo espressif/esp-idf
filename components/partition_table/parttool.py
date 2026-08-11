@@ -443,7 +443,7 @@ def _shared_subcommand_options(func):
 
 @cli.command('read_partition', help='read partition from device and dump contents into a file')
 @_partition_selection_options
-@click.option('--output', help='file to dump the read partition contents to')
+@click.option('--output', required=True, help='file to dump the read partition contents to')
 @_shared_subcommand_options
 def read_partition_cmd(
     ctx,
@@ -461,7 +461,9 @@ def read_partition_cmd(
 
 @cli.command('write_partition', help='write contents of a binary file to partition on device')
 @_partition_selection_options
-@click.option('--input', 'input_file', help='file whose contents are to be written to the partition offset')
+@click.option(
+    '--input', 'input_file', required=True, help='file whose contents are to be written to the partition offset'
+)
 @click.option('--ignore-readonly', is_flag=True, help='Ignore read-only attribute')
 @_shared_subcommand_options
 def write_partition_cmd(
