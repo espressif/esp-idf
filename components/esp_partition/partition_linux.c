@@ -648,6 +648,9 @@ esp_err_t esp_partition_write_raw(const esp_partition_t *partition, size_t dst_o
 esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t offset, size_t size)
 {
     assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
+    if (partition->erase_size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (partition->readonly) {
         return ESP_ERR_NOT_ALLOWED;
