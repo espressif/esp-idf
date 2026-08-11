@@ -438,17 +438,27 @@ esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3)
     return ESP_OK;
 }
 
+/* Delays for at least delay_us. Anything shorter than a FreeRTOS tick has to be busy waited since
+   the scheduler cannot express it. Longer delays are slept off by a single vTaskDelay which returns
+   after n-1 to n tick periods, because the call is placed somewhere inside an already running tick,
+   hence one extra tick is requested to not undershoot the delay. */
+static void phy_802_3_delay_us(uint32_t delay_us)
+{
+    uint32_t tick_period_us = portTICK_PERIOD_MS * 1000;
+    if (delay_us < tick_period_us) {
+        esp_rom_delay_us(delay_us);
+    } else {
+        vTaskDelay((delay_us + tick_period_us - 1) / tick_period_us + 1);
+    }
+}
+
 esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_assert_us)
 {
     if (phy_802_3->reset_gpio_num >= 0) {
         gpio_func_sel(phy_802_3->reset_gpio_num, PIN_FUNC_GPIO);
         gpio_set_level(phy_802_3->reset_gpio_num, 0);
         gpio_output_enable(phy_802_3->reset_gpio_num);
-        if (reset_assert_us < 10000) {
-            esp_rom_delay_us(reset_assert_us);
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(reset_assert_us/1000));
-        }
+        phy_802_3_delay_us(reset_assert_us);
         gpio_set_level(phy_802_3->reset_gpio_num, 1);
         return ESP_OK;
     }
@@ -468,7 +478,7 @@ static esp_err_t esp_eth_phy_802_3_reset_hw_internal(phy_802_3_t *phy_802_3)
     esp_err_t ret = ESP_OK;
     if ((ret = esp_eth_phy_802_3_reset_hw(phy_802_3, phy_802_3->hw_reset_assert_time_us)) == ESP_OK) {
         if (phy_802_3->post_hw_reset_delay_ms > 0) {
-            vTaskDelay(pdMS_TO_TICKS(phy_802_3->post_hw_reset_delay_ms));
+            phy_802_3_delay_us((uint32_t)phy_802_3->post_hw_reset_delay_ms * 1000);
         }
     }
     return ret;
