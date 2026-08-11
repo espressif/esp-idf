@@ -221,7 +221,7 @@ esp_err_t mcpwm_new_soft_sync_src(const mcpwm_soft_sync_config_t *config, mcpwm_
     ESP_GOTO_ON_FALSE(soft_sync, ESP_ERR_NO_MEM, err, TAG, "no mem for soft sync");
 
     // fill in other sync member
-    soft_sync->soft_sync_from = MCPWM_SOFT_SYNC_FROM_NONE;
+    soft_sync->soft_sync_bound_to = MCPWM_SOFT_SYNC_BOUND_TO_NONE;
     soft_sync->base.type = MCPWM_SYNC_TYPE_SOFT;
     soft_sync->base.del = mcpwm_del_soft_sync_src;
     *ret_sync = &soft_sync->base;
@@ -255,13 +255,13 @@ esp_err_t mcpwm_soft_sync_activate(mcpwm_sync_handle_t sync_src)
     mcpwm_group_t *group = sync_src->group;
     mcpwm_soft_sync_src_t *soft_sync = __containerof(sync_src, mcpwm_soft_sync_src_t, base);
 
-    switch (soft_sync->soft_sync_from) {
-    case MCPWM_SOFT_SYNC_FROM_TIMER: {
+    switch (soft_sync->soft_sync_bound_to) {
+    case MCPWM_SOFT_SYNC_BOUND_TO_TIMER: {
         mcpwm_timer_t *timer = soft_sync->timer;
         mcpwm_ll_timer_trigger_soft_sync(group->hal.dev, timer->timer_id);
         break;
     }
-    case MCPWM_SOFT_SYNC_FROM_CAP: {
+    case MCPWM_SOFT_SYNC_BOUND_TO_CAP: {
         mcpwm_ll_capture_trigger_sw_sync(group->hal.dev);
         break;
     }
