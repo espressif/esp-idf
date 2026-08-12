@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,9 +88,5 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
 void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     trans->pos = 0;
-    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+    ble_log_lbm_recycle_trans(trans);
 }
-
-void ble_log_prph_reset_util_counters(void) {}

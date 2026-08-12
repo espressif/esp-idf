@@ -166,10 +166,8 @@ void ble_log_rt_deinit(void)
     if (rt_queue_handle) {
         ble_log_prph_trans_t *trans = NULL;
         while (xQueueReceive(rt_queue_handle, &trans, 0) == pdTRUE) {
-            ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
             trans->pos = 0;
-            __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-            __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+            ble_log_lbm_recycle_trans(trans);
         }
         vQueueDelete(rt_queue_handle);
         rt_queue_handle = NULL;
