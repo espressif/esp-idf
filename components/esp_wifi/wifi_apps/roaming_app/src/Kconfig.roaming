@@ -29,6 +29,18 @@ menu "Roaming triggers"
             Setting 0 here may cause station to be flooded with low rssi events,
             therefore that's not recommended to be kept.
 
+    config ESP_WIFI_ROAMING_LOW_RSSI_ROAM_DIFF
+        depends on ESP_WIFI_ROAMING_LOW_RSSI_ROAMING
+        int "RSSI difference b/w current AP and candidate AP for low RSSI roam"
+        range 1 99
+        default 5
+        help
+            Minimum RSSI improvement (in dB) required of a candidate AP before roaming
+            when triggered by the low RSSI event. A value of 1 keeps the previous behavior
+            (any strictly better AP). Higher values add hysteresis and reduce ping-pong
+            between nearby APs with similar RSSI. Prefer a small value here (e.g. 3-5);
+            use ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF for larger proactive improvements.
+
     config ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
         bool "Conduct periodic scans to check if a better AP is available"
         default y

@@ -20,6 +20,7 @@ struct roam_config {
     bool low_rssi_roam_trigger;
     int8_t low_rssi_threshold;
     uint8_t rssi_threshold_reduction_offset;
+    uint8_t low_rssi_roam_diff;
     bool scan_monitor;
 #if CONFIG_ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
     uint8_t scan_interval;
