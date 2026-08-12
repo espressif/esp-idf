@@ -397,7 +397,7 @@ LCD
     旧版 MCPWM 驱动已弃用
     -----------------------------------
 
-    MCPWM 驱动已更新（详见 :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`）。同时，旧版驱动已被弃用。
+    MCPWM 驱动已更新（详见 :doc:`MCPWM </api-reference/peripherals/mcpwm/index>`）。同时，旧版驱动已被弃用。
 
     新驱动中，每个 MCPWM 子模块相互独立，用户可以自由进行资源连接。
 

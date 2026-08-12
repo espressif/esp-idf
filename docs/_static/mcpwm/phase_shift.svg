@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 370" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="0" orient="auto">
+      <polygon points="0,-3 8,0 0,3" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="370" fill="#ffffff" rx="8"/>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" font-size="14" fill="#333" font-weight="700">PWM Phase Shift — 90° Lag</text>
+  <line x1="180" y1="40" x2="720" y2="40" stroke="#ddd" stroke-width="1"/>
+
+  <g transform="translate(50, 55)">
+    <!-- ===== Timeline ===== -->
+    <!-- X-axis: 0 to 600px = 200 ticks (3 px/tick). Period = 100 ticks = 300 px. -->
+    <!-- Row baselines at translate offsets 40/80, low at y=20, high at y=0 -->
+
+    <!-- Subtle period gridlines -->
+    <g stroke="#e0e0e0" stroke-width="1" opacity="0.5">
+      <line x1="0" y1="40" x2="0" y2="100"/>
+      <line x1="150" y1="40" x2="150" y2="100"/>
+      <line x1="300" y1="40" x2="300" y2="100"/>
+      <line x1="450" y1="40" x2="450" y2="100"/>
+      <line x1="600" y1="40" x2="600" y2="100"/>
+    </g>
+
+    <!-- Period labels -->
+    <text x="150" y="34" text-anchor="middle" font-size="9" fill="#999">Period 1</text>
+    <text x="450" y="34" text-anchor="middle" font-size="9" fill="#999">Period 2</text>
+
+    <!-- ===== PWM_A signal ===== -->
+    <text x="-8" y="62" text-anchor="end" font-size="11" fill="#333" font-weight="600">PWM_A</text>
+    <rect x="-6" y="52" width="10" height="10" rx="2" fill="#1e88e5"/>
+    <g transform="translate(0, 40)">
+      <polyline points="0,20 0,0 150,0 150,20 300,20 300,0 450,0 450,20 600,20" fill="none" stroke="#1e88e5" stroke-width="2.5"/>
+    </g>
+
+    <!-- ===== PWM_B signal ===== -->
+    <text x="-8" y="102" text-anchor="end" font-size="11" fill="#333" font-weight="600">PWM_B</text>
+    <rect x="-6" y="92" width="10" height="10" rx="2" fill="#f57c00"/>
+    <g transform="translate(0, 80)">
+      <polyline points="0,20 75,20 75,0 225,0 225,20 375,20 375,0 525,0 525,20 600,20" fill="none" stroke="#f57c00" stroke-width="2.5"/>
+    </g>
+
+    <!-- ===== Phase shift arrow ===== -->
+    <line x1="0" y1="126" x2="75" y2="126" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <line x1="75" y1="126" x2="0" y2="126" stroke="#555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="37.5" y="122" text-anchor="middle" font-size="10" fill="#555" font-weight="600">25 ticks = 90°</text>
+    <text x="37.5" y="140" text-anchor="middle" font-size="9" fill="#777" font-style="italic">PWM_B lags PWM_A</text>
+
+    <!-- ===== Time axis ===== -->
+    <g stroke="#ddd" stroke-width="1">
+      <line x1="0" y1="158" x2="600" y2="158"/>
+    </g>
+    <g font-size="9" fill="#999" text-anchor="middle">
+      <text x="0" y="172">0</text>
+      <text x="75" y="172">25</text>
+      <text x="150" y="172">50</text>
+      <text x="225" y="172">75</text>
+      <text x="300" y="172">100</text>
+      <text x="375" y="172">125</text>
+      <text x="450" y="172">150</text>
+      <text x="525" y="172">175</text>
+      <text x="600" y="172">200</text>
+    </g>
+    <text x="600" y="158" font-size="9" fill="#999" text-anchor="start" dy="-2">  ticks</text>
+
+    <!-- ===== Bottom note ===== -->
+    <text x="300" y="195" text-anchor="middle" font-size="9" fill="#777">PWM period = 100 ticks, 50% duty cycle. A 25-tick offset produces a 90° phase shift.</text>
+
+    <!-- ===== Right-hand labels ===== -->
+    <g transform="translate(640, 0)">
+      <text x="0" y="58" font-size="9" fill="#888">50% duty, period = 100 ticks</text>
+      <text x="0" y="98" font-size="9" fill="#888">Starts 25 ticks after PWM_A</text>
+    </g>
+  </g>
+</svg>

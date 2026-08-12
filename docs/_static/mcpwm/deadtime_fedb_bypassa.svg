@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 290" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+<rect width="900" height="290" fill="#ffffff" rx="8"/>
+<text x="450.0" y="30" text-anchor="middle" font-size="14" fill="#333333" font-weight="700">FED on B, A Bypasses Dead Time</text>
+<line x1="170" y1="38" x2="730" y2="38" stroke="#ddd" stroke-width="1"/>
+<defs>
+<marker id="arr1e88e5" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><polygon points="0,0 7,3.5 0,7" fill="#1e88e5"/></marker>
+</defs>
+<g transform="translate(70, 66)">
+<text x="-12" y="14" text-anchor="end" font-size="11" fill="#757575" font-weight="600">origin_A</text>
+<polyline points="0,20 100,20 100,0 300,0 300,20 500,20" fill="none" stroke="#757575" stroke-width="2"/>
+<text x="-12" y="60" text-anchor="end" font-size="11" fill="#757575" font-weight="600">origin_B</text>
+<polyline points="0,66 100,66 100,46 300,46 300,66 500,66" fill="none" stroke="#757575" stroke-width="2"/>
+<text x="-12" y="106" text-anchor="end" font-size="11" fill="#43a047" font-weight="600">pwm_A</text>
+<polyline points="0,112 100,112 100,92 300,92 300,112 500,112" fill="none" stroke="#43a047" stroke-width="2"/>
+<text x="-12" y="152" text-anchor="end" font-size="11" fill="#1e88e5" font-weight="600">pwm_B</text>
+<polyline points="0,158 100,158 100,138 320,138 320,158 500,158" fill="none" stroke="#1e88e5" stroke-width="2"/>
+<line x1="300" y1="56" x2="320" y2="148" stroke="#1e88e5" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arr1e88e5)"/>
+<text x="310.0" y="102.0" text-anchor="middle" font-size="10" fill="#1e88e5" font-weight="600">FED</text>
+</g>
+</svg>

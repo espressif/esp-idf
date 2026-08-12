@@ -32,7 +32,7 @@ Peripherals API
     lcd/index
     :SOC_GP_LDO_SUPPORTED: ldo_regulator
     :SOC_LEDC_SUPPORTED: ledc
-    :SOC_MCPWM_SUPPORTED: mcpwm
+    :SOC_MCPWM_SUPPORTED: mcpwm/index
     :SOC_PARLIO_SUPPORTED: parlio/index
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_PPA_SUPPORTED: ppa

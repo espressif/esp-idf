@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 370" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="370" fill="#ffffff" rx="8"/>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" font-size="14" fill="#333" font-weight="700">Carrier Modulation</text>
+  <line x1="180" y1="40" x2="720" y2="40" stroke="#ddd" stroke-width="1"/>
+
+  <g transform="translate(75, 55)">
+    <!-- ===== Timeline ===== -->
+    <!-- X-axis: 0 to 450px = 150 us (3 px/us). Carrier period 10 us = 30 px; base period 50 us = 150 px -->
+    <!-- Row baselines at translate offsets 40/80/120, low at y=20, high at y=0 -->
+
+    <!-- Subtle carrier-period gridlines -->
+    <g stroke="#e0e0e0" stroke-width="1" opacity="0.5">
+      <line x1="0" y1="40" x2="0" y2="140"/>
+      <line x1="30" y1="40" x2="30" y2="140"/>
+      <line x1="60" y1="40" x2="60" y2="140"/>
+      <line x1="90" y1="40" x2="90" y2="140"/>
+      <line x1="120" y1="40" x2="120" y2="140"/>
+      <line x1="150" y1="40" x2="150" y2="140"/>
+      <line x1="180" y1="40" x2="180" y2="140"/>
+      <line x1="210" y1="40" x2="210" y2="140"/>
+      <line x1="240" y1="40" x2="240" y2="140"/>
+      <line x1="270" y1="40" x2="270" y2="140"/>
+      <line x1="300" y1="40" x2="300" y2="140"/>
+      <line x1="330" y1="40" x2="330" y2="140"/>
+      <line x1="360" y1="40" x2="360" y2="140"/>
+      <line x1="390" y1="40" x2="390" y2="140"/>
+      <line x1="420" y1="40" x2="420" y2="140"/>
+      <line x1="450" y1="40" x2="450" y2="140"/>
+    </g>
+
+    <!-- ===== Base PWM signal (50% duty) ===== -->
+    <text x="-8" y="62" text-anchor="end" font-size="11" fill="#333" font-weight="600">PWM</text>
+    <g transform="translate(0, 40)">
+      <polyline points="0,0 150,0 150,20 300,20 300,0 450,0" fill="none" stroke="#1e88e5" stroke-width="2"/>
+    </g>
+
+    <!-- ===== Carrier signal ===== -->
+    <text x="-8" y="102" text-anchor="end" font-size="11" fill="#333" font-weight="600">carrier</text>
+    <g transform="translate(0, 80)">
+      <polyline points="0,0 15,0 15,20 30,20 30,0 45,0 45,20 60,20 60,0 75,0 75,20 90,20 90,0 105,0 105,20 120,20 120,0 135,0 135,20 150,20 150,0 165,0 165,20 180,20 180,0 195,0 195,20 210,20 210,0 225,0 225,20 240,20 240,0 255,0 255,20 270,20 270,0 285,0 285,20 300,20 300,0 315,0 315,20 330,20 330,0 345,0 345,20 360,20 360,0 375,0 375,20 390,20 390,0 405,0 405,20 420,20 420,0 435,0 435,20 450,20" fill="none" stroke="#00897b" stroke-width="2"/>
+    </g>
+
+    <!-- ===== Modulated output ===== -->
+    <!-- Base-low window (150..300 px) shaded: no chopping there -->
+    <rect x="150" y="120" width="150" height="20" fill="#f5f5f5" opacity="0.8"/>
+    <text x="225" y="134" text-anchor="middle" font-size="9" fill="#888">no carrier while base is low</text>
+    <text x="-8" y="142" text-anchor="end" font-size="11" fill="#333" font-weight="600">modulated</text>
+    <g transform="translate(0, 120)">
+      <polyline points="0,0 60,0 60,20 75,20 75,0 90,0 90,20 105,20 105,0 120,0 120,20 135,20 135,0 150,0 150,20 300,20 300,0 315,0 315,20 330,20 330,0 345,0 345,20 360,20 360,0 375,0 375,20 390,20 390,0 405,0 405,20 420,20 420,0 435,0 435,20 450,20" fill="none" stroke="#f57c00" stroke-width="2"/>
+    </g>
+
+    <!-- ===== First-pulse annotation ===== -->
+    <line x1="60" y1="40" x2="60" y2="145" stroke="#f57c00" stroke-width="1.5" stroke-dasharray="4,4"/>
+    <text x="60" y="30" text-anchor="middle" font-size="10" fill="#ef6c00" font-weight="600">first pulse</text>
+
+    <!-- ===== Time axis ===== -->
+    <text x="0" y="225" text-anchor="middle" font-size="9" fill="#999">0</text>
+    <text x="150" y="225" text-anchor="middle" font-size="9" fill="#999">50 µs</text>
+    <text x="300" y="225" text-anchor="middle" font-size="9" fill="#999">100 µs</text>
+    <text x="450" y="225" text-anchor="middle" font-size="9" fill="#999">150 µs</text>
+
+    <!-- ===== Bottom note ===== -->
+    <text x="225" y="246" text-anchor="middle" font-size="9" fill="#777">The first pulse is held HIGH for first_pulse_duration_us</text>
+    <text x="225" y="258" text-anchor="middle" font-size="9" fill="#777">(20 µs = 2 carrier periods) before normal chopping resumes.</text>
+
+    <!-- ===== Right-hand labels ===== -->
+    <g transform="translate(480, 0)">
+      <text x="0" y="58" font-size="9" fill="#888">50% duty, 50 µs period</text>
+      <text x="0" y="98" font-size="9" fill="#888">100 kHz, 50% duty</text>
+      <text x="0" y="132" font-size="9" fill="#888">Carrier gated by base PWM;</text>
+      <text x="0" y="144" font-size="9" fill="#888">first pulse stretched to 20 µs</text>
+    </g>
+  </g>
+</svg>
