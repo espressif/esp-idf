@@ -24,7 +24,10 @@
 /* MACRO */
 #define BLE_LOG_UART_MAX_TRANSFER_SIZE      (10240)
 #define BLE_LOG_UART_RX_BUF_SIZE            (256)
-#define BLE_LOG_UART_DMA_BURST_SIZE         (32)
+/* ponytail: data burst disabled — UHCI enforces burst-size alignment (addr+len) on
+ * uhci_transmit() once GDMA weighted arbitration is enabled, and UART log bandwidth
+ * is baud-rate limited anyway, so burst buys nothing here */
+#define BLE_LOG_UART_DMA_BURST_SIZE         (0)
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 #define BLE_LOG_UART_REDIR_BUF_SIZE         (512)
 #define BLE_LOG_UART_REDIR_FLUSH_PERIOD_US  (1000 * 1000)
@@ -57,9 +60,7 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC bool uart_dma_tx_done_cb(
     );
     ble_log_prph_trans_t *trans = uart_trans_ctx->trans;
     trans->pos = 0;
-    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+    ble_log_lbm_recycle_trans(trans);
     return true;
 }
 
@@ -276,9 +277,7 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
 BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     if (uhci_transmit(dev_handle, trans->buf, trans->pos) != ESP_OK) {
-        ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-        __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-        __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+        ble_log_lbm_recycle_trans(trans);
     }
 }
 
