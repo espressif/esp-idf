@@ -572,7 +572,7 @@ static void s_spi_slave_hd_destroy_priv_trans(spi_host_device_t host, spi_slave_
 {
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     spi_slave_hd_data_t *orig_trans = priv_trans->trans;
-    if (priv_trans->aligned_buffer != orig_trans->data) {
+    if (priv_trans->aligned_buffer && priv_trans->aligned_buffer != orig_trans->data) {
         if (chan == SPI_SLAVE_CHAN_RX) {
             memcpy(orig_trans->data, priv_trans->aligned_buffer, orig_trans->trans_len);
         }
