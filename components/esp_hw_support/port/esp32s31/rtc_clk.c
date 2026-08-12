@@ -516,7 +516,9 @@ void rtc_clk_cpu_freq_set_xtal(void)
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1, false);
-    rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src);
+    if (old_cpu_clk_src != SOC_CPU_CLK_SRC_XTAL) {
+        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src);
+    }
 }
 
 FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)

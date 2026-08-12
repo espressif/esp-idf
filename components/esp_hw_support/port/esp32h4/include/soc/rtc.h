@@ -261,7 +261,9 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config);
  *
  * @param config  CPU frequency configuration structure
  */
+#ifndef BOOTLOADER_BUILD
 void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config);
+#endif
 
 /**
  * @brief Get the currently used CPU frequency configuration
@@ -269,6 +271,7 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config);
  */
 void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
 
+#ifndef BOOTLOADER_BUILD
 /**
  * @brief Switch CPU clock source to XTAL
  *
@@ -276,11 +279,10 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
  * Assumes that XTAL frequency has been determined — don't call in startup code.
  *
- * @note This function always disables BBPLL after switching the CPU clock source to XTAL for power saving purpose.
- * If this is unwanted, please use rtc_clk_cpu_freq_set_config. It helps to check whether USB Serial JTAG is in use,
- * if so, then BBPLL will not be turned off.
+ * Releases the CPU clk_tree hold on the previous root clock (BBPLL / XTAL_X2).
  */
 void rtc_clk_cpu_freq_set_xtal(void);
+#endif
 
 /**
  * @brief Switch root clock source to PLL (only used by sleep) release root clock source locked by PMU
