@@ -2,22 +2,22 @@ menu "H.264 Example Configuration"
 
     choice H264_ENCODER_TYPE
         prompt "H.264 Encoder Type"
-        default H264_ENCODER_HARDWARE if IDF_TARGET_ESP32P4
+        default H264_ENCODER_HARDWARE if SOC_H264_ENCODER_SUPPORTED
         default H264_ENCODER_SOFTWARE
         help
             Select the H.264 encoder type to use.
-            Hardware encoder is only available on ESP32P4 and provides
+            Hardware encoder is available on targets with an H.264 encoder and provides
             better performance and lower power consumption.
             Software encoder is available on all targets but requires
             more CPU resources.
 
         config H264_ENCODER_HARDWARE
-            bool "Hardware Encoder (ESP32P4 only)"
-            depends on IDF_TARGET_ESP32P4
+            bool "Hardware Encoder"
+            depends on SOC_H264_ENCODER_SUPPORTED
             help
                 Use hardware H.264 encoder.
-                This option is only available on ESP32P4 which has
-                dedicated H.264 hardware encoding capabilities.
+                This option is available on targets with dedicated
+                H.264 hardware encoding capabilities.
                 Provides better performance and lower power consumption
                 compared to software encoding.
 
@@ -25,9 +25,8 @@ menu "H.264 Example Configuration"
             bool "Software Encoder"
             help
                 Use software H.264 encoder using OpenH264 library.
-                Available on all supported targets (ESP32S3, ESP32P4)
-                but requires more CPU resources and power consumption
-                compared to hardware encoding.
+                Available on all supported targets but requires more CPU
+                resources and power consumption compared to hardware encoding.
     endchoice
 
     menu "H.264 Encoder Parameters"
