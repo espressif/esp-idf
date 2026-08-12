@@ -9,15 +9,13 @@
 
 /* INCLUDE */
 #include "ble_log_prph_spi_master_dma.h"
+#include "ble_log_prph_spi_common.h"
 #include "ble_log_lbm.h"
 
 #include "esp_timer.h"
 
 /* MACRO */
-#define BLE_LOG_SPI_BUS                     SPI2_HOST
-#define BLE_LOG_SPI_MAX_TRANSFER_SIZE       (10240)
 #define BLE_LOG_SPI_TRANS_ITVL_MIN_US       (30)
-#define BLE_LOG_SPI_DMA_ALIGN_BYTES         (4U)
 #define BLE_LOG_SPI_ALIGN_LOG_PERIOD        (256U)
 
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM
@@ -64,8 +62,8 @@ bool ble_log_prph_init(size_t trans_cnt)
     /* SPI master initialization */
     spi_bus_config_t bus_config = {
         .miso_io_num = -1,
-        .mosi_io_num = CONFIG_BLE_LOG_PRPH_SPI_MASTER_DMA_MOSI_IO_NUM,
-        .sclk_io_num = CONFIG_BLE_LOG_PRPH_SPI_MASTER_DMA_SCLK_IO_NUM,
+        .mosi_io_num = BLE_LOG_SPI_MOSI_IO_NUM,
+        .sclk_io_num = BLE_LOG_SPI_SCLK_IO_NUM,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = BLE_LOG_SPI_MAX_TRANSFER_SIZE,
@@ -80,7 +78,7 @@ bool ble_log_prph_init(size_t trans_cnt)
     spi_device_interface_config_t dev_config = {
         .clock_speed_hz = SPI_MASTER_FREQ_20M,
         .mode = 0,
-        .spics_io_num = CONFIG_BLE_LOG_PRPH_SPI_MASTER_DMA_CS_IO_NUM,
+        .spics_io_num = BLE_LOG_SPI_CS_IO_NUM,
         .queue_size = trans_cnt,
         .post_cb = spi_master_dma_tx_done_cb,
         .pre_cb = spi_master_dma_pre_tx_cb,
