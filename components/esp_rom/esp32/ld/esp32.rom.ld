@@ -564,6 +564,7 @@ PROVIDE ( lmp_not_accepted_ext_handler = 0x40029c54 );
 PROVIDE ( lmp_clk_adj_handler = 0x40027468 );
 PROVIDE ( lmp_clk_adj_ack_handler = 0x400274f4 );
 PROVIDE ( lm_get_auth_method = 0x40023420);
+PROVIDE ( lm_get_total_pkt_type = 0x4004f928);
 PROVIDE ( lmp_accepted_ext_handler = 0x40027290 );
 PROVIDE ( lmp_not_accepted_ext_handler = 0x40029c54 );
 PROVIDE ( lmp_clk_adj_handler = 0x40027468 );
