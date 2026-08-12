@@ -491,6 +491,22 @@ extern void AVDT_SINK_Deactivate(void);
 
 /*******************************************************************************
 **
+** Function         AVDT_SetSepInUse
+**
+** Description      Mark a local stream endpoint as in use or idle. Discover
+**                  responses report this flag; a peer will not SetConfiguration
+**                  on an in-use SEP. Used when one BTA stream control block
+**                  owns several codec SEPs: the unused codecs of a connected
+**                  stream must look busy so a second phone picks a SEP that
+**                  belongs to a free stream.
+**
+** Returns          void.
+**
+*******************************************************************************/
+extern void AVDT_SetSepInUse(UINT8 handle, BOOLEAN in_use);
+
+/*******************************************************************************
+**
 ** Function         AVDT_AbortReq
 **
 ** Description      Trigger Abort request to pass AVDTP Abort related mandatory

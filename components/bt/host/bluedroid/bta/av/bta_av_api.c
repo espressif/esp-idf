@@ -130,11 +130,12 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name, UINT8 app_id,
     }
 }
 
-void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 seid, UINT8 tsep, tBTA_AV_CODEC codec_type, UINT8 *p_codec_info, tBTA_AV_DATA_CBACK *p_data_cback)
+void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 seid, UINT8 tsep, tBTA_AV_CODEC codec_type,
+                  UINT8 *p_codec_info, tBTA_AV_DATA_CBACK * const *pp_data_cback)
 {
     tBTA_AV_API_REG_SEP  *p_buf;
 
-    if (p_codec_info == NULL) {
+    if (p_codec_info == NULL || pp_data_cback == NULL) {
         return;
     }
     if ((p_buf = (tBTA_AV_API_REG_SEP *) osi_malloc(sizeof(tBTA_AV_API_REG_SEP))) != NULL) {
@@ -145,7 +146,9 @@ void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 seid, UINT8 tsep, tBTA_AV_CODEC codec
         p_buf->tsep = tsep;
         p_buf->codec_type = codec_type;
         memcpy(p_buf->codec_info, p_codec_info, AVDT_CODEC_SIZE);
-        p_buf->p_data_cback = p_data_cback;
+        for (int i = 0; i < BTA_AV_NUM_STRS; i++) {
+            p_buf->p_data_cback[i] = pp_data_cback[i];
+        }
         bta_sys_sendmsg(p_buf);
     }
 }
@@ -249,10 +252,26 @@ void BTA_AvDisconnect(BD_ADDR bd_addr)
 *******************************************************************************/
 void BTA_AvStart(void)
 {
+    BTA_AvStartByHndl(0);
+}
+
+/*******************************************************************************
+**
+** Function         BTA_AvStartByHndl
+**
+** Description      Start audio/video stream data transfer on a single stream.
+**                  A handle of 0 addresses every registered stream.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvStartByHndl(tBTA_AV_HNDL hndl)
+{
     BT_HDR  *p_buf;
 
     if ((p_buf = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_AV_API_START_EVT;
+        p_buf->layer_specific = hndl;
         bta_sys_sendmsg(p_buf);
     }
 }
@@ -293,10 +312,26 @@ void BTA_AvEnable_Sink(int enable)
 *******************************************************************************/
 void BTA_AvStop(BOOLEAN suspend)
 {
+    BTA_AvStopByHndl(0, suspend);
+}
+
+/*******************************************************************************
+**
+** Function         BTA_AvStopByHndl
+**
+** Description      Stop audio/video stream data transfer on a single stream.
+**                  A handle of 0 addresses every registered stream.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvStopByHndl(tBTA_AV_HNDL hndl, BOOLEAN suspend)
+{
     tBTA_AV_API_STOP  *p_buf;
 
     if ((p_buf = (tBTA_AV_API_STOP *) osi_malloc(sizeof(tBTA_AV_API_STOP))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_STOP_EVT;
+        p_buf->hdr.layer_specific = hndl;
         p_buf->flush   = TRUE;
         p_buf->suspend = suspend;
         bta_sys_sendmsg(p_buf);
@@ -421,6 +456,7 @@ void BTA_SetDelayValue(UINT16 delay_value)
 
     if ((p_buf = (tBTA_AV_API_SET_DELAY_VALUE *) osi_malloc(sizeof(tBTA_AV_API_SET_DELAY_VALUE))) != NULL) {
         p_buf->hdr.event = BTA_AV_API_SET_DELAY_VALUE_EVT;
+        p_buf->hdr.layer_specific = 0;  /* address every registered stream */
         p_buf->delay_value = delay_value;
         bta_sys_sendmsg(p_buf);
     }

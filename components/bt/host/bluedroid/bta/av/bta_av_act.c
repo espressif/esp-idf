@@ -1790,7 +1790,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
 #endif
                     } else {
                         /* cannot create valid rc_handle for current device. report failure */
-                        APPL_TRACE_ERROR("%s: no link resources available", __func__);
+                        APPL_TRACE_WARNING("%s: no link resources available", __func__);
                         p_scb->use_rc = FALSE;
                         rc_open.rc_handle = BTA_AV_RC_HANDLE_NONE;
                         bdcpy(rc_open.peer_addr, p_scb->peer_addr);

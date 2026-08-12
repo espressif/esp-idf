@@ -294,6 +294,8 @@ typedef enum {
     ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report currently selected sink codec capabilities, only used for A2DP SRC */
     ESP_A2D_SRC_SET_PREF_MCC_EVT,              /*!< indicate a2dp source set preferred media codec configuration status, only used for A2DP SRC */
     ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT,     /*!< report all supported sink codec capabilities, only used for A2DP SRC */
+    ESP_A2D_SNK_ACTIVE_DEVICE_EVT,             /*!< rendered device changed while more than one source is connected,
+                                                    or the result of get/set active device, only used for A2DP SINK */
 } esp_a2d_cb_event_t;
 
 /**
@@ -419,6 +421,27 @@ typedef union {
                                                      @note The memory will be released after the callback function ends */
         uint8_t sep_num;                        /*!< number of A2DP sink SEP information */
     } a2d_report_snk_all_codec_caps_stat;       /*!< A2DP source received all sink codec capabilities */
+
+    /**
+     * @brief ESP_A2D_SNK_ACTIVE_DEVICE_EVT
+     *
+     * Reported when the rendered device changes and at least two sources are
+     * connected, and as the result of esp_a2d_sink_get_active_device() or
+     * esp_a2d_sink_set_active_device(). A single connection does not emit this
+     * event on stream start or stop. A get that finds no selection reports
+     * active = false and status = ESP_BT_STATUS_SUCCESS.
+     */
+    struct a2d_snk_active_device_param {
+        bool active;                            /*!< false when no connected device is selected any more,
+                                                     in which case remote_bda and conn_hdl are meaningless.
+                                                     Ignored when status is not ESP_BT_STATUS_SUCCESS */
+        esp_bd_addr_t remote_bda;               /*!< selected device, or the address of a failed set-active request */
+        esp_a2d_conn_hdl_t conn_hdl;            /*!< connection handle of the selected device */
+        esp_bt_status_t status;                 /*!< ESP_BT_STATUS_SUCCESS, or the reason set-active failed.
+                                                     A non-success status is only an acknowledgement of
+                                                     esp_a2d_sink_set_active_device() and does not change
+                                                     the current selection */
+    } a2d_snk_active_device;                    /*!< A2DP sink active device information */
 
 } esp_a2d_cb_param_t;
 
@@ -605,6 +628,44 @@ esp_err_t esp_a2d_sink_set_delay_value(uint16_t delay_value);
  *
  */
 esp_err_t esp_a2d_sink_get_delay_value(void);
+
+/**
+ *
+ * @brief           Get the device selected for rendering. When several source devices
+ *                  are connected, only one of them is rendered at a time, media packets of the others
+ *                  are discarded. The selected device may still be idle (connected, not streaming)
+ *                  after esp_a2d_sink_set_active_device(). This API must be called after
+ *                  esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *
+ * @param[out]      remote_bda: address of the selected device
+ *
+ * @return
+ *                  - ESP_OK: a device is selected and its address was written to remote_bda
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is NULL
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled, or no device is
+ *                    selected
+ *
+ */
+esp_err_t esp_a2d_sink_get_active_device(esp_bd_addr_t remote_bda);
+
+/**
+ *
+ * @brief           Choose which connected device gets rendered. The device only has to be
+ *                  connected; it does not have to be streaming. Any previously rendered stream is
+ *                  suspended. If the target is idle, AVRCP Play is sent so it can start.
+ *                  ESP_A2D_SNK_ACTIVE_DEVICE_EVT is reported on both success and failure:
+ *                  check param->a2d_snk_active_device.status. This API must be called
+ *                  after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *
+ * @param[in]       remote_bda: address of the device to render
+ *
+ * @return
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_set_active_device(esp_bd_addr_t remote_bda);
 
 /**
  *

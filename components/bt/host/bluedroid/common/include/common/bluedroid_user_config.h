@@ -63,6 +63,12 @@
 #define UC_BT_A2DP_SEP_NUM_MAX              1
 #endif
 
+#ifdef CONFIG_BT_A2DP_SINK_MAX_CONN
+#define UC_BT_A2DP_SINK_MAX_CONN            CONFIG_BT_A2DP_SINK_MAX_CONN
+#else
+#define UC_BT_A2DP_SINK_MAX_CONN            1
+#endif
+
 //AVRCP
 #ifdef CONFIG_BT_AVRCP_ENABLED
 #define UC_BT_AVRCP_ENABLED                 TRUE

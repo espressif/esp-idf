@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 typedef struct {
     btc_sm_state_t         state;
     btc_sm_handler_t       *p_handlers;
+    void                   *user_data;
 } btc_sm_cb_t;
 
 /*****************************************************************************
@@ -54,26 +55,33 @@ typedef struct {
 **              The caller should ensure that the table and the corresponding
 **              states match. The location that 'p_handlers' points to shall
 **              be available until the btc_sm_shutdown API is invoked.
+**              'user_data' is passed unchanged to every handler invocation.
 **
 ** Returns      Returns a pointer to the initialized state machine handle.
 **
 ******************************************************************************/
 
-btc_sm_handle_t btc_sm_init(const btc_sm_handler_t *p_handlers, btc_sm_state_t initial_state)
+btc_sm_handle_t btc_sm_init(const btc_sm_handler_t *p_handlers, btc_sm_state_t initial_state,
+                            void *user_data)
 {
     btc_sm_cb_t *p_cb;
 
     if (p_handlers == NULL) {
-        BTC_TRACE_ERROR("%s : p_handlers is NULL", __FUNCTION__);
+        BTC_TRACE_ERROR("btc_sm: p_handlers is NULL");
         return NULL;
     }
 
     p_cb = (btc_sm_cb_t *)osi_malloc(sizeof(btc_sm_cb_t));
+    if (p_cb == NULL) {
+        BTC_TRACE_ERROR("btc_sm: failed to allocate state machine");
+        return NULL;
+    }
     p_cb->state = initial_state;
     p_cb->p_handlers = (btc_sm_handler_t *)p_handlers;
+    p_cb->user_data = user_data;
 
     /* Send BTC_SM_ENTER_EVT to the initial state */
-    p_cb->p_handlers[initial_state](BTC_SM_ENTER_EVT, NULL);
+    p_cb->p_handlers[initial_state](BTC_SM_ENTER_EVT, NULL, user_data);
 
     return (btc_sm_handle_t)p_cb;
 }
@@ -142,7 +150,7 @@ bt_status_t btc_sm_dispatch(btc_sm_handle_t handle, btc_sm_event_t event,
         return BT_STATUS_FAIL;
     }
 
-    if (p_cb->p_handlers[p_cb->state](event, data) == FALSE) {
+    if (p_cb->p_handlers[p_cb->state](event, data, p_cb->user_data) == FALSE) {
         return BT_STATUS_UNHANDLED;
     }
 
@@ -173,7 +181,7 @@ bt_status_t btc_sm_change_state(btc_sm_handle_t handle, btc_sm_state_t state)
     }
 
     /* Send exit event to the current state */
-    if (p_cb->p_handlers[p_cb->state](BTC_SM_EXIT_EVT, NULL) == FALSE) {
+    if (p_cb->p_handlers[p_cb->state](BTC_SM_EXIT_EVT, NULL, p_cb->user_data) == FALSE) {
         status = BT_STATUS_UNHANDLED;
     }
 
@@ -181,7 +189,7 @@ bt_status_t btc_sm_change_state(btc_sm_handle_t handle, btc_sm_state_t state)
     p_cb->state = state;
 
     /* Send enter event to the new state */
-    if (p_cb->p_handlers[p_cb->state](BTC_SM_ENTER_EVT, NULL) == FALSE) {
+    if (p_cb->p_handlers[p_cb->state](BTC_SM_ENTER_EVT, NULL, p_cb->user_data) == FALSE) {
         status = BT_STATUS_UNHANDLED;
     }
 

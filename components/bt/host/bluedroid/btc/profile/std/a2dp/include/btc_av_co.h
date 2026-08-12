@@ -51,6 +51,9 @@ typedef struct {
     tBTA_AV_CO_SINK *p_snk;             /* currently selected sink */
     tBTA_AV_CO_SINK *p_src;             /* currently selected src */
     UINT8           codec_cfg[AVDT_CODEC_SIZE]; /* current codec configuration */
+    tBTC_AV_CODEC_INFO cur_codec_cfg;   /* codec the stream to this peer was configured with. Kept per
+                                         * peer because several sinks can be connected at once and each
+                                         * one negotiates its own configuration */
     BOOLEAN         cp_active;          /* current CP configuration */
     BOOLEAN         acp;                /* acceptor */
     BOOLEAN         recfg_needed;       /* reconfiguration is needed */
@@ -299,6 +302,17 @@ BOOLEAN bta_av_co_get_peer_sink_caps(tBTA_AV_HNDL hndl, UINT8 *p_codec_caps, UIN
  **
  *******************************************************************************/
 void bta_av_co_get_cur_codec_info(tBTC_AV_CODEC_INFO *cur_codec_info);
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_get_codec_info_by_hndl
+ **
+ ** Description      Get the codec info a single connection was configured with.
+ **                  Falls back to the global configuration when the connection
+ **                  has not negotiated one yet.
+ **
+ *******************************************************************************/
+void bta_av_co_get_codec_info_by_hndl(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *cur_codec_info);
 
 #endif  ///BTA_AV_INCLUDED == TRUE
 

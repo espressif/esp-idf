@@ -30,6 +30,20 @@ enum {
     BT_APP_EVT_STACK_UP = 0,
 };
 
+#ifdef CONFIG_BT_A2DP_SINK_MAX_CONN
+#define BT_APP_A2D_MAX_PEERS    CONFIG_BT_A2DP_SINK_MAX_CONN
+#else
+#define BT_APP_A2D_MAX_PEERS    1
+#endif
+
+#if BT_APP_A2D_MAX_PEERS > 1
+/* Addresses of the source devices that are connected right now. Only one of them
+ * is rendered at a time, the stack reports which one with
+ * ESP_A2D_SNK_ACTIVE_DEVICE_EVT and discards the media packets of the others. */
+static esp_bd_addr_t s_a2d_peers[BT_APP_A2D_MAX_PEERS];
+static int s_a2d_peer_num;
+#endif
+
 /********************************
  * STATIC FUNCTION DECLARATIONS
  *******************************/
@@ -67,6 +81,90 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 {
     bredr_app_gap_evt_def_hdl(event, param);
 }
+
+#if BT_APP_A2D_MAX_PEERS > 1
+static int bt_app_a2d_peer_find(const esp_bd_addr_t bda)
+{
+    for (int i = 0; i < s_a2d_peer_num; i++) {
+        if (memcmp(s_a2d_peers[i], bda, sizeof(esp_bd_addr_t)) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void bt_app_a2d_peer_add(const esp_bd_addr_t bda)
+{
+    if (bt_app_a2d_peer_find(bda) >= 0 || s_a2d_peer_num >= BT_APP_A2D_MAX_PEERS) {
+        return;
+    }
+    memcpy(s_a2d_peers[s_a2d_peer_num++], bda, sizeof(esp_bd_addr_t));
+}
+
+static void bt_app_a2d_peer_remove(const esp_bd_addr_t bda)
+{
+    int idx = bt_app_a2d_peer_find(bda);
+
+    if (idx < 0) {
+        return;
+    }
+    s_a2d_peer_num--;
+    if (idx != s_a2d_peer_num) {
+        memcpy(s_a2d_peers[idx], s_a2d_peers[s_a2d_peer_num], sizeof(esp_bd_addr_t));
+    }
+}
+
+/* Track how many sources are connected so that the device stays visible until
+ * every slot is taken, and so that the audio output is only torn down when the
+ * last source goes away. */
+static void bt_app_a2d_multi_evt_hdl(uint16_t event, void *param)
+{
+    esp_a2d_cb_param_t *a2d = (esp_a2d_cb_param_t *)(param);
+
+    if (event == ESP_A2D_SNK_ACTIVE_DEVICE_EVT) {
+        uint8_t *bda = a2d->a2d_snk_active_device.remote_bda;
+
+        if (a2d->a2d_snk_active_device.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGW(BT_AV_TAG, "A2DP set active failed, status %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
+                     a2d->a2d_snk_active_device.status,
+                     bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            return;
+        }
+        if (a2d->a2d_snk_active_device.active) {
+            ESP_LOGI(BT_AV_TAG, "A2DP rendering [%02x:%02x:%02x:%02x:%02x:%02x], other sources suspended",
+                     bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+        } else {
+            ESP_LOGI(BT_AV_TAG, "A2DP no source is being rendered");
+        }
+        return;
+    }
+
+    if (event == ESP_A2D_CONNECTION_STATE_EVT) {
+        if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED) {
+            bt_app_a2d_peer_add(a2d->conn_stat.remote_bda);
+        } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
+            bt_app_a2d_peer_remove(a2d->conn_stat.remote_bda);
+            if (s_a2d_peer_num > 0) {
+                /* another source is still connected, leave its audio path alone */
+                esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+                return;
+            }
+        }
+    }
+
+#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+    bt_a2d_evt_int_codec_hdl(event, param);
+#else
+    bt_a2d_evt_ext_codec_hdl(event, param);
+#endif
+
+    /* the codec handler turns the device invisible on every connection, stay
+     * visible as long as a slot is free */
+    if (event == ESP_A2D_CONNECTION_STATE_EVT && s_a2d_peer_num < BT_APP_A2D_MAX_PEERS) {
+        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+    }
+}
+#endif /* BT_APP_A2D_MAX_PEERS > 1 */
 
 static void bt_app_a2d_evt_hdl(uint16_t event, void *param)
 {
@@ -128,7 +226,18 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
     case ESP_A2D_AUDIO_CFG_EVT:
-    case ESP_A2D_SEP_REG_STATE_EVT: {
+    case ESP_A2D_SEP_REG_STATE_EVT:
+    case ESP_A2D_SNK_ACTIVE_DEVICE_EVT:
+#if BT_APP_A2D_MAX_PEERS > 1
+    {
+        bt_app_work_dispatch(bt_app_a2d_multi_evt_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
+        break;
+    }
+#else
+    {
+        if (event == ESP_A2D_SNK_ACTIVE_DEVICE_EVT) {
+            break;
+        }
 #if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
         bt_app_work_dispatch(bt_a2d_evt_int_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
 #else
@@ -136,6 +245,7 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 #endif
         break;
     }
+#endif
     default:
         ESP_LOGE(BT_AV_TAG, "Invalid A2DP event: %d", event);
         break;

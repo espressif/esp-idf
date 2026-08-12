@@ -37,6 +37,17 @@
 #define BTC_MEDIA_AA_SBC_OFFSET (BTC_MEDIA_AA_OFFSET + BTA_AV_SBC_HDR_SIZE)
 #define BTC_AUDIO_BUFF_OFFSET   (BTC_MEDIA_AA_OFFSET)
 
+/* Number of A2DP connections BTC can track at the same time. Only the sink role
+ * supports more than one, the source role always uses a single connection. */
+#if BTC_AV_SINK_INCLUDED
+#define BTC_AV_MAX_CONN         BTA_AV_NUM_SNK_CONN
+#else
+#define BTC_AV_MAX_CONN         1
+#endif
+
+/* Index reported when no connection is currently rendering audio */
+#define BTC_AV_IDX_INVALID      (-1)
+
 // global variable to indicate avrc is initialized with a2dp
 extern bool g_av_with_rc;
 // global variable to indicate a2dp is initialized
@@ -76,6 +87,7 @@ typedef enum {
     BTC_AV_SINK_API_REG_AUDIO_DATA_CB_EVT,
     BTC_AV_SINK_API_SET_DELAY_VALUE_EVT,
     BTC_AV_SINK_API_GET_DELAY_VALUE_EVT,
+    BTC_AV_SINK_API_SET_ACTIVE_DEVICE_EVT,
 #endif  /* BTC_AV_SINK_INCLUDED */
 #if BTC_AV_SRC_INCLUDED
     BTC_AV_SRC_API_INIT_EVT,
@@ -102,6 +114,8 @@ typedef union {
     esp_a2d_sink_audio_data_cb_t audio_data_cb;
     // BTC_AV_SINK_API_SET_DELAY_VALUE_EVT
     uint16_t delay_value;
+    // BTC_AV_SINK_API_SET_ACTIVE_DEVICE_EVT
+    bt_bdaddr_t set_active;
 #endif  /* BTC_AV_SINK_INCLUDED */
 #if BTC_AV_SRC_INCLUDED
     // BTC_AV_SRC_API_REG_DATA_CB_EVT
@@ -117,7 +131,10 @@ typedef union {
     } set_pref_mcc;
 #endif /* BTC_AV_SRC_INCLUDED */
     // BTC_AV_CONFIG_EVT
-    esp_a2d_mcc_t mcc;
+    struct {
+        tBTA_AV_HNDL hndl;      /* connection the codec configuration belongs to */
+        esp_a2d_mcc_t mcc;
+    } config;
     // BTC_AV_SINK_API_REG_SEP_EVT or BTC_AV_SRC_API_REG_SEP_EVT
     struct {
         uint8_t seid;
@@ -253,6 +270,30 @@ uint8_t btc_av_get_peer_sep(void);
 
 /*******************************************************************************
 **
+** Function         btc_av_get_active_peer
+**
+** Description      Get the address of the peer selected for rendering. The
+**                  peer may still be idle after a set-active request.
+**
+** Returns          TRUE when a peer is selected
+**
+*******************************************************************************/
+BOOLEAN btc_av_get_active_peer(BD_ADDR peer_addr);
+
+/*******************************************************************************
+**
+** Function         btc_av_set_active_peer
+**
+** Description      Choose which connected peer gets rendered. Accepts OPENED
+**                  or STARTED. An idle target is sent AVRCP Play.
+**
+** Returns          TRUE when the peer became the active one
+**
+*******************************************************************************/
+BOOLEAN btc_av_set_active_peer(BD_ADDR peer_addr);
+
+/*******************************************************************************
+**
 ** Function         btc_av_is_peer_edr
 **
 ** Description      Check if the connected a2dp device supports
@@ -298,6 +339,19 @@ uint8_t btc_av_get_service_id(void);
 *******************************************************************************/
 void btc_av_report_all_snk_codec_caps(tBTA_AV_HNDL hndl, esp_a2d_sep_mcc_t *sep_mcc, UINT8 sep_num);
 #endif /* BTC_AV_SRC_INCLUDED */
+
+#if (BTC_AV_SINK_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         btc_av_get_sink_codec_info
+**
+** Description      Codec cached on this connection at MEDIA_CFG. That copy is
+**                  per-stream and is not overwritten by another phone's
+**                  SetConfig (unlike bta_av_co_cb.codec_cfg).
+**
+*******************************************************************************/
+BOOLEAN btc_av_get_sink_codec_info(uint16_t hndl, tBTC_AV_CODEC_INFO *out);
+#endif /* BTC_AV_SINK_INCLUDED */
 
 #endif  ///BTC_AV_INCLUDED == TRUE
 
