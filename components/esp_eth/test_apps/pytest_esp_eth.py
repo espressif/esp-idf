@@ -104,117 +104,15 @@ def test_esp32p4_emac_clko(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='esp_emac_clk_out')
 
 
-# ----------- LAN8720 -----------
-@pytest.mark.eth_lan8720
+# ----------- YT8531 ESP32S31 -----------
 @pytest.mark.parametrize(
-    'config',
+    'config, target',
     [
-        'default_lan8720',
+        pytest.param('default_yt8531_esp32s31', 'esp32s31', marks=[pytest.mark.eth_yt8531]),
     ],
-    indirect=True,
+    indirect=['target'],
 )
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_lan8720(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
-    eth_test_runner.run_ethernet_test_apps(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_l2_test(dut)
-
-
-# ----------- RTL8201 -----------
-@pytest.mark.eth_rtl8201
-@pytest.mark.parametrize(
-    'config',
-    [
-        'default_rtl8201',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_rtl8201(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
-    eth_test_runner.run_ethernet_test_apps(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_l2_test(dut)
-
-
-# ----------- KSZ8041 -----------
-@pytest.mark.eth_ksz8041
-@pytest.mark.parametrize(
-    'config',
-    [
-        'default_ksz8041',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_ksz8041(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
-    eth_test_runner.run_ethernet_test_apps(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_l2_test(dut)
-
-
-# ----------- DP83848 -----------
-@pytest.mark.eth_dp83848
-@pytest.mark.parametrize(
-    'config',
-    [
-        'default_dp83848',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_dp83848(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
-    eth_test_runner.run_ethernet_test_apps(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_l2_test(dut)
-
-
-# ----------- W5500 -----------
-@pytest.mark.eth_w5500
-@pytest.mark.parametrize(
-    'config',
-    [
-        'default_w5500',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_w5500(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
-    eth_test_runner.run_ethernet_test_apps(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_l2_test(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_heap_alloc_test(dut)
-
-
-# ----------- KSZ8851SNL -----------
-@pytest.mark.eth_ksz8851snl
-@pytest.mark.parametrize(
-    'config',
-    [
-        'default_ksz8851snl',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_ksz8851snl(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
-    eth_test_runner.run_ethernet_test_apps(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_l2_test(dut)
-    dut.serial.hard_reset()
-    eth_test_runner.run_ethernet_heap_alloc_test(dut)
-
-
-# ----------- DM9051 -----------
-@pytest.mark.eth_dm9051
-@pytest.mark.parametrize(
-    'config',
-    [
-        'default_dm9051',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_esp_eth_dm9051(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
+def test_esp32s31_ethernet(dut: IdfDut, eth_test_runner: 'EthTestRunner') -> None:
     eth_test_runner.run_ethernet_test_apps(dut)
     dut.serial.hard_reset()
     eth_test_runner.run_ethernet_l2_test(dut)

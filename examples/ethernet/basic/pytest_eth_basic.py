@@ -14,6 +14,7 @@ from pytest_embedded import Dut
         pytest.param('lan8720_esp32', 'esp32', marks=[pytest.mark.eth_lan8720]),
         pytest.param('defaults_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
         pytest.param('defaults_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
+        pytest.param('defaults_esp32s31', 'esp32s31', marks=[pytest.mark.eth_yt8531]),
     ],
     indirect=['target'],
 )

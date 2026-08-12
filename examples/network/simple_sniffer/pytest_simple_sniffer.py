@@ -56,6 +56,7 @@ def _sniffer_packets_check(dut: Dut, channel: int, packet_num: int) -> None:
         'esp32c61',
         'esp32s2',
         'esp32s3',
+        'esp32s31',
     ],
     indirect=['target'],
 )

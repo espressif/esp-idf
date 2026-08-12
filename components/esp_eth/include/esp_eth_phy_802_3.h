@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -161,6 +161,32 @@ esp_err_t esp_eth_phy_802_3_set_speed(phy_802_3_t *phy_802_3, eth_speed_t speed)
  *      - ESP_FAIL: Set Ethernet PHY duplex mode failed because some error occurred
  */
 esp_err_t esp_eth_phy_802_3_set_duplex(phy_802_3_t *phy_802_3, eth_duplex_t duplex);
+
+/**
+ * @brief Set Ethernet PHY master/slave mode for 1000BASE-T
+ *
+ * @note Required before forcing 1000 Mbps speed when auto-negotiation is disabled.
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param master set true to configure as master; set false to configure as slave
+ * @return
+ *      - ESP_OK: Ethernet PHY master/slave mode set successfully
+ *      - ESP_ERR_NOT_SUPPORTED: PHY does not support 1000BASE-T
+ *      - ESP_FAIL: Set Ethernet PHY master/slave mode failed because some error occurred
+ */
+esp_err_t esp_eth_phy_802_3_set_master_mode(phy_802_3_t *phy_802_3, bool master);
+
+/**
+ * @brief Get Ethernet PHY master/slave mode for 1000BASE-T
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param master set to true if PHY is configured as master; false if configured as slave
+ * @return
+ *      - ESP_OK: Ethernet PHY master/slave mode read successfully
+ *      - ESP_ERR_NOT_SUPPORTED: PHY does not support 1000BASE-T
+ *      - ESP_FAIL: Get Ethernet PHY master/slave mode failed because some error occurred
+ */
+esp_err_t esp_eth_phy_802_3_get_master_mode(phy_802_3_t *phy_802_3, bool *master);
 
 /**
  * @brief Set Ethernet PHY link status

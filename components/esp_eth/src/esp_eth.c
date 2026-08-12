@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -507,6 +507,18 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
     case ETH_CMD_S_PHY_LOOPBACK:
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set loopback to null");
         ESP_GOTO_ON_ERROR(phy->loopback(phy, *(bool *)data), err, TAG, "configuration of phy loopback mode failed");
+        break;
+    case ETH_CMD_S_PHY_MASTER_MODE:
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set master mode to null");
+        ESP_GOTO_ON_FALSE(phy->set_master_mode != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "set PHY master mode not supported");
+        // check if driver is stopped; configuration should be changed only when transmitting/receiving is not active
+        ESP_GOTO_ON_FALSE(atomic_load(&eth_driver->fsm) == ESP_ETH_FSM_STOP, ESP_ERR_INVALID_STATE, err, TAG, "link configuration is only allowed when driver is stopped");
+        ESP_GOTO_ON_ERROR(phy->set_master_mode(phy, *(bool *)data), err, TAG, "set PHY master mode failed");
+        break;
+    case ETH_CMD_G_PHY_MASTER_MODE:
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store master mode value");
+        ESP_GOTO_ON_FALSE(phy->get_master_mode != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "get PHY master mode not supported");
+        ESP_GOTO_ON_ERROR(phy->get_master_mode(phy, (bool *)data), err, TAG, "get PHY master mode failed");
         break;
     case ETH_CMD_READ_PHY_REG: {
         uint32_t phy_addr;
