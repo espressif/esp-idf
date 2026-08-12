@@ -339,7 +339,9 @@ static esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_status, uint3
 static esp_err_t spi_flash_os_yield(void *arg, uint32_t* out_status)
 {
     if (likely(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)) {
-#ifdef CONFIG_SPI_FLASH_ERASE_YIELD_TICKS
+#ifndef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+        esp_rom_delay_us(pdTICKS_TO_MS(1) * 1000);
+#elif CONFIG_SPI_FLASH_ERASE_YIELD_TICKS
         vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
 #else
         vTaskDelay(1);
