@@ -36,3 +36,14 @@ examples/ethernet/ptp:
   depends_components:
     - esp_eth
     - esp_netif
+
+examples/ethernet/sublayer:
+  enable:
+    - if: INCLUDE_DEFAULT == 1
+  disable:
+    - if: IDF_TARGET not in ["esp32", "esp32p4", "esp32s31"]
+  depends_components:
+    - esp_eth
+    - esp_netif
+    - lwip
+    - esp_driver_gpio

@@ -683,6 +683,20 @@ ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 
 
 实现新的自定义 PHY 驱动程序后，你可以通过 `乐鑫组件注册表 <https://components.espressif.com/>`_ 将驱动分享给其他用户。
 
+.. _ethernet-sublayer:
+
+以太网子层
+^^^^^^^^^^
+
+以太网子层是位于一个物理以太网驱动程序（``esp_eth_handle_t``）与一个或多个 ``esp_netif`` 实例之间的可选层。它负责拥有驱动程序的 RX 输入路径，将以太网事件分发给所连接的接口，并可执行路径中的帧处理，例如 802.1Q VLAN 复用与解复用。
+
+.. note::
+    以太网子层是一项**实验性**功能。需启用 :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES` 和 :menuitem:`CONFIG_ETH_SUBLAYER_SUPPORT` 后方可使用。该 API 仍在积极开发中，未来 ESP-IDF 版本中可能会在不经过弃用周期的情况下发生变更。
+
+有关架构细节、配置和使用指南，请参阅 :component_file:`esp_eth/src/sublayer/README.md`。
+
+可参考 :example:`ethernet/sublayer` 中的示例，该示例演示了如何在一个未打标签的 ``esp_netif`` 和一个带标签的 VLAN ``esp_netif`` 之间共享同一个以太网驱动程序。
+
 .. ---------------------------- API Reference ----------------------------------
 
 API 参考

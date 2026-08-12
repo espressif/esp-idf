@@ -683,6 +683,20 @@ The majority of PHY management functionality required by the ESP-IDF Ethernet dr
 
 Once you finish the new custom PHY driver implementation, consider sharing it among other users via `ESP Component Registry <https://components.espressif.com/>`_.
 
+.. _ethernet-sublayer:
+
+Ethernet Sublayer
+^^^^^^^^^^^^^^^^^
+
+The Ethernet sublayer is an optional layer between one physical Ethernet driver (``esp_eth_handle_t``) and one or more ``esp_netif`` instances. It owns the driver RX input path, distributes Ethernet events to attached interfaces, and can perform mid-path frame processing such as 802.1Q VLAN multiplexing and demultiplexing.
+
+.. note::
+    The Ethernet sublayer is an **experimental** feature. Enable :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES` and :menuitem:`CONFIG_ETH_SUBLAYER_SUPPORT` to use it. The API is under active development and may change in future ESP-IDF releases without a deprecation period.
+
+For architecture details, configuration, and usage guidance, see :component_file:`esp_eth/src/sublayer/README.md`.
+
+A working demonstration is available in :example:`ethernet/sublayer`, which shares one Ethernet driver between an untagged ``esp_netif`` and a tagged VLAN ``esp_netif``.
+
 .. ---------------------------- API Reference ----------------------------------
 
 API Reference

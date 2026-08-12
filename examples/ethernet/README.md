@@ -9,6 +9,8 @@ Ethernet examples demonstrate basic features related to Ethernet layer, such as:
 
 * basic Ethernet initialization and binding to IP stack via ESP-NETIF
 
+* experimental Ethernet netif sublayer (untagged + VLAN interfaces on one driver)
+
 * tools for performance measurement, i.e. `iperf`
 
 * hardware time synchronization

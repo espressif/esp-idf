@@ -1,0 +1,22 @@
+menu "Example Configuration"
+
+    config EXAMPLE_ETHERNET_VLAN_ID
+        int "VLAN identifier"
+        range 1 4094
+        default 20
+        help
+            802.1Q VLAN ID for the tagged virtual interface created via the Ethernet sublayer.
+
+    config EXAMPLE_VLAN_STATIC_IPV4_ADDR
+        string "VLAN IPV4 Address"
+        default "192.168.20.10"
+
+    config EXAMPLE_VLAN_STATIC_ADDR_MASK
+        string "VLAN Subnet Mask"
+        default "255.255.255.0"
+
+    config EXAMPLE_VLAN_STATIC_ADDR_DEF_GW
+        string "VLAN IPV4 Default Gateway"
+        default "192.168.20.1"
+
+endmenu
