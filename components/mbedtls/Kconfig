@@ -516,6 +516,11 @@ menu "mbedTLS"
                     Name of the custom certificate directory or file. This path is evaluated
                     relative to the project root directory.
 
+                    Certificates must be either PEM encoded with a .pem extension, or DER
+                    encoded with a .der extension. Files with any other extension are not
+                    parsed: pointing this option directly at such a file fails the build,
+                    while such files inside a directory are skipped with a warning.
+
             config MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST
                 bool "Add deprecated root certificates"
                 depends on MBEDTLS_CERTIFICATE_BUNDLE && !MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_NONE

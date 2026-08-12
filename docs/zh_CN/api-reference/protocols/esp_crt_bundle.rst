@@ -30,6 +30,10 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
  * :menuitem:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`：决定添加证书列表中的哪些证书。
  * :menuitem:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH`：指定要在证书包中嵌入的其他证书的路径。
 
+.. note::
+
+    只有扩展名为 ``.pem`` 的 PEM 编码证书和扩展名为 ``.der`` 的 DER 编码证书会被解析。扩展名必须与文件的编码格式一致，例如保存为 ``.crt`` 的 PEM 编码证书不会被接受。如果 :ref:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH` 直接指向其他扩展名的文件，构建将失败；如果证书目录中存在此类文件，该文件会被跳过并打印警告。
+
 要在使用 ESP-TLS 时启用证书包，将函数指针指向证书包的 attach 函数：
 
 .. code-block:: c
