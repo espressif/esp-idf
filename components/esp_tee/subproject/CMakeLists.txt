@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(ESP_TEE_VERSION_MAJOR 1)
-set(ESP_TEE_VERSION_MINOR 0)
-set(ESP_TEE_VERSION_PATCH 0)
+include("${CMAKE_CURRENT_LIST_DIR}/../version.cmake")
 
 if(NOT SDKCONFIG)
     message(FATAL_ERROR "esp_tee subproject expects the SDKCONFIG variable to be passed "
@@ -44,6 +42,9 @@ idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 # NOTE: Helps to analyse the components built for the TEE binary by CMake Graphviz
 idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
+# NOTE: <TEE source version>~v<IDF release> - the same TEE source builds differently per IDF release
+set(esp_tee_ver "${ESP_TEE_VERSION_MAJOR}.${ESP_TEE_VERSION_MINOR}.${ESP_TEE_VERSION_PATCH}")
+set(PROJECT_VER "${esp_tee_ver}~v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
 project(esp_tee VERSION ${ESP_TEE_VERSION_MAJOR}.${ESP_TEE_VERSION_MINOR}.${ESP_TEE_VERSION_PATCH})
 
 idf_build_set_property(COMPILE_DEFINITIONS "ESP_TEE_BUILD=1" APPEND)
