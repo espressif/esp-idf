@@ -8,7 +8,9 @@ from pytest_embedded import Dut
     'config, target',
     [
         pytest.param('default_esp32', 'esp32', marks=[pytest.mark.eth_ip101]),
+        pytest.param('sub_esp32', 'esp32', marks=[pytest.mark.eth_ip101]),
         pytest.param('default_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
+        pytest.param('sub_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
     ],
     indirect=['target'],
 )

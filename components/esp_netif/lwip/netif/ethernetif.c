@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2026 Espressif Systems (Shanghai) CO LTD
  */
 /**
  * @file
@@ -114,7 +114,7 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  * @param h lwip network interface structure (struct netif) for this ethernetif
  * @param buffer ethernet buffer
  * @param len length of buffer
- * @param l2_buff Placeholder for a separate L2 buffer. Unused for ethernet interface
+ * @param l2_buff Optional original allocation for RX path (when @a buffer is offset into it); if NULL, @a buffer is freed
  */
 esp_err_t ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
 {
@@ -124,15 +124,15 @@ esp_err_t ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
 
     if (unlikely(buffer == NULL || !netif_is_up(netif))) {
         if (buffer) {
-            esp_netif_free_rx_buffer(esp_netif, buffer);
+            esp_netif_free_rx_buffer(esp_netif, l2_buff ? l2_buff : buffer);
         }
         return ESP_FAIL;
     }
 
     /* allocate custom pbuf to hold  */
-    p = esp_pbuf_allocate(esp_netif, buffer, len, buffer);
+    p = esp_pbuf_allocate(esp_netif, buffer, len, l2_buff ? l2_buff : buffer);
     if (p == NULL) {
-        esp_netif_free_rx_buffer(esp_netif, buffer);
+        esp_netif_free_rx_buffer(esp_netif, l2_buff ? l2_buff : buffer);
         return ESP_ERR_NO_MEM;
     }
     /* full packet send to tcpip_thread to process */
