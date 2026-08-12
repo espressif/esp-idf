@@ -37,12 +37,32 @@ set(tee_binary_files
     "${TEE_BUILD_DIR}/esp_tee.map"
     )
 
-# Override LibC for ESP-TEE if needed
+# Force a boolean CONFIG_ option to y/n in the given sdkconfig content variable
+function(__esp_tee_sdkconfig_set content_var option value)
+    if(value STREQUAL "y")
+        set(line "${option}=y")
+    elseif(value STREQUAL "n")
+        set(line "# ${option} is not set")
+    else()
+        message(FATAL_ERROR "__esp_tee_sdkconfig_set: unsupported value '${value}' for ${option}")
+    endif()
+    # Drop every existing line of the option (either spelling), then append the forced one
+    set(content "\n${${content_var}}")
+    string(REGEX REPLACE "\n(# )?${option}( is not set|=[^\n]*)" "" content "${content}")
+    string(REGEX REPLACE "^\n" "" content "${content}")
+    if(NOT content MATCHES "\n$")
+        string(APPEND content "\n")
+    endif()
+    string(APPEND content "${line}\n")
+    set(${content_var} "${content}" PARENT_SCOPE)
+endfunction()
+
 set(esp_tee_sdkconfig "${CMAKE_CURRENT_BINARY_DIR}/sdkconfig.esp_tee")
 configure_file("${sdkconfig}" "${esp_tee_sdkconfig}" COPYONLY)
 
 file(READ "${esp_tee_sdkconfig}" content)
 
+# Override LibC for ESP-TEE if needed
 unset(REE_LIBC)
 unset(TEE_LIBC)
 
@@ -57,21 +77,16 @@ foreach(libc NEWLIB PICOLIBC)
 endforeach()
 
 if(REE_LIBC AND TEE_LIBC AND NOT REE_LIBC STREQUAL TEE_LIBC)
-    string(REGEX REPLACE
-        "CONFIG_LIBC_(NEWLIB|PICOLIBC)=y"
-        "# CONFIG_LIBC_\\1 is not set"
-        content
-        "${content}"
-    )
-    # Enable libc selected by TEE
-    string(REGEX REPLACE
-        "# CONFIG_LIBC_${TEE_LIBC} is not set"
-        "CONFIG_LIBC_${TEE_LIBC}=y"
-        content
-        "${content}"
-    )
-    file(WRITE "${esp_tee_sdkconfig}" "${content}")
+    __esp_tee_sdkconfig_set(content "CONFIG_LIBC_${REE_LIBC}" n)
+    __esp_tee_sdkconfig_set(content "CONFIG_LIBC_${TEE_LIBC}" y)
 endif()
+
+# The TEE binary must always be reproducible, irrespective of the REE app config
+__esp_tee_sdkconfig_set(content "CONFIG_APP_REPRODUCIBLE_BUILD" y)
+# NOTE: The REE app must not be able to rename the TEE image
+__esp_tee_sdkconfig_set(content "CONFIG_APP_PROJECT_VER_FROM_CONFIG" n)
+
+file(WRITE "${esp_tee_sdkconfig}" "${content}")
 
 set(secure_service_headers_dir "${CMAKE_CURRENT_BINARY_DIR}/secure_service_headers")
 make_directory(${secure_service_headers_dir})

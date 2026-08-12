@@ -53,9 +53,30 @@ set(esp_tee_ver "${ESP_TEE_VERSION_MAJOR}.${ESP_TEE_VERSION_MINOR}.${ESP_TEE_VER
 set(PROJECT_VER "${esp_tee_ver}~v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
 project(esp_tee VERSION ${ESP_TEE_VERSION_MAJOR}.${ESP_TEE_VERSION_MINOR}.${ESP_TEE_VERSION_PATCH})
 
+# NOTE: Forced by the parent build (see project_include.cmake); the TEE image must stay reproducible
+if(NOT CONFIG_APP_REPRODUCIBLE_BUILD OR CONFIG_APP_PROJECT_VER_FROM_CONFIG)
+    message(FATAL_ERROR "esp_tee: TEE build must be reproducible (see project_include.cmake)")
+endif()
+
 idf_build_set_property(COMPILE_DEFINITIONS "ESP_TEE_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "NON_OS_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
+# NOTE: Any __DATE__/__TIME__/__TIMESTAMP__ use breaks reproducibility
+idf_build_set_property(COMPILE_OPTIONS "-Werror=date-time" APPEND)
+
+# NOTE: Custom secure-service components live outside IDF_PATH and would otherwise
+# embed absolute __FILE__ paths, breaking TEE binary reproducibility
+if(CUSTOM_SECURE_SERVICE_COMPONENT_DIR)
+    idf_build_set_property(COMPILE_OPTIONS
+        "-fmacro-prefix-map=${CUSTOM_SECURE_SERVICE_COMPONENT_DIR}=/CUSTOM_SEC_SRV" APPEND)
+endif()
+
+# NOTE: The generated secure-service headers live in the parent (REE) build directory;
+# map them out of DWARF as the ELF digest is embedded in the TEE binary
+if(SECURE_SERVICE_HEADERS_DIR)
+    idf_build_set_property(COMPILE_OPTIONS
+        "-fdebug-prefix-map=${SECURE_SERVICE_HEADERS_DIR}=/SEC_SRV_HDRS" APPEND)
+endif()
 
 # Set up the TEE binary generation targets
 set(project_bin "esp_tee.bin")
