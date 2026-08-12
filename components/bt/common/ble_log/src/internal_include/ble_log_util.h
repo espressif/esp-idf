@@ -48,6 +48,9 @@
 #define BLE_LOG_MEM_CAP                         (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA)
 #define BLE_LOG_MALLOC(size)                    heap_caps_malloc(size, BLE_LOG_MEM_CAP)
 #define BLE_LOG_FREE(ptr)                       heap_caps_free(ptr)
+/* GDMA burst alignment: weighted arbitration requires buffers aligned to burst size (32B) */
+#define BLE_LOG_BUF_ALIGN_BYTES                 (32U)
+#define BLE_LOG_ALIGNED_MALLOC(size)            heap_caps_aligned_alloc(BLE_LOG_BUF_ALIGN_BYTES, size, BLE_LOG_MEM_CAP)
 #define BLE_LOG_MEMCPY(dst, src, len)           memcpy(dst, src, len)
 #define BLE_LOG_MEMSET(ptr, value, len)         memset(ptr, value, len)
 
@@ -103,6 +106,7 @@ void mocked_memcpy(void *dst, const void *src, size_t len);
 void mocked_memset(void *ptr, int value, size_t len);
 #define BLE_LOG_MALLOC(size)                    mocked_malloc(size)
 #define BLE_LOG_FREE(ptr)                       mocked_free(ptr)
+#define BLE_LOG_ALIGNED_MALLOC(size)            mocked_malloc(size)
 #define BLE_LOG_MEMCPY(dst, src, len)           mocked_memcpy(dst, src, len)
 #define BLE_LOG_MEMSET(ptr, value, len)         mocked_memset(ptr, value, len)
 
