@@ -83,6 +83,8 @@ append("${data}")
 make_and_append_identifier("_binary_${varname}_end" "for objcopy compatibility")
 
 append_line("")
+# Keep the length aligned on the word boundary (read as a 32-bit `<name>_length`)
+append_line(".balign 4")
 if(FILE_TYPE STREQUAL "TEXT")
     make_and_append_identifier("${varname}_length" "not including null byte")
 else()
