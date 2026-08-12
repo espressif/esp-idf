@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,13 +22,9 @@ const esp_app_desc_t __attribute__((section(".rodata_desc"))) esp_app_desc = {
 #else
     .secure_version = 0,
 #endif
-#ifdef CONFIG_APP_COMPILE_TIME_DATE
-    .time = __TIME__,
-    .date = __DATE__,
-#else
+    /* NOTE: Kept empty unconditionally - the TEE binary must be reproducible */
     .time = "",
     .date = "",
-#endif
     .min_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL,
     .max_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL,
     .mmu_page_size = 31 - __builtin_clz(CONFIG_MMU_PAGE_SIZE),
