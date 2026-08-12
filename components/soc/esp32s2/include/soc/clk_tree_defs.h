@@ -43,8 +43,8 @@ extern "C" {
 
 /* Default clock accuracy values in ppm (parts per million) at different observation durations */
 /* Row order: 1 s, 10 s, 30 s, 60 s */
-#define SOC_CLK_RC_FAST_ACCURACY_PPM_DEFAULTS    { (1107), (1349), (1498), (1976) }
-#define SOC_CLK_RC_SLOW_ACCURACY_PPM_DEFAULTS    { (2147), (5341), (14961), (27755) }
+#define SOC_CLK_RC_FAST_ACCURACY_PPM_DEFAULTS    { (1008), (1351), (2513), (3859) }
+#define SOC_CLK_RC_SLOW_ACCURACY_PPM_DEFAULTS    { (4076), (5114), (7106), (11294) }
 #define SOC_CLK_CRYSTAL_ACCURACY_PPM_DEFAULTS    { (500), (500), (500), (500) }
 
 // Naming convention: SOC_ROOT_CLK_{loc}_{type}_[attr]
