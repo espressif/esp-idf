@@ -1,0 +1,4 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/freetype: "^2.14.3"
+  joltwallet/littlefs: "~1.22.3"
