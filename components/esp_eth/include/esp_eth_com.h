@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
+#include <stddef.h>
+#include <stdint.h>
 #include "esp_err.h"
 #include "esp_event_base.h"
 #include "hal/eth_types.h"
@@ -13,6 +15,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Scatter-gather buffer descriptor for extended Ethernet transmit.
+ */
+typedef struct {
+    uint8_t *buf;   /*!< Pointer to the buffer segment */
+    size_t   len;   /*!< Length of the buffer segment in bytes */
+} esp_eth_buf_desc_t;
 
 /**
  * @brief Offset for start of MAC custom ioctl commands

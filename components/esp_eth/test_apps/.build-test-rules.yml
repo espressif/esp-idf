@@ -1,6 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_eth/test_apps:
+components/esp_eth/test_apps/test_app_driver:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32p4", "esp32s31"]
       reason: ESP32, ESP32P4 and ESP32S31 have internal EMAC.
@@ -13,3 +13,12 @@ components/esp_eth/test_apps:
     - hal
     - lwip
     - soc
+
+components/esp_eth/test_apps/test_app_sublayer:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32p4"]
+      reason: ESP32 and ESP32P4 have internal EMAC.
+  depends_components:
+    - esp_eth
+    - esp_netif
+    - lwip

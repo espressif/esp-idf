@@ -715,7 +715,7 @@ Mark Flaky Tests
 
 Certain test cases are based on Ethernet or Wi-Fi. However, the test may be flaky due to networking issues. Thus, it is possible to mark a particular test case as flaky.
 
-This code example is taken from :idf_file:`pytest_esp_eth.py <components/esp_eth/test_apps/pytest_esp_eth.py>`.
+This code example is taken from :idf_file:`pytest_esp_eth.py <components/esp_eth/test_apps/test_app_driver/pytest_esp_eth.py>`.
 
 .. code-block:: python
 

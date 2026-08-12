@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,11 @@ static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer
 {
 #if CONFIG_ESP_NETIF_L2_TAP
     esp_err_t ret = ESP_OK;
-    ret = esp_vfs_l2tap_eth_filter_frame(eth_handle, buffer, (size_t *)&length, info);
+    l2tap_eth_filter_info_t l2tap_info = {
+        .l2_buffer = NULL,
+        .hw_ts = (l2tap_timestamp_t *)info, // Memory layout matches the Ethernet MAC driver type (eth_mac_time_t)
+    };
+    ret = esp_vfs_l2tap_eth_filter_frame(eth_handle, buffer, (size_t *)&length, &l2tap_info);
     if (length == 0) {
         return ret;
     }

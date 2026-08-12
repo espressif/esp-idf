@@ -1031,3 +1031,4 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
             - CONFIG_COMPILER_KASAN
+            - CONFIG_ETH_SUBLAYER_SUPPORT
