@@ -76,7 +76,6 @@ def _validate_trace_data(trace_log_path: str) -> None:
 
 def _capture_trace(ser: serial.Serial, trace_log_path: str, capture_s: float = 5.0) -> None:
     """Capture trace output from the USB-Serial-JTAG endpoint."""
-    ser.reset_input_buffer()
     with open(trace_log_path, 'w+b') as f:
         end_time = time.time() + capture_s
         while time.time() < end_time:
@@ -106,10 +105,13 @@ def _capture_trace(ser: serial.Serial, trace_log_path: str, capture_s: float = 5
 def test_esp_trace_ext_lib_usj(dut: IdfDut) -> None:
     dut.expect('Start of trace session', timeout=5)
 
-    time.sleep(1)  # wait for USJ port to be ready
+    # Open the port before the DUT starts tracing
     usj_port = '/dev/serial_ports/ttyACM-esp32'
-    ser = serial.Serial(usj_port, baudrate=1000000, timeout=10)
     trace_log_path = os.path.join(dut.logdir, 'ext_trace.log')
+    time.sleep(1)  # Wait for the USJ port to be ready
+    with serial.Serial(usj_port, baudrate=1000000, timeout=10) as ser:
+        # Discard data from before this test, the DUT is not tracing yet
+        ser.reset_input_buffer()
+        _capture_trace(ser, trace_log_path)
 
-    _capture_trace(ser, trace_log_path)
     _validate_trace_data(trace_log_path)

@@ -129,7 +129,9 @@ def _test_function_tracing_jtag(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfD
         dut.expect(re.compile(rb'function-tracing: workload iteration \d+'), timeout=30)
 
         # Let function-trace samples accumulate while recording.
-        time.sleep(1)
+        # Keep reading telnet so OpenOCD's blocking log writes don't stall its
+        # main loop and leave the 'stop' below unserviced.
+        openocd.consume_output(1)
         openocd.write('esp sysview_mcore stop')
         openocd.apptrace_wait_stop()
 

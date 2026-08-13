@@ -195,10 +195,10 @@ esp_err_t esp_trace_rb_init(esp_trace_rb_t *rb, uint32_t size)
 
 esp_err_t esp_trace_rb_put(esp_trace_rb_t *rb, const uint8_t *data, uint32_t len)
 {
-    /* Drop oldest data if needed to make room */
-    uint32_t free_len = rb->max_size - rb->count;
-    if (len > free_len) {
-        rb_advance_tail(rb, len - free_len);
+    /* Drop the new record instead of overwriting old ones, so that the records
+     * in the buffer stay complete */
+    if (len > rb->max_size - rb->count) {
+        return ESP_ERR_NO_MEM;
     }
 
     uint32_t head = rb->head;
