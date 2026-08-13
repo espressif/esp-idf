@@ -43,6 +43,19 @@
     * USB OTG 接口
     * USB 串口/JTAG 控制器
 
+.. only:: esp32s31
+
+    * 2.4 GHz Wi-Fi 6
+    * Bluetooth® 5.4 (LE)
+    * Bluetooth® Classic
+    * 802.15.4，支持 Thread 和 Zigbee 协议
+    * 高性能 RISC-V 32 位双核处理器
+    * 多种外设
+    * 内置安全硬件
+    * USB 2.0 高速 OTG 接口
+    * USB 串口/JTAG 控制器
+    * 以太网 MAC 接口
+
 .. only:: esp32c3
 
     * 2.4 GHz Wi-Fi
@@ -171,6 +184,14 @@
         ESP32-S3-LCD-EV-Board <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-lcd-ev-board/index.html>
         ESP-VoCat <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp-vocat/index.html>
         ESP-DualKey <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp-dualkey/index.html>
+
+.. only:: esp32s31
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-S31-Function-CoreBoard-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s31/esp32-s31-function-coreboard-1/index.html>
+        ESP32-S31-Korvo-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s31/esp32-s31-korvo-1/index.html>
 
 .. only:: esp32c2
 

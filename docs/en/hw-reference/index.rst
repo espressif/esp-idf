@@ -18,6 +18,7 @@ Hardware Reference
     :esp32h2: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-h2_datasheet_en.pdf>
     :esp32c5: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-c5_datasheet_en.pdf>
     :esp32p4: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-p4_datasheet_en.pdf>
+    :esp32s31: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s31_datasheet_en.pdf>
     :esp32:   Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32/index.html>
     :esp32s2: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s2/index.html>
     :esp32s3: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/index.html>
@@ -28,6 +29,7 @@ Hardware Reference
     :esp32h2: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32h2/index.html>
     :esp32p4: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32p4/index.html>
     :esp32c5: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32c5/index.html>
+    :esp32s31: Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s31/index.html>
     :esp32: SoC Errata <https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32/index.html>
     :esp32s2: SoC Errata <https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32s2/index.html>
     :esp32s3: SoC Errata <https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32s3/index.html>
@@ -36,6 +38,7 @@ Hardware Reference
     :esp32c6: SoC Errata <https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32c6/index.html>
     :esp32c61: SoC Errata <https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32c61/index.html>
     :esp32h2: SoC Errata <https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32h2/index.html>
+    :esp32s31: SoC Errata <https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32s31/index.html>
     Chip Variants <https://espressif.com/en/products/socs?id={IDF_TARGET_NAME}>
     :not esp32p4: Modules <https://espressif.com/en/products/modules?id={IDF_TARGET_NAME}>
     Development Boards <https://www.espressif.com/en/products/devkits?id={IDF_TARGET_NAME}>
