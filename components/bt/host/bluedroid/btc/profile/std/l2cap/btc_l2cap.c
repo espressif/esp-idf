@@ -18,7 +18,7 @@
 #include "freertos/ringbuf.h"
 #include "osi/mutex.h"
 #include "osi/alarm.h"
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/lock.h>
 #include <sys/fcntl.h>
 #include "esp_vfs.h"

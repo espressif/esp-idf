@@ -9,7 +9,7 @@
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 
 #include <sys/termios.h>
-#include <sys/errno.h>
+#include <errno.h>
 
 speed_t cfgetispeed(const struct termios *p)
 {

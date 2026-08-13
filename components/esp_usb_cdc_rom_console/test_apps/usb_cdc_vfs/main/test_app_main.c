@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include "unity.h"
 #include "unity_test_utils_cache.h"
 #include "esp_private/usb_console.h"

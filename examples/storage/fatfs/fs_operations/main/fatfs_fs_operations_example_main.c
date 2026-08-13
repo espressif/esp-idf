@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "sdkconfig.h"

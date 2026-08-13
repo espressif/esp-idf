@@ -9,7 +9,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/termios.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <unistd.h>
 #include "unity.h"
 #include "esp_rom_serial_output.h"
