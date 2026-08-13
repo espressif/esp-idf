@@ -30,6 +30,10 @@
 #endif
 
 #if CONFIG_LIBC_PICOLIBC
+/* picolibc declares errno in <errno.h> only, while newlib also declared it
+ * here. Keep <sys/errno.h> self-sufficient for both libc flavours.
+ */
+#include <errno.h>
 #undef __errno_r
 #define __errno_r(r) errno
 #endif
