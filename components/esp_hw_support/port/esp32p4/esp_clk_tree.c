@@ -145,7 +145,10 @@ void esp_clk_tree_initialize(void)
     _clk_gate_ll_ref_50m_clk_en(false);
     _clk_gate_ll_ref_80m_clk_en(false);
     _clk_gate_ll_ref_120m_clk_en(false);
+#if !CONFIG_ESP_ENABLE_PVT
+    // PLL_F160M must always on if PVT is enabled.
     _clk_gate_ll_ref_160m_clk_en(false);
+#endif
     _clk_gate_ll_ref_240m_clk_en(false);
     esp_clk_tree_initialized = true;
 }
@@ -218,7 +221,10 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
             case SOC_MOD_CLK_PLL_F50M:  ENABLE_CLK_GATE(clk_gate_ll_ref_50m_clk_en, enable);  break;
             case SOC_MOD_CLK_PLL_F80M:  ENABLE_CLK_GATE(clk_gate_ll_ref_80m_clk_en, enable);  break;
             case SOC_MOD_CLK_PLL_F120M: ENABLE_CLK_GATE(clk_gate_ll_ref_120m_clk_en, enable); break;
+#if !CONFIG_ESP_ENABLE_PVT
+            // PLL_F160M must always on if PVT is enabled.
             case SOC_MOD_CLK_PLL_F160M: ENABLE_CLK_GATE(clk_gate_ll_ref_160m_clk_en, enable); break;
+#endif
             case SOC_MOD_CLK_PLL_F240M: ENABLE_CLK_GATE(clk_gate_ll_ref_240m_clk_en, enable); break;
             default: break;
         }
