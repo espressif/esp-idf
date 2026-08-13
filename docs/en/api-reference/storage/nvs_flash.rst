@@ -63,7 +63,7 @@ Namespaces
 
 To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of the namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Furthermore, there can be no more than 254 different namespaces in one NVS partition. Namespace name is specified in the :cpp:func:`nvs_open` or :cpp:type:`nvs_open_from_partition` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and :cpp:func:`nvs_commit` functions. This way, a handle is associated with a namespace and partition, and key names will not collide with same names in other namespaces.
 
-The open mode parameter controls the access level and security behavior:
+The ``open_mode`` parameter controls the access level and security behavior:
 
 - ``NVS_READONLY``: Read-only access. All write operations will be rejected.
 - ``NVS_READWRITE``: Standard read-write access. Erased data is marked as deleted but remains in flash.
@@ -87,7 +87,7 @@ Use ``nvs::open_nvs_handle()`` or ``nvs::open_nvs_handle_from_partition()`` to o
 - ``set_blob`` / ``get_blob`` — binary blob values
 - ``commit``, ``erase_item``, ``erase_all``, ``purge_all``, ``find_key``, and related helpers
 
-Open modes (``NVS_READONLY``, ``NVS_READWRITE``, ``NVS_READWRITE_PURGE``) and key/namespace constraints are the same as for the C API. See the :ref:`API Reference <nvs-api-reference>` below for full class and function documentation, and :example:`storage/nvs/nvs_rw_value_cxx` for a complete example.
+The ``open_mode`` values (``NVS_READONLY``, ``NVS_READWRITE``, ``NVS_READWRITE_PURGE``) and key and namespace constraints are the same as for the C API. See the :ref:`API Reference <nvs-api-reference>` below for full class and function documentation, and :example:`storage/nvs/nvs_rw_value_cxx` for a complete example.
 
 NVS Iterators
 ^^^^^^^^^^^^^
