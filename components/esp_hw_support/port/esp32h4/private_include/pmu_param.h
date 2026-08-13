@@ -123,12 +123,25 @@ const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mo
 void pmu_sleep_power_analog_wait_config(void *data, const uint16_t analog_wait[ANALOG_WAIT_CTRL_NUM]);
 #endif
 
+#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
+/**
+ * @brief Back-fill M2A clk power REGDMA write values before sleep.
+ *
+ * @param data    PMU sleep data context.
+ * @param config  IMM TIE_HIGH bits to write.
+ */
+void pmu_sleep_power_clock_config(void *data, const uint32_t config);
+#endif
+
 /* Enabled when this chip needs any pmu_sleep_data_t priv slot; conditions differ per chip. */
-#define PMU_SLEEP_PRIV_ENABLED (CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT || SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG)
+#define PMU_SLEEP_PRIV_ENABLED (CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT || SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG || SOC_PM_MODEM_LOCK_CLK_WORKAROUND)
 #if PMU_SLEEP_PRIV_ENABLED
 enum {
 #if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
     PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT,
+#endif
+#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
+    PMU_SLEEP_PRIV_MODEM_LOCK_CLK_POWER,
 #endif
 #if SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG
     PMU_SLEEP_PRIV_HW_RETENTION_ICG_CLK,

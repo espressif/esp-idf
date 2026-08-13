@@ -94,6 +94,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_clk_power(pmu_dev_t *hw, pmu_hp_mode_t mode
     hw->hp_sys[mode].clk_power.val = xpd_flag;
 }
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_clk_power(pmu_dev_t *hw, pmu_hp_mode_t mode)
+{
+    return hw->hp_sys[mode].clk_power.val;
+}
+
 /**
  * @brief Set the power and isolation of the analog i2c master shared by all the PLLs
  *
@@ -120,6 +125,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_xtal_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode,
 FORCE_INLINE_ATTR void pmu_ll_hp_set_xtalx2_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_xtalx2)
 {
     hw->hp_sys[mode].xtal.xpd_xtalx2 = xpd_xtalx2;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_xtalx2_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode)
+{
+    return hw->hp_sys[mode].xtal.xpd_xtalx2;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_bias_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool xpd_bias)
