@@ -1,5 +1,13 @@
 menu "Example Configuration"
 
+    config EXAMPLE_CI_ID
+        int "example id for CI test"
+        default 0
+
+    config EXAMPLE_CI_PIPELINE_ID
+        int "Project CI pipeline ID for CI test"
+        default 0
+
     config EXAMPLE_PEER_ADDR
         string "Peer Address"
         default "ADDR_ANY"

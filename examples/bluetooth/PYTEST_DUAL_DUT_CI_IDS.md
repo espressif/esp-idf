@@ -60,8 +60,25 @@ Paths are relative to `examples/bluetooth/`. Bluedroid uses `esp_bluedroid_get_e
 | 23 | `bluedroid/ble_50/ble50_throughput/throughput_server` / `throughput_client` (`notify`) | `bluedroid/ble_50/ble50_throughput/pytest_ble50_throughput_test.py` |
 | 24 | same pair (`write`) | same |
 | 25 | `nimble/ble_cte/ble_periodic_adv_with_cte` / `ble_periodic_sync_with_cte` | `nimble/pytest_nimble_test.py` |
+| 26 | `nimble/ble_cts/cts_prph` / `cts_cent` | `nimble/pytest_nimble_test.py` |
+| 27 | `nimble/ble_htp/htp_prph` / `htp_cent` | `nimble/pytest_nimble_test.py` |
+| 28 | `nimble/ble_spp/spp_server` / `spp_client` | `nimble/pytest_nimble_test.py` |
+| 29 | `nimble/ble_multi_conn/ble_multi_conn_prph` / `ble_multi_conn_cent` | `nimble/pytest_nimble_test.py` |
+| 30 | `nimble/ble_phy/phy_prph` / `phy_cent` | `nimble/pytest_nimble_test.py` |
+| 31 | `nimble/ble_pawr_adv_conn/ble_pawr_adv_conn` / `ble_pawr_sync_conn` | `nimble/pytest_nimble_test.py` |
+| 32 | `nimble/ble_pawr_adv/ble_pawr_adv` / `ble_pawr_sync` | `nimble/pytest_nimble_test.py` |
+| 33 | `nimble/ble_proximity_sensor` (`name` / `esp32c2_xtal26m`) | `nimble/pytest_nimble_test.py` |
+| 34 | `nimble/ble_proximity_sensor` (`conn_with_scan` / `esp32c2_xtal26m_conn_with_scan`) | same |
+| 35 | `nimble/ble_proximity_sensor` (`name_v4` / `esp32c2_xtal26m_name_v4`) | same |
+| 36 | `nimble/ble_proximity_sensor` (`conn_with_scan_v4` / `esp32c2_xtal26m_conn_with_scan_v4`) | same |
+| 37 | `nimble/ble_proximity_sensor` (`esp32_name_v4`) | same |
+| 38 | `nimble/ble_periodic_adv` / `ble_periodic_sync` | `nimble/pytest_nimble_test.py` |
+| 39 | `nimble/bleprph` / `blecent` | `nimble/pytest_nimble_test.py` |
+| 40 | `nimble/throughput_app/gatt/bleprph_throughput` / `blecent_throughput` | `nimble/pytest_nimble_test.py` |
+| 41 | `nimble/ble_l2cap_coc/coc_bleprph` / `coc_blecent` | `nimble/pytest_nimble_test.py` |
+| 42 | `nimble/throughput_app/l2cap_coc/l2cap_coc_prph` / `l2cap_coc_cent` | `nimble/pytest_nimble_test.py` |
 
-**Next available Example ID: 26**
+**Next available Example ID: 43**
 
 ---
 

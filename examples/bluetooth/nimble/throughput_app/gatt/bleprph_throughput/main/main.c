@@ -26,10 +26,14 @@ static uint8_t ext_adv_pattern[] = {
     0x0c, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '_', 'p', 'r', 'p', 'h'
 };
 
+/* Offset of the complete-name AD structure inside ext_adv_pattern. Keep in sync
+ * with the pattern above; everything before it is flags plus service UUIDs. */
+#define EXT_ADV_PATTERN_NAME_OFFSET 11
+
 static uint8_t s_current_phy;
 #endif
 
-static const char *device_name = "nimble_prph";
+static char device_name[32] = "nimble_prph";
 
 #define NOTIFY_THROUGHPUT_PAYLOAD 495 /* Exactly aligns with 2 LL packets */
 #define MIN_REQUIRED_MBUF         10 /* Reserve mbufs for incoming ATT packets */
@@ -49,6 +53,20 @@ static uint8_t dummy;
 static uint8_t gatts_addr_type;
 
 static int gatts_gap_event(struct ble_gap_event *event, void *arg);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_throughput_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
@@ -160,7 +178,23 @@ ext_bleprph_advertise(void)
     /* Set current phy; get mbuf for scan rsp data; fill mbuf with scan rsp data */
     params.primary_phy = BLE_HCI_LE_PHY_1M_PREF_MASK ;
     params.secondary_phy = BLE_HCI_LE_PHY_2M_PREF_MASK ;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Keep flags and service UUIDs, but advertise the CI-unique name so the
+     * paired central only connects to its own board. */
+    uint8_t ci_adv_data[BLE_HS_ADV_MAX_SZ];
+    uint8_t name_len = strlen(device_name);
+    uint8_t ci_adv_len = EXT_ADV_PATTERN_NAME_OFFSET;
+
+    memcpy(ci_adv_data, ext_adv_pattern, ci_adv_len);
+    ci_adv_data[ci_adv_len++] = name_len + 1;
+    ci_adv_data[ci_adv_len++] = BLE_HS_ADV_TYPE_COMP_NAME;
+    memcpy(&ci_adv_data[ci_adv_len], device_name, name_len);
+    ci_adv_len += name_len;
+
+    data = ext_get_data(ci_adv_data, ci_adv_len);
+#else
     data = ext_get_data(ext_adv_pattern, sizeof(ext_adv_pattern));
+#endif
     if (!data) {
         return;
     }
@@ -379,6 +413,16 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
             ESP_LOGE(tag, "Set packet length failed");
         }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+        if (event->connect.status == 0 &&
+                ble_gap_conn_find(event->connect.conn_handle, &desc) == 0) {
+            const uint8_t *peer = desc.peer_id_addr.val;
+            ESP_LOGI(tag, "Connected, conn_handle %d, remote %02x:%02x:%02x:%02x:%02x:%02x",
+                     event->connect.conn_handle,
+                     peer[5], peer[4], peer[3], peer[2], peer[1], peer[0]);
+        }
+#endif
+
         conn_handle = event->connect.conn_handle;
         break;
 
@@ -560,6 +604,13 @@ void app_main(void)
 #if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(device_name, esp_ble_throughput_get_example_name(), sizeof(device_name) - 1);
+    device_name[sizeof(device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name */

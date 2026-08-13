@@ -16,3 +16,7 @@ extern uint8_t antenna_use_gpio[];
 extern const char direction_finding_logo[];
 
 int ble_direction_finding_antenna_init(uint8_t* gpio_array,uint8_t gpio_array_len);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+char *esp_ble_cte_get_example_name(void);
+#endif

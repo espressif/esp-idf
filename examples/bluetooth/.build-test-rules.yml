@@ -414,12 +414,54 @@ examples/bluetooth/nimble/ble_chan_sound_reflector:
   depends_filepatterns:
     - examples/bluetooth/nimble/ble_chan_sound_reflector/**/*
     - examples/bluetooth/nimble/common/**/*
-examples/bluetooth/nimble/ble_cte:
+
+examples/bluetooth/nimble/ble_cte/ble_periodic_adv_with_cte:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: lack of runner
   depends_filepatterns:
     - examples/bluetooth/nimble/ble_cte/common_components/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_cte/ble_periodic_sync_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_cte/common_components/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_cts/cts_cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_cts/cts_prph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/ble_enc_adv_data:
   <<: *bt_default_depends
@@ -430,14 +472,70 @@ examples/bluetooth/nimble/ble_enc_adv_data:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
+examples/bluetooth/nimble/ble_htp/htp_cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_htp/htp_prph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_l2cap_coc/coc_blecent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_l2cap_coc/coc_bleprph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
 examples/bluetooth/nimble/ble_multi_adv:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
       temporary: true
       reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/ble_multi_conn:
   <<: *bt_default_depends
@@ -448,33 +546,135 @@ examples/bluetooth/nimble/ble_multi_conn:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
-examples/bluetooth/nimble/ble_pawr_adv:
+examples/bluetooth/nimble/ble_multi_conn/ble_multi_conn_cent:
   <<: *bt_default_depends
   enable:
     - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_multi_conn/ble_multi_conn_prph:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_pawr_adv:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/nimble/ble_pawr_adv/ble_pawr_adv:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_pawr_adv/ble_pawr_sync:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/ble_pawr_adv_conn:
   <<: *bt_default_depends
   enable:
-    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/nimble/ble_pawr_adv_conn/ble_pawr_adv_conn:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_pawr_adv_conn/ble_pawr_sync_conn:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/ble_periodic_adv:
   <<: *bt_default_depends
   enable:
-    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
+    - if: SOC_BLE_SUPPORTED == 1 and SOC_BLE_50_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
-      reason: the other targets are not tested yet
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/ble_periodic_sync:
   <<: *bt_default_depends
   enable:
-    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
+    - if: SOC_BLE_SUPPORTED == 1 and SOC_BLE_50_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
-      reason: the other targets are not tested yet
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/ble_phy:
   <<: *bt_default_depends
@@ -485,14 +685,107 @@ examples/bluetooth/nimble/ble_phy:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
+examples/bluetooth/nimble/ble_phy/phy_cent:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_phy/phy_prph:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_proximity_sensor/proximity_sensor_cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32" and CONFIG_NAME in ["name", "conn_with_scan", "conn_with_scan_v4", "name_v4"]
+      reason: esp32 does not support extended adv / connect-with-scan used by these CI variants
+    - if: IDF_TARGET != "esp32" and CONFIG_NAME == "esp32_name_v4"
+      reason: esp32_name_v4 is for ESP32 only
+    - if: IDF_TARGET != "esp32c2" and CONFIG_NAME in ["esp32c2_xtal26m", "esp32c2_xtal26m_conn_with_scan", "esp32c2_xtal26m_name_v4", "esp32c2_xtal26m_conn_with_scan_v4"]
+      reason: esp32c2_xtal26m* configs are for ESP32-C2 26MHz only
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2508
+      temporary: true
+      reason: ble bugs
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_proximity_sensor/proximity_sensor_prph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32" and CONFIG_NAME in ["name", "conn_with_scan", "conn_with_scan_v4", "name_v4"]
+      reason: esp32 does not support extended adv / connect-with-scan used by these CI variants
+    - if: IDF_TARGET != "esp32" and CONFIG_NAME == "esp32_name_v4"
+      reason: esp32_name_v4 is for ESP32 only
+    - if: IDF_TARGET != "esp32c2" and CONFIG_NAME in ["esp32c2_xtal26m", "esp32c2_xtal26m_conn_with_scan", "esp32c2_xtal26m_name_v4", "esp32c2_xtal26m_conn_with_scan_v4"]
+      reason: esp32c2_xtal26m* configs are for ESP32-C2 26MHz only
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2508
+      temporary: true
+      reason: ble bugs
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_spp/spp_client:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/ble_spp/spp_server:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
 examples/bluetooth/nimble/blecent:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32s31"
-      temporary: true
-      reason: lack of runners
     - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
@@ -502,6 +795,7 @@ examples/bluetooth/nimble/blecent:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
     - examples/bluetooth/nimble/blecent/**/*
+    - examples/bluetooth/nimble/bleprph/**/*
     - examples/bluetooth/nimble/power_save/**/*
     - examples/bluetooth/nimble/pytest_nimble_test.py
 
@@ -513,6 +807,20 @@ examples/bluetooth/nimble/blemesh:
       reason: the other targets are not tested yet
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
+
+examples/bluetooth/nimble/bleprph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/blecent/**/*
+    - examples/bluetooth/nimble/bleprph/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/bleprph_wifi_coex:
   <<: *bt_default_depends
@@ -541,7 +849,7 @@ examples/bluetooth/nimble/power_save:
   disable_test:
     - if: IDF_TARGET == "esp32s31"
       temporary: true
-      reason: lack of runners, and light sleep not supported yet
+      reason: light sleep not supported yet
     - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
@@ -560,30 +868,84 @@ examples/bluetooth/nimble/throughput_app:
     - if: SOC_BLE_SUPPORTED != 1
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/throughput_app/gatt/blecent_throughput:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2509
+      temporary: true
+      reason: ble bugs
   depends_components+:
     - esp_driver_gpio
     - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
     - examples/bluetooth/nimble/throughput_app/gatt/blecent_throughput/components/**/*
+    - examples/bluetooth/nimble/throughput_app/gatt/bleprph_throughput/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
+examples/bluetooth/nimble/throughput_app/gatt/bleprph_throughput:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2509
+      temporary: true
+      reason: ble bugs
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/throughput_app/gatt/blecent_throughput/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32c2" # TODO: BLEQABR25-2507
+      temporary: true
+      reason: ble bugs
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
-    - examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent/**/*
+    - examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_prph/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_prph:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32c2" # TODO: BLEQABR25-2507
+      temporary: true
+      reason: ble bugs
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
-    - examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_prph/**/*
+    - examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py

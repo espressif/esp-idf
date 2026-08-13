@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
+#include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOSConfig.h"
@@ -17,6 +19,19 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "ble_prox_prph.h"
 
+#define EXAMPLE_ADV_NAME_LEN_MAX  29
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *get_example_name(void)
+{
+    static char example_name[EXAMPLE_ADV_NAME_LEN_MAX];
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X", CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF, CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
+
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
@@ -24,10 +39,14 @@ static uint8_t ext_adv_pattern_1[] = {
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x03, 0x18,  /* UUID 0x1803 in little-endian */
     0x13, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'p', 'r', 'o', 'x', '-', 'p', 'r', 'p', 'h', '-', 'e',
 };
+/* AD layout: [0..2] flags, [3..6] UUID, [7..10] Link Loss 0x1803, [11..] Complete Local Name */
+#define EXT_ADV_NAME_LEN_OFFSET  11 /* len field of name AD = 1 (type) + strlen(name) */
+#define EXT_ADV_NAME_OFFSET      13 /* name bytes follow [len][0x09] */
 #endif
 
 static const char *tag = "NimBLE_PROX_PRPH";
-static const char *device_name = "ble_prox_prph";
+static char device_name_buf[EXAMPLE_ADV_NAME_LEN_MAX] = "ble_prox_prph";
+static const char *device_name = device_name_buf;
 
 static int ble_prox_prph_gap_event(struct ble_gap_event *event, void *arg);
 
@@ -101,8 +120,23 @@ ext_ble_prox_prph_advertise(void)
     data = os_msys_get_pkthdr(sizeof(ext_adv_pattern_1), 0);
     assert(data);
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    {
+        uint8_t adv_buf[sizeof(ext_adv_pattern_1)];
+        uint8_t name_len = (uint8_t)strlen(get_example_name());
+
+        if (name_len > sizeof(adv_buf) - EXT_ADV_NAME_OFFSET) {
+            name_len = sizeof(adv_buf) - EXT_ADV_NAME_OFFSET;
+        }
+        memcpy(adv_buf, ext_adv_pattern_1, EXT_ADV_NAME_OFFSET);
+        adv_buf[EXT_ADV_NAME_LEN_OFFSET] = (uint8_t)(name_len + 1);
+        memcpy(&adv_buf[EXT_ADV_NAME_OFFSET], get_example_name(), name_len);
+        rc = os_mbuf_append(data, adv_buf, EXT_ADV_NAME_OFFSET + name_len);
+    }
+#else
     /* fill mbuf with scan rsp data */
     rc = os_mbuf_append(data, ext_adv_pattern_1, sizeof(ext_adv_pattern_1));
+#endif
     assert(rc == 0);
 
     rc = ble_gap_ext_adv_set_data(instance, data);
@@ -312,6 +346,13 @@ void app_main(void)
 
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     int rc;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(device_name_buf, get_example_name(), sizeof(device_name_buf) - 1);
+    device_name_buf[sizeof(device_name_buf) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name_buf, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID,
+             CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);

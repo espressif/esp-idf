@@ -23,4 +23,16 @@ menu "Example Configuration"
             Use this option to enable extended advertising in the example.
             If this option is disabled, ensure config BT_NIMBLE_EXT_ADV is
             also disabled from Nimble stack menuconfig
+
+    config EXAMPLE_CI_ID
+        int "Example ID for CI test"
+        default 0
+        help
+            This config sets the example ID for CI test. For internal use only.
+
+    config EXAMPLE_CI_PIPELINE_ID
+        int "Pipeline ID for CI test"
+        default 0
+        help
+            This config sets the pipeline ID for CI test. For internal use only.
 endmenu

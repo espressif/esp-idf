@@ -56,6 +56,22 @@
 static const char *tag = "blecent_throughput";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char remote_device_name[32];
+
+static char *esp_ble_throughput_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
+
 static int mbuf_len_total;
 static int failure_count;
 static TaskHandle_t throughput_task_handle = NULL;
@@ -749,6 +765,12 @@ blecent_scan(void)
     disc_params.filter_policy = 0;
     disc_params.limited = 0;
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Full scan improves discovery reliability in multi-board CI environments. */
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(50);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(50);
+#endif
+
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
                       blecent_gap_event, NULL);
     if (rc != 0) {
@@ -769,7 +791,9 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     int offset = 0;
     int ad_struct_len = 0;
     uint8_t parsed_addr[6];
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
     uint8_t phy_uuid_found = 0;
+#endif
 
     if (!(disc->props & BLE_HCI_ADV_CONN_MASK)) {
         return 0;
@@ -783,6 +807,35 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
     }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Match on the CI device name only, so that boards belonging to other
+     * pipelines or examples in the same RF environment are ignored. */
+    do {
+        if (offset + 1 >= (int)disc->length_data) {
+            break;
+        }
+        ad_struct_len = disc->data[offset];
+
+        if (!ad_struct_len || offset + ad_struct_len + 1 > (int)disc->length_data) {
+            break;
+        }
+
+        if (disc->data[offset + 1] == BLE_HS_ADV_TYPE_COMP_NAME ||
+                disc->data[offset + 1] == BLE_HS_ADV_TYPE_INCOMP_NAME) {
+            int name_len = ad_struct_len - 1;
+            if (name_len == (int)strlen(remote_device_name) &&
+                    memcmp(&disc->data[offset + 2], remote_device_name, name_len) == 0) {
+                return 1;
+            }
+            return 0;
+        }
+
+        offset += ad_struct_len + 1;
+
+    } while (offset < (int)disc->length_data);
+
+    return 0;
+#else
     /* The device has to advertise support LE PHY UUID (0xABF2).
     */
     do {
@@ -822,6 +875,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     } while (offset < (int)disc->length_data);
 
     return phy_uuid_found;
+#endif
 }
  #else
 /**
@@ -834,7 +888,9 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 {
     struct ble_hs_adv_fields fields;
     int rc;
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
     int i;
+#endif
     uint8_t test_addr[6];
     rc = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
     if (rc != 0) {
@@ -850,6 +906,16 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         }
     }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Match on the CI device name only, so that boards belonging to other
+     * pipelines or examples in the same RF environment are ignored. */
+    if (fields.name != NULL &&
+            fields.name_len == strlen(remote_device_name) &&
+            memcmp(fields.name, remote_device_name, fields.name_len) == 0) {
+        return 1;
+    }
+    return 0;
+#else
     ESP_LOGD(tag, "connect; fields.num_uuids128 =%d", fields.num_uuids128);
     for (i = 0; i < fields.num_uuids128; i++) {
         if ((memcmp(&fields.uuids128[i], THRPT_UUID_DECLARE(THRPT_SVC),
@@ -873,6 +939,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         }
     }
     return 0;
+#endif
 }
 #endif
 
@@ -902,6 +969,10 @@ blecent_connect_if_interesting(void *disc)
     }
     /* Copy addr information for next connection */
     memcpy(&conn_addr, &disc_desc->addr, sizeof(conn_addr));
+#endif
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(tag, "Found device: addr: %s, name: %s", addr_str(conn_addr.val), remote_device_name);
 #endif
 
 #if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
@@ -1002,6 +1073,11 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             print_conn_desc(&desc);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+            ESP_LOGI(tag, "Connected, conn_handle %d, remote %s",
+                     event->connect.conn_handle, addr_str(desc.peer_id_addr.val));
+#endif
 
             rc = ble_gap_update_params(event->connect.conn_handle, &conn_params);
             if (rc != 0) {
@@ -1207,6 +1283,13 @@ app_main(void)
         ESP_LOGE(tag, "Failed to init nimble %d ", ret);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(remote_device_name, esp_ble_throughput_get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;

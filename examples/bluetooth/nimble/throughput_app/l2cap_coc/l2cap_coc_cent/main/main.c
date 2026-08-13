@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -21,6 +22,22 @@
 #include "host/ble_esp_gap.h"
 
 static const char *TAG = "l2cap_coc_cent";
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char remote_device_name[32];
+
+static char *esp_ble_l2cap_coc_tp_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 #define L2CAP_COC_PSM       0x0080  /* valid dynamic LE L2CAP CoC PSM (0x0080-0x00FF) */
 #define L2CAP_COC_MTU       CONFIG_EXAMPLE_L2CAP_COC_MTU
@@ -162,6 +179,11 @@ static void cent_scan(void)
         ESP_LOGE(TAG, "Error inferring addr type; rc=%d", rc);
         return;
     }
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Full scan improves discovery reliability in multi-board CI environments. */
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(50);
+    disc_params.window = BLE_GAP_SCAN_WIN_MS(50);
+#endif
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
                       cent_gap_event, NULL);
     if (rc != 0) {
@@ -180,12 +202,21 @@ static int cent_should_connect(const struct ble_gap_disc_desc *disc)
     if (rc != 0) {
         return 0;
     }
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (fields.name != NULL &&
+            fields.name_len == strlen(remote_device_name) &&
+            memcmp(fields.name, remote_device_name, fields.name_len) == 0) {
+        return 1;
+    }
+    return 0;
+#else
     for (int i = 0; i < fields.num_uuids16; i++) {
         if (ble_uuid_u16(&fields.uuids16[i].u) == L2CAP_COC_UUID) {
             return 1;
         }
     }
     return 0;
+#endif
 }
 
 static void cent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
@@ -204,6 +235,12 @@ static void cent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
         cent_scan();
         return;
     }
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(TAG, "Found device: %02x:%02x:%02x:%02x:%02x:%02x, name: %s",
+             disc->addr.val[5], disc->addr.val[4], disc->addr.val[3],
+             disc->addr.val[2], disc->addr.val[1], disc->addr.val[0],
+             remote_device_name);
+#endif
     ESP_LOGI(TAG, "Connecting to %02x:%02x:%02x:%02x:%02x:%02x (addr_type=%d)",
              disc->addr.val[5], disc->addr.val[4], disc->addr.val[3],
              disc->addr.val[2], disc->addr.val[1], disc->addr.val[0],
@@ -226,6 +263,13 @@ static void cent_connect_if_interesting_ext(const struct ble_gap_ext_disc_desc *
     if (ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data) != 0) {
         return;
     }
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (fields.name == NULL ||
+            fields.name_len != strlen(remote_device_name) ||
+            memcmp(fields.name, remote_device_name, fields.name_len) != 0) {
+        return;
+    }
+#else
     int found = 0;
     for (int i = 0; i < fields.num_uuids16; i++) {
         if (ble_uuid_u16(&fields.uuids16[i].u) == L2CAP_COC_UUID) {
@@ -236,6 +280,7 @@ static void cent_connect_if_interesting_ext(const struct ble_gap_ext_disc_desc *
     if (!found) {
         return;
     }
+#endif
     int rc = ble_gap_disc_cancel();
     if (rc != 0) {
         return;
@@ -247,6 +292,12 @@ static void cent_connect_if_interesting_ext(const struct ble_gap_ext_disc_desc *
         cent_scan();
         return;
     }
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(TAG, "Found device: %02x:%02x:%02x:%02x:%02x:%02x, name: %s",
+             disc->addr.val[5], disc->addr.val[4], disc->addr.val[3],
+             disc->addr.val[2], disc->addr.val[1], disc->addr.val[0],
+             remote_device_name);
+#endif
     ESP_LOGI(TAG, "Connecting to %02x:%02x:%02x:%02x:%02x:%02x (addr_type=%d)",
              disc->addr.val[5], disc->addr.val[4], disc->addr.val[3],
              disc->addr.val[2], disc->addr.val[1], disc->addr.val[0],
@@ -597,6 +648,13 @@ static int cent_gap_event(struct ble_gap_event *event, void *arg)
                          desc.peer_id_addr.val[5], desc.peer_id_addr.val[4],
                          desc.peer_id_addr.val[3], desc.peer_id_addr.val[2],
                          desc.peer_id_addr.val[1], desc.peer_id_addr.val[0]);
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+                ESP_LOGI(TAG, "Connected, conn_handle %d, remote %02x:%02x:%02x:%02x:%02x:%02x",
+                         event->connect.conn_handle,
+                         desc.peer_ota_addr.val[5], desc.peer_ota_addr.val[4],
+                         desc.peer_ota_addr.val[3], desc.peer_ota_addr.val[2],
+                         desc.peer_ota_addr.val[1], desc.peer_ota_addr.val[0]);
+#endif
             }
 
             conn_handle      = event->connect.conn_handle;
@@ -728,6 +786,14 @@ void app_main(void)
     ble_hs_cfg.reset_cb        = cent_on_reset;
     ble_hs_cfg.sync_cb         = cent_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(remote_device_name, esp_ble_l2cap_coc_tp_get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID,
+             CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     int rc = ble_svc_gap_device_name_set("l2cap-coc-cent");

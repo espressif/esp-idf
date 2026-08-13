@@ -5,6 +5,9 @@
  */
 
 #include "nvs_flash.h"
+#include "esp_log.h"
+#include <stdio.h>
+#include <string.h>
 /* BLE */
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -14,7 +17,7 @@
 #include "services/gap/ble_svc_gap.h"
 #include "coc_bleprph.h"
 
-#if CONFIG_EXAMPLE_EXTENDED_ADV
+#if CONFIG_EXAMPLE_EXTENDED_ADV && !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
 static uint8_t ext_adv_pattern_1[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
@@ -24,10 +27,25 @@ static uint8_t ext_adv_pattern_1[] = {
 #endif
 
 static const char *tag = "NimBLE_BLE_PRPH_L2CAP_COC";
+static char device_name[32] = "bleprph-l2coc";
 static int bleprph_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t own_addr_type;
 
 void ble_store_config_init(void);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_l2cap_coc_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
@@ -81,6 +99,16 @@ ext_bleprph_advertise(void)
     struct os_mbuf *data;
     uint8_t instance = 0;
     int rc;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    uint8_t ci_adv_data[32];
+    uint8_t ci_adv_len;
+    uint8_t name_len;
+#endif
+
+    /* First check if any instance is already active */
+    if (ble_gap_ext_adv_active(instance)) {
+        return;
+    }
 
     /* use defaults for non-set params */
     memset (&params, 0, sizeof(params));
@@ -106,6 +134,20 @@ ext_bleprph_advertise(void)
 
     /* in this case only scan response is allowed */
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    name_len = strlen(device_name);
+    memset(ci_adv_data, 0, sizeof(ci_adv_data));
+    ci_adv_data[0] = name_len + 1;
+    ci_adv_data[1] = BLE_HS_ADV_TYPE_COMP_NAME;
+    memcpy(&ci_adv_data[2], device_name, name_len);
+    ci_adv_len = 2 + name_len;
+
+    data = os_msys_get_pkthdr(ci_adv_len, 0);
+    assert(data);
+
+    rc = os_mbuf_append(data, ci_adv_data, ci_adv_len);
+    assert(rc == 0);
+#else
     /* get mbuf for scan rsp data */
     data = os_msys_get_pkthdr(sizeof(ext_adv_pattern_1), 0);
     assert(data);
@@ -113,6 +155,7 @@ ext_bleprph_advertise(void)
     /* fill mbuf with scan rsp data */
     rc = os_mbuf_append(data, ext_adv_pattern_1, sizeof(ext_adv_pattern_1));
     assert(rc == 0);
+#endif
 
     rc = ble_gap_ext_adv_set_data(instance, data);
     assert (rc == 0);
@@ -158,20 +201,18 @@ bleprph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
-#if CONFIG_BT_NIMBLE_GAP_SERVICE
-    const char *name;
-    name = ble_svc_gap_device_name();
-    fields.name = (uint8_t *)name;
-    fields.name_len = strlen(name);
+    fields.name = (uint8_t *)device_name;
+    fields.name_len = strlen(device_name);
     fields.name_is_complete = 1;
-#endif
 
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
     static const ble_uuid16_t adv_uuids16[] = {
         BLE_UUID16_INIT(L2CAP_COC_UUID)
     };
     fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
+#endif
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
@@ -326,6 +367,11 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             bleprph_print_conn_desc(&desc);
+            ESP_LOGI(tag, "Connected, conn_handle %d, remote %02x:%02x:%02x:%02x:%02x:%02x",
+                     event->connect.conn_handle,
+                     desc.peer_ota_addr.val[5], desc.peer_ota_addr.val[4],
+                     desc.peer_ota_addr.val[3], desc.peer_ota_addr.val[2],
+                     desc.peer_ota_addr.val[1], desc.peer_ota_addr.val[0]);
         }
         MODLOG_DFLT(INFO, "\n");
 
@@ -477,9 +523,17 @@ app_main(void)
     bleprph_l2cap_coc_mem_init();
 #endif
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(device_name, esp_ble_l2cap_coc_get_example_name(), sizeof(device_name) - 1);
+    device_name[sizeof(device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID,
+             CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
+
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
-    rc = ble_svc_gap_device_name_set("bleprph-l2coc");
+    rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
 #endif
 
