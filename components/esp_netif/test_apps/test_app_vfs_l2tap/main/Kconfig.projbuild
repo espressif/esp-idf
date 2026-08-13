@@ -1,0 +1,12 @@
+menu "L2 TAP VFS test app"
+
+    config L2TAP_TEST_USE_ETH_SUBLAYER
+        bool "Use Ethernet netif sublayer instead of classic glue"
+        default n
+        depends on ETH_SUBLAYER_SUPPORT
+        help
+            When set, the test attaches esp-netif with esp_eth_sublayer_new() /
+            esp_eth_sublayer_del() (802.1Q demux path). When unset, the classic
+            esp_eth_new_netif_glue() / esp_eth_del_netif_glue() layer is used.
+
+endmenu

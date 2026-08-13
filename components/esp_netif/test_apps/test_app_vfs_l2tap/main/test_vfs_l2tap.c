@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,8 +52,14 @@ typedef struct {
     esp_netif_t *eth_netif;
     esp_eth_mac_t *mac;
     esp_eth_phy_t *phy;
-    void *glue;
+#ifdef CONFIG_L2TAP_TEST_USE_ETH_SUBLAYER
+    esp_eth_sublayer_handle_t eth_sub;
+    esp_eth_sublayer_vlan_handle_t vlan_untagged;
+#else
+    void *netif_io_driver;
+#endif
     esp_eth_handle_t eth_handle;
+    EventGroupHandle_t eth_event_group;
 } test_vfs_eth_network_t;
 
 typedef struct {
@@ -175,18 +181,24 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
 /**
  * @brief Initializes Ethernet interface and starts driver (internal EMAC & IP101 PHY)
  *
+ * @param init_netif true to create and attach an esp_netif; false to skip netif (L2TAP via driver handle)
  */
-static void ethernet_init(test_vfs_eth_network_t *network_hndls)
+static void ethernet_init(test_vfs_eth_network_t *network_hndls, bool init_netif)
 {
     EventBits_t bits = 0;
     EventGroupHandle_t eth_event_group = xEventGroupCreate();
     TEST_ASSERT(eth_event_group != NULL);
 
-    test_case_uses_tcpip();
+    memset(network_hndls, 0, sizeof(*network_hndls));
+    network_hndls->eth_event_group = eth_event_group;
+
     TEST_ESP_OK(esp_event_loop_create_default());
-    // create TCP/IP netif
-    esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
-    network_hndls->eth_netif = esp_netif_new(&netif_cfg);
+    if (init_netif) {
+        test_case_uses_tcpip();
+        // create TCP/IP netif
+        esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
+        network_hndls->eth_netif = esp_netif_new(&netif_cfg);
+    }
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
@@ -201,11 +213,30 @@ static void ethernet_init(test_vfs_eth_network_t *network_hndls)
     // install Ethernet driver
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &network_hndls->eth_handle));
     // combine driver with netif
-    network_hndls->glue = esp_eth_new_netif_glue(network_hndls->eth_handle);
-    TEST_ESP_OK(esp_netif_attach(network_hndls->eth_netif, network_hndls->glue));
+#ifdef CONFIG_L2TAP_TEST_USE_ETH_SUBLAYER
+    ESP_LOGI(TAG, "Using Ethernet Sublayer%s", init_netif ? "" : " without esp_netif");
+    esp_eth_sublayer_config_t sub_config = {
+        .eth_handle = network_hndls->eth_handle,
+    };
+    TEST_ESP_OK(esp_eth_sublayer_new(&sub_config, &network_hndls->eth_sub));
+    // Create untagged Ethernet interface
+    TEST_ESP_OK(esp_eth_sublayer_vlan_add(network_hndls->eth_sub, ESP_ETH_SUBLAYER_UNTAGGED_VID,
+                                            &network_hndls->vlan_untagged));
+    if (init_netif) {
+        TEST_ESP_OK(esp_netif_attach(network_hndls->eth_netif, network_hndls->vlan_untagged));
+    }
+#else
+    if (init_netif) {
+        ESP_LOGI(TAG, "Using Ethernet Netif Glue");
+        network_hndls->netif_io_driver = esp_eth_new_netif_glue(network_hndls->eth_handle);
+        TEST_ESP_OK(esp_netif_attach(network_hndls->eth_netif, network_hndls->netif_io_driver));
+    }
+#endif // CONFIG_L2TAP_TEST_USE_ETH_SUBLAYER
     // register user defined event handlers
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+    if (init_netif) {
+        TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+    }
 
     // set PHY loopback mode
     bool loopback_en = true;
@@ -227,13 +258,27 @@ static void ethernet_init(test_vfs_eth_network_t *network_hndls)
 static void ethernet_deinit(test_vfs_eth_network_t *network_hndls)
 {
     TEST_ESP_OK(esp_eth_stop(network_hndls->eth_handle));
-    TEST_ESP_OK(esp_eth_del_netif_glue(network_hndls->glue));
+    EventBits_t stop_bits = xEventGroupWaitBits(network_hndls->eth_event_group, ETH_STOP_BIT, pdTRUE, pdTRUE,
+                                                pdMS_TO_TICKS(1000));
+    TEST_ASSERT((stop_bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+#ifdef CONFIG_L2TAP_TEST_USE_ETH_SUBLAYER
+    // delete sublayer, it also removes all VLANs
+    TEST_ESP_OK(esp_eth_sublayer_del(network_hndls->eth_sub));
+#else
+    if (network_hndls->netif_io_driver) {
+        TEST_ESP_OK(esp_eth_del_netif_glue(network_hndls->netif_io_driver));
+    }
+#endif // CONFIG_L2TAP_TEST_USE_ETH_SUBLAYER
     esp_eth_driver_uninstall(network_hndls->eth_handle);
     TEST_ESP_OK(network_hndls->phy->del(network_hndls->phy));
     TEST_ESP_OK(network_hndls->mac->del(network_hndls->mac));
-    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
+    if (network_hndls->eth_netif) {
+        TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
+        esp_netif_destroy(network_hndls->eth_netif);
+    }
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    esp_netif_destroy(network_hndls->eth_netif);
+    vEventGroupDelete(network_hndls->eth_event_group);
+    network_hndls->eth_event_group = NULL;
     TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
@@ -296,8 +341,6 @@ TEST_CASE("esp32 l2tap - vfs register", "[ethernet]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
     ESP_LOGI(TAG, "Verify that L2 TAP VFS can be registered only once...");
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_vfs_l2tap_intf_register(NULL));
-
-    //ethernet_init(&eth_network_hndls);
 
     eth_tap_fd = open("/dev/net/tap", O_NONBLOCK);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -408,7 +451,7 @@ TEST_CASE("esp32 l2tap - open/close", "[ethernet]")
     test_vfs_eth_network_t eth_network_hndls;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     open_close_task_ctrl_t task_control;
     task_control.sem = xSemaphoreCreateBinary();
@@ -498,7 +541,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     int loop_cnt = 0;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     eth_tap_fd = open("/dev/net/tap", O_NONBLOCK);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -527,6 +570,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
 
     // Verify the read does not block
     while (loop_cnt < 100) {
+        errno = 0;
         if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             ESP_LOG_BUFFER_HEX(TAG, in_buffer, n);
             ESP_LOGI(TAG, "recv test string: %s", ((test_vfs_eth_tap_msg_t *)in_buffer)->str);
@@ -594,8 +638,8 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     FD_SET(eth_tap_fd, &rfds);
 
     TEST_ASSERT_EQUAL(0, select(eth_tap_fd + 1, &rfds, NULL, NULL, &tv));
-    TEST_ASSERT_EQUAL(EAGAIN, errno);
 
+    errno = 0;
     n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_EQUAL(EAGAIN, errno);
     TEST_ASSERT_EQUAL(-1, n);
@@ -618,7 +662,7 @@ TEST_CASE("esp32 l2tap - blocking read", "[ethernet]")
     int loop_cnt = 0;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -678,7 +722,7 @@ TEST_CASE("esp32 l2tap - write", "[ethernet]")
     int eth_tap_fd;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -703,6 +747,7 @@ TEST_CASE("esp32 l2tap - write", "[ethernet]")
     esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_G_MAC_ADDR, &test_msg.header.dest.addr);
     // set different Ethernet type than the fd is configured to
     test_msg.header.type = htons(ETH_FILTER_LE + 10);
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, write(eth_tap_fd, &test_msg, sizeof(test_msg)));
     TEST_ASSERT_EQUAL(EBADMSG, errno);
 
@@ -797,7 +842,7 @@ TEST_CASE("esp32 l2tap - read/write multiple fd's used by multiple tasks", "[eth
     test_vfs_eth_network_t eth_network_hndls;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     task_info_t task_info[NUM_OF_TASKS];
     for (int i = 0; i < NUM_OF_TASKS; i++) {
@@ -828,7 +873,7 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
     test_vfs_eth_network_t eth_network_hndls;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     int eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -904,9 +949,11 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
     ESP_LOGI(TAG, "Verify response when trying to write/read in standard way (input len > 0) but tap configured as TS enabled");
     test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
     exp_sequence_id++;
+    errno = 0;
     n = write(eth_tap_fd, &test_ptp_msg, sizeof(test_ptp_msg));
     TEST_ASSERT_EQUAL(-1, n);
     TEST_ASSERT_EQUAL(EINVAL, errno);
+    errno = 0;
     n = read(eth_tap_fd, &in_buffer, sizeof(test_ptp_msg));
     TEST_ASSERT_EQUAL(-1, n);
     TEST_ASSERT_EQUAL(EINVAL, errno);
@@ -985,6 +1032,7 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
     ts_info->len = L2TAP_IREC_LEN(sizeof(struct timespec));
     ptp_msg_ext_buff.buff = NULL;
     ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    errno = 0;
     n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
     TEST_ASSERT_EQUAL(-1, n);
     TEST_ASSERT_EQUAL(EFAULT, errno);
@@ -993,6 +1041,7 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
     ts_info->len = L2TAP_IREC_LEN(1);
     ptp_msg_ext_buff.buff = NULL;
     ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    errno = 0;
     n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
     TEST_ASSERT_EQUAL(-1, n);
     TEST_ASSERT_EQUAL(EFAULT, errno);
@@ -1050,12 +1099,13 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
     int eth_tap_fd;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
     ESP_LOGI(TAG, "Verify that RCV_FILTER is allowed to be configured only after interface is set...");
     uint16_t eth_type_filter = ETH_FILTER_LE;
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     TEST_ASSERT_EQUAL(EACCES, errno);
     TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
@@ -1122,6 +1172,7 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
 
     ESP_LOGI(TAG, "Verify that the setting the same Ethernet type to other fd at the same interface was unsuccessful...");
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_S_RCV_FILTER, &eth_type_filter));
     TEST_ASSERT_EQUAL(EINVAL, errno);
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
@@ -1146,7 +1197,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
     int eth_tap_fd;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -1161,6 +1212,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
     // Check getter of direct Ethernet interface handle
     esp_eth_handle_t l2tap_eth_handle;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_DEVICE_DRV_HNDL, &l2tap_eth_handle));
+
     TEST_ASSERT_EQUAL(eth_network_hndls.eth_handle, l2tap_eth_handle);
 
     // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
@@ -1182,6 +1234,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
     ESP_LOGI(TAG, "Try to set non-existing Ethernet interface...");
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_NOT_DEF"));
     TEST_ASSERT_EQUAL(ENODEV, errno);
     ESP_LOGI(TAG, "Verify that previous setting is kept...");
@@ -1235,7 +1288,7 @@ TEST_CASE("esp32 l2tap - ioctl - unknown", "[ethernet]")
     int eth_tap_fd;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -1260,7 +1313,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     int eth_tap_fd;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
+    ethernet_init(&eth_network_hndls, true);
 
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
@@ -1302,6 +1355,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     int loop_cnt = 0;
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
     while (loop_cnt < 100) {
+        errno = 0;
         if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
             break;
@@ -1329,6 +1383,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     loop_cnt = 0;
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
     while (loop_cnt < 100) {
+        errno = 0;
         if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
             break;
@@ -1343,14 +1398,17 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     TEST_ASSERT_EQUAL(0, loop_cnt);
 
     // Try to use unsupported operation
+    errno = 0;
     flags = fcntl(eth_tap_fd, F_DUPFD, 0);
     TEST_ASSERT_EQUAL(-1, flags);
     TEST_ASSERT_EQUAL(ENOSYS, errno);
 
     // Try to set unsupported flag
+    errno = 0;
     flags = fcntl(eth_tap_fd, F_SETFL, O_TRUNC);
     TEST_ASSERT_EQUAL(-1, flags);
     TEST_ASSERT_EQUAL(EINVAL, errno);
+    errno = 0;
     flags = fcntl(eth_tap_fd, F_SETFL, O_TRUNC | O_NONBLOCK);
     TEST_ASSERT_EQUAL(-1, flags);
     TEST_ASSERT_EQUAL(EINVAL, errno);
@@ -1361,6 +1419,52 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_unregister(NULL));
     ethernet_deinit(&eth_network_hndls);
 }
+
+#ifdef CONFIG_L2TAP_TEST_USE_ETH_SUBLAYER
+TEST_CASE("esp32 l2tap - no netif attached", "[ethernet]")
+{
+    test_vfs_eth_network_t eth_network_hndls;
+    int eth_tap_fd;
+    int n;
+    uint16_t eth_type_filter;
+    esp_eth_handle_t l2tap_eth_handle;
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
+    // No netif attached
+    ethernet_init(&eth_network_hndls, false);
+
+    // ==========================================================
+    // Untagged frames, no VLAN child, Ethernet driver handle
+    // ==========================================================
+    ESP_LOGI(TAG, "Verify L2TAP untagged frames with no netif (Ethernet driver handle)...");
+    eth_tap_fd = open("/dev/net/tap", 0);
+    TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
+
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_DEVICE_DRV_HNDL, eth_network_hndls.eth_handle));
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_DEVICE_DRV_HNDL, &l2tap_eth_handle));
+    TEST_ASSERT_EQUAL(eth_network_hndls.eth_handle, l2tap_eth_handle);
+
+    eth_type_filter = ETH_FILTER_LE;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
+
+    TEST_ESP_OK(esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_G_MAC_ADDR, &s_test_msg.header.src.addr));
+    TEST_ESP_OK(esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_G_MAC_ADDR, &s_test_msg.header.dest.addr));
+    s_test_msg.header.type = ETH_FILTER_BE;
+
+    TEST_ASSERT_NOT_EQUAL(-1, write(eth_tap_fd, &s_test_msg, sizeof(s_test_msg)));
+    n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
+    TEST_ASSERT_GREATER_THAN(0, n);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
+    ESP_LOGI(TAG, "untagged recv test string: %s", ((test_vfs_eth_tap_msg_t *)in_buffer)->str);
+
+    TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_unregister(NULL));
+    ethernet_deinit(&eth_network_hndls);
+}
+#if CONFIG_ETH_SUBLAYER_VLAN_SUPPORT
+// TODO add vlan tests IDF-16041
+#endif // CONFIG_ETH_SUBLAYER_VLAN_SUPPORT
+#endif // CONFIG_L2TAP_TEST_USE_ETH_SUBLAYER
 
 void app_main(void)
 {

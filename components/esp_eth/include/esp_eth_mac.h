@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,7 +105,30 @@ struct esp_eth_mac_s {
     esp_err_t (*transmit)(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length);
 
     /**
+    * @brief Transmit packet with extended control from scatter-gather buffer descriptors.
+    *
+    * @param[in] mac: Ethernet MAC instance
+    * @param[in] ctrl: optional transmit control structure (chip specific), set to NULL when not required
+    * @param[in] bufs: array of buffer descriptors comprising the frame
+    * @param[in] buf_count: number of valid entries in @a bufs
+    *
+    * @note Typical intended use case is to make possible to construct a frame from multiple higher layer
+    *       buffers without a need of buffer reallocations.
+    *
+    * @return
+    *      - ESP_OK: transmit packet successfully
+    *      - ESP_ERR_INVALID_SIZE: number of actually sent bytes differs to expected
+    *      - ESP_FAIL: transmit packet failed because some other error occurred
+    *
+    * @note Returned error codes may differ for each specific MAC chip.
+    *
+    */
+    esp_err_t (*transmit_ctrl_bufs)(esp_eth_mac_t *mac, void *ctrl, const esp_eth_buf_desc_t *bufs, size_t buf_count);
+
+    /**
     * @brief Transmit packet with extended control from Ethernet MAC and constructed with special parameters at Layer2.
+    *
+    * @warning Deprecated, use `transmit_ctrl_bufs()` instead.
     *
     * @param[in] mac: Ethernet MAC instance
     * @param[in] ctrl: optional transmit control structure (chip specific), set to NULL when not required
@@ -123,7 +146,7 @@ struct esp_eth_mac_s {
     * @note Returned error codes may differ for each specific MAC chip.
     *
     */
-    esp_err_t (*transmit_ctrl_vargs)(esp_eth_mac_t *mac, void *ctrl, uint32_t argc, va_list args);
+    esp_err_t (*transmit_ctrl_vargs)(esp_eth_mac_t *mac, void *ctrl, uint32_t argc, va_list args) __attribute__((deprecated("Use transmit_ctrl_bufs instead")));
 
     /**
     * @brief Transmit packet from Ethernet MAC constructed with special parameters at Layer2.
@@ -145,7 +168,7 @@ struct esp_eth_mac_s {
     * @note Returned error codes may differ for each specific MAC chip.
     *
     */
-    esp_err_t (*transmit_vargs)(esp_eth_mac_t *mac, uint32_t argc, va_list args) __attribute__((deprecated("Use transmit_ctrl_vargs instead")));
+    esp_err_t (*transmit_vargs)(esp_eth_mac_t *mac, uint32_t argc, va_list args) __attribute__((deprecated("Use transmit_ctrl_bufs instead")));
 
     /**
     * @brief Receive packet from Ethernet MAC

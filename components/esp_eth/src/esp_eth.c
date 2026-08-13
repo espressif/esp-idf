@@ -6,6 +6,8 @@
 
 #include <sys/cdefs.h>
 #include <stdatomic.h>
+#include <string.h>
+#include <stdarg.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_eth_driver.h"
@@ -403,7 +405,30 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t argc, ...)
+static esp_err_t esp_eth_transmit_ctrl_bufs_fallback(esp_eth_mac_t *mac, const esp_eth_buf_desc_t *bufs, size_t buf_count)
+{
+    size_t total_len = 0;
+    for (size_t i = 0; i < buf_count; i++) {
+        total_len += bufs[i].len;
+    }
+
+    uint8_t *single_buff = (uint8_t *)malloc(total_len);
+    if (single_buff == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    size_t offset = 0;
+    for (size_t i = 0; i < buf_count; i++) {
+        memcpy(single_buff + offset, bufs[i].buf, bufs[i].len);
+        offset += bufs[i].len;
+    }
+
+    esp_err_t ret = mac->transmit(mac, single_buff, (uint32_t)total_len);
+    free(single_buff);
+    return ret;
+}
+
+esp_err_t esp_eth_transmit_ctrl_bufs(esp_eth_handle_t hdl, void *ctrl, const esp_eth_buf_desc_t *bufs, size_t buf_count)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
@@ -415,19 +440,43 @@ esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t
     }
 
     esp_eth_mac_t *mac = eth_driver->mac;
+
 #if CONFIG_ETH_TRANSMIT_MUTEX
     if (xSemaphoreTake(eth_driver->transmit_mutex, pdMS_TO_TICKS(ESP_ETH_TX_TIMEOUT_MS)) == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
-    va_list args = {0};
-    va_start(args, argc);
-    ret = mac->transmit_ctrl_vargs(mac, ctrl, argc, args);
+
+    // if the underlying MAC does not support transmit_ctrl_bufs (multiple buffer zero-copy transmit), use the fallback
+    if (mac->transmit_ctrl_bufs) {
+        ret = mac->transmit_ctrl_bufs(mac, ctrl, bufs, buf_count);
+    } else {
+        ESP_LOGD(TAG, "Using fallback transmit function (transmit control and multiple buffer zero-copy not supported)");
+        ret = esp_eth_transmit_ctrl_bufs_fallback(mac, bufs, buf_count);
+    }
+
 #if CONFIG_ETH_TRANSMIT_MUTEX
     xSemaphoreGive(eth_driver->transmit_mutex);
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
-    va_end(args);
 err:
+    return ret;
+}
+
+esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t argc, ...)
+{
+    esp_err_t ret = ESP_OK;
+    uint32_t buf_num = argc / 2;
+    esp_eth_buf_desc_t stack_bufs[buf_num];
+    va_list args = {0};
+
+    va_start(args, argc);
+    for (uint32_t i = 0; i < buf_num; i++) {
+        stack_bufs[i].buf = va_arg(args, uint8_t *);
+        stack_bufs[i].len = va_arg(args, uint32_t);
+    }
+    va_end(args);
+
+    ret = esp_eth_transmit_ctrl_bufs(hdl, ctrl, stack_bufs, buf_num);
     return ret;
 }
 

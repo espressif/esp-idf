@@ -577,7 +577,7 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 
         * :cpp:member:`eth_mac_ptp_config_t::roll_type`：亚秒寄存器的翻转模式（数字或二进制）。推荐使用二进制翻转模式，因为它能提供更精确的时间同步。
 
-    接收帧的时间戳可以通过注册的 :cpp:member:`esp_eth_config_t::stack_input_info` 函数的最后一个参数进行访问，传输帧的时间戳可以通过注册的 :cpp:func:`esp_eth_transmit_ctrl_vargs` 函数的 ``ctrl`` 参数进行访问。然而，对于用户获取时间戳信息，更简便的方式是利用 L2 TAP :ref:`扩展缓冲区 <esp_netif_l2tap_ext_buff>` 机制。
+    接收帧的时间戳可以通过注册的 :cpp:member:`esp_eth_config_t::stack_input_info` 函数的最后一个参数进行访问，传输帧的时间戳可以通过 :cpp:func:`esp_eth_transmit_ctrl_bufs` 函数的 ``ctrl`` 参数进行访问。然而，对于用户获取时间戳信息，更简便的方式是利用 L2 TAP :ref:`扩展缓冲区 <esp_netif_l2tap_ext_buff>` 机制。
 
     您可以通过注册回调函数和设置事件触发的目标时间，在精确的时间点调度事件。请注意，回调函数将在中断服务程序 (ISR) 上下文中调用，因此应尽量简洁。
 
@@ -682,6 +682,20 @@ ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 
 4. 初始化 IEEE 802.3 父对象并重新分配针对芯片的特定管理回调功能。
 
 实现新的自定义 PHY 驱动程序后，你可以通过 `乐鑫组件注册表 <https://components.espressif.com/>`_ 将驱动分享给其他用户。
+
+.. _ethernet-sublayer:
+
+以太网子层
+^^^^^^^^^^
+
+以太网子层是位于一个物理以太网驱动程序（``esp_eth_handle_t``）与一个或多个 ``esp_netif`` 实例之间的可选层。它负责拥有驱动程序的 RX 输入路径，将以太网事件分发给所连接的接口，并可执行路径中的帧处理，例如 802.1Q VLAN 复用与解复用。
+
+.. note::
+    以太网子层是一项**实验性**功能。需启用 :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES` 和 :menuitem:`CONFIG_ETH_SUBLAYER_SUPPORT` 后方可使用。该 API 仍在积极开发中，未来 ESP-IDF 版本中可能会在不经过弃用周期的情况下发生变更。
+
+有关架构细节、配置和使用指南，请参阅 :component_file:`esp_eth/src/sublayer/README.md`。
+
+可参考 :example:`ethernet/sublayer` 中的示例，该示例演示了如何在一个未打标签的 ``esp_netif`` 和一个带标签的 VLAN ``esp_netif`` 之间共享同一个以太网驱动程序。
 
 .. ---------------------------- API Reference ----------------------------------
 

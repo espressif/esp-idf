@@ -174,8 +174,103 @@ menu "Ethernet"
     config ETH_TRANSMIT_MUTEX
         depends on ETH_ENABLED
         bool "Enable Transmit Mutex"
+        default y if ESP_NETIF_L2_TAP
         default n
         help
             Prevents multiple accesses when Ethernet interface is used as shared resource and multiple
             functionalities might try to access it at a time.
+
+    config ETH_SUBLAYER_SUPPORT
+        bool "Support Ethernet netif sublayer (EXPERIMENTAL)"
+        depends on ETH_ENABLED && IDF_EXPERIMENTAL_FEATURES
+        default n
+        help
+            Enable the experimental Ethernet sublayer API (esp_eth_sublayer.h).
+
+            The sublayer is the coupling point between one physical Ethernet driver and one or more
+            esp_netif instances, with optional 802.1Q VLAN demux/mux, integrated switch, and L2TAP integration.
+
+            This API is experimental and may change in future ESP-IDF releases.
+
+    if ETH_SUBLAYER_SUPPORT
+
+        config ETH_SUBLAYER_IODRIVER_PROVIDER
+            bool "Expose the sublayer as an IO driver provider"
+            default y if ESP_NETIF_L2_TAP
+            default n
+            help
+                Build the sublayer's IO driver provider implementation : a generic virtual table
+                (transmit / transmit_wrap / free_rx_buffer / get_ll_driver) that resolves a
+                base, VLAN child, or integrated switch port into its transmit/free functions.
+
+                This is required for L2 TAP integration and is enabled automatically when
+                ESP_NETIF_L2_TAP is selected. It can also be enabled independently so that other upper
+                layers can obtain IO functions for a specific sublayer endpoint.
+
+        config ETH_SUBLAYER_TRANSMIT_MUTEX
+            bool "Enable Ethernet sublayer Transmit Mutex"
+            default y if ETH_SUBLAYER_IODRIVER_PROVIDER
+            default n
+            help
+                Serializes the whole Ethernet sublayer TX path (TX hook, integrated switch mux, and the
+                actual driver transmit call) per sublayer instance with a dedicated mutex.
+
+                This is needed whenever more than one task can end up transmitting through the same
+                sublayer concurrently (e.g. multiple L2TAP sockets bound to different switch/VLAN ports,
+                each potentially owned by a different task), since TX hooks and integrated switch drivers
+                may keep small amounts of mutable state (e.g. tag/padding scratch buffers) that are only
+                safe to access from one task at a time.
+
+                This option is independent of ETH_TRANSMIT_MUTEX: enabling one does not disable the other.
+                If every esp_eth_handle_t used by the application is exclusively driven through a
+                sublayer, ETH_TRANSMIT_MUTEX can usually be left disabled to avoid the extra locking, since
+                this option already serializes the complete TX path leading up to the driver transmit
+                call. However, if any Ethernet handle is also transmitted to directly (bypassing the
+                sublayer), ETH_TRANSMIT_MUTEX is still required for that handle - this option only
+                protects traffic that goes through eth_sublayer_transmit().
+
+        config ETH_SUBLAYER_VLAN_SUPPORT
+            bool "Enable 802.1Q VLAN support in the sublayer"
+            default n
+            help
+                Allow tagged 802.1Q VLAN netifs to be created on top of the sublayer, in addition
+                to the plain untagged one.
+
+                Disabling this option restricts the sublayer to a single, untagged netif per
+                Ethernet driver (or per integrated switch port), reducing code size and RAM usage.
+
+        config ETH_SUBLAYER_SWITCH_SUPPORT
+            bool "Enable integrated Ethernet switch support in the sublayer"
+            default n
+            help
+                Enable support for attaching an integrated Ethernet switch to the sublayer,
+                including switch-specific frame mux/demux and per-port IO driver handling.
+
+                This is intended for Ethernet switch drivers that require host-interface frame
+                tagging. Leave this option disabled to reduce code size and RAM usage when the
+                sublayer is used without a switch.
+
+        config ETH_SUBLAYER_TX_BUF_DESC_CAP_RANGE_MIN
+            int
+            default 3 if ETH_SUBLAYER_VLAN_SUPPORT && ETH_SUBLAYER_SWITCH_SUPPORT
+            default 2 if ETH_SUBLAYER_VLAN_SUPPORT || ETH_SUBLAYER_SWITCH_SUPPORT
+            default 1
+
+        config ETH_SUBLAYER_TX_BUF_DESC_CAPACITY
+            int "Sublayer TX buffer descriptor capacity"
+            range ETH_SUBLAYER_TX_BUF_DESC_CAP_RANGE_MIN 16
+            default ETH_SUBLAYER_TX_BUF_DESC_CAP_RANGE_MIN
+            help
+                Maximum number of esp_eth_buf_desc_t entries available to the
+                Ethernet sublayer TX path (including TX hook edits).
+
+                If TX hook needs to add more frame segments without memcpying the entire frame,
+                it can do so by adding more entries to the descriptor array.
+
+                The descriptor array is stack-allocated on hot TX paths, so larger
+                values increase stack usage but allow hooks to add more frame
+                segments without allocating a new descriptor array.
+
+    endif # ETH_SUBLAYER_SUPPORT
+
 endmenu

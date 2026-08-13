@@ -577,7 +577,7 @@ The following functions should only be invoked after the Ethernet driver has bee
 
         * :cpp:member:`eth_mac_ptp_config_t::roll_type`: Rollover mode (digital or binary) for subseconds register. The binary rollover mode is recommended as it provides a more precise time synchronization.
 
-    Time stamps for transmitted and received frames can be accessed via the last argument of the registered :cpp:member:`esp_eth_config_t::stack_input_info` function for the receive path, and via the ``ctrl`` argument of the :cpp:func:`esp_eth_transmit_ctrl_vargs` function for the transmit path. However, a more user-friendly approach to retrieve time stamp information in user space is by utilizing the L2 TAP :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism.
+    Time stamps for transmitted and received frames can be accessed via the last argument of the registered :cpp:member:`esp_eth_config_t::stack_input_info` function for the receive path, and via the ``ctrl`` argument of the :cpp:func:`esp_eth_transmit_ctrl_bufs` function for the transmit path. However, a more user-friendly approach to retrieve time stamp information in user space is by utilizing the L2 TAP :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism.
 
     You have an option to schedule event at precise point in time by registering callback function and configuring a target time when the event is supposed to be fired. Note that the callback function is then called from ISR context so it should be as brief as possible.
 
@@ -682,6 +682,20 @@ The majority of PHY management functionality required by the ESP-IDF Ethernet dr
 4. Initialize parent IEEE 802.3 object and re-assign chip-specific management call-back functions.
 
 Once you finish the new custom PHY driver implementation, consider sharing it among other users via `ESP Component Registry <https://components.espressif.com/>`_.
+
+.. _ethernet-sublayer:
+
+Ethernet Sublayer
+^^^^^^^^^^^^^^^^^
+
+The Ethernet sublayer is an optional layer between one physical Ethernet driver (``esp_eth_handle_t``) and one or more ``esp_netif`` instances. It owns the driver RX input path, distributes Ethernet events to attached interfaces, and can perform mid-path frame processing such as 802.1Q VLAN multiplexing and demultiplexing.
+
+.. note::
+    The Ethernet sublayer is an **experimental** feature. Enable :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES` and :menuitem:`CONFIG_ETH_SUBLAYER_SUPPORT` to use it. The API is under active development and may change in future ESP-IDF releases without a deprecation period.
+
+For architecture details, configuration, and usage guidance, see :component_file:`esp_eth/src/sublayer/README.md`.
+
+A working demonstration is available in :example:`ethernet/sublayer`, which shares one Ethernet driver between an untagged ``esp_netif`` and a tagged VLAN ``esp_netif``.
 
 .. ---------------------------- API Reference ----------------------------------
 

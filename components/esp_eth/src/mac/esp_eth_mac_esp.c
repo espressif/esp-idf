@@ -556,28 +556,39 @@ static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     return ESP_OK;
 }
 
-static esp_err_t emac_esp32_transmit_ctrl_vargs(esp_eth_mac_t *mac, void *ctrl, uint32_t argc, va_list args)
+static esp_err_t emac_esp32_transmit_ctrl_bufs(esp_eth_mac_t *mac, void *ctrl, const esp_eth_buf_desc_t *bufs, size_t buf_count)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    uint32_t buf_num = argc / 2;
-
-    emac_esp_dma_transmit_buff_t buff_array[buf_num];
+    emac_esp_dma_transmit_buff_t buff_array[buf_count];
 
     uint32_t exp_len = 0;
-    for (int i = 0; i < buf_num; i++) {
-        buff_array[i].buf = va_arg(args, uint8_t *);
-        buff_array[i].size = va_arg(args, uint32_t);
+    for (size_t i = 0; i < buf_count; i++) {
+        buff_array[i].buf = bufs[i].buf;
+        buff_array[i].size = bufs[i].len;
         exp_len += buff_array[i].size;
     }
 
     eth_mac_time_t *ts = (eth_mac_time_t *)ctrl;
-    uint32_t sent_len = emac_esp_dma_transmit_frame_ext(emac->emac_dma_hndl, buff_array, buf_num, ts);
+    uint32_t sent_len = emac_esp_dma_transmit_frame_ext(emac->emac_dma_hndl, buff_array, (uint32_t)buf_count, ts);
 
-    if(sent_len != exp_len) {
+    if (sent_len != exp_len) {
         ESP_LOGD(TAG, "insufficient TX buffer size");
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;
+}
+
+static esp_err_t emac_esp32_transmit_ctrl_vargs(esp_eth_mac_t *mac, void *ctrl, uint32_t argc, va_list args)
+{
+    uint32_t buf_num = argc / 2;
+    esp_eth_buf_desc_t bufs[buf_num];
+
+    for (uint32_t i = 0; i < buf_num; i++) {
+        bufs[i].buf = va_arg(args, uint8_t *);
+        bufs[i].len = va_arg(args, uint32_t);
+    }
+
+    return emac_esp32_transmit_ctrl_bufs(mac, ctrl, bufs, buf_num);
 }
 
 static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
@@ -1239,7 +1250,11 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     emac->parent.set_peer_pause_ability = emac_esp32_set_peer_pause_ability;
     emac->parent.enable_flow_ctrl = emac_esp32_enable_flow_ctrl;
     emac->parent.transmit = emac_esp32_transmit;
+    emac->parent.transmit_ctrl_bufs = emac_esp32_transmit_ctrl_bufs;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     emac->parent.transmit_ctrl_vargs = emac_esp32_transmit_ctrl_vargs;
+#pragma GCC diagnostic pop
     emac->parent.receive = emac_esp32_receive;
     emac->parent.custom_ioctl = emac_esp_custom_ioctl;
 #ifdef SOC_EMAC_IEEE1588V2_SUPPORTED

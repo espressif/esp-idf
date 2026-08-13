@@ -191,48 +191,58 @@ TEST_CASE("internal emac receive/transmit", "[esp_emac]")
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     ESP_LOGI(TAG, "-- Verify transmission using extended Tx fnc using one buffer--");
+    esp_eth_buf_desc_t tx_bufs[3] = {
+        { .buf = (uint8_t *)test_pkt },
+    };
     transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
     ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
     recv_info.expected_size = transmit_size;
     eth_mac_time_t ts;
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, &ts, 2, test_pkt, transmit_size));
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, &ts, tx_bufs, 1));
     printf("test %lu.%lu sec\n", ts.seconds, ts.nanoseconds); // TODO finish the test
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 1;
     ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
     recv_info.expected_size = transmit_size;
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 2, test_pkt, transmit_size));
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE + 1;
     ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
     recv_info.expected_size = transmit_size;
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 2, test_pkt, transmit_size));
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE;
     ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
     recv_info.expected_size = transmit_size;
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 2, test_pkt, transmit_size));
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE - 1;
     ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
     recv_info.expected_size = transmit_size;
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 2, test_pkt, transmit_size));
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE + 1;
     ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
     recv_info.expected_size = transmit_size;
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 2, test_pkt, transmit_size));
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     ESP_LOGI(TAG, "-- Verify transmission using extended Tx func with multiple buffers --");
     uint16_t transmit_size_2;
     // allocated the second buffer
     uint8_t *pkt_data_2 = (uint8_t *)eth_test_alloc(ETH_MAX_PAYLOAD_LEN);
+    tx_bufs[1].buf = pkt_data_2;
     // fill with data (reverse order to differentiate the buffers)
     int j = ETH_MAX_PAYLOAD_LEN;
     for (int i = 0; i < ETH_MAX_PAYLOAD_LEN; i++) {
@@ -247,9 +257,11 @@ TEST_CASE("internal emac receive/transmit", "[esp_emac]")
     transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
     for (int32_t i = 0; i < config_eth_dma_max_buffer_num*2; i++) {
         ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16 ", i = %" PRIi32, transmit_size + transmit_size_2, i);
-        TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 4, test_pkt, transmit_size, pkt_data_2, transmit_size_2));
+        TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
         TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
     }
 
@@ -258,8 +270,10 @@ TEST_CASE("internal emac receive/transmit", "[esp_emac]")
     transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
     ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
-    TEST_ESP_OK(esp_eth_transmit_vargs(eth_handle, 2, test_pkt, transmit_size, pkt_data_2, transmit_size_2));
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     ESP_LOGI(TAG, "Verify boundary conditions");
@@ -267,29 +281,36 @@ TEST_CASE("internal emac receive/transmit", "[esp_emac]")
     transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
     ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 4, test_pkt, transmit_size, pkt_data_2, transmit_size_2));
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 1;
     transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
     ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 4, test_pkt, transmit_size, pkt_data_2, transmit_size_2));
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE + 1;
     transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
     ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 4, test_pkt, transmit_size, pkt_data_2, transmit_size_2));
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     uint16_t transmit_size_3 = 256;
     // allocated the third buffer
     uint8_t *pkt_data_3 = (uint8_t *)eth_test_alloc(256);
+    tx_bufs[2].buf = pkt_data_3;
     // fill with data
     for (int i = 0; i < 256; i++) {
         pkt_data_3[i] = i & 0xFF;
@@ -302,8 +323,11 @@ TEST_CASE("internal emac receive/transmit", "[esp_emac]")
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
     recv_info.expected_size_3 = transmit_size_3;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    tx_bufs[2].len = transmit_size_3;
     ESP_LOGI(TAG, "transmit joint frame size (3 buffs): %" PRIu16, transmit_size + transmit_size_2 + transmit_size_3);
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 6, test_pkt, transmit_size, pkt_data_2, transmit_size_2, pkt_data_3, transmit_size_3));
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 3));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 1;
@@ -312,8 +336,11 @@ TEST_CASE("internal emac receive/transmit", "[esp_emac]")
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
     recv_info.expected_size_3 = transmit_size_3;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    tx_bufs[2].len = transmit_size_3;
     ESP_LOGI(TAG, "transmit joint frame size (3 buffs): %" PRIu16, transmit_size + transmit_size_2 + transmit_size_3);
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 6, test_pkt, transmit_size, pkt_data_2, transmit_size_2, pkt_data_3, transmit_size_3));
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 3));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE + 1;
@@ -322,8 +349,11 @@ TEST_CASE("internal emac receive/transmit", "[esp_emac]")
     recv_info.expected_size = transmit_size;
     recv_info.expected_size_2 = transmit_size_2;
     recv_info.expected_size_3 = transmit_size_3;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    tx_bufs[2].len = transmit_size_3;
     ESP_LOGI(TAG, "transmit joint frame size (3 buffs): %" PRIu16, transmit_size + transmit_size_2 + transmit_size_3);
-    TEST_ESP_OK(esp_eth_transmit_ctrl_vargs(eth_handle, NULL, 6, test_pkt, transmit_size, pkt_data_2, transmit_size_2, pkt_data_3, transmit_size_3));
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 3));
     TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
 
     // stop Ethernet driver

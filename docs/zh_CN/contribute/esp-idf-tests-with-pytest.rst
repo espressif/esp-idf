@@ -715,7 +715,7 @@ Pytest 使用技巧
 
 某些测试用例基于以太网或 Wi-Fi。然而由于网络问题，测试可能会不稳定。此时，可以将某个测试用例标记为不稳定的测试用例。
 
-以下代码示例来自 :idf_file:`pytest_esp_eth.py <components/esp_eth/test_apps/pytest_esp_eth.py>`。
+以下代码示例来自 :idf_file:`pytest_esp_eth.py <components/esp_eth/test_apps/test_app_driver/pytest_esp_eth.py>`。
 
 .. code-block:: python
 

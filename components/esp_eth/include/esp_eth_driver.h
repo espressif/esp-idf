@@ -324,6 +324,8 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
 /**
  * @brief Extended Transmit with variable number of arguments
  *
+ * @deprecated Use esp_eth_transmit_ctrl_bufs() instead.
+ *
  * @note Typical intended use case of this function is to assemble Ethernet frame from multiple input buffers
  *       at lower layer of the driver (MAC layer) to avoid unnecessary buffer reallocation and copy.
  *
@@ -337,12 +339,13 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
  *       - ESP_ERR_TIMEOUT: transmit frame buffer failed because HW was not get available in predefined period
  *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
  */
-esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t argc, ...);
+esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t argc, ...)
+__attribute__((deprecated("Use esp_eth_transmit_ctrl_bufs() instead")));
 
 /**
 * @brief Wrapper over Extended Transmit function to ensure backward compatibility.
 *
-* @note For new implementations, it is recommended to use `esp_eth_transmit_ctrl_vargs()` directly.
+* @note For new implementations, it is recommended to use `esp_eth_transmit_ctrl_bufs()` directly.
 *
 * @param[in] eth_hdl handle of Ethernet driver
 * @param[in] argc number variable arguments
@@ -354,6 +357,25 @@ esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
 */
 #define esp_eth_transmit_vargs(eth_hdl, argc, ...) esp_eth_transmit_ctrl_vargs(eth_hdl, NULL, (argc) * 2, ##__VA_ARGS__)
+
+/**
+ * @brief Extended transmit from scatter-gather buffer descriptors.
+ *
+ * @note Typical intended use case is to assemble an Ethernet frame from multiple
+ *       input buffers at the MAC layer to avoid unnecessary buffer reallocation
+ *       and copy.
+ *
+ * @param hdl       handle of Ethernet driver
+ * @param ctrl      optional transmit control structure (MAC specific), set to NULL when not required
+ * @param bufs      array of buffer descriptors comprising the frame
+ * @param buf_count number of valid entries in @a bufs
+ * @return
+ *       - ESP_OK: transmit successful
+ *       - ESP_ERR_INVALID_STATE: invalid driver state (e.i., driver is not started)
+ *       - ESP_ERR_TIMEOUT: transmit frame buffer failed because HW was not get available in predefined period
+ *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
+ */
+esp_err_t esp_eth_transmit_ctrl_bufs(esp_eth_handle_t hdl, void *ctrl, const esp_eth_buf_desc_t *bufs, size_t buf_count);
 
 /**
 * @brief Misc IO function of Ethernet driver

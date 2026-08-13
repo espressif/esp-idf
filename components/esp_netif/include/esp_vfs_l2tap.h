@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdalign.h>
+#include <stdint.h>
 #include "esp_err.h"
 
 
@@ -20,7 +21,12 @@
 extern "C" {
 #endif
 
+/*
+ * The IO driver / IO driver provider vtable types are a generic concept owned by esp_eth for example
+ * (see esp_private/esp_eth_sublayer_iodriver.h).
+ */
 typedef void *l2tap_iodriver_handle;
+typedef void *l2tap_iodriver_provider_handle;
 
 /**
  * @brief L2Tap VFS config parameters
@@ -30,6 +36,10 @@ typedef struct {
     const char* base_path; /*!< vfs base path */
 } l2tap_vfs_config_t;
 
+/**
+ * @brief L2 TAP ioctl options
+ *
+ */
 typedef enum {
     L2TAP_S_RCV_FILTER,         /*!< Set Ethertype filter, frames with this type to be passed to the file descriptor. */
     L2TAP_G_RCV_FILTER,         /*!< Get current Ethertype filter. */
@@ -39,6 +49,29 @@ typedef enum {
     L2TAP_G_DEVICE_DRV_HNDL,    /*!< Get the Network Interface IO Driver handle the file descriptor is bound to. */
     L2TAP_S_TIMESTAMP_EN,       /*!< Enables the hardware Time Stamping (TS) processing by the file descriptor. TS needs to be supported by hardware and enabled in the IO driver. */
 } l2tap_ioctl_opt_t;
+
+/**
+ * @brief Hardware timestamp for L2 TAP (seconds + nanoseconds).
+ *
+ * Used for RX metadata passed to esp_vfs_l2tap_eth_filter_frame() and for TX completion when
+ * ``L2TAP_S_TIMESTAMP_EN`` is enabled.
+ *
+ */
+typedef struct {
+    uint32_t sec;   /*!< Seconds */
+    uint32_t nsec;  /*!< Nanoseconds (typically 0..999999999 for PTP-style HW time) */
+} l2tap_timestamp_t;
+
+/**
+ * @brief Extra information about received Ethernet frame
+ *
+ * Used for RX metadata passed to esp_vfs_l2tap_eth_filter_frame().
+ *
+ */
+typedef struct {
+    void *l2_buffer;              /*!< Pointer to the starting address of the L2 buffer (optional) */
+    l2tap_timestamp_t *hw_ts;     /*!< Pointer to the hardware timestamp (optional) */
+} l2tap_eth_filter_info_t;
 
 /**
  * @brief Information Record (IREC) Header Type indicates expected type of Header Data
@@ -121,11 +154,11 @@ esp_err_t esp_vfs_l2tap_intf_unregister(const char *base_path);
  * @param driver_handle handle of driver at which the frame was received
  * @param buff received L2 frame
  * @param size input length of the L2 frame which is set to 0 when frame is filtered into L2 TAP
- * @param info extra information about received Ethernet frame
+ * @param info optional per-frame metadata from the IO driver; may be NULL.
  * @return esp_err_t
  *                  - ESP_OK is always returned
  */
-esp_err_t esp_vfs_l2tap_eth_filter_frame(l2tap_iodriver_handle driver_handle, void *buff, size_t *size, void *info);
+esp_err_t esp_vfs_l2tap_eth_filter_frame(l2tap_iodriver_handle driver_handle, void *buff, size_t *size, l2tap_eth_filter_info_t *info);
 
 /**
  * @brief Wrapper over L2 TAP filter function to ensure backward compatibility.
@@ -140,6 +173,33 @@ esp_err_t esp_vfs_l2tap_eth_filter_frame(l2tap_iodriver_handle driver_handle, vo
  */
 #define esp_vfs_l2tap_eth_filter(drv_hndl, buf, size) esp_vfs_l2tap_eth_filter_frame(drv_hndl, buf, size, NULL)
 
+/**
+ * @brief Register an iodriver provider handle with L2 TAP.
+ *
+ * The registered handle becomes visible to all open L2 TAP file descriptors.
+ * Safe to call from any task context. Must not be called from an ISR.
+ *
+ * @param provider  Opaque iodriver provider handle (e.g. from esp_eth_sublayer_new()).
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if provider is NULL
+ *      - ESP_ERR_INVALID_STATE if provider is already registered
+ *      - ESP_ERR_NO_MEM if memory allocation failed
+ */
+esp_err_t esp_vfs_l2tap_iodriver_provider_register(l2tap_iodriver_provider_handle provider);
+
+/**
+ * @brief Unregister a previously registered iodriver provider handle from L2 TAP.
+ *
+ * Safe to call from any task context. Must not be called from an ISR.
+ *
+ * @param provider  Handle to remove.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if provider is NULL
+ *      - ESP_ERR_NOT_FOUND if provider was not registered
+ */
+esp_err_t esp_vfs_l2tap_iodriver_provider_unregister(l2tap_iodriver_provider_handle provider);
 
 #ifdef __cplusplus
 }
