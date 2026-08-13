@@ -160,6 +160,10 @@ if(CONFIG_BLE_LOG_ENABLED)
         list(APPEND bt_common_srcs
             "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/prph/ble_log_prph_dummy.c"
         )
+    elseif(CONFIG_BLE_LOG_PRPH_TEST)
+        list(APPEND bt_common_srcs
+            "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/prph/ble_log_prph_test.c"
+        )
     elseif(CONFIG_BLE_LOG_PRPH_SPI_MASTER_DMA)
         list(APPEND bt_common_srcs
             "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/prph/ble_log_prph_spi_master_dma.c"
