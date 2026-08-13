@@ -198,6 +198,13 @@ if BLE_LOG_ENABLED
             help
                 Dummy transport (dump only)
 
+        config BLE_LOG_PRPH_TEST
+            bool "Test only transport"
+            help
+                Test transport that models DMA ownership and optional
+                link-rate backpressure. Selected by BLE Log test apps
+                only; not shown in menuconfig.
+
         config BLE_LOG_PRPH_SPI_MASTER_DMA
             bool "Utilize SPI master DMA driver as transport"
             depends on SOC_GPSPI_SUPPORTED

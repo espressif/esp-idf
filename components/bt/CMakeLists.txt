@@ -88,6 +88,7 @@ endif()
 set(bt_priv_requires
     nvs_flash
     soc
+    esp_hw_support
     esp_pm
     esp_phy
     esp_coex
