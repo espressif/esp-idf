@@ -250,6 +250,7 @@ menu "Performance Benchmark Example Configuration"
                 default 35 if IDF_TARGET_ESP32S2
                 default 35 if IDF_TARGET_ESP32S3
                 default 5  if IDF_TARGET_ESP32H2
+                default 36 if IDF_TARGET_ESP32P4
                 default 4  # C3 and others
 
             config EXAMPLE_PIN_MISO
@@ -258,6 +259,7 @@ menu "Performance Benchmark Example Configuration"
                 default 37 if IDF_TARGET_ESP32S2
                 default 37 if IDF_TARGET_ESP32S3
                 default 0  if IDF_TARGET_ESP32H2
+                default 47 if IDF_TARGET_ESP32P4
                 default 6  # C3 and others
 
             config EXAMPLE_PIN_CLK
@@ -266,6 +268,7 @@ menu "Performance Benchmark Example Configuration"
                 default 36 if IDF_TARGET_ESP32S2
                 default 36 if IDF_TARGET_ESP32S3
                 default 4  if IDF_TARGET_ESP32H2
+                default 53 if IDF_TARGET_ESP32P4
                 default 5  # C3 and others
 
             config EXAMPLE_PIN_CS
@@ -273,6 +276,7 @@ menu "Performance Benchmark Example Configuration"
                 default 13 if IDF_TARGET_ESP32
                 default 34 if IDF_TARGET_ESP32S2
                 default 34 if IDF_TARGET_ESP32S3
+                default 33 if IDF_TARGET_ESP32P4
                 default 1  # C3 and others
 
         endif  # EXAMPLE_USE_SDSPI
