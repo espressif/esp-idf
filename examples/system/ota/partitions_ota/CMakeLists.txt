@@ -6,7 +6,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(partitions_ota)
 
 # Copy storage.bin from test folder to build directory
-if(CONFIG_SECURE_SIGNED_DATA_PARTITION)
+if(CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION)
     set(storage_file signed_storage.bin)
 else()
     set(storage_file storage.bin)

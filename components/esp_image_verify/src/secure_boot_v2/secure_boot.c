@@ -10,13 +10,12 @@
 #include "esp_secure_boot.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
-#include "bootloader_utility.h"
+#include "bootloader_sha_flash.h"
 #include "esp_image_format.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "secure_boot_signature_priv.h"
 #include "esp_macros.h"
-
 
 /* The following API implementations are used only when called
  * from the bootloader code.
@@ -177,7 +176,7 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
     }
 
     /* Initialize all efuse block entries to invalid (max) value */
-    esp_efuse_block_t blocks[SECURE_BOOT_NUM_BLOCKS] = {[0 ... SECURE_BOOT_NUM_BLOCKS-1] = EFUSE_BLK_KEY_MAX};
+    esp_efuse_block_t blocks[SECURE_BOOT_NUM_BLOCKS] = {[0 ... SECURE_BOOT_NUM_BLOCKS - 1] = EFUSE_BLK_KEY_MAX};
     /* Check if secure boot digests are present */
     bool has_secure_boot_digest = false;
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
@@ -190,7 +189,7 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
 
     esp_image_sig_public_key_digests_t boot_key_digests = {0};
     esp_image_sig_public_key_digests_t app_key_digests = {0};
-    ESP_LOGI(TAG, "Secure boot digests %s", has_secure_boot_digest ? "already present":"absent, generating..");
+    ESP_LOGI(TAG, "Secure boot digests %s", has_secure_boot_digest ? "already present" : "absent, generating..");
 
     if (!has_secure_boot_digest) {
         /* Generate the bootloader public key digests */
@@ -245,8 +244,8 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
 #else
             size_t offset = 0;
 #endif
-             ret = esp_efuse_read_block(blocks[i], boot_key_digests.key_digests[boot_key_digests.num_digests], offset,
-                                            ESP_SECURE_BOOT_KEY_DIGEST_LEN * 8);
+            ret = esp_efuse_read_block(blocks[i], boot_key_digests.key_digests[boot_key_digests.num_digests], offset,
+                                       ESP_SECURE_BOOT_KEY_DIGEST_LEN * 8);
             if (ret) {
                 ESP_LOGE(TAG, "Error during reading %d eFuse block (err=0x%x)", blocks[i], ret);
                 return ret;
@@ -318,7 +317,7 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         }
 #if CONFIG_SECURE_ENABLE_TEE
         if (!match) {
-             continue;
+            continue;
         }
 
         for (unsigned j = 0; j < tee_key_digests.num_digests; j++) {

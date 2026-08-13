@@ -592,3 +592,12 @@
 -
     re: "error: 'WIFI_BW_HT40' undeclared \\(first use in this function\\)"
     hint: "The enum value 'WIFI_BW_HT40' has been removed. Use 'WIFI_BW40' instead."
+
+-
+    re: "undefined reference to `(esp_image_get_metadata|bootloader_sha256_flash_contents|bootloader_sha384_flash_contents)'"
+    hint: "'{}' is provided by the esp_image_verify component, which is not in the build. APIs such as esp_partition_get_sha256() need it. Add esp_image_verify (or app_update, which includes it and provides the OTA APIs) to the calling component's PRIV_REQUIRES or to the project's COMPONENTS list."
+    match_to_output: True
+
+-
+    re: "undefined reference to `esp_secure_boot_check_signature_on_update'"
+    hint: "CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT requires the startup signature check from the esp_image_verify component, which is not in the build. Add esp_image_verify (or app_update, which includes it) to the calling component's PRIV_REQUIRES or to the project's COMPONENTS list."

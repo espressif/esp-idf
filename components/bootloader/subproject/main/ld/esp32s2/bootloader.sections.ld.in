@@ -17,17 +17,18 @@
     *libesp_common.a:fpga_overrides.*(.literal.bootloader_fill_random .text.bootloader_fill_random) \
     *libbootloader_support.a:bootloader_efuse.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*) \
-    *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:bootloader_console_loader.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:bootloader_panic.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:bootloader_soc.*(.literal .text .literal.* .text.*) \
-    *libbootloader_support.a:esp_image_format.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:flash_encrypt.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:flash_partitions.*(.literal .text .literal.* .text.*) \
-    *libbootloader_support.a:secure_boot.*(.literal .text .literal.* .text.*) \
     *libbootloader_support.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*) \
-    *libbootloader_support.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*) \
+    *libesp_image_verify.a:esp_image_format.*(.literal .text .literal.* .text.*) \
+    *libesp_image_verify.a:bootloader_sha.*(.literal .text .literal.* .text.*) \
+    *libesp_image_verify.a:bootloader_sha_flash.*(.literal .text .literal.* .text.*) \
+    *libesp_image_verify.a:secure_boot.*(.literal .text .literal.* .text.*) \
+    *libesp_image_verify.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*) \
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*) \
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*) \
     *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*) \

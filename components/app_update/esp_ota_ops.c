@@ -31,10 +31,11 @@
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
 #include "esp_private/esp_flash_internal.h" //For dangerous write protection
+#include "esp_private/esp_partition_utils.h"
 #include "esp_macros.h"
-#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#if CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 #include "psa/crypto.h"
-#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
+#endif // CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 
 #define OTA_SLOT(i) (i & 0x0F)
 
@@ -491,7 +492,7 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle)
     return ESP_OK;
 }
 
-#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#if CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 #define SHA_CHUNK 256
 static esp_err_t ota_calc_partition_bin_sha(const esp_partition_t *partition, uint32_t length, uint8_t out_digest[ESP_SECURE_BOOT_DIGEST_LEN], psa_algorithm_t alg)
 {
@@ -573,7 +574,7 @@ static esp_err_t ota_verify_data_partition_signature(const esp_partition_t *part
     }
     return err;
 }
-#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
+#endif // CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 
 static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
 {
@@ -600,7 +601,7 @@ static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
             esp_partition_munmap(partition_table_map);
         }
     }
-#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#if CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
     else if (ota_ops->partition.final->type == ESP_PARTITION_TYPE_DATA &&
             ota_ops->partition.final->subtype == ESP_PARTITION_SUBTYPE_DATA_UNDEFINED) {
         esp_err_t err = ota_verify_data_partition_signature(ota_ops->partition.staging, ota_ops->wrote_size);
@@ -610,7 +611,7 @@ static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
         }
         return ESP_OK;
     }
-#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
+#endif // CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
     return ret;
 }
 
@@ -928,38 +929,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
 
 const esp_partition_t* esp_ota_get_running_partition(void)
 {
-    static const esp_partition_t *curr_partition = NULL;
-
-    /*
-     * Currently running partition is unlikely to change across reset cycle,
-     * so it can be cached here, and avoid lookup on every flash write operation.
-     */
-    if (curr_partition != NULL) {
-        return curr_partition;
-    }
-
-    /* Find the flash address of this exact function. By definition that is part
-       of the currently running firmware. Then find the enclosing partition. */
-    size_t phys_offs = spi_flash_cache2phys(esp_ota_get_running_partition);
-
-    assert (phys_offs != SPI_FLASH_CACHE2PHYS_FAIL); /* indicates cache2phys lookup is buggy */
-
-    esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_APP,
-                                                     ESP_PARTITION_SUBTYPE_ANY,
-                                                     NULL);
-    assert(it != NULL); /* has to be at least one app partition */
-
-    while (it != NULL) {
-        const esp_partition_t *p = esp_partition_get(it);
-        if (p->address <= phys_offs && p->address + p->size > phys_offs) {
-            esp_partition_iterator_release(it);
-            curr_partition = p;
-            return p;
-        }
-        it = esp_partition_next(it);
-    }
-
-    abort(); /* Partition table is invalid or corrupt */
+    return esp_partition_get_running_partition();
 }
 
 

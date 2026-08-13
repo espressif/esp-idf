@@ -1,0 +1,4 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_SECURE_SIGNED_DATA_PARTITION    CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION

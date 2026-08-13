@@ -20,7 +20,6 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "esp_image_format.h"
-#include "bootloader_sha.h"
 #include "sys/param.h"
 #include "bootloader_flash_priv.h"
 #include "esp_rom_caps.h"

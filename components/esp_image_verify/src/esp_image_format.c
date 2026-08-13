@@ -6,7 +6,6 @@
 #include <string.h>
 #include <sys/param.h>
 #include <esp_cpu.h>
-#include <bootloader_utility.h>
 #include <esp_secure_boot.h>
 #include <esp_fault.h>
 #include <esp_log.h>
@@ -147,11 +146,11 @@ void esp_image_bootloader_offset_set(const uint32_t offset)
 static bool is_bootloader(uint32_t offset)
 {
     return ((offset == ESP_PRIMARY_BOOTLOADER_OFFSET)
-         || (offset == s_bootloader_partition_offset)
+            || (offset == s_bootloader_partition_offset)
 #if SOC_RECOVERY_BOOTLOADER_SUPPORTED
-         || (efuse_hal_recovery_bootloader_enabled() ? offset == efuse_hal_get_recovery_bootloader_address() : false)
+            || (efuse_hal_recovery_bootloader_enabled() ? offset == efuse_hal_get_recovery_bootloader_address() : false)
 #endif
-    );
+           );
 }
 
 #if BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
@@ -187,7 +186,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     bootloader_sha256_handle_t sha_handle = NULL;
     bool verify_sha;
 #if (SECURE_BOOT_CHECK_SIGNATURE == 1)
-     /* used for anti-FI checks */
+    /* used for anti-FI checks */
     uint8_t image_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { [ 0 ... ESP_SECURE_BOOT_DIGEST_LEN - 1 ] = 0xEE };
     uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { [ 0 ... ESP_SECURE_BOOT_DIGEST_LEN - 1 ] = 0x01 };
 #endif
@@ -336,15 +335,15 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
 #elif CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
     if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON
 #if SOC_EFUSE_HAS_EFUSE_RST_BUG
-        || esp_rom_get_reset_reason(0) == RESET_REASON_CORE_EFUSE_CRC
+            || esp_rom_get_reset_reason(0) == RESET_REASON_CORE_EFUSE_CRC
 #endif
-        ) {
+       ) {
         mode = ESP_IMAGE_LOAD_NO_VALIDATE;
     }
 #endif // CONFIG_BOOTLOADER_SKIP_...
 #endif // CONFIG_SECURE_BOOT
 
- return image_load(mode, part, data);
+    return image_load(mode, part, data);
 #endif // BOOTLOADER_BUILD
 }
 
@@ -387,11 +386,11 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
     esp_err_t err = ESP_OK;
 
     ESP_LOGD(TAG, "image header: 0x%02x 0x%02x 0x%02x 0x%02x %08"PRIx32,
-                image->magic,
-                image->segment_count,
-                image->spi_mode,
-                image->spi_size,
-                image->entry_addr);
+             image->magic,
+             image->segment_count,
+             image->spi_mode,
+             image->spi_size,
+             image->entry_addr);
 
     if (image->magic != ESP_IMAGE_HEADER_MAGIC) {
         FAIL_LOAD("image at 0x%"PRIx32" has invalid magic byte (nothing flashed here?)", src_addr);
@@ -442,7 +441,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
         /* Check if we're clobbering the stack */
         intptr_t sp = (intptr_t)esp_cpu_get_sp();
         if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, ROM_STACK_START,
-                                           load_addr, load_end)) {
+                                            load_addr, load_end)) {
             reason = ESP_LOG_ATTR_STR("overlaps bootloader stack");
             goto invalid;
         }
@@ -485,8 +484,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
                 return verify_load_addresses(segment_index, iram_load_addr, iram_load_end, print_error, true);
             }
         }
-    }
-    else if (esp_ptr_in_iram(load_addr_p) && esp_ptr_in_iram(load_inclusive_end_p)) { /* Writing to IRAM */
+    } else if (esp_ptr_in_iram(load_addr_p) && esp_ptr_in_iram(load_inclusive_end_p)) { /* Writing to IRAM */
         /* Check for overlap of 'loader' section of IRAM */
         if (bootloader_util_regions_overlap((intptr_t)&_loader_text_start, (intptr_t)&_loader_text_end,
                                             load_addr, load_end)) {
@@ -522,12 +520,12 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
                 return verify_load_addresses(segment_index, dram_load_addr, dram_load_end, print_error, true);
             }
         }
-    /* Sections entirely in RTC memory won't overlap with a vanilla bootloader but are valid load addresses, thus skipping them from the check */
+        /* Sections entirely in RTC memory won't overlap with a vanilla bootloader but are valid load addresses, thus skipping them from the check */
     }
 #if SOC_RTC_FAST_MEM_SUPPORTED
-    else if (esp_ptr_in_rtc_iram_fast(load_addr_p) && esp_ptr_in_rtc_iram_fast(load_inclusive_end_p)){
+    else if (esp_ptr_in_rtc_iram_fast(load_addr_p) && esp_ptr_in_rtc_iram_fast(load_inclusive_end_p)) {
         return true;
-    } else if (esp_ptr_in_rtc_dram_fast(load_addr_p) && esp_ptr_in_rtc_dram_fast(load_inclusive_end_p)){
+    } else if (esp_ptr_in_rtc_dram_fast(load_addr_p) && esp_ptr_in_rtc_dram_fast(load_inclusive_end_p)) {
         return true;
     }
 #endif
@@ -550,7 +548,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
     }
     return true;
 
- invalid:
+invalid:
     if (print_error) {
         ESP_LOGE(TAG, "Segment %d 0x%08x-0x%08x invalid: %s", segment_index, load_addr, load_end, reason);
     }
@@ -653,7 +651,6 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
                  (do_load) ? ESP_LOG_ATTR_STR("load") : (is_mapping) ? ESP_LOG_ATTR_STR("map") : "");
     }
 
-
 #ifdef BOOTLOADER_BUILD
     /* Before loading segment, check it doesn't clobber bootloader RAM. */
     if (do_load && data_len > 0) {
@@ -681,7 +678,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 #if (SECURE_BOOT_CHECK_SIGNATURE == 1) && defined(BOOTLOADER_BUILD)
         /* Double check the address verification done above */
         ESP_FAULT_ASSERT(!do_load || verify_load_addresses(0, segment_data.load_addr,
-                         segment_data.load_addr + data_len_remain, false, false));
+                                                           segment_data.load_addr + data_len_remain, false, false));
 #endif
         uint32_t offset_page = ((segment_data.data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
         /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
@@ -799,11 +796,11 @@ static esp_err_t process_segment_data(const process_segment_data_t *segment_data
     // Anti-rollback check and efuse block version check should handle only Case I from above.
     if (segment_data->segment == 0 && segment_data->is_segment_start &&
             !is_bootloader(segment_data->metadata->start_addr)) {
-/* ESP32 doesn't have more memory and more efuse bits for block major version. */
+        /* ESP32 doesn't have more memory and more efuse bits for block major version. */
 #if !CONFIG_IDF_TARGET_ESP32
         const esp_app_desc_t *app_desc = (const esp_app_desc_t *)src;
         esp_err_t ret = bootloader_common_check_efuse_blk_validity(app_desc->min_efuse_blk_rev_full,
-                            app_desc->max_efuse_blk_rev_full);
+                                                                   app_desc->max_efuse_blk_rev_full);
         if (ret != ESP_OK) {
             bootloader_munmap(data);
             return ret;
@@ -1042,7 +1039,7 @@ static esp_err_t process_appended_hash_and_sig(esp_image_metadata_t *data, uint3
         sig_block_len += sizeof(ets_secure_boot_signature_t);
 #endif
     } else {
-    // Case II: Application part
+        // Case II: Application part
 #if CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
         sig_block_len = sizeof(esp_secure_boot_sig_block_t);
 #else
@@ -1147,6 +1144,44 @@ static esp_err_t verify_signature_and_adjust_image_len(esp_image_metadata_t *dat
 }
 #endif /* SECURE_BOOT_CHECK_SIGNATURE */
 
+#if CONFIG_BOOTLOADER_LOG_LEVEL >= 4
+static esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len)
+{
+    if (out_str == NULL || in_array_hex == NULL || len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    for (size_t i = 0; i < len; i++) {
+        for (int shift = 0; shift < 2; shift++) {
+            uint8_t nibble = (in_array_hex[i] >> (shift ? 0 : 4)) & 0x0F;
+            if (nibble < 10) {
+                out_str[i * 2 + shift] = '0' + nibble;
+            } else {
+                out_str[i * 2 + shift] = 'a' + nibble - 10;
+            }
+        }
+    }
+    return ESP_OK;
+}
+#endif
+
+static void bootloader_debug_buffer(const void *buffer, size_t length, const char *label)
+{
+#if CONFIG_BOOTLOADER_LOG_LEVEL >= 4
+    const uint8_t *bytes = (const uint8_t *)buffer;
+    const size_t output_len = MIN(length, 128);
+    char hexbuf[128 * 2 + 1];
+
+    bootloader_sha256_hex_to_str(hexbuf, bytes, output_len);
+
+    hexbuf[output_len * 2] = '\0';
+    ESP_LOGD(TAG, "%s: %s", label, hexbuf);
+#else
+    (void) buffer;
+    (void) length;
+    (void) label;
+#endif
+}
+
 static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest)
 {
 #if (SECURE_BOOT_CHECK_SIGNATURE == 1)
@@ -1225,28 +1260,4 @@ static esp_err_t verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_i
     }
 
     return ESP_OK;
-}
-
-int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size)
-{
-    switch (app_flash_size) {
-    case ESP_IMAGE_FLASH_SIZE_1MB:
-        return 1 * 1024 * 1024;
-    case ESP_IMAGE_FLASH_SIZE_2MB:
-        return 2 * 1024 * 1024;
-    case ESP_IMAGE_FLASH_SIZE_4MB:
-        return 4 * 1024 * 1024;
-    case ESP_IMAGE_FLASH_SIZE_8MB:
-        return 8 * 1024 * 1024;
-    case ESP_IMAGE_FLASH_SIZE_16MB:
-        return 16 * 1024 * 1024;
-    case ESP_IMAGE_FLASH_SIZE_32MB:
-        return 32 * 1024 * 1024;
-    case ESP_IMAGE_FLASH_SIZE_64MB:
-        return 64 * 1024 * 1024;
-    case ESP_IMAGE_FLASH_SIZE_128MB:
-        return 128 * 1024 * 1024;
-    default:
-        return 0;
-    }
 }

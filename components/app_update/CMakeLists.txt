@@ -6,12 +6,15 @@ endif()
 
 idf_component_register(SRCS "esp_ota_ops.c"
                     INCLUDE_DIRS "include"
-                    REQUIRES partition_table bootloader_support esp_app_format esp_bootloader_format esp_partition
-                    PRIV_REQUIRES esptool_py efuse spi_flash)
+                    REQUIRES partition_table bootloader_support
+                             esp_app_format esp_bootloader_format esp_partition
+                    PRIV_REQUIRES esptool_py efuse spi_flash esp_image_verify)
 
-if(CONFIG_SECURE_SIGNED_DATA_PARTITION)
-    idf_component_optional_requires(PRIVATE mbedtls)
-endif()
+# mbedtls is an *optional* requirement: it is linked only when another component in
+# the build pulls it in. esp_image_verify (a priv_require above) always brings
+# mbedtls into app builds; this directive makes it available to esp_ota_ops at
+# link time without app_update forcing mbedtls in by itself.
+idf_component_optional_requires(PRIVATE mbedtls)
 
 idf_define_esp_err_codes(HEADERS include/esp_ota_ops.h)
 

@@ -235,7 +235,7 @@ Kconfig 中的 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用
 签名数据分区的更新
 ------------------
 
-数据分区镜像可以使用与应用镜像相同的 Secure Boot v2 签名机制进行验证。启用 :menuitem:`CONFIG_SECURE_SIGNED_DATA_PARTITION`，以便在 OTA 更新期间验证子类型为 ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` 的数据分区。
+数据分区镜像可以使用与应用镜像相同的 Secure Boot v2 签名机制进行验证。启用 :menuitem:`CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION`，以便在 OTA 更新期间验证子类型为 ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` 的数据分区。
 
 使用以下命令对数据分区镜像进行签名：
 

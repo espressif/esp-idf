@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,8 +153,13 @@ void bootloader_configure_spi_pins(int drv);
  *          - ESP_ERR_NO_MEM: Cannot allocate memory for sha256 operation.
  *          - ESP_ERR_IMAGE_INVALID: App partition doesn't contain a valid app image.
  *          - ESP_FAIL: An allocation error occurred.
+ *
+ * @deprecated Use esp_partition_get_sha256() from the esp_partition component instead.
+ *             Requires the esp_image_verify component in the build; otherwise
+ *             calls fail at link time with an undefined reference.
  */
-esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
+esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256)
+__attribute__((deprecated("Use esp_partition_get_sha256() from the esp_partition component instead")));
 
 /**
  * @brief Returns the number of active otadata.

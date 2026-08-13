@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,15 +14,15 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "esp_flash_partitions.h"
+#include "esp_image_format.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
+#include "bootloader_sha_flash.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
 #include "hal/gpio_ll.h"
-#include "esp_image_format.h"
-#include "bootloader_sha.h"
 #include "sys/param.h"
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
@@ -153,7 +153,8 @@ esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t s
             .size = size,
         };
         esp_image_metadata_t data;
-        if (esp_image_get_metadata(&partition_pos, &data) != ESP_OK) {
+        esp_err_t err = esp_image_get_metadata(&partition_pos, &data);
+        if (err != ESP_OK) {
             return ESP_ERR_IMAGE_INVALID;
         }
         if (data.image.hash_appended) {
@@ -186,4 +187,32 @@ void bootloader_common_vddsdio_configure(void)
         esp_rom_delay_us(10); // wait for regulator to become stable
     }
 #endif // CONFIG_BOOTLOADER_VDDSDIO_BOOST
+}
+
+// Lives here rather than in esp_image_format.c (esp_image_verify) because
+// esp_system calls it during early init and must be able to resolve it via
+// its existing bootloader_support dep, without dragging esp_image_verify
+// (and mbedTLS) into the build graph for every app.
+int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size)
+{
+    switch (app_flash_size) {
+    case ESP_IMAGE_FLASH_SIZE_1MB:
+        return 1 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_2MB:
+        return 2 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_4MB:
+        return 4 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_8MB:
+        return 8 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_16MB:
+        return 16 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        return 32 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        return 64 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        return 128 * 1024 * 1024;
+    default:
+        return 0;
+    }
 }
