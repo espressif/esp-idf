@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdatomic.h>
 #include "sys/queue.h"
 #include "esp_private/dma2d.h"
@@ -156,7 +157,9 @@ typedef struct {
 
 typedef struct {
     uint8_t *header_buf;                           // Pointer to the header of jpeg header buffer
+    uint32_t header_buf_size;                      // Capacity of header_buf in bytes
     uint32_t header_len;                           // Record for header length
+    bool header_buf_overflow;                      // Set when emit exceeds header_buf_size
     uint32_t m_quantization_tables[2][JPEG_QUANTIZATION_TABLE_LEN];         // quantization tables
     uint8_t num_components;                        // number of components
     uint32_t origin_h;                             // horizontal of original picture
