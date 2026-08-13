@@ -205,7 +205,6 @@ esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3);
  * @param phy_802_3 IEEE 802.3 PHY object infostructure
  * @return
  *      - ESP_OK: reset Ethernet PHY successfully
- *      - ESP_ERR_NOT_ALLOWED: reset GPIO not defined
  */
 esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3);
 
