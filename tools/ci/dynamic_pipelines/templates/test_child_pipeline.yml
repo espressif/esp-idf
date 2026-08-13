@@ -35,6 +35,11 @@ generate_presigned_json:
   script:
     - idf-ci gitlab generate-presigned-json --output presigned.json
 
+include:
+  - project: "ci/actions/common"
+    file:
+      - "templates/idf/app-size-metrics-full-report.yml"
+
 generate_pytest_child_pipeline:
   # finally, we can get some use out of the default behavior that downloads all artifacts from the previous stage
   stage: assign_test

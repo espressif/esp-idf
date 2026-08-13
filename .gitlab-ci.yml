@@ -2,26 +2,15 @@
 
 include:
   - project: "ci/actions/common"
-    ref: "v2"
     file:
       - "templates/stable/default-workflow.yml"
-      - "templates/idf/pre_check.yml"
+      - "templates/idf/v2/pre_check.yml"
+      - "templates/idf/pre-commit.yml"
       - "templates/idf/build.yml"
       - "templates/idf/deploy-github.yml"
       - "templates/idf/deploy-docs.yml"
       - "templates/idf/integration-test.yml"
-      - "templates/idf/pre_check.yml"
-  - project: "ci/actions/common"
-    ref: "v2"
-    file: "templates/idf/sync-files.yml"
-    inputs:
-      job_name: "sync-pre-commit-config"
-      remote_repo_url: "https://__token__:${CI_SYNC_REPO_TOKEN}@${CI_SERVER_FQDN}/ci/images.git"
-      ref_name: "ci/sync_idf_pre_commit_config"
-      file_mappings:
-        - ".pre-commit-config.yaml:pre-commit/idf/.pre-commit-config.v6.1.yaml"
-      changes:
-        - ".pre-commit-config.yaml"
+      - "templates/idf/sync-files.yml"
   - project: "ci/actions/common"
     file: "templates/idf/build-docs.yml"
     inputs:
@@ -41,7 +30,6 @@ include:
   - ".gitlab/ci/upload_cache.yml"
   - ".gitlab/ci/pre_check.yml"
   - ".gitlab/ci/static-code-analysis.yml"
-  - ".gitlab/ci/pre_commit.yml"
   - ".gitlab/ci/build.yml"
   - ".gitlab/ci/host-test.yml"
   - ".gitlab/ci/test-win.yml"
