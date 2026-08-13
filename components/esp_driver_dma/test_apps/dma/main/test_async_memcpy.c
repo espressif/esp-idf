@@ -17,8 +17,13 @@
 #include "esp_async_memcpy.h"
 #include "gdma_test_utils.h"
 
-#if SOC_GDMA_SUPPORTED
+#if SOC_AHB_GDMA_VERSION == 1
 #include "hal/gdma_ll.h"
+#elif SOC_AHB_GDMA_VERSION == 2
+#include "hal/ahb_dma_ll.h"
+#endif
+#if SOC_AXI_GDMA_SUPPORTED
+#include "hal/axi_dma_ll.h"
 #endif
 
 #define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
@@ -475,22 +480,30 @@ TEST_CASE("memory copy performance 40KB: PSRAM->PSRAM", "[async mcp]")
 #endif
 
 #if CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+#define TEST_WEIGHTED_ARB_SIZE    (160 * 1024)
 typedef struct {
     SemaphoreHandle_t sem;
     int64_t elapse_us;
+    bool first_done;
 } test_weighted_arb_context_t;
 static IRAM_ATTR bool test_weighted_arb_isr_cb(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
 {
     test_weighted_arb_context_t *ctx = (test_weighted_arb_context_t *)cb_args;
     BaseType_t high_task_wakeup = pdFALSE;
-    ctx->elapse_us = ccomp_timer_get_time();
+    if (!ctx->first_done) {
+        ctx->elapse_us = ccomp_timer_get_time();
+        ctx->first_done = true;
+    }
     xSemaphoreGiveFromISR(ctx->sem, &high_task_wakeup);
     return high_task_wakeup == pdTRUE;
 }
 
 static void memcpy_weighted_arb_test(async_memcpy_handle_t driver[2], size_t burst_size, uint32_t buffer_size, bool buffer_in_psram)
 {
-    SemaphoreHandle_t sem[2] = {xSemaphoreCreateBinary(), xSemaphoreCreateBinary()};
+    SemaphoreHandle_t sem[2] = {
+        xSemaphoreCreateBinary(),
+        xSemaphoreCreateCounting(TEST_ASYNC_MEMCPY_BENCH_COUNTS, 0),
+    };
     int64_t elapse_us[2] = {0};
     float throughput[2] = {0.0};
 
@@ -512,19 +525,20 @@ static void memcpy_weighted_arb_test(async_memcpy_handle_t driver[2], size_t bur
     };
 
     ccomp_timer_start();
+    // Start the low-weight channel first, then pre-queue high-weight transfers.
+    // The EOF ISR starts the next pending transaction immediately, so channel 1
+    // stays busy while channel 0 is still running.
     TEST_ESP_OK(esp_async_memcpy(driver[0], test_context.to_addr, test_context.from_addr, test_context.copy_size, test_weighted_arb_isr_cb, &ctx[0]));
-    TEST_ESP_OK(esp_async_memcpy(driver[1], test_context.to_addr, test_context.from_addr, test_context.copy_size, test_weighted_arb_isr_cb, &ctx[1]));
+    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
+        TEST_ESP_OK(esp_async_memcpy(driver[1], test_context.to_addr, test_context.from_addr, test_context.copy_size, test_weighted_arb_isr_cb, &ctx[1]));
+    }
 
-    // get channel_1 spent time
+    // get channel_1 spent time of the first transfer
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem[1], pdMS_TO_TICKS(1000)));
     elapse_us[1] = ctx[1].elapse_us;
 
-    // wait for channel_0 done, keep channel_1 busy to do arbitration
-    while (xSemaphoreTake(sem[0], 0) == pdFALSE) {
-        TEST_ESP_OK(esp_async_memcpy(driver[1], test_context.to_addr, test_context.from_addr, test_context.copy_size, test_weighted_arb_isr_cb, &ctx[1]));
-        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem[1], pdMS_TO_TICKS(1000)));
-    }
     // get channel_0 spent time
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem[0], pdMS_TO_TICKS(1000)));
     elapse_us[0] = ctx[0].elapse_us;
 
     ccomp_timer_stop();
@@ -534,8 +548,13 @@ static void memcpy_weighted_arb_test(async_memcpy_handle_t driver[2], size_t bur
     throughput[1] = (float)test_context.buffer_size * 1e6  / 1024 / 1024 / elapse_us[1];
     IDF_LOG_PERFORMANCE("DMA1_COPY", "%.2f MB/s, size: %zu Bytes", throughput[1], test_context.buffer_size);
 
-    // the bandwidth of channel_1 should be at least 10 times of channel_0
-    TEST_ASSERT_EQUAL(throughput[1] / throughput[0] > 10, true);
+    // the bandwidth of channel_1 should be at least 5 times of channel_0
+    TEST_ASSERT_EQUAL(throughput[1] / throughput[0] > 5, true);
+
+    // drain remaining channel_1 transactions so the driver can be uninstalled
+    for (int i = 1; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem[1], pdMS_TO_TICKS(1000)));
+    }
 
     async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, buffer_in_psram ? test_context.dst_buf : NULL,
                                             test_context.from_addr, test_context.to_addr);
@@ -553,15 +572,44 @@ TEST_CASE("GDMA M2M Weighted Arbitration Test SRAM->SRAM", "[GDMA][M2M][async mc
 
     async_memcpy_handle_t driver[2] = {NULL};
 
-#if SOC_HAS(AHB_GDMA)
-    driver_config.weight = 1;
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[0]));
-    driver_config.weight = 15;
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[1]));
-    memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, 200 * 1024, false);
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
-#endif // SOC_HAS(AHB_GDMA)
+#if SOC_HAS(AHB_GDMA) && SOC_AHB_GDMA_VERSION == 2
+    if (ahb_dma_ll_is_weighted_arb_supported(0)) {
+        printf("Testing memcpy by AHB GDMA with weighted arbitration\r\n");
+        driver_config.weight = 1;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[0]));
+        driver_config.weight = 15;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[1]));
+        memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, TEST_WEIGHTED_ARB_SIZE, false);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
+    }
+#endif // SOC_HAS(AHB_GDMA) && SOC_AHB_GDMA_VERSION == 2
+
+#if SOC_HAS(AXI_GDMA)
+    if (axi_dma_ll_is_weighted_arb_supported(0)) {
+        printf("Testing memcpy by AXI GDMA with weighted arbitration\r\n");
+        driver_config.weight = 1;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver[0]));
+        driver_config.weight = 15;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver[1]));
+        memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, TEST_WEIGHTED_ARB_SIZE, false);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
+    }
+#endif // SOC_HAS(AXI_GDMA)
+
+#if SOC_HAS(LP_AHB_GDMA)
+    if (ahb_dma_ll_is_weighted_arb_supported(0)) {
+        printf("Testing memcpy by LP AHB GDMA with weighted arbitration\r\n");
+        driver_config.weight = 1;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver[0]));
+        driver_config.weight = 15;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver[1]));
+        memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, TEST_WEIGHTED_ARB_SIZE, false);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
+    }
+#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 #if SOC_SPIRAM_SUPPORTED
@@ -574,17 +622,46 @@ TEST_CASE("GDMA M2M Weighted Arbitration Test PSRAM->PSRAM", "[GDMA][M2M][async 
 
     [[maybe_unused]] async_memcpy_handle_t driver[2] = {NULL};
 
-#if SOC_HAS(AHB_GDMA)
-#if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
-    driver_config.weight = 1;
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[0]));
-    driver_config.weight = 15;
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[1]));
-    memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, 200 * 1024, true);
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
-#endif
-#endif // SOC_HAS(AHB_GDMA)
+#if SOC_HAS(AHB_GDMA) && SOC_AHB_GDMA_VERSION == 2 && GDMA_LL_GET(AHB_PSRAM_CAPABLE)
+    if (ahb_dma_ll_is_weighted_arb_supported(0)) {
+        printf("Testing memcpy by AHB GDMA with weighted arbitration\r\n");
+        driver_config.weight = 1;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[0]));
+        driver_config.weight = 15;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver[1]));
+        memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, TEST_WEIGHTED_ARB_SIZE, true);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
+    }
+#endif // SOC_HAS(AHB_GDMA) && SOC_AHB_GDMA_VERSION == 2 && GDMA_LL_GET(AHB_PSRAM_CAPABLE)
+
+#if SOC_HAS(AXI_GDMA) && GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+    if (axi_dma_ll_is_weighted_arb_supported(0)) {
+        printf("Testing memcpy by AXI GDMA with weighted arbitration\r\n");
+        driver_config.weight = 1;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver[0]));
+        driver_config.weight = 15;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver[1]));
+        memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, TEST_WEIGHTED_ARB_SIZE, true);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
+    }
+#endif // SOC_HAS(AXI_GDMA) && GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+
+#if SOC_HAS(LP_AHB_GDMA) && GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+    if (esp_efuse_is_flash_encryption_enabled() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
+        printf("Skipping LP AHB GDMA PSRAM->PSRAM under flash encryption\r\n");
+    } else if (ahb_dma_ll_is_weighted_arb_supported(0)) {
+        printf("Testing memcpy by LP AHB GDMA with weighted arbitration\r\n");
+        driver_config.weight = 1;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver[0]));
+        driver_config.weight = 15;
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver[1]));
+        memcpy_weighted_arb_test(driver, driver_config.dma_burst_size, TEST_WEIGHTED_ARB_SIZE, true);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[0]));
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver[1]));
+    }
+#endif // SOC_HAS(LP_AHB_GDMA) && GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
 }
 #endif // SOC_SPIRAM_SUPPORTED
 

@@ -34,6 +34,9 @@ extern "C" {
 // any "dummy" peripheral ID can be used for M2M mode
 #define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFE75)
 
+// Default value of weighted arbitration timeout, in AHB bus clock cycles
+#define AHB_DMA_LL_DEFAULT_WEIGHTED_ARBITRATION_TIMEOUT (2000)
+
 #define GDMA_LL_EVENT_TX_FIFO_UDF   (1<<5)
 #define GDMA_LL_EVENT_TX_FIFO_OVF   (1<<4)
 #define GDMA_LL_EVENT_RX_FIFO_UDF   (1<<6)
@@ -153,6 +156,15 @@ static inline void ahb_dma_ll_set_weighted_arb_timeout(ahb_dma_dev_t *dev, uint3
 {
     HAL_ASSERT(timeout != 0 && timeout <= 65535);
     dev->arb_timeout.arb_timeout_num = timeout;
+}
+
+/**
+ * @brief Check if the weighted arbitration is supported
+ */
+static inline bool ahb_dma_ll_is_weighted_arb_supported(ahb_dma_dev_t *dev)
+{
+    (void) dev;
+    return true;
 }
 
 ///////////////////////////////////// RX /////////////////////////////////////////

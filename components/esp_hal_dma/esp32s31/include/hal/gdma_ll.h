@@ -19,6 +19,7 @@
 #define GDMA_LL_PAIRS_PER_INST      MAX(MAX(GDMA_LL_AHB_PAIRS_PER_GROUP, GDMA_LL_AXI_PAIRS_PER_GROUP), GDMA_LL_LP_AHB_PAIRS_PER_GROUP)
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
+#define GDMA_LL_CHANNEL_MAX_WEIGHT   15 // supported weight levels: [0,15]
 
 // the following event bits are only supported by axi-dma
 #define GDMA_LL_EVENT_TX_LINK_SWITCH (1<<10)

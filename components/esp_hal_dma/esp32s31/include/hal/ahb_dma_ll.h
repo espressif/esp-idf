@@ -38,6 +38,10 @@ extern "C" {
 #define LP_AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFFC)
 #define AHB_DMA_LL_RX_EVENT_MASK    (0x7F)
 #define AHB_DMA_LL_TX_EVENT_MASK    (0x3F)
+
+// Default value of weighted arbitration timeout, in AHB bus clock cycles
+#define AHB_DMA_LL_DEFAULT_WEIGHTED_ARBITRATION_TIMEOUT (2000)
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 
 /**
@@ -611,6 +615,85 @@ static inline void ahb_dma_ll_tx_disconnect_all(ahb_dma_dev_t *dev, uint32_t cha
 static inline void ahb_dma_ll_tx_enable_etm_task(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->channel[channel].out.out_conf0.out_etm_en_chn = enable;
+}
+
+/**
+ * @brief Check if the weighted arbitration is supported
+ */
+static inline bool ahb_dma_ll_is_weighted_arb_supported(ahb_dma_dev_t *dev)
+{
+    (void) dev;
+    return true;
+}
+
+/**
+ * @brief Enable the weighted arbitration for AHB-DMA
+ *
+ * @param dev DMA register base address
+ * @param enable True to enable, false to disable
+ */
+static inline void ahb_dma_ll_enable_weighted_arb(ahb_dma_dev_t *dev, bool enable)
+{
+    dev->weight_en.weight_en = enable;
+}
+
+/**
+ * @brief Set the weighted arbitration timeout for AHB-DMA
+ *
+ * @param timeout AHB bus clock cycle
+ */
+static inline void ahb_dma_ll_set_weighted_arb_timeout(ahb_dma_dev_t *dev, uint32_t timeout)
+{
+    HAL_ASSERT(timeout != 0 && timeout <= 65535);
+    dev->arb_timeout.arb_timeout = timeout;
+}
+
+/**
+ * @brief Enable the weighted arbitration optimize for DMA RX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param enable True to enable, false to disable
+ */
+static inline void ahb_dma_ll_rx_enable_weighted_arb_opt(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->channel[channel].in.rx_arb_weigh_opt.rx_arb_weigh_opt_dir_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for DMA RX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param weight Weight value
+ */
+static inline void ahb_dma_ll_rx_set_weight(ahb_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->channel[channel].in.rx_ch_arb_weigh.rx_ch_arb_weigh_chn = weight;
+}
+
+/**
+ * @brief Enable the weighted arbitration optimize for DMA TX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param enable True to enable, false to disable
+ */
+static inline void ahb_dma_ll_tx_enable_weighted_arb_opt(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->channel[channel].out.tx_arb_weigh_opt.tx_arb_weigh_opt_dir_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for DMA TX channel
+ *
+ * @param dev DMA register base address
+ * @param channel Channel ID
+ * @param weight Weight value
+ */
+static inline void ahb_dma_ll_tx_set_weight(ahb_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->channel[channel].out.tx_ch_arb_weigh.tx_ch_arb_weigh_chn = weight;
 }
 
 #ifdef __cplusplus

@@ -35,6 +35,9 @@ extern "C" {
 #define AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH 1
 #define AXI_DMA_LL_TX_EVENT_MASK    (0x43F)
 
+// Default value of weighted arbitration timeout, in AXI bus clock cycles
+#define AXI_DMA_LL_DEFAULT_WEIGHTED_ARBITRATION_TIMEOUT (2000)
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
  * @brief Force enable register clock
@@ -596,6 +599,68 @@ __attribute__((always_inline))
 static inline bool axi_dma_ll_tx_is_reset_avail(axi_dma_dev_t *dev, uint32_t channel)
 {
     return dev->out_reset_avail_chn[channel].out_reset_avail_chn;
+}
+
+/**
+ * @brief Check if the weighted arbitration is supported
+ */
+static inline bool axi_dma_ll_is_weighted_arb_supported(axi_dma_dev_t *dev)
+{
+    (void) dev;
+    return true;
+}
+
+/**
+ * @brief Enable the weighted arbitration for AXI-DMA
+ */
+static inline void axi_dma_ll_enable_weighted_arb(axi_dma_dev_t *dev, bool enable)
+{
+    dev->weight_en.weight_en_tx = enable;
+    dev->weight_en.weight_en_rx = enable;
+}
+
+/**
+ * @brief Set the weighted arbitration timeout for AXI-DMA
+ *
+ * @param timeout AXI bus clock cycle
+ */
+static inline void axi_dma_ll_set_weighted_arb_timeout(axi_dma_dev_t *dev, uint32_t timeout)
+{
+    HAL_ASSERT(timeout != 0 && timeout <= 65535);
+    dev->arb_timeout.arb_timeout_tx = timeout;
+    dev->arb_timeout.arb_timeout_rx = timeout;
+}
+
+/**
+ * @brief Enable the weighted arbitration optimize for AXI-DMA RX channel
+ */
+static inline void axi_dma_ll_rx_enable_weighted_arb_opt(axi_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->in[channel].conf.in_pri.rx_arb_weigh_opt_dir_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for AXI-DMA RX channel
+ */
+static inline void axi_dma_ll_rx_set_weight(axi_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->in[channel].conf.in_pri.rx_ch_arb_weigh_chn = weight;
+}
+
+/**
+ * @brief Enable the weighted arbitration optimize for AXI-DMA TX channel
+ */
+static inline void axi_dma_ll_tx_enable_weighted_arb_opt(axi_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->out[channel].conf.out_pri.tx_arb_weigh_opt_dir_chn = !enable;
+}
+
+/**
+ * @brief Set the weight for AXI-DMA TX channel
+ */
+static inline void axi_dma_ll_tx_set_weight(axi_dma_dev_t *dev, uint32_t channel, uint32_t weight)
+{
+    dev->out[channel].conf.out_pri.tx_ch_arb_weigh_chn = weight;
 }
 
 #ifdef __cplusplus

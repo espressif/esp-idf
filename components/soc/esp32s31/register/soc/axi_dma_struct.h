@@ -567,7 +567,7 @@ typedef union {
          */
         uint32_t rx_ch_arb_weigh_chn: 4;
         /** rx_arb_weigh_opt_dir_chn : R/W; bitpos: [8]; default: 0;
-         *  0: mean not optimization weight function ,1: mean optimization
+         *  0: enable weight optimization, 1: disable weight optimization
          */
         uint32_t rx_arb_weigh_opt_dir_chn: 1;
         uint32_t reserved_9: 23;
@@ -1142,7 +1142,7 @@ typedef union {
          */
         uint32_t tx_ch_arb_weigh_chn: 4;
         /** tx_arb_weigh_opt_dir_chn : R/W; bitpos: [8]; default: 0;
-         *  0: mean not optimization weight function ,1: mean optimization
+         *  0: enable weight optimization, 1: disable weight optimization
          */
         uint32_t tx_arb_weigh_opt_dir_chn: 1;
         uint32_t reserved_9: 23;
