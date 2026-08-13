@@ -19,8 +19,7 @@
 #include "esp_clk_tree.h"
 #include "driver/ppa.h"
 #include "esp_efuse.h"
-
-#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+#include "esp_macros.h"
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define TEST_LCD_CALLBACK_ATTR IRAM_ATTR
@@ -454,18 +453,18 @@ TEST_CASE("lcd_rgb_panel_dma2d_hook", "[lcd]")
     size_t src_x_start = 50;
     size_t src_y_start = 50;
     if (esp_efuse_is_flash_encryption_enabled()) {
-        test_block_size = ALIGN_DOWN(test_block_size, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        test_block_size = ESP_ALIGN_DOWN(test_block_size, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
         start_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
-        src_x_start = ALIGN_DOWN(src_x_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
-        src_y_start = ALIGN_DOWN(src_y_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        src_x_start = ESP_ALIGN_DOWN(src_x_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        src_y_start = ESP_ALIGN_DOWN(src_y_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
     }
 
     printf("Enable DMA2D draw bitmap hook\r\n");
     TEST_ESP_OK(esp_lcd_rgb_panel_enable_dma2d(panel_handle));
     printf("Draw bitmap 2D by DMA2D\r\n");
     for (int i = 0; i < 100; i++) {
-        int x_start = ALIGN_DOWN(rand() % (TEST_LCD_H_RES - test_block_size), start_alignment);
-        int y_start = ALIGN_DOWN(rand() % (TEST_LCD_V_RES - test_block_size), start_alignment);
+        int x_start = ESP_ALIGN_DOWN(rand() % (TEST_LCD_H_RES - test_block_size), start_alignment);
+        int y_start = ESP_ALIGN_DOWN(rand() % (TEST_LCD_V_RES - test_block_size), start_alignment);
         uint8_t color_byte = rand() & 0xFF;
         memset(src_img, color_byte, src_img_size / 2);
         color_byte = rand() & 0xFF;
