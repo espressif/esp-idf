@@ -1268,12 +1268,17 @@ function(__preprocess_linker_script script_in script_out flags component_include
         # ld.common file, so add the parent directory to the C preprocessor
         # search path. Works for that layout; a component with a different
         # layout, or one that must drop -C, should pass FLAGS instead.
+        # esp_system/ld is added as well so that scripts of other components
+        # can include the shared fragments living there (e.g.
+        # ld.elf.internal.sections).
         set(base_flags "-C")
         get_filename_component(script_parent_dir "${script_in}" DIRECTORY)
         get_filename_component(script_parent_name "${script_parent_dir}" NAME)
         if(script_parent_name STREQUAL idf_target)
             get_filename_component(dir_to_include "${script_parent_dir}" DIRECTORY)
-            string(APPEND base_flags " -I\"${dir_to_include}\"")
+            idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
+            string(APPEND base_flags
+                   " -I\"${dir_to_include}\" -I\"${esp_system_dir}/ld\"")
         endif()
     else()
         # Explicit FLAGS replace the whole default set, including -C. config_dir

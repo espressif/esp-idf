@@ -225,7 +225,10 @@ function(preprocess_linker_file cmake_target script_in output_var preserve_suffi
     if(script_parent_name STREQUAL idf_target)
         # Add "../.." directory to include path (e.g. for esp_system component)
         get_filename_component(dir_to_include "${script_parent_dir}" DIRECTORY)
-        set(extra_cflags "-I\"${dir_to_include}\"")
+        # Add esp_system/ld directory to include path for the shared linker
+        # script fragments (e.g. ld.elf.internal.sections)
+        idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
+        set(extra_cflags "-I\"${dir_to_include}\" -I\"${esp_system_dir}/ld\"")
     endif()
 
     # Keep comments (-C): historical behavior for cmakev1 linker scripts. It was

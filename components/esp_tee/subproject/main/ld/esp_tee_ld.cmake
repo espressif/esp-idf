@@ -18,11 +18,13 @@ target_linker_script(${COMPONENT_LIB} INTERFACE "${heap_dir}/port/${target}/ld/$
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/ld")
 
+idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
+
 # Preprocess esp_tee.ld.in linker script to include configuration, becomes esp_tee.ld
 add_custom_command(
     OUTPUT ${ld_output}
     COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o ${ld_output} -I ${config_dir}
-            -I "${CMAKE_CURRENT_LIST_DIR}" ${ld_input}
+            -I "${CMAKE_CURRENT_LIST_DIR}" -I "${esp_system_dir}/ld" ${ld_input}
     MAIN_DEPENDENCY ${ld_input}
     DEPENDS ${sdkconfig_header}
     COMMENT "Generating esp_tee.ld linker script..."

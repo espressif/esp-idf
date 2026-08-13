@@ -100,6 +100,8 @@ SECTIONS
     KEEP (*(EXCLUDE_FILE (*crtend.*) .ctors))
     KEEP (*(SORT(.ctors.*)))
     KEEP (*(.ctors))
+    KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*)))
+    KEEP (*(.init_array))
     __init_array_end = ABSOLUTE(.);
     KEEP (*crtbegin.*(.dtors))
     KEEP (*(EXCLUDE_FILE (*crtend.*) .dtors))
@@ -152,6 +154,8 @@ SECTIONS
    * And so forth...
    */
   /DISCARD/ : { *(.rela.*) }
+
+#include "ld.elf.internal.sections"
 
   /**
    * This section is not included in the binary image; it is only present in the ELF file.

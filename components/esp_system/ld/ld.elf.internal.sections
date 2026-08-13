@@ -1,0 +1,8 @@
+  /**
+   * Linker-generated ELF sections. Must be explicitly placed in linker scripts
+   * when using ld.lld with --orphan-handling=warn/error. GNU ld special-cases
+   * these sections; ld.lld does not.
+   */
+  .symtab             0 : { *(.symtab) }
+  .strtab             0 : { *(.strtab) }
+  .shstrtab           0 : { *(.shstrtab) }
