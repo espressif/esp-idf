@@ -257,6 +257,7 @@ _Static_assert(BLE_LOG_TRANS_BUF_CNT <= 255,
 bool ble_log_lbm_init(void);
 void ble_log_lbm_deinit(void);
 void ble_log_lbm_enable(bool enable);
+void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
 bool ble_log_write_internal(const uint8_t *addr, size_t len);
 void ble_log_write_final_stat(void);
 void ble_log_write_enh_stat(void);

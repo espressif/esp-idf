@@ -204,6 +204,12 @@ if BLE_LOG_ENABLED
             help
                 Utilize SPI master DMA driver as transport
 
+        config BLE_LOG_PRPH_SPI_MASTER_HD
+            bool "Utilize SPI master HD DMA protocol as transport"
+            depends on SOC_GPSPI_SUPPORTED && SOC_SPI_SUPPORT_SLAVE_HD_VER2
+            help
+                Utilize SPI master HD DMA protocol as transport
+
         config BLE_LOG_PRPH_UART_DMA
             bool "Utilize UART DMA driver as transport"
             depends on SOC_UHCI_SUPPORTED
@@ -211,24 +217,27 @@ if BLE_LOG_ENABLED
                 Utilize UART DMA driver as transport
     endchoice
 
-    if BLE_LOG_PRPH_SPI_MASTER_DMA
+    if BLE_LOG_PRPH_SPI_MASTER_DMA || BLE_LOG_PRPH_SPI_MASTER_HD
         config BLE_LOG_PRPH_SPI_MASTER_DMA_MOSI_IO_NUM
-            int "GPIO number of MOSI port for SPI master DMA transport"
-            default 0
+            int "GPIO number of MOSI port for SPI master transport (-1: native SPI2 IOMUX)"
+            default -1
             help
-                GPIO number of MOSI port for SPI master DMA transport
+                GPIO number of MOSI port for SPI master transport. Set to -1
+                to use the target's native SPI2 IOMUX pin.
 
         config BLE_LOG_PRPH_SPI_MASTER_DMA_SCLK_IO_NUM
-            int "GPIO number of SCLK port for SPI master DMA transport"
-            default 0
+            int "GPIO number of SCLK port for SPI master transport (-1: native SPI2 IOMUX)"
+            default -1
             help
-                GPIO number of SCLK port for SPI master DMA transport
+                GPIO number of SCLK port for SPI master transport. Set to -1
+                to use the target's native SPI2 IOMUX pin.
 
         config BLE_LOG_PRPH_SPI_MASTER_DMA_CS_IO_NUM
-            int "GPIO number of CS port for SPI master DMA transport"
-            default 0
+            int "GPIO number of CS port for SPI master transport (-1: native SPI2 IOMUX)"
+            default -1
             help
-                GPIO number of CS port for SPI master DMA transport
+                GPIO number of CS port for SPI master transport. Set to -1 to
+                use the target's native SPI2 IOMUX pin.
     endif
 
     if BLE_LOG_PRPH_UART_DMA

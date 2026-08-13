@@ -1,54 +1,51 @@
 /*
- * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* ----------------------------------------------- */
-/* BLE Log - Peripheral Interface - SPI Master DMA */
-/* ----------------------------------------------- */
+/* -------------------------------------------------- */
+/* BLE Log - Peripheral Interface - SPI Master HD DMA */
+/* -------------------------------------------------- */
 
 /* INCLUDE */
-#include "ble_log_prph_spi_master_dma.h"
+#include "ble_log_prph_spi_master_hd.h"
 #include "ble_log_prph_spi_common.h"
 #include "ble_log_lbm.h"
 
-#include "esp_timer.h"
+#include "hal/spi_ll.h"
+#include "hal/spi_types.h"
 
 /* MACRO */
-#define BLE_LOG_SPI_TRANS_ITVL_MIN_US       (30)
-#define BLE_LOG_SPI_ALIGN_LOG_PERIOD        (256U)
+#define BLE_LOG_SPI_HD_DATA_DONE            BIT(0)
+#define BLE_LOG_SPI_HD_END_QUEUE_FAILED     BIT(1)
 
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM
-#define BLE_LOG_SPI_MASTER_DMA_CB_ATTR      BLE_LOG_IRAM_ATTR
+#define BLE_LOG_SPI_MASTER_HD_CB_ATTR       BLE_LOG_IRAM_ATTR
 #else
-#define BLE_LOG_SPI_MASTER_DMA_CB_ATTR
+#define BLE_LOG_SPI_MASTER_HD_CB_ATTR
 #endif
 
 /* VARIABLE */
 BLE_LOG_STATIC bool prph_inited = false;
+BLE_LOG_STATIC bool bus_inited = false;
 BLE_LOG_STATIC spi_device_handle_t dev_handle = NULL;
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t last_tx_done_ts = 0;
 
 /* PRIVATE FUNCTION DECLARATION */
-BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans);
-BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans);
+BLE_LOG_STATIC void spi_master_hd_tx_done_cb(spi_transaction_t *spi_trans);
 
 /* PRIVATE FUNCTION */
-BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans)
+BLE_LOG_SPI_MASTER_HD_CB_ATTR BLE_LOG_STATIC void spi_master_hd_tx_done_cb(spi_transaction_t *spi_trans)
 {
-    /* SPI slave performance issue workaround */
-    last_tx_done_ts = esp_timer_get_time();
+    ble_log_prph_trans_ctx_t *ctx = (ble_log_prph_trans_ctx_t *)spi_trans->user;
+    if (spi_trans == &ctx->data) {
+        uint8_t old_status = __atomic_fetch_or(&ctx->status, BLE_LOG_SPI_HD_DATA_DONE, __ATOMIC_ACQ_REL);
+        if (!(old_status & BLE_LOG_SPI_HD_END_QUEUE_FAILED)) {
+            return;
+        }
+    }
 
-    /* Recycle transport */
-    ble_log_prph_trans_t *trans = (ble_log_prph_trans_t *)(spi_trans->user);
-    trans->pos = 0;
-    ble_log_lbm_recycle_trans(trans);
-}
-
-BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans)
-{
-    /* SPI slave performance issue workaround */
-    while ((esp_timer_get_time() - last_tx_done_ts) < BLE_LOG_SPI_TRANS_ITVL_MIN_US) {}
+    ctx->trans->pos = 0;
+    ble_log_lbm_recycle_trans(ctx->trans);
 }
 
 /* INTERFACE */
@@ -74,15 +71,21 @@ bool ble_log_prph_init(size_t trans_cnt)
     if (spi_bus_initialize(BLE_LOG_SPI_BUS, &bus_config, SPI_DMA_CH_AUTO) != ESP_OK) {
         goto exit;
     }
+    bus_inited = true;
 
     spi_device_interface_config_t dev_config = {
         .clock_speed_hz = SPI_MASTER_FREQ_20M,
         .mode = 0,
         .spics_io_num = BLE_LOG_SPI_CS_IO_NUM,
-        .queue_size = trans_cnt,
-        .post_cb = spi_master_dma_tx_done_cb,
-        .pre_cb = spi_master_dma_pre_tx_cb,
-        .flags = SPI_DEVICE_NO_RETURN_RESULT
+        .queue_size = (int)(trans_cnt * 2),
+        .command_bits = 8,
+        .address_bits = 8,
+        .dummy_bits = spi_ll_get_slave_hd_dummy_bits((spi_line_mode_t) {
+            .cmd_lines = 1,
+            .data_lines = 1,
+        }),
+        .post_cb = spi_master_hd_tx_done_cb,
+        .flags = SPI_DEVICE_NO_RETURN_RESULT | SPI_DEVICE_HALFDUPLEX,
     };
     if (spi_bus_add_device(BLE_LOG_SPI_BUS, &dev_config, &dev_handle) != ESP_OK) {
         goto exit;
@@ -108,8 +111,10 @@ void ble_log_prph_deinit(void)
         dev_handle = NULL;
     }
 
-    /* Note: We don't care if the bus has been inited or not */
-    spi_bus_free(BLE_LOG_SPI_BUS);
+    if (bus_inited) {
+        spi_bus_free(BLE_LOG_SPI_BUS);
+        bus_inited = false;
+    }
 }
 
 bool ble_log_prph_trans_init(ble_log_prph_trans_t **trans, size_t trans_size)
@@ -133,7 +138,16 @@ bool ble_log_prph_trans_init(ble_log_prph_trans_t **trans, size_t trans_size)
         goto exit;
     }
     BLE_LOG_MEMSET(spi_trans_ctx, 0, sizeof(ble_log_prph_trans_ctx_t));
-    spi_trans_ctx->user = (void *)(*trans);
+
+    spi_line_mode_t line_mode = {
+        .cmd_lines = 1,
+        .data_lines = 1,
+    };
+    spi_trans_ctx->data.cmd = spi_ll_get_slave_hd_command(SPI_CMD_HD_WRDMA, line_mode);
+    spi_trans_ctx->data.user = spi_trans_ctx;
+    spi_trans_ctx->end.cmd = spi_ll_get_slave_hd_command(SPI_CMD_HD_WR_END, line_mode);
+    spi_trans_ctx->end.user = spi_trans_ctx;
+    spi_trans_ctx->trans = *trans;
     (*trans)->ctx = (void *)spi_trans_ctx;
 
     /* Initialize log buffer */
@@ -142,7 +156,7 @@ bool ble_log_prph_trans_init(ble_log_prph_trans_t **trans, size_t trans_size)
         goto exit;
     }
     BLE_LOG_MEMSET((*trans)->buf, 0, trans_size);
-    spi_trans_ctx->tx_buffer = (const void *)(*trans)->buf;
+    spi_trans_ctx->data.tx_buffer = (const void *)(*trans)->buf;
     return true;
 
 exit:
@@ -177,11 +191,11 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
  * function call from any other submodules is not allowed */
 BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
-    spi_transaction_t *spi_trans = (spi_transaction_t *)trans->ctx;
+    ble_log_prph_trans_ctx_t *ctx = (ble_log_prph_trans_ctx_t *)trans->ctx;
     uint16_t tx_len = trans->pos;
 
     /*
-     * SPI slave DMA requires transaction length to be 4-byte aligned.
+     * SPI slave HD DMA requires transaction length to be 4-byte aligned.
      * Pad trailing bytes with zero to reduce transport loss on slave side.
      */
     uint16_t aligned_len = (uint16_t)((tx_len + (BLE_LOG_SPI_DMA_ALIGN_BYTES - 1U)) &
@@ -194,12 +208,21 @@ BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
         }
     }
 
-    /* CRITICAL:
-     * Bytes to bits length conversion is required for tx, and rxlength must be
-     * cleared regardless of whether it is used for rx as per SPI master driver */
-    spi_trans->length = (tx_len << 3);
-    spi_trans->rxlength = 0;
-    if (spi_device_queue_trans(dev_handle, spi_trans, 0) != ESP_OK) {
+    ctx->status = 0;
+    ctx->data.length = (tx_len << 3);
+    ctx->data.rxlength = 0;
+    if (spi_device_queue_trans(dev_handle, &ctx->data, 0) != ESP_OK) {
         ble_log_lbm_recycle_trans(trans);
+        return;
+    }
+
+    if (spi_device_queue_trans(dev_handle, &ctx->end, 0) != ESP_OK) {
+        uint8_t old_status = __atomic_fetch_or(&ctx->status, BLE_LOG_SPI_HD_END_QUEUE_FAILED, __ATOMIC_ACQ_REL);
+        if (old_status & BLE_LOG_SPI_HD_DATA_DONE) {
+            /* Data already on the wire: drop it from the buffer so the next
+             * flush does not re-send these bytes (recycle keeps pos on purpose) */
+            trans->pos = 0;
+            ble_log_lbm_recycle_trans(trans);
+        }
     }
 }

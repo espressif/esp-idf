@@ -182,7 +182,9 @@ BLE_LOG_STATIC void ble_log_lbm_reset_stats(void)
         __atomic_store_n(&lbm->trans_inflight, 0, __ATOMIC_RELAXED);
         __atomic_store_n(&lbm->trans_inflight_peak, 0, __ATOMIC_RELAXED);
     }
+#if CONFIG_BLE_LOG_PRPH_UART_DMA
     ble_log_prph_reset_util_counters();
+#endif
 }
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
@@ -309,6 +311,17 @@ failed:
 /* -------------------------- */
 /*     INTERNAL INTERFACE     */
 /* -------------------------- */
+/* CRITICAL:
+ * Recycle a transport back to its LBM pool after the send completes or fails.
+ * Leaves trans->pos untouched on purpose: a failed send keeps its buffered data
+ * so the next flush re-queues it (flush re-sends any trans with pos != 0) */
+BLE_LOG_IRAM_ATTR void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans)
+{
+    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+}
+
 bool ble_log_lbm_init(void)
 {
     /* Avoid double init */
