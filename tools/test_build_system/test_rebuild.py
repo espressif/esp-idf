@@ -184,7 +184,7 @@ def test_rebuild_ldgen_fingerprint(idf_py: IdfPyFunc, test_app_copy: Path) -> No
 
 
 @pytest.mark.usefixtures('idf_copy')
-def test_rebuild_ldgen_template_change(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+def test_rebuild_ldgen_template_change(idf_py: IdfPyFunc, test_app_copy: Path, request: pytest.FixtureRequest) -> None:
     """Verify that a change to the linker script template reaches the generated
     script. ldgen copies everything outside the mapping placeholders from the
     template into its output verbatim, so the template is an input in its own
@@ -193,7 +193,13 @@ def test_rebuild_ldgen_template_change(idf_py: IdfPyFunc, test_app_copy: Path) -
     skip_msg = 'Skipping linker script generation, section names unchanged'
     idf_path = Path(os.environ['IDF_PATH'])
     template = idf_path / 'components/esp_system/ld/esp32/sections.ld.in'
-    generated = Path('build/esp-idf/esp_system/ld/sections.ld')
+    # Build System v1 writes sections.ld. Build System v2 names the output
+    # per-library (library_<project> for idf_project_default) so multi-library
+    # builds do not clash.
+    if request.config.getoption('buildv2', False):
+        generated = Path('build/esp-idf/esp_system/ld/sections.ld_library_build_test_app')
+    else:
+        generated = Path('build/esp-idf/esp_system/ld/sections.ld')
     # An absolute symbol assignment: it is copied through to the generated
     # script and does not depend on anything else in the build.
     probe = '_ldgen_template_probe'
