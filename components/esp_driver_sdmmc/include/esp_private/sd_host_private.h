@@ -277,11 +277,6 @@ esp_err_t sd_host_slot_set_cclk_always_on_internal(sd_host_sdmmc_slot_t *slot, b
  *
  * @param[in] slot       SD Host Slot handle
  * @param[in] enable     enable or not
- *
- * @return
- *        - ESP_OK:              On success
- *        - ESP_ERR_INVALID_ARG: Invalid arguments
- *        - ESP_ERR_NOT_FOUND:   Command not found
  */
 void sd_host_slot_enable_clk_cmd11(sd_host_sdmmc_slot_t *slot, bool enable);
 
