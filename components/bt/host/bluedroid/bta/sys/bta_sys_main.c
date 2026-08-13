@@ -555,6 +555,7 @@ void bta_sys_register(UINT8 id, const tBTA_SYS_REG *p_reg)
 void bta_sys_deregister(UINT8 id)
 {
     bta_sys_cb.is_reg[id] = FALSE;
+    bta_sys_cb.reg[id] = NULL;
 }
 
 /*******************************************************************************
