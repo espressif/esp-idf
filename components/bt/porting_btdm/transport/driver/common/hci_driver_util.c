@@ -196,7 +196,7 @@ hci_driver_util_tx_list_dequeue(uint32_t max_tx_len, void **tx_data, bool *last_
                 }
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
                 else {
-                    bredr_hci_trans_acl_free(pkt);
+                    bredr_hci_trans_acl_tx_free(pkt);
                 }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
             } else {
@@ -222,7 +222,7 @@ hci_driver_util_tx_list_dequeue(uint32_t max_tx_len, void **tx_data, bool *last_
                 }
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
                 else if (tx_entry->data_source == HCI_DRIVER_BREDR_EVT) {
-                    bredr_hci_trans_evt_free(pkt);
+                    bredr_hci_trans_evt_tx_free(pkt);
                 }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
                 else {
@@ -247,7 +247,7 @@ hci_driver_util_tx_list_dequeue(uint32_t max_tx_len, void **tx_data, bool *last_
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
         else if (tx_entry->data_type == HCI_DRIVER_TYPE_SYNC) {
             if (s_hci_driver_util_env.cur_tx_off >= data_len) {
-                bredr_hci_trans_sync_free(pkt);
+                bredr_hci_trans_sync_tx_free(pkt);
             } else {
                 tx_len = min(max_tx_len, data_len - s_hci_driver_util_env.cur_tx_off);
                 *tx_data = &pkt->data[s_hci_driver_util_env.cur_tx_off];
@@ -326,7 +326,7 @@ hci_driver_util_deinit(void)
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
             else if (tx_entry->data_source == HCI_DRIVER_BREDR_EVT) {
                 bredr_hci_trans_evt_tx_done((hci_driver_packet_t *)tx_entry->data);
-                bredr_hci_trans_evt_free((hci_driver_packet_t *)tx_entry->data);
+                bredr_hci_trans_evt_tx_free((hci_driver_packet_t *)tx_entry->data);
             }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
             else {
@@ -341,7 +341,7 @@ hci_driver_util_deinit(void)
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
             else {
                 bredr_hci_trans_acl_tx_done((hci_driver_packet_t *)tx_entry->data);
-                bredr_hci_trans_acl_free((hci_driver_packet_t *)tx_entry->data);
+                bredr_hci_trans_acl_tx_free((hci_driver_packet_t *)tx_entry->data);
             }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
         } else if (tx_entry->data_type == HCI_DRIVER_TYPE_ISO) {
@@ -351,7 +351,7 @@ hci_driver_util_deinit(void)
         else {
             // SCO data
             bredr_hci_trans_sync_tx_done((hci_driver_packet_t *)tx_entry->pkt);
-            bredr_hci_trans_sync_free((hci_driver_packet_t *)tx_entry->pkt);
+            bredr_hci_trans_sync_tx_free((hci_driver_packet_t *)tx_entry->pkt);
         }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
 

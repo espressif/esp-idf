@@ -119,6 +119,8 @@ int r_ble_hci_trans_reset(void);
 //!TODO: Should we initialize the hci layer in IDF ?
 void esp_ble_hci_trans_init(uint8_t);
 
+int hci_cmd_proc_init(void);
+
 // ********************************************************************************************
 //                  btdm common
 // ********************************************************************************************
@@ -126,7 +128,9 @@ void esp_ble_hci_trans_init(uint8_t);
 typedef int (*btdm_hci_trans_tx_func_t)(hci_driver_packet_t *pkt);
 
 #define HCI_INTERNAL_CONN_MASK                          (0x0fff)
-#define HCI_INTERNAL_CONN_IS_BLE(conn_handle)           (!(conn_handle & 0x0800))
+#define HCI_INTERNAL_CONN_IS_BLE(conn_handle)           ((conn_handle & 0x0800) == 0x0000)
+#define HCI_INTERNAL_CONN_IS_BLE_ACL(conn_handle)       ((conn_handle & 0x0e00) == 0x0000)
+#define HCI_INTERNAL_CONN_IS_BLE_ISO(conn_handle)       ((conn_handle & 0x0e00) == 0x0200)
 #define HCI_INTERNAL_CONN_IS_BREDR(conn_handle)         (conn_handle & 0x0800)
 #define HCI_INTERNAL_CONN_IS_BREDR_ACL(conn_handle)     ((conn_handle & 0x0800) && (conn_handle & 0x000f))
 #define HCI_INTERNAL_CONN_IS_BREDR_SYNC(conn_handle)    ((conn_handle & 0x0800) && (conn_handle & 0x00f0))
@@ -163,10 +167,12 @@ void bredr_hci_trans_register_tx(btdm_hci_trans_tx_func_t *acl_tx_func,
 void bredr_hci_trans_acl_tx_done(hci_driver_packet_t *pkt);
 void bredr_hci_trans_sync_tx_done(hci_driver_packet_t *pkt);
 void bredr_hci_trans_evt_tx_done(hci_driver_packet_t *pkt);
-int bredr_hci_trans_acl_free(hci_driver_packet_t *pkt);
-int bredr_hci_trans_sync_free(hci_driver_packet_t *pkt);
-int bredr_hci_trans_evt_free(hci_driver_packet_t *pkt);
+int bredr_hci_trans_acl_tx_free(hci_driver_packet_t *pkt);
+int bredr_hci_trans_sync_tx_free(hci_driver_packet_t *pkt);
+int bredr_hci_trans_evt_tx_free(hci_driver_packet_t *pkt);
 
+hci_driver_packet_t *bredr_hci_trans_acl_rx_buf_alloc(uint16_t conn_handle);
+hci_driver_packet_t *bredr_hci_trans_sync_rx_buf_alloc(uint16_t conn_handle);
 #ifdef __cplusplus
 }
 #endif

@@ -4,16 +4,20 @@ entries:
 
 [sections:high_perf_iram_text]
 entries:
-    .high_perf_code_iram1+
+    .iram_high_perf+
 
 [sections:adv_fast_execute_code_iram_text]
 entries:
-    .adv_fast_execute_code_iram1+
+    .iram_adv_fast_tx+
 
 [sections:sleep_text]
 entries:
     .iram_sleep+
     .iram_btslp+
+
+[sections:sleep_text_fast_adv]
+entries:
+    .iram_adv_fast_tx_sleep_adv+
 
 [sections:sleep_text_adv]
 entries:
@@ -48,6 +52,11 @@ entries:
         sleep_text -> iram0_text
     else:
         sleep_text -> flash_text
+
+    if BT_LE_CTRL_ADV_FAST_TX_EN = y || BT_CTRL_LE_ADV_SLEEP_CODE_IN_IRAM = y:
+        sleep_text_fast_adv -> iram0_text
+    else:
+        sleep_text_fast_adv -> flash_text
 
     if BT_CTRL_LE_ADV_SLEEP_CODE_IN_IRAM = y:
         sleep_text_adv->iram0_text

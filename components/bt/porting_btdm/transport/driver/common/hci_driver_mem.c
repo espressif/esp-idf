@@ -77,27 +77,27 @@ hci_driver_mem_evt_free(void *ptr)
 hci_driver_packet_t *
 hci_driver_mem_bredr_acl_alloc(uint16_t handle)
 {
-    return btdm_hci_trans_buf_alloc(HCI_H4_ACL, handle);
+    return bredr_hci_trans_acl_rx_buf_alloc(handle);
 }
 
 void
 hci_driver_mem_bredr_acl_free(void *ptr)
 {
     hci_driver_packet_t *pkt = (hci_driver_packet_t *) ptr;
-    bredr_hci_trans_acl_free(pkt);
+    bredr_hci_trans_acl_tx_free(pkt);
 }
 
 hci_driver_packet_t *
 hci_driver_mem_sync_alloc(uint16_t handle)
 {
-    return btdm_hci_trans_buf_alloc(HCI_H4_SYNC, handle);
+    return bredr_hci_trans_sync_rx_buf_alloc(handle);
 }
 
 void
 hci_driver_mem_sync_free(void *ptr)
 {
     hci_driver_packet_t *pkt = (hci_driver_packet_t *) ptr;
-    bredr_hci_trans_sync_free(pkt);
+    bredr_hci_trans_sync_tx_free(pkt);
 }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
 

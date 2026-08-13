@@ -7,7 +7,7 @@
 #define _BTDM_LP_H_
 #include "esp_private/esp_modem_clock.h"
 
-void btdm_lp_enable_clock(esp_btdm_controller_config_t *cfg);
+void btdm_lp_enable_clock(esp_bt_ctrl_btdm_config_t *cfg);
 
 void btdm_lp_disable_clock(void);
 

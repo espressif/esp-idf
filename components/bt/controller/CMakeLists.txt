@@ -87,7 +87,15 @@ if(CONFIG_IDF_DOC_BUILD AND CONFIG_SOC_BT_SUPPORTED)
         "${CMAKE_CURRENT_LIST_DIR}/../include/${TARGET_SRC_NAME}/include"
         ABSOLUTE
     )
-    set(bt_ctrl_include_dirs "${_bt_ctrl_absolute_include_dir}" PARENT_SCOPE)
+    get_filename_component(
+        _bt_ctrl_common_absolute_include_dir
+        "${CMAKE_CURRENT_LIST_DIR}/../include/common"
+        ABSOLUTE
+    )
+    set(bt_ctrl_include_dirs
+        "${_bt_ctrl_absolute_include_dir}"
+        "${_bt_ctrl_common_absolute_include_dir}"
+        PARENT_SCOPE)
     return()
 endif()
 

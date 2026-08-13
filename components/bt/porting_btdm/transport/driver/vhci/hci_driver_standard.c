@@ -5,12 +5,15 @@
  */
 #include <string.h>
 #include <stdio.h>
+#include "esp_log.h"
 #include "esp_hci_driver.h"
 #include "esp_hci_internal.h"
 #include "esp_bt.h"
 #if UC_BT_CTRL_BLE_IS_ENABLE
 #include "ble_mbuf.h"
 #endif
+
+#define TAG                                              "HCI_DRV_STD"
 
 typedef struct {
     hci_driver_forward_fn *forward_cb;
@@ -108,7 +111,7 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
             *buf = old_value;
             if (rc >= 0) {
                 bredr_hci_trans_acl_tx_done(pkt);
-                bredr_hci_trans_acl_free(pkt);
+                bredr_hci_trans_acl_tx_free(pkt);
             }
         }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
@@ -134,7 +137,7 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
             *buf = old_value;
             if (rc >= 0) {
                 bredr_hci_trans_evt_tx_done((hci_driver_packet_t *)data);
-                bredr_hci_trans_evt_free((hci_driver_packet_t *)data);
+                bredr_hci_trans_evt_tx_free((hci_driver_packet_t *)data);
             }
         }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
@@ -164,7 +167,7 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
         *buf = old_value;
         if (rc >= 0) {
             bredr_hci_trans_sync_tx_done(pkt);
-            bredr_hci_trans_sync_free(pkt);
+            bredr_hci_trans_sync_tx_free(pkt);
         }
     }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
@@ -178,6 +181,7 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
 static int
 hci_driver_vhci_host_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_t length)
 {
+    int rc = 0;
     uint16_t pkt_len;
     uint16_t conn_handle;
     uint16_t handle_flags = 0;
@@ -210,7 +214,7 @@ hci_driver_vhci_host_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_
 #endif // UC_BT_CTRL_BLE_IS_ENABLE
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
         if (is_bredr) {
-            pkt = btdm_hci_trans_buf_alloc(data_type, conn_handle);
+            pkt = bredr_hci_trans_acl_rx_buf_alloc(conn_handle);
             assert(pkt);
             memcpy(pkt->data, &data[1], pkt_len);
             data = (uint8_t *)pkt;
@@ -222,11 +226,20 @@ hci_driver_vhci_host_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
     case HCI_DRIVER_TYPE_SYNC:
         conn_handle = btdm_get_le16(&data[1]) & HCI_INTERNAL_CONN_MASK;
-        pkt = btdm_hci_trans_buf_alloc(data_type, conn_handle);
-        assert(pkt);
-        memcpy(pkt->data, &data[1], pkt_len);
-        data = (uint8_t *)pkt;
+        pkt = bredr_hci_trans_sync_rx_buf_alloc(conn_handle);
+        if (pkt != NULL) {
+            memcpy(pkt->data, &data[1], pkt_len);
+        } else {
+#if (UC_BR_EDR_DYNAMIC_SYNC_TX_BUF_NB != 0)
+            pkt_len = 0;
+            ESP_LOGI(TAG, "hci: sync h2c no mem");
+            rc = -1;
+#else
+            assert(0);
+#endif
+        }
         data_source = HCI_DRIVER_BREDR_SYNC;
+        data = (uint8_t *)pkt;
         break;
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
     case HCI_DRIVER_TYPE_ISO:
@@ -237,11 +250,14 @@ hci_driver_vhci_host_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_
         break;
     }
 
-    if (pkt) {
-        pkt->length = pkt_len;
+    if (rc == 0) {
+        if (pkt) {
+            pkt->length = pkt_len;
+        }
+        rc = s_hci_driver_vhci_env.forward_cb(data_type, data, pkt_len, HCI_DRIVER_DIR_H2C, data_source);
     }
 
-    return s_hci_driver_vhci_env.forward_cb(data_type, data, pkt_len, HCI_DRIVER_DIR_H2C, data_source);
+    return rc;
 }
 
 static int

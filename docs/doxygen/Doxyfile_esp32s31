@@ -15,6 +15,10 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_hal_security/include/hal/key_mgr_types.h \
     $(PROJECT_PATH)/components/bt/include/esp32s31/include/esp_bt.h \
     $(PROJECT_PATH)/components/bt/include/esp32s31/include/esp_bt_vs.h \
+    $(PROJECT_PATH)/components/bt/include/common/btdm_le_vs.h \
+    $(PROJECT_PATH)/components/bt/include/common/btdm_bredr_vs.h \
+    $(PROJECT_PATH)/components/bt/include/common/btdm_le.h \
+    $(PROJECT_PATH)/components/bt/include/common/btdm_bredr.h \
     $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
     $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_etm.h \
     $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_uart.h \

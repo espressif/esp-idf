@@ -161,7 +161,7 @@ wr_btdm_coex_iso_protect_frame_thres_get(void)
 #endif /* CONFIG_SW_COEXIST_ENABLE */
 }
 
-void
+void IRAM_ATTR
 wr_btdm_coex_iso_start_int_handle(uint16_t handle, uint32_t duration)
 {
 #if CONFIG_SW_COEXIST_ENABLE && CONFIG_BT_LE_ISO_SUPPORT
@@ -169,7 +169,7 @@ wr_btdm_coex_iso_start_int_handle(uint16_t handle, uint32_t duration)
 #endif /* CONFIG_SW_COEXIST_ENABLE */
 }
 
-void
+void IRAM_ATTR
 wr_btdm_coex_iso_end_int_handle(uint16_t handle, uint32_t duration)
 {
 #if CONFIG_SW_COEXIST_ENABLE && CONFIG_BT_LE_ISO_SUPPORT
@@ -177,7 +177,7 @@ wr_btdm_coex_iso_end_int_handle(uint16_t handle, uint32_t duration)
 #endif /* CONFIG_SW_COEXIST_ENABLE */
 }
 
-void
+void IRAM_ATTR
 wr_btdm_coex_ble_idle_time_inform(uint32_t start_offset, uint32_t duration)
 {
 #if CONFIG_SW_COEXIST_ENABLE
@@ -188,7 +188,7 @@ wr_btdm_coex_ble_idle_time_inform(uint32_t start_offset, uint32_t duration)
 int
 wr_btdm_coex_register_ble_cb(uint32_t type, coex_funcs_ble_cb_t func)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE && CONFIG_BT_LE_ISO_SUPPORT
     return coex_register_ble_cb(type, func);
 #else
     return ESP_OK;
