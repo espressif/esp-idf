@@ -1184,8 +1184,18 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
      * before this indication runs. nan_record_new_ndl() below reuses that
      * slot, so it must not be counted against the peer limit. Observed
      * when an open NDP is established first and a secured NDP follows; the
-     * reverse order does not hit the limit because open NDPs never pre-claim. */
-    if (!nan_find_ndl_by_pub_id_and_peer(pub_id, peer_nmi) && ndl_limit_reached()) {
+     * reverse order does not hit the limit because open NDPs never pre-claim.
+     *
+     * Only a slot belonging to this request qualifies: a pre-claim carries
+     * either this ndp_id or 0 when the id was not yet known at parse time.
+     * An established NDP for the same (pub_id, peer) has a different ndp_id
+     * and must still count, otherwise nan_record_new_ndl() would re-stamp or
+     * wipe a live datapath. */
+    struct ndl_info *preclaimed = nan_find_ndl_by_pub_id_and_peer(pub_id, peer_nmi);
+    if (preclaimed && preclaimed->ndp_id != 0 && preclaimed->ndp_id != ndp_id) {
+        preclaimed = NULL;
+    }
+    if (!preclaimed && ndl_limit_reached()) {
         NAN_DATA_UNLOCK();
         ESP_LOGE(TAG, "NDP limit reached");
         return;
