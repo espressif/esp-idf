@@ -7,7 +7,7 @@ entries:
         parlio_tx: parlio_mount_buffer (noflash)
 
         if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION = y:
-            parlio_tx: parlio_tx_gdma_eof_callback (noflash)
+            parlio_tx: parlio_tx_gdma_buffer_switched_callback (noflash)
 
     if PARLIO_RX_ISR_HANDLER_IN_IRAM = y:
         parlio_rx: parlio_rx_default_eof_callback (noflash)
