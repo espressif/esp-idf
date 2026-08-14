@@ -14,7 +14,7 @@
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
-static size_t actual_leak_threshold = TEST_MEMORY_INITIAL_LEAK_THRESHOLD;
+static ssize_t actual_leak_threshold = TEST_MEMORY_INITIAL_LEAK_THRESHOLD;
 
 
 static void check_leak(size_t before_free, size_t after_free, const char *type)
