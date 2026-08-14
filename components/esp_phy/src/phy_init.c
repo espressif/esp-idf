@@ -55,6 +55,9 @@
 #include "soc/periph_defs.h"
 #endif
 #include "phy_init_deps.h"
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+#include "esp_private/esp_pau.h"
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 
 #ifndef PHY_INIT_MODEM_CLOCK_REQUIRED_BITS
 #warning "PHY_INIT_MODEM_CLOCK_REQUIRED_BITS not defined; using default value 0"
@@ -72,6 +75,11 @@ extern bool pm_mac_modem_rf_already_enabled(void);
 extern bool pm_get_wifimac_regdma_link_selection(void);
 #endif
 #endif
+
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+extern void phy_i2c_enter_critical(void);
+extern void phy_i2c_exit_critical(void);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 
 static const char* TAG = "phy_init";
 
@@ -511,6 +519,17 @@ void esp_wifi_bt_power_domain_off(void)
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 }
 
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+void IRAM_ATTR esp_phy_regi2c_lock_apply(bool enable)
+{
+    if (enable) {
+        phy_i2c_enter_critical();
+    } else {
+        phy_i2c_exit_critical();
+    }
+}
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+
 void esp_phy_modem_init(uint8_t modem)
 {
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP || CONFIG_ESP_PHY_HW_SWITCH_RF
@@ -522,6 +541,9 @@ void esp_phy_modem_init(uint8_t modem)
     }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 #if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_register_modem_link_protect(esp_phy_regi2c_lock_apply);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     if (sleep_modem_phy_init(modem) != ESP_OK) {
         ESP_LOGE(TAG, "failed to initialize sleep modem phy");
     }
@@ -552,9 +574,14 @@ void esp_phy_modem_deinit(uint8_t modem)
         phy_init_flag();
 #endif // CONFIG_IDF_TARGET_ESP32C3
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
-    }
 #if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+        pau_regdma_unregister_modem_link_protect();
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    }
     sleep_modem_phy_deinit(modem);
+#else
+    }
 #endif // (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
     _lock_release(&s_phy_access_lock);
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP

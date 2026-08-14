@@ -138,6 +138,25 @@ void pau_regdma_trigger_extra_link_restore(void);
 bool pau_regdma_enable_aon_link_entry(bool enable);
 #endif
 
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+/**
+ * @brief Callback function type for modem link protect.
+ *
+ */
+typedef void (* pau_regdma_modem_link_protect_cb_t)(bool protect);
+
+/**
+ * @brief Register the modem link trigger hook callback function
+ * @param cb the callback function
+ */
+void pau_regdma_register_modem_link_protect(pau_regdma_modem_link_protect_cb_t cb);
+
+/**
+ * @brief Unregister the modem link trigger hook callback function
+ */
+void pau_regdma_unregister_modem_link_protect(void);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+
 #ifdef __cplusplus
 }
 #endif
