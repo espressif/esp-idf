@@ -441,14 +441,43 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_mpll_get_freq_mhz(u
 }
 
 /**
+ * @brief Start MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_calibration_start(void)
+{
+    HP_SYS_CLKRST.ana_pll_ctrl0.reg_mspi_cal_stop = 0;
+}
+
+/**
+ * @brief Stop MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_calibration_stop(void)
+{
+    HP_SYS_CLKRST.ana_pll_ctrl0.reg_mspi_cal_stop = 1;
+}
+
+/**
+ * @brief Check whether MPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_mpll_calibration_is_done(void)
+{
+    return HP_SYS_CLKRST.ana_pll_ctrl0.reg_mspi_cal_end;
+}
+
+/**
  * @brief Set MPLL frequency from XTAL source (Analog part - through regi2c)
  *
  * @param mpll_freq_mhz MPLL frequency, in MHz
  * @param xtal_freq_mhz XTAL frequency, in MHz
  */
-static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_t mpll_freq_mhz, uint32_t xtal_freq_mhz)
+static inline __attribute__((always_inline)) void clk_ll_mpll_set_config_v1(uint32_t mpll_freq_mhz, uint32_t xtal_freq_mhz)
 {
     HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
+
+    /* MPLL calibration start */
+    clk_ll_mpll_calibration_start();
 
     // There are sequential regi2c operations in `clk_ll_mpll_set_config`, use the raw regi2c API with one lock wrapper to save time.
     REGI2C_ENTER_CRITICAL();
@@ -464,6 +493,36 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
     uint8_t val = ((div << 3) | ref_div);
     esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DIV_REG_ADDR, val);
     REGI2C_EXIT_CRITICAL();
+    /* wait calibration done */
+    while (!clk_ll_mpll_calibration_is_done());
+    /* MPLL calibration stop */
+    clk_ll_mpll_calibration_stop();
+}
+
+/**
+ * @brief MPLL hardware self-calibration (debug flow)
+ *
+ * Power up MPLL, configure IR cal / div / dhref, run HW calibration and wait until done.
+ * Caller must enable the regi2c master clock before calling this function.
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_set_config_v3(uint32_t mpll_freq_mhz, uint32_t xtal_freq_mhz)
+{
+    HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
+
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_IR_CAL_EXT_CAP, 3);
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_IR_CAL_ENX_CAP, 1);
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_DIV_ADDR, 9);
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_DHREF, 3);
+
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_IR_CAL_ENX_CAP, 0);
+    clk_ll_mpll_calibration_start();
+
+    uint8_t div = mpll_freq_mhz / 20 - 1;
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_DIV_ADDR, div);
+
+    while (!clk_ll_mpll_calibration_is_done()) {
+    }
+    clk_ll_mpll_calibration_stop();
 }
 
 /**
