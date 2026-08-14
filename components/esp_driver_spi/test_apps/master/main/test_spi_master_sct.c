@@ -291,6 +291,8 @@ TEST_CASE("spi_master: test_sct_dma_desc_oob_on_tail", "[spi]")
     TEST_ESP_OK(spi_bus_free(SPI2_HOST));
 }
 
+// C5 multi runer use eco2 chip which don't support sleep
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
 #if SOC_LIGHT_SLEEP_SUPPORTED
 /*-----------------------------------------------------------
  * Sleep Retention Test
@@ -417,3 +419,4 @@ static void sleep_slave(void)
 }
 TEST_CASE_MULTIPLE_DEVICES("test_spi_master_sct_sleep_retention", "[spi_ms]", sleep_master, sleep_slave);
 #endif  //SOC_LIGHT_SLEEP_SUPPORTED
+#endif  // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
