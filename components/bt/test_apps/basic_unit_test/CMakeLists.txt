@@ -6,4 +6,6 @@ list(PREPEND SDKCONFIG_DEFAULTS
     "$ENV{IDF_PATH}/tools/test_apps/configs/sdkconfig.debug_helpers"
     "sdkconfig.defaults")
 
+# (set before project() so the bt component picks it up; not in Kconfig).
+idf_build_set_property(COMPILE_DEFINITIONS "BT_BLUEDROID_UNIT_TEST=1" APPEND)
 project(bt_test)
