@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -281,6 +281,52 @@ void *esp_lcd_rgb_alloc_draw_buffer(esp_lcd_panel_handle_t panel, size_t size, u
  *      - ESP_OK: Configure RGB-YUV conversion successfully
  */
 esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_color_conv_yuv_config_t *config);
+
+/**
+ * @brief Register panel hooks to the RGB panel
+ *
+ * @note You can register panel hooks to implement custom operations like scaling, rotation, color space conversion, etc.
+ *       with hardware accelerators like PPA or DMA2D.
+ *       The hook will be overridden when this function is called multiple times.
+ * @note If software rotation is enabled by mirror or swap_xy, the RGB panel driver bypasses the draw bitmap hook and
+ *       falls back to the CPU copy path to apply the rotation transform.
+ *
+ * @param[in] panel LCD RGB panel handle, which is returned from esp_lcd_new_rgb_panel()
+ * @param[in] hooks Panel hooks
+ * @param[in] hook_ctx Hook context
+ * @return
+ *      - ESP_OK: Register hooks successfully
+ *      - Other error codes on failure
+ */
+esp_err_t esp_lcd_rgb_panel_register_hooks(esp_lcd_panel_handle_t panel, const esp_lcd_panel_hooks_t *hooks, void *hook_ctx);
+
+#if SOC_DMA2D_SUPPORTED
+/**
+ * @brief Enable DMA2D for RGB panel
+ *
+ * @note The function will register a built-in DMA2D draw bitmap hook to perform bitmap copy using DMA2D.
+ * @note If software rotation is enabled by mirror or swap_xy, the RGB panel driver bypasses the built-in DMA2D hook and
+ *       falls back to the CPU copy path, because the built-in DMA2D hook does not apply rotation transforms.
+ *
+ * @param[in] panel LCD RGB panel handle, which is returned from esp_lcd_new_rgb_panel()
+ * @return
+ *      - ESP_OK: Enable DMA2D successfully
+ *      - Other error codes on failure
+ */
+esp_err_t esp_lcd_rgb_panel_enable_dma2d(esp_lcd_panel_handle_t panel);
+
+/**
+ * @brief Disable DMA2D for RGB panel
+ *
+ * @note The function will unregister the built-in DMA2D draw bitmap hook.
+ *
+ * @param[in] panel LCD RGB panel handle, which is returned from esp_lcd_new_rgb_panel()
+ * @return
+ *      - ESP_OK: Disable DMA2D successfully
+ *      - Other error codes on failure
+ */
+esp_err_t esp_lcd_rgb_panel_disable_dma2d(esp_lcd_panel_handle_t panel);
+#endif // SOC_DMA2D_SUPPORTED
 
 #endif // SOC_LCD_RGB_SUPPORTED
 
