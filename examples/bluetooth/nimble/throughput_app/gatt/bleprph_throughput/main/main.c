@@ -43,9 +43,12 @@ static char device_name[32] = "nimble_prph";
 #define LL_PACKET_LENGTH          251
 #define MTU_DEF                   512
 
+#define NOTIFY_DISABLE_WAIT_MS    5000 /* Max wait for the central to clear the CCCD */
+
 static const char *tag = "bleprph_throughput";
 static TaskHandle_t notify_task_handle = NULL;
-static bool notify_state;
+static volatile bool notify_state;
+static volatile bool notify_stop_req;
 static int notify_test_time = 60;
 static uint16_t conn_handle;
 /* Dummy variable */
@@ -274,6 +277,18 @@ gatts_advertise(void)
 }
 #endif
 
+/* Called from the GATT write handler when the central asks the notify test to
+ * stop. Stopping the traffic before the CCCD is cleared keeps the link idle
+ * enough for the central's ATT write to complete. */
+void
+bleprph_notify_stop_req(void)
+{
+    notify_stop_req = true;
+    if (notify_task_handle) {
+        xTaskNotifyGive(notify_task_handle);
+    }
+}
+
 /* This function sends notifications to the client */
 static void
 notify_task(void *arg)
@@ -305,11 +320,12 @@ notify_task(void *arg)
                 break;
             }
 
-            while (notify_state && notify_time < (notify_test_time * 1000)) {
+            while (notify_state && !notify_stop_req &&
+                    notify_time < (notify_test_time * 1000)) {
                 ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 
-                /* Stop immediately if central unsubscribed */
-                if (!notify_state) {
+                /* Stop immediately if central unsubscribed or asked us to stop */
+                if (!notify_state || notify_stop_req) {
                     break;
                 }
 
@@ -355,6 +371,17 @@ notify_task(void *arg)
                 end_time = esp_timer_get_time();
                 notify_time = (end_time - start_time) / 1000 ;
                 notify_count += 1;
+            }
+
+            /* Traffic has stopped; give the central time to clear the CCCD so
+             * that the results are printed after "Notifications disabled". */
+            if (notify_stop_req) {
+                int waited = 0;
+                while (notify_state && waited < NOTIFY_DISABLE_WAIT_MS) {
+                    vTaskDelay(100 / portTICK_PERIOD_MS);
+                    waited += 100;
+                }
+                notify_stop_req = false;
             }
 
             /* Use actual elapsed time for accurate throughput calculation */
@@ -431,6 +458,7 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
 
         /* Stop notification task loop cleanly */
         notify_state = false;
+        notify_stop_req = false;
         if (notify_task_handle) {
             xTaskNotifyGive(notify_task_handle);
         }
@@ -464,9 +492,11 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
         if (event->subscribe.attr_handle == notify_handle) {
             notify_state = event->subscribe.cur_notify;
             if (notify_state) {
-                /* Always reset test time on new subscription.
-                 * The central controls the actual duration by unsubscribing.
-                 * Use a large default so the peripheral never stops on its own. */
+                /* Always reset test time on new subscription. The central
+                 * controls the actual duration: it sends THRPT_CMD_STOP_NOTIFY
+                 * when done, so this is only an upper bound that keeps the
+                 * peripheral from notifying forever if that command is lost. */
+                notify_stop_req = false;
                 notify_test_time = 3600;
                 ESP_LOGI(tag, "Notifications enabled, test time = %d sec", notify_test_time);
                 /* Prime the notification pipeline to allow multiple in-flight

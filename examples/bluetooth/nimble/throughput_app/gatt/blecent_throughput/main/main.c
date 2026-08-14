@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <limits.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
@@ -53,6 +54,14 @@
 #define WRITE_THROUGHPUT_PAYLOAD           495 /* 502 bytes ACL -> 2x 251 LL packets exactly (495 + 3 Write Cmd + 4 L2CAP) */
 #define LL_PACKET_TIME                     2120
 #define LL_PACKET_LENGTH                   251
+
+/* One byte command asking the peripheral to stop the notify test */
+#define THRPT_CMD_STOP_NOTIFY              0xF0
+#define NOTIFY_DRAIN_DELAY_MS              500  /* Let queued notifications drain */
+#define UNSUB_TIMEOUT_MS                   5000 /* Well below the 30 s ATT timeout */
+#define UNSUB_MAX_ATTEMPTS                 3
+#define STOP_CMD_MAX_ATTEMPTS              5
+#define UNSUB_STATUS_PENDING               INT_MIN
 static const char *tag = "blecent_throughput";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 
@@ -88,6 +97,18 @@ static uint16_t handle;
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static volatile int current_phy_updated;
+#endif
+
+/* Result of the in-flight CCCD write, set from the GATT write callback */
+static volatile int unsub_status = UNSUB_STATUS_PENDING;
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+/* Address of the board this run is paired with, supplied over the console.
+ * The CI device name is shared by every board of the same pipeline, chip and
+ * example, so boards left advertising by an earlier run would otherwise be
+ * valid scan results. */
+static uint8_t ci_peer_addr[PEER_ADDR_VAL_SIZE];
+static bool ci_peer_addr_valid;
 #endif
 
 /* State for callback-chained read throughput test */
@@ -430,6 +451,94 @@ int update_phy(uint16_t conn_handle, uint8_t phy_mode)
 }
 #endif
 
+static int
+blecent_unsubscribe_cb(uint16_t conn_handle, const struct ble_gatt_error *error,
+                       struct ble_gatt_attr *attr, void *arg)
+{
+    unsub_status = (error == NULL) ? 0 : error->status;
+    return 0;
+}
+
+/* Ask the peripheral to stop notifying using an unacknowledged write, then let
+ * the queued notifications drain. Clearing the CCCD while the peripheral is
+ * still flooding starves the ATT response and the host tears the link down
+ * after the 30 s GATT procedure timeout. */
+static void
+blecent_stop_notify_traffic(uint16_t conn_handle, const struct peer *peer)
+{
+    const struct peer_chr *cmd_chr;
+    uint8_t cmd = THRPT_CMD_STOP_NOTIFY;
+    int attempt;
+    int rc;
+
+    cmd_chr = peer_chr_find_uuid(peer,
+                                 THRPT_UUID_DECLARE(THRPT_SVC),
+                                 THRPT_UUID_DECLARE(THRPT_CHR_READ_WRITE));
+    if (cmd_chr == NULL) {
+        ESP_LOGW(tag, "Peer lacks the control characteristic (0x0006); "
+                 "cannot request notify stop");
+        return;
+    }
+
+    /* The notify traffic keeps the mbuf pool busy, so the command itself can
+     * fail with BLE_HS_ENOMEM; retry until a buffer frees up. */
+    for (attempt = 1; attempt <= STOP_CMD_MAX_ATTEMPTS; attempt++) {
+        rc = ble_gattc_write_no_rsp_flat(conn_handle, cmd_chr->chr.val_handle,
+                                         &cmd, sizeof cmd);
+        if (rc == 0) {
+            break;
+        }
+
+        ESP_LOGW(tag, "Notify stop request attempt %d failed; rc=%d",
+                 attempt, rc);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+
+    vTaskDelay(NOTIFY_DRAIN_DELAY_MS / portTICK_PERIOD_MS);
+}
+
+static void
+blecent_unsubscribe(uint16_t conn_handle, uint16_t cccd_handle)
+{
+    uint8_t unsub_value[2] = {0, 0};
+    struct ble_gap_conn_desc desc;
+    int attempt;
+    int waited;
+    int rc;
+
+    for (attempt = 1; attempt <= UNSUB_MAX_ATTEMPTS; attempt++) {
+        unsub_status = UNSUB_STATUS_PENDING;
+
+        rc = ble_gattc_write_flat(conn_handle, cccd_handle,
+                                  unsub_value, sizeof unsub_value,
+                                  blecent_unsubscribe_cb, NULL);
+        if (rc != 0) {
+            ESP_LOGW(tag, "Unsubscribe attempt %d not started; rc=%d",
+                     attempt, rc);
+        } else {
+            for (waited = 0; unsub_status == UNSUB_STATUS_PENDING &&
+                    waited < UNSUB_TIMEOUT_MS; waited += 100) {
+                vTaskDelay(100 / portTICK_PERIOD_MS);
+            }
+
+            if (unsub_status == 0) {
+                ESP_LOGI(tag, "Unsubscribed from notifications");
+                return;
+            }
+
+            ESP_LOGW(tag, "Unsubscribe attempt %d failed; status=%d",
+                     attempt, unsub_status);
+        }
+
+        if (ble_gap_conn_find(conn_handle, &desc) != 0) {
+            ESP_LOGW(tag, "Connection gone; giving up on unsubscribe");
+            return;
+        }
+    }
+
+    ESP_LOGE(tag, "Failed to unsubscribe from notifications");
+}
+
 static void throughput_task(void *arg)
 {
     struct peer *peer = (struct peer *)arg;
@@ -665,19 +774,11 @@ read_cleanup:
             }
             vTaskDelay((TickType_t)test_data[1] * 1000 / portTICK_PERIOD_MS);
 
-            /* Unsubscribe so the next notify test triggers a fresh
-             * BLE_GAP_EVENT_SUBSCRIBE on the peripheral (cur_notify 0→1) */
-            {
-                uint8_t unsub_value[2] = {0, 0};
-                rc = ble_gattc_write_flat(conn_handle, dsc->dsc.handle,
-                                          unsub_value, sizeof unsub_value,
-                                          NULL, NULL);
-                if (rc != 0) {
-                    ESP_LOGW(tag, "Unsubscribe failed; rc=%d (non-fatal)", rc);
-                } else {
-                    ESP_LOGI(tag, "Unsubscribed from notifications");
-                }
-            }
+            /* Stop the notify traffic first, then unsubscribe so the next
+             * notify test triggers a fresh BLE_GAP_EVENT_SUBSCRIBE on the
+             * peripheral (cur_notify 0→1) */
+            blecent_stop_notify_traffic(conn_handle, peer);
+            blecent_unsubscribe(conn_handle, dsc->dsc.handle);
             break;
 
         default:
@@ -808,6 +909,11 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     }
 
 #if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (ci_peer_addr_valid &&
+            memcmp(ci_peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+        return 0;
+    }
+
     /* Match on the CI device name only, so that boards belonging to other
      * pipelines or examples in the same RF environment are ignored. */
     do {
@@ -907,6 +1013,11 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     }
 
 #if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (ci_peer_addr_valid &&
+            memcmp(ci_peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+        return 0;
+    }
+
     /* Match on the CI device name only, so that boards belonging to other
      * pipelines or examples in the same RF environment are ignored. */
     if (fields.name != NULL &&
@@ -1253,6 +1364,19 @@ blecent_on_sync(void)
             scli_reset_queue();
         }
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(tag, "Enter peer address in this format: `peer xx:xx:xx:xx:xx:xx` ");
+    if (scli_receive_peer_addr(ci_peer_addr)) {
+        ci_peer_addr_valid = true;
+        ESP_LOGI(tag, "Peer address filter set to %s", addr_str(ci_peer_addr));
+    } else {
+        ESP_LOGI(tag, "No peer address provided; connecting to any board with"
+                 " the CI device name");
+    }
+    scli_reset_queue();
+#endif
+
     /* Begin scanning for a peripheral to connect to. */
     blecent_scan();
 }

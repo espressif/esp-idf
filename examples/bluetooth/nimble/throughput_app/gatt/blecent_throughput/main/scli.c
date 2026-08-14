@@ -21,6 +21,7 @@
 #define BLE_RX_TIMEOUT (30000 / portTICK_PERIOD_MS)
 #define BLE_RX_PARAM   (10000 / portTICK_PERIOD_MS)
 #define YES_NO_PARAM   (5000 / portTICK_PERIOD_MS)
+#define PEER_ADDR_PARAM (5000 / portTICK_PERIOD_MS)
 
 static QueueHandle_t cli_handle;
 
@@ -30,6 +31,9 @@ static QueueHandle_t cli_handle;
 #define CLI_MSG_TYPE_MTU        2
 #define CLI_MSG_TYPE_THROUGHPUT 3
 #define CLI_MSG_TYPE_YESNO      4
+#define CLI_MSG_TYPE_PEER_ADDR  5
+
+#define CLI_PEER_ADDR_LEN       6
 
 struct cli_msg {
     int type;
@@ -38,6 +42,7 @@ struct cli_msg {
         int mtu;
         int key[3];
         bool yes;
+        uint8_t peer_addr[CLI_PEER_ADDR_LEN];
     } data;
 };
 
@@ -174,6 +179,52 @@ static int yesno_handler(int argc, char *argv[])
     return 0;
 }
 
+static int peer_addr_handler(int argc, char *argv[])
+{
+    struct cli_msg msg = {
+        .type = CLI_MSG_TYPE_PEER_ADDR,
+    };
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    /* val[0] holds the least significant byte, so parse in reverse order. */
+    if (sscanf(argv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+               &msg.data.peer_addr[5], &msg.data.peer_addr[4],
+               &msg.data.peer_addr[3], &msg.data.peer_addr[2],
+               &msg.data.peer_addr[1], &msg.data.peer_addr[0]) != CLI_PEER_ADDR_LEN) {
+        ESP_LOGE("CLI", "Failed to parse peer address");
+        return -1;
+    }
+
+    ESP_LOGI("User entered", "%s %s", argv[0], argv[1]);
+    if (cli_handle == NULL) {
+        ESP_LOGE("CLI", "Queue not initialized");
+        return -1;
+    }
+    xQueueSend(cli_handle, &msg, 500 / portTICK_PERIOD_MS);
+    return 0;
+}
+
+int scli_receive_peer_addr(uint8_t peer_addr[6])
+{
+    struct cli_msg msg;
+
+    if (cli_handle == NULL) {
+        return 0;
+    }
+    if (xQueueReceive(cli_handle, &msg, PEER_ADDR_PARAM) != pdTRUE) {
+        return 0;
+    }
+    if (msg.type != CLI_MSG_TYPE_PEER_ADDR) {
+        return 0;
+    }
+
+    memcpy(peer_addr, msg.data.peer_addr, CLI_PEER_ADDR_LEN);
+    return 1;
+}
+
 int scli_receive_yesno(bool *console_key)
 {
     struct cli_msg msg;
@@ -265,6 +316,11 @@ static esp_console_cmd_t cmds[] = {
         .command = "Insert",
         .help = "Enter Insert Yes for YES or Insert No for NO",
         .func = &yesno_handler,
+    },
+    {
+        .command = "peer",
+        .help = "Connect only to this peer address: peer xx:xx:xx:xx:xx:xx",
+        .func = &peer_addr_handler,
     },
 };
 
