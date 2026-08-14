@@ -101,6 +101,8 @@ const hci_t *hci_layer_get_interface(void);
 
 int hci_start_up(void);
 void hci_shut_down(void);
+void hci_drop_inbound_acl_reassembly(uint16_t handle);
+osi_thread_t *hci_get_current_thread(void);
 
 bool hci_downstream_data_post(uint32_t timeout);
 

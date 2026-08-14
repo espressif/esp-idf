@@ -36,6 +36,9 @@
 #include "osi/hash_functions.h"
 #include "device/controller.h"
 #include "hci/hci_layer.h"
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "stack/c2h_credit.h"
+#endif
 #include "bta/bta_api.h"
 
 /*******************************************************************************
@@ -165,6 +168,11 @@ static void bte_main_disable(void)
         module_shut_down(get_module(HCI_MODULE));
         module_shut_down(get_module(BTSNOOP_MODULE));
     */
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    /* Host → mail handoff before HCI credit/thread teardown. */
+    btu_c2h_credit_close();
+#endif
 
     hci_shut_down();
 
