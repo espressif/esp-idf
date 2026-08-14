@@ -85,6 +85,7 @@ static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 static uint32_t s_bt_xtal_lpclk_freq = 100000;
 static uint32_t s_bt_lpclk_freq = 0;
 static uint8_t s_btdm_lp_modem_clk_en = 0;
+static uint8_t s_btdm_lp_modem_apb_clk_en = 0;
 
 /*
  ***************************************************************************************************
@@ -358,19 +359,25 @@ btdm_lp_enable_clock(esp_bt_ctrl_btdm_config_t *cfg)
 {
     if (!s_btdm_lp_modem_clk_en) {
         modem_clock_module_enable(PERIPH_BT_MODULE);
+        s_btdm_lp_modem_clk_en = 1;
+    }
+    if (!s_btdm_lp_modem_apb_clk_en) {
         modem_clock_module_enable(PERIPH_BT_APB_MODULE);
         modem_clock_module_mac_reset(PERIPH_BT_MODULE);
         btdm_lp_timer_clk_init(cfg);
-        s_btdm_lp_modem_clk_en = 1;
+        s_btdm_lp_modem_apb_clk_en = 1;
     }
 }
 
 void
 btdm_lp_disable_clock(void)
 {
-    if (s_btdm_lp_modem_clk_en) {
+    if (s_btdm_lp_modem_apb_clk_en) {
         btdm_lp_timer_clk_deinit();
         modem_clock_module_disable(PERIPH_BT_APB_MODULE);
+        s_btdm_lp_modem_apb_clk_en = 0;
+    }
+    if (s_btdm_lp_modem_clk_en) {
         modem_clock_module_disable(PERIPH_BT_MODULE);
         s_btdm_lp_modem_clk_en = 0;
     }
