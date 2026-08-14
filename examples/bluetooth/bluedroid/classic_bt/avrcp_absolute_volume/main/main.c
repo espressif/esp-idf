@@ -43,6 +43,7 @@ static void bt_app_dev_cb(esp_bt_dev_cb_event_t event, esp_bt_dev_cb_param_t *pa
 static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
 
 /* callback function for A2DP sink */
+static void bt_app_a2d_evt_hdl(uint16_t event, void *param);
 static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
 
 #if CONFIG_EXAMPLE_A2DP_SINK_STREAM_ENABLE
@@ -73,10 +74,36 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     bredr_app_gap_evt_def_hdl(event, param);
 }
 
+static void bt_app_a2d_evt_hdl(uint16_t event, void *param)
+{
+    esp_a2d_cb_param_t *a2d = (esp_a2d_cb_param_t *)(param);
+
+    switch (event) {
+    /* when a2dp init or deinit completed, this event comes */
+    case ESP_A2D_PROF_STATE_EVT: {
+        if (ESP_A2D_INIT_SUCCESS == a2d->a2d_prof_stat.init_state) {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Init Complete");
+            /* Get the default value of the delay value */
+            esp_a2d_sink_get_delay_value();
+        } else {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Deinit Complete");
+        }
+        break;
+    }
+    /* others */
+    default:
+        ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
+        break;
+    }
+}
+
 static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 {
     switch (event) {
-    case ESP_A2D_PROF_STATE_EVT:
+    case ESP_A2D_PROF_STATE_EVT: {
+        bt_app_work_dispatch(bt_app_a2d_evt_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
+        break;
+    }
     case ESP_A2D_SNK_PSC_CFG_EVT:
     case ESP_A2D_SNK_SET_DELAY_VALUE_EVT:
     case ESP_A2D_SNK_GET_DELAY_VALUE_EVT: {
@@ -173,8 +200,6 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
 #endif
 
-        /* Get the default value of the delay value */
-        esp_a2d_sink_get_delay_value();
         /* Get local device name */
         esp_bt_gap_get_device_name();
 
