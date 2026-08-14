@@ -731,6 +731,7 @@ hci_cmd_proc_link_control_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint8_t len,
     int rc;
     uint16_t conn_handle;
 
+    (void)conn_handle;
     (void)rspbuf;
     (void)rsplen;
 
@@ -784,6 +785,7 @@ hci_cmd_proc_controller_baseband_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint8
     int rc;
     uint16_t conn_handle;
 
+    (void) conn_handle;
     rc = HCI_CMD_RET_STATUS(HCI_CMD_ERR_UNKNOWN_HCI_CMD);
 
     switch (ocf) {
