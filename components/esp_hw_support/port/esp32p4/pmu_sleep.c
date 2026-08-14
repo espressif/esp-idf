@@ -18,6 +18,7 @@
 #include "soc/soc.h"
 #include "soc/regi2c_syspll.h"
 #include "soc/regi2c_cpll.h"
+#include "soc/regi2c_mpll.h"
 #include "soc/rtc.h"
 #include "soc/cache_reg.h"
 #include "soc/pau_reg.h"
@@ -485,6 +486,13 @@ SPM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
             esp_rom_delay_us(DCDC_STARTUP_TIME_US);
         }
         pmu_sleep_shutdown_ldo();
+    } else if (s_mpll_freq_mhz_before_sleep) {
+        rtc_clk_mpll_enable();
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+        _regi2c_ctrl_ll_master_enable_clock(true);
+        REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_IR_CAL_EXT_CAP, 3);
+        esp_rom_delay_us(10);
+#endif
     }
 
     pmu_ll_imm_set_pad_slp_sel(&PMU, false);
@@ -494,7 +502,6 @@ SPM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 
     if (!dslp) {
         if (s_mpll_freq_mhz_before_sleep) {
-            rtc_clk_mpll_enable();
             rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, true);
 #if CONFIG_SPIRAM
             if (!s_pmu_sleep_regdma_backup_enabled) {
