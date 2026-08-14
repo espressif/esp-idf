@@ -49,6 +49,37 @@ static const packet_fragmenter_callbacks_t *callbacks;
 static hash_map_t *partial_packets;
 static BT_HDR *current_fragment_packet;
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+static void fragmenter_c2h_credit(uint16_t handle, uint16_t num)
+{
+    if (callbacks != NULL && callbacks->c2h_credit != NULL) {
+        callbacks->c2h_credit(handle & HANDLE_MASK, num);
+    }
+}
+#endif
+
+/* HCI-thread only: erase partial, return START credit, free buffer. */
+static void flush_reassembly(uint16_t handle)
+{
+    BT_HDR *partial_packet;
+
+    handle = handle & HANDLE_MASK;
+    if (partial_packets == NULL) {
+        return;
+    }
+
+    partial_packet = (BT_HDR *)hash_map_get(partial_packets, (void *)(uintptr_t)handle);
+    if (partial_packet == NULL) {
+        return;
+    }
+
+    hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    fragmenter_c2h_credit(handle, 1);
+#endif
+    osi_free(partial_packet);
+}
+
 static void init(const packet_fragmenter_callbacks_t *result_callbacks)
 {
     current_fragment_packet = NULL;
@@ -60,6 +91,7 @@ static void cleanup(void)
 {
     if (partial_packets) {
         hash_map_free(partial_packets);
+        partial_packets = NULL;
     }
 }
 
@@ -153,6 +185,13 @@ static void reassemble_and_dispatch(BT_HDR *packet)
         /* All ACL packets need at least the 4-byte HCI ACL preamble (handle + length) */
         if (packet->len < HCI_ACL_PREAMBLE_SIZE) {
             HCI_TRACE_ERROR("ACL packet too short (len=%u)\n", packet->len);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+            /* Still return credit when the handle is present (first 2 bytes). */
+            if (packet->len >= 2) {
+                uint16_t short_handle = (uint16_t)stream[0] | (((uint16_t)stream[1]) << 8);
+                fragmenter_c2h_credit(short_handle, 1);
+            }
+#endif
             osi_free(packet);
             return;
         }
@@ -171,12 +210,20 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             if (partial_packet) {
                 HCI_TRACE_WARNING("%s found unfinished packet for handle with start packet. Dropping old.\n", __func__);
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
+                /* Continuations for the old partial already returned credit when
+                 * merged; only the START represented by the partial remains. */
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                fragmenter_c2h_credit(handle, 1);
+#endif
                 osi_free(partial_packet);
             }
 
             /* START packets must also contain the L2CAP header (length field) */
             if (packet->len < HCI_ACL_PREAMBLE_SIZE + L2CAP_LENGTH_SIZE) {
                 HCI_TRACE_ERROR("ACL START packet too short for L2CAP header (len=%u)\n", packet->len);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                fragmenter_c2h_credit(handle, 1);
+#endif
                 osi_free(packet);
                 return;
             }
@@ -189,6 +236,9 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             /* Check for integer overflow in length calculation */
             if (l2cap_length > (UINT16_MAX - L2CAP_HEADER_SIZE - HCI_ACL_PREAMBLE_SIZE)) {
                 HCI_TRACE_ERROR("L2CAP length too large: %u", l2cap_length);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                fragmenter_c2h_credit(handle, 1);
+#endif
                 osi_free(packet);
                 return;
             }
@@ -199,6 +249,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                     HCI_TRACE_WARNING("%s found l2cap full length %d less than the hci length %d.\n", __func__, l2cap_length, packet->len);
                 }
 
+                /* Complete in one HCI ACL packet: credit after L2CAP finishes. */
                 callbacks->reassembled(packet);
                 return;
             }
@@ -207,6 +258,11 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             if (partial_packet == NULL) {
                HCI_TRACE_WARNING("%s full_length %d no memory.", __func__, full_length);
                assert(0);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+               fragmenter_c2h_credit(handle, 1);
+#endif
+               osi_free(packet);
+               return;
             }
 
             partial_packet->event = packet->event;
@@ -220,12 +276,25 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             STREAM_SKIP_UINT16(stream); // skip the handle
             UINT16_TO_STREAM(stream, full_length - HCI_ACL_PREAMBLE_SIZE);
 
-            hash_map_set(partial_packets, (void *)(uintptr_t)handle, partial_packet);
-            // Free the old packet buffer, since we don't need it anymore
+            if (!hash_map_set(partial_packets, (void *)(uintptr_t)handle, partial_packet)) {
+                HCI_TRACE_ERROR("%s failed to store partial packet for handle 0x%x", __func__, handle);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                fragmenter_c2h_credit(handle, 1);
+#endif
+                osi_free(partial_packet);
+                osi_free(packet);
+                return;
+            }
+            // Free the old packet buffer, since we don't need it anymore.
+            // Credit for this START stays with the partial until L2CAP completes
+            // or the partial is dropped.
             osi_free(packet);
         } else {
             if (!partial_packet) {
                 HCI_TRACE_ERROR("%s got continuation for unknown packet. Dropping it.\n", __func__);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                fragmenter_c2h_credit(handle, 1);
+#endif
                 osi_free(packet);
                 return;
             }
@@ -236,12 +305,18 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             // CVE-2020-0022 (BlueFrag) Fix: Prevent integer underflow
             if (partial_packet->offset > partial_packet->len) {
                 HCI_TRACE_ERROR("%s offset exceeds expected length. Dropping packet.\n", __func__);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                fragmenter_c2h_credit(handle, 1);
+#endif
                 osi_free(packet);
                 return;
             }
 
             if (packet->len > UINT16_MAX - partial_packet->offset) {
                 HCI_TRACE_ERROR("%s: packet->len too large, would overflow. Dropping packet.\n", __func__);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                fragmenter_c2h_credit(handle, 1);
+#endif
                 osi_free(packet);
                 return;
             }
@@ -259,13 +334,17 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 packet->len
             );
 
-            // Free the old packet buffer, since we don't need it anymore
+            // Continuation fragment absorbed into partial: return its credit now.
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+            fragmenter_c2h_credit(handle, 1);
+#endif
             osi_free(packet);
             partial_packet->offset = projected_offset;
 
             if (partial_packet->offset == partial_packet->len) {
                 hash_map_erase(partial_packets, (void *)(uintptr_t)handle);
                 partial_packet->offset = 0;
+                /* Final reassembled buffer carries the START credit; L2CAP returns it. */
                 callbacks->reassembled(partial_packet);
             }
         }
@@ -280,7 +359,8 @@ static const packet_fragmenter_t interface = {
 
     fragment_get_current_packet,
     fragment_and_dispatch,
-    reassemble_and_dispatch
+    reassemble_and_dispatch,
+    flush_reassembly
 };
 
 const packet_fragmenter_t *packet_fragmenter_get_interface(void)
@@ -288,3 +368,11 @@ const packet_fragmenter_t *packet_fragmenter_get_interface(void)
     controller = controller_get_interface();
     return &interface;
 }
+
+#if defined(BT_BLUEDROID_UNIT_TEST)
+/* Reassembly-only tests do not need the controller interface. */
+const packet_fragmenter_t *packet_fragmenter_get_test_interface(void)
+{
+    return &interface;
+}
+#endif
