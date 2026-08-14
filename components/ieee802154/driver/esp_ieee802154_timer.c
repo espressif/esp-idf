@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,11 +59,6 @@ esp_err_t ieee802154_timer1_set_threshold(uint32_t value)
 uint32_t ieee802154_timer1_get_value(void)
 {
     return ieee802154_ll_timer1_get_value();
-}
-
-FORCE_INLINE_ATTR bool is_target_time_expired(uint32_t target, uint32_t now)
-{
-    return (((now - target) & (1 << 31)) == 0);
 }
 
 void ieee802154_timer0_fire_at(uint32_t fire_time)
