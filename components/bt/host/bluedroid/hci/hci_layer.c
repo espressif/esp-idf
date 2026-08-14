@@ -40,16 +40,21 @@
 #include "osi/mutex.h"
 #include "osi/fixed_queue.h"
 #include "osi/fixed_pkt_queue.h"
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "stack/c2h_credit.h"
+#include "stack/hcimsgs.h"
+#endif
 
 #define HCI_HOST_TASK_PINNED_TO_CORE    (TASK_PINNED_TO_CORE)
 #define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
 #define HCI_HOST_TASK_PRIO              (BT_TASK_MAX_PRIORITIES - 3)
 #define HCI_HOST_TASK_NAME              "hciT"
 #define HCI_HOST_TASK_WORKQUEUE_NUM     (2)
-#define HCI_HOST_TASK_WORKQUEUE0_LEN    (1) // for downstream datapath
+#define HCI_HOST_TASK_WORKQUEUE0_LEN    (3) // for downstream datapath + c2h_flush + flush_reassemble
 #define HCI_HOST_TASK_WORKQUEUE1_LEN    (1) // for upstream datapath
 
 #define HCI_DOWNSTREAM_DATA_QUEUE_IDX   (0)
+#define HCI_UPSTREAM_DATA_QUEUE_IDX     (1)
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -68,7 +73,6 @@ typedef struct {
     fixed_queue_t *packet_queue;
     struct osi_event *downstream_data_ready;
     command_waiting_response_t cmd_waiting_q;
-
     /*
       non_repeating_timer_t *command_response_timer;
       list_t *commands_pending_response;
@@ -105,6 +109,11 @@ static serial_data_type_t event_to_data_type(uint16_t event);
 static pkt_linked_item_t *get_waiting_command(command_opcode_t opcode);
 static void dispatch_reassembled(BT_HDR *packet);
 static void dispatch_adv_report(pkt_linked_item_t *linked_pkt);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+static void dispatch_c2h_credit(uint16_t handle, uint16_t num);
+static void dispatch_hci_c2h_credit_flush(void);
+static void flush_reassembly_work(void *context);
+#endif
 
 // Module lifecycle functions
 int hci_start_up(void)
@@ -132,6 +141,12 @@ int hci_start_up(void)
         goto error;
     }
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    if (!hci_c2h_credit_init()) {
+        goto error;
+    }
+#endif
+
     hci_host_startup_flag = true;
     return 0;
 error:
@@ -139,9 +154,51 @@ error:
     return -1;
 }
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+static void flush_reassembly_work(void *context)
+{
+    uint16_t handle = (uint16_t)(uintptr_t)context;
+
+    if (packet_fragmenter != NULL && packet_fragmenter->flush_reassembly != NULL) {
+        packet_fragmenter->flush_reassembly(handle);
+    }
+}
+#endif
+
+void hci_drop_inbound_acl_reassembly(uint16_t handle)
+{
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    handle &= 0x0FFF;
+
+    if (packet_fragmenter == NULL || packet_fragmenter->flush_reassembly == NULL) {
+        return;
+    }
+
+    /* No HCI thread yet / already torn down: flush inline. */
+    if (hci_host_thread == NULL) {
+        packet_fragmenter->flush_reassembly(handle);
+        return;
+    }
+
+    /* BTU must not touch partial_packets; run flush_reassembly on HCI thread. */
+    if (!osi_thread_post(hci_host_thread, flush_reassembly_work, (void *)(uintptr_t)handle,
+                         HCI_DOWNSTREAM_DATA_QUEUE_IDX, OSI_THREAD_MAX_TIMEOUT)) {
+        HCI_TRACE_WARNING("%s post flush_reassembly failed handle=0x%x", __func__, handle);
+        assert(0);
+    }
+#else
+    UNUSED(handle);
+#endif
+}
+
 void hci_shut_down(void)
 {
     hci_host_startup_flag  = false;
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    /* Flush/close HCI credit while HAL + HCI thread are still usable. */
+    hci_c2h_credit_close();
+#endif
 
     /* Close HAL and cleanup before freeing thread: hal->open() and osi_event_bind()
      * stored references to hci_host_thread; they must not use it after osi_thread_free(). */
@@ -153,6 +210,15 @@ void hci_shut_down(void)
 
     osi_thread_free(hci_host_thread);
     hci_host_thread = NULL;
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    hci_c2h_credit_deinit();
+#endif
+}
+
+osi_thread_t *hci_get_current_thread(void)
+{
+    return hci_host_thread;
 }
 
 bool hci_downstream_data_post(uint32_t timeout)
@@ -606,7 +672,6 @@ static void dispatch_reassembled(BT_HDR *packet)
             if (btu_hci_acl_data_post(packet)) {
                 packet = NULL;
             }
-            // TODO: Use controller to host flow control
             break;
         }
 
@@ -617,9 +682,30 @@ static void dispatch_reassembled(BT_HDR *packet)
     } while (0);
 
     if (packet != NULL) {
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+        if ((packet->event & BT_EVT_MASK) == BT_EVT_TO_BTU_HCI_ACL &&
+                packet->len >= HCI_ACL_PREAMBLE_SIZE) {
+            uint8_t *stream = packet->data + packet->offset;
+            uint16_t handle;
+            STREAM_TO_UINT16(handle, stream);
+            dispatch_c2h_credit(handle & HCI_DATA_HANDLE_MASK, 1);
+        }
+#endif
         osi_free(packet);
     }
 }
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+static void dispatch_c2h_credit(uint16_t handle, uint16_t num)
+{
+    hci_c2h_credit_account(handle, num);
+}
+
+static void dispatch_hci_c2h_credit_flush(void)
+{
+    hci_c2h_credit_flush();
+}
+#endif
 
 static void dispatch_adv_report(pkt_linked_item_t *linked_pkt)
 {
@@ -688,12 +774,19 @@ static void init_layer_interface(void)
 static const hci_hal_callbacks_t hal_callbacks = {
     hal_says_packet_ready,
     hal_says_adv_rpt_ready,
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    dispatch_c2h_credit,
+    dispatch_hci_c2h_credit_flush,
+#endif
 };
 
 static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
     transmit_fragment,
     dispatch_reassembled,
-    fragmenter_transmit_finished
+    fragmenter_transmit_finished,
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    dispatch_c2h_credit,
+#endif
 };
 
 const hci_t *hci_layer_get_interface(void)

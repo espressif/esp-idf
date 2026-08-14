@@ -260,6 +260,7 @@ list(APPEND bluedroid_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/stack/btm/btm_pm.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/btm/btm_sco.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/btm/btm_sec.c"
+    "${CMAKE_CURRENT_LIST_DIR}/stack/btu/c2h_credit.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/btu/btu_hcif.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/btu/btu_init.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/btu/btu_task.c"
