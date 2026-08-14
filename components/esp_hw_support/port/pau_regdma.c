@@ -27,12 +27,19 @@ ESP_LOG_ATTR_TAG(TAG, "pau_regdma");
 
 typedef struct {
     pau_hal_context_t *hal;
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_modem_link_protect_cb_t modem_link_protect;
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 } pau_context_t;
 
 pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
 {
     static pau_hal_context_t pau_hal = { .dev = NULL };
-    static pau_context_t pau_context = { .hal = &pau_hal };
+    static pau_context_t pau_context = { .hal = &pau_hal,
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+        .modem_link_protect = NULL,
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    };
 
     /* periph_module_enable don not need to be put in iram because it is
      * called before the flash is powered off and will not be called again. */
@@ -61,6 +68,25 @@ void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries)
     pau_hal_set_regdma_entry_link_addr(PAU_instance()->hal, link_entries);
 }
 
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+void pau_regdma_register_modem_link_protect(pau_regdma_modem_link_protect_cb_t cb)
+{
+    PAU_instance()->modem_link_protect = cb;
+}
+
+void pau_regdma_unregister_modem_link_protect(void)
+{
+    PAU_instance()->modem_link_protect = NULL;
+}
+
+static void IRAM_ATTR pau_regdma_invoke_modem_link_procect(bool protect)
+{
+    if (PAU_instance()->modem_link_protect) {
+        PAU_instance()->modem_link_protect(protect);
+    }
+}
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+
 #if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #if SOC_PM_PAU_REGDMA_LINK_MODEM
 void pau_regdma_set_modem_link_addr(void *link_addr)
@@ -71,18 +97,30 @@ void pau_regdma_set_modem_link_addr(void *link_addr)
 
 void IRAM_ATTR pau_regdma_trigger_modem_link_backup(bool blocking)
 {
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     pau_hal_start_regdma_modem_link(PAU_instance()->hal, true, blocking);
     if (blocking) {
         pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
     }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 }
 
 void IRAM_ATTR pau_regdma_trigger_modem_link_restore(bool blocking)
 {
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     pau_hal_start_regdma_modem_link(PAU_instance()->hal, false, blocking);
     if (blocking) {
         pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
     }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 }
 
 void IRAM_ATTR pau_regdma_modem_link_complete(void)
@@ -113,14 +151,30 @@ void IRAM_ATTR pau_clear_regdma_done_status(void)
 #if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
 void IRAM_ATTR pau_regdma_trigger_wifimac_link_backup(bool blocking)
 {
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     pau_hal_start_regdma_wifimac_link(PAU_instance()->hal, true, blocking);
-    pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+    if (blocking) {
+        pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+    }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 }
 
 void IRAM_ATTR pau_regdma_trigger_wifimac_link_restore(bool blocking)
 {
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     pau_hal_start_regdma_wifimac_link(PAU_instance()->hal, false, blocking);
-    pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+    if (blocking) {
+        pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+    }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 }
 #endif
 #endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */

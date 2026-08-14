@@ -1043,6 +1043,10 @@ config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default y
 
+config SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    bool
+    default y
+
 config SOC_PM_SUPPORT_PMU_CLK_ICG
     bool
     default y
