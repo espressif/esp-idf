@@ -9,6 +9,8 @@ entries:
         usb_console:esp_usb_console_osglue_dis_int (noflash)
         usb_console:esp_usb_console_osglue_ena_int (noflash)
         usb_console:esp_usb_console_interrupt (noflash)
+        usb_console:esp_usb_console_available_for_read (noflash)
+        usb_console:esp_usb_console_write_available (noflash)
         usb_console:esp_usb_console_poll_interrupts (noflash)
         usb_console:esp_usb_console_cdc_acm_cb (noflash)
         usb_console:esp_usb_console_dfu_detach_cb (noflash)
