@@ -393,6 +393,10 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C level in data phase
         lcd_trans->base.length = chunk_size * 8; // transaction length is in bits
         lcd_trans->base.tx_buffer = color;
+        if (esp_ptr_external_ram(color)) {
+            // Allow the SPI master to DMA directly from PSRAM
+            lcd_trans->base.flags |= SPI_TRANS_DMA_USE_PSRAM;
+        }
         if (spi_panel_io->flags.octal_mode) {
             // use 8 lines for transmitting command, address and data
             lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
