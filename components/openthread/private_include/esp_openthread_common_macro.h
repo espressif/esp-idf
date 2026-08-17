@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,4 +41,10 @@
                                 } while (0)
 #else
 #define ESP_OPENTHREAD_ASSERT(a) assert(a)
+#endif
+
+#if CONFIG_OPENTHREAD_MULTIPAN_RCP_ENABLE
+#define OT_INSTANCE_COUNT CONFIG_OPENTHREAD_MULTIPLE_INTERFACES_COUNT
+#else
+#define OT_INSTANCE_COUNT 1
 #endif

@@ -27,6 +27,10 @@
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 
+#if CONFIG_IEEE802154_MULTI_PAN_ENABLE
+#include "esp_ieee802154_multipan.h"
+#endif
+
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
@@ -121,6 +125,16 @@ esp_err_t ieee802154_receive_handle_done(const uint8_t *data)
     s_rx_frame_info[size / IEEE802154_RX_FRAME_SIZE].process = false;
     IEEE802154_RX_BUFFER_STAT_IS_FREE(true);
     return ESP_OK;
+}
+
+static void ieee802154_rx_buffer_clear(void)
+{
+    memset(s_rx_frame, 0, sizeof(s_rx_frame));
+    memset(s_rx_frame_info, 0, sizeof(s_rx_frame_info));
+    s_rx_index = 0;
+    s_recent_rx_frame_info_index = 0;
+    s_needs_next_operation = false;
+    s_pending_rx_stop = false;
 }
 
 static IRAM_ATTR void event_end_process(void)
@@ -914,8 +928,7 @@ esp_err_t ieee802154_mac_init(void)
 
     ieee802154_txon_delay_set();
 
-    memset(s_rx_frame, 0, sizeof(s_rx_frame));
-
+    ieee802154_rx_buffer_clear();
     ieee802154_set_state(IEEE802154_STATE_IDLE);
 
     // TODO: Add flags for IEEE802154 ISR allocating. TZ-102
