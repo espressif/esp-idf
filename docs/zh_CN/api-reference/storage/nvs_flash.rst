@@ -76,7 +76,7 @@ NVS 的操作对象为键值对，其中键是 ASCII 字符串，当前支持的
 
 为减少不同组件之间键名的潜在冲突，NVS 将每个键值对分配到一个命名空间。命名空间的命名规则遵循键名的命名规则，例如，最多可占 15 个字符。此外，单个 NVS 分区最多只能容纳 254 个不同的命名空间。命名空间的名称在调用 :cpp:func:`nvs_open` 或 :cpp:type:`nvs_open_from_partition` 中指定。调用后将返回一个不透明句柄，用于后续调用 ``nvs_get_*``、``nvs_set_*`` 和 :cpp:func:`nvs_commit` 函数。这样，句柄就与命名空间和分区关联，键名不会与其他命名空间中的同名键发生冲突。
 
-open mode 参数控制访问级别和安全行为：
+``open_mode`` 参数控制访问级别和安全行为：
 
 - ``NVS_READONLY``：只读访问权限。所有写操作将被拒绝。
 - ``NVS_READWRITE``：标准读写访问权限。被擦除的数据会被标记为已删除，但仍保留在 flash 中。
@@ -85,6 +85,22 @@ open mode 参数控制访问级别和安全行为：
 .. note::
 
     在不同的 NVS 分区中，同名的命名空间被视为相互独立的命名空间。
+
+C++ API
+^^^^^^^
+
+除上文所述的 C API 外，NVS 还在 :component_file:`nvs_flash/include/nvs_handle.hpp` 中提供了 C++ 类接口（命名空间 ``nvs``）。
+
+使用 ``nvs::open_nvs_handle()`` 或 ``nvs::open_nvs_handle_from_partition()`` 打开命名空间。这些函数返回 ``std::unique_ptr<nvs::NVSHandle>``。当该 ``std::unique_ptr`` 被销毁时，句柄会自动关闭（RAII），因此无需另行调用关闭函数。
+
+``nvs::NVSHandle`` 提供与 C API 对应的方法，包括：
+
+- ``set_item`` / ``get_item`` — 面向整型、浮点型和枚举类型的类型化读写
+- ``set_string`` / ``get_string`` — 字符串值
+- ``set_blob`` / ``get_blob`` — 二进制 blob 值
+- ``commit``、``erase_item``、``erase_all``、``purge_all``、``find_key`` 及相关辅助方法
+
+``open_mode`` 的取值（ ``NVS_READONLY``、``NVS_READWRITE``、``NVS_READWRITE_PURGE``）以及键名和命名空间约束与 C API 相同。完整的类与函数说明见下文 :ref:`API 参考 <nvs-api-reference>`，完整示例见 :example:`storage/nvs/nvs_rw_value_cxx`。
 
 NVS 迭代器
 ^^^^^^^^^^^^^
@@ -264,7 +280,7 @@ ESP-IDF :example:`storage/nvs` 目录下提供了数个代码示例：
 
 :example:`storage/nvs/nvs_rw_value_cxx`
 
-  这个例子与 :example:`storage/nvs/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 句柄类。
+  这个例子与 :example:`storage/nvs/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 句柄类（通过 ``nvs::open_nvs_handle()`` 获取 ``nvs::NVSHandle``）。
 
 :example:`storage/nvs/nvs_statistics`
 
@@ -552,9 +568,13 @@ NVS 正常运行所需的默认最小空间为 12 KiB (``0x3000``)，即至少�
 
 
 
+.. _nvs-api-reference:
+
 API 参考
 -------------
 
 .. include-build-file:: inc/nvs_flash.inc
 
 .. include-build-file:: inc/nvs.inc
+
+.. include-build-file:: inc/nvs_handle.inc

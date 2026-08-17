@@ -76,7 +76,7 @@ Namespaces
 
 To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of the namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Furthermore, there can be no more than 254 different namespaces in one NVS partition. Namespace name is specified in the :cpp:func:`nvs_open` or :cpp:type:`nvs_open_from_partition` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and :cpp:func:`nvs_commit` functions. This way, a handle is associated with a namespace and partition, and key names will not collide with same names in other namespaces.
 
-The open mode parameter controls the access level and security behavior:
+The ``open_mode`` parameter controls the access level and security behavior:
 
 - ``NVS_READONLY``: Read-only access. All write operations will be rejected.
 - ``NVS_READWRITE``: Standard read-write access. Erased data is marked as deleted but remains in flash.
@@ -85,6 +85,22 @@ The open mode parameter controls the access level and security behavior:
 .. note::
 
     Namespaces with the same name in different NVS partitions are considered as separate namespaces.
+
+C++ API
+^^^^^^^
+
+In addition to the C API described above, NVS provides a C++ class interface in :component_file:`nvs_flash/include/nvs_handle.hpp` (namespace ``nvs``).
+
+Use ``nvs::open_nvs_handle()`` or ``nvs::open_nvs_handle_from_partition()`` to open a namespace. These functions return a ``std::unique_ptr<nvs::NVSHandle>``. The handle is closed automatically when the unique pointer is destroyed (RAII), so there is no need to call a separate close function.
+
+``nvs::NVSHandle`` provides methods that mirror the C API, including:
+
+- ``set_item`` / ``get_item`` — typed get/set for integral, floating-point, and enum types
+- ``set_string`` / ``get_string`` — string values
+- ``set_blob`` / ``get_blob`` — binary blob values
+- ``commit``, ``erase_item``, ``erase_all``, ``purge_all``, ``find_key``, and related helpers
+
+The ``open_mode`` values (``NVS_READONLY``, ``NVS_READWRITE``, ``NVS_READWRITE_PURGE``) and key and namespace constraints are the same as for the C API. See the :ref:`API Reference <nvs-api-reference>` below for full class and function documentation, and :example:`storage/nvs/nvs_rw_value_cxx` for a complete example.
 
 NVS Iterators
 ^^^^^^^^^^^^^
@@ -264,7 +280,7 @@ You can find code examples in the :example:`storage/nvs` directory of ESP-IDF ex
 
 :example:`storage/nvs/nvs_rw_value_cxx`
 
-  This example does exactly the same as :example:`storage/nvs/nvs_rw_value`, except that it uses the C++ NVS handle class.
+  This example does exactly the same as :example:`storage/nvs/nvs_rw_value`, except that it uses the C++ NVS handle class (``nvs::NVSHandle`` via ``nvs::open_nvs_handle()``).
 
 :example:`storage/nvs/nvs_statistics`
 
@@ -552,9 +568,13 @@ At build time the mode NVS will use for accessing its underlying storage can be 
 
 
 
+.. _nvs-api-reference:
+
 API Reference
 -------------
 
 .. include-build-file:: inc/nvs_flash.inc
 
 .. include-build-file:: inc/nvs.inc
+
+.. include-build-file:: inc/nvs_handle.inc
