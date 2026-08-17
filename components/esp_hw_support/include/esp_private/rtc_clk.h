@@ -45,9 +45,10 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void);
 /**
  * @brief Notify that the BBPLL has a new in-use consumer
  *
- * Currently, this function is only used for tracking whether USB Serial/JTAG is using the 48MHz PHY clock
+ * Currently, this function is used for tracking whether USB PHY is using the 48MHz PHY clock.
  *
- * Note: Calling this function only helps to not disable the BBPLL clock in `rtc_clk_cpu_freq_set_config`.
+ * The first consumer enables BBPLL analog power. Later `rtc_clk_cpu_freq_set_config` will not
+ * disable BBPLL while any consumer remains.
  */
 void rtc_clk_bbpll_add_consumer(void);
 

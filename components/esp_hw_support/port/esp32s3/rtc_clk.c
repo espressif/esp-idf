@@ -35,22 +35,36 @@ static uint32_t s_apb_freq;
 
 void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 static void rtc_clk_cpu_freq_to_rc_fast(void);
+static void rtc_clk_bbpll_enable(void);
+static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq);
 
 extern uint32_t g_dig_dbias_pvt_240m;
 extern uint32_t g_rtc_dbias_pvt_240m;
 extern uint32_t g_dig_dbias_pvt_non_240m;
 extern uint32_t g_rtc_dbias_pvt_non_240m;
 
-static uint32_t s_bbpll_digi_consumers_ref_count = 0; // Currently, it only tracks whether the 48MHz PHY clock is in-use by USB Serial/JTAG
+static uint32_t s_bbpll_digi_consumers_ref_count = 0; // Currently, it tracks whether the 48MHz PHY clock is in-use by USB
 
 void rtc_clk_bbpll_add_consumer(void)
 {
-    s_bbpll_digi_consumers_ref_count += 1;
+    // Should be refactored in PM-653
+    if (s_bbpll_digi_consumers_ref_count == 0) {
+        if (s_cur_pll_freq == 0) {
+            rtc_clk_bbpll_enable();
+            rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_480M_FREQ_MHZ);
+        }
+    }
+    s_bbpll_digi_consumers_ref_count++;
 }
 
 void rtc_clk_bbpll_remove_consumer(void)
 {
-    s_bbpll_digi_consumers_ref_count -= 1;
+    // Should be refactored in PM-653
+    if (s_bbpll_digi_consumers_ref_count > 0) {
+        s_bbpll_digi_consumers_ref_count--;
+    } else {
+        ESP_HW_LOGW(TAG, "bbpll clk ref cnt mismatched!");
+    }
 }
 
 void rtc_clk_32k_enable(bool enable)
