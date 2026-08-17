@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import subprocess
-from sys import exit
+import sys
 
 try:
-    from typing import List
+    from typing import List  # noqa: F401
 except ImportError:
     # Only used for type annotations
     pass
@@ -84,7 +84,7 @@ def main():  # type: () -> None
         print('mypy check failed for:')
         for file_name in type_issues:
             print('\t', file_name)
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
