@@ -572,9 +572,17 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     }
 
     if (dma_chan->flags.isr_cache_safe) {
+        if (cbs->on_trans_done) {
+            ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_done), ESP_ERR_INVALID_ARG,
+                                TAG, "on_trans_done not in IRAM");
+        }
         if (cbs->on_trans_eof) {
             ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_eof), ESP_ERR_INVALID_ARG,
                                 TAG, "on_trans_eof not in IRAM");
+        }
+        if (cbs->on_trans_total_eof) {
+            ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_total_eof), ESP_ERR_INVALID_ARG,
+                                TAG, "on_trans_total_eof not in IRAM");
         }
         if (cbs->on_descr_err) {
             ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG,
@@ -595,8 +603,12 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
 
     // enable/disable GDMA interrupt events for TX channel
     esp_os_enter_critical(&pair->spinlock);
+    gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_DONE,
+                         cbs->on_trans_done != NULL);
     gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_EOF,
                          cbs->on_trans_eof != NULL);
+    gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_TOTAL_EOF,
+                         cbs->on_trans_total_eof != NULL);
     gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_DESC_ERROR,
                          cbs->on_descr_err != NULL);
 #if GDMA_LL_EVENT_TX_LINK_SWITCH
@@ -1045,6 +1057,9 @@ void gdma_default_tx_isr(void *args)
     uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, false);
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, intr_status);
 
+    if ((intr_status & GDMA_LL_EVENT_TX_DONE) && tx_chan->cbs.on_trans_done) {
+        need_yield |= tx_chan->cbs.on_trans_done(&tx_chan->base, NULL, tx_chan->user_data);
+    }
     if ((intr_status & GDMA_LL_EVENT_TX_EOF) && tx_chan->cbs.on_trans_eof) {
         uint32_t eof_addr = gdma_hal_get_eof_desc_addr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, true);
         gdma_event_data_t edata = {
@@ -1052,6 +1067,9 @@ void gdma_default_tx_isr(void *args)
             .flags.normal_eof = true,
         };
         need_yield |= tx_chan->cbs.on_trans_eof(&tx_chan->base, &edata, tx_chan->user_data);
+    }
+    if ((intr_status & GDMA_LL_EVENT_TX_TOTAL_EOF) && tx_chan->cbs.on_trans_total_eof) {
+        need_yield |= tx_chan->cbs.on_trans_total_eof(&tx_chan->base, NULL, tx_chan->user_data);
     }
     if ((intr_status & GDMA_LL_EVENT_TX_DESC_ERROR) && tx_chan->cbs.on_descr_err) {
         need_yield |= tx_chan->cbs.on_descr_err(&tx_chan->base, NULL, tx_chan->user_data);
