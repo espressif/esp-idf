@@ -30,7 +30,10 @@ bool esp_openthread_instances_init(void)
 
 void esp_openthread_instances_deinit(otInstance *instance)
 {
-    otInstanceFinalize(instance);
+    (void)instance;
+    for (int i = 0; i < OT_INSTANCE_COUNT; i++) {
+        otInstanceFinalize(s_instances[i]);
+    }
 }
 
 bool esp_openthread_tasklets_are_pending(otInstance *instance)
