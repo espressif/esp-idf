@@ -15,6 +15,7 @@ endif()
 
 set(priv_requires "sdmmc"
                   "esp_driver_sdmmc"
+                  "esp_psram"
                   "sdmmc_test_boards"
                   "common_test_flows"
                   "unity"
