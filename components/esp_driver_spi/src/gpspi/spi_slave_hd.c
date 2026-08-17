@@ -168,7 +168,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spi_ll_dma_enable_out_auto_wrback(spi_periph_signal[host->dma_ctx->tx_dma_chan.host_id].hw, host->dma_ctx->tx_dma_chan.chan_id, 1);
     spi_ll_dma_set_out_eof_generation(spi_periph_signal[host->dma_ctx->tx_dma_chan.host_id].hw, host->dma_ctx->tx_dma_chan.chan_id, 1);
 #endif
-    ret = spicommon_dma_desc_alloc(host_id, bus_config->max_transfer_sz, &host->bus_attr->max_transfer_sz);
+    ret = spicommon_dma_desc_alloc(host_id, bus_config->max_transfer_sz, bus_config->max_transfer_sz, &host->bus_attr->max_transfer_sz);
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -544,7 +544,7 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     if (!host->tx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->tx_trans_queue, &host->tx_curr_trans, &awoken);
         if ((ret == pdTRUE) && host->tx_curr_trans.trans) {
-            spicommon_dma_desc_setup_link(host->dma_ctx, 0, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len, false);
+            spicommon_dma_desc_setup_link(host->dma_ctx, 0, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len, false, NULL);
             spi_dma_reset(host->dma_ctx->tx_dma_chan);
             spi_slave_hd_hal_txdma(hal);
             spi_dma_start(host->dma_ctx->tx_dma_chan, host->dma_ctx->dmadesc_tx);
@@ -563,7 +563,7 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     if (!host->rx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->rx_trans_queue, &host->rx_curr_trans, &awoken);
         if ((ret == pdTRUE) && host->rx_curr_trans.trans) {
-            spicommon_dma_desc_setup_link(host->dma_ctx, 0, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len, true);
+            spicommon_dma_desc_setup_link(host->dma_ctx, 0, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len, true, NULL);
             spi_dma_reset(host->dma_ctx->rx_dma_chan);
             spi_slave_hd_hal_rxdma(hal);
             spi_dma_start(host->dma_ctx->rx_dma_chan, host->dma_ctx->dmadesc_rx);
@@ -802,7 +802,7 @@ esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     }
 
     int offset = append->free_desc - append->desc_root;
-    spicommon_dma_desc_setup_link(host->dma_ctx, offset, data, len, false);
+    spicommon_dma_desc_setup_link(host->dma_ctx, offset, data, len, false, NULL);
     append->free_desc->arg = arg;
 
     if (!append->used_desc_cnt) {
@@ -813,7 +813,9 @@ esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     } else {
         //there is already a consecutive link
         gdma_link_list_handle_t link_handle = host->dma_ctx->tx_link_handle;
-        gdma_link_concat(link_handle, offset - 1, link_handle, offset);
+        //link list depth may different from dma_desc_num, so calculate using mantianed dma_desc_num
+        int prev_offset = (offset == 0) ? ((int)dma_desc_num - 1) : (offset - 1);
+        gdma_link_concat(link_handle, prev_offset, link_handle, offset);
         spi_dma_append(host->dma_ctx->tx_dma_chan);
     }
 
@@ -841,7 +843,7 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     }
 
     int offset = append->free_desc - append->desc_root;
-    spicommon_dma_desc_setup_link(host->dma_ctx, offset, data, len, true);
+    spicommon_dma_desc_setup_link(host->dma_ctx, offset, data, len, true, NULL);
     append->free_desc->arg = arg;
 
     if (!append->used_desc_cnt) {
@@ -852,7 +854,8 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     } else {
         //there is already a consecutive link
         gdma_link_list_handle_t link_handle = host->dma_ctx->rx_link_handle;
-        gdma_link_concat(link_handle, offset - 1, link_handle, offset);
+        int prev_offset = (offset == 0) ? ((int)dma_desc_num - 1) : (offset - 1);
+        gdma_link_concat(link_handle, prev_offset, link_handle, offset);
         spi_dma_append(host->dma_ctx->rx_dma_chan);
     }
 

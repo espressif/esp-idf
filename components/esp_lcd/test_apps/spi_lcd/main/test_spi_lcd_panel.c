@@ -20,6 +20,7 @@
 #include "test_spi_board.h"
 
 #define TEST_SPI_HOST_ID  SPI2_HOST
+#define TEST_IMG_SIZE (200 * 200 * sizeof(uint16_t))
 
 void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done,
                                     void *user_data, int cmd_bits, int param_bits, bool oct_mode)
@@ -38,7 +39,7 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
         .miso_io_num = -1,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = 100 * 100 * sizeof(uint16_t),
+        .max_transfer_sz = TEST_IMG_SIZE,
     };
 #if SOC_SPI_SUPPORT_OCT
     if (oct_mode) {
@@ -73,8 +74,6 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
 #endif
     TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, io_handle));
 }
-
-#define TEST_IMG_SIZE (200 * 200 * sizeof(uint16_t))
 
 static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_handle_t panel_handle, bool use_psram)
 {

@@ -402,7 +402,10 @@ void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int *dum
 int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns);
 
 /**
- * @brief Get max length (in bytes) of one transaction
+ * @brief Get the maximum length of one transaction, in bytes
+ *
+ * @note The returned value is limited by :cpp:member:`spi_bus_config_t::max_transfer_sz` and the capability of the selected SPI host.
+ * When DMA is enabled, GP-SPI2 (except ESP32) is not limited to 32 KB; GP-SPI3 remains limited to 32 KB.
  *
  * @param       host_id    SPI peripheral
  * @param[out]  max_bytes  Max length of one transaction, in bytes

@@ -2406,3 +2406,82 @@ TEST_CASE("Test master cmd/data DDR/SDR", "[spi]")
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 #endif
+
+#ifdef SPI_LL_PERIPH_HAS_SCT
+/* Just over one DMA max segment; on S3/C3/... this is 32KB + 1. */
+#define TEST_SCT_LARGE_LEN   (32769)
+#define TEST_SCT_SMALL_LEN   4
+
+static void s_spi_master_trans_once(spi_device_handle_t dev, const void *tx, void *rx, size_t len_bytes, bool check_loopback)
+{
+    spi_transaction_t trans = {
+        .length = tx || rx ? len_bytes * 8 : 0,
+        .tx_buffer = tx ? tx : NULL,
+        .rx_buffer = rx ? rx : NULL,
+        .flags = SPI_TRANS_DMA_USE_PSRAM,   // try using psram if possible
+    };
+
+    printf("test tx %p rx %p len %d\n", tx, rx, len_bytes);
+    TEST_ESP_OK(spi_device_transmit(dev, &trans));
+    if (tx) {
+        ESP_LOG_BUFFER_HEXDUMP("tx", tx, MIN(32, len_bytes), ESP_LOG_INFO);
+    }
+    if (rx) {
+        ESP_LOG_BUFFER_HEXDUMP("rx", rx, MIN(32, len_bytes), ESP_LOG_INFO);
+    }
+    if (check_loopback) {
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(tx, rx, len_bytes);
+    }
+}
+
+TEST_CASE("SPI Master: FD/HD small and oversize transfer", "[spi]")
+{
+    const size_t lens[] = {TEST_SCT_SMALL_LEN, TEST_SCT_LARGE_LEN};
+    const size_t max_len = TEST_SCT_LARGE_LEN;
+    uint8_t cs_pins[] = DUMMY_CS_PINS();
+
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num; // self-loopback for FD check
+    buscfg.max_transfer_sz = max_len;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+    spi_device_handle_t fd_dev = NULL;
+    spi_device_handle_t hd_dev = NULL;
+    spi_device_interface_config_t fd_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t hd_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    hd_cfg.spics_io_num = cs_pins[0];
+    hd_cfg.flags = SPI_DEVICE_HALFDUPLEX;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &fd_cfg, &fd_dev));
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &hd_cfg, &hd_dev));
+
+    uint32_t malloc_cap = MALLOC_CAP_DMA;
+#if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
+    malloc_cap |= MALLOC_CAP_SPIRAM;
+#endif
+    uint8_t *tx_buf = heap_caps_malloc(max_len, malloc_cap);
+    uint8_t *rx_buf = heap_caps_calloc(1, max_len, malloc_cap);
+    TEST_ASSERT_NOT_NULL(tx_buf);
+    TEST_ASSERT_NOT_NULL(rx_buf);
+    for (size_t i = 0; i < max_len; i++) {
+        tx_buf[i] = (uint8_t)((i * 2) + 1);
+    }
+
+    /* Cross FD/HD with small/large: classic path + autosplit + device switch. */
+    for (size_t i = 0; i < sizeof(lens) / sizeof(lens[0]); i++) {
+        size_t len = lens[i];
+        memset(rx_buf, 0, len);
+        s_spi_master_trans_once(hd_dev, tx_buf, NULL, len, false);
+
+        s_spi_master_trans_once(fd_dev, tx_buf, rx_buf, len, true);
+        // test FD with RX only
+        memset(rx_buf, 0, len);
+        s_spi_master_trans_once(fd_dev, NULL, rx_buf, len, false);
+    }
+
+    free(tx_buf);
+    free(rx_buf);
+    TEST_ESP_OK(spi_bus_remove_device(fd_dev));
+    TEST_ESP_OK(spi_bus_remove_device(hd_dev));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
+#endif // SPI_LL_PERIPH_HAS_SCT

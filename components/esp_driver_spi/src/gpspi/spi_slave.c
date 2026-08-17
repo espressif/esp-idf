@@ -191,7 +191,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
             goto cleanup;
         }
         spihost[host]->dma_ctx = spi_bus_get_dma_ctx(host);
-        ret = spicommon_dma_desc_alloc(host, bus_config->max_transfer_sz, &spihost[host]->bus_attr->max_transfer_sz);
+        ret = spicommon_dma_desc_alloc(host, bus_config->max_transfer_sz, bus_config->max_transfer_sz, &spihost[host]->bus_attr->max_transfer_sz);
         if (ret != ESP_OK) {
             goto cleanup;
         }
@@ -603,14 +603,14 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
 static void SPI_SLAVE_ISR_ATTR s_spi_slave_dma_prepare_data(spi_dma_ctx_t *dma_ctx, spi_slave_hal_context_t *hal)
 {
     if (hal->rx_buffer) {
-        spicommon_dma_desc_setup_link(dma_ctx, 0, hal->rx_buffer, (hal->rx_bitlen + 7) / 8, true);
+        spicommon_dma_desc_setup_link(dma_ctx, 0, hal->rx_buffer, (hal->rx_bitlen + 7) / 8, true, NULL);
 
         spi_dma_reset(dma_ctx->rx_dma_chan);
         spi_slave_hal_hw_prepare_rx(hal->hw);
         spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
     }
     if (hal->tx_buffer) {
-        spicommon_dma_desc_setup_link(dma_ctx, 0, hal->tx_buffer, (hal->tx_bitlen + 7) / 8, false);
+        spicommon_dma_desc_setup_link(dma_ctx, 0, hal->tx_buffer, (hal->tx_bitlen + 7) / 8, false, NULL);
 
         spi_dma_reset(dma_ctx->tx_dma_chan);
         spi_slave_hal_hw_prepare_tx(hal->hw);
