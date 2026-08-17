@@ -1286,17 +1286,21 @@ static BOOLEAN bta_av_co_audio_codec_build_config(const UINT8 *p_codec_caps, UIN
     case BTC_AV_CODEC_M24: {
         UINT32 cfg_bit_rate;
         UINT32 cap_bit_rate;
+        UINT32 nego_bit_rate;
 
         /* LOSC(1) + media(1) + codec(1) + CIE(6) = 9 octets */
         memcpy(p_codec_cfg, bta_av_co_cb.codec_cfg.info, BTA_AV_CO_M24_INFO_LEN);
 
         cfg_bit_rate = bta_av_m24_br_info(p_codec_cfg);
         cap_bit_rate = bta_av_m24_br_info(p_codec_caps);
+        /* Bit rate 0 means "not known" per A2DP; do not treat it as min=0. */
+        nego_bit_rate = bta_av_m24_br_min(cfg_bit_rate, cap_bit_rate);
 
-        bta_av_m24_set_br_info(p_codec_cfg, BTA_AV_CO_MIN(cfg_bit_rate, cap_bit_rate));
+        bta_av_m24_set_br_info(p_codec_cfg, nego_bit_rate);
         p_codec_cfg[BTA_AV_CO_M24_VBR_BR1_OFF] &= (p_codec_caps[BTA_AV_CO_M24_VBR_BR1_OFF] & A2D_M24_IE_VBR_MSK) | ~A2D_M24_IE_VBR_MSK;
 
-        APPL_TRACE_EVENT("bta_av_co_audio_codec_build_config bit rate: 0x%u(cfg_br: %u/cap_br: %u, min: %u)", bta_av_m24_br_info(p_codec_cfg), cfg_bit_rate, cap_bit_rate, BTA_AV_CO_MIN(cfg_bit_rate, cap_bit_rate));
+        APPL_TRACE_EVENT("bta_av_co_audio_codec_build_config bit rate: %u(cfg_br: %u/cap_br: %u, nego: %u)",
+                         bta_av_m24_br_info(p_codec_cfg), cfg_bit_rate, cap_bit_rate, nego_bit_rate);
         break;
     }
 #endif
