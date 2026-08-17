@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -466,6 +466,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
 
     // Verify the read does not block
     while (loop_cnt < 100) {
+        errno = 0;
         if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             ESP_LOG_BUFFER_HEX(TAG, in_buffer, n);
             ESP_LOGI(TAG, "recv test string: %s", ((test_vfs_eth_tap_msg_t *)in_buffer)->str);
@@ -533,8 +534,8 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     FD_SET(eth_tap_fd, &rfds);
 
     TEST_ASSERT_EQUAL(0, select(eth_tap_fd + 1, &rfds, NULL, NULL, &tv));
-    TEST_ASSERT_EQUAL(EAGAIN, errno);
 
+    errno = 0;
     n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_EQUAL(EAGAIN, errno);
     TEST_ASSERT_EQUAL(-1, n);
@@ -645,6 +646,7 @@ TEST_CASE("esp32 l2tap - write", "[ethernet]")
 
     // set different Ethernet type than the fd is configured to
     test_msg.header.type = htons(ETH_FILTER_LE + 10);
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, write(eth_tap_fd, &test_msg, sizeof(test_msg)));
     TEST_ASSERT_EQUAL(EBADMSG, errno);
 
@@ -776,6 +778,7 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
     ESP_LOGI(TAG, "Verify that RCV_FILTER is allowed to be configured only after interface is set...");
     uint16_t eth_type_filter = ETH_FILTER_LE;
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     TEST_ASSERT_EQUAL(EACCES, errno);
     TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
@@ -842,6 +845,7 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
 
     ESP_LOGI(TAG, "Verify that the setting the same Ethernet type to other fd at the same interface was unsuccessful...");
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_S_RCV_FILTER, &eth_type_filter));
     TEST_ASSERT_EQUAL(EINVAL, errno);
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
@@ -902,6 +906,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
     ESP_LOGI(TAG, "Try to set non-existing Ethernet interface...");
+    errno = 0;
     TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_NOT_DEF"));
     TEST_ASSERT_EQUAL(ENODEV, errno);
     ESP_LOGI(TAG, "Verify that previous setting is kept...");
@@ -1022,6 +1027,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     int loop_cnt = 0;
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
     while (loop_cnt < 100) {
+        errno = 0;
         if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
             break;
@@ -1049,6 +1055,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     loop_cnt = 0;
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
     while (loop_cnt < 100) {
+        errno = 0;
         if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
             break;
@@ -1063,6 +1070,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     TEST_ASSERT_EQUAL(0, loop_cnt);
 
     // Try to use unsupported operation
+    errno = 0;
     int new_fd = fcntl(eth_tap_fd, F_DUPFD, 0);
     TEST_ASSERT_EQUAL(-1, new_fd);
     TEST_ASSERT_EQUAL(ENOSYS, errno);
