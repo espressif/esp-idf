@@ -14,6 +14,7 @@
 #include "esp_openthread_ncp.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_types.h"
+#include "esp_radio_spinel_host.h"
 #include "esp_system.h"
 #include "esp_spinel_interface.hpp"
 #include "esp_spinel_ncp_vendor_macro.h"
@@ -99,8 +100,7 @@ void esp_openthread_set_coprocessor_reset_failure_callback(esp_openthread_coproc
 
 esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *config)
 {
-    spinel_iid_t iidList[ot::Spinel::kSpinelHeaderMaxNumIid];
-    iidList[0] = 0;
+    ESP_RETURN_ON_FALSE(config != NULL, ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG, "incoming config is NULL");
 
     ot::Spinel::RadioSpinelCallbacks callbacks;
     memset(&callbacks, 0, sizeof(callbacks));
@@ -118,8 +118,16 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
     ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(config->radio_config.radio_spi_config), OT_PLAT_LOG_TAG,
                         "Spinel interface init failed");
 #endif
+#if CONFIG_OPENTHREAD_MULTIPAN_HOST_ENABLE
+    spinel_iid_t iidList[ESP_RADIO_SPINEL_IID_LIST_LEN] = {
+        static_cast<spinel_iid_t>(s_spinel_interface.GetSpinelInterface().GetIid()),
+        static_cast<spinel_iid_t>(SPINEL_HEADER_GET_IID(OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID)),
+    };
+#else
+    spinel_iid_t iidList[ESP_RADIO_SPINEL_IID_LIST_LEN] = {0};
+#endif
     s_spinel_driver.SetCoprocessorResetFailureCallback(ot_spinel_coprocessor_reset_failure_callback, esp_openthread_get_instance());
-    s_spinel_driver.Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_spinel_driver.Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ESP_RADIO_SPINEL_IID_LIST_LEN);
     if (strlen(s_internal_rcp_version) > 0) {
         const char *running_rcp_version = s_spinel_driver.GetVersion();
         if (strcmp(s_internal_rcp_version, running_rcp_version) != 0) {
