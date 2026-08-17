@@ -22,11 +22,29 @@ The example uses the ESP-BLE-AUDIO library pieces for: BAP Unicast Server with P
 idf.py menuconfig
 ```
 
+> **This board must be built to match the topology [tmap_central](../central/) is built for.** Neither side negotiates it: the central looks for a fixed number of peers, each exposing a fixed number of sink ASEs with a specific channel. A mismatch stalls in discovery or fails to build the unicast group.
+
+| Central **Unicast topology** | Boards of this example | **Earbuds type** | **Earbud Location** |
+| --- | --- | --- | --- |
+| `1 peripheral, 1 CIS (TX+RX)` | 1 | `Single headset` | `Mono` |
+| `1 peripheral, 2 CISes (TX+RX, TX)` **(default)** | 1 | `Single headset` **(default)** | `Stereo` **(default)** |
+| `2 peripherals (coordinated set), 2 CISes (TX+RX, TX)` | 2 | `Duo headset` on both | `Left` on one, `Right` on the other |
+
 Under **Example: TMAP Peripheral (CT & UMR)**:
 
-* **Earbuds type** — `Single ear headset` or `Duo headset`. Duo selects `BT_CSIP_SET_MEMBER` and `BT_CAP_ACCEPTOR_SET_MEMBER`, enabling CSIS and adding RSI to the advertisement.
-* **Device rank in set** — integer 1–2, only when Duo is selected; written into the CSIS register parameters.
-* **Earbud Location** — `Left Ear` or `Right Ear`. Adds `FRONT_LEFT` / `FRONT_RIGHT` to the PACS sink/source location bitmap.
+* **Earbuds type** — `Single headset` (standalone: no CSIS, no RSI) or `Duo headset` (selects `BT_CSIP_SET_MEMBER` and `BT_CAP_ACCEPTOR_SET_MEMBER`, enabling CSIS and adding RSI to the advertisement).
+* **Earbud Location** — sets the PACS sink and source location bitmap, and **this is what the central uses to pick the channel it sends here**. The options offered follow the earbuds type, so the two choices together can only express a topology the central supports:
+  * with `Single headset` — a whole device, so mono or stereo:
+    * `Mono` — empty bitmap; the central sends one mono stream. Pair with the central's `1 peripheral, 1 CIS` topology.
+    * `Stereo` (default) — `FRONT_LEFT | FRONT_RIGHT`, so one board renders both channels. Matches the central's default `1 peripheral, 2 CISes` topology.
+  * with `Duo headset` — one of a pair, so left or right:
+    * `Left` (default) — `FRONT_LEFT`, and rank 1.
+    * `Right` — `FRONT_RIGHT`, and rank 2.
+* **Device rank in set** — integer 1–2, only when Duo is selected; written into the CSIS register parameters. The CSIS instance is registered as lockable, which requires a non-zero rank that is **unique** within the set: duplicate ranks break the CSIP ordered access procedure the central locks the set with. The default follows Earbud Location (left → 1, right → 2), and a set member can only be left or right, so building the two boards for their respective ears already gives them distinct ranks. Rank orders the set lock and decides which member the central gives its bidirectional CIS to; it does **not** say which ear this board is.
+
+The ASE counts come from `sdkconfig.defaults`: two sink ASEs and one source ASE, which is what the central's topologies need (two sinks on one device, or one sink per device, plus a source for the bidirectional CIS). Each ASE gets its own stream slot, RX metrics and — for source ASEs — its own TX scheduler, buffer and sequence number.
+
+`CONFIG_BT_ASCS_MAX_ACTIVE_ASES` is pinned to 3 there as well, and it is **not** the same thing as the CIS count. It bounds how many ASEs may be non-idle at once, and a bidirectional CIS carries two ASEs on one CIS — so `1 peripheral, 2 CISes` needs 3 active ASEs (two sinks plus one source) over only 2 CIS. Its Kconfig default is `BT_ISO_MAX_CHAN`, i.e. 2, which is one short; leaving it at the default makes the third codec configuration fail with ASCS response `0x0D` (Insufficient Resources) and `AscsAseNewFail` in the library log, and the central reports `Unicast start completed, err -77`.
 
 ### Security & Pairing
 
@@ -52,6 +70,9 @@ idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkco
 
 For `esp32s31`, replace the chip overlay accordingly.
 
+A coordinated set needs this example on two boards, one built for the `Left`
+ear and the other for `Right`.
+
 (Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
@@ -64,9 +85,10 @@ For `esp32s31`, replace the chip overlay accordingly.
 6. TMAP discovery records whether the peer is CG and/or UMS, then `ccp_discover_tbs` triggers TBS discovery.
 7. After GTBS is discovered the TBS URI list is read; `read_uri_schemes_string_cb` saves the first URI and chains into `mcp_discover_mcs`.
 8. MCS discovery walks player name → track title → duration → position → playback speed → seeking speed → playing order → orders supported → media state → opcodes → CCID.
-9. ASCS callbacks accept config/QoS/enable/start; the `enabled` stream op auto-starts sink streams (receiver-start-ready); RX metrics are reset on start and updated per received SDU.
-10. Helpers `initiate_call`/`terminate_call` (gated on peer CG) and `play_media`/`pause_media` (gated on peer UMS) issue TBS and MCC commands.
-11. On disconnect, the connection handle is cleared and advertising restarts.
+9. ASCS callbacks accept config/QoS/enable/start; the `enabled` stream op auto-starts sink streams (receiver-start-ready); RX metrics are reset on start and updated per received SDU, per sink ASE.
+10. A source ASE that reaches "started" arms its own TX scheduler at the QoS interval and transmits dummy SDUs back to the central — this is the uplink half of the central's bidirectional CIS. The scheduler and buffer are released when the stream stops, when its CIS disconnects, or when the ASE is released.
+11. Helpers `initiate_call`/`terminate_call` (gated on peer CG) and `play_media`/`pause_media` (gated on peer UMS) issue TBS and MCC commands.
+12. On disconnect, the connection handle is cleared and advertising restarts.
 
 ## Expected Log
 
@@ -78,7 +100,7 @@ TMAP_PER: CSIP set member initialized
 TMAP_PER: PRSI: 0x<hex>
 TMAP_PER: vcp vol renderer, vocs_cnt <n> aics_cnt <n>
 TMAP_PER: VCP volume renderer initialized
-TMAP_PER: BAP unicast server initialized
+TMAP_PER: BAP unicast server initialized: 2 sink / 1 source ASE
 TMAP_PER: CCP call controller initialized
 TMAP_PER: MCP controller initialized
 TMAP_PER: Advertising started (handle 0)
@@ -102,7 +124,7 @@ TMAP_PER: Read media state succeeded, state <s>
 TMAP_PER: Read content control id succeeded, ccid <c>
 ```
 
-ASCS / unicast streaming:
+ASCS / unicast streaming. Which streams appear depends on the topology the central was built for — a second `SNK #1` when it drives two CISes onto this device, and `SRC #0` whenever it pairs a source into the bidirectional CIS:
 
 ```
 TMAP_PER: [SNK] Config request:
@@ -111,11 +133,16 @@ TMAP_PER: [SNK #0] Enable request (meta_len <n>)
 TMAP_PER: [SNK #0] Stream enabled
 TMAP_PER: [SNK #0] Start request
 TMAP_PER: [SNK #0] Stream started
+TMAP_PER: [SNK #0] RX: <count> packets
+TMAP_PER: [SRC #0] Stream started
+TMAP_PER: [SRC #0] TX: <count> packets
 TMAP_PER: [SNK #0] Stop request
 TMAP_PER: [SNK #0] Stream stopped, reason 0x<rr>
 TMAP_PER: [SNK #0] Disable request
 TMAP_PER: [SNK #0] Release request
 ```
+
+Each ASE keeps its own counters, so `[SNK #0]` and `[SNK #1]` advance independently rather than sharing one total.
 
 VCP / call control / disconnect:
 
@@ -144,11 +171,19 @@ Tag is `TMAP_PER`.
 
 ## Peer Pairing
 
-Run [tmap_central](../central/) on a second board.
+Run [tmap_central](../central/) on another board. How many boards of this example are needed, and how they must be configured, follows the topology the central is built for:
+
+| Central topology | Boards of this example | Configuration |
+| --- | --- | --- |
+| `1P_1CIS` | 1 | `Single headset` with the `Mono` location, so the central sends one mono stream |
+| `1P_2CIS` | 1 | `Stereo` location, so PACS advertises both channels |
+| `2P_2CIS` | 2 | `Duo headset` on both, `Left` on one and `Right` on the other — the rank default follows, giving them 1 and 2 |
 
 1. Flash this peripheral and start it; advertising begins on handle 0.
-2. Flash and start the central; it scans for TMAS+UMR and connects to this device.
+2. Flash and start the central; it scans for TMAS+UMR (plus a matching CSIS RSI in a coordinated-set build) and connects to this device.
 3. After pairing and MTU exchange, both sides complete TMAP discovery; this peripheral then discovers GTBS and reads the URI list.
-4. The MCC chain reads the central's media proxy state; the central's CAP initiator configures and starts the sink stream.
-5. The peripheral auto-starts the sink stream from the `enabled` callback and logs received SDU metrics.
+4. The MCC chain reads the central's media proxy state; the central's CAP initiator configures and starts the streams.
+5. The peripheral auto-starts each sink stream from the `enabled` callback and logs its received SDU metrics; a configured source stream transmits back on the bidirectional CIS.
 6. Use `initiate_call`/`terminate_call` to drive the central's TBS, and `play_media`/`pause_media` to send PLAY/PAUSE via MCC.
+
+For the two-board set, the CSIS instance is lockable, so the central takes the set lock by rank before configuring the streams and releases it afterwards. Each board logs `Client <p> locked the lock` / `... released the lock`.

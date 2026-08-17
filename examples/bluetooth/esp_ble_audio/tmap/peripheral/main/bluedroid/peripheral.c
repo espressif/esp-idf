@@ -36,7 +36,7 @@ static esp_ble_gap_ext_adv_params_t ext_adv_params = {
     .secondary_phy = ESP_BLE_GAP_PHY_2M,
     .sid = ADV_SID,
     .scan_req_notif = false,
-    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
+    .own_addr_type = BLE_ADDR_TYPE_RANDOM,
     .tx_power = ADV_TX_POWER,
 };
 
@@ -48,6 +48,10 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
                               esp_ble_gap_cb_param_t *param)
 {
     switch (event) {
+    case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
+        adv_op_status = param->ext_adv_set_rand_addr.status;
+        xSemaphoreGive(adv_sem);
+        break;
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
         adv_op_status = param->ext_adv_set_params.status;
         xSemaphoreGive(adv_sem);
@@ -107,10 +111,14 @@ int set_device_name(void)
 
 int ext_adv_start(const uint8_t *ext_data, uint16_t ext_len)
 {
+    esp_bd_addr_t addr = ADV_ADDR;
+
     WAIT_API(esp_ble_gap_ext_adv_set_params(ADV_HANDLE, &ext_adv_params));
+    WAIT_API(esp_ble_gap_ext_adv_set_rand_addr(ADV_HANDLE, addr));
     WAIT_API(esp_ble_gap_config_ext_adv_data_raw(ADV_HANDLE, ext_len, ext_data));
     WAIT_API(esp_ble_gap_ext_adv_start(1, ext_adv_inst));
 
-    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
+    ESP_LOGI(TAG, "Advertising started (handle %u) as %02x:%02x:%02x:%02x:%02x:%02x",
+             ADV_HANDLE, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
     return 0;
 }

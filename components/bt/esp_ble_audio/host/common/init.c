@@ -185,7 +185,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260802)
+#define LEA_VERSION     (0x20260820)
 
 struct lib_ext_cfgs {
     /* BLE */
