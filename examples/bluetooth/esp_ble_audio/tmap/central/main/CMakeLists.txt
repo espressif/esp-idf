@@ -1,5 +1,6 @@
 set(srcs "cap_initiator.c"
          "ccp_server.c"
+         "csip_set_coordinator.c"
          "mcp_server.c"
          "vcp_vol_ctlr.c"
          "main.c")

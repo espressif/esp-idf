@@ -7,11 +7,17 @@ menu "Example: TMAP Peripheral (CT & UMR)"
     choice EXAMPLE_TMAP_PER_TYPE_CHOICE
 
         prompt "Earbuds type"
+        default EXAMPLE_TMAP_PER_SINGLE
         help
-            Select the Earbuds Type to compile.
+            Select the Earbuds Type to compile. Together with Earbud Location this
+            has to match the topology tmap_central is built for; the defaults of
+            both examples pair up as "1 peripheral, 2 CISes".
 
         config EXAMPLE_TMAP_PER_SINGLE
-            bool "Single ear headset"
+            bool "Single headset"
+            help
+                A standalone acceptor: no CSIS instance and no RSI. Which channels
+                it renders is the separate choice below.
 
         config EXAMPLE_TMAP_PER_DUO
             bool "Duo headset"
@@ -20,26 +26,66 @@ menu "Example: TMAP Peripheral (CT & UMR)"
 
     endchoice
 
+    choice EXAMPLE_TMAP_PER_LOCATION
+
+        prompt "Earbud Location"
+        default EXAMPLE_TMAP_PER_STEREO if EXAMPLE_TMAP_PER_SINGLE
+        default EXAMPLE_TMAP_PER_LEFT
+        help
+            Which channels this device renders, published as the PACS Sink and
+            Source Audio Locations, and what the central reads to decide the
+            channel it sends here. The options follow the earbuds type: a single
+            headset is a whole device, so it is mono or stereo, while a set member
+            is one of a pair, so it is left or right.
+
+        config EXAMPLE_TMAP_PER_MONO
+            bool "Mono"
+            depends on !EXAMPLE_TMAP_PER_DUO
+            help
+                Publish an empty Audio Locations bitmap, which BAP reads as "mono,
+                no preference", so the central sends one mono stream. This is what
+                a one-ear headset renders; pair it with the central's
+                "1 peripheral, 1 CIS" topology.
+
+        config EXAMPLE_TMAP_PER_STEREO
+            bool "Stereo"
+            depends on !EXAMPLE_TMAP_PER_DUO
+            help
+                Publish front left and front right, so one device renders both
+                channels. This is the default, matching the central's default
+                "1 peripheral, 2 CISes" topology, which configures both channels
+                on this board.
+
+        config EXAMPLE_TMAP_PER_LEFT
+            bool "Left"
+            depends on EXAMPLE_TMAP_PER_DUO
+
+        config EXAMPLE_TMAP_PER_RIGHT
+            bool "Right"
+            depends on EXAMPLE_TMAP_PER_DUO
+
+    endchoice
+
     if EXAMPLE_TMAP_PER_DUO
         config EXAMPLE_TMAP_PER_SET_RANK
             int "Device rank in set"
             range 1 2
+            default 1 if EXAMPLE_TMAP_PER_LEFT
+            default 2 if EXAMPLE_TMAP_PER_RIGHT
+            default 1
             help
-                Rank of this device in set.
+                Rank of this device in set. A lockable coordinated set requires a
+                non-zero rank that is unique among its members, so the two boards
+                must end up with rank 1 and rank 2 — duplicate ranks break the
+                CSIP ordered access procedure the central locks the set with.
+
+                The default follows Earbud Location (left is 1, right is 2), and a
+                set member can only be left or right, so building the two boards
+                for their respective ears already gives them distinct ranks.
+
+                Rank orders the set lock, and decides which member the central's
+                "2 peripherals" topology gives the bidirectional CIS to. It does
+                not say which ear this board is — that comes from Earbud Location.
     endif
-
-    choice EXAMPLE_TMAP_PER_LOCATION
-
-        prompt "Earbud Location"
-        help
-            Select the Earbud location.
-
-        config EXAMPLE_TMAP_PER_LEFT
-            bool "Left Ear"
-
-        config EXAMPLE_TMAP_PER_RIGHT
-            bool "Right Ear"
-
-    endchoice
 
 endmenu
