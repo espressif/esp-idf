@@ -84,3 +84,12 @@ examples/openthread/ot_trel:
     - if: IDF_TARGET not in ["esp32c6", "esp32s3"]
       reason: only test on esp32c6 and esp32s3
   <<: *openthread_dependencies
+
+examples/openthread/ot_zb_multipan:
+  enable:
+    - if: SOC_WIFI_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32s31", "esp32c61"]
+      temporary: true
+      reason: OpenThread + Zigbee multipan example does not support esp32c2, esp32s2, esp32s31 and esp32c61 yet
+  <<: *openthread_dependencies
