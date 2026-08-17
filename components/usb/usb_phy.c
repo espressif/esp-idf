@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,9 @@
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
+#if USB_WRAP_LL_DEPENDS_ON_BBPLL
+#include "esp_private/rtc_clk.h"
+#endif
 
 #if SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
 #include "esp_private/sleep_usb.h"
@@ -381,13 +384,6 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     }
 #endif
 
-    // For FSLS PHY that shares pads with GPIO peripheral, we must set drive capability to 3 (40mA)
-    if (phy_target == USB_PHY_TARGET_INT) {
-        assert(usb_dwc_info.controllers[otg11_index].internal_phy_io);
-        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dm, GPIO_DRIVE_CAP_3);
-        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dp, GPIO_DRIVE_CAP_3);
-    }
-
     *handle_ret = (usb_phy_handle_t) phy_context;
     if (phy_target == USB_PHY_TARGET_EXT) {
         phy_context->iopins = (usb_phy_ext_io_conf_t *) calloc(1, sizeof(usb_phy_ext_io_conf_t));
@@ -402,6 +398,16 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     if (config->otg_io_conf && (phy_context->controller == USB_PHY_CTRL_OTG)) {
         const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[otg11_index].otg_signals;
         ESP_ERROR_CHECK(phy_otg_iopins_configure(config->otg_io_conf, otg_sig));
+    }
+    if (phy_target == USB_PHY_TARGET_INT) {
+#if USB_WRAP_LL_DEPENDS_ON_BBPLL
+        // PHY clock is derived from BBPLL. Do not turn off BBPLL during low-power modes
+        rtc_clk_bbpll_add_consumer();
+#endif
+        // For FSLS internal PHY that shares pads with GPIO peripheral, we must set drive capability to 3 (40mA)
+        assert(usb_dwc_info.controllers[otg11_index].internal_phy_io);
+        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dm, GPIO_DRIVE_CAP_3);
+        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dp, GPIO_DRIVE_CAP_3);
     }
     return ESP_OK;
 
@@ -448,6 +454,9 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
         // Clear pullup and pulldown loads on D+ / D-, and disable the pads
         usb_wrap_hal_phy_disable_pull_override(&handle->wrap_hal);
         p_phy_ctrl_obj->fsls_phy = NULL;
+#if USB_WRAP_LL_DEPENDS_ON_BBPLL
+        rtc_clk_bbpll_remove_consumer();
+#endif
     } else { // USB_PHY_TARGET_UTMI
         p_phy_ctrl_obj->utmi_phy = NULL;
     }
