@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 #include "sdkconfig.h"
 #include "esp_private/gdma.h"
 
@@ -28,10 +29,10 @@ extern "C" {
  *
  * @note Call this help function after the gdma set up is completed. Then check the gdma functionality is still working.
  *
- * @param chan GDMA channel handle to be reset
- * @param ... Other GDMA channel handle if any
+ * @param chan_num Number of GDMA channel handles
+ * @param ... GDMA channel handles to be reset
  */
-void test_gdma_trigger_retention_backup(gdma_channel_handle_t chan, ...);
+void test_gdma_trigger_retention_backup(size_t chan_num, ...);
 
 #ifdef __cplusplus
 }

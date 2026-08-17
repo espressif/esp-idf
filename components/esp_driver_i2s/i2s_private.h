@@ -11,7 +11,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_periph.h"
 #include "hal/i2s_hal.h"
@@ -27,6 +26,7 @@
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
 #endif
+#include "esp_private/gdma_link.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_gpio_reserve.h"
 #if SOC_HAS(PAU)
@@ -115,6 +115,8 @@ typedef struct {
 #else
     intr_handle_t           dma_chan;       /*!< interrupt channel handle */
 #endif
+    gdma_link_list_handle_t dma_link;       /*!< DMA descriptor link list */
+    uint32_t                link_index;      /*!< Index of the next completed DMA link item */
     uint32_t                desc_num;       /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
     uint32_t                frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots */
     uint32_t                buf_size;       /*!< dma buffer size */
@@ -122,7 +124,6 @@ typedef struct {
     bool                    auto_clear_before_cb;    /*!< Set to auto clear DMA TX descriptor before callback, i2s will always send zero automatically if no data to send */
     uint32_t                rw_pos;         /*!< reading/writing pointer position */
     void                    *curr_ptr;      /*!< Pointer to current dma buffer */
-    lldesc_t                **desc;         /*!< dma descriptor array */
     uint8_t                 **bufs;         /*!< dma buffer array */
 } i2s_dma_t;
 
@@ -306,17 +307,17 @@ esp_err_t i2s_init_i2s_intr(i2s_chan_handle_t handle);
 #endif
 
 /**
- * @brief Free I2S DMA descriptor and DMA buffer
+ * @brief Free I2S DMA buffers and the DMA link list
  *
  * @param handle        I2S channel handle
  * @return
  *      - ESP_OK                Free success
  *      - ESP_ERR_INVALID_ARG   NULL pointer
  */
-esp_err_t i2s_free_dma_desc(i2s_chan_handle_t handle);
+esp_err_t i2s_free_dma_resources(i2s_chan_handle_t handle);
 
 /**
- * @brief Allocate memory for I2S DMA descriptor and DMA buffer
+ * @brief Allocate I2S DMA buffers and mount them to the DMA link list
  *
  * @param handle        I2S channel handle
  * @param bufsize       The DMA buffer size
@@ -324,9 +325,9 @@ esp_err_t i2s_free_dma_desc(i2s_chan_handle_t handle);
  * @return
  *      - ESP_OK                Allocate memory success
  *      - ESP_ERR_INVALID_ARG   NULL pointer or bufsize is too big
- *      - ESP_ERR_NO_MEM        No memory for DMA descriptor and DMA buffer
+ *      - ESP_ERR_NO_MEM        No memory for DMA buffers or DMA link list
  */
-esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t bufsize);
+esp_err_t i2s_alloc_dma_resources(i2s_chan_handle_t handle, uint32_t bufsize);
 
 /**
  * @brief Get DMA buffer size

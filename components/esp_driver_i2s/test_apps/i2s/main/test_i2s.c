@@ -902,6 +902,14 @@ TEST_CASE("I2S_loopback_test", "[i2s]")
 
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
     TEST_ESP_OK(i2s_channel_disable(rx_handle));
+
+    /* Verify the circular DMA link restarts from its head after both channels are re-enabled. */
+    TEST_ESP_OK(i2s_channel_enable(tx_handle));
+    TEST_ESP_OK(i2s_channel_enable(rx_handle));
+    i2s_read_write_test(tx_handle, rx_handle);
+    TEST_ESP_OK(i2s_channel_disable(tx_handle));
+    TEST_ESP_OK(i2s_channel_disable(rx_handle));
+
     TEST_ESP_OK(i2s_del_channel(tx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }

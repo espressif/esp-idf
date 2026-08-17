@@ -154,9 +154,9 @@ static esp_err_t i2s_std_set_slot(i2s_chan_handle_t handle, const i2s_std_slot_c
     /* The DMA buffer need to re-allocate if the buffer size changed.
      * Skip when GDMA is not the data path (e.g. Bluetooth destination), since the channel never owns a DMA buffer. */
     if (handle->destination == I2S_DESTINATION_DMA && handle->dma.buf_size != buf_size) {
-        ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
-        ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, buf_size),
-                            TAG, "allocate memory for dma descriptor failed");
+        ESP_RETURN_ON_ERROR(i2s_free_dma_resources(handle), TAG, "failed to free the old dma resources");
+        ESP_RETURN_ON_ERROR(i2s_alloc_dma_resources(handle, buf_size),
+                            TAG, "allocate dma resources failed");
     }
     /* Share bck and ws signal in full-duplex mode */
     if (handle->controller->full_duplex) {
