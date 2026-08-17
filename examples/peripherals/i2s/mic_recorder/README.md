@@ -42,6 +42,7 @@ idf.py menuconfig
 In the `Example Configuration` menu:
 
 * Use `Microphone type` to select between the digital (PDM) and the analog (ES8389) microphone.
+* Use `Startup data to discard (ms)` to drop the first N milliseconds of PCM after the microphone path is running. The default is 20 ms. Set it to 0 to keep every sample. Refer to the microphone datasheet for the startup delay (also called turn-on time).
 * The configuration menu shown below the mic type is updated automatically:
   * `PDM MIC Configuration` — assign the PDM clock and data GPIOs (digital microphone).
   * `ES8389 Codec Configuration` — assign the I2C and I2S GPIOs, plus the mic gain (analog microphone).
@@ -71,7 +72,7 @@ A digital-microphone run looks like:
 ```
 PDM MIC recording example start
 --------------------------------------
-I (...) mic_rec_example: Starting recording for 2 seconds!
+I (...) mic_rec_example: Starting PDM recording for 2 seconds!
 I (...) mic_rec_example: Recording done, sending PCM data over console
 AUDIO_META sample_rate=16000 bits_per_sample=16 channels=2 data_size=128000 encoding=base64
 AUDIO_BASE64_BEGIN
@@ -122,5 +123,10 @@ Open it with [Audacity](https://www.audacityteam.org/) to listen to the recordin
 
     * Check the I2C wiring (SDA/SCL) and that `ES8389 Codec Configuration` matches your board.
     * Increase `Mic gain (dB)` in the `Example Configuration` menu.
+
+* Recording starts with a pop, click, or a short stretch of invalid audio
+
+    * Increase `Startup data to discard (ms)` in the `Example Configuration` menu. The stored recording length stays the same.
+    * Refer to the microphone datasheet for the startup delay (also called turn-on time).
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

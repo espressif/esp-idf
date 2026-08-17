@@ -24,6 +24,18 @@ menu "Example Configuration"
             select CODEC_ES8389_SUPPORT
     endchoice
 
+    config EXAMPLE_STARTUP_DISCARD_MS
+        int "Startup data to discard (ms)"
+        default 20
+        range 0 500
+        help
+            Number of milliseconds of PCM to read and discard after the
+            microphone path is running, before the recording is stored.
+            Use this to skip the microphone or codec startup transient.
+            The default is 20 ms. Set to 0 to keep every sample.
+            Refer to the microphone datasheet for the startup delay
+            (also called turn-on time).
+
     menu "PDM MIC Configuration"
         depends on EXAMPLE_MIC_TYPE_DMIC
 

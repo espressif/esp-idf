@@ -57,6 +57,27 @@ static void capture_pcm(i2s_chan_handle_t rx_handle, uint8_t *pcm_data, size_t p
     }
 }
 
+static void discard_startup_pcm(i2s_chan_handle_t rx_handle)
+{
+    const size_t bytes_to_discard = (size_t)EXAMPLE_SAMPLE_RATE * EXAMPLE_CHANNEL_COUNT *
+                                    (EXAMPLE_BITS_PER_SAMPLE / 8) * CONFIG_EXAMPLE_STARTUP_DISCARD_MS / 1000;
+    if (bytes_to_discard == 0) {
+        return;
+    }
+
+    uint8_t discard_buf[EXAMPLE_DMA_READ_SIZE];
+    size_t bytes_discarded = 0;
+
+    ESP_LOGI(TAG, "Discarding the first %d ms of startup data", CONFIG_EXAMPLE_STARTUP_DISCARD_MS);
+    while (bytes_discarded < bytes_to_discard) {
+        size_t bytes_to_read = bytes_to_discard - bytes_discarded;
+        bytes_to_read = MIN(bytes_to_read, EXAMPLE_DMA_READ_SIZE);
+        size_t bytes_read = 0;
+        ESP_ERROR_CHECK(i2s_channel_read(rx_handle, discard_buf, bytes_to_read, &bytes_read, 1000));
+        bytes_discarded += bytes_read;
+    }
+}
+
 static void send_pcm_as_base64(const uint8_t *pcm_data, size_t pcm_size)
 {
     unsigned char encoded_chunk[EXAMPLE_BASE64_BUFFER_SIZE];
@@ -100,6 +121,8 @@ static void record_from_pdm_microphone(uint8_t *pcm_data, size_t pcm_size)
     ESP_ERROR_CHECK(i2s_channel_init_pdm_rx_mode(rx_handle, &pdm_rx_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
+    /* Discard the startup PCM to skip the microphone startup transient. */
+    discard_startup_pcm(rx_handle);
     ESP_LOGI(TAG, "Starting PDM recording for %d seconds!", EXAMPLE_RECORD_TIME_SECONDS);
     capture_pcm(rx_handle, pcm_data, pcm_size);
 
@@ -191,6 +214,8 @@ static void record_from_es8389_microphone(uint8_t *pcm_data, size_t pcm_size)
     ESP_ERROR_CHECK(esp_codec_dev_set_in_gain(codec_handle, CONFIG_EXAMPLE_MIC_GAIN));
     ESP_LOGI(TAG, "ES8389 codec initialized");
 
+    /* Discard the startup PCM to skip the microphone or codec startup transient. */
+    discard_startup_pcm(rx_handle);
     ESP_LOGI(TAG, "Starting ES8389 recording for %d seconds!", EXAMPLE_RECORD_TIME_SECONDS);
     capture_pcm(rx_handle, pcm_data, pcm_size);
 
