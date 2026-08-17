@@ -17,7 +17,6 @@ stages:
 
 include:
   - project: "ci/actions/common"
-    ref: "v2"
     file: "templates/idf/common-scripts.yml"
     inputs:
       ci_python_constraint_file: "espidf.constraints.v5.5.txt"
@@ -68,6 +67,7 @@ variables:
   ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v5.5:1"
   ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v5.5-docs:1"
   TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v5.5-target-test:1"
+  PRE_COMMIT_ENV_IMAGE: "${CI_REGISTRY}/ci/images/pre-commit-idf-v5.5:1"
 
   # Set this variable to the branch of idf-constraints repo in order to test a custom Python constraint file. The
   # branch name must be without the remote part ("origin/"). Keep the variable empty in order to use the constraint
