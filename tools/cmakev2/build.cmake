@@ -932,7 +932,8 @@ endfunction()
         idf_build_generate_metadata([BINARY <binary>]
                                     [EXECUTABLE <executable>]
                                     [OUTPUT_FILE <file>]
-                                    [HINTS_OUTPUT_FILE <file>])
+                                    [HINTS_OUTPUT_FILE <file>]
+                                    [GDBINIT_DIR <dir>])
 
     *BINARY[in,opt]*
 
@@ -954,6 +955,15 @@ endfunction()
         behaviour prevents hint files from different binaries overwriting each
         other in multi-binary projects.
 
+    *GDBINIT_DIR[in,opt]*
+
+        Optional directory for the generated gdbinit files. If not provided,
+        the default location ``<build>/gdbinit`` is used. Multi-executable
+        projects should pass a distinct directory per executable so their
+        gdbinit files do not overwrite each other. Only the per-executable
+        ``symbols``, ``connect`` and ``py_extensions`` files are written here;
+        the project-wide ``prefix_map`` file stays under ``<build>/gdbinit``.
+
     Generate metadata for the specified ``binary`` or ``executable`` target and
     store it in the specified ``OUTPUT_FILE``. If no ``OUTPUT_FILE`` is
     provided, the default location ``<build>/project_description.json`` will be
@@ -961,7 +971,7 @@ endfunction()
 #]]
 function(idf_build_generate_metadata)
     set(options)
-    set(one_value OUTPUT_FILE BINARY EXECUTABLE HINTS_OUTPUT_FILE)
+    set(one_value OUTPUT_FILE BINARY EXECUTABLE HINTS_OUTPUT_FILE GDBINIT_DIR)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
@@ -1037,11 +1047,17 @@ function(idf_build_generate_metadata)
     idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
     __get_components_metadata(COMPONENTS "${component_interfaces}" OUTPUT all_component_info_json)
 
-    __generate_gdbinit()
+    if(NOT DEFINED ARG_GDBINIT_DIR)
+        set(ARG_GDBINIT_DIR "${BUILD_DIR}/gdbinit")
+    endif()
+
+    # Each executable produces its own gdbinit output referencing its own ELF.
+    # __generate_gdbinit resolves the ELF path from the executable target.
+    __generate_gdbinit("${ARG_EXECUTABLE}" "${ARG_GDBINIT_DIR}"
+                       gdbinit_files_symbols gdbinit_files_py_extensions gdbinit_files_connect)
+    # prefix_map is project-wide (set once in project.cmake), unlike the
+    # per-executable files returned by __generate_gdbinit above.
     idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
-    idf_build_get_property(gdbinit_files_symbols GDBINIT_FILES_SYMBOLS)
-    idf_build_get_property(gdbinit_files_py_extensions GDBINIT_FILES_PY_EXTENSIONS)
-    idf_build_get_property(gdbinit_files_connect GDBINIT_FILES_CONNECT)
     __get_openocd_options(debug_arguments_openocd)
 
     if(NOT DEFINED ARG_OUTPUT_FILE)

@@ -30,6 +30,17 @@ Each executable then gets its own binary, flash, and configuration targets, name
 
 A single build now produces both ``app1.bin`` and ``app2.bin``, each with its own ``appN-flash`` and ``appN-menuconfig`` targets.
 
+To emit the ``project_description.json`` and gdbinit files that tooling such as ``idf.py gdb`` consumes, call :cmakev2:ref:`idf_build_generate_metadata` for each executable. These outputs are written to project-wide default paths, so every executable past the first must be given a distinct ``OUTPUT_FILE`` and ``GDBINIT_DIR`` to keep its metadata and gdbinit files from overwriting the others':
+
+.. code-block:: cmake
+
+    idf_build_generate_metadata(BINARY app1_binary)
+    idf_build_generate_metadata(BINARY app2_binary
+                                OUTPUT_FILE "${CMAKE_BINARY_DIR}/project_description_app2.json"
+                                GDBINIT_DIR "${CMAKE_BINARY_DIR}/gdbinit/app2")
+
+Each executable's ``project_description.json`` then references its own ELF and points ``gdbinit_files`` at its own directory, so a debugger loads the symbols of the executable it was launched for.
+
 .. note::
 
     A multi-binary project has a single project-wide ``sdkconfig``, and a
