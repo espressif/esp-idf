@@ -15,6 +15,8 @@
 #endif // CONFIG_LIBC_NEWLIB
 
    *(.fini)
+   *(.fini_array)
+   *(.fini_array.*)
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
    *(.eh_frame_hdr)
 #endif // CONFIG_IDF_TARGET_ARCH_XTENSA

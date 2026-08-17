@@ -70,6 +70,7 @@
   .note.GNU-stack     0 : { *(.note.GNU-stack) }
 
   .riscv.attributes   0 : { *(.riscv.attributes) }
+#include "ld.elf.internal.sections"
 
 /**
  * .xt.prop and .xt.lit sections will be used by the debugger and disassembler

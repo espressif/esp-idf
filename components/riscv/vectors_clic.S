@@ -29,11 +29,16 @@
     .global _interrupt_handler
     .global _panic_handler
 
-    .section .exception_vectors_table.text
+    .section .exception_vectors_table.text, "ax"
 
     /* Prevent the compiler from generating 2-byte instruction in the vector tables */
     .option push
     .option norvc
+    /* The vector tables have a fixed layout, so keep linker relaxation from
+     * touching them: with relaxation enabled the assembler emits the .balign
+     * padding as R_RISCV_ALIGN-managed bytes, of which GNU ld may retain more
+     * than the exact amount, changing the table size between builds. */
+    .option norelax
 
     /**
      * Non-hardware vectored interrupt entry. MTVEC CSR points here.

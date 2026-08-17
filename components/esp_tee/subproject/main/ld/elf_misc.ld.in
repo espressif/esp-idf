@@ -56,6 +56,7 @@
 
   .comment 0 : { *(.comment) }
   .note.GNU-stack 0: { *(.note.GNU-stack) }
+#include "ld.elf.internal.sections"
 
 #if CONFIG_IDF_TARGET_ARCH_RISCV
   .riscv.attributes 0: { *(.riscv.attributes) }
@@ -70,5 +71,18 @@
     */
    *(.rela.*)
    *(.got .got.plt) /* TODO: GCC-382 */
+
+   /**
+    * GNU ld removes them via --gc-sections; LLD treats them as GC roots,
+    * so they must be discarded explicitly to not trip --orphan-handling=error.
+    */
+   *(.init)
+   *(.init_array)
+   *(.init_array.*)
+   *(.fini)
+   *(.fini_array)
+   *(.fini_array.*)
+   *(.eh_frame_hdr)
+   *(.eh_frame)
   }
 #endif

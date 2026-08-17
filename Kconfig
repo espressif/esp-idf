@@ -828,6 +828,16 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 result, consider enabling LTO selectively for specific components by
                 adding the -flto=auto compile option to them.
 
+        config COMPILER_USE_LLD
+            bool "Use LLD (ld.lld) as the linker"
+            depends on IDF_TARGET_ARCH_RISCV
+            default n
+            help
+                Link the application with the LLVM LLD linker instead of the GNU ld
+                provided by the toolchain. The "ld.lld" binary must be available in
+                PATH. Options not supported by LLD (e.g. --no-warn-rwx-segments)
+                are omitted from the link automatically.
+
         choice COMPILER_ORPHAN_SECTIONS
             prompt "Orphan sections handling"
             default COMPILER_ORPHAN_SECTIONS_ERROR

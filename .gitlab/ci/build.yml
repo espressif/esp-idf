@@ -35,10 +35,15 @@
     TEST_BUILD_OPTS_EXTRA: ""
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
+    #
+    # In addition to the default sdkconfig.ci.* configs, build the
+    # sdkconfig.ci_clang.* configs, which are meant only for the clang build
+    # jobs (the generic build jobs would build them with the GCC toolchain).
     - run_cmd idf-build-apps build
       -p tools/test_apps/system/clang_build_test
       components/esp_security/test_apps/fault_assert_opt_check
       -t $IDF_TARGET
+      --config-rules "sdkconfig.ci=default" "sdkconfig.ci.*=" "sdkconfig.ci_clang.*="
       --modified-components \"${MR_MODIFIED_COMPONENTS}\"
       --modified-files \"${MR_MODIFIED_FILES}\"
       $TEST_BUILD_OPTS_EXTRA

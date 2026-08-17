@@ -512,8 +512,42 @@ function(__init_project_configuration)
         string(TOUPPER ${target_upper} target_upper)
         # Add this symbol as a hint for esp_idf_size to guess the target name
         list(APPEND link_options "-Wl,--defsym=IDF_TARGET_${target_upper}=0")
+        if(CONFIG_COMPILER_USE_LLD)
+            if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+                # The last --ld-path on the link line takes precedence over the
+                # one set in the toolchain file, selecting LLD for the link.
+                # The bare name is looked up in PATH.
+                list(APPEND link_options "--ld-path=ld.lld")
+            else()
+                # GCC has no --ld-path; -fuse-ld=lld makes the driver search
+                # its search paths and PATH for a binary named "ld.lld".
+                list(APPEND link_options "-fuse-ld=lld")
+            endif()
+            # Bare-metal images have no dynamic loader, so PT_GNU_RELRO is
+            # meaningless. LLD enables relro by default and errors out when
+            # relro sections (e.g. TLS .flash.tdata) are not contiguous in the
+            # IDF linker scripts, so disable it.
+            list(APPEND link_options "-Wl,-z,norelro")
+            # Some targets (e.g. esp32s3) use NOLOAD dummy sections that
+            # deliberately overlap other sections' address ranges, because two
+            # memory regions alias the same bus address space. GNU ld skips
+            # NOBITS sections in its overlap check; LLD does not, so disable
+            # the check there.
+            list(APPEND link_options "-Wl,--no-check-sections")
+            set(linker_binary "ld.lld")
+        else()
+            set(linker_binary "${CMAKE_LINKER}")
+        endif()
+        # Report which linker the link will use, with its version banner
+        execute_process(COMMAND ${linker_binary} "-v"
+            OUTPUT_VARIABLE linker_version
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        string(REGEX REPLACE "\n.*" "" linker_version "${linker_version}")
+        message(STATUS "Linker: ${linker_binary} (${linker_version})")
+        unset(linker_version)
         # Check if linker supports --no-warn-rwx-segments
-        execute_process(COMMAND ${CMAKE_LINKER} "--no-warn-rwx-segments" "--version"
+        execute_process(COMMAND ${linker_binary} "--no-warn-rwx-segments" "--version"
             RESULT_VARIABLE result
             OUTPUT_QUIET
             ERROR_QUIET)
