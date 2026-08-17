@@ -33,6 +33,14 @@ set(exclude_srcs
     "openthread/src/core/instance/extension_example.cpp"
 )
 
+# SRC_DIRS is not recursive. Multipan host lives under src/spinel_multipan/.
+# Shared UartSpinelInterface is used for both single-stack and multipan.
+# Only one uart transport implementation is linked.
+if(CONFIG_OPENTHREAD_MULTIPAN_HOST_ENABLE)
+    list(APPEND src_dirs "src/spinel_multipan")
+    list(APPEND exclude_srcs "src/spinel/esp_radio_spinel_uart_transport.cpp")
+endif()
+
 # CLI sources
 if(CONFIG_OPENTHREAD_CLI)
     list(APPEND src_dirs
@@ -48,14 +56,18 @@ if(CONFIG_OPENTHREAD_RADIO_NATIVE)
         "src/port/esp_openthread_radio_spinel.cpp"
         "src/port/esp_spi_spinel_interface.cpp"
         "src/spinel/esp_radio_spinel.cpp"
-        "src/spinel/esp_radio_spinel_uart_interface.cpp")
+        "src/spinel/esp_radio_spinel_uart_interface.cpp"
+        "src/spinel/esp_radio_spinel_uart_transport.cpp")
 elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
     list(APPEND exclude_srcs
         "src/port/esp_openthread_radio.c"
-        "src/port/esp_openthread_sleep.c"
-        "src/spinel/esp_radio_spinel.cpp")
+        "src/port/esp_openthread_sleep.c")
+    if(NOT CONFIG_OPENTHREAD_MULTIPAN_HOST_ENABLE)
+        list(APPEND exclude_srcs "src/spinel/esp_radio_spinel.cpp")
+    endif()
     if(CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
-        list(APPEND exclude_srcs "src/spinel/esp_radio_spinel_uart_interface.cpp")
+        list(APPEND exclude_srcs "src/spinel/esp_radio_spinel_uart_interface.cpp"
+                                 "src/spinel/esp_radio_spinel_uart_transport.cpp")
     endif()
 elseif(CONFIG_OPENTHREAD_RADIO_154_NONE)
     list(APPEND exclude_srcs
@@ -63,6 +75,7 @@ elseif(CONFIG_OPENTHREAD_RADIO_154_NONE)
         "src/port/esp_spi_spinel_interface.cpp"
         "src/spinel/esp_radio_spinel.cpp"
         "src/spinel/esp_radio_spinel_uart_interface.cpp"
+        "src/spinel/esp_radio_spinel_uart_transport.cpp"
         "src/port/esp_openthread_radio.c"
         "src/port/esp_openthread_sleep.c")
 endif()

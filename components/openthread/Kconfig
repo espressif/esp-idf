@@ -516,6 +516,15 @@ menu "OpenThread"
                 OpenThread esp_netif, attaches the esp_netif glue, and enables
                 lwIP-specific DNS/netif handling.
 
+        config OPENTHREAD_MULTIPAN_HOST_ENABLE
+            bool "Enable Multipan Host"
+            depends on OPENTHREAD_RADIO_SPINEL_UART
+            default n
+            help
+                Enable MULTI-PAN host support over the UART radio spinel interface.
+                The host talks to a multipan RCP and demultiplexes Spinel frames by
+                interface ID.
+
         config OPENTHREAD_MULTIPAN_RCP_ENABLE
             bool "Enable Multipan RCP"
             depends on (OPENTHREAD_RADIO && IEEE802154_MULTI_PAN_ENABLE)
@@ -526,11 +535,11 @@ menu "OpenThread"
 
         config OPENTHREAD_MULTIPLE_INTERFACES_COUNT
             int "The number of multiple interfaces"
-            depends on OPENTHREAD_MULTIPAN_RCP_ENABLE
+            depends on OPENTHREAD_MULTIPAN_HOST_ENABLE || OPENTHREAD_MULTIPAN_RCP_ENABLE
             default 2
             range 2 3
             help
-                Number of multiple interfaces.
+                Number of Spinel interfaces used by the multipan host or RCP.
 
     endmenu
 

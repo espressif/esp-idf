@@ -469,6 +469,49 @@
 #endif
 #endif
 
+#if CONFIG_OPENTHREAD_MULTIPAN_HOST_ENABLE
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID
+ *
+ * Define broadcast IID for spinel frames dedicated to all hosts in multipan configuration.
+ */
+#ifdef OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID
+#error `OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID` is redefined.
+#endif
+#define OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID SPINEL_HEADER_IID(CONFIG_OPENTHREAD_MULTIPLE_INTERFACES_COUNT)
+
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_MAX_INTERFACE_ID
+ *
+ * Specifies the maximum number of Spinel interface IDs.
+ */
+#ifdef OPENTHREAD_SPINEL_CONFIG_MAX_INTERFACE_ID
+#error `OPENTHREAD_SPINEL_CONFIG_MAX_INTERFACE_ID` is redefined.
+#endif
+#define OPENTHREAD_SPINEL_CONFIG_MAX_INTERFACE_ID 2
+
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE
+ *
+ * Enables compilation of vendor specific code for Spinel
+ */
+#ifdef OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE
+#error `OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE` is redefined.
+#endif
+#define OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+ *
+ * Define to 1 to enable multipan RCP support.
+ */
+#ifdef OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+#error `OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE 1
+
+#endif // CONFIG_OPENTHREAD_MULTIPAN_HOST_ENABLE
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 #if CONFIG_OPENTHREAD_BORDER_ROUTER

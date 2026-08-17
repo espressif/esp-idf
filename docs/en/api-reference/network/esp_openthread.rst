@@ -24,6 +24,8 @@ The :example:`openthread` directory of ESP-IDF examples contains the following a
 
 - :example:`openthread/ot_sleepy_device/light_sleep` demonstrates Thread Light-sleep function.
 
+- :example:`openthread/ot_zb_multipan` demonstrates running OpenThread and Zigbee side by side on a host, sharing one 802.15.4 RCP via multipan.
+
 API Reference
 -------------
 
