@@ -140,7 +140,8 @@ static inline void k_sem_delete(struct k_sem *sem)
 #define K_SEM_LOG_ERR(fmt, args...)     BT_ISO_LOGE("ISO_SEM", fmt, ## args)
 #endif
 
-static inline int k_sem_take(struct k_sem *sem, uint32_t timeout)
+/* Implementation of k_sem_take; call through the macro below. */
+static inline int k_sem_take_dbg(struct k_sem *sem, uint32_t timeout, const char *func)
 {
     BT_LE_ASSERT(sem);
     BT_LE_ASSERT(sem->handle);
@@ -156,11 +157,26 @@ static inline int k_sem_take(struct k_sem *sem, uint32_t timeout)
     }
 
 #if !CONFIG_BT_ISO_NO_LOG && (CONFIG_BT_ISO_LOG_LEVEL >= BT_ISO_LOG_ERROR)
-    K_SEM_LOG_ERR("TakeFail[self=%s]", pcTaskGetName(NULL));
+    K_SEM_LOG_ERR("TakeFail[%s][%s]", func, pcTaskGetName(NULL));
 #else
+    ARG_UNUSED(func);
     K_SEM_LOG_ERR("TakeFail");
 #endif
     return -EIO;
+}
+
+/* Macro, not a wrapper function, so __func__ names the CALLER — that identifies
+ * both the wedged operation and the sem, with no per-sem RAM. */
+#define k_sem_take(sem, timeout)    k_sem_take_dbg((sem), (timeout), __func__)
+
+/* Silent take for slice-polling callers, where only the final expiry is an error
+ * and k_sem_take would log TakeFail per slice. Same sem->result contract. */
+static inline int k_sem_take_poll(struct k_sem *sem, uint32_t timeout)
+{
+    BT_LE_ASSERT(sem);
+    BT_LE_ASSERT(sem->handle);
+
+    return (xSemaphoreTake(sem->handle, timeout) == pdTRUE) ? 0 : -EIO;
 }
 
 static inline int k_sem_give(struct k_sem *sem)
