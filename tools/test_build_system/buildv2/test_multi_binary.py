@@ -48,11 +48,14 @@ def test_multi_binary_all_features(idf_py: IdfPyFunc) -> None:
         # Build both binaries
         'add_custom_target(app ALL DEPENDS app1_bin app2_bin)\n'
         # Generate metadata for both executables and binaries
-        'idf_build_generate_metadata(EXECUTABLE app1)\n'
+        'idf_build_generate_metadata(EXECUTABLE app1\n'
+        '    GDBINIT_DIR "${CMAKE_BINARY_DIR}/gdbinit/app1")\n'
         'idf_build_generate_metadata(EXECUTABLE app2\n'
-        '    OUTPUT_FILE "${CMAKE_BINARY_DIR}/project_description_app2.json")\n'
+        '    OUTPUT_FILE "${CMAKE_BINARY_DIR}/project_description_app2.json"\n'
+        '    GDBINIT_DIR "${CMAKE_BINARY_DIR}/gdbinit/app2")\n'
         'idf_build_generate_metadata(BINARY app1_bin\n'
-        '    OUTPUT_FILE "${CMAKE_BINARY_DIR}/project_description_bin.json")\n'
+        '    OUTPUT_FILE "${CMAKE_BINARY_DIR}/project_description_bin.json"\n'
+        '    GDBINIT_DIR "${CMAKE_BINARY_DIR}/gdbinit/app1_bin")\n'
         # Create menuconfig and confserver targets
         'idf_create_menuconfig(app1 TARGET menuconfig-app1)\n'
         'idf_create_menuconfig(app2 TARGET menuconfig-app2)\n'
