@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 # This script is used from the $IDF_PATH/install.* scripts. This way the argument parsing can be done at one place and
@@ -24,9 +24,9 @@ def action_extract_features(args: str) -> None:
         # features to be enabled have prefix '+', disabled have prefix '-'
         for arg in args.split():
             if arg.startswith(arg_enable_prefix):
-                features.append('+' + arg[len(arg_enable_prefix):])
+                features.append('+' + arg[len(arg_enable_prefix) :])
             elif arg.startswith(arg_disable_prefix):
-                features.append('-' + arg[len(arg_disable_prefix):])
+                features.append('-' + arg[len(arg_disable_prefix) :])
             elif arg.startswith('-'):
                 raise SystemExit(f'ERROR: Invalid feature specifier: {arg}')
         features = list(set(features))
@@ -57,7 +57,7 @@ def action_print_help(script_extension: str) -> None:
 
     # extract the list of features from ./requirements.json
     thisdir = os.path.dirname(os.path.realpath(__file__))
-    with open(f'{thisdir}/requirements.json', 'r', encoding='utf-8') as f:
+    with open(f'{thisdir}/requirements.json', encoding='utf-8') as f:
         json_data = json.load(f)
     features = [feat['name'] for feat in json_data['features']]
 
@@ -72,13 +72,13 @@ def action_print_help(script_extension: str) -> None:
 
 optional arguments:
   targets-to-install  'all', a single target (e.g. 'esp32s2'), or a comma-separated list of targets (e.g. 'esp32,esp32c3,esp32h2')
-  --enable-*          a specific feature to enable (e.g. '--enable-pytest' will enable feature pytest)
+  --enable-*          a specific feature to enable (e.g. '--enable-ci' will enable feature ci)
   --disable-*         a specific feature to disable (e.g. '--disable-pytest' will disable feature pytest)
                       supported features: {', '.join(features)}
   {help_opts}      show this help message and exit
 
 For more information, please see https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-tools.html#install-scripts
-  """)  # noqa: E222
+  """)  # noqa: E222, E501
 
 
 def main() -> None:
@@ -101,7 +101,7 @@ def main() -> None:
         action_print_help(args.extension)
         sys.exit(0)
 
-    action_func = globals()['action_{}_{}'.format(args.action, args.type)]
+    action_func = globals()[f'action_{args.action}_{args.type}']
     str_to_parse = vars(args)['str-to-parse'] or ''
     action_func(' '.join(chain([str_to_parse], unknown_args)))
 

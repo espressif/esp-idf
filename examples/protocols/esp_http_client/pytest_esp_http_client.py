@@ -18,7 +18,7 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     """
     binary_file = os.path.join(dut.app.binary_path, 'esp_http_client_example.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('esp_http_client_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'esp_http_client_bin_size : {bin_size // 1024}KB')
     # start test
     dut.expect('Connected to AP, begin http example', timeout=30)
     dut.expect(r'HTTP GET Status = 200, content_length = (\d)')
@@ -70,7 +70,7 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'esp_http_client_example.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('esp_http_client_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'esp_http_client_bin_size : {bin_size // 1024}KB')
 
     dut.expect('Connected to AP, begin http example', timeout=30)
     dut.expect(r'HTTP GET Status = 200, content_length = (\d)')
@@ -106,7 +106,6 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     dut.expect('Finish http example')
 
 
-@pytest.mark.host_test
 # Currently we are just testing the build for esp_http_client on Linux target. So skipping the test run.
 # Later we will enable the test run for Linux target as well.
 @pytest.mark.skipif('config.getvalue("target") == "linux"', reason='Do not run on Linux')

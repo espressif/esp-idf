@@ -11,7 +11,7 @@ https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/esp-ble-m
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example implements Bluetooth Mesh node that supports On/Off and Level models.
-It has suport for both Advertising Bearer and GATT Bearer.
+It has support for both Advertising Bearer and GATT Bearer.
 
 For more information on NimBLE MESH, please visit [NimBLE_MESH](https://mynewt.apache.org/latest/network/mesh/index.html#bluetooth-mesh).
 

@@ -20,11 +20,14 @@ def test_heap_poisoning(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize(
     'config, embedded_services',
-    [('no_poisoning', 'idf,qemu'), ('light_poisoning', 'idf,qemu'), ('comprehensive_poisoning', 'idf,qemu')],
+    [
+        ('no_poisoning', 'idf,qemu'),
+        ('light_poisoning', 'idf,qemu'),
+        ('comprehensive_poisoning', 'idf,qemu'),
+    ],
 )
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_heap_poisoning_qemu(dut: Dut) -> None:

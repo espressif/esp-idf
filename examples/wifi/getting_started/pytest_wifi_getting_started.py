@@ -6,6 +6,7 @@ from typing import Tuple
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # @pytest.mark.supported_targets
 # This test should support all targets, even between different target types
 # For now our CI only support multi dut with esp32
@@ -82,13 +83,13 @@ def test_wifi_getting_started_esp32c2_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> 
 
 @pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2_rev2
 @pytest.mark.parametrize(
     'count, config, target, baud, app_path',
     [
         (
             2,
-            'esp32c2eco4_xtal26m',
+            'esp32c2_rev2_xtal26m',
             'esp32c2',
             '74880',
             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
@@ -96,7 +97,7 @@ def test_wifi_getting_started_esp32c2_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> 
     ],
     indirect=True,
 )
-def test_wifi_getting_started_esp32c2eco4_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_wifi_getting_started_esp32c2_rev2_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
     softap = dut[0]
     station = dut[1]
 
@@ -113,20 +114,20 @@ def test_wifi_getting_started_esp32c2eco4_xtal_26mhz(dut: Tuple[IdfDut, IdfDut])
 
 
 @pytest.mark.two_duts
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3_rev1
 @pytest.mark.parametrize(
     'count, config, target, app_path',
     [
         (
             2,
-            'esp32c3eco7',
+            'esp32c3_rev1',
             'esp32c3',
             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
         ),
     ],
     indirect=True,
 )
-def test_wifi_getting_started_esp32c3eco7(dut: Tuple[IdfDut, IdfDut]) -> None:
+def test_wifi_getting_started_esp32c3_rev1(dut: Tuple[IdfDut, IdfDut]) -> None:
     softap = dut[0]
     station = dut[1]
 

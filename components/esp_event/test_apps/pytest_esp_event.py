@@ -19,9 +19,11 @@ def test_esp_event(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
-@pytest.mark.xfail('config.getvalue("target") == "esp32c3"', reason='Unstable on QEMU, needs investigation')
+@pytest.mark.xfail(
+    'config.getvalue("target") == "esp32c3"',
+    reason='Unstable on QEMU, needs investigation',
+)
 @pytest.mark.parametrize(
     'config',
     [
@@ -36,7 +38,6 @@ def test_esp_event_qemu(dut: Dut) -> None:
             dut._run_normal_case(case)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 @pytest.mark.parametrize(
     'config',

@@ -11,7 +11,6 @@ def test_esp_app_format(dut: Dut) -> None:
     dut.expect_unity_test_output()
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_esp_app_format_linux(dut: Dut) -> None:
     dut.expect_unity_test_output()
