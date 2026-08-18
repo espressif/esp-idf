@@ -6,14 +6,24 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "stdatomic.h"
+#include <stdatomic.h>
+
+#include "dac_priv_common.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/dac_periph.h"
 #include "hal/dac_types.h"
 #include "hal/dac_ll.h"
 #include "esp_private/gpio.h"
 #include "esp_check.h"
-#include "dac_priv_common.h"
+#include "esp_log.h"
+
+#if ! (SOC_IS(ESP32) || SOC_IS(ESP32S2))
+portMUX_TYPE dac_priv_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#endif // ! (SOC_IS(ESP32) || SOC_IS(ESP32S2))
+
+/*---------------------------------------------------------------
+                  Channel (analog pad) management
+---------------------------------------------------------------*/
 
 typedef enum {
     DAC_CHAN_FSM_IDLE,
@@ -27,8 +37,6 @@ static _Atomic dac_channel_fsm_t s_dac_chan_fsm[SOC_DAC_CHAN_NUM] = {
 };
 /* Global dac spin lock for the whole DAC driver */
 portMUX_TYPE dac_spinlock = portMUX_INITIALIZER_UNLOCKED;
-
-static const char *TAG = "dac_common";
 
 esp_err_t dac_priv_register_channel(dac_channel_t chan_id)
 {
@@ -64,10 +72,10 @@ esp_err_t dac_priv_enable_channel(dac_channel_t chan_id)
     if (atomic_compare_exchange_strong(&s_dac_chan_fsm[chan_id], &expected_fsm, DAC_CHAN_FSM_WAIT)) {
         gpio_num_t gpio_num = (gpio_num_t)dac_periph_signal.dac_channel_io_num[chan_id];
         gpio_config_as_analog(gpio_num);
-        DAC_RTC_ENTER_CRITICAL();
+        DAC_ENTER_CRITICAL();
         dac_ll_power_on(chan_id);
         dac_ll_rtc_sync_by_adc(false);
-        DAC_RTC_EXIT_CRITICAL();
+        DAC_EXIT_CRITICAL();
         atomic_store(&s_dac_chan_fsm[chan_id], DAC_CHAN_FSM_ENABLED);
         return ESP_OK;
     } else {
@@ -82,9 +90,9 @@ esp_err_t dac_priv_disable_channel(dac_channel_t chan_id)
 
     dac_channel_fsm_t expected_fsm = DAC_CHAN_FSM_ENABLED;
     if (atomic_compare_exchange_strong(&s_dac_chan_fsm[chan_id], &expected_fsm, DAC_CHAN_FSM_WAIT)) {
-        DAC_RTC_ENTER_CRITICAL();
+        DAC_ENTER_CRITICAL();
         dac_ll_power_down(chan_id);
-        DAC_RTC_EXIT_CRITICAL();
+        DAC_EXIT_CRITICAL();
         atomic_store(&s_dac_chan_fsm[chan_id], DAC_CHAN_FSM_REGISTERED);
         return ESP_OK;
     } else {
@@ -92,3 +100,11 @@ esp_err_t dac_priv_disable_channel(dac_channel_t chan_id)
         return ESP_ERR_INVALID_STATE;
     }
 }
+
+#if CONFIG_DAC_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void dac_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+}
+#endif
