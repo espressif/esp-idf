@@ -147,7 +147,7 @@ void app_main(void)
         .h_res = CONFIG_EXAMPLE_CAM_HRES,
         .v_res = CONFIG_EXAMPLE_CAM_VRES,
 #if CONFIG_EXAMPLE_CAM_INPUT_FORMAT_YUV422
-        .input_data_color_type = CAM_CTLR_COLOR_YUV422,
+        .input_data_color_type = CAM_CTLR_COLOR_YUV422_UYVY,
 #else
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
 #endif
@@ -208,7 +208,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Configure format conversion: YUV422 -> RGB565");
     // Configure format conversion
     const cam_ctlr_format_conv_config_t conv_cfg = {
-        .src_format = CAM_CTLR_COLOR_YUV422,      // Source format: YUV422
+        .src_format = CAM_CTLR_COLOR_YUV422_UYVY,      // Source format: YUV422 UYVY
         .dst_format = CAM_CTLR_COLOR_RGB565,      // Destination format: RGB565
         .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
         .data_width = 8,

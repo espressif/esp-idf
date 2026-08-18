@@ -159,7 +159,7 @@ Camera controller driver can be implemented in one of following ways:
         ESP_ERROR_CHECK(esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle));
 
         const cam_ctlr_format_conv_config_t conv_cfg = {
-            .src_format = CAM_CTLR_COLOR_YUV422,      // Source format: YUV422
+            .src_format = CAM_CTLR_COLOR_YUV422_UYVY,      // Source format: YUV422 UYVY
             .dst_format = CAM_CTLR_COLOR_RGB565,      // Destination format: RGB565
             .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
             .data_width = 8,
