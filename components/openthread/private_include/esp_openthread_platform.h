@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -154,6 +154,37 @@ void esp_openthread_set_storage_name(const char *name);
  *      - The caps of the memory.
  */
 uint32_t esp_openthread_get_alloc_caps(void);
+
+/**
+ * @brief This function gets the index of the instance
+ *
+ * @param[in]    instance   The OpenThread instance.
+ *
+ * @note Invalid input is logged and asserted.
+ *
+ * @return
+ *      - The index of the instance
+ */
+int8_t esp_openthread_get_idx_from_instance(otInstance *instance);
+
+/**
+ * @brief This function gets the instance from the index
+ *
+ * @param[in]    idx   The index of the instance.
+ *
+ * @note Invalid index is logged and asserted. A valid index always has an instance.
+ *
+ * @return
+ *      - The instance
+ */
+otInstance *esp_openthread_get_instance_from_idx(int8_t idx);
+
+/**
+ * @brief This function sets the active instance
+ *
+ * @param[in]    instance   The OpenThread instance.
+ */
+void esp_openthread_set_active_instance(otInstance *instance);
 
 #ifdef __cplusplus
 } // end of extern "C"

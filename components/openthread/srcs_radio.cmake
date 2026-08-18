@@ -60,18 +60,31 @@ set(rcp_srcs
     openthread/src/ncp/ncp_base_dispatcher.cpp
     openthread/src/ncp/ncp_base_radio.cpp
     openthread/examples/apps/ncp/ncp.c
-    # ESP port
-    src/port/esp_openthread_alarm.c
+    # ESP port (logging/misc/settings stay at the original path)
     src/port/esp_openthread_logging.c
     src/port/esp_openthread_misc.c
-    src/port/esp_openthread_radio.c
     src/port/esp_openthread_settings.c
     # ESP sources
     src/esp_openthread.cpp
     src/esp_openthread_lock.c
     src/esp_openthread_platform.cpp
     src/esp_openthread_task_queue.c
-    # ESP NCP
+)
+
+# Single-instance files stay at the original src/ paths. Multipan RCP swaps in
+# radio/alarm/instance under src/multiple_instances/. NCP is shared in src/ncp/.
+if(CONFIG_OPENTHREAD_MULTIPAN_RCP_ENABLE)
+    set(OT_PORT_DIR "src/multiple_instances/port")
+    set(OT_INSTANCE_SRC "src/multiple_instances/esp_openthread_instance.cpp")
+else()
+    set(OT_PORT_DIR "src/port")
+    set(OT_INSTANCE_SRC "src/esp_openthread_instance.cpp")
+endif()
+
+list(APPEND rcp_srcs
+    ${OT_PORT_DIR}/esp_openthread_alarm.c
+    ${OT_PORT_DIR}/esp_openthread_radio.c
+    ${OT_INSTANCE_SRC}
     src/ncp/esp_openthread_ncp.cpp
 )
 
@@ -87,7 +100,9 @@ elseif(CONFIG_OPENTHREAD_RCP_SPI)
     list(APPEND rcp_srcs
         openthread/src/ncp/ncp_spi.cpp
         src/port/esp_openthread_spi_slave.c)
-    if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK)
+    # Multipan SPI NCP is not supported; the compile-time check lives in
+    # src/ncp/esp_openthread_ncp.cpp.
+    if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK AND NOT CONFIG_OPENTHREAD_MULTIPAN_RCP_ENABLE)
         list(APPEND rcp_srcs src/ncp/esp_openthread_ncp_spi.cpp)
     endif()
 endif()
