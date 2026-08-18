@@ -53,6 +53,7 @@ typedef enum {
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 void r_btdm_sched_list_details_dump(void);
 void api_base_ll_dumpDebugStatus(void);
+void api_sched_txn_dumpListDetails(void);
 void r_ble_phy_hw_state_dump(uint8_t);
 void esp_ble_controller_log_dump_all(bool);
 void esp_panic_handler_feed_wdts(void);
@@ -370,6 +371,7 @@ btdm_log_exception_dump(void)
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     api_base_ll_dumpDebugStatus();
     r_btdm_sched_list_details_dump();
+    api_sched_txn_dumpListDetails();
     esp_ble_controller_log_dump_all(true);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 }

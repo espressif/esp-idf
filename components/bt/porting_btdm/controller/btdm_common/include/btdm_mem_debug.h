@@ -18,7 +18,7 @@ extern "C" {
  * Set to 0 to compile out the tracking hooks.
  */
 #ifndef BTDM_MEM_DEBUG
-#define BTDM_MEM_DEBUG 1
+#define BTDM_MEM_DEBUG (0)
 #endif
 
 #if BTDM_MEM_DEBUG

@@ -11,6 +11,7 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_heap_caps.h"
 #include "esp_task.h"
