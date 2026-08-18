@@ -148,6 +148,8 @@ void bta_hd_api_disable(void)
         APPL_TRACE_ERROR("%s: Failed to deregister HID device (%d)", __func__, ret);
     }
 
+    bta_sys_deregister(BTA_ID_HD);
+
     (*bta_hd_cb.p_cback)(BTA_HD_DISABLE_EVT, (tBTA_HD *)&status);
 
     memset(&bta_hd_cb, 0, sizeof(tBTA_HD_CB));

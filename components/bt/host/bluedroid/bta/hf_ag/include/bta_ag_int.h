@@ -367,6 +367,7 @@ typedef struct
     tBTA_AG_CBACK       *p_cback;                   /* application callback */
     tBTA_AG_PARSE_MODE  parse_mode;                 /* parse/pass-through mode */
     BOOLEAN             msbc_enabled;
+    BOOLEAN             disabling;
 } tBTA_AG_CB;
 
 /*****************************************************************************
