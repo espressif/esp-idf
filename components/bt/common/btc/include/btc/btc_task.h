@@ -57,6 +57,9 @@ typedef enum {
     BTC_PID_AVRC_CT,
     BTC_PID_AVRC_TG,
     BTC_PID_SPP,
+#if (BTC_PAN_INCLUDED == TRUE)
+    BTC_PID_PAN,
+#endif /* BTC_PAN_INCLUDED */
     BTC_PID_HD,
     BTC_PID_HH,
     BTC_PID_L2CAP,

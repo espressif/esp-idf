@@ -41,7 +41,7 @@
 #endif
 
 #if (defined(BNEP_INCLUDED) && BNEP_INCLUDED == TRUE)
-#include "bnep_api.h"
+#include "stack/bnep_api.h"
 #endif
 
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE)
@@ -49,7 +49,7 @@
 #endif
 
 #if (defined(PAN_INCLUDED) && PAN_INCLUDED == TRUE)
-#include "pan_api.h"
+#include "stack/pan_api.h"
 #endif
 
 #if (defined(HID_HOST_INCLUDED) && HID_HOST_INCLUDED == TRUE)

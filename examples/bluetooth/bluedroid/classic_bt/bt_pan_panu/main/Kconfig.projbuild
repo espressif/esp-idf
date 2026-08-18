@@ -1,0 +1,26 @@
+menu "PAN PANU Example Configuration"
+    config EXAMPLE_PEER_DEVICE_NAME
+        string "Target NAP Bluetooth Name"
+        default "ESP_PAN_NAP"
+        help
+            Bluetooth name of the NAP device that shares network access.
+            Default matches bt_pan_nap example device name.
+
+    config EXAMPLE_PING_TARGET
+        string "Ping Target (IPv4 address)"
+        default "8.8.8.8"
+        help
+            IPv4 address to ping after PAN link obtains an IP via DHCP
+            (e.g. 8.8.8.8). Hostnames are not resolved; use a dotted-quad
+            address only.
+
+    config EXAMPLE_PING_COUNT
+        int "Ping Count"
+        default 20
+        range 1 1000
+
+    config EXAMPLE_PING_TIMEOUT_MS
+        int "Ping Timeout (ms)"
+        default 3000
+        range 500 30000
+endmenu

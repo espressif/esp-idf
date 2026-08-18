@@ -189,6 +189,13 @@
 #define UC_BT_PBAC_ENABLED       	        FALSE
 #endif
 
+//PAN
+#ifdef CONFIG_BT_PAN_ENABLED
+#define UC_BT_PAN_ENABLED                   CONFIG_BT_PAN_ENABLED
+#else
+#define UC_BT_PAN_ENABLED                   FALSE
+#endif
+
 #ifdef CONFIG_BT_PBAC_SUPPORTED_FEAT
 #define UC_BT_PBAC_SUPPORTED_FEAT           CONFIG_BT_PBAC_SUPPORTED_FEAT
 #else
