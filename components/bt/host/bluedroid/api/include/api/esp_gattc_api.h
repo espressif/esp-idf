@@ -911,6 +911,8 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
  *      3. `handle` must be greater than 0.
  *      4. If `auth_req` is not `ESP_GATT_AUTH_REQ_NONE`, the stack may start encryption
  *         or SMP pairing before sending the ATT write.
+ *      5. `ESP_GATT_AUTH_REQ_SIGNED_*` with `ESP_GATT_WRITE_TYPE_NO_RSP` sends ATT Signed
+ *         Write Command when bonded (CSRK) and the link is not encrypted.
  *
  * @return
  *       - ESP_OK: Success
