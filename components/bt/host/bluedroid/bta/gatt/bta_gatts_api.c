@@ -66,7 +66,6 @@ void BTA_GATTS_Disable(void)
         p_buf->event = BTA_GATTS_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
     }
-    bta_sys_deregister(BTA_ID_GATTS);
 
 }
 

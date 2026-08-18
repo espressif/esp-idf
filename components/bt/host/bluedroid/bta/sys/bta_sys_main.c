@@ -513,7 +513,7 @@ void bta_sys_event(void * param)
     id = (UINT8) (p_msg->event >> 8);
 
     /* verify id and call subsystem event handler */
-    if ((id < BTA_ID_MAX) && (bta_sys_cb.reg[id] != NULL)) {
+    if ((id < BTA_ID_MAX) && bta_sys_cb.is_reg[id] && (bta_sys_cb.reg[id] != NULL)) {
         freebuf = (*bta_sys_cb.reg[id]->evt_hdlr)(p_msg);
     } else {
         APPL_TRACE_WARNING("BTA got unregistered event id %d\n", id);
@@ -555,6 +555,7 @@ void bta_sys_register(UINT8 id, const tBTA_SYS_REG *p_reg)
 void bta_sys_deregister(UINT8 id)
 {
     bta_sys_cb.is_reg[id] = FALSE;
+    bta_sys_cb.reg[id] = NULL;
 }
 
 /*******************************************************************************

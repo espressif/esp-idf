@@ -159,6 +159,8 @@ void bta_gatts_api_disable(tBTA_GATTS_CB *p_cb)
     } else {
         APPL_TRACE_ERROR("GATTS not enabled");
     }
+
+    bta_sys_deregister(BTA_ID_GATTS);
 }
 
 /*******************************************************************************
