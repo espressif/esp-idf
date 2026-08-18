@@ -1470,6 +1470,16 @@ def _run_nimble_gatt_throughput_func(dut: tuple[IdfDut, IdfDut], throughput_mode
     central.write('Insert No')
     central.expect_exact('User entered: Insert No', timeout=10)
 
+    # Boards of the same pipeline, chip and example share the CI device name, so
+    # pin the central to the MAC of the board it was paired with for this run.
+    central.expect_exact('Enter peer address in this format: `peer xx:xx:xx:xx:xx:xx`', timeout=10)
+    central.write(f'peer {peripheral_addr}')
+    central.expect_exact(f'User entered: peer {peripheral_addr}', timeout=10)
+    central.expect_exact(
+        f'blecent_throughput: Peer address filter set to {peripheral_addr.lower()}',
+        timeout=10,
+    )
+
     found_addr = (
         central.expect(
             r'blecent_throughput: Found device: addr: ' + MAC_PATTERN + rf', name: {name}',

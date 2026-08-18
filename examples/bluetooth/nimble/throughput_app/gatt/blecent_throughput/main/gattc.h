@@ -117,6 +117,7 @@ void ble_register_cli(void);
 int scli_receive_key(int key[6]);
 int cli_receive_key(int key[6]);
 int scli_receive_yesno(bool *key);
+int scli_receive_peer_addr(uint8_t peer_addr[PEER_ADDR_VAL_SIZE]);
 void scli_reset_queue(void);
 
 

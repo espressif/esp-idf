@@ -148,6 +148,11 @@ gatt_svr_read_write_long_test(uint16_t conn_handle, uint16_t attr_handle,
                 uint8_t requested_phy;
                 os_mbuf_copydata(ctxt->om, 0, 1, &requested_phy);
                 rc = 0;
+                if (requested_phy == THRPT_CMD_STOP_NOTIFY) {
+                    ESP_LOGI(tag, "Central requested notify test stop via GATT command");
+                    bleprph_notify_stop_req();
+                    return 0;
+                }
                 if (requested_phy == 0) { /* 0 = PHY_1M */
                     rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_1M_PREF_MASK, BLE_HCI_LE_PHY_1M_PREF_MASK, 0);
                     ESP_LOGI(tag, "Central requested 1M PHY via GATT command");
