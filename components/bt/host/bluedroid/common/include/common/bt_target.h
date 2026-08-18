@@ -249,6 +249,14 @@
 ** BLE features
 **
 ******************************************************************************/
+
+/* Discard the local LE keys when the peer rejects encryption with "PIN or Key Missing". */
+#if (UC_BT_BLE_SMP_UNBOND_ON_KEY_MISSING == TRUE)
+#define BLE_SMP_UNBOND_ON_KEY_MISSING TRUE
+#else
+#define BLE_SMP_UNBOND_ON_KEY_MISSING FALSE
+#endif
+
 #if (UC_BT_BLE_ENABLED ==TRUE)
 #define BLE_INCLUDED              TRUE
 #else

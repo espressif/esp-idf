@@ -507,6 +507,29 @@ config BT_BLE_SMP_BOND_NVS_FLASH
     help
         This select can save SMP bonding keys to nvs flash
 
+config BT_BLE_SMP_UNBOND_ON_KEY_MISSING
+    bool "Drop the local LE keys when the peer reports it has no key"
+    depends on BT_BLE_SMP_ENABLE
+    default n
+    help
+        As Central, an encryption attempt using the stored LTK fails with "PIN or Key
+        Missing" when the peer has deleted the bond on its side. This option controls how
+        the stack reacts to that specific error.
+
+        Enabled: the local LE keys are discarded and the link is kept up, so the
+        application can re-pair straight away and recovers without user interaction. The
+        problem is that an impersonating device can report the same error, so a peer can
+        strip the stored security level without any authentication and then re-pair at a
+        weaker level. That is exactly the re-pairing downgrade the BLERP paper describes,
+        which is why this is not the default.
+
+        Disabled: the link is dropped and the keys are kept, so no peer can drop the bond
+        by refusing to encrypt. The problem is that the same stale LTK is then used again
+        on every following connection and encryption keeps failing, which never recovers
+        on its own. The application has to call esp_ble_remove_bond_device() from the
+        ESP_GAP_BLE_AUTH_CMPL_EVT failure callback to get out of it.
+
+
 config BT_BLE_PERIPH_PSEUDO_ADDR_BOND
     bool "Peripheral dual local-identity bond isolation (pseudo address)"
     depends on BT_BLE_SMP_ENABLE && BT_BLE_50_EXTEND_ADV_EN
