@@ -31,6 +31,10 @@ if(CONFIG_IEEE802154_DEBUG)
     list(APPEND srcs "driver/esp_ieee802154_debug.c")
 endif()
 
+if(CONFIG_IEEE802154_MULTI_PAN_ENABLE)
+    list(APPEND srcs "esp_ieee802154_multipan.c")
+endif()
+
 idf_component_register(
     SRCS "${srcs}"
     INCLUDE_DIRS "${include}"

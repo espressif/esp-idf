@@ -323,7 +323,7 @@ menu "OpenThread"
             bool "Enable link metrics feature"
             default n
             select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
-            select OPENTHREAD_TIMING_OPTIMIZATION
+            select OPENTHREAD_TIMING_OPTIMIZATION if OPENTHREAD_RADIO_NATIVE
             help
                 Select this option to enable link metrics feature
 
@@ -427,17 +427,16 @@ menu "OpenThread"
         endmenu
 
         menu "Thread Memory Allocation"
-            depends on (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
             config OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+                depends on (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
                 bool 'Allocate memory from PSRAM'
                 default y
                 help
                     Select this option to allocate buffer from PSRAM for Thread
 
             config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
-                bool 'Allocate message pool buffer from PSRAM'
-                depends on OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
-                default y
+                bool 'Allocate message pool buffer from platform'
+                default n
                 help
                     If enabled, the message pool is managed by platform defined logic.
         endmenu
@@ -471,8 +470,8 @@ menu "OpenThread"
 
             config OPENTHREAD_NUM_MESSAGE_BUFFERS
                 int "The number of openthread message buffers"
-                default 65 if !OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
-                default 1024 if OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+                default 65 if !OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+                default 1024 if OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
 
             config OPENTHREAD_XTAL_ACCURACY
                 int "The accuracy of the XTAL"
@@ -516,6 +515,22 @@ menu "OpenThread"
                 Enable the default ESP-IDF OpenThread integration which creates an
                 OpenThread esp_netif, attaches the esp_netif glue, and enables
                 lwIP-specific DNS/netif handling.
+
+        config OPENTHREAD_MULTIPAN_RCP_ENABLE
+            bool "Enable Multipan RCP"
+            depends on (OPENTHREAD_RADIO && IEEE802154_MULTI_PAN_ENABLE)
+            default n
+            help
+                Enable MULTI-PAN RCP support. This also enables multiple OpenThread
+                instances. Currently only radio devices are supported.
+
+        config OPENTHREAD_MULTIPLE_INTERFACES_COUNT
+            int "The number of multiple interfaces"
+            depends on OPENTHREAD_MULTIPAN_RCP_ENABLE
+            default 2
+            range 2 3
+            help
+                Number of multiple interfaces.
 
     endmenu
 
