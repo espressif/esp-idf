@@ -507,6 +507,87 @@ config BT_BLE_SMP_BOND_NVS_FLASH
     help
         This select can save SMP bonding keys to nvs flash
 
+config BT_BLE_SMP_HARDENED_REPAIRING
+    bool "Reject re-pairing that weakens an existing bond"
+    depends on BT_BLE_SMP_ENABLE
+    default y
+    help
+        Controls whether a peer that is already bonded may replace that bond with a
+        weaker one.
+
+        Enabled: when a bond already exists for the peer, a new pairing procedure is
+        refused if it would end up with less MITM protection, without Secure Connections
+        while the stored bond used it, or with a shorter encryption key. The security
+        level announced in a Security Request is also enforced on the pairing that
+        follows it. The link is dropped along with the pairing so that a peer cannot keep
+        retrying with different parameters. The drawback is that a peer which
+        legitimately needs to re-pair at a lower level is refused for good, for instance
+        one whose IO capabilities changed so that Passkey Entry became Just Works. Such a
+        peer has to be unbonded by the application first, using
+        esp_ble_remove_bond_device(). A refusal from this check always keeps the stored
+        bond, even when BT_BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL or
+        BT_BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_PERIPHERAL is enabled, so a peer cannot
+        erase the baseline by requesting a downgrade.
+
+        Disabled: any peer can replace an existing bond with one at a lower security
+        level, without Secure Connections, or with a shorter encryption key, and no
+        authentication is needed to do so. These are the re-pairing downgrades described
+        by the BLERP paper as V3, V4 and V6. Only choose this if a peer really has to
+        re-pair at a lower level and the application cannot unbond it beforehand.
+
+config BT_BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL
+    bool "Remove the stored bond when pairing fails as Central"
+    depends on BT_BLE_SMP_ENABLE
+    default y
+    help
+        Controls whether the bonding keys kept in NVS are erased when a BLE pairing
+        procedure fails while the local device is the Central (link-layer master) on
+        that connection. A failed encryption attempt is reported through the same
+        authentication complete path and counts as a failure here. This is the role
+        typically used by GATT Client applications.
+
+        Enabled: historical Central behaviour and the default, so applications that rely
+        on a failed pairing implicitly unbonding the peer keep working after an upgrade.
+        It also means every peer able to make pairing fail can drop the bond without any
+        authentication, by simply sending a Pairing Failed, by letting the 30 second SMP
+        timeout expire, or by disconnecting in the middle of the procedure. As Central,
+        that implicit unbond is also what recovers when the peer deleted the bond on its
+        side and answers LL_ENC_REQ with KEY_MISSING.
+
+        Disabled: the bond survives a failed pairing in the Central role and unbonding
+        becomes an explicit application decision through esp_ble_remove_bond_device().
+        A stale LTK then makes every following connection fail to encrypt until the
+        application unbonds from the ESP_GAP_BLE_AUTH_CMPL_EVT failure callback,
+        preferably after a few attempts rather than on the first one.
+
+        A downgrade refused by BT_BLE_SMP_HARDENED_REPAIRING never erases the bond,
+        regardless of this option.
+
+config BT_BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_PERIPHERAL
+    bool "Remove the stored bond when pairing fails as Peripheral"
+    depends on BT_BLE_SMP_ENABLE
+    default n
+    help
+        Controls whether the bonding keys kept in NVS are erased when a BLE pairing
+        procedure fails while the local device is the Peripheral (link-layer slave) on
+        that connection. A failed encryption attempt is reported through the same
+        authentication complete path and counts as a failure here. This is the role
+        typically used by GATT Server applications.
+
+        Disabled (default): the bond survives a failed pairing in the Peripheral role.
+        Unbonding is an explicit application decision through esp_ble_remove_bond_device().
+        This avoids losing the bond when the user walks away mid-pairing, when the SMP
+        timeout expires, or when a peer sends Pairing Failed. Legitimate re-pairing from
+        a Central that deleted its own bond is still possible through a new Pairing
+        Request, as long as BT_BLE_SMP_HARDENED_REPAIRING does not refuse a downgrade.
+
+        Enabled: restores the historical behaviour where any pairing failure as
+        Peripheral erases the NVS bond. Prefer this only if the application depends on
+        that implicit unbond and cannot call esp_ble_remove_bond_device() itself.
+
+        A downgrade refused by BT_BLE_SMP_HARDENED_REPAIRING never erases the bond,
+        regardless of this option.
+
 config BT_BLE_SMP_UNBOND_ON_KEY_MISSING
     bool "Drop the local LE keys when the peer reports it has no key"
     depends on BT_BLE_SMP_ENABLE
@@ -528,7 +609,6 @@ config BT_BLE_SMP_UNBOND_ON_KEY_MISSING
         on every following connection and encryption keeps failing, which never recovers
         on its own. The application has to call esp_ble_remove_bond_device() from the
         ESP_GAP_BLE_AUTH_CMPL_EVT failure callback to get out of it.
-
 
 config BT_BLE_PERIPH_PSEUDO_ADDR_BOND
     bool "Peripheral dual local-identity bond isolation (pseudo address)"

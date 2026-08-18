@@ -481,6 +481,13 @@ void smp_proc_sec_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             reason = SMP_PAIR_AUTH_FAIL;
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         } else {
+#if (BLE_INCLUDED == TRUE && BLE_SMP_HARDENED_REPAIRING == TRUE)
+            /* Remember what the peer asked for here: peer_auth_req is overwritten by the
+               Pairing Response that follows, and smp_repairing_is_allowed() has to compare
+               the two to catch a peer that announces a high level and then downgrades. */
+            p_cb->sec_req_rcvd = TRUE;
+            p_cb->sec_req_auth_req = auth_req;
+#endif
             /* initialize local i/r key to be default keys */
             p_cb->peer_auth_req = auth_req;
             p_cb->local_r_key = p_cb->local_i_key = SMP_SEC_DEFAULT_KEY ;
@@ -620,6 +627,15 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                 auth |= SMP_AUTH_GEN_BOND;
             }
             p_cb->auth_mode = auth;
+#if (BLE_INCLUDED == TRUE && BLE_SMP_HARDENED_REPAIRING == TRUE)
+            if (!smp_repairing_is_allowed(p_cb, &reason)) {
+                if (BTM_IsAclConnectionUp(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+                    btm_remove_acl (p_cb->pairing_bda, BT_TRANSPORT_LE);
+                }
+                smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+                return;
+            }
+#endif
             if (p_cb->accept_specified_sec_auth) {
                 if ((auth & p_cb->origin_loc_auth_req) != p_cb->origin_loc_auth_req ) {
                     SMP_TRACE_ERROR("%s pairing failed - slave requires auth is 0x%x but peer auth is 0x%x local auth is 0x%x",
@@ -659,6 +675,15 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             auth |= SMP_AUTH_GEN_BOND;
         }
         p_cb->auth_mode = auth;
+#if (BLE_INCLUDED == TRUE && BLE_SMP_HARDENED_REPAIRING == TRUE)
+        if (!smp_repairing_is_allowed(p_cb, &reason)) {
+            if (BTM_IsAclConnectionUp(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+                btm_remove_acl (p_cb->pairing_bda, BT_TRANSPORT_LE);
+            }
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            return;
+        }
+#endif
         if (p_cb->accept_specified_sec_auth) {
             if ((auth & p_cb->origin_loc_auth_req) != p_cb->origin_loc_auth_req ) {
                 SMP_TRACE_ERROR("%s pairing failed - master requires auth is 0x%x but peer auth is 0x%x local auth is 0x%x",
@@ -1598,6 +1623,15 @@ void smp_process_io_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             auth |= SMP_AUTH_GEN_BOND;
         }
         p_cb->auth_mode = auth;
+#if (BLE_INCLUDED == TRUE && BLE_SMP_HARDENED_REPAIRING == TRUE)
+        if (!smp_repairing_is_allowed(p_cb, &reason)) {
+            if (BTM_IsAclConnectionUp(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+                btm_remove_acl (p_cb->pairing_bda, BT_TRANSPORT_LE);
+            }
+            smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            return;
+        }
+#endif
         if (p_cb->accept_specified_sec_auth) {
             if ((auth & p_cb->origin_loc_auth_req) != p_cb->origin_loc_auth_req ) {
                 SMP_TRACE_ERROR("pairing failed - slave requires auth is 0x%x but peer auth is 0x%x local auth is 0x%x",
