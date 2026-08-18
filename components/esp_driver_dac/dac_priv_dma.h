@@ -6,71 +6,72 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
 #include "esp_err.h"
 #include "soc/soc_caps.h"
-#include "esp_bit_defs.h"
-#include "esp_intr_alloc.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// one node in the descriptor chain is finished
-#define DAC_DMA_DONE_INTR       BIT(0)
-// all nodes in the descriptor chain are finished
-#define DAC_DMA_TEOF_INTR       BIT(1)
+/**
+ * @brief DAC DMA event callback
+ * @note  Invoked from the DMA ISR
+ *
+ * @return Whether a high-priority task has been woken up by this callback
+ */
+typedef bool (*dac_dma_event_callback_t)(void *ctx);
+
+/**
+ * @brief Group of DAC DMA event callbacks
+ * @note  The callbacks run in ISR context
+ * @note  When CONFIG_DAC_ISR_IRAM_SAFE is enabled, the callbacks and the functions they call
+ *        must be placed in IRAM, and the variables they use must be in internal RAM
+ */
+typedef struct {
+    dac_dma_event_callback_t on_done;   /*!< Invoked when one DMA descriptor is finished */
+    dac_dma_event_callback_t on_teof;   /*!< Invoked when the DMA descriptor chain reaches total EOF */
+} dac_dma_event_callbacks_t;
 
 /**
  * @brief Initialize DAC DMA peripheral
  *
- * @param[in]   freq_hz         DAC data frequency per channel
+ * @param[in]   clk_src         DAC digital controller clock source
+ * @param[in]   freq_hz         Requested DAC data frequency per channel
  * @param[in]   is_alternate    Transmit data alternate between two channels or simultaneously
- * @param[in]   is_apll         Whether use APLL as DAC digital controller clock source
+ * @param[in]   cbs             Group of event callback functions, must not be NULL
+ * @param[in]   ctx             Driver context passed to the callback functions
  * @return
+ *      - ESP_OK                Initialize DAC DMA peripheral success
+ *      - ESP_ERR_INVALID_ARG   Invalid clock source, frequency, or `cbs` is NULL
  *      - ESP_ERR_NOT_FOUND     The DMA peripheral has been occupied
  *      - ESP_ERR_NO_MEM        No memory for the DMA peripheral struct
- *      - ESP_ERR_INVALID_ARG   The frequency is out of range
- *      - ESP_OK                Initialize DAC DMA peripheral success
  */
-esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll);
+esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq_hz, bool is_alternate,
+                            const dac_dma_event_callbacks_t *cbs, void *ctx);
 
 /**
  * @brief Deinitialize DAC DMA peripheral
  *
  * @return
- *      - ESP_ERR_INVALID_STATE The DAC DMA has been de-initialized already
- *                              or the interrupt has not been de-registered
  *      - ESP_OK                Deinitialize DAC DMA peripheral success
+ *      - Others                Failed to release interrupt, clock, or DMA peripheral
  */
-esp_err_t dac_dma_periph_deinit(void);
-
-/**
- * @brief Get the DMA interrupt signal id
- *
- * @return
- *      - int       DMA interrupt signal id
- */
-int dac_dma_periph_get_intr_signal(void);
+esp_err_t dac_priv_dma_deinit(void);
 
 /**
  * @brief Enable the DMA and interrupt of the DAC DMA peripheral
  *
  */
-void dac_dma_periph_enable(void);
+void dac_priv_dma_enable(void);
 
 /**
  * @brief Disable the DMA and interrupt of the DAC DMA peripheral
  *
  */
-void dac_dma_periph_disable(void);
-
-/**
- * @brief Get the mask of the triggered interrupt
- *
- * @return
- *      - uint32_t  Mask of the triggered interrupt: DAC_DMA_DONE_INTR, DAC_DMA_TEOF_INTR
- */
-uint32_t dac_dma_periph_intr_get_mask(void);
+void dac_priv_dma_disable(void);
 
 /**
  * @brief Start a DMA transaction
@@ -78,19 +79,19 @@ uint32_t dac_dma_periph_intr_get_mask(void);
  *
  * @param[in]   desc_addr   Descriptor address
  */
-void dac_dma_periph_trans_start(uintptr_t desc_addr);
+void dac_priv_dma_trans_start(uintptr_t desc_addr);
 
 /**
  * @brief Stop the current DMA transaction immediately
  */
-void dac_dma_periph_trans_stop(void);
+void dac_priv_dma_trans_stop(void);
 
 #if !SOC_IS(ESP32)
 /**
  * @brief Append the newly linked DMA descriptors to the current transaction
  * @note  The caller should link new descriptors to the current tail before calling this function.
  */
-void dac_dma_periph_trans_append(void);
+void dac_priv_dma_trans_append(void);
 #endif
 
 #ifdef __cplusplus

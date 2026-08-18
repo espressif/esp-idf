@@ -87,7 +87,7 @@ The following diagram illustrates the life cycle of the DAC continuous driver an
 
     The clock of the DAC digital controller comes from I2S0 as well, so there are two clock sources for selection:
 
-    - :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_PLL_D2` supports frequency between 19.6 KHz to several MHz. It is the default clock which can also be selected by :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_DEFAULT`.
+    - :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_PLL_160M` supports frequency between 19.6 KHz to several MHz. It is the default clock which can also be selected by :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_DEFAULT`.
     - :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_APLL` supports frequency between 648 Hz to several MHz. However, it might be occupied by other peripherals, thus not providing the required frequency. In such case, this clock source is available only if APLL still can be correctly divided into the target DAC DMA frequency.
 
 .. only:: esp32s2
