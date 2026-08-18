@@ -923,29 +923,12 @@ function(__project_default)
     set(project_elf "${executable}" PARENT_SCOPE)
 
     # Provide Build system v1-compatible build properties so that existing
-    # test apps and project CMakeLists.txt files that query EXECUTABLE or
-    # BUILD_COMPONENTS continue to work when built through the shim.
+    # test apps and project CMakeLists.txt files that query EXECUTABLE
+    # continue to work when built through the shim.
     idf_build_get_property(v1_compat __V1_COMPAT_SHIM)
     if(v1_compat)
         idf_build_set_property(EXECUTABLE "${executable}")
         idf_build_set_property(EXECUTABLE_NAME "${executable}")
-
-        # BUILD_COMPONENTS: in Build system v1 this is the set of components
-        # actually processed during the build (COMPONENTS + their transitive
-        # REQUIRES within the restricted scope). Use LIBRARY_COMPONENTS_LINKED
-        # from the Build system v2 library target which reflects the actual
-        # list of components linked, plus the architecture component which
-        # Build system v1 always includes but Build system v2 does not track
-        # as a linked library.
-        get_target_property(library ${executable} LIBRARY_INTERFACE)
-        if(library)
-            idf_library_get_property(linked_components "${library}" LIBRARY_COMPONENTS_LINKED)
-            idf_build_get_property(target_arch IDF_TARGET_ARCH)
-            if(target_arch AND NOT target_arch IN_LIST linked_components)
-                list(APPEND linked_components ${target_arch})
-            endif()
-            idf_build_set_property(BUILD_COMPONENTS "${linked_components}")
-        endif()
     endif()
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES AND TARGET idf::esptool_py)

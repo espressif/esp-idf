@@ -90,12 +90,7 @@ function(idf_build_get_property variable property)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
     if("${property}" STREQUAL BUILD_COMPONENTS)
-        # BUILD_COMPONENTS is populated by the Build system v1 compatibility
-        # shim; reject only when running as a native Build system v2 project.
-        idf_build_get_property(_v1_compat __V1_COMPAT_SHIM)
-        if(NOT _v1_compat)
-            idf_die("Build property 'BUILD_COMPONENTS' is not supported")
-        endif()
+        idf_die("Build property 'BUILD_COMPONENTS' is not supported")
     endif()
 
     set(genexpr)
