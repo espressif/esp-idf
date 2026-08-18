@@ -61,7 +61,9 @@ typedef bool (*gdma_event_callback_t)(gdma_channel_handle_t dma_chan, gdma_event
  * @note The callbacks are all running under ISR environment
  */
 typedef struct {
+    gdma_event_callback_t on_trans_done; /*!< Invoked when TX engine finishes one descriptor */
     gdma_event_callback_t on_trans_eof; /*!< Invoked when TX engine meets EOF descriptor */
+    gdma_event_callback_t on_trans_total_eof; /*!< Invoked when TX engine reaches the end of the descriptor chain */
     gdma_event_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
     gdma_event_callback_t on_link_switch; /*!< Invoked when TX link list switches to a new descriptor chain */
 } gdma_tx_event_callbacks_t;
