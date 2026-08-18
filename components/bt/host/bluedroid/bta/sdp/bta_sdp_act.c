@@ -653,6 +653,8 @@ void bta_sdp_disable(tBTA_SDP_MSG *p_data)
         }
     }
 
+    bta_sys_deregister(BTA_ID_SDP);
+
     if (dm_cbk) {
         dm_cbk(BTA_SDP_DISABLE_EVT, &bta_sdp, NULL);
     }

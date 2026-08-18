@@ -83,7 +83,6 @@ void BTA_HdDisable(void)
     BT_HDR *p_buf;
     APPL_TRACE_API("%s", __func__);
     if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR))) != NULL) {
-        bta_sys_deregister(BTA_ID_HD);
         p_buf->event = BTA_HD_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
     }
