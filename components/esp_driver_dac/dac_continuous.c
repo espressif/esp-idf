@@ -4,27 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if CONFIG_DAC_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-
 #include <assert.h>
 #include <stdatomic.h>
 #include <string.h>
+
+#include "dac_priv_common.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/idf_additions.h"
 #include "sdkconfig.h"
-
 #include "soc/soc_caps.h"
+#include "hal/dac_ll.h"
 #include "driver/dac_continuous.h"
 #include "esp_private/gdma_link.h"
 #include "esp_check.h"
-
-#include "dac_priv_common.h"
+#include "esp_log.h"
 #include "dac_priv_dma.h"
 
 #if CONFIG_PM_ENABLE
@@ -32,12 +27,6 @@
 #endif
 
 #define DAC_DMA_MAX_BUF_SIZE        4092        // Max DMA buffer size is 4095 but better to align with 4 bytes, so set 4092 here
-
-#if CONFIG_DAC_ISR_IRAM_SAFE || CONFIG_DAC_CTRL_FUNC_IN_IRAM
-#define DAC_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
-#else
-#define DAC_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
-#endif
 
 #if CONFIG_DAC_ISR_IRAM_SAFE
 #define DAC_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
@@ -83,8 +72,6 @@ typedef enum {
 } dac_continuous_fsm_t;
 
 static _Atomic dac_continuous_fsm_t s_dac_cont_fsm = DAC_CONT_FSM_IDLE;
-
-static const char *TAG = "dac_continuous";
 
 static esp_err_t s_dac_continuous_stop_sync(dac_continuous_handle_t handle);
 
@@ -212,9 +199,6 @@ static void IRAM_ATTR s_dac_default_intr_handler(void *arg)
 
 esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, dac_continuous_handle_t *ret_handle)
 {
-#if CONFIG_DAC_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     /* Parameters validation */
     DAC_NULL_POINTER_CHECK(cont_cfg);
     DAC_NULL_POINTER_CHECK(ret_handle);
@@ -276,9 +260,9 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
                       err1, TAG, "Failed to register DAC DMA interrupt");
 
     /* Connect DAC module to the DMA peripheral */
-    DAC_RTC_ENTER_CRITICAL();
+    DAC_ENTER_CRITICAL();
     dac_ll_digi_enable_dma(true);
-    DAC_RTC_EXIT_CRITICAL();
+    DAC_EXIT_CRITICAL();
 
     /* FSM: WAIT -> REGISTERED */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_REGISTERED);
@@ -334,9 +318,9 @@ esp_err_t dac_continuous_del_channels(dac_continuous_handle_t handle)
     ESP_RETURN_ON_ERROR(dac_dma_periph_deinit(), TAG, "Failed to deinitialize DAC DMA peripheral");
 
     /* Disconnect DAC module from the DMA peripheral */
-    DAC_RTC_ENTER_CRITICAL();
+    DAC_ENTER_CRITICAL();
     dac_ll_digi_enable_dma(false);
-    DAC_RTC_EXIT_CRITICAL();
+    DAC_EXIT_CRITICAL();
 
     /* Free allocated resources */
     s_dac_free_dma_desc(handle);
@@ -416,9 +400,9 @@ esp_err_t dac_continuous_enable(dac_continuous_handle_t handle)
     dac_dma_periph_enable();
     esp_intr_enable(handle->intr_handle);
 
-    DAC_RTC_ENTER_CRITICAL();
+    DAC_ENTER_CRITICAL();
     dac_ll_digi_enable_dma(true);
-    DAC_RTC_EXIT_CRITICAL();
+    DAC_EXIT_CRITICAL();
 
     /* FSM: WAIT -> ENABLED */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_ENABLED);
@@ -448,9 +432,9 @@ esp_err_t dac_continuous_disable(dac_continuous_handle_t handle)
     dac_dma_periph_disable();
     esp_intr_disable(handle->intr_handle);
 
-    DAC_RTC_ENTER_CRITICAL();
+    DAC_ENTER_CRITICAL();
     dac_ll_digi_enable_dma(false);
-    DAC_RTC_EXIT_CRITICAL();
+    DAC_EXIT_CRITICAL();
 
     DAC_CHANNEL_MASK_FOREACH(chan, handle->cfg.chan_mask) {
         dac_priv_disable_channel(chan);
