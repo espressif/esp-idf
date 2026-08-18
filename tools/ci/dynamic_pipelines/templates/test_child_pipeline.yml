@@ -35,31 +35,6 @@ generate_presigned_json:
   script:
     - idf-ci gitlab generate-presigned-json --output presigned.json
 
-app-size-metrics:
-  stage: assign_test
-  image: $ESP_ENV_IMAGE
-  tags:
-    - build
-    - shiny
-  when: always
-  allow_failure: true
-  needs:
-    - job: build_test_related_apps
-      optional: true
-    - job: build_non_test_related_apps
-      optional: true
-    - pipeline: $PARENT_PIPELINE_ID
-      job: pipeline_variables
-  variables:
-    ESP_METRICS_PROJECT_URL: "$CI_PROJECT_URL"
-    ESP_METRICS_PROJECT_ID: "$CI_PROJECT_ID"
-    ESP_METRICS_COMMIT_SHA: "$PIPELINE_COMMIT_SHA"
-    ESP_METRICS_BRANCH_NAME: "$CI_COMMIT_REF_NAME"
-  script:
-    - cd tools/ci/metrics/size_metrics
-    - python3 generate_metrics.py
-    - esp-metrics-cli upload -d schema.yaml -i metrics.json
-
 include:
   - project: "ci/actions/common"
     file:
