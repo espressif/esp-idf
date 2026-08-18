@@ -8,7 +8,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
-                       PRIV_REQUIRES esp_timer
+                       PRIV_REQUIRES esp_timer esp_hal_usb
                        LDFRAGMENTS linker.lf
                       )
 
