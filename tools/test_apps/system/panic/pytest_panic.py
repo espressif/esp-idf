@@ -1623,7 +1623,7 @@ def test_dcache_read_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Incorrect panic reason may be observed', run=False)
+@pytest.mark.xfail(reason='Incorrect panic reason may be observed', run=False)
 @idf_parametrize('config', ['memprot_esp32s2'], indirect=['config'])
 @idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_dcache_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1744,13 +1744,16 @@ def test_iram_reg3_write_violation(dut: PanicTestDut, test_func_name: str) -> No
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
 @pytest.mark.generic
-@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Incorrect panic reason may be observed', run=False)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
+            pytest.mark.xfail(reason='Incorrect panic reason may be observed', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c2', 'esp32c2'),
         ('memprot_esp32c5', 'esp32c5'),
@@ -1784,15 +1787,16 @@ def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> No
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(
-    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
-)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+            pytest.mark.xfail(reason='Multiple panic reasons for the same test may surface', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c2', 'esp32c2'),
         ('memprot_esp32c5', 'esp32c5'),
@@ -1819,15 +1823,16 @@ def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(
-    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
-)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+            pytest.mark.xfail(reason='Multiple panic reasons for the same test may surface', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c2', 'esp32c2'),
         ('memprot_esp32c5', 'esp32c5'),
@@ -1907,15 +1912,16 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(
-    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
-)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+            pytest.mark.xfail(reason='Multiple panic reasons for the same test may surface', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c5', 'esp32c5'),
         ('memprot_esp32c6', 'esp32c6'),
