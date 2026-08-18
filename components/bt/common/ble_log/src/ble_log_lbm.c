@@ -39,6 +39,7 @@ BLE_LOG_STATIC
 bool ble_log_lbm_acquire_trans(size_t log_len, ble_log_lbm_t **out_lbm,
                                ble_log_prph_trans_t ***out_trans);
 BLE_LOG_STATIC void ble_log_lbm_release(ble_log_lbm_t *lbm);
+BLE_LOG_STATIC void ble_log_lbm_submit_trans(ble_log_prph_trans_t **trans);
 BLE_LOG_STATIC
 ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len);
 BLE_LOG_STATIC bool ble_log_lbm_flush_all_trans(void);
@@ -125,6 +126,23 @@ void ble_log_lbm_release(ble_log_lbm_t *lbm)
     }
 }
 
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
+void ble_log_lbm_submit_trans(ble_log_prph_trans_t **trans)
+{
+    ble_log_prph_trans_t *submitted = *trans;
+    BLE_LOG_ATOMIC_STORE_RELAXED(submitted->prph_owned, true);
+
+    ble_log_lbm_t *lbm = (ble_log_lbm_t *)submitted->owner;
+    uint32_t inflight = __atomic_add_fetch(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+    uint32_t peak = __atomic_load_n(&lbm->trans_inflight_peak, __ATOMIC_RELAXED);
+    while (inflight > peak &&
+            !__atomic_compare_exchange_n(&lbm->trans_inflight_peak, &peak, inflight,
+                                         false, __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
+    }
+
+    ble_log_rt_submit_trans(submitted);
+}
+
 BLE_LOG_STATIC bool ble_log_lbm_flush_all_trans(void)
 {
     ble_log_lbm_t *lbm;
@@ -138,9 +156,8 @@ BLE_LOG_STATIC bool ble_log_lbm_flush_all_trans(void)
         int trans_idx = lbm->trans_idx;
         for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
             trans = &(lbm->trans[trans_idx]);
-            if (!__atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE) &&
-                (*trans)->pos) {
-                ble_log_rt_queue_trans(trans);
+            if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE((*trans)->prph_owned) && (*trans)->pos) {
+                ble_log_lbm_submit_trans(trans);
             }
             trans_idx = (trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
         }
@@ -153,7 +170,7 @@ BLE_LOG_STATIC bool ble_log_lbm_flush_all_trans(void)
             lbm = &(lbm_ctx->lbm_pool[i]);
             for (int j = 0; j < BLE_LOG_TRANS_BUF_CNT; j++) {
                 trans = &(lbm->trans[j]);
-                in_progress |= __atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE);
+                in_progress |= BLE_LOG_ATOMIC_LOAD_ACQUIRE((*trans)->prph_owned);
             }
         }
         if (in_progress) {
@@ -230,7 +247,7 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
 
     /* Queue trans if full */
     if (BLE_LOG_TRANS_FREE_SPACE((*trans)) <= BLE_LOG_FRAME_OVERHEAD) {
-        ble_log_rt_queue_trans(trans);
+        ble_log_lbm_submit_trans(trans);
     }
 }
 
@@ -257,7 +274,7 @@ void ble_log_lbm_stream_seal(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
 
     ble_log_stat_mgr_update(src_code, payload_len, false);
 
-    ble_log_rt_queue_trans(trans);
+    ble_log_lbm_submit_trans(trans);
 }
 #endif /* BLE_LOG_UART_REDIR_ENABLED */
 
@@ -319,7 +336,7 @@ BLE_LOG_IRAM_ATTR void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans)
 {
     ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
     __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+    BLE_LOG_ATOMIC_STORE_RELEASE(trans->prph_owned, false);
 }
 
 bool ble_log_lbm_init(void)
@@ -388,7 +405,6 @@ bool ble_log_lbm_init(void)
     }
 
     /* Initialization done */
-    lbm_ref_count = 0;
     lbm_inited = true;
     lbm_enabled = false;
     return true;
@@ -448,7 +464,7 @@ ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len)
     ble_log_prph_trans_t **trans;
     for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
         trans = &(lbm->trans[lbm->trans_idx]);
-        if (!__atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE)) {
+        if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE((*trans)->prph_owned)) {
             /* Return if there's enough free space in current transport */
             if (BLE_LOG_TRANS_FREE_SPACE((*trans)) >= (log_len + BLE_LOG_FRAME_OVERHEAD)) {
                 return trans;
@@ -456,7 +472,7 @@ ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len)
 
             /* Queue transport if there's insufficient free space */
             if ((*trans)->pos) {
-                ble_log_rt_queue_trans(trans);
+                ble_log_lbm_submit_trans(trans);
             }
         }
 
@@ -560,8 +576,8 @@ void ble_log_lbm_stream_flush(ble_log_lbm_t *lbm, ble_log_src_t src_code)
     int trans_idx = lbm->trans_idx;
     for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
         ble_log_prph_trans_t **trans = &(lbm->trans[trans_idx]);
-        if (!__atomic_load_n(&(*trans)->prph_owned, __ATOMIC_ACQUIRE) &&
-            (*trans)->pos > BLE_LOG_FRAME_HEAD_LEN) {
+        if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE((*trans)->prph_owned) &&
+                (*trans)->pos > BLE_LOG_FRAME_HEAD_LEN) {
             ble_log_lbm_stream_seal(trans, src_code);
         }
         trans_idx = (trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
@@ -575,8 +591,8 @@ BLE_LOG_STATIC void ble_log_emit_buf_util(ble_log_lbm_t *lbm, uint8_t lbm_id)
         .int_src_code   = BLE_LOG_INT_SRC_BUF_UTIL,
         .lbm_id         = lbm_id,
         .trans_cnt      = BLE_LOG_TRANS_BUF_CNT,
-        .inflight_peak  = (uint8_t)__atomic_load_n(
-                              &lbm->trans_inflight_peak, __ATOMIC_RELAXED),
+        .inflight_peak  = (uint8_t)__atomic_load_n(&lbm->trans_inflight_peak,
+                                                   __ATOMIC_RELAXED),
     };
     ble_log_write_hex(BLE_LOG_SRC_INTERNAL,
                       (const uint8_t *)&util, sizeof(ble_log_buf_util_t));

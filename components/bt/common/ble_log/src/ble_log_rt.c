@@ -174,33 +174,21 @@ void ble_log_rt_deinit(void)
     }
 }
 
-BLE_LOG_IRAM_ATTR void ble_log_rt_queue_trans(ble_log_prph_trans_t **trans)
+BLE_LOG_IRAM_ATTR void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans)
 {
-    __atomic_store_n(&(*trans)->prph_owned, true, __ATOMIC_RELAXED);
-
-    ble_log_lbm_t *lbm = (ble_log_lbm_t *)(*trans)->owner;
-    uint32_t inflight = __atomic_add_fetch(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    uint32_t peak = __atomic_load_n(&lbm->trans_inflight_peak, __ATOMIC_RELAXED);
-    while (inflight > peak) {
-        if (__atomic_compare_exchange_n(&lbm->trans_inflight_peak, &peak, inflight,
-                                        true, __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
-            break;
-        }
-    }
-
     if (BLE_LOG_IN_ISR()) {
         BaseType_t woken = pdFALSE;
         /* Queue depth == total transport buffer count; queue-full is impossible
          * for a valid transport, so the return value is not checked. */
-        xQueueSendFromISR(rt_queue_handle, trans, &woken);
+        xQueueSendFromISR(rt_queue_handle, &trans, &woken);
         portYIELD_FROM_ISR(woken);
     } else if (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED) {
         /* Non-blocking send to avoid configASSERT when scheduler is suspended
          * (e.g., during light sleep transitions). Queue-full is impossible;
          * see comment above. */
-        xQueueSend(rt_queue_handle, trans, 0);
+        xQueueSend(rt_queue_handle, &trans, 0);
     } else {
-        xQueueSend(rt_queue_handle, trans, portMAX_DELAY);
+        xQueueSend(rt_queue_handle, &trans, portMAX_DELAY);
     }
 }
 

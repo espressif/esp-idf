@@ -30,8 +30,8 @@
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* INTERFACE */
-bool ble_log_rt_init();
+bool ble_log_rt_init(void);
 void ble_log_rt_deinit(void);
-void ble_log_rt_queue_trans(ble_log_prph_trans_t **trans);
+void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans);
 
 #endif /* __BLE_LOG_RT_H__ */
