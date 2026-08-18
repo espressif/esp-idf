@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -347,16 +347,18 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of DAC digital controller
  */
-#define SOC_DAC_DIGI_CLKS {SOC_MOD_CLK_PLL_D2, SOC_MOD_CLK_APLL}
+#define SOC_DAC_DIGI_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_APLL}
 
 /**
  * @brief DAC digital controller clock source
  *
+ * @note The ESP32 DAC DMA is based on I2S and uses the same clock source as I2S.
  */
 typedef enum {
-    DAC_DIGI_CLK_SRC_PLLD2 = SOC_MOD_CLK_PLL_D2,    /*!< Select PLL_D2 as the source clock */
-    DAC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,       /*!< Select APLL as the source clock */
-    DAC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_D2,  /*!< Select PLL_D2 as the default source clock  */
+    DAC_DIGI_CLK_SRC_PLLD2 [[deprecated("use DAC_DIGI_CLK_SRC_PLL_160M instead")]] = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
+    DAC_DIGI_CLK_SRC_PLL_160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
+    DAC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,          /*!< Select APLL as the source clock */
+    DAC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,  /*!< Select PLL_F160M as the default source clock  */
 } soc_periph_dac_digi_clk_src_t;
 
 /**

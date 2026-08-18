@@ -233,7 +233,7 @@ TEST_CASE("DAC_dma_write_test", "[dac]")
  * With small DMA buffers and a deliberate long delay between writes, the DMA drains all of
  * its descriptors and stops (raises TEOF) before the next write happens. Every write except
  * the first one therefore has to re-link a descriptor and resume the transfer through
- * dac_dma_periph_trans_append(). If that resume path is broken, the descriptors are never
+ * dac_priv_dma_trans_append(). If that resume path is broken, the descriptors are never
  * recycled, so dac_continuous_write() will return ESP_ERR_TIMEOUT, and dac_continuous_disable()
  * (which waits for the ongoing synchronous transfer to stop) will block forever. */
 TEST_CASE("DAC_dma_sync_write_resume_test", "[dac]")

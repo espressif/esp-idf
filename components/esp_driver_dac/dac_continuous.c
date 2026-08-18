@@ -28,22 +28,15 @@
 
 #define DAC_DMA_MAX_BUF_SIZE        4092        // Max DMA buffer size is 4095 but better to align with 4 bytes, so set 4092 here
 
-#if CONFIG_DAC_ISR_IRAM_SAFE
-#define DAC_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
-#else
-#define DAC_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
-#endif
-
 #define DAC_DMA_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 
 struct dac_continuous_s {
     dac_continuous_config_t cfg;
-    intr_handle_t           intr_handle;                /* Interrupt handle */
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t    pm_lock;
 #endif
 
-    dac_event_callbacks_t   cbs;                        /* Interrupt callbacks */
+    dac_event_callbacks_t   cbs;                        /* User event callbacks */
     void                    *user_data;
 
     uint32_t                cur_index;                  /* Index of the DMA descriptor that is currently being used by DMA. */
@@ -139,62 +132,67 @@ err:
     return ret;
 }
 
-static void IRAM_ATTR s_dac_default_intr_handler(void *arg)
+bool dac_dma_done_callback(void *ctx)
 {
-    dac_continuous_handle_t handle = arg;
-    BaseType_t need_awoke = pdFALSE;
-    BaseType_t tmp = pdFALSE;
+    dac_continuous_handle_t handle = ctx;
+    bool need_awoke = false;
 
-    uint32_t intr_mask = dac_dma_periph_intr_get_mask();
     dac_continuous_fsm_t fsm = atomic_load(&s_dac_cont_fsm);
-
-    if (intr_mask & DAC_DMA_DONE_INTR) {
-        if (fsm == DAC_CONT_FSM_SYNC || fsm == DAC_CONT_FSM_SYNC_WAIT) {
-            /* Sync writing mode: Recycle the descriptor */
-            xQueueSendFromISR(handle->free_desc_queue, &handle->cur_index, &tmp);
-            need_awoke |= tmp;
-        }
-
-        if (handle->cbs.on_convert_done) {
-            dac_event_data_t evt_data = {
-                .buf = handle->bufs[handle->cur_index],
-                .buf_size = handle->cfg.buf_size,
-                .write_bytes = gdma_link_get_length(handle->link, handle->cur_index),
-            };
-            need_awoke |= handle->cbs.on_convert_done(handle, &evt_data, handle->user_data);
-        }
-
-        handle->cur_index = (handle->cur_index + 1) % handle->used_desc_num;
+    if (fsm == DAC_CONT_FSM_SYNC || fsm == DAC_CONT_FSM_SYNC_WAIT) {
+        /* Sync writing mode: Recycle the descriptor */
+        BaseType_t tmp = pdFALSE;
+        xQueueSendFromISR(handle->free_desc_queue, &handle->cur_index, &tmp);
+        need_awoke |= (tmp == pdTRUE);
     }
-    if (intr_mask & DAC_DMA_TEOF_INTR) {
-        /**
-         * Total EOF interrupt: DMA has reached the end of a descriptor chain (NULL next pointer).
-         * This only occurs naturally in sync writing mode when all queued data has been transmitted.
-         */
-        bool dma_restart = false;
+
+    if (handle->cbs.on_convert_done) {
+        dac_event_data_t evt_data = {
+            .buf = handle->bufs[handle->cur_index],
+            .buf_size = handle->cfg.buf_size,
+            .write_bytes = gdma_link_get_length(handle->link, handle->cur_index),
+        };
+        need_awoke |= handle->cbs.on_convert_done(handle, &evt_data, handle->user_data);
+    }
+
+    handle->cur_index = (handle->cur_index + 1) % handle->used_desc_num;
+    return need_awoke;
+}
+
+bool dac_dma_teof_callback(void *ctx)
+{
+    dac_continuous_handle_t handle = ctx;
+    bool need_awoke = false;
+
+    /**
+     * Total EOF interrupt: DMA has reached the end of a descriptor chain (NULL next pointer).
+     * This only occurs naturally in sync writing mode when all queued data has been transmitted.
+     */
+    bool dma_restart = false;
 #if SOC_IS(ESP32)
-        if (fsm == DAC_CONT_FSM_SYNC || fsm == DAC_CONT_FSM_SYNC_WAIT) {
-            /* Check for any remaining descriptors (ignored due to prefetching), and restart the DMA */
-            portENTER_CRITICAL_ISR(&handle->dma_lock);
-            if (!handle->dma_running) {
-                /* Stop already in progress, do not restart */
-            } else if (gdma_link_check_end(handle->link, (int)handle->cur_index - 1) == false) {
-                dac_dma_periph_trans_start(gdma_link_get_item_addr(handle->link, handle->cur_index));
-                dma_restart = true;
-            } else {
-                handle->dma_running = false;
-            }
-            portEXIT_CRITICAL_ISR(&handle->dma_lock);
+    /**
+     * Due to a hardware limitation affecting the ESP32 I2S DMA append() operation, dac_continuous_write()
+     * uses start() to chain subsequent transfers. As a result, descriptor prefetching can cause issues.
+     */
+    dac_continuous_fsm_t fsm = atomic_load(&s_dac_cont_fsm);
+    if (fsm == DAC_CONT_FSM_SYNC || fsm == DAC_CONT_FSM_SYNC_WAIT) {
+        /* Check for any remaining descriptors (ignored due to prefetching), and restart the DMA */
+        portENTER_CRITICAL_ISR(&handle->dma_lock);
+        if (!handle->dma_running) {
+            /* Stop already in progress, do not restart */
+        } else if (gdma_link_check_end(handle->link, (int)handle->cur_index - 1) == false) {
+            dac_priv_dma_trans_start(gdma_link_get_item_addr(handle->link, handle->cur_index));
+            dma_restart = true;
+        } else {
+            handle->dma_running = false;
         }
+        portEXIT_CRITICAL_ISR(&handle->dma_lock);
+    }
 #endif
 
-        if (!dma_restart && handle->cbs.on_stop) {
-            need_awoke |= handle->cbs.on_stop(handle, NULL, handle->user_data);
-        }
+    if (!dma_restart && handle->cbs.on_stop) {
+        need_awoke |= handle->cbs.on_stop(handle, NULL, handle->user_data);
     }
-    if (need_awoke == pdTRUE) {
-        portYIELD_FROM_ISR();
-    }
+    return need_awoke;
 }
 
 esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, dac_continuous_handle_t *ret_handle)
@@ -203,6 +201,8 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     DAC_NULL_POINTER_CHECK(cont_cfg);
     DAC_NULL_POINTER_CHECK(ret_handle);
     ESP_RETURN_ON_FALSE(IS_VALID_DAC_CHANNEL_MASK(cont_cfg->chan_mask) && cont_cfg->chan_mask, ESP_ERR_INVALID_ARG, TAG, "invalid dac channel mask");
+    ESP_RETURN_ON_FALSE(cont_cfg->chan_mode != DAC_CHANNEL_MODE_ALTER || cont_cfg->chan_mask == DAC_CHANNEL_MASK_ALL,
+                        ESP_ERR_INVALID_ARG, TAG, "alternate mode requires both DAC channels enabled");
     ESP_RETURN_ON_FALSE(cont_cfg->desc_num > 1, ESP_ERR_INVALID_ARG, TAG, "at least two DMA descriptor needed");
     ESP_RETURN_ON_FALSE(cont_cfg->buf_size > 0 && cont_cfg->buf_size % 2 == 0, ESP_ERR_INVALID_ARG, TAG, "buf_size must be a positive even number");
     ESP_RETURN_ON_FALSE(cont_cfg->buf_size <= DAC_DMA_MAX_BUF_SIZE, ESP_ERR_INVALID_ARG, TAG, "buf_size exceeds the maximum limit");
@@ -219,14 +219,13 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     /* Register the channels */
     dac_channel_mask_t registered_chan_mask = 0;
     DAC_CHANNEL_MASK_FOREACH(chan, cont_cfg->chan_mask) {
-        ESP_GOTO_ON_ERROR(dac_priv_register_channel(chan),
-                          err4, TAG, "register dac channel %"PRIu32" failed", chan);
+        ESP_GOTO_ON_ERROR(dac_priv_register_channel(chan), err_dereg, TAG, "register dac channel %"PRIu32" failed", chan);
         registered_chan_mask |= BIT(chan);
     }
 
     /* Allocate continuous mode struct */
     dac_continuous_handle_t handle = heap_caps_calloc(1, sizeof(struct dac_continuous_s) + cont_cfg->desc_num * sizeof(uint8_t *), DAC_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(handle, ESP_ERR_NO_MEM, err4, TAG, "no memory for the dac continuous mode structure");
+    ESP_GOTO_ON_FALSE(handle, ESP_ERR_NO_MEM, err_dereg, TAG, "no memory for the dac continuous mode structure");
 
     handle->cfg = *cont_cfg;
 
@@ -235,29 +234,26 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
 #endif
 
     handle->free_desc_queue = xQueueCreateWithCaps(cont_cfg->desc_num, sizeof(int), DAC_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(handle->free_desc_queue, ESP_ERR_NO_MEM, err3, TAG, "Failed to create free descriptor queue");
+    ESP_GOTO_ON_FALSE(handle->free_desc_queue, ESP_ERR_NO_MEM, err_free, TAG, "Failed to create free descriptor queue");
     handle->mutex = xSemaphoreCreateMutexWithCaps(DAC_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(handle->mutex, ESP_ERR_NO_MEM, err3, TAG, "Failed to create mutex");
+    ESP_GOTO_ON_FALSE(handle->mutex, ESP_ERR_NO_MEM, err_free, TAG, "Failed to create mutex");
 
     /* Create PM lock */
 #if CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_lock_type = cont_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_APB_FREQ_MAX;
-    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, "dac_driver", &handle->pm_lock), err3, TAG, "Failed to create DAC pm lock");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, "dac_driver", &handle->pm_lock), err_free, TAG, "Failed to create DAC pm lock");
 #endif
 
     /* Create DMA descriptors and buffers */
-    ESP_GOTO_ON_ERROR(s_dac_alloc_dma_desc(handle), err3, TAG, "Failed to create DMA descriptors and buffers");
+    ESP_GOTO_ON_ERROR(s_dac_alloc_dma_desc(handle), err_free, TAG, "Failed to create DMA descriptors and buffers");
 
     /* Initialize DAC DMA peripheral */
-    ESP_GOTO_ON_ERROR(dac_dma_periph_init(cont_cfg->freq_hz,
-                                          cont_cfg->chan_mode == DAC_CHANNEL_MODE_ALTER,
-                                          cont_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL),
-                      err2, TAG, "Failed to initialize DAC DMA peripheral");
-
-    /* Register DMA interrupt */
-    ESP_GOTO_ON_ERROR(esp_intr_alloc(dac_dma_periph_get_intr_signal(), DAC_INTR_ALLOC_FLAGS,
-                                     s_dac_default_intr_handler, handle, &(handle->intr_handle)),
-                      err1, TAG, "Failed to register DAC DMA interrupt");
+    dac_dma_event_callbacks_t cbs = {
+        .on_done = dac_dma_done_callback,
+        .on_teof = dac_dma_teof_callback,
+    };
+    ESP_GOTO_ON_ERROR(dac_priv_dma_init(cont_cfg->clk_src, cont_cfg->freq_hz, cont_cfg->chan_mode == DAC_CHANNEL_MODE_ALTER, &cbs, handle),
+                      err_desc, TAG, "Failed to initialize DAC DMA peripheral");
 
     /* Connect DAC module to the DMA peripheral */
     DAC_ENTER_CRITICAL();
@@ -270,11 +266,9 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     *ret_handle = handle;
     return ret;
 
-err1:
-    dac_dma_periph_deinit();
-err2:
+err_desc:
     s_dac_free_dma_desc(handle);
-err3:
+err_free:
     if (handle->free_desc_queue) {
         vQueueDeleteWithCaps(handle->free_desc_queue);
     }
@@ -287,7 +281,7 @@ err3:
     }
 #endif
     free(handle);
-err4:
+err_dereg:
     /* Deregister registered channels */
     DAC_CHANNEL_MASK_FOREACH(chan, registered_chan_mask) {
         dac_priv_deregister_channel(chan);
@@ -308,14 +302,8 @@ esp_err_t dac_continuous_del_channels(dac_continuous_handle_t handle)
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Deregister DMA interrupt */
-    if (handle->intr_handle) {
-        ESP_RETURN_ON_ERROR(esp_intr_free(handle->intr_handle), TAG, "Failed to deregister DMA interrupt");
-        handle->intr_handle = NULL;
-    }
-
     /* Deinitialize DMA peripheral */
-    ESP_RETURN_ON_ERROR(dac_dma_periph_deinit(), TAG, "Failed to deinitialize DAC DMA peripheral");
+    ESP_RETURN_ON_ERROR(dac_priv_dma_deinit(), TAG, "Failed to deinitialize DAC DMA peripheral");
 
     /* Disconnect DAC module from the DMA peripheral */
     DAC_ENTER_CRITICAL();
@@ -397,8 +385,7 @@ esp_err_t dac_continuous_enable(dac_continuous_handle_t handle)
     DAC_CHANNEL_MASK_FOREACH(chan, handle->cfg.chan_mask) {
         dac_priv_enable_channel(chan);
     }
-    dac_dma_periph_enable();
-    esp_intr_enable(handle->intr_handle);
+    dac_priv_dma_enable();
 
     DAC_ENTER_CRITICAL();
     dac_ll_digi_enable_dma(true);
@@ -419,7 +406,7 @@ esp_err_t dac_continuous_disable(dac_continuous_handle_t handle)
         ESP_RETURN_ON_ERROR(dac_continuous_stop_cyclically(handle), TAG, "Failed to stop cyclic conversion");
     }
 
-    /* Check if there is any ongoing SYNC writing and wait for it to stop */
+    /* Check if there is any ongoing SYNC writing and stop it */
     if (atomic_load(&s_dac_cont_fsm) == DAC_CONT_FSM_SYNC) {
         ESP_RETURN_ON_ERROR(s_dac_continuous_stop_sync(handle), TAG, "Failed to stop sync writing");
     }
@@ -429,8 +416,7 @@ esp_err_t dac_continuous_disable(dac_continuous_handle_t handle)
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&s_dac_cont_fsm, &expected_fsm, DAC_CONT_FSM_WAIT),
                         ESP_ERR_INVALID_STATE, TAG, "DAC continuous is running/not enabled");
 
-    dac_dma_periph_disable();
-    esp_intr_disable(handle->intr_handle);
+    dac_priv_dma_disable();
 
     DAC_ENTER_CRITICAL();
     dac_ll_digi_enable_dma(false);
@@ -462,7 +448,7 @@ esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle)
         ESP_RETURN_ON_ERROR(dac_continuous_stop_cyclically(handle), TAG, "Failed to stop cyclic conversion");
     }
 
-    /* Check if there is any ongoing SYNC writing and wait for it to stop */
+    /* Check if there is any ongoing SYNC writing and stop it */
     if (atomic_load(&s_dac_cont_fsm) == DAC_CONT_FSM_SYNC) {
         ESP_RETURN_ON_ERROR(s_dac_continuous_stop_sync(handle), TAG, "Failed to stop sync writing");
     }
@@ -483,7 +469,7 @@ esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle)
     handle->cur_index = 0;
     handle->used_desc_num = handle->cfg.desc_num;
     /* Start with an all-zero buffer. User will be notified by the 'on_convert_done' callback, then load the data into the buffer. */
-    dac_dma_periph_trans_start(gdma_link_get_head_addr(handle->link));
+    dac_priv_dma_trans_start(gdma_link_get_head_addr(handle->link));
 
     /* FSM: WAIT -> ASYNC */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_ASYNC);
@@ -502,7 +488,7 @@ esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle)
         return ESP_ERR_INVALID_STATE;
     }
 
-    dac_dma_periph_trans_stop();
+    dac_priv_dma_trans_stop();
 
     /* FSM: WAIT -> ENABLED */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_ENABLED);
@@ -525,7 +511,7 @@ esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle)
  *
  * @note if CONFIG_DAC_DMA_AUTO_16BIT_ALIGN is enabled, data_len can be odd, otherwise it must be even
  */
-static size_t s_dac_load_data_into_desc(dac_continuous_handle_t handle, int index, const uint8_t *data, size_t data_len, bool auto_balance)
+size_t dac_load_data_into_desc(dac_continuous_handle_t handle, int index, const uint8_t *data, size_t data_len, bool auto_balance)
 {
     /* Calculate the length of the data to be loaded */
     size_t buf_size = handle->cfg.buf_size;  // must be even
@@ -600,7 +586,7 @@ esp_err_t dac_continuous_write_asynchronously(dac_continuous_handle_t handle, ui
     ESP_GOTO_ON_FALSE_ISR(index < handle->cfg.desc_num, ESP_ERR_NOT_FOUND, clean_up, TAG, "Corresponding DMA descriptor not found");
 
     /* Load data into DMA buffer. We disable the auto balance here because the total length is actually uncertain. */
-    size_t loaded_len = s_dac_load_data_into_desc(handle, index, data, data_len, false);
+    size_t loaded_len = dac_load_data_into_desc(handle, index, data, data_len, false);
     if (bytes_loaded) {
         *bytes_loaded = loaded_len;
     }
@@ -635,7 +621,7 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_
         ESP_GOTO_ON_ERROR(dac_continuous_stop_cyclically(handle), err, TAG, "Failed to stop cyclic conversion");
     }
 
-    /* Check if there is any ongoing SYNC writing and wait for it to stop */
+    /* Check if there is any ongoing SYNC writing and stop it */
     if (atomic_load(&s_dac_cont_fsm) == DAC_CONT_FSM_SYNC) {
         ESP_GOTO_ON_ERROR(s_dac_continuous_stop_sync(handle), err, TAG, "Failed to stop sync writing");
     }
@@ -648,7 +634,7 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_
     size_t remain_size = buf_size;
     uint32_t index = 0;
     for (; index < handle->cfg.desc_num && remain_size > 0; index++) {
-        size_t loaded_len = s_dac_load_data_into_desc(handle, index, buf, remain_size, true);
+        size_t loaded_len = dac_load_data_into_desc(handle, index, buf, remain_size, true);
         remain_size -= loaded_len;
         buf += loaded_len;
     }
@@ -663,7 +649,7 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_
 
     handle->cur_index = 0;
     handle->used_desc_num = index;
-    dac_dma_periph_trans_start(gdma_link_get_head_addr(handle->link));
+    dac_priv_dma_trans_start(gdma_link_get_head_addr(handle->link));
 
     /* FSM: WAIT -> CYCLIC */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_CYCLIC);
@@ -688,7 +674,7 @@ esp_err_t dac_continuous_stop_cyclically(dac_continuous_handle_t handle)
         return ESP_ERR_INVALID_STATE;
     }
 
-    dac_dma_periph_trans_stop();
+    dac_priv_dma_trans_stop();
 
     /* FSM: WAIT -> ENABLED */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_ENABLED);
@@ -739,7 +725,7 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, siz
         handle->used_desc_num = handle->cfg.desc_num;
 
         /* Load one descriptor and start the DMA */
-        size_t loaded_len = s_dac_load_data_into_desc(handle, 0, buf, remain_size, true);
+        size_t loaded_len = dac_load_data_into_desc(handle, 0, buf, remain_size, true);
         remain_size -= loaded_len;
         buf += loaded_len;
         gdma_link_concat(handle->link, 0, NULL, 0);
@@ -747,7 +733,7 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, siz
         /* It is safe to operate without the lock here because the DMA is not running yet. */
         handle->dma_running = true;
 #endif
-        dac_dma_periph_trans_start(gdma_link_get_head_addr(handle->link));
+        dac_priv_dma_trans_start(gdma_link_get_head_addr(handle->link));
 
         goto skip_cas;
 
@@ -764,7 +750,7 @@ skip_cas:
                 ret = ESP_ERR_TIMEOUT;
                 break;
             }
-            size_t loaded_len = s_dac_load_data_into_desc(handle, index, buf, remain_size, true);
+            size_t loaded_len = dac_load_data_into_desc(handle, index, buf, remain_size, true);
             remain_size -= loaded_len;
             buf += loaded_len;
             /**
@@ -775,19 +761,19 @@ skip_cas:
 
 #if SOC_IS(ESP32)
             /**
-             * The ESP32 I2S DMA append() (restart) is buggy, so we re-issue start() when the DMA has stopped. See IDF-15791.
+             * The ESP32 I2S DMA append() (restart) has a hardware limitation, so we re-issue start() when the DMA has stopped. See IDF-15791.
              * Synchronize with the TEOF handler via dma_lock to prevent duplicate or missed starts.
              */
             portENTER_CRITICAL(&handle->dma_lock);
             gdma_link_concat(handle->link, index - 1, handle->link, index);
             if (!handle->dma_running) {
                 handle->dma_running = true;
-                dac_dma_periph_trans_start(gdma_link_get_item_addr(handle->link, index));
+                dac_priv_dma_trans_start(gdma_link_get_item_addr(handle->link, index));
             }
             portEXIT_CRITICAL(&handle->dma_lock);
 #else
             gdma_link_concat(handle->link, index - 1, handle->link, index);
-            dac_dma_periph_trans_append();
+            dac_priv_dma_trans_append();
 #endif
         }
         break;
@@ -821,11 +807,11 @@ static esp_err_t s_dac_continuous_stop_sync(dac_continuous_handle_t handle)
      * Both must be guarded by dma_lock to prevent concurrent hardware register access.
      */
     portENTER_CRITICAL(&handle->dma_lock);
-    dac_dma_periph_trans_stop();
+    dac_priv_dma_trans_stop();
     handle->dma_running = false;
     portEXIT_CRITICAL(&handle->dma_lock);
 #else
-    dac_dma_periph_trans_stop();
+    dac_priv_dma_trans_stop();
 #endif
 
     /* FSM: WAIT -> ENABLED */
