@@ -76,4 +76,4 @@ def test_ledc_psram(dut: IdfDut) -> None:
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_ledc_multi_device(case_tester) -> None:  # type: ignore
-    case_tester.run_all_multi_dev_cases(reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True, timeout=30)

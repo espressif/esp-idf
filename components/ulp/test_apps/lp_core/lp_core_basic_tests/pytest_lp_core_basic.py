@@ -57,7 +57,7 @@ def test_lp_vad(dut: Dut) -> None:
 def test_lp_i2c_multi_device(case_tester: CaseTester) -> None:
     i2c_cases = [case for case in case_tester.test_menu if 'lp_core_i2c' in case.groups]
     for case in i2c_cases:
-        case_tester.run_multi_dev_case(case=case, reset=True)
+        case_tester.run_multi_dev_case(case=case, reset=True, timeout=30)
 
 
 @pytest.mark.generic_multi_device
@@ -67,7 +67,7 @@ def test_lp_i2c_multi_device(case_tester: CaseTester) -> None:
 def test_lp_spi_multi_device(case_tester: CaseTester) -> None:
     spi_cases = [case for case in case_tester.test_menu if 'lp_core_spi' in case.groups]
     for case in spi_cases:
-        case_tester.run_multi_dev_case(case=case, reset=True)
+        case_tester.run_multi_dev_case(case=case, reset=True, timeout=30)
 
 
 @pytest.mark.generic_multi_device
@@ -77,7 +77,7 @@ def test_lp_spi_multi_device(case_tester: CaseTester) -> None:
 def test_lp_uart_multi_device(case_tester: CaseTester) -> None:
     uart_cases = [case for case in case_tester.test_menu if 'uart' in case.groups and 'wakeup' not in case.groups]
     for case in uart_cases:
-        case_tester.run_multi_dev_case(case=case, reset=True)
+        case_tester.run_multi_dev_case(case=case, reset=True, timeout=30)
 
 
 @pytest.mark.generic_multi_device
@@ -101,4 +101,4 @@ def test_lp_uart_wakeup_modes(case_tester: CaseTester) -> None:
     )
 
     for case in relevant_cases:
-        case_tester.run_multi_dev_case(case=case, reset=True)
+        case_tester.run_multi_dev_case(case=case, reset=True, timeout=30)

@@ -87,4 +87,4 @@ def test_master_esp_flash(case_tester) -> None:  # type: ignore
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_master_multi_dev(case_tester) -> None:  # type: ignore
-    case_tester.run_all_multi_dev_cases(reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True, timeout=30)
