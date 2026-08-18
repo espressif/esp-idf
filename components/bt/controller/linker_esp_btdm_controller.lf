@@ -5,6 +5,7 @@ entries:
 [sections:high_perf_iram_text]
 entries:
     .iram_high_perf+
+    .critical_iram+
 
 [sections:adv_fast_execute_code_iram_text]
 entries:

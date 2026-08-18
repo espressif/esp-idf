@@ -11,6 +11,7 @@
 #include "btdm_osal_freertos.h"
 #include "btdm_user_cfg.h"
 #include "btdm_mempool.h"
+#include "btdm_mem_debug.h"
 
 #include "esp_mac.h"
 #include "esp_heap_caps.h"
@@ -1047,12 +1048,22 @@ wr_btdm_osal_malloc(uint32_t size, btdm_osal_malloc_flag_t flags)
         ptr = heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     }
 
+#if BTDM_MEM_DEBUG
+    if (ptr) {
+        btdm_mem_debug_record(ptr, size);
+    }
+#endif // BTDM_MEM_DEBUG
+
     return ptr;
 }
 
 void
 wr_btdm_osal_free(void *ptr)
 {
+#if BTDM_MEM_DEBUG
+    btdm_mem_debug_clear(ptr);
+#endif // BTDM_MEM_DEBUG
+
     heap_caps_free(ptr);
 }
 
