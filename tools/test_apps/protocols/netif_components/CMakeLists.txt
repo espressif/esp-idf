@@ -56,7 +56,12 @@ idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 project(network_components)
 
 # Get the actual build components included in the build
-idf_build_get_property(build_components BUILD_COMPONENTS)
+if(IDF_BUILD_V2)
+    get_target_property(library ${project_elf} LIBRARY_INTERFACE)
+    idf_library_get_property(build_components "${library}" LIBRARY_COMPONENTS_LINKED)
+else()
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+endif()
 
 message(STATUS "Build components needed my main and ${component_under_test}:")
 foreach(comp ${build_components})
