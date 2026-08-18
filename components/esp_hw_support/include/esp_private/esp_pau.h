@@ -161,7 +161,20 @@ void pau_regdma_unregister_modem_link_protect(void);
 /**
  * @brief Wait for REGDMA to complete
  */
-void pau_regdma_wait_done(void);
+void pau_regdma_wait_work_done(void);
+
+/**
+ * @brief Check if the REGDMA task is triggered
+ * @param index the index of the task
+ * @return true if the task is triggered, false otherwise
+ */
+bool pau_regdma_check_etm_task_triggered(uint8_t index);
+
+/**
+ * @brief Clear the REGDMA task triggered status
+ * @param index the index of the task
+ */
+void pau_regdma_clear_etm_task_triggered(uint8_t index);
 
 /**
  * @brief Set the configuration of the REGDMA etm modem link
