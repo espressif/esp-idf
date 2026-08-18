@@ -8,6 +8,11 @@
 This example demonstrates some of the POSIX functions available for working with the FATFS filesystem.
 Including basic read and write operations, as well as creating moving, and deleting files and directories.
 
+## When to use this example
+
+- You already know how to mount FATFS and want to see richer file/directory operations (`fstat`, append, list, `mkdir`, rename/move, delete).
+- You need a reference for POSIX calls against a FATFS volume.
+
 ## Overview
 
 1. Partition labeled `storage` is mounted (and formatted if necessary) as FATFS filesystem to `/spiflash` mountpoint.

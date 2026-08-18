@@ -17,6 +17,11 @@ The flow of the example is as follows:
 
 4. Do some read and write operations using C standard library functions: create a file, write to it, open it for reading, print the contents to the console.
 
+## When to use this example
+
+- You need to add FATFS storage on an *external* SPI flash chip (e.g. to extend a module with only 4 MB of internal flash).
+- You want to see how to register an external flash chip as a partition (`esp_flash_t` / `esp_partition_t`).
+
 ## How to use example
 
 ### Hardware required

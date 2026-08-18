@@ -16,6 +16,11 @@ Detailed functional description of NVS and API is provided in [documentation](ht
 
 If not done already, consider checking simpler example *storage/nvs/nvs_rw_value*, that has been used as a starting point for preparing this one.
 
+## When to use this example
+
+- You need to store variable-length binary data (a blob), such as a table or struct, in NVS.
+- You want to see blob read-modify-write across reboots, including a button-triggered update.
+
 ## How to use example
 
 ### Hardware required

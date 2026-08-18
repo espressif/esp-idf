@@ -8,6 +8,10 @@ These functions return the matching partitions given a set of constraints. By co
 properties that returned results should match - notably partition type, subtype and label/name. In the case of `esp_partition_find_first`, the first matching instance is returned;
 for `esp_partition_find`, an iterator is returned iterating over matching instances.
 
+## When to use this example
+
+- You need to locate partitions by type/subtype/label at runtime (`esp_partition_find` / `esp_partition_find_first`).
+
 # Example Flow
 
 The example uses a [custom partition table](./partitions_example.csv). The first part uses `esp_partition_find_first` to search for partition instances

@@ -35,6 +35,11 @@ This example demonstrates how to use LittleFS with ESP32. Example does the follo
 
 LittleFS partition size is set in partitions_demo_esp_littlefs.csv file. See [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html) documentation for more information.
 
+## When to use this example
+
+- You want a power-fail-resilient flash filesystem with wear levelling built in (no separate wear_levelling component needed).
+- You are choosing a modern general-purpose filesystem for internal flash and do not mind slower access speeds.
+
 ## How to use example
 
 ### Hardware required
