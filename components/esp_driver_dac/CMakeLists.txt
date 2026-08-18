@@ -27,6 +27,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS "./include"
+                    PRIV_INCLUDE_DIRS "."
                     PRIV_REQUIRES ${priv_req}
                     REQUIRES esp_hal_ana_conv
                     LDFRAGMENTS "linker.lf"

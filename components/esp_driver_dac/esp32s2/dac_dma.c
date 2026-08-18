@@ -12,6 +12,7 @@
  *  DAC digital controller clock source: DIG_SARADC_CLK (root clock: APB or APLL)
  */
 
+#include "dac_priv_common.h"
 #include "sdkconfig.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/periph_ctrl.h"
@@ -24,13 +25,9 @@
 #include "soc/lldesc.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
-#include "../dac_priv_dma.h"
+#include "dac_priv_dma.h"
 #include "esp_clk_tree.h"
-#if CONFIG_DAC_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
+#include "esp_log.h"
 #include "esp_check.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
@@ -45,8 +42,6 @@ typedef struct {
 } dac_dma_periph_spi_t;
 
 static dac_dma_periph_spi_t *s_ddp = NULL; // Static DAC DMA peripheral structure pointer
-
-static const char *TAG = "DAC_DMA";
 
 static uint32_t s_dac_set_apll_freq(uint32_t expt_freq)
 {
@@ -125,15 +120,12 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll)
 
 esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
 {
-#if CONFIG_DAC_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     /* Acquire DMA peripheral */
     ESP_RETURN_ON_FALSE(spicommon_periph_claim(DAC_DMA_PERIPH_SPI_HOST, "dac_dma"), ESP_ERR_NOT_FOUND, TAG, "Failed to acquire DAC DMA peripheral");
     adc_apb_periph_claim();
     /* Allocate DAC DMA peripheral object */
-    s_ddp = (dac_dma_periph_spi_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_spi_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_ddp = (dac_dma_periph_spi_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_spi_t), DAC_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, err, TAG, "No memory for DAC DMA object");
     s_ddp->periph_dev = (void *)SPI_LL_GET_HW(DAC_DMA_PERIPH_SPI_HOST);
 

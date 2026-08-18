@@ -12,6 +12,7 @@
  *  DAC digital controller clock source: I2S ws signal (root clock: D2PLL or APLL)
  */
 
+#include "dac_priv_common.h"
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
 #include "hal/adc_ll.h"
@@ -19,15 +20,11 @@
 #include "hal/i2s_types.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/i2s_periph.h"
-#include "../dac_priv_dma.h"
+#include "dac_priv_dma.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/esp_clk.h"
 #include "esp_clk_tree.h"
-#if CONFIG_DAC_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
+#include "esp_log.h"
 #include "esp_check.h"
 #include "esp_attr.h"
 
@@ -41,8 +38,6 @@ typedef struct {
 } dac_dma_periph_i2s_t;
 
 static dac_dma_periph_i2s_t *s_ddp = NULL; // Static DAC DMA peripheral structure pointer
-
-static const char *TAG = "DAC_DMA";
 
 static uint32_t s_dac_set_apll_freq(uint32_t mclk)
 {
@@ -108,14 +103,11 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll)
 
 esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
 {
-#if CONFIG_DAC_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     /* Acquire DMA peripheral */
     ESP_RETURN_ON_ERROR(i2s_platform_acquire_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), TAG, "Failed to acquire DAC DMA peripheral");
     /* Allocate DAC DMA peripheral object */
-    s_ddp = (dac_dma_periph_i2s_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_i2s_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_ddp = (dac_dma_periph_i2s_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_i2s_t), DAC_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, err, TAG, "No memory for DAC DMA object");
     s_ddp->periph_dev = (void *)I2S_LL_GET_HW(DAC_DMA_PERIPH_I2S_NUM);
 
