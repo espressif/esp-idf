@@ -15,7 +15,7 @@
 
 /* TYPEDEF */
 typedef struct {
-    bool prph_owned;
+    volatile uint32_t prph_owned;
     uint8_t *buf;
     uint16_t size;
     uint16_t pos;
