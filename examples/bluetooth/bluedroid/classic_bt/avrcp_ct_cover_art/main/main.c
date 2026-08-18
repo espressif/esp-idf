@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -79,8 +79,6 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
 #endif
 
-        /* Get the default value of the delay value */
-        esp_a2d_sink_get_delay_value();
         /* Get local device name */
         esp_bt_gap_get_device_name();
 
