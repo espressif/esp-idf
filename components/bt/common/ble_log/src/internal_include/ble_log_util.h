@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,11 @@
 #endif /* !UNIT_TEST */
 
 /* MACRO */
+#define BLE_LOG_ATOMIC_LOAD_ACQUIRE(VAR)         __atomic_load_n(&(VAR), __ATOMIC_ACQUIRE)
+#define BLE_LOG_ATOMIC_LOAD_RELAXED(VAR)         __atomic_load_n(&(VAR), __ATOMIC_RELAXED)
+#define BLE_LOG_ATOMIC_STORE_RELEASE(VAR, VALUE) __atomic_store_n(&(VAR), (VALUE), __ATOMIC_RELEASE)
+#define BLE_LOG_ATOMIC_STORE_RELAXED(VAR, VALUE) __atomic_store_n(&(VAR), (VALUE), __ATOMIC_RELAXED)
+
 /* Unit test */
 #ifndef UNIT_TEST
 
