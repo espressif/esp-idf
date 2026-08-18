@@ -1203,7 +1203,7 @@ config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default y
 
-config SOC_PM_REGDMA_RF_RETENTION_REGI2C_CONFLICT
+config SOC_PM_REGDMA_MODEM_LINK_PROTECT
     bool
     default y
 

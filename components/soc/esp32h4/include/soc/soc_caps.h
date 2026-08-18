@@ -498,7 +498,7 @@
 #define SOC_PM_SUPPORT_PMU_MODEM_STATE  (1)
 // /* macro redefine for pass esp_wifi headers md5sum check */
 // #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
-#define SOC_PM_REGDMA_RF_RETENTION_REGI2C_CONFLICT    (1)
+#define SOC_PM_REGDMA_MODEM_LINK_PROTECT    (1)
 
 #define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)
 #define SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG   (1)
