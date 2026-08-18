@@ -70,6 +70,8 @@ static const char *ROAMING_TAG = "ROAM";
 
 #define RSSI_THRESHOLD_DISABLED -100
 #define RSSI_THRESHOLD_MAX 10
+#define LOW_RSSI_ROAM_DIFF_MIN 1
+#define LOW_RSSI_ROAM_DIFF_MAX 99
 #define BTM_QUERY_LIST_MAX_LEN (MAX_NEIGHBOR_LEN + 96)
 #define ROAMING_PENDING_TIMEOUT_USER_DATA_MAX 16
 
@@ -158,6 +160,19 @@ static int32_t roaming_app_clamp_rssi_threshold(int threshold)
     }
 
     return threshold;
+}
+
+static uint8_t roaming_app_clamp_low_rssi_roam_diff(uint8_t diff)
+{
+    if (diff < LOW_RSSI_ROAM_DIFF_MIN) {
+        return LOW_RSSI_ROAM_DIFF_MIN;
+    }
+
+    if (diff > LOW_RSSI_ROAM_DIFF_MAX) {
+        return LOW_RSSI_ROAM_DIFF_MAX;
+    }
+
+    return diff;
 }
 
 static bool roaming_app_scan_cache_is_valid(const struct timeval *now)
@@ -2400,6 +2415,8 @@ static int update_config_params(void *data)
                               sizeof(next_scan_filter_bssid)) != 0);
 
     g_roaming_app.config = *config;
+    g_roaming_app.config.low_rssi_roam_diff =
+        roaming_app_clamp_low_rssi_roam_diff(g_roaming_app.config.low_rssi_roam_diff);
     memset(g_roaming_app.config.scan_filter_ssid, 0, sizeof(g_roaming_app.config.scan_filter_ssid));
     memset(g_roaming_app.config.scan_filter_bssid, 0, sizeof(g_roaming_app.config.scan_filter_bssid));
     g_roaming_app.config.scan_filter_bssid_set = false;
