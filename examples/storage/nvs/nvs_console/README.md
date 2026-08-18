@@ -5,6 +5,11 @@
 
 This example demonstrates how to use Non-Volatile Storage (NVS) through an interactive console interface. It provides a set of commands to read, write, and manage data in NVS.
 
+## When to use this example
+
+- You want to inspect and modify NVS interactively at runtime (set/get/erase/list keys across namespaces).
+- You are debugging stored values or exploring NVS behavior without writing custom firmware.
+
 ## Hardware Required
 
 This example can run on any ESP32 family development board.

@@ -5,6 +5,11 @@
 
 This example demonstrates the usage of obtaining and interpreting statistics about the a given NVS partition, namely free/used/available/total entries and namespace count.
 
+## When to use this example
+
+- You want to measure NVS partition usage (free/used/available/total entries, namespace count) via `nvs_get_stats()`.
+- You need to understand blob storage overhead and fragmentation before sizing an NVS partition.
+
 The default "nvs" partition is first erased, then a mock string data configuration is written to 2 different namespaces, followed by checking the changed statistics and mainly the number of newly used NVS entries.
 
 Statistics obtained via [nvs_get_stats()](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/storage/nvs_flash.html#_CPPv413nvs_get_statsPKcP11nvs_stats_t) are the following:

@@ -5,6 +5,10 @@
 
 This example demonstrates how to use `esp_partition_mmap` to configure MMU and map a partition into memory address space for read operations.
 
+## When to use this example
+
+- You want to read a flash partition as if it were memory (memory-mapped), e.g. for zero-copy access to large read-only data.
+
 # Example Flow
 
 The example uses a [custom partition table](./partitions_example.csv), with a data partition `storage` used for demonstration. Before mapping this partition to memory,

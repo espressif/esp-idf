@@ -26,6 +26,11 @@ The key advantage of BDL is that **the same `diskio_bdl` adapter works with any 
 You can swap the bottom of the stack (e.g., use `sdmmc_get_blockdev()` for an SD card) without
 changing the FatFS integration code.
 
+## When to use this example
+
+- You want the newer Block Device Layer (BDL) approach to mounting FATFS instead of the legacy `wl_handle_t` API.
+- You plan to reuse the same FATFS integration across different backends (flash partition, SD card, etc.).
+
 ## How to use example
 
 ### Build and flash

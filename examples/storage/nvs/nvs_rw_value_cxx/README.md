@@ -9,6 +9,10 @@ This example demonstrates how to read and write a single integer value using NVS
 It is essentially the same as the nvs_rw_value example. The only difference is that it uses the C++ NVS handle API.
 Please see [nvs_rw_value README](../nvs_rw_value/README.md) for more details about this example.
 
+## When to use this example
+
+- You are writing C++ and want the RAII-style C++ NVS handle API instead of the C API.
+
 ## How to use example
 
 ### Hardware required

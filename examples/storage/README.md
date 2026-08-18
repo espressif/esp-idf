@@ -7,26 +7,30 @@ This directory contains a range of examples ESP-IDF projects. These are intended
 
 The examples are grouped into sub-directories by category. Each category directory contains one or more example projects:
 
-* `fatfs_basic` minimal example of FatFS usage on SPI FLASH
-* `fatfs_advanced` example demonstrates how to use advanced features for working with FatFS such as automatic partition generation
-* `custom_flash_driver` example demonstrates how to implement your own flash chip driver by overriding the default driver.
-* `emmc` example demonstrates how to use an eMMC chip with an ESP device.
-* `ext_flash_fatfs` example demonstrates how to use FATFS partition with external SPI FLASH chip.
-* `fatfsgen` example demonstrates how to use FATFS partition generator
-* `nvs_bootloader` example demonstrates how to read data from NVS in the bootloader code.
-* `nvs_rw_blob` example demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP module restarts.
-* `nvs_rw_value` example demonstrates how to read and write a single integer value using NVS.
-* `nvs_rw_value_cxx` example demonstrates how to read and write a single integer value using NVS (it uses the C++ NVS handle API).
-* `nvs_console` example demonstrates how to use NVS through an interactive console interface.
-* `nvs_statistics` example demonstrates how to obtain and interpret stats about used/available NVS storage entries in given NVS partition.
-* `nvs_iteration` example demonstrates iterating over entries of specific (or any) data type in given namespace, and the info to be obtained about the entries while doing so.
-* `partition_api` examples demonstrate how to use different partition APIs.
-* `parttool` example demonstrates common operations the partitions tool allows the user to perform.
-* `sd_card` examples demonstrate how to use an SD card with an ESP device.
-* `semihost_vfs` example demonstrates how to use semihosting VFS driver with ESP device.
-* `spiffs` example demonstrates how to use SPIFFS with ESP device.
-* `spiffsgen` example demonstrates how to use the SPIFFS image generation tool spiffsgen.py to automatically create a SPIFFS.
-* `wear_levelling` example demonstrates how to use wear levelling library and FATFS library to store files in a partition inside SPI flash.
+* `fatfs/getting_started` — minimal FATFS on internal SPI flash (mount / write / read / unmount). Wear levelling is used via `esp_vfs_fat_spiflash_mount_rw_wl`.
+* `fatfs/fs_operations` — broader FATFS file and directory operations.
+* `fatfs/ext_flash` — FATFS on an external SPI flash chip.
+* `fatfs/fatfsgen` — build-time FATFS image generation.
+* `fatfs/bdl_wl` — FATFS with wear-levelling block device layer (BDL).
+* `wear_levelling` — wear levelling + FATFS lifecycle (mount, write/read, format, verify, rewrite). Not a duplicate of `fatfs/getting_started`; use that for the minimal first demo.
+* `littlefs` — LittleFS on flash (wear management is built into LittleFS; not the wear_levelling component).
+* `custom_flash_driver` — implement a custom flash chip driver by overriding the default driver.
+* `emmc` — use an eMMC chip with an ESP device.
+* `nvs/nvs_bootloader` — read NVS data from bootloader code.
+* `nvs/nvs_rw_blob` — read/write an integer and a blob in NVS across restarts.
+* `nvs/nvs_rw_value` — read/write a single integer in NVS.
+* `nvs/nvs_rw_value_cxx` — same as `nvs/nvs_rw_value` using the C++ NVS handle API.
+* `nvs/nvs_console` — interactive NVS console.
+* `nvs/nvs_statistics` — NVS used/available entry statistics.
+* `nvs/nvs_iteration` — iterate NVS entries by type/namespace.
+* `nvs/nvsgen` — NVS partition / image generation helpers.
+* `partition_api` — partition API examples.
+* `parttool` — common host-side partition tool operations.
+* `sd_card` — SD card examples.
+* `semihost_vfs` — semihosting VFS driver.
+* `spiffs` — SPIFFS on flash.
+* `spiffsgen` — build-time SPIFFS image generation with spiffsgen.py.
+* `perf_benchmark` — storage performance benchmarking.
 
 # More
 
