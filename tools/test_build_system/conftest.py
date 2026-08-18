@@ -70,10 +70,11 @@ def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
         # Only copy if source submodule exists and has content
         if src_submodule.exists() and any(src_submodule.iterdir()):
             logging.debug(f'copying submodule {submodule_rel_path}')
-            # Remove the empty directory created by worktree
-            if dst_submodule.exists():
-                shutil.rmtree(dst_submodule, ignore_errors=True)
-            # Copy the submodule content
+            # Worktree submodule paths may be gitlink files; rmtree() does not remove those.
+            if dst_submodule.is_file() or dst_submodule.is_symlink():
+                dst_submodule.unlink()
+            elif dst_submodule.exists():
+                shutil.rmtree(dst_submodule)
             shutil.copytree(src_submodule, dst_submodule, symlinks=True, ignore=shutil.ignore_patterns('.git'))
 
     # Match old shutil-based idf_copy: no top-level .git (see docstring above).
