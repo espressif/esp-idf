@@ -126,7 +126,12 @@ set(expected_components
 list(SORT expected_components)
 
 
-idf_build_get_property(build_components BUILD_COMPONENTS)
+if(IDF_BUILD_V2)
+    get_target_property(library ${project_elf} LIBRARY_INTERFACE)
+    idf_library_get_property(build_components "${library}" LIBRARY_COMPONENTS_LINKED)
+else()
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+endif()
 list(SORT build_components)
 
 if(NOT "${expected_components}" STREQUAL "${build_components}")
