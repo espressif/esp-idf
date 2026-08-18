@@ -176,7 +176,7 @@ static void mainloop_safe_exit(void *ctx)
 
 esp_err_t esp_openthread_mainloop_exit(void)
 {
-    return esp_openthread_task_queue_post(mainloop_safe_exit, NULL);
+    return esp_openthread_task_queue_post(mainloop_safe_exit, NULL, ESP_OPENTHREAD_TASK_QUEUE_TYPE_NORMAL);
 }
 
 esp_err_t esp_openthread_launch_mainloop(void)

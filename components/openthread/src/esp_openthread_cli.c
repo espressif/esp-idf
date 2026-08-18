@@ -122,7 +122,7 @@ esp_err_t esp_openthread_cli_input(const char *line)
 
     ESP_RETURN_ON_FALSE(line_copy != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to copy OpenThread CLI line input");
 
-    esp_err_t ret = esp_openthread_task_queue_post(line_handle_task, line_copy);
+    esp_err_t ret = esp_openthread_task_queue_post(line_handle_task, line_copy, ESP_OPENTHREAD_TASK_QUEUE_TYPE_NORMAL);
     if (ret != ESP_OK) {
         free(line_copy);
     }
