@@ -11,6 +11,10 @@
 #include "esp_fault.h"
 #include "esp32s31/rom/rom_layout.h"
 #include "esp_macros.h"
+#include "esp_attr.h"
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
 
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
 
@@ -53,7 +57,8 @@ NOINLINE_ATTR IRAM_ATTR static void esp_cpu_configure_invalid_regions(void)
     PMA_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
 
     // [SOC_CPU_SUBSYSTEM_LOW .. SOC_RTC_IRAM_HIGH) is all valid (CPU subsystem, on-chip
-    //  peripherals and the LP TCM) and is configured using PMP below, so no PMA entry is needed.
+    // peripherals and the LP TCM) and is configured using PMP below, so no PMA entry is needed.
+    // Due to less PMA entries we cannot configure all the invalid region gaps in this region.
 
     // 1. Gap between LP TCM (RTC SRAM) and HP TCM (internal SRAM)
     PMA_ENTRY_SET_TOR(1, SOC_RTC_IRAM_HIGH, PMA_NONE);
@@ -65,37 +70,38 @@ NOINLINE_ATTR IRAM_ATTR static void esp_cpu_configure_invalid_regions(void)
 
     // 3. ROM has configured the ROM region to be cacheable, keep the configuration as RX.
     //    Configuring it here (as a valid RX region) lets the I/D-ROM PMP entries below use the
-    //    DROM-split optimization and save a PMP entry.
-    PMA_ENTRY_SET_TOR(5, SOC_IROM_MASK_LOW, PMA_NONE);
-    PMA_ENTRY_SET_TOR(6, SOC_DROM_MASK_HIGH, PMA_TOR | PMA_RX);
+    //    DROM-split optimization and save a PMP entry. This region's base is entry 4's address.
+    PMA_ENTRY_SET_TOR(5, SOC_DROM_MASK_HIGH, PMA_TOR | PMA_RX);
 
-    // 4. ROM has configured the external PSRAM MSPI region with RX permission; add the W attribute
-    //    and make it cacheable. As above, this valid region is configured using PMA so that it can
-    //    be marked cacheable (RWX so that PSRAM data and XIP-from-PSRAM both work).
-    PMA_ENTRY_SET_NAPOT(7, SOC_EXTRAM_LOW, (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RWX);
+    // 4. Gap between ROM-Cache and External flash (I/D-Cache)
+    PMA_ENTRY_SET_TOR(6, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
 
-    // 5. Gap between ROM-Cache and External flash (I/D-Cache)
-    PMA_ENTRY_SET_TOR(8, SOC_DROM_MASK_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(9, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
+    // 5. External flash (I/D-Cache): kept RX and made cacheable. The cacheable attribute can only
+    //    be set through PMA, which is why this valid region is configured here and not only by PMP.
+    PMA_ENTRY_SET_TOR(7, SOC_IROM_HIGH, PMA_TOR | PMA_RX);
 
-    // 6. ROM has configured the external flash MSPI region with RX permission; keep it RX and
-    //    make it cacheable. This is a valid region but is configured using PMA (instead of only
-    //    PMP) because the cacheable attribute can only be set through PMA.
-    PMA_ENTRY_SET_NAPOT(10, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RX);
+    // 6. Gap between External flash and External PSRAM. This range is decoded as flash but lies
+    //    beyond the MMU-mappable window, so it would alias onto the mapped flash: deny it.
+    PMA_ENTRY_SET_TOR(8, SOC_EXTRAM_LOW, PMA_TOR | PMA_NONE);
 
-    // 7. Gap between External flash (I/D-Cache) and External PSRAM
-    PMA_ENTRY_SET_TOR(11, SOC_IROM_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(12, SOC_EXTRAM_LOW, PMA_TOR | PMA_NONE);
+    // 7. External PSRAM: cacheable and RWX so that PSRAM data and XIP-from-PSRAM both work.
+    PMA_ENTRY_SET_TOR(9, SOC_EXTRAM_HIGH, PMA_TOR | PMA_RWX);
 
-    // 8. Non-cacheable (cache-bypass) alias of External PSRAM at +SOC_NON_CACHEABLE_OFFSET_PSRAM,
-    //    used by GDMA to reach PSRAM-resident descriptors/buffers coherently. Marked RW at a higher
-    //    priority (lower index) than the catch-all below so it stays a valid region.
-    PMA_ENTRY_SET_NAPOT(13, (uint32_t)SOC_EXTRAM_LOW + (uint32_t)SOC_NON_CACHEABLE_OFFSET_PSRAM,
-                                    (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RW);
+    // 8. Gap between External PSRAM and the cache-bypass aliases
+    PMA_ENTRY_SET_TOR(10, (uint32_t)SOC_IROM_LOW + (uint32_t)SOC_NON_CACHEABLE_OFFSET_FLASH, PMA_TOR | PMA_NONE);
 
-    // 9. End of address space (everything above External PSRAM except the non-cacheable alias above)
-    PMA_ENTRY_SET_TOR(14, SOC_EXTRAM_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(15, UINT32_MAX, PMA_TOR | PMA_NONE);
+    // 9. Non-cacheable (cache-bypass) alias of External flash
+    PMA_ENTRY_SET_TOR(11, (uint32_t)SOC_IROM_HIGH + (uint32_t)SOC_NON_CACHEABLE_OFFSET_FLASH, PMA_TOR | PMA_RX);
+
+    // 10. Gap between the flash and PSRAM cache-bypass aliases
+    PMA_ENTRY_SET_TOR(12, (uint32_t)SOC_EXTRAM_LOW + (uint32_t)SOC_NON_CACHEABLE_OFFSET_PSRAM, PMA_TOR | PMA_NONE);
+
+    // 11. Non-cacheable (cache-bypass) alias of External PSRAM, used by GDMA to reach
+    //     PSRAM-resident descriptors/buffers coherently
+    PMA_ENTRY_SET_TOR(13, (uint32_t)SOC_EXTRAM_HIGH + (uint32_t)SOC_NON_CACHEABLE_OFFSET_PSRAM, PMA_TOR | PMA_RW);
+
+    // 12. End of address space
+    PMA_ENTRY_SET_TOR(14, UINT32_MAX, PMA_TOR | PMA_NONE);
 }
 
 #ifndef BOOTLOADER_BUILD
@@ -109,8 +115,8 @@ static void esp_cpu_configure_valid_regions(void)
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
      * 2. Application build with CONFIG_ESP_SYSTEM_MEMPROT disabled
-     *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid
-     *      address ranges are successful so for that we set PMP to cover entire valid IRAM and DRAM region.
+     *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid address ranges are successful
+     *      so for that we set PMP to cover entire valid IRAM and DRAM region.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
      * 3. CPU is in OCD debug mode
@@ -156,10 +162,24 @@ static void esp_cpu_configure_valid_regions(void)
     PMP_ENTRY_CFG_RESET(14);
     PMP_ENTRY_CFG_RESET(15);
 
-    // 1. CPU Subsystem region - contains debug mode code and interrupt config registers
-    const uint32_t pmpaddr_cpu_subsystem = PMPADDR_NAPOT(SOC_CPU_SUBSYSTEM_LOW, SOC_CPU_SUBSYSTEM_HIGH);
-    PMP_ENTRY_SET(0, pmpaddr_cpu_subsystem, PMP_NAPOT | RWX);
+    // 1. CPU Subsystem region - contains debug mode code and interrupt config registers - and the
+    //    peripherals (on-chip peripherals, CPU peripheral, cache-data memory, the debug address
+    //    space and the LP peripherals, which are all contiguous with each other).
+    //
+    //    These two are programmed as a TOR chain rather than as separate NAPOT/TOR groups so that
+    //    the peripheral window costs a single entry: entry 0's region is [0, SOC_CPU_SUBSYSTEM_HIGH)
+    //    (its TOR base is implicitly 0) and entry 1 then chains off entry 0's address. That frees
+    //    the entry the PSRAM section split below needs. The [0, SOC_CPU_SUBSYSTEM_LOW) part that
+    //    entry 0 over-covers is denied by PMA, so it stays inaccessible.
+    //
+    //    The peripheral window must not be widened to a NAPOT: rounding its top up
+    //    would cover ROM, HP TCM and LP TCM, and in particular the ROM text that the DROM-split
+    //    optimisation below deliberately leaves PMP-unmatched, which would then lose execute
+    //    permission and lock the CPU up on the first ROM fetch.
+    PMP_ENTRY_SET(0, SOC_CPU_SUBSYSTEM_HIGH, PMP_TOR | RWX);
+    PMP_ENTRY_SET(1, SOC_PERIPHERAL_HIGH, PMP_TOR | RW);
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
+    _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 
     // 2. I/D-ROM (ROM-Cache)
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
@@ -168,14 +188,15 @@ static void esp_cpu_configure_valid_regions(void)
         // We can skip configuring the PMP entry for the [SOC_IROM_MASK_LOW - drom_start]
         // region as RX, as we already have configured a PMA entry with RX permissions for the
         // [SOC_IROM_MASK_LOW - SOC_DROM_MASK_HIGH] region that also makes it cacheable. Thus, we
-        // save on one PMP entry.
-        PMP_ENTRY_SET(1, drom_start, NONE);
-        PMP_ENTRY_SET(2, SOC_DROM_MASK_HIGH, PMP_TOR | R);
+        // save on one PMP entry. Note that this leaves the ROM text PMP-unmatched on purpose (an
+        // address unmatched by PMP is allowed in M-mode), so no later entry may cover it.
+        PMP_ENTRY_SET(2, drom_start, NONE);
+        PMP_ENTRY_SET(3, SOC_DROM_MASK_HIGH, PMP_TOR | R);
     } else
 #endif
     {
-        PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
-        PMP_ENTRY_SET(2, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
+        PMP_ENTRY_SET(2, SOC_IROM_MASK_LOW, NONE);
+        PMP_ENTRY_SET(3, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
         _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
     }
 
@@ -184,103 +205,128 @@ static void esp_cpu_configure_valid_regions(void)
         // Anti-FI check that cpu is really in ocd mode
         ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
 
-        PMP_ENTRY_SET(3, SOC_IRAM_LOW, NONE);
-        PMP_ENTRY_SET(4, SOC_IRAM_HIGH, PMP_TOR | RWX);
+        const uint32_t pmpaddr_sram = PMPADDR_NAPOT(SOC_IRAM_LOW, SOC_IRAM_HIGH);
+        PMP_ENTRY_SET(4, pmpaddr_sram, PMP_NAPOT | RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
     } else {
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
         extern int _iram_text_end;
-        PMP_ENTRY_SET(3, SOC_IRAM_LOW, NONE);
-        PMP_ENTRY_SET(4, (int)&_iram_text_end, PMP_TOR | RX);
-        PMP_ENTRY_SET(5, SOC_DRAM_HIGH, PMP_TOR | RW);
+        PMP_ENTRY_SET(4, SOC_IRAM_LOW, NONE);
+        PMP_ENTRY_SET(5, (int)&_iram_text_end, PMP_TOR | RX);
+        PMP_ENTRY_SET(6, SOC_DRAM_HIGH, PMP_TOR | RW);
 #else
-        PMP_ENTRY_SET(3, SOC_IRAM_LOW, NONE);
-        PMP_ENTRY_SET(4, SOC_IRAM_HIGH, PMP_TOR | RWX);
+        const uint32_t pmpaddr_sram = PMPADDR_NAPOT(SOC_IRAM_LOW, SOC_IRAM_HIGH);
+        PMP_ENTRY_SET(4, pmpaddr_sram, PMP_NAPOT | RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
 #endif
     }
 
-    // 4. I_Cache / D_Cache (external flash)
-    //    The marker-based split uses _instruction_reserved_end / _rodata_reserved_end, which lie in
-    //    the flash aperture only when .text/.rodata are flash-resident. Under XIP-from-PSRAM they
-    //    move into PSRAM, so this higher-priority flash entry would shadow the PSRAM RWX entry
-    //    (section 5) and make the heap-reused page-alignment gaps read-only. So split only when
-    //    flash-resident; otherwise map the flash aperture as a single RX window and let section 5
-    //    govern the XIP code/rodata/gaps.
-#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !CONFIG_SPIRAM_FETCH_INSTRUCTIONS && !CONFIG_SPIRAM_RODATA
+    // 4. External flash (I/D-Cache) and External PSRAM (I/D-EXTRAM)
+#if CONFIG_SPIRAM && (CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA)
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /* XIP-from-PSRAM: split PSRAM by section, mirroring ESP32-P4. Flash needs no PMP entry here,
+     * the PMA entry above already grants it RX. Each combination of the two section markers is
+     * handled separately, since which markers exist decides which boundaries are valid.
+     *
+     * The reclaimed heap starts at the MMU page boundary after the last XIP section, because
+     * esp_mmu_map_reserve_block_with_caps() hands out MMU-page-aligned blocks from the free head.
+     * The heap top is therefore page_aligned_<section>_resv_end + heap size, not the unaligned
+     * section end. This split describes the layout that esp_psram_init() produces, so it is only
+     * programmed when CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION says that layout applies;
+     * otherwise PSRAM is left as one permissive window below, as on ESP32-P4. */
+    const size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
+
+    PMP_ENTRY_SET(7, SOC_EXTRAM_LOW, NONE);
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
     extern int _instruction_reserved_end;
     extern int _rodata_reserved_end;
-
     const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
-    const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
 
-    PMP_ENTRY_SET(6, SOC_IROM_LOW, NONE);
-    PMP_ENTRY_SET(7, page_aligned_irom_resv_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(8, page_aligned_drom_resv_end, PMP_TOR | R);
+    PMP_ENTRY_SET(8, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET(9, page_aligned_irom_resv_end, PMP_TOR | RW);
+    PMP_ENTRY_SET(10, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+    const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
+    PMP_ENTRY_SET(11, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+
+#elif CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    /* Only .text moved to PSRAM; .rodata stays flash-resident. */
+    extern int _instruction_reserved_end;
+    const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
+
+    PMP_ENTRY_SET(8, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET(9, page_aligned_irom_resv_end, PMP_TOR | RW);
+    PMP_ENTRY_SET(10, ESP_ALIGN_UP(page_aligned_irom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+
+#else /* CONFIG_SPIRAM_RODATA */
+    /* Only .rodata moved to PSRAM; nothing in PSRAM is executable. */
+    extern int _rodata_reserved_end;
+
+    PMP_ENTRY_SET(8, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+    const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
+    PMP_ENTRY_SET(9, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    _Static_assert(SOC_EXTRAM_LOW < SOC_EXTRAM_HIGH, "Invalid I/D_EXTRAM region");
+#endif
+#else
+    /* Memory protection disabled, or the pre-configured PSRAM layout does not apply: a single
+     * permissive NAPOT window. It must carry X because .text is executed directly out of PSRAM
+     * in this configuration. */
+    const uint32_t pmpaddr_extram = PMPADDR_NAPOT(SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH);
+    PMP_ENTRY_SET(7, pmpaddr_extram, PMP_NAPOT | RWX);
+    _Static_assert(SOC_EXTRAM_LOW < SOC_EXTRAM_HIGH, "Invalid I/D_EXTRAM region");
+#endif
+#else
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
+    extern int _instruction_reserved_end;
+    const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
+
+    PMP_ENTRY_SET(7, SOC_IROM_LOW, NONE);
+    PMP_ENTRY_SET(8, page_aligned_irom_resv_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(9, SOC_DROM_HIGH, PMP_TOR | R);
+    _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
 #else
     const uint32_t pmpaddr_flash = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
-    PMP_ENTRY_SET(6, pmpaddr_flash, PMP_NAPOT | RX);
+    PMP_ENTRY_SET(7, pmpaddr_flash, PMP_NAPOT | RX);
     _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
 #endif
 
-    // 5. I_EXTRAM / D_EXTRAM (external PSRAM). The PMA entry configured above already makes this
-    //    region cacheable; the PSRAM cache-bypass alias is kept valid by PMA (an address unmatched
-    //    by PMP is allowed by PMP in M-mode, so it needs no extra PMP entry).
 #if CONFIG_SPIRAM
-#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && (CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA)
-    /* XIP-from-PSRAM: .text is executed directly out of PSRAM, so enforce W^X instead of a single
-     * RWX window. Map [EXTRAM_LOW, _instruction_reserved_end) as RX (code) and the remainder
-     * (rodata, the page-alignment gaps and the reclaimed heap) as RW - i.e. non-executable - so an
-     * execute access into the rodata / alignment-gap region faults (Instruction access fault), as
-     * the memory-protection tests expect. A full P4-style per-section split (separate R rodata and
-     * heap-only entries) does not fit the 16-entry PMP budget once the LP split takes 4 entries, but
-     * this two-region split already enforces W^X. It uses entries 7-8 (left free by the flash
-     * aperture's single-entry mapping under XIP) plus entry 9, programmed in ascending order. */
-    extern int _instruction_reserved_end;
-    PMP_ENTRY_SET(7, SOC_EXTRAM_LOW, NONE);
-    PMP_ENTRY_SET(8, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
-    PMP_ENTRY_SET(9, SOC_EXTRAM_HIGH, PMP_TOR | RW);
-    _Static_assert(SOC_EXTRAM_LOW < SOC_EXTRAM_HIGH, "Invalid I/D_EXTRAM region");
-#else
-    /* PSRAM used as data only (no XIP): a single RWX NAPOT window. */
+    /* PSRAM used as data only (no XIP): a single NAPOT window, RW so that nothing in external RAM
+     * is executable. The PMA entry configured above already makes this region cacheable; the PSRAM
+     * cache-bypass alias is kept valid by PMA (an address unmatched by PMP is allowed by PMP in
+     * M-mode, so it needs no extra PMP entry).
+     *
+     * The entry is locked, so it is only narrowed to RW when the pre-configured PSRAM layout
+     * applies. Otherwise the application owns the region - it may map and execute its own code
+     * there - and the window stays RWX, as on ESP32-P4. */
     const uint32_t pmpaddr_extram = PMPADDR_NAPOT(SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH);
-    PMP_ENTRY_SET(9, pmpaddr_extram, PMP_NAPOT | RWX);
-    _Static_assert(SOC_EXTRAM_LOW < SOC_EXTRAM_HIGH, "Invalid I/D_EXTRAM region");
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    PMP_ENTRY_SET(10, pmpaddr_extram, PMP_NAPOT | RW);
+#else
+    PMP_ENTRY_SET(10, pmpaddr_extram, PMP_NAPOT | RWX);
 #endif
+    _Static_assert(SOC_EXTRAM_LOW < SOC_EXTRAM_HIGH, "Invalid EXTRAM region");
 #endif /* CONFIG_SPIRAM */
 
-    // 6. LP memory (LP TCM / RTC SRAM)
+#endif /* CONFIG_SPIRAM && (CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA) */
+
+    // 5. LP memory (LP TCM / RTC SRAM)
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
     extern int _rtc_text_start;
     extern int _rtc_text_end;
-    /* LP TCM split into three regions (mirroring ESP32-P4 / ESP32-C6):
-     *   [LOW, _rtc_text_start)        RW  : RTC-reserved mem + ULP/LP-core image (the HP core writes
-     *                                       the program here, so it must stay writable).
-     *   [_rtc_text_start, _rtc_text_end) RX : HP core rtc.text (e.g. deep-sleep wake stub).
-     *   [_rtc_text_end, HIGH)         RW  : RTC data.
-     * Programmed in ascending-address order (S31 faults on overlapping PMP entries); every entry was
-     * already reset to a disabled state at the top of this function. */
-    PMP_ENTRY_SET(10, SOC_RTC_IRAM_LOW, NONE);
+    PMP_ENTRY_SET(12, SOC_RTC_IRAM_LOW, NONE);
 #if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
-    PMP_ENTRY_SET(11, (int)&_rtc_text_start, PMP_TOR | RWX);
+    PMP_ENTRY_SET(13, (int)&_rtc_text_start, PMP_TOR | RWX);
 #else
-    PMP_ENTRY_SET(11, (int)&_rtc_text_start, PMP_TOR | RW);
+    PMP_ENTRY_SET(13, (int)&_rtc_text_start, PMP_TOR | RW);
 #endif
-    PMP_ENTRY_SET(12, (int)&_rtc_text_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(13, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+    PMP_ENTRY_SET(14, (int)&_rtc_text_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(15, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
 #else
     const uint32_t pmpaddr_rtc = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
-    PMP_ENTRY_SET(10, pmpaddr_rtc, PMP_NAPOT | RWX);
+    PMP_ENTRY_SET(12, pmpaddr_rtc, PMP_NAPOT | RWX);
     _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
 #endif
-
-    // 7. Peripheral addresses (on-chip peripherals, CPU peripheral, cache-data memory and the
-    //    debug address space). The LP peripherals are contiguous with the rest and are covered by
-    //    this single window as well. Peripherals use the last PMP entries (14-15) so that the entry
-    //    count used by the regions above (which varies with the build configuration) never collides.
-    PMP_ENTRY_SET(14, SOC_PERIPHERAL_LOW, NONE);
-    PMP_ENTRY_SET(15, SOC_PERIPHERAL_HIGH, PMP_TOR | RW);
-    _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
 #endif // BOOTLOADER_BUILD
 
