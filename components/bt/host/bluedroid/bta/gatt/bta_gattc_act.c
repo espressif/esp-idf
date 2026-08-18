@@ -175,6 +175,7 @@ void bta_gattc_disable(tBTA_GATTC_CB *p_cb)
     if (p_cb->state != BTA_GATTC_STATE_DISABLING) {
         p_cb->state = BTA_GATTC_STATE_DISABLED;
         memset(p_cb, 0, sizeof(tBTA_GATTC_CB));
+        bta_sys_deregister(BTA_ID_GATTC);
     }
 }
 
@@ -1844,6 +1845,7 @@ void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg)
 
     if (bta_gattc_num_reg_app() == 0 && p_cb->state == BTA_GATTC_STATE_DISABLING) {
         p_cb->state = BTA_GATTC_STATE_DISABLED;
+        bta_sys_deregister(BTA_ID_GATTC);
     }
 }
 
