@@ -54,3 +54,7 @@ I (330) example: SPIFFS unmounted
 ```
 
 The logic of the example is contained in a [single source file](./main/spiffsgen_example_main.c), and it should be relatively simple to match points in its execution with the log outputs above.
+
+## When to use this example
+
+- You want to ship pre-created files on a SPIFFS partition, generated at build time from a host folder.
