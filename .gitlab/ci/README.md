@@ -44,6 +44,7 @@
 
 ### Supported MR Labels
 
+- `app_size_metrics_full_report`, generates the HTML app size metrics report for all apps. Starts the blocked pipeline of the MR target branch (`master` / `release/v*`) on the commit the MR is based on, to get the size metrics to compare against
 - `auto-translate::full`, classifies MR doc changes (incremental vs include-only full); runs commit history check, `check_line_num`, then `translate`; see [.gitlab/ci/README_auto_translate.md](./README_auto_translate.md)
 - `auto-translate::incremental`, commit history check + line check + incremental doc translation only (no full translation; see [.gitlab/ci/README_auto_translate.md](./README_auto_translate.md))
 - `build`
