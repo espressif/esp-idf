@@ -74,9 +74,6 @@ static esp_err_t btbb_sleep_retention_enable(void)
 #if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
         init_param.depends.bitmap[SLEEP_RETENTION_MODULE_PHY_FE >> 5] |= BIT(SLEEP_RETENTION_MODULE_PHY_FE % 32);
 #endif // (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
-#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND && CONFIG_BT_CTRL_SLEEP_ENABLE
-        init_param.depends.bitmap[SLEEP_RETENTION_MODULE_POWER >> 5] |= BIT(SLEEP_RETENTION_MODULE_POWER % 32);
-#endif
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BT_BB, &init_param);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Modem BT BB retention callback register failed");
