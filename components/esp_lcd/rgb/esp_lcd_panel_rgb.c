@@ -373,6 +373,12 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ESP_RETURN_ON_FALSE(in_color_format != 0, ESP_ERR_INVALID_ARG, TAG, "cannot determine input color format");
     // if out_color_format is not specified, set it the same as in_color_format
     lcd_color_format_t out_color_format = rgb_panel_config->out_color_format ? rgb_panel_config->out_color_format : in_color_format;
+    if ((in_color_format == LCD_COLOR_FMT_RGB565 && out_color_format == LCD_COLOR_FMT_RGB888) ||
+            (in_color_format == LCD_COLOR_FMT_RGB888 && out_color_format == LCD_COLOR_FMT_RGB565)) {
+#if !LCD_LL_SUPPORT(RGB2RGB_CONV)
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "RGB to RGB conversion is not supported");
+#endif
+    }
 
     // calculate buffer size
     size_t fb_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(in_color_format);
@@ -612,8 +618,8 @@ esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, con
     // set color range
     lcd_ll_set_input_color_range(hal->dev, config->in_color_range);
     lcd_ll_set_output_color_range(hal->dev, config->out_color_range);
-    // set conversion data width
-    lcd_ll_set_convert_data_width(hal->dev, rgb_panel->data_width);
+    // set conversion input data width
+    lcd_ll_set_yuv_convert_input_data_width(hal->dev, rgb_panel->data_width);
     return ESP_OK;
 }
 
@@ -667,7 +673,22 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     lcd_ll_set_pixel_clock_edge(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_active_neg);
     // enable RGB mode and set data width
     lcd_ll_enable_rgb_mode(rgb_panel->hal.dev, true);
+#if LCD_LL_SUPPORT(RGB2RGB_CONV)
+    if ((rgb_panel->in_color_format == LCD_COLOR_FMT_RGB888 && rgb_panel->out_color_format == LCD_COLOR_FMT_RGB565) || \
+            (rgb_panel->in_color_format == LCD_COLOR_FMT_RGB565 && rgb_panel->out_color_format == LCD_COLOR_FMT_RGB888)) {
+        lcd_ll_set_rgb2rgb_convert_mode(rgb_panel->hal.dev, rgb_panel->in_color_format, rgb_panel->out_color_format);
+        // RGB2RGB converter always uses full color range
+        lcd_ll_set_input_color_range(rgb_panel->hal.dev, LCD_COLOR_RANGE_FULL);
+        lcd_ll_set_output_color_range(rgb_panel->hal.dev, LCD_COLOR_RANGE_FULL);
+    }
+#endif
+
+    // ESP32S3 dma stride is equal to the data width
+#if CONFIG_IDF_TARGET_ESP32S3
     lcd_ll_set_dma_read_stride(rgb_panel->hal.dev, rgb_panel->data_width);
+#else
+    lcd_ll_set_dma_read_stride(rgb_panel->hal.dev, rgb_panel->fb_bits_per_pixel);
+#endif
     // enable conversion if the input color format is different from the output color format
     lcd_ll_enable_color_convert(rgb_panel->hal.dev, rgb_panel->in_color_format != rgb_panel->out_color_format);
     // enable data phase only
