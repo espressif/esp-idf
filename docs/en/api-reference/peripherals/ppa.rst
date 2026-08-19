@@ -175,8 +175,9 @@ The PPA operations are acted on the target block of an input picture. Therefore,
 Application Examples
 ^^^^^^^^^^^^^^^^^^^^
 
-* :example:`peripherals/ppa/ppa_transform` - PPA transform image processing example. The embedded RGB565 image is transformed by SRM, highlighted with blend, framed with fill, and emitted as base64 for host-side PPM reconstruction and golden-image comparison.
+* :example:`peripherals/ppa/ppa_transform` - PPA transform image processing example. The embedded RGB565 image is transformed by SRM, framed with fill, and emitted as base64 for host-side PPM reconstruction and golden-image comparison.
 * :example:`peripherals/ppa/ppa_color_key` - PPA blend color-keying example. The example generates a centered RGB888 glow foreground in software, then demonstrates two blend effects on the embedded RGB565 image: replacing the keyed red `ESP32` text with the glow, and preserving the keyed text while blending the glow into the non-key area. Both results are emitted as base64 for host-side PPM reconstruction and golden-image comparison.
+* :example:`peripherals/ppa/ppa_freetype` - PPA FreeType icon compositing example. The example uses the `espressif/freetype` component to rasterize Font Awesome icon code points (two rows of three) into small per-glyph A8 alpha masks, then uses the PPA blend engine to composite each glyph over a software-generated gradient with a fixed icon color. The final composited RGB565 frame is emitted as base64 for host-side PPM reconstruction and golden-image comparison.
 
 API Reference
 -------------

@@ -13,13 +13,13 @@ from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_idf.utils import soc_filtered_targets
 
 IMAGE_META_PATTERN = (
-    r'IMAGE_META width=(?P<width>\d+) height=(?P<height>\d+) format=(?P<format>\w+) encoding=(?P<encoding>\w+)'
+    r'IMAGE_META effect=(?P<effect>\w+) width=(?P<width>\d+) height=(?P<height>\d+) '
+    r'format=(?P<format>\w+) encoding=(?P<encoding>\w+)'
 )
 IMAGE_META_RE = re.compile(IMAGE_META_PATTERN)
 IMAGE_CHUNK_PATTERN = r'IMAGE_BASE64 (?P<payload>[A-Za-z0-9+/=]+)'
 IMAGE_CHUNK_RE = re.compile(IMAGE_CHUNK_PATTERN)
-IMAGE_OUTPUT_NAME = 'ppa_transform_result.ppm'
-GOLDEN_IMAGE_NAME = 'golden_result.ppm'
+TEXT_OVERLAY_EFFECT = 'text_overlay'
 EXPECTED_PIXEL_FORMAT = 'RGB565'
 EXPECTED_ENCODING = 'base64'
 RGB565_BYTES_PER_PIXEL = 2
@@ -31,6 +31,7 @@ PPM_HEADER_RE = re.compile(rb'^P6\s+(?P<width>\d+)\s+(?P<height>\d+)\s+(?P<max_v
 
 @dataclass(frozen=True)
 class ImageMetadata:
+    effect: str
     width: int
     height: int
     pixel_format: str
@@ -59,6 +60,7 @@ def parse_image_metadata(meta_line: str) -> ImageMetadata:
         raise ValueError(f'Invalid image metadata line: {meta_line}')
 
     return ImageMetadata(
+        effect=match.group('effect'),
         width=int(match.group('width')),
         height=int(match.group('height')),
         pixel_format=match.group('format'),
@@ -164,23 +166,42 @@ def assert_image_matches_golden(result_image: RgbImage, golden_path: Path) -> No
     )
 
 
-@pytest.mark.generic
-@idf_parametrize('target', soc_filtered_targets('SOC_PPA_SUPPORTED == 1'), indirect=['target'])
-def test_ppa_transform(dut: Dut) -> None:
-    dut.expect_exact('Loading embedded RGB565 image from flash...')
-    dut.expect(r'Embedded raw image size: \d+ bytes')
-    dut.expect_exact('Transforming image with PPA SRM...')
-    dut.expect_exact('Drawing border with PPA fill...')
+def effect_output_name(effect: str) -> str:
+    return f'ppa_freetype_{effect}.ppm'
 
+
+def effect_golden_name(effect: str) -> str:
+    return f'golden_{effect}.ppm'
+
+
+def expect_and_check_image(dut: Dut, effect: str) -> None:
     metadata_line = dut.expect(IMAGE_META_PATTERN).group(0).decode('utf-8')
     metadata = parse_image_metadata(metadata_line)
+    assert metadata.effect == effect, f'Expected effect {effect}, got {metadata.effect}'
 
     dut.expect_exact('IMAGE_BASE64_BEGIN')
     base64_chunks = collect_base64_payload(dut)
 
     result_image = decode_rgb565_base64_image(metadata, base64_chunks)
-    output_path = Path(dut.logdir) / IMAGE_OUTPUT_NAME
+    output_path = Path(dut.logdir) / effect_output_name(effect)
     save_ppm_artifact(result_image, output_path)
-    assert_image_matches_golden(result_image, Path(__file__).with_name(GOLDEN_IMAGE_NAME))
 
-    dut.expect_exact('PPA image processing demo done.')
+    golden_path = Path(__file__).with_name(effect_golden_name(effect))
+    assert_image_matches_golden(result_image, golden_path)
+
+
+@pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_PPA_SUPPORTED == 1'), indirect=['target'])
+def test_ppa_freetype(dut: Dut) -> None:
+    dut.expect_exact('LittleFS mounted')
+    dut.expect_exact('FreeType library initialized')
+    dut.expect_exact('Font loaded')
+    dut.expect_exact('Compositing text with PPA blend...')
+    # Row 1: star, heart, sun (U+F005, U+F004, U+F185).
+    dut.expect_exact('Rendering icon row at baseline Y=120: U+F005 U+F004 U+F185')
+    # Row 2: face-smile, bell, envelope (U+F118, U+F0F3, U+F0E0).
+    dut.expect_exact('Rendering icon row at baseline Y=180: U+F118 U+F0F3 U+F0E0')
+
+    expect_and_check_image(dut, TEXT_OVERLAY_EFFECT)
+
+    dut.expect_exact('PPA FreeType demo done.')

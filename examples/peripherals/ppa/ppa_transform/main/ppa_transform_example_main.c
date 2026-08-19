@@ -18,10 +18,8 @@
 #define EXAMPLE_IMAGE_HEIGHT       240
 #define EXAMPLE_RGB565_PIXEL_SIZE  2
 #define EXAMPLE_IMAGE_SIZE         (EXAMPLE_IMAGE_WIDTH * EXAMPLE_IMAGE_HEIGHT * EXAMPLE_RGB565_PIXEL_SIZE)
-#define EXAMPLE_ALPHA_MASK_SIZE    (EXAMPLE_IMAGE_WIDTH * EXAMPLE_IMAGE_HEIGHT)
 #define EXAMPLE_BASE64_CHUNK_LEN   96
 #define EXAMPLE_BORDER_WIDTH       8
-#define EXAMPLE_HIGHLIGHT_ALPHA    160
 
 /* The raw RGB565 asset is embedded by target_add_binary_data() in CMakeLists.txt.
  * RENAME_TO "image_rgb" gives the linker symbols below. */
@@ -144,73 +142,6 @@ static void draw_border(ppa_client_handle_t ppa_fill_handle, void *buffer)
     fill_rect(ppa_fill_handle, buffer, EXAMPLE_IMAGE_WIDTH - 56, EXAMPLE_IMAGE_HEIGHT - 88, 16, 48, blue);
 }
 
-static void prepare_alpha_mask(uint8_t *alpha_mask)
-{
-    /* The blend stage uses this A8 image as a foreground alpha mask. Pixels with
-     * alpha 0 keep the transformed background unchanged; semi-transparent pixels
-     * mix the fixed cyan foreground color with the background. */
-    for (int y = 0; y < EXAMPLE_IMAGE_HEIGHT; y++) {
-        for (int x = 0; x < EXAMPLE_IMAGE_WIDTH; x++) {
-            const int dx = x - (EXAMPLE_IMAGE_WIDTH * 2 / 3);
-            const int dy = y - (EXAMPLE_IMAGE_HEIGHT / 2);
-            const int distance2 = dx * dx + dy * dy;
-            uint8_t alpha = (distance2 < 70 * 70) ? EXAMPLE_HIGHLIGHT_ALPHA : 0;
-            if (x > y && x < y + 80) {
-                alpha = EXAMPLE_HIGHLIGHT_ALPHA;
-            }
-            alpha_mask[y * EXAMPLE_IMAGE_WIDTH + x] = alpha;
-        }
-    }
-}
-
-static void blend_highlight(ppa_client_handle_t ppa_blend_handle, const void *bg_buf,
-                            const void *alpha_mask, void *out_buf)
-{
-    /* Use the transformed RGB565 image as the background and an A8 mask as the
-     * foreground. fg_fix_rgb_val provides the cyan color for masked pixels. */
-    ppa_blend_oper_config_t blend_config = {
-        .in_bg = {
-            .buffer = bg_buf,
-            .pic_w = EXAMPLE_IMAGE_WIDTH,
-            .pic_h = EXAMPLE_IMAGE_HEIGHT,
-            .block_w = EXAMPLE_IMAGE_WIDTH,
-            .block_h = EXAMPLE_IMAGE_HEIGHT,
-            .block_offset_x = 0,
-            .block_offset_y = 0,
-            .blend_cm = PPA_BLEND_COLOR_MODE_RGB565,
-        },
-        .in_fg = {
-            .buffer = alpha_mask,
-            .pic_w = EXAMPLE_IMAGE_WIDTH,
-            .pic_h = EXAMPLE_IMAGE_HEIGHT,
-            .block_w = EXAMPLE_IMAGE_WIDTH,
-            .block_h = EXAMPLE_IMAGE_HEIGHT,
-            .block_offset_x = 0,
-            .block_offset_y = 0,
-            .blend_cm = PPA_BLEND_COLOR_MODE_A8,
-        },
-        .out = {
-            .buffer = out_buf,
-            .buffer_size = EXAMPLE_IMAGE_SIZE,
-            .pic_w = EXAMPLE_IMAGE_WIDTH,
-            .pic_h = EXAMPLE_IMAGE_HEIGHT,
-            .block_offset_x = 0,
-            .block_offset_y = 0,
-            .blend_cm = PPA_BLEND_COLOR_MODE_RGB565,
-        },
-        .bg_alpha_update_mode = PPA_ALPHA_NO_CHANGE,
-        .fg_alpha_update_mode = PPA_ALPHA_NO_CHANGE,
-        .fg_fix_rgb_val = {
-            .r = 0x18,
-            .g = 0xf0,
-            .b = 0xff,
-        },
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
-
-    ESP_ERROR_CHECK(ppa_do_blend(ppa_blend_handle, &blend_config));
-}
-
 static void encode_and_print_image(const uint8_t *image, size_t image_size)
 {
     /* Binary image data is not safe to print directly on the serial console.
@@ -237,10 +168,6 @@ void app_main(void)
     assert(embedded_size == EXAMPLE_IMAGE_SIZE);
 
     uint8_t *srm_buf = alloc_ppa_buffer(EXAMPLE_IMAGE_SIZE);
-    uint8_t *result_buf = alloc_ppa_buffer(EXAMPLE_IMAGE_SIZE);
-    uint8_t *alpha_mask = alloc_ppa_buffer(EXAMPLE_ALPHA_MASK_SIZE);
-
-    prepare_alpha_mask(alpha_mask);
 
     ppa_client_handle_t ppa_srm_handle = NULL;
     ppa_client_config_t ppa_srm_config = {
@@ -249,13 +176,6 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(ppa_register_client(&ppa_srm_config, &ppa_srm_handle));
 
-    ppa_client_handle_t ppa_blend_handle = NULL;
-    ppa_client_config_t ppa_blend_config = {
-        .oper_type = PPA_OPERATION_BLEND,
-        .max_pending_trans_num = 1,
-    };
-    ESP_ERROR_CHECK(ppa_register_client(&ppa_blend_config, &ppa_blend_handle));
-
     ppa_client_handle_t ppa_fill_handle = NULL;
     ppa_client_config_t ppa_fill_config = {
         .oper_type = PPA_OPERATION_FILL,
@@ -263,28 +183,21 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(ppa_register_client(&ppa_fill_config, &ppa_fill_handle));
 
-    /* The three steps below are deliberately simple and independent:
+    /* The two steps below are deliberately simple and independent:
      * 1. SRM transforms the source image into srm_buf.
-     * 2. Blend overlays a highlighted shape into result_buf.
-     * 3. Fill draws visible markers directly into result_buf. */
+     * 2. Fill draws visible markers directly into srm_buf. */
     printf("Transforming image with PPA SRM...\n");
     /* PPA is backed by DMA2D, which can read the source image directly from
      * mapped flash. Only the destination buffers need DMA-capable RAM here. */
     transform_image(ppa_srm_handle, image_rgb_start, srm_buf);
 
-    printf("Blending highlight with PPA blend...\n");
-    blend_highlight(ppa_blend_handle, srm_buf, alpha_mask, result_buf);
-
     printf("Drawing border with PPA fill...\n");
-    draw_border(ppa_fill_handle, result_buf);
+    draw_border(ppa_fill_handle, srm_buf);
 
-    encode_and_print_image(result_buf, EXAMPLE_IMAGE_SIZE);
+    encode_and_print_image(srm_buf, EXAMPLE_IMAGE_SIZE);
     printf("PPA image processing demo done.\n");
 
     ESP_ERROR_CHECK(ppa_unregister_client(ppa_srm_handle));
-    ESP_ERROR_CHECK(ppa_unregister_client(ppa_blend_handle));
     ESP_ERROR_CHECK(ppa_unregister_client(ppa_fill_handle));
     free(srm_buf);
-    free(result_buf);
-    free(alpha_mask);
 }

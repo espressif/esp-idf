@@ -5,14 +5,13 @@
 
 ## Overview
 
-This example demonstrates how to use `esp_driver_ppa` to process an embedded RGB565 image without any display hardware.
+This example demonstrates how to use `esp_driver_ppa` to transform and fill an embedded RGB565 image without any display hardware.
 
-The example embeds a pre-generated raw RGB565 image, processes it with three PPA engines, then base64-encodes the final RGB565 buffer and prints it to the serial console. The accompanying pytest script reconstructs the image as a PPM file and compares it with a golden reference image.
+The example embeds a pre-generated raw RGB565 image, processes it with two PPA engines, then base64-encodes the final RGB565 buffer and prints it to the serial console. The accompanying pytest script reconstructs the image as a PPM file and compares it with a golden reference image.
 
 The processing pipeline demonstrates:
 
 - SRM: rotate the full image by 180 degrees
-- Blend: overlay a cyan A8-mask highlight using a fixed foreground color
 - Fill: draw an amber frame and blue corner markers
 
 ## Hardware Required
@@ -35,7 +34,6 @@ I (1555) main_task: Calling app_main()
 Loading embedded RGB565 image from flash...
 Embedded raw image size: 153600 bytes
 Transforming image with PPA SRM...
-Blending highlight with PPA blend...
 Drawing border with PPA fill...
 IMAGE_META width=320 height=240 format=RGB565 encoding=base64
 IMAGE_BASE64_BEGIN
