@@ -230,6 +230,11 @@ error_exit:;
 
 void btc_a2dp_sink_shutdown(void)
 {
+    if (btc_a2dp_sink_state != BTC_A2DP_SINK_STATE_ON) {
+        APPL_TRACE_ERROR("a2dp sink already shutdown");
+        return;
+    }
+
     APPL_TRACE_EVENT("## A2DP SINK STOP MEDIA THREAD ##\n");
 
     // Exit thread

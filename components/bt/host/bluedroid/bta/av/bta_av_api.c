@@ -60,16 +60,18 @@ void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features, tBTA_AV_CBACK *p_cba
 {
     tBTA_AV_API_ENABLE  *p_buf;
 
+    if ((p_buf = (tBTA_AV_API_ENABLE *) osi_malloc(sizeof(tBTA_AV_API_ENABLE))) == NULL) {
+        return;
+    }
+
     /* register with BTA system manager */
     bta_sys_register(BTA_ID_AV, &bta_av_reg);
 
-    if ((p_buf = (tBTA_AV_API_ENABLE *) osi_malloc(sizeof(tBTA_AV_API_ENABLE))) != NULL) {
-        p_buf->hdr.event = BTA_AV_API_ENABLE_EVT;
-        p_buf->p_cback  = p_cback;
-        p_buf->features = features;
-        p_buf->sec_mask = sec_mask;
-        bta_sys_sendmsg(p_buf);
-    }
+    p_buf->hdr.event = BTA_AV_API_ENABLE_EVT;
+    p_buf->p_cback  = p_cback;
+    p_buf->features = features;
+    p_buf->sec_mask = sec_mask;
+    bta_sys_sendmsg(p_buf);
 }
 
 /*******************************************************************************
