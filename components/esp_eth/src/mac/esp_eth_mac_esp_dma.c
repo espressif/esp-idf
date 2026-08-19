@@ -5,6 +5,7 @@
  */
 
 #include "esp_check.h"
+#include "esp_assert.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "esp_cache.h"
@@ -39,6 +40,11 @@
     } while(0)
 #else
 #define DMA_CACHE_INVALIDATE(addr, size)
+#endif
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+ESP_STATIC_ASSERT((CONFIG_ETH_DMA_BUFFER_SIZE % CONFIG_CACHE_L1_CACHE_LINE_SIZE) == 0,
+                  "CONFIG_ETH_DMA_BUFFER_SIZE must be a multiple of the L1 cache line size");
 #endif
 
 static const char *TAG = "esp.emac.dma";
@@ -315,6 +321,7 @@ err:
 
 static esp_err_t emac_esp_dma_get_valid_recv_len(emac_esp_dma_handle_t emac_esp_dma, uint32_t *ret_len)
 {
+    *ret_len = 0;
     eth_dma_rx_descriptor_t *desc_iter = emac_esp_dma->rx_desc;
     uint32_t used_descs = 0;
     DMA_CACHE_INVALIDATE(desc_iter, EMAC_HAL_DMA_DESC_SIZE);
@@ -328,7 +335,6 @@ static esp_err_t emac_esp_dma_get_valid_recv_len(emac_esp_dma_handle_t emac_esp_
             /* In addition, "Descriptor Error" (no free descriptors) may truncate a frame even if Store Forward is enabled */
             if (desc_iter->RDES0.ErrSummary) {
                 emac_esp_dma_flush_recv_frame(emac_esp_dma);
-                *ret_len = 0;
                 return ESP_FAIL;
             }
             /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
@@ -470,6 +476,7 @@ void emac_esp_dma_flush_recv_frame(emac_esp_dma_handle_t emac_esp_dma)
         desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
         DMA_CACHE_WB(desc_iter, EMAC_HAL_DMA_DESC_SIZE);
         desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+        DMA_CACHE_INVALIDATE(desc_iter, EMAC_HAL_DMA_DESC_SIZE);
     }
     /* the last descriptor */
     desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
