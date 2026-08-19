@@ -123,7 +123,7 @@ void api_adv_hci_enableScanReqRxdVsEvent(bool en);
 void api_conn_hci_enableChanMapUpdCompVsEvent(bool en);
 #endif // UC_BT_CTRL_LE_VS_CMD_EVT_ENABLED
 
-void r_sched_txn_bredrIsEnabled(bool en);
+void api_sched_txn_bredrIsEnabled(bool en);
 
 /*
  ***************************************************************************************************
@@ -318,7 +318,7 @@ ble_stack_enable(void)
 #endif // UC_BT_CTRL_LE_VS_CMD_EVT_ENABLED
 
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
-    r_sched_txn_bredrIsEnabled(true);
+    api_sched_txn_bredrIsEnabled(true);
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
 
     return 0;
