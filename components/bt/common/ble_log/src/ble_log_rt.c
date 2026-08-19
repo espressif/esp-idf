@@ -13,12 +13,18 @@
 #include "ble_log_rt.h"
 #include "ble_log_lbm.h"
 
+#include "esp_log.h"
+
+/* MACRO */
+#define TAG                                      "ble_log_rt"
+
 /* VARIABLE */
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_inited = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_inited = 0;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t rt_ref_count = 0;
 BLE_LOG_STATIC TaskHandle_t rt_task_handle = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
 #if CONFIG_BLE_LOG_TS_ENABLED
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_enabled = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_ts_enabled = 0;
 #if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
 BLE_LOG_STATIC esp_timer_handle_t rt_ts_timer = NULL;
 #endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
@@ -81,7 +87,8 @@ BLE_LOG_IRAM_ATTR
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
 {
     (void)arg;
-    if (!rt_inited || !rt_ts_enabled) {
+    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited) ||
+        !BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_ts_enabled)) {
         return;
     }
     ble_log_ts_info_t *ts_info = NULL;
@@ -95,7 +102,7 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
 /* INTERFACE */
 bool ble_log_rt_init(void)
 {
-    if (rt_inited) {
+    if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited)) {
         return true;
     }
 
@@ -113,7 +120,7 @@ bool ble_log_rt_init(void)
     }
 
 #if CONFIG_BLE_LOG_TS_ENABLED
-    rt_ts_enabled = false;
+    BLE_LOG_ATOMIC_STORE_RELAXED(rt_ts_enabled, false);
 #if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
     /* Initialize ESP Timer Trigger */
     esp_timer_create_args_t ts_timer_args = {
@@ -133,7 +140,7 @@ bool ble_log_rt_init(void)
 #endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
-    rt_inited = true;
+    BLE_LOG_ATOMIC_STORE_RELEASE(rt_inited, true);
     return true;
 
 exit:
@@ -143,12 +150,19 @@ exit:
 
 void ble_log_rt_deinit(void)
 {
-    rt_inited = false;
+    /* Closing gate: seq_cst on both sides (see also submit) so a submitter
+     * either sees rt_inited == false and bails, or its reference is visible
+     * to the ref-count wait before the task and queue are torn down. */
+    BLE_LOG_ATOMIC_STORE_SEQ_CST(rt_inited, false);
+    while (!ble_log_ref_count_wait(&rt_ref_count, 0)) {
+        ESP_LOGE(TAG, "Timed out waiting for BLE Log runtime references");
+        BLE_LOG_ASSERT(false);
+    }
 #if CONFIG_BLE_LOG_TS_ENABLED
-    rt_ts_enabled = false;
+    BLE_LOG_ATOMIC_STORE_RELEASE(rt_ts_enabled, false);
 #if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
     if (rt_ts_timer) {
-        esp_timer_stop(rt_ts_timer);
+        esp_timer_stop_blocking(rt_ts_timer, portMAX_DELAY);
         esp_timer_delete(rt_ts_timer);
         rt_ts_timer = NULL;
     }
@@ -176,29 +190,31 @@ void ble_log_rt_deinit(void)
 
 BLE_LOG_IRAM_ATTR void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans)
 {
-    if (BLE_LOG_IN_ISR()) {
-        BaseType_t woken = pdFALSE;
-        /* Queue depth == total transport buffer count; queue-full is impossible
-         * for a valid transport, so the return value is not checked. */
-        xQueueSendFromISR(rt_queue_handle, &trans, &woken);
-        portYIELD_FROM_ISR(woken);
-    } else if (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED) {
-        /* Non-blocking send to avoid configASSERT when scheduler is suspended
-         * (e.g., during light sleep transitions). Queue-full is impossible;
-         * see comment above. */
-        xQueueSend(rt_queue_handle, &trans, 0);
-    } else {
-        xQueueSend(rt_queue_handle, &trans, portMAX_DELAY);
+    if (!ble_log_ref_count_try_acquire(&rt_ref_count, &rt_inited)) {
+        ble_log_lbm_recycle_trans(trans);
+        return;
     }
+    /* Queue depth == total transport buffer count, so a timeout-0 send cannot
+     * fail for a valid transport; recycling on failure keeps submitters from
+     * blocking while they hold a lifetime reference. */
+    BaseType_t queued = BLE_LOG_IN_ISR()
+                        ? xQueueSendFromISR(rt_queue_handle, &trans, NULL)
+                        : xQueueSend(rt_queue_handle, &trans, 0);
+    if (queued != pdTRUE) {
+        BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
+        ble_log_lbm_recycle_trans(trans);
+        return;
+    }
+    BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
 }
 
 #if CONFIG_BLE_LOG_TS_ENABLED
 bool ble_log_sync_enable(bool enable)
 {
-    if (!rt_inited) {
+    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited)) {
         return false;
     }
-    rt_ts_enabled = enable;
+    BLE_LOG_ATOMIC_STORE_RELEASE(rt_ts_enabled, enable);
     ble_log_ts_reset(enable);
     return true;
 }
