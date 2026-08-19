@@ -183,9 +183,10 @@ static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_s
 __attribute__((always_inline))
 static inline void spi_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint8_t mst_div)
 {
-    // In IDF master driver 'mst_div' will be const 2 and 'hs_div' is actually pre_div temporally
-    (void) hs_div;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.spi2_clkm_conf, spi2_clkm_div_num, mst_div - 1);
+    (void) hw;
+    // Single-stage PCR divider: program total_div = hs_div * mst_div
+    uint16_t total_div = (uint16_t)hs_div * mst_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.spi2_clkm_conf, spi2_clkm_div_num, total_div - 1);
 }
 
 /**
