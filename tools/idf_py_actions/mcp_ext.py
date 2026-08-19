@@ -430,15 +430,16 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             except Exception as e:
                 return f'Error getting devices: {str(e)}'
 
-        # Start the MCP server
-        print('MCP Server running on stdio...')
+        # Start the MCP server. Diagnostics should go to stderr — stdout is reserved
+        # for the JSON-RPC transport and any non-JSON bytes can confuse MCP clients.
+        print('MCP Server running on stdio...', file=sys.stderr)
 
         try:
             mcp.run()
         except KeyboardInterrupt:
-            print('\nMCP Server stopped.')
+            print('\nMCP Server stopped.', file=sys.stderr)
         except Exception as e:
-            print(f'MCP Server error: {e}')
+            print(f'MCP Server error: {e}', file=sys.stderr)
 
     # Return the action extension
     return {
