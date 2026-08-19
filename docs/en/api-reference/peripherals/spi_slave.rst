@@ -173,7 +173,7 @@ GPIO Matrix and IO_MUX
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
-    When an SPI Host is set to 80 MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same compared to routing them via IO_MUX.
+    When transferring data with the SPI slave on a clock frequency 40 MHz or lower, routing SPI pins via GPIO matrix will behave the same compared to routing them via IO_MUX.
 
     The IO_MUX pins for SPI buses are given below.
 
@@ -215,7 +215,7 @@ You can also configure a GPIO pin through which the Device will signal to the Ho
 SCLK Frequency Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_MAX_FREQ:default="60", esp32="10", esp32s2="40", esp32c6="40", esp32h2="32"}
+{IDF_TARGET_MAX_FREQ:default="60", esp32="10", esp32s2="40", esp32c6="40", esp32h2="32", esp32c5="40", esp32c61="40", esp32h21="32"}
 
 The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The data cannot be recognized or received correctly if the clock is too fast or does not have a 50% duty cycle.
 

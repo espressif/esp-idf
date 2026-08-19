@@ -1512,8 +1512,11 @@ static void test_master_hd_dma(void)
                     .dummy_bits = 8,
                     .queue_size = 10,
                 };
+                if (is_gpio && devcfg.clock_speed_hz > 40 * 1000 * 1000) {
+                    devcfg.clock_speed_hz = 40 * 1000 * 1000; // using gpio matrix, clk freq <= 40MHz
+                }
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
-                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, s_spi_bus_freq[speed_level] / 1000000.f);
+                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, devcfg.clock_speed_hz / 1000000.f);
 
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
