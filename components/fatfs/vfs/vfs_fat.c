@@ -719,10 +719,15 @@ static int vfs_fat_fcntl(void* ctx, int fd, int cmd, int arg)
         case F_GETFL:
             result = fat_ctx->flags[fd];
             break;
-        case F_SETFL:
-            fat_ctx->flags[fd] = arg;
+        case F_SETFL: {
+            /* POSIX: F_SETFL changes status flags only; access mode is immutable.
+             * FatFS honors O_APPEND on write(). O_NONBLOCK is stored for F_GETFL
+             * round-trip but does not make I/O non-blocking. */
+            const uint32_t setfl_mask = (uint32_t)(O_APPEND | O_NONBLOCK);
+            fat_ctx->flags[fd] = (fat_ctx->flags[fd] & ~setfl_mask) | ((uint32_t)arg & setfl_mask);
             result = 0;
             break;
+        }
         // no-ops:
         case F_SETLK:
         case F_SETLKW:
