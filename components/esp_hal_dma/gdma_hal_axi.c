@@ -8,7 +8,6 @@
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "hal/gdma_hal_axi.h"
-#include "hal/axi_dma_ll.h"
 #include "hal/gdma_ll.h"
 
 static gdma_hal_priv_data_t gdma_axi_hal_priv_data = {

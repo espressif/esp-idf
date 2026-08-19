@@ -12,7 +12,6 @@
 #include "hal/misc.h"
 #include "hal/hal_utils.h"
 #include "hal/gdma_types.h"
-#include "hal/gdma_ll.h"
 #include "soc/axi_dma_struct.h"
 #include "soc/axi_dma_reg.h"
 

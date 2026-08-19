@@ -51,7 +51,7 @@
 #include "esp_private/async_memcpy_dma2d.h"
 
 #if SOC_HAS(AXI_GDMA)
-#include "hal/axi_dma_ll.h"
+#include "hal/gdma_ll.h"
 #if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
 #define RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT 1
 #endif

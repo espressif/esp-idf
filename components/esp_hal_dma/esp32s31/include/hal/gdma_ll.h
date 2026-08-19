@@ -11,6 +11,8 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/lp_peri_clkrst_struct.h"
 #include "soc/soc_etm_source.h"
+#include "hal/ahb_dma_ll.h"
+#include "hal/axi_dma_ll.h"
 
 #define GDMA_LL_GET(_attr)          GDMA_LL_ ## _attr
 

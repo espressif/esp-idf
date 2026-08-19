@@ -51,7 +51,7 @@
 #include "esp_private/esp_dma_utils.h"
 
 #if defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS) && defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI)
-#include "hal/axi_dma_ll.h"
+#include "hal/gdma_ll.h"
 #if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
 #define PARLIO_USE_GDMA_LINK_SWITCH_EVENT 1
 #endif

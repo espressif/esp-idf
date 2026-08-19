@@ -8,7 +8,6 @@
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "hal/gdma_hal_ahb.h"
-#include "hal/ahb_dma_ll.h"
 #include "hal/gdma_ll.h"
 
 static gdma_hal_priv_data_t gdma_ahb_hal_priv_data = {

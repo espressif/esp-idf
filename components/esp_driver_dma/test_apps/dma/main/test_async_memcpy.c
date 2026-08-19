@@ -17,13 +17,8 @@
 #include "esp_async_memcpy.h"
 #include "gdma_test_utils.h"
 
-#if SOC_AHB_GDMA_VERSION == 1
+#if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
-#elif SOC_AHB_GDMA_VERSION == 2
-#include "hal/ahb_dma_ll.h"
-#endif
-#if SOC_AXI_GDMA_SUPPORTED
-#include "hal/axi_dma_ll.h"
 #endif
 
 #define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
@@ -649,7 +644,7 @@ TEST_CASE("GDMA M2M Weighted Arbitration Test PSRAM->PSRAM", "[GDMA][M2M][async 
 #endif // SOC_HAS(AXI_GDMA) && GDMA_LL_GET(AXI_PSRAM_CAPABLE)
 
 #if SOC_HAS(LP_AHB_GDMA) && GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
-    if (esp_efuse_is_flash_encryption_enabled() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
+    if (gdma_test_mspi_strict_alignment_required() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
         printf("Skipping LP AHB GDMA PSRAM->PSRAM under flash encryption\r\n");
     } else if (ahb_dma_ll_is_weighted_arb_supported(0)) {
         printf("Testing memcpy by LP AHB GDMA with weighted arbitration\r\n");
