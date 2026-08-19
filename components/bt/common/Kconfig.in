@@ -53,7 +53,7 @@ endmenu
 choice BT_SMP_CRYPTO_STACK
     prompt "SMP cryptographic stack"
     depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE || BT_NIMBLE_SECURITY_ENABLE || BT_LE_SECURITY_ENABLE || \
-        BT_CTRL_BREDR_ENABLE)
+        BT_CTRL_BREDR_ENABLE || BT_BLE_FEAT_ENC_ADV_DATA)
     default BT_SMP_CRYPTO_STACK_TINYCRYPT
     help
         Select the cryptographic library to use for SMP operations (AES, AES-CMAC, ECDH P-256).

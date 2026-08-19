@@ -425,16 +425,6 @@ config BT_GATTS_SECURITY_LEVELS_CHAR
     help
         Enable LE GATT Security Levels Characteristic
 
-config BT_GATTS_KEY_MATERIAL_CHAR
-    bool "Enable Encrypted Data Key Material Characteristic"
-    depends on BT_GATTS_ENABLE
-    default n
-    help
-        Enable the Encrypted Data Key Material characteristic in GAP service.
-        This characteristic allows advertising data to be decrypted and authenticated
-        using the key material (session key + IV) as defined in Bluetooth Core
-        Specification Version 5.4. The characteristic requires encrypted link to read.
-
 menuconfig BT_GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BT_BLE_ENABLED
@@ -652,6 +642,36 @@ config BT_BLE_RPA_SUPPORTED
 
         For other BLE chips, devices support network privacy mode and device privacy mode,
         users can switch the two modes according to their own needs. So this option is enabled by default.
+
+menu "Encrypted Advertising Data (EAD)"
+    depends on BT_BLE_ENABLED
+
+    config BT_BLE_FEAT_ENC_ADV_DATA
+        bool "Encrypted Advertising Data APIs"
+        default n
+        help
+            Enable AES-CCM encrypt and decrypt APIs (esp_ble_ead_encrypt /
+            esp_ble_ead_decrypt) for advertising payloads, as defined in
+            Bluetooth Core Specification 5.4. Uses the same cryptographic
+            stack as SMP (TinyCrypt or mbedTLS).
+
+            Enable this alone for a scanner/central that decrypts EAD with a
+            pre-shared key, or when the peer publishes Key Material over GATT.
+
+    config BT_GATTS_KEY_MATERIAL_CHAR
+        bool "Encrypted Data Key Material Characteristic"
+        depends on BT_GATTS_ENABLE
+        select BT_BLE_FEAT_ENC_ADV_DATA
+        default n
+        help
+            Expose session key and IV through the GAP Key Material characteristic
+            (UUID 0x2B88). A central can read it over an encrypted GATT link and
+            then decrypt advertising data with esp_ble_ead_decrypt().
+
+            Selecting this option also enables Encrypted Advertising Data APIs.
+            Set the published key with esp_ble_gap_set_key_material().
+
+endmenu
 
 menu "Bluedroid debug option"
     config BT_BLUEDROID_MEM_DEBUG

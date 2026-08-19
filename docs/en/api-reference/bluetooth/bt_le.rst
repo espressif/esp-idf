@@ -25,6 +25,10 @@ The Bluetooth LE API in ESP-IDF is organized into the following parts:
 
   Discovers and accesses services on remote servers (central role)
 
+- :doc:`Bluetooth Low Energy Encrypted Advertising Data <esp_ble_ead>`
+
+  Encrypts and decrypts advertising payloads with AES-CCM (Bluetooth Core Specification 5.4)
+
 .. only:: SOC_BLUFI_SUPPORTED
 
    - :doc:`Bluetooth Low Energy BluFi <esp_blufi>`
@@ -41,4 +45,5 @@ Each part typically includes an **Overview**, **Application Examples**, and **AP
    Bluetooth Low Energy GATT Define <esp_gatt_defs>
    Bluetooth Low Energy GATT Server <esp_gatts>
    Bluetooth Low Energy GATT Client <esp_gattc>
+   Bluetooth Low Energy Encrypted Advertising Data <esp_ble_ead>
    :SOC_BLUFI_SUPPORTED: Bluetooth Low Energy BluFi <esp_blufi>
