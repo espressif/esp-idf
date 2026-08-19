@@ -139,6 +139,36 @@ To use the WebSocket post-handshake callback, you must enable :menuitem:`CONFIG_
     httpd_register_uri_handler(server, &ws);
 
 
+WebSocket Control Frame Handler
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, the server replies to WebSocket control frames automatically — a PING frame is answered with a PONG and a CLOSE frame is answered with a CLOSE — without involving the application. Setting ``handle_ws_control_frames`` to true in :cpp:type:`httpd_uri_t` disables this behavior and delivers control frames to the data handler, which then becomes responsible for receiving the frame and sending the protocol replies itself.
+
+The ``ws_control_handler`` callback provides a middle ground: when it is set (and ``handle_ws_control_frames`` is true), control frames (PING, PONG, CLOSE) are delivered to this dedicated handler instead of the data handler, while the server still receives the frame body and performs the protocol replies itself after the handler returns. This is useful for observing heartbeats (tracking PONG responses) or logging the close reason without re-implementing the reply logic.
+
+The frame passed to the handler is read-only and owned by the server; it is only valid for the duration of the call, so the handler must not free or retain it. If the handler returns an error, the server still sends the protocol reply and then closes the connection.
+
+.. code-block:: c
+
+    static esp_err_t ws_control_frame_handler(httpd_req_t *req, const httpd_ws_frame_t *frame)
+    {
+        // Observe PING/PONG/CLOSE here (e.g. heartbeat tracking, logging).
+        // The server sends the protocol reply itself after this returns.
+        return ESP_OK;
+    }
+
+    // Registering a WebSocket URI handler with a dedicated control-frame handler
+    static const httpd_uri_t ws = {
+        .uri        = "/ws",
+        .method     = HTTP_GET,
+        .handler    = handler,           // Your WebSocket data handler
+        .user_ctx   = NULL,
+        .is_websocket = true,
+        .handle_ws_control_frames = true,
+        .ws_control_handler = ws_control_frame_handler
+    };
+
+
 Event Handling
 --------------
 

@@ -431,6 +431,13 @@ typedef struct httpd_req {
     bool ignore_sess_ctx_changes;
 } httpd_req_t;
 
+#if CONFIG_HTTPD_WS_SUPPORT
+/* Forward declaration of the WebSocket frame type. The full definition appears
+ * later in this header; only a pointer to it is needed here so that httpd_uri_t
+ * can carry an optional WebSocket control-frame handler. */
+typedef struct httpd_ws_frame httpd_ws_frame_t;
+#endif
+
 /**
  * @brief Structure for URI handler
  */
@@ -481,6 +488,23 @@ typedef struct httpd_uri {
      */
     esp_err_t (*ws_post_handshake_cb)(httpd_req_t *req);
 #endif /* CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT */
+
+    /**
+     * Optional dedicated handler for WebSocket control frames (PING, PONG, CLOSE).
+     *
+     * Only takes effect when handle_ws_control_frames is true. When set, control
+     * frames are delivered to this handler instead of the data handler. The server
+     * has already received the frame (passed via the read-only frame argument), and
+     * after this handler returns the server performs the protocol reply itself
+     * (PONG for PING, CLOSE for CLOSE). The frame and its payload are owned by the
+     * server and are only valid for the duration of the call; the handler must not
+     * free or retain them. If left NULL, control frames continue to be delivered to
+     * the data handler (unchanged behavior).
+     *
+     * Placed at the end of the struct to keep positional initialization of existing
+     * fields backward compatible.
+     */
+    esp_err_t (*ws_control_handler)(httpd_req_t *req, const httpd_ws_frame_t *frame);
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 } httpd_uri_t;
 

@@ -111,6 +111,11 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
 
     got_ip, got_port = _wait_for_server_ready(dut)
 
+    # With the dedicated control-frame handler enabled, PING/PONG/CLOSE are
+    # observed (logged) by the control handler on the DUT, while the server
+    # still sends the protocol replies itself.
+    control_handler_enabled = dut.app.sdkconfig.get('EXAMPLE_ENABLE_WS_CONTROL_FRAME_HANDLER') is True
+
     # Start ws server test
     with WsClient(got_ip, got_port, uri='ws') as ws:
         DATA = 'Espressif'
@@ -122,6 +127,9 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
             if expected_opcode == OPCODE_PING:
                 if opcode != OPCODE_PONG or data != DATA:
                     raise RuntimeError(f'Failed to receive correct opcode:{opcode} or data:{data}')
+                if control_handler_enabled:
+                    # The control-frame handler must have observed the client's PING
+                    dut.expect(rf'Control frame: PING \(len {len(DATA)}\), server replies PONG', timeout=10)
                 continue
             dut_data = dut.expect(r'Got packet with message: ([A-Za-z0-9_]*)')[1]
             dut_opcode = dut.expect(r'Packet type: ([0-9]*)')[1].decode()
@@ -150,11 +158,17 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
         data = data.decode()
         if opcode != OPCODE_PING:
             raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
-        # Now we should get a pong in response to our ping
-        opcode, data = ws.read()
-        data = data.decode()
-        if opcode != OPCODE_PONG:
-            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
+        # The client library auto-replies PONG to the server's PING. With the
+        # control-frame handler enabled, the DUT observes that PONG in the
+        # control handler and does not echo it; otherwise the data handler
+        # echoes the PONG back to the client.
+        if control_handler_enabled:
+            dut.expect('Control frame: PONG, heartbeat alive', timeout=10)
+        else:
+            opcode, data = ws.read()
+            data = data.decode()
+            if opcode != OPCODE_PONG:
+                raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
         ws.write(data='Ping', opcode=OPCODE_TEXT)
         # Wait for server to receive the message and send a ping
         dut.expect(r'Got packet with message: Ping', timeout=10)
@@ -164,11 +178,22 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
         data = data.decode()
         if opcode != OPCODE_PING:
             raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
-        # Now we should get a pong in response to our ping
-        opcode, data = ws.read()
-        data = data.decode()
-        if opcode != OPCODE_PONG:
-            raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
+        # The client library auto-replies PONG to the server's PING. With the
+        # control-frame handler enabled, the DUT observes that PONG in the
+        # control handler and does not echo it; otherwise the data handler
+        # echoes the PONG back to the client.
+        if control_handler_enabled:
+            dut.expect('Control frame: PONG, heartbeat alive', timeout=10)
+        else:
+            opcode, data = ws.read()
+            data = data.decode()
+            if opcode != OPCODE_PONG:
+                raise RuntimeError(f'Failed to receive correct opcode:{opcode}')
+
+    # Leaving the context closes the client connection: the CLOSE frame must be
+    # delivered to the control-frame handler (the server still replies CLOSE).
+    if control_handler_enabled:
+        dut.expect('Control frame: CLOSE', timeout=10)
 
 
 @pytest.mark.wifi_router

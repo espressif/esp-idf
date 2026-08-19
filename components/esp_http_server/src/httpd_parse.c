@@ -851,17 +851,21 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
             ESP_LOGD(TAG, LOG_FMT("Received PONG frame"));
         }
 
-        /* Call handler if it's a non-control frame, a PONG frame,
-         * or if handler requests control frames as well.
-         * PONG must be dispatched so that:
-         *  1. User code that sends PINGs can track responses (heartbeat)
-         *  2. The PONG frame bytes are consumed from the socket via
-         *     httpd_ws_recv_frame(), preventing TCP stream misalignment */
-        if (ret == ESP_OK &&
-            (ra->ws_type < HTTPD_WS_TYPE_CLOSE ||
-             ra->ws_type == HTTPD_WS_TYPE_PONG ||
-             sd->ws_control_frames)) {
-            ret = sd->ws_handler(r);
+        /* Dispatch the frame:
+         *  - Control frames (CLOSE/PING/PONG) go to the dedicated control handler
+         *    when one is registered; the server then sends the protocol reply.
+         *  - Otherwise dispatch to the data handler for non-control frames, PONG
+         *    frames, or when the handler opted in to receiving control frames.
+         *    PONG must be dispatched so that user heartbeat code can track it and
+         *    so its bytes are consumed from the socket (avoiding stream misalignment). */
+        if (ret == ESP_OK) {
+            if (ra->ws_type >= HTTPD_WS_TYPE_CLOSE && sd->ws_control_handler != NULL) {
+                ret = httpd_ws_handle_control_frame(r);
+            } else if (ra->ws_type < HTTPD_WS_TYPE_CLOSE ||
+                       ra->ws_type == HTTPD_WS_TYPE_PONG ||
+                       sd->ws_control_frames) {
+                ret = sd->ws_handler(r);
+            }
         }
 
         if (ret != ESP_OK) {

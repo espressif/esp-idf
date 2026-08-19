@@ -139,6 +139,36 @@ WebSocket 握手后回调
     httpd_register_uri_handler(server, &ws);
 
 
+WebSocket 控制帧处理程序
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+默认情况下，服务器会自动回复 WebSocket 控制帧——收到 PING 帧时回复 PONG 帧，收到 CLOSE 帧时回复 CLOSE 帧——应用程序不会参与该过程。若将 :cpp:type:`httpd_uri_t` 中的 ``handle_ws_control_frames`` 设置为 true，则会禁用该行为，控制帧将交由数据处理程序处理，此时应用程序需要自行接收控制帧并发送协议回复。
+
+``ws_control_handler`` 回调提供了一种折中方案：设置该回调（且 ``handle_ws_control_frames`` 为 true）后，控制帧（PING、PONG、CLOSE）将交由该专用处理程序处理，而不再传递给数据处理程序；服务器仍会自行接收帧体，并在回调返回后自动发送协议回复。该机制适用于观测心跳（跟踪 PONG 响应）或记录连接关闭原因，而无需重新实现回复逻辑。
+
+传递给该回调的帧为只读，且由服务器持有，仅在回调调用期间有效，因此回调中不得释放或保留该帧。如果回调返回错误，服务器仍会发送协议回复，然后关闭连接。
+
+.. code-block:: c
+
+    static esp_err_t ws_control_frame_handler(httpd_req_t *req, const httpd_ws_frame_t *frame)
+    {
+        // 在此处观测 PING/PONG/CLOSE 帧（例如心跳跟踪、日志记录）
+        // 回调返回后，服务器会自行发送协议回复
+        return ESP_OK;
+    }
+
+    // 注册带有专用控制帧处理程序的 WebSocket URI 处理程序
+    static const httpd_uri_t ws = {
+        .uri        = "/ws",
+        .method     = HTTP_GET,
+        .handler    = handler,           // WebSocket 数据处理程序
+        .user_ctx   = NULL,
+        .is_websocket = true,
+        .handle_ws_control_frames = true,
+        .ws_control_handler = ws_control_frame_handler
+    };
+
+
 事件处理
 --------------
 

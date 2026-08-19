@@ -76,6 +76,19 @@ Each outgoing frame has the FIN flag set by default.
 In case an application wants to send fragmented data, it must be done manually by setting the
 `fragmented` option and using the `final` flag as described in [RFC6455, section 5.4](https://tools.ietf.org/html/rfc6455#section-5.4).
 
+#### Handling control frames
+
+By default the server replies to control frames (PING, CLOSE) automatically. Setting `handle_ws_control_frames = true` alone routes control frames to the data handler instead, which then has to receive them and send the protocol replies itself.
+
+This example registers a dedicated control-frame handler on the `/ws` endpoint (see `CONFIG_EXAMPLE_ENABLE_WS_CONTROL_FRAME_HANDLER`, enabled by default):
+
+```c
+        .handle_ws_control_frames = true,
+        .ws_control_handler = ws_control_frame_handler,  // observes PING/PONG/CLOSE
+```
+
+The handler only observes the frames (this example logs them); the server still sends the protocol replies (PONG for PING, CLOSE for CLOSE) itself. Send the text message `Ping` to the server to watch the full heartbeat round trip: the server sends a PING and the client's PONG response is logged by the control-frame handler.
+
 
 ### Hardware Required
 

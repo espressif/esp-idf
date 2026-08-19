@@ -176,6 +176,7 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
 #ifdef CONFIG_HTTPD_WS_SUPPORT
             hd->hd_calls[i]->is_websocket = uri_handler->is_websocket;
             hd->hd_calls[i]->handle_ws_control_frames = uri_handler->handle_ws_control_frames;
+            hd->hd_calls[i]->ws_control_handler = uri_handler->ws_control_handler;
             if (uri_handler->supported_subprotocol) {
                 hd->hd_calls[i]->supported_subprotocol = strdup(uri_handler->supported_subprotocol);
                 if (hd->hd_calls[i]->supported_subprotocol == NULL) {
@@ -353,6 +354,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         aux->sd->ws_handshake_done = true;
         aux->sd->ws_handler = uri->handler;
         aux->sd->ws_control_frames = uri->handle_ws_control_frames;
+        aux->sd->ws_control_handler = uri->handle_ws_control_frames ? uri->ws_control_handler : NULL;
         aux->sd->ws_user_ctx = uri->user_ctx;
 
 #ifdef CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT
