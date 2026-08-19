@@ -153,6 +153,9 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         mcp = _MCPServer('ESP-IDF')
 
         # === TOOLS (Actions) ===
+        # Tool handlers spawn idf.py with stdin=subprocess.DEVNULL. The MCP server's
+        # stdin is the long-lived JSON-RPC transport pipe; a child that inherits it
+        # can hang instead of exiting.
         @mcp.tool(description=f'Build the ESP-IDF project (runs `idf.py build`). {bound_hint}')
         def build_project(project_dir: str | None = None) -> str:
             """Build the ESP-IDF project.
@@ -176,7 +179,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     'build',
                 ]
                 print(f'INFO: Building project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
                     print('INFO: Build successful', file=sys.stderr)
                     return 'Successfully built project'
@@ -217,7 +220,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     target,
                 ]
                 print(f'INFO: Setting target with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
                     print(f'INFO: Target set to: {target}', file=sys.stderr)
                     return f'Target set to: {target}'
@@ -259,7 +262,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     effective_dir,
                 ] + flash_args
                 print(f'INFO: Flashing project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
                 if result.returncode == 0:
                     print('INFO: Flash successful', file=sys.stderr)
@@ -300,7 +303,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     name,
                 ]
                 print(f'INFO: Creating project "{name}" in {parent_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
                     project_path_new = os.path.join(parent_dir, name)
                     print(f'INFO: Project "{name}" created at {project_path_new}', file=sys.stderr)
@@ -336,7 +339,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     'clean',
                 ]
                 print(f'INFO: Cleaning project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
                     print('INFO: Project cleaned successfully', file=sys.stderr)
                     return 'Project cleaned successfully'
