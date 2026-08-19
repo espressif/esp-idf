@@ -180,6 +180,133 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
     free(decryptedtext);
 }
 
+/* Drive a multipart AEAD encryption feeding AAD in aad_step-byte chunks and
+ * plaintext in data_step-byte chunks (deliberately non-block-aligned). */
+static void gcm_encrypt_chunked(psa_key_id_t key_id, const uint8_t *nonce, size_t nonce_len,
+                                const uint8_t *aad, size_t aad_len, size_t aad_step,
+                                const uint8_t *pt, size_t len, size_t data_step,
+                                uint8_t *ct, size_t ct_size, uint8_t *tag, size_t *tag_len)
+{
+    psa_aead_operation_t op = PSA_AEAD_OPERATION_INIT;
+    size_t olen, total = 0;
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_encrypt_setup(&op, key_id, PSA_ALG_GCM));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_set_nonce(&op, nonce, nonce_len));
+    for (size_t i = 0; i < aad_len; i += aad_step) {
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_update_ad(&op, aad + i, MIN(aad_step, aad_len - i)));
+    }
+    for (size_t i = 0; i < len; i += data_step) {
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_update(&op, pt + i, MIN(data_step, len - i),
+                                                       ct + total, ct_size - total, &olen));
+        total += olen;
+    }
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_finish(&op, ct + total, ct_size - total, &olen, tag, 16, tag_len));
+    total += olen;
+    TEST_ASSERT_EQUAL(len, total);
+    psa_aead_abort(&op);
+}
+
+/* Multipart AEAD decrypt + verify, chunked the same non-block-aligned way. */
+static void gcm_decrypt_chunked(psa_key_id_t key_id, const uint8_t *nonce, size_t nonce_len,
+                                const uint8_t *aad, size_t aad_len, size_t aad_step,
+                                const uint8_t *ct, size_t len, size_t data_step,
+                                const uint8_t *tag, size_t tag_len, uint8_t *pt, size_t pt_size)
+{
+    psa_aead_operation_t op = PSA_AEAD_OPERATION_INIT;
+    size_t olen, total = 0;
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_decrypt_setup(&op, key_id, PSA_ALG_GCM));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_set_nonce(&op, nonce, nonce_len));
+    for (size_t i = 0; i < aad_len; i += aad_step) {
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_update_ad(&op, aad + i, MIN(aad_step, aad_len - i)));
+    }
+    for (size_t i = 0; i < len; i += data_step) {
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_update(&op, ct + i, MIN(data_step, len - i),
+                                                       pt + total, pt_size - total, &olen));
+        total += olen;
+    }
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_verify(&op, pt + total, pt_size - total, &olen, tag, tag_len));
+    total += olen;
+    TEST_ASSERT_EQUAL(len, total);
+    psa_aead_abort(&op);
+}
+
+/* Regression test for the multipart GCM streaming bug: feeding a non-block-
+ * aligned stream (and non-block-aligned AAD) across several update calls must
+ * yield the same ciphertext and tag as a single one-shot operation over the
+ * same bytes. The prior implementation reset the CTR keystream offset every
+ * call and zero-padded each GHASH chunk independently, so both ciphertext and
+ * tag diverged for any chunk size that was not a multiple of 16. */
+TEST_CASE("mbedtls GCM unaligned multipart matches one-shot", "[aes-gcm]")
+{
+    const size_t SZ = 100;
+    const size_t AAD_SZ = 30;
+    psa_key_id_t key_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    uint8_t nonce[12], key[16], tag[16];
+    size_t tag_len;
+
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *aad = heap_caps_malloc(AAD_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ref = heap_caps_malloc(SZ + 16, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ct = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *dec = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(aad);
+    TEST_ASSERT_NOT_NULL(ref);
+    TEST_ASSERT_NOT_NULL(ct);
+    TEST_ASSERT_NOT_NULL(dec);
+
+    for (size_t i = 0; i < SZ; i++) {
+        plaintext[i] = (uint8_t)(i * 7 + 3);
+    }
+    for (size_t i = 0; i < AAD_SZ; i++) {
+        aad[i] = (uint8_t)(i * 5 + 1);
+    }
+    memset(nonce, 0x24, sizeof(nonce));
+    memset(key, 0x9a, sizeof(key));
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_GCM);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_import_key(&attributes, key, 16, &key_id));
+
+    /* One-shot reference: ciphertext followed by the 16-byte tag. */
+    size_t ref_len = 0;
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_aead_encrypt(key_id, PSA_ALG_GCM, nonce, sizeof(nonce),
+                                                    aad, AAD_SZ, plaintext, SZ, ref, SZ + 16, &ref_len));
+    TEST_ASSERT_EQUAL(SZ + 16, ref_len);
+
+    const size_t data_steps[] = {1, 7, 13, 20};
+    const size_t aad_steps[] = {1, 7, 13};
+    for (size_t d = 0; d < sizeof(data_steps) / sizeof(data_steps[0]); d++) {
+        for (size_t a = 0; a < sizeof(aad_steps) / sizeof(aad_steps[0]); a++) {
+            memset(ct, 0, SZ);
+            memset(dec, 0, SZ);
+            memset(tag, 0, sizeof(tag));
+
+            gcm_encrypt_chunked(key_id, nonce, sizeof(nonce), aad, AAD_SZ, aad_steps[a],
+                                plaintext, SZ, data_steps[d], ct, SZ, tag, &tag_len);
+            TEST_ASSERT_EQUAL(16, tag_len);
+            TEST_ASSERT_EQUAL_HEX8_ARRAY(ref, ct, SZ);
+            TEST_ASSERT_EQUAL_HEX8_ARRAY(ref + SZ, tag, 16);
+
+            gcm_decrypt_chunked(key_id, nonce, sizeof(nonce), aad, AAD_SZ, aad_steps[a],
+                                ct, SZ, data_steps[d], tag, tag_len, dec, SZ);
+            TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, dec, SZ);
+        }
+    }
+
+    psa_destroy_key(key_id);
+    free(plaintext);
+    free(aad);
+    free(ref);
+    free(ct);
+    free(dec);
+}
+
 // Note: PSA Crypto API does not provide a direct equivalent to mbedtls_gcm_self_test()
 // The self-test functionality is validated through the individual test cases below
 

@@ -5,6 +5,8 @@
  */
 
 #include <string.h>
+#include <stddef.h>
+#include <stdint.h>
 #include "esp_mbedtls_dynamic_impl.h"
 #include "sdkconfig.h"
 
@@ -85,7 +87,7 @@ static void init_tx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
      * In mbedtls, ssl->MBEDTLS_PRIVATE(out_msg) = ssl->MBEDTLS_PRIVATE(out_buf) + offset;
      */
     if (!buf) {
-        int out_msg_off = (int)ssl->MBEDTLS_PRIVATE(out_msg) - (int)ssl->MBEDTLS_PRIVATE(out_buf);
+        ptrdiff_t out_msg_off = ssl->MBEDTLS_PRIVATE(out_msg) - ssl->MBEDTLS_PRIVATE(out_buf);
 
         if (!out_msg_off) {
             out_msg_off = MBEDTLS_SSL_HEADER_LEN;
@@ -96,9 +98,11 @@ static void init_tx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
         ssl->MBEDTLS_PRIVATE(out_hdr) = NULL;
         ssl->MBEDTLS_PRIVATE(out_len) = NULL;
         ssl->MBEDTLS_PRIVATE(out_iv)  = NULL;
-        ssl->MBEDTLS_PRIVATE(out_msg) = (unsigned char *)out_msg_off;
+        /* Stash the offset in the pointer field while the buffer is freed; it is
+         * restored to a real pointer on the next allocation below. */
+        ssl->MBEDTLS_PRIVATE(out_msg) = (unsigned char *)(uintptr_t)out_msg_off;
     } else {
-        int out_msg_off = (int)ssl->MBEDTLS_PRIVATE(out_msg);
+        uintptr_t out_msg_off = (uintptr_t)ssl->MBEDTLS_PRIVATE(out_msg);
 
         ssl->MBEDTLS_PRIVATE(out_buf) = buf;
         ssl->MBEDTLS_PRIVATE(out_ctr) = ssl->MBEDTLS_PRIVATE(out_buf);
@@ -107,7 +111,7 @@ static void init_tx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
         ssl->MBEDTLS_PRIVATE(out_iv)  = ssl->MBEDTLS_PRIVATE(out_buf) + MBEDTLS_SSL_HEADER_LEN;
         ssl->MBEDTLS_PRIVATE(out_msg) = ssl->MBEDTLS_PRIVATE(out_buf) + out_msg_off;
 
-        ESP_LOGV(TAG, "out msg offset is %d", out_msg_off);
+        ESP_LOGV(TAG, "out msg offset is %u", (unsigned)out_msg_off);
     }
 
     ssl->MBEDTLS_PRIVATE(out_msgtype) = 0;
@@ -121,7 +125,7 @@ static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
      * In mbedtls, ssl->MBEDTLS_PRIVATE(in_msg) = ssl->MBEDTLS_PRIVATE(in_buf) + offset;
      */
     if (!buf) {
-        int in_msg_off = (int)ssl->MBEDTLS_PRIVATE(in_msg) - (int)ssl->MBEDTLS_PRIVATE(in_buf);
+        ptrdiff_t in_msg_off = ssl->MBEDTLS_PRIVATE(in_msg) - ssl->MBEDTLS_PRIVATE(in_buf);
 
         if (!in_msg_off) {
             in_msg_off = MBEDTLS_SSL_HEADER_LEN;
@@ -132,9 +136,11 @@ static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
         ssl->MBEDTLS_PRIVATE(in_hdr) = NULL;
         ssl->MBEDTLS_PRIVATE(in_len) = NULL;
         ssl->MBEDTLS_PRIVATE(in_iv)  = NULL;
-        ssl->MBEDTLS_PRIVATE(in_msg) = (unsigned char *)in_msg_off;
+        /* Stash the offset in the pointer field while the buffer is freed; it is
+         * restored to a real pointer on the next allocation below. */
+        ssl->MBEDTLS_PRIVATE(in_msg) = (unsigned char *)(uintptr_t)in_msg_off;
     } else {
-        int in_msg_off = (int)ssl->MBEDTLS_PRIVATE(in_msg);
+        uintptr_t in_msg_off = (uintptr_t)ssl->MBEDTLS_PRIVATE(in_msg);
 
         ssl->MBEDTLS_PRIVATE(in_buf) = buf;
         ssl->MBEDTLS_PRIVATE(in_ctr) = ssl->MBEDTLS_PRIVATE(in_buf);
@@ -143,7 +149,7 @@ static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
         ssl->MBEDTLS_PRIVATE(in_iv)  = ssl->MBEDTLS_PRIVATE(in_buf) + MBEDTLS_SSL_HEADER_LEN;
         ssl->MBEDTLS_PRIVATE(in_msg) = ssl->MBEDTLS_PRIVATE(in_buf) + in_msg_off;
 
-        ESP_LOGV(TAG, "in msg offset is %d", in_msg_off);
+        ESP_LOGV(TAG, "in msg offset is %u", (unsigned)in_msg_off);
     }
 
     ssl->MBEDTLS_PRIVATE(in_msgtype) = 0;
