@@ -83,14 +83,17 @@ The build system looks for components in several locations, each associated with
      - Priority
      - Where the components come from
    * - ``project_components``
-     - 3 (highest)
+     - 4 (highest)
      - The project's ``main`` and ``components`` directories (or ``COMPONENT_DIRS``)
    * - ``project_extra_components``
-     - 2
+     - 3
      - Directories listed in ``EXTRA_COMPONENT_DIRS``
    * - ``project_managed_components``
-     - 1
+     - 2
      - Components fetched by the component manager
+   * - ``idf_managed_components``
+     - 1
+     - ESP-IDF's own root-managed components, installed by the component manager from ``$IDF_PATH/tools/idf_extra_components.yml``
    * - ``idf_components``
      - 0 (lowest)
      - Components bundled with ESP-IDF (``$IDF_PATH/components``)

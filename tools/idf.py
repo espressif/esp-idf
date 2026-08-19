@@ -53,6 +53,8 @@ try:
 
     if os.getenv('IDF_COMPONENT_MANAGER') != '0':
         from idf_component_manager import idf_extensions
+        from idf_component_tools.errors import FatalError as ComponentManagerFatalError
+        from idf_component_tools.root_managed_components import RootManagedComponentsStateManager
 except ImportError as e:
     print(
         (
@@ -1104,20 +1106,43 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
         return result
 
-    def _resolve_idf_managed_lock_path() -> str | None:
-        """Return path to dependencies.lock for IDF-managed components, or None if unavailable."""
+    def _get_trusted_names_from_root_state(state_path: str) -> set[str]:
+        """Return component names from the trusted root-managed inventory."""
+        if state_path in _trusted_names_cache:
+            return _trusted_names_cache[state_path]
+        result: set[str] = set()
+        _trusted_names_cache[state_path] = result
+
+        if not os.path.isfile(state_path) or os.getenv('IDF_COMPONENT_MANAGER') == '0':
+            return result
+
+        try:
+            state = RootManagedComponentsStateManager(state_path).load()
+            result.update(state.components)
+        except (OSError, ComponentManagerFatalError) as e:
+            log.warn(
+                escape(
+                    'Could not verify source of external components. '
+                    f'No extensions (idf_ext.py) from managed components will be loaded. ({e})'
+                )
+            )
+
+        return result
+
+    def _resolve_idf_managed_state_dir() -> str | None:
+        """Return the state directory for IDF-managed components, or None if unavailable."""
         idf_tools_path = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(os.path.join('~', '.espressif'))
         ver = idf_version_from_cmake()  # returns e.g. 'v6.1.0', or None on failure
         if not ver:
             return None
         ver_str = ver.lstrip('v')  # '6.1.0'
-        return os.path.join(idf_tools_path, 'root_managed_components', f'idf{ver_str}', 'dependencies.lock')
+        return os.path.join(idf_tools_path, 'root_managed_components', f'idf{ver_str}')
 
     def _is_component_trusted(
         comp_name: str,
         source: str | None,
     ) -> bool:
-        """True iff this component is from a trusted source (IDF, project, or Espressif component from ESP-registry)."""
+        """Return whether a component may provide an idf.py extension."""
         if source in ('idf_components', 'project_components', 'project_extra_components'):
             return True
         if source == 'project_managed_components':
@@ -1125,11 +1150,14 @@ def init_cli(verbose_output: list | None = None) -> Any:
             lock_key = comp_name.replace('__', '/', 1) if '__' in comp_name else comp_name
             return lock_key in _get_trusted_names_from_lock(os.path.join(project_dir, 'dependencies.lock'))
         if source == 'idf_managed_components':
-            lock_path = _resolve_idf_managed_lock_path()
-            if lock_path is None:
+            state_dir = _resolve_idf_managed_state_dir()
+            if state_dir is None:
                 return False
             lock_key = comp_name.replace('__', '/', 1) if '__' in comp_name else comp_name
-            return lock_key in _get_trusted_names_from_lock(lock_path)
+            root_state_path = os.path.join(state_dir, 'root_components.lock')
+            if os.path.isfile(root_state_path):
+                return lock_key in _get_trusted_names_from_root_state(root_state_path)
+            return lock_key in _get_trusted_names_from_lock(os.path.join(state_dir, 'dependencies.lock'))
         return False
 
     def _build_rich_help_command_groups(

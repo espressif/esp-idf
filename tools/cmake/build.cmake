@@ -65,6 +65,17 @@ function(idf_build_unset_property property)
     idf_build_set_property(__BUILD_PROPERTIES "${build_properties}")
 endfunction()
 
+function(__component_manager_get_command var)
+    idf_build_get_property(python PYTHON)
+    if(DEFINED ENV{IDF_COMPONENT_WRAPPER} AND NOT "$ENV{IDF_COMPONENT_WRAPPER}" STREQUAL "")
+        set(component_manager_cmd
+            "${python}" "$ENV{IDF_COMPONENT_WRAPPER}" "idf_component_manager.prepare_components")
+    else()
+        set(component_manager_cmd "${python}" "-m" "idf_component_manager.prepare_components")
+    endif()
+    set(${var} ${component_manager_cmd} PARENT_SCOPE)
+endfunction()
+
 # idf_build_replace_option_from_property
 #
 # @brief Replace specified option with new one in a given property.
@@ -359,6 +370,7 @@ function(idf_build_component component_dir)
 
     # component_source must be one of the following (sorted by the override order):
     set(valid_component_sources "idf_components"
+                              "idf_managed_components"
                               "project_managed_components"
                               "project_extra_components"
                               "project_components")
@@ -678,7 +690,7 @@ macro(idf_build_process target)
         file(WRITE ${local_components_list_file} "${__contents}")
 
         # Call for the component manager to prepare remote dependencies
-        idf_build_get_property(python PYTHON)
+        __component_manager_get_command(component_manager_cmd)
         idf_build_get_property(component_manager_interface_version __COMPONENT_MANAGER_INTERFACE_VERSION)
         idf_build_get_property(dependencies_lock_file DEPENDENCIES_LOCK)
 
@@ -687,9 +699,7 @@ macro(idf_build_process target)
             set(use_sdk_json FALSE)
         endif()
 
-        execute_process(COMMAND ${python}
-            "-m"
-            "idf_component_manager.prepare_components"
+        execute_process(COMMAND ${component_manager_cmd}
             "--project_dir=${project_dir}"
             "--lock_path=${dependencies_lock_file}"
             "--interface_version=${component_manager_interface_version}"
@@ -740,21 +750,6 @@ macro(idf_build_process target)
                     "However, the component manager is not enabled.")
         endif()
     endif()
-
-    idf_build_get_property(prefix __PREFIX)
-
-    file(GLOB root_dep_component_dirs
-        ${IDF_TOOLS_PATH}/root_managed_components/idf${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}/*)
-    list(SORT root_dep_component_dirs)
-    foreach(component_dir ${root_dep_component_dirs})
-        # A potential component must be a directory
-        if(IS_DIRECTORY ${component_dir})
-            __component_dir_quick_check(is_component ${component_dir})
-            if(is_component)
-                __component_add(${component_dir} ${prefix} "idf_managed_components")
-            endif()
-        endif()
-    endforeach()
 
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.
