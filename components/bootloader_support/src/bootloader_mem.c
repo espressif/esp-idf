@@ -58,7 +58,7 @@ void bootloader_init_mem(void)
     }
 #endif
 
-#if CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
+#if !BOOTLOADER_BUILD || CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
     // protect memory region
     esp_cpu_configure_region_protection();
 #endif

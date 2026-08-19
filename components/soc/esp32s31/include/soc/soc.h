@@ -193,13 +193,16 @@
 #define CPU_PERIPH_LOW     0x2C000000
 #define CPU_PERIPH_HIGH    0x2C020000
 
-// Region of address space that holds peripherals, HP APB peripherals
-#define SOC_PERIPHERAL_LOW 0x50000000   //TODO need update
-#define SOC_PERIPHERAL_HIGH 0x50100000   //TODO need update
+// Region of address space that holds the on-chip peripherals (MODEM/HP/LP APB
+// peripherals, security peripherals, CPU peripheral, cache-data memory and the
+// debug address space). Per the S31 bus address map this spans from the start of
+// the "On-Chip Peripherals" aperture up to the base of the LP TCM (SOC_RTC_IRAM_LOW).
+#define SOC_PERIPHERAL_LOW 0x20100000
+#define SOC_PERIPHERAL_HIGH 0x2E000000
 
 /** LP subsystem from ``LP_SYS`` through ``LP_DAC``*/
-#define SOC_LP_PERIPH_LOW   DR_REG_LP_SYS_BASE
-#define SOC_LP_PERIPH_HIGH  (DR_REG_LP_DAC_BASE + 0x2000)
+#define SOC_LP_PERIPH_LOW   0x20700000
+#define SOC_LP_PERIPH_HIGH  0x20820000
 
 // CPU sub-system region, contains interrupt config registers
 #define SOC_CPU_SUBSYSTEM_LOW 0x10000000
@@ -210,6 +213,7 @@
 #define SOC_ROM_STACK_SIZE          0x2000
 
 // non-cacheable offset for memory behind the cache
+#define SOC_NON_CACHEABLE_OFFSET_FLASH       0x60000000
 #define SOC_NON_CACHEABLE_OFFSET_PSRAM       0x70000000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
