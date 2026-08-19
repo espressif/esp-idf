@@ -152,22 +152,27 @@ If none of our chip series meet your needs, please contact `customer support tea
 
             |unsupported|
     * - .. centered:: |5.1|
-      - Angle of Arrival (AoA)/Angle of Departure (AoD)
+      - .. only:: esp32h2
+
+            Angle of Arrival (AoA)/Angle of Departure (AoD) [2]_
+        .. only:: not esp32h2
+
+            Angle of Arrival (AoA)/Angle of Departure (AoD)
       - .. only:: SOC_BLE_CTE_SUPPORTED
 
-            |experimental|
+            |supported|
         .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
       - .. only:: SOC_BLE_CTE_SUPPORTED
 
-            |experimental|
+            |supported|
         .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
       - .. only:: SOC_BLE_CTE_SUPPORTED
 
-            |experimental|
+            |supported|
         .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
@@ -224,8 +229,18 @@ If none of our chip series meet your needs, please contact `customer support tea
         .. only:: not SOC_BLE_ISO_SUPPORTED
 
             |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
     * -
       - Enhanced Attribute Protocol
       - |NA|
@@ -393,9 +408,24 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |unsupported|
     * -
       - Enhancements for ISOAL
-      - |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
     * -
       - Monitoring Advertisers
       - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
@@ -421,10 +451,55 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |unsupported|
       - |unsupported|
       - |unsupported|
+    * - .. centered:: |6.1|
+      - Randomized Resolvable Private Address (RPA) Updates
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.2|
+      - HCI USB LE Isochronous Support
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - LE Test Mode Enhancements
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Shorter Connection Intervals
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Channel Sounding Amplitude-based Attack Resilience
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.3|
+      - Channel Sounding Inline Phase Correction Term Transfer
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Channel Sounding PHY-specific RTT Accuracy
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Running Out of Bits
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
 
 .. [1]
    If you would like to know the Bluetooth SIG certification information for supported features,
    please consult `SIG Bluetooth Product Database <https://qualification.bluetooth.com/Listings/Search>`__.
+
+.. only:: esp32h2
+
+    .. [2]
+       Note: On ESP32-H2, connection-oriented Bluetooth LE Direction Finding (AoA/AoD) is not supported when the Bluetooth LE connection is encrypted.
 
 For certain features, if the majority of the development is completed on the Controller, the Host's support status will be limited by the Controller's support status.
 If you want Bluetooth LE Controller and Host to run on different Espressif chips, the functionality of the Host will not be limited by the Controller's support status on the chip running the Host,
@@ -468,3 +543,6 @@ You are encouraged to consult with our `customer support team <https://www.espre
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
 .. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__
+.. |6.1| replace:: `6.1 <https://www.bluetooth.com/specifications/specs/core-specification-6-1/>`__
+.. |6.2| replace:: `6.2 <https://www.bluetooth.com/specifications/specs/core-specification-6-2/>`__
+.. |6.3| replace:: `6.3 <https://www.bluetooth.com/specifications/specs/core-specification-6-3/>`__
