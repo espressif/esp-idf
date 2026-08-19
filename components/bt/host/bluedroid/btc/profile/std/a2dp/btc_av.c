@@ -1242,9 +1242,15 @@ static bt_status_t btc_av_init(int service_id)
 
 #if (BTC_AV_EXT_CODEC == TRUE)
     UINT8 index;
+    UINT8 tsep = (service_id == BTA_A2DP_SINK_SERVICE_ID) ? AVDT_TSEP_SNK : AVDT_TSEP_SRC;
     for (index = 0; index < BTA_AV_MAX_SEPS; index++) {
-        btc_av_cb.codec_caps[index].id = BTC_AV_CODEC_NONE;
-        memset(btc_av_cb.codec_caps[index].info, 0, AVDT_CODEC_SIZE);
+        /* A2DP mandates SBC: fill every SEID with the default SBC capability */
+        if (bta_av_co_audio_build_sbc_default(tsep, &btc_av_cb.codec_caps[index].id,
+                                              btc_av_cb.codec_caps[index].info) != TRUE) {
+            BTC_TRACE_ERROR("%s: failed to build default SBC for seid %d", __func__, index);
+            btc_av_cb.codec_caps[index].id = BTC_AV_CODEC_NONE;
+            memset(btc_av_cb.codec_caps[index].info, 0, AVDT_CODEC_SIZE);
+        }
     }
 #endif
 
@@ -1629,6 +1635,7 @@ static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
     tBTA_AV_DATA_CBACK *p_data_cback = NULL;
     esp_a2d_cb_param_t param;
     tBTA_AV_CODEC codec_type = ESP_A2D_MCT_NON_A2DP;
+    UINT8 index;
 
     param.a2d_sep_reg_stat.seid = seid;
     if (btc_av_cb.sm_handle == NULL || btc_sm_get_state(btc_av_cb.sm_handle) != BTC_AV_STATE_IDLE) {
@@ -1636,6 +1643,27 @@ static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
         btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
         BTC_TRACE_WARNING("%s: try to reg sep when a2dp not init or connected", __func__);
         return;
+    }
+
+    /*
+     * A2DP requires at least one SBC SEP. Reject a non-SBC registration that
+     * would overwrite the last remaining SBC capability.
+     */
+    if (mcc->type != ESP_A2D_MCT_SBC) {
+        BOOLEAN has_other_sbc = FALSE;
+        for (index = 0; index < BTA_AV_MAX_SEPS; index++) {
+            if (index != seid && btc_av_cb.codec_caps[index].id == BTC_AV_CODEC_SBC) {
+                has_other_sbc = TRUE;
+                break;
+            }
+        }
+        if (!has_other_sbc) {
+            param.a2d_sep_reg_stat.reg_state = ESP_A2D_SEP_REG_SBC_REQUIRED;
+            btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
+            BTC_TRACE_WARNING("%s: refuse seid %d codec 0x%02x, at least one SBC SEP is required",
+                              __func__, seid, mcc->type);
+            return;
+        }
     }
 
     if (tsep == AVDT_TSEP_SNK) {

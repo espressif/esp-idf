@@ -542,10 +542,8 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     tAVDT_CS        cs;
     char            *p_service_name;
     tBTA_UTL_COD    cod;
-#if (BTA_AV_EXT_CODEC == FALSE)
     tBTA_AV_CODEC   codec_type;
     UINT8           index = 0;
-#endif
     char p_avk_service_name[BTA_SERVICE_NAME_LEN + 1];
     BCM_STRLCPY_S(p_avk_service_name, BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN + 1);
 
@@ -667,10 +665,25 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 
             /* keep the configuration in the stream control block */
             memcpy(&p_scb->cfg, &cs.cfg, sizeof(tAVDT_CFG));
-#if (BTA_AV_EXT_CODEC == FALSE)
-            while (index < BTA_AV_MAX_SEPS &&
-                    (p_scb->p_cos->init)(index, &codec_type, cs.cfg.codec_info,
-                                         &cs.cfg.num_protect, cs.cfg.protect_info, p_data->api_reg.tsep) == TRUE) {
+            /*
+             * Create local SEPs:
+             * - Internal codec: init() supplies SBC (typically one SEP).
+             * - External codec: A2DP mandates SBC, so pre-fill every SEID with
+             *   the default SBC SEP; app register_stream_endpoint() may overwrite.
+             */
+            while (index < BTA_AV_MAX_SEPS) {
+#if (BTA_AV_EXT_CODEC == TRUE)
+                if (bta_av_co_audio_build_sbc_default(p_data->api_reg.tsep, &codec_type,
+                                                      cs.cfg.codec_info) != TRUE) {
+                    APPL_TRACE_ERROR("failed to build default SBC SEP for seid %d", index);
+                    break;
+                }
+#endif
+                if ((p_scb->p_cos->init)(index, &codec_type, cs.cfg.codec_info,
+                                         &cs.cfg.num_protect, cs.cfg.protect_info,
+                                         p_data->api_reg.tsep) != TRUE) {
+                    break;
+                }
 
 #if (BTA_AV_SINK_INCLUDED == TRUE)
                 if (p_data->api_reg.tsep == AVDT_TSEP_SNK) {
@@ -698,7 +711,6 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                     break;
                 }
             }
-#endif
 
             if (!bta_av_cb.reg_audio) {
                 if (p_data->api_reg.tsep == AVDT_TSEP_SRC) {

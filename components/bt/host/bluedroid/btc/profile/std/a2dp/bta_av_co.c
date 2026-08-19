@@ -300,6 +300,37 @@ static void bta_av_co_report_peer_all_snk_codec_caps(tBTA_AV_HNDL hndl)
 
 /*******************************************************************************
  **
+ ** Function         bta_av_co_audio_build_sbc_default
+ **
+ ** Description      Build the mandatory default SBC codec capability for the
+ **                  given SEP type (source or sink).
+ **
+ ** Returns          TRUE if built successfully, FALSE otherwise.
+ **
+ *******************************************************************************/
+BOOLEAN bta_av_co_audio_build_sbc_default(UINT8 tsep, UINT8 *p_codec_type, UINT8 *p_codec_info)
+{
+    FUNC_TRACE();
+
+    if (p_codec_type == NULL || p_codec_info == NULL) {
+        return FALSE;
+    }
+
+    *p_codec_type = BTA_AV_CODEC_SBC;
+    if (tsep == AVDT_TSEP_SRC) {
+        return (A2D_BldSbcInfo(AVDT_MEDIA_AUDIO, (tA2D_SBC_CIE *)&bta_av_co_sbc_caps,
+                               p_codec_info) == A2D_SUCCESS);
+    } else if (tsep == AVDT_TSEP_SNK) {
+        return (A2D_BldSbcInfo(AVDT_MEDIA_AUDIO, (tA2D_SBC_CIE *)&bta_av_co_sbc_sink_caps,
+                               p_codec_info) == A2D_SUCCESS);
+    }
+
+    APPL_TRACE_WARNING("bta_av_co_audio_build_sbc_default invalid SEP type %d", tsep);
+    return FALSE;
+}
+
+/*******************************************************************************
+ **
  ** Function         bta_av_co_audio_init
  **
  ** Description      This callout function is executed by AV when it is
