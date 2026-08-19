@@ -31,4 +31,4 @@ def test_i3c(dut: Dut) -> None:
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_I3C_MASTER_SUPPORTED == 1'), indirect=['target'])
 def test_i3c_multi_device(case_tester) -> None:  # type: ignore
-    case_tester.run_all_multi_dev_cases(reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True, timeout=30)

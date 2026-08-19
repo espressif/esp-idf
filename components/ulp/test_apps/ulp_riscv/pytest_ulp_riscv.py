@@ -16,4 +16,4 @@ def test_ulp_riscv(dut: Dut) -> None:  # type: ignore
 @pytest.mark.parametrize('count', [2], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_RISCV_COPROC_SUPPORTED == 1'), indirect=['target'])
 def test_ulp_riscv_multi_device(case_tester) -> None:  # type: ignore
-    case_tester.run_all_multi_dev_cases(reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True, timeout=30)

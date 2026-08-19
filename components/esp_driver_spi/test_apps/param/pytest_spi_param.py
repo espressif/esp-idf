@@ -15,4 +15,4 @@ def test_param_single_dev(case_tester) -> None:  # type: ignore
 @pytest.mark.parametrize('count', [2], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_param_multi_dev(case_tester) -> None:  # type: ignore
-    case_tester.run_all_multi_dev_cases(reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True, timeout=30)

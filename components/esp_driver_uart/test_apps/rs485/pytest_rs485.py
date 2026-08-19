@@ -17,4 +17,4 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize('target', ['esp32', 'esp32h2', 'esp32s3'], indirect=['target'])
 def test_rs485_multi_dev(case_tester) -> None:  # type: ignore
-    case_tester.run_all_multi_dev_cases(reset=True)
+    case_tester.run_all_multi_dev_cases(reset=True, timeout=60)

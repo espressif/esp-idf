@@ -140,4 +140,4 @@ def test_uart_single_dev_psram(case_tester) -> None:  # type: ignore
 def test_hp_uart_wakeup_modes(case_tester: CaseTester) -> None:
     relevant_cases = [case for case in case_tester.test_menu if {'wakeup', 'uart'}.issubset(case.groups)]
     for case in relevant_cases:
-        case_tester.run_multi_dev_case(case=case, reset=True)
+        case_tester.run_multi_dev_case(case=case, reset=True, timeout=30)
