@@ -35,6 +35,15 @@ def configs_for_app(app_path: str, configs: Sequence[str]) -> list[tuple[str, st
     return [(app_path, config) for config in configs]
 
 
+def configs_with_esp32s2_xfail(
+    configs: Sequence[tuple[str, str]], reason: str
+) -> list[tuple[str, str] | tuple[str, str, Any]]:
+    return [
+        (config, target, pytest.mark.xfail(reason=reason, run=False)) if target == 'esp32s2' else (config, target)
+        for config, target in configs
+    ]
+
+
 CONFIGS = configs_for_app(PANIC_APP, ['gdbstub', 'panic'])
 
 CONFIGS_UBSAN = configs_for_app(PANIC_APP, ['gdbstub', 'panic'])
@@ -722,7 +731,7 @@ def test_dcache_read_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(targets=['esp32s2'], reason='Incorrect panic reason may be observed', run=False)
+@pytest.mark.xfail(reason='Incorrect panic reason may be observed', run=False)
 @idf_parametrize('config, target', CONFIGS_MEMPROT_DCACHE, indirect=['config', 'target'])
 def test_dcache_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -862,11 +871,14 @@ def iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
 @pytest.mark.generic
-@pytest.mark.xfail(targets=['esp32s2'], reason='Incorrect panic reason may be observed', run=False)
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-@idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
+# TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
+@idf_parametrize(
+    'config,target,markers',
+    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_IDRAM, 'Incorrect panic reason may be observed'),
+    indirect=['config', 'target'],
+)
 def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     iram_reg_write_violation(dut, test_func_name)
 
@@ -894,11 +906,14 @@ def dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(targets=['esp32s2'], reason='Multiple panic reasons for the same test may surface', run=False)
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-@idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
+# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+@idf_parametrize(
+    'config,target,markers',
+    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
+    indirect=['config', 'target'],
+)
 def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dram_reg1_execute_violation(dut, test_func_name)
 
@@ -925,11 +940,14 @@ def dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(targets=['esp32s2'], reason='Multiple panic reasons for the same test may surface', run=False)
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-@idf_parametrize('config, target', CONFIGS_MEMPROT_IDRAM, indirect=['config', 'target'])
+# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+@idf_parametrize(
+    'config,target,markers',
+    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
+    indirect=['config', 'target'],
+)
 def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dram_reg2_execute_violation(dut, test_func_name)
 
@@ -974,11 +992,14 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(targets=['esp32s2'], reason='Multiple panic reasons for the same test may surface', run=False)
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-@idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=['config', 'target'])
+# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+@idf_parametrize(
+    'config,target,markers',
+    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_RTC_FAST_MEM, 'Multiple panic reasons for the same test may surface'),
+    indirect=['config', 'target'],
+)
 def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 

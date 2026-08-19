@@ -735,14 +735,34 @@ Sometimes, a test can consistently fail for the following reasons:
 
 Now you may mark this test case with marker `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ with a user-friendly readable reason.
 
+.. attention::
+
+    Avoid using a string condition, e.g., ``@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', ...)``. This condition is evaluated against the session-level CLI ``--target`` option, not against the actual target resolved for a given parametrized test instance, so it can silently mismatch when the same test is parametrized over multiple targets and produce unreliable results.
+
+    Instead, attach the ``xfail`` marker directly to the specific parametrized value passed to ``idf_parametrize`` (see :ref:`Same App With Different Running Environments <pytest-same-app-different-running-environments>`), so the marker is tied to that value at collection time.
+
 This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/panic_base/pytest_panic.py>`
 
 .. code-block:: python
 
-    @pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='raised IllegalInstruction instead')
-    def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    @pytest.mark.generic
+    @idf_parametrize(
+        'config,target,markers',
+        [
+            (
+                'memprot_esp32s2',
+                'esp32s2',
+                pytest.mark.xfail(reason='Incorrect panic reason may be observed', run=False),
+            ),
+            ('memprot_esp32c3', 'esp32c3'),
+        ],
+        indirect=['config', 'target'],
+    )
+    def test_cache_error(dut: PanicTestDut, test_func_name: str) -> None:
 
 This marker means that test is a known failure on the ESP32-S2.
+
+If a test is only ever parametrized with a single target, there is no ambiguity, and you can use an unconditional ``@pytest.mark.xfail(reason=..., run=False)`` instead.
 
 Mark Nightly Run Test Cases
 ---------------------------
