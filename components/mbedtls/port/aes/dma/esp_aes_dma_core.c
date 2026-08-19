@@ -1053,6 +1053,26 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
 
+#if SOC_AES_CRYPTO_DMA && CONFIG_SPIRAM
+    /* The Crypto DMA in-channel stalls indefinitely (no descriptor error is raised) when a
+       receive descriptor list transitions from a buffer in external RAM to one in internal
+       RAM. Avoid linking the internal stream buffer descriptor after external-RAM data
+       descriptors by processing the block-aligned part and the trailing partial block as
+       two separate DMA operations. */
+    if (block_bytes > 0 && stream_bytes > 0 && esp_ptr_external_ram(output)) {
+        ret = esp_aes_process_dma(ctx, input, output, block_bytes, NULL);
+        if (ret != 0) {
+            mbedtls_platform_zeroize(output, len);
+            return ret;
+        }
+        ret = esp_aes_process_dma(ctx, input + block_bytes, output + block_bytes, stream_bytes, stream_out);
+        if (ret != 0) {
+            mbedtls_platform_zeroize(output, len);
+        }
+        return ret;
+    }
+#endif /* SOC_AES_CRYPTO_DMA && CONFIG_SPIRAM */
+
     if (block_bytes > 0) {
         /* Flush cache if input in external ram */
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
