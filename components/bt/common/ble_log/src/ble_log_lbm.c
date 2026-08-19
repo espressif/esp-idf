@@ -28,8 +28,8 @@
 #define BLE_LOG_LBM_WAIT_TIMEOUT_MS (1000)
 
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t lbm_ref_count = 0;
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool lbm_inited = false;
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool lbm_enabled = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t lbm_inited = 0;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t lbm_enabled = 0;
 BLE_LOG_STATIC volatile bool flush_in_progress = false;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_lbm_ctx_t *lbm_ctx = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_stat_mgr_t *stat_mgr_ctx[BLE_LOG_SRC_MAX] = {0};
@@ -59,6 +59,19 @@ BLE_LOG_STATIC void ble_log_stat_mgr_update(ble_log_src_t src_code, uint32_t len
 /* ------------------------- */
 /*     PRIVATE INTERFACE     */
 /* ------------------------- */
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
+bool ble_log_lbm_ref_acquire(bool require_enabled)
+{
+    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
+        return false;
+    }
+    if (require_enabled && !BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled)) {
+        BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
+        return false;
+    }
+    return true;
+}
+
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 bool ble_log_lbm_acquire_trans(size_t log_len, ble_log_lbm_t **out_lbm,
                                ble_log_prph_trans_t ***out_trans)
@@ -319,7 +332,7 @@ bool ble_log_write_hex_core(ble_log_src_t src_code, const uint8_t *addr, size_t 
     return true;
 
 failed:
-    if (lbm_inited) {
+    if (BLE_LOG_ATOMIC_LOAD_RELAXED(lbm_inited)) {
         ble_log_stat_mgr_update(src_code, payload_len, true);
     }
     return false;
@@ -342,7 +355,7 @@ BLE_LOG_IRAM_ATTR void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans)
 bool ble_log_lbm_init(void)
 {
     /* Avoid double init */
-    if (lbm_inited) {
+    if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_inited)) {
         return true;
     }
 
@@ -405,8 +418,8 @@ bool ble_log_lbm_init(void)
     }
 
     /* Initialization done */
-    lbm_inited = true;
-    lbm_enabled = false;
+    BLE_LOG_ATOMIC_STORE_RELAXED(lbm_enabled, false);
+    BLE_LOG_ATOMIC_STORE_RELEASE(lbm_inited, true);
     return true;
 
 exit:
@@ -414,22 +427,22 @@ exit:
     return false;
 }
 
+void ble_log_lbm_close(void)
+{
+    BLE_LOG_ATOMIC_STORE_SEQ_CST(lbm_inited, false);
+    BLE_LOG_ATOMIC_STORE_RELEASE(lbm_enabled, false);
+}
+
 void ble_log_lbm_deinit(void)
 {
-    /* Set inited flag to false to prevent new references */
-    lbm_inited = false;
-    lbm_enabled = false;
+    /* Close before waiting: every LBM entry increments the reference count
+     * before checking this seq_cst gate. */
+    ble_log_lbm_close();
 
     /* Disable module and wait for all references to be released */
-    TickType_t start_tick = xTaskGetTickCount();
-    while (__atomic_load_n(&lbm_ref_count, __ATOMIC_ACQUIRE) > 0) {
-        if ((xTaskGetTickCount() - start_tick) >=
-            pdMS_TO_TICKS(BLE_LOG_LBM_WAIT_TIMEOUT_MS)) {
-            ESP_LOGE(TAG, "Timed out waiting for BLE Log references during deinit");
-        }
-        BLE_LOG_ASSERT((xTaskGetTickCount() - start_tick) <
-                       pdMS_TO_TICKS(BLE_LOG_LBM_WAIT_TIMEOUT_MS));
-        vTaskDelay(1);
+    while (!ble_log_ref_count_wait(&lbm_ref_count, 0)) {
+        ESP_LOGE(TAG, "Timed out waiting for BLE Log references during deinit");
+        BLE_LOG_ASSERT(false);
     }
 
     /* Release statistic manager context */
@@ -486,9 +499,8 @@ ble_log_prph_trans_t **ble_log_lbm_get_trans(ble_log_lbm_t *lbm, size_t log_len)
 
 void ble_log_write_enh_stat(void)
 {
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_enabled) {
-        goto deref;
+    if (!ble_log_lbm_ref_acquire(true)) {
+        return;
     }
 
     /* Snapshot all sources under one critical section so the set of
@@ -510,7 +522,6 @@ void ble_log_write_enh_stat(void)
         ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&snapshots[i], sizeof(ble_log_enh_stat_t));
     }
 
-deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
 
@@ -600,9 +611,8 @@ BLE_LOG_STATIC void ble_log_emit_buf_util(ble_log_lbm_t *lbm, uint8_t lbm_id)
 
 void ble_log_write_buf_util(void)
 {
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_enabled) {
-        goto deref;
+    if (!ble_log_lbm_ref_acquire(true)) {
+        return;
     }
 
     ble_log_emit_buf_util(&lbm_ctx->spin_task,
@@ -634,15 +644,13 @@ void ble_log_write_buf_util(void)
     }
 #endif
 
-deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
 
 void ble_log_write_final_stat(void)
 {
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_inited) {
-        goto deref;
+    if (!ble_log_lbm_ref_acquire(false)) {
+        return;
     }
 
     ble_log_final_stat_t final_stat;
@@ -661,7 +669,6 @@ void ble_log_write_final_stat(void)
 
     ble_log_write_internal((const uint8_t *)&final_stat, sizeof(final_stat));
 
-deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
 
@@ -670,10 +677,10 @@ deref:
 /* ------------------------ */
 bool ble_log_enable(bool enable)
 {
-    if (!lbm_inited) {
+    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_inited)) {
         return false;
     }
-    lbm_enabled = enable;
+    BLE_LOG_ATOMIC_STORE_RELEASE(lbm_enabled, enable);
     return true;
 }
 
@@ -686,9 +693,8 @@ void ble_log_flush(void)
         return;
     }
 
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_inited) {
-        goto deref;
+    if (!ble_log_lbm_ref_acquire(false)) {
+        goto clear;
     }
     ble_log_write_enh_stat();
     ble_log_write_buf_util();
@@ -701,17 +707,12 @@ void ble_log_flush(void)
     ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&ble_log_info, sizeof(ble_log_info_t));
 
     /* Disable module and wait for all other references to release */
-    bool lbm_enabled_copy = lbm_enabled;
+    bool lbm_enabled_copy = BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled);
 
-    lbm_enabled = false;
-    TickType_t start_tick = xTaskGetTickCount();
-    while (__atomic_load_n(&lbm_ref_count, __ATOMIC_ACQUIRE) > 1) {
-        if ((xTaskGetTickCount() - start_tick) >=
-            pdMS_TO_TICKS(BLE_LOG_LBM_WAIT_TIMEOUT_MS)) {
-            ESP_LOGE(TAG, "Timed out waiting for BLE Log writers");
-            goto fail;
-        }
-        vTaskDelay(1);
+    BLE_LOG_ATOMIC_STORE_RELEASE(lbm_enabled, false);
+    if (!ble_log_ref_count_wait(&lbm_ref_count, 1)) {
+        ESP_LOGE(TAG, "Timed out waiting for BLE Log writers");
+        goto fail;
     }
 
     if (!ble_log_lbm_flush_all_trans()) {
@@ -727,9 +728,9 @@ void ble_log_flush(void)
 
 fail:
     /* Resume enable status after a completed or failed flush. */
-    lbm_enabled = lbm_enabled_copy;
-deref:
+    BLE_LOG_ATOMIC_STORE_RELEASE(lbm_enabled, lbm_enabled_copy);
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
+clear:
     __atomic_clear(&flush_in_progress, __ATOMIC_RELEASE);
 }
 
@@ -738,13 +739,11 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
 {
     bool ret = false;
 
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_enabled) {
-        goto exit;
+    if (!ble_log_lbm_ref_acquire(true)) {
+        return false;
     }
 
     ret = ble_log_write_hex_core(src_code, addr, len);
-exit:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return ret;
 }
@@ -754,13 +753,11 @@ bool ble_log_write_internal(const uint8_t *addr, size_t len)
 {
     bool ret = false;
 
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_inited) {
-        goto exit;
+    if (!ble_log_lbm_ref_acquire(false)) {
+        return false;
     }
 
     ret = ble_log_write_hex_core(BLE_LOG_SRC_INTERNAL, addr, len);
-exit:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return ret;
 }
@@ -770,9 +767,8 @@ BLE_LOG_IRAM_ATTR
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
                           uint32_t len_append, const uint8_t *addr_append, uint32_t flag)
 {
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_enabled) {
-        goto exit;
+    if (!ble_log_lbm_ref_acquire(true)) {
+        return;
     }
 
     /* Source code shall be determined before LBM determination */
@@ -830,10 +826,9 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
     return;
 
 failed:
-    if (lbm_inited) {
+    if (BLE_LOG_ATOMIC_LOAD_RELAXED(lbm_inited)) {
         ble_log_stat_mgr_update(src_code, payload_len, true);
     }
-exit:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return;
 }
@@ -841,9 +836,8 @@ exit:
 
 void ble_log_dump_to_console(void)
 {
-    BLE_LOG_REF_COUNT_ACQUIRE(&lbm_ref_count);
-    if (!lbm_inited) {
-        goto deref;
+    if (!ble_log_lbm_ref_acquire(false)) {
+        return;
     }
 
     int trans_idx;
@@ -870,7 +864,6 @@ void ble_log_dump_to_console(void)
     BLE_LOG_CONSOLE("\n:BLE_LOG_DUMP_END]\n\n");
     BLE_LOG_EXIT_CRITICAL();
 
-deref:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return;
 }
