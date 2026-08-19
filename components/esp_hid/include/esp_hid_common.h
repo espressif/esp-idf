@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -273,9 +273,14 @@ void esp_hid_cod_minor_print(uint8_t cod_min, FILE *fp);
 
 /**
  * @brief Convert BLE disconnect reason to string
- * @param reason : The value of the reason
  *
- * @return: a pointer to the string or NULL
+ * Accepts Bluedroid `esp_gatt_conn_reason_t` values (raw HCI for most
+ * cases) and NimBLE `BLE_HS_HCI_ERR()` values (`0x200 + HCI status`).
+ *
+ * @param transport : HID transport (string map is BLE-only)
+ * @param reason    : Disconnect reason from the host stack
+ *
+ * @return: a pointer to the string (never NULL)
  */
 const char *esp_hid_disconnect_reason_str(esp_hid_transport_t transport, int reason);
 

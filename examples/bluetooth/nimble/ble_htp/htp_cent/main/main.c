@@ -21,7 +21,9 @@
 #endif
 
 static const char *tag = "NimBLE_HTP_CENT";
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
 static char remote_device_name[32];
+#endif
 static int ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg);
 
 void ble_store_config_init(void);

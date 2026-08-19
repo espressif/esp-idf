@@ -18,3 +18,7 @@ CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
 CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT=n
 CONFIG_BT_NIMBLE_SECURITY_ENABLE=n
 CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS=n
+# ESP32-C2 has no hardware MPI, so the 3072-bit BLUFI Diffie-Hellman runs in
+# software and needs ~4.2 kB of contiguous internal heap.  BLUFI only exchanges
+# small packets, so the 320-byte msys_2 pool is trimmed to leave that headroom.
+CONFIG_BT_NIMBLE_MSYS_2_BLOCK_COUNT=8

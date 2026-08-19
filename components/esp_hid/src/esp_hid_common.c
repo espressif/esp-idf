@@ -14,6 +14,9 @@
 #if (CONFIG_GATTS_ENABLE || CONFIG_GATTC_ENABLE)
 #include "esp_gatt_defs.h"
 #endif
+#if CONFIG_BT_NIMBLE_ENABLED
+#include "host/ble_hs.h"
+#endif
 static const char *TAG = "hid_parser";
 
 typedef struct {
@@ -524,22 +527,57 @@ void esp_hid_cod_minor_print(uint8_t cod_min, FILE *fp)
     }
 }
 
+/* Core HCI disconnect statuses (Vol 1 Part F). Shared by Bluedroid GATT
+ * conn reasons and NimBLE BLE_HS_HCI_ERR(hci_status).
+ */
+static const char *ble_hci_disconn_reason_str(int hci_reason)
+{
+    switch (hci_reason) {
+    case 0x05: return "AUTH_FAIL";
+    case 0x06: return "PINKEY_MISSING";
+    case 0x08: return "TIMEOUT";
+    case 0x13: return "TERMINATE_PEER_USER";
+    case 0x14: return "TERMINATE_PEER_RESOURCES";
+    case 0x15: return "TERMINATE_PEER_POWER_OFF";
+    case 0x16: return "TERMINATE_LOCAL_HOST";
+    case 0x1f: return "UNSPECIFIED";
+    case 0x22: return "LMP_TIMEOUT";
+    case 0x28: return "INSTANT_PASSED";
+    case 0x3b: return "UNACCEPTABLE_CONN_PARAMS";
+    case 0x3d: return "MIC_FAILURE";
+    case 0x3e: return "FAIL_ESTABLISH";
+    default: return NULL;
+    }
+}
+
 const char *esp_hid_disconnect_reason_str(esp_hid_transport_t transport, int reason)
 {
-    if (transport == ESP_HID_TRANSPORT_BLE) {
-#if (CONFIG_GATTS_ENABLE || CONFIG_GATTC_ENABLE)
-        switch ((esp_gatt_conn_reason_t)reason) {
-        case ESP_GATT_CONN_L2C_FAILURE: return "L2C_FAILURE";
-        case ESP_GATT_CONN_TIMEOUT: return "TIMEOUT";
-        case ESP_GATT_CONN_TERMINATE_PEER_USER: return "TERMINATE_PEER_USER";
-        case ESP_GATT_CONN_TERMINATE_LOCAL_HOST: return "TERMINATE_LOCAL_HOST";
-        case ESP_GATT_CONN_LMP_TIMEOUT: return "LMP_TIMEOUT";
-        case ESP_GATT_CONN_FAIL_ESTABLISH: return "FAIL_ESTABLISH";
-        case ESP_GATT_CONN_CONN_CANCEL: return "CONN_CANCEL";
-        case ESP_GATT_CONN_NONE: return "NONE";
-        default: break;
-        }
-#endif /* CONFIG_GATTS_ENABLE || CONFIG_GATTC_ENABLE */
+    const char *str;
+
+    if (transport != ESP_HID_TRANSPORT_BLE) {
+        return s_unknown_str;
     }
-    return s_unknown_str;
+
+#if CONFIG_BT_NIMBLE_ENABLED
+    /* NimBLE GAP posts BLE_HS_HCI_ERR(hci) = 0x200 + hci. Do not fall through:
+     * HCI 0x01 would collide with Bluedroid ESP_GATT_CONN_L2C_FAILURE.
+     */
+    if (reason > BLE_HS_ERR_HCI_BASE && reason < BLE_HS_ERR_L2C_BASE) {
+        str = ble_hci_disconn_reason_str(reason - BLE_HS_ERR_HCI_BASE);
+        return str ? str : s_unknown_str;
+    }
+#endif
+
+#if (CONFIG_GATTS_ENABLE || CONFIG_GATTC_ENABLE)
+    switch ((esp_gatt_conn_reason_t)reason) {
+    case ESP_GATT_CONN_L2C_FAILURE: return "L2C_FAILURE";
+    case ESP_GATT_CONN_CONN_CANCEL: return "CONN_CANCEL";
+    case ESP_GATT_CONN_NONE: return "NONE";
+    default:
+        break;
+    }
+#endif /* CONFIG_GATTS_ENABLE || CONFIG_GATTC_ENABLE */
+
+    str = ble_hci_disconn_reason_str(reason);
+    return str ? str : s_unknown_str;
 }
