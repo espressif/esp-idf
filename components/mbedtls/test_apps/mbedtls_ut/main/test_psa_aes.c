@@ -1853,7 +1853,11 @@ void aes_psram_one_buf_ctr_test(void)
     uint8_t nonce[16];
     uint8_t key[16];
     psa_status_t status;
+#if CONFIG_MBEDTLS_HARDWARE_AES
     size_t SZ = TEST_AES_CTR_DATA_LEN;
+#else
+    size_t SZ = TEST_AES_CTR_DATA_LEN - (TEST_AES_CTR_DATA_LEN % 16);
+#endif
     size_t ALIGNMENT_SIZE_BYTES = 32;
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
