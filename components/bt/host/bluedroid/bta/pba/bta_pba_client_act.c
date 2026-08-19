@@ -27,11 +27,15 @@ static const char *type_pull_vcard_entry = "x-bt/vcard";
 
 static void free_ccb(tBTA_PBA_CLIENT_CCB *p_ccb)
 {
-    /* free sdp db */
+    UINT8 sdp_seq;
+
+    /* free sdp db (also invalidates in-flight SDP via sdp_seq++) */
     bta_pba_client_free_db(p_ccb);
 
-    /* clear all field, set allocated to 0 */
+    /* Preserve SDP generation across memset so a reused slot cannot accept a stale callback */
+    sdp_seq = p_ccb->sdp_seq;
     memset(p_ccb, 0, sizeof(tBTA_PBA_CLIENT_CCB));
+    p_ccb->sdp_seq = sdp_seq;
 }
 
 static void close_goepc_and_report(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_ERR reason)
@@ -156,6 +160,105 @@ static void report_error_data_event(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_
     bta_pba_client_cb.p_cback(event, (tBTA_PBA_CLIENT *)&response);
 }
 
+/*******************************************************************************
+**
+** Function         bta_pba_client_validate_get_headers
+**
+** Description      Walk GET response headers and verify Body / End-of-Body /
+**                  App-Param lengths before any data is reported to BTC.
+**                  Callers must re-run OBEX_ParseResponse before reporting so
+**                  the header iterator is reset.
+**
+** Returns          TRUE if all relevant headers are valid
+**
+*******************************************************************************/
+static BOOLEAN bta_pba_client_validate_get_headers(BT_HDR *pkt, tOBEX_PARSE_INFO *info,
+                                                   tBTA_PBA_CLIENT_ERR *reason)
+{
+    UINT8 *header;
+    UINT8 *pkt_data = (UINT8 *)(pkt + 1) + pkt->offset;
+    UINT8 *pkt_end = pkt_data + pkt->len;
+
+    while ((header = OBEX_GetNextHeader(pkt, info)) != NULL) {
+        switch (*header) {
+        case OBEX_HEADER_ID_BODY:
+        case OBEX_HEADER_ID_END_OF_BODY:
+        case OBEX_HEADER_ID_APP_PARAM: {
+            UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
+            if (hi_len < 3) {
+                *reason = BTA_PBA_CLIENT_BAD_REQUEST;
+                return FALSE;
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    return TRUE;
+}
+
+/*******************************************************************************
+**
+** Function         bta_pba_client_report_get_headers
+**
+** Description      Report Body / App-Param from a GET response that has already
+**                  been validated. Intermediate body chunks use pkt = NULL;
+**                  the last report transfers pkt ownership to BTC when there is
+**                  any body or app-param data. For a non-final empty response,
+**                  frees pkt locally. For a final empty response, reports with
+**                  pkt ownership transferred.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_pba_client_report_get_headers(tBTA_PBA_CLIENT_CCB *p_ccb, BT_HDR *pkt,
+                                              tOBEX_PARSE_INFO *info, BOOLEAN final)
+{
+    UINT8 *header = NULL;
+    UINT8 *body_data = NULL;
+    UINT16 body_data_len = 0;
+    UINT8 *app_param = NULL;
+    UINT16 app_param_len = 0;
+    UINT8 *pkt_data = (UINT8 *)(pkt + 1) + pkt->offset;
+    UINT8 *pkt_end = pkt_data + pkt->len;
+
+    while ((header = OBEX_GetNextHeader(pkt, info)) != NULL) {
+        switch (*header) {
+        case OBEX_HEADER_ID_BODY:
+        case OBEX_HEADER_ID_END_OF_BODY: {
+            /* Length already validated in bta_pba_client_validate_get_headers */
+            UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
+            if (body_data == NULL) {
+                body_data = header + 3;
+                body_data_len = hi_len - 3;
+            } else {
+                report_data_event(p_ccb, body_data, body_data_len, NULL, 0, FALSE, NULL);
+                body_data = header + 3;
+                body_data_len = hi_len - 3;
+            }
+            break;
+        }
+        case OBEX_HEADER_ID_APP_PARAM: {
+            UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
+            app_param = header + 3;
+            app_param_len = hi_len - 3;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+    if (body_data != NULL || app_param != NULL) {
+        report_data_event(p_ccb, body_data, body_data_len, app_param, app_param_len, final, pkt);
+    } else if (final) {
+        report_data_event(p_ccb, NULL, 0, NULL, 0, TRUE, pkt);
+    } else {
+        osi_free(pkt);
+    }
+}
+
 static void ascii_to_utf16(const UINT8 *src, UINT16 len, UINT8 *dst)
 {
     UINT16 pos = 0;
@@ -205,7 +308,9 @@ void bta_pba_client_api_register(tBTA_PBA_CLIENT_DATA *p_data)
     /* create SDP records */
     bta_pba_client_create_record(p_data->api_register.name);
 
-    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_REGISTER_EVT, NULL);
+    if (bta_pba_client_cb.p_cback) {
+        bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_REGISTER_EVT, NULL);
+    }
 }
 
 void bta_pba_client_api_deregister(tBTA_PBA_CLIENT_DATA *p_data)
@@ -213,7 +318,9 @@ void bta_pba_client_api_deregister(tBTA_PBA_CLIENT_DATA *p_data)
     /* delete SDP records */
     bta_pba_client_del_record();
 
-    bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_DEREGISTER_EVT, NULL);
+    if (bta_pba_client_cb.p_cback) {
+        bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_DEREGISTER_EVT, NULL);
+    }
 }
 
 void bta_pba_client_api_open(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data)
@@ -370,6 +477,8 @@ static void goep_event_callback(UINT16 handle, UINT8 event, tGOEPC_MSG *p_msg)
             else {
                 p_data->goep_response.hdr.event = BTA_PBA_CLIENT_RESPONSE_EVT;
             }
+        } else {
+            osi_free(p_msg->response.pkt);
         }
         break;
     case GOEPC_MTU_CHANGED_EVT:
@@ -468,60 +577,16 @@ void bta_pba_client_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p
     }
     if (p_data->goep_response.opcode == OBEX_OPCODE_GET_FINAL &&
         (info.response_code == OBEX_RESPONSE_CODE_CONTINUE || info.response_code == (OBEX_RESPONSE_CODE_CONTINUE | OBEX_FINAL_BIT_MASK))) {
-        UINT8 *header = NULL;
-        UINT8 *body_data = NULL;
-        UINT16 body_data_len = 0;
-        UINT8 *app_param = NULL;
-        UINT16 app_param_len = 0;
-        UINT8 *pkt_data = (UINT8 *)(p_data->goep_response.pkt + 1) + p_data->goep_response.pkt->offset;
-        UINT8 *pkt_end = pkt_data + p_data->goep_response.pkt->len;
-        while((header = OBEX_GetNextHeader(p_data->goep_response.pkt, &info)) != NULL) {
-            switch (*header)
-            {
-            case OBEX_HEADER_ID_BODY:
-            case OBEX_HEADER_ID_END_OF_BODY:
-            {
-                UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
-                if (hi_len < 3) {
-                    reason = BTA_PBA_CLIENT_BAD_REQUEST;
-                    goto error;
-                }
-                if (body_data == NULL) {
-                    /* first body header */
-                    body_data = header + 3;     /* skip opcode, length */
-                    body_data_len = hi_len - 3;
-                }
-                else {
-                    /* another body header found */
-                    report_data_event(p_ccb, body_data, body_data_len, NULL, 0, FALSE, NULL);
-                    body_data = header + 3;     /* skip opcode, length */
-                    body_data_len = hi_len - 3;
-                }
-                break;
-            }
-            case OBEX_HEADER_ID_APP_PARAM:
-            {
-                UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
-                if (hi_len < 3) {
-                    reason = BTA_PBA_CLIENT_BAD_REQUEST;
-                    goto error;
-                }
-                app_param = header + 3;
-                app_param_len = hi_len - 3;
-                break;
-            }
-            default:
-                break;
-            }
+        /* Validate all headers before reporting so we never free pkt while BTC
+         * still holds pointers into it from an earlier report_data_event. */
+        if (!bta_pba_client_validate_get_headers(p_data->goep_response.pkt, &info, &reason)) {
+            goto error;
         }
-        if (body_data != NULL || app_param != NULL) {
-            /* report body data and app param, dont free packet here */
-            report_data_event(p_ccb, body_data, body_data_len, app_param, app_param_len, FALSE, p_data->goep_response.pkt);
+        if (OBEX_ParseResponse(p_data->goep_response.pkt, p_data->goep_response.opcode, &info) != OBEX_SUCCESS) {
+            goto error;
         }
-        else {
-            /* not any body data or app param */
-            osi_free(p_data->goep_response.pkt);
-        }
+        bta_pba_client_report_get_headers(p_ccb, p_data->goep_response.pkt, &info, FALSE);
+        p_data->goep_response.pkt = NULL;
 
         /* if SRM not enable, we need to send a empty get request */
         if (!p_data->goep_response.srm_en || p_data->goep_response.srm_wait) {
@@ -607,65 +672,22 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
     else if (p_data->goep_response.opcode == OBEX_OPCODE_GET_FINAL) {
         /* check response code is success */
         if (info.response_code == (OBEX_RESPONSE_CODE_OK | OBEX_FINAL_BIT_MASK)) {
-            UINT8 *body_data = NULL;
-            UINT16 body_data_len = 0;
-            UINT8 *app_param = NULL;
-            UINT16 app_param_len = 0;
-            UINT8 *pkt_data = (UINT8 *)(p_data->goep_response.pkt + 1) + p_data->goep_response.pkt->offset;
-            UINT8 *pkt_end = pkt_data + p_data->goep_response.pkt->len;
-            while((header = OBEX_GetNextHeader(p_data->goep_response.pkt, &info)) != NULL) {
-                switch (*header)
-                {
-                /* actually, BODY should not in this final response */
-                case OBEX_HEADER_ID_BODY:
-                case OBEX_HEADER_ID_END_OF_BODY:
-                {
-                    UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
-                    if (hi_len < 3) {
-                        reason = BTA_PBA_CLIENT_BAD_REQUEST;
-                        goto error;
-                    }
-                    if (body_data == NULL) {
-                        /* first body header */
-                        body_data = header + 3;     /* skip opcode, length */
-                        body_data_len = hi_len - 3;
-                    }
-                    else {
-                        /* another body header found */
-                        report_data_event(p_ccb, body_data, body_data_len, NULL, 0, FALSE, NULL);
-                        body_data = header + 3;     /* skip opcode, length */
-                        body_data_len = hi_len - 3;
-                    }
-                    break;
-                }
-                case OBEX_HEADER_ID_APP_PARAM:
-                {
-                    UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
-                    if (hi_len < 3) {
-                        reason = BTA_PBA_CLIENT_BAD_REQUEST;
-                        goto error;
-                    }
-                    app_param = header + 3;
-                    app_param_len = hi_len - 3;
-                    break;
-                }
-                default:
-                    break;
-                }
+            /* Validate before reporting to avoid UAF if a later header is bad */
+            if (!bta_pba_client_validate_get_headers(p_data->goep_response.pkt, &info, &reason)) {
+                goto error;
             }
-            if (body_data != NULL || app_param != NULL) {
-                /* report body data and app param, dont free packet here */
-                report_data_event(p_ccb, body_data, body_data_len, app_param, app_param_len, TRUE, p_data->goep_response.pkt);
-                /* done, return */
-                return;
+            if (OBEX_ParseResponse(p_data->goep_response.pkt, p_data->goep_response.opcode, &info) != OBEX_SUCCESS) {
+                goto error;
             }
-            report_data_event(p_ccb, NULL, 0, NULL, 0, TRUE, p_data->goep_response.pkt);
+            bta_pba_client_report_get_headers(p_ccb, p_data->goep_response.pkt, &info, TRUE);
+            p_data->goep_response.pkt = NULL;
             return;
         }
         /* unexpected response code or body data not found */
         reason = calculate_response_error(info.response_code);
         report_error_data_event(p_ccb, reason);
         osi_free(p_data->goep_response.pkt);
+        p_data->goep_response.pkt = NULL;
 
         /* state machine is good, don't goto error */
     }
@@ -752,6 +774,16 @@ void bta_pba_client_free_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DA
         osi_free(p_data->goep_response.pkt);
     }
     close_goepc_and_report(p_ccb, BTA_PBA_CLIENT_GOEP_ERROR);
+}
+
+void bta_pba_client_free_req(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data)
+{
+    if (p_data->api_req.name != NULL) {
+        osi_free(p_data->api_req.name);
+    }
+    if (p_data->api_req.app_param != NULL) {
+        osi_free(p_data->api_req.app_param);
+    }
 }
 
 #endif

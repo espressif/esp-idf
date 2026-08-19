@@ -82,11 +82,11 @@ void BTA_PbaClientEnable(tBTA_PBA_CLIENT_CBACK *p_cback);
 void BTA_PbaClientDisable(void);
 void BTA_PbaClientRegister(const char *server_name);
 void BTA_PbaClientDeregister(void);
-void BTA_PbaClientOpen(BD_ADDR bd_addr, tBTA_SEC sec_mask, UINT32 supported_feat, UINT16 mtu);
+tBTA_STATUS BTA_PbaClientOpen(BD_ADDR bd_addr, tBTA_SEC sec_mask, UINT32 supported_feat, UINT16 mtu);
 void BTA_PbaClientClose(UINT16 handle);
-void BTA_PbaClientPullPhoneBook(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len);
-void BTA_PbaClientSetPhoneBook(UINT16 handle, UINT8 flags, char *name);
-void BTA_PbaClientPullvCardListing(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len);
-void BTA_PbaClientPullvCardEntry(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len);
+tBTA_STATUS BTA_PbaClientPullPhoneBook(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len);
+tBTA_STATUS BTA_PbaClientSetPhoneBook(UINT16 handle, UINT8 flags, char *name);
+tBTA_STATUS BTA_PbaClientPullvCardListing(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len);
+tBTA_STATUS BTA_PbaClientPullvCardEntry(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len);
 
 #endif

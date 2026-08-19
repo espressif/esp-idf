@@ -130,6 +130,7 @@ typedef struct {
     tBTA_PBA_CLIENT_OP          operation;                  /* ongoing or last operations */
     UINT8                       state;                      /* main state machine */
     UINT8                       allocated;                  /* index + 1 if allocated, otherwise 0 */
+    UINT8                      sdp_seq;                    /* SDP request generation; survives CCB reuse */
 } tBTA_PBA_CLIENT_CCB;
 
 typedef struct {
@@ -163,6 +164,7 @@ extern void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_C
 void bta_pba_client_goep_connect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data);
 void bta_pba_client_goep_disconnect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data);
 void bta_pba_client_free_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data);
+void bta_pba_client_free_req(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data);
 void bta_pba_client_free_sdp_db(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data);
 
 extern void bta_pba_client_create_record(const char *p_service_name);
