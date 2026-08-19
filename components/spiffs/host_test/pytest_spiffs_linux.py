@@ -5,7 +5,6 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.host_test
 @pytest.mark.parametrize('config', ['erase_check', 'no_erase_check'])
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_spiffs_linux(dut: Dut) -> None:

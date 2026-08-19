@@ -5,12 +5,12 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'config',
     [
         'default',
-        'system_timestamptag_level_linked_list',
+        'system_timestamp',
+        'tag_level_linked_list',
         'tag_level_linked_list_and_array_cache',
         'tag_level_none',
     ],

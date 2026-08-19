@@ -4,11 +4,6 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-CONFIGS = [
-    pytest.param('default', marks=[pytest.mark.esp32s2, pytest.mark.esp32s3, pytest.mark.esp32p4]),
-    pytest.param('esp32p4_psram', marks=[pytest.mark.esp32p4]),
-]
-
 
 @pytest.mark.usb_host_flash_disk
 @pytest.mark.temp_skip_ci(targets=['esp32s2'], reason='lack of runners with usb_host_flash_disk tag')

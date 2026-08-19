@@ -1,44 +1,16 @@
-workflow:
-  rules:
-    # Disable those non-protected push triggered pipelines
-    - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && $CI_PIPELINE_SOURCE == "push"'
-      when: never
-    # when running merged result pipelines, CI_COMMIT_SHA represents the temp commit it created.
-    # Please use PIPELINE_COMMIT_SHA at all places that require a commit sha of the original commit.
-    - if: $CI_OPEN_MERGE_REQUESTS != null
-      variables:
-        PIPELINE_COMMIT_SHA: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-        IS_MR_PIPELINE: 1
-    - if: $CI_OPEN_MERGE_REQUESTS == null
-      variables:
-        PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
-        IS_MR_PIPELINE: 0
-    - when: always
-
 # Place the default settings in `.gitlab/ci/common.yml` instead
 
 include:
   - project: "ci/actions/common"
     file:
-      - "templates/idf/integration-test.yml"
-  - '.gitlab/ci/danger.yml'
-  - '.gitlab/ci/common.yml'
-  - '.gitlab/ci/rules.yml'
-  - ".gitlab/ci/manual_gate.yml"
-  - '.gitlab/ci/upload_cache.yml'
-  - '.gitlab/ci/static-code-analysis.yml'
-  - '.gitlab/ci/pre_commit.yml'
-  - '.gitlab/ci/pre_check.yml'
-  - '.gitlab/ci/build.yml'
-  - '.gitlab/ci/host-test.yml'
-  - '.gitlab/ci/deploy.yml'
-  - '.gitlab/ci/post_deploy.yml'
-  - '.gitlab/ci/retry_failed_jobs.yml'
-  - '.gitlab/ci/test-win.yml'
-
-  - project: "ci/actions/common"
-    file:
+      - "templates/stable/default-workflow.yml"
+      - "templates/idf/v2/pre_check.yml"
+      - "templates/idf/pre-commit.yml"
+      - "templates/idf/build.yml"
+      - "templates/idf/deploy-github.yml"
       - "templates/idf/deploy-docs.yml"
+      - "templates/idf/integration-test.yml"
+      - "templates/idf/sync-files.yml"
   - project: "ci/actions/common"
     file: "templates/idf/build-docs.yml"
     inputs:
@@ -50,3 +22,15 @@ include:
           DOCTGT: "esp32"
         - DOCLANG: "zh_CN"
           DOCTGT: "esp32p4"
+  - ".gitlab/ci/danger.yml"
+  - ".gitlab/ci/common.yml"  # has to be placed after danger.yml, since danger.yml defined stages.
+  - ".gitlab/ci/rules.yml"
+  # by stages
+  - ".gitlab/ci/manual_gate.yml"
+  - ".gitlab/ci/upload_cache.yml"
+  - ".gitlab/ci/pre_check.yml"
+  - ".gitlab/ci/pre_deploy.yml"
+  - ".gitlab/ci/static-code-analysis.yml"
+  - ".gitlab/ci/build.yml"
+  - ".gitlab/ci/host-test.yml"
+  - ".gitlab/ci/test-win.yml"

@@ -20,7 +20,9 @@ def test_pthread(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize(
-    'config,target', [('single_core_esp32', 'esp32'), ('single_core_esp32s3', 'esp32s3')], indirect=['config', 'target']
+    'config,target',
+    [('single_core_esp32', 'esp32'), ('single_core_esp32s3', 'esp32s3')],
+    indirect=['config', 'target'],
 )
 def test_pthread_single_core(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='!thread-specific', timeout=300)
@@ -46,7 +48,6 @@ def test_pthread_single_core_tls(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='thread-specific', timeout=300)
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_pthread_qemu(dut: Dut) -> None:
@@ -55,7 +56,6 @@ def test_pthread_qemu(dut: Dut) -> None:
             dut._run_normal_case(case, timeout=75)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_pthread_linux(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120)

@@ -1,9 +1,15 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
-default_stages: [commit]
+default_stages: [pre-commit]
 
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.9.7"
+    hooks:
+      - id: ruff-format
+      - id: ruff
+        args: [ "--fix" ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -14,6 +20,7 @@ repos:
         # 2 - any file matching *test*/*expected* (for host tests, if possible use this naming pattern always)
         # 3 - any directory named 'testdata'
         # 4 - protobuf auto-generated files
+        # 5 - COPYING files
         exclude: &whitespace_excludes |
           (?x)^(
             .+\.(md|rst|map|bin)|
@@ -41,21 +48,6 @@ repos:
       - id: no-commit-to-branch
         name: Do not use uppercase letters in the branch name
         args: ['--pattern', '^[^A-Z]*[A-Z]']
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
-    hooks:
-      - id: flake8
-        args: ['--config=.flake8', '--tee', '--benchmark']
-  - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.12.0
-    hooks:
-      - id: reorder-python-imports
-        name: Reorder Python imports
-        args: [--py38-plus]
-        exclude: >
-          (?x)^(
-              .*_pb2.py
-          )$
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
@@ -126,7 +118,7 @@ repos:
         name: Check tools dir files patterns
         entry: tools/ci/check_tools_files_patterns.py
         language: python
-        files: '^tools/.+'
+        files: '^(tools/.+|.gitlab/ci/rules\.yml)'
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
@@ -150,11 +142,11 @@ repos:
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
         language: python
-        files: 'tools/test_apps/.+|examples/.+|components/.+|tools/idf_py_actions/constants.py|tools/ci/check_build_test_rules.py'
+        files: 'tools/.+|examples/.+|components/.+'
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.5
+          - idf-build-apps~=2.16
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -169,29 +161,12 @@ repos:
         files: 'tools/ci/sort_yaml\.py$'
         additional_dependencies:
           - ruamel.yaml
-      - id: check-build-test-rules-path-exists
-        name: check path in .build-test-rules.yml exists
-        entry: tools/ci/check_build_test_rules.py check-exist
-        language: python
-        additional_dependencies:
-          - PyYAML == 5.3.1
-        always_run: true
-        pass_filenames: false
-        require_serial: true
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
         language: python
         always_run: true
         require_serial: true
-      - id: gitlab-yaml-linter
-        name: Check gitlab yaml files
-        entry: tools/ci/gitlab_yaml_linter.py
-        language: python
-        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml|\.gitmodules'
-        pass_filenames: false
-        additional_dependencies:
-          - PyYAML == 5.3.1
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
@@ -245,3 +220,8 @@ repos:
     hooks:
       - id: check-kconfig-files
       - id: check-deprecated-kconfig-options
+  - repo: https://github.com/espressif/idf-ci
+    rev: v1.2.1
+    hooks:
+      - id: check-tests-missing-config
+        files: 'pytest_.*\.py$|sdkconfig(\..*)?$'

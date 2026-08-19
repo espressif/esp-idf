@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # pylint: disable=W0621  # redefined-outer-name
 #
@@ -9,6 +9,7 @@
 # please report to https://github.com/espressif/pytest-embedded/issues
 # or discuss at https://github.com/espressif/pytest-embedded/discussions
 import os
+import subprocess
 import sys
 
 if os.path.join(os.path.dirname(__file__), 'tools', 'ci') not in sys.path:
@@ -17,8 +18,6 @@ if os.path.join(os.path.dirname(__file__), 'tools', 'ci') not in sys.path:
 if os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages') not in sys.path:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
 
-import glob
-import io
 import json
 import logging
 import os
@@ -26,7 +25,6 @@ import re
 import signal
 import time
 import typing as t
-import zipfile
 from copy import deepcopy
 from urllib.parse import quote
 
@@ -34,20 +32,19 @@ import common_test_methods  # noqa: F401
 import gitlab_api
 import pexpect
 import pytest
-import requests
-import yaml
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
-from artifacts_handler import ArtifactType
-from dynamic_pipelines.constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
-from idf_ci_local.app import import_apps_from_txt
-from idf_ci_local.uploader import AppDownloader, AppUploader
-from idf_ci_utils import IDF_PATH, idf_relpath
-from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS, PytestCase, \
-    DEFAULT_LOGDIR
-from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, ITEM_PYTEST_CASE_KEY, IdfPytestEmbedded
+from idf_ci import PytestCase
+from idf_ci.idf_pytest import IDF_CI_PYTEST_CASE_KEY
+from idf_ci_utils import IDF_PATH
+from idf_ci_utils import idf_relpath
+from idf_pytest.constants import DEFAULT_LOGDIR
+from idf_pytest.plugin import IDF_LOCAL_PLUGIN_KEY
+from idf_pytest.plugin import IdfLocalPlugin
+from idf_pytest.plugin import requires_elf_or_map
 from idf_pytest.utils import format_case_id
-from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
+from pytest_embedded.plugin import _request_param_or_config_option_or_default
+from pytest_embedded.plugin import multi_dut_fixture
 from pytest_embedded.utils import to_bytes
 from pytest_embedded.utils import to_str
 from pytest_embedded_idf.dut import IdfDut
@@ -72,23 +69,6 @@ def session_root_logdir(idf_path: str) -> str:
 @pytest.fixture
 def case_tester(unity_tester: CaseTester) -> CaseTester:
     return unity_tester
-
-
-@pytest.fixture
-@multi_dut_argument
-def config(request: FixtureRequest) -> str:
-    return getattr(request, 'param', None) or DEFAULT_SDKCONFIG  # type: ignore
-
-
-@pytest.fixture
-@multi_dut_fixture
-def target(request: FixtureRequest, dut_total: int, dut_index: int) -> str:
-    plugin = request.config.stash[IDF_PYTEST_EMBEDDED_KEY]
-
-    if dut_total == 1:
-        return plugin.target[0]  # type: ignore
-
-    return plugin.target[dut_index]  # type: ignore
 
 
 @pytest.fixture
@@ -117,33 +97,69 @@ def pipeline_id(request: FixtureRequest) -> t.Optional[str]:
     return request.config.getoption('pipeline_id', None) or os.getenv('PARENT_PIPELINE_ID', None)  # type: ignore
 
 
-class BuildReportDownloader(AppDownloader):
-    def __init__(self, presigned_url_yaml: str) -> None:
-        self.app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = yaml.safe_load(presigned_url_yaml)
+def get_pipeline_commit_sha_by_pipeline_id(pipeline_id: str) -> t.Optional[str]:
+    gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
+    pipeline = gl.project.pipelines.get(pipeline_id)
+    if not pipeline:
+        return None
 
-    def _download_app(self, app_build_path: str, artifact_type: ArtifactType) -> None:
-        url = self.app_presigned_urls_dict[app_build_path][artifact_type.value]
+    commit = gl.project.commits.get(pipeline.sha)
+    if not commit or not commit.parent_ids:
+        return None
 
-        logging.info('Downloading app from %s', url)
-        with io.BytesIO() as f:
-            for chunk in requests.get(url).iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
+    if len(commit.parent_ids) == 1:
+        return commit.parent_ids[0]  # type: ignore
 
-            f.seek(0)
+    for parent_id in commit.parent_ids:
+        parent_commit = gl.project.commits.get(parent_id)
+        if parent_commit.parent_ids and len(parent_commit.parent_ids) == 1:
+            return parent_id  # type: ignore
 
-            with zipfile.ZipFile(f) as zip_ref:
-                zip_ref.extractall(IDF_PATH)
+    return None
 
-    def download_app(self, app_build_path: str, artifact_type: t.Optional[ArtifactType] = None) -> None:
-        if app_build_path not in self.app_presigned_urls_dict:
-            raise ValueError(
-                f'No presigned url found for {app_build_path}. '
-                f'Usually this should not happen, please re-trigger a pipeline.'
-                f'If this happens again, please report this bug to the CI channel.'
-            )
 
-        super().download_app(app_build_path, artifact_type)
+class AppDownloader:
+    def __init__(
+        self,
+        commit_sha: str,
+        pipeline_id: t.Optional[str] = None,
+    ) -> None:
+        self.commit_sha = commit_sha
+        self.pipeline_id = pipeline_id
+
+    def download_app(self, app_dir: str, build_dir: str, artifact_type: t.Optional[str] = None) -> None:
+        args = [
+            'idf-ci',
+            'gitlab',
+            'download-artifacts',
+            '--commit-sha',
+            self.commit_sha,
+        ]
+        if artifact_type:
+            args.extend(['--type', artifact_type])
+
+        if self.pipeline_id:
+            args.extend(['--pipeline-id', self.pipeline_id])
+
+        args.extend(
+            [
+                app_dir,
+                '--build-dir',
+                build_dir,
+            ]
+        )
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            cwd=IDF_PATH,
+        )
+        logging.info(result.stdout)
+        if result.stderr:
+            logging.info(result.stderr)
+
+
+PRESIGNED_JSON = 'presigned.json'
 
 
 class OpenOCD:
@@ -166,7 +182,7 @@ class OpenOCD:
         desc_path = os.path.join(self.dut.app.binary_path, 'project_description.json')
 
         try:
-            with open(desc_path, 'r') as f:
+            with open(desc_path) as f:
                 project_desc = json.load(f)
         except FileNotFoundError:
             logging.error('Project description file not found at %s', desc_path)
@@ -184,7 +200,7 @@ class OpenOCD:
         ocd_env = os.environ.copy()
         ocd_env['LIBUSB_DEBUG'] = '1'
 
-        for _ in range(1, self.MAX_RETRIES + 1):
+        for attempt in range(1, self.MAX_RETRIES + 1):
             try:
                 self.proc = pexpect.spawn(
                     command='openocd',
@@ -197,10 +213,12 @@ class OpenOCD:
                 if self.proc and self.proc.isalive():
                     self.proc.expect_exact('Info : Listening on port 3333 for gdb connections', timeout=5)
                     self.connect_telnet()
-                    self.write('log_output {}'.format(self.log_file))
+                    self.write(f'log_output {self.log_file}')
                     return self
             except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, ConnectionRefusedError) as e:
-                logging.error('Error running OpenOCD: %s', str(e))
+                logging.error(
+                    'OpenOCD connection attempt %d/%d failed. Error: %s', attempt, self.MAX_RETRIES, type(e).__name__
+                )
                 self.kill()
             time.sleep(self.RETRY_DELAY)
 
@@ -255,38 +273,22 @@ def openocd_dut(dut: IdfDut) -> OpenOCD:
 
 @pytest.fixture(scope='session')
 def app_downloader(pipeline_id: t.Optional[str]) -> t.Optional[AppDownloader]:
+    if commit_sha := os.getenv('PIPELINE_COMMIT_SHA'):
+        logging.debug('pipeline commit sha from CI env is %s', commit_sha)
+        return AppDownloader(commit_sha, None)
+
     if not pipeline_id:
         return None
 
-    if (
-        'IDF_S3_BUCKET' in os.environ
-        and 'IDF_S3_ACCESS_KEY' in os.environ
-        and 'IDF_S3_SECRET_KEY' in os.environ
-        and 'IDF_S3_SERVER' in os.environ
-        and 'IDF_S3_BUCKET' in os.environ
-    ):
-        return AppUploader(pipeline_id)
+    commit_sha = get_pipeline_commit_sha_by_pipeline_id(pipeline_id)
+    if not commit_sha:
+        raise ValueError(
+            'commit sha cannot be found for pipeline id %s. Please check the pipeline id. '
+            'If you think this is a bug, please report it to CI team',
+        )
+    logging.debug('pipeline commit sha of pipeline %s is %s', pipeline_id, commit_sha)
 
-    logging.info('Downloading build report from the build pipeline %s', pipeline_id)
-    test_app_presigned_urls_file = None
-
-    gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
-
-    for child_pipeline in gl.project.pipelines.get(pipeline_id, lazy=True).bridges.list(iterator=True):
-        if child_pipeline.name == 'build_child_pipeline':
-            for job in gl.project.pipelines.get(child_pipeline.downstream_pipeline['id'], lazy=True).jobs.list(
-                iterator=True
-            ):
-                if job.name == 'generate_pytest_build_report':
-                    test_app_presigned_urls_file = gl.download_artifact(
-                        job.id, [TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME]
-                    )[0]
-                    break
-
-    if test_app_presigned_urls_file:
-        return BuildReportDownloader(test_app_presigned_urls_file)
-
-    return None
+    return AppDownloader(commit_sha, pipeline_id)
 
 
 @pytest.fixture
@@ -310,14 +312,21 @@ def build_dir(
         valid build directory
     """
     # download from minio on CI
-    case: PytestCase = request._pyfuncitem.stash[ITEM_PYTEST_CASE_KEY]
-    if app_downloader:
+    case: PytestCase = request.node.stash[IDF_CI_PYTEST_CASE_KEY]
+    if 'skip_app_downloader' in case.all_markers:
+        logging.debug('skip_app_downloader marker found, skip downloading app')
+        downloader = None
+    else:
+        downloader = app_downloader
+
+    if downloader:
+        app_dir = idf_relpath(app_path)
+        build_dir = f'build_{target}_{config}'
         # somehow hardcoded...
-        app_build_path = os.path.join(idf_relpath(app_path), f'build_{target}_{config}')
-        if case.requires_elf_or_map:
-            app_downloader.download_app(app_build_path)
+        if requires_elf_or_map(case):
+            downloader.download_app(app_dir, build_dir)
         else:
-            app_downloader.download_app(app_build_path, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES)
+            downloader.download_app(app_dir, build_dir, 'flash')
         check_dirs = [f'build_{target}_{config}']
     else:
         check_dirs = []
@@ -438,7 +447,7 @@ def check_performance(idf_path: str) -> t.Callable[[str, float, str], None]:
         def _find_perf_item(operator: str, path: str) -> float:
             with open(path, encoding='utf-8') as f:
                 data = f.read()
-            match = re.search(fr'#define\s+IDF_PERFORMANCE_{operator}_{item.upper()}\s+([\d.]+)', data)
+            match = re.search(rf'#define\s+IDF_PERFORMANCE_{operator}_{item.upper()}\s+([\d.]+)', data)
             return float(match.group(1))  # type: ignore
 
         def _check_perf(operator: str, standard_value: float) -> None:
@@ -477,16 +486,18 @@ def check_performance(idf_path: str) -> t.Callable[[str, float, str], None]:
 
 
 @pytest.fixture
-def log_minimum_free_heap_size(dut: IdfDut, config: str) -> t.Callable[..., None]:
+def log_minimum_free_heap_size(dut: IdfDut, config: str, idf_path: str) -> t.Callable[..., None]:
     def real_func() -> None:
         res = dut.expect(r'Minimum free heap size: (\d+) bytes')
         logging.info(
             '\n------ heap size info ------\n'
+            '[app_path] {}\n'
             '[app_name] {}\n'
             '[config_name] {}\n'
             '[target] {}\n'
             '[minimum_free_heap_size] {} Bytes\n'
             '------ heap size end ------'.format(
+                dut.app.app_path.replace(idf_path, '').lstrip('/\\'),
                 os.path.basename(dut.app.app_path),
                 config,
                 dut.target,
@@ -499,12 +510,12 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> t.Callable[..., None
 
 @pytest.fixture(scope='session')
 def dev_password(request: FixtureRequest) -> str:
-    return request.config.getoption('dev_passwd') or ''
+    return _request_param_or_config_option_or_default(request, 'dev_password', '')  # type: ignore
 
 
 @pytest.fixture(scope='session')
 def dev_user(request: FixtureRequest) -> str:
-    return request.config.getoption('dev_user') or ''
+    return _request_param_or_config_option_or_default(request, 'dev_user', '')  # type: ignore
 
 
 ##################
@@ -512,10 +523,6 @@ def dev_user(request: FixtureRequest) -> str:
 ##################
 def pytest_addoption(parser: pytest.Parser) -> None:
     idf_group = parser.getgroup('idf')
-    idf_group.addoption(
-        '--sdkconfig',
-        help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
-    )
     idf_group.addoption(
         '--dev-user',
         help='user name associated with some specific device/service used during the test execution',
@@ -525,79 +532,33 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help='password associated with some specific device/service used during the test execution',
     )
     idf_group.addoption(
-        '--app-info-filepattern',
-        help='glob pattern to specify the files that include built app info generated by '
-        '`idf-build-apps --collect-app-info ...`. will not raise ValueError when binary '
-        'paths not exist in local file system if not listed recorded in the app info.',
-    )
-    idf_group.addoption(
         '--pipeline-id',
-        help='main pipeline id, not the child pipeline id. Specify this option to download the artifacts '
-        'from the minio server for debugging purpose.',
+        help='For users without s3 access. main pipeline id, not the child pipeline id. '
+        'Specify this option to download the artifacts from the minio server for debugging purpose.',
     )
 
 
 def pytest_configure(config: Config) -> None:
-    # cli option "--target"
-    target = [_t.strip().lower() for _t in (config.getoption('target', '') or '').split(',') if _t.strip()]
+    from idf_pytest.constants import PREVIEW_TARGETS
+    from idf_pytest.constants import SUPPORTED_TARGETS
+    from pytest_embedded_idf.utils import preview_targets
+    from pytest_embedded_idf.utils import supported_targets
 
-    # add markers based on idf_pytest/constants.py
-    for name, description in {
-        **TARGET_MARKERS,
-        **ENV_MARKERS,
-        **SPECIAL_MARKERS,
-    }.items():
-        config.addinivalue_line('markers', f'{name}: {description}')
+    supported_targets.set(SUPPORTED_TARGETS)
+    preview_targets.set(PREVIEW_TARGETS)
 
-    help_commands = ['--help', '--fixtures', '--markers', '--version']
-    for cmd in help_commands:
-        if cmd in config.invocation_params.args:
-            target = ['unneeded']
-            break
-
-    markexpr = config.getoption('markexpr') or ''
-    # check marker expr set via "pytest -m"
-    if not target and markexpr:
-        # we use `-m "esp32 and generic"` in our CI to filter the test cases
-        # this doesn't cover all use cases, but fit what we do in CI.
-        for marker in markexpr.split('and'):
-            marker = marker.strip()
-            if marker in TARGET_MARKERS:
-                target.append(marker)
-
-    # "--target" must be set
-    if not target:
-        raise SystemExit(
-            """Pass `--target TARGET[,TARGET...]` to specify all targets the test cases are using.
-    - for single DUT, we run with `pytest --target esp32`
-    - for multi DUT, we run with `pytest --target esp32,esp32,esp32s2` to indicate all DUTs
-"""
-        )
-
-    apps = None
-    app_info_filepattern = config.getoption('app_info_filepattern')
-    if app_info_filepattern:
-        apps = []
-        for f in glob.glob(os.path.join(IDF_PATH, app_info_filepattern)):
-            apps.extend(import_apps_from_txt(f))
-
-    if '--collect-only' not in config.invocation_params.args:
-        config.stash[IDF_PYTEST_EMBEDDED_KEY] = IdfPytestEmbedded(
-            config_name=config.getoption('sdkconfig'),
-            target=target,
-            apps=apps,
-        )
-        config.pluginmanager.register(config.stash[IDF_PYTEST_EMBEDDED_KEY])
+    config.stash[IDF_LOCAL_PLUGIN_KEY] = IdfLocalPlugin()
+    config.pluginmanager.register(config.stash[IDF_LOCAL_PLUGIN_KEY])
 
 
 def pytest_unconfigure(config: Config) -> None:
-    _pytest_embedded = config.stash.get(IDF_PYTEST_EMBEDDED_KEY, None)
-    if _pytest_embedded:
-        del config.stash[IDF_PYTEST_EMBEDDED_KEY]
-        config.pluginmanager.unregister(_pytest_embedded)
+    idf_local_plugin = config.stash.get(IDF_LOCAL_PLUGIN_KEY, None)
+    if idf_local_plugin:
+        del config.stash[IDF_LOCAL_PLUGIN_KEY]
+        config.pluginmanager.unregister(idf_local_plugin)
 
 
-dut_artifacts_url = []
+dut_artifacts_url: t.List[str] = []
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -620,10 +581,10 @@ def pytest_runtest_makereport(item, call):  # type: ignore
 
         if isinstance(_dut, list):
             logs_files.extend([template.format(get_path(d.logfile)) for d in _dut])
-            dut_artifacts_url.append('{}:'.format(_dut[0].test_case_name))
+            dut_artifacts_url.append(f'{_dut[0].test_case_name}:')
         else:
             logs_files.append(template.format(get_path(_dut.logfile)))
-            dut_artifacts_url.append('{}:'.format(_dut.test_case_name))
+            dut_artifacts_url.append(f'{_dut.test_case_name}:')
 
         for file in logs_files:
             dut_artifacts_url.append('    - {}'.format(quote(file, safe=':/')))

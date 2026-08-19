@@ -2,7 +2,11 @@
 # no_env_marker_test_cases: List of test cases that do not have environment markers.
 #   each item shall be the test node id, you may check the error message to get the node id.
 no_env_marker_test_cases:
-  - dummy_test_case
+  - test_examples_security_secure_boot
+  - test_examples_security_secure_boot_corrupt_app_sig
+  - test_examples_security_secure_boot_corrupt_bl_sig
+  - test_examples_security_secure_boot_key_combo
+  - test_examples_security_secure_boot_key_revoke
 
 # no_runner_tags: List of runner tags that has no test runner set.
 #   each item shall be a comma separated list of runner tags.
@@ -27,14 +31,14 @@ no_runner_tags:
   - esp32c61,generic
   - esp32c61,jtag
   - esp32h2,jtag
-  - esp32p4,esp32p4_eco4,flash_encryption
-  - esp32p4,esp32p4_eco4,lp_i2s
-  - esp32p4,esp32p4_eco4,ram_app
-  - esp32p4,esp32p4_eco4,sdcard
-  - esp32p4,esp32p4_eco4,sdcard_spimode
-  - esp32p4,esp32p4_eco4,twai_adapter
-  - esp32p4,esp32p4_eco4,usb_device
-  - esp32p4,esp32p4_eco4,usb_host_flash_disk
+  - esp32p4,esp32p4_rev1,flash_encryption
+  - esp32p4,esp32p4_rev1,lp_i2s
+  - esp32p4,esp32p4_rev1,ram_app
+  - esp32p4,esp32p4_rev1,sdcard
+  - esp32p4,esp32p4_rev1,sdcard_spimode
+  - esp32p4,esp32p4_rev1,twai_adapter
+  - esp32p4,esp32p4_rev1,usb_device
+  - esp32p4,esp32p4_rev1,usb_host_flash_disk
   - esp32p4,jtag
-  - esp32p4_2,generic_multi_device
+  - esp32p4_2,esp32p4_rev1,generic_multi_device
   - esp32s2,usb_host_flash_disk

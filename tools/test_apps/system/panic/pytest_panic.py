@@ -13,104 +13,9 @@ import pytest
 from pytest_embedded_idf.utils import idf_parametrize
 from test_panic_util import PanicTestDut
 
-TARGETS_XTENSA_SINGLE_CORE = [
-    pytest.mark.esp32s2,
-]
-
-TARGETS_XTENSA_DUAL_CORE = [
-    pytest.mark.esp32,
-    pytest.mark.esp32s3,
-]
-
-TARGETS_XTENSA = TARGETS_XTENSA_SINGLE_CORE + TARGETS_XTENSA_DUAL_CORE
-
-TARGETS_RISCV_SINGLE_CORE = [
-    pytest.mark.esp32c2,
-    pytest.mark.esp32c3,
-    pytest.mark.esp32c5,
-    pytest.mark.esp32c6,
-    pytest.mark.esp32h2,
-    pytest.mark.esp32c61,
-]
-
-TARGETS_RISCV_DUAL_CORE = [
-    pytest.mark.esp32p4,
-]
-
-TARGETS_RISCV = TARGETS_RISCV_SINGLE_CORE + TARGETS_RISCV_DUAL_CORE
-
-# Markers for all the targets this test currently runs on
-TARGETS_ALL = TARGETS_XTENSA + TARGETS_RISCV
-
-# Some tests only run on dual-core targets, they use the config below.
-TARGETS_DUAL_CORE = TARGETS_XTENSA_DUAL_CORE + TARGETS_RISCV_DUAL_CORE
-
-# Most tests run on all targets and with all configs.
-# This list is passed to @pytest.mark.parametrize for each of the test cases.
-# It creates an outer product of the sets: [configs] x [targets],
-# with some exceptions.
-CONFIGS = [
-    pytest.param('coredump_flash_bin_crc', marks=TARGETS_ALL),
-    pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL),
-    pytest.param('coredump_flash_elf_soft_sha', marks=TARGETS_ALL),
-    pytest.param('coredump_uart_bin_crc', marks=TARGETS_ALL),
-    pytest.param('coredump_uart_elf_crc', marks=TARGETS_ALL),
-    pytest.param('coredump_flash_custom_stack', marks=TARGETS_ALL),
-    pytest.param('gdbstub', marks=TARGETS_ALL),
-    pytest.param('panic', marks=TARGETS_ALL),
-]
-
-CONFIGS_UBSAN = [
-    pytest.param('gdbstub', marks=TARGETS_ALL),
-    pytest.param('panic', marks=TARGETS_ALL),
-]
-
-CONFIGS_DUAL_CORE = [
-    pytest.param('coredump_flash_bin_crc', marks=TARGETS_DUAL_CORE),
-    pytest.param('coredump_flash_elf_sha', marks=TARGETS_DUAL_CORE),
-    pytest.param('coredump_uart_bin_crc', marks=TARGETS_DUAL_CORE),
-    pytest.param('coredump_uart_elf_crc', marks=TARGETS_DUAL_CORE),
-    pytest.param('gdbstub', marks=TARGETS_DUAL_CORE),
-    pytest.param('panic', marks=TARGETS_DUAL_CORE),
-]
-
 # Some tests run on all targets but need to behave differently on the dual-core ones.
 # This list is used to check if the target is a dual-core one.
-TARGETS_DUAL_CORE_NAMES = [x.mark.name for x in TARGETS_DUAL_CORE]
-
-CONFIGS_EXTRAM_STACK = [
-    pytest.param('coredump_flash_extram_stack_heap_esp32', marks=[pytest.mark.esp32, pytest.mark.psram]),
-    pytest.param('coredump_flash_extram_stack_heap_esp32s2', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
-    pytest.param('coredump_flash_extram_stack_heap_esp32s3', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
-    pytest.param('coredump_flash_extram_stack_bss_esp32', marks=[pytest.mark.esp32, pytest.mark.psram]),
-    pytest.param('coredump_flash_extram_stack_bss_esp32s2', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
-    pytest.param('coredump_flash_extram_stack_bss_esp32s3', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
-]
-
-CONFIGS_HW_STACK_GUARD = [
-    pytest.param('coredump_flash_bin_crc', marks=TARGETS_RISCV),
-    pytest.param('coredump_uart_bin_crc', marks=TARGETS_RISCV),
-    pytest.param('coredump_uart_elf_crc', marks=TARGETS_RISCV),
-    pytest.param('gdbstub', marks=TARGETS_RISCV),
-    pytest.param('panic', marks=TARGETS_RISCV),
-]
-
-CONFIGS_HW_STACK_GUARD_DUAL_CORE = [
-    pytest.param('coredump_flash_bin_crc', marks=TARGETS_RISCV_DUAL_CORE),
-    pytest.param('coredump_uart_bin_crc', marks=TARGETS_RISCV_DUAL_CORE),
-    pytest.param('coredump_uart_elf_crc', marks=TARGETS_RISCV_DUAL_CORE),
-    pytest.param('gdbstub', marks=TARGETS_RISCV_DUAL_CORE),
-    pytest.param('panic', marks=TARGETS_RISCV_DUAL_CORE),
-]
-
-CONFIG_CAPTURE_DRAM = [pytest.param('coredump_flash_capture_dram', marks=TARGETS_ALL)]
-
-CONFIG_COREDUMP_SUMMARY = [pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL)]
-
-CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED = [
-    pytest.param('coredump_flash_encrypted', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),
-    pytest.param('coredump_flash_encrypted_coredump_plain', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),
-]
+TARGETS_DUAL_CORE_NAMES = ['esp32', 'esp32s3', 'esp32p4']
 
 # Panic abort information will start with this string.
 PANIC_ABORT_PREFIX = 'Panic reason: '
@@ -1707,70 +1612,6 @@ def test_panic_handler_crash1(dut: PanicTestDut, config: str, test_func_name: st
     dut.expect_cpu_reset()
 
 
-#########################
-# for memprot test only #
-#########################
-
-# Memprot-related tests are supported only on targets with PMS/PMA peripheral;
-# currently ESP32-S2, ESP32-C3, ESP32-C2, ESP32-H2, ESP32-C6, ESP32-P4, ESP32-C5 and ESP32-C61 are supported
-CONFIGS_MEMPROT_IDRAM = [
-    pytest.param('memprot_esp32s2', marks=[pytest.mark.esp32s2]),
-    pytest.param('memprot_esp32c3', marks=[pytest.mark.esp32c3]),
-    pytest.param('memprot_esp32c2', marks=[pytest.mark.esp32c2]),
-    pytest.param('memprot_esp32c5', marks=[pytest.mark.esp32c5]),
-    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
-    pytest.param('memprot_esp32c61', marks=[pytest.mark.esp32c61]),
-    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-CONFIGS_MEMPROT_DCACHE = [
-    pytest.param('memprot_esp32s2', marks=pytest.mark.esp32s2),
-]
-
-CONFIGS_MEMPROT_RTC_FAST_MEM = [
-    pytest.param('memprot_esp32s2', marks=[pytest.mark.esp32s2]),
-    pytest.param('memprot_esp32c3', marks=[pytest.mark.esp32c3]),
-    pytest.param('memprot_esp32c5', marks=[pytest.mark.esp32c5]),
-    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
-    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-CONFIGS_MEMPROT_RTC_SLOW_MEM = [
-    pytest.param('memprot_esp32s2', marks=[pytest.mark.esp32s2]),
-]
-
-CONFIGS_MEMPROT_FLASH_IDROM = [
-    pytest.param('memprot_esp32c5', marks=[pytest.mark.esp32c5]),
-    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
-    pytest.param('memprot_esp32c61', marks=[pytest.mark.esp32c61]),
-    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP = [
-    pytest.param('memprot_spiram_xip_esp32c5', marks=[pytest.mark.esp32c5]),
-    pytest.param('memprot_spiram_xip_esp32c61', marks=[pytest.mark.esp32c61]),
-    pytest.param('memprot_spiram_xip_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP = [
-    pytest.param('memprot_spiram_xip_esp32s3', marks=[pytest.mark.esp32s3]),
-    pytest.param('memprot_spiram_xip_esp32c5', marks=[pytest.mark.esp32c5]),
-    pytest.param('memprot_spiram_xip_esp32c61', marks=[pytest.mark.esp32c61]),
-    pytest.param('memprot_spiram_xip_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = [
-    pytest.param('memprot_esp32c5', marks=[pytest.mark.esp32c5]),
-    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
-    pytest.param('memprot_esp32c61', marks=[pytest.mark.esp32c61]),
-    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-
 @pytest.mark.generic
 @idf_parametrize('config', ['memprot_esp32s2'], indirect=['config'])
 @idf_parametrize('target', ['esp32s2'], indirect=['target'])
@@ -1782,7 +1623,7 @@ def test_dcache_read_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Incorrect panic reason may be observed', run=False)
+@pytest.mark.xfail(reason='Incorrect panic reason may be observed', run=False)
 @idf_parametrize('config', ['memprot_esp32s2'], indirect=['config'])
 @idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_dcache_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1903,13 +1744,16 @@ def test_iram_reg3_write_violation(dut: PanicTestDut, test_func_name: str) -> No
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
 @pytest.mark.generic
-@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Incorrect panic reason may be observed', run=False)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
+            pytest.mark.xfail(reason='Incorrect panic reason may be observed', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c2', 'esp32c2'),
         ('memprot_esp32c5', 'esp32c5'),
@@ -1943,15 +1787,16 @@ def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> No
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(
-    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
-)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+            pytest.mark.xfail(reason='Multiple panic reasons for the same test may surface', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c2', 'esp32c2'),
         ('memprot_esp32c5', 'esp32c5'),
@@ -1978,15 +1823,16 @@ def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(
-    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
-)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+            pytest.mark.xfail(reason='Multiple panic reasons for the same test may surface', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c2', 'esp32c2'),
         ('memprot_esp32c5', 'esp32c5'),
@@ -2032,9 +1878,9 @@ def test_rtc_fast_reg1_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 
 @pytest.mark.generic
-@pytest.mark.skipif(
-    'config.getvalue("target") in ["esp32c5", "esp32c6", "esp32h2", "esp32p4"]',
-    reason='Not a violation condition, no PMS peripheral case',
+@pytest.mark.temp_skip(
+    targets=['esp32c5', 'esp32c6', 'esp32h2', 'esp32p4'],
+    reason='Not a violation condition, no PMS peripheral cases',
 )
 @idf_parametrize(
     'config,target',
@@ -2066,15 +1912,16 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_cpu_reset()
 
 
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @pytest.mark.generic
-@pytest.mark.xfail(
-    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
-)
 @idf_parametrize(
-    'config,target',
+    'config,target,markers',
     [
-        ('memprot_esp32s2', 'esp32s2'),
+        (
+            'memprot_esp32s2',
+            'esp32s2',
+            # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+            pytest.mark.xfail(reason='Multiple panic reasons for the same test may surface', run=False),
+        ),
         ('memprot_esp32c3', 'esp32c3'),
         ('memprot_esp32c5', 'esp32c5'),
         ('memprot_esp32c6', 'esp32c6'),

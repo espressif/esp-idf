@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
+from __future__ import annotations
+
 import hashlib
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
@@ -18,14 +20,12 @@ def test_hello_world(dut: IdfDut, log_minimum_free_heap_size: Callable[..., None
     log_minimum_free_heap_size()
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_hello_world_linux(dut: IdfDut) -> None:
     dut.expect('Hello world!')
 
 
-@pytest.mark.host_test
-@pytest.mark.macos_shell
+@pytest.mark.macos
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_hello_world_macos(dut: IdfDut) -> None:
     dut.expect('Hello world!')
@@ -45,7 +45,6 @@ def verify_elf_sha256_embedding(app: QemuApp, sha256_reported: str) -> None:
         raise ValueError('ELF file SHA256 mismatch')
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_hello_world_host(app: QemuApp, dut: QemuDut) -> None:

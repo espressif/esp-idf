@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # normal mmu tests
 
 
@@ -20,14 +21,6 @@ def test_mmap(dut: Dut) -> None:
 
 
 # mmu tests with psram enabled
-PSRAM_RELEASE_CONFIGS = [
-    pytest.param('psram_release_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('psram_release_esp32s2', marks=[pytest.mark.esp32s2]),
-    pytest.param('psram_release_esp32s3', marks=[pytest.mark.esp32s3]),
-    pytest.param('psram_release_esp32p4', marks=[pytest.mark.esp32p4]),
-]
-
-
 @pytest.mark.generic
 @idf_parametrize(
     'config,target',
@@ -44,12 +37,6 @@ def test_mmap_psram(dut: Dut) -> None:
 
 
 # mmu tests with xip_psram
-XIP_CONFIGS = [
-    pytest.param('xip_psram_esp32s2', marks=[pytest.mark.esp32s2]),
-    pytest.param('xip_psram_esp32s3', marks=[pytest.mark.esp32s3]),
-]
-
-
 @pytest.mark.generic
 @idf_parametrize(
     'config,target', [('xip_psram_esp32s2', 'esp32s2'), ('xip_psram_esp32s3', 'esp32s3')], indirect=['config', 'target']
