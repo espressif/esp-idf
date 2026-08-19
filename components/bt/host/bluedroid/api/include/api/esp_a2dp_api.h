@@ -257,6 +257,7 @@ typedef enum {
     ESP_A2D_SEP_REG_FAIL,                      /*!< A2DP stream endpoint register generic fail */
     ESP_A2D_SEP_REG_UNSUPPORTED,               /*!< A2DP stream endpoint register fail, unsupported codec type or param */
     ESP_A2D_SEP_REG_INVALID_STATE,             /*!< A2DP stream endpoint register fail, invalid state */
+    ESP_A2D_SEP_REG_SBC_REQUIRED,              /*!< A2DP stream endpoint register fail, at least one SBC SEP must remain */
 } esp_a2d_sep_reg_state_t;
 
 /**
@@ -511,7 +512,11 @@ esp_err_t esp_a2d_sink_init(void);
  *                  SEP index repeatedly will overwrite the old one.
  *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
  *
- * @note            The SEID determines the priority of negotiating the configuration with the peer for initiator.
+ * @note            After A2DP sink init, every SEID is pre-registered with the mandatory default SBC SEP.
+ *                  Calling this API overwrites that SEID. A2DP requires at least one SBC SEP; registering a
+ *                  non-SBC codec that would overwrite the last SBC SEP fails with ESP_A2D_SEP_REG_SBC_REQUIRED.
+ *                  Therefore using AAC (or other non-SBC codecs) requires ESP_A2D_MAX_SEPS >= 2.
+ *                  The SEID determines the priority of negotiating the configuration with the peer for initiator.
  *                  The lower the SEID, the higher the priority of the codec capability.
  *
  * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
@@ -667,7 +672,11 @@ esp_err_t esp_a2d_source_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d
  *                  SEP index repeatedly will overwrite the old one.
  *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
  *
- * @note            The SEID determines the priority of negotiating the configuration with the peer for initiator.
+ * @note            After A2DP source init, every SEID is pre-registered with the mandatory default SBC SEP.
+ *                  Calling this API overwrites that SEID. A2DP requires at least one SBC SEP; registering a
+ *                  non-SBC codec that would overwrite the last SBC SEP fails with ESP_A2D_SEP_REG_SBC_REQUIRED.
+ *                  Therefore using AAC (or other non-SBC codecs) requires ESP_A2D_MAX_SEPS >= 2.
+ *                  The SEID determines the priority of negotiating the configuration with the peer for initiator.
  *                  The lower the SEID, the higher the priority of the codec capability.
  *
  * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
