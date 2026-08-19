@@ -32,7 +32,7 @@ typedef int32_t INT32;
 // #define INLINE  __inline
 
 #define BCM_STRCPY_S(x1,x2)      strcpy((x1),(x2))
-#define BCM_STRNCPY_S(x1,x2,x3)  strncpy((x1),(x2),(x3))
+#define BCM_STRLCPY_S(x1,x2,x3)  strlcpy((x1),(x2),(x3))
 #define BCM_STRCMP_S(x1,x2)      strcmp((x1),(x2))
 #define BCM_STRNCMP_S(x1,x2,x3)  strncmp((x1),(x2),(x3))
 

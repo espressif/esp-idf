@@ -1109,7 +1109,14 @@ static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
 
     btm_process_remote_name (bd_addr, p, evt_len, status);
 #if (SMP_INCLUDED == TRUE)
-    btm_sec_rmt_name_request_complete (bd_addr, p, status);
+    BD_NAME rem_name;
+    UINT16  name_len;
+
+    name_len = (evt_len < BD_NAME_LEN) ? evt_len : BD_NAME_LEN;
+    memset (rem_name, 0, sizeof(rem_name));
+    memcpy (rem_name, p, name_len);
+
+    btm_sec_rmt_name_request_complete (bd_addr, rem_name, status);
 #endif  ///SMP_INCLUDED == TRUE
 }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
