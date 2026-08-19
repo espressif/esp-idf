@@ -93,23 +93,27 @@ void ble_log_deinit(void)
             ESP_LOGW(TAG, "Unregister shutdown handler failed, ret = 0x%x", ret);
         }
     }
-    ble_log_enable(false);
     ble_log_inited = false;
+    ble_log_lbm_close();
 
     /* CRITICAL — Deinit ordering rationale:
      *
-     * 1. Runtime task must be stopped FIRST to prevent it from sending
+     * 1. The LBM writer gate is closed before submodule teardown. Writers
+     *    already inside the gate keep a reference until they finish; later
+     *    writers are rejected.
+     *
+     * 2. Runtime task must be stopped FIRST to prevent it from sending
      *    transports to an already-destroyed peripheral driver. The queue
      *    is drained and pending transports are discarded.
      *
-     * 2. Peripheral interface is deinitialized SECOND. It waits for any
+     * 3. Peripheral interface is deinitialized SECOND. It waits for any
      *    in-flight DMA operations (started before the task was killed) to
      *    complete, then destroys the driver. This is safe because no new
      *    DMA operations can be started (the task is already dead).
      *
-     * 3. LBM is deinitialized LAST. At this point all DMA has completed
-     *    (ensured by step 2) and all queued transports have been drained
-     *    (ensured by step 1), so freeing the buffers is safe. */
+     * 4. LBM is deinitialized LAST. At this point all DMA has completed
+     *    (ensured by step 3) and all queued transports have been drained
+     *    (ensured by step 2), so freeing the buffers is safe. */
     ble_log_rt_deinit();
     ble_log_prph_deinit();
     ble_log_lbm_deinit();
