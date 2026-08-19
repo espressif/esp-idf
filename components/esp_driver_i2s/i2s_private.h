@@ -120,6 +120,11 @@ typedef struct {
     uint32_t                desc_num;       /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
     uint32_t                frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots */
     uint32_t                buf_size;       /*!< dma buffer size */
+    size_t                  buf_alignment;  /*!< DMA buffer alignment required for address and size */
+    bool                    buffer_in_psram; /*!< Whether the DMA buffers are allocated in PSRAM */
+#if SOC_GDMA_SUPPORTED
+    bool                    connected;      /*!< Whether the GDMA channel is connected to I2S */
+#endif
     bool                    auto_clear_after_cb;     /*!< Set to auto clear DMA TX descriptor after callback, i2s will always send zero automatically if no data to send */
     bool                    auto_clear_before_cb;    /*!< Set to auto clear DMA TX descriptor before callback, i2s will always send zero automatically if no data to send */
     uint32_t                rw_pos;         /*!< reading/writing pointer position */
@@ -293,6 +298,17 @@ extern i2s_platform_t g_i2s;  /*!< Global i2s instance for driver internal use *
  *      - ESP_ERR_INVALID_ARG   Wrong port id or NULL pointer
  */
 esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag);
+
+/**
+ * @brief Prepare the DMA engine and query the memory alignment constraints
+ *
+ * @param handle I2S channel handle
+ * @return
+ *      - ESP_OK                DMA engine prepared
+ *      - ESP_ERR_NOT_SUPPORTED External-memory DMA is unsupported
+ *      - ESP_ERR_NOT_FOUND     DMA channel not found
+ */
+esp_err_t i2s_prepare_dma(i2s_chan_handle_t handle);
 
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
 /**

@@ -291,6 +291,12 @@ I2S 的数据传输（包括数据发送和接收）由 DMA 实现。在传输�
 
 :cpp:func:`i2s_channel_write` 和 :cpp:func:`i2s_channel_read` 都是阻塞函数，在源缓冲区的数据发送完毕前，或是整个目标缓冲区都被加载数据占用时，它们会一直保持等待状态。在等待时间达到最大阻塞时间时，返回 ``ESP_ERR_TIMEOUT`` 错误。要实现异步发送或接收数据，可以通过 :cpp:func:`i2s_channel_register_event_callback` 注册回调，随即便可在回调函数中直接访问 DMA 缓冲区，无需通过这两个阻塞函数来发送或接收数据。但请注意，该回调是一个中断回调，不要在该回调中添加复杂的逻辑、进行浮点运算或调用不可重入函数。
 
+:cpp:member:`i2s_chan_config_t::dma_burst_size` 用于设置 DMA 突发传输大小（字节）。设为 ``0`` （:c:macro:`I2S_CHANNEL_DEFAULT_CONFIG` 的默认值）时，驱动使用默认值 32 字节。非 0 值必须是芯片 GDMA 支持的 2 的幂。在不支持配置 DMA 突发大小的芯片上，该字段会被忽略。
+
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    为减少内部 RAM 占用，可设置 :cpp:member:`i2s_chan_config_t::dma_buffer_in_psram`，将驱动管理的 DMA 缓冲区分配到 PSRAM 中。DMA 描述符仍分配在内部 RAM 中。如果 PSRAM DMA 不可用或分配失败，驱动将返回错误，而不会回退到内部 RAM。启用 :ref:`CONFIG_I2S_ISR_IRAM_SAFE` 时，TX 自动清零功能不能与 PSRAM DMA 缓冲区同时使用，且在 cache 被禁用期间，回调函数不得访问 DMA 缓冲区。
+
 .. only:: SOC_I2S_SUPPORTS_BT_DEST
 
     在 {IDF_TARGET_NAME} 上，可在调用 :cpp:func:`i2s_new_channel` 时通过 :cpp:member:`i2s_chan_config_t::tx_destination` 与 :cpp:member:`i2s_chan_config_t::rx_destination` 分别为 TX 与 RX 方向选择数据路径；每个方向可在 **DMA** 与 **Bluetooth** 二者中择一：

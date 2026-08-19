@@ -75,7 +75,7 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
     /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
-    ESP_RETURN_ON_FALSE((float)clk_info->sclk > clk_info->mclk * min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE((float)clk_info->sclk > clk_info->mclk * min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large, sclk: %"PRIu32" Hz, mclk: %"PRIu32" Hz", clk_info->sclk, clk_info->mclk);
     ESP_RETURN_ON_FALSE(clk_info->mclk_div < I2S_LL_CLK_FRAC_DIV_N_MAX, ESP_ERR_INVALID_ARG, TAG, "sample rate is too small");
 
     return ESP_OK;
@@ -316,6 +316,10 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
     /* Try to constitute full-duplex mode if the TDM configuration is totally same as another channel */
     ESP_GOTO_ON_ERROR(s_i2s_channel_try_to_constitute_tdm_duplex(handle, tdm_cfg), err, TAG, "failed to constitute full-duplex mode");
+    /* DMA alignment must be known before allocating buffers in set_slot */
+    if (I2S_CHANNEL_USES_DMA(handle)) {
+        ESP_GOTO_ON_ERROR(i2s_prepare_dma(handle), err, TAG, "prepare dma failed");
+    }
     /* i2s_set_tdm_slot should be called before i2s_set_tdm_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_tdm_set_slot(handle, &tdm_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
     ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
@@ -348,6 +352,10 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
         pm_type = ESP_PM_NO_LIGHT_SLEEP;
     }
 #endif // SOC_I2S_SUPPORTS_APLL
+    if (I2S_CHANNEL_USES_DMA(handle) && handle->dma.buffer_in_psram) {
+        // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+        pm_type = ESP_PM_CPU_FREQ_MAX;
+    }
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
 #endif
 
@@ -400,6 +408,10 @@ esp_err_t i2s_channel_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm
             pm_type = ESP_PM_NO_LIGHT_SLEEP;
         }
 #endif // SOC_I2S_SUPPORTS_APLL
+        if (I2S_CHANNEL_USES_DMA(handle) && handle->dma.buffer_in_psram) {
+            // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+            pm_type = ESP_PM_CPU_FREQ_MAX;
+        }
         ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
     }
 #endif //CONFIG_PM_ENABLE
