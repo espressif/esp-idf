@@ -33,6 +33,8 @@ void test_fatfs_open_file_with_o_creat_flag(const char* filename);
 
 void test_fatfs_overwrite_append(const char* filename);
 
+void test_fatfs_fcntl_setfl(const char* filename);
+
 void test_fatfs_read_file(const char* filename);
 
 void test_fatfs_read_file_utf_8(const char* filename);
