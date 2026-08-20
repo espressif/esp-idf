@@ -21,6 +21,10 @@ extern "C" {
 
 #define AHB_DMA_LL_GET_HW(id) (((id) == 0) ? (&AHB_DMA) : NULL)
 
+#define AHB_DMA_LL_SUPPORTED_BURST_SIZE_MASK (GDMA_BURST_SIZE_SUPPORT_4 | \
+                                              GDMA_BURST_SIZE_SUPPORT_16 | \
+                                              GDMA_BURST_SIZE_SUPPORT_32)
+
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 #define GDMA_LL_CHANNEL_MAX_WEIGHT   15  // supported weight levels: [0,15]
 

@@ -267,7 +267,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 #define SPI_GDMA_NEW_CHANNEL    gdma_new_ahb_channel
 #endif
 
-static esp_err_t resolve_dma_burst_size(uint32_t requested, uint32_t *out_burst_size)
+static uint32_t resolve_dma_burst_size(uint32_t requested)
 {
     uint32_t burst_size = requested;
     if (burst_size == 0) {
@@ -280,8 +280,7 @@ static esp_err_t resolve_dma_burst_size(uint32_t requested, uint32_t *out_burst_
     }
     burst_size = SPI_DMA_DEFAULT_BURST_SIZE;
 #endif
-    *out_burst_size = burst_size;
-    return ESP_OK;
+    return burst_size;
 }
 
 static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t dma_burst_size, spi_dma_ctx_t *dma_ctx)
@@ -291,8 +290,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
     esp_err_t ret = ESP_OK;
 
     if (dma_chan == SPI_DMA_CH_AUTO) {
-        uint32_t burst_size = SPI_DMA_DEFAULT_BURST_SIZE;
-        ESP_RETURN_ON_ERROR(resolve_dma_burst_size(dma_burst_size, &burst_size), SPI_TAG, "invalid dma_burst_size");
+        uint32_t burst_size = resolve_dma_burst_size(dma_burst_size);
 
         gdma_channel_alloc_config_t alloc_config = {
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM

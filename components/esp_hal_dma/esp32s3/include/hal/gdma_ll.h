@@ -19,6 +19,10 @@
 #define GDMA_LL_INST_NUM            1
 #define GDMA_LL_PAIRS_PER_INST      GDMA_LL_AHB_PAIRS_PER_GROUP
 
+#define GDMA_LL_AHB_SUPPORTED_BURST_SIZE_MASK (GDMA_BURST_SIZE_SUPPORT_16 | \
+                                               GDMA_BURST_SIZE_SUPPORT_32 | \
+                                               GDMA_BURST_SIZE_SUPPORT_64)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

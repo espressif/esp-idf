@@ -921,3 +921,66 @@ TEST_CASE("GDMA interrupt priority configuration", "[GDMA]")
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 }
+
+#if SOC_HAS(AHB_GDMA)
+TEST_CASE("GDMA rejects invalid AHB burst sizes", "[GDMA]")
+{
+    gdma_channel_handle_t tx_chan = NULL;
+    gdma_channel_alloc_config_t channel_config = {};
+    TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &tx_chan, NULL));
+
+    gdma_transfer_config_t transfer_config = {
+        .max_data_burst_size = 16,
+        .access_ext_mem = false,
+    };
+    TEST_ESP_OK(gdma_config_transfer(tx_chan, &transfer_config));
+
+#if GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
+    // Non power-of-two must be rejected when the burst size is programmable.
+    transfer_config.max_data_burst_size = 3;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gdma_config_transfer(tx_chan, &transfer_config));
+
+    // 8 is a power of two but is outside every current AHB supported-burst mask.
+    transfer_config.max_data_burst_size = 8;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gdma_config_transfer(tx_chan, &transfer_config));
+
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
+    transfer_config.access_ext_mem = true;
+    transfer_config.max_data_burst_size = GDMA_LL_MAX_BURST_SIZE_PSRAM * 2;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gdma_config_transfer(tx_chan, &transfer_config));
+#endif // GDMA_LL_GET(AHB_PSRAM_CAPABLE)
+#endif // GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
+
+    TEST_ESP_OK(gdma_del_channel(tx_chan));
+}
+#endif // SOC_HAS(AHB_GDMA)
+
+#if SOC_HAS(AXI_GDMA)
+TEST_CASE("GDMA rejects invalid AXI burst sizes", "[GDMA]")
+{
+    gdma_channel_handle_t tx_chan = NULL;
+    gdma_channel_alloc_config_t channel_config = {};
+    TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &tx_chan, NULL));
+
+    gdma_transfer_config_t transfer_config = {
+        .max_data_burst_size = 16,
+        .access_ext_mem = false,
+    };
+    TEST_ESP_OK(gdma_config_transfer(tx_chan, &transfer_config));
+
+    transfer_config.max_data_burst_size = 3;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gdma_config_transfer(tx_chan, &transfer_config));
+
+    // 4 is a power of two but is outside the AXI supported-burst mask.
+    transfer_config.max_data_burst_size = 4;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gdma_config_transfer(tx_chan, &transfer_config));
+
+#if GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+    transfer_config.access_ext_mem = true;
+    transfer_config.max_data_burst_size = GDMA_LL_MAX_BURST_SIZE_PSRAM * 2;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gdma_config_transfer(tx_chan, &transfer_config));
+#endif // GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+
+    TEST_ESP_OK(gdma_del_channel(tx_chan));
+}
+#endif // SOC_HAS(AXI_GDMA)

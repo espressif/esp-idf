@@ -55,6 +55,8 @@ typedef struct {
     // Supported interrupt events can vary across DMA instances (e.g. AHB vs AXI)
     uint32_t tx_event_mask;
     uint32_t rx_event_mask;
+    // Bitmap of supported configurable data burst sizes, using gdma_burst_size_support_t
+    uint32_t supported_burst_size_mask;
 } gdma_hal_priv_data_t;
 
 /**
@@ -127,6 +129,8 @@ void gdma_hal_disconnect_all(gdma_hal_context_t *hal, int chan_id, gdma_channel_
 void gdma_hal_enable_burst(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_data_burst, bool en_desc_burst);
 
 void gdma_hal_set_burst_size(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t burst_sz);
+
+bool gdma_hal_check_burst_size(gdma_hal_context_t *hal, uint32_t burst_sz);
 
 void gdma_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back, bool eof_till_popped);
 

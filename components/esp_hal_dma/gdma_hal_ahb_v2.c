@@ -14,6 +14,9 @@ static gdma_hal_priv_data_t gdma_ahb_hal_priv_data = {
     .m2m_free_periph_mask = AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK,
     .tx_event_mask = AHB_DMA_LL_TX_EVENT_MASK,
     .rx_event_mask = AHB_DMA_LL_RX_EVENT_MASK,
+#if GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
+    .supported_burst_size_mask = AHB_DMA_LL_SUPPORTED_BURST_SIZE_MASK,
+#endif
 };
 
 void gdma_ahb_hal_start_with_desc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, intptr_t desc_base_addr)
@@ -315,6 +318,9 @@ static gdma_hal_priv_data_t gdma_lp_ahb_hal_priv_data = {
     .m2m_free_periph_mask = LP_AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK,
     .tx_event_mask = AHB_DMA_LL_TX_EVENT_MASK,
     .rx_event_mask = AHB_DMA_LL_RX_EVENT_MASK,
+#if GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
+    .supported_burst_size_mask = AHB_DMA_LL_SUPPORTED_BURST_SIZE_MASK,
+#endif
 };
 
 void gdma_lp_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)

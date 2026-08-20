@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,11 @@ extern "C" {
 #endif
 
 #define AHB_DMA_LL_GET_HW(id) (((id) == 0) ? (&AHB_DMA) : NULL)
+
+#define AHB_DMA_LL_SUPPORTED_BURST_SIZE_MASK (GDMA_BURST_SIZE_SUPPORT_4 | \
+                                              GDMA_BURST_SIZE_SUPPORT_16 | \
+                                              GDMA_BURST_SIZE_SUPPORT_32 | \
+                                              GDMA_BURST_SIZE_SUPPORT_64)
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 #define GDMA_LL_CHANNEL_MAX_WEIGHT 15  // supported weight levels: [0,15]
