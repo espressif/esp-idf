@@ -61,6 +61,10 @@ _ns_sp_max:
 _ns_int_rtn:
     .word 0
 
+    .global _s_svc_lock
+_s_svc_lock:
+    .word 0
+
     .section .exception_vectors.text, "ax"
 
     /* Exception handler. */
@@ -178,6 +182,9 @@ _1:
     lui     t0, ESP_TEE_M2U_SWITCH_MAGIC
     beq     a1, t0, _skip_ctx_restore
 
+    /* The secure service has returned - the REE may issue the next one */
+    SVC_LOCK_RELEASE t0
+
     /* Check if we need to restore the MINTTHRESH register */
     la      t0, _s_intr_thresh
     lw      t1, 0(t0)
@@ -218,10 +225,13 @@ _skip_ctx_restore:
     /* U-mode ecall handler */
 _user_ecall:
     /* Check whether we are returning after servicing an U-mode interrupt */
+    li      t0, NS_INT_RTN_MAGIC
+    bne     a0, t0, _svc_call_enter
     la      t0, _ns_int_rtn
     lw      t0, 0(t0)
     bnez    t0, _rtn_from_ns_int
 
+_svc_call_enter:
     /* Reject an sp whose frame would be out-of-bounds */
     VALIDATE_REE_SP CONTEXT_SIZE, t0, 0
 
@@ -232,6 +242,9 @@ _user_ecall:
     /* Save register context and mepc */
     save_general_regs
     save_mepc
+
+    /* Claim the TEE before touching any of its state */
+    SVC_LOCK_ACQUIRE t0, _svc_call_reject
 
     # Check if REE is in a critical section
     csrr    t0, CSR_UINTTHRESH      # t0 = current UINTTHRESH
@@ -312,6 +325,16 @@ _3:
     restore_mepc
     restore_general_regs
 
+    mret
+
+    /* Discard a service call that arrived while another one was active */
+_svc_call_reject:
+    addi    sp, sp, CONTEXT_SIZE    /* t0 is the only register clobbered past the context save */
+    csrr    t0, mepc
+    addi    t0, t0, 4               /* resume the REE after its ecall */
+    csrw    mepc, t0
+    csrr    t0, mscratch
+    li      a0, -1
     mret
 
     .size  _ecall_handler, .-_ecall_handler
