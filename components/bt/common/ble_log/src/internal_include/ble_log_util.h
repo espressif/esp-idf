@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,12 +25,23 @@
 #endif /* !UNIT_TEST */
 
 /* MACRO */
+#define BLE_LOG_ATOMIC_LOAD_ACQUIRE(VAR)         __atomic_load_n(&(VAR), __ATOMIC_ACQUIRE)
+#define BLE_LOG_ATOMIC_LOAD_RELAXED(VAR)         __atomic_load_n(&(VAR), __ATOMIC_RELAXED)
+#define BLE_LOG_ATOMIC_STORE_RELEASE(VAR, VALUE) __atomic_store_n(&(VAR), (VALUE), __ATOMIC_RELEASE)
+#define BLE_LOG_ATOMIC_STORE_RELAXED(VAR, VALUE) __atomic_store_n(&(VAR), (VALUE), __ATOMIC_RELAXED)
+
 /* Unit test */
 #ifndef UNIT_TEST
 
 /* Reference counting macros */
 #define BLE_LOG_REF_COUNT_ACQUIRE(VAR)          __atomic_fetch_add(VAR, 1, __ATOMIC_ACQUIRE)
 #define BLE_LOG_REF_COUNT_RELEASE(VAR)          __atomic_fetch_sub(VAR, 1, __ATOMIC_RELEASE)
+/* Closing gate: pairs an inited-flag store with a reference-count load (and
+ * vice versa) at seq_cst so deinit and a submitter cannot both observe the
+ * pre-transition values on SMP (store-buffer / Dekker pattern). */
+#define BLE_LOG_ATOMIC_LOAD_SEQ_CST(VAR)        __atomic_load_n(&(VAR), __ATOMIC_SEQ_CST)
+#define BLE_LOG_ATOMIC_STORE_SEQ_CST(VAR, VALUE) __atomic_store_n(&(VAR), (VALUE), __ATOMIC_SEQ_CST)
+#define BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(VAR)  __atomic_fetch_add(VAR, 1, __ATOMIC_SEQ_CST)
 
 /* Specifier */
 #define BLE_LOG_STATIC                          static
@@ -90,6 +101,9 @@ void ble_log_cas_release(volatile bool *cas_lock)
 /* Reference counting macros */
 #define BLE_LOG_REF_COUNT_ACQUIRE(VAR)          (*VAR)++
 #define BLE_LOG_REF_COUNT_RELEASE(VAR)          (*VAR)--
+#define BLE_LOG_ATOMIC_LOAD_SEQ_CST(VAR)        BLE_LOG_ATOMIC_LOAD_ACQUIRE(VAR)
+#define BLE_LOG_ATOMIC_STORE_SEQ_CST(VAR, VALUE) BLE_LOG_ATOMIC_STORE_RELAXED(VAR, VALUE)
+#define BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(VAR)  BLE_LOG_REF_COUNT_ACQUIRE(VAR)
 
 /* Specifier*/
 #define BLE_LOG_STATIC
@@ -161,5 +175,12 @@ typedef struct {
 
 /* INTERFACE */
 uint32_t ble_log_fast_checksum(const uint8_t *data, size_t len);
+
+/* Acquire a lifetime reference only while the closing gate remains open. */
+bool ble_log_ref_count_try_acquire(volatile uint32_t *ref_count,
+                                   const uint32_t *inited);
+
+/* Task-context wait; returns false if the count stays above max for one second. */
+bool ble_log_ref_count_wait(volatile uint32_t *ref_count, uint32_t max_ref_count);
 
 #endif /* __BLE_LOG_UTIL_H__ */
