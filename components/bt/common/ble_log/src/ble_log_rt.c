@@ -43,9 +43,7 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
     ble_log_prph_trans_t *trans = NULL;
     uint32_t curr_os_ts = 0;
     uint32_t last_hook_os_ts = 0;
-#ifndef UNIT_TEST
     while (1)
-#endif /* !UNIT_TEST */
     {
         /* CRITICAL:
          * Blocking queue receive is mandatory for light sleep support */
@@ -56,11 +54,7 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         /* Task hook */
         curr_os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
         if ((curr_os_ts - last_hook_os_ts) < BLE_LOG_TASK_HOOK_TIMEOUT_MS) {
-#ifndef UNIT_TEST
             continue;
-#else /* UNIT_TEST */
-            return;
-#endif /* !UNIT_TEST */
         }
         last_hook_os_ts = curr_os_ts;
 
