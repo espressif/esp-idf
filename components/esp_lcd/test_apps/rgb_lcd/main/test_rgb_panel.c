@@ -477,7 +477,7 @@ TEST_CASE("lcd_rgb_panel_draw_bitmap_2d", "[lcd]")
     TEST_ASSERT_NOT_NULL(src_img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
 
     printf("Draw bitmap 2D by CPU - copy partial region from source to destination\r\n");
     for (int i = 0; i < 100; i++) {
@@ -515,7 +515,7 @@ TEST_CASE("lcd_rgb_panel_dma2d_hook", "[lcd]")
     TEST_ASSERT_NOT_NULL(src_img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
 
     printf("Draw bitmap 2D by CPU first\r\n");
     for (int i = 0; i < 50; i++) {
@@ -661,7 +661,7 @@ TEST_CASE("lcd_rgb_panel_ppa_hook", "[lcd]")
     TEST_ASSERT_NOT_NULL(src_img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
 
     SemaphoreHandle_t draw_sem = xSemaphoreCreateBinaryWithCaps(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(draw_sem);
