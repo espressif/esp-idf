@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -388,10 +388,18 @@ esp_err_t esp_now_get_user_oui(uint8_t *oui);
   *
   * @param     config  ESPNOW switch channel relevant information
   *
+  * @attention 1. The data_len should not exceed ESP_NOW_MAX_DATA_LEN_V2.
+  *
+  * @attention 2. The sec_channel must be set to a valid value.
+  *
+  * @attention 3. The status field in WIFI_EVENT_ACTION_TX_STATUS event has only two possible cases:
+  *               WIFI_ACTION_TX_OP_CANCELLED and WIFI_ACTION_TX_DURATION_COMPLETED.
+  *               For the TX status, ESP-NOW already has a TX callback to report it.
+  *
   * @return
   *          - ESP_OK : succeed
   *          - ESP_ERR_NO_MEM: failed to allocate memory
-  *          - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
+  *          - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid; the data len is invalid; the dest mac is invalid.
   *          - ESP_FAIL: failed to send frame
   */
 esp_err_t esp_now_switch_channel_tx(esp_now_switch_channel_t *config);
