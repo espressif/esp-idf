@@ -194,6 +194,22 @@ typedef union {
 } isp_ll_awb_rgb_ratio_t;
 
 /**
+ * @brief DPC input color
+ */
+typedef enum {
+    ISP_LL_DPC_INPUT_COLOR_WHITE,    ///< White input color
+    ISP_LL_DPC_INPUT_COLOR_BLACK,    ///< Black input color
+} isp_ll_dpc_input_color_t;
+
+/**
+ * @brief DPC dynamic correction method
+ */
+typedef enum {
+    ISP_LL_DPC_DYNAMIC_CORRECTION_METHOD_SIMPLE,   ///< Hardware method 1
+    ISP_LL_DPC_DYNAMIC_CORRECTION_METHOD_HARD,     ///< Hardware method 2
+} isp_ll_dpc_dynamic_correction_method_t;
+
+/**
  * @brief ISP LUT
  */
 typedef enum {
@@ -1446,6 +1462,198 @@ static inline void isp_ll_ae_env_detector_set_period(isp_dev_t *hw, uint32_t per
 }
 
 /*---------------------------------------------------------------
+                      DPC
+---------------------------------------------------------------*/
+/**
+ * @brief Set DPC clock control mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
+ */
+static inline void isp_ll_dpc_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
+{
+    hw->clk_en.clk_dpc_force_on = mode;
+}
+
+/**
+ * @brief Enable / Disable DPC
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_dpc_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.dpc_en = enable;
+}
+
+/**
+ * @brief Enable / Disable DPC check mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_dpc_enable_check_mode(isp_dev_t *hw, bool enable)
+{
+    hw->dpc_ctrl.dpc_check_en = enable;
+}
+
+/**
+ * @brief Enable / Disable DPC check mode data
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_dpc_enable_check_mode_data(isp_dev_t *hw, bool enable)
+{
+    hw->dpc_ctrl.dpc_check_od_en = enable;
+}
+
+/**
+ * @brief Enable / Disable DPC static correction
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_dpc_enable_static_correction(isp_dev_t *hw, bool enable)
+{
+    hw->dpc_ctrl.sta_en = enable;
+}
+
+/**
+ * @brief Set DPC input color
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] color   DPC input color
+ */
+static inline void isp_ll_dpc_set_input_color(isp_dev_t *hw, isp_ll_dpc_input_color_t color)
+{
+    hw->dpc_ctrl.dpc_black_en = color;
+}
+
+/**
+ * @brief Enable / Disable DPC dynamic correction
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_dpc_enable_dynamic_correction(isp_dev_t *hw, bool enable)
+{
+    hw->dpc_ctrl.dyn_en = enable;
+}
+
+/**
+ * @brief Check whether DPC dynamic correction is enabled
+ *
+ * @param[in] hw Hardware instance address
+ *
+ * @return True if dynamic correction is enabled
+ */
+static inline bool isp_ll_dpc_is_dynamic_correction_enabled(isp_dev_t *hw)
+{
+    return hw->dpc_ctrl.dyn_en;
+}
+
+/**
+ * @brief Set DPC dynamic correction method
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] method  DPC dynamic correction method
+ */
+static inline void isp_ll_dpc_set_dynamic_correction_method(isp_dev_t *hw, isp_ll_dpc_dynamic_correction_method_t method)
+{
+    hw->dpc_ctrl.dpc_method_sel = method;
+}
+
+static inline void isp_ll_dpc_set_low_thresh(isp_dev_t *hw, uint32_t thresh)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->dpc_conf, dpc_threshold_l, thresh);
+}
+
+/**
+ * @brief Set DPC high threshold
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] thresh  High threshold
+ */
+static inline void isp_ll_dpc_set_high_thresh(isp_dev_t *hw, uint32_t thresh)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->dpc_conf, dpc_threshold_h, thresh);
+}
+
+/**
+ * @brief Set DPC dynamic correction method 1 dark factor
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] factor  Dynamic correction method 1 dark factor
+ */
+static inline void isp_ll_dpc_set_dynamic_correction_method_1_dark_factor(isp_dev_t *hw, uint32_t factor)
+{
+    hw->dpc_conf.dpc_factor_dark = factor;
+}
+
+/**
+ * @brief Set DPC dynamic correction method 1 bright factor
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] factor  Dynamic correction method 1 bright factor
+ */
+static inline void isp_ll_dpc_set_dynamic_correction_method_1_bright_factor(isp_dev_t *hw, uint32_t factor)
+{
+    hw->dpc_conf.dpc_factor_brig = factor;
+}
+
+/**
+ * @brief Get DPC dead pixel count
+ *
+ * @param[in] hw      Hardware instance address
+ *
+ * @return Dead pixel count
+ */
+static inline uint32_t isp_ll_dpc_get_deadpix_cnt(isp_dev_t *hw)
+{
+    return hw->dpc_deadpix_cnt.dpc_deadpix_cnt;
+}
+
+/**
+ * @brief Set DPC LUT command for read/write
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] is_write  Is write or not (true for write, false for read)
+ * @param[in] addr      LUT address
+ */
+static inline void isp_ll_lut_dpc_set_cmd(isp_dev_t *hw, bool is_write, uint32_t addr)
+{
+    uint32_t val = 0;
+    val |= is_write ? (1 << 16) : 0;
+    val |= addr & ((1 << 12) - 1);
+    val |= ISP_LL_LUT_DPC << 12;
+    hw->lut_cmd.val = val;
+}
+
+/**
+ * @brief Set DPC LUT write data
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] data      Data to write
+ */
+static inline void isp_ll_lut_dpc_set_wdata(isp_dev_t *hw, uint32_t data)
+{
+    hw->lut_wdata.lut_wdata = data;
+}
+
+/**
+ * @brief Get DPC LUT read data
+ *
+ * @param[in] hw        Hardware instance address
+ *
+ * @return Read data
+ */
+static inline uint32_t isp_ll_lut_dpc_get_rdata(isp_dev_t *hw)
+{
+    return hw->lut_rdata.lut_rdata;
+}
+
+/*---------------------------------------------------------------
                       LSC
 ---------------------------------------------------------------*/
 /**
@@ -1460,7 +1668,7 @@ static inline void isp_ll_lsc_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_c
 }
 
 /**
- * @brief Enable / Disable Color
+ * @brief Enable / Disable LSC
  *
  * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable

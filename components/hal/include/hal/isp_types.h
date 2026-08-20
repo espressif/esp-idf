@@ -415,6 +415,50 @@ typedef union {
 } isp_color_saturation_t;
 
 /*---------------------------------------------------------------
+                      DPC
+---------------------------------------------------------------*/
+#define ISP_DPC_RATIO_INT_BITS             1
+#define ISP_DPC_RATIO_DEC_BITS             4
+#define ISP_DPC_RATIO_RES_BITS             27
+#define ISP_DPC_RATIO_MAX                  (1U << ISP_DPC_RATIO_DEC_BITS)
+#define ISP_DPC_DEVIATION_FACTOR_INT_BITS 1
+#define ISP_DPC_DEVIATION_FACTOR_DEC_BITS 5
+#define ISP_DPC_DEVIATION_FACTOR_RES_BITS 26
+#define ISP_DPC_DEVIATION_FACTOR_MAX      (1U << ISP_DPC_DEVIATION_FACTOR_DEC_BITS)
+
+/**
+ * @brief ISP DPC first-stage ratio
+ *
+ * @note Value = integer + decimal / ISP_DPC_RATIO_MAX. Range 0 ~ 1.
+ *       Fractional values use integer 0 and decimal 0 ~ (ISP_DPC_RATIO_MAX - 1);
+ *       1.0 uses integer 1 and decimal 0.
+ */
+typedef union {
+    struct {
+        uint32_t decimal: ISP_DPC_RATIO_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_DPC_RATIO_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_DPC_RATIO_RES_BITS;  ///< Reserved
+    };
+    uint32_t val;                                   ///< 32-bit first-stage ratio register value
+} isp_dpc_ratio_t;
+
+/**
+ * @brief ISP DPC second-stage deviation factor
+ *
+ * @note Value = integer + decimal / ISP_DPC_DEVIATION_FACTOR_MAX. Range 0 ~ 1.
+ *       Fractional values use integer 0 and decimal 0 ~ (ISP_DPC_DEVIATION_FACTOR_MAX - 1);
+ *       1.0 uses integer 1 and decimal 0.
+ */
+typedef union {
+    struct {
+        uint32_t decimal: ISP_DPC_DEVIATION_FACTOR_DEC_BITS;   ///< Decimal part
+        uint32_t integer: ISP_DPC_DEVIATION_FACTOR_INT_BITS;   ///< Integer part
+        uint32_t reserved: ISP_DPC_DEVIATION_FACTOR_RES_BITS;  ///< Reserved
+    };
+    uint32_t val;                                             ///< 32-bit deviation factor register value
+} isp_dpc_deviation_factor_t;
+
+/*---------------------------------------------------------------
                       LSC
 ---------------------------------------------------------------*/
 #if SOC_ISP_LSC_SUPPORTED
