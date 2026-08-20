@@ -293,8 +293,8 @@ extern int r_btdm_hci_rd_local_supp_features_handler(const uint8_t *cmdbuf, uint
 extern int r_btdm_hci_rd_local_ext_features_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
                                                     uint8_t *rsplen);
 extern int r_btdm_hci_rd_bdaddr_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf, uint8_t *rsplen);
-extern int r_btdm_hci_rd_local_supp_codecs_handler(uint8_t *rspbuf, uint8_t *rsplen);
-extern int r_btdm_hci_rd_local_supp_codecs_v2_handler(uint8_t *rspbuf, uint8_t *rsplen);
+extern int r_btdm_hci_rd_local_supp_codecs_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf, uint8_t *rsplen);
+extern int r_btdm_hci_rd_local_supp_codecs_v2_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf, uint8_t *rsplen);
 extern int r_btdm_hci_rd_local_supp_codec_cap_handler(const uint8_t *cmdbuf, uint8_t len,
                                                       uint8_t *rspbuf, uint8_t *rsplen);
 extern int r_btdm_hci_rd_local_supp_ctrl_delay_handler(const uint8_t *cmdbuf, uint8_t len,
@@ -895,7 +895,7 @@ hci_cmd_proc_informational_params_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint
         break;
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
     case HCI_CMD_OCF_INFO_READ_LOCAL_SUPPORTED_CODECS:
-        rc = r_btdm_hci_rd_local_supp_codecs_handler(rspbuf, rsplen);
+        rc = r_btdm_hci_rd_local_supp_codecs_handler(cmdbuf, len, rspbuf, rsplen);
         break;
     case HCI_CMD_OCF_INFO_READ_LOCAL_SUPPORTED_CODEC_CAP:
         rc = r_btdm_hci_rd_local_supp_codec_cap_handler(cmdbuf, len, rspbuf, rsplen);
@@ -906,7 +906,7 @@ hci_cmd_proc_informational_params_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE || UC_BT_CTRL_LE_ISO_ENABLED
         case HCI_CMD_OCF_INFO_READ_LOCAL_SUPPORTED_CODECS_V2:
-            rc = r_btdm_hci_rd_local_supp_codecs_v2_handler(rspbuf, rsplen);
+            rc = r_btdm_hci_rd_local_supp_codecs_v2_handler(cmdbuf, len, rspbuf, rsplen);
             break;
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE || UC_BT_CTRL_LE_ISO_ENABLED
     }
