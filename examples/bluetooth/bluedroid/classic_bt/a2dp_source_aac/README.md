@@ -28,6 +28,31 @@ idf.py menuconfig
 
 * Enable Classic Bluetooth and A2DP under Component config --> Bluetooth --> Bluedroid Enable
 
+### Stream Endpoint (SEP) registration
+
+This example registers codec capabilities with `esp_a2d_source_register_stream_endpoint()` after A2DP source init and before connecting. A2DP requires **at least one SBC SEP**; using AAC therefore needs `ESP_A2D_MAX_SEPS >= 2`. Capabilities that do not meet A2DP Profile (SRC) fail with `ESP_A2D_SEP_REG_UNSUPPORTED` in `ESP_A2D_SEP_REG_STATE_EVT`. Overwriting the last SBC SEP fails with `ESP_A2D_SEP_REG_SBC_REQUIRED`.
+
+**SBC (SRC)**
+
+| Field | Mandatory |
+| :---- | :-------- |
+| Sampling frequency | At least one of 44.1 kHz and 48 kHz |
+| Channel mode | Mono, and at least one of Dual Channel / Stereo / Joint Stereo |
+| Block length | 4, 8, 12, and 16 |
+| Subbands | 8 |
+| Allocation method | Loudness |
+| Bitpool | min 2–250, max 2–250, min ≤ max |
+
+**AAC (SRC)**
+
+| Field | Mandatory |
+| :---- | :-------- |
+| Object type | MPEG-2 AAC LC |
+| MPEG-D DRC | Must be 0 if only MPEG-2 AAC LC is advertised |
+| Sampling frequency | At least one of 44.1 kHz and 48 kHz |
+| Channels | At least one of 1 and 2 |
+| VBR | Optional |
+
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output.

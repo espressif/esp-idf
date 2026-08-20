@@ -85,6 +85,24 @@ typedef enum {
 #define BTC_AV_M24_CIE_OFFSET       3
 #define BTC_AV_M24_CIE_LEN          6
 
+#define BTC_AV_SBC_SNK_HQ_BITPOOL   53
+#define BTC_AV_SBC_CH_MODE_ALL      (ESP_A2D_SBC_CIE_CH_MODE_MONO | \
+                                     ESP_A2D_SBC_CIE_CH_MODE_DUAL_CHANNEL | \
+                                     ESP_A2D_SBC_CIE_CH_MODE_STEREO | \
+                                     ESP_A2D_SBC_CIE_CH_MODE_JOINT_STEREO)
+#define BTC_AV_SBC_CH_MODE_SRC_C1   (ESP_A2D_SBC_CIE_CH_MODE_DUAL_CHANNEL | \
+                                     ESP_A2D_SBC_CIE_CH_MODE_STEREO | \
+                                     ESP_A2D_SBC_CIE_CH_MODE_JOINT_STEREO)
+#define BTC_AV_SBC_BLOCK_LEN_ALL    (ESP_A2D_SBC_CIE_BLOCK_LEN_4 | \
+                                     ESP_A2D_SBC_CIE_BLOCK_LEN_8 | \
+                                     ESP_A2D_SBC_CIE_BLOCK_LEN_12 | \
+                                     ESP_A2D_SBC_CIE_BLOCK_LEN_16)
+#define BTC_AV_SBC_NUM_SUBBANDS_ALL (ESP_A2D_SBC_CIE_NUM_SUBBANDS_4 | \
+                                     ESP_A2D_SBC_CIE_NUM_SUBBANDS_8)
+#define BTC_AV_SBC_ALLOC_MTHD_ALL   (ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR | \
+                                     ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS)
+#define BTC_AV_M24_CH_1_2           (ESP_A2D_M24_CIE_CH_1 | ESP_A2D_M24_CIE_CH_2)
+
 /*****************************************************************************
 **  Local type definitions
 ******************************************************************************/
@@ -1630,6 +1648,67 @@ tBTC_AV_CODEC_INFO *btc_av_codec_cap_get(void)
     return btc_av_cb.codec_caps;
 }
 
+static BOOLEAN btc_av_sep_mcc_caps_valid(BOOLEAN is_sink, const esp_a2d_mcc_t *mcc)
+{
+    /* Mandatory bits per A2DP v1.4.1 Get All Capabilities (Tables 4.2–4.7, 4.14–4.20). */
+    if (mcc->type == ESP_A2D_MCT_SBC) {
+        const esp_a2d_cie_sbc_t *sbc = &mcc->cie.sbc_info;
+        if (!sbc->samp_freq || !sbc->ch_mode || !sbc->block_len ||
+            !sbc->num_subbands || !sbc->alloc_mthd ||
+            sbc->min_bitpool < A2D_SBC_IE_MIN_BITPOOL || sbc->max_bitpool > A2D_SBC_IE_MAX_BITPOOL ||
+            sbc->max_bitpool < sbc->min_bitpool) {
+            return FALSE;
+        }
+        /* Table 4.4: block length 4/8/12/16 mandatory for SRC and SNK. */
+        if ((sbc->block_len & BTC_AV_SBC_BLOCK_LEN_ALL) != BTC_AV_SBC_BLOCK_LEN_ALL) {
+            return FALSE;
+        }
+        if (is_sink) {
+            /* Tables 4.2, 4.3, 4.5, 4.6, 4.7: 44.1+48, all channel modes,
+             * both subbands, SNR+Loudness, min bitpool 2, max >= HQ JS 44.1. */
+            return ((sbc->samp_freq & (ESP_A2D_SBC_CIE_SF_44K | ESP_A2D_SBC_CIE_SF_48K)) ==
+                    (ESP_A2D_SBC_CIE_SF_44K | ESP_A2D_SBC_CIE_SF_48K)) &&
+                   ((sbc->ch_mode & BTC_AV_SBC_CH_MODE_ALL) == BTC_AV_SBC_CH_MODE_ALL) &&
+                   ((sbc->num_subbands & BTC_AV_SBC_NUM_SUBBANDS_ALL) == BTC_AV_SBC_NUM_SUBBANDS_ALL) &&
+                   ((sbc->alloc_mthd & BTC_AV_SBC_ALLOC_MTHD_ALL) == BTC_AV_SBC_ALLOC_MTHD_ALL) &&
+                   (sbc->min_bitpool == A2D_SBC_IE_MIN_BITPOOL) &&
+                   (sbc->max_bitpool >= BTC_AV_SBC_SNK_HQ_BITPOOL);
+        }
+        /* SRC: Table 4.2 C1 (44.1 or 48), Table 4.3 Mono + C1 stereo family,
+         * Table 4.5 subbands 8, Table 4.6 Loudness. */
+        return ((sbc->samp_freq & (ESP_A2D_SBC_CIE_SF_44K | ESP_A2D_SBC_CIE_SF_48K)) != 0) &&
+               (sbc->ch_mode & ESP_A2D_SBC_CIE_CH_MODE_MONO) &&
+               (sbc->ch_mode & BTC_AV_SBC_CH_MODE_SRC_C1) &&
+               (sbc->num_subbands & ESP_A2D_SBC_CIE_NUM_SUBBANDS_8) &&
+               (sbc->alloc_mthd & ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS);
+    }
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+    if (mcc->type == ESP_A2D_MCT_M24) {
+        const esp_a2d_cie_m24_t *m24 = &mcc->cie.m24_info;
+        /* Table 4.14: MPEG-2 AAC LC mandatory. Table 4.16: DRC not with MPEG-2 AAC LC only. */
+        if (!(m24->obj_type & ESP_A2D_M24_CIE_OBJ_TYPE_2_AAC_LC) ||
+            !(m24->samp_freq1 | m24->samp_freq2) || !m24->ch) {
+            return FALSE;
+        }
+        if (m24->obj_type == ESP_A2D_M24_CIE_OBJ_TYPE_2_AAC_LC && m24->drc) {
+            return FALSE;
+        }
+        if (is_sink) {
+            /* Tables 4.17, 4.18, 4.20: 44.1+48, ch 1+2, VBR. */
+            return (m24->samp_freq1 & ESP_A2D_M24_CIE_SF1_44K) &&
+                   (m24->samp_freq2 & ESP_A2D_M24_CIE_SF2_48K) &&
+                   ((m24->ch & BTC_AV_M24_CH_1_2) == BTC_AV_M24_CH_1_2) &&
+                   m24->vbr;
+        }
+        /* SRC: Table 4.17 C1 (44.1 or 48), Table 4.18 C1 (1 or 2 ch). */
+        return ((m24->samp_freq1 & ESP_A2D_M24_CIE_SF1_44K) ||
+                (m24->samp_freq2 & ESP_A2D_M24_CIE_SF2_48K)) &&
+               (m24->ch & BTC_AV_M24_CH_1_2);
+    }
+#endif
+    return FALSE;
+}
+
 static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
 {
     tBTA_AV_DATA_CBACK *p_data_cback = NULL;
@@ -1642,6 +1721,14 @@ static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
         param.a2d_sep_reg_stat.reg_state = ESP_A2D_SEP_REG_INVALID_STATE;
         btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
         BTC_TRACE_WARNING("%s: try to reg sep when a2dp not init or connected", __func__);
+        return;
+    }
+
+    if (!btc_av_sep_mcc_caps_valid((tsep == AVDT_TSEP_SNK), mcc)) {
+        param.a2d_sep_reg_stat.reg_state = ESP_A2D_SEP_REG_UNSUPPORTED;
+        btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
+        BTC_TRACE_WARNING("%s: refuse seid %d codec 0x%02x, A2DP capability check failed",
+                          __func__, seid, mcc->type);
         return;
     }
 
