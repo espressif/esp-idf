@@ -159,8 +159,8 @@
         ESP_ERROR_CHECK(esp_cam_new_dvp_ctlr(&dvp_config, &cam_handle));
 
         const cam_ctlr_format_conv_config_t conv_cfg = {
-            .src_format = CAM_CTLR_COLOR_YUV422,      // 源格式：YUV422
-            .dst_format = CAM_CTLR_COLOR_RGB565,      // 目标格式：RGB565
+            .src_format = CAM_CTLR_COLOR_YUV422_UYVY,      // 源格式：YUV422 UYVY
+            .dst_format = CAM_CTLR_COLOR_RGB565,           // 目标格式：RGB565
             .conv_std = COLOR_CONV_STD_RGB_YUV_BT601,
             .data_width = 8,
             .input_range = COLOR_RANGE_LIMIT,
