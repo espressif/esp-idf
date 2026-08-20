@@ -338,12 +338,11 @@ menu "Power Management"
             keeping all other peripheral clocks gated to minimize sleep
             power consumption.
 
-    config PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
+    config PM_MODEM_STATE_ENABLED
         bool
-        depends on SOC_PM_SUPPORT_PMU_MODEM_STATE
+        depends on SOC_PM_SUPPORT_PMU_MODEM_STATE && IDF_TARGET_ESP32H4
         default n
         help
-            If enabled, the analog wait time when waking up from modem to active state will be skipped.
-            This will reduce the wakeup time.
+            If enabled, the modem state is supported. Note: This option is only supported on ESP32H4.
 
 endmenu # "Power Management"

@@ -14,7 +14,7 @@ endif()
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "sar_periph_ctrl.c")
-    if(CONFIG_BT_LE_MODEM_STATE_ENABLED)
+    if(CONFIG_PM_MODEM_STATE_ENABLED)
         list(APPEND srcs "pmu_sleep_power.c")
     endif()
 endif()

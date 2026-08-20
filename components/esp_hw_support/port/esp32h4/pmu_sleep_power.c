@@ -56,8 +56,6 @@ static esp_err_t sleep_power_system_retention_init(void *arg)
 
 #endif
 
-#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
-
 #define SLEEP_POWER_ANA_WAIT_LINK_BASE          10
 #define SLEEP_POWER_ANA_WAIT_LINK_ID(_idx)      REGDMA_POWER_LINK((SLEEP_POWER_ANA_WAIT_LINK_BASE + (_idx)))
 
@@ -89,15 +87,11 @@ static esp_err_t sleep_power_analog_wait_ctrl_init(void *arg)
     return ESP_OK;
 }
 
-#endif
-
 typedef struct {
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
     pmu_sleep_power_clock_context_t clock;
 #endif
-#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
     pmu_sleep_power_ana_wait_context_t ana_wait;
-#endif
 } pmu_sleep_power_context_t;
 
 static esp_err_t sleep_power_retention_init(void *arg)
@@ -106,9 +100,7 @@ static esp_err_t sleep_power_retention_init(void *arg)
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
     ESP_RETURN_ON_ERROR(sleep_power_system_retention_init(&ctx->clock), TAG, "system retention init failed");
 #endif
-#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
     ESP_RETURN_ON_ERROR(sleep_power_analog_wait_ctrl_init(&ctx->ana_wait), TAG, "analog wait ctrl retention init failed");
-#endif
     return ESP_OK;
 }
 
@@ -120,11 +112,9 @@ static esp_err_t sleep_power_retention_deinit(void *arg)
         ctx->clock.regdma_desc[i] = NULL;
     }
 #endif
-#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
     for (int i = 0; i < ANALOG_WAIT_CTRL_NUM; i++) {
         ctx->ana_wait.regdma_desc[i] = NULL;
     }
-#endif
     return ESP_OK;
 }
 
@@ -146,9 +136,7 @@ ESP_SYSTEM_INIT_FN(sleep_power_startup_init, SECONDARY, BIT(0), 108)
     } else {
 #if PMU_SLEEP_PRIV_ENABLED
         pmu_sleep_data_t *data = (pmu_sleep_data_t *)PMU_instance()->priv;
-#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
         data->func[PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT] = &power_context.ana_wait;
-#endif
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
         data->func[PMU_SLEEP_PRIV_MODEM_LOCK_CLK_POWER] = &power_context.clock;
 #endif
@@ -158,7 +146,6 @@ ESP_SYSTEM_INIT_FN(sleep_power_startup_init, SECONDARY, BIT(0), 108)
     return ESP_OK;
 }
 
-#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
 void pmu_sleep_power_analog_wait_config(void *data, const uint16_t analog_wait[ANALOG_WAIT_CTRL_NUM])
 {
     pmu_sleep_data_t *data_ctx = (pmu_sleep_data_t *)data;
@@ -174,7 +161,6 @@ void pmu_sleep_power_analog_wait_config(void *data, const uint16_t analog_wait[A
         regdma_link_set_write_wait_content(ana_wait_ctx->regdma_desc[i], (uint32_t)analog_wait[i] << PMU_ANA_WAIT_TARGET_S, PMU_ANA_WAIT_TARGET_M);
     }
 }
-#endif
 
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
 void pmu_sleep_power_clock_config(void *data, const uint32_t config)
