@@ -84,7 +84,7 @@ typedef struct {
     uint32_t drop_pkt_cnt;
     osi_mutex_t lock;
     struct pkt_queue *data_queue;
-    struct osi_event *data_ready;
+    struct osi_dynamic_event *data_ready;
     osi_alarm_t *vup_timer;
 } btc_hh_device_t;
 
