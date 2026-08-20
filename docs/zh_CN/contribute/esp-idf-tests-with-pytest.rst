@@ -735,14 +735,34 @@ Pytest 使用技巧
 
 可使用 `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ marker 来标记此测试用例，并写出原因。
 
+.. attention::
+
+    请避免使用字符串条件，例如 ``@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', ...)``。该条件是在运行时根据 session 级别的 CLI ``--target`` 参数求值的，而不是针对某个具体参数化测试实例实际解析出的 target 值，因此当同一测试针对多个 target 参数化时，该条件可能被错误匹配，导致结果不可靠。
+
+    推荐做法是通过 ``idf_parametrize`` 传入的具体参数化取值直接附加 ``xfail`` marker，更复杂的示例请参阅 :ref:`在不同运行环境中运行相同的应用程序 <pytest-same-app-different-running-environments>` 小节，这样该 marker 在 collection 阶段就与该取值绑定。
+
 以下代码来自 :idf_file:`pytest_panic.py <tools/test_apps/system/panic/panic_base/pytest_panic.py>`。
 
 .. code-block:: python
 
-    @pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='raised IllegalInstruction instead')
-    def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    @pytest.mark.generic
+    @idf_parametrize(
+        'config,target,markers',
+        [
+            (
+                'memprot_esp32s2',
+                'esp32s2',
+                pytest.mark.xfail(reason='Incorrect panic reason may be observed', run=False),
+            ),
+            ('memprot_esp32c3', 'esp32c3'),
+        ],
+        indirect=['config', 'target'],
+    )
+    def test_cache_error(dut: PanicTestDut, test_func_name: str) -> None:
 
 这一 marker 表示该测试在 ESP32-S2 上是一个已知失败。
+
+如果一个测试始终只针对单个 target 参数化，则不存在歧义，此时可直接使用无条件的 ``@pytest.mark.xfail(reason=..., run=False)``。
 
 标记夜间运行的测试用例
 ---------------------------
