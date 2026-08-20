@@ -133,7 +133,6 @@ void BTA_JvDisable(tBTA_JV_RFCOMM_CBACK *p_cback)
 
     APPL_TRACE_API( "BTA_JvDisable");
     if ((p_buf = (tBTA_JV_API_DISABLE *) osi_malloc(sizeof(tBTA_JV_API_DISABLE))) != NULL) {
-        bta_sys_deregister(BTA_ID_JV);
         p_buf->hdr.event = BTA_JV_API_DISABLE_EVT;
         p_buf->p_cback = p_cback;
         bta_sys_sendmsg(p_buf);

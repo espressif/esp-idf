@@ -473,6 +473,7 @@ void bta_pan_disable(void)
     }
 
     PAN_Deregister();
+    bta_sys_deregister(BTA_ID_PAN);
 }
 
 /*******************************************************************************

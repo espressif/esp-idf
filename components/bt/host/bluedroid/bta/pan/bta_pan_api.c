@@ -84,7 +84,6 @@ void BTA_PanDisable(void)
         return;
     }
 
-    bta_sys_deregister(BTA_ID_PAN);
     p_buf->event = BTA_PAN_API_DISABLE_EVT;
 
     bta_sys_sendmsg(p_buf);
