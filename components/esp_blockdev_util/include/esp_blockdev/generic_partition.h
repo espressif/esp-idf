@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include <sys/types.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "esp_blockdev.h"
 
@@ -26,29 +26,31 @@ extern "C" {
  *         ESP_ERR_NO_MEM - Failed to allocate the struct
  *         ESP_OK
  */
-esp_err_t esp_blockdev_generic_partition_get(esp_blockdev_handle_t parent, size_t start, size_t size, esp_blockdev_handle_t *out);
+esp_err_t esp_blockdev_generic_partition_get(esp_blockdev_handle_t parent, uint64_t start, uint64_t size, esp_blockdev_handle_t *out);
 
 /**
  * @brief Translate virtual partition address to parents address space
  *
  * @param device The device for which to do the translation
  * @param address Address to be translated, relative to the partition start
+ * @param output Where to store the translated parent-space address. Will be unchanged upon failure.
  *
- * @return Parent-space address on success
- *         -1 on error (invalid argument or overflow)
+ * @return ESP_OK on success
+ *         ESP_ERR_INVALID_ARG if an argument is invalid or the address cannot be translated
  */
-ssize_t esp_blockdev_generic_partition_translate_address_to_parent(esp_blockdev_handle_t device, size_t address);
+esp_err_t esp_blockdev_generic_partition_translate_address_to_parent(esp_blockdev_handle_t device, uint64_t address, uint64_t *output);
 
 /**
  * @brief Translate virtual partition address from parents address space
  *
  * @param device The device for which to do the translation
  * @param address Address to be translated, in the parent address space
+ * @param output Where to store the translated partition-relative address. Will be unchanged upon failure.
  *
- * @return Partition-relative address on success
- *         -1 on error (invalid argument or underflow)
+ * @return ESP_OK on success
+ *         ESP_ERR_INVALID_ARG if an argument is invalid or the address cannot be translated
  */
-ssize_t esp_blockdev_generic_partition_translate_address_to_child(esp_blockdev_handle_t device, size_t address);
+esp_err_t esp_blockdev_generic_partition_translate_address_to_child(esp_blockdev_handle_t device, uint64_t address, uint64_t *output);
 
 #ifdef __cplusplus
 }
