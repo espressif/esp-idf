@@ -162,7 +162,6 @@ tA2D_STATUS bta_av_m24_pick_pref_from_src_cap(const tA2D_M24_CIE *src_cap, tA2D_
 {
     UINT8 i;
     UINT32 src_br_max;
-    UINT32 p_pref_br;
     static const UINT8 sf2_order[] = {
         A2D_M24_IE_SAMP_FREQ2_96,
         A2D_M24_IE_SAMP_FREQ2_88,
@@ -195,11 +194,12 @@ tA2D_STATUS bta_av_m24_pick_pref_from_src_cap(const tA2D_M24_CIE *src_cap, tA2D_
         }
     }
 
-    if ((p_pref->drc & A2D_M24_IE_DRC_MSK) && !(src_cap->drc & A2D_M24_IE_DRC_MSK)) {
-        p_pref->drc = A2D_M24_IE_DRC_NS;
-    }
-
+    /* DRC: follow registered SEP capability (MPEG-2 AAC LC has no DRC) */
     if ((p_pref->obj_type & A2D_M24_IE_OBJ_TYPE_MSK) == A2D_M24_IE_OBJ_TYPE_2_AAC_LC) {
+        p_pref->drc = A2D_M24_IE_DRC_NS;
+    } else if (src_cap->drc & A2D_M24_IE_DRC_MSK) {
+        p_pref->drc = A2D_M24_IE_DRC_SUPPORT;
+    } else {
         p_pref->drc = A2D_M24_IE_DRC_NS;
     }
 
@@ -246,10 +246,7 @@ got_sf:
     }
 
     src_br_max = bta_av_m24_br(src_cap);
-    p_pref_br  = bta_av_m24_br(p_pref);
-    p_pref_br  = bta_av_m24_br_min(p_pref_br, src_br_max);
-
-    bta_av_m24_set_br(p_pref, p_pref_br, (UINT8)(p_pref->vbr & A2D_M24_IE_VBR_MSK));
+    bta_av_m24_set_br(p_pref, src_br_max, (UINT8)(p_pref->vbr & A2D_M24_IE_VBR_MSK));
 
     return A2D_SUCCESS;
 }
