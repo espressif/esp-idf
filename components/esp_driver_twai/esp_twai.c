@@ -23,12 +23,12 @@
  *                | tseg2/2  ^            ^
  *                          sjw      sample_point
  */
-uint32_t twai_node_timing_calc_param(const uint32_t source_freq, const twai_timing_basic_config_t *in_param, const twai_timing_constraint_t *hw_limit, twai_timing_advanced_config_t *out_param)
+uint32_t twai_node_timing_calc_param(const uint32_t source_freq, const twai_timing_basic_config_t *in_param, const twai_timing_limits_t *hw_limit, twai_timing_advanced_config_t *out_param)
 {
     uint32_t total_div = (source_freq + in_param->bitrate / 2) / in_param->bitrate;
     uint32_t pre_div = hw_limit->brp_min;
     uint16_t tseg = 0;
-    for (; pre_div <= hw_limit->brp_max; pre_div ++) {
+    for (; pre_div <= hw_limit->brp_max; pre_div += hw_limit->brp_inc) {
         tseg = total_div / pre_div;
         if (total_div != tseg * pre_div) {
             continue;   // no integer tseg

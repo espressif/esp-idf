@@ -436,19 +436,11 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, const twai_t
     ESP_RETURN_ON_FALSE((!timing_fd->bitrate) || (timing_fd->bitrate == timing->bitrate), ESP_ERR_INVALID_ARG, TAG, "FD stage bitrate is not supported");
 #endif
 
-    twai_timing_constraint_t hw_const = {
-        .brp_min = TWAI_LL_BRP_MIN,
-        .brp_max = TWAI_LL_BRP_MAX,
-        .prop_max = TWAI_LL_PROP_MAX,
-        .tseg1_min = TWAI_LL_TSEG1_MIN,
-        .tseg1_max = TWAI_LL_TSEG1_MAX,
-        .tseg2_min = TWAI_LL_TSEG2_MIN,
-        .tseg2_max = TWAI_LL_TSEG2_MAX,
-        .sjw_max = TWAI_LL_SJW_MAX,
-    };
+    twai_timing_limits_t hw_limits = {};
+    twai_hal_get_timing_limits(&hw_limits);
 
     twai_timing_advanced_config_t timing_adv = {}, *timing_fd_ptr = NULL;
-    uint32_t real_baud = twai_node_timing_calc_param(twai_ctx->src_freq_hz, timing, &hw_const, &timing_adv);
+    uint32_t real_baud = twai_node_timing_calc_param(twai_ctx->src_freq_hz, timing, &hw_limits, &timing_adv);
     ESP_LOGD(TAG, "timing: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", twai_ctx->src_freq_hz, timing_adv.brp, timing_adv.prop_seg, timing_adv.tseg_1, timing_adv.tseg_2, timing_adv.sjw, timing_adv.ssp_offset);
     ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
     if (timing->bitrate != real_baud) {
@@ -457,12 +449,8 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, const twai_t
 #if SOC_HAS(TWAI_FD)
     twai_timing_advanced_config_t timing_adv_fd = {};
     if (timing_fd->bitrate) {
-        hw_const.brp_max = TWAI_LL_BRP_MAX_FD;
-        hw_const.prop_max = TWAI_LL_PROP_MAX_FD;
-        hw_const.tseg1_max = TWAI_LL_TSEG1_MAX_FD;
-        hw_const.tseg2_max = TWAI_LL_TSEG2_MAX_FD;
-        hw_const.sjw_max = TWAI_LL_SJW_MAX_FD;
-        real_baud = twai_node_timing_calc_param(twai_ctx->src_freq_hz, timing_fd, &hw_const, &timing_adv_fd);
+        twai_hal_get_timing_limits_fd(&hw_limits);
+        real_baud = twai_node_timing_calc_param(twai_ctx->src_freq_hz, timing_fd, &hw_limits, &timing_adv_fd);
         ESP_LOGD(TAG, "timing_fd: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", twai_ctx->src_freq_hz, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
         ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");
         if (timing_fd->bitrate != real_baud) {
@@ -842,4 +830,20 @@ err:
     _lock_release(&s_platform.intr_mutex);
     _node_destroy(node);
     return ret;
+}
+
+esp_err_t twai_node_onchip_get_timing_limits(bool is_fd, twai_timing_limits_t *timing_limits)
+{
+    ESP_RETURN_ON_FALSE(timing_limits, ESP_ERR_INVALID_ARG, TAG, "Invalid argument: null");
+
+    if (is_fd) {
+#if SOC_HAS(TWAI_FD)
+        twai_hal_get_timing_limits_fd(timing_limits);
+#else
+        ESP_RETURN_ON_ERROR(ESP_ERR_NOT_SUPPORTED, TAG, "FD is not supported");
+#endif
+    } else {
+        twai_hal_get_timing_limits(timing_limits);
+    }
+    return ESP_OK;
 }

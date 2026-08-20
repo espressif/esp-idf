@@ -459,6 +459,7 @@ Application Examples
     - :example:`peripherals/twai/twai_error_recovery` demonstrates how to recover nodes from the bus-off state and resume communication, as well as bus error reporting, node state changes, and other event information.
     - :example:`peripherals/twai/twai_network` using 2 nodes with different roles: transmitting and listening, demonstrates how to use the driver for single and bulk data transmission, as well as configure filters to receive these data.
     - :example:`peripherals/twai/cybergear` demonstrates how to control XiaoMi CyberGear motors via TWAI interface.
+    - :example:`peripherals/twai/usb_twai_adapter` demonstrates how to make an USB-CAN adapter and enumerate it to a socket can device.
 
 API Reference
 =============

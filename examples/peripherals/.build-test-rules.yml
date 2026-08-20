@@ -820,6 +820,14 @@ examples/peripherals/twai/twai_utils:
     - console
     - soc
 
+examples/peripherals/twai/usb_twai_adapter:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_USB_OTG_SUPPORTED != 1
+  depends_components:
+    - esp_driver_twai
+    - esp_hal_twai
+    - soc
+
 examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
