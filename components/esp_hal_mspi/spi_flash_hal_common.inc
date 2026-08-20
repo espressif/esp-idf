@@ -24,6 +24,7 @@
 #define ADDRESS_MASK_24BIT 0xFFFFFF
 #define COMPUTE_DUMMY_CYCLELEN(host, base)    ((base) + ((spi_flash_hal_context_t*)host)->extra_dummy)
 
+__attribute__((always_inline))
 static inline spi_dev_t *get_spi_dev(spi_flash_host_inst_t *host)
 {
     return ((spi_flash_hal_context_t*)host)->spi;
