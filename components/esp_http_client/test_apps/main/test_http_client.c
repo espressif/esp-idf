@@ -188,6 +188,46 @@ TEST_CASE("esp_http_client_set_header() should not return error if header value 
     esp_http_client_cleanup(client);
 }
 
+TEST_CASE("set_post_field adds default Content-Type when missing", "[esp_http_client]")
+{
+    const esp_http_client_config_t config = {
+        .url = "http://localhost",
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    const char post_data[] = "foo=bar";
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_post_field(client, post_data, strlen(post_data)));
+
+    char *content_type = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_header(client, "Content-Type", &content_type));
+    TEST_ASSERT_NOT_NULL(content_type);
+    TEST_ASSERT_EQUAL_STRING("application/x-www-form-urlencoded", content_type);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_cleanup(client));
+}
+
+TEST_CASE("set_post_field preserves explicit Content-Type", "[esp_http_client]")
+{
+    const esp_http_client_config_t config = {
+        .url = "http://localhost",
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_header(client, "Content-Type", "application/json"));
+
+    const char post_data[] = "{}";
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_post_field(client, post_data, strlen(post_data)));
+
+    char *content_type = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_header(client, "Content-Type", &content_type));
+    TEST_ASSERT_NOT_NULL(content_type);
+    TEST_ASSERT_EQUAL_STRING("application/json", content_type);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_cleanup(client));
+}
+
 TEST_CASE("set_url() to a different host strips Authorization header", "[esp_http_client]")
 {
     esp_http_client_config_t config = {
