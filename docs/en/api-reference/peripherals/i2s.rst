@@ -291,6 +291,8 @@ The data transport of the I2S peripheral, including sending and receiving, is re
 
 Both :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` are blocking functions. They keeps waiting until the whole source buffer is sent or the whole destination buffer is loaded, unless they exceed the max blocking time, where the error code ``ESP_ERR_TIMEOUT`` returns. To send or receive data asynchronously, callbacks can be registered by  :cpp:func:`i2s_channel_register_event_callback`. Users are able to access the DMA buffer directly in the callback function instead of transmitting or receiving by the two blocking functions. However, please be aware that it is an interrupt callback, so do not add complex logic, run floating operation, or call non-reentrant functions in the callback.
 
+:cpp:member:`i2s_chan_config_t::dma_burst_size` sets the DMA burst size in bytes. Set it to ``0`` (the value used by :c:macro:`I2S_CHANNEL_DEFAULT_CONFIG`) to apply the driver default of 32 bytes. A non-zero value must be a power of 2 supported by the chip GDMA. The field is ignored on chips that do not support configurable DMA burst size.
+
 .. only:: SOC_PSRAM_DMA_CAPABLE
 
     To reduce internal RAM usage, set :cpp:member:`i2s_chan_config_t::dma_buffer_in_psram` to allocate the driver-owned DMA buffers in PSRAM. DMA descriptors remain in internal RAM. The driver returns an error if PSRAM DMA is unavailable or the allocation fails; it does not fall back to internal RAM. When :ref:`CONFIG_I2S_ISR_IRAM_SAFE` is enabled, TX auto-clear cannot be used with PSRAM DMA buffers, and callbacks must not access the DMA buffer while the cache is disabled.

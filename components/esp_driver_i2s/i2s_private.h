@@ -119,6 +119,7 @@ typedef struct {
     uint32_t                link_index;      /*!< Index of the next completed DMA link item */
     uint32_t                desc_num;       /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
     uint32_t                frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots */
+    uint32_t                burst_size;     /*!< Resolved DMA data burst size in bytes */
     uint32_t                buf_size;       /*!< dma buffer size */
     size_t                  buf_alignment;  /*!< DMA buffer alignment required for address and size */
     bool                    buffer_in_psram; /*!< Whether the DMA buffers are allocated in PSRAM */

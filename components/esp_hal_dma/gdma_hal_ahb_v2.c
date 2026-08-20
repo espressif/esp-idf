@@ -319,7 +319,7 @@ static gdma_hal_priv_data_t gdma_lp_ahb_hal_priv_data = {
     .tx_event_mask = AHB_DMA_LL_TX_EVENT_MASK,
     .rx_event_mask = AHB_DMA_LL_RX_EVENT_MASK,
 #if GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
-    .supported_burst_size_mask = AHB_DMA_LL_SUPPORTED_BURST_SIZE_MASK,
+    .supported_burst_size_mask = LP_AHB_DMA_LL_SUPPORTED_BURST_SIZE_MASK,
 #endif
 };
 

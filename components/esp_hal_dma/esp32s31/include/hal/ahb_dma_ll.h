@@ -25,6 +25,11 @@ extern "C" {
                                               GDMA_BURST_SIZE_SUPPORT_32 | \
                                               GDMA_BURST_SIZE_SUPPORT_64)
 
+#define LP_AHB_DMA_LL_SUPPORTED_BURST_SIZE_MASK (GDMA_BURST_SIZE_SUPPORT_4 | \
+                                                 GDMA_BURST_SIZE_SUPPORT_16 | \
+                                                 GDMA_BURST_SIZE_SUPPORT_32 | \
+                                                 GDMA_BURST_SIZE_SUPPORT_64)
+
 // any "dummy" peripheral ID can be used for M2M mode
 #define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0x8200)
 #define AHB_DMA_LL_RX_EVENT_MASK    (0x7F)

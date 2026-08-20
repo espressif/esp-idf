@@ -24,6 +24,7 @@ extern "C" {
     .role = i2s_role, \
     .dma_desc_num = 6, \
     .dma_frame_num = 240, \
+    .dma_burst_size = 0, \
     .auto_clear_after_cb = false, \
     .auto_clear_before_cb = false, \
     .dma_buffer_in_psram = false, \
@@ -72,6 +73,10 @@ typedef struct {
     uint32_t            dma_desc_num;       /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
     uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots,
                                              *   it should be the multiple of `3` when the data bit width is 24.
+                                             */
+    size_t              dma_burst_size;     /*!< DMA data burst size in bytes. Set to 0 to use driver default (32).
+                                             *   When non-zero, must be a chip-supported power of 2 (see GDMA driver or chip TRM).
+                                             *   Ignored on chips that do not support configurable burst size.
                                              */
     union {
         bool            auto_clear;         /*!< Alias of `auto_clear_after_cb` */
