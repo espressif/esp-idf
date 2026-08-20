@@ -11,6 +11,7 @@ entries:
         gdma: gdma_stop (noflash)
         gdma: gdma_append (noflash)
         gdma: gdma_reset (noflash)
+        gdma: gdma_get_buffer_alignment_constraint (noflash)
 
 [mapping:gdma_hal]
 archive: libesp_hal_dma.a

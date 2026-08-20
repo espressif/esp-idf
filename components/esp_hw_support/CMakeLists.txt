@@ -16,6 +16,7 @@ set(public_include_dirs "include" "include/soc"
                         "ldo/include" "debug_probe/include" "etm/include"
                         "mspi/mspi_timing_tuning/include" "mspi/mspi_timing_tuning/tuning_scheme_impl/include"
                         "mspi/mspi_intr/include"
+                        "mspi/esp_mspi_align/include"
                         "power_supply/include" "modem/include")
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
@@ -52,7 +53,8 @@ set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.
                   esp_hal_ana_conv      # sleep process requires backup/restore some ADC, TSENS registers
                   )
 
-set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
+set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c"
+         "mspi/esp_mspi_align/esp_mspi_align.c")
 if(NOT non_os_build)
     list(APPEND srcs "esp_clk.c"
                      "clk_ctrl_os.c"

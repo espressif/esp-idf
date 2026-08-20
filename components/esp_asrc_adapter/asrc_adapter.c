@@ -9,6 +9,7 @@
 #include "freertos/semphr.h"
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_mspi_align.h"
 #include "soc/ahb_dma_struct.h"
 #include "hal/dma_types.h"
 #include "esp_check.h"
@@ -180,8 +181,13 @@ esp_err_t asrc_hw_gdma_create_link_list(uint32_t byte_cnt, asrc_hw_gdma_link_lis
     ESP_RETURN_ON_FALSE(list_hd, ESP_ERR_INVALID_ARG, TAG, "NULL pointer");
     ESP_RETURN_ON_FALSE(max_desc_num, ESP_ERR_INVALID_ARG, TAG, "NULL pointer");
     esp_err_t ret = ESP_OK;
-    int32_t desc_num = byte_cnt / ASRC_HW_GDMA_DESC_BUFFER_MAX_SIZE;
-    if (byte_cnt % ASRC_HW_GDMA_DESC_BUFFER_MAX_SIZE != 0) {
+    size_t mspi_align = esp_mspi_get_alignment(NULL);
+    uint32_t max_desc_size = ASRC_HW_GDMA_DESC_BUFFER_MAX_SIZE;
+    if (mspi_align > 1) {
+        max_desc_size &= ~(mspi_align - 1);
+    }
+    int32_t desc_num = byte_cnt / max_desc_size;
+    if (byte_cnt % max_desc_size != 0) {
         desc_num++;
     }
     gdma_link_list_handle_t list = (gdma_link_list_handle_t)(*list_hd);
@@ -208,21 +214,30 @@ esp_err_t asrc_hw_gdma_mount_link_list(asrc_hw_gdma_link_list_handle_t list_hd, 
     ESP_RETURN_ON_FALSE(list_hd, ESP_ERR_INVALID_ARG, TAG, "NULL pointer");
     esp_err_t ret = ESP_OK;
     uint32_t remaining_byte_cnt = byte_cnt;
+    size_t mspi_align = esp_mspi_get_alignment(buf);
+    if (mspi_align > 1) {
+        ESP_RETURN_ON_FALSE((((uintptr_t)buf & (mspi_align - 1)) == 0) && ((byte_cnt & (mspi_align - 1)) == 0),
+                            ESP_ERR_INVALID_ARG, TAG, "buffer addr or size not aligned to MSPI alignment");
+    }
+    uint32_t max_desc_size = ASRC_HW_GDMA_DESC_BUFFER_MAX_SIZE;
+    if (mspi_align > 1) {
+        max_desc_size &= ~(mspi_align - 1);
+    }
     gdma_buffer_mount_config_t mount_config[desc_num] = {};
     for (int i = 0; i < desc_num; i++) {
         mount_config[i].buffer = buf;
-        mount_config[i].flags.bypass_buffer_align_check = true;
+        mount_config[i].buffer_alignment = mspi_align;
         if ((i + 1) != desc_num) {
-            mount_config[i].length = ASRC_HW_GDMA_DESC_BUFFER_MAX_SIZE;
+            mount_config[i].length = max_desc_size;
             mount_config[i].flags.mark_eof = 0;
             mount_config[i].flags.mark_final = GDMA_FINAL_LINK_TO_DEFAULT;
-            remaining_byte_cnt -= ASRC_HW_GDMA_DESC_BUFFER_MAX_SIZE;
+            remaining_byte_cnt -= max_desc_size;
         } else {
             mount_config[i].length = remaining_byte_cnt;
             mount_config[i].flags.mark_eof = 1;
             mount_config[i].flags.mark_final = GDMA_FINAL_LINK_TO_NULL;
         }
-        buf += ASRC_HW_GDMA_DESC_BUFFER_MAX_SIZE;
+        buf += max_desc_size;
     }
     ret = gdma_link_mount_buffers((gdma_link_list_handle_t)list_hd, 0, mount_config, desc_num, NULL);
     if (ret != ESP_OK) {

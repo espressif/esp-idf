@@ -14,6 +14,7 @@
 #include "esp_cache.h"
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
+#include "esp_macros.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -22,6 +23,7 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/esp_mspi_align.h"
 #include "esp_private/esp_dma_utils.h"
 #include "esp_private/gdma_link.h"
 #include "esp_private/sleep_retention.h"
@@ -321,8 +323,14 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
         ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->rx_dma_chan, &trans_cfg), SPI_TAG, "config gdma rx transfer failed");
 
         // Get DMA alignment constraints
-        gdma_get_alignment_constraints(dma_ctx->tx_dma_chan, &dma_ctx->dma_align_tx_int, &dma_ctx->dma_align_tx_ext);
-        gdma_get_alignment_constraints(dma_ctx->rx_dma_chan, &dma_ctx->dma_align_rx_int, &dma_ctx->dma_align_rx_ext);
+        gdma_channel_alignment_info_t tx_align_info;
+        gdma_get_channel_alignment_constraints(dma_ctx->tx_dma_chan, &tx_align_info);
+        dma_ctx->dma_align_tx_int = tx_align_info.int_mem_alignment;
+        dma_ctx->dma_align_tx_ext = tx_align_info.ext_enc_mem_alignment;
+        gdma_channel_alignment_info_t rx_align_info;
+        gdma_get_channel_alignment_constraints(dma_ctx->rx_dma_chan, &rx_align_info);
+        dma_ctx->dma_align_rx_int = rx_align_info.int_mem_alignment;
+        dma_ctx->dma_align_rx_ext = rx_align_info.ext_enc_mem_alignment;
     }
     return ret;
 }
@@ -409,12 +417,23 @@ cleanup:
 
 void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, const void *data, int len, bool is_rx)
 {
-    size_t buffer_alignment;
-    if (esp_ptr_internal(data)) {
-        buffer_alignment = is_rx ? dma_ctx->dma_align_rx_int : dma_ctx->dma_align_tx_int;
+    size_t buffer_alignment = 0;
+#if SOC_GDMA_SUPPORTED
+    gdma_channel_handle_t dma_chan = is_rx ? dma_ctx->rx_dma_chan : dma_ctx->tx_dma_chan;
+    buffer_alignment = gdma_get_buffer_alignment_constraint(dma_chan, data);
+#else
+    bool is_ptr_ext = esp_ptr_external_ram(data);
+    if (is_rx) {
+        buffer_alignment = is_ptr_ext ? dma_ctx->dma_align_rx_ext : dma_ctx->dma_align_rx_int;
     } else {
-        buffer_alignment = is_rx ? dma_ctx->dma_align_rx_ext : dma_ctx->dma_align_tx_ext;
+        buffer_alignment = is_ptr_ext ? dma_ctx->dma_align_tx_ext : dma_ctx->dma_align_tx_int;
+
     }
+    if (is_ptr_ext || esp_ptr_in_drom(data)) {
+        size_t mspi_alignment = esp_mspi_get_alignment(data);
+        buffer_alignment = MAX(buffer_alignment, mspi_alignment);
+    }
+#endif
 
     gdma_buffer_mount_config_t mount_config = {
         .buffer = (void *)data,
@@ -423,7 +442,9 @@ void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_
         .flags = {
             .mark_eof = true,
             .mark_final = GDMA_FINAL_LINK_TO_NULL,
-            .bypass_buffer_align_check = true,  // 'setup_priv_buffer' already do the check
+            // 'setup_priv_buffer' already do the check
+            .bypass_buffer_addr_align_check = true,
+            .bypass_buffer_size_align_check = true,
         }
     };
     esp_err_t ret = gdma_link_mount_buffers(is_rx ? dma_ctx->rx_link_handle : dma_ctx->tx_link_handle, offset, &mount_config, 1, NULL);

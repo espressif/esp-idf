@@ -177,7 +177,10 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     ESP_RETURN_ON_FALSE(out_size, ESP_ERR_INVALID_ARG, TAG, "jpeg encode picture out_size is null");
     ESP_RETURN_ON_FALSE(((uintptr_t)bit_stream % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_ARG, TAG, "jpeg encode bit stream is not aligned, please use jpeg_alloc_encoder_mem to malloc your buffer");
     // both the input picture and output bitstream are accessed by the 2D-DMA
-    ESP_RETURN_ON_FALSE(jpeg_check_dma2d_buffer(encode_inbuf) && jpeg_check_dma2d_buffer(bit_stream), ESP_ERR_INVALID_ARG, TAG, "jpeg encode buffer is not 16-byte aligned or not in unencrypted PSRAM, please use jpeg_alloc_encoder_mem to malloc your buffer");
+    size_t encode_inbuf_alignment = dma2d_get_buffer_alignment_constraint(encode_inbuf);
+    size_t bit_stream_alignment = dma2d_get_buffer_alignment_constraint(bit_stream);
+    ESP_RETURN_ON_FALSE(encode_inbuf_alignment <= 1 && bit_stream_alignment <= 1, ESP_ERR_INVALID_ARG, TAG,
+                        "jpeg encode buffer doesn't satisfy DMA2D alignment constraints, please use jpeg_alloc_encoder_mem to malloc your buffer");
 
     esp_err_t ret = ESP_OK;
 

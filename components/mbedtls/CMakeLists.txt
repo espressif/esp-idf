@@ -370,6 +370,8 @@ if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
 endif()
 
 if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")
+    target_link_libraries(tfpsacrypto PRIVATE idf::esp_hw_support)
+    target_link_libraries(builtin PRIVATE idf::esp_hw_support)
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_mm)
     target_link_libraries(builtin PRIVATE idf::esp_mm)
     if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)

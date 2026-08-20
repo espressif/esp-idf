@@ -22,8 +22,6 @@ extern "C" {
 
 typedef struct uhci_controller_t uhci_controller_t;
 
-#define UHCI_MAX(a, b) (((a)>(b))?(a):(b))
-
 #define UHCI_PM_LOCK_NAME_LEN_MAX              16
 
 #if CONFIG_UHCI_ISR_HANDLER_IN_IRAM
@@ -69,8 +67,6 @@ typedef struct {
     uhci_transaction_desc_t *cur_trans;                 // pointer to current transaction
     QueueHandle_t trans_queues[UHCI_TRANS_QUEUE_MAX];   // transaction queue
     _Atomic uhci_tx_fsm_t tx_fsm;                       // channel life cycle specific FSM
-    size_t int_mem_align;                               // Alignment for internal memory
-    size_t ext_mem_align;                               // Alignment for external memory
     atomic_int num_trans_inflight;                      // Indicates the number of transactions that are undergoing but not recycled to ready_queue
     size_t max_transmit_size;                           // per-transaction max total size in bytes, from config->max_transmit_size; the DMA node pool is sized for this
     size_t max_buf_count;                               // per-transaction max buffer segment count, from config->max_transmit_buffer_count (at least 1)
@@ -86,8 +82,6 @@ typedef struct {
     uint8_t **buffer_pointers;                          // Pointer for saving buffer pointer
     _Atomic uhci_rx_fsm_t rx_fsm;                       // channel life cycle specific FSM
     size_t cache_line;                                  // cache line size need to be aligned up.
-    size_t int_mem_align;                               // Alignment for internal memory
-    size_t ext_mem_align;                               // Alignment for external memory
     size_t rx_num_dma_nodes;                            // rx dma number nodes
     gdma_buffer_mount_config_t *mount_configs;          // scratch array (capacity rx_num_dma_nodes) reused by every receive to mount buffer segments; avoids a VLA in ISR context
     bool continuous;                                    // continuous mode: keep DMA running across EOFs instead of stopping
@@ -99,8 +93,6 @@ struct uhci_controller_t {
     uhci_tx_dir tx_dir;                                 // tx direction structure
     uhci_rx_dir rx_dir;                                 // rx direction structure
     void *user_data;                                    // user data
-    size_t int_mem_cache_line_size;                     // internal memory cache line size
-    size_t ext_mem_cache_line_size;                     // external memory cache line size
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;                       // power management lock
     char pm_lock_name[UHCI_PM_LOCK_NAME_LEN_MAX];       // pm lock name

@@ -204,7 +204,6 @@
 #define SOC_AHB_GDMA_VERSION                2
 #define SOC_GDMA_SUPPORT_ETM                1
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
-#define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- MODEM CAPS --------------------------------------*/
 #define SOC_MODEM_SUPPORT_ETM               1

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdatomic.h>
 #include <sys/queue.h>
+#include <sys/param.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_check.h"
@@ -51,8 +52,6 @@ typedef struct {
     gdma_channel_handle_t rx_channel;  // GDMA RX channel handle used to drain M2M data
     portMUX_TYPE spin_lock;            // Spinlock for synchronization
     _Atomic async_crc_fsm_t fsm;       // driver state machine, changing state should be atomic
-    size_t tx_int_mem_alignment;       // Required DMA buffer alignment for internal TX memory
-    size_t tx_ext_mem_alignment;       // Required DMA buffer alignment for external TX memory
     uint8_t *rx_sink_buffer;           // Sink buffer used to drain the M2M RX path
     gdma_link_list_handle_t rx_link_list; // Self-loop DMA link list for the RX sink buffer, shared by all crc transactions
     uint32_t gdma_bus_id;              // GDMA bus id (AHB, AXI, etc.)
@@ -164,9 +163,9 @@ esp_err_t esp_async_crc_install_gdma_template(const async_crc_config_t *config, 
     ESP_GOTO_ON_ERROR(gdma_config_transfer(crc_gdma->rx_channel, &transfer_cfg), err, TAG, "config RX DMA transfer failed");
 
     // Get buffer alignment required by GDMA channel
-    gdma_get_alignment_constraints(crc_gdma->tx_channel, &crc_gdma->tx_int_mem_alignment, &crc_gdma->tx_ext_mem_alignment);
-    size_t rx_int_mem_alignment = 0;
-    gdma_get_alignment_constraints(crc_gdma->rx_channel, &rx_int_mem_alignment, NULL);
+    gdma_channel_alignment_info_t rx_align_info;
+    gdma_get_channel_alignment_constraints(crc_gdma->rx_channel, &rx_align_info);
+    size_t rx_int_mem_alignment = rx_align_info.int_mem_alignment;
     size_t rx_buffer_size = (rx_int_mem_alignment > CRC_DMA_RX_SINK_BUFFER_SIZE) ?
                             rx_int_mem_alignment : CRC_DMA_RX_SINK_BUFFER_SIZE;
     crc_gdma->rx_sink_buffer = heap_caps_aligned_calloc(rx_int_mem_alignment, 1, rx_buffer_size,
@@ -324,13 +323,7 @@ static esp_err_t async_crc_prepare_transaction(async_crc_gdma_context_t *crc_gdm
     uint32_t max_crc_bit_width = (crc_gdma->gdma_bus_id == SOC_GDMA_BUS_AXI) ? GDMA_LL_AXI_MAX_CRC_BIT_WIDTH : GDMA_LL_AHB_MAX_CRC_BIT_WIDTH;
     ESP_RETURN_ON_FALSE(trans->params.width <= max_crc_bit_width, ESP_ERR_INVALID_ARG, TAG, "invalid crc bit width %"PRIu32, trans->params.width);
 
-    // Get buffer alignment based on memory type
-    size_t buffer_alignment = esp_ptr_internal(trans->data) ? crc_gdma->tx_int_mem_alignment : crc_gdma->tx_ext_mem_alignment;
-
-    // Verify user buffer satisfies DMA alignment requirements
-    ESP_RETURN_ON_FALSE(((uintptr_t)trans->data % buffer_alignment) == 0, ESP_ERR_INVALID_ARG, TAG,
-                        "Data buffer not aligned to %zu bytes", buffer_alignment);
-
+    size_t buffer_alignment = gdma_get_buffer_alignment_constraint(crc_gdma->tx_channel, trans->data);
     // Calculate number of DMA nodes needed
     size_t tx_num_dma_nodes = esp_dma_calculate_node_count(trans->size, buffer_alignment, CRC_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
 

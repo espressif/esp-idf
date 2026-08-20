@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <sys/param.h>
 #if CONFIG_UHCI_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
@@ -13,6 +14,7 @@
 #endif
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "esp_macros.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_macros.h"
@@ -26,13 +28,10 @@
 #include "hal/uhci_hal.h"
 #include "hal/uhci_ll.h"
 #include "hal/dma_types.h"
-#include "hal/cache_hal.h"
-#include "hal/cache_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gdma.h"
 #include "esp_private/esp_dma_utils.h"
 #include "esp_private/gdma_link.h"
-#include "esp_private/esp_cache_private.h"
 #include "esp_private/esp_psram_mspi.h"
 #include "uhci_private.h"
 #include "esp_memory_utils.h"
@@ -213,8 +212,9 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     gdma_apply_strategy(uhci_ctrl->tx_dir.dma_chan, &strategy_config);
 
     // create DMA link list
-    gdma_get_alignment_constraints(uhci_ctrl->tx_dir.dma_chan, &uhci_ctrl->tx_dir.int_mem_align, &uhci_ctrl->tx_dir.ext_mem_align);
-    size_t buffer_alignment = UHCI_MAX(uhci_ctrl->tx_dir.int_mem_align, uhci_ctrl->tx_dir.ext_mem_align);
+    gdma_channel_alignment_info_t tx_align_info;
+    gdma_get_channel_alignment_constraints(uhci_ctrl->tx_dir.dma_chan, &tx_align_info);
+    size_t buffer_alignment = MAX(tx_align_info.int_mem_alignment, tx_align_info.ext_enc_mem_alignment);
     // Given that the combined size of all buffers does not exceed `max_transmit_size` and
     // the number of buffers does not exceed `max_transmit_buffer_count`, a single transfer
     // requires at most `esp_dma_calculate_node_count(max_transmit_size) + max_transmit_buffer_count - 1` DMA descriptors.
@@ -237,8 +237,9 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     gdma_connect(uhci_ctrl->rx_dir.dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
     ESP_RETURN_ON_ERROR(gdma_config_transfer(uhci_ctrl->rx_dir.dma_chan, &transfer_cfg), TAG, "Config DMA rx channel transfer failed");
 
-    gdma_get_alignment_constraints(uhci_ctrl->rx_dir.dma_chan, &uhci_ctrl->rx_dir.int_mem_align, &uhci_ctrl->rx_dir.ext_mem_align);
-    buffer_alignment = UHCI_MAX(uhci_ctrl->rx_dir.int_mem_align, uhci_ctrl->rx_dir.ext_mem_align);
+    gdma_channel_alignment_info_t rx_align_info;
+    gdma_get_channel_alignment_constraints(uhci_ctrl->rx_dir.dma_chan, &rx_align_info);
+    buffer_alignment = MAX(rx_align_info.int_mem_alignment, rx_align_info.ext_enc_mem_alignment);
     uhci_ctrl->rx_dir.rx_num_dma_nodes = esp_dma_calculate_node_count(config->max_receive_internal_mem, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     dma_link_config.num_items = uhci_ctrl->rx_dir.rx_num_dma_nodes;
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &uhci_ctrl->rx_dir.dma_link), TAG, "DMA rx link list alloc failed");
@@ -287,7 +288,7 @@ static void uhci_do_transmit(uhci_controller_handle_t uhci_ctrl, uhci_transactio
 
     for (size_t i = 0; i < buf_count; i++) {
         bool is_last = (i == buf_count - 1);
-        size_t buffer_alignment = esp_ptr_internal(trans->buf_info[i].write_buffer) ? uhci_ctrl->tx_dir.int_mem_align : uhci_ctrl->tx_dir.ext_mem_align;
+        size_t buffer_alignment = gdma_get_buffer_alignment_constraint(uhci_ctrl->tx_dir.dma_chan, trans->buf_info[i].write_buffer);
         mount_configs[i] = (gdma_buffer_mount_config_t) {
             .buffer = (void *)trans->buf_info[i].write_buffer,
             .buffer_alignment = buffer_alignment,
@@ -324,9 +325,11 @@ static esp_err_t uhci_receive_internal(uhci_controller_handle_t uhci_ctrl, uint8
 
     esp_err_t ret = ESP_OK;
 
-    const uint32_t mem_cache_line_size = esp_ptr_external_ram(read_buffer) ? uhci_ctrl->ext_mem_cache_line_size : uhci_ctrl->int_mem_cache_line_size;
     // Must take cache line into consideration for C2M operation.
-    const uint32_t max_alignment_needed = UHCI_MAX(UHCI_MAX(uhci_ctrl->rx_dir.int_mem_align, uhci_ctrl->rx_dir.ext_mem_align), mem_cache_line_size);
+    const uint32_t mem_cache_line_size = esp_cache_get_line_size_by_addr(read_buffer);
+
+    size_t buffer_alignment = gdma_get_buffer_alignment_constraint(uhci_ctrl->rx_dir.dma_chan, read_buffer);
+    const uint32_t max_alignment_needed = MAX(buffer_alignment, mem_cache_line_size);
     uhci_ctrl->rx_dir.cache_line = mem_cache_line_size;
 
     // Align the read_buffer pointer to mem_cache_line_size
@@ -364,7 +367,7 @@ static esp_err_t uhci_receive_internal(uhci_controller_handle_t uhci_ctrl, uint8
             ESP_GOTO_ON_FALSE_ISR(uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] != 0 && uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE,
                                   ESP_ERR_INVALID_ARG, err, TAG, "buffer_size is too small or too large");
 
-            size_t buffer_alignment = esp_ptr_internal(read_buffer) ? uhci_ctrl->rx_dir.int_mem_align : uhci_ctrl->rx_dir.ext_mem_align;
+            buffer_alignment = gdma_get_buffer_alignment_constraint(uhci_ctrl->rx_dir.dma_chan, read_buffer);
             mount_configs[i] = (gdma_buffer_mount_config_t) {
                 .buffer = read_buffer,
                 .buffer_alignment = buffer_alignment,
@@ -382,8 +385,7 @@ static esp_err_t uhci_receive_internal(uhci_controller_handle_t uhci_ctrl, uint8
 
         // Invalidate cache before DMA starts to ensure no dirty cache lines.
         // All DMA nodes (mount_configs) share the same contiguous user buffer, so checking mount_configs[0].buffer is sufficient.
-        bool need_cache_sync = esp_ptr_internal(mount_configs[0].buffer) ? (uhci_ctrl->int_mem_cache_line_size > 0) : (uhci_ctrl->ext_mem_cache_line_size > 0);
-        if (need_cache_sync) {
+        if (esp_cache_get_line_size_by_addr(mount_configs[0].buffer) > 0) {
             ESP_GOTO_ON_ERROR_ISR(esp_cache_msync(mount_configs[0].buffer, usable_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err, TAG, "cache sync failed");
         }
     }
@@ -465,20 +467,7 @@ esp_err_t uhci_multi_buffer_transmit(uhci_controller_handle_t uhci_ctrl, const u
 
         total_size += write_size;
 
-        size_t alignment = 0;
-        size_t cache_line_size = 0;
-        if (esp_ptr_external_ram(write_buffer)) {
-            alignment = uhci_ctrl->tx_dir.ext_mem_align;
-            cache_line_size = uhci_ctrl->ext_mem_cache_line_size;
-        } else {
-            alignment = uhci_ctrl->tx_dir.int_mem_align;
-            cache_line_size = uhci_ctrl->int_mem_cache_line_size;
-        }
-
-        ESP_RETURN_ON_FALSE(((((uintptr_t)write_buffer) & (alignment - 1)) == 0) && (((write_size) & (alignment - 1)) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "buffer segment %zu address or size are not %zu bytes aligned", i, alignment);
-
-        if (cache_line_size > 0) {
+        if (esp_cache_get_line_size_by_addr(write_buffer) > 0) {
             // Write back to cache to synchronize the cache before DMA start
             ESP_RETURN_ON_ERROR(esp_cache_msync((void *)write_buffer, write_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
         }
@@ -668,9 +657,6 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
     if (config->rx_eof_flags.length_eof) {
         uhci_ll_rx_set_packet_threshold(uhci_ctrl->hal.dev, config->max_packet_receive);
     }
-
-    esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &uhci_ctrl->ext_mem_cache_line_size);
-    esp_cache_get_alignment(MALLOC_CAP_INTERNAL, &uhci_ctrl->int_mem_cache_line_size);
 
     ESP_GOTO_ON_ERROR(uhci_gdma_initialize(uhci_ctrl, config), err, TAG, "uhci gdma initialize failed");
 

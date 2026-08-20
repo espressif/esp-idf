@@ -13,6 +13,7 @@
 #include "esp_memory_utils.h"
 #include "esp_private/async_memcpy_dma2d.h"
 #include "esp_private/dw_gdma.h"
+#include "esp_private/dma2d.h"
 #include "hal/color_hal.h"
 
 typedef struct esp_lcd_dpi_panel_t esp_lcd_dpi_panel_t;
@@ -223,17 +224,23 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     dpi_panel->bus = bus;
     dpi_panel->num_fbs = num_fbs;
 
+    // Although the DW-GDMA can handle unaligned data, frame buffer still may be the dst of DMA2D operation.
+    // Allocate FB with DMA2D alloc alignment so address is usable as a DMA2D destination when enabled later.
+    // Line-size / window misalignment will fail later in async_color_convert's DMA2D transaction check.
+    size_t dma2d_align = dma2d_get_alloc_alignment();
+
     // allocate frame buffer from PSRAM
     size_t fb_size = panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel / 8;
     for (int i = 0; i < num_fbs; i++) {
-        uint8_t *frame_buffer = heap_caps_calloc(1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+        uint8_t *frame_buffer = heap_caps_aligned_calloc(dma2d_align, 1, fb_size,
+                                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
         ESP_GOTO_ON_FALSE(frame_buffer, ESP_ERR_NO_MEM, err, TAG, "no memory for frame buffer");
         dpi_panel->fbs[i] = frame_buffer;
         ESP_LOGD(TAG, "fb[%d] @%p", i, frame_buffer);
         // preset the frame buffer with black color
-        // the frame buffer address alignment is ensured by `heap_caps_calloc`
+        // the frame buffer address alignment is ensured by `heap_caps_aligned_calloc`
         // while the value of the fb_size may not be aligned to the cache line size
-        // but that's not a problem because the `heap_caps_calloc` internally allocated a buffer whose size is aligned up to the cache line size
+        // but that's not a problem because the `heap_caps_aligned_calloc` internally allocated a buffer whose size is aligned up to the cache line size
         ESP_GOTO_ON_ERROR(esp_cache_msync(frame_buffer, fb_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                           err, TAG, "cache write back failed");
     }
