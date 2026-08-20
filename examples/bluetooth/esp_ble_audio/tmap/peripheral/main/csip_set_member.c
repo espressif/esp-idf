@@ -21,7 +21,15 @@ static void csip_lock_changed_cb(esp_ble_conn_t *conn,
                                  esp_ble_audio_csip_set_member_svc_inst_t *inst,
                                  bool locked)
 {
-    ESP_LOGI(TAG, "Client %p %s the lock", conn, locked ? "locked" : "released");
+    /* No conn means the server released it itself, on the lock timeout or from
+     * bt_csip_set_member_lock(), rather than a client asking for it. */
+    if (conn == NULL) {
+        ESP_LOGI(TAG, "Lock %s locally", locked ? "taken" : "released");
+        return;
+    }
+
+    ESP_LOGI(TAG, "Client on handle %u %s the lock", conn->handle,
+             locked ? "locked" : "released");
 }
 
 static uint8_t sirk_read_req_cb(esp_ble_conn_t *conn,
@@ -40,7 +48,9 @@ int csip_set_member_init(void)
     esp_ble_audio_csip_set_member_register_param_t param = {
         .set_size = 2,
         .rank     = CONFIG_EXAMPLE_TMAP_PER_SET_RANK,
-        .lockable = false,
+        /* Lockable so the coordinator can run the CSIP ordered access procedure
+         * (rank-ordered lock) around stream setup, as a real CAP initiator does. */
+        .lockable = true,
         .sirk     = CSIP_SIRK_DEBUG,
         .cb       = &csip_cb,
     };

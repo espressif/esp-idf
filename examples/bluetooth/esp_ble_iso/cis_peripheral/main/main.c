@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
@@ -20,10 +21,29 @@
 #include "peripheral.h"
 
 #define CIS_SDU_SIZE            120
+#define CIS_COUNT               2
 
 static uint8_t ext_adv_data[3 + 2 + LOCAL_DEVICE_NAME_LEN];
 
-static example_iso_rx_metrics_t rx_metrics;
+/* Each CIS is received and reported independently, so it keeps its own metrics. */
+struct cis_ctx {
+    esp_ble_iso_chan_t       chan;
+    example_iso_rx_metrics_t rx_metrics;
+    char                     name[8];
+};
+
+static struct cis_ctx cis_ctxs[CIS_COUNT];
+
+static struct cis_ctx *ctx_by_chan(const esp_ble_iso_chan_t *chan)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
+        if (&cis_ctxs[i].chan == chan) {
+            return &cis_ctxs[i];
+        }
+    }
+
+    return NULL;
+}
 
 static void iso_connected_cb(esp_ble_iso_chan_t *chan)
 {
@@ -31,30 +51,35 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         .pid = ESP_BLE_ISO_DATA_PATH_HCI,
         .format = ESP_BLE_ISO_CODING_FORMAT_TRANSPARENT,
     };
+    struct cis_ctx *ctx = ctx_by_chan(chan);
     esp_err_t err;
 
-    ESP_LOGI(TAG, "[CIS #0] Connected");
+    ESP_LOGI(TAG, "[%s] Connected", ctx->name);
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_OUTPUT, &data_path);
     if (err) {
-        ESP_LOGE(TAG, "[CIS #0] Failed to setup data path, err %d", err);
+        ESP_LOGE(TAG, "[%s] Failed to setup data path, err %d", ctx->name, err);
         return;
     }
 
-    example_iso_rx_metrics_reset(&rx_metrics);
+    example_iso_rx_metrics_reset(&ctx->rx_metrics);
 }
 
 static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 {
-    ESP_LOGI(TAG, "[CIS #0] Disconnected, reason 0x%02x", reason);
+    struct cis_ctx *ctx = ctx_by_chan(chan);
+
+    ESP_LOGI(TAG, "[%s] Disconnected, reason 0x%02x", ctx->name, reason);
 }
 
 static void iso_recv_cb(esp_ble_iso_chan_t *chan,
                         const esp_ble_iso_recv_info_t *info,
                         const uint8_t *data, uint16_t len)
 {
-    rx_metrics.last_sdu_len = len;
-    example_iso_rx_metrics_on_recv(info, &rx_metrics, TAG, "CIS #0");
+    struct cis_ctx *ctx = ctx_by_chan(chan);
+
+    ctx->rx_metrics.last_sdu_len = len;
+    example_iso_rx_metrics_on_recv(info, &ctx->rx_metrics, TAG, ctx->name);
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -72,24 +97,23 @@ static esp_ble_iso_chan_qos_t iso_qos = {
     .tx = NULL,
 };
 
-static esp_ble_iso_chan_t iso_chan = {
-    .ops = &iso_ops,
-    .qos = &iso_qos,
-};
-
 static int iso_accept(const esp_ble_iso_accept_info_t *info,
                       esp_ble_iso_chan_t **chan)
 {
     ESP_LOGI(TAG, "Incoming CIS request from handle %u", info->acl->handle);
 
-    if (iso_chan.iso) {
-        ESP_LOGE(TAG, "No channels available");
-        return -ENOMEM;
+    /* The central establishes the CIS one at a time, so hand out the next
+     * channel that is not already carrying one. */
+    for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
+        if (cis_ctxs[i].chan.iso == NULL) {
+            *chan = &cis_ctxs[i].chan;
+            return 0;
+        }
     }
 
-    *chan = &iso_chan;
+    ESP_LOGE(TAG, "No channels available");
 
-    return 0;
+    return -ENOMEM;
 }
 
 static esp_ble_iso_server_t iso_server = {
@@ -187,6 +211,14 @@ void app_main(void)
     if (err) {
         ESP_LOGE(TAG, "Failed to initialize ISO, err %d", err);
         return;
+    }
+
+    /* All CIS share the same callbacks and RX QoS; they differ only by which
+     * channel iso_accept() hands out and where its metrics are kept. */
+    for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
+        cis_ctxs[i].chan.ops = &iso_ops;
+        cis_ctxs[i].chan.qos = &iso_qos;
+        snprintf(cis_ctxs[i].name, sizeof(cis_ctxs[i].name), "CIS #%zu", i);
     }
 
     err = esp_ble_iso_server_register(&iso_server);
