@@ -29,6 +29,7 @@ set(priv_requires
     "esp_driver_gptimer"
     "esp_hal_usb"
     "esp_driver_usb_serial_jtag"
+    "esp_hal_systimer"
     "esp_timer"
 )
 set(priv_includes "")
