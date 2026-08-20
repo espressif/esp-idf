@@ -142,6 +142,7 @@ menu "ESP Trace Configuration"
         prompt "Trace timestamp source"
         default ESP_TRACE_TS_SOURCE_CCOUNT if ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
         default ESP_TRACE_TS_SOURCE_GPTIMER if !ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+        default ESP_TRACE_TS_SOURCE_SYSTIMER if SOC_SYSTIMER_SUPPORTED && (PM_ENABLE || IDF_TARGET_ESP32C3)
         default ESP_TRACE_TS_SOURCE_ESP_TIMER if PM_ENABLE || IDF_TARGET_ESP32C3
         help
             Select the timestamp source for tracing.
@@ -153,6 +154,15 @@ menu "ESP Trace Configuration"
         config ESP_TRACE_TS_SOURCE_GPTIMER
             bool "General Purpose Timer (Timer Group)"
             depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
+
+        config ESP_TRACE_TS_SOURCE_SYSTIMER
+            bool "Systimer raw ticks"
+            depends on SOC_SYSTIMER_SUPPORTED
+            help
+                Read the systimer counter directly. This is the same clock
+                esp_timer uses, without the tick-to-microsecond conversion.
+                Timestamps are in raw ticks (16 MHz on most targets); host
+                tools get the rate from the trace stream.
 
         config ESP_TRACE_TS_SOURCE_ESP_TIMER
             bool "esp_timer high resolution timer"
