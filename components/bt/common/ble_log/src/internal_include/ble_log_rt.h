@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,12 +22,7 @@
 /* MACRO */
 #define BLE_LOG_TASK_PRIO                       (ESP_TASK_PRIO_MAX - 1)
 #define BLE_LOG_TASK_STACK_SIZE                 CONFIG_BLE_LOG_TASK_STACK_SIZE
-#if CONFIG_BLE_LOG_TS_ENABLED
-#define BLE_LOG_TS_TRIGGER_TIMEOUT_US           (CONFIG_BLE_LOG_TS_TRIGGER_TIMEOUT_MS * 1000)
-#define BLE_LOG_TASK_HOOK_TIMEOUT_MS            CONFIG_BLE_LOG_TS_TRIGGER_TIMEOUT_MS
-#else /* !CONFIG_BLE_LOG_TS_ENABLED */
-#define BLE_LOG_TASK_HOOK_TIMEOUT_MS            (1000)
-#endif /* CONFIG_BLE_LOG_TS_ENABLED */
+#define BLE_LOG_TS_TRIGGER_TIMEOUT_MS           (1000)
 
 /* INTERFACE */
 bool ble_log_rt_init(void);
