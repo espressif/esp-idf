@@ -159,4 +159,14 @@ menu "ESP Trace Configuration"
 
     endchoice
 
+    config ESP_TRACE_OPTIMIZE_SPEED
+        bool "Compile trace hot path for speed (-O2)"
+        depends on ESP_TRACE_ENABLE
+        default y
+        help
+            Compile this component with -O2 regardless of the project-wide
+            optimization level. The per-event trace path (locking, timestamps)
+            runs through this code, so its speed directly contributes to the
+            per-event tracing overhead.
+
 endmenu
