@@ -48,7 +48,7 @@ extern "C" {
 #define MSPI_LL_PERIPH_NUM                            4
 #define MSPI_TIMING_LL_MSPI_ID_0                      0
 #define MSPI_TIMING_LL_MSPI_ID_1                      1
-#define MSPI_TIMING_LL_FLASH_CORE_80M_CLK_DIV         6
+#define MSPI_TIMING_LL_FLASH_CORE_80M_CLK_DIV         4 // clk src is 320M CPLL
 
 // PSRAM frequency should be constrained by AXI frequency to avoid FIFO underflow.
 #define MSPI_TIMING_LL_PSRAM_FREQ_AXI_CONSTRAINED     1
@@ -216,6 +216,30 @@ static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_perip
     HP_SYS_CLKRST.flash_ctrl0.reg_flash_sys_clk_en = 1;
     HP_SYS_CLKRST.flash_ctrl0.reg_flash_pll_clk_en = 1;
     HP_SYS_CLKRST.flash_ctrl0.reg_flash_clk_src_sel = clk_val;
+}
+
+/**
+ * @brief Get FLASH clock source
+ *
+ * @param mspi_id      mspi_id
+ *
+ * @return clock source, see valid sources in type `soc_periph_flash_clk_src_t`
+ */
+__attribute__((always_inline))
+static inline soc_periph_flash_clk_src_t _mspi_timing_ll_get_flash_clk_src(uint32_t mspi_id)
+{
+    HAL_ASSERT(mspi_id == MSPI_TIMING_LL_MSPI_ID_0);
+    switch (HP_SYS_CLKRST.flash_ctrl0.reg_flash_clk_src_sel) {
+    case 0:
+        return FLASH_CLK_SRC_XTAL;
+    case 1:
+        return FLASH_CLK_SRC_BBPLL;
+    case 2:
+        return FLASH_CLK_SRC_CPLL;
+    default:
+        HAL_ASSERT(false);
+        return FLASH_CLK_SRC_XTAL;
+    }
 }
 
 /**

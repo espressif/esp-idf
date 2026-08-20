@@ -76,7 +76,13 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     assert(ctx->hal);
     /* Default configuration of hp-system power in active, modem and sleep modes */
     pmu_ll_hp_set_dig_power(ctx->hal->dev, mode, power->dig_power.val);
-    pmu_ll_hp_set_clk_power(ctx->hal->dev, mode, power->clk_power.val);
+    if (mode == PMU_MODE_HP_ACTIVE) {
+        // In active mode the root clock circuit power (BBPLL/CPLL/MPLL/APLL/XTALx2, etc.) is owned by esp_clk_tree.
+        // The analog i2c master is shared by all the PLLs and is not refcounted there, so it is still configured here.
+        pmu_ll_hp_set_ana_i2c_power(ctx->hal->dev, mode, power->clk_power.xpd_bb_i2c, power->clk_power.i2c_iso_en, power->clk_power.i2c_retention);
+    } else {
+        pmu_ll_hp_set_clk_power(ctx->hal->dev, mode, power->clk_power.val);
+    }
     pmu_ll_hp_set_xtal_xpd (ctx->hal->dev, mode, power->xtal.xpd_xtal);
 
     /* Default configuration of hp-system clock in active, modem and sleep modes */

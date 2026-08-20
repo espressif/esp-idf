@@ -425,7 +425,7 @@ typedef enum {
  * @brief Type of FLASH clock source.
  */
 typedef enum {
-    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_BBPLL,        /*!< Select SOC_MOD_CLK_BBPLL as FLASH source clock */
+    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_CPLL,         /*!< Select SOC_MOD_CLK_CPLL as FLASH source clock */
     FLASH_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select SOC_MOD_CLK_XTAL as FLASH source clock */
     FLASH_CLK_SRC_CPLL = SOC_MOD_CLK_CPLL,            /*!< Select SOC_MOD_CLK_CPLL as FLASH source clock */
     FLASH_CLK_SRC_BBPLL = SOC_MOD_CLK_BBPLL,          /*!< Select SOC_MOD_CLK_BBPLL as FLASH source clock */

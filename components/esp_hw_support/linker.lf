@@ -15,7 +15,8 @@ entries:
     clk_utils (noflash)
     esp_clk_tree: esp_clk_tree_enable_src (noflash)
     if RTC_CLK_FUNC_IN_IRAM = y:
-        esp_clk_tree: esp_clk_tree_enable_power (noflash)
+        esp_clk_tree:esp_clk_tree_enable_power (noflash)
+        esp_clk_tree:esp_clk_tree_port_is_power_on (noflash)
         esp_clk_tree_common:esp_clk_tree_is_power_on (noflash)
         if SOC_CLK_MPLL_SUPPORTED = y:
             esp_clk_tree_common:esp_clk_tree_mpll_release (noflash)
