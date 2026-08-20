@@ -56,7 +56,7 @@ struct osi_thread_start_arg {
   int error;
 };
 
-struct osi_event {
+struct osi_event_core {
     struct work_item item;
     osi_mutex_t lock;
     osi_thread_t *thread;
@@ -65,17 +65,25 @@ struct osi_event {
     uint8_t queue_idx;
 };
 
+struct osi_event {
+    struct osi_event_core core;
+};
+
+struct osi_dynamic_event {
+    struct osi_event_core core;
+};
+
 #define OSI_EVENT_FLAG_QUEUED        (1U << 0)
-#define OSI_EVENT_FLAG_POSTING       (1U << 1)
-#define OSI_EVENT_FLAG_DELETING      (1U << 2)
-#define OSI_EVENT_FLAG_RUNNING       (1U << 3)
+#define OSI_EVENT_FLAG_DELETING      (1U << 1)
+#define OSI_EVENT_FLAG_RUNNING       (1U << 2)
 
 #define OSI_EVENT_HAS_FLAG(event, flag) (((event)->flags & (flag)) != 0)
 #define OSI_EVENT_SET_FLAG(event, flag) ((event)->flags |= (uint8_t)(flag))
 #define OSI_EVENT_CLEAR_FLAG(event, flag) ((event)->flags &= (uint8_t)(~(flag)))
 
 static const size_t DEFAULT_WORK_QUEUE_CAPACITY = 100;
-static list_t *s_osi_event_list;
+static list_t *s_osi_session_event_list;
+static list_t *s_osi_dynamic_event_list;
 static osi_mutex_t s_osi_event_lock;
 
 #if OSI_THREAD_DEBUG
@@ -494,35 +502,47 @@ int osi_thread_queue_wait_size(osi_thread_t *thread, int wq_idx)
 }
 
 
-static bool osi_event_add_alive_locked(struct osi_event *event)
+static struct osi_event_core *osi_event_core_new(size_t size, osi_thread_func_t func, void *context)
 {
-    assert(s_osi_event_list != NULL);
-    return list_append(s_osi_event_list, event);
+    struct osi_event_core *event = osi_calloc(size);
+
+    if (event == NULL) {
+        return NULL;
+    }
+    if (osi_mutex_new(&event->lock) != 0) {
+        osi_free(event);
+        return NULL;
+    }
+
+    event->item.func = func;
+    event->item.context = context;
+    /* Session events hold a registry pin; dynamic events hold an owner ref. */
+    event->ref_count = 1;
+    return event;
 }
 
-static void osi_event_free(struct osi_event *event)
+static void osi_event_core_free(struct osi_event_core *event)
 {
     if (event != NULL) {
         osi_mutex_free(&event->lock);
-        memset(event, 0, sizeof(struct osi_event));
+        memset(event, 0, sizeof(*event));
         osi_free(event);
     }
 }
 
-static bool osi_event_is_idle(const struct osi_event *event)
+static bool osi_event_is_idle(const struct osi_event_core *event)
 {
     return !OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_QUEUED) &&
-           !OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_POSTING) &&
            !OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_RUNNING);
 }
 
-static bool osi_event_should_free(const struct osi_event *event)
+static bool osi_event_should_free(const struct osi_event_core *event)
 {
     return OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_DELETING) &&
            osi_event_is_idle(event);
 }
 
-static bool osi_event_can_bind_locked(const struct osi_event *event, osi_thread_t *thread, int queue_idx)
+static bool osi_event_can_bind_locked(const struct osi_event_core *event, osi_thread_t *thread, int queue_idx)
 {
     return !OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_DELETING) &&
            event->thread == NULL &&
@@ -531,7 +551,7 @@ static bool osi_event_can_bind_locked(const struct osi_event *event, osi_thread_
            queue_idx < thread->work_queue_num;
 }
 
-static bool osi_event_can_post_locked(const struct osi_event *event)
+static bool osi_event_can_post_locked(const struct osi_event_core *event)
 {
     if (event->thread == NULL || event->queue_idx >= event->thread->work_queue_num) {
         OSI_TRACE_EVENT("%s deny ev=%p flags=0x%x qidx=%u",
@@ -549,173 +569,188 @@ static bool osi_event_can_post_locked(const struct osi_event *event)
         return false;
     }
 
-    /* Do NOT gate on OSI_EVENT_FLAG_POSTING here. POSTING marks the window in
-     * osi_thread_post_event() between osi_thread_post() (enqueue) and the
-     * poster clearing the flag. During that window the generic event handler
-     * may already have run and cleared QUEUED. A concurrent post that arrives
-     * after QUEUED is cleared is a legitimate re-post (new work arrived while
-     * the handler was draining) and must be accepted; rejecting it causes a
-     * lost wakeup. QUEUED alone prevents genuine double-queueing. POSTING is
-     * retained only for osi_event_is_idle()/osi_event_should_free(). */
+    /* QUEUED alone prevents double-queueing. Do not gate on RUNNING: the
+     * generic handler clears QUEUED before invoking the user callback, and a
+     * concurrent post after that is a legitimate re-post of work that arrived
+     * while the handler was draining. */
     return true;
 }
 
-static bool osi_event_is_alive_locked(const struct osi_event *event)
+/* Caller holds event->lock. Drops one reference. Returns true if the caller
+ * must free the event AFTER unlocking; never destroy the mutex while held. */
+static bool osi_event_release_locked(struct osi_event_core *event)
 {
-    /* Do not dereference event here: callers may pass a stale pointer racing
-     * with osi_event_delete(). The alive list is the ownership boundary. */
-    return s_osi_event_list != NULL && list_contains(s_osi_event_list, event);
-}
-
-static bool osi_event_remove_alive_locked(struct osi_event *event)
-{
-    bool removed = false;
-
-    if (s_osi_event_list == NULL) {
+    assert(event->ref_count > 0);
+    event->ref_count--;
+    if (event->ref_count != 0) {
         return false;
     }
+    return osi_event_should_free(event);
+}
 
-    removed = list_delete(s_osi_event_list, event);
-    return removed;
+static void osi_event_unlock_and_maybe_free(struct osi_event_core *event, bool should_free)
+{
+    osi_mutex_unlock(&event->lock);
+    if (should_free) {
+        osi_event_core_free(event);
+    }
+}
+
+static void osi_event_mark_deleting_locked(struct osi_event_core *event)
+{
+    OSI_EVENT_SET_FLAG(event, OSI_EVENT_FLAG_DELETING);
+    event->item.func = NULL;
+    event->item.context = NULL;
 }
 
 struct osi_event *osi_event_create(osi_thread_func_t func, void *context)
 {
+    struct osi_event *event = (struct osi_event *)osi_event_core_new(sizeof(*event), func, context);
     bool added = false;
-    struct osi_event *event = osi_calloc(sizeof(struct osi_event));
 
     if (event == NULL) {
         return NULL;
     }
 
-    if (osi_mutex_new(&event->lock) != 0) {
-        osi_free(event);
+    osi_event_lock();
+    if (s_osi_session_event_list != NULL) {
+        added = list_append(s_osi_session_event_list, event);
+    }
+    osi_event_unlock();
+    if (!added) {
+        osi_event_core_free(&event->core);
         return NULL;
     }
-
-    event->item.func = func;
-    event->item.context = context;
-    event->ref_count = 1;
-
-    osi_event_lock();
-    added = osi_event_add_alive_locked(event);
-    osi_event_unlock();
-    if (added) {
-        return event;
-    }
-
-    osi_mutex_free(&event->lock);
-    osi_free(event);
-    return NULL;
-}
-
-/* ref_count is protected by the per-event lock (event->lock), NOT the global
- * s_osi_event_lock. This keeps the reference-release path independent of the
- * global event subsystem: it must stay valid even after
- * osi_thread_event_deinit() has freed s_osi_event_lock (e.g. when a thread is
- * freed on a shutdown path that tears the event subsystem down first). The
- * global lock is only used to gate the alive-list membership that decides
- * whether a new reference may be acquired. */
-static bool osi_event_acquire(struct osi_event *event)
-{
-    bool acquired = false;
-
-    if (event == NULL) {
-        return false;
-    }
-
-    /* Hold the global lock so the event cannot be removed from the alive list
-     * (and thus cannot be freed) while we take a fresh reference. Nesting is
-     * always global-lock-outer, event->lock-inner; no path takes them in the
-     * reverse order, so this cannot deadlock. */
-    osi_event_lock();
-    if (osi_event_is_alive_locked(event)) {
-        osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
-        assert(event->ref_count > 0);
-        event->ref_count++;
-        osi_mutex_unlock(&event->lock);
-        acquired = true;
-    }
-    osi_event_unlock();
-
-    return acquired;
-}
-
-static void osi_event_retain(struct osi_event *event)
-{
-    osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
-    assert(event->ref_count > 0);
-    event->ref_count++;
-    osi_mutex_unlock(&event->lock);
-}
-
-static void osi_event_release(struct osi_event *event)
-{
-    bool should_free = false;
-
-    osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
-    assert(event->ref_count > 0);
-    event->ref_count--;
-    if (event->ref_count == 0) {
-        should_free = osi_event_should_free(event);
-    }
-    osi_mutex_unlock(&event->lock);
-
-    if (should_free) {
-        osi_event_free(event);
-    }
+    return event;
 }
 
 void osi_event_delete(struct osi_event *event)
 {
-    bool removed = false;
-
     if (event == NULL) {
         return;
     }
 
-    osi_event_lock();
-    removed = osi_event_remove_alive_locked(event);
-    osi_event_unlock();
-    if (!removed) {
-        return;
-    }
-
-    osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
-    OSI_EVENT_SET_FLAG(event, OSI_EVENT_FLAG_DELETING);
-    event->item.func = NULL;
-    event->item.context = NULL;
-    osi_mutex_unlock(&event->lock);
-
-    osi_event_release(event);
+    /* The registry pin keeps session-event storage valid until subsystem
+     * deinit, so delete is only a logical, idempotent operation. */
+    osi_mutex_lock(&event->core.lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_event_mark_deleting_locked(&event->core);
+    osi_mutex_unlock(&event->core.lock);
 }
 
 bool osi_event_bind(struct osi_event *event, osi_thread_t *thread, int queue_idx)
 {
     bool ret = false;
 
-    if (!osi_event_acquire(event)) {
+    if (event == NULL) {
         return false;
     }
 
-    osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
-    if (osi_event_can_bind_locked(event, thread, queue_idx)) {
-        event->thread = thread;
-        event->queue_idx = queue_idx;
+    osi_mutex_lock(&event->core.lock, OSI_MUTEX_MAX_TIMEOUT);
+    if (osi_event_can_bind_locked(&event->core, thread, queue_idx)) {
+        event->core.thread = thread;
+        event->core.queue_idx = (uint8_t)queue_idx;
         ret = true;
     }
-    osi_mutex_unlock(&event->lock);
-
-    osi_event_release(event);
-
+    osi_mutex_unlock(&event->core.lock);
     return ret;
+}
+
+struct osi_dynamic_event *osi_dynamic_event_create(osi_thread_func_t func, void *context)
+{
+    struct osi_dynamic_event *event =
+        (struct osi_dynamic_event *)osi_event_core_new(sizeof(*event), func, context);
+    bool added = false;
+
+    if (event == NULL) {
+        return NULL;
+    }
+
+    osi_event_lock();
+    if (s_osi_dynamic_event_list != NULL) {
+        added = list_append(s_osi_dynamic_event_list, event);
+    }
+    osi_event_unlock();
+    if (!added) {
+        osi_event_core_free(&event->core);
+        return NULL;
+    }
+    return event;
+}
+
+/* The global alive list is the ownership boundary for dynamic events. Never
+ * dereference event until list membership is confirmed under the global lock.
+ * Lock nesting is always global-lock-outer, event-lock-inner.
+ * On success: drops the global lock and returns holding event->core.lock with
+ * an extra reference; the caller must unlock (and maybe free) via
+ * osi_event_unlock_and_maybe_free after osi_event_release_locked. */
+static bool osi_dynamic_event_acquire_locked(struct osi_dynamic_event *event)
+{
+    if (event == NULL) {
+        return false;
+    }
+
+    osi_event_lock();
+    if (s_osi_dynamic_event_list == NULL ||
+            !list_contains(s_osi_dynamic_event_list, event)) {
+        osi_event_unlock();
+        return false;
+    }
+
+    osi_mutex_lock(&event->core.lock, OSI_MUTEX_MAX_TIMEOUT);
+    assert(event->core.ref_count > 0);
+    event->core.ref_count++;
+    osi_event_unlock();
+    return true;
+}
+
+bool osi_dynamic_event_bind(struct osi_dynamic_event *event, osi_thread_t *thread, int queue_idx)
+{
+    bool ret = false;
+    bool should_free;
+
+    if (!osi_dynamic_event_acquire_locked(event)) {
+        return false;
+    }
+    if (osi_event_can_bind_locked(&event->core, thread, queue_idx)) {
+        event->core.thread = thread;
+        event->core.queue_idx = (uint8_t)queue_idx;
+        ret = true;
+    }
+    should_free = osi_event_release_locked(&event->core);
+    osi_event_unlock_and_maybe_free(&event->core, should_free);
+    return ret;
+}
+
+void osi_dynamic_event_delete(struct osi_dynamic_event *event)
+{
+    bool removed = false;
+    bool should_free;
+
+    if (event == NULL) {
+        return;
+    }
+
+    osi_event_lock();
+    if (s_osi_dynamic_event_list != NULL) {
+        removed = list_delete(s_osi_dynamic_event_list, event);
+    }
+    osi_event_unlock();
+    if (!removed) {
+        return;
+    }
+
+    osi_mutex_lock(&event->core.lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_event_mark_deleting_locked(&event->core);
+    should_free = osi_event_release_locked(&event->core);
+    osi_event_unlock_and_maybe_free(&event->core, should_free);
 }
 
 static void osi_thread_generic_event_handler(void *context)
 {
-    struct osi_event *event = (struct osi_event *)context;
+    struct osi_event_core *event = (struct osi_event_core *)context;
     osi_thread_func_t func = NULL;
     void *func_context = NULL;
+    bool should_free = false;
 
     if (event == NULL) {
         return;
@@ -724,8 +759,8 @@ static void osi_thread_generic_event_handler(void *context)
     osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
     OSI_EVENT_CLEAR_FLAG(event, OSI_EVENT_FLAG_QUEUED);
     if (OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_DELETING)) {
-        osi_mutex_unlock(&event->lock);
-        osi_event_release(event);
+        should_free = osi_event_release_locked(event);
+        osi_event_unlock_and_maybe_free(event, should_free);
         return;
     }
     OSI_EVENT_SET_FLAG(event, OSI_EVENT_FLAG_RUNNING);
@@ -741,20 +776,17 @@ static void osi_thread_generic_event_handler(void *context)
     osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
     OSI_EVENT_CLEAR_FLAG(event, OSI_EVENT_FLAG_RUNNING);
     OSI_TRACE_DEBUG("%s exit ev=%p flags=0x%x", __func__, event, event->flags);
-    osi_mutex_unlock(&event->lock);
-
-    osi_event_release(event);
+    should_free = osi_event_release_locked(event);
+    osi_event_unlock_and_maybe_free(event, should_free);
 }
 
 /* Reclaim a queued event work item during thread teardown WITHOUT invoking the
- * user callback. It only clears the QUEUED flag and drops the reference the
- * queued item owns (osi_thread_post_event() retained it); this frees the event
- * if it was already deleted, and leaves a still-live event untouched. Unlike
- * osi_thread_generic_event_handler(), it never dispatches into stack state that
- * may already have been freed on the shutdown path. */
+ * user callback. The release path only uses the per-event lock and remains
+ * valid after the global event subsystem has been deinitialized. */
 static void osi_thread_generic_event_drain(void *context)
 {
-    struct osi_event *event = (struct osi_event *)context;
+    struct osi_event_core *event = (struct osi_event_core *)context;
+    bool should_free = false;
 
     if (event == NULL) {
         return;
@@ -762,86 +794,150 @@ static void osi_thread_generic_event_drain(void *context)
 
     osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
     OSI_EVENT_CLEAR_FLAG(event, OSI_EVENT_FLAG_QUEUED);
-    osi_mutex_unlock(&event->lock);
-
-    osi_event_release(event);
+    should_free = osi_event_release_locked(event);
+    osi_event_unlock_and_maybe_free(event, should_free);
 }
 
 bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
 {
-    bool ret = false;
-    osi_thread_t *thread = NULL;
-    uint8_t queue_idx = 0;
+    struct osi_event_core *core;
+    osi_thread_t *thread;
+    uint8_t queue_idx;
+    bool ret;
+    bool should_free = false;
 
-    if (!osi_event_acquire(event)) {
-        OSI_TRACE_EVENT("%s acquire fail ev=%p", __func__, event);
+    if (event == NULL) {
         return false;
     }
+    core = &event->core;
 
-    osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
-    if (!osi_event_can_post_locked(event)) {
-        osi_mutex_unlock(&event->lock);
-        osi_event_release(event);
+    /* Session-event storage is pinned until subsystem deinit, so the hot path
+     * needs only the per-event lock and a queue reference. */
+    osi_mutex_lock(&core->lock, OSI_MUTEX_MAX_TIMEOUT);
+    if (!osi_event_can_post_locked(core)) {
+        OSI_TRACE_EVENT("%s post fail ev=%p qidx=%u wq_len=%d", __func__, event, core->queue_idx,
+                        core->thread ? osi_thread_queue_wait_size(core->thread, core->queue_idx) : -1);
+        osi_mutex_unlock(&core->lock);
         return false;
     }
-    OSI_EVENT_SET_FLAG(event, OSI_EVENT_FLAG_QUEUED);
-    OSI_EVENT_SET_FLAG(event, OSI_EVENT_FLAG_POSTING);
-    thread = event->thread;
-    queue_idx = event->queue_idx;
-    osi_mutex_unlock(&event->lock);
+    OSI_EVENT_SET_FLAG(core, OSI_EVENT_FLAG_QUEUED);
+    core->ref_count++;
+    thread = core->thread;
+    queue_idx = core->queue_idx;
+    osi_mutex_unlock(&core->lock);
 
-    /* The queued work item owns a reference until the generic handler drains it. */
-    osi_event_retain(event);
-    ret = osi_thread_post(thread, osi_thread_generic_event_handler, event, queue_idx, timeout);
-    osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
-    OSI_EVENT_CLEAR_FLAG(event, OSI_EVENT_FLAG_POSTING);
-    if (!ret) {
-        // clear "is_queued" when post failure, to allow for following event posts
-        OSI_EVENT_CLEAR_FLAG(event, OSI_EVENT_FLAG_QUEUED);
-    }
-    osi_mutex_unlock(&event->lock);
+    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, queue_idx, timeout);
 
+    osi_mutex_lock(&core->lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!ret) {
-        OSI_TRACE_EVENT("%s enqueue fail ev=%p qidx=%u wq_len=%d",
-                        __func__, event, queue_idx,
+        OSI_TRACE_EVENT("%s enqueue fail ev=%p qidx=%u wq_len=%d", __func__, event, queue_idx,
                         osi_thread_queue_wait_size(thread, queue_idx));
-        osi_event_release(event);
+        /* Clear QUEUED on post failure so a later post may enqueue. */
+        OSI_EVENT_CLEAR_FLAG(core, OSI_EVENT_FLAG_QUEUED);
+        should_free = osi_event_release_locked(core);
     }
-    osi_event_release(event);
+    osi_event_unlock_and_maybe_free(core, should_free);
+    return ret;
+}
+
+bool osi_dynamic_event_post(struct osi_dynamic_event *event, uint32_t timeout)
+{
+    struct osi_event_core *core;
+    osi_thread_t *thread;
+    uint8_t queue_idx;
+    bool ret;
+    bool should_free = false;
+
+    if (!osi_dynamic_event_acquire_locked(event)) {
+        return false;
+    }
+    core = &event->core;
+
+    if (!osi_event_can_post_locked(core)) {
+        OSI_TRACE_EVENT("%s post fail ev=%p qidx=%u wq_len=%d", __func__, event, core->queue_idx,
+                        core->thread ? osi_thread_queue_wait_size(core->thread, core->queue_idx) : -1);
+        should_free = osi_event_release_locked(core);
+        osi_event_unlock_and_maybe_free(core, should_free);
+        return false;
+    }
+
+    OSI_EVENT_SET_FLAG(core, OSI_EVENT_FLAG_QUEUED);
+    core->ref_count++;
+    thread = core->thread;
+    queue_idx = core->queue_idx;
+    osi_mutex_unlock(&core->lock);
+
+    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, queue_idx, timeout);
+
+    osi_mutex_lock(&core->lock, OSI_MUTEX_MAX_TIMEOUT);
+    if (!ret) {
+        OSI_TRACE_EVENT("%s enqueue fail ev=%p qidx=%u wq_len=%d", __func__, event, queue_idx,
+                        osi_thread_queue_wait_size(thread, queue_idx));
+        /* Drop the queue ownership taken above; handler will never run. */
+        OSI_EVENT_CLEAR_FLAG(core, OSI_EVENT_FLAG_QUEUED);
+        should_free = osi_event_release_locked(core);
+    }
+    /* Always drop the acquire reference from osi_dynamic_event_acquire_locked. */
+    if (osi_event_release_locked(core)) {
+        should_free = true;
+    }
+    osi_event_unlock_and_maybe_free(core, should_free);
 
     return ret;
+}
+
+static void osi_event_retire(struct osi_event_core *event)
+{
+    bool should_free;
+
+    osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_event_mark_deleting_locked(event);
+    should_free = osi_event_release_locked(event);
+    osi_event_unlock_and_maybe_free(event, should_free);
 }
 
 int osi_thread_event_init(void)
 {
-    int ret = -1;
-
-    do {
-        if (osi_mutex_new(&s_osi_event_lock) != 0) {
-            break;
-        }
-
-        s_osi_event_list = list_new(NULL);
-        if (s_osi_event_list == NULL) {
-            break;
-        }
-
-        ret = 0;
-    } while (0);
-
-    if (ret != 0) {
-        osi_thread_event_deinit();
+    if (osi_mutex_new(&s_osi_event_lock) != 0) {
+        return -1;
     }
 
-    return ret;
+    s_osi_session_event_list = list_new(NULL);
+    s_osi_dynamic_event_list = list_new(NULL);
+    if (s_osi_session_event_list == NULL || s_osi_dynamic_event_list == NULL) {
+        list_free(s_osi_session_event_list);
+        list_free(s_osi_dynamic_event_list);
+        s_osi_session_event_list = NULL;
+        s_osi_dynamic_event_list = NULL;
+        osi_mutex_free(&s_osi_event_lock);
+        return -1;
+    }
+    return 0;
 }
 
 void osi_thread_event_deinit(void)
 {
-    if (s_osi_event_list != NULL) {
-        list_free(s_osi_event_list);
-        s_osi_event_list = NULL;
+    if (s_osi_event_lock == NULL) {
+        return;
     }
+
+    osi_event_lock();
+    while (s_osi_session_event_list != NULL && !list_is_empty(s_osi_session_event_list)) {
+        struct osi_event *event = (struct osi_event *)list_front(s_osi_session_event_list);
+        list_delete(s_osi_session_event_list, event);
+        osi_event_retire(&event->core);
+    }
+    while (s_osi_dynamic_event_list != NULL && !list_is_empty(s_osi_dynamic_event_list)) {
+        struct osi_dynamic_event *event =
+            (struct osi_dynamic_event *)list_front(s_osi_dynamic_event_list);
+        list_delete(s_osi_dynamic_event_list, event);
+        osi_event_retire(&event->core);
+    }
+    list_free(s_osi_session_event_list);
+    list_free(s_osi_dynamic_event_list);
+    s_osi_session_event_list = NULL;
+    s_osi_dynamic_event_list = NULL;
+    osi_event_unlock();
     osi_mutex_free(&s_osi_event_lock);
 }
 
