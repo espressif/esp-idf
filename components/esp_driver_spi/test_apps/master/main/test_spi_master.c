@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
+#include "driver/uart.h"
 #include "sys/param.h"
 #include "driver/gpio.h"
 #include "hal/spi_ll.h"     // for SPI_LL_SRC_PRE_DIV_MAX
@@ -2190,5 +2191,62 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
     free(external_2);
     spi_bus_remove_device(dev_handle);
     spi_bus_free(TEST_SPI_HOST);
+}
+#endif
+
+#if SOC_SPI_SUPPORT_DDR_CLOCK
+TEST_CASE("Test master cmd/data DDR/SDR", "[spi]")
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num; // same pin to test data loopback
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_DISABLED));
+
+    spi_device_handle_t dev0;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.command_bits = 16;
+    devcfg.address_bits = 16;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+    // Tap SCLK with UART bitrate detection to count clock edges.
+    uart_bitrate_detect_config_t uart_cfg = {
+        .rx_io_num = buscfg.sclk_io_num,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+
+    spi_transaction_t trans_cfg = {
+        .cmd = 0x1234,
+        .addr = 0x5678,
+        .length = 32,
+        .tx_data = {0xAA, 0x34, 0x56, 0x5f},
+    };
+    uint32_t clk_edges[2];
+    for (int i = 0; i < 4; i++) {
+        const bool use_ddr = (i % 2) != 0;
+        printf("\nTest trans %s\n", use_ddr ? "DDR" : "SDR");
+        trans_cfg.flags = use_ddr ? SPI_TRANS_DDRCLK : 0;
+        trans_cfg.flags |= SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA;
+        trans_cfg.tx_data[3] *= 2;
+        memset(trans_cfg.rx_data, 0, sizeof(trans_cfg.rx_data));
+
+        TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, &uart_cfg));
+        TEST_ESP_OK(spi_device_polling_transmit(dev0, &trans_cfg));
+        uart_bitrate_res_t uart_res = {};
+        TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, true, &uart_res));
+
+        int measured_freq_khz = (uart_res.clk_freq_hz / uart_res.pos_period) / 1000;
+        printf("clk edge %lu, measured freq %d kHz\n", uart_res.edge_cnt, measured_freq_khz);
+        clk_edges[i % 2] = uart_res.edge_cnt;
+        int bit_num = devcfg.command_bits + devcfg.address_bits + trans_cfg.length;
+        // SDR: one bit per clock period => 2 edges/bit; DDR: two bits per period => 1 edge/bit
+        TEST_ASSERT_INT_WITHIN(5, use_ddr ? bit_num : bit_num * 2, (int)uart_res.edge_cnt);
+        TEST_ASSERT_INT_WITHIN(devcfg.clock_speed_hz / 100000, measured_freq_khz, devcfg.clock_speed_hz / 1000);
+        ESP_LOG_BUFFER_HEX("Tx", trans_cfg.tx_data, 4);
+        ESP_LOG_BUFFER_HEX("Rx", trans_cfg.rx_data, 4);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(trans_cfg.tx_data, trans_cfg.rx_data, 4);
+    }
+    TEST_ASSERT_INT_WITHIN(50, clk_edges[1] * 2, clk_edges[0]);   // DDR should cost half clk edges of SDR
+
+    TEST_ESP_OK(spi_bus_remove_device(dev0));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 #endif

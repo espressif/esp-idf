@@ -264,6 +264,13 @@ SPI 总线传输事务由五个阶段构成，详见下表（任意阶段均可�
            SPI_TRANS_MULTILINE_CMD
          - SPICOMMON_BUSFLAG_OCTAL
 
+.. only:: SOC_SPI_SUPPORT_DDR_CLOCK
+
+    DDR 时钟
+    ^^^^^^^^
+
+    在 :cpp:member:`spi_transaction_t::flags` 中设置 :c:macro:`SPI_TRANS_DDRCLK`，可使当前传输事务使用时钟双边沿数据模式，该模式下， cmd/addr/data 段都将在时钟的上升沿和下降沿都进行传输，没有设置该标志时，传输将回到传统单边沿数据模式。DDRCLK 模式在 2/4/8 线模式下同样支持。
+
 命令阶段和地址阶段
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 

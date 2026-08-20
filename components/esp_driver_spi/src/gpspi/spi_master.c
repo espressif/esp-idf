@@ -649,6 +649,17 @@ int spi_get_actual_clock(int fapb, int hz, int duty_cycle)
     return spi_hal_master_cal_clock(fapb, hz, duty_cycle);
 }
 
+static SPI_MASTER_ISR_ATTR bool s_spi_clock_need_reconfig(spi_device_t *dev, spi_trans_priv_t *trans_buf)
+{
+    if (!trans_buf) {
+        return false;
+    }
+    if (dev->hal_dev.timing_conf.use_ddr_clk != !!(trans_buf->trans->flags & SPI_TRANS_DDRCLK)) {
+        return true;
+    }
+    return ((trans_buf->trans->override_freq_hz > 0) && (dev->hal_dev.timing_conf.expect_freq != trans_buf->trans->override_freq_hz));
+}
+
 // Setup the device-specified configuration registers. Called every time a new
 // transaction is to be sent, but only apply new configurations when the device
 // changes or timing change is required.
@@ -659,21 +670,31 @@ static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev, spi_trans_pr
     spi_hal_dev_config_t *hal_dev = &(dev->hal_dev);
 
     bool clock_changed = false;
-    // check if timing config update is required
-    if (trans_buf && (trans_buf->trans->override_freq_hz > 0) && (hal_dev->timing_conf.expect_freq != trans_buf->trans->override_freq_hz)) {
+    if (s_spi_clock_need_reconfig(dev, trans_buf)) {    // check if timing config update is required
+        const bool want_ddr = !!(trans_buf->trans->flags & SPI_TRANS_DDRCLK);
+        uint32_t target_freq = trans_buf->trans->override_freq_hz ? trans_buf->trans->override_freq_hz : dev->cfg.clock_speed_hz;
         spi_hal_timing_param_t timing_param = {
-            .expected_freq = trans_buf->trans->override_freq_hz,
+            .use_ddr_clk = want_ddr,
+            .expected_freq = target_freq,
             .clk_src_hz = dev->hal_dev.timing_conf.source_real_freq,
             .duty_cycle = dev->cfg.duty_cycle_pos,
             .input_delay_ns = dev->cfg.input_delay_ns,
             .half_duplex = dev->hal_dev.half_duplex,
+            .no_compensate = dev->hal_dev.no_compensate,
             .use_gpio = !(dev->host->bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
         };
 
-        if ((trans_buf->trans->override_freq_hz <= SPI_PERIPH_SRC_FREQ_MAX) && (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf))) {
+        if ((target_freq <= SPI_PERIPH_SRC_FREQ_MAX) && (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf))) {
             clock_changed = true;
         } else {
-            ESP_EARLY_LOGW(SPI_TAG, "assigned override_freq_hz %d not supported", trans_buf->trans->override_freq_hz);
+            // Keep previous timing_conf; clarify why reconfig failed.
+            if (want_ddr != !!dev->hal_dev.timing_conf.use_ddr_clk) {
+                ESP_EARLY_LOGW(SPI_TAG, "failed to switch to %s at %lu Hz, keep previous clock config",
+                               want_ddr ? "DDR" : "SDR", (unsigned long)target_freq);
+            } else {
+                ESP_EARLY_LOGW(SPI_TAG, "failed to apply override_freq_hz %lu, keep previous frequency",
+                               (unsigned long)target_freq);
+            }
         }
     }
 
@@ -1116,6 +1137,9 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(!(host->id == SPI3_HOST && trans_desc->flags & SPI_TRANS_MODE_OCT), "SPI3 does not support octal mode", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & SPI_TRANS_MODE_OCT) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "Incompatible when setting to both Octal mode and 3-wire-mode", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & SPI_TRANS_MODE_OCT) && !is_half_duplex), "Incompatible when setting to both Octal mode and half duplex mode", ESP_ERR_INVALID_ARG);
+#endif
+#if !SOC_SPI_SUPPORT_DDR_CLOCK
+    SPI_CHECK(!(trans_desc->flags & SPI_TRANS_DDRCLK), "DDRCLK is not supported on this chip", ESP_ERR_NOT_SUPPORTED);
 #endif
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO | SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "Incompatible when setting to both multi-line mode and 3-wire-mode", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO | SPI_TRANS_MODE_QIO)) && !is_half_duplex), "Incompatible when setting to both multi-line mode and half duplex mode", ESP_ERR_INVALID_ARG);

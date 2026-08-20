@@ -507,6 +507,7 @@
 #define SOC_SPI_SUPPORT_SLEEP_RETENTION     1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
 #define SOC_SPI_SUPPORT_OCT                 1
+#define SOC_SPI_SUPPORT_DDR_CLOCK           1
 
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_XIP_SUPPORTED        1
