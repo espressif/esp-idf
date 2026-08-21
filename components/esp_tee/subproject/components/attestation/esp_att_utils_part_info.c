@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,21 @@ static size_t digest_type_to_len(esp_att_part_digest_type_t digest)
 }
 
 #if ESP_TEE_BUILD
+#define DIGEST_CHUNK_LEN (1024)
+
+static psa_status_t hash_update_chunked(psa_hash_operation_t *hash_op, const void *data, uint32_t len)
+{
+    psa_status_t status = PSA_SUCCESS;
+
+    for (uint32_t offset = 0; offset < len; offset += DIGEST_CHUNK_LEN) {
+        status = psa_hash_update(hash_op, (const uint8_t *)data + offset, MIN(DIGEST_CHUNK_LEN, len - offset));
+        if (status != PSA_SUCCESS) {
+            break;
+        }
+    }
+
+    return status;
+}
 
 static esp_err_t read_partition(uint32_t offset, void *buf, size_t size)
 {
@@ -99,12 +114,12 @@ esp_err_t get_flash_contents_sha256(uint32_t flash_offset, uint32_t len, uint8_t
             psa_hash_abort(&hash_op);
             return ESP_FAIL;
         }
-        status = psa_hash_update(&hash_op, image, mmap_len);
+        status = hash_update_chunked(&hash_op, image, mmap_len);
+        esp_tee_flash_munmap(image);
         if (status != PSA_SUCCESS) {
             psa_hash_abort(&hash_op);
             return ESP_FAIL;
         }
-        esp_tee_flash_munmap(image);
 
         flash_offset += mmap_len;
         len -= mmap_len;
