@@ -57,8 +57,9 @@ static inline void bootloader_hardware_init(void)
     regi2c_ctrl_ll_master_configure_clock();
 #endif
 
-    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
-    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_IR_CAL_EXT_CAP, 3);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 12);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
 
     /* During mmu_hal_init, a valid clock source is required for the PSRAM,
        so before shutting down MPLL in rtc_clk_init, the PSRAM clock source
