@@ -22,30 +22,52 @@ extern "C" {
 
 #if CONFIG_BT_BLUEDROID_ENABLED
 #if CONFIG_BT_BLUEDROID_PINNED_TO_CORE
-#define ISO_TASK_CORE           CONFIG_BT_BLUEDROID_PINNED_TO_CORE
+#define ISO_TASK_CORE               CONFIG_BT_BLUEDROID_PINNED_TO_CORE
 #else /* CONFIG_BT_BLUEDROID_PINNED_TO_CORE */
-#define ISO_TASK_CORE           (0)
+#define ISO_TASK_CORE               (0)
 #endif /* CONFIG_BT_BLUEDROID_PINNED_TO_CORE */
 #else /* CONFIG_BT_BLUEDROID_ENABLED */
 #if CONFIG_BT_NIMBLE_PINNED_TO_CORE
-#define ISO_TASK_CORE           CONFIG_BT_NIMBLE_PINNED_TO_CORE
+#define ISO_TASK_CORE               CONFIG_BT_NIMBLE_PINNED_TO_CORE
 #else /* CONFIG_BT_NIMBLE_PINNED_TO_CORE */
-#define ISO_TASK_CORE           (0)
+#define ISO_TASK_CORE               (0)
 #endif /* CONFIG_BT_NIMBLE_PINNED_TO_CORE */
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
-#define ISO_TASK_STACK_SIZE     4096
-#define ISO_TASK_NAME           "iso_task"
+#define ISO_TASK_STACK_SIZE         4096
+#define ISO_TASK_NAME               "iso_task"
 /* Ref:
- * - Bluedroid BTC task: configMAX_PRIORITIES - 6
- * - Bluedroid BTU task: configMAX_PRIORITIES - 5
- * - NimBLE Host task:   configMAX_PRIORITIES - 4
+ * - Bluedroid hci_layer task: configMAX_PRIORITIES - 3
+ * - NimBLE Host task:         configMAX_PRIORITIES - 4
+ * - Bluedroid BTU task:       configMAX_PRIORITIES - 5
+ * - Bluedroid BTC task:       configMAX_PRIORITIES - 6
+ *
+ * MUST stay strictly above BTU. Both tasks post to Bluedroid's single shared
+ * downstream event, and osi_thread_post_event() keeps OSI_EVENT_FLAG_POSTING
+ * set across its osi_thread_post() — which yields to the higher-priority
+ * hci_layer task — until the poster is rescheduled. Any post landing in that
+ * window is rejected, and the ACL path discards the result, stranding the
+ * packet until someone else posts (measured at 56.6 s). At equal priority the
+ * round-robin lets BTU run inside our window and lose a notification that way;
+ * one rung above BTU, BTU cannot be scheduled until we have cleared POSTING,
+ * so it can never be the victim. Same core is a precondition — see
+ * ISO_TASK_CORE above. The reverse (BTU's window rejecting our command) stays
+ * possible and is covered by the kick loop in adapter/bluedroid/hci.c.
  */
-#if CONFIG_BT_BLUEDROID_ENABLED
-#define ISO_TASK_PRIO           (configMAX_PRIORITIES - 5)
-#else
-#define ISO_TASK_PRIO           (configMAX_PRIORITIES - 4)
-#endif
+#define ISO_TASK_PRIO               (configMAX_PRIORITIES - 4)
+
+/* The other, weaker mitigation for the same lost-wakeup race: re-post the
+ * shared downstream event after every HCI command we send, hoping to flush a
+ * packet whose own post was rejected inside our POSTING window.
+ *
+ * Off because the priority above supersedes it, and once that holds it cannot
+ * help in either direction: BTU never runs inside our window, so there is no
+ * stranded ACL packet to flush; and if BTU's window rejected our command, BTU
+ * is not scheduled between our two posts either, so the re-post is rejected
+ * with it. Measured ineffective on hardware before the priority change too.
+ * Enable only together with lowering ISO_TASK_PRIO back to BTU's level.
+ * Mechanism: adapter/bluedroid/hci.c. */
+#define ISO_HCI_DRAIN_DOWNSTREAM    0
 
 /* Ordered by priority tier, highest first. The numeric value is not used for
  * prioritization (that comes from which queue bt_le_iso_task_post routes to);
