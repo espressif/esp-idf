@@ -14,9 +14,38 @@
 #include "ble_log_lbm.h"
 
 #include "esp_log.h"
+#include "esp_chip_info.h"
 
 /* MACRO */
 #define TAG                                      "ble_log_rt"
+
+#if CONFIG_BT_CONTROLLER_ENABLED
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+extern const char *btdm_controller_get_compile_version(void);
+#define BLE_LOG_CONTROLLER_GET_COMMIT() btdm_controller_get_compile_version()
+#elif !CONFIG_BT_DUAL_MODE_ARCH || CONFIG_BT_CTRL_BLE_ENABLE
+/* BR/EDR-only dual-mode builds do not link the BLE controller lib */
+extern char *ble_controller_get_compile_version(void);
+#define BLE_LOG_CONTROLLER_GET_COMMIT() ble_controller_get_compile_version()
+#endif
+#if CONFIG_BT_DUAL_MODE_ARCH
+/* BTDM common lib (dual-mode arch only) */
+extern const char *r_btdm_get_compile_version(void);
+#define BLE_LOG_BTDM_COMMON_GET_COMMIT() r_btdm_get_compile_version()
+#endif
+#endif
+
+#if CONFIG_BLE_MESH && CONFIG_BLE_MESH_V11_SUPPORT
+/* "Bluetooth Mesh v1.1 commit: <hash>" */
+extern const char bt_mesh_v11_commit_str[];
+#endif
+
+#if CONFIG_BT_AUDIO && CONFIG_SOC_BLE_AUDIO_SUPPORTED
+extern const char *lib_audio_commit_get(void);
+#endif
+
+_Static_assert(sizeof(ble_log_version_info_t) == 58,
+               "Unexpected BLE Log version info frame size");
 
 /* VARIABLE */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_inited = 0;
@@ -35,6 +64,12 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* PRIVATE FUNCTION */
+/* Copies a NUL-terminated commit string into a fixed-width zero-padded field */
+BLE_LOG_STATIC void ble_log_commit_copy(uint8_t *dst, const char *src, size_t len)
+{
+    BLE_LOG_MEMCPY(dst, src, strnlen(src, len));
+}
+
 BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
 {
     (void)pvParameters;
@@ -56,12 +91,42 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         }
         last_hook_os_ts = curr_os_ts;
 
-        /* Write BLE Log info log */
-        ble_log_info_t ble_log_info = {
-            .int_src_code = BLE_LOG_INT_SRC_INFO,
+        /* Write version info: BLE Log version, idf commit (build-time),
+         * linked-in BLE lib commits, chip model/revision (efuse, runtime-only).
+         * Libs absent from the build leave their fields zero. */
+        ble_log_version_info_t version_info = {
+            .int_src_code = BLE_LOG_INT_SRC_VERSION_INFO,
             .version = BLE_LOG_VERSION,
         };
-        ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&ble_log_info, sizeof(ble_log_info_t));
+#ifdef BLE_LOG_IDF_COMMIT
+        BLE_LOG_MEMCPY(version_info.idf_commit, BLE_LOG_IDF_COMMIT, BLE_LOG_IDF_COMMIT_LEN);
+#endif
+#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_CONTROLLER_GET_COMMIT)
+        ble_log_commit_copy(version_info.controller_commit, BLE_LOG_CONTROLLER_GET_COMMIT(),
+                            BLE_LOG_LIB_COMMIT_LEN);
+#endif
+#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_BTDM_COMMON_GET_COMMIT)
+        ble_log_commit_copy(version_info.btdm_common_commit, BLE_LOG_BTDM_COMMON_GET_COMMIT(),
+                            BLE_LOG_LIB_COMMIT_LEN);
+#endif
+#if CONFIG_BLE_MESH && CONFIG_BLE_MESH_V11_SUPPORT
+        /* The hash is the substring after the last space of the lib string */
+        const char *mesh_commit = strrchr(bt_mesh_v11_commit_str, ' ');
+        if (mesh_commit) {
+            ble_log_commit_copy(version_info.mesh_commit, mesh_commit + 1,
+                                BLE_LOG_LIB_COMMIT_LEN);
+        }
+#endif
+#if CONFIG_BT_AUDIO && CONFIG_SOC_BLE_AUDIO_SUPPORTED
+        ble_log_commit_copy(version_info.audio_commit, lib_audio_commit_get(),
+                            BLE_LOG_LIB_COMMIT_LEN);
+#endif
+        esp_chip_info_t chip_info;
+        esp_chip_info(&chip_info);
+        version_info.chip_model = (uint16_t)chip_info.model;
+        version_info.chip_revision = chip_info.revision;
+        ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&version_info,
+                          sizeof(version_info));
 
         ble_log_write_enh_stat();
         ble_log_write_buf_util();
