@@ -426,28 +426,28 @@ menu "GATT / ATT"
     config BT_NIMBLE_GATT_CACHING_MAX_SVCS
         int "Maximum number of services per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 8
         help
             Set this option to set the upper limit on number of services per connection to be cached.
 
     config BT_NIMBLE_GATT_CACHING_MAX_INCL_SVCS
         int "Maximum number of included services per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 8
         help
             Set this option to set the upper limit on number of included services per connection to be cached.
 
     config BT_NIMBLE_GATT_CACHING_MAX_CHRS
         int "Maximum number of characteristics per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 58
         help
             Set this option to set the upper limit on number of characteristics per connection to be cached.
 
     config BT_NIMBLE_GATT_CACHING_MAX_DSCS
         int "Maximum number of descriptors per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 58
         help
             Set this option to set the upper limit on number of descriptors per connection to be cached.
 
