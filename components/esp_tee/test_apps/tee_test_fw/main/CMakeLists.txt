@@ -32,8 +32,7 @@ endif()
 
 # SHA
 if(CONFIG_SOC_SHA_SUPPORTED)
-    list(APPEND srcs "${mbedtls_test_srcs_dir}/test_sha.c"
-                    "${mbedtls_test_srcs_dir}/test_sha_perf.c")
+    list(APPEND srcs "${mbedtls_test_srcs_dir}/test_sha_perf.c")
 endif()
 
 # Mixed

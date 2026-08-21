@@ -112,12 +112,6 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
 #endif
 }
 
-/* NOTE: This test attempts to mmap 1MB of flash starting from address 0x00, which overlaps
- * the entire TEE protected region, causing the mmap operation to fail and triggering an
- * exception in the subsequent steps.
- */
-#if !CONFIG_SECURE_ENABLE_TEE
-
 TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 {
     int r = -1;
@@ -176,4 +170,3 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 }
 
 #endif
-#endif // SOC_SHA_SUPPORTED && CONFIG_MBEDTLS_HARDWARE_SHA

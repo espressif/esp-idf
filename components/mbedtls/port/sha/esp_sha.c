@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <assert.h>
 
 #include "psa/crypto.h"
+#include "mbedtls/platform_util.h"
 
 #include "hal/sha_hal.h"
 #include "hal/sha_types.h"
@@ -64,18 +65,20 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 
     if (alg == PSA_ALG_NONE) {
         ESP_LOGE(TAG, "SHA type %d not supported", (int)sha_type);
-        abort();
+        return;
     }
     size_t olen;
     size_t output_len = PSA_HASH_LENGTH(alg);
     status = psa_hash_compute(alg, input, ilen, output, output_len, &olen);
     if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "SHA computation failed, status %d", status);
-        abort();
+        ESP_LOGE(TAG, "SHA computation failed (status %d), output zeroed", (int)status);
+        mbedtls_platform_zeroize(output, output_len);
+        return;
     }
     if (olen != output_len) {
-        ESP_LOGE(TAG, "SHA output length mismatch, expected %u, got %u", output_len, olen);
-        abort();
+        ESP_LOGE(TAG, "SHA output length mismatch (expected %u, got %u), output zeroed", output_len, olen);
+        mbedtls_platform_zeroize(output, output_len);
+        return;
     }
 }
 

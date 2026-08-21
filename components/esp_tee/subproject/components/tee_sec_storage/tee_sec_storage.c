@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <sys/param.h>
 
 #include "soc/soc_caps.h"
 #include "esp_log.h"
@@ -36,8 +37,8 @@
 #define AES256_KEY_LEN                      32
 #define AES256_KEY_BITS                     (AES256_KEY_LEN * 8)
 #define AES256_GCM_IV_LEN                   12
-#define AES256_GCM_TAG_LEN_MIN             12   /* NIST SP800-38D general-use minimum (96-bit tag) */
-#define AES256_GCM_TAG_LEN_MAX             16   /* full GCM tag (128-bit) */
+#define AES256_GCM_TAG_LEN_MIN              12   /* NIST SP800-38D general-use minimum (96-bit tag) */
+#define AES256_GCM_TAG_LEN_MAX              16   /* full GCM tag (128-bit) */
 #define ECDSA_SECP384R1_KEY_LEN             48
 #define ECDSA_SECP256R1_KEY_LEN             32
 
@@ -678,6 +679,46 @@ cleanup:
     return err;
 }
 
+#define AEAD_CHUNK_LEN  (1024)
+
+static psa_status_t aead_update_ad_chunked(psa_aead_operation_t *op, const uint8_t *aad, size_t aad_len)
+{
+    psa_status_t status = PSA_SUCCESS;
+
+    for (size_t offset = 0; offset < aad_len; offset += AEAD_CHUNK_LEN) {
+        status = psa_aead_update_ad(op, aad + offset, MIN(AEAD_CHUNK_LEN, aad_len - offset));
+        if (status != PSA_SUCCESS) {
+            break;
+        }
+    }
+
+    return status;
+}
+
+static psa_status_t aead_update_chunked(psa_aead_operation_t *op, psa_algorithm_t alg,
+                                        const uint8_t *input, size_t len,
+                                        uint8_t *out, size_t out_size, size_t *out_len)
+{
+    psa_status_t status = PSA_SUCCESS;
+    size_t total = 0;
+
+    for (size_t offset = 0; offset < len; offset += AEAD_CHUNK_LEN) {
+        const size_t chunk = MIN(AEAD_CHUNK_LEN, len - offset);
+        const size_t update_osize = PSA_AEAD_UPDATE_OUTPUT_SIZE(PSA_KEY_TYPE_AES, alg, chunk);
+        const size_t osize = MIN(out_size - total, update_osize);
+        size_t olen = 0;
+
+        status = psa_aead_update(op, input + offset, chunk, out + total, osize, &olen);
+        if (status != PSA_SUCCESS) {
+            break;
+        }
+        total += olen;
+    }
+
+    *out_len = total;
+    return status;
+}
+
 static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t *input, size_t len, const uint8_t *aad,
                                               size_t aad_len, uint8_t *iv, size_t iv_len, uint8_t *tag, size_t tag_len,
                                               uint8_t *output, bool is_encrypt)
@@ -700,21 +741,16 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         return ESP_ERR_INVALID_SIZE;
     }
 
-    esp_err_t err = secure_storage_find_key(key_id);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Key ID not found");
-        return err;
-    }
-
     psa_key_id_t psa_key_id = 0;
-    uint8_t *aead_buf = NULL;
-    size_t aead_buf_len = 0;
+    psa_aead_operation_t aead_op = PSA_AEAD_OPERATION_INIT;
+    uint8_t *plaintext = NULL;
 
     sec_stg_key_t keyctx;
     size_t keyctx_len = sizeof(keyctx);
-    err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
+    esp_err_t err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to fetch key from storage");
+        ESP_LOGE(TAG, "%s", (err == ESP_ERR_NVS_NOT_FOUND) ?
+                 "Key ID not found" : "Failed to fetch key from storage");
         goto cleanup;
     }
 
@@ -724,10 +760,12 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         goto cleanup;
     }
 
+    const psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len);
+
     // Setup PSA key attributes
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
-    psa_set_key_algorithm(&attributes, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len));
+    psa_set_key_usage_flags(&attributes, is_encrypt ? PSA_KEY_USAGE_ENCRYPT : PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, alg);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
     psa_set_key_bits(&attributes, AES256_KEY_BITS);
     psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
@@ -741,56 +779,75 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         goto cleanup;
     }
 
-    /* PSA AEAD wants ciphertext+tag concatenated in a single buffer for both
-     * encrypt (output) and decrypt (input). */
-    aead_buf_len = len + tag_len;
-    aead_buf = malloc(aead_buf_len);
-    if (!aead_buf) {
-        err = ESP_ERR_NO_MEM;
+    uint8_t iv_local[AES256_GCM_IV_LEN];
+    uint8_t tag_local[AES256_GCM_TAG_LEN_MAX];
+
+    size_t out_len = 0, fin_len = 0, tag_out_len = tag_len;
+
+    uint8_t *out_buf = output;
+
+    if (is_encrypt) {
+        status = psa_aead_encrypt_setup(&aead_op, psa_key_id, alg);
+        if (status == PSA_SUCCESS) {
+            status = psa_generate_random(iv_local, iv_len);
+        }
+    } else {
+        memcpy(iv_local, iv, iv_len);
+        memcpy(tag_local, tag, tag_len);
+
+        /* NOTE: Only the AEAD-written prefix is ever copied out; zeroized at cleanup */
+        plaintext = malloc(len);
+        if (!plaintext) {
+            err = ESP_ERR_NO_MEM;
+            goto cleanup;
+        }
+        out_buf = plaintext;
+
+        status = psa_aead_decrypt_setup(&aead_op, psa_key_id, alg);
+    }
+
+    /* Shared spine: nonce, then AAD, then the payload in bounded chunks. */
+    if (status == PSA_SUCCESS) {
+        status = psa_aead_set_nonce(&aead_op, iv_local, iv_len);
+    }
+    if (status == PSA_SUCCESS) {
+        status = aead_update_ad_chunked(&aead_op, aad, aad_len);
+    }
+    if (status == PSA_SUCCESS) {
+        status = aead_update_chunked(&aead_op, alg, input, len, out_buf, len, &out_len);
+    }
+    if (status == PSA_SUCCESS) {
+        const size_t osize_fv = PSA_AEAD_FINISH_OUTPUT_SIZE(PSA_KEY_TYPE_AES, alg);
+        const size_t osize = MIN(len - out_len, osize_fv);
+        if (is_encrypt) {
+            status = psa_aead_finish(&aead_op, out_buf + out_len, osize, &fin_len,
+                                     tag_local, tag_len, &tag_out_len);
+        } else {
+            status = psa_aead_verify(&aead_op, out_buf + out_len, osize, &fin_len,
+                                     tag_local, tag_len);
+        }
+    }
+
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Error in %scrypting data: %d", is_encrypt ? "en" : "de", status);
+        err = ESP_FAIL;
         goto cleanup;
     }
 
     if (is_encrypt) {
-        status = psa_generate_random(iv, iv_len);
-        if (status != PSA_SUCCESS) {
-            err = ESP_FAIL;
-            goto cleanup;
-        }
-
-        size_t output_length = 0;
-        status = psa_aead_encrypt(psa_key_id, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len),
-                                  iv, iv_len, aad, aad_len, input, len,
-                                  aead_buf, aead_buf_len, &output_length);
-        if (status != PSA_SUCCESS) {
-            ESP_LOGE(TAG, "Error in encrypting data: %d", status);
-            err = ESP_FAIL;
-            goto cleanup;
-        }
-
-        // Separate ciphertext and tag
-        memcpy(output, aead_buf, len);
-        memcpy(tag, aead_buf + len, tag_len);
+        memcpy(iv, iv_local, iv_len);
+        memcpy(tag, tag_local, tag_out_len);
     } else {
-        memcpy(aead_buf, input, len);
-        memcpy(aead_buf + len, tag, tag_len);
-
-        size_t output_length = 0;
-        status = psa_aead_decrypt(psa_key_id, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len),
-                                  iv, iv_len, aad, aad_len, aead_buf, aead_buf_len,
-                                  output, len, &output_length);
-        if (status != PSA_SUCCESS) {
-            ESP_LOGE(TAG, "Error in decrypting data: %d", status);
-            err = ESP_FAIL;
-            goto cleanup;
-        }
+        memcpy(output, plaintext, out_len + fin_len);
     }
 
     err = ESP_OK;
 
 cleanup:
-    if (aead_buf) {
-        mbedtls_platform_zeroize(aead_buf, aead_buf_len);
-        free(aead_buf);
+    psa_aead_abort(&aead_op);
+    if (plaintext) {
+        mbedtls_platform_zeroize(plaintext, len);
+        free(plaintext);
     }
     if (psa_key_id != 0) {
         psa_destroy_key(psa_key_id);
