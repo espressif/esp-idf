@@ -63,9 +63,13 @@ esp_err_t IRAM_ATTR esp_openthread_task_queue_post(esp_openthread_task_t task, v
     BaseType_t task_woken = pdFALSE;
 
     if (!xPortCanYield()) {
+        ESP_RETURN_ON_FALSE_ISR(s_task_queue != NULL && s_task_queue_event_fd >= 0, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
+                                "OpenThread task queue not initialized");
         ESP_RETURN_ON_FALSE_ISR(xQueueSendFromISR(s_task_queue, &task_storage, &task_woken), ESP_FAIL, OT_PLAT_LOG_TAG,
                                 "Failed to post task to OpenThread task queue");
     } else {
+        ESP_RETURN_ON_FALSE(s_task_queue != NULL && s_task_queue_event_fd >= 0, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
+                            "OpenThread task queue not initialized");
         ESP_RETURN_ON_FALSE(xQueueSend(s_task_queue, &task_storage, OT_TASK_QUEUE_SENDING_WAIT_TIME), ESP_FAIL, OT_PLAT_LOG_TAG,
                             "Failed to post task to OpenThread task queue");
     }
