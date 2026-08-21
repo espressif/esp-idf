@@ -25,9 +25,7 @@ BLE_LOG_STATIC TaskHandle_t rt_task_handle = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
 #if CONFIG_BLE_LOG_TS_ENABLED
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_ts_enabled = 0;
-#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
 BLE_LOG_STATIC esp_timer_handle_t rt_ts_timer = NULL;
-#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* PRIVATE FUNCTION DECLARATION */
@@ -43,9 +41,7 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
     ble_log_prph_trans_t *trans = NULL;
     uint32_t curr_os_ts = 0;
     uint32_t last_hook_os_ts = 0;
-#ifndef UNIT_TEST
     while (1)
-#endif /* !UNIT_TEST */
     {
         /* CRITICAL:
          * Blocking queue receive is mandatory for light sleep support */
@@ -55,12 +51,8 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
 
         /* Task hook */
         curr_os_ts = pdTICKS_TO_MS(xTaskGetTickCount());
-        if ((curr_os_ts - last_hook_os_ts) < BLE_LOG_TASK_HOOK_TIMEOUT_MS) {
-#ifndef UNIT_TEST
+        if ((curr_os_ts - last_hook_os_ts) < BLE_LOG_TS_TRIGGER_TIMEOUT_MS) {
             continue;
-#else /* UNIT_TEST */
-            return;
-#endif /* !UNIT_TEST */
         }
         last_hook_os_ts = curr_os_ts;
 
@@ -71,19 +63,12 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         };
         ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&ble_log_info, sizeof(ble_log_info_t));
 
-#if CONFIG_BLE_LOG_TS_TRIGGER_TASK_EVENT
-        ble_log_rt_ts_trigger(NULL);
-#endif /* CONFIG_BLE_LOG_TS_TRIGGER_TASK_EVENT */
-
         ble_log_write_enh_stat();
         ble_log_write_buf_util();
     }
 }
 
 #if CONFIG_BLE_LOG_TS_ENABLED
-#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
-BLE_LOG_IRAM_ATTR
-#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD */
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
 {
     (void)arg;
@@ -121,23 +106,19 @@ bool ble_log_rt_init(void)
 
 #if CONFIG_BLE_LOG_TS_ENABLED
     BLE_LOG_ATOMIC_STORE_RELAXED(rt_ts_enabled, false);
-#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
     /* Initialize ESP Timer Trigger */
     esp_timer_create_args_t ts_timer_args = {
         .callback = ble_log_rt_ts_trigger,
         .arg = NULL,
-#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
-        .dispatch_method = ESP_TIMER_ISR,
-#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD */
         .name = "ble_log_ts_timer",
+        .skip_unhandled_events = true,
     };
     if (esp_timer_create(&ts_timer_args, &rt_ts_timer) != ESP_OK) {
         goto exit;
     }
-    if (esp_timer_start_periodic(rt_ts_timer, BLE_LOG_TS_TRIGGER_TIMEOUT_US) != ESP_OK) {
+    if (esp_timer_start_periodic(rt_ts_timer, BLE_LOG_TS_TRIGGER_TIMEOUT_MS * 1000) != ESP_OK) {
         goto exit;
     }
-#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
     BLE_LOG_ATOMIC_STORE_RELEASE(rt_inited, true);
@@ -160,13 +141,11 @@ void ble_log_rt_deinit(void)
     }
 #if CONFIG_BLE_LOG_TS_ENABLED
     BLE_LOG_ATOMIC_STORE_RELEASE(rt_ts_enabled, false);
-#if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
     if (rt_ts_timer) {
         esp_timer_stop_blocking(rt_ts_timer, portMAX_DELAY);
         esp_timer_delete(rt_ts_timer);
         rt_ts_timer = NULL;
     }
-#endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
     /* CRITICAL:

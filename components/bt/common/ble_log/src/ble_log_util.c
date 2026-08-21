@@ -17,9 +17,7 @@
 #define BLE_LOG_REF_COUNT_WAIT_TIMEOUT_MS (1000)
 
 /* VARIABLE */
-#ifndef UNIT_TEST
 BLE_LOG_DRAM_ATTR portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
-#endif /* !UNIT_TEST */
 
 /* INTERNAL INTERFACE */
 #include "esp_compiler.h"
