@@ -119,6 +119,7 @@ if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
+    register_ble_log_idf_commit()
     register_bt_ctrl_libs()
     set_bluedroid_host_compile_flags()
     set_nimble_host_compile_flags()

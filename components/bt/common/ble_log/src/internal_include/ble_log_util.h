@@ -91,7 +91,10 @@ void ble_log_cas_release(volatile bool *cas_lock)
     __atomic_store_n(cas_lock, false, __ATOMIC_RELEASE);
 }
 
-#define BLE_LOG_VERSION                         (5)
+#define BLE_LOG_VERSION                         (6)
+#define BLE_LOG_IDF_COMMIT_LEN                  (12)
+/* Lib commit hashes are at most 10 hex chars; zero-padded when shorter */
+#define BLE_LOG_LIB_COMMIT_LEN                  (10)
 
 /* TYPEDEF */
 typedef enum {
@@ -102,6 +105,7 @@ typedef enum {
     BLE_LOG_INT_SRC_FLUSH,
     BLE_LOG_INT_SRC_BUF_UTIL,
     BLE_LOG_INT_SRC_FINAL_STAT,
+    BLE_LOG_INT_SRC_VERSION_INFO,
     BLE_LOG_INT_SRC_MAX,
 } ble_log_int_src_t;
 
@@ -109,6 +113,18 @@ typedef struct {
     uint8_t int_src_code;
     uint8_t version;
 } __attribute__((packed)) ble_log_info_t;
+
+typedef struct {
+    uint8_t int_src_code;
+    uint8_t version;
+    uint8_t idf_commit[BLE_LOG_IDF_COMMIT_LEN];
+    uint8_t controller_commit[BLE_LOG_LIB_COMMIT_LEN];
+    uint8_t btdm_common_commit[BLE_LOG_LIB_COMMIT_LEN];
+    uint8_t mesh_commit[BLE_LOG_LIB_COMMIT_LEN];
+    uint8_t audio_commit[BLE_LOG_LIB_COMMIT_LEN];
+    uint16_t chip_model;
+    uint16_t chip_revision;
+} __attribute__((packed)) ble_log_version_info_t;
 
 /* INTERFACE */
 uint32_t ble_log_fast_checksum(const uint8_t *data, size_t len);
