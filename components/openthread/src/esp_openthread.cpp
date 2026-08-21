@@ -225,12 +225,9 @@ esp_err_t esp_openthread_launch_mainloop(void)
             esp_openthread_lock_release();
             if (error != ESP_OK) {
                 ESP_LOGE(OT_PLAT_LOG_TAG, "esp_openthread_platform_process failed");
-                break;
             }
         } else {
-            error = ESP_FAIL;
-            ESP_LOGE(OT_PLAT_LOG_TAG, "OpenThread system polling failed");
-            break;
+            ESP_LOGE(OT_PLAT_LOG_TAG, "OpenThread system polling failed (errno: %d)", errno);
         }
     }
 #if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR

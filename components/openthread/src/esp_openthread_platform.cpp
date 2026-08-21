@@ -33,15 +33,18 @@ static esp_openthread_platform_workflow_t *s_workflow_list = NULL;
 esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func update_func,
                                                     esp_openthread_process_func process_func, const char *name)
 {
-    uint8_t name_len = strnlen(name, WORKFLOW_MAX_NAMELEN - 1);
+    assert(name != NULL);
+    size_t name_len = strlen(name);
+    ESP_RETURN_ON_FALSE(name_len > 0 && name_len < WORKFLOW_MAX_NAMELEN, ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG,
+                        "Workflow name '%s' is invalid", name);
+
     esp_openthread_platform_workflow_t *current_workflow = s_workflow_list;
     esp_openthread_platform_workflow_t *before_workflow = NULL;
     esp_openthread_platform_workflow_t *add_workflow =
         static_cast<esp_openthread_platform_workflow_t *>(calloc(1, sizeof(esp_openthread_platform_workflow_t)));
     ESP_RETURN_ON_FALSE(add_workflow != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG,
                         "Failed to alloc memory for esp_openthread_workflow");
-    strncpy(add_workflow->name, name, name_len);
-    add_workflow->name[name_len] = '\0';
+    memcpy(add_workflow->name, name, name_len + 1);
     add_workflow->update_func = update_func;
     add_workflow->process_func = process_func;
     add_workflow->next = NULL;
@@ -67,6 +70,9 @@ esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func u
 
 void esp_openthread_platform_workflow_unregister(const char *name)
 {
+    if (name == NULL) {
+        return;
+    }
     esp_openthread_platform_workflow_t *current_workflow = s_workflow_list;
     esp_openthread_platform_workflow_t *before_workflow = NULL;
     while (current_workflow) {
@@ -206,13 +212,17 @@ void esp_openthread_platform_update(esp_openthread_mainloop_context_t *mainloop)
 
 esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)
 {
+    esp_err_t error = ESP_OK;
     esp_openthread_platform_workflow_t *current_workflow = s_workflow_list;
     while (current_workflow) {
-        ESP_RETURN_ON_ERROR(current_workflow->process_func(instance, mainloop), OT_PLAT_LOG_TAG, "process %s failed",
-                            current_workflow->name);
+        esp_err_t ret = current_workflow->process_func(instance, mainloop);
+        if (ret != ESP_OK) {
+            ESP_LOGE(OT_PLAT_LOG_TAG, "process %s failed", current_workflow->name);
+            error = ret;
+        }
         current_workflow = current_workflow->next;
     }
-    return ESP_OK;
+    return error;
 }
 
 uint32_t esp_openthread_get_alloc_caps(void)
