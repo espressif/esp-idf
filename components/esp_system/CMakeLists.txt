@@ -195,7 +195,15 @@ endif()
 
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)
-        idf_component_optional_requires(PRIVATE esp_psram)
+        if(IDF_BUILD_V2)
+            # esp_psram is not required by any component unconditionally, so nothing else
+            # brings it into the build. Include it here, so that PSRAM support (and its
+            # startup hook) is part of any build which enables CONFIG_SPIRAM.
+            idf_component_include(esp_psram)
+            target_link_libraries(${COMPONENT_TARGET} PRIVATE idf::esp_psram)
+        else()
+            idf_component_optional_requires(PRIVATE esp_psram)
+        endif()
     endif()
 endif()
 

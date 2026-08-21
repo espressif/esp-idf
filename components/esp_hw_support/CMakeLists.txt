@@ -17,6 +17,7 @@ set(public_include_dirs "include" "include/soc"
                         "mspi/mspi_timing_tuning/include" "mspi/mspi_timing_tuning/tuning_scheme_impl/include"
                         "mspi/mspi_intr/include"
                         "mspi/esp_mspi_align/include"
+                        "mspi/mspi_mem_barrier/include"
                         "power_supply/include" "modem/include")
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
@@ -73,7 +74,8 @@ if(NOT non_os_build)
                      "port/${target}/esp_clk_tree.c"
                      "spi_bus_lock.c"
                      "heap_align_hw.c"
-                     "clk_utils.c")
+                     "clk_utils.c"
+                     "mspi/mspi_mem_barrier/mspi_mem_barrier.c")
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs "usb_phy/usb_phy.c")
     endif()

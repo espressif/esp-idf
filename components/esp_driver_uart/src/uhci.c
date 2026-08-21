@@ -32,7 +32,9 @@
 #include "esp_private/gdma.h"
 #include "esp_private/esp_dma_utils.h"
 #include "esp_private/gdma_link.h"
-#include "esp_private/esp_psram_mspi.h"
+#if CONFIG_SPIRAM
+#include "esp_private/mspi_mem_barrier.h"
+#endif
 #include "uhci_private.h"
 #include "esp_memory_utils.h"
 #include "esp_cache.h"
@@ -142,9 +144,11 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
         .flags.totally_received = frame_end,
     };
 
+#if CONFIG_SPIRAM
     if (esp_ptr_external_ram(evt_data.data)) {
         esp_psram_mspi_mb();
     }
+#endif
 
     // DMA just finished writing the node's buffer. Because the descriptor link is circular,
     // the same buffer region gets overwritten on every loop. On targets where the buffer is
