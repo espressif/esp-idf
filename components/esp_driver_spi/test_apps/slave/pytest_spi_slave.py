@@ -12,7 +12,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     soc_filtered_targets('SOC_GPSPI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15615
 def test_slave_single_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_normal_cases(reset=True)
 

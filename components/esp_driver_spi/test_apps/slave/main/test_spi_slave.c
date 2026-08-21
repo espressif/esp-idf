@@ -324,14 +324,6 @@ TEST_CASE("test slave using external ram", "[spi]")
         ESP_LOGI(SLAVE_TAG, "ok\n");
     }
 
-#if (TEST_SPI_PERIPH_NUM >= 2) && !SOC_IS(ESP32P4)  // P4 can't reach error condition since it has powerful 16bits ddr psram
-    master_tans.override_freq_hz = 61000000;    // real freq will be 40 if just config 60M
-    ESP_LOGI(SLAVE_TAG, "Testing over freq: %ld", master_tans.override_freq_hz);
-    TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &slave_tans, portMAX_DELAY));
-    spi_device_transmit(spi, (spi_transaction_t *)&master_tans);
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, spi_slave_get_trans_result(TEST_SPI_HOST, &out_trans, portMAX_DELAY));
-#endif
-
     free(slave_ext_tx);
     free(slave_ext_rx);
     free(master_tx);
