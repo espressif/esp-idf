@@ -26,6 +26,12 @@ int bt_le_bluedroid_hci_init(void);
 
 void bt_le_bluedroid_hci_deinit(void);
 
+/* Re-post Bluedroid's downstream-data event; call right after any HCI command
+ * this adapter sends from the iso task. Empty unless ISO_HCI_DRAIN_DOWNSTREAM
+ * is enabled — see hci.c for the mechanism and common/task.h for why it is off
+ * by default. */
+void bt_le_bluedroid_hci_drain_downstream(void);
+
 /* Send a sync HCI command, bypassing BTM and ble_sync_info. `cmd_params`
  * is the cmd parameter payload (without opcode/length preamble).
  *

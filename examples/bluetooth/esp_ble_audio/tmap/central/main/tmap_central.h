@@ -93,6 +93,8 @@ size_t set_member_count(void);
 
 uint16_t set_member_handle(size_t index);
 
+const uint8_t *set_member_addr(uint16_t conn_handle);
+
 void set_member_discovered(uint16_t conn_handle, int err);
 
 void set_lock_complete(int err);

@@ -29,6 +29,26 @@ LOG_MODULE_REGISTER(ISO_BISO, CONFIG_BT_ISO_LOG_LEVEL);
  * path (bt_le_bluedroid_hci_send_sync) nor the fire-and-forget BTM_*
  * calls need bt_le_host_lock; single-task affinity is the serialization.
  *
+ * The bt_le_bluedroid_hci_drain_downstream() call after each fire-and-forget
+ * BTM_* command below compiles away by default: what actually keeps a
+ * concurrent BTU ACL post from being rejected inside our POSTING window is
+ * ISO_TASK_PRIO sitting above BTU. See common/task.h for both.
+ *
+ * TODO:
+ * The opposite direction is uncovered for these commands. If BTU's own POSTING
+ * window rejects the post one of them makes, it strands in command_queue until
+ * the next successful post from anyone — unbounded when the link happens to go
+ * quiet. send_sync survives this via its kick loop, which works only because
+ * the sem wait deschedules us so BTU can clear POSTING; fire-and-forget has no
+ * response to wait on, so it has no equivalent. Raising ISO_TASK_PRIO above BTU
+ * makes us win that race more often, so the odds went up.
+ *
+ * Not observed yet. Each call site below names the event that goes missing when
+ * it happens. The fix is an explicit yield (vTaskDelay(1)) after the BTM call,
+ * so BTU can clear POSTING, then a re-post via
+ * bt_le_bluedroid_hci_drain_downstream() — add it only once this shows up, and
+ * only at the site that showed it.
+ *
  * iso_sem is the legacy sync-response mechanism for the USE_DIRECT_HCI=0
  * fallback only (set_cig_params / read_tx_sync): iso_evt_rx fills the
  * file-scope tx_sync / set_cig_params buffers on BTU, then gives the
@@ -385,8 +405,10 @@ static int hci_cmd_create_cis(struct net_buf *buf, struct net_buf **rsp)
     }
 
     /* No direct_hci variant: HCI Create CIS returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleCreateCis(cis_count, (void *)cis_params);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
     free(cis_params);
@@ -423,8 +445,10 @@ static int hci_cmd_accept_cis_req(struct net_buf *buf, struct net_buf **rsp)
     cis_handle = sys_get_le16(buf->data + 3);
 
     /* No direct_hci variant: HCI Accept CIS Request returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleAcceptCisReq(cis_handle);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -483,7 +507,8 @@ static int hci_cmd_create_big(struct net_buf *buf, struct net_buf **rsp)
     bst_code     = buf->data + 18;
 
     /* No direct_hci variant: HCI Create BIG returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigCreate(big_handle,
                               adv_handle,
                               num_bis,
@@ -496,6 +521,7 @@ static int hci_cmd_create_big(struct net_buf *buf, struct net_buf **rsp)
                               framing,
                               encryption,
                               bst_code);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -542,7 +568,8 @@ static int hci_cmd_create_big_test(struct net_buf *buf, struct net_buf **rsp)
     bst_code     = buf->data + 23;
 
     /* No direct_hci variant: HCI Create BIG Test returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigCreateTest(big_handle,
                                   adv_handle,
                                   num_bis,
@@ -559,6 +586,7 @@ static int hci_cmd_create_big_test(struct net_buf *buf, struct net_buf **rsp)
                                   pto,
                                   encryption,
                                   bst_code);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -577,8 +605,10 @@ static int hci_cmd_terminate_big(struct net_buf *buf, struct net_buf **rsp)
     reason     = buf->data[4];
 
     /* No direct_hci variant: HCI Terminate BIG returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigTerminate(big_handle, reason);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -609,7 +639,8 @@ static int hci_cmd_big_create_sync(struct net_buf *buf, struct net_buf **rsp)
     bis          = buf->data + 27;
 
     /* No direct_hci variant: HCI BIG Create Sync returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigSyncCreate(big_handle,
                                   sync_handle,
                                   encryption,
@@ -618,6 +649,7 @@ static int hci_cmd_big_create_sync(struct net_buf *buf, struct net_buf **rsp)
                                   sync_timeout,
                                   num_bis,
                                   bis);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -1241,8 +1273,10 @@ int bt_le_bluedroid_iso_disconnect(uint16_t conn_handle, uint8_t reason)
     LOG_DBG("[B]IsoDisconn[0x%03x][%02x]", conn_handle, reason);
 
     /* No direct_hci variant: HCI Disconnect returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_CIS_DISCONNECTED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_CIS_DISCONNECTED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleDisconCis(conn_handle, reason);
+    bt_le_bluedroid_hci_drain_downstream();
 
     if (status != BTM_SUCCESS) {
         LOG_ERR("[B]IsoDisconnFail[0x%03x][%02x]", conn_handle, status);

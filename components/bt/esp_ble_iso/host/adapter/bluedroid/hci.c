@@ -12,8 +12,6 @@
 
 #include "bluedroid/hci.h"
 
-#if USE_DIRECT_HCI
-
 /* hci/hci_layer.h pulls in osi/osi.h which defines a 2-arg CONCAT(a, b)
  * macro that conflicts with the variadic CONCAT(...) from Zephyr's
  * <zephyr/sys/util.h>. hci.c does not use CONCAT itself, so drop the
@@ -28,6 +26,8 @@
 #include "common/host.h"
 
 LOG_MODULE_REGISTER(ISO_BHCI, CONFIG_BT_ISO_LOG_LEVEL);
+
+#if USE_DIRECT_HCI
 
 /* Adapter-private sync cmd path. Decouples sync HCI cmds from BTU's global
  * ble_sync_info entirely: each cmd carries its own command_complete_cb (this
@@ -117,10 +117,15 @@ static void direct_hci_complete_cb(BT_HDR *response, void *context)
     k_sem_give(&direct_hci_sem);
 }
 
-/* Dropped-wakeup recovery in send_sync below. SLICE is well above the ~5 ms
- * round trip so a healthy command never kicks; the first kick already recovers,
- * and the leftover budget is one final wait, keeping the total K_SEM_SHORT. */
-#define DIRECT_HCI_KICK_SLICE   (50 / portTICK_PERIOD_MS)
+/* Dropped-wakeup recovery in send_sync below, and the only one that works for
+ * our own command: it recovers precisely because the sem wait deschedules
+ * iso_task, which is what lets the poster holding POSTING run and clear it (a
+ * re-post issued back-to-back cannot — see common/task.h). SLICE stays above
+ * the ~5 ms round trip so a healthy command never kicks, but far below the old
+ * 50 ms: iso_task is the sole consumer of the ISO RX queue, and every
+ * millisecond spent here backs up SDUs. The first kick already recovers, and
+ * the leftover budget is one final wait, keeping the total K_SEM_SHORT. */
+#define DIRECT_HCI_KICK_SLICE   (10 / portTICK_PERIOD_MS)
 #define DIRECT_HCI_KICK_MAX     3
 #define DIRECT_HCI_WAIT_REST    (K_SEM_SHORT - DIRECT_HCI_KICK_MAX * DIRECT_HCI_KICK_SLICE)
 
@@ -168,6 +173,10 @@ tBTM_STATUS bt_le_bluedroid_hci_send_sync(uint16_t opcode,
     hci_layer_get_interface()->transmit_command(p, direct_hci_complete_cb,
                                                 NULL, NULL);
 
+    /* Close the POSTING window transmit_command() just opened; empty by
+     * default. */
+    bt_le_bluedroid_hci_drain_downstream();
+
     for (kicks = 0; kicks < DIRECT_HCI_KICK_MAX; kicks++) {
         if (k_sem_take_poll(&direct_hci_sem, DIRECT_HCI_KICK_SLICE) == 0) {
             break;
@@ -175,38 +184,14 @@ tBTM_STATUS bt_le_bluedroid_hci_send_sync(uint16_t opcode,
 
         LOG_WRN("[B]DirectHciKick[0x%04x][%u]", opcode, kicks + 1);
 
-        /* Re-post the downstream event: our own wakeup may have been dropped.
-         *
-         * transmit_command() does not write the command from this task. It
-         * appends to hci_host_env.command_queue and wakes the hciT worker via
-         * hci_downstream_data_post(), whose return value it discards.
-         * osi_thread_post_event() refuses to post while OSI_EVENT_FLAG_POSTING
-         * is set, and that flag is held by whichever task is mid-post from the
-         * moment it sets the flag until it is rescheduled: osi_thread_post()
-         * ends in osi_sem_give(work_sem), which immediately yields to the
-         * higher-priority hciT, so POSTING stays set across the whole handler
-         * run. A second producer landing in that window is rejected:
-         *
-         *   BTU      set QUEUED|POSTING; osi_thread_post() -> sem give --.
-         *   hciT     clear QUEUED; handler: send the ACL, command_queue  <-'
-         *            still empty -> break; block again
-         *   iso_task (same prio as BTU, round-robin) transmit_command():
-         *            enqueue cmd ok, post -> QUEUED clear but POSTING set
-         *            -> rejected, no wakeup, return value discarded
-         *   BTU      resumes, clears POSTING (too late)
-         *
-         * The command then sits in command_queue with nothing scheduled to
-         * drain it. It never reached commands_pending_response either, so
-         * Bluedroid's own COMMAND_PENDING_TIMEOUT never arms and only this
-         * task's sem timeout notices. That is expensive here: the caller is the
-         * ISO task, sole consumer of the ISO RX queue, so a full K_SEM_SHORT
-         * stall drops every SDU received during it.
-         *
-         * One slice later the POSTING holder has long been rescheduled, so this
-         * post lands and hciT drains the queued command. Bluedroid-only: NimBLE
-         * writes the command inline from the caller's task (ble_hs_hci_cmd_tx),
-         * so it has no wakeup to lose. Drop this loop once the POSTING gate in
-         * osi_event_can_post_locked() is fixed (regression in 0564b09e86f). */
+        /* Still no response: this command sits in command_queue with nothing
+         * scheduled to drain it — its post was rejected inside another poster's
+         * POSTING window, and it never reached commands_pending_response either,
+         * so COMMAND_PENDING_TIMEOUT never armed. The wait above descheduled us,
+         * so that poster has since cleared POSTING; this post lands and hciT
+         * drains the queue. Bluedroid-only: NimBLE writes the command inline
+         * from the caller's task (ble_hs_hci_cmd_tx), so it has no wakeup to
+         * lose. */
         hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
     }
 
@@ -249,3 +234,27 @@ void bt_le_bluedroid_hci_deinit(void)
 }
 
 #endif /* USE_DIRECT_HCI */
+
+/* Re-post the downstream event after one of our HCI commands, to flush a packet
+ * whose own post was rejected inside the window that command opened.
+ *
+ * Both the command queue and the ACL data queue are drained by one shared
+ * osi_event (hci_host_env.downstream_data_ready). osi_thread_post_event() holds
+ * OSI_EVENT_FLAG_POSTING from before its osi_thread_post() — which yields to the
+ * higher-priority hciT — until the poster is rescheduled, and
+ * osi_event_can_post_locked() rejects any post landing in that window. Both
+ * victims are silent: transmit_downward() and host_send_pkt_available_cb()
+ * discard the return value, and a command rejected this way never reaches
+ * commands_pending_response, so COMMAND_PENDING_TIMEOUT never arms. The stranded
+ * packet then waits for the next successful post from anyone — measured at
+ * 56.6 s on a peripheral holding a CSIS set lock, where the lock's 60 s timeout
+ * notification happened to be that next post.
+ *
+ * Empty by default: ISO_TASK_PRIO above BTU closes the window instead, and this
+ * re-post cannot help once it does. See common/task.h. */
+void bt_le_bluedroid_hci_drain_downstream(void)
+{
+#if ISO_HCI_DRAIN_DOWNSTREAM
+    hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
+#endif /* ISO_HCI_DRAIN_DOWNSTREAM */
+}

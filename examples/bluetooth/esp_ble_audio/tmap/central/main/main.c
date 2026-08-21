@@ -27,6 +27,12 @@ struct set_member {
 static struct set_member members[TMAP_CEN_PEER_COUNT];
 static size_t member_count;
 
+/* One connect at a time. members[] only learns a peer at acl_connect, and
+ * ext_scan_stop() does not discard reports already queued for us, so without
+ * this a second report starts an overlapping conn_create that the stack
+ * rejects ("L2CAP - LE - cannot start new connection at conn st: 1"). */
+static bool conn_pending;
+
 /* Lock state: pending until the callback, held until stream setup completes. */
 static bool lock_pending;
 static bool set_locked;
@@ -39,6 +45,17 @@ size_t set_member_count(void)
 uint16_t set_member_handle(size_t index)
 {
     return (index < member_count) ? members[index].handle : CONN_HANDLE_INIT;
+}
+
+const uint8_t *set_member_addr(uint16_t conn_handle)
+{
+    for (size_t i = 0; i < member_count; i++) {
+        if (members[i].handle == conn_handle) {
+            return members[i].dst;
+        }
+    }
+
+    return NULL;
 }
 
 static struct set_member *member_by_handle(uint16_t handle)
@@ -196,7 +213,7 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
     struct adv_match match = {0};
     int err;
 
-    if (member_count >= ARRAY_SIZE(members)) {
+    if (member_count >= ARRAY_SIZE(members) || conn_pending) {
         return;
     }
 
@@ -235,15 +252,21 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
     if (err) {
         ESP_LOGE(TAG, "Failed to create conn, err %d", err);
         ext_scan_start();
+        return;
     }
+
+    conn_pending = true;
 }
 
 static void acl_connect(esp_ble_audio_gap_app_event_t *event)
 {
     int err;
 
+    conn_pending = false;
+
     if (event->acl_connect.status) {
         ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
+        ext_scan_start();
         return;
     }
 
