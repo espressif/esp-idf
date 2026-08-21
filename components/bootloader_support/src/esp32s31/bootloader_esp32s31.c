@@ -58,13 +58,12 @@ static inline void bootloader_hardware_init(void)
     regi2c_ctrl_ll_master_configure_clock();
 #endif
 
-    /* Disable MPLL by default, during mmu_hal_init, a valid clock source is required for the PSRAM,
-       so before shutting down mpll, the PSRAM clock source should be selected to an always-on source. */
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_IR_CAL_EXT_CAP, 3);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 12);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
+
     _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
     _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_XTAL);
-    clk_ll_mpll_disable();
-    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
-    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
 }
 
 void bootloader_enable_cpu_reset_info(void)
