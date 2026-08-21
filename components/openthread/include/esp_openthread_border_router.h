@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,11 @@ esp_err_t esp_openthread_border_router_init(void);
 
 /**
  * @brief   Deinitializes the border router features of OpenThread.
+ *
+ * @note This function must be called while the OpenThread mainloop is still running
+ *       and after Thread IPv6 has been brought down:
+ *       `otThreadSetEnabled(instance, false)` then `otIp6SetEnabled(instance, false)`.
+ *       Call `esp_openthread_stop()` only after this function returns.
  *
  * @return
  *      - ESP_OK on success
