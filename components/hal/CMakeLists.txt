@@ -26,8 +26,11 @@ if(CONFIG_SOC_WDT_SUPPORTED AND NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
     list(APPEND srcs "wdt_hal_iram.c")
 endif()
 
-if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+if(CONFIG_SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT)
     list(APPEND srcs "key_mgr_hal.c")
+endif()
+
+if(CONFIG_SOC_HUK_SUPPORTED)
     list(APPEND srcs "huk_hal.c")
 endif()
 

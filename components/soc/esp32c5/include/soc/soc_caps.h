@@ -77,7 +77,7 @@
 #define SOC_SPI_FLASH_SUPPORTED         1     // TODO: [ESP32C5] IDF-8715
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_RNG_SUPPORTED               1
-#define SOC_KEY_MANAGER_SUPPORTED       1
+#define SOC_KEY_MANAGER_SUPPORTED       0
 #define SOC_HUK_SUPPORTED               1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
