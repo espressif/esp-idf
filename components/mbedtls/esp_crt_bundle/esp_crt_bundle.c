@@ -315,6 +315,9 @@ static bool esp_crt_check_bundle(const uint8_t* const x509_bundle, const size_t 
     // Check all offsets for consistency with certificate data
     for (uint32_t i = 0; i < num_certs - 1; ++i) {
         const uint32_t off = esp_crt_get_cert_offset(x509_bundle, i);
+        if (unlikely((uint64_t)off + CRT_HEADER_SIZE > bundle_size)) {
+            return false;
+        }
         cert_t cert = x509_bundle + off;
         // The next offset in the list must point to right after the current cert
         const uint32_t expected_next_offset = off + esp_crt_get_len(cert);
@@ -328,7 +331,7 @@ static bool esp_crt_check_bundle(const uint8_t* const x509_bundle, const size_t 
     // The loop above stops at num_certs - 1, so the final certificate's extent is never
     // validated; check it explicitly so its key data cannot run past the bundle (CWE-125).
     const uint32_t last_off = esp_crt_get_cert_offset(x509_bundle, num_certs - 1);
-    if (unlikely(last_off >= bundle_size)) {
+    if (unlikely((uint64_t)last_off + CRT_HEADER_SIZE > bundle_size)) {
         return false;
     }
     const uint32_t last_len = esp_crt_get_len(x509_bundle + last_off);
