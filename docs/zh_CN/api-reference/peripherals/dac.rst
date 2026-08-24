@@ -87,7 +87,7 @@ DAC 通道可以通过 DMA 连续转换数字信号，这种模式下有三种�
 
     DAC 的数字控制器的时钟也来自 I2S0，有以下两种时钟源可选：
 
-    - :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_PLL_D2` 支持 19.6 KHz 到若干 MHz 之间的频率。该时钟源为默认时钟源，也可通过选择 :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_DEFAULT` 来启用该时钟源。
+    - :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_PLL_160M` 支持 19.6 KHz 到若干 MHz 之间的频率。该时钟源为默认时钟源，也可通过选择 :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_DEFAULT` 来启用该时钟源。
     - :cpp:enumerator:`dac_continuous_digi_clk_src_t::DAC_DIGI_CLK_SRC_APLL` 支持 648 Hz 到若干 MHz 之间的频率。该时钟源可能会被其他外设占用而导致频率无法更改，此时除非 APLL 仍能准确分频得到 DAC DMA 的目标频率，否则将无法使用该时钟源。
 
 .. only:: esp32s2

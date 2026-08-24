@@ -5,11 +5,11 @@
  */
 
 /**
- *  This file is a target specific for DAC DMA peripheral
+ *  Target-specific DAC DMA backend implementation
  *  Target: ESP32
  *  DAC DMA peripheral (data source): I2S0 (i.e. use I2S DMA to transmit data)
  *  DAC DMA interrupt source: I2S0
- *  DAC digital controller clock source: I2S ws signal (root clock: D2PLL or APLL)
+ *  DAC digital controller clock source: I2S ws signal (root clock: PLL_F160M or APLL)
  */
 
 #include "dac_priv_common.h"
@@ -22,22 +22,51 @@
 #include "hal/i2s_periph.h"
 #include "dac_priv_dma.h"
 #include "esp_private/i2s_platform.h"
-#include "esp_private/esp_clk.h"
 #include "esp_clk_tree.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_attr.h"
 
 #define DAC_DMA_PERIPH_I2S_NUM          0
 #define DAC_DMA_PERIPH_I2S_BIT_WIDTH    16      // Fixed bit width, only the high 8 bits take effect
 
+#if CONFIG_DAC_ISR_IRAM_SAFE
+#define DAC_DMA_INTR_ALLOC_FLAGS        (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#else
+#define DAC_DMA_INTR_ALLOC_FLAGS        (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_INTRDISABLED)
+#endif
+
 typedef struct {
     void                *periph_dev;    /* DMA peripheral device address */
     intr_handle_t       intr_handle;    /* Interrupt handle */
-    bool                use_apll;       /* Whether use APLL as clock source */
+    soc_periph_dac_digi_clk_src_t clk_src;  /* Acquired clock source; 0 means not enabled yet */
+    dac_dma_event_callbacks_t cbs;      /* Event callbacks */
+    void                *ctx;           /* Driver context for callbacks */
 } dac_dma_periph_i2s_t;
 
 static dac_dma_periph_i2s_t *s_ddp = NULL; // Static DAC DMA peripheral structure pointer
+
+void dac_priv_dma_intr_handler(void *arg)
+{
+    dac_dma_periph_i2s_t *ddp = arg;
+    bool need_yield = false;
+
+    uint32_t status = i2s_ll_get_intr_status(ddp->periph_dev);
+    if (status == 0) {
+        // Avoid spurious interrupt
+        return;
+    }
+    i2s_ll_clear_intr_status(ddp->periph_dev, status);
+
+    if ((status & I2S_LL_EVENT_TX_DONE) && ddp->cbs.on_done) {
+        need_yield |= ddp->cbs.on_done(ddp->ctx);
+    }
+    if ((status & I2S_LL_EVENT_TX_TEOF) && ddp->cbs.on_teof) {
+        need_yield |= ddp->cbs.on_teof(ddp->ctx);
+    }
+    if (need_yield) {
+        portYIELD_FROM_ISR();
+    }
+}
 
 static uint32_t s_dac_set_apll_freq(uint32_t mclk)
 {
@@ -64,26 +93,26 @@ static uint32_t s_dac_set_apll_freq(uint32_t mclk)
 
 /**
  * @brief Calculate and set DAC data frequency
- * @note  DAC frequency is decided by I2S WS frequency, the clock source of I2S is D2PLL or APLL on ESP32
+ * @note  DAC frequency is decided by I2S WS frequency, the clock source of I2S is PLL_F160M or APLL on ESP32
  *        freq_hz = ws = bclk / I2S_LL_AD_BCK_FACTOR
+ * @param clk_src    DAC digital controller clock source
  * @param freq_hz    DAC byte transmit frequency
  * @return
  *      - ESP_OK    config success
  *      - ESP_ERR_INVALID_ARG   invalid frequency
  */
-static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll)
+static esp_err_t s_dac_priv_dma_set_clock(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq_hz)
 {
     /* Calculate clock coefficients */
     uint32_t bclk = freq_hz * I2S_LL_AD_BCK_FACTOR;
     uint32_t bclk_div = DAC_DMA_PERIPH_I2S_BIT_WIDTH;
     uint32_t mclk = bclk * bclk_div;
     uint32_t sclk; // use 160M PLL clock as default, minimum support freq: 19.6 KHz maximum support freq: 2.5 MHz
-    if (is_apll) {
+    if (clk_src == DAC_DIGI_CLK_SRC_APLL) {
         sclk = s_dac_set_apll_freq(mclk);
         ESP_RETURN_ON_FALSE(sclk, ESP_ERR_INVALID_ARG, TAG, "set APLL coefficients failed");
     } else {
-        // [clk_tree] TODO: replace the following clock by clk_tree API
-        sclk = esp_clk_apb_freq() * 2; // D2PLL
+        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk), TAG, "get clock source frequency failed");
     }
     uint32_t mclk_div = sclk / mclk;
 
@@ -92,7 +121,7 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll)
     ESP_RETURN_ON_FALSE(mclk_div < 256, ESP_ERR_INVALID_ARG, TAG, "Frequency is too small, the mclk division exceed the maximum value 255");
     ESP_LOGD(TAG, "[sclk] %"PRIu32" [mclk] %"PRIu32" [mclk_div] %"PRIu32" [bclk] %"PRIu32" [bclk_div] %"PRIu32, sclk, mclk, mclk_div, bclk, bclk_div);
 
-    i2s_ll_tx_clk_set_src(s_ddp->periph_dev, is_apll ? I2S_CLK_SRC_APLL : I2S_CLK_SRC_DEFAULT);
+    i2s_ll_tx_clk_set_src(s_ddp->periph_dev, (i2s_clock_src_t)clk_src);
     hal_utils_clk_div_t mclk_div_coeff = {};
     i2s_hal_calc_mclk_precise_division(sclk, mclk, &mclk_div_coeff);
     i2s_ll_tx_set_mclk(s_ddp->periph_dev, &mclk_div_coeff);
@@ -101,21 +130,25 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll)
     return ESP_OK;
 }
 
-esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
+esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq_hz, bool is_alternate,
+                            const dac_dma_event_callbacks_t *cbs, void *ctx)
 {
+    ESP_RETURN_ON_FALSE(clk_src == DAC_DIGI_CLK_SRC_PLL_160M || clk_src == DAC_DIGI_CLK_SRC_APLL, ESP_ERR_INVALID_ARG, TAG, "invalid DAC digital clock source");
+    DAC_NULL_POINTER_CHECK(cbs);
+
     esp_err_t ret = ESP_OK;
-    /* Acquire DMA peripheral */
-    ESP_RETURN_ON_ERROR(i2s_platform_acquire_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), TAG, "Failed to acquire DAC DMA peripheral");
+
     /* Allocate DAC DMA peripheral object */
     s_ddp = (dac_dma_periph_i2s_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_i2s_t), DAC_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, err, TAG, "No memory for DAC DMA object");
+    ESP_RETURN_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, TAG, "No memory for DAC DMA object");
+
+    /* Acquire DMA peripheral */
+    ESP_GOTO_ON_ERROR(i2s_platform_acquire_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), err, TAG, "Failed to acquire DAC DMA peripheral");
     s_ddp->periph_dev = (void *)I2S_LL_GET_HW(DAC_DMA_PERIPH_I2S_NUM);
 
-    if (is_apll) {
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true), err, TAG, "APLL enable failed");
-        s_ddp->use_apll = true;
-    }
-    ESP_GOTO_ON_ERROR(s_dac_dma_periph_set_clock(freq_hz, is_apll), err, TAG, "Failed to set clock of DMA peripheral");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "enable DAC digital clock source failed");
+    s_ddp->clk_src = clk_src;
+    ESP_GOTO_ON_ERROR(s_dac_priv_dma_set_clock(clk_src, freq_hz), err, TAG, "Failed to set clock of DMA peripheral");
 
     i2s_ll_enable_builtin_adc_dac(s_ddp->periph_dev, true);
     i2s_ll_tx_reset(s_ddp->periph_dev);
@@ -131,43 +164,53 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     i2s_ll_tx_force_enable_fifo_mod(s_ddp->periph_dev, true);
     i2s_ll_dma_enable_auto_write_back(s_ddp->periph_dev, true);
 
+    s_ddp->cbs = *cbs;
+    s_ddp->ctx = ctx;
+    ESP_GOTO_ON_ERROR(esp_intr_alloc(i2s_periph_signal[DAC_DMA_PERIPH_I2S_NUM].irq, DAC_DMA_INTR_ALLOC_FLAGS, dac_priv_dma_intr_handler, s_ddp, &s_ddp->intr_handle),
+                      err, TAG, "Failed to register DAC DMA interrupt");
+
     return ret;
 err:
-    dac_dma_periph_deinit();
+    dac_priv_dma_deinit();
     return ret;
 }
 
-esp_err_t dac_dma_periph_deinit(void)
+esp_err_t dac_priv_dma_deinit(void)
 {
     if (!s_ddp) {
         return ESP_OK;
     }
 
-    ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
-    ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
-    if (s_ddp->use_apll) {
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false), TAG, "APLL disable failed");
-        s_ddp->use_apll = false;
+    if (s_ddp->intr_handle) {
+        ESP_RETURN_ON_ERROR(esp_intr_disable(s_ddp->intr_handle), TAG, "Failed to disable DAC DMA interrupt");
+        ESP_RETURN_ON_ERROR(esp_intr_free(s_ddp->intr_handle), TAG, "Failed to deregister DAC DMA interrupt");
+        s_ddp->intr_handle = NULL;
     }
+
+    if (s_ddp->clk_src) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)s_ddp->clk_src, false), TAG, "disable DAC digital clock source failed");
+        s_ddp->clk_src = 0;
+    }
+
+    if (s_ddp->periph_dev) {
+        ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
+        s_ddp->periph_dev = NULL;
+    }
+
     free(s_ddp);
     s_ddp = NULL;
 
     return ESP_OK;
 }
 
-int dac_dma_periph_get_intr_signal(void)
-{
-    return i2s_periph_signal[DAC_DMA_PERIPH_I2S_NUM].irq;
-}
-
-static void s_dac_dma_periph_reset(void)
+static void s_dac_priv_dma_reset(void)
 {
     i2s_ll_tx_reset(s_ddp->periph_dev);
     i2s_ll_tx_reset_dma(s_ddp->periph_dev);
     i2s_ll_tx_reset_fifo(s_ddp->periph_dev);
 }
 
-static void s_dac_dma_periph_start(void)
+static void s_dac_priv_dma_start(void)
 {
     i2s_ll_enable_dma(s_ddp->periph_dev, true);
     i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_DONE | I2S_LL_EVENT_TX_TEOF, true);
@@ -176,7 +219,7 @@ static void s_dac_dma_periph_start(void)
     i2s_ll_dma_enable_auto_write_back(s_ddp->periph_dev, true);
 }
 
-static void s_dac_dma_periph_stop(void)
+static void s_dac_priv_dma_stop(void)
 {
     i2s_ll_tx_stop(s_ddp->periph_dev);
     i2s_ll_tx_stop_link(s_ddp->periph_dev);
@@ -186,42 +229,30 @@ static void s_dac_dma_periph_stop(void)
     i2s_ll_dma_enable_auto_write_back(s_ddp->periph_dev, false);
 }
 
-void dac_dma_periph_enable(void)
+void dac_priv_dma_enable(void)
 {
     /* Reset */
-    s_dac_dma_periph_reset();
+    s_dac_priv_dma_reset();
     /* Start */
-    s_dac_dma_periph_start();
+    s_dac_priv_dma_start();
+    esp_intr_enable(s_ddp->intr_handle);
 }
 
-void dac_dma_periph_disable(void)
+void dac_priv_dma_disable(void)
 {
     /* Reset */
-    s_dac_dma_periph_reset();
+    s_dac_priv_dma_reset();
     /* Stop */
-    s_dac_dma_periph_stop();
+    s_dac_priv_dma_stop();
+    esp_intr_disable(s_ddp->intr_handle);
 }
 
-uint32_t IRAM_ATTR dac_dma_periph_intr_get_mask(void)
-{
-    uint32_t status = i2s_ll_get_intr_status(s_ddp->periph_dev);
-    if (status == 0) {
-        // Avoid spurious interrupt
-        return 0UL;
-    }
-    i2s_ll_clear_intr_status(s_ddp->periph_dev, status);
-    uint32_t ret = 0;
-    ret |= (status & I2S_LL_EVENT_TX_DONE) ? DAC_DMA_DONE_INTR : 0;
-    ret |= (status & I2S_LL_EVENT_TX_TEOF) ? DAC_DMA_TEOF_INTR : 0;
-    return ret;
-}
-
-void IRAM_ATTR dac_dma_periph_trans_start(uintptr_t desc_addr)
+void dac_priv_dma_trans_start(uintptr_t desc_addr)
 {
     i2s_ll_tx_start_link(s_ddp->periph_dev, desc_addr);
 }
 
-void dac_dma_periph_trans_stop(void)
+void dac_priv_dma_trans_stop(void)
 {
     i2s_ll_tx_stop_link(s_ddp->periph_dev);
 }
