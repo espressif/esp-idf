@@ -924,6 +924,7 @@ Wi-Fi Bandwidth Mode
 
           1. If the STA connects to an AP on a DFS channel, the SoftAP is allowed to switch to the same DFS channel using CSA (Channel Switch Announcement).
           2. When the STA disconnects, the SoftAP will switch back to a non-DFS channel via CSA to remain compliant with regulations.
+          3. To completely prevent the SoftAP from operating on DFS channels, call :cpp:func:`esp_wifi_set_country()` to set ``policy`` to ``WIFI_COUNTRY_POLICY_MANUAL`` and restrict ``wifi_5g_channel_mask`` to the non-DFS channels of the current country/region. ``wifi_5g_channel_mask`` takes effect only when policy is ``WIFI_COUNTRY_POLICY_MANUAL``. Note: in this case, if the target AP operates on a DFS channel, the STA cannot connect to that AP. See :component_file:`esp_wifi/regulatory/esp_wifi_regulatory.txt` for the DFS channel range of each country/region.
 
 ..
 
@@ -1058,7 +1059,7 @@ Wi-Fi Country Code
       * - policy
         - Country/region policy. When the configured country/region conflicts with that of the connected AP, this field determines which information to use. Details are explained below.
       * - wifi_5g_channel_mask
-        - Bitmask indicating allowed 5 GHz channels for the station/AP. The mapping between channel numbers and bits can be found in :cpp:enum:`wifi_5g_channel_bit_t`.
+        - Bitmask indicating allowed 5 GHz channels for the station/AP. The mapping between channel numbers and bits can be found in :cpp:enum:`wifi_5g_channel_bit_t`. A mask of 0 means 5 GHz channels are allowed according to local regulatory rules. The configured mask takes effect only when ``policy`` is ``WIFI_COUNTRY_POLICY_MANUAL``. To disable DFS channels, restrict the mask to the non-DFS channels of the current country/region; the STA will then be unable to connect to an AP operating on a DFS channel.
 
     A default configuration example::
 

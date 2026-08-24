@@ -23,6 +23,15 @@ In the `Example Configuration` menu:
     * Set `WiFi Remote AP SSID`.
     * Set `WiFi Remote AP Password`.
 
+* (5 GHz capable chips only) Set the DFS channel configuration under `DFS Channel Configuration`.
+    * Set `Country code` to select the regulatory domain (e.g. `US` for FCC, `DE` for CE, `01` for world safe mode).
+    * Enable `Disable DFS channels` to forbid both the STA and the SoftAP from using any DFS channel of the
+      selected regulatory domain. STA will not be able to connect to an AP that operates on a DFS channel.
+      The non-DFS channels are looked up from the esp_wifi regulatory table for the configured country, and
+      the 5 GHz channel bitmask (`wifi_country_t.wifi_5g_channel_mask`) is restricted to them with the
+      country policy switched to manual. This is useful for certification setups (e.g. FCC, CE) where DFS
+      channels must be avoided.
+
 Optional: If necessary, modify the other choices to suit your needs.
 
 ### Build and Flash
