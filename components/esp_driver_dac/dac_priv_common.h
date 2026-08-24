@@ -14,6 +14,8 @@
 #endif
 #include "freertos/FreeRTOS.h"
 #include "hal/dac_types.h"
+#include "hal/dac_types_private.h"
+#include "hal/dac_ll.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_err.h"
@@ -56,6 +58,11 @@ extern portMUX_TYPE dac_priv_spinlock;
 #define DAC_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif
 
+#define DAC_DIV_ROUND(n, d) (((n) + (d) / 2) / (d))
+#define DAC_DIV_CEIL(n, d) (((n) + (d) - 1) / (d))
+#define DAC_MAX(a, b) ((a) > (b) ? (a) : (b))
+#define DAC_CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+
 /**
  * @brief Register dac channel in the driver, in case a same channel is reused by different modes
  *
@@ -65,7 +72,7 @@ extern portMUX_TYPE dac_priv_spinlock;
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
  *      - ESP_OK                Register the channel success
  */
-esp_err_t dac_priv_register_channel(dac_channel_t chan_id);
+esp_err_t dac_priv_channel_register(dac_channel_t chan_id);
 
 /**
  * @brief Deregister dac channel in the driver
@@ -76,18 +83,19 @@ esp_err_t dac_priv_register_channel(dac_channel_t chan_id);
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
  *      - ESP_OK                Deregister the channel success
  */
-esp_err_t dac_priv_deregister_channel(dac_channel_t chan_id);
+esp_err_t dac_priv_channel_deregister(dac_channel_t chan_id);
 
 /**
  * @brief Enable the DAC channel and turn on its power
  *
  * @param chan_id       DAC channel id
+ * @param source        Channel data source
  * @return
  *      - ESP_ERR_INVALID_STATE The channel has not been registered or already enabled
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
  *      - ESP_OK                Enable the channel success
  */
-esp_err_t dac_priv_enable_channel(dac_channel_t chan_id);
+esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_data_source_t source);
 
 /**
  * @brief Disable the DAC channel and turn off its power
@@ -98,7 +106,56 @@ esp_err_t dac_priv_enable_channel(dac_channel_t chan_id);
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
  *      - ESP_OK                Disable the channel success
  */
-esp_err_t dac_priv_disable_channel(dac_channel_t chan_id);
+esp_err_t dac_priv_channel_disable(dac_channel_t chan_id);
+
+/**
+ * @brief Acquire the shared cosine wave (Sintx/tone) generator (reference counted)
+ *
+ * @note  The cosine wave generator is a single shared resource: all DAC channels that output a
+ *        cosine wave share one generator (and thus one frequency). This claims the generator in tone
+ *        mode, programs the wave frequency, and starts the generator on the first acquire. The first
+ *        acquirer (or any acquirer passing `force_set_freq`) programs the frequency; a later acquirer
+ *        requesting a different frequency without `force_set_freq` is rejected. On targets where the
+ *        tone generator and the direct (DC) output share one Sintx generator, a tone acquire is also
+ *        rejected while the DC path is in use.
+ *
+ * @param[in] freq_hz         The cosine wave frequency in Hz
+ * @param[in] clk_freq_hz     The clock frequency that drives the generator in Hz
+ * @param[in] force_set_freq  Force (re)programming the frequency even if the generator is in use
+ * @return
+ *      - ESP_ERR_INVALID_STATE The generator is busy on a conflicting mode or frequency
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_sintx_acquire_tone(uint32_t freq_hz, uint32_t clk_freq_hz, bool force_set_freq);
+
+#if SOC_DAC_DC_VIA_SINTX
+/**
+ * @brief Acquire the shared Sintx generator for the direct (DC) software output (reference counted)
+ *
+ * @note  On some targets, the direct (DC) software output runs through the same Sintx generator as
+ *        the cosine wave output, so the two are mutually exclusive. This claims the generator in DC
+ *        mode and, on the first acquire, starts the Sintx timer that pushes the written DC value to
+ *        the pad.
+ *
+ * @return
+ *      - ESP_ERR_INVALID_STATE The generator is busy on the cosine path
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_sintx_acquire_dc(void);
+#endif // SOC_DAC_DC_VIA_SINTX
+
+/**
+ * @brief Release the shared Sintx generator (reference counted)
+ *
+ * @note  Releases one reference acquired by `dac_priv_sintx_acquire_tone()` or
+ *        `dac_priv_sintx_acquire_dc()`. The generator is stopped once the last reference is
+ *        released.
+ *
+ * @return
+ *      - ESP_ERR_INVALID_STATE The generator is not in use
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_sintx_release(void);
 
 #ifdef __cplusplus
 }

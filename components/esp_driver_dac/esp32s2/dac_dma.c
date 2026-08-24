@@ -139,8 +139,8 @@ static esp_err_t s_dac_priv_dma_set_clock(soc_periph_dac_digi_clk_src_t clk_src,
     hal_utils_calc_clk_div_frac_accurate(&adc_clk_info, &adc_clk_div);
 
     /* Step 4: Set the clock coefficients */
-    dac_ll_digi_clk_inv(true);
-    dac_ll_digi_set_trigger_interval(interval); // secondary clock division
+    dac_ll_dma_clk_inv(true);
+    dac_ll_dma_set_timer_target(interval); // secondary clock division
     adc_ll_digi_controller_clk_div(adc_clk_div.integer - 1, adc_clk_div.denominator, adc_clk_div.numerator);
     adc_ll_digi_clk_sel((adc_continuous_clk_src_t)clk_src);
     return ESP_OK;
@@ -174,7 +174,7 @@ esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq
                       err, TAG, "Failed to allocate dma peripheral channel");
     s_ddp->dma_chan = spi_bus_get_dma_ctx(DAC_DMA_PERIPH_SPI_HOST)->rx_dma_chan.chan_id;
     spi_ll_enable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_DONE | SPI_LL_INTR_OUT_TOTAL_EOF);
-    dac_ll_digi_set_convert_mode(is_alternate);
+    dac_ll_dma_enable_alternate_mode(is_alternate);
 
     s_ddp->cbs = *cbs;
     s_ddp->ctx = ctx;
@@ -211,6 +211,7 @@ esp_err_t dac_priv_dma_deinit(void)
     }
 
     if (s_ddp->clk_src) {
+        dac_ll_dma_clk_inv(false);
         ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)s_ddp->clk_src, false), TAG, "disable DAC digital clock source failed");
         s_ddp->clk_src = 0;
     }
@@ -224,12 +225,14 @@ static void s_dac_priv_dma_reset(void)
 {
     spi_ll_dma_tx_reset(s_ddp->periph_dev, s_ddp->dma_chan);
     spi_ll_dma_tx_fifo_reset(s_ddp->periph_dev);
+    dac_ll_dma_reset_fifo();
+    dac_ll_dma_reset_fsm();
 }
 
 void dac_priv_dma_enable(void)
 {
     s_dac_priv_dma_reset();
-    dac_ll_digi_trigger_output(true);
+    dac_ll_dma_enable_timer(true);
     esp_intr_enable(s_ddp->intr_handle);
 }
 
@@ -237,7 +240,7 @@ void dac_priv_dma_disable(void)
 {
     s_dac_priv_dma_reset();
     spi_ll_dma_tx_stop(s_ddp->periph_dev, s_ddp->dma_chan);
-    dac_ll_digi_trigger_output(false);
+    dac_ll_dma_enable_timer(false);
     esp_intr_disable(s_ddp->intr_handle);
 }
 
@@ -245,6 +248,7 @@ void dac_priv_dma_trans_start(uintptr_t desc_addr)
 {
     spi_ll_dma_tx_reset(s_ddp->periph_dev, s_ddp->dma_chan);
     spi_ll_dma_tx_fifo_reset(s_ddp->periph_dev);
+    dac_ll_dma_reset_fifo();
     spi_ll_dma_tx_start(s_ddp->periph_dev, s_ddp->dma_chan, (lldesc_t *)desc_addr);
 }
 
