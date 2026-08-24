@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import argparse
@@ -23,7 +23,7 @@ from pyparsing import ParseFatalException
 
 
 def _update_environment(args):
-    env = [(name, value) for (name,value) in (e.split('=',1) for e in args.env)]
+    env = [(name, value) for (name, value) in (e.split('=', 1) for e in args.env)]
     for name, value in env:
         value = ' '.join(value.split())
         os.environ[name] = value
@@ -33,72 +33,90 @@ def _update_environment(args):
         os.environ.update(env)
 
 
-def main():
+def _run_objdump(objdump, library):
+    """Run ``objdump -h`` on a library and return its output.
 
+    On some Windows systems, antivirus, endpoint-security or DLP/encryption
+    software intercepts short-lived toolchain processes and strips their output
+    when the build captures it, so objdump exits successfully but returns empty
+    output, while the same command works when run by hand. The output is read
+    through a pipe so that this empty result is reliably detectable: it is
+    rejected here with an actionable error instead of being fed to the parser
+    (which would otherwise report it as a confusing pyparsing error). Capturing
+    to a file is deliberately avoided: it would not be guaranteed complete
+    either, and a truncated-but-non-empty result could be parsed into a wrong
+    linker script instead of failing. See
+    https://github.com/espressif/esp-idf/issues/18665 and
+    https://github.com/espressif/esp-idf/issues/18727.
+    """
+    new_env = os.environ.copy()
+    # Force the C locale so objdump emits the English 'In archive' header that
+    # the section parser expects, regardless of the host locale (see
+    # https://github.com/espressif/esp-idf/issues/7903).
+    new_env['LC_ALL'] = 'C'
+
+    output = subprocess.check_output([objdump, '-h', library], env=new_env).decode()
+    if not output.strip():
+        raise LdGenFailure(
+            f"'{objdump} -h {library}' ran successfully but returned no output. The toolchain ran "
+            'but its output was empty when captured by the build system. This is usually caused by '
+            'antivirus, endpoint-security or DLP/encryption software stripping the output of '
+            'toolchain processes; the same command often works when run directly in a terminal. '
+            'Add an exclusion for the ESP-IDF tools directory in that software, then build again.'
+        )
+    return output
+
+
+def main():
     argparser = argparse.ArgumentParser(description='ESP-IDF linker script generator')
 
-    argparser.add_argument(
-        '--input', '-i',
-        help='Linker template file',
-        type=argparse.FileType('r'))
+    argparser.add_argument('--input', '-i', help='Linker template file', type=argparse.FileType('r'))
 
     fragments_group = argparser.add_mutually_exclusive_group()
 
     fragments_group.add_argument(
-        '--fragments', '-f',
-        type=argparse.FileType('r'),
-        help='Input fragment files',
-        nargs='+'
+        '--fragments', '-f', type=argparse.FileType('r'), help='Input fragment files', nargs='+'
     )
 
     fragments_group.add_argument(
-        '--fragments-list',
-        help='Input fragment files as a semicolon-separated list',
-        type=str
+        '--fragments-list', help='Input fragment files as a semicolon-separated list', type=str
     )
 
     argparser.add_argument(
-        '--libraries-file',
+        '--libraries-file', type=argparse.FileType('r'), help='File that contains the list of libraries in the build'
+    )
+
+    argparser.add_argument('--output', '-o', help='Output linker script', type=str)
+
+    argparser.add_argument('--config', '-c', help='Project configuration')
+
+    argparser.add_argument('--kconfig', '-k', help='IDF Kconfig file')
+
+    argparser.add_argument(
+        '--check-mapping', help='Perform a check if a mapping (archive, obj, symbol) exists', action='store_true'
+    )
+
+    argparser.add_argument(
+        '--check-mapping-exceptions', help='Mappings exempted from check', type=argparse.FileType('r')
+    )
+
+    argparser.add_argument(
+        '--env',
+        '-e',
+        action='append',
+        default=[],
+        help='Environment to set when evaluating the config file',
+        metavar='NAME=VAL',
+    )
+
+    argparser.add_argument(
+        '--env-file',
         type=argparse.FileType('r'),
-        help='File that contains the list of libraries in the build')
-
-    argparser.add_argument(
-        '--output', '-o',
-        help='Output linker script',
-        type=str)
-
-    argparser.add_argument(
-        '--config', '-c',
-        help='Project configuration')
-
-    argparser.add_argument(
-        '--kconfig', '-k',
-        help='IDF Kconfig file')
-
-    argparser.add_argument(
-        '--check-mapping',
-        help='Perform a check if a mapping (archive, obj, symbol) exists',
-        action='store_true'
+        help='Optional file to load environment variables from. Contents '
+        'should be a JSON object where each key/value pair is a variable.',
     )
 
-    argparser.add_argument(
-        '--check-mapping-exceptions',
-        help='Mappings exempted from check',
-        type=argparse.FileType('r')
-    )
-
-    argparser.add_argument(
-        '--env', '-e',
-        action='append', default=[],
-        help='Environment to set when evaluating the config file', metavar='NAME=VAL')
-
-    argparser.add_argument('--env-file', type=argparse.FileType('r'),
-                           help='Optional file to load environment variables from. Contents '
-                           'should be a JSON object where each key/value pair is a variable.')
-
-    argparser.add_argument(
-        '--objdump',
-        help='Path to toolchain objdump')
+    argparser.add_argument('--objdump', help='Path to toolchain objdump')
 
     args = argparser.parse_args()
 
@@ -126,11 +144,22 @@ def main():
         for library in libraries_file:
             library = library.strip()
             if library:
-                new_env = os.environ.copy()
-                new_env['LC_ALL'] = 'C'
-                dump = StringIO(subprocess.check_output([objdump, '-h', library], env=new_env).decode())
+                dump = StringIO(_run_objdump(objdump, library))
                 dump.name = library
-                sections_infos.add_sections_info(dump)
+                try:
+                    sections_infos.add_sections_info(dump)
+                except ParseException as e:
+                    # Non-empty but unparsable section info (for example truncated or
+                    # corrupted toolchain output) is reported here rather than allowed to
+                    # propagate as a raw pyparsing traceback. The same root cause as the
+                    # empty case in _run_objdump applies.
+                    raise LdGenFailure(
+                        f'failed to parse section information from {library}. The toolchain output '
+                        'is incomplete or corrupted. This can be caused by antivirus, '
+                        'endpoint-security or DLP/encryption software tampering with the output of '
+                        'toolchain processes; the same command often works when run directly in a '
+                        f'terminal. Add an exclusion for the ESP-IDF tools directory, then build again.\n{e}'
+                    )
 
         generation_model = Generation(check_mapping, check_mapping_exceptions)
 
@@ -165,7 +194,9 @@ def main():
                     if exc.errno != errno.EEXIST:
                         raise
 
-            with open(output_path, 'w', encoding='utf-8') as f:  # only create output file after generation has succeeded
+            with open(
+                output_path, 'w', encoding='utf-8'
+            ) as f:  # only create output file after generation has succeeded
                 f.write(output.read())
     except LdGenFailure as e:
         print('linker script generation failed for %s\nERROR: %s' % (input_file.name, e))

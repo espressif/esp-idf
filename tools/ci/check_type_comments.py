@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import subprocess
-from sys import exit
+import sys
 
 try:
-    from typing import List
+    from typing import List  # noqa: F401
 except ImportError:
     # Only used for type annotations
     pass
@@ -29,7 +29,7 @@ def types_valid_ignored_rules(file_name):  # type: (str) -> bool
     """
     Run Mypy check with rules for ignore list on the given file, return TRUE if Mypy check passes
     """
-    mypy_exit_code = subprocess.call('mypy {} --python-version 3.8 --allow-untyped-defs'.format(file_name), shell=True)
+    mypy_exit_code = subprocess.call('mypy {} --python-version 3.9 --allow-untyped-defs'.format(file_name), shell=True)
     return not bool(mypy_exit_code)
 
 
@@ -84,7 +84,7 @@ def main():  # type: () -> None
         print('mypy check failed for:')
         for file_name in type_issues:
             print('\t', file_name)
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
