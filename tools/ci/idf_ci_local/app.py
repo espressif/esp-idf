@@ -8,6 +8,7 @@ import typing as t
 from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
+from idf_build_apps.constants import BuildStatus
 from idf_build_apps.utils import rmdir
 from idf_ci_utils import APP_EXTRA_S3_ARTIFACT_TYPE
 from idf_ci_utils import idf_relpath
@@ -36,6 +37,8 @@ class IdfCMakeApp(CMakeApp):
                     'gitlab',
                     'upload-artifacts',
                     self.app_dir,
+                    '--build-dir',
+                    self.build_dir,
                 ],
                 [
                     'idf-ci',
@@ -48,11 +51,14 @@ class IdfCMakeApp(CMakeApp):
             ]
 
             for command in upload_commands:
-                subprocess.run(
+                result = subprocess.run(
                     command,
                     stdout=sys.stdout,
                     stderr=sys.stderr,
                 )
+                if result.returncode != 0:
+                    self.build_status = BuildStatus.FAILED
+                    self.build_comment = 'Failed to upload artifacts'
 
             rmdir(
                 self.build_path,

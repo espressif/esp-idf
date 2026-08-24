@@ -6,7 +6,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.qemu
-@pytest.mark.host_test
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_std_filesystem(dut: Dut) -> None:
     dut.expect_exact('All tests passed', timeout=200)

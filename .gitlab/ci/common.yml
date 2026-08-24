@@ -276,7 +276,11 @@ variables:
     - source tools/ci/utils.sh
     - source tools/ci/configure_ci_environment.sh
     - *show_ccache_statistics
-    - *upload_failed_job_log_artifacts
+    - run_cmd idf-ci gitlab upload-artifacts --type junit
+    - |
+      if [ $CI_JOB_STATUS = "failed" ]; then
+        run_cmd idf-ci gitlab upload-artifacts --type log
+      fi
 
 .brew-macos-settings:
   variables:
@@ -288,6 +292,46 @@ variables:
   image: macos-sequoia-idf-v6.0
   after_script: []  # ccache now is disabled for macos brew runners
   timeout: 30m
+
+.brew-windows-settings:
+  image: windows_11_idf_v6_0
+  tags: [windows-vm, brew]
+  variables:
+    GIT_STRATEGY: fetch
+    LC_ALL: C.UTF-8
+    # git clean at the final cleanup stage stuck on Windows VM
+    # a new VM for each job anyway, so we can skip cleaning the workspace
+    GIT_CLEAN_FLAGS: none
+#    IDF_CCACHE_ENABLE: "1"
+#    CCACHE_DIR: "C:/cache/idf_ccache"
+  before_script:
+    - if ($env:IDF_DONT_USE_MIRRORS) { $env:IDF_MIRROR_PREFIX_MAP = '' }
+    - ./install.ps1 --enable-ci
+    - ./export.ps1
+    - $env:PYTHONPATH = "$env:PYTHONPATH;$env:IDF_PATH\tools;$env:IDF_PATH\tools\esp_app_trace;$env:IDF_PATH\components\partition_table;$env:IDF_PATH\tools\ci\python_packages"
+    - python "${SUBMODULE_FETCH_TOOL}" -s "${SUBMODULES_TO_FETCH}"
+    # Sync VM clock. net start/stop exit 2 when the service is already in that state; do not fail CI.
+    - |
+      function Invoke-NetService($Action, $Name) {
+        $output = net $Action $Name 2>&1
+        if ($LASTEXITCODE -eq 2) {
+          Write-Host "net $Action $Name already in requested state: $output"
+          $global:LASTEXITCODE = 0
+          return
+        }
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host $output
+          exit $LASTEXITCODE
+        }
+      }
+      Invoke-NetService start w32time
+      w32tm /config /manualpeerlist:"time.google.com,0x9 pool.ntp.org,0x9" /syncfromflags:manual /reliable:yes /update
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      Invoke-NetService stop w32time
+      Invoke-NetService start w32time
+      w32tm /resync
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  after_script: []
 
 #############
 # `default` #

@@ -65,6 +65,7 @@
   - "tools/ci/check_esp_memory_utils_headers.sh"
   - "tools/ci/check_blobs.sh"
   - "tools/ci/check_public_headers.py"
+  - "tools/ci/check_public_headers_exceptions.txt"
   - "tools/ci/check_register_rw_half_word.cmake"
   - "tools/ci/check_register_rw_half_word.py"
   - "examples/build_system/**/*"
@@ -99,6 +100,7 @@
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
   - "tools/install_util.py"
+  - "tools/idf_extra_components.yml"
 
   - "tools/export_utils/utils.py"
   - "tools/export_utils/shell_types.py"

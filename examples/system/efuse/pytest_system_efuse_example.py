@@ -43,7 +43,6 @@ def test_examples_efuse(dut: Dut) -> None:
     basic_efuse_example(dut)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_examples_efuse_linux(dut: Dut) -> None:
     basic_efuse_example(dut)
@@ -900,7 +899,6 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize(
     'config',

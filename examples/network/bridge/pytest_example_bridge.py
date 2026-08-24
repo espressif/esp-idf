@@ -25,6 +25,8 @@ from pytest_embedded_idf.utils import idf_parametrize
 # Testbed configuration
 
 ETHVM_ENDNODE_USER = 'ci.ethvm'
+ETHERNET_TEST_USER = os.getenv('ETHERNET_TEST_USER')
+ETHERNET_TEST_PASSWORD = os.getenv('ETHERNET_TEST_PASSWORD')
 
 BR_PORTS_NUM = 2
 IPERF_BW_LIM = 6
@@ -632,5 +634,10 @@ def setup_test_environment() -> Generator[None, None, None]:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32'], indirect=['target'])
+@pytest.mark.parametrize(
+    'dev_user, dev_password',
+    [(ETHERNET_TEST_USER, ETHERNET_TEST_PASSWORD)],
+    indirect=True,
+)
 def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     eth_bridge_test(dut, dev_user, dev_password)
