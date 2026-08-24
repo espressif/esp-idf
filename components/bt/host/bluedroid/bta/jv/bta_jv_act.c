@@ -767,6 +767,8 @@ void bta_jv_disable (tBTA_JV_MSG *p_data)
         bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
     }
 
+    bta_sys_deregister(BTA_ID_JV);
+
     if (p_data->disable.p_cback) {
         p_data->disable.p_cback(BTA_JV_DISABLE_EVT, (tBTA_JV *)&evt_data, NULL);
     }
