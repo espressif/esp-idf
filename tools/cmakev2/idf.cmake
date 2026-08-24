@@ -21,11 +21,6 @@ set(CMAKE_MODULE_PATH
 # for both cmakev1 and cmakev2.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
-# Suppress CMake warning: "Manually-specified variables were not used by the project: CONFIGDEP_ENABLE"
-# (CONFIGDEP_ENABLE is passed by idf.py but only used in the cmake v1 project() flow in project.cmake)
-# FIXME: When cmakev2 will start supporting configdep, this can be removed.
-set(_idf_ignore_configdep_enable "${CONFIGDEP_ENABLE}")
-
 # The gdbinit.cmake file from cmakev1 contains a single function,
 # __generate_gdbinit, which is used in the generation of
 # project_description.json.
@@ -376,22 +371,62 @@ function(__init_toolchain)
 endfunction()
 
 #[[
-    __init_ccache()
+    __init_compiler_launchers()
 
-    Enable ccache if requested through CCACHE_ENABLE.
+    Build the compiler launcher chain and apply it to
+    CMAKE_{C,CXX,ASM}_COMPILER_LAUNCHER. The chain runs esp-idf-configdep first
+    (when configdep is enabled) followed by ccache (when enabled).
 #]]
-function(__init_ccache)
-    if(NOT CCACHE_ENABLE)
+function(__init_compiler_launchers)
+    set(launcher_chain "")
+
+    # esp-idf-configdep goes first in the chain.
+    # Gate on the same esp-idf-kconfig version check as --output cdep_tree in
+    # kconfig.cmake so the launcher is never enabled without the .cdep tree.
+    if(CONFIGDEP_ENABLE)
+        idf_build_get_property(python PYTHON)
+        __check_python_package_min_version(
+            ${python} esp-idf-kconfig "${CONFIGDEP_MIN_KCONFIG_VERSION}" _kconfig_version_ok)
+        if(_kconfig_version_ok)
+            find_program(CONFIGDEP_FOUND esp-idf-configdep)
+            if(CONFIGDEP_FOUND)
+                idf_msg("esp-idf-configdep will be used for faster recompilation")
+                list(APPEND launcher_chain "esp-idf-configdep")
+            else()
+                idf_warn("esp-idf-configdep enabled but not found. "
+                         "Run 'eim fix' to update esp-idf-kconfig.")
+            endif()
+        else()
+            idf_warn("esp-idf-configdep not supported by esp-idf-kconfig "
+                     "(>= ${CONFIGDEP_MIN_KCONFIG_VERSION} required). "
+                     "Run 'eim fix' to update esp-idf-kconfig.")
+        endif()
+    endif()
+
+    # ccache goes second in the chain.
+    if(CCACHE_ENABLE)
+        find_program(CCACHE_FOUND ccache)
+        if(CCACHE_FOUND)
+            idf_msg("ccache will be used for faster recompilation")
+            list(APPEND launcher_chain "ccache")
+        else()
+            idf_warn("enabled ccache in build but ccache program not found")
+        endif()
+    endif()
+
+    if(NOT launcher_chain)
+        idf_msg("No compiler launcher chain will be used.")
         return()
     endif()
 
-    find_program(CCACHE_FOUND ccache)
-    if(CCACHE_FOUND)
-        idf_msg("ccache will be used for faster recompilation")
-        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    else()
-        idf_warn("enabled ccache in build but ccache program not found")
-    endif()
+    # Apply to all languages. Set in the caller's (project top-level) directory
+    # scope so component targets created later in idf_project_init() inherit it.
+    set(CMAKE_C_COMPILER_LAUNCHER "${launcher_chain}" PARENT_SCOPE)
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${launcher_chain}" PARENT_SCOPE)
+    set(CMAKE_ASM_COMPILER_LAUNCHER "${launcher_chain}" PARENT_SCOPE)
+
+    string(REPLACE ";" " -> " launcher_display "${launcher_chain}")
+    idf_msg("Compiler launcher chain: ${launcher_display}")
 endfunction()
 
 #[[
@@ -768,8 +803,8 @@ __init_idf_target()
 # Set IDF_TOOLCHAIN, IDF_TOOLCHAIN_FILE and CMAKE_TOOLCHAIN_FILE.
 __init_toolchain()
 
-# Enable ccache if requested.
-__init_ccache()
+# Set up the compiler launcher chain (esp-idf-configdep, ccache) if requested.
+__init_compiler_launchers()
 
 #[[
 
