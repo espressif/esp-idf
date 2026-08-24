@@ -464,10 +464,7 @@ TEST_GROUP_RUNNER(ecdsa)
 {
     /* SECP192R1 test cases */
     RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_signature_verification)
-#if !CONFIG_IDF_TARGET_ESP32S31
-    // TODO: IDF-15703 re-enable TRNG-backed sign_and_verify on esp32s31 once the TRNG support update lands
     RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_sign_and_verify)
-#endif
     RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_corrupt_signature)
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
@@ -478,10 +475,7 @@ TEST_GROUP_RUNNER(ecdsa)
 
     /* SECP256R1 test cases */
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_signature_verification)
-#if !CONFIG_IDF_TARGET_ESP32S31
-    // TODO: IDF-15703 re-enable TRNG-backed sign_and_verify on esp32s31 once the TRNG support update lands
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_sign_and_verify)
-#endif
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
@@ -493,10 +487,7 @@ TEST_GROUP_RUNNER(ecdsa)
     /* SECP384R1 test cases */
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
     RUN_TEST_CASE(ecdsa, ecdsa_SECP384R1_signature_verification)
-#if !CONFIG_IDF_TARGET_ESP32S31
-    // TODO: IDF-15703 re-enable TRNG-backed sign_and_verify on esp32s31 once the TRNG support update lands
     RUN_TEST_CASE(ecdsa, ecdsa_SECP384R1_sign_and_verify)
-#endif
     RUN_TEST_CASE(ecdsa, ecdsa_SECP384R1_corrupt_signature)
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     RUN_TEST_CASE(ecdsa, ecdsa_SECP384R1_det_sign_and_verify)
