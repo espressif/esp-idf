@@ -196,7 +196,7 @@
 
 //ICache1 region
 #define SOC_RAM_ICACHE1_LOW    0x40860000
-#define SOC_RAM_ICACHE1_HIGH   0x40867fff
+#define SOC_RAM_ICACHE1_HIGH   0x40868000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.

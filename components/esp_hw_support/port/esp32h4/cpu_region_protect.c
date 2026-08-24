@@ -45,7 +45,7 @@
  * outside the valid RAM window.
  */
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-#define SOC_HP_RAM_HIGH   (SOC_RAM_ICACHE1_HIGH + 1)
+#define SOC_HP_RAM_HIGH   SOC_RAM_ICACHE1_HIGH
 _Static_assert(SOC_IRAM_HIGH == SOC_RAM_ICACHE1_LOW, "ICache1 RAM must be contiguous with D/IRAM");
 #else
 #define SOC_HP_RAM_HIGH   SOC_IRAM_HIGH
