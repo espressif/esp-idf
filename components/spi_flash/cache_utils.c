@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,7 @@
 #include "esp_private/esp_ipc.h"
 #endif
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
 #include "esp_private/esp_cache_private.h"
@@ -87,6 +88,13 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
     uint32_t cpuid = (uint32_t) arg;
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    /* The branch predictor issues speculative cache requests while this core
+     * spins in IRAM. The flash-op core is about to suspend the (shared) cache,
+     * so speculative fetches into flash would raise a cache access-fail on
+     * this core. */
+    esp_cpu_branch_prediction_disable();
+#endif
     // s_flash_op_complete flag is cleared on *this* CPU, otherwise the other
     // CPU may reset the flag back to false before IPC task has a chance to check it
     // (if it is preempted by an ISR taking non-trivial amount of time)
@@ -97,6 +105,9 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
     }
     // Flash operation is complete, re-enable cache
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_enable();
 #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
@@ -169,6 +180,9 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_disable();
+#endif
     // This CPU executes this routine, with non-IRAM interrupts and the scheduler
     // disabled. The other CPU is spinning in the spi_flash_op_block_func task, also
     // with non-iram interrupts and the scheduler disabled. None of these CPUs will
@@ -205,6 +219,9 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
         s_flash_op_complete = true;
     }
 
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
     // Re-enable non-iram interrupts
     esp_intr_noniram_enable();
 
@@ -231,6 +248,12 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os(void)
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    /* Disable BP before the first disable_cache(): on shared-cache chips that
+     * call suspends external memory for all cores, so speculative fetches must
+     * already be stopped. */
+    esp_cpu_branch_prediction_disable();
+#endif
     // do not care about other CPU, it was halted upon entering panic handler
     spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
     // Kill interrupts that aren't located in IRAM
@@ -245,6 +268,9 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os(void)
 
     // Re-enable cache on this CPU
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
     // Re-enable non-iram interrupts
     esp_intr_noniram_enable();
 }
@@ -284,12 +310,18 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
     spi_flash_op_lock();
     esp_intr_noniram_disable();
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_disable();
+#endif
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
 void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
 {
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
     esp_intr_noniram_enable();
     spi_flash_op_unlock();
 }
@@ -298,6 +330,9 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os(void)
 {
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_disable();
+#endif
     // Disable cache on this CPU as well
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
@@ -306,6 +341,9 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os(void)
 {
     // Re-enable cache on this CPU
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
     // Re-enable non-iram interrupts
     esp_intr_noniram_enable();
 }
@@ -328,19 +366,12 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
-#if SOC_BRANCH_PREDICTOR_SUPPORTED
-    //branch predictor will start cache request as well
-    esp_cpu_branch_prediction_disable();
-#endif
     esp_cache_suspend_ext_mem_cache();
 }
 
 void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
     esp_cache_resume_ext_mem_cache();
-#if SOC_BRANCH_PREDICTOR_SUPPORTED
-    esp_cpu_branch_prediction_enable();
-#endif
 }
 
 bool IRAM_ATTR spi_flash_cache_enabled(void)

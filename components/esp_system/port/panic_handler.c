@@ -126,6 +126,15 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
 FORCE_INLINE_ATTR __attribute__((__noreturn__))
 void busy_wait(void)
 {
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    /* This core parks here while the offending core handles the panic, which
+     * may include flash accesses with the cache suspended (e.g. writing a core
+     * dump). Stop the branch predictor so its speculative fetches cannot latch
+     * spurious cache access-fail errors that would corrupt the cache error
+     * status of the panic being reported. This core never resumes, so the
+     * predictor is not re-enabled. */
+    esp_cpu_branch_prediction_disable();
+#endif
     ESP_INFINITE_LOOP();
 }
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
