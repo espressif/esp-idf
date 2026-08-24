@@ -26,62 +26,50 @@
       - ADC1_CH0
       - LP_GPIO0
       -
-
     * - GPIO1
       - ADC1_CH1
       - LP_GPIO1
       -
-
     * - GPIO2
       - ADC1_CH2
       - LP_GPIO2
       -
-
     * - GPIO3
       - ADC1_CH3
       - LP_GPIO3
       -
-
     * - GPIO4
       - ADC1_CH4
       - LP_GPIO4
-      - Strapping 管脚
-
+      -
     * - GPIO5
       - ADC1_CH5
       - LP_GPIO5
-      - Strapping 管脚
-
+      -
     * - GPIO6
       - ADC1_CH6
       - LP_GPIO6
       -
-
     * - GPIO7
       -
       - LP_GPIO7
       -
-
     * - GPIO8
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO9
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO10
       -
       -
       -
-
     * - GPIO11
       -
       -
       -
-
     * - GPIO12
       -
       -
@@ -96,52 +84,42 @@
       -
       -
       -
-
     * - GPIO15
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO16
       -
       -
       -
-
     * - GPIO17
       -
       -
       -
-
     * - GPIO18
       -
       -
       -
-
     * - GPIO19
       -
       -
       -
-
     * - GPIO20
       -
       -
       -
-
     * - GPIO21
       -
       -
       -
-
     * - GPIO22
       -
       -
       -
-
     * - GPIO23
       -
       -
       -
-
     * - GPIO24
       -
       -
@@ -179,10 +157,10 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO4、GPIO5、GPIO8、GPIO9 和 GPIO15 是 Strapping 管脚。更多信息请参考 `ESP32-C6 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
+    - Strapping 管脚：部分管脚被用作 Strapping 管脚。更多信息请参阅 *{IDF_TARGET_NAME} 技术规格书* > *启动配置项* [`PDF <{IDF_TARGET_DATASHEET_CN_URL}#cd-pins-strap>`__]。
     - SPI0/1：GPIO24 ～ GPIO30 通常用于 SPI flash，不推荐用于其他用途。
     - USB-JTAG：GPIO12 和 GPIO13 默认用于 USB-JTAG。如果将它们配置为普通 GPIO，驱动程序将禁用 USB-JTAG 功能。
-    - 对于内置 SiP flash 的芯片型号，GPIO24 ~ GPIO30 专门用于连接 SiP flash; 且 GPIO10 ~ GPIO11 未引出至芯片管脚。因此，对于这类芯片只有 22 个 GPIO 管脚可用。
+    - 对于内置 SiP flash 的芯片型号，SPI0/1 管脚以及 GPIO10 ~ GPIO11 未引出至芯片管脚。因此，对于这类芯片只有 22 个 GPIO 管脚可用。
     - 对于无内置 SiP flash 的芯片型号，则 GPIO14 未引出至芯片管脚。
 
 ---

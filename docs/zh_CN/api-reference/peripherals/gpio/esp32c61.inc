@@ -26,62 +26,50 @@
       -
       - LP_GPIO0
       -
-
     * - GPIO1
       - ADC1_CH0
       - LP_GPIO1
       -
-
     * - GPIO2
       -
       - LP_GPIO2
       -
-
     * - GPIO3
       - ADC1_CH1
       - LP_GPIO3
       -
-
     * - GPIO4
       - ADC1_CH2
       - LP_GPIO4
       -
-
     * - GPIO5
       - ADC1_CH3
       - LP_GPIO5
       -
-
     * - GPIO6
       - ADC1_CH5
       - LP_GPIO6
       -
-
     * - GPIO7
       -
       -
       -
-
     * - GPIO8
       -
       -
       -
-
     * - GPIO9
       -
       -
       -
-
     * - GPIO10
       -
       -
       -
-
     * - GPIO11
       -
       -
       -
-
     * - GPIO12
       -
       -
@@ -116,7 +104,6 @@
       -
       -
       -
-
     * - GPIO19
       -
       -
@@ -136,45 +123,37 @@
       -
       -
       -
-
     * - GPIO23
       -
       -
       -
-
     * - GPIO24
       -
       -
       -
-
     * - GPIO25
       -
       -
       -
-
     * - GPIO26
       -
       -
       -
-
     * - GPIO27
       -
       -
       -
-
     * - GPIO28
       -
       -
       -
-
     * - GPIO29
       -
       -
       -
-
 .. note::
 
-    - 其中一些管脚被用作 Strapping 管脚，可用于选择加载芯片的启动模式等。详细信息请见 `ESP32-C61 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_ > ``Strapping 管脚``。
+    - Strapping 管脚：部分管脚被用作 Strapping 管脚。更多信息请参阅 *{IDF_TARGET_NAME} 技术规格书* > *启动配置项* [`PDF <{IDF_TARGET_DATASHEET_CN_URL}#cd-pins-strap>`__]。
     - SPI0/1：GPIO14 ~ GPIO17 和 GPIO19 ~ GPIO21 通常用于 SPI flash 和 PSRAM，不推荐用于其他用途。
     - USB-JTAG：GPIO12 和 GPIO13 默认用于 USB-JTAG。如果将它们配置为普通 GPIO，驱动程序将禁用 USB-JTAG 功能。
 

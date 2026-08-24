@@ -26,280 +26,225 @@
       -
       - LP_GPIO0
       -
-
     * - GPIO1
       -
       - LP_GPIO1
       -
-
     * - GPIO2
       - TOUCH0
       - LP_GPIO2
       -
-
     * - GPIO3
       - TOUCH1
       - LP_GPIO3
       -
-
     * - GPIO4
       - TOUCH2
       - LP_GPIO4
       -
-
     * - GPIO5
       - TOUCH3
       - LP_GPIO5
       -
-
     * - GPIO6
       - TOUCH4
       - LP_GPIO6
       -
-
     * - GPIO7
       - TOUCH5
       - LP_GPIO7
       -
-
     * - GPIO8
       - TOUCH6
       - LP_GPIO8
       -
-
     * - GPIO9
       - TOUCH7
       - LP_GPIO9
       -
-
     * - GPIO10
       - TOUCH8
       - LP_GPIO10
       -
-
     * - GPIO11
       - TOUCH9
       - LP_GPIO11
       -
-
     * - GPIO12
       - TOUCH10
       - LP_GPIO12
       -
-
     * - GPIO13
       - TOUCH11
       - LP_GPIO13
       -
-
     * - GPIO14
       - TOUCH12
       - LP_GPIO14
       -
-
     * - GPIO15
       - TOUCH13
       - LP_GPIO15
       -
-
     * - GPIO16
       - ADC1_CH0
       -
       -
-
     * - GPIO17
       - ADC1_CH1
       -
       -
-
     * - GPIO18
       - ADC1_CH2
       -
       -
-
     * - GPIO19
       - ADC1_CH3
       -
       -
-
     * - GPIO20
       - ADC1_CH4
       -
       -
-
     * - GPIO21
       - ADC1_CH5
       -
       -
-
     * - GPIO22
       - ADC1_CH6
       -
       -
-
     * - GPIO23
       - ADC1_CH7
       -
       -
-
     * - GPIO24
       -
       -
       -
-
     * - GPIO25
       -
       -
       -
-
     * - GPIO26
       -
       -
       -
-
     * - GPIO27
       -
       -
       -
-
     * - GPIO28
       -
       -
       -
-
     * - GPIO29
       -
       -
       -
-
     * - GPIO30
       -
       -
       -
-
     * - GPIO31
       -
       -
       -
-
     * - GPIO32
       -
       -
       -
-
     * - GPIO33
       -
       -
       -
-
     * - GPIO34
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO35
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO36
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO37
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO38
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO39
       -
       -
       -
-
     * - GPIO40
       -
       -
       -
-
     * - GPIO41
       -
       -
       -
-
     * - GPIO42
       -
       -
       -
-
     * - GPIO43
       -
       -
       -
-
     * - GPIO44
       -
       -
       -
-
     * - GPIO45
       -
       -
       -
-
     * - GPIO46
       -
       -
       -
-
     * - GPIO47
       -
       -
       -
-
     * - GPIO48
       -
       -
       -
-
     * - GPIO49
       - ADC2_CH0
       -
       -
-
     * - GPIO50
       - ADC2_CH1
       -
       -
-
     * - GPIO51
       - ADC2_CH2，ANA_CMPR_CH0 外部参考电压
       -
       -
-
     * - GPIO52
       - ADC2_CH3，ANA_CMPR_CH0 同相输入
       -
       -
-
     * - GPIO53
       - ADC2_CH4，ANA_CMPR_CH1 外部参考电压
       -
       -
-
     * - GPIO54
       - ADC2_CH5，ANA_CMPR_CH1 同相输入
       -
       -
-
 .. note::
 
-    - Strapping 管脚：GPIO34, GPIO35、GPIO36、GPIO37 和 GPIO38 是 Strapping 管脚。更多信息请参考 `ESP32-P4 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
+    - Strapping 管脚：部分管脚被用作 Strapping 管脚。更多信息请参阅 *{IDF_TARGET_NAME} 技术规格书* > *启动配置项* [`PDF <{IDF_TARGET_DATASHEET_CN_URL}#cd-pins-strap>`__]。
     - USB-JTAG：GPIO24 和 GPIO25 默认用于 USB-JTAG。如果将它们配置为普通 GPIO，驱动程序将禁用 USB-JTAG 功能。
 
 ---

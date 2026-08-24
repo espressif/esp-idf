@@ -26,67 +26,54 @@ The table below provides more information on pin usage, and please note the comm
       -
       - LP_GPIO0
       -
-
     * - GPIO1
       - ADC1_CH0
       - LP_GPIO1
       -
-
     * - GPIO2
       - ADC1_CH1
       - LP_GPIO2
-      - Strapping pin
-
+      -
     * - GPIO3
       - ADC1_CH2
       - LP_GPIO3
       -
-
     * - GPIO4
       - ADC1_CH3
       - LP_GPIO4
       -
-
     * - GPIO5
       - ADC1_CH4
       - LP_GPIO5
       -
-
     * - GPIO6
       - ADC1_CH5
       - LP_GPIO6
       -
-
     * - GPIO7
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO8
       -
       -
       -
-
     * - GPIO9
       -
       -
       -
-
     * - GPIO10
       -
       -
       -
-
     * - GPIO11
       -
       -
       -
-
     * - GPIO12
       -
       -
       -
-
     * - GPIO13
       -
       -
@@ -101,7 +88,6 @@ The table below provides more information on pin usage, and please note the comm
       -
       -
       -
-
     * - GPIO16
       -
       -
@@ -141,36 +127,30 @@ The table below provides more information on pin usage, and please note the comm
       -
       -
       -
-
     * - GPIO24
       -
       -
       -
-
     * - GPIO25
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO26
       -
       -
       -
-
     * - GPIO27
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO28
       -
       -
-      - Strapping pin
-
+      -
 .. note::
 
-    - Strapping pin: GPIO2, GPIO7, GPIO25, GPIO27, and GPIO28 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
-	  - SPI0/1: GPIO16 ~ GPIO22 are usually used for SPI flash and PSRAM, they're not recommended for other uses.
-	  - USB-JTAG: GPIO13 and GPIO14 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
+    - Strapping pin: Some pins are used as strapping pins. For more information, please refer to *{IDF_TARGET_NAME} datasheet* > *Boot Configurations* [`PDF <{IDF_TARGET_DATASHEET_EN_URL}#cd-pins-strap>`__].
+    - SPI0/1: GPIO16 ~ GPIO22 are usually used for SPI flash and PSRAM, they're not recommended for other uses.
+    - USB-JTAG: GPIO13 and GPIO14 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 
 ---

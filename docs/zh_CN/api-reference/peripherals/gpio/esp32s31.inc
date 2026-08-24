@@ -26,132 +26,106 @@
       -
       - LP_GPIO0
       -
-
     * - GPIO1
       -
       - LP_GPIO1
       -
-
     * - GPIO2
       -
       - LP_GPIO2
       -
-
     * - GPIO3
       -
       - LP_GPIO3
       -
-
     * - GPIO4
       - DAC0
       - LP_GPIO4
       -
-
     * - GPIO5
       - DAC1
       - LP_GPIO5
       -
-
     * - GPIO6
       - TOUCH0
       - LP_GPIO6
       -
-
     * - GPIO7
       - TOUCH1
       - LP_GPIO7
       -
-
     * - GPIO8
       - TOUCH2
       -
       -
-
     * - GPIO9
       - TOUCH3
       -
       -
-
     * - GPIO10
       - TOUCH4
       -
       -
-
     * - GPIO11
       - TOUCH5
       -
       -
-
     * - GPIO12
       - TOUCH6
       -
       -
-
     * - GPIO13
       - TOUCH7
       -
       -
-
     * - GPIO14
       - TOUCH8
       -
       -
-
     * - GPIO15
       - TOUCH9
       -
       -
-
     * - GPIO16
       - TOUCH10
       -
       -
-
     * - GPIO17
       - TOUCH11
       -
       -
-
     * - GPIO18
       - TOUCH12
       -
       -
-
     * - GPIO19
       - TOUCH13
       -
       -
-
     * - GPIO20
       -
       -
       -
-
     * - GPIO21
       -
       -
       -
-
     * - GPIO22
       -
       -
       -
-
     * - GPIO23
       -
       -
       -
-
     * - GPIO24
       -
       -
       -
-
     * - GPIO25
       -
       -
       -
-
     * - GPIO26
       -
       -
@@ -186,122 +160,98 @@
       -
       -
       -
-
     * - GPIO34
       -
       -
       -
-
     * - GPIO35
       -
       -
       -
-
     * - GPIO36
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO37
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO38
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO39
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO40
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO42
       - ADC1_CH0_N
       -
       -
-
     * - GPIO43
       - ADC1_CH0_P
       -
       -
-
     * - GPIO44
       - ADC1_CH1_N
       -
       -
-
     * - GPIO45
       - ADC1_CH1_P
       -
       -
-
     * - GPIO46
       - ADC1_CH2_N
       -
       -
-
     * - GPIO47
       - ADC1_CH2_P
       -
       -
-
     * - GPIO48
       - ADC1_CH3_N
       -
       -
-
     * - GPIO49
       - ADC1_CH3_P
       -
       -
-
     * - GPIO50
       - ADC2_CH0_N
       -
       -
-
     * - GPIO51
       - ADC2_CH0_P
       -
       -
-
     * - GPIO52
       - ADC2_CH1_N
       -
       -
-
     * - GPIO53
       - ADC2_CH1_P
       -
       -
-
     * - GPIO54
       - ADC2_CH2_N
       -
       -
-
     * - GPIO55
       - ADC2_CH2_P
       -
       -
-
     * - GPIO56
       - ADC2_CH3_N
       -
       -
-
     * - GPIO57
       - ADC2_CH3_P
       -
       -
-
     * - GPIO58
       -
       -
@@ -315,16 +265,14 @@
     * - GPIO60
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO61
       -
       -
-      - Strapping 管脚
-
+      -
 .. note::
 
-    - Strapping 管脚：GPIO36 ~ GPIO40、GPIO60 ~ GPIO61 是 Strapping 管脚。更多信息请参考 `{IDF_TARGET_NAME} 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
+    - Strapping 管脚：部分管脚被用作 Strapping 管脚。更多信息请参阅 *{IDF_TARGET_NAME} 技术规格书* > *启动配置项* [`PDF <{IDF_TARGET_DATASHEET_CN_URL}#cd-pins-strap>`__]。
     - SPI0/1：GPIO26 ~ GPIO32 通常用于 SPI flash，不推荐用于其他用途。
 
 ---
