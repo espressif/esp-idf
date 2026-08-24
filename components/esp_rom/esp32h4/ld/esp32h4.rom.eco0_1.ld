@@ -6,9 +6,9 @@
 /* ROM function interface esp32h4.rom.ld for esp32h4
  *
  *
- * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum 5996da6c5ce799e55c4cf85b5d2ae712
+ * Generated from ../../rom/target/esp32h4/interface-esp32h4.yml md5sum bb9ee317148d3c5b10610936a3675a65
  *
- * Compatible with ROM where ECO version equal or greater to 2.
+ * Compatible with ROM where ECO version equal or greater to 0.
  *
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
  */
@@ -397,7 +397,7 @@ ets_secure_boot_revoke_public_key_digest = 0x400007e0;
  ***************************************/
 
 /* Functions */
-usb_serial_device_rx_one_char = 0x400007e4;
-usb_serial_device_rx_one_char_block = 0x400007e8;
-usb_serial_device_tx_flush = 0x400007ec;
-usb_serial_device_tx_one_char = 0x400007f0;
+usb_serial_device_rx_one_char = 0x40000910;
+usb_serial_device_rx_one_char_block = 0x40000914;
+usb_serial_device_tx_flush = 0x40000918;
+usb_serial_device_tx_one_char = 0x4000091c;

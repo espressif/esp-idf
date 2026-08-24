@@ -14,6 +14,7 @@
 #define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano version of formatting functions
 #define ESP_ROM_HAS_NEWLIB_32BIT_TIME       (1) // ROM was compiled with 32 bit time_t
+#define ESP_ROM_HAS_LIBGCC                  (1) // ROM has libgcc functions included
 #define ESP_ROM_USB_OTG_NUM                 (3) // The serial port ID (UART, USB, ...) of USB_OTG CDC in the ROM.
 #define ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG   (1) // ROM api Cache_Count_Flash_Pages will return unexpected value
 #define ESP_ROM_HAS_SW_FLOAT            (1) // ROM has libgcc software floating point emulation functions

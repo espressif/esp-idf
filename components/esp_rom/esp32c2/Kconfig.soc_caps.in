@@ -67,6 +67,10 @@ config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
     bool
     default y
 
+config ESP_ROM_HAS_LIBGCC
+    bool
+    default y
+
 config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
     bool
     default y

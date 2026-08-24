@@ -1,6 +1,3 @@
-comment "NOTE! Support of ESP32-H4 MP is mutually exclusive"
-comment "Read the help text of the option below for explanation"
-
 choice ESP32H4_REV_MIN
     prompt "Minimum Supported ESP32-H4 Revision"
     default ESP32H4_REV_MIN_0
@@ -14,11 +11,14 @@ choice ESP32H4_REV_MIN
 
     config ESP32H4_REV_MIN_0
         bool "Rev v0.0"
+    config ESP32H4_REV_MIN_2
+        bool "Rev v0.2"
 endchoice
 
 config ESP32H4_REV_MIN_FULL
     int
     default 0 if ESP32H4_REV_MIN_0
+    default 2 if ESP32H4_REV_MIN_2
 
 config ESP_REV_MIN_FULL
     int
