@@ -162,7 +162,9 @@ void bta_av_ca_goep_event_handler(UINT16 handle, UINT8 event, tGOEPC_MSG *p_msg)
     tBTA_AV_DATA *p_data = NULL;
     UINT16 rcb_idx;
 
-    if (p_msg == NULL) {
+    if (p_msg == NULL && (event == GOEPC_OPENED_EVT ||
+                          event == GOEPC_CLOSED_EVT ||
+                          event == GOEPC_RESPONSE_EVT)) {
         goto error;
     }
 
