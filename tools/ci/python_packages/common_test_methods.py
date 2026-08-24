@@ -1,19 +1,28 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import os
 import socket
-from typing import Any, List
+from typing import Any
+from typing import List
 
-import netifaces
+try:
+    import netifaces
+except ImportError:
+    from unittest.mock import MagicMock
+
+    netifaces = MagicMock()
+    logging.warning('netifaces is not installed. Please install it to get network interface information.')
+
 import yaml
 
 ENV_CONFIG_FILE_SEARCH = [
     os.path.join(os.environ['IDF_PATH'], 'EnvConfig.yml'),
-    os.path.join(os.environ['IDF_PATH'], 'ci-test-runner-configs', os.environ.get('CI_RUNNER_DESCRIPTION', ''), 'EnvConfig.yml'),
+    os.path.join(
+        os.environ['IDF_PATH'], 'ci-test-runner-configs', os.environ.get('CI_RUNNER_DESCRIPTION', ''), 'EnvConfig.yml'
+    ),
 ]
-ENV_CONFIG_TEMPLATE = '''
+ENV_CONFIG_TEMPLATE = """
 $IDF_PATH/EnvConfig.yml:
     ```yaml
     <env_name>:
@@ -22,19 +31,19 @@ $IDF_PATH/EnvConfig.yml:
     <another_env>:
         key: var
     ```
-'''
+"""
 
 
 def get_host_ip_by_interface(interface_name: str, ip_type: int = netifaces.AF_INET) -> str:
     if ip_type == netifaces.AF_INET:
         for _addr in netifaces.ifaddresses(interface_name)[ip_type]:
-            host_ip = _addr['addr'].replace('%{}'.format(interface_name), '')
+            host_ip = _addr['addr'].replace(f'%{interface_name}', '')
             assert isinstance(host_ip, str)
             return host_ip
     elif ip_type == netifaces.AF_INET6:
         ip6_addrs: List[str] = []
         for _addr in netifaces.ifaddresses(interface_name)[ip_type]:
-            host_ip = _addr['addr'].replace('%{}'.format(interface_name), '')
+            host_ip = _addr['addr'].replace(f'%{interface_name}', '')
             assert isinstance(host_ip, str)
             # prefer to use link local address due to example settings
             if host_ip.startswith('FE80::'):
@@ -80,7 +89,7 @@ def get_my_interface_by_dest_ip(dest_ip: str = '') -> str:
         if my_ip in [a['addr'] for a in addresses]:
             assert isinstance(interface, str)
             return interface
-    logging.error('Can not get interface, dest ip is {}'.format(dest_ip))
+    logging.error(f'Can not get interface, dest ip is {dest_ip}')
     return ''
 
 
@@ -100,7 +109,7 @@ def get_env_config_variable(env_name: str, key: str, default: Any = None) -> Any
     config = dict()
     for _file in ENV_CONFIG_FILE_SEARCH:
         try:
-            with open(_file, 'r') as f:
+            with open(_file) as f:
                 data = yaml.load(f.read(), Loader=yaml.SafeLoader)
             config = data[env_name]
             break
@@ -115,7 +124,7 @@ def get_env_config_variable(env_name: str, key: str, default: Any = None) -> Any
         logging.info(f'Env config file template: {ENV_CONFIG_TEMPLATE}')
         if not os.environ.get('CI_JOB_ID'):
             # Try to get variable from stdin
-            var = input(f'You can input the variable now:')
+            var = input('You can input the variable now:')
         else:
             raise ValueError(f'Env variable not found: {env_name}/{key}')
     logging.debug(f'Got env variable {env_name}/{key}: {var}')

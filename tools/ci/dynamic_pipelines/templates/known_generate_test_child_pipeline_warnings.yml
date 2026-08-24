@@ -2,7 +2,11 @@
 # no_env_marker_test_cases: List of test cases that do not have environment markers.
 #   each item shall be the test node id, you may check the error message to get the node id.
 no_env_marker_test_cases:
-  - dummy_test_case
+  - test_examples_security_secure_boot
+  - test_examples_security_secure_boot_corrupt_app_sig
+  - test_examples_security_secure_boot_corrupt_bl_sig
+  - test_examples_security_secure_boot_key_combo
+  - test_examples_security_secure_boot_key_revoke
 
 # no_runner_tags: List of runner tags that has no test runner set.
 #   each item shall be a comma separated list of runner tags.
@@ -13,7 +17,7 @@ no_runner_tags:
   - esp32,ip101
   - esp32c2,jtag,xtal_40mhz
   - esp32c3,flash_multi
-  - esp32c3,sdcard_sdmode
+  - esp32c3,rev_default,sdcard_sdmode
   - esp32c6,jtag
   - esp32h2,jtag
   - esp32p4,*

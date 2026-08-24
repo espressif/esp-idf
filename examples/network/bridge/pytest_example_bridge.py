@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
+from __future__ import annotations
+
 import base64
 import io
 import ipaddress
@@ -9,14 +11,10 @@ import re
 import socket
 import subprocess
 import time
+from collections.abc import Generator
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
-from typing import Generator
-from typing import List
-from typing import Match
-from typing import Optional
-from typing import Tuple
-from typing import Union
+from re import Match
 
 import netifaces
 import paramiko  # type: ignore
@@ -25,9 +23,12 @@ from common_test_methods import get_host_ip_by_interface
 from netmiko import ConnectHandler
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # Testbed configuration
 
 ETHVM_ENDNODE_USER = 'ci.ethvm'
+ETHERNET_TEST_USER = os.getenv('ETHERNET_TEST_USER')
+ETHERNET_TEST_PASSWORD = os.getenv('ETHERNET_TEST_PASSWORD')
 
 BR_PORTS_NUM = 2
 IPERF_BW_LIM = 6
@@ -36,7 +37,7 @@ MIN_TCP_THROUGHPUT = 4
 
 
 class EndnodeSsh:
-    def __init__(self, host_ip: str, usr: str, passwd: Optional[str] = None):
+    def __init__(self, host_ip: str, usr: str, passwd: str | None = None):
         key_string = os.getenv('CI_ETHVM_KEY')
         key = None
         if key_string:
@@ -93,7 +94,7 @@ class SwitchSsh:
             }
             self.ssh_client = ConnectHandler(**edgeSwitch)
 
-    def exec_cmd(self, cmd: Union[str, List[str]]) -> str:
+    def exec_cmd(self, cmd: str | list[str]) -> str:
         if self.type == self.EDGE_SWITCH_5XP:
             _, stdout, stderr = self.ssh_client.exec_command(cmd)
 
@@ -192,7 +193,17 @@ def run_iperf(
     if ipaddress.ip_address(server_ip).is_multicast:
         # Configure Multicast Server
         server_proc = subprocess.Popen(
-            ['iperf', '-u', '-s', '-i', '1', '-t', str(interval), '-B', f'{server_ip}%{server_if}'],
+            [
+                'iperf',
+                '-u',
+                '-s',
+                '-i',
+                '1',
+                '-t',
+                str(interval),
+                '-B',
+                f'{server_ip}%{server_if}',
+            ],
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -284,14 +295,14 @@ def send_brcast_msg_endnode_to_host(endnode: EndnodeSsh, host_brcast_ip: str, po
     return nc_host_out
 
 
-def get_legacy_host_name_match() -> Optional[Match[str]]:
+def get_legacy_host_name_match() -> Match[str] | None:
     host_name = socket.gethostname()
     regex = r'ethVM-(\d+)-(\d+)'
     host_name_match = re.search(regex, host_name, re.DOTALL)
     return host_name_match
 
 
-def get_host_info() -> Tuple[int, int]:
+def get_host_info() -> tuple[int, int]:
     # Get switch configuration info from the hostname (legacy runners)
     sw_info = get_legacy_host_name_match()
     if sw_info is not None:
@@ -635,5 +646,10 @@ def setup_test_environment() -> Generator[None, None, None]:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32'], indirect=['target'])
+@pytest.mark.parametrize(
+    'dev_user, dev_password',
+    [(ETHERNET_TEST_USER, ETHERNET_TEST_PASSWORD)],
+    indirect=True,
+)
 def test_esp_eth_bridge(dut: Dut, dev_user: str, dev_password: str) -> None:
     eth_bridge_test(dut, dev_user, dev_password)

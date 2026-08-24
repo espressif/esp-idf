@@ -1,39 +1,35 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+
+from __future__ import annotations
+
 import argparse
 import inspect
 import os
 import sys
+import typing as t
 from collections import defaultdict
 from itertools import product
 
 import yaml
-from idf_ci_utils import GitlabYmlConfig
 from idf_ci_utils import IDF_PATH
 
-try:
+if t.TYPE_CHECKING:
     import pygraphviz as pgv
-except ImportError:  # used when pre-commit, skip generating image
-    pass
-
-try:
-    from typing import Union
-except ImportError:  # used for type hint
-    pass
 
 
-def _list(str_or_list):  # type: (Union[str, list]) -> list
+def _list(str_or_list: str | list) -> list:
     if isinstance(str_or_list, str):
         return [str_or_list]
     elif isinstance(str_or_list, list):
         return str_or_list
     else:
-        raise ValueError('Wrong type: {}. Only supports str or list.'.format(type(str_or_list)))
+        raise ValueError(f'Wrong type: {type(str_or_list)}. Only supports str or list.')
 
 
-def _format_nested_dict(_dict, f_tuple):  # type: (dict[str, dict], tuple[str, ...]) -> dict[str, dict]
+def _format_nested_dict(_dict: dict[str, dict], f_tuple: tuple[str, ...]) -> dict[str, dict]:
     res = {}
     for k, v in _dict.items():
         k = k.split('__')[0]
@@ -47,7 +43,7 @@ def _format_nested_dict(_dict, f_tuple):  # type: (dict[str, dict], tuple[str, .
     return res
 
 
-def _format_nested_list(_list, f_tuple):  # type: (list[str], tuple[str, ...]) -> list[str]
+def _format_nested_list(_list: list[str], f_tuple: tuple[str, ...]) -> list[str]:
     res = []
     for item in _list:
         if isinstance(item, list):
@@ -61,26 +57,23 @@ def _format_nested_list(_list, f_tuple):  # type: (list[str], tuple[str, ...]) -
 
 
 class RulesWriter:
-    AUTO_GENERATE_MARKER = inspect.cleandoc(r'''
+    AUTO_GENERATE_MARKER = inspect.cleandoc(r"""
     ##################
     # Auto Generated #
     ##################
-    ''')
+    """)
 
-    LABEL_TEMPLATE = inspect.cleandoc(r'''
+    LABEL_TEMPLATE = inspect.cleandoc(r"""
     .if-label-{0}: &if-label-{0}
       if: '$BOT_LABEL_{1} || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*{0}(?:,[^,\n\r]+)*$/i'
-    ''')
+    """)
 
-    RULE_PROTECTED = '    - <<: *if-protected'
-    RULE_PROTECTED_NO_LABEL = '    - <<: *if-protected-no_label'
-    RULE_BUILD_ONLY = '    - <<: *if-label-build-only\n' \
-                      '      when: never'
-    RULE_REVERT_BRANCH = '    - <<: *if-revert-branch\n' \
-                         '      when: never'
+    RULE_PROTECTED_CHECK = '    - <<: *if-protected-check'
+    RULE_PROTECTED_PUSH = '    - <<: *if-protected-push'
+    RULE_BUILD_ONLY = '    - <<: *if-label-build-only\n      when: never'
+    RULE_REVERT_BRANCH = '    - <<: *if-revert-branch\n      when: never'
     RULE_LABEL_TEMPLATE = '    - <<: *if-label-{0}'
-    RULE_PATTERN_TEMPLATE = '    - <<: *if-dev-push\n' \
-                            '      changes: *patterns-{0}'
+    RULE_PATTERN_TEMPLATE = '    - <<: *if-dev-push\n      changes: *patterns-{0}'
     SPECIFIC_RULE_TEMPLATE = '    - <<: *{0}'
     RULES_TEMPLATE = inspect.cleandoc(r"""
     .rules:{0}:
@@ -99,7 +92,6 @@ class RulesWriter:
         self.cfg = self.expand_matrices()
         self.rules = self.expand_rules()
 
-        self.yml_config = GitlabYmlConfig()
         self.graph = None
 
     def expand_matrices(self):  # type: () -> dict
@@ -116,11 +108,11 @@ class RulesWriter:
             deploy = v.get('deploy')
             if deploy:
                 for item in _list(deploy):
-                    res['{}-{}'.format(k, item)] = v
+                    res[f'{k}-{item}'] = v
         return res
 
     @staticmethod
-    def _expand_matrix(name, cfg):  # type: (str, dict) -> dict
+    def _expand_matrix(name: str, cfg: dict[str, t.Any]) -> dict[str, t.Any]:
         """
         Expand matrix into multi keys
         :param cfg: single rule dict
@@ -138,7 +130,7 @@ class RulesWriter:
             res.update(_format_nested_dict(default, comb))
         return res
 
-    def expand_rules(self):  # type: () -> dict[str, dict[str, list]]
+    def expand_rules(self) -> dict[str, dict[str, list[str]]]:
         res = defaultdict(lambda: defaultdict(set))  # type: dict[str, dict[str, set]]
         for k, v in self.cfg.items():
             if not v:
@@ -164,18 +156,18 @@ class RulesWriter:
                     if 'patterns' in v:
                         for _pat in _list(v['patterns']):
                             # Patterns must be pre-defined
-                            if '.patterns-{}'.format(_pat) not in self.rules_cfg:
-                                print('WARNING: pattern {} not exists'.format(_pat))
+                            if f'.patterns-{_pat}' not in self.rules_cfg:
+                                print(f'WARNING: pattern {_pat} not exists')
                                 continue
                             res[item]['patterns'].add(_pat)
 
-        sorted_res = defaultdict(lambda: defaultdict(list))  # type: dict[str, dict[str, list]]
+        sorted_res = defaultdict(lambda: defaultdict(list))  # type: t.Dict[str, t.Dict[str, t.List[str]]]
         for k, v in res.items():
             for vk, vv in v.items():
                 sorted_res[k][vk] = sorted(vv)
         return sorted_res
 
-    def new_labels_str(self):  # type: () -> str
+    def new_labels_str(self) -> str:
         _labels = set([])
         for k, v in self.cfg.items():
             if not v:
@@ -191,33 +183,29 @@ class RulesWriter:
         return res
 
     @classmethod
-    def _format_label(cls, label):  # type: (str) -> str
+    def _format_label(cls, label: str) -> str:
         return cls.LABEL_TEMPLATE.format(label, cls.bot_label_str(label))
 
     @staticmethod
-    def bot_label_str(label):  # type: (str) -> str
+    def bot_label_str(label: str) -> str:
         return label.upper().replace('-', '_')
 
-    def new_rules_str(self):  # type: () -> str
+    def new_rules_str(self) -> str:
         res = []
         for k, v in sorted(self.rules.items()):
             if k.startswith('pattern'):
                 continue
 
-            if '.rules:' + k not in self.yml_config.used_templates:
-                print(f'WARNING: unused rule: {k}, skipping...')
-                continue
-
             res.append(self.RULES_TEMPLATE.format(k, self._format_rule(k, v)))
         return '\n\n'.join(res)
 
-    def _format_rule(self, name, cfg):  # type: (str, dict) -> str
+    def _format_rule(self, name: str, cfg: dict[str, t.Any]) -> str:
         _rules = [self.RULE_REVERT_BRANCH]
         if name.endswith('-production'):
-            _rules.append(self.RULE_PROTECTED_NO_LABEL)
+            _rules.append(self.RULE_PROTECTED_PUSH)
         else:
             if not (name.endswith('-preview') or name.startswith('labels:')):
-                _rules.append(self.RULE_PROTECTED)
+                _rules.append(self.RULE_PROTECTED_CHECK)
             if name.startswith('test:'):
                 _rules.append(self.RULE_BUILD_ONLY)
 
@@ -225,21 +213,21 @@ class RulesWriter:
                 if f'.{specific_rule}' in self.rules_cfg:
                     _rules.append(self.SPECIFIC_RULE_TEMPLATE.format(specific_rule))
                 else:
-                    print('WARNING: specific_rule {} not exists'.format(specific_rule))
+                    print(f'WARNING: specific_rule {specific_rule} not exists')
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))
             for pattern in cfg['patterns']:
-                if '.patterns-{}'.format(pattern) in self.rules_cfg:
+                if f'.patterns-{pattern}' in self.rules_cfg:
                     _rules.append(self.RULE_PATTERN_TEMPLATE.format(pattern))
                 else:
-                    print('WARNING: pattern {} not exists'.format(pattern))
+                    print(f'WARNING: pattern {pattern} not exists')
         return '\n'.join(_rules)
 
-    def update_rules_yml(self):  # type: () -> bool
+    def update_rules_yml(self) -> bool:
         with open(self.rules_yml) as fr:
             file_str = fr.read()
 
-        auto_generate_str = '\n{}\n\n{}\n'.format(self.new_labels_str(), self.new_rules_str())
+        auto_generate_str = f'\n{self.new_labels_str()}\n\n{self.new_rules_str()}\n'
         rest, marker, old = file_str.partition(self.AUTO_GENERATE_MARKER)
         if old == auto_generate_str:
             return False
@@ -255,7 +243,9 @@ PATTERN_COLOR = 'cyan'
 RULE_COLOR = 'blue'
 
 
-def build_graph(rules_dict):  # type: (dict[str, dict[str, list]]) -> pgv.AGraph
+def build_graph(rules_dict: dict[str, dict[str, list[str]]]) -> pgv.AGraph:
+    from pygraphviz import pgv
+
     graph = pgv.AGraph(directed=True, rankdir='LR', concentrate=True)
 
     for k, v in rules_dict.items():
@@ -270,18 +260,18 @@ def build_graph(rules_dict):  # type: (dict[str, dict[str, list]]) -> pgv.AGraph
         labels = v.get('labels')
         if labels:
             for _label in labels:
-                graph.add_node('label:{}'.format(_label), color=LABEL_COLOR)
-                graph.add_edge('label:{}'.format(_label), k, color=LABEL_COLOR)
+                graph.add_node(f'label:{_label}', color=LABEL_COLOR)
+                graph.add_edge(f'label:{_label}', k, color=LABEL_COLOR)
         patterns = v.get('patterns')
         if patterns:
             for _pat in patterns:
-                graph.add_node('pattern:{}'.format(_pat), color=PATTERN_COLOR)
-                graph.add_edge('pattern:{}'.format(_pat), k, color=PATTERN_COLOR)
+                graph.add_node(f'pattern:{_pat}', color=PATTERN_COLOR)
+                graph.add_edge(f'pattern:{_pat}', k, color=PATTERN_COLOR)
 
     return graph
 
 
-def output_graph(graph, output_path='output.png'):  # type: (pgv.AGraph, str) -> None
+def output_graph(graph: pgv.AGraph, output_path: str = 'output.png') -> None:
     graph.layout('dot')
     if output_path.endswith('.png'):
         img_path = output_path
@@ -292,13 +282,22 @@ def output_graph(graph, output_path='output.png'):  # type: (pgv.AGraph, str) ->
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('rules_yml', nargs='?', default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'rules.yml'),
-                        help='rules.yml file path')
-    parser.add_argument('dependencies_yml', nargs='?', default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'dependencies',
-                                                                            'dependencies.yml'),
-                        help='dependencies.yml file path')
-    parser.add_argument('--graph',
-                        help='Specify PNG image output path. Use this argument to generate dependency graph')
+    parser.add_argument(
+        'rules_yml',
+        nargs='?',
+        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'rules.yml'),
+        help='rules.yml file path',
+    )
+    parser.add_argument(
+        'dependencies_yml',
+        nargs='?',
+        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'dependencies', 'dependencies.yml'),
+        help='dependencies.yml file path',
+    )
+    parser.add_argument(
+        '--graph',
+        help='Specify PNG image output path. Use this argument to generate dependency graph',
+    )
     args = parser.parse_args()
 
     writer = RulesWriter(args.rules_yml, args.dependencies_yml)

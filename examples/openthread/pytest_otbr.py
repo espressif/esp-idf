@@ -8,16 +8,19 @@ import random
 import re
 import secrets
 import subprocess
+import sys
 import threading
 import time
 from typing import Generator
 from typing import Optional
 from typing import Tuple
 
-import ot_ci_function as ocf
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import ot_ci_function as ocf  # noqa: E402
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
+
 # This file contains the test scripts for Thread:
 # Case 1: Thread network formation and attaching
 #         A Thread Border Router forms a Thread network, Thread devices attach to it, then test ping

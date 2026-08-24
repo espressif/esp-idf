@@ -4,11 +4,6 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-CONFIGS = [
-    pytest.param('default', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),
-    pytest.param('psram_esp32', marks=[pytest.mark.esp32]),
-]
-
 
 @pytest.mark.generic
 @idf_parametrize(
