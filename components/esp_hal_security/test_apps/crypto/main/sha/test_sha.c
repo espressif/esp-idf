@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -17,6 +17,11 @@
 #include "unity_fixture.h"
 #include "sha_block.h"
 #include "sha_dma.h"
+
+#if SOC_SHA_SUPPORT_SM3
+#include "esp_sm3.h"
+#include "hal/sha_hal.h"
+#endif
 
 #if SOC_SHA_SUPPORTED
 
@@ -257,6 +262,133 @@ TEST(sha, test_sha256_dma)
 #endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA256 */
 
+#if SOC_SHA_SUPPORT_SM3
+
+/* Reference digests for SM3 test inputs (cross-checked with OpenSSL dgst -sm3):
+ *   [0] "abc"              (GM/T 0004-2012 spec vector)
+ *   [1] "abcd" x 16         (one full 64-byte block)
+ *   [2] 0xEE x 1030         (multi-block, non-aligned tail)
+ */
+static const uint8_t sm3_expected[3][32] = {
+    {
+        0x66, 0xc7, 0xf0, 0xf4, 0x62, 0xee, 0xed, 0xd9,
+        0xd1, 0xf2, 0xd4, 0x6b, 0xdc, 0x10, 0xe4, 0xe2,
+        0x41, 0x67, 0xc4, 0x87, 0x5c, 0xf2, 0xf7, 0xa2,
+        0x29, 0x7d, 0xa0, 0x2b, 0x8f, 0x4b, 0xa8, 0xe0,
+    },
+    {
+        0xde, 0xbe, 0x9f, 0xf9, 0x22, 0x75, 0xb8, 0xa1,
+        0x38, 0x60, 0x48, 0x89, 0xc1, 0x8e, 0x5a, 0x4d,
+        0x6f, 0xdb, 0x70, 0xe5, 0x38, 0x7e, 0x57, 0x65,
+        0x29, 0x3d, 0xcb, 0xa3, 0x9c, 0x0c, 0x57, 0x32,
+    },
+    {
+        0xfb, 0x7d, 0xd6, 0x4a, 0xd5, 0x0d, 0x5a, 0x16,
+        0x2e, 0x92, 0x90, 0xa0, 0xd8, 0x3f, 0xa6, 0x01,
+        0x86, 0x9b, 0x79, 0xf2, 0xda, 0xff, 0xbe, 0x16,
+        0xac, 0x6b, 0x6c, 0x06, 0x52, 0x21, 0x56, 0x0a,
+    },
+};
+
+/* Skip the esp_sm3 API tests when the chip forbids the SM crypto functions. */
+static void sm3_api_skip_if_disabled(void)
+{
+    if (!sha_hal_is_sm3_supported()) {
+        TEST_IGNORE_MESSAGE("SM crypto disabled by eFuse (DIS_SM_CRYPT)");
+    }
+}
+
+TEST(sha, test_sm3_api_one_shot)
+{
+    uint8_t digest[ESP_SM3_DIGEST_LEN];
+
+    sm3_api_skip_if_disabled();
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sm3("abc", 3, digest, sizeof(digest)));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(sm3_expected[0], digest, sizeof(digest));
+
+    uint8_t one_block_input[ESP_SM3_BLOCK_LEN];
+    for (size_t i = 0; i < sizeof(one_block_input); i += 4) {
+        memcpy(&one_block_input[i], "abcd", 4);
+    }
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sm3(one_block_input, sizeof(one_block_input), digest, sizeof(digest)));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(sm3_expected[1], digest, sizeof(digest));
+
+    uint8_t *buffer = heap_caps_calloc(BUFFER_SZ, sizeof(uint8_t), MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(buffer);
+    memset(buffer, 0xEE, BUFFER_SZ);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sm3(buffer, BUFFER_SZ, digest, sizeof(digest)));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(sm3_expected[2], digest, sizeof(digest));
+    heap_caps_free(buffer);
+}
+
+/* Feed the message in uneven pieces. Every piece that does not end on a block
+   boundary forces the driver to save and restore the digest state. */
+TEST(sha, test_sm3_api_streaming)
+{
+    static const size_t chunk_sizes[] = { 1, 62, 1, 64, 3, 200, 128, 129 };
+    uint8_t digest[ESP_SM3_DIGEST_LEN];
+    esp_sm3_ctx_handle_t ctx;
+
+    sm3_api_skip_if_disabled();
+
+    uint8_t *buffer = heap_caps_calloc(BUFFER_SZ, sizeof(uint8_t), MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(buffer);
+    memset(buffer, 0xEE, BUFFER_SZ);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sm3_create(&ctx));
+
+    size_t offset = 0;
+    size_t index = 0;
+    while (offset < BUFFER_SZ) {
+        size_t chunk = chunk_sizes[index % (sizeof(chunk_sizes) / sizeof(chunk_sizes[0]))];
+        if (chunk > BUFFER_SZ - offset) {
+            chunk = BUFFER_SZ - offset;
+        }
+        TEST_ASSERT_EQUAL(ESP_OK, esp_sm3_update(ctx, buffer + offset, chunk));
+        offset += chunk;
+        index++;
+    }
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sm3_finish(ctx, digest, sizeof(digest)));
+    esp_sm3_delete(ctx);
+    heap_caps_free(buffer);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(sm3_expected[2], digest, sizeof(digest));
+}
+
+TEST(sha, test_sm3_api_bad_args)
+{
+    uint8_t digest[ESP_SM3_DIGEST_LEN];
+
+    sm3_api_skip_if_disabled();
+
+    /* A short output buffer must be rejected before any byte reaches it. */
+    memset(digest, 0xA5, sizeof(digest));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE,
+                      esp_sm3("abc", 3, digest, ESP_SM3_DIGEST_LEN - 1));
+    for (size_t i = 0; i < sizeof(digest); i++) {
+        TEST_ASSERT_EQUAL_HEX8(0xA5, digest[i]);
+    }
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_sm3("abc", 3, NULL, sizeof(digest)));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_sm3(NULL, 3, digest, sizeof(digest)));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_sm3_create(NULL));
+
+    /* An empty message is valid input. The digest comes from the padding
+       block alone, so it proves that the pad-only path works. */
+    static const uint8_t sm3_expected_empty[ESP_SM3_DIGEST_LEN] = {
+        0x1a, 0xb2, 0x1d, 0x83, 0x55, 0xcf, 0xa1, 0x7f,
+        0x8e, 0x61, 0x19, 0x48, 0x31, 0xe8, 0x1a, 0x8f,
+        0x22, 0xbe, 0xc8, 0xc7, 0x28, 0xfe, 0xfb, 0x74,
+        0x7e, 0xd0, 0x35, 0xeb, 0x50, 0x82, 0xaa, 0x2b,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sm3(NULL, 0, digest, sizeof(digest)));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(sm3_expected_empty, digest, sizeof(digest));
+}
+
+#endif /* SOC_SHA_SUPPORT_SM3 */
+
 #if SOC_SHA_SUPPORT_SHA384
 
 TEST(sha, test_sha384_block)
@@ -328,6 +460,12 @@ TEST_GROUP_RUNNER(sha)
     RUN_TEST_CASE(sha, test_sha256_dma);
 #endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA256 */
+
+#if SOC_SHA_SUPPORT_SM3
+    RUN_TEST_CASE(sha, test_sm3_api_one_shot);
+    RUN_TEST_CASE(sha, test_sm3_api_streaming);
+    RUN_TEST_CASE(sha, test_sm3_api_bad_args);
+#endif /* SOC_SHA_SUPPORT_SM3 */
 
 #if SOC_SHA_SUPPORT_SHA384
     RUN_TEST_CASE(sha, test_sha384_block);
