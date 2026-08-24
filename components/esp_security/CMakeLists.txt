@@ -23,6 +23,10 @@ if(NOT non_os_build)
         list(APPEND srcs "src/esp_ds.c")
     endif()
 
+    if(CONFIG_SOC_SHA_SUPPORT_SM3)
+        list(APPEND srcs "src/esp_sm3.c")
+    endif()
+
     if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
         list(APPEND srcs "src/esp_key_mgr.c")
     endif()
