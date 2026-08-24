@@ -1021,14 +1021,6 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
         should_skip_sleep = light_sleep_uart_prepare(sleep_flags, sleep_duration);
     }
 
-#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
-    // Do deep-sleep PHY related callback, which need to be executed when the PLL clock is exists.
-    // For light-sleep, PHY state is managed by the upper layer of the wifi/bt protocol stack.
-    if (deep_sleep) {
-        s_do_deep_sleep_phy_callback();
-    }
-#endif
-
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     uint32_t xtal_freq = rtc_clk_xtal_freq_get();
     esp_clk_utils_mspi_speed_mode_sync_before_cpu_freq_switching(xtal_freq, xtal_freq);
@@ -1239,12 +1231,18 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
     esp_sync_timekeeping_timers();
 
+#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
+    /* Close PHY/RF before stalling the other CPU. phy_close_rf() (registered via
+     * esp_deep_sleep_register_phy_hook) takes s_phy_int_mux and may take rtc_spinlock;
+     * those can be held by the other core.
+     */
+    s_do_deep_sleep_phy_callback();
+#endif
+
     // Must acquire all spinlocks which may be acquired during sleep process before stalling other core,
     // otherwise deadlock may occur.
     portENTER_CRITICAL(&s_config.lock);
 #if !CONFIG_FREERTOS_UNICORE
-    extern portMUX_TYPE rtc_spinlock;
-    portENTER_CRITICAL_SAFE(&rtc_spinlock); // Maybe acquired from temp_sensor_get_raw_value by phy_close_rf callback
     esp_clk_private_lock(); // Maybe acquired from esp_clk_slowclk_cal_set
 #endif
 
@@ -1323,7 +1321,6 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     esp_ipc_isr_release_other_cpu();
 #if !CONFIG_FREERTOS_UNICORE
     esp_clk_private_unlock();
-    portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 #endif
     portEXIT_CRITICAL(&s_config.lock);
     return err;
