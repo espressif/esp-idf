@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,8 +10,10 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_heap_task_info.h"
+#include "esp_timer.h"
 
 extern void set_leak_threshold(int threshold);
 
@@ -380,6 +382,138 @@ TEST_CASE("heap task tracking realloc with reused TaskHandle does not underflow 
     assert_no_underflow_for_reused_handle(s_reused_task_handle);
 
     vTaskDelete(dummy_task_handle);
+}
+
+#define STRESS_ALLOC_BYTES  128
+#define STRESS_DURATION_MS  3000
+
+static int64_t s_stress_end_time;
+
+static void task_tracking_stress_task(void *args)
+{
+    while (esp_timer_get_time() < s_stress_end_time) {
+        void *ptr = heap_caps_malloc(STRESS_ALLOC_BYTES, MALLOC_CAP_INTERNAL);
+        if (ptr != NULL) {
+            heap_caps_free(ptr);
+        }
+    }
+
+    // let the test know that this task is done before deleting itself
+    xTaskNotifyGive((TaskHandle_t)args);
+    vTaskDelete(NULL);
+}
+
+/**
+ * @brief Start one allocation stress task on every core, each running for STRESS_DURATION_MS.
+ *
+ * The tasks are created with the priority of the calling task so that they share the CPU with
+ * it instead of starving it.
+ */
+static void start_stress_tasks(void)
+{
+    s_stress_end_time = esp_timer_get_time() + (STRESS_DURATION_MS * 1000);
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        xTaskCreatePinnedToCore(&task_tracking_stress_task, "tt_stress", 3072,
+                                (void *)xTaskGetCurrentTaskHandle(),
+                                uxTaskPriorityGet(NULL), NULL, core);
+    }
+}
+
+/**
+ * @brief Wait for all the allocation stress tasks to be done.
+ */
+static void wait_for_stress_tasks(void)
+{
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        // the notification count is not cleared: each stress task notifies once
+        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+    }
+}
+
+#if CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+
+#define ISR_ALLOC_BYTES     64
+#define ISR_TIMER_PERIOD_US 500
+
+static volatile uint32_t s_isr_alloc_count;
+static volatile bool s_isr_alloc_failed;
+
+static void IRAM_ATTR task_tracking_isr_alloc_cb(void *args)
+{
+    void *ptr = heap_caps_malloc(ISR_ALLOC_BYTES, MALLOC_CAP_INTERNAL);
+    if (ptr == NULL) {
+        s_isr_alloc_failed = true;
+        return;
+    }
+
+    heap_caps_free(ptr);
+    s_isr_alloc_count++;
+}
+
+/* malloc() and free() can run from an ISR or a critical section, and task tracking
+ * is updated on those paths. A blocking lock around the statistics deadlocks here
+ * (interrupt watchdog timeout). Allocate and free from an ISR while every core does
+ * the same from a task.
+ */
+TEST_CASE("heap task tracking is safe when malloc/free run from an ISR", "[heap]")
+{
+    const esp_timer_create_args_t timer_args = {
+        .callback = &task_tracking_isr_alloc_cb,
+        .dispatch_method = ESP_TIMER_ISR,
+        .name = "tt_isr",
+    };
+    esp_timer_handle_t timer = NULL;
+
+    // the task tracking statistics of the stress tasks are kept after their deletion
+    set_leak_threshold(-5000);
+
+    s_isr_alloc_count = 0;
+    s_isr_alloc_failed = false;
+
+    start_stress_tasks();
+
+    TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
+    TEST_ESP_OK(esp_timer_start_periodic(timer, ISR_TIMER_PERIOD_US));
+
+    wait_for_stress_tasks();
+
+    TEST_ESP_OK(esp_timer_stop(timer));
+    TEST_ESP_OK(esp_timer_delete(timer));
+
+    TEST_ASSERT_FALSE_MESSAGE(s_isr_alloc_failed, "allocation from ISR failed");
+    TEST_ASSERT_GREATER_THAN_UINT32(0, s_isr_alloc_count);
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+}
+
+#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+
+/* Reading and printing statistics must not hold the tracking lock for the whole
+ * operation. Call the getters and printers while every core allocates and frees,
+ * so a lock that is held too long would stall the allocator.
+ */
+TEST_CASE("heap task tracking get and print stats while allocating from all cores", "[heap][qemu-ignore]")
+{
+    // the task tracking statistics of the stress tasks are kept after their deletion
+    set_leak_threshold(-5000);
+
+    start_stress_tasks();
+
+    for (size_t i = 0; i < 5; i++) {
+        heap_all_tasks_stat_t tasks_stat = {};
+
+        TEST_ESP_OK(heap_caps_alloc_all_task_stat_arrays(&tasks_stat));
+        TEST_ESP_OK(heap_caps_get_all_task_stat(&tasks_stat));
+        heap_caps_free_all_task_stat_arrays(&tasks_stat);
+
+        heap_caps_print_all_task_stat_overview(stdout);
+        heap_caps_print_single_task_stat(stdout, xTaskGetCurrentTaskHandle());
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    wait_for_stress_tasks();
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
 }
 
 #endif // CONFIG_HEAP_TASK_TRACKING
