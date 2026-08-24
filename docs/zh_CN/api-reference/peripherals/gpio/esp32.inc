@@ -25,8 +25,7 @@
     * - GPIO0
       - ADC2_CH1
       - RTC_GPIO11
-      - Strapping 管脚
-
+      -
     * - GPIO1
       -
       -
@@ -35,8 +34,7 @@
     * - GPIO2
       - ADC2_CH2
       - RTC_GPIO12
-      - Strapping 管脚
-
+      -
     * - GPIO3
       -
       -
@@ -46,12 +44,10 @@
       - ADC2_CH0
       - RTC_GPIO10
       -
-
     * - GPIO5
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO6
       -
       -
@@ -85,7 +81,7 @@
     * - GPIO12
       - ADC2_CH5
       - RTC_GPIO15
-      - Strapping 管脚；JTAG
+      - JTAG
 
     * - GPIO13
       - ADC2_CH4
@@ -100,7 +96,7 @@
     * - GPIO15
       - ADC2_CH3
       - RTC_GPIO13
-      - Strapping 管脚；JTAG
+      - JTAG
 
     * - GPIO16
       -
@@ -116,52 +112,42 @@
       -
       -
       -
-
     * - GPIO19
       -
       -
       -
-
     * - GPIO21
       -
       -
       -
-
     * - GPIO22
       -
       -
       -
-
     * - GPIO23
       -
       -
       -
-
     * - GPIO25
       - ADC2_CH8
       - RTC_GPIO6
       -
-
     * - GPIO26
       - ADC2_CH9
       - RTC_GPIO7
       -
-
     * - GPIO27
       - ADC2_CH7
       - RTC_GPIO17
       -
-
     * - GPIO32
       - ADC1_CH4
       - RTC_GPIO9
       -
-
     * - GPIO33
       - ADC1_CH5
       - RTC_GPIO8
       -
-
     * - GPIO34
       - ADC1_CH6
       - RTC_GPIO4
@@ -194,7 +180,7 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO0、GPIO2、GPIO5、GPIO12 (MTDI) 和 GPIO15 (MTDO) 是 Strapping 管脚。更多信息请参考 `ESP32 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
+    - Strapping 管脚：部分管脚被用作 Strapping 管脚。更多信息请参阅 *{IDF_TARGET_NAME} 技术规格书* > *启动配置项* [`PDF <{IDF_TARGET_DATASHEET_CN_URL}#cd-pins-strap>`__]。
     - SPI0/1：GPIO6-11 和 GPIO16-17 通常连接到模组内集成的 SPI flash 和 PSRAM，因此不能用于其他用途。
     - JTAG：GPIO12-15 通常用于在线调试。
     - GPI：GPIO34-39 只能设置为输入模式，不具备软件使能的上拉或下拉功能。

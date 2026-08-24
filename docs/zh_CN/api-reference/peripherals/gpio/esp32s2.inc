@@ -25,113 +25,91 @@
     * - GPIO0
       -
       - RTC_GPIO0
-      - Strapping 管脚
-
+      -
     * - GPIO1
       - ADC1_CH0
       - RTC_GPIO1
       -
-
     * - GPIO2
       - ADC1_CH1
       - RTC_GPIO2
       -
-
     * - GPIO3
       - ADC1_CH2
       - RTC_GPIO3
       -
-
     * - GPIO4
       - ADC1_CH3
       - RTC_GPIO4
       -
-
     * - GPIO5
       - ADC1_CH4
       - RTC_GPIO5
       -
-
     * - GPIO6
       - ADC1_CH5
       - RTC_GPIO6
       -
-
     * - GPIO7
       - ADC1_CH6
       - RTC_GPIO7
       -
-
     * - GPIO8
       - ADC1_CH7
       - RTC_GPIO8
       -
-
     * - GPIO9
       - ADC1_CH8
       - RTC_GPIO9
       -
-
     * - GPIO10
       - ADC1_CH9
       - RTC_GPIO10
       -
-
     * - GPIO11
       - ADC2_CH0
       - RTC_GPIO11
       -
-
     * - GPIO12
       - ADC2_CH1
       - RTC_GPIO12
       -
-
     * - GPIO13
       - ADC2_CH2
       - RTC_GPIO13
       -
-
     * - GPIO14
       - ADC2_CH3
       - RTC_GPIO14
       -
-
     * - GPIO15
       - ADC2_CH4
       - RTC_GPIO15
       -
-
     * - GPIO16
       - ADC2_CH5
       - RTC_GPIO16
       -
-
     * - GPIO17
       - ADC2_CH6
       - RTC_GPIO17
       -
-
     * - GPIO18
       - ADC2_CH7
       - RTC_GPIO18
       -
-
     * - GPIO19
       - ADC2_CH8
       - RTC_GPIO19
       -
-
     * - GPIO20
       - ADC2_CH9
       - RTC_GPIO20
       -
-
     * - GPIO21
       -
       - RTC_GPIO21
       -
-
     * - GPIO26
       -
       -
@@ -171,32 +149,26 @@
       -
       -
       -
-
     * - GPIO34
       -
       -
       -
-
     * - GPIO35
       -
       -
       -
-
     * - GPIO36
       -
       -
       -
-
     * - GPIO37
       -
       -
       -
-
     * - GPIO38
       -
       -
       -
-
     * - GPIO39
       -
       -
@@ -221,25 +193,22 @@
       -
       -
       -
-
     * - GPIO44
       -
       -
       -
-
     * - GPIO45
       -
       -
-      - Strapping 管脚
-
+      -
     * - GPIO46
       -
       -
-      - GPI；Strapping 管脚
+      - GPI
 
 .. note::
 
-    - Strapping 管脚：GPIO0、GPIO45、和 GPIO46 是 Strapping 管脚。更多信息请参考 `ESP32-S2 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
+    - Strapping 管脚：部分管脚被用作 Strapping 管脚。更多信息请参阅 *{IDF_TARGET_NAME} 技术规格书* > *启动配置项* [`PDF <{IDF_TARGET_DATASHEET_CN_URL}#cd-pins-strap>`__]。
     - SPI0/1：GPIO26-32 通常用于 SPI flash 和 PSRAM，不推荐用于其他用途。
     - JTAG：GPIO39-42 通常用于在线调试。
     - GPI：GPIO46 固定为下拉，只能设置为输入模式。

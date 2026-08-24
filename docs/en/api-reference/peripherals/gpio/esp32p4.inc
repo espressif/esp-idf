@@ -26,280 +26,225 @@ The table below provides more information on pin usage, and please note the comm
       -
       - LP_GPIO0
       -
-
     * - GPIO1
       -
       - LP_GPIO1
       -
-
     * - GPIO2
       - TOUCH0
       - LP_GPIO2
       -
-
     * - GPIO3
       - TOUCH1
       - LP_GPIO3
       -
-
     * - GPIO4
       - TOUCH2
       - LP_GPIO4
       -
-
     * - GPIO5
       - TOUCH3
       - LP_GPIO5
       -
-
     * - GPIO6
       - TOUCH4
       - LP_GPIO6
       -
-
     * - GPIO7
       - TOUCH5
       - LP_GPIO7
       -
-
     * - GPIO8
       - TOUCH6
       - LP_GPIO8
       -
-
     * - GPIO9
       - TOUCH7
       - LP_GPIO9
       -
-
     * - GPIO10
       - TOUCH8
       - LP_GPIO10
       -
-
     * - GPIO11
       - TOUCH9
       - LP_GPIO11
       -
-
     * - GPIO12
       - TOUCH10
       - LP_GPIO12
       -
-
     * - GPIO13
       - TOUCH11
       - LP_GPIO13
       -
-
     * - GPIO14
       - TOUCH12
       - LP_GPIO14
       -
-
     * - GPIO15
       - TOUCH13
       - LP_GPIO15
       -
-
     * - GPIO16
       - ADC1_CH0
       -
       -
-
     * - GPIO17
       - ADC1_CH1
       -
       -
-
     * - GPIO18
       - ADC1_CH2
       -
       -
-
     * - GPIO19
       - ADC1_CH3
       -
       -
-
     * - GPIO20
       - ADC1_CH4
       -
       -
-
     * - GPIO21
       - ADC1_CH5
       -
       -
-
     * - GPIO22
       - ADC1_CH6
       -
       -
-
     * - GPIO23
       - ADC1_CH7
       -
       -
-
     * - GPIO24
       -
       -
       -
-
     * - GPIO25
       -
       -
       -
-
     * - GPIO26
       -
       -
       -
-
     * - GPIO27
       -
       -
       -
-
     * - GPIO28
       -
       -
       -
-
     * - GPIO29
       -
       -
       -
-
     * - GPIO30
       -
       -
       -
-
     * - GPIO31
       -
       -
       -
-
     * - GPIO32
       -
       -
       -
-
     * - GPIO33
       -
       -
       -
-
     * - GPIO34
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO35
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO36
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO37
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO38
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO39
       -
       -
       -
-
     * - GPIO40
       -
       -
       -
-
     * - GPIO41
       -
       -
       -
-
     * - GPIO42
       -
       -
       -
-
     * - GPIO43
       -
       -
       -
-
     * - GPIO44
       -
       -
       -
-
     * - GPIO45
       -
       -
       -
-
     * - GPIO46
       -
       -
       -
-
     * - GPIO47
       -
       -
       -
-
     * - GPIO48
       -
       -
       -
-
     * - GPIO49
       - ADC2_CH0
       -
       -
-
     * - GPIO50
       - ADC2_CH1
       -
       -
-
     * - GPIO51
       - ADC2_CH2, ANA_CMPR_CH0 reference voltage
       -
       -
-
     * - GPIO52
       - ADC2_CH3, ANA_CMPR_CH0 input (non-inverting)
       -
       -
-
     * - GPIO53
       - ADC2_CH4, ANA_CMPR_CH1 reference voltage
       -
       -
-
     * - GPIO54
       - ADC2_CH5, ANA_CMPR_CH1 input (non-inverting)
       -
       -
-
 .. note::
 
-    - Strapping pin: GPIO34, GPIO35, GPIO36, GPIO37, and GPIO38 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
-	  - USB-JTAG: GPIO24 and GPIO25 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
+    - Strapping pin: Some pins are used as strapping pins. For more information, please refer to *{IDF_TARGET_NAME} datasheet* > *Boot Configurations* [`PDF <{IDF_TARGET_DATASHEET_EN_URL}#cd-pins-strap>`__].
+    - USB-JTAG: GPIO24 and GPIO25 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 
 ---
