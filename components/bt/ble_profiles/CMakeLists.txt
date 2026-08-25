@@ -18,5 +18,12 @@ if(CONFIG_BT_PRF_TASK_ENABLED)
     list(APPEND _srcs "${CMAKE_CURRENT_LIST_DIR}/common/src/bt_prf_task.c")
 endif()
 
+# NimBLE profile cores, mirroring the "if BT_NIMBLE_ENABLED" guard in Kconfig.in.
+if(CONFIG_BT_NIMBLE_ENABLED)
+    add_subdirectory(nimble)
+    list(APPEND _srcs ${nimble_profiles_srcs})
+    list(APPEND _include_dirs ${nimble_profiles_include_dirs})
+endif()
+
 set(ble_profiles_srcs "${_srcs}" PARENT_SCOPE)
 set(ble_profiles_include_dirs "${_include_dirs}" PARENT_SCOPE)
