@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/param.h>
 #include <esp_log.h>
 #include <esp_err.h>
@@ -367,9 +368,45 @@ static esp_err_t cb_headers_complete(http_parser *parser)
         return ESP_FAIL;
     }
 
-    /* In absence of body/chunked encoding, http_parser sets content_len to -1 */
-    r->content_len = ((int)parser->content_length != -1 ?
-                      parser->content_length : 0);
+    /* In absence of body/chunked encoding, http_parser sets content_len to ULLONG_MAX */
+    if (parser->content_length != ULLONG_MAX) {
+        /* Content-Length was specified. Reject any value above UINT32_MAX: it is
+         * the largest body length the server can represent in r->content_len on
+         * every target, and rejecting larger values prevents the 64->32-bit
+         * truncation that would otherwise enable request smuggling (CWE-681). */
+        if (parser->content_length > UINT32_MAX) {
+            ESP_LOGW(TAG, LOG_FMT("Content-Length %" PRIu64
+                                  " exceeds UINT32_MAX; rejecting with 413"),
+                     (uint64_t)parser->content_length);
+            parser_data->error = HTTPD_413_CONTENT_TOO_LARGE;
+            parser_data->status = PARSING_FAILED;
+            return ESP_FAIL;
+        }
+        r->content_len = (size_t)parser->content_length;
+    } else {
+        r->content_len = 0;
+    }
+    /* This server implements no transfer codings, so reject any request that
+     * carries a Transfer-Encoding header with 501 (RFC 9112 section 6.1).
+     * Without this check a chunked body is treated as an empty body and its
+     * chunk framing is parsed as a separate pipelined request, which is a
+     * request-smuggling primitive when the server sits behind a proxy.
+     * http_parser sets F_CHUNKED only for a value that starts with "chunked",
+     * so the header is looked up directly as well. This covers the other
+     * codings, for example "gzip" and "gzip, chunked". ESP_OK and
+     * ESP_ERR_HTTPD_RESULT_TRUNC are the results that mean that the client
+     * sent the header. The copied value is not used, because the presence of
+     * the header is the reason to reject the request. */
+    char te_hdr_val[sizeof("chunked")];
+    esp_err_t te_err = httpd_req_get_hdr_value_str(r, "Transfer-Encoding",
+                                                   te_hdr_val, sizeof(te_hdr_val));
+    if ((parser->flags & F_CHUNKED) || (te_err == ESP_OK) ||
+        (te_err == ESP_ERR_HTTPD_RESULT_TRUNC)) {
+        ESP_LOGW(TAG, LOG_FMT("Transfer-Encoding is not supported"));
+        parser_data->error = HTTPD_501_METHOD_NOT_IMPLEMENTED;
+        parser_data->status = PARSING_FAILED;
+        return ESP_FAIL;
+    }
 
     ESP_LOGD(TAG, LOG_FMT("bytes read     = %" PRId32 ""),  parser->nread);
     ESP_LOGD(TAG, LOG_FMT("content length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(r->content_len));
