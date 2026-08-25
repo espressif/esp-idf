@@ -75,8 +75,7 @@ void btc_dev_call_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_DEV_ACT_SET_DEVICE_NAME:{
         dst->set_dev_name.device_name = (char *)osi_malloc((BTC_MAX_LOC_BD_NAME_LEN + 1) * sizeof(char));
         if (dst->set_dev_name.device_name) {
-            BCM_STRNCPY_S(dst->set_dev_name.device_name, src->set_dev_name.device_name, BTC_MAX_LOC_BD_NAME_LEN);
-            dst->set_dev_name.device_name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
+            BCM_STRLCPY_S(dst->set_dev_name.device_name, src->set_dev_name.device_name, BTC_MAX_LOC_BD_NAME_LEN + 1);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
         }
@@ -102,8 +101,7 @@ void btc_dev_cb_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case ESP_BT_DEV_NAME_RES_EVT:{
         dst->name_res.name = (char *)osi_malloc((BTC_MAX_LOC_BD_NAME_LEN + 1) * sizeof(char));
         if (dst->name_res.name) {
-            BCM_STRNCPY_S(dst->name_res.name, src->name_res.name, BTC_MAX_LOC_BD_NAME_LEN);
-            dst->name_res.name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
+            BCM_STRLCPY_S(dst->name_res.name, src->name_res.name, BTC_MAX_LOC_BD_NAME_LEN + 1);
         } else {
             BTC_TRACE_ERROR("%s, malloc failed\n", __func__);
         }
