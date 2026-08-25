@@ -82,8 +82,8 @@ test_ldgen_on_host:
 
 test_reproducible_build:
   extends: .host_test_template
-  script:
-    - ./tools/ci/test_reproducible_build.sh
+  variables:
+    INSTALL_EXTRA_TOOLS: cmake  # CMAKE_CURRENT_FUNCTION_LIST_DIR was only introduced in CMake 3.17
   artifacts:
     when: on_failure
     paths:
@@ -95,6 +95,8 @@ test_reproducible_build:
       - "**/build*/*.bin"
       - "**/build*/bootloader/*.bin"
       - "**/build*/partition_table/*.bin"
+  script:
+    - ./tools/ci/test_reproducible_build.sh
 
 test_spiffs_on_host:
   extends: .host_test_template
