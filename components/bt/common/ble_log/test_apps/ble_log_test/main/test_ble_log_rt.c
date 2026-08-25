@@ -24,7 +24,7 @@
 #error "BLE Log test app requires CONFIG_BLE_LOG_PRPH_TEST"
 #endif
 
-/* The runtime task hook is throttled to one pass per
+/* The runtime dispatch hook is throttled to one pass per
  * BLE_LOG_TS_TRIGGER_TIMEOUT_MS; let the window elapse between write bursts
  * so a hook pass is guaranteed to run after the settle delay. */
 #define TEST_HOOK_SETTLE_MS          (BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 100)
@@ -102,7 +102,8 @@ static void test_reader_task(void *arg)
     reader_ctx_t *ctx = arg;
     while (!ctx->stop) {
         size_t len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
-                                            pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS), 0);
+                                            pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS), 0,
+                                            NULL);
         if (len > 0 &&
                 !test_ble_log_walk_frames(s_read_buf, len, capture_version_info_frame,
                                           &ctx->capture)) {
@@ -127,7 +128,7 @@ TEST_CASE("BLE Log runtime hook reports build and chip versions", "[ble_log]")
                                           TEST_READER_PRIO, &reader));
     TEST_ASSERT_TRUE(ble_log_enable(true));
 
-    /* Transports are auto-submitted once full, which wakes the runtime task;
+    /* Transports are auto-submitted once full, which arms the defer alarm;
      * after the throttle window elapses, a hook pass writes the version frame
      * into the LBM and a later transport carries it out. ble_log_flush()
      * cannot be used here: it disables the module while waiting for the

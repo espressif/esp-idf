@@ -17,6 +17,7 @@ from typing import TypedDict
 KV = re.compile(r'(\w+)=(\S+)')
 
 WRITER_COLS = ('frames', 'failed', 'avg', 'avg_failed', 'p50', 'p95', 'p99', 'max')
+RT_COLS = ('mode', 'samples', 'batch', 'payload', 'min', 'avg', 'p50', 'p95', 'max')
 
 
 class Run(TypedDict):
@@ -42,8 +43,12 @@ def main() -> int:
         lines = f.read().splitlines()
 
     runs: list[Run] = []
+    rt_rows: list[dict[str, str]] = []
     cur: Run | None = None
     for line in lines:
+        if line.startswith('BLE_LOG_RT_PERF '):
+            rt_rows.append(fields(line))
+            continue
         if not line.startswith('BLE_LOG_PERF '):
             continue
         kv = fields(line)
@@ -62,8 +67,8 @@ def main() -> int:
         else:
             cur['other'].append(line[len('BLE_LOG_PERF ') :])
 
-    if not runs:
-        print(f'no BLE_LOG_PERF lines found in {path}')
+    if not runs and not rt_rows:
+        print(f'no BLE_LOG_PERF or BLE_LOG_RT_PERF lines found in {path}')
         return 1
 
     for i, run in enumerate(runs, 1):
@@ -85,15 +90,39 @@ def main() -> int:
             print(f'- `{o}`')
         print()
 
+    if rt_rows:
+        print('## Runtime dispatch')
+        print('| ' + ' | '.join(RT_COLS) + ' |')
+        print('|' + '---|' * len(RT_COLS))
+        for rt_row in rt_rows:
+            print('| ' + ' | '.join(rt_row.get(c, '-') for c in RT_COLS) + ' |')
+        print()
+
     if csv_path:
         with open(csv_path, 'w', newline='', encoding='utf-8') as f:
             wcsv = csv.writer(f)
-            wcsv.writerow(['run', 'mode', 'profile', 'link', 'isolate', 'writer', *WRITER_COLS])
+            wcsv.writerow(
+                [
+                    'kind',
+                    'run',
+                    'mode',
+                    'profile',
+                    'link',
+                    'isolate',
+                    'writer',
+                    *WRITER_COLS,
+                    'samples',
+                    'batch',
+                    'payload',
+                    'min',
+                ]
+            )
             for i, run in enumerate(runs, 1):
                 h = run['head']
                 for w in run['writers']:
                     wcsv.writerow(
                         [
+                            'perf',
                             i,
                             h.get('mode', ''),
                             h.get('profile', ''),
@@ -101,8 +130,36 @@ def main() -> int:
                             h.get('isolate', ''),
                             w.get('writer', ''),
                             *(w.get(c, '') for c in WRITER_COLS),
+                            '',
+                            '',
+                            '',
+                            '',
                         ]
                     )
+            for rt_row in rt_rows:
+                wcsv.writerow(
+                    [
+                        'rt_perf',
+                        '',
+                        rt_row.get('mode', ''),
+                        '',
+                        '',
+                        '',
+                        'runtime',
+                        '',
+                        '',
+                        rt_row.get('avg', ''),
+                        '',
+                        rt_row.get('p50', ''),
+                        rt_row.get('p95', ''),
+                        '',
+                        rt_row.get('max', ''),
+                        rt_row.get('samples', ''),
+                        rt_row.get('batch', ''),
+                        rt_row.get('payload', ''),
+                        rt_row.get('min', ''),
+                    ]
+                )
         print(f'CSV written to {csv_path}')
     return 0
 
