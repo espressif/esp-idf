@@ -25,6 +25,7 @@
 /*
 Test ESP-IDF FreeRTOS API additions from idf_additions.h:
     - ...Create...WithCaps() / ...DeleteWithCaps() memory capability helpers
+    - xTaskCreatePinnedToCore() / xTaskCreateStaticPinnedToCore() pinning semantics
     - Task utility helpers (xTaskGetCoreID, xTaskGetStackStart, per-core handle queries, etc.)
 
 Run only these cases from the Unity menu with the [idf_additions] tag filter.
@@ -633,3 +634,160 @@ TEST_CASE("IDF additions: ulTaskGetIdleRunTimeCounterForCore", "[freertos][idf_a
 }
 
 #endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS && !CONFIG_FREERTOS_SMP */
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * xTaskCreatePinnedToCore / xTaskCreateStaticPinnedToCore pinning semantics
+ * --------------------------------------------------------------------------------------------------------------------- */
+
+#define PIN_SEMANTICS_SAMPLES     5
+#define PIN_SEMANTICS_STACK_BYTES 2048
+
+typedef struct {
+    TaskHandle_t parent;
+    BaseType_t requested_core;
+    BaseType_t samples[PIN_SEMANTICS_SAMPLES];
+    TaskHandle_t self_handle;
+} pin_semantics_ctx_t;
+
+static void drain_task_notifications(void)
+{
+    while (ulTaskNotifyTake(pdFALSE, 0) != 0) {
+        ;
+    }
+}
+
+static void pin_semantics_task(void *arg)
+{
+    pin_semantics_ctx_t *ctx = (pin_semantics_ctx_t *)arg;
+
+    ctx->self_handle = xTaskGetCurrentTaskHandle();
+    for (int i = 0; i < PIN_SEMANTICS_SAMPLES; i++) {
+        ctx->samples[i] = xPortGetCoreID();
+        if (ctx->requested_core != tskNO_AFFINITY) {
+            TEST_ASSERT_EQUAL(ctx->requested_core, ctx->samples[i]);
+        } else {
+            TEST_ASSERT_GREATER_OR_EQUAL(0, ctx->samples[i]);
+            TEST_ASSERT_LESS_THAN(CONFIG_FREERTOS_NUMBER_OF_CORES, ctx->samples[i]);
+        }
+        /* Yield and sleep so a wrongly pinned task would have a chance to migrate. */
+        taskYIELD();
+        vTaskDelay(1);
+    }
+
+    xTaskNotifyGive(ctx->parent);
+    vTaskSuspend(NULL);
+}
+
+static void verify_pin_samples(const pin_semantics_ctx_t *ctx)
+{
+    for (int i = 0; i < PIN_SEMANTICS_SAMPLES; i++) {
+        if (ctx->requested_core == tskNO_AFFINITY) {
+            TEST_ASSERT_GREATER_OR_EQUAL(0, ctx->samples[i]);
+            TEST_ASSERT_LESS_THAN(CONFIG_FREERTOS_NUMBER_OF_CORES, ctx->samples[i]);
+        } else {
+            TEST_ASSERT_EQUAL(ctx->requested_core, ctx->samples[i]);
+        }
+    }
+}
+
+TEST_CASE("IDF additions: xTaskCreatePinnedToCore pinning semantics", "[freertos][idf_additions]")
+{
+    const TaskHandle_t parent = xTaskGetCurrentTaskHandle();
+
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        pin_semantics_ctx_t ctx = {
+            .parent = parent,
+            .requested_core = core,
+            .self_handle = NULL,
+        };
+        TaskHandle_t created = NULL;
+
+        drain_task_notifications();
+
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(pin_semantics_task,
+                                                          "pin_dyn",
+                                                          PIN_SEMANTICS_STACK_BYTES,
+                                                          &ctx,
+                                                          UNITY_FREERTOS_PRIORITY + 1,
+                                                          &created,
+                                                          core));
+        TEST_ASSERT_NOT_NULL(created);
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+        TEST_ASSERT_EQUAL_PTR(created, ctx.self_handle);
+        TEST_ASSERT_EQUAL(core, xTaskGetCoreID(created));
+        verify_pin_samples(&ctx);
+
+        vTaskDelete(created);
+        vTaskDelay(1);
+    }
+}
+
+TEST_CASE("IDF additions: xTaskCreateStaticPinnedToCore pinning semantics", "[freertos][idf_additions]")
+{
+    static StackType_t pin_static_stack[PIN_SEMANTICS_STACK_BYTES / sizeof(StackType_t)];
+    static StaticTask_t pin_static_tcb;
+    const TaskHandle_t parent = xTaskGetCurrentTaskHandle();
+
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        pin_semantics_ctx_t ctx = {
+            .parent = parent,
+            .requested_core = core,
+            .self_handle = NULL,
+        };
+
+        memset(&pin_static_tcb, 0, sizeof(pin_static_tcb));
+        drain_task_notifications();
+
+        TaskHandle_t created = xTaskCreateStaticPinnedToCore(pin_semantics_task,
+                                                             "pin_static",
+                                                             PIN_SEMANTICS_STACK_BYTES,
+                                                             &ctx,
+                                                             UNITY_FREERTOS_PRIORITY + 1,
+                                                             pin_static_stack,
+                                                             &pin_static_tcb,
+                                                             core);
+        TEST_ASSERT_NOT_NULL(created);
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+        TEST_ASSERT_EQUAL_PTR(created, ctx.self_handle);
+        TEST_ASSERT_EQUAL(core, xTaskGetCoreID(created));
+        verify_pin_samples(&ctx);
+
+        vTaskDelete(created);
+        vTaskDelay(1);
+    }
+}
+
+TEST_CASE("IDF additions: xTaskCreatePinnedToCore tskNO_AFFINITY", "[freertos][idf_additions]")
+{
+    pin_semantics_ctx_t ctx = {
+        .parent = xTaskGetCurrentTaskHandle(),
+        .requested_core = tskNO_AFFINITY,
+        .self_handle = NULL,
+    };
+    TaskHandle_t created = NULL;
+
+    drain_task_notifications();
+
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(pin_semantics_task,
+                                                      "pin_any",
+                                                      PIN_SEMANTICS_STACK_BYTES,
+                                                      &ctx,
+                                                      UNITY_FREERTOS_PRIORITY + 1,
+                                                      &created,
+                                                      tskNO_AFFINITY));
+    TEST_ASSERT_NOT_NULL(created);
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL_PTR(created, ctx.self_handle);
+    verify_pin_samples(&ctx);
+
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(created));
+#else
+    /* Unicore treats tskNO_AFFINITY as core 0. */
+    TEST_ASSERT_EQUAL(0, xTaskGetCoreID(created));
+    TEST_ASSERT_EQUAL(0, ctx.samples[0]);
+#endif
+
+    vTaskDelete(created);
+    vTaskDelay(1);
+}
