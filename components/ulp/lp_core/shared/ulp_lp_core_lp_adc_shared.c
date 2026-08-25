@@ -43,7 +43,7 @@ static esp_err_t lp_adc_validate_unit(adc_unit_t unit_id)
 
 static esp_err_t lp_adc_validate_channel(adc_unit_t unit_id, adc_channel_t channel)
 {
-    if (channel >= SOC_ADC_CHANNEL_NUM(unit_id)) {
+    if (channel >= ADC_LL_CHANNEL_NUM(unit_id)) {
         return ESP_ERR_INVALID_ARG;
     }
 

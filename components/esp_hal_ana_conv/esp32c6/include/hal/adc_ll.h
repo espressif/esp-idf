@@ -46,6 +46,7 @@ extern "C" {
 
 #define ADC_LL_UNIT2_CHANNEL_SUBSTRATION            0
 #define ADC_LL_MAX_CHANNEL_NUM                      (7)
+#define ADC_LL_CHANNEL_NUM(unit_id)                 (7)
 
 /*---------------------------------------------------------------
  *                            oneshot

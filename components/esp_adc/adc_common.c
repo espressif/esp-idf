@@ -45,7 +45,7 @@ esp_err_t adc_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_
 esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * const io_num)
 {
     ESP_RETURN_ON_FALSE(unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid unit");
-    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(unit_id), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
+    ESP_RETURN_ON_FALSE(channel < ADC_LL_CHANNEL_NUM(unit_id), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
     ESP_RETURN_ON_FALSE(io_num, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
     *io_num = adc_channel_io_map[unit_id][channel];
@@ -74,7 +74,7 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
             adc_calc_hw_calibration_code(i, j);
 #if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
             /* Load the channel compensation from efuse */
-            for (int k = 0; k < SOC_ADC_CHANNEL_NUM(i); k++) {
+            for (int k = 0; k < ADC_LL_CHANNEL_NUM(i); k++) {
                 adc_load_hw_calibration_chan_compens(i, k, j);
             }
 #endif

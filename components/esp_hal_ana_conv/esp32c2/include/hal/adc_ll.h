@@ -34,6 +34,7 @@ extern "C" {
 
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (1)
 #define ADC_LL_MAX_CHANNEL_NUM                      (5)
+#define ADC_LL_CHANNEL_NUM(unit_id)                 (5)
 
 /*---------------------------------------------------------------
  *                            oneshot

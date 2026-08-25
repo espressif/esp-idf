@@ -99,7 +99,7 @@ void test_adc_calibration_deinit(adc_cali_handle_t handle)
 
 void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
 {
-    TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
+    TEST_ASSERT(channel < ADC_LL_CHANNEL_NUM(unit) && "invalid channel");
 
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY)));
@@ -118,7 +118,7 @@ void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
 
 void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel)
 {
-    TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
+    TEST_ASSERT(channel < ADC_LL_CHANNEL_NUM(unit) && "invalid channel");
 
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     TEST_ESP_OK(gpio_set_pull_mode(io_num, GPIO_PULLUP_PULLDOWN));
@@ -133,7 +133,7 @@ void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel)
 
 void test_assert_adc_raw(adc_unit_t unit, adc_channel_t channel, bool level, int raw, bool dma_mode, bool loose_thresh)
 {
-    TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
+    TEST_ASSERT(channel < ADC_LL_CHANNEL_NUM(unit) && "invalid channel");
 
 #if defined ADC_TEST_HIGH_VAL_DMA
     int expected_value = level ? (dma_mode ? ADC_TEST_HIGH_VAL_DMA : ADC_TEST_HIGH_VAL) : ADC_TEST_LOW_VAL;

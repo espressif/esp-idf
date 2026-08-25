@@ -9,6 +9,7 @@
 #include "esp_efuse_table.h"
 #include "esp_efuse_rtc_calib.h"
 #include "hal/efuse_hal.h"
+#include "hal/adc_ll.h"
 
 /**
  * @brief Get the signed value by the raw data that read from eFuse
@@ -60,7 +61,7 @@ int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_
 {
     /* Version validation should be guaranteed in the caller */
     assert(atten < 4);
-    assert(adc_channel < SOC_ADC_CHANNEL_NUM(adc_unit));
+    assert(adc_channel < ADC_LL_CHANNEL_NUM(adc_unit));
     assert(adc_unit == 0);
 
     const esp_efuse_desc_t** chan_diff_efuse = NULL;

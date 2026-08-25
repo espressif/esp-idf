@@ -617,18 +617,18 @@ esp_err_t adc_continuous_parse_data(adc_continuous_handle_t handle,
         parsed_data[i].unit = ADC_UNIT_1;
         parsed_data[i].channel = p->type1.channel;
         parsed_data[i].raw_data = p->type1.data;
-        parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+        parsed_data[i].valid = (parsed_data[i].channel < ADC_LL_CHANNEL_NUM(parsed_data[i].unit));
 #elif CONFIG_IDF_TARGET_ESP32S2
         if (handle->format == ADC_DIGI_OUTPUT_FORMAT_TYPE2) {
             parsed_data[i].unit = p->type2.unit ? ADC_UNIT_2 : ADC_UNIT_1;
             parsed_data[i].channel = p->type2.channel;
             parsed_data[i].raw_data = p->type2.data;
-            parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+            parsed_data[i].valid = (parsed_data[i].channel < ADC_LL_CHANNEL_NUM(parsed_data[i].unit));
         } else if (handle->format == ADC_DIGI_OUTPUT_FORMAT_TYPE1) {
             parsed_data[i].unit = handle->use_adc1 ? ADC_UNIT_1 : ADC_UNIT_2;
             parsed_data[i].channel = p->type1.channel;
             parsed_data[i].raw_data = p->type1.data;
-            parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+            parsed_data[i].valid = (parsed_data[i].channel < ADC_LL_CHANNEL_NUM(parsed_data[i].unit));
         }
 #else
 #if CONFIG_SOC_ADC_PERIPH_NUM == 1
@@ -638,7 +638,7 @@ esp_err_t adc_continuous_parse_data(adc_continuous_handle_t handle,
 #endif
         parsed_data[i].channel = (parsed_data[i].unit == ADC_UNIT_2) ? p->type2.channel - ADC_LL_UNIT2_CHANNEL_SUBSTRATION : p->type2.channel;
         parsed_data[i].raw_data = p->type2.data;
-        parsed_data[i].valid = (parsed_data[i].channel < SOC_ADC_CHANNEL_NUM(parsed_data[i].unit));
+        parsed_data[i].valid = (parsed_data[i].channel < ADC_LL_CHANNEL_NUM(parsed_data[i].unit));
 #endif
     }
 
