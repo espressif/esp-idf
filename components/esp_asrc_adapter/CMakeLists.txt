@@ -17,4 +17,4 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS "."
                        REQUIRES esp_hal_asrc esp_driver_dma esp_mm
-                       PRIV_REQUIRES esp_hw_support esp_pm)
+                       PRIV_REQUIRES esp_hw_support esp_pm esp_mspi)

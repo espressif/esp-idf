@@ -9,9 +9,13 @@ if(${target} STREQUAL "linux")
 endif()
 
 if(non_os_build OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-    set(priv_requires bootloader_support soc esp_hal_gpio)
+    # efuse is required by esp_mspi_align.c to query the flash encryption state
+    set(priv_requires bootloader_support soc esp_hal_gpio efuse)
     set(requires hal esp_hal_mspi)
     set(srcs "spi_flash_wrap.c" "spi_flash_os_tee_stub.c")
+    if(NOT BOOTLOADER_BUILD)
+        list(APPEND srcs "esp_mspi_align/esp_mspi_align.c")
+    endif()
     if(ESP_TEE_BUILD)
         if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
             list(APPEND srcs "mspi_timing_tuning/mspi_timing_tuning.c")
@@ -27,10 +31,13 @@ if(non_os_build OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         endif()
     endif()
 else()
-    set(priv_requires bootloader_support soc esp_hal_gpio esp_mm)
+    # efuse is required by esp_mspi_align.c to query the flash encryption state
+    set(priv_requires bootloader_support soc esp_hal_gpio esp_mm efuse)
     set(requires hal esp_hal_mspi)
 
-    set(srcs "flash_brownout_hook.c" "cache_utils.c" "flash_ops.c" "spi_flash_wrap.c")
+    set(srcs "flash_brownout_hook.c" "cache_utils.c" "flash_ops.c" "spi_flash_wrap.c"
+             "esp_mspi_align/esp_mspi_align.c"
+             "mspi_mem_barrier/mspi_mem_barrier.c")
 
     # MSPI0 Octal flash init
     if(CONFIG_SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE)
@@ -69,13 +76,18 @@ endif()
 set(include_dirs include
     "mspi_timing_tuning/include"
     "mspi_timing_tuning/tuning_scheme_impl/include"
-    "mspi_intr/include")
+    "mspi_intr/include"
+    "esp_mspi_align/include"
+    "mspi_mem_barrier/include")
 
-if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}")
-    list(APPEND include_dirs "${target}")
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
+    list(APPEND include_dirs "${target}/include")
 endif()
 
-set(ldfragments linker.lf)
+set(ldfragments "")
+if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+    list(APPEND ldfragments linker.lf)
+endif()
 
 idf_component_register(SRCS "${srcs}"
                        REQUIRES ${requires}
@@ -90,7 +102,7 @@ if(NOT non_os_build AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         # esp_mspi_get_io() queries esp_psram_io_get_cs_io() for the PSRAM CS pin
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
-    # Force linking init_flash_os ESP_SYSTEM_INIT_FN to ensure it's not discarded by linker
+    # Force linking init_flash_dpd ESP_SYSTEM_INIT_FN to ensure it's not discarded by linker
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_mspi_flash_ops_include_func")
 endif()
 
