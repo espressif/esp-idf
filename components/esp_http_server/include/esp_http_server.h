@@ -659,8 +659,10 @@ typedef enum {
  *    guaranteed as the HTTP request may be partially received/parsed.
  *  - The function must return ESP_OK if underlying socket needs to
  *    be kept open. Any other value will ensure that the socket is
- *    closed. The return value is ignored when error is of type
- *    `HTTPD_500_INTERNAL_SERVER_ERROR` and the socket closed anyway.
+ *    closed. The return value is ignored, and the socket is closed
+ *    anyway, when the error is `HTTPD_500_INTERNAL_SERVER_ERROR` or
+ *    `HTTPD_501_METHOD_NOT_IMPLEMENTED` (for 501 the request is only
+ *    partially parsed, so the session cannot continue safely).
  *
  * @param[in] req    HTTP request for which the error needs to be handled
  * @param[in] error  Error type
