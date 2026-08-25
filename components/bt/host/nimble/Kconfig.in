@@ -188,6 +188,24 @@ menu "Security (SMP)"
             help
                 Enable this flag to make bonding persistent across device reboots
 
+        choice BT_NIMBLE_STORE_OVERFLOW_POLICY
+            prompt "Bond store overflow eviction policy"
+            default BT_NIMBLE_STORE_OVERFLOW_RR
+            help
+                Select which bond is removed when the bond store is full.
+
+            config BT_NIMBLE_STORE_OVERFLOW_RR
+                bool "Round-robin (oldest bond)"
+                help
+                    Remove the bond which was stored first.
+
+            config BT_NIMBLE_STORE_OVERFLOW_LFU
+                bool "Least recently used"
+                help
+                    Remove the least recently used bond. A bond is considered
+                    used when encryption succeeds with the bonded peer.
+        endchoice
+
         config BT_NIMBLE_MAX_BONDS
             int "Maximum number of bonds to save across reboots"
             default 3
