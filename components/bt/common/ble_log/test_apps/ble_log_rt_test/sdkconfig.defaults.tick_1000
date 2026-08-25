@@ -1,0 +1,3 @@
+# 1000 Hz tick regression. Use with sdkconfig.defaults:
+#   -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.tick_1000"
+CONFIG_FREERTOS_HZ=1000
