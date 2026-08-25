@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1339,9 +1339,9 @@ TEST_CASE("Test no-split buffers returning oldest item when full frees one slot"
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
     const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
-    TEST_ASSERT_EQUAL(4, capacity);
+    TEST_ASSERT_EQUAL(8, capacity);
     void *rx_items[capacity];
-    uint8_t data[] = {10, 11, 12, 13};
+    uint8_t data[8] = {10, 11, 12, 13, 14, 15, 16, 17};
 
     acquire_all_items(buffer_handle, rx_items, capacity);
     write_and_send_all_items(buffer_handle, rx_items, capacity, data);
@@ -1392,9 +1392,9 @@ TEST_CASE("Test no-split buffers returning non-oldest item when full does not fr
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
     const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
-    TEST_ASSERT_EQUAL(4, capacity);
+    TEST_ASSERT_EQUAL(8, capacity);
     void *rx_items[capacity];
-    uint8_t data[] = {10, 11, 12, 13};
+    uint8_t data[8] = {10, 11, 12, 13, 14, 15, 16, 17};
 
     acquire_all_items(buffer_handle, rx_items, capacity);
     write_and_send_all_items(buffer_handle, rx_items, capacity, data);
@@ -1435,8 +1435,8 @@ TEST_CASE("Test no-split full buffer becomes empty when oldest is returned last"
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
     const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
-    TEST_ASSERT_EQUAL(4, capacity);
-    uint8_t data[] = {10, 11, 12, 13};
+    TEST_ASSERT_EQUAL(8, capacity);
+    uint8_t data[8] = {10, 11, 12, 13, 14, 15, 16, 17};
 
     // 1) Acquire, write, complete: buffer becomes FULL
     void *rx_items[capacity];
@@ -1452,7 +1452,7 @@ TEST_CASE("Test no-split full buffer becomes empty when oldest is returned last"
     TEST_ASSERT_EQUAL(0U, xRingbufferGetCurFreeSize(buffer_handle)); // still FULL
 
     // 3) Return non-oldest first — still no space (FULL must remain)
-    for (int i = 1; i < (int)(sizeof(data) / sizeof(data[0])); i++) {
+    for (int i = 1; i < capacity; i++) {
         read_and_return_item(buffer_handle, rx_items, i, data[i]);
     }
     void *tmp;
