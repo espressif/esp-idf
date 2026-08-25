@@ -9,6 +9,10 @@ This example shows how to override the default chip driver list provided by IDF.
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+## When to use this example
+
+- You need to support a flash chip that is not covered by the default IDF chip driver list, by providing your own chip driver.
+
 ## How to use example
 
 Follow detailed instructions provided specifically for this example.

@@ -19,6 +19,9 @@ This example demonstrates how to use an eMMC chip with an ESP device. Example do
 
 This example supports eMMC chips.
 
+## When to use this example
+
+- Your board has a soldered eMMC chip connected over the SDMMC host (ESP32-S3 / ESP32-P4) and you want FATFS on it.
 
 ## Hardware
 

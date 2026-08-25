@@ -7,6 +7,11 @@ The purpose of this example is to show how to use the simplified, read-only API 
 
 A very practical application of being able to access the NVS in the bootloader build would be faster device restoration, where-in the application stores the device's current state/configurations and post a reset it would read the NVS to restore the device's last state, without waiting for application to boot-up.
 
+## When to use this example
+
+- You need to read NVS data from the bootloader (before the app starts), e.g. for fast state restoration.
+- You want to use the simplified, read-only NVS bootloader API.
+
 ## Usage of this example:
 
 Simply compile it:
