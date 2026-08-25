@@ -268,7 +268,6 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
 
     bootloader_munmap(partitions);
 
-    ESP_LOGI(TAG, "End of partition table");
     return true;
 }
 
@@ -788,7 +787,7 @@ static void load_image(const esp_image_metadata_t *image_data)
     }
 #endif
 
-    ESP_LOGI(TAG, "Disabling RNG early entropy source...");
+    ESP_LOGD(TAG, "Disabling RNG early entropy source...");
     bootloader_random_disable();
 
     /* Disable glitch reset after all the security checks are completed.
