@@ -116,10 +116,15 @@ struct iso_queue_item {
 #define ISO_CRITICAL_QUEUE_LEN      32
 #define ISO_NORMAL_QUEUE_LEN        64
 #define ISO_FLOODABLE_QUEUE_LEN     32
-/* The set must be able to hold one token per item across all three queues. */
+/* Not a tier. One-deep and written only by deinit, so the stop signal can never
+ * hit a full queue - which is what lets the task block on the set indefinitely
+ * instead of polling for iso_task_stopping. */
+#define ISO_CTRL_QUEUE_LEN          1
+/* The set must be able to hold one token per item across all queues. */
 #define ISO_QUEUE_SET_LEN           (ISO_CRITICAL_QUEUE_LEN + \
                                      ISO_NORMAL_QUEUE_LEN + \
-                                     ISO_FLOODABLE_QUEUE_LEN)
+                                     ISO_FLOODABLE_QUEUE_LEN + \
+                                     ISO_CTRL_QUEUE_LEN)
 #define ISO_QUEUE_ITEM_SIZE         sizeof(struct iso_queue_item)
 
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
@@ -132,9 +137,21 @@ void bt_le_iso_dispatch_stats_dump(void);
 int bt_le_iso_task_post(enum iso_queue_item_type type,
                         void *data, size_t data_len);
 
+/* -ESHUTDOWN is expected for as long as an ACL, scan or PA sync outlives the
+ * deinit that stopped it; anything else is a real drop. A macro so each file
+ * logs under its own LOG_MODULE_REGISTER. */
+#define ISO_POST_FAIL_LOG(_err, ...) \
+    do { \
+        if ((_err) == -ESHUTDOWN) { \
+            LOG_DBG(__VA_ARGS__); \
+        } else { \
+            LOG_ERR(__VA_ARGS__); \
+        } \
+    } while (0)
+
 int bt_le_iso_task_init(void);
 
-void bt_le_iso_task_deinit(void);
+int bt_le_iso_task_deinit(void);
 
 #ifdef __cplusplus
 }

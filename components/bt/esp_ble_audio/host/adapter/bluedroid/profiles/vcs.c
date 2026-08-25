@@ -49,6 +49,12 @@ struct inc_svc_inst *vcs_not_included_inst(void)
     return NULL;
 }
 
+void bt_le_bluedroid_vcs_state_reset(void)
+{
+    inc_vocs_svc_count = 0;
+    inc_aics_svc_count = 0;
+}
+
 int bt_le_bluedroid_vcs_init(void *vcp_inc)
 {
     struct bt_vcp_included *vcp_included;

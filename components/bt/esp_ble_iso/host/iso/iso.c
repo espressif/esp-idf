@@ -2445,6 +2445,23 @@ int bt_iso_big_register_cb(struct bt_iso_big_cb *cb)
     return 0;
 }
 
+int bt_iso_big_unregister_cb(struct bt_iso_big_cb *cb)
+{
+    CHECKIF(cb == NULL) {
+        LOG_ERR("BigCbNull");
+
+        return -EINVAL;
+    }
+
+    if (!sys_slist_find_and_remove(&iso_big_cbs, &cb->_node)) {
+        LOG_ERR("BigCbNotReg[%p]", cb);
+
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
 #if defined(CONFIG_BT_ISO_BROADCASTER)
 static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
                              struct bt_iso_big_create_param *param)
@@ -3552,4 +3569,55 @@ void bt_iso_reset_safe(void)
     bt_le_host_lock();
     bt_iso_reset();
     bt_le_host_unlock();
+}
+
+void bt_le_iso_state_reset(void)
+{
+    /* Clear the CIG/BIG pools, the registered server and the BIG callback list.
+     * Not bt_iso_reset(), which is the HCI-reset path and tears down live
+     * channels. Call from init, before anything registers. */
+
+    LOG_DBG("IsoStateReset");
+
+#if CONFIG_BT_ISO_CENTRAL
+    memset(cigs, 0, sizeof(cigs));
+#endif /* CONFIG_BT_ISO_CENTRAL */
+
+#if CONFIG_BT_ISO_PERIPHERAL
+    iso_server = NULL;
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
+
+#if CONFIG_BT_ISO_BROADCAST
+    memset(bigs, 0, sizeof(bigs));
+    sys_slist_init(&iso_big_cbs);
+#endif /* CONFIG_BT_ISO_BROADCAST */
+}
+
+size_t bt_le_iso_report_busy(void)
+{
+    size_t busy = 0;
+
+    /* Number of CIG/BIG slots still allocated; each is logged at ERROR. */
+
+#if CONFIG_BT_ISO_CENTRAL
+    /* A CIS disconnect only moves the CIG to INACTIVE; nothing but
+     * bt_iso_cig_terminate() frees the slot and the controller's CIG. */
+    for (size_t i = 0; i < ARRAY_SIZE(cigs); i++) {
+        if (cigs[i].state != BT_ISO_CIG_STATE_IDLE) {
+            LOG_ERR("DeinitBusyCig[%u][state=%u]", i, cigs[i].state);
+            busy++;
+        }
+    }
+#endif /* CONFIG_BT_ISO_CENTRAL */
+
+#if CONFIG_BT_ISO_BROADCAST
+    for (size_t i = 0; i < ARRAY_SIZE(bigs); i++) {
+        if (atomic_test_bit(bigs[i].flags, BT_BIG_INITIALIZED)) {
+            LOG_ERR("DeinitBusyBig[%u]", i);
+            busy++;
+        }
+    }
+#endif /* CONFIG_BT_ISO_BROADCAST */
+
+    return busy;
 }

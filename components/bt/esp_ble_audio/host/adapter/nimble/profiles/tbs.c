@@ -372,3 +372,15 @@ int bt_le_nimble_tbs_init(void)
 
     return 0;
 }
+
+int bt_le_nimble_gtbs_deinit(void)
+{
+    LOG_DBG("[N]GtbsDeinit");
+    return 0;
+}
+
+int bt_le_nimble_tbs_deinit(uint8_t bearer_index)
+{
+    LOG_DBG("[N]TbsDeinit[%u]", bearer_index);
+    return 0;
+}

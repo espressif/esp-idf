@@ -41,6 +41,11 @@ struct inc_svc_inst *mics_not_included_inst(void)
     return NULL;
 }
 
+void bt_le_bluedroid_mics_state_reset(void)
+{
+    inc_aics_svc_count = 0;
+}
+
 int bt_le_bluedroid_mics_init(void *micp_inc)
 {
     struct bt_micp_included *micp_included;

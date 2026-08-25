@@ -218,3 +218,9 @@ free:
     }
     return rc;
 }
+
+int bt_le_nimble_bass_deinit(void)
+{
+    LOG_DBG("[N]BassDeinit");
+    return 0;
+}

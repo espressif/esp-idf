@@ -400,7 +400,7 @@ static int hci_cmd_create_cis(struct net_buf *buf, struct net_buf **rsp)
     BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
-        cis_params[i].cis_hdl  = sys_get_le16(buf->data + 4 + i * sizeof(struct ble_hci_cis_hdls));
+        cis_params[i].cis_hdl = sys_get_le16(buf->data + 4 + i * sizeof(struct ble_hci_cis_hdls));
         cis_params[i].acl_hdl = sys_get_le16(buf->data + 6 + i * sizeof(struct ble_hci_cis_hdls));
     }
 
@@ -1089,7 +1089,9 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
     err = bt_le_iso_task_post(q_type, qdata, qdata_len);
     if (err) {
-        LOG_ERR("[B]IsoPostEvtFail[%d][%02x]", err, event);
+        if (q_type == ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT) {
+            ISO_POST_FAIL_LOG(err, "[B]IsoPostEvtFail[%d][%02x]", err, event);
+        }
         free(qdata);
     }
 }
@@ -1330,8 +1332,12 @@ int bt_le_bluedroid_iso_init(void)
 void bt_le_bluedroid_iso_deinit(void)
 {
 #if CONFIG_BT_ISO_UNICAST
-    /* Mirror bt_le_iso_init() which enables bit 32 only on unicast build. */
-    iso_disable_cis();
+    /* Core 6.0 Vol 4 Part E 7.8.115: LE Set Host Feature is Command Disallowed
+     * while any connection exists, and the ACL outlives ISO deinit. Skip - a
+     * stale host-support bit is harmless and the next init sets it again. */
+    if (bt_le_acl_conn_count() == 0) {
+        iso_disable_cis();
+    }
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 #if CONFIG_BT_ISO_RX

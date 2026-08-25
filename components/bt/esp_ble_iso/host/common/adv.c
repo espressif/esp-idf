@@ -70,6 +70,17 @@ struct bt_le_ext_adv *bt_le_ext_adv_find(uint8_t adv_handle)
 }
 
 _IDF_ONLY
+void bt_le_ext_adv_state_reset(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(ext_adv_pool); i++) {
+        if (atomic_test_bit(ext_adv_pool[i].flags, BT_PER_ADV_PARAMS_SET)) {
+            LOG_WRN("DeinitDropExtAdv[%u]", ext_adv_pool[i].handle);
+        }
+    }
+
+    memset(ext_adv_pool, 0, sizeof(ext_adv_pool));
+}
+
 int bt_le_ext_adv_new_safe(uint8_t adv_handle, uint8_t addr_type,
                            const uint8_t *addr, uint8_t sid)
 {

@@ -14,7 +14,11 @@
 extern "C" {
 #endif
 
+void bt_le_bluedroid_csis_state_reset(void);
+
 int bt_le_bluedroid_csis_init(void *csis_svc, uint8_t count);
+
+int bt_le_bluedroid_csis_deinit(void *csis_svc);
 
 int bt_le_bluedroid_csis_start(void);
 

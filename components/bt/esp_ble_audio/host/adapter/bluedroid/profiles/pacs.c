@@ -38,6 +38,21 @@ int bt_le_bluedroid_pacs_init(void)
     return bt_le_bluedroid_svc_init(pacs_svc);
 }
 
+int bt_le_bluedroid_pacs_deinit(void)
+{
+    struct bt_gatt_service *pacs_svc;
+
+    LOG_DBG("[B]PacsDeinit");
+
+    pacs_svc = lib_pacs_svc_get();
+    if (!pacs_svc) {
+        LOG_ERR("[B]PacsSvcGetFail");
+        return -ENODEV;
+    }
+
+    return bt_le_bluedroid_svc_deinit(pacs_svc);
+}
+
 int bt_le_bluedroid_pacs_start(void)
 {
     struct bt_gatt_service *pacs_svc;

@@ -102,15 +102,8 @@ void bt_le_nimble_gatt_post_event(void *param)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[N]GattPostEvtFail[%d][%u]", err, qev->type);
-
-        if (qev->type == BT_LE_GATTC_NOTIFY_RX_EVENT &&
-                qev->gattc_notify_rx.value) {
-            free(qev->gattc_notify_rx.value);
-            qev->gattc_notify_rx.value = NULL;
-        }
-
-        free(qev);
+        ISO_POST_FAIL_LOG(err, "[N]GattPostEvtFail[%d][%u]", err, qev->type);
+        bt_le_gatt_event_free(qev);
     }
 }
 
@@ -140,7 +133,7 @@ int bt_le_nimble_gatt_post_disc_event(uint16_t conn_handle, ble_uuid16_t *uuid,
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[N]GattPostDiscEvtFail[%d][%u]", err, type);
+        ISO_POST_FAIL_LOG(err, "[N]GattPostDiscEvtFail[%d][%u]", err, type);
         free(qev);
         return err;
     }
@@ -165,7 +158,7 @@ int bt_le_nimble_gatt_post_disc_cmpl_event(uint16_t conn_handle, uint8_t status)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[N]GattPostDiscCmplEvtFail[%d][%u][%02x]", err, conn_handle, status);
+        ISO_POST_FAIL_LOG(err, "[N]GattPostDiscCmplEvtFail[%d][%u][%02x]", err, conn_handle, status);
         free(qev);
         return err;
     }

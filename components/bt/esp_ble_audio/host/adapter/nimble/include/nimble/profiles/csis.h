@@ -19,7 +19,11 @@ extern "C" {
 
 int bt_le_nimble_csis_attr_handle_set(void);
 
+void bt_le_nimble_csis_state_reset(void);
+
 int bt_le_nimble_csis_init(void *csis_svc, uint8_t count);
+
+int bt_le_nimble_csis_deinit(void *csis_svc);
 
 #ifdef __cplusplus
 }

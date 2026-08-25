@@ -18,9 +18,13 @@ int bt_le_nimble_gtbs_attr_handle_set(void);
 
 int bt_le_nimble_gtbs_init(void);
 
+int bt_le_nimble_gtbs_deinit(void);
+
 int bt_le_nimble_tbs_attr_handle_set(void);
 
 int bt_le_nimble_tbs_init(void);
+
+int bt_le_nimble_tbs_deinit(uint8_t bearer_index);
 
 #ifdef __cplusplus
 }

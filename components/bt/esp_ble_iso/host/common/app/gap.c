@@ -527,6 +527,32 @@ static void handle_bond_delete_event_safe(struct bt_le_gap_app_param *param)
     bt_le_gap_app_cb_evt(&event);
 }
 
+void bt_le_gap_event_free(void *data)
+{
+    struct bt_le_gap_app_param *qev = data;
+
+    if (qev == NULL) {
+        return;
+    }
+
+    switch (qev->type) {
+    case BT_LE_GAP_APP_PARAM_EXT_SCAN_RECV:
+        if (qev->ext_scan_recv.data) {
+            free(qev->ext_scan_recv.data);
+        }
+        break;
+    case BT_LE_GAP_APP_PARAM_PA_SYNC_RECV:
+        if (qev->pa_sync_recv.data) {
+            free(qev->pa_sync_recv.data);
+        }
+        break;
+    default:
+        break;
+    }
+
+    free(qev);
+}
+
 void bt_le_gap_handle_event(uint8_t *data, size_t data_len)
 {
     struct bt_le_gap_app_param *param;

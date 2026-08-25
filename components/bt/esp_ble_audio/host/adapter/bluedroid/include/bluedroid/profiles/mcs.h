@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+void bt_le_bluedroid_mcs_state_reset(void);
+
 int bt_le_bluedroid_gmcs_init(void);
 
 int bt_le_bluedroid_gmcs_start(void);

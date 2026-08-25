@@ -38,6 +38,21 @@ int bt_le_bluedroid_ascs_init(void)
     return bt_le_bluedroid_svc_init(ascs_svc);
 }
 
+int bt_le_bluedroid_ascs_deinit(void)
+{
+    struct bt_gatt_service *ascs_svc;
+
+    LOG_DBG("[B]AscsDeinit");
+
+    ascs_svc = lib_ascs_svc_get();
+    if (!ascs_svc) {
+        LOG_ERR("[B]AscsSvcGetFail");
+        return -ENODEV;
+    }
+
+    return bt_le_bluedroid_svc_deinit(ascs_svc);
+}
+
 int bt_le_bluedroid_ascs_start(void)
 {
     struct bt_gatt_service *ascs_svc;
