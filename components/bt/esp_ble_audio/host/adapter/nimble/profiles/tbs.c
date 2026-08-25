@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/logging/log.h>
@@ -24,6 +26,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -162,19 +165,43 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
     },
 };
 
-/* Discrete TBS (0x184B) shares GTBS's characteristic table, bound at init (a
- * static initializer can't reference another object's member). */
-static struct ble_gatt_svc_def gatt_svc_tbs[] = {
-    {
-        .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_VAL),
-        .includes = NULL,
-        .characteristics = NULL,
-    },
-    {
-        0, /* No more services. */
-    },
-};
+#if CONFIG_BT_TBS_BEARER_COUNT > 0
+static const ble_uuid16_t tbs_uuid_svc = BLE_UUID16_INIT(BT_UUID_TBS_VAL);
+
+/* A def and a characteristic table per bearer: val_handle lives in the table,
+ * so a shared one would only ever hold the last bearer's handles. */
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def *tbs_svc_defs[CONFIG_BT_TBS_BEARER_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t tbs_anchor_handle[CONFIG_BT_TBS_BEARER_COUNT];
+
+static struct ble_gatt_svc_def *tbs_svc_def_new(uint16_t *anchor)
+{
+    const struct ble_gatt_chr_def *src = gatt_svc_gtbs[0].characteristics;
+    struct ble_gatt_chr_def *chrs;
+    struct ble_gatt_svc_def *def;
+    size_t count = 0;
+
+    while (src[count].uuid) {
+        count++;
+    }
+
+    def = bt_le_ext_calloc(2, sizeof(*def));
+    chrs = bt_le_ext_calloc(count + 1, sizeof(*chrs));
+    if (!def || !chrs) {
+        free(def);
+        free(chrs);
+        return NULL;
+    }
+
+    memcpy(chrs, src, count * sizeof(*chrs));
+    chrs[0].val_handle = anchor;
+
+    def[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
+    def[0].uuid = &tbs_uuid_svc.u;
+    def[0].characteristics = chrs;
+
+    return def;
+}
+#endif /* CONFIG_BT_TBS_BEARER_COUNT > 0 */
 
 int bt_le_nimble_gtbs_attr_handle_set(void)
 {
@@ -277,34 +304,49 @@ int bt_le_nimble_gtbs_init(void)
 
 int bt_le_nimble_tbs_attr_handle_set(void)
 {
+#if CONFIG_BT_TBS_BEARER_COUNT > 0
     struct bt_gatt_service *tbs_list;
-    uint16_t handle = 0;
-    int rc;
+    const struct bt_uuid_16 *uuid;
+    uint16_t base;
 
-    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_TBS_VAL), &handle);
-    if (rc) {
+    tbs_list = lib_tbs_server_list_get();
+    if (!tbs_list) {
         LOG_DBG("[N]TbsNotInit");
         return 0;
     }
 
-    tbs_list = lib_tbs_server_list_get();
-    if (!tbs_list) {
-        LOG_ERR("[N]TbsSvcListGetFail");
-        return -ENODEV;
-    }
+    for (int i = 0; i < CONFIG_BT_TBS_BEARER_COUNT; i++) {
+        struct bt_gatt_service *svc = &tbs_list[i];
 
-    /* ble_gatts_find_svc returns the first match, so only the single discrete
-     * bearer is mapped (sufficient for CONFIG_BT_TBS_BEARER_COUNT==1).
-     */
-    LOG_DBG("[N]TbsAttrHdlSet[%u][%u]", handle, tbs_list[0].attr_count);
+        /* Zero when the bearer was registered after the boot's ble_gatts_start():
+         * it never reached the ATT database, so there is no range to anchor. */
+        if (!tbs_svc_defs[i] || tbs_anchor_handle[i] < 2) {
+            continue;
+        }
 
-    for (size_t i = 0; i < tbs_list[0].attr_count; i++) {
-        (tbs_list[0].attrs + i)->handle = handle + i;
+        base = tbs_anchor_handle[i] - 2;    /* service decl & char def handle */
+
+        /* Holds only while the lib orders this bearer the way NimBLE registered it. */
+        uuid = svc->attr_count > 2 ? (const struct bt_uuid_16 *)svc->attrs[2].uuid : NULL;
+
+        if (!uuid || uuid->uuid.type != BT_UUID_TYPE_16 ||
+                uuid->val != BT_UUID_TBS_PROVIDER_NAME_VAL) {
+            LOG_ERR("[N]TbsAnchorMismatch[%d][%u]", i, tbs_anchor_handle[i]);
+            return -1;
+        }
+
+        LOG_DBG("[N]TbsAttrHdlSet[%d][%u][%u]", i, base, svc->attr_count);
+
+        for (size_t j = 0; j < svc->attr_count; j++) {
+            (svc->attrs + j)->handle = base + j;
+        }
     }
+#endif /* CONFIG_BT_TBS_BEARER_COUNT > 0 */
 
     return 0;
 }
 
+#if CONFIG_BT_TBS_BEARER_COUNT > 0
 static int tbs_svc_check(void)
 {
     struct bt_gatt_service *tbs_list;
@@ -319,7 +361,8 @@ static int tbs_svc_check(void)
 
     LOG_DBG("[N]TbsSvcCheck");
 
-    for (const struct ble_gatt_chr_def *chr = gatt_svc_tbs[0].characteristics;
+    /* Every bearer's table is a copy of this one. */
+    for (const struct ble_gatt_chr_def *chr = gatt_svc_gtbs[0].characteristics;
             chr && chr->uuid; chr++) {
         const ble_uuid16_t *check = (const ble_uuid16_t *)chr->uuid;
 
@@ -343,34 +386,60 @@ static int tbs_svc_check(void)
 
     return 0;
 }
+#endif /* CONFIG_BT_TBS_BEARER_COUNT > 0 */
 
 int bt_le_nimble_tbs_init(void)
 {
+#if CONFIG_BT_TBS_BEARER_COUNT > 0
+    struct bt_gatt_service *tbs_list;
     int rc;
+    int i;
 
-    LOG_DBG("[N]TbsInit");
-
-    /* Bind the shared characteristic table (see gatt_svc_tbs comment). */
-    gatt_svc_tbs[0].characteristics = gatt_svc_gtbs[0].characteristics;
-
-    rc = ble_gatts_count_cfg(gatt_svc_tbs);
-    if (rc) {
-        LOG_ERR("[N]TbsCountCfgFail[%d]", rc);
-        return rc;
+    tbs_list = lib_tbs_server_list_get();
+    if (!tbs_list) {
+        return 0;
     }
 
-    rc = ble_gatts_add_svcs(gatt_svc_tbs);
-    if (rc) {
-        LOG_ERR("[N]TbsAddSvcsFail[%d]", rc);
-        return rc;
+    /* Runs once per bearer registration and gets no index, so sweep for the slot
+     * that is registered but not yet added - as bt_le_bluedroid_tbs_init() does. */
+    for (i = 0; i < CONFIG_BT_TBS_BEARER_COUNT; i++) {
+        if (tbs_list[i].attr_count == 0 || tbs_svc_defs[i]) {
+            continue;
+        }
+
+        LOG_DBG("[N]TbsInit[%d]", i);
+
+        tbs_svc_defs[i] = tbs_svc_def_new(&tbs_anchor_handle[i]);
+        if (!tbs_svc_defs[i]) {
+            LOG_ERR("[N]TbsSvcDefAllocFail[%d]", i);
+            return -ENOMEM;
+        }
+
+        rc = ble_gatts_count_cfg(tbs_svc_defs[i]);
+        if (rc) {
+            LOG_ERR("[N]TbsCountCfgFail[%d]", rc);
+            goto free;
+        }
+
+        rc = ble_gatts_add_svcs(tbs_svc_defs[i]);
+        if (rc) {
+            LOG_ERR("[N]TbsAddSvcsFail[%d]", rc);
+            goto free;
+        }
     }
 
-    rc = tbs_svc_check();
-    if (rc) {
-        return rc;
-    }
+    return tbs_svc_check();
 
+free:
+    /* Only reachable before ble_gatts_add_svcs() succeeded; after that NimBLE
+     * holds the def and it must be leaked instead. */
+    free((void *)tbs_svc_defs[i]->characteristics);
+    free(tbs_svc_defs[i]);
+    tbs_svc_defs[i] = NULL;
+    return rc;
+#else
     return 0;
+#endif /* CONFIG_BT_TBS_BEARER_COUNT > 0 */
 }
 
 int bt_le_nimble_gtbs_deinit(void)

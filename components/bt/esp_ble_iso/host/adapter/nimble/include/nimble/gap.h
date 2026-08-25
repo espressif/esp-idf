@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#include <zephyr/bluetooth/bluetooth.h>
+
 #include "host/ble_gap.h"
 
 #ifdef __cplusplus
