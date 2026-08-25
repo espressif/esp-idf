@@ -673,6 +673,27 @@ TEST_CASE("deinit partition doesn't affect other partition's open handles", "[nv
     TEST_ESP_OK(nvs_flash_deinit_partition(OTHER_PARTITION_NAME));
 }
 
+TEST_CASE("deinit with open handles frees them", "[nvs]")
+{
+    // nvs_flash_deinit_partition must delete leftover open
+    // handles (same as nvs_close), not only erase them from the C API handle list.
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns1", NVS_READWRITE, &handle_1));
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns2", NVS_READWRITE, &handle_2));
+    CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 2);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+    CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
+
+    // Stale handle ids must be harmless after deinit already freed the entries.
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+}
+
 TEST_CASE("nvs iterator nvs_entry_find invalid parameter test", "[nvs]")
 {
     nvs_iterator_t it = reinterpret_cast<nvs_iterator_t>(0xbeef);
