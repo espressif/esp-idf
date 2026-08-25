@@ -21,7 +21,7 @@
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
 #if CONFIG_SPIRAM
-#include "esp_private/esp_psram_mspi.h"
+#include "esp_private/mspi_mem_barrier.h"
 #endif
 
 ESP_LOG_ATTR_TAG(TAG, "dma_utils");

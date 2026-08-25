@@ -36,7 +36,7 @@
 #include "soc/dport_reg.h"
 #endif
 #if CONFIG_SPIRAM
-#include "esp_private/esp_psram_mspi.h"
+#include "esp_private/mspi_mem_barrier.h"
 #endif
 
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM

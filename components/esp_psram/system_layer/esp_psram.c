@@ -31,6 +31,7 @@
 #include "esp_private/esp_mmu_map_private.h"
 #include "esp_private/esp_psram_impl.h"
 #include "esp_private/esp_psram_mspi.h"
+#include "esp_private/mspi_mem_barrier.h"
 #include "esp_private/startup_internal.h"
 #if SOC_SPIRAM_XIP_SUPPORTED
 #include "esp_private/mmu_psram_flash.h"

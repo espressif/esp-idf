@@ -35,7 +35,7 @@ endif()
 if(${target} STREQUAL "linux")
     set(priv_requires esp_ringbuf)
 else()
-    set(priv_requires esp_pm esp_driver_gpio esp_driver_dma esp_ringbuf esp_mm esp_psram)
+    set(priv_requires esp_pm esp_driver_gpio esp_driver_dma esp_ringbuf esp_mm)
 endif()
 
 idf_component_register(
