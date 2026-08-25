@@ -59,6 +59,7 @@ typedef enum {
 bool ble_log_init(void);
 void ble_log_deinit(void);
 bool ble_log_enable(bool enable);
+/* Blocking; call only from a caller-owned task, not an ISR or system callback. */
 void ble_log_flush(void);
 bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len);
 void ble_log_dump_to_console(void);

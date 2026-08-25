@@ -176,7 +176,12 @@ BLE_LOG_STATIC bool ble_log_lbm_flush_all_trans(void)
         }
     }
 
-    /* Wait for transportation to finish */
+    /* Dispatch anything still waiting on the defer alarm, then
+     * wait for transportation to finish */
+    if (!ble_log_rt_drain()) {
+        return false;
+    }
+
     do {
         in_progress = false;
         for (int i = 0; i < BLE_LOG_LBM_CNT; i++) {
