@@ -9,7 +9,7 @@
 
 This test app verifies the BLE Log runtime behaviour on target, using the
 in-memory test peripheral (`CONFIG_BLE_LOG_PRPH_TEST=y`) to capture the
-transport stream written by the runtime task hook.
+transport stream written by the runtime dispatch hook.
 
 Currently covered:
 
