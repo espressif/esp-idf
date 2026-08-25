@@ -25,113 +25,91 @@ The table below provides more information on pin usage, and please note the comm
     * - GPIO0
       -
       - RTC_GPIO0
-      - Strapping pin
-
+      -
     * - GPIO1
       - ADC1_CH0
       - RTC_GPIO1
       -
-
     * - GPIO2
       - ADC1_CH1
       - RTC_GPIO2
       -
-
     * - GPIO3
       - ADC1_CH2
       - RTC_GPIO3
       -
-
     * - GPIO4
       - ADC1_CH3
       - RTC_GPIO4
       -
-
     * - GPIO5
       - ADC1_CH4
       - RTC_GPIO5
       -
-
     * - GPIO6
       - ADC1_CH5
       - RTC_GPIO6
       -
-
     * - GPIO7
       - ADC1_CH6
       - RTC_GPIO7
       -
-
     * - GPIO8
       - ADC1_CH7
       - RTC_GPIO8
       -
-
     * - GPIO9
       - ADC1_CH8
       - RTC_GPIO9
       -
-
     * - GPIO10
       - ADC1_CH9
       - RTC_GPIO10
       -
-
     * - GPIO11
       - ADC2_CH0
       - RTC_GPIO11
       -
-
     * - GPIO12
       - ADC2_CH1
       - RTC_GPIO12
       -
-
     * - GPIO13
       - ADC2_CH2
       - RTC_GPIO13
       -
-
     * - GPIO14
       - ADC2_CH3
       - RTC_GPIO14
       -
-
     * - GPIO15
       - ADC2_CH4
       - RTC_GPIO15
       -
-
     * - GPIO16
       - ADC2_CH5
       - RTC_GPIO16
       -
-
     * - GPIO17
       - ADC2_CH6
       - RTC_GPIO17
       -
-
     * - GPIO18
       - ADC2_CH7
       - RTC_GPIO18
       -
-
     * - GPIO19
       - ADC2_CH8
       - RTC_GPIO19
       -
-
     * - GPIO20
       - ADC2_CH9
       - RTC_GPIO20
       -
-
     * - GPIO21
       -
       - RTC_GPIO21
       -
-
     * - GPIO26
       -
       -
@@ -171,32 +149,26 @@ The table below provides more information on pin usage, and please note the comm
       -
       -
       -
-
     * - GPIO34
       -
       -
       -
-
     * - GPIO35
       -
       -
       -
-
     * - GPIO36
       -
       -
       -
-
     * - GPIO37
       -
       -
       -
-
     * - GPIO38
       -
       -
       -
-
     * - GPIO39
       -
       -
@@ -221,25 +193,22 @@ The table below provides more information on pin usage, and please note the comm
       -
       -
       -
-
     * - GPIO44
       -
       -
       -
-
     * - GPIO45
       -
       -
-      - Strapping pin
-
+      -
     * - GPIO46
       -
       -
-      - GPI；Strapping pin
+      - GPI
 
 .. note::
 
-    - Strapping pin: GPIO0, GPIO45 and GPIO46 are strapping pins. For more information, please refer to `ESP32-S2 datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_
+    - Strapping pin: Some pins are used as strapping pins. For more information, please refer to *{IDF_TARGET_NAME} datasheet* > *Boot Configurations* [`PDF <{IDF_TARGET_DATASHEET_EN_URL}#cd-pins-strap>`__].
     - SPI0/1: GPIO26-32 are usually used for SPI flash and PSRAM and not recommended for other uses.
     - JTAG: GPIO39-42 are usually used for inline debug.
     - GPI: GPIO46 is fixed to pull-down and is input only.
