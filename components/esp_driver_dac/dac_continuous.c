@@ -602,7 +602,7 @@ clean_up:
 
 //////////////////////////////////// Cyclic writing ////////////////////////////////////
 
-esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_t *buf, size_t buf_size, size_t *bytes_loaded)
+esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, const uint8_t *buf, size_t buf_size, size_t *bytes_loaded)
 {
     DAC_NULL_POINTER_CHECK(handle);
     DAC_NULL_POINTER_CHECK(buf);
@@ -687,7 +687,7 @@ esp_err_t dac_continuous_stop_cyclically(dac_continuous_handle_t handle)
 
 //////////////////////////////////// Synchronous writing ////////////////////////////////////
 
-esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, size_t buf_size, size_t *bytes_loaded, int timeout_ms)
+esp_err_t dac_continuous_write(dac_continuous_handle_t handle, const uint8_t *buf, size_t buf_size, size_t *bytes_loaded, int timeout_ms)
 {
     DAC_NULL_POINTER_CHECK(handle);
     DAC_NULL_POINTER_CHECK(buf);
@@ -821,4 +821,13 @@ static esp_err_t s_dac_continuous_stop_sync(dac_continuous_handle_t handle)
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_ENABLED);
 
     return ESP_OK;
+}
+
+uint8_t dac_continuous_get_bitwidth(dac_continuous_handle_t handle)
+{
+    if (!handle) {
+        return 0;
+    }
+
+    return SOC_DAC_RESOLUTION;
 }

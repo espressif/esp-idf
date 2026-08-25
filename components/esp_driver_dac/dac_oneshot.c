@@ -69,3 +69,12 @@ esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint8_t digi_v
 
     return ESP_OK;
 }
+
+uint8_t dac_oneshot_get_bitwidth(dac_oneshot_handle_t handle)
+{
+    if (!handle) {
+        return 0;
+    }
+
+    return SOC_DAC_RESOLUTION;
+}
