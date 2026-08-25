@@ -9,7 +9,7 @@ menu "Example Configuration"
 
     config EXAMPLE_USE_SCAN_CHANNEL_BITMAP
         bool "Scan only non overlapping channels using Channel bitmap"
-        default 0
+        default n
         help
             Enable this to scan only the non overlapping channels i.e 1,6,11 by mentioning a channel bitmap
             in scan config. If you wish to scan a different set of specific channels, please edit the channel_list
