@@ -485,6 +485,126 @@ TEST_CASE("httpd_queue_work fast-fails on ctrl mbox saturation", "[HTTP SERVER]"
     TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
 }
 
+/* ---- Transfer-Encoding rejection (RFC 9112 section 6.1) ---- */
+
+/* The server implements no transfer codings, so any request carrying a
+ * Transfer-Encoding header must be answered with 501. Without the parser
+ * check, a chunked body is misread as an empty body and its chunk framing
+ * is then parsed as a separate pipelined request — a request-smuggling
+ * primitive when the server sits behind a proxy. */
+static httpd_handle_t start_plain_test_server(uint16_t server_port, uint16_t ctrl_port)
+{
+    httpd_handle_t hd = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = server_port;
+    config.ctrl_port = ctrl_port;
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_start(&hd, &config));
+    return hd;
+}
+
+static esp_err_t te_ok_handler(httpd_req_t *req)
+{
+    return httpd_resp_sendstr(req, "OK");
+}
+
+/* Assert the captured wire data holds exactly one HTTP response and that the
+ * server closed the session afterwards. This is what proves the bytes after
+ * the rejected framing were NOT parsed and answered as a further request. */
+static void assert_single_response_then_close(const mock_server_response_t *resp)
+{
+    TEST_ASSERT_TRUE_MESSAGE(resp->len > 0,
+                             "no response received before session close");
+    TEST_ASSERT_TRUE_MESSAGE(resp->server_closed,
+                             "server must close the session after 501");
+    TEST_ASSERT_NULL_MESSAGE(strstr(resp->data + 1, "HTTP/1."),
+                             "trailing bytes were answered as a second request");
+}
+
+TEST_CASE("Chunked request is rejected with 501", "[HTTP SERVER][security]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_plain_test_server(8098, ESP_HTTPD_DEF_CTRL_PORT + 17);
+    /* Register real handlers: without the parser-level reject, "POST /any"
+     * would succeed with an empty body (keep-alive stays up) and the chunk
+     * framing plus the pipelined GET would be parsed as further requests,
+     * producing a second response on the same connection. */
+    httpd_uri_t post_any = {
+        .uri = "/any", .method = HTTP_POST, .handler = te_ok_handler,
+    };
+    httpd_uri_t get_smuggled = {
+        .uri = "/smuggled", .method = HTTP_GET, .handler = te_ok_handler,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_uri_handler(hd, &post_any));
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_uri_handler(hd, &get_smuggled));
+    mock_server_request_t req = {
+        .data = "POST /any HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Transfer-Encoding: chunked\r\n"
+                "\r\n"
+                "5\r\nhello\r\n0\r\n\r\n"
+                "GET /smuggled HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8098, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    assert_single_response_then_close(resp);
+    mock_server_assert_status(resp, 501);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+static esp_err_t err_501_keepalive_handler(httpd_req_t *req, httpd_err_code_t error)
+{
+    httpd_resp_send_err(req, error, NULL);
+    /* Try to keep the session open. The server must ignore this for 501:
+     * parsing aborted mid-request, so the stream has no safe continuation. */
+    return ESP_OK;
+}
+
+TEST_CASE("Custom 501 handler cannot keep the session open", "[HTTP SERVER][security]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_plain_test_server(8100, ESP_HTTPD_DEF_CTRL_PORT + 19);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_err_handler(hd, HTTPD_501_METHOD_NOT_IMPLEMENTED,
+                                                         err_501_keepalive_handler));
+    mock_server_request_t req = {
+        .data = "POST /any HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Transfer-Encoding: chunked\r\n"
+                "\r\n"
+                "5\r\nhello\r\n0\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8100, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    assert_single_response_then_close(resp);
+    mock_server_assert_status(resp, 501);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+TEST_CASE("Unknown Transfer-Encoding is rejected with 501", "[HTTP SERVER][security]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_plain_test_server(8099, ESP_HTTPD_DEF_CTRL_PORT + 18);
+    /* "gzip" does not set the parser's chunked flag; presence of the header
+     * alone must trigger the 501 so the body cannot be silently skipped. */
+    mock_server_request_t req = {
+        .data = "POST /any HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Transfer-Encoding: gzip\r\n"
+                "Content-Length: 5\r\n"
+                "\r\n"
+                "hello",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8099, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    assert_single_response_then_close(resp);
+    mock_server_assert_status(resp, 501);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
 #ifdef CONFIG_HTTPD_WS_SUPPORT
 TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERVER][websocket]")
 {
