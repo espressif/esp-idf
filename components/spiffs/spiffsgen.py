@@ -2,7 +2,7 @@
 #
 # spiffsgen is a tool used to generate a spiffs image from a directory
 #
-# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import io
@@ -35,22 +35,23 @@ SPIFFS_BLOCK_IX_LEN = 2  # spiffs_block_ix
 
 
 class SpiffsBuildConfig(object):
-    def __init__(self,
-                 page_size,  # type: int
-                 page_ix_len,  # type: int
-                 block_size,  # type: int
-                 block_ix_len,  # type: int
-                 meta_len,  # type: int
-                 obj_name_len,  # type: int
-                 obj_id_len,  # type: int
-                 span_ix_len,  # type: int
-                 packed,  # type: bool
-                 aligned,  # type: bool
-                 endianness,  # type: str
-                 use_magic,  # type: bool
-                 use_magic_len,  # type: bool
-                 aligned_obj_ix_tables  # type: bool
-                 ):
+    def __init__(
+        self,
+        page_size,  # type: int
+        page_ix_len,  # type: int
+        block_size,  # type: int
+        block_ix_len,  # type: int
+        meta_len,  # type: int
+        obj_name_len,  # type: int
+        obj_id_len,  # type: int
+        span_ix_len,  # type: int
+        packed,  # type: bool
+        aligned,  # type: bool
+        endianness,  # type: str
+        use_magic,  # type: bool
+        use_magic_len,  # type: bool
+        aligned_obj_ix_tables,  # type: bool
+    ):
         if block_size % page_size != 0:
             raise RuntimeError('block size should be a multiple of page size')
 
@@ -70,7 +71,9 @@ class SpiffsBuildConfig(object):
         self.aligned_obj_ix_tables = aligned_obj_ix_tables
 
         self.PAGES_PER_BLOCK = self.block_size // self.page_size
-        self.OBJ_LU_PAGES_PER_BLOCK = int(math.ceil(self.block_size / self.page_size * self.obj_id_len / self.page_size))
+        self.OBJ_LU_PAGES_PER_BLOCK = int(
+            math.ceil(self.block_size / self.page_size * self.obj_id_len / self.page_size)
+        )
         self.OBJ_USABLE_PAGES_PER_BLOCK = self.PAGES_PER_BLOCK - self.OBJ_LU_PAGES_PER_BLOCK
 
         self.OBJ_LU_PAGES_OBJ_IDS_LIM = self.page_size // self.obj_id_len
@@ -83,16 +86,27 @@ class SpiffsBuildConfig(object):
         self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED_PAD = pad
         self.OBJ_DATA_PAGE_CONTENT_LEN = self.page_size - self.OBJ_DATA_PAGE_HEADER_LEN
 
-        self.OBJ_INDEX_PAGES_HEADER_LEN = (self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED + SPIFFS_PH_IX_SIZE_LEN +
-                                           SPIFFS_PH_IX_OBJ_TYPE_LEN + self.obj_name_len + self.meta_len)
+        self.OBJ_INDEX_PAGES_HEADER_LEN = (
+            self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED
+            + SPIFFS_PH_IX_SIZE_LEN
+            + SPIFFS_PH_IX_OBJ_TYPE_LEN
+            + self.obj_name_len
+            + self.meta_len
+        )
         if aligned_obj_ix_tables:
-            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED = (self.OBJ_INDEX_PAGES_HEADER_LEN + SPIFFS_PAGE_IX_LEN - 1) & ~(SPIFFS_PAGE_IX_LEN - 1)
-            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD = self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED - self.OBJ_INDEX_PAGES_HEADER_LEN
+            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED = (self.OBJ_INDEX_PAGES_HEADER_LEN + SPIFFS_PAGE_IX_LEN - 1) & ~(
+                SPIFFS_PAGE_IX_LEN - 1
+            )
+            self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD = (
+                self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED - self.OBJ_INDEX_PAGES_HEADER_LEN
+            )
         else:
             self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED = self.OBJ_INDEX_PAGES_HEADER_LEN
             self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD = 0
 
-        self.OBJ_INDEX_PAGES_OBJ_IDS_HEAD_LIM = (self.page_size - self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED) // self.block_ix_len
+        self.OBJ_INDEX_PAGES_OBJ_IDS_HEAD_LIM = (
+            self.page_size - self.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED
+        ) // self.block_ix_len
         self.OBJ_INDEX_PAGES_OBJ_IDS_LIM = (self.page_size - self.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED) // self.block_ix_len
 
 
@@ -101,17 +115,9 @@ class SpiffsFullError(RuntimeError):
 
 
 class SpiffsPage(object):
-    _endianness_dict = {
-        'little': '<',
-        'big': '>'
-    }
+    _endianness_dict = {'little': '<', 'big': '>'}
 
-    _len_dict = {
-        1: 'B',
-        2: 'H',
-        4: 'I',
-        8: 'Q'
-    }
+    _len_dict = {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}
 
     def __init__(self, bix, build_config):  # type: (int, SpiffsBuildConfig) -> None
         self.build_config = build_config
@@ -158,15 +164,18 @@ class SpiffsObjLuPage(SpiffsPage):
     def to_binary(self):  # type: () -> bytes
         img = b''
 
-        for (obj_id, page_type) in self.obj_ids:
+        for obj_id, page_type in self.obj_ids:
             if page_type == SpiffsObjIndexPage:
-                obj_id ^= (1 << ((self.build_config.obj_id_len * 8) - 1))
-            img += struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
-                               SpiffsPage._len_dict[self.build_config.obj_id_len], obj_id)
+                obj_id ^= 1 << ((self.build_config.obj_id_len * 8) - 1)
+            img += struct.pack(
+                SpiffsPage._endianness_dict[self.build_config.endianness]
+                + SpiffsPage._len_dict[self.build_config.obj_id_len],
+                obj_id,
+            )
 
         assert len(img) <= self.build_config.page_size
 
-        img += b'\xFF' * (self.build_config.page_size - len(img))
+        img += b'\xff' * (self.build_config.page_size - len(img))
 
         return img
 
@@ -175,12 +184,7 @@ class SpiffsObjLuPage(SpiffsPage):
         # spot taken up by the last obj id on last lookup page. The parent is responsible
         # for determining which is the last lookup page and calling this function.
         remaining = self.obj_ids_limit
-        empty_obj_id_dict = {
-            1: 0xFF,
-            2: 0xFFFF,
-            4: 0xFFFFFFFF,
-            8: 0xFFFFFFFFFFFFFFFF
-        }
+        empty_obj_id_dict = {1: 0xFF, 2: 0xFFFF, 4: 0xFFFFFFFF, 8: 0xFFFFFFFFFFFFFFFF}
         if remaining >= 2:
             for i in range(remaining):
                 if i == remaining - 2:
@@ -192,8 +196,7 @@ class SpiffsObjLuPage(SpiffsPage):
 
 
 class SpiffsObjIndexPage(SpiffsObjPageWithIdx):
-    def __init__(self, obj_id, span_ix, size, name, build_config
-                 ):  # type: (int, int, int, str, SpiffsBuildConfig) -> None
+    def __init__(self, obj_id, span_ix, size, name, build_config):  # type: (int, int, int, str, SpiffsBuildConfig) -> None
         super(SpiffsObjIndexPage, self).__init__(obj_id, build_config)
         self.span_ix = span_ix
         self.name = name
@@ -215,66 +218,78 @@ class SpiffsObjIndexPage(SpiffsObjPageWithIdx):
 
     def to_binary(self):  # type: () -> bytes
         obj_id = self.obj_id ^ (1 << ((self.build_config.obj_id_len * 8) - 1))
-        img = struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
-                          SpiffsPage._len_dict[self.build_config.obj_id_len] +
-                          SpiffsPage._len_dict[self.build_config.span_ix_len] +
-                          SpiffsPage._len_dict[SPIFFS_PH_FLAG_LEN],
-                          obj_id,
-                          self.span_ix,
-                          SPIFFS_PH_FLAG_USED_FINAL_INDEX)
+        img = struct.pack(
+            SpiffsPage._endianness_dict[self.build_config.endianness]
+            + SpiffsPage._len_dict[self.build_config.obj_id_len]
+            + SpiffsPage._len_dict[self.build_config.span_ix_len]
+            + SpiffsPage._len_dict[SPIFFS_PH_FLAG_LEN],
+            obj_id,
+            self.span_ix,
+            SPIFFS_PH_FLAG_USED_FINAL_INDEX,
+        )
 
         # Add padding before the object index page specific information
-        img += b'\xFF' * self.build_config.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED_PAD
+        img += b'\xff' * self.build_config.OBJ_DATA_PAGE_HEADER_LEN_ALIGNED_PAD
 
         # If this is the first object index page for the object, add filename, type
         # and size information
         if self.span_ix == 0:
-            img += struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
-                               SpiffsPage._len_dict[SPIFFS_PH_IX_SIZE_LEN]  +
-                               SpiffsPage._len_dict[SPIFFS_PH_FLAG_LEN],
-                               self.size,
-                               SPIFFS_TYPE_FILE)
+            img += struct.pack(
+                SpiffsPage._endianness_dict[self.build_config.endianness]
+                + SpiffsPage._len_dict[SPIFFS_PH_IX_SIZE_LEN]
+                + SpiffsPage._len_dict[SPIFFS_PH_FLAG_LEN],
+                self.size,
+                SPIFFS_TYPE_FILE,
+            )
 
-            img += self.name.encode() + (b'\x00' * (
-                (self.build_config.obj_name_len - len(self.name))
-                + self.build_config.meta_len
-                + self.build_config.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD))
+            img += self.name.encode() + (
+                b'\x00'
+                * (
+                    (self.build_config.obj_name_len - len(self.name))
+                    + self.build_config.meta_len
+                    + self.build_config.OBJ_INDEX_PAGES_HEADER_LEN_ALIGNED_PAD
+                )
+            )
 
         # Finally, add the page index of data pages
         for page in self.pages:
             page = page >> int(math.log(self.build_config.page_size, 2))
-            img += struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
-                               SpiffsPage._len_dict[self.build_config.page_ix_len], page)
+            img += struct.pack(
+                SpiffsPage._endianness_dict[self.build_config.endianness]
+                + SpiffsPage._len_dict[self.build_config.page_ix_len],
+                page,
+            )
 
         assert len(img) <= self.build_config.page_size
 
-        img += b'\xFF' * (self.build_config.page_size - len(img))
+        img += b'\xff' * (self.build_config.page_size - len(img))
 
         return img
 
 
 class SpiffsObjDataPage(SpiffsObjPageWithIdx):
-    def __init__(self, offset, obj_id, span_ix, contents, build_config
-                 ):  # type: (int, int, int, bytes, SpiffsBuildConfig) -> None
+    def __init__(self, offset, obj_id, span_ix, contents, build_config):  # type: (int, int, int, bytes, SpiffsBuildConfig) -> None
         super(SpiffsObjDataPage, self).__init__(obj_id, build_config)
         self.span_ix = span_ix
         self.contents = contents
         self.offset = offset
 
     def to_binary(self):  # type: () -> bytes
-        img = struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
-                          SpiffsPage._len_dict[self.build_config.obj_id_len] +
-                          SpiffsPage._len_dict[self.build_config.span_ix_len] +
-                          SpiffsPage._len_dict[SPIFFS_PH_FLAG_LEN],
-                          self.obj_id,
-                          self.span_ix,
-                          SPIFFS_PH_FLAG_USED_FINAL)
+        img = struct.pack(
+            SpiffsPage._endianness_dict[self.build_config.endianness]
+            + SpiffsPage._len_dict[self.build_config.obj_id_len]
+            + SpiffsPage._len_dict[self.build_config.span_ix_len]
+            + SpiffsPage._len_dict[SPIFFS_PH_FLAG_LEN],
+            self.obj_id,
+            self.span_ix,
+            SPIFFS_PH_FLAG_USED_FINAL,
+        )
 
         img += self.contents
 
         assert len(img) <= self.build_config.page_size
 
-        img += b'\xFF' * (self.build_config.page_size - len(img))
+        img += b'\xff' * (self.build_config.page_size - len(img))
 
         return img
 
@@ -323,8 +338,7 @@ class SpiffsBlock(object):
 
         self.pages.append(page)
 
-    def begin_obj(self, obj_id, size, name, obj_index_span_ix=0, obj_data_span_ix=0
-                  ):  # type: (int, int, str, int, int) -> None
+    def begin_obj(self, obj_id, size, name, obj_index_span_ix=0, obj_data_span_ix=0):  # type: (int, int, str, int, int) -> None
         if not self.remaining_pages > 0:
             raise SpiffsFullError()
         self._reset()
@@ -344,8 +358,13 @@ class SpiffsBlock(object):
     def update_obj(self, contents):  # type: (bytes) -> None
         if not self.remaining_pages > 0:
             raise SpiffsFullError()
-        page = SpiffsObjDataPage(self.offset + (len(self.pages) * self.build_config.page_size),
-                                 self.cur_obj_id, self.cur_obj_data_span_ix, contents, self.build_config)
+        page = SpiffsObjDataPage(
+            self.offset + (len(self.pages) * self.build_config.page_size),
+            self.cur_obj_id,
+            self.cur_obj_data_span_ix,
+            contents,
+            self.build_config,
+        )
 
         self._register_page(page)
 
@@ -362,7 +381,7 @@ class SpiffsBlock(object):
         img = b''
 
         if self.build_config.use_magic:
-            for (idx, page) in enumerate(self.pages):
+            for idx, page in enumerate(self.pages):
                 if idx == self.build_config.OBJ_LU_PAGES_PER_BLOCK - 1:
                     assert isinstance(page, SpiffsObjLuPage)
                     page.magicfy(blocks_lim)
@@ -373,7 +392,7 @@ class SpiffsBlock(object):
 
         assert len(img) <= self.build_config.block_size
 
-        img += b'\xFF' * (self.build_config.block_size - len(img))
+        img += b'\xff' * (self.build_config.block_size - len(img))
         return img
 
 
@@ -403,7 +422,8 @@ class SpiffsFS(object):
         return self.remaining_blocks <= 0
 
     def create_file(self, img_path, file_path):  # type: (str, str) -> None
-        if len(img_path) > self.build_config.obj_name_len:
+        # obj_name_len includes NUL (CONFIG_SPIFFS_OBJ_NAME_LEN); max chars is obj_name_len - 1.
+        if len(img_path) > self.build_config.obj_name_len - 1:
             raise RuntimeError("object name '%s' too long" % img_path)
 
         name = img_path
@@ -434,9 +454,13 @@ class SpiffsFS(object):
                     if block.is_full():
                         raise SpiffsFullError
                     # If its (2), write another object index page
-                    block.begin_obj(self.cur_obj_id, len(contents), name,
-                                    obj_index_span_ix=block.cur_obj_index_span_ix,
-                                    obj_data_span_ix=block.cur_obj_data_span_ix)
+                    block.begin_obj(
+                        self.cur_obj_id,
+                        len(contents),
+                        name,
+                        obj_index_span_ix=block.cur_obj_index_span_ix,
+                        obj_data_span_ix=block.cur_obj_data_span_ix,
+                    )
                     continue
             except (IndexError, SpiffsFullError):
                 # All pages in the block have been exhausted. Create a new block, copying
@@ -471,7 +495,7 @@ class SpiffsFS(object):
                 bix += 1
         else:
             # Just fill remaining spaces FF's
-            all_blocks.append(b'\xFF' * (self.img_size - len(all_blocks) * self.build_config.block_size))
+            all_blocks.append(b'\xff' * (self.img_size - len(all_blocks) * self.build_config.block_size))
         img += b''.join([blk for blk in all_blocks])
         return img
 
@@ -483,6 +507,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
     This helps in the case of options with action="store_false", like
     --no-magic or --no-magic-len.
     """
+
     def _get_help_string(self, action):  # type: (argparse.Action) -> str
         if action.help is None:
             return ''
@@ -495,69 +520,84 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
 
 def main():  # type: () -> None
-    parser = argparse.ArgumentParser(description='SPIFFS Image Generator',
-                                     formatter_class=CustomHelpFormatter)
+    parser = argparse.ArgumentParser(description='SPIFFS Image Generator', formatter_class=CustomHelpFormatter)
 
-    parser.add_argument('image_size',
-                        help='Size of the created image')
+    parser.add_argument('image_size', help='Size of the created image')
 
-    parser.add_argument('base_dir',
-                        help='Path to directory from which the image will be created')
+    parser.add_argument('base_dir', help='Path to directory from which the image will be created')
 
-    parser.add_argument('output_file',
-                        help='Created image output file path')
+    parser.add_argument('output_file', help='Created image output file path')
 
-    parser.add_argument('--page-size',
-                        help='Logical page size. Set to value same as CONFIG_SPIFFS_PAGE_SIZE.',
-                        type=int,
-                        default=256)
+    parser.add_argument(
+        '--page-size', help='Logical page size. Set to value same as CONFIG_SPIFFS_PAGE_SIZE.', type=int, default=256
+    )
 
-    parser.add_argument('--block-size',
-                        help="Logical block size. Set to the same value as the flash chip's sector size (g_rom_flashchip.sector_size).",
-                        type=int,
-                        default=4096)
+    parser.add_argument(
+        '--block-size',
+        help="Logical block size. Set to the same value as the flash chip's sector size (g_rom_flashchip.sector_size).",
+        type=int,
+        default=4096,
+    )
 
-    parser.add_argument('--obj-name-len',
-                        help='File full path maximum length. Set to value same as CONFIG_SPIFFS_OBJ_NAME_LEN.',
-                        type=int,
-                        default=32)
+    parser.add_argument(
+        '--obj-name-len',
+        help='File full path maximum length. Set to value same as CONFIG_SPIFFS_OBJ_NAME_LEN.',
+        type=int,
+        default=32,
+    )
 
-    parser.add_argument('--meta-len',
-                        help='File metadata length. Set to value same as CONFIG_SPIFFS_META_LENGTH.',
-                        type=int,
-                        default=4)
+    parser.add_argument(
+        '--meta-len', help='File metadata length. Set to value same as CONFIG_SPIFFS_META_LENGTH.', type=int, default=4
+    )
 
-    parser.add_argument('--use-magic',
-                        dest='use_magic',
-                        help='Use magic number to create an identifiable SPIFFS image. Specify if CONFIG_SPIFFS_USE_MAGIC.',
-                        action='store_true')
+    parser.add_argument(
+        '--use-magic',
+        dest='use_magic',
+        help='Use magic number to create an identifiable SPIFFS image. Specify if CONFIG_SPIFFS_USE_MAGIC.',
+        action='store_true',
+    )
 
-    parser.add_argument('--no-magic',
-                        dest='use_magic',
-                        help='Inverse of --use-magic (default: --use-magic is enabled)',
-                        action='store_false')
+    parser.add_argument(
+        '--no-magic',
+        dest='use_magic',
+        help='Inverse of --use-magic (default: --use-magic is enabled)',
+        action='store_false',
+    )
 
-    parser.add_argument('--use-magic-len',
-                        dest='use_magic_len',
-                        help='Use position in memory to create different magic numbers for each block. Specify if CONFIG_SPIFFS_USE_MAGIC_LENGTH.',
-                        action='store_true')
+    parser.add_argument(
+        '--use-magic-len',
+        dest='use_magic_len',
+        help=(
+            'Use position in memory to create different magic numbers for each block. '
+            'Specify if CONFIG_SPIFFS_USE_MAGIC_LENGTH.'
+        ),
+        action='store_true',
+    )
 
-    parser.add_argument('--no-magic-len',
-                        dest='use_magic_len',
-                        help='Inverse of --use-magic-len (default: --use-magic-len is enabled)',
-                        action='store_false')
+    parser.add_argument(
+        '--no-magic-len',
+        dest='use_magic_len',
+        help='Inverse of --use-magic-len (default: --use-magic-len is enabled)',
+        action='store_false',
+    )
 
-    parser.add_argument('--follow-symlinks',
-                        help='Take into account symbolic links during partition image creation.',
-                        action='store_true')
+    parser.add_argument(
+        '--follow-symlinks',
+        help='Take into account symbolic links during partition image creation.',
+        action='store_true',
+    )
 
-    parser.add_argument('--big-endian',
-                        help='Specify if the target architecture is big-endian. If not specified, little-endian is assumed.',
-                        action='store_true')
+    parser.add_argument(
+        '--big-endian',
+        help='Specify if the target architecture is big-endian. If not specified, little-endian is assumed.',
+        action='store_true',
+    )
 
-    parser.add_argument('--aligned-obj-ix-tables',
-                        action='store_true',
-                        help='Use aligned object index tables. Specify if SPIFFS_ALIGNED_OBJECT_INDEX_TABLES is set.')
+    parser.add_argument(
+        '--aligned-obj-ix-tables',
+        action='store_true',
+        help='Use aligned object index tables. Specify if SPIFFS_ALIGNED_OBJECT_INDEX_TABLES is set.',
+    )
 
     parser.set_defaults(use_magic=True, use_magic_len=True)
 
@@ -568,11 +608,22 @@ def main():  # type: () -> None
 
     with open(args.output_file, 'wb') as image_file:
         image_size = int(args.image_size, 0)
-        spiffs_build_default = SpiffsBuildConfig(args.page_size, SPIFFS_PAGE_IX_LEN,
-                                                 args.block_size, SPIFFS_BLOCK_IX_LEN, args.meta_len,
-                                                 args.obj_name_len, SPIFFS_OBJ_ID_LEN, SPIFFS_SPAN_IX_LEN,
-                                                 True, True, 'big' if args.big_endian else 'little',
-                                                 args.use_magic, args.use_magic_len, args.aligned_obj_ix_tables)
+        spiffs_build_default = SpiffsBuildConfig(
+            args.page_size,
+            SPIFFS_PAGE_IX_LEN,
+            args.block_size,
+            SPIFFS_BLOCK_IX_LEN,
+            args.meta_len,
+            args.obj_name_len,
+            SPIFFS_OBJ_ID_LEN,
+            SPIFFS_SPAN_IX_LEN,
+            True,
+            True,
+            'big' if args.big_endian else 'little',
+            args.use_magic,
+            args.use_magic_len,
+            args.aligned_obj_ix_tables,
+        )
 
         spiffs = SpiffsFS(image_size, spiffs_build_default)
 
