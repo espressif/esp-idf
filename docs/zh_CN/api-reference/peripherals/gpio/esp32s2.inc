@@ -91,11 +91,11 @@
       - RTC_GPIO16
       -
     * - GPIO17
-      - ADC2_CH6
+      - ADC2_CH6, DAC0
       - RTC_GPIO17
       -
     * - GPIO18
-      - ADC2_CH7
+      - ADC2_CH7, DAC1
       - RTC_GPIO18
       -
     * - GPIO19
