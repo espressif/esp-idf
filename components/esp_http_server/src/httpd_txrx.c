@@ -603,9 +603,16 @@ esp_err_t httpd_req_handle_err(httpd_req_t *req, httpd_err_code_t error)
     if (hd->err_handler_fns[error]) {
         ret = hd->err_handler_fns[error](req, error);
 
-        /* If error code is 500, force return failure
-         * irrespective of the handler's return value */
-        ret = (error == HTTPD_500_INTERNAL_SERVER_ERROR ? ESP_FAIL : ret);
+        /* Force failure irrespective of the handler's return value for
+         * errors after which the session cannot continue safely: 500
+         * (internal state is broken) and 501 (parsing aborted mid-request,
+         * so the position of the next request in the byte stream is
+         * unknown and keep-alive would let leftover bytes be parsed and
+         * answered as a further request). */
+        if (error == HTTPD_500_INTERNAL_SERVER_ERROR ||
+            error == HTTPD_501_METHOD_NOT_IMPLEMENTED) {
+            ret = ESP_FAIL;
+        }
     } else {
         /* If no handler is registered for this error default
          * behavior is to send the HTTP error response and

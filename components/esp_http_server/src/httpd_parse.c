@@ -55,6 +55,8 @@ typedef struct {
     size_t raw_datalen;     /*!< Full length of the raw data in scratch buffer */
 } parser_data_t;
 
+static const char *httpd_find_hdr_value(struct httpd_req_aux *ra, const char *field);
+
 static esp_err_t verify_url (http_parser *parser)
 {
     parser_data_t *parser_data  = (parser_data_t *) parser->data;
@@ -368,6 +370,21 @@ static esp_err_t cb_headers_complete(http_parser *parser)
     } else {
         ESP_LOGE(TAG, LOG_FMT("unexpected state transition"));
         parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
+        parser_data->status = PARSING_FAILED;
+        return ESP_FAIL;
+    }
+
+    /* This server implements no transfer codings, so reject any request that
+     * carries a Transfer-Encoding header with 501 (RFC 9112 section 6.1).
+     * Without this check a chunked body is treated as an empty body and its
+     * chunk framing is parsed as a separate pipelined request, which is a
+     * request-smuggling primitive when the server sits behind a proxy. The
+     * header-presence check also covers codings that http_parser does not
+     * flag as chunked (e.g. "gzip, chunked"). */
+    if ((parser->flags & F_CHUNKED) ||
+        httpd_find_hdr_value(ra, "Transfer-Encoding") != NULL) {
+        ESP_LOGW(TAG, LOG_FMT("Transfer-Encoding is not supported"));
+        parser_data->error = HTTPD_501_METHOD_NOT_IMPLEMENTED;
         parser_data->status = PARSING_FAILED;
         return ESP_FAIL;
     }
