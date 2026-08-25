@@ -530,7 +530,7 @@ In ``HEAP_TRACE_ALL``:
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    By default, the depth of the call stack recorded for each trace entry is 0, which means that only the direct caller of the memory allocation function can be retrieve. However, when the ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` option is enabled, this call stack depth can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+    By default, the call stack depth for each trace entry is 0: no caller PCs are recorded (allocation address, size, and related fields are still traced). Enable ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` to walk the stack, then configure the depth under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 Finally, the total number of the 'leaked' bytes (bytes allocated but not freed while the trace is running) is printed together with the total number of allocations it represents.
 
