@@ -146,7 +146,6 @@
 /*!< SAR ADC Module*/
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_PERIPH_NUM                      (2)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (8)
 #define SOC_ADC_ATTEN_NUM                       (1U)
 
 #define SOC_ADC_DMA_SUPPORTED                   1

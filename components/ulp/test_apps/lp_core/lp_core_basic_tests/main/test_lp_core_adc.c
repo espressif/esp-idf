@@ -7,6 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/adc_types.h"
+#include "hal/adc_ll.h"
 #include "lp_core_test_app_adc.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_lp_adc_shared.h"
@@ -32,7 +33,7 @@ extern const uint8_t lp_core_main_adc_bin_end[]   asm("_binary_lp_core_test_app_
 
 static void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
 {
-    TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
+    TEST_ASSERT(channel < ADC_LL_CHANNEL_NUM(unit) && "invalid channel");
 
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY)));
@@ -106,7 +107,7 @@ void test_lp_adc(adc_unit_t unit_id)
     int *adc_raw = (int *)&ulp_adc_raw;
 
     /* Verify that the LP ADC values reflect a low-state of the input pins */
-    for (int i = 0; i < SOC_ADC_CHANNEL_NUM(unit_id); i++) {
+    for (int i = 0; i < ADC_LL_CHANNEL_NUM(unit_id); i++) {
         printf("LP ADC low[%d] = %d\n", i, adc_raw[i]);
         TEST_ASSERT_LESS_THAN_INT(ADC_TEST_LOW_VAL, adc_raw[i]);
     }
@@ -124,7 +125,7 @@ void test_lp_adc(adc_unit_t unit_id)
     vTaskDelay(10);
 
     /* Verify that the LP ADC values reflect a high-state of the input pins */
-    for (int i = 0; i < SOC_ADC_CHANNEL_NUM(unit_id); i++) {
+    for (int i = 0; i < ADC_LL_CHANNEL_NUM(unit_id); i++) {
         printf("LP ADC high[%d] = %d\n", i, adc_raw[i]);
         TEST_ASSERT_GREATER_THAN_INT(ADC_TEST_HIGH_VAL, adc_raw[i]);
     }

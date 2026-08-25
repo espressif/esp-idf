@@ -18,6 +18,7 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "test_common_adc.h"
+#include "hal/adc_ll.h"
 #include "test_utils.h"
 
 #if SOC_TEMP_SENSOR_SUPPORTED && SOC_ADC_SUPPORTED
@@ -138,7 +139,7 @@ TEST_CASE("Test temperature sensor work with ADC continuous", "[adc]")
     for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
         adc_digi_output_data_t *p = (void*)&result[i];
         uint32_t chan_num = ADC_DRIVER_TEST_GET_CHANNEL(p);
-        TEST_ASSERT(chan_num < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1));
+        TEST_ASSERT(chan_num < ADC_LL_CHANNEL_NUM(ADC_UNIT_1));
     }
 
     //Temperature sensor work after ADC continuous read

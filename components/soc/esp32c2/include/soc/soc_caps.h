@@ -71,7 +71,6 @@
 #define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
 #define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_PERIPH_NUM                      (1U)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (5)
 #define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */

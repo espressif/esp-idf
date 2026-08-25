@@ -14,6 +14,7 @@
 #include "esp_rom_sys.h"
 #include "esp_adc/adc_oneshot.h"
 #include "test_common_adc.h"
+#include "hal/adc_ll.h"
 #include "esp_adc/adc_continuous.h"
 #include "esp_adc/adc_filter.h"
 
@@ -295,7 +296,7 @@ TEST_CASE("ADC continuous test after restarting", "[adc_continuous][ignore]")
         for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
             adc_digi_output_data_t *p = (void*)&result[i];
             uint32_t chan_num = ADC_DRIVER_TEST_GET_CHANNEL(p);
-            TEST_ASSERT(chan_num < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1));
+            TEST_ASSERT(chan_num < ADC_LL_CHANNEL_NUM(ADC_UNIT_1));
         }
         TEST_ESP_OK(adc_continuous_stop(handle));
     }
