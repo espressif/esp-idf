@@ -1,0 +1,14 @@
+CONFIG_BT_ENABLED=y
+CONFIG_BLE_LOG_ENABLED=y
+CONFIG_BLE_LOG_PRPH_TEST=y
+# Exercise the ISR-only runtime submission path.
+CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD=y
+# Production tick rate; the 1000 Hz regression variant is built from
+# sdkconfig.defaults.tick_1000.
+CONFIG_FREERTOS_HZ=100
+CONFIG_BLE_LOG_TS_ENABLED=y
+# Keep the production TS/hook cadence (Kconfig default 1000 ms) so the
+# regressions see the production info/stat/buf-util cadence.
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
+# 64-bit assertions used by the runtime latency checks
+CONFIG_UNITY_ENABLE_64BIT=y

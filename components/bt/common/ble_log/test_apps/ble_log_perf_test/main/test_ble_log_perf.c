@@ -511,7 +511,7 @@ static void perf_sink_task(void *arg)
     while (!sink->stop) {
         size_t len = ble_log_prph_test_read(data, sizeof(data),
                                              pdMS_TO_TICKS(PERF_READ_TIMEOUT_MS),
-                                             sink->bytes_per_second);
+                                             sink->bytes_per_second, NULL);
         if (!len) {
             sink->drained = true;
             continue;
@@ -746,7 +746,7 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sink.done, pdMS_TO_TICKS(1000)));
 
     uint8_t discard[BLE_LOG_TRANS_SIZE];
-    while (ble_log_prph_test_read(discard, sizeof(discard), 0, 0)) {
+    while (ble_log_prph_test_read(discard, sizeof(discard), 0, 0, NULL)) {
     }
 
     uint64_t elapsed_us = run_end_us - run_start_us;

@@ -13,6 +13,7 @@
 #include "esp_timer.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 
 /* VARIABLE */
 static QueueHandle_t s_pending_trans;
@@ -20,6 +21,15 @@ static SemaphoreHandle_t s_tx_done;
 static esp_timer_handle_t s_tx_timer;
 static int64_t s_tx_deadline_us;
 static uint32_t s_tx_rate;
+
+typedef struct {
+    ble_log_prph_test_auto_recycle_hook_t hook;
+    void *ctx;
+} ble_log_prph_test_hook_reg_t;
+
+static ble_log_prph_test_hook_reg_t s_auto_recycle_slots[2];
+static volatile uint32_t s_auto_recycle_idx;
+static volatile uint32_t s_auto_recycle_busy;
 
 static void test_tx_done(void *arg)
 {
@@ -50,6 +60,7 @@ bool ble_log_prph_init(size_t trans_cnt)
 
 void ble_log_prph_deinit(void)
 {
+    ble_log_prph_test_set_auto_recycle_hook(NULL, NULL);
     s_tx_deadline_us = 0;
     s_tx_rate = 0;
     if (s_tx_timer) {
@@ -137,6 +148,21 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
  * equivalent to a real peripheral's asynchronous tx_done callback. */
 void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
+    ble_log_prph_trans_ctx_t *ctx = trans->ctx;
+    ctx->received_at_us = esp_timer_get_time();
+
+    __atomic_fetch_add(&s_auto_recycle_busy, 1, __ATOMIC_ACQUIRE);
+    uint32_t idx = __atomic_load_n(&s_auto_recycle_idx, __ATOMIC_ACQUIRE);
+    ble_log_prph_test_hook_reg_t reg = s_auto_recycle_slots[idx & 1];
+    if (reg.hook) {
+        trans->pos = 0;
+        ble_log_lbm_recycle_trans(trans);
+        reg.hook(reg.ctx);
+        __atomic_fetch_sub(&s_auto_recycle_busy, 1, __ATOMIC_RELEASE);
+        return;
+    }
+    __atomic_fetch_sub(&s_auto_recycle_busy, 1, __ATOMIC_RELEASE);
+
     if (xQueueSend(s_pending_trans, &trans, 0) != pdTRUE) {
         trans->pos = 0;
         ble_log_lbm_recycle_trans(trans);
@@ -144,9 +170,31 @@ void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     }
 }
 
-size_t ble_log_prph_test_read(uint8_t *data, size_t len, TickType_t timeout,
-                              uint32_t bytes_per_second)
+void ble_log_prph_test_set_auto_recycle_hook(ble_log_prph_test_auto_recycle_hook_t hook,
+                                             void *ctx)
 {
+    while (__atomic_load_n(&s_auto_recycle_busy, __ATOMIC_ACQUIRE) != 0) {
+        vTaskDelay(1);
+    }
+
+    uint32_t next = !__atomic_load_n(&s_auto_recycle_idx, __ATOMIC_RELAXED);
+    s_auto_recycle_slots[next].hook = hook;
+    s_auto_recycle_slots[next].ctx = ctx;
+    __atomic_store_n(&s_auto_recycle_idx, next, __ATOMIC_RELEASE);
+
+    if (!hook) {
+        while (__atomic_load_n(&s_auto_recycle_busy, __ATOMIC_ACQUIRE) != 0) {
+            vTaskDelay(1);
+        }
+    }
+}
+
+size_t ble_log_prph_test_read(uint8_t *data, size_t len, TickType_t timeout,
+                              uint32_t bytes_per_second, int64_t *received_at_us)
+{
+    if (received_at_us) {
+        *received_at_us = 0;
+    }
     if (!data) {
         return 0;
     }
@@ -179,6 +227,10 @@ size_t ble_log_prph_test_read(uint8_t *data, size_t len, TickType_t timeout,
         s_tx_rate = 0;
     }
 
+    if (received_at_us) {
+        ble_log_prph_trans_ctx_t *ctx = trans->ctx;
+        *received_at_us = ctx->received_at_us;
+    }
     size_t copied = len < trans->pos ? len : trans->pos;
     BLE_LOG_MEMCPY(data, trans->buf, copied);
     trans->pos = 0;
