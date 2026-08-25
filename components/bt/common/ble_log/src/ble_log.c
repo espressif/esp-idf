@@ -102,14 +102,14 @@ void ble_log_deinit(void)
      *    already inside the gate keep a reference until they finish; later
      *    writers are rejected.
      *
-     * 2. Runtime task must be stopped FIRST to prevent it from sending
-     *    transports to an already-destroyed peripheral driver. The queue
-     *    is drained and pending transports are discarded.
+     * 2. Runtime dispatch must be stopped FIRST to prevent it from sending
+     *    transports to an already-destroyed peripheral driver. Active
+     *    submissions and callbacks finish before the timers are deleted;
+     *    the queue is then drained and pending transports are discarded.
      *
-     * 3. Peripheral interface is deinitialized SECOND. It waits for any
-     *    in-flight DMA operations (started before the task was killed) to
-     *    complete, then destroys the driver. This is safe because no new
-     *    DMA operations can be started (the task is already dead).
+     * 3. Peripheral interface is deinitialized SECOND. It waits for DMA
+     *    operations started before runtime dispatch stopped, then destroys
+     *    the driver. No new DMA operations can start after runtime teardown.
      *
      * 4. LBM is deinitialized LAST. At this point all DMA has completed
      *    (ensured by step 3) and all queued transports have been drained
