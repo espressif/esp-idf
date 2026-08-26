@@ -34,7 +34,7 @@ function(register_bt_ctrl_libs)
         set(lib_path "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/lib_${TARGET_SRC_NAME}/${TARGET_SRC_NAME}-bt-lib")
         # BLE controller library
         if(NOT CONFIG_BT_DUAL_MODE_ARCH OR CONFIG_BT_CTRL_BLE_ENABLE)
-            if(EXISTS "${lib_path}/libble_app.a")
+            if(NOT EXISTS "${lib_path}/${idf_target}")
                 if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND EXISTS "${lib_path}/libble_app_flash.a")
                     add_prebuilt_library(libble_app "${lib_path}/libble_app_flash.a" REQUIRES esp_phy bt)
                 else()
