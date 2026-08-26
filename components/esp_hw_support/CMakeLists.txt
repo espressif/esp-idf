@@ -54,8 +54,10 @@ set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.
                   esp_hal_ana_conv      # sleep process requires backup/restore some ADC, TSENS registers
                   )
 
-set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c"
-         "mspi/esp_mspi_align/esp_mspi_align.c")
+set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
+if(NOT BOOTLOADER_BUILD)
+    list(APPEND srcs "mspi/esp_mspi_align/esp_mspi_align.c")
+endif()
 if(NOT non_os_build)
     list(APPEND srcs "esp_clk.c"
                      "clk_ctrl_os.c"
