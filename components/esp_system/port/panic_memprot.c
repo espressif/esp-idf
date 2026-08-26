@@ -79,9 +79,19 @@ static void print_memprot_err_details(const void *frame __attribute__((unused)))
 
 bool panic_memprot_fill_info(panic_info_t *info)
 {
+    const bool violation_pending = esp_mprot_get_active_intr(&s_memp_intr) == ESP_OK &&
+                                   s_memp_intr.mem_type != MEMPROT_TYPE_NONE &&
+                                   s_memp_intr.mem_type != MEMPROT_TYPE_INVALID;
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    if (!violation_pending) {
+        return false;
+    }
+#endif
+
     info->reason = "Memory protection fault";
     info->details = print_memprot_err_details;
-    info->core = esp_mprot_get_active_intr(&s_memp_intr) == ESP_OK ? s_memp_intr.core : -1;
+    info->core = violation_pending ? s_memp_intr.core : -1;
 
     return true;
 }
