@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ESP32-P4 target-specific HP memory definitions shared between HP app and LP Core linker scripts */
+
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+#define SRAM_MAIN_END   0x4FF2CBD0  /* 2nd stage bootloader iram_loader_seg start address (rev < 3) */
+#else
+#define SRAM_MAIN_END   0x4FFAEFC0  /* 2nd stage bootloader iram_loader_seg start address (rev3+) */
+#endif
+
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+#define ULP_HP_MEM_SIZE     CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES
+/* Align down to 64-byte cache line boundary */
+#define ULP_HP_MEM_START    ((SRAM_MAIN_END - ULP_HP_MEM_SIZE) & ~(64 - 1))
+/* Align down to 64-byte cache line boundary so that ULP_HP_MEM_END - ULP_HP_MEM_START
+ * is always a multiple of the cache line size, satisfying esp_cache_msync alignment */
+#define ULP_HP_MEM_END      (SRAM_MAIN_END & ~(64 - 1))
+#endif

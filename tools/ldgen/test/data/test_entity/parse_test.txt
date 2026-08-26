@@ -1,0 +1,26 @@
+In archive /home/user/ãóç+ěščřžýáíé/build/esp-idf/freertos/ěščřžýáíé.a:
+
+croutine.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+
+FreeRTOS-ěščřžýáíé.c.obj:     file format elf32-xtensa-le // 'F' should not get included in match for 'CONTENTS, ALLOC, LOAD ...' prior
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.ěščřžýáíé 00000018  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+
+o_suffix.c.o:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .find_me         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE

@@ -1,0 +1,4 @@
+CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_SPI_FLASH_ROM_IMPL=y
+# Unrelated to rom, but to test if the boundary checking works well
+CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED=y

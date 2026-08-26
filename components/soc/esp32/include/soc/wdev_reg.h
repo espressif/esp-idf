@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
+ */
+
+#pragma once
+
+#include "soc.h"
+
+/* Hardware random number generator register */
+#define WDEV_RND_REG 0x60035144

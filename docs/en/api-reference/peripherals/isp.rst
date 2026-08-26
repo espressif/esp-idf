@@ -1,0 +1,1176 @@
+Image Signal Processor (ISP)
+============================
+
+:link_to_translation:`zh_CN:[中文]`
+
+Introduction
+------------
+
+{IDF_TARGET_NAME} includes an Image Signal Processor (ISP), which is a feature pipeline that consists of many image processing algorithms. ISP receives image data from the DVP camera or MIPI-CSI camera, or system memory, and writes the processed image data to the system memory through DMA. The ISP is designed to work with other camera controller modules and can not operate independently.
+
+Terminology
+-----------
+
+.. list::
+
+    - MIPI-CSI: Camera serial interface, a high-speed serial interface for cameras compliant with MIPI specifications
+    - DVP: Digital video parallel interface, generally composed of vsync, hsync, de, and data signals
+    - RAW: Unprocessed data directly output from an image sensor, typically divided into R, Gr, Gb, and B four channels classified into RAW8, RAW10, RAW12, etc., based on bit width
+    - RGB: Colored image format composed of red, green, and blue colors classified into RGB888, RGB565, etc., based on the bit width of each color
+    - YUV: Colored image format composed of luminance and chrominance classified into YUV444, YUV422, YUV420, etc., based on the data arrangement
+    - AF: Auto focus
+    - AWB: Auto white balance
+    - AE: Auto exposure
+    - HIST: Histogram
+    - BF: Bayer noise filter
+    - BLC: Black Level Correction
+    - LSC: Lens Shading Correction
+    - CCM: Color correction matrix
+
+ISP Pipeline
+------------
+
+.. blockdiag::
+    :scale: 100%
+    :caption: ISP Pipeline
+    :align: center
+
+    blockdiag isp_pipeline {
+        orientation = portrait;
+        node_height = 30;
+        node_width = 120;
+        span_width = 100;
+        default_fontsize = 16;
+
+        isp_header [label = "ISP Header"];
+        isp_tail [label = "ISP Tail"];
+        isp_chs [label = "Contrast &\n Hue & Saturation", width = 150, height = 70];
+        isp_yuv [label = "YUV Limit\n YUB2RGB", width = 120, height = 70];
+
+        isp_header -> BLC -> DPC -> BF -> LSC -> Demosaic -> WBG -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> CROP -> isp_tail;
+
+        LSC -> HIST
+        Demosaic -> WBG
+        Demosaic -> AWB
+        Demosaic -> AE
+        Demosaic -> HIST
+        WBG -> AWB
+        Gamma -> AE
+        RGB2YUV -> HIST
+        RGB2YUV -> AF
+    }
+
+Functional Overview
+-------------------
+
+The ISP driver offers following services:
+
+- :ref:`isp-resource-allocation` - covers how to allocate ISP resources with properly set of configurations. It also covers how to recycle the resources when they finished working.
+- :ref:`isp-enable-disable` - covers how to enable and disable an ISP processor.
+- :ref:`isp-dma-input` - covers how to feed image frames stored in memory into the ISP through DW-GDMA.
+- :ref:`isp-af-statistics` - covers how to get AF statistics one-shot or continuously.
+- :ref:`isp-awb-statistics` - covers how to get AWB white patches statistics one-shot or continuously.
+- :ref:`isp-ae-statistics` - covers how to get AE statistics one-shot or continuously.
+- :ref:`isp-hist-statistics` - covers how to get histogram statistics one-shot or continuously.
+- :ref:`isp-bf` - covers how to enable and configure BF function.
+- :ref:`isp-blc` - covers how to enable and configure BLC function.
+- :ref:`isp-dpc` - covers how to configure static and dynamic dead pixel correction.
+- :ref:`isp-lsc` - covers how to enable and configure LSC function.
+- :ref:`isp-ccm-config` - covers how to configure the CCM.
+- :ref:`isp-demosaic` - covers how to configure the Demosaic function.
+- :ref:`isp-gamma-correction` - covers how to enable and configure gamma correction.
+- :ref:`isp-sharpen` - covers how to configure the sharpening function.
+- :ref:`isp-crop` - covers how to enable and configure image cropping function.
+- :ref:`isp-callback` - covers how to hook user specific code to ISP driver event callback function.
+- :ref:`isp-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
+- :ref:`isp-kconfig-options` - lists the supported Kconfig options that can bring different effects to the driver.
+- :ref:`isp-iram-safe` - describes tips on how to make the ISP interrupt and control functions work better along with a disabled cache.
+
+.. _isp-resource-allocation:
+
+Resource Allocation
+^^^^^^^^^^^^^^^^^^^
+
+Install ISP Driver
+~~~~~~~~~~~~~~~~~~
+
+ISP driver requires the configuration that specified by :cpp:type:`esp_isp_processor_cfg_t`.
+
+If the configurations in :cpp:type:`esp_isp_processor_cfg_t` is specified, users can call :cpp:func:`esp_isp_new_processor` to allocate and initialize an ISP processor. This function will return an ISP processor handle if it runs correctly. You can take following code as reference:
+
+.. code-block:: c
+
+    esp_isp_processor_cfg_t isp_config = {
+        .clk_src = ISP_CLK_SRC_DEFAULT,
+        ...
+    };
+
+    isp_proc_handle_t isp_proc = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_processor(&isp_config, &isp_proc));
+
+You can use the created handle to enable/disable the ISP driver and do other ISP module installation.
+
+.. note::
+
+    ISP peripheral is necessary if MIPI CSI or ISP_DVP is used as camera controller. This means that even if ISP functions are not needed, you still need to install the ISP driver by calling :cpp:func:`esp_isp_new_processor`.
+
+    If ISP functions are not needed, ISP driver supports bypassing ISP pipelines and enabling only the necessary functions. This can be achieved by setting :cpp:member:`esp_isp_processor_cfg_t::bypass_isp`.
+
+Install ISP Auto Focus (AF) Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ISP auto focus (AF) driver requires the configuration that specified by :cpp:type:`esp_isp_af_config_t`.
+
+If the configurations in :cpp:type:`esp_isp_af_config_t` is specified, users can call :cpp:func:`esp_isp_new_af_controller` to allocate and initialize an ISP AF controller. This function will return an ISP AF controller handle if it runs correctly. You can take following code as reference:
+
+.. code-block:: c
+
+    esp_isp_af_config_t af_config = {
+        .edge_thresh = 128,
+    };
+    isp_af_ctlr_t af_ctrlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
+
+You can use the created handle to enable/disable the ISP AF driver and install ISP AF environment detector module.
+
+Install ISP Auto White Balance (AWB) Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ISP auto white balance (AWB) driver requires the configuration specified by :cpp:type:`esp_isp_awb_config_t`.
+
+If an :cpp:type:`esp_isp_awb_config_t` configuration is specified, you can call :cpp:func:`esp_isp_new_awb_controller` to allocate and initialize an ISP AWB controller. This function will return an ISP AWB controller handle on success. You can take following code as reference:
+
+.. code-block:: c
+
+    isp_awb_ctlr_t awb_ctlr = NULL;
+    uint32_t image_width = 800;
+    uint32_t image_height = 600;
+    /* The AWB configuration, please refer to the API comment for how to tune these parameters */
+    esp_isp_awb_config_t awb_config = {
+        .sample_point = ISP_AWB_SAMPLE_POINT_1,
+        ...
+    };
+    ESP_ERROR_CHECK(esp_isp_new_awb_controller(isp_proc, &awb_config, &awb_ctlr));
+
+The AWB handle created in this step is required by other AWB APIs and AWB scheme.
+
+Install ISP Auto Exposure (AE) Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ISP auto exposure (AE) driver requires the configuration that specified by :cpp:type:`esp_isp_ae_config_t`.
+
+If the configurations in :cpp:type:`esp_isp_ae_config_t` is specified, call :cpp:func:`esp_isp_new_ae_controller` to allocate and initialize an ISP AE controller. This function will return an ISP AE controller handle if it runs correctly. You can take following code as reference.
+
+.. code-block:: c
+
+    esp_isp_ae_config_t ae_config = {
+        .sample_point = ISP_AE_SAMPLE_POINT_0,
+        ...
+    };
+    isp_ae_ctlr_t ae_ctlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_ae_controller(isp_proc, &ae_config, &ae_ctlr));
+
+You can use the created handle to enable/disable the ISP AE driver and do ISP AE environment detector setup.
+
+Install ISP Histogram (HIST) Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ISP histogram (HIST) driver requires the configuration that specified by :cpp:type:`esp_isp_hist_config_t`.
+
+If the configurations in :cpp:type:`esp_isp_hist_config_t` is specified, users can call :cpp:func:`esp_isp_new_hist_controller` to allocate and initialize an ISP Histogram controller. This function will return an ISP HIST controller handle if it runs correctly. You can take following code as reference.
+
+.. list::
+
+    - The sum of all subwindow weights' decimal values should be 256; otherwise, the statistics will be small. The integer value should be 0.
+    - The sum of all RGB coefficients' decimal values should be 256; otherwise, the statistics will be small. The integer value should be 0.
+    - The segment_threshold must be 0–255 and in order.
+
+.. code:: c
+
+    esp_isp_hist_config_t hist_cfg = {
+        .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
+        .hist_mode = ISP_HIST_SAMPLING_RGB,
+        .rgb_coefficient.coeff_r = {
+            .integer = 0,
+            .decimal = 86,
+        },
+        .rgb_coefficient.coeff_g = {
+            .integer = 0,
+            .decimal = 85,
+        },
+        .rgb_coefficient.coeff_b = {
+            .integer = 0,
+            .decimal = 85,
+        },
+        .window_weight = {
+            {{16, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
+    };
+    isp_hist_ctlr_t hist_ctlr_ctlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_hist_controller(isp_proc, &hist_config, &hist_ctlr));
+
+You can use the created handle to enable/disable the ISP HIST driver setup.
+
+Uninstall ISP Drivers
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If previously installed ISP drivers are no longer needed, it's recommended to recycle the resource by following APIs to release the underlying hardware:
+
+.. list::
+
+    - :cpp:func:`esp_isp_del_processor`, for ISP processor.
+    - :cpp:func:`esp_isp_del_af_controller`, for ISP AF controller.
+    - :cpp:func:`esp_isp_del_awb_controller`, for ISP AWB controller.
+    - :cpp:func:`esp_isp_del_ae_controller`, for ISP AE controller.
+    - :cpp:func:`esp_isp_del_hist_controller`, for ISP Histogram controller.
+
+.. _isp-enable-disable:
+
+Enable and Disable ISP
+^^^^^^^^^^^^^^^^^^^^^^
+
+ISP
+~~~
+
+Before doing ISP pipeline, you need to enable the ISP processor first, by calling :cpp:func:`esp_isp_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-dma-input:
+
+ISP DMA Input
+~~~~~~~~~~~~~
+
+Besides image streams from camera controllers, the ISP can also read image frames from system memory through DW-GDMA. To use DMA input, set :cpp:member:`esp_isp_processor_cfg_t::input_data_source` in :cpp:type:`esp_isp_processor_cfg_t` to :cpp:enumerator:`ISP_INPUT_DATA_SOURCE_DWGDMA`, and configure the input format, output format, and resolution according to the image frame.
+
+DMA input is useful for feeding software-generated data, offline RAW images, or other test images in memory into the ISP. It can be used to validate an ISP pipeline without a camera sensor, reproduce issues with a specific input image. Call :cpp:func:`esp_isp_dma_process_frame` to send one input buffer to the ISP and write the processed image into an output buffer. The input and output buffers must be accessible by DMA. The driver synchronizes cacheable buffers automatically. Input buffers use an unaligned cache write-back; cacheable output buffer addresses and their derived frame sizes must be aligned to the cache line size.
+
+ISP AF Controller
+~~~~~~~~~~~~~~~~~
+
+Before doing ISP AF, you need to enable the ISP AF controller first, by calling :cpp:func:`esp_isp_af_controller_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_af_controller_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-af-statistics:
+
+AF One-shot and Continuous Statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_af_controller_get_oneshot_statistics` to get one-shot AF statistics result. You can take following code as reference.
+
+Aside from the above one-shot API, the ISP AF driver also provides a way to start AF statistics continuously. Calling :cpp:func:`esp_isp_af_controller_start_continuous_statistics` to start the continuous statistics and :cpp:func:`esp_isp_af_controller_stop_continuous_statistics` to stop it.
+
+Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_statistics_done` or :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_change` callbacks to get the statistics result. See how to register in :ref:`isp-callback`.
+
+.. note::
+
+    When you use the continuous statistics, AF Environment Detector will be invalid.
+
+.. code:: c
+
+    esp_isp_af_config_t af_config = {
+        .edge_thresh = 128,
+    };
+    isp_af_ctlr_t af_ctrlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
+    ESP_ERROR_CHECK(esp_isp_af_controller_enable(af_ctrlr));
+    isp_af_result_t result = {};
+    /* Trigger the AF statistics and get its result for one time with timeout value 2000 ms */
+    ESP_ERROR_CHECK(esp_isp_af_controller_get_oneshot_statistics(af_ctrlr, 2000, &result));
+
+    /* Start continuous AF statistics */
+    ESP_ERROR_CHECK(esp_isp_af_controller_start_continuous_statistics(af_ctrlr));
+    // You can do other stuffs here, the statistics result can be obtained in the callback
+    // ......
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    /* Stop continuous AF statistics */
+    ESP_ERROR_CHECK(esp_isp_af_controller_stop_continuous_statistics(af_ctrlr));
+
+    /* Disable the AF controller */
+    ESP_ERROR_CHECK(esp_isp_af_controller_disable(af_ctrlr));
+    /* Delete the AF controller and free the resources */
+    ESP_ERROR_CHECK(esp_isp_del_af_controller(af_ctrlr));
+
+Set AF Environment Detector
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_af_controller_set_env_detector` to set an ISP AF environment detector. You can take following code as reference:
+
+.. code-block:: c
+
+    esp_isp_af_env_config_t env_config = {
+        .interval = 10,
+    };
+    isp_af_ctlr_t af_ctrlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
+    ESP_ERROR_CHECK(esp_isp_af_controller_set_env_detector(af_ctrlr, &env_config));
+
+Set AF Environment Detector Threshold
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_af_controller_set_env_detector_threshold` to set the threshold of an ISP AF environment detector.
+
+.. code-block:: c
+
+    int definition_thresh = 0;
+    int luminance_thresh = 0;
+    ESP_ERROR_CHECK(esp_isp_af_env_detector_set_threshold(env_detector, definition_thresh, luminance_thresh));
+
+ISP AWB Controller
+~~~~~~~~~~~~~~~~~~
+
+Before doing ISP AWB, you need to enable the ISP AWB controller first, by calling :cpp:func:`esp_isp_awb_controller_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_awb_controller_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-awb-statistics:
+
+AWB One-shot and Continuous Statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_awb_controller_get_oneshot_statistics` to get oneshot AWB statistics result of white patches. You can take following code as reference.
+
+Aside from the above one-shot API, the ISP AWB driver also provides a way to start AWB statistics continuously. Calling :cpp:func:`esp_isp_awb_controller_start_continuous_statistics` starts the continuous statistics and :cpp:func:`esp_isp_awb_controller_stop_continuous_statistics` stops it.
+
+Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_awb_cbs_t::on_statistics_done` callback to get the statistics result. See how to register it in :ref:`isp-callback`.
+
+.. code-block:: c
+
+    bool example_isp_awb_on_statistics_done_cb(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_evt_data_t *edata, void *user_data);
+    // ...
+    isp_awb_ctlr_t awb_ctlr = NULL;
+    uint32_t image_width = 800;
+    uint32_t image_height = 600;
+    /* The AWB configuration, please refer to the API comment for how to tune these parameters */
+    esp_isp_awb_config_t awb_config = {
+        .sample_point = ISP_AWB_SAMPLE_POINT_1,
+        ...
+    };
+    isp_awb_stat_result_t stat_res = {};
+    /* Create the AWB controller */
+    ESP_ERROR_CHECK(esp_isp_new_awb_controller(isp_proc, &awb_config, &awb_ctlr));
+    /* Register the AWB callback */
+    esp_isp_awb_cbs_t awb_cb = {
+        .on_statistics_done = example_isp_awb_on_statistics_done_cb,
+    };
+    ESP_ERROR_CHECK(esp_isp_awb_register_event_callbacks(awb_ctlr, &awb_cb, NULL));
+    /* Enable the AWB controller */
+    ESP_ERROR_CHECK(esp_isp_awb_controller_enable(awb_ctlr));
+
+    /* Get one-shot AWB statistics result */
+    ESP_ERROR_CHECK(esp_isp_awb_controller_get_oneshot_statistics(awb_ctlr, -1, &stat_res));
+
+    /* Start continuous AWB statistics, note that continuous statistics requires `on_statistics_done` callback */
+    ESP_ERROR_CHECK(esp_isp_awb_controller_start_continuous_statistics(awb_ctlr));
+    // You can do other stuffs here, the statistics result can be obtained in the callback
+    // ......
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    /* Stop continuous AWB statistics */
+    ESP_ERROR_CHECK(esp_isp_awb_controller_stop_continuous_statistics(awb_ctlr));
+
+    /* Disable the AWB controller */
+    ESP_ERROR_CHECK(esp_isp_awb_controller_disable(awb_ctlr));
+    /* Delete the AWB controller and free the resources */
+    ESP_ERROR_CHECK(esp_isp_del_awb_controller(awb_ctlr));
+
+ISP AE Controller
+~~~~~~~~~~~~~~~~~
+
+Before doing ISP AE, you need to enable the ISP AE controller first, by calling :cpp:func:`esp_isp_ae_controller_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_ae_controller_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-ae-statistics:
+
+AE One-shot and Continuous Statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_ae_controller_get_oneshot_statistics` to get oneshot AE statistics result. You can take following code as reference.
+
+When using AE oneshot statistics, the AE continuous mode need to be disabled otherwise the result may be overwritten by the environment detector. After oneshot operation finishes, you need to restart continuous mode again.
+
+Aside from the above oneshot API, the ISP AE driver also provides a way to start AE statistics continuously. Calling :cpp:func:`esp_isp_ae_controller_start_continuous_statistics` to start the continuous statistics and :cpp:func:`esp_isp_ae_controller_stop_continuous_statistics` to stop it.
+
+Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_statistics_done` or :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_change` callback to get the statistics result. See how to register in :ref:`isp-callback`.
+
+.. note::
+
+    When using oneshot statistics, the AE environment detector will be temporarily disabled and will automatically recover once the oneshot is completed.
+
+.. code-block:: c
+
+    esp_isp_ae_config_t ae_config = {
+        .sample_point = ISP_AE_SAMPLE_POINT_0,
+    };
+    isp_ae_ctlr_t ae_ctlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_ae_controller(isp_proc, &ae_config, &ae_ctlr));
+    ESP_ERROR_CHECK(esp_isp_ae_controller_enable(ae_ctlr));
+    isp_ae_result_t result = {};
+    /* Trigger the AE statistics and get its result for one time with timeout value 2000 ms. */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_get_oneshot_statistics(ae_ctlr, 2000, &result));
+
+    /* Start continuous AE statistics */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_start_continuous_statistics(ae_ctlr));
+    // You can do other stuffs here, the statistics result can be obtained in the callback
+    // ......
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    /* Stop continuous AE statistics */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_stop_continuous_statistics(ae_ctlr));
+
+    /* Disable the AE controller */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_disable(ae_ctlr));
+    /* Delete the AE controller and free the resources */
+    ESP_ERROR_CHECK(esp_isp_del_ae_controller(ae_ctlr));
+
+Set AE Environment Detector
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_ae_controller_set_env_detector` to set an ISP AE environment detector. You can take following code as reference.
+
+.. code:: c
+
+    esp_isp_ae_env_config_t env_config = {
+        .interval = 10,
+    };
+    ESP_ERROR_CHECK(esp_isp_ae_controller_set_env_detector(ae_ctlr, &env_config));
+
+Set AE Environment Detector Threshold
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_ae_controller_set_env_detector_threshold` to set the thresholds (1-255) of an ISP AE environment detector.
+
+.. code:: c
+
+    esp_isp_ae_env_thresh_t env_thresh = {
+        .low_thresh = 110,
+        .high_thresh = 130,
+    };
+    ESP_ERROR_CHECK(esp_isp_ae_controller_set_env_detector_threshold(ae_ctlr, env_thresh));
+
+.. _isp-hist:
+
+ISP Histogram Controller
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before doing ISP histogram statistics, you need to enable the ISP histogram controller first, by calling :cpp:func:`esp_isp_hist_controller_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_hist_controller_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-hist-statistics:
+
+Histogram One-shot and Continuous Statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_hist_controller_get_oneshot_statistics` to get oneshot histogram statistics result. You can take following code as reference.
+
+Aside from the above oneshot API, the ISP histogram driver also provides a way to start histogram statistics continuously. Calling :cpp:func:`esp_isp_hist_controller_start_continuous_statistics` starts the continuous statistics and :cpp:func:`esp_isp_hist_controller_stop_continuous_statistics` stops it.
+
+Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_hist_cbs_t::on_statistics_done` callback to get the statistics result. See how to register it in :ref:`isp-callback`.
+
+.. code:: c
+
+    static bool s_hist_scheme_on_statistics_done_callback(isp_hist_ctlr_t awb_ctrlr, const esp_isp_hist_evt_data_t *edata, void *user_data)
+    {
+        for(int i = 0; i < 16; i++) {
+            esp_rom_printf(DRAM_STR("val %d is %x\n"), i, edata->hist_result.hist_value[i]); // get the histogram statistic value
+        }
+        return true;
+    }
+
+    esp_isp_hist_cbs_t hist_cbs = {
+        .on_statistics_done = s_hist_scheme_on_statistics_done_callback,
+    };
+
+    esp_isp_hist_register_event_callbacks(hist_ctlr, &hist_cbs, hist_ctlr);
+    esp_isp_hist_controller_enable(hist_ctlr);
+
+
+.. _isp-bf:
+
+ISP BF Controller
+~~~~~~~~~~~~~~~~~
+
+This pipeline is used for doing image input denoising under bayer mode.
+
+Calling :cpp:func:`esp_isp_bf_configure` to configure BF function, you can take following code as reference.
+
+.. code-block:: c
+
+    esp_isp_bf_config_t bf_config = {
+        .denoising_level = 5,
+        .bf_template = {
+            {1, 2, 1},
+            {2, 4, 2},
+            {1, 2, 1},
+        },
+        ...
+    };
+    ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
+    ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
+
+:cpp:member:`esp_isp_bf_config_t::bf_template` is used for bayer denoise. You can set the :cpp:member:`esp_isp_bf_config_t::bf_template` with a Gaussian filter template or an average filter template.
+
+After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF controller, by calling :cpp:func:`esp_isp_bf_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
+
+
+.. _isp-blc:
+
+ISP BLC Controller
+^^^^^^^^^^^^^^^^^^
+
+Black Level Correction (BLC) aims for the issues caused by the uneven black level of the image.
+
+Calling :cpp:func:`esp_isp_blc_configure` to configure the BLC module to do the correction.
+
+.. code-block:: c
+
+    esp_isp_blc_config_t blc_config = {
+        .window = {
+            .top_left = {
+                .x = 0,
+                .y = 0,
+            },
+            .btm_right = {
+                .x = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
+                .y = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
+            },
+        },
+        .filter_enable = true,
+        .filter_threshold = {
+            .top_left_chan_thresh = 128,
+            .top_right_chan_thresh = 128,
+            .bottom_left_chan_thresh = 128,
+            .bottom_right_chan_thresh = 128,
+        },
+        .stretch = {
+            .top_left_chan_stretch_en = true,
+            .top_right_chan_stretch_en = true,
+            .bottom_left_chan_stretch_en = true,
+            .bottom_right_chan_stretch_en = true,
+        },
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_configure(isp_proc, &blc_config));
+    ESP_ERROR_CHECK(esp_isp_blc_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_blc_configure`, you need to enable the ISP BLC controller by calling :cpp:func:`esp_isp_blc_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_blc_disable` does the opposite, that is, put the driver back to the **init** state.
+
+Calling :cpp:func:`esp_isp_blc_set_correction_offset` to set the BLC correction offset.
+
+.. code-block:: c
+
+    esp_isp_blc_offset_t blc_offset = {
+        .top_left_chan_offset = 20,
+        .top_right_chan_offset = 20,
+        .bottom_left_chan_offset = 20,
+        .bottom_right_chan_offset = 20,
+    };
+    ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
+
+
+.. _isp-dpc:
+
+ISP DPC Controller
+^^^^^^^^^^^^^^^^^^
+
+Dead Pixel Correction (DPC) corrects defective pixels in RAW Bayer images before later ISP processing stages. Since adjacent Bayer pixels have different colors, DPC uses the eight same-color neighbors around the center pixel to form a 3×3 same-color neighborhood. When it detects a defective pixel, the hardware replaces the center pixel with the neighborhood median.
+
+DPC supports two complementary correction modes:
+
+- **Static correction** is intended for defects at fixed locations. Software uses a uniform white frame to calibrate dark pixels and a uniform black frame to calibrate bright pixels, then merges the results into a coordinate list; a previously calibrated list can also be supplied. During configuration, the driver writes the list to the hardware LUT, and the hardware replaces pixels at matching coordinates with the neighborhood median in every frame.
+- **Dynamic correction** is intended for transient defects or defects at unknown locations and does not require a coordinate list. Dynamic method 1 uses the same-color neighborhood minimum, maximum, and absolute thresholds to detect bright and dark defects. Dynamic method 2 first screens the center pixel with a neighborhood-maximum ratio range, then applies a second test using a neighborhood estimate and adaptive bright and dark factors.
+
+Both modes can be enabled together. While DPC is disabled, call :cpp:func:`esp_isp_dpc_static_configure` and :cpp:func:`esp_isp_dpc_dynamic_configure` for the correction modes to use, call :cpp:func:`esp_isp_dpc_configure` to apply common DPC settings, then call :cpp:func:`esp_isp_dpc_enable`. To change the static coordinate list, disable DPC before configuring it again.
+
+Static Correction and Calibration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Static correction accepts 0 to 512 :cpp:type:`esp_isp_dpc_pixel_coord_t` coordinates. Each coordinate contains ``x`` and ``y`` fields. The array must be in ascending y/x order, contain no duplicates, and all coordinates must be inside the input frame. :cpp:func:`esp_isp_dpc_static_configure` converts the coordinates to the hardware LUT format during the call, so the caller may release the coordinate array after the call returns.
+
+To calibrate the coordinate list, use a uniform white frame to find dark pixels and a uniform black frame to find bright pixels. Each call to a calibration start API internally enables DPC and accepts one corresponding input frame. Reading the result disables DPC again, which allows the next calibration pass or the final static configuration to start.
+
+The following sequence calibrates and enables static correction. ``white_frame`` and ``black_frame`` must be uniform RAW input frames. Acquire them as follows:
+
+- **White frame**: Fill the sensor field of view with a uniform, texture-free bright target, such as an integrating-sphere source or a defocused matte white reflector. Avoid shadows, vignetting, reflections, and saturated areas.
+- **Black frame**: Block all light, for example with a lens cap or a dark enclosure. Prevent light leaks, status LEDs, and other stray light from reaching the sensor.
+
+The way to feed each frame to the ISP and wait for it to complete depends on the input source. The following uses DMA input as an example; ``output_frame`` is the DMA output buffer.
+
+.. code-block:: c
+
+    esp_isp_dpc_calibration_config_t white_calibration_config = {
+        .threshold = 0xf0,
+        .enable_output = true,
+    };
+    esp_isp_dpc_calibration_config_t black_calibration_config = {
+        .threshold = 0x0a,
+        .enable_output = true,
+    };
+    static esp_isp_dpc_calibration_ref_t white_ref;
+    static esp_isp_dpc_calibration_ref_t black_ref;
+    static esp_isp_dpc_calibration_ref_t merged_ref;
+
+    // Find dark defective pixels from a white frame.
+    esp_isp_dpc_static_calibration_start_once(isp_proc, ESP_ISP_DPC_CALIBRATION_IMAGE_WHITE, &white_calibration_config);
+    // Feed white_frame to the ISP and wait until processing completes.
+    // For example, with DMA input:
+    esp_isp_dma_process_frame(isp_proc, output_frame, white_frame, 1000);
+    esp_isp_dpc_calibration_read_result(isp_proc, 1000, &white_ref);
+
+    // Find bright defective pixels from a black frame.
+    esp_isp_dpc_static_calibration_start_once(isp_proc, ESP_ISP_DPC_CALIBRATION_IMAGE_BLACK, &black_calibration_config);
+    // Feed black_frame to the ISP and wait until processing completes.
+    // For example, with DMA input:
+    esp_isp_dma_process_frame(isp_proc, output_frame, black_frame, 1000);
+    esp_isp_dpc_calibration_read_result(isp_proc, 1000, &black_ref);
+
+    // Merge, sort, and remove duplicate coordinates before writing the static LUT.
+    const esp_isp_dpc_calibration_ref_t *calibration_refs[] = {
+        &white_ref,
+        &black_ref,
+    };
+    esp_isp_dpc_calibration_merge_result(calibration_refs, 2, &merged_ref);
+    esp_isp_dpc_static_config_t static_dpc_config = {
+        .dead_pixel_coords = merged_ref.dead_pixel_coords,
+        .dead_pixel_count = merged_ref.dead_pixel_count,
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_static_configure(isp_proc, &static_dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
+:cpp:func:`esp_isp_dpc_calibration_merge_result` is a software-only utility that accepts any positive number of references. It does not access an ISP processor or hardware. It sorts all coordinates by y/x, removes duplicates, and keeps at most :c:macro:`ESP_ISP_DPC_MAX_DEAD_PIXELS` coordinates.
+
+To merge N references, pass an array of their addresses and the number of elements to :cpp:func:`esp_isp_dpc_calibration_merge_result`:
+
+.. code-block:: c
+
+    const esp_isp_dpc_calibration_ref_t *refs[] = {
+        &ref_0,
+        &ref_1,
+        &ref_2,
+    };
+    const size_t ref_count = sizeof(refs) / sizeof(refs[0]);
+    static esp_isp_dpc_calibration_ref_t merged_ref;
+
+    ESP_ERROR_CHECK(esp_isp_dpc_calibration_merge_result(refs, ref_count, &merged_ref));
+
+If a factory calibration or another source already provides a defective-pixel coordinate list, the white- and black-frame calibration flow above can be skipped. Pass the coordinate array directly to :cpp:func:`esp_isp_dpc_static_configure`:
+
+.. code-block:: c
+
+    static const esp_isp_dpc_pixel_coord_t factory_bad_pixels[] = {
+        {.x = 24, .y = 24},
+        {.x = 56, .y = 24},
+        {.x = 25, .y = 72},
+    };
+    esp_isp_dpc_static_config_t static_dpc_config = {
+        .dead_pixel_coords = factory_bad_pixels,
+        .dead_pixel_count = sizeof(factory_bad_pixels) / sizeof(factory_bad_pixels[0]),
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_static_configure(isp_proc, &static_dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
+Dynamic Correction
+~~~~~~~~~~~~~~~~~~
+
+Dynamic Method 1
+++++++++++++++++
+
+Dynamic method 1 uses absolute thresholds. A pixel is a bright candidate when it is greater than ``max8 + high_threshold`` and a dark candidate when it is less than ``min8 - low_threshold``, where ``min8`` and ``max8`` are calculated from the eight same-color neighbors.
+
+.. code-block:: c
+
+    esp_isp_dpc_dynamic_config_t dpc_config = {
+        .method = ESP_ISP_DPC_DYNAMIC_METHOD_1,
+        .method_1 = {
+            .high_threshold = 48,
+            .low_threshold = 48,
+        },
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_dynamic_configure(isp_proc, &dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
+Dynamic Method 2
+++++++++++++++++
+
+Dynamic method 2 detects defective pixels in two stages.
+
+The first stage uses the maximum value ``max8`` of the eight same-color neighbors to screen the center pixel ``pixel_center``. The normal range is ``max8 * first_stage_lower_ratio < pixel_center < max8 * first_stage_upper_ratio``: pixels within this range pass the first stage, while pixels equal to a boundary or outside the range receive a second test. The first-stage ratios use fixed-point values: ``value = integer + decimal / ISP_DPC_RATIO_MAX``. Valid values are 0.0 to 1.0. For fractional values, set ``integer`` to 0 and ``decimal`` to 0 ... ``ISP_DPC_RATIO_MAX - 1``; for example, 0.5 is ``integer = 0`` and ``decimal = 8``. For 1.0, set ``integer`` to 1 and ``decimal`` to 0.
+
+- ``first_stage_lower_ratio`` (range ``0.0`` to ``1.0``): Lower bound of the first-stage normal range. Raising it sends more dark pixels to the second-stage test; lowering it lets more dark pixels pass the first stage.
+- ``first_stage_upper_ratio`` (range ``0.0`` to ``1.0``): Upper bound of the first-stage normal range. Raising it lets more bright pixels pass the first stage; lowering it sends more bright pixels to the second-stage test. It must be greater than ``first_stage_lower_ratio``, otherwise the configuration function returns ``ESP_ERR_INVALID_ARG``.
+
+The second stage calculates the mean ``est`` of the eight neighbors, the absolute difference ``dif = abs(est - pixel_center)`` between ``est`` and the center pixel, and their mean ``avg``. A dark-pixel candidate is detected when ``est >= pixel_center`` and ``dif > avg * dark_deviation_factor``; a bright-pixel candidate is detected when ``est < pixel_center`` and ``dif > (255 - avg) * bright_deviation_factor``. The deviation factors use fixed-point values: ``value = integer + decimal / ISP_DPC_DEVIATION_FACTOR_MAX``. Valid values are 0.0 to 1.0. For fractional values, set ``integer`` to 0 and ``decimal`` to 0 ... ``ISP_DPC_DEVIATION_FACTOR_MAX - 1``; for example, 0.5 is ``integer = 0`` and ``decimal = 16``. For 1.0, set ``integer`` to 1 and ``decimal`` to 0.
+
+- ``dark_deviation_factor`` (range ``0.0`` to ``1.0``): Second-stage dark-pixel sensitivity. Lowering it reduces the required dark-pixel deviation and corrects dark pixels more aggressively; raising it is more conservative.
+- ``bright_deviation_factor`` (range ``0.0`` to ``1.0``): Second-stage bright-pixel sensitivity. Lowering it reduces the required bright-pixel deviation and corrects bright pixels more aggressively; raising it is more conservative.
+
+.. code-block:: c
+
+    esp_isp_dpc_dynamic_config_t dpc_config = {
+        .method = ESP_ISP_DPC_DYNAMIC_METHOD_2,
+        .method_2 = {
+            .first_stage_lower_ratio = {
+                .integer = 0,
+                .decimal = 8,
+            },
+            .first_stage_upper_ratio = {
+                .integer = 1,
+                .decimal = 0,
+            },
+            .bright_deviation_factor = {
+                .integer = 0,
+                .decimal = 16,
+            },
+            .dark_deviation_factor = {
+                .integer = 0,
+                .decimal = 16,
+            },
+        },
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_dynamic_configure(isp_proc, &dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
+.. _isp-lsc:
+
+ISP LSC Controller
+~~~~~~~~~~~~~~~~~~
+
+Lens Shading Correction (LSC) aims for the issues caused by the uneven refraction of light through the camera lens.
+
+Calling :cpp:func:`esp_isp_lsc_configure` to configure the LSC module to do the correction. The :cpp:type:`esp_isp_lsc_gain_array_t` is necessary for the hardware to do the correction related calculation. :cpp:func:`esp_isp_lsc_allocate_gain_array` is a helper function to help allocate proper size of memory for the gains.
+
+.. code-block:: c
+
+    esp_isp_lsc_gain_array_t gain_array = {};
+    size_t gain_size = 0;
+    ESP_ERROR_CHECK(esp_isp_lsc_allocate_gain_array(isp_proc, &gain_array, &gain_size));
+
+    esp_isp_lsc_config_t lsc_config = {
+        .gain_array = &gain_array,
+    };
+    isp_lsc_gain_t gain_val = {
+        .decimal = 204,
+        .integer = 0,
+    };
+    for (int i = 0; i < gain_size; i++) {
+        gain_array.gain_r[i].val = gain_val.val;
+        gain_array.gain_gr[i].val = gain_val.val;
+        gain_array.gain_gb[i].val = gain_val.val;
+        gain_array.gain_b[i].val = gain_val.val;
+    }
+    ESP_ERROR_CHECK(esp_isp_lsc_configure(isp_proc, &lsc_config));
+
+After calling :cpp:func:`esp_isp_lsc_configure`, you need to enable the ISP LSC controller by calling :cpp:func:`esp_isp_lsc_enable`. The LSC can be disabled by calling :cpp:func:`esp_isp_lsc_disable`. It is allowed to call :cpp:func:`esp_isp_lsc_configure` when the LSC is not enabled, but the LSC function will only take effect when it is enabled.
+
+
+.. _isp-color:
+
+ISP Color Controller
+~~~~~~~~~~~~~~~~~~~~
+
+This pipeline is used to adjust the image contrast, saturation, hue and brightness.
+
+Calling :cpp:func:`esp_isp_color_configure` to configure color function, you can take following code as reference.
+
+{IDF_TARGET_SOC_ISP_COLOR_CONTRAST_MAX:default="1.0", esp32p4="1.0"}
+{IDF_TARGET_SOC_ISP_COLOR_CONTRAST_DEFAULT:default="1.0", esp32p4="1.0"}
+
+{IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX:default="1.0", esp32p4="1.0"}
+{IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT:default="1.0", esp32p4="1.0"}
+
+{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="359", esp32p4="359"}
+{IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT:default="0", esp32p4="0"}
+
+{IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN:default="-127", esp32p4="-127"}
+{IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MAX:default="128", esp32p4="128"}
+{IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_DEFAULT:default="0", esp32p4="0"}
+
+.. list::
+
+    - Contrast value should be 0 ~ {IDF_TARGET_SOC_ISP_COLOR_CONTRAST_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_CONTRAST_DEFAULT}
+    - Saturation value should be 0 ~ {IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT}
+    - Hue value should be 0 ~ {IDF_TARGET_SOC_ISP_COLOR_HUE_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT}
+    - Brightness value should be {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN} ~ {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_DEFAULT}
+
+.. code:: c
+
+    esp_isp_color_config_t color_config = {
+        .color_contrast = {
+            .integer = 1,
+            .decimal = 0,
+        },
+        .color_saturation = {
+            .integer = 1,
+            .decimal = 0,
+        },
+        .color_hue = 0,
+        .color_brightness = 0,
+    };
+    ESP_ERROR_CHECK(esp_isp_color_configure(isp_proc, &color_config));
+    ESP_ERROR_CHECK(esp_isp_color_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_color_configure`, you need to enable the ISP color controller, by calling :cpp:func:`esp_isp_color_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_color_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. note::
+
+    When the ISP DVP peripheral is used with the output color format set to the RGB color space, :ref:`isp-color` is automatically enabled in the camera driver to ensure correct data output. The function :cpp:func:`esp_isp_color_disable` should never be called in this case, otherwise it may result in disarrayed camera data.
+
+.. _isp-ccm-config:
+
+Configure CCM
+^^^^^^^^^^^^^
+
+Color correction matrix can scale the color ratio of RGB888 pixels. It can be used for adjusting the image color via some algorithms, for example, used for white balance by inputting the AWB computed result, or used as a filter with some filter algorithms.
+
+To adjust the color correction matrix, here is the formula:
+
+.. code-block:: none
+
+    [ R' ]     [ RR  RG  RB  ]   [ R ]
+    [ G' ] =   [ GR  GG  GB  ] * [ G ]
+    [ B' ]     [ BR  BG  BB  ]   [ B ]
+
+, and you can refer to the following code:
+
+.. code-block:: c
+
+    // ...
+    // Configure CCM
+    esp_isp_ccm_config_t ccm_cfg = {
+        .matrix = {
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0
+        },
+        .saturation = false,
+        ...
+    };
+    ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
+    // The configured CCM will be applied to the image once the CCM module is enabled
+    ESP_ERROR_CHECK(esp_isp_ccm_enable(isp_proc));
+    // CCM can also be configured after it is enabled
+    ccm_cfg.matrix[0][0] = 2.0;
+    ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
+    // Disable CCM if no longer needed
+    ESP_ERROR_CHECK(esp_isp_ccm_disable(isp_proc));
+
+.. _isp-demosaic:
+
+ISP Demosaic Controller
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This pipeline is used for doing image demosaic algorithm to convert RAW image to RGB mode.
+
+Calling :cpp:func:`esp_isp_demosaic_configure` to configure Demosaic function, you can take following code as reference.
+
+.. code:: c
+
+    esp_isp_demosaic_config_t demosaic_config = {
+        .grad_ratio = {
+            .integer = 2,
+            .decimal = 5,
+        },
+        ...
+    };
+
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_demosaic_configure`, you need to enable the ISP Demosaic controller, by calling :cpp:func:`esp_isp_demosaic_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_demosaic_disable` does the opposite, that is, put the driver back to the **init** state.
+
+:cpp:func:`esp_isp_demosaic_configure` is allowed to be called even if the driver is in **init** state, but the demosaic configurations will only be taken into effect when in **enable** state.
+
+.. _isp-gamma-correction:
+
+Enable Gamma Correction
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The human visual system is non-linearly sensitive to the physical luminance. Adding gamma correction to the ISP pipeline to transform RGB coordinates into a space in which coordinates are proportional to subjective brightness.
+
+The driver provides a helper API :cpp:func:`esp_isp_gamma_fill_curve_points` to fill :cpp:type:`isp_gamma_curve_points_t`, which is a group of points used to describe the gamma correction curve. Or you can manually declare the points as your desired gamma correction curve. Each R/G/B component can have its own gamma correction curve, you can set the configuration by calling :cpp:func:`esp_isp_gamma_configure`.
+
+A typical code example is:
+
+.. code:: c
+
+    #include <math.h>
+
+    // Set the camera gamma to be 0.7, so the gamma correction curve is y = 256 * (x / 256) ^ 0.7
+    static uint32_t s_gamma_curve(uint32_t x)
+    {
+        return pow((double)x / 256, 0.7) * 256;
+    }
+
+    isp_gamma_curve_points_t pts = {};
+    ESP_ERROR_CHECK(esp_isp_gamma_fill_curve_points(s_gamma_curve, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_R, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_G, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_B, &pts));
+
+    // Enable gamma module after curve parameters configured
+    ESP_ERROR_CHECK(esp_isp_gamma_enable(isp_proc));
+
+    // Disable gamma if no longer needed
+    ESP_ERROR_CHECK(esp_isp_gamma_disable(isp_proc));
+
+.. _isp-sharpen:
+
+ISP Sharpen Controller
+~~~~~~~~~~~~~~~~~~~~~~
+
+This pipeline is used for doing image input sharpening under YUV mode.
+
+Calling :cpp:func:`esp_isp_sharpen_configure` to configure Sharpen function, you can take following code as reference.
+
+.. code:: c
+
+    esp_isp_sharpen_config_t sharpen_config = {
+        .h_thresh = 255,
+        .sharpen_template = {
+            {1, 2, 1},
+            {2, 4, 2},
+            {1, 2, 1},
+        },
+        ...
+    };
+    ESP_ERROR_CHECK(esp_isp_sharpen_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_sharpen_enable(isp_proc));
+
+:cpp:member:`esp_isp_sharpen_config_t::sharpen_template` is used for sharpening. You can set the :cpp:member:`esp_isp_sharpen_config_t::sharpen_template` with a Gaussian filter template or an average filter template.
+
+After calling :cpp:func:`esp_isp_sharpen_configure`, you need to enable the ISP Sharpen controller, by calling :cpp:func:`esp_isp_sharpen_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_sharpen_disable` does the opposite, that is, put the driver back to the **init** state.
+
+:cpp:func:`esp_isp_sharpen_configure` is allowed to be called even if the driver is in **init** state, but the sharpen configurations will only be taken into effect when in **enable** state.
+
+.. _isp-crop:
+
+ISP Image Crop Controller
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ISP image crop function can extract a specified region from the original image, reducing the amount of data for subsequent processing and improving processing efficiency. The crop function is executed at the end of the ISP pipeline and can output a smaller region than the input image.
+
+.. note::
+
+    The ISP image crop function is only available on ESP32-P4 revision 3.0 and above.
+
+Calling :cpp:func:`esp_isp_crop_configure` to configure the image crop function, you can take the following code as reference:
+
+.. code-block:: c
+
+    esp_isp_crop_config_t crop_config = {
+        .window = {
+            .top_left = {
+                .x = 100,  // Top-left X coordinate of crop region
+                .y = 100,  // Top-left Y coordinate of crop region
+            },
+            .btm_right = {
+                .x = 699,  // Bottom-right X coordinate of crop region
+                .y = 499,  // Bottom-right Y coordinate of crop region
+            }
+        }
+    };
+    ESP_ERROR_CHECK(esp_isp_crop_configure(isp_proc, &crop_config));
+    ESP_ERROR_CHECK(esp_isp_crop_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_crop_configure`, you need to enable the ISP image crop controller by calling :cpp:func:`esp_isp_crop_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_crop_disable` does the opposite, that is, put the driver back to the **init** state.
+
+:cpp:func:`esp_isp_crop_configure` is allowed to be called even if the driver is in **init** state, but the crop configurations will only be taken into effect when in **enable** state.
+
+.. note::
+
+    - The top-left coordinates (top_left) of the crop region must be smaller than the bottom-right coordinates (btm_right)
+    - The top-left coordinates (top_left) of the crop region must be even, and the bottom-right coordinates (btm_right) must be odd
+    - The crop region cannot exceed the boundaries of the original image
+    - Adjust the display medium (such as LCD) size according to the cropped resolution to ensure complete display and avoid black borders or stretching.
+
+
+.. _isp-callback:
+
+Register Event Callbacks
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+After an ISP module starts up, it can generate a specific event dynamically.
+
+You can save your own context to callback function as well, via the parameter ``user_data``. The user data will be directly passed to the callback function.
+
+.. note::
+
+    The below-mentioned callback functions are called within an ISR context. You must ensure that the functions do not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
+
+Register ISP Processor Event Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the ISP processor is enabled, it can generate multiple events of multiple ISP submodules dynamically. You can hook your functions to the interrupt service routine by calling :cpp:func:`esp_isp_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_evt_cbs_t`:
+
+- :cpp:member:`esp_isp_evt_cbs_t::on_sharpen_frame_done` sets a callback function for sharpen frame done. It will be called after the ISP sharpen submodule finishes its operation for one frame. The function prototype is declared in :cpp:type:`esp_isp_sharpen_callback_t`.
+
+Register ISP AF Environment Detector Event Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the ISP AF environment detector starts up, it can generate a specific event dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`esp_isp_af_env_detector_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_af_env_detector_evt_cbs_t`:
+
+-  :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_statistics_done` sets a callback function for environment statistics done. The function prototype is declared in :cpp:type:`esp_isp_af_env_detector_callback_t`.
+-  :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_change` sets a callback function for environment change. The function prototype is declared in :cpp:type:`esp_isp_af_env_detector_callback_t`.
+
+Register ISP AWB Statistics Done Event Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the ISP AWB controller finished statistics of white patches, it can generate a specific event dynamically. If you want to be informed when the statistics done event takes place, please hook your function to the interrupt service routine by calling :cpp:func:`esp_isp_awb_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_awb_cbs_t`:
+
+-  :cpp:member:`esp_isp_awb_cbs_t::on_statistics_done` sets a callback function when finishing statistics of the white patches. The function prototype is declared in :cpp:type:`esp_isp_awb_callback_t`.
+
+
+Register ISP AE Environment Detector Event Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the ISP AE environment detector starts up, it can generate a specific event dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`esp_isp_ae_env_detector_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_ae_env_detector_evt_cbs_t`:
+
+- :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_statistics_done` sets a callback function for environment statistics done. The function prototype is declared in :cpp:type:`esp_isp_ae_env_detector_callback_t`.
+- :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_change` sets a callback function for environment change. The function prototype is declared in :cpp:type:`esp_isp_ae_env_detector_callback_t`.
+
+
+Register ISP HIST Statistics Done Event Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the ISP HIST controller finished statistics of brightness, it can generate a specific event dynamically. If you want to be informed when the statistics done event takes place, please hook your function to the interrupt service routine by calling :cpp:func:`esp_isp_hist_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_hist_cbs_t`:
+
+- :cpp:member:`esp_isp_hist_cbs_t::on_statistics_done` sets a callback function when finishing statistics of the brightness. The function prototype is declared in :cpp:type:`esp_isp_hist_callback_t`.
+
+.. _isp-thread-safety:
+
+Thread Safety
+^^^^^^^^^^^^^
+
+The following factory function are guaranteed to be thread safe by the driver:
+
+.. list::
+
+    - :cpp:func:`esp_isp_new_processor`
+    - :cpp:func:`esp_isp_del_processor`
+    - :cpp:func:`esp_isp_new_af_controller`
+    - :cpp:func:`esp_isp_del_af_controller`
+    - :cpp:func:`esp_isp_new_awb_controller`
+    - :cpp:func:`esp_isp_del_awb_controller`
+    - :cpp:func:`esp_isp_new_ae_controller`
+    - :cpp:func:`esp_isp_del_ae_controller`
+    - :cpp:func:`esp_isp_new_hist_controller`
+    - :cpp:func:`esp_isp_del_hist_controller`
+
+These functions can be called from different RTOS tasks without protection by extra locks. Other APIs are not guaranteed to be thread-safe.
+
+.. _isp-kconfig-options:
+
+Kconfig Options
+^^^^^^^^^^^^^^^
+
+- :menuitem:`CONFIG_ISP_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled.
+
+.. _isp-iram-safe:
+
+IRAM Safe
+^^^^^^^^^
+
+By default, the ISP interrupt will be deferred when the cache is disabled because of writing or erasing the flash.
+
+Kconfig option :menuitem:`CONFIG_ISP_ISR_IRAM_SAFE` will:
+
+-  Enable the interrupt being serviced even when the cache is disabled
+-  Place all functions that used by the ISR into IRAM
+-  Place driver object into DRAM (in case it is mapped to PSRAM by accident)
+
+This allows the interrupt to run while the cache is disabled, but comes at the cost of increased IRAM consumption. With this option enabled, the ISR callbacks will be running when cache is disabled. Therefore you should make sure the callbacks and its involved context are IRAM-safe as well.
+
+Kconfig option :menuitem:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` will:
+
+- Place some of the ISP control functions into IRAM, including:
+
+    .. list::
+
+        - :cpp:func:`esp_isp_sharpen_configure`
+        - :cpp:func:`esp_isp_demosaic_configure`
+
+Application Examples
+--------------------
+
+* :example:`peripherals/isp/multi_pipelines` demonstrates how to use the ISP pipelines to process the image signals from camera sensors and display the video on LCD screen via DSI peripheral.
+* :example:`peripherals/isp/dma_input` demonstrates how to feed a RAW8 BGGR image in memory into the ISP through DW-GDMA. ``pytest_isp_dma_input.py`` saves the processed RGB888 frames as PPM images and compares them pixel by pixel with the checked-in golden image.
+* `esp_video/examples <https://github.com/espressif/esp-video-components/tree/master/esp_video/examples>`_ provides some examples of enabling ISP control algorithms.
+
+API Reference
+-------------
+
+.. include-build-file:: inc/isp.inc
+.. include-build-file:: inc/isp_af.inc
+.. include-build-file:: inc/isp_ae.inc
+.. include-build-file:: inc/isp_awb.inc
+.. include-build-file:: inc/isp_bf.inc
+.. include-build-file:: inc/isp_blc.inc
+.. include-build-file:: inc/isp_lsc.inc
+.. include-build-file:: inc/isp_ccm.inc
+.. include-build-file:: inc/isp_demosaic.inc
+.. include-build-file:: inc/isp_dpc.inc
+.. include-build-file:: inc/isp_dpc_dynamic.inc
+.. include-build-file:: inc/isp_dpc_static.inc
+.. include-build-file:: inc/isp_sharpen.inc
+.. include-build-file:: inc/isp_gamma.inc
+.. include-build-file:: inc/isp_hist.inc
+.. include-build-file:: inc/isp_color.inc
+.. include-build-file:: inc/isp_crop.inc
+.. include-build-file:: inc/isp_core.inc
+.. include-build-file:: inc/isp_dma.inc
+.. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
+.. include-build-file:: inc/components/esp_hal_cam/include/hal/isp_types.inc

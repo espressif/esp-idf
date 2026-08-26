@@ -1,0 +1,315 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rmt_private.h"
+#include "esp_clk_tree.h"
+#include "soc/rtc.h"
+#include "driver/gpio.h"
+
+typedef struct rmt_platform_t {
+    _lock_t mutex;                              // platform level mutex lock
+    rmt_group_t *groups[RMT_LL_GET(INST_NUM)];  // array of RMT group instances
+    int group_ref_counts[RMT_LL_GET(INST_NUM)]; // reference count used to protect group install/uninstall
+} rmt_platform_t;
+
+static rmt_platform_t s_platform; // singleton platform
+
+#if RMT_USE_RETENTION_LINK
+static esp_err_t rmt_create_sleep_retention_link_cb(void *arg);
+#endif
+
+rmt_group_t *rmt_acquire_group_handle(int group_id)
+{
+    bool new_group = false;
+    rmt_group_t *group = NULL;
+
+    // prevent install rmt group concurrently
+    _lock_acquire(&s_platform.mutex);
+    if (!s_platform.groups[group_id]) {
+        group = heap_caps_calloc(1, sizeof(rmt_group_t), RMT_MEM_ALLOC_CAPS);
+        if (group) {
+            new_group = true;
+            s_platform.groups[group_id] = group;
+            group->group_id = group_id;
+            group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+            // initial occupy_mask: 1111...100...0
+            group->occupy_mask = UINT32_MAX & ~((1 << RMT_LL_GET(CHANS_PER_INST)) - 1);
+            // group clock won't be configured at this stage, it will be set when allocate the first channel
+            group->clk_src = 0;
+            // enable the bus clock for the RMT peripheral
+            PERIPH_RCC_ATOMIC() {
+                rmt_ll_enable_bus_clock(group_id, true);
+                rmt_ll_reset_register(group_id);
+            }
+#if RMT_USE_RETENTION_LINK
+            sleep_retention_module_t module = rmt_retention_infos[group_id].module;
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = rmt_create_sleep_retention_link_cb,
+                        .arg = group,
+                    },
+                },
+                .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+            };
+            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+                // even though the sleep retention module init failed, RMT driver should still work, so just warning here
+                ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
+            }
+#endif // RMT_USE_RETENTION_LINK
+            // hal layer initialize
+            rmt_hal_init(&group->hal);
+        }
+    } else { // group already install
+        group = s_platform.groups[group_id];
+    }
+    if (group) {
+        // someone acquired the group handle means we have a new object that refer to this group
+        s_platform.group_ref_counts[group_id]++;
+    }
+    _lock_release(&s_platform.mutex);
+
+    if (new_group) {
+        ESP_LOGD(TAG, "new group(%d) at %p, occupy=%"PRIx32, group_id, group, group->occupy_mask);
+    }
+    return group;
+}
+
+void rmt_release_group_handle(rmt_group_t *group)
+{
+    int group_id = group->group_id;
+    bool do_deinitialize = false;
+    rmt_hal_context_t *hal = &group->hal;
+
+    _lock_acquire(&s_platform.mutex);
+    s_platform.group_ref_counts[group_id]--;
+    if (s_platform.group_ref_counts[group_id] == 0) {
+        do_deinitialize = true;
+        s_platform.groups[group_id] = NULL;
+        // disable core clock
+        PERIPH_RCC_ATOMIC() {
+            rmt_ll_enable_group_clock(hal->regs, false);
+        }
+        // hal layer deinitialize
+        rmt_hal_deinit(hal);
+        // disable bus clock
+        PERIPH_RCC_ATOMIC() {
+            rmt_ll_enable_bus_clock(group_id, false);
+        }
+    }
+    _lock_release(&s_platform.mutex);
+
+    if (do_deinitialize) {
+#if RMT_USE_RETENTION_LINK
+        sleep_retention_module_t module = rmt_retention_infos[group_id].module;
+        sleep_retention_module_detach(module);
+        if (sleep_retention_is_module_created(module)) {
+            sleep_retention_module_free(module);
+        }
+        if (sleep_retention_is_module_inited(module)) {
+            sleep_retention_module_deinit(module);
+        }
+#endif
+        free(group);
+        ESP_LOGD(TAG, "del group(%d)", group_id);
+    }
+}
+
+#if !RMT_LL_GET(CHANNEL_CLK_INDEPENDENT)
+static esp_err_t rmt_set_group_prescale(rmt_channel_t *chan, uint32_t expect_resolution_hz, uint32_t *ret_channel_prescale)
+{
+    uint32_t periph_src_clk_hz = 0;
+    rmt_group_t *group = chan->group;
+    int group_id = group->group_id;
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(group->clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
+
+    uint32_t group_resolution_hz = 0;
+    uint32_t group_prescale = 0;
+    uint32_t channel_prescale = 0;
+
+    if (group->resolution_hz == 0) {
+        while (++group_prescale <= RMT_LL_GROUP_CLOCK_MAX_INTEGER_PRESCALE) {
+            group_resolution_hz = periph_src_clk_hz / group_prescale;
+            channel_prescale = (group_resolution_hz + expect_resolution_hz / 2) / expect_resolution_hz;
+            // use the first value found during the search that satisfies the division requirement (highest frequency)
+            if (channel_prescale > 0 && channel_prescale <= RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE) {
+                break;
+            }
+        }
+    } else {
+        group_prescale = periph_src_clk_hz / group->resolution_hz;
+        channel_prescale = (group->resolution_hz + expect_resolution_hz / 2) / expect_resolution_hz;
+    }
+
+    ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= RMT_LL_GROUP_CLOCK_MAX_INTEGER_PRESCALE, ESP_ERR_INVALID_ARG, TAG,
+                        "group prescale out of the range");
+    ESP_RETURN_ON_FALSE(channel_prescale > 0 && channel_prescale <= RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE, ESP_ERR_INVALID_ARG, TAG,
+                        "channel prescale out of the range");
+
+    // group prescale is shared by all rmt_channel, only set once. use critical section to avoid race condition.
+    bool prescale_conflict = false;
+    group_resolution_hz = periph_src_clk_hz / group_prescale;
+    portENTER_CRITICAL(&group->spinlock);
+    if (group->resolution_hz == 0) {
+        group->resolution_hz = group_resolution_hz;
+        PERIPH_RCC_ATOMIC() {
+            rmt_ll_set_group_clock_src(group->hal.regs, chan->channel_id, group->clk_src, group_prescale, 1, 0);
+            rmt_ll_enable_group_clock(group->hal.regs, true);
+        }
+    } else {
+        prescale_conflict = (group->resolution_hz != group_resolution_hz);
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+    ESP_RETURN_ON_FALSE(!prescale_conflict, ESP_ERR_INVALID_ARG, TAG,
+                        "group resolution conflict, already is %"PRIu32" but attempt to %"PRIu32"", group->resolution_hz, group_resolution_hz);
+    ESP_LOGD(TAG, "group (%d) clock resolution:%"PRIu32"Hz", group_id, group->resolution_hz);
+    *ret_channel_prescale = channel_prescale;
+    return ESP_OK;
+}
+#endif // RMT_LL_GET(CHANNEL_CLK_INDEPENDENT)
+
+esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src, uint32_t expect_channel_resolution)
+{
+    esp_err_t ret = ESP_OK;
+    rmt_group_t *group = chan->group;
+    bool clock_selection_conflict = false;
+    // check if we need to update the group clock source, group clock source is shared by all channels
+    portENTER_CRITICAL(&group->spinlock);
+    if (group->clk_src == 0) {
+        group->clk_src = clk_src;
+    } else {
+        clock_selection_conflict = (group->clk_src != clk_src);
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+    ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_STATE, TAG,
+                        "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
+
+#if CONFIG_PM_ENABLE
+    // if DMA is not used, we're using CPU to push the data to the RMT FIFO
+    // if the CPU frequency goes down, the transfer+encoding scheme could be unstable because CPU can't fill the data in time
+    // so, choose ESP_PM_CPU_FREQ_MAX lock for non-dma mode
+    // otherwise, chose lock type based on the clock source
+    // note, even if the clock source is APB, we still use CPU_FREQ_MAX lock to ensure the stability of the RMT operation.
+    esp_pm_lock_type_t pm_lock_type = chan->dma_chan ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_CPU_FREQ_MAX;
+
+    ret = esp_pm_lock_create(pm_lock_type, 0, soc_rmt_signals[group->group_id].module_name, &chan->pm_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
+#endif // CONFIG_PM_ENABLE
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
+    uint32_t real_div;
+#if RMT_LL_GET(CHANNEL_CLK_INDEPENDENT)
+    uint32_t periph_src_clk_hz = 0;
+    // get clock source frequency
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz),
+                      err, TAG, "get clock source frequency failed");
+    PERIPH_RCC_ATOMIC() {
+        rmt_ll_set_group_clock_src(group->hal.regs, chan->channel_id, clk_src, 1, 1, 0);
+        rmt_ll_enable_group_clock(group->hal.regs, true);
+    }
+    group->resolution_hz = periph_src_clk_hz;
+    ESP_LOGD(TAG, "group clock resolution:%"PRIu32, group->resolution_hz);
+    real_div = (group->resolution_hz + expect_channel_resolution / 2) / expect_channel_resolution;
+#else
+    // set division for group clock source, to achieve highest resolution while guaranteeing the channel resolution.
+    ESP_GOTO_ON_ERROR(rmt_set_group_prescale(chan, expect_channel_resolution, &real_div), err, TAG, "set rmt group prescale failed");
+#endif // RMT_LL_GET(CHANNEL_CLK_INDEPENDENT)
+
+    if (chan->direction == RMT_CHANNEL_DIRECTION_TX) {
+        rmt_ll_tx_set_channel_clock_div(group->hal.regs, chan->channel_id, real_div);
+    } else {
+        rmt_ll_rx_set_channel_clock_div(group->hal.regs, chan->channel_id, real_div);
+    }
+    // resolution lost due to division, calculate the real resolution
+    chan->resolution_hz = group->resolution_hz / real_div;
+    if (chan->resolution_hz != expect_channel_resolution) {
+        ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, chan->resolution_hz);
+    }
+    return ret;
+
+err:
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    return ret;
+}
+
+esp_err_t rmt_get_channel_id(rmt_channel_handle_t channel, int *ret_id)
+{
+    ESP_RETURN_ON_FALSE(channel && ret_id, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *ret_id = channel->channel_id;
+    return ESP_OK;
+}
+
+esp_err_t rmt_get_channel_resolution(rmt_channel_handle_t channel, uint32_t *ret_resolution_hz)
+{
+    ESP_RETURN_ON_FALSE(channel && ret_resolution_hz, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *ret_resolution_hz = channel->resolution_hz;
+    return ESP_OK;
+}
+
+esp_err_t rmt_apply_carrier(rmt_channel_handle_t channel, const rmt_carrier_config_t *config)
+{
+    // specially, we allow config to be NULL, means to disable the carrier submodule
+    ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    return channel->set_carrier_action(channel, config);
+}
+
+esp_err_t rmt_del_channel(rmt_channel_handle_t channel)
+{
+    ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    return channel->del(channel);
+}
+
+esp_err_t rmt_enable(rmt_channel_handle_t channel)
+{
+    ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    return channel->enable(channel);
+}
+
+esp_err_t rmt_disable(rmt_channel_handle_t channel)
+{
+    ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    return channel->disable(channel);
+}
+
+#if RMT_USE_RETENTION_LINK
+static esp_err_t rmt_create_sleep_retention_link_cb(void *arg)
+{
+    rmt_group_t *group = (rmt_group_t *)arg;
+    int group_id = group->group_id;
+    esp_err_t err = sleep_retention_entries_create(rmt_retention_infos[group_id].regdma_entry_array,
+                                                   rmt_retention_infos[group_id].array_size,
+                                                   REGDMA_LINK_PRI_RMT, rmt_retention_infos[group_id].module);
+    return err;
+}
+
+void rmt_create_retention_module(rmt_group_t *group)
+{
+    int group_id = group->group_id;
+    sleep_retention_module_t module = rmt_retention_infos[group_id].module;
+    _lock_acquire(&s_platform.mutex);
+    if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
+        if (sleep_retention_module_allocate(module) != ESP_OK) {
+            // even though the sleep retention module create failed, RMT driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention link failed, power domain won't be turned off during sleep");
+        } else {
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention link failed, power domain won't be turned off during sleep");
+            }
+        }
+    }
+    _lock_release(&s_platform.mutex);
+}
+#endif // RMT_USE_RETENTION_LINK
+
+#if CONFIG_RMT_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void rmt_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

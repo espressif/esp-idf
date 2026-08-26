@@ -1,0 +1,6 @@
+if ESP_EVENT_POST_FROM_IRAM_ISR = y:
+    [mapping:esp_event]
+    archive: libesp_event.a
+    entries:
+        esp_event:esp_event_isr_post_to (noflash)
+        default_event_loop:esp_event_isr_post (noflash)

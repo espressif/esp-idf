@@ -1,0 +1,19 @@
+menu "Partition API Configuration"
+
+    config ESP_PARTITION_ENABLE_STATS
+        bool "Host test statistics enabled"
+        depends on IDF_TARGET_LINUX
+        default n
+        help
+            This option enables gathering host test statistics and SPI flash wear levelling simulation.
+
+    config ESP_PARTITION_ERASE_CHECK
+        bool "Check if flash is erased before writing"
+        depends on IDF_TARGET_LINUX
+        default y
+        help
+            This option controls whether the partition implementation checks
+            if the flash is erased before writing to it.
+            This is necessary for SPIFFS, which expects to be able to write without erasing first.
+
+endmenu

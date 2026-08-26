@@ -1,0 +1,28 @@
+
+menuconfig BLE_ISO_COMPRESSED_LOG_ENABLE
+    bool "Enable BLE Audio/ISO log compression(Preview)"
+    depends on BLE_COMPRESSED_LOG_ENABLE
+    depends on BT_ISO
+    default n
+    help
+            Apply compression to BLE Audio/ISO protocol stack logs. Requires
+            base BLE compression to be enabled. Specifically optimizes log
+            storage and transmission for BLE Audio and ISO.
+
+            Note: This library depends on additional Python packages. It will
+            function correctly only after these dependencies are installed;
+            refer to:
+            "components/bt/common/ble_log/log_compression/README.en.md"
+            for installation instructions.
+
+            If the required packages are not installed, the log-compression
+            mechanism will remain disabled even when this Config is enabled.
+
+config BLE_ISO_COMPRESSED_LOG_BUFFER_LEN
+    int "BLE Audio/ISO log buffer length"
+    depends on BLE_ISO_COMPRESSED_LOG_ENABLE
+    default 300
+    help
+            Maximum output length for a single log
+
+source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/iso/audio/Kconfig.iso.tags.in"

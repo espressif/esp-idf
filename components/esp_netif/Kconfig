@@ -1,0 +1,110 @@
+menu "ESP NETIF Adapter"
+
+    config ESP_NETIF_LOST_IP_TIMER_ENABLE
+        bool "Enable IPv4 lost IP event timer"
+        default y
+        help
+            Enable raising LOST_IP events using a timer when the IPv4 address becomes invalid.
+            When disabled, the timer is not started and LOST_IP events are not posted.
+            The delay is configured by ESP_NETIF_IP_LOST_TIMER_INTERVAL.
+
+    config ESP_NETIF_IP_LOST_TIMER_INTERVAL
+        int "IP Address lost timer interval (seconds)"
+        range 0 65535
+        default 120
+        help
+            The IP address may be lost because of some reasons, e.g. when the station disconnects
+            from soft-AP, or when DHCP IP renew fails etc. If the IP lost timer is enabled, it will
+            be started every time the IP is lost. Event SYSTEM_EVENT_STA_LOST_IP will be raised if
+            the timer expires. The IP lost timer is stopped if the station gets the IP again before
+            the timer expires. For backward compatibility, setting the interval to 0 disables the
+            timer as well.
+
+    config ESP_NETIF_PROVIDE_CUSTOM_IMPLEMENTATION
+        bool "Use only ESP-NETIF headers"
+        default n
+        help
+            No implementation of ESP-NETIF functions is provided.
+            This option is used for adding a custom TCP/IP stack and defining related
+            esp_netif functionality
+
+    choice ESP_NETIF_USE_TCPIP_STACK_LIB
+        prompt "TCP/IP Stack Library"
+        default ESP_NETIF_TCPIP_LWIP
+        depends on !ESP_NETIF_PROVIDE_CUSTOM_IMPLEMENTATION
+        help
+            Choose the TCP/IP Stack to work, for example, LwIP, uIP, etc.
+        config ESP_NETIF_TCPIP_LWIP
+            bool "LwIP"
+            select ESP_NETIF_USES_TCPIP_WITH_BSD_API
+            depends on LWIP_ENABLE
+            help
+                lwIP is a small independent implementation of the TCP/IP protocol suite.
+
+        config ESP_NETIF_LOOPBACK
+            bool "Loopback"
+            help
+                Dummy implementation of esp-netif functionality which connects driver transmit
+                to receive function. This option is for testing purpose only
+
+    endchoice
+
+    config ESP_NETIF_USES_TCPIP_WITH_BSD_API
+        bool # Set to true if the chosen TCP/IP stack provides BSD socket API
+
+    config ESP_NETIF_REPORT_DATA_TRAFFIC
+        bool "Report data traffic via events"
+        default y
+        help
+            Enable if esp_netif_transmit() and esp_netif_receive() should generate events. This can be useful
+            to blink data traffic indication lights.
+
+    config ESP_NETIF_RECEIVE_REPORT_ERRORS
+        # Hidden option forcing esp_netif_receive to report errors with external components and backward compatibility
+        bool
+        default y
+
+    config ESP_NETIF_L2_TAP
+        bool "Enable netif L2 TAP support"
+        help
+            A user program can read/write link layer (L2) frames from/to ESP TAP device.
+            The ESP TAP device can be currently associated only with Ethernet physical interfaces.
+
+    config ESP_NETIF_L2_TAP_MAX_FDS
+        depends on ESP_NETIF_L2_TAP
+        int "Maximum number of opened L2 TAP File descriptors"
+        range 1 10
+        default 5
+        help
+            Maximum number of opened File descriptors (FD's) associated with ESP TAP device. ESP TAP FD's take up
+            a certain amount of memory, and allowing fewer FD's to be opened at the same time conserves memory.
+
+    config ESP_NETIF_L2_TAP_RX_QUEUE_SIZE
+        depends on ESP_NETIF_L2_TAP
+        int "Size of L2 TAP Rx queue"
+        range 1 100
+        default 20
+        help
+            Maximum number of frames queued in opened File descriptor. Once the queue is full, the newly arriving
+            frames are dropped until the queue has enough room to accept incoming traffic (Tail Drop queue
+            management).
+
+    config ESP_NETIF_BRIDGE_EN
+        depends on ESP_NETIF_TCPIP_LWIP
+        bool "Enable LwIP IEEE 802.1D bridge"
+        default n
+        help
+            Enable LwIP IEEE 802.1D bridge support in ESP-NETIF. Note that "Number of clients store data in netif"
+            (LWIP_NUM_NETIF_CLIENT_DATA) option needs to be properly configured to be LwIP bridge available!
+
+    config ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+        bool "Enable DNS server per interface"
+        default n
+        select LWIP_DNS_SETSERVER_WITH_NETIF
+        help
+            Enable this option to use the DNS server which belongs to the selected default network interface.
+            This feature collects DNS server and netif information from LWIP core modules.
+            Whenever a new default netif is selected, global DNS servers in LWIP are updated with the netif
+            related servers.
+
+endmenu

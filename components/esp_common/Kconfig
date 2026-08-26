@@ -1,0 +1,17 @@
+menu "Common ESP-related"
+
+    config ESP_ERR_TO_NAME_LOOKUP
+        bool "Enable lookup of error code strings"
+        default "y"
+        help
+            Functions esp_err_to_name() and esp_err_to_name_r() return string representations of error codes from a
+            pre-generated lookup table. This option can be used to turn off the use of the look-up table in order to
+            save memory but this comes at the price of sacrificing distinguishable (meaningful) output string
+            representations.
+
+    config ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+        # Invisible option that is set by SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY, but
+        # exists even if SPIRAM is not supported
+        bool
+
+endmenu # Common ESP-related

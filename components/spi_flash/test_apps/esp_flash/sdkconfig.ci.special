@@ -1,0 +1,6 @@
+# This config lists merged freertos_flash no_optimization in UT all together.
+CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_ESP_SYSTEM_MEMPROT=n
+CONFIG_COMPILER_OPTIMIZATION_NONE=y

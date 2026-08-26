@@ -1,0 +1,24 @@
+choice ESPTOOLPY_FLASHFREQ
+    prompt "Flash SPI speed"
+    default ESPTOOLPY_FLASHFREQ_80M
+    config ESPTOOLPY_FLASHFREQ_120M
+        bool "120 MHz (READ DOCS FIRST)"
+        depends on (SPI_FLASH_HPM_ON || ESPTOOLPY_OCT_FLASH) && \
+            (ESPTOOLPY_FLASH_SAMPLE_MODE_STR || IDF_EXPERIMENTAL_FEATURES)
+        help
+            - Optional feature for QSPI Flash. Read docs and enable `CONFIG_SPI_FLASH_HPM_ENA` first!
+            - Flash 120 MHz SDR mode is stable.
+            - Flash 120 MHz DDR mode is an experimental feature, it works when
+              the temperature is stable.
+
+              Risks:
+              If your chip powers on at a certain temperature, then after the temperature
+              increases or decreases by approximately 20 Celsius degrees (depending on the
+              chip), the program will crash randomly.
+    config ESPTOOLPY_FLASHFREQ_80M
+        bool "80 MHz"
+    config ESPTOOLPY_FLASHFREQ_40M
+        bool "40 MHz"
+    config ESPTOOLPY_FLASHFREQ_20M
+        bool "20 MHz"
+endchoice

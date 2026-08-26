@@ -1,0 +1,4 @@
+## IDF Component Manager Manifest File
+dependencies:
+  # ESP codec device driver, only used when an analog microphone is selected.
+  espressif/esp_codec_dev: "^1.6.0"

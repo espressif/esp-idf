@@ -1,0 +1,2 @@
+# need this to detect that OpenOCD is connected
+CONFIG_ESP_DEBUG_OCDAWARE=y

@@ -1,0 +1,11 @@
+idf_component_register(SRCS
+                        "app_main.c"
+                        "test_wifi_conn.c"
+                        "test_bss_max_idle.c"
+                        "test_connect_passive_channel_hidden_ap.c"
+
+                         PRIV_INCLUDE_DIRS . ${CMAKE_CURRENT_BINARY_DIR}
+                         PRIV_REQUIRES cmock test_utils nvs_flash esp_common esp_wifi esp_event
+                         WHOLE_ARCHIVE)
+
+add_definitions(-DCONFIG_ESP_WIFI_BSS_MAX_IDLE_SUPPORT)

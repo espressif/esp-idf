@@ -1,0 +1,11 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_ana_cmpr/test_apps/analog_comparator:
+  disable:
+    - if: SOC_ANA_CMPR_SUPPORTED != 1
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_ana_cmpr
+    - esp_hal_ana_cmpr
+    - esp_hw_support
+    - soc

@@ -1,0 +1,428 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stddef.h>
+#include <string.h>
+#include <sys/lock.h>
+#include <sys/param.h>
+
+#include "esp_log.h"
+#include "esp_attr.h"
+#include "esp_sleep.h"
+#include "esp_check.h"
+#include "soc/soc_caps.h"
+#include "esp_private/pm_impl.h"
+#include "esp_private/sleep_modem.h"
+#include "esp_private/sleep_retention.h"
+#include "sdkconfig.h"
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#include "esp_private/esp_pmu.h"
+#endif
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#include "esp_pau.h"
+#endif
+
+ESP_LOG_ATTR_TAG(TAG, "sleep_modem");
+
+#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
+static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);
+#endif
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+static bool s_modem_sleep = false;
+static uint8_t s_modem_prepare_ref = 0;
+static _lock_t s_modem_prepare_lock;
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+
+#if CONFIG_MAC_BB_PD
+#define MAC_BB_POWER_DOWN_CB_NO     (4)
+#define MAC_BB_POWER_UP_CB_NO       (3)
+
+static DRAM_ATTR mac_bb_power_down_cb_t s_mac_bb_power_down_cb[MAC_BB_POWER_DOWN_CB_NO];
+static DRAM_ATTR mac_bb_power_up_cb_t   s_mac_bb_power_up_cb[MAC_BB_POWER_UP_CB_NO];
+
+esp_err_t esp_register_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
+{
+    int index = MAC_BB_POWER_DOWN_CB_NO;
+    for (int i = MAC_BB_POWER_DOWN_CB_NO - 1; i >= 0; i--) {
+        if (s_mac_bb_power_down_cb[i] == cb) {
+            return ESP_OK;
+        }
+
+        if (s_mac_bb_power_down_cb[i] == NULL) {
+            index = i;
+        }
+    }
+
+    if (index < MAC_BB_POWER_DOWN_CB_NO) {
+        s_mac_bb_power_down_cb[index] = cb;
+        return ESP_OK;
+    }
+
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_unregister_mac_bb_pd_callback(mac_bb_power_down_cb_t cb)
+{
+    for (int i = MAC_BB_POWER_DOWN_CB_NO - 1; i >= 0; i--) {
+        if (s_mac_bb_power_down_cb[i] == cb) {
+            s_mac_bb_power_down_cb[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+void mac_bb_power_down_cb_execute(void)
+{
+    for (int i = 0; i < MAC_BB_POWER_DOWN_CB_NO; i++) {
+        if (s_mac_bb_power_down_cb[i]) {
+            s_mac_bb_power_down_cb[i]();
+        }
+    }
+}
+
+esp_err_t esp_register_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
+{
+    int index = MAC_BB_POWER_UP_CB_NO;
+    for (int i = MAC_BB_POWER_UP_CB_NO - 1; i >= 0; i--) {
+        if (s_mac_bb_power_up_cb[i] == cb) {
+            return ESP_OK;
+        }
+
+        if (s_mac_bb_power_up_cb[i] == NULL) {
+            index = i;
+        }
+    }
+
+    if (index < MAC_BB_POWER_UP_CB_NO) {
+        s_mac_bb_power_up_cb[index] = cb;
+        return ESP_OK;
+    }
+
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_unregister_mac_bb_pu_callback(mac_bb_power_up_cb_t cb)
+{
+    for (int i = MAC_BB_POWER_UP_CB_NO - 1; i >= 0; i--) {
+        if (s_mac_bb_power_up_cb[i] == cb) {
+            s_mac_bb_power_up_cb[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+void mac_bb_power_up_cb_execute(void)
+{
+    for (int i = 0; i < MAC_BB_POWER_UP_CB_NO; i++) {
+        if (s_mac_bb_power_up_cb[i]) {
+            s_mac_bb_power_up_cb[i]();
+        }
+    }
+}
+
+#endif ///CONFIG_MAC_BB_PD
+
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+typedef struct sleep_modem_config {
+    _lock_t phy_link_lock;
+    void    *phy_link;
+    union {
+        struct {
+            uint32_t phy_link_done: 1;
+            uint32_t modem_mask: SLEEP_MODEM_MAX_CNT;
+            uint32_t reserved: 27 - SLEEP_MODEM_MAX_CNT;
+        };
+        uint32_t flags;
+    };
+} sleep_modem_config_t;
+
+static sleep_modem_config_t s_sleep_modem = { .phy_link = NULL, .flags = 0 };
+
+bool IRAM_ATTR sleep_modem_wifi_modem_state_is_enabled(void)
+{
+    return !!(s_sleep_modem.modem_mask & SLEEP_MODEM_WIFI);
+}
+
+esp_err_t sleep_modem_phy_init(sleep_modem_type_t modem_mask)
+{
+    esp_err_t err = ESP_OK;
+    void *link = NULL;
+
+    _lock_acquire(&s_sleep_modem.phy_link_lock);
+    if (s_sleep_modem.modem_mask & modem_mask) {
+        _lock_release(&s_sleep_modem.phy_link_lock);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!s_sleep_modem.modem_mask) {
+        s_sleep_modem.flags = 0;
+        if (!s_sleep_modem.phy_link) {
+            err = sleep_phy_link_init(&link);
+            if (err == ESP_OK) {
+                s_sleep_modem.phy_link = link;
+            } else {
+                _lock_release(&s_sleep_modem.phy_link_lock);
+                return err;
+            }
+        }
+    }
+    s_sleep_modem.modem_mask |= modem_mask;
+    _lock_release(&s_sleep_modem.phy_link_lock);
+    return err;
+}
+
+__attribute__((unused)) void sleep_modem_phy_deinit(sleep_modem_type_t modem_mask)
+{
+    _lock_acquire(&s_sleep_modem.phy_link_lock);
+    if (!(s_sleep_modem.modem_mask & modem_mask)) {
+        _lock_release(&s_sleep_modem.phy_link_lock);
+        return;
+    }
+
+    s_sleep_modem.modem_mask &= ~modem_mask;
+    if (s_sleep_modem.phy_link && !s_sleep_modem.modem_mask) {
+        sleep_phy_link_deinit(s_sleep_modem.phy_link);
+        s_sleep_modem.phy_link = NULL;
+        s_sleep_modem.flags = 0;
+    }
+    _lock_release(&s_sleep_modem.phy_link_lock);
+}
+
+void IRAM_ATTR sleep_modem_phy_retention_complete(void)
+{
+    sleep_retention_phy_retention_complete();
+}
+
+void IRAM_ATTR sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel, uint8_t flags)
+{
+    sleep_phy_link_config(s_sleep_modem.phy_link, flags);
+    sleep_retention_do_phy_retention(!restore, wifimac_link_is_sel, true);
+    sleep_phy_link_config(s_sleep_modem.phy_link, SLEEP_MODEM_RESET_RETENTION);
+    if (!restore) {
+        s_sleep_modem.phy_link_done = 1;
+    }
+}
+
+inline __attribute__((always_inline)) bool sleep_modem_phy_link_enabled(void)
+{
+    return s_sleep_modem.modem_mask;
+}
+
+inline __attribute__((always_inline)) bool sleep_modem_phy_link_done(void)
+{
+    return (s_sleep_modem.phy_link_done == 1);
+}
+
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
+
+bool modem_domain_pd_allowed(void)
+{
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && SOC_PAU_SUPPORTED
+    const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
+    const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
+    const sleep_retention_module_bitmap_t retained_modules = sleep_retention_get_retained_modules();
+
+    sleep_retention_module_bitmap_t mask = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+#if SOC_WIFI_SUPPORTED
+    mask.bitmap[SLEEP_RETENTION_MODULE_WIFI_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_MAC % 32);
+    mask.bitmap[SLEEP_RETENTION_MODULE_WIFI_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_BB % 32);
+#endif
+#if SOC_BT_SUPPORTED
+    mask.bitmap[SLEEP_RETENTION_MODULE_BLE_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC % 32);
+    mask.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
+#endif
+#if SOC_IEEE802154_SUPPORTED
+    mask.bitmap[SLEEP_RETENTION_MODULE_802154_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_802154_MAC % 32);
+    mask.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
+#endif
+
+    const sleep_retention_module_bitmap_t modem_domain_inited_modules = sleep_retention_module_bitmap_and(inited_modules, mask);
+    const sleep_retention_module_bitmap_t modem_domain_created_modules = sleep_retention_module_bitmap_and(created_modules, mask);
+    const sleep_retention_module_bitmap_t modem_domain_retained_modules = sleep_retention_module_bitmap_and(retained_modules, mask);
+    bool ic = sleep_retention_module_bitmap_eq(modem_domain_inited_modules, modem_domain_created_modules);
+    bool cr = sleep_retention_module_bitmap_eq(modem_domain_created_modules, modem_domain_retained_modules);
+    return ic && cr;
+#else
+    return false; /* MODEM power domain is controlled by each module (WiFi, Bluetooth or 15.4) of modem */
+#endif
+}
+
+uint32_t sleep_modem_reject_triggers(void)
+{
+    uint32_t reject_triggers = 0;
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    reject_triggers = sleep_modem_wifi_modem_state_is_enabled() ? PMU_MODEM_WAKEUP_PROTECT : 0;
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+    return reject_triggers;
+}
+
+bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_light_sleep(void)
+{
+    bool skip = false;
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    /* To block the system from entering sleep before modem link done. In light
+     * sleep mode, the system may switch to modem state, which will cause
+     * hardware to fail to enable RF */
+    skip = sleep_modem_wifi_modem_state_is_enabled() && !sleep_modem_phy_link_done();
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+    return skip;
+}
+
+esp_err_t sleep_modem_configure(int max_freq_mhz, int min_freq_mhz, bool light_sleep_enable)
+{
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    extern int esp_wifi_internal_light_sleep_configure(bool);
+    esp_wifi_internal_light_sleep_configure(light_sleep_enable);
+#endif
+#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
+    if (light_sleep_enable) {
+        esp_pm_light_sleep_default_params_config(min_freq_mhz, max_freq_mhz);
+    }
+#endif
+    return ESP_OK;
+}
+
+#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 2
+
+/* Inform peripherals of light sleep wakeup overhead time */
+static inform_out_light_sleep_overhead_cb_t s_periph_inform_out_light_sleep_overhead_cb[PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO];
+
+esp_err_t esp_pm_register_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
+            return ESP_OK;
+        } else if (s_periph_inform_out_light_sleep_overhead_cb[i] == NULL) {
+            s_periph_inform_out_light_sleep_overhead_cb[i] = cb;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_pm_unregister_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
+            s_periph_inform_out_light_sleep_overhead_cb[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+void periph_inform_out_light_sleep_overhead(uint32_t out_light_sleep_time)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i]) {
+            s_periph_inform_out_light_sleep_overhead_cb[i](out_light_sleep_time);
+        }
+    }
+}
+
+static update_light_sleep_default_params_config_cb_t s_light_sleep_default_params_config_cb = NULL;
+
+void esp_pm_register_light_sleep_default_params_config_callback(update_light_sleep_default_params_config_cb_t cb)
+{
+    if (s_light_sleep_default_params_config_cb == NULL) {
+        s_light_sleep_default_params_config_cb = cb;
+    }
+}
+
+void esp_pm_unregister_light_sleep_default_params_config_callback(void)
+{
+    if (s_light_sleep_default_params_config_cb) {
+        s_light_sleep_default_params_config_cb = NULL;
+    }
+}
+
+#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
+static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz)
+{
+    if (s_light_sleep_default_params_config_cb) {
+        (*s_light_sleep_default_params_config_cb)(min_freq_mhz, max_freq_mhz);
+    }
+}
+#endif
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+void sleep_modem_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                         mac_bb_power_up_cb_t pu_cb)
+{
+    _lock_acquire(&s_modem_prepare_lock);
+    if (s_modem_prepare_ref++ == 0) {
+        esp_register_mac_bb_pd_callback(pd_cb);
+        esp_register_mac_bb_pu_callback(pu_cb);
+    }
+    _lock_release(&s_modem_prepare_lock);
+}
+
+void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                           mac_bb_power_up_cb_t pu_cb)
+{
+    _lock_acquire(&s_modem_prepare_lock);
+    assert(s_modem_prepare_ref);
+    if (--s_modem_prepare_ref == 0) {
+        esp_unregister_mac_bb_pd_callback(pd_cb);
+        esp_unregister_mac_bb_pu_callback(pu_cb);
+    }
+    _lock_release(&s_modem_prepare_lock);
+
+}
+
+/**
+ * @brief Switch root clock source to PLL do retention and switch back
+ *
+ * This function is used when Bluetooth/IEEE802154 module requires register backup/restore, this function
+ * is called ONLY when SOC_PM_RETENTION_HAS_CLOCK_BUG is set.
+ * @param backup true for backup, false for restore
+ * @param cpu_freq_mhz cpu frequency to do retention
+ * @param do_retention function for retention
+ */
+static void IRAM_ATTR rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(bool backup, int cpu_freq_mhz, void (*do_retention)(bool))
+{
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    if (pmu_sleep_pll_already_enabled()) {
+        return;
+    }
+#endif
+    rtc_cpu_freq_config_t config, pll_config;
+    rtc_clk_cpu_freq_get_config(&config);
+
+    rtc_clk_cpu_freq_mhz_to_config(cpu_freq_mhz, &pll_config);
+    rtc_clk_cpu_freq_set_config(&pll_config);
+
+    if (do_retention) {
+        (*do_retention)(backup);
+    }
+
+    rtc_clk_cpu_freq_set_config(&config);
+}
+
+void IRAM_ATTR sleep_modem_mac_bb_power_down_prepare(void)
+{
+    if (s_modem_sleep == false) {
+        rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(true,
+                                                     CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+                                                     sleep_retention_do_extra_retention);
+        s_modem_sleep = true;
+    }
+}
+
+void IRAM_ATTR sleep_modem_mac_bb_power_up_prepare(void)
+{
+    if (s_modem_sleep) {
+        rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(false,
+                                                     CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+                                                     sleep_retention_do_extra_retention);
+        s_modem_sleep = false;
+    }
+}
+#endif /* SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD */

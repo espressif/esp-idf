@@ -1,0 +1,76 @@
+menu "ESP-Driver:RMT Configurations"
+    depends on SOC_RMT_SUPPORTED
+
+    config RMT_ENCODER_FUNC_IN_IRAM
+        bool "Place RMT encoder function in IRAM"
+        default y
+        help
+            Place RMT encoder function into IRAM for better performance and fewer cache misses.
+
+    config RMT_TX_ISR_HANDLER_IN_IRAM
+        bool "Place RMT TX ISR handler in IRAM to reduce latency"
+        default y
+        select RMT_OBJ_CACHE_SAFE
+        help
+            Place RMT TX ISR handler in IRAM to reduce latency caused by cache miss.
+
+    config RMT_RX_ISR_HANDLER_IN_IRAM
+        bool "Place RMT RX ISR handler in IRAM to reduce latency"
+        default y
+        select RMT_OBJ_CACHE_SAFE
+        help
+            Place RMT RX ISR handler in IRAM to reduce latency caused by cache miss.
+
+    config RMT_RECV_FUNC_IN_IRAM
+        bool "Place RMT receive function in IRAM"
+        default n
+        select RMT_OBJ_CACHE_SAFE
+        help
+            Place RMT receive function into IRAM for better performance and fewer cache misses.
+
+    config RMT_TX_ISR_CACHE_SAFE
+        bool "Allow RMT TX ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
+        select RMT_TX_ISR_HANDLER_IN_IRAM
+        select RMT_ENCODER_FUNC_IN_IRAM
+        default n
+        help
+            Enable this option to allow the RMT TX Interrupt Service Routine (ISR)
+            to execute even when the cache is disabled. This can be useful in scenarios where the cache
+            might be turned off, but the RMT TX functionality is still required to operate correctly.
+
+    config RMT_RX_ISR_CACHE_SAFE
+        bool "Allow RMT RX ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
+        select RMT_RX_ISR_HANDLER_IN_IRAM
+        default n
+        help
+            Enable this option to allow the RMT RX Interrupt Service Routine (ISR)
+            to execute even when the cache is disabled. This can be useful in scenarios where the cache
+            might be turned off, but the RMT RX functionality is still required to operate correctly.
+
+    config RMT_OBJ_CACHE_SAFE
+        bool
+        default n
+        help
+            This will ensure the RMT object will not be allocated from a memory region
+            where its cache can be disabled.
+
+    config RMT_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, RMT driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+
+    config RMT_ISR_IRAM_SAFE
+        bool "RMT ISR IRAM-Safe (Deprecated)" if !SPI_FLASH_AUTO_SUSPEND
+        select RMT_TX_ISR_CACHE_SAFE
+        select RMT_RX_ISR_CACHE_SAFE
+        default n
+        help
+            Ensure the RMT interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+endmenu # RMT Configurations

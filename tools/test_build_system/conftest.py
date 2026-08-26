@@ -1,0 +1,424 @@
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+import datetime
+import logging
+import os
+import shutil
+import subprocess
+import typing
+from pathlib import Path
+from tempfile import mkdtemp
+
+import pytest
+from _pytest.config import Config
+from _pytest.fixtures import FixtureRequest
+from _pytest.main import Session
+from _pytest.nodes import Item
+from test_build_system_helpers import EXT_IDF_PATH
+from test_build_system_helpers import EnvDict
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import get_idf_build_env
+from test_build_system_helpers import run_idf_py
+
+
+def _get_git_submodule_paths(repo_path: Path) -> list[str]:
+    """Get list of submodule paths from .gitmodules file."""
+    gitmodules = repo_path / '.gitmodules'
+    if not gitmodules.exists():
+        return []
+
+    submodule_paths = []
+    with open(gitmodules, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('path = '):
+                submodule_paths.append(line[7:])  # Remove 'path = ' prefix
+    return submodule_paths
+
+
+def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
+    """
+    Create IDF copy using git worktree (fast) + copying submodule directories.
+
+    Git worktree creates a fast checkout of tracked files, but submodules
+    appear as empty directories. We copy submodule content from the source
+    repo (which has them already checked out) instead of running git submodule
+    update (which can fail due to auth issues on CI).
+
+    After copying submodules, remove the worktree's top-level ``.git`` file so
+    the result matches the old ``shutil.copytree`` behavior (no git repo at
+    ``IDF_PATH``). Otherwise CMake's ``git_submodule_check`` runs inside the
+    copy, sees missing submodule gitlinks, and tries ``git submodule update``,
+    which fails because submodule directories already contain copied files.
+    """
+    import uuid
+
+    timestamp = datetime.datetime.now().strftime('%H%M%S')
+    branch_name = f'test-worktree-{timestamp}-{uuid.uuid4().hex[:8]}'
+
+    logging.debug(f'creating git worktree at {path_to} (branch: {branch_name})')
+    subprocess.run(
+        ['git', 'worktree', 'add', '-b', branch_name, str(path_to)], cwd=path_from, capture_output=True, check=True
+    )
+
+    # Copy submodule directories from source (they're already checked out there)
+    submodule_paths = _get_git_submodule_paths(path_from)
+    for submodule_rel_path in submodule_paths:
+        src_submodule = path_from / submodule_rel_path
+        dst_submodule = path_to / submodule_rel_path
+
+        # Only copy if source submodule exists and has content
+        if src_submodule.exists() and any(src_submodule.iterdir()):
+            logging.debug(f'copying submodule {submodule_rel_path}')
+            # Worktree submodule paths may be gitlink files; rmtree() does not remove those.
+            if dst_submodule.is_file() or dst_submodule.is_symlink():
+                dst_submodule.unlink()
+            elif dst_submodule.exists():
+                shutil.rmtree(dst_submodule)
+            shutil.copytree(src_submodule, dst_submodule, symlinks=True, ignore=shutil.ignore_patterns('.git'))
+
+    # Match old shutil-based idf_copy: no top-level .git (see docstring above).
+    (path_to / '.git').unlink(missing_ok=True)
+
+    return branch_name
+
+
+def _cleanup_worktree(path_from: Path, path_to: Path, branch_name: str) -> None:
+    """Remove worktree checkout directory and metadata; delete the temporary branch."""
+    logging.debug(f'removing git worktree at {path_to}')
+    # ``git worktree remove`` does not work once we deleted ``path_to/.git``;
+    # remove the directory and prune orphaned worktree metadata from the source repo.
+    shutil.rmtree(path_to, ignore_errors=True)
+    subprocess.run(
+        ['git', 'worktree', 'prune'],
+        cwd=path_from,
+        capture_output=False,
+        check=False,
+    )
+    # Delete the temporary branch
+    subprocess.run(
+        ['git', 'branch', '-D', branch_name],
+        cwd=path_from,
+        check=False,  # Don't fail if branch doesn't exist
+    )
+
+
+def _create_idf_copy_via_shutil(path_from: Path, path_to: Path) -> None:
+    """Create IDF copy using shutil.copytree (slower but always works)."""
+    # if the new directory inside the original directory,
+    # make sure not to go into recursion.
+    ignore = shutil.ignore_patterns(
+        path_to.name,
+        # also ignore the build directories which may be quite large
+        # plus ignore .git since it is causing trouble when removing on Windows
+        '**/build',
+        '.git',
+    )
+    logging.debug(f'copying {path_from} to {path_to} (shutil.copytree)')
+    shutil.copytree(path_from, path_to, ignore=ignore, symlinks=True)
+
+
+# Pytest hook used to check if the test has passed or failed, from a fixture.
+# Based on https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item: typing.Any, call: typing.Any) -> typing.Generator[None, pytest.TestReport, None]:  # pylint: disable=unused-argument
+    outcome = yield  # Execute all other hooks to obtain the report object
+    report = outcome.get_result()
+    if report.when == 'call' and report.passed:
+        # set an attribute which can be checked using 'should_clean_test_dir' function below
+        setattr(item, 'passed', True)
+
+
+def should_clean_test_dir(request: FixtureRequest) -> bool:
+    # Only remove the test directory if the test has passed
+    return getattr(request.node, 'passed', False) or request.config.getoption('cleanup_idf_copy', False)
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        '--work-dir',
+        action='store',
+        default=None,
+        help='Directory for temporary files. If not specified, an OS-specific temporary directory will be used.',
+    )
+    parser.addoption(
+        '--cleanup-idf-copy',
+        action='store_true',
+        help='Always clean up the IDF copy after the test. By default, the copy is cleaned up only if the test passes.',
+    )
+    parser.addoption(
+        '--buildv2',
+        action='store_true',
+        help='Use the IDF build system v2 project for testing.',
+    )
+
+
+@pytest.fixture(scope='session')
+def _session_work_dir(request: FixtureRequest) -> typing.Generator[tuple[Path, bool], None, None]:
+    work_dir = request.config.getoption('--work-dir')
+
+    if work_dir:
+        work_dir = os.path.join(work_dir, datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d_%H-%M-%S'))
+        logging.debug(f'using work directory: {work_dir}')
+        os.makedirs(work_dir, exist_ok=True)
+        clean_dir = None
+        is_temp_dir = False
+    else:
+        work_dir = mkdtemp()
+        logging.debug(f'created temporary work directory: {work_dir}')
+        clean_dir = work_dir
+        is_temp_dir = True
+
+    # resolve allows using relative paths with --work-dir option
+    yield Path(work_dir).resolve(), is_temp_dir
+
+    if clean_dir:
+        logging.debug(f'cleaning up {clean_dir}')
+        shutil.rmtree(clean_dir, ignore_errors=True)
+
+
+@pytest.fixture(name='func_work_dir', autouse=True)
+def work_dir(request: FixtureRequest, _session_work_dir: tuple[Path, bool]) -> typing.Generator[Path, None, None]:
+    session_work_dir, is_temp_dir = _session_work_dir
+
+    if request._pyfuncitem.keywords.get('force_temp_work_dir') and not is_temp_dir:
+        work_dir = Path(mkdtemp()).resolve()
+        logging.debug('Force using temporary work directory')
+        clean_dir = work_dir
+    else:
+        work_dir = session_work_dir
+        clean_dir = None
+
+    # resolve allows using relative paths with --work-dir option
+    yield work_dir
+
+    if clean_dir:
+        logging.debug(f'cleaning up {clean_dir}')
+        shutil.rmtree(clean_dir, ignore_errors=True)
+
+
+@pytest.fixture
+def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
+    # by default, use hello_world app and copy it to a temporary directory with
+    # the name resembling that of the test
+    if request.config.getoption('buildv2', False):
+        copy_from = 'tools/test_build_system/buildv2_test_app'
+    else:
+        copy_from = 'tools/test_build_system/build_test_app'
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_app'
+
+    # allow overriding source and destination via pytest.mark.test_app_copy()
+    mark = request.node.get_closest_marker('test_app_copy')
+    if mark:
+        copy_from = mark.args[0]
+        if len(mark.args) > 1:
+            copy_to = mark.args[1]
+
+    path_from = Path(os.environ['IDF_PATH']) / copy_from
+    path_to = func_work_dir / copy_to
+
+    # if the new directory inside the original directory,
+    # make sure not to go into recursion.
+    ignore = shutil.ignore_patterns(
+        path_to.name,
+        # also ignore files which may be present in the work directory
+        'build',
+        'sdkconfig',
+    )
+
+    logging.debug(f'copying {path_from} to {path_to}')
+    shutil.copytree(path_from, path_to, ignore=ignore, symlinks=True)
+
+    old_cwd = Path.cwd()
+    os.chdir(path_to)
+
+    yield Path(path_to)
+
+    os.chdir(old_cwd)
+
+    if should_clean_test_dir(request):
+        logging.debug(f'cleaning up work directory after a successful test: {path_to}')
+        shutil.rmtree(path_to, ignore_errors=True)
+
+
+@pytest.fixture
+def minimal_git_app(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    path_to = func_work_dir / (test_name_sanitized + '_app')
+
+    logging.debug(f'creating minimal git app at {path_to}')
+    path_to.mkdir()
+    (path_to / 'CMakeLists.txt').write_text(
+        'cmake_minimum_required(VERSION 3.22)\n'
+        'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
+        'project(app-template)\n'
+    )
+    (path_to / 'main').mkdir()
+    (path_to / 'main' / 'CMakeLists.txt').write_text('idf_component_register(SRCS "main.c")\n')
+    (path_to / 'main' / 'main.c').write_text('void app_main(void) {}\n')
+    for cmd in [
+        ['git', 'init'],
+        ['git', 'add', '.'],
+        ['git', '-c', 'user.email=test@test.com', '-c', 'user.name=Test', 'commit', '-m', 'init'],
+        ['git', 'tag', 'v1.0'],
+    ]:
+        subprocess.run(cmd, cwd=path_to, capture_output=True, check=True)
+
+    old_cwd = Path.cwd()
+    os.chdir(path_to)
+
+    yield Path(path_to)
+
+    os.chdir(old_cwd)
+
+    if should_clean_test_dir(request):
+        logging.debug(f'cleaning up work directory after a successful test: {path_to}')
+        shutil.rmtree(path_to, ignore_errors=True)
+
+
+@pytest.fixture
+def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_idf'
+    # allow overriding the destination via pytest.mark.idf_copy_with_space so the destination contain space
+    mark_with_space = request.node.get_closest_marker('idf_copy_with_space')
+    if mark_with_space:
+        copy_to = test_name_sanitized + ' idf'
+
+    # allow overriding the destination via pytest.mark.idf_copy()
+    mark = request.node.get_closest_marker('idf_copy')
+    if mark:
+        copy_to = mark.args[0]
+
+    path_from = Path(EXT_IDF_PATH)
+    path_to = func_work_dir / copy_to
+
+    orig_idf_path = os.environ['IDF_PATH']
+    branch_name: str | None = None
+
+    # Try git worktree first (much faster), fall back to shutil.copytree
+    try:
+        branch_name = _create_idf_copy_via_worktree(path_from, path_to)
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
+        logging.debug(f'git worktree failed ({e}), falling back to shutil.copytree')
+        # Clean up any partial worktree before fallback
+        if path_to.exists():
+            shutil.rmtree(path_to, ignore_errors=True)
+        _create_idf_copy_via_shutil(path_from, path_to)
+
+    os.environ['IDF_PATH'] = str(path_to)
+
+    yield Path(path_to)
+
+    os.environ['IDF_PATH'] = orig_idf_path
+
+    if should_clean_test_dir(request):
+        logging.debug(f'cleaning up work directory after a successful test: {path_to}')
+        if branch_name:
+            _cleanup_worktree(path_from, path_to, branch_name)
+        else:
+            shutil.rmtree(path_to, ignore_errors=True)
+
+
+@pytest.fixture(autouse=True, scope='session')
+def idf_py_terminal_env() -> typing.Generator[None, None, None]:
+    """Set terminal env so idf.py subprocesses produce consistent output.
+
+    COLUMNS=200 raises Rich's non-TTY default of 80, preventing most line wrapping.
+    Messages with long file paths can still exceed 200 characters; use
+    normalize_output() for assertions on those.
+    """
+    keys = ('COLUMNS', 'LINES', 'NO_COLOR', 'FORCE_COLOR', 'PY_COLORS', 'TERM')
+    saved = {k: os.environ.get(k) for k in keys}
+    os.environ['COLUMNS'] = '200'
+    os.environ['LINES'] = '40'
+    os.environ['NO_COLOR'] = '1'
+    for k in ('FORCE_COLOR', 'PY_COLORS'):
+        os.environ.pop(k, None)
+    yield
+    for k, v in saved.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
+
+
+@pytest.fixture(name='default_idf_env')
+def fixture_default_idf_env(request: FixtureRequest) -> EnvDict:
+    env = get_idf_build_env(os.environ['IDF_PATH'])  # type: ignore
+    if request.config.getoption('buildv2', False):
+        env['IDF_BUILD_V2'] = '1'
+    return env
+
+
+@pytest.fixture
+def idf_py(default_idf_env: EnvDict) -> IdfPyFunc:
+    def result(*args: str, check: bool = True, input_str: str | None = None) -> subprocess.CompletedProcess:
+        return run_idf_py(*args, env=default_idf_env, workdir=os.getcwd(), check=check, input_str=input_str)  # type: ignore
+
+    return result
+
+
+def pytest_collection_modifyitems(session: Session, config: Config, items: list[Item]) -> None:
+    buildv2_dir = Path(__file__).parent / 'buildv2'
+    is_buildv2 = config.getoption('--buildv2', False)
+
+    for item in items:
+        if is_buildv2:
+            marker = item.get_closest_marker('buildv2_skip')
+            if marker:
+                reason = marker.args[0] if marker.args else 'Skipped as this test is specific to build system v1.'
+                item.add_marker(pytest.mark.skip(reason=reason))
+        else:
+            if buildv2_dir in item.path.parents or item.path == buildv2_dir:
+                item.add_marker(pytest.mark.skip(reason='Skipped as build system v2 tests are disabled.'))
+
+
+def pytest_report_header(config: Config) -> str:
+    """Add a clear header to the terminal output whether buildv1 or buildv2 testing is in progress."""
+    if config.getoption('--buildv2'):
+        return 'Testing ESP-IDF CMake-based build system v2'
+    else:
+        return 'Testing ESP-IDF CMake-based build system v1'
+
+
+@pytest.fixture
+def clean_root_managed_components(tmp_path: Path) -> typing.Generator[None, None, None]:
+    """
+    Temporarily clear root managed components and restore them after the test.
+    """
+    from idf_component_tools.config import root_managed_components_dir
+
+    root_managed = str(root_managed_components_dir())
+    backup = tmp_path / 'root_managed_backup'
+    if os.path.isdir(root_managed):
+        shutil.copytree(root_managed, backup)
+        shutil.rmtree(root_managed)
+    yield
+    shutil.rmtree(root_managed, ignore_errors=True)
+    if backup.is_dir():
+        shutil.copytree(str(backup), root_managed)
+
+
+@pytest.fixture(autouse=True)
+def revert_later(request: FixtureRequest) -> typing.Generator[None, None, None]:
+    origin_content_d: dict[str, str] = {}
+
+    _marker = request.node.get_closest_marker('revert_later')
+    if _marker:
+        for filename in _marker.args[0]:
+            if not os.path.isabs(filename):
+                filename = os.path.join(EXT_IDF_PATH, filename)
+
+            with open(filename, encoding='utf-8') as fr:
+                origin_content_d[filename] = fr.read()
+
+    yield
+
+    if origin_content_d:
+        for filename, content in origin_content_d.items():
+            with open(filename, 'w', encoding='utf-8') as fw:
+                fw.write(content)

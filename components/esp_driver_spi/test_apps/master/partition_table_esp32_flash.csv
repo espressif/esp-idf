@@ -1,0 +1,8 @@
+# Special partition table for unit test app
+#
+# Name,     Type, SubType, Offset,   Size, Flags
+# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
+factory,    0,    0,        0x20000, 0x260000
+
+# flash_test partition used for SPI flash tests, WL FAT tests, and SPIFFS tests
+flash_test, data, fat,      ,        528K

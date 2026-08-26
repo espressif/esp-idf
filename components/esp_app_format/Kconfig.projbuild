@@ -1,0 +1,52 @@
+menu "Application manager"
+
+    config APP_COMPILE_TIME_DATE
+        bool "Use time/date stamp for app"
+        default y
+        depends on !APP_REPRODUCIBLE_BUILD
+        help
+            If set, then the app will be built with the current time/date stamp. It is stored in the app description
+            structure. If not set, time/date stamp will be excluded from app image. This can be useful for getting the
+            same binary image files made from the same source, but at different times.
+
+    config APP_EXCLUDE_PROJECT_VER_VAR
+        bool "Exclude PROJECT_VER from firmware image"
+        default n
+        help
+            The PROJECT_VER variable from the build system will not affect the firmware image.
+            This value will not be contained in the esp_app_desc structure.
+
+    config APP_EXCLUDE_PROJECT_NAME_VAR
+        bool "Exclude PROJECT_NAME from firmware image"
+        default n
+        help
+            The PROJECT_NAME variable from the build system will not affect the firmware image.
+            This value will not be contained in the esp_app_desc structure.
+
+    config APP_PROJECT_VER_FROM_CONFIG
+        bool "Get the project version from Kconfig"
+        default n
+        help
+            If this is enabled, then config item APP_PROJECT_VER will be used for the variable PROJECT_VER.
+            Other ways to set PROJECT_VER will be ignored.
+
+    config APP_PROJECT_VER
+        string "Project version"
+        default "1"
+        depends on APP_PROJECT_VER_FROM_CONFIG
+        help
+            Project version
+
+    config APP_RETRIEVE_LEN_ELF_SHA
+        int "The length of APP ELF SHA is stored in RAM(chars)"
+        default 9
+        range 8 64
+        help
+            At startup, the app will read the embedded APP ELF SHA-256 hash value from flash
+            and convert it into a string and store it in a RAM buffer.
+            This ensures the panic handler and core dump will be able to print this string
+            even when cache is disabled.
+            The size of the buffer is APP_RETRIEVE_LEN_ELF_SHA plus the null terminator.
+            Changing this value will change the size of this buffer, in bytes.
+
+endmenu # "Application manager"

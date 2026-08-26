@@ -1,0 +1,2 @@
+# Halt on panic so pytest can read the register dump (not KASAN-specific).
+CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y

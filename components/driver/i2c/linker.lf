@@ -1,0 +1,4 @@
+[mapping:esp_hal_i2c]
+archive: libesp_hal_i2c.a
+entries:
+    i2c_hal_iram (noflash)

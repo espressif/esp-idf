@@ -1,0 +1,7 @@
+CONFIG_BLINK_LED_STRIP=y
+#
+# Please Note:
+# ESP32-S31 function core board uses GPIO60 for the on-board LED
+# ESP32-S31 Korvo board uses GPIO37 for the on-board LED
+#
+CONFIG_BLINK_GPIO=37

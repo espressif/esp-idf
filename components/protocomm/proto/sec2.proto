@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+import "constants.proto";
+
+/* A message must be of type Cmd0 / Cmd1 / Resp0 / Resp1 */
+enum Sec2MsgType {
+    S2Session_Command0 = 0;
+    S2Session_Response0 = 1;
+    S2Session_Command1 = 2;
+    S2Session_Response1 = 3;
+}
+
+// NOTE: Client: Host (shell, Android/iOS) | Device: ESP32-XX
+/* Data structure of Session command0 packet */
+message S2SessionCmd0 {
+    bytes client_username = 1;
+    bytes client_pubkey = 2;
+}
+
+/* Data structure of Session response0 packet */
+message S2SessionResp0 {
+    Status status = 1;
+    bytes device_pubkey = 2;
+    bytes device_salt = 3;
+}
+
+/* Data structure of Session command1 packet */
+message S2SessionCmd1 {
+    bytes client_proof = 1;
+}
+
+/* Data structure of Session response1 packet */
+message S2SessionResp1 {
+    Status status = 1;
+    bytes device_proof = 2;
+    bytes device_nonce = 3;
+}
+
+/* Payload structure of session data */
+message Sec2Payload {
+    Sec2MsgType msg = 1;        /*!< Type of message */
+    oneof payload {
+        S2SessionCmd0 sc0 = 20;   /*!< Payload data interpreted as Cmd0 */
+        S2SessionResp0 sr0 = 21;  /*!< Payload data interpreted as Resp0 */
+        S2SessionCmd1 sc1 = 22;   /*!< Payload data interpreted as Cmd1 */
+        S2SessionResp1 sr1 = 23;  /*!< Payload data interpreted as Resp1 */
+    }
+}

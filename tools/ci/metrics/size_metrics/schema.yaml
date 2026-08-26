@@ -1,0 +1,111 @@
+---
+# ESP-IDF Size Metrics Schema Definitions
+# This file defines the schema and validation rules for ESP-IDF size metrics
+# We use JSON Schema for annotating and validating JSON documents' structure.
+# Read more about the JSON Schema: https://json-schema.org/understanding-json-schema/about
+$schema: "https://json-schema.org/draft/2020-12/schema"
+# Note: Each key under 'properties' will correspond to an independent document in the DB.
+# For example, 'app_size' will be stored as a separate document with its data.
+properties:
+  app_size:
+    properties:
+      data:
+        type: array
+        title: "App Size Metrics"
+        description: "Total flash/DRAM/IRAM sizes for all built apps"
+        items:
+          properties:
+            app:
+              type: string
+              title: "App Path"
+              description: "App path relative to IDF_PATH"
+            target:
+              type: string
+              title: "Build Target"
+              description: "Build target (e.g. 'esp32c6')"
+            config:
+              type: string
+              title: "Build Config"
+              description: "Build configuration (e.g. 'default', 'release')"
+            flash_total:
+              type: integer
+              title: "Total Flash Usage"
+              description: "Total flash usage in bytes"
+            dram_total:
+              type: integer
+              title: "Total DRAM Usage"
+              description: "Total DRAM usage in bytes"
+            iram_total:
+              type: integer
+              title: "Total IRAM Usage"
+              description: "Total IRAM usage in bytes"
+
+  library_size:
+    properties:
+      data:
+        type: array
+        title: "Library Size Metrics"
+        description: "Per-library size breakdown for apps listed in size_metrics_config.yml (flattened, one entry per library)"
+        items:
+          properties:
+            app:
+              type: string
+              title: "App Path"
+              description: "App path relative to IDF_PATH"
+            target:
+              type: string
+              title: "Build Target"
+              description: "Build target (e.g. 'esp32c6')"
+            config:
+              type: string
+              title: "Build Config"
+              description: "Build configuration (e.g. 'default', 'release')"
+            library:
+              type: string
+              title: "Library Name"
+              description: "Archive name (e.g. 'libesp_timer.a', 'libfreertos.a')"
+            text:
+              type: integer
+              title: ".text Section Size"
+              description: ".text section size in bytes"
+            rodata:
+              type: integer
+              title: ".rodata Section Size"
+              description: ".rodata section size in bytes"
+            data:
+              type: integer
+              title: ".data Section Size"
+              description: ".data section size in bytes"
+            bss:
+              type: integer
+              title: ".bss Section Size"
+              description: ".bss section size in bytes"
+            total:
+              type: integer
+              title: "Total Archive Size"
+              description: "Total archive size in bytes"
+
+  bootloader_size:
+    properties:
+      data:
+        type: array
+        title: "Bootloader Size Metrics"
+        description: "Second-stage bootloader binary size for tracked apps"
+        items:
+          properties:
+            app:
+              type: string
+              title: "App Path"
+              description: "App path relative to IDF_PATH"
+            target:
+              type: string
+              title: "Build Target"
+              description: "Build target (e.g. 'esp32c6')"
+            config:
+              type: string
+              title: "Build Config"
+              description: "Build configuration (e.g. 'default', 'release')"
+            bin_size:
+              type: integer
+              title: "Bootloader Binary Size"
+              description: "Size of bootloader.bin in bytes"

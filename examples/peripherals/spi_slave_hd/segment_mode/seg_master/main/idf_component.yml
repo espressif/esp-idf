@@ -1,0 +1,2 @@
+dependencies:
+  espressif/esp_serial_slave_link: "^1.0.0"

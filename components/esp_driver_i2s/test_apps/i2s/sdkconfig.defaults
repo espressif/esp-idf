@@ -1,0 +1,4 @@
+CONFIG_I2S_ENABLE_DEBUG_LOG=y
+CONFIG_ESP_TASK_WDT_EN=n
+# primitives for checking sleep internal state
+CONFIG_ESP_SLEEP_DEBUG=y

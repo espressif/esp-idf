@@ -1,0 +1,4 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf: ">=5.0"
+  usb_host_uvc: "^2.2.0"

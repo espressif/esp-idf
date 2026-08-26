@@ -1,0 +1,57 @@
+menu "FreeRTOS"
+
+    menu "Kernel"
+        config FREERTOS_HZ
+            int "configTICK_RATE_HZ"
+            range 1 1000
+            default 1000
+            help
+                Sets the FreeRTOS tick interrupt frequency in Hz (see configTICK_RATE_HZ documentation for more
+                details).
+
+        config FREERTOS_MAX_TASK_NAME_LEN
+            int "configMAX_TASK_NAME_LEN"
+            range 1 256
+            default 16
+            help
+                Sets the maximum number of characters for task names (see configMAX_TASK_NAME_LEN documentation for
+                more details).
+
+                Note: For most uses, the default of 16 characters is sufficient.
+
+        config FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES
+            int "configTASK_NOTIFICATION_ARRAY_ENTRIES"
+            range 1 32
+            default 1
+            help
+                Set the size of the task notification array of each task. When increasing this value, keep in
+                mind that this means additional memory for each and every task on the system.
+                However, task notifications in general are more light weight compared to alternatives
+                such as semaphores.
+    endmenu
+
+    config FREERTOS_NO_AFFINITY
+        # This invisible config value sets the value of tskNO_AFFINITY in task.h.
+        # Intended to be used as a constant from other Kconfig files.
+        # Value is (32-bit) INT_MAX.
+        hex
+        default 0x7FFFFFFF if !FREERTOS_SMP
+        default 0xFFFFFFFF if FREERTOS_SMP
+
+    config FREERTOS_UNICORE
+        # This invisible config ensures that ESP-IDF components are always built as single-core
+        # when building for CMock. CMock is currently only supported on the Linux target, and the
+        # Linux FreeRTOS port supports single-core only.
+        bool
+        default y
+        select ESP_SYSTEM_SINGLE_CORE_MODE
+
+    config FREERTOS_NUMBER_OF_CORES
+        # Invisible option to configure the number of cores on which FreeRTOS runs
+        # Todo: Unhide this option and deprecate CONFIG_FREERTOS_UNICORE (IDF-9156)
+        int
+        range 1 2
+        default 1 if FREERTOS_UNICORE
+        default 2 if !FREERTOS_UNICORE
+
+endmenu

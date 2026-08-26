@@ -1,0 +1,10 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp-zboss-lib: "~1.6.0"
+  espressif/esp-zigbee-lib: "~1.6.0"
+  espressif/led_strip: "~3.0.0"
+  ## Required IDF version
+  idf:
+    version: ">=5.0.0"
+  examples_utils:
+    path: ${IDF_PATH}/examples/zigbee/zb_common_components/examples_utils

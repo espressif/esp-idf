@@ -1,0 +1,9 @@
+name: 'freertos'
+version: '10.5.1'
+cpe: cpe:2.3:o:amazon:freertos:{}:*:*:*:*:*:*:*
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Amazon Web Services'
+description: An open-source, real-time operating system (RTOS) with additional features and patches from Espressif.
+cve-exclude-list:
+  - cve: CVE-2024-28115
+    reason: Affects only ARMv7-M MPU ports, and ARMv8-M ports with Memory Protected Unit (MPU) support enabled

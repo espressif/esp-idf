@@ -1,0 +1,11 @@
+# Name,           Type,               SubType,   Offset,  Size,      Flags
+PrimaryBTLDR,     bootloader,         primary,   N/A,     N/A,
+PrimaryPrtTable,  partition_table,    primary,   N/A,     N/A,
+nvs,              data,               nvs,       ,        0x6000,
+nvs_key,          data,               nvs_keys,  ,        4K,
+storage,          data,               ,          ,        0x1000,    encrypted
+otadata,          data,               ota,       ,        0x2000,
+phy_init,         data,               phy,       ,        0x1000,
+emul_efuse,       data,               efuse,     ,        0x2000,
+ota_0,            app,                ota_0,     ,        0x1B0000,
+ota_1,            app,                ota_1,     ,        0x1B0000,

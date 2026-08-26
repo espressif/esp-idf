@@ -1,0 +1,35 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/storage/fatfs:
+  depends_components:
+    - *common_components
+    - fatfs
+    - vfs
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+
+examples/storage/fatfs/bdl_wl:
+  depends_components:
+    - *common_components
+    - esp_blockdev
+    - fatfs
+    - vfs
+    - wear_leveling
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+
+examples/storage/fatfs/ext_flash:
+  depends_components:
+    - *common_components
+    - fatfs
+    - vfs
+    - spi_flash
+    - esp_driver_spi
+  disable:
+    - if: SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32"]
+      temporary: true
+      reason: lack of runners

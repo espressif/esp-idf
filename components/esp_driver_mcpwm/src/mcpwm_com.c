@@ -1,0 +1,342 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mcpwm_private.h"
+#include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/rtc_clk.h"
+
+#if MCPWM_USE_RETENTION_LINK
+static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg);
+static void mcpwm_release_sleep_retention_module(int group_id);
+#endif
+// NOTE: caller MUST hold s_platform.mutex. This function does not take any lock by itself.
+static esp_err_t mcpwm_create_group_unsafe(int group_id, soc_module_clk_t clk_src, mcpwm_group_t **ret_group);
+static esp_err_t mcpwm_select_periph_clock_unsafe(mcpwm_group_t *group, soc_module_clk_t clk_src);
+
+typedef struct {
+    _lock_t mutex;                           // platform level mutex lock
+    mcpwm_group_t *groups[MCPWM_LL_GET(GROUP_NUM)]; // array of MCPWM group instances
+    int group_ref_counts[MCPWM_LL_GET(GROUP_NUM)];  // reference count used to protect group install/uninstall
+} mcpwm_platform_t;
+
+static mcpwm_platform_t s_platform; // singleton platform
+
+esp_err_t mcpwm_acquire_group_handle(int group_id, soc_module_clk_t clk_src, mcpwm_group_t **ret_group)
+{
+    esp_err_t ret = ESP_OK;
+
+    ESP_RETURN_ON_FALSE(ret_group, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *ret_group = NULL;
+
+    // prevent install mcpwm group concurrently
+    _lock_acquire(&s_platform.mutex);
+    mcpwm_group_t *group = s_platform.groups[group_id];
+    if (group) {
+        // commit or verify the group clock source while holding the platform mutex
+        ret = mcpwm_select_periph_clock_unsafe(group, clk_src);
+    } else {
+        ret = mcpwm_create_group_unsafe(group_id, clk_src, &group);
+        if (ret == ESP_OK) {
+            s_platform.groups[group_id] = group;
+        }
+    }
+    if (ret == ESP_OK) {
+        // someone acquired the group handle means we have a new object that refer to this group
+        s_platform.group_ref_counts[group_id]++;
+        *ret_group = group;
+    }
+    _lock_release(&s_platform.mutex);
+    return ret;
+}
+
+// NOTE: caller MUST hold s_platform.mutex. This function does not take any lock by itself.
+static esp_err_t mcpwm_create_group_unsafe(int group_id, soc_module_clk_t clk_src, mcpwm_group_t **ret_group)
+{
+    esp_err_t ret = ESP_OK;
+    *ret_group = NULL;
+    mcpwm_group_t *group = heap_caps_calloc(1, sizeof(mcpwm_group_t), MCPWM_MEM_ALLOC_CAPS);
+    ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", group_id);
+
+    group->group_id = group_id;
+    group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+#if MCPWM_USE_RETENTION_LINK
+    sleep_retention_module_t module = mcpwm_retention_infos[group_id].retention_module;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = mcpwm_create_sleep_retention_link_cb,
+                .arg = group,
+            },
+        },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    // we only do retention init here. Allocate retention module in the unit initialization
+    if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+        // even though the sleep retention module init failed, MCPWM driver should still work, so just warning here
+        ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
+    }
+#endif // MCPWM_USE_RETENTION_LINK
+    // enable APB to access MCPWM registers
+    PERIPH_RCC_ATOMIC() {
+        mcpwm_ll_enable_bus_clock(group_id, true);
+        mcpwm_ll_reset_register(group_id);
+    }
+    // enable function clock before initialize HAL context
+    // MCPWM registers are in the core clock domain, there's a bridge between APB and the Core clock domain
+    // if the core clock is not enabled, then even the APB clock is enabled, the MCPWM registers are still not accessible
+    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock_unsafe(group, clk_src), err, TAG, "set group clock failed");
+    PERIPH_RCC_ATOMIC() {
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
+        if (!group->clk_src) {
+            // Use an always-on source only for safe register bring-up; it is not committed as the group source.
+            mcpwm_ll_group_set_clock_source(group_id, MCPWM_TIMER_CLK_SRC_XTAL);
+        }
+#endif
+        mcpwm_ll_group_enable_clock(group_id, true);
+    }
+    // initialize HAL context
+    mcpwm_hal_init_config_t hal_config = {
+        .group_id = group_id
+    };
+    mcpwm_hal_context_t *hal = &group->hal;
+    mcpwm_hal_init(hal, &hal_config);
+    // disable all interrupts and clear pending status
+    mcpwm_ll_intr_enable(hal->dev, UINT32_MAX, false);
+    mcpwm_ll_intr_clear_status(hal->dev, UINT32_MAX);
+
+    *ret_group = group;
+    return ESP_OK;
+
+err:
+    PERIPH_RCC_ATOMIC() {
+        mcpwm_ll_enable_bus_clock(group_id, false);
+    }
+#if MCPWM_USE_RETENTION_LINK
+    mcpwm_release_sleep_retention_module(group_id);
+#endif // MCPWM_USE_RETENTION_LINK
+    free(group);
+    return ret;
+}
+
+void mcpwm_release_group_handle(mcpwm_group_t *group)
+{
+    int group_id = group->group_id;
+    bool do_deinitialize = false;
+
+    _lock_acquire(&s_platform.mutex);
+    s_platform.group_ref_counts[group_id]--;
+    if (s_platform.group_ref_counts[group_id] == 0) {
+        do_deinitialize = true;
+        s_platform.groups[group_id] = NULL; // deregister from platform
+        PERIPH_RCC_ATOMIC() {
+            mcpwm_ll_group_enable_clock(group_id, false);
+        }
+        // hal layer deinitialize
+        mcpwm_hal_deinit(&group->hal);
+        PERIPH_RCC_ATOMIC() {
+            mcpwm_ll_enable_bus_clock(group_id, false);
+        }
+        // release the group clock source acquired in mcpwm_select_periph_clock_unsafe()
+        if (group->clk_src) {
+            esp_clk_tree_enable_src(group->clk_src, false);
+        }
+#if CONFIG_PM_ENABLE
+        if (group->pm_lock) {
+            esp_pm_lock_delete(group->pm_lock);
+        }
+#endif
+#if MCPWM_USE_RETENTION_LINK
+        mcpwm_release_sleep_retention_module(group_id);
+#endif // MCPWM_USE_RETENTION_LINK
+        free(group);
+    }
+    _lock_release(&s_platform.mutex);
+
+    if (do_deinitialize) {
+        ESP_LOGD(TAG, "del group(%d)", group_id);
+    }
+}
+
+// The group clock source (group->clk_src / group->pm_lock and the clock source enable/disable) is owned
+// exclusively by s_platform.mutex. The caller must hold s_platform.mutex.
+static esp_err_t mcpwm_select_periph_clock_unsafe(mcpwm_group_t *group, soc_module_clk_t clk_src)
+{
+    esp_err_t ret = ESP_OK;
+    int group_id = group->group_id;
+    if (!clk_src) {
+        return ESP_OK;
+    }
+    // check if we need to update the group clock source, group clock source is shared by all mcpwm modules
+    if (group->clk_src) {
+        ESP_RETURN_ON_FALSE(group->clk_src == clk_src, ESP_ERR_INVALID_STATE, TAG,
+                            "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
+        return ESP_OK;
+    }
+
+    group->clk_src = clk_src;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true),
+                      err, TAG, "clock source enable failed");
+#if CONFIG_PM_ENABLE
+    // to make the mcpwm works reliable, the source clock must stay alive and unchanged
+    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+    // on ESP32 and ESP32S3, MCPWM's clock source (PLL_160M) frequency is automatically reduced during DFS, resulting in an inaccurate time base
+    // thus we want to use the APB_MAX lock
+    pm_lock_type = ESP_PM_APB_FREQ_MAX;
+#endif
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, soc_mcpwm_signals[group_id].module_name, &group->pm_lock),
+                      err_clock_enabled, TAG, "create pm lock failed");
+#endif // CONFIG_PM_ENABLE
+    PERIPH_RCC_ATOMIC() {
+        mcpwm_ll_group_set_clock_source(group_id, clk_src);
+    }
+    return ret;
+
+#if CONFIG_PM_ENABLE
+err_clock_enabled:
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+#endif
+err:
+    group->clk_src = 0;
+    return ret;
+}
+
+esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src)
+{
+    esp_err_t ret = ESP_OK;
+
+    _lock_acquire(&s_platform.mutex);
+    ret = mcpwm_select_periph_clock_unsafe(group, clk_src);
+    _lock_release(&s_platform.mutex);
+    return ret;
+}
+
+esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t *ret_module_prescale)
+{
+    ESP_RETURN_ON_FALSE(group && expect_module_resolution_hz && module_prescale_max, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    uint32_t periph_src_clk_hz = 0;
+    int group_id = group->group_id;
+    uint32_t group_resolution_hz = 0;
+    uint32_t group_prescale = group->prescale > 0 ? group->prescale : MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE;     // range: 1~256, 0 means not calculated
+    uint32_t module_prescale = 0;       // range: 1~256 (for timer) or 1~16 (for carrier) or 1 (for capture)
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(group->clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
+
+    // calc the group prescale
+
+    group_resolution_hz = periph_src_clk_hz / group_prescale;
+    module_prescale = group_resolution_hz / expect_module_resolution_hz;
+
+    // default prescale cannot match
+    // try to ensure accurate division. If none of the division factors can be guaranteed to be integers, then allocate the clock frequency to the highest divisor
+    uint32_t fit_module_prescale = 0;
+    uint32_t fit_group_prescale = 0;
+    if (!(module_prescale >= 1 && module_prescale <= module_prescale_max)) {
+        group_prescale = 0;
+        while (++group_prescale <= MCPWM_LL_GET(MAX_GROUP_PRESCALE)) {
+            group_resolution_hz = periph_src_clk_hz / group_prescale;
+            module_prescale = group_resolution_hz / expect_module_resolution_hz;
+            if (module_prescale >= 1 && module_prescale <= module_prescale_max) {
+                // maintain the first value found during the search that satisfies the division requirement (highest frequency), applicable for cases where integer division is not possible."
+                fit_module_prescale = fit_module_prescale ? fit_module_prescale : module_prescale;
+                fit_group_prescale = fit_group_prescale ? fit_group_prescale : group_prescale;
+                // find accurate division
+                if (group_resolution_hz == expect_module_resolution_hz * module_prescale) {
+                    fit_module_prescale = module_prescale;
+                    fit_group_prescale = group_prescale;
+                    break;
+                }
+            }
+        }
+        module_prescale = fit_module_prescale;
+        group_prescale = fit_group_prescale;
+        ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_GET(MAX_GROUP_PRESCALE), ESP_ERR_INVALID_STATE, TAG,
+                            "set group prescale failed, group clock cannot match the resolution");
+        group_resolution_hz = periph_src_clk_hz / group_prescale;
+    }
+
+    ESP_LOGD(TAG, "group (%d) calc prescale:%"PRIu32", module calc prescale:%"PRIu32"", group_id, group_prescale, module_prescale);
+
+    // check if we need to update the group prescale, group prescale is shared by all mcpwm modules
+    bool prescale_conflict = false;
+    portENTER_CRITICAL(&group->spinlock);
+    if (group->prescale == 0) {
+        group->prescale = group_prescale;
+        group->resolution_hz = group_resolution_hz;
+        PERIPH_RCC_ATOMIC() {
+            mcpwm_ll_group_set_clock_prescale(group_id, group_prescale);
+        }
+    } else {
+        prescale_conflict = (group->prescale != group_prescale);
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+
+    ESP_RETURN_ON_FALSE(!prescale_conflict, ESP_ERR_INVALID_STATE, TAG,
+                        "group prescale conflict, already is %"PRIu32" but attempt to %"PRIu32"", group->prescale, group_prescale);
+
+    ESP_LOGD(TAG, "group (%d) clock resolution:%"PRIu32"Hz", group_id, group->resolution_hz);
+
+    // set module resolution
+    if (ret_module_prescale) {
+        *ret_module_prescale = module_prescale;
+    }
+
+    return ESP_OK;
+}
+
+#if MCPWM_USE_RETENTION_LINK
+static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg)
+{
+    mcpwm_group_t *group = (mcpwm_group_t *)arg;
+    int group_id = group->group_id;
+    sleep_retention_module_t module_id = mcpwm_retention_infos[group_id].retention_module;
+    esp_err_t err = sleep_retention_entries_create(mcpwm_retention_infos[group_id].regdma_entry_array,
+                                                   mcpwm_retention_infos[group_id].array_size,
+                                                   REGDMA_LINK_PRI_MCPWM, module_id);
+    return err;
+}
+
+static void mcpwm_release_sleep_retention_module(int group_id)
+{
+    const periph_retention_module_t module_id = mcpwm_retention_infos[group_id].retention_module;
+    sleep_retention_module_detach(module_id);
+    if (sleep_retention_is_module_created(module_id)) {
+        sleep_retention_module_free(module_id);
+    }
+    if (sleep_retention_is_module_inited(module_id)) {
+        sleep_retention_module_deinit(module_id);
+    }
+}
+
+void mcpwm_create_retention_module(mcpwm_group_t *group)
+{
+    int group_id = group->group_id;
+    sleep_retention_module_t module_id = mcpwm_retention_infos[group_id].retention_module;
+    _lock_acquire(&s_platform.mutex);
+    if (sleep_retention_is_module_inited(module_id) && !sleep_retention_is_module_created(module_id)) {
+        if (sleep_retention_module_allocate(module_id) != ESP_OK) {
+            // even though the sleep retention module create failed, MCPWM driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            if (sleep_retention_module_attach(module_id) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention module failed, power domain can't turn off");
+            }
+        }
+    }
+    _lock_release(&s_platform.mutex);
+}
+#endif // MCPWM_USE_RETENTION_LINK
+
+#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void mcpwm_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

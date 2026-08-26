@@ -1,0 +1,19 @@
+menu "ESP-Driver:Temperature Sensor Configurations"
+    depends on SOC_TEMP_SENSOR_SUPPORTED
+
+    config TEMP_SENSOR_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            whether to enable the debug log message for temperature sensor driver.
+            Note that, this option only controls the temperature sensor driver log, won't affect other drivers.
+
+    config TEMP_SENSOR_ISR_IRAM_SAFE
+        depends on SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+        bool "Temperature sensor ISR IRAM-Safe"
+        default n
+        help
+            Ensure the Temperature Sensor interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+endmenu # TEMP_SENSOR Configuration

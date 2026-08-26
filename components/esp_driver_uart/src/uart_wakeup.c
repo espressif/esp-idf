@@ -1,0 +1,183 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * WARNING:
+ *
+ * This file is shared between the HP and LP cores.
+ * Updates to this file should be made carefully and should not include FreeRTOS APIs or other IDF-specific functionalities, such as the interrupt allocator.
+ */
+
+#include "esp_check.h"
+#include "driver/uart_wakeup.h"
+#include "hal/uart_hal.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_log.h"
+
+#if (SOC_UART_LP_NUM >= 1)
+#include "soc/rtc.h"
+#endif
+
+const __attribute__((unused)) static char *TAG = "uart_wakeup";
+
+#if SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+static esp_err_t uart_char_seq_wk_configure(uart_dev_t *hw, const char* phrase)
+{
+    if (phrase == NULL || phrase[0] == '\0') {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_err_t ret = ESP_OK;
+
+    uint32_t mask = 0;
+    uint32_t index = 0;
+
+    while (index < SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN && phrase[index] != '\0') {
+        if (phrase[index] == '*') {
+            mask |= 1 << index;
+        } else {
+            uart_ll_set_char_seq_wk_char(hw, index, phrase[index]);
+        }
+        index++;
+    }
+
+    if (
+        index == 0 ||
+        phrase[index - 1] == '*' ||
+        mask > 0xF
+    ) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uart_ll_set_wakeup_char_seq_mask(hw, mask);
+    uart_ll_set_wakeup_char_seq_char_num(hw, index - 1);
+
+    return ret;
+}
+#endif
+
+esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg)
+{
+    ESP_RETURN_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, TAG, "cfg is NULL");
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    uart_hal_context_t hal = {
+        .dev = hw,
+    };
+    soc_module_clk_t src_clk;
+    uart_hal_get_sclk(&hal, &src_clk);
+
+    esp_err_t ret = ESP_OK;
+
+    // This should be mocked at ll level if the selection of the UART wakeup mode is not supported by this SOC.
+    uart_ll_set_wakeup_mode(hw, cfg->wakeup_mode);
+    PERIPH_RCC_ATOMIC() {
+        uart_ll_enable_pad_sleep_clock(hw, true);
+    }
+    // When uarts are utilized, the src clk(hp_uart: main XTAL, lp_uart: RTC_FAST or XTAL_D2) need to be PU and ungate，and for hp uart UARTx & IOMX ICG need to be ungate
+    if (cfg->wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
+        if (uart_num < SOC_UART_HP_NUM) {
+            // For wakeup modes except ACTIVE_THRESH, the function clock needs to be exist to trigger wakeup
+            ESP_RETURN_ON_FALSE(src_clk == SOC_MOD_CLK_XTAL, ESP_ERR_NOT_SUPPORTED, TAG, "failed to setup uart wakeup due to the clock source is not XTAL!");
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+            esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_XTAL_MODE, true);
+            esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+            esp_sleep_clock_config(SLEEP_UART_ICG(uart_num), ESP_SLEEP_CLOCK_OPTION_UNGATE);
+            esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
+#endif
+#if (SOC_UART_LP_NUM >= 1)
+        } else {
+            // When lp uarts are utilized, the src clk need to be power up and lp clock need to be ungate
+            if ((src_clk == SOC_MOD_CLK_RTC_FAST && rtc_clk_fast_src_get() == SOC_RTC_FAST_CLK_SRC_RC_FAST) || (src_clk == SOC_MOD_CLK_RC_FAST)) {
+                esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_RC_FAST_MODE, true);
+                esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+            } else if (src_clk == SOC_MOD_CLK_XTAL_D2) {
+#if SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
+                // TODO: PM-533
+                // Currently, ESP32C5 and ESP32C6 don't support this feature temporarily.
+                ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "Not support when the source clock of the LP UART is XTAL_D2, and lp uart will be powered down.");
+#else
+                // ESP32P4 supports this feature.
+                esp_sleep_acquire_lp_use_xtal();
+                esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+                ESP_LOGW(TAG, "Not support When the source clock of the LP UART is XTAL_D2 during deep sleep.");
+#endif
+#if SOC_CLK_LP_FAST_SUPPORT_LP_PLL
+            } else if (src_clk == SOC_MOD_CLK_LP_PLL) {
+                ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "Not support When the source clock of the LP UART is lp_pll, and lp uart will be powered down.");
+#endif
+            }
+#endif
+        }
+    }
+
+    switch (cfg->wakeup_mode) {
+#if SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    case UART_WK_MODE_ACTIVE_THRESH:
+        if (cfg->rx_edge_threshold < UART_LL_WAKEUP_EDGE_THRED_MIN || cfg->rx_edge_threshold > UART_LL_WAKEUP_EDGE_THRED_MAX(hw)) {
+            ret = ESP_ERR_INVALID_ARG;
+        } else {
+            uart_ll_set_wakeup_edge_thrd(hw, cfg->rx_edge_threshold);
+        }
+        break;
+#endif
+#if SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+    case UART_WK_MODE_FIFO_THRESH:
+        if (cfg->rx_fifo_threshold > UART_LL_WAKEUP_FIFO_THRED_MAX(hw)) {
+            ret = ESP_ERR_INVALID_ARG;
+        } else {
+            uart_ll_set_wakeup_fifo_thrd(hw, cfg->rx_fifo_threshold);
+        }
+        break;
+#endif
+#if SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+    case UART_WK_MODE_START_BIT:
+        break;
+#endif
+#if SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+    case UART_WK_MODE_CHAR_SEQ:
+        ret = uart_char_seq_wk_configure(hw, cfg->wake_chars_seq);
+        break;
+#endif
+    default:
+        ret = ESP_ERR_INVALID_ARG;
+        break;
+    }
+
+    return ret;
+}
+
+esp_err_t uart_wakeup_clear(uart_port_t uart_num, uart_wakeup_mode_t wakeup_mode)
+{
+    if (wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
+        // When hp uarts are utilized, the main XTAL need to be PU and UARTx & IOMX ICG need to be ungate
+        if (uart_num < SOC_UART_HP_NUM) {
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+            esp_sleep_clock_config(SLEEP_UART_ICG(uart_num), ESP_SLEEP_CLOCK_OPTION_GATE);
+            esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_GATE);
+            esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
+            esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_XTAL_MODE, false);
+#endif
+#if (SOC_UART_LP_NUM >= 1)
+        } else {
+            uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+            uart_hal_context_t hal = {
+                .dev = hw,
+            };
+            soc_module_clk_t src_clk;
+            uart_hal_get_sclk(&hal, &src_clk);
+            if ((src_clk == SOC_MOD_CLK_RTC_FAST && rtc_clk_fast_src_get() == SOC_RTC_FAST_CLK_SRC_RC_FAST) || (src_clk == SOC_MOD_CLK_RC_FAST)) {
+                esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_RC_FAST_MODE, false);
+                esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+            } else if (src_clk == SOC_MOD_CLK_XTAL_D2) {
+#if !SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
+                esp_sleep_release_lp_use_xtal();
+                esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+#endif
+            }
+#endif
+        }
+    }
+    return ESP_OK;
+}

@@ -1,0 +1,85 @@
+menu "Cache config"
+
+    choice ESP32S2_INSTRUCTION_CACHE_SIZE
+        prompt "Instruction cache size"
+        default ESP32S2_INSTRUCTION_CACHE_8KB
+        help
+            Instruction cache size to be set on application startup.
+            If you use 8KB instruction cache rather than 16KB instruction cache,
+            then the other 8KB will be added to the heap.
+
+        config ESP32S2_INSTRUCTION_CACHE_8KB
+            bool "8KB"
+        config ESP32S2_INSTRUCTION_CACHE_16KB
+            bool "16KB"
+    endchoice
+
+    config ESP32S2_INSTRUCTION_CACHE_SIZE
+        hex
+        default 0x2000 if ESP32S2_INSTRUCTION_CACHE_8KB
+        default 0x4000 if ESP32S2_INSTRUCTION_CACHE_16KB
+
+    choice ESP32S2_INSTRUCTION_CACHE_LINE_SIZE
+        prompt "Instruction cache line size"
+        default ESP32S2_INSTRUCTION_CACHE_LINE_32B
+        help
+            Instruction cache line size to be set on application startup.
+
+        config ESP32S2_INSTRUCTION_CACHE_LINE_16B
+            bool "16 Bytes"
+        config ESP32S2_INSTRUCTION_CACHE_LINE_32B
+            bool "32 Bytes"
+    endchoice
+
+    choice ESP32S2_DATA_CACHE_SIZE
+        prompt "Data cache size"
+        default ESP32S2_DATA_CACHE_8KB
+        help
+            Data cache size to be set on application startup.
+            If you use 0KB data cache, the other 16KB will be added to the heap
+            If you use 8KB data cache rather than 16KB data cache, the other 8KB will be added to the heap
+
+        config ESP32S2_DATA_CACHE_0KB
+            depends on !SPIRAM
+            bool "0KB"
+        config ESP32S2_DATA_CACHE_8KB
+            bool "8KB"
+        config ESP32S2_DATA_CACHE_16KB
+            bool "16KB"
+    endchoice
+
+    config ESP32S2_DATA_CACHE_SIZE
+        hex
+        default 0 if ESP32S2_DATA_CACHE_0KB
+        default 0x2000 if ESP32S2_DATA_CACHE_8KB
+        default 0x4000 if ESP32S2_DATA_CACHE_16KB
+
+    choice ESP32S2_DATA_CACHE_LINE_SIZE
+        prompt "Data cache line size"
+        default ESP32S2_DATA_CACHE_LINE_32B
+        help
+            Data cache line size to be set on application startup.
+
+        config ESP32S2_DATA_CACHE_LINE_16B
+            bool "16 Bytes"
+        config ESP32S2_DATA_CACHE_LINE_32B
+            bool "32 Bytes"
+    endchoice
+
+    config ESP32S2_INSTRUCTION_CACHE_WRAP
+        bool "Enable instruction cache wrap"
+        default "n"
+        help
+            If enabled, instruction cache will use wrap mode to read spi flash (maybe spiram).
+            The wrap length equals to INSTRUCTION_CACHE_LINE_SIZE.
+            However, it depends on complex conditions.
+
+    config ESP32S2_DATA_CACHE_WRAP
+        bool "Enable data cache wrap"
+        default "n"
+        help
+            If enabled, data cache will use wrap mode to read spiram (maybe spi flash).
+            The wrap length equals to DATA_CACHE_LINE_SIZE.
+            However, it depends on complex conditions.
+
+endmenu  # Cache config

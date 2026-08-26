@@ -1,0 +1,12 @@
+config HAL_SYSTIMER_USE_ROM_IMPL
+    bool "Use ROM implementation of SysTimer HAL driver"
+    depends on ESP_ROM_HAS_HAL_SYSTIMER
+    default y
+    help
+        Enable this flag to use HAL functions from ROM instead of ESP-IDF.
+
+        If keeping this as "n" in your project, you will have less free IRAM.
+        If making this as "y" in your project, you will increase free IRAM,
+        but you will lose the possibility to debug this module, and some new
+        features will be added and bugs will be fixed in the IDF source
+        but cannot be synced to ROM.

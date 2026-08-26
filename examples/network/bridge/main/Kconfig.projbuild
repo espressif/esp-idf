@@ -1,0 +1,51 @@
+menu "Example Bridge Configuration"
+    config EXAMPLE_BR_DHCPS
+        bool "Enable DHCP Server"
+        default n
+        help
+            Enable DHCP Server on the device.
+endmenu
+
+menu "Example AP Wifi Configuration"
+    config EXAMPLE_BR_WIFI
+        depends on SOC_WIFI_SUPPORTED || SLAVE_SOC_WIFI_SUPPORTED
+        default n
+        bool "Bridge WiFi interface"
+        help
+            Add WiFi interface to be bridged.
+
+    config EXAMPLE_BR_WIFI_SSID
+        depends on EXAMPLE_BR_WIFI
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_BR_WIFI_PASSWORD
+        depends on EXAMPLE_BR_WIFI
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config EXAMPLE_BR_WIFI_CHANNEL
+        depends on EXAMPLE_BR_WIFI
+        int "WiFi Channel"
+        range 1 13
+        default 1
+        help
+            WiFi channel (network channel) for the example to use.
+
+    config EXAMPLE_BR_MAX_STA_CONN
+        depends on EXAMPLE_BR_WIFI
+        int "Maximal STA connections"
+        default 4
+        range 1 4 if IDF_TARGET_ESP32C2
+        range 1 15
+        help
+            Maximum number of STAs allowed to connect to the bridged soft-AP (wifi_config_t.ap.max_connection).
+            Upper bound matches ESP_WIFI_MAX_CONN_NUM in esp_wifi_types_native.h:
+            1-4 on ESP32-C2, 1-15 on other Wi-Fi chips.
+            Soft-AP and ESP-NOW share encryption keys; see Wi-Fi driver documentation
+            if ESP-NOW is enabled.
+endmenu

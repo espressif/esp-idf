@@ -1,0 +1,45 @@
+menu "ESP-Driver:GPTimer Configurations"
+    depends on SOC_GPTIMER_SUPPORTED
+
+    config GPTIMER_ISR_HANDLER_IN_IRAM
+        bool "Place GPTimer ISR handler in IRAM to reduce latency"
+        default y
+        select GPTIMER_OBJ_CACHE_SAFE
+        help
+            Place GPTimer ISR handler in IRAM to reduce latency caused by cache miss.
+
+    config GPTIMER_CTRL_FUNC_IN_IRAM
+        bool "Place GPTimer control functions in IRAM"
+        default n
+        select GPTIMER_OBJ_CACHE_SAFE
+        help
+            Place GPTimer control functions (like start/stop) in IRAM, to reduce latency caused by cache miss.
+            If enabled, these functions can also be called when cache is disabled.
+
+    config GPTIMER_ISR_CACHE_SAFE
+        bool "Allow GPTimer ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
+        select GPTIMER_ISR_HANDLER_IN_IRAM
+        default n
+        help
+            Enable this option to allow the GPTimer Interrupt Service Routine (ISR)
+            to execute even when the cache is disabled. This can be useful in scenarios where the cache
+            might be turned off, but the GPTimer functionality is still required to operate correctly.
+
+    config GPTIMER_OBJ_CACHE_SAFE
+        bool
+        default n
+        help
+            This will ensure the GPTimer object will not be allocated from a memory region
+            where its cache can be disabled.
+
+    config GPTIMER_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, GPTimer component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+
+endmenu

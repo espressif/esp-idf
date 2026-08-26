@@ -1,0 +1,3 @@
+-
+    re: "assert failed: .*?\\(s_task_stack_is_sane_when_cache_frozen\\(\\)\\)"
+    hint: "Flash operations cannot be performed when task stack is in PSRAM. Check out esp_flash_dispatcher component at https://components.espressif.com/components/espressif/esp_flash_dispatcher/versions/1.0.1/readme?language= for a potential solution to this issue."

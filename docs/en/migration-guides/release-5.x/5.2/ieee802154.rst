@@ -1,0 +1,9 @@
+IEEE 802.15.4
+=============
+
+:link_to_translation:`zh_CN:[中文]`
+
+Receive Handle Done
+-------------------
+
+User must call the function :cpp:func:`esp_ieee802154_receive_handle_done` to notify 802.15.4 driver after the received frame is handled. Otherwise the frame buffer will not be freed for future use.

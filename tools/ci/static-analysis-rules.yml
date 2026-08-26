@@ -1,0 +1,37 @@
+limits:
+  "clang-analyzer-core.NullDereference" : 0
+  "clang-analyzer-unix.Malloc" : 0
+
+ignore:
+  - "llvm-header-guard"
+  - "llvm-include-order"
+
+skip:
+  # submodules and third-party code
+  - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
+  - "components/bt/controller/lib_esp32"
+  - "components/bt/controller/lib_esp32c3_family"
+  - "components/bt/host/nimble/nimble"
+  - "components/bt/lib"
+  - "components/cmock/CMock"
+  - "components/esp_phy/lib"
+  - "components/esp_wifi/lib"
+  - "components/esp_wifi/lib_esp32"
+  - "components/lwip/lwip"
+  - "components/mbedtls/mbedtls"
+  - "components/openthread/lib"
+  - "components/openthread/openthread"
+  - "components/protobuf-c/protobuf-c"
+  - "components/spiffs/spiffs"
+  - "components/unity/unity"
+  - "components/heap/tlsf"
+
+  # disabled temporarily to pass the CI
+  - "components/bt/common/btc/core/btc_task.c"
+  - "components/bt/host/bluedroid/btc/profile/std/gap/btc_gap_ble.c"
+  - "components/bt/host/bluedroid/stack/btm/btm_acl.c"
+  - "components/bt/host/bluedroid/stack/btm/btm_ble_gap.c"
+  - "components/bt/host/bluedroid/stack/btm/btm_dev.c"
+  - "components/bt/host/bluedroid/stack/gatt/att_protocol.c"
+  - "components/bt/host/bluedroid/stack/gatt/gatt_db.c"
+  - "components/bt/host/bluedroid/stack/l2cap/l2c_utils.c"

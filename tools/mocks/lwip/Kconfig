@@ -1,0 +1,16 @@
+menu "LWIP"
+    config LWIP_TCP_OVERSIZE_MSS
+        bool "MSS"
+        default y
+
+    config LWIP_DHCP_COARSE_TIMER_SECS
+        int "DHCP coarse timer interval(s)"
+        default 1
+        range 1 10
+
+    config LWIP_IPV4
+        bool "Enable IPv4"
+        default y
+        help
+            Enable IPv4 stack. If you want to use IPv6 only TCP/IP stack, disable this.
+endmenu

@@ -1,0 +1,7 @@
+test_nvs_host/test_nvs
+test_nvs_host/coverage_report
+test_nvs_host/coverage.info
+**/*.gcno
+**/*.gcda
+**/*.gcov
+**/*.o

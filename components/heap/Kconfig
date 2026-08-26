@@ -1,0 +1,148 @@
+menu "Heap memory debugging"
+
+    config HEAP_HAS_EXEC_HEAP
+        bool
+        default n if ESP_SYSTEM_MEMPROT
+        default y if !ESP_SYSTEM_MEMPROT
+
+    choice HEAP_CORRUPTION_DETECTION
+        prompt "Heap corruption detection"
+        default HEAP_POISONING_DISABLED
+        help
+            Enable heap poisoning features to detect heap corruption caused by out-of-bounds access to heap memory.
+
+            See the "Heap Memory Debugging" page of the IDF documentation
+            for a description of each level of heap corruption detection.
+
+        config HEAP_POISONING_DISABLED
+            bool "Basic (no poisoning)"
+        config HEAP_POISONING_LIGHT
+            bool "Light impact"
+        config HEAP_POISONING_COMPREHENSIVE
+            bool "Comprehensive"
+    endchoice
+
+    choice HEAP_TRACING_DEST
+        bool "Heap tracing"
+        default HEAP_TRACING_OFF
+        help
+            Enables the heap tracing API defined in esp_heap_trace.h.
+
+            This function causes a moderate increase in IRAM code side and a minor increase in heap function
+            (malloc/free/realloc) CPU overhead, even when the tracing feature is not used.
+            So it's best to keep it disabled unless tracing is being used.
+
+        config HEAP_TRACING_OFF
+            bool "Disabled"
+        config HEAP_TRACING_STANDALONE
+            bool "Standalone"
+        config HEAP_TRACING_TOHOST
+            bool "Host-based"
+    endchoice
+
+    config HEAP_TRACING
+        bool
+        default n if HEAP_TRACING_OFF
+        default y if !HEAP_TRACING_OFF
+        help
+            Enables/disables heap tracing API.
+
+    config HEAP_TRACE_HASH_MAP
+        bool "Use hash map mechanism to access heap trace records"
+        depends on HEAP_TRACING_STANDALONE
+        default n
+        help
+            Enable this flag to use a hash map to increase performance in handling
+            heap trace records.
+
+            Heap trace standalone supports storing records as a list, or a list + hash map.
+
+            Using only a list takes less memory, but calls to 'free' will get slower as the
+            list grows. This is particularly affected when using HEAP_TRACE_ALL mode.
+
+            By using a list + hash map, calls to 'free' remain fast, at the cost of
+            additional memory to store the hash map.
+
+    config HEAP_TRACE_HASH_MAP_IN_EXT_RAM
+        bool "Place hash map in external RAM"
+        depends on SPIRAM && HEAP_TRACE_HASH_MAP
+        default n
+        help
+            When enabled this configuration forces the hash map to be placed in external RAM.
+
+    config HEAP_TRACE_HASH_MAP_SIZE
+        int "The number of entries in the hash map"
+        depends on HEAP_TRACE_HASH_MAP
+        default 512
+        help
+            Defines the number of entries in the heap trace hashmap. Each entry takes 8 bytes.
+            The bigger this number is, the better the performance. Recommended range: 200 - 2000.
+
+    config HEAP_TRACING_STACK_DEPTH
+        int "Heap tracing stack depth"
+        range 0 0 if IDF_TARGET_ARCH_RISCV && !ESP_SYSTEM_USE_FRAME_POINTER
+        default 0 if IDF_TARGET_ARCH_RISCV && !ESP_SYSTEM_USE_FRAME_POINTER
+        range 0 32
+        default 2
+        depends on HEAP_TRACING
+        help
+            Number of stack frames to save when tracing heap operation callers.
+
+            More stack frames uses more memory in the heap trace buffer (and slows down allocation), but
+            can provide useful information.
+
+    config HEAP_USE_HOOKS
+        bool "Use allocation and free hooks"
+        help
+            Enable the user to implement function hooks triggered for each successful allocation and free.
+
+    config HEAP_TASK_TRACKING
+        bool "Enable heap task tracking"
+        help
+            Enables tracking the task responsible for each heap allocation.
+
+            Note: Allocating or freeing memory or using the task tracking API will lead to a crash when the
+            scheduler is not working (e.g, after calling vTaskSuspendAll).
+
+    config HEAP_TRACK_DELETED_TASKS
+        bool "Keep information about the memory usage of deleted tasks"
+        depends on HEAP_TASK_TRACKING
+        default n
+        help
+            When enabled, this configuration allows the user to keep trace of the memory usage
+            of a task that has been deleted.
+
+            This allows the user to verify that no memory allocated within a task remains unfreed
+            before terminating the task
+
+            Note that this feature cannot keep track of a task deletion if the task is allocated statically
+
+    config HEAP_ABORT_WHEN_ALLOCATION_FAILS
+        bool "Abort if memory allocation fails"
+        default n
+        help
+            When enabled, if a memory allocation operation fails it will cause a system abort.
+
+    config HEAP_TLSF_USE_ROM_IMPL
+        bool "Use ROM implementation of heap tlsf library"
+        depends on ESP_ROM_HAS_HEAP_TLSF
+        default y
+        help
+            Enable this flag to use heap functions from ROM instead of ESP-IDF.
+
+            If keeping this as "n" in your project, you will have less free IRAM.
+            If making this as "y" in your project, you will increase free IRAM,
+            but you will lose the possibility to debug this module, and some new
+            features will be added and bugs will be fixed in the IDF source
+            but cannot be synced to ROM.
+
+    config HEAP_PLACE_FUNCTION_INTO_FLASH
+        bool "Force the entire heap component to be placed in flash memory"
+        default n
+        help
+            Enable this flag to save up RAM space by placing the heap component in the flash memory
+
+            Note that it is only safe to enable this configuration if no functions from esp_heap_caps.h
+            or esp_heap_trace.h are called from IRAM ISR which runs when cache is disabled.
+
+endmenu

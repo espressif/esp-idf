@@ -1,0 +1,10 @@
+menu "ULP RISC-V Interrupt Example Configuration"
+
+    config EXAMPLE_GPIO_INT
+        int "GPIO interrupt pin"
+        range 0 21
+        default 0
+        help
+            GPIO number to trigger an interrupt on the ULP RISC-V core.
+
+endmenu

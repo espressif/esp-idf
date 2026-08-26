@@ -1,0 +1,73 @@
+# Bluetooth Audio - Audio Stream Control configuration options
+#
+# SPDX-FileCopyrightText: 2020 Intel Corporation
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_ASCS
+    bool "Audio Stream Control Service Support"
+    help
+        This option enables support for Audio Stream Control Service.
+
+if BT_ASCS
+
+    config BT_ASCS_MAX_ASE_SNK_COUNT
+        int "Maximum number of Audio Stream Endpoint Sink Characteristics"
+        default 2
+        range 0 255
+        help
+            An ASE Sink characteristic represents the state of an ASE, which is
+            coupled to a single direction of a unicast Audio Stream.
+
+    config BT_ASCS_MAX_ASE_SRC_COUNT
+        int "Maximum number of Audio Stream Endpoint Source Characteristics"
+        default 2
+        range 0 255
+        help
+            An ASE Source characteristic represents the state of an ASE, which is
+            coupled to a single direction of a unicast Audio Stream.
+
+    config BT_ASCS_ASE_SNK
+        bool # hidden
+        default y if BT_ASCS_MAX_ASE_SNK_COUNT > 0
+        select BT_PAC_SNK
+        select BT_AUDIO_RX
+
+    config BT_ASCS_ASE_SRC
+        bool # hidden
+        default y if BT_ASCS_MAX_ASE_SRC_COUNT > 0
+        select BT_PAC_SRC
+        select BT_AUDIO_TX
+
+    config BT_ASCS_MAX_ACTIVE_ASES
+        int "Number of simultaneously supported ASE sessions"
+        default BT_ISO_MAX_CHAN
+        range 1 65535
+        help
+            The number of simultaneously supported active ASEs, in particular
+            meaning the number of ASEs that are allowed to be in a non-idle state at
+            a single time.
+
+    config BT_ASCS_ISO_DISCONNECT_DELAY
+        int "Milliseconds of delay before ASCS disconnects ISO after stream stop"
+        range 0 5000
+        default 500
+        help
+            The number of milliseconds ASCS will wait before disconnecting the ISO
+            of a stopped stream. The delay is added as it is the Unicast Client's
+            responsibility, but this is a failsafe to ensure that ISO channel is
+            being properly disconnected.
+
+    config BT_ASCS_ASE_BUF_TIMEOUT
+        int "Milliseconds of timeout when handle concurrent access to the long read ASE buffer"
+        range 0 1000
+        default 50
+        help
+            The number of milliseconds that the ASCS implementation will maximum wait before rejecting
+            an ASE read or dropping a notification if the ASE state is being accessed by another
+            thread.
+
+
+endif # BT_ASCS

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    ".opencode/plugins/opencode-ble-uart-bridge/opencode-ble-uart-bridge.ts"
+  ],
+  "permission": {
+    "edit": "ask"
+  }
+}

@@ -1,0 +1,318 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+#include <sys/lock.h>
+#include "sdkconfig.h"
+#include "esp_phy_init.h"
+#include "soc/soc_caps.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define ESP_CAL_DATA_CHECK_FAIL 1
+#define ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED (SOC_PM_MODEM_RF_FLAG_UPDATE_WORKAROUND || CONFIG_ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG)
+
+typedef struct {
+    uint8_t cmd_type;   /* the command type of the current phy i2c master command memory config */
+    struct {
+        uint8_t start, end; /* the start and end index of phy i2c master command memory */
+        uint8_t host_id;    /* phy i2c master host id */
+    } config;
+} phy_i2c_master_command_attribute_t;
+
+/**
+ * @file phy.h
+ * @brief Declarations for functions provided by libphy.a
+ */
+
+/**
+ * @brief Return ROM function pointer table from PHY library.
+ */
+void phy_get_romfunc_addr(void);
+
+/**
+ * @brief Initialize PHY module and do RF calibration
+ * @param[in] init_data Initialization parameters to be used by the PHY
+ * @param[inout] cal_data As input, calibration data previously obtained. As output, will contain new calibration data.
+ * @param[in] cal_mode  RF calibration mode
+ * @return ESP_CAL_DATA_CHECK_FAIL if the calibration data checksum fails or if the calibration data is outdated, other values are reserved for future use
+ */
+int register_chipv7_phy(const esp_phy_init_data_t* init_data, esp_phy_calibration_data_t *cal_data, esp_phy_calibration_mode_t cal_mode);
+
+/**
+ * @brief Get the format version of calibration data used by PHY library.
+ * @return Format version number, OR'ed with BIT(16) if PHY is in WIFI only mode.
+ */
+uint32_t phy_get_rf_cal_version(void);
+
+/**
+ * @brief Set RF/BB for only WIFI mode or coexist(WIFI & BT) mode
+ * @param[in] true is for only WIFI mode, false is for coexist mode. default is 0.
+ * @return NULL
+ */
+void phy_set_wifi_mode_only(bool wifi_only);
+
+/**
+ * @brief Set BT the highest priority in coexist mode.
+ * @return NULL
+ */
+void coex_bt_high_prio(void);
+
+/**
+ * @brief Open PHY and RF.
+ */
+void phy_wakeup_init(void);
+
+/**
+ * @brief Shutdown PHY and RF.
+ */
+void phy_close_rf(void);
+
+#if !CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Disable PHY temperature sensor.
+ */
+void phy_xpd_tsens(void);
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C3
+/**
+ * @brief Update internal state of PHY when wifi deinit powers off the wifi power domain.
+ */
+void phy_init_flag(void);
+#endif
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+/**
+ * @brief Get the configuration info of PHY i2c master command memory.
+ *
+ * @param[out] attr  the configuration info of PHY i2c master command memory
+ * @param[out] size  the count of PHY i2c master command memory configuration
+ */
+void phy_i2c_master_command_mem_cfg(phy_i2c_master_command_attribute_t *attr, int *size);
+#endif
+
+/**
+ * @brief Store and load PHY digital registers.
+ *
+ * @param     backup_en  if backup_en is true, store PHY digital registers to memory. Otherwise load PHY digital registers from memory
+ * @param     mem_addr   Memory address to store and load PHY digital registers
+ *
+ * @return    memory size
+ */
+uint8_t phy_dig_reg_backup(bool backup_en, uint32_t *mem_addr);
+
+#if CONFIG_MAC_BB_PD
+/**
+ * @brief Store and load baseband registers.
+ */
+void phy_freq_mem_backup(bool backup_en, uint32_t *mem);
+#endif
+
+#if CONFIG_ESP_PHY_ENABLE_USB
+/**
+ * @brief Enable or disable USB when phy init.
+ */
+void phy_bbpll_en_usb(bool en);
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32S2
+/**
+ * @brief Phy version select for ESP32S2
+ */
+void phy_eco_version_sel(uint8_t chip_ver);
+#endif
+
+#if CONFIG_ESP_PHY_IMPROVE_RX_11B
+/**
+ * @brief Improve Wi-Fi receive 11b pkts when modules with high interference.
+ *
+ * @attention 1.This is a workaround to improve Wi-Fi receive 11b pkts for some modules using AC-DC power supply with high interference.
+ * @attention 2.Enable this will sacrifice Wi-Fi OFDM receive performance.But to guarantee 11b receive performance serves as a bottom line in this case.
+ *
+ * @param     enable  Enable or disable.
+ */
+void phy_improve_rx_special(bool enable);
+#endif
+
+/**
+ * @brief Enable phy track pll
+ *
+ */
+void phy_track_pll_init(void);
+
+/**
+ * @brief Disable phy track pll
+ *
+ */
+void phy_track_pll_deinit(void);
+
+/**
+ * @brief Set the flag recorded which modem has already enabled phy
+ *
+ */
+void phy_set_modem_flag(esp_phy_modem_t modem);
+
+/**
+ * @brief Clear the flag to record which modem calls phy disenable
+ */
+void phy_clr_modem_flag(esp_phy_modem_t modem);
+
+/**
+ * @brief Get the flag recorded which modem has already enabled phy
+ *
+ */
+esp_phy_modem_t phy_get_modem_flag(void);
+
+/**
+ * @brief Get the PHY lock, only used in esp_phy, the user should not use this function.
+ *
+ */
+_lock_t phy_get_lock(void);
+
+/**
+ * @brief Call this funnction to track pll immediately.
+ *
+ */
+void phy_track_pll(void);
+
+/**
+ * @brief PHY antenna default configuration
+ *
+ */
+void ant_dft_cfg(bool default_ant);
+
+/**
+ * @brief PHY tx antenna config
+ *
+ */
+void ant_tx_cfg(uint8_t ant0);
+
+/**
+ * @brief PHY rx antenna config
+ *
+ */
+void ant_rx_cfg(bool auto_en, uint8_t ant0, uint8_t ant1);
+
+/**
+ * @brief PHY antenna need update
+ *
+ */
+bool phy_ant_need_update(void);
+
+/**
+ * @brief PHY antenna need update
+ *
+ */
+void phy_ant_clr_update_flag(void);
+
+/**
+ * @brief PHY antenna configuration update
+ *
+ */
+void phy_ant_update(void);
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+/**
+ * @brief Get the REGDMA config value of the BBPLL in analog i2c master burst mode
+ *
+ * @return  the BBPLL REGDMA configure value of i2c master burst mode
+ */
+uint32_t phy_ana_i2c_master_burst_bbpll_config(void);
+
+/**
+ * @brief Get the REGDMA config value of the RF PHY on or off in analog i2c master burst mode
+ *
+ * @param[in] on true for enable RF PHY, false for disable RF PHY.
+ *
+ * @return  the RF on or off configure value of i2c master burst mode
+ */
+uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
+#endif
+
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+/**
+ * @brief On sleep->modem->active wakeup process, since RF has been turned on by hardware in
+ *        modem state, `sleep_modem_wifi_do_phy_retention` and `phy_wakeup_init` will be skipped
+ *        in `esp_phy_enable`, but there are still some configurations that need to be restored
+ *        by software, which are packed in this function.
+ */
+void phy_wakeup_from_modem_state_extra_init(void);
+#endif
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+/**
+ * @brief Update modem RF flag
+ *
+ * This function is called as a callback during MAC/BB power down operations.
+ * It checks if modem RF is already enabled and clears the RF power state accordingly.
+ */
+void esp_phy_modem_rf_flag_update(void);
+#endif
+
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
+/**
+ * @brief PHY module sleep data (includes AGC, TX, NRX, BB, etc..) initialize.
+ */
+void esp_phy_sleep_data_init(void);
+
+/**
+ * @brief Attach WiFi BB sleep retention linked list (REGDMA) after entries are allocated in `esp_phy_sleep_data_init()`.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - error code from sleep retention otherwise
+ */
+esp_err_t esp_phy_wifi_bb_sleep_retention_attach(void);
+
+/**
+ * @brief Detach WiFi BB sleep retention linked list (REGDMA) before `sleep_retention_module_free()` in `esp_phy_sleep_data_deinit()`.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - error code from sleep retention otherwise
+ */
+esp_err_t esp_phy_wifi_bb_sleep_retention_detach(void);
+
+/**
+ * @brief PHY module sleep data de-initialize.
+ */
+void esp_phy_sleep_data_deinit(void);
+#endif
+
+/**
+ * @brief Wait for frequency hardware hop to complete
+ *
+ */
+void phy_wait_freq_hw_hop_done(void);
+
+#if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
+/**
+ * @brief Set the temperature delta for PHY track pll
+ *
+ * @param     debug_flag  Debug flag for PHY temperature tracking
+ * @param     track_temp   Temperature delta for PHY temperature tracking
+ */
+void phy_track_temp_debug(uint8_t debug_flag, uint8_t track_temp);
+#endif
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
+/**
+ * @brief PHY module common memory (FE) initialize
+ *
+ */
+esp_err_t esp_phy_fe_sleep_data_init(void);
+
+/**
+ * @brief PHY module common memory (FE) de-initialize
+ *
+ */
+void esp_phy_fe_sleep_data_deinit(void);
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
+#ifdef __cplusplus
+}
+#endif

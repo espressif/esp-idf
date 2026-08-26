@@ -1,0 +1,82 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_IP_MODE
+        prompt "Multicast IP type"
+        help
+            Example can multicast IPV4, IPV6, or both.
+
+        config EXAMPLE_IPV4_V6
+            bool "IPV4 & IPV6"
+            select EXAMPLE_IPV4
+            select EXAMPLE_IPV6
+
+        config EXAMPLE_IPV4_ONLY
+            bool "IPV4"
+            select EXAMPLE_IPV4
+
+        config EXAMPLE_IPV6_ONLY
+            bool "IPV6"
+            select EXAMPLE_IPV6
+
+    endchoice
+
+    config EXAMPLE_IPV4
+        bool
+    config EXAMPLE_IPV6
+        bool
+        select EXAMPLE_CONNECT_IPV6 if IDF_TARGET_ESP32
+
+    config EXAMPLE_MULTICAST_IPV4_ADDR
+        string "Multicast IPV4 Address (send & receive)"
+        default "232.10.11.12"
+        depends on EXAMPLE_IPV4
+        help
+            IPV4 multicast address. Example will both send to and listen to this address.
+
+    config EXAMPLE_MULTICAST_IPV6_ADDR
+        string "Multicast IPV6 Address (send & receive)"
+        default "FF02::FC"
+        depends on EXAMPLE_IPV6
+        help
+            IPV6 multicast address. Example will both send to and listen to this address.
+
+            The default FF02::FC address is a link-local multicast address.
+            Consult IPV6 specifications or documentation for information about
+            meaning of different IPV6 multicast ranges.
+
+    config EXAMPLE_PORT
+        int "Multicast port (send & receive)"
+        range 0 65535
+        default 3333
+        help
+            Multicast port the example will both send & receive UDP packets on.
+
+    config EXAMPLE_LOOPBACK
+        bool "Multicast loopback"
+        help
+            Enables IP_MULTICAST_LOOP/IPV6_MULTICAST_LOOP options, meaning
+            that packets transmitted from the device are also received by the
+            device itself.
+
+    config EXAMPLE_MULTICAST_TTL
+        int  "Multicast packet TTL"
+        range 1 255
+        help
+            Sets TTL field of multicast packets. Separate from uni- & broadcast TTL.
+
+    choice EXAMPLE_MULTICAST_IF
+        prompt "Multicast Interface"
+        default EXAMPLE_MULTICAST_LISTEN_DEFAULT_IF
+        help
+            Multicast socket can bind to default interface, or all interfaces.
+
+        config EXAMPLE_MULTICAST_LISTEN_ALL_IF
+            bool "All interfaces (IPV4 only)"
+            depends on !EXAMPLE_IPV6_ONLY
+
+        config EXAMPLE_MULTICAST_LISTEN_DEFAULT_IF
+            bool "Default interface"
+
+    endchoice
+
+endmenu

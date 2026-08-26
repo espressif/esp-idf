@@ -1,0 +1,15 @@
+config ESP_REV_MIN_FULL
+    int
+    default 0
+
+config ESP_REV_MAX_FULL
+    int
+    default 999
+
+config ESP_EFUSE_BLOCK_REV_MIN_FULL
+    int
+    default 0
+
+config ESP_EFUSE_BLOCK_REV_MAX_FULL
+    int
+    default 999

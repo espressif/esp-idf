@@ -1,0 +1,1044 @@
+#
+# Please run the following command for opening a page with more information about this configuration file:
+# idf.py docs -sp api-reference/kconfig.html
+#
+mainmenu "Espressif IoT Development Framework Configuration"
+
+    orsource "./components/soc/$IDF_TARGET/include/soc/Kconfig.soc_caps.in"
+
+    config IDF_CMAKE
+        bool
+        default "y"
+
+    config IDF_ENV_FPGA
+        bool
+        option env="IDF_ENV_FPGA"
+        help
+            - This option is for internal use only.
+            - Enabling this option will help enable all FPGA support so as to
+              run ESP-IDF on an FPGA. This can help reproduce some issues that
+              only happens on FPGA condition, or when you have to burn some
+              efuses multiple times.
+
+    config IDF_ENV_BRINGUP
+        bool
+        help
+            - This option is ONLY used when doing new chip bringup.
+            - This option will only enable necessary hw / sw settings for running
+              a hello_world application.
+
+
+    config IDF_CI_BUILD
+        bool
+        default y if "$(IDF_CI_BUILD)" = "y" || "$(IDF_CI_BUILD)" = 1
+
+    config IDF_DOC_BUILD
+        bool
+        default y if "$(IDF_DOC_BUILD)" = "y" || "$(IDF_DOC_BUILD)" = 1
+
+    config IDF_TOOLCHAIN
+        # This option records the IDF target when sdkconfig is generated the first time.
+        # It is not updated if environment variable $IDF_TOOLCHAIN changes later, and
+        # the build system is responsible for detecting the mismatch between
+        # CONFIG_IDF_TOOLCHAIN and $IDF_TOOLCHAIN.
+        string
+        default "$IDF_TOOLCHAIN"
+
+    config IDF_TOOLCHAIN_CLANG
+        bool
+        default "y" if IDF_TOOLCHAIN="clang"
+
+    config IDF_TOOLCHAIN_GCC
+        bool
+        default "y" if IDF_TOOLCHAIN="gcc"
+
+    config IDF_TARGET_ARCH_RISCV
+        bool
+        default "n"
+
+    config IDF_TARGET_ARCH_XTENSA
+        bool
+        default "n"
+
+    config IDF_TARGET_ARCH
+        string
+        default "riscv" if IDF_TARGET_ARCH_RISCV
+        default "xtensa" if IDF_TARGET_ARCH_XTENSA
+
+    config IDF_TARGET
+        # This option records the IDF target when sdkconfig is generated the first time.
+        # It is not updated if environment variable $IDF_TARGET changes later, and
+        # the build system is responsible for detecting the mismatch between
+        # CONFIG_IDF_TARGET and $IDF_TARGET.
+        string
+        default "$IDF_TARGET"
+
+    config IDF_INIT_VERSION
+        # This option records the IDF version when sdkconfig is generated the first time.
+        # It is not updated if environment variable $IDF_VERSION changes later
+        string
+        default "$IDF_INIT_VERSION"
+
+    config IDF_TARGET_ESP32
+        bool
+        default "y" if IDF_TARGET="esp32"
+        select IDF_TARGET_ARCH_XTENSA
+
+    config IDF_TARGET_ESP32S2
+        bool
+        default "y" if IDF_TARGET="esp32s2"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_XTENSA
+
+    config IDF_TARGET_ESP32S3
+        bool
+        default "y" if IDF_TARGET="esp32s3"
+        select IDF_TARGET_ARCH_XTENSA
+
+    config IDF_TARGET_ESP32C3
+        bool
+        default "y" if IDF_TARGET="esp32c3"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32C2
+        bool
+        default "y" if IDF_TARGET="esp32c2"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32C6
+        bool
+        default "y" if IDF_TARGET="esp32c6"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32C5
+        bool
+        default "y" if IDF_TARGET="esp32c5"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32P4
+        bool
+        default "y" if IDF_TARGET="esp32p4"
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32H2
+        bool
+        default "y" if IDF_TARGET="esp32h2"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32C61
+        bool
+        default "y" if IDF_TARGET="esp32c61"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32H21
+        bool
+        default "y" if IDF_TARGET="esp32h21"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32H4
+        bool
+        default "y" if IDF_TARGET="esp32h4"
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32S31
+        bool
+        default "y" if IDF_TARGET="esp32s31"
+        select IDF_TARGET_ARCH_RISCV
+        select IDF_ENV_BRINGUP
+
+    config IDF_TARGET_LINUX
+        bool
+        default "y" if IDF_TARGET="linux"
+        select FREERTOS_UNICORE
+
+    config IDF_FIRMWARE_CHIP_ID
+        hex
+        default 0x0000 if IDF_TARGET_ESP32
+        default 0x0002 if IDF_TARGET_ESP32S2
+        default 0x0005 if IDF_TARGET_ESP32C3
+        default 0x0009 if IDF_TARGET_ESP32S3
+        default 0x000C if IDF_TARGET_ESP32C2
+        default 0x000D if IDF_TARGET_ESP32C6
+        default 0x0010 if IDF_TARGET_ESP32H2
+        default 0x0012 if IDF_TARGET_ESP32P4
+        default 0x0017 if IDF_TARGET_ESP32C5
+        default 0x0014 if IDF_TARGET_ESP32C61
+        default 0x0019 if IDF_TARGET_ESP32H21
+        default 0x001C if IDF_TARGET_ESP32H4
+        default 0x0020 if IDF_TARGET_ESP32S31
+        default 0xFFFF
+
+
+    menu "Build type"
+
+        choice APP_BUILD_TYPE
+            prompt "Application build type"
+            default APP_BUILD_TYPE_APP_2NDBOOT
+            help
+                Select the way the application is built.
+
+                By default, the application is built as a binary file in a format compatible with
+                the ESP-IDF bootloader. In addition to this application, 2nd stage bootloader is
+                also built. Application and bootloader binaries can be written into flash and
+                loaded/executed from there.
+
+                Another option, useful for only very small and limited applications, is to only link
+                the .elf file of the application, such that it can be loaded directly into RAM over
+                JTAG or UART. Note that since IRAM and DRAM sizes are very limited, it is not possible
+                to build any complex application this way. However for some kinds of testing and debugging,
+                this option may provide faster iterations, since the application does not need to be
+                written into flash.
+
+                Note: when APP_BUILD_TYPE_RAM is selected and loaded with JTAG, ESP-IDF does not contain
+                all the startup code required to initialize the CPUs and ROM memory (data/bss).
+                Therefore it is necessary to execute a bit of ROM code prior to executing the application.
+                A gdbinit file may look as follows (for ESP32):
+
+                    # Connect to a running instance of OpenOCD
+                    target remote :3333
+                    # Reset and halt the target
+                    mon reset halt
+                    # Run to a specific point in ROM code,
+                    #  where most of initialization is complete.
+                    thb *0x40007d54
+                    c
+                    # Load the application into RAM
+                    load
+                    # Run till app_main
+                    tb app_main
+                    c
+
+                Execute this gdbinit file as follows:
+
+                    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit
+
+                Example gdbinit files for other targets can be found in tools/test_apps/system/gdb_loadable_elf/
+
+                When loading the BIN with UART, the ROM will jump to ram and run the app after finishing the ROM
+                startup code, so there's no additional startup initialization required. You can use the
+                `load-ram` in esptool to load the generated .bin file into ram and execute.
+
+                Example:
+                    esptool --chip {chip} -p {port} -b {baud} --no-stub load-ram {app.bin}
+
+                Recommended sdkconfig.defaults for building loadable ELF files is as follows.
+                CONFIG_APP_BUILD_TYPE_RAM is required, other options help reduce application
+                memory footprint.
+
+                    CONFIG_APP_BUILD_TYPE_RAM=y
+                    CONFIG_VFS_SUPPORT_TERMIOS=
+                    CONFIG_LIBC_NEWLIB_NANO_FORMAT=y
+                    CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y
+                    CONFIG_ESP_DEBUG_STUBS_ENABLE=
+                    CONFIG_ESP_ERR_TO_NAME_LOOKUP=
+
+
+            config APP_BUILD_TYPE_APP_2NDBOOT
+                bool
+                prompt "Default (binary application + 2nd stage bootloader)"
+                depends on !IDF_TARGET_LINUX
+                select APP_BUILD_GENERATE_BINARIES
+                select APP_BUILD_BOOTLOADER
+                select APP_BUILD_USE_FLASH_SECTIONS
+
+            config APP_BUILD_TYPE_RAM
+                bool
+                prompt "Build app runs entirely in RAM (EXPERIMENTAL)"
+                select APP_BUILD_GENERATE_BINARIES
+
+        endchoice # APP_BUILD_TYPE
+
+        # Hidden options, set according to the choice above
+        config APP_BUILD_GENERATE_BINARIES
+            bool # Whether to generate .bin files or not
+
+        config APP_BUILD_BOOTLOADER
+            bool # Whether to build the bootloader
+
+        config APP_BUILD_TYPE_PURE_RAM_APP
+            bool
+            prompt "Build app without SPI_FLASH/PSRAM support (saves ram)"
+            depends on APP_BUILD_TYPE_RAM
+            help
+                If this option is enabled, external memory and related peripherals, such as Cache, MMU,
+                Flash and PSRAM, won't be initialized. Corresponding drivers won't be introduced either.
+                Components that depend on the spi_flash component will also be unavailable, such as
+                app_update, etc. When this option is enabled, about 26KB of RAM space can be saved.
+
+        config APP_BUILD_USE_FLASH_SECTIONS
+            bool # Whether to place code/data into memory-mapped flash sections
+
+        menu "Minimize binary changes between builds"
+            depends on APP_BUILD_TYPE_APP_2NDBOOT
+
+            config APP_BUILD_MINIMIZE_BINARY_CHANGES
+                bool "Minimize binary changes between builds"
+                select COMPILER_NO_MERGE_CONSTANTS if IDF_TOOLCHAIN_GCC
+                help
+                    Optimize the application binary so that "idf.py flash" can
+                    flash only the data sectors that changed. Fast reflashing works
+                    without this option, enabling it improves reflash effectiveness
+                    by reducing the amount of data written on each reflash.
+
+                    Enabling this option classifies component libraries into two
+                    categories: mutable and immutable. Mutable libraries are
+                    expected to change frequently during development, while
+                    immutable libraries are considered stable. All project
+                    component libraries are treated as mutable; all other libraries
+                    are treated as immutable.
+
+                    In the generated linker script, input sections from immutable
+                    libraries are placed before those from mutable libraries. This
+                    layout helps localize changes in the output sections of the ELF
+                    file, so that recompilation primarily affects a confined area
+                    associated with the mutable libraries.
+
+                    To support this, some compiler optimizations, such as constant
+                    merging, are disabled, which helps minimize differences in the
+                    binary image between builds. However, this may increase the
+                    overall image size and flash usage.
+
+                    Additionally, this option inserts a padding, defined by the
+                    APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING option, after the input
+                    sections of mutable libraries. This allows further isolation of
+                    changes but also increases the size of the binary image and
+                    flash consumption.
+
+                    This option is primarily intended for development. It increases
+                    binary size and disables optimizations; it is not recommended
+                    for production builds.
+
+            choice APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_SIZE
+                prompt "Padding size"
+                default APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_4KB
+                depends on APP_BUILD_MINIMIZE_BINARY_CHANGES
+                help
+                    Selects the amount of padding (in kilobytes) to add after input
+                    sections of mutable libraries when "Minimize binary changes
+                    between builds" is enabled.
+
+                config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_2KB
+                    bool "2 KB"
+                config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_4KB
+                    bool "4 KB"
+                config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_8KB
+                    bool "8 KB"
+            endchoice
+
+            config APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING
+                int
+                depends on APP_BUILD_MINIMIZE_BINARY_CHANGES
+                default 2048 if APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_2KB
+                default 4096 if APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_4KB
+                default 8192 if APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING_8KB
+
+        endmenu  # Minimize binary changes between builds
+
+        config APP_REPRODUCIBLE_BUILD
+            bool "Enable reproducible build"
+            default n
+            select COMPILER_HIDE_PATHS_MACROS
+            help
+                If enabled, all date, time, and path information would be eliminated. A .gdbinit file would be create
+                automatically. (or will be append if you have one already)
+
+        config APP_NO_BLOBS
+            bool "No Binary Blobs"
+            default n
+            help
+                If enabled, this disables the linking of binary libraries in the application build. Note
+                that after enabling this Wi-Fi/Bluetooth will not work.
+
+        config APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+            bool "App compatible with bootloaders before ESP-IDF v2.1"
+            select APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                Bootloaders before ESP-IDF v2.1 did less initialisation of the
+                system clock. This setting needs to be enabled to build an app
+                which can be booted by these older bootloaders.
+
+                If this setting is enabled, the app can be booted by any bootloader
+                from IDF v1.0 up to the current version.
+
+                If this setting is disabled, the app can only be booted by bootloaders
+                from IDF v2.1 or newer.
+
+                Enabling this setting adds approximately 1KB to the app's IRAM usage.
+
+        config APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+            bool "App compatible with bootloader and partition table before ESP-IDF v3.1"
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                Partition tables before ESP-IDF V3.1 do not contain an MD5 checksum
+                field, and the bootloader before ESP-IDF v3.1 cannot read a partition
+                table that contains an MD5 checksum field.
+
+                Enable this option only if your app needs to boot on a bootloader and/or
+                partition table that was generated from a version *before* ESP-IDF v3.1.
+
+                If this option and Flash Encryption are enabled at the same time, and any
+                data partitions in the partition table are marked Encrypted, then the
+                partition encrypted flag should be manually verified in the app before accessing
+                the partition (see CVE-2021-27926).
+
+        config APP_INIT_CLK
+            bool
+            depends on IDF_TARGET_ESP32
+            default y if APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+            default y if APP_BUILD_TYPE_RAM
+
+
+    endmenu # Build type
+
+    source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
+
+    menu "Compiler options"
+
+        choice COMPILER_OPTIMIZATION
+            prompt "Optimization Level"
+            default COMPILER_OPTIMIZATION_DEBUG
+            help
+                This option sets compiler optimization level (gcc -O argument) for the app.
+
+                - The "Debug" setting will add the -Og flag to CFLAGS.
+                - The "Size" setting will add the -Os flag to CFLAGS (-Oz with Clang).
+                - The "Performance" setting will add the -O2 flag to CFLAGS.
+                - The "None" setting will add the -O0 flag to CFLAGS.
+
+                The "Size" setting cause the compiled code to be smaller and faster, but
+                may lead to difficulties of correlating code addresses to source file
+                lines when debugging.
+
+                The "Performance" setting causes the compiled code to be larger and faster,
+                but will be easier to correlated code addresses to source file lines.
+
+                "None" with -O0 produces compiled code without optimization.
+
+                Note that custom optimization levels may be unsupported.
+
+                Compiler optimization for the IDF bootloader is set separately,
+                see the BOOTLOADER_COMPILER_OPTIMIZATION setting.
+
+            config COMPILER_OPTIMIZATION_DEBUG
+                bool "Debug (-Og)"
+            config COMPILER_OPTIMIZATION_SIZE
+                bool "Optimize for size (-Os with GCC, -Oz with Clang)"
+            config COMPILER_OPTIMIZATION_PERF
+                bool "Optimize for performance (-O2)"
+            config COMPILER_OPTIMIZATION_NONE
+                bool "Debug without optimization (-O0)"
+
+        endchoice
+
+        config COMPILER_ENABLE_RISCV_ZCMP
+            bool "Enable RISCV ZCMP extension"
+            depends on SOC_CPU_ZCMP_WORKAROUND
+            default n
+            help
+                Enable the RISC-V ZCMP (Compressed Macro) extension to reduce binary size
+                by optimizing function prologue and epilogue sequences.
+
+                Note: Due to a hardware issue on some ESP32 chips (e.g., ESP32C5, ESP32C61,
+                ESP32H4), executing "cm.push" may re-enable interrupts even when global
+                interrupts are disabled (mstatus.mie = 0). This can cause unexpected interrupts
+                during CPU retention or within critical sections.
+
+                Workarounds are implemented in the IDF codebase. However, if user code
+                directly disables interrupts, additional actions may be required. Refer
+                to code examples under the SOC_CPU_ZCMP_WORKAROUND macro, or disable
+                the ZCMP extension for source files that contain functions which may
+                execute while mstatus.mie = 0.
+
+        choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
+            prompt "Assertion level"
+            default COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
+            help
+                Assertions can be:
+
+                - Enabled. Failure will print verbose assertion details. This is the default.
+
+                - Set to "silent" to save code size (failed assertions will abort() but user
+                  needs to use the aborting address to find the line number with the failed assertion.)
+
+                - Disabled entirely (not recommended for most configurations.) -DNDEBUG is added
+                  to CPPFLAGS in this case.
+
+            config COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
+                prompt "Enabled"
+                bool
+                help
+                    Enable assertions. Assertion content and line number will be printed on failure.
+
+            config COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
+                prompt "Silent (saves code size)"
+                bool
+                help
+                    Enable silent assertions. Failed assertions will abort(), user needs to
+                    use the aborting address to find the line number with the failed assertion.
+
+            config COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
+                prompt "Disabled (sets -DNDEBUG)"
+                bool
+                help
+                    If assertions are disabled, -DNDEBUG is added to CPPFLAGS.
+
+        endchoice # assertions
+
+        config COMPILER_ASSERT_NDEBUG_EVALUATE
+            bool "Enable the evaluation of the expression inside assert(X) when NDEBUG is set"
+            default n
+            help
+                When NDEBUG is set, assert(X) will not cause code to trigger an assertion.
+                With this option set, assert(X) will still evaluate the expression X, though
+                the result will never cause an assertion. This means that if X is a function
+                then the function will be called.
+
+                This is not according to the standard, which states that the assert(X) should
+                be replaced with ((void)0) if NDEBUG is defined.
+
+        choice COMPILER_FLOAT_LIB_FROM
+            prompt "Compiler float lib source"
+            default COMPILER_FLOAT_LIB_FROM_RVFPLIB if ESP_ROM_HAS_RVFPLIB
+            default COMPILER_FLOAT_LIB_FROM_GCCLIB
+            help
+                In the soft-fp part of libgcc, riscv version is written in C,
+                and handles all edge cases in IEEE754, which makes it larger
+                and performance is slow.
+
+                RVfplib is an optimized RISC-V library for FP arithmetic on 32-bit
+                integer processors, for single and double-precision FP.
+                RVfplib is "fast", but it has a few exceptions from IEEE 754 compliance.
+
+            config COMPILER_FLOAT_LIB_FROM_GCCLIB
+                bool "libgcc"
+            config COMPILER_FLOAT_LIB_FROM_RVFPLIB
+                depends on ESP_ROM_HAS_RVFPLIB
+                bool "librvfp"
+        endchoice # COMPILER_FLOAT_LIB_FROM
+
+        config COMPILER_OPTIMIZATION_ASSERTION_LEVEL
+            int
+            default 0 if COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
+            default 1 if COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
+            default 2 if COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
+
+        config COMPILER_OPTIMIZATION_CHECKS_SILENT
+            bool "Disable messages in ESP_RETURN_ON_* and ESP_EXIT_ON_* macros"
+            default n
+            help
+                If enabled, the error messages will be discarded in following check macros:
+                - ESP_RETURN_ON_ERROR
+                - ESP_EXIT_ON_ERROR
+                - ESP_RETURN_ON_FALSE
+                - ESP_EXIT_ON_FALSE
+
+        menuconfig COMPILER_HIDE_PATHS_MACROS
+            bool "Replace ESP-IDF and project paths in binaries"
+            default y
+            help
+                When expanding the __FILE__ and __BASE_FILE__ macros, replace paths inside ESP-IDF
+                with paths relative to the placeholder string "IDF", and convert paths inside the
+                project directory to relative paths.
+
+                This allows building the project with assertions or other code that embeds file paths,
+                without the binary containing the exact path to the IDF or project directories.
+
+                This option passes -fmacro-prefix-map options to the GCC command line. To replace additional
+                paths in your binaries, modify the project CMakeLists.txt file to pass custom -fmacro-prefix-map or
+                -ffile-prefix-map arguments.
+
+        menuconfig COMPILER_CXX_EXCEPTIONS
+            bool "Enable C++ exceptions"
+            default n
+            help
+                Enabling this option compiles all IDF C++ files with exception support enabled.
+
+                Disabling this option disables C++ exception support in all compiled files, and any libstdc++ code
+                which throws an exception will abort instead.
+
+                Enabling this option currently adds an additional ~500 bytes of heap overhead
+                when an exception is thrown in user code for the first time.
+
+        config COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE
+            int "Emergency Pool Size"
+            default 0
+            depends on COMPILER_CXX_EXCEPTIONS
+            help
+                Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
+                memory for thrown exceptions when there is not enough memory on the heap.
+
+        config COMPILER_CXX_RTTI
+            bool "Enable C++ run-time type info (RTTI)"
+            default n
+            help
+                Enabling this option compiles all C++ files with RTTI support enabled.
+                This increases binary size (typically by tens of kB) but allows using
+                dynamic_cast conversion and typeid operator.
+
+        choice COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT
+            prompt "C++ trivial automatic variable initialization"
+            default COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED
+            depends on !IDF_TARGET_LINUX
+            help
+                Controls initialization of trivial automatic variables in C++ code
+                (-ftrivial-auto-var-init). The 'uninitialized' setting reduces overall
+                binary size compared to 'zero' or 'pattern'.
+
+            config COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED
+                bool "Uninitialized"
+                help
+                    Does not initialize automatic variables. This matches the traditional C and
+                    C++ behavior and yields the smallest code of the three modes.
+
+                    When compiling as C++26, compilers may zero-initialize automatic variables
+                    and temporaries unless -ftrivial-auto-var-init is set explicitly. This
+                    option passes -ftrivial-auto-var-init=uninitialized to preserve the
+                    traditional behavior. Padding bits in objects are not initialized.
+
+            config COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_PATTERN
+                bool "Pattern"
+                help
+                    Initialize automatic variables with values which will likely transform logic
+                    bugs into crashes down the line, are easily recognized in a crash dump and
+                    without being values that programmers can rely on for useful program semantics.
+                    The current value is byte-repeatable pattern with byte "0xFE". The values used
+                    for pattern initialization might be changed in the future.
+
+            config COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_ZERO
+                bool "Zero"
+                help
+                    Initialize automatic variables with zeroes.
+        endchoice
+
+        choice COMPILER_STACK_CHECK_MODE
+            prompt "Stack smashing protection mode"
+            default COMPILER_STACK_CHECK_MODE_NONE
+            help
+                Stack smashing protection mode. Emit extra code to check for buffer overflows, such as stack
+                smashing attacks. This is done by adding a guard variable to functions with vulnerable objects.
+                The guards are initialized when a function is entered and then checked when the function exits.
+                If a guard check fails, program is halted. Protection has the following modes:
+
+                - In NORMAL mode (GCC flag: -fstack-protector) only functions that call alloca, and functions with
+                  buffers larger than 8 bytes are protected.
+
+                - STRONG mode (GCC flag: -fstack-protector-strong) is like NORMAL, but includes additional functions
+                  to be protected -- those that have local array definitions, or have references to local frame
+                  addresses.
+
+                - In OVERALL mode (GCC flag: -fstack-protector-all) all functions are protected.
+
+                Modes have the following impact on code performance and coverage:
+
+                - performance: NORMAL > STRONG > OVERALL
+
+                - coverage: NORMAL < STRONG < OVERALL
+
+                The performance impact includes increasing the amount of stack memory required for each task.
+
+            config COMPILER_STACK_CHECK_MODE_NONE
+                bool "None"
+            config COMPILER_STACK_CHECK_MODE_NORM
+                bool "Normal"
+            config COMPILER_STACK_CHECK_MODE_STRONG
+                bool "Strong"
+            config COMPILER_STACK_CHECK_MODE_ALL
+                bool "Overall"
+        endchoice
+
+        config COMPILER_STACK_CHECK
+            bool
+            default !COMPILER_STACK_CHECK_MODE_NONE
+            help
+                Stack smashing protection.
+
+        config COMPILER_NO_MERGE_CONSTANTS
+            bool "Disable merging const sections"
+            depends on IDF_TOOLCHAIN_GCC
+            help
+                Disable merging identical constants (string/floating-point) across compilation units.
+                This helps in better size analysis of the application binary as the rodata section
+                distribution is more uniform across libraries. On downside, it may increase
+                the binary size and hence should be used during development phase only.
+
+        config COMPILER_ENABLE_TEXT_SECTION_LITERALS
+            bool
+            depends on IDF_TOOLCHAIN_GCC
+            depends on IDF_TARGET_ARCH_XTENSA
+            default y if APP_BUILD_MINIMIZE_BINARY_CHANGES
+            help
+                Intersperse Xtensa literals within the text section to keep
+                them as close as possible to their references. This prevents
+                literals from being placed into a separate section in the
+                output file and prevents the linker from combining literal
+                pools from different object files. Enabling this is necessary
+                for fast reflashing to prevent mixing code from mutable and
+                immutable libraries.
+
+        config COMPILER_WARN_WRITE_STRINGS
+            bool "Enable -Wwrite-strings warning flag"
+            default "n"
+            help
+                Adds -Wwrite-strings flag for the C/C++ compilers.
+
+                For C, this gives string constants the type ``const char[]`` so that
+                copying the address of one into a non-const ``char *`` pointer
+                produces a warning. This warning helps to find at compile time code
+                that tries to write into a string constant.
+
+                For C++, this warns about the deprecated conversion from string
+                literals to ``char *``.
+
+        config COMPILER_SAVE_RESTORE_LIBCALLS
+            bool "Enable -msave-restore flag to reduce code size"
+            depends on IDF_TARGET_ARCH_RISCV
+            help
+                Adds -msave-restore to C/C++ compilation flags.
+
+                When this flag is enabled, compiler will call library functions to
+                save/restore registers in function prologues/epilogues. This results
+                in lower overall code size, at the expense of slightly reduced performance.
+
+                This option can be enabled for RISC-V targets only.
+
+        config COMPILER_DISABLE_DEFAULT_ERRORS
+            bool "Disable errors for default warnings"
+            default "n"
+            help
+                Enable this option if you do not want default warnings to be considered as errors,
+                especially when updating IDF.
+
+                This is a temporary flag that could help to allow upgrade while having
+                some time to address the warnings raised by those default warnings.
+                Alternatives are:
+                1) fix code (preferred),
+                2) remove specific warnings,
+                3) do not consider specific warnings as error.
+
+        config COMPILER_DISABLE_GCC12_WARNINGS
+            bool "Disable new warnings introduced in GCC 12"
+            default "n"
+            help
+                Enable this option if use GCC 12 or newer, and want to disable warnings which don't appear with
+                GCC 11.
+
+        config COMPILER_DISABLE_GCC13_WARNINGS
+            bool "Disable new warnings introduced in GCC 13"
+            default "n"
+            help
+                Enable this option if use GCC 13 or newer, and want to disable warnings which don't appear with
+                GCC 12.
+
+        config COMPILER_DISABLE_GCC14_WARNINGS
+            bool "Disable new warnings introduced in GCC 14"
+            default "n"
+            help
+                Enable this option if use GCC 14 or newer, and want to disable warnings which don't appear with
+                GCC 13.
+
+        config COMPILER_DISABLE_GCC15_WARNINGS
+            bool "Disable new warnings introduced in GCC 15"
+            default "n"
+            help
+                Enable this option if use GCC 15 or newer, and want to disable warnings which don't appear with
+                GCC 14.
+
+        config COMPILER_DUMP_RTL_FILES
+            bool "Dump RTL files during compilation"
+            help
+                If enabled, RTL files will be produced during compilation. These files
+                can be used by other tools, for example to calculate call graphs.
+
+        choice COMPILER_RT_LIB
+            prompt "Compiler runtime library"
+            default COMPILER_RT_LIB_CLANGRT if IDF_TOOLCHAIN_CLANG
+            default COMPILER_RT_LIB_HOST if IDF_TARGET_LINUX
+            default COMPILER_RT_LIB_GCCLIB
+            help
+                Select runtime library to be used by compiler.
+                - GCC toolchain supports libgcc only.
+                - Clang allows to choose between libgcc or libclang_rt.
+                - For host builds ("linux" target), uses the default library.
+
+            config COMPILER_RT_LIB_GCCLIB
+                depends on !IDF_TARGET_LINUX
+                bool "libgcc"
+            config COMPILER_RT_LIB_CLANGRT
+                depends on IDF_TOOLCHAIN_CLANG && !IDF_TARGET_LINUX
+                bool "libclang_rt"
+            config COMPILER_RT_LIB_HOST
+                depends on IDF_TARGET_LINUX
+                bool "Host"
+        endchoice
+
+        config COMPILER_RT_LIB_NAME
+            string
+            default "clang_rt.builtins" if COMPILER_RT_LIB_CLANGRT
+            default "gcc" if COMPILER_RT_LIB_GCCLIB
+            default "" if COMPILER_RT_LIB_HOST
+
+        config COMPILER_LTO_LINKTIME
+            bool "Enable LTO at link time"
+            default n
+            # LTO for host builds is probably not needed at all
+            # LTO with Clang needs LLD (IDF-8286)
+            # LTO works with APP_REPRODUCIBLE_BUILD (see top-level CMakeLists.txt)
+            depends on !IDF_TARGET_LINUX && !IDF_TOOLCHAIN_CLANG
+            help
+                If enabled, ESP-IDF build system will tell the linker to use LTO
+                (Link Time Optimization). This option may increase linking time but
+                will also produce smaller binaries.
+                Note that to see some code size reduction, you should also enable LTO
+                at compile time for some components.
+
+                You can do this either selectively for specific components, or use
+                the option CONFIG_COMPILER_LTO_COMPILETIME below to enable
+                it for most of the components by default.
+
+                Note that LTO can also increase task stack usage, because inlining
+                across translation units produces fewer but larger stack frames. After
+                enabling LTO, check the stack high water mark of your tasks and raise the
+                stack sizes of the affected tasks if necessary.
+
+        config COMPILER_LTO_COMPILETIME
+            bool "Enable LTO by default at compile time"
+            depends on COMPILER_LTO_LINKTIME
+            default n
+            help
+                If enabled, ESP-IDF build system will compile most of the components with
+                LTO (link time optimizations) enabled.
+
+                Components which have link-time sections placement requirements will not
+                have LTO enabled. This includes components which specify linker fragment
+                files, as well as components whose object code is placed by a linker
+                fragment of another component.
+
+                Note that enabling LTO for all components does not always reduce the
+                binary size, and in some cases can increase it. For a more predictable
+                result, consider enabling LTO selectively for specific components by
+                adding the -flto=auto compile option to them.
+
+        config COMPILER_USE_LLD
+            bool "Use LLD (ld.lld) as the linker"
+            depends on IDF_TARGET_ARCH_RISCV
+            default n
+            help
+                Link the application with the LLVM LLD linker instead of the GNU ld
+                provided by the toolchain. The "ld.lld" binary must be available in
+                PATH. Options not supported by LLD (e.g. --no-warn-rwx-segments)
+                are omitted from the link automatically.
+
+        choice COMPILER_ORPHAN_SECTIONS
+            prompt "Orphan sections handling"
+            default COMPILER_ORPHAN_SECTIONS_ERROR
+            depends on !IDF_TARGET_LINUX
+            help
+                If the linker finds orphan sections, it attempts to place orphan sections after sections of the same
+                attribute such as code vs data, loadable vs non-loadable, etc.
+                That means that orphan sections could placed between sections defined in IDF linker scripts.
+                This could lead to corruption of the binary image. Configure the linker action here.
+
+            config COMPILER_ORPHAN_SECTIONS_ERROR
+                bool "Fail if orphan sections found"
+                help
+                    Fails the link step with an error if orphan sections are detected.
+
+            config COMPILER_ORPHAN_SECTIONS_WARNING
+                bool "Place with warning"
+                help
+                    Places orphan sections with a warning message.
+
+            config COMPILER_ORPHAN_SECTIONS_PLACE
+                bool "Place silently"
+                help
+                    Places orphan sections without a warning/error message.
+        endchoice
+
+        config COMPILER_STATIC_ANALYZER
+            bool "Enable compiler static analyzer"
+            default "n"
+            depends on IDF_TOOLCHAIN_GCC
+            help
+                Enable compiler static analyzer. This may produce false-positive results and increases compile time.
+
+        choice COMPILER_CXX_GLIBCXX_CONSTEXPR
+            prompt "Define _GLIBCXX_CONSTEXPR"
+            default COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+            depends on IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
+            help
+                Modify libstdc++ _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR definitions to provide size
+                optimizations. The total size optimization depends on the application's structure.
+                There is no robust way to determine which option would be better in a particular case.
+                Please try all available options to find the best size optimization.
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+                bool "No change"
+                help
+                    Use default _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR defined in libstdc++
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold)) constexpr"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold))"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)).
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)).
+        endchoice
+
+        config COMPILER_CXX_ATOMIC_LOCK_POLICY
+            bool "Force libstdc++ lock-free atomic policy"
+            default n
+            depends on IDF_TARGET_ARCH_RISCV && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3
+            help
+                Define _GLIBCXX_HAVE_ATOMIC_LOCK_POLICY=1 when compiling C++ code.
+
+                libstdc++ selects between a lock-free and a mutex-based policy for
+                std::shared_ptr reference counting based on this macro. Enabling this
+                option forces the lock-free policy, which avoids pulling in the
+                mutex-based implementation and can reduce code size.
+
+                Note: the lock-free policy avoids embedding a mutex in each control
+                block, saving about 88 bytes per shared_ptr, and improves performance
+                by using atomic operations instead of mutex locking.
+
+                Note: this option changes the ABI of libstdc++ atomic/shared_ptr
+                helpers. It can be incompatible when linking against prebuilt
+                libraries that were compiled without it, leading to link errors or
+                undefined runtime behavior. Only enable it if all C++ objects and
+                libraries in the build use the same setting.
+
+        config COMPILER_KASAN
+            bool "Enable Kernel Address Sanitizer (KASAN)"
+            depends on IDF_EXPERIMENTAL_FEATURES && IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
+            select HEAP_USE_HOOKS
+            default n
+            help
+                Enables Kernel Address Sanitizer instrumentation (-fsanitize=kernel-address).
+                GCC instruments every memory load and store with calls to __asan_load<N>_noabort /
+                __asan_store<N>_noabort.  These stubs check a shadow memory region and panic if
+                poisoned (freed / out-of-bounds) memory is accessed.
+
+                KASAN is useful for detecting:
+                - Heap buffer overflows and underflows (with redzones)
+                - Use-after-free bugs (when heap hooks are enabled)
+                - Out-of-bounds accesses in global and stack variables (optional)
+
+                Enabling this option increases code size by 1.5-3x for instrumented components
+                and reserves shadow memory in DRAM (~42-64 KiB depending on target).
+
+                NOT compatible with bootloader builds or ROM code.  Components in the
+                hal, soc, esp_rom, and bootloader_support families are automatically
+                excluded from instrumentation.
+
+        menu "Kernel Address Sanitizer (KASAN)"
+            depends on COMPILER_KASAN
+
+            config KASAN_STACK
+                bool "Instrument stack variables (higher overhead)"
+                depends on COMPILER_KASAN
+                default n
+                help
+                    Pass --param asan-stack=1 to enable KASAN instrumentation of
+                    stack (local) variables.  This detects stack buffer overflows but
+                    significantly increases stack usage for every instrumented function.
+                    Leave disabled unless you specifically need stack-overflow detection.
+
+            config KASAN_HEAP_REDZONE_SIZE
+                int "Heap allocation redzone size in bytes (0 to disable)"
+                depends on COMPILER_KASAN
+                default 8
+                range 0 64
+                help
+                    Number of bytes of poisoned redzone added on each side of every heap
+                    allocation.  Redzones catch heap buffer overflows and underflows.
+                    This value must be a multiple of 4; the build enforces that with
+                    a static assertion in the heap KASAN runtime.  Set to 0 to disable
+                    redzones (reduces per-allocation overhead at the cost of reduced
+                    detection coverage).
+
+            config KASAN_QUARANTINE_SIZE
+                int "Freed-block quarantine queue size in bytes (0 to disable)"
+                depends on COMPILER_KASAN
+                default 8192
+                range 0 65536
+                help
+                    When non-zero, freed heap blocks are held in a FIFO quarantine for this
+                    many bytes total before being returned to the allocator.  Quarantined
+                    blocks remain poisoned, allowing KASAN to catch use-after-free accesses
+                    for some time after the block is freed.  Increases peak memory usage by
+                    the configured amount.  Set to 0 to disable (frees memory immediately).
+
+            config KASAN_NO_HALT
+                bool "Continue execution after KASAN error (no abort)"
+                depends on COMPILER_KASAN
+                default n
+                help
+                    When enabled, KASAN prints the error report but does not call
+                    esp_system_abort().  Execution continues after each violation.
+
+                    This is useful for test applications that need to verify multiple
+                    KASAN detections in a single boot cycle.
+
+                    Not recommended for production or debugging real bugs, as continued
+                    execution after a memory safety violation may cause undefined behaviour.
+
+        endmenu # Kernel Address Sanitizer (KASAN)
+
+    endmenu # Compiler Options
+
+    menu "Component config"
+        comment "!!! MINIMAL_BUILD is enabled !!!"
+        depends on "${IDF_MINIMAL_BUILD}"
+        comment "Only common components and those transitively required by the main component are listed"
+        depends on "${IDF_MINIMAL_BUILD}"
+        comment "If a component configuration is missing, please add it to the main component's requirements"
+        depends on "${IDF_MINIMAL_BUILD}"
+
+        source "$COMPONENT_KCONFIGS_SOURCE_FILE"
+
+        menu "Configuration for components not included in the build"
+            depends on "${IDF_BUILD_V2}"
+            osource "$COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE"
+        endmenu
+
+    endmenu
+
+    menu "Project configuration for components not included in the build"
+        depends on "${IDF_BUILD_V2}"
+        osource "$COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE"
+    endmenu
+
+    config IDF_EXPERIMENTAL_FEATURES
+        bool "Make experimental features visible"
+        default "n"
+        help
+            By enabling this option, ESP-IDF experimental feature options will be visible.
+
+            Note you should still enable a certain experimental feature option to use it, and you
+            should read the corresponding risk warning and known issue list carefully.
+
+            Current experimental feature list:
+
+            - CONFIG_ESPTOOLPY_FLASHFREQ_120M && CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+            - CONFIG_SPIRAM_SPEED_120M && CONFIG_SPIRAM_MODE_OCT
+            - CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
+            - CONFIG_ESP_WIFI_EAP_TLS1_3
+            - CONFIG_ESP_WIFI_NAN_SECURITY
+            - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
+            - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+            - CONFIG_COMPILER_KASAN
+            - CONFIG_ETH_SUBLAYER_SUPPORT

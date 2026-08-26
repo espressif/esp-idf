@@ -1,0 +1,1 @@
+This is a file contained in the generated filesystem image on the host and flashed to the ESP device

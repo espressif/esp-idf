@@ -1,0 +1,9 @@
+# set compiler optimization level
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE=y
+
+# we can silent the assertion to save the binary footprint
+CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT=y
+
+# enable the option to test retention correctness
+CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y

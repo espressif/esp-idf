@@ -1,0 +1,522 @@
+
+menu "ESP System Settings"
+    # Insert chip-specific cpu config
+    rsource "./port/soc/$IDF_TARGET/Kconfig.cpu"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.cache"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.memory"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.tracemem"
+
+    config ESP_SYSTEM_IN_IRAM
+        bool "Place system functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+        help
+            The following system functions will be placed in IRAM if this option is enabled:
+            - system startup
+            - system time
+            - system error
+            - system restart
+            - system crosscore
+            - system debug
+            - system APB backup DMA lock
+            - system application tick hook
+            - Unified Behavior Sanitizer (UBSAN) hook
+            - Interrupt watchdog handler
+            - XTAL32K watchdog timer
+            - IPC and IPC ISR
+
+    choice ESP_SYSTEM_PANIC
+        prompt "Panic handler behaviour"
+        default ESP_SYSTEM_PANIC_PRINT_REBOOT
+        help
+            If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is
+            invoked. Configure the panic handler's action here.
+
+        config ESP_SYSTEM_PANIC_PRINT_HALT
+            bool "Print registers and halt"
+            depends on !ESP_SYSTEM_GDBSTUB_RUNTIME
+            help
+                Outputs the relevant registers over the serial port and halt the
+                processor. Needs a manual reset to restart.
+
+        config ESP_SYSTEM_PANIC_PRINT_REBOOT
+            bool "Print registers and reboot"
+            depends on !ESP_SYSTEM_GDBSTUB_RUNTIME
+            help
+                Outputs the relevant registers over the serial port and immediately
+                reset the processor.
+
+        config ESP_SYSTEM_PANIC_SILENT_REBOOT
+            bool "Silent reboot"
+            depends on !ESP_SYSTEM_GDBSTUB_RUNTIME
+            help
+                Just resets the processor without outputting anything
+
+        config ESP_SYSTEM_PANIC_GDBSTUB
+            bool "GDBStub on panic"
+            depends on ESP_GDBSTUB_ENABLED
+            help
+                Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
+                of the crash.
+
+    endchoice
+
+    config ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
+        int "Panic reboot delay (Seconds)"
+        default 0
+        range 0 99
+        depends on ESP_SYSTEM_PANIC_PRINT_REBOOT
+        help
+            After the panic handler executes, you can specify a number of seconds to
+            wait before the device reboots.
+
+    config ESP_SYSTEM_SINGLE_CORE_MODE
+        bool
+        default y if IDF_TARGET_LINUX
+        default n
+        help
+            Only initialize and use the main core.
+
+    config ESP_SYSTEM_RTC_EXT_XTAL
+        # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
+        # e.g. It will be selected on when RTC_CLK_SRC_EXT_CRYS is on
+        bool
+        default n
+
+    config ESP_SYSTEM_RTC_EXT_OSC
+        # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
+        # e.g. It will be selected on when ESPX_RTC_CLK_SRC_EXT_OSC is on
+        bool
+        default n
+
+    config ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES
+        int "Bootstrap cycles for external 32kHz crystal"
+        depends on ESP_SYSTEM_RTC_EXT_XTAL
+        default 5 if IDF_TARGET_ESP32
+        default 0
+        range 0 32768
+        help
+            To reduce the startup time of an external RTC crystal,
+            we bootstrap it with a 32kHz square wave for a fixed number of cycles.
+            Setting 0 will disable bootstrapping (if disabled, the crystal may take
+            longer to start up or fail to oscillate under some conditions).
+
+            If this value is too high, a faulty crystal may initially start and then fail.
+            If this value is too low, an otherwise good crystal may not start.
+
+            To accurately determine if the crystal has started,
+            set a larger "Number of cycles for RTC_SLOW_CLK calibration" (about 3000).
+
+    config ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+        bool
+        default n if IDF_TARGET_ESP32 && !ESP_SYSTEM_SINGLE_CORE_MODE
+        default y
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
+
+    config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+        bool "Enable RTC fast memory for dynamic allocations"
+        default y
+        depends on ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+        help
+            This config option allows to add RTC fast memory region to system heap with capability
+            similar to that of DRAM region but without DMA. Speed wise RTC fast memory operates on
+            APB clock and hence does not have much performance impact.
+
+    choice ESP_BACKTRACING_METHOD
+        prompt "Backtracing method"
+        default ESP_SYSTEM_NO_BACKTRACE
+        depends on IDF_TARGET_ARCH_RISCV
+        help
+            Configure how backtracing will be performed at runtime when a panic occurs.
+
+        config ESP_SYSTEM_NO_BACKTRACE
+            bool "No backtracing"
+            help
+                When selected, no backtracing will be performed at runtime. By using idf.py monitor, it
+                is still possible to get a backtrace when a panic occurs.
+
+        config ESP_SYSTEM_USE_EH_FRAME
+            bool "Generate and use eh_frame for backtracing"
+            help
+                Generate DWARF information for each function of the project. These information will parsed and used to
+                perform backtracing when panics occur. Activating this option will activate asynchronous frame
+                unwinding and generation of both .eh_frame and .eh_frame_hdr sections, resulting in a bigger binary
+                size (20% to 100% larger). The main purpose of this option is to be able to have a backtrace parsed
+                and printed by the program itself, regardless of the serial monitor used.
+                This option is not recommended to be used for production.
+
+        config ESP_SYSTEM_USE_FRAME_POINTER
+            bool "Use CPU Frame Pointer register"
+            help
+                This configuration allows the compiler to allocate CPU register s0 as the frame pointer. The main usage
+                of the frame pointer is to be able to generate a backtrace from the panic handler on exception.
+                Enabling this option results in bigger and slightly slower code since all functions will have
+                to populate this register and won't be able to use it as a general-purpose register anymore.
+
+    endchoice
+
+    config ESP_SYSTEM_MEMPROT
+        bool "Enable memory protection"
+        default y
+        depends on SOC_CPU_IDRAM_SPLIT_USING_PMP || SECURE_ENABLE_TEE || SOC_MEMPROT_SUPPORTED
+        help
+            This option enables memory protection for the valid memory regions.
+            This feature also automatically splits the ROM, RAM and flash memory into data and
+            instruction segments and sets Read/Execute permissions for the instruction part
+            (below given splitting address) and Read/Write permissions for the data part
+            (above the splitting address). The memory protection is effective on all access
+            through the IRAM0 and DRAM0 buses.
+
+            Note: allocating memory with MALLOC_CAP_EXEC capability is not possible when this config is enabled.
+
+    choice ESP_SYSTEM_MEMPROT_MODE
+        prompt "Memory Protection configurations"
+        depends on ESP_SYSTEM_MEMPROT
+        default ESP_SYSTEM_MEMPROT_TEE if SECURE_ENABLE_TEE
+        default ESP_SYSTEM_MEMPROT_PMP if SOC_CPU_IDRAM_SPLIT_USING_PMP && !SECURE_ENABLE_TEE
+        default ESP_SYSTEM_MEMPROT_PMS if SOC_MEMPROT_SUPPORTED
+
+        config ESP_SYSTEM_MEMPROT_PMS
+            bool "Enable Permission Control Module (PMS) configurations"
+            depends on SOC_MEMPROT_SUPPORTED
+            help
+                    This option enables memory protection using the Permission Control Module (PMS).
+
+        config ESP_SYSTEM_MEMPROT_PMP
+            bool "Enable CPU's Physical Memory Protection (PMP) configurations"
+            depends on SOC_CPU_IDRAM_SPLIT_USING_PMP && !SECURE_ENABLE_TEE
+            help
+                    This option enables memory protection using CPU PMP.
+
+        config ESP_SYSTEM_MEMPROT_TEE
+            bool "Enable Trusted Execution Environment (TEE) configurations"
+            depends on SECURE_ENABLE_TEE
+            help
+                    This option enables the default memory protection provided by TEE.
+
+    endchoice
+
+
+    config ESP_SYSTEM_MEMPROT_PMS_LOCK
+        bool "Lock memory protection settings"
+        depends on ESP_SYSTEM_MEMPROT && ESP_SYSTEM_MEMPROT_PMS
+        default y
+        help
+                Once locked, memory protection settings cannot be changed anymore.
+                The lock is reset only on the chip startup.
+
+
+    config ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
+        bool "Make LP core reserved memory executable from HP core"
+        depends on ESP_SYSTEM_MEMPROT&& IDF_TARGET_ARCH_RISCV && SOC_LP_CORE_SUPPORTED && ESP_SYSTEM_MEMPROT_PMP
+        default n
+        help
+                If enabled, user can run code available in LP Core image.
+
+                Warning: on ESP32-P4 this will also mark the memory area used for BOOTLOADER_RESERVE_RTC_MEM
+                as executable. If you consider this a security risk then do not activate this option.
+
+    config ESP_SYSTEM_EVENT_QUEUE_SIZE
+        int "System event queue size"
+        default 32
+        help
+            Config system event queue size in different application.
+
+    config ESP_SYSTEM_EVENT_TASK_STACK_SIZE
+        int "Event loop task stack size"
+        default 2304
+        help
+            Config system event task stack size in different application.
+
+    config ESP_MAIN_TASK_STACK_SIZE
+        int "Main task stack size"
+        default 3584
+        help
+            Configure the "main task" stack size. This is the stack of the task
+            which calls app_main(). If app_main() returns then this task is deleted
+            and its stack memory is freed.
+
+    choice ESP_MAIN_TASK_AFFINITY
+        prompt "Main task core affinity"
+        default ESP_MAIN_TASK_AFFINITY_CPU0
+        help
+            Configure the "main task" core affinity. This is the used core of the task
+            which calls app_main(). If app_main() returns then this task is deleted.
+
+        config ESP_MAIN_TASK_AFFINITY_CPU0
+            bool "CPU0"
+        config ESP_MAIN_TASK_AFFINITY_CPU1
+            bool "CPU1"
+            depends on !FREERTOS_UNICORE
+        config ESP_MAIN_TASK_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+
+    endchoice
+
+    config ESP_MAIN_TASK_AFFINITY
+        hex
+        default 0x0 if ESP_MAIN_TASK_AFFINITY_CPU0
+        default 0x1 if ESP_MAIN_TASK_AFFINITY_CPU1
+        default FREERTOS_NO_AFFINITY if ESP_MAIN_TASK_AFFINITY_NO_AFFINITY
+
+    config ESP_MINIMAL_SHARED_STACK_SIZE
+        int "Minimal allowed size for shared stack"
+        default 2048
+        help
+            Minimal value of size, in bytes, accepted to execute a expression
+            with shared stack.
+
+    config ESP_INT_WDT
+        bool "Interrupt watchdog"
+        depends on SOC_WDT_SUPPORTED
+        default y
+        help
+            This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
+            either because a task turned off interrupts and did not turn them on for a long time, or because an
+            interrupt handler did not return. It will try to invoke the panic handler first and failing that
+            reset the SoC.
+
+    config ESP_INT_WDT_TIMEOUT_MS
+        int "Interrupt watchdog timeout (ms)"
+        depends on ESP_INT_WDT
+        default 300 if !SPIRAM
+        default 800 if SPIRAM
+        range 10 10000
+        help
+            The timeout of the watchdog, in milliseconds. Make this higher than the FreeRTOS tick rate.
+
+    config ESP_INT_WDT_CHECK_CPU1
+        bool "Also watch CPU1 tick interrupt"
+        depends on ESP_INT_WDT && !FREERTOS_UNICORE
+        default y
+        help
+            Also detect if interrupts on CPU 1 are disabled for too long.
+
+    config ESP_TASK_WDT_EN
+        bool "Enable Task Watchdog Timer"
+        depends on SOC_WDT_SUPPORTED
+        default y
+        help
+            The Task Watchdog Timer can be used to make sure individual tasks are still
+            running. Enabling this option will enable the Task Watchdog Timer. It can be
+            either initialized automatically at startup or initialized after startup
+            (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_USE_ESP_TIMER
+        # Software implementation of Task Watchdog, handy for targets with only a single
+        # Timer Group, such as the ESP32-C2
+        bool
+        depends on ESP_TASK_WDT_EN
+        default y if IDF_TARGET_ESP32C2
+        default n if !IDF_TARGET_ESP32C2
+        select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+
+    config ESP_TASK_WDT_INIT
+        bool "Initialize Task Watchdog Timer on startup"
+        depends on ESP_TASK_WDT_EN
+        default y
+        help
+            Enabling this option will cause the Task Watchdog Timer to be initialized
+            automatically at startup.
+
+    config ESP_TASK_WDT_PANIC
+        bool "Invoke panic handler on Task Watchdog timeout"
+        depends on ESP_TASK_WDT_INIT
+        default n
+        help
+            If this option is enabled, the Task Watchdog Timer will be configured to
+            trigger the panic handler when it times out. This can also be configured
+            at run time (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_TIMEOUT_S
+        int "Task Watchdog timeout period (seconds)"
+        depends on ESP_TASK_WDT_INIT
+        range 1 60
+        default 5
+        help
+            Timeout period configuration for the Task Watchdog Timer in seconds.
+            This is also configurable at run time (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+        bool "Watch CPU0 Idle Task"
+        depends on ESP_TASK_WDT_INIT
+        default y
+        help
+            If this option is enabled, the Task Watchdog Timer will watch the CPU0
+            Idle Task. Having the Task Watchdog watch the Idle Task allows for detection
+            of CPU starvation as the Idle Task not being called is usually a symptom of
+            CPU starvation. Starvation of the Idle Task is detrimental as FreeRTOS household
+            tasks depend on the Idle Task getting some runtime every now and then.
+
+    config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+        bool "Watch CPU1 Idle Task"
+        depends on ESP_TASK_WDT_INIT && !FREERTOS_UNICORE
+        default y
+        help
+            If this option is enabled, the Task Watchdog Timer will wach the CPU1
+            Idle Task.
+
+    config ESP_XT_WDT
+        bool "Initialize XTAL32K watchdog timer on startup"
+        depends on SOC_XT_WDT_SUPPORTED && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
+        default n
+        help
+            This watchdog timer can detect oscillation failure of the XTAL32K_CLK. When such a failure
+            is detected the hardware can be set up to automatically switch to BACKUP32K_CLK and generate
+            an interrupt.
+
+    config ESP_XT_WDT_TIMEOUT
+        int "XTAL32K watchdog timeout period"
+        depends on ESP_XT_WDT
+        range 1 255
+        default 200
+        help
+            Timeout period configuration for the XTAL32K watchdog timer based on RTC_CLK.
+
+    config ESP_XT_WDT_BACKUP_CLK_ENABLE
+        bool "Automatically switch to BACKUP32K_CLK when timer expires"
+        depends on ESP_XT_WDT
+        default y
+        help
+            Enable this to automatically switch to BACKUP32K_CLK as the source of RTC_SLOW_CLK when
+            the watchdog timer expires.
+
+    config ESP_PANIC_HANDLER_IRAM
+        bool "Place panic handler code in IRAM"
+        default n
+        help
+            If this option is disabled (default), the panic handler code is placed in flash not IRAM.
+            This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will
+            automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor
+            risk, if the flash cache status is also corrupted during the crash.
+
+            If this option is enabled, the panic handler code (including required UART functions) is placed
+            in IRAM. This may be necessary to debug some complex issues with crashes while flash cache is
+            disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception
+            is triggered.
+
+    config ESP_DEBUG_STUBS_ENABLE
+        bool "OpenOCD debug stubs"
+        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
+        depends on !ESP32_TRAX && !ESP32S2_TRAX && !ESP32S3_TRAX
+        help
+            Debug stubs are used by OpenOCD to execute pre-compiled onboard code
+            which does some useful debugging stuff, e.g. GCOV data dump.
+
+    config ESP_DEBUG_INCLUDE_OCD_STUB_BINS
+        bool "Preload OpenOCD stub binaries to speed up debugging. 12K memory will be reserved"
+        default n
+        depends on SOC_DEBUG_HAVE_OCD_STUB_BINS
+        depends on !IDF_TARGET_ESP32P4 || ESP32P4_SELECTS_REV_LESS_V3 || CACHE_L2_CACHE_512KB
+        help
+            OpenOCD uses stub code to access flash during programming or when inserting and removing
+            SW flash breakpoints.
+            To execute stub code, OpenOCD allocates memory on the target device, backs up the existing memory,
+            loads the stub binary, runs the binary, and then restores the original memory.
+            This process can be time-consuming, especially when using USB serial JTAG.
+            By enabling this option, 12K of memory in RAM will be preallocated with the stub code,
+            eliminating the need to back up and restore the memory region.
+
+            The stub binaries are prebuilt and linked to run at the start of IRAM (_iram_start).
+            On ESP32-P4 rev >= v3, _iram_start is 0x4FF00000 + L2 cache size, so it only matches the
+            stub's link address (0x4FF80000) when the L2 cache is 512KB. This option is therefore
+            only available on ESP32-P4 rev >= v3 when CACHE_L2_CACHE_512KB is selected. Earlier P4
+            revisions and other targets place _iram_start at a fixed address and are not affected.
+
+    config ESP_DEBUG_OCDAWARE
+        bool "Make exception and panic handlers JTAG/OCD aware"
+        default y
+        select FREERTOS_DEBUG_OCDAWARE
+        help
+            The FreeRTOS panic and unhandled exception handlers can detect a JTAG OCD debugger and
+            instead of panicking, have the debugger stop on the offending instruction.
+
+    choice ESP_SYSTEM_CHECK_INT_LEVEL
+        prompt "Interrupt level to use for Interrupt Watchdog and other system checks"
+        default ESP_SYSTEM_CHECK_INT_LEVEL_4
+        help
+            Interrupt level to use for Interrupt Watchdog, IPC_ISR and other system checks.
+
+        config ESP_SYSTEM_CHECK_INT_LEVEL_5
+            bool "Level 5 interrupt"
+            depends on IDF_TARGET_ESP32
+            help
+                Using level 5 interrupt for Interrupt Watchdog, IPC_ISR and other system checks.
+
+        config ESP_SYSTEM_CHECK_INT_LEVEL_4
+            bool "Level 4 interrupt"
+            depends on !BTDM_CTRL_HLI
+            help
+                Using level 4 interrupt for Interrupt Watchdog, IPC_ISR and other system checks.
+    endchoice
+
+    # Insert chip-specific system config
+    orsource "./port/soc/$IDF_TARGET/Kconfig.system"
+
+    config ESP_SYSTEM_HW_STACK_GUARD
+        bool "Hardware stack guard"
+        depends on SOC_ASSIST_DEBUG_SUPPORTED
+        default y
+        help
+            This config allows to trigger a panic interrupt when Stack Pointer register goes out of allocated stack
+            memory bounds.
+
+    config ESP_SYSTEM_BBPLL_RECALIB
+        bool "Re-calibration BBPLL at startup"
+        depends on IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default y
+        help
+            This configuration helps to address an BBPLL inaccurate issue when boot from certain bootloader version,
+            which may increase about the boot-up time by about 200 us. Disable this when your bootloader is built with
+            ESP-IDF version v5.2 and above.
+
+    config ESP_SYSTEM_HW_PC_RECORD
+        bool "Hardware PC recording"
+        depends on SOC_ASSIST_DEBUG_SUPPORTED
+        default y
+        help
+            This option will enable the PC recording function of assist_debug module. The PC value of the CPU will be
+            recorded to PC record register in assist_debug module in real time. When an exception occurs and the CPU
+            is reset, this register will be kept, then we can use the recorded PC to debug the causes of the reset.
+endmenu  # ESP System Settings
+
+menu "IPC (Inter-Processor Call)"
+
+    config ESP_IPC_ENABLE
+        bool
+        default y if !ESP_SYSTEM_SINGLE_CORE_MODE
+
+    config ESP_IPC_TASK_STACK_SIZE
+        int "Inter-Processor Call (IPC) task stack size"
+        range 512 65536 if !APPTRACE_ENABLE
+        range 2048 65536 if APPTRACE_ENABLE
+        default 2048 if APPTRACE_ENABLE
+        default 1280 if !APPTRACE_ENABLE && IDF_TARGET_ESP32S3
+        default 1024
+        help
+            Configure the IPC tasks stack size. An IPC task runs on each core (in dual core mode), and allows for
+            cross-core function calls. See IPC documentation for more details. The default IPC stack size should be
+            enough for most common simple use cases. However, users can increase/decrease the stack size to their
+            needs.
+
+    config ESP_IPC_USES_CALLERS_PRIORITY
+        bool "IPC runs at caller's priority"
+        default y
+        depends on ESP_IPC_ENABLE
+        help
+            If this option is not enabled then the IPC task will keep behavior same as prior to that of ESP-IDF v4.0,
+            hence IPC task will run at (configMAX_PRIORITIES - 1) priority.
+
+    config ESP_IPC_ISR_ENABLE
+        bool
+        default y if !ESP_SYSTEM_SINGLE_CORE_MODE
+        help
+            The IPC ISR feature is similar to the IPC feature except that the callback function is executed in the
+            context of a High Priority Interrupt. The IPC ISR feature is intended for low latency execution of simple
+            callbacks written in assembly on another CPU. Due to being run in a High Priority Interrupt, the assembly
+            callbacks must be written with particular restrictions (see "IPC" and "High-Level Interrupt" docs for more
+            details).
+
+endmenu # "IPC (Inter-Processor Call)

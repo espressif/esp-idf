@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/lwip/test_apps:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: running this test for one target only is enough to be sufficiently confident about no regression in lwip

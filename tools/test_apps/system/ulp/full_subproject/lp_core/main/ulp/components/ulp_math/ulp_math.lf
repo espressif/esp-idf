@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+# Linker fragment file for the ulp_math ULP component.
+# Demonstrates custom section placement via ldgen for ULP builds.
+
+[sections:ulp_fast_text]
+entries:
+    .ulp_math_fast+
+
+[scheme:ulp_fast]
+entries:
+    ulp_fast_text -> ulp_math_fast
+
+[mapping:ulp_math]
+archive: libulp_math.a
+entries:
+    ulp_math (ulp_fast)

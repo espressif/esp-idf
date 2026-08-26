@@ -1,0 +1,23 @@
+[sections:coex_iram]
+entries:
+    .coexiram+
+
+[sections:coex_sleep_iram]
+entries:
+    .coexsleepiram+
+
+[scheme:coex_iram_config]
+entries:
+    if ESP_WIFI_IRAM_OPT = y:
+        coex_iram -> iram0_text
+    else:
+        coex_iram -> flash_text
+    if ESP_WIFI_SLP_IRAM_OPT = y:
+        coex_sleep_iram -> iram0_text
+    else:
+        coex_sleep_iram -> flash_text
+
+[mapping:coexist]
+archive: libcoexist.a
+entries:
+    * (coex_iram_config)

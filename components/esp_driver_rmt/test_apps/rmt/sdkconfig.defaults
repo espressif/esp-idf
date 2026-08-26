@@ -1,0 +1,10 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+# CONFIG_ESP_TASK_WDT_INIT is not set
+CONFIG_FREERTOS_HZ=1000
+CONFIG_UNITY_ENABLE_64BIT=y
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=4096
+
+# primitives for checking sleep internal state
+CONFIG_ESP_SLEEP_DEBUG=y

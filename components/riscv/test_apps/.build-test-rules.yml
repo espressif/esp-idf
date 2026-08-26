@@ -1,0 +1,13 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/riscv/test_apps/test_zcmp_workaround_checking:
+  enable:
+    - if: SOC_CPU_ZCMP_WORKAROUND == 1
+      reason: builds chips that require the ZCMP mintthresh workaround
+  disable_test:
+    - if: SOC_CPU_ZCMP_WORKAROUND == 1
+      reason: build-only check for ZCMP workaround
+  depends_components:
+    - riscv
+    - soc
+    - freertos

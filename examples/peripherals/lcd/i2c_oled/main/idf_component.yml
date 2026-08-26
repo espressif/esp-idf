@@ -1,0 +1,3 @@
+dependencies:
+  lvgl/lvgl: "9.2.0"
+  esp_lcd_sh1107: "^1"

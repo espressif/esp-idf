@@ -1,0 +1,46 @@
+menu "I2S PDM Example Configuration"
+
+    choice EXAMPLE_PDM_DIR
+        prompt "I2S PDM direction"
+        default EXAMPLE_PDM_TX
+        help
+            Select example PDM direction
+
+        config EXAMPLE_PDM_TX
+            bool "PDM TX"
+            depends on SOC_I2S_SUPPORTS_PDM_TX
+            help
+                PDM TX example will play 'twinkle twinkle little star' in three tones.
+
+        config EXAMPLE_PDM_RX
+            bool "PDM RX"
+            depends on SOC_I2S_SUPPORTS_PDM_RX
+            help
+                PDM RX example will show the received data from a PDM microphone.
+    endchoice
+
+    choice EXAMPLE_PDM_TX_LINE_MODE
+        prompt "I2S PDM TX Line Mode"
+        depends on EXAMPLE_PDM_TX && SOC_I2S_HW_VERSION_2
+        default EXAMPLE_PDM_TX_CODEC
+        help
+            Decide to output PDM signal into a PDM codec or a low-pass filter
+
+        config EXAMPLE_PDM_TX_CODEC
+            bool "Codec line mode"
+            help
+                Output PDM signal to a PDM codec. The PDM clock signal is mandatory for PDM codec,
+                the codec can differentiate the left and right sound channels by sampling data
+                on positive or negative edges. That means the data of the left and right channels
+                can coexist on a same data line.
+
+        config EXAMPLE_PDM_TX_DAC
+            bool "DAC line mode"
+            help
+                Output PDM signal to a low-pass filter, so that the low-pass filter can restore the PDM
+                signal to analog wave. Therefore, each data line can only contains one sound channel,
+                if both left and right channels are required, two data lines should be specified as well.
+                Normally the PDM signal is not sufficient in DAC line mode.
+    endchoice
+
+endmenu

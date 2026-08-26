@@ -1,0 +1,4 @@
+# Enable eh_frame sections generation
+CONFIG_ESP_SYSTEM_USE_EH_FRAME=y
+# use non-rom systimer implementation, can't backtrace functions in ROM
+CONFIG_HAL_SYSTIMER_USE_ROM_IMPL=n

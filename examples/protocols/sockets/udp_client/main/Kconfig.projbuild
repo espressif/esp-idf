@@ -1,0 +1,52 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_IP_MODE
+        prompt "IP Version"
+        depends on EXAMPLE_SOCKET_IP_INPUT_STRING
+        help
+            Example can use either IPV4 or IPV6.
+
+        config EXAMPLE_IPV4
+            bool "IPV4"
+
+        config EXAMPLE_IPV6
+            bool "IPV6"
+            select EXAMPLE_CONNECT_IPV6
+
+    endchoice
+
+    config EXAMPLE_IPV4_ADDR
+        string "IPV4 Address"
+        default "192.168.0.165"
+        depends on EXAMPLE_IPV4
+        help
+            IPV4 address to which the client example will send data.
+
+    config EXAMPLE_IPV6_ADDR
+        string "IPV6 Address"
+        default "FE80::30AD:E57B:C212:68AD"
+        depends on EXAMPLE_IPV6
+        help
+            IPV6 address to which the client example will send data.
+
+    config EXAMPLE_PORT
+        int "Port"
+        range 0 65535
+        default 3333
+        help
+            The remote port to which the client example will send data.
+
+    choice EXAMPLE_SOCKET_IP_INPUT
+        prompt "Socket example source"
+        default EXAMPLE_SOCKET_IP_INPUT_STRING
+        help
+            Selects the input source of the IP used in the example.
+
+        config EXAMPLE_SOCKET_IP_INPUT_STRING
+            bool "From string"
+
+        config EXAMPLE_SOCKET_IP_INPUT_STDIN
+            bool "From stdin"
+    endchoice
+
+endmenu

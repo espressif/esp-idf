@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+
+/*
+ * Supplementary ULP FSM linker script template processed by ldgen.
+ * The mapped marker is non-allocated, so it exercises ldgen without becoming
+ * part of the ULP FSM load image. The FSM loader validates the binary size
+ * against the .text/.data sizes recorded in the default linker-script header.
+ */
+SECTIONS
+{
+    .ulp_fsm_extra_data 0 (INFO) :
+    {
+        mapping[ulp_fsm_extra_data]
+    }
+}

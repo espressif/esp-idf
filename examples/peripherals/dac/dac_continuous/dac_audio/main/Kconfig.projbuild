@@ -1,0 +1,21 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_DAC_WRITE_MODE
+        prompt "Select DAC writing mode"
+        default EXAMPLE_DAC_WRITE_SYNC
+        help
+            DAC writes data synchronously or asynchronously
+
+        config EXAMPLE_DAC_WRITE_SYNC
+            bool "Synchronous transmitting"
+        config EXAMPLE_DAC_WRITE_ASYNC
+            bool "Asynchronous transmitting"
+    endchoice
+
+    config EXAMPLE_AUDIO_SAMPLE_RATE
+        int "The audio sample rate (Unit: Hz)"
+        default 48000
+        help
+            The audio sample rate
+
+endmenu

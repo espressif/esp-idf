@@ -1,0 +1,161 @@
+menu "Example Configuration"
+
+    config EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+        bool "Allocate color data from PSRAM"
+        depends on SOC_PSRAM_DMA_CAPABLE
+        default n
+        help
+            Enable this option if you want to allocate the LVGL draw buffer from PSRAM.
+
+    config EXAMPLE_LCD_PIXEL_CLOCK_HZ
+        int "Pixel clock frequency (Hz)"
+        default 2000000 if EXAMPLE_LCD_I80_COLOR_IN_PSRAM && IDF_TARGET_ESP32S3
+        default 10000000
+        help
+            Set the pixel clock frequency in Hz.
+
+    choice EXAMPLE_LCD_I80_CONTROLLER_MODEL
+        prompt "i80 LCD controller model"
+        default EXAMPLE_LCD_I80_CONTROLLER_ST7789
+        help
+            Select LCD controller model
+
+        config EXAMPLE_LCD_I80_CONTROLLER_ST7789
+            bool "ST7789"
+
+        config EXAMPLE_LCD_I80_CONTROLLER_NT35510
+            bool "NT35510"
+
+        config EXAMPLE_LCD_I80_CONTROLLER_ILI9341
+            bool "ILI9341"
+    endchoice
+
+    if EXAMPLE_LCD_I80_CONTROLLER_NT35510
+        choice EXAMPLE_LCD_NT35510_DATA_WIDTH
+            prompt "NT35510 Data Width"
+            default EXAMPLE_LCD_NT35510_DATA_WIDTH_8
+            help
+                Select NT35510 Data Width (8 or 16), a.k.a, the number of data lines.
+
+            config EXAMPLE_LCD_NT35510_DATA_WIDTH_8
+                bool "8"
+
+            config EXAMPLE_LCD_NT35510_DATA_WIDTH_16
+                bool "16"
+        endchoice
+
+    endif
+
+    config EXAMPLE_LCD_I80_BUS_WIDTH
+        int
+        default 16 if EXAMPLE_LCD_NT35510_DATA_WIDTH_16
+        default 8
+
+    choice EXAMPLE_LCD_IMAGE_SOURCE
+        prompt "LCD image source from"
+        default EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
+        help
+            Select LCD image source
+
+        config EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
+            bool "File system"
+
+        config EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
+            bool "Embedded binary"
+    endchoice
+
+    menu "LCD GPIO Configuration"
+        config EXAMPLE_PIN_NUM_PCLK
+            int "PCLK Pin"
+            default 5
+
+        config EXAMPLE_PIN_NUM_CS
+            int "CS Pin"
+            default 3
+
+        config EXAMPLE_PIN_NUM_DC
+            int "DC Pin"
+            default 4
+
+        config EXAMPLE_PIN_NUM_RST
+            int "RST Pin"
+            default 2
+
+        config EXAMPLE_PIN_NUM_BK_LIGHT
+            int "Backlight Pin"
+            default 1
+
+        config EXAMPLE_PIN_NUM_DATA0
+            int "Data Pin 0"
+            default 6
+
+        config EXAMPLE_PIN_NUM_DATA1
+            int "Data Pin 1"
+            default 7
+
+        config EXAMPLE_PIN_NUM_DATA2
+            int "Data Pin 2"
+            default 8
+
+        config EXAMPLE_PIN_NUM_DATA3
+            int "Data Pin 3"
+            default 9
+
+        config EXAMPLE_PIN_NUM_DATA4
+            int "Data Pin 4"
+            default 10
+
+        config EXAMPLE_PIN_NUM_DATA5
+            int "Data Pin 5"
+            default 11
+
+        config EXAMPLE_PIN_NUM_DATA6
+            int "Data Pin 6"
+            default 12
+
+        config EXAMPLE_PIN_NUM_DATA7
+            int "Data Pin 7"
+            default 13
+
+        config EXAMPLE_PIN_NUM_DATA8
+            int "Data Pin 8"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 14
+
+        config EXAMPLE_PIN_NUM_DATA9
+            int "Data Pin 9"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 15
+
+        config EXAMPLE_PIN_NUM_DATA10
+            int "Data Pin 10"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 16
+
+        config EXAMPLE_PIN_NUM_DATA11
+            int "Data Pin 11"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 17
+
+        config EXAMPLE_PIN_NUM_DATA12
+            int "Data Pin 12"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 18
+
+        config EXAMPLE_PIN_NUM_DATA13
+            int "Data Pin 13"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 19
+
+        config EXAMPLE_PIN_NUM_DATA14
+            int "Data Pin 14"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 20
+
+        config EXAMPLE_PIN_NUM_DATA15
+            int "Data Pin 15"
+            depends on EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            default 21
+    endmenu
+
+endmenu

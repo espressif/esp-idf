@@ -1,0 +1,5 @@
+# ECDSA opaque persistent-format runner overlay (esp32h2).
+# The runner has a SECP256R1 ECDSA key burned in EFUSE_BLK_KEY1 with
+# ECDSA_KEY purpose. DS isn't on h2; HMAC opaque test runs on c3, not here.
+CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN=y
+CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY=y

@@ -1,0 +1,6 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf:
+    version: ">=4.1.0"
+  ot_examples_common:
+    path: ${IDF_PATH}/examples/openthread/ot_common_components/ot_examples_common

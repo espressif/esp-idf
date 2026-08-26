@@ -1,0 +1,123 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stdint.h>
+#include <stdatomic.h>
+#include "esp_clk_tree.h"
+#include "esp_err.h"
+#include "esp_check.h"
+#include "esp_log.h"
+#include "soc/rtc.h"
+#include "hal/clk_tree_hal.h"
+#include "hal/clk_tree_ll.h"
+#include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/periph_ctrl.h"
+
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
+
+static _Atomic int16_t s_pll_src_cg_ref_cnt[SOC_MOD_CLK_INVALID] = { 0 };
+
+esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
+uint32_t *freq_value)
+{
+    ESP_RETURN_ON_FALSE(clk_src > 0 && clk_src < SOC_MOD_CLK_INVALID, ESP_ERR_INVALID_ARG, TAG, "unknown clk src");
+    ESP_RETURN_ON_FALSE(precision < ESP_CLK_TREE_SRC_FREQ_PRECISION_INVALID, ESP_ERR_INVALID_ARG, TAG, "unknown precision");
+    ESP_RETURN_ON_FALSE(freq_value, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+
+    uint32_t clk_src_freq = 0;
+    switch (clk_src) {
+    case SOC_MOD_CLK_CPU:
+        clk_src_freq = clk_hal_cpu_get_freq_hz();
+        break;
+    case SOC_MOD_CLK_XTAL:
+        clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
+        break;
+    case SOC_MOD_CLK_PLL_F40M:
+        clk_src_freq = CLK_LL_PLL_40M_FREQ_MHZ * MHZ;
+        break;
+    case SOC_MOD_CLK_PLL_F60M:
+        clk_src_freq = CLK_LL_PLL_60M_FREQ_MHZ * MHZ;
+        break;
+    case SOC_MOD_CLK_PLL_F80M:
+        clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
+        break;
+    case SOC_MOD_CLK_RTC_SLOW:
+        clk_src_freq = esp_clk_tree_lp_slow_get_freq_hz(precision);
+        break;
+    case SOC_MOD_CLK_RTC_FAST:
+        clk_src_freq = esp_clk_tree_lp_fast_get_freq_hz(precision);
+        break;
+    case SOC_MOD_CLK_RC_FAST:
+        clk_src_freq = esp_clk_tree_rc_fast_get_freq_hz(precision);
+        break;
+    case SOC_MOD_CLK_RC_FAST_D256:
+        clk_src_freq = esp_clk_tree_rc_fast_d256_get_freq_hz(precision);
+        break;
+    case SOC_MOD_CLK_OSC_SLOW:
+        clk_src_freq = esp_clk_tree_osc_slow_get_freq_hz(precision);
+        break;
+    default:
+        break;
+    }
+
+    ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG,
+                        "freq shouldn't be 0, calibration failed");
+    *freq_value = clk_src_freq;
+    return ESP_OK;
+}
+
+esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_freq_value, uint32_t *ret_freq_value)
+{
+    (void)clk_src; (void)expt_freq_value; (void)ret_freq_value;
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+void esp_clk_tree_initialize(void)
+{
+}
+
+bool esp_clk_tree_port_is_power_on(soc_root_clk_circuit_t clk_circuit)
+{
+    (void)clk_circuit;
+    return false;
+}
+
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+{
+    (void)clk_circuit; (void)enable;
+    return false; // TODO: PM-653
+}
+
+esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+{
+    if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID) {
+        // some conditions is legal, e.g. -1 means external clock source
+        return ESP_OK;
+    }
+
+    int16_t prev_ref_cnt = 0;
+    if (enable) {
+        prev_ref_cnt = atomic_fetch_add(&s_pll_src_cg_ref_cnt[clk_src], 1);
+    } else {
+        prev_ref_cnt = atomic_fetch_sub(&s_pll_src_cg_ref_cnt[clk_src], 1);
+        if (prev_ref_cnt <= 0) {
+            ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", clk_src);
+            atomic_store(&s_pll_src_cg_ref_cnt[clk_src], 0);
+            return ESP_OK;
+        }
+    }
+    if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
+        switch (clk_src) {
+        case SOC_MOD_CLK_RC_FAST:
+            enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable();
+            break;
+        default:
+            break;
+        }
+    }
+
+    return ESP_OK;
+}

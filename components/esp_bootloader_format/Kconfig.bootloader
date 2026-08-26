@@ -1,0 +1,21 @@
+menu "Bootloader manager"
+
+    config BOOTLOADER_COMPILE_TIME_DATE
+        bool "Use time/date stamp for bootloader"
+        default y
+        depends on !APP_REPRODUCIBLE_BUILD
+        help
+            If set, then the bootloader will be built with the current time/date stamp.
+            It is stored in the bootloader description
+            structure. If not set, time/date stamp will be excluded from bootloader image.
+            This can be useful for getting the
+            same binary image files made from the same source, but at different times.
+
+    config BOOTLOADER_PROJECT_VER
+        int "Project version"
+        default 1
+        range 0 4294967295
+        help
+            Project version. It is placed in "version" field of the esp_bootloader_desc structure.
+            The type of this field is "uint32_t".
+endmenu # "Bootloader manager"

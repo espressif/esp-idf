@@ -1,0 +1,192 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <stdint.h>
+#include "sdkconfig.h"
+#include "esp_attr.h"
+#include "esp_log.h"
+#include "esp_image_format.h"
+#include "flash_qio_mode.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_serial_output.h"
+#include "esp_rom_sys.h"
+#include "esp_rom_spiflash.h"
+#include "soc/gpio_sig_map.h"
+#include "soc/io_mux_reg.h"
+#include "soc/assist_debug_reg.h"
+#include "esp_cpu.h"
+#include "soc/rtc.h"
+#include "soc/soc_caps.h"
+
+#include "soc/cache_reg.h"
+#include "esp32p4/rom/ets_sys.h"
+#include "esp32p4/rom/spi_flash.h"
+#include "bootloader_common.h"
+#include "bootloader_init.h"
+#include "bootloader_clock.h"
+#include "bootloader_flash_config.h"
+#include "bootloader_mem.h"
+#include "esp_private/regi2c_ctrl.h"
+#include "soc/chip_revision.h"
+#include "soc/regi2c_lp_bias.h"
+#include "soc/regi2c_bias.h"
+#include "bootloader_console.h"
+#include "bootloader_flash_priv.h"
+#include "bootloader_soc.h"
+#include "esp_private/bootloader_flash_internal.h"
+#include "esp_efuse.h"
+#include "hal/assist_debug_ll.h"
+#include "hal/mmu_hal.h"
+#include "hal/cache_hal.h"
+#include "hal/clk_tree_ll.h"
+#include "hal/lpwdt_ll.h"
+#include "hal/spimem_flash_ll.h"
+#include "soc/lp_wdt_reg.h"
+#include "hal/efuse_hal.h"
+#include "soc/regi2c_syspll.h"
+#include "soc/regi2c_cpll.h"
+#include "soc/regi2c_bias.h"
+#include "esp_private/periph_ctrl.h"
+#include "hal/regi2c_ctrl_ll.h"
+#include "hal/brownout_ll.h"
+
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32p4");
+
+#if SOC_RTC_WDT_SUPPORTED
+void bootloader_enable_cpu_reset_info(void)
+{
+    _assist_debug_ll_enable_bus_clock(0, true);
+    assist_debug_ll_enable_pc_recording(0, true);
+}
+
+void bootloader_dump_wdt_reset_info(int cpu)
+{
+    (void) cpu;
+    // saved PC was already printed by the ROM bootloader.
+    // nothing to do here.
+}
+
+bool bootloader_check_if_wdt_reset(int cpu, soc_reset_reason_t rst_reason)
+{
+    if (cpu == 0 && (rst_reason == RESET_REASON_CPU_MWDT || rst_reason == RESET_REASON_CPU_RWDT ||
+                     rst_reason == RESET_REASON_CORE_MWDT || rst_reason == RESET_REASON_CORE_RWDT ||
+                     rst_reason == RESET_REASON_SYS_RWDT)) {
+        ESP_LOGW(TAG, "CPU has been reset by WDT.");
+        return true;
+    }
+    return false;
+}
+
+static void bootloader_super_wdt_auto_feed(void)
+{
+    REG_WRITE(LP_WDT_SWD_WPROTECT_REG, LP_WDT_SWD_WKEY_VALUE);
+    REG_SET_BIT(LP_WDT_SWD_CONFIG_REG, LP_WDT_SWD_AUTO_FEED_EN);
+    REG_WRITE(LP_WDT_SWD_WPROTECT_REG, 0);
+}
+#endif // SOC_RTC_WDT_SUPPORTED
+
+static inline void bootloader_hardware_init(void)
+{
+    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
+    regi2c_ctrl_ll_master_configure_clock();
+
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
+        // On ESP32P4 ECO0, the default (power on reset) CPLL and SPLL frequencies are very high, lower them to avoid bias may not be enough in bootloader
+        // And we are fixing SPLL to be 480MHz after app is up
+        REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
+        REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
+        esp_rom_delay_us(100);
+    }
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
+
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    // IDF-10019 TODO: This is temporarily for ESP32P4-ECO0, please remove it when eco0 is not widly used.
+    if (likely(ESP_CHIP_REV_ABOVE(chip_version, 1))) {
+        bootloader_init_mspi_clock();
+    }
+#endif
+}
+
+static inline void bootloader_ana_reset_config(void)
+{
+    //Enable super WDT reset.
+    bootloader_ana_super_wdt_reset_config(true);
+    //Enable BOD reset (mode1)
+    brownout_ll_ana_reset_enable(true);
+}
+
+esp_err_t bootloader_init(void)
+{
+    esp_err_t ret = ESP_OK;
+
+    bootloader_hardware_init();
+    bootloader_ana_reset_config();
+#if SOC_RTC_WDT_SUPPORTED
+    bootloader_super_wdt_auto_feed();
+#endif
+
+// In RAM_APP, memory will be initialized in `call_start_cpu0`
+#if !CONFIG_APP_BUILD_TYPE_RAM
+    // protect memory region
+    bootloader_init_mem();
+    /* check that static RAM is after the stack */
+    assert(&_bss_start <= &_bss_end);
+    assert(&_data_start <= &_data_end);
+    // clear bss section
+    bootloader_clear_bss_section();
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
+
+    // init eFuse virtual mode (read eFuses to RAM)
+#ifdef CONFIG_EFUSE_VIRTUAL
+    ESP_EARLY_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    esp_efuse_init_virtual_mode_in_ram();
+#endif
+#endif
+
+    // config clock
+    bootloader_clock_configure();
+    // initialize console, from now on, we can use esp_log
+    bootloader_console_init();
+    /* print 2nd bootloader banner */
+    bootloader_print_banner();
+
+#if !CONFIG_APP_BUILD_TYPE_RAM
+    // init cache and mmu
+    bootloader_init_ext_mem();
+    // update flash ID
+    bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
+        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        return ret;
+    }
+    // read bootloader header
+    if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
+        return ret;
+    }
+    // read chip revision and check if it's compatible to bootloader
+    if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
+        return ret;
+    }
+    // initialize spi flash
+    if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
+        return ret;
+    }
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
+
+    // check reset reason and dump diagnostic info
+    bootloader_check_reset();
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
+    // config WDT
+    bootloader_config_wdt();
+#endif
+    // enable RNG early entropy source
+    bootloader_enable_random();
+
+    return ret;
+}

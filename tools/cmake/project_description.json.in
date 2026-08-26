@@ -1,0 +1,40 @@
+{
+    "version":            "1.3",
+    "project_name":       "${PROJECT_NAME}",
+    "project_version":    "${PROJECT_VER}",
+    "project_path":       "${PROJECT_PATH}",
+    "idf_path":           "${IDF_PATH}",
+    "build_dir":          "${BUILD_DIR}",
+    "config_file":        "${SDKCONFIG}",
+    "config_defaults":    "${SDKCONFIG_DEFAULTS}",
+    "bootloader_elf":     "${BOOTLOADER_ELF_FILE}",
+    "app_elf":            "${PROJECT_EXECUTABLE}",
+    "app_bin":            "${PROJECT_BIN}",
+    "build_type":         "${PROJECT_BUILD_TYPE}",
+    "git_revision":       "${IDF_VER}",
+    "target":             "${CONFIG_IDF_TARGET}",
+    "rev":                "${CONFIG_ESP32_REV_MIN}",
+    "min_rev":            "${CONFIG_ESP_REV_MIN_FULL}",
+    "max_rev":            "${CONFIG_ESP_REV_MAX_FULL}",
+    "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
+    "monitor_baud" :      "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
+    "monitor_toolprefix": "${_CMAKE_TOOLCHAIN_PREFIX}",
+    "c_compiler":         "${CMAKE_C_COMPILER}",
+    "config_environment" : {
+        "COMPONENT_KCONFIGS" : "${COMPONENT_KCONFIGS}",
+        "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"
+    },
+    "common_component_reqs": ${common_component_reqs_json},
+    "build_components" : ${build_components_json},
+    "build_component_paths" : ${build_component_paths_json},
+    "build_component_info" : ${build_component_info_json},
+    "all_component_info" : ${all_component_info_json},
+    "gdbinit_files": {
+        "01_symbols": "${gdbinit_files_symbols}",
+        "02_prefix_map": "${gdbinit_files_prefix_map}",
+        "03_py_extensions": "${gdbinit_files_py_extensions}",
+        "04_connect": "${gdbinit_files_connect}"
+    },
+    "debug_arguments_openocd": "${debug_arguments_openocd}",
+    "hints_file": "${HINTS_FILE}"
+}

@@ -1,0 +1,6 @@
+# Name,     Type, SubType, Offset,   Size, Flags
+# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
+nvs,        data, nvs,      0x9000,  0x6000,
+flash_test, data, fat,      0x10000, 528K
+# This partition is placed to this weird address intentionally to test spi_flash_cache2phys
+factory,    0,    0,        0xF0000, 1M

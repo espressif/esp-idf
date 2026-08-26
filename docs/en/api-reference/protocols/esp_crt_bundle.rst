@@ -1,0 +1,127 @@
+ESP x509 Certificate Bundle
+===========================
+
+:link_to_translation:`zh_CN:[中文]`
+
+Overview
+--------
+
+The ESP x509 Certificate Bundle API provides an easy way to include a bundle of custom x509 root certificates for TLS server verification.
+
+The bundle comes with the complete list of root certificates from Mozilla's NSS root certificate store. Using the gen_crt_bundle.py python utility, the certificates' subject name and public key are stored in a file and embedded in the {IDF_TARGET_NAME} binary.
+
+When generating the bundle you may choose between:
+
+ * The full root certificate bundle from Mozilla, containing more than 130 certificates. The current bundle was updated Thu Aug 13 03:12:01 2026 GMT.
+ * A pre-selected filter list of the name of the most commonly used root certificates, reducing the amount of certificates to around 35 while still having around 94% absolute usage coverage and 99% market share coverage according to SSL certificate authorities statistics.
+
+In addition, it is possible to specify a path to a certificate file or a directory containing certificates which then will be added to the generated bundle.
+
+.. note::
+
+    Trusting all root certificates means the list will have to be updated if any of the certificates are retracted. This includes removing them from ``cacrt_all.pem``.
+
+Configuration
+-------------
+
+Most configuration is done through menuconfig. CMake generates the bundle according to the configuration and embed it.
+
+ * :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`: automatically build and attach the bundle.
+ * :menuitem:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`: decide which certificates to include from the complete root certificate list.
+ * :menuitem:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH`: specify the path of any additional certificates to embed in the bundle.
+
+.. note::
+
+    Only PEM encoded certificates with a ``.pem`` extension and DER encoded certificates with a ``.der`` extension are parsed. The extension must match the encoding of the file, for example a PEM encoded certificate saved as ``.crt`` is not accepted. If :ref:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH` points directly at a file with any other extension, the build fails; if such a file is found inside a certificate directory, it is skipped and a warning is printed.
+
+To enable the bundle when using ESP-TLS simply pass the function pointer to the bundle attach function:
+
+.. code-block:: c
+
+    esp_tls_cfg_t cfg = {
+         .crt_bundle_attach = esp_crt_bundle_attach,
+    };
+
+This is done to avoid embedding the certificate bundle unless activated by the user.
+
+If using mbedTLS directly then the bundle may be activated by directly calling the attach function during the setup process:
+
+.. code-block:: c
+
+    mbedtls_ssl_config conf;
+    mbedtls_ssl_config_init(&conf);
+
+    esp_crt_bundle_attach(&conf);
+
+
+.. _updating_bundle:
+
+Generating the List of Root Certificates
+----------------------------------------
+
+The list of root certificates comes from Mozilla's NSS root certificate store, which can be found `here <https://wiki.mozilla.org/CA/Included_Certificates>`_
+
+The list can be downloaded and created by running the script ``mk-ca-bundle.pl`` that is distributed as a part of `curl <https://github.com/curl/curl>`_.
+
+Another alternative would be to download the finished list directly from the curl website: `CA certificates extracted from Mozilla <https://curl.se/docs/caextract.html>`_
+
+The common certificates bundle were made by selecting the authorities with a market share of more than 1% from w3tech's `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate>`_.
+
+These authorities were then used to pick the names of the certificates for the filter list, ``cmn_crt_authorities.csv``, from Mozilla's `Included CA Certificate List <https://ccadb.my.salesforce-sites.com/mozilla/IncludedRootCertificateReportCSVFormat>`_.
+
+
+Updating the Certificate Bundle
+-------------------------------
+
+The bundle is embedded into the app and can be updated along with the app by an OTA update. If you want to include a more up-to-date bundle than the bundle currently included in ESP-IDF, then the certificate list can be downloaded from Mozilla as described in :ref:`updating_bundle`.
+
+
+Periodic Sync
+-------------
+
+The bundle is kept updated by periodic sync with the Mozilla's NSS root certificate store. The deprecated certs from the upstream bundle are added to deprecated list (for compatibility reasons) in ESP-IDF minor or patch release. If required, the deprecated certs can be added to the default bundle by enabling :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST`. The deprecated certs shall be removed (reset) on the next major ESP-IDF release.
+
+Cross-Signed Certificate Support
+---------------------------------
+
+Overview
+^^^^^^^^
+
+When the configuration option :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled, the ESP x509 Certificate Bundle API adds support for verifying certificate chains that include cross-signed root certificates.
+
+This feature allows the verification process to dynamically select candidate Certificate Authorities (CAs) from the bundle, even when the certificate chain contains cross-signed roots, improving interoperability with a wider range of server certificates.
+
+With this functionality enabled, certificate verification is performed in a manner equivalent to the default mbedTLS behavior, ensuring compatibility and robust validation for cross-signed chains.
+
+.. note::
+
+    Enabling cross-signed certificate support increases peak run-time heap usage during the TLS handshake by approximately 1 KB. This is a transient allocation (a candidate CA certificate built during certificate verification) that is freed once the handshake completes, and the exact amount scales with the maximum supported RSA key size. It also reduces the flash footprint, as the bundle size is reduced.
+
+Key Points:
+
+- The bundle can act as a dynamic CA store, providing candidate root certificates during the handshake.
+- The verification callback uses the issuer information from the certificate chain to locate and provide matching root certificates from the bundle.
+- This is especially useful for environments where cross-signing is common, such as during root CA transitions.
+
+Usage
+^^^^^
+
+No additional application changes are required beyond enabling :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` in your project configuration. The bundle will automatically provide candidate CAs during the TLS handshake.
+
+.. note::
+
+    If :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled, it internally uses ``MBEDTLS_X509_TRUSTED_CERT_CALLBACK``. In this case, users should **not** provide their own trusted certificate callback, as the certificate bundle will manage this automatically.
+
+Application Examples
+--------------------
+
+- :example:`protocols/https_x509_bundle` demonstrates how to use ESP-TLS to establish a secure socket connection using the certificate bundle with two custom certificates added for verification.
+
+- :example:`protocols/https_request` demonstrates an HTTPS example that uses ESP-TLS and the default bundle.
+
+- :example:`protocols/https_mbedtls` demonstrates an HTTPS example that uses Mbed TLS and the default bundle.
+
+API Reference
+-------------
+
+.. include-build-file:: inc/esp_crt_bundle.inc

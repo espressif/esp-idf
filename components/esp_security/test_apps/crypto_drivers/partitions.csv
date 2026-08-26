@@ -1,0 +1,4 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+# Extra partition to demonstrate reading/writing of encrypted flash
+factory,    app,  factory,  , 1M,
+storage,    data, 0xff, 0x170000   ,  0x1000, encrypted

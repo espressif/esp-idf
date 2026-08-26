@@ -1,0 +1,36 @@
+.. output_log
+
+.. code-block:: none
+
+    ...
+    esptool --chip esp32s31 -p /dev/ttyUSB0 -b 460800 --before=default-reset --after=hard-reset --no-stub write-flash --flash-mode dio --flash-freq 80m --flash-size 2MB 0x2000 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x10000 hello_world.bin
+    esptool v5.3.1
+    Connected to ESP32-S31 on /dev/ttyUSB0:
+    Chip type:          ESP32-S31 (revision v0.0)
+    Features:           Wi-Fi 6, BT 5.4 (LE), IEEE802.15.4, Dual Core + LP Core, 300MHz
+    Crystal frequency:  40MHz
+    MAC:                30:ed:a0:f3:dc:70
+
+    Changing baud rate to 460800...
+    Changed.
+
+    Enabling default SPI flash mode...
+    Configuring flash size...
+
+    Writing 'bootloader/bootloader.bin' at 0x00002000...
+    SHA digest in image updated.
+    Flash will be erased from 0x00002000 to 0x00007fff...
+    Wrote 21392 bytes at 0x00002000 in 0.9 seconds (193.6 kbit/s).
+    Hash of data verified.
+
+    Writing 'partition_table/partition-table.bin' at 0x00008000...
+    Flash will be erased from 0x00008000 to 0x00008fff...
+    Wrote 3072 bytes at 0x00008000 in 0.1 seconds (192.1 kbit/s).
+    Hash of data verified.
+
+    Writing 'hello_world.bin' at 0x00010000...
+    Flash will be erased from 0x00010000 to 0x00034fff...
+    Wrote 149968 bytes at 0x00010000 in 6.3 seconds (191.7 kbit/s).
+    Hash of data verified.
+
+    Hard resetting via RTS pin...

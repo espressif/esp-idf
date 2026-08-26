@@ -1,0 +1,50 @@
+# crosstool-NG-esp-2021r2.tar.gz: 3179127 bytes
+6b2a40d84bf1d3a0ab71b7df8a265d323c43b4b48de017e30e6262642cb04fb1 *crosstool-NG-esp-2021r2.tar.gz
+# riscv32-esp-elf-esp-0.0.0-19700101-linux-amd64.tar.gz: 106837189 bytes
+812d735063da9d063b374b59f55832a96c41fbd27ddaef19000a75de8607ba21 *riscv32-esp-elf-esp-0.0.0-19700101-linux-amd64.tar.gz
+# riscv32-esp-elf-esp-0.0.0-19700101-linux-arm64.tar.gz: 103273444 bytes
+712f1fbc3e08304a6f32aa18b346b16bbcb413b507b3d4c7c3211bf0d7dc4813 *riscv32-esp-elf-esp-0.0.0-19700101-linux-arm64.tar.gz
+# riscv32-esp-elf-esp-0.0.0-19700101-linux-armel.tar.gz: 103058744 bytes
+80a3342cda2cd4b6b75ebb2b36d5d12fce7d375cfadadcff01ec3a907f0a16a2 *riscv32-esp-elf-esp-0.0.0-19700101-linux-armel.tar.gz
+# riscv32-esp-elf-esp-0.0.0-19700101-linux-armhf.tar.gz: 100134410 bytes
+ed4e6bebd34aed77048bd33ae13c0e5ff404b8748f99e4004983ce365309b039 *riscv32-esp-elf-esp-0.0.0-19700101-linux-armhf.tar.gz
+# riscv32-esp-elf-esp-0.0.0-19700101-linux-i686.tar.gz: 109447789 bytes
+7f0162a81558ab0ed09d6c5d356def25b5cb3d5c2d61358f20152fa260ccc8ae *riscv32-esp-elf-esp-0.0.0-19700101-linux-i686.tar.gz
+# riscv32-esp-elf-esp-0.0.0-19700101-macos.tar.gz: 113672945 bytes
+3ff7e5427907cf8e271c1f959b70fb01e39625c3caf61a6567e7b38aa0c11578 *riscv32-esp-elf-esp-0.0.0-19700101-macos.tar.gz
+# riscv32-esp-elf-esp-0.0.0-19700101-win32.zip: 140809778 bytes
+c8ff08883c1456c278fad85e1c43b7c6e251d525683214168655550e85c5b82e *riscv32-esp-elf-esp-0.0.0-19700101-win32.zip
+# riscv32-esp-elf-esp-0.0.0-19700101-win64.zip: 142365782 bytes
+6c04cb4728db928ec6473e63146b695b6dec686a0d40dd73dd3353f05247b19e *riscv32-esp-elf-esp-0.0.0-19700101-win64.zip
+# xtensa-esp-elf-esp-0.0.0-19700101-linux-amd64.tar.gz: 90565318 bytes
+3eb3d68b27fa6ba5af6f88da21cb8face9be0094daaa8960793cfe570ab785ff *xtensa-esp-elf-esp-0.0.0-19700101-linux-amd64.tar.gz
+# xtensa-esp-elf-esp-0.0.0-19700101-linux-arm64.tar.gz: 86860292 bytes
+aa534be24e45e06b7080a6a3bb8cd9e3cfb818f5f8bce2244d7cfb5e91336541 *xtensa-esp-elf-esp-0.0.0-19700101-linux-arm64.tar.gz
+# xtensa-esp-elf-esp-0.0.0-19700101-linux-armel.tar.gz: 86183421 bytes
+f0e49ce06fe7833ff5d76961dc2dac5449d320f823bb8c05a302cf85a3a6eb04 *xtensa-esp-elf-esp-0.0.0-19700101-linux-armel.tar.gz
+# xtensa-esp-elf-esp-0.0.0-19700101-linux-armhf.tar.gz: 83295350 bytes
+b9de7b995630ea000318ee734c33dc1b9c3a9d24b42403e98045a62ccdef1ecf *xtensa-esp-elf-esp-0.0.0-19700101-linux-armhf.tar.gz
+# xtensa-esp-elf-esp-0.0.0-19700101-linux-i686.tar.gz: 92582250 bytes
+06de09b74652de43e5b22db3b7fc992623044baa75e9faaab68317a986715ba3 *xtensa-esp-elf-esp-0.0.0-19700101-linux-i686.tar.gz
+# xtensa-esp-elf-esp-0.0.0-19700101-macos.tar.gz: 97808961 bytes
+96443f69c8569417c780ee749d91ef33cffe22153fffa30a0fbf12107d87381b *xtensa-esp-elf-esp-0.0.0-19700101-macos.tar.gz
+# xtensa-esp-elf-esp-0.0.0-19700101-win32.zip: 112578260 bytes
+076a4171bdc33e5ced3952efffb233d70263dfa760e636704050597a9edf61db *xtensa-esp-elf-esp-0.0.0-19700101-win32.zip
+# xtensa-esp-elf-esp-0.0.0-19700101-win64.zip: 115278695 bytes
+c35b7998f7f503e0cb22055d1e279ae14b6b0e09bb3ff3846b17d552ece9c247 *xtensa-esp-elf-esp-0.0.0-19700101-win64.zip
+# riscv32-esp-elf-esp-0.0.0-19700101-patch1-win32.zip: 144692343 bytes
+f1ff7d2a87e1f1515371c1e4868b982e6a0958df144e2f1b2bd7e684ec1f9c93 *riscv32-esp-elf-esp-0.0.0-19700101-patch1-win32.zip
+# xtensa-esp-elf-esp-0.0.0-19700101-patch1-win32.zip: 116460829 bytes
+eba06307022cc659e3c5345ecb3c620c99ec5d0d2a5cb59ac21c831edcbafc45 *xtensa-esp-elf-esp-0.0.0-19700101-patch1-win32.zip
+# riscv32-esp-elf-esp-0.0.0-19700101-patch1-win64.zip: 146593717 bytes
+791b8c8ed99934a2ec7f42100f2c71fb1ef7042efa7c6267c0d59394175c827a *riscv32-esp-elf-esp-0.0.0-19700101-patch1-win64.zip
+# xtensa-esp-elf-esp-0.0.0-19700101-patch1-win64.zip: 119506634 bytes
+36a47c80fa79a867244f39794565c391cf4646d221c8f3e228bef45a5de1d32a *xtensa-esp-elf-esp-0.0.0-19700101-patch1-win64.zip
+# riscv32-esp-elf-esp-0.0.0-19700101-patch2-win32.zip: 144701997 bytes
+937566910600d3d5b4ef6f272084fe59ea82dc3711b260a601be7487ef7a4626 *riscv32-esp-elf-esp-0.0.0-19700101-patch2-win32.zip
+# riscv32-esp-elf-esp-0.0.0-19700101-patch2-win64.zip: 146606360 bytes
+40570481ba0d78f7a51e523ce2e7d144b55352071adeeda0d7e81161c6c73245 *riscv32-esp-elf-esp-0.0.0-19700101-patch2-win64.zip
+# xtensa-esp-elf-esp-0.0.0-19700101-patch2-win32.zip: 116446514 bytes
+c14cc88ddeff6d5494497de33fb5783268c6a171b3bb8c745aafae58507e2356 *xtensa-esp-elf-esp-0.0.0-19700101-patch2-win32.zip
+# xtensa-esp-elf-esp-0.0.0-19700101-patch2-win64.zip: 119516221 bytes
+68db46ed4f188e169b922d43215eea781de28f847e7caed3acd5991d0bfb67bd *xtensa-esp-elf-esp-0.0.0-19700101-patch2-win64.zip

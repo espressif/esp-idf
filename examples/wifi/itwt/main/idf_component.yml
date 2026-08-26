@@ -1,0 +1,5 @@
+dependencies:
+  cmd_system:
+    path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
+  cmd_nvs:
+    path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_nvs

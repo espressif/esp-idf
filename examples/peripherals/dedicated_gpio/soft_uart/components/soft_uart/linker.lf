@@ -1,0 +1,4 @@
+[mapping:main_default]
+archive: libsoft_uart.a
+entries:
+    * (noflash)

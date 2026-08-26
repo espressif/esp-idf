@@ -1,0 +1,91 @@
+menu "eFuse Bit Manager"
+
+    config EFUSE_ENABLE_STAGED_TOKEN_API
+        bool "Enable staged eFuse token dump API"
+        default n
+        help
+            Allows esp_efuse_token_dump() to produce dump types that include
+            staged eFuse writes. Staging refers to pending eFuse writes
+            prepared in batch mode but not yet burned to hardware.
+
+            Token dump types:
+            - EFSR: current eFuse read state.
+            - EFSW: pending write state.
+            - EFSRW: combined read and pending write state.
+
+            Pending write tokens may contain sensitive data, including
+            plaintext keys, before eFuses are burned and read-protected.
+            Keep this option disabled in production firmware unless staged
+            token workflows are explicitly required.
+
+    config EFUSE_CUSTOM_TABLE
+        bool "Use custom eFuse table"
+        default n
+        help
+            Allows to generate a structure for eFuse from the CSV file.
+
+    config EFUSE_CUSTOM_TABLE_FILENAME
+        string "Custom eFuse CSV file"
+        depends on EFUSE_CUSTOM_TABLE
+        default "main/esp_efuse_custom_table.csv"
+        help
+            Name of the custom eFuse CSV filename. This path is evaluated
+            relative to the project root directory.
+
+    config EFUSE_VIRTUAL
+        bool "Simulate eFuse operations in RAM"
+        default n if !IDF_TARGET_LINUX
+        default y if IDF_TARGET_LINUX
+        help
+            If "n" - No virtual mode. All eFuse operations are real and use eFuse registers.
+            If "y" - The virtual mode is enabled and all eFuse operations (read and write) are redirected
+            to RAM instead of eFuse registers, all permanent changes (via eFuse) are disabled.
+            Log output will state changes that would be applied, but they will not be.
+
+            If it is "y", then SECURE_FLASH_ENCRYPTION_MODE_RELEASE cannot be used.
+            Because the EFUSE VIRT mode is for testing only.
+
+            During startup, the eFuses are copied into RAM. This mode is useful for fast tests.
+
+    config EFUSE_VIRTUAL_KEEP_IN_FLASH
+        bool "Keep eFuses in flash"
+        depends on EFUSE_VIRTUAL && !IDF_TARGET_LINUX
+        help
+            In addition to the "Simulate eFuse operations in RAM" option, this option just adds
+            a feature to keep eFuses after reboots in flash memory. To use this mode the partition_table
+            should have the `efuse` partition. partition.csv: "efuse_em, data, efuse,   ,   0x2000,"
+
+            During startup, the eFuses are copied from flash or,
+            in case if flash is empty, from real eFuse to RAM and then update flash.
+            This mode is useful when need to keep changes after reboot
+            (testing secure_boot and flash_encryption).
+
+    config EFUSE_VIRTUAL_LOG_ALL_WRITES
+        bool "Log all virtual writes"
+        depends on EFUSE_VIRTUAL
+        help
+            If enabled, log efuse burns. This shows changes that would be made.
+
+    choice EFUSE_CODE_SCHEME_SELECTOR
+        prompt "Coding Scheme Compatibility"
+        default EFUSE_CODE_SCHEME_COMPAT_3_4
+        depends on IDF_TARGET_ESP32
+        help
+            Selector eFuse code scheme.
+
+        config EFUSE_CODE_SCHEME_COMPAT_NONE
+            bool "None Only"
+        config EFUSE_CODE_SCHEME_COMPAT_3_4
+            bool "3/4 and None"
+        config EFUSE_CODE_SCHEME_COMPAT_REPEAT
+            bool "Repeat, 3/4 and None (common table does not support it)"
+    endchoice
+
+    config EFUSE_MAX_BLK_LEN
+        int
+        default 256 if EFUSE_CODE_SCHEME_COMPAT_NONE
+        default 192 if EFUSE_CODE_SCHEME_COMPAT_3_4
+        default 128 if EFUSE_CODE_SCHEME_COMPAT_REPEAT
+        default 256 if !IDF_TARGET_ESP32
+
+endmenu

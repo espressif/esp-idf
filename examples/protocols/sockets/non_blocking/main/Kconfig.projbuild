@@ -1,0 +1,48 @@
+menu "Example Configuration"
+
+    config EXAMPLE_TCP_SERVER
+        bool "TCP server"
+        default n
+        help
+            This example will setup a tcp server, binds it to the specified address
+            and starts listening
+
+    if EXAMPLE_TCP_SERVER
+        config EXAMPLE_TCP_SERVER_BIND_ADDRESS
+            string "Server bind address"
+            default "0.0.0.0"
+            help
+                Server listener's socket would be bound to this address. This address could be
+                either IPv4 or IPv6 address
+
+        config EXAMPLE_TCP_SERVER_BIND_PORT
+            string "Server bind port"
+            default "3344"
+            help
+                Server listener's socket would be bound to this port.
+
+    endif
+
+    config EXAMPLE_TCP_CLIENT
+        bool "TCP client"
+        default y
+        help
+            This example will setup a tcp client, connects to the specified address
+            and sends the data.
+
+    if EXAMPLE_TCP_CLIENT
+        config EXAMPLE_TCP_CLIENT_CONNECT_ADDRESS
+            string "Client connection address or hostname"
+            default "www.google.com"
+            help
+                Client's socket would connect to this address/host.
+
+        config EXAMPLE_TCP_CLIENT_CONNECT_PORT
+            string "Client connection port"
+            default "80"
+            help
+                Client connection port.
+
+    endif
+
+endmenu

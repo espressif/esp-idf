@@ -1,0 +1,12 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_IDF_TARGET="esp32c5"
+# Bluedroid config
+CONFIG_BT_ACL_CONNECTIONS=50
+CONFIG_BT_ALARM_MAX_NUM=150
+# Controller config
+CONFIG_BT_LE_MSYS_1_BLOCK_COUNT=100
+CONFIG_BT_LE_HCI_EVT_BUF_SIZE=70
+CONFIG_BT_LE_MAX_CONNECTIONS=50
+# CONFIG_BT_LE_50_FEATURE_SUPPORT is not set

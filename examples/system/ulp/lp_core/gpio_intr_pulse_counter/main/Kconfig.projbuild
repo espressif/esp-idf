@@ -1,0 +1,20 @@
+menu "Example Configuration"
+    config EXAMPLE_PULSE_COUNT_PIN
+        int "Input pin for the pulse counter"
+        default 6
+        help
+            GPIO pin used as the input for the pulse counter
+
+    config EXAMPLE_PULSE_COUNT_WAKEUP_LIMIT
+        int "Wake-up pulse count limit"
+        default 10
+        help
+            Number of pulses counted after which the ULP will wake up the main CPU
+
+    config EXAMPLE_PULSE_COUNT_SIMULATE
+        bool "Simulate pulses on input pin"
+        default n
+        help
+            The ULP will periodically toggle the input pin to simulate pulses
+
+endmenu

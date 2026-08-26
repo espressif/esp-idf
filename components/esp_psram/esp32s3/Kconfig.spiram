@@ -1,0 +1,145 @@
+config SPIRAM
+    bool "Support for external, SPI-connected RAM"
+    default "n"
+    help
+        This enables support for an external SPI RAM chip, connected in parallel with the
+        main SPI flash chip.
+
+menu "SPI RAM config"
+    depends on SPIRAM
+
+    choice SPIRAM_MODE
+        prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
+        default SPIRAM_MODE_QUAD
+
+        config SPIRAM_MODE_QUAD
+            bool "Quad Mode PSRAM"
+
+        config SPIRAM_MODE_OCT
+            bool "Octal Mode PSRAM"
+    endchoice
+
+    choice SPIRAM_TYPE
+        prompt "Type of SPIRAM chip in use"
+        default SPIRAM_TYPE_AUTO
+
+        config SPIRAM_TYPE_AUTO
+            bool "Auto-detect"
+
+        config SPIRAM_TYPE_ESPPSRAM16
+            bool "ESP-PSRAM16 or APS1604"
+            depends on SPIRAM_MODE_QUAD
+
+        config SPIRAM_TYPE_ESPPSRAM32
+            bool "ESP-PSRAM32"
+            depends on SPIRAM_MODE_QUAD
+
+        config SPIRAM_TYPE_ESPPSRAM64
+            bool "ESP-PSRAM64 , LY68L6400 or APS6408"
+    endchoice
+
+    config SPIRAM_CLK_IO
+        int
+        default 30
+
+    config SPIRAM_CS_IO
+        int
+        default 26
+
+    config SPIRAM_XIP_FROM_PSRAM
+        bool "Enable Executable in place from (XiP) from PSRAM feature"
+        default n
+        select SPIRAM_FETCH_INSTRUCTIONS
+        select SPIRAM_RODATA
+        help
+            Helper for selecting both `SPIRAM_FETCH_INSTRUCTIONS` and `SPIRAM_RODATA`
+
+    config SPIRAM_FETCH_INSTRUCTIONS
+        bool "Move Instructions in Flash to PSRAM"
+        default n
+        help
+            If enabled, instructions in flash will be moved into PSRAM on startup.
+            If SPIRAM_RODATA is also enabled, code that requires execution during an MSPI1 Flash operation
+            can forgo being placed in IRAM. Therefore codes that need to be executing during Flash
+            operation can continue working normally.
+
+            This feature is useful for high throughput peripheral involved applications to improve
+            the performance during MSPI1 flash operations. PSRAM access speed is faster than Flash access.
+            So the performance is better. (see External RAM documentation for more details).
+
+    config SPIRAM_RODATA
+        bool "Move Read-Only Data in Flash to PSRAM"
+        default n
+        help
+            If enabled, rodata in flash will be moved into PSRAM on startup.
+            If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an MSPI1 Flash operation
+            is not necessary to be placed in IRAM. Therefore codes that need to be executing during Flash
+            operation can continue working normally.
+
+            This feature is useful for high throughput peripheral involved applications to improve
+            the performance during MSPI1 flash operations. PSRAM access speed is faster than Flash access.
+            So the performance is better. (see External RAM documentation for more details).
+
+    choice SPIRAM_SPEED
+        prompt "Set RAM clock speed"
+        default SPIRAM_SPEED_40M
+        help
+            Select the speed for the SPI RAM chip.
+
+        config SPIRAM_SPEED_120M
+            depends on SPIRAM_MODE_QUAD || IDF_EXPERIMENTAL_FEATURES
+            bool "120MHz clock speed (READ DOCS FIRST)"
+
+            help
+                - Quad PSRAM 120 MHz is stable.
+
+                - Octal PSRAM 120 MHz is an experimental feature, it works when
+                  the temperature is stable.
+
+                    Risks:
+                        If your chip powers on at a certain temperature, then after the temperature
+                        increases or decreases by approximately 20 Celsius degrees (depending on the
+                        chip), the accesses to / from PSRAM will crash randomly.
+
+        config SPIRAM_SPEED_80M
+            bool "80MHz clock speed"
+        config SPIRAM_SPEED_40M
+            bool "40Mhz clock speed"
+    endchoice
+
+    config SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        depends on SPIRAM_SPEED_120M && SPIRAM_MODE_OCT && IDF_EXPERIMENTAL_FEATURES
+        bool "Adjust PSRAM timing tuning point via on-chip temperature sensor in real-time"
+        default n
+        help
+            Temperature would influence the source clock frequency so that the timing tuning point set in start-up
+            might not be always proper when temperature varies in high range. This configuration would help checking
+            the temperature in real-time, and adjust timing point automatically when temperature change.
+            (see External RAM documentation for more details)
+
+    config SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND
+        depends on SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        int "PSRAM timing tuning measure temperature interval (unit: second)"
+        default 5
+        help
+            Due to adjusting timing point automatically when temperature change, the task will measure current
+            temperature value in some specific interval. This configuration option would help you to set the
+            proper interval. The interval unit is second.
+
+    config SPIRAM_SPEED
+        int
+        default 120 if SPIRAM_SPEED_120M
+        default 80 if SPIRAM_SPEED_80M
+        default 40 if SPIRAM_SPEED_40M
+
+    config SPIRAM_ECC_ENABLE
+        bool "Enable SPI RAM ECC"
+        default n
+        depends on SPIRAM_MODE_OCT
+        help
+            Enable MSPI Error-Correcting Code function when accessing SPIRAM.
+
+            If enabled, 1/16 of the SPI RAM total size will be reserved for error-correcting code.
+
+    source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
+endmenu

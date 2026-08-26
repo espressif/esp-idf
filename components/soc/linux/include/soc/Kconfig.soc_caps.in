@@ -1,0 +1,92 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+config SOC_EFUSE_SUPPORTED
+    bool
+    default y
+
+config SOC_EFUSE_KEY_PURPOSE_FIELD
+    bool
+    default y
+
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
+config SOC_GPIO_IN_RANGE_MAX
+    int
+    default 65535
+
+config SOC_GPIO_OUT_RANGE_MAX
+    int
+    default 65535
+
+config SOC_I2C_SUPPORT_SLAVE
+    bool
+    default y
+
+config SOC_I2C_SUPPORT_10BIT_ADDR
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DOWNLOAD_DCACHE
+    bool
+    default y
+
+config SOC_EFUSE_HARD_DIS_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_DIS_ICACHE
+    bool
+    default y
+
+config SOC_SECURE_BOOT_V2_RSA
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
+    int
+    default 3
+
+config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+    bool
+    default y
+
+config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_256
+    bool
+    default y

@@ -1,0 +1,131 @@
+menu "ESP Timer (High Resolution Timer)"
+
+    config ESP_TIMER_IN_IRAM
+        bool "Place esp_timer functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
+    config ESP_TIMER_PROFILING
+        bool "Enable esp_timer profiling features"
+        default n
+        help
+            If enabled, esp_timer_dump will dump information such as number of times the timer was started,
+            number of times the timer has triggered, and the total time it took for the callback to run.
+            This option has some effect on timer performance and the amount of memory used for timer
+            storage, and should only be used for debugging/testing purposes.
+
+    config ESP_TIME_FUNCS_USE_RTC_TIMER  # [refactor-todo] remove when timekeeping and persistence are separate
+        bool
+
+    config ESP_TIME_FUNCS_USE_ESP_TIMER  # [refactor-todo] remove when timekeeping and persistence are separate
+        bool
+
+    config ESP_TIME_FUNCS_USE_NONE  # [refactor-todo] remove when timekeeping and persistence are separate
+        bool
+
+    config ESP_TIMER_TASK_STACK_SIZE
+        int "High-resolution timer task stack size"
+        default 3584
+        range 2048 65536
+        help
+            Configure the stack size of "timer_task" task. This task is used
+            to dispatch callbacks of timers created using ets_timer and esp_timer
+            APIs. If you are seeing stack overflow errors in timer task, increase
+            this value.
+
+            Note that this is not the same as FreeRTOS timer task. To configure
+            FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
+            in "FreeRTOS".
+
+    config ESP_TIMER_INTERRUPT_LEVEL
+        int "Interrupt level"
+        default 1
+        range 1 3 if IDF_TARGET_ESP32
+        range 1 1 if !IDF_TARGET_ESP32
+        help
+            This sets the interrupt priority level for esp_timer ISR.
+            A higher value reduces interrupt latency by minimizing the timer processing delay.
+
+    config ESP_TIMER_SHOW_EXPERIMENTAL
+        bool "show esp_timer's experimental features"
+        help
+            This shows some hidden features of esp_timer.
+            Note that they may break other features, use them with care.
+
+    config ESP_TIMER_TASK_AFFINITY
+        hex
+        default 0x0 if ESP_TIMER_TASK_AFFINITY_CPU0
+        default 0x1 if ESP_TIMER_TASK_AFFINITY_CPU1
+        default FREERTOS_NO_AFFINITY if ESP_TIMER_TASK_AFFINITY_NO_AFFINITY
+
+    choice ESP_TIMER_TASK_AFFINITY
+        prompt "esp_timer task core affinity"
+        default ESP_TIMER_TASK_AFFINITY_CPU0
+        help
+            The default settings: timer TASK on CPU0 and timer ISR on CPU0.
+            Other settings may help in certain cases, but note that they may break
+            other features, use them with care.
+            - "CPU0": (default) esp_timer task is processed by CPU0.
+            - "CPU1": esp_timer task is processed by CPU1.
+            - "No affinity": esp_timer task can be processed by any CPU.
+
+        config ESP_TIMER_TASK_AFFINITY_CPU0
+            bool "CPU0"
+        config ESP_TIMER_TASK_AFFINITY_CPU1
+            bool "CPU1"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+        config ESP_TIMER_TASK_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+    endchoice
+
+    choice ESP_TIMER_ISR_AFFINITY
+        prompt "timer interrupt core affinity"
+        default ESP_TIMER_ISR_AFFINITY_CPU0
+        help
+            The default settings: timer TASK on CPU0 and timer ISR on CPU0.
+            Other settings may help in certain cases, but note that they may break
+            other features, use them with care.
+            - "CPU0": (default) timer interrupt is processed by CPU0.
+            - "CPU1": timer interrupt is processed by CPU1.
+            - "No affinity": timer interrupt can be processed by any CPU. It helps
+            to reduce latency but there is a disadvantage it leads to the timer ISR
+            running on every core. It increases the CPU time usage for timer ISRs
+            by N on an N-core system.
+
+        config ESP_TIMER_ISR_AFFINITY_CPU0
+            bool "CPU0"
+        config ESP_TIMER_ISR_AFFINITY_CPU1
+            bool "CPU1"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+        config ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+            depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
+    endchoice
+
+    config ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+        bool "Support ISR dispatch method"
+        default n
+        help
+            Allows using ESP_TIMER_ISR dispatch method (ESP_TIMER_TASK dispatch method is also available).
+            - ESP_TIMER_TASK - Timer callbacks are dispatched from a high-priority esp_timer task.
+            - ESP_TIMER_ISR - Timer callbacks are dispatched directly from the timer interrupt handler.
+            The ISR dispatch can be used, in some cases, when a callback is very simple
+            or need a lower-latency.
+
+    config ESP_TIMER_IMPL_TG0_LAC
+        bool
+        default y
+        depends on IDF_TARGET_ESP32
+
+    config ESP_TIMER_IMPL_SYSTIMER
+        bool
+        default y
+        depends on !IDF_TARGET_ESP32 && !IDF_TARGET_LINUX
+
+    config ESP_TIMER_IMPL_LINUX
+        bool
+        default y
+        depends on IDF_TARGET_LINUX
+        select ESP_TIME_FUNCS_USE_ESP_TIMER
+
+endmenu # esp_timer

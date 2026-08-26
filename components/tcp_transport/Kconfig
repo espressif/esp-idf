@@ -1,0 +1,26 @@
+menu "TCP Transport"
+
+    menu "Websocket"
+        config WS_TRANSPORT
+            bool "Enable Websocket Transport"
+            default y
+            help
+                Enable support for creating websocket transport.
+
+        config WS_BUFFER_SIZE
+            int "Websocket transport buffer size"
+            default 1024
+            depends on WS_TRANSPORT
+            help
+                Size of the buffer used for constructing the HTTP Upgrade request during connect
+
+        config WS_DYNAMIC_BUFFER
+            bool "Using dynamic websocket transport buffer"
+            default n
+            depends on WS_TRANSPORT
+            help
+                If enable this option, websocket transport buffer will be freed after connection
+                succeed to save more heap.
+    endmenu
+
+endmenu

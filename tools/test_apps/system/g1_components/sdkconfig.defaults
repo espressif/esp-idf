@@ -1,0 +1,6 @@
+# Force VFS_SUPPORT_IO off so the conditional requires in esp_stdio and
+# esp_libc do not pull vfs, esp_driver_uart, and their transitive deps
+# into the g1_components closure. components/vfs/Kconfig defaults this
+# symbol to y whenever it is processed, which happens for every discovered
+# component under IDF_BUILD_V2 regardless of the COMPONENTS restriction.
+CONFIG_VFS_SUPPORT_IO=n

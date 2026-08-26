@@ -1,0 +1,454 @@
+cmake_minimum_required(VERSION 3.22)
+
+if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
+    message(FATAL_ERROR "Current directory '${CMAKE_CURRENT_LIST_DIR}' is not buildable. "
+    "Change directories to one of the example projects in '${CMAKE_CURRENT_LIST_DIR}/examples' and try again.")
+endif()
+
+project(esp-idf C CXX ASM)
+
+# Variables compile_options, c_compile_options, cxx_compile_options, compile_definitions, link_options shall
+# not be unset as they may already contain flags, set by toolchain-TARGET.cmake files.
+
+# Add the following build specifications here, since these seem to be dependent
+# on config values on the root Kconfig.
+
+if(BOOTLOADER_BUILD)
+
+    if(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE)
+        if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+            list(APPEND compile_options "-Oz")
+        else()
+            list(APPEND compile_options "-Os")
+        endif()
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+            list(APPEND compile_options "-freorder-blocks")
+            if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+                list(APPEND compile_options "-mno-target-align")
+            endif()
+        endif()
+    elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG)
+        list(APPEND compile_options "-Og")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
+            list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
+        endif()
+    elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF)
+        list(APPEND compile_options "-O2")
+    endif()
+
+elseif(ESP_TEE_BUILD)
+
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        list(APPEND compile_options "-Oz")
+    else()
+        list(APPEND compile_options "-Os")
+        list(APPEND compile_options "-freorder-blocks")
+    endif()
+
+else()
+
+    if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
+        if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+            list(APPEND compile_options "-Oz")
+        else()
+            list(APPEND compile_options "-Os")
+        endif()
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+            list(APPEND compile_options "-freorder-blocks")
+            if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+                list(APPEND compile_options "-mno-target-align")
+            endif()
+        endif()
+    elseif(CONFIG_COMPILER_OPTIMIZATION_DEBUG)
+        list(APPEND compile_options "-Og")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
+            list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
+        endif()
+    elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
+        list(APPEND compile_options "-O0")
+    elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
+        list(APPEND compile_options "-O2")
+    endif()
+
+endif()
+
+if(CONFIG_COMPILER_CXX_EXCEPTIONS)
+    list(APPEND cxx_compile_options "-fexceptions")
+else()
+    list(APPEND cxx_compile_options "-fno-exceptions")
+endif()
+
+if(CONFIG_IDF_TOOLCHAIN_GCC)
+    if(CONFIG_COMPILER_CXX_RTTI)
+        idf_toolchain_remove_flags(CXX_COMPILE_OPTIONS "-fno-rtti"
+                                   LINK_OPTIONS "-fno-rtti")
+    else()
+        idf_toolchain_add_flags(CXX_COMPILE_OPTIONS "-fno-rtti"
+                                LINK_OPTIONS "-fno-rtti")
+    endif()
+    idf_toolchain_rerun_abi_detection()
+else() # TODO IDF-14338
+    if(CONFIG_COMPILER_CXX_RTTI)
+        list(APPEND cxx_compile_options "-frtti")
+    else()
+        list(APPEND cxx_compile_options "-fno-rtti")
+        list(APPEND link_options "-fno-rtti")        # used to invoke correct multilib variant (no-rtti) during linking
+    endif()
+endif()
+
+if(CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS)
+    list(APPEND compile_options "-msave-restore")
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    list(APPEND c_compile_options "-Wno-old-style-declaration")
+endif()
+
+# TODO IDF-15784: remove in IDF v7.0 ?
+check_c_compiler_flag("-Wunused-but-set-variable=1" compiler_supports_wunused_but_set_variable_eq_1)
+if(compiler_supports_wunused_but_set_variable_eq_1)
+    list(APPEND compile_options "-Wunused-but-set-variable=1")
+endif()
+
+if(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED)
+    set(compiler_cxx_trivial_auto_var_init "uninitialized")
+elseif(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_PATTERN)
+    set(compiler_cxx_trivial_auto_var_init "pattern")
+elseif(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_ZERO)
+    set(compiler_cxx_trivial_auto_var_init "zero")
+endif()
+if(compiler_cxx_trivial_auto_var_init)
+    idf_toolchain_remove_flags(CXX_COMPILE_OPTIONS "-ftrivial-auto-var-init")
+    check_cxx_compiler_flag("-ftrivial-auto-var-init=${compiler_cxx_trivial_auto_var_init}"
+        compiler_supports_ftrivial_auto_var_init)
+    if(compiler_supports_ftrivial_auto_var_init)
+        idf_toolchain_add_flags(CXX_COMPILE_OPTIONS "-ftrivial-auto-var-init=${compiler_cxx_trivial_auto_var_init}")
+    endif()
+endif()
+
+# Clang finds some warnings in IDF code which GCC doesn't.
+# All these warnings should be fixed before Clang is presented
+# as a toolchain choice for users.
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    # Clang checks Doxygen comments for being in sync with function prototype.
+    # There are some inconsistencies, especially in ROM headers.
+    list(APPEND compile_options "-Wno-documentation")
+    # GCC allows repeated typedefs when the source and target types are the same.
+    # Clang doesn't allow this. This occurs in many components due to forward
+    # declarations.
+    list(APPEND compile_options "-Wno-typedef-redefinition")
+    # This issue is seemingly related to newlib's char type functions.
+    # Fix is not clear yet.
+    list(APPEND compile_options "-Wno-char-subscripts")
+    # Clang seems to notice format string issues which GCC doesn't.
+    list(APPEND compile_options "-Wno-format-security")
+    # Some pointer checks in mDNS component check addresses which can't be NULL
+    list(APPEND compile_options "-Wno-tautological-pointer-compare")
+    # Similar to the above, in tcp_transport
+    list(APPEND compile_options "-Wno-pointer-bool-conversion")
+    # mbedTLS md5.c triggers this warning in md5_test_buf (false positive)
+    list(APPEND compile_options "-Wno-string-concatenation")
+    # multiple cases of implicit conversions between unrelated enum types
+    list(APPEND compile_options "-Wno-enum-conversion")
+    # When IRAM_ATTR is specified both in function declaration and definition,
+    # it produces different section names, since section names include __COUNTER__.
+    # Occurs in multiple places.
+    list(APPEND compile_options "-Wno-section")
+    # Multiple cases of attributes unknown to clang, for example
+    # __attribute__((optimize("-O3")))
+    list(APPEND compile_options "-Wno-unknown-attributes")
+    # Disable Clang warnings for atomic operations with access size
+    # more then 4 bytes
+    list(APPEND compile_options "-Wno-atomic-alignment")
+    # several warnings in wpa_supplicant component
+    list(APPEND compile_options "-Wno-unused-but-set-variable")
+    # Clang also produces many -Wunused-function warnings which GCC doesn't.
+    list(APPEND compile_options "-Wno-unused-function")
+    # many warnings in bluedroid code
+    # warning: field 'hdr' with variable sized type 'BT_HDR' not at the end of a struct or class is a GNU extension
+    list(APPEND compile_options "-Wno-gnu-variable-sized-type-not-at-end")
+    # several warnings in bluedroid code
+    list(APPEND compile_options "-Wno-constant-logical-operand")
+    # warning: '_Static_assert' with no message is a C2x extension
+    list(APPEND compile_options "-Wno-c2x-extensions")
+    # warning on xMPU_SETTINGS for esp32s2 has size 0 for C and 1 for C++
+    list(APPEND compile_options "-Wno-extern-c-compat")
+    if(NOT (CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"))
+        # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
+        list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
+    endif()
+    # warning: initializer overrides prior initialization of this subobject
+    # in esp32c61 pmu_param.c when static unions are initialized (e.g. in pmu_hp_system_analog_param_default)
+    list(APPEND compile_options "-Wno-initializer-overrides")
+endif()
+# More warnings may exist in unit tests and example projects.
+
+if(CONFIG_COMPILER_WARN_WRITE_STRINGS)
+    list(APPEND compile_options "-Wwrite-strings")
+endif()
+
+if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE)
+    list(APPEND compile_definitions "-DNDEBUG")
+endif()
+
+if(CONFIG_COMPILER_NO_MERGE_CONSTANTS)
+    list(APPEND compile_options "-fno-merge-constants")
+endif()
+
+if(CONFIG_COMPILER_ENABLE_TEXT_SECTION_LITERALS)
+    list(APPEND compile_options "-mtext-section-literals")
+endif()
+
+if(CONFIG_COMPILER_STACK_CHECK_MODE_NORM)
+    list(APPEND compile_options "-fstack-protector")
+elseif(CONFIG_COMPILER_STACK_CHECK_MODE_STRONG)
+    list(APPEND compile_options "-fstack-protector-strong")
+elseif(CONFIG_COMPILER_STACK_CHECK_MODE_ALL)
+    list(APPEND compile_options "-fstack-protector-all")
+endif()
+
+if(CONFIG_COMPILER_KASAN)
+    # Only instrument the app build; the bootloader runs before kasan_init_shadow()
+    # is called and does not have the KASAN runtime.
+    if(NOT BOOTLOADER_BUILD)
+        list(APPEND c_compile_options "-fsanitize=kernel-address")
+        list(APPEND cxx_compile_options "-fsanitize=kernel-address")
+        if(NOT CONFIG_KASAN_STACK)
+            list(APPEND c_compile_options "--param" "asan-stack=0")
+            list(APPEND cxx_compile_options "--param" "asan-stack=0")
+        endif()
+        list(APPEND link_options "-fsanitize=kernel-address")
+    endif()
+endif()
+
+if(CONFIG_COMPILER_DUMP_RTL_FILES)
+    list(APPEND compile_options "-fdump-rtl-expand")
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0)
+    list(APPEND c_compile_options "-fzero-init-padding-bits=all" "-fno-malloc-dce")
+endif()
+
+if(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr")
+elseif(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold))")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold))")
+endif()
+
+__generate_prefix_map(prefix_map_compile_options)
+list(APPEND compile_options ${prefix_map_compile_options})
+
+if(CONFIG_COMPILER_DISABLE_GCC12_WARNINGS)
+    list(APPEND compile_options "-Wno-address"
+                                "-Wno-use-after-free")
+endif()
+
+if(CONFIG_COMPILER_DISABLE_GCC13_WARNINGS)
+    list(APPEND compile_options "-Wno-xor-used-as-pow")
+    list(APPEND c_compile_options "-Wno-enum-int-mismatch")
+    list(APPEND cxx_compile_options "-Wno-self-move"
+                                    "-Wno-dangling-reference")
+endif()
+
+if(CONFIG_COMPILER_DISABLE_GCC14_WARNINGS)
+    list(APPEND compile_options "-Wno-calloc-transposed-args")
+endif()
+
+if(CONFIG_COMPILER_DISABLE_GCC15_WARNINGS)
+    list(APPEND c_compile_options "-Wno-unterminated-string-initialization")
+    list(APPEND c_compile_options "-Wno-header-guard")
+    list(APPEND cxx_compile_options "-Wno-self-move")
+    list(APPEND cxx_compile_options "-Wno-template-body")
+    list(APPEND cxx_compile_options "-Wno-dangling-reference")
+    list(APPEND cxx_compile_options "-Wno-defaulted-function-deleted")
+endif()
+
+if(CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        idf_build_replace_option_from_property(COMPILE_OPTIONS "-Werror" "-Werror=all")
+    endif()
+endif()
+
+# GCC-specific options
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    list(APPEND compile_options "-fstrict-volatile-bitfields")
+    if(CONFIG_COMPILER_STATIC_ANALYZER)
+        list(APPEND compile_options "-fanalyzer")
+    endif()
+endif()
+
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+  list(APPEND compile_options "-fasynchronous-unwind-tables")
+  list(APPEND link_options "-Wl,--eh-frame-hdr")
+endif()
+
+if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
+    list(APPEND compile_options "-fno-omit-frame-pointer")
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        list(APPEND compile_options "-mno-omit-leaf-frame-pointer")
+    endif()
+endif()
+
+if(CONFIG_COMPILER_LTO_LINKTIME AND NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
+    list(APPEND link_options "-flto=auto")
+
+    if(CONFIG_APP_REPRODUCIBLE_BUILD)
+        # LTO generates code at link time, where the path remapping applied to
+        # compile_options doesn't take effect, so pass it to the linker as well.
+        # -save-temps keeps LTRANS objects out of $TMPDIR, and a pinned random
+        # seed makes LTO bytecode byte-identical. See the commit message for
+        # details.
+        list(APPEND link_options ${prefix_map_compile_options})
+        list(APPEND link_options "-save-temps")
+        list(APPEND compile_options "-frandom-seed=1")
+    endif()
+else()
+    list(APPEND compile_options "-fno-lto")
+endif()
+
+if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    # Not all versions of the MacOS linker support the -warn_commons flag.
+    # ld version 1053.12 (and above) have been tested to support it.
+    # Hence, we extract the version string from the linker output
+    # before including the flag.
+
+    # Get the ld version, capturing both stdout and stderr
+    execute_process(
+        COMMAND ${CMAKE_LINKER} -v
+        OUTPUT_VARIABLE LD_VERSION_OUTPUT
+        ERROR_VARIABLE LD_VERSION_ERROR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+    )
+
+    # Combine stdout and stderr
+    set(LD_VERSION_OUTPUT "${LD_VERSION_OUTPUT}\n${LD_VERSION_ERROR}")
+
+    # Extract the version string
+    string(REGEX MATCH "PROJECT:(ld|dyld)-([0-9]+)\\.([0-9]+)" LD_VERSION_MATCH "${LD_VERSION_OUTPUT}")
+    set(LD_VERSION_MAJOR_MINOR "${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
+
+    message(STATUS "Linker Version: ${LD_VERSION_MAJOR_MINOR}")
+
+    # Compare the version with 1053.12
+    if(LD_VERSION_MAJOR_MINOR VERSION_GREATER_EQUAL "1053.12")
+        list(APPEND link_options "-Wl,-warn_commons")
+    endif()
+
+    list(APPEND link_options "-Wl,-dead_strip")
+else()
+    list(APPEND link_options "-Wl,--gc-sections")
+    list(APPEND link_options "-Wl,--warn-common")
+endif()
+
+# SMP FreeRTOS user provided minimal idle hook. This allows the user to provide
+# their own copy of vApplicationPassiveIdleHook()
+if(CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK)
+    list(APPEND link_options "-Wl,--wrap=vApplicationPassiveIdleHook")
+endif()
+
+# Placing jump tables in flash would cause issues with code that required
+# to be placed in IRAM
+list(APPEND compile_options "-fno-jump-tables")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    # This flag is GCC-specific.
+    # Not clear yet if some other flag should be used for Clang.
+    list(APPEND compile_options "-fno-tree-switch-conversion")
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    list(APPEND compile_options "-fno-use-cxa-atexit")  # TODO IDF-10934
+else()
+    list(APPEND cxx_compile_options "-fuse-cxa-atexit")
+endif()
+
+if(COMPILER_RT_LIB_NAME)
+    list(APPEND link_options "-rtlib=${CONFIG_COMPILER_RT_LIB_NAME}")
+endif()
+
+
+idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
+idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
+idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
+idf_build_set_property(ASM_COMPILE_OPTIONS "${asm_compile_options}" APPEND)
+idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
+idf_build_set_property(LINK_OPTIONS "${link_options}" APPEND)
+
+idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
+
+# Add each component as a subdirectory, processing each component's CMakeLists.txt
+foreach(component_target ${build_component_targets})
+    __component_get_property(dir ${component_target} COMPONENT_DIR)
+    __component_get_property(_name ${component_target} COMPONENT_NAME)
+    __component_get_property(prefix ${component_target} __PREFIX)
+    __component_get_property(alias ${component_target} COMPONENT_ALIAS)
+    set(COMPONENT_NAME ${_name})
+    set(COMPONENT_DIR ${dir})
+    set(COMPONENT_ALIAS ${alias})
+    set(COMPONENT_PATH ${dir}) # for backward compatibility only, COMPONENT_DIR is preferred
+    idf_build_get_property(build_prefix __PREFIX)
+    set(__idf_component_context 1)
+    if(NOT prefix STREQUAL build_prefix)
+        add_subdirectory(${dir} ${prefix}_${_name})
+    else()
+        add_subdirectory(${dir} ${_name})
+    endif()
+    set(__idf_component_context 0)
+endforeach()
+
+if(CONFIG_COMPILER_LTO_COMPILETIME AND NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/lto.cmake")
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    # Components whose object code is placed by a linker fragment (their own or
+    # another component's) must not be compiled with LTO, otherwise the placement
+    # stops matching. See tools/cmake/lto.cmake for details.
+    __lto_collect_fragment_placed_components(lto_placed_components ${build_components})
+    # For each component, enable LTO unless it has its own linker fragments, is
+    # placed by some fragment, has opted out via NO_LTO, or is not a static library.
+    foreach(component_name ${build_components})
+        idf_component_get_property(ldfragment ${component_name} LDFRAGMENTS)
+        idf_component_get_property(no_lto ${component_name} NO_LTO)
+        idf_component_get_property(component_lib ${component_name} COMPONENT_LIB)
+        get_target_property(type ${component_lib} TYPE)
+        if(NOT ldfragment AND NOT no_lto AND NOT component_name IN_LIST lto_placed_components
+                AND type STREQUAL "STATIC_LIBRARY")
+            target_compile_options(${component_lib} PRIVATE -flto=auto)
+        endif()
+    endforeach()
+endif()
+
+# Run component validation checks after all components have been processed
+# Only run validation for the main project, not subprojects like bootloader
+idf_build_get_property(bootloader_build BOOTLOADER_BUILD)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+if(NOT bootloader_build AND NOT esp_tee_build)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/component_validation.cmake")
+    __component_validation_run_checks()
+endif()
+
+# KASAN: exclude low-level / hardware-access components from instrumentation.
+# Apply the exclusion after add_subdirectory() so every target already exists.
+# The exclusion set itself is defined in tools/cmake/kasan.cmake and shared with
+# the Build system v2, which applies it in idf_build_library().
+if(CONFIG_COMPILER_KASAN AND NOT BOOTLOADER_BUILD)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/kasan.cmake")
+    idf_build_get_property(__kasan_all_components BUILD_COMPONENTS)
+    kasan_filter_excluded_components(__kasan_excluded_components ${__kasan_all_components})
+
+    foreach(__kasan_comp ${__kasan_excluded_components})
+        set(__kasan_lib "__idf_${__kasan_comp}")
+        if(TARGET ${__kasan_lib})
+            get_target_property(__kasan_type ${__kasan_lib} TYPE)
+            if(NOT __kasan_type STREQUAL "INTERFACE_LIBRARY")
+                # Only apply to real (non-INTERFACE) libraries that have source
+                # files. INTERFACE libraries have no sources so there is nothing
+                # to de-instrument, and adding an INTERFACE compile option would
+                # propagate -fno-sanitize to all downstream consumers (including
+                # the application under test).
+                target_compile_options(${__kasan_lib} PRIVATE "-fno-sanitize=kernel-address")
+            endif()
+        endif()
+    endforeach()
+endif()

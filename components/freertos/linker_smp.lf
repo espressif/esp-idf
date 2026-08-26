@@ -1,0 +1,154 @@
+# ----------------------------------------------------------------------------------------------------------------------
+# Linker fragment file for SMP FreeRTOS (i.e., CONFIG_FREERTOS_SMP=y)
+# Flash function placements are listed per source file, in the order that they appear in the source file.
+#
+# Placement Rules:
+#   - Default behavior: All FreeRTOS functions are placed in Flash by default, except for:
+#       - FromISR() functions (placed in IRAM by default)
+#       - Performance-critical functions, such as critical section APIs and code related to context switching
+#   - CONFIG_FREERTOS_IN_IRAM:
+#       - This option is presented to users as a performance optimization feature, with the trade-off of reduced
+#         internal RAM availability. This option is disabled by default.
+#   - CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH
+#       - If SPI_FLASH_AUTO_SUSPEND is supported, this option allows placing FromISR() functions in Flash.
+# ----------------------------------------------------------------------------------------------------------------------
+
+[mapping:freertos_smp]
+archive: libfreertos.a
+entries:
+    if FREERTOS_IN_IRAM = y:
+        * (noflash_text)        # All FreeRTOS functions to IRAM
+    else:
+        * (default)             # All FreeRTOS functions to Flash
+
+        # --------------------------------------------------------------------------------------------------------------
+        # event_groups.c
+        # --------------------------------------------------------------------------------------------------------------
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            event_groups:xEventGroupClearBitsFromISR (noflash_text)
+            event_groups:xEventGroupGetBitsFromISR (noflash_text)
+            event_groups:xEventGroupSetBitsFromISR (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # list.c
+        # - List/List Item initialization functions are never called from ISR
+        # - vListInsert is never called from an ISR context
+        # - Remaining List insertion/removal functions can be called from an ISR context and hence place them in flash
+        #   only when CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled
+        # --------------------------------------------------------------------------------------------------------------
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            list:vListInsertEnd (noflash_text)
+            list:uxListRemove (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # queue.c
+        # --------------------------------------------------------------------------------------------------------------
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            queue:xQueueGetMutexHolderFromISR (noflash_text)
+            queue:xQueueGenericSendFromISR (noflash_text)
+            queue:prvCopyDataToQueue (noflash_text)
+            queue:xQueueGiveFromISR (noflash_text)
+            queue:xQueueReceiveFromISR (noflash_text)
+            queue:prvCopyDataFromQueue (noflash_text)
+            queue:xQueuePeekFromISR (noflash_text)
+            queue:uxQueueMessagesWaitingFromISR (noflash_text)
+            queue:xQueueIsQueueEmptyFromISR (noflash_text)
+            queue:xQueueIsQueueFullFromISR (noflash_text)
+            queue:xQueueSelectFromSetFromISR (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # stream_buffer.c
+        # --------------------------------------------------------------------------------------------------------------
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            stream_buffer:xStreamBufferSendFromISR (noflash_text)
+            stream_buffer:prvWriteMessageToBuffer (noflash_text)
+            stream_buffer:xStreamBufferReceiveFromISR (noflash_text)
+            stream_buffer:prvReadMessageFromBuffer (noflash_text)
+            stream_buffer:xStreamBufferSendCompletedFromISR (noflash_text)
+            stream_buffer:xStreamBufferReceiveCompletedFromISR (noflash_text)
+            stream_buffer:prvBytesInBuffer (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # tasks.c
+        # - The following functions are always kept in internal RAM as they are frequently called during context switches
+        #   or are called with cache disabled
+        #   - xTaskIncrementTick
+        #   - prvSelectHighestPriorityTaskSMP
+        #   - vTaskSwitchContext
+        #   - xTaskGetSchedulerState
+        #   - xTaskGetTickCount
+        #   - vTaskEnterCritical / vTaskExitCritical (called via taskENTER_CRITICAL()
+        # - Place all functions that are called from an ISR context into Flash if
+        #   CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled
+        # --------------------------------------------------------------------------------------------------------------
+        tasks:xTaskIncrementTick (noflash_text)
+        tasks:prvSelectHighestPriorityTaskSMP (noflash_text)
+        tasks:vTaskSwitchContext (noflash_text)
+        tasks:xTaskGetSchedulerState (noflash_text)
+        tasks:xTaskGetTickCount (noflash_text)
+        tasks:vTaskEnterCritical (noflash_text)
+        tasks:vTaskExitCritical (noflash_text)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            tasks:uxTaskPriorityGetFromISR (noflash_text)
+            tasks:prvTaskIsTaskSuspended (noflash_text)
+            tasks:xTaskResumeFromISR (noflash_text)
+            tasks:xTaskGetTickCountFromISR (noflash_text)
+            tasks:xTaskGetApplicationTaskTagFromISR (noflash_text)
+            tasks:xTaskRemoveFromEventList (noflash_text)
+            tasks:prvResetNextTaskUnblockTime (noflash_text)
+            tasks:xTaskGenericNotifyFromISR (noflash_text)
+            tasks:vTaskGenericNotifyGiveFromISR (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # timers.c
+        # - xTimerGenericCommand() is used for ISR calls as well. Thus leave it (and its dependents) in internal RAM
+        #   unless CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled
+        # --------------------------------------------------------------------------------------------------------------
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+            timers:xTimerGenericCommand (noflash_text)
+            timers:xTimerPendFunctionCallFromISR (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # portable/xtensa/port.c
+        # - Critical sections and interrupt context checking functions are always placed in internal RAM for better
+        #   performance and correctness.
+        # - vPortSetStackWatchpoint is placed in IRAM as it is called from vTaskSwitchContext.
+        # - The following functions directly call portasm functions which are always in IRAM
+        #   - xPortStartScheduler
+        # --------------------------------------------------------------------------------------------------------------
+        if IDF_TARGET_ARCH_XTENSA = y:
+            port:xPortStartScheduler (noflash_text)
+            port:vPortEnterCritical (noflash_text)
+            port:vPortExitCritical (noflash_text)
+            port:xPortEnterCriticalTimeout (noflash_text)
+            port:vPortExitCriticalIDF (noflash_text)
+            port:vPortSetStackWatchpoint (noflash_text)
+            port:xPortCheckIfInISR (noflash_text)
+            port:vPortAssertIfInISR (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # portable/riscv/port.c
+        # - Critical sections, interrupt masking, and yielding functions are always placed in internal RAM for better
+        #   performance and correctness.
+        # - vPortSetStackWatchpoint is placed in IRAM as it is called from vTaskSwitchContext.
+        # --------------------------------------------------------------------------------------------------------------
+        if IDF_TARGET_ARCH_RISCV = y:
+            port:vPortEnterCritical (noflash_text)
+            port:vPortExitCritical (noflash_text)
+            port:ulPortSetInterruptMask (noflash_text)
+            port:vPortClearInterruptMask (noflash_text)
+            port:vPortYield (noflash_text)
+            port:vPortYieldFromISR (noflash_text)
+            port:vPortSetStackWatchpoint (noflash_text)
+            port:xPortSetInterruptMaskFromISR (noflash_text)
+            port:vPortClearInterruptMaskFromISR (noflash_text)
+            port:vPortCoprocUsedInISR (noflash_text)
+            port:xPortCheckIfInISR (noflash_text)
+            port:vPortAssertIfInISR (noflash_text)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # portasm.S
+        # - Place the entire portasm object file in IRAM. It contains critical context switching and interrupt entry/exit
+        #   code that must always be in IRAM for better performance.
+        # --------------------------------------------------------------------------------------------------------------
+        portasm (noflash_text)

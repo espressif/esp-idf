@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "constants.proto";
+
+/* Data structure of Session command1 packet */
+message SessionCmd1 {
+    bytes client_verify_data = 2;
+}
+
+/* Data structure of Session response1 packet */
+message SessionResp1 {
+    Status status = 1;
+    bytes device_verify_data = 3;
+}
+
+/* Data structure of Session command0 packet */
+message SessionCmd0 {
+    bytes client_pubkey = 1;
+}
+
+/* Data structure of Session response0 packet */
+message SessionResp0 {
+    Status status = 1;
+    bytes device_pubkey = 2;
+    bytes device_random = 3;
+}
+
+/* A message must be of type Cmd0 / Cmd1 / Resp0 / Resp1 */
+enum Sec1MsgType {
+    Session_Command0 = 0;
+    Session_Response0 = 1;
+    Session_Command1 = 2;
+    Session_Response1 = 3;
+}
+
+/* Payload structure of session data */
+message Sec1Payload {
+    Sec1MsgType msg = 1;        /*!< Type of message */
+    oneof payload {
+        SessionCmd0 sc0 = 20;   /*!< Payload data interpreted as Cmd0 */
+        SessionResp0 sr0 = 21;  /*!< Payload data interpreted as Resp0 */
+        SessionCmd1 sc1 = 22;   /*!< Payload data interpreted as Cmd1 */
+        SessionResp1 sr1 = 23;  /*!< Payload data interpreted as Resp1 */
+    }
+}

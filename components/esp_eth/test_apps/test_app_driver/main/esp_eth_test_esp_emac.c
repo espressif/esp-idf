@@ -1,0 +1,784 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+
+// This module tests the internal ESP EMAC (Ethernet MAC) only. Tests target EMAC HAL/LL
+// behavior and do not depend on a specific PHY, so they need not be run with different PHY combinations.
+
+#include <string.h>
+#include <inttypes.h>
+#include "esp_eth_spec.h"
+#include "time.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "esp_log.h"
+#include "esp_eth_test_utils.h"
+#include "hal/emac_hal.h" // for MAC_HAL_TDES0_* control bits
+#include "esp_private/esp_clk_tree_common.h"
+
+#define ETHERTYPE_TX_STD        0x2222  // frame transmitted via _transmit_frame
+#define ETHERTYPE_TX_MULTI_2    0x2223  // frame transmitted via _transmit_multiple_buf_frame (2 buffers)
+#define ETHERTYPE_TX_MULTI_3    0x2224  // frame transmitted via _transmit_multiple_buf_frame (3 buffers)
+
+#define MINIMUM_TEST_FRAME_SIZE 64
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+static const char *TAG = "eth_test_esp_emac";
+
+typedef struct
+{
+    SemaphoreHandle_t mutex;
+    uint16_t expected_size;
+    uint16_t expected_size_2;
+    uint16_t expected_size_3;
+} recv_esp_emac_check_info_t;
+
+static esp_err_t eth_recv_esp_emac_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv, void *info)
+{
+    // Copy to a static buffer to avoid memory leak when TEST_ASSERT fails (`static` to avoid large stack allocation)
+    static uint8_t buf_copy[ETH_MAX_PACKET_SIZE];
+    memcpy(buf_copy, buffer, length);
+    free(buffer);
+    emac_frame_t *pkt = (emac_frame_t *)buf_copy;
+
+    recv_esp_emac_check_info_t *recv_info = (recv_esp_emac_check_info_t *)priv;
+    uint16_t expected_size = recv_info->expected_size + recv_info->expected_size_2 + recv_info->expected_size_3;
+    ESP_LOGI(TAG, "recv frame size: %" PRIu16, expected_size);
+    TEST_ASSERT_EQUAL(expected_size, length);
+    // frame transmitted via _transmit_frame
+    if (pkt->proto == ETHERTYPE_TX_STD) {
+        for (int i = 0; i < recv_info->expected_size - ETH_HEADER_LEN; i++) {
+            TEST_ASSERT_EQUAL(pkt->data[i], i & 0xFF);
+        }
+    // frame transmitted via _multiple_buf_frame (2 buffers)
+    } else if (pkt->proto == ETHERTYPE_TX_MULTI_2) {
+        uint8_t *data_p = pkt->data;
+        for (int i = 0; i < recv_info->expected_size - ETH_HEADER_LEN; i++) {
+            TEST_ASSERT_EQUAL(*(data_p++), i & 0xFF);
+        }
+        int j = ETH_MAX_PAYLOAD_LEN;
+        for (int i = 0; i < recv_info->expected_size_2; i++) {
+            TEST_ASSERT_EQUAL(*(data_p++), j & 0xFF);
+            j--;
+        }
+    // frame transmitted via emac_hal_transmit_multiple_buf_frame (3 buffers)
+    } else if (pkt->proto == ETHERTYPE_TX_MULTI_3) {
+        uint8_t *data_p = pkt->data;
+        for (int i = 0; i < recv_info->expected_size - ETH_HEADER_LEN; i++) {
+            TEST_ASSERT_EQUAL(*(data_p++), i & 0xFF);
+        }
+        int j = ETH_MAX_PAYLOAD_LEN;
+        for (int i = 0; i < recv_info->expected_size_2; i++) {
+            TEST_ASSERT_EQUAL(*(data_p++), j & 0xFF);
+            j--;
+        }
+        for (int i = 0; i < recv_info->expected_size_3; i++) {
+            TEST_ASSERT_EQUAL(*(data_p++), i & 0xFF);
+        }
+    } else {
+        TEST_FAIL();
+    }
+    xSemaphoreGive(recv_info->mutex);
+    return ESP_OK;
+}
+
+TEST_CASE("internal emac receive/transmit", "[esp_emac]")
+{
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
+    static StaticSemaphore_t recv_info_mutex_buffer;
+    recv_esp_emac_check_info_t recv_info;
+    recv_info.mutex = xSemaphoreCreateBinaryStatic(&recv_info_mutex_buffer);
+    TEST_ASSERT_NOT_NULL(recv_info.mutex);
+    recv_info.expected_size = 0;
+    recv_info.expected_size_2 = 0;
+    recv_info.expected_size_3 = 0;
+
+    // ---------------------------------------
+    // Loopback greatly simplifies the test !!
+    // ---------------------------------------
+    bool loopback_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
+
+    TEST_ESP_OK(esp_eth_update_input_path_info(eth_handle, eth_recv_esp_emac_check_cb, &recv_info));
+
+    // start the driver
+    TEST_ESP_OK(esp_eth_start(eth_handle));
+    // wait for connection start
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
+    // wait for connection establish
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    // create test frame
+    emac_frame_t *test_pkt = (emac_frame_t *)eth_test_alloc(ETH_MAX_PACKET_SIZE);
+    test_pkt->proto = ETHERTYPE_TX_STD;
+    memset(test_pkt->dest, 0xff, ETH_ADDR_LEN); // broadcast addr
+    uint8_t local_mac_addr[ETH_ADDR_LEN] = { 0 };
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, local_mac_addr));
+    memcpy(test_pkt->src, local_mac_addr, ETH_ADDR_LEN);
+    // fill with data
+    for (int i = 0; i < ETH_MAX_PAYLOAD_LEN; i++) {
+        test_pkt->data[i] = i & 0xFF;
+    }
+
+    uint16_t transmit_size;
+
+    ESP_LOGI(TAG, "Verify DMA descriptors are returned back to owner");
+    // find if Rx or Tx buffer number is bigger and work with bigger number
+    uint32_t config_eth_dma_max_buffer_num = MAX(CONFIG_ETH_DMA_RX_BUFFER_NUM, CONFIG_ETH_DMA_TX_BUFFER_NUM);
+    // start with short frames since EMAC Rx FIFO may be different of size for different chips => it may help with following fail isolation
+    for (int32_t i = 0; i < config_eth_dma_max_buffer_num*2; i++) {
+        transmit_size = MINIMUM_TEST_FRAME_SIZE;
+        ESP_LOGI(TAG, "transmit frame size: %" PRIu16 ", i = %" PRIi32, transmit_size, i);
+        recv_info.expected_size = transmit_size;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+    }
+
+    ESP_LOGI(TAG, "Verify that we are able to transmit/receive all frame sizes");
+    // iteration over different sizes may help with fail isolation
+    for (int i = 1; (MINIMUM_TEST_FRAME_SIZE *i) < ETH_MAX_PAYLOAD_LEN; i++) {
+        transmit_size = MINIMUM_TEST_FRAME_SIZE * i;
+        ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+        recv_info.expected_size = transmit_size;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+    }
+
+    ESP_LOGI(TAG, "Verify that DMA driver correctly processes frame from EMAC descriptors at boundary conditions");
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE + 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE - 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE + 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    ESP_LOGI(TAG, "-- Verify transmission using extended Tx fnc using one buffer--");
+    esp_eth_buf_desc_t tx_bufs[3] = {
+        { .buf = (uint8_t *)test_pkt },
+    };
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    eth_mac_time_t ts;
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, &ts, tx_bufs, 1));
+    printf("test %lu.%lu sec\n", ts.seconds, ts.nanoseconds); // TODO finish the test
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE + 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE - 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = 2 * CONFIG_ETH_DMA_BUFFER_SIZE + 1;
+    ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+    recv_info.expected_size = transmit_size;
+    tx_bufs[0].len = transmit_size;
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 1));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    ESP_LOGI(TAG, "-- Verify transmission using extended Tx func with multiple buffers --");
+    uint16_t transmit_size_2;
+    // allocated the second buffer
+    uint8_t *pkt_data_2 = (uint8_t *)eth_test_alloc(ETH_MAX_PAYLOAD_LEN);
+    tx_bufs[1].buf = pkt_data_2;
+    // fill with data (reverse order to differentiate the buffers)
+    int j = ETH_MAX_PAYLOAD_LEN;
+    for (int i = 0; i < ETH_MAX_PAYLOAD_LEN; i++) {
+        pkt_data_2[i] = j & 0xFF;
+        j--;
+    }
+    // change protocol number so the cb function is aware that frame was joint from two buffers
+    test_pkt->proto = ETHERTYPE_TX_MULTI_2;
+
+    ESP_LOGI(TAG, "Verify DMA descriptors are returned back to owner");
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE / 2;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    for (int32_t i = 0; i < config_eth_dma_max_buffer_num*2; i++) {
+        ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16 ", i = %" PRIi32, transmit_size + transmit_size_2, i);
+        TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
+        TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+    }
+
+    ESP_LOGI(TAG, "Verify backwards compatibility");
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    ESP_LOGI(TAG, "Verify boundary conditions");
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 1;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE + 1;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    ESP_LOGI(TAG, "transmit joint frame size: %" PRIu16, transmit_size + transmit_size_2);
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 2));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    uint16_t transmit_size_3 = 256;
+    // allocated the third buffer
+    uint8_t *pkt_data_3 = (uint8_t *)eth_test_alloc(256);
+    tx_bufs[2].buf = pkt_data_3;
+    // fill with data
+    for (int i = 0; i < 256; i++) {
+        pkt_data_3[i] = i & 0xFF;
+    }
+    // change protocol number so the cb function is aware that frame was joint from three buffers
+    test_pkt->proto = ETHERTYPE_TX_MULTI_3;
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    transmit_size_3 = 256;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    recv_info.expected_size_3 = transmit_size_3;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    tx_bufs[2].len = transmit_size_3;
+    ESP_LOGI(TAG, "transmit joint frame size (3 buffs): %" PRIu16, transmit_size + transmit_size_2 + transmit_size_3);
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 3));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 1;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    transmit_size_3 = 256;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    recv_info.expected_size_3 = transmit_size_3;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    tx_bufs[2].len = transmit_size_3;
+    ESP_LOGI(TAG, "transmit joint frame size (3 buffs): %" PRIu16, transmit_size + transmit_size_2 + transmit_size_3);
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 3));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE + 1;
+    transmit_size_2 = CONFIG_ETH_DMA_BUFFER_SIZE;
+    transmit_size_3 = 256;
+    recv_info.expected_size = transmit_size;
+    recv_info.expected_size_2 = transmit_size_2;
+    recv_info.expected_size_3 = transmit_size_3;
+    tx_bufs[0].len = transmit_size;
+    tx_bufs[1].len = transmit_size_2;
+    tx_bufs[2].len = transmit_size_3;
+    ESP_LOGI(TAG, "transmit joint frame size (3 buffs): %" PRIu16, transmit_size + transmit_size_2 + transmit_size_3);
+    TEST_ESP_OK(esp_eth_transmit_ctrl_bufs(eth_handle, NULL, tx_bufs, 3));
+    TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
+    /* wait for connection stop */
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+}
+
+#define TEST_FRAMES_NUM CONFIG_ETH_DMA_RX_BUFFER_NUM
+
+static uint8_t *s_recv_frames[TEST_FRAMES_NUM];
+static uint8_t s_recv_frames_cnt = 0;
+
+static esp_err_t eth_recv_esp_emac_err_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv, void *info)
+{
+    SemaphoreHandle_t mutex = (SemaphoreHandle_t)priv;
+    s_recv_frames[s_recv_frames_cnt++] = buffer;
+    if (s_recv_frames_cnt >= TEST_FRAMES_NUM)
+        xSemaphoreGive(mutex);
+    return ESP_OK;
+}
+
+TEST_CASE("internal emac erroneous frames", "[esp_emac]")
+{
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
+    static StaticSemaphore_t mutex_buffer;
+    SemaphoreHandle_t mutex = xSemaphoreCreateBinaryStatic(&mutex_buffer);
+    TEST_ASSERT_NOT_NULL(mutex);
+
+    // loopback greatly simplifies the test
+    bool loopback_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
+
+    TEST_ESP_OK(esp_eth_update_input_path_info(eth_handle, eth_recv_esp_emac_err_check_cb, mutex));
+
+    // start the driver
+    TEST_ESP_OK(esp_eth_start(eth_handle));
+    // wait for connection start
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
+    // wait for connection establish
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    // create test frame
+    emac_frame_t *test_pkt = (emac_frame_t *)eth_test_alloc(ETH_MAX_PACKET_SIZE);
+    test_pkt->proto = ETHERTYPE_TX_STD;
+    memset(test_pkt->dest, 0xff, ETH_ADDR_LEN); // broadcast addr
+    uint8_t local_mac_addr[ETH_ADDR_LEN] = { 0 };
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, local_mac_addr));
+    memcpy(test_pkt->src, local_mac_addr, ETH_ADDR_LEN);
+    // fill with data
+    int i;
+    for (i = 1; i < ETH_MAX_PAYLOAD_LEN; i++) {
+        test_pkt->data[i] = i & 0xFF;
+    }
+
+    size_t transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    uint8_t frame_id = 0;
+
+    ESP_LOGI(TAG, "Verify non-failure frame condition");
+    for (i = 1; i <= TEST_FRAMES_NUM; i++) {
+        test_pkt->data[0] = frame_id++;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        // if we have only 10 or less Rx buffers, they can be all used pretty fast => wait to be freed prior next Tx
+        if (CONFIG_ETH_DMA_RX_BUFFER_NUM <= 10 && !(i % (CONFIG_ETH_DMA_RX_BUFFER_NUM / 2))) {
+            ESP_LOGI(TAG, "wait prior Tx (frame num %i)", i);
+            vTaskDelay(10);
+        }
+    }
+    ESP_LOGI(TAG, "num of sent frames: %d", TEST_FRAMES_NUM);
+    TEST_ASSERT(xSemaphoreTake(mutex, pdMS_TO_TICKS(500)));
+    ESP_LOGI(TAG, "num of recv frames: %d", s_recv_frames_cnt);
+
+    for (i = 0; i < s_recv_frames_cnt; i++) {
+        emac_frame_t *recv_frame = (emac_frame_t *)s_recv_frames[i];
+        ESP_LOGI(TAG, "recv frame id %" PRIu8, recv_frame->data[0]);
+        free(recv_frame); // free buffer allocated by emac driver
+    }
+    TEST_ASSERT_EQUAL_UINT8(TEST_FRAMES_NUM, s_recv_frames_cnt);
+    s_recv_frames_cnt = 0;
+
+    printf("\n");
+    ESP_LOGI(TAG, "Verify failure condition when every second frame has invalid CRC");
+    uint32_t emac_tx_dbg_flag = EMAC_HAL_TDES0_CRC_APPEND_DISABLE;
+    for (i = 1; i <= TEST_FRAMES_NUM; i++) {
+        test_pkt->data[0] = frame_id++;
+        // make every 2nd frame invalid
+        if (!(i % 2)) {
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS, &emac_tx_dbg_flag));
+        }
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        if (!(i % 2)) {
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_MAC_ESP_CMD_CLEAR_TDES0_CFG_BITS, &emac_tx_dbg_flag));
+        }
+    }
+    ESP_LOGI(TAG, "num of sent frames: %d (every 2nd invalid)", TEST_FRAMES_NUM);
+    TEST_ASSERT_FALSE(xSemaphoreTake(mutex, pdMS_TO_TICKS(500)));
+    ESP_LOGI(TAG, "num of recv frames: %d", s_recv_frames_cnt);
+
+    for (i = 0; i < s_recv_frames_cnt; i++) {
+        emac_frame_t *recv_frame = (emac_frame_t *)s_recv_frames[i];
+        ESP_LOGI(TAG, "recv frame id %" PRIu8, recv_frame->data[0]);
+        free(recv_frame); // free buffer allocated by emac driver
+    }
+    TEST_ASSERT_EQUAL_UINT8(TEST_FRAMES_NUM / 2, s_recv_frames_cnt);
+    s_recv_frames_cnt = 0;
+
+    ESP_LOGI(TAG, "Verify full Rx DMA failure condition");
+    // suspend ETH Rx task so the DMA is filled
+    vTaskSuspend(xTaskGetHandle("emac_rx"));
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 4; // -4 bytes to the frame fit into one descriptor even with CRC
+    // fill the descriptors, keep one free
+    for (i = 1; i <= CONFIG_ETH_DMA_RX_BUFFER_NUM - 1; i++) {
+        test_pkt->data[0] = frame_id++;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        vTaskDelay(1); // to prevent "insufficient TX buffer size" error
+    }
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE; // now, we will need 2 descriptors to store the frame (with CRC) but only one is free
+    test_pkt->data[0] = frame_id++;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    vTaskDelay(50);
+    vTaskResume(xTaskGetHandle("emac_rx"));
+
+    ESP_LOGI(TAG, "num of sent frames: %d", i);
+    TEST_ASSERT_FALSE(xSemaphoreTake(mutex, pdMS_TO_TICKS(500)));
+    ESP_LOGI(TAG, "num of recv frames: %d", s_recv_frames_cnt);
+
+    for (i = 0; i < s_recv_frames_cnt; i++) {
+        emac_frame_t *recv_frame = (emac_frame_t *)s_recv_frames[i];
+        ESP_LOGI(TAG, "recv frame id %" PRIu8, recv_frame->data[0]);
+        free(recv_frame); // free buffer allocated by emac driver
+    }
+    TEST_ASSERT_EQUAL_INT(CONFIG_ETH_DMA_RX_BUFFER_NUM - 1, s_recv_frames_cnt); // one frame is missing due to "Descriptor Error"
+    s_recv_frames_cnt = 0;
+
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
+    // wait for connection stop
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+}
+
+TEST_CASE("internal emac address filter", "[esp_emac]")
+{
+    // get handles from common module initialized by setUp()
+    esp_eth_handle_t eth_handle = eth_test_get_eth_handle();
+    EventGroupHandle_t eth_event_group = eth_test_get_default_event_group();
+
+    // ---------------------------------------
+    // Loopback greatly simplifies the test !!
+    // ---------------------------------------
+    bool loopback_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
+
+    // start Ethernet driver
+    TEST_ESP_OK(esp_eth_start(eth_handle));
+    // wait for connection start
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
+    // wait for connection establish
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    emac_hal_context_t emac_hal;
+    emac_hal_init(&emac_hal);
+
+    // Test destination address filter functions
+    uint8_t test_mac_addr1[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+    uint8_t test_mac_addr2[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16};
+    uint8_t test_mac_addr3[] = {0x21, 0x22, 0x23, 0x24, 0x25, 0x26};
+    uint8_t mac_got[ETH_ADDR_LEN];
+
+    // Test adding filter with specific address number
+    TEST_ESP_OK(emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, 1));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 1));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr1, mac_got, ETH_ADDR_LEN);
+
+    // Test auto adding filter
+    TEST_ESP_OK(emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr2));
+    TEST_ESP_OK(emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr3));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 3));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr3, mac_got, ETH_ADDR_LEN);
+
+    // Test removing filter with specific address number
+    TEST_ESP_OK(emac_hal_rm_addr_da_filter(&emac_hal, test_mac_addr1, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, 1));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 3));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr3, mac_got, ETH_ADDR_LEN);
+
+    // Test auto removing filter
+    TEST_ESP_OK(emac_hal_rm_addr_da_filter_auto(&emac_hal, test_mac_addr3));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, 3));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_rm_addr_da_filter_auto(&emac_hal, test_mac_addr2));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, 2));
+
+    // Test clear all filters
+    TEST_ESP_OK(emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, 1));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, 1));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr1, mac_got, ETH_ADDR_LEN);
+    TEST_ESP_OK(emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr2, EMAC_LL_MAX_MAC_ADDR_NUM));
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, EMAC_LL_MAX_MAC_ADDR_NUM));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr2, mac_got, ETH_ADDR_LEN);
+    emac_hal_clear_addr_da_filters(&emac_hal);
+    for(uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, emac_hal_get_addr_da_filter(&emac_hal, mac_got, i));
+    }
+
+    // Test auto adding filter with all addresses
+    uint8_t test_mac_addr[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x00};
+    for(uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        test_mac_addr[5]++;
+        TEST_ESP_OK(emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr));
+    }
+    TEST_ASSERT_EQUAL(ESP_FAIL, emac_hal_add_addr_da_filter_auto(&emac_hal, test_mac_addr));
+    test_mac_addr[5] = 0x00;
+    for(uint8_t i = 1; i <= EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        test_mac_addr[5]++;
+        TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, mac_got, i));
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(test_mac_addr, mac_got, ETH_ADDR_LEN);
+    }
+
+    // Test invalid arguments
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_add_addr_da_filter(&emac_hal, NULL, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_add_addr_da_filter(&emac_hal, test_mac_addr1, EMAC_LL_MAX_MAC_ADDR_NUM + 1));
+
+    TEST_ESP_OK(emac_hal_get_addr_da_filter(&emac_hal, NULL, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_get_addr_da_filter(&emac_hal, test_mac_addr1, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_get_addr_da_filter(&emac_hal, test_mac_addr1, EMAC_LL_MAX_MAC_ADDR_NUM + 1));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter(&emac_hal, NULL, 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter(&emac_hal, test_mac_addr1, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter(&emac_hal, test_mac_addr1, EMAC_LL_MAX_MAC_ADDR_NUM + 1));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, emac_hal_rm_addr_da_filter_auto(&emac_hal, NULL));
+
+    // Check EMAC_LL_MAX_MAC_ADDR_NUM is correctly defined (e.i. max MAC address was really limited to this value during coreConsultant phase)
+    emac_ll_add_addr_filter(emac_hal.mac_regs, EMAC_LL_MAX_MAC_ADDR_NUM + 1, test_mac_addr1, 0, false);
+    TEST_ASSERT_FALSE(emac_ll_get_addr_filter(emac_hal.mac_regs, EMAC_LL_MAX_MAC_ADDR_NUM + 1, mac_got, NULL, NULL));
+
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
+    // wait for connection stop
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+}
+
+TEST_CASE("internal emac ref rmii clk out", "[esp_emac_clk_out]")
+{
+    // Ethernet driver is initialized and installed in the setUp() function
+    // This is a simple test and it only verifies the REF RMII output CLK is configured and started, and the internal
+    // EMAC is clocked by it. It does not verify the whole system functionality. As such, it can be executed on the same
+    // test boards which are configured to input REF RMII CLK by default with only minor HW modification.
+}
+
+#if SOC_EMAC_REF_CLK_FROM_MPLL
+// Verifies that EMAC can derive 50 MHz RMII clock when MPLL is already in use by another
+// peripheral (e.g. PSRAM). The MPLL frequency is pre-set to typical PSRAM values and EMAC
+// must find an integer divider that produces 50 MHz within the 50 ppm tolerance.
+TEST_CASE("internal emac MPLL shared with PSRAM", "[esp_emac_clk_out][skip_setup_teardown]")
+{
+    uint32_t real_freq = 0;
+    esp_eth_mac_t *mac;
+
+    // Init common MAC and PHY configs to default
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+
+    // Init vendor specific MAC config to default
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+
+    esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+    esp32_emac_config.clock_config.rmii.clock_gpio = 23;
+
+    esp32_emac_config.clock_config_out_in.rmii.clock_mode = EMAC_CLK_EXT_IN;
+    esp32_emac_config.clock_config_out_in.rmii.clock_gpio = 32;
+
+    // PSRAM default speed: MPLL at 400 MHz — EMAC divider 8 gives exactly 50 MHz
+    ESP_LOGI(TAG, "Verify MPLL at 400 MHz (simulating PSRAM default)");
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, true));
+    TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_MPLL, 400 * 1000000, &real_freq));
+    ESP_LOGI(TAG, "MPLL set to %" PRIu32 " Hz", real_freq);
+
+    mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+    TEST_ASSERT_NOT_NULL(mac);
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, false));
+
+    // PSRAM 250M speed: MPLL at 500 MHz — EMAC divider 10 gives exactly 50 MHz
+    ESP_LOGI(TAG, "Verify MPLL at 500 MHz (simulating PSRAM @ 250M speed)");
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, true));
+    TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_MPLL, 500 * 1000000, &real_freq));
+    ESP_LOGI(TAG, "MPLL set to %" PRIu32 " Hz", real_freq);
+
+    mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+    TEST_ASSERT_NOT_NULL(mac);
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, false));
+
+    // PSRAM 80M speed: MPLL at 320 MHz — no integer divider can produce 50 MHz within tolerance,
+    // see AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ for reference
+    // Best candidate: 320/6 = 53.33 MHz (error ~3.33 MHz >> 2500 Hz tolerance)
+    ESP_LOGI(TAG, "Verify MPLL at 320 MHz (simulating PSRAM @ 80M speed) — expected to fail");
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, true));
+    TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_MPLL, 320 * 1000000, &real_freq));
+    ESP_LOGI(TAG, "MPLL set to %" PRIu32 " Hz", real_freq);
+
+    mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+    TEST_ASSERT_NULL(mac);
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, false));
+}
+#endif // SOC_EMAC_REF_CLK_FROM_MPLL
+
+#if SOC_EMAC_REF_CLK_FROM_APLL
+// Verifies that EMAC can use the APLL when it is already occupied by another peripheral
+// (e.g. I2S). Unlike MPLL, the APLL has no configurable divider — its output feeds the RMII
+// clock directly. So EMAC can only work if the APLL is already at exactly 50 MHz (+/- 50 ppm).
+TEST_CASE("internal emac APLL shared with I2S", "[esp_emac_clk_out][skip_setup_teardown]")
+{
+    uint32_t real_freq = 0;
+    esp_eth_mac_t *mac;
+
+    // Init common MAC and PHY configs to default
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+
+    // Init vendor specific MAC config to default
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+
+    esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+    esp32_emac_config.clock_config.rmii.clock_gpio = 0;
+
+    // Another peripheral has APLL at 50 MHz — exact RMII clock match, EMAC should succeed
+    ESP_LOGI(TAG, "Verify APLL at 50 MHz (exact RMII clock match)");
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true));
+    TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, 50 * 1000000, &real_freq));
+    ESP_LOGI(TAG, "APLL set to %" PRIu32 " Hz", real_freq);
+
+    mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+    TEST_ASSERT_NOT_NULL(mac);
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false));
+
+    // I2S typical frequency: APLL at ~12.288 MHz (48 kHz * 256) — far from 50 MHz, EMAC should fail
+    ESP_LOGI(TAG, "Verify APLL at ~12.288 MHz (simulating I2S @ 48 kHz) — expected to fail");
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true));
+    TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, 12288000, &real_freq));
+    ESP_LOGI(TAG, "APLL set to %" PRIu32 " Hz", real_freq);
+
+    mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+    TEST_ASSERT_NULL(mac);
+    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false));
+}
+#endif // SOC_EMAC_REF_CLK_FROM_APLL
+
+// This test skips Ethernet initialization in the setUp and tearDown since different EMAC configurations are tested.
+// As such, allocated resources may not be freed in the tearDown when the test fails. Therefore the tets is run as
+// the last test in the suite to not affect other tests.
+TEST_CASE("internal emac interrupt priority", "[esp_emac][skip_setup_teardown]")
+{
+    EventBits_t bits = 0;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    esp_netif_init();
+    TEST_ESP_OK(esp_event_loop_create_default());
+    for (int i = -1; i <= 4; i++) {
+        // create TCP/IP netif
+        esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
+        esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
+        // Init common MAC and PHY configs to default
+        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+        eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+        esp32_emac_config.intr_priority = i;
+        ESP_LOGI(TAG, "set interrupt priority %i: ", i);
+        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+        if (i >= 4) {
+            TEST_ASSERT_NULL(mac);
+        } else {
+            TEST_ASSERT_NOT_NULL(mac);
+            esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);
+            TEST_ASSERT_NOT_NULL(phy);
+            esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+            esp_eth_handle_t eth_handle = NULL;
+            // install Ethernet driver
+            TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+            // combine driver with netif
+            esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
+            TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+            // register user defined event handlers
+            TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_test_default_event_handler, eth_event_group));
+            TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &eth_test_got_ip_event_handler, eth_event_group));
+
+            // start Ethernet driver
+            TEST_ESP_OK(esp_eth_start(eth_handle));
+            /* wait for IP lease */
+            bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
+            TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
+            // stop Ethernet driveresp_event_handler_unregister
+            TEST_ESP_OK(esp_eth_stop(eth_handle));
+            /* wait for connection stop */
+            bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+            TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+
+            TEST_ESP_OK(esp_eth_del_netif_glue(glue));
+            /* driver should be uninstalled within 2 seconds */
+            TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+            TEST_ESP_OK(phy->del(phy));
+            TEST_ESP_OK(mac->del(mac));
+            TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, eth_test_got_ip_event_handler));
+            TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_test_default_event_handler));
+        }
+        esp_netif_destroy(eth_netif);
+    }
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    vEventGroupDelete(eth_event_group);
+}

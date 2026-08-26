@@ -1,0 +1,144 @@
+menu "Bluetooth"
+
+    config BT_ENABLED
+        bool "Bluetooth"
+        depends on !APP_NO_BLOBS
+        help
+            Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
+
+    choice BT_HOST
+        prompt "Host"
+        depends on BT_ENABLED
+        default BT_BLUEDROID_ENABLED
+        help
+            This helps to choose Bluetooth host stack
+
+        config BT_BLUEDROID_ENABLED
+            bool "Bluedroid - Dual-mode"
+            help
+                This option is recommended for classic Bluetooth or for dual-mode
+                usecases
+
+        config BT_NIMBLE_ENABLED
+            bool "NimBLE - BLE only"
+            help
+                This option is recommended for BLE only usecases to save on memory
+
+        config BT_CONTROLLER_ONLY
+            depends on SOC_BT_SUPPORTED
+            bool "Disabled"
+            help
+                This option is recommended when you want to communicate directly with the
+                controller (without any host) or when you are using any other host stack
+                not supported by Espressif (not mentioned here).
+
+    endchoice
+
+    choice BT_CONTROLLER
+        prompt "Controller"
+        depends on BT_ENABLED
+        default BT_CONTROLLER_ENABLED
+        help
+            This helps to choose Bluetooth controller stack
+
+        config BT_CONTROLLER_ENABLED
+            depends on SOC_BT_SUPPORTED
+            bool "Enabled"
+            help
+                This option is recommended for Bluetooth controller usecases
+
+        config BT_CONTROLLER_DISABLED
+            bool "Disabled"
+            help
+                This option is recommended for Bluetooth Host only usecases
+
+    endchoice
+
+    menu "Common Options"
+        source "$IDF_PATH/components/bt/common/Kconfig.in"
+    endmenu
+
+    menu "Bluedroid Options"
+        depends on BT_BLUEDROID_ENABLED
+        source "$IDF_PATH/components/bt/host/bluedroid/Kconfig.in"
+    endmenu
+
+    menu "NimBLE Options"
+        depends on BT_NIMBLE_ENABLED
+        source "$IDF_PATH/components/bt/host/nimble/Kconfig.in"
+    endmenu
+
+    menu "Controller Options"
+        depends on BT_CONTROLLER_ENABLED
+        osource "$IDF_PATH/components/bt/controller/$IDF_TARGET/Kconfig.in"
+    endmenu
+
+    config BT_RELEASE_IRAM
+        depends on BT_ENABLED && BT_LE_RELEASE_IRAM_SUPPORTED
+        bool "Release Bluetooth text (READ DOCS FIRST)"
+        default n
+        help
+            This option release Bluetooth text section and merge Bluetooth data, bss & text into
+            a large free heap region when esp_bt_mem_release is called, total saving ~21kB or more of IRAM.
+            ESP32-C2 only 3 configurable PMP entries available, rest of them are hard-coded.
+            We cannot split the memory into 3 different regions (IRAM, BLE-IRAM, DRAM).
+            So this option will disable the memory protection scheme (ESP_SYSTEM_MEMPROT)
+
+    config BT_HCI_LOG_DEBUG_EN
+        depends on BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED
+        bool "Enable Bluetooth HCI debug mode"
+        default n
+        help
+            This option is used to enable bluetooth debug mode, which saves the hci layer data stream.
+
+    config BT_HCI_LOG_DATA_BUFFER_SIZE
+        depends on BT_HCI_LOG_DEBUG_EN
+        int "Size of the cache used for HCI data in Bluetooth HCI debug mode (N*1024 bytes)"
+        range 1 100
+        default 5
+        help
+            This option is to configure the buffer size of the hci data steam cache in hci debug mode.
+            This is a ring buffer, the new data will overwrite the oldest data if the buffer is full.
+
+    config BT_HCI_LOG_ADV_BUFFER_SIZE
+        depends on BT_HCI_LOG_DEBUG_EN
+        int "Size of the cache used for adv report in Bluetooth HCI debug mode (N*1024 bytes)"
+        range 1 100
+        default 8
+        help
+            This option is to configure the buffer size of the hci adv report cache in hci debug mode.
+            This is a ring buffer, the new data will overwrite the oldest data if the buffer is full.
+
+    menu "BLE ISO Options"
+        depends on BT_ENABLED && SOC_BLE_ISO_SUPPORTED
+        source "$IDF_PATH/components/bt/esp_ble_iso/Kconfig.in"
+    endmenu
+
+    menu "BLE Audio Options"
+        depends on BT_ENABLED && SOC_BLE_AUDIO_SUPPORTED
+        source "$IDF_PATH/components/bt/esp_ble_audio/Kconfig.in"
+    endmenu
+
+    menu "BLE Profiles"
+        depends on BT_ENABLED
+        source "$IDF_PATH/components/bt/ble_profiles/Kconfig.in"
+    endmenu
+
+    config BT_HCI_LOG_INSIGHTS_ENABLE
+        depends on BT_HCI_LOG_DEBUG_EN
+        bool "Enable Insights for HCI LOGS BT Stack"
+        help
+            Enable this to allow the BT stack to send diagnostic events.
+
+endmenu
+
+menuconfig BLE_MESH
+    bool "ESP BLE Mesh Support"
+    depends on BT_ENABLED
+    depends on SOC_BLE_MESH_SUPPORTED
+    help
+        This option enables ESP BLE Mesh support. The specific features that are
+        available may depend on other features that have been enabled in the
+        stack, such as Bluetooth Support, Bluedroid Support & GATT support.
+
+source "$IDF_PATH/components/bt/esp_ble_mesh/Kconfig.in"

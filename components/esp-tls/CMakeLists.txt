@@ -1,0 +1,40 @@
+set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c esp_tls_error_capture.c esp_tls_platform_port.c)
+if(CONFIG_ESP_TLS_USING_MBEDTLS)
+    list(APPEND srcs
+        "esp_tls_mbedtls.c")
+endif()
+
+if(CONFIG_ESP_TLS_CUSTOM_STACK)
+    list(APPEND srcs
+        "esp_tls_custom_stack.c")
+endif()
+
+set(priv_req http_parser esp_timer)
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    list(APPEND priv_req lwip)
+else()
+    # For linux target on Build system v2, add lwip to PRIV_REQUIRES when CONFIG_LWIP_ENABLE is set.
+    if(CONFIG_LWIP_ENABLE AND IDF_BUILD_V2)
+        list(APPEND priv_req lwip)
+    endif()
+endif()
+
+idf_component_register(SRCS "${srcs}"
+                    INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} esp-tls-crypto
+                    PRIV_INCLUDE_DIRS "private_include"
+                    # mbedtls is public requirements because esp_tls.h
+                    # includes mbedtls header files.
+                    # esp_security is public because esp_tls.h includes esp_key_config.h
+                    REQUIRES mbedtls esp_security
+                    PRIV_REQUIRES ${priv_req})
+
+idf_define_esp_err_codes(HEADERS esp_tls_errors.h)
+
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+idf_component_get_property(lwip lwip COMPONENT_LIB)
+else()
+    # For linux target, define ESP_TLS_WITH_LWIP if LWIP is enabled in the build
+    if(CONFIG_LWIP_ENABLE)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_TLS_WITH_LWIP=1)
+    endif()
+endif()

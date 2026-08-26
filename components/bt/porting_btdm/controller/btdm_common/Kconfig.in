@@ -1,0 +1,17 @@
+choice BTDM_CTRL_MODE
+    prompt "Bluetooth Controller Mode (BLE/BREDR/DualMode)"
+    help
+        Specify the bluetooth controller mode (BR/EDR, BLE or dual mode).
+
+    config BTDM_CTRL_MODE_BLE_ONLY
+        bool "BLE Only"
+        depends on SOC_BLE_SUPPORTED
+
+    config BTDM_CTRL_MODE_BR_EDR_ONLY
+        bool "BR/EDR Only"
+        depends on SOC_BT_CLASSIC_SUPPORTED
+
+    config BTDM_CTRL_MODE_BTDM
+        bool "Bluetooth Dual Mode"
+        depends on SOC_BLE_SUPPORTED && SOC_BT_CLASSIC_SUPPORTED
+endchoice

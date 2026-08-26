@@ -1,0 +1,29 @@
+# pre_check stage
+clang_tidy_check:
+  extends:
+    - .pre_check_template
+    - .rules:patterns:clang_tidy
+  artifacts:
+    paths:
+      - clang_tidy_reports/
+    expire_in: 1 week
+    when: always
+  variables:
+    IDF_TOOLCHAIN: clang
+  script:
+    - run_cmd idf_clang_tidy $(cat tools/ci/clang_tidy_dirs.txt | xargs)
+      --output-path clang_tidy_reports
+      --limit-file tools/ci/static-analysis-rules.yml
+      --xtensa-include-dir
+
+gcc_static_analyzer:
+  extends:
+    - .pre_check_template
+    - .rules:patterns:clang_tidy
+  variables:
+    IDF_CCACHE_ENABLE: "1"
+    ANALYZING_APP: "examples/get-started/hello_world"
+  script:
+    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
+    - sed -i 's/.*MINIMAL_BUILD.*//g' ${ANALYZING_APP}/CMakeLists.txt
+    - idf-build-apps build -p ${ANALYZING_APP}

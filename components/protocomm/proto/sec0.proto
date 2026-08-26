@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "constants.proto";
+
+/* Data structure of Session command/request packet */
+message S0SessionCmd {
+
+}
+
+/* Data structure of Session response packet */
+message S0SessionResp {
+    Status status = 1;
+}
+
+/* A message must be of type Cmd or Resp */
+enum Sec0MsgType {
+    S0_Session_Command = 0;
+    S0_Session_Response = 1;
+}
+
+/* Payload structure of session data */
+message Sec0Payload {
+    Sec0MsgType msg = 1;        /*!< Type of message */
+    oneof payload {
+        S0SessionCmd sc = 20;   /*!< Payload data interpreted as Cmd */
+        S0SessionResp sr = 21;  /*!< Payload data interpreted as Resp */
+    }
+}

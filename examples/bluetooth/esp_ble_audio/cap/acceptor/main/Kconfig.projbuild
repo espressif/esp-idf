@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+# SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: CAP Acceptor"
+
+    config EXAMPLE_UNICAST
+        bool "Unicast"
+        default y
+        help
+            If set, advertise as a Unicast acceptor (ASCS) for unicast audio.
+
+    config EXAMPLE_BROADCAST
+        bool "Broadcast"
+        default y if !EXAMPLE_UNICAST
+        select BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
+        help
+            If set, advertise as a Broadcast acceptor (BASS Scan Delegator)
+            for syncable broadcast audio. Can coexist with EXAMPLE_UNICAST
+            for a dual-role CAP Acceptor (BAP spec C.2 allows both).
+
+    config EXAMPLE_SCAN_SELF
+        bool "Scan for Broadcast Sources without Broadcast Assistant"
+        # !EXAMPLE_UNICAST: dual-role + self-scan coexistence not supported yet.
+        depends on EXAMPLE_BROADCAST && !EXAMPLE_UNICAST
+        help
+            If set, the sample will start scanning for Broadcast Sources
+            without waiting for a Broadcast Assistant to connect.
+
+endmenu

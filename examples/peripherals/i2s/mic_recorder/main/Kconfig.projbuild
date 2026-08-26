@@ -1,0 +1,106 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_MIC_TYPE
+        prompt "Microphone type"
+        default EXAMPLE_MIC_TYPE_DMIC if SOC_I2S_SUPPORTS_PDM2PCM
+        default EXAMPLE_MIC_TYPE_AMIC
+        help
+            Select the microphone type connected to the board. The example configures the
+            I2S peripheral accordingly:
+
+            - Digital microphone (PDM): the I2S PDM RX mode samples two PDM MEMS
+              microphones and performs the PDM-to-PCM conversion in hardware.
+              Only available on chips that support hardware PDM-to-PCM conversion.
+            - Analog microphone (ES8389 codec): the ES8389 ADC samples the analog
+              microphone signal, then I2S STD mode receives the codec's PCM stream.
+
+        config EXAMPLE_MIC_TYPE_DMIC
+            bool "Digital microphone (PDM)"
+            depends on SOC_I2S_SUPPORTS_PDM2PCM
+
+        config EXAMPLE_MIC_TYPE_AMIC
+            bool "Analog microphone (ES8389 codec)"
+            # defined by the esp_codec_dev component
+            select CODEC_ES8389_SUPPORT
+    endchoice
+
+    config EXAMPLE_STARTUP_DISCARD_MS
+        int "Startup data to discard (ms)"
+        default 20
+        range 0 500
+        help
+            Number of milliseconds of PCM to read and discard after the
+            microphone path is running, before the recording is stored.
+            Use this to skip the microphone or codec startup transient.
+            The default is 20 ms. Set to 0 to keep every sample.
+            Refer to the microphone datasheet for the startup delay
+            (also called turn-on time).
+
+    menu "PDM MIC Configuration"
+        depends on EXAMPLE_MIC_TYPE_DMIC
+
+        config EXAMPLE_PDM_CLK_GPIO
+            int "PDM Clock GPIO"
+            default 4
+            help
+                Set the GPIO number used for the PDM clock line driven by I2S.
+
+        config EXAMPLE_PDM_DATA_GPIO
+            int "PDM Data GPIO"
+            default 5
+            help
+                Set the GPIO number used for receiving PDM data from the microphone.
+                The left and right PDM microphones share this data pin:
+                connect the left microphone's select pin to GND
+                and the right microphone's select pin to VDD.
+    endmenu
+
+    menu "ES8389 Codec Configuration (Analog Microphone)"
+        depends on EXAMPLE_MIC_TYPE_AMIC
+
+        config EXAMPLE_I2C_SDA_IO
+            int "I2C SDA GPIO"
+            default 0
+            help
+                Set the GPIO number used for the I2C SDA signal towards the ES8389 codec.
+
+        config EXAMPLE_I2C_SCL_IO
+            int "I2C SCL GPIO"
+            default 1
+            help
+                Set the GPIO number used for the I2C SCL signal towards the ES8389 codec.
+
+        config EXAMPLE_I2S_MCLK_IO
+            int "I2S MCLK GPIO (set -1 if the codec does not use an external MCLK)"
+            default 2
+            help
+                Set the GPIO number used for the I2S MCLK signal. When set to -1, no MCLK
+                is generated and the ES8389 derives its clock from BCLK.
+
+        config EXAMPLE_I2S_BCLK_IO
+            int "I2S BCLK GPIO"
+            default 3
+            help
+                Set the GPIO number used for the I2S BCLK signal towards the ES8389 codec.
+
+        config EXAMPLE_I2S_WS_IO
+            int "I2S WS/LRCK GPIO"
+            default 4
+            help
+                Set the GPIO number used for the I2S WS (LRCK) signal towards the ES8389 codec.
+
+        config EXAMPLE_I2S_DIN_IO
+            int "I2S DIN GPIO"
+            default 6
+            help
+                Set the GPIO number used for receiving the ADC data from the ES8389 codec.
+
+        config EXAMPLE_MIC_GAIN
+            int "Mic gain (dB)"
+            default 27
+            range 0 36
+            help
+                Set the ES8389 analog microphone input gain in dB.
+    endmenu
+
+endmenu

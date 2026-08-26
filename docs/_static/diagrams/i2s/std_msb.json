@@ -1,0 +1,52 @@
+{
+    "head": {
+        "text": "Standard MSB Timing Diagram"
+    },
+    "signal": [
+        {
+            "node": "..C.....D",
+            "phase": 0.65
+        },
+        {
+            "node": "..A...B",
+            "phase": 0.65
+        },
+        {
+            "name": "BCLK",
+            "wave": "p..pd.pd.pd.pd"
+        },
+        {
+            "name": "WS",
+            "wave": "xx0.d0.d1.u1u10",
+            "node": ".H.....I......J",
+            "phase": 0.65
+        },
+        {
+            "name": "DIN / DOUT",
+            "wave": "xx2x|2x|2x|2x|2",
+            "data": [
+                "MSB",
+                "LSB",
+                "MSB",
+                "LSB",
+                "MSB"
+            ],
+            "node": "......K",
+            "phase": 0.65
+        },
+        {
+            "node": "..E.....F.....G",
+            "phase": 0.65
+        }
+    ],
+    "edge": [
+        "C<->D slot_bit_width",
+        "A<->B data_bit_width",
+        "E<->F Left Slot",
+        "F<->G Right Slot",
+        "E-C",
+        "K-B",
+        "F-D",
+        "J-G"
+    ]
+}

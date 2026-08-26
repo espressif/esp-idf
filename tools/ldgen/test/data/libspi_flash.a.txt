@@ -1,0 +1,1242 @@
+In archive ./build/esp-idf/spi_flash/libspi_flash.a:
+
+flash_brownout_hook.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_needs_reset_check 00000020  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_set_erasing_flag 0000000a  00000000  00000000  00000054  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.spi_flash_brownout_need_reset 00000014  00000000  00000000  0000005e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .sbss.flash_erasing 00000001  00000000  00000000  00000072  2**0
+                  ALLOC
+  7 .sbss.flash_brownout_needs_reset 00000001  00000000  00000000  00000072  2**0
+                  ALLOC
+  8 .debug_info   000001eb  00000000  00000000  00000072  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  9 .debug_abbrev 0000012a  00000000  00000000  0000025d  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 10 .debug_aranges 00000030  00000000  00000000  00000387  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 11 .debug_ranges 00000020  00000000  00000000  000003b7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_line   0000024b  00000000  00000000  000003d7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 13 .debug_str    00000406  00000000  00000000  00000622  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 14 .comment      00000030  00000000  00000000  00000a28  2**0
+                  CONTENTS, READONLY
+ 15 .note.GNU-stack 00000000  00000000  00000000  00000a58  2**0
+                  CONTENTS, READONLY
+ 16 .debug_frame  00000040  00000000  00000000  00000a58  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .riscv.attributes 00000065  00000000  00000000  00000a98  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_drivers.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.spi_flash_chip_list_check.str1.4 000000c5  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .text.spi_flash_chip_list_check 00000144  00000000  00000000  000000fa  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .sdata.esp_flash_registered_chips 00000004  00000000  00000000  00000240  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+  6 .data.default_registered_chips 00000010  00000000  00000000  00000244  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+  7 .debug_info   00000f1b  00000000  00000000  00000254  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_abbrev 00000258  00000000  00000000  0000116f  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_loc    00000113  00000000  00000000  000013c7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_aranges 00000020  00000000  00000000  000014da  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 11 .debug_ranges 00000010  00000000  00000000  000014fa  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_line   00000784  00000000  00000000  0000150a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 13 .debug_str    00000b95  00000000  00000000  00001c8e  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 14 .comment      00000030  00000000  00000000  00002823  2**0
+                  CONTENTS, READONLY
+ 15 .note.GNU-stack 00000000  00000000  00000000  00002853  2**0
+                  CONTENTS, READONLY
+ 16 .debug_frame  00000038  00000000  00000000  00002854  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .riscv.attributes 00000065  00000000  00000000  0000288c  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_generic.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_generic_detect_size 00000032  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_chip_generic_probe 00000004  00000000  00000000  00000066  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .text.spi_flash_chip_generic_reset 00000060  00000000  00000000  0000006a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.spi_flash_chip_generic_erase_chip 00000088  00000000  00000000  000000ca  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.spi_flash_chip_generic_set_write_protect 0000004c  00000000  00000000  00000152  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.spi_flash_chip_generic_read_reg 0000000a  00000000  00000000  0000019e  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  9 .text.spi_flash_chip_generic_wait_idle 000000a4  00000000  00000000  000001a8  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spi_flash_chip_generic_config_host_io_mode 0000013e  00000000  00000000  0000024c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.spi_flash_chip_generic_get_caps 00000086  00000000  00000000  0000038a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.spi_flash_chip_generic_suspend_cmd_conf 00000024  00000000  00000000  00000410  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 13 .rodata.spi_flash_chip_generic_read.str1.4 00000039  00000000  00000000  00000434  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 14 .text.spi_flash_chip_generic_read 000000ec  00000000  00000000  0000046e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.spi_flash_chip_generic_write 000000b6  00000000  00000000  0000055a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.spi_flash_chip_generic_yield 0000004a  00000000  00000000  00000610  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .rodata.spi_flash_chip_generic_read_unique_id.str1.4 00000048  00000000  00000000  0000065c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 18 .text.spi_flash_chip_generic_read_unique_id 000000b0  00000000  00000000  000006a4  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.spi_flash_chip_generic_get_write_protect 0000003a  00000000  00000000  00000754  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.spi_flash_chip_generic_write_encrypted 000000f4  00000000  00000000  0000078e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.spi_flash_common_read_qe_sr.constprop.0.isra.0 00000048  00000000  00000000  00000882  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.spi_flash_common_read_status_16b_rdsr_rdsr2 00000048  00000000  00000000  000008ca  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.spi_flash_common_write_qe_sr.isra.0 00000046  00000000  00000000  00000912  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.spi_flash_common_write_status_16b_wrsr 00000010  00000000  00000000  00000958  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.spi_flash_chip_generic_erase_block 000000cc  00000000  00000000  00000968  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.spi_flash_chip_generic_erase_sector 000000cc  00000000  00000000  00000a34  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .text.spi_flash_chip_generic_page_program 000000ba  00000000  00000000  00000b00  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .text.spi_flash_chip_generic_read_unique_id_none 00000006  00000000  00000000  00000bba  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 29 .text.spi_flash_common_read_status_8b_rdsr2 00000010  00000000  00000000  00000bc0  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .text.spi_flash_chip_generic_get_io_mode 00000024  00000000  00000000  00000bd0  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .text.spi_flash_common_read_status_8b_rdsr 0000000e  00000000  00000000  00000bf4  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text.spi_flash_common_write_status_8b_wrsr 00000010  00000000  00000000  00000c02  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .text.spi_flash_common_write_status_8b_wrsr2 00000012  00000000  00000000  00000c12  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .text.spi_flash_common_set_io_mode 000000a2  00000000  00000000  00000c24  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 35 .text.spi_flash_chip_generic_set_io_mode 0000001c  00000000  00000000  00000cc6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 36 .rodata.esp_flash_chip_generic 0000007c  00000000  00000000  00000ce4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 37 .srodata.chip_name 00000008  00000000  00000000  00000d60  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 38 .rodata.TAG   0000000d  00000000  00000000  00000d68  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 39 .dram1.5      00000014  00000000  00000000  00000d78  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 40 .dram1.4      00000018  00000000  00000000  00000d8c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 41 .dram1.3      00000004  00000000  00000000  00000da4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 42 .dram1.2      00000004  00000000  00000000  00000da8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 43 .dram1.1      00000006  00000000  00000000  00000dac  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 44 .dram1.0      00000006  00000000  00000000  00000db4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 45 .debug_info   00003096  00000000  00000000  00000dba  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 46 .debug_abbrev 00000616  00000000  00000000  00003e50  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 47 .debug_loc    00002153  00000000  00000000  00004466  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 48 .debug_aranges 00000110  00000000  00000000  000065b9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 49 .debug_ranges 000001f0  00000000  00000000  000066c9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 50 .debug_line   000024e8  00000000  00000000  000068b9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 51 .debug_str    0000240c  00000000  00000000  00008da1  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 52 .comment      00000030  00000000  00000000  0000b1ad  2**0
+                  CONTENTS, READONLY
+ 53 .note.GNU-stack 00000000  00000000  00000000  0000b1dd  2**0
+                  CONTENTS, READONLY
+ 54 .debug_frame  00000484  00000000  00000000  0000b1e0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 55 .riscv.attributes 00000065  00000000  00000000  0000b664  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_issi.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_issi_probe 00000018  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_chip_issi_get_caps 00000004  00000000  00000000  0000004c  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .text.spi_flash_chip_issi_set_io_mode 0000001c  00000000  00000000  00000050  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.spi_flash_chip_issi_get_io_mode 00000024  00000000  00000000  0000006c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .rodata.esp_flash_chip_issi 0000007c  00000000  00000000  00000090  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  8 .srodata.chip_name 00000005  00000000  00000000  0000010c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  9 .debug_info   0000103d  00000000  00000000  00000111  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_abbrev 00000260  00000000  00000000  0000114e  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 11 .debug_loc    00000124  00000000  00000000  000013ae  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_aranges 00000038  00000000  00000000  000014d2  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 13 .debug_ranges 00000028  00000000  00000000  0000150a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 14 .debug_line   0000043f  00000000  00000000  00001532  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 15 .debug_str    00000d47  00000000  00000000  00001971  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 16 .comment      00000030  00000000  00000000  000026b8  2**0
+                  CONTENTS, READONLY
+ 17 .note.GNU-stack 00000000  00000000  00000000  000026e8  2**0
+                  CONTENTS, READONLY
+ 18 .debug_frame  00000060  00000000  00000000  000026e8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 19 .riscv.attributes 00000065  00000000  00000000  00002748  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_mxic.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_mxic_probe 00000022  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_chip_mxic_detect_size 00000034  00000000  00000000  00000056  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.spi_flash_chip_mxic_get_caps 00000004  00000000  00000000  0000008a  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .rodata.esp_flash_chip_mxic 0000007c  00000000  00000000  00000090  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  7 .srodata.chip_name 00000005  00000000  00000000  0000010c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  8 .debug_info   0000137d  00000000  00000000  00000111  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  9 .debug_abbrev 00000229  00000000  00000000  0000148e  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 10 .debug_loc    00000165  00000000  00000000  000016b7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 11 .debug_aranges 00000030  00000000  00000000  0000181c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_ranges 00000020  00000000  00000000  0000184c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 13 .debug_line   0000053d  00000000  00000000  0000186c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 14 .debug_str    00001acb  00000000  00000000  00001da9  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 15 .comment      00000030  00000000  00000000  00003874  2**0
+                  CONTENTS, READONLY
+ 16 .note.GNU-stack 00000000  00000000  00000000  000038a4  2**0
+                  CONTENTS, READONLY
+ 17 .debug_frame  00000040  00000000  00000000  000038a4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 18 .riscv.attributes 00000065  00000000  00000000  000038e4  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_gd.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_gd_get_caps 00000014  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .text.spi_flash_chip_gd_detect_size 00000026  00000000  00000000  00000048  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.spi_flash_chip_gd_suspend_cmd_conf 00000024  00000000  00000000  0000006e  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .text.spi_flash_chip_gd_get_io_mode 00000024  00000000  00000000  00000092  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.spi_flash_chip_gd_probe 0000003c  00000000  00000000  000000b6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.spi_flash_chip_gd_set_io_mode 00000050  00000000  00000000  000000f2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .rodata.esp_flash_chip_gd 0000007c  00000000  00000000  00000144  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 10 .srodata.chip_name 00000003  00000000  00000000  000001c0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 11 .debug_info   000011c7  00000000  00000000  000001c3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_abbrev 00000333  00000000  00000000  0000138a  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 13 .debug_loc    00000300  00000000  00000000  000016bd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 14 .debug_aranges 00000048  00000000  00000000  000019bd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 15 .debug_ranges 00000068  00000000  00000000  00001a05  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 16 .debug_line   0000060a  00000000  00000000  00001a6d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .debug_str    00000ddc  00000000  00000000  00002077  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 18 .comment      00000030  00000000  00000000  00002e53  2**0
+                  CONTENTS, READONLY
+ 19 .note.GNU-stack 00000000  00000000  00000000  00002e83  2**0
+                  CONTENTS, READONLY
+ 20 .debug_frame  0000008c  00000000  00000000  00002e84  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 21 .riscv.attributes 00000065  00000000  00000000  00002f10  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_winbond.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_winbond_probe 00000012  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_chip_winbond_get_caps 00000014  00000000  00000000  00000046  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .text.spi_flash_chip_winbond_suspend_cmd_conf 00000024  00000000  00000000  0000005a  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .rodata.spi_flash_chip_winbond_read.str1.4 00000039  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .text.spi_flash_chip_winbond_read 000000ec  00000000  00000000  000000ba  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.spi_flash_chip_winbond_erase_block 000000e6  00000000  00000000  000001a6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.spi_flash_chip_winbond_erase_sector 000000e2  00000000  00000000  0000028c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spi_flash_chip_winbond_page_program 000000b4  00000000  00000000  0000036e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .rodata.esp_flash_chip_winbond 0000007c  00000000  00000000  00000424  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 12 .srodata.chip_name 00000008  00000000  00000000  000004a0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 13 .srodata.TAG  00000008  00000000  00000000  000004a8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 14 .debug_info   00001764  00000000  00000000  000004b0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 15 .debug_abbrev 000003c5  00000000  00000000  00001c14  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 16 .debug_loc    000009ea  00000000  00000000  00001fd9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .debug_aranges 00000050  00000000  00000000  000029c3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 18 .debug_ranges 00000078  00000000  00000000  00002a13  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 19 .debug_line   00000d8c  00000000  00000000  00002a8b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 20 .debug_str    00000eb0  00000000  00000000  00003817  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 21 .comment      00000030  00000000  00000000  000046c7  2**0
+                  CONTENTS, READONLY
+ 22 .note.GNU-stack 00000000  00000000  00000000  000046f7  2**0
+                  CONTENTS, READONLY
+ 23 .debug_frame  00000150  00000000  00000000  000046f8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 24 .riscv.attributes 00000065  00000000  00000000  00004848  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_boya.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_boya_probe 00000014  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_chip_boya_get_caps 00000004  00000000  00000000  00000048  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .rodata.esp_flash_chip_boya 0000007c  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  6 .srodata.chip_name 00000005  00000000  00000000  000000c8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .debug_info   00000f04  00000000  00000000  000000cd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_abbrev 000001f8  00000000  00000000  00000fd1  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_loc    00000081  00000000  00000000  000011c9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_aranges 00000028  00000000  00000000  0000124a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 11 .debug_ranges 00000018  00000000  00000000  00001272  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_line   00000384  00000000  00000000  0000128a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 13 .debug_str    00000ca6  00000000  00000000  0000160e  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 14 .comment      00000030  00000000  00000000  000022b4  2**0
+                  CONTENTS, READONLY
+ 15 .note.GNU-stack 00000000  00000000  00000000  000022e4  2**0
+                  CONTENTS, READONLY
+ 16 .debug_frame  00000030  00000000  00000000  000022e4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .riscv.attributes 00000065  00000000  00000000  00002314  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_mxic_opi.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_mxic_opi_probe 00000020  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_chip_mxic_opi_detect_size 0000002c  00000000  00000000  00000054  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.spi_flash_chip_mxic_opi_get_caps 00000004  00000000  00000000  00000080  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .text.spi_flash_chip_mxic_opi_set_write_protect 00000074  00000000  00000000  00000084  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.spi_flash_chip_mxic_opi_erase_chip 00000086  00000000  00000000  000000f8  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.spi_flash_chip_mxic_opi_erase_sector 00000090  00000000  00000000  0000017e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.spi_flash_chip_mxic_opi_erase_block 00000090  00000000  00000000  0000020e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spi_flash_chip_xmic_opi_set_io_mode 00000004  00000000  00000000  0000029e  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 11 .text.spi_flash_chip_xmic_opi_config_host_io_mode 0000003a  00000000  00000000  000002a2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.spi_flash_chip_mxic_opi_write 000000b6  00000000  00000000  000002dc  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.spi_flash_chip_mxic_opi_page_program 00000098  00000000  00000000  00000392  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.spi_flash_chip_mxic_opi_get_data_length_zoom.part.0 00000014  00000000  00000000  0000042a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .rodata.spi_flash_chip_mxic_opi_read_id.str1.4 0000001a  00000000  00000000  00000440  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 16 .text.spi_flash_chip_mxic_opi_read_id 000000fa  00000000  00000000  0000045a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.spi_flash_chip_mxic_opi_get_write_protect 00000034  00000000  00000000  00000554  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.spi_flash_chip_mxic_opi_get_io_mode 00000094  00000000  00000000  00000588  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.spi_flash_chip_mxic_opi_read_reg 00000074  00000000  00000000  0000061c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .rodata.esp_flash_chip_mxic_opi 0000007c  00000000  00000000  00000690  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 21 .rodata.chip_name 0000000b  00000000  00000000  0000070c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 22 .debug_info   00001fa4  00000000  00000000  00000717  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 23 .debug_abbrev 000004d6  00000000  00000000  000026bb  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 24 .debug_loc    00000efe  00000000  00000000  00002b91  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 25 .debug_aranges 00000098  00000000  00000000  00003a8f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 26 .debug_ranges 00000130  00000000  00000000  00003b27  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 27 .debug_line   0000144a  00000000  00000000  00003c57  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 28 .debug_str    00001d92  00000000  00000000  000050a1  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 29 .comment      00000030  00000000  00000000  00006e33  2**0
+                  CONTENTS, READONLY
+ 30 .note.GNU-stack 00000000  00000000  00000000  00006e63  2**0
+                  CONTENTS, READONLY
+ 31 .debug_frame  00000248  00000000  00000000  00006e64  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 32 .riscv.attributes 00000065  00000000  00000000  000070ac  2**0
+                  CONTENTS, READONLY
+
+spi_flash_chip_th.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_chip_th_probe 00000014  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_chip_th_get_caps 00000004  00000000  00000000  00000048  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .rodata.esp_flash_chip_th 0000007c  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  6 .srodata.chip_name 00000003  00000000  00000000  000000c8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .debug_info   00000f04  00000000  00000000  000000cb  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_abbrev 000001f8  00000000  00000000  00000fcf  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_loc    00000081  00000000  00000000  000011c7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_aranges 00000028  00000000  00000000  00001248  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 11 .debug_ranges 00000018  00000000  00000000  00001270  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_line   00000382  00000000  00000000  00001288  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 13 .debug_str    00000c9e  00000000  00000000  0000160a  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 14 .comment      00000030  00000000  00000000  000022a8  2**0
+                  CONTENTS, READONLY
+ 15 .note.GNU-stack 00000000  00000000  00000000  000022d8  2**0
+                  CONTENTS, READONLY
+ 16 .debug_frame  00000030  00000000  00000000  000022d8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .riscv.attributes 00000065  00000000  00000000  00002308  2**0
+                  CONTENTS, READONLY
+
+memspi_host_driver.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.memspi_host_read_status_hs 00000046  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.memspi_host_erase_chip 00000030  00000000  00000000  0000007a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.memspi_host_set_write_protect 0000003c  00000000  00000000  000000aa  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.memspi_host_write_data_slicer 0000003e  00000000  00000000  000000e6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.memspi_host_read_data_slicer 00000032  00000000  00000000  00000124  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .rodata.memspi_host_read_id_hs.str1.4 0000001a  00000000  00000000  00000158  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  9 .text.memspi_host_read_id_hs 0000009c  00000000  00000000  00000172  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.memspi_host_flush_cache 0000002a  00000000  00000000  0000020e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.memspi_host_erase_sector.part.0 00000014  00000000  00000000  00000238  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.memspi_host_erase_sector 0000004e  00000000  00000000  0000024c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.memspi_host_erase_block 0000004e  00000000  00000000  0000029a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.memspi_host_program_page 00000060  00000000  00000000  000002e8  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.memspi_host_init_pointers 00000042  00000000  00000000  00000348  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.memspi_host_read 0000004e  00000000  00000000  0000038a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .srodata.TAG  00000007  00000000  00000000  000003d8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 18 .rodata.esp_flash_gpspi_host 00000058  00000000  00000000  000003e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 19 .dram1.0      00000058  00000000  00000000  00000438  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 20 .debug_info   00004863  00000000  00000000  00000490  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 21 .debug_abbrev 000004f3  00000000  00000000  00004cf3  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 22 .debug_loc    00000b18  00000000  00000000  000051e6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 23 .debug_aranges 00000080  00000000  00000000  00005cfe  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 24 .debug_ranges 00000088  00000000  00000000  00005d7e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 25 .debug_line   00000f72  00000000  00000000  00005e06  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 26 .debug_str    00003945  00000000  00000000  00006d78  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 27 .comment      00000030  00000000  00000000  0000a6bd  2**0
+                  CONTENTS, READONLY
+ 28 .note.GNU-stack 00000000  00000000  00000000  0000a6ed  2**0
+                  CONTENTS, READONLY
+ 29 .debug_frame  0000019c  00000000  00000000  0000a6f0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 30 .riscv.attributes 00000065  00000000  00000000  0000a88c  2**0
+                  CONTENTS, READONLY
+
+spi_flash_blockdev.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.esp_flash_blockdev_ioctl 00000010  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .text.esp_flash_blockdev_sync_noop 0000000e  00000000  00000000  00000044  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .text.esp_flash_release_blockdev 0000001c  00000000  00000000  00000052  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.esp_flash_blockdev_erase 00000020  00000000  00000000  0000006e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.esp_flash_blockdev_write 00000034  00000000  00000000  0000008e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.esp_flash_blockdev_read 00000030  00000000  00000000  000000c2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.esp_flash_get_blockdev 0000008c  00000000  00000000  000000f2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .rodata.esp_flash_blockdev_ops 00000018  00000000  00000000  00000180  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 11 .debug_info   0000131a  00000000  00000000  00000198  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_abbrev 000002aa  00000000  00000000  000014b2  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 13 .debug_loc    00000741  00000000  00000000  0000175c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 14 .debug_aranges 00000050  00000000  00000000  00001e9d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 15 .debug_ranges 00000040  00000000  00000000  00001eed  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 16 .debug_line   00000781  00000000  00000000  00001f2d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .debug_str    00000c80  00000000  00000000  000026ae  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 18 .comment      00000030  00000000  00000000  0000332e  2**0
+                  CONTENTS, READONLY
+ 19 .note.GNU-stack 00000000  00000000  00000000  0000335e  2**0
+                  CONTENTS, READONLY
+ 20 .debug_frame  000000a8  00000000  00000000  00003360  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 21 .riscv.attributes 00000065  00000000  00000000  00003408  2**0
+                  CONTENTS, READONLY
+
+cache_utils.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .iram1.6      00000038  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_init_lock 00000002  00000000  00000000  0000006c  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .text.spi_flash_op_lock 00000008  00000000  00000000  0000006e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.spi_flash_op_unlock 00000008  00000000  00000000  00000076  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .iram1.1      00000020  00000000  00000000  0000007e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .iram1.3      00000018  00000000  00000000  0000009e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .iram1.4      00000008  00000000  00000000  000000b6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .iram1.5      00000012  00000000  00000000  000000be  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .iram1.0      0000002a  00000000  00000000  000000d0  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .iram1.2      00000022  00000000  00000000  000000fa  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .iram1.7      0000000c  00000000  00000000  0000011c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .sbss.s_flash_op_cache_state 00000008  00000000  00000000  00000128  2**2
+                  ALLOC
+ 15 .debug_info   0000051b  00000000  00000000  00000128  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 16 .debug_abbrev 0000026e  00000000  00000000  00000643  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 17 .debug_loc    0000010b  00000000  00000000  000008b1  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 18 .debug_aranges 00000078  00000000  00000000  000009bc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 19 .debug_ranges 00000068  00000000  00000000  00000a34  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 20 .debug_line   00000688  00000000  00000000  00000a9c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 21 .debug_str    0000060d  00000000  00000000  00001124  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 22 .comment      00000030  00000000  00000000  00001731  2**0
+                  CONTENTS, READONLY
+ 23 .note.GNU-stack 00000000  00000000  00000000  00001761  2**0
+                  CONTENTS, READONLY
+ 24 .debug_frame  00000118  00000000  00000000  00001764  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 25 .riscv.attributes 00000069  00000000  00000000  0000187c  2**0
+                  CONTENTS, READONLY
+
+flash_mmap.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.s_find_non_contiguous_block_nums 0000002a  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.s_pages_to_bytes 00000018  00000000  00000000  0000005e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.s_merge_contiguous_pages 00000066  00000000  00000000  00000076  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .iram1.0      00000050  00000000  00000000  000000dc  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.spi_flash_mmap 000000c6  00000000  00000000  0000012c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.spi_flash_mmap_pages 0000013c  00000000  00000000  000001f2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.spi_flash_munmap 0000005e  00000000  00000000  0000032e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spi_flash_mmap_dump 00000010  00000000  00000000  0000038c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.spi_flash_mmap_get_free_pages 00000028  00000000  00000000  0000039c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .iram1.1      00000076  00000000  00000000  000003c4  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.spi_flash_cache2phys 00000028  00000000  00000000  0000043a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.spi_flash_phys2cache 0000003e  00000000  00000000  00000462  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .debug_info   00000f32  00000000  00000000  000004a0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 16 .debug_abbrev 000003a9  00000000  00000000  000013d2  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 17 .debug_loc    00000e0b  00000000  00000000  0000177b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 18 .debug_aranges 00000078  00000000  00000000  00002586  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 19 .debug_ranges 00000148  00000000  00000000  000025fe  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 20 .debug_line   00001069  00000000  00000000  00002746  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 21 .debug_str    000008aa  00000000  00000000  000037af  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 22 .comment      00000030  00000000  00000000  00004059  2**0
+                  CONTENTS, READONLY
+ 23 .note.GNU-stack 00000000  00000000  00000000  00004089  2**0
+                  CONTENTS, READONLY
+ 24 .debug_frame  000001d8  00000000  00000000  0000408c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 25 .riscv.attributes 00000065  00000000  00000000  00004264  2**0
+                  CONTENTS, READONLY
+
+flash_ops.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .iram1.2      0000000a  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .iram1.3      0000000a  00000000  00000000  0000003e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .iram1.4      00000002  00000000  00000000  00000048  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .iram1.5      00000004  00000000  00000000  0000004a  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  7 .iram1.6      00000002  00000000  00000000  0000004e  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  8 .text.esp_mspi_get_io 0000002a  00000000  00000000  00000050  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.esp_mspi_pin_reserve 0000005c  00000000  00000000  0000007a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .iram1.7      00000004  00000000  00000000  000000d6  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 11 .srodata.s_mspi_io_num_default 00000006  00000000  00000000  000000dc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 12 .sbss.s_flash_guard_ops 00000004  00000000  00000000  000000e4  2**2
+                  ALLOC
+ 13 .dram1.1      00000008  00000000  00000000  000000e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 14 .dram1.0      00000008  00000000  00000000  000000ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 15 .debug_info   0000039f  00000000  00000000  000000f4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 16 .debug_abbrev 00000279  00000000  00000000  00000493  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 17 .debug_loc    000000ec  00000000  00000000  0000070c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 18 .debug_aranges 00000058  00000000  00000000  000007f8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 19 .debug_ranges 00000068  00000000  00000000  00000850  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 20 .debug_line   000004f4  00000000  00000000  000008b8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 21 .debug_str    0000061d  00000000  00000000  00000dac  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 22 .comment      00000030  00000000  00000000  000013c9  2**0
+                  CONTENTS, READONLY
+ 23 .note.GNU-stack 00000000  00000000  00000000  000013f9  2**0
+                  CONTENTS, READONLY
+ 24 .debug_frame  000000bc  00000000  00000000  000013fc  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 25 .riscv.attributes 00000065  00000000  00000000  000014b8  2**0
+                  CONTENTS, READONLY
+
+spi_flash_wrap.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spi_flash_wrap_probe_c0 00000014  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.spi_flash_wrap_enable_c0 00000032  00000000  00000000  00000048  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.spi_flash_wrap_enable_77 0000004e  00000000  00000000  0000007a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.spi_flash_wrap_clear_c0 00000024  00000000  00000000  000000c8  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.spi_flash_wrap_clear_77 0000003e  00000000  00000000  000000ec  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.spi_flash_wrap_probe 0000003e  00000000  00000000  0000012a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.spi_flash_wrap_enable 0000000c  00000000  00000000  00000168  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spi_flash_wrap_disable 0000000c  00000000  00000000  00000174  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .rodata.spi_flash_support_wrap_size.str1.4 00000042  00000000  00000000  00000180  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 12 .text.spi_flash_support_wrap_size 00000074  00000000  00000000  000001c2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .sbss.chip_wrap 00000004  00000000  00000000  00000238  2**2
+                  ALLOC
+ 14 .rodata.str1.4 00000010  00000000  00000000  00000238  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 15 .rodata.spi_flash_wrap_list 00000020  00000000  00000000  00000248  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 16 .debug_info   00000b4c  00000000  00000000  00000268  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 17 .debug_abbrev 000002c5  00000000  00000000  00000db4  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 18 .debug_loc    0000026a  00000000  00000000  00001079  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 19 .debug_aranges 00000060  00000000  00000000  000012e3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 20 .debug_ranges 00000050  00000000  00000000  00001343  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 21 .debug_line   000007f4  00000000  00000000  00001393  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 22 .debug_str    0000153f  00000000  00000000  00001b87  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 23 .comment      00000030  00000000  00000000  000030c6  2**0
+                  CONTENTS, READONLY
+ 24 .note.GNU-stack 00000000  00000000  00000000  000030f6  2**0
+                  CONTENTS, READONLY
+ 25 .debug_frame  000000fc  00000000  00000000  000030f8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 26 .riscv.attributes 00000065  00000000  00000000  000031f4  2**0
+                  CONTENTS, READONLY
+
+esp_flash_api.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.spiflash_end_default 00000022  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.flash_end_flush_cache 00000064  00000000  00000000  00000056  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.read_unique_id 00000042  00000000  00000000  000000ba  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.find_region 00000058  00000000  00000000  000000fc  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.spiflash_start_core.constprop.0 0000002c  00000000  00000000  00000154  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.spiflash_start_default 00000008  00000000  00000000  00000180  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.esp_flash_chip_driver_initialized 00000008  00000000  00000000  00000188  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 10 .text.check_chip_pointer_default 00000036  00000000  00000000  00000190  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .rodata.detect_spi_flash_chip.str1.4 0000001f  00000000  00000000  000001c8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 12 .text.detect_spi_flash_chip 000000b6  00000000  00000000  000001e8  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .iram1.3      00000096  00000000  00000000  0000029e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.esp_flash_read_chip_id 0000000a  00000000  00000000  00000334  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.esp_flash_read_id 0000003e  00000000  00000000  0000033e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .rodata.esp_flash_read_unique_chip_id.str1.4 0000007b  00000000  00000000  0000037c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 17 .text.esp_flash_read_unique_chip_id 000000ac  00000000  00000000  000003f8  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.esp_flash_get_physical_size 00000066  00000000  00000000  000004a4  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .rodata.esp_flash_init.str1.4 000000b2  00000000  00000000  0000050c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 20 .text.esp_flash_init 00000188  00000000  00000000  000005be  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.esp_flash_init_main 000001be  00000000  00000000  00000746  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.esp_flash_get_size 0000003c  00000000  00000000  00000904  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.esp_flash_erase_region 00000200  00000000  00000000  00000940  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .rodata.esp_flash_erase_chip.str1.4 0000003d  00000000  00000000  00000b40  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 25 .text.esp_flash_erase_chip 00000064  00000000  00000000  00000b7e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.esp_flash_get_chip_write_protect 00000058  00000000  00000000  00000be2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .text.esp_flash_set_chip_write_protect 00000050  00000000  00000000  00000c3a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .text.esp_flash_get_protectable_regions 0000004c  00000000  00000000  00000c8a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .text.esp_flash_get_protected_region 000000a2  00000000  00000000  00000cd6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .text.esp_flash_set_protected_region 000000b0  00000000  00000000  00000d78  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .text.esp_flash_read 00000122  00000000  00000000  00000e28  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text.esp_flash_write 000001a8  00000000  00000000  00000f4a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .text.esp_flash_read_encrypted 00000090  00000000  00000000  000010f2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .text.esp_flash_get_io_mode 00000062  00000000  00000000  00001182  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 35 .text.esp_flash_set_io_mode 00000054  00000000  00000000  000011e4  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 36 .text.esp_flash_write_encrypted 0000025e  00000000  00000000  00001238  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 37 .rodata.esp_flash_suspend_cmd_init.str1.4 000000c0  00000000  00000000  00001498  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 38 .text.esp_flash_suspend_cmd_init 000000c0  00000000  00000000  00001558  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 39 .text.esp_flash_app_disable_protect 0000001c  00000000  00000000  00001618  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 40 .dram1.13     0000001b  00000000  00000000  00001634  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 41 .dram1.11     00000021  00000000  00000000  00001650  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 42 .dram1.9      0000003b  00000000  00000000  00001674  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 43 .dram1.7      0000003e  00000000  00000000  000016b0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 44 .dram1.5      0000001b  00000000  00000000  000016f0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 45 .dram1.2      00000004  00000000  00000000  0000170c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 46 .dram1.1      00000010  00000000  00000000  00001710  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 47 .rodata.io_mode_str 000000b4  00000000  00000000  00001720  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 48 .dram1.0      0000000a  00000000  00000000  000017d4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 49 .debug_info   0000519c  00000000  00000000  000017de  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 50 .debug_abbrev 0000063c  00000000  00000000  0000697a  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 51 .debug_loc    00002432  00000000  00000000  00006fb6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 52 .debug_aranges 00000118  00000000  00000000  000093e8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 53 .debug_ranges 00000318  00000000  00000000  00009500  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 54 .debug_line   00003c0e  00000000  00000000  00009818  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 55 .debug_str    00003475  00000000  00000000  0000d426  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 56 .comment      00000030  00000000  00000000  0001089b  2**0
+                  CONTENTS, READONLY
+ 57 .note.GNU-stack 00000000  00000000  00000000  000108cb  2**0
+                  CONTENTS, READONLY
+ 58 .debug_frame  00000580  00000000  00000000  000108cc  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 59 .riscv.attributes 00000065  00000000  00000000  00010e4c  2**0
+                  CONTENTS, READONLY
+
+esp_flash_spi_init.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.use_bus_lock 00000006  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .text.bus_using_iomux 00000072  00000000  00000000  0000003a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.cs_using_iomux 0000003e  00000000  00000000  000000ac  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.get_host_id_from_chip 0000002a  00000000  00000000  000000ea  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .rodata.acquire_spi_device.str1.4 00000087  00000000  00000000  00000114  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  8 .text.acquire_spi_device 000000f8  00000000  00000000  0000019c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .iram1.0      00000132  00000000  00000000  00000294  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.deinit_gpspi_clock 0000005c  00000000  00000000  000003c6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.s_spi_find_clock_src_pre_div.constprop.0 00000034  00000000  00000000  00000422  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.init_gpspi_clock 000000ce  00000000  00000000  00000456  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.spi_bus_remove_flash_device 00000050  00000000  00000000  00000524  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.spi_bus_add_flash_device 00000154  00000000  00000000  00000574  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .rodata.esp_flash_init_default_chip.str1.4 00000124  00000000  00000000  000006c8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 16 .text.esp_flash_init_default_chip 000001ca  00000000  00000000  000007ec  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.esp_flash_app_init 00000030  00000000  00000000  000009b6  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .rodata.__FUNCTION__.0 0000001c  00000000  00000000  000009e8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 19 .dram1.2      00000024  00000000  00000000  00000a04  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 20 .dram1.1      00000030  00000000  00000000  00000a28  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 21 .sbss.esp_flash_default_chip 00000004  00000000  00000000  00000a58  2**2
+                  ALLOC
+ 22 .rodata.TAG   0000000a  00000000  00000000  00000a58  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 23 .debug_info   0000b318  00000000  00000000  00000a62  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 24 .debug_abbrev 00000732  00000000  00000000  0000bd7a  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 25 .debug_loc    00000a1d  00000000  00000000  0000c4ac  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 26 .debug_aranges 00000080  00000000  00000000  0000cec9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 27 .debug_ranges 00000158  00000000  00000000  0000cf49  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 28 .debug_line   00001ae5  00000000  00000000  0000d0a1  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 29 .debug_str    000076a1  00000000  00000000  0000eb86  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 30 .comment      00000030  00000000  00000000  00016227  2**0
+                  CONTENTS, READONLY
+ 31 .note.GNU-stack 00000000  00000000  00000000  00016257  2**0
+                  CONTENTS, READONLY
+ 32 .debug_frame  000001d8  00000000  00000000  00016258  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 33 .riscv.attributes 00000065  00000000  00000000  00016430  2**0
+                  CONTENTS, READONLY
+
+spi_flash_os_func_app.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.use_bus_lock 00000006  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .text.spi_flash_os_yield 00000034  00000000  00000000  0000003a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.spi_flash_os_check_yield 00000062  00000000  00000000  0000006e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.release_buffer_malloc 0000000a  00000000  00000000  000000d0  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.get_buffer_malloc 00000054  00000000  00000000  000000da  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.delay_us 00000016  00000000  00000000  0000012e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .iram1.3      0000000a  00000000  00000000  00000144  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spi23_end 0000002a  00000000  00000000  0000014e  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .iram1.2      00000032  00000000  00000000  00000178  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.spi23_start 00000008  00000000  00000000  000001aa  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.main_flash_op_status 0000000a  00000000  00000000  000001b2  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.main_flash_region_protected 00000046  00000000  00000000  000001bc  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .iram1.1      00000008  00000000  00000000  00000202  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .iram1.4      00000016  00000000  00000000  0000020a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .iram1.0      00000008  00000000  00000000  00000220  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .iram1.5      00000024  00000000  00000000  00000228  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.esp_flash_init_os_functions 00000084  00000000  00000000  0000024c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.esp_flash_deinit_os_functions 0000002c  00000000  00000000  000002d0  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.esp_flash_init_main_bus_lock 00000006  00000000  00000000  000002fc  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 22 .text.esp_flash_app_enable_os_functions 00000032  00000000  00000000  00000302  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.esp_flash_set_dangerous_write_protection 0000001a  00000000  00000000  00000334  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .rodata.esp_flash_spi23_default_os_functions 00000028  00000000  00000000  00000350  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 25 .dram1.7      00000028  00000000  00000000  00000378  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 26 .dram1.6      00000014  00000000  00000000  000003a0  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 27 .debug_info   0000148e  00000000  00000000  000003b4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 28 .debug_abbrev 000004a9  00000000  00000000  00001842  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 29 .debug_loc    00000a2e  00000000  00000000  00001ceb  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 30 .debug_aranges 000000c0  00000000  00000000  00002719  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 31 .debug_ranges 000000c8  00000000  00000000  000027d9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 32 .debug_line   00000f25  00000000  00000000  000028a1  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 33 .debug_str    00000d86  00000000  00000000  000037c6  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 34 .comment      00000030  00000000  00000000  0000454c  2**0
+                  CONTENTS, READONLY
+ 35 .note.GNU-stack 00000000  00000000  00000000  0000457c  2**0
+                  CONTENTS, READONLY
+ 36 .debug_frame  00000238  00000000  00000000  0000457c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 37 .riscv.attributes 00000065  00000000  00000000  000047b4  2**0
+                  CONTENTS, READONLY
+
+spi_flash_os_func_noos.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.delay_us 00000016  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .iram1.1      00000022  00000000  00000000  0000004a  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .iram1.0      00000022  00000000  00000000  0000006c  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.get_temp_buffer_not_supported 00000004  00000000  00000000  0000008e  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  7 .text.esp_flash_app_disable_os_functions 0000000e  00000000  00000000  00000092  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .dram1.2      00000028  00000000  00000000  000000a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  9 .debug_info   00000aa8  00000000  00000000  000000c8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_abbrev 00000293  00000000  00000000  00000b70  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 11 .debug_loc    0000012d  00000000  00000000  00000e03  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 12 .debug_aranges 00000040  00000000  00000000  00000f30  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 13 .debug_ranges 00000050  00000000  00000000  00000f70  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 14 .debug_line   000005b4  00000000  00000000  00000fc0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 15 .debug_str    000008a4  00000000  00000000  00001574  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 16 .comment      00000030  00000000  00000000  00001e18  2**0
+                  CONTENTS, READONLY
+ 17 .note.GNU-stack 00000000  00000000  00000000  00001e48  2**0
+                  CONTENTS, READONLY
+ 18 .debug_frame  00000084  00000000  00000000  00001e48  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 19 .riscv.attributes 00000069  00000000  00000000  00001ecc  2**0
+                  CONTENTS, READONLY
+
+spi_flash_freq_limit.c.obj:     file format elf32-little
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_info   00000079  00000000  00000000  00000034  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  4 .debug_abbrev 00000026  00000000  00000000  000000ad  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  5 .debug_aranges 00000018  00000000  00000000  000000d3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  6 .debug_line   00000072  00000000  00000000  000000eb  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_str    000002ac  00000000  00000000  0000015d  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .comment      00000030  00000000  00000000  00000409  2**0
+                  CONTENTS, READONLY
+  9 .note.GNU-stack 00000000  00000000  00000000  00000439  2**0
+                  CONTENTS, READONLY
+ 10 .riscv.attributes 00000065  00000000  00000000  00000439  2**0
+                  CONTENTS, READONLY

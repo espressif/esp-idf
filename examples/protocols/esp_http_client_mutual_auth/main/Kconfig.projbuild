@@ -1,0 +1,12 @@
+menu "Example Configuration"
+    config EXAMPLE_MUTUAL_AUTH_USE_HW_RSA_DS
+        bool "Use DS peripheral for client authentication" if SOC_DIG_SIGN_SUPPORTED
+        default n
+        help
+            When enabled, the client private key is held by the DS (Digital Signature)
+            peripheral. The client certificate and DS context are loaded from the
+            esp_secure_cert partition at runtime. Requires provisioning; see the README.
+
+            When disabled (default), the client certificate and private key are embedded
+            in the firmware as PEM files from main/certs/.
+endmenu

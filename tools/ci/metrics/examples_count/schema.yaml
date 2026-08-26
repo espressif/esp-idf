@@ -1,0 +1,33 @@
+---
+# ESP-IDF Examples Count Metrics Schema Definitions
+# This file defines the schema and validation rules for ESP-IDF examples count metrics
+# We use JSON Schema for annotating and validating JSON documents' structure.
+# Read more about the JSON Schema: https://json-schema.org/understanding-json-schema/about#what-is-a-schema
+$schema: "https://json-schema.org/draft/2020-12/schema"
+# Note: Each key under 'properties' will correspond to an independent document in the DB.
+# For example, 'examples_count' will be stored as a separate document with its data. See the example.metrics.json how the output will look like.
+properties:
+  examples_count:
+    properties:
+      data:
+        type: array
+        title: "ESP-IDF Examples Count Data"
+        description: "List of example counts for each component-target combination"
+        items:
+          properties:
+            component:
+              type: string
+              title: "Component Name"
+              description: "The component name (e.g., 'wifi', 'bluetooth', 'storage')"
+            target:
+              type: string
+              title: "Target Name"
+              description: "The ESP32 target (e.g., 'ESP32', 'ESP32-C3', 'ESP32-S3')"
+            count:
+              type: integer
+              title: "Examples Count"
+              description: "Number of examples for this component-target combination"
+      total_examples_count:
+        type: integer
+        title: "Total Examples Count"
+        description: "Total number of ESP-IDF examples across all components"

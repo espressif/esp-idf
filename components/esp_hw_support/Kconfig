@@ -1,0 +1,421 @@
+menu "Hardware Settings"
+
+    config ESP_HW_SUPPORT_FUNC_IN_IRAM
+        bool
+        default n if SPI_FLASH_AUTO_SUSPEND
+        default y
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+        select ESP_REGI2C_CTRL_FUNC_IN_IRAM
+        select RTC_CLK_FUNC_IN_IRAM
+        select RTC_TIME_FUNC_IN_IRAM
+
+    menu "Chip revision"
+        # Insert chip-specific HW config
+        orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+
+        config ESP_REV_NEW_CHIP_TEST
+            bool "Internal test mode"
+            depends on IDF_CI_BUILD
+            default n
+            help
+                For internal chip testing, a small number of new versions chips didn't
+                update the version field in eFuse, you can enable this option to force the
+                software recognize the chip version based on the rev selected in menuconfig.
+    endmenu
+
+    menu "MAC Config"
+        config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+            bool
+
+        config ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+            bool
+
+        config ESP_MAC_ADDR_UNIVERSE_BT
+            bool
+
+        config ESP_MAC_ADDR_UNIVERSE_ETH
+            bool
+
+        config ESP_MAC_ADDR_UNIVERSE_IEEE802154
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES
+            int
+            default 1 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
+            default 2 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+            default 4 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+
+            # Insert chip-specific MAC config
+        orsource "./port/$IDF_TARGET/Kconfig.mac"
+
+        config ESP_MAC_IGNORE_MAC_CRC_ERROR
+            bool "Ignore MAC CRC error (not recommended)"
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                If you have an invalid MAC CRC (ESP_ERR_INVALID_CRC) problem
+                and you still want to use this chip, you can enable this option to bypass such an error.
+                This applies to both MAC_FACTORY and CUSTOM_MAC efuses.
+
+        config ESP_MAC_USE_CUSTOM_MAC_AS_BASE_MAC
+            bool "Enable using custom mac as base mac"
+            default n
+            help
+                When this configuration is enabled, the user can invoke `esp_read_mac` to obtain the desired type of
+                MAC using a custom MAC as the base MAC.
+    endmenu
+
+    menu "Sleep Config"
+        # This is here since this option affect behavior of esp_light_sleep_start
+        # regardless of power management configuration.
+        config ESP_SLEEP_POWER_DOWN_FLASH
+            bool "Power down flash in light sleep when there is no SPIRAM or SPIRAM has independent power supply"
+            select PM_SLP_IRAM_OPT
+            select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+            select ESP_REGI2C_CTRL_FUNC_IN_IRAM
+            depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM || SOC_PSRAM_HAS_DEDICATED_LDO
+            depends on !(IDF_TARGET_ESP32P4 && (ESP32P4_REV_MIN_FULL < 100))
+            depends on !SOC_PM_FLASH_KEEP_POWER_IN_LSLP
+            default n
+            help
+                If enabled, chip will try to power down flash as part of esp_light_sleep_start(), which costs
+                more time when chip wakes up. Can only be enabled if there is no SPIRAM configured.
+
+                This option will power down flash under a strict but relatively safe condition. Also, it is possible to
+                power down flash under a relaxed condition by using esp_sleep_pd_config() to set ESP_PD_DOMAIN_VDDSDIO
+                to ESP_PD_OPTION_OFF. It should be noted that there is a risk in powering down flash, you can refer
+                `ESP-IDF Programming Guide/API Reference/System API/Sleep Modes/Power-down of Flash` for more details.
+
+        config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+            bool "Pull-up Flash CS pin in light sleep"
+            depends on !APP_BUILD_TYPE_PURE_RAM_APP
+            default y
+            help
+                All IOs will be set to isolate(floating) state by default during sleep.
+                Since the power supply of SPI Flash is not lost during lightsleep, if its CS pin is recognized as
+                low level(selected state) in the floating state, there will be a large current leakage, and the
+                data in Flash may be corrupted by random signals on other SPI pins.
+                Select this option will set the CS pin of Flash to PULL-UP state during sleep, but this will
+                increase the sleep current about 10 uA.
+                If you are developing with esp32xx modules, you must select this option, but if you are developing
+                with chips, you can also pull up the CS pin of SPI Flash in the external circuit to save power
+                consumption caused by internal pull-up during sleep.
+                (!!! Don't deselect this option if you don't have external SPI Flash CS pin pullups.)
+
+        config ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND
+            bool "Pull-up PSRAM CS pin in light sleep"
+            depends on SPIRAM
+            default y
+            help
+                All IOs will be set to isolate(floating) state by default during sleep.
+                Since the power supply of PSRAM is not lost during lightsleep, if its CS pin is recognized as
+                low level(selected state) in the floating state, there will be a large current leakage, and the
+                data in PSRAM may be corrupted by random signals on other SPI pins.
+                Select this option will set the CS pin of PSRAM to PULL-UP state during sleep, but this will
+                increase the sleep current about 10 uA.
+                If you are developing with esp32xx modules, you must select this option, but if you are developing
+                with chips, you can also pull up the CS pin of PSRAM in the external circuit to save power
+                consumption caused by internal pull-up during sleep.
+                (!!! Don't deselect this option if you don't have external PSRAM CS pin pullups.)
+
+        config ESP_SLEEP_MSPI_NEED_ALL_IO_PU
+            bool "Pull-up all SPI pins in light sleep"
+            depends on (ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND || ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3
+            help
+                To reduce leakage current, some types of SPI Flash/RAM only need to pull up the CS pin
+                during light sleep. But there are also some kinds of SPI Flash/RAM that need to pull up
+                all pins. It depends on the SPI Flash/RAM chip used.
+
+        config ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
+            bool
+            default y if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+        config ESP_SLEEP_GPIO_RESET_WORKAROUND
+            bool "light sleep GPIO reset workaround"
+            default y if !(IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2)
+            select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
+            help
+                All existing chips except esp32 and esp32s2 will reset on wake-up if a GPIO receives
+                a small electrostatic pulse during light sleep, with specific conditions.
+
+                - GPIO needs to be configured as input-mode only
+                - The pin receives a small electrostatic pulse, and reset occurs when the pulse
+                  voltage is higher than 6 V
+
+                For GPIO set to input mode only, it is not a good practice to leave it open/floating,
+                The hardware design needs to controlled it with determined supply or ground voltage
+                is necessary.
+
+                This option provides a software workaround for this issue. Configure to isolate all
+                GPIO pins in sleep state.
+
+        config ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
+            int "Extra delay (in us) after flash powerdown sleep wakeup to wait flash ready"
+            default 2000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            default 0
+            range 0 5000
+            help
+                When the chip exits sleep, the CPU and the flash chip are powered on at the same time.
+                CPU will run rom code (deepsleep) or ram code (lightsleep) first, and then load or execute
+                code from flash.
+
+                Some flash chips need sufficient time to pass between power on and first read operation.
+                By default, without any extra delay, this time is approximately 900us, although
+                some flash chip types need more than that.
+
+                (!!! Please adjust this value according to the Data Sheet of SPI Flash used in your project.)
+                In Flash Data Sheet, the parameters that define the Flash ready timing after power-up (minimum
+                time from Vcc(min) to CS active) are usually named tVSL in ELECTRICAL CHARACTERISTICS chapter,
+                and the configuration value here should be:
+                ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY = tVSL - 900
+
+                For esp32 and esp32s3, the default extra delay is set to 2000us. When optimizing startup time
+                for applications which require it, this value may be reduced.
+
+                If you are seeing "flash read err, 1000" message printed to the console after deep sleep reset
+                on esp32, or triggered RTC_WDT/LP_WDT after lightsleep wakeup, try increasing this value.
+                (For esp32, the delay will be executed in both deep sleep and light sleep wake up flow.
+                For chips after esp32, the delay will be executed only in light sleep flow, the delay
+                controlled by the EFUSE_FLASH_TPUW in ROM will be executed in deepsleep wake up flow.)
+
+        config ESP_SLEEP_CACHE_SAFE_ASSERTION
+            bool "Check the cache safety of the sleep wakeup code in sleep process"
+            default n
+            select ESP_PANIC_HANDLER_IRAM
+            help
+                Enabling it will check the cache safety of the code before the flash power is ready after
+                light sleep wakeup, and check PM_SLP_IRAM_OPT related code cache safety. This option is
+                only for code quality inspection. Enabling it will increase the time overhead of entering
+                and exiting sleep. It is not recommended to enable it in the release version.
+
+        config ESP_SLEEP_DEBUG
+            bool "esp sleep debug"
+            default n
+            help
+                Enable esp sleep debug.
+
+        config ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
+            bool "Allow to enable internal pull-up/downs for the Deep-Sleep wakeup IOs"
+            default y
+            help
+                When using rtc gpio wakeup source during deepsleep without external pull-up/downs, you may want to
+                make use of the internal ones.
+
+        config ESP_SLEEP_EVENT_CALLBACKS
+            bool "Enable registration of sleep event callbacks"
+            depends on FREERTOS_USE_TICKLESS_IDLE
+            default n
+            help
+                If enabled, it allows user to register sleep event callbacks. It is primarily designed for internal
+                developers and customers can use PM_LIGHT_SLEEP_CALLBACKS as an alternative.
+
+                NOTE: These callbacks are executed from the IDLE task context hence you cannot have any blocking calls
+                in your callbacks.
+
+                NOTE: Enabling these callbacks may change sleep duration calculations based on time spent in
+                callback and hence it is highly recommended to keep them as short as possible.
+
+        config ESP_SLEEP_SET_FLASH_DPD
+            bool "Set SPI flash to deep power-down mode in light sleep"
+            depends on (!APP_BUILD_TYPE_PURE_RAM_APP && !ESP_SLEEP_POWER_DOWN_FLASH && !SPI_FLASH_ROM_IMPL)
+            default y if SOC_PM_FLASH_KEEP_POWER_IN_LSLP
+            default y if (IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3)
+            default n
+            help
+                Deep Power-Down mode is a power mode supported by most SPI Flash, SPI Flash has better power
+                consumption performance in this mode comparing to standby mode (hold CS).
+                Enabling this option will set the SPI Flash to deep power down mode during lightsleep to save power,
+                which will reduce the sleep current by about 10uA. And you can also use this option to reduce power
+                consumption when using PSRAM
+
+                NOTE: We have conducted sufficient testing on ESP32-C5, ESP32-C61, ESP32-H21, ESP32-H4 and
+                ESP32-P4 (less v3). If you plan to use a customized flash chip, or if you are working with other
+                ESP32-series chips, please make sure to check the corresponding flash datasheet or consult us
+                directly. This is to ensure that using the B9h command to enter Deep Power-Down mode and ABh to exit.
+
+        config ESP_SLEEP_SPI_FLASH_ENTER_DPD_MODE_DELAY
+            int "SPI Flash enter deep power-down time delay (in us)"
+            depends on ESP_SLEEP_SET_FLASH_DPD
+            default 25
+            range 0 100
+            help
+                When used to set the SPI Flash to enter the Deep Power-Down mode, the command is issued by driving
+                CS pin low, shifting the instruction code "B9H" and driving CS high, enter Deep Power-Down mode will
+                take the time duration of tDP before the supply current is reduced and Deep Power-down mode is
+                entered. The CS pin must keep high during the tDP time duration, adjust the value of this option to
+                configure the value of tDP, different types of flash require different tDP values, usually no more
+                than 20us, please refer to the datasheet of the used Flash to configure this option.
+
+        config ESP_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
+            int "SPI Flash exit from deep power-down time delay (in us)"
+            depends on ESP_SLEEP_SET_FLASH_DPD
+            default 40
+            range 0 100
+            help
+                When used to exit the SPI Flash from the Deep Power-Down mode, the command is issued by driving the
+                CS pin low, shifting the instruction code "ABH" and driving CS high, release from Deep Power-Down will
+                take the time duration of tRES1 before the SPI FLASH will resume normal operation and other command are
+                accepted. The CS pin must keep high during the tRES1 time duration, adjust the value of this option
+                to configure the value of tRES1, different types of flash require different tRES1 values, usually no
+                more than 35us, please refer to the datasheet of the used Flash to configure this option.
+
+        config ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP
+            bool "Enable rtc wdt during sleep (EXPERIMENTAL)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            depends on (SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED)
+            default n
+            help
+                If enabled, rtc watchdog will remain active during sleep to prevent program runaway. Specifically, its
+                timeout will be set as the sum of the sleep duration, hardware overhead time, and RTC slow clock
+                compensation time.
+
+                NOTE: This feature only works when a timer wakeup is used. In the current phase, the RTC slow clock
+                compensation time remains zero (pending implementation). When using the RC_SLOW_CLK clock without
+                calibration, the maximum continuous sleep duration is typically around 5 minutes, and may vary
+                between chips. Therefore, avoid configuring sleep periods longer than this when enabling this option.
+
+
+        config ESP_SLEEP_ENABLE_RTC_WDT_IN_DEEP_SLEEP
+            bool "Enable rtc wdt during deep sleep (EXPERIMENTAL)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            depends on SOC_DEEP_SLEEP_SUPPORTED
+            default n
+            help
+                If enabled, rtc watchdog will remain active during deep sleep to prevent program runaway.
+
+                NOTE: This feature only works when a timer wakeup is used. In the current phase, the RTC watchdog
+                will not be disabled or reset after waking from deep sleep. Even though it will be reconfigured
+                during the bootloader phase, there remains a concern that a timeout could occur before this
+                reconfiguration is completed.
+    endmenu
+
+    menu "RTC Clock Config"
+        orsource "./port/$IDF_TARGET/Kconfig.rtc"
+
+        config RTC_CLK_FUNC_IN_IRAM
+            bool "Place RTC clock module functions into IRAM"
+            default y
+            help
+                Place RTC clock module (all rtc clock functions and const data) into IRAM.
+
+        config RTC_TIME_FUNC_IN_IRAM
+            bool "Place RTC time module functions into IRAM"
+            default y
+            help
+                Place RTC time module (all rtc clock functions) into IRAM.
+    endmenu
+
+    menu "Peripheral Control"
+        config ESP_PERIPH_CTRL_FUNC_IN_IRAM
+            bool "Place peripheral control functions into IRAM"
+            default y
+            help
+                Place peripheral control functions (e.g. periph_module_reset) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+        config ESP_REGI2C_CTRL_FUNC_IN_IRAM
+            bool "Place regi2c control functions into IRAM"
+            default y
+            help
+                Place analog i2c master control functions (e.g. regi2c_ctrl_read_reg, regi2c_ctrl_write_reg) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+        config ESP_MODEM_CLOCK_ENABLE_CHECKING
+            bool "Enable modem clock configuration checking"
+            depends on SOC_MODEM_CLOCK_SUPPORTED
+            default n
+            help
+                If enabled, this option will perform additional checks on modem clock configuration
+                to ensure proper operation and detect potential configuration issues.
+
+        config ESP_BUS_ENABLE_AUTO_GATE
+            bool "Enable bus clock auto-gate"
+            depends on SOC_PM_SUPPORT_BUS_CLK_AUTO_GATE
+            default y if IDF_CI_BUILD
+            default n
+            help
+                Enable this option to use bus clock auto-gate for the system bus.
+
+                When enabled, AHB/APB/AXI/MEM bus clock gating bypass is cleared, so the bus
+                clocks are no longer forced on. Hardware then automatically gates these clocks
+                when there is no bus access, reducing power consumption.
+
+                This option has risk: auto-gating may cause unexpected bus access failures or
+                system instability on some peripherals/scenarios. Enable with caution and
+                verify thoroughly.
+    endmenu
+
+    rsource "./etm/Kconfig.etm"
+
+    menu "Main XTAL Config"
+        orsource "./port/$IDF_TARGET/Kconfig.xtal"
+    endmenu
+
+    orsource "./port/$IDF_TARGET/Kconfig.dcdc"
+
+    orsource "./port/$IDF_TARGET/Kconfig.ldo"
+
+    orsource "./power_supply/port/$IDF_TARGET/Kconfig.power"
+
+    # Invisible bringup bypass options for esp_hw_support component
+    config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
+        bool
+        default y if !SOC_CLK_TREE_SUPPORTED
+        default n
+        help
+            This option is only used for new chip bringup, when
+            clock support isn't done yet. So with this option,
+            we use xtal on FPGA as the clock source.
+
+    config ESP_BRINGUP_BYPASS_RANDOM_SETTING
+        bool
+        default y if !SOC_RNG_SUPPORTED
+        default n
+        help
+            This option is only used for new chip bringup, when
+            RNG isn't done yet. So with this option, we use 0x5A
+            to fill the random buffers
+
+    config ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
+        bool
+        default n
+
+    config ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
+        bool
+        default n
+
+    config ESP_CLK_RC32K_NOT_TO_USE
+        bool
+        default y if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
+        default n
+        help
+            Due to the poor low-temperature characteristics of
+            RC32K (it cannot operate below -40 degrees Celsius),
+            please avoid using it whenever possible
+
+    config ESP_ENABLE_PVT
+        bool "Auto adjust hp & lp voltage using pvt function (MUST ENABLE FOR MP)"
+        depends on SOC_PMU_PVT_SUPPORTED
+        default n if IDF_TARGET_ESP32C6
+        default y
+        help
+            If enabled, hp & lp voltage can be auto adjust by PVT characteristic.
+            Otherwise, internal voltage will be set to fix dbias.
+            This is a must for stable mass production. Disable for debugging only.
+
+    config ESP_INTR_IN_IRAM
+        bool "Place esp_intr_alloc functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
+    orsource "./lowpower/port/esp32p4/Kconfig.p4_rev3_mspi_workaround"
+endmenu

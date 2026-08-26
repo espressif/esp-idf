@@ -1,0 +1,17 @@
+menu "Conditional Component Example Configuration"
+
+    config EXAMPLE_ENABLE_LOGGING
+        bool "Enable Logging Utility Component"
+        default y
+        help
+            Enable the logging_util component to demonstrate conditional
+            component inclusion in Build System v2.
+
+    config EXAMPLE_ENABLE_MATH
+        bool "Enable Math Utility Component"
+        default y
+        help
+            Enable the math_util component to demonstrate conditional
+            component inclusion in Build System v2.
+
+endmenu

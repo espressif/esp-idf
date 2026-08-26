@@ -1,0 +1,16 @@
+config ESP32_DISABLE_BASIC_ROM_CONSOLE
+    bool "Permanently disable BASIC ROM Console"
+    default n
+    help
+        If set, the first time the app boots it will disable the BASIC ROM Console
+        permanently (by burning an eFuse).
+
+        Otherwise, the BASIC ROM Console starts on reset if no valid bootloader is
+        read from the flash.
+
+        (Enabling secure boot also disables the BASIC ROM Console by default.)
+
+config ESP32_ECO3_CACHE_LOCK_FIX
+    bool
+    default y
+    depends on !ESP_SYSTEM_SINGLE_CORE_MODE && SPIRAM

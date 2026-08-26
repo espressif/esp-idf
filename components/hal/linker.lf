@@ -1,0 +1,9 @@
+[mapping:hal]
+archive: libhal.a
+entries:
+    if APP_BUILD_TYPE_PURE_RAM_APP = n:
+        mmu_hal (noflash)
+        if IDF_TARGET_ESP32 = y:
+            cache_hal_esp32 (noflash)
+        else:
+            cache_hal (noflash)

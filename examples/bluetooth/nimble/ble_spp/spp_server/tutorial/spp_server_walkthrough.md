@@ -1,0 +1,579 @@
+# BLE SPP Server Walkthrough
+
+## Introduction
+
+In this tutorial, we will explore the spp_server example code provided by Espressif's ESP-IDF framework. This tutorial guides you in building a BLE Serial Port Profile (SPP) server using the NimBLE stack. BLE SPP enables wireless serial communication, making it valuable for IoT and embedded applications. It allows the ESP32 to communicate with other BLE devices, handling connection management, advertising, and data transmission. The code also defines a custom GATT service and initializes UART communication for data transfer.
+
+## Includes
+
+This example is located in the examples folder of the ESP-IDF under the [ble_spp/spp_server/main](../main). The [main.c](../main/main.c) file located in the main folder contains all the functionality that we are going to review. The header files contained in [main.c](../main/main.c) are:
+
+```c
+#include "esp_log.h"
+#include "nvs_flash.h"
+/* BLE */
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#include "host/util/util.h"
+#include "console/console.h"
+#include "services/gap/ble_svc_gap.h"
+#include "services/gatt/ble_svc_gatt.h"
+#include "ble_spp_server.h"
+#include "driver/uart.h"
+```
+
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“nimble_port.h”`, `“nimble_port_freertos.h”`, `"ble_hs.h"`, `“ble_svc_gap.h”` and `“ble_spp_server.h”` which expose the BLE APIs required to implement this example.
+
+* `nimble_port.h`: Includes the declaration of functions required for the initialization of the nimble stack.
+* `nimble_port_freertos.h`: Initializes and enables nimble host task.
+* `ble_hs.h`: Defines the functionalities to handle the host event.
+* `ble_svc_gap.h`: Defines the macros for device name, and device appearance and declares the function to set them.
+* `ble_spp_server.h`: Includes necessary headers and defines UUIDs for the SPP service and characteristic.
+
+
+## Main Entry Point
+
+The program's entry point is the `app_main()` function:
+```c
+void
+app_main(void)
+{
+    int rc;
+
+    /* Initialize NVS — it is used to store PHY calibration data */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
+
+    /* Initialize connection_handle array */
+    for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+        conn_handle_subs[i] = false;
+    }
+
+    /* Initialize uart driver and start uart task */
+    ble_spp_uart_init();
+
+    /* Initialize the NimBLE host configuration. */
+    ble_hs_cfg.reset_cb = ble_spp_server_on_reset;
+    ble_hs_cfg.sync_cb = ble_spp_server_on_sync;
+    ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+
+    ble_hs_cfg.sm_io_cap = CONFIG_EXAMPLE_IO_TYPE;
+#ifdef CONFIG_EXAMPLE_BONDING
+    ble_hs_cfg.sm_bonding = 1;
+#endif
+#ifdef CONFIG_EXAMPLE_MITM
+    ble_hs_cfg.sm_mitm = 1;
+#endif
+#ifdef CONFIG_EXAMPLE_USE_SC
+    ble_hs_cfg.sm_sc = 1;
+#else
+    ble_hs_cfg.sm_sc = 0;
+#endif
+#ifdef CONFIG_EXAMPLE_BONDING
+    ble_hs_cfg.sm_our_key_dist = 1;
+    ble_hs_cfg.sm_their_key_dist = 1;
+#endif
+
+    /* Register custom service */
+    rc = gatt_svr_init();
+    assert(rc == 0);
+
+    /* Set the default device name. */
+    rc = ble_svc_gap_device_name_set("nimble-ble-spp-svr");
+    assert(rc == 0);
+
+    /* XXX Need to have template for store */
+    ble_store_config_init();
+
+    nimble_port_freertos_init(ble_spp_server_host_task);
+}
+```
+
+The main function starts by initializing the non-volatile storage library. This library allows us to save the key-value pairs in flash memory. `nvs_flash_init()` stores the PHY calibration data. In a Bluetooth Low Energy (BLE) device, cryptographic keys used for encryption and authentication are often stored in Non-Volatile Storage (NVS). BLE stores the peer keys, CCCD keys, peer records, etc on NVS. By storing these keys in NVS, the BLE device can quickly retrieve them when needed, without the need for time-consuming key generations.
+
+```c
+esp_err_t ret = nvs_flash_init();
+if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+}
+ESP_ERROR_CHECK(ret);
+```
+
+### BT Controller and Stack Initialization
+
+The main function calls `nimble_port_init()` to initialize BT Controller and nimble stack. This function initializes the BT controller by first creating its configuration structure named `esp_bt_controller_config_t` with default settings generated by the `BT_CONTROLLER_INIT_CONFIG_DEFAULT()` macro. It implements the Host Controller Interface (HCI) on the controller side, the Link Layer (LL), and the Physical Layer (PHY). The BT Controller is invisible to the user applications and deals with the lower layers of the BLE stack. The controller configuration includes setting the BT controller stack size, priority, and HCI baud rate. With the settings created, the BT controller is initialized and enabled with the `esp_bt_controller_init()` and `esp_bt_controller_enable()` functions:
+
+
+```c
+esp_bt_controller_config_t config_opts = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+ret = esp_bt_controller_init(&config_opts);
+```
+
+Next, the controller is enabled in BLE Mode.
+```c
+ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+```
+
+The controller should be enabled in `ESP_BT_MODE_BLE` if you want to use the BLE mode.
+There are four Bluetooth modes supported:
+
+1. `ESP_BT_MODE_IDLE`: Bluetooth not running
+2. `ESP_BT_MODE_BLE`: BLE mode
+3. `ESP_BT_MODE_CLASSIC_BT`: BT Classic mode
+4. `ESP_BT_MODE_BTDM`: Dual mode (BLE + BT Classic)
+
+After the initialization of the BT controller, the nimble stack, which includes the common definitions and APIs for BLE, is initialized by using `esp_nimble_init()`:
+
+```c
+esp_err_t esp_nimble_init(void)
+{
+#if !SOC_ESP_NIMBLE_CONTROLLER
+    /* Initialize the function pointers for OS porting */
+    npl_freertos_funcs_init();
+
+    npl_freertos_mempool_init();
+
+    if(esp_nimble_hci_init() != ESP_OK) {
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "hci inits failed\n");
+        return ESP_FAIL;
+    }
+
+    /* Initialize default event queue */
+    ble_npl_eventq_init(&g_eventq_dflt);
+
+    os_msys_init();
+
+    void ble_store_ram_init(void); 
+    /* XXX Need to have template for store */
+    ble_store_ram_init();
+#endif
+
+    /* Initialize the host */
+    ble_hs_init();
+    return ESP_OK;
+}
+```
+
+After this, an array called `conn_handle_subs` is being initialized for the purpose of managing Bluetooth connections. The for loop iterates through a range of values, setting each element of the array to false. This action signifies that there are no active connections at the initialization stage.
+
+```c
+/* Initialize connection_handle array */
+for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+    conn_handle_subs[i] = false;
+}
+```
+
+The main function calls `ble_spp_uart_init`, which is responsible for initializing the UART (Universal Asynchronous Receiver-Transmitter) communication for the BLE SPP server application.
+
+
+```c
+static void ble_spp_uart_init(void)
+{
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_RTS,
+        .rx_flow_ctrl_thresh = 122,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+    //Install UART driver, and get the queue.
+    uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    //Set UART parameters
+    uart_param_config(UART_NUM_0, &uart_config);
+    //Set UART pins
+    uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    xTaskCreate(ble_server_uart_task, "uTask", 4096, (void *)UART_NUM_0, 8, NULL);
+}
+```
+
+* It defines a configuration structure (`uart_config_t`) to specify the UART communication settings, such as `baud rate`, `data bits`, `parity`, `stop bits`, `flow control`, and more.
+
+* `uart_driver_install` installs the UART driver, allocating memory for the UART communication buffers and creating a queue (`spp_common_uart_queue`) to manage UART events.
+
+* `uart_param_config` sets the UART parameters based on the configuration structure defined earlier.
+
+* `uart_set_pin` configures the UART pins for communication. In this case, it uses default pin configurations.
+
+* Finally, it creates a FreeRTOS task (`ble_server_uart_task`) that will handle UART communication. This task is responsible for sending and receiving data over UART.
+
+```c
+/* Initialize the NimBLE host configuration. */
+ble_hs_cfg.reset_cb = ble_spp_server_on_reset;
+ble_hs_cfg.sync_cb = ble_spp_server_on_sync;
+ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+```
+The host is configured by setting up the callbacks for Stack-reset, Stack-sync, registration of each GATT resource (service, characteristic, or descriptor), and storage status.
+
+### Security Manager Configuration
+Security Manager (sm_ members) is configurable at runtime to simplify security testing. Defaults for those are configured by selecting proper options via menuconfig for example configurations.
+
+### I/O CAPABILITIES
+```c
+    ble_hs_cfg.sm_io_cap = CONFIG_EXAMPLE_IO_TYPE;
+#ifdef CONFIG_EXAMPLE_BONDING
+    ble_hs_cfg.sm_bonding = 1;
+#endif
+```
+`CONFIG_EXAMPLE_BONDING` is set to enable the bonding on BLE SPP server. By default this flag is disabled. It can be configured through the sdkconfig file or from the menuconfig options.
+
+### MITM PROTECTION
+```c
+#ifdef CONFIG_EXAMPLE_MITM
+    ble_hs_cfg.sm_mitm = 1;
+#endif
+```
+When the `CONFIG_EXAMPLE_MITM` flag is set during pairing, it will enable the MITM bit in the auth req field of pairing request, which in turn necessitates protection against Man-In-The-Middle attacks during the pairing process. The flag can be configured through sdkconfig or menuconfig as mentioned above.
+
+### SECURE CONNECTION FEUTURE
+```c
+#ifdef CONFIG_EXAMPLE_USE_SC
+    ble_hs_cfg.sm_sc = 1;
+#else
+    ble_hs_cfg.sm_sc = 0;
+#endif
+```
+When the `CONFIG_EXAMPLE_USE_SC` flag is set in the Pairing Request/Response, it enables the usage of LE Secure Connections for pairing, provided that the remote device also supports it. If the remote device does not support LE Secure Connections, the pairing process falls back to using legacy pairing.
+
+So, the main function configures security features in a BLE application like Bonding, MITM protection, Secure connections, and Key distribution.
+
+### GATT SERVER INIT
+```c
+rc = gatt_svr_init();
+assert(rc == 0);
+```
+The gatt_svr_init function is called during the initialization phase of a BLE application to set up the GATT server and define the services and characteristics it supports.
+
+### SETTING DEVICE NAME
+The main function calls `ble_svc_gap_device_name_set()` to set the default device name. 'nimble-ble-spp-svr' is passed as the default device name to this function.
+```c
+rc = ble_svc_gap_device_name_set("nimble-ble-spp-svr");
+```
+
+### BLE STORE CONFIGURATION
+The main function calls `ble_store_config_init()` to configure the host by setting up the storage callbacks which handle the read, write, and deletion of security material.
+```c
+/* XXX Need to have a template for store */
+ble_store_config_init();
+```
+
+### THREAD MODEL
+The main function creates a task where nimble will run using `nimble_port_freertos_init()`. This enables the nimble stack by using `esp_nimble_enable()`.
+```c
+nimble_port_freertos_init(ble_spp_server_host_task);
+```
+
+`esp_nimble_enable()` create a task where the nimble host will run. Nimble stack runs in a separate thread with its own context to handle async operations from controller and post HCI commands to controller.
+
+
+## ble_server_uart_task
+
+```c
+void ble_server_uart_task(void *pvParameters)
+{
+    MODLOG_DFLT(INFO, "BLE server UART_task started\n");
+    uart_event_t event;
+    int rc = 0;
+    for (;;) {
+        //Waiting for UART event.
+        if (xQueueReceive(spp_common_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY))            {
+            switch (event.type) {
+            //Event of UART receving data
+            case UART_DATA:
+                if (event.size) {
+                    uint8_t *ntf;
+                    ntf = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
+                    memset(ntf, 0x00, event.size);
+                    uart_read_bytes(UART_NUM_0, ntf, event.size, portMAX_DELAY);
+
+                    for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+                        /* Check if client has subscribed to notifications */
+                        if (conn_handle_subs[i]) {
+                            struct os_mbuf *txom;
+                            txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
+                            rc = ble_gatts_notify_custom(i, ble_spp_svc_gatt_read_val_handle,
+                                                         txom);
+                            if (rc == 0) {
+                                MODLOG_DFLT(INFO, "Notification sent successfully");
+                            } else {
+                                MODLOG_DFLT(INFO, "Error in sending notification rc = %d", rc);
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    vTaskDelete(NULL);
+}
+```
+
+The function `ble_server_uart_task` serves as a BLE server with UART communication capabilities. Here's a summary of what this code does:
+
+1. The task starts and logs a message to indicate that the BLE server UART task has begun. It enters an infinite loop (`for (;;)`) to continuously process UART events.
+
+2. Inside the loop, it waits for a UART event to occur using the `xQueueReceive` function. When a UART event is received, it checks the type of event.
+
+3. If the event type is `UART_DATA`, it reads the data from the UART and stores it in a dynamically allocated buffer (`ntf`). The buffer is then used to send notifications to connected BLE clients.
+
+4. It iterates through a loop for each possible BLE connection (up to `CONFIG_BT_NIMBLE_MAX_CONNECTIONS` connections).
+
+5. For each connection, it checks if a client has subscribed to notifications (`conn_handle_subs[i]`).
+
+6. If a client has subscribed, it prepares a BLE notification message (`txom`) containing the UART data and sends it to the client using the `ble_gatts_notify_custom` function.
+
+7. It logs whether the notification was sent successfully or if there was an error. The loop continues processing UART events, and the task repeats.
+
+8. Finally, the task is deleted using `vTaskDelete(NULL)` when it is no longer needed.
+
+
+## ble_spp_server_advertise
+
+```c
+static void
+ble_spp_server_advertise(void)
+{
+    struct ble_gap_adv_params adv_params;
+    struct ble_hs_adv_fields fields;
+    const char *name;
+    int rc;
+
+    /**
+     *  Set the advertisement data included in our advertisements:
+     *     o Flags (indicates advertisement type and other general info).
+     *     o Advertising tx power.
+     *     o Device name.
+     *     o 16-bit service UUIDs (alert notifications).
+     */
+
+    memset(&fields, 0, sizeof fields);
+
+    /* Advertise two flags:
+     *     o Discoverability in forthcoming advertisement (general)
+     *     o BLE-only (BR/EDR unsupported).
+     */
+    fields.flags = BLE_HS_ADV_F_DISC_GEN |
+                   BLE_HS_ADV_F_BREDR_UNSUP;
+
+    /* Indicate that the TX power level field should be included; have the
+     * stack fill this value automatically.  This is done by assigning the
+     * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
+     */
+    fields.tx_pwr_lvl_is_present = 1;
+    fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+
+    name = ble_svc_gap_device_name();
+    fields.name = (uint8_t *)name;
+    fields.name_len = strlen(name);
+    fields.name_is_complete = 1;
+
+    fields.uuids16 = (ble_uuid16_t[]) {
+        BLE_UUID16_INIT(BLE_SVC_SPP_UUID16)
+    };
+    fields.num_uuids16 = 1;
+    fields.uuids16_is_complete = 1;
+
+    rc = ble_gap_adv_set_fields(&fields);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error setting advertisement data; rc=%d\n", rc);
+        return;
+    }
+
+    /* Begin advertising. */
+    memset(&adv_params, 0, sizeof adv_params);
+    adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
+    adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+    rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
+                           &adv_params, ble_spp_server_gap_event, NULL);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error enabling advertisement; rc=%d\n", rc);
+        return;
+    }
+}
+```
+
+The function `ble_spp_server_advertise` is responsible for enabling advertising in a BLE server application. Here's a summary of what the code does:
+
+1. It configures the advertisement data to include the following information:
+- Flags indicating general discoverability and BLE-only mode.
+- Advertising transmission power level.
+- Device name.
+- A 16-bit service UUID (alert notifications).
+
+2. The code sets up the advertisement data using the `fields` structure and specifies that the TX power level should be automatically filled by the stack.
+
+3. It retrieves the device name using `ble_svc_gap_device_name()` and includes it in the advertisement data.
+
+4. It includes a 16-bit service UUID related to alert notifications in the advertisement data.
+
+5. The code then attempts to set the advertisement data using `ble_gap_adv_set_fields()` and starts advertising in general discoverable and undirected connectable modes using `ble_gap_adv_start()`.
+
+In summary, this code sets up and initiates BLE advertising for a server application, making the device discoverable to other BLE devices and allowing them to establish connections.
+
+
+## GAP Event in spp_server
+
+Various events are handled in the `ble_spp_server_gap_event()`. Their list is as follows:
+
+1. `BLE_GAP_EVENT_CONNECT`: This case handles when a new connection is established or a connection attempt fails. It prints connection status, and details about the connection, and, in case of failure, resume advertising. If the Connection was established then the connection descriptor is initiated using the method `ble_gap_conn_find()`.
+
+2. `BLE_GAP_EVENT_DISCONNECT`: This case handles a disconnection event. It prints disconnection details and resumes advertising.
+
+3. `BLE_GAP_EVENT_CONN_UPDATE`: This case handles a connection parameter update event. It prints the updated connection parameters.
+
+4. `BLE_GAP_EVENT_ADV_COMPLETE`: This case handles the completion of advertising. It resumes advertising when advertising completes.
+
+5. `BLE_GAP_EVENT_MTU`: This case is activated when the Maximum Transmission Unit (MTU) is updated for a connection. It prints the new MTU value and related information.
+
+6. `BLE_GAP_EVENT_SUBSCRIBE`: This case handles a subscription event. It prints details about subscription changes.
+
+
+## ble_svc_gatt_handler
+
+```c
+static int  ble_svc_gatt_handler(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    switch (ctxt->op) {
+    case BLE_GATT_ACCESS_OP_READ_CHR:
+        MODLOG_DFLT(INFO, "Callback for read");
+        break;
+
+    case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        MODLOG_DFLT(INFO, "Data received in write event,conn_handle = %x,attr_handle = %x", conn_handle, attr_handle);
+        break;
+
+    default:
+        MODLOG_DFLT(INFO, "\nDefault Callback");
+        break;
+    }
+    return 0;
+}
+```
+
+This callback function `ble_svc_gatt_handler` is responsible for handling read and write operations on characteristics within the custom service. Here is a summary of what the code does:
+
+1. The function is defined with the following parameters:
+- `uint16_t conn_handle`: The connection handle for the BLE connection.
+- `uint16_t attr_handle`: The attribute handle associated with the operation.
+- `struct ble_gatt_access_ctxt *ctxt`: A context structure containing information about the GATT (Generic Attribute Profile) access operation.
+- `void *arg`: A generic argument pointer (not used in this code).
+
+2. Inside the function, there is a `switch` statement that checks the type of GATT access operation being performed, which can be either a read or a write operation.
+
+3. If the operation is a read operation (`BLE_GATT_ACCESS_OP_READ_CHR`), the code logs a message with "Callback for read."
+
+4. If the operation is a write operation (`BLE_GATT_ACCESS_OP_WRITE_CHR`), the code logs a message with information about the received data, including the connection handle and attribute handle.
+
+5. If the operation is neither read nor write (i.e., the default case), it logs a message with "Default Callback."
+
+
+## Custom service
+
+```c
+/* Define new custom service */
+static const struct ble_gatt_svc_def new_ble_svc_gatt_defs[] = {
+    {
+        /*** Service: SPP */
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = BLE_UUID16_DECLARE(BLE_SVC_SPP_UUID16),
+        .characteristics = (struct ble_gatt_chr_def[])
+        { {
+                /* Support SPP service */
+                .uuid = BLE_UUID16_DECLARE(BLE_SVC_SPP_CHR_UUID16),
+                .access_cb = ble_svc_gatt_handler,
+                .val_handle = &ble_spp_svc_gatt_read_val_handle,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY,
+            }, {
+                0, /* No more characteristics */
+            }
+        },
+    },
+    {
+        0, /* No more services. */
+    },
+};
+```
+
+The provided code defines a custom service for BLE communication. Here is a summary of what this code does:
+
+1. It defines a custom BLE service using the `ble_gatt_svc_def` structure.
+
+2. This service is marked as a primary service using `BLE_GATT_SVC_TYPE_PRIMARY`. The UUID (Universally Unique Identifier) for the service is specified as `BLE_SVC_SPP_UUID16`.
+
+3. Inside the service, there is a list of characteristics defined using the `ble_gatt_chr_def` structure. In this case, there's only one characteristic defined. The characteristic supports various operations, including reading, writing, and notifications. The UUID for the characteristic is specified as `BLE_SVC_SPP_CHR_UUID16`.
+
+4. A callback function named `ble_svc_gatt_handler` is assigned to handle access to this characteristic.
+
+5. The characteristic is set to support reading (`BLE_GATT_CHR_F_READ`), writing (`BLE_GATT_CHR_F_WRITE`), and notifications (`BLE_GATT_CHR_F_NOTIFY`).
+
+6. The `val_handle` field is used to store the handle for reading the characteristic's value.
+
+In summary, this code defines a custom BLE service with one characteristic, and it specifies that this characteristic can be read, written to, and used for notifications. The UUIDs and callback functions for the service and characteristic are also specified.
+
+
+## gatt_svr_register_cb
+
+```c
+static void
+gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
+{
+    char buf[BLE_UUID_STR_LEN];
+
+    switch (ctxt->op) {
+    case BLE_GATT_REGISTER_OP_SVC:
+        MODLOG_DFLT(DEBUG, "registered service %s with handle=%d\n",
+                    ble_uuid_to_str(ctxt->svc.svc_def->uuid, buf),
+                    ctxt->svc.handle);
+        break;
+
+    case BLE_GATT_REGISTER_OP_CHR:
+        MODLOG_DFLT(DEBUG, "registering characteristic %s with "
+                    "def_handle=%d val_handle=%d\n",
+                    ble_uuid_to_str(ctxt->chr.chr_def->uuid, buf),
+                    ctxt->chr.def_handle,
+                    ctxt->chr.val_handle);
+        break;
+
+    case BLE_GATT_REGISTER_OP_DSC:
+        MODLOG_DFLT(DEBUG, "registering descriptor %s with handle=%d\n",
+                    ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
+                    ctxt->dsc.handle);
+        break;
+
+    default:
+        assert(0);
+        break;
+    }
+}
+```
+
+This function is invoked when various GATT (Generic Attribute Profile) elements, such as services, characteristics, or descriptors, are registered.
+
+1. The function takes two parameters: `struct ble_gatt_register_ctxt *ctxt`, which represents context information about the registration operation, and `void *arg`, which is not used in this code snippet.
+
+2. Inside the function, a switch statement is used to handle different GATT registration operations (`ctxt->op`). The possible operations include registering a service (`BLE_GATT_REGISTER_OP_SVC`), registering a characteristic (`BLE_GATT_REGISTER_OP_CHR`), and registering a descriptor (`BLE_GATT_REGISTER_OP_DSC`).
+
+3. For each case, the code uses the `MODLOG_DFLT` macro to log debug information. The information logged includes the type of element being registered (service, characteristic, or descriptor) and its UUID in string format. Additionally, it logs specific details like handles associated with these elements.
+
+
+## Conclusion
+
+Overall, this code establishes a BLE SPP server, handles BLE events, advertises services, manages a custom Serial Port Profile (SPP) service, and enables UART data communication with connected BLE clients. It allows data to be exchanged between the ESP32 device and connected BLE clients via UART communication.

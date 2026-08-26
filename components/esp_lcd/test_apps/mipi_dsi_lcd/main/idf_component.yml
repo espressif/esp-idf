@@ -1,0 +1,2 @@
+dependencies:
+  esp_lcd_ek79007: "^1.0.0"

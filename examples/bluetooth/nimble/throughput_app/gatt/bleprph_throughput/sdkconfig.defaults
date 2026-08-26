@@ -1,0 +1,33 @@
+# Override some defaults so BT stack is enabled
+# in this example and some example specific misc sizes are increased.
+
+#
+# BT config (universal across all ESP32 variants)
+#
+CONFIG_BT_ENABLED=y
+CONFIG_BT_BLUEDROID_ENABLED=n
+CONFIG_BT_NIMBLE_ENABLED=y
+
+# === BT 5.0 / 2M PHY support ===
+# Ignored automatically on classic ESP32 which lacks BT 5.0
+CONFIG_BT_NIMBLE_EXT_ADV=n
+CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT=y
+CONFIG_EXAMPLE_EXTENDED_ADV=n
+
+# === ATT / GATT ===
+CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=512
+
+# === Memory Pool Tuning ===
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1
+CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=80
+CONFIG_BT_NIMBLE_MSYS_2_BLOCK_SIZE=592
+CONFIG_BT_NIMBLE_MSYS_2_BLOCK_COUNT=80
+
+# Increase controller-to-host buffers
+CONFIG_BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT=40
+CONFIG_BT_NIMBLE_TRANSPORT_ACL_SIZE=255
+CONFIG_BT_NIMBLE_TRANSPORT_EVT_SIZE=255
+
+# Disable NimBLE INFO logging for throughput tests
+CONFIG_BT_NIMBLE_LOG_LEVEL_WARNING=y
+CONFIG_BT_NIMBLE_LOG_LEVEL=2

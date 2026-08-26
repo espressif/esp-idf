@@ -1,0 +1,12 @@
+# Enable Unity fixture support
+CONFIG_UNITY_ENABLE_FIXTURE=n
+CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER=y
+CONFIG_COMPILER_DUMP_RTL_FILES=y
+
+# Custom partition table for this test app
+CONFIG_ESP_TASK_WDT_INIT=n
+
+CONFIG_ESP_CONSOLE_USB_CDC=y
+
+# one test requires this option to be enabled
+CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF=y

@@ -1,0 +1,36 @@
+CPU 0 interrupt status:
+ Int  Level  Type   Status
+  0     *      *    Reserved
+  1     *      *    Reserved
+  2     1    Level  Used: RTC_CORE
+  3     1    Level  Used: SYSTIMER_TARGET2_EDGE
+  4     1    Level  Used: ETS_FROM_CPU_INTR0
+  5     1    Level  Used: SYSTIMER_TARGET0_EDGE
+  6     *      *    Reserved
+  7     1    Level  Used: UART
+  8     *      *    Free
+  9     *      *    Free
+ 10     *      *    Free
+ 11     *      *    Free
+ 12     *      *    Free
+ 13     *      *    Free
+ 14     *      *    Free
+ 15     *      *    Free
+ 16     *      *    Free
+ 17     *      *    Free
+ 18     *      *    Free
+ 19     *      *    Free
+ 20     *      *    Free
+ 21     *      *    Free
+ 22     *      *    Free
+ 23     *      *    Free
+ 24     *      *    Reserved
+ 25     *      *    Reserved
+ 26     *      *    Free
+ 27     *      *    Reserved
+ 28     *      *    Free
+ 29     *      *    Free
+ 30     *      *    Free
+ 31     *      *    Free
+Interrupts available for general use: 21
+Shared interrupts: 0

@@ -1,0 +1,17 @@
+menu "Example Configuration"
+    config EXAMPLE_LCD_SPI_8_LINE_MODE
+        bool
+        prompt "Drive a LCD with 8 data lines"
+        depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        default "n"
+        help
+            This option can be chosen when using 8-line lcd.
+
+    config EXAMPLE_LCD_FLUSH_PARALLEL_LINES
+        int "LCD flush parallel lines"
+        default 12 if IDF_TARGET_ESP32C2
+        default 16
+        help
+            To speed up transfers, every SPI transfer sends a bunch of lines.
+
+endmenu

@@ -1,0 +1,6 @@
+## IDF Component Manager Manifest File
+dependencies:
+  ## Required IDF version
+  idf:
+    version: '>=6.0'
+  espressif/esp_sysview: ^1

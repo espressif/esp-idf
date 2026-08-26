@@ -1,0 +1,7 @@
+key,type,encoding,value
+nvs.net80211,namespace,,
+sta.ssid,data,blob_sz_fill(32;0x00),TESTSSID
+sta.pswd,data,blob_fill(64;0x00),TESTPASSWORD
+ap.ssid,data,blob_sz_fill(32;0x00),TESTSSID
+ap.passwd,data,blob_fill(64;0x00),TESTPASSWORD
+ap.authmode,data,u8,3

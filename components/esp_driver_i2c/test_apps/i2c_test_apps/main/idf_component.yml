@@ -1,0 +1,3 @@
+dependencies:
+  test_flash_utils:
+    path: ${IDF_PATH}/components/spi_flash/test_apps/components/test_flash_utils

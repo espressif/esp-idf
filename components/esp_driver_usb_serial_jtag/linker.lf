@@ -1,0 +1,5 @@
+[mapping:usb_serial_jtag_vfs]
+archive: libesp_driver_usb_serial_jtag.a
+entries:
+    if VFS_SELECT_IN_RAM = y && SOC_USB_SERIAL_JTAG_SUPPORTED = y:
+        usb_serial_jtag_vfs: select_notif_callback_isr (noflash)

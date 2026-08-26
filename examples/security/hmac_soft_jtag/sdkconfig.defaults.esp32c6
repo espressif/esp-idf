@@ -1,0 +1,3 @@
+# Changing channel for console output
+#
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y

@@ -1,0 +1,99 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdint.h>
+#include "esp_err.h"
+#include "hal/uart_types.h"
+#include "hal/uart_ll.h"
+
+#if SOC_LP_UART_SUPPORTED
+/**
+ * @brief LP UART peripheral interrupt enable
+ * @param uart_num UART port number
+ * @param mask Interrupt mask needs to be enabled
+ */
+static inline void ulp_lp_core_lp_uart_intr_enable(uart_port_t uart_num, uint32_t mask)
+{
+    HAL_ASSERT(uart_num == LP_UART_NUM_0);
+    uart_ll_ena_intr_mask(UART_LL_GET_HW(uart_num), mask);
+}
+
+/**
+ * @brief LP UART peripheral interrupt disable
+ * @param uart_num UART port number
+ * @param mask Interrupt mask needs to be disabled
+ */
+static inline void ulp_lp_core_lp_uart_intr_disable(uart_port_t uart_num, uint32_t mask)
+{
+    HAL_ASSERT(uart_num == LP_UART_NUM_0);
+    uart_ll_disable_intr_mask(UART_LL_GET_HW(uart_num), mask);
+}
+#endif /* SOC_LP_UART_SUPPORTED */
+
+/**
+ * @brief Send data to the LP UART port if there is space available in the Tx FIFO
+ *
+ * This function will not wait for enough space in the Tx FIFO to be available.
+ * It will just fill the available Tx FIFO slots and return when the FIFO is full.
+ * If there are no empty slots in the Tx FIFO, this function will not write any data.
+ *
+ * @param lp_uart_num   LP UART port number
+ * @param src           data buffer address
+ * @param size          data length to send
+ *
+ * @return              - (-1) Error
+ *                      - OTHERS (>=0) The number of bytes pushed to the Tx FIFO
+ */
+int lp_core_uart_tx_chars(uart_port_t lp_uart_num, const void *src, size_t size);
+
+/**
+ * @brief Write data to the LP UART port
+ *
+ * This function will write data to the Tx FIFO. If a timeout value is configured, this function will timeout once the number of CPU cycles expire.
+ *
+ * @param lp_uart_num   LP UART port number
+ * @param src           data buffer address
+ * @param size          data length to send
+ * @param timeout       Operation timeout in CPU cycles. Set to -1 to wait forever.
+ *
+ * @return esp_err_t    ESP_OK when successful
+ */
+esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, size_t size, int32_t timeout);
+
+/**
+ * @brief Read data from the LP UART port
+ *
+ * This function will read data from the Rx FIFO. If a timeout value is configured, then this function will timeout once the number of CPU cycles expire.
+ *
+ * @param lp_uart_num   LP UART port number
+ * @param buf           data buffer address
+ * @param size          data length to send
+ * @param timeout       Operation timeout in CPU cycles. Set to -1 to wait forever.
+ *
+ * @return              - (-1) Error
+ *                      - OTHERS (>=0) The number of bytes read from the Rx FIFO
+ */
+int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int32_t timeout);
+
+/**
+ * @brief Flush LP UART Tx FIFO
+ *
+ * This function is automatically called before the LP core powers down once the main() function returns.
+ * It can also be called manually in the application to flush the Tx FIFO.
+ *
+ * @param lp_uart_num   LP UART port number
+ */
+void lp_core_uart_tx_flush(uart_port_t lp_uart_num);
+
+#ifdef __cplusplus
+}
+#endif

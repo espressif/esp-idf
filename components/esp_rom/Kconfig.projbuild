@@ -1,0 +1,37 @@
+orsource "./$IDF_TARGET//Kconfig.soc_caps.in"
+
+menu "Boot ROM Behavior"
+    visible if !IDF_TARGET_ESP32  # no options ere currently supported on ESP32
+
+    choice BOOT_ROM_LOG_SCHEME
+        prompt "Permanently change Boot ROM output"
+        default BOOT_ROM_LOG_ALWAYS_ON
+        depends on !IDF_TARGET_ESP32
+        help
+            Controls the Boot ROM log behavior.
+            The rom log behavior can only be changed for once,
+            specific eFuse bit(s) will be burned at app boot stage.
+
+        config BOOT_ROM_LOG_ALWAYS_ON
+            bool "Always Log"
+            help
+                Always print ROM logs, this is the default behavior.
+        config BOOT_ROM_LOG_ALWAYS_OFF
+            bool "Permanently disable logging"
+            help
+                Don't print ROM logs.
+        config BOOT_ROM_LOG_ON_GPIO_HIGH
+            bool "Log on GPIO High"
+            help
+                Print ROM logs when GPIO level is high during start up.
+                The GPIO number is chip dependent,
+                e.g. on ESP32-S2, the control GPIO is GPIO46.
+        config BOOT_ROM_LOG_ON_GPIO_LOW
+            bool "Log on GPIO Low"
+            help
+                Print ROM logs when GPIO level is low during start up.
+                The GPIO number is chip dependent,
+                e.g. on ESP32-S2, the control GPIO is GPIO46.
+    endchoice
+
+endmenu  # Boot ROM Behavior

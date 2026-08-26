@@ -1,0 +1,13 @@
+[sections:esp_err_msg_tbl]
+entries:
+    .esp_err_msg_tbl+
+
+[scheme:esp_err_msg_tbl_default]
+entries:
+    esp_err_msg_tbl -> flash_rodata
+
+[mapping:esp_err_msg_tbl]
+archive: *
+entries:
+    * (esp_err_msg_tbl_default);
+    esp_err_msg_tbl -> flash_rodata KEEP() SORT(name) SURROUND(esp_err_msg_tbl)

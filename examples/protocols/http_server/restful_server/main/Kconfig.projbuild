@@ -1,0 +1,22 @@
+menu "Example Configuration"
+
+    config EXAMPLE_MDNS_HOST_NAME
+        string "mDNS Host Name"
+        default "dashboard"
+        help
+            Specify the domain name used in the mDNS service.
+            Note that webpage also take it as a part of URL where it will send GET/POST requests to.
+
+    config EXAMPLE_WEB_MOUNT_POINT
+        string "Website mount point in VFS"
+        default "/www"
+        help
+            Specify the mount point in VFS.
+
+    config EXAMPLE_DEPLOY_WEB_PAGES
+        bool "Deploy web pages to device's filesystem"
+        default n
+        help
+            If enabled, the example will deploy web pages to the device's filesystem.
+            Ensure that the necessary files (html, css, js, etc.) are available in the `front/web-demo/dist` directory.
+endmenu

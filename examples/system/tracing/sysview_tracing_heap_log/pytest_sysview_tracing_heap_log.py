@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+import os.path
+import time
+import typing
+
+import pexpect.fdpexpect
+import pytest
+from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
+
+if typing.TYPE_CHECKING:
+    from conftest import OpenOCD
+
+
+def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
+    # Single multi-core capture file (esp sysview_mcore): one file is enough for
+    # both single- and dual-core targets.
+    trace_log = os.path.join(dut.logdir, 'heap_log.svdat')  # pylint: disable=protected-access
+
+    # Prepare gdbinit file pointing at this run's capture file
+    gdb_logfile = os.path.join(dut.logdir, 'gdb.txt')
+    gdbinit_orig = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gdbinit')
+    gdbinit = os.path.join(dut.logdir, 'gdbinit')
+    with open(gdbinit_orig) as f_r, open(gdbinit, 'w') as f_w:
+        for line in f_r:
+            if line.startswith('mon esp sysview_mcore start'):
+                f_w.write(f'mon esp sysview_mcore start file://{trace_log}\n')
+            else:
+                f_w.write(line)
+
+    time.sleep(1)  # Wait for the USJ port to be ready
+    dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
+    with openocd_dut.run() as oocd:
+        if dut.target == 'esp32p4':
+            oocd.write('esp appimage_offset 0x20000')
+        with (
+            open(gdb_logfile, 'w') as gdb_log,
+            pexpect.spawn(
+                f'idf.py -B {dut.app.binary_path} gdb --batch -x {gdbinit}',
+                timeout=60,
+                logfile=gdb_log,
+                encoding='utf-8',
+                codec_errors='ignore',
+            ) as p,
+        ):
+            # Wait for sysview files to be generated
+            p.expect_exact('Tracing is STOPPED')
+
+    # Process sysview trace log (sysviewtrace_proc.py auto-detects and splits the
+    # multi-core capture, so a single file works for single- and dual-core)
+    command = [os.path.join(idf_path, 'tools', 'esp_app_trace', 'sysviewtrace_proc.py'), '-p', trace_log]
+    with pexpect.spawn(' '.join(command)) as sysviewtrace:
+        sysviewtrace.expect(r'Found \d+ leaked bytes in \d+ blocks.', timeout=120)
+
+    # Validate GDB logs
+    with open(gdb_logfile, encoding='utf-8') as fr:  # pylint: disable=protected-access
+        gdb_pexpect_proc = pexpect.fdpexpect.fdspawn(fr.fileno())
+        gdb_pexpect_proc.expect_exact(
+            'Thread 2 "main" hit Temporary breakpoint 1, heap_trace_start (mode_param', timeout=10
+        )  # should be (mode_param=HEAP_TRACE_ALL) # TODO GCC-329
+        gdb_pexpect_proc.expect_exact('Thread 2 "main" hit Temporary breakpoint 2, heap_trace_stop ()', timeout=10)
+
+
+@pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
+@pytest.mark.jtag
+@idf_parametrize('target', ['esp32', 'esp32c2', 'esp32s2'], indirect=['target'])
+def test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
+    _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)
+
+
+@pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
+@pytest.mark.usb_serial_jtag
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'),
+    indirect=['target'],
+)
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
+def test_examples_sysview_tracing_heap_log_usj(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
+    _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)

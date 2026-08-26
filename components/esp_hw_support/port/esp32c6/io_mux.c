@@ -1,0 +1,72 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "sdkconfig.h"
+#include "esp_attr.h"
+#include "esp_private/io_mux.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/critical_section.h"
+#include "hal/rtc_io_ll.h"
+
+#define RTCIO_RCC_ATOMIC()  PERIPH_RCC_ATOMIC()
+
+DEFINE_CRIT_SECTION_LOCK_STATIC(s_io_mux_spinlock);
+
+#if CONFIG_ULP_COPROC_ENABLED
+RTC_DATA_ATTR
+#endif
+static rtc_io_status_t s_rtc_io_status = {
+    .rtc_io_enabled_cnt = { 0 },
+    .rtc_io_using_mask = 0
+};
+
+void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
+{
+    uint32_t rtc_io_num = gpio_num - RTCIO_LL_GPIO_NUM_OFFSET;
+    assert(rtc_io_num < SOC_RTCIO_PIN_COUNT);
+    esp_os_enter_critical(&s_io_mux_spinlock);
+    if (enable) {
+        if (s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] == 0) {
+            s_rtc_io_status.rtc_io_using_mask |= (1ULL << rtc_io_num);
+        }
+        s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num]++;
+    } else if (!enable && (s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] > 0)) {
+        s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num]--;
+        if (s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] == 0) {
+            s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << rtc_io_num);
+        }
+    }
+    RTCIO_RCC_ATOMIC() {
+        if (s_rtc_io_status.rtc_io_using_mask == 0) {
+            rtcio_ll_enable_io_clock(false);
+        } else {
+            rtcio_ll_enable_io_clock(true);
+        }
+    }
+    esp_os_exit_critical(&s_io_mux_spinlock);
+}
+
+void io_mux_force_disable_lp_io_clock(gpio_num_t gpio_num)
+{
+    uint32_t rtc_io_num = gpio_num - RTCIO_LL_GPIO_NUM_OFFSET;
+    assert(rtc_io_num < SOC_RTCIO_PIN_COUNT);
+    esp_os_enter_critical(&s_io_mux_spinlock);
+    s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] = 0;
+    s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << rtc_io_num);
+    if (s_rtc_io_status.rtc_io_using_mask == 0) {
+        RTCIO_RCC_ATOMIC() {
+            rtcio_ll_enable_io_clock(false);
+        }
+    }
+    esp_os_exit_critical(&s_io_mux_spinlock);
+}
+
+bool io_mux_is_lp_io_in_use(gpio_num_t gpio_num)
+{
+    uint32_t rtc_io_num = gpio_num - RTCIO_LL_GPIO_NUM_OFFSET;
+    assert(rtc_io_num < SOC_RTCIO_PIN_COUNT);
+    return s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] > 0;
+}

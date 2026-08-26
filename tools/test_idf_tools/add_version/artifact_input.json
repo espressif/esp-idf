@@ -1,0 +1,12 @@
+[
+        {
+            "filename": "xtensa-esp-elf-test-linux-amd64.tar.gz",
+            "size": 10,
+            "sha256": "d2d02ea74de2c9fab1d802db969c18d409a8663a9697977bb1c98ccdd9de4372"
+        },
+        {
+            "filename": "xtensa-esp-elf-test-linux-armhf.tar.gz",
+            "size": 20,
+            "sha256": "d1b3707fbdc6a22d16e95bf6b910646f5d9c2b3ed81bd637d454ffb9bb0948e4"
+        }
+]

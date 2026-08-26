@@ -1,0 +1,56 @@
+/* override table width restrictions */
+@media screen and (min-width: 767px) {
+
+  .wy-table-responsive table td {
+    /* !important prevents the common CSS stylesheets from overriding
+       this as on RTD they are loaded after this stylesheet */
+    white-space: normal !important;
+  }
+
+  .wy-table-responsive {
+    overflow: visible !important;
+  }
+}
+
+.wy-side-nav-search {
+  background-color: #e3e3e3 !important;
+}
+
+.wy-side-nav-search input[type=text] {
+   border-radius: 0px !important;
+   border-color: #333333 !important;
+}
+
+.icon-home {
+  color: #333333 !important;
+}
+
+.icon-home:hover {
+  background-color: #d6d6d6 !important;
+}
+
+.version {
+  color: #000000 !important;
+}
+
+a:hover {
+  color: #bd2c2a !important;
+}
+
+.logo {
+  width: 240px !important;
+}
+
+/* For space between the return type and function name */
+a.internal + code.descname::before {
+  content: ' ';
+}
+
+/* For space between the arguments of the function */
+a.internal + em::before {
+  content: ' ';
+}
+
+.tool-sha256 {
+  word-break: break-all;
+}

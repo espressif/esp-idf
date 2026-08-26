@@ -1,0 +1,17 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: no-stdint-include-in-soc-reg-header
+message: Don't include <stdint.h> in soc *reg.h headers
+severity: error # error, warning, info, hint
+note: Please remove '#include <stdint.h>' from soc *reg.h headers
+language: C
+files:
+  - "components/soc/**/*reg.h"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    pattern: $N
+constraints:
+  N:
+    regex: '^["<]stdint\.h[">]' # match "stdint.h" or <stdint.h>
+fix: ''

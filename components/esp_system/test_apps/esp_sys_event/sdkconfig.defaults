@@ -1,0 +1,2 @@
+# Defaults for esp_sys_event test
+CONFIG_ESP_TASK_WDT_INIT=n

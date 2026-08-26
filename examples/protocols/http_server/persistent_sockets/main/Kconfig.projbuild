@@ -1,0 +1,9 @@
+menu "Example Configuration"
+
+    config EXAMPLE_SESSION_CTX_HANDLERS
+        bool "Update session ctx from another handler"
+        default n
+        help
+            Feature to show how session ctx can be manipulated by other handlers.
+
+endmenu

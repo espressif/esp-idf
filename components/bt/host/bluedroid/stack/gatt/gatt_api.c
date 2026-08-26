@@ -1,0 +1,1875 @@
+/******************************************************************************
+ *
+ *  Copyright (C) 1999-2012 Broadcom Corporation
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ ******************************************************************************/
+
+/******************************************************************************
+ *
+ *  this file contains GATT interface functions
+ *
+ ******************************************************************************/
+#include "common/bt_target.h"
+
+
+#if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
+
+#include "osi/allocator.h"
+#include <string.h>
+#include "stack/gatt_api.h"
+#include "gatt_int.h"
+#include "stack/l2c_api.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
+#include "btm_int.h"
+#include "stack/sdpdefs.h"
+#include "stack/sdp_api.h"
+
+/*******************************************************************************
+**
+** Function         GATT_SetTraceLevel
+**
+** Description      This function sets the trace level.  If called with
+**                  a value of 0xFF, it simply returns the current trace level.
+**
+**                  Input Parameters:
+**                      level:  The level to set the GATT tracing to:
+**                      0xff-returns the current setting.
+**                      0-turns off tracing.
+**                      >= 1-Errors.
+**                      >= 2-Warnings.
+**                      >= 3-APIs.
+**                      >= 4-Events.
+**                      >= 5-Debug.
+**
+** Returns          The new or current trace level
+**
+*******************************************************************************/
+UINT8 GATT_SetTraceLevel (UINT8 new_level)
+{
+    if (new_level != 0xFF) {
+        gatt_cb.trace_level = new_level;
+    }
+
+    return (gatt_cb.trace_level);
+}
+
+
+#if (GATTS_INCLUDED == TRUE)
+/*****************************************************************************
+**
+**                  GATT SERVER API
+**
+******************************************************************************/
+/*******************************************************************************
+**
+** Function         GATTS_AddHandleRange
+**
+** Description      This function add the allocated handles range for the specified
+**                  application UUID, service UUID and service instance
+**
+** Parameter        p_hndl_range:   pointer to allocated handles information
+**
+** Returns          TRUE if handle range is added successfully; otherwise FALSE.
+**
+*******************************************************************************/
+
+BOOLEAN GATTS_AddHandleRange(tGATTS_HNDL_RANGE *p_hndl_range)
+{
+    tGATT_HDL_LIST_ELEM *p_buf;
+    BOOLEAN status = FALSE;
+
+    if ((p_buf = gatt_alloc_hdl_buffer()) != NULL) {
+        p_buf->asgn_range = *p_hndl_range;
+        status  = gatt_add_an_item_to_list(&gatt_cb.hdl_list_info, p_buf);
+    }
+    return status;
+}
+
+
+/*******************************************************************************
+**
+** Function         GATTS_NVRegister
+**
+** Description      Application manager calls this function to register for
+**                  NV save callback function.  There can be one and only one
+**                  NV save callback function.
+**
+** Parameter        p_cb_info : callback information
+**
+** Returns          TRUE if registered OK, else FALSE
+**
+*******************************************************************************/
+BOOLEAN  GATTS_NVRegister (const tGATT_APPL_INFO *p_cb_info)
+{
+    BOOLEAN status = FALSE;
+    if (p_cb_info) {
+        gatt_cb.cb_info = *p_cb_info;
+        status = TRUE;
+        gatt_init_srv_chg();
+    }
+
+    return status;
+}
+
+#if GATTS_ROBUST_CACHING_ENABLED
+static void gatt_update_for_database_change(void)
+{
+    UINT8 i;
+
+    gatts_calculate_datebase_hash(gatt_cb.database_hash);
+
+    for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
+        tGATT_TCB *p_tcb = gatt_get_tcb_by_idx(i);
+        if (p_tcb && p_tcb->in_use) {
+            gatt_sr_update_cl_status(p_tcb, false);
+        }
+    }
+}
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
+/*******************************************************************************
+**
+** Function         GATTS_CreateService
+**
+** Description      This function is called to reserve a block of handles for a service.
+**
+**                  *** It should be called only once per service instance  ***
+**
+** Parameter        gatt_if       : application if
+**                  p_svc_uuid    : service UUID
+**                  svc_inst      : instance of the service inside the application
+**                  num_handles   : number of handles needed by the service.
+**                  is_pri        : is a primary service or not.
+**
+** Returns          service handle if successful, otherwise 0.
+**
+*******************************************************************************/
+UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
+                            UINT16 svc_inst, UINT16 num_handles, BOOLEAN is_pri)
+{
+
+    tGATT_HDL_LIST_INFO     *p_list_info = &gatt_cb.hdl_list_info;
+    tGATT_HDL_LIST_ELEM     *p_list = NULL;
+    UINT16                  s_hdl = 0;
+    BOOLEAN                 save_hdl = FALSE;
+    tGATTS_PENDING_NEW_SRV_START      *p_buf = NULL;
+    tGATT_REG              *p_reg = gatt_get_regcb(gatt_if);
+    tBT_UUID     *p_app_uuid128;
+
+
+    GATT_TRACE_API ("GATTS_CreateService\n" );
+
+    if (p_reg == NULL) {
+        GATT_TRACE_ERROR ("Invalid gatt_if=%d\n", gatt_if);
+        return (0);
+    }
+
+    p_app_uuid128 = &p_reg->app_uuid128;
+
+    if ((p_list = gatt_find_hdl_buffer_by_app_id(p_app_uuid128, p_svc_uuid, svc_inst)) != NULL) {
+        GATT_TRACE_DEBUG ("Service already been created!!\n");
+        return p_list->asgn_range.s_handle;
+    } else {
+        if ( (p_svc_uuid->len == LEN_UUID_16) && (p_svc_uuid->uu.uuid16 == UUID_SERVCLASS_GATT_SERVER)) {
+            s_hdl =  gatt_cb.hdl_cfg.gatt_start_hdl;
+            save_hdl = TRUE;
+        } else if ((p_svc_uuid->len == LEN_UUID_16) && (p_svc_uuid->uu.uuid16 == UUID_SERVCLASS_GAP_SERVER)) {
+            s_hdl = gatt_cb.hdl_cfg.gap_start_hdl;
+            save_hdl = TRUE;
+        } else {
+            p_list = p_list_info->p_first;
+
+            if (p_list) {
+                s_hdl = p_list->asgn_range.e_handle + 1;
+            }
+
+            if (s_hdl < gatt_cb.hdl_cfg.app_start_hdl) {
+
+                s_hdl = gatt_cb.hdl_cfg.app_start_hdl;
+            }
+            save_hdl = TRUE;
+        }
+
+        /* check for space */
+        if (num_handles > (0xFFFF - s_hdl + 1)) {
+            GATT_TRACE_ERROR ("GATTS_ReserveHandles: no handles, s_hdl: %u  needed: %u\n", s_hdl, num_handles);
+            return (0);
+        }
+
+        if ( (p_list = gatt_alloc_hdl_buffer()) == NULL) {
+            /* No free entry */
+            GATT_TRACE_ERROR ("GATTS_ReserveHandles: no free handle blocks\n");
+            return (0);
+        }
+
+        p_list->asgn_range.app_uuid128 = *p_app_uuid128;
+        p_list->asgn_range.svc_uuid    = *p_svc_uuid;
+        p_list->asgn_range.svc_inst    = svc_inst;
+        p_list->asgn_range.s_handle    = s_hdl;
+        p_list->asgn_range.e_handle    = s_hdl + num_handles - 1;
+        p_list->asgn_range.is_primary  = is_pri;
+
+        gatt_add_an_item_to_list(p_list_info, p_list);
+
+        if (save_hdl) {
+            if (gatt_cb.cb_info.p_nv_save_callback) {
+                (*gatt_cb.cb_info.p_nv_save_callback)(TRUE, &p_list->asgn_range);
+            }
+            /* add a pending new  service change item to the list */
+            if ( (p_buf = gatt_add_pending_new_srv_start(&p_list->asgn_range)) == NULL) {
+                /* No free entry */
+                GATT_TRACE_ERROR ("gatt_add_pending_new_srv_start: no free blocks\n");
+
+                if (p_list) {
+                    gatt_remove_an_item_from_list(p_list_info, p_list);
+                    gatt_purge_prepare_write_before_free_db(&p_list->svc_db);
+                    gatt_free_attr_value_buffer(p_list);
+                    gatt_free_hdl_buffer(p_list);
+                }
+                return (0);
+            }
+
+            GATT_TRACE_DEBUG ("Add a new srv chg item\n");
+        }
+    }
+
+    if (!gatts_init_service_db(&p_list->svc_db, p_svc_uuid, is_pri, s_hdl , num_handles)) {
+        GATT_TRACE_ERROR ("GATTS_ReserveHandles: service DB initialization failed\n");
+        if (p_list) {
+            gatt_remove_an_item_from_list(p_list_info, p_list);
+            gatt_purge_prepare_write_before_free_db(&p_list->svc_db);
+            gatt_free_attr_value_buffer(p_list);
+            gatt_free_hdl_buffer(p_list);
+        }
+
+        if (p_buf) {
+            osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
+        }
+        return (0);
+    }
+
+    return (s_hdl);
+}
+
+/*******************************************************************************
+**
+** Function         GATTS_AddIncludeService
+**
+** Description      This function is called to add an included service.
+**
+** Parameter        service_handle : To which service this included service is added to.
+**                  include_svc_handle    : included service handle.
+**
+** Returns          included service attribute handle. If 0, add included service
+**                  fail.
+**
+*******************************************************************************/
+UINT16 GATTS_AddIncludeService (UINT16 service_handle, UINT16 include_svc_handle)
+
+{
+    tGATT_HDL_LIST_ELEM  *p_decl, *p_incl_decl;
+
+    if ((p_decl = gatt_find_hdl_buffer_by_handle(service_handle)) == NULL) {
+        GATT_TRACE_DEBUG("Service not created");
+        return 0;
+    }
+    if ((p_incl_decl = gatt_find_hdl_buffer_by_handle(include_svc_handle)) == NULL) {
+        GATT_TRACE_DEBUG("Included Service not created");
+        return 0;
+    }
+
+    return gatts_add_included_service(&p_decl->svc_db,
+                                      p_incl_decl->asgn_range.s_handle,
+                                      p_incl_decl->asgn_range.e_handle,
+                                      p_incl_decl->asgn_range.svc_uuid);
+}
+/*******************************************************************************
+**
+** Function         GATTS_AddCharacteristic
+**
+** Description      This function is called to add a characteristic into a service.
+**                  It will add a characteristic declaration and characteristic
+**                  value declaration into the service database identified by the
+**                  service handle.
+**
+** Parameter        service_handle : To which service this included service is added to.
+**                  char_uuid : Characteristic UUID.
+**                  perm      : Characteristic value declaration attribute permission.
+**                  property  : Characteristic Properties
+**
+** Returns          Characteristic value declaration attribute handle. 0 if failed.
+**
+*******************************************************************************/
+UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *p_char_uuid,
+                                tGATT_PERM perm, tGATT_CHAR_PROP property,
+                                tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control)
+{
+    tGATT_HDL_LIST_ELEM  *p_decl;
+
+    if ((p_decl = gatt_find_hdl_buffer_by_handle(service_handle)) == NULL) {
+        GATT_TRACE_DEBUG("Service not created\n");
+        return 0;
+    }
+    /* data validity checking */
+    if (  ((property & GATT_CHAR_PROP_BIT_AUTH) && !(perm & GATT_WRITE_SIGNED_PERM)) ||
+            ((perm & GATT_WRITE_SIGNED_PERM) && !(property & GATT_CHAR_PROP_BIT_AUTH)) ) {
+        GATT_TRACE_DEBUG("Invalid configuration property=0x%x perm=0x%x\n ", property, perm);
+        return 0;
+    }
+
+    return gatts_add_characteristic(&p_decl->svc_db,
+                                    perm,
+                                    property,
+                                    p_char_uuid,
+                                    attr_val, control);
+}
+/*******************************************************************************
+**
+** Function         GATTS_AddCharDescriptor
+**
+** Description      This function is called to add a characteristic descriptor
+**                  into a service database. Add descriptor should follow add char
+**                  to which it belongs, and next add char should be done only
+**                  after all add descriptors for the previous char.
+**
+** Parameter        service_handle  : To which service this characteristic descriptor
+**                                    is added to.
+**                  perm            : Characteristic value declaration attribute
+**                                    permission.
+**                  p_descr_uuid    : Characteristic descriptor UUID
+**
+** Returns         Characteristic descriptor attribute handle. 0 if add
+**                 characteristic descriptor failed.
+**
+*******************************************************************************/
+UINT16 GATTS_AddCharDescriptor (UINT16 service_handle,
+                                tGATT_PERM perm,
+                                tBT_UUID   *p_descr_uuid, tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control)
+{
+    tGATT_HDL_LIST_ELEM  *p_decl;
+
+    if ((p_decl = gatt_find_hdl_buffer_by_handle(service_handle)) == NULL) {
+        GATT_TRACE_DEBUG("Service not created");
+        return 0;
+    }
+    if (p_descr_uuid == NULL ||
+            (p_descr_uuid->len != LEN_UUID_128 && p_descr_uuid->len !=  LEN_UUID_16
+             && p_descr_uuid->len !=  LEN_UUID_32)) {
+        GATT_TRACE_DEBUG("Illegal parameter");
+        return 0;
+    }
+
+    return gatts_add_char_descr(&p_decl->svc_db,
+                                perm,
+                                p_descr_uuid,
+                                attr_val, control);
+
+}
+/*******************************************************************************
+**
+** Function         GATTS_DeleteService
+**
+** Description      This function is called to delete a service.
+**
+** Parameter        gatt_if       : application interface
+**                  p_svc_uuid    : service UUID
+**                  svc_inst      : instance of the service inside the application
+**
+** Returns          TRUE if operation succeed, FALSE if handle block was not found.
+**
+*******************************************************************************/
+BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_inst)
+{
+
+    tGATT_HDL_LIST_INFO             *p_list_info = &gatt_cb.hdl_list_info;
+    tGATT_HDL_LIST_ELEM             *p_list = NULL;
+    UINT8                           i_sreg;
+    tGATTS_PENDING_NEW_SRV_START    *p_buf;
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tBT_UUID *p_app_uuid128;
+    BOOLEAN         notify_db_change = FALSE;
+
+    GATT_TRACE_DEBUG ("GATTS_DeleteService");
+
+    if (p_reg == NULL) {
+        GATT_TRACE_ERROR ("Application not foud");
+        return (FALSE);
+    }
+    p_app_uuid128 = &p_reg->app_uuid128;
+
+    if ((p_list = gatt_find_hdl_buffer_by_app_id(p_app_uuid128, p_svc_uuid, svc_inst)) == NULL) {
+        GATT_TRACE_ERROR ("No Service found");
+        return (FALSE);
+    }
+
+    if ( (p_buf = gatt_sr_is_new_srv_chg(&p_list->asgn_range.app_uuid128,
+                                         &p_list->asgn_range.svc_uuid,
+                                         p_list->asgn_range.svc_inst)) != NULL) {
+        GATT_TRACE_DEBUG ("Delete a new service changed item - the service has not yet started");
+        osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
+    } else {
+        /* Service was started; notify clients after it is removed from sr_reg. */
+        notify_db_change = TRUE;
+    }
+
+    if ((i_sreg = gatt_sr_find_i_rcb_by_app_id (p_app_uuid128,
+                  p_svc_uuid,
+                  svc_inst)) != GATT_MAX_SR_PROFILES) {
+        GATTS_StopService(gatt_cb.sr_reg[i_sreg].s_hdl);
+    }
+
+    GATT_TRACE_DEBUG ("released handles s_hdl=%u e_hdl=%u",
+                      p_list->asgn_range.s_handle , p_list->asgn_range.e_handle  );
+
+    if ( (p_list->asgn_range.s_handle >= gatt_cb.hdl_cfg.app_start_hdl)
+            && gatt_cb.cb_info.p_nv_save_callback) {
+        (*gatt_cb.cb_info.p_nv_save_callback)(FALSE, &p_list->asgn_range);
+    }
+
+    gatt_remove_an_item_from_list(p_list_info, p_list);
+    gatt_purge_prepare_write_before_free_db(&p_list->svc_db);
+    gatt_free_attr_value_buffer(p_list);
+    gatt_free_hdl_buffer(p_list);
+
+    if (notify_db_change) {
+#if GATTS_ROBUST_CACHING_ENABLED
+        gatt_update_for_database_change();
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
+        if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
+            gatt_proc_srv_chg();
+        }
+    }
+
+    return (TRUE);
+}
+
+/*******************************************************************************
+**
+** Function         GATTS_StartService
+**
+** Description      This function is called to start a service with GATT
+**
+** Parameter        gatt_if : service handle.
+**                  p_cback       : application service callback functions.
+**                  sup_transport : supported transport(s) for this primary service
+**
+** return           GATT_SUCCESS if successfully started; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
+                                 tGATT_TRANSPORT sup_transport)
+{
+    tGATT_SR_REG            *p_sreg;
+    tGATT_HDL_LIST_ELEM      *p_list = NULL;
+    UINT8                    i_sreg;
+#if (SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE)
+    tBT_UUID                *p_uuid;
+#endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
+    tGATT_REG              *p_reg = gatt_get_regcb(gatt_if);
+
+    tGATTS_PENDING_NEW_SRV_START *p_buf;
+
+    GATT_TRACE_API ("GATTS_StartService");
+
+    if (p_reg == NULL) {
+        /* Not found  */
+        GATT_TRACE_ERROR ("Application not found ");
+        return GATT_NOT_FOUND;
+    }
+
+    if ((p_list = gatt_find_hdl_buffer_by_handle(service_handle)) == NULL) {
+        /* Not found  */
+        GATT_TRACE_ERROR ("no service found");
+        return GATT_NOT_FOUND;
+    }
+
+    if (gatt_sr_find_i_rcb_by_app_id (&p_list->asgn_range.app_uuid128,
+                                      &p_list->asgn_range.svc_uuid,
+                                      p_list->asgn_range.svc_inst) != GATT_MAX_SR_PROFILES) {
+        GATT_TRACE_ERROR ("Duplicate Service start - Service already started");
+        return GATT_SERVICE_STARTED;
+    }
+
+    /*this is a new application service start */
+    if ((i_sreg = gatt_sr_alloc_rcb(p_list)) ==  GATT_MAX_SR_PROFILES) {
+        GATT_TRACE_ERROR ("GATTS_StartService: no free server registration block");
+        return GATT_NO_RESOURCES;
+    }
+
+    p_sreg = &gatt_cb.sr_reg[i_sreg];
+    p_sreg->gatt_if = gatt_if;
+
+    switch (sup_transport) {
+    case GATT_TRANSPORT_BR_EDR:
+    case GATT_TRANSPORT_LE_BR_EDR:
+        if (p_sreg->type == GATT_UUID_PRI_SERVICE) {
+#if (SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE)
+            p_uuid = gatts_get_service_uuid (p_sreg->p_db);
+            p_sreg->sdp_handle = gatt_add_sdp_record(p_uuid, p_sreg->s_hdl, p_sreg->e_hdl);
+#endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
+        }
+        break;
+    default:
+        break;
+    }
+
+    gatts_update_srv_list_elem(i_sreg, p_sreg->s_hdl,
+                               p_list->asgn_range.is_primary);
+
+    gatt_add_a_srv_to_list(&gatt_cb.srv_list_info, &gatt_cb.srv_list[i_sreg]);
+
+    GATT_TRACE_DEBUG ("allocated i_sreg=%d\n", i_sreg);
+
+    GATT_TRACE_DEBUG ("s_hdl=%d e_hdl=%d type=0x%x svc_inst=%d sdp_hdl=0x%x\n",
+                      p_sreg->s_hdl, p_sreg->e_hdl,
+                      p_sreg->type,  p_sreg->service_instance,
+                      p_sreg->sdp_handle);
+
+
+    if ( (p_buf = gatt_sr_is_new_srv_chg(&p_list->asgn_range.app_uuid128,
+                                         &p_list->asgn_range.svc_uuid,
+                                         p_list->asgn_range.svc_inst)) != NULL) {
+
+        #if GATTS_ROBUST_CACHING_ENABLED
+        gatt_update_for_database_change();
+        #endif /* GATTS_ROBUST_CACHING_ENABLED */
+
+        if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
+            gatt_proc_srv_chg();
+        }
+        /* remove the new service element after the srv changed processing is completed*/
+
+        osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
+    }
+    return GATT_SUCCESS;
+}
+
+/*******************************************************************************
+**
+** Function         GATTS_StopService
+**
+** Description      This function is called to stop a service
+**
+** Parameter         service_handle : this is the start handle of a service
+**
+** Returns          None.
+**
+*******************************************************************************/
+void GATTS_StopService (UINT16 service_handle)
+{
+    UINT8           ii = gatt_sr_find_i_rcb_by_handle(service_handle);
+
+    GATT_TRACE_API("GATTS_StopService %u", service_handle);
+
+    /* Index 0 is reserved for GATT, and is never stopped */
+    if ( (ii > 0) && (ii < GATT_MAX_SR_PROFILES) && (gatt_cb.sr_reg[ii].in_use) ) {
+#if(SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE)
+        if (gatt_cb.sr_reg[ii].sdp_handle) {
+            SDP_DeleteRecord(gatt_cb.sr_reg[ii].sdp_handle);
+        }
+#endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
+        gatt_remove_a_srv_from_list(&gatt_cb.srv_list_info, &gatt_cb.srv_list[ii]);
+        gatt_cb.srv_list[ii].in_use = FALSE;
+        memset (&gatt_cb.sr_reg[ii], 0, sizeof(tGATT_SR_REG));
+    } else {
+        GATT_TRACE_ERROR("GATTS_StopService service_handle: %u is not in use", service_handle);
+    }
+}
+/*******************************************************************************
+**
+** Function         GATTs_HandleValueIndication
+**
+** Description      This function sends a handle value indication to a client.
+**
+** Parameter        conn_id: connection identifier.
+**                  attr_handle: Attribute handle of this handle value indication.
+**                  val_len: Length of the indicated attribute value.
+**                  p_val: Pointer to the indicated attribute value data.
+**
+** Returns          GATT_SUCCESS if successfully sent or queued; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, UINT16 val_len, UINT8 *p_val)
+{
+    tGATT_STATUS    cmd_status = GATT_NO_RESOURCES;
+
+    tGATT_VALUE      indication;
+    BT_HDR          *p_msg;
+    tGATT_IF         gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+
+
+    GATT_TRACE_API ("GATTS_HandleValueIndication");
+    if ( (p_reg == NULL) || (p_tcb == NULL)) {
+        GATT_TRACE_ERROR ("GATTS_HandleValueIndication Unknown  conn_id: %u ", conn_id);
+        return (tGATT_STATUS) GATT_INVALID_CONN_ID;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
+    if (! GATT_HANDLE_IS_VALID (attr_handle)) {
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    indication.conn_id  = conn_id;
+    indication.handle   = attr_handle;
+    indication.len      = val_len;
+    memcpy (indication.value, p_val, val_len);
+    indication.auth_req = GATT_AUTH_REQ_NONE;
+
+    if (GATT_HANDLE_IS_VALID(p_tcb->indicate_handle)) {
+        /* TODO: need to further check whether deleting pending queue here cause reducing transport performance */
+        /*
+        GATT_TRACE_DEBUG ("Add a pending indication");
+        if ((p_buf = gatt_add_pending_ind(p_tcb, &indication)) != NULL) {
+            cmd_status = GATT_SUCCESS;
+        } else {
+            cmd_status = GATT_NO_RESOURCES;
+        }
+        */
+        return GATT_BUSY;
+    } else {
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        /* Route the indication over an EATT bearer (if any) so it uses the EATT
+         * MTU instead of the legacy 23-byte ATT MTU. Set transiently and cleared
+         * after the send; all GATT TX runs on the single BTU task. */
+        UINT16 ind_bearer = gatt_eatt_get_server_tx_bearer(p_tcb->peer_bda);
+        p_tcb->eatt_tx_bearer = (ind_bearer != L2CAP_ATT_CID) ? ind_bearer : 0;
+#endif
+        if ( (p_msg = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_IND, (tGATT_SR_MSG *)&indication)) != NULL) {
+            cmd_status = attp_send_sr_msg (p_tcb, p_msg);
+
+            if (cmd_status == GATT_SUCCESS || cmd_status == GATT_CONGESTED) {
+                p_tcb->indicate_handle = indication.handle;
+                gatt_start_conf_timer(p_tcb);
+            }
+        }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        p_tcb->eatt_tx_bearer = 0;
+#endif
+    }
+    return cmd_status;
+}
+
+/*******************************************************************************
+**
+** Function         GATTS_HandleValueNotification
+**
+** Description      This function sends a handle value notification to a client.
+**
+** Parameter        conn_id: connection identifier.
+**                  attr_handle: Attribute handle of this handle value indication.
+**                  val_len: Length of the indicated attribute value.
+**                  p_val: Pointer to the indicated attribute value data.
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
+        UINT16 val_len, UINT8 *p_val)
+{
+    tGATT_STATUS    cmd_sent = GATT_ILLEGAL_PARAMETER;
+    BT_HDR          *p_buf;
+    tGATT_VALUE     notif;
+    tGATT_IF         gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+
+    GATT_TRACE_API ("GATTS_HandleValueNotification");
+
+    if ( (p_reg == NULL) || (p_tcb == NULL)) {
+        GATT_TRACE_ERROR ("GATTS_HandleValueNotification Unknown  conn_id: %u \n", conn_id);
+        return (tGATT_STATUS) GATT_INVALID_CONN_ID;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
+    if (GATT_HANDLE_IS_VALID (attr_handle)) {
+        notif.handle    = attr_handle;
+        notif.len       = val_len;
+        memcpy (notif.value, p_val, val_len);
+        notif.auth_req = GATT_AUTH_REQ_NONE;
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        /* Route the notification over an EATT bearer (if any) so it uses the EATT
+         * MTU instead of the legacy 23-byte ATT MTU. Set transiently and cleared
+         * after the send; all GATT TX runs on the single BTU task. */
+        UINT16 notif_bearer = gatt_eatt_get_server_tx_bearer(p_tcb->peer_bda);
+        p_tcb->eatt_tx_bearer = (notif_bearer != L2CAP_ATT_CID) ? notif_bearer : 0;
+#endif
+        if ((p_buf = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_NOTIF, (tGATT_SR_MSG *)&notif))
+                != NULL) {
+            cmd_sent = attp_send_sr_msg (p_tcb, p_buf);
+        } else {
+            cmd_sent = GATT_NO_RESOURCES;
+        }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        p_tcb->eatt_tx_bearer = 0;
+#endif
+    }
+    return cmd_sent;
+}
+
+/*******************************************************************************
+**
+** Function         GATTS_SendRsp
+**
+** Description      This function sends the server response to client.
+**
+** Parameter        conn_id: connection identifier.
+**                  trans_id: transaction id
+**                  status: response status
+**                  p_msg: pointer to message parameters structure.
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_SendRsp (UINT16 conn_id,  UINT32 trans_id,
+                            tGATT_STATUS status, tGATTS_RSP *p_msg)
+{
+    tGATT_STATUS cmd_sent = GATT_ILLEGAL_PARAMETER;
+    tGATT_IF         gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+
+    GATT_TRACE_API ("GATTS_SendRsp: conn_id: %u  trans_id: %u  Status: 0x%04x\n",
+                    conn_id, trans_id, status);
+
+    if ( (p_reg == NULL) || (p_tcb == NULL)) {
+        GATT_TRACE_ERROR ("GATTS_SendRsp Unknown  conn_id: %u\n", conn_id);
+        return (tGATT_STATUS) GATT_INVALID_CONN_ID;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
+    if (p_tcb->sr_cmd.trans_id != trans_id) {
+        GATT_TRACE_ERROR ("GATTS_SendRsp conn_id: %u  waiting for op_code = %02x\n",
+                          conn_id, p_tcb->sr_cmd.op_code);
+
+        return (GATT_WRONG_STATE);
+    }
+    /* Process App response */
+    cmd_sent = gatt_sr_process_app_rsp (p_tcb,  gatt_if, trans_id, p_tcb->sr_cmd.op_code, status, p_msg);
+
+    return cmd_sent;
+}
+
+
+/*******************************************************************************
+**
+** Function         GATTS_SetAttributeValue
+**
+** Description      This function sends to set the attribute value .
+**
+** Parameter        attr_handle:the attribute handle
+**                  length: the attribute length
+**                  value: the value to be set to the attribute in the database
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value)
+{
+    tGATT_STATUS status;
+    tGATT_HDL_LIST_ELEM  *p_decl = NULL;
+
+    GATT_TRACE_DEBUG("GATTS_SetAttributeValue: attr_handle: %u  length: %u \n",
+                    attr_handle, length);
+    if (length <= 0){
+        return GATT_INVALID_ATTR_LEN;
+    }
+    if ((p_decl = gatt_find_hdl_buffer_by_attr_handle(attr_handle)) == NULL) {
+        GATT_TRACE_DEBUG("Service not created\n");
+        return GATT_INVALID_HANDLE;
+    }
+
+    status =  gatts_set_attribute_value(&p_decl->svc_db, attr_handle, length, value);
+    return status;
+
+}
+
+
+/*******************************************************************************
+**
+** Function         GATTS_GetAttributeValue
+**
+** Description      This function sends to get the attribute value .
+**
+** Parameter        attr_handle: the attribute handle
+**                  length:the attribute value length in the database
+**                  value: the attribute value out put
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+{
+     tGATT_STATUS status;
+     tGATT_HDL_LIST_ELEM  *p_decl;
+
+     GATT_TRACE_DEBUG("GATTS_GetAttributeValue: attr_handle: %u\n",
+                    attr_handle);
+
+     if ((p_decl = gatt_find_hdl_buffer_by_attr_handle(attr_handle)) == NULL) {
+         GATT_TRACE_ERROR("Service not created\n");
+         *length = 0;
+         return GATT_INVALID_HANDLE;
+     }
+
+     status =  gatts_get_attribute_value(&p_decl->svc_db, attr_handle, length, value);
+     return status;
+}
+
+/*******************************************************************************
+**
+** Function         GATTS_GetAttributeValueInternal
+**
+** Description      This function sends to get the attribute value of internal gatt and gap service.
+**
+** Parameter        attr_handle: the attribute handle
+**                  length:the attribute value length in the database
+**                  value: the attribute value out put
+*
+**
+** Returns          tGATT_STATUS - GATT status indicating success or failure in
+**                  retrieving the attribute value.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_GetAttributeValueInternal(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+{
+    return gatts_get_attr_value_internal(attr_handle, length, value);
+}
+#endif  ///GATTS_INCLUDED == TRUE
+
+
+#if (GATTC_INCLUDED == TRUE)
+/*******************************************************************************/
+/* GATT Profile Srvr Functions */
+/*******************************************************************************/
+
+/*******************************************************************************/
+/*                                                                             */
+/*                   GATT CLIENT APIs                                          */
+/*                                                                             */
+/*******************************************************************************/
+
+
+/*******************************************************************************
+**
+** Function         GATTC_ConfigureMTU
+**
+** Description      This function is called to configure the ATT MTU size.
+**
+** Parameters       conn_id: connection identifier.
+**                  mtu    - attribute MTU size..
+**
+** Returns          GATT_SUCCESS if command started successfully.
+**
+*******************************************************************************/
+tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id)
+{
+    UINT8           ret = GATT_NO_RESOURCES;
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+
+    tGATT_CLCB    *p_clcb;
+    uint16_t  mtu = gatt_get_local_mtu();
+
+    GATT_TRACE_API ("GATTC_ConfigureMTU conn_id=%d mtu=%d", conn_id, mtu );
+
+    if ( (p_tcb == NULL) || (p_reg == NULL) || (mtu < GATT_DEF_BLE_MTU_SIZE) || (mtu > GATT_MAX_MTU_SIZE)) {
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
+
+    /* Validate that the link is BLE, not BR/EDR */
+    if (p_tcb->transport != BT_TRANSPORT_LE) {
+        return GATT_ERROR;
+    }
+
+    if (gatt_is_clcb_allocated(conn_id)) {
+        GATT_TRACE_ERROR("GATTC_ConfigureMTU GATT_BUSY conn_id = %d", conn_id);
+        return GATT_BUSY;
+    }
+
+    if ((p_clcb = gatt_clcb_alloc(conn_id)) != NULL) {
+        p_clcb->p_tcb->payload_size = mtu;
+        p_clcb->operation = GATTC_OPTYPE_CONFIG;
+
+        ret = attp_send_cl_msg (p_clcb->p_tcb, p_clcb->clcb_idx, GATT_REQ_MTU, (tGATT_CL_MSG *)&mtu);
+    }
+
+    return ret;
+}
+
+/*******************************************************************************
+**
+** Function         GATTC_Discover
+**
+** Description      This function is called to do a discovery procedure on ATT server.
+**
+** Parameters       conn_id: connection identifier.
+**                  disc_type:discovery type.
+**                  p_param: parameters of discovery requirement.
+**
+** Returns          GATT_SUCCESS if command received/sent successfully.
+**
+*******************************************************************************/
+tGATT_STATUS GATTC_Discover (UINT16 conn_id, tGATT_DISC_TYPE disc_type,
+                             tGATT_DISC_PARAM *p_param)
+{
+    tGATT_STATUS    status = GATT_SUCCESS;
+    tGATT_CLCB      *p_clcb;
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+
+
+    GATT_TRACE_API ("GATTC_Discover conn_id=%d disc_type=%d", conn_id, disc_type);
+
+    if ( (p_tcb == NULL) || (p_reg == NULL) || (p_param == NULL) ||
+            (disc_type >= GATT_DISC_MAX)) {
+        GATT_TRACE_ERROR("GATTC_Discover Illegal param: disc_type %d conn_id = %d", disc_type, conn_id);
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
+
+    if (gatt_is_clcb_allocated(conn_id)) {
+        GATT_TRACE_ERROR("GATTC_Discover GATT_BUSY conn_id = %d", conn_id);
+        return GATT_BUSY;
+    }
+
+
+    if ((p_clcb = gatt_clcb_alloc(conn_id)) != NULL ) {
+        if (!GATT_HANDLE_IS_VALID(p_param->s_handle) ||
+                !GATT_HANDLE_IS_VALID(p_param->e_handle) ||
+                /* search by type does not have a valid UUID param */
+                (disc_type == GATT_DISC_SRVC_BY_UUID &&
+                 p_param->service.len == 0)) {
+            gatt_clcb_dealloc(p_clcb);
+            return GATT_ILLEGAL_PARAMETER;
+        }
+
+        p_clcb->operation  = GATTC_OPTYPE_DISCOVERY;
+        p_clcb->op_subtype = disc_type;
+        p_clcb->s_handle   = p_param->s_handle;
+        p_clcb->e_handle   = p_param->e_handle;
+        p_clcb->uuid       = p_param->service;
+
+        gatt_act_discovery(p_clcb);
+    } else {
+        status = GATT_NO_RESOURCES;
+    }
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         GATTC_Read
+**
+** Description      This function is called to read the value of an attribute from
+**                  the server.
+**
+** Parameters       conn_id: connection identifier.
+**                  type    - attribute read type.
+**                  p_read  - read operation parameters.
+**
+** Returns          GATT_SUCCESS if command started successfully.
+**
+*******************************************************************************/
+tGATT_STATUS GATTC_Read (UINT16 conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM *p_read)
+{
+    tGATT_STATUS status = GATT_SUCCESS;
+    tGATT_CLCB          *p_clcb;
+    tGATT_READ_MULTI    *p_read_multi;
+    tGATT_IF            gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8               tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB           *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    tGATT_REG           *p_reg = gatt_get_regcb(gatt_if);
+
+
+    GATT_TRACE_API ("GATTC_Read conn_id=%d type=%d", conn_id, type);
+
+    if ( (p_tcb == NULL) || (p_reg == NULL) || (p_read == NULL) || ((type >= GATT_READ_MAX) || (type == 0))) {
+        GATT_TRACE_ERROR("GATT_Read Illegal param: conn_id %d, type 0%d,", conn_id, type);
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
+
+    if (gatt_is_clcb_allocated(conn_id)) {
+        GATT_TRACE_ERROR("GATTC_Read GATT_BUSY conn_id = %d", conn_id);
+        return GATT_BUSY;
+    }
+
+    if ( (p_clcb = gatt_clcb_alloc(conn_id)) != NULL  ) {
+        p_clcb->operation = GATTC_OPTYPE_READ;
+        p_clcb->op_subtype = type;
+        p_clcb->auth_req = p_read->by_handle.auth_req;
+        p_clcb->counter = 0;
+
+        switch (type) {
+        case GATT_READ_BY_TYPE:
+        case GATT_READ_CHAR_VALUE:
+            p_clcb->s_handle = p_read->service.s_handle;
+            p_clcb->e_handle = p_read->service.e_handle;
+            memcpy(&p_clcb->uuid, &p_read->service.uuid, sizeof(tBT_UUID));
+            break;
+        case GATT_READ_MULTIPLE:
+        case GATT_READ_MULTIPLE_VAR:
+            p_clcb->s_handle = 0;
+            /* copy multiple handles in CB */
+            p_read_multi = (tGATT_READ_MULTI *)osi_malloc(sizeof(tGATT_READ_MULTI));
+            if (p_read_multi == NULL) {
+                GATT_TRACE_ERROR("GATTC_Read no resources for multiple read");
+                status = GATT_NO_RESOURCES;
+                gatt_clcb_dealloc(p_clcb);
+                return status;
+            }
+            p_clcb->p_attr_buf = (UINT8 *)p_read_multi;
+            memcpy (p_read_multi, &p_read->read_multiple, sizeof(tGATT_READ_MULTI));
+        case GATT_READ_BY_HANDLE:
+        case GATT_READ_PARTIAL:
+            memset(&p_clcb->uuid, 0, sizeof(tBT_UUID));
+            p_clcb->s_handle = p_read->by_handle.handle;
+
+            if (type == GATT_READ_PARTIAL) {
+                p_clcb->counter = p_read->partial.offset;
+            }
+
+            break;
+        default:
+            break;
+        }
+        /* start security check */
+        if (gatt_security_check_start(p_clcb) == FALSE) {
+            status = GATT_NO_RESOURCES;
+            gatt_clcb_dealloc(p_clcb);
+        }
+    } else {
+        status = GATT_NO_RESOURCES;
+    }
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         GATTC_Write
+**
+** Description      This function is called to write the value of an attribute to
+**                  the server.
+**
+** Parameters       conn_id: connection identifier.
+**                  type    - attribute write type.
+**                  p_write  - write operation parameters.
+**
+** Returns          GATT_SUCCESS if command started successfully.
+**
+*******************************************************************************/
+tGATT_STATUS GATTC_Write (UINT16 conn_id, tGATT_WRITE_TYPE type, tGATT_VALUE *p_write)
+{
+    tGATT_STATUS status = GATT_SUCCESS;
+    tGATT_CLCB      *p_clcb;
+    tGATT_VALUE     *p;
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+
+    if ( (p_tcb == NULL) || (p_reg == NULL) || (p_write == NULL) ||
+            ((type != GATT_WRITE) && (type != GATT_WRITE_PREPARE) && (type != GATT_WRITE_NO_RSP)) ) {
+        GATT_TRACE_ERROR("GATT_Write Illegal param: conn_id %d, type 0%d,", conn_id, type);
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
+
+    if (gatt_is_clcb_allocated(conn_id)) {
+        GATT_TRACE_ERROR("GATTC_Write GATT_BUSY conn_id = %d", conn_id);
+        return GATT_BUSY;
+    }
+
+    if ((p_clcb = gatt_clcb_alloc(conn_id)) != NULL ) {
+        p_clcb->operation  = GATTC_OPTYPE_WRITE;
+        p_clcb->op_subtype = type;
+        p_clcb->auth_req = p_write->auth_req;
+
+        if (( p_clcb->p_attr_buf = (UINT8 *)osi_malloc((UINT16)sizeof(tGATT_VALUE))) != NULL) {
+            memcpy(p_clcb->p_attr_buf, (void *)p_write, sizeof(tGATT_VALUE));
+
+            p =  (tGATT_VALUE *)p_clcb->p_attr_buf;
+            if (type == GATT_WRITE_PREPARE) {
+                p_clcb->start_offset = p_write->offset;
+                p->offset = 0;
+            }
+            if (gatt_security_check_start(p_clcb) == FALSE) {
+                status = GATT_NO_RESOURCES;
+            }
+        } else {
+            status = GATT_NO_RESOURCES;
+        }
+
+        if (status == GATT_NO_RESOURCES) {
+            gatt_clcb_dealloc(p_clcb);
+        }
+    } else {
+        status = GATT_NO_RESOURCES;
+    }
+    return status;
+}
+
+
+/*******************************************************************************
+**
+** Function         GATTC_ExecuteWrite
+**
+** Description      This function is called to send an Execute write request to
+**                  the server.
+**
+** Parameters       conn_id: connection identifier.
+**                  is_execute - to execute or cancel the prepare write request(s)
+**
+** Returns          GATT_SUCCESS if command started successfully.
+**
+*******************************************************************************/
+tGATT_STATUS GATTC_ExecuteWrite (UINT16 conn_id, BOOLEAN is_execute)
+{
+    tGATT_STATUS status = GATT_SUCCESS;
+    tGATT_CLCB      *p_clcb;
+    tGATT_EXEC_FLAG flag;
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+
+    GATT_TRACE_API ("GATTC_ExecuteWrite conn_id=%d is_execute=%d", conn_id, is_execute);
+
+    if ( (p_tcb == NULL) || (p_reg == NULL) ) {
+        GATT_TRACE_ERROR("GATTC_ExecuteWrite Illegal param: conn_id %d", conn_id);
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
+
+    if (gatt_is_clcb_allocated(conn_id)) {
+        GATT_TRACE_ERROR("GATTC_Write GATT_BUSY conn_id = %d", conn_id);
+        return GATT_BUSY;
+    }
+
+    if ((p_clcb = gatt_clcb_alloc(conn_id)) != NULL) {
+        p_clcb->operation  = GATTC_OPTYPE_EXE_WRITE;
+        flag = is_execute ? GATT_PREP_WRITE_EXEC : GATT_PREP_WRITE_CANCEL;
+        gatt_send_queue_write_cancel (p_clcb->p_tcb, p_clcb, flag);
+    } else {
+        GATT_TRACE_ERROR("Unable to allocate client CB for conn_id %d ", conn_id);
+        status = GATT_NO_RESOURCES;
+    }
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         GATTC_SendHandleValueConfirm
+**
+** Description      This function is called to send a handle value confirmation
+**                  as response to a handle value notification from server.
+**
+** Parameters       conn_id: connection identifier.
+**                  handle: the handle of the attribute confirmation.
+**
+** Returns          GATT_SUCCESS if command started successfully.
+**
+*******************************************************************************/
+tGATT_STATUS GATTC_SendHandleValueConfirm (UINT16 conn_id, UINT16 handle)
+{
+    tGATT_STATUS    ret = GATT_ILLEGAL_PARAMETER;
+    tGATT_TCB     *p_tcb = gatt_get_tcb_by_idx(GATT_GET_TCB_IDX(conn_id));
+
+    GATT_TRACE_API ("GATTC_SendHandleValueConfirm conn_id=%d handle=0x%x", conn_id, handle);
+
+    if (p_tcb) {
+        if (p_tcb->ind_count > 0 ) {
+            btu_stop_timer (&p_tcb->ind_ack_timer_ent);
+
+            GATT_TRACE_DEBUG ("notif_count=%d ", p_tcb->ind_count);
+            /* send confirmation now */
+#if (BLE_EATT_INCLUDED == TRUE)
+            /* Route the confirmation back on the EATT bearer the indication came
+             * in on (0 == legacy ATT). eatt_rx_bearer was cleared after the
+             * indication was delivered, so use the saved eatt_ind_bearer. */
+            p_tcb->eatt_tx_bearer = p_tcb->eatt_ind_bearer;
+            ret = attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, (tGATT_CL_MSG *)&handle);
+            p_tcb->eatt_tx_bearer = 0;
+            p_tcb->eatt_ind_bearer = 0;
+#else
+            ret = attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, (tGATT_CL_MSG *)&handle);
+#endif
+
+            p_tcb->ind_count = 0;
+
+        } else {
+            GATT_TRACE_DEBUG ("GATTC_SendHandleValueConfirm - conn_id: %u - ignored not waiting for indicaiton ack", conn_id);
+            ret = GATT_SUCCESS;
+        }
+    } else {
+        GATT_TRACE_ERROR ("GATTC_SendHandleValueConfirm - Unknown conn_id: %u", conn_id);
+    }
+    return ret;
+}
+
+tGATT_STATUS GATTC_AutoDiscoverEnable(UINT8 enable)
+{
+    gatt_cb.auto_disc = (enable > 0) ? TRUE : FALSE;
+    return GATT_SUCCESS;
+}
+
+#endif  ///GATTC_INCLUDED == TRUE
+
+/*******************************************************************************/
+/*                                                                             */
+/*                   GATT  APIs                                                */
+/*                                                                             */
+/*******************************************************************************/
+/*******************************************************************************
+**
+** Function         GATT_SetIdleTimeout
+**
+** Description      This function (common to both client and server) sets the idle
+**                  timeout for a tansport connection
+**
+** Parameter        bd_addr:   target device bd address.
+**                  idle_tout: timeout value in seconds.
+**
+** Returns          void
+**
+*******************************************************************************/
+void GATT_SetIdleTimeout (BD_ADDR bd_addr, UINT16 idle_tout, tBT_TRANSPORT transport)
+{
+    tGATT_TCB       *p_tcb;
+    BOOLEAN         status = FALSE;
+
+    if ((p_tcb = gatt_find_tcb_by_addr (bd_addr, transport)) != NULL) {
+        if (p_tcb->att_lcid == L2CAP_ATT_CID) {
+            status = L2CA_SetFixedChannelTout (bd_addr, L2CAP_ATT_CID, idle_tout);
+
+            if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP) {
+                L2CA_SetIdleTimeoutByBdAddr(p_tcb->peer_bda,
+                                            GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, BT_TRANSPORT_LE);
+            }
+        } else {
+            status = L2CA_SetIdleTimeout (p_tcb->att_lcid, idle_tout, FALSE);
+        }
+    }
+
+#if (CONFIG_BT_STACK_NO_LOG)
+    (void) status;
+#endif
+
+    GATT_TRACE_API ("GATT_SetIdleTimeout idle_tout=%d status=%d(1-OK 0-not performed)",
+                    idle_tout, status);
+}
+
+
+/*******************************************************************************
+**
+** Function         GATT_Register
+**
+** Description      This function is called to register an  application
+**                  with GATT
+**
+** Parameter        p_app_uuid128: Application UUID
+**                  p_cb_info: callback functions.
+**
+** Returns          0 for error, otherwise the index of the client registered with GATT
+**
+*******************************************************************************/
+tGATT_IF GATT_Register (tBT_UUID *p_app_uuid128, const tGATT_CBACK *p_cb_info)
+{
+    tGATT_REG    *p_reg;
+    UINT8        i_gatt_if = 0;
+    tGATT_IF     gatt_if = 0;
+
+    GATT_TRACE_API ("GATT_Register");
+    gatt_dbg_display_uuid(*p_app_uuid128);
+
+    for (i_gatt_if = 0, p_reg = gatt_cb.cl_rcb; i_gatt_if < GATT_MAX_APPS; i_gatt_if++, p_reg++) {
+        if (p_reg->in_use  && !memcmp(p_app_uuid128->uu.uuid128, p_reg->app_uuid128.uu.uuid128, LEN_UUID_128)) {
+            GATT_TRACE_ERROR("application already registered.");
+            return 0;
+        }
+    }
+
+    for (i_gatt_if = 0, p_reg = gatt_cb.cl_rcb; i_gatt_if < GATT_MAX_APPS; i_gatt_if++, p_reg++) {
+        if (!p_reg->in_use) {
+            memset(p_reg, 0 , sizeof(tGATT_REG));
+            i_gatt_if++;              /* one based number */
+            p_reg->app_uuid128 =  *p_app_uuid128;
+            gatt_if            =
+                p_reg->gatt_if     = (tGATT_IF)i_gatt_if;
+            p_reg->app_cb      = *p_cb_info;
+            p_reg->in_use      = TRUE;
+
+            break;
+        }
+    }
+    GATT_TRACE_API ("allocated gatt_if=%d\n", gatt_if);
+    return gatt_if;
+}
+
+
+/*******************************************************************************
+**
+** Function         GATT_Deregister
+**
+** Description      This function deregistered the application from GATT.
+**
+** Parameters       gatt_if: application interface.
+**
+** Returns          None.
+**
+*******************************************************************************/
+void GATT_Deregister (tGATT_IF gatt_if)
+{
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tGATT_TCB       *p_tcb;
+    tGATT_CLCB      *p_clcb;
+    list_node_t     *p_node = NULL;
+    list_node_t     *p_next = NULL;
+#if (GATTS_INCLUDED == TRUE)
+    UINT8           ii;
+    tGATT_SR_REG    *p_sreg;
+#endif  ///GATTS_INCLUDED == TRUE
+    GATT_TRACE_API ("GATT_Deregister gatt_if=%d", gatt_if);
+    /* Index 0 is GAP and is never deregistered */
+    if ( (gatt_if == 0) || (p_reg == NULL) ) {
+        GATT_TRACE_ERROR ("GATT_Deregister with invalid gatt_if: %u", gatt_if);
+        return;
+    }
+
+    /* stop all services  */
+    /* todo an applcaiton can not be deregistered if its services is also used by other application
+      deregisteration need to bed performed in an orderly fashion
+      no check for now */
+#if (GATTS_INCLUDED == TRUE)
+    for (ii = 0, p_sreg = gatt_cb.sr_reg; ii < GATT_MAX_SR_PROFILES; ii++, p_sreg++) {
+        if (p_sreg->in_use && (p_sreg->gatt_if == gatt_if)) {
+            GATTS_StopService(p_sreg->s_hdl);
+        }
+    }
+    if (gatt_if > 0 && gatt_if <= GATT_MAX_APPS) {
+        UINT8 prep_idx = (UINT8)(gatt_if - 1);
+        for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+            p_tcb = list_node(p_node);
+            if (p_tcb->in_use) {
+                p_tcb->prep_cnt[prep_idx] = 0;
+            }
+        }
+    }
+    /* free all services db buffers if owned by this application */
+    gatt_free_srvc_db_buffer_app_id(&p_reg->app_uuid128);
+#endif  ///GATTS_INCLUDED == TRUE
+    /* When an application deregisters, check remove the link associated with the app */
+
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = p_next) {
+	p_tcb = list_node(p_node);
+	p_next = list_next(p_node);
+        if (p_tcb->in_use) {
+            if (gatt_get_ch_state(p_tcb) != GATT_CH_CLOSE) {
+                gatt_update_app_use_link_flag(gatt_if, p_tcb,  FALSE, FALSE);
+                if (!gatt_num_apps_hold_link(p_tcb)) {
+                    /* this will disconnect the link or cancel the pending connect request at lower layer*/
+                    gatt_disconnect(p_tcb);
+                }
+            }
+
+            list_node_t *p_node_clcb = NULL;
+            list_node_t *p_node_next = NULL;
+	    for(p_node_clcb = list_begin(gatt_cb.p_clcb_list); p_node_clcb; p_node_clcb = p_node_next) {
+                p_clcb = list_node(p_node_clcb);
+                p_node_next = list_next(p_node_clcb);
+                if (p_clcb->in_use &&
+                        (p_clcb->p_reg->gatt_if == gatt_if) &&
+                        (p_clcb->p_tcb->tcb_idx == p_tcb->tcb_idx)) {
+                    btu_stop_timer(&p_clcb->rsp_timer_ent);
+                    gatt_clcb_dealloc (p_clcb);
+                    // Removed break to ensure all CLCBs are cleaned up
+                    // break;
+                }
+            }
+        }
+    }
+#if (GATT_BG_CONN_DEV == TRUE)
+    gatt_deregister_bgdev_list(gatt_if);
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
+
+    memset (p_reg, 0, sizeof(tGATT_REG));
+}
+
+void gatt_start_if_conn_cb(UINT8 tcb_idx, tBT_TRANSPORT transport, BD_ADDR bda)
+{
+
+}
+
+/*******************************************************************************
+**
+** Function         GATT_StartIf
+**
+** Description      This function is called after registration to start receiving
+**                  callbacks for registered interface.  Function may call back
+**                  with connection status and queued notifications
+**
+** Parameter        gatt_if: application interface.
+**
+** Returns          None.
+**
+*******************************************************************************/
+void GATT_StartIf (tGATT_IF gatt_if)
+{
+    tGATT_REG   *p_reg;
+    tGATT_TCB   *p_tcb;
+    UINT16      conn_id;
+    list_node_t *p_node = NULL;
+
+    GATT_TRACE_API ("GATT_StartIf gatt_if=%d", gatt_if);
+    if ((p_reg = gatt_get_regcb(gatt_if)) != NULL) {
+        for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+            p_tcb = list_node(p_node);
+            if (p_tcb->in_use && p_tcb->ch_state == GATT_CH_OPEN) {
+                if (p_reg->app_cb.p_conn_cb && p_tcb) {
+                    conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, gatt_if);
+                    (*p_reg->app_cb.p_conn_cb)(gatt_if, p_tcb->peer_bda, conn_id, TRUE, 0, p_tcb->transport);
+                }
+            }
+        }
+    }
+}
+
+
+/*******************************************************************************
+**
+** Function         GATT_Connect
+**
+** Description      This function initiate a connection to a remote device on GATT
+**                  channel.
+**
+** Parameters       gatt_if: application interface
+**                  bd_addr: peer device address.
+**                  bd_addr_type: peer device address type.
+**                  is_direct: is a direct connection or a background auto connection
+**
+** Returns          TRUE if connection started; FALSE if connection start failure.
+**
+*******************************************************************************/
+BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type,
+                              BOOLEAN is_direct, tBT_TRANSPORT transport, BOOLEAN is_aux,
+                              BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent)
+{
+    tGATT_REG    *p_reg;
+    BOOLEAN status = FALSE;
+
+    GATT_TRACE_API ("GATT_Connect gatt_if=%d", gatt_if);
+
+    /* Make sure app is registered */
+    if ((p_reg = gatt_get_regcb(gatt_if)) == NULL) {
+        GATT_TRACE_ERROR("GATT_Connect - gatt_if =%d is not registered", gatt_if);
+        return (FALSE);
+    }
+
+    if (is_direct) {
+        status = gatt_act_connect (p_reg, bd_addr, bd_addr_type, transport, is_aux, is_pawr_synced, adv_handle, subevent);
+    } else {
+#if (GATT_BG_CONN_DEV == TRUE)
+        if (transport == BT_TRANSPORT_LE) {
+            status = gatt_update_auto_connect_dev(gatt_if, TRUE, bd_addr, TRUE);
+        } else
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
+        {
+            GATT_TRACE_ERROR("Unsupported transport for background connection");
+        }
+    }
+
+    return status;
+
+}
+
+/*******************************************************************************
+**
+** Function         GATT_CancelConnect
+**
+** Description      This function terminate the connection initiation to a remote
+**                  device on GATT channel.
+**
+** Parameters       gatt_if: client interface. If 0 used as unconditionally disconnect,
+**                          typically used for direct connection cancellation.
+**                  bd_addr: peer device address.
+**
+** Returns          TRUE if connection started; FALSE if connection start failure.
+**
+*******************************************************************************/
+BOOLEAN GATT_CancelConnect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct)
+{
+    tGATT_REG     *p_reg;
+    tGATT_TCB     *p_tcb;
+    BOOLEAN       status = TRUE;
+    tGATT_IF      temp_gatt_if;
+    UINT8         start_idx, found_idx;
+
+    GATT_TRACE_API ("GATT_CancelConnect gatt_if=%d", gatt_if);
+
+    if ((gatt_if != 0) && ((p_reg = gatt_get_regcb(gatt_if)) == NULL)) {
+        GATT_TRACE_ERROR("GATT_CancelConnect - gatt_if =%d is not registered", gatt_if);
+        return (FALSE);
+    }
+
+    if (is_direct) {
+        if (!gatt_if) {
+            GATT_TRACE_DEBUG("GATT_CancelConnect - unconditional");
+            start_idx = 0;
+            /* only LE connection can be cancelled */
+            p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
+            if (p_tcb && gatt_num_apps_hold_link(p_tcb)) {
+                while (status && gatt_find_app_hold_link(p_tcb, start_idx, &found_idx, &temp_gatt_if)) {
+                    status = gatt_cancel_open(temp_gatt_if, bd_addr);
+                    start_idx = ++found_idx;
+                }
+            } else {
+                GATT_TRACE_ERROR("GATT_CancelConnect - no app found");
+                status = FALSE;
+            }
+        } else {
+            status = gatt_cancel_open(gatt_if, bd_addr);
+        }
+    } else {
+#if (GATT_BG_CONN_DEV == TRUE)
+        if (!gatt_if) {
+            if (gatt_get_num_apps_for_bg_dev(bd_addr)) {
+                while (gatt_find_app_for_bg_dev(bd_addr, &temp_gatt_if)) {
+                    gatt_remove_bg_dev_for_app(temp_gatt_if, bd_addr);
+                }
+            } else {
+                GATT_TRACE_ERROR("GATT_CancelConnect -no app associated with the bg device for unconditional removal");
+                status = FALSE;
+            }
+        } else {
+            status = gatt_remove_bg_dev_for_app(gatt_if, bd_addr);
+        }
+#endif // #if (GATT_BG_CONN_DEV == TRUE)
+    }
+
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         GATT_Disconnect
+**
+** Description      This function disconnect the GATT channel for this registered
+**                  application.
+**
+** Parameters       conn_id: connection identifier.
+**
+** Returns          GATT_SUCCESS if disconnected.
+**
+*******************************************************************************/
+tGATT_STATUS GATT_Disconnect (UINT16 conn_id)
+{
+    tGATT_STATUS    ret = GATT_ILLEGAL_PARAMETER;
+    tGATT_TCB       *p_tcb = NULL;
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8          tcb_idx = GATT_GET_TCB_IDX(conn_id);
+
+    GATT_TRACE_API ("GATT_Disconnect conn_id=%d ", conn_id);
+
+    p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+
+    if (p_tcb) {
+        gatt_update_app_use_link_flag(gatt_if, p_tcb, FALSE, FALSE);
+        if (!gatt_num_apps_hold_link(p_tcb)) {
+            gatt_disconnect(p_tcb);
+        }
+        ret = GATT_SUCCESS;
+    }
+    return ret;
+}
+
+#if (GATTS_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         GATT_SendServiceChangeIndication
+**
+** Description      This function is to send a service change indication
+**
+** Parameters       bd_addr: peer device address.
+**
+** Returns          None.
+**
+*******************************************************************************/
+tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
+{
+    BOOLEAN             srv_chg_ind_pending = FALSE;
+    tGATT_TCB           *p_tcb;
+    tGATT_STATUS status = GATT_NOT_FOUND;
+    list_node_t     *p_node = NULL;
+
+    if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
+        status = GATT_WRONG_STATE;
+        GATT_TRACE_ERROR ("%s can't send service change indication manually, please configure the option through menuconfig", __func__);
+        return status;
+    }
+
+    if(bd_addr) {
+         status = gatt_send_srv_chg_ind(bd_addr);
+    } else {
+        for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+            p_tcb = list_node(p_node);
+            if (p_tcb->in_use && p_tcb->ch_state == GATT_CH_OPEN) {
+                srv_chg_ind_pending = gatt_is_srv_chg_ind_pending(p_tcb);
+                if (!srv_chg_ind_pending) {
+                    status = gatt_send_srv_chg_ind(p_tcb->peer_bda);
+                } else {
+                    status = GATT_BUSY;
+                    GATT_TRACE_DEBUG("discard srv chg - already has one in the queue");
+                }
+            }
+        }
+    }
+
+    return status;
+}
+#endif // (GATTS_INCLUDED == TRUE)
+
+/*******************************************************************************
+**
+** Function         GATT_GetConnectionInfor
+**
+** Description      This function use conn_id to find its associated BD address and application
+**                  interface
+**
+** Parameters        conn_id: connection id  (input)
+**                   p_gatt_if: application interface (output)
+**                   bd_addr: peer device address. (output)
+**
+** Returns          TRUE the logical link information is found for conn_id
+**
+*******************************************************************************/
+BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if, BD_ADDR bd_addr,
+                                tBT_TRANSPORT *p_transport)
+{
+
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    BOOLEAN         status = FALSE;
+
+    GATT_TRACE_API ("GATT_GetConnectionInfor conn_id=%d", conn_id);
+
+    if (p_tcb && p_reg ) {
+        memcpy(bd_addr, p_tcb->peer_bda, BD_ADDR_LEN);
+        *p_gatt_if = gatt_if;
+        *p_transport = p_tcb->transport;
+        status = TRUE;
+    }
+    return status;
+}
+
+
+/*******************************************************************************
+**
+** Function         GATT_GetConnIdIfConnected
+**
+** Description      This function find the conn_id if the logical link for BD address
+**                  and application interface is connected
+**
+** Parameters        gatt_if: application interface (input)
+**                   bd_addr: peer device address. (input)
+**                   p_conn_id: connection id  (output)
+**                   transport: transport option
+**
+** Returns          TRUE the logical link is connected
+**
+*******************************************************************************/
+BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr, UINT16 *p_conn_id,
+                                  tBT_TRANSPORT transport)
+{
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tGATT_TCB       *p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
+    BOOLEAN         status = FALSE;
+
+    if (p_reg && p_tcb && (gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) ) {
+        *p_conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, gatt_if);
+        status = TRUE;
+    }
+
+    GATT_TRACE_API ("GATT_GetConnIdIfConnected status=%d\n", status);
+    return status;
+}
+
+#if (GATTS_INCLUDED == TRUE)
+tGATT_STATUS GATTS_SetServiceChangeMode(UINT8 mode)
+{
+    if (mode > GATTS_SEND_SERVICE_CHANGE_MANUAL) {
+        GATT_TRACE_ERROR("%s invalid service change mode %u", __func__, mode);
+        return GATT_VALUE_NOT_ALLOWED;
+    }
+
+    gatt_cb.srv_chg_mode = mode;
+    return GATT_SUCCESS;
+}
+
+#endif // (GATTS_INCLUDED == TRUE)
+
+tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tuples, UINT16 num_tuples)
+{
+    tGATT_STATUS    cmd_sent = GATT_ILLEGAL_PARAMETER;
+    BT_HDR          *p_buf;
+    tGATT_VALUE     notif;
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    UINT8           *p = notif.value;
+    tGATT_HLV       *p_hlv = tuples;
+
+    GATT_TRACE_API ("GATTS_HandleMultiValueNotification");
+
+    if ( (p_reg == NULL) || (p_tcb == NULL)) {
+        GATT_TRACE_ERROR ("GATTS_HandleMultiValueNotification Unknown conn_id: %u \n", conn_id);
+        return (tGATT_STATUS) GATT_INVALID_CONN_ID;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
+    if (tuples == NULL) {
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    notif.len = 0;
+
+    while (num_tuples) {
+        if (!GATT_HANDLE_IS_VALID (p_hlv->handle)) {
+            return GATT_ILLEGAL_PARAMETER;
+        }
+
+        {
+            UINT32 new_len = (UINT32)notif.len + 4U + (UINT32)p_hlv->length;
+            if (new_len > (UINT32)GATT_MAX_ATTR_LEN) {
+                GATT_TRACE_ERROR("%s: len %u>MAX_ATTR_LEN", __func__, (unsigned)new_len);
+                return GATT_ILLEGAL_PARAMETER;
+            }
+        }
+
+        UINT16_TO_STREAM(p, p_hlv->handle);   //handle
+        UINT16_TO_STREAM(p, p_hlv->length);   //length
+        if (p_hlv->length > 0) {
+            if (p_hlv->value == NULL) {
+                return GATT_ILLEGAL_PARAMETER;
+            }
+            memcpy (p, p_hlv->value, p_hlv->length); //value
+        }
+        GATT_TRACE_DEBUG("%s handle %x, length %u", __func__, p_hlv->handle, p_hlv->length);
+        p += p_hlv->length;
+        notif.len += 4 + p_hlv->length;
+        num_tuples--;
+        p_hlv++;
+    }
+
+    notif.auth_req = GATT_AUTH_REQ_NONE;
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    /* Route the multi-value notification over an EATT bearer (if any) so it uses
+     * the EATT MTU instead of the legacy 23-byte ATT MTU, and so gatt_get_att_mtu()
+     * (used for buffer sizing in attp_build_sr_msg) matches the bearer it is sent
+     * on. Set transiently and cleared after the send; all GATT TX runs on the
+     * single BTU task. Mirrors GATTS_HandleValueNotification. */
+    UINT16 mv_bearer = gatt_eatt_get_server_tx_bearer(p_tcb->peer_bda);
+    p_tcb->eatt_tx_bearer = (mv_bearer != L2CAP_ATT_CID) ? mv_bearer : 0;
+#endif
+    p_buf = attp_build_sr_msg (p_tcb, GATT_HANDLE_MULTI_VALUE_NOTIF, (tGATT_SR_MSG *)&notif);
+    if (p_buf != NULL) {
+        cmd_sent = attp_send_sr_msg (p_tcb, p_buf);
+    } else {
+        cmd_sent = GATT_NO_RESOURCES;
+    }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    p_tcb->eatt_tx_bearer = 0;
+#endif
+
+    return cmd_sent;
+}
+
+tGATT_STATUS GATTS_ShowLocalDatabase(void)
+{
+    gatts_show_local_database();
+    return GATT_SUCCESS;
+}
+
+#if (BLE_EATT_INCLUDED == TRUE)
+void GATT_EattSetChanNum(UINT8 num_chan)
+{
+    gatt_eatt_set_chan_num(num_chan);
+}
+
+BOOLEAN GATT_EattSetDefaultBearer(UINT16 conn_id, UINT16 lcid)
+{
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    return gatt_eatt_set_default_bearer(conn_id, lcid);
+#else
+    UNUSED(conn_id);
+    UNUSED(lcid);
+    return FALSE;
+#endif
+}
+#endif
+
+#endif

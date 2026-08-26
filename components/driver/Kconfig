@@ -1,0 +1,38 @@
+menu "Legacy Driver Configurations"
+
+    orsource "./twai/Kconfig.twai"
+
+    menu "Legacy I2C Driver Configurations"
+        depends on SOC_I2C_SUPPORTED
+        config I2C_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy i2c driver
+                (driver/i2c.h). If you want to continue using the legacy driver,
+                and don't want to see related deprecation warnings, you can enable this option.
+
+        config I2C_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
+    endmenu # Legacy I2C Driver Configurationss
+
+    menu "Legacy Touch Sensor Driver Configurations"
+        depends on SOC_TOUCH_SENSOR_SUPPORTED
+        config TOUCH_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy touch sensor driver
+                (driver/touch_sensor.h). If you want to continue using the legacy driver,
+                and don't want to see related deprecation warnings, you can enable this option.
+
+        config TOUCH_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
+    endmenu # Legacy Touch Sensor Driver Configurationss
+endmenu  # Driver configurations

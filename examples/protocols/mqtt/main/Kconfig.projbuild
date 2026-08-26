@@ -1,0 +1,41 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_CERT_VALIDATION
+        prompt "Certificate validation method"
+        default EXAMPLE_CERT_VALIDATE_BUNDLE
+        help
+            Choose how the broker's TLS server certificate is validated.
+            - Certificate bundle (default).
+            - Embedded certificate
+
+        config EXAMPLE_CERT_VALIDATE_BUNDLE
+            bool "Certificate bundle"
+
+        config EXAMPLE_CERT_VALIDATE_MOSQUITTO_CA
+            bool "Embedded Certificate"
+
+    endchoice
+
+    config EXAMPLE_MQTT_BROKER_URI
+        string "MQTT broker URI"
+        default "mqtts://test.mosquitto.org:8886"
+        default "mqtts://test.mosquitto.org:8883" if EXAMPLE_CERT_VALIDATE_MOSQUITTO_CA
+        help
+            URI to the MQTT broker.
+            When using the example broker the port must be set to 8883 if testing
+            embedded certificate
+
+    config EXAMPLE_BROKER_CERTIFICATE_OVERRIDE
+        string "Broker certificate override (PEM body)"
+        default ""
+        help
+            Optional: override server certificate by embedding a PEM constructed
+            from this base64 body. Leave empty to use the certificate bundle or the
+            embedded Mosquitto CA. Provide only the base64 payload without the
+            BEGIN/END markers.
+
+    config EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN
+        bool
+        default y if EXAMPLE_BROKER_CERTIFICATE_OVERRIDE != ""
+
+endmenu

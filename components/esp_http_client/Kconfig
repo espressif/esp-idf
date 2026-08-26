@@ -1,0 +1,81 @@
+menu "ESP HTTP client"
+
+
+    config ESP_HTTP_CLIENT_ENABLE_HTTPS
+        bool "Enable https"
+        default y
+        help
+            This option will enable https protocol by linking esp-tls library and initializing SSL transport
+
+    config ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
+        bool "Enable HTTP Basic Authentication"
+        default n
+        help
+            This option will enable HTTP Basic Authentication. It is disabled by default as Basic
+            auth uses unencrypted encoding, so it introduces a vulnerability when not using TLS
+
+    config ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
+        bool "Enable HTTP Digest Authentication"
+        default n
+        help
+            This option will enable HTTP Digest Authentication. It is enabled by default, but use of this
+            configuration is not recommended as the password can be derived from the exchange, so it introduces
+            a vulnerability when not using TLS
+
+    config ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+        bool "Enable custom transport"
+        default n
+        help
+            This option will enable injection of a custom tcp_transport handle, so the http operation
+            will be performed on top of the user defined transport abstraction (if configured)
+
+    config ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE
+        bool "Enable content range functionality"
+        default n
+        help
+            This enables use of content range header in esp_http_client component.
+
+    config ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT
+        int "Time in millisecond to wait for posting event"
+        default 2000
+        help
+            This config option helps in setting the time in millisecond to wait for event to be posted to the
+            system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
+    config ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        bool "Save response headers"
+        default n
+        help
+            This option will enable saving of response headers in esp_http_client component.
+            When enabled, upto ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS headers are saved.
+            Enabling this option will increase the memory footprint of the component.
+
+    config ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS
+        depends on ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        int "Maximum number of response headers"
+        default 10
+        help
+            This config option helps in setting the maximum number of response headers that
+            can be saved in esp_http_client component.
+
+    config ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE
+        depends on ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        int "Maximum size of response header"
+        default 128
+        help
+            This config option helps in setting the maximum size of response header that
+            can be saved in esp_http_client component.
+            Note that the same size is used for key and value in the response headers.
+
+    config ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER
+        bool "Fail the request when a header does not fit in the tx buffer"
+        default y
+        help
+            When enabled, esp_http_client_request_send() returns
+            ESP_ERR_HTTP_HEADER_TOO_LONG if any individual header is larger than
+            buffer_size_tx. With this option disabled, the legacy behavior is
+            preserved: oversized headers are silently dropped and the request
+            is emitted without its '\r\n\r\n' terminator, which typically
+            results in the server timing out the connection. The strict check
+            adds two small comparisons in the header send loop.
+endmenu

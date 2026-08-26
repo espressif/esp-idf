@@ -1,0 +1,38 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_USB_HOST_RHPORT
+        prompt "USB Host Peripheral"
+        default EXAMPLE_USB_HOST_RHPORT_HS if IDF_TARGET_ESP32P4
+        default EXAMPLE_USB_HOST_RHPORT_FS
+        help
+            Allows set the USB Peripheral Controller for USB host.
+
+            - High-speed (USB OTG2.0 Peripheral for High-, Full- and Low-speed)
+            - Full-speed (USB OTG1.1 Peripheral for Full- and Low-speed)
+
+        config EXAMPLE_USB_HOST_RHPORT_HS
+            bool "OTG2.0"
+            depends on IDF_TARGET_ESP32P4
+        config EXAMPLE_USB_HOST_RHPORT_FS
+            bool "OTG1.1"
+
+    endchoice
+
+    config EXAMPLE_HAL_USE_ESP32_S3_USB_OTG
+        bool "Use dev kit ESP32-S3-USB-OTG"
+        depends on IDF_TARGET_ESP32S3
+        default y
+
+    config EXAMPLE_FORMAT_IF_MOUNT_FAILED
+        bool "Format the card if mount failed"
+        depends on CHERRYUSB_HOST_MSC
+        default n
+        help
+            If this config item is set, format_if_mount_failed will be set to true and the card will be formatted if
+            the mount has failed.
+
+    config EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
+        bool "Perform init deinit of cherryusb stack in a loop"
+        default n
+
+endmenu

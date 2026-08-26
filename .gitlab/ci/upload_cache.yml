@@ -1,0 +1,30 @@
+# pull only for most of the use cases for cache
+# only set "push" policy for the jobs under this file.
+# The cache would be updated when files matched specified patterns changes.
+
+.upload_cache_template:
+  stage: upload_cache
+  image: $ESP_ENV_IMAGE
+
+upload-submodules-cache:
+  extends:
+    - .upload_cache_template
+    - .before_script:minimal
+    - .rules:upload-submodule-cache
+  tags:
+    - $GEO
+    - cache
+  cache:
+    key: submodule-cache-${LATEST_GIT_TAG}
+    paths:
+      - .cache/submodule_archives
+    policy: push
+  script:
+    # use the default gitlab server
+    - unset LOCAL_GITLAB_HTTPS_HOST
+    - rm -rf .cache/submodule_archives  # clear old submodule archives
+    - add_gitlab_ssh_keys
+    - fetch_submodules
+  parallel:
+    matrix:
+      - GEO: [ 'shiny',  'brew' ]

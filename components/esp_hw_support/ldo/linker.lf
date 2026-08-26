@@ -1,0 +1,6 @@
+[mapping:ldo_driver]
+archive: libesp_hw_support.a
+entries:
+    if SOC_GP_LDO_SUPPORTED = y:
+        if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
+            esp_ldo_regulator: esp_ldo_acquire_channel (noflash)

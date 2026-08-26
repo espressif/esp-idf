@@ -1,0 +1,21 @@
+menu "Example Configuration"
+
+    config UART_RX_IO
+        int "UART RX GPIO Num"
+        default 2
+        help
+            GPIO number for UART RX line.
+
+    config UART_PORT_NUM
+        int "UART port number"
+        default 1
+        help
+            The UART device attached to DMA.
+
+    config UART_BAUD_RATE
+        int "uart baud rate"
+        default 1000000
+        help
+            Uart baud rate.
+
+endmenu

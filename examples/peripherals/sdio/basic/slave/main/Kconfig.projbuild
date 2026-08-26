@@ -1,0 +1,16 @@
+menu "Example Configuration"
+
+    config SDIO_DAT2_DISABLED
+        bool "Disable the DAT2 in SDIO slave"
+        default n
+        help
+            SDIO slave DAT pin is unfortunately the same pin as MTDI, which
+            controls the flash power voltage. For 3.3v flash devkits / modules /
+            kits, it conflicts with the DAT2 pullups required by the
+            specification.
+
+            This disables the peripheral input from the DAT2 so that we can work
+            in 1-bit mode when DAT2 is floating (pulled down). 4-bit mode is
+            therefore unavailable.
+
+endmenu

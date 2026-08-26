@@ -1,0 +1,120 @@
+menu "ESP-TLS"
+    choice ESP_TLS_LIBRARY_CHOOSE
+        prompt "Choose SSL/TLS library for ESP-TLS (See help for more Info)"
+        default ESP_TLS_USING_MBEDTLS
+        help
+            The ESP-TLS APIs support multiple backend TLS libraries. mbedTLS is supported by default.
+            Custom TLS stacks can be registered via esp_tls_register_stack() API when
+            CONFIG_ESP_TLS_CUSTOM_STACK is selected. Different TLS libraries may support different
+            features and have different resource usage. Consult the ESP-TLS documentation in ESP-IDF
+            Programming guide for more details.
+        config ESP_TLS_USING_MBEDTLS
+            bool "mbedTLS"
+            select MBEDTLS_TLS_ENABLED
+        config ESP_TLS_CUSTOM_STACK
+            bool "Custom TLS stack (register via esp_tls_register_stack())"
+            help
+                When selected, allows external components to register their own TLS stack implementation
+                via esp_tls_register_stack() API. The custom stack must be registered before creating
+                any TLS connections, otherwise TLS operations will fail.
+
+                External components can provide any TLS stack implementation by implementing the
+                esp_tls_stack_ops_t interface.
+    endchoice
+
+    config ESP_TLS_ENABLE_TCP_NODELAY
+        bool "Enable TCP_NODELAY (disable Nagle's algorithm) on ESP-TLS sockets"
+        default n
+        help
+            Set TCP_NODELAY on every ESP-TLS client connection socket, disabling Nagle's algorithm.
+            Recommended for latency-sensitive small-message traffic (e.g. MQTT), where Nagle
+            interacting with the peer's delayed-ACK can stall a small write by ~40-200 ms until
+            the delayed-ACK timer fires. Off by default (no behavior change).
+
+    config ESP_TLS_USE_DS_PERIPHERAL
+        bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
+        depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED
+        select MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL
+        default y
+        help
+            Enable use of the Digital Signature Peripheral for ESP-TLS.The DS peripheral
+            can only be used when it is appropriately configured for TLS.
+            Consult the ESP-TLS documentation in ESP-IDF Programming Guide for more details.
+
+    config ESP_TLS_CLIENT_SESSION_TICKETS
+        bool "Enable client session tickets"
+        depends on ESP_TLS_USING_MBEDTLS && MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+        help
+            Enable session ticket support as specified in RFC5077.
+
+    config ESP_TLS_SERVER_SESSION_TICKETS
+        bool "Enable server session tickets"
+        depends on ESP_TLS_USING_MBEDTLS && MBEDTLS_SERVER_SSL_SESSION_TICKETS
+        help
+            Enable session ticket support as specified in RFC5077
+
+    config ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT
+        int "Server session ticket timeout in seconds"
+        depends on ESP_TLS_SERVER_SESSION_TICKETS
+        default 86400
+        help
+            Sets the session ticket timeout used in the tls server.
+
+    config ESP_TLS_SERVER_CERT_SELECT_HOOK
+        bool "Certificate selection hook"
+        depends on ESP_TLS_USING_MBEDTLS
+        help
+            Ability to configure and use a certificate selection callback during server handshake,
+            to select a certificate to present to the client based on the TLS extensions supplied in
+            the client hello (alpn, sni, etc).
+
+    config ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+        bool "ESP-TLS Server: Set minimum Certificate Verification mode to Optional"
+        depends on ESP_TLS_USING_MBEDTLS
+        default n
+        help
+            When this option is enabled, the ESP-TLS server can be configured to
+            request client certificates optionally. This is done by setting the
+            client_cert_authmode_optional field in the esp_https_server_config_t structure.
+
+            mbedtls_ssl_get_verify_result() can be called after the handshake is complete to
+            retrieve status of verification of the client certificate, if presented.
+
+    config ESP_TLS_PSK_VERIFICATION
+        bool "Enable PSK verification"
+        select MBEDTLS_PSK_MODES if ESP_TLS_USING_MBEDTLS
+        select MBEDTLS_KEY_EXCHANGE_PSK if ESP_TLS_USING_MBEDTLS
+        select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK if ESP_TLS_USING_MBEDTLS && MBEDTLS_ECDH_C
+        help
+            Enable support for pre shared key ciphers, supported for both mbedTLS as well as
+            custom TLS stacks.
+
+    config ESP_TLS_INSECURE
+        bool "Allow potentially insecure options"
+        help
+            You can enable some potentially insecure options. These options should only be used for testing purposes.
+            Only enable these options if you are very sure.
+
+    config ESP_TLS_SKIP_SERVER_CERT_VERIFY
+        bool "Skip server certificate verification by default (WARNING: ONLY FOR TESTING PURPOSE, READ HELP)"
+        depends on ESP_TLS_INSECURE
+        help
+            After enabling this option the esp-tls client will skip the server certificate verification
+            by default. Note that this option will only modify the default behaviour of esp-tls client
+            regarding server cert verification. The default behaviour should only be applicable when
+            no other option regarding the server cert verification is opted in the esp-tls config
+            (e.g. crt_bundle_attach, use_global_ca_store etc.).
+            WARNING : Enabling this option comes with a potential risk of establishing a TLS connection
+            with a server which has a fake identity, provided that the server certificate
+            is not provided either through API or other mechanism like ca_store etc.
+
+
+    config ESP_TLS_DYN_BUF_STRATEGY_SUPPORTED
+        bool
+        default y
+        help
+            Enable support for dynamic buffer strategy for ESP-TLS. This is the hidden config option kept
+            for external components like OTA, to find out whether the dynamic buffer strategy is supported
+            for particular ESP-IDF version.
+
+endmenu

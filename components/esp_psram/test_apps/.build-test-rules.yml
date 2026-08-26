@@ -1,0 +1,24 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_psram/test_apps/psram:
+  disable:
+    - if: SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "xip_psram_no_boot_init" and SOC_SPIRAM_XIP_SUPPORTED != 1
+    - if: CONFIG_NAME == "release"  SOC_SPIRAM_XIP_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32p4", "esp32h4", "esp32s31"] and CONFIG_NAME in ["release", "advanced"]
+      temporary: false
+      reason:
+        - esp32 doesn't have xip_psram
+        - esp32s2 doesn't have 120M
+        - esp32s3 needs to specify line mode
+        - esp32p4/s31 needs higher than 200/250M test
+        - esp32h4 needs 48/64M test
+
+  depends_components:
+    - *common_components
+    - esp_psram
+    - esp_mm
+    - esp_driver_gpio
+    - esp_driver_spi
+    - spi_flash
+    - esp_hal_mspi

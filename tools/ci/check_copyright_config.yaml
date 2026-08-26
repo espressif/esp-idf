@@ -1,0 +1,263 @@
+# This file configures the check_copyright pre-commit hook
+#
+# Values from the DEFAULT section are used, when the particular option is not set in a section.
+# The DEFAULT section also contains all options with description
+#
+# Section name is just an identifier, keep it unique.
+# Section must contain the option 'include' and at least one other option
+#
+# The sections are matched in the order they are in this config file, the last section which matches is used.
+# This means that the order of the sections should be from broad to specific.
+# For example:
+# sections:
+#   tools/
+#   tools/ci/file.c
+#   tools/ci/
+# files:
+# tools/file.c -> section tools/
+# tools/ci/file.c -> section tools/ci/
+#
+
+# don't modify this section!
+DEFAULT:
+  perform_check: yes  # should the check be performed?
+  # Sections setting this to 'no' don't need to include any other options as they are ignored
+  # When a file is using a section with the option set to 'no', no checks are performed.
+
+  # what licenses (or license expressions) are allowed for files in this section
+  # when setting this option in a section, you need to list all the allowed licenses
+  allowed_licenses:
+    - Apache-2.0
+  license_for_new_files: Apache-2.0  # license to be used when inserting a new copyright notice
+  new_notice_c: |  # notice for new C, CPP, H, HPP and LD files
+    /*
+     * SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
+     *
+     * SPDX-License-Identifier: {license}
+     */
+  new_notice_python: |  # notice for new python files
+    # SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
+    # SPDX-License-Identifier: {license}
+
+  new_notice_bsasm: |  # notice for new bsasm files
+    # SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
+    # SPDX-License-Identifier: {license}
+
+  # comment lines matching:
+  # SPDX-FileCopyrightText: year[-year] Espressif Systems
+  # or
+  # SPDX-FileContributor: year[-year] Espressif Systems
+  # are replaced with this template prefixed with the correct comment notation (# or // or *) and SPDX- notation
+  espressif_copyright: '{years} Espressif Systems (Shanghai) CO LTD'
+
+# this section sets the default license for examples and unit tests of components
+examples_and_unit_tests:
+  include:
+   - 'examples/'
+   - 'components/**/test/**'
+   - 'components/**/test_apps/**'
+   - 'tools/test_apps/**'
+   - '**/pytest_*.py'
+  allowed_licenses:
+  - Apache-2.0
+  - Unlicense
+  - CC0-1.0
+  license_for_new_files: Unlicense OR CC0-1.0
+
+lwip_component:
+  include:
+    - 'components/lwip/**'
+    - 'components/esp_netif/lwip/**'
+    - 'examples/common_components/protocol_examples_tapif_io/lwip'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-3-Clause
+  license_for_new_files: Apache-2.0
+
+esp_libc_component:
+  include:
+    - 'components/esp_libc/platform_include/**'
+    - 'components/esp_libc/port/**'
+    - 'components/esp_libc/priv_include/**'
+    - 'components/esp_libc/src/**'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-2-Clause-FreeBSD AND Apache-2.0
+  license_for_new_files: Apache-2.0
+
+freertos_component:
+  include:
+    - 'components/freertos/**'
+  allowed_licenses:
+    - Apache-2.0    #Files added to the freertos added by us
+    - MIT           #FreeRTOS sources and port files
+
+ethernet_component:
+  include:
+    - 'components/esp_eth/include/**'
+    - 'components/esp_eth/src/**'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT           # To allow contributed drivers
+
+linux_component:
+  include:
+    - 'components/linux/fls.c'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-4-Clause-UC
+
+rt_component:
+  include:
+    - 'components/rt/**'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT           #FreeRTOS-Plux-POSIX sources and port files
+
+rt_component_tests:
+  include:
+    - 'components/rt/test_apps/**'
+  allowed_licenses:
+    - Apache-2.0
+    - Unlicense
+    - CC0-1.0
+  license_for_new_files: Unlicense OR CC0-1.0
+
+systemview:
+  include:
+    - 'components/app_trace/sys_view'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-1-Clause
+  license_for_new_files: Apache-2.0
+
+spiffs:
+  include:
+    - 'components/spiffs/include/'
+  allowed_licenses:
+    - MIT
+    - Apache-2.0
+
+sdmmc:
+  include:
+    - 'components/esp_driver_sdmmc/include/driver/'
+    - 'components/sdmmc/'
+  allowed_licenses:
+    - Apache-2.0
+    - ISC
+
+argtable3:
+  include:
+    - 'components/console/argtable3/'
+  allowed_licenses:
+    - BSD-3-Clause
+    - Apache-2.0
+
+md5_hash:
+  include:
+    - 'components/esp_rom/*/include/**/rom/md5_hash.h'
+  allowed_licenses:
+    - BSD-3-Clause
+    - Apache-2.0
+
+# OpenOCD project is licensed under GPLv2.0, which is incompatible with Apache-2.0
+# The source files built by the OpenOCD stub flasher, need to be dual-licensed for the upstreaming.
+# MIT is chosen as the dual license, ensuring compatibility with GPLv2.0.
+app_trace:
+  include:
+    - components/app_trace/app_trace.c
+    - components/app_trace/app_trace_membufs_proto.c
+    - components/app_trace/app_trace_util.c
+    - components/app_trace/port/riscv/port_jtag.c
+    - components/app_trace/port/xtensa/port_jtag.c
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
+
+xtensa:
+  include:
+    - 'components/xtensa/**'
+  allowed_licenses:
+    - Apache-2.0    #Files added to the xtensa component by us
+    - MIT           #Cadence sources
+
+tinyusb:
+  include:
+    - 'examples/peripherals/usb/device/tusb_midi/'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT           # Example derived from TinyUSB code by HaThach
+    - Unlicense
+    - CC0-1.0
+
+# Portions of the USB stack in ROM are derived from Zephyr project,
+# with files licensed under a mix of Apache and BSD-3-Clause licenses.
+esp_rom_usb:
+  include:
+    - 'components/esp_rom/*/include/*/rom/usb/'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-3-Clause
+
+protocol_examples_common_component:
+  include:
+    - 'examples/common_components/protocol_examples_common/'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-2-Clause  # Contains URI encoding/decoding code from nginx
+    - Unlicense
+    - CC0-1.0
+  license_for_new_files: Unlicense OR CC0-1.0
+
+zigbee:
+  include:
+    - 'examples/zigbee/'
+  allowed_licenses:
+    - Apache-2.0
+    - LicenseRef-Included
+
+esp_trace:
+  include:
+    - components/esp_trace/include/
+    - components/esp_trace/adapters/transport/
+    - components/esp_trace/adapters/encoder/
+    - components/esp_trace/src/core/
+    - components/esp_trace/src/ports/
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
+    - CC0-1.0
+
+# These files are used in esp-stub-lib which is licensed under a mix of Apache-2.0 and MIT licenses.
+soc_component:
+  include:
+    - 'components/soc/**'
+  allowed_licenses:
+    - Apache-2.0 OR MIT
+  license_for_new_files: Apache-2.0 OR MIT
+
+
+# files matching this section do not perform the check
+# file patterns starting with ! are negated, meaning files matching them won't match the section.
+ignore:
+  perform_check: no
+  include:
+    - components/bt/host/nimble/nimble/
+    - components/bt/common/osi/
+    - components/bt/porting/ext/
+    - components/bt/porting/nimble/
+    - components/http_parser/
+    - components/wpa_supplicant/src/
+    - '!components/wpa_supplicant/esp_supplicant/'
+    - components/wpa_supplicant/esp_supplicant/src/crypto/fastpbkdf2*
+    - components/bt/host/bluedroid/
+    - '!components/bt/host/bluedroid/api/'
+    - '!components/bt/host/bluedroid/btc/'
+    - '!components/bt/host/bluedroid/bta/pba/'
+    - '!components/bt/host/bluedroid/stack/goep/'
+    - '!components/bt/host/bluedroid/stack/obex/'
+    - components/esp_local_ctrl/proto-c/
+    - components/esp_local_ctrl/python/
+    - components/protocomm/proto-c/
+    - components/protocomm/python/
+    - tools/templates/

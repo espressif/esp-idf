@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * LP-core RISC-V linker script, assembled from base + layout + checks.
+ * A custom layout replaces the default via LP_CORE_LINKER_INCLUDE.
+ */
+#include "lp_core_riscv_base.ld.in"
+
+#ifdef LP_CORE_LINKER_INCLUDE
+#include LP_CORE_LINKER_INCLUDE
+#else
+#include "lp_core_riscv_default_layout.ld.in"
+#endif
+
+#include "lp_core_riscv_checks.ld.in"

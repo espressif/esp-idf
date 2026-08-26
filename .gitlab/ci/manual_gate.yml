@@ -1,0 +1,11 @@
+manual_gate:
+  stage: manual_gate
+  image: $ESP_ENV_IMAGE
+  tags: [fast_run, shiny]
+  allow_failure: false
+  rules:
+    - if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
+      when: manual
+    - when: never
+  script:
+    - echo "Manual approval received for master pipeline."

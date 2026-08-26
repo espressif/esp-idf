@@ -1,0 +1,19 @@
+examples/system/freertos/basic_freertos_smp_usage:
+  enable:
+    - if: IDF_TARGET in ["esp32c3", "esp32s3", "linux"]
+      reason: no target specific functionality, testing on a single core target and a multiple core target is sufficient
+  depends_components:
+    - freertos
+
+examples/system/freertos/psram_stack:
+  disable:
+    - if: SOC_SPIRAM_SUPPORTED != 1
+      reason: test requires PSRAM, and these are the targets with PSRAM support
+  depends_components:
+    - freertos
+
+examples/system/freertos/real_time_stats:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  depends_components:
+    - freertos

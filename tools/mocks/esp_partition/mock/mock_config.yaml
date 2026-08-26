@@ -1,0 +1,10 @@
+        :cmock:
+          :includes_h_pre_orig_header:
+            - esp_flash.h
+          :plugins:
+            - expect
+            - expect_any_args
+            - return_thru_ptr
+            - array
+            - ignore_arg
+            - callback

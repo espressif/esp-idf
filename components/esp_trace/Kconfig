@@ -1,0 +1,162 @@
+menu "ESP Trace Configuration"
+
+    choice ESP_TRACE_LIBRARY
+        prompt "Trace library"
+        default ESP_TRACE_LIB_NONE
+        help
+            Select the trace library to use.
+
+        config ESP_TRACE_LIB_EXTERNAL
+            bool "External library from component registry"
+            help
+                Use a custom encoder provided by an external component.
+                The trace core system will be enabled but no built-in encoder is included.
+
+                The external component MUST provide a header file named
+                "esp_trace_freertos_impl.h" in its include directories that
+                defines all required FreeRTOS trace macros.
+
+        config ESP_TRACE_LIB_NONE
+            bool "Disabled"
+    endchoice
+
+    config ESP_TRACE_LIB_NAME
+        string
+        default "ext" if ESP_TRACE_LIB_EXTERNAL
+        default "none" if ESP_TRACE_LIB_NONE
+
+    choice ESP_TRACE_TRANSPORT
+        prompt "Trace transport"
+        default ESP_TRACE_TRANSPORT_NONE
+        help
+            Select the trace backend to use.
+
+        config ESP_TRACE_TRANSPORT_APPTRACE
+            bool "ESP-IDF apptrace"
+
+        config ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+            bool "USB Serial JTAG"
+            depends on SOC_USB_SERIAL_JTAG_SUPPORTED && !ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+            help
+                Use USB Serial JTAG peripheral as trace transport.
+
+                Note: This option is not available when USB Serial JTAG is used as
+                primary or secondary console (ESP_CONSOLE_USB_SERIAL_JTAG or
+                ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG).
+
+        config ESP_TRACE_TRANSPORT_EXTERNAL
+            bool "External transport from component registry"
+            depends on !ESP_TRACE_LIB_NONE
+            help
+                Use a transport registered by an external component.
+                The trace core system will be enabled but no built-in transport is included.
+
+        config ESP_TRACE_TRANSPORT_NONE
+            bool "None"
+    endchoice
+
+    config ESP_TRACE_TRANSPORT_NAME
+        string
+        default "apptrace" if ESP_TRACE_TRANSPORT_APPTRACE
+        default "usb_serial_jtag" if ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+        default "ext" if ESP_TRACE_TRANSPORT_EXTERNAL
+        default "none" if ESP_TRACE_TRANSPORT_NONE
+
+    config ESP_TRACE_ENABLE
+        bool
+        default !ESP_TRACE_LIB_NONE
+        help
+            Internal config to enable tracing dependency around components.
+
+    rsource "$IDF_PATH/components/app_trace/Kconfig.apptrace"
+
+    menu "USB Serial JTAG Trace Configuration"
+        depends on ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+
+        config ESP_TRACE_USJ_TX_BUFFER_SIZE
+            int "TX buffer size"
+            default 2048
+            range 2048 32768
+            help
+                Size of the TX ring buffer for USB Serial JTAG trace transport.
+                Larger buffer allows more trace data to be queued before blocking.
+
+                Note: Buffer size must be a power of 2. Minimum is 2048 since
+                smaller buffers overflow easily on the USJ transport.
+
+    endmenu
+
+    menu "Function Tracing"
+        depends on ESP_TRACE_ENABLE
+
+        config ESP_TRACE_FUNCTION_TRACE
+            bool "Enable compiler-instrumented function tracing"
+            default n
+            help
+                Trace when functions are entered and exited.
+
+                When you build a component with the compiler flag
+                -finstrument-functions, the compiler inserts a call at the start
+                and end of every function in that component. These calls go to
+                hooks provided by esp_trace, which forward the events to the
+                active trace encoder (for example SystemView).
+
+                Enabling this option compiles the hook functions and the
+                function-trace runtime into the build. It does not add
+                -finstrument-functions to any code, so on its own it produces no
+                events.
+
+                To trace a component or file, add the GCC function instrumentation flag
+                from that component's CMakeLists.txt. See the Application Level Tracing
+                guide and examples/system/tracing/function_tracing for CMake examples.
+
+                Use the GCC -finstrument-functions-exclude-file-list and
+                -finstrument-functions-exclude-function-list flags to skip
+                specific files or functions.
+
+        config ESP_TRACE_FUNCTION_TRACE_AUTO_START
+            bool "Start function tracing automatically when the host starts recording"
+            depends on ESP_TRACE_FUNCTION_TRACE
+            default y
+            help
+                Controls when function tracing begins recording once a trace
+                session is active.
+
+                When enabled, function tracing follows the encoder's recording
+                state and begins as soon as the host starts the session (for
+                example OpenOCD "mon esp sysview_mcore start"), without an
+                application call.
+
+                When disabled, function-trace events are dropped until the
+                application calls esp_trace_function_trace_start(), even if a host
+                trace session is already recording. esp_trace_function_trace_stop()
+                stops recording again.
+
+                An active trace session (encoder recording) is required in both
+                cases.
+
+    endmenu
+
+    choice ESP_TRACE_TIMESTAMP_SOURCE
+        depends on ESP_TRACE_ENABLE
+        prompt "Trace timestamp source"
+        default ESP_TRACE_TS_SOURCE_CCOUNT if ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+        default ESP_TRACE_TS_SOURCE_GPTIMER if !ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+        default ESP_TRACE_TS_SOURCE_ESP_TIMER if PM_ENABLE || IDF_TARGET_ESP32C3
+        help
+            Select the timestamp source for tracing.
+
+        config ESP_TRACE_TS_SOURCE_CCOUNT
+            bool "CPU cycle counter (CCOUNT)"
+            depends on ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+
+        config ESP_TRACE_TS_SOURCE_GPTIMER
+            bool "General Purpose Timer (Timer Group)"
+            depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
+
+        config ESP_TRACE_TS_SOURCE_ESP_TIMER
+            bool "esp_timer high resolution timer"
+
+    endchoice
+
+endmenu

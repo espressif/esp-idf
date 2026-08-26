@@ -1,0 +1,37 @@
+menu "GDB Stub"
+
+    # Hidden option which adds GDBStub on panic option to the "Panic handler behavior"
+    # menu in the target component.
+    config ESP_GDBSTUB_ENABLED
+        bool
+        default y
+
+    config ESP_SYSTEM_GDBSTUB_RUNTIME
+        bool "GDBStub at runtime"
+        select ESP_GDBSTUB_ENABLED
+        help
+            Enable builtin GDBStub.
+            This allows to debug the target device using serial port:
+            - Run 'idf.py monitor'.
+            - Wait for the device to initialize.
+            - Press Ctrl+C to interrupt the execution and enter GDB attached to your device for debugging.
+            NOTE: all UART input will be handled by GDBStub.
+
+    config ESP_GDBSTUB_SUPPORT_TASKS
+        bool "Enable listing FreeRTOS tasks through GDB Stub"
+        depends on ESP_GDBSTUB_ENABLED
+        default y
+        help
+            If enabled, GDBStub can supply the list of FreeRTOS tasks to GDB.
+            Thread list can be queried from GDB using 'info threads' command.
+            Note that if GDB task lists were corrupted, this feature may not work.
+            If GDBStub fails, try disabling this feature.
+
+    config ESP_GDBSTUB_MAX_TASKS
+        int "Maximum number of tasks supported by GDB Stub"
+        default 32
+        depends on ESP_GDBSTUB_SUPPORT_TASKS
+        help
+            Set the number of tasks which GDB Stub will support.
+
+endmenu

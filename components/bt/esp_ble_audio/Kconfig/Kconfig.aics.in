@@ -1,0 +1,50 @@
+# Bluetooth Audio - Audio Input Control Service options
+#
+# SPDX-FileCopyrightText: 2020 Bose Corporation
+# SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+##################### Audio Input Control Service #####################
+
+config BT_AICS_MAX_INSTANCE_COUNT
+    int "Audio Input Control Service max instance count"
+    default 0
+    range 0 15
+    help
+        This option sets the maximum number of instances of Audio Input
+        Control Services.
+
+config BT_AICS
+    bool # hidden
+    default y if BT_AICS_MAX_INSTANCE_COUNT > 0
+    help
+        This hidden option enables support for Audio Input Control Service.
+
+if BT_AICS
+
+    config BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
+        int "Audio Input Control Service max input description size"
+        default 32
+        range 0 512
+        help
+            This option sets the maximum input description size in octets.
+
+endif # BT_AICS
+
+##################### Audio Input Control Service Client #####################
+
+config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
+    int "Audio Input Control Service client max instance count"
+    default 0
+    range 0 15
+    help
+        This option sets the maximum number of instances of Audio Input
+        Control Services.
+
+config BT_AICS_CLIENT
+    bool # hidden
+    default y if BT_AICS_CLIENT_MAX_INSTANCE_COUNT > 0
+    help
+        This hidden option enables support for Audio Input Control Service.

@@ -1,0 +1,25 @@
+menu "ESP Ringbuf"
+
+    config RINGBUF_IN_IRAM
+        bool "Place ring buffer functions in IRAM"
+        default n
+        help
+            Place ring buffer functions in IRAM for better performance.
+            By default, ring buffer functions are placed in Flash to save IRAM.
+            Enable this option if you need maximum performance for ring buffer operations.
+
+            Note: This option increases IRAM usage.
+
+    config RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
+        bool "Place ISR ringbuf functions into flash"
+        depends on !RINGBUF_IN_IRAM
+        default n
+        help
+            Place ISR ringbuf functions (like xRingbufferSendFromISR/xRingbufferReceiveFromISR) into flash.
+            This frees up IRAM, but the functions can no longer be called when the cache is disabled
+            or from an IRAM interrupt context.
+
+            This option is not compatible with ESP-IDF drivers which are configured to
+            run the ISR from an IRAM context, e.g. CONFIG_UART_ISR_IN_IRAM.
+
+endmenu

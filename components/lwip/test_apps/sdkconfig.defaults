@@ -1,0 +1,5 @@
+CONFIG_UNITY_ENABLE_FIXTURE=y
+CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER=n
+
+# Added to enable compilation of DHCP last IP restore feature
+CONFIG_LWIP_DHCP_RESTORE_LAST_IP=y

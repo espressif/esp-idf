@@ -1,0 +1,12 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/size_metrics/minimal_baseline:
+  disable_test:
+    - if: IDF_TARGET == "linux"
+      temporary: true
+      reason: Not a real hardware target
+
+tools/test_apps/size_metrics/wifi_ota:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1
+      reason: Wi-Fi is not supported

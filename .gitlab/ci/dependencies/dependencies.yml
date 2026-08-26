@@ -1,0 +1,103 @@
+##############
+# Build Jobs #
+##############
+"build":
+  labels:
+    - build
+  patterns:
+    - build_components
+    - build_system
+    - downloadable-tools
+  included_in:
+    - build:check
+
+# -------------------
+# Specific Build Jobs
+# -------------------
+"build:docker":
+  labels:
+    - build
+    - docker
+  patterns:
+    - docker
+    - submodule
+    - build_system
+    - downloadable-tools
+
+"build:macos":
+  labels:
+#    - build
+    - macos
+    - macos_test  # for backward compatibility
+#  patterns:
+#    - build_system
+#    - build_macos
+#    - downloadable-tools
+
+# ---------------------------
+# Add patterns to build rules
+# ---------------------------
+"patterns:template-app":
+  patterns:
+    - build_template-app
+
+"patterns:build-check":
+  patterns:
+    - build_check
+  included_in:
+    - build:check
+
+"test:host_test":
+  labels:
+    - host_test
+  patterns:
+    - host_test
+
+"test:host_test_ldgen":
+  labels:
+    - host_test
+  patterns:
+    - host_test_ldgen
+
+"test:host_test_ulp_linker":
+  labels:
+    - host_test
+  patterns:
+    - host_test_ulp_linker
+
+"test:host_test_cli_installer":
+  labels:
+    - host_test
+  patterns:
+    - host_test_cli_installer
+
+"test:host_test_tools":
+  labels:
+    - host_test
+  patterns:
+    - host_test_tools
+
+"test:submodule":
+  labels:
+    - submodule
+  patterns:
+    - submodule
+
+#################################
+# Triggered Only By Labels Jobs #
+#################################
+"labels:nvs_coverage": # host_test
+  labels:
+    - nvs_coverage
+
+"labels:windows_pytest_build_system":
+  labels:
+    - windows
+  specific_rules:
+    - if-schedule-test-build-system-windows
+  patterns:
+    - build_system_win
+
+"labels:buildv2":
+  labels:
+    - buildv2

@@ -1,0 +1,10 @@
+[mapping:libm]
+archive:
+  if LIBC_NEWLIB_NANO_FORMAT = y:
+    libm_nano.a
+  else:
+    libm.a
+entries:
+    if SPIRAM_CACHE_LIBMATH_IN_IRAM = y:
+        libm_a-s_fpclassify (noflash)
+        libm_a-sf_nan (noflash)

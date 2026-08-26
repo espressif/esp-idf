@@ -1,0 +1,3 @@
+#| Proxy  | PB-GATT | Proxy Server | Proxy Client |
+#| Enable | Disable | Enable       | Disable      |
+CONFIG_BLE_MESH_PB_GATT=n

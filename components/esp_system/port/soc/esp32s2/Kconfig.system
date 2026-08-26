@@ -1,0 +1,7 @@
+config ESP32S2_KEEP_USB_ALIVE
+    bool "Keep USB peripheral enabled at start up" if !ESP_CONSOLE_USB_CDC
+    default y if ESP_CONSOLE_USB_CDC
+    help
+        During the application initialization process, all the peripherals except UARTs and timers
+        are reset. Enable this option to keep USB peripheral enabled.
+        This option is automatically enabled if "USB CDC" console is selected.

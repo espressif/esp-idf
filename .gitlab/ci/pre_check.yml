@@ -1,0 +1,164 @@
+####################
+# fast_build_check #
+####################
+
+# Build one config per target at earliest stage to catch obvious failures before the full build
+fast_build_check:
+  extends:
+    - .build_template
+    - .rules:build
+  stage: pre_check
+  tags: [fast_run, shiny]
+  artifacts:
+    paths:
+      - "**/build*/build_log.txt"
+      - "**/build*/size*.json"
+    expire_in: 1 week
+    when: always
+  script:
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - idf-build-apps build
+        -p tools/test_apps/system/build_tests/full_build
+        --config-rules "sdkconfig.ci.Og="
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4 esp32s31
+
+check_version:
+  # Don't run this for feature/bugfix branches, so that it is possible to modify
+  # esp_idf_version.h in a branch before tagging the next version.
+  extends:
+    - .pre_check_template
+    - .rules:protected:check
+  tags: [ github_sync ]
+  variables:
+    # need a full clone to get the latest tag
+    # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
+    GIT_STRATEGY: fetch
+    SUBMODULES_TO_FETCH: "none"
+    GIT_DEPTH: 0
+  script:
+    - export IDF_PATH=$PWD
+    - tools/ci/check_idf_version.sh
+
+check_api_usage:
+  extends: .pre_check_template
+  script:
+    - python -m pip install ast-grep-cli # use ast-grep to describe customized lint rules
+    - ast-grep scan
+    - tools/ci/check_api_violation.sh
+    - tools/ci/check_examples_extra_component_dirs.sh
+
+check_wifi_remote_api:
+  extends:
+    - .pre_check_template
+    - .rules:build:check
+  script:
+    - cd components/esp_wifi/remote/scripts/
+    - python generate_and_check.py
+    - git diff --exit-code || { echo 'Differences found. Please run generate_and_check.py and commit the changes.'; exit 1; }
+
+check_examples_documented:
+  extends: .pre_check_template
+  script:
+    - python3 tools/ci/check_examples_documented.py
+
+check_blobs:
+  extends:
+    - .pre_check_template
+    - .rules:build:check
+  variables:
+    SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib;components/esp_coex/lib"
+  script:
+    # Check if Wi-Fi library header files match between IDF and the version used when compiling the libraries
+    - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c5 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c61 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32_host $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    # Check if Coexistence library header files match between IDF and the version used when compiling the libraries
+    - IDF_TARGET=esp32 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32h2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c5 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c61 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
+    - bash $IDF_PATH/tools/ci/check_blobs.sh
+
+check_chip_support_components:
+  extends:
+    - .pre_check_template
+    - .rules:build:check
+  artifacts:
+    when: on_failure
+    paths:
+      - esp_hw_support_part.h
+      - bootloader_support_part.h
+    expire_in: 1 week
+  script:
+    - python tools/ci/check_soc_headers_leak.py
+    - find ${IDF_PATH}/components/soc \( -path "*/include/soc/*_struct.h" -o -path "*/register/soc/*_struct.h" -o -path "*/register/*/soc/*_struct.h" \) -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+    - tools/ci/check_esp_memory_utils_headers.sh
+
+check_esp_err_codes:
+  extends:
+    - .pre_check_template
+    - .rules:build:check
+  script:
+    - cd ${IDF_PATH}
+    - python tools/err_codes_extract.py --search-dirs components/ --output /tmp/err_codes.csv --validate
+    - python tools/err_codes_to_rst.py --csv /tmp/err_codes.csv --output /tmp/esp_err_defs.inc
+    - echo "Extracted $(wc -l < /tmp/err_codes.csv) error codes"
+
+check_esp_system:
+  extends:
+    - .pre_check_template
+    - .rules:build
+  script:
+    - python components/esp_system/check_system_init_priorities.py
+
+# For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
+# the version returned by 'git describe'
+# Don't forget to update the env var `LATEST_GIT_TAG` in .gitlab/ci/common.yml
+check_version_tag:
+  extends:
+    - .pre_check_template
+    - .rules:tag:release
+  tags: [ brew, github_sync ]
+  variables:
+    # need a full clone to get the latest tag
+    # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
+    GIT_STRATEGY: fetch
+    SUBMODULES_TO_FETCH: "none"
+    GIT_DEPTH: 0
+  script:
+    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
+
+check_test_scripts_build_test_rules:
+  extends:
+    - .pre_check_template
+  script:
+    # requires basic pytest dependencies
+    - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
+
+check_gitlab_yaml:
+  extends:
+    - .pre_check_template
+  script:
+    - python tools/ci/gitlab_yaml_linter.py
+
+retry_failed_jobs:
+  extends:
+    - .pre_check_template
+    - .rules:dev-push
+  allow_failure: true
+  script:
+    - echo "Retrieving and retrying all failed jobs for the pipeline..."
+    - python tools/ci/python_packages/gitlab_api.py retry_failed_jobs $CI_MERGE_REQUEST_PROJECT_ID --pipeline_id $CI_PIPELINE_ID
+  when: manual

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 198" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+<rect width="900" height="198" fill="#ffffff" rx="8"/>
+<text x="450.0" y="30" text-anchor="middle" font-size="14" fill="#333333" font-weight="700">Single-Edge Asymmetric PWM, Active Low</text>
+<line x1="170" y1="38" x2="730" y2="38" stroke="#ddd" stroke-width="1"/>
+<defs>
+</defs>
+<g transform="translate(70, 66)">
+<text x="-12" y="14" text-anchor="end" font-size="11" fill="#333333" font-weight="600">count</text>
+<line x1="0" y1="20" x2="500" y2="0" stroke="#8e24aa" stroke-width="2"/>
+<line x1="500" y1="0" x2="500" y2="20" stroke="#8e24aa" stroke-width="1" stroke-dasharray="3,3"/>
+<text x="-12" y="60" text-anchor="end" font-size="11" fill="#43a047" font-weight="600">pwm_A</text>
+<polyline points="0,66 150,66 150,46 500,46 500,66" fill="none" stroke="#43a047" stroke-width="2"/>
+<line x1="150" y1="-4" x2="150" y2="84" stroke="#ff9800" stroke-width="1" stroke-dasharray="4,4"/>
+<text x="150" y="-12" text-anchor="middle" font-size="10" fill="#ff9800">cmp = 15</text>
+</g>
+<text x="450.0" y="186" text-anchor="middle" font-size="10" fill="#888888">Set low at the period boundary, high at the comparator.</text>
+</svg>

@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+# SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: CAP Initiator"
+
+    choice EXAMPLE_CAP_INITIATOR_MODE
+        prompt "CAP Initiator mode"
+        default EXAMPLE_UNICAST
+        help
+            Select exactly one CAP initiator mode.
+
+        config EXAMPLE_UNICAST
+            bool "Unicast"
+            help
+                If selected, the sample will start advertising connectable
+                for Broadcast Assistants.
+
+        config EXAMPLE_BROADCAST
+            bool "Broadcast"
+            help
+                If selected, the sample will start advertising syncable
+                audio streams.
+
+    endchoice
+
+endmenu

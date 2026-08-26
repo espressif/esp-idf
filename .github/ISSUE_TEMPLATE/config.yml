@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: ESP-IDF Programming Guide
+    url: https://docs.espressif.com/projects/esp-idf/en/latest/
+    about: Documentation for configuring and using ESP-IDF
+  - name: Espressif documentation page
+    url: https://www.espressif.com/en/support/download/documents
+    about: Hardware documentation (datasheets, Technical Reference Manual, etc)
+  - name: Forum
+    url: https://esp32.com
+    about: For questions about using ESP-IDF and/or ESP32 series chips. Please submit all questions starting "How do I..." here.
+  - name: Hardware-related services
+    url: https://www.espressif.com/en/products/hardware-services
+    about: Espressif service providing hardware design and certification support

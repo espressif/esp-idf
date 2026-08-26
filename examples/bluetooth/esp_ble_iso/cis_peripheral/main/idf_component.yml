@@ -1,0 +1,5 @@
+dependencies:
+  example_init:
+    path: ${IDF_PATH}/examples/bluetooth/esp_ble_iso/common_components/example_init
+  example_utils:
+    path: ${IDF_PATH}/examples/bluetooth/esp_ble_iso/common_components/example_utils

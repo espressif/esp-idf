@@ -1,0 +1,2 @@
+# Some of the tests will starve the watchdog
+CONFIG_ESP_TASK_WDT_EN=n

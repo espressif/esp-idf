@@ -1,0 +1,47 @@
+menu "Cache config"
+
+    choice CACHE_L2_CACHE_SIZE
+        prompt "L2 cache size"
+        default CACHE_L2_CACHE_128KB
+        help
+            L2 cache size to be set on application startup.
+
+        config CACHE_L2_CACHE_128KB
+            bool "128KB"
+        config CACHE_L2_CACHE_256KB
+            bool "256KB"
+        config CACHE_L2_CACHE_512KB
+            bool "512KB"
+    endchoice
+
+    config CACHE_L2_CACHE_SIZE
+        hex
+        default 0x20000 if CACHE_L2_CACHE_128KB
+        default 0x40000 if CACHE_L2_CACHE_256KB
+        default 0x80000 if CACHE_L2_CACHE_512KB
+
+    choice CACHE_L2_CACHE_LINE_SIZE
+        prompt "L2 cache line size"
+        default CACHE_L2_CACHE_LINE_64B if CACHE_L2_CACHE_128KB
+        default CACHE_L2_CACHE_LINE_64B if CACHE_L2_CACHE_256KB
+        default CACHE_L2_CACHE_LINE_128B if CACHE_L2_CACHE_512KB
+        help
+            L2 cache line size to be set on application startup.
+
+        config CACHE_L2_CACHE_LINE_64B
+            bool "64 Bytes"
+            depends on CACHE_L2_CACHE_128KB || CACHE_L2_CACHE_256KB
+        config CACHE_L2_CACHE_LINE_128B
+            bool "128 Bytes"
+    endchoice
+
+    config CACHE_L2_CACHE_LINE_SIZE
+        int
+        default 64 if CACHE_L2_CACHE_LINE_64B
+        default 128 if CACHE_L2_CACHE_LINE_128B
+
+    config CACHE_L1_CACHE_LINE_SIZE
+        int
+        default 64
+
+endmenu  # Cache config

@@ -1,0 +1,82 @@
+<svg width="980" height="160" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .segment { stroke: #333; stroke-width: 1; }
+    .label { font-family: sans-serif; font-size: 12px; text-anchor: middle; dominant-baseline: central; }
+    .title { font-family: sans-serif; font-size: 14px; font-weight: bold; }
+    .arrow { stroke: #333; marker-start: url(#startArrow); marker-end: url(#endArrow); }
+  </style>
+
+  <!-- Arrowhead definitions -->
+  <defs>
+    <marker id="startArrow" markerWidth="10" markerHeight="7" refX="3" refY="3.5" orient="auto">
+      <polygon points="6 0, 0 3.5, 6 7" fill="#333" />
+    </marker>
+    <marker id="endArrow" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 6 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- Header arrow (ID to DLC) -->
+  <line x1="60" y1="30" x2="450" y2="30" class="arrow" stroke-width="1.5"/>
+  <text x="260" y="22" class="label">Header</text>
+
+  <!-- Data arrow (Data field only) -->
+  <line x1="462" y1="30" x2="690" y2="30" class="arrow" stroke-width="1.5"/>
+  <text x="580" y="22" class="label">Data</text>
+
+  <!-- TX line -->
+  <text x="8" y="60" class="label">TX</text>
+
+  <!-- SOF -->
+  <rect x="20" y="40" width="40" height="40" fill="#ffcccc" class="segment"/>
+  <text x="40" y="60" class="label">SOF</text>
+
+  <!-- ID -->
+  <rect x="60" y="40" width="160" height="40" fill="#ffe599" class="segment"/>
+  <text x="140" y="60" class="label">ID (11/29)</text>
+
+  <!-- RTR -->
+  <rect x="220" y="40" width="40" height="40" fill="#c9daf8" class="segment"/>
+  <text x="240" y="60" class="label">RTR</text>
+
+  <!-- IDE -->
+  <rect x="260" y="40" width="40" height="40" fill="#d9ead3" class="segment"/>
+  <text x="280" y="60" class="label">IDE</text>
+
+  <!-- FDF -->
+  <rect x="300" y="40" width="40" height="40" fill="#d0e0e3" class="segment"/>
+  <text x="320" y="60" class="label">FDF</text>
+
+  <!-- BRS -->
+  <rect x="340" y="40" width="40" height="40" fill="#ead1dc" class="segment"/>
+  <text x="360" y="60" class="label">BRS</text>
+
+  <!-- ESI -->
+  <rect x="380" y="40" width="40" height="40" fill="#f4cccc" class="segment"/>
+  <text x="400" y="60" class="label">ESI</text>
+
+  <!-- DLC -->
+  <rect x="420" y="40" width="40" height="40" fill="#d9d2e9" class="segment"/>
+  <text x="440" y="60" class="label">DLC</text>
+
+  <!-- Data -->
+  <rect x="460" y="40" width="240" height="40" fill="#cfe2f3" class="segment"/>
+  <text x="580" y="60" class="label">Data (0~64 bytes)</text>
+
+  <!-- CRC -->
+  <rect x="700" y="40" width="120" height="40" fill="#d9d2e9" class="segment"/>
+  <text x="760" y="60" class="label">CRC</text>
+
+  <!-- EOF -->
+  <rect x="900" y="40" width="60" height="40" fill="#fff2cc" class="segment"/>
+  <text x="930" y="60" class="label">EOF</text>
+
+  <!-- TX base line -->
+  <line x1="20" y1="80" x2="960" y2="80" stroke="#999" stroke-width="2"/>
+
+  <!-- RX line -->
+  <text x="8" y="120" class="label">RX</text>
+  <rect x="820" y="100" width="80" height="40" fill="#b6d7a8" class="segment"/>
+  <text x="860" y="120" class="label">ACK</text>
+  <line x1="20" y1="140" x2="960" y2="140" stroke="#999" stroke-width="2" stroke-dasharray="5,5"/>
+</svg>

@@ -1,0 +1,32 @@
+menu "Memory"
+
+    config ESP32S3_RTCDATA_IN_FAST_MEM
+        bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
+        default n
+        help
+            This option allows to place .rtc_data and .rtc_rodata sections into
+            RTC fast memory segment to free the slow memory region for ULP programs.
+
+    config ESP32S3_USE_FIXED_STATIC_RAM_SIZE
+        bool "Use fixed static RAM size"
+        default n
+        help
+            If this option is disabled, the DRAM part of the heap starts right after the .bss section,
+            within the dram0_0 region. As a result, adding or removing some static variables
+            will change the available heap size.
+
+            If this option is enabled, the DRAM part of the heap starts right after the dram0_0 region,
+            where its length is set with ESP32S3_FIXED_STATIC_RAM_SIZE
+
+    config ESP32S3_FIXED_STATIC_RAM_SIZE
+        hex "Fixed Static RAM size"
+        default 0x10000
+        range 0 0x54700 # Equal to I_D_SRAM_SIZE in linkerscript
+        depends on ESP32S3_USE_FIXED_STATIC_RAM_SIZE
+        help
+            RAM size dedicated for static variables (.data & .bss sections).
+            This value is less than the chips total memory, as not all of it can be used for this purpose.
+            E.g. parts are used by the software bootloader, and will only be available
+            as heap memory after app startup.
+
+endmenu # Memory

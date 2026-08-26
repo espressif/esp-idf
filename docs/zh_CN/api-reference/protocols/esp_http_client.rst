@@ -1,0 +1,247 @@
+ESP HTTP 客户端
+===============
+
+:link_to_translation:`en:[English]`
+
+概述
+----
+
+``esp_http_client`` 提供了一组 API，用于从 ESP-IDF 应用程序中发起 HTTP/S 请求，具体的使用步骤如下：
+
+    * 首先调用 :cpp:func:`esp_http_client_init`，创建一个 :cpp:type:`esp_http_client_handle_t` 实例，即基于给定的 :cpp:type:`esp_http_client_config_t` 配置创建 HTTP 客户端句柄。此函数必须第一个被调用。若用户未明确定义参数的配置值，则使用默认值。
+    * 其次调用 :cpp:func:`esp_http_client_perform`，执行 ``esp_http_client`` 的所有操作，包括打开连接、交换数据、关闭连接（如需要），同时在当前任务完成前阻塞该任务。所有相关的事件（在 :cpp:type:`esp_http_client_config_t` 中指定）将通过事件处理程序被调用。
+    * 最后调用 :cpp:func:`esp_http_client_cleanup` 来关闭连接（如有），并释放所有分配给 HTTP 客户端实例的内存。此函数必须在操作完成后最后一个被调用。
+
+
+应用示例
+--------
+
+- :example:`protocols/esp_http_client` 演示了如何使用 ESP HTTP 客户端发起 HTTP/S 请求。
+- :example:`protocols/esp_http_client_mutual_auth` 演示了如何使用 ESP HTTP 客户端配置双向 TLS 认证。
+
+HTTP 基本请求
+-------------
+
+如需了解实现细节，请参考应用示例中的 ``http_rest_with_url`` 和 ``http_rest_with_hostname_path`` 函数。
+
+
+持久连接
+--------
+
+持久连接是 HTTP 客户端在多次交换中重复使用同一连接的方法。如果服务器没有使用 ``Connection: close`` 头来请求关闭连接，连接就会一直保持开放，用于其他新请求。
+
+为了使 ESP HTTP 客户端充分利用持久连接的优势，建议尽可能多地使用同一个句柄实例来发起请求，可参考应用示例中的函数 ``http_rest_with_url`` 和 ``http_rest_with_hostname_path``。示例中，一旦创建连接，即会在连接关闭前发出多个请求（如 ``GET``、 ``POST``、 ``PUT`` 等）。
+
+为 TLS 使用安全元件 (ATECC608)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+安全元件 (ATECC608) 可通过 PSA Crypto 不透明驱动接口用于 HTTP 客户端连接中的底层 TLS 连接。有关设置 PSA 密钥的详细内容，请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ESP-TLS 中的 ATECC608A（安全元件）** 小节。然后通过 :cpp:type:`esp_http_client_config_t` 中的 ``client_key`` 字段配置 HTTP 客户端使用安全元件：
+
+.. code-block:: c
+
+    esp_key_config_t key_config = {
+        .source = ESP_KEY_SOURCE_PSA,
+        .psa.key_id = psa_key_id,  /* 通过 psa_import_key() 获取 */
+    };
+
+    esp_http_client_config_t cfg = {
+        /* 其他配置选项 */
+        .client_key = &key_config,
+    };
+
+.. only:: SOC_ECDSA_SUPPORTED
+
+    为 TLS 使用 ECDSA_DS 外设
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ECDSA_DS 外设可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **在 ESP-TLS 中使用 ECDSA_DS 外设** 小节。可以按如下方式配置 HTTP 客户端以使用 ECDSA_DS 外设：
+
+    .. code-block:: c
+
+        esp_http_client_config_t cfg = {
+            /* other configurations options */
+            .use_ecdsa_peripheral = true,
+            .ecdsa_key_efuse_blk = 4,    // ECDSA 密钥的低 eFuse 块
+            .ecdsa_key_efuse_blk_high = 5,   // ECDSA 密钥的高 eFuse 块（仅 SECP384R1）
+            .ecdsa_curve = ESP_TLS_ECDSA_CURVE_SECP384R1, // 设置为 ESP_TLS_ECDSA_CURVE_SECP256R1 以使用 SECP256R1 曲线
+        };
+
+
+HTTPS 请求
+-----------
+
+ESP HTTP 客户端支持使用 **mbedTLS** 的 SSL 连接，需将 ``url`` 配置为以 ``https`` 开头，或将 ``transport_type`` 设置为 ``HTTP_TRANSPORT_OVER_SSL``。可以通过 :menuitem:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` 来配置 HTTPS 支持（默认启用）。
+
+.. note::
+
+    在发起 HTTPS 请求时，如需服务器验证，首先需要向 ``esp_http_client_config_t`` 配置中的 ``cert_pem`` 成员提供额外的根证书（PEM 格式）。用户还可以通过 ``esp_http_client_config_t`` 配置中的 ``crt_bundle_attach`` 成员，使用 ``ESP x509 Certificate Bundle`` 进行服务器验证。
+
+如需了解上文备注中的实现细节，请参考应用示例中的函数 ``https_with_url`` 和 ``https_with_hostname_path``。
+
+
+HTTP 流
+--------
+
+有些应用程序需要主动打开连接并控制数据交换（数据流）。在这种情况下，应用流程与常规请求不同。请参考以下示例：
+
+    * :cpp:func:`esp_http_client_init`：创建一个 HTTP 客户端句柄。
+    * ``esp_http_client_set_*`` 或 ``esp_http_client_delete_*``：修改 HTTP 连接参数（可选）。
+    * :cpp:func:`esp_http_client_open`：用 ``write_len`` （该参数为需要写入服务器的内容长度）打开 HTTP 连接，设置 ``write_len=0`` 为只读连接，设置 ``write_len=-1`` 为分块编码数据传输。
+    * :cpp:func:`esp_http_client_write`：向服务器写入数据，最大长度为 :cpp:func:`esp_http_client_open` 函数中的 ``write_len`` 值；配置 ``write_len=0`` 无需调用此函数。
+    * :cpp:func:`esp_http_client_chunk_write_begin`：使用分块传输编码（``write_len=-1``）时，发送分块头（大小行）以开始一个新分块。
+    * :cpp:func:`esp_http_client_chunk_write_end`：使用分块传输编码时，发送分块尾以结束当前分块。
+    * :cpp:func:`esp_http_client_fetch_headers`：在发送完请求头和服务器数据（如有）后，读取 HTTP 服务器的响应头。从服务器返回 ``content-length``，并可以由 :cpp:func:`esp_http_client_get_status_code` 继承，以获取连接的 HTTP 状态。
+    * :cpp:func:`esp_http_client_read`：读取 HTTP 流。
+    * :cpp:func:`esp_http_client_close`：关闭连接。
+    * :cpp:func:`esp_http_client_cleanup`：释放分配的资源。
+
+如需了解实现细节，请参考应用示例中的函数 ``http_perform_as_stream_reader``。
+
+
+HTTP 认证
+---------
+
+ESP HTTP 客户端同时支持 **基本** 和 **摘要** 认证。
+    * 用户可以在 ``url`` 或 ``esp_http_client_config_t`` 配置中的 ``username`` 和 ``password`` 处输入用户名和密码。对于 ``auth_type = HTTP_AUTH_TYPE_BASIC``，HTTP 客户端只需执行一项操作就可通过认证过程。
+    * 如果 ``auth_type = HTTP_AUTH_TYPE_NONE``，但配置中有 ``username`` 和 ``password`` 字段，HTTP 客户端需要执行两项操作。客户端在第一次尝试连接服务器时，会收到 ``401 Unauthorized`` 头，而后再根据这些信息来选择认证方法，并在第二项操作中执行。
+    * 如需了解实现细节，请参考应用示例中的函数 ``http_auth_basic``、 ``http_auth_basic_redirect`` （用于基本认证）和 ``http_auth_digest`` （用于摘要认证）。
+    * 目前，摘要认证仅支持 MD5 和 SHA-256 算法。
+
+
+认证配置示例
+^^^^^^^^^^^^
+
+    * 基于 URI 的认证
+
+        .. highlight:: c
+
+        ::
+
+            esp_http_client_config_t config = {
+                .url = "http://user:passwd@httpbin.org/basic-auth/user/passwd",
+                .auth_type = HTTP_AUTH_TYPE_BASIC,
+            };
+
+
+    * 基于用户名和密码的认证
+
+        .. highlight:: c
+
+        ::
+
+            esp_http_client_config_t config = {
+                .url = "http://httpbin.org/basic-auth/user/passwd",
+                .username = "user",
+                .password = "passwd",
+                .auth_type = HTTP_AUTH_TYPE_BASIC,
+            };
+
+响应头访问
+----------
+
+ESP HTTP 客户端具有保存和检索来自服务器的 HTTP 响应头的功能。当应用程序需要访问元数据（如内容类型、缓存控制指令、自定义服务器头或其他响应信息）时，此功能会发挥重要作用。
+
+配置
+^^^^^
+
+要启用响应头保存功能，必须配置以下 Kconfig 选项：
+
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS`：启用响应头保存（默认禁用以节省内存）。
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`：要保存的响应头的最大数量（默认值：10）。
+    * :menuitem:`CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`：响应头键和值的最大大小（单位：字节，默认值：各 128 字节）。
+
+用法
+^^^^^
+
+启用后，在执行 HTTP 请求后，可以使用 :cpp:func:`esp_http_client_get_response_header` 函数检索响应头。该函数返回给定键对应响应头的值。
+
+示例：
+
+.. code-block:: c
+
+    #if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        char *content_type = NULL;
+        err = esp_http_client_get_response_header(client, "Content-Type", &content_type);
+        if (err == ESP_OK && content_type != NULL) {
+            ESP_LOGI(TAG, "Content-Type: %s", content_type);
+        } else if (err == ESP_ERR_NOT_FOUND) {
+            ESP_LOGW(TAG, "Content-Type header not found");
+        }
+
+        char *date = NULL;
+        err = esp_http_client_get_response_header(client, "Date", &date);
+        if (err == ESP_OK && date != NULL) {
+            ESP_LOGI(TAG, "Date: %s", date);
+        }
+    }
+
+    esp_http_client_cleanup(client);
+    #endif
+
+重要限制
+^^^^^^^^^
+
+使用响应头访问功能时，需注意以下限制：
+
+    * **响应头数量限制**：仅保存前 ``CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS`` 个响应头，超出限制的响应头会被丢弃，并产生警告日志。
+    * **大小限制**：若响应头的键或值长度超过 ``CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE`` 字节，该头将被丢弃，并记录包含实际长度的警告日志。
+    * **多值响应头**：对于在响应中出现多次的响应头（如 ``Set-Cookie``），仅保存最后一次出现的值。
+    * **大小写敏感性**：查找响应头时不区分大小写，但存储时会保留原始大小写。
+    * **内存开销**：启用此功能会增加内存消耗。每个客户端实例的近似内存使用量为 ``(CONFIG_ESP_HTTP_CLIENT_MAX_SAVED_RESPONSE_HEADERS * CONFIG_ESP_HTTP_CLIENT_MAX_RESPONSE_HEADER_SIZE * 2)`` 字节。
+    * **响应头生命周期**：当通过 :cpp:func:`esp_http_client_perform` 或 :cpp:func:`esp_http_client_prepare` 用同一客户端句柄发起新请求时，保存的响应头会被清空。
+
+.. note::
+
+    返回的头值指针由 HTTP 客户端内部管理，应用程序不得释放该指针。该指针在客户端句柄被清理或启动新请求之前保持有效。
+
+事件处理
+---------
+
+ESP HTTP 客户端支持事件处理，发生相关事件时会触发相应的事件处理程序。:cpp:enum:`esp_http_client_event_id_t` 中包含了所有使用 ESP HTTP 客户端执行 HTTP 请求时可能发生的事件。
+
+通过 :cpp:member:`esp_http_client_config_t::event_handler` 设置回调函数即可启用事件处理功能。
+
+也可以在客户端初始化后使用 :cpp:func:`esp_http_client_set_event_handler` 函数设置回调函数。
+
+ESP HTTP 客户端诊断信息
+--------------------------
+
+诊断信息可以帮助用户深入了解出现的问题。在 ESP HTTP 客户端中，可以通过在 :doc:`事件循环库 <../system/esp_event>` 中注册事件处理程序来获取诊断信息。此功能的增加基于 `ESP Insights <https://github.com/espressif/esp-insights>`_ 框架，该框架可帮助收集诊断信息。然而，即使不依赖 ESP Insights 框架，也可以获取诊断信息。事件处理程序可通过 :cpp:func:`esp_event_handler_register` 函数注册到事件循环中。
+
+事件循环中不同 HTTP 客户端事件的预期数据类型如下所示：
+
+    - HTTP_EVENT_ERROR              :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_CONNECTED       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_HEADERS_SENT       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADER          :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_HEADERS_COMPLETE:   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_STATUS_CODE     :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_ON_DATA            :   ``esp_http_client_on_data_t``
+    - HTTP_EVENT_ON_FINISH          :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_DISCONNECTED       :   ``esp_http_client_handle_t``
+    - HTTP_EVENT_REDIRECT           :   ``esp_http_client_redirect_event_data_t``
+
+在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
+
+TLS 协议版本
+--------------------
+
+可在 :cpp:type:`esp_http_client_config_t` 中设置用于底层 TLS 连接的 TLS 协议版本。了解更多信息，请参考 :doc:`/api-reference/protocols/esp_tls` 中的 **TLS 协议版本** 章节。
+
+HTTP 客户端的 TLS 协议版本可按如下方式配置：
+
+    .. code-block:: c
+
+        #include "esp_http_client.h"
+        esp_http_client_config_t config = {
+            .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
+        };
+
+API 参考
+---------
+
+.. include-build-file:: inc/esp_http_client.inc

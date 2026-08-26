@@ -1,0 +1,49 @@
+menu "PThreads"
+
+    config PTHREAD_TASK_PRIO_DEFAULT
+        int "Default task priority"
+        range 0 255
+        default 5
+        help
+            Priority used to create new tasks with default pthread parameters.
+
+    config PTHREAD_TASK_STACK_SIZE_DEFAULT
+        int "Default task stack size"
+        default 3072
+        help
+            Stack size used to create new tasks with default pthread parameters.
+
+    config PTHREAD_STACK_MIN
+        int "Minimum allowed pthread stack size"
+        default 768
+        help
+            Minimum allowed pthread stack size set in attributes passed to pthread_create
+
+    choice PTHREAD_TASK_CORE_DEFAULT
+        bool "Default pthread core affinity"
+        default PTHREAD_DEFAULT_CORE_NO_AFFINITY
+        depends on !FREERTOS_UNICORE
+        help
+            The default core to which pthreads are pinned.
+
+        config PTHREAD_DEFAULT_CORE_NO_AFFINITY
+            bool "No affinity"
+        config PTHREAD_DEFAULT_CORE_0
+            bool "Core 0"
+        config PTHREAD_DEFAULT_CORE_1
+            bool "Core 1"
+    endchoice
+
+    config PTHREAD_TASK_CORE_DEFAULT
+        int
+        default -1 if PTHREAD_DEFAULT_CORE_NO_AFFINITY || FREERTOS_UNICORE
+        default 0 if PTHREAD_DEFAULT_CORE_0
+        default 1 if PTHREAD_DEFAULT_CORE_1
+
+    config PTHREAD_TASK_NAME_DEFAULT
+        string "Default name of pthreads"
+        default "pthread"
+        help
+            The default name of pthreads.
+
+endmenu

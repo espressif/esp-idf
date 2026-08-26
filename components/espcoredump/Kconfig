@@ -1,0 +1,132 @@
+menu "Core dump"
+
+    choice ESP_COREDUMP_TO_FLASH_OR_UART
+        prompt "Data destination"
+        default ESP_COREDUMP_ENABLE_TO_NONE
+        help
+            Select place to store core dump: flash, uart or none (to disable core dumps generation).
+
+            Core dumps to Flash are not available if PSRAM is used for task stacks.
+
+            If core dump is configured to be stored in flash and custom partition table is used add
+            corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions
+            in the components/partition_table directory.
+
+        config ESP_COREDUMP_ENABLE_TO_FLASH
+            bool "Flash"
+            select ESP_COREDUMP_ENABLE
+        config ESP_COREDUMP_ENABLE_TO_UART
+            bool "UART"
+            select ESP_COREDUMP_ENABLE
+        config ESP_COREDUMP_ENABLE_TO_NONE
+            bool "None"
+    endchoice
+
+    config ESP_COREDUMP_CAPTURE_DRAM
+        bool "Include whole .bss and .data sections and heap data into core dump file"
+        default n
+        depends on ESP_COREDUMP_ENABLE
+        help
+            Storing these sections can help with easier debugging and troubleshooting.
+            However, additional storage space will be required in the core dump partition.
+            At least 128KB should be reserved, but the actual amount required may vary based
+            on the application's DRAM usage.
+            Note that sections located in external RAM will not be stored.
+
+    config ESP_COREDUMP_CHECK_BOOT
+        bool "Check core dump data integrity on boot"
+        default y
+        depends on ESP_COREDUMP_ENABLE_TO_FLASH
+        help
+            When enabled, if any data are found on the flash core dump partition,
+            they will be checked by calculating their checksum.
+
+    config ESP_COREDUMP_ENABLE
+        bool
+        default F
+        select ESP_COREDUMP_DATA_FORMAT_ELF
+        select ESP_COREDUMP_CHECKSUM_SHA256
+        help
+            Enables/disable core dump module.
+
+    config ESP_COREDUMP_LOGS
+        bool "Enable coredump logs for debugging"
+        depends on ESP_COREDUMP_ENABLE
+        default y
+        help
+            Enable/disable coredump logs. Logs strings from espcoredump component are
+            placed in DRAM. Disabling these helps to save ~5KB of internal memory.
+
+    config ESP_COREDUMP_MAX_TASKS_NUM
+        int "Maximum number of tasks"
+        depends on ESP_COREDUMP_ENABLE
+        default 64
+        help
+            Maximum number of tasks that will be included in the core dump.
+            Crashed task registers and stacks are always included.
+            Other tasks are included in order of their priority. (Highest priority ready task first)
+
+    config ESP_COREDUMP_UART_DELAY
+        int "Delay before print to UART"
+        depends on ESP_COREDUMP_ENABLE_TO_UART
+        default 0
+        help
+            Config delay (in ms) before printing core dump to UART.
+            Delay can be interrupted by pressing Enter key.
+
+    config ESP_COREDUMP_FLASH_NO_OVERWRITE
+        bool "Don't overwrite existing core dump"
+        depends on ESP_COREDUMP_ENABLE_TO_FLASH
+        default n
+        help
+            Don't overwrite an existing core dump already present in flash.
+            Enable this option to only keep the first of multiple core dumps.
+
+            If enabled, the core dump partition must be erased before the first
+            core dump can be written.
+
+    config ESP_COREDUMP_USE_STACK_SIZE
+        bool
+        default y if ESP_COREDUMP_ENABLE_TO_FLASH && FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+        default n
+        help
+            Force the use of a custom DRAM stack for coredump when Task stacks can be in PSRAM.
+
+    config ESP_COREDUMP_STACK_SIZE
+        int "Reserved stack size"
+        depends on ESP_COREDUMP_ENABLE
+        range 0 4096 if !ESP_COREDUMP_USE_STACK_SIZE
+        range 1792 4096 if ESP_COREDUMP_USE_STACK_SIZE
+        default 0 if !ESP_COREDUMP_USE_STACK_SIZE
+        default 1792 if ESP_COREDUMP_USE_STACK_SIZE
+        help
+            Size of the memory to be reserved for core dump stack. If 0 core dump process will run on
+            the stack of crashed task/ISR, otherwise special stack will be allocated.
+            To ensure that core dump itself will not overflow task/ISR stack set this to the value around 1300-1800
+            depending on the chosen checksum calculation method. SHA256 method needs more stack space than CRC32.
+            NOTE: It eats DRAM.
+
+    config ESP_COREDUMP_SUMMARY_STACKDUMP_SIZE
+        int "Size of the stack dump buffer"
+        depends on ESP_COREDUMP_ENABLE_TO_FLASH && IDF_TARGET_ARCH_RISCV
+        range 512 4096
+        default 1024
+        help
+            Size of the buffer that would be reserved for extracting backtrace info summary.
+            This buffer will contain the stack dump of the crashed task. This dump is useful in generating backtrace
+
+    choice ESP_COREDUMP_DECODE
+        prompt "Handling of UART core dumps in IDF Monitor"
+        depends on ESP_COREDUMP_ENABLE_TO_UART
+        config ESP_COREDUMP_DECODE_INFO
+            bool "Decode and show summary (info_corefile)"
+        config ESP_COREDUMP_DECODE_DISABLE
+            bool "Don't decode"
+    endchoice
+
+    config ESP_COREDUMP_DECODE
+        string
+        default "disable" if ESP_COREDUMP_DECODE_DISABLE
+        default "info" if ESP_COREDUMP_DECODE_INFO
+
+endmenu

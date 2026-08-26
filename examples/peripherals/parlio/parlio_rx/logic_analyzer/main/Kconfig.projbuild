@@ -1,0 +1,72 @@
+menu "ESP probe configurations"
+
+    choice EXAMPLE_SIGNAL_SRC
+        prompt "Select signal source"
+        default EXAMPLE_INTERNAL_SIGNAL
+        config EXAMPLE_INTERNAL_SIGNAL
+            bool "Probing the internal signals"
+        config EXAMPLE_EXTERNAL_SIGNAL
+            bool "Probing the External signals"
+    endchoice
+
+    choice EXAMPLE_DATA_DUMP_MODE
+        prompt "Select ESP probe dump mode"
+        default EXAMPLE_DATA_BUFFER_MODE
+        help
+            Select how to dump the data. Different modes have different requirements.
+        config EXAMPLE_DATA_BUFFER_MODE
+            bool "Buffer mode (recommended)"
+            help
+                The buffer mode will store the data onto the heap storage first,
+                and output all of them to the stream in once.
+                The probe will stop if run out of the given storage on the heap.
+                So that to guarantee a reliable data storing during the sampling period.
+                However, the disadvantage is that, the probing time is limited by the available heap size,
+                the higher the sample rate is, the shorter time the sampling last.
+        config EXAMPLE_DATA_STREAM_MODE
+            bool "Stream mode"
+            help
+                The stream mode relies heavily on the bandwidth of the output stream.
+                Stream mode can only achieve a relatively low sample rate to guarantee no samples are dropped,
+                but it can keep sampling continuously for a long time.
+        config EXAMPLE_DATA_BUFFER_STREAM_MODE
+            bool "Buffer + Stream mode"
+            help
+                The buffer stream mode will store the data onto heap storage first,
+                and output them to the stream every half of the storage.
+                Buffer stream mode means the probe will loop to use the given storage on heap.
+                So that we can also sample the data continuously for a long time.
+                However, while the data outputting rate can't catch the data producing rate,
+                data will still be dropped.
+                The difference comparing to the stream mode is that, it sends a larger block in every output,
+                i.e., it can hold more reliable samples for a time
+    endchoice
+
+    choice EXAMPLE_DATA_IO_DEVICE
+        prompt "Select ESP probe dump stream"
+        default EXAMPLE_DUMP_VIA_FS if !SOC_WIFI_SUPPORTED && !SOC_EMAC_SUPPORTED
+        default EXAMPLE_DUMP_VIA_TCP if SOC_WIFI_SUPPORTED || SOC_EMAC_SUPPORTED
+        help
+            Select the dump stream for the sampled data
+        config EXAMPLE_DUMP_VIA_FS
+            bool "Dump data to the flash via file stream"
+        config EXAMPLE_DUMP_VIA_TCP
+            depends on SOC_WIFI_SUPPORTED || SOC_EMAC_SUPPORTED
+            bool "Dump data to the host via TCP stream"
+    endchoice
+
+    config EXAMPLE_HOST_IP_ADDR
+        depends on EXAMPLE_DUMP_VIA_TCP
+        default "192.168.1.100"
+        string "TCP server IP address"
+    config EXAMPLE_HOST_PORT
+        depends on EXAMPLE_DUMP_VIA_TCP
+        default 8888
+        int "TCP server port"
+
+    config EXAMPLE_PARTITION_LABEL
+        depends on EXAMPLE_DUMP_VIA_FS
+        default "storage"
+        string "The label of the data storage partition"
+
+endmenu

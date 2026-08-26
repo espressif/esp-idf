@@ -1,0 +1,85 @@
+menu "Power Supplier"
+
+    menu "Brownout Detector"
+        config ESP_BROWNOUT_DET
+            bool "Hardware brownout detect & reset"
+            depends on !IDF_ENV_FPGA
+            default y
+            help
+                The ESP32-H4 has a built-in brownout detector which can detect if the voltage is lower than
+                a specific value. If this happens, it will reset the chip in order to prevent unintended
+                behaviour.
+
+        choice ESP_BROWNOUT_DET_LVL_SEL
+            prompt "Brownout voltage level"
+            depends on ESP_BROWNOUT_DET
+            default ESP_BROWNOUT_DET_LVL_SEL_4
+            help
+                The brownout detector will reset the chip when the supply voltage is approximately
+                below this level. Note that there may be some variation of brownout voltage level
+                between each chip.
+
+                #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
+                #of the brownout threshold levels.
+            config ESP_BROWNOUT_DET_LVL_SEL_15
+                bool "3.77V"
+            config ESP_BROWNOUT_DET_LVL_SEL_14
+                bool "3.68V"
+            config ESP_BROWNOUT_DET_LVL_SEL_13
+                bool "3.58V"
+            config ESP_BROWNOUT_DET_LVL_SEL_12
+                bool "3.47V"
+            config ESP_BROWNOUT_DET_LVL_SEL_11
+                bool "3.37V"
+            config ESP_BROWNOUT_DET_LVL_SEL_10
+                bool "3.26V"
+            config ESP_BROWNOUT_DET_LVL_SEL_9
+                bool "3.16V"
+            config ESP_BROWNOUT_DET_LVL_SEL_8
+                bool "3.06V"
+            config ESP_BROWNOUT_DET_LVL_SEL_7
+                bool "2.96V"
+            config ESP_BROWNOUT_DET_LVL_SEL_6
+                bool "2.86V"
+            config ESP_BROWNOUT_DET_LVL_SEL_5
+                bool "2.75V"
+            config ESP_BROWNOUT_DET_LVL_SEL_4
+                bool "2.66V"
+            config ESP_BROWNOUT_DET_LVL_SEL_3
+                bool "2.55V"
+            config ESP_BROWNOUT_DET_LVL_SEL_2
+                bool "2.45V"
+
+        endchoice
+
+        config ESP_BROWNOUT_DET_LVL
+            int
+            default 2 if ESP_BROWNOUT_DET_LVL_SEL_2
+            default 3 if ESP_BROWNOUT_DET_LVL_SEL_3
+            default 4 if ESP_BROWNOUT_DET_LVL_SEL_4
+            default 5 if ESP_BROWNOUT_DET_LVL_SEL_5
+            default 6 if ESP_BROWNOUT_DET_LVL_SEL_6
+            default 7 if ESP_BROWNOUT_DET_LVL_SEL_7
+            default 8 if ESP_BROWNOUT_DET_LVL_SEL_8
+            default 9 if ESP_BROWNOUT_DET_LVL_SEL_9
+            default 10 if ESP_BROWNOUT_DET_LVL_SEL_10
+            default 11 if ESP_BROWNOUT_DET_LVL_SEL_11
+            default 12 if ESP_BROWNOUT_DET_LVL_SEL_12
+            default 13 if ESP_BROWNOUT_DET_LVL_SEL_13
+            default 14 if ESP_BROWNOUT_DET_LVL_SEL_14
+            default 15 if ESP_BROWNOUT_DET_LVL_SEL_15
+
+
+        config ESP_BROWNOUT_USE_INTR
+            bool
+            default n
+            help
+                This config allows to trigger an interrupt when brownout detected. Software restart will be done
+                at the end of the default callback.
+                This is because for some special workflow, the chip needs do more things when brownout happens
+                before restart instead of restarting directly. This part needs to be done in callback function
+                of interrupt.
+
+    endmenu
+
+endmenu

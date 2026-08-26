@@ -1,0 +1,9 @@
+# Enable Unity fixture support
+CONFIG_UNITY_ENABLE_FIXTURE=n
+CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER=y
+
+# Custom partition table for this test app
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+CONFIG_ESP_TASK_WDT_INIT=n

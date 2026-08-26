@@ -1,0 +1,8 @@
+# Partition table for DS test using esp_secure_cert partition.
+# esp_secure_cert_mgr looks for type 0x3F (custom) and name "esp_secure_cert".
+# Flash main/certs/esp_secure_cert_data/esp_secure_cert.bin to the esp_secure_cert partition.
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     ,        0x6000,
+phy_init, data, phy,     ,        0x1000,
+esp_secure_cert, 0x3F, 0x00, ,    0x4000,
+factory,  app,  factory, ,        0x100000,

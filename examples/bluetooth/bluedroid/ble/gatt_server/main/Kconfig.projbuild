@@ -1,0 +1,45 @@
+menu "Example 'GATT SERVER' Config"
+    config EXAMPLE_CHAR_READ_DATA_LEN
+        int "Length of characteristic value for Read Long support"
+        default 4
+        range 4 1000
+        help
+            Defines the length of the characteristic value used in the
+            Read Characteristic Values procedure.
+
+            If the characteristic value length exceeds (MTU - 1) bytes,
+            the Read Long procedure is automatically triggered, requiring
+            multiple `ATT_READ_BLOB_REQ` requests from the client to retrieve
+            the full value. For details, refer to Bluetooth Core Specification
+            Vol 3, Part G §4.8.3.
+
+            Note: To ensure compatibility with certain smartphones,
+            the Read Long response length should ideally not exceed 500 bytes.
+            If a device receives more than 600 bytes, it may stop sending
+            `ATT_READ_BLOB_REQ`, resulting in incomplete data reception.
+
+
+    config EXAMPLE_SET_RAW_ADV_DATA
+        bool "Use raw data for advertising packets and scan response data"
+        help
+            If this config item is set, raw binary data will be used to generate advertising & scan response data.
+            This option uses the esp_ble_gap_config_adv_data_raw() and esp_ble_gap_config_scan_rsp_data_raw()
+            functions.
+
+            If this config item is unset, advertising & scan response data is provided via a higher-level
+            esp_ble_adv_data_t structure. The lower layer will generate the BLE packets. This option has higher
+            overhead at runtime.
+
+    config EXAMPLE_CI_ID
+        int "example id for CI test"
+        default 0
+        help
+            This config the example id for CI test. Only for internal used.
+
+    config EXAMPLE_CI_PIPELINE_ID
+        int "The pipeline id for CI test"
+        default 0
+        help
+            This config the pipeline id for CI test. Only for internal used.
+
+endmenu

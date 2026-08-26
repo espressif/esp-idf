@@ -1,0 +1,1 @@
+# Default CI config uses sdkconfig.defaults plus target-specific defaults.

@@ -1,0 +1,10 @@
+components/spiffs/host_test:
+  enable:
+    - if: IDF_TARGET == "linux"
+      reason: only test on linux
+  depends_components:
+    - *common_components
+    - spi_flash
+    - esp_partition
+    - spiffs
+    - vfs

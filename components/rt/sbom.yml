@@ -1,0 +1,5 @@
+name: 'FreeRTOS-Plus-POSIX'
+version: '1.0.0'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Amazon Web Services'
+description: Portable Operating System Interface for FreeRTOS

@@ -1,0 +1,39 @@
+-
+    re: "fatal error: {}: No such file or directory"
+    hint: "The {} driver is removed. It should be replaced by '{}' in the '{}' component. Please read the migration guide for more details."
+    variables:
+        -
+            re_variables: ['driver/timer.h']
+            hint_variables: ['legacy timer group', 'driver/gptimer.h', 'esp_driver_gptimer']
+        -
+            re_variables: ['driver/i2s.h']
+            hint_variables: ['legacy I2S', 'driver/i2s_std.h, driver/i2s_pdm.h, driver/i2s_tdm.h', 'esp_driver_i2s']
+        -
+            re_variables: ['driver/pcnt.h']
+            hint_variables: ['legacy pcnt', 'driver/pulse_cnt.h', 'esp_driver_pcnt']
+        -
+            re_variables: ['driver/dac.h']
+            hint_variables: ['legacy DAC', 'driver/dac_oneshot.h, driver/dac_continuous.h, driver/dac_cosine.h', 'esp_driver_dac']
+        -
+            re_variables: ['driver/adc.h']
+            hint_variables: ['legacy ADC', 'esp_adc/adc_oneshot.h, esp_adc/adc_continuous.h, esp_adc/adc_cali.h, esp_adc/adc_cali_scheme.h', 'esp_adc']
+        -
+            re_variables: ['driver/mcpwm.h']
+            hint_variables: ['legacy MCPWM', 'driver/mcpwm_prelude', 'esp_driver_mcpwm']
+        -
+            re_variables: ['driver/sigmadelta.h']
+            hint_variables: ['legacy Sigma-Delta', 'driver/sdm.h', 'esp_driver_sdm']
+        -
+            re_variables: ['driver/rmt.h']
+            hint_variables: ['legacy RMT', 'driver/rmt_tx.h, driver/rmt_rx.h, driver/rmt_encoder.h', 'esp_driver_rmt']
+
+-
+    re: "fatal error: {}: No such file or directory"
+    hint: "{} was removed. Include {} instead."
+    variables:
+        -   re_variables: ['driver/can.h']
+            hint_variables: ['driver/can.h', 'driver/twai.h']
+        -   re_variables: ['driver/periph_ctrl.h']
+            hint_variables: ['driver/periph_ctrl.h', 'esp_private/periph_ctrl.h']
+        -   re_variables: ['driver/rtc_cntl.h']
+            hint_variables: ['driver/rtc_cntl.h', 'esp_private/rtc_ctrl.h']

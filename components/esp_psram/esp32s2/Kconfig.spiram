@@ -1,0 +1,99 @@
+config SPIRAM
+    bool "Support for external, SPI-connected RAM"
+    default "n"
+    help
+        This enables support for an external SPI RAM chip, connected in parallel with the
+        main SPI flash chip.
+
+menu "SPI RAM config"
+    depends on SPIRAM
+
+    config SPIRAM_MODE_QUAD
+        bool
+        default "y"
+
+    choice SPIRAM_TYPE
+        prompt "Type of SPI RAM chip in use"
+        default SPIRAM_TYPE_AUTO
+
+        config SPIRAM_TYPE_AUTO
+            bool "Auto-detect"
+
+        config SPIRAM_TYPE_ESPPSRAM16
+            bool "ESP-PSRAM16 or APS1604"
+
+        config SPIRAM_TYPE_ESPPSRAM32
+            bool "ESP-PSRAM32"
+
+        config SPIRAM_TYPE_ESPPSRAM64
+            bool "ESP-PSRAM64 or LY68L6400"
+    endchoice
+
+    config SPIRAM_CLK_IO
+        int
+        default 30
+
+    config SPIRAM_CS_IO
+        int
+        default 26
+
+    config SPIRAM_XIP_FROM_PSRAM
+        bool "Enable Executable in place from (XiP) from PSRAM feature"
+        default n
+        select SPIRAM_FETCH_INSTRUCTIONS
+        select SPIRAM_RODATA
+        help
+            Helper for selecting both `SPIRAM_FETCH_INSTRUCTIONS` and `SPIRAM_RODATA`
+
+    config SPIRAM_FETCH_INSTRUCTIONS
+        bool "Move Instructions in Flash to PSRAM"
+        default n
+        help
+            If enabled, instructions in flash will be moved into PSRAM on startup.
+            If SPIRAM_RODATA is also enabled, code that requires execution during an MSPI1 Flash operation
+            can forgo being placed in IRAM. Therefore codes that need to be executing during Flash
+            operation can continue working normally.
+
+            This feature is useful for high throughput peripheral involved applications to improve
+            the performance during MSPI1 flash operations. PSRAM access speed is faster than Flash access.
+            So the performance is better. (see External RAM documentation for more details).
+
+    config SPIRAM_RODATA
+        bool "Move Read-Only Data in Flash to PSRAM"
+        default n
+        help
+            If enabled, rodata in flash will be moved into PSRAM on startup.
+            If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an MSPI1 Flash operation
+            is not necessary to be placed in IRAM. Therefore codes that need to be executing during Flash
+            operation can continue working normally.
+
+            This feature is useful for high throughput peripheral involved applications to improve
+            the performance during MSPI1 flash operations. PSRAM access speed is faster than Flash access.
+            So the performance is better. (see External RAM documentation for more details).
+
+    choice SPIRAM_SPEED
+        prompt "Set RAM clock speed"
+        default SPIRAM_SPEED_40M
+        help
+            Select the speed for the SPI RAM chip.
+
+        config SPIRAM_SPEED_80M
+            bool "80MHz clock speed"
+        config SPIRAM_SPEED_40M
+            bool "40Mhz clock speed"
+        config SPIRAM_SPEED_26M
+            bool "26Mhz clock speed"
+        config SPIRAM_SPEED_20M
+            bool "20Mhz clock speed"
+    endchoice
+
+    config SPIRAM_SPEED
+        int
+        default 80 if SPIRAM_SPEED_80M
+        default 40 if SPIRAM_SPEED_40M
+        default 40 if SPIRAM_SPEED_26M
+        default 40 if SPIRAM_SPEED_20M
+
+    source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
+
+endmenu

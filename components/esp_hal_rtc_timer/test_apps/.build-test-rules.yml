@@ -1,0 +1,6 @@
+components/esp_hal_rtc_timer/test_apps:
+  enable:
+    - if: SOC_RTC_TIMER_SUPPORTED == 1
+  depends_components:
+    - esp_hal_rtc_timer
+    - soc

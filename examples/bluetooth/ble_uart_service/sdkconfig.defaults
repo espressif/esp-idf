@@ -1,0 +1,22 @@
+# Bluetooth controller in BLE-only mode + NimBLE host stack.
+# CONFIG_BTDM_CTRL_MODE_* are ESP32-classic-only knobs; on C2/C3/C5/C6/
+# C61/H2/H4/S3 they may emit an "unknown symbol" warning at configure
+# time but are otherwise harmless, so this single sdkconfig.defaults
+# stays valid for every supported target.
+CONFIG_BT_ENABLED=y
+CONFIG_BTDM_CTRL_MODE_BLE_ONLY=y
+CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY=n
+CONFIG_BTDM_CTRL_MODE_BTDM=n
+CONFIG_BT_BLUEDROID_ENABLED=n
+CONFIG_BT_NIMBLE_ENABLED=y
+
+# Negotiate the largest ATT MTU we can; ble_uart_tx auto-fragments to
+# the live MTU so smaller-MTU centrals still work.
+CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=512
+
+# LE Secure Connections + persistent bond store. The example defaults to
+# encrypted operation (ble_uart_config_t::encrypted=true) and stores LTK
+# in NVS so a previously-paired peer reconnects without re-prompting for
+# the passkey.
+CONFIG_BT_NIMBLE_SM_SC=y
+CONFIG_BT_NIMBLE_NVS_PERSIST=y

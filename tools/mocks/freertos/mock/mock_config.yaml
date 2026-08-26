@@ -1,0 +1,22 @@
+:cmock:
+  :includes_h_pre_orig_header:
+    - FreeRTOSConfig.h
+    - FreeRTOS.h
+  :plugins:
+    - expect
+    - expect_any_args
+    - return_thru_ptr
+    - array
+    - ignore
+    - ignore_arg
+    - callback
+  :strippables:
+    - '(?:__attribute__\s*\(+.*?\)+)'
+      # following functions are disabled by configQUEUE_REGISTRY_SIZE
+    - '(?:vQueueAddToRegistry\s*\([\s\w\*_,]*\))'
+    - '(?:vQueueUnregisterQueue\s*\([\s\w\*_,]*\))'
+    - '(?:pcQueueGetName\s*\([\s\w\*_,]*\))'
+      # following function is disabled by configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS
+    - '(?:vTaskSetThreadLocalStoragePointerAndDelCallback\s*\([\s\w\*_,]*\))'
+    - PRIVILEGED_FUNCTION
+    - portDONT_DISCARD

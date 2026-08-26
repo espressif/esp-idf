@@ -1,0 +1,3 @@
+# ESP32P4 supports the Recovery bootloader feature in ROM from rev3.0
+CONFIG_IDF_TARGET="esp32p4"
+CONFIG_ESP32P4_REV_MIN_300=y

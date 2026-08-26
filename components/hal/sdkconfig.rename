@@ -1,0 +1,4 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_HAL_ASSERTION_SILIENT                             CONFIG_HAL_ASSERTION_SILENT

@@ -1,0 +1,6 @@
+**/*.gcno
+**/*.gcda
+test_wl_host/coverage_report
+test_wl_host/coverage.info
+**/*.o
+test_wl_host/test_wl

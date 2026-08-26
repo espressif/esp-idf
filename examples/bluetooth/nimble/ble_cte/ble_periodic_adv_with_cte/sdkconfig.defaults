@@ -1,0 +1,11 @@
+# Minimal NimBLE config for periodic advertising with CTE (requires BLE 5.0).
+#
+# Supported targets: ESP32-H2, ESP32-C5, ESP32-C61, etc. (see README.md).
+# Run: idf.py set-target <chip> before building.
+
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT=y
+CONFIG_BT_NIMBLE_EXT_ADV=y
+CONFIG_BT_NIMBLE_ENABLE_PERIODIC_ADV=y
+CONFIG_BT_NIMBLE_AOA_AOD=y

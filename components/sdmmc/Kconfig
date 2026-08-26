@@ -1,0 +1,8 @@
+menu "SD Protocol Layer Configuration"
+    config SD_ENABLE_SDIO_SUPPORT
+        bool "Enable SDIO support"
+        default y
+        help
+            Enable SDIO support.
+            Disabling this will skip SDIO-specific initialization steps
+endmenu

@@ -1,0 +1,34 @@
+menu "Example Configuration"
+
+    config EXAMPLE_LCD_TOUCH_ENABLED
+        bool "Enable LCD touch"
+        default n
+        help
+            Enable this option if you wish to use display touch. You can select from touch controllers.
+
+    choice EXAMPLE_LCD_TOUCH_CONTROLLER
+        prompt "LCD touch controller model"
+        depends on EXAMPLE_LCD_TOUCH_ENABLED
+        default EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610
+        help
+            Select LCD touch controller model
+
+        config EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610
+            bool "STMPE610"
+            help
+                Touch controller STMPE610 connected via SPI.
+
+        config EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+            bool "XPT2046"
+            help
+                Touch controller XPT2046 connected via SPI.
+    endchoice
+
+    config EXAMPLE_LCD_MIRROR_Y
+        int
+        default 1 if EXAMPLE_LCD_TOUCH_ENABLED && EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+        default 0
+        help
+            This value is 1 if XPT2046 touch controller is selected, 0 otherwise.
+
+endmenu

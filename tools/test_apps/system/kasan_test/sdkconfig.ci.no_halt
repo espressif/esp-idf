@@ -1,0 +1,2 @@
+# Run all tests in one boot cycle without aborting on errors
+CONFIG_KASAN_NO_HALT=y

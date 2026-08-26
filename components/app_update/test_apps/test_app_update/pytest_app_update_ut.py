@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+import re
+
+import pytest
+from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
+
+DEFAULT_TIMEOUT = 20
+TEST_SUBMENU_PATTERN_PYTEST = re.compile(rb'\s+\((\d+)\)\s+"([^"]+)"\r?\n')
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31', 'esp32h4'], reason='bringup on this module is not done')
+def test_app_update(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=180)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'xip_psram',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31', 'esp32h4'], reason='bringup on this module is not done')
+def test_app_update_xip_psram(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=180)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'xip_psram_with_rom_impl',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31', 'esp32h4'], reason='bringup on this module is not done')
+def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=180)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rollback',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3', 'esp32p4'], indirect=['target'])
+def test_app_update_with_rollback(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=180)
+
+
+@pytest.mark.recovery_bootloader
+@pytest.mark.parametrize(
+    'config',
+    ['recovery_bootloader'],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5', 'esp32c61', 'esp32p4', 'esp32s31'], indirect=['target'])
+def test_recovery_bootloader_update(dut: Dut) -> None:
+    try:
+        dut.run_all_single_board_cases(group='recovery_bootloader', timeout=90)
+    finally:
+        # Erase recovery bootloader after test because it may interfere with other tests using this runner
+        dut.serial.erase_flash()

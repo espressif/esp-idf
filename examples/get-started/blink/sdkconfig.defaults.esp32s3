@@ -1,0 +1,7 @@
+CONFIG_BLINK_LED_STRIP=y
+#
+# Please Note:
+# ESP32-S3-DevKitC v1.1 uses GPIO38 for the on-board LED
+# ESP32-S3-DevKitC v1.0 uses GPIO48 for the on-board LED
+#
+CONFIG_BLINK_GPIO=38

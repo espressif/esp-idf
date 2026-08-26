@@ -1,0 +1,313 @@
+Support for External RAM
+************************
+
+:link_to_translation:`zh_CN:[中文]`
+
+.. toctree::
+    :maxdepth: 1
+
+Introduction
+============
+
+{IDF_TARGET_PSRAM_VADDR_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="32 MB", esp32p4="64 MB"}
+
+{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external PSRAM (pseudo-static RAM) memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
+
+.. only:: esp32s3
+
+    The {IDF_TARGET_PSRAM_VADDR_SIZE} virtual addresses are shared with flash instructions and rodata.
+
+Hardware
+========
+
+{IDF_TARGET_NAME} supports PSRAM connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF currently only supports Espressif branded PSRAM chips (e.g., ESP-PSRAM32, ESP-PSRAM64, etc).
+
+.. note::
+
+    .. only:: esp32
+
+        Some PSRAM chips are 1.8 V devices and some are 3.3 V. The working voltage of the PSRAM chip must match the working voltage of the flash component. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages. For a 1.8 V PSRAM chip, make sure to either set the MTDI pin to a high signal level on boot-up, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
+
+    .. only:: esp32s2 or esp32s3
+
+        Some PSRAM chips are 1.8 V devices and some are 3.3 V. The working voltage of the PSRAM chip must match the working voltage of the flash component. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages. For a 1.8 V PSRAM chip, make sure to either set the GPIO45 strapping pin to a high signal level on boot-up, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SPI level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
+
+    .. only:: esp32p4
+
+        Some PSRAM chips are 1.8 V devices and some are 3.3 V. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages.
+
+        By default, the PSRAM is powered up by the on-chip LDO2. You can use :menuitem:`CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN` to switch the LDO channel accordingly. Set this value to -1 to use an external power supply, which means the on-chip LDO will not be used. By default, the PSRAM connected to LDO is set to the correct voltage based on the Espressif module used. You can still use :menuitem:`CONFIG_ESP_LDO_VOLTAGE_PSRAM_DOMAIN` to select the LDO output voltage if you are not using an Espressif module. When using an external power supply, this option does not exist.
+
+.. note::
+
+    Espressif produces both modules and system-in-package chips that integrate compatible PSRAM and flash and are ready to mount on a product PCB. Consult the Espressif website for more information. If you are using a custom PSRAM chip, ESP-IDF SDK might not be compatible with it.
+
+For specific details about connecting the SoC or module pins to an external PSRAM chip, consult the SoC or module datasheet.
+
+.. _external_ram_config:
+
+
+Configuring External RAM
+========================
+
+.. note::
+
+    The ``SPI RAM`` configuration options are available only if the ``esp_psram`` component is included in the build. To include ``SPI RAM`` into your project, add the ``esp_psram`` component as a dependency in either ``REQUIRES`` or ``PRIV_REQUIRES`` when registering your component with ``idf_component_register``.
+
+ESP-IDF fully supports the use of external RAM in applications. Once the external RAM is initialized at startup, ESP-IDF can be configured to integrate the external RAM in several ways:
+
+.. list::
+
+    * :ref:`external_ram_config_memory_map`
+    * :ref:`external_ram_config_capability_allocator`
+    * :ref:`external_ram_config_malloc` (default)
+    * :ref:`external_ram_config_bss`
+    * :ref:`external_ram_config_noinit`
+    :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_xip`
+
+.. _external_ram_config_memory_map:
+
+
+Integrate RAM into the {IDF_TARGET_NAME} Memory Map
+---------------------------------------------------
+
+Select this option by choosing ``Integrate RAM into memory map`` from :menuitem:`CONFIG_SPIRAM_USE`.
+
+This is the most basic option for external RAM integration. Most likely, you will need another, more advanced option.
+
+During the ESP-IDF startup, external RAM is mapped into the data virtual address space. The address space is dynamically allocated. The length will be the minimum length between the PSRAM size and the available data virtual address space size.
+
+Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external RAM: coordinating buffer usage, preventing corruption, etc.
+
+It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next chapter).
+
+.. _external_ram_config_capability_allocator:
+
+
+Add External RAM to the Capability Allocator
+--------------------------------------------
+
+Select this option by choosing ``Add RAM to heap_caps allocator (malloc() stays internal by default)`` from :menuitem:`CONFIG_SPIRAM_USE`.
+
+When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``. Since this memory is also tagged with ``MALLOC_CAP_DEFAULT``, calls such as ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` can still return PSRAM pointers.
+
+To explicitly allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+
+In this mode, standard ``malloc()`` does not allocate from external RAM by default because it uses a separate default allocation policy.
+
+.. _external_ram_config_malloc:
+
+
+Provide External RAM via malloc()
+---------------------------------
+
+Select this option by choosing ``Make RAM allocatable using malloc() as well`` from :menuitem:`CONFIG_SPIRAM_USE`. This is the default option.
+
+In this case, memory is added to the capability allocator as described for the previous option. However, it is also added to the pool of RAM that can be returned by the standard ``malloc()`` function.
+
+This allows any application to use the external RAM without having to rewrite the code to use ``heap_caps_malloc(..., MALLOC_CAP_SPIRAM)``.
+
+An additional configuration item, :menuitem:`CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`, can be used to set the size threshold when a single allocation should prefer external memory:
+
+- When allocating a size less than or equal to the threshold, the allocator will try internal memory first.
+- When allocating a size larger than the threshold, the allocator will try external memory first.
+
+If a suitable block of preferred internal/external memory is not available, the allocator will try the other type of memory.
+
+Because some buffers can only be allocated in internal memory, a second configuration item :menuitem:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` reserves a pool of internal DMA-capable memory at startup (in ``main_task``, after PSRAM is initialized). The pool is malloc from the regular internal heaps and re-registered as separate heap pool.
+
+The reserved pool uses the heap capability priority mechanism:
+
+- **Medium priority** — ``MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL``: explicit ``heap_caps_malloc()`` requests with these flags are preferentially served from this pool.
+- **Low priority** — ``MALLOC_CAP_DEFAULT``: ``malloc()`` may use the pool only after other internal heaps with higher-priority ``MALLOC_CAP_DEFAULT`` are exhausted.
+
+Therefore, under normal conditions ``malloc()`` does not allocate from this pool, but it can fall back to it as a last resort before allocation fails entirely.
+
+.. _external_ram_config_bss:
+
+Allow .bss Segment to Be Placed in External Memory
+--------------------------------------------------
+
+Enable this option by checking :menuitem:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
+
+If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, wpa_supplicant and bluedroid ESP-IDF libraries.
+
+Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
+
+It is also possible to place the BSS section of a component or a library to external RAM using linker fragment scheme ``extram_bss``.
+
+This option reduces the internal static memory used by the BSS segment.
+
+Remaining external RAM can also be added to the capability heap allocator using the method shown above.
+
+.. _external_ram_config_noinit:
+
+Allow .noinit Segment to Be Placed in External Memory
+--------------------------------------------------------------
+
+Enable this option by checking :menuitem:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
+
+By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
+
+.. only:: SOC_SPIRAM_XIP_SUPPORTED
+
+    .. only:: esp32s2 or esp32s3
+
+        Move Instructions in Flash to PSRAM
+        -----------------------------------
+
+        The :menuitem:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option allows the flash ``.text`` sections (for instructions) to be placed in PSRAM.
+
+        By enabling the :menuitem:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option,
+
+        - Instructions from the ``.text`` sections of flash are moved into PSRAM on system startup.
+
+        - The corresponding virtual memory range of those instructions will also be re-mapped to PSRAM.
+
+        Move Read-Only Data in Flash to PSRAM
+        ---------------------------------------
+
+        The :menuitem:`CONFIG_SPIRAM_RODATA` option allows the flash ``.rodata`` sections (for read only data) to be placed in PSRAM.
+
+        By enabling the :menuitem:`CONFIG_SPIRAM_RODATA` option,
+
+        - Instructions from the ``.rodata`` sections of flash are moved into PSRAM on system startup.
+
+        - The corresponding virtual memory range of those rodata will also be re-mapped to PSRAM.
+
+        .. _external_ram_config_xip:
+
+        Execute In Place (XiP) from PSRAM
+        ------------------------------------
+
+        The :menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM` is a helper option for you to select both the :menuitem:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :menuitem:`CONFIG_SPIRAM_RODATA`.
+
+        The benefits of XiP from PSRAM is:
+
+        - PSRAM access speed may be faster than flash access, so the overall application performance may be better. For example, if the PSRAM is an Octal mode (8-line PSRAM) and is configured to 80 MHz, then it is faster than a Quad flash (4-line flash) which is configured to 80 MHz.
+
+        - The cache will not be disabled during an SPI1 flash operation, thus optimizing the code execution performance during SPI1 flash operations. For ISRs, ISR callbacks and data which might be accessed during this period, you do not need to place them in internal RAM, thus internal RAM usage can be optimized. This feature is useful for high throughput peripheral involved applications to improve the performance during SPI1 flash operations.
+
+        :example:`system/xip_from_psram` demonstrates the usage of XiP from PSRAM, optimizing internal RAM usage and avoiding cache disabling during flash operations from user call (e.g., flash erase/read/write operations).
+
+    .. only:: not (esp32s2 or esp32s3)
+
+        .. _external_ram_config_xip:
+
+        Execute In Place (XiP) from PSRAM
+        ------------------------------------
+
+        The :menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM` option enables the executable in place (XiP) from PSRAM feature. With this option sections that are normally placed in flash, ``.text`` (for instructions) and ``.rodata`` (for read only data), will be loaded in PSRAM.
+
+        With this option enabled, the cache will not be disabled during an SPI1 flash operation, so code that requires executing during an SPI1 flash operation does not have to be placed in internal RAM.
+
+        .. only:: SOC_MMU_PER_EXT_MEM_TARGET
+
+            Since the flash and PSRAM in {IDF_TARGET_NAME} use two separate SPI buses, moving flash content to PSRAM will actually increase the load on the PSRAM MSPI bus. Therefore, the exact impact on performance will be dependent on your app usage of PSRAM.
+
+            The PSRAM bus can operate at a higher speed than the flash bus. For example, if the PSRAM is a HEX (16-line PSRAM on ESP32P4) running at 200 MHz, it is significantly faster than a Quad flash (4-line flash) running at 80 MHz.
+
+            If the instructions and data previously stored in flash are not accessed frequently, then enabling this option could improve performance. It is recommended to conduct performance profiling to evaluate how this option will affect your system.
+
+Restrictions
+============
+
+External RAM use has the following restrictions:
+
+.. list::
+
+    - When flash cache is disabled (for example, if the flash is being written to), the external RAM also becomes inaccessible. Any read operations from or write operations to it will lead to an illegal cache access exception. This is also the reason why ESP-IDF does not by default allocate any task stacks in external RAM (see below).
+
+    :esp32s2: - External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffer that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call. Note that although {IDF_TARGET_NAME} has hardware support for DMA to or from external RAM, this is not yet supported in ESP-IDF.
+
+    :esp32s3: - Although {IDF_TARGET_NAME} has hardware support for DMA to or from external RAM, there are still limitations:
+
+        :esp32s3: - DMA transaction descriptors cannot be placed in PSRAM.
+        :esp32s3: - The bandwidth that DMA accesses external RAM is very limited, especially when the core is trying to access the external RAM at the same time.
+        :esp32s3: - You can configure :menuitem:`CONFIG_SPIRAM_SPEED` as 120 MHz for an octal PSRAM. The bandwidth will be improved. However there are still restrictions for this option. See :ref:`All Supported PSRAM Modes and Speeds <flash-psram-combination>` for more details.
+
+    - External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal RAM. However, when accessing large chunks of data (> 32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
+
+    - In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs. Task stacks can optionally be placed in external RAM — see :ref:`task-stack-in-external-ram` below.
+
+.. _task-stack-in-external-ram:
+
+Task Stack Placement in External RAM
+-------------------------------------
+
+There are three ways to place task stacks in external RAM:
+
+1. **Per-task (explicit)** – Use :cpp:func:`xTaskCreateWithCaps` with ``MALLOC_CAP_SPIRAM``.  Requires :menuitem:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM`.
+
+2. **Per-task (static)** – Use :cpp:func:`xTaskCreateStatic` with a caller-supplied buffer in external RAM.  Requires :menuitem:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM`.
+
+3. **Global default (automatic)** – Enable :menuitem:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM`.  When set, every call to :cpp:func:`xTaskCreate` / :cpp:func:`xTaskCreatePinnedToCore` allocates the stack from PSRAM first, falling back to internal RAM if PSRAM is exhausted.  TCBs are always kept in internal DRAM.
+
+
+When :menuitem:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` is enabled, the following additional restrictions apply:
+
+- **Flash operations** – Any code path that temporarily disables the CPU cache (flash erase/write, NVS, OTA) must run on a task whose stack is in internal RAM, or the operations must be routed through the `espressif/esp_flash_dispatcher <https://components.espressif.com/components/espressif/esp_flash_dispatcher>`__ component, which executes flash operations on a dedicated internal-RAM task.
+- **Deep sleep** – Calling :cpp:func:`esp_deep_sleep_start` from a task with a PSRAM stack logs an error and proceeds anyway, which will likely crash when the cache is disabled during the sleep transition.  Use :cpp:func:`esp_deep_sleep_try_to_start` instead: it returns :c:macro:`ESP_ERR_NOT_ALLOWED` cleanly when called from a PSRAM-stacked task.  If deep sleep is required, trigger it from a task whose stack is in internal RAM.
+- **Light sleep** – Calling :cpp:func:`esp_light_sleep_start` directly from a PSRAM-stacked task is also rejected with :c:macro:`ESP_ERR_NOT_ALLOWED`.  Tickless-idle light sleep (auto-light-sleep) is safe because it is initiated by the idle task, whose stack is always in internal RAM; PSRAM-stacked tasks simply block and resume normally after wake-up.
+- **pthread** – :cpp:func:`pthread_create` delegates to :cpp:func:`xTaskCreate`, so pthread stacks will also move to PSRAM when this option is on.
+
+See the :example:`system/freertos/psram_stack` example for a working demonstration.
+
+Failure to Initialize
+=====================
+
+By default, failure to initialize external RAM will cause the ESP-IDF startup to abort. This can be disabled by enabling the config item :menuitem:`CONFIG_SPIRAM_IGNORE_NOTFOUND`.
+
+.. only:: esp32 or esp32s2
+
+    If :menuitem:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` is enabled, the option to ignore failure is not available as the linker will have assigned symbols to external memory addresses at link time.
+
+
+.. only:: not esp32
+
+    Encryption
+    ==========
+
+    It is possible to enable automatic encryption for data stored in external RAM. When this is enabled any data read and written through the cache will automatically be encrypted or decrypted by the external memory encryption hardware.
+
+    This feature is enabled whenever flash encryption is enabled. For more information on how to enable and how it works see :doc:`Flash Encryption </security/flash-encryption>`.
+
+    .. only:: SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+
+        On {IDF_TARGET_NAME}, PSRAM encryption can be controlled on a per-MMU-page basis, allowing individual PSRAM pages to be selectively encrypted or left unencrypted. However, in the default configuration, all PSRAM pages are encrypted when flash encryption is enabled.
+
+        Reserving an Unencrypted PSRAM Region
+        -------------------------------------
+
+        Enabling :menuitem:`CONFIG_SPIRAM_ENC_EXEMPT` reserves a region at the upper end of PSRAM (highest physical addresses; sized by :menuitem:`CONFIG_SPIRAM_ENC_EXEMPT_SIZE`, in KB, rounded up to the MMU page size) that is mapped without encryption. This region is registered as a separate heap pool reachable only via the ``MALLOC_CAP_SPIRAM_NO_ENC`` capability. The rest of PSRAM (and flash) remains encrypted.
+
+        .. warning::
+
+            Memory allocated with ``MALLOC_CAP_SPIRAM_NO_ENC`` is stored as plaintext in PSRAM and can be observed by an attacker with physical access to the PSRAM interface. Never place TLS state, keys, or other secrets in this region.
+
+        Typical use case: PSRAM encryption imposes alignment constraints on buffers that some DMA engines (for example, 2D-DMA) cannot satisfy. Buffers that need to be DMA-accessed from such engines can be allocated from this unencrypted region:
+
+        .. code-block:: c
+
+            #if CONFIG_SPIRAM_ENC_EXEMPT
+            uint32_t caps = MALLOC_CAP_SPIRAM_NO_ENC;
+            #else
+            uint32_t caps = MALLOC_CAP_SPIRAM;
+            #endif
+            uint8_t *buf = heap_caps_malloc(buf_size, caps);
+
+        ``MALLOC_CAP_SPIRAM_NO_ENC`` must be requested explicitly. It is intentionally not combined with ``MALLOC_CAP_SPIRAM`` or ``MALLOC_CAP_DEFAULT``, so ordinary SPIRAM/heap allocations cannot accidentally land in the unencrypted region.
+
+        To verify after the fact that a buffer was allocated from the unencrypted carve-out (for example after a ``heap_caps_malloc_prefer()`` call that may have fallen back to encrypted PSRAM), use ``esp_psram_ptr_is_no_enc()``.
+
+    .. only:: SOC_PSRAM_ENCRYPTION_SEPARATE_KEY
+
+        On {IDF_TARGET_NAME}, PSRAM encryption can use an independent encryption key. If the PSRAM encryption key is not programmed, the flash encryption key will be used as the PSRAM encryption key.
+
+
+.. only:: esp32
+
+    .. include:: inc/external-ram-esp32-notes.rst
+
+.. _ESP32 Series SoC Errata: https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf
+.. _ESP32 Chip Revision v3.0 User Guide: https://www.espressif.com/sites/default/files/documentation/ESP32_ECO_V3_User_Guide__EN.pdf

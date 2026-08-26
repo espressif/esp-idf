@@ -1,0 +1,9 @@
+# Name,   Type, SubType, Offset,   Size
+# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
+nvs,      data, nvs,     ,         0x4000
+otadata,  data, ota,     ,         0x2000
+phy_init, data, phy,     ,         0x1000
+factory,  0,    0,       ,         1M
+coredump, data, coredump,,         64K
+ota_0,    0,    ota_0,   ,         1M
+ota_1,    0,    ota_1,   ,         1M

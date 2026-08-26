@@ -1,0 +1,19 @@
+menu "Test config"
+
+    config PERFORMANCE_LEVEL
+        int
+        range 0 3
+        prompt "Performance level"
+
+    config PERFORMANCE_A
+        bool
+        default "y"
+
+    config PERFORMANCE_B
+        bool
+        default "n"
+
+    config PERFORMANCE_C
+        bool
+        default "y"
+endmenu # Test config

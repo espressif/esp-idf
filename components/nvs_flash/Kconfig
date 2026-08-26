@@ -1,0 +1,71 @@
+menu "NVS"
+
+    config NVS_ENCRYPTION
+        bool "Enable NVS encryption"
+        depends on SECURE_FLASH_ENC_ENABLED || SOC_HMAC_SUPPORTED
+        default y if SECURE_FLASH_ENC_ENABLED
+        help
+            This option enables encryption for NVS. When enabled, XTS-AES is used to encrypt
+            the complete NVS data, except the page headers. It requires XTS encryption keys
+            to be stored in an encrypted partition (enabling flash encryption is mandatory here)
+            or to be derived from an HMAC key burnt in eFuse.
+
+    config NVS_COMPATIBLE_PRE_V4_3_ENCRYPTION_FLAG
+        bool "NVS partition encrypted flag compatible with ESP-IDF before v4.3"
+        depends on SECURE_FLASH_ENC_ENABLED
+        help
+            Enabling this will ignore "encrypted" flag for NVS partitions. NVS encryption
+            scheme is different than hardware flash encryption and hence it is not recommended
+            to have "encrypted" flag for NVS partitions. This was not being checked in pre v4.3
+            IDF. Hence, if you have any devices where this flag is kept enabled in partition
+            table then enabling this config will allow to have same behavior as pre v4.3 IDF.
+
+    config NVS_ASSERT_ERROR_CHECK
+        bool "Use assertions for error checking"
+        default n
+        help
+            This option switches error checking type between assertions (y) or return codes (n).
+
+    config NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+        bool "Enable legacy nvs_set function behavior when same key is reused with different data types"
+        default n
+        help
+            Enabling this option will switch the nvs_set() family of functions to the legacy mode:
+            when called repeatedly with the same key but different data type, the existing value
+            in the NVS remains active and the new value is just stored, actually not accessible through
+            corresponding nvs_get() call for the key given. Use this option only when your application
+            relies on such NVS API behaviour.
+
+    config NVS_ALLOCATE_CACHE_IN_SPIRAM
+        bool "Prefers allocation of in-memory cache structures in SPI connected PSRAM"
+        depends on SPIRAM && (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
+        default n
+        help
+            Enabling this option lets NVS library try to allocate page cache and key hash list in SPIRAM
+            instead of internal RAM. It can help applications using large nvs partitions or large number
+            of keys to save heap space in internal RAM. SPIRAM heap allocation negatively impacts speed
+            of NVS operations as the CPU accesses NVS cache via SPI instead of direct access to the internal RAM.
+
+    config NVS_BDL_STACK
+        bool "Run NVS on BDL instead of ESP_Partition"
+        default n
+        help
+            This option enforces internal use of Block Device Layer instead ESP_Partition.
+
+    config NVS_FLASH_VERIFY_ERASE
+        bool "Enable verification of erase operations by reading back the erased data"
+        default n
+        help
+            This option ensures that erase operations are verified by reading back the flash memory.
+
+    config NVS_FLASH_ERASE_ATTEMPTS
+        int "Total number of flash erase attempts in case the erase verification fails"
+        depends on NVS_FLASH_VERIFY_ERASE
+        range 1 10
+        default 2
+        help
+            Configures the total number of flash erase attempts. The flash erase operation will be attempted
+            up to this number of times before returning an error.
+            Minimum value is 1, maximum value is 10.
+
+endmenu

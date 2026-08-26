@@ -1,0 +1,5 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_GDBSTUB_SUPPORT_TASKS                            CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
+CONFIG_GDBSTUB_MAX_TASKS                                CONFIG_ESP_GDBSTUB_MAX_TASKS

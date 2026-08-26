@@ -1,0 +1,3 @@
+api-guides/partition-tables.rst
+api-guides/usb-otg-console.rst
+api-reference/peripherals/sd_pullup_requirements.rst

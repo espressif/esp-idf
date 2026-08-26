@@ -1,0 +1,18 @@
+menu "Example Configuration"
+
+    menu "I3C Master"
+        config I3C_MASTER_SCL
+            int "SCL GPIO Num"
+            default 4
+            help
+                GPIO number for I3C Master clock line.
+
+        config I3C_MASTER_SDA
+            int "SDA GPIO Num"
+            default 5
+            help
+                GPIO number for I3C Master data line.
+
+    endmenu
+
+endmenu

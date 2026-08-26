@@ -1,0 +1,34 @@
+menu "Button"
+
+    choice BUTTON_TIMER_IMPLEMENT
+        bool "Button Timer Mode"
+        default BUTTON_USE_ESP_TIMER
+        help
+            Choose a implementation of timer for button instance.
+
+        config BUTTON_USE_RTOS_TIMER
+            bool "Use FreeRTOS Timer"
+
+        config BUTTON_USE_ESP_TIMER
+            bool "Use ESP Timer"
+    endchoice
+
+    config BUTTON_IO_GLITCH_FILTER_TIME_MS
+        int "IO glitch filter timer ms (10~100)"
+        range 10 100
+        default 50
+
+    config BUTTON_IO_NUM
+        int "Default Boot Button IO"
+        default 0 if IDF_TARGET_ESP32
+        default 9 if IDF_TARGET_ESP32C3
+        default 0 if IDF_TARGET_ESP32S3
+        default 8 if IDF_TARGET_ESP32C6
+        default 9 if IDF_TARGET_ESP32H2
+        default 9 if IDF_TARGET_ESP32H21
+        default 9 if IDF_TARGET_ESP32C61
+        default 28 if IDF_TARGET_ESP32C5
+        default 9 if IDF_TARGET_ESP32H4
+        default 9 if IDF_TARGET_ESP32S31
+
+endmenu

@@ -1,0 +1,21 @@
+menu "MbedTLS Test Configuration"
+
+    config MBEDTLS_TEST_HMAC_OPAQUE_EFUSE_KEY
+        bool "Enable HMAC opaque driver test with eFuse key"
+        default n
+        depends on SOC_HMAC_SUPPORTED
+        help
+            Enable test cases for the PSA HMAC opaque driver using an HMAC key
+            burned in eFuse. Requires the test runner to have an HMAC_UP key
+            provisioned in the configured eFuse block.
+
+    config MBEDTLS_TEST_HMAC_OPAQUE_EFUSE_KEY_ID
+        int "eFuse key block ID for HMAC opaque test"
+        depends on MBEDTLS_TEST_HMAC_OPAQUE_EFUSE_KEY
+        range -1 5
+        default -1
+        help
+            The eFuse key block index (offset from EFUSE_BLK_KEY0) that contains
+            the HMAC_UP key for opaque driver testing.
+
+endmenu

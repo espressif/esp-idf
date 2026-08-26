@@ -1,0 +1,68 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 8,
+    "inst": [
+        {
+            "opcode": {
+                "op": "LOOPA",
+                "tgt": 0,
+                "end_val": 10,
+                "ctr_add": 1
+            }
+        },
+        {
+            "opcode": {
+                "op": "IF",
+                "src": 0,
+                "tgt": 7
+            }
+        },
+        {
+            "opcode": {
+                "op": "IFN",
+                "src": 0,
+                "tgt": 3
+            }
+        },
+        {
+            "opcode": {
+                "op": "IF",
+                "src": 95,
+                "tgt": 7
+            }
+        },
+        {
+            "opcode": {
+                "op": "IF",
+                "src": 95,
+                "tgt": 0
+            }
+        },
+        {
+            "opcode": {
+                "op": "LOOPB",
+                "tgt": 3,
+                "end_val": 0,
+                "ctr_add": 1
+            }
+        },
+        {
+            "opcode": {
+                "op": "LOOPA",
+                "tgt": 0,
+                "end_val": 65535,
+                "ctr_add": 1
+            }
+        },
+        {
+            "opcode": {
+                "op": "LOOPA",
+                "tgt": 7,
+                "end_val": 32768,
+                "ctr_add": 1
+            }
+        }
+    ]
+}

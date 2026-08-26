@@ -1,0 +1,19 @@
+menu "Example Configuration"
+
+    config CONSOLE_STORE_HISTORY
+        bool "Store command history in flash"
+        default y
+        help
+            Linenoise line editing library provides functions to save and load
+            command history. If this option is enabled, initializes a FAT filesystem
+            and uses it to store command history.
+
+    config CONSOLE_IGNORE_EMPTY_LINES
+        bool "Ignore empty lines inserted into the console"
+        default y
+        help
+            If an empty line is inserted to the console, the Console can either
+            ignore empty lines (the example would continue), or break on empty lines
+            (the example would stop after an empty line).
+
+endmenu

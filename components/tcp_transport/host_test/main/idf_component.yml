@@ -1,0 +1,3 @@
+dependencies:
+  espressif/fmt: "^9.1.0"
+  espressif/catch2: "^3.4.0"

@@ -1,0 +1,347 @@
+set(srcs "")
+set(includes "")
+set(requires "")
+set(priv_requires "")
+
+if(__ULP_BUILDV2)
+    if(ULP_TYPE STREQUAL "riscv")
+        list(APPEND includes
+            ulp_common/include
+            ulp_riscv/include
+            ulp_riscv/shared/include
+            ulp_riscv/ulp_core/include)
+        list(APPEND srcs
+            "ulp_riscv/ulp_core/ulp_riscv_vectors.S"
+            "ulp_riscv/ulp_core/start.S"
+            "ulp_riscv/ulp_core/ulp_riscv_adc.c"
+            "ulp_riscv/ulp_core/ulp_riscv_lock.c"
+            "ulp_riscv/ulp_core/ulp_riscv_uart.c"
+            "ulp_riscv/ulp_core/ulp_riscv_print.c"
+            "ulp_riscv/ulp_core/ulp_riscv_i2c.c"
+            "ulp_riscv/ulp_core/ulp_riscv_utils.c"
+            "ulp_riscv/ulp_core/ulp_riscv_touch.c"
+            "ulp_riscv/ulp_core/ulp_riscv_gpio.c"
+            "ulp_riscv/ulp_core/ulp_riscv_interrupt.c")
+        list(APPEND requires
+            esp_common
+            esp_hal_ana_conv
+            esp_hal_gpio
+            esp_hal_i2c
+            esp_hal_touch_sens
+            esp_hw_support
+            riscv
+            soc)
+    elseif(ULP_TYPE STREQUAL "lp_core")
+        list(APPEND includes
+            ulp_common/include
+            lp_core/include
+            lp_core/lp_core/include
+            lp_core/shared/include)
+        list(APPEND srcs
+            "lp_core/lp_core/start.S"
+            "lp_core/lp_core/vector.S"
+            "lp_core/lp_core/port/${target}/vector_table.S"
+            "lp_core/shared/ulp_lp_core_memory_shared.c"
+            "lp_core/lp_core/lp_core_startup.c"
+            "lp_core/lp_core/lp_core_pmp.c"
+            "lp_core/lp_core/lp_core_utils.c"
+            "lp_core/lp_core/lp_core_print.c"
+            "lp_core/lp_core/lp_core_panic.c"
+            "lp_core/lp_core/lp_core_interrupt.c"
+            "lp_core/lp_core/lp_core_ubsan.c"
+            "lp_core/lp_core/lp_core_mailbox.c"
+            "lp_core/shared/ulp_lp_core_critical_section_shared.c")
+
+        list(APPEND requires
+            esp_common
+            esp_hal_gpio
+            esp_hal_uart
+            esp_rom
+            hal
+            riscv
+            soc)
+        list(APPEND priv_requires
+            esp_hal_pmu
+            esp_hw_support)
+
+        if(CONFIG_SOC_RTC_TIMER_V2 OR CONFIG_SOC_RTC_TIMER_V3)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
+            list(APPEND priv_requires
+                esp_hal_clock
+                esp_hal_rtc_timer)
+        endif()
+
+        if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
+            list(APPEND srcs "lp_core/lp_core/lp_core_i2c.c")
+            list(APPEND requires esp_hal_i2c)
+        endif()
+
+        if(CONFIG_SOC_LP_SPI_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core/lp_core_spi.c")
+            list(APPEND priv_requires esp_hal_gpspi)
+        endif()
+
+        if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+            list(APPEND srcs
+                "lp_core/shared/ulp_lp_core_lp_uart_shared.c"
+                "lp_core/lp_core/lp_core_uart.c")
+            list(APPEND requires esp_driver_uart)
+        endif()
+
+        if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core/port/lp_core_mailbox_impl_hw.c")
+        else()
+            list(APPEND srcs "lp_core/lp_core/port/lp_core_mailbox_impl_sw.c")
+        endif()
+
+        if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core/lp_core_touch.c")
+            list(APPEND requires esp_hal_touch_sens)
+        endif()
+
+        if(CONFIG_SOC_LP_ADC_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_adc_shared.c")
+            list(APPEND requires
+                esp_adc
+                esp_hal_ana_conv)
+        endif()
+
+        if(CONFIG_SOC_LP_VAD_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_vad_shared.c")
+            list(APPEND requires esp_driver_i2s)
+        endif()
+    elseif(ULP_TYPE STREQUAL "fsm")
+        list(APPEND includes
+            ulp_common/include
+            ulp_fsm/include
+            ulp_fsm/include/${target})
+        list(APPEND requires soc)
+    else()
+        message(FATAL_ERROR "__ULP_BUILDV2 requires ULP_TYPE to be one of: riscv, lp_core, fsm.")
+    endif()
+else()
+    # TODO(IDF-15993): Keep esp_driver_gpio and esp_adc public for compatibility
+    # with the CMake v1 dependency graph until downstream users are fixed.
+    list(APPEND requires
+        esp_adc
+        esp_driver_gpio)
+
+    if(CONFIG_ULP_COPROC_ENABLED OR CONFIG_IDF_DOC_BUILD)
+        list(APPEND includes
+            ulp_common/include)
+        list(APPEND requires
+            esp_common
+            soc)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_FSM OR (CONFIG_IDF_DOC_BUILD AND CONFIG_SOC_ULP_FSM_SUPPORTED))
+        list(APPEND includes
+            ulp_fsm/include
+            ulp_fsm/include/${target})
+        list(APPEND requires esp_hw_support)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_RISCV OR CONFIG_IDF_DOC_BUILD)
+        list(APPEND includes
+            ulp_riscv/include
+            ulp_riscv/shared/include
+            ulp_riscv/ulp_core/include)
+        list(APPEND requires esp_hw_support)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_LP_CORE OR CONFIG_IDF_DOC_BUILD)
+        list(APPEND includes
+             lp_core/include
+             lp_core/lp_core/include
+             lp_core/shared/include)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_FSM OR CONFIG_ULP_COPROC_TYPE_RISCV)
+        list(APPEND srcs
+            "ulp_common/ulp_common.c"
+            "ulp_common/ulp_adc.c")
+
+        if(CONFIG_ULP_COPROC_TYPE_FSM)
+            list(APPEND srcs
+                "ulp_fsm/ulp.c"
+                "ulp_fsm/ulp_macro.c")
+        endif()
+
+        if(CONFIG_ULP_COPROC_TYPE_RISCV)
+            list(APPEND srcs
+                "ulp_riscv/ulp_riscv.c"
+                "ulp_riscv/ulp_riscv_lock.c"
+                "ulp_riscv/ulp_riscv_i2c.c")
+            list(APPEND priv_requires esp_driver_gpio)
+            list(APPEND requires
+                # ulp/ulp_riscv/ulp_core/include/ulp_riscv_touch_ulp_core.h
+                # includes hal/touch_sens_types.h.
+                esp_hal_touch_sens
+                esp_hal_i2c
+                hal)
+        endif()
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+        list(APPEND srcs
+            "lp_core/lp_core.c"
+            "lp_core/shared/ulp_lp_core_memory_shared.c"
+            "lp_core/shared/ulp_lp_core_critical_section_shared.c")
+        list(APPEND requires
+            esp_common
+            esp_hal_pmu
+            esp_rom
+            hal
+            riscv
+            soc)
+
+        if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+            list(APPEND srcs
+            "lp_core/lp_core_uart.c"
+            "lp_core/shared/ulp_lp_core_lp_uart_shared.c")
+            list(APPEND requires
+                esp_driver_gpio
+                esp_driver_uart)
+        endif()
+
+        if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
+            list(APPEND srcs "lp_core/lp_core_i2c.c")
+            list(APPEND requires
+                esp_driver_gpio
+                esp_hal_i2c)
+        endif()
+
+        if(CONFIG_SOC_RTC_TIMER_V2 OR CONFIG_SOC_RTC_TIMER_V3)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
+            list(APPEND requires
+                esp_hal_clock
+                esp_hal_rtc_timer)
+        endif()
+
+        if(CONFIG_SOC_LP_SPI_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core_spi.c")
+            list(APPEND requires
+                esp_driver_gpio
+                esp_hal_gpspi)
+        endif()
+
+        if(CONFIG_SOC_LP_CORE_SUPPORT_ETM)
+            list(APPEND srcs "lp_core/lp_core_etm.c")
+        endif()
+
+        if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+            list(APPEND requires esp_hal_touch_sens)
+        endif()
+
+        if(CONFIG_SOC_LP_ADC_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_adc_shared.c")
+            list(APPEND priv_requires esp_hw_support)
+        endif()
+
+        if(CONFIG_SOC_LP_VAD_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_vad_shared.c")
+            list(APPEND requires esp_driver_i2s)
+        endif()
+
+        list(APPEND srcs "lp_core/lp_core_mailbox.c")
+        if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core_mailbox_impl_hw.c")
+        else()
+            list(APPEND srcs "lp_core/lp_core_mailbox_impl_sw.c")
+        endif()
+    endif()
+
+    if(srcs)
+        list(APPEND priv_requires
+            bootloader_support
+            esp_mm)
+    endif()
+endif()
+
+if(requires)
+    list(REMOVE_DUPLICATES requires)
+endif()
+
+if(priv_requires)
+    list(REMOVE_DUPLICATES priv_requires)
+endif()
+
+set(whole_archive)
+if(__ULP_BUILDV2)
+    # Legacy ULP child builds added the LP-core runtime sources directly to the
+    # executable. Preserve that behavior so strong handlers such as
+    # ulp_lp_core_panic_handler are not dropped in favor of weak defaults from
+    # other runtime objects.
+    set(whole_archive WHOLE_ARCHIVE)
+endif()
+
+idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS ${includes}
+                       REQUIRES ${requires}
+                       PRIV_REQUIRES ${priv_requires}
+                       ${whole_archive})
+
+# In the parent app build, the ulp component only provides the host-side API.
+# The executable/linker setup below is for native ULP child projects.
+if(NOT __ULP_BUILDV2)
+    idf_define_esp_err_codes(HEADERS ulp_fsm/include/ulp_fsm_common.h)
+    return()
+endif()
+
+# Preprocessor flags shared by every ULP memory-layout template. The template
+# is a ".in" file, so the standard target_linker_script flow runs the C
+# preprocessor on it. -D__ASSEMBLER__ keeps SoC headers to their macro-only
+# form, and the component's own ld directory is available for relative
+# includes.
+set(ulp_ld_flags "-D__ASSEMBLER__ -I\"${CMAKE_CURRENT_SOURCE_DIR}/ld\"")
+
+# Select the linker template and target-specific link options used by the ULP
+# executable created in the child project. The memory-layout template is
+# registered with target_linker_script so the standard build system
+# preprocesses and attaches it; per-type FLAGS supply the include directories
+# its #include lines need.
+if(ULP_TYPE STREQUAL "riscv")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/ulp_riscv.ld.in" MEMORY
+                         FLAGS "${ulp_ld_flags}")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}.peripherals.ld")
+    target_link_options(${COMPONENT_LIB} INTERFACE
+        -nostartfiles
+        -Wl,--gc-sections
+        -Wl,--no-warn-rwx-segments
+        LINKER:-u,main)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC
+        IS_ULP_COCPU
+        ULP_RISCV_REGISTER_OPS)
+elseif(ULP_TYPE STREQUAL "lp_core")
+    # lp_core_riscv.ld includes soc/soc.h and esp_common headers, which are
+    # resolved automatically from the linked component graph. It also includes
+    # the esp_system ld snippets (ld.common, ld.hp_mem_defs); those live in the
+    # component's ld/ directory, which is not a public include dir, so pass it
+    # via FLAGS.
+    idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
+    set(lp_core_ld_flags "${ulp_ld_flags} -I\"${esp_system_dir}/ld\" -I\"${esp_system_dir}/ld/${target}\"")
+    # A user-supplied LINKER layout replaces the default one composed into
+    # lp_core_riscv.ld.in. It reaches this child project as LP_CORE_LINKER_SCRIPT
+    # (passed by __setup_ulp_project, same as the CMake v1 path). Hand it to the
+    # wrapper as the LP_CORE_LINKER_INCLUDE macro it #includes. The escaped quotes
+    # survive separate_arguments() in the linker-script preprocessor so the macro
+    # expands to a quoted header-name token ("/abs/path.ld").
+    if(LP_CORE_LINKER_SCRIPT)
+        message(STATUS "Using custom LP-core linker layout: ${LP_CORE_LINKER_SCRIPT}")
+        string(APPEND lp_core_ld_flags " -DLP_CORE_LINKER_INCLUDE=\\\"${LP_CORE_LINKER_SCRIPT}\\\"")
+    endif()
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/lp_core_riscv.ld.in" MEMORY
+                         FLAGS "${lp_core_ld_flags}")
+
+    target_link_options(${COMPONENT_LIB} INTERFACE
+        -nostartfiles
+        -Wl,--gc-sections
+        -Wl,--no-warn-rwx-segments
+        LINKER:-u,main)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC IS_ULP_COCPU)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough)
+elseif(ULP_TYPE STREQUAL "fsm")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/ulp_fsm.ld.in" MEMORY
+                         FLAGS "${ulp_ld_flags}")
+    target_link_options(${COMPONENT_LIB} INTERFACE "SHELL:-u entry")
+endif()

@@ -1,0 +1,3 @@
+-
+    re: "fatal error: esp_adc_cal.h: No such file or directory"
+    hint: "``esp_adc_cal`` component is no longer supported. New adc calibration driver is in ``esp_adc``. Legacy adc calibration driver has been moved into ``esp_adc`` component. To use legacy ``esp_adc_cal`` driver APIs, you should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt. For more information run 'idf.py docs -sp migration-guides/release-5.x/peripherals.html'."

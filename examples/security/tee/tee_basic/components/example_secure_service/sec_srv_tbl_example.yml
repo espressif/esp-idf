@@ -1,0 +1,11 @@
+secure_services:
+  - family: example
+    entries:
+      - id: 200
+        type: custom
+        function: example_sec_serv_aes_gcm_encrypt
+        args: 4
+      - id: 201
+        type: custom
+        function: example_sec_serv_aes_gcm_decrypt
+        args: 4

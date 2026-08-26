@@ -1,0 +1,44 @@
+menu "Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config EXAMPLE_FIRMWARE_UPG_URL
+        string "Firmware Upgrade URL"
+        default "https://192.168.2.106:8070/hello_world.bin"
+        help
+            URL of server which hosts the firmware image.
+
+    config EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
+        bool
+        default y if EXAMPLE_FIRMWARE_UPG_URL = "FROM_STDIN"
+
+    config EXAMPLE_SKIP_COMMON_NAME_CHECK
+        bool "Skip server certificate CN fieldcheck"
+        default n
+        help
+            This allows you to skip the validation of OTA server certificate CN field.
+
+    config EXAMPLE_SKIP_VERSION_CHECK
+        bool "Skip firmware version check"
+        default n
+        help
+            This allows you to skip the firmware version check.
+
+    config EXAMPLE_GPIO_DIAGNOSTIC
+        int "Number of the GPIO input for diagnostic"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+        default 4
+        help
+            Used to demonstrate how a rollback works.
+            The selected GPIO will be configured as an input with internal pull-up enabled.
+            To trigger a rollback, this GPIO must be pulled low while the message
+            `Diagnostics (5 sec)...` which will be on first boot.
+            If GPIO is not pulled low then the operable of the app will be confirmed.
+
+    config EXAMPLE_OTA_RECV_TIMEOUT
+        int "OTA Receive Timeout"
+        default 5000
+        help
+            Maximum time for reception
+
+endmenu

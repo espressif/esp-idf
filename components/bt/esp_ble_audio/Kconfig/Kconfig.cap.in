@@ -1,0 +1,58 @@
+# Bluetooth Audio - Common Audio Profile (CAP) options
+#
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_CAP
+    bool # hidden
+    default y if BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
+
+config BT_CAP_ACCEPTOR
+    bool "Common Audio Profile Acceptor Role Support"
+    depends on BT_BAP_UNICAST_SERVER || (BT_BAP_BROADCAST_SINK && BT_BAP_SCAN_DELEGATOR)
+    depends on BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE >= 4
+    help
+        Enabling this will enable the CAP Acceptor role. This instantiates the
+        common audio service (CAS).
+
+config BT_CAP_ACCEPTOR_SET_MEMBER
+    bool "Common Audio Profile Acceptor Role Set Member support"
+    depends on BT_CAP_ACCEPTOR
+    depends on BT_CSIP_SET_MEMBER
+    help
+        Enabling this will allow a CAP acceptor to be a set member.
+        Enabling this will require a manual register of the CAS service.
+        Enabling will take one of the allocated CSIS instances
+        (BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT).
+
+config BT_CAP_INITIATOR_UNICAST
+    bool # hidden
+    default y if BT_CAP_INITIATOR && BT_BAP_UNICAST_CLIENT
+
+config BT_CAP_INITIATOR
+    bool "Common Audio Profile Initiator Role Support"
+    depends on (BT_BAP_UNICAST_CLIENT && BT_CSIP_SET_COORDINATOR) || BT_BAP_BROADCAST_SOURCE
+    depends on BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE >= 4
+    help
+        Enabling this will enable the CAP Initiator role.
+
+config BT_CAP_COMMANDER
+    bool "Common Audio Profile Initiator Role Support"
+    depends on (BT_BAP_BROADCAST_ASSISTANT && BT_BAP_SCAN_DELEGATOR && BT_CSIP_SET_COORDINATOR) || \
+        (BT_BAP_SCAN_DELEGATOR && BT_CSIP_SET_COORDINATOR) || \
+        (BT_VCP_VOL_CTLR && BT_CSIP_SET_COORDINATOR) || \
+        (BT_MICP_MIC_CTLR && BT_CSIP_SET_COORDINATOR) || \
+        BT_TBS_CLIENT || \
+        BT_MCC
+    help
+        Enabling this will enable the CAP Initiator role.
+
+config BT_CAP_HANDOVER
+    bool "Common Audio Profile Handover Procedures"
+    depends on BT_CAP_COMMANDER && BT_CAP_INITIATOR && BT_BAP_BROADCAST_ASSISTANT && \
+        BT_BAP_BROADCAST_SOURCE && BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+    help
+        Enable support for the CAP Handover procedures, allowing a device to switch between
+        broadcast and unicast for a usecase.

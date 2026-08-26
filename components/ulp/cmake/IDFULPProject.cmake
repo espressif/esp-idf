@@ -1,0 +1,265 @@
+# This is the CMake v1 (legacy) ULP child entry point, used by ulp_embed_binary.
+# CMake v2 full-subproject builds include components/ulp/cmake/ulp_project.cmake
+# instead.
+#
+# Legacy ULP child projects are plain CMake projects, so the parent-provided
+# sdkconfig.cmake has to be loaded here before the common ULP helpers inspect
+# CONFIG_* values. CMake v1 callers pass this path explicitly.
+include(${SDKCONFIG_CMAKE})
+include(${CMAKE_CURRENT_LIST_DIR}/IDFULPProjectCommon.cmake)
+enable_language(C ASM)
+set(CMAKE_EXECUTABLE_SUFFIX ".elf")
+
+ulp_detect_build_type()
+ulp_apply_build_type_options()
+
+# Check the supported assembler version
+if(BUILD_FSM)
+    check_expected_tool_version("esp32ulp-elf" ${CMAKE_ASM_COMPILER})
+endif()
+
+# CMake v1-only helpers that preprocess the ULP memory-layout linker template
+# with the C preprocessor. The CMake v2 path attaches the template through
+# target_linker_script(... FLAGS) and does not use these.
+function(__ulp_create_arg_file arguments output_file)
+    # Escape all spaces
+    list(TRANSFORM arguments REPLACE " " "\\\\ ")
+    # Create a single string with all args separated by space
+    list(JOIN arguments " " arguments)
+    # Generate the response file late enough for target generator expressions
+    # in include directories to resolve to their final build-system values.
+    file(GENERATE OUTPUT "${output_file}" CONTENT "${arguments}")
+endfunction()
+
+function(__ulp_add_preprocessed_linker_script ulp_app_name ld_template ld_script ld_script_target)
+    # Use the C preprocessor so sdkconfig and SoC constants can shape the linker
+    # template before the ULP executable is linked. -MD -MF -MT records every file
+    # the preprocessor reads (sdkconfig.h, SoC headers, the base/layout/checks
+    # parts and a custom LINKER_LAYOUT with its own includes) into a depfile, so
+    # the script regenerates when any of them changes.
+    set(ld_depfile ${CMAKE_CURRENT_BINARY_DIR}/${ld_script}.d)
+    set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -MD -MF ${ld_depfile} -MT ${ld_script}
+                          -o ${ld_script} ${ARGN} ${ld_template})
+    set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ld_script}_args.txt)
+    __ulp_create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
+
+    add_custom_command(OUTPUT ${ld_script}
+                    COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                    MAIN_DEPENDENCY ${ld_template}
+                    # The response file is a dependency too: a change visible only
+                    # in the preprocessor flags (e.g. a different LINKER layout
+                    # path) must regenerate the script even though no file recorded
+                    # in the depfile changed. __ulp_create_arg_file rewrites it
+                    # only when its content actually changes, so this does not
+                    # retrigger on every reconfigure.
+                    DEPENDS ${compiler_arguments_file}
+                    DEPFILE ${ld_depfile}
+                    COMMENT "Generating ${ld_script} linker script..."
+                    VERBATIM)
+
+    add_custom_target(${ld_script_target} DEPENDS ${ld_script})
+    add_dependencies(${ulp_app_name} ${ld_script_target})
+    target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}/${ld_script})
+    set_property(TARGET ${ulp_app_name} APPEND PROPERTY LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${ld_script})
+endfunction()
+
+function(ulp_apply_default_options ulp_app_name)
+    if(BUILD_RISCV)
+        target_link_options(${ulp_app_name} PRIVATE "-nostartfiles")
+        target_link_options(${ulp_app_name} PRIVATE -Wl,--gc-sections)
+        target_link_options(${ulp_app_name} PRIVATE "-Wl,--no-warn-rwx-segments")
+        target_link_options(${ulp_app_name} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.map)
+    elseif(BUILD_LP_CORE)
+        target_link_options(${ulp_app_name} PRIVATE "-nostartfiles")
+        target_link_options(${ulp_app_name} PRIVATE "-Wl,--no-warn-rwx-segments")
+        target_link_options(${ulp_app_name} PRIVATE -Wl,--gc-sections)
+        target_link_options(${ulp_app_name} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.map)
+    elseif(BUILD_FSM)
+        target_link_options(${ulp_app_name} PRIVATE -Map=${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.map)
+    endif()
+endfunction()
+
+function(ulp_apply_default_sources ulp_app_name)
+    message(STATUS "Building ULP app ${ulp_app_name}")
+
+    get_filename_component(sdkconfig_dir ${SDKCONFIG_HEADER} DIRECTORY)
+
+    foreach(include ${COMPONENT_INCLUDES})
+        list(APPEND component_includes -I${include})
+    endforeach()
+    list(REMOVE_DUPLICATES component_includes)
+
+    list(APPEND ULP_PREPRO_ARGS ${component_includes})
+    list(APPEND ULP_PREPRO_ARGS -I${COMPONENT_DIR})
+    list(APPEND ULP_PREPRO_ARGS -I${sdkconfig_dir})
+    list(APPEND ULP_PREPRO_ARGS -I${IDF_PATH}/components/esp_system/ld)
+    list(APPEND ULP_PREPRO_ARGS -I${IDF_PATH}/components/esp_system/ld/${IDF_TARGET})
+
+    target_include_directories(${ulp_app_name} PRIVATE ${COMPONENT_INCLUDES} ${sdkconfig_dir})
+
+    # Pre-process the linker script. The LP-core script is assembled from
+    # base + layout + checks. A user-supplied LINKER_LAYOUT (LP_CORE_LINKER_SCRIPT)
+    # replaces the layout, swapped in by the wrapper. This is supported for the
+    # LP-core type only.
+    if(BUILD_RISCV)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld.in)
+    elseif(BUILD_LP_CORE)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/lp_core_riscv.ld.in)
+    elseif(BUILD_FSM)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld.in)
+    else()
+        message(FATAL_ERROR "Unable to determine ULP type. ")
+    endif()
+
+    if(LP_CORE_LINKER_SCRIPT)
+        # The LINKER_LAYOUT-is-LP-core-only check is enforced once in
+        # ulp_embed_binary/ulp_add_project, so LP_CORE_LINKER_SCRIPT only ever
+        # reaches an LP-core child.
+        message(STATUS "Using custom LP-core linker layout: ${LP_CORE_LINKER_SCRIPT}")
+        # The inner escaped quotes are required: the wrapper does
+        # `#include LP_CORE_LINKER_INCLUDE`, so the macro must expand to a quoted
+        # header-name token ("/abs/path.ld"). __ulp_create_arg_file() additionally
+        # escapes spaces in the path, keeping it a single preprocessor token.
+        list(APPEND ULP_PREPRO_ARGS "-DLP_CORE_LINKER_INCLUDE=\\\"${LP_CORE_LINKER_SCRIPT}\\\"")
+    endif()
+
+    # Strip the .in suffix so the generated script keeps its .ld name.
+    get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME_WLE)
+    __ulp_add_preprocessed_linker_script(${ulp_app_name} ${ULP_LD_TEMPLATE} ${ULP_LD_SCRIPT}
+                                         ld_script ${ULP_PREPRO_ARGS})
+
+    # To avoid warning "Manually-specified variables were not used by the project"
+    set(bypassWarning "${IDF_TARGET}")
+    set(bypassWarning "${ULP_VAR_PREFIX}")
+    set(bypassWarning "${ULP_TYPE}")
+
+    # Save user sources before adding core sources
+    set(ULP_USER_SOURCES ${ULP_S_SOURCES})
+
+    # Clear ULP_S_SOURCES and rebuild it with only the sources we need
+    set(ULP_S_SOURCES ${ULP_USER_SOURCES})
+
+    if(BUILD_RISCV)
+        #risc-v ulp uses extra files for building:
+        list(APPEND ULP_S_SOURCES
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_vectors.S"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/start.S"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_lock.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_uart.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_print.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_i2c.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_touch.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_gpio.c"
+            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_interrupt.c")
+
+        target_sources(${ulp_app_name} PRIVATE ${ULP_S_SOURCES})
+        #Makes the csr utillies for riscv visible:
+        target_include_directories(${ulp_app_name} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include"
+                                                        "${IDF_PATH}/components/ulp/ulp_riscv/shared/include"
+                                                        "${IDF_PATH}/components/riscv/include")
+        target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.peripherals.ld)
+        target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
+        target_compile_definitions(${ulp_app_name} PRIVATE ULP_RISCV_REGISTER_OPS)
+
+    elseif(BUILD_FSM)
+        foreach(ulp_s_source ${ULP_S_SOURCES})
+            get_filename_component(ulp_ps_source ${ulp_s_source} NAME_WE)
+            set(ulp_ps_output ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.ulp.S)
+            # Put all arguments to the list
+            set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ulp_ps_output} ${ULP_PREPRO_ARGS} ${ulp_s_source})
+
+            set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}_args.txt)
+            __ulp_create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
+
+            # Generate preprocessed assembly files.
+            add_custom_command(OUTPUT ${ulp_ps_output}
+                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                            COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
+                            DEPENDS ${ulp_s_source}
+                            VERBATIM)
+            # During assembly file compilation, output listing files as well.
+            set_source_files_properties(${ulp_ps_output}
+                                        PROPERTIES COMPILE_FLAGS
+                                        "-al=${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.lst")
+            list(APPEND ULP_PS_SOURCES ${ulp_ps_output})
+        endforeach()
+
+        target_sources(${ulp_app_name} PRIVATE ${ULP_PS_SOURCES})
+
+    elseif(BUILD_LP_CORE)
+        list(APPEND ULP_S_SOURCES
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/port/${IDF_TARGET}/vector_table.S"
+        "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_memory_shared.c"
+        "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_pmp.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_panic.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_interrupt.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_ubsan.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_mailbox.c"
+        "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_adc_shared.c"
+        "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_vad_shared.c"
+        "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_critical_section_shared.c")
+
+        if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c")
+        endif()
+
+        if(CONFIG_SOC_LP_SPI_SUPPORTED)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c")
+        endif()
+
+        if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_uart_shared.c"
+                "${IDF_PATH}/components/esp_driver_uart/src/uart_wakeup.c"
+                "${IDF_PATH}/components/esp_hal_uart/uart_hal_iram.c"
+                "${IDF_PATH}/components/esp_hal_uart/uart_hal.c"
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_uart.c")
+        endif()
+
+        if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_hw.c")
+        else()
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_sw.c")
+        endif()
+
+        if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+            list(APPEND ULP_S_SOURCES
+                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_touch.c")
+        endif()
+
+        set(target_folder ${IDF_TARGET})
+
+        target_link_options(${ulp_app_name}
+            PRIVATE SHELL:-T ${IDF_PATH}/components/soc/${target_folder}/ld/${IDF_TARGET}.peripherals.ld)
+
+        if(CONFIG_ESP_ROM_HAS_LP_ROM)
+            target_link_options(${ulp_app_name}
+                PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.ld)
+            target_link_options(${ulp_app_name}
+                PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.newlib.ld)
+            target_link_options(${ulp_app_name}
+                PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.version.ld)
+            target_link_options(${ULP_APP_NAME}
+                PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.api.ld)
+        endif()
+
+        target_sources(${ulp_app_name} PRIVATE ${ULP_S_SOURCES})
+        target_include_directories(${ulp_app_name} PRIVATE "${IDF_PATH}/components/ulp/lp_core/lp_core/include"
+                                                        "${IDF_PATH}/components/ulp/lp_core/shared/include")
+        target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
+
+    endif()
+endfunction()

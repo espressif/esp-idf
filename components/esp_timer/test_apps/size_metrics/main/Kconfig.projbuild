@@ -1,0 +1,18 @@
+menu "Size Metrics Test App Configuration"
+
+    choice SIZE_METRICS_FUNCTION_SET
+        prompt "Function set to compile"
+        default SIZE_METRICS_FUNCTION_SET_MINIMAL
+        help
+            Select which set of functions to compile for size metrics comparison.
+            Minimal set includes only basic functions, full set includes all features.
+
+        config SIZE_METRICS_FUNCTION_SET_MINIMAL
+            bool "Minimal function set"
+
+        config SIZE_METRICS_FUNCTION_SET_FULL
+            bool "Full function set"
+
+    endchoice
+
+endmenu

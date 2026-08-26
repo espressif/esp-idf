@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+# SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: Broadcast Sink"
+
+    config EXAMPLE_SCAN_OFFLOAD
+        bool "Whether to wait for a Broadcast Assistant"
+        select BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
+        help
+            If set to true, the example will start advertising connectable
+            for Broadcast Assistants.
+
+endmenu

@@ -1,0 +1,292 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+#include <stdint.h>
+#include <stdbool.h>
+#include "sdkconfig.h"
+#include "esp_err.h"
+#include "esp_sleep.h"
+#include "esp_attr.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+#define SLEEP_MODEM_SKIP_I2C_MST_CLK_RETENTION    (BIT(0))
+#define SLEEP_MODEM_SKIP_WIFI_RETENTION           (BIT(1))
+#define SLEEP_MODEM_RESET_RETENTION               (0)
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+typedef enum {
+    SLEEP_MODEM_WIFI       = 1,
+    SLEEP_MODEM_BT         = 2,
+    SLEEP_MODEM_IEEE802154 = 4,
+} sleep_modem_type_t;
+#define SLEEP_MODEM_MAX_CNT 3
+
+/**
+ * @file sleep_modem.h
+ *
+ * This file contains declarations of MAC and baseband power consumption related functions in light sleep mode.
+ */
+
+#if CONFIG_MAC_BB_PD
+
+/**
+ * @brief A callback function completes MAC and baseband power down operation
+ *
+ * In light sleep mode, execute Wi-Fi and Bluetooth module MAC and baseband
+ * power down and backup register configuration information operations.
+ */
+void mac_bb_power_down_cb_execute(void);
+
+/**
+ * @brief A callback function completes MAC and baseband power up operation
+ *
+ * In light sleep mode, execute Wi-Fi and Bluetooth module MAC and baseband
+ * power up and restore register configuration information operations.
+ */
+void mac_bb_power_up_cb_execute(void);
+
+#endif // CONFIG_MAC_BB_PD
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+/**
+ * @brief Register sleep prepare callback for Bluetooth/IEEE802154 MAC and baseband
+ *
+ * @param pd_cb function to call when power down
+ * @param pu_cb function to call when power up
+ */
+void sleep_modem_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                    mac_bb_power_up_cb_t pu_cb);
+
+/**
+ * @brief Unregister sleep prepare callback for Bluetooth/IEEE802154 MAC and baseband
+ *
+ * @param pd_cb function to call when power down
+ * @param pu_cb function to call when power up
+ */
+void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                      mac_bb_power_up_cb_t pu_cb);
+
+/**
+ * @brief MAC and baseband power up operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power down and backup prepare operations.
+ */
+void sleep_modem_mac_bb_power_down_prepare(void);
+
+/**
+ * @brief MAC and baseband power up operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power up and restore prepare operations.
+ */
+void sleep_modem_mac_bb_power_up_prepare(void);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+/**
+ * @brief Phy retention completes
+ *
+ */
+void sleep_modem_phy_retention_complete(void);
+
+/**
+ * @brief The retention action of PHY module
+ *
+ * @param restore  true for restore the PHY context, false for backup the PHY context
+ * @param flags Configure flags for phy link
+ */
+void sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel, uint8_t flags);
+
+/**
+ * @brief Get phy link state
+ *
+ * @return true or false for phy link is enabled or disabled
+ */
+bool sleep_modem_phy_link_enabled(void);
+
+/**
+ * @brief Get phy link done state
+ *
+ * @return true or false for phy link can be used to enable RF by REGDMA or can not be used
+ */
+bool sleep_modem_phy_link_done(void);
+
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
+
+/**
+ * @brief Whether the current target allows Modem or the TOP power domain to be powered off during light sleep
+ *
+ * During light sleep on some targets, it is possible to power OFF the Modem or TOP
+ * power domains in order to further lower power power consumption. However, this
+ * can only occur on targets that support REGDMA for modem (WiFi, Bluetooth,
+ * IEEE802.15.4) retention.
+ */
+bool modem_domain_pd_allowed(void);
+
+/**
+ * @brief Get the reject trigger signal of Modem system
+ *
+ * @return the reject trigger signal of Modem system.
+ */
+uint32_t sleep_modem_reject_triggers(void);
+
+/**
+ * @brief Configure the parameters of the modem subsystem during the sleep process
+ *
+ * In light sleep mode, the wake-up early time of the WiFi module and the TBTT
+ * interrupt early time (trigger enabling RF) are determined by the maximum and
+ * minimum frequency of system (higher system frequency means less time to wake
+ * up and enable RF).
+ * For the esp32c6 SOC, the modem state is strongly dependent on the light sleep
+ * mode, and the modem state will be enabled only when light sleep is enabled
+ * and the `CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP` is configured in menuconfig.
+ *
+ * @param max_freq_mhz       the maximum frequency of system
+ * @param min_freq_mhz       the minimum frequency of system
+ * @param light_sleep_enable true or false for enable or disable light sleep mode, respectively
+ *
+ * @return
+ *  - ESP_OK on success
+ */
+esp_err_t sleep_modem_configure(int max_freq_mhz, int min_freq_mhz, bool light_sleep_enable);
+
+/**
+ * @brief Callback function type for peripherals to know light sleep wakeup overhead.
+ *
+ */
+typedef void (* inform_out_light_sleep_overhead_cb_t)(uint32_t);
+
+/**
+  * @brief  Register informing peripherals light sleep wakeup overhead time callback
+  *
+  * This function allows you to register a callback that informs the peripherals of
+  * the wakeup overhead time of light sleep.
+  * @param cb function to inform time
+  * @return
+  *   - ESP_OK on success
+  *   - ESP_ERR_NO_MEM if no more callback slots are available
+  */
+esp_err_t esp_pm_register_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb);
+
+/**
+  * @brief  Unregister informing peripherals light sleep wakeup overhead time callback
+  *
+  * This function allows you to unregister a callback that informs the peripherals of
+  * the wakeup overhead time of light sleep.
+  * @param cb function to inform time
+  * @return
+  *   - ESP_OK on success
+  *   - ESP_ERR_INVALID_STATE if the given callback hasn't been registered before
+  */
+esp_err_t esp_pm_unregister_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb);
+
+/**
+  * @brief  A callback that informs the peripherals of the wakeup overhead time of light sleep
+  *
+  * @param out_light_sleep_time wakeup overhead time of light sleep
+  */
+void periph_inform_out_light_sleep_overhead(uint32_t out_light_sleep_time);
+
+/**
+ * @brief Callback function type for peripherals to know light sleep default parameters
+ */
+typedef void (* update_light_sleep_default_params_config_cb_t)(int, int);
+
+/**
+ * @brief  Register peripherals light sleep default parameters configure callback
+ *
+ * This function allows you to register a callback that configure the peripherals
+ * of default parameters of light sleep
+ * @param cb function to update default parameters
+ */
+void esp_pm_register_light_sleep_default_params_config_callback(update_light_sleep_default_params_config_cb_t cb);
+
+/**
+ * @brief  Unregister peripherals light sleep default parameters configure Callback
+ *
+ * This function allows you to unregister a callback that configure the peripherals
+ * of default parameters of light sleep
+ */
+void esp_pm_unregister_light_sleep_default_params_config_callback(void);
+
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+/**
+ * @brief Init phy link.
+ *
+ * This function init phy link.
+ *
+ * @param modem_mask bit mask of modems
+ * @return
+ *    - ESP_OK on success
+ *    - ESP_ERR_NO_MEM if no memory for link
+ */
+esp_err_t sleep_modem_phy_init(sleep_modem_type_t modem_mask);
+
+/**
+ * @brief Deinit phy link.
+ *
+ * This function deinit phy link.
+ *
+ * @param modem_mask bit mask of modems
+ */
+void sleep_modem_phy_deinit(sleep_modem_type_t modem_mask);
+
+/**
+ * @brief Check if Wi-Fi modem state is enabled
+ *
+ * @return
+ *  - true Wi-Fi modem state is enabled
+ *  - false Wi-Fi modem state is disabled
+ */
+bool sleep_modem_wifi_modem_state_is_enabled(void);
+
+/**
+ * @brief Function to check Wi-Fi modem state to skip light sleep.
+ *
+ * This function is to check if light sleep should skip by Wi-Fi modem state .
+  * @return
+  *   - true skip light sleep
+  *   - false not skip light sleep
+ */
+bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
+
+/**
+ * @brief Function to initialize and create the phy link
+ * @param link_context PHY link regdma description conteoxt pointer
+ * @return
+ *   - ESP_OK on success
+ *   - ESP_ERR_NO_MEM if no memory for link
+ *   - ESP_ERR_INVALID_ARG if value is out of range
+ *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
+ */
+esp_err_t sleep_phy_link_init(void **link_context);
+
+/**
+ * @brief Function to destroy and de-initialize phy link
+ * @param link_context PHY link regdma description conteoxt pointer
+ * @return
+ *   - ESP_OK on success
+ *   - ESP_ERR_INVALID_ARG if value is out of range
+ *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
+ */
+esp_err_t sleep_phy_link_deinit(void *link_context);
+
+/**
+ * @brief Function to configure PHY link regdma description at runtime
+ * @param link_context PHY link regdma description conteoxt pointer
+ * @param flags A bitmap to indicate the PHY link regdma description configuration flag
+ */
+void sleep_phy_link_config(void *link_context, uint32_t flags);
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
+
+#ifdef __cplusplus
+}
+#endif

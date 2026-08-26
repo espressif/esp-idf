@@ -1,0 +1,57 @@
+<svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .box { fill: #f0f0f0; stroke: #333; stroke-width: 2; }
+      .text { font-family: Arial, sans-serif; font-size: 12px; text-anchor: middle; dominant-baseline: middle; }
+      .small-text { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; dominant-baseline: middle; }
+      .wire { stroke: #333; stroke-width: 1.5; fill: none; }
+      .arrow { fill: #333; }
+    </style>
+  </defs>
+
+  <!-- SAR ADC -->
+  <rect x="10" y="50" width="100" height="40" class="box"/>
+  <text x="60" y="70" class="text">SAR ADC</text>
+
+  <!-- RC_FAST_CLK -->
+  <rect x="10" y="110" width="100" height="40" class="box"/>
+  <text x="60" y="130" class="small-text">RC_FAST_CLK</text>
+
+  <!-- Entropy source labels -->
+  <text x="150" y="64" class="small-text">Entropy source</text>
+
+  <text x="150" y="124" class="small-text">Entropy source</text>
+
+  <!-- XOR gate -->
+  <path d="M 220 80 Q 230 80 240 90 Q 230 100 220 100 L 200 100 Q 210 90 200 80 Z" class="box"/>
+  <text x="220" y="90" class="small-text">XOR</text>
+
+  <!-- Random Number Generator -->
+  <rect x="350" y="70" width="120" height="40" class="box"/>
+  <text x="410" y="85" class="text">Random</text>
+  <text x="410" y="95" class="text">Number</text>
+  <text x="410" y="105" class="text">Generator</text>
+
+  <!-- RNG_DATA_REG output -->
+  <text x="520" y="90" class="text">RNG_DATA_REG</text>
+
+  <!-- Wires -->
+  <!-- SAR ADC to XOR (top input) -->
+  <line x1="110" y1="70" x2="160" y2="70" class="wire"/>
+  <line x1="160" y1="70" x2="160" y2="85" class="wire"/>
+  <line x1="160" y1="85" x2="200" y2="85" class="wire"/>
+
+  <!-- RC_FAST_CLK to XOR (bottom input) -->
+  <line x1="110" y1="130" x2="180" y2="130" class="wire"/>
+  <line x1="180" y1="130" x2="180" y2="95" class="wire"/>
+  <line x1="180" y1="95" x2="200" y2="95" class="wire"/>
+
+  <!-- XOR to RNG -->
+  <line x1="240" y1="90" x2="350" y2="90" class="wire"/>
+
+  <!-- RNG to output -->
+  <line x1="470" y1="90" x2="520" y2="90" class="wire"/>
+
+  <!-- Arrow at the end -->
+  <polygon points="520,85 520,95 530,90" class="arrow"/>
+</svg>

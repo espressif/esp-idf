@@ -1,0 +1,39 @@
+menu "ESP-Driver:Camera Controller Configurations"
+
+    depends on SOC_MIPI_CSI_SUPPORTED || SOC_ISP_DVP_SUPPORTED || SOC_LCDCAM_CAM_SUPPORTED
+
+    config CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
+        bool "CSI ISR Cache-Safe"
+        depends on SOC_MIPI_CSI_SUPPORTED
+        default n
+        select DW_GDMA_ISR_IRAM_SAFE
+        select DW_GDMA_CTRL_FUNC_IN_IRAM
+        select DW_GDMA_SETTER_FUNC_IN_IRAM
+        select DW_GDMA_GETTER_FUNC_IN_IRAM
+        help
+            Ensure the CSI driver ISR is Cache-Safe. When enabled, the ISR handler
+            will be available when the cache is disabled.
+
+    config CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE # IDF-10093
+        bool "ISP_DVP ISR Cache-Safe"
+        depends on SOC_ISP_DVP_SUPPORTED
+        default n
+        select DW_GDMA_ISR_IRAM_SAFE
+        select DW_GDMA_CTRL_FUNC_IN_IRAM
+        select DW_GDMA_SETTER_FUNC_IN_IRAM
+        select DW_GDMA_GETTER_FUNC_IN_IRAM
+        help
+            Ensure the ISP_DVP driver ISR is Cache-Safe. When enabled, the ISR handler
+            will be available when the cache is disabled.
+
+    config CAM_CTLR_DVP_CAM_ISR_CACHE_SAFE
+        bool "DVP ISR Cache-Safe"
+        depends on SOC_LCDCAM_CAM_SUPPORTED
+        default n
+        select GDMA_ISR_HANDLER_IN_IRAM if SOC_GDMA_SUPPORTED
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
+        help
+            Ensure the DVP driver ISR is Cache-Safe. When enabled, the ISR handler
+            will be available when the cache is disabled.
+
+endmenu # ESP Camera Controller Configurations

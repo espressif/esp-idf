@@ -1,0 +1,6 @@
+# ESP32S3, F8R8, Flash 80M DDR, PSRAM 80M DDR, XIP_PSRAM
+
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_SPI_FLASH_AUTO_SUSPEND=y
+# Now the runners are massively using xmc-c chips, to be removed when xmc-d goes massive production.
+CONFIG_SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND=y

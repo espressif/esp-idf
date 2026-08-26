@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
+ */
+
+#include "soc/hp_system_reg.h"
+#include "soc/intpri_reg.h"
+
+#define SYSTEM_CPU_INTR_FROM_CPU_0_REG INTPRI_CPU_INTR_FROM_CPU_0_REG
+#define SYSTEM_CPU_INTR_FROM_CPU_0 INTPRI_CPU_INTR_FROM_CPU_0

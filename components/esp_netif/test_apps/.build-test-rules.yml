@@ -1,0 +1,22 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_netif/test_apps/test_app_esp_netif:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s2", "esp32c3"]
+      temporary: false
+      reason: Not needed to test on all targets (chosen two, one for each architecture)
+  depends_components:
+    - esp_netif
+    - lwip
+    - esp_eth
+    - esp_wifi
+
+components/esp_netif/test_apps/test_app_vfs_l2tap:
+  disable:
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
+      temporary: true
+      reason: Not needed to test on all targets (chosen two, one for each architecture plus P4 tests time stamping)
+  depends_components:
+    - esp_netif
+    - lwip
+    - esp_eth

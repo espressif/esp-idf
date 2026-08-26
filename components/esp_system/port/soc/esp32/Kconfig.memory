@@ -1,0 +1,58 @@
+menu "Memory"
+
+    config ESP32_RTCDATA_IN_FAST_MEM
+        bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
+        default n
+        depends on ESP_SYSTEM_SINGLE_CORE_MODE
+        help
+            This option allows to place .rtc_data and .rtc_rodata sections into
+            RTC fast memory segment to free the slow memory region for ULP programs.
+            This option depends on the CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE option because RTC fast memory
+            can be accessed only by PRO_CPU core.
+
+    config ESP32_USE_FIXED_STATIC_RAM_SIZE
+        bool "Use fixed static RAM size"
+        default n
+        help
+            If this option is disabled, the DRAM part of the heap starts right after the .bss section,
+            within the dram0_0 region. As a result, adding or removing some static variables
+            will change the available heap size.
+
+            If this option is enabled, the DRAM part of the heap starts right after the dram0_0 region,
+            where its length is set with ESP32_FIXED_STATIC_RAM_SIZE
+
+    config ESP32_FIXED_STATIC_RAM_SIZE
+        hex "Fixed Static RAM size"
+        default 0x1E000
+        range 0 0x2c200
+        depends on ESP32_USE_FIXED_STATIC_RAM_SIZE
+        help
+            RAM size dedicated for static variables (.data & .bss sections).
+            Please note that the actual length will be reduced by BTDM_RESERVE_DRAM if Bluetooth
+            controller is enabled.
+
+    config ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+        bool "Enable IRAM as 8 bit accessible memory"
+        depends on ESP_SYSTEM_SINGLE_CORE_MODE
+        help
+            If enabled, application can use IRAM as byte accessible region for storing data
+            (Note: IRAM region cannot be used as task stack)
+
+            This is possible due to handling of exceptions `LoadStoreError (3)` and `LoadStoreAlignmentError (9)`
+            Each unaligned read/write access will incur a penalty of maximum of 167 CPU cycles.
+
+    menu "Non-backward compatible options"
+
+        config ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM
+            bool "Reserve parts of SRAM1 for app IRAM (WARNING, read help before enabling)"
+            depends on !ESP32_TRAX
+            help
+                Reserve parts of SRAM1 for app IRAM which was previously reserved for bootloader DRAM.
+                If booting an app on an older bootloader from before this option was introduced, the app will fail
+                to boot due to not recognizing the new IRAM memory area.
+
+                If this is the case please test carefully before pushing out any OTA updates.
+
+    endmenu
+
+endmenu # Memory

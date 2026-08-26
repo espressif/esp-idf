@@ -1,0 +1,103 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+# Example bitscrambler program. Reads in 8 bytes and spits out 8 bytes are
+# the 'rotated' version of the input bytes. Specifically, output byte 0
+# consists of bit 0 of input byte 0, bit 0 of input byte 1, bit 0 of input
+# byte 2 etc. Output byte 1 consists of bit 1 of input byte 0, bit 1 of
+# input byte 1, bit 1 of input byte 2, etc.
+
+cfg eof_on downstream
+cfg trailing_bytes 8			#If we have an EOF on the input, we still
+								#need to process the 64 bits in M0/M1
+cfg prefetch true				#We expect M0/M1 to be filled
+
+loop:
+	# Note: we start with 64 bits in M0 and M1, so we can immediately start outputting.
+
+	#output byte 0
+	set 0 0,
+	set 1 8,
+	set 2 16,
+	set 3 24,
+	set 4 32,
+	set 5 40,
+	set 6 48,
+	set 7 56,
+	#output byte 1
+	set 8 1,
+	set 9 9,
+	set 10 17,
+	set 11 25,
+	set 12 33,
+	set 13 41,
+	set 14 49,
+	set 15 57,
+	#output byte 2
+	set 16 2,
+	set 17 10,
+	set 18 18,
+	set 19 26,
+	set 20 34,
+	set 21 42,
+	set 22 50,
+	set 23 58,
+	#output byte 3
+	set 24 3,
+	set 25 11,
+	set 26 19,
+	set 27 27,
+	set 28 35,
+	set 29 43,
+	set 30 51,
+	set 31 59,
+	#as we can only write 32 bits at the same time, we write these and
+	#route the other 32 bits in the next instruction.
+	write 32
+
+	#2nd instruction: route the other 32 bits and write.
+	#output byte 4
+	set 0 4,
+	set 1 12,
+	set 2 20,
+	set 3 28,
+	set 4 36,
+	set 5 44,
+	set 6 52,
+	set 7 60,
+	#output byte 5
+	set 8 5,
+	set 9 13,
+	set 10 21,
+	set 11 29,
+	set 12 37,
+	set 13 45,
+	set 14 53,
+	set 15 61,
+	#output byte 6
+	set 16 6,
+	set 17 14,
+	set 18 22,
+	set 19 30,
+	set 20 38,
+	set 21 46,
+	set 22 54,
+	set 23 62,
+	#output byte 7
+	set 24 7,
+	set 25 15,
+	set 26 23,
+	set 27 31,
+	set 28 39,
+	set 29 47,
+	set 30 55,
+	set 31 63,
+	#Write these last 32 bits.
+	write 32,
+	#Note we can read the first half of the next 64 bits into the
+	#input buffer as the load happens at the end of the instruction.
+	read 32
+
+	#Read the 2nd half of the 64 bits in, and loop back to the start.
+	read 32,
+	jmp loop

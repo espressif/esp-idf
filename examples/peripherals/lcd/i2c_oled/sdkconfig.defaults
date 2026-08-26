@@ -1,0 +1,6 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_LV_CONF_SKIP=y
+CONFIG_LV_USE_OBSERVER=y
+CONFIG_LV_USE_SYSMON=y

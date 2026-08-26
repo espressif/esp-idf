@@ -1,0 +1,16 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_blockdev_util/test_apps/generic_partition:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "linux"]
+      temporary: true
+      reason: cover Xtensa and RISC-V targets
+components/esp_blockdev_util/test_apps/memory_blockdev:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "linux"]
+      temporary: true
+      reason: cover Xtensa and RISC-V targets

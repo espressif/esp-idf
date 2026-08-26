@@ -1,0 +1,17 @@
+CONFIG_IDF_TARGET="esp32s3"
+
+# MODEM SLEEP Options
+CONFIG_BT_CTRL_MODEM_SLEEP=y
+CONFIG_BT_CTRL_MODEM_SLEEP_MODE_1=y
+# Bluetooth low power clock
+CONFIG_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL=y
+# Power up main XTAL during light sleep
+CONFIG_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP=y
+
+# RTC clock source
+CONFIG_RTC_CLK_SRC_EXT_CRYS=y
+
+# Run FreeRTOS only on first core
+CONFIG_FREERTOS_UNICORE=y
+# Enable power down of MAC and baseband in light sleep mode
+CONFIG_ESP_PHY_MAC_BB_PD=y

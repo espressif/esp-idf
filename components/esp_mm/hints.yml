@@ -1,0 +1,3 @@
+-
+    re: "error: implicit declaration of function '(esp_cache_aligned_malloc|esp_cache_aligned_calloc)'"
+    hint: "Use the heap_caps_malloc() or heap_caps_calloc() functions from the esp_heap_caps.h with the MALLOC_CAP_CACHE_ALIGNED flag to allocate memory that is aligned to cache line."

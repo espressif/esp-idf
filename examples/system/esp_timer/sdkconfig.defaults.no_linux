@@ -1,0 +1,2 @@
+# Put sleep related source code in IRAM
+CONFIG_PM_SLP_IRAM_OPT=y

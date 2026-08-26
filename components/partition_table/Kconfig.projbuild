@@ -1,0 +1,182 @@
+menu "Partition Table"
+
+    choice PARTITION_TABLE_TYPE
+        prompt "Partition Table"
+        default PARTITION_TABLE_SINGLE_APP
+        help
+            The partition table to flash to the ESP32. The partition table
+            determines where apps, data and other resources are expected to
+            be found.
+
+            The predefined partition table CSV descriptions can be found
+            in the components/partition_table directory. These are mostly intended
+            for example and development use, it's expect that for production use you
+            will copy one of these CSV files and create a custom partition CSV for
+            your application.
+
+        config PARTITION_TABLE_SINGLE_APP
+            bool "Single factory app, no OTA"
+            help
+                This is the default partition table, designed to fit into a 2MB or
+                larger flash with a single 1MB app partition.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_singleapp.csv
+
+                This partition table is not suitable for an app that needs OTA
+                (over the air update) capability.
+
+        config PARTITION_TABLE_SINGLE_APP_LARGE
+            bool "Single factory app (large), no OTA"
+            help
+                This is a variation of the default partition table, that expands
+                the 1MB app partition size to 1.5MB to fit more code.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_singleapp_large.csv
+
+                This partition table is not suitable for an app that needs OTA
+                (over the air update) capability.
+
+        config PARTITION_TABLE_TWO_OTA
+            bool "Factory app, two OTA definitions"
+            help
+                This is a basic OTA-enabled partition table with a factory app
+                partition plus two OTA app partitions. All are 1MB, so this
+                partition table requires 4MB or larger flash size.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_two_ota.csv
+
+        config PARTITION_TABLE_TWO_OTA_LARGE
+            bool "Two large size OTA partitions"
+            help
+                This is a basic OTA-enabled partition table with
+                two OTA app partitions. Both app partition sizes are 1700K,
+                so this partition table requires 4MB or larger flash size.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_two_ota_large.csv
+
+        config PARTITION_TABLE_CUSTOM
+            bool "Custom partition table CSV"
+            help
+                Specify the path to the partition table CSV to use for your project.
+
+                Consult the Partition Table section in the ESP-IDF Programmers Guide
+                for more information.
+
+        config PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS
+            bool "Single factory app, no OTA, encrypted NVS"
+            depends on !ESP32_COREDUMP_ENABLE_TO_FLASH && NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+
+            help
+                This is a variation of the default "Single factory app, no OTA" partition table
+                that supports encrypted NVS when using flash encryption. See the Flash Encryption section
+                in the ESP-IDF Programmers Guide for more information.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_singleapp_encr_nvs.csv
+
+        config PARTITION_TABLE_SINGLE_APP_LARGE_ENC_NVS
+            bool "Single factory app (large), no OTA, encrypted NVS"
+            depends on !ESP32_COREDUMP_ENABLE_TO_FLASH && NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+            help
+                This is a variation of the "Single factory app (large), no OTA" partition table
+                that supports encrypted NVS when using flash encryption. See the Flash Encryption section
+                in the ESP-IDF Programmers Guide for more information.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_singleapp_large_encr_nvs.csv
+
+        config PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS
+            bool "Factory app, two OTA definitions, encrypted NVS"
+            depends on !ESP_COREDUMP_ENABLE_TO_FLASH && NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
+            help
+                This is a variation of the "Factory app, two OTA definitions" partition table
+                that supports encrypted NVS when using flash encryption. See the Flash Encryption section
+                in the ESP-IDF Programmers Guide for more information.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_two_ota_encr_nvs.csv
+
+        config PARTITION_TABLE_SINGLE_APP_TEE
+            bool "Single factory app, no OTA, TEE"
+            depends on SECURE_ENABLE_TEE
+            help
+                This is a variation of the default "Single factory app, no OTA" partition table
+                that supports the ESP-TEE framework. See the Trusted Execution Environment (TEE) section
+                in the ESP-IDF Programmers Guide for more information.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_singleapp_tee.csv
+
+        config PARTITION_TABLE_TWO_OTA_TEE
+            bool "Two OTA definitions, TEE"
+            depends on SECURE_ENABLE_TEE
+            help
+                This is a basic OTA-enabled partition table with two OTA app partitions each
+                for the TEE and the user (REE) application. The user app partition sizes are 1536K,
+                so this partition table requires 4MB or larger flash size. See the
+                Trusted Execution Environment (TEE) section in the ESP-IDF Programmers Guide
+                for more information.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_two_ota_tee.csv
+
+    endchoice
+
+    config PARTITION_TABLE_CUSTOM_FILENAME
+        string "Custom partition CSV file" if PARTITION_TABLE_CUSTOM
+        default "partitions.csv"
+        help
+            Name of the custom partition CSV filename.
+            This path is evaluated relative to the project root directory by default.
+            However, if the absolute path for the CSV file is provided, then the absolute path is configured.
+
+    config PARTITION_TABLE_FILENAME
+        string
+        default "partitions_singleapp.csv" if PARTITION_TABLE_SINGLE_APP && !ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_singleapp_coredump.csv" if PARTITION_TABLE_SINGLE_APP && ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_singleapp_encr_nvs.csv" if PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS
+        default "partitions_singleapp_large.csv" if PARTITION_TABLE_SINGLE_APP_LARGE && !ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_singleapp_large_coredump.csv" if PARTITION_TABLE_SINGLE_APP_LARGE && ESP_COREDUMP_ENABLE_TO_FLASH # NOERROR
+        default "partitions_singleapp_large_encr_nvs.csv" if PARTITION_TABLE_SINGLE_APP_LARGE_ENC_NVS
+        default "partitions_two_ota.csv" if PARTITION_TABLE_TWO_OTA && !ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_two_ota_coredump.csv" if PARTITION_TABLE_TWO_OTA && ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_two_ota_encr_nvs.csv" if PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS
+        default "partitions_two_ota_large.csv" if PARTITION_TABLE_TWO_OTA_LARGE && !ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_singleapp_tee.csv" if PARTITION_TABLE_SINGLE_APP_TEE
+        default "partitions_two_ota_tee.csv" if PARTITION_TABLE_TWO_OTA_TEE
+        default PARTITION_TABLE_CUSTOM_FILENAME if PARTITION_TABLE_CUSTOM
+
+    config PARTITION_TABLE_OFFSET
+        hex "Offset of partition table"
+        default 0x8000
+        help
+            The offset address of the partition table is, by default, 0x8000, and it starts right after
+            the bootloader. This offset can be changed if more space is required for the bootloader.
+            If you change this offset, both the bootloader and the app must be compiled with the same
+            PARTITION_TABLE_OFFSET value.
+
+            This value must be a multiple of 0x1000.
+
+            If you change the partition table offset, make sure to update the partition offsets in
+            the partition table CSV file. To let the build system automatically adjust partition offsets based on
+            the configured partition table offset, leave the offset fields blank in the CSV file.
+
+            Note: If you specify fixed offsets in the partition table CSV (i.e., the offset column is not blank),
+            the first partition must start at PARTITION_TABLE_OFFSET + 0x1000, since the partition table occupies
+            0x1000 bytes of flash space.
+
+    config PARTITION_TABLE_MD5
+        bool "Generate an MD5 checksum for the partition table"
+        default y
+        depends on !APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS && !IDF_TARGET_LINUX
+        help
+            Generate an MD5 checksum for the partition table for protecting the
+            integrity of the table. The generation should be turned off for legacy
+            bootloaders which cannot recognize the MD5 checksum in the partition
+            table.
+
+endmenu

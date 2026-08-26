@@ -1,0 +1,3 @@
+-
+    re: "spi_hal: The clock_speed_hz should less than"
+    hint: "When operating in full-duplex mode at high frequencies, the device may not read data correctly.\nTry using IOMUX pins to increase the frequency limit or switch to half-duplex mode.\nNote that the SPI master can only operate at divisors of 80 MHz, and the driver always selects the closest available frequency to your configuration.\nSpecify SPI_DEVICE_NO_DUMMY to bypass this check. This allows higher output speeds but may result in unreliable data reads."

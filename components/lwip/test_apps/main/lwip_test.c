@@ -1,0 +1,642 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <esp_types.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "test_utils.h"
+#include "unity.h"
+#include "unity_fixture.h"
+
+#include "soc/soc_caps.h"
+
+#include "lwip/inet.h"
+#include "lwip/netdb.h"
+#include "lwip/sockets.h"
+#include "lwip/tcpip.h"
+#include "lwip/prot/iana.h"
+#include "ping/ping_sock.h"
+#include "dhcpserver/dhcpserver.h"
+#include "dhcpserver/dhcpserver_options.h"
+#include "esp_sntp.h"
+#include "lwip/dhcp.h"
+#include "lwip/acd.h"
+#include "lwip/prot/dhcp.h"
+#include "lwip/prot/acd.h"
+#include "lwip/prot/etharp.h"
+
+#define ETH_PING_END_BIT BIT(1)
+#define ETH_PING_DURATION_MS (5000)
+#define ETH_PING_END_TIMEOUT_MS (ETH_PING_DURATION_MS * 2)
+#define TEST_ICMP_DESTINATION_DOMAIN_NAME "127.0.0.1"
+
+
+TEST_GROUP(lwip);
+
+TEST_SETUP(lwip)
+{
+}
+
+TEST_TEAR_DOWN(lwip)
+{
+}
+
+static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
+{
+    uint8_t ttl;
+    uint16_t seqno;
+    uint32_t elapsed_time, recv_len;
+    ip_addr_t target_addr;
+    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_TTL, &ttl, sizeof(ttl));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
+    printf("%" PRId32 "bytes from %s icmp_seq=%d ttl=%d time=%" PRId32 " ms\n",
+           recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
+}
+
+static void test_on_ping_timeout(esp_ping_handle_t hdl, void *args)
+{
+    uint16_t seqno;
+    ip_addr_t target_addr;
+    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
+    printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
+}
+
+static void test_on_ping_end(esp_ping_handle_t hdl, void *args)
+{
+    EventGroupHandle_t eth_event_group = (EventGroupHandle_t)args;
+    uint32_t transmitted;
+    uint32_t received;
+    uint32_t total_time_ms;
+
+    esp_ping_get_profile(hdl, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
+    printf("%" PRId32 " packets transmitted, %" PRId32 " received, time %" PRId32 "ms\n", transmitted, received, total_time_ms);
+    if (transmitted == received) {
+        xEventGroupSetBits(eth_event_group, ETH_PING_END_BIT);
+    }
+}
+
+TEST(lwip, localhost_ping_test)
+{
+    EventBits_t bits;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    test_case_uses_tcpip();
+
+    // Parse IP address: Destination is a localhost address, so we don't need any interface (esp-netif/driver)
+    ip_addr_t target_addr;
+    struct addrinfo hint;
+    struct addrinfo *res = NULL;
+    memset(&hint, 0, sizeof(hint));
+    memset(&target_addr, 0, sizeof(target_addr));
+    /* convert URL to IP */
+    TEST_ASSERT(getaddrinfo(TEST_ICMP_DESTINATION_DOMAIN_NAME, NULL, &hint, &res) == 0);
+    struct in_addr addr4 = ((struct sockaddr_in *)(res->ai_addr))->sin_addr;
+    inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
+    freeaddrinfo(res);
+
+    esp_ping_config_t ping_config = ESP_PING_DEFAULT_CONFIG();
+    ping_config.timeout_ms = 2000;
+    ping_config.target_addr = target_addr;
+    ping_config.count = 0; // ping in infinite mode
+    /* set callback functions */
+    esp_ping_callbacks_t cbs;
+    cbs.on_ping_success = test_on_ping_success;
+    cbs.on_ping_timeout = test_on_ping_timeout;
+    cbs.on_ping_end = test_on_ping_end;
+    cbs.cb_args = eth_event_group;
+
+    esp_ping_handle_t ping;
+    TEST_ESP_OK(esp_ping_new_session(&ping_config, &cbs, &ping));
+    /* start ping */
+    TEST_ESP_OK(esp_ping_start(ping));
+    /* ping for a while */
+    vTaskDelay(pdMS_TO_TICKS(ETH_PING_DURATION_MS));
+    /* stop ping */
+    TEST_ESP_OK(esp_ping_stop(ping));
+    /* wait for end of ping */
+    bits = xEventGroupWaitBits(eth_event_group, ETH_PING_END_BIT, true, true, pdMS_TO_TICKS(ETH_PING_END_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_PING_END_BIT) == ETH_PING_END_BIT);
+    /* restart ping */
+    TEST_ESP_OK(esp_ping_start(ping));
+    vTaskDelay(pdMS_TO_TICKS(ETH_PING_DURATION_MS));
+    TEST_ESP_OK(esp_ping_stop(ping));
+    bits = xEventGroupWaitBits(eth_event_group, ETH_PING_END_BIT, true, true, pdMS_TO_TICKS(ETH_PING_END_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_PING_END_BIT) == ETH_PING_END_BIT);
+    /* de-initialize ping process */
+    TEST_ESP_OK(esp_ping_delete_session(ping));
+
+    vEventGroupDelete(eth_event_group);
+}
+
+TEST(lwip, dhcp_server_init_deinit)
+{
+    dhcps_t *dhcps = dhcps_new();
+    TEST_ASSERT_NOT_NULL(dhcps);
+    ip4_addr_t ip = { .addr = IPADDR_ANY };
+    TEST_ASSERT(dhcps_start(dhcps, NULL, ip) == ERR_ARG);
+    TEST_ASSERT(dhcps_stop(dhcps, NULL) == ERR_ARG);
+    dhcps_delete(dhcps);
+}
+
+typedef enum
+{
+    DNS_CALLBACK_TYPE_GET = 0, /**< DNS main server address*/
+    DNS_CALLBACK_TYPE_SET,   /**< DNS backup server address (Wi-Fi STA and Ethernet only) */
+} dns_callback_type_t;
+
+typedef struct dhcps_dns_options_ {
+    dns_callback_type_t cb_type;
+    ip_addr_t *dnsserver;
+    dns_type_t type;
+} dhcps_dns_options_t;
+
+struct dhcps_api {
+    EventGroupHandle_t event;
+    dhcps_t *dhcps;
+    ip4_addr_t netmask;
+    ip4_addr_t ip;
+    dhcps_dns_options_t dns_options;
+    err_t ret_start;
+    err_t ret_stop;
+};
+
+static void dhcps_test_net_classes_api(void* ctx)
+{
+    struct netif *netif;
+    struct dhcps_api *api = ctx;
+
+    NETIF_FOREACH(netif) {
+        if (netif->name[0] == 'l' && netif->name[1] == 'o') {
+            break;
+        }
+    }
+    TEST_ASSERT_NOT_NULL(netif);
+
+    dhcps_t *dhcps = dhcps_new();
+    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&api->netmask, sizeof(api->netmask));
+    api->ret_start = dhcps_start(dhcps, netif, api->ip);
+    api->ret_stop = dhcps_stop(dhcps, netif);
+    dhcps_delete(dhcps);
+    xEventGroupSetBits(api->event, 1);
+}
+
+static void dhcps_test_net_classes(uint32_t ip, uint32_t mask, bool pass)
+{
+
+    struct dhcps_api api = {
+            .ret_start = ERR_IF,
+            .ret_stop = ERR_IF,
+            .ip = {.addr = PP_HTONL(ip)},
+            .netmask = {.addr = PP_HTONL(mask)},
+            .event = xEventGroupCreate()
+    };
+
+    tcpip_callback(dhcps_test_net_classes_api, &api);
+    xEventGroupWaitBits(api.event, 1, true, true, pdMS_TO_TICKS(5000));
+    vEventGroupDelete(api.event);
+    err_t ret_start_expected = pass ? ERR_OK : ERR_ARG;
+    TEST_ASSERT(api.ret_start == ret_start_expected);
+    TEST_ASSERT(api.ret_stop == ERR_OK);
+
+}
+
+TEST(lwip, dhcp_server_start_stop_localhost)
+{
+    test_case_uses_tcpip();
+
+    // Class A: IP: 127.0.0.1, Mask: 255.0.0.0
+    dhcps_test_net_classes(0x7f000001, 0xFF000000, true);
+
+    // Class B: IP: 128.1.1.1, Mask: 255.255.0.0
+    dhcps_test_net_classes(0x80010101, 0xFFFF0000, true);
+
+    // Class C: IP: 192.168.1.1, Mask: 255.255.255.0
+    dhcps_test_net_classes(0xC0A80101, 0xFFFFFF00, true);
+
+    // Class C: IP: 192.168.4.1, Mask: 255.255.0.0
+    dhcps_test_net_classes(0xC0A80401, 0xFFFF0000, true);
+
+    // Class C: IP: 192.168.4.1, Mask: 255.0.0.0
+    dhcps_test_net_classes(0xC0A80401, 0xFF000000, true);
+
+    // Class A: IP: 127.0.0.1, with inaccurate Mask: 255.248.255.0
+    // expect dhcps_start() to fail
+    dhcps_test_net_classes(0x7f000001, 0xFFF8FF00, false);
+
+    // Class C: IP: 192.168.200.8, with inaccurate Mask: 255.255.255.248
+    // expect dhcps_start() to fail
+    dhcps_test_net_classes(0xC0A8C808, 0xFFFFFFF8, false);
+}
+
+static void dhcps_test_dns_options_api(void* ctx)
+{
+    struct netif *netif;
+    struct dhcps_api *api = ctx;
+
+    NETIF_FOREACH(netif) {
+        if (netif->name[0] == 'l' && netif->name[1] == 'o') {
+            break;
+        }
+    }
+    TEST_ASSERT_NOT_NULL(netif);
+
+    if (api->dns_options.cb_type == DNS_CALLBACK_TYPE_GET) {
+        api->ret_start = dhcps_dns_getserver_by_type(api->dhcps,
+                                                    ip_2_ip4(api->dns_options.dnsserver),
+                                                    api->dns_options.type);
+    } else {
+        api->ret_start = dhcps_dns_setserver_by_type(api->dhcps,
+                                                    api->dns_options.dnsserver,
+                                                    api->dns_options.type);
+    }
+    xEventGroupSetBits(api->event, 1);
+}
+
+static void dhcps_test_dns_options(dns_callback_type_t cb_type,
+                                    dhcps_t *dhcps, ip_addr_t *dnsserver,
+                                    dns_type_t type, bool pass)
+{
+    struct dhcps_api api = {
+            .dhcps = dhcps,
+            .dns_options.cb_type = cb_type,
+            .dns_options.dnsserver = dnsserver,
+            .dns_options.type = type,
+            .ret_start = ERR_IF,
+            .event = xEventGroupCreate()
+    };
+
+    tcpip_callback(dhcps_test_dns_options_api, &api);
+    xEventGroupWaitBits(api.event, 1, true, true, pdMS_TO_TICKS(5000));
+    vEventGroupDelete(api.event);
+
+    TEST_ASSERT((api.ret_start == ERR_OK) == pass);
+}
+
+typedef struct {
+    EventGroupHandle_t event;
+    int self_mac_cb_calls;
+    int other_mac_cb_calls;
+} acd_test_ctx_t;
+
+static acd_test_ctx_t g_acd_ctx;
+
+static void acd_test_cb(struct netif *netif, acd_callback_enum_t state)
+{
+    (void)netif;
+    (void)state;
+    /* We only need to know that a callback was triggered (decline/restart). */
+    g_acd_ctx.other_mac_cb_calls++;
+}
+
+static void dhcp_acd_arp_check_api(void *arg)
+{
+    acd_test_ctx_t *ctx = (acd_test_ctx_t *)arg;
+    struct netif *netif = NULL;
+    NETIF_FOREACH(netif) {
+        if (netif->name[0] == 'l' && netif->name[1] == 'o') {
+            break;
+        }
+    }
+    TEST_ASSERT_NOT_NULL(netif);
+
+    /* Set our interface MAC to a known value */
+    const struct eth_addr self = { .addr = { 0x08, 0x3a, 0x8d, 0x41, 0x13, 0x14 } };
+    netif->hwaddr_len = ETH_HWADDR_LEN;
+    SMEMCPY(netif->hwaddr, self.addr, ETH_HWADDR_LEN);
+
+    /* Attach a DHCP client struct with CHECKING state and PROBING ACD state */
+    static struct dhcp dhcp;
+    memset(&dhcp, 0, sizeof(dhcp));
+    netif_set_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP, &dhcp);
+    IP4_ADDR(&dhcp.offered_ip_addr, 192, 168, 88, 4);
+    dhcp.state = DHCP_STATE_CHECKING;
+    dhcp.acd.state = ACD_STATE_PROBING;
+    dhcp.acd.acd_conflict_callback = acd_test_cb;
+
+    /* Case 1: ARP reply from our offered IP but with our own MAC -> NO conflict */
+    struct etharp_hdr hdr = {0};
+    hdr.opcode = PP_HTONS(ARP_REPLY);
+    IPADDR_WORDALIGNED_COPY_FROM_IP4_ADDR_T(&hdr.sipaddr, &dhcp.offered_ip_addr);
+    SMEMCPY(hdr.shwaddr.addr, self.addr, ETH_HWADDR_LEN);
+    ctx->self_mac_cb_calls = 0;
+    g_acd_ctx.other_mac_cb_calls = 0;
+    acd_arp_reply(netif, &hdr);
+    /* No callback should be invoked for self-MAC */
+    TEST_ASSERT_EQUAL_INT(0, g_acd_ctx.other_mac_cb_calls);
+
+    /* Case 2: ARP reply from offered IP with a different MAC -> conflict expected */
+    const struct eth_addr other = { .addr = { 0x08, 0x3a, 0x8d, 0x41, 0x13, 0x15 } };
+    SMEMCPY(hdr.shwaddr.addr, other.addr, ETH_HWADDR_LEN);
+    g_acd_ctx.other_mac_cb_calls = 0;
+    acd_arp_reply(netif, &hdr);
+    /* Our callback should be called (DECLINE/RESTART) at least once */
+    TEST_ASSERT(g_acd_ctx.other_mac_cb_calls > 0);
+
+    xEventGroupSetBits(ctx->event, 1);
+}
+
+TEST(lwip, dhcp_arp_probe_self_mac_is_ok)
+{
+    test_case_uses_tcpip();
+    g_acd_ctx.event = xEventGroupCreate();
+    TEST_ASSERT_NOT_NULL(g_acd_ctx.event);
+    g_acd_ctx.self_mac_cb_calls = 0;
+    g_acd_ctx.other_mac_cb_calls = 0;
+
+    tcpip_callback(dhcp_acd_arp_check_api, &g_acd_ctx);
+    xEventGroupWaitBits(g_acd_ctx.event, 1, true, true, pdMS_TO_TICKS(5000));
+    vEventGroupDelete(g_acd_ctx.event);
+}
+
+TEST(lwip, dhcp_server_dns_options)
+{
+    test_case_uses_tcpip();
+
+    // Class C: IP: 192.168.4.1
+    ip_addr_t ip = IPADDR4_INIT_BYTES(192, 168, 4, 1);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, NULL, &ip, DNS_TYPE_MAIN, false);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, NULL, &ip, DNS_TYPE_MAIN, false);
+
+    dhcps_t *dhcps = dhcps_new();
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, NULL, DNS_TYPE_MAIN, true);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, NULL, DNS_TYPE_MAIN, false);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, &ip, DNS_TYPE_MAX, false);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, &ip, DNS_TYPE_MAX, false);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, &ip, DNS_TYPE_MAIN, true);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, &ip, DNS_TYPE_MAIN, true);
+
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_SET, dhcps, &ip, DNS_TYPE_BACKUP, true);
+    dhcps_test_dns_options(DNS_CALLBACK_TYPE_GET, dhcps, &ip, DNS_TYPE_BACKUP, true);
+
+    dhcps_delete(dhcps);
+}
+
+int test_sntp_server_create(void)
+{
+    struct sockaddr_in dest_addr_ip4;
+    int sock = -1;
+    dest_addr_ip4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    dest_addr_ip4.sin_family = AF_INET;
+    dest_addr_ip4.sin_port = htons(LWIP_IANA_PORT_SNTP);
+    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, sock);
+    int reuse_en = 1;
+    TEST_ASSERT_GREATER_OR_EQUAL(0, setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse_en, sizeof(reuse_en)));
+    TEST_ASSERT_GREATER_OR_EQUAL(0, bind(sock, (struct sockaddr*) &dest_addr_ip4, sizeof(dest_addr_ip4)));
+    return sock;
+}
+
+bool test_sntp_server_reply_with_time(int sock, int year, bool msb_flag)
+{
+    struct sntp_timestamp {
+        uint32_t seconds;
+        uint32_t fraction;
+    };
+    const int SNTP_MSG_LEN = 48;
+    const int SNTP_MODE_CLIENT = 0x03;
+    const int SNTP_MODE_SERVER = 0x04;
+    const int SNTP_MODE_MASK = 0x07;
+    const int SNTP_OFFSET_STRATUM = 1;
+
+    char rx_buffer[SNTP_MSG_LEN];
+    struct sockaddr_storage source_addr;
+    socklen_t socklen = sizeof(source_addr);
+
+    int len = recvfrom(sock, rx_buffer, SNTP_MSG_LEN, 0, (struct sockaddr *)&source_addr, &socklen);
+    if (len == SNTP_MSG_LEN && source_addr.ss_family == PF_INET && (SNTP_MODE_MASK & rx_buffer[0]) == SNTP_MODE_CLIENT) {
+        // modify the client's request to act as a server's response with the injected *xmit* timestamp
+        rx_buffer[0] &= ~SNTP_MODE_CLIENT;
+        rx_buffer[0] |= SNTP_MODE_SERVER;
+        rx_buffer[SNTP_OFFSET_STRATUM] = 0x1;
+        // set the desired timestamp
+        struct sntp_timestamp *timestamp = (struct sntp_timestamp *)(rx_buffer + SNTP_MSG_LEN - sizeof(struct sntp_timestamp)); // xmit is the last timestamp in the datagram
+        int64_t seconds_since_1900 = (365*24*60*60 /* seconds per year */ + 24*60*60/4 /* ~ seconds per leap year */ )*(year-1900);
+        // apply the MSB convention (set: 1968-2036, cleared: 2036-2104)
+        timestamp->seconds = htonl( (msb_flag ? 0x80000000 : 0) | (0xFFFFFFFF & seconds_since_1900) );
+        len = sendto(sock, rx_buffer, SNTP_MSG_LEN, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
+        if (len == SNTP_MSG_LEN) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void test_sntp_timestamps(int year, bool msb_flag)
+{
+    int sock = test_sntp_server_create();
+
+    // init and start the SNTP
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "127.0.0.1");
+    esp_sntp_init();
+    // wait until time sync
+    int retry = 0;
+    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET) {
+        TEST_ASSERT_TRUE(test_sntp_server_reply_with_time(sock, year, msb_flag)); // post the SNTP server's reply
+        retry++;
+        TEST_ASSERT_LESS_THAN(3, retry);
+    }
+
+    // check time and assert the year
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    TEST_ASSERT_EQUAL(year, 1900 + timeinfo.tm_year);
+
+    // Check that the server 0 was reachable
+    TEST_ASSERT_EQUAL(1, esp_sntp_getreachability(0));
+    // close the SNTP and the fake server
+    esp_sntp_stop();
+
+    // Test some other SNTP APIs
+    TEST_ASSERT_EQUAL(0, esp_sntp_getreachability(0));
+    TEST_ASSERT_EQUAL(ESP_SNTP_OPMODE_POLL, esp_sntp_getoperatingmode());
+    const ip_addr_t *server_ip = esp_sntp_getserver(0);
+    TEST_ASSERT_EQUAL(PP_HTONL(IPADDR_LOOPBACK), server_ip->u_addr.ip4.addr);
+    close(sock);
+}
+
+TEST(lwip, sntp_client_time_2015)
+{
+    test_case_uses_tcpip();
+    test_sntp_timestamps(2015, true); // NTP timestamp MSB is set for time before 2036
+}
+
+TEST(lwip, sntp_client_time_2048)
+{
+    test_case_uses_tcpip();
+    test_sntp_timestamps(2048, false); // NTP timestamp MSB is cleared for time after 2036
+}
+
+/*
+ * DHCP option parser tests
+ *
+ * These exercise the bounds-checking in parse_options() by constructing raw
+ * option byte arrays and verifying correct behaviour for well-formed,
+ * truncated, and malformed inputs.
+ */
+
+#if LWIP_DHCPS_TEST_PARSE_OPTIONS
+
+extern u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len);
+
+#define TEST_OPT_PAD           0
+#define TEST_OPT_MSG_TYPE     53
+#define TEST_OPT_REQ_IPADDR   50
+#define TEST_OPT_END         255
+#define TEST_STATE_OFFER       1
+#define TEST_STATE_ACK         3
+#define TEST_STATE_IDLE        5
+
+TEST(lwip, dhcps_parse_options_well_formed_discover)
+{
+    u8_t opts[] = {
+        TEST_OPT_MSG_TYPE, 1, 1,   /* DHCPDISCOVER */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_well_formed_request_ack)
+{
+    u8_t opts[] = {
+        TEST_OPT_MSG_TYPE, 1, 3,   /* DHCPREQUEST */
+        TEST_OPT_REQ_IPADDR, 4, 192, 168, 4, 2,  /* matches client_address */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_ACK, state);
+}
+
+TEST(lwip, dhcps_parse_options_pad_bytes_skipped)
+{
+    u8_t opts[] = {
+        TEST_OPT_PAD,
+        TEST_OPT_PAD,
+        TEST_OPT_PAD,
+        TEST_OPT_MSG_TYPE, 1, 1,   /* DHCPDISCOVER */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_truncated_length_byte)
+{
+    /* Option code at the last byte with no room for the length byte.
+     * Before the fix this would read 1 byte OOB. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_truncated_option_data)
+{
+    /* MSG_TYPE says length=1 but the data byte is outside the buffer.
+     * Before the fix this would read 1 byte OOB via optptr[2]. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE, 1 };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_oversized_length)
+{
+    /* Option declares a length far exceeding the buffer. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE, 200, 1, TEST_OPT_END };
+    u8_t state = dhcps_test_parse_options(opts, (s16_t)sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_no_end_marker)
+{
+    /* Well-formed option but no END marker — parser must stop at buffer end. */
+    u8_t opts[] = { TEST_OPT_MSG_TYPE, 1, 1 };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_empty)
+{
+    u8_t opts[] = { 0 };
+    u8_t state = dhcps_test_parse_options(opts, 0);
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_only_pads)
+{
+    u8_t opts[] = { TEST_OPT_PAD, TEST_OPT_PAD, TEST_OPT_PAD };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_IDLE, state);
+}
+
+TEST(lwip, dhcps_parse_options_unknown_option_skipped)
+{
+    /* Unknown option 99 with length 3 should be skipped, then MSG_TYPE parsed. */
+    u8_t opts[] = {
+        99, 3, 0xAA, 0xBB, 0xCC,
+        TEST_OPT_MSG_TYPE, 1, 1,   /* DHCPDISCOVER */
+        TEST_OPT_END
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    TEST_ASSERT_EQUAL_UINT8(TEST_STATE_OFFER, state);
+}
+
+TEST(lwip, dhcps_parse_options_req_ipaddr_truncated)
+{
+    /* REQ_IPADDR claims 4 bytes but buffer only has room for 2. */
+    u8_t opts[] = {
+        TEST_OPT_MSG_TYPE, 1, 3,
+        TEST_OPT_REQ_IPADDR, 4, 192, 168
+    };
+    u8_t state = dhcps_test_parse_options(opts, sizeof(opts));
+    /* Parser should stop before the truncated REQ_IPADDR, return based on type alone. */
+    TEST_ASSERT(state != 0);
+}
+
+#endif /* LWIP_DHCPS_TEST_PARSE_OPTIONS */
+
+TEST_GROUP_RUNNER(lwip)
+{
+    RUN_TEST_CASE(lwip, localhost_ping_test)
+    RUN_TEST_CASE(lwip, dhcp_server_init_deinit)
+    RUN_TEST_CASE(lwip, dhcp_server_start_stop_localhost)
+    RUN_TEST_CASE(lwip, dhcp_server_dns_options)
+    RUN_TEST_CASE(lwip, sntp_client_time_2015)
+    RUN_TEST_CASE(lwip, sntp_client_time_2048)
+    RUN_TEST_CASE(lwip, dhcp_arp_probe_self_mac_is_ok)
+#if LWIP_DHCPS_TEST_PARSE_OPTIONS
+    RUN_TEST_CASE(lwip, dhcps_parse_options_well_formed_discover)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_well_formed_request_ack)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_pad_bytes_skipped)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_truncated_length_byte)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_truncated_option_data)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_oversized_length)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_no_end_marker)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_empty)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_only_pads)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_unknown_option_skipped)
+    RUN_TEST_CASE(lwip, dhcps_parse_options_req_ipaddr_truncated)
+#endif
+}
+
+void app_main(void)
+{
+    UNITY_MAIN(lwip);
+}

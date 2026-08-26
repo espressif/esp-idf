@@ -1,0 +1,5 @@
+INPUT += \
+    $(PROJECT_PATH)/components/bt/include/esp32c2/include/esp_bt.h \
+    $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \

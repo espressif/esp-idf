@@ -1,0 +1,17 @@
+CONFIG_SPIRAM=y
+
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=10240
+
+# FreeRTOS configurations
+CONFIG_FREERTOS_HZ=1000
+
+# H264 IRAM Configuration Notes:
+# When LDGEN_CHECK_MAPPING="1" strict memory mapping check is enabled, linking errors may occur
+# Cause: Prebuilt libtinyh264.a library doesn't support forced IRAM placement
+# Solutions:
+#  Disable IRAM optimization: CONFIG_ESP_H264_DECODER_IRAM=n
+CONFIG_ESP_H264_DECODER_IRAM=n
+
+# This case uses the terminal to print the brief diagrams before encoding and after decoding.
+# Turn off the watchdog to ensure the integrity of the picture printing
+CONFIG_ESP_TASK_WDT_EN=n

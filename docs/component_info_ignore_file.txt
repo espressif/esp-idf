@@ -1,0 +1,15 @@
+# Header files that will be ignored when generating extra header information
+# For API reference (include path/REQUIRE component)
+# ULP header files for the ULP app do not have an IDF header path/component require
+components/ulp/lp_core/lp_core/include/ulp_lp_core_gpio.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_i2c.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_print.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_spi.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_mailbox.h
+# ESP-TEE header files
+components/esp_tee/subproject/components/tee_sec_storage/include/esp_tee_sec_storage.h
+components/esp_tee/subproject/components/tee_attestation/esp_tee_attestation.h
+components/esp_tee/subproject/components/tee_ota_ops/include/esp_tee_ota_ops.h

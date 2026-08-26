@@ -1,0 +1,496 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stddef.h>
+#include <string.h>
+#include <inttypes.h>
+#include <sys/lock.h>
+#include <sys/param.h>
+
+#include "esp_attr.h"
+#include "esp_check.h"
+#include "esp_ipc_isr.h"
+#include "esp_sleep.h"
+#include "esp_log.h"
+#include "esp_rom_crc.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/portmacro.h"
+#include "riscv/csr.h"
+#include "soc/clic_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/soc_caps.h"
+#include "soc/hp_sys_clkrst_reg.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/sleep_event.h"
+#include "sdkconfig.h"
+#include "esp_private/esp_pmu.h"
+
+#include "esp32p4/rom/ets_sys.h"
+#include "esp32p4/rom/rtc.h"
+#include "rvsleep-frames.h"
+#include "sleep_cpu_retention.h"
+
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+#include "esp_private/system_internal.h"
+#include "hal/uart_hal.h"
+#endif
+
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+static SPM_DRAM_ATTR _Atomic(smp_retention_state_t) s_smp_retention_state[portNUM_PROCESSORS];
+#endif
+
+static bool s_fpu_saved[portNUM_PROCESSORS];
+
+ESP_LOG_ATTR_TAG(TAG, "sleep");
+
+static SPM_DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
+
+extern RvCoreCriticalSleepFrame *rv_core_critical_regs_frame[portNUM_PROCESSORS];
+
+FORCE_INLINE_ATTR void save_csr_disable_global_int(uint32_t *mstatus_val, uint32_t *mintthresh_val)
+{
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+    *mintthresh_val = rv_utils_set_intlevel_regval(0xff);
+#else
+    (void) mintthresh_val;
+#endif
+    *mstatus_val = RV_READ_MSTATUS_AND_DISABLE_INTR();
+}
+
+FORCE_INLINE_ATTR void restore_csr_enable_global_int(uint32_t mstatus_val, uint32_t mintthresh_val)
+{
+    RV_WRITE_CSR(mstatus, mstatus_val);
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+    rv_utils_restore_intlevel_regval(mintthresh_val);
+#else
+    (void) mintthresh_val;
+#endif
+}
+
+static SPM_IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(void)
+{
+    RvCoreNonCriticalSleepFrame *frame = s_cpu_retention.retent.non_critical_frame[esp_cpu_get_core_id()];
+
+    frame->mscratch  = RV_READ_CSR(mscratch);
+    frame->misa      = RV_READ_CSR(misa);
+    frame->mhcr      = RV_READ_CSR(MHCR);
+    frame->tselect   = RV_READ_CSR(tselect);
+    frame->tdata1    = RV_READ_CSR(tdata1);
+    frame->tdata2    = RV_READ_CSR(tdata2);
+    frame->tcontrol  = RV_READ_CSR(tcontrol);
+
+    frame->pmpaddr0  = RV_READ_CSR(pmpaddr0);
+    frame->pmpaddr1  = RV_READ_CSR(pmpaddr1);
+    frame->pmpaddr2  = RV_READ_CSR(pmpaddr2);
+    frame->pmpaddr3  = RV_READ_CSR(pmpaddr3);
+    frame->pmpaddr4  = RV_READ_CSR(pmpaddr4);
+    frame->pmpaddr5  = RV_READ_CSR(pmpaddr5);
+    frame->pmpaddr6  = RV_READ_CSR(pmpaddr6);
+    frame->pmpaddr7  = RV_READ_CSR(pmpaddr7);
+    frame->pmpaddr8  = RV_READ_CSR(pmpaddr8);
+    frame->pmpaddr9  = RV_READ_CSR(pmpaddr9);
+    frame->pmpaddr10 = RV_READ_CSR(pmpaddr10);
+    frame->pmpaddr11 = RV_READ_CSR(pmpaddr11);
+    frame->pmpaddr12 = RV_READ_CSR(pmpaddr12);
+    frame->pmpaddr13 = RV_READ_CSR(pmpaddr13);
+    frame->pmpaddr14 = RV_READ_CSR(pmpaddr14);
+    frame->pmpaddr15 = RV_READ_CSR(pmpaddr15);
+    frame->pmpcfg0   = RV_READ_CSR(pmpcfg0);
+    frame->pmpcfg1   = RV_READ_CSR(pmpcfg1);
+    frame->pmpcfg2   = RV_READ_CSR(pmpcfg2);
+    frame->pmpcfg3   = RV_READ_CSR(pmpcfg3);
+
+    frame->pmaaddr0  = RV_READ_CSR(CSR_PMAADDR(0));
+    frame->pmaaddr1  = RV_READ_CSR(CSR_PMAADDR(1));
+    frame->pmaaddr2  = RV_READ_CSR(CSR_PMAADDR(2));
+    frame->pmaaddr3  = RV_READ_CSR(CSR_PMAADDR(3));
+    frame->pmaaddr4  = RV_READ_CSR(CSR_PMAADDR(4));
+    frame->pmaaddr5  = RV_READ_CSR(CSR_PMAADDR(5));
+    frame->pmaaddr6  = RV_READ_CSR(CSR_PMAADDR(6));
+    frame->pmaaddr7  = RV_READ_CSR(CSR_PMAADDR(7));
+    frame->pmaaddr8  = RV_READ_CSR(CSR_PMAADDR(8));
+    frame->pmaaddr9  = RV_READ_CSR(CSR_PMAADDR(9));
+    frame->pmaaddr10 = RV_READ_CSR(CSR_PMAADDR(10));
+    frame->pmaaddr11 = RV_READ_CSR(CSR_PMAADDR(11));
+    frame->pmaaddr12 = RV_READ_CSR(CSR_PMAADDR(12));
+    frame->pmaaddr13 = RV_READ_CSR(CSR_PMAADDR(13));
+    frame->pmaaddr14 = RV_READ_CSR(CSR_PMAADDR(14));
+    frame->pmaaddr15 = RV_READ_CSR(CSR_PMAADDR(15));
+    frame->pmacfg0   = RV_READ_CSR(CSR_PMACFG(0));
+    frame->pmacfg1   = RV_READ_CSR(CSR_PMACFG(1));
+    frame->pmacfg2   = RV_READ_CSR(CSR_PMACFG(2));
+    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(3));
+    frame->pmacfg4   = RV_READ_CSR(CSR_PMACFG(4));
+    frame->pmacfg5   = RV_READ_CSR(CSR_PMACFG(5));
+    frame->pmacfg6   = RV_READ_CSR(CSR_PMACFG(6));
+    frame->pmacfg7   = RV_READ_CSR(CSR_PMACFG(7));
+    frame->pmacfg8   = RV_READ_CSR(CSR_PMACFG(8));
+    frame->pmacfg9   = RV_READ_CSR(CSR_PMACFG(9));
+    frame->pmacfg10   = RV_READ_CSR(CSR_PMACFG(10));
+    frame->pmacfg11   = RV_READ_CSR(CSR_PMACFG(11));
+    frame->pmacfg12   = RV_READ_CSR(CSR_PMACFG(12));
+    frame->pmacfg13   = RV_READ_CSR(CSR_PMACFG(13));
+    frame->pmacfg14   = RV_READ_CSR(CSR_PMACFG(14));
+    frame->pmacfg15   = RV_READ_CSR(CSR_PMACFG(15));
+    frame->mcycle    = RV_READ_CSR(mcycle);
+    return frame;
+}
+
+static SPM_IRAM_ATTR void rv_core_noncritical_regs_restore(void)
+{
+    RvCoreNonCriticalSleepFrame *frame = s_cpu_retention.retent.non_critical_frame[esp_cpu_get_core_id()];
+
+    RV_WRITE_CSR(mscratch, frame->mscratch);
+    RV_WRITE_CSR(misa,     frame->misa);
+    RV_WRITE_CSR(MHCR,     frame->mhcr);
+    RV_WRITE_CSR(tselect,  frame->tselect);
+    RV_WRITE_CSR(tdata1,   frame->tdata1);
+    RV_WRITE_CSR(tdata2,   frame->tdata2);
+    RV_WRITE_CSR(tcontrol, frame->tcontrol);
+    RV_WRITE_CSR(pmpaddr0, frame->pmpaddr0);
+    RV_WRITE_CSR(pmpaddr1, frame->pmpaddr1);
+    RV_WRITE_CSR(pmpaddr2, frame->pmpaddr2);
+    RV_WRITE_CSR(pmpaddr3, frame->pmpaddr3);
+    RV_WRITE_CSR(pmpaddr4, frame->pmpaddr4);
+    RV_WRITE_CSR(pmpaddr5, frame->pmpaddr5);
+    RV_WRITE_CSR(pmpaddr6, frame->pmpaddr6);
+    RV_WRITE_CSR(pmpaddr7, frame->pmpaddr7);
+    RV_WRITE_CSR(pmpaddr8, frame->pmpaddr8);
+    RV_WRITE_CSR(pmpaddr9, frame->pmpaddr9);
+    RV_WRITE_CSR(pmpaddr10,frame->pmpaddr10);
+    RV_WRITE_CSR(pmpaddr11,frame->pmpaddr11);
+    RV_WRITE_CSR(pmpaddr12,frame->pmpaddr12);
+    RV_WRITE_CSR(pmpaddr13,frame->pmpaddr13);
+    RV_WRITE_CSR(pmpaddr14,frame->pmpaddr14);
+    RV_WRITE_CSR(pmpaddr15,frame->pmpaddr15);
+    RV_WRITE_CSR(pmpcfg0,  frame->pmpcfg0);
+    RV_WRITE_CSR(pmpcfg1,  frame->pmpcfg1);
+    RV_WRITE_CSR(pmpcfg2,  frame->pmpcfg2);
+    RV_WRITE_CSR(pmpcfg3,  frame->pmpcfg3);
+
+    RV_WRITE_CSR(CSR_PMAADDR(0), frame->pmaaddr0);
+    RV_WRITE_CSR(CSR_PMAADDR(1), frame->pmaaddr1);
+    RV_WRITE_CSR(CSR_PMAADDR(2), frame->pmaaddr2);
+    RV_WRITE_CSR(CSR_PMAADDR(3), frame->pmaaddr3);
+    RV_WRITE_CSR(CSR_PMAADDR(4), frame->pmaaddr4);
+    RV_WRITE_CSR(CSR_PMAADDR(5), frame->pmaaddr5);
+    RV_WRITE_CSR(CSR_PMAADDR(6), frame->pmaaddr6);
+    RV_WRITE_CSR(CSR_PMAADDR(7), frame->pmaaddr7);
+    RV_WRITE_CSR(CSR_PMAADDR(8), frame->pmaaddr8);
+    RV_WRITE_CSR(CSR_PMAADDR(9), frame->pmaaddr9);
+    RV_WRITE_CSR(CSR_PMAADDR(10),frame->pmaaddr10);
+    RV_WRITE_CSR(CSR_PMAADDR(11),frame->pmaaddr11);
+    RV_WRITE_CSR(CSR_PMAADDR(12),frame->pmaaddr12);
+    RV_WRITE_CSR(CSR_PMAADDR(13),frame->pmaaddr13);
+    RV_WRITE_CSR(CSR_PMAADDR(14),frame->pmaaddr14);
+    RV_WRITE_CSR(CSR_PMAADDR(15),frame->pmaaddr15);
+    RV_WRITE_CSR(CSR_PMACFG(0),  frame->pmacfg0);
+    RV_WRITE_CSR(CSR_PMACFG(1),  frame->pmacfg1);
+    RV_WRITE_CSR(CSR_PMACFG(2),  frame->pmacfg2);
+    RV_WRITE_CSR(CSR_PMACFG(3),  frame->pmacfg3);
+    RV_WRITE_CSR(CSR_PMACFG(4),  frame->pmacfg4);
+    RV_WRITE_CSR(CSR_PMACFG(5),  frame->pmacfg5);
+    RV_WRITE_CSR(CSR_PMACFG(6),  frame->pmacfg6);
+    RV_WRITE_CSR(CSR_PMACFG(7),  frame->pmacfg7);
+    RV_WRITE_CSR(CSR_PMACFG(8),  frame->pmacfg8);
+    RV_WRITE_CSR(CSR_PMACFG(9),  frame->pmacfg9);
+    RV_WRITE_CSR(CSR_PMACFG(10),  frame->pmacfg10);
+    RV_WRITE_CSR(CSR_PMACFG(11),  frame->pmacfg11);
+    RV_WRITE_CSR(CSR_PMACFG(12),  frame->pmacfg12);
+    RV_WRITE_CSR(CSR_PMACFG(13),  frame->pmacfg13);
+    RV_WRITE_CSR(CSR_PMACFG(14),  frame->pmacfg14);
+    RV_WRITE_CSR(CSR_PMACFG(15),  frame->pmacfg15);
+    RV_WRITE_CSR(mcycle, frame->mcycle);
+}
+
+static SPM_IRAM_ATTR void cpu_domain_dev_regs_save(cpu_domain_dev_sleep_frame_t *frame)
+{
+    assert(frame);
+    cpu_domain_dev_regs_region_t *region = frame->region;
+    uint32_t *regs_frame = frame->regs_frame;
+
+    int offset = 0;
+    for (int i = 0; i < frame->region_num; i++) {
+        for (uint32_t addr = region[i].start; addr < region[i].end; addr+=4) {
+            regs_frame[offset++] = *(uint32_t *)addr;
+        }
+    }
+}
+
+static SPM_IRAM_ATTR void cpu_domain_dev_regs_restore(cpu_domain_dev_sleep_frame_t *frame)
+{
+    assert(frame);
+    cpu_domain_dev_regs_region_t *region = frame->region;
+    uint32_t *regs_frame = frame->regs_frame;
+
+    int offset = 0;
+    for (int i = 0; i < frame->region_num; i++) {
+        for (uint32_t addr = region[i].start; addr < region[i].end; addr+=4) {
+            *(uint32_t *)addr = regs_frame[offset++];
+        }
+    }
+}
+
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+static SPM_IRAM_ATTR void update_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
+{
+    *(frame_crc_ptr) = esp_rom_crc32_le(0, (void *)frame_ptr, frame_check_size);
+}
+
+static SPM_IRAM_ATTR void validate_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
+{
+    if(*(frame_crc_ptr) != esp_rom_crc32_le(0, (void *)(frame_ptr), frame_check_size)){
+        // resume uarts
+        for (int i = 0; i < SOC_UART_NUM; ++i) {
+            if (!uart_ll_is_enabled(i)) {
+                continue;
+            }
+            uart_ll_force_xon(i);
+        }
+
+        /* Since it is still in the critical now, use ESP_EARLY_LOG */
+        ESP_EARLY_LOGE(TAG, "Sleep retention frame is corrupted");
+        esp_restart_noos();
+    }
+}
+#endif
+
+extern RvCoreCriticalSleepFrame * rv_core_critical_regs_save(void);
+extern RvCoreCriticalSleepFrame * rv_core_critical_regs_restore(void);
+extern void rv_core_fpu_save(RvCoreCriticalSleepFrame *frame);
+extern void rv_core_fpu_restore(RvCoreCriticalSleepFrame *frame);
+typedef uint32_t (* sleep_cpu_entry_cb_t)(uint32_t, uint32_t, uint32_t, bool);
+
+static SPM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
+        uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
+{
+    uint8_t core_id = esp_cpu_get_core_id();
+    bool reject = false;
+    RvCoreCriticalSleepFrame *frame = s_cpu_retention.retent.critical_frame[core_id];
+    /* mstatus is core privated CSR, do it near the core critical regs restore */
+    uint32_t mstatus = 0;
+    uint32_t mintthresh = 0;
+    save_csr_disable_global_int(&mstatus, &mintthresh);
+    s_fpu_saved[core_id] = xPortFPUContextIsDirty(core_id);
+    if (s_fpu_saved[core_id]) {
+        rv_core_fpu_save(frame);
+    }
+    rv_core_critical_regs_save();
+    if ((frame->pmufunc & 0x3) == 0x1) {
+        esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_END, (void *)0);
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+        /* Minus 2 * sizeof(long) is for bypass `pmufunc` and `frame_crc` field */
+        update_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_SZ1 - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
+#endif
+        REG_WRITE(RTC_SLEEP_WAKE_STUB_ADDR_REG, (uint32_t)rv_core_critical_regs_restore);
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+        atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_DONE);
+        while (atomic_load(&s_smp_retention_state[!core_id]) != SMP_BACKUP_DONE) {
+            ;
+        }
+#endif
+
+        reject = (*goto_sleep)(wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
+    }
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+    else {
+        validate_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_SZ1 - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
+    }
+#endif
+    if (s_fpu_saved[core_id]) {
+        rv_core_fpu_restore(frame);
+    }
+    restore_csr_enable_global_int(mstatus, mintthresh);
+    return reject ? reject : pmu_sleep_finish(dslp);
+}
+
+esp_err_t SPM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uint32_t, bool),
+        uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
+{
+    esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_START, (void *)0);
+    uint8_t core_id = esp_cpu_get_core_id();
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+    atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
+#endif
+    cpu_domain_dev_regs_save(s_cpu_retention.retent.clic_frame[core_id]);
+    rv_core_noncritical_regs_save();
+
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+    RvCoreNonCriticalSleepFrame *frame = s_cpu_retention.retent.non_critical_frame[core_id];
+    /* Minus sizeof(long) is for bypass `frame_crc` field */
+    update_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
+#endif
+
+    esp_err_t err = do_cpu_retention(goto_sleep, wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
+
+    if (err == ESP_OK) {
+#if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
+        validate_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
+#endif
+    }
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+    // Start core1
+    if (core_id == 0) {
+        REG_SET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
+    }
+
+    atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
+#endif
+    if (err == ESP_OK) {
+        cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
+        rv_core_noncritical_regs_restore();
+    }
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+    atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
+#endif
+    return err;
+}
+
+esp_err_t esp_sleep_cpu_retention_init(void)
+{
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
+    return esp_sleep_cpu_retention_init_impl(& s_cpu_retention, s_smp_retention_state);
+#else
+    return esp_sleep_cpu_retention_init_impl(& s_cpu_retention);
+#endif
+}
+
+esp_err_t esp_sleep_cpu_retention_deinit(void)
+{
+    return esp_sleep_cpu_retention_deinit_impl(& s_cpu_retention);
+}
+
+bool cpu_domain_pd_allowed(void)
+{
+    bool allowed = true;
+    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
+        allowed &= (s_cpu_retention.retent.critical_frame[core_id] != NULL);
+        allowed &= (s_cpu_retention.retent.non_critical_frame[core_id] != NULL);
+    }
+    for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
+        allowed &= (s_cpu_retention.retent.clic_frame[core_id] != NULL);
+    }
+    return allowed;
+}
+
+esp_err_t sleep_cpu_configure(bool light_sleep_enable)
+{
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+    if (light_sleep_enable) {
+        ESP_RETURN_ON_ERROR(esp_sleep_cpu_retention_init(), TAG, "Failed to enable CPU power down during light sleep.");
+    } else {
+        ESP_RETURN_ON_ERROR(esp_sleep_cpu_retention_deinit(), TAG, "Failed to release CPU retention memory");
+    }
+#endif
+    return ESP_OK;
+}
+
+#if !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+SPM_IRAM_ATTR void sleep_cpu_retention_execute(void* arg)
+{
+    (void) arg;
+    esp_cpu_branch_prediction_disable();
+    uint8_t core_id = esp_cpu_get_core_id();
+
+    // Wait another core start to do retention
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
+    bool smp_skip_retention = false;
+    smp_retention_state_t another_core_state;
+    while (1) {
+        another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
+        if (another_core_state == SMP_SKIP_RETENTION) {
+            // If another core skips the retention, the current core should also have to skip it.
+            smp_skip_retention = true;
+            break;
+        } else if (another_core_state == SMP_BACKUP_START) {
+            break;
+        }
+    }
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
+
+    if (!smp_skip_retention) {
+        uint32_t mstatus = 0;
+        uint32_t mintthresh = 0;
+        atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
+        rv_core_noncritical_regs_save();
+        cpu_domain_dev_regs_save(s_cpu_retention.retent.clic_frame[core_id]);
+        RvCoreCriticalSleepFrame *frame_critical = s_cpu_retention.retent.critical_frame[core_id];
+        save_csr_disable_global_int(&mstatus, &mintthresh);
+        s_fpu_saved[core_id] = xPortFPUContextIsDirty(core_id);
+        if (s_fpu_saved[core_id]) {
+            rv_core_fpu_save(frame_critical);
+        }
+        rv_core_critical_regs_save();
+        if ((frame_critical->pmufunc & 0x3) == 0x1) {
+            atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_DONE);
+            // wait another core trigger sleep and wakeup
+            while (1) {
+                // If another core's sleep request is rejected by the hardware, jumps out of blocking.
+                another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
+                if (another_core_state == SMP_SKIP_RETENTION) {
+                    break;
+                }
+            }
+        } else {
+            // Start core1
+            if (core_id == 0) {
+                REG_SET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
+                REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
+            }
+            atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
+            if (s_fpu_saved[core_id]) {
+                rv_core_fpu_restore(frame_critical);
+            }
+            restore_csr_enable_global_int(mstatus, mintthresh);
+            cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
+            rv_core_noncritical_regs_restore();
+            atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
+        }
+    }
+    // wait another core out sleep
+    while (atomic_load(&s_smp_retention_state[!core_id]) != SMP_IDLE) {
+        ;
+    }
+    atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
+    esp_cpu_branch_prediction_enable();
+}
+
+
+SPM_IRAM_ATTR void esp_sleep_cpu_skip_retention(void) {
+    atomic_store(&s_smp_retention_state[esp_cpu_get_core_id()], SMP_SKIP_RETENTION);
+}
+#endif
+
+void sleep_cpu_retention_start(void)
+{
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+    while (atomic_load(&s_smp_retention_state[!esp_cpu_get_core_id()]) != SMP_IDLE) {
+        ;
+    }
+#endif
+}
+
+void sleep_cpu_retention_finish(void)
+{
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+    uint8_t core_id = esp_cpu_get_core_id();
+    if (atomic_load(&s_smp_retention_state[core_id]) == SMP_RESTORE_DONE) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
+        while (atomic_load(&s_smp_retention_state[!core_id]) != SMP_RESTORE_DONE) {
+            ;
+        }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
+    }
+    atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
+#endif
+}
+#endif //!CONFIG_FREERTOS_UNICORE

@@ -1,0 +1,38 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_USB_DEVICE_RHPORT
+        prompt "USB Device Peripheral"
+        default EXAMPLE_USB_DEVICE_RHPORT_HS if IDF_TARGET_ESP32P4
+        default EXAMPLE_USB_DEVICE_RHPORT_FS
+        help
+            Allows set the USB Peripheral Controller for USB device.
+
+            - High-speed (USB OTG2.0 Peripheral for High-, Full- and Low-speed)
+            - Full-speed (USB OTG1.1 Peripheral for Full- and Low-speed)
+
+        config EXAMPLE_USB_DEVICE_RHPORT_HS
+            bool "OTG2.0"
+            depends on IDF_TARGET_ESP32P4
+        config EXAMPLE_USB_DEVICE_RHPORT_FS
+            bool "OTG1.1"
+
+    endchoice
+
+    config EXAMPLE_CHERRYUSB_CDC_ACM_TWO_CHANNEL
+        bool "Enable usb cdc acm two channel"
+        default n
+
+    config EXAMPLE_CHERRYUSB_INIT_DEINIT_LOOP
+        bool "Perform init deinit of cherryusb stack in a loop"
+        default n
+
+    config EXAMPLE_CHERRYUSB_SET_READ_BUFFER_SIZE_MPS
+        bool "set usb read buffer size to MPS"
+        default y
+        help
+            If this option is disabled, a larger receive buffer will be configured for DMA at a time,
+            which may improve efficiency a little. However, when the host sends data with a length that
+            is an integer multiple of MPS, the host may not send ZLP, resulting in failure to report
+            the receipt of data in a timely manner.
+
+endmenu

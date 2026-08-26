@@ -1,0 +1,5 @@
+menu "Configdep Test"
+    config TEST_CONFIGDEP_OPTION
+        bool "Test configdep option"
+        default y
+endmenu

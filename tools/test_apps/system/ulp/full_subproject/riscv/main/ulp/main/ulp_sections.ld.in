@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+
+/*
+ * Supplementary ULP RISC-V linker script template processed by ldgen.
+ * ldgen replaces mapping[ulp_riscv_extra_data] with entries from the
+ * component linker fragment file.
+ */
+SECTIONS
+{
+    .ulp_riscv_extra_data ALIGN(4) :
+    {
+        mapping[ulp_riscv_extra_data]
+        *(.ulp_riscv_extra_data .ulp_riscv_extra_data.*)
+    } > ram
+}

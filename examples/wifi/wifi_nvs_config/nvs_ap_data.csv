@@ -1,0 +1,8 @@
+key,type,encoding,value
+nvs.net80211,namespace,,
+opmode,data,u8,2
+ap.ssid,data,blob_sz_fill(32;0x00),myssid
+ap.passwd,data,blob_fill(64;0x00),mypassword
+ap.authmode,data,u8,3
+ap.max.conn,data,u8,3
+ap.pmf_r,data,u8,0

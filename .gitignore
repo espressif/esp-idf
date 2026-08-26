@@ -1,0 +1,110 @@
+.config
+*.o
+*.pyc
+
+# gtags
+GTAGS
+GRTAGS
+GPATH
+
+# emacs
+.dir-locals.el
+
+# emacs temp file suffixes
+*~
+.#*
+\#*#
+
+# eclipse setting
+.settings
+
+# MacOS directory files
+.DS_Store
+
+# cache dir
+.cache/
+
+# Doc build artifacts
+docs/_build/
+docs/doxygen_sqlite3.db
+
+# Downloaded font files
+docs/_static/DejaVuSans.ttf
+docs/_static/NotoSansSC-Regular.otf
+
+# Components Unit Test Apps files
+components/**/build/
+components/**/build_*_*/
+components/**/sdkconfig
+components/**/sdkconfig.old
+components/**/test_apps/wifi_nvs_config/nvs_data_suffix.csv
+
+# Example project files
+examples/**/build/
+examples/**/build_*_*/
+examples/**/sdkconfig
+examples/**/sdkconfig.old
+
+# Unit test app files
+tools/unit-test-app/build
+tools/unit-test-app/build_*_*/
+tools/unit-test-app/sdkconfig
+tools/unit-test-app/sdkconfig.old
+
+# test application build files
+tools/test_apps/**/build/
+tools/test_apps/**/build_*_*/
+tools/test_apps/**/sdkconfig
+tools/test_apps/**/sdkconfig.old
+
+TEST_LOGS/
+build_summary_*.xml
+
+# gcov coverage reports
+*.gcda
+*.gcno
+coverage.info
+coverage_report/
+
+# VS Code Settings
+.vscode/
+
+# VIM files
+*.swp
+*.swo
+
+# Sublime Text files
+*.sublime-project
+*.sublime-workspace
+
+# Clion IDE CMake build & config
+.idea/
+cmake-build-*/
+
+# Results for the checking of the Python coding style and static analysis
+.mypy_cache
+flake8_output.txt
+
+# ESP-IDF default build directory name
+build
+
+# lock files for examples and components
+dependencies.lock
+
+# managed_components for examples
+managed_components
+
+# pytest log
+pytest-embedded/
+# legacy one
+pytest_embedded_log/
+app_info_*.txt
+size_info*.txt
+XUNIT_RESULT*.xml
+.manifest_sha
+
+# clang config (for LSP)
+.clangd
+
+# Vale
+.vale/styles/*

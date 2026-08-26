@@ -1,0 +1,93 @@
+menu "AliGenie Example Configuration"
+
+    menu "AliGenie Triples Configuration"
+
+        config TRIPLES_PRODUCT_ID
+            int "Product ID"
+            default 0
+
+        config TRIPLES_DEVICE_NAME
+            string "Device Name"
+            default "Device Name"
+            help
+                Please use lower case
+
+        config TRIPLES_DEVICE_SECRET
+            string "Device Secret"
+            default "Device Secret"
+            help
+                Please use lower case
+
+    endmenu
+
+    menu "light driver config"
+        config LIGHT_GPIO_RED
+            int "Light red pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 33
+            default 25
+            help
+                There are more enumerations like that
+                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+                They are not shown here to reduce redundant information.
+                @note GPIO34..39 are input mode only.
+
+        config LIGHT_GPIO_GREEN
+            int "Light green pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 33
+            default 26
+            help
+                There are more enumerations like that
+                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+                They are not shown here to reduce redundant information.
+                @note GPIO34..39 are input mode only.
+
+        config LIGHT_GPIO_BLUE
+            int "Light blue pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 33
+            default 27
+            help
+                There are more enumerations like that
+                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+                They are not shown here to reduce redundant information.
+                @note GPIO34..39 are input mode only.
+
+        config LIGHT_GPIO_COLD
+            int "Light cold colors pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 33
+            default -1
+            help
+                There are more enumerations like that
+                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+                They are not shown here to reduce redundant information.
+                @note GPIO34..39 are input mode only.
+
+        config LIGHT_GPIO_WARM
+            int "Light warm color pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 33
+            default -1
+            help
+                There are more enumerations like that
+                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+                They are not shown here to reduce redundant information.
+                @note GPIO34..39 are input mode only.
+
+        config LIGHT_FADE_PERIOD_MS
+            int "The time from the current color to the next color"
+            default 500
+            help
+                The time from the current color to the next color.
+
+        config LIGHT_BLINK_PERIOD_MS
+            int "Period of blinking lights"
+            default 2000
+            help
+                Period of blinking lights.
+
+    endmenu
+
+endmenu

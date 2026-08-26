@@ -1,0 +1,3 @@
+components/hal/test_apps/hal_utils:
+  enable:
+    - if: IDF_TARGET == "linux"

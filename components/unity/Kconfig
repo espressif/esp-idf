@@ -1,0 +1,61 @@
+menu "Unity unit testing library"
+
+    config UNITY_ENABLE_FLOAT
+        bool "Support for float type"
+        default y
+        help
+            If not set, assertions on float arguments will not be available.
+
+
+    config UNITY_ENABLE_DOUBLE
+        bool "Support for double type"
+        default y
+        help
+            If not set, assertions on double arguments will not be available.
+
+    config UNITY_ENABLE_64BIT
+        bool "Support for 64-bit integer types"
+        default n
+        help
+            If not set, assertions on 64-bit integer types will always fail.
+            If this feature is enabled, take care not to pass pointers (which are 32 bit)
+            to UNITY_ASSERT_EQUAL, as that will cause pointer-to-int-cast warnings.
+
+    config UNITY_ENABLE_COLOR
+        bool "Colorize test output"
+        default n
+        help
+            If set, Unity will colorize test results using console escape sequences.
+
+
+    config UNITY_ENABLE_IDF_TEST_RUNNER
+        bool "Include ESP-IDF test registration/running helpers"
+        default y
+        help
+            If set, then the following features will be available:
+
+            - TEST_CASE macro which performs automatic registration of test functions
+            - Functions to run registered test functions: unity_run_all_tests,
+              unity_run_tests_with_filter, unity_run_single_test_by_name.
+            - Interactive menu which lists test cases and allows choosing the tests to
+              be run, available via unity_run_menu function.
+
+            Disable if a different test registration mechanism is used.
+
+    config UNITY_ENABLE_FIXTURE
+        bool "Include Unity test fixture"
+        default n
+        help
+            If set, unity_fixture.h header file and associated source files are part of
+            the build. These provide an optional set of macros and functions to
+            implement test groups.
+
+    config UNITY_ENABLE_BACKTRACE_ON_FAIL
+        bool "Print a backtrace when a unit test fails"
+        default n
+        help
+            If set, the unity framework will print the backtrace information before
+            jumping back to the test menu. The jumping is usually occurs in assert
+            functions such as TEST_ASSERT, TEST_FAIL etc.
+
+endmenu # "Unity unit testing library"

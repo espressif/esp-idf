@@ -1,0 +1,106 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_USE_IO_TYPE
+        prompt "I/O Capability"
+        default BLE_SM_IO_CAP_NO_IO
+        help
+            I/O capability of device.
+
+        config BLE_SM_IO_CAP_DISP_ONLY
+            bool "DISPLAY ONLY"
+        config BLE_SM_IO_CAP_DISP_YES_NO
+            bool "DISPLAY YESNO"
+        config BLE_SM_IO_CAP_KEYBOARD_ONLY
+            bool "KEYBOARD ONLY"
+        config BLE_SM_IO_CAP_NO_IO
+            bool "Just works"
+        config BLE_SM_IO_CAP_KEYBOARD_DISP
+            bool "Both KEYBOARD & DISPLAY"
+    endchoice
+
+    config EXAMPLE_IO_TYPE
+        int
+        default 0 if BLE_SM_IO_CAP_DISP_ONLY
+        default 1 if BLE_SM_IO_CAP_DISP_YES_NO
+        default 2 if BLE_SM_IO_CAP_KEYBOARD_ONLY
+        default 3 if BLE_SM_IO_CAP_NO_IO
+        default 4 if BLE_SM_IO_CAP_KEYBOARD_DISP
+
+    config EXAMPLE_BONDING
+        bool
+        default n
+        prompt "Use Bonding"
+        help
+            Use this option to enable/disable bonding.
+
+    config EXAMPLE_MITM
+        bool
+        default n
+        prompt "MITM security"
+        help
+            Use this option to enable/disable MITM security.
+
+    config EXAMPLE_USE_SC
+        bool
+        depends on BT_NIMBLE_SM_SC
+        default n
+        prompt "Use Secure Connection feature"
+        help
+            Use this option to enable/disable Security Manager Secure Connection 4.2 feature.
+
+    config EXAMPLE_EXTENDED_ADV
+        bool
+        depends on SOC_BLE_50_SUPPORTED && BT_NIMBLE_50_FEATURE_SUPPORT
+        default y if SOC_ESP_NIMBLE_CONTROLLER
+        select BT_NIMBLE_EXT_ADV
+        prompt "Enable Extended Adv"
+        help
+            Use this option to enable extended advertising in the example.
+            If this option is disabled, ensure config BT_NIMBLE_EXT_ADV is
+            also disabled from Nimble stack menuconfig
+
+    config EXAMPLE_RANDOM_ADDR
+        bool
+        prompt "Advertise RANDOM Address"
+        help
+            Use this option to advertise a random address instead of public address
+
+    config EXAMPLE_ENCRYPTION
+        bool
+        prompt "Enable Link Encryption"
+        help
+            This adds Encrypted Read and Write permissions in the custom GATT server.
+
+    config EXAMPLE_RESOLVE_PEER_ADDR
+        bool
+        prompt "Enable resolving peer address"
+        help
+            Use this option to enable resolving peer's address.
+
+    config EXAMPLE_USE_CI_ADDRESS
+        bool
+        default n
+        prompt "Advertise using Test address(Internal Test ONLY)"
+        help
+            Used for internal test ONLY.
+            Use this option to advertise in a specific random address.
+
+    config EXAMPLE_CI_ADDRESS_OFFSET
+        string
+        prompt "Advertise using Test address(Internal Test ONLY)"
+        depends on EXAMPLE_USE_CI_ADDRESS
+        help
+            Used for internal test ONLY.
+            Use this option to advertise in a specific random address.
+
+    config EXAMPLE_SLEEP_WAKEUP
+        bool "Enable Vendor-Specific Sleep Wake-Up Event"
+        depends on BT_NIMBLE_VS_SUPPORT
+        default n
+        help
+            When enabled, the Nimble Host allows setting a Vendor-Specific
+            Event Mask for processing sleep wake-up events from the controller.
+            The controller sends a wake-up event (HCI_LE_SLEEP_WAKE_UP 0xFF 0xC3)
+            when it resumes from sleep.
+
+endmenu

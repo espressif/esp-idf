@@ -1,0 +1,27 @@
+set pagination off
+set confirm off
+
+# Start OpenOCD and run to the entry function
+file test.elf
+target remote | openocd -c "log_output openocd.log; set ESP_RTOS none; set ESP_FLASH_SIZE 0; set ESP_ONLYCPU 1" -f board/esp32-ethernet-kit-3.3v.cfg -c "gdb_port pipe; init; reset halt"
+thb entry
+c
+
+# Clear trace memory
+mon mww 0x3fff8000 0 0x4000
+mon mww 0x3fffc000 0 0x4000
+
+# Enable trace memory
+# DPORT_TRACEMEM_MUX_MODE_REG = TRACEMEM_MUX_BLK0_ONLY
+mon mww 0x3ff00070 1
+# DPORT_PRO_TRACEMEM_ENA_REG = 1
+mon mww 0x3ff00074 1
+
+# Start trace
+eval "mon esp32 tracestart pc %p/4", &done
+c
+
+# Dump and process the trace
+mon esp32 tracedump trace_pro.bin
+source ../traceparse.py
+python parse_and_dump("trace_pro.bin")

@@ -1,0 +1,261 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/system/base_mac_address:
+  depends_components:
+    - *common_components
+    - esp_hw_support
+
+examples/system/deep_sleep:
+  disable:
+    - if: SOC_DEEP_SLEEP_SUPPORTED != 1
+
+examples/system/deep_sleep_wake_stub:
+  disable:
+    - if: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB != 1
+      temporary: true
+      reason: target(s) is not supported yet
+
+examples/system/efuse:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  disable:
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc_release"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_and_fe"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_secure_boot_v2"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe"
+      reason: Security features are not yet supported for Linux.
+    - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
+      reason: Secure Boot V2 with ECDSA P384 is not supported.
+    - if: IDF_TARGET in ["esp32s31", "esp32h4"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14442 [ESP32H4] IDF-12262
+  depends_components:
+    - *common_components
+    - efuse
+    - bootloader_support
+
+examples/system/esp_event/default_event_loop:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  depends_components:
+    - esp_event
+
+examples/system/esp_event/user_event_loops:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  depends_components:
+    - esp_event
+
+examples/system/esp_timer:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  depends_components:
+    - esp_timer
+
+examples/system/eventfd:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1 and (IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux"))
+      reason: no target specific functionality, testing on a single target is sufficient
+  depends_components:
+    - vfs
+    - esp_driver_gptimer
+
+examples/system/flash_suspend:
+  enable:
+    - if: IDF_TARGET == "esp32c3"
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/system/heap_task_tracking:
+  disable:
+    - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
+      reason: no target specific functionality, testing on a single target is sufficient
+  depends_components:
+    - heap
+
+examples/system/himem:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      reason: Feature is only needed/supported on ESP32
+
+examples/system/ipc/ipc_isr/riscv:
+  enable:
+    - if: IDF_TARGET in ["esp32p4"]
+      reason: The test is intended only for multi-core chips
+  depends_components:
+    - esp_system
+
+examples/system/ipc/ipc_isr/xtensa:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s3"]
+      reason: The test is intended only for multi-core chips
+  depends_components:
+    - esp_system
+
+examples/system/light_sleep:
+  disable:
+    - if: SOC_LIGHT_SLEEP_SUPPORTED != 1
+
+examples/system/nmi_isr:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
+      reason: test NMI for Xtensa targets only
+  depends_components:
+    - esp_system
+    - xtensa
+
+examples/system/ota/advanced_https_ota:
+  disable:
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
+      temporary: true
+      reason: not supported yet # TODO: [ESP32S31,ESP32H4,ESP32H21] IDF-14944
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - app_update
+    - esp_https_ota
+    - esp_http_client
+    # different configs need different components
+    - esp_eth
+    - esp_wifi
+    - esp_phy
+    - bt
+    - protocol_examples_common
+    - openthread
+
+examples/system/ota/native_ota_example:
+  disable:
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"]
+      temporary: true
+      reason: not supported yet # TODO: [ESP32S31,ESP32H4,ESP32H21] IDF-14944
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: Only esp32 has ethernet runners
+  depends_components:
+    - app_update
+    - esp_https_ota
+    - esp_http_client
+    - esp_eth
+    - esp_driver_gpio
+    - bootloader_support
+    - protocol_examples_common
+    - openthread
+
+examples/system/ota/otatool:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32c5", "esp32c61"]
+
+examples/system/ota/partitions_ota:
+  disable:
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # TODO: [ESP32S31] IDF-14944
+      temporary: true
+      reason: not supported yet
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
+      temporary: true
+      reason: disabled for targets that do not support recovery bootloader
+    - if: CONFIG_NAME == "on_update_no_sb_rsa" and SOC_SECURE_BOOT_V2_RSA != 1
+      reason: Secure Boot V2 with RSA signatures is not supported.
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+    - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED == 1
+      temporary: true
+      reason: lack of runners with recovery_bootloader lablel
+  depends_components:
+    - app_update
+    - esp_https_ota
+    - esp_http_client
+    # different configs need different components
+    - esp_eth
+    - esp_wifi
+    - esp_phy
+    - mbedtls
+    - protocol_examples_common
+    - openthread
+
+examples/system/ota/simple_ota_example:
+  disable:
+    - if: IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # TODO: [ESP32S31] IDF-14944
+      temporary: true
+      reason: not supported yet
+    - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_XIP_SUPPORTED != 1
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p256" and SOC_SECURE_BOOT_V2_ECC != 1
+      reason: Secure Boot V2 with ECDSA signatures is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p384" and SOC_ECDSA_SUPPORT_CURVE_P384 != 1
+      reason: Secure Boot V2 with ECDSA P384 signatures is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_ecdsa_esp32" and SOC_SECURE_BOOT_V1 != 1
+      reason: Secure Boot V1 is not supported.
+    - if: CONFIG_NAME == "on_update_no_sb_rsa" and SOC_SECURE_BOOT_V2_RSA != 1
+      reason: Secure Boot V2 with RSA signatures is not supported.
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3", "esp32c5"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - app_update
+    - esp_https_ota
+    - esp_http_client
+    # different configs need different components
+    - esp_eth
+    - esp_wifi
+    - esp_phy
+    - mbedtls
+    - protocol_examples_common
+    - openthread
+
+examples/system/perfmon:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"] and NIGHTLY_RUN == "1"
+      reason: xtensa only feature
+    - if: IDF_TARGET == "esp32"
+      reason: testing on a single target is sufficient
+  depends_components:
+    - perfmon
+    - xtensa
+
+examples/system/pthread:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
+  depends_components:
+    - pthread
+
+examples/system/rt_mqueue:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
+  depends_components:
+    - rt
+
+examples/system/select:
+  disable:
+    - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
+      reason: no target specific functionality, testing on a single target is sufficient
+  depends_components:
+    - *common_components
+    - vfs
+
+examples/system/task_watchdog:
+  disable:
+    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
+      reason: no target specific functionality, testing on a single target is sufficient
+  depends_components:
+    - esp_system
+
+examples/system/unit_test/:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
+  depends_components:
+    - unity
+
+examples/system/xip_from_psram:
+  enable:
+    - if: SOC_SPIRAM_SUPPORTED == 1 and SOC_SPIRAM_XIP_SUPPORTED == 1
+      reason: this feature is supported on chips that have PSRAM
+  disable:
+    - if: IDF_TARGET == "esp32"
+      reason: target esp32 doesn't support this feature.

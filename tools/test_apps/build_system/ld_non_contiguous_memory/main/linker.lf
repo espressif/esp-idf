@@ -1,0 +1,13 @@
+[sections:main_dram]
+entries:
+    buf1
+    buf2
+
+[scheme:main_dram_config]
+entries:
+    main_dram -> dram0_bss
+
+[mapping:main]
+archive: libmain.a
+entries:
+    * (main_dram_config)

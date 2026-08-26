@@ -1,0 +1,11 @@
+[mapping:xtensa]
+archive: libxtensa.a
+entries:
+    * (noflash_text)            # Default all functions to IRAM
+    xt_trax (default)
+    xtensa_intr (default)
+
+[mapping:xt_hal]
+archive: libxt_hal.a
+entries:
+    * (noflash_text)

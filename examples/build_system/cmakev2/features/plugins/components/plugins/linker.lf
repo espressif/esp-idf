@@ -1,0 +1,13 @@
+[sections:plugins_desc]
+entries:
+    .plugins_desc
+
+[scheme:plugins_desc_default]
+entries:
+    plugins_desc -> flash_rodata
+
+[mapping:plugins_desc]
+archive: *
+entries:
+    * (plugins_desc_default);
+        plugins_desc -> flash_rodata KEEP() SORT(name) SURROUND(plugins_array)

@@ -1,0 +1,5 @@
+[mapping:esp_hal_pmu]
+archive: libesp_hal_pmu.a
+entries:
+    if SOC_PMU_SUPPORTED = y:
+        pmu_hal (noflash)

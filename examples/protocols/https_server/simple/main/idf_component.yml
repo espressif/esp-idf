@@ -1,0 +1,7 @@
+dependencies:
+  protocol_examples_common:
+    path: ${IDF_PATH}/examples/common_components/protocol_examples_common
+  esp_stubs:
+    path: ${IDF_PATH}/examples/protocols/linux_stubs/esp_stubs
+    rules:
+    - if: "target in [linux]"

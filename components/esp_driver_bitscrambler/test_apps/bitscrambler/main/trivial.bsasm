@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+# Example bitscrambler program. Does nothing but forward all bytes.
+
+cfg eof_on upstream
+cfg trailing_bytes 8			# Let M0/M1 empty when EOF on input is found
+cfg prefetch true				# We expect M0/M1 to be filled
+
+loop:
+	set 0..31 0..31,
+	write 32,
+	read 32,
+	jmp loop

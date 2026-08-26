@@ -1,0 +1,49 @@
+# Bluetooth Audio - Volume Offset Control Service options
+#
+# SPDX-FileCopyrightText: 2020 Bose Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+##################### Volume Offset Control Service #####################
+
+config BT_VOCS_MAX_INSTANCE_COUNT
+    int "Volume Offset Control Service max instance count"
+    default 0
+    range 0 15
+    help
+        This option sets the maximum number of instances of Volume Offset
+        Control Services.
+
+config BT_VOCS
+    bool # hidden
+    default y if BT_VOCS_MAX_INSTANCE_COUNT > 0
+    help
+        This hidden option enables support for Volume Control Service.
+
+if BT_VOCS
+
+    config BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
+        int "Volume Offset Control Service max output description size"
+        default 32
+        range 0 512
+        help
+            This option sets the maximum output description size in octets.
+
+endif # BT_VOCS
+
+##################### Volume Offset Control Service Client #####################
+
+config BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
+    int "Volume Offset Control Service client max instance count"
+    default 0
+    range 0 15
+    help
+        This option sets the maximum number of instances of Volume Offset
+        Control Service clients.
+
+config BT_VOCS_CLIENT
+    bool # hidden
+    default y if BT_VOCS_CLIENT_MAX_INSTANCE_COUNT > 0
+    help
+        This hidden option enables support for Volume Offset Control Service.

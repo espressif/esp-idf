@@ -1,0 +1,7 @@
+# Enable power management (required for esp_pm component)
+CONFIG_PM_ENABLE=y
+CONFIG_PM_PROFILING=y
+CONFIG_FREERTOS_HZ=1000
+
+# Enable tickless idle so that automatic light sleep can be used when light_sleep_enable is true
+CONFIG_FREERTOS_USE_TICKLESS_IDLE=y

@@ -1,0 +1,1 @@
+source "$IDF_PATH/components/bt/controller/esp32c6/Kconfig.in"

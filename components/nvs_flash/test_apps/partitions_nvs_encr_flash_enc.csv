@@ -1,0 +1,5 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,        data, nvs,         ,  24K,
+factory,    app,  factory,     ,  1M,
+nvs_key,    data, nvs_keys,    ,  4K,   encrypted,
+custom_nvs, data, nvs,         ,  24K,

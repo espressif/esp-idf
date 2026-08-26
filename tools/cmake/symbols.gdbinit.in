@@ -1,0 +1,9 @@
+${rom_symbols}
+
+# Load bootloader symbols
+set confirm off
+  ${add_bootloader_symbols}
+set confirm on
+
+# Load application symbols
+file ${application_elf}

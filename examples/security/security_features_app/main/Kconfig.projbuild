@@ -1,0 +1,18 @@
+menu "Example Configuration"
+
+    config EXAMPLE_JTAG_REENABLE_EFUSE_BLOCK
+        int "JTAG Re-enable efuse key id"
+        default 3
+        range 0 5
+        help
+            The value of the eFuse key id in which the HMAC key is stored for the JTAG re-enablement.
+            The example readily assumes that the respective hmac key is burned in the eFuse at this value
+
+    config EXAMPLE_SECURE_JTAG_TOKEN_PATH
+        string "Secure JTAG token path"
+        default "secure_jtag_token.bin"
+        help
+            The path to the binary file containing the token to re-enable JTAG.
+            This path is relative to the root directory of the example project.
+
+endmenu

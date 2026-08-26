@@ -1,0 +1,7 @@
+        :cmock:
+          :plugins:
+            - expect
+            - expect_any_args
+            - ignore
+            - ignore_arg
+            - return_thru_ptr

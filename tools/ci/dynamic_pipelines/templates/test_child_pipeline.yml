@@ -1,0 +1,77 @@
+all_build_finished:
+  stage: assign_test
+  tags: [fast_run, shiny]
+  image: $ESP_ENV_IMAGE
+  when: always
+  # this job is used to check if all build jobs are finished
+  # because the `needs` make the later jobs run even if the previous stage are not finished
+  # and there's no `needs: stage` for now in gitlab
+  # https://gitlab.com/gitlab-org/gitlab/-/issues/220758
+  artifacts:
+    untracked: true
+    expire_in: 1 week
+    when: always
+  before_script: []
+  dependencies: []
+  script:
+    - echo "all test jobs finished"
+
+generate_presigned_json:
+  stage: assign_test
+  image: $ESP_ENV_IMAGE
+  tags:
+    - build
+    - shiny
+  when: always
+  needs:
+    - all_build_finished
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
+  artifacts:
+    paths:
+      - presigned.json
+    expire_in: 1 week
+    when: always
+  script:
+    - idf-ci gitlab generate-presigned-json --output presigned.json
+
+include:
+  - project: "ci/actions/common"
+    file:
+      - "templates/idf/app-size-metrics-report.yml"
+      - "templates/idf/app-size-metrics-full-report.yml"
+
+generate_pytest_child_pipeline:
+  # finally, we can get some use out of the default behavior that downloads all artifacts from the previous stage
+  stage: assign_test
+  image: $ESP_ENV_IMAGE
+  tags:
+    - build
+    - shiny
+  needs:
+    - job: build_test_related_apps
+      optional: true
+    - job: build_non_test_related_apps  # make sure all build jobs are passed
+      optional: true
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
+  artifacts:
+    paths:
+      - target_test_child_pipeline.yml
+  script:
+    - python tools/ci/dynamic_pipelines/scripts/generate_target_test_child_pipeline.py
+
+Pytest Target Test Jobs:
+  stage: target_test
+  needs:
+    - generate_pytest_child_pipeline
+  variables:
+    PARENT_PIPELINE_ID: $PARENT_PIPELINE_ID
+  # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
+  inherit:
+    variables: false
+  trigger:
+    include:
+      - artifact: target_test_child_pipeline.yml
+        job: generate_pytest_child_pipeline
+    strategy: depend

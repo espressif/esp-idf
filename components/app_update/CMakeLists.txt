@@ -1,0 +1,86 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
+idf_component_register(SRCS "esp_ota_ops.c"
+                    INCLUDE_DIRS "include"
+                    REQUIRES partition_table bootloader_support
+                             esp_app_format esp_bootloader_format esp_partition
+                    PRIV_REQUIRES esptool_py efuse spi_flash esp_image_verify)
+
+# mbedtls is an *optional* requirement: it is linked only when another component in
+# the build pulls it in. esp_image_verify (a priv_require above) always brings
+# mbedtls into app builds; this directive makes it available to esp_ota_ops at
+# link time without app_update forcing mbedtls in by itself.
+idf_component_optional_requires(PRIVATE mbedtls)
+
+idf_define_esp_err_codes(HEADERS include/esp_ota_ops.h)
+
+if(NOT BOOTLOADER_BUILD)
+    partition_table_get_partition_info(otadata_offset "--partition-type data --partition-subtype ota" "offset")
+    partition_table_get_partition_info(otadata_size "--partition-type data --partition-subtype ota" "size")
+
+    # Add custom target for generating empty otadata partition for flashing
+    if(otadata_size AND otadata_offset)
+        idf_build_get_property(build_dir BUILD_DIR)
+        set(blank_otadata_file ${build_dir}/ota_data_initial.bin)
+
+        idf_build_get_property(idf_path IDF_PATH)
+        idf_build_get_property(python PYTHON)
+
+        idf_component_get_property(partition_table_dir partition_table COMPONENT_DIR)
+
+        add_custom_command(OUTPUT ${blank_otadata_file}
+            COMMAND ${python} ${partition_table_dir}/gen_empty_partition.py
+            ${otadata_size} ${blank_otadata_file})
+
+        add_custom_target(blank_ota_data ALL DEPENDS ${blank_otadata_file})
+        add_dependencies(flash blank_ota_data)
+        if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+            add_dependencies(encrypted-flash blank_ota_data)
+        endif()
+
+        set(otatool_py "${python}" "${COMPONENT_DIR}/otatool.py")
+
+        set(esptool_args --esptool-args before=${CONFIG_ESPTOOLPY_BEFORE} after=${CONFIG_ESPTOOLPY_AFTER})
+        set(otatool_args --partition-table-file ${PARTITION_CSV_PATH})
+        list(APPEND otatool_args --partition-table-offset ${PARTITION_TABLE_OFFSET})
+
+        idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
+
+        add_custom_target(read-otadata DEPENDS "${PARTITION_CSV_PATH}"
+            COMMAND ${CMAKE_COMMAND}
+            -D "IDF_PATH=${idf_path}"
+            -D "SERIAL_TOOL=${otatool_py}"
+            -D "SERIAL_TOOL_ARGS=${esptool_args};${otatool_args};read_otadata"
+            -D "WORKING_DIRECTORY=${build_dir}"
+            -P ${esptool_py_dir}/run_serial_tool.cmake
+            WORKING_DIRECTORY "${build_dir}"
+            USES_TERMINAL
+            VERBATIM
+            )
+        add_deprecated_target_alias(read_otadata read-otadata)
+
+        add_custom_target(erase-otadata DEPENDS "${PARTITION_CSV_PATH}"
+            COMMAND ${CMAKE_COMMAND}
+            -D "IDF_PATH=${idf_path}"
+            -D "SERIAL_TOOL=${otatool_py}"
+            -D "SERIAL_TOOL_ARGS=${esptool_args};${otatool_args};erase_otadata"
+            -D "WORKING_DIRECTORY=${build_dir}"
+            -P ${esptool_py_dir}/run_serial_tool.cmake
+            WORKING_DIRECTORY "${build_dir}"
+            USES_TERMINAL
+            VERBATIM
+            )
+        add_deprecated_target_alias(erase_otadata erase-otadata)
+
+        idf_component_get_property(main_args esptool_py FLASH_ARGS)
+        idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+        esptool_py_flash_target(otadata-flash "${main_args}" "${sub_args}")
+        esptool_py_flash_target_image(otadata-flash otadata "${otadata_offset}" "${blank_otadata_file}")
+
+        esptool_py_flash_target_image(flash otadata "${otadata_offset}" "${blank_otadata_file}")
+    endif()
+endif()

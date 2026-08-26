@@ -1,0 +1,97 @@
+menu "Format"
+
+    config LOG_COLORS
+        bool "Color"
+        default n
+        select LOG_COLORS_SUPPORT if LOG_VERSION_2
+        help
+            Enable ANSI terminal color codes. Logs (info, errors, warnings) will contain color codes.
+            In order to view these, your terminal program must support ANSI color codes.
+
+            This is disabled by default, as colors are added in IDF Monitor. If you want to use new lines
+            in the messages or you are using a different terminal program, you may want to enable this option.
+
+    config LOG_COLORS_SUPPORT
+        bool "Allow enabling color output at run time"
+        depends on LOG_VERSION_2
+        default n
+        help
+            Enables support for color codes in the esp_log() function. If CONFIG_LOG_COLORS is enabled, this option
+            is always active. If CONFIG_LOG_COLORS is disabled, this option allows you to still handle color codes
+            in specific files by defining ESP_LOG_COLOR_DISABLED as 0 before including esp_log.h.
+
+            Note that enabling this option may slightly increase IRAM usage due to additional color handling
+            functionality. It provides flexibility to manage color output even when CONFIG_LOG_COLORS is turned off.
+
+    choice LOG_TIMESTAMP_SOURCE
+        prompt "Timestamp"
+        default LOG_TIMESTAMP_SOURCE_RTOS
+        help
+            Choose what sort of timestamp is displayed in the log output:
+
+            - "None" - The log will only contain the actual log messages themselves
+              without any time-related information. Avoiding timestamps can help conserve
+              processing power and memory. It might useful when you
+              perform log analysis or debugging, sometimes it's more straightforward
+              to work with logs that lack timestamps, especially if the time of occurrence
+              is not critical for understanding the issues.
+
+            - "Milliseconds since boot" is calculated from the RTOS tick count multiplied
+              by the tick period. This time will reset after a software reboot.
+              e.g. (90000)
+
+            - "System time (HH:MM:SS.sss)" is taken from POSIX time functions which use the chip's
+              RTC and high resolution timers to maintain an accurate time. The system time is
+              initialized to 0 on startup, it can be set with an SNTP sync, or with
+              POSIX time functions. This time will not reset after a software reboot.
+              e.g. (00:01:30.000)
+
+            - "System time (YY-MM-DD HH:MM:SS.sss)" it is the same as the above,
+              but also prints the date as well.
+
+            - "Unix time in milliseconds" is the same as the two above,
+              but in Unix time format and in milliseconds.
+              e.g. (1718795571035).
+
+            - NOTE: Currently this will not get used in logging from binary blobs
+              (i.e WiFi & Bluetooth libraries), these will always print
+              milliseconds since boot.
+
+        config LOG_TIMESTAMP_SOURCE_NONE
+            bool "None"
+            depends on LOG_VERSION_2
+
+        config LOG_TIMESTAMP_SOURCE_RTOS
+            bool "Milliseconds Since Boot"
+            select LOG_TIMESTAMP_SUPPORT if LOG_VERSION_2
+
+        config LOG_TIMESTAMP_SOURCE_SYSTEM
+            bool "System Time (HH:MM:SS.sss)"
+            select LOG_TIMESTAMP_SUPPORT if LOG_VERSION_2
+
+        config LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
+            bool "System Time (YY-MM-DD HH:MM:SS.sss)"
+            select LOG_TIMESTAMP_SUPPORT if LOG_VERSION_2
+            depends on LOG_VERSION_2
+
+        config LOG_TIMESTAMP_SOURCE_UNIX
+            bool "Unix time in milliseconds"
+            select LOG_TIMESTAMP_SUPPORT if LOG_VERSION_2
+            depends on LOG_VERSION_2
+
+    endchoice # LOG_TIMESTAMP_SOURCE
+
+    config LOG_TIMESTAMP_SUPPORT
+        bool "Allow enabling timestamp output at run time"
+        depends on LOG_VERSION_2
+        default y
+        help
+            Enables support for timestamp in the esp_log() function.
+            If CONFIG_LOG_TIMESTAMP_SOURCE_NONE, this option allows you to still handle timestamp
+            in specific files by defining ESP_LOG_TIMESTAMP_DISABLED as 0 before including esp_log.h.
+
+            Note that enabling this option may slightly increase IRAM usage due to additional timestamp handling
+            functionality. It provides flexibility to manage timestamp output even when
+            CONFIG_LOG_TIMESTAMP_SOURCE_NONE.
+
+endmenu

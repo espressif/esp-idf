@@ -1,0 +1,6 @@
+[mapping:esp_hal_systimer]
+archive: libesp_hal_systimer.a
+entries:
+    if SOC_SYSTIMER_SUPPORTED = y:
+        # All systimer HAL code must be in IRAM for ISR safety and cache-disabled operation
+        * (noflash)

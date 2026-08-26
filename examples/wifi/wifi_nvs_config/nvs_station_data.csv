@@ -1,0 +1,17 @@
+key,type,encoding,value
+nvs.net80211,namespace,,
+opmode,data,u8,1
+sta.ssid,data,blob_sz_fill(32;0x00),myssid
+sta.pswd,data,blob_fill(64;0x00),mypassword
+bssid.set,data,u8,0
+sta.lis_intval,data,u16,3
+sta.scan_method,data,u8,1
+sta.sort_method,data,u8,0
+sta.pmf_r,data,u8,0
+sta.btm_e,data,u8,0
+sta.rrm_e,data,u8,0
+sta.mbo_e,data,u8,0
+sta.ft,data,u8,0
+sta.trans_d,data,u8,0
+sta.sae_h2e,data,u8,0
+sta.sae_pk_mode,data,u8,0

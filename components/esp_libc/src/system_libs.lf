@@ -1,0 +1,22 @@
+[mapping:gcc]
+archive: libgcc.a
+entries:
+    lib2funcs (noflash_text)
+    if IDF_TARGET_ESP32 = n:
+        _divsf3 (noflash)
+    if IDF_TARGET_ARCH_RISCV:
+        save-restore (noflash)
+
+[mapping:clang_rt_builtins]
+archive: libclang_rt.builtins.a
+entries:
+    if IDF_TARGET_ESP32 = n:
+        _divsf3 (noflash)
+    if IDF_TARGET_ARCH_RISCV:
+        save (noflash)
+        restore (noflash)
+
+[mapping:gcov]
+archive: libgcov.a
+entries:
+    * (noflash)

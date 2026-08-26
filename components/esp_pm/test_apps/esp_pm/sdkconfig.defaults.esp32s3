@@ -1,0 +1,4 @@
+# Target specific default configurations
+
+# Enable the ULP FSM to test it as a wake up source
+CONFIG_ULP_COPROC_TYPE_FSM=y

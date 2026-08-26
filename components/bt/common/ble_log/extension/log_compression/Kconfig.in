@@ -1,0 +1,21 @@
+
+config BLE_COMPRESSED_LOG_ENABLE
+    bool "Enable BLE log compression(Preview, Please read help information)"
+    default n
+    help
+        Compress BLE logs during application build to reduce flash usage
+        and improve output speed. When enabled, log data from Bluetooth
+        Low Energy components will be compressed before storage,
+        optimizing both memory footprint and transmission efficiency.
+
+        Note: This library depends on additional Python packages. It will
+        function correctly only after these dependencies are installed;
+        refer to:
+        "components/bt/common/ble_log/log_compression/README.en.md"
+        for installation instructions.
+
+if BLE_COMPRESSED_LOG_ENABLE
+    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/profile/mesh/Kconfig.mesh.in"
+    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/iso/audio/Kconfig.iso.in"
+    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/host/Kconfig.host.in"
+endif

@@ -1,0 +1,120 @@
+menu "HTTP Server"
+
+
+    config HTTPD_MAX_REQ_HDR_LEN
+        int "HTTP Request Header Length limit"
+        default 1024
+        range 128 65536
+        help
+            This sets the default limit for the HTTP request header length. The limit can be
+            configured at run time by setting max_req_hdr_len member of httpd_config_t structure.
+            The memory allocated will depend on the actual header length. Hence keeping a sufficiently
+            large max header length is recommended.
+
+
+    config HTTPD_MAX_URI_LEN
+        int "Max HTTP URI Length"
+        default 512
+        help
+            This sets the maximum supported size of HTTP request URI to be processed by the server
+
+    config HTTPD_ERR_RESP_NO_DELAY
+        bool "Use TCP_NODELAY socket option when sending HTTP error responses"
+        default y
+        help
+            Using TCP_NODEALY socket option ensures that HTTP error response reaches the client before the
+            underlying socket is closed. Please note that turning this off may cause multiple test failures
+
+    config HTTPD_PURGE_BUF_LEN
+        int "Length of temporary buffer for purging data"
+        default 32
+        help
+            This sets the size of the temporary buffer used to receive and discard any remaining data that is
+            received from the HTTP client in the request, but not processed as part of the server HTTP request
+            handler.
+
+            If the remaining data is larger than the available buffer size, the buffer will be filled in multiple
+            iterations. The buffer should be small enough to fit on the stack, but large enough to avoid excessive
+            iterations.
+
+    config HTTPD_LOG_PURGE_DATA
+        bool "Log purged content data at Debug level"
+        default n
+        help
+            Enabling this will log discarded binary HTTP request data at Debug level.
+            For large content data this may not be desirable as it will clutter the log.
+
+    config HTTPD_WS_SUPPORT
+        bool "WebSocket server support"
+        default n
+        help
+            This sets the WebSocket server support.
+
+    config HTTPD_WS_STRICTER_RFC6455
+        bool "Enforce stricter RFC 6455 WebSocket conformance"
+        default n
+        depends on HTTPD_WS_SUPPORT
+        help
+            Enable stricter RFC 6455 enforcement in the WebSocket server. When enabled,
+            the server validates handshake headers (Host, Sec-WebSocket-Version,
+            Sec-WebSocket-Key), rejects frames with reserved RSV bits, reserved or
+            fragmented control opcodes, non-minimal payload length encodings, and
+            frames whose 64-bit length has the MSB set; sends a CLOSE frame on
+            protocol errors; and blocks outbound data frames once a CLOSE has been
+            sent or received.
+
+            This option defaults to off in this release cycle so existing deployments
+            see no behavior change. Enable to opt into stricter enforcement; lenient
+            mode (the default) silently accepts protocol violations that may produce
+            security or interoperability issues, so enable as soon as your clients are
+            verified conformant.
+
+    config HTTPD_QUEUE_WORK_BLOCKING
+        bool "httpd_queue_work as blocking API"
+        help
+            Selects the wait policy for httpd_queue_work() when the UDP control-socket
+            mbox is at capacity. The HTTP server always uses a counting semaphore
+            (sized to LWIP_UDP_RECVMBOX_SIZE) to prevent silent mbox overflow drops
+            that would leak the caller's async-send callback context.
+
+            When disabled (default): httpd_queue_work() returns ESP_FAIL immediately
+            if the mbox is full, so the caller can free its callback context. This
+            preserves the non-blocking semantics of httpd_ws_send_data_async().
+
+            When enabled: httpd_queue_work() blocks until a slot is available. Use
+            this only if your application can tolerate the call blocking and wants
+            guaranteed delivery instead of a fast-fail.
+
+    config HTTPD_ENABLE_EVENTS
+        bool "Enable ESP_HTTP_SERVER_EVENT"
+        default y
+        help
+            This enables the ESP_HTTP_SERVER_EVENT event type. Generating these eventes adds some overhead.
+            If you are not using this event type, you can disable it to save some memory and add performance.
+
+    config HTTPD_SERVER_EVENT_POST_TIMEOUT
+        int "Time in millisecond to wait for posting event"
+        depends on HTTPD_ENABLE_EVENTS
+        default 2000
+        help
+            This config option helps in setting the time in millisecond to wait for event to be posted to the
+            system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
+    config HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT
+        bool "WebSocket pre-handshake callback support"
+        default n
+        depends on HTTPD_WS_SUPPORT
+        help
+            Enable this option to use WebSocket pre-handshake callback. This will allow the server to register
+            a callback function that will be called before the WebSocket handshake is processed i.e. before switching
+            to the WebSocket protocol.
+
+    config HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT
+        bool "WebSocket post-handshake callback support"
+        default n
+        depends on HTTPD_WS_SUPPORT
+        help
+            Enable this option to use WebSocket post-handshake callback. This will allow the server to register
+            a callback function that will be called after the WebSocket handshake is processed i.e. after switching
+            to the WebSocket protocol.
+endmenu

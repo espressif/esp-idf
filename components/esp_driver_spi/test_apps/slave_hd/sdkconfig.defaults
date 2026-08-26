@@ -1,0 +1,4 @@
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_TASK_WDT_INIT=n
+# primitives for checking sleep internal state
+CONFIG_ESP_SLEEP_DEBUG=y

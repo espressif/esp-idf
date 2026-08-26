@@ -1,0 +1,45 @@
+menu "ESP-Driver:Analog Comparator Configurations"
+    depends on SOC_ANA_CMPR_SUPPORTED
+
+    config ANA_CMPR_ISR_HANDLER_IN_IRAM
+        bool "Place Analog Comparator ISR handler in IRAM to reduce latency"
+        default y
+        select ANA_CMPR_OBJ_CACHE_SAFE
+        help
+            Place Analog Comparator ISR handler in IRAM to reduce latency caused by cache miss.
+
+    config ANA_CMPR_CTRL_FUNC_IN_IRAM
+        bool "Place Analog Comparator control functions into IRAM"
+        default n
+        select ANA_CMPR_OBJ_CACHE_SAFE
+        help
+            Place Analog Comparator control functions (like ana_cmpr_set_internal_reference) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in an IRAM interrupt context.
+            Enabling this option can improve driver performance as well.
+
+    config ANA_CMPR_ISR_CACHE_SAFE
+        bool "Allow Analog Comparator ISR to execute when cache is disabled"
+        select ANA_CMPR_ISR_HANDLER_IN_IRAM
+        default n
+        help
+            Enable this option to allow the Analog Comparator Interrupt Service Routine (ISR)
+            to execute even when the cache is disabled. This can be useful in scenarios where the cache
+            might be turned off, but the comparator functionality is still required to operate correctly.
+
+    config ANA_CMPR_OBJ_CACHE_SAFE
+        bool
+        default n
+        help
+            This will ensure the driver object will not be allocated from a memory region
+            where its cache can be disabled.
+
+    config ANA_CMPR_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, the driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+endmenu # Analog Comparator Configuration

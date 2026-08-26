@@ -1,0 +1,13 @@
+[mapping:esp_netif]
+archive: libesp_netif.a
+entries:
+  if LWIP_IRAM_OPTIMIZATION = y:
+    ethernetif:ethernet_low_level_output (noflash_text)
+    ethernetif:ethernetif_input (noflash_text)
+    wlanif:low_level_output (noflash_text)
+    wlanif:wlanif_input (noflash_text)
+    esp_netif_lwip:esp_netif_transmit_wrap (noflash_text)
+    esp_netif_lwip:esp_netif_free_rx_buffer (noflash_text)
+    esp_netif_lwip:esp_netif_receive (noflash_text)
+    esp_pbuf_ref:esp_pbuf_allocate (noflash_text)
+    esp_pbuf_ref:esp_pbuf_free (noflash_text)

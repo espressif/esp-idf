@@ -1,0 +1,23 @@
+name: General issue report
+description: File an issue report
+body:
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Answers checklist.
+      description: Before submitting a new issue, please follow the checklist and try to find the answer.
+      options:
+        - label: I have read the documentation [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/) and the issue is not addressed there.
+          required: true
+        - label: I have updated my IDF branch (master or release) to the latest version and checked that the issue is present there.
+          required: true
+        - label: I have searched the issue tracker for a similar issue and not found a similar issue.
+          required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: General issue report
+      description: Your issue report goes here.
+      placeholder: ex. How do I run...
+    validations:
+      required: true

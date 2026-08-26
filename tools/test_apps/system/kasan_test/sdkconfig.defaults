@@ -1,0 +1,6 @@
+# Minimal KASAN enablement — everything else stays at Kconfig defaults
+# (redzone=8, quarantine=8192, heap poisoning=disabled, HEAP_USE_HOOKS selected).
+
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+CONFIG_COMPILER_KASAN=y
+CONFIG_ESP_TASK_WDT_EN=n

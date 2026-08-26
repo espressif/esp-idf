@@ -1,0 +1,136 @@
+menu "Cache config"
+
+    choice ESP32S3_INSTRUCTION_CACHE_SIZE
+        prompt "Instruction cache size"
+        default ESP32S3_INSTRUCTION_CACHE_16KB
+        help
+            Instruction cache size to be set on application startup.
+            If you use 16KB instruction cache rather than 32KB instruction cache,
+            then the other 16KB will be managed by heap allocator.
+
+        config ESP32S3_INSTRUCTION_CACHE_16KB
+            bool "16KB"
+        config ESP32S3_INSTRUCTION_CACHE_32KB
+            bool "32KB"
+    endchoice
+
+    config ESP32S3_INSTRUCTION_CACHE_SIZE
+        hex
+        default 0x4000 if ESP32S3_INSTRUCTION_CACHE_16KB
+        default 0x8000 if ESP32S3_INSTRUCTION_CACHE_32KB
+
+    choice ESP32S3_ICACHE_ASSOCIATED_WAYS
+        prompt "Instruction cache associated ways"
+        default ESP32S3_INSTRUCTION_CACHE_8WAYS
+        help
+            Instruction cache associated ways to be set on application startup.
+
+        config ESP32S3_INSTRUCTION_CACHE_4WAYS
+            bool "4 ways"
+        config ESP32S3_INSTRUCTION_CACHE_8WAYS
+            bool "8 ways"
+    endchoice
+
+    config ESP32S3_ICACHE_ASSOCIATED_WAYS
+        int
+        default 4 if ESP32S3_INSTRUCTION_CACHE_4WAYS
+        default 8 if ESP32S3_INSTRUCTION_CACHE_8WAYS
+
+    choice ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
+        prompt "Instruction cache line size"
+        default ESP32S3_INSTRUCTION_CACHE_LINE_32B
+        help
+            Instruction cache line size to be set on application startup.
+
+        config ESP32S3_INSTRUCTION_CACHE_LINE_16B
+            bool "16 Bytes"
+            depends on ESP32S3_INSTRUCTION_CACHE_16KB
+        config ESP32S3_INSTRUCTION_CACHE_LINE_32B
+            bool "32 Bytes"
+    endchoice
+
+    config ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
+        int
+        default 16 if ESP32S3_INSTRUCTION_CACHE_LINE_16B
+        default 32 if ESP32S3_INSTRUCTION_CACHE_LINE_32B
+
+    config ESP32S3_INSTRUCTION_CACHE_WRAP
+        bool       ## TODO IDF-4307
+        default "n"
+        depends on !SPIRAM_ECC_ENABLE
+        help
+            If enabled, instruction cache will use wrap mode to read spi flash or spi ram.
+            The wrap length equals to ESP32S3_INSTRUCTION_CACHE_LINE_SIZE.
+            However, it depends on complex conditions.
+
+    choice ESP32S3_DATA_CACHE_SIZE
+        prompt "Data cache size"
+        default ESP32S3_DATA_CACHE_32KB
+        help
+            Data cache size to be set on application startup.
+            If you use 32KB data cache rather than 64KB data cache,
+            the other 32KB will be added to the heap.
+
+        config ESP32S3_DATA_CACHE_16KB
+            bool "16KB"
+        config ESP32S3_DATA_CACHE_32KB
+            bool "32KB"
+        config ESP32S3_DATA_CACHE_64KB
+            bool "64KB"
+    endchoice
+
+    config ESP32S3_DATA_CACHE_SIZE
+        hex
+        # For 16KB the actual configuration is 32kb cache, but 16kb will be reserved for heap at startup
+        default 0x8000 if ESP32S3_DATA_CACHE_16KB
+        default 0x8000 if ESP32S3_DATA_CACHE_32KB
+        default 0x10000 if ESP32S3_DATA_CACHE_64KB
+
+    choice ESP32S3_DCACHE_ASSOCIATED_WAYS
+        prompt "Data cache associated ways"
+        default ESP32S3_DATA_CACHE_8WAYS
+        help
+            Data cache associated ways to be set on application startup.
+
+        config ESP32S3_DATA_CACHE_4WAYS
+            bool "4 ways"
+        config ESP32S3_DATA_CACHE_8WAYS
+            bool "8 ways"
+    endchoice
+
+    config ESP32S3_DCACHE_ASSOCIATED_WAYS
+        int
+        default 4 if ESP32S3_DATA_CACHE_4WAYS
+        default 8 if ESP32S3_DATA_CACHE_8WAYS
+
+    choice ESP32S3_DATA_CACHE_LINE_SIZE
+        prompt "Data cache line size"
+        default ESP32S3_DATA_CACHE_LINE_32B
+        help
+            Data cache line size to be set on application startup.
+
+        config ESP32S3_DATA_CACHE_LINE_16B
+            bool "16 Bytes"
+            depends on ESP32S3_DATA_CACHE_16KB || ESP32S3_DATA_CACHE_32KB
+        config ESP32S3_DATA_CACHE_LINE_32B
+            bool "32 Bytes"
+        config ESP32S3_DATA_CACHE_LINE_64B
+            bool "64 Bytes"
+    endchoice
+
+    config ESP32S3_DATA_CACHE_LINE_SIZE
+        int
+        default 16 if ESP32S3_DATA_CACHE_LINE_16B
+        default 32 if ESP32S3_DATA_CACHE_LINE_32B
+        default 64 if ESP32S3_DATA_CACHE_LINE_64B
+
+    config ESP32S3_DATA_CACHE_WRAP
+        bool        ## TODO IDF-4307
+        default "n"
+        depends on !SPIRAM_ECC_ENABLE
+        help
+            If enabled, data cache will use wrap mode to read spi flash or spi ram.
+            The wrap length equals to ESP32S3_DATA_CACHE_LINE_SIZE.
+            However, it depends on complex conditions.
+
+endmenu  # Cache config

@@ -1,0 +1,147 @@
+#####################
+# Default Variables #
+#####################
+stages:
+  - manual_gate
+  - upload_cache
+  - pre_check
+  - auto_translate
+  - build
+  - assign_test
+  - build_doc
+  - target_test
+  - host_test
+  - test_deploy
+  - pre_deploy
+  - deploy
+  - post_deploy
+
+include:
+  - project: "ci/actions/common"
+    file: "templates/idf/common-scripts.yml"
+    inputs:
+      ci_python_constraint_file: "espidf.constraints.v6.2.txt"
+      macos_image: "registry.hub.docker.com/espressif/macos-idf:sequoia-v6.2"
+      windows_image: "windows_11_idf_v6_2"
+
+variables:
+# System environment
+
+  # Common parameters for the 'make' during CI tests
+  MAKEFLAGS: "-j5 --no-keep-going"
+  # By default, CI build jobs request and limit 4 CPU cores and 4 GB of memory
+  # https://github.com/ninja-build/ninja/blob/def9560a0b6d755936e615ce443a0aec45c39bdb/src/ninja.cc#L262
+  # cpu_cores + 2
+  IDF_PY_BUILD_JOBS: "6"
+
+# GitLab-CI environment
+  # Thanks to pack-objects cache, clone strategy should behave faster than fetch
+  #   so we pick "clone" as default git strategy
+  # Shiny runners by default remove the CI_PROJECT_DIR every time at the beginning of one job
+  #   and clone with a --depth=1
+  # Brew runners will fetch from locally mirror first, and cache the local CI_PROJECT_DIR
+  # In conclusion
+  # - set GIT_STRATEGY: "clone" to shiny runners
+  # - set GIT_STRATEGY: "fetch" to brew runners
+  GIT_STRATEGY: clone
+  GIT_DEPTH: 1
+  GIT_SUBMODULE_STRATEGY: none  # here we use cache for submodules, so we don't need to fetch them every time
+  # since we're using merged-result pipelines, the last commit should work for most cases
+  # --prune --prune-tags: in case remote branch or tag is force pushed
+  GIT_FETCH_EXTRA_FLAGS: "--no-recurse-submodules --prune --prune-tags"
+
+  LATEST_GIT_TAG: v6.2-dev
+
+  SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
+  # by default we will fetch all submodules
+  # jobs can overwrite this variable to only fetch submodules they required
+  # set to "none" if don't need to fetch submodules
+  SUBMODULES_TO_FETCH: "all"
+  # tell build system do not check submodule update as we download archive instead of clone
+  IDF_SKIP_CHECK_SUBMODULES: 1
+
+  IDF_PATH: "$CI_PROJECT_DIR"
+  V: "0"
+  CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
+
+  # Docker images
+  ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2:1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-docs:1"
+  TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-target-test:1"
+  PRE_COMMIT_ENV_IMAGE: "${CI_REGISTRY}/ci/images/pre-commit-idf-v6.2:1"
+
+  # Set this variable to the branch of idf-constraints repo in order to test a custom Python constraint file. The
+  # branch name must be without the remote part ("origin/"). Keep the variable empty in order to use the constraint
+  # file from https://dl.espressif.com/dl/esp-idf.
+  # CI_PYTHON_CONSTRAINT_BRANCH could be defined as component input `ci_python_constraint_branch` in common-scripts above
+
+  # Update the filename for a specific ESP-IDF release. It is used only with CI_PYTHON_CONSTRAINT_BRANCH.
+  # CI_PYTHON_CONSTRAINT_FILE is defined as component input `ci_python_constraint_file` in common-scripts above
+
+  # Set this variable to repository name of a Python tool you wish to install and test in the context of ESP-IDF CI.
+  # Keep the variable empty when not used.
+  # CI_PYTHON_TOOL_REPO could be defined as component input `ci_python_tool_repo` in common-scripts above
+
+  # Set this variable to the branch of a Python tool repo specified in CI_PYTHON_TOOL_REPO. The
+  # branch name must be without the remote part ("origin/"). Keep the variable empty when not used.
+  # This is used only if CI_PYTHON_TOOL_REPO is not empty.
+  # CI_PYTHON_TOOL_BRANCH could be defined as component input `ci_python_tool_branch` in common-scripts above
+
+  # Set this variable to Clang toolchain distro URL to be used.
+  # NOTE: We have separate toolchains for Xtensa and RISCV, therefore jobs for one arch will fail.
+  # This is OK as far as we use CI_CLANG_DISTRO_URL for pre-release tests purposes only.
+  # Keep the variable empty when not used.
+  # CI_CLANG_DISTRO_URL could be defined as component input `ci_clang_distro_url` in common-scripts above
+
+  # Set this variable to specify the file name for the known failure cases.
+  KNOWN_FAILURE_CASES_FILE_NAME: "master.txt"
+
+  IDF_CI_BUILD: 1
+
+  PYTHONWARNINGS: "ignore"
+  # ccache settings
+  # some settings need to set in .gitlab-ci.yml as it takes effect while start-up the job
+  # https://ccache.dev/manual/latest.html#_configuring_ccache
+
+  # host mapping volume to share ccache between runner concurrent jobs
+  CCACHE_DIR: "/cache/idf_ccache"
+  CCACHE_MAXSIZE: "50G"
+
+  FF_USE_NEW_BASH_EVAL_STRATEGY: "true"
+  FORCE_COLOR: "1"  # rich print with color
+
+################################################
+# `before_script` and `after_script` Templates #
+################################################
+.before_script:minimal:
+  before_script:
+    - !reference [.common_before_scripts, minimal]
+
+.after_script:build:
+  after_script:
+    - !reference [.common_after_scripts, ccache]
+    - run_cmd idf-ci gitlab upload-artifacts --type junit
+    - |
+      if [ $CI_JOB_STATUS = "failed" ]; then
+        run_cmd idf-ci gitlab upload-artifacts --type log
+      fi
+
+#############
+# `default` #
+#############
+default:
+  cache:
+    # pull only for most of the use cases since it's cache dir.
+    # Only set "push" policy for "upload_cache" stage jobs
+    - key: submodule-cache-${LATEST_GIT_TAG}
+      fallback_keys:
+        - submodule-cache
+      paths:
+        - .cache/submodule_archives
+      policy: pull
+  before_script:
+    - !reference [.common_before_scripts, with_tools]
+    - add_gitlab_ssh_keys
+    - fetch_submodules
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}

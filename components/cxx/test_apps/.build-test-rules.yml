@@ -1,0 +1,18 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/cxx/test_apps:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32c61", "esp32p4"]
+      temporary: true
+      reason: the other targets are not tested yet
+  depends_components:
+    - cxx
+    - pthread
+    - freertos
+
+components/cxx/test_apps/atomic_lock_policy:
+  enable:
+    - if: IDF_TARGET == "esp32c5"
+  disable:
+    - if: IDF_TARGET != "esp32c5"
+      reason: only built on ESP32-C5

@@ -1,0 +1,144 @@
+.build_template:
+  stage: build
+  extends:
+    - .after_script:build
+  image: $ESP_ENV_IMAGE
+  tags: [build, shiny]
+  variables:
+    # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+
+########################################
+# Clang Build Apps Without Tests Cases #
+########################################
+.build_cmake_clang_template:
+  extends:
+    - .build_template
+    - .rules:build
+  needs:
+    - job: fast_build_check
+      artifacts: false
+    - pipeline_variables
+  artifacts:
+    paths:
+      # The other artifacts patterns are defined under .idf_ci.toml
+      # Now we're uploading/downloading the binary files from our internal storage server
+      #
+      # keep the log file to help debug
+      - "**/build*/build_log.txt"
+      - "**/build*/size*.json"
+    expire_in: 1 week
+    when: always
+  variables:
+    IDF_TOOLCHAIN: clang
+    TEST_BUILD_OPTS_EXTRA: ""
+  script:
+    # CI specific options start from "--parallel-count xxx". could ignore when running locally
+    #
+    # In addition to the default sdkconfig.ci.* configs, build the
+    # sdkconfig.ci_clang.* configs, which are meant only for the clang build
+    # jobs (the generic build jobs would build them with the GCC toolchain).
+    - run_cmd idf-build-apps build
+      -p tools/test_apps/system/clang_build_test
+      components/esp_security/test_apps/fault_assert_opt_check
+      -t $IDF_TARGET
+      --config-rules "sdkconfig.ci=default" "sdkconfig.ci.*=" "sdkconfig.ci_clang.*="
+      --modified-components \"${MR_MODIFIED_COMPONENTS}\"
+      --modified-files \"${MR_MODIFIED_FILES}\"
+      $TEST_BUILD_OPTS_EXTRA
+
+build_clang_test_apps_xtensa:
+  extends: .build_cmake_clang_template
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32s2, esp32s3]
+
+build_clang_test_apps_riscv:
+  extends: .build_cmake_clang_template
+  variables:
+    # https://reviews.llvm.org/D90108.
+    # GNU 'as' lets .weak override .globl since binutils-gdb
+    # https://github.com/bminor/binutils-gdb/commit/5ca547dc2399a0a5d9f20626d4bf5547c3ccfddd (1996)
+    # while MC lets the last directive win (PR38921).
+    # For RISCV chips we use integrated assembler by default, so suppress this warning to pass CI pipeline.
+    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'changed binding to STB_WEAK'"
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32c3, esp32c2, esp32c6, esp32c5, esp32h2, esp32p4]
+
+####################
+# Dynamic Pipeline #
+####################
+# !!!
+# configurations moved to ci/actions/common/idf/
+# !!!
+
+# Generates a separate child-pipeline YAML for the cmakev2 build system.
+# The build_dir stays identical to cmakev1 (build_<target>_<config>); v1/v2
+# binaries are kept separate in s3 by suffixing PIPELINE_COMMIT_SHA — see
+# the python injection below — which idf-ci uses unmodified in its s3
+# prefix (project/<sha>/...). Keeping build_dir identical preserves the
+# upstream pytest matching that uses app.build_path to filter test cases.
+generate_build_child_pipeline_buildv2:
+  extends:
+    - .build_template
+    - .rules:labels:buildv2
+  tags: [fast_run, shiny]
+  variables:
+    # The build child pipeline's app list is fixed here, at generation time.
+    # Set IDF_BUILD_V2 so that manifest `disable: if IDF_BUILD_V2 == "1"` rules
+    # take effect during app discovery; otherwise those apps (e.g. kasan_test,
+    # IDF-15864) are discovered, built and target-tested even though the build
+    # jobs run with IDF_BUILD_V2 injected by patch_buildv2_child_pipeline.py.
+    IDF_BUILD_V2: "1"
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - pipeline_variables
+    - job: pre_check_complete
+      artifacts: false
+    - job: baseline_manifest_sha
+      optional: true
+  artifacts:
+    paths:
+      - buildv2_child_pipeline.yml
+      - test_related_apps.txt
+      - non_test_related_apps.txt
+    expire_in: 1 week
+    when: always
+  script:
+    - run_cmd idf-ci --debug gitlab build-child-pipeline
+      -p components
+      -p examples
+      -p tools/test_apps
+      --modified-files \"${MR_MODIFIED_FILES}\"
+      buildv2_child_pipeline.yml > idfci_buildv2_gen.log 2>&1
+    - tail -20 idfci_buildv2_gen.log
+    - shuf test_related_apps.txt -o test_related_apps.txt
+    - shuf non_test_related_apps.txt -o non_test_related_apps.txt
+    # Patch the generated yaml to activate the cmakev2 shim and route v2 build
+    # and target_test artifacts to a distinct s3 namespace. See the script
+    # docstring for the rationale.
+    - python tools/ci/dynamic_pipelines/scripts/patch_buildv2_child_pipeline.py buildv2_child_pipeline.yml
+    - 'echo "=== buildv2_child_pipeline.yml (post-injection) ==="; cat buildv2_child_pipeline.yml; echo "=== end ==="'
+
+build_child_pipeline_buildv2:
+  stage: build
+  extends:
+    - .rules:labels:buildv2
+  needs:
+    - job: fast_build_check
+      optional: true
+      artifacts: false
+    - pipeline_variables
+    - generate_build_child_pipeline_buildv2
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+  inherit:
+    variables: false
+  trigger:
+    include:
+      - artifact: buildv2_child_pipeline.yml
+        job: generate_build_child_pipeline_buildv2
+    strategy: depend
+  allow_failure: true

@@ -1,0 +1,1868 @@
+config BT_BTC_TASK_STACK_SIZE
+    int "Bluetooth event (callback to application) task stack size"
+    depends on BT_BLUEDROID_ENABLED
+    default 3072
+    help
+        This select btc task stack size
+
+choice BT_BLUEDROID_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which Bluedroid run"
+    depends on BT_BLUEDROID_ENABLED && !FREERTOS_UNICORE
+    help
+        Which the cpu core to run Bluedroid. Can choose core0 and core1.
+        Can not specify no-affinity.
+
+    config BT_BLUEDROID_PINNED_TO_CORE_0
+        bool "Core 0 (PRO CPU)"
+    config BT_BLUEDROID_PINNED_TO_CORE_1
+        bool "Core 1 (APP CPU)"
+        depends on !FREERTOS_UNICORE
+endchoice
+
+config BT_BLUEDROID_PINNED_TO_CORE
+    int
+    depends on BT_BLUEDROID_ENABLED
+    default 0 if BT_BLUEDROID_PINNED_TO_CORE_0
+    default 1 if BT_BLUEDROID_PINNED_TO_CORE_1
+    default 0
+
+config BT_BTU_TASK_STACK_SIZE
+    int "Bluetooth Bluedroid Host Stack task stack size"
+    depends on BT_BLUEDROID_ENABLED
+    default 4352
+    help
+        This select btu task stack size
+
+config BT_BLUEDROID_ESP_COEX_VSC
+    bool "Enable Espressif Vendor-specific HCI commands for coexist status configuration"
+    depends on BT_BLUEDROID_ENABLED
+    default y if (ESP_COEX_SW_COEXIST_ENABLE || BT_CONTROLLER_DISABLED)
+    default n
+    help
+        Enable Espressif Vendor-specific HCI commands for coexist status configuration
+
+config BT_CLASSIC_ENABLED
+    bool "Classic Bluetooth"
+    depends on BT_BLUEDROID_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BT_CLASSIC_SUPPORTED) || BT_CONTROLLER_DISABLED)
+    default n
+    help
+        For now this option needs "SMP_ENABLE" to be set to yes
+
+config BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+    int "Maximum number of reconnection attempts in case of collision"
+    depends on BT_CLASSIC_ENABLED
+    default 5
+    help
+        The maximum number of reconnection attempts when encountering rejection of connection
+        request with error code 0x0B(Connection Already Exists) from peer device
+
+config BT_CLASSIC_ENABLE_POWER_CTRL_VSC
+    bool "Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth
+
+choice BT_ENC_KEY_SIZE_CTRL_ENABLED
+    prompt "configure encryption key size"
+    depends on BT_CLASSIC_ENABLED
+    default BT_ENC_KEY_SIZE_CTRL_VSC
+    help
+        This chooses the support status of configuring encryption key size
+
+    config BT_ENC_KEY_SIZE_CTRL_STD
+        depends on (BT_CONTROLLER_DISABLED || (BT_CONTROLLER_ENABLED && SOC_BT_H2C_ENC_KEY_CTRL_ENH_STD_SUPPORTED))
+        bool "Supported by standard HCI command"
+
+    config BT_ENC_KEY_SIZE_CTRL_VSC
+        depends on (BT_CONTROLLER_DISABLED || (BT_CONTROLLER_ENABLED && SOC_BT_H2C_ENC_KEY_CTRL_ENH_VSC_SUPPORTED))
+        bool "Supported by Vendor-specific HCI command"
+
+    config BT_ENC_KEY_SIZE_CTRL_NONE
+        bool "Not supported"
+endchoice
+
+config BT_CLASSIC_BQB_ENABLED
+    bool "Host Qualitifcation support for Classic Bluetooth"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables functionalities of Host qualification for Classic Bluetooth.
+
+config BT_A2DP_ENABLE
+    bool "A2DP"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    select BT_AVRCP_ENABLED
+    help
+        Advanced Audio Distribution Profile
+
+config BT_A2DP_USE_EXTERNAL_CODEC
+    bool "Use External Codec for A2DP"
+    depends on BT_A2DP_ENABLE
+    default n
+    help
+        If enable, user shall register audio codec capability to A2DP and encode/decode
+        audio data in application layer. The internal codec in A2DP will be remove in
+        the future, it is recommend to use external codec for new design.
+
+config BT_A2DP_CODEC_AAC_ENABLED
+    bool "A2DP AAC codec"
+    depends on BT_A2DP_USE_EXTERNAL_CODEC
+    default n
+    help
+        Enable support for A2DP AAC codec when using an external codec.
+        Currently, only the A2DP sink supports AAC codec.
+
+config BT_A2DP_SEP_NUM_MAX
+    int "Maximum number of Stream End Points that can be registered for A2DP"
+    depends on BT_A2DP_USE_EXTERNAL_CODEC
+    default 2 if BT_A2DP_CODEC_AAC_ENABLED
+    default 1
+    range 1 3
+    help
+        The maximum number of Stream End Points (SEPs) that can be registered for A2DP.
+        The default value is 2. If you need to register more SEPs, you can increase this value.
+
+config BT_AVRCP_ENABLED
+    bool
+    depends on BT_A2DP_ENABLE
+    default y
+    help
+        Audio/Video Remote Control Profile, AVRCP and A2DP are coupled in Bluedroid,
+        AVRCP still controlled by A2DP option, this is a dummy option currently
+
+menu "AVRCP Features"
+    depends on BT_AVRCP_ENABLED
+
+    config BT_AVRCP_CT_COVER_ART_ENABLED
+        bool "AVRCP CT Cover Art"
+        default y
+        select BT_GOEPC_ENABLED
+        help
+            This enable Cover Art feature for AVRCP CT role, Cover Art requires AVRCP
+            version 1.6 or higher. Therefore, if the Cover Art feature is enabled,
+            AVRCP version will set to 1.6, otherwise, it will remain at 1.5
+
+endmenu
+
+config BT_SPP_ENABLED
+    bool "SPP"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the Serial Port Profile
+
+config BT_PAN_ENABLED
+    bool "PAN (Personal Area Networking)"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the Personal Area Networking Profile
+
+config BT_L2CAP_ENABLED
+    bool "BT L2CAP"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the Logical Link Control and Adaptation Layer Protocol.
+        Only supported classic bluetooth.
+
+config BT_SDP_COMMON_ENABLED
+    bool "BT SDP COMMON"
+    depends on BT_CLASSIC_ENABLED
+    default y if BT_L2CAP_ENABLED
+    default n
+    help
+        This enables common SDP operation, such as SDP record creation and deletion.
+
+config BT_SDP_PAD_LEN
+    int "One or more BT SDP attributes total allocated length (bytes)"
+    depends on BT_CLASSIC_ENABLED
+    default 300
+    range   BT_SDP_ATTR_LEN 1024
+    help
+        This is the total size of all SDP attributes allowed.
+        Any attributes that exceed this size are truncated.
+        The default value is 300.
+
+config BT_SDP_ATTR_LEN
+    int "Single BT SDP attribute allocated length (bytes)"
+    depends on BT_CLASSIC_ENABLED
+    default 300
+    range   300 1024
+    help
+        This is the maximum allowed size for a single SDP attribute.
+        Any attributes that exceed this size are truncated.
+        The default value is 300.
+
+menuconfig BT_HFP_ENABLE
+    bool "Hands Free/Handset Profile"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        Hands Free Unit and Audio Gateway can be included simultaneously
+        but they cannot run simultaneously due to internal limitations.
+
+config BT_HFP_CLIENT_ENABLE
+    bool "Hands Free Unit"
+    depends on BT_HFP_ENABLE
+    default y
+
+config BT_HFP_AG_ENABLE
+    bool "Audio Gateway"
+    depends on BT_HFP_ENABLE
+    default y
+
+choice BT_HFP_AUDIO_DATA_PATH
+    prompt "audio(SCO) data path"
+    depends on BT_HFP_ENABLE
+    help
+        SCO data path, i.e. HCI or PCM. This option is set using API
+        "esp_bredr_sco_datapath_set" in Bluetooth host. Default SCO data
+        path can also be set in Bluetooth Controller.
+
+    config BT_HFP_AUDIO_DATA_PATH_PCM
+        bool "PCM"
+    config BT_HFP_AUDIO_DATA_PATH_HCI
+        bool "HCI"
+endchoice
+
+config BT_HFP_USE_EXTERNAL_CODEC
+    bool "Use External Codec for HFP"
+    depends on BT_HFP_ENABLE && BT_HFP_AUDIO_DATA_PATH_HCI
+    default n
+    help
+        If enable, user shall encode/decode audio data in application layer. The internal
+        codec in HFP will be remove in the future, it is recommend to use external codec
+        for new design.
+
+config BT_HFP_WBS_ENABLE
+    bool "Wide Band Speech"
+    depends on BT_HFP_ENABLE && BT_HFP_AUDIO_DATA_PATH_HCI
+    default y
+    help
+        This enables Wide Band Speech. Should disable it when SCO data path is PCM.
+        Otherwise there will be no data transmitted via GPIOs.
+
+menuconfig BT_HID_ENABLED
+    bool "Classic BT HID"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the BT HID functionalities
+
+config BT_HID_HOST_ENABLED
+    bool "Classic BT HID Host"
+    depends on BT_HID_ENABLED
+    default n
+    help
+        This enables the BT HID Host
+
+config BT_HID_DEVICE_ENABLED
+    bool "Classic BT HID Device"
+    depends on BT_HID_ENABLED
+    help
+        This enables the BT HID Device
+
+config BT_HID_REMOVE_DEVICE_BONDING_ENABLED
+    bool "Remove Device Bonding Information when HID Virtual Cable Unplugging"
+    depends on BT_HID_ENABLED
+    default y
+    help
+        This enables the BT HID to remove device bonding information when virtual cable unplugging,
+        removing device bonding information is optional in HID 1.0 but mandatory in HID 1.1
+
+menuconfig BT_PBAC_ENABLED
+    bool "PBAP Client"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    select BT_GOEPC_ENABLED
+    help
+        This enables the Phone Book Access Profile Client
+
+config BT_PBAC_SUPPORTED_FEAT
+    hex "PBAP Client Supported Features"
+    depends on BT_PBAC_ENABLED
+    default 0x000003FF
+    help
+        Set the supported features of PBAP Client, the default value is supported all features
+
+config BT_PBAC_PREFERRED_MTU
+    int "PBAP Client Preferred MTU"
+    depends on BT_PBAC_ENABLED
+    default 0
+    help
+        MTU is limited by the max MTU of transport layer, and should not be smaller than 255,
+        but can be set to zero to use a default MTU of transport layer
+
+config BT_GOEPC_ENABLED
+    bool
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the BT GOEP Profile Client role
+
+config BT_BLE_ENABLED
+    bool "Bluetooth Low Energy"
+    depends on BT_BLUEDROID_ENABLED && (!BTDM_CTRL_MODE_BR_EDR_ONLY)
+    default y
+    help
+        This enables Bluetooth Low Energy
+
+menuconfig BT_GATTS_ENABLE
+    bool "Include GATT server module(GATTS)"
+    depends on BT_BLE_ENABLED
+    default y
+    help
+        This option can be disabled when the app work only on gatt client mode
+
+config BT_GATTS_PPCP_CHAR_GAP
+    bool "Enable Peripheral Preferred Connection Parameters characteristic in GAP service"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This enables "Peripheral Preferred Connection Parameters" characteristic (UUID: 0x2A04)
+        in GAP service that has connection parameters like min/max connection interval, slave
+        latency and supervision timeout multiplier
+
+config BT_BLE_BLUFI_ENABLE
+    bool "Include blufi function"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This option can be close when the app does not require blufi function.
+
+config BT_BLUFI_BLE_SMP_ENABLE
+    bool "Enable BLE SMP support for BluFi"
+    depends on BT_BLE_BLUFI_ENABLE && BT_BLE_SMP_ENABLE
+    default n
+    help
+        Enable BLE Security Manager Protocol (SMP) for BluFi.
+        When enabled, BluFi will support BLE pairing and encryption
+        before Wi-Fi provisioning, providing a more secure provisioning process.
+        This feature is only supported with the Bluedroid host.
+
+config BT_GATT_MAX_SR_PROFILES
+    int "Max GATT Server Profiles"
+    depends on BT_GATTS_ENABLE && BT_BLUEDROID_ENABLED
+    range 1 32
+    default 8
+    help
+        Maximum GATT Server Profiles Count
+
+config BT_GATT_MAX_SR_ATTRIBUTES
+    int "Max GATT Service Attributes"
+    depends on BT_GATTS_ENABLE && BT_BLUEDROID_ENABLED
+    range 1 500
+    default 100
+    help
+        Maximum GATT Service Attributes Count
+
+
+choice BT_GATTS_SEND_SERVICE_CHANGE_MODE
+    prompt "GATTS Service Change Mode"
+    default BT_GATTS_SEND_SERVICE_CHANGE_AUTO
+    depends on BT_GATTS_ENABLE
+    help
+        Service change indication mode for GATT Server.
+
+    config BT_GATTS_SEND_SERVICE_CHANGE_MANUAL
+        bool "GATTS manually send service change indication"
+        help
+            Manually send service change indication through API esp_ble_gatts_send_service_change_indication()
+
+    config BT_GATTS_SEND_SERVICE_CHANGE_AUTO
+        bool "GATTS automatically send service change indication"
+        help
+            Let Bluedroid handle the service change indication internally
+
+endchoice
+
+config BT_GATTS_SEND_SERVICE_CHANGE_MODE
+    int
+    depends on BT_GATTS_ENABLE
+    default 0 if BT_GATTS_SEND_SERVICE_CHANGE_AUTO
+    default 1 if BT_GATTS_SEND_SERVICE_CHANGE_MANUAL
+    default 0
+
+config BT_GATTS_ROBUST_CACHING_ENABLED
+    bool "Enable Robust Caching on Server Side"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This option enables the GATT robust caching feature on the server.
+        if turned on, the Client Supported Features characteristic, Database Hash characteristic,
+        and Server Supported Features characteristic will be included in the GAP SERVICE.
+
+
+config BT_GATTS_DEVICE_NAME_WRITABLE
+    bool "Allow to write device name by GATT clients"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enabling this option allows remote GATT clients to write device name
+
+config BT_GATTS_APPEARANCE_WRITABLE
+    bool "Allow to write appearance by GATT clients"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enabling this option allows remote GATT clients to write appearance
+
+config BT_GATTS_SECURITY_LEVELS_CHAR
+    bool "Enable LE GATT Security Levels Characteristic"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enable LE GATT Security Levels Characteristic
+
+config BT_GATTS_KEY_MATERIAL_CHAR
+    bool "Enable Encrypted Data Key Material Characteristic"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enable the Encrypted Data Key Material characteristic in GAP service.
+        This characteristic allows advertising data to be decrypted and authenticated
+        using the key material (session key + IV) as defined in Bluetooth Core
+        Specification Version 5.4. The characteristic requires encrypted link to read.
+
+menuconfig BT_GATTC_ENABLE
+    bool "Include GATT client module(GATTC)"
+    depends on BT_BLE_ENABLED
+    default y
+    help
+        This option can be close when the app work only on gatt server mode
+
+config BT_GATTC_MAX_CACHE_CHAR
+    int "Max gattc cache characteristic for discover"
+    depends on BT_GATTC_ENABLE
+    range 1 500
+    default 40
+    help
+        Maximum GATTC cache characteristic count
+
+config BT_GATTC_NOTIF_REG_MAX
+    int "Max gattc notify(indication) register number"
+    depends on BT_GATTC_ENABLE
+    range 1 255
+    default 5
+    help
+        Maximum GATTC notify(indication) register number
+
+config BT_GATTC_CACHE_NVS_FLASH
+    bool "Save gattc cache data to nvs flash"
+    depends on BT_GATTC_ENABLE
+    default n
+    help
+        This select can save gattc cache data to nvs flash
+
+config BT_GATTC_CONNECT_RETRY_COUNT
+    int "The number of attempts to reconnect if the connection establishment failed"
+    depends on BT_GATTC_ENABLE
+    range 0 255
+    default 3
+    help
+        The number of attempts to reconnect if the connection establishment failed
+
+config BT_BLE_ESTAB_LINK_CONN_TOUT
+    int "Timeout of BLE connection establishment"
+    depends on BT_GATTC_ENABLE
+    range 1 60
+    default 30
+    help
+        Bluetooth Connection establishment maximum time, if connection time exceeds this value, the connection
+        establishment fails, ESP_GATTC_OPEN_EVT or ESP_GATTS_OPEN_EVT is triggered.
+
+menuconfig BT_BLE_SMP_ENABLE
+    bool "Include BLE security module(SMP)"
+    depends on BT_BLE_ENABLED
+    default y
+    help
+        This option can be close when the app not used the ble security connect.
+
+config BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE
+    bool "Slave enable connection parameters update during pairing"
+    depends on BT_BLE_SMP_ENABLE
+    default n
+    help
+        In order to reduce the pairing time, slave actively initiates connection parameters
+        update during pairing.
+
+config BT_BLE_SMP_ID_RESET_ENABLE
+    bool "Reset device identity when all bonding records are deleted"
+    depends on BT_BLE_SMP_ENABLE
+    default n
+    help
+        There are tracking risks associated with using a fixed or static IRK.
+        If enabled this option, Bluedroid will assign a new randomly-generated IRK
+        when all pairing and bonding records are deleted. This would decrease the ability
+        of a previously paired peer to be used to determine whether a device
+        with which it previously shared an IRK is within range.
+
+config BT_BLE_SMP_BOND_NVS_FLASH
+    bool "Save SMP bonding keys to nvs flash"
+    depends on BT_BLE_SMP_ENABLE
+    default y
+    help
+        This select can save SMP bonding keys to nvs flash
+
+config BT_BLE_PERIPH_PSEUDO_ADDR_BOND
+    bool "Peripheral dual local-identity bond isolation (pseudo address)"
+    depends on BT_BLE_SMP_ENABLE && BT_BLE_50_EXTEND_ADV_EN
+    default n
+    help
+        Enable Host-internal pseudo address derivation so that one peer phone
+        connecting through two distinct local identities (e.g. Public and a
+        fixed Static Random advertising set) is treated as two independent
+        peers. Each connection gets its own device record, LTK and NVS bond
+        section keyed by pseudo = f(local_identity, peer). The over-the-air
+        and SMP cryptography keep using the real peer and the real local
+        identity; the pseudo address never leaves the Host.
+
+        This is intended for BLE 5.0 Extended Advertising peripherals that need
+        simultaneous dual-identity connections with isolated bonds. Requires
+        BT_BLE_50_EXTEND_ADV_EN. When disabled (default) the stack behaves
+        exactly as before.
+
+config BT_BLE_RPA_SUPPORTED
+    bool "Update RPA to Controller"
+    depends on (BT_BLE_SMP_ENABLE && ((BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n if (BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED)
+    default y if BT_CONTROLLER_DISABLED
+    help
+        This enables controller RPA list function.
+        For ESP32, ESP32 only support network privacy mode. If this option is enabled, ESP32 will only accept
+        advertising packets from peer devices that contain private address, HW will not receive the advertising
+        packets contain identity address after IRK changed. If this option is disabled, address resolution will
+        be performed in the host, so the functions that require controller to resolve address in the white list
+        cannot be used. This option is disabled by default on ESP32, please enable or disable this option according
+        to your own needs.
+
+        For other BLE chips, devices support network privacy mode and device privacy mode,
+        users can switch the two modes according to their own needs. So this option is enabled by default.
+
+menu "Bluedroid debug option"
+    config BT_BLUEDROID_MEM_DEBUG
+        bool "Bluedroid memory debug"
+        depends on BT_BLUEDROID_ENABLED
+        default n
+        help
+            Bluedroid memory debug
+
+    config BT_BLUEDROID_MEM_STATS
+        bool "Bluedroid memory statistics"
+        depends on BT_BLUEDROID_ENABLED
+        depends on !BT_BLUEDROID_MEM_DEBUG
+        default n
+        help
+            Enable Bluedroid memory usage statistics
+
+    config BT_BLUEDROID_THREAD_DEBUG
+        bool "Bluedroid thread debug"
+        depends on BT_BLUEDROID_ENABLED
+        default n
+        help
+            Enable Bluedroid thread debug mode.
+            Used to debug whether the thread is blocked and
+            dump information about the thread’s related work queue.
+
+    config BT_BLUEDROID_THREAD_BLOCK_TIME
+        int "OSI thread block time (in ms)"
+        depends on BT_BLUEDROID_THREAD_DEBUG
+        default 1000
+        help
+            Indicates how long it takes for the thread to execute an item
+            before it is considered blocked.
+
+    config BT_BLUEDROID_THREAD_BLOCK_MSG
+        int "OSI thread block message count"
+        depends on BT_BLUEDROID_THREAD_DEBUG
+        default 50
+        help
+            Indicates how many messages are added to the queue
+            while the threadis executing an item before it is considered blocked.
+endmenu #BT debug option
+
+config BT_STACK_NO_LOG
+    bool "Disable BT debug logs (minimize bin size)"
+    depends on BT_BLUEDROID_ENABLED
+    default y if BLE_LOG_ENABLED && !BLE_LOG_HOST_LOG
+    default n
+    help
+        This select can save the rodata code size
+
+menu "BT DEBUG LOG LEVEL"
+    depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+
+    choice BT_LOG_HCI_TRACE_LEVEL
+        prompt "HCI layer"
+        default BT_LOG_HCI_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_HCI_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_HCI_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for HCI layer
+
+        config BT_LOG_HCI_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_HCI_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_HCI_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_HCI_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_HCI_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_HCI_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_HCI_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_HCI_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_HCI_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_HCI_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_HCI_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_HCI_TRACE_LEVEL_API
+        default 4 if BT_LOG_HCI_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_HCI_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_HCI_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_BTM_TRACE_LEVEL
+        prompt "BTM layer"
+        default BT_LOG_BTM_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTM_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTM_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for BTM layer
+
+        config BT_LOG_BTM_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_BTM_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_BTM_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_BTM_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_BTM_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_BTM_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_BTM_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_BTM_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_BTM_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_BTM_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_BTM_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_BTM_TRACE_LEVEL_API
+        default 4 if BT_LOG_BTM_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_BTM_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_BTM_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_L2CAP_TRACE_LEVEL
+        prompt "L2CAP layer"
+        default BT_LOG_L2CAP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_L2CAP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_L2CAP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for L2CAP layer
+
+        config BT_LOG_L2CAP_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_L2CAP_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_L2CAP_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_L2CAP_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_L2CAP_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_L2CAP_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_L2CAP_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_L2CAP_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_L2CAP_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_L2CAP_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_L2CAP_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_L2CAP_TRACE_LEVEL_API
+        default 4 if BT_LOG_L2CAP_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_L2CAP_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_L2CAP_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_RFCOMM_TRACE_LEVEL
+        prompt "RFCOMM layer"
+        default BT_LOG_RFCOMM_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for RFCOMM layer
+
+        config BT_LOG_RFCOMM_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_RFCOMM_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_RFCOMM_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_RFCOMM_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_RFCOMM_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_RFCOMM_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_RFCOMM_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_RFCOMM_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_RFCOMM_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_RFCOMM_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_RFCOMM_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_RFCOMM_TRACE_LEVEL_API
+        default 4 if BT_LOG_RFCOMM_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_RFCOMM_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_RFCOMM_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_SDP_TRACE_LEVEL
+        prompt "SDP layer"
+        default BT_LOG_SDP_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for SDP layer
+
+        config BT_LOG_SDP_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_SDP_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_SDP_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_SDP_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_SDP_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_SDP_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_SDP_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_SDP_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_SDP_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_SDP_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_SDP_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_SDP_TRACE_LEVEL_API
+        default 4 if BT_LOG_SDP_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_SDP_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_SDP_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_GAP_TRACE_LEVEL
+        prompt "GAP layer"
+        default BT_LOG_GAP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GAP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GAP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for GAP layer
+
+        config BT_LOG_GAP_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_GAP_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_GAP_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_GAP_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_GAP_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_GAP_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_GAP_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_GAP_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_GAP_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_GAP_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_GAP_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_GAP_TRACE_LEVEL_API
+        default 4 if BT_LOG_GAP_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_GAP_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_GAP_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_BNEP_TRACE_LEVEL
+        prompt "BNEP layer"
+        default BT_LOG_BNEP_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for BNEP layer
+
+        config BT_LOG_BNEP_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_BNEP_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_BNEP_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_BNEP_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_BNEP_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_BNEP_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_BNEP_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_BNEP_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_BNEP_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_BNEP_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_BNEP_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_BNEP_TRACE_LEVEL_API
+        default 4 if BT_LOG_BNEP_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_BNEP_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_BNEP_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_PAN_TRACE_LEVEL
+        prompt "PAN layer"
+        default BT_LOG_PAN_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for PAN layer
+
+        config BT_LOG_PAN_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_PAN_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_PAN_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_PAN_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_PAN_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_PAN_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_PAN_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_PAN_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_PAN_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_PAN_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_PAN_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_PAN_TRACE_LEVEL_API
+        default 4 if BT_LOG_PAN_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_PAN_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_PAN_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_A2D_TRACE_LEVEL
+        prompt "A2D layer"
+        default BT_LOG_A2D_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for A2D layer
+
+        config BT_LOG_A2D_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_A2D_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_A2D_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_A2D_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_A2D_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_A2D_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_A2D_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_A2D_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_A2D_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_A2D_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_A2D_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_A2D_TRACE_LEVEL_API
+        default 4 if BT_LOG_A2D_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_A2D_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_A2D_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_AVDT_TRACE_LEVEL
+        prompt "AVDT layer"
+        default BT_LOG_AVDT_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for AVDT layer
+
+        config BT_LOG_AVDT_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_AVDT_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_AVDT_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_AVDT_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_AVDT_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_AVDT_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_AVDT_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_AVDT_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_AVDT_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_AVDT_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_AVDT_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_AVDT_TRACE_LEVEL_API
+        default 4 if BT_LOG_AVDT_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_AVDT_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_AVDT_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_AVCT_TRACE_LEVEL
+        prompt "AVCT layer"
+        default BT_LOG_AVCT_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for AVCT layer
+
+        config BT_LOG_AVCT_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_AVCT_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_AVCT_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_AVCT_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_AVCT_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_AVCT_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_AVCT_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_AVCT_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_AVCT_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_AVCT_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_AVCT_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_AVCT_TRACE_LEVEL_API
+        default 4 if BT_LOG_AVCT_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_AVCT_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_AVCT_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_AVRC_TRACE_LEVEL
+        prompt "AVRC layer"
+        default BT_LOG_AVRC_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for AVRC layer
+
+        config BT_LOG_AVRC_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_AVRC_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_AVRC_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_AVRC_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_AVRC_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_AVRC_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_AVRC_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_AVRC_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_AVRC_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_AVRC_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_AVRC_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_AVRC_TRACE_LEVEL_API
+        default 4 if BT_LOG_AVRC_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_AVRC_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_AVRC_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_MCA_TRACE_LEVEL
+        prompt "MCA layer"
+        default BT_LOG_MCA_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for MCA layer
+
+        config BT_LOG_MCA_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_MCA_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_MCA_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_MCA_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_MCA_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_MCA_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_MCA_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_MCA_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_MCA_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_MCA_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_MCA_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_MCA_TRACE_LEVEL_API
+        default 4 if BT_LOG_MCA_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_MCA_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_MCA_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_HID_TRACE_LEVEL
+        prompt "HID layer"
+        default BT_LOG_HID_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for HID layer
+
+        config BT_LOG_HID_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_HID_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_HID_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_HID_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_HID_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_HID_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_HID_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_HID_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_HID_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_HID_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_HID_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_HID_TRACE_LEVEL_API
+        default 4 if BT_LOG_HID_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_HID_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_HID_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_APPL_TRACE_LEVEL
+        prompt "APPL layer"
+        default BT_LOG_APPL_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_APPL_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_APPL_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for APPL layer
+
+        config BT_LOG_APPL_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_APPL_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_APPL_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_APPL_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_APPL_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_APPL_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_APPL_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_APPL_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_APPL_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_APPL_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_APPL_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_APPL_TRACE_LEVEL_API
+        default 4 if BT_LOG_APPL_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_APPL_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_APPL_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_GATT_TRACE_LEVEL
+        prompt "GATT layer"
+        default BT_LOG_GATT_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GATT_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GATT_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for GATT layer
+
+        config BT_LOG_GATT_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_GATT_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_GATT_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_GATT_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_GATT_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_GATT_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_GATT_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_GATT_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_GATT_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_GATT_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_GATT_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_GATT_TRACE_LEVEL_API
+        default 4 if BT_LOG_GATT_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_GATT_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_GATT_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_SMP_TRACE_LEVEL
+        prompt "SMP layer"
+        default BT_LOG_SMP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_SMP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_SMP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for SMP layer
+
+        config BT_LOG_SMP_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_SMP_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_SMP_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_SMP_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_SMP_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_SMP_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_SMP_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_SMP_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_SMP_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_SMP_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_SMP_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_SMP_TRACE_LEVEL_API
+        default 4 if BT_LOG_SMP_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_SMP_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_SMP_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_BTIF_TRACE_LEVEL
+        prompt "BTIF layer"
+        default BT_LOG_BTIF_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTIF_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTIF_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for BTIF layer
+
+        config BT_LOG_BTIF_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_BTIF_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_BTIF_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_BTIF_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_BTIF_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_BTIF_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_BTIF_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_BTIF_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_BTIF_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_BTIF_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_BTIF_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_BTIF_TRACE_LEVEL_API
+        default 4 if BT_LOG_BTIF_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_BTIF_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_BTIF_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_BTC_TRACE_LEVEL
+        prompt "BTC layer"
+        default BT_LOG_BTC_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTC_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTC_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for BTC layer
+
+        config BT_LOG_BTC_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_BTC_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_BTC_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_BTC_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_BTC_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_BTC_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_BTC_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_BTC_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_BTC_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_BTC_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_BTC_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_BTC_TRACE_LEVEL_API
+        default 4 if BT_LOG_BTC_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_BTC_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_BTC_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_OSI_TRACE_LEVEL
+        prompt "OSI layer"
+        default BT_LOG_OSI_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_OSI_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_OSI_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for OSI layer
+
+        config BT_LOG_OSI_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_OSI_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_OSI_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_OSI_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_OSI_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_OSI_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_OSI_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_OSI_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_OSI_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_OSI_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_OSI_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_OSI_TRACE_LEVEL_API
+        default 4 if BT_LOG_OSI_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_OSI_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_OSI_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_BLUFI_TRACE_LEVEL
+        prompt "BLUFI layer"
+        default BT_LOG_BLUFI_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for BLUFI layer
+
+        config BT_LOG_BLUFI_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_BLUFI_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_BLUFI_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_BLUFI_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_BLUFI_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_BLUFI_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_BLUFI_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_BLUFI_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_BLUFI_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_BLUFI_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_BLUFI_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_BLUFI_TRACE_LEVEL_API
+        default 4 if BT_LOG_BLUFI_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_BLUFI_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_BLUFI_TRACE_LEVEL_VERBOSE
+        default 2
+
+endmenu #BT DEBUG LOG LEVEL
+
+config BT_ACL_CONNECTIONS
+    int "BT/BLE MAX ACL CONNECTIONS"
+    depends on BT_BLUEDROID_ENABLED
+    range 1 2 if IDF_TARGET_ESP32C2
+    range 1 9 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+    range 1 15 if IDF_TARGET_ESP32H2
+    range 1 50
+    default 2 if IDF_TARGET_ESP32C2
+    default 4
+    help
+        Maximum BT/BLE connection count. The ESP32-C3/S3 chip supports a maximum of 10 instances,
+        including ADV, SCAN and connections. The ESP32-C3/S3 chip can connect up to 9 devices if
+        ADV or SCAN uses only one. If ADV and SCAN are both used, The ESP32-C3/S3 chip is connected
+        to a maximum of 8 devices. Because Bluetooth cannot reclaim used instances once ADV or SCAN
+        is used.
+
+config BT_MULTI_CONNECTION_ENBALE
+    bool "Enable BLE multi-connections"
+    depends on BT_BLE_ENABLED
+    default y
+    help
+        Enable this option if there are multiple connections
+
+config BT_ALLOCATION_FROM_SPIRAM_FIRST
+    bool "BT/BLE will first malloc the memory from the PSRAM"
+    depends on BT_BLUEDROID_ENABLED
+    default n
+    help
+        This select can save the internal RAM if there have the PSRAM
+
+config BT_BLUEDROID_TASK_STACK_IN_EXT_MEM
+    bool "Place BT task stack in external memory"
+    depends on FREERTOS_TASK_CREATE_ALLOW_EXT_MEM && (!IDF_TARGET_ESP32 || SPIRAM_CACHE_WORKAROUND)
+    default n
+    help
+        Common prerequisites for placing Bluedroid host
+        task stacks in PSRAM.
+
+config BT_BLUEDROID_BTU_TASK_STACK_IN_EXT_MEM
+    bool "Place BTU task stack in external memory"
+    depends on BT_BLUEDROID_TASK_STACK_IN_EXT_MEM
+    default n
+    help
+        Allocate BTU_TASK stack from external SPIRAM using static task
+        allocation. TCB remains in internal DRAM.
+
+        BTU does not perform NVS operations directly.
+
+config BT_BLUEDROID_HCI_TASK_STACK_IN_EXT_MEM
+    bool "Place HCI host task stack in external memory"
+    depends on BT_BLUEDROID_TASK_STACK_IN_EXT_MEM
+    default n
+    help
+        Allocate HCI host task (hciT) stack from external SPIRAM using
+        static task allocation. TCB remains in internal DRAM.
+
+        HCI does not perform NVS operations.
+
+config BT_BLE_DYNAMIC_ENV_MEMORY
+    bool "Use dynamic memory allocation in BT/BLE stack"
+    depends on BT_BLUEDROID_ENABLED
+    default n
+    help
+        This select can make the allocation of memory will become more flexible
+
+config BT_SMP_ENABLE
+    bool
+    depends on BT_BLUEDROID_ENABLED
+    default BT_CLASSIC_ENABLED || BT_BLE_SMP_ENABLE
+
+config BT_SMP_MAX_BONDS
+    int "BT/BLE maximum bond device count"
+    depends on BT_SMP_ENABLE
+    range 1 32
+    default 15
+    help
+        The number of security records for peer devices.
+
+config BT_BLE_ACT_SCAN_REP_ADV_SCAN
+    bool "Report adv data and scan response individually when BLE active scan"
+    depends on BT_BLUEDROID_ENABLED && BT_BLE_ENABLED
+    default n
+    help
+        Originally, when doing BLE active scan, Bluedroid will not report adv to application layer
+        until receive scan response. This option is used to disable the behavior. When enable this option,
+        Bluedroid will report adv data or scan response to application layer immediately.
+
+        # Memory reserved at start of DRAM for Bluetooth stack
+
+config BT_MAX_DEVICE_NAME_LEN
+    int "length of bluetooth device name"
+    depends on BT_BLUEDROID_ENABLED
+    range 32 248
+    default 32
+    help
+        Bluetooth Device name length shall be no larger than 248 octets, If the broadcast data cannot contain
+        the complete device name, then only the shortname will be displayed, the rest parts that can't fit in
+        will be truncated.
+
+config BT_BLE_RPA_TIMEOUT
+    int "Timeout of resolvable private address"
+    depends on BT_BLE_ENABLED
+    range 1 3600
+    default 900
+    help
+        This set RPA timeout of Controller and Host.
+        Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
+
+menuconfig BT_BLE_50_FEATURES_SUPPORTED
+    bool "Enable BLE 5.0 and above features(please disable BLE 4.2 if enable BLE 5.0)"
+    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
+    default y
+    help
+        Enabling this option activates BLE 5.0 features.
+        This option is universally supported in chips that support BLE, except for ESP32.
+        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+
+config BT_BLE_50_EXTEND_ADV_EN
+    bool "Enable BLE extend advertising"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE extend advertising
+
+config BT_BLE_50_PERIODIC_ADV_EN
+    bool "Enable BLE periodic advertising"
+    depends on BT_BLE_50_EXTEND_ADV_EN
+    default y
+    help
+        This enables BLE periodic advertising
+
+config BT_BLE_50_EXTEND_SCAN_EN
+    bool "Enable BLE extend scan"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE extend scan
+
+config BT_BLE_50_EXTEND_SYNC_EN
+    bool "Enable BLE periodic advertising sync"
+    depends on BT_BLE_50_EXTEND_SCAN_EN
+    default y
+    help
+        This enables BLE periodic advertising sync
+
+config BT_BLE_50_DTM_TEST_EN
+    bool "Enable BLE 5.0 DTM test"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE 5.0 direct test mode
+
+config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
+    bool "Enable BLE periodic advertising sync transfer feature"
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_PERIODIC_ADV_EN && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        This enables BLE periodic advertising sync transfer feature
+
+config BT_BLE_FEAT_PERIODIC_ADV_ENH
+    bool "Enable periodic adv enhancements(adi support)"
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_PERIODIC_ADV_EN && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable the periodic advertising enhancements
+
+config BT_BLE_FEAT_CREATE_SYNC_ENH
+    bool "Enable create sync enhancements(reporting disable and duplicate filtering enable support)"
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_EXTEND_SYNC_EN && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable the create sync enhancements
+
+config BT_BLE_FEAT_CREATE_SYNC_RETRY_MAX
+    int "Maximum retry count for periodic advertising create sync"
+    depends on BT_BLE_50_EXTEND_SYNC_EN
+    default 3
+    range 0 16
+    help
+        Set the maximum retry count when periodic advertising create sync fails
+        with error code 0x3E (Connection Failed to be Established).
+        Set to 0 to disable retry. Default is 3.
+
+menuconfig BT_BLE_FEAT_ISO_EN
+    bool "Enable BLE 5.2 iso feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ISO_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE 5.2 iso
+
+config BT_BLE_FEAT_ISO_60_EN
+    bool "Enable ISO v6.0 feature"
+    depends on BT_BLE_FEAT_ISO_EN
+    default n
+    help
+        Enable iso 6.0 feature
+
+config BT_BLE_FEAT_ISO_BIG_BROCASTER
+    bool "Enable BLE iso BIG broadcaster"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 BIG broadcaster
+
+config BT_BLE_FEAT_ISO_BIG_SYNCER
+    bool "Enable BLE iso BIG syncer"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 BIG syncer
+
+config BT_BLE_ISO_BIS_MAX_COUNT
+    int "Maximum bis count"
+    depends on BT_BLE_FEAT_ISO_EN && (BT_BLE_FEAT_ISO_BIG_BROCASTER || BT_BLE_FEAT_ISO_BIG_SYNCER)
+    default 2
+    range 1 31
+    help
+        Enable BLE 5.2 CIG peripheral
+
+config BT_BLE_FEAT_ISO_CIG_CENTRAL
+    bool "Enable BLE iso CIG central"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 CIG central
+
+config BT_BLE_FEAT_ISO_CIG_PERIPHERAL
+    bool "Enable BLE iso CIG peripheral"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 CIG peripheral
+
+config BT_BLE_ISO_CIS_MAX_COUNT
+    int "Maximum cis count"
+    depends on BT_BLE_FEAT_ISO_EN && (BT_BLE_FEAT_ISO_CIG_CENTRAL || BT_BLE_FEAT_ISO_CIG_PERIPHERAL)
+    default 2
+    range 1 31
+    help
+        Enable BLE 5.2 CIG peripheral
+
+choice BT_BLE_ISO_FLOW_CONTROL
+    prompt "Select ISO flow control type"
+    depends on BT_BLE_FEAT_ISO_EN
+    default BT_BLE_ISO_NON_STD_FLOW_CTRL
+    help
+        Select ISO flow control type
+
+    config BT_BLE_ISO_STD_FLOW_CTRL
+        bool "ISO standard flow control"
+        help
+            Enable ISO standard flow control
+
+    config BT_BLE_ISO_NON_STD_FLOW_CTRL
+        bool "ISO non-standard flow control"
+        help
+            Enable ISO non-standard flow control
+
+endchoice
+
+menuconfig BT_BLE_FEAT_CTE_EN
+    bool "Enable BLE CTE feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CTE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE 5.1 CTE
+
+config BT_BLE_FEAT_CTE_CONNECTIONLESS_EN
+    bool "Enable BLE CTE connectionless feature"
+    depends on BT_BLE_FEAT_CTE_EN
+    default y
+    help
+        Transmission of CTE in periodic advertising
+
+config BT_BLE_FEAT_CTE_CONNECTION_EN
+    bool "Enable BLE CTE connection feature"
+    depends on BT_BLE_FEAT_CTE_EN
+    default y
+    help
+        Transmission of CTE by ACL connection
+
+config BT_BLE_FEAT_POWER_CONTROL
+    bool "Enable BLE power control feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_POWER_CONTROL_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE power control feature
+
+config BT_BLE_FEAT_CONN_SUBRATING
+    bool "Enable BLE connection subrating feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SUBRATE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE connection subrating feature
+
+config BT_BLE_FEAT_PAWR_EN
+    bool "Enable Periodic Advertisement with Response(PAwR)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_PERIODIC_ADV_WITH_RESPONSE) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE Periodic Advertisement with Response(PAwR) feature
+
+config BT_BLE_FEAT_ADV_CODING_SELECTION
+    bool "Enable Advertising Coding Selection"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ADV_CODING_SELECT_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Advertising Coding Selection
+
+config BT_BLE_FEAT_CHANNEL_SOUNDING
+    bool "Enable BLE channel sounding"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CHANNEL_SOUNDING_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE channel sounding.
+        CS Security Requirements (Core 6.3) is configured separately via
+        BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS.
+
+config BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS
+    bool "Enable BLE CS Security Requirements (Core 6.3)"
+    depends on BT_BLE_FEAT_CHANNEL_SOUNDING && ((BT_CONTROLLER_ENABLED && SOC_BLE_CS_SECURITY_REQUIREMENTS_SUPPORTED) || BT_CONTROLLER_DISABLED) # NOERROR
+    default n
+    help
+        Enable Channel Sounding security requirements HCI commands (Bluetooth Core 6.3).
+        Supports LE CS Set Security Requirements (0x00A7) and
+        LE CS Set Default Security Requirements (0x00A8).
+        Use esp_ble_cs_set_security_requirements() and
+        esp_ble_cs_set_default_security_requirements().
+
+config BT_BLE_FEAT_ADV_MONITOR
+    bool "Enable BLE Advertising Monitor (LE Monitor Advertisement)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ADV_MONITOR_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LE Monitor Advertisement feature (Bluetooth Core 6.0).
+        Allows the host to add devices to a monitor list and receive reports when
+        the controller detects advertising from those devices (e.g. RSSI threshold).
+
+config BT_BLE_FEAT_DBAF
+    bool "Enable BLE Decision-Based Advertising Filtering (DBAF)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_DBAF_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Decision-Based Advertising Filtering (Bluetooth Core 6.0).
+        Supports LE Set Decision Data and LE Set Decision Instructions HCI commands.
+
+config BT_BLE_FEAT_FRAME_SPACE_UPDATE
+    bool "Enable BLE Frame Space Update"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_FRAME_SPACE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Frame Space Update feature (Bluetooth Core 6.0).
+
+config BT_BLE_FEAT_LL_EXT_FEAT
+    bool "Enable BLE LL Extended Feature Set"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_LL_EXT_FEAT_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LL Extended Feature Set (Bluetooth Core 6.0).
+        Supports LE Read All Local/Remote Supported Features HCI commands.
+
+config BT_BLE_FEAT_SHORTER_CONN_INTERVALS
+    bool "Enable BLE Shorter Connection Intervals (Core 6.2)"
+    depends on BT_BLE_FEAT_CONN_SUBRATING && (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SHORTER_CONN_INTERVALS_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Shorter Connection Intervals feature (Bluetooth Core 6.2).
+        Requires Connection Subrating (Core 5.3) per [Vol 6] Part B, Section 4.6.50.
+        Supports LE Connection Rate Request, LE Set Default Rate Parameters,
+        LE Read Minimum Supported Connection Interval commands and LE Connection Rate Change event.
+        Connection intervals use 125 us units (minimum 375 us). Use esp_ble_gap_connection_rate_request(),
+        esp_ble_gap_set_default_rate_parameters(), esp_ble_gap_read_min_supported_connection_interval()
+        and ESP_BLE_GAP_CONN_RATE_* conversion macros in esp_gap_ble_api.h.
+
+config BT_BLE_FEAT_LE_UTP
+    bool "Enable BLE Unified Test Protocol (UTP)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_LE_UTP_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LE Unified Test Protocol (Bluetooth Core 6.2).
+        Supports LE Enable UTP OTA Mode, LE UTP Send commands and LE UTP Receive event.
+
+menuconfig BT_BLE_42_FEATURES_SUPPORTED
+    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
+    depends on BT_BLE_ENABLED
+    default y if IDF_TARGET_ESP32
+    default n
+    help
+        This enables BLE 4.2 features.
+        This option is universally supported by all ESP chips with BLE capabilities.
+        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+
+config BT_BLE_42_DTM_TEST_EN
+    bool "Enable BLE 4.2 DTM test"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE 4.2 direct test mode
+
+config BT_BLE_42_ADV_EN
+    bool "Enable BLE 4.2 advertising"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 advertising
+
+config BT_BLE_42_SCAN_EN
+    bool "Enable BLE 4.2 scan"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 scan
+
+config BT_BLE_VENDOR_HCI_EN
+    bool "Enable BLE Vendor HCI command and event"
+    depends on BT_BLE_ENABLED
+    default y
+    help
+        This enables BLE vendor HCI command and event
+
+config BT_BLE_HIGH_DUTY_ADV_INTERVAL
+    bool "Enable BLE high duty advertising interval feature"
+    depends on BT_BLE_ENABLED
+    default n
+    help
+        This enable BLE high duty advertising interval feature
+
+menu "Bluedroid L2CAP CoC"
+    # LE CoC client code is compiled only with GATTC and server code only with
+    # GATTS (see BLE_L2CAP_COC_CLIENT/SERVER_INCLUDED in bt_target.h). Without
+    # either, enabling CoC would silently compile out entirely, so require at
+    # least one GATT role to be enabled.
+    depends on BT_BLE_ENABLED && (BT_GATTC_ENABLE || BT_GATTS_ENABLE)
+
+    config BT_BLE_L2CAP_COC_ENABLED
+        bool "Enable BLE L2CAP Connection Oriented Channels"
+        default n
+        help
+            Enable LE Credit Based Flow Control mode L2CAP CoC in Bluedroid stack.
+            Independent of Classic Bluetooth L2CAP; does not affect esp_bt_l2cap_* APIs.
+
+    config BT_BLE_L2CAP_COC_MAX_CHAN
+        int "Maximum LE CoC channels"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        range 1 15
+        default 5
+
+    config BT_BLE_L2CAP_COC_MPS
+        int "Default MPS (L2CAP fragment size)"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        range 23 65533 if !BT_BLE_L2CAP_ENHANCED_COC
+        range 64 65533 if BT_BLE_L2CAP_ENHANCED_COC
+        default 247
+        help
+            Default Maximum PDU Payload Size for LE CoC channels. Legacy LE Credit
+            Based Flow Control allows 23–65533 octets (section 4.22). Enhanced
+            Credit Based Flow Control (ECFC/EATT) requires 64–65533 (section 4.25).
+            When ECFC is enabled the minimum is raised to 64 automatically.
+
+    config BT_BLE_L2CAP_COC_INIT_CREDITS
+        int "Initial RX credit window (K-frames per channel)"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        range 1 64
+        default 24
+        help
+            Number of LE CoC RX credits granted to the peer when a channel opens.
+            One credit allows the peer to send one K-frame. A larger window can
+            raise sustained throughput but increases how many in-flight frames
+            the peer may send before waiting for more credits (higher RX memory
+            pressure). A smaller window reduces that pressure but can lower
+            throughput. Manual credit mode can stall if a single SDU needs more
+            K-frames than this window; prefer automatic credit mode or a larger
+            MPS when using large MTUs.
+
+    config BT_BLE_L2CAP_ENHANCED_COC
+        bool "Enable Enhanced Credit Based Flow Control (ECFC)"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        default n
+        help
+            Enable LE Enhanced CoC (L2CAP signaling 0x17/0x18) for multi-channel
+            establishment. Required for EATT multi-bearer support.
+
+    config BT_BLE_EATT_ENABLE
+        bool "Enable Enhanced ATT (EATT)"
+        depends on BT_BLE_L2CAP_COC_ENABLED && BT_BLE_L2CAP_ENHANCED_COC
+        default n
+        help
+            Enable EATT bearers over LE Enhanced CoC (PSM 0x0027).
+            GATT operations may use multiple parallel bearers after link encryption.
+
+    config BT_BLE_EATT_CHAN_NUM
+        int "Number of EATT bearers per connection"
+        depends on BT_BLE_EATT_ENABLE
+        range 1 BT_BLE_L2CAP_COC_MAX_CHAN
+        default 3
+        help
+            Number of parallel EATT bearers established per connection. Must not
+            exceed the maximum LE CoC channels, since EATT bearers are LE CoC
+            channels; the range is capped by BT_BLE_L2CAP_COC_MAX_CHAN.
+
+    config BT_BLE_EATT_MTU
+        int "EATT bearer MTU"
+        depends on BT_BLE_EATT_ENABLE
+        range 64 517
+        default 247
+
+endmenu
+
+config BT_ABORT_WHEN_ALLOCATION_FAILS
+    bool "Abort when memory allocation fails in BT/BLE stack"
+    depends on BT_BLUEDROID_ENABLED
+    default n
+    help
+        This enables abort when memory allocation fails

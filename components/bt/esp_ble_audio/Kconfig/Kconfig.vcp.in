@@ -1,0 +1,97 @@
+# Bluetooth Audio - Volume Control Profile configuration options
+#
+# SPDX-FileCopyrightText: 2020 Bose Corporation
+# SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+################### Volume Control Profile Volume Renderer ###################
+
+config BT_VCP_VOL_REND
+    bool "Volume Control Profile Volume Renderer Support"
+    help
+        This option enables support for Volume Control Profile Volume Renderer
+        role and the Volume Control Service.
+
+if BT_VCP_VOL_REND
+
+    config BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT
+        int "Volume Offset Control Service instance count"
+        default 0
+        range 0 BT_VOCS_MAX_INSTANCE_COUNT
+        help
+            This option sets the number of instances of Volume Offset Control
+            Services.
+
+    config BT_VCP_VOL_REND_VOCS
+        bool # Hidden
+        default y if BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT > 0
+        help
+            This hidden option makes it possible to easily check if VOCS is
+            enabled for VCS.
+
+    config BT_VCP_VOL_REND_AICS_INSTANCE_COUNT
+        int "Audio Input Control Service instance count for VCS"
+        default 0
+        range 0 BT_AICS_MAX_INSTANCE_COUNT
+        help
+            This option sets the number of instances of Audio Input Control
+            Services for VCS.
+
+    config BT_VCP_VOL_REND_AICS
+        bool # Hidden
+        default y if BT_VCP_VOL_REND_AICS_INSTANCE_COUNT > 0
+        help
+            This hidden option makes it possible to easily check if AICS is
+            enabled for VCS.
+
+    config BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE
+        bool "Volume Flags notifiable support"
+        help
+            This option enables support for clients to subscribe for notifications
+            on the Volume Flags characteristic.
+
+endif # BT_VCP_VOL_REND
+
+################### Volume Control Profile Volume Controller ###################
+
+config BT_VCP_VOL_CTLR
+    bool "Volume Control Profile Volume Controller Support"
+    help
+        This option enables support for Volume Control Profile Volume
+        Controller.
+
+if BT_VCP_VOL_CTLR
+
+    config BT_VCP_VOL_CTLR_MAX_VOCS_INST
+        int "Maximum number of VOCS instances to setup"
+        default 0
+        range 0 BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
+        help
+            Sets the maximum number of Volume Offset Control Service (VOCS)
+            instances to setup and use.
+
+    config BT_VCP_VOL_CTLR_VOCS
+        bool # Hidden
+        default y if BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0
+        help
+            This hidden option makes it possible to easily check if VOCS is
+            enabled for VCS client.
+
+    config BT_VCP_VOL_CTLR_MAX_AICS_INST
+        int "Maximum number of AICS instances to setup"
+        default 0
+        range 0 3
+        help
+            Sets the maximum number of Audio Input Control Service (AICS)
+            instances to setup and use.
+
+    config BT_VCP_VOL_CTLR_AICS
+        bool # Hidden
+        default y if BT_VCP_VOL_CTLR_MAX_AICS_INST > 0
+        help
+            This hidden option makes it possible to easily check if AICS is
+            enabled for VCS client.
+
+endif # BT_VCP_VOL_CTLR

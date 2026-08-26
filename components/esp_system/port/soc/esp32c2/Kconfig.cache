@@ -1,0 +1,11 @@
+menu "Cache config"
+
+    config ESP32C2_INSTRUCTION_CACHE_WRAP
+        # TODO: IDF-4194
+        bool
+        prompt "Instruction cache wrap"
+        help
+            If enabled, instruction cache will use wrap mode to read spi flash.
+            The wrap length is fixed to 32B
+
+endmenu

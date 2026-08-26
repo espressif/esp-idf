@@ -1,0 +1,19 @@
+:cmock:
+  :includes_h_pre_header:
+    - esp_netif_types.h
+  :includes_c_pre_header:
+    # Some types are not directly included in header files
+    - esp_netif_types.h
+    - esp_wifi_types.h
+    - esp_netif_mock.h
+    - esp_smartconfig.h
+  :plugins:
+    - expect
+    - expect_any_args
+    - return_thru_ptr
+    - array
+    - ignore
+    - ignore_arg
+    - callback
+  :strippables:
+    - '(?:ESP_EVENT_DECLARE_BASE\s*\([\s\w\*_,]*\))'

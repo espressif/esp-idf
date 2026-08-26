@@ -1,0 +1,46 @@
+menu "Example Configuration"
+
+    choice BASE_MAC_ADDRESS_STORAGE
+        prompt "Storage location of the base MAC address"
+        default BASE_MAC_STORED_EFUSE_BLK0
+        help
+            Select the storage location of the base MAC addresses.
+            1. eFuse BLK0: The "Default (Espressif factory)" selection. The
+            default base MAC address is written to words 1 and 2 of eFuse block
+            0 when the chip was manufactured. Call esp_efuse_mac_get_default()
+            read retrieve the "eFuse BLK0" MAC address.
+            2. eFuse BLK3: A custom base MAC address is burned by the user into
+            eFuse word 0 of block 3. Call esp_efuse_mac_get_custom() to read
+            the "eFuse BLK3" MAC address.
+            3. Other External Storage: Selecting this option will cause the
+            example to call external_storage_mac_get() which is defined in this
+            example to simply return a MAC address preset in software. Users
+            should modify this function to access their desired storage mediums
+            (e.g. flash, EEPROM etc).
+
+        config BASE_MAC_STORED_EFUSE_BLK0
+            bool "Default (Espressif factory) eFuse BLK0"
+        config BASE_MAC_STORED_EFUSE_BLK3
+            bool "Custom eFuse BLK3"
+        config BASE_MAC_STORED_OTHER_EXTERNAL_STORAGE
+            bool "Other external storage"
+    endchoice
+
+    choice BASE_MAC_STORED_EFUSE_BLK3_ERROR_BEHAV
+        prompt "Behavior when retrieving eFuse BLK3 fails"
+        depends on BASE_MAC_STORED_EFUSE_BLK3
+        default BASE_MAC_STORED_EFUSE_BLK3_ERROR_DEFAULT
+        help
+            Select the behavior when reading base MAC address "eFuse BLK3" fails
+            (i.e. the retrieved result is all 0).
+            - If "Abort" is selected, the ESP32 will abort.
+            - If "Use the default base MAC address from BLK0 of eFuse" is
+            selected, the default "eFuse BLK0" will be used instead.
+
+        config BASE_MAC_STORED_EFUSE_BLK3_ERROR_ABORT
+            bool "Abort"
+        config BASE_MAC_STORED_EFUSE_BLK3_ERROR_DEFAULT
+            bool "Use the default base MAC address eFuse BLK0"
+    endchoice
+
+endmenu

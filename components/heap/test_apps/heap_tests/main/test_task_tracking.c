@@ -1,0 +1,519 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+#include "unity.h"
+#include "stdio.h"
+#include <string.h>
+#include <stdint.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_attr.h"
+#include "esp_heap_caps.h"
+#include "esp_heap_task_info.h"
+#include "esp_timer.h"
+
+extern void set_leak_threshold(int threshold);
+
+// This test only apply when task tracking is enabled
+#if defined(CONFIG_HEAP_TASK_TRACKING) && defined(CONFIG_HEAP_TRACK_DELETED_TASKS)
+
+#define ALLOC_BYTES 36
+
+static void check_heap_task_info(const char *task_name, const bool task_active)
+{
+    heap_all_tasks_stat_t heap_tasks_stat;
+
+    heap_tasks_stat.task_count = 10;
+    heap_tasks_stat.heap_count = 20;
+    heap_tasks_stat.alloc_count = 60;
+    task_stat_t arr_task_stat[heap_tasks_stat.task_count];
+    heap_stat_t arr_heap_stat[heap_tasks_stat.heap_count];
+    heap_task_block_t arr_alloc_stat[heap_tasks_stat.alloc_count];
+    heap_tasks_stat.stat_arr = arr_task_stat;
+    heap_tasks_stat.heap_stat_start = arr_heap_stat;
+    heap_tasks_stat.alloc_stat_start = arr_alloc_stat;
+
+    heap_caps_get_all_task_stat(&heap_tasks_stat);
+
+    bool task_found = false;
+    for (size_t task_index = 0; task_index < heap_tasks_stat.task_count; task_index++) {
+        // the prescheduler allocs and free are stored as a
+        // task with a handle set to 0, avoid calling pcTaskGetName
+        // in that case.
+        task_stat_t task_stat = heap_tasks_stat.stat_arr[task_index];
+        if (0 == strcmp(task_stat.name, task_name) && task_stat.is_alive == task_active) {
+            task_found = true;
+        }
+    }
+    TEST_ASSERT_TRUE(task_found);
+}
+
+static void test_task(void *args)
+{
+    void *ptr = heap_caps_malloc(ALLOC_BYTES, MALLOC_CAP_32BIT);
+    if (ptr == NULL) {
+        abort();
+    }
+
+    // unlock main to check task tracking feature
+    xTaskNotifyGive((TaskHandle_t)args);
+
+    // wait for main to give back the hand to the task to delete the pointer
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    heap_caps_free(ptr);
+
+    // unlock main to delete the task
+    xTaskNotifyGive((TaskHandle_t)args);
+
+   // wait for main to delete the task
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+}
+
+static void test_task_a(void *args)
+{
+    test_task(args);
+}
+
+static void test_task_b(void *args)
+{
+    test_task(args);
+}
+
+/* This test will create a task, wait for the task to allocate / free memory
+ * so it is added to the task tracking info in the heap component and then
+ * call heap_caps_get_all_task_stat() and make sure a task with the name test_task
+ * is in the list, and that the right ALLOC_BYTES are shown.
+ *
+ * Note: The memory allocated in the task is not freed for the sake of the test
+ * so it is normal that memory leak will be reported by the test environment. It
+ * shouldn't be more than the byte allocated by the task + associated metadata
+ */
+TEST_CASE("heap task tracking reports created / deleted task", "[heap]")
+{
+    TaskHandle_t test_task_handle;
+    const char *task_name = "test_task_a";
+    xTaskCreate(&test_task_a, task_name, 3072, (void *)xTaskGetCurrentTaskHandle(), 5, &test_task_handle);
+
+    // wait for task to allocate memory and give the hand back to the test
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // check that the task is referenced in the list of task
+    // by the task tracking feature. check that the task name is
+    // matching and the task is running.
+    check_heap_task_info(task_name, true);
+
+    // unlock main to check task tracking feature
+    xTaskNotifyGive(test_task_handle);
+
+    // wait for the task to free the memory
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // delete the task.
+    vTaskDelete(test_task_handle);
+
+    // check that the task is referenced in the list of task
+    // by the task tracking feature. check that the task name is
+    // matching and the task is marked as deleted.
+    check_heap_task_info(task_name, false);
+}
+
+/* The test case calls heap_caps_alloc_all_task_stat_arrays and heap_caps_get_all_task_stat
+ * after creating new tasks and allocating in new heaps to check that the number of tasks, heaps and
+ * allocation statistics provided by heap_caps_get_all_task_stat is updated accordingly.
+*/
+TEST_CASE("heap task tracking check alloc array and get all tasks info", "[heap]")
+{
+    // call heap_caps_alloc_all_task_stat_arrays and save the number of tasks, heaps and allocs
+    // statistics available when the test starts
+    heap_all_tasks_stat_t tasks_stat;
+    esp_err_t ret_val = heap_caps_alloc_all_task_stat_arrays(&tasks_stat);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+    ret_val = heap_caps_get_all_task_stat(&tasks_stat);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    const size_t nb_of_tasks_stat = tasks_stat.task_count;
+    const size_t nb_of_heaps_stat = tasks_stat.heap_count;
+    const size_t nb_of_allocs_stat = tasks_stat.alloc_count;
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
+
+    // Create a task that will allocate memory
+    TaskHandle_t test_task_handle;
+    const char *task_name = "test_task_b";
+    xTaskCreate(&test_task_b, task_name, 3072, (void *)xTaskGetCurrentTaskHandle(), 5, &test_task_handle);
+
+    // wait for the task to give the hand to the test and call heap_caps_alloc_all_task_stat_arrays.
+    // Compare the number of tasks, heaps and allocs statistics available to make sure they contain the stats
+    // related to the newly created task.
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    ret_val = heap_caps_alloc_all_task_stat_arrays(&tasks_stat);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+    ret_val = heap_caps_get_all_task_stat(&tasks_stat);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    TEST_ASSERT(nb_of_tasks_stat < tasks_stat.task_count);
+    TEST_ASSERT(nb_of_heaps_stat < tasks_stat.heap_count);
+    TEST_ASSERT(nb_of_allocs_stat < tasks_stat.alloc_count);
+
+    // free the arrays of stat in tasks_stat and reset the counters
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
+
+    // unlock task to delete allocated memory
+    xTaskNotifyGive(test_task_handle);
+
+    // wait for the task to free the memory
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // delete the task.
+    vTaskDelete(test_task_handle);
+}
+
+static void task_self_check(void *args)
+{
+    const size_t alloc_size = 100;
+    const uint32_t caps = MALLOC_CAP_32BIT | MALLOC_CAP_DMA;
+
+    // call heap_caps_alloc_single_task_stat_arrays on the current task. Since no alloc was made, the
+    // function should return ESP_OK but the heap_count and alloc_count should be 0, the pointer to the
+    // allocated arrays should be NULL.
+    heap_single_task_stat_t task_stat;
+    esp_err_t ret_val = heap_caps_alloc_single_task_stat_arrays(&task_stat, NULL);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+    TEST_ASSERT_EQUAL(task_stat.heap_count, 0);
+    TEST_ASSERT_EQUAL(task_stat.alloc_count, 0);
+    TEST_ASSERT_NULL(task_stat.heap_stat_start);
+    TEST_ASSERT_NULL(task_stat.alloc_stat_start);
+
+    // allocate memory
+    void *ptr = heap_caps_malloc(alloc_size, caps);
+
+    // allocate arrays for the statistics of the task. This time, it should succeed as we just
+    // allocated memory. This information should be stored in the task info list.
+    ret_val = heap_caps_alloc_single_task_stat_arrays(&task_stat, NULL);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // The number of heap info should be one and the number of alloc should be one too
+    TEST_ASSERT_EQUAL(1, task_stat.heap_count);
+    TEST_ASSERT_EQUAL(1, task_stat.alloc_count);
+
+    ret_val = heap_caps_get_single_task_stat(&task_stat, NULL);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // the caps of the heap info should contain the caps used to allocate the memory
+    TEST_ASSERT((task_stat.stat.heap_stat[0].caps & caps) == caps);
+
+    // The size of the alloc found in the stat should be not null and the address
+    // of the alloc should match too
+    TEST_ASSERT(task_stat.stat.heap_stat[0].alloc_stat[0].size > 0);
+    TEST_ASSERT(task_stat.stat.heap_stat[0].alloc_stat[0].address == ptr);
+
+    // free the memory and get the updated statistics on the task
+    heap_caps_free(ptr);
+    heap_caps_free_single_task_stat_arrays(&task_stat);
+
+    ret_val = heap_caps_alloc_single_task_stat_arrays(&task_stat, NULL);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // The number of heap info should be one and the number of alloc should be zero
+    // since the allocated memory was just freed
+    TEST_ASSERT_EQUAL(1, task_stat.heap_count);
+    TEST_ASSERT_EQUAL(0, task_stat.alloc_count);
+
+    ret_val = heap_caps_get_single_task_stat(&task_stat, NULL);
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    TEST_ASSERT((task_stat.stat.heap_stat[0].caps & caps) == caps);
+    TEST_ASSERT(task_stat.stat.heap_stat[0].alloc_stat == NULL);
+
+    // unlock main to check task tracking feature
+    xTaskNotifyGive((TaskHandle_t)args);
+
+    // wait for main to give back the hand to the task to delete the pointer
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+}
+
+/* The test case calls heap_caps_alloc_single_task_stat_arrays and heap_caps_get_single_task_stat
+ * after creating new task and allocating in new heaps to check that the number of heaps and
+ * allocation statistics provided by heap_caps_get_single_task_stat is updated accordingly.
+*/
+TEST_CASE("heap task tracking check alloc arrays and get info on specific task", "[heap]")
+{
+    TaskHandle_t test_task_handle;
+    const char *task_name = "task_self_check";
+    xTaskCreate(&task_self_check, task_name, 3072, (void *)xTaskGetCurrentTaskHandle(), 5, &test_task_handle);
+
+    // wait for the task to free the memory
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // delete the task.
+    vTaskDelete(test_task_handle);
+}
+
+typedef struct {
+    void *ptr;
+    TaskHandle_t task;
+} handle_reuse_allocation_t;
+
+#define NUM_HANDLE_REUSE_ATTEMPTS 500
+
+static volatile handle_reuse_allocation_t s_handle_reuse_allocations[NUM_HANDLE_REUSE_ATTEMPTS];
+static volatile bool s_handle_reuse_found = false;
+static volatile TaskHandle_t s_reused_task_handle = NULL;
+static volatile bool s_alloc_task_done = false;
+
+static bool task_usage_underflowed(size_t usage)
+{
+    /* size_t underflow looks negative when printed with %d (e.g. -16 -> 0xFFFFFFF0). */
+    return usage > ((size_t)INT32_MAX);
+}
+
+static void assert_no_underflow_for_reused_handle(TaskHandle_t handle)
+{
+    heap_all_tasks_stat_t tasks_stat;
+    esp_err_t ret_val = heap_caps_alloc_all_task_stat_arrays(&tasks_stat);
+    TEST_ASSERT_EQUAL(ESP_OK, ret_val);
+    ret_val = heap_caps_get_all_task_stat(&tasks_stat);
+    TEST_ASSERT_EQUAL(ESP_OK, ret_val);
+
+    size_t matching = 0;
+    for (size_t task_index = 0; task_index < tasks_stat.task_count; task_index++) {
+        task_stat_t task_stat = tasks_stat.stat_arr[task_index];
+        if (task_stat.handle != handle) {
+            continue;
+        }
+
+        matching++;
+        TEST_ASSERT_FALSE_MESSAGE(task_usage_underflowed(task_stat.overall_current_usage),
+                                  "overall_current_usage underflowed");
+        for (size_t heap_index = 0; heap_index < task_stat.heap_count; heap_index++) {
+            TEST_ASSERT_FALSE_MESSAGE(task_usage_underflowed(task_stat.heap_stat[heap_index].current_usage),
+                                      "heap current_usage underflowed");
+        }
+    }
+
+    TEST_ASSERT_GREATER_THAN(0, matching);
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
+}
+
+static void realloc_then_free(void *ptr, size_t size)
+{
+    void *new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_DEFAULT);
+    if (new_ptr != NULL) {
+        ptr = new_ptr;
+    }
+    heap_caps_free(ptr);
+}
+
+static void handle_reuse_dummy_task(void *args)
+{
+    (void)args;
+    while (1) {
+        taskYIELD();
+    }
+}
+
+static void handle_reuse_alloc_task(void *args)
+{
+    TaskHandle_t handle = xTaskGetCurrentTaskHandle();
+    size_t i = (size_t)args;
+
+    s_handle_reuse_allocations[i].ptr = heap_caps_malloc(10, MALLOC_CAP_DEFAULT);
+    if (s_handle_reuse_allocations[i].ptr == NULL) {
+        abort();
+    }
+    s_handle_reuse_allocations[i].task = handle;
+
+    for (size_t j = 0; j < i; j++) {
+        if (s_handle_reuse_allocations[j].task == handle) {
+            /* Same TaskHandle_t as a previously deleted task: exercise the realloc path. */
+            realloc_then_free(s_handle_reuse_allocations[i].ptr, 20);
+            realloc_then_free(s_handle_reuse_allocations[j].ptr, 20);
+            s_handle_reuse_allocations[i].ptr = NULL;
+            s_handle_reuse_allocations[j].ptr = NULL;
+
+            s_handle_reuse_found = true;
+            s_reused_task_handle = handle;
+            s_alloc_task_done = true;
+            vTaskDelete(NULL);
+            return;
+        }
+    }
+
+    s_alloc_task_done = true;
+    vTaskDelete(NULL);
+}
+
+/* Reproduce the scenario from GoeBachmann/esp-idf (heap-tracking-bug branch),
+ * examples/system/heap_task_tracking/basic: create many short-lived tasks until
+ * a new task reuses a deleted task's TaskHandle_t, then realloc/free allocations
+ * from both lifetimes. Without the fix, overall_current_usage underflows and
+ * appears negative in logs.
+ */
+TEST_CASE("heap task tracking realloc with reused TaskHandle does not underflow usage", "[heap]")
+{
+    TaskHandle_t dummy_task_handle = NULL;
+
+    set_leak_threshold(-50000);
+
+    s_handle_reuse_found = false;
+    s_reused_task_handle = NULL;
+    memset((void *)s_handle_reuse_allocations, 0, sizeof(s_handle_reuse_allocations));
+
+    xTaskCreate(&handle_reuse_dummy_task, "dummy_task", 3072, NULL, 0, &dummy_task_handle);
+
+    for (size_t i = 0; i < NUM_HANDLE_REUSE_ATTEMPTS; i++) {
+        s_alloc_task_done = false;
+        xTaskCreate(&handle_reuse_alloc_task, "alloc_task", 3072, (void *)i, 5, NULL);
+        while (!s_alloc_task_done) {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+
+        if (s_handle_reuse_found) {
+            break;
+        }
+    }
+
+    TEST_ASSERT_TRUE_MESSAGE(s_handle_reuse_found,
+                             "Could not force TaskHandle reuse within iteration limit");
+    assert_no_underflow_for_reused_handle(s_reused_task_handle);
+
+    vTaskDelete(dummy_task_handle);
+}
+
+#define STRESS_ALLOC_BYTES  128
+#define STRESS_DURATION_MS  3000
+
+static int64_t s_stress_end_time;
+
+static void task_tracking_stress_task(void *args)
+{
+    while (esp_timer_get_time() < s_stress_end_time) {
+        void *ptr = heap_caps_malloc(STRESS_ALLOC_BYTES, MALLOC_CAP_INTERNAL);
+        if (ptr != NULL) {
+            heap_caps_free(ptr);
+        }
+    }
+
+    // let the test know that this task is done before deleting itself
+    xTaskNotifyGive((TaskHandle_t)args);
+    vTaskDelete(NULL);
+}
+
+/**
+ * @brief Start one allocation stress task on every core, each running for STRESS_DURATION_MS.
+ *
+ * The tasks are created with the priority of the calling task so that they share the CPU with
+ * it instead of starving it.
+ */
+static void start_stress_tasks(void)
+{
+    s_stress_end_time = esp_timer_get_time() + (STRESS_DURATION_MS * 1000);
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        xTaskCreatePinnedToCore(&task_tracking_stress_task, "tt_stress", 3072,
+                                (void *)xTaskGetCurrentTaskHandle(),
+                                uxTaskPriorityGet(NULL), NULL, core);
+    }
+}
+
+/**
+ * @brief Wait for all the allocation stress tasks to be done.
+ */
+static void wait_for_stress_tasks(void)
+{
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        // the notification count is not cleared: each stress task notifies once
+        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+    }
+}
+
+#if CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+
+#define ISR_ALLOC_BYTES     64
+#define ISR_TIMER_PERIOD_US 500
+
+static volatile uint32_t s_isr_alloc_count;
+static volatile bool s_isr_alloc_failed;
+
+static void IRAM_ATTR task_tracking_isr_alloc_cb(void *args)
+{
+    void *ptr = heap_caps_malloc(ISR_ALLOC_BYTES, MALLOC_CAP_INTERNAL);
+    if (ptr == NULL) {
+        s_isr_alloc_failed = true;
+        return;
+    }
+
+    heap_caps_free(ptr);
+    s_isr_alloc_count++;
+}
+
+/* malloc() and free() can run from an ISR or a critical section, and task tracking
+ * is updated on those paths. A blocking lock around the statistics deadlocks here
+ * (interrupt watchdog timeout). Allocate and free from an ISR while every core does
+ * the same from a task.
+ */
+TEST_CASE("heap task tracking is safe when malloc/free run from an ISR", "[heap]")
+{
+    const esp_timer_create_args_t timer_args = {
+        .callback = &task_tracking_isr_alloc_cb,
+        .dispatch_method = ESP_TIMER_ISR,
+        .name = "tt_isr",
+    };
+    esp_timer_handle_t timer = NULL;
+
+    // the task tracking statistics of the stress tasks are kept after their deletion
+    set_leak_threshold(-5000);
+
+    s_isr_alloc_count = 0;
+    s_isr_alloc_failed = false;
+
+    start_stress_tasks();
+
+    TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
+    TEST_ESP_OK(esp_timer_start_periodic(timer, ISR_TIMER_PERIOD_US));
+
+    wait_for_stress_tasks();
+
+    TEST_ESP_OK(esp_timer_stop(timer));
+    TEST_ESP_OK(esp_timer_delete(timer));
+
+    TEST_ASSERT_FALSE_MESSAGE(s_isr_alloc_failed, "allocation from ISR failed");
+    TEST_ASSERT_GREATER_THAN_UINT32(0, s_isr_alloc_count);
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+}
+
+#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+
+/* Reading and printing statistics must not hold the tracking lock for the whole
+ * operation. Call the getters and printers while every core allocates and frees,
+ * so a lock that is held too long would stall the allocator.
+ */
+TEST_CASE("heap task tracking get and print stats while allocating from all cores", "[heap][qemu-ignore]")
+{
+    // the task tracking statistics of the stress tasks are kept after their deletion
+    set_leak_threshold(-5000);
+
+    start_stress_tasks();
+
+    for (size_t i = 0; i < 5; i++) {
+        heap_all_tasks_stat_t tasks_stat = {};
+
+        TEST_ESP_OK(heap_caps_alloc_all_task_stat_arrays(&tasks_stat));
+        TEST_ESP_OK(heap_caps_get_all_task_stat(&tasks_stat));
+        heap_caps_free_all_task_stat_arrays(&tasks_stat);
+
+        heap_caps_print_all_task_stat_overview(stdout);
+        heap_caps_print_single_task_stat(stdout, xTaskGetCurrentTaskHandle());
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    wait_for_stress_tasks();
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+}
+
+#endif // CONFIG_HEAP_TASK_TRACKING

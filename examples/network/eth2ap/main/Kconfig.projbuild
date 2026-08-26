@@ -1,0 +1,34 @@
+menu "Example Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "Wi-Fi SSID"
+        default "eth2ap"
+        help
+            Set the SSID of Wi-Fi ap interface.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "Wi-Fi Password"
+        default "12345678"
+        help
+            Set the password of Wi-Fi ap interface.
+
+    config EXAMPLE_WIFI_CHANNEL
+        int "WiFi channel"
+        range 1 13
+        default 1
+        help
+            Set the channel of Wi-Fi ap.
+
+    config EXAMPLE_MAX_STA_CONN
+        int "Maximum STA connections"
+        default 4
+        range 1 4 if IDF_TARGET_ESP32C2
+        range 1 15
+        help
+            Maximum number of STAs allowed to connect to the soft-AP (wifi_config_t.ap.max_connection).
+            Upper bound matches ESP_WIFI_MAX_CONN_NUM in esp_wifi_types_native.h:
+            1-4 on ESP32-C2, 1-15 on other Wi-Fi chips.
+            Soft-AP and ESP-NOW share encryption keys; see Wi-Fi driver documentation
+            if ESP-NOW is enabled.
+
+endmenu

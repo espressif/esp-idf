@@ -1,0 +1,97 @@
+[sections:bt_iram_text]
+entries:
+    .iram1+
+
+[sections:high_perf_iram_text]
+entries:
+    .high_perf_code_iram1+
+
+[sections:adv_fast_execute_code_iram_text]
+entries:
+    .adv_fast_execute_code_iram1+
+
+[sections:sleep_text]
+entries:
+    .iram_sleep+
+    .iram_btslp+
+
+[sections:sleep_text_adv]
+entries:
+    .iram_sleep_adv+
+
+[sections:sleep_text_conn]
+entries:
+    .iram_sleep_conn+
+
+[sections:sleep_single_sleep]
+entries:
+    .iram_single_sleep+
+
+
+[scheme:bt_default]
+entries:
+    bt_bss -> dram0_bss
+    bt_common -> dram0_bss
+    data -> dram0_data
+    high_perf_iram_text -> iram0_text
+
+    if BT_CTRL_RUN_IN_FLASH_ONLY = y:
+        bt_iram_text -> flash_text
+    else:
+        bt_iram_text -> iram0_text
+
+    if BT_LE_CTRL_ADV_FAST_TX_EN = y:
+        adv_fast_execute_code_iram_text -> iram0_text
+    else:
+        adv_fast_execute_code_iram_text -> flash_text
+
+    if BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM = y:
+        sleep_text -> iram0_text
+    else:
+        sleep_text -> flash_text
+
+    if BT_CTRL_LE_ADV_SLEEP_CODE_IN_IRAM = y:
+        sleep_text_adv->iram0_text
+    else:
+        sleep_text_adv->flash_text
+
+    if BT_CTRL_LE_CONN_SLEEP_CODE_IN_IRAM = y:
+        sleep_text_conn->iram0_text
+    else:
+        sleep_text_conn->flash_text
+
+    if BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM = y || BT_CTRL_RUN_IN_FLASH_ONLY = n:
+        sleep_single_sleep->iram0_text
+    else:
+        sleep_single_sleep->flash_text
+
+# For the following fragments, order matters for
+# 'ALIGN(4) ALIGN(4, post) SURROUND(sym)', which generates:
+#
+#   . = ALIGN(4)
+#   _sym_start
+#   ...
+#   . = ALIGN(4)
+#   _sym_end
+
+[mapping:bt]
+archive: libbt.a
+entries:
+    if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
+        * (bt_extram_bss);
+            bt_bss -> extern_ram ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
+            bt_common -> extern_ram ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
+            data -> dram0_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
+    else:
+        * (bt_default);
+            bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
+            bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
+            data -> dram0_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
+
+[mapping:ble_app]
+archive: libble_app.a
+entries:
+    * (bt_default);
+        bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_bss),
+        bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_common),
+        data -> dram0_data ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_data)

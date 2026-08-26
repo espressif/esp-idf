@@ -1,0 +1,67 @@
+menu "ESP-Driver:Parallel IO Configurations"
+    depends on SOC_PARLIO_SUPPORTED
+
+    config PARLIO_TX_ISR_HANDLER_IN_IRAM
+        bool "Place Parallel IO TX ISR handler in IRAM to reduce latency"
+        default y
+        select PARLIO_OBJ_CACHE_SAFE
+        select GDMA_CTRL_FUNC_IN_IRAM
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+        help
+            Place Parallel IO TX ISR handler in IRAM to reduce latency caused by cache miss.
+
+    config PARLIO_RX_ISR_HANDLER_IN_IRAM
+        bool "Place Parallel IO RX ISR handler in IRAM to reduce latency"
+        default y
+        select PARLIO_OBJ_CACHE_SAFE
+        select GDMA_CTRL_FUNC_IN_IRAM
+        help
+            Place Parallel IO RX ISR handler in IRAM to reduce latency caused by cache miss.
+
+    config PARLIO_TX_ISR_CACHE_SAFE
+        bool "Allow Parallel IO TX ISR to execute when cache is disabled"
+        select PARLIO_TX_ISR_HANDLER_IN_IRAM
+        select GDMA_ISR_HANDLER_IN_IRAM
+        default n
+        help
+            Enable this option to allow the Parallel IO TX Interrupt Service Routine (ISR)
+            to execute even when the cache is disabled. This can be useful in scenarios where the cache
+            might be turned off, but the Parallel IO TX functionality is still required to operate correctly.
+
+    config PARLIO_RX_ISR_CACHE_SAFE
+        bool "Allow Parallel IO RX ISR to execute when cache is disabled"
+        select PARLIO_RX_ISR_HANDLER_IN_IRAM
+        select GDMA_ISR_HANDLER_IN_IRAM
+        default n
+        help
+            Enable this option to allow the Parallel IO RX Interrupt Service Routine (ISR)
+            to execute even when the cache is disabled. This can be useful in scenarios where the cache
+            might be turned off, but the Parallel IO RX functionality is still required to operate correctly.
+
+    config PARLIO_OBJ_CACHE_SAFE
+        bool
+        default n
+        help
+            This will ensure the driver object will not be allocated from a memory region
+            where its cache can be disabled.
+
+    config PARLIO_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, Parallel IO driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+
+    config PARLIO_ISR_IRAM_SAFE
+        bool "Parallel IO ISR IRAM-Safe (Deprecated)"
+        default n
+        select PARLIO_TX_ISR_CACHE_SAFE
+        select PARLIO_RX_ISR_CACHE_SAFE
+        help
+            Ensure the Parallel IO interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+endmenu # Parallel IO Configuration

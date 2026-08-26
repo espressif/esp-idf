@@ -1,0 +1,39 @@
+In archive /home/user/build/esp-idf/freertos/libfreertos.a:
+
+croutine.c.obj:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.prvCheckPendingReadyList 00000018  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.prvCheckDelayedList 0000002c  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+
+croutine.cpp.obj:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  9 .text.prvCheckPendingReadyList 00000056  00000000  00000000  000000d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.prvCheckDelayedList 000000ac  00000000  00000000  00000130  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+
+croutine.S.obj:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+ 26 .debug_frame  000000a0  00000000  00000000  00000394  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 27 .debug_info   000006b8  00000000  00000000  00000434  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 28 .debug_abbrev 00000233  00000000  00000000  00000aec  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+timers.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.prvGetNextExpireTime 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.prvInsertTimerInActiveList 00000010  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE

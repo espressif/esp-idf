@@ -1,0 +1,1070 @@
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+import asyncio
+import importlib
+import json
+import os
+import re
+import subprocess
+import sys
+from asyncio.subprocess import Process
+from collections.abc import Generator
+from pkgutil import iter_modules
+from re import Match
+from types import FunctionType
+from typing import Any
+from typing import TextIO
+from typing import cast
+
+import rich_click as click
+import yaml
+from esp_idf_monitor import get_ansi_converter
+from esp_pylib.logger import log
+from rich.markup import escape
+
+from idf_py_actions.errors import NoSerialPortFoundError
+
+from .constants import GENERATORS
+from .errors import FatalError
+
+# Name of the program, normally 'idf.py'.
+# Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
+PROG = os.getenv('IDF_PY_PROGRAM_NAME', 'idf.py')
+
+# environment variable used during click shell completion run
+SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
+
+# was shell completion invoked?
+SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
+
+# During shell completion idf.py must stay silent: any diagnostic written to stdout/stderr
+# corrupts the completion output. Silence the shared logger once instead of guarding every
+# call site (this is what the old print_warning() helper did via its SHELL_COMPLETE_RUN check).
+if SHELL_COMPLETE_RUN:
+    log.set_verbosity('SILENT')
+
+
+# The ctx dict "abuses" how python evaluates default parameter values.
+# https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+# Default parameter values are evaluated from left to right
+# when the function definition is executed
+def get_build_context(ctx: dict = {}) -> dict:
+    """
+    The build context is set in the ensure_build_directory function. It can be used
+    in modules or other code, which don't have direct access to such information.
+    It returns dictionary with the following keys:
+
+    'proj_desc' - loaded project_description.json file
+
+    Please make sure that ensure_build_directory was called otherwise the build
+    context dictionary will be empty. Also note that it might not be thread-safe to
+    modify the returned dictionary. It should be considered read-only.
+    """
+    return ctx
+
+
+def _set_build_context(args: 'PropertyDict') -> None:
+    # private helper to set global build context from ensure_build_directory
+    ctx = get_build_context()
+
+    proj_desc_fn = f'{args.build_dir}/project_description.json'
+    try:
+        with open(proj_desc_fn, encoding='utf-8') as f:
+            ctx['proj_desc'] = json.load(f)
+    except (OSError, ValueError) as e:
+        raise FatalError(f'Cannot load {proj_desc_fn}: {e}')
+
+
+def executable_exists(args: list) -> bool:
+    try:
+        subprocess.check_output(args)
+        return True
+
+    except Exception:
+        return False
+
+
+def idf_version_from_cmake() -> str | None:
+    """Acquires version of ESP-IDF from version.cmake"""
+    version_path = os.path.join(os.environ['IDF_PATH'], 'tools/cmake/version.cmake')
+    regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
+    ver = {}
+    try:
+        with open(version_path, encoding='utf-8') as f:
+            for line in f:
+                m = regex.match(line)
+
+                if m:
+                    ver[m.group(1)] = m.group(2)
+
+        return f'v{ver["MAJOR"]}.{ver["MINOR"]}.{ver["PATCH"]}'
+    except (KeyError, OSError):
+        log.warn('Cannot find ESP-IDF version in version.cmake')
+        return None
+
+
+def get_target(path: str, sdkconfig_filename: str = 'sdkconfig') -> str | None:
+    path = os.path.join(path, sdkconfig_filename)
+    return get_sdkconfig_value(path, 'CONFIG_IDF_TARGET')
+
+
+def idf_version() -> str | None:
+    """Print version of ESP-IDF"""
+
+    #  Try to get version from git:
+    try:
+        version: str | None = (
+            subprocess.check_output(
+                [
+                    'git',
+                    f'--git-dir={os.path.join(os.environ["IDF_PATH"], ".git")}',
+                    f'--work-tree={os.environ["IDF_PATH"]}',
+                    'describe',
+                    '--tags',
+                    '--dirty',
+                    '--match',
+                    'v*.*',
+                ]
+            )
+            .decode('utf-8', 'ignore')
+            .strip()
+        )
+    except Exception:
+        # if failed, then try to parse cmake.version file
+        log.warn('Git version unavailable, reading from source')
+        version = idf_version_from_cmake()
+
+    return version
+
+
+def get_default_serial_port() -> Any:
+    # Import is done here in order to move it after the check_environment()
+    # ensured that pyserial has been installed
+    try:
+        import esptool
+
+        ports = esptool.get_port_list()
+        # high baud rate could cause the failure of creation of the connection
+        esp = esptool.get_default_connected_device(
+            serial_list=ports, port=None, connect_attempts=4, initial_baud=115200
+        )
+        if esp is None:
+            raise NoSerialPortFoundError(
+                "No serial ports found. Connect a device, or use '-p PORT' option to set a specific port."
+            )
+
+        serial_port = esp.serial_port
+        esp._port.close()
+
+        return serial_port
+
+    except NoSerialPortFoundError:
+        raise
+    except Exception as e:
+        raise FatalError(f'An exception occurred during detection of the serial port: {e}')
+
+
+def debug_print_idf_version() -> None:
+    log.note(f'ESP-IDF {idf_version() or "version unknown"}')
+
+
+def _load_hints_from_directory(directory: str) -> list:
+    """Load hints file in the given directory"""
+    hints_file = os.path.join(directory, 'hints.yml')
+    if not os.path.exists(hints_file):
+        return []
+
+    try:
+        with open(hints_file, encoding='utf-8') as file:
+            hints = yaml.safe_load(file)
+            return hints if hints else []
+    except (OSError, yaml.YAMLError):
+        log.warn(escape(f'Failed to load hints from "{hints_file}"'))
+        return []
+
+
+def _load_hints_from_project_components(proj_desc: dict) -> list:
+    """
+    Load hints from project components
+    Excluding ESP-IDF components to avoid duplicates
+    """
+    hints = []
+    all_component_info = proj_desc.get('all_component_info', {})
+    for comp_name, comp_info in proj_desc.get('build_component_info', {}).items():
+        comp_dir = comp_info.get('dir')
+        if comp_dir and os.path.isdir(comp_dir) and os.path.exists(os.path.join(comp_dir, 'hints.yml')):
+            if comp_name in all_component_info and all_component_info[comp_name].get('source') != 'idf_components':
+                hints.extend(_load_hints_from_directory(comp_dir))
+
+    return hints
+
+
+def _load_idf_hints() -> dict:
+    """Load global hints and IDF component hints"""
+    hints: dict[str, list[Any]] = {'yml': [], 'modules': []}
+    current_module_dir = os.path.dirname(__file__)
+    # Load global hints
+    hints['yml'] = _load_hints_from_directory(current_module_dir)
+
+    # Load hint modules
+    hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
+    if os.path.exists(hint_modules_dir):
+        sys.path.append(hint_modules_dir)
+        for _, name, _ in iter_modules([hint_modules_dir]):
+            # Import modules for hint processing and add list of their 'generate_hint' functions into hint dict.
+            # If the module doesn't have the function 'generate_hint', it will raise an exception
+            try:
+                hints['modules'].append(getattr(importlib.import_module(name), 'generate_hint'))
+            except ModuleNotFoundError:
+                log.die(escape(f'Failed to import "{name}" from "{hint_modules_dir}" as a module'))
+            except AttributeError:
+                log.die(escape(f'Module "{name}" does not have function generate_hint.'))
+
+    # Load ESP-IDF components
+    idf_path = os.environ.get('IDF_PATH')
+    if idf_path:
+        components_dir = os.path.join(os.path.abspath(idf_path), 'components')
+        if os.path.isdir(components_dir):
+            try:
+                for comp_name in os.listdir(components_dir):
+                    comp_dir = os.path.join(components_dir, comp_name)
+                    if os.path.isdir(comp_dir):
+                        hints['yml'].extend(_load_hints_from_directory(comp_dir))
+            except OSError:
+                pass
+
+    return hints
+
+
+def load_hints(cache: dict = {}) -> dict:
+    """
+    Helper function to load hints.yml files from global and component sources
+
+    Uses mutable default argument as cache - same dict (argument 'cache') persists its data across all calls.
+    See: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+    """
+
+    # Initialize cache structure if first call with IDF hints (global + IDF components)
+    if 'hints' not in cache:
+        cache['hints'] = _load_idf_hints()
+        cache['project_components_loaded'] = False
+
+    # Extend Cached hints with hints from project components if available
+    if not cache.get('project_components_loaded'):
+        proj_desc = get_build_context().get('proj_desc')
+        if proj_desc:
+            project_hints = _load_hints_from_project_components(proj_desc)
+            cache['hints']['yml'].extend(project_hints)
+            cache['project_components_loaded'] = True
+
+    return cast(dict, cache['hints'])
+
+
+def generate_hints_buffer(output: str, hints: dict) -> Generator:
+    """Helper function to process hints within a string buffer"""
+    # Call modules for possible hints with unchanged output. Note that
+    # hints in hints.yml expect new line trimmed, but modules should
+    # get the output unchanged. Please see tools/idf_py_actions/hints.yml
+    for generate_hint in hints['modules']:
+        module_hint = generate_hint(output)
+        if module_hint:
+            yield module_hint
+
+    # hints expect new lines trimmed
+    output = ' '.join(line.strip() for line in output.splitlines() if line.strip())
+    for hint in hints['yml']:
+        variables_list = hint.get('variables')
+        hint_list, hint_vars, re_vars = [], [], []
+        match: Match[str] | None = None
+        try:
+            if variables_list:
+                for variables in variables_list:
+                    hint_vars = variables['hint_variables']
+                    re_vars = variables['re_variables']
+                    regex = hint['re'].format(*re_vars)
+                    if re.compile(regex).search(output):
+                        try:
+                            hint_list.append(hint['hint'].format(*hint_vars))
+                        except KeyError as e:
+                            log.die(escape(f'Argument {e} missing in {hint}. Check hints.yml file.'))
+            else:
+                match = re.compile(hint['re']).search(output)
+        except KeyError as e:
+            log.die(escape(f'Argument {e} missing in {hint}. Check hints.yml file.'))
+        except re.error as e:
+            log.die(escape('{} from hints.yml have {} problem. Check hints.yml file.'.format(hint['re'], e)))
+        if hint_list:
+            yield from hint_list
+        elif match:
+            extra_info = ', '.join(match.groups()) if hint.get('match_to_output', '') else ''
+            try:
+                yield hint['hint'].format(extra_info)
+            except KeyError:
+                raise KeyError(f"Argument 'hint' missing in {hint}. Check hints.yml file.")
+
+
+def generate_hints(*filenames: str) -> Generator:
+    """Getting output files and printing hints on how to resolve errors based on the output."""
+    hints = load_hints()
+    for file_name in filenames:
+        with open(file_name, encoding='utf-8') as file:
+            yield from generate_hints_buffer(file.read(), hints)
+
+
+def fit_text_in_terminal(out: str) -> str:
+    """Fit text in terminal, if the string is not fit replace center with `...`"""
+    space_for_dots = 3  # Space for "..."
+    terminal_width, _ = os.get_terminal_size()
+    if not terminal_width:
+        return out
+    if terminal_width <= space_for_dots:
+        # if the wide of the terminal is too small just print dots
+        return '.' * terminal_width
+    if len(out) >= terminal_width:
+        elide_size = (terminal_width - space_for_dots) // 2
+        # cut out the middle part of the output if it does not fit in the terminal
+        return '...'.join([out[:elide_size], out[len(out) - elide_size :]])
+    return out
+
+
+# ANSI SGR / CSI sequences and Ninja-style progression lines are 7-bit; keep
+# readline forwarding on bytes so CMake UTF-8 pipe output is not re-encoded
+# through a legacy TextIOWrapper (cp1252) layer on Windows.
+_ANSI_ESCAPE_BYTES = re.compile(rb'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+_PROGRESSION_BYTES = re.compile(rb'^\[\d+/\d+\]|.*\(\d+ \%\)$')
+
+
+def delete_ansi_escape_bytes(data: bytes) -> bytes:
+    return _ANSI_ESCAPE_BYTES.sub(b'', data)
+
+
+def is_progression_bytes(line: bytes) -> bool:
+    return _PROGRESSION_BYTES.match(line) is not None
+
+
+class RunTool:
+    def __init__(
+        self,
+        tool_name: str,
+        args: list,
+        cwd: str,
+        env: dict | None = None,
+        custom_error_handler: FunctionType | None = None,
+        build_dir: str | None = None,
+        hints: bool = True,
+        force_progression: bool = False,
+        interactive: bool = False,
+        convert_output: bool = False,
+        buffer_size: int | None = None,
+    ) -> None:
+        self.tool_name = tool_name
+        self.args = args
+        self.cwd = cwd
+        self.env = env
+        self.custom_error_handler = custom_error_handler
+        # build_dir sets by tools that do not use build directory as cwd
+        self.build_dir = build_dir or cwd
+        self.hints = hints
+        self.force_progression = force_progression
+        self.interactive = interactive
+        self.convert_output = convert_output
+        self.buffer_size = buffer_size or 256
+
+    def __call__(self) -> None:
+        def quote_arg(arg: str) -> str:
+            """
+            Quote the `arg` with whitespace in them because
+            it can cause problems when we call it from a subprocess.
+            """
+            if re.match(r'^(?![\'\"]).*\s.*', arg):
+                return ''.join(["'", arg, "'"])
+            return arg
+
+        self.args = [str(arg) for arg in self.args]
+        display_args = ' '.join(quote_arg(arg) for arg in self.args)
+        print(f'Running {self.tool_name} in directory {quote_arg(self.cwd)}')
+        print(f'Executing "{str(display_args)}"...')
+
+        env_copy = dict(os.environ)
+        env_copy.update(self.env or {})
+
+        # Color control:
+        # 1. CLICOLOR_FORCE:
+        #   By default, GNU Make and Ninja strip away color escape sequences when they see that their stdout
+        #   is redirected. If idf.py's stdout is not redirected, the final output is a TTY, so we can tell
+        #   Make/Ninja to disable stripping of color escape sequences. (Requires Ninja v1.9.0 or later.)
+        # 2. FORCE_COLOR:
+        #   The same idea as above, but FORCE_COLOR is used by Python packages like rich.
+        # 3. NO_COLOR:
+        #   Universal kill switch; if set, we won't force colors.
+        if sys.stdout.isatty() and not env_copy.get('NO_COLOR'):
+            env_copy.setdefault('CLICOLOR_FORCE', '1')
+            env_copy.setdefault('FORCE_COLOR', '1')
+
+        process: Process | subprocess.CompletedProcess[bytes]
+        if self.hints:
+            process, stderr_output_file, stdout_output_file = asyncio.run(self.run_command(self.args, env_copy))
+        else:
+            process = subprocess.run(self.args, env=env_copy, cwd=self.cwd)
+            stderr_output_file, stdout_output_file = None, None
+        if process.returncode == 0:
+            return
+
+        if self.custom_error_handler:
+            self.custom_error_handler(process.returncode, stderr_output_file, stdout_output_file)
+            return
+
+        if stderr_output_file and stdout_output_file:
+            # hints in interactive mode were already processed, don't print them again
+            if not self.interactive:
+                for hint in generate_hints(stderr_output_file, stdout_output_file):
+                    log.hint(escape(hint))
+            raise FatalError(
+                f'{self.tool_name} failed with exit code {process.returncode}, '
+                f'output of the command is in the {stderr_output_file} and {stdout_output_file}'
+            )
+
+        raise FatalError(f'{self.tool_name} failed with exit code {process.returncode}')
+
+    async def run_command(self, cmd: list, env_copy: dict) -> tuple[Process, str | None, str | None]:
+        """Run the `cmd` command with capturing stderr and stdout from that function and return returncode
+        and of the command, the id of the process, paths to captured output"""
+        log_dir_name = 'log'
+        try:
+            os.mkdir(os.path.join(self.build_dir, log_dir_name))
+        except FileExistsError:
+            pass
+        # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
+        # limit was added for avoiding error in idf.py confserver
+        try:
+            p = await asyncio.create_subprocess_exec(
+                *cmd,
+                env=env_copy,
+                limit=1024 * self.buffer_size,
+                cwd=self.cwd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except NotImplementedError:
+            message = (
+                f"{sys.executable} doesn't support asyncio. Workaround: re-run idf.py with the '--no-hints' argument."
+            )
+            if sys.platform == 'win32':
+                message += (
+                    ' To fix the issue use the Windows Installer for setting up your python environment, '
+                    'available from: https://dl.espressif.com/dl/esp-idf/'
+                )
+            log.die(escape(message))
+
+        stderr_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stderr_output_{p.pid}')
+        stdout_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stdout_output_{p.pid}')
+        if p.stderr and p.stdout:  # it only to avoid None type in p.std
+            try:
+                await asyncio.gather(
+                    self.read_and_write_stream(p.stderr, stderr_output_file, sys.stderr),
+                    self.read_and_write_stream(p.stdout, stdout_output_file, sys.stdout),
+                )
+            except asyncio.CancelledError:
+                # The process we are trying to read from was terminated. Print the
+                # message here and let the asyncio to finish, because
+                # Runner context in asyncio.run is closing the event loop and
+                # if exception is raised(unhandled here) the transport is not closed before
+                # the even loop is closed and we get RuntimeError: Event loop is closed
+                # in the transport __del__ function because it's trying to use the closed
+                # even loop.
+                log.err(f'\n{self.tool_name} process terminated')
+        await p.wait()  # added for avoiding None returncode
+        return p, stderr_output_file, stdout_output_file
+
+    async def read_and_write_stream(
+        self, input_stream: asyncio.StreamReader, output_filename: str, output_stream: TextIO
+    ) -> None:
+        """read the output of the `input_stream` and then write it into `output_filename` and `output_stream`"""
+
+        def delete_ansi_escape(text: str) -> str:
+            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+            return ansi_escape.sub('', text)
+
+        def write_text_maybe_illencoded(stream: TextIO, text: str) -> None:
+            """Write ``text`` to ``stream``; on narrow Windows stdio, fall back so the build does not abort."""
+            try:
+                stream.write(text)
+                stream.flush()
+            except UnicodeEncodeError:
+                enc = getattr(stream, 'encoding', None) or 'ascii'
+                safe = text.encode(enc, errors='backslashreplace').decode(enc)
+                stream.write(safe)
+                stream.flush()
+
+        def print_progression(output: str) -> None:
+            # Print a new line on top of the previous line
+            write_text_maybe_illencoded(
+                output_stream,
+                '\r' + fit_text_in_terminal(output.strip('\n\r')) + '\x1b[K',
+            )
+
+        def is_progression(output: str) -> bool:
+            # try to find possible progression by a pattern match
+            if re.match(r'^\[\d+/\d+\]|.*\(\d+ \%\)$', output):
+                return True
+            return False
+
+        async def read_stream_bytes() -> bytes | None:
+            try:
+                output_b = await input_stream.readline()
+                if not output_b:
+                    return None
+                return output_b
+            except (asyncio.LimitOverrunError, asyncio.IncompleteReadError) as e:
+                print(e, file=sys.stderr)
+                return None
+            except AttributeError:
+                return None
+
+        async def read_interactive_stream() -> str | None:
+            buffer = b''
+            while True:
+                output_b = await input_stream.read(1)
+                if not output_b:
+                    return None
+                try:
+                    return (buffer + output_b).decode()
+                except UnicodeDecodeError:
+                    buffer += output_b
+                    if len(buffer) > 4:
+                        # Multi-byte character contain up to 4 bytes and if buffer have more then 4 bytes
+                        # and still can not decode it we can just ignore some bytes
+                        return buffer.decode(errors='replace')
+
+        def write_stdout_bytes(data: bytes) -> None:
+            """Write raw subprocess bytes to the underlying binary stream (UTF-8 from CMake, no TextIO re-encode)."""
+            binary_buf = getattr(output_stream, 'buffer', None)
+            if binary_buf is not None:
+                binary_buf.write(data)
+                binary_buf.flush()
+            else:
+                write_text_maybe_illencoded(output_stream, data.decode('utf-8', errors='replace'))
+
+        def write_stdout_after_progression_line() -> None:
+            """Emit a newline after a progression ``\\r`` line (binary when possible)."""
+            if not self.convert_output and getattr(output_stream, 'buffer', None) is not None:
+                output_stream.buffer.write(os.linesep.encode('ascii'))
+                output_stream.buffer.flush()
+            else:
+                write_text_maybe_illencoded(output_converter, os.linesep)
+
+        # use ANSI color converter for Monitor on Windows
+        output_converter = get_ansi_converter(output_stream) if self.convert_output else output_stream
+
+        # used in interactive mode to print hints after matched line
+        hints = load_hints()
+        last_line = ''
+        is_progression_last_line = False
+        is_progression_processing_enabled = self.force_progression and output_stream.isatty() and '-v' not in self.args
+
+        try:
+            # Binary log: subprocess lines are written as received (ANSI stripped for the file).
+            with open(output_filename, 'wb') as output_file:
+                output_file.write('Command: {}\n'.format(' '.join(self.args)).encode('utf-8'))
+                while True:
+                    if self.interactive:
+                        output = await read_interactive_stream()
+                        if not output:
+                            break
+
+                        output_noescape = delete_ansi_escape(output)
+                        output_file.write(output_noescape.encode('utf-8'))
+                        if not output_stream.isatty():
+                            output = output_noescape
+
+                        if is_progression_processing_enabled and is_progression(output):
+                            print_progression(output)
+                            is_progression_last_line = True
+                        else:
+                            if is_progression_last_line:
+                                write_stdout_after_progression_line()
+                                is_progression_last_line = False
+                            write_text_maybe_illencoded(output_converter, output)
+
+                            last_line += output
+                            if last_line[-1] == '\n':
+                                for hint in generate_hints_buffer(last_line, hints):
+                                    log.hint(escape(hint))
+                                last_line = ''
+                    else:
+                        output_b = await read_stream_bytes()
+                        if not output_b:
+                            break
+
+                        output_noescape_b = delete_ansi_escape_bytes(output_b)
+                        output_file.write(output_noescape_b)
+                        if not output_stream.isatty():
+                            forward_b = output_noescape_b
+                        else:
+                            forward_b = output_b
+
+                        if is_progression_processing_enabled and is_progression_bytes(output_b):
+                            print_progression(output_b.decode('utf-8', errors='replace'))
+                            is_progression_last_line = True
+                        else:
+                            if is_progression_last_line:
+                                write_stdout_after_progression_line()
+                                is_progression_last_line = False
+                            if self.convert_output:
+                                write_text_maybe_illencoded(
+                                    output_converter,
+                                    forward_b.decode('utf-8', errors='replace'),
+                                )
+                            else:
+                                write_stdout_bytes(forward_b)
+        except (OSError, RuntimeError) as e:
+            log.warn(
+                escape(
+                    "The exception {} was raised and we can't capture all your {} and "
+                    'hints on how to resolve errors can be not accurate.'.format(e, output_stream.name.strip('<>'))
+                )
+            )
+
+
+def run_tool(*args: Any, **kwargs: Any) -> None:
+    # Added in case someone uses run_tool externally in idf.py extensions
+    return RunTool(*args, **kwargs)()
+
+
+def run_target(
+    target_name: str,
+    args: 'PropertyDict',
+    env: dict | None = None,
+    custom_error_handler: FunctionType | None = None,
+    force_progression: bool = False,
+    interactive: bool = False,
+    buffer_size: int | None = None,
+) -> None:
+    """Run target in build directory."""
+    if env is None:
+        env = {}
+
+    generator_cmd = list(GENERATORS[args.generator]['command'])
+
+    # Parallel jobs from -j/--jobs (or IDF_PY_BUILD_JOBS), falling back to the generator's default.
+    jobs = getattr(args, 'jobs', None)
+    if jobs is None:
+        jobs = GENERATORS[args.generator].get('default_jobs')
+
+    if jobs is not None:
+        generator_cmd += ['-j', str(jobs)]
+
+    if args.verbose:
+        generator_cmd += [GENERATORS[args.generator]['verbose_flag']]
+
+    RunTool(
+        generator_cmd[0],
+        generator_cmd + [target_name],
+        args.build_dir,
+        env,
+        custom_error_handler,
+        hints=not args.no_hints,
+        force_progression=force_progression,
+        interactive=interactive,
+        buffer_size=buffer_size,
+    )()
+
+
+def _strip_quotes(value: str, regexp: re.Pattern = re.compile(r"^\"(.*)\"$|^'(.*)'$|^(.*)$")) -> str | None:
+    """
+    Strip quotes like CMake does during parsing cache entries
+    """
+    matching_values = regexp.match(value)
+    return [x for x in matching_values.groups() if x is not None][0].rstrip() if matching_values is not None else None
+
+
+def _parse_cmakecache(path: str) -> dict:
+    """
+    Parse the CMakeCache file at 'path'.
+
+    Returns a dict of name:value.
+
+    CMakeCache entries also each have a "type", but this is currently ignored.
+    """
+    result = {}
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            # cmake cache lines look like: CMAKE_CXX_FLAGS_DEBUG:STRING=-g
+            # groups are name, type, value
+            m = re.match(r'^([^#/:=]+):([^:=]+)=(.*)\n$', line)
+            if m:
+                result[m.group(1)] = m.group(3)
+    return result
+
+
+def _parse_cmdl_cmakecache(entries: list) -> dict[str, str]:
+    """
+    Parse list of CMake cache entries passed in via the -D option.
+
+    Returns a dict of name:value.
+    """
+    result: dict = {}
+    for entry in entries:
+        key, value = entry.split('=', 1)
+        value = _strip_quotes(value)
+        result[key] = value
+
+    return result
+
+
+def _new_cmakecache_entries(cache: dict, cache_cmdl: dict) -> bool:
+    for entry in cache_cmdl:
+        if entry not in cache:
+            return True
+        if cache_cmdl[entry] != cache[entry]:
+            return True
+    return False
+
+
+def _detect_cmake_generator(prog_name: str) -> Any:
+    """
+    Find the default cmake generator, if none was specified. Raises an exception if no valid generator is found.
+    """
+    for generator_name, generator in GENERATORS.items():
+        if executable_exists(generator['version']):
+            return generator_name
+    raise FatalError(f"To use {prog_name}, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
+
+
+def ensure_build_directory(
+    args: 'PropertyDict', prog_name: str, always_run_cmake: bool = False, env: dict | None = None
+) -> None:
+    """Check the build directory exists and that cmake has been run there.
+
+    If this isn't the case, create the build directory (if necessary) and
+    do an initial cmake run to configure it.
+
+    This function will also check args.generator parameter. If the parameter is incompatible with
+    the build directory, an error is raised. If the parameter is None, this function will set it to
+    an auto-detected default generator or to the value already configured in the build directory.
+    """
+
+    if not executable_exists(['cmake', '--version']):
+        debug_print_idf_version()
+        raise FatalError(f'"cmake" must be available on the PATH to use {PROG}')
+
+    project_dir = args.project_dir
+    # Verify the project directory
+    if not os.path.isdir(project_dir):
+        if not os.path.exists(project_dir):
+            raise FatalError(f'Project directory {project_dir} does not exist')
+        else:
+            raise FatalError(f'{project_dir} must be a project directory')
+    if not os.path.exists(os.path.join(project_dir, 'CMakeLists.txt')):
+        raise FatalError(f'CMakeLists.txt not found in project directory {project_dir}')
+
+    # Verify/create the build directory
+    build_dir = args.build_dir
+    if not os.path.isdir(build_dir):
+        os.makedirs(build_dir)
+
+    # Parse CMakeCache, if it exists
+    cache_path = os.path.join(build_dir, 'CMakeCache.txt')
+    cache = _parse_cmakecache(cache_path) if os.path.exists(cache_path) else {}
+
+    args.define_cache_entry.append(f'CCACHE_ENABLE={args.ccache}')
+    args.define_cache_entry.append(f'CONFIGDEP_ENABLE={args.configdep}')
+
+    cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
+
+    # Validate IDF_TARGET
+    _check_idf_target(args, prog_name, cache, cache_cmdl, env)
+
+    if always_run_cmake or _new_cmakecache_entries(cache, cache_cmdl):
+        if args.generator is None:
+            args.generator = _detect_cmake_generator(prog_name)
+
+        try:
+            cmake_args = [
+                'cmake',
+                '-G',
+                args.generator,
+                '-B',
+                args.build_dir,
+                '-DPYTHON_DEPS_CHECKED=1',
+                f'-DPYTHON={sys.executable}',
+                '-DESP_PLATFORM=1',
+            ]
+            if args.cmake_warn_uninitialized:
+                cmake_args += ['--warn-uninitialized']
+
+            if args.define_cache_entry:
+                cmake_args += ['-D' + d for d in args.define_cache_entry]
+            cmake_args += [project_dir]
+
+            if args.preset:
+                cmake_args += ['--preset', args.preset]
+
+            hints = not args.no_hints
+            RunTool('cmake', cmake_args, cwd=args.build_dir, env=env, hints=hints)()
+        except Exception:
+            # don't allow partially valid CMakeCache.txt files,
+            # to keep the "should I run cmake?" logic simple
+            if os.path.exists(cache_path):
+                os.remove(cache_path)
+            raise
+
+    # need to update cache so subsequent access in this method would reflect the result of the previous cmake run
+    cache = _parse_cmakecache(cache_path) if os.path.exists(cache_path) else {}
+
+    try:
+        generator = cache['CMAKE_GENERATOR']
+    except KeyError:
+        generator = _detect_cmake_generator(prog_name)
+    if args.generator is None:
+        args.generator = generator  # reuse the previously configured generator, if none was given
+    if generator != args.generator:
+        raise FatalError(
+            f"Build is configured for generator '{generator}' not '{args.generator}'. "
+            f"Run '{prog_name} fullclean' to start again."
+        )
+
+    try:
+        home_dir = cache['CMAKE_HOME_DIRECTORY']
+        if os.path.realpath(home_dir) != os.path.realpath(project_dir):
+            raise FatalError(
+                f"Build directory '{build_dir}' configured for project '{os.path.realpath(home_dir)}' "
+                f"not '{os.path.realpath(project_dir)}'. Run '{prog_name} fullclean' to start again."
+            )
+    except KeyError:
+        pass  # if cmake failed part way, CMAKE_HOME_DIRECTORY may not be set yet
+
+    try:
+        python = cache['PYTHON']
+        if os.path.normcase(python) != os.path.normcase(sys.executable):
+            raise FatalError(
+                f"'{sys.executable}' is currently active in the environment while the project was "
+                f"configured with '{python}'. "
+                f"Run '{prog_name} fullclean' to start again."
+            )
+    except KeyError:
+        pass
+
+    # set global build context
+    _set_build_context(args)
+
+
+def merge_action_lists(*action_lists: dict, custom_actions: dict[str, Any] | None = None) -> dict:
+    """
+    Merge multiple action lists into a single dictionary.
+
+    External action lists (via custom_actions) come from outside components or
+    user-defined extensions:
+    - Any duplicate with an existing action or option will trigger a warning,
+      and external definitions will not override defaults.
+
+    *action_lists: Actions that comes from official ESP-IDF development
+    custom_actions: Actions that comes from external extensions
+    """
+
+    def _get_all_action_identifiers(actions_dict: dict[str, Any]) -> set[str]:
+        """Extract all action names and their aliases as a single set."""
+        return {name for name in actions_dict.keys()} | {
+            alias for action in actions_dict.values() for alias in action.get('aliases', [])
+        }
+
+    def _check_action_conflicts(name: str, action: dict[str, Any], existing_identifiers: set[str]) -> None:
+        """Check if an action name or its aliases conflict with existing identifiers.
+        Raises UserWarning if conflicts are found.
+        """
+        if name in existing_identifiers:
+            raise UserWarning(f"Action '{name}' already defined")
+
+        aliases = action.get('aliases', [])
+        conflicting_aliases = set(aliases) & existing_identifiers
+        if conflicting_aliases:
+            raise UserWarning(
+                f"Action '{name}' has aliases {list(conflicting_aliases)} "
+                'that conflict with existing actions or aliases'
+            )
+
+    merged_actions: dict = {
+        'global_options': [],
+        'actions': {},
+        'global_action_callbacks': [],
+    }
+    for action_list in action_lists:
+        merged_actions['global_options'].extend(action_list.get('global_options', []))
+        merged_actions['actions'].update(action_list.get('actions', {}))
+        merged_actions['global_action_callbacks'].extend(action_list.get('global_action_callbacks', []))
+
+    if not custom_actions:
+        return merged_actions
+
+    if not custom_actions.get('version'):
+        raise AttributeError(
+            'Attribute "version" is required in custom extension. '
+            'Please update your extension dictionary to contain the "version" attribute.'
+        )
+
+    existing_identifiers = _get_all_action_identifiers(merged_actions['actions'])
+    for name, action in custom_actions.get('actions', {}).items():
+        try:
+            _check_action_conflicts(name, action, existing_identifiers)
+            merged_actions['actions'][name] = action
+            existing_identifiers.add(name)
+            existing_identifiers.update(action.get('aliases', []))
+        except UserWarning as e:
+            log.warn(escape(f'{e}. External action will not be added.'))
+
+    for new_opt in custom_actions.get('global_options', []):
+        if any(
+            set(new_opt.get('names', [])) & set(existing.get('names', []))
+            for existing in merged_actions['global_options']
+        ):
+            log.warn(escape(f'Global option {new_opt["names"]} already defined. External option will not be added.'))
+        else:
+            merged_actions['global_options'].append(new_opt)
+
+    merged_actions['global_action_callbacks'].extend(custom_actions.get('global_action_callbacks', []))
+
+    return merged_actions
+
+
+def get_sdkconfig_filename(args: 'PropertyDict', cache_cmdl: dict | None = None) -> str:
+    """
+    Get project's sdkconfig file name.
+    """
+    if not cache_cmdl:
+        cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
+    config = cache_cmdl.get('SDKCONFIG')
+    if config:
+        return os.path.abspath(config)
+
+    proj_desc_path = os.path.join(args.build_dir, 'project_description.json')
+    try:
+        with open(proj_desc_path, encoding='utf-8') as f:
+            proj_desc = json.load(f)
+        return str(proj_desc['config_file'])
+    except (OSError, KeyError):
+        pass
+
+    return os.path.join(args.project_dir, 'sdkconfig')
+
+
+def get_sdkconfig_value(sdkconfig_file: str, key: str) -> str | None:
+    """
+    Return the value of given key from sdkconfig_file.
+    If sdkconfig_file does not exist or the option is not present, returns None.
+    """
+    assert key.startswith('CONFIG_')
+    if not os.path.exists(sdkconfig_file):
+        return None
+    # keep track of the last seen value for the given key
+    value = None
+    # if the value is quoted, this excludes the quotes from the value
+    pattern = re.compile(rf'^{key}=\"?([^\"]*)\"?$')
+    with open(sdkconfig_file, encoding='utf-8') as f:
+        for line in f:
+            match = re.match(pattern, line.strip())
+            if match:
+                value = match.group(1)
+    return value
+
+
+def _check_idf_target(
+    args: 'PropertyDict', prog_name: str, cache: dict, cache_cmdl: dict, env: dict | None = None
+) -> None:
+    """
+    Cross-check the three settings (sdkconfig, CMakeCache, environment) and if there is
+    mismatch, fail with instructions on how to fix this.
+    """
+    sdkconfig = get_sdkconfig_filename(args, cache_cmdl)
+    idf_target_from_sdkconfig = get_sdkconfig_value(sdkconfig, 'CONFIG_IDF_TARGET')
+    idf_target_from_env = os.environ.get('IDF_TARGET')
+    idf_target_from_cache = cache.get('IDF_TARGET')
+    idf_target_from_cache_cmdl = cache_cmdl.get('IDF_TARGET')
+
+    # Called from set-target action. The original sdkconfig will be renamed
+    # in cmake, so ignore any CONFIG_IDF_TARGET which may be defined in
+    # stale sdkconfig.
+    if env and env.get('_IDF_PY_SET_TARGET_ACTION') == '1':
+        idf_target_from_sdkconfig = None
+
+    if idf_target_from_env:
+        # Let's check that IDF_TARGET values are consistent
+        if idf_target_from_sdkconfig and idf_target_from_sdkconfig != idf_target_from_env:
+            raise FatalError(
+                f"Project sdkconfig '{sdkconfig}' was generated for target '{idf_target_from_sdkconfig}', "
+                f"but environment variable IDF_TARGET is set to '{idf_target_from_env}'. "
+                f"Run '{prog_name} set-target {idf_target_from_env}' to generate new sdkconfig "
+                f'file for target {idf_target_from_env}.'
+            )
+
+        if idf_target_from_cache and idf_target_from_cache != idf_target_from_env:
+            raise FatalError(
+                f"Target settings are not consistent: '{idf_target_from_env}' in the environment, "
+                f"'{idf_target_from_cache}' in CMakeCache.txt. "
+                f"Run '{prog_name} fullclean' to start again."
+            )
+
+        if idf_target_from_cache_cmdl and idf_target_from_cache_cmdl != idf_target_from_env:
+            raise FatalError(
+                f"Target '{idf_target_from_cache_cmdl}' specified on command line is not consistent with "
+                f"target '{idf_target_from_env}' in the environment."
+            )
+    elif idf_target_from_cache_cmdl:
+        # Check if -DIDF_TARGET is consistent with target in CMakeCache.txt
+        if idf_target_from_cache and idf_target_from_cache != idf_target_from_cache_cmdl:
+            raise FatalError(
+                f"Target '{idf_target_from_cache_cmdl}' specified on command line is not consistent with "
+                f"target '{idf_target_from_cache}' in CMakeCache.txt. "
+                f"Run '{prog_name} set-target {idf_target_from_cache_cmdl}' to re-generate "
+                'CMakeCache.txt.'
+            )
+
+    elif idf_target_from_cache:
+        # This shouldn't happen, unless the user manually edits CMakeCache.txt or sdkconfig, but let's check anyway.
+        if idf_target_from_sdkconfig and idf_target_from_cache != idf_target_from_sdkconfig:
+            raise FatalError(
+                f"Project sdkconfig '{sdkconfig}' was generated for target '{idf_target_from_sdkconfig}', but "
+                f"CMakeCache.txt contains '{idf_target_from_cache}'. To keep the setting in sdkconfig "
+                f"({idf_target_from_sdkconfig}) and re-generate CMakeCache.txt, run '{prog_name} fullclean'. To "
+                f"re-generate sdkconfig for '{idf_target_from_cache}' target, run '{prog_name} set-target "
+                f"{idf_target_from_cache}'."
+            )
+
+
+class TargetChoice(click.Choice):
+    """
+    A version of click.Choice with two special features:
+    - ignores hyphens
+    - not case sensitive
+    """
+
+    def __init__(self, choices: list) -> None:
+        super().__init__(choices, case_sensitive=False)
+
+    def convert(self, value: Any, param: click.Parameter, ctx: click.Context) -> Any:
+        def normalize(string: str) -> str:
+            return string.lower().replace('-', '')
+
+        saved_token_normalize_func = ctx.token_normalize_func
+        ctx.token_normalize_func = normalize
+
+        try:
+            return super().convert(value, param, ctx)
+        finally:
+            ctx.token_normalize_func = saved_token_normalize_func
+
+
+class PropertyDict(dict):
+    def __getattr__(self, name: str) -> Any:
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError(f"'PropertyDict' object has no attribute '{name}'")
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self[name] = value
+
+    def __delattr__(self, name: str) -> None:
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError(f"'PropertyDict' object has no attribute '{name}'")

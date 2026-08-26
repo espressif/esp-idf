@@ -1,0 +1,21 @@
+#Diagram demonstrating sending in byte buffer
+#Buffer of 128 bytes, and 3 items of size 18, 3, and 27 bytes sent
+
+packetdiag ring_buffer_send_byte_buf {
+    node_width = 6
+    node_height = 24
+    default_fontsize = 12
+    colwidth = 128
+
+    #Add 18 byte item
+    0-17: 18 [color = lightyellow];
+    18-127: 110 Free
+
+    #Add 3 byte item
+    128-148: 21 [color = lightyellow];
+    149-255: 107 Free
+
+    #Add 27 byte item
+    256-303: 48 [color = lightyellow];
+    304-383: 80 Free
+}

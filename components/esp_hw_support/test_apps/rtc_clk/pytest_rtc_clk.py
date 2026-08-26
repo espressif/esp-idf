@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: CC0-1.0
+
+import pytest
+from pytest_embedded_idf import CaseTester
+from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
+
+
+@pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_CLK_TREE_SUPPORTED == 1'), indirect=['target'])
+def test_rtc_clk(case_tester: CaseTester) -> None:
+    for case in case_tester.test_menu:
+        if 'test_env' in case.attributes:
+            continue
+        case_tester.run_normal_case(case=case)
+
+
+@pytest.mark.xtal32k
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_rtc_xtal32k(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(attributes={'test_env': 'xtal32k'})
+
+
+@pytest.mark.no32kXtal
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_rtc_no_xtal32k(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(attributes={'test_env': 'noXtal32k'})
+
+
+@pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_CLK_TREE_SUPPORTED == 1'), indirect=['target'])
+def test_rtc_calib_compensation_across_dslp(case_tester: CaseTester) -> None:
+    case_tester.run_all_multi_stage_cases()
+
+
+@pytest.mark.flash_suspend
+@pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='flash clock lose in startup')  # TODO [ESP32H2]: IDF-15212
+@pytest.mark.temp_skip_ci(
+    targets=['esp32s31'], reason='no flash_suspend runners available yet'
+)  # TODO [ESP32S31] IDF-15531
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11111')
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rtc_clk_flash',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_CLK_TREE_SUPPORTED == 1 and IDF_TARGET not in ["esp32", "esp32s2"]'),
+    indirect=['target'],
+)
+def test_rtc_clk_flash(case_tester: CaseTester) -> None:
+    case_tester.run_all_multi_stage_cases()

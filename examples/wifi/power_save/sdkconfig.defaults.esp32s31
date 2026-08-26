@@ -1,0 +1,2 @@
+# ESP32-S31 does not support 80 MHz; use the lowest available CPU frequency
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y

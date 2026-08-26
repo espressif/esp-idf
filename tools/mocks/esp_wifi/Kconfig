@@ -1,0 +1,39 @@
+# Mock Kconfig file to provide definitions
+menu "Wi-Fi"
+    config ESP_WIFI_STATIC_RX_BUFFER_NUM
+        int "Max number of WiFi static RX buffers"
+        range 2 25
+        default 10
+
+    config ESP_WIFI_DYNAMIC_RX_BUFFER_NUM
+        int "Max number of WiFi dynamic RX buffers"
+        range 0 1024
+        default 32
+
+    config ESP_WIFI_TX_BUFFER_TYPE
+        int
+        default 1
+
+    config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
+        int "Maximum espnow encrypt peers number"
+        range 0 17
+        default 7
+
+    choice ESP_WIFI_MGMT_RX_BUFFER
+        prompt "Type of WiFi RX MGMT buffers"
+        default ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
+        help
+            This is just a placeholder configuration for mocking the WiFi driver.
+
+        config ESP_WIFI_STATIC_RX_MGMT_BUFFER
+            bool "Static"
+        config ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
+            bool "Dynamic"
+    endchoice
+
+    config ESP_WIFI_DYNAMIC_RX_MGMT_BUF
+        int
+        default 0 if ESP_WIFI_STATIC_RX_MGMT_BUFFER
+        default 1 if ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
+
+endmenu # Wi-Fi

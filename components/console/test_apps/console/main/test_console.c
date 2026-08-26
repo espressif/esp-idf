@@ -1,0 +1,511 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <stdio.h>
+#include <string.h>
+#include "sdkconfig.h"
+#include "unity.h"
+#include "esp_console.h"
+#include "argtable3/argtable3.h"
+#include "linenoise/linenoise.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#if !CONFIG_IDF_TARGET_LINUX
+#include "driver/uart.h"
+#endif
+
+/*
+ * NOTE: Most of these unit tests DO NOT work standalone. They require pytest to control
+ * the application and check for correct output.
+ * E.g., to run the test "esp console help command - reverse registration", type:
+ * pytest --target esp32 -m "generic" -k test_console_help_reverse_registration
+ * The pytest test cases are different than the unit test cases here, they can be found
+ * in the pytest_*.py file in the root directory of this test project.
+ * For more information on pytest, please refer to
+ * https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html.
+ */
+
+extern void set_leak_threshold(int threshold);
+
+typedef struct {
+    const char *in;
+    const char *out;
+} cmd_context_t;
+
+static esp_console_repl_t *s_repl = NULL;
+
+/* Shared state for the repl config limits test */
+static int s_cmd_captured_argc;
+static char s_cmd_captured_last_arg[32];
+
+static int do_capture_args_cmd(int argc, char **argv)
+{
+    s_cmd_captured_argc = argc;
+    if (argc > 1) {
+        strncpy(s_cmd_captured_last_arg, argv[argc - 1], sizeof(s_cmd_captured_last_arg) - 1);
+        s_cmd_captured_last_arg[sizeof(s_cmd_captured_last_arg) - 1] = '\0';
+    }
+    return 0;
+}
+
+static const esp_console_cmd_t s_capture_args_cmd = {
+    .command = "capture",
+    .help = "Capture argc and last arg for testing",
+    .func = do_capture_args_cmd,
+};
+
+static int do_hello_cmd_with_context(void *context, int argc, char **argv)
+{
+    cmd_context_t *cmd_context = (cmd_context_t *)context;
+    cmd_context->out = cmd_context->in;
+    return 0;
+}
+
+static int do_hello_cmd(int argc, char **argv)
+{
+    printf("Hello World\n");
+    return 0;
+}
+
+static int do_not_call(void* context, int argc, char **argv)
+{
+    TEST_ASSERT_MESSAGE(false, "This function is a dummy and must not be called\n");
+    return 0;
+}
+
+TEST_CASE("esp console register with normal and context aware functions set fails", "[console]")
+{
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "valid_cmd",
+        .help = "Command which is valid",
+        .hint = NULL,
+        .func = do_hello_cmd,
+        .func_w_context = do_not_call,
+    };
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console register with normal and context aware function set to NULL fails", "[console]")
+{
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "valid_cmd",
+        .help = "Command which is valid",
+        .hint = NULL,
+        .func = do_hello_cmd,
+        .func_w_context = do_not_call,
+    };
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console init function NULL param fails", "[console]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_new_repl_stdio(NULL, &s_repl));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_new_repl_stdio(&repl_config, NULL));
+}
+
+TEST_CASE("esp console init/deinit test", "[console]")
+{
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "hello",
+        .help = "Print Hello World",
+        .hint = NULL,
+        .func = do_hello_cmd,
+    };
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    // re-register the same command, just for test
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console init/deinit with context test", "[console]")
+{
+    int dummy = 47;
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "hello",
+        .help = "Print Hello World",
+        .hint = NULL,
+        .func_w_context = do_not_call,
+        .context = &dummy,
+    };
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    // re-register the same command, just for test
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+static bool can_terminate = false;
+static SemaphoreHandle_t s_test_console_mutex = NULL;
+static StaticSemaphore_t s_test_console_mutex_buf;
+
+/* handle 'quit' command */
+static int do_cmd_quit(int argc, char **argv)
+{
+    TEST_ASSERT_NOT_NULL(s_test_console_mutex);
+    xSemaphoreTake(s_test_console_mutex, portMAX_DELAY);
+    can_terminate = true;
+    xSemaphoreGive(s_test_console_mutex);
+
+    return 0;
+}
+
+static esp_console_cmd_t s_quit_cmd = {
+    .command = "quit",
+    .help = "Quit REPL environment",
+    .func = &do_cmd_quit
+};
+
+// Enter "quit" to exit REPL environment
+/* Marked as ignore since it cannot run as a normal unity test case
+   ran separately in test_console_repl  */
+TEST_CASE("esp console repl test", "[console][ignore]")
+{
+    set_leak_threshold(248);
+
+    s_test_console_mutex = xSemaphoreCreateMutexStatic(&s_test_console_mutex_buf);
+    TEST_ASSERT_NOT_NULL(s_test_console_mutex);
+
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+
+    bool temp_can_terminate = false;
+    do {
+        xSemaphoreTake(s_test_console_mutex, portMAX_DELAY);
+        temp_can_terminate = can_terminate;
+        xSemaphoreGive(s_test_console_mutex);
+    } while (temp_can_terminate != true);
+
+    /* Wait to make sure the command has finished its execution */
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    esp_err_t ret = esp_console_stop_repl(s_repl);
+    TEST_ESP_OK(ret);
+
+    xSemaphoreTake(s_test_console_mutex, portMAX_DELAY);
+    can_terminate = false;
+    xSemaphoreGive(s_test_console_mutex);
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    printf("ByeBye\r\n");
+}
+
+TEST_CASE("esp console repl deinit", "[console][ignore]")
+{
+    set_leak_threshold(248);
+
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+
+    /* start the repl task */
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+
+    /* wait to make sure the task reaches linenoiseEdit function
+     * and gets stuck in the select */
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    /* call the delete function, this returns only when the repl task terminated */
+    const esp_err_t res = esp_console_stop_repl(s_repl);
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    /* if this point is reached, the repl environment has been deleted successfully */
+    TEST_ASSERT(res == ESP_OK);
+}
+
+static const esp_console_cmd_t cmd_a = {
+    .command = "aaa",
+    .help = "should appear first in help",
+    .hint = NULL,
+    .func = do_hello_cmd,
+};
+static const esp_console_cmd_t cmd_z = {
+    .command = "zzz",
+    .help = "should appear last in help",
+    .hint = NULL,
+    .func = do_hello_cmd,
+};
+
+/* To keep testing the old API esp_console_new_repl_uart, the following
+ * 2 test cases will initialize repl using this API when run on other target
+ * than linux and will use the new API on linux. */
+#if !CONFIG_IDF_TARGET_LINUX
+static void test_console_repl_init(void)
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    /* use the old API to register the IO so we keep some coverage for it in the tests */
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+}
+#else
+static void test_console_repl_init(void)
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+}
+#endif // !CONFIG_IDF_TARGET_LINUX
+
+TEST_CASE("esp console help command - sorted registration", "[console][ignore]")
+{
+    test_console_repl_init();
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+/**
+ * The commands in the 'help'-command's output should be alphabetically sorted,
+ * regardless of their registration order.
+ */
+TEST_CASE("esp console help command - reverse registration", "[console][ignore]")
+{
+    test_console_repl_init();
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console init/deinit test, minimal config", "[console]")
+{
+    /* Test with minimal init config */
+    esp_console_config_t console_config = {
+        .max_cmdline_length = 100,
+    };
+
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "hello",
+        .help = "Print Hello World",
+        .hint = NULL,
+        .func = do_hello_cmd,
+    };
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    // re-register the same command, just for test
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console test with context", "[console]")
+{
+    /* Test with minimal init config */
+    esp_console_config_t console_config = {
+        .max_cmdline_args = 2,
+        .max_cmdline_length = 100,
+    };
+
+    TEST_ESP_OK(esp_console_init(&console_config));
+
+    cmd_context_t context0 = {
+        .in = "c1",
+        .out = NULL,
+    };
+
+    cmd_context_t context1 = {
+        .in = "c2",
+        .out = NULL,
+    };
+
+    const esp_console_cmd_t cmd0 = {
+        .command = "hello-c1",
+        .help = "Print Hello World in context c1",
+        .hint = NULL,
+        .func_w_context = do_hello_cmd_with_context,
+        .context = &context0,
+    };
+
+    const esp_console_cmd_t cmd1 = {
+        .command = "hello-c2",
+        .help = "Print Hello World in context c2",
+        .hint = NULL,
+        .func_w_context = do_hello_cmd_with_context,
+        .context = &context1,
+    };
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd0));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd1));
+
+    int ret;
+    TEST_ESP_OK(esp_console_run(cmd0.command, &ret));
+    TEST_ASSERT_EQUAL(ret, 0);
+    TEST_ASSERT_EQUAL(context0.in, context0.out);
+
+    TEST_ESP_OK(esp_console_run(cmd1.command, &ret));
+    TEST_ASSERT_EQUAL(ret, 0);
+    TEST_ASSERT_EQUAL(context1.in, context1.out);
+
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console help command - set verbose level = 0", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
+    TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_0));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console help command - set verbose level = 1", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
+    TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_1));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console help command - --verbose sub command", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console deregister commands", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    // deregister a non-existing cmd, should return "ESP_ERR_INVALID_ARG"
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_cmd_deregister("abcdefg"));
+    // deregister cmd_a
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_a.command));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console re-register commands", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_register_help_command());
+
+    // deregister cmd_z and cmd_a
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_z.command));
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_a.command));
+
+    // re-register cmd_z and cmd_a
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+#if !CONFIG_IDF_TARGET_LINUX
+TEST_CASE("esp console repl custom_uart test", "[console][ignore]")
+{
+    set_leak_threshold(248);
+
+    printf("Running repl on UART1\n");
+
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    uart_config.channel = UART_NUM_1; // Set UART1 for repl task
+
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+
+    /* Wait a little for repl console initialization on UART1  */
+    vTaskDelay(pdMS_TO_TICKS(300));
+
+    TEST_ESP_OK(esp_console_stop_repl(s_repl));
+
+    /* Let scheduler clean task internals  */
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    printf("ByeBye\r\n");
+}
+#endif // !CONFIG_IDF_TARGET_LINUX
+
+TEST_CASE("esp console repl config respects max_cmdline_args and max_cmdline_length", "[console][ignore]")
+{
+    set_leak_threshold(248);
+
+    /*
+     * Use small limits to make truncation observable:
+     *  - max_cmdline_args = 4: split_argv stops when argc reaches argv_size-1 = 3,
+     *    so "capture arg1 arg2 arg3" drops "arg3" and the command receives argc == 3.
+     *  - max_cmdline_length = 20: strlcpy copies at most 19 chars, so the 20-char
+     *    input "capture longarg12345" is truncated to "capture longarg1234" and the
+     *    last argument received by the command is "longarg1234".
+     */
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    repl_config.max_cmdline_args = 4;
+    repl_config.max_cmdline_length = 20;
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&s_capture_args_cmd));
+
+    /* --- Verify max_cmdline_args ---
+     * Input has 4 tokens (command + 3 args). The limit allows at most
+     * argv_size-1 = 3 tokens, so the last token ("arg3") is dropped.
+     */
+    s_cmd_captured_argc = -1;
+    int ret;
+    TEST_ESP_OK(esp_console_run("capture arg1 arg2 arg3", &ret));
+    TEST_ASSERT_EQUAL(0, ret);
+    TEST_ASSERT_EQUAL(3, s_cmd_captured_argc);
+
+    /* --- Verify max_cmdline_length ---
+     * "capture longarg12345" is exactly 20 chars. strlcpy(buf, input, 20)
+     * retains at most 19 chars, yielding "capture longarg1234".
+     * The command therefore receives "longarg1234" as its only argument.
+     */
+    s_cmd_captured_argc = -1;
+    memset(s_cmd_captured_last_arg, 0, sizeof(s_cmd_captured_last_arg));
+    TEST_ESP_OK(esp_console_run("capture longarg12345", &ret));
+    TEST_ASSERT_EQUAL(0, ret);
+    TEST_ASSERT_EQUAL(2, s_cmd_captured_argc);
+    TEST_ASSERT_EQUAL_STRING("longarg1234", s_cmd_captured_last_arg);
+
+    /* Start and immediately stop the REPL for a clean teardown */
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ESP_OK(esp_console_stop_repl(s_repl));
+}

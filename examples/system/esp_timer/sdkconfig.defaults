@@ -1,0 +1,2 @@
+# With this option enabled, esp_timer_dump() prints more data about timers in the output log
+CONFIG_ESP_TIMER_PROFILING=y

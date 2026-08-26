@@ -1,0 +1,12 @@
+        :cmock:
+          :includes_c_pre_header:
+            # This is to define the esp_netif_t object, CMock needs its size for expect functions
+            - esp_netif_mock.h
+          :plugins:
+            - expect
+            - expect_any_args
+            - return_thru_ptr
+            - array
+            - ignore
+            - ignore_arg
+            - callback

@@ -1,0 +1,4 @@
+[mapping:custom_chip_driver]
+archive: libcustom_chip_driver.a
+entries:
+    chip_drivers (noflash)

@@ -1,0 +1,161 @@
+#
+# All the relative URL paths are intended to be GitHub ones
+# For Espressif's public projects please use '../../espressif/proj', not a '../proj'
+#
+# Submodules SBOM information
+# ---------------------------
+# Submodules, which are used directly and not forked into espressif namespace should
+# contain SBOM information here. Other submodules should have the SBOM manifest file
+# included in the root of their project's repository.
+#
+# The sbom-hash entry records the submodule's checkout SHA as presented in git-tree
+# commit object. For example spiffs submodule
+#
+# $ git ls-tree HEAD components/spiffs/spiffs
+# 160000 commit 0dbb3f71c5f6fae3747a9d935372773762baf852	components/spiffs/spiffs
+#
+# The hash can be also obtained with git submodule command
+#
+# $ git submodule status components/spiffs/spiffs
+# 0dbb3f71c5f6fae3747a9d935372773762baf852 components/spiffs/spiffs (0.2-255-g0dbb3f71c5f6)
+#
+# The submodule SHA recorded here has to match with SHA, which is presented in git-tree.
+# This is checked by CI. Also please don't forget to update the submodule version
+# if you are changing the sbom-hash. This is important for SBOM generation.
+
+[submodule "components/bt/controller/lib_esp32"]
+	path = components/bt/controller/lib_esp32
+	url = ../../espressif/esp32-bt-lib.git
+	shallow = true
+
+[submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
+	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
+	url = ../../kmackay/micro-ecc.git
+	sbom-version = 1.1
+	sbom-cpe = cpe:2.3:a:micro-ecc_project:micro-ecc:{}:*:*:*:*:*:*:*
+	sbom-supplier = Person: Ken MacKay
+	sbom-url = https://github.com/kmackay/micro-ecc
+	sbom-description = A small and fast ECDH and ECDSA implementation for 8-bit, 32-bit, and 64-bit processors
+	sbom-hash = 24c60e243580c7868f4334a1ba3123481fe1aa48
+
+[submodule "components/spiffs/spiffs"]
+	path = components/spiffs/spiffs
+	url = ../../pellepl/spiffs.git
+	sbom-version = 0.2-265-gad902ca
+	sbom-supplier = Person: Peter Andersson
+	sbom-url = https://github.com/pellepl/spiffs
+	sbom-description = Wear-leveled SPI flash file system for embedded devices
+	sbom-hash = ad902cadceb39d0825a97e25ecb5867641f606ba
+
+[submodule "components/mbedtls/mbedtls"]
+	path = components/mbedtls/mbedtls
+	url = ../../espressif/mbedtls.git
+
+[submodule "components/lwip/lwip"]
+	path = components/lwip/lwip
+	url = ../../espressif/esp-lwip.git
+
+[submodule "components/protobuf-c/protobuf-c"]
+	path = components/protobuf-c/protobuf-c
+	url = ../../protobuf-c/protobuf-c.git
+	sbom-version = 1.4.1
+	sbom-cpe = cpe:2.3:a:protobuf-c_project:protobuf-c:{}:*:*:*:*:*:*:*
+	sbom-supplier = Organization: protobuf-c community <https://groups.google.com/g/protobuf-c>
+	sbom-url = https://github.com/protobuf-c/protobuf-c
+	sbom-description = Protocol Buffers implementation in C
+	sbom-hash = abc67a11c6db271bedbb9f58be85d6f4e2ea8389
+
+[submodule "components/unity/unity"]
+	path = components/unity/unity
+	url = ../../ThrowTheSwitch/Unity.git
+	sbom-version = v2.6.0-RC1
+	sbom-supplier = Organization: ThrowTheSwitch community <http://www.throwtheswitch.org>
+	sbom-url = https://github.com/ThrowTheSwitch/Unity
+	sbom-description = Simple Unit Testing for C
+	sbom-hash = bf560290f6020737eafaa8b5cbd2177c3956c03f
+
+[submodule "components/bt/host/nimble/nimble"]
+	path = components/bt/host/nimble/nimble
+	url = ../../espressif/esp-nimble.git
+
+[submodule "components/esp_wifi/lib"]
+	path = components/esp_wifi/lib
+	url = ../../espressif/esp32-wifi-lib.git
+	shallow = true
+
+[submodule "components/cmock/CMock"]
+	path = components/cmock/CMock
+	url = ../../ThrowTheSwitch/CMock.git
+	sbom-version = v2.5.2-2-geeecc49ce8af
+	sbom-supplier = Organization: ThrowTheSwitch community <http://www.throwtheswitch.org>
+	sbom-url = https://github.com/ThrowTheSwitch/CMock
+	sbom-description = CMock - Mock/stub generator for C
+	sbom-hash = eeecc49ce8af123cf8ad40efdb9673e37b56230f
+
+[submodule "components/openthread/openthread"]
+	path = components/openthread/openthread
+	url = ../../espressif/openthread.git
+
+[submodule "components/bt/controller/lib_esp32c3_family"]
+	path = components/bt/controller/lib_esp32c3_family
+	url = ../../espressif/esp32c3-bt-lib.git
+	shallow = true
+
+[submodule "components/esp_phy/lib"]
+	path = components/esp_phy/lib
+	url = ../../espressif/esp-phy-lib.git
+	shallow = true
+
+[submodule "components/openthread/lib"]
+	path = components/openthread/lib
+	url = ../../espressif/esp-thread-lib.git
+	shallow = true
+
+[submodule "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"]
+	path = components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+	url = ../../espressif/esp32h2-bt-lib.git
+	shallow = true
+
+[submodule "components/bt/controller/lib_esp32h4/esp32h4-bt-lib"]
+	path = components/bt/controller/lib_esp32h4/esp32h4-bt-lib
+	url = ../../espressif/esp32h4-bt-lib.git
+	shallow = true
+
+[submodule "components/bt/controller/lib_esp32c2/esp32c2-bt-lib"]
+	path = components/bt/controller/lib_esp32c2/esp32c2-bt-lib
+	url = ../../espressif/esp32c2-bt-lib.git
+	shallow = true
+
+[submodule "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"]
+	path = components/bt/controller/lib_esp32c6/esp32c6-bt-lib
+	url = ../../espressif/esp32c6-bt-lib.git
+	shallow = true
+
+[submodule "components/bt/controller/lib_esp32c5/esp32c5-bt-lib"]
+	path = components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+	url = ../../espressif/esp32c5-bt-lib.git
+	shallow = true
+
+[submodule "components/heap/tlsf"]
+	path = components/heap/tlsf
+	url = ../../espressif/tlsf.git
+
+[submodule "components/esp_coex/lib"]
+	path = components/esp_coex/lib
+	url = ../../espressif/esp-coex-lib.git
+	shallow = true
+
+[submodule "components/bt/esp_ble_mesh/lib/lib"]
+	path = components/bt/esp_ble_mesh/lib/lib
+	url = ../../espressif/esp-ble-mesh-lib.git
+	shallow = true
+
+[submodule "components/bt/esp_ble_audio/lib/lib"]
+	path = components/bt/esp_ble_audio/lib/lib
+	url = ../../espressif/esp-ble-audio-lib.git
+	shallow = true
+
+[submodule "components/bt/controller/lib_esp32s31/esp32s31-bt-lib"]
+	path = components/bt/controller/lib_esp32s31/esp32s31-bt-lib
+	url = ../../espressif/esp32s31-bt-lib.git
+	shallow = true

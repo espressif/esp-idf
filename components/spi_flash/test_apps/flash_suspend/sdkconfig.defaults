@@ -1,0 +1,6 @@
+CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_SPI_FLASH_AUTO_SUSPEND=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# Now the runners are massively using xmc-c chips, to be removed when xmc-d goes massive production.
+CONFIG_SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND=y

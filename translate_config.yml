@@ -1,0 +1,25 @@
+# Translation config (TCF) for auto-translate / GitLab CI
+#
+# specified_files: roots allowed for auto-translation (MR-changed paths under these trees).
+# compare_branch: diff base (use MR target branch name when not merging to master).
+#
+# Classification (tools/ci/doc_auto_translate.py) on each MR-changed doc:
+#   - incremental: normal EN/CN docs -> translate_files.py (changed lines only)
+#   - entire: docs/zh_CN file has no Chinese body (only .. include:: to en, etc.)
+#             -> translate_files.py -a on the paired docs/en file
+#
+# force_full_translate: optional paths always fully translated when changed (rare).
+#
+specified_files:
+  - docs/en
+
+compare_branch: master
+
+target_language: EN-CN
+
+trans_dict: {}
+
+target_language_folder: ./
+
+# force_full_translate:
+#   - docs/en/api-guides/example.rst

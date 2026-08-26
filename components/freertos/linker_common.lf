@@ -1,0 +1,82 @@
+# Linker fragment file for common FreeRTOS files (i.e., both "port_common.c" and "esp_additions/..."
+# Flash function placements are listed per source file, in the order that they appear in the source file.
+
+[mapping:freertos_common]
+archive: libfreertos.a
+entries:
+    if FREERTOS_IN_IRAM = y:
+        * (noflash_text)        # All FreeRTOS functions to IRAM
+    else:
+        * (default)             # All FreeRTOS functions to Flash
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # esp_additions/private_include/freertos_tasks_c_additions.h
+    # Placement Rules (FreeRTOS API Additions):
+    #   - Default: Place all functions in flash.
+    #   - CONFIG_FREERTOS_IN_IRAM: Place all functions in internal RAM for performance optimization.
+    #   - xTaskIncrementTickOtherCores is always placed in internal RAM for better performance
+    # Placement Rules (Task Snapshot):
+    #   - Default: Place all functions in flash.
+    #   - CONFIG_FREERTOS_IN_IRAM: Place all functions in internal RAM for performance optimization.
+    #   - ESP_PANIC_HANDLER_IRAM: Place task snapshot functions in IRAM for panic handling.
+    #   - vTaskGetSnapshot is used by the Task Watchdog (TWDT) interrupt handler, so it's kept in IRAM
+    #     unless CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled.
+    #
+    # ------------------------------------------------------------------------------------------------------------------
+    if FREERTOS_SMP = n && FREERTOS_UNICORE = n:
+        tasks:xTaskIncrementTickOtherCores (noflash_text)
+    if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
+        tasks:vTaskGetSnapshot (noflash_text)
+    if ESP_PANIC_HANDLER_IRAM = y:
+        tasks:vTaskGetSnapshot (noflash_text)
+        tasks:uxTaskGetSnapshotAll (noflash_text)
+        tasks:xTaskGetNext (noflash_text)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # idf_additions.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    idf_additions (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # idf_additions_event_groups.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    idf_additions_event_groups (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # app_startup.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    app_startup (default)           # Place functions (but not Data and BSS) to flash
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # heap_idf.c
+    # Placement Rules:
+    #   - Default: Place all functions in flash.
+    #   - CONFIG_FREERTOS_IN_IRAM: Place all functions in internal RAM for performance optimization.
+    # ------------------------------------------------------------------------------------------------------------------
+    if FREERTOS_IN_IRAM = y:
+        heap_idf (noflash_text)     # All functions to internal RAM
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # port_common.c
+    # Placement Rules:
+    #   - Default: Place all functions in flash.
+    #   - CONFIG_FREERTOS_IN_IRAM: Place all functions in internal RAM for performance optimization.
+    # ------------------------------------------------------------------------------------------------------------------
+    if FREERTOS_IN_IRAM = y:
+        port_common (noflash_text)  # All functions to internal RAM
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # port_systick.c
+    # - Place the entire port_systick in IRAM. It contains the tick ISR and its related functions, which are
+    #   performance-critical and must always be in IRAM.
+    # - For RISC-V targets, the timer setup functions can be placed in Flash. For Xtensa targets this is not possible
+    #   as the timer setup function is called from xPortStartScheduler() which is in IRAM.
+    # ------------------------------------------------------------------------------------------------------------------
+    port_systick (noflash_text)
+    if IDF_TARGET_ARCH_RISCV = y:
+        port_systick:vPortSetupTimer (default)
+        if FREERTOS_SYSTICK_USES_SYSTIMER = y:
+            port_systick:vSystimerSetup (default)

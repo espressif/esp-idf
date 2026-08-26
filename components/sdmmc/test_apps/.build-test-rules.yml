@@ -1,0 +1,13 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/sdmmc/test_apps:
+  disable:
+    - if: SOC_SDMMC_HOST_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32"]
+      temporary: false
+      reason: only one target required for running the test
+  depends_components:
+    - sdmmc
+    - esp_driver_sdmmc
+    - vfs

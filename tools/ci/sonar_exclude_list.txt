@@ -1,0 +1,28 @@
+# exclude list for sonarqube
+# Here're some examples: (relative with the idf_path)
+# test/**
+# test/*/*.c
+# test.c
+#
+# lines start with # will be ignored
+
+# FreeRTOS upstream code (don't include our port files here)
+components/freertos/FreeRTOS-Kernel/*.c
+components/freertos/FreeRTOS-Kernel/include/freertos/*.h
+
+# wpa_supplicant upstream code
+components/wpa_supplicant/src/**
+components/wpa_supplicant/include/**
+
+# HTTP Parser code
+components/http_parser/*.c
+components/http_parser/*.h
+
+# FATFS upstream code
+components/fatfs/src/**
+
+# Protobuf auto-generated files
+components/esp_local_ctrl/proto-c/**
+components/esp_local_ctrl/python/**
+components/protocomm/proto-c/**
+components/protocomm/python/**

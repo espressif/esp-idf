@@ -1,0 +1,20 @@
+menu "TestApp Configuration"
+
+    choice TESTAPP_COMPONENT_TEST
+        prompt "Component under test"
+        help
+            Component for which we check their dependencies
+
+        config TESTAPP_COMPONENT_ESP_NETIF
+            bool "esp_netif"
+
+        config TESTAPP_COMPONENT_LWIP
+            bool "lwip"
+
+        config TESTAPP_COMPONENT_ESP_NETIF_WITHOUT_LWIP
+            bool "esp_netif without lwip"
+            depends on ESP_NETIF_LOOPBACK
+
+    endchoice
+
+endmenu

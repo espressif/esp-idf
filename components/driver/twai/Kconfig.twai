@@ -1,0 +1,24 @@
+menu "Legacy TWAI Driver Configurations"
+    depends on SOC_TWAI_SUPPORTED
+
+    config TWAI_ISR_IN_IRAM_LEGACY
+        bool "Place TWAI ISR function in IRAM"
+        default n
+        help
+            Place the TWAI ISR in to IRAM to reduce latency and increase performance
+
+    config TWAI_SUPPRESS_DEPRECATE_WARN
+        bool "Suppress legacy driver deprecated warning"
+        default n
+        help
+            whether to suppress the deprecation warnings when using legacy twai driver
+            (driver/twai.h). If you want to continue using the legacy driver,
+            and don't want to see related deprecation warnings, you can enable this option.
+
+    config TWAI_SKIP_LEGACY_CONFLICT_CHECK
+        bool "Skip legacy driver conflict check"
+        default n
+        help
+            This configuration option used to bypass the conflict check mechanism with legacy code.
+
+endmenu # TWAI Configuration

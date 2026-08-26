@@ -1,0 +1,17 @@
+[mapping:esp_mm]
+archive: libesp_mm.a
+entries:
+
+    if APP_BUILD_TYPE_PURE_RAM_APP = n:
+        esp_cache_msync (noflash)
+        esp_cache_utils (noflash)
+
+        if IDF_TARGET_ESP32 = y:
+            cache_esp32 (noflash)
+
+        if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
+            esp_mmu_map: s_get_bus_mask (noflash)
+            esp_mmu_map: s_reserve_irom_region (noflash)
+            esp_mmu_map: s_reserve_drom_region (noflash)
+            esp_mmu_map: esp_mmu_map_init (noflash)
+            ext_mem_layout (noflash)

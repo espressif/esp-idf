@@ -1,0 +1,28 @@
+blockdiag {
+  orientation = portrait;
+  edge_layout = flowchart;
+  shadow_style = none;
+  node_width = 170;
+  node_height = 80;
+  span_width = 50;
+  span_height = 50;
+  default_fontsize = 22;
+
+  start [label = "", shape = beginpoint, width = 40, height = 40];
+  ide_first [label = "从 IDE 开始?", shape = diamond, width = 280, height = 140];
+  install_ide [label = "安装 IDE 和插件", width = 180, height = 90, shape =  roundedbox];
+  skip_ide [label = "下一步", width = 180, height = 90, shape =  roundedbox];
+  prereq [label = "安装依赖包", width = 180, height = 90, shape =  roundedbox];
+  eim [label = "安装 EIM", width = 180, height = 90, shape =  roundedbox];
+  install_espidf [label = "使用 EIM 安装\nESP-IDF", width = 200, height = 90, shape =  roundedbox];
+  build_method [label = "如何构建项目？\nIDE 或 CLI", shape = diamond, width = 300, height = 170, style = dashed];
+
+  start -> ide_first;
+  ide_first -> install_ide [label = "是"];
+  install_ide -> prereq;
+  ide_first -> skip_ide [label = "否"];
+  skip_ide -> prereq;
+  prereq -> eim;
+  eim -> install_espidf;
+  install_espidf -> build_method;
+}

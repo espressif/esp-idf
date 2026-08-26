@@ -1,0 +1,3 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp_flash_dispatcher: ==1.0.1

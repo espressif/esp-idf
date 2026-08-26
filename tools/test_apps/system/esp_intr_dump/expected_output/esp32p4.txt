@@ -1,0 +1,70 @@
+CPU 0 interrupt status:
+ Int  Level  Type   Status
+  0     1    Level  Shared: LP_ANAPERI
+  1     1    Level  Used: CPU_INT_FROM_CPU_0
+  2     1    Level  Used: SYSTIMER_TARGET0
+  3     1    Level  Used: TG0_WDT_LEVEL
+  4     1    Level  Used: UART0
+  5     *      *    Free
+  6     *      *    Reserved
+  7     *      *    Free
+  8     *      *    Free
+  9     *      *    Free
+ 10     *      *    Free
+ 11     *      *    Free
+ 12     *      *    Free
+ 13     *      *    Free
+ 14     *      *    Free
+ 15     *      *    Free
+ 16     *      *    Free
+ 17     *      *    Free
+ 18     *      *    Free
+ 19     *      *    Free
+ 20     *      *    Free
+ 21     *      *    Free
+ 22     *      *    Free
+ 23     *      *    Free
+ 24     *      *    Reserved
+ 25     *      *    Reserved
+ 26     *      *    Free
+ 27     *      *    Reserved
+ 28     *      *    Reserved
+ 29     *      *    Free
+ 30     *      *    Free
+ 31     *      *    Free
+CPU 1 interrupt status:
+ Int  Level  Type   Status
+  0     ?      ?    Used: CPU_INT_FROM_CPU_1
+  1     ?      ?    Used: SYSTIMER_TARGET1
+  2     *      *    Free
+  3     *      *    Free
+  4     *      *    Free
+  5     *      *    Free
+  6     *      *    Reserved
+  7     *      *    Free
+  8     *      *    Free
+  9     *      *    Free
+ 10     *      *    Free
+ 11     *      *    Free
+ 12     *      *    Free
+ 13     *      *    Free
+ 14     *      *    Free
+ 15     *      *    Free
+ 16     *      *    Free
+ 17     *      *    Free
+ 18     *      *    Free
+ 19     *      *    Free
+ 20     *      *    Free
+ 21     *      *    Free
+ 22     *      *    Free
+ 23     *      *    Free
+ 24     *      *    Reserved
+ 25     *      *    Reserved
+ 26     *      *    Free
+ 27     *      *    Reserved
+ 28     *      *    Reserved
+ 29     *      *    Free
+ 30     *      *    Free
+ 31     *      *    Free
+Interrupts available for general use: 47
+Shared interrupts: 1

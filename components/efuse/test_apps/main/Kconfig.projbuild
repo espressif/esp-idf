@@ -1,0 +1,11 @@
+menu "eFuse Tests"
+    visible if IDF_ENV_FPGA
+
+    config EFUSE_FPGA_TEST
+        bool "Enable eFuse tests for FPGA (developers only, will PERMANENTLY burn efuses)"
+        default n
+        help
+            This includes eFuse tests for FPGA. These tests expect actual eFuse burning.
+            Disable EFUSE_VIRTUAL to use real eFuse burning.
+
+endmenu

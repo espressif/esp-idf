@@ -1,0 +1,12 @@
+menu "Example Configuration"
+
+    config USE_CUSTOM_EVENT_ID
+        bool "Use custom SystemView event IDs"
+        default "n"
+        help
+            Use custom IDs for user events. If it is enabled, replace `SYSVIEW_FreeRTOS.txt` in SystemView
+            installation directory with the version from example's root directory.
+
+            By default SYSVIEW_EVTID_MARK_START/STOP are used for tracing purposes of the example.
+
+endmenu

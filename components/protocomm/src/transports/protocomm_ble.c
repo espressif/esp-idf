@@ -1,0 +1,1080 @@
+/*
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <sys/param.h>
+#include <stdbool.h>
+#include <esp_log.h>
+#include <esp_gatt_common_api.h>
+#include <esp_gap_bt_api.h>
+#include <limits.h>
+
+#include <protocomm.h>
+#include <protocomm_ble.h>
+
+#include "protocomm_priv.h"
+#include "simple_ble.h"
+
+ESP_EVENT_DEFINE_BASE(PROTOCOMM_TRANSPORT_BLE_EVENT);
+
+/* NOTE: For the security2 scheme, the payload size is quite larger
+ * than that for security1. The increased value has been selected
+ * keeping in mind the largest packet size for security2 and the
+ * factors affecting it.
+ */
+#if CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+    #define CHAR_VAL_LEN_MAX         (480 + 1)
+#else
+    #define CHAR_VAL_LEN_MAX         (256 + 1)
+#endif // CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+
+#define PREPARE_BUF_MAX_SIZE     CHAR_VAL_LEN_MAX
+
+static const char *TAG = "protocomm_ble";
+
+/* BLE specific configuration parameters */
+static const uint16_t primary_service_uuid       = ESP_GATT_UUID_PRI_SERVICE;
+static const uint16_t character_declaration_uuid = ESP_GATT_UUID_CHAR_DECLARE;
+static const uint16_t character_user_description = ESP_GATT_UUID_CHAR_DESCRIPTION;
+static const uint16_t character_client_config_uuid = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
+static const uint8_t  character_prop_read_write  = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
+static const uint8_t  character_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | \
+                                                         ESP_GATT_CHAR_PROP_BIT_NOTIFY;
+static const uint8_t  character_cccd_value[2]      = {0x00, 0x00};
+
+typedef struct {
+    uint8_t type;
+    uint8_t length;
+    uint8_t *data_p;
+} raw_data_info_t;
+
+typedef struct {
+    uint8_t                *prepare_buf;
+    int                     prepare_len;
+    uint16_t                handle;
+} prepare_type_env_t;
+
+static prepare_type_env_t prepare_write_env;
+
+typedef struct name_uuid128 {
+    const char *name;
+    uint8_t uuid128[ESP_UUID_LEN_128];
+} name_uuid128_t;
+
+typedef struct _protocomm_ble {
+    protocomm_t *pc_ble;
+    name_uuid128_t *g_nu_lookup;
+    size_t g_nu_lookup_count;
+    uint16_t gatt_mtu;
+    uint8_t *service_uuid;
+    unsigned ble_link_encryption:1;
+    unsigned ble_notify:1;
+} _protocomm_ble_internal_t;
+
+static _protocomm_ble_internal_t *protoble_internal;
+static esp_gatts_attr_db_t *s_gatt_db;
+
+static bool protocomm_ble_transport_active(void)
+{
+    return (protoble_internal != NULL) && (protoble_internal->pc_ble != NULL);
+}
+
+static void protocomm_ble_reset_prepare_write(void)
+{
+    if (prepare_write_env.prepare_buf) {
+        free(prepare_write_env.prepare_buf);
+        prepare_write_env.prepare_buf = NULL;
+    }
+    prepare_write_env.prepare_len = 0;
+    prepare_write_env.handle = 0;
+}
+
+// config adv data
+#if SIMPLE_BLE_LEGACY_ADV
+static esp_ble_adv_data_t adv_config = {
+    .set_scan_rsp = false,
+    .include_txpower = true,
+    .min_interval = 0x0006, //slave connection min interval, Time = min_interval * 1.25 msec
+    .max_interval = 0x0010, //slave connection max interval, Time = max_interval * 1.25 msec
+    .appearance = 0x00,
+    .manufacturer_len = 0,
+    .p_manufacturer_data =  NULL,
+    .service_data_len = 0,
+    .p_service_data = NULL,
+    .service_uuid_len = 0,  // Filled later
+    .p_service_uuid = NULL, // Filled later
+    .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
+};
+// config scan response data
+static esp_ble_adv_data_t scan_rsp_config = {
+    .set_scan_rsp = true,
+    .include_name = true,
+    .manufacturer_len = 0,          // Filled later
+    .p_manufacturer_data = NULL,    // Filler later
+};
+
+static esp_ble_adv_params_t adv_params = {
+    .adv_int_min         = 0x100,
+    .adv_int_max         = 0x100,
+    .adv_type            = ADV_TYPE_IND,
+    .own_addr_type       = BLE_ADDR_TYPE_PUBLIC,
+    .channel_map         = ADV_CHNL_ALL,
+    .adv_filter_policy   = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+};
+#elif SIMPLE_BLE_EXT_ADV
+#define PROTOCOMM_BLE_RAW_AD_MAX  ESP_BLE_ADV_DATA_LEN_MAX
+
+static uint8_t s_raw_adv_data[PROTOCOMM_BLE_RAW_AD_MAX];
+static uint8_t s_raw_scan_rsp_data[PROTOCOMM_BLE_RAW_AD_MAX];
+static uint32_t s_raw_adv_data_len;
+static uint32_t s_raw_scan_rsp_data_len;
+
+static esp_err_t protocomm_ble_build_raw_adv_data(const uint8_t *service_uuid)
+{
+    uint32_t offset = 0;
+
+    if (offset + 3 > PROTOCOMM_BLE_RAW_AD_MAX) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    s_raw_adv_data[offset++] = 2;
+    s_raw_adv_data[offset++] = ESP_BLE_AD_TYPE_FLAG;
+    s_raw_adv_data[offset++] = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
+
+    if (offset + 2 + ESP_UUID_LEN_128 > PROTOCOMM_BLE_RAW_AD_MAX) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    s_raw_adv_data[offset++] = 1 + ESP_UUID_LEN_128;
+    s_raw_adv_data[offset++] = ESP_BLE_AD_TYPE_128SRV_CMPL;
+    memcpy(&s_raw_adv_data[offset], service_uuid, ESP_UUID_LEN_128);
+    offset += ESP_UUID_LEN_128;
+
+    s_raw_adv_data_len = offset;
+    return ESP_OK;
+}
+
+static esp_err_t protocomm_ble_build_raw_scan_rsp_data(const char *name,
+                                                      const uint8_t *mfg_data,
+                                                      size_t mfg_len)
+{
+    uint32_t offset = 0;
+    size_t name_len = (name != NULL) ? strlen(name) : 0;
+
+    if (name_len > 0) {
+        if (name_len > ESP_BLE_ADV_NAME_LEN_MAX) {
+            name_len = ESP_BLE_ADV_NAME_LEN_MAX;
+        }
+        if (offset + 2 + name_len > PROTOCOMM_BLE_RAW_AD_MAX) {
+            return ESP_ERR_INVALID_SIZE;
+        }
+        s_raw_scan_rsp_data[offset++] = 1 + (uint8_t)name_len;
+        s_raw_scan_rsp_data[offset++] = ESP_BLE_AD_TYPE_NAME_CMPL;
+        memcpy(&s_raw_scan_rsp_data[offset], name, name_len);
+        offset += name_len;
+    }
+
+    if (mfg_data != NULL && mfg_len > 0) {
+        if (offset + 2 + mfg_len > PROTOCOMM_BLE_RAW_AD_MAX) {
+            return ESP_ERR_INVALID_SIZE;
+        }
+        s_raw_scan_rsp_data[offset++] = 1 + (uint8_t)mfg_len;
+        s_raw_scan_rsp_data[offset++] = ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE;
+        memcpy(&s_raw_scan_rsp_data[offset], mfg_data, mfg_len);
+        offset += mfg_len;
+    }
+
+    s_raw_scan_rsp_data_len = offset;
+    return ESP_OK;
+}
+#endif
+
+static char *protocomm_ble_device_name = NULL;
+static uint8_t *protocomm_ble_mfg_data = NULL;
+static size_t protocomm_ble_mfg_data_len;
+static uint8_t *protocomm_ble_addr = NULL;
+
+static void hexdump(const char *msg, uint8_t *buf, int len)
+{
+    ESP_LOGD(TAG, "%s:", msg);
+    ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_DEBUG);
+}
+
+static uint16_t uuid128_to_16(const uint8_t *uuid128)
+{
+    uint16_t uuid16 = 0;
+    memcpy(&uuid16, &uuid128[12], sizeof(uuid16));
+    return uuid16;
+}
+
+static const char *handle_to_handler(uint16_t handle)
+{
+    if (protoble_internal == NULL) {
+        return NULL;
+    }
+    const uint8_t *uuid128 = simple_ble_get_uuid128(handle);
+    if (!uuid128) {
+        return NULL;
+    }
+    uint16_t target_uuid16 = uuid128_to_16(uuid128);
+    for (size_t i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
+        if (uuid128_to_16(protoble_internal->g_nu_lookup[i].uuid128) == target_uuid16) {
+            return protoble_internal->g_nu_lookup[i].name;
+        }
+    }
+    return NULL;
+}
+
+static void transport_simple_ble_read(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    static const uint8_t *read_buf = NULL;
+    static uint16_t read_len = 0;
+    static uint16_t max_read_len = 0;
+    esp_gatt_status_t status = ESP_OK;
+
+    if (!protocomm_ble_transport_active()) {
+        read_len = 0;
+        max_read_len = 0;
+        read_buf = NULL;
+        esp_err_t err = esp_ble_gatts_send_response(gatts_if, param->read.conn_id,
+                        param->read.trans_id, ESP_GATT_ERROR, NULL);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Send response error in read");
+        }
+        return;
+    }
+
+    ESP_LOGD(TAG, "Inside read w/ session - %d on param %d %d",
+             param->read.conn_id, param->read.handle, read_len);
+    if (!param->read.offset) {
+        ESP_LOGD(TAG, "Reading attr value first time");
+        status = esp_ble_gatts_get_attr_value(param->read.handle, &read_len, &read_buf);
+        max_read_len = read_len;
+    } else if ((read_len + param->read.offset) > max_read_len) {
+        status = ESP_GATT_INVALID_OFFSET;
+    } else {
+        ESP_LOGD(TAG, "Subsequent read request for attr value");
+    }
+
+    esp_gatt_rsp_t gatt_rsp = {0};
+    gatt_rsp.attr_value.handle = param->read.handle;
+    gatt_rsp.attr_value.offset = param->read.offset;
+
+    if (status == ESP_GATT_OK) {
+        gatt_rsp.attr_value.len = MIN(read_len, (protoble_internal->gatt_mtu - 1));
+        gatt_rsp.attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+        if (gatt_rsp.attr_value.len && read_buf) {
+            memcpy(gatt_rsp.attr_value.value,
+                   read_buf + param->read.offset,
+                   gatt_rsp.attr_value.len);
+        }
+        read_len -= gatt_rsp.attr_value.len;
+    } else {
+        read_len = 0;
+        max_read_len = 0;
+        read_buf = NULL;
+    }
+    esp_err_t err = esp_ble_gatts_send_response(gatts_if, param->read.conn_id,
+                    param->read.trans_id, status, &gatt_rsp);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Send response error in read");
+    }
+}
+
+static esp_err_t prepare_write_event_env(esp_gatt_if_t gatts_if,
+        esp_ble_gatts_cb_param_t *param)
+{
+    ESP_LOGD(TAG, "prepare write, handle = %d, value len = %d, offset = %d",
+             param->write.handle, param->write.len, param->write.offset);
+    esp_gatt_status_t status = ESP_GATT_OK;
+
+    /* Ensure that write data is not larger than max attribute length */
+    if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
+        status = ESP_GATT_INVALID_OFFSET;
+    } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
+        status = ESP_GATT_INVALID_ATTR_LEN;
+    } else {
+        /* If prepare buffer is not allocated, then allocate it */
+        if (prepare_write_env.prepare_buf == NULL) {
+            prepare_write_env.prepare_len = 0;
+            prepare_write_env.prepare_buf = (uint8_t *) malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
+            if (prepare_write_env.prepare_buf == NULL) {
+                ESP_LOGE(TAG, "%s , failed to allocate prepare buf", __func__);
+                status = ESP_GATT_NO_RESOURCES;
+            }
+        }
+    }
+
+    /* If prepare buffer is allocated copy incoming data into it */
+    if (status == ESP_GATT_OK) {
+        if (param->write.len && param->write.value) {
+            memcpy(prepare_write_env.prepare_buf + param->write.offset,
+                   param->write.value,
+                   param->write.len);
+            int next_len = param->write.offset + param->write.len;
+            prepare_write_env.prepare_len = MAX(prepare_write_env.prepare_len, next_len);
+            prepare_write_env.handle = param->write.handle;
+        } else if (param->write.len) {
+            ESP_LOGE(TAG, "NULL write value for non-zero length");
+            status = ESP_GATT_ERROR;
+        }
+    }
+
+    /* Send write response if needed */
+    if (param->write.need_rsp) {
+        esp_err_t response_err;
+        /* If data was successfully appended to prepare buffer
+         * only then have it reflected in the response */
+        if (status == ESP_GATT_OK) {
+            esp_gatt_rsp_t gatt_rsp = {0};
+            gatt_rsp.attr_value.len = param->write.len;
+            gatt_rsp.attr_value.handle = param->write.handle;
+            gatt_rsp.attr_value.offset = param->write.offset;
+            gatt_rsp.attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+            if (gatt_rsp.attr_value.len && param->write.value) {
+                memcpy(gatt_rsp.attr_value.value, param->write.value, param->write.len);
+            }
+            response_err = esp_ble_gatts_send_response(gatts_if,
+                           param->write.conn_id, param->write.trans_id, status, &gatt_rsp);
+        } else {
+            response_err = esp_ble_gatts_send_response(gatts_if,
+                           param->write.conn_id, param->write.trans_id, status, NULL);
+        }
+        if (response_err != ESP_OK) {
+            ESP_LOGE(TAG, "Send response error in prep write");
+        }
+    }
+    if (status != ESP_GATT_OK) {
+        if (prepare_write_env.prepare_buf) {
+            free(prepare_write_env.prepare_buf);
+            prepare_write_env.prepare_buf = NULL;
+            prepare_write_env.prepare_len = 0;
+        }
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+static void transport_simple_ble_write(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    uint8_t *outbuf = NULL;
+    ssize_t outlen = 0;
+    esp_err_t ret;
+
+    ESP_LOGD(TAG, "Inside write with session - %d on attr handle = %d \nlen = %d, is_prep = %d",
+             param->write.conn_id, param->write.handle, param->write.len, param->write.is_prep);
+
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGW(TAG, "Ignoring write on inactive protocomm transport");
+        protocomm_ble_reset_prepare_write();
+        if (param->write.need_rsp) {
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                        param->write.trans_id, ESP_GATT_ERROR, NULL);
+        }
+        esp_ble_gatts_close(gatts_if, param->write.conn_id);
+        return;
+    }
+
+    protocomm_t *pc_ble = protoble_internal->pc_ble;
+    if (pc_ble == NULL) {
+        ESP_LOGW(TAG, "Ignoring write on inactive protocomm transport");
+        if (param->write.need_rsp) {
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                        param->write.trans_id, ESP_GATT_ERROR, NULL);
+        }
+        return;
+    }
+
+    if (param->write.is_prep) {
+        ret = prepare_write_event_env(gatts_if, param);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Error appending to prepare buffer");
+        }
+        return;
+    } else {
+        ESP_LOGD(TAG, "is_prep not set");
+    }
+
+    if (param->write.len == 0 || param->write.len > CHAR_VAL_LEN_MAX) {
+        ESP_LOGE(TAG, "Invalid write length %d for handle %d", param->write.len, param->write.handle);
+        if (param->write.need_rsp) {
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                        param->write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL);
+        }
+        return;
+    }
+
+    const char *ep_name = handle_to_handler(param->write.handle);
+    if (ep_name == NULL) {
+        ESP_LOGW(TAG, "No endpoint mapped for handle %d", param->write.handle);
+        if (param->write.need_rsp) {
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                        param->write.trans_id, ESP_GATT_NOT_FOUND, NULL);
+        }
+        return;
+    }
+
+    ret = protocomm_req_handle(pc_ble,
+                               ep_name,
+                               param->write.conn_id,
+                               param->write.value,
+                               param->write.len,
+                               &outbuf, &outlen);
+    if (ret == ESP_OK) {
+        if (outlen < 0 || outlen > CHAR_VAL_LEN_MAX) {
+            ESP_LOGE(TAG, "Invalid response length %d for handle %d", (int)outlen, param->write.handle);
+            if (outbuf) {
+                free(outbuf);
+            }
+            if (param->write.need_rsp) {
+                esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                            param->write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL);
+            }
+            return;
+        }
+        if (outlen > 0 && outbuf == NULL) {
+            ESP_LOGE(TAG, "NULL response buffer for non-zero response length");
+            if (param->write.need_rsp) {
+                esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                            param->write.trans_id, ESP_GATT_ERROR, NULL);
+            }
+            return;
+        }
+
+        ret = esp_ble_gatts_set_attr_value(param->write.handle, outlen, outbuf);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set the session attribute value");
+        }
+        if (param->write.need_rsp) {
+            ret = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                              param->write.trans_id, ESP_GATT_OK, NULL);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Send response error in write");
+            }
+        }
+        hexdump("Response from  write", outbuf, outlen);
+
+    } else {
+        ESP_LOGE(TAG, "Invalid content received, killing connection");
+        if (param->write.need_rsp) {
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                        param->write.trans_id, ESP_GATT_ERROR, NULL);
+        }
+        esp_ble_gatts_close(gatts_if, param->write.conn_id);
+    }
+    if (outbuf) {
+        free(outbuf);
+    }
+}
+
+static void transport_simple_ble_exec_write(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    esp_err_t err;
+    uint8_t *outbuf = NULL;
+    ssize_t outlen = 0;
+    ESP_LOGD(TAG, "Inside exec_write w/ session - %d", param->exec_write.conn_id);
+
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGW(TAG, "Ignoring exec write on inactive protocomm transport");
+        protocomm_ble_reset_prepare_write();
+        esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                    param->exec_write.trans_id, ESP_GATT_ERROR, NULL);
+        esp_ble_gatts_close(gatts_if, param->exec_write.conn_id);
+        return;
+    }
+
+    protocomm_t *pc_ble = protoble_internal->pc_ble;
+    if (pc_ble == NULL) {
+        ESP_LOGW(TAG, "Ignoring exec write on inactive protocomm transport");
+        protocomm_ble_reset_prepare_write();
+        esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                    param->exec_write.trans_id, ESP_GATT_ERROR, NULL);
+        esp_ble_gatts_close(gatts_if, param->exec_write.conn_id);
+        return;
+    }
+
+    if ((param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC)
+            &&
+            prepare_write_env.prepare_buf) {
+        if (prepare_write_env.prepare_len <= 0 || prepare_write_env.prepare_len > PREPARE_BUF_MAX_SIZE) {
+            ESP_LOGE(TAG, "Invalid prepared write length: %d", prepare_write_env.prepare_len);
+            esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                        param->exec_write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL);
+            protocomm_ble_reset_prepare_write();
+            return;
+        }
+
+        const char *ep_name = handle_to_handler(prepare_write_env.handle);
+        if (ep_name == NULL) {
+            ESP_LOGE(TAG, "No endpoint mapped for prepared write handle %d", prepare_write_env.handle);
+            esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                        param->exec_write.trans_id, ESP_GATT_NOT_FOUND, NULL);
+            esp_ble_gatts_close(gatts_if, param->exec_write.conn_id);
+            protocomm_ble_reset_prepare_write();
+            return;
+        }
+
+        err = protocomm_req_handle(pc_ble,
+                                   ep_name,
+                                   param->exec_write.conn_id,
+                                   prepare_write_env.prepare_buf,
+                                   prepare_write_env.prepare_len,
+                                   &outbuf, &outlen);
+
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Invalid content received, killing connection");
+            esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                        param->exec_write.trans_id, ESP_GATT_ERROR, NULL);
+            esp_ble_gatts_close(gatts_if, param->exec_write.conn_id);
+            protocomm_ble_reset_prepare_write();
+            if (outbuf) {
+                free(outbuf);
+            }
+            return;
+        } else {
+            if (outlen < 0 || outlen > CHAR_VAL_LEN_MAX) {
+                ESP_LOGE(TAG, "Invalid response length %d in exec write", (int)outlen);
+                if (outbuf) {
+                    free(outbuf);
+                    outbuf = NULL;
+                }
+                esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                            param->exec_write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL);
+                protocomm_ble_reset_prepare_write();
+                return;
+            }
+            if (outlen > 0 && outbuf == NULL) {
+                ESP_LOGE(TAG, "NULL response buffer for non-zero exec write response");
+                esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id,
+                                            param->exec_write.trans_id, ESP_GATT_ERROR, NULL);
+                protocomm_ble_reset_prepare_write();
+                return;
+            }
+            hexdump("Response from exec write", outbuf, outlen);
+            esp_ble_gatts_set_attr_value(prepare_write_env.handle, outlen, outbuf);
+        }
+    }
+    if (prepare_write_env.prepare_buf) {
+        free(prepare_write_env.prepare_buf);
+        prepare_write_env.prepare_buf = NULL;
+        prepare_write_env.prepare_len = 0;
+    }
+
+    err = esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id, param->exec_write.trans_id, ESP_GATT_OK, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Send response error in exec write");
+    }
+    if (outbuf) {
+        free(outbuf);
+    }
+}
+
+static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    esp_err_t ret;
+    ESP_LOGD(TAG, "Inside disconnect w/ session - %d", param->disconnect.conn_id);
+
+    /* Drop any staged prepare-write data when a connection ends */
+    protocomm_ble_reset_prepare_write();
+
+    /* Clear GATT attribute values so a new connection cannot read the
+     * previous session's response data. */
+    simple_ble_gatts_clear_char_values();
+
+    /* Ignore BLE events received after protocomm layer is stopped */
+    if (protoble_internal == NULL) {
+        ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring disconnect");
+        return;
+    }
+
+    protocomm_t *pc_ble = protoble_internal->pc_ble;
+    if (pc_ble == NULL) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring disconnect");
+        return;
+    }
+
+    if (pc_ble->sec && pc_ble->sec->close_transport_session) {
+        ret = pc_ble->sec->close_transport_session(pc_ble->sec_inst,
+                param->disconnect.conn_id);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "error closing the session after disconnect");
+        } else {
+            protocomm_ble_event_t ble_event = {};
+            /* Assign the event type */
+            ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_DISCONNECTED;
+            /* Set the Disconnection handle */
+            ble_event.conn_handle = param->disconnect.conn_id;
+            ble_event.disconnect_reason = param->disconnect.reason;
+
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to post transport disconnection event");
+            }
+        }
+    }
+    protoble_internal->gatt_mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
+}
+
+static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    esp_err_t ret;
+    ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", param->connect.conn_id);
+
+    /* Start each connection with a clean prepare-write buffer */
+    protocomm_ble_reset_prepare_write();
+
+    /* Ignore BLE events received after protocomm layer is stopped */
+    if (protoble_internal == NULL) {
+        ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring connect");
+        return;
+    }
+
+    protocomm_t *pc_ble = protoble_internal->pc_ble;
+    if (pc_ble == NULL) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring connect");
+        return;
+    }
+
+    if (pc_ble->sec && pc_ble->sec->new_transport_session) {
+        ret = pc_ble->sec->new_transport_session(pc_ble->sec_inst,
+                param->connect.conn_id);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "error creating the session");
+        } else {
+            protocomm_ble_event_t ble_event = {};
+            /* Assign the event type */
+            ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_CONNECTED;
+            /* Set the Connection handle */
+            ble_event.conn_handle = param->connect.conn_id;
+
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_CONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to post transport pairing event");
+            }
+        }
+    }
+}
+
+static void transport_simple_ble_set_mtu(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    if (!protocomm_ble_transport_active()) {
+        return;
+    }
+    protoble_internal->gatt_mtu = param->mtu.mtu;
+    return;
+}
+
+static esp_err_t protocomm_ble_add_endpoint(const char *ep_name,
+        protocomm_req_handler_t req_handler,
+        void *priv_data)
+{
+    /* Endpoint UUID already added when protocomm_ble_start() was called */
+    return ESP_OK;
+}
+
+static esp_err_t protocomm_ble_remove_endpoint(const char *ep_name)
+{
+    /* Endpoint UUID will be removed when protocomm_ble_stop() is called  */
+    return ESP_OK;
+}
+
+static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
+{
+    int i;
+    int char_stride = protoble_internal->ble_notify ? 4 : 3;
+    /* Each endpoint requires 3 (or 4 if notify enabled) attributes:
+     * 1) for Characteristic Declaration
+     * 2) for Characteristic Value (for reading and writing to an endpoint)
+     * 3) for Characteristic User Description (endpoint name)
+     * 4) for Client Characteristic Configuration Descriptor (if notify enabled)
+     *
+     * Therefore, we need esp_gatts_attr_db_t of size char_stride * number of endpoints + 1 for service
+     */
+    if (protoble_internal->g_nu_lookup_count > ((SIZE_MAX - 1) / char_stride)) {
+        ESP_LOGE(TAG, "gatt db entries overflow");
+        return -1;
+    }
+    size_t gatt_db_generated_entries_sz = char_stride * protoble_internal->g_nu_lookup_count + 1;
+    if (gatt_db_generated_entries_sz > (size_t)INT_MAX ||
+            gatt_db_generated_entries_sz > (SIZE_MAX / sizeof(esp_gatts_attr_db_t))) {
+        ESP_LOGE(TAG, "gatt db size overflow");
+        return -1;
+    }
+    ssize_t gatt_db_generated_entries = (ssize_t)gatt_db_generated_entries_sz;
+
+    *gatt_db_generated = (esp_gatts_attr_db_t *) malloc(sizeof(esp_gatts_attr_db_t) *
+                         gatt_db_generated_entries_sz);
+    if ((*gatt_db_generated) == NULL) {
+        ESP_LOGE(TAG, "Failed to assign memory to gatt_db");
+        return -1;
+    }
+    /* Declare service */
+    (*gatt_db_generated)[0].attr_control.auto_rsp       = ESP_GATT_RSP_BY_APP;
+
+    (*gatt_db_generated)[0].att_desc.uuid_length        = ESP_UUID_LEN_16;
+    (*gatt_db_generated)[0].att_desc.uuid_p             = (uint8_t *) &primary_service_uuid;
+    (*gatt_db_generated)[0].att_desc.perm               = ESP_GATT_PERM_READ;
+    (*gatt_db_generated)[0].att_desc.max_length         = ESP_UUID_LEN_128;
+    (*gatt_db_generated)[0].att_desc.length             = ESP_UUID_LEN_128;
+    (*gatt_db_generated)[0].att_desc.value              = protoble_internal->service_uuid;
+
+    /* Declare characteristics */
+    for (i = 1 ; i < gatt_db_generated_entries ; i++) {
+        int attr_idx = (i - 1) % char_stride;
+        int ep_idx = (i - 1) / char_stride;
+
+        (*gatt_db_generated)[i].attr_control.auto_rsp     = ESP_GATT_RSP_BY_APP;
+
+        if (attr_idx == 0) {
+            /* Characteristic Declaration */
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ;
+            (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_16;
+            (*gatt_db_generated)[i].att_desc.uuid_p       = (uint8_t *) &character_declaration_uuid;
+            (*gatt_db_generated)[i].att_desc.max_length   = sizeof(uint8_t);
+            (*gatt_db_generated)[i].att_desc.length       = sizeof(uint8_t);
+
+	    if (protoble_internal->ble_notify) {
+                (*gatt_db_generated)[i].att_desc.value    = (uint8_t *) &character_prop_read_write_notify;
+	    } else {
+                (*gatt_db_generated)[i].att_desc.value    = (uint8_t *) &character_prop_read_write;
+	    }
+        } else if (attr_idx == 1) {
+            /* Characteristic Value */
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE ;
+            if (protoble_internal->ble_link_encryption) {
+                (*gatt_db_generated)[i].att_desc.perm     |= ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED;
+            }
+            (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_128;
+            (*gatt_db_generated)[i].att_desc.uuid_p       = protoble_internal->g_nu_lookup[ep_idx].uuid128;
+            (*gatt_db_generated)[i].att_desc.max_length   = CHAR_VAL_LEN_MAX;
+            (*gatt_db_generated)[i].att_desc.length       = 0;
+            (*gatt_db_generated)[i].att_desc.value        = NULL;
+        } else if (attr_idx == 2) {
+            /* Characteristic User Description (for keeping endpoint names) */
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ;
+            (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_16;
+            (*gatt_db_generated)[i].att_desc.uuid_p       = (uint8_t *) &character_user_description;
+            (*gatt_db_generated)[i].att_desc.max_length   = strlen(protoble_internal->g_nu_lookup[ep_idx].name);
+            (*gatt_db_generated)[i].att_desc.length       = (*gatt_db_generated)[i].att_desc.max_length;
+            (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) protoble_internal->g_nu_lookup[ep_idx].name;
+        } else {
+            /* Client Characteristic Configuration Descriptor */
+            (*gatt_db_generated)[i].attr_control.auto_rsp = ESP_GATT_AUTO_RSP;
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
+            (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_16;
+            (*gatt_db_generated)[i].att_desc.uuid_p       = (uint8_t *) &character_client_config_uuid;
+            (*gatt_db_generated)[i].att_desc.max_length   = sizeof(uint16_t);
+            (*gatt_db_generated)[i].att_desc.length       = sizeof(uint16_t);
+            (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) character_cccd_value;
+        }
+    }
+    return gatt_db_generated_entries;
+}
+
+static void protocomm_ble_cleanup(void)
+{
+    protocomm_ble_reset_prepare_write();
+    free(s_gatt_db);
+    s_gatt_db = NULL;
+    if (protoble_internal) {
+        if (protoble_internal->service_uuid) {
+            free(protoble_internal->service_uuid);
+            protoble_internal->service_uuid = NULL;
+        }
+#if SIMPLE_BLE_LEGACY_ADV
+        adv_config.p_service_uuid = NULL;
+        adv_config.service_uuid_len = 0;
+#endif
+        if (protoble_internal->g_nu_lookup) {
+            for (size_t i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
+                if (protoble_internal->g_nu_lookup[i].name) {
+                    free((void *)protoble_internal->g_nu_lookup[i].name);
+                }
+            }
+            free(protoble_internal->g_nu_lookup);
+        }
+        free(protoble_internal);
+        protoble_internal = NULL;
+    }
+    if (protocomm_ble_device_name) {
+        free(protocomm_ble_device_name);
+        protocomm_ble_device_name = NULL;
+    }
+    if (protocomm_ble_mfg_data) {
+        free(protocomm_ble_mfg_data);
+        protocomm_ble_mfg_data = NULL;
+        protocomm_ble_mfg_data_len = 0;
+    }
+    if (protocomm_ble_addr) {
+        free(protocomm_ble_addr);
+        protocomm_ble_addr = NULL;
+    }
+}
+
+esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *config)
+{
+    if (!pc || !config || !config->nu_lookup) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (config->manufacturer_data_len > 0 && config->manufacturer_data == NULL) {
+        ESP_LOGE(TAG, "Manufacturer data length set without data");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (config->nu_lookup_count <= 0 || config->nu_lookup_count > (ssize_t)(INT_MAX - 1)) {
+        ESP_LOGE(TAG, "Invalid nu_lookup_count: %d", (int)config->nu_lookup_count);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (config->manufacturer_data != NULL &&
+            (config->manufacturer_data_len <= 0 ||
+             config->manufacturer_data_len > MAX_BLE_MANUFACTURER_DATA_LEN)) {
+        ESP_LOGE(TAG, "Invalid manufacturer data length: %d", (int)config->manufacturer_data_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (protoble_internal) {
+        ESP_LOGE(TAG, "Protocomm BLE already started");
+        return ESP_FAIL;
+    }
+
+    size_t endpoint_count = (size_t)config->nu_lookup_count;
+    if (endpoint_count > (SIZE_MAX / sizeof(name_uuid128_t))) {
+        ESP_LOGE(TAG, "Name UUID table size overflow");
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Store BLE device name internally */
+    protocomm_ble_device_name = strdup(config->device_name);
+    if (protocomm_ble_device_name == NULL) {
+        ESP_LOGE(TAG, "Error allocating memory for storing BLE device name");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Store BLE manufacturer data pointer */
+    if (config->manufacturer_data != NULL) {
+        protocomm_ble_mfg_data = (uint8_t *)malloc((size_t)config->manufacturer_data_len);
+        if (protocomm_ble_mfg_data == NULL) {
+            ESP_LOGE(TAG, "Error allocating memory for manufacturer data");
+            protocomm_ble_cleanup();
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(protocomm_ble_mfg_data, config->manufacturer_data, (size_t)config->manufacturer_data_len);
+        protocomm_ble_mfg_data_len = (size_t)config->manufacturer_data_len;
+    }
+
+    if (config->ble_addr != NULL) {
+        protocomm_ble_addr = (uint8_t *)malloc(BLE_ADDR_LEN);
+        if (protocomm_ble_addr == NULL) {
+            ESP_LOGE(TAG, "Error allocating memory for BLE address");
+            protocomm_ble_cleanup();
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(protocomm_ble_addr, config->ble_addr, BLE_ADDR_LEN);
+    }
+
+    protoble_internal = (_protocomm_ble_internal_t *) calloc(1, sizeof(_protocomm_ble_internal_t));
+    if (protoble_internal == NULL) {
+        ESP_LOGE(TAG, "Error allocating internal protocomm structure");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    protoble_internal->g_nu_lookup_count = endpoint_count;
+    protoble_internal->g_nu_lookup = calloc(endpoint_count, sizeof(name_uuid128_t));
+    if (protoble_internal->g_nu_lookup == NULL) {
+        ESP_LOGE(TAG, "Error allocating internal name UUID table");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    for (size_t i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
+        memcpy(protoble_internal->g_nu_lookup[i].uuid128, config->service_uuid, ESP_UUID_LEN_128);
+        memcpy((uint8_t *)&protoble_internal->g_nu_lookup[i].uuid128[12],
+               &config->nu_lookup[i].uuid, ESP_UUID_LEN_16);
+
+        if (config->nu_lookup[i].name == NULL) {
+            ESP_LOGE(TAG, "Invalid endpoint name");
+            protocomm_ble_cleanup();
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        protoble_internal->g_nu_lookup[i].name = strdup(config->nu_lookup[i].name);
+        if (protoble_internal->g_nu_lookup[i].name == NULL) {
+            ESP_LOGE(TAG, "Error allocating internal name UUID entry");
+            protocomm_ble_cleanup();
+            return ESP_ERR_NO_MEM;
+        }
+    }
+
+    pc->add_endpoint = protocomm_ble_add_endpoint;
+    pc->remove_endpoint = protocomm_ble_remove_endpoint;
+    protoble_internal->pc_ble = pc;
+    protoble_internal->gatt_mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
+    protoble_internal->ble_link_encryption = config->ble_link_encryption;
+    protoble_internal->ble_notify = config->ble_notify;
+
+    // Config adv data
+#if SIMPLE_BLE_LEGACY_ADV
+    adv_config.service_uuid_len = ESP_UUID_LEN_128;
+    protoble_internal->service_uuid = (uint8_t *)malloc(ESP_UUID_LEN_128);
+    if (protoble_internal->service_uuid == NULL) {
+        ESP_LOGE(TAG, "Error allocating memory for service UUID");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(protoble_internal->service_uuid, config->service_uuid, ESP_UUID_LEN_128);
+    adv_config.p_service_uuid = protoble_internal->service_uuid;
+
+    // Config scan response data
+    scan_rsp_config.manufacturer_len = protocomm_ble_mfg_data_len;
+    scan_rsp_config.p_manufacturer_data = (uint8_t *) protocomm_ble_mfg_data;
+#elif SIMPLE_BLE_EXT_ADV
+    protoble_internal->service_uuid = (uint8_t *)malloc(ESP_UUID_LEN_128);
+    if (protoble_internal->service_uuid == NULL) {
+        ESP_LOGE(TAG, "Error allocating memory for service UUID");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(protoble_internal->service_uuid, config->service_uuid, ESP_UUID_LEN_128);
+
+    esp_err_t raw_ret = protocomm_ble_build_raw_adv_data(protoble_internal->service_uuid);
+    if (raw_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to build raw advertising data");
+        protocomm_ble_cleanup();
+        return raw_ret;
+    }
+    raw_ret = protocomm_ble_build_raw_scan_rsp_data(protocomm_ble_device_name,
+                                                    protocomm_ble_mfg_data,
+                                                    protocomm_ble_mfg_data_len);
+    if (raw_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to build raw scan response data");
+        protocomm_ble_cleanup();
+        return raw_ret;
+    }
+#endif
+
+    simple_ble_cfg_t *ble_config = simple_ble_init();
+    if (ble_config == NULL) {
+        ESP_LOGE(TAG, "Ran out of memory for BLE config");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Set function pointers required for simple BLE layer */
+    ble_config->read_fn         = transport_simple_ble_read;
+    ble_config->write_fn        = transport_simple_ble_write;
+    ble_config->exec_write_fn   = transport_simple_ble_exec_write;
+    ble_config->disconnect_fn   = transport_simple_ble_disconnect;
+    ble_config->connect_fn      = transport_simple_ble_connect;
+    ble_config->set_mtu_fn      = transport_simple_ble_set_mtu;
+
+    /* Set parameters required for advertising */
+#if SIMPLE_BLE_LEGACY_ADV
+    ble_config->adv_params      = adv_params;
+
+    ble_config->adv_data_p      = &adv_config;
+    ble_config->scan_rsp_data_p = &scan_rsp_config;
+#elif SIMPLE_BLE_EXT_ADV
+    ble_config->raw_adv_data_p        = s_raw_adv_data;
+    ble_config->raw_adv_data_len      = s_raw_adv_data_len;
+    ble_config->raw_scan_rsp_data_p   = s_raw_scan_rsp_data;
+    ble_config->raw_scan_rsp_data_len = s_raw_scan_rsp_data_len;
+#endif
+
+    ble_config->device_name     = protocomm_ble_device_name;
+    ble_config->gatt_db_count   = populate_gatt_db(&ble_config->gatt_db);
+    s_gatt_db = ble_config->gatt_db;
+
+    ble_config->ble_bonding = config->ble_bonding;
+    ble_config->ble_sm_sc   = config->ble_sm_sc;
+
+   /* Set parameter to keep BLE on */
+    ble_config->keep_ble_on = config->keep_ble_on;
+
+    if (config->ble_addr != NULL) {
+        ble_config->ble_addr = protocomm_ble_addr;
+    }
+
+    if (ble_config->gatt_db_count == -1) {
+        ESP_LOGE(TAG, "Invalid GATT database count");
+        free(s_gatt_db);
+        s_gatt_db = NULL;
+        ble_config->gatt_db = NULL;
+        free(ble_config);
+        protocomm_ble_cleanup();
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_err_t err = simple_ble_start(ble_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "simple_ble_start failed w/ error code 0x%x", err);
+        simple_ble_deinit();
+        protocomm_ble_cleanup();
+        return err;
+    }
+
+    prepare_write_env.prepare_buf = NULL;
+    ESP_LOGD(TAG, "Waiting for client to connect ......");
+    return ESP_OK;
+}
+
+esp_err_t protocomm_ble_stop(protocomm_t *pc)
+{
+    if ((pc == NULL) ||
+            (protoble_internal == NULL ) ||
+            (pc != protoble_internal->pc_ble)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = ESP_OK;
+    bool ble_callbacks_active = true;
+    uint8_t protocomm_keep_ble_on = get_keep_ble_on();
+
+    protoble_internal->pc_ble = NULL;
+
+    if (protocomm_keep_ble_on) {
+#ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
+        /* Keep BT stack on, but terminate the connection after provisioning */
+        ret = simple_ble_disconnect();
+        if (ret) {
+            ESP_LOGE(TAG, "BLE disconnect failed");
+            protoble_internal->pc_ble = pc;
+            return ret;
+        }
+        simple_ble_deinit();
+        ble_callbacks_active = false;
+#else
+        ESP_LOGD(TAG, "Keeping BLE stack running after protocomm stop");
+#endif  // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
+    }
+    else {
+
+	/* If flag is not enabled, stop the stack. */
+        ret = simple_ble_stop();
+        if (ret) {
+            ESP_LOGE(TAG, "BLE stop failed");
+            protoble_internal->pc_ble = pc;
+            return ret;
+        }
+        simple_ble_deinit();
+        ble_callbacks_active = false;
+    }
+
+    protocomm_ble_reset_prepare_write();
+
+    if (!ble_callbacks_active) {
+        protocomm_ble_cleanup();
+    }
+    return ret;
+}

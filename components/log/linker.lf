@@ -1,0 +1,20 @@
+[mapping:log]
+archive: liblog.a
+entries:
+    if LOG_IN_IRAM = y:
+        log_write:esp_log_write (noflash)
+        log_write:esp_log_writev (noflash)
+        tag_log_level:esp_log_level_get_timeout (noflash)
+        log_timestamp:esp_log_timestamp (noflash)
+        log_timestamp:esp_log_early_timestamp (noflash)
+        log_lock (noflash)
+        util (noflash)
+        log_timestamp_common (noflash)
+        log (noflash)
+        if LOG_MASTER_LEVEL = y:
+            log_level: esp_log_get_level_master (noflash)
+        if LOG_MODE_TEXT_EN = y:
+            log_print (noflash)
+            log_format_text (noflash)
+        if LOG_MODE_BINARY_EN = y:
+            log_format_binary (noflash)

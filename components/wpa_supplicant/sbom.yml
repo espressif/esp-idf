@@ -1,0 +1,9 @@
+name: 'wpa_supplicant'
+version: '2.10'
+cpe: cpe:2.3:a:w1.fi:wpa_supplicant:{}:*:*:*:*:*:*:*
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Person: Jouni Malinen'
+description: Espressif fork of wpa_supplicant - an open-source WPA/WPA2/WPA3/IEEE 802.1X Supplicant.
+cve-exclude-list:
+  - cve: CVE-2023-52160
+    reason: The relevant fix has been patched with https://github.com/espressif/esp-idf/commit/59a62f2af65945f92d475089f9ce66fce56cc737

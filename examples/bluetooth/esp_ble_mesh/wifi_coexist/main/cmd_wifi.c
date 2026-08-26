@@ -1,0 +1,361 @@
+/*
+ * Iperf example - wifi commands
+ *
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <inttypes.h>
+
+#include "esp_log.h"
+#include "esp_console.h"
+#include "argtable3/argtable3.h"
+#include "cmd_decl.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "esp_wifi.h"
+#include "esp_netif.h"
+
+typedef struct {
+    struct arg_str *ssid;
+    struct arg_str *password;
+    struct arg_end *end;
+} wifi_args_t;
+
+typedef struct {
+    struct arg_str *ssid;
+    struct arg_end *end;
+} wifi_scan_arg_t;
+
+static wifi_args_t sta_args;
+static wifi_scan_arg_t scan_args;
+static wifi_args_t ap_args;
+static bool reconnect = true;
+static const char *TAG = "iperf";
+
+static EventGroupHandle_t wifi_event_group;
+const int CONNECTED_BIT = BIT0;
+const int DISCONNECTED_BIT = BIT1;
+static esp_netif_t *sta_netif = NULL;
+static esp_netif_t *ap_netif = NULL;
+
+static void scan_done_handler(void)
+{
+    uint16_t sta_number = 0;
+    uint8_t i;
+    wifi_ap_record_t *ap_list_buffer;
+
+    esp_wifi_scan_get_ap_num(&sta_number);
+    ap_list_buffer = malloc(sta_number * sizeof(wifi_ap_record_t));
+    if (ap_list_buffer == NULL) {
+        ESP_LOGE(TAG, "Failed to malloc buffer to print scan results");
+        esp_wifi_clear_ap_list();
+        return;
+    }
+
+    if (esp_wifi_scan_get_ap_records(&sta_number, (wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
+        for (i = 0; i < sta_number; i++) {
+            ESP_LOGI(TAG, "[%s][rssi=%d]", ap_list_buffer[i].ssid, ap_list_buffer[i].rssi);
+        }
+    }
+    free(ap_list_buffer);
+}
+
+static void wifi_event_handler(void *arg, esp_event_base_t event_base,
+                               int32_t event_id, void *event_data)
+{
+    switch (event_id) {
+    case WIFI_EVENT_SCAN_DONE:
+        scan_done_handler();
+        ESP_LOGI(TAG, "sta scan done");
+        break;
+    case WIFI_EVENT_STA_CONNECTED:
+        ESP_LOGI(TAG, "L2 connected");
+        break;
+    case WIFI_EVENT_STA_DISCONNECTED:
+        if (reconnect) {
+            ESP_LOGI(TAG, "sta disconnect, reconnect...");
+            esp_wifi_connect();
+        } else {
+            ESP_LOGI(TAG, "sta disconnect");
+        }
+        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        xEventGroupSetBits(wifi_event_group, DISCONNECTED_BIT);
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+static void ip_event_handler(void *arg, esp_event_base_t event_base,
+                             int32_t event_id, void *event_data)
+{
+    switch (event_id) {
+    case IP_EVENT_STA_GOT_IP:
+        xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
+        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        ESP_LOGI(TAG, "got ip");
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+void initialise_wifi(void)
+{
+    esp_log_level_set("wifi", ESP_LOG_WARN);
+    static bool initialized = false;
+
+    if (initialized) {
+        return;
+    }
+
+    ESP_ERROR_CHECK(esp_netif_init());
+    wifi_event_group = xEventGroupCreate();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
+    ap_netif = esp_netif_create_default_wifi_ap();
+    assert(ap_netif);
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+    ESP_ERROR_CHECK( esp_wifi_set_ps(WIFI_PS_MIN_MODEM) ); //must call this
+    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK( esp_wifi_start() );
+    initialized = true;
+}
+
+static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
+{
+    int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
+
+    wifi_config_t wifi_config = { 0 };
+
+    strlcpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    if (pass) {
+        strncpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+    }
+
+    if (bits & CONNECTED_BIT) {
+        reconnect = false;
+        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        ESP_ERROR_CHECK( esp_wifi_disconnect() );
+        xEventGroupWaitBits(wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_PERIOD_MS);
+    }
+
+    reconnect = true;
+    esp_wifi_disconnect();
+    //ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) ); //by snake
+    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+    esp_wifi_connect();
+
+    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_PERIOD_MS);
+
+    return true;
+}
+
+static int wifi_cmd_sta(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &sta_args);
+
+    if (nerrors != 0) {
+        arg_print_errors(stderr, sta_args.end, argv[0]);
+        return 1;
+    }
+
+    ESP_LOGI(TAG, "sta connecting to '%s'", sta_args.ssid->sval[0]);
+    wifi_cmd_sta_join(sta_args.ssid->sval[0], sta_args.password->sval[0]);
+    return 0;
+}
+
+static bool wifi_cmd_sta_scan(const char *ssid)
+{
+    wifi_scan_config_t scan_config = { 0 };
+    scan_config.ssid = (uint8_t *) ssid;
+
+    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+    esp_wifi_scan_start(&scan_config, false);
+
+    return true;
+}
+
+static int wifi_cmd_scan(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &scan_args);
+
+    if (nerrors != 0) {
+        arg_print_errors(stderr, scan_args.end, argv[0]);
+        return 1;
+    }
+
+    ESP_LOGI(TAG, "sta start to scan");
+    if ( scan_args.ssid->count == 1 ) {
+        wifi_cmd_sta_scan(scan_args.ssid->sval[0]);
+    } else {
+        wifi_cmd_sta_scan(NULL);
+    }
+    return 0;
+}
+
+
+static bool wifi_cmd_ap_set(const char *ssid, const char *pass)
+{
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = "",
+            .ssid_len = 0,
+            .max_connection = 4,
+            .password = "",
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+        },
+    };
+
+    reconnect = false;
+    strncpy((char *) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
+    if (pass) {
+        if (strlen(pass) != 0 && strlen(pass) < 8) {
+            reconnect = true;
+            ESP_LOGE(TAG, "password less than 8");
+            return false;
+        }
+        strncpy((char *) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
+    }
+
+    if (strlen(pass) == 0) {
+        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    return true;
+}
+
+static int wifi_cmd_ap(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &ap_args);
+
+    if (nerrors != 0) {
+        arg_print_errors(stderr, ap_args.end, argv[0]);
+        return 1;
+    }
+
+    wifi_cmd_ap_set(ap_args.ssid->sval[0], ap_args.password->sval[0]);
+    ESP_LOGI(TAG, "AP mode, %s %s", ap_args.ssid->sval[0], ap_args.password->sval[0]);
+    return 0;
+}
+
+static int wifi_cmd_query(int argc, char **argv)
+{
+    wifi_config_t cfg;
+    wifi_mode_t mode;
+
+    esp_wifi_get_mode(&mode);
+    if (WIFI_MODE_AP == mode) {
+        esp_wifi_get_config(WIFI_IF_AP, &cfg);
+        ESP_LOGI(TAG, "AP mode, %s %s", cfg.ap.ssid, cfg.ap.password);
+    } else if (WIFI_MODE_STA == mode) {
+        int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
+        if (bits & CONNECTED_BIT) {
+            esp_wifi_get_config(WIFI_IF_STA, &cfg);
+            ESP_LOGI(TAG, "sta mode, connected %s", cfg.ap.ssid);
+        } else {
+            ESP_LOGI(TAG, "sta mode, disconnected");
+        }
+    } else {
+        ESP_LOGI(TAG, "NULL mode");
+        return 0;
+    }
+
+    return 0;
+}
+
+static int restart(int argc, char **argv)
+{
+    ESP_LOGI(TAG, "Restarting");
+    esp_restart();
+}
+
+static int heap_size(int argc, char **argv)
+{
+    uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+    ESP_LOGI(TAG, "min heap size: %" PRIu32, heap_size);
+    return 0;
+}
+
+void register_wifi(void)
+{
+    sta_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
+    sta_args.password = arg_str0(NULL, NULL, "<pass>", "password of AP");
+    sta_args.end = arg_end(2);
+
+    const esp_console_cmd_t sta_cmd = {
+        .command = "sta",
+        .help = "WiFi is station mode, join specified soft-AP",
+        .hint = NULL,
+        .func = &wifi_cmd_sta,
+        .argtable = &sta_args
+    };
+
+    ESP_ERROR_CHECK( esp_console_cmd_register(&sta_cmd) );
+
+    scan_args.ssid = arg_str0(NULL, NULL, "<ssid>", "SSID of AP want to be scanned");
+    scan_args.end = arg_end(1);
+
+    const esp_console_cmd_t scan_cmd = {
+        .command = "scan",
+        .help = "WiFi is station mode, start scan ap",
+        .hint = NULL,
+        .func = &wifi_cmd_scan,
+        .argtable = &scan_args
+    };
+
+    ap_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
+    ap_args.password = arg_str0(NULL, NULL, "<pass>", "password of AP");
+    ap_args.end = arg_end(2);
+
+
+    ESP_ERROR_CHECK( esp_console_cmd_register(&scan_cmd) );
+
+    const esp_console_cmd_t ap_cmd = {
+        .command = "ap",
+        .help = "AP mode, configure ssid and password",
+        .hint = NULL,
+        .func = &wifi_cmd_ap,
+        .argtable = &ap_args
+    };
+
+    ESP_ERROR_CHECK( esp_console_cmd_register(&ap_cmd) );
+
+    const esp_console_cmd_t query_cmd = {
+        .command = "query",
+        .help = "query WiFi info",
+        .hint = NULL,
+        .func = &wifi_cmd_query,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&query_cmd) );
+
+    const esp_console_cmd_t restart_cmd = {
+        .command = "restart",
+        .help = "Restart the program",
+        .hint = NULL,
+        .func = &restart,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&restart_cmd) );
+
+    const esp_console_cmd_t heap_cmd = {
+        .command = "heap",
+        .help = "get min free heap size during test",
+        .hint = NULL,
+        .func = &heap_size,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&heap_cmd) );
+}

@@ -1,0 +1,65 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/fatfs/test_apps/bdl:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+  depends_components:
+    - esp_blockdev
+    - esp_partition
+    - fatfs
+    - vfs
+
+components/fatfs/test_apps/dyn_buffers:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target required
+
+  depends_components:
+    - fatfs
+
+components/fatfs/test_apps/flash_ro:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+
+  depends_components:
+    - esp_partition
+    - fatfs
+    - vfs
+
+components/fatfs/test_apps/flash_wl:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "linux"]
+      reason: only one target per arch needed
+  depends_components:
+    - esp_partition
+    - fatfs
+    - vfs
+    - wear_leveling
+
+components/fatfs/test_apps/flash_wl_readonly:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+  depends_components:
+    - esp_partition
+    - fatfs
+    - vfs
+    - wear_leveling
+
+components/fatfs/test_apps/sdcard:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+      temporary: true
+      reason: not supported yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_driver_sdmmc
+    - esp_driver_spi
+    - sdmmc
+    - fatfs
+    - vfs

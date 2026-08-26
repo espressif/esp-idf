@@ -1,0 +1,56 @@
+[mapping:heap]
+archive: libheap.a
+entries:
+    if HEAP_PLACE_FUNCTION_INTO_FLASH = n:
+        if HEAP_TLSF_USE_ROM_IMPL = n:
+            tlsf:tlsf_block_size (noflash)
+            tlsf:tlsf_size (noflash)
+            tlsf:tlsf_alloc_overhead (noflash)
+            tlsf:tlsf_get_pool (noflash)
+            tlsf:tlsf_malloc (noflash)
+            tlsf:tlsf_memalign_offs (noflash)
+            tlsf:tlsf_memalign (noflash)
+            tlsf:tlsf_free (noflash)
+            tlsf:tlsf_realloc (noflash)
+
+            multi_heap:multi_heap_get_block_address_impl (noflash)
+            multi_heap:multi_heap_get_allocated_size_impl (noflash)
+            multi_heap:multi_heap_set_lock (noflash)
+            multi_heap:multi_heap_get_first_block (noflash)
+            multi_heap:multi_heap_get_next_block (noflash)
+            multi_heap:multi_heap_is_free (noflash)
+            multi_heap:multi_heap_malloc_impl (noflash)
+            multi_heap:multi_heap_free_impl (noflash)
+            multi_heap:multi_heap_realloc_impl (noflash)
+            multi_heap:multi_heap_aligned_alloc_impl_offs (noflash)
+            multi_heap:multi_heap_aligned_alloc_impl (noflash)
+            multi_heap:multi_heap_internal_lock (noflash)
+            multi_heap:multi_heap_internal_unlock (noflash)
+            multi_heap:assert_valid_block (noflash)
+
+        if HEAP_TLSF_USE_ROM_IMPL = y:
+            multi_heap:_multi_heap_lock (noflash)
+            multi_heap:_multi_heap_unlock (noflash)
+            multi_heap:multi_heap_in_rom_init (noflash)
+
+        if HEAP_POISONING_DISABLED = n:
+            multi_heap_poisoning:poison_allocated_region (noflash)
+            multi_heap_poisoning:verify_allocated_region (noflash)
+            multi_heap_poisoning:multi_heap_aligned_alloc (noflash)
+            multi_heap_poisoning:multi_heap_malloc (noflash)
+            multi_heap_poisoning:multi_heap_free (noflash)
+            multi_heap_poisoning:multi_heap_aligned_free (noflash)
+            multi_heap_poisoning:multi_heap_realloc (noflash)
+            multi_heap_poisoning:multi_heap_get_block_address (noflash)
+            multi_heap_poisoning:multi_heap_get_allocated_size (noflash)
+            multi_heap_poisoning:multi_heap_internal_check_block_poisoning (noflash)
+            multi_heap_poisoning:multi_heap_internal_poison_fill_region (noflash)
+            multi_heap_poisoning:multi_heap_aligned_alloc_offs (noflash)
+            multi_heap_poisoning:multi_heap_get_full_block_size (noflash)
+        else:
+            multi_heap:multi_heap_aligned_alloc_offs (noflash)
+            multi_heap:multi_heap_get_full_block_size (noflash)
+
+        if HEAP_POISONING_COMPREHENSIVE = y:
+            multi_heap_poisoning:verify_fill_pattern (noflash)
+            multi_heap_poisoning:block_absorb_post_hook (noflash)

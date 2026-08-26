@@ -1,0 +1,35 @@
+menu "ESP HTTPS server"
+
+    config ESP_HTTPS_SERVER_ENABLE
+        bool "Enable ESP_HTTPS_SERVER component"
+        depends on (ESP_TLS_USING_MBEDTLS && MBEDTLS_TLS_SERVER)
+        help
+            Enable ESP HTTPS server component
+
+    config ESP_HTTPS_SERVER_EVENTS
+        bool "Enable ESP_HTTPS_SERVER_EVENT event type"
+        depends on ESP_HTTPS_SERVER_ENABLE
+        default y
+        help
+            This enables the ESP_HTTPS_SERVER_EVENT event type. Generating these eventes adds some overhead.
+            If you are not using this event type, you can disable it to save some memory.
+
+
+    config ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT
+        int "Time in millisecond to wait for posting event"
+        depends on (ESP_HTTPS_SERVER_ENABLE && ESP_HTTPS_SERVER_EVENTS)
+        default 2000
+        help
+            This config option helps in setting the time in millisecond to wait for event to be posted to the
+            system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
+    config ESP_HTTPS_SERVER_CERT_SELECT_HOOK
+        select ESP_TLS_SERVER_CERT_SELECT_HOOK
+        bool "Enable certificate selection hook"
+        default n
+        help
+            Enable certificate selection hook for ESP HTTPS Server. When enabled, this allows the server to
+            dynamically select the appropriate certificate based on the client's Server Name Indication (SNI).
+            This is useful for hosting multiple domains on a single server with different SSL certificates.
+
+endmenu

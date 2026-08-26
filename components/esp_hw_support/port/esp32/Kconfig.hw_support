@@ -1,0 +1,85 @@
+choice ESP32_REV_MIN
+    prompt "Minimum Supported ESP32 Revision"
+    default ESP32_REV_MIN_0
+    help
+        Required minimum chip revision. ESP-IDF will check for it and
+        reject to boot if the chip revision fails the check.
+        This ensures the chip used will have some modifications (features, or bugfixes).
+
+        The complied binary will only support chips above this revision,
+        this will also help to reduce binary size.
+
+    config ESP32_REV_MIN_0
+        bool "Rev v0.0 (ECO0)"
+        # Brownout on Rev 0 is bugged, must use interrupt
+        select ESP_BROWNOUT_USE_INTR
+    config ESP32_REV_MIN_1
+        bool "Rev v1.0 (ECO1)"
+    config ESP32_REV_MIN_1_1
+        bool "Rev v1.1 (ECO1.1)"
+    config ESP32_REV_MIN_2
+        bool "Rev v2.0 (ECO2)"
+    config ESP32_REV_MIN_3
+        bool "Rev v3.0 (ECO3)"
+        select ESP_INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
+    config ESP32_REV_MIN_3_1
+        bool "Rev v3.1 (ECO4)"
+        select ESP_INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
+endchoice
+
+config ESP32_REV_MIN
+    # we keep it for compatibility. Use ESP32_REV_MIN_FULL instead.
+    int
+    default 0 if ESP32_REV_MIN_0
+    default 1 if ESP32_REV_MIN_1 || ESP32_REV_MIN_1_1
+    default 2 if ESP32_REV_MIN_2
+    default 3 if ESP32_REV_MIN_3 || ESP32_REV_MIN_3_1
+
+config ESP32_REV_MIN_FULL
+    int
+    default 0 if ESP32_REV_MIN_0
+    default 100 if ESP32_REV_MIN_1
+    default 101 if ESP32_REV_MIN_1_1
+    default 200 if ESP32_REV_MIN_2
+    default 300 if ESP32_REV_MIN_3
+    default 301 if ESP32_REV_MIN_3_1
+
+config ESP_REV_MIN_FULL
+    int
+    default ESP32_REV_MIN_FULL
+
+    #
+    # MAX Revision
+    #
+
+    comment "Maximum Supported ESP32 Revision (Rev v3.99)"
+    # Maximum revision that IDF supports.
+    # It can not be changed by user.
+    # Only Espressif can change it when a new version will be supported in IDF.
+    # Supports all chips starting from ESP32_REV_MIN_FULL to ESP32_REV_MAX_FULL
+
+config ESP32_REV_MAX_FULL
+    int
+    default 399
+    # keep in sync the "Maximum Supported Revision" description with this value
+
+config ESP_REV_MAX_FULL
+    int
+    default ESP32_REV_MAX_FULL
+
+config ESP_EFUSE_BLOCK_REV_MIN_FULL
+    int "Minimum Supported ESP32 eFuse Block Revision"
+    default 0
+    help
+        Required minimum eFuse Block revision. ESP-IDF will check it at the 2nd bootloader stage
+        whether the current image can work correctly for this eFuse Block revision.
+        So that to avoid running an incompatible image on a SoC that contains breaking change in the eFuse Block.
+        If you want to update this value to run the image that not compatible with the current eFuse Block revision,
+        please contact to Espressif's business team for details:
+        https://www.espressif.com.cn/en/contact-us/sales-questions
+
+config ESP_EFUSE_BLOCK_REV_MAX_FULL
+    int
+    default 99
+    comment "Maximum Supported ESP32 eFuse Block Revision (eFuse Block Rev v0.99)"
+    # The revision in the comment must correspond to the default value of ESP_EFUSE_BLOCK_REV_MAX_FULL

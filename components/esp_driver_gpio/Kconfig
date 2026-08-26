@@ -1,0 +1,8 @@
+menu "ESP-Driver:GPIO Configurations"
+    config GPIO_CTRL_FUNC_IN_IRAM
+        bool "Place GPIO control functions into IRAM"
+        default n
+        help
+            Place GPIO control functions (like intr_disable/set_level) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+endmenu

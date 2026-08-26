@@ -1,0 +1,2 @@
+# Do not add LP_MEM to heap
+CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP=n

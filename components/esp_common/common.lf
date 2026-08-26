@@ -1,0 +1,36 @@
+# Sections emitted by compiler by default.
+
+[sections:text]
+entries:
+    .text+
+    .literal+
+
+[sections:data]
+entries:
+    .data+
+
+[sections:bss]
+entries:
+    .bss+
+
+[sections:common]
+entries:
+    COMMON
+
+[sections:legacy_bss]
+entries:
+    .dynsbss
+    .sbss+
+    .gnu.linkonce.sb+
+    .scommon
+    .sbss2+
+    .gnu.linkonce.sb2+
+    .dynbss
+    .share.mem
+    .gnu.linkonce.b+
+
+[sections:rodata]
+entries:
+    .rodata+
+    .sdata2+
+    .srodata+

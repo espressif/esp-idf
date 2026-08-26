@@ -1,0 +1,2 @@
+# TODO: Change the build test to build with legacy IDF-FreeRTOS. IDF-5268
+CONFIG_FREERTOS_SMP=y

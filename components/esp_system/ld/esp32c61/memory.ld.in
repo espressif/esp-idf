@@ -1,0 +1,98 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ *                    ESP32-C61 Linker Script Memory Layout
+ * This file describes the memory layout (memory blocks) by virtual memory addresses.
+ * This linker script is passed through the C preprocessor to include configuration options.
+ * Please use preprocessor features sparingly!
+ * Restrict to simple macros with numeric values, and/or #if/#endif blocks.
+ */
+
+#include "sdkconfig.h"
+#include "ld.common"
+
+#if !CONFIG_SECURE_ENABLE_TEE
+#define SRAM_SEG_START        (0x40800000)
+#else
+#define SRAM_SEG_START        (0x40800000 + CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE)
+#define FLASH_SEG_OFFSET      (CONFIG_SECURE_TEE_IROM_SIZE + CONFIG_SECURE_TEE_DROM_SIZE)
+#endif // CONFIG_SECURE_ENABLE_TEE
+
+#define SRAM_SEG_END       0x4083ea70  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
+
+/*
+ * IDRAM0_2_SEG_SIZE_DEFAULT is used when page size is 64KB
+ */
+#define IDRAM0_2_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 8)
+
+MEMORY
+{
+  /**
+   *  All these values assume the flash cache is on, and have the blocks this uses subtracted from the length
+   *  of the various regions. The 'data access port' dram/drom regions map to the same iram/irom regions but
+   *  are connected to the data port of the CPU and eg allow byte-wise access.
+   */
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SECURE_ENABLE_TEE
+  /* Flash mapped instruction data */
+  irom_seg (RX) :                    org = 0x42000020 + FLASH_SEG_OFFSET,
+                                     len = IDRAM0_2_SEG_SIZE - FLASH_SEG_OFFSET - 0x20
+#else
+  /* Flash mapped instruction data */
+  irom_seg (RX) :                    org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+#endif
+
+  /**
+   * (0x20 offset above is a convenience for the app binary image generation.
+   * Flash cache has 64KB pages. The .bin file which is flashed to the chip
+   * has a 0x18 byte file header, and each segment has a 0x08 byte segment
+   * header. Setting this offset makes it simple to meet the flash cache MMU's
+   * constraint that (paddr % 64KB == vaddr % 64KB).)
+   */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+  /**
+   * Shared data RAM, excluding memory reserved for ROM bss/data/stack.
+   * Enabling Bluetooth & Trace Memory features in menuconfig will decrease the amount of RAM available.
+   */
+  sram_seg (RWX) :                   org = SRAM_SEG_START, len = SRAM_SEG_SIZE
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SECURE_ENABLE_TEE
+  /* Flash mapped constant data */
+  drom_seg (R) :                     org = 0x42000020 + FLASH_SEG_OFFSET,
+                                     len = IDRAM0_2_SEG_SIZE - FLASH_SEG_OFFSET - 0x20
+#else
+  /* Flash mapped instruction data */
+  drom_seg (R) :                     org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+#endif
+
+  /* (See irom_seg for meaning of 0x20 offset in the above.) */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+    /* PSRAM seg */
+  ext_ram_seg(RWX) :           org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+}
+
+/* Heap ends at top of sram_seg */
+_heap_end = 0x40000000;
+
+REGION_ALIAS("iram_text_seg", sram_seg);
+REGION_ALIAS("dram_seg", sram_seg);
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  REGION_ALIAS("flash_text_seg", irom_seg);
+  REGION_ALIAS("flash_rodata_seg", drom_seg);
+#else
+  REGION_ALIAS("flash_text_seg", sram_seg);
+  REGION_ALIAS("flash_rodata_seg", sram_seg);
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+ALIGN_VECTOR_TABLE = 0x100;
+OFFSET_TEE = 0x2b0;

@@ -1,0 +1,236 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <esp_types.h>
+#include "sdkconfig.h"
+#include "esp_attr.h"
+#include "esp_log.h"
+#include "soc/soc.h"
+#include "soc/soc_caps.h"
+#include "esp_private/esp_pau.h"
+#include "esp_private/periph_ctrl.h"
+#if SOC_PAU_IN_TOP_DOMAIN
+#include "hal/lp_sys_ll.h"
+#endif
+
+#define PAU_REGDMA_LINK_LOOP                (0x3FF)
+#define PAU_REGDMA_REG_ACCESS_TIME          (0x3FF)
+#define PAU_REGDMA_LINK_WAIT_RETRY_COUNT    (1000)
+#define PAU_REGDMA_LINK_WAIT_READ_INTERNAL  (32)
+
+ESP_LOG_ATTR_TAG(TAG, "pau_regdma");
+
+typedef struct {
+    pau_hal_context_t *hal;
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_modem_link_protect_cb_t modem_link_protect;
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+} pau_context_t;
+
+pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
+{
+    static pau_hal_context_t pau_hal = { .dev = NULL };
+    static pau_context_t pau_context = { .hal = &pau_hal,
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+        .modem_link_protect = NULL,
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    };
+
+    /* periph_module_enable don not need to be put in iram because it is
+     * called before the flash is powered off and will not be called again. */
+
+    if (pau_hal.dev == NULL) {
+        pau_hal.dev = &PAU;
+        PERIPH_RCC_ATOMIC() {
+            pau_hal_enable_bus_clock(true);
+        }
+        pau_hal_set_regdma_wait_timeout(&pau_hal, PAU_REGDMA_LINK_WAIT_RETRY_COUNT, PAU_REGDMA_LINK_WAIT_READ_INTERNAL);
+        pau_hal_set_regdma_work_timeout(&pau_hal, PAU_REGDMA_LINK_LOOP, PAU_REGDMA_REG_ACCESS_TIME);
+#if SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
+        pau_hal_regdma_link_count_config(&pau_hal, SOC_PM_PAU_LINK_NUM);
+#endif
+#if SOC_PAU_IN_TOP_DOMAIN
+        pau_hal_lp_sys_initialize();
+#endif
+    }
+
+    return &pau_context;
+}
+
+void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries)
+{
+    ESP_LOGD(TAG, "All link addresses %p,%p,%p,%p", (*link_entries)[0], (*link_entries)[1], (*link_entries)[2], (*link_entries)[3]);
+    pau_hal_set_regdma_entry_link_addr(PAU_instance()->hal, link_entries);
+}
+
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+void pau_regdma_register_modem_link_protect(pau_regdma_modem_link_protect_cb_t cb)
+{
+    PAU_instance()->modem_link_protect = cb;
+}
+
+void pau_regdma_unregister_modem_link_protect(void)
+{
+    PAU_instance()->modem_link_protect = NULL;
+}
+
+static void IRAM_ATTR pau_regdma_invoke_modem_link_procect(bool protect)
+{
+    if (PAU_instance()->modem_link_protect) {
+        PAU_instance()->modem_link_protect(protect);
+    }
+}
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
+void pau_regdma_set_modem_link_addr(void *link_addr)
+{
+    pau_hal_set_regdma_modem_link_addr(PAU_instance()->hal, link_addr);
+}
+#endif
+
+void IRAM_ATTR pau_regdma_trigger_modem_link_backup(bool blocking)
+{
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_hal_start_regdma_modem_link(PAU_instance()->hal, true, blocking);
+    if (blocking) {
+        pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
+    }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+}
+
+void IRAM_ATTR pau_regdma_trigger_modem_link_restore(bool blocking)
+{
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_hal_start_regdma_modem_link(PAU_instance()->hal, false, blocking);
+    if (blocking) {
+        pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
+    }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+}
+
+void IRAM_ATTR pau_regdma_modem_link_complete(void)
+{
+    pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_regdma_done_int_enable(void)
+{
+    pau_hal_regdma_done_int_enable(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_regdma_done_int_disable(void)
+{
+    pau_hal_regdma_done_int_disable(PAU_instance()->hal);
+}
+
+bool IRAM_ATTR pau_get_regdma_done_status(void)
+{
+    return pau_hal_get_regdma_done_status(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_clear_regdma_done_status(void)
+{
+    pau_hal_clear_regdma_backup_done_intr_state(PAU_instance()->hal);
+}
+
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+void IRAM_ATTR pau_regdma_trigger_wifimac_link_backup(bool blocking)
+{
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_hal_start_regdma_wifimac_link(PAU_instance()->hal, true, blocking);
+    if (blocking) {
+        pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+    }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+}
+
+void IRAM_ATTR pau_regdma_trigger_wifimac_link_restore(bool blocking)
+{
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(true);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_hal_start_regdma_wifimac_link(PAU_instance()->hal, false, blocking);
+    if (blocking) {
+        pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+    }
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    pau_regdma_invoke_modem_link_procect(false);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+}
+#endif
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
+
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
+void IRAM_ATTR pau_regdma_set_system_link_addr(void *link_addr)
+{
+    /* ESP32H2 use software to trigger REGDMA to restore instead of PMU,
+     * because regdma has power bug, so we need to manually set the clock
+     * for regdma before using it after the chip wakes up. We use
+     * pau_hal_clock_configure because periph_module_enable will consume
+     * a relatively large amount of memory space. */
+
+    pau_hal_regdma_clock_configure(PAU_instance()->hal, true);
+#if SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
+    pau_hal_set_regdma_system_link_addr(PAU_instance()->hal, link_addr);
+#endif
+}
+
+void IRAM_ATTR pau_regdma_trigger_system_link_backup(void)
+{
+    pau_hal_start_regdma_system_link(PAU_instance()->hal, true);
+    pau_hal_stop_regdma_system_link(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_regdma_trigger_system_link_restore(void)
+{
+    pau_hal_start_regdma_system_link(PAU_instance()->hal, false);
+    pau_hal_stop_regdma_system_link(PAU_instance()->hal);
+}
+#endif
+
+void IRAM_ATTR pau_regdma_set_extra_link_addr(void *link_addr)
+{
+#if SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
+    pau_hal_set_regdma_extra_link_addr(PAU_instance()->hal, link_addr);
+#endif
+}
+
+void IRAM_ATTR pau_regdma_trigger_extra_link_backup(void)
+{
+    pau_hal_start_regdma_extra_link(PAU_instance()->hal, true);
+    pau_hal_stop_regdma_extra_link(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_regdma_trigger_extra_link_restore(void)
+{
+    pau_hal_start_regdma_extra_link(PAU_instance()->hal, false);
+    pau_hal_stop_regdma_extra_link(PAU_instance()->hal);
+}
+
+#if SOC_PAU_IN_TOP_DOMAIN
+bool IRAM_ATTR pau_regdma_enable_aon_link_entry(bool enable)
+{
+    bool origin_bypass_en = lp_sys_ll_get_pau_aon_bypass();
+    lp_sys_ll_set_pau_aon_bypass(enable);
+    return origin_bypass_en;
+}
+#endif

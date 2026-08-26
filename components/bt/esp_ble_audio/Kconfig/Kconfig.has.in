@@ -1,0 +1,59 @@
+# Bluetooth Audio - Hearing Access Service options
+#
+# SPDX-FileCopyrightText: 2022 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HAS
+    bool "Hearing Access Service support"
+    depends on BT_BAP_UNICAST_SERVER
+    help
+        This option enables support for Hearing Access Service.
+
+if BT_HAS
+
+    config BT_HAS_FEATURES_NOTIFIABLE
+        bool "Hearing Aid Features Notifiable Support"
+        help
+            This option enables support for clients to subscribe for notifications
+            on the Hearing Aid Features characteristic.
+
+    config BT_HAS_PRESET_COUNT
+        int "Preset record list size"
+        default 2
+        range 0 255
+        help
+            This option sets the number of Hearing Access Service Presets
+            that can be registered. Setting this value to 0 disables Presets support.
+
+    config BT_HAS_PRESET_SUPPORT
+        bool # hidden
+        default y if BT_HAS_PRESET_COUNT > 0
+
+    if BT_HAS_PRESET_SUPPORT
+
+        config BT_HAS_PRESET_NAME_DYNAMIC
+            bool "Allow to set preset name on runtime"
+            help
+                Enabling this option allows for runtime configuration of preset name.
+
+        config BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE
+            bool "Preset Control Point Notifiable support (depends on EATT)"
+            help
+                This option enables support for clients to subscribe for notifications
+                on the Hearing Aid Preset Control Point characteristic.
+
+        config BT_HAS_ACTIVE_PRESET_INDEX
+            bool # hidden
+            default y if BT_HAS_PRESET_SUPPORT
+            help
+                This option enables the Hearing Aid Active Preset Index characteristic.
+
+    endif # BT_HAS_PRESET_SUPPORT
+
+endif # BT_HAS
+
+config BT_HAS_CLIENT
+    bool "Hearing Access Service Client support"
+    help
+        This option enables support for Hearing Access Service Client.

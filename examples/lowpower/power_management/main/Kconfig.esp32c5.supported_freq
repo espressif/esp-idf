@@ -1,0 +1,57 @@
+choice EXAMPLE_PM_MAX_FREQ_MHZ
+    prompt "Max CPU frequency (MHz)"
+    default EXAMPLE_PM_MAX_FREQ_MHZ_240
+    config EXAMPLE_PM_MAX_FREQ_MHZ_12
+        bool "12"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_24
+        bool "24"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_40
+        bool "40"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_48
+        bool "48"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_80
+        bool "80"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_160
+        bool "160"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_240
+        bool "240"
+endchoice
+
+config EXAMPLE_PM_MAX_FREQ
+    int
+    default 12 if EXAMPLE_PM_MAX_FREQ_MHZ_12
+    default 24 if EXAMPLE_PM_MAX_FREQ_MHZ_24
+    default 40 if EXAMPLE_PM_MAX_FREQ_MHZ_40
+    default 48 if EXAMPLE_PM_MAX_FREQ_MHZ_48
+    default 80 if EXAMPLE_PM_MAX_FREQ_MHZ_80
+    default 160 if EXAMPLE_PM_MAX_FREQ_MHZ_160
+    default 240 if EXAMPLE_PM_MAX_FREQ_MHZ_240
+
+choice EXAMPLE_PM_MIN_FREQ_MHZ
+    prompt "Min CPU frequency (MHz)"
+    default EXAMPLE_PM_MIN_FREQ_MHZ_48
+    config EXAMPLE_PM_MIN_FREQ_MHZ_12
+        bool "12"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_24
+        bool "24"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_40
+        bool "40 (use with 40MHz XTAL)"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_48
+        bool "48 (use with 48MHz XTAL)"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_80
+        bool "80"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_160
+        bool "160"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_240
+        bool "240"
+endchoice
+
+config EXAMPLE_PM_MIN_FREQ
+    int
+    default 12 if EXAMPLE_PM_MIN_FREQ_MHZ_12
+    default 24 if EXAMPLE_PM_MIN_FREQ_MHZ_24
+    default 40 if EXAMPLE_PM_MIN_FREQ_MHZ_40
+    default 48 if EXAMPLE_PM_MIN_FREQ_MHZ_48
+    default 80 if EXAMPLE_PM_MIN_FREQ_MHZ_80
+    default 160 if EXAMPLE_PM_MIN_FREQ_MHZ_160
+    default 240 if EXAMPLE_PM_MIN_FREQ_MHZ_240

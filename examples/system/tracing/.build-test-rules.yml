@@ -1,0 +1,62 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/system/tracing/app_trace_basic:
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - app_trace
+
+examples/system/tracing/esp_trace_custom_library:
+  disable:
+    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+      reason: example transport is USB Serial JTAG
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - freertos
+
+examples/system/tracing/function_tracing:
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - app_trace
+
+examples/system/tracing/gcov:
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - app_trace
+
+examples/system/tracing/sysview_tracing:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - app_trace
+
+examples/system/tracing/sysview_tracing_heap_log:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - app_trace

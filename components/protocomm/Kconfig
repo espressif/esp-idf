@@ -1,0 +1,57 @@
+menu "Protocomm"
+
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
+        bool "Support protocomm security version 0 (no security)"
+        default n
+        help
+            Enable support of security version 0.
+            This version provides no encryption or authentication and should
+            not be used in production. Use only for development and testing.
+            Disabling this option saves some code size.
+            Consult the Enabling protocomm security version section of the
+            Protocomm documentation in ESP-IDF Programming guide for more details.
+
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
+        bool "Support protocomm security version 1 (Curve25519 key exchange + AES-CTR encryption/decryption)"
+        default n
+        help
+            Enable support of security version 1.
+            Security version 2 (SRP6a + AES-GCM) is recommended over this
+            version for new designs.
+            Disabling this option saves some code size.
+            Consult the Enabling protocomm security version section of the
+            Protocomm documentation in ESP-IDF Programming guide for more details.
+
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+        bool "Support protocomm security version 2 (SRP6a-based key exchange + AES-GCM encryption/decryption)"
+        default y
+        help
+            Enable support of security version 2.
+            Disabling this option saves some code size.
+            Consult the Enabling protocomm security version section of the
+            Protocomm documentation in ESP-IDF Programming guide for more details.
+
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_PATCH_VERSION
+        bool
+        default y
+        help
+            Enable support of security patch version. This is a hidden config option
+            kept for external components like "network_provisioning" to find out if
+            protocomm component support security patch version. This config option
+            also indicates availability of a new API `protocomm_get_sec_version`.
+            Please refer to Protocomm documentation in ESP-IDF Programming guide for
+            more details.
+
+    config ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+        bool
+        depends on BT_ENABLED
+        help
+            Keep BT on after calling protocomm_ble_stop
+
+    config ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
+        bool
+        depends on ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+        help
+            Terminate connection after calling protocomm_ble_stop
+
+endmenu

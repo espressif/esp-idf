@@ -1,0 +1,53 @@
+if IDF_TARGET_ESP32 = y:
+    [scheme:phy_iram]
+    entries:
+    if ESP_WIFI_SLP_IRAM_OPT = y:
+        phy_iram -> iram0_text
+    else:
+        phy_iram -> flash_text
+
+    [sections:phy_iram]
+    entries:
+        .phyiram+
+
+if IDF_TARGET_ESP32C2 = y:
+    [scheme:phy_iram]
+    entries:
+    if ESP_PHY_IRAM_OPT = y:
+        phy_iram -> iram0_text
+    else:
+        phy_iram -> flash_text
+
+    [sections:phy_iram]
+    entries:
+        .phyiram+
+
+[mapping:btbb]
+archive: libbtbb.a
+entries:
+    if IDF_TARGET_ESP32C2 = y:
+        * (phy_iram)
+
+[mapping:phy]
+archive: libphy.a
+entries:
+    * (noflash_data)
+    if IDF_TARGET_ESP32 = y:
+        * (phy_iram)
+    if IDF_TARGET_ESP32C2 = y:
+        * (phy_iram)
+
+[mapping:rtc]
+archive: librtc.a
+entries:
+    * (noflash_text)
+
+[mapping:esp_phy]
+archive: libesp_phy.a
+entries:
+    if ESP_WIFI_SLP_IRAM_OPT =y:
+        phy_init:esp_phy_enable (noflash)
+        phy_init:esp_phy_disable (noflash)
+        phy_init:esp_wifi_bt_power_domain_off (noflash)
+    if PM_SLP_IRAM_OPT = y:
+        phy_override:phy_get_tsens_value (noflash)

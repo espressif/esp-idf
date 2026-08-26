@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+  <defs>
+    <marker id="caparrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#555"/>
+    </marker>
+    <marker id="caparrow2" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+      <polygon points="8,0 0,3 8,6" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="330" fill="#ffffff" rx="8"/>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" font-size="14" fill="#333" font-weight="700">Capture: Measure a Pulse Width</text>
+  <line x1="180" y1="40" x2="720" y2="40" stroke="#ddd" stroke-width="1"/>
+
+  <g transform="translate(70, 55)">
+
+    <!-- input signal -->
+    <text x="-12" y="44" text-anchor="end" font-size="11" fill="#1e88e5" font-weight="600">input</text>
+    <polyline points="0,30 130,30 130,10 330,10 330,30 500,30" fill="none" stroke="#1e88e5" stroke-width="2"/>
+
+    <!-- edge node dots and labels a, b -->
+    <circle cx="130" cy="10" r="3" fill="#1e88e5"/>
+    <circle cx="330" cy="30" r="3" fill="#1e88e5"/>
+    <text x="130" y="0" text-anchor="middle" font-size="10" fill="#1e88e5" font-weight="700">a (rising)</text>
+    <text x="330" y="46" text-anchor="middle" font-size="10" fill="#1e88e5" font-weight="700">b (falling)</text>
+
+    <!-- capture pulses -->
+    <text x="-12" y="114" text-anchor="end" font-size="11" fill="#e53935" font-weight="600">capture</text>
+    <line x1="0" y1="100" x2="500" y2="100" stroke="#e53935" stroke-width="1.5"/>
+    <polyline points="130,100 130,80 142,80 142,100" fill="none" stroke="#e53935" stroke-width="2"/>
+    <polyline points="330,100 330,80 342,80 342,100" fill="none" stroke="#e53935" stroke-width="2"/>
+    <text x="136" y="72" text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">t1</text>
+    <text x="336" y="72" text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">t2</text>
+
+    <!-- timer free-running counter -->
+    <text x="-12" y="190" text-anchor="end" font-size="11" fill="#43a047" font-weight="600">timer</text>
+    <!-- continuous rising ramp: the counter counts up without ever stopping -->
+    <line x1="0" y1="200" x2="500" y2="200" stroke="#43a047" stroke-width="1" opacity="0.35"/>
+    <line x1="0" y1="200" x2="500" y2="70" stroke="#43a047" stroke-width="2"/>
+    <!-- latched values at t1 / t2 lie on the same continuous ramp -->
+    <circle cx="130" cy="166" r="3.5" fill="#43a047"/>
+    <circle cx="330" cy="114" r="3.5" fill="#43a047"/>
+    <text x="130" y="158" text-anchor="middle" font-size="9" fill="#43a047">cnt_t1</text>
+    <text x="330" y="106" text-anchor="middle" font-size="9" fill="#43a047">cnt_t2</text>
+    <text x="490" y="205" text-anchor="end" font-size="9" fill="#888">counts continuously</text>
+
+    <!-- dashed drop lines: edge -> captured timestamp -> latched timer value -->
+    <line x1="130" y1="10" x2="130" y2="166" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="330" y1="30" x2="330" y2="132" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- width annotation -->
+    <line x1="130" y1="240" x2="130" y2="252" stroke="#333" stroke-width="1"/>
+    <line x1="330" y1="240" x2="330" y2="252" stroke="#333" stroke-width="1"/>
+    <line x1="130" y1="246" x2="330" y2="246" stroke="#333" stroke-width="1"/>
+    <text x="230" y="268" text-anchor="middle" font-size="12" fill="#333" font-weight="600">width = t2 - t1</text>
+
+    <!-- rising / falling labels -->
+    <line x1="130" y1="130" x2="180" y2="130" stroke="#1e88e5" stroke-width="1"/>
+    <text x="188" y="134" font-size="10" fill="#1e88e5">rising@t1</text>
+    <line x1="330" y1="130" x2="380" y2="130" stroke="#1e88e5" stroke-width="1"/>
+    <text x="388" y="134" font-size="10" fill="#1e88e5">falling@t2</text>
+
+    <!-- legend -->
+    <g transform="translate(560, 0)">
+      <text x="0" y="24" font-size="9" fill="#888">Input pulse under test</text>
+      <text x="0" y="74" font-size="9" fill="#888">Capture fires a pulse on</text>
+      <text x="0" y="84" font-size="9" fill="#888">each configured edge and</text>
+      <text x="0" y="94" font-size="9" fill="#888">latches the timer count</text>
+      <text x="0" y="154" font-size="9" fill="#888">Capture timer counts freely</text>
+      <text x="0" y="164" font-size="9" fill="#888">at resolution_hz ticks/s</text>
+    </g>
+  </g>
+</svg>

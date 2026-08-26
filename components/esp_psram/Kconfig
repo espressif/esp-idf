@@ -1,0 +1,7 @@
+menu "ESP PSRAM"
+    depends on !APP_BUILD_TYPE_PURE_RAM_APP
+    # Will be refactored after !18050 to merge target-specific items
+
+    orsource "./$IDF_TARGET/Kconfig.spiram"
+
+endmenu  # ESP PSRAM

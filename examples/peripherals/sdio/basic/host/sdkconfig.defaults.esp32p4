@@ -1,0 +1,2 @@
+## On P4-SDMMC + C5 SDIO test runner environment, hardware delay needs to be considered
+CONFIG_EXAMPLE_SDIO_HOST_DELAY=2

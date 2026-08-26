@@ -1,0 +1,343 @@
+/*
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <stdbool.h>
+#include <assert.h>
+#include "string.h"
+#include "sdkconfig.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "esp_rom_gpio.h"
+#include "esp_rom_efuse.h"
+#include "esp32s2/rom/spi_flash.h"
+#include "soc/efuse_reg.h"
+#include "soc/io_mux_reg.h"
+#include "soc/spi_reg.h"
+#include "soc/spi_mem_reg.h"
+#include "soc/spi_pins.h"
+#include "soc/soc_caps.h"
+#include "flash_qio_mode.h"
+#include "bootloader_flash_config.h"
+#include "bootloader_flash_priv.h"
+#include "bootloader_common.h"
+#include "bootloader_init.h"
+#include "hal/mmu_hal.h"
+#include "hal/mmu_ll.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
+
+#define FLASH_IO_MATRIX_DUMMY_40M   0
+#define FLASH_IO_MATRIX_DUMMY_80M   0
+
+#define FLASH_IO_DRIVE_GD_WITH_1V8PSRAM    3
+
+void bootloader_flash_update_id()
+{
+    g_rom_flashchip.device_id = bootloader_read_flash_id();
+}
+
+void bootloader_flash_update_size(uint32_t size)
+{
+    g_rom_flashchip.chip_size = size;
+}
+
+void IRAM_ATTR bootloader_flash_cs_timing_config()
+{
+    SET_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME_V, 0, SPI_MEM_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME_V, 0, SPI_MEM_CS_SETUP_TIME_S);
+    SET_PERI_REG_MASK(SPI_MEM_USER_REG(1), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(1), SPI_MEM_CS_HOLD_TIME_V, 1, SPI_MEM_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(1), SPI_MEM_CS_SETUP_TIME_V, 0, SPI_MEM_CS_SETUP_TIME_S);
+}
+
+void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t* pfhdr)
+{
+    uint32_t spi_clk_div = 0;
+    switch (pfhdr->spi_speed) {
+    case ESP_IMAGE_SPI_SPEED_DIV_1:
+        spi_clk_div = 1;
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_2:
+        spi_clk_div = 2;
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_3:
+        spi_clk_div = 3;
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_4:
+        spi_clk_div = 4;
+        break;
+    default:
+        break;
+    }
+    esp_rom_spiflash_config_clk(spi_clk_div, 0);
+    esp_rom_spiflash_config_clk(spi_clk_div, 1);
+}
+
+void IRAM_ATTR bootloader_flash_set_dummy_out(void)
+{
+    REG_SET_BIT(SPI_MEM_CTRL_REG(0), SPI_MEM_FDUMMY_OUT | SPI_MEM_D_POL | SPI_MEM_Q_POL);
+    REG_SET_BIT(SPI_MEM_CTRL_REG(1), SPI_MEM_FDUMMY_OUT | SPI_MEM_D_POL | SPI_MEM_Q_POL);
+}
+
+//deprecated
+void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
+{
+    bootloader_configure_spi_pins(1);
+    bootloader_flash_set_dummy_out();
+}
+
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32s2");
+
+void IRAM_ATTR bootloader_configure_spi_pins(int drv)
+{
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+    uint8_t wp_pin = esp_rom_efuse_get_flash_wp_gpio();
+    uint8_t clk_gpio_num = MSPI_IOMUX_PIN_NUM_CLK;
+    uint8_t q_gpio_num   = MSPI_IOMUX_PIN_NUM_MISO;
+    uint8_t d_gpio_num   = MSPI_IOMUX_PIN_NUM_MOSI;
+    uint8_t cs0_gpio_num = MSPI_IOMUX_PIN_NUM_CS0;
+    uint8_t hd_gpio_num  = MSPI_IOMUX_PIN_NUM_HD;
+    uint8_t wp_gpio_num  = MSPI_IOMUX_PIN_NUM_WP;
+    if (spiconfig == 0) {
+
+    } else {
+        clk_gpio_num = spiconfig         & 0x3f;
+        q_gpio_num = (spiconfig >> 6)    & 0x3f;
+        d_gpio_num = (spiconfig >> 12)   & 0x3f;
+        cs0_gpio_num = (spiconfig >> 18) & 0x3f;
+        hd_gpio_num = (spiconfig >> 24)  & 0x3f;
+        wp_gpio_num = wp_pin;
+    }
+    esp_rom_gpio_pad_set_drv(clk_gpio_num, drv);
+    esp_rom_gpio_pad_set_drv(q_gpio_num,   drv);
+    esp_rom_gpio_pad_set_drv(d_gpio_num,   drv);
+    esp_rom_gpio_pad_set_drv(cs0_gpio_num, drv);
+    if (hd_gpio_num < SOC_GPIO_PIN_COUNT) {
+        esp_rom_gpio_pad_set_drv(hd_gpio_num, drv);
+    }
+    if (wp_gpio_num < SOC_GPIO_PIN_COUNT) {
+        esp_rom_gpio_pad_set_drv(wp_gpio_num, drv);
+    }
+}
+
+static void update_flash_config(const esp_image_header_t *bootloader_hdr)
+{
+    uint32_t size;
+    switch (bootloader_hdr->spi_size) {
+    case ESP_IMAGE_FLASH_SIZE_1MB:
+        size = 1;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_2MB:
+        size = 2;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_4MB:
+        size = 4;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_8MB:
+        size = 8;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_16MB:
+        size = 16;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        size = 32;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        size = 64;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        size = 128;
+        break;
+    default:
+        size = 2;
+    }
+    // Set flash chip size
+    esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
+    // TODO: IDF-15747 set mode
+    // TODO: set frequency
+}
+
+static void print_flash_info(const esp_image_header_t *bootloader_hdr)
+{
+    ESP_EARLY_LOGD(TAG, "magic %02x", bootloader_hdr->magic);
+    ESP_EARLY_LOGD(TAG, "segments %02x", bootloader_hdr->segment_count);
+    ESP_EARLY_LOGD(TAG, "spi_mode %02x", bootloader_hdr->spi_mode);
+    ESP_EARLY_LOGD(TAG, "spi_speed %02x", bootloader_hdr->spi_speed);
+    ESP_EARLY_LOGD(TAG, "spi_size %02x", bootloader_hdr->spi_size);
+
+    const char *str;
+    switch (bootloader_hdr->spi_speed) {
+    case ESP_IMAGE_SPI_SPEED_DIV_2:
+        str = ESP_LOG_ATTR_STR("40MHz");
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_3:
+        str = ESP_LOG_ATTR_STR("26.7MHz");
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_4:
+        str = ESP_LOG_ATTR_STR("20MHz");
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_1:
+        str = ESP_LOG_ATTR_STR("80MHz");
+        break;
+    default:
+        str = ESP_LOG_ATTR_STR("20MHz");
+        break;
+    }
+    ESP_EARLY_LOGI(TAG, "SPI Speed      : %s", str);
+
+    /* SPI mode could have been set to QIO during boot already,
+       so test the SPI registers not the flash header */
+    esp_rom_spiflash_read_mode_t spi_mode = bootloader_flash_get_spi_mode();
+    switch (spi_mode) {
+    case ESP_ROM_SPIFLASH_QIO_MODE:
+        str = ESP_LOG_ATTR_STR("QIO");
+        break;
+    case ESP_ROM_SPIFLASH_QOUT_MODE:
+        str = ESP_LOG_ATTR_STR("QOUT");
+        break;
+    case ESP_ROM_SPIFLASH_DIO_MODE:
+        str = ESP_LOG_ATTR_STR("DIO");
+        break;
+    case ESP_ROM_SPIFLASH_DOUT_MODE:
+        str = ESP_LOG_ATTR_STR("DOUT");
+        break;
+    case ESP_ROM_SPIFLASH_FASTRD_MODE:
+        str = ESP_LOG_ATTR_STR("FAST READ");
+        break;
+    default:
+        str = ESP_LOG_ATTR_STR("SLOW READ");
+        break;
+    }
+    ESP_EARLY_LOGI(TAG, "SPI Mode       : %s", str);
+
+    switch (bootloader_hdr->spi_size) {
+    case ESP_IMAGE_FLASH_SIZE_1MB:
+        str = ESP_LOG_ATTR_STR("1MB");
+        break;
+    case ESP_IMAGE_FLASH_SIZE_2MB:
+        str = ESP_LOG_ATTR_STR("2MB");
+        break;
+    case ESP_IMAGE_FLASH_SIZE_4MB:
+        str = ESP_LOG_ATTR_STR("4MB");
+        break;
+    case ESP_IMAGE_FLASH_SIZE_8MB:
+        str = ESP_LOG_ATTR_STR("8MB");
+        break;
+    case ESP_IMAGE_FLASH_SIZE_16MB:
+        str = ESP_LOG_ATTR_STR("16MB");
+        break;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        str = ESP_LOG_ATTR_STR("32MB");
+        break;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        str = ESP_LOG_ATTR_STR("64MB");
+        break;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        str = ESP_LOG_ATTR_STR("128MB");
+        break;
+    default:
+        str = ESP_LOG_ATTR_STR("2MB");
+        break;
+    }
+    ESP_EARLY_LOGI(TAG, "SPI Flash Size : %s", str);
+}
+
+static void IRAM_ATTR bootloader_init_flash_configure(void)
+{
+    bootloader_configure_spi_pins(1);
+    bootloader_flash_set_dummy_out();
+    bootloader_flash_cs_timing_config();
+}
+
+esp_err_t bootloader_init_spi_flash(void)
+{
+    bootloader_init_flash_configure();
+
+    if ((void*)bootloader_flash_unlock != (void*)bootloader_flash_unlock_default) {
+        ESP_EARLY_LOGD(TAG, "Using overridden bootloader_flash_unlock");
+    }
+
+    bootloader_flash_unlock();
+
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
+    bootloader_enable_qio_mode();
+#endif
+
+    print_flash_info(&bootloader_image_hdr);
+
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    update_flash_config(&bootloader_image_hdr);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+
+    //ensure the flash is write-protected
+    bootloader_enable_wp();
+    return ESP_OK;
+}
+
+#if CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+static void bootloader_flash_set_spi_mode(const esp_image_header_t* pfhdr)
+{
+    esp_rom_spiflash_read_mode_t mode;
+    switch(pfhdr->spi_mode) {
+    case ESP_IMAGE_SPI_MODE_QIO:
+        mode = ESP_ROM_SPIFLASH_QIO_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_QOUT:
+        mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_DIO:
+        mode = ESP_ROM_SPIFLASH_DIO_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_FAST_READ:
+        mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_SLOW_READ:
+        mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
+        break;
+    default:
+        mode = ESP_ROM_SPIFLASH_DIO_MODE;
+    }
+    esp_rom_spiflash_config_readmode(mode);
+}
+
+void bootloader_flash_hardware_init(void)
+{
+    esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
+
+    // init cache and mmu
+    bootloader_init_ext_mem();
+
+    // Workaround: normal ROM bootloader exits with DROM0 cache unmasked, but 2nd bootloader exits with it masked.
+    REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_DROM0);
+    // update flash ID
+    bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    esp_err_t ret = bootloader_flash_xmc_startup();
+    assert(ret == ESP_OK);
+
+    /* Alternative of bootloader_init_spi_flash */
+    // RAM app doesn't have headers in the flash. Make a default one for it.
+    esp_image_header_t WORD_ALIGNED_ATTR hdr = {
+        .spi_mode = ESP_IMAGE_SPI_MODE_DIO,
+        .spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2,
+        .spi_size = ESP_IMAGE_FLASH_SIZE_2MB,
+    };
+    bootloader_configure_spi_pins(1);
+    bootloader_flash_set_spi_mode(&hdr);
+    bootloader_flash_clock_config(&hdr);
+    bootloader_flash_set_dummy_out();
+    bootloader_flash_cs_timing_config();
+
+    bootloader_flash_unlock();
+
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    update_flash_config(&hdr);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+
+    //ensure the flash is write-protected
+    bootloader_enable_wp();
+}
+#endif //CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP

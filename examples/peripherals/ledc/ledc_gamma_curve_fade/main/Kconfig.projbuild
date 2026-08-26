@@ -1,0 +1,11 @@
+menu "Example Configuration"
+
+    config GAMMA_CORRECTION_WITH_LUT
+        bool "Use look up table to do gamma correction"
+        default n
+        help
+            By default, the gamma correction in the example is through math power operation. This requires computation
+            on embedded system. With this option enabled, gamma correction will be based on a look up table. Note that,
+            the look up table provided in the example is only for a Gamma factor of 2.6.
+
+endmenu

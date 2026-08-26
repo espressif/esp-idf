@@ -1,0 +1,35 @@
+{
+  "signal": [
+    {
+      "name": "Input CLK",
+      "wave": "0HlHl.HlHl|"
+    },
+    {
+      "name": "Output CLK",
+      "wave": "0..Hl...Hl|"
+    },
+    {
+      "name": "Valid",
+      "wave": "0..1......|"
+    },
+    {
+      "name": "IO0",
+      "wave": "0..3....4.|", "data": "A0.0 A0.4"
+    },
+    {
+      "name": "IO1",
+      "wave": "0..3....4.|", "data": "A0.1 A0.5"
+    },
+    {
+      "name": "IO2",
+      "wave": "0..3....4.|", "data": "A0.2 A0.6"
+    },
+    {
+      "name": "IO3",
+      "wave": "0..3....4.|", "data": "A0.3 A0.7"
+    }
+  ],
+  "head": {
+    "text": "External Clock Input Waveform"
+  }
+}

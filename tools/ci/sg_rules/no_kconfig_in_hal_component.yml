@@ -1,0 +1,54 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: no-kconfig-in-hal-component
+message: Don't use Kconfig macros in the hal component
+severity: error # error, warning, info, hint
+note: hal component should be able to deliver without 3rd party config system
+language: C
+files:
+  - "components/hal/**/*"
+  - "components/esp_hal*/**/*"
+ignores:
+  # porting layer and test apps are allowed to use Kconfig macros
+  - "components/hal/platform_port/**/*"
+  - "components/hal/test_apps/**/*"
+  - "components/esp_hal*/test_apps/**/*"
+rule:
+  any:
+    - kind: argument_list
+      has:
+        kind: identifier
+        pattern: $N
+    - kind: preproc_if
+      has:
+        field: condition
+        pattern: $M
+constraints:
+  N:
+    regex: "^CONFIG"
+  M:
+    regex: "^CONFIG"
+
+---
+
+id: no-sdkconfig-include-in-hal-component
+message: Don't include sdkconfig.h in the hal component
+severity: error # error, warning, info, hint
+note: hal component should be able to deliver without 3rd party config system
+language: C
+files:
+  - "components/hal/**/*"
+  - "components/esp_hal*/**/*"
+ignores:
+  # porting layer and test apps are allowed to include sdkconfig.h
+  - "components/hal/platform_port/**/*"
+  - "components/hal/test_apps/**/*"
+  - "components/esp_hal*/test_apps/**/*"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    pattern: $N
+constraints:
+  N:
+   regex: '^["<]sdkconfig' # match "sdkconfig.h" or <sdkconfig.h>
+fix: ''

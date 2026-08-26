@@ -1,0 +1,21 @@
+# HMAC + RSA-DS persistent-format runner overlay (nvs_encr_hmac runner,
+# esp32c3). The runner has:
+#   - an eFuse HMAC key in block 0 with HMAC_UP purpose (used by the HMAC
+#     consume test for a real psa_mac_compute roundtrip)
+#     in test_persistent_format.c, so the RSA-DS consume test runs without
+#     needing a real HMAC-DOWN-DIGITAL-SIGNATURE eFuse key on this runner.
+#
+# A single runner therefore exercises both the HMAC and RSA-DS persistent
+# extract paths against the same shared NVS fixture.
+
+CONFIG_SECURE_FLASH_ENC_ENABLED=y
+CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT=y
+CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED=y
+CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC=y
+CONFIG_SECURE_BOOT_ALLOW_JTAG=y
+CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC=y
+CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC=y
+CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE=y
+CONFIG_PARTITION_TABLE_OFFSET=0x9000
+
+CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL=y

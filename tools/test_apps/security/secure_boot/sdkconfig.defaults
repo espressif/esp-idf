@@ -1,0 +1,9 @@
+# Default Secure Boot bootloader is too large to fit in default
+# bootloader size without adding 0x1000 bytes or reducing the log level.
+#
+# If you find yourself needing to edit this in the future, it's a sign the
+# bootloader is bloating out!
+CONFIG_PARTITION_TABLE_OFFSET=0xD000
+
+# Maximize the number of possible build warnings
+CONFIG_COMPILER_OPTIMIZATION_PERF=y

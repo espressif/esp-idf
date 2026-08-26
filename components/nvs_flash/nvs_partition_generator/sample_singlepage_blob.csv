@@ -1,0 +1,21 @@
+# Sample csv file
+key,type,encoding,value
+dummyNamespace,namespace,,
+dummyU8Key,data,u8,127
+dummyI8Key,data,i8,-128
+dummyU16Key,data,u16,32768
+dummyU32Key,data,u32,4294967295
+dummyI32Key,data,i32,-2147483648
+dummyStringKey,data,string,"Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Fusce quis risus justo.
+Suspendisse egestas in nisi sit amet auctor.
+Pellentesque rhoncus dictum sodales.
+In justo erat, viverra at interdum eget, interdum vel dui."
+dummyHex2BinKey,data,hex2bin,010203abcdef
+dummyBase64Key,data,base64,MTIzYWJj
+hexFileKey,file,hex2bin,testdata/sample.hex
+base64FileKey,file,base64,testdata/sample.base64
+stringFileKey,file,string,testdata/sample.txt
+blobFileAKey,file,binary,testdata/sample_blob.bin
+blobFileBKey,file,binary,testdata/sample_blob.bin
+binFileKey,file,binary,testdata/sample_singlepage_blob.bin

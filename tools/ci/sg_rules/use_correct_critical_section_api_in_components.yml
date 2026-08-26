@@ -1,0 +1,14 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: use-correct-critical-section-api-in-components
+message: Don't use FreeRTOS specific critical section APIs in this component
+severity: error # error, warning, info, hint
+note: Please use the APIs provided by 'esp_private/critical_section.h' instead.
+language: C
+files:
+  - "components/esp_hw_support/**/*"
+ignores:
+  - "components/esp_hw_support/test_apps/**/*"
+rule:
+  kind: expression_statement
+  pattern: $FUNC($$$ARGS);
+  regex: port.*CRITICAL.*(.*)

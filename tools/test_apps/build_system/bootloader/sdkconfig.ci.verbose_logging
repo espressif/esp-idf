@@ -1,0 +1,5 @@
+#
+# Turn verbose log on for bootloader
+#
+CONFIG_BOOTLOADER_LOG_LEVEL_VERBOSE=y
+CONFIG_PARTITION_TABLE_OFFSET=0xF000

@@ -1,0 +1,62 @@
+menu "Wear Levelling"
+
+    choice WL_SECTOR_SIZE
+        bool "Wear Levelling library sector size"
+        default WL_SECTOR_SIZE_4096
+        help
+            Sector size used by wear levelling library.
+            You can set default sector size or size that will
+            fit to the flash device sector size.
+
+            With sector size set to 4096 bytes, wear levelling library is more
+            efficient. However if FAT filesystem is used on top of wear levelling
+            library, it will need more temporary storage: 4096 bytes for each
+            mounted filesystem and 4096 bytes for each opened file.
+
+            With sector size set to 512 bytes, wear levelling library will perform
+            more operations with flash memory, but less RAM will be used by FAT
+            filesystem library (512 bytes for the filesystem and 512 bytes for each
+            file opened).
+
+        config WL_SECTOR_SIZE_512
+            bool "512"
+        config WL_SECTOR_SIZE_4096
+            bool "4096"
+    endchoice
+
+    config WL_SECTOR_SIZE
+        int
+        default 512 if WL_SECTOR_SIZE_512
+        default 4096 if WL_SECTOR_SIZE_4096
+
+    choice WL_SECTOR_MODE
+        bool "Sector store mode"
+        depends on WL_SECTOR_SIZE_512
+        default WL_SECTOR_MODE_SAFE
+        help
+            Specify the mode to store data into flash:
+
+            - In Performance mode a data will be stored to the RAM and then
+              stored back to the flash. Compared to the Safety mode, this operation is
+              faster, but if power will be lost when erase sector operation is in
+              progress, then the data from complete flash device sector will be lost.
+
+            - In Safety mode data from complete flash device sector will be read from
+              flash, modified, and then stored back to flash.
+              Compared to the Performance mode, this operation is slower, but if
+              power is lost during erase sector operation, then the data from full
+              flash device sector will not be lost.
+
+        config WL_SECTOR_MODE_PERF
+            bool "Performance"
+
+        config WL_SECTOR_MODE_SAFE
+            bool "Safety"
+    endchoice
+
+    config WL_SECTOR_MODE
+        int
+        default 0 if WL_SECTOR_MODE_PERF
+        default 1 if WL_SECTOR_MODE_SAFE
+
+endmenu
