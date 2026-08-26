@@ -1,3 +1,6 @@
+"CMake Error at /esp-idf/tools/cmakev2/build.cmake:93 (message): IDF: Build property 'BUILD_COMPONENTS' is not supported\n":
+    "HINT: The 'BUILD_COMPONENTS' build property does not exist in Build System v2, since components are not collected before they are evaluated. To check whether a component takes part in the build, use the '$<TARGET_EXISTS:idf::component_name>' generator expression instead. For details and a migration example, run 'idf.py docs -sp api-guides/build-system-v2/breaking-changes.html#cmakev2-build-components'"
+
 'ccache error: Failed to create temporary file\n':
     "HINT: On Windows, you should enable long path support in the installer, or disable ccache temporarily. See 'idf.py --help' or the documentation how to achieve this."
 
