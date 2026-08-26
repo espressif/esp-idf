@@ -64,8 +64,6 @@ void example_dac_continuous_by_dma(void)
         .desc_num = 8,
         .buf_size = 2048,
         .freq_hz = EXAMPLE_CONVERT_FREQ_HZ,
-        .offset = 0,
-        .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,     // If the frequency is out of range, try 'DAC_DIGI_CLK_SRC_APLL'
         /* Assume the data in buffer is 'A B C D E F'
          * DAC_CHANNEL_MODE_SIMUL:
          *      - channel 0: A B C D E F

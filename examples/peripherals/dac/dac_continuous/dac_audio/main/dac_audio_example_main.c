@@ -83,7 +83,6 @@ void app_main(void)
         .desc_num = 4,
         .buf_size = 2048,
         .freq_hz = CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE,
-        .offset = 0,
         .clk_src = DAC_DIGI_CLK_SRC_APLL,   // Using APLL as clock source to get a wider frequency range
         /* Assume the data in buffer is 'A B C D E F'
          * DAC_CHANNEL_MODE_SIMUL:
