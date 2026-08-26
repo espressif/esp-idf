@@ -7,501 +7,368 @@
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/ringbuf.h"
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #include "driver/uart.h"
+#include "driver/uhci.h"
 #include "esp_hci_transport.h"
 #include "esp_hci_internal.h"
+#include "ble_user_cfg.h"
 #include "common/hci_driver_h4.h"
 #include "common/hci_driver_util.h"
 #include "common/hci_driver_mem.h"
 #include "hci_driver_uart.h"
 
-#include "ble_hci_trans.h"
-#include "esp_private/periph_ctrl.h"
-#include "esp_private/gdma.h"
-#include "hal/uhci_ll.h"
-
-/*
- *  UART DMA Desc struct
+/**
+ * HCI UART DMA transport on top of the UHCI driver (driver/uhci.h).
  *
- * --------------------------------------------------------------
- * | own | EoF | sub_sof | 5'b0   | length [11:0] | size [11:0] |
- * --------------------------------------------------------------
- * |            buf_ptr [31:0]                                  |
- * --------------------------------------------------------------
- * |            next_desc_ptr [31:0]                            |
- * --------------------------------------------------------------
+ * RX  (uhci_start_receive_continuous)
+ * TX  (uhci_multi_buffer_transmit)
  */
-
-/* this bitfield is start from the LSB!!! */
-typedef struct uhci_lldesc_s {
-    volatile uint32_t size  : 12,
-             length: 12,
-             offset: 5, /* h/w reserved 5bit, s/w use it as offset in buffer */
-             sosf  : 1, /* start of sub-frame */
-             eof   : 1, /* end of frame */
-             owner : 1; /* hw or sw */
-    volatile const uint8_t *buf;       /* point to buffer data */
-    union {
-        volatile uint32_t empty;
-        STAILQ_ENTRY(uhci_lldesc_s) qe;  /* pointing to the next desc */
-    };
-} uhci_lldesc_t;
 
 /**
  * @brief Enumeration of HCI transport transmission states.
  */
 typedef enum {
-    HCI_TRANS_TX_IDLE,    ///< HCI Transport TX is in idle state.
-    HCI_TRANS_TX_START,   ///< HCI Transport TX is starting transmission.
-    HCI_TRANS_TX_END,     ///< HCI Transport TX has completed transmission.
+    HCI_TRANS_TX_IDLE,    /*!< No UHCI TX transaction in flight; task may dequeue the next packet. */
+    HCI_TRANS_TX_BUSY,    /*!< uhci_multi_buffer_transmit() has been submitted; wait for on_tx_trans_done. */
 } hci_trans_tx_state_t;
 
+/**
+ * @brief Runtime context for the UHCI-based HCI UART DMA transport.
+ */
 typedef struct {
-    TaskHandle_t task_handler;
-    hci_driver_uart_params_config_t *hci_uart_params;
-    SemaphoreHandle_t process_sem;
-    struct hci_h4_sm *h4_sm;
-    hci_driver_forward_fn *forward_cb;
-    struct os_mempool *hci_rx_data_pool; /*!< Init a memory pool for rx_data cache */
-    uint8_t *hci_rx_data_buffer;
-    struct os_mempool *hci_rxinfo_pool; /*!< Init a memory pool for rxinfo cache */
-    os_membuf_t *hci_rxinfo_buffer;
-    volatile bool rxinfo_mem_exhausted; /*!< Indicate rxinfo memory does not exist */
-    volatile bool is_continue_rx; /*!< Continue to rx */
-    volatile hci_trans_tx_state_t hci_tx_state; /*!< HCI Tx State */
-    struct os_mempool lldesc_mem_pool;/*!< Init a memory pool for uhci_lldesc_t */
-    uhci_lldesc_t *lldesc_mem;
+    TaskHandle_t task_handler;                        /*!< Process task: starts TX when idle and feeds RX bytes to H4. */
+    hci_driver_uart_params_config_t *hci_uart_params; /*!< UART port / pins / baud used by uhci_controller_config_t. */
+    SemaphoreHandle_t process_sem;                    /*!< Wakes the process task (TX enqueue, TX done, RX event). */
+    struct hci_h4_sm *h4_sm;                          /*!< H4 state machine that reassembles HCI packets from the byte stream. */
+    hci_driver_forward_fn *forward_cb;                /*!< Host-bound callback invoked when H4 completes one packet. */
+    uhci_controller_handle_t uhci_ctrl;               /*!< Handle returned by uhci_new_controller(). */
+    uint8_t *rx_dma_ring;                             /*!< Storage for uhci_start_receive_continuous(); valid until uhci_stop_receive(). */
+    size_t rx_dma_ring_size;                          /*!< Size of rx_dma_ring, passed as buffer_size to continuous RX. */
+    RingbufHandle_t rx_copy_ringbuf;                  /*!< ISR copies DMA-ring slices here; the process task drains it. */
+    uhci_transmit_buffer_info_t *tx_segments;         /*!< Scratch array of UHCI TX segments for one multi-buffer transaction. */
+    volatile hci_trans_tx_state_t hci_tx_state;       /*!< Only one HCI packet is in flight (tx-list entries cannot be mixed). */
+    volatile bool rx_copy_overflow;                   /*!< Set in ISR when rx_copy_ringbuf cannot accept a DMA slice. */
 } hci_driver_uart_dma_env_t;
 
-#define ESP_BT_HCI_TL_STATUS_OK            (0)   /*!< HCI_TL Tx/Rx operation status OK */
-/* The number of lldescs pool */
-#define HCI_LLDESCS_POOL_NUM                (UC_BT_CTRL_HCI_LLDESCS_POOL_NUM)
-/* Default block size for HCI RX data  */
-#define HCI_RX_DATA_POOL_NUM                (UC_BT_CTRL_HCI_TRANS_RX_MEM_NUM)
-#define HCI_RX_INFO_POOL_NUM                (UC_BT_CTRL_HCI_TRANS_RX_MEM_NUM + 1)
-#if UC_BT_CTRL_BLE_IS_ENABLE
-#define HCI_RX_DATA_BLOCK_SIZE              (DEFAULT_BT_LE_ACL_BUF_SIZE + BLE_HCI_TRANS_CMD_SZ)
+/* Max UHCI TX segments in one uhci_multi_buffer_transmit(); maps to max_transmit_buffer_count. */
+#define HCI_TX_MAX_SEGMENT_COUNT            (20)
+
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+/* BR/EDR or dual-mode: Classic ACL packet budget (H4 type + payload). */
+#define HCI_TX_MAX_SIZE                     (1024)
+#define HCI_RX_PKT_BUDGET                   (1024 + HCI_TRANSPORT_CMD_SZ)
 #else
-#define HCI_RX_DATA_BLOCK_SIZE              (1024)
+/* BLE only: H4 type byte + one LE ACL payload; RX also covers a command-sized packet. */
+#define HCI_TX_MAX_SIZE                     (DEFAULT_BT_LE_ACL_BUF_SIZE + 1)
+#define HCI_RX_PKT_BUDGET                   (DEFAULT_BT_LE_ACL_BUF_SIZE + HCI_TRANSPORT_CMD_SZ)
 #endif
 
-/**
- * @brief callback function for HCI Transport Layer send/receive operations
+#define HCI_RX_DMA_RING_SIZE                ((HCI_RX_PKT_BUDGET) > 4096 ? (HCI_RX_PKT_BUDGET) : 4096)
+/*
+ * uhci_controller_config_t.max_receive_internal_mem decides how many RX DMA descriptors
+ * UHCI allocates (node_count = size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE). Keep this large
+ * enough for at least two nodes so continuous RX can ping-pong instead of overwriting
+ * a single node while the callback still copies. This is not the allocated DMA ring size.
  */
-typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
-
-struct uart_txrxchannel {
-    esp_bt_hci_tl_callback_t callback;
-    void *arg;
-    uhci_lldesc_t *link_head;
-};
-
-struct uart_env_tag {
-    struct uart_txrxchannel tx;
-    struct uart_txrxchannel rx;
-};
-
-typedef struct hci_message {
-    void *ptr;                   ///< Pointer to the message data.
-    uint32_t length;             ///< Length of the message data.
-    STAILQ_ENTRY(hci_message) next; ///< Next element in the linked list.
-} hci_message_t;
-
-static void hci_driver_uart_dma_recv_async(uint8_t *buf, uint32_t size, esp_bt_hci_tl_callback_t callback, void *arg);
-int hci_driver_uart_dma_rx_start(uint8_t *rx_data, uint32_t length);
-int hci_driver_uart_dma_tx_start(esp_bt_hci_tl_callback_t callback, void *arg);
+#define HCI_UHCI_RX_DESC_MEM                (UC_BT_CTRL_HCI_TRANS_RX_MEM_NUM * HCI_RX_DMA_RING_SIZE)
+#define HCI_RX_COPY_RINGBUF_SIZE            HCI_RX_DMA_RING_SIZE
 
 static const char *TAG = "uart_dma";
 static hci_driver_uart_dma_env_t s_hci_driver_uart_dma_env;
 static struct hci_h4_sm s_hci_driver_uart_h4_sm;
+static portMUX_TYPE s_hci_tx_state_mux = portMUX_INITIALIZER_UNLOCKED;
 
-/* The list for hci_rx_data */
-STAILQ_HEAD(g_hci_rxinfo_list, hci_message);
+static int hci_driver_uart_dma_tx_submit(void);
 
-DRAM_ATTR struct g_hci_rxinfo_list g_hci_rxinfo_head;
-static DRAM_ATTR struct uart_env_tag uart_env;
-static volatile uhci_dev_t *s_uhci_hw = &UHCI0;
-static DRAM_ATTR gdma_channel_handle_t s_rx_channel;
-static DRAM_ATTR gdma_channel_handle_t s_tx_channel;
-
-static int hci_driver_uart_dma_memory_deinit(void)
+/**
+ * @brief Free the DMA ring, software RX ringbuf and TX segment scratch array.
+ *
+ * Must be called only after uhci_stop_receive() has returned, so the DMA ring
+ * is no longer referenced by UHCI.
+ */
+static void
+hci_driver_uart_dma_memory_deinit(void)
 {
-
-    if (s_hci_driver_uart_dma_env.hci_rxinfo_buffer) {
-        free(s_hci_driver_uart_dma_env.hci_rxinfo_buffer);
-        s_hci_driver_uart_dma_env.hci_rxinfo_buffer = NULL;
+    if (s_hci_driver_uart_dma_env.rx_copy_ringbuf) {
+        vRingbufferDelete(s_hci_driver_uart_dma_env.rx_copy_ringbuf);
+        s_hci_driver_uart_dma_env.rx_copy_ringbuf = NULL;
     }
 
-    if (s_hci_driver_uart_dma_env.hci_rxinfo_pool) {
-        free(s_hci_driver_uart_dma_env.hci_rxinfo_pool);
-        s_hci_driver_uart_dma_env.hci_rxinfo_pool = NULL;
+    if (s_hci_driver_uart_dma_env.rx_dma_ring) {
+        heap_caps_free(s_hci_driver_uart_dma_env.rx_dma_ring);
+        s_hci_driver_uart_dma_env.rx_dma_ring = NULL;
     }
 
-    if (s_hci_driver_uart_dma_env.hci_rx_data_buffer) {
-        free(s_hci_driver_uart_dma_env.hci_rx_data_buffer);
-        s_hci_driver_uart_dma_env.hci_rx_data_buffer = NULL;
+    if (s_hci_driver_uart_dma_env.tx_segments) {
+        free(s_hci_driver_uart_dma_env.tx_segments);
+        s_hci_driver_uart_dma_env.tx_segments = NULL;
+    }
+}
+
+/**
+ * @brief Allocate UHCI RX/TX working buffers.
+ *
+ * rx_dma_ring is DMA-capable internal memory required by uhci_start_receive_continuous().
+ * tx_segments holds the segment descriptors for uhci_multi_buffer_transmit().
+ */
+static int
+hci_driver_uart_dma_memory_init(void)
+{
+    s_hci_driver_uart_dma_env.rx_dma_ring_size = HCI_UHCI_RX_DESC_MEM;
+    /* DMA + internal: UHCI/GDMA writes here; cache-safe path also expects internal RAM. */
+    s_hci_driver_uart_dma_env.rx_dma_ring = heap_caps_calloc(1, s_hci_driver_uart_dma_env.rx_dma_ring_size,
+                                                             MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (!s_hci_driver_uart_dma_env.rx_dma_ring) {
+        goto init_err;
     }
 
-    if (s_hci_driver_uart_dma_env.hci_rx_data_pool) {
-        free(s_hci_driver_uart_dma_env.hci_rx_data_pool);
-        s_hci_driver_uart_dma_env.hci_rx_data_pool = NULL;
+    /* BYTEBUF so ISR can push arbitrary UHCI slice lengths without pre-sized items. */
+    s_hci_driver_uart_dma_env.rx_copy_ringbuf = xRingbufferCreate(HCI_RX_COPY_RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF);
+    if (!s_hci_driver_uart_dma_env.rx_copy_ringbuf) {
+        goto init_err;
     }
 
-    if (s_hci_driver_uart_dma_env.lldesc_mem) {
-        free(s_hci_driver_uart_dma_env.lldesc_mem);
-        s_hci_driver_uart_dma_env.lldesc_mem = NULL;
+    s_hci_driver_uart_dma_env.tx_segments = calloc(HCI_TX_MAX_SEGMENT_COUNT, sizeof(uhci_transmit_buffer_info_t));
+    if (!s_hci_driver_uart_dma_env.tx_segments) {
+        goto init_err;
     }
 
     return 0;
-}
-
-static int hci_driver_uart_dma_memory_init(void)
-{
-    int rc = 0;
-
-    s_hci_driver_uart_dma_env.lldesc_mem = malloc(OS_MEMPOOL_SIZE(HCI_LLDESCS_POOL_NUM,
-                        sizeof (uhci_lldesc_t)) * sizeof(os_membuf_t));
-    if (!s_hci_driver_uart_dma_env.lldesc_mem) {
-        return -1;
-    }
-
-    rc = os_mempool_init(&s_hci_driver_uart_dma_env.lldesc_mem_pool, HCI_LLDESCS_POOL_NUM,
-                         sizeof (uhci_lldesc_t), s_hci_driver_uart_dma_env.lldesc_mem, "hci_lldesc_pool");
-    if (rc) {
-        goto init_err;
-    }
-
-    s_hci_driver_uart_dma_env.hci_rx_data_pool = (struct os_mempool *)malloc(sizeof(struct os_mempool));
-    if (!s_hci_driver_uart_dma_env.hci_rx_data_pool) {
-        goto init_err;
-    }
-
-    memset(s_hci_driver_uart_dma_env.hci_rx_data_pool, 0, sizeof(struct os_mempool));
-    s_hci_driver_uart_dma_env.hci_rx_data_buffer = malloc(OS_MEMPOOL_SIZE(HCI_RX_DATA_POOL_NUM,
-                                                    HCI_RX_DATA_BLOCK_SIZE) * sizeof(os_membuf_t));
-    if (!s_hci_driver_uart_dma_env.hci_rx_data_buffer) {
-        goto init_err;
-    }
-
-    memset(s_hci_driver_uart_dma_env.hci_rx_data_buffer, 0, OS_MEMPOOL_SIZE(HCI_RX_DATA_POOL_NUM,
-                                          HCI_RX_DATA_BLOCK_SIZE) * sizeof(os_membuf_t));
-    rc = os_mempool_init(s_hci_driver_uart_dma_env.hci_rx_data_pool, HCI_RX_DATA_POOL_NUM,
-                         HCI_RX_DATA_BLOCK_SIZE, s_hci_driver_uart_dma_env.hci_rx_data_buffer,
-                         "hci_rx_data_pool");
-    if (rc) {
-        goto init_err;
-    }
-
-
-    /* Malloc hci rxinfo pool */
-    s_hci_driver_uart_dma_env.hci_rxinfo_pool = (struct os_mempool *)malloc(sizeof(struct os_mempool));
-    if (!s_hci_driver_uart_dma_env.hci_rxinfo_pool) {
-        goto init_err;
-    }
-
-    memset(s_hci_driver_uart_dma_env.hci_rxinfo_pool, 0, sizeof(struct os_mempool));
-    s_hci_driver_uart_dma_env.hci_rxinfo_buffer = malloc(OS_MEMPOOL_SIZE(HCI_RX_INFO_POOL_NUM,
-                                         sizeof(hci_message_t)) * sizeof(os_membuf_t));
-    if (!s_hci_driver_uart_dma_env.hci_rxinfo_buffer) {
-        goto init_err;
-    }
-
-    memset(s_hci_driver_uart_dma_env.hci_rxinfo_buffer, 0, OS_MEMPOOL_SIZE(HCI_RX_INFO_POOL_NUM,
-           sizeof(hci_message_t)) * sizeof(os_membuf_t));
-    rc = os_mempool_init(s_hci_driver_uart_dma_env.hci_rxinfo_pool, HCI_RX_INFO_POOL_NUM,
-                         sizeof(hci_message_t), s_hci_driver_uart_dma_env.hci_rxinfo_buffer,
-                         "hci_rxinfo_pool");
-    if (rc) {
-        goto init_err;
-    }
-
-    return rc;
 init_err:
     hci_driver_uart_dma_memory_deinit();
-    return rc;
+    return -1;
 }
 
-static IRAM_ATTR bool hci_uart_tl_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static void IRAM_ATTR
+hci_driver_uart_dma_txstate_set(hci_trans_tx_state_t tx_state)
 {
-    esp_bt_hci_tl_callback_t callback = uart_env.rx.callback;
-    void *arg = uart_env.rx.arg;
-    assert(dma_chan == s_rx_channel);
-    assert(uart_env.rx.callback != NULL);
-    // clear callback pointer
-    uart_env.rx.callback = NULL;
-    uart_env.rx.arg = NULL;
-    // call handler
-    callback(arg, ESP_BT_HCI_TL_STATUS_OK);
-    return true;
-}
-
-static IRAM_ATTR bool hci_uart_tl_tx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
-{
-    esp_bt_hci_tl_callback_t callback = uart_env.tx.callback;
-    assert(dma_chan == s_tx_channel);
-    assert(uart_env.tx.callback != NULL);
-    // clear callback pointer
-    uart_env.tx.callback = NULL;
-    // call handler
-    callback(uart_env.tx.arg, ESP_BT_HCI_TL_STATUS_OK);
-    uart_env.tx.arg = NULL;
-    return true;
-}
-
-uint8_t * IRAM_ATTR hci_driver_uart_dma_rxdata_memory_get(void)
-{
-    uint8_t *rx_data;
-    rx_data = os_memblock_get(s_hci_driver_uart_dma_env.hci_rx_data_pool);
-    return rx_data;
-}
-
-hci_message_t * IRAM_ATTR hci_driver_uart_dma_rxinfo_memory_get(void)
-{
-    hci_message_t *rx_info;
-    rx_info = os_memblock_get(s_hci_driver_uart_dma_env.hci_rxinfo_pool);
-    return rx_info;
-}
-
-void IRAM_ATTR hci_driver_uart_dma_cache_rxinfo(hci_message_t *hci_rxinfo)
-{
-    os_sr_t sr;
-
-    OS_ENTER_CRITICAL(sr);
-    STAILQ_INSERT_TAIL(&g_hci_rxinfo_head, hci_rxinfo, next);
-    OS_EXIT_CRITICAL(sr);
-}
-
-void IRAM_ATTR hci_driver_uart_dma_continue_rx_enable(bool enable)
-{
-    os_sr_t sr;
-    OS_ENTER_CRITICAL(sr);
-    s_hci_driver_uart_dma_env.is_continue_rx = enable;
-    OS_EXIT_CRITICAL(sr);
-}
-
-void IRAM_ATTR hci_driver_uart_dma_rxinfo_mem_exhausted_set(bool is_exhausted)
-{
-    os_sr_t sr;
-    OS_ENTER_CRITICAL(sr);
-    s_hci_driver_uart_dma_env.rxinfo_mem_exhausted = is_exhausted;
-    OS_EXIT_CRITICAL(sr);
-}
-
-void IRAM_ATTR hci_driver_uart_dma_recv_callback(void *arg, uint8_t status)
-{
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    hci_message_t *hci_rxinfo;
-    uint8_t *rx_data;
-
-    if (s_hci_driver_uart_dma_env.rxinfo_mem_exhausted) {
-        ESP_LOGE(TAG, "Will lost rx data, need adjust rxinfo memory count\n");
-        assert(0);
-    }
-
-    hci_rxinfo = hci_driver_uart_dma_rxinfo_memory_get();
-    if (!hci_rxinfo) {
-        ESP_LOGW(TAG, "set rxinfo mem exhausted flag\n");
-        hci_driver_uart_dma_rxinfo_mem_exhausted_set(true);
-        xSemaphoreGiveFromISR(s_hci_driver_uart_dma_env.process_sem, &xHigherPriorityTaskWoken);
-        return;
-    }
-
-    hci_rxinfo->ptr = (void *)uart_env.rx.link_head->buf;
-    hci_rxinfo->length = uart_env.rx.link_head->length;
-    hci_driver_uart_dma_cache_rxinfo(hci_rxinfo);
-    xSemaphoreGiveFromISR(s_hci_driver_uart_dma_env.process_sem, &xHigherPriorityTaskWoken);
-    rx_data = hci_driver_uart_dma_rxdata_memory_get();
-    if (!rx_data) {
-        hci_driver_uart_dma_continue_rx_enable(true);
-    }else {
-        hci_driver_uart_dma_rx_start(rx_data, HCI_RX_DATA_BLOCK_SIZE);
-    }
-}
-
-void IRAM_ATTR hci_driver_uart_dma_txstate_set(hci_trans_tx_state_t tx_state)
-{
-    os_sr_t sr;
-    OS_ENTER_CRITICAL(sr);
+    portENTER_CRITICAL_SAFE(&s_hci_tx_state_mux);
     s_hci_driver_uart_dma_env.hci_tx_state = tx_state;
-    OS_EXIT_CRITICAL(sr);
+    portEXIT_CRITICAL_SAFE(&s_hci_tx_state_mux);
 }
 
-void IRAM_ATTR hci_driver_uart_dma_send_callback(void *arg, uint8_t status)
+/**
+ * @brief UHCI on_rx_trans_event callback (ISR context, must be non-blocking).
+ *
+ * edata->data points into rx_dma_ring and is only guaranteed readable during this
+ * callback. Copy the slice out immediately: continuous RX does not stop DMA at EOF,
+ * so the same node will be overwritten on wrap-around. Both partial-node and EOF
+ * events are forwarded; H4 (not UHCI) decides packet boundaries.
+ *
+ * @return Whether a higher-priority task was woken (UHCI ISR yield contract).
+ */
+IRAM_ATTR static bool
+hci_driver_uart_dma_rx_event_cb(uhci_controller_handle_t uhci_ctrl, const uhci_rx_event_data_t *edata, void *user_ctx)
 {
-    uhci_lldesc_t *lldesc_head;
-    uhci_lldesc_t *lldesc_nxt;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    lldesc_head = uart_env.tx.link_head;
-    while (lldesc_head) {
-        lldesc_nxt = lldesc_head->qe.stqe_next;
-        os_memblock_put(&s_hci_driver_uart_dma_env.lldesc_mem_pool, lldesc_head);
-        lldesc_head = lldesc_nxt;
+    (void)uhci_ctrl;
+    (void)user_ctx;
+
+    /* Abnormal EOF: UHCI reports data == NULL and recv_size == 0. Keep the session running. */
+    if (!edata->data || edata->recv_size == 0) {
+        return false;
     }
 
-    uart_env.tx.link_head = NULL;
+    /*
+     * xRingbufferSendFromISR copies the DMA-ring slice. If this fails the DMA session
+     * still runs (no overrun callback from UHCI); the process task reports HCI sync loss.
+     */
+    if (xRingbufferSendFromISR(s_hci_driver_uart_dma_env.rx_copy_ringbuf, edata->data, edata->recv_size,
+                               &xHigherPriorityTaskWoken) != pdTRUE) {
+        s_hci_driver_uart_dma_env.rx_copy_overflow = true;
+    }
+
+    xSemaphoreGiveFromISR(s_hci_driver_uart_dma_env.process_sem, &xHigherPriorityTaskWoken);
+    return xHigherPriorityTaskWoken == pdTRUE;
+}
+
+/**
+ * @brief UHCI on_tx_trans_done callback (ISR context).
+ *
+ * For a multi-buffer transaction, edata->buffer only points at the first segment
+ * and is treated as a transaction id, not as sent_size bytes of contiguous memory.
+ * The tx-list entry is recycled on the next dequeue after last_frame, so the
+ * process task must run again now that the buffers may be freed.
+ */
+IRAM_ATTR static bool
+hci_driver_uart_dma_tx_done_cb(uhci_controller_handle_t uhci_ctrl, const uhci_tx_done_event_data_t *edata, void *user_ctx)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    (void)uhci_ctrl;
+    (void)edata;
+    (void)user_ctx;
+
     hci_driver_uart_dma_txstate_set(HCI_TRANS_TX_IDLE);
     xSemaphoreGiveFromISR(s_hci_driver_uart_dma_env.process_sem, &xHigherPriorityTaskWoken);
+    return xHigherPriorityTaskWoken == pdTRUE;
 }
 
-static IRAM_ATTR void hci_driver_uart_dma_recv_async(uint8_t *buf, uint32_t size, esp_bt_hci_tl_callback_t callback, void *arg)
-{
-    uhci_lldesc_t *lldesc_head;
-    assert(buf != NULL);
-    assert(size != 0);
-    assert(callback != NULL);
-    uart_env.rx.callback = callback;
-    uart_env.rx.arg = arg;
-    lldesc_head = uart_env.rx.link_head;
-
-    while (lldesc_head) {
-        os_memblock_put(&s_hci_driver_uart_dma_env.lldesc_mem_pool, lldesc_head),
-        lldesc_head = lldesc_head->qe.stqe_next;
-    }
-
-    uart_env.rx.link_head = NULL;
-    lldesc_head = os_memblock_get(&s_hci_driver_uart_dma_env.lldesc_mem_pool);
-    assert(lldesc_head);
-    memset(lldesc_head, 0, sizeof(uhci_lldesc_t));
-    lldesc_head->buf = buf;
-    lldesc_head->size = size;
-    lldesc_head->eof = 0;
-    s_uhci_hw->pkt_thres.pkt_thrs = size;
-    uart_env.rx.link_head = lldesc_head;
-    gdma_start(s_rx_channel, (intptr_t)(uart_env.rx.link_head));
-}
-
-int IRAM_ATTR hci_driver_uart_dma_rx_start(uint8_t *rx_data, uint32_t length)
-{
-    hci_driver_uart_dma_recv_async(rx_data, length, hci_driver_uart_dma_recv_callback, NULL);
-    return 0;
-}
-
-int hci_driver_uart_dma_tx_start(esp_bt_hci_tl_callback_t callback, void *arg)
+/**
+ * @brief Dequeue one HCI packet and submit it with uhci_multi_buffer_transmit().
+ *
+ * tx_list_dequeue() is one-entry-at-a-time: the first call yields the 1-byte H4
+ * type, later calls yield payload fragments, last_frame marks the end of that
+ * packet. All fragments stay valid until on_tx_trans_done (the next dequeue
+ * after last_frame frees the event buffer / mbuf).
+ *
+ * @return 0 if a transaction was queued, -1 if the TX list is empty.
+ */
+static int
+hci_driver_uart_dma_tx_submit(void)
 {
     void *data;
-    bool last_frame;
-    bool head_is_setted;
+    bool last_frame = false;
     uint32_t tx_len;
-    uhci_lldesc_t *lldesc_data;
-    uhci_lldesc_t *lldesc_head;
-    uhci_lldesc_t *lldesc_tail;
+    size_t seg_count = 0;
+    esp_err_t err;
 
-    lldesc_head = NULL;
-    lldesc_tail = NULL;
-    head_is_setted = false;
-    last_frame = false;
-    while (true) {
-        // The length in DMA is 12 bits
-        tx_len = hci_driver_util_tx_list_dequeue(0xfff, &data, &last_frame);
+    while (seg_count < HCI_TX_MAX_SEGMENT_COUNT) {
+        tx_len = hci_driver_util_tx_list_dequeue(0xffffff, &data, &last_frame);
         if (!tx_len) {
             break;
         }
 
-        lldesc_data = os_memblock_get(&s_hci_driver_uart_dma_env.lldesc_mem_pool);
-        /* According to the current processing logic， It should not be empty */
-        assert(lldesc_data);
-        memset(lldesc_data, 0, sizeof(uhci_lldesc_t));
-        lldesc_data->length = tx_len;
-        lldesc_data->buf = data;
-        lldesc_data->eof = 0;
-        if (!head_is_setted) {
-            lldesc_head = lldesc_data;
-            head_is_setted = true;
-        } else {
-            lldesc_tail->qe.stqe_next = lldesc_data;
-        }
-
-        lldesc_tail = lldesc_data;
+        /* Each fragment is a UHCI TX segment; UHCI concatenates them on the UART wire. */
+        s_hci_driver_uart_dma_env.tx_segments[seg_count].write_buffer = data;
+        s_hci_driver_uart_dma_env.tx_segments[seg_count].buffer_size = tx_len;
+        seg_count++;
         if (last_frame) {
             break;
         }
     }
 
-    if (lldesc_head) {
-        lldesc_tail->eof = 1;
-        uart_env.tx.link_head = lldesc_head;
-        uart_env.tx.callback = callback;
-        uart_env.tx.arg = arg;
-        /* The DMA interrupt may have been triggered before setting the tx_state,
-         * So we set it first.
-         */
-        hci_driver_uart_dma_txstate_set(HCI_TRANS_TX_START);
-        gdma_start(s_tx_channel, (intptr_t)(uart_env.tx.link_head));
-        return 0;
-    } else {
+    if (seg_count == 0) {
         return -1;
     }
-}
 
-static void hci_driver_uart_dma_install(void)
-{
-#if __PERIPH_CTRL_DEPRECATE_ATTR
-    periph_module_enable(PERIPH_UHCI0_MODULE);
-    periph_module_reset(PERIPH_UHCI0_MODULE);
-#else
-    PERIPH_RCC_ATOMIC() {
-        uhci_ll_enable_bus_clock(1);
-        uhci_ll_reset_register();
+    if (!last_frame) {
+        /* array_size is capped by max_transmit_buffer_count; a gap before the rest may look like idle EOF on the peer. */
+        ESP_LOGW(TAG, "HCI TX packet exceeds max_transmit_buffer_count (%d), sending partial packet",
+                 HCI_TX_MAX_SEGMENT_COUNT);
     }
-#endif
 
-    // install DMA driver
-    gdma_channel_alloc_config_t tx_channel_config = {
-        .flags.reserve_sibling = 1,
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-    };
+    /* Mark BUSY first so a completion ISR cannot be observed as still-idle. */
+    hci_driver_uart_dma_txstate_set(HCI_TRANS_TX_BUSY);
+    err = uhci_multi_buffer_transmit(s_hci_driver_uart_dma_env.uhci_ctrl,
+                                     s_hci_driver_uart_dma_env.tx_segments, seg_count);
+    /* Transmit must not fail; assert directly. */
+    assert(err == ESP_OK);
 
-    ESP_ERROR_CHECK(gdma_new_ahb_channel(&tx_channel_config, &s_tx_channel));
-    gdma_channel_alloc_config_t rx_channel_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = s_tx_channel,
-    };
-
-    ESP_ERROR_CHECK(gdma_new_ahb_channel(&rx_channel_config, &s_rx_channel));
-    gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
-    gdma_connect(s_rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
-    gdma_strategy_config_t strategy_config = {
-        .auto_update_desc = false,
-        .owner_check = false
-    };
-
-    ESP_ERROR_CHECK(gdma_apply_strategy(s_tx_channel, &strategy_config));
-    ESP_ERROR_CHECK(gdma_apply_strategy(s_rx_channel, &strategy_config));
-    gdma_rx_event_callbacks_t rx_cbs = {
-        .on_recv_eof = hci_uart_tl_rx_eof_callback
-    };
-
-    ESP_ERROR_CHECK(gdma_register_rx_event_callbacks(s_rx_channel, &rx_cbs, NULL));
-    gdma_tx_event_callbacks_t tx_cbs = {
-        .on_trans_eof = hci_uart_tl_tx_eof_callback
-    };
-
-    ESP_ERROR_CHECK(gdma_register_tx_event_callbacks(s_tx_channel, &tx_cbs, NULL));
-
-    // configure UHCI
-    uhci_ll_init((uhci_dev_t *)s_uhci_hw);
-    // uhci_ll_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_LEN_EOF);
-    uhci_ll_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_IDLE_EOF);
-    // disable software flow control
-    s_uhci_hw->escape_conf.val = 0;
-    uhci_ll_attach_uart_port((uhci_dev_t *)s_uhci_hw, s_hci_driver_uart_dma_env.hci_uart_params->hci_uart_port);
+    return 0;
 }
 
+/**
+ * @brief Create the UHCI controller, register ISR callbacks and start continuous RX.
+ *
+ * UART pins/baud must already be programmed (uart_param_config / uart_set_pin).
+ * UHCI and BT HCI share the same hardware; this driver is the exclusive UHCI user.
+ */
+static int
+hci_driver_uart_dma_uhci_install(void)
+{
+    uhci_controller_config_t uhci_cfg = {
+        .uart_port = s_hci_driver_uart_dma_env.hci_uart_params->hci_uart_port, /* Attach this UART to UHCI. */
+        .tx_trans_queue_depth = 2,                    /* One in-flight HCI packet is enough; +1 for slack. */
+        .max_transmit_size = HCI_TX_MAX_SIZE,         /* Total bytes of all segments in one transaction. */
+        .max_transmit_buffer_count = HCI_TX_MAX_SEGMENT_COUNT, /* Caps uhci_multi_buffer_transmit() array_size. */
+        .max_receive_internal_mem = HCI_UHCI_RX_DESC_MEM,      /* Sizes the RX DMA descriptor chain, not the ring. */
+        .dma_burst_size = 32,                         /* Power-of-two burst; 0 would disable burst. */
+        .rx_eof_flags.idle_eof = 1,                   /* Frame ends when the UART RX line goes idle. */
+    };
+    uhci_event_callbacks_t uhci_cbs = {
+        .on_rx_trans_event = hci_driver_uart_dma_rx_event_cb, /* Partial node and/or frame EOF. */
+        .on_tx_trans_done = hci_driver_uart_dma_tx_done_cb,
+    };
+
+    ESP_LOGI(TAG, "uart attach uhci");
+    if (uhci_new_controller(&uhci_cfg, &s_hci_driver_uart_dma_env.uhci_ctrl) != ESP_OK) {
+        return -1;
+    }
+
+    /* Register before start_receive_continuous so the first frame is not dropped. */
+    if (uhci_register_event_callbacks(s_hci_driver_uart_dma_env.uhci_ctrl, &uhci_cbs, NULL) != ESP_OK) {
+        uhci_del_controller(s_hci_driver_uart_dma_env.uhci_ctrl);
+        s_hci_driver_uart_dma_env.uhci_ctrl = NULL;
+        return -1;
+    }
+
+    /* Arm once. Do not call uhci_receive() / start again until uhci_stop_receive(). */
+    if (uhci_start_receive_continuous(s_hci_driver_uart_dma_env.uhci_ctrl,
+                                      s_hci_driver_uart_dma_env.rx_dma_ring,
+                                      s_hci_driver_uart_dma_env.rx_dma_ring_size) != ESP_OK) {
+        uhci_del_controller(s_hci_driver_uart_dma_env.uhci_ctrl);
+        s_hci_driver_uart_dma_env.uhci_ctrl = NULL;
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Stop continuous RX so UHCI RX callbacks cannot run anymore.
+ *
+ * Does not delete the controller: the process task may still submit TX until it
+ * is torn down. No-op if UHCI was never installed (init error path).
+ */
+static void
+hci_driver_uart_dma_uhci_stop_rx(void)
+{
+    if (!s_hci_driver_uart_dma_env.uhci_ctrl) {
+        return;
+    }
+
+    uhci_stop_receive(s_hci_driver_uart_dma_env.uhci_ctrl);
+}
+
+/**
+ * @brief Wait for in-flight TX and delete the UHCI controller.
+ *
+ * Call only after the process task is gone so it cannot uhci_multi_buffer_transmit()
+ * on a handle that is being deleted. The DMA ring may be freed only after this returns.
+ */
+static void
+hci_driver_uart_dma_uhci_del(void)
+{
+    if (!s_hci_driver_uart_dma_env.uhci_ctrl) {
+        return;
+    }
+
+    uhci_wait_all_tx_transaction_done(s_hci_driver_uart_dma_env.uhci_ctrl, 100);
+    uhci_del_controller(s_hci_driver_uart_dma_env.uhci_ctrl);
+    s_hci_driver_uart_dma_env.uhci_ctrl = NULL;
+}
+
+static void
+hci_driver_uart_dma_task_delete(void)
+{
+    if (s_hci_driver_uart_dma_env.task_handler) {
+        vTaskDelete(s_hci_driver_uart_dma_env.task_handler);
+        s_hci_driver_uart_dma_env.task_handler = NULL;
+    }
+}
+
+/**
+ * @brief Enqueue a controller-to-host HCI packet and wake the process task.
+ *
+ * The actual UART DMA send happens in hci_driver_uart_dma_tx_submit() when TX is idle.
+ */
 static int
 hci_driver_uart_dma_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_t length,
                        hci_driver_direction_t dir)
 {
-    uint8_t data_source;
     int rc;
+    uint8_t data_source;
 
     data_source = 0;
-    /* By now, this layer is only used by controller. */
-    ESP_LOGD(TAG, "dma tx len:%d\n", length);
+    ESP_LOGD(TAG, "dma tx:");
+    ESP_LOG_BUFFER_HEXDUMP(TAG, data, length, ESP_LOG_DEBUG);
     if (dir == HCI_DRIVER_DIR_BTDMC2H) {
         if (data_type == HCI_DRIVER_TYPE_EVT) {
             data_source = HCI_DRIVER_BTDM_EVT;
@@ -523,7 +390,7 @@ hci_driver_uart_dma_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_t
             data_source = HCI_DRIVER_BREDR_SYNC;
         } else if (data_type == HCI_DRIVER_TYPE_EVT) {
             data_source = HCI_DRIVER_BREDR_EVT;
-         }
+        }
     }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
     else {
@@ -532,7 +399,7 @@ hci_driver_uart_dma_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_t
 
     rc = hci_driver_util_tx_list_enqueue(data_type, data, length, data_source);
     if (rc < 0) {
-        ESP_LOGE(TAG, "dma tx data enqueue failed!\n");
+        ESP_LOGE(TAG, "tx data enqueue failed!\n");
         return rc;
     }
 
@@ -540,76 +407,79 @@ hci_driver_uart_dma_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_t
     return rc;
 }
 
+/**
+ * @brief H4 has assembled one host-bound HCI packet; forward it upward.
+ */
 static int
 hci_driver_uart_dma_h4_frame_cb(uint8_t pkt_type, void *data, int pkt_len, uint8_t data_source)
 {
     hci_driver_forward_fn *forward_cb = s_hci_driver_uart_dma_env.forward_cb;
+
     if (!forward_cb) {
-        ESP_LOGW(TAG, "rx cb is NULL\n");
+        ESP_LOGE(TAG, "rx cb is NULL\n");
         return -1;
     }
-
     ESP_LOGD(TAG, "h4 frame\n");
     return forward_cb(pkt_type, data, pkt_len, HCI_DRIVER_DIR_H2C, data_source);
 }
 
+/**
+ * @brief Drain the software RX ringbuf into the H4 state machine.
+ *
+ * Timeout is 0: the process task is already woken by process_sem. Chunks may be
+ * one DMA node or a short EOF tail; H4 concatenates them into HCI packets.
+ */
+static void
+hci_driver_uart_dma_process_rx(void)
+{
+    size_t item_size;
+    uint8_t *rx_data;
+    int ret;
+
+    if (s_hci_driver_uart_dma_env.rx_copy_overflow) {
+        ESP_LOGE(TAG, "RX software ring buffer overflow, HCI stream may lose sync");
+        s_hci_driver_uart_dma_env.rx_copy_overflow = false;
+#if UC_BT_CTRL_BLE_IS_ENABLE
+        r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
+#endif // #if UC_BT_CTRL_BLE_IS_ENABLE
+    }
+
+    while ((rx_data = xRingbufferReceive(s_hci_driver_uart_dma_env.rx_copy_ringbuf, &item_size, 0)) != NULL) {
+        ESP_LOGD(TAG, "uart rx");
+        ESP_LOG_BUFFER_HEXDUMP(TAG, rx_data, item_size, ESP_LOG_DEBUG);
+        ret = hci_h4_sm_rx(s_hci_driver_uart_dma_env.h4_sm, rx_data, (uint16_t)item_size);
+        /* Return the item before parsing the next slice so the ringbuf can accept more ISR copies. */
+        vRingbufferReturnItem(s_hci_driver_uart_dma_env.rx_copy_ringbuf, rx_data);
+        if (ret < 0) {
+            ESP_LOGW(TAG, "parse rx data error!\n");
+#if UC_BT_CTRL_BLE_IS_ENABLE
+            r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
+#endif // #if UC_BT_CTRL_BLE_IS_ENABLE
+        }
+    }
+}
+
+/**
+ * @brief Serialized TX kick + RX parse.
+ *
+ * Woken by: controller TX enqueue, UHCI TX done, or UHCI RX event. A binary
+ * semaphore is enough because both sides are polled every wake-up.
+ */
 static void
 hci_driver_uart_dma_process_task(void *p)
 {
-    hci_message_t *rxinfo_container;
-    os_sr_t sr;
-    int ret;
-    uint8_t* rx_data;
-    uint32_t rx_len;
+    (void)p;
 
     while (true) {
         xSemaphoreTake(s_hci_driver_uart_dma_env.process_sem, portMAX_DELAY);
-        ESP_LOGD(TAG, "task run:%d\n",s_hci_driver_uart_dma_env.hci_tx_state);
-        /* Process Tx data */
+        ESP_LOGD(TAG, "task run:%d\n", s_hci_driver_uart_dma_env.hci_tx_state);
+
+        /* Do not start another uhci_multi_buffer_transmit() while one is in flight. */
         if (s_hci_driver_uart_dma_env.hci_tx_state == HCI_TRANS_TX_IDLE) {
-            hci_driver_uart_dma_tx_start(hci_driver_uart_dma_send_callback, (void*)&uart_env);
+            hci_driver_uart_dma_tx_submit();
         }
 
-        if (s_hci_driver_uart_dma_env.rxinfo_mem_exhausted) {
-            rx_data = (void *)uart_env.rx.link_head->buf;
-            rx_len = uart_env.rx.link_head->length;
-            ESP_LOGD(TAG, "rxinfo exhausted:");
-            ESP_LOG_BUFFER_HEXDUMP(TAG, rx_data, rx_len, ESP_LOG_DEBUG);
-            ret  = hci_h4_sm_rx(s_hci_driver_uart_dma_env.h4_sm, rx_data, rx_len);
-            hci_driver_uart_dma_rx_start(rx_data, HCI_RX_DATA_BLOCK_SIZE);
-            hci_driver_uart_dma_rxinfo_mem_exhausted_set(false);
-            if (ret < 0) {
-               ESP_LOGW(TAG, "parse rx data error!\n");
-               r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
-            }
-        }
-
-        while (!STAILQ_EMPTY(&g_hci_rxinfo_head)) {
-            OS_ENTER_CRITICAL(sr);
-            rxinfo_container = STAILQ_FIRST(&g_hci_rxinfo_head);
-            STAILQ_REMOVE_HEAD(&g_hci_rxinfo_head, next);
-            OS_EXIT_CRITICAL(sr);
-
-            rx_data = rxinfo_container->ptr;
-            rx_len = rxinfo_container->length;
-            ESP_LOGD(TAG, "uart rx");
-            ESP_LOG_BUFFER_HEXDUMP(TAG, rx_data, rx_len, ESP_LOG_DEBUG);
-            ret  = hci_h4_sm_rx(s_hci_driver_uart_dma_env.h4_sm, rx_data, rx_len);
-            if (ret < 0) {
-                ESP_LOGW(TAG, "parse rx data error!\n");
-                r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
-            }
-
-            os_memblock_put(s_hci_driver_uart_dma_env.hci_rxinfo_pool, rxinfo_container);
-            /* No need to enter CRITICAL */
-            if (s_hci_driver_uart_dma_env.is_continue_rx) {
-                /* We should set continux rx flag first, RX interrupted may happened when rx start soon */
-                hci_driver_uart_dma_continue_rx_enable(false);
-                hci_driver_uart_dma_rx_start(rx_data, HCI_RX_DATA_BLOCK_SIZE);
-            } else {
-                os_memblock_put(s_hci_driver_uart_dma_env.hci_rx_data_pool, rx_data);
-            }
-        }
+        hci_driver_uart_dma_process_rx();
     }
 }
 
@@ -629,26 +499,39 @@ hci_driver_uart_dma_task_create(void)
     return 0;
 }
 
-
+/**
+ * @brief Tear down in reverse-dependency order, with UHCI RX stopped before the task.
+ *
+ * 1. uhci_stop_receive: RX ISR must not write a ringbuf / give a sem we are about to free.
+ * 2. Delete the process task: it must not call UHCI TX APIs during del_controller.
+ * 3. Wait TX + uhci_del_controller: DMA ring is then unused.
+ * 4. UART, working buffers, process_sem, TX list.
+ */
 static void
 hci_driver_uart_dma_deinit(void)
 {
-    if (s_hci_driver_uart_dma_env.task_handler) {
-        vTaskDelete(s_hci_driver_uart_dma_env.task_handler);
-        s_hci_driver_uart_dma_env.task_handler = NULL;
+    hci_driver_uart_dma_uhci_stop_rx();
+    hci_driver_uart_dma_task_delete();
+    hci_driver_uart_dma_uhci_del();
+
+    if (s_hci_driver_uart_dma_env.hci_uart_params) {
+        /* uart_param_config/set_pin do not uart_driver_install(); delete may be a no-op. */
+        (void)uart_driver_delete(s_hci_driver_uart_dma_env.hci_uart_params->hci_uart_port);
     }
 
-    ESP_ERROR_CHECK(uart_driver_delete(s_hci_driver_uart_dma_env.hci_uart_params->hci_uart_port));
     hci_driver_uart_dma_memory_deinit();
-    if (!s_hci_driver_uart_dma_env.process_sem) {
+    if (s_hci_driver_uart_dma_env.process_sem) {
         vSemaphoreDelete(s_hci_driver_uart_dma_env.process_sem);
+        s_hci_driver_uart_dma_env.process_sem = NULL;
     }
 
     hci_driver_util_deinit();
     memset(&s_hci_driver_uart_dma_env, 0, sizeof(hci_driver_uart_dma_env_t));
 }
 
-
+/**
+ * @brief Bring up H4, TX list, UART, UHCI continuous RX and the process task.
+ */
 static int
 hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
 {
@@ -657,7 +540,8 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
     memset(&s_hci_driver_uart_dma_env, 0, sizeof(hci_driver_uart_dma_env_t));
 
     s_hci_driver_uart_dma_env.h4_sm = &s_hci_driver_uart_h4_sm;
-    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, &s_hci_driver_mem_free, hci_driver_uart_dma_h4_frame_cb);
+    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, &s_hci_driver_mem_free,
+                   hci_driver_uart_dma_h4_frame_cb);
 
     rc = hci_driver_util_init();
     if (rc) {
@@ -676,12 +560,13 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
 
     s_hci_driver_uart_dma_env.forward_cb = cb;
     s_hci_driver_uart_dma_env.hci_uart_params = hci_driver_uart_config_param_get();
+    /* UART must be parameterized before uhci_new_controller() attaches the port. */
     hci_driver_uart_config(s_hci_driver_uart_dma_env.hci_uart_params);
 
-    ESP_LOGI(TAG, "uart attach uhci!");
-    hci_driver_uart_dma_install();
-
-    STAILQ_INIT(&g_hci_rxinfo_head);
+    rc = hci_driver_uart_dma_uhci_install();
+    if (rc) {
+        goto error;
+    }
 
     rc = hci_driver_uart_dma_task_create();
     if (rc) {
@@ -689,10 +574,6 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
     }
 
     s_hci_driver_uart_dma_env.hci_tx_state = HCI_TRANS_TX_IDLE;
-    s_hci_driver_uart_dma_env.rxinfo_mem_exhausted = false;
-    s_hci_driver_uart_dma_env.is_continue_rx = false;
-    hci_driver_uart_dma_rx_start(os_memblock_get(s_hci_driver_uart_dma_env.hci_rx_data_pool),
-                                HCI_RX_DATA_BLOCK_SIZE);
     return 0;
 
 error:
@@ -703,9 +584,9 @@ error:
 int
 hci_driver_uart_dma_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
 {
+    /* UHCI stays attached to the same UART port; only the GPIO mapping changes. */
     return hci_driver_uart_pin_update(tx_pin, rx_pin, cts_pin, rts_pin);
 }
-
 
 hci_driver_ops_t hci_driver_uart_dma_ops = {
     .hci_driver_tx = hci_driver_uart_dma_tx,
