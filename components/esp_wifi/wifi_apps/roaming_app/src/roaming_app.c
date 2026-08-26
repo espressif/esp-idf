@@ -33,6 +33,8 @@
 #include "common/wpa_common.h"
 #include "esp_wpas_glue.h"
 
+#define BTM_QUERY_REASON_LOW_RSSI 16
+
 static struct roaming_app g_roaming_app;
 extern bool current_task_is_wifi_task(void);
 
@@ -1442,7 +1444,8 @@ static bool trigger_network_assisted_roam(struct cand_bss *bss)
         btm_candidates = query_list;
     }
 
-    if (esp_wnm_send_bss_transition_mgmt_query(REASON_RSSI, btm_candidates, 1) < 0) {
+    if (esp_wnm_send_bss_transition_mgmt_query((enum btm_query_reason)BTM_QUERY_REASON_LOW_RSSI,
+                                               btm_candidates, 1) < 0) {
         ESP_LOGD(ROAMING_TAG, "failed to send btm query");
         os_free(query_list);
         return false;
