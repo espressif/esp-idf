@@ -228,6 +228,9 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     ESP_GOTO_ON_FALSE(handle, ESP_ERR_NO_MEM, err_dereg, TAG, "no memory for the dac continuous mode structure");
 
     handle->cfg = *cont_cfg;
+    if (handle->cfg.clk_src == 0) {
+        handle->cfg.clk_src = DAC_DIGI_CLK_SRC_DEFAULT;
+    }
 
 #if SOC_IS(ESP32)
     handle->dma_lock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -240,7 +243,7 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
 
     /* Create PM lock */
 #if CONFIG_PM_ENABLE
-    esp_pm_lock_type_t pm_lock_type = cont_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_APB_FREQ_MAX;
+    esp_pm_lock_type_t pm_lock_type = handle->cfg.clk_src == DAC_DIGI_CLK_SRC_APLL ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_APB_FREQ_MAX;
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, "dac_driver", &handle->pm_lock), err_free, TAG, "Failed to create DAC pm lock");
 #endif
 
@@ -252,7 +255,7 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
         .on_done = dac_dma_done_callback,
         .on_teof = dac_dma_teof_callback,
     };
-    ESP_GOTO_ON_ERROR(dac_priv_dma_init(cont_cfg->clk_src, cont_cfg->freq_hz, cont_cfg->chan_mode == DAC_CHANNEL_MODE_ALTER, &cbs, handle),
+    ESP_GOTO_ON_ERROR(dac_priv_dma_init(handle->cfg.clk_src, handle->cfg.freq_hz, handle->cfg.chan_mode == DAC_CHANNEL_MODE_ALTER, &cbs, handle),
                       err_desc, TAG, "Failed to initialize DAC DMA peripheral");
 
     /* Connect DAC module to the DMA peripheral */

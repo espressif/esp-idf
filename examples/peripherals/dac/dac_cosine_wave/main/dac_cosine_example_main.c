@@ -46,8 +46,6 @@ void app_main(void)
     dac_cosine_config_t cos0_cfg = {
         .chan_id = DAC_CHAN_0,
         .freq_hz = 1000, // It will be covered by 8000 in the latter configuration
-        .clk_src = DAC_COSINE_CLK_SRC_DEFAULT,
-        .offset = 0,
         .phase = DAC_COSINE_PHASE_0,
         .atten = DAC_COSINE_ATTEN_DEFAULT,
         .flags.force_set_freq = false,
@@ -55,8 +53,6 @@ void app_main(void)
     dac_cosine_config_t cos1_cfg = {
         .chan_id = DAC_CHAN_1,
         .freq_hz = 8000,
-        .clk_src = DAC_COSINE_CLK_SRC_DEFAULT,
-        .offset = 0,
         .phase = DAC_COSINE_PHASE_180,
         .atten = DAC_COSINE_ATTEN_DB_6,
         .flags.force_set_freq = true, // set true will allow to overwrite the frequency that set before
