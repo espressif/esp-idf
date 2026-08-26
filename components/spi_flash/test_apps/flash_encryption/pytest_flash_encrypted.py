@@ -68,6 +68,7 @@ def test_flash_encryption_f8r8(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='not support yet')  # TODO: [ESP32H4] IDF-12388
 @pytest.mark.parametrize(
     'config, target',
     [
