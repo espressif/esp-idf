@@ -353,6 +353,22 @@ void os_mempool_flags_set(struct os_mempool *mp, uint8_t flags);
  */
 void os_mempool_flags_clear(struct os_mempool *mp, uint8_t flags);
 
+/**
+ * @brief Deinitialize a memory pool.
+ *
+ * @param mp Pointer to memory pool
+ */
+void os_mempool_deinit(struct os_mempool *mp);
+
+ /**
+ * @brief Deinitialize all of memory pools.
+ *
+ * @param is_controller Whether called from controller.
+ *
+ * @return OS_OK on success; OS_INVALID_PARM if not found corresponding memory pools.
+ */
+os_error_t os_mempool_deinit_all(bool is_controller);
+
 #else /* !CONFIG_BT_DUAL_MODE_ARCH */
 #include "btdm_mempool.h"
 
@@ -442,6 +458,18 @@ static inline void
 os_mempool_flags_clear(struct os_mempool *mp, uint8_t flags)
 {
     btdm_mempool_flags_clear((struct btdm_mempool *)mp, flags);
+}
+
+static inline void
+os_mempool_deinit(struct os_mempool *mp)
+{
+    btdm_mempool_deinit((struct btdm_mempool *)mp);
+}
+
+static inline os_error_t
+os_mempool_deinit_all(bool is_controller)
+{
+    return (os_error_t)btdm_mempool_deinit_all(is_controller);
 }
 
 #endif /* !CONFIG_BT_DUAL_MODE_ARCH */

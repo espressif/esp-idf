@@ -1174,6 +1174,7 @@ btdm_osal_elem_mempool_init(btdm_osal_elem_num_t *elem_num)
         if (rc) {
             return -2;
         }
+        btdm_mempool_flags_set(&s_btdm_osal_ev_pool, BTDM_MEMPOOL_F_CONTROLLER);
     }
 
     if (elem_num->co_count) {
@@ -1190,6 +1191,7 @@ btdm_osal_elem_mempool_init(btdm_osal_elem_num_t *elem_num)
         if (rc) {
             return -4;
         }
+        btdm_mempool_flags_set(&s_btdm_osal_co_pool, BTDM_MEMPOOL_F_CONTROLLER);
     }
 
     return 0;
@@ -1200,12 +1202,15 @@ btdm_osal_elem_mempool_deinit(void)
 {
     if (s_btdm_osal_ev_buf) {
         BTDM_OSAL_ASSERT(s_btdm_osal_ev_pool.mp_num_free == s_btdm_osal_ev_pool.mp_num_blocks);
+        btdm_mempool_deinit(&s_btdm_osal_ev_pool);
         btdm_osal_free(s_btdm_osal_ev_buf);
         s_btdm_osal_ev_buf = NULL;
     }
 
+
     if (s_btdm_osal_co_buf) {
         BTDM_OSAL_ASSERT(s_btdm_osal_co_pool.mp_num_free == s_btdm_osal_co_pool.mp_num_blocks);
+        btdm_mempool_deinit(&s_btdm_osal_co_pool);
         btdm_osal_free(s_btdm_osal_co_buf);
         s_btdm_osal_co_buf = NULL;
     }

@@ -102,6 +102,7 @@ hci_driver_util_memory_init(void)
         ESP_LOGE(TAG, "Failed to initialize tx pool");
         goto init_err;
     }
+    btdm_mempool_flags_set(s_hci_driver_util_env.tx_entry_pool, BTDM_MEMPOOL_F_CONTROLLER);
 
     return 0;
 
