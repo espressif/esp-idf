@@ -221,7 +221,7 @@ static void handle_gattc_notify_rx_event_safe(struct bt_le_gattc_notify_rx_event
                  * tearing down a core subscription like the ASCS control point
                  * over one bad PDU would drop every later notification. Tolerate
                  * the bad PDU and keep the subscription. */
-                params->notify(conn, params, event->value, event->len);
+                params->notify(conn, params, NOTIFY_VALUE(event), event->len);
             }
         }
     }
