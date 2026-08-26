@@ -90,7 +90,6 @@ typedef struct {
     uint8_t r[MAX_ECDSA_COMPONENT_LEN];     /**< Must be 4-byte aligned for ECDSA HAL MMIO reads */
     uint8_t s[MAX_ECDSA_COMPONENT_LEN];
     uint8_t sha[MAX_ECDSA_SHA_LEN];
-    size_t sha_len;
     size_t key_len;
 } esp_ecdsa_transparent_sign_hash_operation_t;
 #endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */

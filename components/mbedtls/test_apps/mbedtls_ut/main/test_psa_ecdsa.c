@@ -432,6 +432,9 @@ void test_ecdsa_sign(esp_ecdsa_curve_t curve, const uint8_t *hash, const uint8_t
     size_t plen = 0;
     psa_algorithm_t sha_alg = 0;
 
+#ifdef ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED
+    int64_t elapsed_time;
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
     switch (curve) {
         case ESP_ECDSA_CURVE_SECP256R1:
             hash_len = HASH_LEN;
@@ -488,12 +491,22 @@ void test_ecdsa_sign(esp_ecdsa_curve_t curve, const uint8_t *hash, const uint8_t
     TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
     TEST_ASSERT_NOT_EQUAL(0, priv_key_id);
 
+#ifdef ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED
+    ccomp_timer_start();
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
     status = psa_sign_hash(priv_key_id,
                           alg,
                           hash, hash_len,
                           signature, 2 * plen_bytes,
                           &signature_len);
-
+#ifdef ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED
+    elapsed_time = ccomp_timer_stop();
+    if (plen == 256) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_SIGN_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+    } else if (plen == 384) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P384_SIGN_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+    }
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
     TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
     TEST_ASSERT_TRUE(signature_len == 2 * plen_bytes);
     test_ecdsa_verify(curve, sha, signature, signature + plen_bytes, pub_x, pub_y, PSA_SUCCESS);
@@ -970,10 +983,13 @@ TEST_CASE("mbedtls ECDSA signature generation with software key on SECP256R1", "
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
-    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA software key is disabled by eFuse");
     }
+#if !CONFIG_IDF_TARGET_ESP32S31
+    // TODO: IDF-15703 re-enable TRNG-backed sign on esp32s31 once the TRNG support update lands
     test_ecdsa_sign(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, 0, NULL, ecdsa256_priv);
+#endif
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     test_ecdsa_sign(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, true, 0, NULL, ecdsa256_priv);
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
@@ -985,10 +1001,13 @@ TEST_CASE("mbedtls ECDSA signature generation with software key on SECP384R1", "
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
-    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA software key is disabled by eFuse");
     }
+#if !CONFIG_IDF_TARGET_ESP32S31
+    // TODO: IDF-15703 re-enable TRNG-backed sign on esp32s31 once the TRNG support update lands
     test_ecdsa_sign(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, 0, NULL, ecdsa384_priv);
+#endif
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     test_ecdsa_sign(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, true, 0, NULL, ecdsa384_priv);
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */

@@ -864,7 +864,7 @@ bool esp_efuse_is_ecdsa_p256_curve_supported(void);
  * a private key written into its key registers by software. Returns false if the chip
  * does not support a software key source or if it has been permanently disabled by eFuse.
 */
-bool esp_efuse_is_ecdsa_software_key_allowed(void);
+bool esp_efuse_is_ecdsa_software_key_supported(void);
 #endif /* SOC_ECDSA_SUPPORTED*/
 
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED

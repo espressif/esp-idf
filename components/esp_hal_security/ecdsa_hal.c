@@ -66,6 +66,7 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 #endif
     }
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     else if (use_hw_key) {
         if (!key_mgr_ll_is_supported()) {
             HAL_ASSERT(false && "Key manager is not supported");
@@ -81,6 +82,7 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
     if (conf->mode != ECDSA_MODE_EXPORT_PUBKEY) {
         ecdsa_ll_set_z_mode(conf->sha_mode);
     }
+    ecdsa_ll_set_k_type(ECDSA_K_TYPE_TRNG);
 
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     if (ecdsa_ll_is_deterministic_mode_supported()) {
@@ -116,7 +118,6 @@ static void ecdsa_hal_gen_signature_inner(ecdsa_hal_config_t *conf, const uint8_
 #endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
 
     ecdsa_ll_write_param(ECDSA_PARAM_Z, hash, len);
-
     ecdsa_ll_set_stage(ECDSA_STAGE_LOAD_DONE);
 
     while (ecdsa_ll_get_state() != ECDSA_STATE_GET) {

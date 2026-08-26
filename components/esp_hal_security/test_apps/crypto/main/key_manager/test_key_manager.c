@@ -10,6 +10,7 @@
 #include "esp_efuse_chip.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_crc.h"
+#include "hal/efuse_hal.h"
 #include "hal/key_mgr_hal.h"
 #include "hal/key_mgr_ll.h"
 #include "hal/key_mgr_types.h"
@@ -31,6 +32,7 @@
  * See km_ecdh0_verify.h for details. */
 #include "km_ecdh0_verify.h"
 #include "ecc_impl.h"  /* for P192_LEN / P256_LEN / P384_LEN */
+#include "ecdsa/test_ecdsa.h"
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
 #include "hal/ecdsa_types.h"
@@ -253,14 +255,6 @@ static void key_mgr_test_xts_aes_256_random_mode(void)
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-#if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
-extern void test_ecdsa_export_pubkey(ecdsa_curve_t curve, uint8_t *ecdsa_pub_x, uint8_t *ecdsa_pub_y, bool use_km_key, const uint8_t *sw_key);
-extern void test_ecdsa_export_pubkey_inner(ecdsa_curve_t curve, uint8_t *exported_pub_x, uint8_t *exported_pub_y, bool use_km_key, const uint8_t *sw_key, uint16_t *len);
-#endif
-
-extern void test_ecdsa_sign(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type, const uint8_t *sw_key);
-extern int test_ecdsa_verify(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, uint8_t *pub_x, uint8_t *pub_y);
-extern void test_ecdsa_sign_and_verify(ecdsa_curve_t curve, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key, ecdsa_sign_type_t k_type, const uint8_t *sw_key);
 
 /*
 const uint8_t message[32] = { 0xDF, 0xDE, 0xD7, 0x4A, 0x47, 0xB1, 0x4F, 0x73, 0x00, 0x21, 0x62, 0xC7, 0x66, 0x6D, 0xA3, 0x95, 0x66, 0x19, 0x62, 0x7F, 0x71, 0x7B, 0x3C, 0x66, 0x82, 0xD3, 0x9F, 0x71, 0xAC, 0x9C, 0xC3, 0x39 };

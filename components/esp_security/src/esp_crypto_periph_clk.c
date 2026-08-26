@@ -179,7 +179,6 @@ void esp_crypto_ecdsa_enable_periph_clk(bool enable)
         esp_crypto_common_clk_enable(true);
     }
     ECDSA_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
 #if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
         /* The ECDSA key registers retain a software-supplied key after an
          * operation and ignore direct writes outside of an operation, so the

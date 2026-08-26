@@ -31,6 +31,7 @@
 
 #include "ecdsa_params.h"
 #include "hal_crypto_common.h"
+#include "test_ecdsa.h"
 
 ESP_LOG_ATTR_TAG(TAG, "crypto_test");
 
@@ -482,7 +483,10 @@ TEST(ecdsa, ecdsa_SECP384R1_export_pubkey)
 
 static void test_ecdsa_sw_key_on_curve(ecdsa_curve_t curve, uint8_t *pub_x, uint8_t *pub_y, const uint8_t *priv)
 {
+#if !CONFIG_IDF_TARGET_ESP32S31
+    // TODO: IDF-15703 re-enable TRNG-backed sign_and_verify on esp32s31 once the TRNG support update lands
     test_ecdsa_sign_and_verify(curve, sha, pub_x, pub_y, false, ECDSA_K_TYPE_TRNG, priv);
+#endif
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     test_ecdsa_sign_and_verify(curve, sha, pub_x, pub_y, false, ECDSA_K_TYPE_DETERMINISITIC, priv);
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
@@ -493,7 +497,7 @@ static void test_ecdsa_sw_key_on_curve(ecdsa_curve_t curve, uint8_t *pub_x, uint
 
 TEST(ecdsa, sw_key_SECP192R1_operations)
 {
-    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
     } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
@@ -504,7 +508,7 @@ TEST(ecdsa, sw_key_SECP192R1_operations)
 
 TEST(ecdsa, sw_key_SECP256R1_operations)
 {
-    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
     } else {
         test_ecdsa_sw_key_on_curve(ECDSA_CURVE_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y, ecdsa256_priv);
@@ -514,7 +518,7 @@ TEST(ecdsa, sw_key_SECP256R1_operations)
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
 TEST(ecdsa, sw_key_SECP384R1_operations)
 {
-    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
     } else {
         test_ecdsa_sw_key_on_curve(ECDSA_CURVE_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, ecdsa384_priv);
@@ -522,30 +526,123 @@ TEST(ecdsa, sw_key_SECP384R1_operations)
 }
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
 
+/* Read the key registers back as the little-endian byte string that
+ * ecdsa_ll_write_key() writes */
+static void ecdsa_read_key_regs(uint8_t *key_regs)
+{
+    for (uint16_t i = 0; i < ECDSA_LL_KEY_REG_BYTES; i += 4) {
+        uint32_t word = REG_READ(ECDSA_KEY_0_REG + i);
+        memcpy(key_regs + i, &word, sizeof(word));
+    }
+}
+
 TEST(ecdsa, sw_key_registers_cleared_after_use)
 {
-    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
         return;
     }
 
-    uint8_t r_le[48] = {0};
-    uint8_t s_le[48] = {0};
-    test_ecdsa_sign(ECDSA_CURVE_SECP256R1, sha, r_le, s_le, false, ECDSA_K_TYPE_DETERMINISITIC, ecdsa256_priv);
+    uint8_t sha_le[32] = {0};
+    uint8_t r_le[32] = {0};
+    uint8_t s_le[32] = {0};
+    uint8_t key_regs[ECDSA_LL_KEY_REG_BYTES] = {0};
+    uint8_t expected_key[ECDSA_LL_KEY_REG_BYTES] = {0};
+    memcpy(expected_key, ecdsa256_priv, sizeof(ecdsa256_priv));
+
+    ecdsa_hal_config_t conf = {
+        .mode = ECDSA_MODE_SIGN_GEN,
+        .curve = ECDSA_CURVE_SECP256R1,
+        .sha_mode = ECDSA_Z_USER_PROVIDED,
+        .sign_type = ECDSA_K_TYPE_TRNG,
+        .use_sw_key = true,
+        .sw_key = ecdsa256_priv,
+    };
+    ecc_be_to_le(sha, sha_le, sizeof(sha_le));
+
+    /* Positive control: while the peripheral is still acquired the key
+     * registers hold the key. Without this, the check after release below
+     * would also pass if the registers were not readable at all. */
+    ecdsa_enable_and_reset();
+    ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, sizeof(r_le));
+    ecdsa_read_key_regs(key_regs);
+    ecdsa_disable();
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_key, key_regs, sizeof(key_regs));
 
     /* Releasing the peripheral must have scrubbed the key registers.
      * Re-enable only the bus clock (without the reset that a regular acquire
-     * performs) so that any leftover key material would still be visible. */
+     * performs) so that any leftover key material would still be visible.
+     * The ECC clock is enabled to hold the shared crypto clock on. */
+    esp_crypto_ecc_enable_periph_clk(true);
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(true);
     }
-    for (uint16_t i = 0; i < ECDSA_LL_KEY_REG_BYTES; i += 4) {
-        TEST_ASSERT_EQUAL_HEX32(0, REG_READ(ECDSA_KEY_0_REG + i));
-    }
+    ecdsa_read_key_regs(key_regs);
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(false);
     }
+    esp_crypto_ecc_enable_periph_clk(false);
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, key_regs, sizeof(key_regs));
 }
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+/* RFC 6979 Appendix A.2.5: NIST P-256 (secp256r1), hash SHA-256, message "sample".
+ * The values are stored big-endian, exactly as printed in the RFC. The peripheral
+ * works little-endian, so the key and the expected r and s are byte-reversed before use. */
+static const uint8_t rfc6979_p256_priv_be[32] = {
+    0xC9, 0xAF, 0xA9, 0xD8, 0x45, 0xBA, 0x75, 0x16,
+    0x6B, 0x5C, 0x21, 0x57, 0x67, 0xB1, 0xD6, 0x93,
+    0x4E, 0x50, 0xC3, 0xDB, 0x36, 0xE8, 0x9B, 0x12,
+    0x7B, 0x8A, 0x62, 0x2B, 0x12, 0x0F, 0x67, 0x21,
+};
+static const uint8_t rfc6979_p256_sample_hash_be[32] = {  /* SHA-256("sample") */
+    0xAF, 0x2B, 0xDB, 0xE1, 0xAA, 0x9B, 0x6E, 0xC1,
+    0xE2, 0xAD, 0xE1, 0xD6, 0x94, 0xF4, 0x1F, 0xC7,
+    0x1A, 0x83, 0x1D, 0x02, 0x68, 0xE9, 0x89, 0x15,
+    0x62, 0x11, 0x3D, 0x8A, 0x62, 0xAD, 0xD1, 0xBF,
+};
+static const uint8_t rfc6979_p256_sample_r_be[32] = {
+    0xEF, 0xD4, 0x8B, 0x2A, 0xAC, 0xB6, 0xA8, 0xFD,
+    0x11, 0x40, 0xDD, 0x9C, 0xD4, 0x5E, 0x81, 0xD6,
+    0x9D, 0x2C, 0x87, 0x7B, 0x56, 0xAA, 0xF9, 0x91,
+    0xC3, 0x4D, 0x0E, 0xA8, 0x4E, 0xAF, 0x37, 0x16,
+};
+static const uint8_t rfc6979_p256_sample_s_be[32] = {
+    0xF7, 0xCB, 0x1C, 0x94, 0x2D, 0x65, 0x7C, 0x41,
+    0xD4, 0x36, 0xC7, 0xA1, 0xB6, 0xE2, 0x9F, 0x65,
+    0xF3, 0xE9, 0x00, 0xDB, 0xB9, 0xAF, 0xF4, 0x06,
+    0x4D, 0xC4, 0xAB, 0x2F, 0x84, 0x3A, 0xCD, 0xA8,
+};
+
+/* Known-answer test for the deterministic-K derivation of the ECDSA peripheral.
+ * A deterministic signature over the fixed key and message above must equal the
+ * RFC 6979 vector. */
+TEST(ecdsa, sw_key_SECP256R1_deterministic_rfc6979_kat)
+{
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
+        return;
+    }
+
+    /* test_ecdsa_sign expects the private key little-endian and the hash big-endian,
+     * and returns r and s little-endian. */
+    uint8_t priv_le[32] = {0};
+    ecc_be_to_le(rfc6979_p256_priv_be, priv_le, 32);
+
+    uint8_t r_le[32] = {0};
+    uint8_t s_le[32] = {0};
+    test_ecdsa_sign(ECDSA_CURVE_SECP256R1, (uint8_t *)rfc6979_p256_sample_hash_be,
+                    r_le, s_le, false, ECDSA_K_TYPE_DETERMINISITIC, priv_le);
+
+    uint8_t expected_r_le[32] = {0};
+    uint8_t expected_s_le[32] = {0};
+    ecc_be_to_le(rfc6979_p256_sample_r_be, expected_r_le, 32);
+    ecc_be_to_le(rfc6979_p256_sample_s_be, expected_s_le, 32);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_r_le, r_le, 32);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_s_le, s_le, 32);
+}
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 #endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
 
 TEST_GROUP_RUNNER(ecdsa)
@@ -597,5 +694,8 @@ TEST_GROUP_RUNNER(ecdsa)
     RUN_TEST_CASE(ecdsa, sw_key_SECP384R1_operations)
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
     RUN_TEST_CASE(ecdsa, sw_key_registers_cleared_after_use)
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    RUN_TEST_CASE(ecdsa, sw_key_SECP256R1_deterministic_rfc6979_kat)
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 #endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
 }

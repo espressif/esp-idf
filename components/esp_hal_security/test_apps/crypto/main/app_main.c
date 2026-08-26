@@ -36,10 +36,10 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(key_manager);
 #endif
 
-#if (CONFIG_SOC_ECDSA_SUPPORTED && CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS && CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS) \
-    || CONFIG_SOC_ECDSA_SUPPORT_SOFTWARE_KEY
-    /* The eFuse-key test cases additionally need CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS,
-     * see the gating inside the group runner; the software-key test cases need no eFuse */
+#if CONFIG_SOC_ECDSA_SUPPORTED
+    /* The group runner gates its own cases: the eFuse-key cases need the FPGA and ECDSA
+     * test options, and the software-key cases need no eFuse. If none apply, the group
+     * runs no cases. This keeps the gating in one place. */
     RUN_TEST_GROUP(ecdsa)
 #endif
 

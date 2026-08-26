@@ -22,6 +22,8 @@
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
 
+#include "mbedtls/platform_util.h"
+
 #include "psa_crypto_driver_esp_ecdsa.h"
 #include "include/psa_crypto_driver_esp_ecdsa_utilities.h"
 #include "sdkconfig.h"
@@ -47,6 +49,8 @@ psa_status_t esp_ecdsa_transparent_sign_hash_start(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    memset(operation, 0, sizeof(esp_ecdsa_transparent_sign_hash_operation_t));
+
     /* Any condition the peripheral cannot handle returns PSA_ERROR_NOT_SUPPORTED
      * so that the PSA core falls back to the builtin implementation */
 
@@ -56,7 +60,7 @@ psa_status_t esp_ecdsa_transparent_sign_hash_start(
     }
 
     // Check if the software key source has been permanently disabled by eFuse
-    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+    if (!esp_efuse_is_ecdsa_software_key_supported()) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -94,12 +98,10 @@ psa_status_t esp_ecdsa_transparent_sign_hash_start(
         return status;
     }
 
-    if ((curve == ESP_ECDSA_CURVE_SECP192R1 && hash_length != ECDSA_SHA_LEN) ||
-        (curve == ESP_ECDSA_CURVE_SECP256R1 && hash_length != ECDSA_SHA_LEN)
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-        || (curve == ESP_ECDSA_CURVE_SECP384R1 && hash_length != ECDSA_SHA_LEN_P384)
-#endif
-    ) {
+    /* esp_ecdsa_validate_sha_alg has already pinned the hash algorithm to the curve,
+     * so the expected digest length is exactly that hash's output length. PSA does not
+     * force hash_length to match the algorithm, so the length is still checked here. */
+    if (hash_length != PSA_HASH_LENGTH(PSA_ALG_SIGN_GET_HASH(alg))) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -109,11 +111,9 @@ psa_status_t esp_ecdsa_transparent_sign_hash_start(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    memset(operation, 0, sizeof(esp_ecdsa_transparent_sign_hash_operation_t));
     operation->alg = alg;
     operation->curve = curve;
     operation->key_len = key_len;
-    operation->sha_len = hash_length;
     esp_ecdsa_change_endianness(key_buffer, operation->key, key_len);
     esp_ecdsa_change_endianness(hash, operation->sha, key_len);
 
@@ -192,7 +192,7 @@ psa_status_t esp_ecdsa_transparent_sign_hash_abort(esp_ecdsa_transparent_sign_ha
 {
     if (operation) {
         /* Zeroizes the plaintext private key copy held in the operation context */
-        memset(operation, 0, sizeof(esp_ecdsa_transparent_sign_hash_operation_t));
+        mbedtls_platform_zeroize(operation, sizeof(esp_ecdsa_transparent_sign_hash_operation_t));
     }
     return PSA_SUCCESS;
 }
@@ -208,22 +208,16 @@ psa_status_t esp_ecdsa_transparent_sign_hash(
     size_t signature_size,
     size_t *signature_length)
 {
-    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
-
     esp_ecdsa_transparent_sign_hash_operation_t operation;
 
-    status = esp_ecdsa_transparent_sign_hash_start(&operation, attributes, key_buffer, key_buffer_size, alg, hash, hash_length);
-    if (status != PSA_SUCCESS) {
-        esp_ecdsa_transparent_sign_hash_abort(&operation);
-        return status;
+    psa_status_t status = esp_ecdsa_transparent_sign_hash_start(&operation, attributes, key_buffer,
+                                                                key_buffer_size, alg, hash, hash_length);
+    if (status == PSA_SUCCESS) {
+        status = esp_ecdsa_transparent_sign_hash_complete(&operation, signature, signature_size, signature_length);
     }
 
-    status = esp_ecdsa_transparent_sign_hash_complete(&operation, signature, signature_size, signature_length);
-    if (status != PSA_SUCCESS) {
-        esp_ecdsa_transparent_sign_hash_abort(&operation);
-        return status;
-    }
-
-    return esp_ecdsa_transparent_sign_hash_abort(&operation);
+    /* Always scrub the plaintext private key copy from the stack, on success and failure. */
+    esp_ecdsa_transparent_sign_hash_abort(&operation);
+    return status;
 }
 #endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
