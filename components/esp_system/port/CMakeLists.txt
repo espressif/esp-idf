@@ -45,6 +45,10 @@ elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
                      "arch/riscv/debug_stubs.c")
 endif()
 
+if(CONFIG_ESP_SYSTEM_MEMPROT AND CONFIG_ESP_SYSTEM_MEMPROT_PMS AND NOT CONFIG_IDF_TARGET_ESP32S2)
+    list(APPEND srcs "panic_memprot.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})
