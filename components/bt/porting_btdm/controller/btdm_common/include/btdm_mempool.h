@@ -330,12 +330,30 @@ void e_btdm_mempool_module_init(void);
 #define btdm_mempool_module_init BTDM_MEMPOOL_EXT_FUNC(btdm_mempool_module_init)
 
 /**
- * Deinitialize the memory pool module.
+ * Deinitialize a memory pool.
+ *
+ * @param mp Pointer to memory pool
+ */
+void e_btdm_mempool_deinit(struct btdm_mempool *mp);
+#define btdm_mempool_deinit BTDM_MEMPOOL_EXT_FUNC(btdm_mempool_deinit)
+
+/**
+ * Deinitialize all of memory pools.
  *
  * @param is_controller Whether called from controller.
+ *
+ * @return BTDM_OSAL_OK on success; BTDM_OSAL_INVALID_PARM if not found corresponding memory pools.
  */
-void e_btdm_mempool_deinit(bool is_controller);
-#define btdm_mempool_deinit BTDM_MEMPOOL_EXT_FUNC(btdm_mempool_deinit)
+btdm_osal_error_t e_btdm_mempool_deinit_all(bool is_controller);
+#define btdm_mempool_deinit_all BTDM_MEMPOOL_EXT_FUNC(btdm_mempool_deinit_all)
+
+/**
+ * Check if there are any live memory pools.
+ *
+ * @return true if there are any live memory pools; false otherwise.
+ */
+bool e_btdm_mempool_has_live_pool(void);
+#define btdm_mempool_has_live_pool BTDM_MEMPOOL_EXT_FUNC(btdm_mempool_has_live_pool)
 
 #ifdef __cplusplus
 }

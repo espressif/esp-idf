@@ -18,6 +18,11 @@ static STAILQ_HEAD(, btdm_mempool) s_btdm_osal_mempool_list = STAILQ_HEAD_INITIA
 static btdm_osal_error_t
 e_btdm_mempool_mem_free(struct btdm_mempool *mp)
 {
+    /*  Extended mempool has its own free logic */
+    if (mp->mp_flags & BTDM_MEMPOOL_F_EXT) {
+        return BTDM_OSAL_OK;
+    }
+
     /* For runtime allocation mode, check whether all blocks have been freed */
     if (!(mp->mp_flags & BTDM_MEMPOOL_F_RUNTIME)) {
         return BTDM_OSAL_EINVAL;
@@ -588,8 +593,15 @@ e_btdm_mempool_module_init(void)
 }
 
 void
-e_btdm_mempool_deinit(bool is_controller)
+e_btdm_mempool_deinit(struct btdm_mempool *mp)
 {
+    btdm_mempool_unregister(mp);
+}
+
+btdm_osal_error_t
+e_btdm_mempool_deinit_all(bool is_controller)
+{
+    btdm_osal_error_t err = BTDM_OSAL_INVALID_PARM;
     struct btdm_mempool *mp = NULL;
     struct btdm_mempool *next = NULL;
 
@@ -601,8 +613,17 @@ e_btdm_mempool_deinit(bool is_controller)
             next = STAILQ_NEXT(mp, mp_list);
             btdm_mempool_unregister(mp);
             mp = next;
+            err = BTDM_OSAL_OK;
         } else {
             mp = STAILQ_NEXT(mp, mp_list);
         }
     }
+
+    return  err;
+}
+
+bool
+e_btdm_mempool_has_live_pool(void)
+{
+    return  !STAILQ_EMPTY(&s_btdm_osal_mempool_list);
 }
