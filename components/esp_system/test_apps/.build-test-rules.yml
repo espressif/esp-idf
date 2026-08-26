@@ -1,6 +1,8 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_system/test_apps/cache_panic:
+  disable:
+    - if: (CONFIG_NAME == "panic_iram" and IDF_TARGET not in ["esp32p4", "esp32s31"])
   depends_components:
     - *common_components
     - spi_flash  # esp_system is included by default
