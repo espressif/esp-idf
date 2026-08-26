@@ -404,6 +404,7 @@ conditional_include_dict = {
     'SOC_DIG_SIGN_SUPPORTED': ['api-reference/peripherals/ds.rst'],
     'SOC_ECDSA_SUPPORTED': ['api-reference/peripherals/ecdsa.rst'],
     'SOC_HMAC_SUPPORTED': ['api-reference/peripherals/hmac.rst'],
+    'SOC_SHA_SUPPORT_SM3': ['api-reference/peripherals/sm3.rst'],
     'SOC_GDMA_SUPPORT_CRC': ['api-reference/peripherals/async_crc.rst'],
     'SOC_ASYNC_MEMCPY_SUPPORTED': ['api-reference/peripherals/async_memcpy.rst'],
     'SOC_DMA2D_SUPPORTED': ['api-reference/peripherals/async_color_convert.rst'],
