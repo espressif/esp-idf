@@ -269,6 +269,34 @@
 #define BLE_PERIPH_PSEUDO_ADDR_BOND   FALSE
 #endif
 
+/* Refuse a re-pairing that would end up weaker than the bond it replaces. */
+#if (UC_BT_BLE_SMP_HARDENED_REPAIRING == TRUE)
+#define BLE_SMP_HARDENED_REPAIRING    TRUE
+#else
+#define BLE_SMP_HARDENED_REPAIRING    FALSE
+#endif
+
+/* Erase the NVS bond when pairing/encryption fails while local device is Central. */
+#if (UC_BT_BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL == TRUE)
+#define BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL TRUE
+#else
+#define BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL FALSE
+#endif
+
+/* Erase the NVS bond when pairing/encryption fails while local device is Peripheral. */
+#if (UC_BT_BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_PERIPHERAL == TRUE)
+#define BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_PERIPHERAL TRUE
+#else
+#define BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_PERIPHERAL FALSE
+#endif
+
+/* Discard the local LE keys when the peer rejects encryption with "PIN or Key Missing". */
+#if (UC_BT_BLE_SMP_UNBOND_ON_KEY_MISSING == TRUE)
+#define BLE_SMP_UNBOND_ON_KEY_MISSING TRUE
+#else
+#define BLE_SMP_UNBOND_ON_KEY_MISSING FALSE
+#endif
+
 #if (UC_BT_BLE_ENABLED ==TRUE)
 #if (UC_BT_BLE_42_FEATURES_SUPPORTED == TRUE || BLE_50_FEATURE_SUPPORT == FALSE)
 #define BLE_42_FEATURE_SUPPORT   TRUE

@@ -5054,6 +5054,18 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         bdcpy(sec_event.auth_cmpl.bd_addr, bda);
 #if BLE_INCLUDED == TRUE
         BTM_ReadDevInfo(bda, &sec_event.auth_cmpl.dev_type, &sec_event.auth_cmpl.addr_type);
+        {
+            /* BTM_GetRole() is BR/EDR-only; take the LE role from the ACL or sec record. */
+            tACL_CONN *p_acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
+            if (p_acl != NULL) {
+                sec_event.auth_cmpl.is_central = (p_acl->link_role == HCI_ROLE_MASTER);
+            } else {
+                tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bda);
+                if (p_dev_rec != NULL) {
+                    sec_event.auth_cmpl.is_central = p_dev_rec->role_master;
+                }
+            }
+        }
 #endif
         p_name = BTM_SecReadDevName(bda);
         if (p_name != NULL) {
@@ -5062,11 +5074,38 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
             sec_event.auth_cmpl.bd_name[0] = '\0';
         }
         if (p_data->complt.reason != 0) {
+            BOOLEAN remove_bond = FALSE;
+
             sec_event.auth_cmpl.fail_reason = BTA_DM_AUTH_CONVERT_SMP_CODE(((UINT8)p_data->complt.reason));
-            /* delete this device entry from Sec Dev DB */
-            APPL_TRACE_WARNING("%s remove bond,rsn %d, BDA:0x%02X%02X%02X%02X%02X%02X", __func__, sec_event.auth_cmpl.fail_reason,
-                            bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
-            bta_dm_remove_sec_dev_entry(bda);
+            sec_event.auth_cmpl.keep_bond = p_data->complt.keep_bond;
+            if (p_data->complt.keep_bond) {
+                /* Local policy refused the procedure (hardened re-pairing). The bond is
+                   what the check protects, so leave the Sec Dev DB and NVS alone. */
+                APPL_TRACE_WARNING("%s keep bond after local refusal,rsn %d, BDA:0x%02X%02X%02X%02X%02X%02X",
+                                   __func__, sec_event.auth_cmpl.fail_reason,
+                                   bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            } else if (sec_event.auth_cmpl.is_central) {
+#if (BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL == TRUE)
+                remove_bond = TRUE;
+#endif
+            } else {
+#if (BLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_PERIPHERAL == TRUE)
+                remove_bond = TRUE;
+#endif
+            }
+            if (remove_bond) {
+                /* delete this device entry from Sec Dev DB */
+                APPL_TRACE_WARNING("%s remove bond,rsn %d, role=%s, BDA:0x%02X%02X%02X%02X%02X%02X",
+                                   __func__, sec_event.auth_cmpl.fail_reason,
+                                   sec_event.auth_cmpl.is_central ? "central" : "peripheral",
+                                   bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+                bta_dm_remove_sec_dev_entry(bda);
+            } else if (!p_data->complt.keep_bond) {
+                APPL_TRACE_WARNING("%s keep bond after pairing fail,rsn %d, role=%s, BDA:0x%02X%02X%02X%02X%02X%02X",
+                                   __func__, sec_event.auth_cmpl.fail_reason,
+                                   sec_event.auth_cmpl.is_central ? "central" : "peripheral",
+                                   bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            }
         } else {
             sec_event.auth_cmpl.success = TRUE;
             if (!p_data->complt.smp_over_br) {
