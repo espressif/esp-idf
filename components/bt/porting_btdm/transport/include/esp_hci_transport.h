@@ -36,6 +36,8 @@ typedef enum {
     HCI_TRANSPORT_USB,          /*!< USB Transport Mode */
 } hci_trans_mode_t;
 
+#define HCI_TRANSPORT_CMD_SZ                            (260)
+
 /**
  * @brief Initialize the HCI transport layer.
  *        It should be called before using any other functions in the transport layer.
