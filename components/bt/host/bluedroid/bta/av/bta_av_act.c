@@ -1348,6 +1348,7 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
     int     xx;
     UINT8   mask;
     tBTA_AV_LCB *p_lcb = NULL;
+    tBTA_AV_RCB *p_rcb = NULL;
 
     APPL_TRACE_DEBUG("bta_av_sig_chg event: %d", event);
     if (event == AVDT_CONNECT_IND_EVT) {
@@ -1422,6 +1423,20 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
                         (bdcmp(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr) == 0)) {
                     p_cb->p_scb[xx]->disc_rsn = p_data->str_msg.hdr.offset;
                     bta_av_ssm_execute(p_cb->p_scb[xx], BTA_AV_AVDT_DISCONNECT_EVT, NULL);
+                }
+            }
+        }
+
+        /* The acceptor RCB of this link gets its shdl only when a stream opens. If no stream
+         * opened, nothing deletes the RCB and its AVCTP ccb leaks until the device reboots. */
+        if (p_lcb && p_lcb->lidx != 0 && p_lcb->lidx != (BTA_AV_NUM_LINKS + 1)) {
+            for (xx = 0; xx < BTA_AV_NUM_RCB; xx++) {
+                p_rcb = &p_cb->rcb[xx];
+                if (p_rcb->handle != BTA_AV_RC_HANDLE_NONE && p_rcb->lidx == p_lcb->lidx &&
+                        p_rcb->shdl == 0 && !(p_rcb->status & BTA_AV_RC_CONN_MASK)) {
+                    APPL_TRACE_DEBUG("bta_av_sig_chg: delete unused rcb[%d] handle:%d lidx:%d", xx,
+                                     p_rcb->handle, p_rcb->lidx);
+                    bta_av_del_rc(p_rcb);
                 }
             }
         }
