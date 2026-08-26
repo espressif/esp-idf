@@ -72,6 +72,15 @@ struct bt_le_gattc_notify_rx_event {
     uint8_t *value;
 };
 
+/* Neither adapter allocates a buffer for a zero-length notification, but NULL data is
+ * how gatt.c completes an unsubscribe: a lib notify handler that sees it drops its
+ * subscription. A zero-length notification is a real PDU (BASS sends one for an emptied
+ * Broadcast Receive State), so keep the pointer non-NULL when handing it to the lib.
+ */
+#define NOTIFY_VALUE(_event) \
+    ((const void *)((_event)->value != NULL ? (const uint8_t *)(_event)->value \
+                                            : (const uint8_t *)""))
+
 struct bt_le_gatts_notify_tx_event {
     bool     is_notify;
     uint16_t conn_handle;

@@ -24,6 +24,17 @@
 
 #define CONN_HANDLE_INIT        0xFFFF
 
+/* Number of sink streams the sample drives towards the Acceptor (one per sink ASE,
+ * so a stereo Acceptor gets one stream per channel).
+ *
+ * The same stream objects are reused for unicast and, after a CAP handover, for
+ * broadcast, so the count is bounded by both the number of sink ASEs that can be
+ * discovered on the Acceptor and the number of broadcast source streams that can
+ * be created locally.
+ */
+#define SINK_STREAM_COUNT       MIN(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT, \
+                                    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
+
 #if CONFIG_EXAMPLE_UNICAST
 #define LOCAL_DEVICE_NAME       "CAP Initiator"
 

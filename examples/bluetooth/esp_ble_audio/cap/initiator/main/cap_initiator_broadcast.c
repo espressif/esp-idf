@@ -18,20 +18,44 @@ ESP_BLE_AUDIO_BAP_LC3_BROADCAST_PRESET_16_2_1_DEFINE(broadcast_preset_16_2_1,
                                                      ESP_BLE_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static esp_ble_audio_cap_broadcast_source_t *broadcast_source;
-static esp_ble_audio_cap_stream_t broadcast_stream;
+static esp_ble_audio_cap_stream_t broadcast_streams[SINK_STREAM_COUNT];
+
+/* One BIS per channel. The subgroup codec configuration is shared, so the channel
+ * allocation is carried per BIS as Codec Specific Configuration.
+ */
+static const esp_ble_audio_location_t bis_locations[] = {
+    ESP_BLE_AUDIO_LOCATION_FRONT_LEFT,
+    ESP_BLE_AUDIO_LOCATION_FRONT_RIGHT,
+};
+_Static_assert(ARRAY_SIZE(bis_locations) >= SINK_STREAM_COUNT,
+               "Need one channel allocation per broadcast stream");
+
+static uint8_t bis_data[SINK_STREAM_COUNT][6];
+
+static int broadcast_stream_index(const esp_ble_audio_bap_stream_t *stream)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+        if (stream == &broadcast_streams[i].bap_stream) {
+            return (int)i;
+        }
+    }
+
+    return -1;
+}
 
 static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
     esp_ble_audio_cap_stream_t *cap_stream;
     int err;
 
-    ESP_LOGI(TAG, "[SRC #0] Stream started");
+    ESP_LOGI(TAG, "[SRC #%d] Stream started", broadcast_stream_index(stream));
 
     cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
     err = cap_initiator_tx_register_stream(cap_stream, true);
     if (err) {
-        ESP_LOGE(TAG, "[SRC #0] Failed to register TX, err %d", err);
+        ESP_LOGE(TAG, "[SRC #%d] Failed to register TX, err %d",
+                 broadcast_stream_index(stream), err);
     }
 }
 
@@ -39,7 +63,8 @@ static void broadcast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint
 {
     esp_ble_audio_cap_stream_t *cap_stream;
 
-    ESP_LOGI(TAG, "[SRC #0] Stream stopped, reason 0x%02x", reason);
+    ESP_LOGI(TAG, "[SRC #%d] Stream stopped, reason 0x%02x",
+             broadcast_stream_index(stream), reason);
 
     cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
@@ -50,7 +75,8 @@ static void broadcast_stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream,
 {
     esp_ble_audio_cap_stream_t *cap_stream;
 
-    ESP_LOGI(TAG, "[SRC #0] ISO disconnected, reason 0x%02x", reason);
+    ESP_LOGI(TAG, "[SRC #%d] ISO disconnected, reason 0x%02x",
+             broadcast_stream_index(stream), reason);
 
     cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
@@ -135,13 +161,11 @@ static uint8_t *per_adv_data_get(uint8_t *data_len)
 
 int cap_initiator_broadcast_start(void)
 {
-    esp_ble_audio_cap_initiator_broadcast_stream_param_t stream_params = {
-        .stream = &broadcast_stream,
-    };
+    esp_ble_audio_cap_initiator_broadcast_stream_param_t stream_params[SINK_STREAM_COUNT] = {0};
     esp_ble_audio_cap_initiator_broadcast_subgroup_param_t subgroup_param = {
         .codec_cfg = &broadcast_preset_16_2_1.codec_cfg,
-        .stream_params = &stream_params,
-        .stream_count = 1,
+        .stream_params = stream_params,
+        .stream_count = ARRAY_SIZE(stream_params),
     };
     const esp_ble_audio_cap_initiator_broadcast_create_param_t create_param = {
         .qos = &broadcast_preset_16_2_1.qos,
@@ -159,6 +183,22 @@ int cap_initiator_broadcast_start(void)
     int err;
 
     ESP_LOGI(TAG, "Creating broadcast source");
+
+    for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
+        const esp_ble_audio_location_t loc = bis_locations[i];
+
+        /* LTV: length, type, 4-octet Audio_Channel_Allocation (little endian) */
+        bis_data[i][0] = 5;
+        bis_data[i][1] = ESP_BLE_AUDIO_CODEC_CFG_CHAN_ALLOC;
+        bis_data[i][2] = (uint8_t)loc;
+        bis_data[i][3] = (uint8_t)(loc >> 8);
+        bis_data[i][4] = (uint8_t)(loc >> 16);
+        bis_data[i][5] = (uint8_t)(loc >> 24);
+
+        stream_params[i].stream = &broadcast_streams[i];
+        stream_params[i].data = bis_data[i];
+        stream_params[i].data_len = sizeof(bis_data[i]);
+    }
 
     err = esp_ble_audio_cap_initiator_broadcast_audio_create(&create_param, &broadcast_source);
     if (err) {
@@ -212,7 +252,9 @@ end:
 
 int cap_initiator_broadcast_init(void)
 {
-    esp_ble_audio_cap_stream_ops_register(&broadcast_stream, &broadcast_stream_ops);
+    for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+        esp_ble_audio_cap_stream_ops_register(&broadcast_streams[i], &broadcast_stream_ops);
+    }
 
     ESP_LOGI(TAG, "CAP initiator broadcast initialized");
 

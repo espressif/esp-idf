@@ -27,8 +27,7 @@ static struct bt_le_ext_adv *ext_adv_find(uint8_t adv_handle)
     struct bt_le_ext_adv *adv = NULL;
 
     for (size_t i = 0; i < ARRAY_SIZE(ext_adv_pool); i++) {
-        if (atomic_test_bit(ext_adv_pool[i].flags,
-                            BT_PER_ADV_PARAMS_SET) &&
+        if (atomic_test_bit(ext_adv_pool[i].flags, BT_PER_ADV_PARAMS_SET) &&
                 ext_adv_pool[i].handle == adv_handle) {
             LOG_DBG("ExtAdvFound[%u][%u]", i, adv_handle);
             adv = &ext_adv_pool[i];
@@ -44,8 +43,7 @@ static struct bt_le_ext_adv *ext_adv_new(void)
     struct bt_le_ext_adv *adv = NULL;
 
     for (size_t i = 0; i < ARRAY_SIZE(ext_adv_pool); i++) {
-        if (atomic_test_bit(ext_adv_pool[i].flags,
-                            BT_PER_ADV_PARAMS_SET) == false) {
+        if (atomic_test_bit(ext_adv_pool[i].flags, BT_PER_ADV_PARAMS_SET) == false) {
             adv = &ext_adv_pool[i];
 
             memset(adv, 0, sizeof(*adv));
@@ -159,4 +157,24 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
     info->per_adv_state = BT_LE_PER_ADV_STATE_ENABLED;
 
     return 0;
+}
+
+_LIB_ONLY
+struct bt_le_ext_adv *bt_le_ext_adv_lookup_addr(const bt_addr_le_t *adv_addr, uint8_t sid)
+{
+    struct bt_le_ext_adv *adv = NULL;
+
+    BT_LE_ASSERT(adv_addr);
+
+    for (size_t i = 0; i < ARRAY_SIZE(ext_adv_pool); i++) {
+        if (atomic_test_bit(ext_adv_pool[i].flags, BT_PER_ADV_PARAMS_SET) &&
+                bt_addr_le_eq(&ext_adv_pool[i].addr, adv_addr) &&
+                ext_adv_pool[i].sid == sid) {
+            LOG_INF("ExtAdvLookupAddrFound[%u][%u]", i, sid);
+            adv = &ext_adv_pool[i];
+            break;
+        }
+    }
+
+    return adv;
 }

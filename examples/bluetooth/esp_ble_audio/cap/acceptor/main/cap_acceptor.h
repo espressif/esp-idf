@@ -45,9 +45,23 @@
                              ESP_BLE_AUDIO_CONTEXT_TYPE_MEDIA | \
                              ESP_BLE_AUDIO_CONTEXT_TYPE_GAME)
 
+/* Number of stream objects the application backs per direction.
+ *
+ * Sink: one per exposed ASE, so a stereo Initiator can configure two independent
+ * sink streams. The CAP handover procedures hand over all streaming sink streams
+ * at once (CAP 7.3.1.10 applies to every CIS carrying Initiator-to-Acceptor audio),
+ * so the sink pool has to match the number of ASEs that can be configured.
+ *
+ * Source: one. Only the bidirectional (call) configuration uses it, and the TX
+ * pump in cap_acceptor_unicast.c drives a single stream. A Config request beyond
+ * these counts is answered with NO_MEM by stream_alloc().
+ */
+#define ACCEPTOR_SINK_STREAM_COUNT      CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT
+#define ACCEPTOR_SOURCE_STREAM_COUNT    1
+
 struct peer_config {
-    esp_ble_audio_cap_stream_t source_stream;
-    esp_ble_audio_cap_stream_t sink_stream;
+    esp_ble_audio_cap_stream_t source_streams[ACCEPTOR_SOURCE_STREAM_COUNT];
+    esp_ble_audio_cap_stream_t sink_streams[ACCEPTOR_SINK_STREAM_COUNT];
     uint16_t conn_handle;
     /* Assistant's BD addr — used by Bluedroid pa_sync_with_past to set per-peer
      * PAST receive params. Populated at ACL_CONNECT, cleared at ACL_DISCONNECT. */

@@ -407,6 +407,16 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
                                                           uint8_t sid);
 
 /**
+ * @brief Look up a local extended advertising set by advertiser address.
+ *
+ * @param adv_addr Advertiser address.
+ * @param sid      The advertising set ID.
+ *
+ * @return Extended advertising set object or NULL if not found.
+ */
+struct bt_le_ext_adv *bt_le_ext_adv_lookup_addr(const bt_addr_le_t *adv_addr, uint8_t sid);
+
+/**
  * @brief Register periodic advertising sync callbacks.
  *
  * Adds the callback structure to the list of callback structures for periodic

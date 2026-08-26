@@ -11,21 +11,16 @@
 #include <string.h>
 #include <errno.h>
 
-#include "cap_initiator.h"
+#include "cap_handover.h"
 
-/* One slot per stream the sample can transmit on, in every enabled mode: the
- * unicast sink streams and the broadcast source streams are distinct objects.
- */
-static struct tx_stream tx_streams[SINK_STREAM_COUNT *
-                                   (IS_ENABLED(CONFIG_EXAMPLE_UNICAST) +
-                                    IS_ENABLED(CONFIG_EXAMPLE_BROADCAST))];
+/* The same stream objects move between unicast and broadcast, so one slot each. */
+static struct tx_stream tx_streams[SINK_STREAM_COUNT];
 
 static const char *cap_stream_tx_label(const esp_ble_audio_cap_stream_t *cap_stream)
 {
     esp_ble_audio_bap_ep_info_t ep_info = {0};
 
     if (cap_stream == NULL || cap_stream->bap_stream.ep == NULL) {
-        /* Broadcast source streams do not expose an ep; always TX from SRC. */
         return "SRC";
     }
 
@@ -62,7 +57,7 @@ static bool tx_stream_is_streaming(const struct tx_stream *tx_stream)
     return (ep_info.state == ESP_BLE_AUDIO_BAP_EP_STATE_STREAMING);
 }
 
-static void cap_initiator_tx_send(struct tx_stream *tx_stream)
+static void cap_handover_tx_send(struct tx_stream *tx_stream)
 {
     const char *label;
     int err;
@@ -102,7 +97,7 @@ static void cap_initiator_tx_send(struct tx_stream *tx_stream)
     tx_stream->seq_num++;
 }
 
-void cap_initiator_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_data)
+void cap_handover_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_data)
 {
     for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
         if (tx_streams[i].stream && &tx_streams[i].stream->bap_stream == stream) {
@@ -120,10 +115,10 @@ static void tx_scheduler_cb(void *arg)
 {
     struct tx_stream *tx_stream = arg;
 
-    cap_initiator_tx_send(tx_stream);
+    cap_handover_tx_send(tx_stream);
 }
 
-int cap_initiator_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, bool is_broadcast)
+int cap_handover_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, bool is_broadcast)
 {
     int err;
 
@@ -168,7 +163,7 @@ int cap_initiator_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, boo
                      cap_stream->bap_stream.qos->sdu,
                      cap_stream->bap_stream.qos->interval);
 
-            cap_initiator_tx_send(&tx_streams[i]);
+            cap_handover_tx_send(&tx_streams[i]);
             return 0;
         }
     }
@@ -178,7 +173,7 @@ int cap_initiator_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, boo
     return -ENOMEM;
 }
 
-int cap_initiator_tx_unregister_stream(esp_ble_audio_cap_stream_t *cap_stream)
+int cap_handover_tx_unregister_stream(esp_ble_audio_cap_stream_t *cap_stream)
 {
     int err;
 
@@ -212,7 +207,7 @@ int cap_initiator_tx_unregister_stream(esp_ble_audio_cap_stream_t *cap_stream)
     return -ENODATA;
 }
 
-void cap_initiator_tx_init(void)
+void cap_handover_tx_init(void)
 {
     int err;
 
