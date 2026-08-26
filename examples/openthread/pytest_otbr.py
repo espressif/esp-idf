@@ -100,8 +100,9 @@ PORT_MAPPING = {
     'ESPPORT2': 'esp32s3',
     'ESPPORT3': 'esp32c6',
     'ESPPORT4': 'esp32c5',
+    'ESPPORT5': 'esp32s31',
 }
-ESPPORT1, ESPPORT2, ESPPORT3, ESPPORT4 = (os.getenv(name) for name in PORT_MAPPING)
+ESPPORT1, ESPPORT2, ESPPORT3, ESPPORT4, ESPPORT5 = (os.getenv(name) for name in PORT_MAPPING)
 
 _RUNNER_CHANNEL = os.getenv('CHANNEL', '12')
 _RUNNER_NETWORKKEY = os.getenv('NETWORKKEY', '99112233445566778899aabbccddeeff')
@@ -776,6 +777,15 @@ def test_TCP_NAT64(Init_interface: bool, dut: tuple[IdfDut, IdfDut, IdfDut]) -> 
             'esp32h2|esp32c5',
             f'{ESPPORT1}|{ESPPORT4}',
             id='h2-c5',
+        ),
+        pytest.param(
+            'cli|sleepy',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+            'esp32h2|esp32s31',
+            f'{ESPPORT1}|{ESPPORT5}',
+            id='h2-s31',
         ),
     ],
     indirect=True,
