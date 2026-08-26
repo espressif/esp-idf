@@ -99,9 +99,14 @@ void IRAM_ATTR esp_rtc_init(void)
  */
 static void IRAM_ATTR esp_clk_cpu_freq_set_config_isolated(const rtc_cpu_freq_config_t *config)
 {
+    /* esp_cache_utils.c is not built for pure-ram apps. */
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_cache_suspend_ext_mem_cache();
+#endif
     rtc_clk_cpu_freq_set_config(config);
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_cache_resume_ext_mem_cache();
+#endif
 }
 
 __attribute__((weak)) void esp_clk_init(void)
