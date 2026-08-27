@@ -62,7 +62,10 @@ CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED = panic_tests.configs_for_app(
     COREDUMP_APP, ['coredump_flash_encrypted', 'coredump_flash_encrypted_coredump_plain']
 )
 CONFIG_GDBSTUB_COREDUMP = panic_tests.configs_for_app(COREDUMP_APP, ['gdbstub_coredump'])
-CONFIG_TCB_CORRUPTED = panic_tests.configs_for_app(COREDUMP_APP, ['coredump_flash_default'])
+# Uses the dedicated coredump stack (CONFIG_ESP_COREDUMP_STACK_SIZE) on purpose: this test
+# faults in idle-task context, whose small stack overflows the FreeRTOS end-of-stack watchpoint
+# if the coredump runs in place, causing a double panic. Do not switch back to coredump_flash_default.
+CONFIG_TCB_CORRUPTED = panic_tests.configs_for_app(COREDUMP_APP, ['coredump_flash_custom_stack'])
 
 
 @pytest.mark.generic
