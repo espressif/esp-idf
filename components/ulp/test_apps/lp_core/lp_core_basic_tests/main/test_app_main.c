@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc/soc_caps.h"
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
@@ -21,6 +22,10 @@ static void check_leak(size_t before_free, size_t after_free, const char *type)
     TEST_ASSERT_MESSAGE(delta >= TEST_MEMORY_LEAK_THRESHOLD, "memory leak");
 }
 
+#if SOC_LP_ADC_SUPPORTED
+void lp_adc_test_teardown(void);
+#endif
+
 void setUp(void)
 {
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
@@ -29,6 +34,9 @@ void setUp(void)
 
 void tearDown(void)
 {
+#if SOC_LP_ADC_SUPPORTED
+    lp_adc_test_teardown();
+#endif
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");
