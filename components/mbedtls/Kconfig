@@ -8,10 +8,15 @@ menu "mbedTLS"
 
         choice MBEDTLS_COMPILER_OPTIMIZATION
             prompt "Compiler optimization level"
+            default MBEDTLS_COMPILER_OPTIMIZATION_PERF if COMPILER_OPTIMIZATION_PERF
             default MBEDTLS_COMPILER_OPTIMIZATION_SIZE
             help
-                This option allows you to select the compiler optimization level for mbedTLS.
-                The default is set to the optimization level used by the rest of the ESP-IDF project.
+                This option selects the compiler optimization level for mbedTLS.
+                By default, mbedTLS is optimized for size (-Os). If the project optimization
+                level (CONFIG_COMPILER_OPTIMIZATION) is set to "Optimize for performance (-O2)",
+                mbedTLS also defaults to -O2. You can override the default with this option.
+                The "No optimization" setting adds no flags, so mbedTLS compiles with the
+                project optimization level.
             config MBEDTLS_COMPILER_OPTIMIZATION_NONE
                 bool "No optimization"
             config MBEDTLS_COMPILER_OPTIMIZATION_SIZE
