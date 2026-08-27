@@ -332,6 +332,8 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
                 s_sync_conn_hdl = param->audio_stat.sync_conn_handle;
                 s_audio_buff_queue = xQueueCreate(50, sizeof(esp_hf_audio_buff_t*));
                 esp_hf_client_register_audio_data_callback(bt_app_hf_client_audio_data_cb);
+                /* Disable connectable and discoverable mode to save the over-the-air bandwidth and ensure audio quality  */
+                esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
             } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
                 s_sync_conn_hdl = 0;
                 s_msbc_air_mode = false;
@@ -344,6 +346,8 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
                     s_audio_buff_queue = NULL;
                 }
                 s_audio_buff_cnt = 0;
+                /* Resume connectable and discoverable mode */
+                esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             }
     #else
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
