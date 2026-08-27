@@ -13,11 +13,27 @@ namespace nvs {
 
 #ifdef CONFIG_NVS_BDL_STACK
 NVSEncryptedPartition::NVSEncryptedPartition(const char* label, const esp_blockdev_handle_t bdl, const bool managed_bdl)
-    : NVSPartition(label, bdl, managed_bdl) { }
+    : NVSPartition(label, bdl, managed_bdl)
+{
+    XTS_FUNC(xts_init)(&mEctxt);
+    XTS_FUNC(xts_init)(&mDctxt);
+}
 #else
 NVSEncryptedPartition::NVSEncryptedPartition(const esp_partition_t *partition)
-    : NVSPartition(partition) { }
+    : NVSPartition(partition)
+{
+    XTS_FUNC(xts_init)(&mEctxt);
+    XTS_FUNC(xts_init)(&mDctxt);
+}
 #endif // CONFIG_NVS_BDL_STACK
+
+NVSEncryptedPartition::~NVSEncryptedPartition()
+{
+    /* Wipe AES round keys derived from the NVS encryption key so they are not
+     * left in DRAM after the partition object is destroyed. */
+    XTS_FUNC(xts_free)(&mEctxt);
+    XTS_FUNC(xts_free)(&mDctxt);
+}
 
 esp_err_t NVSEncryptedPartition::init(nvs_sec_cfg_t* cfg)
 {
