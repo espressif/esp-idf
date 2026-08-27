@@ -195,4 +195,4 @@ static void i2c_slave_read_write_test(void)
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
 
-TEST_CASE_MULTIPLE_DEVICES("LP-Core I2C read and write test", "[lp_core][test_env=generic_multi_device][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
+TEST_CASE_MULTIPLE_DEVICES("LP-Core I2C read and write test", "[lp_core_i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
