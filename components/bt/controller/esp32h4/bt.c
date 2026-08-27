@@ -21,6 +21,7 @@
 #include "btdm_lp.h"
 #include "btdm_log.h"
 #include "btdm_external.h"
+#include "btdm_mempool.h"
 
 /*
  ***************************************************************************************************
@@ -94,6 +95,8 @@ static esp_err_t
 bt_controller_deinit(void)
 {
     s_btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+
+    btdm_mempool_deinit_all(true);
 
     hci_transport_deinit();
 
