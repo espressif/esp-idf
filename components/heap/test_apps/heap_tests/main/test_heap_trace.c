@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -67,6 +67,39 @@ TEST_CASE("heap trace leak check", "[heap-trace]")
     TEST_ASSERT_EQUAL_PTR(recs[0].address, 0x00);
 
     free(b);
+
+    heap_trace_stop();
+}
+
+TEST_CASE("heap trace records heap_caps_calloc", "[heap-trace]")
+{
+    heap_trace_record_t recs[8];
+    heap_trace_init_standalone(recs, 8);
+
+    printf("calloc trace test\n"); // Print something before trace starts, or stdout allocations skew total counts
+    fflush(stdout);
+
+    heap_trace_start(HEAP_TRACE_LEAKS);
+
+    // heap_caps_calloc() reaches heap_caps_malloc_base() through a same-TU
+    // call inside heap_caps_base.c that the linker --wrap does not redirect.
+    // This allocation must still be recorded via the heap_caps_calloc_base wrap.
+    const size_t n = 4;
+    const size_t size = 16;
+    void *a = heap_caps_calloc(n, size, MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(a);
+
+    heap_trace_dump();
+    TEST_ASSERT_EQUAL(1, heap_trace_get_count());
+
+    heap_trace_record_t trace_a;
+    heap_trace_get(0, &trace_a);
+    TEST_ASSERT_EQUAL_PTR(a, trace_a.address);
+    TEST_ASSERT_EQUAL(n * size, trace_a.size);
+
+    free(a);
+
+    TEST_ASSERT_EQUAL(0, heap_trace_get_count());
 
     heap_trace_stop();
 }
