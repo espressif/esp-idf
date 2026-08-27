@@ -10,7 +10,7 @@
 
 static void strip_default_obj_style(lv_obj_t *obj)
 {
-    lv_obj_remove_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollable(obj, false);
     lv_obj_set_style_bg_opa(obj, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(obj, 0, 0);
     lv_obj_set_style_pad_all(obj, 0, 0);
@@ -76,7 +76,7 @@ static lv_obj_t *create_gauge_card(lv_obj_t *parent, const char *name, lv_color_
     lv_arc_set_range(arc, 0, 100);
     lv_arc_set_value(arc, 0);
     lv_obj_remove_style(arc, NULL, LV_PART_KNOB);
-    lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_clickable(arc, false);
     lv_obj_set_style_arc_width(arc, arc_width, LV_PART_MAIN);
     lv_obj_set_style_arc_width(arc, arc_width, LV_PART_INDICATOR);
     lv_obj_set_style_arc_color(arc, lv_color_hex(0x2A3140), LV_PART_MAIN);
@@ -138,7 +138,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
                           true, font_caption);
 
     lv_obj_t *scr = lv_display_get_screen_active(disp);
-    lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollable(scr, false);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x0B0E12), 0);
     lv_obj_set_style_text_color(scr, lv_color_white(), 0);
     lv_obj_set_style_border_width(scr, 0, 0);
