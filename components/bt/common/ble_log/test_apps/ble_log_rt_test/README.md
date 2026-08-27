@@ -19,12 +19,12 @@ the hand-over time, so dispatch latency is measured without a real link.
 - `runtime` regressions: shared ESP Timer task fairness, periodic timestamp
   delivery without light-sleep wakeups, ISR-only submission delivery,
   consumer-independent receipt timing, extra-marker detection, exact 1 ms
-  first-submission defer scheduling, full task-pool snapshot dispatch, deinit
+  first-submission defer scheduling, full shared-pool snapshot dispatch, deinit
   racing submissions (SMP-pinned writer, failure-safe recovery), bounded
   inflight-peak statistics, and monotonic millisecond waits at both supported
   tick rates.
 
-The first-deadline and full task-pool regressions require dispatch exclusion
+The first-deadline and full shared-pool regressions require dispatch exclusion
 while enqueueing, so they run on single-core builds only (they are ignored on
 SMP targets). The deinit-race regression pins its writer to the other core on
 SMP.
