@@ -33,7 +33,7 @@
 #define BLE_LOG_WAIT_TIMEOUT_TICKS                 pdMS_TO_TICKS(1000)
 
 /* Single-instruction clock read; a function would add an IRAM call site. */
-#define ble_log_timestamp_now()                    ((uint32_t)esp_timer_get_time())
+#define BLE_LOG_TIMESTAMP_NOW()                    ((uint32_t)esp_timer_get_time())
 
 /* ------------------------------- */
 /*     Global Pool Context         */
@@ -196,7 +196,7 @@ ble_log_pool_publish_open_and_unlock(ble_log_prph_trans_t *trans)
     BLE_LOG_ATOMIC_STORE_RELAXED(trans->state, BLE_LOG_TRANS_STATE_OPEN);
     /* The following lock release publishes both state and frame data. */
     __atomic_fetch_or(&g_pool.open_bitmap, BIT(trans->id), __ATOMIC_RELAXED);
-    ble_log_cas_release(&trans->atomic_lock);
+    BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
     ble_log_pool_notify_waiter(trans->id);
 }
 
@@ -253,7 +253,7 @@ BLE_LOG_IRAM_ATTR void ble_log_pool_seal_and_send(ble_log_prph_trans_t *trans)
 
     /* Release the lock BEFORE submitting. The buffer is now in no bitmap and
      * is SENDING, so no other writer can find it. */
-    ble_log_cas_release(&trans->atomic_lock);
+    BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
     ble_log_rt_submit_trans(trans);
 }
 
@@ -281,12 +281,12 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_from(volatile uint32_t *bitmap,
         }
 
         ble_log_prph_trans_t *trans = g_pool.trans[id];
-        if (!ble_log_cas_acquire(&trans->atomic_lock)) {
+        if (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
             continue;
         }
         if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) != expected_state) {
             /* The bitmap is only a hint; another owner may have changed state. */
-            ble_log_cas_release(&trans->atomic_lock);
+            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
             continue;
         }
 
@@ -323,7 +323,7 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_available(uint32_t frame_len, bool 
     uint8_t open_id = (uint8_t)BLE_LOG_ATOMIC_LOAD_RELAXED(g_pool.open_cursor);
     if (open_domain & BIT(open_id)) {
         ble_log_prph_trans_t *open_trans = g_pool.trans[open_id];
-        if (ble_log_cas_acquire(&open_trans->atomic_lock)) {
+        if (BLE_LOG_CAS_ACQUIRE(&open_trans->atomic_lock)) {
             if (BLE_LOG_ATOMIC_LOAD_RELAXED(open_trans->state) == BLE_LOG_TRANS_STATE_OPEN) {
                 if (BLE_LOG_TRANS_FREE_SPACE(open_trans) >= frame_len) {
                     ble_log_pool_bitmap_clear(&g_pool.open_bitmap, open_id);
@@ -331,7 +331,7 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_available(uint32_t frame_len, bool 
                 }
                 ble_log_pool_seal_and_send(open_trans);   /* releases the lock */
             } else {
-                ble_log_cas_release(&open_trans->atomic_lock);
+                BLE_LOG_CAS_RELEASE(&open_trans->atomic_lock);
             }
         }
     }
@@ -479,7 +479,7 @@ uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle)
     uint32_t frame_sn = BLE_LOG_GET_GLOBAL_SN();
 
     /* The timestamp is the log occurrence time, before pool contention. */
-    uint32_t timestamp = ble_log_timestamp_now();
+    uint32_t timestamp = BLE_LOG_TIMESTAMP_NOW();
     bool non_yield = !xPortCanYield() ||
                      xTaskGetSchedulerState() != taskSCHEDULER_RUNNING;
     size_t payload_capacity = sizeof(timestamp) + max_len;
@@ -535,7 +535,7 @@ void ble_log_commit(uint32_t handle, size_t actual_len)
         if (trans->pos == 0) {
             BLE_LOG_ATOMIC_STORE_RELEASE(trans->state, BLE_LOG_TRANS_STATE_FREE);
             ble_log_pool_bitmap_set(&g_pool.free_bitmap, trans->id);
-            ble_log_cas_release(&trans->atomic_lock);
+            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
             ble_log_pool_notify_waiter(trans->id);
         } else {
             ble_log_pool_publish_open_and_unlock(trans);
@@ -835,15 +835,15 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
     /* Capture the complete occurrence sample before any dedicated-buffer
      * drain or wait. Without a TS sync sample, esp_ts comes from the frame
      * timestamp and os_ts from the current tick. */
-    uint32_t timestamp = ts_info ? ts_info->esp_ts : ble_log_timestamp_now();
+    uint32_t timestamp = ts_info ? ts_info->esp_ts : BLE_LOG_TIMESTAMP_NOW();
     TickType_t start_tick = xTaskGetTickCount();
     for (;;) {
-        if (ble_log_cas_acquire(&internal_trans->atomic_lock)) {
+        if (BLE_LOG_CAS_ACQUIRE(&internal_trans->atomic_lock)) {
             if (BLE_LOG_ATOMIC_LOAD_RELAXED(internal_trans->state) ==
                 BLE_LOG_TRANS_STATE_FREE) {
                 break;
             }
-            ble_log_cas_release(&internal_trans->atomic_lock);
+            BLE_LOG_CAS_RELEASE(&internal_trans->atomic_lock);
         }
         if (!required ||
             (xTaskGetTickCount() - start_tick) >= BLE_LOG_WAIT_TIMEOUT_TICKS) {
@@ -885,7 +885,7 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
     internal_trans->pos = BLE_LOG_INTERNAL_FRAME_LEN;
     BLE_LOG_ATOMIC_STORE_RELAXED(internal_trans->state,
                                  BLE_LOG_TRANS_STATE_SENDING);
-    ble_log_cas_release(&internal_trans->atomic_lock);
+    BLE_LOG_CAS_RELEASE(&internal_trans->atomic_lock);
     ble_log_rt_submit_trans(internal_trans);
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return true;
@@ -905,14 +905,14 @@ BLE_LOG_STATIC bool ble_log_pool_flush_all_trans(void)
      * current frame copy. Seal every remaining OPEN transport. */
     for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
         ble_log_prph_trans_t *trans = g_pool.trans[id];
-        while (!ble_log_cas_acquire(&trans->atomic_lock)) {
+        while (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
         }
         if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) == BLE_LOG_TRANS_STATE_OPEN &&
             trans->pos > 0) {
             ble_log_pool_bitmap_clear(&g_pool.open_bitmap, id);
             ble_log_pool_seal_and_send(trans);   /* releases the lock */
         } else {
-            ble_log_cas_release(&trans->atomic_lock);
+            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
         }
     }
 
@@ -941,14 +941,14 @@ void ble_log_lbm_flush_open_transports(void)
             continue;
         }
         ble_log_prph_trans_t *trans = g_pool.trans[id];
-        if (!ble_log_cas_acquire(&trans->atomic_lock)) {
+        if (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
             continue;
         }
         if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) == BLE_LOG_TRANS_STATE_OPEN &&
             trans->pos > 0) {
             ble_log_pool_seal_and_send(trans);
         } else {
-            ble_log_cas_release(&trans->atomic_lock);
+            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
         }
     }
 
@@ -1096,7 +1096,7 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
     bool is_isr = BLE_LOG_IN_ISR();
     bool can_yield = !is_isr && xPortCanYield() &&
                      xTaskGetSchedulerState() == taskSCHEDULER_RUNNING;
-    uint32_t timestamp = ble_log_timestamp_now();
+    uint32_t timestamp = BLE_LOG_TIMESTAMP_NOW();
     size_t payload_len = sizeof(timestamp) + len;
     ble_log_prph_trans_t *trans =
         ble_log_pool_acquire(payload_len, !can_yield, false);

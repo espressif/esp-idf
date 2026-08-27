@@ -10,7 +10,7 @@
 #include "unity_test_runner.h"
 
 #include "ble_log.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 #include "test_ble_log_main.h"
 
 bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
@@ -35,8 +35,10 @@ bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
         }
 
         if (observer) {
+            uint8_t source_meta = head.frame_meta & 0xff;
             test_ble_log_frame_t frame = {
-                .src = head.frame_meta & 0xff,
+                .src = BLE_LOG_SRC_ID(source_meta),
+                .source_meta = source_meta,
                 .sn = head.frame_meta >> 8,
                 .payload = data + offset + BLE_LOG_FRAME_HEAD_LEN,
                 .payload_len = head.length,
