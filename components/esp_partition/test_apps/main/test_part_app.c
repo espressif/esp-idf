@@ -219,6 +219,10 @@
      RUN_TEST_CASE(esp_partition, test_bdl_two_partitions)
      RUN_TEST_CASE(esp_partition, test_bdl_interface_limits)
      RUN_TEST_CASE(esp_partition, test_bdl_interface_readonly)
+     RUN_TEST_CASE(esp_partition, test_erase_partition)
+     RUN_TEST_CASE(esp_partition, test_get_sha256_data)
+     RUN_TEST_CASE(esp_partition, test_get_sha256_app)
+     RUN_TEST_CASE(esp_partition, test_get_sha256_big_partition)
  }
 
  void app_main(void)
