@@ -5,6 +5,7 @@
 import ipaddress
 import logging
 import os
+import random
 import re
 import socket
 import struct
@@ -265,11 +266,20 @@ def ot_ping(
     return tx_count, rx_count
 
 
-def ping_and_check(dut: IdfDut, target: str, tx_total: int = 10, timeout: int = 6, pass_rate: float = 0.8) -> None:
+def ping_and_check(
+    dut: IdfDut,
+    target: str,
+    tx_total: int = 10,
+    timeout: int = 6,
+    pass_rate: float = 0.8,
+    size: int = 10,
+    size_range: Optional[Tuple[int, int]] = None,
+) -> None:
     tx_count = 0
     rx_count = 0
     for _ in range(tx_total):
-        tx, rx = ot_ping(dut, target, timeout=timeout, count=1, size=10, interval=6)
+        ping_size = random.randint(*size_range) if size_range else size
+        tx, rx = ot_ping(dut, target, timeout=timeout, count=1, size=ping_size, interval=6)
         tx_count += tx
         rx_count += rx
 

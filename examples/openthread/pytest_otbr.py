@@ -1160,9 +1160,9 @@ def test_ot_ssed_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         cli_rloc_addr = ':'.join(ocf.get_rloc_addr(leader).split(':')[:-1])
         ssed_address = f'{cli_rloc_addr}:{rloc16_decode_from_leader}'
 
-        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6)
+        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6, size_range=(10, 70))
         time.sleep(random.randint(5, 20))
-        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6)
+        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6, size_range=(100, 200))
     finally:
         ocf.execute_command(leader, 'factoryreset')
         ocf.hardreset_dut(ssed_device)
