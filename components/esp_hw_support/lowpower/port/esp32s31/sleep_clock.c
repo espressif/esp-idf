@@ -58,7 +58,8 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
         [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_MODEMSYSCON_LINK(0), MODEM_SYSCON_DATE_REG, 0xf, 0xffffffff, 1, 0), .owner = ENTRY(0) | ENTRY(1) },
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(1), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, N_REGS_SYSCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK(0), MODEM_LPCON_TEST_CONF_REG, MODEM_LPCON_TEST_CONF_REG, N_REGS_LPCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
-        [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(0), HP_SYS_CLKRST_MODEM_CONF_REG, 0x3d, 0x3d, 1, 0), .owner = ENTRY(1)},
+        [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(0), HP_SYS_CLKRST_REF_160M_CTRL0_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN, HP_SYS_CLKRST_REG_REF_160M_CLK_EN_M, 1, 0), .owner = ENTRY(1)},
+        [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(1), HP_SYS_CLKRST_MODEM_CONF_REG, 0x3d, 0x3d, 1, 0), .owner = ENTRY(1)},
     };
 
     esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
