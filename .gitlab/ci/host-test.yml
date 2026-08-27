@@ -285,6 +285,12 @@ test_idf_build_apps_load_soc_caps:
     - cd tools/ci
     - pytest_for_ut ./test_soc_headers_load_in_idf_build_apps.py
 
+test_dynamic_pipelines_scripts:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/tools/ci/dynamic_pipelines/tests
+    - pytest_for_ut ./test_patch_buildv2_child_pipeline.py
+
 test_nvs_gen_check:
   extends: .host_test_template
   artifacts:

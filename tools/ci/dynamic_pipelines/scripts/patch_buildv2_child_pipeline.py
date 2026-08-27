@@ -33,6 +33,13 @@ def patch(path: str) -> None:
     with open(path) as f:
         d = yaml.safe_load(f)
 
+    if 'fake_pass' in d:
+        # idf-ci emitted a skip pipeline (no apps matched the modified files): there
+        # are no build jobs to activate and no included generate_pytest_child_pipeline
+        # to redefine. Leave it untouched so Build system v2 skips like the default path.
+        print('Skip pipeline (fake_pass) detected, leaving it untouched')
+        return
+
     injected = []
     for k, v in d.items():
         if isinstance(v, dict) and 'extends' in v:
@@ -46,6 +53,8 @@ def patch(path: str) -> None:
     # keyword level, so only `script` is overridden; `needs`, `artifacts`,
     # `image`, etc. come from the included version.
     d['generate_pytest_child_pipeline'] = {
+        # Set IDF_BUILD_V2 so test-case collection honors `if IDF_BUILD_V2 == "1"`
+        'variables': {'IDF_BUILD_V2': '1'},
         'script': [
             'python tools/ci/dynamic_pipelines/scripts/generate_target_test_child_pipeline.py',
             'python tools/ci/dynamic_pipelines/scripts/patch_buildv2_target_test_pipeline.py '
