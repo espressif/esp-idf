@@ -375,8 +375,8 @@ typedef enum {
     ESP_GATT_AUTH_REQ_NONE                  = 0, /*!< No authentication required. Corresponds to BTA_GATT_AUTH_REQ_NONE. */
     ESP_GATT_AUTH_REQ_NO_MITM               = 1, /*!< Unauthenticated encryption. Corresponds to BTA_GATT_AUTH_REQ_NO_MITM. */
     ESP_GATT_AUTH_REQ_MITM                  = 2, /*!< Authenticated encryption (MITM protection). Corresponds to BTA_GATT_AUTH_REQ_MITM. */
-    ESP_GATT_AUTH_REQ_SIGNED_NO_MITM        = 3, /*!< Signed data, no MITM protection. Corresponds to BTA_GATT_AUTH_REQ_SIGNED_NO_MITM. */
-    ESP_GATT_AUTH_REQ_SIGNED_MITM           = 4, /*!< Signed data with MITM protection. Corresponds to BTA_GATT_AUTH_REQ_SIGNED_MITM. */
+    ESP_GATT_AUTH_REQ_SIGNED_NO_MITM        = 3, /*!< CSRK signed write, no MITM. Use with `ESP_GATT_WRITE_TYPE_NO_RSP` on a bonded, unencrypted link. */
+    ESP_GATT_AUTH_REQ_SIGNED_MITM           = 4, /*!< CSRK signed write with MITM. Use with `ESP_GATT_WRITE_TYPE_NO_RSP` on a bonded, unencrypted link. */
 } esp_gatt_auth_req_t;
 
 
@@ -410,10 +410,10 @@ typedef enum {
 /** @brief Permission to write to the attribute with encrypted MITM protection. Corresponds to BTA_GATT_PERM_WRITE_ENC_MITM. */
 #define ESP_GATT_PERM_WRITE_ENC_MITM        (1 << 6)
 
-/** @brief Permission for signed writes to the attribute. Corresponds to BTA_GATT_PERM_WRITE_SIGNED. */
+/** @brief Signed write without link encryption (CSRK). Requires `ESP_GATT_CHAR_PROP_BIT_AUTH`. Corresponds to BTA_GATT_PERM_WRITE_SIGNED. */
 #define ESP_GATT_PERM_WRITE_SIGNED          (1 << 7)
 
-/** @brief Permission for signed writes to the attribute with MITM protection. Corresponds to BTA_GATT_PERM_WRITE_SIGNED_MITM. */
+/** @brief Signed write with MITM-protected CSRK. Requires `ESP_GATT_CHAR_PROP_BIT_AUTH`. Corresponds to BTA_GATT_PERM_WRITE_SIGNED_MITM. */
 #define ESP_GATT_PERM_WRITE_SIGNED_MITM     (1 << 8)
 
 /** @brief Permission to read the attribute with authorization. */
@@ -463,7 +463,7 @@ typedef uint16_t esp_gatt_perm_t; ///< Type to represent GATT attribute permissi
 /** @brief Ability to indicate.Corresponds to BTA_GATT_CHAR_PROP_BIT_INDICATE. */
 #define ESP_GATT_CHAR_PROP_BIT_INDICATE     (1 << 5)
 
-/** @brief Ability to authenticate.Corresponds to BTA_GATT_CHAR_PROP_BIT_AUTH. */
+/** @brief Authenticated Signed Writes (ATT Signed Write Command, 0xD2). Requires matching `ESP_GATT_PERM_WRITE_SIGNED`. Corresponds to BTA_GATT_CHAR_PROP_BIT_AUTH. */
 #define ESP_GATT_CHAR_PROP_BIT_AUTH         (1 << 6)
 
 /** @brief Has extended properties.Corresponds to BTA_GATT_CHAR_PROP_BIT_EXT_PROP. */

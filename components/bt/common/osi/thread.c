@@ -534,13 +534,30 @@ static bool osi_event_can_bind_locked(const struct osi_event *event, osi_thread_
 static bool osi_event_can_post_locked(const struct osi_event *event)
 {
     if (event->thread == NULL || event->queue_idx >= event->thread->work_queue_num) {
+        OSI_TRACE_EVENT("%s deny ev=%p flags=0x%x qidx=%u",
+                        __func__, event, event ? event->flags : 0,
+                        event ? event->queue_idx : 0);
         return false;
     }
 
-    return !OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_DELETING) &&
-           event->item.func != NULL &&
-           !OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_QUEUED) &&
-           !OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_POSTING);
+    if (OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_DELETING) ||
+            event->item.func == NULL ||
+            OSI_EVENT_HAS_FLAG(event, OSI_EVENT_FLAG_QUEUED)) {
+        OSI_TRACE_EVENT("%s deny ev=%p flags=0x%x qidx=%u wq_len=%d",
+                        __func__, event, event->flags, event->queue_idx,
+                        osi_thread_queue_wait_size(event->thread, event->queue_idx));
+        return false;
+    }
+
+    /* Do NOT gate on OSI_EVENT_FLAG_POSTING here. POSTING marks the window in
+     * osi_thread_post_event() between osi_thread_post() (enqueue) and the
+     * poster clearing the flag. During that window the generic event handler
+     * may already have run and cleared QUEUED. A concurrent post that arrives
+     * after QUEUED is cleared is a legitimate re-post (new work arrived while
+     * the handler was draining) and must be accepted; rejecting it causes a
+     * lost wakeup. QUEUED alone prevents genuine double-queueing. POSTING is
+     * retained only for osi_event_is_idle()/osi_event_should_free(). */
+    return true;
 }
 
 static bool osi_event_is_alive_locked(const struct osi_event *event)
@@ -714,6 +731,7 @@ static void osi_thread_generic_event_handler(void *context)
     OSI_EVENT_SET_FLAG(event, OSI_EVENT_FLAG_RUNNING);
     func = event->item.func;
     func_context = event->item.context;
+    OSI_TRACE_DEBUG("%s enter ev=%p flags=0x%x", __func__, event, event->flags);
     osi_mutex_unlock(&event->lock);
 
     if (func != NULL) {
@@ -722,6 +740,7 @@ static void osi_thread_generic_event_handler(void *context)
 
     osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
     OSI_EVENT_CLEAR_FLAG(event, OSI_EVENT_FLAG_RUNNING);
+    OSI_TRACE_DEBUG("%s exit ev=%p flags=0x%x", __func__, event, event->flags);
     osi_mutex_unlock(&event->lock);
 
     osi_event_release(event);
@@ -755,6 +774,7 @@ bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
     uint8_t queue_idx = 0;
 
     if (!osi_event_acquire(event)) {
+        OSI_TRACE_EVENT("%s acquire fail ev=%p", __func__, event);
         return false;
     }
 
@@ -782,6 +802,9 @@ bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
     osi_mutex_unlock(&event->lock);
 
     if (!ret) {
+        OSI_TRACE_EVENT("%s enqueue fail ev=%p qidx=%u wq_len=%d",
+                        __func__, event, queue_idx,
+                        osi_thread_queue_wait_size(thread, queue_idx));
         osi_event_release(event);
     }
     osi_event_release(event);
