@@ -729,7 +729,8 @@ tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type, uint8_t param
     BT_HDR *p_buf;
     uint8_t *p_out;
     uint16_t cid;
-    uint16_t buf_size;
+    uint16_t max_buf_size;
+    uint32_t payload_size, buf_size;
 
     HIDD_TRACE_VERBOSE("%s: channel(%d), msg_type(%d), len(%d)", __func__, channel, msg_type, len);
 
@@ -742,20 +743,34 @@ tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type, uint8_t param
     case HID_TRANS_HANDSHAKE:
     case HID_TRANS_CONTROL:
         cid = p_hcon->ctrl_cid;
-        buf_size = HID_CONTROL_BUF_SIZE;
+        max_buf_size = HID_CONTROL_BUF_SIZE;
         break;
     case HID_TRANS_DATA:
         if (channel == HID_CHANNEL_CTRL) {
             cid = p_hcon->ctrl_cid;
-            buf_size = HID_CONTROL_BUF_SIZE;
+            max_buf_size = HID_CONTROL_BUF_SIZE;
         } else {
             cid = p_hcon->intr_cid;
-            buf_size = HID_INTERRUPT_BUF_SIZE;
+            max_buf_size = HID_INTERRUPT_BUF_SIZE;
         }
         break;
     default:
         return (HID_ERR_INVALID_PARAM);
     }
+
+    /* HID header byte, plus an optional report id byte */
+    payload_size = (uint32_t)len + 2;
+    buf_size = BT_HDR_SIZE + L2CAP_MIN_OFFSET + payload_size;
+    if (buf_size > max_buf_size) {
+        HIDD_TRACE_ERROR("hidd tx: len(%d) too large",len);
+        return (HID_ERR_INVALID_PARAM);
+    }
+    /* rem_mtu_size is only known once the channel has been configured */
+    if (p_hcon->rem_mtu_size && payload_size > p_hcon->rem_mtu_size) {
+        HIDD_TRACE_ERROR("hidd tx: len(%d) exceeds peer mtu(%d)",len, p_hcon->rem_mtu_size);
+        return (HID_ERR_INVALID_PARAM);
+    }
+
     p_buf = (BT_HDR *)osi_malloc(buf_size);
     if (p_buf == NULL)
         return (HID_ERR_NO_RESOURCES);
