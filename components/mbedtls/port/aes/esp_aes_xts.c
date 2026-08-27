@@ -37,6 +37,7 @@
 #include <string.h>
 #include "aes/esp_aes.h"
 #include "psa/crypto_values.h"
+#include "mbedtls/platform_util.h"
 
 void esp_aes_xts_init( esp_aes_xts_context *ctx )
 {
@@ -205,7 +206,7 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
     ret = esp_aes_crypt_ecb( &ctx->tweak, ESP_AES_ENCRYPT,
                              data_unit, tweak );
     if ( ret != 0 ) {
-        return ( ret );
+        goto cleanup;
     }
 
     while ( blocks-- ) {
@@ -227,7 +228,7 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
 
         ret = esp_aes_crypt_ecb( &ctx->crypt, mode, tmp, tmp );
         if ( ret != 0 ) {
-            return ( ret );
+            goto cleanup;
         }
 
         for ( i = 0; i < 16; i++ ) {
@@ -268,7 +269,7 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
 
         ret = esp_aes_crypt_ecb( &ctx->crypt, mode, tmp, tmp );
         if ( ret != 0 ) {
-            return ret;
+            goto cleanup;
         }
 
         /* Write the result back to the previous block, overriding the previous
@@ -278,5 +279,11 @@ int esp_aes_crypt_xts( esp_aes_xts_context *ctx,
         }
     }
 
-    return ( 0 );
+cleanup:
+    /* tweak/prev_tweak are key-derived and tmp holds plaintext-derived data.
+     * Scrub all three on every exit so they cannot be recovered from stack RAM. */
+    mbedtls_platform_zeroize( tweak, sizeof( tweak ) );
+    mbedtls_platform_zeroize( prev_tweak, sizeof( prev_tweak ) );
+    mbedtls_platform_zeroize( tmp, sizeof( tmp ) );
+    return ( ret );
 }
