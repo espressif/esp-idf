@@ -640,7 +640,7 @@ TEST_CASE("IDF additions: ulTaskGetIdleRunTimeCounterForCore", "[freertos][idf_a
  * --------------------------------------------------------------------------------------------------------------------- */
 
 #define PIN_SEMANTICS_SAMPLES     5
-#define PIN_SEMANTICS_STACK_BYTES 2048
+#define PIN_SEMANTICS_STACK_BYTES 4096
 
 typedef struct {
     TaskHandle_t parent;
@@ -757,6 +757,8 @@ TEST_CASE("IDF additions: xTaskCreateStaticPinnedToCore pinning semantics", "[fr
     }
 }
 
+/* Create with tskNO_AFFINITY must succeed and run. Multicore stores no pin
+ * (xTaskGetCoreID == tskNO_AFFINITY); unicore treats it as core 0. */
 TEST_CASE("IDF additions: xTaskCreatePinnedToCore tskNO_AFFINITY", "[freertos][idf_additions]")
 {
     pin_semantics_ctx_t ctx = {
