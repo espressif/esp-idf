@@ -106,6 +106,12 @@ def _test_panic_extram_stack_impl(dut: PanicTestDut, config: str) -> None:
     elif dut.target == 'esp32s3':
         # ESP32-S3 External data memory range [0x3c000000-0x3e000000)
         coredump_pattern = re.compile('.coredump.tasks.data (0x3[c-dC-D][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
+    elif dut.target == 'esp32s31':
+        # ESP32-S31 External data memory range [0x50000000-0x54000000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x5[0-9a-fA-F]{7}) (0x[a-fA-F0-9]+) RW')
+    elif dut.target == 'esp32p4':
+        # ESP32-P4 External data memory range [0x48000000-0x4c000000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x4[8-9a-bA-B][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
     else:
         # RISC-V targets (esp32c5, esp32c61, etc.) External data memory range [0x42000000-0x44000000)
         coredump_pattern = re.compile('.coredump.tasks.data (0x4[2-3][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
