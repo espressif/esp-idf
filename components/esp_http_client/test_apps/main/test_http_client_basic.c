@@ -418,7 +418,29 @@ TEST_CASE("Client handles 400 Bad Request error", "[esp_http_client][basic][p0][
 /**
  * Test: Client handles 401 Unauthorized
  *
- * Negative scenario: Authentication required but not provided
+ * Negative scenario: Authentication required, no credentials configured.
+ *
+ * characterization: master behavior, see refactor spec
+ * This test app's sdkconfig.ci.default sets
+ * CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH=y, so esp_http_client_add_auth()
+ * (esp_http_client.c ~L2132-2198) can recognize the "Basic" scheme in this
+ * response's WWW-Authenticate header. That function sets
+ * client->process_again = 1 purely from successfully parsing that header -
+ * it never checks whether any credentials are actually configured. The
+ * credential check happens later and separately, in
+ * esp_http_client_prepare() (~L800-803): it only gates whether an
+ * Authorization header gets *attached* to the retried request, not whether
+ * a retry is *attempted*. So this client - no auth_type, no
+ * username/password, no URL-embedded credentials - still retries on a 401:
+ * it resends a byte-identical, credential-less request. This is the same
+ * shared redirect_counter / max_authorization_retries mechanism the FSM
+ * refactor's auth-retry handling and counter-split fix are meant to
+ * address. To pin that credential-less-retry behavior deterministically
+ * (rather than depend on how many canned responses happen to be queued),
+ * this test caps the retry at 1 and queues a second identical 401, so the
+ * client hits esp_http_client_add_auth()'s own
+ * "redirect_counter >= max_authorization_retries" guard (~L2140-2143)
+ * on the second 401 and terminates with a real, mock-independent outcome.
  */
 TEST_CASE("Client handles 401 Unauthorized error", "[esp_http_client][basic][p0][negative]")
 {
@@ -431,10 +453,15 @@ TEST_CASE("Client handles 401 Unauthorized error", "[esp_http_client][basic][p0]
 
     esp_transport_handle_t mock_transport = mock_http_transport_create(&mock_config);
     TEST_ASSERT_NOT_NULL(mock_transport);
+    /* Second 401 so the credential-less retry lands on the deterministic
+     * max_authorization_retries cap below, instead of exhausting the
+     * mock's queue and timing out. */
+    mock_http_transport_queue_response(mock_transport, response_401_unauthorized, 0);
 
     esp_http_client_config_t config = {
         .url = "http://test-server.local/api/protected",
         .event_handler = basic_event_handler,
+        .max_authorization_retries = 1,
         .transport = mock_transport,
     };
 
@@ -442,13 +469,34 @@ TEST_CASE("Client handles 401 Unauthorized error", "[esp_http_client][basic][p0]
     TEST_ASSERT_NOT_NULL(client);
 
     esp_err_t err = esp_http_client_perform(client);
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, err);
+    /* characterization: master behavior, see refactor spec
+     * The first 401 is answered by a credential-less retry (see the file
+     * comment above). The second 401 then trips
+     * esp_http_client_add_auth()'s "redirect_counter(1) >=
+     * max_authorization_retries(1)" guard, which logs "reached
+     * max_authorization_retries" and returns ESP_FAIL directly;
+     * esp_http_client_perform() propagates that ESP_FAIL to the caller
+     * without any further retry. */
+    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    /* characterization: master behavior, see refactor spec
+     * status_code is a direct field read of the last response actually
+     * parsed (the second 401) - untouched by the retry-cap error path. */
     TEST_ASSERT_EQUAL(401, esp_http_client_get_status_code(client));
 
-    // Verify WWW-Authenticate header could be read
-    // (In real scenarios, this would trigger authentication retry)
+    /* characterization: master behavior, see refactor spec
+     * Confirms the retry actually happened (2 writes: the original
+     * request and the one credential-less retry) rather than the client
+     * simply giving up on the first 401. As in test_http_client_auth.c,
+     * this assumes one mock_write() call per request's header block,
+     * which held for every GET-with-no-body case observed in this suite;
+     * a refactor that splits header writes across multiple
+     * esp_transport_write() calls would need to update this count
+     * without necessarily changing behavior. */
+    mock_http_transport_stats_t stats;
+    TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_stats(mock_transport, &stats));
+    TEST_ASSERT_EQUAL(2, stats.write_calls);
 
-    ESP_LOGI(TAG, "OK: 401 error handled, authentication required");
+    ESP_LOGI(TAG, "OK: 401 error handled, credential-less retry capped and reported");
 
     esp_http_client_cleanup(client);
     mock_http_transport_destroy(mock_transport);

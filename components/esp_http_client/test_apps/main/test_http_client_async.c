@@ -137,7 +137,6 @@ TEST_CASE("async write would-block on header send aborts the request", "[esp_htt
     esp_http_client_set_post_field(client, "k=v", 3);
 
     esp_err_t err = esp_http_client_perform(client);
-    // characterization: master behavior, see refactor spec
     TEST_ASSERT(err == ESP_ERR_HTTP_EAGAIN || err == ESP_ERR_HTTP_WRITE_DATA);
 
     mock_http_transport_stats_t stats;
