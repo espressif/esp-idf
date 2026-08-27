@@ -12,6 +12,7 @@
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
+#include "test_aes_params.h"
 #include "ccomp_timer.h"
 #include "sys/param.h"
 #include "crypto_performance.h"
@@ -986,5 +987,79 @@ TEST_CASE("mbedtls AES GCM - Different Authentication Tag lengths", "[aes-gcm]")
     }
     free(input);
 }
+
+#ifdef CONFIG_SPIRAM_USE_MALLOC
+
+static void aes_gcm_psram_test(size_t len)
+{
+    psa_key_id_t key_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_status_t status;
+    uint8_t key[16];
+    uint8_t nonce[12];
+    uint8_t aad[16];
+    const size_t out_len = len + 16;
+    size_t olen = 0;
+
+    memset(key, 0x44, sizeof(key));
+    memset(nonce, 0xEE, sizeof(nonce));
+    memset(aad, 0x76, sizeof(aad));
+
+    status = psa_crypto_init();
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_GCM);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+    status = psa_import_key(&attributes, key, sizeof(key), &key_id);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+
+    uint8_t *plaintext = heap_caps_malloc(len, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    uint8_t *ciphertext = heap_caps_malloc(out_len, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    uint8_t *decryptedtext = heap_caps_malloc(len, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    uint8_t *ref_plaintext = heap_caps_malloc(len, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    uint8_t *ref_ciphertext = heap_caps_malloc(out_len, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+    TEST_ASSERT_NOT_NULL(ref_plaintext);
+    TEST_ASSERT_NOT_NULL(ref_ciphertext);
+
+    memset(plaintext, 0xAA, len);
+    memset(ref_plaintext, 0xAA, len);
+
+    status = psa_aead_encrypt(key_id, PSA_ALG_GCM, nonce, sizeof(nonce), aad, sizeof(aad),
+                              ref_plaintext, len, ref_ciphertext, out_len, &olen);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(out_len, olen);
+
+    status = psa_aead_encrypt(key_id, PSA_ALG_GCM, nonce, sizeof(nonce), aad, sizeof(aad),
+                              plaintext, len, ciphertext, out_len, &olen);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(out_len, olen);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(ref_ciphertext, ciphertext, out_len);
+
+    status = psa_aead_decrypt(key_id, PSA_ALG_GCM, nonce, sizeof(nonce), aad, sizeof(aad),
+                              ciphertext, out_len, decryptedtext, len, &olen);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(len, olen);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, len);
+
+    psa_destroy_key(key_id);
+    heap_caps_free(plaintext);
+    heap_caps_free(ciphertext);
+    heap_caps_free(decryptedtext);
+    heap_caps_free(ref_plaintext);
+    heap_caps_free(ref_ciphertext);
+}
+
+TEST_CASE("mbedtls AES GCM PSRAM tests", "[aes-gcm]")
+{
+    aes_gcm_psram_test(TEST_AES_CTR_DATA_LEN);
+}
+
+#endif // CONFIG_SPIRAM_USE_MALLOC
 
 #endif //CONFIG_MBEDTLS_HARDWARE_AES
