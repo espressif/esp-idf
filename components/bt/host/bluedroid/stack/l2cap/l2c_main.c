@@ -860,7 +860,10 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     l2c_csm_execute (p_ccb, L2CEVT_L2CAP_DISCONNECT_REQ, &con_info);
                 }
             } else {
-                l2cu_send_peer_disc_rsp (p_lcb, id, lcid, rcid);
+                /* Core Spec Vol 3 Part A 4.6: an unknown DCID/SCID is rejected
+                 * with reason Invalid CID. Data is local CID then remote CID.
+                 * L2CAP/COS/CED/BI-08-C. */
+                l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_INVALID_CID, id, lcid, rcid);
             }
 
             break;
