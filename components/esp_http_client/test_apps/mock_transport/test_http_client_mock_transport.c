@@ -21,6 +21,9 @@ typedef struct {
     bool is_connected;                       /*!< Connection state */
     size_t read_offset;                      /*!< Current position in response data */
     size_t bytes_processed;                  /*!< Bytes processed (for error injection) */
+    size_t read_only_bytes;                  /*!< Bytes delivered via mock_read() alone (for
+                                                   read_bytes_before_error injection, independent
+                                                   of bytes written via mock_write()) */
     char *response_buffer;                   /*!< Internal copy of response data */
     int async_polls_left;                    /*!< Remaining "in progress" returns from mock_connect_async() */
     int wb_reads_left;                       /*!< Remaining EAGAIN injections for mock_read() */
@@ -71,6 +74,19 @@ static bool should_inject_error(mock_http_transport_ctx_t *ctx, size_t bytes_abo
 }
 
 /**
+ * @brief Check if a READ-side-only error should be injected, based on bytes
+ *        delivered via mock_read() alone (ignores mock_write() entirely)
+ */
+static bool should_inject_read_error(mock_http_transport_ctx_t *ctx, size_t bytes_about_to_process)
+{
+    if (ctx->config.read_bytes_before_error < 0) {
+        return false;  // Read-side budget not configured
+    }
+
+    return (ctx->read_only_bytes + bytes_about_to_process) > (size_t)ctx->config.read_bytes_before_error;
+}
+
+/**
  * @brief Mock connect implementation
  */
 static int mock_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
@@ -104,6 +120,7 @@ static int mock_connect(esp_transport_handle_t t, const char *host, int port, in
     ctx->is_connected = true;
     ctx->read_offset = 0;
     ctx->bytes_processed = 0;
+    ctx->read_only_bytes = 0;
 
     ESP_LOGI(TAG, "Mock connect succeeded");
     return 0;
@@ -143,6 +160,7 @@ static int mock_connect_async(esp_transport_handle_t t, const char *host, int po
     ctx->is_connected = true;
     ctx->read_offset = 0;
     ctx->bytes_processed = 0;
+    ctx->read_only_bytes = 0;
 
     ESP_LOGI(TAG, "Mock connect_async succeeded");
     return 1;      /* ASYNC_TRANS_CONNECT_PASS */
@@ -202,15 +220,28 @@ static int mock_read(esp_transport_handle_t t, char *buffer, int len, int timeou
     // Determine how much to read
     size_t to_read = (len < remaining) ? len : remaining;
 
-    // Handle incomplete read mode (close connection mid-stream)
+    // Handle incomplete read mode (close connection mid-stream).
+    // read_bytes_before_error, when set (>= 0), is a READ-side-only budget:
+    // it is checked against bytes delivered via mock_read() alone, so
+    // truncation lands at a byte offset inside the response body
+    // regardless of how many bytes the request write consumed. When unset
+    // (-1, the default), falls back to the original shared bytes_processed
+    // counter (also incremented by mock_write()) used by earlier tests.
     if (ctx->config.mode == MOCK_TRANSPORT_MODE_INCOMPLETE_READ) {
-        if (should_inject_error(ctx, to_read)) {
+        bool use_read_budget = (ctx->config.read_bytes_before_error >= 0);
+        bool inject = use_read_budget ? should_inject_read_error(ctx, to_read)
+                                       : should_inject_error(ctx, to_read);
+        if (inject) {
+            size_t budget = use_read_budget ? (size_t)ctx->config.read_bytes_before_error
+                                             : (size_t)ctx->config.bytes_before_error;
+            size_t processed = use_read_budget ? ctx->read_only_bytes : ctx->bytes_processed;
             // Read partial data then close connection
-            size_t partial = ctx->config.bytes_before_error - ctx->bytes_processed;
+            size_t partial = budget - processed;
             if (partial > 0 && partial < to_read) {
                 memcpy(buffer, ctx->response_buffer + ctx->read_offset, partial);
                 ctx->read_offset += partial;
                 ctx->bytes_processed += partial;
+                ctx->read_only_bytes += partial;
                 ctx->stats.total_bytes_read += partial;
                 ESP_LOGD(TAG, "Mock read: incomplete data %zu bytes, then EOF", partial);
                 return partial;
@@ -226,6 +257,7 @@ static int mock_read(esp_transport_handle_t t, char *buffer, int len, int timeou
     memcpy(buffer, ctx->response_buffer + ctx->read_offset, to_read);
     ctx->read_offset += to_read;
     ctx->bytes_processed += to_read;
+    ctx->read_only_bytes += to_read;
 
     if (ctx->config.track_calls) {
         ctx->stats.total_bytes_read += to_read;
@@ -343,6 +375,7 @@ static int mock_close(esp_transport_handle_t t)
     ctx->is_connected = false;
     ctx->read_offset = 0;
     ctx->bytes_processed = 0;
+    ctx->read_only_bytes = 0;
 
     return 0;
 }
@@ -540,6 +573,7 @@ esp_err_t mock_http_transport_set_config(esp_transport_handle_t transport,
     // The connection state should be managed through connect/close calls
     ctx->read_offset = 0;
     ctx->bytes_processed = 0;
+    ctx->read_only_bytes = 0;
 
     // Re-initialize error-injection countdown counters from the new config
     ctx->async_polls_left = ctx->config.async_connect_polls;
@@ -617,6 +651,7 @@ esp_err_t mock_http_transport_set_response(esp_transport_handle_t transport,
     // Reset read position
     ctx->read_offset = 0;
     ctx->bytes_processed = 0;
+    ctx->read_only_bytes = 0;
 
     ESP_LOGD(TAG, "Mock transport response updated (%zu bytes)", ctx->config.response_len);
     return ESP_OK;

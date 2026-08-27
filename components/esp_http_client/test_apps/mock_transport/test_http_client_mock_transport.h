@@ -38,6 +38,12 @@ typedef struct {
     int async_connect_polls;                 /*!< connect_async returns "in progress" this many times, then succeeds */
     int would_block_reads;                   /*!< First N reads return -1 with errno = EAGAIN */
     int would_block_writes;                  /*!< First N writes return -1 with errno = EAGAIN */
+    int read_bytes_before_error;             /*!< READ-side-only error budget for MOCK_TRANSPORT_MODE_INCOMPLETE_READ:
+                                                   counts only bytes actually delivered via mock_read(), independent of
+                                                   mock_write()'s byte count, so truncation can be pinned to an offset
+                                                   inside the response body regardless of request size. -1 (default)
+                                                   disables this and falls back to the shared bytes_before_error/
+                                                   bytes_processed counter used by the original tests. */
 } mock_http_transport_config_t;
 
 /**
@@ -53,6 +59,7 @@ typedef struct {
     .async_connect_polls = 0, \
     .would_block_reads = 0, \
     .would_block_writes = 0, \
+    .read_bytes_before_error = -1, \
 }
 
 /**

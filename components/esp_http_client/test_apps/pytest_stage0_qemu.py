@@ -8,4 +8,4 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_http_client_mock(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group=['basic', 'async', 'lifecycle'], timeout=120)
+    dut.run_all_single_board_cases(group=['basic', 'async', 'lifecycle', 'chunked'], timeout=120)
