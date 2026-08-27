@@ -33,6 +33,7 @@ set(priv_requires
     "esp_driver_gptimer"
     "esp_hal_usb"
     "esp_driver_usb_serial_jtag"
+    "esp_hal_systimer"
     "esp_timer"
     "esp_system"
 )
@@ -46,3 +47,7 @@ idf_component_register(SRCS ${srcs}
                        REQUIRES ${requires}
                        WHOLE_ARCHIVE TRUE
                        LDFRAGMENTS linker.lf)
+
+if(CONFIG_ESP_TRACE_OPTIMIZE_SPEED)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -O2)
+endif()
