@@ -49,6 +49,7 @@ typedef struct controller_t {
     bool (*supports_simultaneous_le_bredr)(void);
     bool (*supports_reading_remote_extended_features)(void);
     bool (*supports_interlaced_inquiry_scan)(void);
+    bool (*supports_interlaced_page_scan)(void);
     bool (*supports_rssi_with_inquiry_results)(void);
     bool (*supports_extended_inquiry_response)(void);
     bool (*supports_master_slave_role_switch)(void);

@@ -54,6 +54,7 @@
 static void btm_read_remote_features (UINT16 handle);
 static void btm_read_remote_ext_features (UINT16 handle, UINT8 page_number);
 static void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages);
+static BOOLEAN btm_get_acl_db(void *p_acl_db_node, void *context);
 
 #define BTM_DEV_REPLY_TIMEOUT   3       /* 3 second timeout waiting for responses */
 
@@ -61,7 +62,7 @@ static void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read
 static void btm_read_acl_real_rssi_vsc_cmpl_cb(tBTM_VSC_CMPL *p1)
 {
     tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_acl_real_rssi_cmpl_cb;
-    tBTM_ACL_REAL_RSSI_RESULTS results;
+    tBTM_ACL_REAL_RSSI_RESULTS results = {0};
     UINT16 handle = 0;
     tACL_CONN *p_acl_cb = NULL;
 
@@ -90,13 +91,15 @@ static void btm_read_acl_real_rssi_vsc_cmpl_cb(tBTM_VSC_CMPL *p1)
     }
 
     STREAM_TO_UINT16(handle, p);
+    p_acl_cb = btm_handle_to_acl(handle);
+    if (!p_acl_cb) {
+        results.status = BTM_UNKNOWN_ADDR;
+        goto out;
+    }
+
+    memcpy(results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
     STREAM_TO_UINT8(results.rssi, p);
     results.status = BTM_SUCCESS;
-
-    p_acl_cb = btm_handle_to_acl(handle);
-    if (p_acl_cb) {
-        memcpy(results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
-    }
 
 out:
     if (p_cb) {
@@ -189,38 +192,38 @@ void btm_acl_init (void)
 **                  NULL if not found.
 **
 *******************************************************************************/
-BOOLEAN btm_get_acl_db(void *p_acl_db_node, void *context)
+static BOOLEAN btm_get_acl_db(void *p_acl_db_node, void *context)
 {
     tACL_CONN *p_acl_db =(tACL_CONN *)p_acl_db_node;
     BOOLEAN ret = TRUE;
     tACL_DB_PARAM *p_param = (tACL_DB_PARAM *)context;
     switch(p_param->type) {
         case ACL_DB_BDA:
-	{
-	    UINT8 *p_bda = (UINT8 *)p_param->p_data1;
+    {
+        UINT8 *p_bda = (UINT8 *)p_param->p_data1;
 #if BLE_INCLUDED == TRUE
-	    tBT_TRANSPORT transport = (tBT_TRANSPORT)(*((UINT8 *)p_param->p_data2));
+        tBT_TRANSPORT transport = (tBT_TRANSPORT)(*((UINT8 *)p_param->p_data2));
 #endif
-	    if (p_acl_db->in_use
+        if (p_acl_db->in_use
                     && !memcmp(p_bda, p_acl_db->remote_addr, BD_ADDR_LEN)
 #if BLE_INCLUDED == TRUE
                     && transport == p_acl_db->transport
 #endif
-		    ) {
-	       ret = FALSE;
-	    }
+            ) {
+           ret = FALSE;
+        }
             break;
-	}
+    }
         case ACL_DB_HANDLE:
-	{
+    {
             UINT16 handle = (UINT16) *((UINT16 *)p_param->p_data1);
             if (p_acl_db->in_use && handle == p_acl_db->hci_handle) {
                 ret = FALSE;
-	    }
+        }
             break;
-	}
-	default:
-	    break;
+    }
+    default:
+        break;
     }
     return ret;
 }
@@ -399,8 +402,12 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
 #if (CLASSIC_BT_INCLUDED == TRUE)
         p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
 
-
         p->p_pm_mode_db = btm_pm_sm_alloc();
+        if (!p->p_pm_mode_db) {
+            list_remove(btm_cb.p_acl_db_list, p);
+            p = NULL;
+            return;
+        }
 
 #if BTM_PM_DEBUG == TRUE
         BTM_TRACE_DEBUG( "btm_pm_sm_alloc handle:%d st:%d", hci_handle, p->p_pm_mode_db->state);
@@ -601,7 +608,10 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
         }
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
-        list_remove(btm_cb.p_pm_mode_db_list, p->p_pm_mode_db);
+        if (p->p_pm_mode_db) {
+            list_remove(btm_cb.p_pm_mode_db_list, p->p_pm_mode_db);
+            p->p_pm_mode_db = NULL;
+        }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
         /* Remove and free the ACL connection data */
         list_remove(btm_cb.p_acl_db_list, p);
@@ -704,14 +714,13 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
     || (old_inquiry_state != btm_cb.is_inquiry)
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     ) {
-        tBTM_BL_UPDATE_DATA evt = {
-            .event = BTM_BL_UPDATE_EVT,
-            .busy_level = busy_level,
-            .busy_level_flags = busy_level_flags,
-        };
+        tBTM_BL_EVENT_DATA evt = {0};
+        evt.update.event = BTM_BL_UPDATE_EVT;
+        evt.update.busy_level = busy_level;
+        evt.update.busy_level_flags = busy_level_flags;
         btm_cb.busy_level = busy_level;
         if (btm_cb.p_bl_changed_cb && (btm_cb.bl_evt_mask & BTM_BL_UPDATE_MASK)) {
-            (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA *)&evt);
+            (*btm_cb.p_bl_changed_cb)(&evt);
         }
     }
 }
@@ -910,7 +919,7 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
 {
     tACL_CONN *p;
     tBTM_SEC_DEV_REC  *p_dev_rec;
-    tBTM_BL_ROLE_CHG_DATA   evt;
+    tBTM_BL_ROLE_CHG_DATA   evt = {0};
 
     BTM_TRACE_DEBUG ("btm_acl_encrypt_change handle=%d status=%d encr_enable=%d\n",
                      handle, status, encr_enable);
@@ -952,14 +961,20 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     else if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_ON) {
         p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
         p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+
+        BD_ADDR remote_bd_addr;
+        UINT8 role = btm_cb.devcb.switch_role_ref_data.role;
+        UINT8 hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
+        bdcpy(remote_bd_addr, btm_cb.devcb.switch_role_ref_data.remote_bd_addr);
+
         btm_acl_report_role_change(btm_cb.devcb.switch_role_ref_data.hci_status, p->remote_addr);
 
         /* if role change event is registered, report it now */
         if (btm_cb.p_bl_changed_cb && (btm_cb.bl_evt_mask & BTM_BL_ROLE_CHG_MASK)) {
             evt.event       = BTM_BL_ROLE_CHG_EVT;
-            evt.new_role    = btm_cb.devcb.switch_role_ref_data.role;
-            evt.p_bda       = btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
-            evt.hci_status  = btm_cb.devcb.switch_role_ref_data.hci_status;
+            evt.new_role    = role;
+            evt.p_bda       = remote_bd_addr;
+            evt.hci_status  = hci_status;
             (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA *)&evt);
 
             BTM_TRACE_DEBUG("Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d\n",
@@ -1060,10 +1075,12 @@ void BTM_SetDefaultLinkPolicy (UINT16 settings)
     }
     BTM_TRACE_DEBUG("Set DefaultLinkPolicy:0x%04x\n", settings);
 
-    btm_cb.btm_def_link_policy = settings;
-
     /* Set the default Link Policy of the controller */
-    btsnd_hcic_write_def_policy_set(settings);
+    if (btsnd_hcic_write_def_policy_set(settings) == TRUE) {
+        btm_cb.btm_def_link_policy = settings;
+    } else {
+        BTM_TRACE_WARNING("Failed to issue command of write_default_link_policy\n");
+    }
 }
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
@@ -1076,23 +1093,32 @@ void BTM_SetDefaultLinkPolicy (UINT16 settings)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_remote_version_complete (UINT8 *p)
+void btm_read_remote_version_complete (UINT8 *p, UINT16 evt_len)
 {
     tACL_CONN        *p_acl_cb = NULL;
     UINT8             status;
     UINT16            handle;
+    UINT16            remain_len = evt_len;
     BTM_TRACE_DEBUG ("btm_read_remote_version_complete\n");
+
+    if (remain_len < 3) {
+        return;
+    }
 
     STREAM_TO_UINT8  (status, p);
     STREAM_TO_UINT16 (handle, p);
+    remain_len -= 3;
 
     /* Look up the connection by handle and copy features */
     p_acl_cb = btm_handle_to_acl(handle);
     if (p_acl_cb) {
         if (status == HCI_SUCCESS) {
-            STREAM_TO_UINT8  (p_acl_cb->lmp_version, p);
-            STREAM_TO_UINT16 (p_acl_cb->manufacturer, p);
-            STREAM_TO_UINT16 (p_acl_cb->lmp_subversion, p);
+            if (remain_len >= 5) {
+                STREAM_TO_UINT8  (p_acl_cb->lmp_version, p);
+                STREAM_TO_UINT16 (p_acl_cb->manufacturer, p);
+                STREAM_TO_UINT16 (p_acl_cb->lmp_subversion, p);
+                remain_len -= 5;
+            }
         }
 #if BLE_INCLUDED == TRUE
         if (p_acl_cb->transport == BT_TRANSPORT_LE) {
@@ -1137,6 +1163,9 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
     if (p_dev_rec == NULL) {
         /* Get a new device; might be doing dedicated bonding */
         p_dev_rec = btm_find_or_alloc_dev (p_acl_cb->remote_addr);
+        if (p_dev_rec == NULL) {
+            return;
+        }
     }
 
     p_acl_cb->num_read_pages = num_read_pages;
@@ -1186,7 +1215,7 @@ void btm_read_remote_features (UINT16 handle)
     p_acl_cb = btm_handle_to_acl(handle);
     if (p_acl_cb == NULL) {
         BTM_TRACE_ERROR("btm_read_remote_features handle=%d invalid\n", handle);
-	return;
+    return;
     }
 
     p_acl_cb->num_read_pages = 0;
@@ -1244,7 +1273,7 @@ void btm_read_remote_features_complete (UINT8 *p)
     p_acl_cb = btm_handle_to_acl(handle);
     if (p_acl_cb == NULL) {
         BTM_TRACE_ERROR("btm_read_remote_features_complete handle=%d invalid\n", handle);
-	return;
+        return;
     }
 
     /* Copy the received features page */
@@ -1303,6 +1332,11 @@ void btm_read_remote_ext_features_complete (UINT8 *p)
         BTM_TRACE_ERROR("btm_read_remote_ext_features_complete page=%d unknown", max_page);
     }
 
+    if (page_num > HCI_EXT_FEATURES_PAGE_MAX) {
+        BTM_TRACE_ERROR("btm_read_remote_ext_features_complete page_num=%u invalid", page_num);
+        page_num = HCI_EXT_FEATURES_PAGE_MAX;
+        goto exit;
+    }
 
     /* Copy the received features page */
     STREAM_TO_ARRAY(p_acl_cb->peer_lmp_features[page_num], p, HCI_FEATURE_BYTES_PER_PAGE);
@@ -1319,6 +1353,7 @@ void btm_read_remote_ext_features_complete (UINT8 *p)
     /* Reading of remote feature pages is complete */
     BTM_TRACE_DEBUG("BTM reached last remote extended features page (%d)\n", page_num);
 
+exit:
     /* Process the pages */
     btm_process_remote_ext_features (p_acl_cb, (UINT8) (page_num + 1));
 
@@ -1346,7 +1381,7 @@ void btm_read_remote_ext_features_failed (UINT8 status, UINT16 handle)
     p_acl_cb = btm_handle_to_acl(handle);
     if (p_acl_cb == NULL) {
         BTM_TRACE_ERROR("btm_read_remote_ext_features_failed handle=%d invalid\n", handle);
-	return;
+        return;
     }
 
     /* Process supported features only */
@@ -1522,7 +1557,10 @@ UINT16 BTM_GetNumAclLinks (void)
 {
     uint16_t num_acl = 0;
 
-    num_acl = list_length(btm_cb.p_acl_db_list);
+    if (btm_cb.p_acl_db_list) {
+        num_acl = list_length(btm_cb.p_acl_db_list);
+    }
+
     return num_acl;
 }
 
@@ -1533,10 +1571,10 @@ UINT16 BTM_GetNumAclLinks (void)
 ** Description      This function is called to get the disconnection reason code
 **                  returned by the HCI at disconnection complete event.
 **
-** Returns          TRUE if connection is up, else FALSE.
+** Returns          UINT the HCI disconnection reason code
 **
 *******************************************************************************/
-UINT16 btm_get_acl_disc_reason_code (void)
+UINT8 btm_get_acl_disc_reason_code (void)
 {
     UINT8 res = btm_cb.acl_disc_reason;
     BTM_TRACE_DEBUG ("btm_get_acl_disc_reason_code\n");
@@ -1729,7 +1767,7 @@ UINT8 BTM_AllocateSCN(void)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 {
-    if (scn >= BTM_MAX_SCN) {
+    if ((scn == 0) || (scn >= BTM_MAX_SCN)) {
         return FALSE;
     }
 
@@ -1755,13 +1793,12 @@ BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 BOOLEAN BTM_FreeSCN(UINT8 scn)
 {
     BTM_TRACE_DEBUG ("BTM_FreeSCN \n");
-    if (scn <= BTM_MAX_SCN) {
+    if ((scn > 0) && (scn <= BTM_MAX_SCN)) {
         btm_cb.btm_scn[scn - 1] = FALSE;
         return (TRUE);
     } else {
         return (FALSE);    /* Illegal SCN passed in */
     }
-    return (FALSE);
 }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
@@ -1983,13 +2020,12 @@ tBTM_STATUS BTM_RegBusyLevelNotif (tBTM_BL_CHANGE_CB *p_cb, UINT8 *p_level,
         *p_level = btm_cb.busy_level;
     }
 
-    btm_cb.bl_evt_mask = evt_mask;
-
     if (!p_cb) {
         btm_cb.p_bl_changed_cb = NULL;
     } else if (btm_cb.p_bl_changed_cb) {
         return (BTM_BUSY);
     } else {
+        btm_cb.bl_evt_mask = evt_mask;
         btm_cb.p_bl_changed_cb = p_cb;
     }
 
@@ -2030,7 +2066,7 @@ tBTM_STATUS BTM_SetQoS (BD_ADDR bd, FLOW_SPEC *p_flow, tBTM_CMPL_CB *p_cb)
                    bd[0], bd[1], bd[2],
                    bd[3], bd[4], bd[5]);
 
-    /* If someone already waiting on the version, do not allow another */
+    /* If someone already waiting on the QoS, do not allow another */
     if (btm_cb.devcb.p_qossu_cmpl_cb) {
         return (BTM_BUSY);
     }
@@ -2132,7 +2168,8 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL
     BTM_TRACE_API ("BTM_ReadRSSI: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
                    remote_bda[0], remote_bda[1], remote_bda[2],
                    remote_bda[3], remote_bda[4], remote_bda[5]);
-    tBTM_RSSI_RESULTS result;
+    tBTM_RSSI_RESULTS result = {0};
+    memcpy(result.rem_bda, remote_bda, BD_ADDR_LEN);
     /* If someone already waiting on the version, do not allow another */
     if (btm_cb.devcb.p_rssi_cmpl_cb) {
         result.status = BTM_BUSY;
@@ -2156,10 +2193,11 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL
         } else {
             return (BTM_CMD_STARTED);
         }
+    } else {
+        result.status = BTM_UNKNOWN_ADDR;
+        (*p_cb)(&result);
+        return (BTM_UNKNOWN_ADDR);
     }
-
-    /* If here, no BD Addr found */
-    return (BTM_UNKNOWN_ADDR);
 }
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -2211,13 +2249,13 @@ tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_C
 #if CLASSIC_BT_INCLUDED == TRUE
     tBTM_STATUS ret = BTM_UNKNOWN_ADDR;
     tACL_CONN *p;
-    tBTM_SET_ACL_PKT_TYPES_RESULTS result;
+    tBTM_SET_ACL_PKT_TYPES_RESULTS result = {0};
 
     /* If someone already waiting on the version, do not allow another */
     if (btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb) {
-        result.status = HCI_ERR_REPEATED_ATTEMPTS;
+        result.status = BTM_BUSY;
         (*p_cb)(&result);
-        return (BTM_BUSY);;
+        return (BTM_BUSY);
     }
 
     p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
@@ -2230,12 +2268,16 @@ tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_C
         if (btm_set_packet_types(p, pkt_types) != BTM_CMD_STARTED) {
             btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb = NULL;
             btu_stop_timer (&btm_cb.devcb.set_acl_pkt_types_timer);
-            result.status = HCI_ERR_MEMORY_FULL;
+            result.status = BTM_NO_RESOURCES;
             (*p_cb)(&result);
             ret = BTM_NO_RESOURCES;
         } else {
             ret = BTM_CMD_STARTED;
         }
+    } else {
+        result.status = BTM_UNKNOWN_ADDR;
+        (*p_cb)(&result);
+        return (BTM_UNKNOWN_ADDR);
     }
     /* If here, no BD Addr found */
     return ret;
@@ -2248,7 +2290,7 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 {
     BTM_TRACE_DEBUG ("btm_acl_pkt_types_changed\n");
     tACL_CONN *conn = NULL;
-    tBTM_SET_ACL_PKT_TYPES_RESULTS results;
+    tBTM_SET_ACL_PKT_TYPES_RESULTS results = {0};
     btu_stop_timer (&btm_cb.devcb.set_acl_pkt_types_timer);
 
     /* If there is a callback registered for packet types changed, call it */
@@ -2262,8 +2304,10 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
         /* Search through the list of active channels for the correct BD Addr */
         if ((conn = btm_handle_to_acl(handle)) != NULL) {
             memcpy(results.rem_bda, conn->remote_addr, BD_ADDR_LEN);
-            (*btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb)(&results);
+        } else {
+            results.status = BTM_UNKNOWN_ADDR;
         }
+        (*btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb)(&results);
         btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb = NULL;
     }
 }
@@ -2293,6 +2337,7 @@ tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda)
                   remote_bda[0], remote_bda[1], remote_bda[2],
                   remote_bda[3], remote_bda[4], remote_bda[5]);
 
+    memcpy(result.rem_bda, remote_bda, BD_ADDR_LEN);
     memset(result.channel_map, 0, sizeof(result.channel_map));  // Clear channel map data
     /* If someone already waiting for the channel map, do not allow another */
     if (btm_cb.devcb.is_ch_map_cb) {
@@ -2480,7 +2525,7 @@ err_out:
 void btm_read_link_quality_complete (UINT8 *p)
 {
     tBTM_CMPL_CB            *p_cb = btm_cb.devcb.p_lnk_qual_cmpl_cb;
-    tBTM_LINK_QUALITY_RESULTS results;
+    tBTM_LINK_QUALITY_RESULTS results = {0};
     UINT16                   handle;
     tACL_CONN               *p_acl_cb = NULL;
     BTM_TRACE_DEBUG ("btm_read_link_quality_complete\n");
@@ -2502,10 +2547,12 @@ void btm_read_link_quality_complete (UINT8 *p)
                              results.link_quality, results.hci_status);
 
             /* Search through the list of active channels for the correct BD Addr */
-	    p_acl_cb = btm_handle_to_acl(handle);
-	    if (p_acl_cb) {
+            p_acl_cb = btm_handle_to_acl(handle);
+            if (p_acl_cb) {
                 memcpy (results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
-	    }
+            } else {
+                results.status = BTM_UNKNOWN_ADDR;
+            }
         } else {
             results.status = BTM_ERR_PROCESSING;
         }
@@ -2528,11 +2575,10 @@ tBTM_STATUS btm_remove_acl (BD_ADDR bd_addr, tBT_TRANSPORT transport)
 {
     UINT16  hci_handle = BTM_GetHCIConnHandle(bd_addr, transport);
     tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (bd_addr);
 
     BTM_TRACE_DEBUG ("btm_remove_acl\n");
 #if BTM_DISC_DURING_RS == TRUE
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bd_addr);
-
     /* Role Switch is pending, postpone until completed */
     if (p_dev_rec && (p_dev_rec->rs_disc_pending == BTM_SEC_RS_PENDING)) {
         p_dev_rec->rs_disc_pending = BTM_SEC_DISC_PENDING;
@@ -2588,6 +2634,7 @@ void btm_cont_rswitch (tACL_CONN *p, tBTM_SEC_DEV_REC *p_dev_rec,
                        UINT8 hci_status)
 {
     BOOLEAN sw_ok = TRUE;
+    UINT8 final_status = hci_status;
     BTM_TRACE_DEBUG ("btm_cont_rswitch\n");
     /* Check to see if encryption needs to be turned off if pending
        change of link key or role switch */
@@ -2622,8 +2669,9 @@ void btm_cont_rswitch (tACL_CONN *p, tBTM_SEC_DEV_REC *p_dev_rec,
         }
 
         if (!sw_ok) {
+            final_status = HCI_ERR_MEMORY_FULL;
             p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-            btm_acl_report_role_change(hci_status, p->remote_addr);
+            btm_acl_report_role_change(final_status, p->remote_addr);
         }
     }
 }
@@ -2774,23 +2822,23 @@ void btm_acl_chk_peer_pkt_type_support (tACL_CONN *p, UINT16 *p_pkt_type)
 {
     /* 3 and 5 slot packets? */
     if (!HCI_3_SLOT_PACKETS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])) {
-        *p_pkt_type &= ~(BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3);
+        *p_pkt_type &= ~(BTM_ACL_PKT_TYPES_MASK_DH3 | BTM_ACL_PKT_TYPES_MASK_DM3);
     }
 
     if (!HCI_5_SLOT_PACKETS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])) {
-        *p_pkt_type &= ~(BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5);
+        *p_pkt_type &= ~(BTM_ACL_PKT_TYPES_MASK_DH5 | BTM_ACL_PKT_TYPES_MASK_DM5);
     }
 
     /* 2 and 3 MPS support? */
     if (!HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])) {
         /* Not supported. Add 'not_supported' mask for all 2MPS packet types */
-        *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
+        *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 | BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 |
                         BTM_ACL_PKT_TYPES_MASK_NO_2_DH5);
     }
 
     if (!HCI_EDR_ACL_3MPS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])) {
         /* Not supported. Add 'not_supported' mask for all 3MPS packet types */
-        *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 +
+        *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 | BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 |
                         BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
     }
 
@@ -2800,13 +2848,13 @@ void btm_acl_chk_peer_pkt_type_support (tACL_CONN *p, UINT16 *p_pkt_type)
         if (!HCI_3_SLOT_EDR_ACL_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0]))
             /* Not supported. Add 'not_supported' mask for all 3-slot EDR packet types */
         {
-            *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
+            *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 | BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
         }
 
         if (!HCI_5_SLOT_EDR_ACL_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0]))
             /* Not supported. Add 'not_supported' mask for all 5-slot EDR packet types */
         {
-            *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+            *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 | BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
         }
     }
 }
@@ -2821,8 +2869,10 @@ void btm_acl_chk_peer_pkt_type_support (tACL_CONN *p, UINT16 *p_pkt_type)
 void btm_acl_free(void)
 {
     list_free(btm_cb.p_acl_db_list);
+    btm_cb.p_acl_db_list = NULL;
 #if (CLASSIC_BT_INCLUDED == TRUE)
     list_free(btm_cb.p_pm_mode_db_list);
+    btm_cb.p_pm_mode_db_list = NULL;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 

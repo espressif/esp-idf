@@ -27,7 +27,7 @@
 static void btm_read_new_conn_tx_pwr_lvl_vsc_cmpl_cb(tBTM_VSC_CMPL *p1)
 {
     tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_read_new_conn_tx_pwr_lvl_cmpl_cb;
-    tBTM_READ_NEW_CONN_TX_PWR_LVL_RESULTS result;
+    tBTM_READ_NEW_CONN_TX_PWR_LVL_RESULTS result = {0};
 
     btu_stop_timer(&btm_cb.devcb.read_new_conn_tx_pwr_lvl_timer);
     btm_cb.devcb.p_read_new_conn_tx_pwr_lvl_cmpl_cb = NULL;
@@ -63,11 +63,13 @@ out:
 tBTM_STATUS BTM_ReadNewConnTxPwrLvl(tBTM_CMPL_CB *p_cb)
 {
     tBTM_STATUS status;
-    tBTM_READ_NEW_CONN_TX_PWR_LVL_RESULTS result;
+    tBTM_READ_NEW_CONN_TX_PWR_LVL_RESULTS result = {0};
 
     if (btm_cb.devcb.p_read_new_conn_tx_pwr_lvl_cmpl_cb) {
         result.status = BTM_BUSY;
-        (*p_cb)(&result);
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
         return BTM_BUSY;
     }
 
@@ -82,7 +84,9 @@ tBTM_STATUS BTM_ReadNewConnTxPwrLvl(tBTM_CMPL_CB *p_cb)
         btm_cb.devcb.p_read_new_conn_tx_pwr_lvl_cmpl_cb = NULL;
         btu_stop_timer(&btm_cb.devcb.read_new_conn_tx_pwr_lvl_timer);
         result.status = status;
-        (*p_cb)(&result);
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
         return BTM_NO_RESOURCES;
     }
 
@@ -92,12 +96,11 @@ tBTM_STATUS BTM_ReadNewConnTxPwrLvl(tBTM_CMPL_CB *p_cb)
 static void btm_write_new_conn_tx_pwr_lvl_vsc_cmpl_cb(tBTM_VSC_CMPL *p1)
 {
     tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_write_new_conn_tx_pwr_lvl_cmpl_cb;
-    tBTM_WRITE_NEW_CONN_TX_PWR_LVL_RESULTS result;
+    tBTM_WRITE_NEW_CONN_TX_PWR_LVL_RESULTS result = {0};
 
     btu_stop_timer(&btm_cb.devcb.write_new_conn_tx_pwr_lvl_timer);
     btm_cb.devcb.p_write_new_conn_tx_pwr_lvl_cmpl_cb = NULL;
 
-    memset(&result, 0, sizeof(result));
     result.status = BTM_ERR_PROCESSING;
     result.hci_status = HCI_ERR_UNSPECIFIED;
 
@@ -122,13 +125,15 @@ out:
 tBTM_STATUS BTM_WriteNewConnTxPwrLvl(INT8 pwr_lvl_min, INT8 pwr_lvl_max, tBTM_CMPL_CB *p_cb)
 {
     tBTM_STATUS status;
-    tBTM_WRITE_NEW_CONN_TX_PWR_LVL_RESULTS result;
+    tBTM_WRITE_NEW_CONN_TX_PWR_LVL_RESULTS result = {0};
     UINT8 param[2];
     UINT8 *p = param;
 
     if (btm_cb.devcb.p_write_new_conn_tx_pwr_lvl_cmpl_cb) {
         result.status = BTM_BUSY;
-        (*p_cb)(&result);
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
         return BTM_BUSY;
     }
 
@@ -145,7 +150,9 @@ tBTM_STATUS BTM_WriteNewConnTxPwrLvl(INT8 pwr_lvl_min, INT8 pwr_lvl_max, tBTM_CM
         btm_cb.devcb.p_write_new_conn_tx_pwr_lvl_cmpl_cb = NULL;
         btu_stop_timer(&btm_cb.devcb.write_new_conn_tx_pwr_lvl_timer);
         result.status = status;
-        (*p_cb)(&result);
+        if (p_cb) {
+            (*p_cb)(&result);
+        }
         return BTM_NO_RESOURCES;
     }
 
@@ -156,7 +163,7 @@ static void btm_read_tx_pwr_lvl_vsc_cmpl_cb(tBTM_TX_PWR_LVL_TYPE type, tBTM_VSC_
                                             TIMER_LIST_ENT *timer, tBTM_CMPL_CB **pp_cb)
 {
     tBTM_CMPL_CB *p_cb = *pp_cb;
-    tBTM_READ_TX_PWR_LVL_RESULTS result;
+    tBTM_READ_TX_PWR_LVL_RESULTS result = {0};
 
     btu_stop_timer(timer);
     *pp_cb = NULL;
@@ -220,7 +227,7 @@ tBTM_STATUS BTM_ReadBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, tBTM_CMPL_CB *p_cb)
     tBTM_VSC_CMPL_CB *p_vsc_cb;
 
     tBTM_STATUS status;
-    tBTM_READ_TX_PWR_LVL_RESULTS result;
+    tBTM_READ_TX_PWR_LVL_RESULTS result = {0};
 #endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
 
     switch (type) {
@@ -288,7 +295,7 @@ static void btm_write_tx_pwr_lvl_vsc_cmpl_cb(tBTM_TX_PWR_LVL_TYPE type, tBTM_VSC
                                              TIMER_LIST_ENT *timer, tBTM_CMPL_CB **pp_cb)
 {
     tBTM_CMPL_CB *p_cb = *pp_cb;
-    tBTM_WRITE_TX_PWR_LVL_RESULTS result;
+    tBTM_WRITE_TX_PWR_LVL_RESULTS result = {0};
 
     btu_stop_timer(timer);
     *pp_cb = NULL;
@@ -347,7 +354,7 @@ tBTM_STATUS BTM_WriteBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, INT8 tx_power, tBT
     tBTM_VSC_CMPL_CB *p_vsc_cb;
 
     tBTM_STATUS status;
-    tBTM_WRITE_TX_PWR_LVL_RESULTS result;
+    tBTM_WRITE_TX_PWR_LVL_RESULTS result = {0};
     UINT8 param[1];
     UINT8 *p = param;
 #endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
@@ -425,12 +432,12 @@ tBTM_STATUS BTM_WriteBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, INT8 tx_power, tBT
 void btm_bredr_pwr_ctrl_timeout(TIMER_LIST_ENT *p_tle)
 {
     if (p_tle == &btm_cb.devcb.write_inq_txpwer_timer) {
-        btm_write_inq_tx_power_complete(NULL);
+        btm_write_inq_tx_power_complete(NULL, 0);
     } else if (p_tle == &btm_cb.devcb.read_iscan_txpwer_timer) {
-        btm_read_iscan_tx_power_complete(NULL);
-
+        btm_read_iscan_tx_power_complete(NULL, 0);
+    }
 #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
-    } else if (p_tle == &btm_cb.devcb.read_new_conn_tx_pwr_lvl_timer) {
+    else if (p_tle == &btm_cb.devcb.read_new_conn_tx_pwr_lvl_timer) {
         btm_read_new_conn_tx_pwr_lvl_vsc_cmpl_cb(NULL);
     } else if (p_tle == &btm_cb.devcb.write_new_conn_tx_pwr_lvl_timer) {
         btm_write_new_conn_tx_pwr_lvl_vsc_cmpl_cb(NULL);
@@ -446,9 +453,8 @@ void btm_bredr_pwr_ctrl_timeout(TIMER_LIST_ENT *p_tle)
         btm_write_page_tx_pwr_lvl_vsc_cmpl_cb(NULL);
     } else if (p_tle == &btm_cb.devcb.write_pscan_tx_pwr_lvl_timer) {
         btm_write_pscan_tx_pwr_lvl_vsc_cmpl_cb(NULL);
-
-#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
     }
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
 }
 
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)

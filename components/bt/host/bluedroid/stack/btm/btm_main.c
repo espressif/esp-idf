@@ -25,6 +25,7 @@
 
 #include "stack/bt_types.h"
 #include "common/bt_target.h"
+#include <assert.h>
 #include <string.h>
 #include "btm_int.h"
 #include "osi/allocator.h"
@@ -61,14 +62,17 @@ void btm_init (void)
 {
 #if BTM_DYNAMIC_MEMORY
     btm_cb_ptr = (tBTM_CB *)osi_malloc(sizeof(tBTM_CB));
+    assert(btm_cb_ptr != NULL);
 #endif /* #if BTM_DYNAMIC_MEMORY */
     /* All fields are cleared; nonzero fields are reinitialized in appropriate function */
     memset(&btm_cb, 0, sizeof(tBTM_CB));
 #if (CLASSIC_BT_INCLUDED == TRUE)
     btm_cb.page_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    assert(btm_cb.page_queue != NULL);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
     btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
+    assert(btm_cb.sec_pending_q != NULL);
 #endif // (SMP_INCLUDED == TRUE)
 #if defined(BTM_INITIAL_TRACE_LEVEL)
     btm_cb.trace_level = BTM_INITIAL_TRACE_LEVEL;
@@ -114,6 +118,11 @@ void btm_init (void)
 *******************************************************************************/
 void btm_free(void)
 {
+#if BTM_DYNAMIC_MEMORY
+    if (!btm_cb_ptr) {
+        return;
+    }
+#endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
     fixed_queue_free(btm_cb.page_queue, osi_free_func);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -125,6 +134,7 @@ void btm_free(void)
 #if BTM_SCO_INCLUDED == TRUE
     btm_sco_free();
 #endif
+    FREE_AND_RESET(btm_cb.btm_inq_vars.p_bd_db);
 #if BTM_DYNAMIC_MEMORY
     FREE_AND_RESET(btm_cb_ptr);
 #endif

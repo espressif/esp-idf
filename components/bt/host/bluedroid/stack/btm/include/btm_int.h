@@ -1097,7 +1097,7 @@ void         btm_inq_rmt_name_failed(void);
 /* Inquiry related functions */
 void         btm_clr_inq_db (BD_ADDR p_bda);
 void         btm_inq_db_init (void);
-void         btm_process_inq_results (UINT8 *p, UINT8 inq_res_mode);
+void         btm_process_inq_results (UINT8 *p, UINT16 evt_len, UINT8 inq_res_mode);
 void         btm_process_inq_complete (UINT8 status, UINT8 mode);
 void         btm_process_cancel_complete(UINT8 status, UINT8 mode);
 void         btm_event_filter_complete (UINT8 *p);
@@ -1109,8 +1109,8 @@ BOOLEAN      btm_inq_find_bdaddr (BD_ADDR p_bda);
 BOOLEAN btm_lookup_eir(BD_ADDR_PTR p_rem_addr);
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
-void btm_read_iscan_tx_power_complete (UINT8 *p);
-void btm_write_inq_tx_power_complete (UINT8 *p);
+void btm_read_iscan_tx_power_complete (UINT8 *p, UINT16 evt_len);
+void btm_write_inq_tx_power_complete (UINT8 *p, UINT16 evt_len);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /* Internal functions provided by btm_bredr_pwr_ctrl.c
@@ -1147,12 +1147,12 @@ tBTM_STATUS  btm_set_packet_types (tACL_CONN *p, UINT16 pkt_types);
 void         btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset);
 void         btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role);
 void         btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable);
-UINT16       btm_get_acl_disc_reason_code (void);
+UINT8        btm_get_acl_disc_reason_code (void);
 tBTM_STATUS  btm_remove_acl (BD_ADDR bd_addr, tBT_TRANSPORT transport);
 void         btm_read_remote_features_complete (UINT8 *p);
 void         btm_read_remote_ext_features_complete (UINT8 *p);
 void         btm_read_remote_ext_features_failed (UINT8 status, UINT16 handle);
-void         btm_read_remote_version_complete (UINT8 *p);
+void         btm_read_remote_version_complete (UINT8 *p, UINT16 evt_len);
 void         btm_establish_continue (tACL_CONN *p_acl_cb);
 
 // btla-specific ++
@@ -1319,8 +1319,8 @@ void  btm_io_capabilities_req (UINT8 *p);
 void  btm_io_capabilities_rsp (UINT8 *p);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 void  btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p);
-void  btm_keypress_notif_evt (UINT8 *p);
-void  btm_simple_pair_complete (UINT8 *p);
+void  btm_keypress_notif_evt (UINT8 *p, UINT16 evt_len);
+void  btm_simple_pair_complete (UINT8 *p, UINT16 evt_len);
 #endif /* (CLASSIC_BT_INCLUDED == TRUE) */
 void  btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_type);
 void  btm_sec_link_key_request (UINT8 *p_bda);
