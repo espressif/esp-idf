@@ -96,7 +96,7 @@ static void IRAM_ATTR cache_access_test_func(void* arg)
 #define CACHE_ERROR_REASON "Cache error,SW_CPU"
 #endif
 
-// These tests works properly if they resets the chip with the
+// These tests work properly if they reset the chip with the
 // "Cache Error" reason and the correct CPU is logged.
 static void invalid_access_to_cache_pro_cpu(void)
 {
@@ -119,13 +119,11 @@ TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (APP CPU)", "[ms
 #endif // !CONFIG_FREERTOS_UNICORE
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
-#if MSPI_LL_AXI_DISABLE_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32P4
-#define AXI_RESET_REASON    ESP_RST_WDT
-#elif CONFIG_IDF_TARGET_ESP32S31
-//aligned with rom impl
-#define AXI_RESET_REASON    5
-#endif
+#if MSPI_LL_AXI_DISABLE_SUPPORTED && CONFIG_ESP_PANIC_HANDLER_IRAM
+// AXI stays closed after the first fault. A flash-resident panic handler would nested-fault (CPU lockup / WDT).
+// Using IRAM handler can complete with ESP_RST_PANIC.
+
+#define AXI_RESET_REASON    ESP_RST_PANIC
 static void reset_after_disable_axi(void)
 {
     //For now we only support AXI disabling LL APIs, so the reset reason will be AXI_RESET_REASON
@@ -149,4 +147,4 @@ static void NOINLINE_ATTR IRAM_ATTR s_invalid_axi_access(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("invalid access to axi bus", "[mspi][reset="CACHE_ERROR_REASON"]", s_invalid_axi_access, reset_after_disable_axi);
-#endif // MSPI_LL_AXI_DISABLE_SUPPORTED
+#endif // MSPI_LL_AXI_DISABLE_SUPPORTED && CONFIG_ESP_PANIC_HANDLER_IRAM

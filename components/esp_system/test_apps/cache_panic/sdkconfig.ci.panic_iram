@@ -1,0 +1,4 @@
+# Place the panic handler in IRAM for the AXI access case.
+# Closing AXI then fetching a flash-resident handler causes a nested
+# exception (CPU lockup / WDT reset) instead of ESP_RST_PANIC.
+CONFIG_ESP_PANIC_HANDLER_IRAM=y
