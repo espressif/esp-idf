@@ -10,6 +10,7 @@ from idf_build_apps import App
 from idf_build_apps import CMakeApp
 from idf_build_apps.constants import BuildStatus
 from idf_build_apps.utils import rmdir
+from idf_ci_utils import APP_EXTRA_S3_ARTIFACT_TYPE
 from idf_ci_utils import idf_relpath
 
 if t.TYPE_CHECKING:
@@ -30,7 +31,7 @@ class IdfCMakeApp(CMakeApp):
 
         # only upload in CI
         if os.getenv('CI_JOB_ID'):
-            result = subprocess.run(
+            upload_commands = [
                 [
                     'idf-ci',
                     'gitlab',
@@ -39,12 +40,26 @@ class IdfCMakeApp(CMakeApp):
                     '--build-dir',
                     self.build_dir,
                 ],
-                stdout=sys.stdout,
-                stderr=sys.stderr,
-            )
-            if result.returncode != 0:
-                self.build_status = BuildStatus.FAILED
-                self.build_comment = 'Failed to upload artifacts'
+                [
+                    'idf-ci',
+                    'gitlab',
+                    'upload-artifacts',
+                    self.app_dir,
+                    '--type',
+                    APP_EXTRA_S3_ARTIFACT_TYPE,
+                ],
+            ]
+
+            for command in upload_commands:
+                result = subprocess.run(
+                    command,
+                    stdout=sys.stdout,
+                    stderr=sys.stderr,
+                )
+                if result.returncode != 0:
+                    self.build_status = BuildStatus.FAILED
+                    self.build_comment = 'Failed to upload artifacts'
+                    break
 
             rmdir(
                 self.build_path,

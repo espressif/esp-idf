@@ -36,6 +36,7 @@ from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
 from idf_ci import PytestCase
 from idf_ci.idf_pytest import IDF_CI_PYTEST_CASE_KEY
+from idf_ci_utils import APP_EXTRA_S3_ARTIFACT_TYPE
 from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
 from idf_pytest.constants import DEFAULT_LOGDIR
@@ -157,6 +158,33 @@ class AppDownloader:
         logging.info(result.stdout)
         if result.stderr:
             logging.info(result.stderr)
+
+    def download_app_extra(self, app_dir: str) -> None:
+        """Download app-dir artifacts defined under app_extra in .idf_ci.toml."""
+        args = [
+            'idf-ci',
+            'gitlab',
+            'download-artifacts',
+            '--commit-sha',
+            self.commit_sha,
+            '--type',
+            APP_EXTRA_S3_ARTIFACT_TYPE,
+            app_dir,
+        ]
+        if self.pipeline_id:
+            args.extend(['--pipeline-id', self.pipeline_id])
+
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            cwd=IDF_PATH,
+        )
+        logging.info(result.stdout)
+        if result.stderr:
+            logging.info(result.stderr)
+        if result.returncode != 0:
+            raise RuntimeError(f'Failed to download {APP_EXTRA_S3_ARTIFACT_TYPE} artifacts for {app_dir}')
 
 
 class OpenOCD:
@@ -301,6 +329,18 @@ def app_downloader(
     logging.debug('pipeline commit sha of pipeline %s is %s', pipeline_id, commit_sha)
 
     return AppDownloader(commit_sha, pipeline_id)
+
+
+@pytest.fixture
+def download_app_extra(app_downloader: AppDownloader | None) -> t.Callable[[str], None]:
+    """Download app_extra S3 artifacts for the given app path (no-op outside CI)."""
+
+    def _download_app_extra(app_path: str) -> None:
+        if app_downloader is None:
+            return
+        app_downloader.download_app_extra(idf_relpath(app_path))
+
+    return _download_app_extra
 
 
 @pytest.fixture
