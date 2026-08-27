@@ -41,19 +41,40 @@
 
 static const char *TAG = "usj_transport";
 
+/*
+ * USB CDC IN transfers finish with a short packet. A 64-byte USJ packet fills
+ * the endpoint, so the host may keep the transfer open until it receives another
+ * packet shorter than 64 bytes. If no later short packet is sent, flush must send
+ * a ZLP (zero-length packet) to finish the transfer.
+ *
+ * See usb_serial_jtag_ll_txfifo_flush() for the USJ FIFO/full-packet behavior.
+ */
+typedef enum {
+    USJ_TX_IDLE,
+    USJ_TX_SHORT_PENDING,
+    USJ_TX_ZLP_PENDING,
+} usj_tx_state_t;
+
 /* Transport context */
 typedef struct {
     int inited;                         ///< Initialization flag (bitmask per core)
     esp_trace_rb_t tx_ring;             ///< TX ring buffer
     esp_trace_rb_t rx_ring;             ///< RX ring buffer
+    usj_tx_state_t tx_state;            ///< Pending TX packet finalization state
 
     /* Flush configuration */
     uint32_t flush_tmo;                 ///< Flush timeout in microseconds
     uint32_t flush_thresh;              ///< Flush threshold in bytes
 } usj_ctx_t;
 
-#define USJ_FLUSH_TIMEOUT_US (1000000)  // 1 second
-#define USJ_FLUSH_THRESH_BYTES (0)      // 0 bytes
+/*
+ * flush_nolock() runs with interrupts masked, so normal flushes use a short
+ * fixed timeout even if an encoder requests a longer one.
+ */
+#define USJ_FLUSH_TIMEOUT_US            (1000)      // 1 ms
+#define USJ_FLUSH_THRESH_BYTES          (0)         // 0 bytes
+#define USJ_FLUSH_MAX_INTR_MASKED_US    (2000)      // 2 ms
+#define USJ_FLUSH_POLL_STEP_US          (100)       // delay between no-progress polls
 
 /* USB Serial JTAG hardware FIFO size (RX and TX) is 64 bytes (USB FS bulk endpoint max packet size) */
 #define USJ_HW_FIFO_SIZE    (64)
@@ -76,10 +97,30 @@ static uint32_t usj_write_fifo(usj_ctx_t *ctx, esp_trace_rb_t *rb)
     uint32_t written = usb_serial_jtag_ll_write_txfifo(ptr, to_send);
     esp_trace_rb_consume(rb, written);
 
-    /* Flush to send data or zero-byte packet to end USB transfer */
-    usb_serial_jtag_ll_txfifo_flush();
+    ctx->tx_state = usb_serial_jtag_ll_txfifo_writable() ? USJ_TX_SHORT_PENDING : USJ_TX_ZLP_PENDING;
 
     return written;
+}
+
+static uint32_t usj_fill_txfifo(usj_ctx_t *ctx, bool commit_short)
+{
+    esp_trace_rb_t *rb = &ctx->tx_ring;
+    uint32_t total_written = 0;
+
+    while (esp_trace_rb_data_len(rb) > 0 && usb_serial_jtag_ll_txfifo_writable()) {
+        uint32_t written = usj_write_fifo(ctx, rb);
+        if (written == 0) {
+            break;
+        }
+        total_written += written;
+    }
+
+    if (commit_short && ctx->tx_state == USJ_TX_SHORT_PENDING) {
+        usb_serial_jtag_ll_txfifo_flush();
+        ctx->tx_state = USJ_TX_IDLE;
+    }
+
+    return total_written;
 }
 
 static void usj_read_rx_fifo(usj_ctx_t *ctx)
@@ -229,12 +270,8 @@ static esp_err_t usj_write(esp_trace_transport_t *tp, const void *data, size_t s
     /* Add data to TX ring buffer */
     esp_trace_rb_put(rb, (const uint8_t *)data, size);
 
-    /* Try to flush some data to HW FIFO immediately (non-blocking) */
-    while (esp_trace_rb_data_len(rb) > 0) {
-        if (usj_write_fifo(ctx, rb) == 0) {
-            break;  /* FIFO full, will be drained on next write or flush */
-        }
-    }
+    /* Try to move data to HW FIFO immediately, without forcing a short packet. */
+    usj_fill_txfifo(ctx, false);
 
     return ESP_OK;
 }
@@ -250,29 +287,46 @@ static esp_err_t usj_down_buffer_config(esp_trace_transport_t *tp, uint8_t *buf,
     return ESP_OK;
 }
 
-static esp_err_t usj_flush_nolock(esp_trace_transport_t *tp)
+static esp_err_t usj_flush_with_timeout(usj_ctx_t *ctx, uint32_t tmo_us)
 {
-    usj_ctx_t *ctx = (usj_ctx_t *)tp->ctx;
     esp_trace_rb_t *rb = &ctx->tx_ring;
 
     uint32_t pending = esp_trace_rb_data_len(rb);
-    if (pending < ctx->flush_thresh) {
+    if (pending < ctx->flush_thresh && ctx->tx_state == USJ_TX_IDLE) {
         return ESP_OK;
     }
 
     esp_trace_tmo_t timeout;
-    esp_trace_tmo_init(&timeout, ctx->flush_tmo);
+    esp_trace_tmo_init(&timeout, tmo_us);
 
-    /* Drain ring buffer to HW FIFO */
-    while (esp_trace_rb_data_len(rb) > 0) {
-        usj_write_fifo(ctx, rb);
-        if (esp_trace_tmo_check(&timeout) != ESP_OK) {
-            return ESP_ERR_TIMEOUT;
+    while (esp_trace_rb_data_len(rb) > 0 || ctx->tx_state != USJ_TX_IDLE) {
+        uint32_t written = usj_fill_txfifo(ctx, true);
+
+        if (ctx->tx_state == USJ_TX_ZLP_PENDING && usb_serial_jtag_ll_txfifo_writable()) {
+            usb_serial_jtag_ll_txfifo_flush();
+            ctx->tx_state = USJ_TX_IDLE;
+            continue;
         }
-        esp_rom_delay_us(100);
+
+        if (written == 0) {
+            if (esp_trace_tmo_check(&timeout) != ESP_OK) {
+                return ESP_ERR_TIMEOUT;
+            }
+            esp_rom_delay_us(USJ_FLUSH_POLL_STEP_US);
+        }
     }
 
     return ESP_OK;
+}
+
+static esp_err_t usj_flush_nolock(esp_trace_transport_t *tp)
+{
+    usj_ctx_t *ctx = (usj_ctx_t *)tp->ctx;
+
+    /* Interrupts are masked here, so never spin longer than the int_wdt-safe limit. */
+    uint32_t tmo = (ctx->flush_tmo < USJ_FLUSH_MAX_INTR_MASKED_US)
+                   ? ctx->flush_tmo : USJ_FLUSH_MAX_INTR_MASKED_US;
+    return usj_flush_with_timeout(ctx, tmo);
 }
 
 static bool usj_is_host_connected(esp_trace_transport_t *tp)
@@ -341,7 +395,8 @@ static esp_err_t usj_get_config(esp_trace_transport_t *tp, esp_trace_transport_c
 static void usj_panic_handler(esp_trace_transport_t *tp, const void *info)
 {
     (void)info;
-    usj_flush_nolock(tp);
+    usj_ctx_t *ctx = (usj_ctx_t *)tp->ctx;
+    usj_flush_with_timeout(ctx, ctx->flush_tmo);
 }
 
 /* ----------------------- Transport Registration ----------------------- */

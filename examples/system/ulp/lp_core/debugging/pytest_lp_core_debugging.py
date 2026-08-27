@@ -15,6 +15,7 @@ if typing.TYPE_CHECKING:
 
 @idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32p4', 'esp32s31'], indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31-lpcore not supported in latest OpenOCD release yet')
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 @pytest.mark.usb_serial_jtag
 def test_lp_core_debugging(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     dut.expect('Do some work on HP core...')

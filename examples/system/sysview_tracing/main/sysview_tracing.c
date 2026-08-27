@@ -45,18 +45,10 @@ static const char *TAG = "example";
 #define SYSVIEW_EXAMPLE_WAIT_EVENT_START()  example_sysview_event_send(SYSVIEW_EXAMPLE_WAIT_EVENT_START_ID, 0)
 #define SYSVIEW_EXAMPLE_WAIT_EVENT_END(_val_)    example_sysview_event_send(SYSVIEW_EXAMPLE_WAIT_EVENT_END_ID, _val_)
 
-static void example_sysview_module_send_desc(void);
-
 static SEGGER_SYSVIEW_MODULE s_example_sysview_module = {
-    .sModule = "example_sysview_module",
+    .sModule = "M=Example SystemView User Module",
     .NumEvents = SYSVIEW_EXAMPLE_EVENT_MAX,
-    .pfSendModuleDesc = example_sysview_module_send_desc,
 };
-
-static void example_sysview_module_send_desc(void)
-{
-    SEGGER_SYSVIEW_RecordModuleDescription(&s_example_sysview_module, "Example SystemView User Module");
-}
 
 static void example_sysview_event_send(uint32_t id, uint32_t val)
 {
