@@ -1,6 +1,41 @@
 CONFIG_LV_CONF_SKIP=y
+CONFIG_FREERTOS_HZ=1000
+
+# Use ESP-IDF / newlib for heap and libc primitives instead of LVGL's copies.
 CONFIG_LV_USE_CLIB_MALLOC=y
+CONFIG_LV_USE_CLIB_STRING=y
+CONFIG_LV_USE_CLIB_SPRINTF=y
+
+# Match the 16-bit RGB565 panel and the flush callback in lvgl_port.c.
+CONFIG_LV_COLOR_DEPTH_16=y
+
+# Style property cache: 8 bytes per widget, fewer style lookups per refresh.
+CONFIG_LV_OBJ_STYLE_CACHE=y
+
+# Cache decoded image headers so LittleFS files are not re-probed every frame.
+CONFIG_LV_IMAGE_HEADER_CACHE_DEF_CNT=4
+
+# Do not compile LVGL's own examples/demos into this firmware.
+CONFIG_LV_BUILD_EXAMPLES=n
+CONFIG_LV_BUILD_DEMOS=n
+
 CONFIG_LV_USE_OBSERVER=y
 CONFIG_LV_USE_SYSMON=y
 CONFIG_LV_USE_PERF_MONITOR=y
-CONFIG_FREERTOS_HZ=1000
+
+# Use the custom partition table which reserves a LittleFS "storage" partition
+CONFIG_PARTITION_TABLE_CUSTOM=y
+
+# Enable LVGL's POSIX file system interface so images can be loaded from LittleFS
+# use 'S' (83 in ASCII) as drive letter for POSIX FS
+CONFIG_LV_USE_FS_POSIX=y
+CONFIG_LV_FS_POSIX_LETTER=83
+
+# Enable LZ4 image decompression. Use the external espressif/lz4 library instead
+# of LVGL's built-in copy. The external library is pulled automatically via the lvgl/idf_component.yml.
+CONFIG_LV_USE_LZ4=y
+CONFIG_LV_USE_LZ4_INTERNAL=n
+
+# Compressed .bin images cannot be decoded line-by-line; the decoder must load
+# and decompress the whole image into RAM.
+CONFIG_LV_BIN_DECODER_RAM_LOAD=y

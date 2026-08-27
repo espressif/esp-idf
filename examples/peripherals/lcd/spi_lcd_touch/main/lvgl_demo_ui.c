@@ -9,16 +9,16 @@
 #include "lvgl.h"
 
 static lv_obj_t * btn;
-static lv_display_rotation_t rotation = LV_DISP_ROTATION_0;
+static lv_display_rotation_t rotation = LV_DISPLAY_ROTATION_0;
 
 static void btn_cb(lv_event_t * e)
 {
     lv_display_t *disp = lv_event_get_user_data(e);
     rotation++;
-    if (rotation > LV_DISP_ROTATION_270) {
-        rotation = LV_DISP_ROTATION_0;
+    if (rotation > LV_DISPLAY_ROTATION_270) {
+        rotation = LV_DISPLAY_ROTATION_0;
     }
-    lv_disp_set_rotation(disp, rotation);
+    lv_display_set_rotation(disp, rotation);
 }
 static void set_angle(void * obj, int32_t v)
 {
@@ -41,7 +41,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_arc_set_rotation(arc, 270);
     lv_arc_set_bg_angles(arc, 0, 360);
     lv_obj_remove_style(arc, NULL, LV_PART_KNOB);   /*Be sure the knob is not displayed*/
-    lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);  /*To not allow adjusting by click*/
+    lv_obj_set_clickable(arc, false);  /*To not allow adjusting by click*/
     lv_obj_center(arc);
 
     lv_anim_t a;
