@@ -9,7 +9,7 @@
 
 .. gpio-summary
 
-The {IDF_TARGET_NAME} chip features 21 physical GPIO pins (GPIO0 ~ GPIO20). For chip variants with an SiP flash built in, GPIO11 ~ GPIO17 are dedicated to connecting the SiP flash; therefore, only 14 GPIO pins are available.
+The {IDF_TARGET_NAME} chip features 21 physical GPIO pins (GPIO0 ~ GPIO20). For chip variants with an SiP flash built in, GPIO11 ~ GPIO17 are not led out; therefore, only 14 GPIO pins are available.
 
 Each pin can be used as a general-purpose I/O, or to be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
@@ -50,27 +50,21 @@ The table below provides more information on pin usage, and please note the comm
     * - GPIO6
       -
       -
-
     * - GPIO7
       -
       -
-
     * - GPIO8
       -
-      - Strapping pin
-
+      -
     * - GPIO9
       -
-      - Strapping pin
-
+      -
     * - GPIO10
       -
       -
-
     * - GPIO11
       -
       -
-
     * - GPIO12
       -
       - SPI0/1
@@ -98,18 +92,15 @@ The table below provides more information on pin usage, and please note the comm
     * - GPIO18
       -
       -
-
     * - GPIO19
       -
       -
-
     * - GPIO20
       -
       -
-
 .. note::
 
-    - Strapping pin: GPIO8 and GPIO9 are strapping pins. For more information, please refer to `ESP8684 datasheet <https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf>`_.
+    - Strapping pin: Some pins are used as strapping pins. For more information, please refer to *{IDF_TARGET_NAME} datasheet* > *Boot Configurations* [`PDF <{IDF_TARGET_DATASHEET_EN_URL}#cd-pins-strap>`__].
     - SPI0/1: GPIO12-17 are usually used for SPI flash and not recommended for other uses.
     - RTC: GPIO0-5 can be used to wake up the chip from Deep-sleep mode. Other GPIOs can only wake up the chip from Light-sleep mode. For more information, please refer to Section :ref:`Wakeup Sources<api-reference-wakeup-source>`.
 
