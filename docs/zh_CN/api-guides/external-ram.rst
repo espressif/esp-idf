@@ -104,14 +104,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
 如果优先考虑的内部或外部存储器中没有可用的存储块，分配程序则会选择其他类型存储。
 
-由于有些内存缓冲器仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 在启动阶段（PSRAM 初始化完成后，于 ``main_task`` 中）预留一块内部 DMA 可用内存池。该内存从常规内部堆中分配出，并重新注册为独立的内存池。
-
-预留池通过堆能力优先级机制管理：
-
-- **中优先级** — ``MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL``：显式使用这些标志的 ``heap_caps_malloc()`` 请求会优先从此池分配。
-- **低优先级** — ``MALLOC_CAP_DEFAULT``：仅当其他具有更高优先级 ``MALLOC_CAP_DEFAULT`` 的内部堆耗尽后，``malloc()`` 才会回退使用此池。
-
-因此，在正常情况下 ``malloc()`` 不会从该池分配；仅当其他内部内存耗尽后，``malloc()`` 才会将其作为最后的回退来源以避免分配完全失败。
+由于有些内存缓冲器仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 定义一个内部内存池，仅限显式的内部存储器分配使用（例如用于 DMA 的存储器）。常规 ``malloc()`` 将不会从该池中分配，但可以使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 和 ``MALLOC_CAP_INTERNAL`` 标志从该池中分配存储器。
 
 .. _external_ram_config_bss:
 
