@@ -528,11 +528,36 @@ static esp_err_t sd_host_slot_sdmmc_get_info(sd_host_slot_handle_t slot, sd_host
 /*---------------------------------------------------------------
                     Internal APIs
 ---------------------------------------------------------------*/
+static bool sdmmc_dma_accessible(const void *ptr)
+{
+    if (esp_ptr_external_ram(ptr)) {
+#if SOC_SDMMC_PSRAM_DMA_CAPABLE
+        return esp_ptr_dma_ext_capable(ptr);
+#else
+        return false;
+#endif
+    }
+
+    return esp_ptr_dma_capable(ptr);
+}
+
 bool sd_host_check_buffer_alignment(sd_host_sdmmc_slot_t *slot, const void *buf, size_t size)
 {
     //for future-proof
     (void)slot;
     if (!buf || !size) {
+        return false;
+    }
+
+    uintptr_t start = (uintptr_t) buf;
+    if (size - 1 > UINTPTR_MAX - start) {
+        return false;
+    }
+    const void *end = (const void *)(start + size - 1);
+
+    bool not_dma_accessible = !sdmmc_dma_accessible(buf) || !sdmmc_dma_accessible(end);
+    bool different_memory_types = esp_ptr_external_ram(buf) != esp_ptr_external_ram(end);
+    if (not_dma_accessible || different_memory_types) {
         return false;
     }
 

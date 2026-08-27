@@ -1,4 +1,4 @@
-set(srcs "test_app_main.c" "test_sd_driver_resource.c")
+set(srcs "test_app_main.c" "test_sd_driver_resource.c" "test_sdmmc_buffer.c")
 
 set(priv_requires
         # tests reside in this component, also available for `sdmmc_console`
