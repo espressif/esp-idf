@@ -12,28 +12,11 @@
 
 CONFIG_IDF_TARGET="esp32c2"
 
-# Increase main task stack size
-CONFIG_ESP_MAIN_TASK_STACK_SIZE=7168
-
-# Enable filesystem for console commands history storage
-CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
-CONFIG_PARTITION_TABLE_CUSTOM=y
-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
-CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
-
-# Enable FreeRTOS stats formatting functions, needed for 'tasks' command
-CONFIG_FREERTOS_USE_TRACE_FACILITY=y
-CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
-
-# Disable watch dog
-CONFIG_ESP_INT_WDT=n
-CONFIG_ESP_TASK_WDT_EN=n
-
-# Disable lwIP IRAM optimization
+# Disable lwIP IRAM optimization (overrides sdkconfig.defaults)
 CONFIG_LWIP_IRAM_OPTIMIZATION=n
 CONFIG_LWIP_EXTRA_IRAM_OPTIMIZATION=n
 
-# Disable Ethernet IRAM optimization
+# Disable Ethernet IRAM optimization (overrides sdkconfig.defaults)
 CONFIG_ETH_IRAM_OPTIMIZATION=n
 
 # Config Ethernet Init and Choose w5500

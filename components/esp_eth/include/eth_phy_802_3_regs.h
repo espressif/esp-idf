@@ -161,10 +161,13 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved0 : 8;        /*!< Reserved */
-        uint32_t base1000_t : 1;       /*!< 1000Base-T half duplex support */
-        uint32_t base1000_t_fd : 1;    /*!< 1000Base-T full duplex support */
-        uint32_t reserved1 : 6;        /*!< Reserved */
+        uint32_t reserved0 : 8;             /*!< Reserved */
+        uint32_t base1000_t : 1;            /*!< 1000Base-T half duplex support */
+        uint32_t base1000_t_fd : 1;         /*!< 1000Base-T full duplex support */
+        uint32_t port_type : 1;             /*!< Port type: multiport device(1), single-port device(0) */
+        uint32_t master_slave_cfg : 1;      /*!< Master-slave config value: master(1), slave(0) */
+        uint32_t master_slave_manual : 1;   /*!< Master-slave manual configuration enable */
+        uint32_t test_mode : 3;             /*!< Transmitter test mode */
     };
     uint32_t val;
 } gbcr_reg_t;
