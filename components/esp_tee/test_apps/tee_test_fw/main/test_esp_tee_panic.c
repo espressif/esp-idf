@@ -29,6 +29,7 @@
 
 #include "unity.h"
 #include "esp_tee.h"
+#include "esp_private/hw_stack_guard.h"
 #include "secure_service_num.h"
 
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
@@ -226,6 +227,25 @@ TEST_CASE("Test REE-TEE isolation: DROM-W1", "[exception]")
 {
     const uint32_t test_addr = ALIGN_DOWN_TO_MMU_PAGE_SIZE((uint32_t)&_instruction_reserved_start);
     *(uint32_t *)(test_addr - 0x04) = 0xbadc0de;
+    TEST_FAIL_MESSAGE("Exception should have been generated");
+}
+
+TEST_CASE("Test REE-TEE isolation: Corrupted SP", "[exception]")
+{
+    uintptr_t atk_sp = (uintptr_t)&_iram_start - 0x100;
+
+    /* Disable U-mode interrupts so the tick cannot preempt before the ecall */
+    __asm__ volatile("csrci ustatus, 0x1\n\t" : : : "memory");
+
+    /* Stop the REE-owned HW stack guard, as a malicious REE could */
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    esp_hw_stack_guard_monitor_stop();
+#endif
+
+    /* Cross into the TEE with the doctored sp; the handler rejects it and panics */
+    __asm__ volatile("mv sp, %0\n\t"
+                     "ecall\n\t" : : "r"(atk_sp) : "memory");
+
     TEST_FAIL_MESSAGE("Exception should have been generated");
 }
 
