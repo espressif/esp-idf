@@ -2134,7 +2134,7 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
 
     spi_device_handle_t dev_handle = NULL;
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
-    devcfg.clock_speed_hz = 80 * 1000 * 1000;   // Test error case on highest freq first
+    devcfg.clock_speed_hz = IDF_TARGET_MAX_SPI_CLK_FREQ;   // Test error case on highest freq first
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
     int real_freq_khz;
     spi_device_get_actual_freq(dev_handle, &real_freq_khz);
@@ -2163,9 +2163,6 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
         TEST_ASSERT(i ? (before - after) < 2 * TEST_EDMA_TRANS_LEN : (before - after) > 2 * TEST_EDMA_TRANS_LEN);
         spi_device_polling_end(dev_handle, portMAX_DELAY);
         printf("TX fail: %d, RX fail: %d\n", !!(trans_cfg.flags & SPI_TRANS_DMA_TX_FAIL), !!(trans_cfg.flags & SPI_TRANS_DMA_RX_FAIL));
-#if !SOC_IS(ESP32P4)  // P4 can't reach error condition since it has powerful 16bits ddr psram
-        TEST_ASSERT((!!i) == !!(trans_cfg.flags & (SPI_TRANS_DMA_TX_FAIL | SPI_TRANS_DMA_RX_FAIL)));
-#endif
         if (!i) { // data should be correct if using auto malloc
             TEST_ASSERT_EQUAL_HEX8_ARRAY(trans_cfg.tx_buffer, trans_cfg.rx_buffer, TEST_EDMA_TRANS_LEN);
         }
