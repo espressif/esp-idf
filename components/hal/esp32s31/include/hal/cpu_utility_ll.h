@@ -11,6 +11,7 @@
 #include "soc/pmu_struct.h"
 #include "soc/hp_system_reg.h"
 #include "soc/hp_sys_clkrst_reg.h"
+#include "soc/assist_debug_reg.h"
 #include "esp_attr.h"
 #include "hal/misc.h"
 
@@ -50,14 +51,20 @@ FORCE_INLINE_ATTR void cpu_utility_ll_unstall_cpu(uint32_t cpu_no)
 
 FORCE_INLINE_ATTR void cpu_utility_ll_enable_debug(uint32_t cpu_no)
 {
-    (void) cpu_no;
-    // TODO: IDF-14675 ASSIST_DEBUG is not supported yet on ESP32S31
+    if (cpu_no == 0) {
+        REG_SET_BIT(ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN);
+    } else {
+        REG_SET_BIT(ASSIST_DEBUG_CORE_1_RCD_EN_REG, ASSIST_DEBUG_CORE_1_RCD_PDEBUGEN);
+    }
 }
 
 FORCE_INLINE_ATTR void cpu_utility_ll_enable_record(uint32_t cpu_no)
 {
-    (void) cpu_no;
-    // TODO: IDF-14675 ASSIST_DEBUG is not supported yet on ESP32S31
+    if (cpu_no == 0) {
+        REG_SET_BIT(ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_0_RCD_RECORDEN);
+    } else {
+        REG_SET_BIT(ASSIST_DEBUG_CORE_1_RCD_EN_REG, ASSIST_DEBUG_CORE_1_RCD_RECORDEN);
+    }
 }
 
 FORCE_INLINE_ATTR void cpu_utility_ll_enable_clock_and_reset_app_cpu(void)
