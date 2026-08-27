@@ -178,6 +178,7 @@ menu "LibC"
         bool "Use performance-optimized memXXX/strXXX functions on misaligned memory access"
         default y
         depends on ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+        depends on !(IDF_TARGET_ESP32C5 && ESP32C5_REV_MIN_FULL >= 103)
         help
             Enables performance-optimized implementations of memory and string functions
             when handling misaligned memory.
