@@ -45,7 +45,6 @@ def test_esp_ringbuf_qemu(dut: Dut) -> None:
             dut._run_normal_case(case)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_esp_ringbuf_posix_simulator(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='linux')

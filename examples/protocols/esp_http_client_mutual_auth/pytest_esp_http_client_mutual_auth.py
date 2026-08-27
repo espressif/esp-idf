@@ -186,7 +186,6 @@ def _run_mtls_test(
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
@@ -203,7 +202,6 @@ def test_mutual_auth_software_keys(app: QemuApp, dut: QemuDut) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize('config', ['qemu_ds'], indirect=True)
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
@@ -216,7 +214,6 @@ def test_mutual_auth_ds(app: QemuApp, dut: QemuDut) -> None:
     _run_mtls_test(dut, server_port=8070, client_ca=client_ca, expect_success=True)
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize('config', ['qemu_ds'], indirect=True)
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])

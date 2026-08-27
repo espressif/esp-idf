@@ -22,8 +22,7 @@ IDF_CI_BUILD = "1"
 
 [gitlab.build_pipeline]
 workflow_name = "build_child_pipeline"
-presigned_json_job_name = 'generate_pytest_build_report'
-runs_per_job=30
+runs_per_job = 30
 
 job_tags = ['build', 'shiny']
 job_template_name = '.dynamic_build_template'

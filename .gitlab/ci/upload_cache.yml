@@ -6,26 +6,6 @@
   stage: upload_cache
   image: $ESP_ENV_IMAGE
 
-upload-pip-cache:
-  extends:
-    - .upload_cache_template
-    - .before_script:minimal
-    - .rules:upload-python-cache
-  tags:
-    - $GEO
-    - cache
-  cache:
-    key: pip-cache-${LATEST_GIT_TAG}
-    paths:
-      - .cache/pip
-    policy: push
-  script:
-    - rm -rf .cache/pip  # clear old packages
-    - bash install.sh --enable-ci --enable-test-specific
-  parallel:
-    matrix:
-      - GEO: [ 'shiny',  'brew' ]
-
 upload-submodules-cache:
   extends:
     - .upload_cache_template

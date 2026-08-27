@@ -18,13 +18,11 @@ def test_hello_world(dut: IdfDut, log_minimum_free_heap_size: Callable[..., None
     log_minimum_free_heap_size()
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_hello_world_linux(dut: IdfDut) -> None:
     dut.expect('Hello world!')
 
 
-@pytest.mark.host_test
 @pytest.mark.macos
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_hello_world_macos(dut: IdfDut) -> None:

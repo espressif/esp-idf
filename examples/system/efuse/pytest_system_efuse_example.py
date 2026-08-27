@@ -43,7 +43,6 @@ def test_examples_efuse(dut: Dut) -> None:
     basic_efuse_example(dut)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_examples_efuse_linux(dut: Dut) -> None:
     basic_efuse_example(dut)

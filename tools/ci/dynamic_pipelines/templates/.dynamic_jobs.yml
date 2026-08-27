@@ -43,7 +43,6 @@
     - run_cmd idf-ci build run
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-files ${MR_MODIFIED_FILES}
 
 .dynamic_target_test_template:
   image: $TARGET_TEST_ENV_IMAGE
@@ -61,12 +60,6 @@
       job: pipeline_variables
     - pipeline: $PARENT_PIPELINE_ID
       job: snapshot_known_failure_cases
-  cache:
-    # Usually do not need submodule-cache in target_test
-    - key: pip-cache-${LATEST_GIT_TAG}
-      paths:
-        - .cache/pip
-      policy: pull
   artifacts:
     paths:
       - XUNIT_RESULT*.xml
