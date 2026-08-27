@@ -90,6 +90,8 @@ typedef struct {
     size_t int_mem_align;                               // Alignment for internal memory
     size_t ext_mem_align;                               // Alignment for external memory
     size_t rx_num_dma_nodes;                            // rx dma number nodes
+    gdma_buffer_mount_config_t *mount_configs;          // scratch array (capacity rx_num_dma_nodes) reused by every receive to mount buffer segments; avoids a VLA in ISR context
+    bool continuous;                                    // continuous mode: keep DMA running across EOFs instead of stopping
 } uhci_rx_dir;
 
 struct uhci_controller_t {
