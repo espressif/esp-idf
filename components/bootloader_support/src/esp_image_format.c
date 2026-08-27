@@ -131,15 +131,15 @@ uint32_t esp_image_bootloader_offset_get(void)
 void esp_image_bootloader_offset_set(const uint32_t offset)
 {
     s_bootloader_partition_offset = offset;
-    ESP_LOGI(TAG, "Bootloader offsets for PRIMARY: 0x%x, Secondary: 0x%" PRIx32, ESP_PRIMARY_BOOTLOADER_OFFSET, s_bootloader_partition_offset);
+    ESP_LOGD(TAG, "Bootloader offsets for PRIMARY: 0x%x, Secondary: 0x%" PRIx32, ESP_PRIMARY_BOOTLOADER_OFFSET, s_bootloader_partition_offset);
 #if SOC_RECOVERY_BOOTLOADER_SUPPORTED
     uint32_t recovery_offset = efuse_hal_get_recovery_bootloader_address();
     if (efuse_hal_recovery_bootloader_enabled()) {
-        ESP_LOGI(TAG, "Bootloader offset for RECOVERY: 0x%" PRIx32, recovery_offset);
+        ESP_LOGD(TAG, "Bootloader offset for RECOVERY: 0x%" PRIx32, recovery_offset);
     } else if (recovery_offset == 0) {
-        ESP_LOGI(TAG, "Bootloader offset for RECOVERY: has not been set yet");
+        ESP_LOGD(TAG, "Bootloader offset for RECOVERY: has not been set yet");
     } else {
-        ESP_LOGI(TAG, "Bootloader offset for RECOVERY: is disabled");
+        ESP_LOGD(TAG, "Bootloader offset for RECOVERY: is disabled");
     }
 #endif
 }
