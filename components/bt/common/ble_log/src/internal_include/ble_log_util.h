@@ -80,9 +80,9 @@ extern void esp_panic_handler_feed_wdts(void);
 /* INLINE */
 /* Compare-and-swap lock as macros: single-instruction acquire/release used
  * from several IRAM sites; a function would add an IRAM call site each. */
-#define ble_log_cas_acquire(cas_lock) \
+#define BLE_LOG_CAS_ACQUIRE(cas_lock) \
     (__atomic_exchange_n((cas_lock), 1, __ATOMIC_ACQUIRE) == 0)
-#define ble_log_cas_release(cas_lock) \
+#define BLE_LOG_CAS_RELEASE(cas_lock) \
     __atomic_store_n((cas_lock), 0, __ATOMIC_RELEASE)
 
 #define BLE_LOG_VERSION                         (7)
