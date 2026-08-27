@@ -14,18 +14,23 @@ This example shows how to control intensity of LEDs using selected SoC's on-boar
 * A development board with any Espressif SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for power supply and programming
 
-Connect four LEDs to the following LEDC channels / individual GPIOs:
+Connect four LEDs to the following LEDC channels / individual GPIOs (defaults):
 
 |                 | Channel 0 | Channel 1 | Channel 2 | Channel 3 |
 | --------------- | --------- | --------- | --------- | --------- |
-|     ESP32       | GPIO18    | GPIO19    | GPIO4     | GPIO5     |
+| ESP32           | GPIO18    | GPIO19    | GPIO4     | GPIO5     |
+| ESP32-H4        | GPIO18    | GPIO19    | GPIO2     | GPIO3     |
 | All other chips | GPIO8     | GPIO9     | GPIO2     | GPIO3     |
+
+The GPIO numbers can be changed in menuconfig under `Example Configuration`.
 
 ### Configure the project
 
 ```
 idf.py menuconfig
 ```
+
+- `Example Configuration` → select GPIO numbers for LEDC channel 0–3
 
 ### Build and Flash
 
