@@ -46,6 +46,15 @@
 #if BT_SDP_BQB_INCLUDED
 extern BOOLEAN l2cap_bqb_ertm_mode_included_flag;
 #endif /* BT_SDP_BQB_INCLUDED */
+#if BT_CLASSIC_BQB_INCLUDED
+/* L2CAP/EXF/BV-08-C and L2CAP/FIX/BV-03-C. Default off so CID 0x0007 stays advertised. */
+BOOLEAN s_l2cap_bqb_hide_fixed_chnl_flag = FALSE;
+
+void l2cap_bqb_hide_fixed_chnl_ctrl(BOOLEAN enable)
+{
+    s_l2cap_bqb_hide_fixed_chnl_flag = enable;
+}
+#endif /* BT_CLASSIC_BQB_INCLUDED */
 
 /*******************************************************************************
 **
@@ -1345,11 +1354,20 @@ void l2cu_send_peer_info_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 info_type
 #if L2CAP_CONFORMANCE_TESTING == TRUE
             UINT32_TO_STREAM (p, l2cb.test_info_resp);
 #else
+            {
+                UINT32 ext_fea = L2CAP_EXTFEA_SUPPORTED_MASK;
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
-            UINT32_TO_STREAM (p, L2CAP_EXTFEA_SUPPORTED_MASK | L2CAP_EXTFEA_FIXED_CHNLS);
-#else
-            UINT32_TO_STREAM (p, L2CAP_EXTFEA_SUPPORTED_MASK);
+                ext_fea |= L2CAP_EXTFEA_FIXED_CHNLS;
 #endif
+#if BT_CLASSIC_BQB_INCLUDED
+                /* EXF/BV-08-C expects the mask PTS derives from the ICS,
+                 * which is Enhanced Retransmission Mode only. */
+                if (s_l2cap_bqb_hide_fixed_chnl_flag) {
+                    ext_fea = L2CAP_EXTFEA_ENH_RETRANS;
+                }
+#endif
+                UINT32_TO_STREAM (p, ext_fea);
+            }
 #endif
         }
     } else if (info_type == L2CAP_FIXED_CHANNELS_INFO_TYPE) {
@@ -1361,8 +1379,11 @@ void l2cu_send_peer_info_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 info_type
         if ( L2CAP_EXTFEA_SUPPORTED_MASK & L2CAP_EXTFEA_UCD_RECEPTION ) {
             p[0] |= L2CAP_FIXED_CHNL_CNCTLESS_BIT;
         }
-
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
+#if BT_CLASSIC_BQB_INCLUDED
+        /* FIX/BV-03-C omits optional fixed channels, including BR/EDR SMP CID 0x0007. */
+        if (!s_l2cap_bqb_hide_fixed_chnl_flag)
+#endif
         {
             int xx;
 
