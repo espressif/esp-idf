@@ -44,6 +44,17 @@ typedef struct {
                                                    inside the response body regardless of request size. -1 (default)
                                                    disables this and falls back to the shared bytes_before_error/
                                                    bytes_processed counter used by the original tests. */
+    int max_write_chunk;                     /*!< If > 0, caps every mock_write() call's accepted byte count to at
+                                                   most this many bytes, independent of `mode`. Simulates a transport
+                                                   whose per-call send buffer is smaller than the caller's write,
+                                                   forcing the client's short-write retry loop (esp_http_client_write()
+                                                   / esp_http_client_request_send()) to run across multiple calls.
+                                                   Added because MOCK_TRANSPORT_MODE_WRITE_PARTIAL's existing
+                                                   bytes_before_error budget only splits a write when the budget lands
+                                                   inside that specific call, which is brittle (coupled to exact
+                                                   serialized header length); this field reliably forces a split on
+                                                   every call regardless of request size. 0 (default) = no cap, and
+                                                   existing tests are unaffected. */
 } mock_http_transport_config_t;
 
 /**
@@ -60,6 +71,7 @@ typedef struct {
     .would_block_reads = 0, \
     .would_block_writes = 0, \
     .read_bytes_before_error = -1, \
+    .max_write_chunk = 0, \
 }
 
 /**

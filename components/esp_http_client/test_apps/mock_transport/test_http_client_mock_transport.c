@@ -269,6 +269,68 @@ static int mock_read(esp_transport_handle_t t, char *buffer, int len, int timeou
 }
 
 /**
+ * @brief Append accepted write bytes into the request-capture buffer
+ *
+ * Shared by every mock_write() path that accepts bytes (full accept,
+ * max_write_chunk-capped accept, and the WRITE_PARTIAL short-accept branch)
+ * so req_capture always reflects exactly what the mock reported as written
+ * to the caller - never more, and never skipped for a partial accept.
+ */
+static void mock_capture_bytes(mock_http_transport_ctx_t *ctx, const char *buffer, size_t n)
+{
+    size_t space = sizeof(ctx->req_capture) - ctx->req_capture_len;
+    size_t copy = n < space ? n : space;
+    memcpy(ctx->req_capture + ctx->req_capture_len, buffer, copy);
+    ctx->req_capture_len += copy;
+}
+
+/**
+ * @brief Check MOCK_TRANSPORT_MODE_WRITE_FAIL and break the connection if triggered
+ *
+ * @return true if the caller should report the write as failed (EPIPE)
+ */
+static bool mock_write_check_fail(mock_http_transport_ctx_t *ctx, int accept_len)
+{
+    if (ctx->config.mode != MOCK_TRANSPORT_MODE_WRITE_FAIL || !should_inject_error(ctx, accept_len)) {
+        return false;
+    }
+    ESP_LOGI(TAG, "Mock write: FAILED (simulated) - connection broken");
+    // Write failure (EPIPE) indicates broken connection - this simulates
+    // real-world behavior where write errors break the connection
+    ctx->is_connected = false;
+    errno = EPIPE;
+    return true;
+}
+
+/**
+ * @brief Check MOCK_TRANSPORT_MODE_WRITE_PARTIAL and, if triggered, capture
+ *        and account for the short accept
+ *
+ * @return Number of bytes short-accepted (> 0) if a partial write was
+ *         performed and the caller should return that count directly, or 0
+ *         if WRITE_PARTIAL did not trigger and the caller should proceed
+ *         with its normal (possibly max_write_chunk-capped) full accept.
+ */
+static int mock_write_try_partial(mock_http_transport_ctx_t *ctx, const char *buffer, int accept_len)
+{
+    if (ctx->config.mode != MOCK_TRANSPORT_MODE_WRITE_PARTIAL || !should_inject_error(ctx, accept_len)) {
+        return 0;
+    }
+    int partial = ctx->config.bytes_before_error - ctx->bytes_processed;
+    if (partial <= 0 || partial >= accept_len) {
+        return 0;
+    }
+    // Capture exactly the bytes reported as written - this path used to
+    // return before the capture code below ever ran, so a partially-accepted
+    // write silently vanished from req_capture.
+    mock_capture_bytes(ctx, buffer, (size_t)partial);
+    ctx->bytes_processed += partial;
+    ctx->stats.total_bytes_written += partial;
+    ESP_LOGI(TAG, "Mock write: partial write %d bytes (out of %d)", partial, accept_len);
+    return partial;
+}
+
+/**
  * @brief Mock write implementation
  */
 static int mock_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms)
@@ -300,30 +362,24 @@ static int mock_write(esp_transport_handle_t t, const char *buffer, int len, int
     ESP_LOGI(TAG, "Mock write: %d bytes (mode=%d, bytes_processed=%zu)",
              len, ctx->config.mode, ctx->bytes_processed);
 
+    // Optional per-call cap: simulate a transport whose send buffer only
+    // accepts up to max_write_chunk bytes per call, independent of `mode`.
+    // 0 (default) leaves accept_len == len, so every pre-existing test's
+    // behavior (including the byte-budget math below) is unchanged.
+    int accept_len = len;
+    if (ctx->config.max_write_chunk > 0 && accept_len > ctx->config.max_write_chunk) {
+        accept_len = ctx->config.max_write_chunk;
+    }
+
     // Handle write failure mode
-    if (ctx->config.mode == MOCK_TRANSPORT_MODE_WRITE_FAIL) {
-        if (should_inject_error(ctx, len)) {
-            ESP_LOGI(TAG, "Mock write: FAILED (simulated) - connection broken");
-            // Write failure (EPIPE) indicates broken connection
-            // This simulates real-world behavior where write errors break the connection
-            ctx->is_connected = false;
-            errno = EPIPE;
-            return -1;
-        }
+    if (mock_write_check_fail(ctx, accept_len)) {
+        return -1;
     }
 
     // Handle partial write mode
-    if (ctx->config.mode == MOCK_TRANSPORT_MODE_WRITE_PARTIAL) {
-        if (should_inject_error(ctx, len)) {
-            // Write only partial data
-            int partial = ctx->config.bytes_before_error - ctx->bytes_processed;
-            if (partial > 0 && partial < len) {
-                ctx->bytes_processed += partial;
-                ctx->stats.total_bytes_written += partial;
-                ESP_LOGI(TAG, "Mock write: partial write %d bytes (out of %d)", partial, len);
-                return partial;
-            }
-        }
+    int partial = mock_write_try_partial(ctx, buffer, accept_len);
+    if (partial > 0) {
+        return partial;
     }
 
     // Request boundary: previous response fully consumed and a new request starts.
@@ -339,21 +395,18 @@ static int mock_write(esp_transport_handle_t t, const char *buffer, int len, int
 
     // Capture written bytes (request content) for test assertions, capped to
     // avoid overflowing the fixed-size buffer.
-    size_t space = sizeof(ctx->req_capture) - ctx->req_capture_len;
-    size_t copy = (size_t)len < space ? (size_t)len : space;
-    memcpy(ctx->req_capture + ctx->req_capture_len, buffer, copy);
-    ctx->req_capture_len += copy;
+    mock_capture_bytes(ctx, buffer, (size_t)accept_len);
 
     // Normal write (just track it, don't actually store)
-    ctx->bytes_processed += len;
+    ctx->bytes_processed += accept_len;
 
     if (ctx->config.track_calls) {
-        ctx->stats.total_bytes_written += len;
+        ctx->stats.total_bytes_written += accept_len;
     }
 
     ESP_LOGI(TAG, "Mock write: completed %d bytes (total_processed=%zu)",
-             len, ctx->bytes_processed);
-    return len;
+             accept_len, ctx->bytes_processed);
+    return accept_len;
 }
 
 /**
