@@ -596,6 +596,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     //catch design errors and aren't meant to be triggered during normal operation.
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue) == 0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(handle->host->cur_cs == DEV_NUM_MAX || handle->host->device[handle->host->cur_cs] != handle, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
+    SPI_CHECK(handle->host->device_acquiring_lock != handle, "Device has acquired the bus", ESP_ERR_INVALID_STATE);
     if (handle->ret_queue) {
         SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue) == 0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     }
@@ -1164,7 +1165,7 @@ static SPI_MASTER_ISR_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
 
     // copy data from temporary DMA-capable buffer back to trans_desc buffer and free the temporary one.
     void *orig_rx_buffer = (trans_desc->flags & SPI_TRANS_USE_RXDATA) ? trans_desc->rx_data : trans_desc->rx_buffer;
-    if (trans_buf->buffer_to_rcv != orig_rx_buffer) {
+    if (trans_buf->buffer_to_rcv && trans_buf->buffer_to_rcv != orig_rx_buffer) {
         memcpy(orig_rx_buffer, trans_buf->buffer_to_rcv, (trans_desc->rxlength + 7) / 8);
         free(trans_buf->buffer_to_rcv);
     }

@@ -439,17 +439,21 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
         return ESP_ERR_INVALID_ARG;
     }
 
+    spi_bus_lock_dev_handle_t dev_handle = NULL;
+    esp_err_t ret = esp_flash_deinit_os_functions(chip, &dev_handle);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
     // Disable GPSPI clocks before cleanup
     deinit_gpspi_clock(chip);
 
-    spi_bus_lock_dev_handle_t dev_handle = NULL;
-    esp_flash_deinit_os_functions(chip, &dev_handle);
     if (dev_handle) {
         spi_bus_lock_unregister_dev(dev_handle);
     }
     free(chip->host);
     free(chip);
-    return ESP_OK;
+    return ret;
 }
 
 /* The default (ie initial boot) no-OS ROM esp_flash_os_functions_t */
