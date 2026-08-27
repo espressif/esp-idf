@@ -910,11 +910,19 @@ static BT_HDR   *avrc_pass_msg(tAVRC_MSG_PASS *p_msg)
 {
     BT_HDR  *p_cmd = NULL;
     UINT8   *p_data;
+    UINT32  buf_size;
+    UINT16  pass_len;
 
     assert(p_msg != NULL);
-    assert(AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN+p_msg->pass_len));
 
-    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL) {
+    /* ctype(1) + subunit(1) + opcode(1) + op_id(1) + data_len(1) + optional pass data */
+    pass_len = (p_msg->op_id == AVRC_ID_VENDOR) ? p_msg->pass_len : 0;
+    buf_size = (UINT32)sizeof(BT_HDR) + AVCT_MSG_OFFSET + 5 + pass_len;
+    if (buf_size > AVRC_CMD_BUF_SIZE) {
+        return NULL;
+    }
+
+    if ((p_cmd = (BT_HDR *) osi_malloc(buf_size)) != NULL) {
         p_cmd->offset   = AVCT_MSG_OFFSET;
         p_cmd->layer_specific   = AVCT_DATA_CTRL;
         p_data          = (UINT8 *)(p_cmd + 1) + p_cmd->offset;
