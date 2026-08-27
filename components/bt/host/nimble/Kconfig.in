@@ -1427,7 +1427,7 @@ menu "NimBLE Mesh"
 
     config BT_NIMBLE_MESH_PROVISIONER
         bool "Enable BLE mesh provisioner"
-        default 0
+        default n
         depends on BT_NIMBLE_MESH
         help
             Enable mesh provisioner.
