@@ -424,6 +424,9 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
     }
 #endif /* !SOC_AES_SUPPORT_DMA || CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM */
 cleanup:
+    /* ov holds the CFB8 feedback register (key/IV-derived state). Scrub it
+     * before returning so it cannot be recovered from stack RAM. */
+    mbedtls_platform_zeroize( ov, sizeof( ov ) );
     esp_aes_release_hardware();
     return ret;
 }

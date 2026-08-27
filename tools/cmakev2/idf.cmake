@@ -582,6 +582,12 @@ endfunction()
         component is already included, the idf_component_include function
         simply returns, as there is nothing further to do except add a new
         alias target if requested.
+
+    PROJECT_DEFAULT_EXTRA_COMPONENTS
+        Internal list of additional components to include in the executable
+        created by idf_project_default. Components should use
+        idf_project_add_default_build_component rather than modifying this
+        property directly.
 #]]
 add_library(idf_build_properties INTERFACE)
 

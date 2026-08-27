@@ -104,7 +104,6 @@ def test_esp_system_stdio_correct_open_and_close(dut: Dut) -> None:
     dut.expect('STDIO_TEST:CLOSE_OK')
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize(
     'config, embedded_services',

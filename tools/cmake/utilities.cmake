@@ -485,3 +485,9 @@ function(add_deprecated_target_alias old_target new_target)
     )
     add_dependencies(${old_target} ${new_target})
 endfunction()
+
+
+# __compiler_query is defined in a standalone module so it can also be included
+# by the cmakev2 utilities; the esp_common and xtensa project_include.cmake
+# files that call it are shared by both build systems.
+include(${CMAKE_CURRENT_LIST_DIR}/compiler_query.cmake)

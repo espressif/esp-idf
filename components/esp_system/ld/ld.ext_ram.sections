@@ -9,6 +9,13 @@
   .ext_ram.dummy (NOLOAD) :
   {
     HIDDEN(_ext_ram_on_same_bus = ORIGIN(ext_ram_seg) == ORIGIN(flash_rodata_seg));
+    /**
+     * This must be the first section placed in `ext_ram_seg`, and `ext_ram_seg` must be
+     * a distinct region (not a REGION_ALIAS of `flash_rodata_seg`) so it has its own
+     * location counter. Otherwise NOLOAD rodata (e.g. .rodata_wlog_*) placed after
+     * `_rodata_reserved_end` leaves the counter past the skip target, and moving it
+     * backwards here is a hard linker error.
+     */
     . = _ext_ram_on_same_bus ? ORIGIN(ext_ram_seg) + (_rodata_reserved_end - _flash_rodata_dummy_start) : 0;
     . = ALIGN(_ext_ram_on_same_bus ? _esp_mmu_page_size : 0);
   } > ext_ram_seg

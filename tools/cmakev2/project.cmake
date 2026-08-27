@@ -730,6 +730,28 @@ function(idf_build_generate_flasher_args)
                  INPUT "${build_dir}/flasher_args.json.in")
 endfunction()
 
+#[[api
+.. cmakev2:function:: idf_project_add_default_build_component
+
+    .. code-block:: cmake
+
+        idf_project_add_default_build_component(<component>...)
+
+    *component[in]*
+
+        Component name to include in the executable created by
+        :cmakev2:ref:`idf_project_default`.
+
+    Add components to the default project executable. This is intended for
+    components that need to be built based on sdkconfig alone, for example to
+    provide linker-section registrations, without making another component
+    depend on them. This is e.g. the case with coredump which is simply enabled
+    based on CONFIG_ESP_COREDUMP_ENABLE option, but no other components depend it.
+#]]
+function(idf_project_add_default_build_component)
+    idf_build_set_property(PROJECT_DEFAULT_EXTRA_COMPONENTS "${ARGN}" APPEND)
+endfunction()
+
 #[[
 .. cmakev2:macro:: __project_default
 
@@ -751,6 +773,11 @@ function(__project_default)
         set(root_components ${shim_components})
     else()
         set(root_components main)
+        idf_build_get_property(extra_default_components PROJECT_DEFAULT_EXTRA_COMPONENTS)
+        if(extra_default_components)
+            list(APPEND root_components ${extra_default_components})
+            list(REMOVE_DUPLICATES root_components)
+        endif()
     endif()
 
     idf_build_executable("${executable}"

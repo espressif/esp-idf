@@ -1057,6 +1057,26 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
 
+#if SOC_AES_CRYPTO_DMA && CONFIG_SPIRAM
+    /* The Crypto DMA in-channel stalls indefinitely (no descriptor error is raised) when a
+       receive descriptor list transitions from a buffer in external RAM to one in internal
+       RAM. Avoid linking the internal stream buffer descriptor after external-RAM data
+       descriptors by processing the block-aligned part and the trailing partial block as
+       two separate DMA operations. */
+    if (block_bytes > 0 && stream_bytes > 0 && esp_ptr_external_ram(output)) {
+        ret = esp_aes_process_dma(ctx, input, output, block_bytes, NULL);
+        if (ret != 0) {
+            mbedtls_platform_zeroize(output, len);
+            return ret;
+        }
+        ret = esp_aes_process_dma(ctx, input + block_bytes, output + block_bytes, stream_bytes, stream_out);
+        if (ret != 0) {
+            mbedtls_platform_zeroize(output, len);
+        }
+        return ret;
+    }
+#endif /* SOC_AES_CRYPTO_DMA && CONFIG_SPIRAM */
+
     if (block_bytes > 0) {
         /* Flush cache if input in external ram */
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
@@ -1222,6 +1242,11 @@ cleanup:
     if (ret != 0) {
         mbedtls_platform_zeroize(output, len);
     }
+    /* s_stream_in/out are static DRAM buffers that held the trailing
+     * plaintext/ciphertext block for the DMA transfer. Scrub them so the block
+     * does not linger in fixed RAM between operations. */
+    mbedtls_platform_zeroize(s_stream_in, AES_BLOCK_BYTES);
+    mbedtls_platform_zeroize(s_stream_out, AES_BLOCK_BYTES);
     free(block_desc);
     return ret;
 }
@@ -1393,6 +1418,12 @@ cleanup:
     if (ret != 0) {
         mbedtls_platform_zeroize(output, len);
     }
+    /* stream_in/stream_out held the trailing plaintext/ciphertext block and
+     * stream_in_aad the trailing AAD block for the DMA transfer. Scrub them so
+     * the data does not linger in stack RAM. */
+    mbedtls_platform_zeroize(stream_in, sizeof(stream_in));
+    mbedtls_platform_zeroize(stream_out, sizeof(stream_out));
+    mbedtls_platform_zeroize(stream_in_aad, sizeof(stream_in_aad));
     free(block_desc);
     return ret;
 }

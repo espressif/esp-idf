@@ -21,7 +21,6 @@ def test_efuse_qemu(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_efuse_linux(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=60)

@@ -27,22 +27,20 @@ def test_esp_event_ext_ram(dut: Dut) -> None:
 
 
 @pytest.mark.qemu
-@pytest.mark.xfail('config.getvalue("target") == "esp32c3"', reason='Unstable on QEMU, needs investigation')
-@pytest.mark.parametrize(
-    'config',
+@idf_parametrize(
+    'config,target,markers',
     [
-        'defaults',
+        ('defaults', 'esp32'),
+        ('defaults', 'esp32c3', (pytest.mark.xfail(reason='Unstable on QEMU, needs investigation'),)),
     ],
-    indirect=True,
+    indirect=['config', 'target'],
 )
-@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_esp_event_qemu(dut: Dut) -> None:
     for case in dut.test_menu:
         if 'qemu-ignore' not in case.groups and not case.is_ignored and case.type == 'normal':
             dut._run_normal_case(case)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 @pytest.mark.parametrize(
     'config',

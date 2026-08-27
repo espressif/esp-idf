@@ -32,7 +32,7 @@
 #if SOC_ECDSA_SUPPORTED
 #include "hal/ecdsa_ll.h"
 #endif
-#if SOC_KEY_MANAGER_SUPPORTED
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 #include "hal/key_mgr_ll.h"
 #endif
 /* Crypto DMA, shared between AES and SHA */
@@ -154,7 +154,7 @@ void esp_crypto_ecdsa_enable_periph_clk(bool enable)
 }
 #endif
 
-#if SOC_KEY_MANAGER_SUPPORTED
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 void esp_crypto_key_mgr_enable_periph_clk(bool enable)
 {
     KEY_MANAGER_RCC_ATOMIC() {

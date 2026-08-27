@@ -52,7 +52,7 @@
 #define SOC_USB_DFU_SUPPORTED           1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
-// #define SOC_SUPPORTS_SECURE_DL_MODE     1      // TODO: [ESP32S31] IDF-14629
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_ULP_SUPPORTED               1
 #define SOC_LP_CORE_SUPPORTED           1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
@@ -447,7 +447,7 @@
 #define SOC_HUK_SUPPORTED                       1
 
 /*-------------------------- Key Manager CAPS----------------------------*/
-#define SOC_KEY_MANAGER_SUPPORTED                   1
+#define SOC_KEY_MANAGER_SUPPORTED                   0
 #define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT      1 /*!< Key manager supports key deployment */
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY            1 /*!< Key manager responsible to deploy ECDSA key */
 #define SOC_KEY_MANAGER_FE_KEY_DEPLOY               1 /*!< Key manager responsible to deploy Flash Encryption key */

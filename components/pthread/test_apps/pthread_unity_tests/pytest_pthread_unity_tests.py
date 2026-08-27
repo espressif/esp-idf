@@ -54,7 +54,6 @@ def test_pthread_qemu(dut: Dut) -> None:
             dut._run_normal_case(case, timeout=75)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_pthread_linux(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120)

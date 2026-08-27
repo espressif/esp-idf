@@ -121,7 +121,6 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     dut.expect('Finish http example')
 
 
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'config',
     [

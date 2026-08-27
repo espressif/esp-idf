@@ -20,7 +20,6 @@ def test_unit_test_order(dut: Dut) -> None:
     verify_test_order(dut)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 def test_unit_test_order_linux(dut: Dut) -> None:
     verify_test_order(dut)

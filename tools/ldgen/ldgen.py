@@ -27,7 +27,7 @@ from pyparsing import ParseFatalException
 _RE_SECTION_NAME = re.compile(r'^\s*\d+\s+(\.\S+)', re.MULTILINE)
 
 
-def _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file):
+def _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file, input_file):
     """Compute a fingerprint from section names and mtimes of all inputs."""
     hasher = hashlib.md5()
 
@@ -36,9 +36,12 @@ def _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_fi
         names = _RE_SECTION_NAME.findall(info.content)
         hasher.update((archive + ':' + ','.join(names)).encode())
 
-    # Mtimes of fragment files, sdkconfig, kconfig
+    # Mtimes of fragment files, the linker template, sdkconfig, kconfig. The
+    # template counts as an input because everything outside its mapping
+    # placeholders ends up in the generated script verbatim, so an edit to it
+    # changes the output even when no section name does.
     input_files = [p.name if hasattr(p, 'name') else p for p in fragment_files]
-    input_files += [p for p in (config_file, kconfig_file) if p]
+    input_files += [p.name if hasattr(p, 'name') else p for p in (input_file, config_file, kconfig_file) if p]
     for path in input_files:
         try:
             hasher.update(f'{path}:{os.path.getmtime(path)}'.encode())
@@ -127,6 +130,40 @@ def _update_environment(args):
     if args.env_file is not None:
         env = json.load(args.env_file)
         os.environ.update(env)
+
+
+def _run_objdump(objdump, library):
+    """Run ``objdump -h`` on a library and return its output.
+
+    On some Windows systems, antivirus, endpoint-security or DLP/encryption
+    software intercepts short-lived toolchain processes and strips their output
+    when the build captures it, so objdump exits successfully but returns empty
+    output, while the same command works when run by hand. The output is read
+    through a pipe so that this empty result is reliably detectable: it is
+    rejected here with an actionable error instead of being fed to the parser
+    (which would otherwise report it as a confusing pyparsing error). Capturing
+    to a file is deliberately avoided: it would not be guaranteed complete
+    either, and a truncated-but-non-empty result could be parsed into a wrong
+    linker script instead of failing. See
+    https://github.com/espressif/esp-idf/issues/18665 and
+    https://github.com/espressif/esp-idf/issues/18727.
+    """
+    new_env = os.environ.copy()
+    # Force the C locale so objdump emits the English 'In archive' header that
+    # the section parser expects, regardless of the host locale (see
+    # https://github.com/espressif/esp-idf/issues/7903).
+    new_env['LC_ALL'] = 'C'
+
+    output = subprocess.check_output([objdump, '-h', library], env=new_env).decode()
+    if not output.strip():
+        raise LdGenFailure(
+            f"'{objdump} -h {library}' ran successfully but returned no output. The toolchain ran "
+            'but its output was empty when captured by the build system. This is usually caused by '
+            'antivirus, endpoint-security or DLP/encryption software stripping the output of '
+            'toolchain processes; the same command often works when run directly in a terminal. '
+            'Add an exclusion for the ESP-IDF tools directory in that software, then build again.'
+        )
+    return output
 
 
 def main():
@@ -219,16 +256,29 @@ def main():
         for library in libraries_file:
             library = library.strip()
             if library:
-                new_env = os.environ.copy()
-                new_env['LC_ALL'] = 'C'
-                dump = StringIO(subprocess.check_output([objdump, '-h', library], env=new_env).decode())
+                dump = StringIO(_run_objdump(objdump, library))
                 dump.name = library
-                sections_infos.add_sections_info(dump)
+                try:
+                    sections_infos.add_sections_info(dump)
+                except ParseException as e:
+                    # Non-empty but unparsable section info (for example truncated or
+                    # corrupted toolchain output) is reported here rather than allowed to
+                    # propagate as a raw pyparsing traceback. The same root cause as the
+                    # empty case in _run_objdump applies.
+                    raise LdGenFailure(
+                        f'failed to parse section information from {library}. The toolchain output '
+                        'is incomplete or corrupted. This can be caused by antivirus, '
+                        'endpoint-security or DLP/encryption software tampering with the output of '
+                        'toolchain processes; the same command often works when run directly in a '
+                        f'terminal. Add an exclusion for the ESP-IDF tools directory, then build again.\n{e}'
+                    )
 
         # Check if we can skip generation entirely — section names and other
         # inputs unchanged since last run.
         fingerprint = (
-            None if no_cache else _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file)
+            None
+            if no_cache
+            else _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file, input_file)
         )
         if (
             output_path

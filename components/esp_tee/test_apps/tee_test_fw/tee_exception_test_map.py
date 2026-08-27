@@ -23,6 +23,7 @@ _BASE_CONFIG = {
         'DROM-R1': 'Load access fault',
         'DROM-W1': 'Store access fault',
         'MMU-spillover': 'Illegal instruction',
+        'Corrupted SP': 'Environment call from U-mode',
     },
     'apm_violation': {
         'eFuse': 'APM - Space exception',

@@ -13,16 +13,6 @@
   - "components/**/Kconfig"
   - "components/**/CMakeLists.txt"
 
-.patterns-python-cache: &patterns-python-cache
-  - "tools/requirements.json"
-  - "tools/requirements/requirements.*.txt"
-
-.patterns-python-files: &patterns-python-files
-  - ".gitlab/ci/static-code-analysis.yml"
-  - "**/*.py"
-
-.patterns-sonarqube-files: &patterns-sonarqube-files
-  - "tools/ci/sonar_exclude_list.txt"
 
 .patterns-build_components: &patterns-build_components
   # components files except "test*/" "host*/" folders
@@ -142,6 +132,9 @@
 
   - "tools/ci/test_soc_headers_load_in_idf_build_apps.py"
 
+  - "tools/ci/dynamic_pipelines/scripts/patch_buildv2_child_pipeline.py"
+  - "tools/ci/dynamic_pipelines/tests/**/*"
+
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"
 
@@ -184,15 +177,9 @@
 .if-protected-check: &if-protected-check
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) || $CI_COMMIT_TAG =~ /^qa-test/'
 
-.if-protected-deploy: &if-protected-deploy
-  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "api")'
-
 .if-protected-branch-push: &if-protected-branch-push
   # rules:changes always evaluates to true for new branch pipelines or when there is no Git push event
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
-
-.if-qa-test-tag: &if-qa-test-tag
-  if: '$CI_COMMIT_TAG =~ /^qa-test/'
 
 .if-dev-push: &if-dev-push
   if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
@@ -231,15 +218,6 @@
 .rules:dev-push:
   rules:
     - <<: *if-dev-push
-
-.rules:upload-python-cache:
-  rules:
-    - <<: *if-release-tag
-    - <<: *if-schedule-nightly
-    - <<: *if-protected-branch-push
-      changes: *patterns-python-cache
-    - <<: *if-label-upload_cache
-      when: manual
 
 .rules:upload-submodule-cache:
   rules:

@@ -1,14 +1,11 @@
 .host_test_win_template:
   extends:
-    - .brew-windows-settings
+    - .windows-settings
     - .rules:test:host_test
   stage: host_test
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
-    - job: upload-pip-cache
-      optional: true
-      artifacts: false
     - job: upload-submodules-cache
       optional: true
       artifacts: false

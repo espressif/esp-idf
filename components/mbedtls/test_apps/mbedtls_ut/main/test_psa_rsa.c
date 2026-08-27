@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 #include "psa/crypto.h"
 #include "mbedtls/pk.h"
@@ -17,6 +18,10 @@
 #include "ccomp_timer.h"
 #include "test_utils.h"
 #include "crypto_performance.h"
+
+#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
+#include "esp_task_wdt.h"
+#endif
 
 typedef enum {
     PSA_RSA_KEY_SIZE_2048,
@@ -302,3 +307,45 @@ TEST_CASE("test performance RSA key operations", "[bignum]")
         keysize++;
     }
 }
+
+/* With constant-time prime generation the RSA-2048 key generation below takes
+ * over a minute on most targets (~86 s on ESP32-S3), exceeding the test
+ * timeout and starving the task watchdog, so only run it with the faster
+ * variable-time implementation.
+ */
+#if CONFIG_MBEDTLS_HARDWARE_MPI && !CONFIG_MBEDTLS_CONSTANT_TIME_PRIME_GEN
+
+TEST_CASE("PSA RSA generate key", "[mbedtls][timeout=60]")
+{
+#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
+    /* Check that generating keys doesn't starve the watchdog: long-running
+     * computations in key generation must not monopolize the CPU. */
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = 1000,
+        .idle_core_mask = (1 << 0), // Watch core 0 idle
+        .trigger_panic = true,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
+
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id;
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_RSA_KEY_PAIR);
+    psa_set_key_algorithm(&attributes, PSA_ALG_RSA_PKCS1V15_CRYPT);
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_bits(&attributes, 2048);
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_generate_key(&attributes, &key_id));
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_destroy_key(key_id));
+    psa_reset_key_attributes(&attributes);
+
+#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
+}
+#endif // CONFIG_MBEDTLS_HARDWARE_MPI && !CONFIG_MBEDTLS_CONSTANT_TIME_PRIME_GEN

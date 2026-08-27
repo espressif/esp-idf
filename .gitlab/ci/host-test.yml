@@ -7,9 +7,6 @@
   # run host_test jobs immediately, only after upload cache
   needs:
     - pipeline_variables
-    - job: upload-pip-cache
-      optional: true
-      artifacts: false
     - job: upload-submodules-cache
       optional: true
       artifacts: false
@@ -285,6 +282,12 @@ test_idf_build_apps_load_soc_caps:
     - cd tools/ci
     - pytest_for_ut ./test_soc_headers_load_in_idf_build_apps.py
 
+test_dynamic_pipelines_scripts:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/tools/ci/dynamic_pipelines/tests
+    - pytest_for_ut ./test_patch_buildv2_child_pipeline.py
+
 test_nvs_gen_check:
   extends: .host_test_template
   artifacts:
@@ -368,7 +371,7 @@ build_docker:
       --build-system cmake
       --target $IDF_TARGET
       -m qemu
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-files \"${MR_MODIFIED_FILES}\"
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target $IDF_TARGET
@@ -406,7 +409,7 @@ test_pytest_qemu:
       -p components -p examples -p tools/test_apps
       --target linux
       --only-test-related
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-files \"${MR_MODIFIED_FILES}\"
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
@@ -421,7 +424,7 @@ test_pytest_linux:
 test_pytest_macos:
   extends:
     - .host_test_template
-    - .brew-macos-settings
+    - .macos-settings
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -436,7 +439,7 @@ test_pytest_macos:
       --target linux
       --only-test-related
       -m macos
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-files \"${MR_MODIFIED_FILES}\"
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
@@ -555,7 +558,7 @@ test_pytest_linux_buildv2:
 pytest_build_system_macos:
   extends:
     - .test_build_system_template
-    - .brew-macos-settings
+    - .macos-settings
     - .rules:build:macos
   parallel: 3
 
@@ -565,7 +568,7 @@ pytest_build_system_minimal_cmake:
 pytest_build_system_macos_minimal_cmake:
   extends:
     - .test_build_system_minimal_cmake_template
-    - .brew-macos-settings
+    - .macos-settings
     - .rules:build:macos
   variables:
     INSTALL_EXTRA_TOOLS: ninja cmake@3.22.1

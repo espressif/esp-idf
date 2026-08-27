@@ -5,7 +5,6 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'config',
     [

@@ -221,7 +221,7 @@ config SOC_ECDSA_SUPPORTED
 
 config SOC_KEY_MANAGER_SUPPORTED
     bool
-    default y
+    default n
 
 config SOC_HUK_SUPPORTED
     bool

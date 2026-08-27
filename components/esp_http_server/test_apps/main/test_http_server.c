@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <esp_system.h>
 #include <esp_http_server.h>
 #include <esp_heap_caps.h>
@@ -14,12 +15,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#ifdef CONFIG_HTTPD_WS_SUPPORT
+/* http_parser.h must precede esp_httpd_priv.h, which embeds a
+ * struct http_parser_url by value */
+#include <http_parser.h>
 #include "../../src/esp_httpd_priv.h"
-#endif
 
 #include "unity.h"
 #include "test_utils.h"
+#include "mock_http_server_client.h"
 
 int pre_start_mem, post_stop_mem, post_stop_min_mem;
 bool basic_sanity = true;
@@ -30,6 +33,30 @@ esp_err_t null_func(httpd_req_t *req)
 {
     return ESP_OK;
 }
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+static httpd_handle_t start_test_ws_server(uint16_t server_port, uint16_t ctrl_port)
+{
+    httpd_handle_t hd = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = server_port;
+    config.ctrl_port = ctrl_port;
+
+    httpd_uri_t ws_uri = {
+        .uri = "/ws",
+        .method = HTTP_GET,
+        .handler = null_func,
+        .user_ctx = NULL,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL,
+    };
+
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_start(&hd, &config));
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_uri_handler(hd, &ws_uri));
+    return hd;
+}
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 httpd_uri_t handler_limit_uri (char* path)
 {
@@ -519,7 +546,265 @@ TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERV
 
     free(hd.hd_req_aux.resp_hdrs);
 }
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+TEST_CASE("WS HTTP/1.0 upgrade request returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8091, ESP_HTTPD_DEF_CTRL_PORT + 10);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.0\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8091, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
+/* Regression test: enabling CONFIG_HTTPD_WS_SUPPORT must not reject HTTP/1.0
+ * traffic on non-WS endpoints. The HTTP/1.1 requirement only applies once
+ * an "Upgrade: websocket" header confirms the request is a WS handshake. */
+TEST_CASE("Non-WS HTTP/1.0 request is not rejected by WS version check", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8097, ESP_HTTPD_DEF_CTRL_PORT + 16);
+    mock_server_request_t req = {
+        .data = "GET /non-ws HTTP/1.0\r\n"
+                "Host: localhost\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8097, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    /* No handler is registered for /non-ws, so the server returns 404.
+     * The crucial assertion is that it is NOT 400 from the WS version check —
+     * i.e., HTTP/1.0 was accepted at the parser level. */
+    mock_server_assert_status(resp, 404);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+TEST_CASE("WS handshake missing Host returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8090, ESP_HTTPD_DEF_CTRL_PORT + 9);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8090, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
+TEST_CASE("WS handshake missing Sec-WebSocket-Version returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8094, ESP_HTTPD_DEF_CTRL_PORT + 13);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8094, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+TEST_CASE("WS handshake unsupported version returns 426 with Sec-WebSocket-Version header", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8093, ESP_HTTPD_DEF_CTRL_PORT + 12);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                "Sec-WebSocket-Version: 12\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8093, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 426);
+    TEST_ASSERT_NOT_NULL(strstr(resp->data, "Sec-WebSocket-Version: 13"));
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+TEST_CASE("WS handshake invalid Sec-WebSocket-Key returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8092, ESP_HTTPD_DEF_CTRL_PORT + 11);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: AQID\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8092, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
+
+/********* URL query / header pointer-accessor tests *********
+ * These exercise httpd_req_get_url_query_str_ptr() and
+ * httpd_req_get_hdr_value_str_ptr() against hand-built requests that mirror
+ * the parser's output: the query is parsed with http_parser_parse_url() (the
+ * exact mechanism the server uses), and the header scratch buffer reproduces
+ * the parser layout ("Field: value" with the CRLF terminators replaced by
+ * null bytes). The new pointer APIs are cross-checked against the existing
+ * copy/length variants so any divergence is caught.
+ *
+ * Note: these assume CONFIG_HTTPD_VALIDATE_REQ is disabled (the default), so
+ * httpd_valid_req() accepts the stack request used here. */
+
+/* Parse a query-carrying URI into a stack request, like verify_url() does */
+static void build_query_req(httpd_req_t *req, struct httpd_req_aux *aux, const char *uri)
+{
+    memset(req, 0, sizeof(*req));
+    memset(aux, 0, sizeof(*aux));
+    req->aux = aux;
+    strlcpy((char *)req->uri, uri, sizeof(req->uri));
+    http_parser_url_init(&aux->url_parse_res);
+    TEST_ASSERT_EQUAL(0, http_parser_parse_url(req->uri, strlen(req->uri), 0,
+                                               &aux->url_parse_res));
+}
+
+TEST_CASE("httpd_req_get_url_query_str_ptr returns query without copy", "[HTTP SERVER]")
+{
+    httpd_req_t req;
+    struct httpd_req_aux aux;
+    const char *expected = "foo=bar&baz=qux";
+    build_query_req(&req, &aux, "/path?foo=bar&baz=qux");
+
+    const char *q = NULL;
+    size_t qlen = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_req_get_url_query_str_ptr(&req, &q, &qlen));
+    TEST_ASSERT_NOT_NULL(q);
+    TEST_ASSERT_EQUAL(strlen(expected), qlen);
+    TEST_ASSERT_EQUAL(0, memcmp(q, expected, qlen));
+
+    /* Must point into the request URI buffer, i.e. no copy was made */
+    TEST_ASSERT_TRUE(q >= req.uri && q < req.uri + sizeof(req.uri));
+
+    /* Cross-check against the length and copy variants */
+    TEST_ASSERT_EQUAL(qlen, httpd_req_get_url_query_len(&req));
+    char buf[64];
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_req_get_url_query_str(&req, buf, sizeof(buf)));
+    TEST_ASSERT_EQUAL(0, strncmp(buf, q, qlen));
+}
+
+TEST_CASE("httpd_req_get_url_query_str_ptr handles empty and missing query", "[HTTP SERVER]")
+{
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    req.aux = &aux;
+    const char *q = NULL;
+    size_t qlen = 0;
+
+    /* Empty URI -> ESP_FAIL */
+    TEST_ASSERT_EQUAL(ESP_FAIL, httpd_req_get_url_query_str_ptr(&req, &q, &qlen));
+
+    /* URI without a query -> ESP_ERR_NOT_FOUND */
+    build_query_req(&req, &aux, "/path/only");
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, httpd_req_get_url_query_str_ptr(&req, &q, &qlen));
+}
+
+TEST_CASE("httpd_req_get_url_query_str_ptr validates NULL args", "[HTTP SERVER][security]")
+{
+    httpd_req_t req;
+    struct httpd_req_aux aux;
+    build_query_req(&req, &aux, "/p?x=1");
+
+    const char *q = NULL;
+    size_t qlen = 0;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, httpd_req_get_url_query_str_ptr(NULL, &q, &qlen));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, httpd_req_get_url_query_str_ptr(&req, NULL, &qlen));
+    /* Regression: a query is present, so a NULL buf_len used to be written to */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, httpd_req_get_url_query_str_ptr(&req, &q, NULL));
+}
+
+TEST_CASE("httpd_req_get_hdr_value_str_ptr returns value without copy", "[HTTP SERVER]")
+{
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    /* Parser layout: "Field: value" entries, CRLF terminators replaced by nulls */
+    static char scratch[] = "Host: example.com\0\0X-Custom: hello world";
+    aux.scratch = scratch;
+    aux.req_hdrs_count = 2;
+    req.aux = &aux;
+
+    const char *val = NULL;
+    size_t vlen = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_req_get_hdr_value_str_ptr(&req, "X-Custom", &val, &vlen));
+    TEST_ASSERT_EQUAL(strlen("hello world"), vlen);
+    TEST_ASSERT_EQUAL(0, strcmp(val, "hello world"));
+
+    /* Must point into the scratch buffer, i.e. no copy was made */
+    TEST_ASSERT_TRUE(val >= scratch && val < scratch + sizeof(scratch));
+
+    /* Field match is case-insensitive, like the copy variant */
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_req_get_hdr_value_str_ptr(&req, "host", &val, &vlen));
+    TEST_ASSERT_EQUAL(0, strcmp(val, "example.com"));
+
+    /* Cross-check the new pointer API against the length and copy variants */
+    TEST_ASSERT_EQUAL(strlen("hello world"), httpd_req_get_hdr_value_len(&req, "X-Custom"));
+    char buf[32];
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_req_get_hdr_value_str(&req, "X-Custom", buf, sizeof(buf)));
+    TEST_ASSERT_EQUAL(0, strcmp(buf, "hello world"));
+
+    /* Missing field -> ESP_ERR_NOT_FOUND */
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND,
+                      httpd_req_get_hdr_value_str_ptr(&req, "Nonexistent", &val, &vlen));
+}
+
+TEST_CASE("httpd_req_get_hdr_value_str_ptr validates NULL args", "[HTTP SERVER][security]")
+{
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    static char scratch[] = "X-Custom: hello world";
+    aux.scratch = scratch;
+    aux.req_hdrs_count = 1;
+    req.aux = &aux;
+
+    const char *val = NULL;
+    size_t vlen = 0;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_req_get_hdr_value_str_ptr(NULL, "X-Custom", &val, &vlen));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_req_get_hdr_value_str_ptr(&req, NULL, &val, &vlen));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_req_get_hdr_value_str_ptr(&req, "X-Custom", NULL, &vlen));
+    /* Regression-style guard: a value is present, so a NULL val_len must be
+     * rejected rather than written to */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_req_get_hdr_value_str_ptr(&req, "X-Custom", &val, NULL));
+}
 
 void app_main(void)
 {

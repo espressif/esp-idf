@@ -89,7 +89,14 @@ endif()
 idf_component_get_property(cxx cxx COMPONENT_LIB)
 add_library(libgcc_cxx INTERFACE)
 target_link_libraries(libgcc_cxx INTERFACE ${CONFIG_COMPILER_RT_LIB_NAME} $<TARGET_FILE:${cxx}>)
-target_link_libraries(${COMPONENT_LIB} PUBLIC libgcc_cxx)
+# Link as INTERFACE, not PUBLIC: libgcc_cxx references $<TARGET_FILE:${cxx}>, so adding it to the
+# cxx archive's own LINK_LIBRARIES would make the target depend on its own TARGET_FILE. CMake then
+# needs the link language (hence SOURCES) to resolve that TARGET_FILE, which is a self-reference and
+# fails generation with "The SOURCES of '...' use a generator expression that depends on the SOURCES
+# themselves" whenever the cxx target is not itself link-consumed (e.g. cmakev2, IDFGH-16748). A
+# static archive isn't linked, so its private link libraries are inert; consumers still get
+# libgcc_cxx through INTERFACE_LINK_LIBRARIES, preserving link order.
+target_link_libraries(${COMPONENT_LIB} INTERFACE libgcc_cxx)
 
 if(NOT CONFIG_COMPILER_CXX_EXCEPTIONS)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxx_fatal_exception")

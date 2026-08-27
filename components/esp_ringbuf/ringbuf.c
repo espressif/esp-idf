@@ -91,6 +91,11 @@ static void prvInitializeNewRingbuffer(size_t xBufferSize,
                                        Ringbuffer_t *pxNewRingbuffer,
                                        uint8_t *pucRingbufferStorage);
 
+//Validate and align buffer size for dynamically allocated ring buffers
+static BaseType_t prvGetAlignedBufferSize(size_t xBufferSize,
+                                          RingbufferType_t xBufferType,
+                                          size_t *pxAlignedBufferSize);
+
 //Calculate current amount of free space (in bytes) in the ring buffer
 static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer);
 
@@ -203,6 +208,29 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
                                            size_t xMaxSize);
 
 // ------------------------------------------------ Static Functions ---------------------------------------------------
+
+static BaseType_t prvGetAlignedBufferSize(size_t xBufferSize,
+                                          RingbufferType_t xBufferType,
+                                          size_t *pxAlignedBufferSize)
+{
+    if (xBufferType >= RINGBUF_TYPE_MAX || xBufferSize == 0) {
+        return pdFALSE;
+    }
+
+    //No-split/allow-split buffers must be large enough to avoid underflowing xMaxItemSize
+    if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
+        if (xBufferSize > SIZE_MAX - rbALIGN_MASK) {
+            return pdFALSE;     //Alignment would overflow
+        }
+        xBufferSize = rbALIGN_SIZE(xBufferSize);
+        if (xBufferSize < rbHEADER_SIZE * 2) {
+            return pdFALSE;
+        }
+    }
+
+    *pxAlignedBufferSize = xBufferSize;
+    return pdTRUE;
+}
 
 static void prvInitializeNewRingbuffer(size_t xBufferSize,
                                        RingbufferType_t xBufferType,
@@ -944,10 +972,11 @@ RingbufHandle_t xRingbufferCreate(size_t xBufferSize, RingbufferType_t xBufferTy
     configASSERT(xBufferSize > 0);
     configASSERT(xBufferType < RINGBUF_TYPE_MAX);
 
-    //Allocate memory
-    if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
-        xBufferSize = rbALIGN_SIZE(xBufferSize);    //xBufferSize is rounded up for no-split/allow-split buffers
+    if (prvGetAlignedBufferSize(xBufferSize, xBufferType, &xBufferSize) != pdTRUE) {
+        return NULL;
     }
+
+    //Allocate memory
     Ringbuffer_t *pxNewRingbuffer = calloc(1, sizeof(Ringbuffer_t));
     uint8_t *pucRingbufferStorage = malloc(xBufferSize);
     if (pxNewRingbuffer == NULL || pucRingbufferStorage == NULL) {
@@ -966,7 +995,16 @@ err:
 
 RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum)
 {
-    return xRingbufferCreate((rbALIGN_SIZE(xItemSize) + rbHEADER_SIZE) * xItemNum, RINGBUF_TYPE_NOSPLIT);
+    //Guard the (aligned item size + header) * item count computation against overflow
+    size_t xItemSizeWithHeader;
+    size_t xBufferSize;
+    if (xItemNum == 0 || xItemSize > SIZE_MAX - rbALIGN_MASK ||
+            __builtin_add_overflow(rbALIGN_SIZE(xItemSize), rbHEADER_SIZE, &xItemSizeWithHeader) ||
+            __builtin_mul_overflow(xItemSizeWithHeader, xItemNum, &xBufferSize)) {
+        return NULL;
+    }
+
+    return xRingbufferCreate(xBufferSize, RINGBUF_TYPE_NOSPLIT);
 }
 
 RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
@@ -978,9 +1016,15 @@ RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
     configASSERT(xBufferSize > 0);
     configASSERT(xBufferType < RINGBUF_TYPE_MAX);
     configASSERT(pucRingbufferStorage != NULL && pxStaticRingbuffer != NULL);
+    if (xBufferType >= RINGBUF_TYPE_MAX || xBufferSize == 0) {
+        return NULL;
+    }
     if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
-        //No-split/allow-split buffer sizes must be 32-bit aligned
+        //No-split/allow-split buffer sizes must be 32-bit aligned and large enough to avoid underflowing xMaxItemSize
         configASSERT(rbCHECK_ALIGNED(xBufferSize));
+        if (!rbCHECK_ALIGNED(xBufferSize) || xBufferSize < rbHEADER_SIZE * 2) {
+            return NULL;
+        }
     }
 
     Ringbuffer_t *pxNewRingbuffer = (Ringbuffer_t *)pxStaticRingbuffer;
@@ -1496,11 +1540,11 @@ RingbufHandle_t xRingbufferCreateWithCaps(size_t xBufferSize, RingbufferType_t x
     StaticRingbuffer_t *pxStaticRingbuffer;
     uint8_t *pucRingbufferStorage;
 
-    //Allocate memory
-    if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
-        xBufferSize = rbALIGN_SIZE(xBufferSize);    //xBufferSize is rounded up for no-split/allow-split buffers
+    if (prvGetAlignedBufferSize(xBufferSize, xBufferType, &xBufferSize) != pdTRUE) {
+        return NULL;
     }
 
+    //Allocate memory
     pxStaticRingbuffer = heap_caps_malloc(sizeof(StaticRingbuffer_t), (uint32_t)uxMemoryCaps);
     pucRingbufferStorage = heap_caps_malloc(xBufferSize, (uint32_t)uxMemoryCaps);
 
