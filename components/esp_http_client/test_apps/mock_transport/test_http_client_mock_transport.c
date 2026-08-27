@@ -22,10 +22,20 @@ typedef struct {
     size_t read_offset;                      /*!< Current position in response data */
     size_t bytes_processed;                  /*!< Bytes processed (for error injection) */
     char *response_buffer;                   /*!< Internal copy of response data */
+    int async_polls_left;                    /*!< Remaining "in progress" returns from mock_connect_async() */
+    int wb_reads_left;                       /*!< Remaining EAGAIN injections for mock_read() */
+    int wb_writes_left;                      /*!< Remaining EAGAIN injections for mock_write() */
+    const char *resp_queue[8];               /*!< FIFO of queued response pointers (caller-owned) */
+    size_t resp_queue_len[8];                /*!< Lengths matching resp_queue entries */
+    int resp_queue_count;                    /*!< Number of entries queued */
+    int resp_queue_next;                     /*!< Index of the next entry to pop */
+    char req_capture[2048];                  /*!< Bytes written since the last request boundary */
+    size_t req_capture_len;                  /*!< Number of valid bytes in req_capture */
 } mock_http_transport_ctx_t;
 
 // Forward declarations of transport function implementations
 static int mock_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms);
+static int mock_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms);
 static int mock_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms);
 static int mock_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms);
 static int mock_close(esp_transport_handle_t t);
@@ -100,6 +110,45 @@ static int mock_connect(esp_transport_handle_t t, const char *host, int port, in
 }
 
 /**
+ * @brief Mock async connect implementation
+ *
+ * Simulates a non-blocking connect(): returns "in progress" for
+ * `async_connect_polls` calls, then reports success. Honors
+ * MOCK_TRANSPORT_MODE_CONNECT_FAIL to simulate an async connect failure.
+ */
+static int mock_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
+{
+    mock_http_transport_ctx_t *ctx = esp_transport_get_context_data(t);
+    if (!ctx) {
+        ESP_LOGE(TAG, "Invalid transport context");
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (ctx->config.track_calls) {
+        ctx->stats.connect_calls++;
+    }
+
+    if (ctx->config.mode == MOCK_TRANSPORT_MODE_CONNECT_FAIL) {
+        ESP_LOGD(TAG, "Mock connect_async failed (simulated)");
+        return -1; /* ASYNC_TRANS_CONNECT_FAIL */
+    }
+
+    if (ctx->async_polls_left > 0) {
+        ctx->async_polls_left--;
+        ESP_LOGD(TAG, "Mock connect_async: still connecting (%d polls left)", ctx->async_polls_left);
+        return 0;  /* ASYNC_TRANS_CONNECTING */
+    }
+
+    ctx->is_connected = true;
+    ctx->read_offset = 0;
+    ctx->bytes_processed = 0;
+
+    ESP_LOGI(TAG, "Mock connect_async succeeded");
+    return 1;      /* ASYNC_TRANS_CONNECT_PASS */
+}
+
+/**
  * @brief Mock read implementation
  */
 static int mock_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
@@ -107,6 +156,14 @@ static int mock_read(esp_transport_handle_t t, char *buffer, int len, int timeou
     mock_http_transport_ctx_t *ctx = esp_transport_get_context_data(t);
     if (!ctx || !buffer || len <= 0) {
         errno = EINVAL;
+        return -1;
+    }
+
+    // Would-block injection: simulate a non-blocking socket returning EAGAIN
+    if (ctx->wb_reads_left > 0) {
+        ctx->wb_reads_left--;
+        ESP_LOGD(TAG, "Mock read: EAGAIN (simulated would-block, %d left)", ctx->wb_reads_left);
+        errno = EAGAIN;
         return -1;
     }
 
@@ -190,6 +247,14 @@ static int mock_write(esp_transport_handle_t t, const char *buffer, int len, int
         return -1;
     }
 
+    // Would-block injection: simulate a non-blocking socket returning EAGAIN
+    if (ctx->wb_writes_left > 0) {
+        ctx->wb_writes_left--;
+        ESP_LOGD(TAG, "Mock write: EAGAIN (simulated would-block, %d left)", ctx->wb_writes_left);
+        errno = EAGAIN;
+        return -1;
+    }
+
     if (ctx->config.track_calls) {
         ctx->stats.write_calls++;
     }
@@ -228,6 +293,24 @@ static int mock_write(esp_transport_handle_t t, const char *buffer, int len, int
             }
         }
     }
+
+    // Request boundary: previous response fully consumed and a new request starts.
+    // Pop the next queued response into the active buffer via set_response()
+    // (which owns free/realloc + read_offset reset) and start a fresh capture.
+    if (ctx->resp_queue_next < ctx->resp_queue_count &&
+        ctx->response_buffer && ctx->read_offset >= ctx->config.response_len) {
+        mock_http_transport_set_response(t, ctx->resp_queue[ctx->resp_queue_next],
+                                         ctx->resp_queue_len[ctx->resp_queue_next]);
+        ctx->resp_queue_next++;
+        ctx->req_capture_len = 0;
+    }
+
+    // Capture written bytes (request content) for test assertions, capped to
+    // avoid overflowing the fixed-size buffer.
+    size_t space = sizeof(ctx->req_capture) - ctx->req_capture_len;
+    size_t copy = (size_t)len < space ? (size_t)len : space;
+    memcpy(ctx->req_capture + ctx->req_capture_len, buffer, copy);
+    ctx->req_capture_len += copy;
 
     // Normal write (just track it, don't actually store)
     ctx->bytes_processed += len;
@@ -388,6 +471,11 @@ esp_transport_handle_t mock_http_transport_create(const mock_http_transport_conf
         ctx->config.track_calls = true;
     }
 
+    // Initialize error-injection countdown counters from config
+    ctx->async_polls_left = ctx->config.async_connect_polls;
+    ctx->wb_reads_left = ctx->config.would_block_reads;
+    ctx->wb_writes_left = ctx->config.would_block_writes;
+
     // Set context
     esp_transport_set_context_data(transport, ctx);
 
@@ -400,6 +488,7 @@ esp_transport_handle_t mock_http_transport_create(const mock_http_transport_conf
                           mock_poll_read,
                           mock_poll_write,
                           mock_destroy);
+    esp_transport_set_async_connect_func(transport, mock_connect_async);
 
     ESP_LOGI(TAG, "Mock HTTP transport created (mode=%d)", ctx->config.mode);
     return transport;
@@ -451,6 +540,11 @@ esp_err_t mock_http_transport_set_config(esp_transport_handle_t transport,
     // The connection state should be managed through connect/close calls
     ctx->read_offset = 0;
     ctx->bytes_processed = 0;
+
+    // Re-initialize error-injection countdown counters from the new config
+    ctx->async_polls_left = ctx->config.async_connect_polls;
+    ctx->wb_reads_left = ctx->config.would_block_reads;
+    ctx->wb_writes_left = ctx->config.would_block_writes;
 
     ESP_LOGD(TAG, "Mock transport config updated (mode=%d)", ctx->config.mode);
     return ESP_OK;
@@ -525,5 +619,37 @@ esp_err_t mock_http_transport_set_response(esp_transport_handle_t transport,
     ctx->bytes_processed = 0;
 
     ESP_LOGD(TAG, "Mock transport response updated (%zu bytes)", ctx->config.response_len);
+    return ESP_OK;
+}
+
+esp_err_t mock_http_transport_queue_response(esp_transport_handle_t t,
+                                              const char *data, size_t len)
+{
+    mock_http_transport_ctx_t *ctx = esp_transport_get_context_data(t);
+    if (!ctx || ctx->resp_queue_count >= 8 || !data) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Queue entries are caller-owned (e.g. string literals); store the pointer only.
+    ctx->resp_queue[ctx->resp_queue_count] = data;
+    ctx->resp_queue_len[ctx->resp_queue_count] = len > 0 ? len : strlen(data);
+    ctx->resp_queue_count++;
+    return ESP_OK;
+}
+
+esp_err_t mock_http_transport_get_last_request(esp_transport_handle_t t,
+                                                char *buf, size_t buf_len, size_t *out_len)
+{
+    mock_http_transport_ctx_t *ctx = esp_transport_get_context_data(t);
+    if (!ctx || !buf || buf_len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t n = ctx->req_capture_len < buf_len - 1 ? ctx->req_capture_len : buf_len - 1;
+    memcpy(buf, ctx->req_capture, n);
+    buf[n] = '\0';
+    if (out_len) {
+        *out_len = n;
+    }
     return ESP_OK;
 }
