@@ -648,13 +648,8 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_
     } else {
         ANALOG_CLOCK_ENABLE();
     }
-    /* MPLL calibration start */
-    clk_ll_mpll_calibration_start();
+
     clk_ll_mpll_set_config(mpll_freq, xtal_freq);
-    /* wait calibration done */
-    while(!clk_ll_mpll_calibration_is_done());
-    /* MPLL calibration stop */
-    clk_ll_mpll_calibration_stop();
 
     if (thread_safe) {
         _regi2c_ctrl_ll_master_enable_clock(false);
