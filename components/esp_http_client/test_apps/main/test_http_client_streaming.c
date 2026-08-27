@@ -55,12 +55,40 @@ TEST_CASE("open/write/fetch_headers/read sequence works", "[esp_http_client][str
 
     const char *body = "abcde";
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_open(client, 5));
+    // characterization: master behavior, see refactor spec
+    // esp_http_client_open() (esp_http_client.c ~L1921) sets
+    // state = HTTP_STATE_REQ_COMPLETE_HEADER right after writing the
+    // request line and headers over the transport.
+    TEST_ASSERT_EQUAL(HTTP_STATE_REQ_COMPLETE_HEADER, esp_http_client_get_state(client));
     TEST_ASSERT_EQUAL(5, esp_http_client_write(client, body, 5));
+    // characterization: master behavior, see refactor spec
+    // The public esp_http_client_write() (~L1978) never touches
+    // client->state - it only requires state >= REQ_COMPLETE_HEADER and
+    // writes bytes directly over the transport, so the state observed
+    // here is unchanged from the open() call above.
+    TEST_ASSERT_EQUAL(HTTP_STATE_REQ_COMPLETE_HEADER, esp_http_client_get_state(client));
     TEST_ASSERT_EQUAL(5, esp_http_client_fetch_headers(client));
+    // characterization: master behavior, see refactor spec
+    // esp_http_client_fetch_headers() (~L1667-1697) unconditionally sets
+    // state = HTTP_STATE_REQ_COMPLETE_DATA on entry, then reads/parses
+    // until the response header-parse loop exits, then unconditionally
+    // sets state = HTTP_STATE_RES_ON_DATA_START before returning - it
+    // never stops at RES_COMPLETE_HEADER and does not depend on whether
+    // any body bytes were actually read yet.
+    TEST_ASSERT_EQUAL(HTTP_STATE_RES_ON_DATA_START, esp_http_client_get_state(client));
     TEST_ASSERT_EQUAL(200, esp_http_client_get_status_code(client));
 
     char buf[16] = {0};
     int rd = esp_http_client_read(client, buf, sizeof(buf));
+    // characterization: master behavior, see refactor spec
+    // esp_http_client_read() (~L1435) never assigns client->state at all.
+    // Also, for this canned response the single mock transport read done
+    // inside fetch_headers() above already delivered the whole 43-byte
+    // buffer (headers + 5-byte body) to the parser in one
+    // http_parser_execute() call, so this read() serves the body from the
+    // already-cached response buffer without issuing a second transport
+    // read - the state observed here is unchanged from fetch_headers().
+    TEST_ASSERT_EQUAL(HTTP_STATE_RES_ON_DATA_START, esp_http_client_get_state(client));
     TEST_ASSERT_EQUAL(5, rd);
     TEST_ASSERT_EQUAL_STRING("hello", buf);
     TEST_ASSERT_TRUE(esp_http_client_is_complete_data_received(client));

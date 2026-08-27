@@ -17,7 +17,3 @@ CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT=y
 # (unencrypted credentials without TLS); this is a test-only config, not a
 # client-code change - the mock transport never touches the network.
 CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH=y
-
-# Some of the test apps allocate 2048 size buffers on the stack.
-# Increase the default stack size to accommodate for that
-CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192

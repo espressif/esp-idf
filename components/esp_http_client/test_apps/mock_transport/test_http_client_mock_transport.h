@@ -202,8 +202,12 @@ esp_err_t mock_http_transport_queue_response(esp_transport_handle_t t,
  * @brief Retrieve the bytes captured from the most recent request
  *
  * mock_write() appends every written byte (capped at 2048 bytes) into an
- * internal capture buffer, reset at each request boundary. This lets tests
- * assert on the serialized request content (headers, body).
+ * internal capture buffer. The buffer is reset only on a queue-advance: a
+ * write arriving after the current response has been fully read AND a
+ * queued response is still pending (see mock_http_transport_queue_response()).
+ * With the queue empty or exhausted, no reset happens and the capture
+ * concatenates bytes across requests. This lets tests assert on the
+ * serialized request content (headers, body).
  *
  * @param[in] t Mock transport handle
  * @param[out] buf Buffer to receive the captured request bytes, NUL-terminated

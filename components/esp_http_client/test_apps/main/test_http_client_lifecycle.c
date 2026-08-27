@@ -81,6 +81,11 @@ TEST_CASE("Connection: close forces reconnect on next perform", "[esp_http_clien
     mc.response_data = resp_close;
     esp_transport_handle_t mock = mock_http_transport_create(&mc);
     TEST_ASSERT_NOT_NULL(mock);
+    /* characterization: this queued response is never popped - the forced
+     * reconnect calls mock_close() then mock_connect(), both of which reset
+     * read_offset to 0, so the second perform() re-serves the identical
+     * initial buffer instead of advancing the queue; kept here for
+     * intent-documentation. */
     mock_http_transport_queue_response(mock, resp_close, 0);
 
     esp_http_client_config_t cfg = {

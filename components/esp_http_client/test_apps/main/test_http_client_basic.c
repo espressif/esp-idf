@@ -496,6 +496,25 @@ TEST_CASE("Client handles 401 Unauthorized error", "[esp_http_client][basic][p0]
     TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_stats(mock_transport, &stats));
     TEST_ASSERT_EQUAL(2, stats.write_calls);
 
+    /* characterization: master behavior, see refactor spec
+     * The queued second 401 triggers a queue-advance on the retry's write
+     * (previous response fully read, a queued response is still pending -
+     * see test_http_client_mock_transport.h), which resets the capture
+     * buffer just before the retry is written. So this last-request capture
+     * holds only the credential-less retry, not the original request.
+     * Confirms no Authorization header is attached: no auth_type,
+     * username/password, or URL-embedded credentials were ever configured
+     * on this client, so esp_http_client_prepare()'s credential check
+     * (~L800-803) has nothing to attach even though add_auth() unconditionally
+     * schedules the retry. */
+    char req[2048];
+    TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_last_request(mock_transport, req, sizeof(req), NULL));
+    /* Non-vacuity check: confirms the capture actually holds the retried
+     * request line (not empty, not the original request left over from a
+     * missed reset) before trusting the Authorization-absence assert below. */
+    TEST_ASSERT_NOT_NULL(strstr(req, "GET /api/protected"));
+    TEST_ASSERT_NULL(strstr(req, "Authorization"));
+
     ESP_LOGI(TAG, "OK: 401 error handled, credential-less retry capped and reported");
 
     esp_http_client_cleanup(client);

@@ -465,7 +465,7 @@ static const char *mock_http_response_ok =
     "\r\n"
     "{\"status\":\"ok\"}";
 
-esp_err_t _http_event_handler(esp_http_client_event_t *evt)
+static esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     switch (evt->event_id) {
         case HTTP_EVENT_ON_CONNECTED:

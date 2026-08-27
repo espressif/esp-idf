@@ -52,6 +52,10 @@
  */
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
 
+#if !CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
+#error "These cases require CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH=y; keep every sdkconfig.ci.* with CUSTOM_TRANSPORT in sync"
+#endif
+
 static const char *resp_401 =
     "HTTP/1.1 401 Unauthorized\r\n"
     "WWW-Authenticate: Basic realm=\"Test\"\r\n"
