@@ -65,7 +65,6 @@ void BTA_GATTC_Disable(void)
         p_buf->event = BTA_GATTC_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
     }
-    bta_sys_deregister(BTA_ID_GATTC);
 
 }
 

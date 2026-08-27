@@ -481,6 +481,8 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status)
     }
     utl_freebuf((void **)&bta_hh_cb.p_disc_db);
 
+    bta_sys_deregister(BTA_ID_HH);
+
     if (bta_hh_cb.p_cback) {
         tBTA_HH data = {0};
         data.status = status;

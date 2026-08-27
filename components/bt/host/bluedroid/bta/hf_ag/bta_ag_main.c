@@ -492,7 +492,7 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB *p_scb)
     memset(p_scb, 0, sizeof(tBTA_AG_SCB));
     p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
     /* If all scbs are deallocated, callback with disable event */
-    if (!bta_sys_is_register (BTA_ID_AG)) {
+    if (bta_ag_cb.disabling) {
         for (idx = 0; idx < BTA_AG_NUM_SCB; idx++) {
             if (bta_ag_cb.scb[idx].in_use) {
                 allocated = TRUE;
@@ -500,6 +500,8 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB *p_scb)
             }
         }
         if (!allocated) {
+            bta_ag_cb.disabling = FALSE;
+            bta_sys_deregister(BTA_ID_AG);
             (*bta_ag_cb.p_cback)(BTA_AG_DISABLE_EVT, NULL);
         }
     }
@@ -822,8 +824,7 @@ static void bta_ag_api_disable(tBTA_AG_DATA *p_data)
         APPL_TRACE_ERROR("BTA AG is already disabled, ignoring ...");
         return;
     }
-    /* De-register with BTA system manager */
-    bta_sys_deregister(BTA_ID_AG);
+    bta_ag_cb.disabling = TRUE;
 
     for (i = 0; i < BTA_AG_NUM_SCB; i++, p_scb++) {
         if (p_scb->in_use) {
@@ -834,6 +835,8 @@ static void bta_ag_api_disable(tBTA_AG_DATA *p_data)
 
     if (!do_dereg) {
         /* Done, send callback evt to app */
+        bta_ag_cb.disabling = FALSE;
+        bta_sys_deregister(BTA_ID_AG);
         (*bta_ag_cb.p_cback)(BTA_AG_DISABLE_EVT, NULL);
     }
     bta_sys_collision_register (BTA_ID_AG, NULL);
