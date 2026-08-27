@@ -42,6 +42,9 @@
 /* Flag passed to retransmit_i_frames() when all packets should be retransmitted */
 #define L2C_FCR_RETX_ALL_PKTS   0xFF
 
+/* Offset reserved in front of a reassembled SDU, the minimal offset required by OBEX */
+#define L2C_FCR_RX_SDU_OFFSET   4
+
 #if BT_TRACE_VERBOSE == TRUE
 static char *SAR_types[] = { "Unsegmented", "Start", "End", "Continuation" };
 static char *SUP_types[] = { "RR", "REJ", "RNR", "SREJ" };
@@ -538,7 +541,11 @@ void l2c_fcr_send_S_frame (tL2C_CCB *p_ccb, UINT16 function_code, UINT16 pf_bit)
     ctrl_word |= (p_ccb->fcrb.next_seq_expected << L2CAP_FCR_REQ_SEQ_BITS_SHIFT);
     ctrl_word |= pf_bit;
 
-    if ((p_buf = (BT_HDR *)osi_malloc(L2CAP_CMD_BUF_SIZE)) != NULL) {
+    /* An S-frame carries no payload: HCI preamble, L2CAP header, control word and FCS */
+    UINT16 s_frame_buf_size = sizeof(BT_HDR) + HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD
+                              + L2CAP_FCR_OVERHEAD + L2CAP_FCS_LEN;
+
+    if ((p_buf = (BT_HDR *)osi_malloc(s_frame_buf_size)) != NULL) {
         p_buf->offset = HCI_DATA_PREAMBLE_SIZE;
         p_buf->len    = L2CAP_PKT_OVERHEAD + L2CAP_FCR_OVERHEAD;
 
@@ -1350,11 +1357,12 @@ static BOOLEAN do_sar_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_wo
             if (p_fcrb->rx_sdu_len > p_ccb->max_rx_mtu) {
                 L2CAP_TRACE_WARNING ("SAR - SDU len: %u  larger than MTU: %u", p_fcrb->rx_sdu_len, p_ccb->max_rx_mtu);
                 packet_ok = FALSE;
-            } else if ((p_fcrb->p_rx_sdu = (BT_HDR *)osi_malloc(L2CAP_MAX_BUF_SIZE)) == NULL) {
+            } else if ((p_fcrb->p_rx_sdu = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + L2C_FCR_RX_SDU_OFFSET
+                                                                + p_fcrb->rx_sdu_len)) == NULL) {
                 L2CAP_TRACE_ERROR ("SAR - no buffer for SDU start user_rx_buf_size:%d", p_ccb->ertm_info.user_rx_buf_size);
                 packet_ok = FALSE;
             } else {
-                p_fcrb->p_rx_sdu->offset = 4; /* this is the minimal offset required by OBX to process incoming packets */
+                p_fcrb->p_rx_sdu->offset = L2C_FCR_RX_SDU_OFFSET;
                 p_fcrb->p_rx_sdu->len    = 0;
             }
         }
