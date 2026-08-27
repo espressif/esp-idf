@@ -184,8 +184,13 @@ bool BTU_StartUp(void)
     osi_mutex_new(&btu_l2cap_alarm_lock);
 
     const size_t workqueue_len[] = {BTU_TASK_WORKQUEUE0_LEN};
+#if (!CONFIG_BT_BLUEDROID_BTU_TASK_STACK_IN_EXT_MEM)
     btu_thread = osi_thread_create(BTU_TASK_NAME, BTU_TASK_STACK_SIZE, BTU_TASK_PRIO, BTU_TASK_PINNED_TO_CORE,
-                                   BTU_TASK_WORKQUEUE_NUM, workqueue_len);
+                                   BTU_TASK_WORKQUEUE_NUM, workqueue_len, false);
+#else
+    btu_thread = osi_thread_create(BTU_TASK_NAME, BTU_TASK_STACK_SIZE, BTU_TASK_PRIO, BTU_TASK_PINNED_TO_CORE,
+                                   BTU_TASK_WORKQUEUE_NUM, workqueue_len, true);
+#endif
     if (btu_thread == NULL) {
         goto error_exit;
     }
