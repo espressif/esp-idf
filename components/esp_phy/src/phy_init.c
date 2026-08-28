@@ -1207,6 +1207,11 @@ esp_err_t esp_phy_update_init_data(phy_init_data_type_t init_data_type)
     free(init_data_store);
     return ESP_OK;
 }
+
+phy_init_data_type_t esp_phy_get_init_data_type(void)
+{
+    return s_current_apply_phy_init_data;
+}
 #endif
 
 esp_err_t esp_phy_update_country_info(const char *country)
