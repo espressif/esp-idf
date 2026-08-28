@@ -34,7 +34,7 @@ Below is short explanation of remaining files in the project folder.
 └── README.md                  This is the file you are currently reading
 ```
 
-For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System v2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system-v2.html) of the ESP-IDF Programming Guide.
+For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System v2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system-v2/index.html) of the ESP-IDF Programming Guide.
 
 ## Troubleshooting
 

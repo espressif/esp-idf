@@ -28,7 +28,7 @@ extern "C" {
 #define ISP_LL_PERIPH_NUMS                    1U
 
 #define ISP_LL_HSIZE_MAX                      1920
-#define ISP_LL_VSIZE_MAX                      1080
+#define ISP_LL_VSIZE_MAX                      1280
 
 /*---------------------------------------------------------------
                       Clock
@@ -533,6 +533,82 @@ static inline void isp_ll_enable_line_start_packet_exist(isp_dev_t *hw, bool en)
 static inline void isp_ll_enable_line_end_packet_exist(isp_dev_t *hw, bool en)
 {
     hw->frame_cfg.hsync_end_exist = en;
+}
+
+/**
+ * @brief Set DMA input data type
+ *
+ * @param[in] hw         Hardware instance address
+ * @param[in] format     color format, see `isp_color_t`
+ *
+ * @return true for valid format, false for invalid format
+ */
+static inline bool isp_ll_dma_set_data_type(isp_dev_t *hw, isp_color_t format)
+{
+    bool valid = false;
+
+    switch (format) {
+    case ISP_COLOR_RAW8:
+        hw->dma_cntl.dma_data_type = 0x2A;
+        valid = true;
+        break;
+    case ISP_COLOR_RAW10:
+        hw->dma_cntl.dma_data_type = 0x2B;
+        valid = true;
+        break;
+    case ISP_COLOR_RAW12:
+        hw->dma_cntl.dma_data_type = 0x2C;
+        valid = true;
+        break;
+    default:
+        break;
+    }
+
+    return valid;
+}
+
+/**
+ * @brief Set DMA input burst length in units of 64-bit
+ *
+ * @param[in] hw         Hardware instance address
+ * @param[in] burst_len  Number of 64-bit beats in one DMA burst
+ */
+static inline void isp_ll_dma_set_burst_len(isp_dev_t *hw, uint32_t burst_len)
+{
+    hw->dma_cntl.dma_burst_len = burst_len;
+}
+
+/**
+ * @brief Set DMA input total frame size in units of 64-bit
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] num64b  Number of 64-bit words in one frame
+ */
+static inline void isp_ll_dma_set_frame_size(isp_dev_t *hw, uint32_t num64b)
+{
+    hw->dma_raw_data.dma_raw_num_total = num64b;
+    hw->dma_raw_data.dma_raw_num_total_set = 1;
+}
+
+/**
+ * @brief Apply DMA input registers
+ *
+ * @param[in] hw  Hardware instance address
+ */
+static inline void isp_ll_dma_apply_config(isp_dev_t *hw)
+{
+    hw->dma_cntl.dma_update_reg = 1;
+    while (hw->dma_cntl.dma_update_reg);
+}
+
+/**
+ * @brief Trigger one DMA input frame transfer
+ *
+ * @param[in] hw  Hardware instance address
+ */
+static inline void isp_ll_dma_trigger_frame(isp_dev_t *hw)
+{
+    hw->dma_cntl.dma_en = 1;
 }
 
 /**
