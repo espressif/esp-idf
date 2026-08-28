@@ -95,6 +95,7 @@ Application Example
     :SOC_LCD_RGB_SUPPORTED: * :example:`peripherals/lcd/rgb_panel` demonstrates how to install an RGB panel driver, display a scatter chart on the screen based on the LVGL library.
     :SOC_I2C_SUPPORTED: * :example:`peripherals/lcd/i2c_oled` demonstrates how to use the SSD1306 panel driver from the `esp_lcd` component to facilitate the porting of LVGL library and display a scrolling text on the OLED screen.
     :SOC_MIPI_DSI_SUPPORTED: * :example:`peripherals/lcd/mipi_dsi` demonstrates the general process of installing a MIPI DSI LCD driver, and displays a LVGL widget on the screen.
+    :SOC_MIPI_DSI_SUPPORTED: * :example:`peripherals/lcd/dsi_hdmi_bridge` demonstrates how to drive an HDMI display through a MIPI DSI to HDMI bridge and show a full-screen LVGL UI.
     :SOC_PARLIO_LCD_SUPPORTED: * :example:`peripherals/lcd/parlio_simulate` demonstrates how to use Parallel IO peripheral to drive an SPI or I80 Interfaced LCD.
 
 
