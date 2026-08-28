@@ -2065,7 +2065,7 @@ esp_err_t esp_http_client_set_post_field(esp_http_client_handle_t client, const 
     ESP_LOGD(TAG, "set post file length = %d", len);
     if (client->post_data) {
         char *value = NULL;
-        if ((err = esp_http_client_get_header(client, "Content-Type", &value)) != ESP_OK) {
+        if ((err = esp_http_client_get_header(client, "Content-Type", &value)) != ESP_OK && err != ESP_ERR_NOT_FOUND) {
             return err;
         }
         if (value == NULL) {
