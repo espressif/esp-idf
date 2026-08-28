@@ -1,0 +1,3 @@
+# The multiple PHY init data bin is embedded into the application binary
+# instead of being flashed into the phy data partition.
+CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED=y

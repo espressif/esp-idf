@@ -1,2 +1,2 @@
-CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION=y
-CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN=y
+# The multiple PHY init data bin is flashed into the phy data partition,
+# the options are already set by sdkconfig.defaults.
