@@ -340,7 +340,12 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         break;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_ENCRYPTION_CHANGE_EVT:
+    case HCI_ENCRYPTION_CHANGE_V2_EVT:
 #if (SMP_INCLUDED == TRUE)
+        if (hci_evt_len < 4) {
+            HCI_TRACE_ERROR("HCI evt 0x%02x param len %u invalid (need >= 4), dropping", hci_evt_code, hci_evt_len);
+            break;
+        }
         btu_hcif_encryption_change_evt (p);
 #endif  ///SMP_INCLUDED == TRUE
         break;
@@ -1098,7 +1103,11 @@ static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
 **
 ** Function         btu_hcif_encryption_change_evt
 **
-** Description      Process event HCI_ENCRYPTION_CHANGE_EVT
+** Description      Process event HCI_ENCRYPTION_CHANGE_EVT and
+**                  HCI_ENCRYPTION_CHANGE_V2_EVT. The Encryption_Key_Size
+**                  parameter added by v2 is not used by BLE (the spec requires
+**                  it to be ignored for LE connections), so it is ignored for
+**                  now.
 **
 ** Returns          void
 **

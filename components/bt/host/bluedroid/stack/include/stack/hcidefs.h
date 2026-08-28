@@ -932,6 +932,9 @@
 #define HCI_SHORT_RANGE_MODE_COMPLETE_EVT   0x4C
 #define HCI_AMP_STATUS_CHANGE_EVT           0x4D
 #define HCI_SET_TRIGGERED_CLOCK_CAPTURE_EVT 0x4E
+/* Same as HCI_ENCRYPTION_CHANGE_EVT plus a trailing Encryption_Key_Size octet.
+ * Encryption_Key_Size is not used by BLE and is ignored for now. */
+#define HCI_ENCRYPTION_CHANGE_V2_EVT        0x59
 
 /* ULP HCI Event */
 #define HCI_BLE_EVENT                       0x3e
