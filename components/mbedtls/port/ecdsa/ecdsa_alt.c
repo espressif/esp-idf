@@ -110,8 +110,13 @@ static void esp_ecdsa_acquire_hardware(void)
     /*  Key Manager holds the key usage selector register (efuse vs own key).
         Thus, we need to enable the Key Manager peripheral clock to ensure
         that the key usage selector register is properly set.
+        Taken after the ECDSA lock (which already holds SHA/AES and MPI) so
+        the order matches HMAC/DS: sha_aes < mpi < key_manager.
      */
-    esp_crypto_key_mgr_enable_periph_clk(true);
+    esp_crypto_key_manager_lock_acquire();
+    /* Clock only: a full KM reset would drop the XTS-AES flash encryption
+       key-usage selector, and spi_flash DMA does not take the KM lock. */
+    esp_crypto_key_mgr_enable_periph_clk_no_reset(true);
 #endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY */
 
 #if SOC_ECDSA_USES_MPI
@@ -131,7 +136,8 @@ static void esp_ecdsa_release_hardware(void)
     esp_crypto_ecc_enable_periph_clk(false);
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-    esp_crypto_key_mgr_enable_periph_clk(false);
+    esp_crypto_key_mgr_enable_periph_clk_no_reset(false);
+    esp_crypto_key_manager_lock_release();
 #endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY */
 
 #if SOC_ECDSA_USES_MPI

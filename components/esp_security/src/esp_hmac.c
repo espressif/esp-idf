@@ -79,14 +79,26 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     /*  Key Manager holds the key usage selector register(efuse vs own key).
         Thus, we need to enable the Key Manager peripheral clock to ensure
         that the key usage selector register is properly set.
+        Taken after the HMAC lock (SHA/AES) so the order matches ECDSA/DS:
+        sha_aes < mpi < key_manager. Do not take it earlier: ECDSA already
+        holds MPI before KM, and reversing that here would deadlock.
      */
-    esp_crypto_key_mgr_enable_periph_clk(true);
+    esp_crypto_key_manager_lock_acquire();
+    /* Clock only: a full KM reset would drop the XTS-AES flash encryption
+       key-usage selector, and spi_flash DMA does not take the KM lock. */
+    esp_crypto_key_mgr_enable_periph_clk_no_reset(true);
 #endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
 
     hmac_hal_start();
 
     uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_USER, key_id);
     if (conf_error) {
+        esp_crypto_sha_enable_periph_clk(false);
+        esp_crypto_hmac_enable_periph_clk(false);
+#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+        esp_crypto_key_mgr_enable_periph_clk_no_reset(false);
+        esp_crypto_key_manager_lock_release();
+#endif // SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
         esp_crypto_hmac_lock_release();
         return ESP_FAIL;
     }
@@ -144,7 +156,8 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     hmac_hal_read_result_256(hmac);
 
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
-    esp_crypto_key_mgr_enable_periph_clk(false);
+    esp_crypto_key_mgr_enable_periph_clk_no_reset(false);
+    esp_crypto_key_manager_lock_release();
 #endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
 
     esp_crypto_sha_enable_periph_clk(false);

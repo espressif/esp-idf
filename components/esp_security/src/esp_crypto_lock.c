@@ -15,7 +15,9 @@ MPI/RSA: independent
 ECC: independent
 HMAC: needs SHA
 DS: needs HMAC (which needs SHA), AES and MPI
-ECDSA: needs ECC and MPI
+ECDSA: needs ECC and MPI, and its reset pulse holds SHA (and thus the SHA/AES DMA) in reset
+Key Manager: shared key-usage selectors (ECDSA/HMAC/DS/XTS-AES flash);
+             esp_crypto_key_mgr_enable_periph_clk(true) resets it
 */
 
 #if !NON_OS_BUILD
@@ -140,6 +142,19 @@ void esp_crypto_ecdsa_lock_acquire(void)
 {
     _lock_acquire(&s_crypto_ecdsa_lock);
     esp_crypto_ecc_lock_acquire();
+#if defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED)
+    /* Enabling the ECDSA peripheral pulses the ECDSA reset
+       (esp_crypto_ecdsa_enable_periph_clk() -> ecdsa_ll_reset_register()), and on every
+       target that has an ECDSA peripheral that reset also holds SHA in reset: see the
+       "otherwise SHA is held in reset" note in sha_ll_reset_register(). SHA shares its
+       (G)DMA channel with AES, and the SHA/AES lock is what serializes both of them, so
+       it has to be held across the pulse. Without it, a hardware ECDSA operation on one
+       core lands in the middle of an unrelated SHA or AES transfer on the other core,
+       which completes without an error but yields wrong output.
+       Taken before the MPI lock to keep the acquisition order of
+       esp_crypto_ds_lock_acquire() (SHA/AES before MPI) and avoid a lock cycle. */
+    esp_crypto_sha_aes_lock_acquire();
+#endif /* defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED) */
 #ifdef SOC_ECDSA_USES_MPI
     if (ecdsa_ll_is_mpi_required()) {
         esp_crypto_mpi_lock_acquire();
@@ -154,6 +169,9 @@ void esp_crypto_ecdsa_lock_release(void)
         esp_crypto_mpi_lock_release();
     }
 #endif /* SOC_ECDSA_USES_MPI */
+#if defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED)
+    esp_crypto_sha_aes_lock_release();
+#endif /* defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED) */
     esp_crypto_ecc_lock_release();
     _lock_release(&s_crypto_ecdsa_lock);
 }

@@ -110,14 +110,16 @@ void esp_crypto_ecc_lock_release(void);
 /**
  * @brief Acquire lock for ECDSA cryptography peripheral
  *
- * Internally also locks the ECC and MPI peripheral, as the ECDSA depends on these peripherals
+ * Internally also locks the ECC and MPI peripheral, as the ECDSA depends on these peripherals,
+ * and the SHA/AES peripheral, because the ECDSA reset holds SHA in reset as well
  */
 void esp_crypto_ecdsa_lock_acquire(void);
 
 /**
  * @brief Release lock for ECDSA cryptography peripheral
  *
- * Internally also releases the ECC and MPI peripheral, as the ECDSA depends on these peripherals
+ * Internally also releases the ECC and MPI peripheral, as the ECDSA depends on these peripherals,
+ * and the SHA/AES peripheral, because the ECDSA reset holds SHA in reset as well
  */
 void esp_crypto_ecdsa_lock_release(void);
 #endif /* SOC_ECDSA_SUPPORTED */
@@ -126,12 +128,16 @@ void esp_crypto_ecdsa_lock_release(void);
 /**
  * @brief Acquire lock for Key Manager peripheral
  *
+ * Must be held across esp_crypto_key_mgr_enable_periph_clk(true/false): that
+ * helper pulses the Key Manager reset, which also covers the XTS-AES flash
+ * encryption key-usage selector on targets that deploy FE keys through KM.
  */
 void esp_crypto_key_manager_lock_acquire(void);
 
 /**
  * @brief Release lock for Key Manager peripheral
  *
+ * Must be released only after the matching esp_crypto_key_mgr_enable_periph_clk(false).
  */
 void esp_crypto_key_manager_lock_release(void);
 #endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */

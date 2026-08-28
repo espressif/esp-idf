@@ -261,15 +261,21 @@ static void ds_acquire_enable(void)
     /*  Key Manager holds the key usage selector register(efuse vs own key).
         Thus, we need to enable the Key Manager peripheral clock to ensure
         that the key usage selector register is properly set.
+        Taken after the DS lock (SHA/AES + MPI) so the order matches HMAC/ECDSA:
+        sha_aes < mpi < key_manager.
      */
-    esp_crypto_key_mgr_enable_periph_clk(true);
+    esp_crypto_key_manager_lock_acquire();
+    /* Clock only: a full KM reset would drop the XTS-AES flash encryption
+       key-usage selector, and spi_flash DMA does not take the KM lock. */
+    esp_crypto_key_mgr_enable_periph_clk_no_reset(true);
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
 }
 
 static void ds_disable_release(void)
 {
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
-    esp_crypto_key_mgr_enable_periph_clk(false);
+    esp_crypto_key_mgr_enable_periph_clk_no_reset(false);
+    esp_crypto_key_manager_lock_release();
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
 
     esp_crypto_ds_enable_periph_clk(false);
