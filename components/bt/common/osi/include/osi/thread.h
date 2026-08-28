@@ -118,4 +118,7 @@ void osi_event_delete(struct osi_event* event);
  */
 bool osi_thread_post_event(struct osi_event *event, uint32_t timeout);
 
+int osi_thread_event_init(void);
+void osi_thread_event_deinit(void);
+
 #endif /* __THREAD_H__ */
