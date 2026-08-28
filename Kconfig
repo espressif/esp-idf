@@ -459,6 +459,21 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 the ZCMP extension for source files that contain functions which may
                 execute while mstatus.mie = 0.
 
+        menu "LLVM optimizations"
+            depends on IDF_TOOLCHAIN_CLANG && IDF_TARGET_ESP32P4
+
+            config COMPILER_LLVM_MEMCPY_OPTIMIZATION
+                bool "Optimize memcpy with PIE"
+                default n
+                help
+                    Optimize memcpy using the RISC-V PIE extension on ESP32-P4.
+                    Applied only to sources or components opted in with
+                    ENABLE_LLVM_OPT or idf_component_enable_llvm_opt, or by
+                    applying IDF_LLVM_OPT_MEMCPY or IDF_LLVM_OPT_ALL with
+                    target_compile_options.
+
+        endmenu
+
         choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
             prompt "Assertion level"
             default COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
