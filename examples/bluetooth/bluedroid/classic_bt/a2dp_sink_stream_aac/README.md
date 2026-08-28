@@ -57,6 +57,31 @@ idf.py menuconfig
 
 * Choose external I2S codec or internal DAC for audio output, and configure the output PINs under A2DP Sink Internal Codec Example Configuration.
 
+### Stream Endpoint (SEP) registration
+
+This example registers codec capabilities with `esp_a2d_sink_register_stream_endpoint()` after A2DP sink init and before connecting. A2DP requires **at least one SBC SEP**; using AAC therefore needs `ESP_A2D_MAX_SEPS >= 2`. Capabilities that do not meet A2DP Profile (SNK) fail with `ESP_A2D_SEP_REG_UNSUPPORTED` in `ESP_A2D_SEP_REG_STATE_EVT`. Overwriting the last SBC SEP fails with `ESP_A2D_SEP_REG_SBC_REQUIRED`.
+
+**SBC (SNK)**
+
+| Field | Mandatory |
+| :---- | :-------- |
+| Sampling frequency | 44.1 kHz and 48 kHz |
+| Channel mode | Mono, Dual Channel, Stereo, and Joint Stereo |
+| Block length | 4, 8, 12, and 16 |
+| Subbands | 4 and 8 |
+| Allocation method | SNR and Loudness |
+| Bitpool | min = 2; max ≥ 53 (High Quality Joint Stereo 44.1 kHz, A2DP Table 4.7); max ≤ 250 |
+
+**AAC (SNK)**
+
+| Field | Mandatory |
+| :---- | :-------- |
+| Object type | MPEG-2 AAC LC |
+| MPEG-D DRC | Must be 0 if only MPEG-2 AAC LC is advertised |
+| Sampling frequency | 44.1 kHz and 48 kHz |
+| Channels | 1 and 2 |
+| VBR | Supported |
+
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output.

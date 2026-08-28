@@ -43,6 +43,19 @@ extern void bta_av_m24_set_br_info(UINT8 *codec_info, UINT32 bit_rate);
 
 /*******************************************************************************
 **
+** Function         bta_av_m24_br_min
+**
+** Description      Select the negotiated AAC bit rate from two values.
+**                  Per A2DP, bit rate 0 means "not known" (no upper bound),
+**                  so it is ignored when the other value is non-zero.
+**
+** Returns          Negotiated bit rate (0 only if both inputs are 0).
+**
+*******************************************************************************/
+extern UINT32 bta_av_m24_br_min(UINT32 br1, UINT32 br2);
+
+/*******************************************************************************
+**
 ** Function         bta_av_m24_cap_matches_cap
 **
 ** Description      Compare two proposed M24 codec capability sets (full Media
