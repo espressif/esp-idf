@@ -118,6 +118,13 @@ static uint8_t s_phy_modem_init_ref = 0;
 extern uint8_t multi_phy_init_data_bin_start[] asm("_binary_phy_multiple_init_data_bin_start");
 extern uint8_t multi_phy_init_data_bin_end[]   asm("_binary_phy_multiple_init_data_bin_end");
 #endif
+
+/* Both flags live in the last bytes of an init data entry */
+_Static_assert(PHY_INIT_DATA_TYPE_OFFSET == sizeof(esp_phy_init_data_t) - 2,
+               "PHY_INIT_DATA_TYPE_OFFSET does not match the PHY init data of this target");
+_Static_assert(PHY_SUPPORT_MULTIPLE_BIN_OFFSET == sizeof(esp_phy_init_data_t) - 3,
+               "PHY_SUPPORT_MULTIPLE_BIN_OFFSET does not match the PHY init data of this target");
+
 /* The following static variables are only used by Wi-Fi tasks, so they can be handled without lock */
 static phy_init_data_type_t s_phy_init_data_type = 0;
 
