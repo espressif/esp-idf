@@ -422,9 +422,8 @@ static void host_link_deinit(host_link_t *link)
         return;
     }
 
-    if (link->card != NULL && link->card->host.dma_aligned_buffer != NULL) {
-        free(link->card->host.dma_aligned_buffer);
-        link->card->host.dma_aligned_buffer = NULL;
+    if (link->card) {
+        sdmmc_card_deinit(link->card);
     }
 
     if (link->host_initialized) {

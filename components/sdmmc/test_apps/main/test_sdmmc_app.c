@@ -14,10 +14,93 @@
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_sd.h"
 #include "sdmmc_test_rw_common.h"
+#include "esp_private/sdmmc_common.h"
 #include "esp_blockdev.h"
 #include "esp_private/sdmmc_blockdev.h"
 
 #define TEST_MEMORY_LEAK_THRESHOLD (200)
+
+static size_t test_get_bus_width(int slot)
+{
+    (void)slot;
+    return 1;
+}
+
+static bool test_check_buffer_alignment(int slot, const void *buf, size_t size)
+{
+    (void)slot;
+    (void)buf;
+    (void)size;
+    return true;
+}
+
+static esp_err_t test_fail_transaction(int slot, sdmmc_command_t *cmdinfo)
+{
+    (void)slot;
+    (void)cmdinfo;
+    return ESP_ERR_INVALID_STATE;
+}
+
+TEST_CASE("sdmmc card deinit releases allocated aligned buffer", "[sdmmc]")
+{
+    sdmmc_card_t card = {};
+    card.host.flags = SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF;
+    card.host.dma_aligned_buffer = malloc(SDMMC_IO_BLOCK_SIZE);
+    TEST_ASSERT_NOT_NULL(card.host.dma_aligned_buffer);
+
+    TEST_ESP_OK(sdmmc_card_deinit(&card));
+    TEST_ASSERT_NULL(card.host.dma_aligned_buffer);
+    TEST_ESP_OK(sdmmc_card_deinit(&card));
+
+    void *caller_owned_buffer = malloc(SDMMC_IO_BLOCK_SIZE);
+    TEST_ASSERT_NOT_NULL(caller_owned_buffer);
+    card.host.flags = 0;
+    card.host.dma_aligned_buffer = caller_owned_buffer;
+    TEST_ESP_OK(sdmmc_card_deinit(&card));
+    TEST_ASSERT_EQUAL_PTR(caller_owned_buffer, card.host.dma_aligned_buffer);
+    free(caller_owned_buffer);
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, sdmmc_card_deinit(NULL));
+}
+
+TEST_CASE("sdmmc card init releases allocated aligned buffer on failure", "[sdmmc]")
+{
+    sdmmc_host_t host = {
+        .flags = SDMMC_HOST_FLAG_1BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
+        .get_bus_width = test_get_bus_width,
+        .do_transaction = test_fail_transaction,
+        .check_buffer_alignment = test_check_buffer_alignment,
+    };
+    sdmmc_card_t card;
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, sdmmc_card_init(&host, &card));
+    TEST_ASSERT_NULL(card.host.dma_aligned_buffer);
+}
+
+TEST_CASE("sdmmc card init rejects preset buffer with ALLOC_ALIGNED_BUF", "[sdmmc]")
+{
+    void *caller_owned_buffer = malloc(SDMMC_IO_BLOCK_SIZE);
+    TEST_ASSERT_NOT_NULL(caller_owned_buffer);
+
+    sdmmc_host_t host = {
+        .flags = SDMMC_HOST_FLAG_1BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
+        .get_bus_width = test_get_bus_width,
+        .do_transaction = test_fail_transaction,
+        .check_buffer_alignment = test_check_buffer_alignment,
+        .dma_aligned_buffer = caller_owned_buffer,
+    };
+    sdmmc_card_t card;
+    memset(&card, 0xAA, sizeof(card));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, sdmmc_card_init(&host, &card));
+    /* card must be left untouched, and the caller keeps ownership of the buffer */
+    TEST_ASSERT_EQUAL_PTR(caller_owned_buffer, host.dma_aligned_buffer);
+    for (size_t i = 0; i < sizeof(card); i++) {
+        TEST_ASSERT_EQUAL_UINT8(0xAA, ((uint8_t *)&card)[i]);
+    }
+
+    free(caller_owned_buffer);
+}
 
 TEST_CASE("sdmmc blockdev converts byte ranges to sectors", "[sdmmc]")
 {

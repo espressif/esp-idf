@@ -108,6 +108,7 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
 
 void sdmmc_test_sd_end(sdmmc_card_t *card)
 {
+    TEST_ESP_OK(sdmmc_card_deinit(card));
     TEST_ESP_OK(sdmmc_host_deinit());
 
     // Reset all GPIOs to their default states

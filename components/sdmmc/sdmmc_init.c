@@ -24,10 +24,10 @@ static const char* TAG = "sdmmc_init";
 #define SDMMC_INIT_STEP(condition, function) \
     do { \
         if ((condition)) { \
-            esp_err_t err = (function)(card); \
-            if (err != ESP_OK) { \
-                ESP_LOGD(TAG, "%s: %s returned 0x%x", __func__, #function, err); \
-                return err; \
+            ret = (function)(card); \
+            if (ret != ESP_OK) { \
+                ESP_LOGD(TAG, "%s: %s returned 0x%x", __func__, #function, ret); \
+                goto cleanup; \
             } \
         } \
     } while(0);
@@ -35,10 +35,10 @@ static const char* TAG = "sdmmc_init";
 #define SDMMC_INIT_STEP_PARAM(condition, function, param) \
     do { \
         if ((condition)) { \
-            esp_err_t err = (function)(card, param); \
-            if (err != ESP_OK) { \
-                ESP_LOGD(TAG, "%s: %s returned 0x%x", __func__, #function, err); \
-                return err; \
+            ret = (function)(card, param); \
+            if (ret != ESP_OK) { \
+                ESP_LOGD(TAG, "%s: %s returned 0x%x", __func__, #function, ret); \
+                goto cleanup; \
             } \
         } \
     } while(0);
@@ -46,6 +46,12 @@ static const char* TAG = "sdmmc_init";
 esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 {
     esp_err_t ret = ESP_FAIL;
+
+    if ((config->flags & SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF) && config->dma_aligned_buffer != NULL) {
+        ESP_LOGE(TAG, "%s: dma_aligned_buffer must be NULL when SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF is set", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     memset(card, 0, sizeof(*card));
     memcpy(&card->host, config, sizeof(*config));
 
@@ -188,6 +194,25 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* Sanity check for SDIO after switching the frequency */
     SDMMC_INIT_STEP_PARAM(is_sdio, sdmmc_io_init_check_card_cap, &card_cap);
 #endif
+
+    return ESP_OK;
+
+cleanup:
+    sdmmc_card_deinit(card);
+    return ret;
+}
+
+esp_err_t sdmmc_card_deinit(sdmmc_card_t* card)
+{
+    ESP_RETURN_ON_FALSE(card, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+
+    // sdmmc_card_init allocates at most this one buffer (see sdmmc_allocate_aligned_buf).
+    // Flag set => we allocated it and must free it. Flag clear => caller owns the pointer.
+    // Other DMA/bounce buffers are not card-init resources.
+    if (card->host.flags & SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF) {
+        free(card->host.dma_aligned_buffer);
+        card->host.dma_aligned_buffer = NULL;
+    }
 
     return ESP_OK;
 }
