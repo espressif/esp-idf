@@ -8,6 +8,7 @@
 #include "common/sae.h"
 #include "common/ieee802_11_defs.h"
 #include "esp_wifi_driver.h"
+#include "esp_wps_i.h"
 #include "rsn_supp/wpa.h"
 #include "ap/hostapd.h"
 #include "ap/ieee802_11.h"
@@ -253,8 +254,10 @@ static u8 *wpa3_build_sae_msg(u8 *bssid, u32 sae_msg_type, size_t *sae_msg_len)
 
     switch (sae_msg_type) {
     case SAE_MSG_COMMIT:
-        /* Do not go for SAE when WPS is ongoing */
-        if (esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
+        /* Do not go for SAE when the WPS enrollee is ongoing.
+         * An AP registrar session shares this status, so require the enrollee owner. */
+        if (esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE &&
+                wps_get_owner() == WPS_OWNER_ENROLLEE) {
             *sae_msg_len = 0;
             return NULL;
         }

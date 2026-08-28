@@ -170,8 +170,9 @@ bool wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
 #ifdef CONFIG_WPS_REGISTRAR
     int wps_type = esp_wifi_get_wps_type_internal();
 
-    if ((wps_type == WPS_TYPE_PBC) ||
-            (wps_type == WPS_TYPE_PIN)) {
+    if (((wps_type == WPS_TYPE_PBC) ||
+            (wps_type == WPS_TYPE_PIN)) &&
+            wps_get_owner() == WPS_OWNER_REGISTRAR) {
         ieee802_1x_receive(hapd, sta->addr, data, data_len);
         return true;
     }
@@ -369,17 +370,23 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 #ifdef CONFIG_WPS_REGISTRAR
 static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, const u8 *ies, u8 ies_len, bool *pmf_enable, int subtype)
 {
-    struct wpabuf *wps_ie = ieee802_11_vendor_ie_concat(ies, ies_len, WPS_DEV_OUI_WFA);
+    struct wpabuf *wps_ie;
     int wps_type = esp_wifi_get_wps_type_internal();
 
     /* Condition for this, WPS is running and WPS IEs are part of assoc req */
-    if (!wps_ie || (wps_type == WPS_TYPE_DISABLE)) {
+    if ((wps_type == WPS_TYPE_DISABLE) || (wps_get_owner() != WPS_OWNER_REGISTRAR)) {
+        return 0;
+    }
+
+    wps_ie = ieee802_11_vendor_ie_concat(ies, ies_len, WPS_DEV_OUI_WFA);
+    if (!wps_ie) {
         return 0;
     }
 
     if (wps_type == WPS_TYPE_PBC) {
         if (esp_wps_registrar_check_pbc_overlap(hapd->wps)) {
             wpa_printf(MSG_DEBUG, "WPS: PBC session overlap detected");
+            wpabuf_free(wps_ie);
             return -1;
         }
     }

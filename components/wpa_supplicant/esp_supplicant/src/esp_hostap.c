@@ -323,12 +323,6 @@ void hostapd_cleanup(struct hostapd_data *hapd)
         hapd->conf = NULL;
     }
 
-#ifdef CONFIG_WPS_REGISTRAR
-    if (esp_wifi_get_wps_type_internal() != WPS_TYPE_DISABLE ||
-            esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
-        esp_wifi_ap_wps_disable();
-    }
-#endif /* CONFIG_WPS_REGISTRAR */
     os_free(hapd);
     global_hapd = NULL;
 
@@ -629,7 +623,7 @@ bool wpa_ap_remove(u8* bssid)
     }
 
 #ifdef CONFIG_WPS_REGISTRAR
-    if (wps_get_status() == WPS_STATUS_PENDING) {
+    if (wps_get_status() == WPS_STATUS_PENDING && wps_get_owner() == WPS_OWNER_REGISTRAR) {
         HOSTAPD_STA_LIST_UNLOCK(hapd);
         u8 *addr = os_malloc(ETH_ALEN);
 
