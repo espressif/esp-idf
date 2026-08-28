@@ -704,6 +704,7 @@ static psa_status_t aead_update_chunked(psa_aead_operation_t *op, psa_algorithm_
 
     for (size_t offset = 0; offset < len; offset += AEAD_CHUNK_LEN) {
         const size_t chunk = MIN(AEAD_CHUNK_LEN, len - offset);
+        /* NOTE: tight osize keeps PSA's internal output copy chunk-sized (it allocates the declared size) */
         const size_t update_osize = PSA_AEAD_UPDATE_OUTPUT_SIZE(PSA_KEY_TYPE_AES, alg, chunk);
         const size_t osize = MIN(out_size - total, update_osize);
         size_t olen = 0;
@@ -724,20 +725,19 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
                                               uint8_t *output, bool is_encrypt)
 {
     if (key_id == NULL || input == NULL || output == NULL || tag == NULL || iv == NULL) {
-        ESP_LOGE(TAG, "Invalid arguments");
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (len == 0) {
-        ESP_LOGE(TAG, "Invalid input length");
+    /* NOTE: Cap applies to both directions so encryption never produces a blob decryption cannot stage */
+    if (len == 0 || len > MAX_AEAD_INPUT_LEN) {
+        ESP_LOGE(TAG, "Invalid input length (max %u)", (unsigned)MAX_AEAD_INPUT_LEN);
         return ESP_ERR_INVALID_SIZE;
     }
 
     /* Enforce standard AES-GCM parameters */
     if (iv_len != AES256_GCM_IV_LEN ||
             tag_len < AES256_GCM_TAG_LEN_MIN || tag_len > AES256_GCM_TAG_LEN_MAX) {
-        ESP_LOGE(TAG, "Non-standard GCM iv_len(%u)/tag_len(%u) rejected",
-                 (unsigned)iv_len, (unsigned)tag_len);
+        ESP_LOGE(TAG, "Non-standard GCM iv_len/tag_len rejected");
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -795,7 +795,7 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         memcpy(iv_local, iv, iv_len);
         memcpy(tag_local, tag, tag_len);
 
-        /* NOTE: Only the AEAD-written prefix is ever copied out; zeroized at cleanup */
+        /* NOTE: TEE-resident staging - no plaintext reaches the REE until the tag verifies */
         plaintext = malloc(len);
         if (!plaintext) {
             err = ESP_ERR_NO_MEM;
@@ -833,6 +833,7 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         err = ESP_FAIL;
         goto cleanup;
     }
+    ESP_FAULT_ASSERT(status == PSA_SUCCESS);
 
     if (is_encrypt) {
         memcpy(iv, iv_local, iv_len);

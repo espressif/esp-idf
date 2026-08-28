@@ -19,11 +19,13 @@ extern "C" {
 #include "sdkconfig.h"
 
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
-#define MAX_ECDSA_SUPPORTED_KEY_LEN         48   /*!< Maximum supported size for the ECDSA key (SECP384R1) */
+#define MAX_ECDSA_SUPPORTED_KEY_LEN         48     /*!< Maximum supported size for the ECDSA key (SECP384R1) */
 #else
-#define MAX_ECDSA_SUPPORTED_KEY_LEN         32   /*!< Maximum supported size for the ECDSA key (SECP256R1) */
+#define MAX_ECDSA_SUPPORTED_KEY_LEN         32     /*!< Maximum supported size for the ECDSA key (SECP256R1) */
 #endif /* CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN */
-#define MAX_AES_SUPPORTED_KEY_LEN           32   /*!< Maximum supported size for the AES key */
+#define MAX_AES_SUPPORTED_KEY_LEN           32     /*!< Maximum supported size for the AES key */
+
+#define MAX_AEAD_INPUT_LEN                  4096   /*!< Maximum input length per AEAD operation */
 
 #define SEC_STORAGE_FLAG_NONE               0      /*!< No flags */
 #define SEC_STORAGE_FLAG_WRITE_ONCE         BIT(0) /*!< Data can only be written once */
@@ -169,6 +171,8 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
  * @param[out] output   Pointer to the output data buffer
  *
  * @note Non-standard @p iv_len / @p tag_len values are rejected with ESP_ERR_INVALID_SIZE.
+ * @note The input length must not exceed ::MAX_AEAD_INPUT_LEN bytes;
+ *       larger inputs are rejected with ESP_ERR_INVALID_SIZE.
  *
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
@@ -185,6 +189,8 @@ esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t 
  * @param[out] output   Pointer to the output data buffer
  *
  * @note Non-standard @p iv_len / @p tag_len values are rejected with ESP_ERR_INVALID_SIZE.
+ * @note The input length must not exceed ::MAX_AEAD_INPUT_LEN bytes;
+ *       larger inputs are rejected with ESP_ERR_INVALID_SIZE.
  *
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
