@@ -154,8 +154,9 @@ bool mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_
  * @param hbp Horizontal Back Porch
  * @param active_width Active Width
  * @param hfp Horizontal Front Porch
+ * @return True if the compensated timing is valid, otherwise false
  */
-void mipi_dsi_hal_host_dpi_set_horizontal_timing(mipi_dsi_hal_context_t *hal, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp);
+bool mipi_dsi_hal_host_dpi_set_horizontal_timing(mipi_dsi_hal_context_t *hal, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp);
 
 /**
  * @brief Set vertical timing parameters for DPI

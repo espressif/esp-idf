@@ -94,10 +94,12 @@ typedef struct {
                                                     which is the format that the panel can accept */
     uint8_t num_fbs;                           /*!< Number of screen-sized frame buffers that allocated by the driver
                                                     By default (set to either 0 or 1) only one frame buffer will be created */
+    mipi_dsi_video_burst_type_t video_burst_type; /*!< DPI video burst type */
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
     /// Extra configuration flags for MIPI DSI DPI panel
     struct extra_dpi_panel_flags {
-        uint32_t disable_lp: 1;/*!< Disable low-power for DPI */
+        uint32_t disable_lp: 1;          /*!< Disable low-power for DPI */
+        uint32_t disable_frame_ack: 1;   /*!< Disable the frame acknowledgement request */
     } flags;                   /*!< Extra configuration flags */
 } esp_lcd_dpi_panel_config_t;
 

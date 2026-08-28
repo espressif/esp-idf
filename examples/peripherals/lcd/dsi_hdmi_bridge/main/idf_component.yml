@@ -1,0 +1,5 @@
+description: MIPI DSI to HDMI bridge example
+
+dependencies:
+  lvgl/lvgl: "9.6.0"
+  esp_lcd_lt9611: "^0.1.0"
