@@ -25,6 +25,10 @@
 #define BTA_HH_CO_H
 
 #include "bta/bta_hh_api.h"
+#include "osi/pkt_queue.h"
+#include "stack/bt_types.h"
+
+#if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
 typedef struct {
     UINT16              rpt_uuid;
@@ -34,20 +38,47 @@ typedef struct {
     UINT8               prop;
 } tBTA_HH_RPT_CACHE_ENTRY;
 
+typedef enum {
+    BTA_HH_DATA_BUF_RAW = 0,
+    BTA_HH_DATA_BUF_BT_HDR,
+} tBTA_HH_DATA_BUF_TYPE;
+
+typedef struct {
+    UINT8 dev_handle;
+    UINT8 buf_type; // see tBTA_HH_DATA_BUF_TYPE
+    tBTA_HH_PROTO_MODE proto_mode;
+    UINT16 len;
+    void *p_buf;
+} tBTA_HH_DATA_PKT;
+
+extern void bta_hh_co_data_pkt_free(tBTA_HH_DATA_PKT *pkt);
+extern void bta_hh_co_data_linked_pkt_free(pkt_linked_item_t *item);
+extern UINT8 *bta_hh_co_data_pkt_get_payload(tBTA_HH_DATA_PKT *pkt);
+
 /*******************************************************************************
 **
 ** Function         bta_hh_co_data
 **
 ** Description      This callout function is executed by HH when data is received
-**                  in interupt channel.
+**                  in interrupt channel.
 **
 **
 ** Returns          void.
 **
 *******************************************************************************/
-extern void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len,
+
+extern void bta_hh_co_data_hdr(UINT8 dev_handle, BT_HDR *p_hdr,
+                               tBTA_HH_PROTO_MODE mode, UINT8 sub_class,
+                               UINT8 ctry_code, BD_ADDR peer_addr, UINT8 app_id);
+#if (BLE_INCLUDED == TRUE && BTA_HH_LE_INCLUDED == TRUE)
+extern void bta_hh_le_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len,
                            tBTA_HH_PROTO_MODE  mode, UINT8 sub_class,
                            UINT8 ctry_code, BD_ADDR peer_addr, UINT8 app_id);
+
+extern void bta_hh_le_co_data_owned(UINT8 dev_handle, UINT8 *p_buf, UINT16 len,
+                                 tBTA_HH_PROTO_MODE mode, UINT8 sub_class,
+                                 UINT8 ctry_code, BD_ADDR peer_addr, UINT8 app_id);
+#endif /* (BLE_INCLUDED == TRUE && BTA_HH_LE_INCLUDED == TRUE) */
 
 /*******************************************************************************
 **
@@ -57,11 +88,11 @@ extern void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len,
 **                  opened, and application may do some device specific
 **                  initialization.
 **
-** Returns          void.
+** Returns          TRUE if platform specific initialization succeeds.
 **
 *******************************************************************************/
-extern void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class,
-                           UINT16 attr_mask, UINT8 app_id);
+extern BOOLEAN bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class,
+                              UINT16 attr_mask, UINT8 app_id);
 
 /*******************************************************************************
 **
@@ -129,4 +160,5 @@ extern tBTA_HH_RPT_CACHE_ENTRY *bta_hh_le_co_cache_load (BD_ADDR remote_bda,
 extern void bta_hh_le_co_reset_rpt_cache (BD_ADDR remote_bda, UINT8 app_id);
 
 #endif /* #if (BLE_INCLUDED == TRUE && BTA_HH_LE_INCLUDED == TRUE) */
+#endif /* defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE) */
 #endif /* BTA_HH_CO_H */

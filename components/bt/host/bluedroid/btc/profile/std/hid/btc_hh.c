@@ -34,9 +34,13 @@
 #include "device/bdaddr.h"
 #include "btc/btc_storage.h"
 #include "osi/allocator.h"
+#include "osi/pkt_queue.h"
+#include "stack/bt_types.h"
+#include "stack/gatt_api.h"
 #include "bta/utl.h"
 #include "bta/bta_hh_api.h"
 #include "stack/l2c_api.h"
+#include "esp_log.h"
 // #include "bta_dm_int.h"
 
 #if HID_HOST_INCLUDED == TRUE
@@ -64,7 +68,25 @@ static bdstr_t bdstr;
 #define is_hidh_init() (btc_hh_cb.status > BTC_HH_DISABLED)
 #define BTC_TIMEOUT_VUP_MS (3 * 1000)
 
+#define BTC_HH_DATA_QUEUE_IDX            (1)
+/**
+ * Low-latency profile for gamepad-like traffic:
+ * keep queue short to avoid stale input backlog and keep batch moderate.
+ */
+#define BTC_HH_DATA_QUEUE_LEN_MAX        (20) // for high report rate, the queue will cause 1.25ms * BTC_HH_DATA_QUEUE_LEN_MAX latency
+#define BTC_HH_DATA_BATCH_SIZE_BASE      (8)
+#define BTC_HH_DATA_BATCH_SIZE_HIGH      (10)
+#define BTC_HH_DATA_BATCH_SIZE_MAX       (12)
+
 static void btc_hh_cb_arg_deep_free(btc_msg_t *msg);
+static void btc_hh_data_pkt_handler(void *arg);
+static size_t btc_hh_get_batch_size(size_t queue_len);
+static bool btc_hh_data_path_init_inner(btc_hh_device_t *p_dev);
+static void btc_hh_data_path_deinit_inner(btc_hh_device_t *p_dev);
+static bool btc_hh_device_drop_cnt_init(btc_hh_device_t *p_dev);
+static void btc_hh_device_drop_cnt_deinit(btc_hh_device_t *p_dev);
+static void btc_hh_device_drop_cnt_set(btc_hh_device_t *p_dev, uint32_t cnt);
+static void btc_hh_device_drop_cnt_inc(btc_hh_device_t *p_dev);
 
 static inline void btc_hh_cb_to_app(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
 {
@@ -144,6 +166,68 @@ btc_hh_device_t *btc_hh_find_connected_dev_by_handle(uint8_t handle)
         }
     }
     return NULL;
+}
+
+static bool btc_hh_device_drop_cnt_init(btc_hh_device_t *p_dev)
+{
+    if (p_dev == NULL) {
+        return false;
+    }
+
+    return (osi_mutex_new(&p_dev->lock) == 0);
+}
+
+static void btc_hh_device_drop_cnt_deinit(btc_hh_device_t *p_dev)
+{
+    if (p_dev == NULL) {
+        return;
+    }
+
+    osi_mutex_free(&p_dev->lock);
+}
+
+static void btc_hh_device_drop_cnt_set(btc_hh_device_t *p_dev, uint32_t cnt)
+{
+    if (p_dev == NULL) {
+        return;
+    }
+
+    osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+    p_dev->drop_pkt_cnt = cnt;
+    osi_mutex_unlock(&p_dev->lock);
+}
+
+static void btc_hh_device_drop_cnt_inc(btc_hh_device_t *p_dev)
+{
+    if (p_dev == NULL) {
+        return;
+    }
+
+    osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+    p_dev->drop_pkt_cnt++;
+    osi_mutex_unlock(&p_dev->lock);
+}
+
+void btc_hh_on_pkt_dropped(uint8_t dev_handle)
+{
+    btc_hh_device_t *p_dev = btc_hh_find_connected_dev_by_handle(dev_handle);
+
+    if (p_dev == NULL) {
+        return;
+    }
+
+    btc_hh_device_drop_cnt_inc(p_dev);
+}
+
+void btc_hh_reset_drop_pkt_cnt(uint8_t dev_handle)
+{
+    btc_hh_device_t *p_dev = btc_hh_find_connected_dev_by_handle(dev_handle);
+
+    if (p_dev == NULL) {
+        return;
+    }
+
+    btc_hh_device_drop_cnt_set(p_dev, 0);
 }
 
 /*******************************************************************************
@@ -337,9 +421,10 @@ void btc_hh_remove_device(BD_ADDR bd_addr)
      * with up-layer */ //[boblane]
     // HAL_CBACK(bt_hh_callbacks, connection_state_cb, &(p_dev->bd_addr), BTHH_CONN_STATE_DISCONNECTED);
 
+    btc_hh_device_drop_cnt_set(p_dev, 0);
     p_dev->dev_status = ESP_HIDH_CONN_STATE_UNKNOWN;
     p_dev->dev_handle = BTA_HH_INVALID_HANDLE;
-    p_dev->ready_for_data = false;
+    btc_hh_data_path_deinit_inner(p_dev);
 
     if (btc_hh_cb.device_num > 0) {
         btc_hh_cb.device_num--;
@@ -364,23 +449,6 @@ static void bte_hh_arg_deep_copy(btc_msg_t *msg, void *p_dst, void *p_src)
                 break;
             }
             memcpy(p_dst_data->hs_data.rsp_data.p_rpt_data, src_hdr, sizeof(BT_HDR) + src_hdr->offset + src_hdr->len);
-        }
-        break;
-    }
-    case BTA_HH_DATA_IND_EVT: {
-        BT_HDR *src_hdr = p_src_data->int_data.p_data;
-        p_dst_data->int_data.p_data = NULL;
-        if (src_hdr) {
-            p_dst_data->int_data.p_data = osi_malloc(sizeof(BT_HDR) + src_hdr->len);
-            if (p_dst_data->int_data.p_data == NULL) {
-                BTC_TRACE_ERROR("%s malloc int_data.p_data failed!", __func__);
-                p_dst_data->int_data.status = ESP_HIDH_ERR_NO_RES;
-                break;
-            }
-            BT_HDR *dst_hdr = p_dst_data->int_data.p_data;
-            memcpy(dst_hdr, src_hdr, sizeof(BT_HDR));
-            memcpy(dst_hdr->data, src_hdr->data + src_hdr->offset, src_hdr->len);
-            dst_hdr->offset = 0;
         }
         break;
     }
@@ -442,9 +510,6 @@ static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH *p_data)
     case BTA_HH_DATA_EVT:
         param_len = sizeof(tBTA_HH_API_SENDDATA);
         break;
-    case BTA_HH_DATA_IND_EVT:
-        param_len = sizeof(tBTA_HH_INTDATA);
-        break;
     case BTA_HH_API_ERR_EVT:
         param_len = 0;
         break;
@@ -472,6 +537,7 @@ static void btc_hh_init(void)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
+    uint8_t i;
     do {
         if (is_hidh_init()) {
             BTC_TRACE_ERROR("%s HH has been initiated, shall uninit first!", __func__);
@@ -480,8 +546,19 @@ static void btc_hh_init(void)
         }
 
         memset(&btc_hh_cb, 0, sizeof(btc_hh_cb));
-        for (uint8_t i = 0; i < BTC_HH_MAX_HID; i++) {
+        for (i = 0; i < BTC_HH_MAX_HID; i++) {
             btc_hh_cb.devices[i].dev_status = ESP_HIDH_CONN_STATE_UNKNOWN;
+            if (!btc_hh_device_drop_cnt_init(&btc_hh_cb.devices[i])) {
+                BTC_TRACE_ERROR("%s: device lock init failed", __func__);
+                ret = ESP_HIDH_ERR_NO_RES;
+                break;
+            }
+        }
+        if (ret != ESP_HIDH_OK) {
+            while (i-- > 0) {
+                btc_hh_device_drop_cnt_deinit(&btc_hh_cb.devices[i]);
+            }
+            break;
         }
         BTA_HhEnable(BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, bte_hh_evt);
     } while (0);
@@ -1220,11 +1297,260 @@ static void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
     case BTA_HH_GET_RPT_EVT:
         utl_freebuf((void **)&arg->hs_data.rsp_data.p_rpt_data);
         break;
-    case BTA_HH_DATA_IND_EVT:
-        utl_freebuf((void **)&arg->int_data.p_data);
-        break;
     default:
         break;
+    }
+}
+
+static void btc_hh_data_path_deinit_inner(btc_hh_device_t *p_dev)
+{
+    struct pkt_queue *queue;
+    struct osi_event *event;
+
+    if (p_dev == NULL) {
+        return;
+    }
+
+    osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+    queue = p_dev->data_queue;
+    event = p_dev->data_ready;
+    p_dev->data_queue = NULL;
+    p_dev->data_ready = NULL;
+    osi_mutex_unlock(&p_dev->lock);
+
+    if (event != NULL) {
+        osi_event_delete(event);
+    }
+
+    if (queue != NULL) {
+        pkt_queue_destroy(queue, bta_hh_co_data_linked_pkt_free);
+    }
+}
+
+bool btc_hh_data_enqueue_linked_pkt(pkt_linked_item_t *linked_pkt)
+{
+    tBTA_HH_DATA_PKT *pkt = linked_pkt != NULL ? (tBTA_HH_DATA_PKT *)linked_pkt->data : NULL;
+    btc_hh_device_t *p_dev = pkt != NULL ? btc_hh_find_connected_dev_by_handle(pkt->dev_handle) : NULL;
+    struct pkt_queue *data_queue;
+    struct osi_event *data_ready;
+    pkt_linked_item_t *old = NULL;
+    bool enqueue_ok;
+
+    if (p_dev == NULL || pkt == NULL || pkt->p_buf == NULL || pkt->len == 0) {
+        return false;
+    }
+
+    osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+    data_queue = p_dev->data_queue;
+    data_ready = p_dev->data_ready;
+    if (data_queue == NULL) {
+        osi_mutex_unlock(&p_dev->lock);
+        return false;
+    }
+
+    if (pkt_queue_length(data_queue) >= BTC_HH_DATA_QUEUE_LEN_MAX) {
+        old = pkt_queue_dequeue(data_queue);
+        if (old != NULL) {
+            p_dev->drop_pkt_cnt++;
+        }
+    }
+
+    enqueue_ok = pkt_queue_enqueue(data_queue, linked_pkt);
+    if (enqueue_ok && data_ready != NULL) {
+        osi_thread_post_event(data_ready, 0);
+    }
+    osi_mutex_unlock(&p_dev->lock);
+
+    if (old != NULL) {
+        bta_hh_co_data_linked_pkt_free(old);
+    }
+
+    return enqueue_ok;
+}
+
+pkt_linked_item_t *btc_hh_data_dequeue_reusable_linked_pkt(uint8_t dev_handle)
+{
+    btc_hh_device_t *p_dev = btc_hh_find_connected_dev_by_handle(dev_handle);
+    struct pkt_queue *data_queue;
+    pkt_linked_item_t *old;
+
+    if (p_dev == NULL) {
+        return NULL;
+    }
+
+    osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+    data_queue = p_dev->data_queue;
+    if (data_queue == NULL || pkt_queue_length(data_queue) < BTC_HH_DATA_QUEUE_LEN_MAX) {
+        osi_mutex_unlock(&p_dev->lock);
+        return NULL;
+    }
+
+    old = pkt_queue_dequeue(data_queue);
+    if (old != NULL) {
+        p_dev->drop_pkt_cnt++;
+    }
+    osi_mutex_unlock(&p_dev->lock);
+
+    return old;
+}
+
+bool btc_hh_data_enqueue_pkt(const tBTA_HH_DATA_PKT *pkt_meta)
+{
+    pkt_linked_item_t *linked_pkt;
+    tBTA_HH_DATA_PKT *pkt;
+
+    if (pkt_meta == NULL || pkt_meta->p_buf == NULL || pkt_meta->len == 0) {
+        return false;
+    }
+
+    linked_pkt = (pkt_linked_item_t *)osi_malloc(BT_PKT_LINKED_HDR_SIZE + sizeof(tBTA_HH_DATA_PKT));
+    if (linked_pkt == NULL) {
+        return false;
+    }
+
+    pkt = (tBTA_HH_DATA_PKT *)linked_pkt->data;
+    *pkt = *pkt_meta;
+
+    if (!btc_hh_data_enqueue_linked_pkt(linked_pkt)) {
+        osi_free(linked_pkt);
+        return false;
+    }
+
+    return true;
+}
+
+static bool btc_hh_data_path_init_inner(btc_hh_device_t *p_dev)
+{
+    bool result = false;
+    struct pkt_queue *data_queue = NULL;
+    struct osi_event *data_ready = NULL;
+
+    do {
+        if (p_dev == NULL) {
+            break;
+        }
+
+        osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+        if (p_dev->data_queue != NULL && p_dev->data_ready != NULL) {
+            osi_mutex_unlock(&p_dev->lock);
+            result = true;
+            break;
+        }
+        osi_mutex_unlock(&p_dev->lock);
+
+        btc_hh_data_path_deinit_inner(p_dev);
+
+        data_queue = pkt_queue_create();
+        if (data_queue == NULL) {
+            BTC_TRACE_ERROR("%s: pkt_queue_create failed", __func__);
+            break;
+        }
+
+        data_ready = osi_event_create(btc_hh_data_pkt_handler, p_dev);
+        if (data_ready == NULL) {
+            BTC_TRACE_ERROR("%s: osi_event_create failed", __func__);
+            break;
+        }
+
+        if (!osi_event_bind(data_ready, btc_get_current_thread(), BTC_HH_DATA_QUEUE_IDX)) {
+            BTC_TRACE_ERROR("%s: osi_event_bind failed", __func__);
+            break;
+        }
+
+        osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+        p_dev->data_queue = data_queue;
+        p_dev->data_ready = data_ready;
+        p_dev->drop_pkt_cnt = 0;
+        osi_mutex_unlock(&p_dev->lock);
+        data_queue = NULL;
+        data_ready = NULL;
+        result = true;
+    } while (0);
+
+    if (!result) {
+        btc_hh_data_path_deinit_inner(p_dev);
+        if (data_ready != NULL) {
+            osi_event_delete(data_ready);
+        }
+        if (data_queue != NULL) {
+            pkt_queue_destroy(data_queue, bta_hh_co_data_linked_pkt_free);
+        }
+    }
+
+    return result;
+}
+
+bool btc_hh_data_path_init(uint8_t dev_handle)
+{
+    btc_hh_device_t *p_dev = btc_hh_find_connected_dev_by_handle(dev_handle);
+    return btc_hh_data_path_init_inner(p_dev);
+}
+
+static size_t btc_hh_get_batch_size(size_t queue_len)
+{
+    size_t batch_size = BTC_HH_DATA_BATCH_SIZE_BASE;
+
+    if (queue_len >= BTC_HH_DATA_BATCH_SIZE_MAX) {
+        batch_size = BTC_HH_DATA_BATCH_SIZE_MAX;
+    } else if (queue_len >= BTC_HH_DATA_BATCH_SIZE_HIGH) {
+        batch_size = BTC_HH_DATA_BATCH_SIZE_HIGH;
+    }
+
+    return batch_size;
+}
+
+static void btc_hh_data_pkt_handler(void *arg)
+{
+    tBTA_HH_DATA_PKT *pkt;
+    pkt_linked_item_t *linked_pkt;
+    btc_hh_device_t *p_dev = (btc_hh_device_t *)arg;
+    size_t pkts_to_process;
+    size_t batch_limit;
+    uint32_t drop_pkt_cnt;
+
+    if (p_dev == NULL || p_dev->data_queue == NULL) {
+        return;
+    }
+
+    drop_pkt_cnt = p_dev->drop_pkt_cnt;
+    if (drop_pkt_cnt) {
+        osi_mutex_lock(&p_dev->lock, OSI_MUTEX_MAX_TIMEOUT);
+        drop_pkt_cnt = p_dev->drop_pkt_cnt;
+        p_dev->drop_pkt_cnt = 0;
+        osi_mutex_unlock(&p_dev->lock);
+
+        BTC_TRACE_WARNING("hh hdl:%d drop %u pkts", p_dev->dev_handle, (unsigned int)drop_pkt_cnt);
+    }
+
+    pkts_to_process = pkt_queue_length(p_dev->data_queue);
+    batch_limit = btc_hh_get_batch_size(pkts_to_process);
+    if (pkts_to_process > batch_limit) {
+        pkts_to_process = batch_limit;
+    }
+
+    for (size_t i = 0; i < pkts_to_process; i++) {
+        esp_hidh_cb_param_t param = {0};
+
+        linked_pkt = pkt_queue_dequeue(p_dev->data_queue);
+        if (linked_pkt == NULL) {
+            break;
+        }
+
+        pkt = (tBTA_HH_DATA_PKT *)linked_pkt->data;
+        BTC_TRACE_DEBUG("handle = %d", pkt->dev_handle);
+        if (pkt->len > 0) {
+            param.data_ind.len = pkt->len;
+            param.data_ind.data = bta_hh_co_data_pkt_get_payload(pkt);
+        }
+        param.data_ind.handle = pkt->dev_handle;
+        param.data_ind.status = ESP_HIDH_OK;
+        param.data_ind.proto_mode = proto_mode_change_to_upper_layer(pkt->proto_mode);
+        btc_hh_cb_to_app(ESP_HIDH_DATA_IND_EVT, &param);
+        bta_hh_co_data_linked_pkt_free(linked_pkt);
+    }
+
+    if (p_dev->data_ready != NULL && !pkt_queue_is_empty(p_dev->data_queue)) {
+        osi_thread_post_event(p_dev->data_ready, 0);
     }
 }
 
@@ -1287,24 +1613,35 @@ void btc_hh_cb_handler(btc_msg_t *msg)
             btc_hh_cb.status = BTC_HH_ENABLED;
             BTC_TRACE_DEBUG("Loading added devices");
             /* Add hid descriptors for already bonded hid devices*/
-            // btc_storage_load_bonded_hid_info();
+            btc_storage_load_bonded_hid_info();
+            param.init.status = ESP_HIDH_OK;
         } else {
+            for (i = 0; i < BTC_HH_MAX_HID; i++) {
+                btc_hh_device_drop_cnt_deinit(&btc_hh_cb.devices[i]);
+            }
+            memset(&btc_hh_cb, 0, sizeof(btc_hh_cb));
+            for (i = 0; i < BTC_HH_MAX_HID; i++) {
+                btc_hh_cb.devices[i].dev_status = ESP_HIDH_CONN_STATE_UNKNOWN;
+            }
             btc_hh_cb.status = BTC_HH_DISABLED;
             BTC_TRACE_ERROR("Error, HH enabling failed, status = %d", p_data->status);
+            param.init.status = p_data->status;
         }
-        param.init.status = p_data->status;
         btc_hh_cb_to_app(ESP_HIDH_INIT_EVT, &param);
         break;
-    case BTA_HH_DISABLE_EVT:
+    case BTA_HH_DISABLE_EVT: {
         btc_hh_cb.status = BTC_HH_DISABLED;
         if (btc_hh_cb.service_dereg_active) {
             BTIF_TRACE_DEBUG("BTA_HH_DISABLE_EVT: enabling HID Device service");
             // btif_hd_service_registration();
             btc_hh_cb.service_dereg_active = FALSE;
         }
+
         if (p_data->status == BTA_HH_OK) {
             // Clear the control block
             for (i = 0; i < BTC_HH_MAX_HID; i++) {
+                btc_hh_data_path_deinit_inner(&btc_hh_cb.devices[i]);
+                btc_hh_device_drop_cnt_deinit(&btc_hh_cb.devices[i]);
                 if (btc_hh_cb.devices[i].vup_timer) {
                     osi_alarm_free(btc_hh_cb.devices[i].vup_timer);
                 }
@@ -1319,6 +1656,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         param.deinit.status = p_data->status;
         btc_hh_cb_to_app(ESP_HIDH_DEINIT_EVT, &param);
         break;
+    }
     case BTA_HH_OPEN_EVT:
         BTC_TRACE_DEBUG("handle=%d, status =%d", p_data->conn.handle, p_data->conn.status);
         memset(btc_hh_cb.pending_conn_address, 0, BD_ADDR_LEN);
@@ -1343,9 +1681,8 @@ void btc_hh_cb_handler(btc_msg_t *msg)
                 // if (check_cod(&p_data->conn.bda, COD_HID_KEYBOARD) || check_cod(&p_data->conn.bda, COD_HID_COMBO))
                 //     BTA_HhSetIdle(p_data->conn.handle, 0);
                 btc_hh_cb.p_curr_dev = btc_hh_find_connected_dev_by_handle(p_data->conn.handle);
-                BTA_HhGetDscpInfo(p_data->conn.handle);
                 p_dev->dev_status = ESP_HIDH_CONN_STATE_CONNECTED;
-
+                BTA_HhGetDscpInfo(p_data->conn.handle);
                 param.open.status = ESP_HIDH_OK;
                 param.open.conn_status = ESP_HIDH_CONN_STATE_CONNECTED;
             }
@@ -1354,6 +1691,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
             if (p_dev != NULL) {
                 btc_hh_stop_vup_timer(p_dev->bd_addr);
                 p_dev->dev_status = ESP_HIDH_CONN_STATE_DISCONNECTED;
+                btc_hh_data_path_deinit_inner(p_dev);
             }
             btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
 
@@ -1419,10 +1757,13 @@ void btc_hh_cb_handler(btc_msg_t *msg)
     case BTA_HH_CLOSE_EVT:
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_status.status,
                          p_data->dev_status.handle);
+        btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
         p_dev = btc_hh_find_connected_dev_by_handle(p_data->dev_status.handle);
         if (p_dev != NULL) {
             BTC_TRACE_DEBUG("uhid local_vup=%d", p_dev->local_vup);
             btc_hh_stop_vup_timer(p_dev->bd_addr);
+            p_dev->dev_status = ESP_HIDH_CONN_STATE_DISCONNECTED;
+            btc_hh_data_path_deinit_inner(p_dev);
             /* If this is a locally initiated VUP, remove the bond as ACL got
              *  disconnected while VUP being processed.
              */
@@ -1432,11 +1773,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
 #endif
                 btc_hh_remove_device(p_dev->bd_addr);
-            } else {
-                p_dev->dev_status = ESP_HIDH_CONN_STATE_DISCONNECTED;
             }
-
-            btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
             param.close.status = p_data->dev_status.status;
         } else {
             BTC_TRACE_ERROR("Error: cannot find device with handle %d", p_data->dev_status.handle);
@@ -1449,12 +1786,13 @@ void btc_hh_cb_handler(btc_msg_t *msg)
     case BTA_HH_VC_UNPLUG_EVT:
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_status.status,
                         p_data->dev_status.handle);
-        p_dev = btc_hh_find_connected_dev_by_handle(p_data->dev_status.handle);
         btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
+        p_dev = btc_hh_find_connected_dev_by_handle(p_data->dev_status.handle);
         if (p_dev != NULL) {
             /* Stop the VUP timer */
             btc_hh_stop_vup_timer(p_dev->bd_addr);
             p_dev->dev_status = ESP_HIDH_CONN_STATE_DISCONNECTED;
+            btc_hh_data_path_deinit_inner(p_dev);
             BTC_TRACE_DEBUG("%s---Sending connection state change", __func__);
             param.close.status = ESP_HIDH_OK;
             param.close.handle = p_data->dev_status.handle;
@@ -1576,17 +1914,6 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         param.rmv_dev.status = p_data->dev_info.status;
         memcpy(param.rmv_dev.bd_addr, p_data->dev_info.bda, BD_ADDR_LEN);
         btc_hh_cb_to_app(ESP_HIDH_RMV_DEV_EVT, &param);
-        break;
-    case BTA_HH_DATA_IND_EVT:
-        BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->int_data.status, p_data->int_data.handle);
-        if (p_data->int_data.status == BTA_HH_OK && p_data->int_data.p_data) {
-            param.data_ind.len = p_data->int_data.p_data->len;
-            param.data_ind.data = p_data->int_data.p_data->data + p_data->int_data.p_data->offset;
-        }
-        param.data_ind.handle = p_data->int_data.handle;
-        param.data_ind.status = p_data->int_data.status;
-        param.data_ind.proto_mode = proto_mode_change_to_upper_layer(p_data->int_data.proto_mode);
-        btc_hh_cb_to_app(ESP_HIDH_DATA_IND_EVT, &param);
         break;
     case BTA_HH_API_ERR_EVT:
         break;
