@@ -377,14 +377,8 @@ typedef union {
          *  need_des
          */
         uint32_t touch_touch_buf_drv:3;
-        /** touch_touch_en_cal : R/W; bitpos: [3]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_touch_en_cal:1;
-        /** touch_touch_dcap_cal : R/W; bitpos: [10:4]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_touch_dcap_cal:7;
+        uint32_t reserved_3:1;
+        uint32_t reserved_4:7;
         /** touch_drefh : R/W; bitpos: [12:11]; default: 3;
          *  need_des
          */
