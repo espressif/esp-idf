@@ -20,6 +20,64 @@ EnvDict = typing.Dict[str, str]
 IdfPyFunc = typing.Callable[..., subprocess.CompletedProcess]
 
 
+_LOG_ERROR_MARKERS = (
+    'CMake Error',
+    'FAILED:',
+    'fatal error',
+    'ninja: build stopped',
+    'HINT:',
+)
+
+
+def _clip_log_output(text: str | None, max_lines: int = 80, max_line_len: int = 400) -> str:
+    """Last ``max_lines`` of process output for logging, plus failure lines.
+
+    pytest.ini enables ``log_cli``, so ``logging.error(full_stdout)`` after a
+    failed build is one record. On Windows CI that live-log can stall for hours
+    even when the line count is small: CMake's ``-- Component paths:`` line is
+    a single multi-KB (sometimes multi-MB) string.
+    """
+    if not text:
+        return ''
+    lines = text.splitlines()
+
+    def _short(line: str) -> str:
+        if len(line) <= max_line_len:
+            return line
+        return line[:max_line_len] + f'... [{len(line) - max_line_len} chars omitted]'
+
+    omitted = max(0, len(lines) - max_lines)
+    tail_start = len(lines) - max_lines if omitted else 0
+    tail = lines[tail_start:]
+
+    failures: list[str] = []
+    for idx, line in enumerate(lines):
+        if idx >= tail_start:
+            break
+        if any(marker in line for marker in _LOG_ERROR_MARKERS):
+            failures.append(line)
+            if len(failures) >= 40:
+                break
+
+    parts: list[str] = []
+    if failures:
+        parts.append('[... failure lines ...]')
+        parts.extend(_short(line) for line in failures)
+    if omitted:
+        parts.append(f'[... {omitted} lines omitted ...]')
+    parts.extend(_short(line) for line in tail)
+    return '\n'.join(parts)
+
+
+def normalize_output(text: str) -> str:
+    """Collapse all whitespace runs to a single space.
+
+    Use for content assertions on messages that include file paths: long paths can
+    push lines past COLUMNS=200 and cause Rich to insert a mid-message line break.
+    """
+    return ' '.join(text.split())
+
+
 def find_python(path_var: str) -> str:
     """
     Find python interpreter in the paths specified in the given PATH variable.
@@ -98,8 +156,8 @@ def run_idf_py(*args: str,
     except subprocess.CalledProcessError as e:
         logging.error('The following idf.py command has failed: {}'.format(' '.join(cmd)))
         logging.error('Working directory: {}'.format(workdir))
-        logging.error('Stdout: {}'.format(e.stdout))
-        logging.error('Stderr: {}'.format(e.stderr))
+        logging.error('Stdout: {}'.format(_clip_log_output(e.stdout)))
+        logging.error('Stderr: {}'.format(_clip_log_output(e.stderr)))
         raise
 
 
@@ -135,8 +193,8 @@ def run_cmake(*cmake_args: str,
     except subprocess.CalledProcessError as e:
         logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
         logging.error('Working directory: {}'.format(workdir))
-        logging.error('Stdout: {}'.format(e.stdout))
-        logging.error('Stderr: {}'.format(e.stderr))
+        logging.error('Stdout: {}'.format(_clip_log_output(e.stdout)))
+        logging.error('Stderr: {}'.format(_clip_log_output(e.stderr)))
         raise
 
 
