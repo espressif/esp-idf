@@ -72,7 +72,8 @@ def test_mbedtls_psram(dut: Dut) -> None:
 )
 @idf_parametrize('target', PSRAM_ECC_DMA_TARGETS, indirect=['target'])
 def test_mbedtls_psram_ecc(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='aes', timeout=180)
+    # ECC makes the MSPI alignment rule apply, which the GCM DMA descriptors have to respect too
+    dut.run_all_single_board_cases(group=['aes', 'aes-gcm'], timeout=180)
 
 
 @pytest.mark.flash_encryption_psram
@@ -96,7 +97,7 @@ def test_mbedtls_psram_all_ext_flash_enc_esp32(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize('target', ['esp32p4', 'esp32c5', 'esp32s31'], indirect=['target'])
 def test_mbedtls_psram_all_ext_flash_enc(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
 

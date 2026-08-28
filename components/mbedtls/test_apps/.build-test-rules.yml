@@ -12,7 +12,7 @@ components/mbedtls/test_apps/mbedtls_ut:
     - if: CONFIG_NAME == "hmac_opaque" and SOC_HMAC_SUPPORTED != 1
     - if: CONFIG_NAME == "pd_top" and (SOC_PM_SUPPORT_TOP_PD != 1 or SOC_PAU_SUPPORTED != 1)
   disable_test:
-    - if: CONFIG_NAME == "psram_all_ext_flash_enc" and IDF_TARGET not in ["esp32", "esp32p4", "esp32c5"]
+    - if: CONFIG_NAME == "psram_all_ext_flash_enc" and IDF_TARGET not in ["esp32", "esp32p4", "esp32c5", "esp32s31"]
       reason: lack of runners
     - if: CONFIG_NAME == "hmac_opaque" and IDF_TARGET not in ["esp32c3"]
       reason: lack of runners
