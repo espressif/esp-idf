@@ -238,6 +238,21 @@ esp_err_t esp_ota_resume(const esp_partition_t *partition, const size_t erase_si
         return ESP_ERR_OTA_PARTITION_CONFLICT;
     }
 
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    // Mirror esp_ota_begin(): refuse to resume an OTA into an app slot while the running
+    // app is still pending verification, otherwise the rollback target could be
+    // overwritten during the unconfirmed window.
+    if (partition->type == ESP_PARTITION_TYPE_APP) {
+        esp_ota_img_states_t ota_state_running_part;
+        if (esp_ota_get_state_partition(running_partition, &ota_state_running_part) == ESP_OK) {
+            if (ota_state_running_part == ESP_OTA_IMG_PENDING_VERIFY) {
+                ESP_LOGE(TAG, "Running app has not confirmed state (ESP_OTA_IMG_PENDING_VERIFY)");
+                return ESP_ERR_OTA_ROLLBACK_INVALID_STATE;
+            }
+        }
+    }
+#endif
+
     new_entry = esp_ota_init_entry(partition);
     if (new_entry == NULL) {
         return ESP_ERR_NO_MEM;
@@ -335,7 +350,10 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                     }
 
                 } else if (it->partition.final->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
-                    if (*(uint16_t*)data_bytes != (uint16_t)ESP_PARTITION_MAGIC) {
+                    /* Read the 2-byte magic word only if the caller-supplied buffer is large
+                     * enough; otherwise this would read past a short (e.g. 1-byte) first chunk.
+                     * A too-short chunk is still fully validated later by esp_partition_table_verify(). */
+                    if (size >= sizeof(uint16_t) && *(uint16_t*)data_bytes != (uint16_t)ESP_PARTITION_MAGIC) {
                         ESP_LOGE(TAG, "Partition table image has invalid magic word (expected 0x50AA, saw 0x%04x)", *(uint16_t*)data_bytes);
                         return ESP_ERR_OTA_VALIDATE_FAILED;
                     }

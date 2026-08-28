@@ -69,7 +69,7 @@ char *http_utils_append_string(char **str, const char *new_str, int len)
         if (old_str) {
             old_len = strlen(old_str);
             old_str = realloc(old_str, old_len + l + 1);
-            mem_check(old_str);
+            ESP_RETURN_ON_FALSE(old_str, NULL, TAG, "Memory exhausted");
             // Ensure the new string is null-terminated
             old_str[old_len + l] = 0;
         } else {
