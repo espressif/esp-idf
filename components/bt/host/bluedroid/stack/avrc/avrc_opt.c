@@ -60,18 +60,20 @@ static BT_HDR   *avrc_vendor_msg(tAVRC_MSG_VENDOR *p_msg)
 */
 #define AVRC_MIN_VENDOR_CMD_LEN (BT_HDR_SIZE + AVCT_MSG_OFFSET + AVRC_VENDOR_HDR_SIZE)
 
+    UINT32 buf_size;
+#if AVRC_METADATA_INCLUDED == TRUE
+    const UINT16 max_cmd_buf = AVRC_META_CMD_BUF_SIZE;
+#else
+    const UINT16 max_cmd_buf = AVRC_CMD_BUF_SIZE;
+#endif
+
     if (!p_msg) {
         return NULL;
     }
 
-#if AVRC_METADATA_INCLUDED == TRUE
-    if ((AVRC_META_CMD_BUF_SIZE >= AVRC_MIN_VENDOR_CMD_LEN + p_msg->vendor_len) &&
-        ((p_cmd = (BT_HDR *) osi_malloc(AVRC_META_CMD_BUF_SIZE)) != NULL))
-#else
-    if ((AVRC_CMD_BUF_SIZE >= (AVRC_MIN_VENDOR_CMD_LEN + p_msg->vendor_len)) &&
-        ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL))
-#endif
-    {
+    buf_size = (UINT32)AVRC_MIN_VENDOR_CMD_LEN + p_msg->vendor_len;
+    if (buf_size <= max_cmd_buf &&
+            ((p_cmd = (BT_HDR *) osi_malloc(buf_size)) != NULL)) {
         p_cmd->offset   = AVCT_MSG_OFFSET;
         p_data          = (UINT8 *)(p_cmd + 1) + p_cmd->offset;
         *p_data++       = (p_msg->hdr.ctype & AVRC_CTYPE_MASK);
@@ -115,8 +117,10 @@ UINT16 AVRC_UnitCmd(UINT8 handle, UINT8 label)
 {
     BT_HDR  *p_cmd;
     UINT8   *p_data;
+    /* ctype + subunit + opcode + AVRC_UNIT_OPRND_BYTES */
+    UINT32  buf_size = (UINT32)sizeof(BT_HDR) + AVCT_MSG_OFFSET + 3 + AVRC_UNIT_OPRND_BYTES;
 
-    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL) {
+    if ((p_cmd = (BT_HDR *) osi_malloc(buf_size)) != NULL) {
         p_cmd->offset   = AVCT_MSG_OFFSET;
         p_data          = (UINT8 *)(p_cmd + 1) + p_cmd->offset;
         *p_data++       = AVRC_CMD_STATUS;
@@ -159,8 +163,10 @@ UINT16 AVRC_SubCmd(UINT8 handle, UINT8 label, UINT8 page)
 {
     BT_HDR  *p_cmd;
     UINT8   *p_data;
+    /* ctype + subunit + opcode + page + AVRC_SUB_OPRND_BYTES */
+    UINT32  buf_size = (UINT32)sizeof(BT_HDR) + AVCT_MSG_OFFSET + 4 + AVRC_SUB_OPRND_BYTES;
 
-    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL) {
+    if ((p_cmd = (BT_HDR *) osi_malloc(buf_size)) != NULL) {
         p_cmd->offset   = AVCT_MSG_OFFSET;
         p_data          = (UINT8 *)(p_cmd + 1) + p_cmd->offset;
         *p_data++       = AVRC_CMD_STATUS;
