@@ -258,6 +258,26 @@ If declarator-id:
 
 isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
 If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 22]
+    struct isp_dpc_ratio_t
+    ----------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 22]
+    struct isp_dpc_ratio_t
+    ----------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 33]
+    struct isp_dpc_deviation_factor_t
+    ---------------------------------^
+If declarator-id:
+  Invalid C++ declaration: Expected identifier in nested name. [error at 33]
+    struct isp_dpc_deviation_factor_t
+    ---------------------------------^
+
+isp_types.inc:line: WARNING: Error in declarator or parameters-and-qualifiers
+If pointer to member declarator:
   Invalid C++ declaration: Expected identifier in nested name. [error at 21]
     struct isp_lsc_gain_t
     ---------------------^
