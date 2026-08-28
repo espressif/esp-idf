@@ -43,9 +43,8 @@ typedef struct {
                                                  *   Typically not suggest to set the frequency higher than 2 MHz, otherwise the severe distortion will appear
                                                  */
     int8_t                      offset;         /*!< The offset of the DAC digital data. Range -128~127 */
-    dac_continuous_digi_clk_src_t    clk_src;        /*!< The clock source of digital controller, which can affect the range of supported frequency
-                                                 *   Currently `DAC_DIGI_CLK_SRC_DEFAULT` and `DAC_DIGI_CLK_SRC_APLL` are available
-                                                 */
+    dac_continuous_digi_clk_src_t    clk_src;   /*!< The clock source of digital controller, which can affect the range of supported frequency.
+                                                     Set to 0 to use `DAC_DIGI_CLK_SRC_DEFAULT`.*/
     dac_continuous_channel_mode_t    chan_mode;      /*!< The channel mode of continuous mode, only take effect when multiple channels enabled, depends converting the buffer alternately or simultaneously */
 } dac_continuous_config_t;
 

@@ -30,7 +30,8 @@ typedef struct {
                                                 *   the waveform will distort at high frequency due to the hardware limitation.
                                                 *   Typically not suggest to set the frequency higher than 200 KHz
                                                 */
-    dac_cosine_clk_src_t        clk_src;        /*!< The clock source of the cosine wave generator, currently only support `DAC_COSINE_CLK_SRC_DEFAULT` */
+    dac_cosine_clk_src_t        clk_src;        /*!< The clock source of the cosine wave generator.
+                                                     Set to 0 to use `DAC_COSINE_CLK_SRC_DEFAULT`. */
     dac_cosine_atten_t          atten;          /*!< The attenuation of cosine wave amplitude */
     dac_cosine_phase_t          phase;          /*!< The phase of cosine wave, can only support DAC_COSINE_PHASE_0 or DAC_COSINE_PHASE_180, default as 0 while setting an unsupported phase */
     int8_t                      offset;         /*!< The DC offset of cosine wave */

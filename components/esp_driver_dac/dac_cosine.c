@@ -41,12 +41,15 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_NO_MEM, TAG, "no memory for the dac cosine handle");
     /* Assign configurations */
     handle->cfg = *cos_cfg;
+    if (handle->cfg.clk_src == 0) {
+        handle->cfg.clk_src = DAC_COSINE_CLK_SRC_DEFAULT;
+    }
     /* Register the handle */
-    ESP_GOTO_ON_ERROR(dac_priv_register_channel(cos_cfg->chan_id), err1, TAG, "register dac channel %d failed", cos_cfg->chan_id);
+    ESP_GOTO_ON_ERROR(dac_priv_register_channel(handle->cfg.chan_id), err1, TAG, "register dac channel %d failed", handle->cfg.chan_id);
 
-    /* Cosine wave generator uses RTC_FAST clock which is divided from RC_FAST */
+    /* Get the cosine wave generator clock frequency */
     uint32_t rtc_clk_freq = 0;
-    esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rtc_clk_freq);
+    esp_clk_tree_src_get_freq_hz((soc_module_clk_t)handle->cfg.clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rtc_clk_freq);
 
     if (rtc_clk_freq == 0) {
         ESP_LOGW(TAG, "RTC clock calibration failed, using the approximate value as default");
@@ -54,13 +57,13 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     }
     DAC_ENTER_CRITICAL();
     /* Set coefficients for cosine wave generator */
-    if ((!s_cwg_freq) || cos_cfg->flags.force_set_freq) {
-        dac_ll_cw_set_freq(cos_cfg->freq_hz, rtc_clk_freq);
-        s_cwg_freq = cos_cfg->freq_hz;
+    if ((!s_cwg_freq) || handle->cfg.flags.force_set_freq) {
+        dac_ll_cw_set_freq(handle->cfg.freq_hz, rtc_clk_freq);
+        s_cwg_freq = handle->cfg.freq_hz;
     }
-    dac_ll_cw_set_atten(cos_cfg->chan_id, cos_cfg->atten);
-    dac_ll_cw_set_phase(cos_cfg->chan_id, cos_cfg->phase);
-    dac_ll_cw_set_dc_offset(cos_cfg->chan_id, cos_cfg->offset);
+    dac_ll_cw_set_atten(handle->cfg.chan_id, handle->cfg.atten);
+    dac_ll_cw_set_phase(handle->cfg.chan_id, handle->cfg.phase);
+    dac_ll_cw_set_dc_offset(handle->cfg.chan_id, handle->cfg.offset);
     DAC_EXIT_CRITICAL();
 
     *ret_handle = handle;
@@ -94,8 +97,8 @@ esp_err_t dac_cosine_start(dac_cosine_handle_t handle)
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(!handle->is_started, ESP_ERR_INVALID_STATE, TAG,
                         "the dac channel has already started");
-    /* Acquire the RTC clock */
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, true), TAG, "RC_FAST clock enable failed");
+    /* Acquire the cosine wave generator clock */
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)handle->cfg.clk_src, true), TAG, "cosine clock enable failed");
     /* Enabled DAC channel */
     ESP_GOTO_ON_ERROR(dac_priv_enable_channel(handle->cfg.chan_id), err, TAG,
                       "enable dac channel %d failed", handle->cfg.chan_id);
@@ -113,7 +116,7 @@ esp_err_t dac_cosine_start(dac_cosine_handle_t handle)
     return ESP_OK;
 
 err:
-    esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, false);
+    esp_clk_tree_enable_src((soc_module_clk_t)handle->cfg.clk_src, false);
     return ret;
 }
 
@@ -136,8 +139,8 @@ esp_err_t dac_cosine_stop(dac_cosine_handle_t handle)
     }
     handle->is_started = false;
     DAC_EXIT_CRITICAL();
-    /* Release the RTC clock */
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, false), TAG, "RC_FAST clock disable failed");
+    /* Release the cosine wave generator clock */
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)handle->cfg.clk_src, false), TAG, "cosine clock disable failed");
 
     return ESP_OK;
 }
