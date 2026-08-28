@@ -67,13 +67,17 @@ def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
         src_submodule = path_from / submodule_rel_path
         dst_submodule = path_to / submodule_rel_path
 
-        # Only copy if source submodule exists and has content
-        if src_submodule.exists() and any(src_submodule.iterdir()):
+        # Only copy if the source submodule is a populated directory. A gitlink
+        # file or empty dir means the source checkout did not materialize it.
+        if src_submodule.is_dir() and any(src_submodule.iterdir()):
             logging.debug(f'copying submodule {submodule_rel_path}')
-            # Remove the empty directory created by worktree
-            if dst_submodule.exists():
-                shutil.rmtree(dst_submodule, ignore_errors=True)
-            # Copy the submodule content
+            # Worktree submodule paths are often gitlink files; rmtree() cannot
+            # remove those (even with ignore_errors=True), and copytree() then
+            # leaves a file where CMake expects a directory (e.g. mbedtls/include).
+            if dst_submodule.is_file() or dst_submodule.is_symlink():
+                dst_submodule.unlink()
+            elif dst_submodule.exists():
+                shutil.rmtree(dst_submodule)
             shutil.copytree(src_submodule, dst_submodule, symlinks=True, ignore=shutil.ignore_patterns('.git'))
 
     # Match old shutil-based idf_copy: no top-level .git (see docstring above).
