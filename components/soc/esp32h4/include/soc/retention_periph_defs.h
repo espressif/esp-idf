@@ -50,18 +50,19 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_MCPWM0       = 26,
     SLEEP_RETENTION_MODULE_MCPWM1       = 27,
     SLEEP_RETENTION_MODULE_SDM0         = 28,
+    SLEEP_RETENTION_MODULE_ASRC         = 29,
 
     /* Modem module, which includes BLE and 802.15.4 */
-    SLEEP_RETENTION_MODULE_CLOCK_MODEM  = 29,
-    SLEEP_RETENTION_MODULE_BLE_MAC      = 30,
-    SLEEP_RETENTION_MODULE_BT_BB        = 31,
-    SLEEP_RETENTION_MODULE_802154_MAC   = 32,
-    SLEEP_RETENTION_MODULE_POWER        = 33,
+    SLEEP_RETENTION_MODULE_CLOCK_MODEM  = 30,
+    SLEEP_RETENTION_MODULE_BLE_MAC      = 31,
+    SLEEP_RETENTION_MODULE_BT_BB        = 32,
+    SLEEP_RETENTION_MODULE_802154_MAC   = 33,
+    SLEEP_RETENTION_MODULE_POWER        = 34,
 
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
 
-#define is_top_domain_module(m)     ((m) <= SLEEP_RETENTION_MODULE_SDM0)
+#define is_top_domain_module(m)     ((m) <= SLEEP_RETENTION_MODULE_ASRC)
 
 #ifdef __cplusplus
 }

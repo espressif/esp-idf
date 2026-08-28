@@ -79,6 +79,8 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_CLOCK_MODEM  = 51,
     SLEEP_RETENTION_MODULE_MODEM_PHY    = 52,
 
+    SLEEP_RETENTION_MODULE_ASRC         = 53,
+
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
 
