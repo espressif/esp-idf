@@ -40,6 +40,13 @@ function(register_bt_ctrl_libs)
                     add_prebuilt_library(libble_app "${lib_path}/libble_app.a" REQUIRES esp_phy bt)
                 endif()
             else()
+                file(GLOB ILLEGAL_LIB_FILES "${lib_path}/*.a")
+                if(ILLEGAL_LIB_FILES)
+                    message(FATAL_ERROR
+                        "${lib_path} should not contain the library files!"
+                    )
+                endif()
+
                 if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND EXISTS "${lib_path}/${idf_target}/libble_app_flash.a")
                     add_prebuilt_library(libble_app "${lib_path}/${idf_target}/libble_app_flash.a" REQUIRES esp_phy bt)
                 else()
