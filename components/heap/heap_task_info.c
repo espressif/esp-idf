@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,14 +14,18 @@
 #include "esp_heap_task_info.h"
 #include "esp_heap_task_info_internal.h"
 #include "heap_memory_layout.h"
-#include "esp_log.h"
+#include "esp_rom_sys.h"
 
 #ifdef CONFIG_HEAP_TASK_TRACKING
 
-const static char *TAG = "heap_task_tracking";
-
-static SemaphoreHandle_t s_task_tracking_mutex = NULL;
-static StaticSemaphore_t s_task_tracking_mutex_buf;
+/* malloc/free can run from ISR or while a spinlock is already held, so this
+ * lock is a portmux critical section, matching multi_heap.
+ *
+ * Do not use std i/o here (use esp_rom_printf()). Do not print statistics or
+ * free tracking nodes while the lock is held: both can take unbounded time,
+ * and multi_heap_free() takes the lock of the heap the node was allocated from.
+ */
+static portMUX_TYPE s_task_tracking_mux = portMUX_INITIALIZER_UNLOCKED;
 
 
 typedef struct alloc_stats {
@@ -90,7 +94,7 @@ static HEAP_IRAM_ATTR void create_new_alloc_stats_entry(heap_stats_t *heap_stats
 
         alloc_stats = multi_heap_malloc(heap_used_for_alloc->heap, sizeof(alloc_stats_t));
         if (!alloc_stats) {
-            ESP_LOGE(TAG, "Could not allocate memory to add new task statistics");
+            esp_rom_printf("heap_task_tracking: could not allocate memory to add new task statistics\n");
             return;
         }
     }
@@ -119,7 +123,7 @@ static HEAP_IRAM_ATTR void create_new_heap_stats_entry(task_info_t *task_stats, 
     // to memset the memory since all field will be set later in the function.
     heap_stats_t *heap_stats = multi_heap_malloc(heap_used_for_alloc->heap, sizeof(heap_stats_t));
     if (!heap_stats) {
-        ESP_LOGE(TAG, "Could not allocate memory to add new task statistics");
+        esp_rom_printf("heap_task_tracking: could not allocate memory to add new task statistics\n");
         return;
     }
 
@@ -167,7 +171,7 @@ static HEAP_IRAM_ATTR void create_new_task_stats_entry(heap_t *used_heap, TaskHa
         // create the task_stats entry. No need to memset since all fields are set later
         task_info = multi_heap_malloc(heap_used_for_alloc->heap, sizeof(task_info_t));
         if (!task_info) {
-            ESP_LOGE(TAG, "Could not allocate memory to add new task statistics");
+            esp_rom_printf("heap_task_tracking: could not allocate memory to add new task statistics\n");
             return;
         }
 
@@ -219,9 +223,12 @@ static HEAP_IRAM_ATTR void create_new_task_stats_entry(heap_t *used_heap, TaskHa
 
 #if !CONFIG_HEAP_TRACK_DELETED_TASKS
 /**
- * @brief Delete an entry from the list of task statistics
+ * @brief Free the heap, alloc, and task statistics nodes of a detached task.
  *
- * @param task_info The task statistics to delete from the list of task statistics
+ * The caller must already have removed the task from the tracking list and
+ * must not hold the task tracking lock: multi_heap_free() takes the heap lock.
+ *
+ * @param task_info Detached task statistics to free
  */
 static HEAP_IRAM_ATTR void delete_task_info_entry(task_info_t *task_info)
 {
@@ -259,28 +266,19 @@ static HEAP_IRAM_ATTR void delete_task_info_entry(task_info_t *task_info)
             }
         }
     }
-    if (STAILQ_EMPTY(&task_info->heaps_stats)) {
-        // remove task_info from task_stats (and free the memory)
-        SLIST_REMOVE(&task_stats, task_info, task_stats, next_task_info);
-        containing_heap = find_containing_heap(task_info);
-        if (containing_heap != NULL) {
-            multi_heap_free(containing_heap->heap, task_info);
-        }
+    containing_heap = find_containing_heap(task_info);
+    if (containing_heap != NULL) {
+        multi_heap_free(containing_heap->heap, task_info);
     }
 }
 #endif // !CONFIG_HEAP_TRACK_DELETED_TASKS
 
 HEAP_IRAM_ATTR void heap_caps_update_per_task_info_alloc(heap_t *heap, void *ptr, size_t size, uint32_t caps)
 {
-    if (s_task_tracking_mutex == NULL) {
-        s_task_tracking_mutex = xSemaphoreCreateMutexStatic(&s_task_tracking_mutex_buf);
-        assert(s_task_tracking_mutex);
-    }
-
     TaskHandle_t task_handle = xTaskGetCurrentTaskHandle();
     task_info_t *task_info = NULL;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     /* find the task in the list and update the overall stats */
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
         if (task_info->task_stat.handle == task_handle && task_info->task_stat.is_alive) {
@@ -302,7 +300,7 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_alloc(heap_t *heap, void *ptr
                     /* add the alloc info to the list */
                     create_new_alloc_stats_entry(heap_stats, NULL, task_handle, ptr, size);
 
-                    xSemaphoreGive(s_task_tracking_mutex);
+                    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
                     return;
                 }
             }
@@ -322,7 +320,7 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_alloc(heap_t *heap, void *ptr
     // Add the info to the list (either new task stats or new heap stat if task_info not NULL)
     create_new_task_stats_entry(heap, task_handle, task_info, ptr, size, caps);
 
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
 }
 
 HEAP_IRAM_ATTR void heap_caps_update_per_task_info_realloc(heap_t *heap, void *old_ptr, void *new_ptr,
@@ -334,7 +332,7 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_realloc(heap_t *heap, void *o
     task_info_t *task_info = NULL;
     alloc_stats_t *alloc_stat = NULL;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
         if (task_info->task_stat.handle == old_task) {
             heap_stats_t *heap_stats = NULL;
@@ -393,7 +391,7 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_realloc(heap_t *heap, void *o
         create_new_task_stats_entry(heap, task_handle, task_info, new_ptr, new_size, caps);
     }
 
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
 }
 
 HEAP_IRAM_ATTR void heap_caps_update_per_task_info_free(heap_t *heap, void *ptr)
@@ -405,11 +403,12 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_free(heap_t *heap, void *ptr)
     }
 
     task_info_t *task_info = NULL;
+    alloc_stats_t *alloc_stat_to_free = NULL;
 #if !CONFIG_HEAP_TRACK_DELETED_TASKS
     task_info_t *task_info_to_delete = NULL;
 #endif // !CONFIG_HEAP_TRACK_DELETED_TASKS
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     /* find the matching task */
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
         /* check all tasks (alive and deleted) since the free can come from any tasks,
@@ -434,17 +433,11 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_free(heap_t *heap, void *ptr)
                         heap_stats->heap_stat.alloc_count--;
                         heap_stats->heap_stat.current_usage -= alloc_stat->alloc_stat.size;
                         task_info->task_stat.overall_current_usage -= alloc_stat->alloc_stat.size;
+                        alloc_stat_to_free = alloc_stat;
                     }
 
                     break;
                 }
-            }
-
-            /* free the memory used to store alloc_stat */
-            heap_t *containing_heap = find_containing_heap(alloc_stat);
-            // task_stats must be allocated somewhere
-            if (containing_heap != NULL) {
-                multi_heap_free(containing_heap->heap, alloc_stat);
             }
         }
 
@@ -463,13 +456,23 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_free(heap_t *heap, void *ptr)
     }
 
 #if !CONFIG_HEAP_TRACK_DELETED_TASKS
-    // remove the entry related to the task that was just deleted.
+    /* Drop the task from the list under the lock. Its nodes are freed after
+     * the lock is released, so multi_heap_free() is not nested in this CS. */
     if (task_info_to_delete != NULL) {
-        delete_task_info_entry(task_info_to_delete);
+        SLIST_REMOVE(&task_stats, task_info_to_delete, task_stats, next_task_info);
     }
 #endif // !CONFIG_HEAP_TRACK_DELETED_TASKS
 
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
+
+    /* free the memory used to store alloc_stat */
+    heap_t *containing_heap = find_containing_heap(alloc_stat_to_free);
+    if (containing_heap != NULL) {
+        multi_heap_free(containing_heap->heap, alloc_stat_to_free);
+    }
+#if !CONFIG_HEAP_TRACK_DELETED_TASKS
+    delete_task_info_entry(task_info_to_delete);
+#endif // !CONFIG_HEAP_TRACK_DELETED_TASKS
 }
 
 esp_err_t heap_caps_get_all_task_stat(heap_all_tasks_stat_t *tasks_stat)
@@ -486,7 +489,7 @@ esp_err_t heap_caps_get_all_task_stat(heap_all_tasks_stat_t *tasks_stat)
     size_t alloc_index = 0;
     task_info_t *task_info = NULL;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
         // If there is no more task stat entries available in tasks_stat->stat_arr
         // break the loop and return the function.
@@ -543,7 +546,7 @@ esp_err_t heap_caps_get_all_task_stat(heap_all_tasks_stat_t *tasks_stat)
         }
     }
 
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
 
     tasks_stat->task_count = task_index;
     tasks_stat->heap_count = heap_index;
@@ -566,7 +569,7 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
 
     task_info_t *task_info = NULL;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
         if(task_info->task_stat.handle == task_handle) {
             // copy the task_stat of the task itself
@@ -574,7 +577,7 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
             break;
         }
     }
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
 
     if (task_info == NULL) {
         return ESP_FAIL;
@@ -589,7 +592,7 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
     size_t heap_index = 0;
     size_t alloc_index = 0;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     heap_stats_t *heap_info = STAILQ_FIRST(&task_info->heaps_stats);
     while(heap_index < task_info->task_stat.heap_count || heap_info != NULL) {
         // check that there is enough heap_stat entry left to add another one to the user defined
@@ -623,7 +626,7 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
         heap_index++;
         heap_info = STAILQ_NEXT(heap_info, next_heap_stat);
     }
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
 
     task_stat->heap_count = heap_index;
     task_stat->alloc_count = alloc_index;
@@ -631,7 +634,15 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
     return ESP_OK;
 }
 
-static void heap_caps_print_task_info(FILE *stream, task_info_t *task_info, bool is_last_task_info)
+/**
+ * @brief Print the statistics of a task from a snapshot of the internal statistics.
+ *
+ * @param stream The stream to print to, if NULL then stdout is used
+ * @param task_stat The task statistics to print
+ * @param heap_count The number of valid entries in task_stat->heap_stat
+ * @param is_last_task_info Whether this is the last task to be printed
+ */
+static void heap_caps_print_task_info(FILE *stream, const task_stat_t *task_stat, size_t heap_count, bool is_last_task_info)
 {
     if (stream == NULL) {
         stream = stdout;
@@ -640,39 +651,44 @@ static void heap_caps_print_task_info(FILE *stream, task_info_t *task_info, bool
     const char *task_info_visual = is_last_task_info ? " " : "│";
     const char *task_info_visual_start = is_last_task_info ? "└" : "├";
     fprintf(stream, "%s %s: %s, CURRENT MEMORY USAGE %d, PEAK MEMORY USAGE %d, TOTAL HEAP USED %d:\n", task_info_visual_start,
-                                                                                                      task_info->task_stat.is_alive ? "ALIVE" : "DELETED",
-                                                                                                      task_info->task_stat.name,
-                                                                                                      task_info->task_stat.overall_current_usage,
-                                                                                                      task_info->task_stat.overall_peak_usage,
-                                                                                                      task_info->task_stat.heap_count);
+                                                                                                      task_stat->is_alive ? "ALIVE" : "DELETED",
+                                                                                                      task_stat->name,
+                                                                                                      task_stat->overall_current_usage,
+                                                                                                      task_stat->overall_peak_usage,
+                                                                                                      task_stat->heap_count);
 
-    heap_stats_t *heap_info = NULL;
-    STAILQ_FOREACH(heap_info, &task_info->heaps_stats, next_heap_stat) {
-        char *next_heap_visual = !STAILQ_NEXT(heap_info, next_heap_stat) ? " " : "│";
-        char *next_heap_visual_start = !STAILQ_NEXT(heap_info, next_heap_stat) ? "└" : "├";
+    for (size_t heap_index = 0; heap_index < heap_count; heap_index++) {
+        const heap_stat_t *heap_stat = &task_stat->heap_stat[heap_index];
+        const bool is_last_heap_stat = (heap_index + 1 == heap_count);
+        const char *next_heap_visual = is_last_heap_stat ? " " : "│";
+        const char *next_heap_visual_start = is_last_heap_stat ? "└" : "├";
         fprintf(stream, "%s    %s HEAP: %s, CAPS: 0x%08lx, SIZE: %d, USAGE: CURRENT %d (%d%%), PEAK %d (%d%%), ALLOC COUNT: %d\n",
                 task_info_visual,
                 next_heap_visual_start,
-                heap_info->heap_stat.name,
-                heap_info->heap_stat.caps,
-                heap_info->heap_stat.size,
-                heap_info->heap_stat.current_usage,
-                (heap_info->heap_stat.current_usage * 100) / heap_info->heap_stat.size,
-                heap_info->heap_stat.peak_usage,
-                (heap_info->heap_stat.peak_usage * 100) / heap_info->heap_stat.size,
-                heap_info->heap_stat.alloc_count);
+                heap_stat->name,
+                heap_stat->caps,
+                heap_stat->size,
+                heap_stat->current_usage,
+                (heap_stat->current_usage * 100) / heap_stat->size,
+                heap_stat->peak_usage,
+                (heap_stat->peak_usage * 100) / heap_stat->size,
+                heap_stat->alloc_count);
 
-        alloc_stats_t *alloc_stats = NULL;
-        STAILQ_FOREACH(alloc_stats, &heap_info->allocs_stats, next_alloc_stat) {
+        // the alloc statistics are not available when the snapshot could not hold them all
+        if (heap_stat->alloc_stat == NULL) {
+            continue;
+        }
+
+        for (size_t alloc_index = 0; alloc_index < heap_stat->alloc_count; alloc_index++) {
             fprintf(stream, "%s    %s    ├ ALLOC %p, SIZE %" PRIu32 "\n", task_info_visual,
                                                                 next_heap_visual,
-                                                                alloc_stats->alloc_stat.address,
-                                                                alloc_stats->alloc_stat.size);
+                                                                heap_stat->alloc_stat[alloc_index].address,
+                                                                heap_stat->alloc_stat[alloc_index].size);
         }
     }
 }
 
-static void heap_caps_print_task_overview(FILE *stream, task_info_t *task_info, bool is_first_task_info, bool is_last_task_info)
+static void heap_caps_print_task_overview(FILE *stream, const task_stat_t *task_stat, bool is_first_task_info, bool is_last_task_info)
 {
     if (stream == NULL) {
         stream = stdout;
@@ -684,86 +700,124 @@ static void heap_caps_print_task_overview(FILE *stream, task_info_t *task_info, 
         fprintf(stream, "├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤\n");
     }
 
-    task_stat_t task_stat = task_info->task_stat;
     fprintf(stream, "│ %18s │ %7s │ %20d │ %17d │ %15d │\n",
-                    task_stat.name,
-                    task_stat.is_alive ? "ALIVE  " : "DELETED",
-                    task_stat.overall_current_usage,
-                    task_stat.overall_peak_usage,
-                    task_stat.heap_count);
+                    task_stat->name,
+                    task_stat->is_alive ? "ALIVE  " : "DELETED",
+                    task_stat->overall_current_usage,
+                    task_stat->overall_peak_usage,
+                    task_stat->heap_count);
 
     if (is_last_task_info) {
         fprintf(stream, "└────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘\n");
     }
 }
 
-void heap_caps_print_single_task_stat(FILE *stream, TaskHandle_t task_handle)
-{
-    if (task_handle == NULL) {
-        task_handle = xTaskGetCurrentTaskHandle();
-    }
+static esp_err_t alloc_stat_arrays_for_single_task(heap_single_task_stat_t *task_stat, TaskHandle_t task_handle, bool alive_only);
 
+/**
+ * @brief Allocate an array holding the task level statistics of every tracked task.
+ *
+ * Contrary to heap_caps_alloc_all_task_stat_arrays(), the arrays holding the heap and alloc
+ * statistics are not allocated since the overview only prints task level information.
+ *
+ * @param tasks_stat Structure filled by this function
+ * @return ESP_OK if the array was allocated successfully, ESP_FAIL otherwise
+ */
+static esp_err_t alloc_task_stat_array_for_overview(heap_all_tasks_stat_t *tasks_stat)
+{
+    memset(tasks_stat, 0x00, sizeof(heap_all_tasks_stat_t));
+
+    size_t task_count = 0;
     task_info_t *task_info = NULL;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
-        if (task_info->task_stat.handle == task_handle) {
-            heap_caps_print_task_info(stream, task_info, true);
-
-            xSemaphoreGive(s_task_tracking_mutex);
-            return;
-        }
+        task_count++;
     }
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
+
+    if (task_count == 0) {
+        return ESP_OK;
+    }
+
+    heap_t *heap_used_for_alloc = find_biggest_heap();
+    tasks_stat->stat_arr = multi_heap_malloc(heap_used_for_alloc->heap, task_count * sizeof(task_stat_t));
+    if (tasks_stat->stat_arr == NULL) {
+        return ESP_FAIL;
+    }
+    tasks_stat->task_count = task_count;
+
+    return ESP_OK;
+}
+
+void heap_caps_print_single_task_stat(FILE *stream, TaskHandle_t task_handle)
+{
+    heap_single_task_stat_t task_stat = {};
+
+    /* Print from a copy: fprintf must not run with the tracking lock held.
+     * Deleted tasks are printed too, so statistics of a task that is no longer
+     * running can still be inspected. */
+    if (alloc_stat_arrays_for_single_task(&task_stat, task_handle, false) == ESP_OK &&
+        heap_caps_get_single_task_stat(&task_stat, task_handle) == ESP_OK) {
+        heap_caps_print_task_info(stream, &task_stat.stat, task_stat.heap_count, true);
+    }
+
+    heap_caps_free_single_task_stat_arrays(&task_stat);
 }
 
 void heap_caps_print_all_task_stat(FILE *stream)
 {
-    task_info_t *task_info = NULL;
+    heap_all_tasks_stat_t tasks_stat = {};
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
-    SLIST_FOREACH(task_info, &task_stats, next_task_info) {
-        const bool last_task_info = (SLIST_NEXT(task_info, next_task_info) == NULL);
-        heap_caps_print_task_info(stream, task_info, last_task_info);
+    if (heap_caps_alloc_all_task_stat_arrays(&tasks_stat) == ESP_OK &&
+        heap_caps_get_all_task_stat(&tasks_stat) == ESP_OK) {
+        for (size_t task_index = 0; task_index < tasks_stat.task_count; task_index++) {
+            const task_stat_t *task_stat = &tasks_stat.stat_arr[task_index];
+            // heap_stat is NULL when the snapshot could not hold the heap statistics of this task
+            const size_t heap_count = (task_stat->heap_stat != NULL) ? task_stat->heap_count : 0;
+            heap_caps_print_task_info(stream, task_stat, heap_count, task_index + 1 == tasks_stat.task_count);
+        }
     }
-    xSemaphoreGive(s_task_tracking_mutex);
+
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
 }
 
 void heap_caps_print_single_task_stat_overview(FILE *stream, TaskHandle_t task_handle)
 {
-    if (task_handle == NULL) {
-        task_handle = xTaskGetCurrentTaskHandle();
+    /* The overview only uses task level statistics, so no heap or alloc statistics
+     * array is needed to take the snapshot. */
+    heap_single_task_stat_t task_stat = {};
+
+    if (heap_caps_get_single_task_stat(&task_stat, task_handle) == ESP_OK) {
+        heap_caps_print_task_overview(stream, &task_stat.stat, true, true);
     }
-
-    task_info_t *task_info = NULL;
-
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
-    SLIST_FOREACH(task_info, &task_stats, next_task_info) {
-        if (task_info->task_stat.handle == task_handle) {
-            heap_caps_print_task_overview(stream, task_info, true, true);
-
-            xSemaphoreGive(s_task_tracking_mutex);
-            return;
-        }
-    }
-    xSemaphoreGive(s_task_tracking_mutex);
 }
 
 void heap_caps_print_all_task_stat_overview(FILE *stream)
 {
-    task_info_t *task_info = NULL;
-    bool is_first_task_info = true;
+    heap_all_tasks_stat_t tasks_stat = {};
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
-    SLIST_FOREACH(task_info, &task_stats, next_task_info) {
-        const bool last_task_info = (SLIST_NEXT(task_info, next_task_info) == NULL);
-        heap_caps_print_task_overview(stream, task_info, is_first_task_info, last_task_info);
-        is_first_task_info = false;
+    if (alloc_task_stat_array_for_overview(&tasks_stat) == ESP_OK &&
+        heap_caps_get_all_task_stat(&tasks_stat) == ESP_OK) {
+        for (size_t task_index = 0; task_index < tasks_stat.task_count; task_index++) {
+            heap_caps_print_task_overview(stream, &tasks_stat.stat_arr[task_index], task_index == 0,
+                                          task_index + 1 == tasks_stat.task_count);
+        }
     }
-    xSemaphoreGive(s_task_tracking_mutex);
+
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
 }
 
-esp_err_t heap_caps_alloc_single_task_stat_arrays(heap_single_task_stat_t *task_stat, TaskHandle_t task_handle)
+/**
+ * @brief Allocate the arrays used to store the heap and alloc statistics of a given task.
+ *
+ * @param task_stat Structure containing information filled by this function
+ * @param task_handle The task from which to get the information. If NULL, the calling task is used
+ * @param alive_only When true, only a task that is still running is matched. Task handles are
+ * recycled by FreeRTOS, so a running task can share its handle with a deleted one
+ * @return ESP_OK if the memory necessary to gather the statistics was allocated successfully
+ */
+static esp_err_t alloc_stat_arrays_for_single_task(heap_single_task_stat_t *task_stat, TaskHandle_t task_handle, bool alive_only)
 {
     if (task_handle == NULL) {
         task_handle = xTaskGetCurrentTaskHandle();
@@ -776,9 +830,9 @@ esp_err_t heap_caps_alloc_single_task_stat_arrays(heap_single_task_stat_t *task_
 
     task_info_t *task_info = NULL;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
-        if(task_info->task_stat.handle == task_handle && task_info->task_stat.is_alive) {
+        if(task_info->task_stat.handle == task_handle && (task_info->task_stat.is_alive || !alive_only)) {
             task_stat->heap_count = task_info->task_stat.heap_count;
             heap_stats_t *heap_info = NULL;
             STAILQ_FOREACH(heap_info, &task_info->heaps_stats, next_heap_stat) {
@@ -787,7 +841,7 @@ esp_err_t heap_caps_alloc_single_task_stat_arrays(heap_single_task_stat_t *task_
             break;
         }
     }
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
 
     // allocate the memory used to store the statistics of allocs, heaps
     if (task_stat->heap_count != 0) {
@@ -806,6 +860,11 @@ esp_err_t heap_caps_alloc_single_task_stat_arrays(heap_single_task_stat_t *task_
     }
 
     return ESP_OK;
+}
+
+esp_err_t heap_caps_alloc_single_task_stat_arrays(heap_single_task_stat_t *task_stat, TaskHandle_t task_handle)
+{
+    return alloc_stat_arrays_for_single_task(task_stat, task_handle, true);
 }
 
 void heap_caps_free_single_task_stat_arrays(heap_single_task_stat_t *task_stat)
@@ -837,7 +896,7 @@ esp_err_t heap_caps_alloc_all_task_stat_arrays(heap_all_tasks_stat_t *tasks_stat
 
     task_info_t *task_info = NULL;
 
-    xSemaphoreTake(s_task_tracking_mutex, portMAX_DELAY);
+    portENTER_CRITICAL_SAFE(&s_task_tracking_mux);
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
         tasks_stat->task_count += 1;
 
@@ -847,7 +906,7 @@ esp_err_t heap_caps_alloc_all_task_stat_arrays(heap_all_tasks_stat_t *tasks_stat
             tasks_stat->alloc_count += heap_info->heap_stat.alloc_count;
         }
     }
-    xSemaphoreGive(s_task_tracking_mutex);
+    portEXIT_CRITICAL_SAFE(&s_task_tracking_mux);
 
     // allocate the memory used to store the statistics of allocs, heaps and tasks
     if (tasks_stat->task_count != 0) {

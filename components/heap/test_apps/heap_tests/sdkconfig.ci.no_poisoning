@@ -4,3 +4,4 @@ CONFIG_HEAP_POISONING_COMPREHENSIVE=n
 
 CONFIG_HEAP_TASK_TRACKING=y # to make sure the config doesn't induce unexpected behavior
 CONFIG_HEAP_TRACK_DELETED_TASKS=y # to make sure the config doesn't induce unexpected behavior
+CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD=y # to allow allocating from an ISR in the task tracking tests
