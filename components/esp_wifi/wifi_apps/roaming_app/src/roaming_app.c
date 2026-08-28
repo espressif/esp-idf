@@ -70,6 +70,8 @@ static const char *ROAMING_TAG = "ROAM";
 
 #define RSSI_THRESHOLD_DISABLED -100
 #define RSSI_THRESHOLD_MAX 10
+#define LOW_RSSI_ROAM_DIFF_MIN 1
+#define LOW_RSSI_ROAM_DIFF_MAX 99
 #define BTM_QUERY_LIST_MAX_LEN (MAX_NEIGHBOR_LEN + 96)
 #define ROAMING_PENDING_TIMEOUT_USER_DATA_MAX 16
 
@@ -158,6 +160,19 @@ static int32_t roaming_app_clamp_rssi_threshold(int threshold)
     }
 
     return threshold;
+}
+
+static uint8_t roaming_app_clamp_low_rssi_roam_diff(uint8_t diff)
+{
+    if (diff < LOW_RSSI_ROAM_DIFF_MIN) {
+        return LOW_RSSI_ROAM_DIFF_MIN;
+    }
+
+    if (diff > LOW_RSSI_ROAM_DIFF_MAX) {
+        return LOW_RSSI_ROAM_DIFF_MAX;
+    }
+
+    return diff;
 }
 
 static bool roaming_app_scan_cache_is_valid(const struct timeval *now)
@@ -1342,7 +1357,7 @@ static void roaming_app_rssi_low_internal_handler(void *ctx, void *data)
     if (!roaming_app_get_ap_info(&g_roaming_app.current_bss.ap)) {
         g_roaming_app.current_bss.ap.rssi = event->rssi;
     }
-    determine_best_ap(0);
+    determine_best_ap(g_roaming_app.config.low_rssi_roam_diff - 1);
     int32_t next_threshold = g_roaming_app.current_low_rssi_threshold -
                              g_roaming_app.config.rssi_threshold_reduction_offset;
     next_threshold = roaming_app_clamp_rssi_threshold(next_threshold);
@@ -2097,8 +2112,11 @@ static esp_err_t init_config_params(void)
     g_roaming_app.config.backoff_time = ROAMING_BACKOFF_TIME;
 
     g_roaming_app.config.low_rssi_roam_trigger = LOW_RSSI_ROAMING_ENABLED;
+#if LOW_RSSI_ROAMING_ENABLED
     g_roaming_app.config.low_rssi_threshold = ROAMING_LOW_RSSI_THRESHOLD;
     g_roaming_app.config.rssi_threshold_reduction_offset = RSSI_THRESHOLD_REDUCTION_OFFSET;
+    g_roaming_app.config.low_rssi_roam_diff = LOW_RSSI_ROAM_DIFF;
+#endif /* LOW_RSSI_ROAMING_ENABLED */
 
     g_roaming_app.config.scan_monitor = PERIODIC_SCAN_MONITORING;
 #if PERIODIC_SCAN_MONITORING
@@ -2117,9 +2135,10 @@ static esp_err_t init_config_params(void)
 
     ESP_LOGD(ROAMING_TAG, "Roaming app config :");
 
-    ESP_LOGD(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d",
+    ESP_LOGD(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d low_rssi_roam_diff=%d",
                             g_roaming_app.config.backoff_time, g_roaming_app.config.low_rssi_roam_trigger,
-                            g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset);
+                            g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset,
+                            g_roaming_app.config.low_rssi_roam_diff);
 
 #if PERIODIC_SCAN_MONITORING
     ESP_LOGD(ROAMING_TAG, "scan_monitor=%d scan_interval=%d scan_rssi_threshold=%d scan_rssi_diff=%d",
@@ -2396,6 +2415,8 @@ static int update_config_params(void *data)
                               sizeof(next_scan_filter_bssid)) != 0);
 
     g_roaming_app.config = *config;
+    g_roaming_app.config.low_rssi_roam_diff =
+        roaming_app_clamp_low_rssi_roam_diff(g_roaming_app.config.low_rssi_roam_diff);
     memset(g_roaming_app.config.scan_filter_ssid, 0, sizeof(g_roaming_app.config.scan_filter_ssid));
     memset(g_roaming_app.config.scan_filter_bssid, 0, sizeof(g_roaming_app.config.scan_filter_bssid));
     g_roaming_app.config.scan_filter_bssid_set = false;
@@ -2421,9 +2442,10 @@ static int update_config_params(void *data)
 
     ESP_LOGI(ROAMING_TAG, "Updated Roaming app config :");
 
-    ESP_LOGI(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d",
+    ESP_LOGI(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d low_rssi_roam_diff=%d",
                             g_roaming_app.config.backoff_time, g_roaming_app.config.low_rssi_roam_trigger,
-                            g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset);
+                            g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset,
+                            g_roaming_app.config.low_rssi_roam_diff);
 
 #if PERIODIC_SCAN_MONITORING
     ESP_LOGI(ROAMING_TAG, "scan_monitor=%d scan_interval=%d scan_rssi_threshold=%d scan_rssi_diff=%d",
