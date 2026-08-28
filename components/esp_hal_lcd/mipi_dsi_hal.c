@@ -256,26 +256,39 @@ bool mipi_dsi_hal_host_gen_read_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t
     return mipi_dsi_hal_host_gen_read_short_packet(hal, vc, MIPI_DSI_DT_DCS_READ_0, header_data, ret_param, param_buf_size);
 }
 
-void mipi_dsi_hal_host_dpi_set_horizontal_timing(mipi_dsi_hal_context_t *hal, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp)
+bool mipi_dsi_hal_host_dpi_set_horizontal_timing(mipi_dsi_hal_context_t *hal, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp)
 {
     // set the horizontal timing based on user's expectation
     uint32_t htotal = hsw + hbp + active_width + hfp;
+    int compensation = (int)roundf(hal->real_dpi_clock_freq_mhz / hal->expect_dpi_clock_freq_mhz * htotal) - (int)htotal;
+    int compensated_hfp = (int)hfp + compensation;
+    int compensated_htotal = (int)htotal + compensation;
+    if (compensated_hfp <= 0 || compensated_htotal > MIPI_DSI_BRG_HTOTAL_MAX) {
+        HAL_LOGE(TAG, "invalid compensated timing: hfp=%d, htotal=%d", compensated_hfp, compensated_htotal);
+        return false;
+    }
+    if (fabsf(hal->real_dpi_clock_freq_mhz - hal->expect_dpi_clock_freq_mhz) > 0.01f) {
+        HAL_LOGW(TAG, "DPI clock adjusted from %.2f MHz to %.2f MHz, compensated hfp=%d, compensated htotal=%d",
+                 hal->expect_dpi_clock_freq_mhz, hal->real_dpi_clock_freq_mhz,
+                 compensated_hfp, compensated_htotal);
+    }
+
     float dpi2lane_clk_ratio = hal->lane_bit_rate_mbps / hal->expect_dpi_clock_freq_mhz / 8.0f;
     uint32_t host_hsw = (uint32_t)roundf(hsw * dpi2lane_clk_ratio);
     uint32_t host_hbp = (uint32_t)roundf(hbp * dpi2lane_clk_ratio);
     uint32_t host_act = (uint32_t)roundf(active_width * dpi2lane_clk_ratio);
     uint32_t host_hfp = (uint32_t)roundf(hfp * dpi2lane_clk_ratio);
     uint32_t host_htotal = (uint32_t)roundf(htotal * dpi2lane_clk_ratio);
-    int compensation = (int)host_htotal - (int)(host_hsw + host_hbp + host_act + host_hfp);
-    mipi_dsi_host_ll_dpi_set_horizontal_timing(hal->host, host_hsw, host_hbp, host_act + compensation, host_hfp);
+    int host_compensation = (int)host_htotal - (int)(host_hsw + host_hbp + host_act + host_hfp);
+    mipi_dsi_host_ll_dpi_set_horizontal_timing(hal->host, host_hsw, host_hbp, host_act + host_compensation, host_hfp);
     HAL_LOGD(TAG, "host video timing: hsw=%" PRIu32 ", hbp=%" PRIu32 ", act=%" PRIu32 ", hfp=%" PRIu32,
-             host_hsw, host_hbp, host_act + compensation, host_hfp);
+             host_hsw, host_hbp, host_act + host_compensation, host_hfp);
 
     // compensate the video timing to achieve the same refresh rate as expected
-    compensation = (int)roundf(hal->real_dpi_clock_freq_mhz / hal->expect_dpi_clock_freq_mhz * htotal) - (int)htotal;
-    mipi_dsi_brg_ll_set_horizontal_timing(hal->bridge, hsw, hbp, active_width, hfp + compensation);
+    mipi_dsi_brg_ll_set_horizontal_timing(hal->bridge, hsw, hbp, active_width, compensated_hfp);
     HAL_LOGD(TAG, "brg video timing: hsw=%" PRIu32 ", hbp=%" PRIu32 ", act=%" PRIu32 ", hfp=%" PRIu32,
-             hsw, hbp, active_width, hfp + compensation);
+             hsw, hbp, active_width, (uint32_t)compensated_hfp);
+    return true;
 }
 
 void mipi_dsi_hal_host_dpi_set_vertical_timing(mipi_dsi_hal_context_t *hal, uint32_t vsw, uint32_t vbp, uint32_t active_height, uint32_t vfp)
