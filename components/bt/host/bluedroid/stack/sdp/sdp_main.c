@@ -209,9 +209,11 @@ void sdp_init (void)
 
 void sdp_deinit (void)
 {
+#if SDP_DYNAMIC_MEMORY == FALSE
     list_free(sdp_cb.server_db.p_record_list);
-#if SDP_DYNAMIC_MEMORY
+#else
     if (sdp_cb_ptr) {
+        list_free(sdp_cb_ptr->server_db.p_record_list);
         osi_free(sdp_cb_ptr);
         sdp_cb_ptr = NULL;
     }

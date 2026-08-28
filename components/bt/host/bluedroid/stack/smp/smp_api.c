@@ -217,7 +217,7 @@ tSMP_STATUS SMP_BR_PairWith (BD_ADDR bd_addr)
 
     if (!L2CA_ConnectFixedChnl (L2CAP_SMP_BR_CID, bd_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE, FALSE, 0xFF, 0xFF)) {
         SMP_TRACE_ERROR("%s: L2C connect fixed channel failed.", __FUNCTION__);
-        smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
+        smp_reset_control_value(p_cb);
         return status;
     }
 

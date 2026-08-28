@@ -2406,10 +2406,10 @@ extern void bta_dmexecutecallback (tBTA_DM_EXEC_CBACK *p_callback, void *p_param
 **                  bits: number of bits per pcm sample (16)
 **                  n_channels: number of channels (i.e. mono(1), stereo(2)...)
 **
-** Returns          none
+** Returns          tBTA_STATUS
 **
 *******************************************************************************/
-extern void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels);
+extern tBTA_STATUS BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels);
 
 /*******************************************************************************
 **
