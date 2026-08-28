@@ -875,6 +875,7 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 
 #endif // !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
 {
     esp_timer_impl_advance(50331648); // 0xefffffff/80 = 50331647
@@ -892,6 +893,7 @@ TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", 
     printf("alarm_reg = 0x%llx, count_reg 0x%llx\n", alarm_reg, count_reg);
     TEST_ASSERT(alarm_reg <= (count_reg + offset));
 }
+#endif // CONFIG_IDF_TARGET_ESP32
 
 static void timer_callback5(void* arg)
 {
