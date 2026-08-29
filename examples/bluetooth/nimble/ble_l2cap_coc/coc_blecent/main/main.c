@@ -97,7 +97,7 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
 static void
 blecent_l2cap_coc_on_disc_complete(const struct peer *peer, int status, void *arg)
 {
-    uint16_t psm = 0x1002;
+    uint16_t psm = 0x0080;
     struct os_mbuf *sdu_rx = NULL;
     int rc;
 

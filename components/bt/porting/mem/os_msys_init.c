@@ -312,7 +312,7 @@ os_msys_buf_free(void)
 #if OS_MSYS_2_BLOCK_COUNT > 0
     bt_osi_mem_free(os_msys_init_2_data);
     os_msys_init_2_data = NULL;
-    os_mempool_unregister(&os_msys_init_1_mempool);
+    os_mempool_unregister(&os_msys_init_2_mempool);
 #endif
 #endif // CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
 }

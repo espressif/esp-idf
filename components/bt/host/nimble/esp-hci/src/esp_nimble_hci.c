@@ -182,7 +182,6 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
 {
     struct os_mbuf *m = NULL;
     int rc;
-    int sr;
 
     int retry_count = 1;
 
@@ -216,9 +215,7 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
         os_mbuf_free_chain(m);
         return;
     }
-    OS_ENTER_CRITICAL(sr);
     ble_transport_to_hs_acl(m);
-    OS_EXIT_CRITICAL(sr);
 }
 #endif
 

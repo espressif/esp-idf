@@ -1,0 +1,6 @@
+# MTU is intentionally left at the Kconfig default (16384) for throughput.
+# Reducing MTU lowers L2CAP credit flow, which directly cuts throughput.
+# If the build fails due to RAM pressure (~98 KB static SDU pool), lower MTU here.
+CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=20
+CONFIG_BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT=24
+CONFIG_BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB=8

@@ -1,0 +1,67 @@
+menu "L2CAP COC Throughput Configuration"
+
+    config EXAMPLE_L2CAP_COC_MTU
+        int "L2CAP CoC MTU size in bytes"
+        default 2048
+        range 512 65511
+        help
+            L2CAP CoC SDU MTU size used by the central device.
+            Note: memory pool allocates 6 buffers of this size; total pool
+            memory = MTU x 6. On chips without PSRAM ensure sufficient heap
+            is available before increasing this value.
+            Use idf.py size-components to verify.
+
+    config EXAMPLE_EXTENDED_ADV
+        bool
+        depends on SOC_BLE_50_SUPPORTED && BT_NIMBLE_50_FEATURE_SUPPORT
+        default y if SOC_ESP_NIMBLE_CONTROLLER
+        select BT_NIMBLE_EXT_ADV
+        prompt "Enable Extended Scanning"
+        help
+            Use extended scanning on chips that support BLE 5.0
+
+    config EXAMPLE_TEST_PHY_1M
+        bool "Test on 1M PHY"
+        default y if !SOC_BLE_50_SUPPORTED
+        default n
+
+    config EXAMPLE_TEST_PHY_2M
+        bool "Test on 2M PHY"
+        default y
+        depends on SOC_BLE_50_SUPPORTED
+
+    config EXAMPLE_TEST_PHY_CODED_S2
+        bool "Test on Coded PHY S2"
+        default n
+        depends on SOC_BLE_50_SUPPORTED
+
+    config EXAMPLE_TEST_PHY_CODED_S8
+        bool "Test on Coded PHY S8"
+        default n
+        depends on SOC_BLE_50_SUPPORTED
+
+    config EXAMPLE_TEST_DURATION_1M
+        int "Test duration for 1M PHY (sec)"
+        default 8
+        range 1 3600
+        depends on EXAMPLE_TEST_PHY_1M
+
+    config EXAMPLE_TEST_DURATION_2M
+        int "Test duration for 2M PHY (sec)"
+        default 8
+        range 1 3600
+        depends on EXAMPLE_TEST_PHY_2M
+
+    config EXAMPLE_TEST_DURATION_CODED_S2
+        int "Test duration for Coded S2 PHY (sec)"
+        default 8
+        range 1 3600
+        depends on EXAMPLE_TEST_PHY_CODED_S2
+
+    config EXAMPLE_TEST_DURATION_CODED_S8
+        int "Test duration for Coded S8 PHY (sec)"
+        default 8
+        range 1 3600
+        depends on EXAMPLE_TEST_PHY_CODED_S8
+
+endmenu
