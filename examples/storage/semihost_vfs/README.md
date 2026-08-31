@@ -14,6 +14,10 @@ This example demonstrates how to use semihosting VFS driver with ESP32. Example 
 5. Opens text file on the host.
 6. Reads the file and prints its content on stdout.
 
+## When to use this example
+
+- You want the device to read/write files on the *host* PC through the debugger (semihosting), e.g. for logging or test data, without on-device storage.
+
 ## How to use example
 
 ### Hardware and tools required

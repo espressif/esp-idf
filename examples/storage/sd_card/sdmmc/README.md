@@ -18,6 +18,11 @@ This example demonstrates how to use an SD card with an ESP device. Example does
 1. Create a file using `fopen` and write to it using `fprintf`.
 1. Rename the file. Before renaming, check if destination file already exists using `stat` function, and remove it using `unlink` function.
 1. Open renamed file for reading, read back the line, and print it to the terminal.
+
+## When to use this example
+
+- You have a removable SD/MMC card wired to the SDMMC host and want FATFS access with best throughput (1/4/8-line).
+
 1. __OPTIONAL:__ Format the SD card, check if the file doesn't exist anymore.
 
 This example supports SD (SDSC, SDHC, SDXC) cards and eMMC chips.

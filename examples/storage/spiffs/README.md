@@ -3,6 +3,8 @@
 
 # SPIFFS example
 
+**Note:** SPIFFS is not recommended for new designs. Use FATFS or LittleFS instead.
+
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates how to use SPIFFS with ESP32. Example does the following steps:
@@ -16,6 +18,10 @@ This example demonstrates how to use SPIFFS with ESP32. Example does the followi
 4. Open renamed file for reading, read back the line, and print it to the terminal.
 
 SPIFFS partition size is set in partitions_example.csv file. See [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html) documentation for more information.
+
+## When to use this example
+
+- You need to work with a legacy SPIFFS image.
 
 ## How to use example
 

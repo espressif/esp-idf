@@ -5,6 +5,11 @@
 
 This example showcases how to iterate and obtain info about NVS entries of a specific (or any) NVS datatype.
 
+## When to use this example
+
+- You need to enumerate NVS entries in code, filtered by type and/or namespace (`nvs_entry_find` / `nvs_entry_info`).
+- You are building tooling that discovers keys rather than reading known keys.
+
 Default "nvs" partition is first erased to allow for clean example run, followed by writing 2 sets of key value pairs of different types to NVS storage.
 After that, iteration is performed over the individual data types, as well as the generic `NVS_TYPE_ANY`, and relevant entry info gained from iteration is verbosely logged.
 

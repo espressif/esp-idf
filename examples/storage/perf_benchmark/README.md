@@ -12,6 +12,11 @@ Only ESP32 and ESP32-S3 targets can use SDMMC mode when connecting to a SD card.
 
 This example provides comparison between different types of storage in terms of speed under various configurable (from menuconfig) conditions
 
+## When to use this example
+
+- You want to benchmark and compare read/write speed across storage media and filesystems (SPI flash / SD card; raw, FATFS, SPIFFS, LittleFS).
+- You are deciding which filesystem or medium best fits your performance needs.
+
 Currently these mediums and file-systems are supported:
 - SPI Flash
     - Raw access
