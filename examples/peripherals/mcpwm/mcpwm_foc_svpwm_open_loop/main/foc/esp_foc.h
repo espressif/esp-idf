@@ -3,12 +3,18 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
+
 #include <math.h>
 
 // Use IQ18 type, range [-8,192 8,191.999 996 185]
 // This definition should be added before including "IQmathLib.h"
 #define GLOBAL_IQ               18
 #include "IQmathLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // 3-phase uvw coord data type
 typedef struct foc_uvw_coord {
@@ -70,3 +76,7 @@ void foc_inverse_park_transform(_iq theta_rad, const foc_dq_coord_t *v_dq, foc_a
  * @param out_uvw[out]  output modulated pwm duty in IQ type
  */
 void foc_svpwm_duty_calculate(const foc_ab_coord_t *v_ab, foc_uvw_coord_t *out_uvw);
+
+#ifdef __cplusplus
+}
+#endif

@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#pragma once
+
 #include "driver/mcpwm_prelude.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief   svpwm inverter config struct type
@@ -78,3 +84,7 @@ esp_err_t svpwm_inverter_set_duty(inverter_handle_t handle, uint16_t u, uint16_t
  *          - ESP_ERR_INVALID_ARG: NULL arguments
  */
 esp_err_t svpwm_del_inverter(inverter_handle_t handle);
+
+#ifdef __cplusplus
+}
+#endif
