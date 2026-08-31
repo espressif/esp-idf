@@ -22,7 +22,9 @@ With the console users can configure NAN and its services on the fly. Flashing t
  |                                                                  |
  |  # NAN Discovery -                                               |
  |  1. To start NAN issue 'nan -S', to stop it use 'nan -T'         |
- |  2. Publish OR Subscribe a service using 'publish' OR 'subscribe'|
+ |  2. Publish OR Subscribe a service with name 'TEST' -            |
+ |      > publish -n TEST                                           |
+ |      > subscribe -n TEST                                         |
  |  4. After service match, send a text to Peer with service id 5 - |
  |      > send -p 5 -t Hello                                        |
  |  5. Cancel an ongoing service with id 5 -                        |
@@ -31,22 +33,30 @@ With the console users can configure NAN and its services on the fly. Flashing t
  |  # NAN Datapath -                                                |
  |  1. Subscriber can initiate datapath using 'ndp -I -p [pub_id]'  |
  |  2. After NDP setup, use 'ping [Peer's IPv6]' to test datapath   |
- |  3. Terminate the NDP using 'ndp -D'                             |
+ |  3. Terminate the NDP using 'ndp -T'                             |
+ |                                                                  |
+ |  # NAN Security (per service) -                                  |
+ |  1. Secure publish: publish -n TEST -p password                 |
+ |  2. Secure subscribe: subscribe -n TEST -p password             |
+ |  3. Group data: publish/subscribe with '-d 1'                  |
+ |  4. Group mgmt: start NAN with 'nan -S -m 1'                   |
  |                                                                  |
  ====================================================================
 
 nan>
 ```
 
-Mode detailed information about command parameters is given below -
+More detailed information about command parameters is given below -
 
 1. **Starting NAN**
 >nan> nan -S
    *OR*
 >nan> nan -S -p 2 -c 6 -w 5
+>nan> nan -S -m 1
 >p - Master Preference
 >c - Operating channel
 >w - Warmup time
+>m - Device-global group-management protection (IGTKSA/BIGTKSA; BIP for Beacons + multicast SDFs). Default 0. When set, GTKSA is also forced on secured services.
 
 2. **Stopping NAN**
 > nan> nan -T
@@ -74,7 +84,7 @@ Mode detailed information about command parameters is given below -
 >nan> publish -C -i 5
 
 6. **Send a Follow-up message**
-*To send message to amatched Publish OR Subscribe service*
+*To send message to a matched Publish OR Subscribe service*
 >nan> send -p 5 -t Hello
 >p - Peer’s service instance id
 >t - Message
@@ -84,10 +94,10 @@ Mode detailed information about command parameters is given below -
 >nan> ndp -I -p 5
 >p - Publish Id
 
-9. **Start a IPv6 Ping with Peer**
+8. **Start a IPv6 Ping with Peer**
 >nan> ping FE80::E2E2:E6FF:FE7B:C132
 
-10. **Terminate the current NAN Datapath**
+9. **Terminate the current NAN Datapath**
 >nan> ndp -T -d 5
 >d - NDP id
 
@@ -102,19 +112,23 @@ The security parameters available on both commands are:
 
 | Short | Long | Argument | Description |
 |-------|------|----------|-------------|
-| `-p` | `--passphrase` | `<text>` | Add an NCS-SK-128 passphrase credential |
-| `-k` | `--pmk` | `<hex>` | Add a raw 32-byte PMK (64 hexadecimal characters) |
-| `-a` | `--add-passphrase` | `<text>` | Add another passphrase credential |
-| `-A` | `--add-pmk` | `<hex>` | Add another raw PMK credential |
+| `-p` | `--passphrase` | `<text>` | NCS-SK-128 passphrase credential (mutually exclusive with `-k`) |
+| `-k` | `--pmk` | `<hex>` | Raw 32-byte PMK, 64 hex characters (mutually exclusive with `-p`) |
 | `-d` | `--group-data-prot` | `<0\|1>` | Enable or disable ND-GTK group-data protection |
-| `-m` | `--group-mgmt-prot` | `<0\|1>` | Enable or disable group-management frame protection |
 
-Up to four credentials can be attached to one service. Additional credentials and group-protection options require a primary `--passphrase` or `--pmk`. Both peers must configure a matching credential on the corresponding service.
+Exactly one credential may be set per service — either `--passphrase` or `--pmk`, not both. Both peers must configure the same credential type and value on the corresponding service. Group-data protection (`-d 1`) requires a credential.
 
-For example, enable all security protection flags:
+Group-management protection (IGTKSA/BIGTKSA) is device-global and must be enabled when starting NAN:
 
->nan> publish -n TEST -p password -d 1 -m 1
->nan> subscribe -n TEST -p password -d 1 -m 1
+>nan> nan -S -m 1
+>nan> publish -n TEST -p password -d 1
+>nan> subscribe -n TEST -p password -d 1
+
+For group-data protection only (GTKSA, no BIP on Beacons/multicast SDFs):
+
+>nan> nan -S
+>nan> publish -n TEST -p password -d 1
+>nan> subscribe -n TEST -p password -d 1
 
 An open service needs no security arguments:
 

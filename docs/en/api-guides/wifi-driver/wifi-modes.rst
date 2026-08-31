@@ -96,7 +96,7 @@ Another noteworthy issue about the sniffer is the callback :cpp:type:`wifi_promi
         .. code-block:: yaml
 
             dependencies:
-              espressif/wifi_aware: "^0.0.1"
+              espressif/wifi_aware: "*"
 
     NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP.
 
