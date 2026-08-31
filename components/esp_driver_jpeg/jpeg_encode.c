@@ -163,7 +163,8 @@ esp_err_t jpeg_new_encoder_engine(const jpeg_encode_engine_cfg_t *enc_eng_cfg, j
     };
     ESP_ERROR_CHECK(dma2d_acquire_pool(&dma2d_group_config, &encoder_engine->dma2d_group_handle));
 
-    encoder_engine->trans_desc = (dma2d_trans_t *)heap_caps_calloc(1, SIZEOF_DMA2D_TRANS_T, JPEG_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the dma2d transaction descriptor contains atomic variable
+    encoder_engine->trans_desc = (dma2d_trans_t *)heap_caps_calloc(1, SIZEOF_DMA2D_TRANS_T, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(encoder_engine->trans_desc, ESP_ERR_NO_MEM, err, TAG, "No memory for dma2d descriptor");
 
     encoder_engine->header_info = (jpeg_enc_header_info_t*)heap_caps_calloc(1, sizeof(jpeg_enc_header_info_t), JPEG_MEM_ALLOC_CAPS);

@@ -1058,7 +1058,8 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     ESP_RETURN_ON_FALSE(bus_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_I2C_SUPPORT_SLEEP_RETENTION
 
-    i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variables
+    i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 
     ESP_GOTO_ON_FALSE(i2c_master, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c master bus");
 
