@@ -75,6 +75,10 @@ config ESP_ROM_HAS_NEWLIB_32BIT_TIME
     bool
     default y
 
+config ESP_ROM_HAS_LIBGCC
+    bool
+    default y
+
 config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
     bool
     default y

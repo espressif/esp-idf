@@ -15,6 +15,7 @@
 #define ESP_ROM_HAS_NEWLIB              (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT  (1) // ROM has the newlib nano version of formatting functions
 #define ESP_ROM_HAS_NEWLIB_32BIT_TIME   (1) // ROM was compiled with 32 bit time_t
+#define ESP_ROM_HAS_LIBGCC              (1) // ROM has libgcc functions included
 #define ESP_ROM_HAS_SW_FLOAT            (1) // ROM has libgcc software floating point emulation functions
 #define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
 #define ESP_ROM_USB_SERIAL_DEVICE_NUM       (-1) // No USB_SERIAL_JTAG in the ROM, set -1 for Kconfig usage.

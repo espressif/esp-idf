@@ -31,6 +31,10 @@ config ESP_ROM_HAS_NEWLIB_32BIT_TIME
     bool
     default y
 
+config ESP_ROM_HAS_LIBGCC
+    bool
+    default y
+
 config ESP_ROM_USB_OTG_NUM
     int
     default 3
