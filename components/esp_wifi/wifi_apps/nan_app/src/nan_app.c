@@ -171,6 +171,7 @@ static struct nan_paired_peer *nan_app_alloc_paired_slot_locked(const uint8_t *p
 esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
                                        uint8_t role,
                                        uint8_t ndp_csid,
+                                       int pairing_akmp,
                                        const uint8_t *nd_pmk,
                                        size_t nd_pmk_len,
                                        uint32_t lifetime_sec)
@@ -190,13 +191,14 @@ esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
     MACADDR_COPY(p->peer_nmi, peer_nmi);
     p->role = role;
     p->ndp_csid = ndp_csid;
+    p->pairing_akmp = pairing_akmp;
     memcpy(p->nd_pmk, nd_pmk, nd_pmk_len);
     p->lifetime_sec = lifetime_sec;
     p->established_us = esp_timer_get_time();
     NAN_DATA_UNLOCK();
 
-    ESP_LOGI(TAG, "Paired peer cached: " MACSTR " role=%u csid=%u lifetime=%us",
-             MAC2STR(peer_nmi), role, ndp_csid, lifetime_sec);
+    ESP_LOGI(TAG, "Paired peer cached: " MACSTR " role=%u csid=%u akmp=0x%x lifetime=%us",
+             MAC2STR(peer_nmi), role, ndp_csid, pairing_akmp, lifetime_sec);
     return ESP_OK;
 }
 
@@ -308,6 +310,10 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
         ndl->bigtk_set = 0;
         ndl->igtk_len = 0;
         ndl->bigtk_len = 0;
+
+        nan_sec_ndp_clear_sa(key_addr);
+    } else {
+        nan_sec_ndp_clear_sa(peer_nmi);
     }
 
     /* Fallback when no NDL slot tracks peer_ndi yet. */
@@ -547,6 +553,9 @@ static void nan_reset_ndl(uint8_t ndp_id, bool reset_all)
 
     if (reset_all) {
         memset(s_nan_ctx.ndl, 0, sizeof(struct ndl_info) * ESP_WIFI_NAN_DATAPATH_MAX_PEERS);
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_sec_ndp_clear_sa(NULL);
+#endif
         return;
     }
     for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
@@ -1426,36 +1435,74 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     if (ndl->security_ctx.type == WIFI_NAN_SECURITY_ENCRYPTED) {
         uint8_t key_rsc[8] = {0};
-        int ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
-                                                peer_ndi,
-                                                0,
-                                                1,
-                                                key_rsc,
-                                                sizeof(key_rsc),
-                                                ndl->nd_tk,
-                                                NAN_NCS_SK_128_TK_LEN,
-                                                NAN_KEY_ND_TK);
-        ESP_LOG_BUFFER_HEXDUMP("ND-TK", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_DEBUG);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "NDP confirm: failed to install ND-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+        uint8_t csid = nan_sec_pairwise_csid_from_bitmap(ndl->security_ctx.csid_bitmap);
+        int pairing_akmp = 0;
+        bool install_keys = false;
+
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+        /* When ND-PMK came from PASN pairing, rank the SA with that AKMP
+         * (ESP maps PASN→SK for NDP M1-M4; strength helper maps back). */
+        const struct nan_paired_peer *paired = nan_app_find_paired_peer(peer_nmi);
+        if (paired && paired->valid) {
+            pairing_akmp = paired->pairing_akmp;
+            if (!csid) {
+                csid = paired->ndp_csid;
+            }
+        }
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
+
+        if (!csid) {
+            ESP_LOGE(TAG, "NDP confirm: no pairwise CSID in security_ctx (ndp_id=%d)", ndp_id);
             os_free(evt);
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
             goto done;
         }
-        ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
-                                                peer_nmi,
-                                                0,
-                                                1,
-                                                key_rsc,
-                                                sizeof(key_rsc),
-                                                ndl->nd_tk,
-                                                NAN_NCS_SK_128_TK_LEN,
-                                                NAN_KEY_NM_TK);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "NDP confirm: failed to install NM-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
-            os_free(evt);
-            nan_ndp_confirm_teardown(peer_nmi, ndp_id);
-            goto done;
+
+        install_keys = nan_sec_ndp_should_install_keys(csid, pairing_akmp);
+        if (install_keys) {
+            int ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                                    peer_ndi,
+                                                    0,
+                                                    1,
+                                                    key_rsc,
+                                                    sizeof(key_rsc),
+                                                    ndl->nd_tk,
+                                                    NAN_NCS_SK_128_TK_LEN,
+                                                    NAN_KEY_ND_TK);
+            ESP_LOG_BUFFER_HEXDUMP("ND-TK", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_DEBUG);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "NDP confirm: failed to install ND-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+                os_free(evt);
+                nan_ndp_confirm_teardown(peer_nmi, ndp_id);
+                goto done;
+            }
+            /* When NMI==NDI, also bind the pairwise key as NM-TK for unicast
+             * NAN management frames (Wi-Fi Aware v4.0 §7.1.3). */
+            if (MACADDR_EQUAL(peer_nmi, peer_ndi)) {
+                ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                                    peer_nmi,
+                                                    0,
+                                                    1,
+                                                    key_rsc,
+                                                    sizeof(key_rsc),
+                                                    ndl->nd_tk,
+                                                    NAN_NCS_SK_128_TK_LEN,
+                                                    NAN_KEY_NM_TK);
+                if (ret != 0) {
+                    ESP_LOGE(TAG, "NDP confirm: failed to install NM-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+                    os_free(evt);
+                    nan_ndp_confirm_teardown(peer_nmi, ndp_id);
+                    goto done;
+                }
+            }
+            /* Commit SA only after firmware install succeeds so a failed
+             * set_key cannot leave the §7.4 cache ahead of the driver. */
+            nan_sec_ndp_commit_keys(peer_ndi, own_ndi, csid, pairing_akmp,
+                                    ndl->nd_tk, ndl->tk_len);
+        } else {
+            ESP_LOGI(TAG, "NDP confirm: keeping existing stronger pairwise SA for "
+                     MACSTR " (ndp_id=%d csid=%u); skipping ND-TK/NM-TK install",
+                     MAC2STR(peer_ndi), ndp_id, csid);
         }
 
         /* Group keys (ND-GTK) exchanged during NDP setup (§7.1.3.2): our GTK
@@ -1901,6 +1948,7 @@ void esp_nan_action_stop(void)
      * keys instead of re-installing a stale key with IPN/BIPN=0 (which would
      * reset the blob's replay counter) — see nan_security_reset_own_group_keys. */
     nan_security_reset_own_group_keys();
+    nan_sec_ndp_clear_sa(NULL);
 #endif
 
     esp_nan_internal_register_callbacks(NULL);

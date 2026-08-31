@@ -26,9 +26,10 @@
 
 #include "esp_wifi_driver.h"
 
+#include "common/defs.h"
+
 #if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 #include "esp_private/esp_supp_nan.h"
-#include "common/defs.h"
 #endif
 
 static const char *TAG = "nan_pairing";
@@ -949,7 +950,10 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
 
     /* Cache ND-PMK for future paired NDPs (Wi-Fi Aware v4.0 §7.6.4.2). */
     if (ndp_csid && nd_pmk && nd_pmk_len == ESP_WIFI_NAN_NDP_PMK_LEN) {
+        /* ESP NAN pairing currently uses SAE as the single base AKM. */
+        int pairing_akmp = WPA_KEY_MGMT_SAE;
         (void)nan_app_register_paired_peer(peer_nmi, role, ndp_csid,
+                                           pairing_akmp,
                                            nd_pmk, nd_pmk_len,
                                            lifetime_sec);
     } else {
