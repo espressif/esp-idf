@@ -287,6 +287,7 @@ typedef enum {
     ESP_GAP_BLE_UTP_RECEIVE_EVT,                                 /*!< When UTP data is received, the event comes */
     ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT,           /*!< When CS set security requirements complete, the event comes */
     ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT,   /*!< When CS set default security requirements complete, the event comes */
+    ESP_GAP_BLE_EATT_EVT,                                        /*!< When an EATT bearer is connected or disconnected, the event comes. Requires `CONFIG_BT_BLE_EATT_ENABLE` */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -3228,6 +3229,18 @@ typedef union {
         esp_ble_cs_step_info *step_info; /*!< steps information in the CS subevent */
     } cs_subevt_result_continue; /*!< Event parameter of ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT */
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
+    /**
+     * @brief ESP_GAP_BLE_EATT_EVT
+     *
+     * Requires `CONFIG_BT_BLE_EATT_ENABLE`. EATT bearers are established automatically
+     * after the ACL link is encrypted.
+     */
+    struct ble_eatt_evt {
+        uint16_t conn_id;   /*!< GATT connection id of the underlying ACL link. 0xFFFF (GATT_INVALID_CONN_ID) if not yet available. Note: 0 is a valid conn_id (the first BLE connection) */
+        uint8_t status;     /*!< EATT bearer status. 0: connected; 1: disconnected */
+        uint16_t cid;       /*!< Local L2CAP channel identifier (CID) of the EATT bearer */
+    } eatt_evt;             /*!< Event parameter of ESP_GAP_BLE_EATT_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -3596,6 +3609,94 @@ esp_err_t esp_ble_gap_set_key_material(const uint8_t session_key[16], const uint
  *
  */
 esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type);
+
+#if (CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND)
+/**
+ * @brief          Reverse-map a Host pseudo address to the real peer identity.
+ *
+ *                 When CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND is enabled, the
+ *                 remote_bda reported to the application for a dual local
+ *                 identity link is a Host-internal pseudo address (one peer
+ *                 phone connected through two local identities shows up as two
+ *                 different pseudo addresses). This helper returns the actual
+ *                 over-the-air peer identity for UI / diagnostics.
+ *
+ *                 **Must be called while the link is connected.** The mapping
+ *                 lives in a Host-side connection table that is cleared on
+ *                 disconnect. If there is no active link for `pseudo`, the call
+ *                 returns `ESP_FAIL` and `real_peer` is not modified.
+ *
+ *                 For offline bond information, use
+ *                 `esp_ble_get_bond_device_list()` and read
+ *                 `bond_key.pid_key.static_addr` for the real peer identity.
+ *
+ * @param[in]       pseudo    - the pseudo address as seen in remote_bda
+ * @param[out]      real_peer - filled with the real peer identity on success
+ *
+ * @return          - ESP_OK : success (link connected and pseudo known)
+ *                  - ESP_FAIL : Bluedroid not enabled, or pseudo not found /
+ *                    not connected
+ *                  - ESP_ERR_INVALID_ARG : NULL pointer argument
+ */
+esp_err_t esp_ble_gap_get_real_peer_addr(esp_bd_addr_t pseudo, esp_bd_addr_t real_peer);
+
+/**
+ * @brief   Full identity of a dual local-identity connection.
+ */
+typedef struct {
+    esp_bd_addr_t       peer_addr;          /*!< real over-the-air peer identity */
+    esp_bd_addr_t       local_addr;         /*!< local identity used for this link */
+    esp_ble_addr_type_t peer_addr_type;     /*!< peer identity address type */
+    esp_ble_addr_type_t local_addr_type;    /*!< local identity address type */
+} esp_ble_conn_identity_t;
+
+/**
+ * @brief          Get the full (peer, local) identity of a dual local-identity
+ *                 link, keyed by the pseudo address the application sees as
+ *                 remote_bda.
+ *
+ *                 **Must be called while the link is connected.** The mapping
+ *                 is kept in a Host-side connection table that is registered at
+ *                 connection complete and cleared on disconnect. If there is no
+ *                 active link for `pseudo`, or the local identity is not yet
+ *                 finalized (`local_ready`), the call returns `ESP_FAIL` and
+ *                 `identity` is not modified.
+ *
+ *                 For offline bond information (no connection), use
+ *                 `esp_ble_get_bond_device_list()` and read
+ *                 `bond_key.pid_key.static_addr` for the real peer identity.
+ *                 The bond list key is the stored pseudo address; local identity
+ *                 is not exposed by this API offline.
+ *
+ * @param[in]       pseudo    - the pseudo address as seen in remote_bda
+ * @param[out]      identity  - filled with the peer/local identity on success
+ *
+ * @return          - ESP_OK : success (link connected and pseudo known)
+ *                  - ESP_FAIL : Bluedroid not enabled, or pseudo not found /
+ *                    not connected / local identity not yet ready
+ *                  - ESP_ERR_INVALID_ARG : NULL pointer argument
+ */
+esp_err_t esp_ble_gap_get_conn_identity(esp_bd_addr_t pseudo, esp_ble_conn_identity_t *identity);
+
+/**
+ * @brief          Remove the stored bond for one specific (local, peer)
+ *                 identity pair. The pseudo bond section is recomputed from the
+ *                 identity, so this only deletes that one local identity's bond
+ *                 and never affects the same phone's other local identity.
+ *
+ * @param[in]       local_addr      - local identity used when bonding
+ * @param[in]       local_addr_type - local identity address type
+ * @param[in]       peer_addr       - real peer identity
+ * @param[in]       peer_addr_type  - peer identity address type
+ *
+ * @return          - ESP_OK : request accepted
+ *                  - other  : invalid arguments / not enabled
+ */
+esp_err_t esp_ble_gap_remove_bond_for_identity(esp_bd_addr_t local_addr,
+                                               esp_ble_addr_type_t local_addr_type,
+                                               esp_bd_addr_t peer_addr,
+                                               esp_ble_addr_type_t peer_addr_type);
+#endif // CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND
 
 /**
  * @brief          This function is called to get ADV data for a specific type.
@@ -5166,6 +5267,53 @@ esp_err_t esp_ble_cs_set_procedure_params(esp_ble_cs_set_proc_params *procedure_
  *                  - other  : failed
  */
 esp_err_t esp_ble_cs_procedure_enable(esp_ble_cs_procedure_enable_params *procedure_enable_params);
+
+/**
+ * @brief       Set the number of EATT bearers to establish per connection
+ *
+ *              Requires `CONFIG_BT_BLE_EATT_ENABLE`.
+ *              EATT bearers are created automatically after the link is encrypted.
+ *              Call this function before the bearers are established. The value must
+ *              not exceed `CONFIG_BT_BLE_EATT_CHAN_NUM` (compile-time maximum).
+ *
+ *              This API is intentionally synchronous (does not dispatch through the
+ *              BTC task): it only stores the requested bearer count for future
+ *              connections and returns validation errors immediately.
+ *
+ * @param[in]   num_chan:  Number of EATT bearers to establish per connection
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: `num_chan` is 0 or greater than
+ *                `CONFIG_BT_BLE_EATT_CHAN_NUM`
+ *
+ * @note        Defined only when `CONFIG_BT_BLE_EATT_ENABLE` is set; calling it
+ *              in a build with EATT disabled fails at link time (no definition).
+ */
+esp_err_t esp_ble_eatt_set_chan_num(uint8_t num_chan);
+
+/**
+ * @brief       Set the preferred EATT bearer for GATT client operations on a connection
+ *
+ *              Requires `CONFIG_BT_BLE_EATT_ENABLE`.
+ *              By default the stack selects an available bearer automatically.
+ *              Pass `cid` as 0 to restore automatic selection.
+ *
+ *              This API is intentionally synchronous (does not dispatch through the
+ *              BTC task): it updates the preferred bearer for GATT client TX routing
+ *              and returns validation errors immediately.
+ *
+ * @param[in]   conn_id:  GATT connection id
+ * @param[in]   cid:      Local L2CAP channel identifier (CID) of the preferred EATT bearer
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: invalid `conn_id` or `cid`
+ *
+ * @note        Defined only when `CONFIG_BT_BLE_EATT_ENABLE` is set; calling it
+ *              in a build with EATT disabled fails at link time (no definition).
+ */
+esp_err_t esp_ble_eatt_set_default_bearer(uint16_t conn_id, uint16_t cid);
 
 #ifdef __cplusplus
 }

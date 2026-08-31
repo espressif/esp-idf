@@ -859,6 +859,35 @@ void btm_ble_enqueue_direct_conn_req(void *p_param)
 }
 /*******************************************************************************
 **
+** Function         btm_ble_remove_direct_conn_req
+**
+** Description      Remove a pending direct connection request for the given LCB.
+**
+** Returns          None.
+**
+*******************************************************************************/
+void btm_ble_remove_direct_conn_req(void *p_param)
+{
+    fixed_queue_t *q = btm_cb.ble_ctr_cb.conn_pending_q;
+
+    if (q == NULL || p_param == NULL) {
+        return;
+    }
+
+    list_t *list = fixed_queue_get_list(q);
+    for (const list_node_t *node = list_begin(list); node != NULL; node = list_next(node)) {
+        tBTM_BLE_CONN_REQ *p = (tBTM_BLE_CONN_REQ *)list_node(node);
+
+        if (p->p_param == p_param) {
+            if (fixed_queue_try_remove_from_queue(q, p) != NULL) {
+                osi_free(p);
+            }
+            break;
+        }
+    }
+}
+/*******************************************************************************
+**
 ** Function         btm_send_pending_direct_conn
 **
 ** Description      This function send the pending direct connection request in queue
@@ -873,7 +902,17 @@ BOOLEAN btm_send_pending_direct_conn(void)
 
     p_req = (tBTM_BLE_CONN_REQ*)fixed_queue_dequeue(btm_cb.ble_ctr_cb.conn_pending_q, 0);
     if (p_req != NULL) {
-        rt = l2cble_init_direct_conn((tL2C_LCB *)(p_req->p_param));
+        tL2C_LCB *p_lcb = (tL2C_LCB *)(p_req->p_param);
+
+        if (p_lcb == NULL || !p_lcb->in_use) {
+            osi_free((void *)p_req);
+            return FALSE;
+        }
+
+        rt = l2cble_init_direct_conn(p_lcb);
+        if (!rt) {
+            l2cu_release_lcb(p_lcb);
+        }
 
         osi_free((void *)p_req);
     }

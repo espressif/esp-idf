@@ -28,6 +28,9 @@
 
 #include "gatt_int.h"
 #include "stack/l2c_api.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 #include "btm_int.h"
 #include "btm_ble_int.h"
 #include "osi/allocator.h"
@@ -149,6 +152,10 @@ void gatt_init (void)
 #endif  ///GATTS_INCLUDED == TRUE
     //init local MTU size
     gatt_default.local_mtu = GATT_MAX_MTU_SIZE;
+
+#if (BLE_EATT_INCLUDED == TRUE)
+    gatt_eatt_init();
+#endif
 }
 
 
@@ -166,37 +173,54 @@ void gatt_free(void)
 {
     GATT_TRACE_DEBUG("gatt_free()");
 #if (GATTS_INCLUDED == TRUE)
-    fixed_queue_free(gatt_cb.srv_chg_clt_q, NULL);
+    fixed_queue_free(gatt_cb.srv_chg_clt_q, osi_free_func);
     gatt_cb.srv_chg_clt_q = NULL;
     fixed_queue_free(gatt_cb.pending_new_srv_start_q, osi_free_func);
     gatt_cb.pending_new_srv_start_q = NULL;
 #endif // (GATTS_INCLUDED == TRUE)
 
+    /* Note: gatt_eatt_deinit() is intentionally invoked from btu_free_core()
+     * BEFORE l2c_free(), because it deregisters L2CAP/GATT resources that
+     * require live L2CAP state. Calling it here (gatt_free runs after l2c_free)
+     * would dereference the already-freed l2c_cb_ptr. */
+
     list_node_t *p_node = NULL;
+    list_node_t *p_next = NULL;
     tGATT_TCB   *p_tcb  = NULL;
-    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
-	p_tcb = list_node(p_node);
+    tGATT_CLCB  *p_clcb = NULL;
+
+    for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+        p_tcb = list_node(p_node);
 #if (SMP_INCLUDED == TRUE)
-        fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
-        p_tcb->pending_enc_clcb = NULL;
+        gatt_free_pending_enc_queue(p_tcb);
 #endif // (SMP_INCLUDED == TRUE)
 #if (GATTS_INCLUDED == TRUE)
+        gatt_free_pending_prepare_write_queue(p_tcb);
         btu_free_timer(&p_tcb->conf_timer_ent);
         memset(&p_tcb->conf_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+        gatt_dequeue_sr_cmd(p_tcb);
 #endif // (GATTS_INCLUDED == TRUE)
 
 #if (GATTC_INCLUDED == TRUE)
         btu_free_timer(&p_tcb->ind_ack_timer_ent);
         memset(&p_tcb->ind_ack_timer_ent, 0, sizeof(TIMER_LIST_ENT));
-#endif // #if (GATTC_INCLUDED == TRUE)
+#endif // (GATTC_INCLUDED == TRUE)
 
-#if (GATTS_INCLUDED == TRUE)
-        fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
-        p_tcb->sr_cmd.multi_rsp_q = NULL;
-#endif /* #if (GATTS_INCLUDED == TRUE) */
         UNUSED(p_tcb);
     }
     list_free(gatt_cb.p_tcb_list);
+
+    for (p_node = list_begin(gatt_cb.p_clcb_list); p_node; p_node = p_next) {
+        p_clcb = list_node(p_node);
+        p_next = list_next(p_node);
+        if (p_clcb->p_attr_buf) {
+            osi_free(p_clcb->p_attr_buf);
+            p_clcb->p_attr_buf = NULL;
+        }
+        btu_free_timer(&p_clcb->rsp_timer_ent);
+        memset(&p_clcb->rsp_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+        list_remove(gatt_cb.p_clcb_list, p_clcb);
+    }
     list_free(gatt_cb.p_clcb_list);
 
 #if (GATTS_INCLUDED == TRUE)
@@ -413,11 +437,9 @@ BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr,
                 // p_tcb, p_tcb->pending_enc_clcb, and p_tcb->pending_ind_q have been freed in gatt_cleanup_upon_disc(),
                 // but here p_tcb is get from gatt_allocate_tcb_by_bdaddr(), is too old, so we get p_tcb again
                 p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
-                if(p_tcb != NULL) {
+                if (p_tcb != NULL) {
 #if (SMP_INCLUDED == TRUE)
-                    if(p_tcb->pending_enc_clcb != NULL) {
-                        fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
-                    }
+                    gatt_free_pending_enc_queue(p_tcb);
 #endif // (SMP_INCLUDED == TRUE)
                     gatt_tcb_free(p_tcb);
                 }
@@ -935,6 +957,7 @@ static void gatt_l2cif_congest_cback (UINT16 lcid, BOOLEAN congested)
 static void gatt_send_conn_cback(tGATT_TCB *p_tcb)
 {
     UINT8               i;
+    UINT8               tcb_idx = p_tcb->tcb_idx;
     tGATT_REG           *p_reg;
 #if (GATT_BG_CONN_DEV == TRUE)
     tGATT_BG_CONN_DEV   *p_bg_dev = NULL;
@@ -947,6 +970,9 @@ static void gatt_send_conn_cback(tGATT_TCB *p_tcb)
 
     /* notifying all applications for the connection up event */
     for (i = 0,  p_reg = gatt_cb.cl_rcb ; i < GATT_MAX_APPS; i++, p_reg++) {
+        if (gatt_get_tcb_by_idx(tcb_idx) != p_tcb) {
+            return;
+        }
         if (p_reg->in_use) {
 #if (GATT_BG_CONN_DEV == TRUE)
             if (p_bg_dev && gatt_is_bg_dev_for_app(p_bg_dev, p_reg->gatt_if)) {
@@ -954,14 +980,19 @@ static void gatt_send_conn_cback(tGATT_TCB *p_tcb)
             }
 #endif // #if (GATT_BG_CONN_DEV == TRUE)
             if (p_reg->app_cb.p_conn_cb) {
-                conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
+                conn_id = GATT_CREATE_CONN_ID(tcb_idx, p_reg->gatt_if);
                 (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id,
                                            TRUE, 0, p_tcb->transport);
+                if (gatt_get_tcb_by_idx(tcb_idx) != p_tcb) {
+                    return;
+                }
             }
         }
     }
 
-
+    if (gatt_get_tcb_by_idx(tcb_idx) != p_tcb) {
+        return;
+    }
     if (gatt_num_apps_hold_link(p_tcb) &&  p_tcb->att_lcid == L2CAP_ATT_CID ) {
         /* disable idle timeout if one or more clients are holding the link disable the idle timer */
         GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT, p_tcb->transport);
@@ -986,7 +1017,7 @@ static void gatt_send_conn_cback(tGATT_TCB *p_tcb)
 void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 {
     UINT8   *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
-    UINT8   op_code, pseudo_op_code;
+    UINT8   op_code;
 #if (GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
     UINT16  msg_len;
 #endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
@@ -998,10 +1029,7 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 #endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
         STREAM_TO_UINT8(op_code, p);
 
-        /* remove the two MSBs associated with sign write and write cmd */
-        pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
-
-        if (pseudo_op_code < GATT_OP_CODE_MAX) {
+        if (gatt_is_valid_att_opcode(op_code)) {
 #if (GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
             GATT_TRACE_DEBUG("%s opcode=%x msg_len=%u", __func__, op_code, msg_len);
 #endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
@@ -1017,7 +1045,7 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 #endif  ///GATTS_INCLUDED == TRUE
                 } else {
 #if (GATTC_INCLUDED == TRUE)
-                    gatt_client_handle_server_rsp (p_tcb, op_code, msg_len, p);
+                    gatt_client_handle_server_rsp (p_tcb, op_code, msg_len, p, 0);
 #endif  ///GATTC_INCLUDED == TRUE
                 }
             }
@@ -1110,10 +1138,19 @@ tGATT_STATUS gatt_send_srv_chg_ind (BD_ADDR peer_bda)
 *******************************************************************************/
 void gatt_chk_srv_chg(tGATTS_SRV_CHG *p_srv_chg_clt)
 {
+    tGATT_STATUS status;
+
     GATT_TRACE_DEBUG("gatt_chk_srv_chg srv_changed=%d", p_srv_chg_clt->srv_changed );
 
-    if (p_srv_chg_clt->srv_changed) {
-        gatt_send_srv_chg_ind(p_srv_chg_clt->bda);
+    if (!p_srv_chg_clt->srv_changed) {
+        return;
+    }
+
+    status = gatt_send_srv_chg_ind(p_srv_chg_clt->bda);
+    if (status == GATT_BUSY || status == GATT_CONGESTED) {
+        GATT_TRACE_DEBUG("gatt_chk_srv_chg: defer srv chg ind (status=0x%02x)", status);
+    } else if (status != GATT_SUCCESS && status != GATT_PENDING) {
+        GATT_TRACE_WARNING("gatt_chk_srv_chg: send srv chg ind failed (status=0x%02x)", status);
     }
 }
 #endif  ///GATTS_INCLUDED == TRUE
@@ -1174,7 +1211,6 @@ void gatt_init_srv_chg (void)
 #if (GATTS_INCLUDED == TRUE)
 void gatt_proc_srv_chg (void)
 {
-    BOOLEAN             srv_chg_ind_pending = FALSE;
     tGATT_TCB           *p_tcb;
     list_node_t *p_node = NULL;
 
@@ -1186,11 +1222,11 @@ void gatt_proc_srv_chg (void)
         for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
             p_tcb = list_node(p_node);
             if (p_tcb->in_use && p_tcb->ch_state == GATT_CH_OPEN) {
-                srv_chg_ind_pending  = gatt_is_srv_chg_ind_pending(p_tcb);
-                if (!srv_chg_ind_pending) {
-                    gatt_send_srv_chg_ind(p_tcb->peer_bda);
+                if (gatt_is_srv_chg_ind_pending(p_tcb) ||
+                        GATT_HANDLE_IS_VALID(p_tcb->indicate_handle)) {
+                    GATT_TRACE_DEBUG ("defer srv chg - indication slot busy");
                 } else {
-                    GATT_TRACE_DEBUG ("discard srv chg - already has one in the queue");
+                    gatt_send_srv_chg_ind(p_tcb->peer_bda);
                 }
             }
         }

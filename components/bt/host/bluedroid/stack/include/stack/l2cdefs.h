@@ -44,6 +44,10 @@
 #define L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ 0x14
 #define L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES 0x15
 #define L2CAP_CMD_BLE_FLOW_CTRL_CREDIT      0x16
+#define L2CAP_CMD_BLE_ENHANCED_CONN_REQ     0x17
+#define L2CAP_CMD_BLE_ENHANCED_CONN_RES     0x18
+#define L2CAP_CMD_BLE_CREDIT_RECONFIG_REQ   0x19
+#define L2CAP_CMD_BLE_CREDIT_RECONFIG_RSP   0x1A
 
 
 
@@ -77,6 +81,10 @@
 #define L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ_LEN 10 /* LE_PSM, SCID, MTU, MPS, Init Credit */
 #define L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES_LEN 10 /* DCID, MTU, MPS, Init credit, Result */
 #define L2CAP_CMD_BLE_FLOW_CTRL_CREDIT_LEN      4  /* CID, Credit */
+#define L2CAP_CMD_BLE_ENHANCED_CONN_REQ_BASE_LEN 8 /* LE_PSM, MTU, MPS, Init Credit */
+#define L2CAP_CMD_BLE_ENHANCED_CONN_RES_BASE_LEN 8 /* MTU, MPS, Init credit, Result */
+#define L2CAP_CMD_BLE_CREDIT_RECONFIG_REQ_BASE_LEN 4 /* MTU, MPS */
+#define L2CAP_CMD_BLE_CREDIT_RECONFIG_RSP_LEN 2 /* Result */
 
 
 
@@ -288,7 +296,7 @@
 /* SAR bits in the control word
 */
 #define L2CAP_FCR_UNSEG_SDU    0x0000   /* Control word to begin with for unsegmented PDU*/
-#define L2CAP_FCR_START_SDU    0x4000   /* ...for Starting PDU of a semented SDU */
+#define L2CAP_FCR_START_SDU    0x4000   /* ...for Starting PDU of a segmented SDU */
 #define L2CAP_FCR_END_SDU      0x8000   /* ...for ending PDU of a segmented SDU */
 #define L2CAP_FCR_CONT_SDU     0xc000   /* ...for continuation PDU of a segmented SDU */
 
@@ -332,5 +340,11 @@
 #define L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED 0x0A
 #define L2CAP_LE_RESULT_UNACCEPTABLE_PARAMETERS 0x0B
 #define L2CAP_LE_RESULT_INVALID_PARAMETERS 0x0C
+
+#define L2CAP_LE_RECONFIG_OK                        0
+#define L2CAP_LE_RECONFIG_REDUCTION_MTU_NOT_ALLOWED 1
+#define L2CAP_LE_RECONFIG_REDUCTION_MPS_NOT_ALLOWED 2
+#define L2CAP_LE_RECONFIG_INVALID_DCID              3
+#define L2CAP_LE_RECONFIG_UNACCEPTED_PARAM          4
 
 #endif

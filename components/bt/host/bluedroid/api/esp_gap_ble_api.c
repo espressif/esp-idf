@@ -14,6 +14,10 @@
 #include "btc_gap_ble.h"
 #include "btc/btc_ble_storage.h"
 #include "esp_random.h"
+#include "common/bt_target.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "stack/gatt_api.h"
+#endif
 
 /* Hard upper bound to prevent excessive allocations in BTC/BTA layers. */
 #define ESP_GAP_BLE_EXT_ADV_DATA_MAX_LEN 1650U
@@ -512,6 +516,59 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
     }
     return ESP_OK;
 }
+
+#if (CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND)
+esp_err_t esp_ble_gap_get_real_peer_addr(esp_bd_addr_t pseudo, esp_bd_addr_t real_peer)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        LOG_ERROR("%s, bluedroid status error", __func__);
+        return ESP_FAIL;
+    }
+    if (pseudo == NULL || real_peer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!BTM_BleGetRealPeerByPseudo(pseudo, real_peer)) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_gap_get_conn_identity(esp_bd_addr_t pseudo, esp_ble_conn_identity_t *identity)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        LOG_ERROR("%s, bluedroid status error", __func__);
+        return ESP_FAIL;
+    }
+    if (pseudo == NULL || identity == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    UINT8 peer_type = 0, local_type = 0;
+    if (!BTM_BleGetConnIdentityByPseudo(pseudo, identity->peer_addr, identity->local_addr,
+                                        &peer_type, &local_type)) {
+        return ESP_FAIL;
+    }
+    identity->peer_addr_type = peer_type;
+    identity->local_addr_type = local_type;
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_gap_remove_bond_for_identity(esp_bd_addr_t local_addr,
+                                               esp_ble_addr_type_t local_addr_type,
+                                               esp_bd_addr_t peer_addr,
+                                               esp_ble_addr_type_t peer_addr_type)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        LOG_ERROR("%s, bluedroid status error", __func__);
+        return ESP_FAIL;
+    }
+    if (local_addr == NULL || peer_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_bd_addr_t pseudo;
+    BTM_BleComputePseudoForIdentity(local_addr, local_addr_type, peer_addr, peer_addr_type, pseudo);
+    return esp_ble_remove_bond_device(pseudo);
+}
+#endif // CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND
 #if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length)
 {
@@ -3226,3 +3283,36 @@ esp_err_t esp_ble_cs_procedure_enable(esp_ble_cs_procedure_enable_params *proced
 }
 
 #endif
+
+#if (BLE_EATT_INCLUDED == TRUE)
+/* Intentionally synchronous: updates the pre-connection EATT bearer count only.
+ * Must be called before the link is encrypted / bearers are established (see API
+ * doc). No btc_transfer_context dispatch — this is a setup-time config write, not
+ * an async stack procedure, and callers need immediate ESP_ERR_INVALID_ARG feedback. */
+esp_err_t esp_ble_eatt_set_chan_num(uint8_t num_chan)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (num_chan == 0 || num_chan > GATT_EATT_MAX_CHAN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    GATT_EattSetChanNum(num_chan);
+    return ESP_OK;
+}
+
+/* Intentionally synchronous: sets the preferred EATT bearer (ec->default_lcid) for
+ * subsequent GATT client TX routing on this connection. No btc_transfer_context
+ * dispatch — by design this is an immediate preference update with synchronous
+ * validation (invalid conn_id/cid returns ESP_ERR_INVALID_ARG at call time).
+ * Client-only: defined solely when the EATT client role is built in, so a build
+ * without it fails at link time rather than exposing a stub. */
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+esp_err_t esp_ble_eatt_set_default_bearer(uint16_t conn_id, uint16_t cid)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (!GATT_EattSetDefaultBearer(conn_id, cid)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return ESP_OK;
+}
+#endif /* BLE_EATT_CLIENT_INCLUDED */
+#endif /* BLE_EATT_INCLUDED */

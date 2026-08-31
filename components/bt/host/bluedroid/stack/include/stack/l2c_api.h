@@ -277,6 +277,15 @@ typedef void (tL2CA_ECHO_DATA_CB) (BD_ADDR, UINT16, UINT8 *);
 */
 typedef void (tL2CA_CONGESTION_STATUS_CB) (UINT16, BOOLEAN);
 
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+/* LE CoC reconfiguration indication. Parameters are:
+**              Local CID
+**              Result (0 = L2CAP_LE_RECONFIG_OK)
+**              TRUE if peer initiated the reconfiguration
+*/
+typedef void (tL2CA_LE_RECONFIG_IND_CB) (UINT16, UINT16, BOOLEAN);
+#endif
+
 /* Callback prototype for number of packets completed events.
 ** This callback notifies the application when Number of Completed Packets
 ** event has been received.
@@ -312,6 +321,9 @@ typedef struct {
     tL2CA_DATA_IND_CB           *pL2CA_DataInd_Cb;
     tL2CA_CONGESTION_STATUS_CB  *pL2CA_CongestionStatus_Cb;
     tL2CA_TX_COMPLETE_CB        *pL2CA_TxComplete_Cb;
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+    tL2CA_LE_RECONFIG_IND_CB    *pL2CA_LeReconfigInd_Cb;
+#endif
 
 } tL2CAP_APPL_INFO;
 
@@ -558,6 +570,12 @@ extern UINT16 L2CA_ConnectLECocReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG
 extern BOOLEAN L2CA_ConnectLECocRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 result,
                                          UINT16 status, tL2CAP_LE_CFG_INFO *p_cfg);
 
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+extern UINT8 L2CA_ConnectLEEcocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p_cfg,
+                                   UINT8 num_chan, UINT16 *p_lcids);
+extern BOOLEAN L2CA_LEEcocReconfig(UINT16 lcids[], UINT8 num, UINT16 new_mtu, UINT16 new_mps);
+#endif
+
 /*******************************************************************************
 **
 **  Function         L2CA_GetPeerLECocConfig
@@ -568,6 +586,12 @@ extern BOOLEAN L2CA_ConnectLECocRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, U
 **
 *******************************************************************************/
 extern BOOLEAN L2CA_GetPeerLECocConfig (UINT16 lcid, tL2CAP_LE_CFG_INFO* peer_cfg);
+
+extern UINT8   L2CA_LECocDataWrite (UINT16 lcid, BT_HDR *p_data);
+extern BOOLEAN L2CA_LECocIsCongested (UINT16 lcid);
+extern BOOLEAN L2CA_LECocGiveCredits (UINT16 lcid, UINT16 credits);
+extern BOOLEAN L2CA_LECocSetAutoCredit (UINT16 lcid, BOOLEAN enable);
+extern BOOLEAN L2CA_LECocDisconnect (UINT16 lcid);
 
 #endif // (BLE_L2CAP_COC_INCLUDED == TRUE)
 

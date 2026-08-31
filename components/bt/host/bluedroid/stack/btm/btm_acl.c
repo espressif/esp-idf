@@ -43,6 +43,10 @@
 #include "stack/btu.h"
 #include "stack/btm_api.h"
 #include "btm_int.h"
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+#include "btm_ble_int.h"
+#include "btm_ble_pseudo.h"
+#endif
 #include "stack/acl_hci_link_interface.h"
 #include "l2c_int.h"
 #include "stack/l2cap_hci_link_interface.h"
@@ -578,12 +582,6 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
                          btm_cb.ble_ctr_cb.inq_var.connectable_mode,
                          p->link_role);
 
-        if (p->transport == BT_TRANSPORT_LE) {
-#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE)
-            btm_ble_clear_ext_adv_ter_con_handle(p->hci_handle);
-#endif
-        }
-
         p_dev_rec = btm_find_dev(bda);
         if ( p_dev_rec) {
             BTM_TRACE_DEBUG("before update p_dev_rec->sec_flags=0x%x\n", p_dev_rec->sec_flags);
@@ -613,6 +611,11 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
             p->p_pm_mode_db = NULL;
         }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE)
+        if (p->transport == BT_TRANSPORT_LE) {
+            btm_ble_clear_ext_adv_ter_con_handle(p->hci_handle);
+        }
+#endif
         /* Remove and free the ACL connection data */
         list_remove(btm_cb.p_acl_db_list, p);
         p = NULL;
@@ -2969,6 +2972,17 @@ BOOLEAN btm_acl_disconnected(UINT16 handle, UINT8 reason)
     }
 
 #endif  /* SMP_INCLUDED == TRUE */
+
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    /* Drop the per-connection pseudo identity mapping for this handle. */
+    BLE_PSEUDO_DBG("disconnect: handle=0x%x reason=0x%x -> cleanup", handle, reason);
+    btm_ble_conn_identity_unregister(handle);
+#endif
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE)
+    /* Unbind ext-adv sets so a reused handle cannot leak into another inst. */
+    btm_ble_clear_ext_adv_ter_con_handle(handle);
+#endif
 
     return status;
 }
