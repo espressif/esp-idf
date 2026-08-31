@@ -109,6 +109,8 @@ void ReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
         frame[0] = aFrame->mLength;
         memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
         frame_info.rssi = aFrame->mInfo.mRxInfo.mRssi;
+        frame_info.channel = aFrame->mChannel;
+        frame_info.lqi = aFrame->mInfo.mRxInfo.mLqi;
         frame_info.timestamp = aFrame->mInfo.mRxInfo.mTimestamp;
         frame_info.pending = aFrame->mInfo.mRxInfo.mAckedWithFramePending;
         s_esp_radio_spinel_callbacks[idx].receive_done(frame, &frame_info);
@@ -251,7 +253,7 @@ esp_err_t esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_s
     return (s_radio[idx].SetShortAddress(short_address) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_extended_address(const uint8_t *ext_address, esp_radio_spinel_idx_t idx)
 {
     otExtAddress aExtAddress;
     memcpy(aExtAddress.m8, (void *)ext_address, OT_EXT_ADDRESS_SIZE);
@@ -284,6 +286,11 @@ esp_err_t esp_radio_spinel_clear_short_entries(esp_radio_spinel_idx_t idx)
     return (s_radio[idx].ClearSrcMatchShortEntries() == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_radio_spinel_clear_short_entry(uint16_t short_address, esp_radio_spinel_idx_t idx)
+{
+    return (s_radio[idx].ClearSrcMatchShortEntry(short_address) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
+}
+
 esp_err_t esp_radio_spinel_add_short_entry(uint16_t short_address, esp_radio_spinel_idx_t idx)
 {
     return (s_radio[idx].AddSrcMatchShortEntry(short_address) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
@@ -294,7 +301,14 @@ esp_err_t esp_radio_spinel_clear_extended_entries(esp_radio_spinel_idx_t idx)
     return (s_radio[idx].ClearSrcMatchExtEntries() == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_radio_spinel_add_extended_entry(uint8_t *ext_address, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_clear_extended_entry(const uint8_t *ext_address, esp_radio_spinel_idx_t idx)
+{
+    otExtAddress aExtAddress;
+    memcpy(aExtAddress.m8, (void *)ext_address, OT_EXT_ADDRESS_SIZE);
+    return (s_radio[idx].ClearSrcMatchExtEntry(aExtAddress) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_radio_spinel_add_extended_entry(const uint8_t *ext_address, esp_radio_spinel_idx_t idx)
 {
     otExtAddress aExtAddress;
     memcpy(aExtAddress.m8, (void *)ext_address, OT_EXT_ADDRESS_SIZE);
