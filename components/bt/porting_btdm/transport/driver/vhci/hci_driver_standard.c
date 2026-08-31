@@ -246,6 +246,10 @@ hci_driver_vhci_host_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_
         data_source = HCI_DRIVER_LE_ISO;
         break;
     default:
+        ESP_LOGE(TAG, "hci: unsupported h2c data type %d, len %u", (int)data_type, (unsigned)length);
+        ESP_LOG_BUFFER_HEX_LEVEL(TAG, data, (uint16_t)length, ESP_LOG_ERROR);
+        pkt_len = 0;
+        rc = -1;
         assert(0);
         break;
     }

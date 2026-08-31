@@ -87,14 +87,19 @@ bool hci_host_check_send_available(void)
 
 void hci_host_send_packet(uint8_t *data, uint16_t len)
 {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-    if (data != NULL && len > 1) {
-        uint8_t data_type = bt_hci_log_h4_type_to_data_type(data[0]);
-        bt_hci_log_record_hci_data(data_type, &data[1], (uint16_t)(len - 1));
-#if BT_HCI_INSIGHTS_INCLUDED
-        bt_hci_log_record_insights(data_type, &data[1], (uint16_t)(len - 1));
-#endif
+    if ((data == NULL) || (len < 2)) {
+        ESP_LOGE(LOG_TAG, "%s invalid packet, data %p, len %u", __func__, (void *)data, (unsigned)len);
+        return;
     }
+
+    ESP_LOGD(LOG_TAG, "H4 TX type 0x%02x, len %u", data[0], (unsigned)len);
+
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    uint8_t data_type = bt_hci_log_h4_type_to_data_type(data[0]);
+    bt_hci_log_record_hci_data(data_type, &data[1], (uint16_t)(len - 1));
+#if BT_HCI_INSIGHTS_INCLUDED
+    bt_hci_log_record_insights(data_type, &data[1], (uint16_t)(len - 1));
+#endif
 #endif
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
     ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
