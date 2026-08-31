@@ -240,12 +240,12 @@ menu "FAT Filesystem support"
     config FATFS_PRINT_LLI
         depends on !FATFS_USE_STRFUNC_NONE
         bool "Make fatfs f_printf() support long long argument"
-        default 0
+        default n
 
     config FATFS_PRINT_FLOAT
         depends on !FATFS_USE_STRFUNC_NONE
         bool "Make fatfs f_printf() support floating point argument"
-        default 0
+        default n
 
     choice FATFS_STRF_ENCODE_CHOICE
         prompt "FatFS string functions: convert character encoding"
