@@ -6,6 +6,13 @@ from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_idf.utils import soc_filtered_targets
 
 
+def get_flash_encryption_marks(target: str) -> tuple[pytest.MarkDecorator, ...]:
+    if target == 'esp32s3':
+        return (pytest.mark.flash_encryption_f4r8,)
+
+    return (pytest.mark.flash_encryption,)
+
+
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -65,31 +72,13 @@ def test_rmt_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.flash_encryption_f4r8
 @pytest.mark.parametrize(
-    'config',
+    'config, target',
     [
-        'flash_enc',
+        pytest.param('flash_enc', target, marks=get_flash_encryption_marks(target))
+        for target in soc_filtered_targets('SOC_RMT_SUPPORT_DMA == 1 and SOC_FLASH_ENC_SUPPORTED == 1')
     ],
     indirect=True,
-)
-@idf_parametrize('target', ['esp32s3'], indirect=['target'])
-def test_rmt_with_flash_encryption_esp32s3_f4r8(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
-
-
-@pytest.mark.flash_encryption
-@pytest.mark.parametrize(
-    'config',
-    [
-        'flash_enc',
-    ],
-    indirect=True,
-)
-@idf_parametrize(
-    'target',
-    soc_filtered_targets('SOC_RMT_SUPPORT_DMA == 1 and SOC_FLASH_ENC_SUPPORTED == 1 and IDF_TARGET not in ["esp32s3"]'),
-    indirect=['target'],
 )
 def test_rmt_with_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()
