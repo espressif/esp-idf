@@ -419,7 +419,8 @@ static bool ppa_malloc_transaction(QueueHandle_t trans_elm_ptr_queue, uint32_t t
     assert(ppa_trans_desc_size != 0);
     size_t trans_elm_storage_size = sizeof(ppa_trans_t) + SIZEOF_DMA2D_TRANS_T + sizeof(dma2d_trans_config_t) + sizeof(ppa_dma2d_trans_on_picked_config_t) + ppa_trans_desc_size;
     for (int i = 0; i < trans_elm_num; i++) {
-        void *trans_elm_storage = heap_caps_calloc(1, trans_elm_storage_size, PPA_MEM_ALLOC_CAPS);
+        // always allocate memory from internal memory because the transaction storage embeds a dma2d_trans_t which contains atomic variable
+        void *trans_elm_storage = heap_caps_calloc(1, trans_elm_storage_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         SemaphoreHandle_t ppa_trans_sem = xSemaphoreCreateBinaryWithCaps(PPA_MEM_ALLOC_CAPS);
 
         if (!trans_elm_storage || !ppa_trans_sem) {

@@ -95,7 +95,8 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
         ESP_RETURN_ON_FALSE(proc_config->input_data_color_type == proc_config->output_data_color_type, ESP_ERR_INVALID_ARG, TAG, "isp is bypassed, input and output data color type should be same");
     }
 
-    isp_processor_t *proc = heap_caps_calloc(1, sizeof(isp_processor_t), ISP_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variables
+    isp_processor_t *proc = heap_caps_calloc(1, sizeof(isp_processor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_NO_MEM, TAG, "no mem");
     INIT_CRIT_SECTION_LOCK_RUNTIME(&proc->spinlock);
 
