@@ -57,16 +57,20 @@ The checksum is `ble_log_fast_checksum()` over the six-byte header and exactly
 `payload length` bytes. It excludes the checksum field and peripheral-only DMA
 padding.
 
-Core frames begin their payload with:
+Core frames (all sources except REDIR) begin their payload with:
 
 ```text
 [4-byte low32 esp_timer_get_time() microseconds][source payload]
 ```
 
-The timestamp is captured at API entry before any pool or UART0 redirection
-mutex wait. It wraps approximately every 71.6 minutes and must be unwrapped
-modulo 2^32 by the receiver. UART0 redirection retains its extension-specific
-stream aggregation while using the same ESP Timer timestamp semantics.
+The timestamp is captured at API entry before any pool mutex wait. It wraps
+approximately every 71.6 minutes and must be unwrapped modulo 2^32 by the
+receiver.
+
+UART0 redirection payload is the raw console stream with no timestamp
+prefix: the redirection stream keeps its own frame sequence, and its
+receiver-side arrival time (aggregation delay bounded by the periodic
+redirection flush) is the alignment reference against the core timeline.
 
 ### Sources
 
@@ -86,11 +90,13 @@ value directly, so existing decoders keep working:
 8  REDIR extension
 ```
 
-All non-INTERNAL sources share one 24-bit Global SN: it is consumed at API
-entry, so it totally orders log attempts — including equal-timestamp records
-from different sources — and every lost or rejected attempt leaves a gap
-in the sequence. Internal Snapshot frames carry their own separate
-sequence; a gap there counts skipped snapshots. Neither sequence is reset.
+Log sources except INTERNAL and REDIR share one 24-bit Global SN: it is
+consumed at API entry, so it totally orders log attempts — including
+equal-timestamp records from different sources — and every lost or rejected
+attempt leaves a gap in the sequence. Internal Snapshot frames carry their
+own separate sequence (a gap counts skipped snapshots), and the REDIR
+console stream keeps its own sequence as well (a gap counts a dropped
+console batch). None of these sequences is reset.
 Actual ISR and critical-section records carry `NON_YIELD` in source bit 7.
 
 Controller-side HCI records are not emitted by BLE Log, and the controller no

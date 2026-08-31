@@ -12,6 +12,7 @@
 #include "ble_log_prph_uart_dma.h"
 #include "ble_log.h"
 #include "ble_log_lbm_v2.h"
+#include "ble_log_redir.h"
 #include "ble_log_rt.h"
 
 #if BLE_LOG_PRPH_UART_DMA_REDIR
@@ -326,9 +327,8 @@ bool ble_log_redir_uart_tx_chars(const char *src, size_t len)
         __atomic_sub_fetch(&redir_writer_count, 1, __ATOMIC_SEQ_CST);
         return true;
     }
-    uint32_t timestamp = (uint32_t)esp_timer_get_time();
     xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
-    ble_log_lbm_stream_write(redir_lbm, BLE_LOG_SRC_REDIR, timestamp,
+    ble_log_lbm_stream_write(redir_lbm, BLE_LOG_SRC_REDIR,
                              (const uint8_t *)src, len);
     xSemaphoreGive(redir_lbm->mutex);
     __atomic_sub_fetch(&redir_writer_count, 1, __ATOMIC_SEQ_CST);
