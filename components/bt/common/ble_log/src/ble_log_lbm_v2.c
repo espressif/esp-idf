@@ -83,10 +83,12 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t lbm_enabled = 0;
 BLE_LOG_STATIC volatile bool flush_in_progress = false;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_pool_t g_pool;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_stat_mgr_t stat_mgr_ctx[BLE_LOG_SRC_MAX];
-/* Global SN (all non-INTERNAL sources) and the separate Internal Snapshot
- * sequence; see ble_log_lbm_v2.h. */
+/* Global SN (the log sources except INTERNAL and REDIR) and the separate
+ * Internal Snapshot sequence; see ble_log_lbm_v2.h. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t g_frame_sn;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t g_snapshot_sn;
+#define BLE_LOG_GET_GLOBAL_SN()                 BLE_LOG_GET_FRAME_SN(g_frame_sn)
+#define BLE_LOG_GET_SNAPSHOT_SN()               BLE_LOG_GET_FRAME_SN(g_snapshot_sn)
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_prph_trans_t *internal_trans;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_pool_claim_t pool_claim_ctx[BLE_LOG_POOL_TRANS_CNT];
 BLE_LOG_STATIC ble_log_internal_snapshot_t internal_snapshot;
@@ -123,9 +125,6 @@ BLE_LOG_STATIC void ble_log_stat_mgr_mark_lost(ble_log_src_t src_code);
 BLE_LOG_STATIC void ble_log_snapshot_stats(ble_log_source_stat_t *snapshots);
 BLE_LOG_STATIC bool ble_log_pool_flush_all_trans(void);
 BLE_LOG_STATIC void ble_log_pool_wake_all(void);
-#if BLE_LOG_UART_REDIR_ENABLED
-BLE_LOG_STATIC void ble_log_redir_seal(ble_log_prph_trans_t *trans, ble_log_src_t src_code);
-#endif /* BLE_LOG_UART_REDIR_ENABLED */
 
 /* ------------------------- */
 /*     BITMAP HELPERS        */
@@ -571,121 +570,6 @@ void ble_log_commit(uint32_t handle, size_t actual_len)
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
 
-#if BLE_LOG_UART_REDIR_ENABLED
-/* ------------------------------------------------- */
-/*     STREAM WRITE INTERFACE (UART redirection)     */
-/*                                                   */
-/* Stream mode appends raw data into a transport     */
-/* buffer with deferred frame encapsulation.         */
-/* Redirection transports are single-writer under    */
-/* redir->mutex; their only concurrent mutation is   */
-/* the UART tx-done recycle (state SENDING -> FREE),  */
-/* so state access uses atomics.                     */
-/* ------------------------------------------------- */
-BLE_LOG_STATIC
-ble_log_prph_trans_t *ble_log_redir_get_trans(ble_log_redir_t *redir,
-                                               ble_log_src_t src_code)
-{
-    for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
-        ble_log_prph_trans_t *trans = redir->trans[redir->trans_idx];
-        if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(trans->state) != BLE_LOG_TRANS_STATE_SENDING) {
-            if (BLE_LOG_TRANS_FREE_SPACE(trans) >= BLE_LOG_FRAME_OVERHEAD) {
-                return trans;
-            }
-            if (trans->pos > BLE_LOG_FRAME_HEAD_LEN) {
-                ble_log_redir_seal(trans, src_code);
-            }
-        }
-        redir->trans_idx = (redir->trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
-    }
-    return NULL;
-}
-
-BLE_LOG_STATIC
-void ble_log_redir_seal(ble_log_prph_trans_t *trans, ble_log_src_t src_code)
-{
-    if (trans->pos <= BLE_LOG_FRAME_HEAD_LEN) {
-        return;
-    }
-
-    uint16_t payload_len = trans->pos - BLE_LOG_FRAME_HEAD_LEN;
-    /* REDIR frames take the Global SN at seal time; the stream has no
-     * core-stat slot. */
-    uint32_t frame_sn = BLE_LOG_GET_GLOBAL_SN();
-    ble_log_frame_head_t frame_head = {
-        .length = payload_len,
-        .frame_meta = BLE_LOG_MAKE_FRAME_META(src_code, frame_sn),
-    };
-    BLE_LOG_MEMCPY(trans->buf, &frame_head, BLE_LOG_FRAME_HEAD_LEN);
-
-    uint32_t checksum = ble_log_fast_checksum(trans->buf, trans->pos);
-    BLE_LOG_MEMCPY(trans->buf + trans->pos, &checksum, BLE_LOG_FRAME_TAIL_LEN);
-    trans->pos += BLE_LOG_FRAME_TAIL_LEN;
-
-    ble_log_redir_t *redir = ble_log_prph_get_redir_lbm();
-    BLE_LOG_ASSERT(redir);
-    uint32_t infl = __atomic_add_fetch(&redir->inflight, 1, __ATOMIC_RELAXED);
-    uint32_t peak = BLE_LOG_ATOMIC_LOAD_RELAXED(redir->inflight_peak);
-    while (infl > peak &&
-           !__atomic_compare_exchange_n(&redir->inflight_peak, &peak, infl, true,
-                                        __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
-    }
-
-    BLE_LOG_ATOMIC_STORE_RELAXED(trans->state, BLE_LOG_TRANS_STATE_SENDING);
-    ble_log_rt_submit_trans(trans);
-}
-
-void ble_log_lbm_stream_write(ble_log_redir_t *redir, ble_log_src_t src_code,
-                              uint32_t timestamp, const uint8_t *data, size_t len)
-{
-    while (len > 0) {
-        ble_log_prph_trans_t *trans = ble_log_redir_get_trans(redir, src_code);
-        if (!trans) {
-            /* Burn one Global SN so the dropped console batch leaves a
-             * sequence gap. */
-            (void)BLE_LOG_GET_GLOBAL_SN();
-            return;
-        }
-
-        if (trans->pos == 0) {
-            trans->pos = BLE_LOG_FRAME_HEAD_LEN;
-            BLE_LOG_MEMCPY(trans->buf + trans->pos, &timestamp,
-                           sizeof(timestamp));
-            trans->pos += sizeof(timestamp);
-        }
-
-        uint16_t available = BLE_LOG_TRANS_FREE_SPACE(trans);
-        if (available <= BLE_LOG_FRAME_TAIL_LEN) {
-            ble_log_redir_seal(trans, src_code);
-            continue;
-        }
-        available -= BLE_LOG_FRAME_TAIL_LEN;
-
-        size_t to_write = (len < available) ? len : available;
-        BLE_LOG_MEMCPY(trans->buf + trans->pos, data, to_write);
-        trans->pos += to_write;
-        data += to_write;
-        len -= to_write;
-
-        if (BLE_LOG_TRANS_FREE_SPACE(trans) <= BLE_LOG_FRAME_OVERHEAD) {
-            ble_log_redir_seal(trans, src_code);
-        }
-    }
-}
-
-void ble_log_lbm_stream_flush(ble_log_redir_t *redir, ble_log_src_t src_code)
-{
-    int trans_idx = redir->trans_idx;
-    for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
-        ble_log_prph_trans_t *trans = redir->trans[trans_idx];
-        if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(trans->state) != BLE_LOG_TRANS_STATE_SENDING &&
-            trans->pos > BLE_LOG_FRAME_HEAD_LEN) {
-            ble_log_redir_seal(trans, src_code);
-        }
-        trans_idx = (trans_idx + 1) & (BLE_LOG_TRANS_BUF_CNT - 1);
-    }
-}
-#endif /* BLE_LOG_UART_REDIR_ENABLED */
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_stat_mgr_mark_lost(ble_log_src_t src_code)
