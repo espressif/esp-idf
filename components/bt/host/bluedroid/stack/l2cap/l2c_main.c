@@ -693,7 +693,8 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, lcid)) != NULL) {
                 p_ccb->remote_id = id;
                 if (cfg_rej) {
-                    l2cu_send_peer_config_rej (p_ccb, p_cfg_start, (UINT16) (cmd_len - L2CAP_CONFIG_REQ_LEN), cfg_rej_len);
+                    l2cu_send_peer_config_rej (p_ccb, p_cfg_start, (UINT16) (cmd_len - L2CAP_CONFIG_REQ_LEN),
+                                               cfg_rej_len, cfg_info.flags);
                 } else {
                     l2c_csm_execute (p_ccb, L2CEVT_L2CAP_CONFIG_REQ, &cfg_info);
                 }
