@@ -812,6 +812,8 @@ void l2cu_send_peer_config_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
         L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
 
     UINT16_TO_STREAM (p, p_ccb->remote_cid);
+    /* Extended Flow Spec is not in L2CAP_EXTFEA_SUPPORTED_MASK, so the
+     * Continuation flag is sent as requested. */
     UINT16_TO_STREAM (p, p_cfg->flags);                    /* Flags (continuation) */
 
     /* Now, put the options */
@@ -909,7 +911,8 @@ void l2cu_send_peer_config_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
     p = (UINT8 *)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
 
     UINT16_TO_STREAM (p, p_ccb->remote_cid);
-    UINT16_TO_STREAM (p, p_cfg->flags);           /* Flags (continuation) Must match request */
+    /* Extended Flow Spec is not supported. Flags (continuation) match the request. */
+    UINT16_TO_STREAM (p, p_cfg->flags);
     UINT16_TO_STREAM (p, p_cfg->result);
 
     /* Now, put the options */
@@ -969,7 +972,7 @@ void l2cu_send_peer_config_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 ** Returns          void
 **
 *******************************************************************************/
-void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len, UINT16 rej_len)
+void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len, UINT16 rej_len, UINT16 flags)
 {
     BT_HDR  *p_buf;
     UINT16  len, cfg_len, buf_space, len1, opt_len;
@@ -1021,7 +1024,10 @@ void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len,
     UINT16_TO_STREAM (p, L2CAP_CONFIG_RSP_LEN + rej_len);
 
     UINT16_TO_STREAM (p, p_ccb->remote_cid);
-    UINT16_TO_STREAM (p, 0);                    /* Flags = 0 (no continuation) */
+    /* Extended Flow Spec is not supported. Echo the request Continuation flag.
+     * Core Spec Vol 3 Part A 4.5. */
+    flags &= L2CAP_CFG_FLAGS_MASK_CONT;
+    UINT16_TO_STREAM (p, flags);
     UINT16_TO_STREAM (p, L2CAP_CFG_UNKNOWN_OPTIONS);
 
     buf_space = rej_len;
