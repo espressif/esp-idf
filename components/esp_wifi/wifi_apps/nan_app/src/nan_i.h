@@ -441,6 +441,10 @@ struct own_svc_info *nan_find_own_svc(uint8_t svc_id);
 struct own_svc_info *nan_find_own_svc_by_name(const char *svc_name);
 struct ndl_info *nan_find_ndl(uint8_t ndp_id, uint8_t peer_nmi[]);
 struct ndl_info *nan_find_ndl_by_pub_id_and_peer(uint8_t pub_id, const uint8_t *peer_nmi);
+/* A slot is in use once peer_nmi is stamped, even if ndp_id is still 0
+ * (initiator pre-claim window). Shared with nan_security.c so the wifi-task
+ * key-desc parser does not treat a pre-claimed ndp_id==0 slot as free. */
+bool nan_ndl_slot_in_use(const struct ndl_info *ndl);
 bool nan_compute_service_id(const char *service_name, uint8_t service_id[6]);
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY

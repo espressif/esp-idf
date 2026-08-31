@@ -561,6 +561,16 @@ static void nan_reset_ndl(uint8_t ndp_id, bool reset_all)
     for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
         ndl = &s_nan_ctx.ndl[i];
         if (ndl->ndp_id == ndp_id) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+            /* Drop the §7.4 SA cache for this peer NDI when a secured NDP
+             * ends, otherwise the next secured NDP is strength-ranked against
+             * a stale (possibly stronger) entry and its keys get skipped,
+             * leaving the new NDP up with no working datapath. The WiFi
+             * library already deletes the firmware key on peer removal. */
+            if (ndl->ptk_set) {
+                nan_sec_ndp_clear_sa(ndl->peer_ndi);
+            }
+#endif
             memset(ndl, 0, sizeof(struct ndl_info));
             break;
         }
@@ -698,7 +708,7 @@ static void nan_abort_own_svc(const char *svc_name)
  * and the WiFi library returning the real ndp_id). Treating ndp_id==0 alone as
  * "free" lets a concurrent claim for a different peer overwrite a
  * pre-claimed slot's security context. */
-static inline bool nan_ndl_slot_in_use(const struct ndl_info *ndl)
+bool nan_ndl_slot_in_use(const struct ndl_info *ndl)
 {
     return (ndl->ndp_id != 0) || !MACADDR_EQUAL(ndl->peer_nmi, null_mac);
 }
