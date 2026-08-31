@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdarg.h>
+#include <string.h>
 #include <sys/param.h>
 
 #include "esp_err.h"
@@ -164,70 +165,90 @@ void _ss_wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t pres
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    wdt_hal_init(hal, wdt_inst, prescaler, enable_intr);
+    wdt_hal_context_t hal_local;
+    wdt_hal_init(&hal_local, wdt_inst, prescaler, enable_intr);
+
+    *hal = hal_local;
 }
 
 void _ss_wdt_hal_deinit(wdt_hal_context_t *hal)
 {
-    bool valid_addr = (esp_tee_buf_in_ree(hal, sizeof(wdt_hal_context_t)) &&
-                       is_wdt_dev_valid(hal->mwdt_dev));
+    if (!esp_tee_buf_in_ree(hal, sizeof(wdt_hal_context_t))) {
+        return;
+    }
 
+    wdt_hal_context_t hal_snap = *hal;
+
+    bool valid_addr = is_wdt_dev_valid(hal_snap.mwdt_dev);
     if (!valid_addr) {
         return;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    wdt_hal_deinit(hal);
+    wdt_hal_deinit(&hal_snap);
 }
 
 /* ---------------------------------------------- Secure Storage ------------------------------------------------- */
 
-/* NOTE: The key-name pointers here (cfg->id/ctx->key_id) are REE-supplied, NULL-terminated
- * NVS key names used read-only for key lookup (NVS compares them with strncmp bounded to
- * NVS_KEY_NAME_MAX_SIZE-1) — never written through, never used as a register base.
- * Pointing one at TEE memory yields at most a load-fault DoS or a useless presence oracle,
- * so they are left unchecked. Argument checks cost code size and add latency to every
- * service call, so we keep only the ones that close a real REE->TEE read/write/control-flow gap.
- * The buffers alongside these ARE validated, since the TEE reads/writes them.
- */
 esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign)
 {
-    bool valid_arg = (esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
-                      esp_tee_buf_in_ree(hash, hlen) &&
+    if (!esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_tee_sec_storage_key_cfg_t cfg_local = *cfg;
+    char id_buf[NVS_KEY_NAME_MAX_SIZE];
+    tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf));
+
+    bool valid_arg = (esp_tee_buf_in_ree(hash, hlen) &&
                       esp_tee_buf_in_ree(out_sign, sizeof(esp_tee_sec_storage_ecdsa_sign_t)) &&
-                      !esp_tee_sec_storage_is_key_tee_owned(cfg->id));
+                      !esp_tee_sec_storage_is_key_tee_owned(cfg_local.id));
     if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(valid_arg);
 
-    return esp_tee_sec_storage_ecdsa_sign(cfg, hash, hlen, out_sign);
+    return esp_tee_sec_storage_ecdsa_sign(&cfg_local, hash, hlen, out_sign);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg_t *cfg, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
 {
-    bool valid_arg = (esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
-                      esp_tee_buf_in_ree(out_pubkey, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t)) &&
-                      !esp_tee_sec_storage_is_key_tee_owned(cfg->id));
+    if (!esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_tee_sec_storage_key_cfg_t cfg_local = *cfg;
+    char id_buf[NVS_KEY_NAME_MAX_SIZE];
+    tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf));
+
+    bool valid_arg = (esp_tee_buf_in_ree(out_pubkey, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t)) &&
+                      !esp_tee_sec_storage_is_key_tee_owned(cfg_local.id));
     if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(valid_arg);
 
-    return esp_tee_sec_storage_ecdsa_get_pubkey(cfg, out_pubkey);
+    return esp_tee_sec_storage_ecdsa_get_pubkey(&cfg_local, out_pubkey);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *iv, size_t iv_len, uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    bool valid_arg = (esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t)) &&
-                      esp_tee_buf_in_ree(ctx->input, ctx->input_len) &&
+    if (!esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_tee_sec_storage_aead_ctx_t ctx_local = *ctx;
+    char id_buf[NVS_KEY_NAME_MAX_SIZE];
+    tee_snapshot_ree_str(&ctx_local.key_id, id_buf, sizeof(id_buf));
+
+    bool valid_arg = (esp_tee_buf_in_ree(ctx_local.input, ctx_local.input_len) &&
                       esp_tee_buf_in_ree(iv, iv_len) &&
                       esp_tee_buf_in_ree(tag, tag_len) &&
-                      esp_tee_buf_in_ree(output, ctx->input_len) &&
-                      !esp_tee_sec_storage_is_key_tee_owned(ctx->key_id));
+                      esp_tee_buf_in_ree(output, ctx_local.input_len) &&
+                      !esp_tee_sec_storage_is_key_tee_owned(ctx_local.key_id));
 
-    if (ctx->aad_len != 0) {
-        valid_arg &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
+    if (ctx_local.aad_len != 0) {
+        valid_arg &= esp_tee_buf_in_ree(ctx_local.aad, ctx_local.aad_len);
     }
 
     if (!valid_arg) {
@@ -235,20 +256,27 @@ esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ct
     }
     ESP_FAULT_ASSERT(valid_arg);
 
-    return esp_tee_sec_storage_aead_encrypt(ctx, iv, iv_len, tag, tag_len, output);
+    return esp_tee_sec_storage_aead_encrypt(&ctx_local, iv, iv_len, tag, tag_len, output);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *iv, size_t iv_len, const uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    bool valid_arg = (esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t)) &&
-                      esp_tee_buf_in_ree(ctx->input, ctx->input_len) &&
+    if (!esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_tee_sec_storage_aead_ctx_t ctx_local = *ctx;
+    char id_buf[NVS_KEY_NAME_MAX_SIZE];
+    tee_snapshot_ree_str(&ctx_local.key_id, id_buf, sizeof(id_buf));
+
+    bool valid_arg = (esp_tee_buf_in_ree(ctx_local.input, ctx_local.input_len) &&
                       esp_tee_buf_in_ree(iv, iv_len) &&
                       esp_tee_buf_in_ree(tag, tag_len) &&
-                      esp_tee_buf_in_ree(output, ctx->input_len) &&
-                      !esp_tee_sec_storage_is_key_tee_owned(ctx->key_id));
+                      esp_tee_buf_in_ree(output, ctx_local.input_len) &&
+                      !esp_tee_sec_storage_is_key_tee_owned(ctx_local.key_id));
 
-    if (ctx->aad_len != 0) {
-        valid_arg &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
+    if (ctx_local.aad_len != 0) {
+        valid_arg &= esp_tee_buf_in_ree(ctx_local.aad, ctx_local.aad_len);
     }
 
     if (!valid_arg) {
@@ -256,23 +284,28 @@ esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ct
     }
     ESP_FAULT_ASSERT(valid_arg);
 
-    return esp_tee_sec_storage_aead_decrypt(ctx, iv, iv_len, tag, tag_len, output);
+    return esp_tee_sec_storage_aead_decrypt(&ctx_local, iv, iv_len, tag, tag_len, output);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2_ctx_t *ctx, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
 {
-    bool valid_addr = (esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_pbkdf2_ctx_t)) &&
-                       esp_tee_buf_in_ree(hash, hlen) &&
+    if (!esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_pbkdf2_ctx_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const esp_tee_sec_storage_pbkdf2_ctx_t ctx_local = *ctx;
+
+    bool valid_addr = (esp_tee_buf_in_ree(hash, hlen) &&
                        esp_tee_buf_in_ree(out_sign, sizeof(esp_tee_sec_storage_ecdsa_sign_t)) &&
                        esp_tee_buf_in_ree(out_pubkey, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t)) &&
-                       esp_tee_buf_in_ree(ctx->salt, ctx->salt_len));
+                       esp_tee_buf_in_ree(ctx_local.salt, ctx_local.salt_len));
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_tee_sec_storage_ecdsa_sign_pbkdf2(ctx, hash, hlen, out_sign, out_pubkey);
+    return esp_tee_sec_storage_ecdsa_sign_pbkdf2(&ctx_local, hash, hlen, out_sign, out_pubkey);
 }
 
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */
@@ -379,30 +412,6 @@ static bool is_flash_addr_readable(uint32_t paddr, uint32_t len)
     return !esp_tee_flash_check_prange_in_tee_region(paddr, len);
 }
 
-static bool is_spi_host_in_ree(spi_flash_host_inst_t *host)
-{
-    const spi_flash_hal_context_t *ctx = (const spi_flash_hal_context_t *)host;
-
-    return (esp_tee_buf_in_ree(host, sizeof(spi_flash_hal_context_t)) &&
-            ctx->spi == spi_flash_ll_get_hw(SPI1_HOST));
-}
-
-static bool is_spi_trans_valid(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)
-{
-    if (!is_spi_host_in_ree(host) || !esp_tee_buf_in_ree(trans, sizeof(spi_flash_trans_t))) {
-        return false;
-    }
-
-    bool valid_addr = true;
-    if (trans->mosi_len != 0) {
-        valid_addr &= esp_tee_buf_in_ree(trans->mosi_data, trans->mosi_len);
-    }
-    if (trans->miso_len != 0) {
-        valid_addr &= esp_tee_buf_in_ree(trans->miso_data, trans->miso_len);
-    }
-    return valid_addr;
-}
-
 static bool is_spi_cmd_addr_ok(uint32_t addr_bitlen, uint32_t address, uint32_t mosi_len, uint32_t miso_len)
 {
     if (addr_bitlen == 0) {
@@ -427,206 +436,246 @@ static const spi_flash_host_driver_t tee_host_driver = {
     .configure_host_io_mode = spi_flash_hal_configure_host_io_mode,
 };
 
-static inline const spi_flash_host_driver_t *tee_substitute_host_driver(spi_flash_host_inst_t *host)
+static spi_flash_host_inst_t *tee_own_host(const spi_flash_host_inst_t *host, spi_flash_hal_context_t *snap)
 {
-    const spi_flash_host_driver_t *orig = host->driver;
-    host->driver = &tee_host_driver;
-    return orig;
+    if (!esp_tee_buf_in_ree(host, sizeof(spi_flash_hal_context_t))) {
+        return NULL;
+    }
+
+    *snap = *(const spi_flash_hal_context_t *)host;
+
+    /* Reject a host aimed at another peripheral rather than silently retargeting it */
+    if (snap->spi != spi_flash_ll_get_hw(SPI1_HOST)) {
+        return NULL;
+    }
+
+    snap->inst.driver = &tee_host_driver;
+    snap->spi         = spi_flash_ll_get_hw(SPI1_HOST);
+
+    return &snap->inst;
 }
 
 uint32_t _ss_spi_flash_hal_check_status(spi_flash_host_inst_t *host)
 {
-    bool valid_addr = is_spi_host_in_ree(host);
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return 0;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    return spi_flash_hal_check_status(host);
+    return spi_flash_hal_check_status(tee_host);
 }
 
 esp_err_t _ss_spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)
 {
-    bool trans_valid = is_spi_trans_valid(host, trans);
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(tee_host != NULL);
+
+    if (!esp_tee_buf_in_ree(trans, sizeof(spi_flash_trans_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    spi_flash_trans_t trans_snap = *trans;
+
+    bool trans_valid = true;
+    if (trans_snap.mosi_len != 0) {
+        trans_valid &= esp_tee_buf_in_ree(trans_snap.mosi_data, trans_snap.mosi_len);
+    }
+    if (trans_snap.miso_len != 0) {
+        trans_valid &= esp_tee_buf_in_ree(trans_snap.miso_data, trans_snap.miso_len);
+    }
+    trans_valid &= is_spi_cmd_addr_ok(trans_snap.address_bitlen, trans_snap.address,
+                                      trans_snap.mosi_len, trans_snap.miso_len);
     if (!trans_valid) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, trans_snap.address);
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(trans_valid);
 
-    bool addr_ok = is_spi_cmd_addr_ok(trans->address_bitlen, trans->address, trans->mosi_len, trans->miso_len);
-    if (!addr_ok) {
-        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, trans->address);
-        return ESP_ERR_INVALID_ARG;
-    }
-    ESP_FAULT_ASSERT(addr_ok);
-
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    esp_err_t r = spi_flash_hal_common_command(host, trans);
-    host->driver = orig;
-    return r;
+    return spi_flash_hal_common_command(tee_host, &trans_snap);
 }
 
 esp_err_t _ss_spi_flash_hal_device_config(spi_flash_host_inst_t *host)
 {
-    bool valid_addr = is_spi_host_in_ree(host);
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    return spi_flash_hal_device_config(host);
+    return spi_flash_hal_device_config(tee_host);
 }
 
 void _ss_spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_address)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) &&
-                       start_address <= FLASH_ADDR_MAX_24BIT &&
-                       is_flash_addr_writable(start_address, FLASH_BLOCK_SIZE));
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
+        return;
+    }
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
+    bool valid_addr = (start_address <= FLASH_ADDR_MAX_24BIT &&
+                       is_flash_addr_writable(start_address, FLASH_BLOCK_SIZE));
     if (!valid_addr) {
         ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, start_address);
         return;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    spi_flash_hal_erase_block(host, start_address);
-    host->driver = orig;
+    spi_flash_hal_erase_block(tee_host, start_address);
 }
 
 void _ss_spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) &&
-                       start_address <= FLASH_ADDR_MAX_24BIT &&
-                       is_flash_addr_writable(start_address, FLASH_SECTOR_SIZE));
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
+        return;
+    }
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
+    bool valid_addr = (start_address <= FLASH_ADDR_MAX_24BIT &&
+                       is_flash_addr_writable(start_address, FLASH_SECTOR_SIZE));
     if (!valid_addr) {
         ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, start_address);
         return;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    spi_flash_hal_erase_sector(host, start_address);
-    host->driver = orig;
+    spi_flash_hal_erase_sector(tee_host, start_address);
 }
 
 void _ss_spi_flash_hal_program_page(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) &&
-                       address <= FLASH_ADDR_MAX_24BIT &&
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
+        return;
+    }
+    ESP_FAULT_ASSERT(tee_host != NULL);
+
+    bool valid_addr = (address <= FLASH_ADDR_MAX_24BIT &&
                        is_flash_addr_writable(address, length) &&
                        esp_tee_buf_in_ree(buffer, length));
-
     if (!valid_addr) {
         ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, address);
         return;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    spi_flash_hal_program_page(host, buffer, address, length);
-    host->driver = orig;
+    spi_flash_hal_program_page(tee_host, buffer, address, length);
 }
 
 esp_err_t _ss_spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) &&
-                       is_flash_addr_readable(address, read_len) &&
-                       esp_tee_buf_in_ree(buffer, read_len));
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
+    bool valid_addr = (is_flash_addr_readable(address, read_len) &&
+                       esp_tee_buf_in_ree(buffer, read_len));
     if (!valid_addr) {
         ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, address);
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    esp_err_t r = spi_flash_hal_read(host, buffer, address, read_len);
-    host->driver = orig;
-    return r;
+    return spi_flash_hal_read(tee_host, buffer, address, read_len);
 }
 
 void _ss_spi_flash_hal_resume(spi_flash_host_inst_t *host)
 {
-    bool valid_addr = is_spi_host_in_ree(host);
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    spi_flash_hal_resume(host);
-    host->driver = orig;
+    spi_flash_hal_resume(tee_host);
 }
 
 esp_err_t _ss_spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp)
 {
-    bool valid_addr = is_spi_host_in_ree(host);
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    esp_err_t r = spi_flash_hal_set_write_protect(host, wp);
-    host->driver = orig;
-    return r;
+    return spi_flash_hal_set_write_protect(tee_host, wp);
 }
 
 esp_err_t _ss_spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) &&
-                       esp_tee_buf_in_ree(sus_conf, sizeof(spi_flash_sus_cmd_conf)));
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    return spi_flash_hal_setup_read_suspend(host, sus_conf);
+    if (!esp_tee_buf_in_ree(sus_conf, sizeof(spi_flash_sus_cmd_conf))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const spi_flash_sus_cmd_conf sus_snap = *sus_conf;
+    return spi_flash_hal_setup_read_suspend(tee_host, &sus_snap);
 }
 
 bool _ss_spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) && esp_tee_ptr_in_ree(p));
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return false;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    return spi_flash_hal_supports_direct_read(host, p);
+    if (!esp_tee_ptr_in_ree(p)) {
+        return false;
+    }
+
+    return spi_flash_hal_supports_direct_read(tee_host, p);
 }
 
 bool _ss_spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void *p)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) && esp_tee_ptr_in_ree(p));
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return false;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    return spi_flash_hal_supports_direct_write(host, p);
+    if (!esp_tee_ptr_in_ree(p)) {
+        return false;
+    }
+
+    return spi_flash_hal_supports_direct_write(tee_host, p);
 }
 
 void _ss_spi_flash_hal_suspend(spi_flash_host_inst_t *host)
 {
-    bool valid_addr = is_spi_host_in_ree(host);
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    spi_flash_hal_suspend(host);
-    host->driver = orig;
+    spi_flash_hal_suspend(tee_host);
 }
 
 /* ---------------------------------------------- SPI Flash Extras ------------------------------------------------- */
@@ -677,38 +726,41 @@ uint32_t _ss_bootloader_flash_execute_command_common(
 
 esp_err_t _ss_memspi_host_flush_cache(spi_flash_host_inst_t *host, uint32_t addr, uint32_t size)
 {
-    bool valid_addr = (is_spi_host_in_ree(host) &&
-                       is_flash_addr_readable(addr, size));
-
-    if (!valid_addr) {
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
-    return memspi_host_flush_cache(host, addr, size);
+    if (!is_flash_addr_readable(addr, size)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return memspi_host_flush_cache(tee_host, addr, size);
 }
 
 esp_err_t _ss_spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint32_t flags)
 {
-    spi_flash_host_inst_t *host = NULL;
-    bool valid_addr = (esp_tee_buf_in_ree(chip, sizeof(struct esp_flash_t)) &&
-                       is_spi_host_in_ree((host = chip->host)));
-
-    if (!valid_addr) {
+    if (!esp_tee_buf_in_ree(chip, sizeof(struct esp_flash_t))) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+
+    spi_flash_host_inst_t *const host = chip->host;
+    spi_flash_hal_context_t host_snap;
+    spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
+    if (tee_host == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(tee_host != NULL);
 
     esp_flash_t chip_snap = {
-        .host          = host,
+        .host          = tee_host,
         .read_mode     = chip->read_mode,
         .hpm_dummy_ena = chip->hpm_dummy_ena,
     };
 
-    const spi_flash_host_driver_t *orig = tee_substitute_host_driver(host);
-    esp_err_t r = spi_flash_chip_generic_config_host_io_mode(&chip_snap, flags);
-    host->driver = orig;
-    return r;
+    return spi_flash_chip_generic_config_host_io_mode(&chip_snap, flags);
 }
 
 #if CONFIG_IDF_TARGET_ESP32C5

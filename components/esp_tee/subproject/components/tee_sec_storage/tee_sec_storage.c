@@ -12,7 +12,6 @@
 #include "esp_fault.h"
 #include "esp_efuse.h"
 #include "esp_efuse_chip.h"
-#include "esp_random.h"
 #include "spi_flash_mmap.h"
 #if SOC_HMAC_SUPPORTED
 #include "psa_crypto_driver_esp_hmac_opaque.h"
@@ -314,6 +313,13 @@ bool esp_tee_sec_storage_is_key_tee_owned(const char *key_id)
 
 esp_err_t esp_tee_sec_storage_init(void)
 {
+    /* Explicitly seeds the CTR-DRBG before any PSA operations */
+    uint8_t random;
+    psa_status_t ret = psa_generate_random(&random, sizeof(random));
+    if (ret != PSA_SUCCESS) {
+        return ESP_FAIL;
+    }
+
     nvs_sec_cfg_t cfg = {};
     esp_err_t err = read_security_cfg_hmac(&cfg);
     if (err != ESP_OK) {
@@ -479,9 +485,9 @@ static int generate_aes256_key(sec_stg_key_t *keyctx)
     }
 
     ESP_LOGD(TAG, "Generating AES-256 key...");
-    esp_fill_random(&keyctx->aes256.key, AES256_KEY_LEN);
+    psa_status_t status = psa_generate_random(keyctx->aes256.key, AES256_KEY_LEN);
 
-    return 0;
+    return (status == PSA_SUCCESS) ? 0 : -1;
 }
 
 esp_err_t esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
@@ -569,11 +575,9 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
 
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
-    psa_algorithm_t ecdsa_alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
 
-#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
-    ecdsa_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256);
-#endif
+    /* ECDSA signatures over TEE secure-storage keys are compulsorily non-deterministic */
+    psa_algorithm_t ecdsa_alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
 
     psa_set_key_algorithm(&key_attributes, ecdsa_alg);
 
@@ -747,7 +751,11 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
     }
 
     if (is_encrypt) {
-        esp_fill_random(iv, iv_len);
+        status = psa_generate_random(iv, iv_len);
+        if (status != PSA_SUCCESS) {
+            err = ESP_FAIL;
+            goto cleanup;
+        }
 
         size_t output_length = 0;
         status = psa_aead_encrypt(psa_key_id, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len),

@@ -1099,6 +1099,10 @@ config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default y
 
+config SOC_RNG_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
 config SOC_CLK_XTAL32K_SUPPORTED
     bool
     default y

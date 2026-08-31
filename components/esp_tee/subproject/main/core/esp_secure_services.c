@@ -71,7 +71,8 @@ int _ss_esp_aes_crypt_cbc(esp_aes_context *ctx,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_aes_crypt_cbc(ctx, mode, length, iv, input, output);
+    esp_aes_context ctx_local = *ctx;
+    return esp_aes_crypt_cbc(&ctx_local, mode, length, iv, input, output);
 }
 
 int _ss_esp_aes_crypt_cfb128(esp_aes_context *ctx,
@@ -93,7 +94,8 @@ int _ss_esp_aes_crypt_cfb128(esp_aes_context *ctx,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_aes_crypt_cfb128(ctx, mode, length, iv_off, iv, input, output);
+    esp_aes_context ctx_local = *ctx;
+    return esp_aes_crypt_cfb128(&ctx_local, mode, length, iv_off, iv, input, output);
 }
 
 int _ss_esp_aes_crypt_cfb8(esp_aes_context *ctx,
@@ -113,7 +115,8 @@ int _ss_esp_aes_crypt_cfb8(esp_aes_context *ctx,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_aes_crypt_cfb8(ctx, mode, length, iv, input, output);
+    esp_aes_context ctx_local = *ctx;
+    return esp_aes_crypt_cfb8(&ctx_local, mode, length, iv, input, output);
 }
 
 int _ss_esp_aes_crypt_ctr(esp_aes_context *ctx,
@@ -136,7 +139,8 @@ int _ss_esp_aes_crypt_ctr(esp_aes_context *ctx,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_aes_crypt_ctr(ctx, length, nc_off, nonce_counter, stream_block, input, output);
+    esp_aes_context ctx_local = *ctx;
+    return esp_aes_crypt_ctr(&ctx_local, length, nc_off, nonce_counter, stream_block, input, output);
 }
 
 int _ss_esp_aes_crypt_ecb(esp_aes_context *ctx,
@@ -153,7 +157,8 @@ int _ss_esp_aes_crypt_ecb(esp_aes_context *ctx,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_aes_crypt_ecb(ctx, mode, input, output);
+    esp_aes_context ctx_local = *ctx;
+    return esp_aes_crypt_ecb(&ctx_local, mode, input, output);
 }
 
 int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
@@ -174,7 +179,8 @@ int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_aes_crypt_ofb(ctx, length, iv_off, iv, input, output);
+    esp_aes_context ctx_local = *ctx;
+    return esp_aes_crypt_ofb(&ctx_local, length, iv_off, iv, input, output);
 }
 #endif
 
@@ -401,8 +407,10 @@ esp_err_t _ss_esp_ds_sign(const void *message,
         return ESP_ERR_INVALID_ARG;
     }
 
-    size_t n = get_ds_msg_sign_len(data->rsa_length);
-    valid_addr &= (n > 0) && esp_tee_buf_in_ree(message, n) && esp_tee_buf_in_ree(signature, n);
+    const size_t n_max = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
+    valid_addr &= (get_ds_msg_sign_len(data->rsa_length) > 0) &&
+                  esp_tee_buf_in_ree(message, n_max) &&
+                  esp_tee_buf_in_ree(signature, n_max);
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
@@ -422,15 +430,21 @@ esp_err_t _ss_esp_ds_start_sign(const void *message,
                                 hmac_key_id_t key_id,
                                 esp_ds_context_t **esp_ds_ctx)
 {
-    bool valid_addr = (esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t *)) &&
-                       esp_tee_buf_in_ree(*esp_ds_ctx, sizeof(esp_ds_context_t)) &&
+    if (!esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t *))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_ds_context_t *ds_ctx = *esp_ds_ctx;
+    const size_t n_max = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
+
+    bool valid_addr = (esp_tee_buf_in_ree(ds_ctx, sizeof(esp_ds_context_t)) &&
                        esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)));
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    size_t n = get_ds_msg_sign_len(data->rsa_length);
-    valid_addr &= (n > 0) && esp_tee_buf_in_ree(message, n);
+    valid_addr &= (get_ds_msg_sign_len(data->rsa_length) > 0) &&
+                  esp_tee_buf_in_ree(message, n_max);
 
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
     valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
@@ -442,7 +456,12 @@ esp_err_t _ss_esp_ds_start_sign(const void *message,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_ds_start_sign(message, data, key_id, esp_ds_ctx);
+    esp_err_t err = esp_ds_start_sign(message, data, key_id, &ds_ctx);
+    if (err == ESP_OK) {
+        *esp_ds_ctx = ds_ctx;
+    }
+
+    return err;
 }
 
 bool _ss_esp_ds_is_busy(void)
@@ -452,14 +471,16 @@ bool _ss_esp_ds_is_busy(void)
 
 esp_err_t _ss_esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
 {
-    const size_t max_sign = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
-    bool valid_addr = (esp_tee_buf_in_ree(signature, max_sign) &&
+    const size_t n_max = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
+    bool valid_addr = (esp_tee_buf_in_ree(signature, n_max) &&
                        esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t)));
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    const esp_ds_data_t *data = (const esp_ds_data_t *)esp_ds_ctx->data;
+    const esp_ds_context_t ctx_local = *esp_ds_ctx;
+
+    const esp_ds_data_t *data = (const esp_ds_data_t *)ctx_local.data;
     valid_addr &= esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)) &&
                   (get_ds_msg_sign_len(data->rsa_length) > 0);
 
@@ -468,7 +489,7 @@ esp_err_t _ss_esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_ds_finish_sign(signature, esp_ds_ctx);
+    return esp_ds_finish_sign(signature, (esp_ds_context_t *)&ctx_local);
 }
 
 esp_err_t _ss_esp_ds_encrypt_params(esp_ds_data_t *data,
@@ -583,15 +604,11 @@ int _ss_esp_tee_ota_end(void)
 
 /* ---------------------------------------------- Secure Storage ------------------------------------------------- */
 
-/* NOTE: The key-name pointers here (cfg->id/ctx->key_id) are REE-supplied, NULL-terminated
- * NVS key names used read-only for key lookup (NVS compares them with strncmp bounded to
- * NVS_KEY_NAME_MAX_SIZE-1) — never written through, never used as a register base.
- * Pointing one at TEE memory yields at most a load-fault DoS or a useless presence oracle,
- * so they are left unchecked. Argument checks cost code size and add latency to every
- * service call, so we keep only the ones that close a real REE->TEE read/write/control-flow gap.
- */
 esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 {
+    char id_buf[NVS_KEY_NAME_MAX_SIZE];
+    tee_snapshot_ree_str(&key_id, id_buf, sizeof(id_buf));
+
     bool valid_arg = !esp_tee_sec_storage_is_key_tee_owned(key_id);
     if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
@@ -603,15 +620,22 @@ esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 
 esp_err_t _ss_esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 {
-    bool valid_arg = esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
-                     !(cfg->flags & SEC_STORAGE_FLAG_TEE_ONLY) &&
-                     !esp_tee_sec_storage_is_key_tee_owned(cfg->id);
+    if (!esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_tee_sec_storage_key_cfg_t cfg_local = *cfg;
+    char id_buf[NVS_KEY_NAME_MAX_SIZE];
+    tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf));
+
+    bool valid_arg = !(cfg_local.flags & SEC_STORAGE_FLAG_TEE_ONLY) &&
+                     !esp_tee_sec_storage_is_key_tee_owned(cfg_local.id);
     if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(valid_arg);
 
-    return esp_tee_sec_storage_gen_key(cfg);
+    return esp_tee_sec_storage_gen_key(&cfg_local);
 }
 
 /* ---------------------------------------------- PSA Attestation ------------------------------------------------- */

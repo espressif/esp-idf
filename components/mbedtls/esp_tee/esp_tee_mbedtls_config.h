@@ -43,6 +43,12 @@
 #if SOC_AES_SUPPORTED
 #define ESP_AES_DRIVER_ENABLED
 #define MBEDTLS_PSA_ACCEL_KEY_TYPE_AES
+#define MBEDTLS_PSA_ACCEL_ALG_ECB_NO_PADDING
+#define MBEDTLS_PSA_ACCEL_ALG_CBC_NO_PADDING
+#define MBEDTLS_PSA_ACCEL_ALG_CBC_PKCS7
+#define MBEDTLS_PSA_ACCEL_ALG_CFB
+#define MBEDTLS_PSA_ACCEL_ALG_CTR
+#define MBEDTLS_PSA_ACCEL_ALG_OFB
 #endif
 #define MBEDTLS_CIPHER_MODE_XTS
 
@@ -55,12 +61,10 @@
 #endif
 #define PSA_WANT_ECC_SECP_R1_256 1
 
-#ifdef CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
-#define PSA_WANT_ALG_DETERMINISTIC_ECDSA 1
-#else
+/* ECDSA signatures over TEE secure-storage keys are compulsorily
+ * non-deterministic (randomized nonce) */
 #undef PSA_WANT_ALG_DETERMINISTIC_ECDSA
 #undef MBEDTLS_HMAC_DRBG_C
-#endif
 
 #if SOC_SHA_SUPPORTED
 #define ESP_SHA_DRIVER_ENABLED
@@ -119,11 +123,14 @@
 /* Disable unused cipher/algorithm types */
 #undef PSA_WANT_KEY_TYPE_ARIA
 #undef PSA_WANT_KEY_TYPE_CAMELLIA
+#undef PSA_WANT_KEY_TYPE_CHACHA20
 #undef PSA_WANT_KEY_TYPE_DES
 #undef PSA_WANT_ALG_RIPEMD160
+#undef PSA_WANT_ALG_STREAM_CIPHER
 #undef PSA_WANT_ALG_CHACHA20
 #undef PSA_WANT_ALG_CHACHA20_POLY1305
 #undef PSA_WANT_ALG_CCM
+#undef PSA_WANT_ALG_CCM_STAR_NO_TAG
 #undef PSA_WANT_ALG_CMAC
 
 #define MBEDTLS_AES_ROM_TABLES
@@ -165,6 +172,8 @@
 #undef MBEDTLS_SSL_SRV_C
 
 #undef PSA_WANT_ALG_TLS12_PRF
+#undef PSA_WANT_ALG_TLS12_PSK_TO_MS
+#undef PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
 #undef PSA_WANT_ALG_PBKDF2_HMAC
 #undef PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128
 
@@ -191,8 +200,8 @@
 /* Disable self-test functions to save code size */
 #undef MBEDTLS_SELF_TEST
 
-/* TEE uses EXTERNAL_RNG, no need for CTR-DRBG */
-#undef MBEDTLS_CTR_DRBG_C
+/* CTR-DRBG for strengthening the RNG operations in TEE */
+#define MBEDTLS_CTR_DRBG_C
 
 /* Disable PEM/Base64 — TEE uses DER format */
 #undef MBEDTLS_PEM_PARSE_C

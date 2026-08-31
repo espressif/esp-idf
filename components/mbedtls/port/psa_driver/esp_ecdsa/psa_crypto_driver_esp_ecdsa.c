@@ -1003,6 +1003,10 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
     if (key_source == ESP_ECDSA_KEY_SOURCE_TEE) {
         /* TEE key path */
+        if (PSA_ALG_ECDSA_IS_DETERMINISTIC(operation->alg)) {
+            ESP_LOGW(TAG, "Deterministic ECDSA unsupported for TEE keys; using randomized nonce");
+        }
+
         const char *tee_key_id = NULL;
         uint8_t stored_curve;
 

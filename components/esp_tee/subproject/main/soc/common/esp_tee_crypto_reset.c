@@ -27,6 +27,9 @@
 #if SOC_ECDSA_SUPPORTED
 #include "hal/ecdsa_ll.h"
 #endif
+#if SOC_RNG_SUPPORTED
+#include "hal/rng_ll.h"
+#endif
 
 #include "esp_tee.h"
 #include "esp_attr.h"
@@ -76,5 +79,12 @@ void IRAM_ATTR esp_tee_soc_reset_crypto_peripherals(void)
     ecdsa_ll_enable_bus_clock(true);
     ecdsa_ll_reset_register();
     ecdsa_ll_enable_bus_clock(false);
+#endif
+
+#if SOC_RNG_SUPPORTED
+    rng_ll_enable();
+#if RNG_LL_NEEDS_RESET_WHEN_WAKEUP
+    rng_ll_reset();
+#endif
 #endif
 }
