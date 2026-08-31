@@ -22,6 +22,7 @@
 #include "test_utils.h"
 #include "esp_freertos_hooks.h"
 #include "esp_rom_sys.h"
+#include "esp_task_wdt.h"
 /* include performance pass standards header file */
 #include "esp_timer_performance.h"
 
@@ -874,6 +875,7 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 
 #endif // !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
 {
     esp_timer_impl_advance(50331648); // 0xefffffff/80 = 50331647
@@ -891,6 +893,7 @@ TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", 
     printf("alarm_reg = 0x%llx, count_reg 0x%llx\n", alarm_reg, count_reg);
     TEST_ASSERT(alarm_reg <= (count_reg + offset));
 }
+#endif // CONFIG_IDF_TARGET_ESP32
 
 static void timer_callback5(void* arg)
 {
@@ -1426,6 +1429,76 @@ TEST_CASE("Test ISR dispatch callbacks are not blocked even if TASK callbacks ta
     TEST_ESP_OK(esp_timer_delete(task_timer_handle));
     TEST_ESP_OK(esp_timer_delete(isr_timer_handle));
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
+}
+
+static volatile uint32_t task_timer_count;
+static volatile uint32_t isr_timer_count;
+
+static void task_timer_count_cb(void *arg)
+{
+    task_timer_count++;
+}
+
+static void IRAM_ATTR isr_timer_count_cb(void *arg)
+{
+    isr_timer_count++;
+}
+
+#define NUM_ISR_TIMERS 5
+
+TEST_CASE("TASK dispatch timers not stalled by ISR dispatch timers on shared alarm", "[esp_timer][isr_dispatch][timeout=120]")
+{
+    task_timer_count = 0;
+    isr_timer_count = 0;
+
+    esp_timer_handle_t task_timer;
+    esp_timer_handle_t isr_timers[NUM_ISR_TIMERS];
+
+    const esp_timer_create_args_t task_args = {
+        .callback = task_timer_count_cb,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "task_timer",
+    };
+
+    TEST_ESP_OK(esp_timer_create(&task_args, &task_timer));
+
+    for (int i = 0; i < NUM_ISR_TIMERS; i++) {
+        const esp_timer_create_args_t isr_args = {
+            .callback = isr_timer_count_cb,
+            .dispatch_method = ESP_TIMER_ISR,
+            .name = "isr_timer",
+        };
+        TEST_ESP_OK(esp_timer_create(&isr_args, &isr_timers[i]));
+    }
+
+    /* One TASK timer at 1s. Multiple ISR timers at harmonic periods that
+     * frequently collide with the TASK alarm (1s, 500ms, 333ms, 250ms, 200ms).
+     * This maximizes the shared-alarm race window that triggers the stall. */
+    TEST_ESP_OK(esp_timer_start_periodic(task_timer, 1 * SEC));
+    TEST_ESP_OK(esp_timer_start_periodic(isr_timers[0], 1 * SEC));
+    TEST_ESP_OK(esp_timer_start_periodic(isr_timers[1], SEC / 2));
+    TEST_ESP_OK(esp_timer_start_periodic(isr_timers[2], SEC / 3));
+    TEST_ESP_OK(esp_timer_start_periodic(isr_timers[3], SEC / 4));
+    TEST_ESP_OK(esp_timer_start_periodic(isr_timers[4], SEC / 5));
+
+    for (int i = 0; i < 20; i++) {
+        uint32_t prev_task = task_timer_count;
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        esp_task_wdt_reset();
+        uint32_t cur_task = task_timer_count;
+        uint32_t cur_isr = isr_timer_count;
+        printf("check %d/20: task_timer_count=%" PRIu32 " isr_timer_count=%" PRIu32 "\n",
+               i + 1, cur_task, cur_isr);
+        // Verify TASK-dispatch callback is still being invoked (not stalled)
+        TEST_ASSERT_GREATER_THAN_UINT32(prev_task, cur_task);
+    }
+
+    TEST_ESP_OK(esp_timer_stop(task_timer));
+    TEST_ESP_OK(esp_timer_delete(task_timer));
+    for (int i = 0; i < NUM_ISR_TIMERS; i++) {
+        TEST_ESP_OK(esp_timer_stop(isr_timers[i]));
+        TEST_ESP_OK(esp_timer_delete(isr_timers[i]));
+    }
 }
 
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
