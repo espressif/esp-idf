@@ -195,6 +195,13 @@ TEST_CASE("(WL) overwrite and append file", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
+TEST_CASE("(WL) fcntl F_SETFL preserves access mode", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_fcntl_setfl("/spiflash/fcntl.txt");
+    test_teardown();
+}
+
 TEST_CASE("(WL) can lseek", "[fatfs][wear_levelling]")
 {
     test_setup();
