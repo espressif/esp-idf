@@ -408,7 +408,7 @@ esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr)
     if (err == ESP_OK) {
         err = sdmmc_decode_scr(buf, out_scr);
     }
-    free(buf);
+    heap_caps_free(buf);
     return err;
 }
 
@@ -478,16 +478,15 @@ esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_n
 
     err = sdmmc_send_app_cmd(card, &cmd);
     if (err != ESP_OK) {
-        free(buf);
+        heap_caps_free(buf);
         ESP_LOGE(TAG, "%s: sdmmc_send_app_cmd returned 0x%x, failed to get number of written write blocks", __func__, err);
         return err;
     }
 
-    size_t result = __builtin_bswap32(*(uint32_t*)buf);
     if (out_num_blocks) {
-        *out_num_blocks = result;
+        *out_num_blocks = __builtin_bswap32(*(uint32_t*)buf);
     }
-    free(buf);
+    heap_caps_free(buf);
     return err;
 }
 
@@ -550,7 +549,7 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
             }
         }
         if (!use_dma_aligned_buffer) {
-            free(buf);
+            heap_caps_free(buf);
         }
     }
     return err;
@@ -707,7 +706,7 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
             cur_dst += block_size * blocks_per_read;
         }
         if (!use_dma_aligned_buffer) {
-            free(buf);
+            heap_caps_free(buf);
         }
     }
     return err;
