@@ -104,7 +104,8 @@ esp_err_t esp_isp_new_hist_controller(isp_proc_handle_t isp_proc, const esp_isp_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(isp_proc && hist_cfg && ret_hdl, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
-    isp_hist_ctlr_t hist_ctlr = heap_caps_calloc(1, sizeof(isp_hist_controller_t), ISP_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variable
+    isp_hist_ctlr_t hist_ctlr = heap_caps_calloc(1, sizeof(isp_hist_controller_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(hist_ctlr, ESP_ERR_NO_MEM, TAG, "no mem for hist controller");
     hist_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_hist_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(hist_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for hist event queue");

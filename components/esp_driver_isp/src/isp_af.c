@@ -101,7 +101,8 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
     }
     ESP_RETURN_ON_FALSE(af_config->edge_thresh > 0, ESP_ERR_INVALID_ARG, TAG, "edge threshold should be larger than 0");
 
-    isp_af_ctlr_t af_ctlr = heap_caps_calloc(1, sizeof(isp_af_controller_t), ISP_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variable
+    isp_af_ctlr_t af_ctlr = heap_caps_calloc(1, sizeof(isp_af_controller_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(af_ctlr, ESP_ERR_NO_MEM, TAG, "no mem");
     af_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_af_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(af_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for af event queue");
