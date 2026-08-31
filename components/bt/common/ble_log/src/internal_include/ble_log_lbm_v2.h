@@ -84,6 +84,10 @@ typedef struct {
     ble_log_prph_trans_t *trans[BLE_LOG_TRANS_BUF_CNT];
     SemaphoreHandle_t mutex;
     int trans_idx;
+    /* The REDIR console stream keeps its own 24-bit frame sequence: it is
+     * not a log attempt, so it never consumes the Global SN; a gap counts
+     * a dropped console batch. Zeroed when the manager is created. */
+    volatile uint32_t frame_sn;
     volatile uint32_t inflight;
     volatile uint32_t inflight_peak;
 } ble_log_redir_t;
@@ -106,18 +110,15 @@ typedef struct {
 
 #define BLE_LOG_GET_FRAME_SN(VAR)               BLE_LOG_ATOMIC_ADD_RELAXED(VAR, 1)
 
-/* One 24-bit Global SN is shared by every non-INTERNAL source: consumed at
- * API entry (before pool contention), it orders all log attempts —
- * including equal-timestamp records from different sources — and every
- * lost or rejected attempt leaves a gap. Internal Snapshot frames keep
- * their own separate sequence: a skipped periodic snapshot burns one
- * snapshot SN, so a gap there counts lost snapshots without a dedicated
- * field. Neither sequence is ever reset. */
-#define BLE_LOG_SN_MODULO                       0x00ffffffU
-#define BLE_LOG_GET_GLOBAL_SN()                 \
-    ((uint32_t)BLE_LOG_GET_FRAME_SN(g_frame_sn) & BLE_LOG_SN_MODULO)
-#define BLE_LOG_GET_SNAPSHOT_SN()               \
-    ((uint32_t)BLE_LOG_GET_FRAME_SN(g_snapshot_sn) & BLE_LOG_SN_MODULO)
+/* One 24-bit Global SN is shared by the log sources except INTERNAL and
+ * REDIR: consumed at API entry (before pool contention), it orders all
+ * log attempts — including equal-timestamp records from different
+ * sources — and every lost or rejected attempt leaves a gap. INTERNAL
+ * snapshot frames and the REDIR console stream keep their own separate
+ * sequences (a gap counts a skipped snapshot or a dropped console batch).
+ * None of the sequences is ever reset. The per-counter macros live next
+ * to their counters in the owning translation units; the 24-bit wire
+ * field is enforced where the frame meta is packed. */
 
 /* -------------------------------- */
 /*     Internal Snapshot Frame      */
@@ -231,9 +232,6 @@ uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle)
 void ble_log_commit(uint32_t handle, size_t actual_len);
 
 #if BLE_LOG_UART_REDIR_ENABLED
-void ble_log_lbm_stream_write(ble_log_redir_t *redir, ble_log_src_t src_code,
-                              uint32_t timestamp, const uint8_t *data, size_t len);
-void ble_log_lbm_stream_flush(ble_log_redir_t *redir, ble_log_src_t src_code);
 ble_log_redir_t *ble_log_prph_get_redir_lbm(void);
 #endif
 
