@@ -11,8 +11,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sdkconfig.h"
 #include <esp_gap_ble_api.h>
 #include <esp_gatts_api.h>
+
+#if CONFIG_BT_BLE_42_ADV_EN
+#define SIMPLE_BLE_LEGACY_ADV 1
+#elif CONFIG_BT_BLE_50_EXTEND_ADV_EN
+#define SIMPLE_BLE_EXT_ADV 1
+#endif
 
 typedef void (simple_ble_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t p_gatts_if, esp_ble_gatts_cb_param_t *param);
 
@@ -24,12 +31,21 @@ typedef void (simple_ble_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t p_gatts
 typedef struct {
     /** Name to be displayed to devices scanning for ESP32 */
     const char *device_name;
+#if SIMPLE_BLE_LEGACY_ADV
     /** Raw advertisement data */
     esp_ble_adv_data_t *adv_data_p;
     /** Raw scan response data */
     esp_ble_adv_data_t *scan_rsp_data_p;
     /** Parameters to configure the nature of advertising */
     esp_ble_adv_params_t adv_params;
+#elif SIMPLE_BLE_EXT_ADV
+    /** Raw advertisement data for BLE 5.0+ extended advertising */
+    uint8_t *raw_adv_data_p;
+    uint32_t raw_adv_data_len;
+    /** Raw scan response data for BLE 5.0+ extended advertising */
+    uint8_t *raw_scan_rsp_data_p;
+    uint32_t raw_scan_rsp_data_len;
+#endif
     /** Descriptor table which consists of the configuration
      * required by services and characteristics */
     esp_gatts_attr_db_t *gatt_db;
