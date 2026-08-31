@@ -1,17 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/system/app_trace_basic:
-  disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1081
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1137
-  depends_components:
-    - esp_trace
-    - app_trace
-
 examples/system/base_mac_address:
   depends_components:
     - *common_components
@@ -68,21 +56,6 @@ examples/system/esp_timer:
     - *common_components
     - esp_timer
 
-examples/system/esp_trace_custom_library:
-  disable:
-    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-      reason: example transport is USB Serial JTAG
-  disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: lack of runners
-  depends_components:
-    - esp_trace
-    - freertos
-
 examples/system/eventfd:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1 and (IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux"))
@@ -115,21 +88,6 @@ examples/system/freertos/real_time_stats:
   depends_components:
     - *common_components
     - freertos
-
-examples/system/gcov:
-  disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1079
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1138
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14440
-  depends_components:
-    - esp_trace
-    - app_trace
 
 examples/system/heap_task_tracking:
   disable:
@@ -298,34 +256,6 @@ examples/system/select:
   depends_components:
     - *common_components
     - vfs
-
-examples/system/sysview_tracing:
-  disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1082
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1136
-  depends_components:
-    - esp_trace
-    - app_trace
-
-examples/system/sysview_tracing_heap_log:
-  disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1082
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1136
-  depends_components:
-    - esp_trace
-    - app_trace
 
 examples/system/task_watchdog:
   disable:

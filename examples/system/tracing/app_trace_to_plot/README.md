@@ -23,7 +23,7 @@ This example will assume that an ESP-WROVER-KIT is used.
 
 1. Connect the JTAG interface to the target board. For details about how to set up JTAG interface, please see [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html). Power up both the JTAG debugger and target board.
 
-2. To start the tcp socket server, you need to run `read_trace.py` tool under the `esp-idf/examples/system/app_trace_to_plot` path.
+2. To start the tcp socket server, you need to run `read_trace.py` tool under the `esp-idf/examples/system/tracing/app_trace_to_plot` path.
 
 3. After connecting JTAG interface and starting the tcp socket server, you need to [Run OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#run-openocd).
 
@@ -46,7 +46,7 @@ idf.py -p PORT flash monitor
 
 (Replace PORT with the name of the serial port to use.)
 
-**Run Plotting Tool** To plot data and open TCP socket, there is a tool named `read_trace.py` under the `examples/system/app_trace_to_plot` path. Run this tool in the terminal session with configured IDF development environment by entering the command below. This command opens a TCP socket and plots the given data when OpenOCD triggered to start App Trace. If you are running tool at first time, you need to install dash with `pip install dash` in the same terminal session after running configuring IDF development environment.
+**Run Plotting Tool** To plot data and open TCP socket, there is a tool named `read_trace.py` under the `examples/system/tracing/app_trace_to_plot` path. Run this tool in the terminal session with configured IDF development environment by entering the command below. This command opens a TCP socket and plots the given data when OpenOCD triggered to start App Trace. If you are running tool at first time, you need to install dash with `pip install dash` in the same terminal session after running configuring IDF development environment.
 
 ```bash
 python read_trace.py --plot-config data.json --source tcp://localhost:53535 --output-file data.log
