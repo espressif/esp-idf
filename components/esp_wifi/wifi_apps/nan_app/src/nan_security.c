@@ -437,7 +437,7 @@ static struct ndl_info *nan_ndl_claim_for_pub_peer(uint8_t pub_id, const uint8_t
     }
     for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
         struct ndl_info *ndl = &s_nan_ctx.ndl[i];
-        if (ndl->ndp_id == 0) {
+        if (!nan_ndl_slot_in_use(ndl)) {
             ndl->publisher_id = pub_id;
             MACADDR_COPY(ndl->peer_nmi, peer_nmi);
             ndl->ndp_id = ndp_id;
