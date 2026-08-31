@@ -52,7 +52,9 @@ typedef bool (*async_memcpy_isr_cb_t)(async_memcpy_handle_t mcp_hdl, async_memcp
 typedef struct {
     uint32_t backlog;          /*!< Maximum number of transactions that can be prepared in the background */
     uint32_t weight;           /*!< Weight of async memcpy dma channel, higher weight means higher average bandwidth */
-    size_t dma_burst_size;     /*!< DMA transfer burst size, in bytes */
+    size_t dma_burst_size;     /*!< DMA transfer burst size, in bytes, must be a power of 2.
+                                    Set to 0 to use the driver default.
+                                    Set to 1 to disable the data burst. */
     uint32_t flags;            /*!< Extra flags to control async memcpy feature */
 } async_memcpy_config_t;
 
@@ -160,7 +162,7 @@ esp_err_t esp_async_memcpy_install_dw_gdma(const async_memcpy_config_t *config, 
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
 esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp)
-    __attribute__((deprecated("Select a DMA backend explicitly with esp_async_memcpy_install_* instead")));
+__attribute__((deprecated("Select a DMA backend explicitly with esp_async_memcpy_install_* instead")));
 /** @endcond */
 
 /**

@@ -201,8 +201,8 @@ esp_err_t gdma_disconnect(gdma_channel_handle_t dma_chan);
  */
 typedef struct {
     uint32_t max_data_burst_size; /*!< Set the max burst size when DMA read/write the data buffer.
-                                       Set to 0 means to disable the data burst.
-                                       Other values must be powers of 2 or supported by the selected GDMA bus. */
+                                       Set to 0 or 1 means to disable the data burst.
+                                       Other value must be power of 2 and supported by the DMA bus interface */
     bool access_ext_mem;          /*!< Set this if the DMA transfer will access external memory */
 } gdma_transfer_config_t;
 

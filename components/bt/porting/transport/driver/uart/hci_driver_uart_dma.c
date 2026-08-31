@@ -272,7 +272,7 @@ hci_driver_uart_dma_uhci_install(void)
         .max_transmit_size = HCI_TX_MAX_SIZE,         /* Total bytes of all segments in one transaction. */
         .max_transmit_buffer_count = HCI_TX_MAX_SEGMENT_COUNT, /* Caps uhci_multi_buffer_transmit() array_size. */
         .max_receive_internal_mem = HCI_UHCI_RX_DESC_MEM,      /* Sizes the RX DMA descriptor chain, not the ring. */
-        .dma_burst_size = 32,                         /* Power-of-two burst; 0 would disable burst. */
+        .dma_burst_size = 32,                         /* Power-of-two burst size in bytes. */
         .rx_eof_flags.idle_eof = 1,                   /* Frame ends when the UART RX line goes idle. */
     };
     uhci_event_callbacks_t uhci_cbs = {

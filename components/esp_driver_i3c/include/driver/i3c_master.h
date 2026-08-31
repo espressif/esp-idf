@@ -50,7 +50,7 @@ typedef struct {
  */
 typedef struct {
     size_t max_transfer_size;                            /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes */
-    size_t dma_burst_size;                               /*!< DMA burst size, in bytes. If 0, driver will use default value (16 bytes) */
+    size_t dma_burst_size;                               /*!< DMA burst size, in bytes. Set to 0 to use the driver default. Set to 1 to disable the data burst. */
 } i3c_master_dma_config_t;
 
 /**

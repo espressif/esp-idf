@@ -22,7 +22,7 @@ typedef struct {
     size_t max_transmit_size;                             /*!< Maximum transfer size in one transaction, in bytes. Note that this is the total size of all buffers combined */
     size_t max_transmit_buffer_count;                     /*!< Maximum number of buffers that can be transmitted together in one transaction, via `uhci_multi_buffer_transmit()`. Set to 0 or 1 if only single-buffer transmit (`uhci_transmit()`) is needed. */
     size_t max_receive_internal_mem;                      /*!< Expected maximum buffer size for uhci_receive(). This value determines the number of descriptors in the receive DMA chain. Each DMA descriptor can reference a buffer of up to X bytes (depending on the chip). For large transfers, at least two descriptors are recommended for ping-pong operation. */
-    size_t dma_burst_size;                                /*!< DMA burst size, in bytes. Set to 0 to disable data burst. Otherwise, use a power of 2. */
+    size_t dma_burst_size;                                /*!< DMA burst size, in bytes, must be a power of 2. Set to 0 to use the driver default. Set to 1 to disable the data burst. */
     size_t max_packet_receive;                            /*!< Max receive size, auto stop receiving after reach this value, only valid when `length_eof` set true */
 
     struct {

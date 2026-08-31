@@ -101,7 +101,7 @@ When creating a driver instance, you need to configure:
 
 - **backlog**: Maximum number of pending CRC requests that can be queued. Higher values use more memory but provide better throughput for bursty workloads.
 - **intr_priority**: DMA interrupt priority. Set to ``0`` to use the default low/medium priority, or set a non-zero value to request a specific interrupt priority.
-- **dma_burst_size**: DMA transfer burst size in bytes.
+- **dma_burst_size**: DMA transfer burst size in bytes. Set to ``0`` to use the driver default (16 bytes), or to ``1`` to disable the data burst.
 
 The driver handle ``crc_hdl`` is an opaque pointer that you use for all subsequent operations.
 
@@ -327,6 +327,7 @@ The ``dma_burst_size`` affects DMA transfer efficiency:
 
 - Larger burst sizes can improve throughput
 - Typical values: 16, 32, 64 bytes
+- Set to ``0`` to use the driver default (16 bytes), or to ``1`` to disable the data burst
 
 The optimal value depends on your chip's DMA controller capabilities.
 

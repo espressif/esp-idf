@@ -74,7 +74,7 @@ typedef struct {
     uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots,
                                              *   it should be the multiple of `3` when the data bit width is 24.
                                              */
-    size_t              dma_burst_size;     /*!< DMA data burst size in bytes. Set to 0 to use driver default (32).
+    size_t              dma_burst_size;     /*!< DMA data burst size in bytes. Set to 0 to use the driver default.
                                              *   When non-zero, must be a chip-supported power of 2 (see GDMA driver or chip TRM).
                                              *   Ignored on chips that do not support configurable burst size.
                                              */

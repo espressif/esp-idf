@@ -150,7 +150,7 @@ typedef struct {
     void *user_fbs[ESP_RGB_LCD_PANEL_MAX_FB_NUM];              /*!< Array of user-provided frame buffers. If not NULL, the driver will use these buffers instead of allocating its own */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
-    size_t dma_burst_size;        /*!< DMA burst size, in bytes */
+    size_t dma_burst_size;        /*!< DMA burst size, in bytes, must be a power of 2. Set to 0 to use the driver default. Set to 1 to disable the data burst. */
     gpio_num_t hsync_gpio_num;    /*!< GPIO used for HSYNC signal */
     gpio_num_t vsync_gpio_num;    /*!< GPIO used for VSYNC signal */
     gpio_num_t de_gpio_num;       /*!< GPIO used for DE signal, set to -1 if it's not used */

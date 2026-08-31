@@ -27,7 +27,7 @@
 /* ponytail: data burst disabled — UHCI enforces burst-size alignment (addr+len) on
  * uhci_transmit() once GDMA weighted arbitration is enabled, and UART log bandwidth
  * is baud-rate limited anyway, so burst buys nothing here */
-#define BLE_LOG_UART_DMA_BURST_SIZE         (0)
+#define BLE_LOG_UART_DMA_BURST_SIZE         (1)
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 #define BLE_LOG_UART_REDIR_BUF_SIZE         (512)
 #define BLE_LOG_UART_REDIR_FLUSH_PERIOD_US  (1000 * 1000)

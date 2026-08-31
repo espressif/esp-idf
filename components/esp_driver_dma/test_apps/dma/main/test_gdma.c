@@ -941,6 +941,13 @@ static void test_gdma_burst_size_validation(gdma_new_channel_func_t new_channel,
     };
     TEST_ESP_OK(gdma_config_transfer(tx_chan, &transfer_config));
 
+    // 0 and 1 both mean "disable data burst", and must be accepted even on chips
+    // whose hardware burst size is not programmable to 1 (e.g. S3: 16/32/64 only).
+    transfer_config.max_data_burst_size = 0;
+    TEST_ESP_OK(gdma_config_transfer(tx_chan, &transfer_config));
+    transfer_config.max_data_burst_size = 1;
+    TEST_ESP_OK(gdma_config_transfer(tx_chan, &transfer_config));
+
     transfer_config.max_data_burst_size = 3;
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gdma_config_transfer(tx_chan, &transfer_config));
 

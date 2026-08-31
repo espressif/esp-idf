@@ -144,7 +144,7 @@ esp_err_t asrc_hw_gdma_create_channel(int asrc_idx, void *user_data, uint16_t ma
     ESP_GOTO_ON_ERROR(gdma_apply_strategy(dma_tx, &strategy_config), cleanup, TAG, "Fail to apply tx strategy");
     ESP_GOTO_ON_ERROR(gdma_apply_strategy(dma_rx, &strategy_config), cleanup, TAG, "Fail to apply rx strategy");
     gdma_transfer_config_t transfer_config = {
-        .max_data_burst_size = max_data_burst_size,
+        .max_data_burst_size = max_data_burst_size ? max_data_burst_size : 16,
         .access_ext_mem = true,
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(dma_rx, &transfer_config), cleanup, TAG, "Fail to config rx transfer");

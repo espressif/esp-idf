@@ -22,6 +22,8 @@ ESP_LOG_ATTR_TAG(TAG, "async_crc_gdma");
 
 #define CRC_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 #define CRC_DMA_RX_SINK_BUFFER_SIZE 32
+/// Default DMA burst size (in bytes), used when the user leaves `dma_burst_size` as 0
+#define CRC_DMA_DEFAULT_BURST_SIZE  16
 
 __attribute__((always_inline))
 static inline uint32_t bit_reverse32(uint32_t val)
@@ -155,8 +157,9 @@ esp_err_t esp_async_crc_install_gdma_template(const async_crc_config_t *config, 
     gdma_apply_strategy(crc_gdma->rx_channel, &rx_strategy_cfg);
 
     // Configure DMA transfer
+    // Note: 0 means "unset" in the config struct, fall back to the driver default burst size.
     gdma_transfer_config_t transfer_cfg = {
-        .max_data_burst_size = config->dma_burst_size,
+        .max_data_burst_size = config->dma_burst_size ? config->dma_burst_size : CRC_DMA_DEFAULT_BURST_SIZE,
         .access_ext_mem = true, // allow to copy data from external memory
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(crc_gdma->tx_channel, &transfer_cfg), err, TAG, "config TX DMA transfer failed");

@@ -23,6 +23,7 @@ extern "C" {
 typedef struct uhci_controller_t uhci_controller_t;
 
 #define UHCI_PM_LOCK_NAME_LEN_MAX              16
+#define UHCI_DEFAULT_DMA_BURST_SIZE            16  // Default DMA burst size in bytes, used when user config leaves dma_burst_size as 0
 
 #if CONFIG_UHCI_ISR_HANDLER_IN_IRAM
 #define UHCI_MEM_ALLOC_CAPS     (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)

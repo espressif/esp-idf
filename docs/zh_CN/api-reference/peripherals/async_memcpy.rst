@@ -92,7 +92,11 @@ DMA 必须能访问源和目标 buffer。目标 buffer 应分配在 DMA 可访�
     :SOC_LP_AHB_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_lp_ahb`
     :SOC_DW_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_dw_gdma`
 
-对于一次阻塞复制，将 :cpp:member:`async_memcpy_config_t::backlog` 设为 1 即可；若可能同时等待多个复制请求，应增大该值。:cpp:member:`async_memcpy_config_t::dma_burst_size` 设置 DMA 突发大小，单位为字节；可从 16 开始，仅在性能测试后再调整。除非目标芯片支持加权仲裁且应用需要调节平均总线带宽，否则将 :cpp:member:`async_memcpy_config_t::weight` 设为 0。
+对于一次阻塞复制，将 :cpp:member:`async_memcpy_config_t::backlog` 设为 1 即可；若可能同时等待多个复制请求，应增大该值。
+
+:cpp:member:`async_memcpy_config_t::dma_burst_size` 设置 DMA 突发大小，单位为字节；可从 16 开始，仅在性能测试后再调整。设为 ``0`` 表示使用驱动默认值（16 字节），设为 ``1`` 表示关闭数据突发传输。
+
+除非目标芯片支持加权仲裁且应用需要调节平均总线带宽，否则将 :cpp:member:`async_memcpy_config_t::weight` 设为 0。
 
 场景 2：在 DMA 复制期间继续工作
 =================================

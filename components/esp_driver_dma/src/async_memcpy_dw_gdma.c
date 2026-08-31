@@ -35,6 +35,9 @@ ESP_LOG_ATTR_TAG(TAG, "async_mcp.dw_gdma");
 /// @brief Maximum body transfer width (in bits), capped by the AXI data width.
 #define MCP_DW_GDMA_MAX_BODY_WIDTH_BITS  64
 
+/// Default DMA burst size (in bytes), used when the user leaves `dma_burst_size` as 0
+#define MCP_DW_GDMA_DEFAULT_BURST_SIZE  16
+
 /// @brief Transaction object for async memcpy
 typedef struct async_memcpy_transaction_t {
     dw_gdma_link_list_handle_t link_list;   // DW_GDMA link list for this transaction (body only)
@@ -184,7 +187,8 @@ esp_err_t esp_async_memcpy_install_dw_gdma(const async_memcpy_config_t *config, 
     portMUX_INITIALIZE(&mcp_dw_gdma->spin_lock);
     atomic_init(&mcp_dw_gdma->fsm, MCP_FSM_IDLE);
     mcp_dw_gdma->num_trans_objs = trans_queue_len;
-    mcp_dw_gdma->dma_burst_size = config->dma_burst_size;
+    // Note: 0 means "unset" in the config struct, fall back to the driver default burst size
+    mcp_dw_gdma->dma_burst_size = config->dma_burst_size ? config->dma_burst_size : MCP_DW_GDMA_DEFAULT_BURST_SIZE;
 
     mcp_dw_gdma->parent.del = mcp_dw_gdma_del;
     mcp_dw_gdma->parent.memcpy = mcp_dw_gdma_memcpy;
