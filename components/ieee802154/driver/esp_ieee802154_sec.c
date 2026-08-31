@@ -7,7 +7,6 @@
 #include "sdkconfig.h"
 #include <string.h>
 #include "esp_err.h"
-#include "hal/ieee802154_ll.h"
 #include "esp_ieee802154_frame.h"
 #include "esp_ieee802154_sec.h"
 #include "esp_ieee802154_util.h"
