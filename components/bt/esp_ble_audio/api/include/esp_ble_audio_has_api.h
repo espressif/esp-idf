@@ -162,6 +162,20 @@ esp_err_t esp_ble_audio_has_client_preset_next(esp_ble_audio_has_t *has, bool sy
 esp_err_t esp_ble_audio_has_client_preset_prev(esp_ble_audio_has_t *has, bool sync);
 
 /**
+ * @brief   Write Preset Name.
+ *
+ * Client procedure to change the name of the preset identified by @p index.
+ *
+ * @param   has     Pointer to the Hearing Access Service object.
+ * @param   index   Preset index whose name to change.
+ * @param   name    New preset name (1..40 octets).
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_has_client_preset_name_write(esp_ble_audio_has_t *has,
+                                                     uint8_t index, const char *name);
+
+/**
  * @brief   Register the Hearing Access Service instance.
  *
  * @param   features    Hearing Access Service register parameters.

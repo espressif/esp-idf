@@ -251,14 +251,14 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t ms)
     return 0;
 }
 
-int k_work_schedule_periodic(struct k_work_delayable *dwork, k_timeout_t period_ms)
+int k_work_schedule_periodic_us(struct k_work_delayable *dwork, uint64_t period_us)
 {
     int err;
 
-    LOG_DBG("WorkSchedulePeriodic[%p][%u]", dwork, period_ms);
+    LOG_DBG("WorkSchedulePeriodicUs[%p][%llu]", dwork, (unsigned long long)period_us);
 
     assert(dwork);
-    assert(period_ms > 0);
+    assert(period_us > 0);
 
     if (dwork->work.timer == NULL) {
         LOG_WRN("TimerNotCreated");
@@ -267,13 +267,21 @@ int k_work_schedule_periodic(struct k_work_delayable *dwork, k_timeout_t period_
 
     esp_timer_stop(dwork->work.timer);
 
-    err = esp_timer_start_periodic(dwork->work.timer, (uint64_t)period_ms * 1000);
+    err = esp_timer_start_periodic(dwork->work.timer, period_us);
     if (err) {
         LOG_ERR("StartPeriodicTimerFail[%d]", err);
         return -EIO;
     }
 
     return 0;
+}
+
+int k_work_schedule_periodic(struct k_work_delayable *dwork, k_timeout_t period_ms)
+{
+    /* Sub-millisecond ISO SDU intervals (e.g. 7500, 8163, 10884 us) lose
+     * precision when forced to whole milliseconds; callers that need the exact
+     * interval should use k_work_schedule_periodic_us(). */
+    return k_work_schedule_periodic_us(dwork, (uint64_t)period_ms * 1000);
 }
 
 k_timeout_t k_work_delayable_remaining_get(struct k_work_delayable *dwork)

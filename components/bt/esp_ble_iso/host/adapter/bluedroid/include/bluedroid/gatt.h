@@ -20,6 +20,10 @@
 extern "C" {
 #endif
 
+/* Reject ceiling for a reassembled ATT long write: the GATT attribute value max
+ * (0..512 octets). Costs no RAM — the buffer is malloc'd to the actual write size. */
+#define GATTS_PREP_MAX_LEN  512
+
 struct gatt_conn {
     uint8_t  used : 1;
     uint8_t  conn_create : 1;
@@ -30,6 +34,10 @@ struct gatt_conn {
     uint8_t  status;
     uint8_t  gatt_if;
     uint16_t conn_handle;
+    /* BTA GATT conn_id: (internal GATT index << 8) | gatt_if. Diverges from
+     * conn_handle (the ACL handle) after connection churn, so it's captured
+     * verbatim from BTA at connect rather than rebuilt from the ACL handle. */
+    uint16_t conn_id;
     uint8_t  role;
     struct {
         uint8_t type;
@@ -54,6 +62,15 @@ struct gatt_conn {
      * flag so the handler pops this list first to disambiguate from the
      * indication acks tracked in gatts_list. See struct gatts_notify_node. */
     sys_slist_t gatts_notify_list;
+
+    /* Per-connection ATT long-write (prepare/execute) reassembly, so concurrent long
+     * writes on different links never collide. prep_buf is malloc'd to the write size
+     * on demand and freed on execute/cancel/disconnect — idle links cost nothing. */
+    bool      prep_active;
+    bool      prep_error;       /* sticky: a chunk overflowed or arrived out of order */
+    uint16_t  prep_attr_handle;
+    uint16_t  prep_len;
+    uint8_t  *prep_buf;
 };
 
 uint8_t bt_le_bluedroid_gattc_get_if(void);

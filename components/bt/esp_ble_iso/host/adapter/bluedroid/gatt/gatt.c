@@ -236,16 +236,26 @@ static void gatts_notify_list_drain(struct gatt_conn *gatt_conn)
     }
 }
 
+/* Rewrite a slot's conn_id to the GATTS/GATTC gatt_if (low byte); the BTA index
+ * (high byte) is shared on one ACL. Lets a dual-role link op on the right conn_id. */
+static inline uint16_t to_gatts_conn_id(uint16_t conn_id)
+{
+    return BTC_GATT_CREATE_CONN_ID(gatts_if, BTC_GATT_GET_CONN_ID(conn_id));
+}
+
+static inline uint16_t to_gattc_conn_id(uint16_t conn_id)
+{
+    return BTC_GATT_CREATE_CONN_ID(gattc_if, BTC_GATT_GET_CONN_ID(conn_id));
+}
+
 static void gatts_indicate_dispatch(struct bt_conn *conn,
+                                    uint16_t conn_id,
                                     struct gatts_list_node *n)
 {
-    uint16_t conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conn->handle);
-
     LOG_DBG("[B]GattsIndDispatch[%u][%u]", conn->handle, n->value_handle);
 
-    BTA_GATTS_HandleValueIndication(conn_id, n->value_handle,
-                                    n->params_copy.len,
-                                    n->data_copy, true);
+    BTA_GATTS_HandleValueIndication(to_gatts_conn_id(conn_id), n->value_handle,
+                                    n->params_copy.len, n->data_copy, true);
 }
 
 /* Silent drain — used by reset_gatt_conn as a safety net. The disconnect
@@ -348,11 +358,58 @@ struct gatt_conn *bt_le_bluedroid_find_free_gatt_conn(void)
     return NULL;
 }
 
+/* Exact slot lookup by BTA conn_id (full gatt_if + connection index). */
+static struct gatt_conn *find_gatt_conn_with_conn_id(uint16_t conn_id)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(gatt_conns); i++) {
+        if (gatt_conns[i].used && gatt_conns[i].conn_id == conn_id) {
+            return &gatt_conns[i];
+        }
+    }
+
+    return NULL;
+}
+
+/* Slot lookup for a BTA request/completion: exact conn_id, else fall back to the
+ * connection index (high byte) so a dual-role link resolves either gatt_if. */
+static struct gatt_conn *find_gatt_conn_by_conn_id_or_index(uint16_t conn_id)
+{
+    struct gatt_conn *gatt_conn = find_gatt_conn_with_conn_id(conn_id);
+
+    if (gatt_conn == NULL) {
+        for (size_t i = 0; i < ARRAY_SIZE(gatt_conns); i++) {
+            if (gatt_conns[i].used &&
+                    BTC_GATT_GET_CONN_ID(gatt_conns[i].conn_id) == BTC_GATT_GET_CONN_ID(conn_id)) {
+                gatt_conn = &gatt_conns[i];
+                break;
+            }
+        }
+    }
+
+    return gatt_conn;
+}
+
+/* Map an ACL conn_handle to the BTA conn_id for BTA_GATT[CS]_* calls. Returns
+ * false if the link is already torn down (slot gone) — caller skips the BTA op. */
+static bool gatt_conn_id_lookup(uint16_t conn_handle, uint16_t *conn_id)
+{
+    struct gatt_conn *gatt_conn;
+
+    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(conn_handle);
+    if (gatt_conn == NULL) {
+        return false;
+    }
+
+    *conn_id = gatt_conn->conn_id;
+    return true;
+}
+
 static void reset_gatt_conn(struct gatt_conn *gatt_conn)
 {
     gattc_list_drain(gatt_conn);
     gatts_list_drain(gatt_conn);
     gatts_notify_list_drain(gatt_conn);
+    free(gatt_conn->prep_buf);   /* free(NULL) is safe when no long write was in flight */
     memset(gatt_conn, 0, sizeof(*gatt_conn));
     gatt_conn->conn_handle = UINT16_MAX;
 }
@@ -392,7 +449,8 @@ static void gattc_connect_event_handler(tBTA_GATTC_CONNECT *connect)
 
     qev->type = BT_LE_GATTC_CONNECT_EVENT;
 
-    qev->gattc_connect.conn_handle = BTC_GATT_GET_CONN_ID(connect->conn_id);
+    qev->gattc_connect.conn_handle = connect->conn_handle;
+    qev->gattc_connect.conn_id = connect->conn_id;
     qev->gattc_connect.role = connect->link_role;
     qev->gattc_connect.peer.type = connect->ble_addr_type;
     memcpy(qev->gattc_connect.peer.val, connect->remote_bda, BT_ADDR_SIZE);
@@ -414,7 +472,7 @@ static void gattc_disconnect_event_handler(tBTA_GATTC_DISCONNECT *disconnect)
 
     qev->type = BT_LE_GATTC_DISCONNECT_EVENT;
 
-    qev->gattc_disconnect.conn_handle = BTC_GATT_GET_CONN_ID(disconnect->conn_id);
+    qev->gattc_disconnect.conn_id = disconnect->conn_id;
     qev->gattc_disconnect.reason = bta_disconn_reason_to_hci(disconnect->reason);
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
@@ -435,7 +493,7 @@ static void gattc_open_event_handler(tBTA_GATTC_OPEN *open)
     qev->type = BT_LE_GATTC_OPEN_EVENT;
 
     qev->gattc_open.status = open->status;
-    qev->gattc_open.conn_handle = BTC_GATT_GET_CONN_ID(open->conn_id);
+    qev->gattc_open.conn_id = open->conn_id;
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
@@ -455,7 +513,7 @@ static void gattc_mtu_event_handler(tBTA_GATTC_CFG_MTU *cfg_mtu)
     qev->type = BT_LE_GATTC_MTU_EVENT;
 
     qev->gattc_mtu.status = cfg_mtu->status;
-    qev->gattc_mtu.conn_handle = BTC_GATT_GET_CONN_ID(cfg_mtu->conn_id);
+    qev->gattc_mtu.conn_id = cfg_mtu->conn_id;
     qev->gattc_mtu.mtu = cfg_mtu->mtu;
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
@@ -476,7 +534,7 @@ static void gattc_disc_cmpl_event_handler(tBTA_GATTC_DIS_CMPL *disc_cmpl)
     qev->type = BT_LE_GATTC_DISC_CMPL_EVENT;
 
     qev->gattc_disc_cmpl.status = disc_cmpl->status;
-    qev->gattc_disc_cmpl.conn_handle = BTC_GATT_GET_CONN_ID(disc_cmpl->conn_id);
+    qev->gattc_disc_cmpl.conn_id = disc_cmpl->conn_id;
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
@@ -496,7 +554,7 @@ static void gattc_read_chrc_event_handler(tBTA_GATTC_READ *read)
     qev->type = BT_LE_GATTC_READ_CHRC_EVENT;
 
     qev->gattc_read_chrc.status = read->status;
-    qev->gattc_read_chrc.conn_handle = BTC_GATT_GET_CONN_ID(read->conn_id);
+    qev->gattc_read_chrc.conn_id = read->conn_id;
     qev->gattc_read_chrc.attr_handle = read->handle;
 
     if (read->p_value &&
@@ -531,7 +589,7 @@ static void gattc_write_chrc_event_handler(tBTA_GATTC_WRITE *write)
     qev->type = BT_LE_GATTC_WRITE_CHRC_EVENT;
 
     qev->gattc_write_chrc.status = write->status;
-    qev->gattc_write_chrc.conn_handle = BTC_GATT_GET_CONN_ID(write->conn_id);
+    qev->gattc_write_chrc.conn_id = write->conn_id;
     qev->gattc_write_chrc.attr_handle = write->handle;
     qev->gattc_write_chrc.offset = write->offset;
 
@@ -558,7 +616,7 @@ static void gatts_notify_tx_event_handler(tBTA_GATTS_REQ *req)
      * list first (see gatts_notify_enqueue / handle_gatts_notify_tx_event),
      * so is_notify here is left unused on this path. */
     qev->gatts_notify_tx.is_notify = false;
-    qev->gatts_notify_tx.conn_handle = BTC_GATT_GET_CONN_ID(req->conn_id);
+    qev->gatts_notify_tx.conn_id = req->conn_id;
     qev->gatts_notify_tx.attr_handle = req->handle;
     qev->gatts_notify_tx.status = req->status;
 
@@ -580,7 +638,7 @@ static void gattc_notify_rx_event_handler(tBTA_GATTC_NOTIFY *notify)
     qev->type = BT_LE_GATTC_NOTIFY_RX_EVENT;
 
     qev->gattc_notify_rx.is_notify = notify->is_notify;
-    qev->gattc_notify_rx.conn_handle = BTC_GATT_GET_CONN_ID(notify->conn_id);
+    qev->gattc_notify_rx.conn_id = notify->conn_id;
     qev->gattc_notify_rx.attr_handle = notify->handle;
 
     if (notify->len) {
@@ -612,7 +670,8 @@ static void gatts_connect_event_handler(tBTA_GATTS_CONN *connect)
 
     qev->type = BT_LE_GATTS_CONNECT_EVENT;
 
-    qev->gatts_connect.conn_handle = BTC_GATT_GET_CONN_ID(connect->conn_id);
+    qev->gatts_connect.conn_handle = connect->conn_handle;
+    qev->gatts_connect.conn_id = connect->conn_id;
     qev->gatts_connect.role = connect->link_role;
     qev->gatts_connect.peer.type = connect->ble_addr_type;
     memcpy(qev->gatts_connect.peer.val, connect->remote_bda, BT_ADDR_SIZE);
@@ -634,7 +693,7 @@ static void gatts_disconnect_event_handler(tBTA_GATTS_CONN *disconnect)
 
     qev->type = BT_LE_GATTS_DISCONNECT_EVENT;
 
-    qev->gatts_disconnect.conn_handle = BTC_GATT_GET_CONN_ID(disconnect->conn_id);
+    qev->gatts_disconnect.conn_id = disconnect->conn_id;
     qev->gatts_disconnect.reason = bta_disconn_reason_to_hci(disconnect->reason);
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
@@ -655,7 +714,7 @@ static void gatts_mtu_event_handler(tBTA_GATTS_REQ *req)
 
     qev->type = BT_LE_GATTS_MTU_EVENT;
 
-    qev->gatts_mtu.conn_handle = BTC_GATT_GET_CONN_ID(req->conn_id);
+    qev->gatts_mtu.conn_id = req->conn_id;
     qev->gatts_mtu.mtu = req->p_data->mtu;
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
@@ -675,7 +734,7 @@ static void gatts_read_req_handler(tBTA_GATTS_REQ *req)
 
     qev->type = BT_LE_GATTS_READ_EVENT;
 
-    qev->gatts_read.conn_handle = BTC_GATT_GET_CONN_ID(req->conn_id);
+    qev->gatts_read.conn_id = req->conn_id;
     qev->gatts_read.trans_id = req->trans_id;
     memcpy(qev->gatts_read.peer, req->remote_bda, BT_ADDR_SIZE);
     qev->gatts_read.attr_handle = req->p_data->read_req.handle;
@@ -701,7 +760,7 @@ static void gatts_write_req_handler(tBTA_GATTS_REQ *req)
 
     qev->type = BT_LE_GATTS_WRITE_EVENT;
 
-    qev->gatts_write.conn_handle = BTC_GATT_GET_CONN_ID(req->conn_id);
+    qev->gatts_write.conn_id = req->conn_id;
     qev->gatts_write.trans_id = req->trans_id;
     memcpy(qev->gatts_write.peer, req->remote_bda, BT_ADDR_SIZE);
     qev->gatts_write.attr_handle = req->p_data->write_req.handle;
@@ -724,6 +783,27 @@ static void gatts_write_req_handler(tBTA_GATTS_REQ *req)
         if (qev->gatts_write.value) {
             free(qev->gatts_write.value);
         }
+        free(qev);
+    }
+}
+
+static void gatts_exec_write_req_handler(tBTA_GATTS_REQ *req)
+{
+    struct bt_le_gatt_event_param *qev;
+    int err;
+
+    qev = calloc(1, sizeof(*qev));
+    assert(qev);
+
+    qev->type = BT_LE_GATTS_EXEC_WRITE_EVENT;
+    qev->gatts_exec_write.conn_id = req->conn_id;
+    qev->gatts_exec_write.trans_id = req->trans_id;
+    qev->gatts_exec_write.exec = req->p_data &&
+                                 req->p_data->exec_write == GATT_PREP_WRITE_EXEC;
+
+    err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
+    if (err) {
+        LOG_ERR("[B]GattsExecPostFail[%d]", err);
         free(qev);
     }
 }
@@ -771,12 +851,6 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
         if (p_data->conn.server_if != gatts_if) {
             LOG_ERR("[B]GattsConnUnknownIf[%u]", p_data->conn.server_if);
-            break;
-        }
-
-        if (BTC_GATT_GET_CONN_ID(p_data->conn.conn_id) != p_data->conn.conn_handle) {
-            LOG_ERR("[B]GattsConnHdlMismatch[%u][%u]",
-                    BTC_GATT_GET_CONN_ID(p_data->conn.conn_id), p_data->conn.conn_handle);
             break;
         }
 
@@ -983,6 +1057,14 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         if (p_data->req_data.p_data) {
             LOG_DBG("[B]GattsExecFlag[%u]", p_data->req_data.p_data->exec_write);
         }
+
+        if (BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id) != gatts_if) {
+            LOG_ERR("[B]GattsExecUnknownIf[%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id));
+            break;
+        }
+
+        gatts_exec_write_req_handler(&p_data->req_data);
         break;
 
     case BTA_GATTS_CONF_EVT:
@@ -1056,12 +1138,6 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 
         if (p_data->connect.client_if != gattc_if) {
             LOG_ERR("[B]GattcConnUnknownIf[%u]", p_data->connect.client_if);
-            break;
-        }
-
-        if (BTC_GATT_GET_CONN_ID(p_data->connect.conn_id) != p_data->connect.conn_handle) {
-            LOG_ERR("[B]GattcConnHdlMismatch[%u][%u]",
-                    BTC_GATT_GET_CONN_ID(p_data->connect.conn_id), p_data->connect.conn_handle);
             break;
         }
 
@@ -1375,6 +1451,7 @@ static void handle_gattc_connect_event(struct bt_le_gattc_connect_event *event)
     gatt_conn->status = 0x00;
     gatt_conn->gatt_if = gattc_if;
     gatt_conn->conn_handle = event->conn_handle;
+    gatt_conn->conn_id = event->conn_id;
     gatt_conn->role = event->role;
     gatt_conn->peer.type = event->peer.type;
     memcpy(gatt_conn->peer.val, event->peer.val, BT_ADDR_SIZE);
@@ -1387,11 +1464,13 @@ static void handle_gattc_disconnect_event(struct bt_le_gattc_disconnect_event *e
     struct bt_conn *conn;
     sys_snode_t *snode;
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
+    gatt_conn = find_gatt_conn_with_conn_id(event->conn_id);
     if (gatt_conn == NULL) {
         LOG_DBG("[B]GattcDisconnUnknownDev");
         return;
     }
+
+    event->conn_handle = gatt_conn->conn_handle;
 
     if (gatt_conn->role == BTM_ROLE_MASTER) {
         /* CENTRAL may also run a GATT server (e.g. CAP Initiator with PACS).
@@ -1419,11 +1498,13 @@ static void handle_gattc_open_event(struct bt_le_gattc_open_event *event)
     struct gatt_conn *gatt_conn;
     uint16_t conn_id;
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
     if (gatt_conn == NULL) {
         LOG_ERR("[B]GattcOpenUnknownDev");
         return;
     }
+
+    event->conn_handle = gatt_conn->conn_handle;
 
     gatt_conn->status = event->status;
 
@@ -1445,7 +1526,7 @@ static void handle_gattc_open_event(struct bt_le_gattc_open_event *event)
 
     /* At this moment, the peer device may has not initiated MTU exchange */
     if (gatt_conn->mtu == 0) {
-        conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, gatt_conn->conn_handle);
+        conn_id = to_gattc_conn_id(gatt_conn->conn_id);
 
         BTA_GATTC_ConfigureMTU(conn_id);
 
@@ -1465,11 +1546,13 @@ static void handle_gattc_mtu_event(struct bt_le_gattc_mtu_event *event)
 {
     struct gatt_conn *gatt_conn;
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
     if (gatt_conn == NULL) {
-        LOG_ERR("[B]GattcMtuUnknownConn[%u]", event->conn_handle);
+        LOG_ERR("[B]GattcMtuUnknownConn[0x%04x]", event->conn_id);
         return;
     }
+
+    event->conn_handle = gatt_conn->conn_handle;
 
     /* The device may works as GATT client or server or both, which is not
      * related to the Link Layer role, hence we don't check the Link layer
@@ -1499,13 +1582,39 @@ static void handle_gattc_disc_cmpl_event(struct bt_le_gattc_disc_cmpl_event *eve
 {
     struct gatt_conn *gatt_conn;
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
     if (gatt_conn == NULL) {
-        LOG_ERR("[B]GattcDiscSvcUnknownConn[%u]", event->conn_handle);
+        LOG_ERR("[B]GattcDiscSvcUnknownConn[0x%04x]", event->conn_id);
         return;
     }
 
+    event->conn_handle = gatt_conn->conn_handle;
+
     bt_le_gattc_app_disc_cmpl_event(event);
+}
+
+/* Map a BTA/Bluedroid GATT status to a standard ATT error. Bluedroid reuses the
+ * 0x80-0x92 range for internal failures (e.g. 0x85 on link loss) overlapping ATT
+ * app errors, so only codes the profiles receive OTA pass; the rest -> "unlikely". */
+static uint8_t bluedroid_gattc_att_err(uint8_t status)
+{
+    /* Success (0) and ATT spec error codes (0x01-0x1F) match the wire 1:1. */
+    if (status <= 0x1F) {
+        return status;
+    }
+
+    /* ATT application error codes the profiles receive as a client. 0x85+ here is
+     * Bluedroid-internal (GATT_ERROR etc.), not an over-the-air error. */
+    if (status >= 0x80 && status <= 0x84) {
+        return status;
+    }
+
+    /* Common Profile and Service error codes (0xFC-0xFF). */
+    if (status >= 0xFC) {
+        return status;
+    }
+
+    return BT_ATT_ERR_UNLIKELY;
 }
 
 static void handle_gattc_read_chrc_event(struct bt_le_gattc_read_chrc_event *event)
@@ -1521,15 +1630,17 @@ static void handle_gattc_read_chrc_event(struct bt_le_gattc_read_chrc_event *eve
     uint16_t off;
     uint8_t ret;
 
-    conn = bt_le_acl_conn_find(event->conn_handle);
-    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_WRN("[B]GattcRdCharNotConn");
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]GattcRdCharUnknownConn[0x%04x]", event->conn_id);
         goto end;
     }
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
-    if (gatt_conn == NULL) {
-        LOG_WRN("[B]GattcRdCharUnknownConn[%u]", event->conn_handle);
+    event->conn_handle = gatt_conn->conn_handle;
+
+    conn = bt_le_acl_conn_find(event->conn_handle);
+    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
+        LOG_WRN("[B]GattcRdCharNotConn");
         goto end;
     }
 
@@ -1582,7 +1693,13 @@ static void handle_gattc_read_chrc_event(struct bt_le_gattc_read_chrc_event *eve
         vlen = (off < event->len) ? (event->len - off) : 0;
     }
 
-    ret = read_copy.func(conn, event->status, params, val, vlen);
+    /* By-UUID read: report the matched handle in params->by_uuid.start_handle (like
+     * Zephyr); callers (has_client active-index read) use it as the value handle. */
+    if (read_copy.handle_count == 0 && event->status == 0) {
+        params->by_uuid.start_handle = event->attr_handle;
+    }
+
+    ret = read_copy.func(conn, bluedroid_gattc_att_err(event->status), params, val, vlen);
 
     if (ret == BT_GATT_ITER_CONTINUE && event->status == 0) {
         read_copy.func(conn, 0, params, NULL, 0);
@@ -1602,15 +1719,17 @@ static void handle_gattc_write_chrc_event(struct bt_le_gattc_write_chrc_event *e
     struct bt_conn *conn;
     sys_snode_t *snode;
 
-    conn = bt_le_acl_conn_find(event->conn_handle);
-    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_WRN("[B]GattcWrCharNotConn");
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]GattcWrCharUnknownConn[0x%04x]", event->conn_id);
         return;
     }
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
-    if (gatt_conn == NULL) {
-        LOG_WRN("[B]GattcWrCharUnknownConn[%u]", event->conn_handle);
+    event->conn_handle = gatt_conn->conn_handle;
+
+    conn = bt_le_acl_conn_find(event->conn_handle);
+    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
+        LOG_WRN("[B]GattcWrCharNotConn");
         return;
     }
 
@@ -1647,7 +1766,7 @@ static void handle_gattc_write_chrc_event(struct bt_le_gattc_write_chrc_event *e
         return;
     }
 
-    params->func(conn, event->status, params);
+    params->func(conn, bluedroid_gattc_att_err(event->status), params);
 }
 
 static void handle_gattc_notify_event(struct bt_le_gattc_notify_rx_event *event)
@@ -1658,15 +1777,17 @@ static void handle_gattc_notify_event(struct bt_le_gattc_notify_rx_event *event)
     struct gattc_sub *sub;
     struct bt_conn *conn;
 
-    conn = bt_le_acl_conn_find(event->conn_handle);
-    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_WRN("[B]GattcNotifNotConn");
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]GattcNotifUnknownConn[0x%04x]", event->conn_id);
         goto end;
     }
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
-    if (gatt_conn == NULL) {
-        LOG_WRN("[B]GattcNotifUnknownConn[%u]", event->conn_handle);
+    event->conn_handle = gatt_conn->conn_handle;
+
+    conn = bt_le_acl_conn_find(event->conn_handle);
+    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
+        LOG_WRN("[B]GattcNotifNotConn");
         goto end;
     }
 
@@ -1730,9 +1851,19 @@ static void handle_gatts_connect_event(struct bt_le_gatts_connect_event *event)
     gatt_conn->status = 0x00;
     gatt_conn->gatt_if = gatts_if;
     gatt_conn->conn_handle = event->conn_handle;
+    gatt_conn->conn_id = event->conn_id;
     gatt_conn->role = event->role;
     gatt_conn->peer.type = event->peer.type;
     memcpy(gatt_conn->peer.val, event->peer.val, BT_ADDR_SIZE);
+
+    /* conn->le.dst is the connect-event address verbatim — no RPA->identity resolution.
+     * A peer using an RPA makes bt_le_bond_exists()/CCC cfg miss on reconnect (fresh RPA
+     * each time). Identity / static-random / public addresses are stable. Warn to surface it. */
+    if (event->peer.type == BT_ADDR_LE_RANDOM && BT_ADDR_IS_RPA(&event->peer)) {
+        LOG_WRN("[B]GattsConnRpaDst[%02x:%02x:%02x:%02x:%02x:%02x]",
+                event->peer.val[5], event->peer.val[4], event->peer.val[3],
+                event->peer.val[2], event->peer.val[1], event->peer.val[0]);
+    }
 
     post_acl_connect_app_event(gatt_conn);
 }
@@ -1744,11 +1875,13 @@ static void handle_gatts_disconnect_event(struct bt_le_gatts_disconnect_event *e
     struct bt_conn *conn;
     sys_snode_t *snode;
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
+    gatt_conn = find_gatt_conn_with_conn_id(event->conn_id);
     if (gatt_conn == NULL) {
         LOG_WRN("[B]GattsDisconnUnknownDev");
         return;
     }
+
+    event->conn_handle = gatt_conn->conn_handle;
 
     /* Mirror handle_gatts_connect_event: SLAVE-side teardown happens here;
      * MASTER teardown is in handle_gattc_disconnect_event. */
@@ -1783,11 +1916,13 @@ static void handle_gatts_mtu_event(struct bt_le_gatts_mtu_event *event)
 {
     struct gatt_conn *gatt_conn;
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
     if (gatt_conn == NULL) {
-        LOG_ERR("[B]GattsMtuUnknownConn[%u]", event->conn_handle);
+        LOG_ERR("[B]GattsMtuUnknownConn[0x%04x]", event->conn_id);
         return;
     }
+
+    event->conn_handle = gatt_conn->conn_handle;
 
     /* The device may works as GATT client or server or both, which is not
      * related to the Link Layer role, hence we don't check the Link layer
@@ -1812,6 +1947,7 @@ static void handle_gatts_mtu_event(struct bt_le_gatts_mtu_event *event)
 
 static void handle_gatts_read_event(struct bt_le_gatts_read_event *event)
 {
+    struct gatt_conn *gatt_conn;
     struct bt_gatt_attr *attr;
     tBTA_GATT_STATUS status;
     struct bt_conn *conn;
@@ -1821,6 +1957,14 @@ static void handle_gatts_read_event(struct bt_le_gatts_read_event *event)
 
     status = BTA_GATT_OK;
     rsp = NULL;
+
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]GattsRdUnknownConn[0x%04x]", event->conn_id);
+        return;
+    }
+
+    event->conn_handle = gatt_conn->conn_handle;
 
     conn = bt_le_acl_conn_find(event->conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
@@ -1844,24 +1988,23 @@ static void handle_gatts_read_event(struct bt_le_gatts_read_event *event)
     rsp->attr_value.handle = event->attr_handle;
 
     if (attr->read) {
-        if (event->offset) {
-            LOG_WRN("[B]GattsRdEvtNotSupp");
+        /* Pass the request offset through so GATT Read Blob (long read) works: the read
+         * cb returns value[offset..], BTA caps each response at ATT_MTU-1. Needed for
+         * values larger than one PDU (e.g. a BASS Broadcast Receive State). */
+        ret = attr->read(conn, attr, (void *)rsp, GATT_MAX_ATTR_LEN, event->offset);
+        if (ret < 0) {
+            LOG_DBG("[B]GattsRdEvtErr[%u][%d]", event->attr_handle, ret);
 
-            status = GATT_REQ_NOT_SUPPORTED;
-        } else {
-            ret = attr->read(conn, attr, (void *)rsp, GATT_MAX_ATTR_LEN, 0);
-            if (ret < 0) {
-                LOG_DBG("[B]GattsRdEvtErr[%u][%d]", event->attr_handle, ret);
-
-                status = BT_GATT_ERR(ret);
-            }
+            status = BT_GATT_ERR(ret);
         }
     } else {
         status = GATT_READ_NOT_PERMIT;
     }
 
 end:
-    conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conn->handle);
+    /* Respond on the conn_id the request arrived on (event->conn_id): for a central-side
+     * server the slot's canonical conn_id is the GATTC one, which would be wrong here. */
+    conn_id = event->conn_id;
 
     BTA_GATTS_SendRsp(conn_id, event->trans_id, status, rsp);
 
@@ -1870,9 +2013,92 @@ end:
     }
 }
 
+/* Buffer one ATT prepare-write chunk and echo it; the reassembled value is applied on
+ * the execute event. Per-connection state (struct gatt_conn) so concurrent long writes
+ * don't collide. Used for control-point PDUs > ATT_MTU-3 (e.g. BASS Add Source). */
+static void handle_gatts_prepare_write(struct bt_le_gatts_write_event *event)
+{
+    struct gatt_conn *gatt_conn;
+    tBTA_GATT_STATUS status = BTA_GATT_OK;
+    uint16_t conn_id;
+    tBTA_GATTS_RSP *rsp;
+
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_ERR("[B]GattsPrepNoConn[0x%04x]", event->conn_id);
+        return;
+    }
+
+    if (event->offset == 0) {
+        /* A new long write always restarts at offset 0; this also discards any
+         * sequence abandoned by a prior disconnect. */
+        gatt_conn->prep_active = true;
+        gatt_conn->prep_error = false;
+        gatt_conn->prep_attr_handle = event->attr_handle;
+        gatt_conn->prep_len = 0;
+    } else if (!gatt_conn->prep_active ||
+               gatt_conn->prep_attr_handle != event->attr_handle ||
+               gatt_conn->prep_len != event->offset) {
+        LOG_WRN("[B]GattsPrepBadOft[%u][%u]", event->offset, gatt_conn->prep_len);
+        gatt_conn->prep_error = true;
+        status = GATT_INVALID_OFFSET;
+    }
+
+    if (status == BTA_GATT_OK) {
+        uint32_t total = (uint32_t)event->offset + event->len;
+
+        if (total > GATTS_PREP_MAX_LEN) {
+            LOG_WRN("[B]GattsPrepQFull[%u]", (unsigned)total);
+            gatt_conn->prep_error = true;
+            status = GATT_PREPARE_Q_FULL;
+        } else if (total == 0) {
+            /* realloc(_,0) frees prep_buf and returns NULL → dangling ptr that
+               execute/disconnect would double-free. Release it explicitly. */
+            free(gatt_conn->prep_buf);
+            gatt_conn->prep_buf = NULL;
+            gatt_conn->prep_len = 0;
+        } else {
+            /* Grow the reassembly buffer to the write size on demand; realloc leaves
+             * the old buffer intact on failure. */
+            uint8_t *nb = realloc(gatt_conn->prep_buf, total);
+
+            if (nb == NULL) {
+                LOG_ERR("[B]GattsPrepNoMem[%u]", (unsigned)total);
+                gatt_conn->prep_error = true;
+                status = GATT_INSUF_RESOURCE;
+            } else {
+                gatt_conn->prep_buf = nb;
+                memcpy(gatt_conn->prep_buf + event->offset, event->value, event->len);
+                gatt_conn->prep_len = (uint16_t)total;
+            }
+        }
+    }
+
+    conn_id = event->conn_id;
+
+    if (status == BTA_GATT_OK) {
+        /* The prepare-write response must echo handle/offset/value. */
+        rsp = calloc(1, sizeof(*rsp));
+        assert(rsp);
+
+        rsp->attr_value.handle = event->attr_handle;
+        rsp->attr_value.offset = event->offset;
+        rsp->attr_value.len = event->len;
+        if (event->len) {
+            memcpy(rsp->attr_value.value, event->value, event->len);
+        }
+
+        BTA_GATTS_SendRsp(conn_id, event->trans_id, status, rsp);
+        free(rsp);
+    } else {
+        BTA_GATTS_SendRsp(conn_id, event->trans_id, status, NULL);
+    }
+}
+
 static void handle_gatts_write_event(struct bt_le_gatts_write_event *event)
 {
     struct bt_le_gatts_subscribe_event sub_event;
+    struct gatt_conn *gatt_conn;
     struct bt_gatt_attr *attr;
     tBTA_GATT_STATUS status;
     struct bt_conn *conn;
@@ -1881,9 +2107,29 @@ static void handle_gatts_write_event(struct bt_le_gatts_write_event *event)
 
     status = BTA_GATT_OK;
 
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]GattsWrUnknownConn[0x%04x]", event->conn_id);
+        if (event->value) {
+            free(event->value);
+        }
+        return;
+    }
+
+    event->conn_handle = gatt_conn->conn_handle;
+
     conn = bt_le_acl_conn_find(event->conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
         LOG_WRN("[B]GattsWrEvtNotConn");
+        if (event->value) {
+            free(event->value);
+        }
+        return;
+    }
+
+    /* Long write: queue the chunk and defer the attr->write to the execute event. */
+    if (event->is_prep) {
+        handle_gatts_prepare_write(event);
         if (event->value) {
             free(event->value);
         }
@@ -1953,7 +2199,7 @@ static void handle_gatts_write_event(struct bt_le_gatts_write_event *event)
 
 end:
     if (event->need_rsp) {
-        conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conn->handle);
+        conn_id = event->conn_id;
 
         BTA_GATTS_SendRsp(conn_id, event->trans_id, status, NULL);
     }
@@ -1961,6 +2207,61 @@ end:
     if (event->value) {
         free(event->value);
     }
+}
+
+static void handle_gatts_exec_write_event(struct bt_le_gatts_exec_write_event *event)
+{
+    tBTA_GATT_STATUS status = BTA_GATT_OK;
+    struct gatt_conn *gatt_conn;
+    struct bt_gatt_attr *attr;
+    struct bt_conn *conn;
+    uint16_t conn_id;
+    ssize_t ret;
+
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]GattsExecUnknownConn[0x%04x]", event->conn_id);
+        return;
+    }
+
+    event->conn_handle = gatt_conn->conn_handle;
+
+    conn = bt_le_acl_conn_find(event->conn_handle);
+    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
+        LOG_WRN("[B]GattsExecNotConn");
+        return;
+    }
+
+    if (!gatt_conn->prep_active) {
+        LOG_DBG("[B]GattsExecNoPrep");
+    } else {
+        if (!event->exec) {
+            LOG_DBG("[B]GattsExecCancel");
+        } else if (gatt_conn->prep_error) {
+            LOG_WRN("[B]GattsExecPrepErr");
+            status = GATT_INSUF_RESOURCE;
+        } else {
+            attr = bt_gatts_find_attr_by_handle(gatt_conn->prep_attr_handle);
+            if (attr == NULL) {
+                status = GATT_INVALID_HANDLE;
+            } else if (attr->write == NULL) {
+                status = GATT_WRITE_NOT_PERMIT;
+            } else {
+                ret = attr->write(conn, attr, gatt_conn->prep_buf, gatt_conn->prep_len, 0, 0);
+                if (ret < 0) {
+                    LOG_DBG("[B]GattsExecWrErr[%u][%d]", gatt_conn->prep_attr_handle, (int)ret);
+                    status = BT_GATT_ERR(ret);
+                }
+            }
+        }
+
+        free(gatt_conn->prep_buf);
+        gatt_conn->prep_buf = NULL;
+        gatt_conn->prep_active = false;
+    }
+
+    conn_id = event->conn_id;
+    BTA_GATTS_SendRsp(conn_id, event->trans_id, status, NULL);
 }
 
 static void handle_gatts_notify_tx_event(struct bt_le_gatts_notify_tx_event *event)
@@ -1973,15 +2274,17 @@ static void handle_gatts_notify_tx_event(struct bt_le_gatts_notify_tx_event *eve
     /* Find conn once up front. If the acl_conn was already torn down (race
      * with a queued CLOSE_EVT behind this CONF_EVT), leave the head in the
      * list — disconnect drain will fire its func with BT_ATT_ERR_UNLIKELY. */
-    conn = bt_le_acl_conn_find(event->conn_handle);
-    if (conn == NULL) {
-        LOG_WRN("[B]NotifyTxNoConn[%u]", event->conn_handle);
+    gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]NotifyTxUnknownConn[0x%04x]", event->conn_id);
         return;
     }
 
-    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
-    if (gatt_conn == NULL) {
-        LOG_WRN("[B]NotifyTxUnknownConn[%u]", event->conn_handle);
+    event->conn_handle = gatt_conn->conn_handle;
+
+    conn = bt_le_acl_conn_find(event->conn_handle);
+    if (conn == NULL) {
+        LOG_WRN("[B]NotifyTxNoConn[%u]", event->conn_handle);
         return;
     }
 
@@ -2022,7 +2325,7 @@ static void handle_gatts_notify_tx_event(struct bt_le_gatts_notify_tx_event *eve
         if (next_snode != NULL) {
             struct gatts_list_node *next_n =
                 CONTAINER_OF(next_snode, struct gatts_list_node, node);
-            gatts_indicate_dispatch(conn, next_n);
+            gatts_indicate_dispatch(conn, gatt_conn->conn_id, next_n);
         }
     }
 
@@ -2106,6 +2409,10 @@ void bt_le_bluedroid_gatt_handle_event(uint8_t *data, size_t data_len)
 
     case BT_LE_GATTS_WRITE_EVENT:
         handle_gatts_write_event(&param->gatts_write);
+        break;
+
+    case BT_LE_GATTS_EXEC_WRITE_EVENT:
+        handle_gatts_exec_write_event(&param->gatts_exec_write);
         break;
 
     case BT_LE_GATTS_NOTIFY_TX_EVENT:
@@ -2326,8 +2633,11 @@ static int gatts_notify(struct bt_conn *conn,
             }
         }
 
-        conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conn->handle);
-        BTA_GATTS_HandleValueIndication(conn_id, data.handle, len,
+        if (!gatt_conn_id_lookup(conn->handle, &conn_id)) {
+            return -ENOTCONN;
+        }
+
+        BTA_GATTS_HandleValueIndication(to_gatts_conn_id(conn_id), data.handle, len,
                                         (uint8_t *)value, need_cfm);
     } else {
         bt_conn_get_acl_conns(&conns, &conns_count);
@@ -2341,8 +2651,11 @@ static int gatts_notify(struct bt_conn *conn,
                 continue;
             }
 
-            conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conns[i].handle);
-            BTA_GATTS_HandleValueIndication(conn_id, data.handle, len,
+            if (!gatt_conn_id_lookup(conns[i].handle, &conn_id)) {
+                continue;
+            }
+
+            BTA_GATTS_HandleValueIndication(to_gatts_conn_id(conn_id), data.handle, len,
                                             (uint8_t *)value, need_cfm);
         }
     }
@@ -2383,7 +2696,7 @@ static int gatts_indicate_enqueue(struct bt_conn *conn,
     sys_slist_append(&gatt_conn->gatts_list, &n->node);
 
     if (was_empty) {
-        gatts_indicate_dispatch(conn, n);
+        gatts_indicate_dispatch(conn, gatt_conn->conn_id, n);
     }
 
     return 0;
@@ -2478,7 +2791,8 @@ int bt_le_bluedroid_gattc_disc_start(uint16_t conn_handle)
     return 0;
 }
 
-static int gattc_disc_primary_svc(struct bt_conn *conn, struct bt_gatt_discover_params *params)
+static int gattc_disc_primary_svc(struct bt_conn *conn, uint16_t conn_id,
+                                  struct bt_gatt_discover_params *params)
 {
     struct bt_gatt_service_val svc = {0};
     struct bt_uuid_16 svc_uuid = {0};
@@ -2486,7 +2800,6 @@ static int gattc_disc_primary_svc(struct bt_conn *conn, struct bt_gatt_discover_
     btgatt_db_element_t *db = NULL;
     tBT_UUID uuid = {0};
     uint16_t count = 0;
-    uint16_t conn_id;
     uint8_t ret;
 
     if (params->uuid == NULL) {
@@ -2494,7 +2807,6 @@ static int gattc_disc_primary_svc(struct bt_conn *conn, struct bt_gatt_discover_
         return -ENOTSUP;
     }
 
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
     bt_le_bluedroid_gatt_uuid_convert(params->uuid, &uuid);
 
     BTA_GATTC_GetServiceWithUUID(conn_id, &uuid, &db, &count);
@@ -2562,7 +2874,8 @@ end:
     return 0;
 }
 
-static int gattc_disc_included_svc(struct bt_conn *conn, struct bt_gatt_discover_params *params)
+static int gattc_disc_included_svc(struct bt_conn *conn, uint16_t conn_id,
+                                   struct bt_gatt_discover_params *params)
 {
     struct bt_gatt_include inc_svc = {0};
     struct bt_uuid_16 svc_uuid = {0};
@@ -2570,10 +2883,8 @@ static int gattc_disc_included_svc(struct bt_conn *conn, struct bt_gatt_discover
     btgatt_db_element_t *db = NULL;
     tBT_UUID uuid = {0};
     uint16_t count = 0;
-    uint16_t conn_id;
     uint8_t ret;
 
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
     if (params->uuid) {
         bt_le_bluedroid_gatt_uuid_convert(params->uuid, &uuid);
     }
@@ -2650,7 +2961,8 @@ end:
     return 0;
 }
 
-static int gattc_disc_chrc(struct bt_conn *conn, struct bt_gatt_discover_params *params)
+static int gattc_disc_chrc(struct bt_conn *conn, uint16_t conn_id,
+                           struct bt_gatt_discover_params *params)
 {
     struct bt_uuid_16 chrc_uuid = {0};
     struct bt_gatt_attr attr = {0};
@@ -2658,10 +2970,7 @@ static int gattc_disc_chrc(struct bt_conn *conn, struct bt_gatt_discover_params 
     btgatt_db_element_t *db = NULL;
     tBT_UUID uuid = {0};
     uint16_t count = 0;
-    uint16_t conn_id;
     uint8_t ret;
-
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
 
     /* Note:
      * Increment start_handle with 1 here because, for example, if 2 characteristics
@@ -2747,7 +3056,8 @@ end:
     return 0;
 }
 
-static int gattc_disc_chrc_desc(struct bt_conn *conn, struct bt_gatt_discover_params *params)
+static int gattc_disc_chrc_desc(struct bt_conn *conn, uint16_t conn_id,
+                                struct bt_gatt_discover_params *params)
 {
     struct bt_gatt_attr attr = {0};
     btgatt_db_element_t *db = NULL;
@@ -2756,7 +3066,6 @@ static int gattc_disc_chrc_desc(struct bt_conn *conn, struct bt_gatt_discover_pa
     uint16_t chrc_handle;
     tBT_UUID uuid = {0};
     uint16_t count = 0;
-    uint16_t conn_id;
     int err = 0;
 
     assert(params);
@@ -2773,7 +3082,6 @@ static int gattc_disc_chrc_desc(struct bt_conn *conn, struct bt_gatt_discover_pa
         return -EINVAL;
     }
 
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
     chrc_handle = params->sub_params->value_handle;
     bt_le_bluedroid_gatt_uuid_convert(params->uuid, &uuid);
 
@@ -2856,16 +3164,16 @@ int bt_le_bluedroid_gattc_discover(struct bt_conn *conn, struct bt_gatt_discover
 
     switch (params->type) {
     case BT_GATT_DISCOVER_PRIMARY:
-        return gattc_disc_primary_svc(conn, params);
+        return gattc_disc_primary_svc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
 
     case BT_GATT_DISCOVER_INCLUDE:
-        return gattc_disc_included_svc(conn, params);
+        return gattc_disc_included_svc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
 
     case BT_GATT_DISCOVER_CHARACTERISTIC:
-        return gattc_disc_chrc(conn, params);
+        return gattc_disc_chrc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
 
     case BT_GATT_DISCOVER_DESCRIPTOR:
-        return gattc_disc_chrc_desc(conn, params);
+        return gattc_disc_chrc_desc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
 
     default:
         LOG_ERR("[B]DiscTypeNotSupp[%u]", params->type);
@@ -2899,7 +3207,7 @@ int bt_le_bluedroid_gattc_read(struct bt_conn *conn, struct bt_gatt_read_params 
 
     sys_slist_append(&gatt_conn->gattc_list, &op->node);
 
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
+    conn_id = to_gattc_conn_id(gatt_conn->conn_id);
 
     if (op->read.params_copy.handle_count == 0) {
         LOG_INF("[B]RdByTypeReq[0x%04x]",
@@ -2946,7 +3254,7 @@ int bt_le_bluedroid_gattc_write(struct bt_conn *conn, struct bt_gatt_write_param
 
     sys_slist_append(&gatt_conn->gattc_list, &op->node);
 
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
+    conn_id = to_gattc_conn_id(gatt_conn->conn_id);
 
     BTA_GATTC_WriteCharValue(conn_id, params->handle, BTA_GATTC_TYPE_WRITE,
                              params->length, (void *)params->data,
@@ -2972,7 +3280,7 @@ int bt_le_bluedroid_gattc_write_without_rsp(struct bt_conn *conn, uint16_t handl
         return -ENODEV;
     }
 
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
+    conn_id = to_gattc_conn_id(gatt_conn->conn_id);
 
     /* TODO: BTA_GATTC_WriteCharValue is void and silently drops the cmd on
      * osi_malloc failure. NimBLE returns the host status here, so the API
@@ -2992,7 +3300,13 @@ int bt_le_bluedroid_gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscri
     uint16_t chrc_handle;
     uint16_t conn_id;
 
-    conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
+    if (!gatt_conn_id_lookup(conn->handle, &conn_id)) {
+        LOG_INF("[B]NoConnInfo[%u]", conn->handle);
+        return -ENOTCONN;
+    }
+
+    conn_id = to_gattc_conn_id(conn_id);
+
     chrc_handle = params->value_handle;
 
     /* Unsubscribe path: caller (bt_gatt_unsubscribe) forces params->value to

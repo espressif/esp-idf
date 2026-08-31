@@ -20,6 +20,7 @@
 #include "nimble/profiles/tmas.h"
 #include "nimble/profiles/vcs.h"
 #include "nimble/profiles/has.h"
+#include "nimble/profiles/gmas.h"
 
 #ifdef __cplusplus
 extern "C" {

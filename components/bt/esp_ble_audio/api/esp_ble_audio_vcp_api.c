@@ -185,6 +185,22 @@ esp_err_t esp_ble_audio_vcp_vol_rend_mute(void)
 
     return ESP_OK;
 }
+
+esp_err_t esp_ble_audio_vcp_vol_rend_reset_state(const esp_ble_audio_vcp_vol_rend_reset_state_param_t *param)
+{
+    int err;
+
+    if (param == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = bt_vcp_vol_rend_reset_state_safe(param);
+    if (err) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
 #endif /* CONFIG_BT_VCP_VOL_REND */
 
 #if CONFIG_BT_VCP_VOL_CTLR

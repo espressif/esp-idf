@@ -43,11 +43,11 @@ static int ots_l2cap_recv_ready(struct ble_l2cap_chan *chan)
     struct os_mbuf *sdu_rx;
     int rc;
 
-    LOG_DBG("[N]OtsRecvReady");
+    LOG_DBG("[N]L2capOtsRecvReady");
 
     sdu_rx = os_mbuf_get_pkthdr(&ots_mbuf_pool, 0);
     if (sdu_rx == NULL) {
-        LOG_ERR("[N]NoBufForL2capRecv");
+        LOG_ERR("[N]L2capNoBufForL2capRecv");
         return -ENOMEM;
     }
 
@@ -70,31 +70,31 @@ static int ots_l2cap_event_cb(struct ble_l2cap_event *event, void *arg)
     uint8_t *sdu;
     int err;
 
-    LOG_DBG("[N]OtsEvtCb[%u]", event->type);
+    LOG_DBG("[N]L2capOtsEvtCb[%u]", event->type);
 
     switch (event->type) {
     case BLE_L2CAP_EVENT_COC_CONNECTED:
         if (event->connect.status) {
-            LOG_ERR("[N]CocConnectFail[%d]", event->connect.status);
+            LOG_ERR("[N]L2capCocConnectFail[%d]", event->connect.status);
             return 0;
         }
 
         if (ots_chan) {
-            LOG_ERR("[N]CocChanExist");
+            LOG_ERR("[N]L2capCocChanExist");
             return 0;
         }
 
         ots_chan = event->connect.chan;
 
         if (ble_l2cap_get_chan_info(event->connect.chan, &chan_info)) {
-            LOG_ERR("[N]CocGetChanInfoFail");
+            LOG_ERR("[N]L2capCocGetChanInfoFail");
             /* Roll back the latch so the next COC_CONNECTED isn't refused
              * by the if (ots_chan) guard above. */
             ots_chan = NULL;
             return -EIO;
         }
 
-        LOG_DBG("[N]CocConnect[%u][%04x][%04x][%04x][%u][%u][%u][%u]",
+        LOG_INF("[N]L2capCocConnect[%u][%04x][%04x][%04x][%u][%u][%u][%u]",
                 event->connect.conn_handle, chan_info.scid, chan_info.dcid,
                 chan_info.psm, chan_info.our_l2cap_mtu, chan_info.peer_l2cap_mtu,
                 chan_info.our_coc_mtu, chan_info.peer_coc_mtu);
@@ -106,11 +106,11 @@ static int ots_l2cap_event_cb(struct ble_l2cap_event *event, void *arg)
 
     case BLE_L2CAP_EVENT_COC_DISCONNECTED:
         if (ots_chan != event->disconnect.chan) {
-            LOG_ERR("[N]DisconnectInvCocChan");
+            LOG_ERR("[N]L2capDisconnectInvCocChan");
             return 0;
         }
 
-        LOG_DBG("[N]CocDisconnect[%u][%04x]",
+        LOG_INF("[N]L2capCocDisconnect[%u][%04x]",
                 event->disconnect.conn_handle, event->disconnect.chan->psm);
 
         bt_le_l2cap_disconnected(event->disconnect.conn_handle, event->disconnect.chan->psm);
@@ -119,13 +119,11 @@ static int ots_l2cap_event_cb(struct ble_l2cap_event *event, void *arg)
         return 0;
 
     case BLE_L2CAP_EVENT_COC_ACCEPT:
-        if (event->accept.peer_sdu_size > L2CAP_LE_OTS_MTU) {
-            LOG_ERR("[N]InvAcceptMtu[%u][%u]",
-                    event->accept.peer_sdu_size, L2CAP_LE_OTS_MTU);
-            return -EINVAL;
-        }
+        /* Don't reject on peer_sdu_size: LE CoC allows asymmetric MTUs. It's the peer's
+         * RX MTU (our TX ceiling) — harmless; our RX is bounded by ble_l2cap_create_server.
+         * (PTS uses 1024 > our 256; rejecting broke SCP.) */
 
-        LOG_DBG("[N]CocAccept[%u][%04x][%04x][%u][%u][%u][%u]",
+        LOG_DBG("[N]L2capCocAccept[%u][%04x][%04x][%u][%u][%u][%u]",
                 event->accept.conn_handle, event->accept.chan->psm,
                 event->accept.chan->dcid, event->accept.chan->coc_tx.mtu,
                 event->accept.chan->peer_coc_mps, event->accept.peer_sdu_size,
@@ -148,13 +146,13 @@ static int ots_l2cap_event_cb(struct ble_l2cap_event *event, void *arg)
 
     case BLE_L2CAP_EVENT_COC_DATA_RECEIVED:
         if (ots_chan != event->receive.chan) {
-            LOG_ERR("[N]RecvOnInvCocChan");
+            LOG_ERR("[N]L2capRecvOnInvCocChan");
             return 0;
         }
 
         assert(event->receive.sdu_rx);
 
-        LOG_DBG("[N]CocReceive[%u][%04x][%u]",
+        LOG_DBG("[N]L2capCocRecv[%u][%04x][%u]",
                 event->receive.conn_handle, event->receive.chan->psm,
                 event->receive.sdu_rx->om_len);
 
@@ -177,11 +175,11 @@ static int ots_l2cap_event_cb(struct ble_l2cap_event *event, void *arg)
 
     case BLE_L2CAP_EVENT_COC_TX_UNSTALLED:
         if (ots_chan != event->tx_unstalled.chan) {
-            LOG_ERR("[N]TxUnstalledOnInvCocChan");
+            LOG_ERR("[N]L2capTxUnstalledOnInvCocChan");
             return 0;
         }
 
-        LOG_DBG("[N]CocTxUnstalled[%u][%d]",
+        LOG_WRN("[N]L2capCocTxUnstalled[%u][%d]",
                 event->tx_unstalled.conn_handle, event->tx_unstalled.status);
 
         /* TODO: transmit the remaining data */
@@ -198,13 +196,13 @@ int bt_le_nimble_l2cap_chan_connect(uint16_t conn_handle)
     int rc;
 
     if (ots_chan) {
-        LOG_WRN("[N]OtsChanExist");
+        LOG_WRN("[N]L2capOtsChanExist");
         return -EALREADY;
     }
 
     sdu_rx = os_mbuf_get_pkthdr(&ots_mbuf_pool, 0);
     if (sdu_rx == NULL) {
-        LOG_ERR("[N]NoBufForL2capConnect");
+        LOG_ERR("[N]L2capNoBufForConnect");
         return -ENOMEM;
     }
 
@@ -225,12 +223,12 @@ int bt_le_nimble_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
     int rc;
 
     if (ots_chan == NULL) {
-        LOG_WRN("[N]NoOtsChan");
+        LOG_WRN("[N]L2capNoOtsChan");
         return -ENOTCONN;
     }
 
     if (ble_l2cap_get_conn_handle(ots_chan) != chan->conn->handle) {
-        LOG_ERR("[N]UnexpOtsChan[%u][%u]",
+        LOG_ERR("[N]L2capUnexpOtsChan[%u][%u]",
                 ble_l2cap_get_conn_handle(ots_chan), chan->conn->handle);
         return -EINVAL;
     }
@@ -250,25 +248,25 @@ int bt_le_nimble_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf
     int rc;
 
     if (ots_chan == NULL) {
-        LOG_WRN("[N]NoOtsChan");
+        LOG_WRN("[N]L2capNoOtsChan");
         return -ENOTCONN;
     }
 
     if (ble_l2cap_get_conn_handle(ots_chan) != chan->conn->handle) {
-        LOG_ERR("[N]UnexpOtsChan[%u][%u]",
+        LOG_ERR("[N]L2capUnexpOtsChan[%u][%u]",
                 ble_l2cap_get_conn_handle(ots_chan), chan->conn->handle);
         return -EINVAL;
     }
 
     sdu_tx = os_mbuf_get_pkthdr(&ots_mbuf_pool, 0);
     if (sdu_tx == NULL) {
-        LOG_ERR("[N]NoBufForL2capSend");
+        LOG_ERR("[N]L2capNoBufForSend");
         return -ENOMEM;
     }
 
     rc = os_mbuf_append(sdu_tx, buf->data, buf->len);
     if (rc) {
-        LOG_ERR("[N]AppendBufFail[%d]", rc);
+        LOG_ERR("[N]L2capAppendBufFail[%d]", rc);
         os_mbuf_free_chain(sdu_tx);
         return -EIO;
     }
@@ -279,18 +277,22 @@ int bt_le_nimble_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf
             /* sdu is queued in tx->sdus[0]; NimBLE will continue on
              * BLE_L2CAP_EVENT_COC_TX_UNSTALLED. Do NOT free here.
              */
-            LOG_WRN("[N]MoreCreditsForL2capSend");
+            LOG_WRN("[N]L2capMoreCreditsForSend");
         } else if (rc == BLE_HS_EBADDATA || rc == BLE_HS_EBUSY) {
             /* sdu was rejected before being queued; caller still owns it. */
             LOG_ERR("[N]L2capSendFail[%d]", rc);
             os_mbuf_free_chain(sdu_tx);
         } else {
             /* Internal error inside continue_tx; NimBLE already freed sdu. */
-            LOG_ERR("[N]L2capSendFail[%d]", rc);
+            LOG_ERR("[N]L2capSendInternalFail[%d]", rc);
         }
 
         return nimble_err_to_errno(rc);
     }
+
+    /* Payload copied into sdu_tx; consume buf here (no async TX-done to unref it),
+     * else the 1-buffer ot_chan_tx_pool leaks. Failure paths leave buf to caller. */
+    net_buf_unref(buf);
 
     return 0;
 }
@@ -301,20 +303,20 @@ int bt_le_nimble_l2cap_init(void)
 
     rc = os_mempool_init(&ots_mbuf_mempool, OTS_L2CAP_BUF_COUNT, L2CAP_LE_OTS_MTU * 2, ots_mem, "ots_pool");
     if (rc) {
-        LOG_ERR("[N]InitOtsMempoolFail[%d]", rc);
+        LOG_ERR("[N]L2capInitOtsMempoolFail[%d]", rc);
         return rc;
     }
 
     rc = os_mbuf_pool_init(&ots_mbuf_pool, &ots_mbuf_mempool, L2CAP_LE_OTS_MTU, OTS_L2CAP_BUF_COUNT);
     if (rc) {
-        LOG_ERR("[N]InitOtsMbufPoolFail[%d]", rc);
+        LOG_ERR("[N]L2capInitOtsMbufPoolFail[%d]", rc);
         return rc;
     }
 
 #if CONFIG_BT_OTS
     rc = ble_l2cap_create_server(L2CAP_LE_OTS_PSM, L2CAP_LE_OTS_MTU, ots_l2cap_event_cb, NULL);
     if (rc) {
-        LOG_ERR("[N]CreateL2capSrvFail[%d]", rc);
+        LOG_ERR("[N]L2capCreateL2capSrvFail[%d]", rc);
         return rc;
     }
 #endif /* CONFIG_BT_OTS */

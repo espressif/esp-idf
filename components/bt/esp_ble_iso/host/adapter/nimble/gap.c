@@ -214,6 +214,27 @@ void bt_le_nimble_gap_post_event(void *param)
             qev->security_change.bonded = desc.sec_state.bonded;
             qev->security_change.dst.type = desc.peer_id_addr.type;
             memcpy(qev->security_change.dst.val, desc.peer_id_addr.val, BT_ADDR_SIZE);
+
+            /* Capture the bonded LTK for the lib's CSIS SIRK encryption. The
+             * peripheral's own key (OUR_SEC) is the link LTK; fall back to the
+             * peer record. Mirrors nimble_desc_to_sec_level's store read. */
+            {
+                struct ble_store_value_sec sec = {0};
+                struct ble_store_key_sec skey = {0};
+
+                skey.peer_addr = desc.peer_id_addr;
+                if ((ble_store_read_our_sec(&skey, &sec) == 0 && sec.ltk_present) ||
+                        (ble_store_read_peer_sec(&skey, &sec) == 0 && sec.ltk_present)) {
+                    memcpy(qev->security_change.ltk, sec.ltk,
+                           sizeof(qev->security_change.ltk));
+                    qev->security_change.ltk_present = 1;
+                    LOG_INF("[N]LtkFromStore[%u]", ev->enc_change.conn_handle);
+                } else {
+                    /* Encrypted but no stored LTK; CSIS SIRK encryption will
+                     * have no key. */
+                    LOG_WRN("[N]NoLtkForEnc[%u]", ev->enc_change.conn_handle);
+                }
+            }
         }
         break;
 

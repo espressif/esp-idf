@@ -14,6 +14,16 @@ config BT_MCS
     help
         This option enables support for the Media Control Service.
 
+config BT_MCS_INSTANCE_COUNT
+    int "How many discrete MCS (0x1848) instances the device instantiates"
+    depends on BT_MCS
+    default 0
+    range 0 255
+    help
+        Number of discrete Media Control Service instances (0x1848), each bound
+        to its own media player. GMCS (0x1849) is always present in addition to
+        these. Leave at 0 for a GMCS-only device.
+
 #### Media Control Client ################################
 
 config BT_MCC

@@ -169,8 +169,13 @@ static int gattc_nrp_read_by_uuid_cb_safe(uint16_t conn_handle,
         LOG_WRN("[N]GattcNrpStatus[%04x]", error->status);
 
         bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_BY_UUID, read_params, 0);
-        if ((error->status & BLE_HS_ERR_ATT_BASE) && !iter_stopped) {
-            read_params->func(conn, (uint8_t)error->status, read_params, NULL, 0);
+        if (!iter_stopped) {
+            /* A NimBLE ATT error carries the wire code (BLE_HS_ATT_ERR base);
+             * anything else is an internal/link failure -> generic "unlikely". */
+            uint8_t att_err = (error->status & BLE_HS_ERR_ATT_BASE) ?
+                              (uint8_t)error->status : BT_ATT_ERR_UNLIKELY;
+
+            read_params->func(conn, att_err, read_params, NULL, 0);
         }
 
         rc = error->status;
@@ -253,8 +258,13 @@ static int gattc_nrp_read_long_cb_safe(uint16_t conn_handle,
         LOG_WRN("[N]GattcNrpStatus[%04x]", error->status);
 
         bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_LONG, read_params, 0);
-        if ((error->status & BLE_HS_ERR_ATT_BASE) && !iter_stopped) {
-            read_params->func(conn, (uint8_t)error->status, read_params, NULL, 0);
+        if (!iter_stopped) {
+            /* A NimBLE ATT error carries the wire code (BLE_HS_ATT_ERR base);
+             * anything else is an internal/link failure -> generic "unlikely". */
+            uint8_t att_err = (error->status & BLE_HS_ERR_ATT_BASE) ?
+                              (uint8_t)error->status : BT_ATT_ERR_UNLIKELY;
+
+            read_params->func(conn, att_err, read_params, NULL, 0);
         }
 
         rc = error->status;
@@ -323,9 +333,10 @@ static int gattc_nrp_read_single_cb_safe(uint16_t conn_handle,
     default:
         LOG_WRN("[N]GattcNrpStatus[%04x]", error->status);
 
-        if (error->status & BLE_HS_ERR_ATT_BASE) {
-            func(conn, (uint8_t)error->status, original, NULL, 0);
-        }
+        /* A NimBLE ATT error carries the wire code (BLE_HS_ATT_ERR base);
+         * anything else is an internal/link failure -> generic "unlikely". */
+        func(conn, (error->status & BLE_HS_ERR_ATT_BASE) ?
+             (uint8_t)error->status : BT_ATT_ERR_UNLIKELY, original, NULL, 0);
 
         rc = error->status;
         break;
@@ -430,9 +441,10 @@ static int gattc_nrp_write_cb_safe(uint16_t conn_handle,
     default:
         LOG_WRN("[N]GattcNrpStatus[%04x]", error->status);
 
-        if (error->status & BLE_HS_ERR_ATT_BASE) {
-            write_params->func(conn, (uint8_t)error->status, write_params);
-        }
+        /* A NimBLE ATT error carries the wire code (BLE_HS_ATT_ERR base);
+         * anything else is an internal/link failure -> generic "unlikely". */
+        write_params->func(conn, (error->status & BLE_HS_ERR_ATT_BASE) ?
+                           (uint8_t)error->status : BT_ATT_ERR_UNLIKELY, write_params);
 
         rc = error->status;
         break;

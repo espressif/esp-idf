@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/common/bt_str.h>
 
 #include <../host/conn_internal.h>
+#include <../host/hci_core.h>
 
 #include "common/host.h"
 
@@ -28,7 +29,53 @@ static sys_slist_t gatt_db = SYS_SLIST_STATIC_INIT(&gatt_db);
 
 static struct gattc_sub subscriptions[CONFIG_BT_MAX_CONN];
 
+/* Each CCC descriptor's cfg is a heap pool (depth BT_GATT_CCC_MAX = bonded peers +
+ * active conn), allocated here at registration; freed in gatts_free_svc_ccc_cfg. */
 _LIB_ONLY
+static int gatts_alloc_svc_ccc_cfg(struct bt_gatt_service *svc)
+{
+    for (size_t i = 0; i < svc->attr_count; i++) {
+        const struct bt_gatt_attr *attr = &svc->attrs[i];
+        struct bt_gatt_ccc_managed_user_data *ccc;
+
+        if (attr->uuid->type != BT_UUID_TYPE_16 ||
+                BT_UUID_16(attr->uuid)->val != BT_UUID_GATT_CCC_VAL) {
+            continue;
+        }
+
+        ccc = attr->user_data;
+        ccc->cfg = calloc(BT_GATT_CCC_MAX, sizeof(struct bt_gatt_ccc_cfg));
+        if (ccc->cfg == NULL) {
+            return -ENOMEM;
+        }
+        ccc->cfg_count = BT_GATT_CCC_MAX;
+    }
+
+    return 0;
+}
+
+static void gatts_free_svc_ccc_cfg(struct bt_gatt_service *svc)
+{
+    for (size_t i = 0; i < svc->attr_count; i++) {
+        const struct bt_gatt_attr *attr = &svc->attrs[i];
+        struct bt_gatt_ccc_managed_user_data *ccc;
+
+        if (attr->uuid->type != BT_UUID_TYPE_16 ||
+                BT_UUID_16(attr->uuid)->val != BT_UUID_GATT_CCC_VAL) {
+            continue;
+        }
+
+        ccc = attr->user_data;
+        if (ccc->cfg != NULL) {
+            free(ccc->cfg);
+            ccc->cfg = NULL;
+        }
+        ccc->cfg_count = 0;
+        ccc->value = 0;     /* else a re-registered svc keeps the old subscription
+                               state and suppresses the next cfg_changed. */
+    }
+}
+
 int bt_gatt_service_register(struct bt_gatt_service *svc)
 {
     const struct bt_uuid_16 *uuid;
@@ -51,6 +98,13 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
     }
 
     sys_slist_append(&gatt_db, &svc->node);
+
+    if (gatts_alloc_svc_ccc_cfg(svc) != 0) {
+        LOG_ERR("GattSvcCccAllocFail");
+        gatts_free_svc_ccc_cfg(svc);
+        (void)sys_slist_find_and_remove(&gatt_db, &svc->node);
+        return -ENOMEM;
+    }
 
     return 0;
 }
@@ -79,6 +133,8 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
         LOG_ERR("GattSvcNotFound");
         return -ENOENT;
     }
+
+    gatts_free_svc_ccc_cfg(svc);
 
     return 0;
 }
@@ -166,7 +222,7 @@ uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
      */
 
     if (attr) {
-        LOG_DBG("GattAttrUuid[%s]", attr->uuid ? bt_uuid_str(attr->uuid) : "Null");
+        LOG_DBG("GattAttrValHdlUuid[%s]", attr->uuid ? bt_uuid_str(attr->uuid) : "Null");
 
         if (attr->uuid == NULL) {
             handle = (attr->handle + 1);
@@ -251,7 +307,7 @@ static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 
     /* Match attribute user_data if set */
     if (attr_data && attr_data != attr->user_data) {
-        LOG_DBG("MismatchAttrData");
+        LOG_DBG("GattForeachIterMismatchData");
         return BT_GATT_ITER_CONTINUE;
     }
 
@@ -260,11 +316,11 @@ static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
     result = func(attr, handle, user_data);
 
     if (*num_matches == 0) {
-        LOG_DBG("NumMatchesZero");
+        LOG_DBG("GattForeachIterNumMatchesZero");
         return BT_GATT_ITER_STOP;
     }
 
-    LOG_DBG("GattIter%s", result == BT_GATT_ITER_CONTINUE ? "Cont" : "Stop");
+    LOG_DBG("GattForeachIter%s", result == BT_GATT_ITER_CONTINUE ? "Cont" : "Stop");
     return result;
 }
 
@@ -359,9 +415,9 @@ bool bt_gatts_find_attr_by_uuid(struct notify_data *found, const struct bt_uuid 
     bt_gatt_foreach_attr_type(found->handle, 0xffff, uuid, NULL, 1, match_uuid, found);
 
     if (found->attr) {
-        LOG_DBG("AttrFoundByUuid");
+        LOG_DBG("GattsFindAttrByUuidFound");
     } else {
-        LOG_WRN("AttrNotFoundByUuid");
+        LOG_WRN("GattsFindAttrByUuidNotFound");
     }
 
     return (found->attr ? true : false);
@@ -397,7 +453,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
     LOG_DBG("GattAttrRd[%u][%u][%u]", buf_len, offset, value_len);
 
     if (offset > value_len) {
-        LOG_ERR("TooLargeOffset[%u][%u]", offset, value_len);
+        LOG_ERR("GattAttrRdTooLargeOffset[%u][%u]", offset, value_len);
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
@@ -454,12 +510,12 @@ int bt_gatt_indicate(struct bt_conn *conn, struct bt_gatt_indicate_params *param
     }
 
     if ((!params->data ^ !params->len)) {
-        LOG_ERR("InvData[%p][%u]", params->data, params->len);
+        LOG_ERR("GattIndInvData[%p][%u]", params->data, params->len);
         return -EINVAL;
     }
 
     if (params->attr->uuid->type != BT_UUID_TYPE_16) {
-        LOG_ERR("InvUuidType[%u]", params->attr->uuid->type);
+        LOG_ERR("GattIndInvUuidType[%u]", params->attr->uuid->type);
         return -ENOTSUP;
     }
 
@@ -503,7 +559,7 @@ static uint8_t gatts_get_svc_handles(const struct bt_gatt_attr *attr, uint16_t h
     /* Stop if attribute is a service */
     if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) == 0 ||
             bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY) == 0) {
-        LOG_DBG("SvcAttr");
+        LOG_DBG("GattsSvcAttr");
         return BT_GATT_ITER_STOP;
     }
 
@@ -580,36 +636,53 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
         memcpy(pdu.uuid, BT_UUID_128(chrc->uuid)->val, 16);
         value_len += 16U;
     } else {
-        LOG_ERR("UnsupportedUuidType[%u]", chrc->uuid->type);
+        LOG_ERR("GattAttrRdNotSupUuidType[%u]", chrc->uuid->type);
         return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
     }
 
     return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
 }
 
-static struct bt_gatt_ccc_cfg *gatts_find_ccc_cfg(const struct bt_conn *conn,
-                                                  struct bt_gatt_ccc_managed_user_data *ccc)
+static struct bt_gatt_ccc_cfg *gatts_find_free_ccc_cfg(struct bt_gatt_ccc_managed_user_data *ccc)
 {
-    /* LOG_DBG("GattsFindCccCfg"); */
-
-    for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+    for (size_t i = 0; i < ccc->cfg_count; i++) {
         struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
-        if (conn) {
-            if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
-                /* LOG_DBG("CccCfgFound[%u]", i); */
-                return cfg;
-            }
-        } else if (bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
-            LOG_DBG("CccCfgNew[%u]", i);
+        if (bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
+            LOG_DBG("GattsCccCfgNew[%u]", i);
             return cfg;
         }
     }
 
-    if (conn) {
-        /* LOG_DBG("CccCfgNotFound"); */
-    } else {
-        LOG_ERR("CccNoFreeCfg");
+    LOG_WRN("GattsCccNoFreeCfg");
+    return NULL;
+}
+
+static struct bt_gatt_ccc_cfg *gatts_find_ccc_cfg_by_conn(const struct bt_conn *conn,
+                                                          struct bt_gatt_ccc_managed_user_data *ccc)
+{
+    assert(conn);
+
+    for (size_t i = 0; i < ccc->cfg_count; i++) {
+        struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+        if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
+            return cfg;
+        }
+    }
+
+    return NULL;
+}
+
+static struct bt_gatt_ccc_cfg *gatts_find_ccc_cfg_by_addr(const bt_addr_le_t *peer,
+                                                          struct bt_gatt_ccc_managed_user_data *ccc)
+{
+    for (size_t i = 0; i < ccc->cfg_count; i++) {
+        struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+        if (bt_addr_le_eq(&cfg->peer, peer)) {
+            return cfg;
+        }
     }
 
     return NULL;
@@ -620,7 +693,7 @@ static void gatts_ccc_changed(const struct bt_gatt_attr *attr,
 {
     uint16_t value = 0x0000;
 
-    for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+    for (size_t i = 0; i < ccc->cfg_count; i++) {
         if (ccc->cfg[i].value > value) {
             value = ccc->cfg[i].value;
         }
@@ -645,6 +718,62 @@ static void gatts_clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
     cfg->value = 0U;
 }
 
+static void gatts_clear_ccc_cfg_by_conn(struct bt_conn *conn)
+{
+    /* Free this peer's CCC cfg entries. The pool is only BT_GATT_CCC_MAX deep, so a
+     * stale entry would starve a later different peer's subscribe (CccNoFreeCfg). */
+
+    struct bt_gatt_service *svc;
+
+    SYS_SLIST_FOR_EACH_CONTAINER(&gatt_db, svc, node) {
+        for (size_t i = 0; i < svc->attr_count; i++) {
+            const struct bt_gatt_attr *attr = &svc->attrs[i];
+            struct bt_gatt_ccc_managed_user_data *ccc;
+            struct bt_gatt_ccc_cfg *cfg;
+
+            if (attr->uuid->type != BT_UUID_TYPE_16 ||
+                    BT_UUID_16(attr->uuid)->val != BT_UUID_GATT_CCC_VAL) {
+                continue;
+            }
+
+            ccc = attr->user_data;
+            cfg = gatts_find_ccc_cfg_by_conn(conn, ccc);
+            if (cfg != NULL) {
+                gatts_clear_ccc_cfg(cfg);
+                gatts_ccc_changed(attr, ccc);
+            }
+        }
+    }
+}
+
+static void gatts_clear_ccc_cfg_by_addr(const bt_addr_le_t *peer)
+{
+    /* Address-keyed twin of gatts_clear_ccc_cfg_by_conn: bond-delete carries only
+     * the identity address, with no bt_conn to key on. */
+
+    struct bt_gatt_service *svc;
+
+    SYS_SLIST_FOR_EACH_CONTAINER(&gatt_db, svc, node) {
+        for (size_t i = 0; i < svc->attr_count; i++) {
+            const struct bt_gatt_attr *attr = &svc->attrs[i];
+            struct bt_gatt_ccc_managed_user_data *ccc;
+            struct bt_gatt_ccc_cfg *cfg;
+
+            if (attr->uuid->type != BT_UUID_TYPE_16 ||
+                    BT_UUID_16(attr->uuid)->val != BT_UUID_GATT_CCC_VAL) {
+                continue;
+            }
+
+            ccc = attr->user_data;
+            cfg = gatts_find_ccc_cfg_by_addr(peer, ccc);
+            if (cfg != NULL) {
+                gatts_clear_ccc_cfg(cfg);
+                gatts_ccc_changed(attr, ccc);
+            }
+        }
+    }
+}
+
 _LIB_IDF
 ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
                               const struct bt_gatt_attr *attr,
@@ -662,7 +791,7 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 
     LOG_DBG("GattAttrRdCcc[%u][%u]", len, offset);
 
-    cfg = gatts_find_ccc_cfg(conn, ccc);
+    cfg = gatts_find_ccc_cfg_by_conn(conn, ccc);
     if (cfg) {
         value = sys_cpu_to_le16(cfg->value);
     } else {
@@ -690,7 +819,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
     ccc = attr->user_data;
     assert(ccc);
 
-    LOG_DBG("GattAttrWrChrc[%u][%u][%02x]", len, offset, flags);
+    LOG_DBG("GattAttrWrCcc[%u][%u][%02x]", len, offset, flags);
 
     if (offset) {
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -708,18 +837,18 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
     new_entry = false;
 
-    cfg = gatts_find_ccc_cfg(conn, ccc);
+    cfg = gatts_find_ccc_cfg_by_conn(conn, ccc);
     if (cfg == NULL) {
         /* If there's no existing entry, but the new value is zero,
          * we don't need to do anything, since a disabled CCC is
          * behaviorally the same as no written CCC.
          */
         if (value == 0) {
-            LOG_INF("CccValZero");
+            LOG_INF("GattAttrWrCccValZero");
             return len;
         }
 
-        cfg = gatts_find_ccc_cfg(NULL, ccc);
+        cfg = gatts_find_free_ccc_cfg(ccc);
         if (cfg == NULL) {
             return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
         }
@@ -734,7 +863,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
     if (ccc->cfg_write) {
         ssize_t write = ccc->cfg_write(conn, attr, value);
 
-        LOG_INF("CccCfgWr[%d]", write);
+        LOG_INF("GattAttrWrCccCfgWr[%d]", write);
 
         if (write < 0) {
             if (new_entry) {
@@ -752,7 +881,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
         }
     }
 
-    LOG_DBG("CccCfg[%u][%04x][%04x]", attr->handle, cfg->value, value);
+    LOG_DBG("GattAttrWrCccCfg[%u][%04x][%04x]", attr->handle, cfg->value, value);
 
     value_changed = (cfg->value != value);
     cfg->value = value;
@@ -798,32 +927,32 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
         ssize_t len;
 
         if (attr->read == NULL) {
-            LOG_WRN("AttrRdCbNull");
+            LOG_WRN("GattIsSubAttrRdCbNull");
             return false;
         }
 
         /* The characteristic properties is the first byte of the attribute value */
         len = attr->read(NULL, attr, &properties, 1, 0);
         if (len < 0) {
-            LOG_ERR("RdAttrFail[%zd]", len);
+            LOG_ERR("GattIsSubRdAttrFail[%zd]", len);
             return false;
         }
 
         if (len != 1) {
-            LOG_ERR("InvRdLen[%zd]", len);
+            LOG_ERR("GattIsSubInvRdLen[%zd]", len);
             return false;
         }
 
         if (!(properties & (BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE))) {
             /* Characteristic doesn't support subscription */
-            LOG_WRN("SubNotSupp[%02x]", properties);
+            LOG_WRN("GattIsSubNotSupp[%02x]", properties);
             return false;
         }
 
         attr = bt_gatt_attr_next(attr);
         assert(attr && attr->uuid);
 
-        LOG_DBG("Attr[%s][%d]", bt_uuid_str(attr->uuid), __LINE__);
+        LOG_DBG("GattIsSubAttr[%s][%d]", bt_uuid_str(attr->uuid), __LINE__);
     }
 
     /* Check if attribute is a characteristic value */
@@ -834,7 +963,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
         }
 
         assert(attr->uuid);
-        LOG_DBG("Attr[%s][%d]", bt_uuid_str(attr->uuid), __LINE__);
+        LOG_DBG("GattIsSubAttr[%s][%d]", bt_uuid_str(attr->uuid), __LINE__);
     }
 
     /* Find the CCC Descriptor */
@@ -851,7 +980,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 
     assert(attr->uuid);
 
-    LOG_DBG("Attr[%s][%d]", bt_uuid_str(attr->uuid), __LINE__);
+    LOG_DBG("GattIsSubAttr[%s][%d]", bt_uuid_str(attr->uuid), __LINE__);
 
     if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
         return false;
@@ -861,10 +990,10 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
     assert(ccc);
 
     /* Check if the connection is subscribed */
-    for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+    for (size_t i = 0; i < ccc->cfg_count; i++) {
         const struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
-        LOG_DBG("CccCfg[%u][%04x]", i, ccc->cfg[i].value);
+        LOG_DBG("GattIsSubCccCfg[%u][%04x]", i, ccc->cfg[i].value);
 
         if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer) &&
                 (ccc_type & ccc->cfg[i].value)) {
@@ -888,18 +1017,18 @@ static int gatts_ccc_cfg_update(struct bt_conn *conn,
 
     /* LOG_DBG("GattsCccCfgUpd[%04x]", value); */
 
-    cfg = gatts_find_ccc_cfg(conn, ccc);
+    cfg = gatts_find_ccc_cfg_by_conn(conn, ccc);
     if (cfg == NULL) {
         /* If there's no existing entry, and the new notification value
          * is zero, we don't need to do anything, since a disabled CCC
          * is behaviorally the same as no written CCC.
          */
         if (value == 0) {
-            LOG_INF("CccValZero");
+            LOG_INF("GattsCccCfgUpdValZero");
             return 0;
         }
 
-        cfg = gatts_find_ccc_cfg(NULL, ccc);
+        cfg = gatts_find_free_ccc_cfg(ccc);
         if (cfg == NULL) {
             return -ENOMEM;
         }
@@ -1014,7 +1143,7 @@ int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *param
     }
 
     if (params->uuid && params->uuid->type != BT_UUID_TYPE_16) {
-        LOG_ERR("InvUuid[%s]", bt_uuid_str(params->uuid));
+        LOG_ERR("GattDiscInvUuid[%s]", bt_uuid_str(params->uuid));
         return -ENOTSUP;
     }
 
@@ -1034,7 +1163,7 @@ static struct gattc_sub *gattc_sub_find(struct bt_conn *conn)
 
         if (conn == NULL) {
             if (bt_addr_le_eq(&sub->peer, BT_ADDR_LE_ANY)) {
-                LOG_DBG("SubNew[%u]", i);
+                LOG_DBG("GattcSubFindNew[%u]", i);
                 return sub;
             }
         } else if (bt_conn_is_peer_addr_le(conn, sub->id, &sub->peer)) {
@@ -1046,7 +1175,7 @@ static struct gattc_sub *gattc_sub_find(struct bt_conn *conn)
     if (conn) {
         /* LOG_DBG("SubNotFound"); */
     } else {
-        LOG_WRN("NoFreeSub");
+        LOG_WRN("GattcSubFindNoFree");
     }
 
     return NULL;
@@ -1064,7 +1193,7 @@ static struct gattc_sub *gattc_sub_add(struct bt_conn *conn)
         if (sub) {
             bt_addr_le_copy(&sub->peer, &conn->le.dst);
             sub->id = conn->id;
-            LOG_DBG("SubPeer[%s]", bt_addr_le_str(&sub->peer));
+            LOG_DBG("GattcSubAddPeer[%s]", bt_addr_le_str(&sub->peer));
         }
     }
 
@@ -1098,6 +1227,10 @@ static void gattc_sub_clear(struct bt_conn *conn)
         tmp->value = 0;
     }
     sys_slist_init(&sub->list);
+
+    /* Release the pool slot back to free. Without this it stays bound to the disconnected
+     * peer's address, so a later connection from a different peer finds no free slot -> -ENOMEM. */
+    bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
 }
 
 _IDF_ONLY
@@ -1126,7 +1259,7 @@ static uint8_t gattc_ccc_discover_cb(struct bt_conn *conn,
     if (params->type == BT_GATT_DISCOVER_DESCRIPTOR) {
         memset(params, 0, sizeof(*params));
 
-        LOG_DBG("CccHdl[%u]", attr->handle);
+        LOG_DBG("GattcCccDiscCbHdl[%u]", attr->handle);
 
         sub_params->ccc_handle = attr->handle;
 
@@ -1193,7 +1326,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
      * can resubscribe.
      */
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("GattSubNotConn[%u][%u]", conn->handle, conn->state);
+        LOG_ERR("GattcSubNotConn[%u][%u]", conn->handle, conn->state);
         params->value_handle = 0; /* unlinked: clear retry guard */
         return -ENOTCONN;
     }
@@ -1219,7 +1352,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
          */
         if (tmp->value_handle == params->value_handle &&
                 tmp->value >= params->value) {
-            LOG_INF("AnotherSubExist[%04x]", tmp->value);
+            LOG_INF("GattcSubAnotherExist[%04x]", tmp->value);
             has_subscription = true;
         }
     }
@@ -1232,7 +1365,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
         if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
             int err = gattc_ccc_discover(conn, params);
             if (err) {
-                LOG_ERR("DiscCccFail[%d]", err);
+                LOG_ERR("GattcSubDiscCccFail[%d]", err);
                 params->value_handle = 0; /* unlinked: clear retry guard */
                 return err;
             }
@@ -1277,7 +1410,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
             params->value, params->value_handle, params->ccc_handle, params->end_handle);
 
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("GattUnsubNotConn[%u][%u]", conn->handle, conn->state);
+        LOG_ERR("GattcUnsubNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
@@ -1298,7 +1431,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
          * characteristic value handle.
          */
         if (tmp->value_handle == params->value_handle) {
-            LOG_INF("AnotherSubFound");
+            LOG_INF("GattcUnsubAnotherSub");
             has_subscription = true;
         }
     }
@@ -1321,7 +1454,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
              * the write was issued. Not a real failure.
              */
             if (err != -ENOTCONN) {
-                LOG_ERR("WrCccFail[%d]", err);
+                LOG_ERR("GattcUnsubWrCccFail[%d]", err);
             }
             return err;
         }
@@ -1330,7 +1463,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
     sys_slist_find_and_remove(&sub->list, &params->node);
 
     if (sys_slist_is_empty(&sub->list)) {
-        LOG_DBG("SubListEmpty");
+        LOG_DBG("GattcUnsubListEmpty");
         bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
     }
 
@@ -1358,7 +1491,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
     }
 
     if (params->handle_count > 1) {
-        LOG_ERR("NotSuppToRdHdl[%u]", params->handle_count);
+        LOG_ERR("GattRdNotSuppHdl[%u]", params->handle_count);
         return -ENOTSUP;
     }
 
@@ -1366,7 +1499,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
         assert(params->by_uuid.uuid);
 
         if (params->by_uuid.uuid->type != BT_UUID_TYPE_16) {
-            LOG_ERR("InvUuid[%s]", bt_uuid_str(params->by_uuid.uuid));
+            LOG_ERR("GattRdInvUuid[%s]", bt_uuid_str(params->by_uuid.uuid));
             return -ENOTSUP;
         }
     }
@@ -1395,7 +1528,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
     }
 
     if (params->offset != 0) {
-        LOG_ERR("PrepWrNotSupp[%u][%u]", params->handle, params->offset);
+        LOG_ERR("GattWrPrepNotSupp[%u][%u]", params->handle, params->offset);
         return -ENOTSUP;
     }
 
@@ -1427,7 +1560,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
     }
 
     if (sign) {
-        LOG_ERR("WrCmdNotSupp");
+        LOG_ERR("GattWrCmdNotSupp");
         return -ENOTSUP;
     }
 
@@ -1472,7 +1605,26 @@ void bt_le_acl_conn_disconnected_gatt_listener(uint16_t conn_handle)
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn) {
         gattc_sub_clear(conn);
+
+        /* Bonded peers keep their cfg (reconnect notifications resume without a
+         * re-subscribe); free non-bonded peers' cfg so the pool isn't leaked. */
+        if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
+            gatts_clear_ccc_cfg_by_conn(conn);
+        }
     }
+}
+
+_LIB_ONLY
+void bt_le_acl_conn_bond_deleted_gatt_listener(uint8_t id, const bt_addr_le_t *peer)
+{
+    ARG_UNUSED(id);
+
+    /* Cfg is retained across disconnect only for bonded peers (see disconnect
+     * listener), so bond deletion must drop it — else an unbonded reconnect from
+     * that address gets notified for a subscription it never made. */
+
+    LOG_DBG("AclConnBondDeletedGattListener");
+    gatts_clear_ccc_cfg_by_addr(peer);
 }
 
 void bt_le_gatt_handle_event(uint8_t *data, size_t data_len)

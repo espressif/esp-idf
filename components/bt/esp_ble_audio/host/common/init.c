@@ -69,10 +69,6 @@ _Static_assert(offsetof(struct bt_le_audio_start_info, csis_insts) ==
                "Mismatch LE Audio start info structure");
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
 
-#if CONFIG_BT_TBS
-_Static_assert(CONFIG_BT_TBS_BEARER_COUNT == 0, "Currently only support GTBS");
-#endif /* CONFIG_BT_TBS */
-
 #if CONFIG_BT_OTS && !CONFIG_BT_OTS_SECONDARY_SVC
 _Static_assert(0, "Currently only support using OTS as Secondary Service");
 #endif /* CONFIG_BT_OTS && !CONFIG_BT_OTS_SECONDARY_SVC */
@@ -182,7 +178,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260624)
+#define LEA_VERSION     (0x20260722)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -269,6 +265,7 @@ struct lib_ext_cfgs {
     bool     config_csip_set_member_enc_sirk_support;
     bool     config_csip_set_member_sirk_notifiable;
     bool     config_csip_set_member_size_notifiable;
+    bool     config_csip_set_member_set_name_notifiable;
     bool     config_csip_set_member_test_sample_data;
     bool     config_csip_set_coordinator;
     uint8_t  config_csip_set_coordinator_max_csis_instances;
@@ -294,6 +291,7 @@ struct lib_ext_cfgs {
 
     /* MCS (Media Control Service) */
     bool     config_mcs;
+    uint8_t  config_mcs_instance_count;
     bool     config_mcc;
     uint8_t  config_mcc_media_player_name_max;
     uint8_t  config_mcc_icon_url_max;
@@ -436,6 +434,9 @@ struct lib_ext_cfgs {
     bool     config_ots;
     bool     config_ots_client;
     uint8_t  config_ots_obj_max_name_len;
+
+    /* PTS */
+    bool     config_pts_test_enable;
 
     /* Version Check */
     uint32_t config_version;
@@ -592,6 +593,9 @@ static const struct lib_ext_cfgs ext_cfgs = {
 #if CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE
     .config_csip_set_member_size_notifiable = CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE,
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE */
+#if CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE
+    .config_csip_set_member_set_name_notifiable = CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE,
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE */
 #if CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA
     .config_csip_set_member_test_sample_data = CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA,
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA */
@@ -649,6 +653,7 @@ static const struct lib_ext_cfgs ext_cfgs = {
     /* MCS (Media Control Service) */
 #if CONFIG_BT_MCS
     .config_mcs = CONFIG_BT_MCS,
+    .config_mcs_instance_count = CONFIG_BT_MCS_INSTANCE_COUNT,
 #endif /* CONFIG_BT_MCS */
 #if CONFIG_BT_MCC
     .config_mcc = CONFIG_BT_MCC,
@@ -968,6 +973,9 @@ static const struct lib_ext_cfgs ext_cfgs = {
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     .config_ots_obj_max_name_len = CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
+
+    /* PTS test mode: gates PTS-only changes. Set true only for PTS builds. */
+    .config_pts_test_enable = false,
 
     .config_version = LEA_VERSION,
 };
@@ -1345,7 +1353,7 @@ static const struct lib_ext_funcs ext_funcs = {
 #endif /* CONFIG_BT_OTS_CLIENT */
 };
 
-struct lib_funcs {
+struct lib_int_funcs {
     /* AICS Client */
     int (*_aics_client_state_get)(struct bt_aics *inst);
     int (*_aics_client_gain_setting_get)(struct bt_aics *inst);
@@ -1534,7 +1542,7 @@ struct lib_funcs {
     int (*_vocs_client_description_set)(struct bt_vocs_client *inst, const char *description);
 };
 
-static const struct lib_funcs lib_funcs = {
+static const struct lib_int_funcs int_funcs = {
 #if CONFIG_BT_AICS_CLIENT
     ._aics_client_state_get = lib_aics_client_state_get,
     ._aics_client_gain_setting_get = lib_aics_client_gain_setting_get,
@@ -1742,7 +1750,7 @@ static const struct lib_funcs lib_funcs = {
 #endif /* CONFIG_BT_VOCS_CLIENT */
 };
 
-static int lib_resources_init(void)
+static int lib_audio_resources_init(void)
 {
     int err = 0;
 
@@ -2077,27 +2085,27 @@ int bt_le_audio_init(void)
 {
     int err;
 
-    err = lib_ext_structs_check(ext_structs, sizeof(ext_structs));
+    err = lib_audio_ext_structs_check(ext_structs, sizeof(ext_structs));
     if (err) {
         LOG_ERR("LibExtStructsCheckFail");
         return err;
     }
 
-    err = lib_ext_cfgs_set(&ext_cfgs, sizeof(ext_cfgs));
+    err = lib_audio_ext_cfgs_set(&ext_cfgs, sizeof(ext_cfgs));
     if (err) {
         LOG_ERR("LibExtCfgsSetFail");
         return err;
     }
 
-    err = lib_ext_funcs_set(&ext_funcs, sizeof(ext_funcs));
+    err = lib_audio_ext_funcs_set(&ext_funcs, sizeof(ext_funcs));
     if (err) {
         LOG_ERR("LibExtFuncsSetFail");
         return err;
     }
 
-    err = lib_funcs_set(&lib_funcs, sizeof(lib_funcs));
+    err = lib_audio_int_funcs_set(&int_funcs, sizeof(int_funcs));
     if (err) {
-        LOG_ERR("LibFuncsSetFail");
+        LOG_ERR("LibIntFuncsSetFail");
         return err;
     }
 
@@ -2105,9 +2113,10 @@ int bt_le_audio_init(void)
                   BT_ISO_LOG_COLOR_I
                   "I (%lu) %s: BLE Audio lib commit: [%s]"
                   BT_ISO_LOG_RESET_COLOR "\n",
-                  esp_log_timestamp(), LEA_TAG, lib_ext_commit_get());
+                  esp_log_timestamp(), LEA_TAG,
+                  lib_audio_commit_get());
 
-    err = lib_resources_init();
+    err = lib_audio_resources_init();
     if (err) {
         return err;
     }
@@ -2168,6 +2177,17 @@ int bt_le_gtbs_init(void)
     return bt_le_bluedroid_gtbs_init();
 #else
     return bt_le_nimble_gtbs_init();
+#endif
+}
+
+int bt_le_tbs_init(void)
+{
+    LOG_DBG("TbsInit");
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_tbs_init();
+#else
+    return bt_le_nimble_tbs_init();
 #endif
 }
 #endif /* CONFIG_BT_TBS */
@@ -2236,7 +2256,7 @@ int bt_le_audio_start(void *info)
 #endif
 }
 
-void ble_audio_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...)
+void bt_le_audio_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...)
 {
 #if CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE
     if (CONFIG_BT_ISO_LOG_LEVEL >= log_level) {
@@ -2249,14 +2269,14 @@ void ble_audio_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t 
         va_end(args);
     }
 #else
-    (void)log_level;
-    (void)log_index;
-    (void)arg_cnt;
+    ARG_UNUSED(log_level);
+    ARG_UNUSED(log_index);
+    ARG_UNUSED(arg_cnt);
 #endif
 }
 
-void ble_audio_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint8_t buf_idx,
-                                      const uint8_t *buf, size_t len)
+void bt_le_audio_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint8_t buf_idx,
+                                        const uint8_t *buf, size_t len)
 {
 #if CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE
     if (CONFIG_BT_ISO_LOG_LEVEL >= log_level) {
@@ -2267,10 +2287,10 @@ void ble_audio_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uin
                                          log_index, buf_idx, buf, len);
     }
 #else
-    (void)log_level;
-    (void)log_index;
-    (void)buf_idx;
-    (void)buf;
-    (void)len;
+    ARG_UNUSED(log_level);
+    ARG_UNUSED(log_index);
+    ARG_UNUSED(buf_idx);
+    ARG_UNUSED(buf);
+    ARG_UNUSED(len);
 #endif
 }

@@ -48,6 +48,11 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 
     /* Prepare buffer for sending. */
     buf = net_buf_alloc(&ot_chan_tx_pool, K_FOREVER);
+    if (buf == NULL) {
+        LOG_ERR("OtsTxBufAllocFail");
+        return -ENOMEM;
+    }
+
     net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
     net_buf_add_mem(buf, &l2cap_ctx->tx.data[l2cap_ctx->tx.len_sent], len);
 

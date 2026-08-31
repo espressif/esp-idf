@@ -352,6 +352,12 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
     },
 };
 
+/* Discrete MCS (0x1848): INSTANCE_COUNT instances sharing GMCS's characteristic table
+ * and OTS include (val_handle vars are write-only here, so sharing is safe). Built in
+ * bt_le_nimble_mcs_init as an N+1 NULL-terminated array for the GATT DB lifetime. */
+static struct ble_gatt_svc_def *gatt_svc_mcs;
+static const ble_uuid16_t mcs_uuid_svc = BLE_UUID16_INIT(BT_UUID_MCS_VAL);
+
 #if CONFIG_BT_OTS
 static int inc_ots_attr_handle_set(void)
 {
@@ -402,7 +408,7 @@ int bt_le_nimble_gmcs_attr_handle_set(void)
         return 0;
     }
 
-    gmcs_svc = lib_mcs_svc_get();
+    gmcs_svc = lib_gmcs_svc_get();
     if (!gmcs_svc) {
         LOG_ERR("[N]GmcsSvcGetFail");
         return -ENODEV;
@@ -448,7 +454,7 @@ static int gmcs_svc_check(void)
      * the service exist in the service defined by Zephyr.
      */
 
-    gmcs_svc = lib_mcs_svc_get();
+    gmcs_svc = lib_gmcs_svc_get();
     if (!gmcs_svc) {
         LOG_ERR("[N]GmcsSvcGetFail");
         return -ENODEV;
@@ -711,5 +717,135 @@ free:
     }
     gatt_svc_gmcs[0].includes = NULL;
 #endif /* CONFIG_BT_OTS */
+    return rc;
+}
+
+int bt_le_nimble_mcs_attr_handle_set(void)
+{
+    struct bt_gatt_service *mcs_list;
+    uint16_t start_handle = 0;
+    int rc;
+
+    /* ble_gatts_find_svc returns the first 0x1848 (instance 0). All N instances
+     * were registered contiguously in one ble_gatts_add_svcs call and share the
+     * same attr_count, so instance i starts at start_handle + i * attr_count. */
+    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MCS_VAL), &start_handle);
+    if (rc) {
+        LOG_DBG("[N]McsNotInit");
+        return 0;
+    }
+
+    mcs_list = lib_mcs_server_list_get();
+    if (!mcs_list) {
+        LOG_ERR("[N]McsSvcGetFail");
+        return -ENODEV;
+    }
+
+    for (int inst = 0; inst < CONFIG_BT_MCS_INSTANCE_COUNT; inst++) {
+        struct bt_gatt_service *svc = &mcs_list[inst];
+        uint16_t base = start_handle + inst * svc->attr_count;
+
+        LOG_DBG("[N]McsAttrHdlSet[%d][%u][%u]", inst, base, svc->attr_count);
+
+        for (size_t i = 0; i < svc->attr_count; i++) {
+            (svc->attrs + i)->handle = base + i;
+        }
+    }
+
+    return 0;
+}
+
+static int mcs_svc_check(void)
+{
+    struct bt_gatt_service *mcs_svc;
+    const struct bt_uuid_16 *uuid;
+    bool chr_found;
+
+    mcs_svc = lib_mcs_server_list_get();
+    if (!mcs_svc) {
+        LOG_ERR("[N]McsSvcGetFail");
+        return -ENODEV;
+    }
+
+    LOG_DBG("[N]McsSvcCheck");
+
+    for (const struct ble_gatt_chr_def *chr = gatt_svc_mcs[0].characteristics;
+            chr && chr->uuid; chr++) {
+        const ble_uuid16_t *check = (const ble_uuid16_t *)chr->uuid;
+
+        chr_found = false;
+
+        for (size_t i = 0; i < mcs_svc->attr_count; i++) {
+            uuid = (const struct bt_uuid_16 *)(mcs_svc->attrs + i)->uuid;
+
+            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+                    uuid->val == check->value) {
+                chr_found = true;
+                break;
+            }
+        }
+
+        if (chr_found == false) {
+            LOG_ERR("[N]McsChrNotFound[%04x]", check->value);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int bt_le_nimble_mcs_init(void)
+{
+    uint8_t count = CONFIG_BT_MCS_INSTANCE_COUNT;
+    int rc;
+
+    /* NULL when CONFIG_BT_MCS_INSTANCE_COUNT == 0: nothing discrete to add. */
+    if (!lib_mcs_server_list_get()) {
+        LOG_DBG("[N]McsDiscreteOff");
+        return 0;
+    }
+
+    LOG_DBG("[N]McsInit[%d]", count);
+
+    /* One ble_gatt_svc_def per instance + a zeroed terminator. Persists for the
+     * GATT DB lifetime (NimBLE references these defs until ble_gatts_start). */
+    gatt_svc_mcs = calloc(count + 1, sizeof(struct ble_gatt_svc_def));
+    assert(gatt_svc_mcs);
+
+    for (int i = 0; i < count; i++) {
+        gatt_svc_mcs[i].type = BLE_GATT_SVC_TYPE_PRIMARY;
+        gatt_svc_mcs[i].uuid = &mcs_uuid_svc.u;
+        /* All instances share the GMCS characteristic table (val_handle vars are
+         * write-only here, so sharing is safe). */
+        gatt_svc_mcs[i].characteristics = gatt_svc_gmcs[0].characteristics;
+#if CONFIG_BT_OTS
+        /* Each instance includes the same shared OTS secondary as GMCS. gmcs_init
+         * runs first and builds gmcs_inc_svcs (NULL when OTS is not included). */
+        gatt_svc_mcs[i].includes = (const struct ble_gatt_svc_def **)gmcs_inc_svcs;
+#endif /* CONFIG_BT_OTS */
+    }
+
+    rc = ble_gatts_count_cfg(gatt_svc_mcs);
+    if (rc) {
+        LOG_ERR("[N]McsCountCfgFail[%d]", rc);
+        goto free;
+    }
+
+    rc = ble_gatts_add_svcs(gatt_svc_mcs);
+    if (rc) {
+        LOG_ERR("[N]McsAddSvcsFail[%d]", rc);
+        goto free;
+    }
+
+    rc = mcs_svc_check();
+    if (rc) {
+        goto free;
+    }
+
+    return 0;
+
+free:
+    free(gatt_svc_mcs);
+    gatt_svc_mcs = NULL;
     return rc;
 }

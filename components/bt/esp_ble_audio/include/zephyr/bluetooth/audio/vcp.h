@@ -251,6 +251,46 @@ int bt_vcp_vol_rend_unmute_safe(void);
 int bt_vcp_vol_rend_mute_safe(void);
 
 /**
+ * @name Volume Renderer reset field selectors
+ *
+ * Bitmask values for @ref bt_vcp_vol_rend_reset_param.fields selecting
+ * which state fields a reset applies.
+ * @{
+ */
+/** Apply the volume field; also clears Volume_Setting_Persisted (persisted = 0). */
+#define BT_VCP_VOL_REND_RESET_VOLUME    BIT(0)
+/** Apply the mute field. */
+#define BT_VCP_VOL_REND_RESET_MUTE      BIT(1)
+/** @} */
+
+/** Parameters for @ref bt_vcp_vol_rend_reset_state_safe. */
+struct bt_vcp_vol_rend_reset_param {
+    /** Bitmask of BT_VCP_VOL_REND_RESET_* selecting which fields to apply. */
+    uint32_t fields;
+
+    /** Volume setting, applied when BT_VCP_VOL_REND_RESET_VOLUME is set. */
+    uint8_t volume;
+
+    /** Mute state, applied when BT_VCP_VOL_REND_RESET_MUTE is set. */
+    uint8_t mute;
+};
+
+/**
+ * @brief Reset selected volume state fields to an initial/reset value.
+ *
+ * For each field selected in @p param->fields, sets it to the provided value
+ * without treating it as a user change. When the volume field is applied,
+ * Volume_Setting_Persisted returns to Reset Volume Setting (0) - the value is a
+ * server reset value, not a modification (VCS v1.0.1 Section 3.3.1). Unselected
+ * fields are left unchanged; no notification is emitted.
+ *
+ * @param param  Reset parameters. Must not be NULL.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcp_vol_rend_reset_state_safe(const struct bt_vcp_vol_rend_reset_param *param);
+
+/**
  * @brief Struct to hold the Volume Controller callbacks
  *
  * These can be registered for usage with bt_vcp_vol_ctlr_cb_register().

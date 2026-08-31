@@ -162,6 +162,47 @@ esp_err_t esp_ble_audio_tbs_remote_incoming(uint8_t bearer_index,
     return ESP_OK;
 }
 
+esp_err_t esp_ble_audio_tbs_add_call(uint8_t bearer_index, uint8_t state,
+                                     const char *uri, uint8_t *call_index)
+{
+    int ret;
+
+    if (uri == NULL || call_index == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ret = bt_tbs_add_call_safe(bearer_index, state, uri, call_index);
+    if (ret < 0) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_audio_tbs_set_auto_alerting(uint8_t bearer_index, bool enable)
+{
+    int err;
+
+    err = bt_tbs_set_auto_alerting_safe(bearer_index, enable);
+    if (err) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_audio_tbs_set_call_alerting(uint8_t call_index)
+{
+    int err;
+
+    err = bt_tbs_set_call_alerting_safe(call_index);
+    if (err) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t esp_ble_audio_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 {
     int err;
@@ -233,10 +274,9 @@ esp_err_t esp_ble_audio_tbs_set_status_flags(uint8_t bearer_index, uint16_t stat
 
 esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list)
 {
-    uint8_t count = CONFIG_BT_TBS_BEARER_COUNT;
     int err;
 
-    if (count == 0 || bearer_index >= count || uri_scheme_list == NULL) {
+    if (uri_scheme_list == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -303,11 +343,6 @@ esp_err_t esp_ble_audio_tbs_register_bearer(const esp_ble_audio_tbs_register_par
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* Note: currently only GTBS is supported */
-    if (param->gtbs == false) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
     ret = bt_tbs_register_bearer_safe(param);
     if (ret < 0) {
         return ESP_FAIL;
@@ -316,7 +351,7 @@ esp_err_t esp_ble_audio_tbs_register_bearer(const esp_ble_audio_tbs_register_par
     *bearer_index = ret;
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
-    if (bt_le_gtbs_init()) {
+    if (param->gtbs ? bt_le_gtbs_init() : bt_le_tbs_init()) {
         bt_tbs_unregister_bearer_safe(*bearer_index);
         return ESP_FAIL;
     }

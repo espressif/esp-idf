@@ -272,6 +272,47 @@ esp_err_t esp_ble_audio_tbs_remote_incoming(uint8_t bearer_index,
                                             uint8_t *call_index);
 
 /**
+ * @brief   Create a call directly in a given state (test setup helper).
+ *
+ * Allocates a call and sets it to @p state without running the call state
+ * machine, bypassing the single-outgoing-call restriction and the
+ * Dialing->Alerting auto-promotion. Intended for setting up the fixed call
+ * configurations required by the Join test procedures.
+ *
+ * @param   bearer_index    The index of the Telephone Bearer.
+ * @param   state           The initial call state (ESP_BLE_AUDIO_TBS_CALL_STATE_*).
+ * @param   uri             The remote URI stored for the call.
+ * @param   call_index      The call index on success.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_tbs_add_call(uint8_t bearer_index, uint8_t state,
+                                     const char *uri, uint8_t *call_index);
+
+/**
+ * @brief   Enable/disable automatic Dialing->Alerting promotion (test control).
+ *
+ * When disabled, an originated call on the bearer stays in Dialing until
+ * esp_ble_audio_tbs_set_call_alerting() is called. Lets a test harness control
+ * the transition timing and hold several outgoing calls in Dialing at once.
+ *
+ * @param   bearer_index    The index of the Telephone Bearer or GTBS index.
+ * @param   enable          true to auto-promote (default), false to keep Dialing.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_tbs_set_auto_alerting(uint8_t bearer_index, bool enable);
+
+/**
+ * @brief   Move a Dialing call to the Alerting state (test setup helper).
+ *
+ * @param   call_index  The call index to promote.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_tbs_set_call_alerting(uint8_t call_index);
+
+/**
  * @brief   Set a new bearer provider.
  *
  * @param   bearer_index    The index of the Telephone Bearer or

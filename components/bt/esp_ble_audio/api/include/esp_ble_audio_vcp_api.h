@@ -29,6 +29,11 @@ extern "C" {
 /*!< The volume state is muted */
 #define ESP_BLE_AUDIO_VCP_STATE_MUTED       BT_VCP_STATE_MUTED
 
+/*!< Reset selector: apply the volume field (clears persisted flag) */
+#define ESP_BLE_AUDIO_VCP_RESET_VOLUME      BT_VCP_VOL_REND_RESET_VOLUME
+/*!< Reset selector: apply the mute field */
+#define ESP_BLE_AUDIO_VCP_RESET_MUTE        BT_VCP_VOL_REND_RESET_MUTE
+
 /** Volume Control Service included services */
 typedef struct bt_vcp_included      esp_ble_audio_vcp_included_t;
 
@@ -43,6 +48,9 @@ typedef struct bt_vcp_vol_rend_cb   esp_ble_audio_vcp_vol_rend_cb_t;
 
 /** Register structure for Volume Control Service */
 typedef struct bt_vcp_vol_rend_register_param   esp_ble_audio_vcp_vol_rend_register_param_t;
+
+/** Parameters for resetting the Volume Renderer state */
+typedef struct bt_vcp_vol_rend_reset_param    esp_ble_audio_vcp_vol_rend_reset_state_param_t;
 
 /**
  * @brief   Get Volume Control Service included services.
@@ -145,6 +153,21 @@ esp_err_t esp_ble_audio_vcp_vol_rend_unmute(void);
  * @return  ESP_OK on success, or an error code on failure.
  */
 esp_err_t esp_ble_audio_vcp_vol_rend_mute(void);
+
+/**
+ * @brief   Reset selected volume state fields to an initial/reset value.
+ *
+ * For each field selected in @p param->fields (ESP_BLE_AUDIO_VCP_RESET_*), sets
+ * it to the provided value without treating it as a user change. Resetting the
+ * volume returns Volume_Setting_Persisted to Reset Volume Setting (0) per VCS
+ * v1.0.1 Section 3.3.1. Use to establish a starting state that must report
+ * persisted = 0.
+ *
+ * @param   param   Reset parameters. Must not be NULL.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_vcp_vol_rend_reset_state(const esp_ble_audio_vcp_vol_rend_reset_state_param_t *param);
 
 /**
  * @brief   Registers the callbacks used by the Volume Controller.

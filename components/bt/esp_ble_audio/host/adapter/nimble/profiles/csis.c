@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #define CSIS_SVC_COUNT      CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 
-#define CSIS_CHR_COUNT      (4 + 1)
+#define CSIS_CHR_COUNT      (5 + 1)
 
 #if CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE
 #define CSIS_CHR_FLAGS_SIRK \
@@ -60,11 +60,20 @@ LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
 #define CSIS_CHR_FLAGS_RANK \
     (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC)
 
+#if CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE
+#define CSIS_CHR_FLAGS_SET_NAME \
+    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC)
+#else /* CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE */
+#define CSIS_CHR_FLAGS_SET_NAME \
+    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC)
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE */
+
 static const ble_uuid16_t csis_uuid_svc = BLE_UUID16_INIT(BT_UUID_CSIS_VAL);
 static const ble_uuid16_t csis_uuid_sirk = BLE_UUID16_INIT(BT_UUID_CSIS_SIRK_VAL);
 static const ble_uuid16_t csis_uuid_set_size = BLE_UUID16_INIT(BT_UUID_CSIS_SET_SIZE_VAL);
 static const ble_uuid16_t csis_uuid_set_lock = BLE_UUID16_INIT(BT_UUID_CSIS_SET_LOCK_VAL);
 static const ble_uuid16_t csis_uuid_rank = BLE_UUID16_INIT(BT_UUID_CSIS_RANK_VAL);
+static const ble_uuid16_t csis_uuid_set_name = BLE_UUID16_INIT(BT_UUID_CSIS_SET_NAME_VAL);
 
 static struct csis_inst {
     struct bt_gatt_service *svc_p;
@@ -72,6 +81,7 @@ static struct csis_inst {
     uint16_t set_size_handle;
     uint16_t set_lock_handle;
     uint16_t rank_handle;
+    uint16_t set_name_handle;
 } csis_insts[CSIS_SVC_COUNT];
 
 static uint8_t csis_svc_count;
@@ -187,6 +197,9 @@ int bt_le_nimble_csis_attr_handle_set(void)
             case BT_UUID_CSIS_RANK_VAL:
                 chr_handle = csis_insts[i].rank_handle;
                 break;
+            case BT_UUID_CSIS_SET_NAME_VAL:
+                chr_handle = csis_insts[i].set_name_handle;
+                break;
             default:
                 continue;
             }
@@ -262,17 +275,21 @@ static void csis_svc_init(struct csis_inst *inst,
             csis_chr_init((void *)&svc->characteristics[chr_cnt++], &csis_uuid_rank,
                           &inst->rank_handle, CSIS_CHR_FLAGS_RANK);
             break;
+        case BT_UUID_CSIS_SET_NAME_VAL:
+            csis_chr_init((void *)&svc->characteristics[chr_cnt++], &csis_uuid_set_name,
+                          &inst->set_name_handle, CSIS_CHR_FLAGS_SET_NAME);
+            break;
         default:
             break;
         }
     }
 
-    /* svc->characteristics has CSIS_CHR_COUNT (= 4 + 1) slots: up to 4 real chars plus
+    /* svc->characteristics has CSIS_CHR_COUNT (= 5 + 1) slots: up to 5 real chars plus
      * a trailing zeroed slot that NimBLE requires as the NULL-uuid array terminator.
      * chr_cnt is the real-char count written via [chr_cnt++], so it must stay strictly
      * below CSIS_CHR_COUNT — chr_cnt == CSIS_CHR_COUNT means a write already clobbered
-     * the terminator slot. Trips if the switch matches a 5th char: a new CSIS case added
-     * without bumping the (4 + 1), or a duplicate UUID in the Zephyr service table.
+     * the terminator slot. Trips if the switch matches a 6th char: a new CSIS case added
+     * without bumping the (5 + 1), or a duplicate UUID in the Zephyr service table.
      */
     assert(chr_cnt < CSIS_CHR_COUNT);
 }

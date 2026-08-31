@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include "esp_ble_audio_mcs_defs.h"
 #include "esp_ble_audio_media_proxy_api.h"
 
@@ -575,6 +577,38 @@ esp_err_t esp_ble_audio_media_proxy_pl_init(void)
         return ESP_FAIL;
     }
 #endif /* CONFIG_BT_MCS && BLE_AUDIO_SVC_DEFERRED_ADD */
+
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_audio_media_proxy_pl_set_player_name(char *name)
+{
+    int err;
+
+    if (name == NULL || strlen(name) > CONFIG_BT_MPL_MEDIA_PLAYER_NAME_MAX - 1) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = bt_media_proxy_pl_set_player_name_safe(name);
+    if (err) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_audio_media_proxy_pl_set_track_title(char *title)
+{
+    int err;
+
+    if (title == NULL || strlen(title) > CONFIG_BT_MPL_TRACK_TITLE_MAX - 1) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = bt_media_proxy_pl_set_track_title_safe(title);
+    if (err) {
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }
