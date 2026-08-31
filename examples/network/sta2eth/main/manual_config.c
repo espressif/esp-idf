@@ -1,9 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -16,6 +18,28 @@ static httpd_handle_t s_web_server = NULL;
 static EventGroupHandle_t *s_flags = NULL;
 static int s_success_bit;
 
+/* Query values are still percent-encoded; each byte may expand to three (%XX) */
+#define WIFI_QUERY_VAL_ENCODED_MAX (MAX_PASSPHRASE_LEN * 3 + 1)
+
+/* Decodes '+' as space and %XX as the corresponding byte, in place */
+static void url_decode(char *str)
+{
+    char *dst = str;
+    while (*str) {
+        if (*str == '+') {
+            *dst++ = ' ';
+            str++;
+        } else if (*str == '%' && isxdigit((unsigned char)str[1]) && isxdigit((unsigned char)str[2])) {
+            char hex[3] = { str[1], str[2], '\0' };
+            *dst++ = (char) strtol(hex, NULL, 16);
+            str += 3;
+        } else {
+            *dst++ = *str++;
+        }
+    }
+    *dst = '\0';
+}
+
 bool is_provisioned(void)
 {
     wifi_config_t wifi_cfg;
@@ -23,7 +47,7 @@ bool is_provisioned(void)
         return false;
     }
 
-    if (strlen((const char *) wifi_cfg.sta.ssid)) {
+    if (strnlen((const char *) wifi_cfg.sta.ssid, sizeof(wifi_cfg.sta.ssid)) > 0) {
         return true;
     }
 
@@ -45,19 +69,28 @@ static esp_err_t http_get_handler(httpd_req_t *req)
         buf = malloc(buf_len);
         if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
             ESP_LOGI(TAG, "Found URL query => %s", buf);
-            char param[32];
-            wifi_config_t wifi_cfg = {};
+            char param[WIFI_QUERY_VAL_ENCODED_MAX];
+            wifi_config_t wifi_cfg = {0};
 
             if (httpd_query_key_value(buf, "ssid", param, sizeof(param)) == ESP_OK) {
+                url_decode(param);
                 ESP_LOGI(TAG, "ssid=%s", param);
-                strncpy((char *)wifi_cfg.sta.ssid, param, sizeof(wifi_cfg.sta.ssid));
+                size_t ssid_len = strlen(param);
+                if (ssid_len > 0 && ssid_len <= sizeof(wifi_cfg.sta.ssid)) {
+                    memcpy(wifi_cfg.sta.ssid, param, ssid_len);
+                }
             }
             if (httpd_query_key_value(buf, "password", param, sizeof(param)) == ESP_OK) {
+                url_decode(param);
                 ESP_LOGI(TAG, "password=%s", param);
-                strncpy((char *)wifi_cfg.sta.password, param, sizeof(wifi_cfg.sta.password));
+                size_t pass_len = strlen(param);
+                if (pass_len > 0 && pass_len <= sizeof(wifi_cfg.sta.password)) {
+                    memcpy(wifi_cfg.sta.password, param, pass_len);
+                }
             }
 
-            if (strlen((char *)wifi_cfg.sta.ssid) > 0 && strlen((char *)wifi_cfg.sta.password)) {
+            if (strnlen((char *)wifi_cfg.sta.ssid, sizeof(wifi_cfg.sta.ssid)) > 0 &&
+                    strnlen((char *)wifi_cfg.sta.password, sizeof(wifi_cfg.sta.password)) > 0) {
                 httpd_resp_set_type(req, "text/html");
                 esp_wifi_set_mode(WIFI_MODE_STA);
                 if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) == ESP_OK &&
