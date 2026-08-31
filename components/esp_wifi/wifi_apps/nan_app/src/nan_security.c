@@ -26,6 +26,7 @@
 #include "crypto/sha256.h"
 #include "crypto/aes_wrap.h"
 #include "nan_i.h"
+#include "common/defs.h"
 
 static const char *TAG = "nan_sec";
 
@@ -2995,6 +2996,125 @@ int esp_nan_verify_ndp_security_install_mic(uint8_t *m4_body, size_t body_len, u
     }
     NAN_DATA_UNLOCK();
     return rc;
+}
+
+/**
+ * nan_sec_get_strength - Security strength for a cipher suite (Wi-Fi Aware v4.0 §7.4)
+ *
+ * Higher return value = stronger. pairing_akmp distinguishes SAE password PASN
+ * from opportunistic PASN (WPA_KEY_MGMT_PASN).
+ *
+ * ESP maps PASN pairing ciphers to NCS-SK for the NDP M1-M4 (§7.6.4.2). When
+ * pairing_akmp is set, SK_128/256 are ranked as their PASN equivalents so a
+ * password-paired NDP outranks a passphrase SK NDP.
+ */
+static int nan_sec_get_strength(uint8_t csid, int pairing_akmp)
+{
+    bool is_opportunistic = (pairing_akmp == WPA_KEY_MGMT_PASN);
+    uint8_t rank_csid = csid;
+
+    if (pairing_akmp) {
+        if (csid == WIFI_NAN_CSID_NCS_SK_128) {
+            rank_csid = WIFI_NAN_CSID_NCS_PK_PASN_128;
+        } else if (csid == WIFI_NAN_CSID_NCS_SK_256) {
+            rank_csid = WIFI_NAN_CSID_NCS_PK_PASN_256;
+        }
+    }
+
+    switch (rank_csid) {
+    case WIFI_NAN_CSID_NCS_PK_PASN_256:
+        return is_opportunistic ? 2 : 6;
+    case WIFI_NAN_CSID_NCS_PK_PASN_128:
+        return is_opportunistic ? 1 : 5;
+    case WIFI_NAN_CSID_NCS_SK_256:
+        return 4;
+    case WIFI_NAN_CSID_NCS_SK_128:
+        return 3;
+    default:
+        return 0;
+    }
+}
+
+uint8_t nan_sec_pairwise_csid_from_bitmap(uint16_t csid_bitmap)
+{
+    static const uint8_t pairwise[] = {
+        WIFI_NAN_CSID_NCS_PK_PASN_256,
+        WIFI_NAN_CSID_NCS_PK_PASN_128,
+        WIFI_NAN_CSID_NCS_SK_256,
+        WIFI_NAN_CSID_NCS_SK_128,
+    };
+
+    for (size_t i = 0; i < sizeof(pairwise) / sizeof(pairwise[0]); i++) {
+        if (csid_bitmap & (1u << pairwise[i])) {
+            return pairwise[i];
+        }
+    }
+    return 0;
+}
+
+bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp)
+{
+    struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
+    int new_strength;
+
+    if (csid != WIFI_NAN_CSID_NCS_SK_128 && csid != WIFI_NAN_CSID_NCS_SK_256 &&
+            csid != WIFI_NAN_CSID_NCS_PK_PASN_128 && csid != WIFI_NAN_CSID_NCS_PK_PASN_256) {
+        return false;
+    }
+
+    new_strength = nan_sec_get_strength(csid, pairing_akmp);
+
+    if (!sa->valid) {
+        return true;
+    }
+
+    int cur_strength = nan_sec_get_strength(sa->csid, sa->pairing_akmp);
+    ESP_LOGD(TAG, "SEC: Comparing strength: new=%d (csid=%u akmp=0x%x) vs cur=%d (csid=%u akmp=0x%x)",
+             new_strength, csid, pairing_akmp, cur_strength, sa->csid, sa->pairing_akmp);
+
+    if (new_strength < cur_strength) {
+        ESP_LOGI(TAG, "SEC: New security weaker than existing, discarding keys");
+        return false;
+    }
+    return true;
+}
+
+void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, const uint8_t *local_ndi,
+                             uint8_t csid, int pairing_akmp,
+                             const uint8_t *tk, uint8_t tk_len)
+{
+    struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
+
+    if (!peer_ndi || !local_ndi || !tk || tk_len == 0 || tk_len > NAN_ND_TK_MAX_LEN) {
+        return;
+    }
+
+    memset(sa, 0, sizeof(*sa));
+    sa->valid = true;
+    memcpy(sa->peer_ndi, peer_ndi, MACADDR_LEN);
+    memcpy(sa->local_ndi, local_ndi, MACADDR_LEN);
+    sa->csid = csid;
+    sa->pairing_akmp = pairing_akmp;
+    memcpy(sa->tk, tk, tk_len);
+    sa->tk_len = tk_len;
+
+    ESP_LOGD(TAG, "SEC: Committed SA csid=%u akmp=0x%x strength=%d peer_ndi=" MACSTR,
+             csid, pairing_akmp, nan_sec_get_strength(csid, pairing_akmp),
+             MAC2STR(peer_ndi));
+}
+
+void nan_sec_ndp_clear_sa(const uint8_t *peer_ndi)
+{
+    struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
+
+    if (!sa->valid) {
+        return;
+    }
+    if (peer_ndi && memcmp(sa->peer_ndi, peer_ndi, MACADDR_LEN) != 0) {
+        return;
+    }
+    forced_memzero(sa->tk, sizeof(sa->tk));
+    memset(sa, 0, sizeof(*sa));
 }
 
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
