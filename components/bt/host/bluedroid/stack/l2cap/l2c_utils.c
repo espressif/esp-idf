@@ -49,6 +49,7 @@ extern BOOLEAN l2cap_bqb_ertm_mode_included_flag;
 #if BT_CLASSIC_BQB_INCLUDED
 /* L2CAP/EXF/BV-08-C and L2CAP/FIX/BV-03-C. Default off so CID 0x0007 stays advertised. */
 BOOLEAN s_l2cap_bqb_hide_fixed_chnl_flag = FALSE;
+extern BOOLEAN s_l2cap_bqb_cfg_hint_rej_flag;
 
 void l2cap_bqb_hide_fixed_chnl_ctrl(BOOLEAN enable)
 {
@@ -1057,9 +1058,13 @@ void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len,
             p_data += opt_len;
             break;
 
-        /* unknown options; copy into rsp if not hints */
+        /* unknown options; hints stay out of Result 0x0003 unless the BQB flag is on */
         default:
-            if ((cfg_code & 0x80) == 0) {
+            if ((cfg_code & 0x80) == 0
+#if BT_CLASSIC_BQB_INCLUDED
+                    || s_l2cap_bqb_cfg_hint_rej_flag
+#endif
+               ) {
                 if (buf_space >= opt_len) {
                     memcpy(p, p_data, opt_len);
                     p += opt_len;

@@ -57,6 +57,99 @@ tL2C_CB *l2c_cb_ptr;
 
 #if BT_CLASSIC_BQB_INCLUDED
 static BOOLEAN s_l2cap_bqb_bad_cmd_len_rej_flag = FALSE;
+/* L2CAP/COS/CED/BI-01-C: reject Echo Request as unknown when ICS Echo unsupported */
+static BOOLEAN s_l2cap_bqb_echo_rej_flag = FALSE;
+/* L2CAP/COS/CED/BI-01-C: reject Information Request as unknown when ICS
+ * Information Request (L2CAP 2/6) is not claimed. */
+static BOOLEAN s_l2cap_bqb_info_rej_flag = FALSE;
+/* L2CAP/COS/CED/BI-01-C only. Default off: a Disconnect Request for an
+ * unknown CID is Invalid CID. This is not tied to the Echo or Information
+ * ICS flags, so BI-08 stays Invalid CID. */
+static BOOLEAN s_l2cap_bqb_disc_cid_not_understood_flag = FALSE;
+/* L2CAP/COS/CFD/BV-14-C on PTS 8.14.1.6: also reject unknown options
+ * whose hint bit is set. Default off; production skips those hints. */
+BOOLEAN s_l2cap_bqb_cfg_hint_rej_flag = FALSE;
+
+/*******************************************************************************
+**
+** Function     l2cap_bqb_bad_cmd_len_rej_ctrl
+**
+** Description  Control rejecting L2CAP signaling PDUs with incorrect length
+**              for BQB test.
+**
+** Returns      void
+**
+*******************************************************************************/
+void l2cap_bqb_bad_cmd_len_rej_ctrl(BOOLEAN enable)
+{
+    s_l2cap_bqb_bad_cmd_len_rej_flag = enable;
+}
+
+/*******************************************************************************
+**
+** Function     l2cap_bqb_echo_rej_ctrl
+**
+** Description  Control rejecting L2CAP Echo Request with Command Reject
+**              (Command not understood) for L2CAP/COS/CED/BI-01-C BQB test
+**              when Echo is not claimed in ICS (L2CAP 2/4).
+**
+** Returns      void
+**
+*******************************************************************************/
+void l2cap_bqb_echo_rej_ctrl(BOOLEAN enable)
+{
+    s_l2cap_bqb_echo_rej_flag = enable;
+}
+
+/*******************************************************************************
+**
+** Function     l2cap_bqb_info_rej_ctrl
+**
+** Description  Control rejecting L2CAP Information Request with Command Reject
+**              (Command not understood) for L2CAP/COS/CED/BI-01-C BQB test
+**              when Information Request is not claimed in ICS (L2CAP 2/6).
+**
+** Returns      void
+**
+*******************************************************************************/
+void l2cap_bqb_info_rej_ctrl(BOOLEAN enable)
+{
+    s_l2cap_bqb_info_rej_flag = enable;
+}
+
+/*******************************************************************************
+**
+** Function     l2cap_bqb_disc_cid_not_understood_ctrl
+**
+** Description  When enabled, a Disconnect Request whose CID is not open is
+**              rejected as Command not understood. Default off: Core Spec
+**              Vol 3 Part A 4.6 uses Invalid CID. Only L2CAP/COS/CED/BI-01-C.
+**
+** Returns      void
+**
+*******************************************************************************/
+void l2cap_bqb_disc_cid_not_understood_ctrl(BOOLEAN enable)
+{
+    s_l2cap_bqb_disc_cid_not_understood_flag = enable;
+}
+
+/*******************************************************************************
+**
+** Function     l2cap_bqb_cfg_hint_rej_ctrl
+**
+** Description  When enabled, an unknown configuration option with the hint
+**              bit set is rejected and echoed (Result 0x0003). Default off:
+**              those options are skipped. PTS 8.14.1.6 L2CAP/COS/CFD/BV-14-C
+**              still expects the reject. Once cfg_rej is set, the request
+**              skips l2c_csm_execute, so later known options are not applied.
+**
+** Returns      void
+**
+*******************************************************************************/
+void l2cap_bqb_cfg_hint_rej_ctrl(BOOLEAN enable)
+{
+    s_l2cap_bqb_cfg_hint_rej_flag = enable;
+}
 #endif /* BT_CLASSIC_BQB_INCLUDED */
 
 #if 0 //Unused
@@ -113,24 +206,6 @@ void l2c_bcst_msg( BT_HDR *p_buf, UINT16 psm )
     }
 }
 #endif
-
-/*******************************************************************************
-**
-** Function     l2cap_bqb_bad_cmd_len_rej_ctrl
-**
-** Description  Control rejecting L2CAP signaling PDUs with incorrect length
-**              for BQB test.
-**
-** Returns      void
-**
-*******************************************************************************/
-#if BT_CLASSIC_BQB_INCLUDED
-void l2cap_bqb_bad_cmd_len_rej_ctrl(BOOLEAN enable)
-{
-    s_l2cap_bqb_bad_cmd_len_rej_flag = enable;
-}
-#endif /* BT_CLASSIC_BQB_INCLUDED */
-
 
 /*******************************************************************************
 **
@@ -586,7 +661,8 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             p_cfg_start = p;
 
             cfg_info.flush_to_present = cfg_info.mtu_present = cfg_info.qos_present =
-                                            cfg_info.fcr_present = cfg_info.fcs_present = FALSE;
+                                            cfg_info.fcr_present = cfg_info.fcs_present =
+                                            cfg_info.ext_flow_spec_present = FALSE;
 
             while (p < p_cfg_end) {
                 if ((p_cfg_end - p) < L2CAP_CFG_OPTION_OVERHEAD) {
@@ -682,14 +758,21 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 
                 default:
                     p = p_cfg_opt_end;
-                    if ((cfg_code & 0x80) == 0) {
+                    /* Unknown option with the hint bit set is skipped, so a
+                     * hint-only request is answered with Success. A non-hint
+                     * unknown option is rejected and echoed. The BQB flag also
+                     * rejects hints for PTS; cfg_rej then skips l2c_csm_execute. */
+                    if ((cfg_code & 0x80) == 0
+#if BT_CLASSIC_BQB_INCLUDED
+                            || s_l2cap_bqb_cfg_hint_rej_flag
+#endif
+                       ) {
                         cfg_rej_len += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
                         cfg_rej = TRUE;
                     }
                     break;
                 }
             }
-
             if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, lcid)) != NULL) {
                 p_ccb->remote_id = id;
                 if (cfg_rej) {
@@ -716,7 +799,8 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             STREAM_TO_UINT16 (cfg_info.result, p);
 
             cfg_info.flush_to_present = cfg_info.mtu_present = cfg_info.qos_present =
-                                            cfg_info.fcr_present = cfg_info.fcs_present = FALSE;
+                                            cfg_info.fcr_present = cfg_info.fcs_present =
+                                            cfg_info.ext_flow_spec_present = FALSE;
 
             while (p < p_cfg_end) {
                 if ((p_cfg_end - p) < L2CAP_CFG_OPTION_OVERHEAD) {
@@ -861,6 +945,15 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     l2c_csm_execute (p_ccb, L2CEVT_L2CAP_DISCONNECT_REQ, &con_info);
                 }
             } else {
+#if BT_CLASSIC_BQB_INCLUDED
+                /* L2CAP/COS/CED/BI-01-C sends Disconnect on a CID that was
+                 * never opened and expects Command not understood. Default
+                 * stays Invalid CID, including L2CAP/COS/CED/BI-08-C. */
+                if (s_l2cap_bqb_disc_cid_not_understood_flag) {
+                    l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
+                    break;
+                }
+#endif /* BT_CLASSIC_BQB_INCLUDED */
                 /* Core Spec Vol 3 Part A 4.6: an unknown DCID/SCID is rejected
                  * with reason Invalid CID. Data is local CID then remote CID.
                  * L2CAP/COS/CED/BI-08-C. */
