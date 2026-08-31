@@ -28,12 +28,12 @@ NAN Security
 By default a NAN Data Path (NDP) carries data in the clear. NAN Security encrypts the NDP by deriving a pairwise key (ND-PMK) between the Publisher and Subscriber during the NDP handshake. Two mechanisms are supported:
 
 - **Passphrase/PMK-based (NCS-SK-128)**: both peers share a passphrase or raw 32-byte PMK out of band. Available with stand-alone ESP-IDF; requires :ref:`CONFIG_ESP_WIFI_NAN_SECURITY`. See :doc:`/api-guides/wifi-security`.
-- **Pairing-based (NCS-PK-PASN-128)**: peers run the NAN Pairing protocol (PASN) to negotiate an NPK/NIK, optionally authenticated by a bootstrapping method (PIN). Requires :ref:`CONFIG_ESP_WIFI_NAN_PAIRING` and the **Wi-Fi Aware** external component (``espressif/wifi_aware``), which is not bundled with stand-alone ESP-IDF. Add it to your project from the `ESP Component Registry <https://components.espressif.com/components/espressif/wifi_aware/versions/0.0.1/readme>`__:
+- **Pairing-based (NCS-PK-PASN-128)**: peers run the NAN Pairing protocol (PASN) to negotiate an NPK/NIK, optionally authenticated by a bootstrapping method (PIN). Requires :ref:`CONFIG_ESP_WIFI_NAN_PAIRING` and the **Wi-Fi Aware** external component (``espressif/wifi_aware``), which is not bundled with stand-alone ESP-IDF. Add it to your project from the `ESP Component Registry <https://components.espressif.com/components/espressif/wifi_aware/>`__:
 
 .. code-block:: yaml
 
     dependencies:
-      espressif/wifi_aware: "^0.0.1"
+      espressif/wifi_aware: "*"
 
 API Reference
 -------------
