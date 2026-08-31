@@ -72,7 +72,7 @@ examples/openthread/ot_sleepy_device/light_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable:
-    - if: IDF_TARGET in ["esp32h4", "esp32s31", "esp32h21"]
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"]
       temporary: true
       reason: Not supported yet
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]
