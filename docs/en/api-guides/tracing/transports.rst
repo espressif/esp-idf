@@ -396,8 +396,8 @@ Optional arguments:
 Application Examples
 --------------------
 
-- :example:`system/app_trace_basic` demonstrates how to use the Application Level Tracing Library to log messages to a host via JTAG, providing a faster alternative to UART logs.
-- :example:`system/app_trace_to_plot` demonstrates how to send and plot dummy sensor data to a host via JTAG.
+- :example:`system/tracing/app_trace_basic` demonstrates how to use the Application Level Tracing Library to log messages to a host via JTAG, providing a faster alternative to UART logs.
+- :example:`system/tracing/app_trace_to_plot` demonstrates how to send and plot dummy sensor data to a host via JTAG.
 
 API Reference
 -------------

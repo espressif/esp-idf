@@ -396,8 +396,8 @@ Log Trace Processor 命令选项
 应用示例
 --------
 
-- :example:`system/app_trace_basic` 演示如何使用应用层跟踪库通过 JTAG 将日志消息记录到主机，作为 UART 日志的更快替代方案。
-- :example:`system/app_trace_to_plot` 演示如何通过 JTAG 向主机发送并绘制虚拟传感器数据。
+- :example:`system/tracing/app_trace_basic` 演示如何使用应用层跟踪库通过 JTAG 将日志消息记录到主机，作为 UART 日志的更快替代方案。
+- :example:`system/tracing/app_trace_to_plot` 演示如何通过 JTAG 向主机发送并绘制虚拟传感器数据。
 
 API 参考
 --------

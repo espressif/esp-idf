@@ -69,4 +69,4 @@ To capture FreeRTOS events, the external component implementing a trace encoder 
 Application Example
 -------------------
 
-- :example:`system/esp_trace_custom_library` is a minimal template that wires up an external encoder, demonstrates the FreeRTOS trace-hook include chain, and shows cross-core serialization through the encoder lock.
+- :example:`system/tracing/esp_trace_custom_library` is a minimal template that wires up an external encoder, demonstrates the FreeRTOS trace-hook include chain, and shows cross-core serialization through the encoder lock.

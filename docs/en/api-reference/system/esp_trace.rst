@@ -13,7 +13,7 @@ For a conceptual overview, architecture, and usage guides, see :doc:`/api-guides
 Application Examples
 --------------------
 
-- :example:`system/esp_trace_custom_library` demonstrates how to integrate an external trace library (encoder) with the ``esp_trace`` core.
+- :example:`system/tracing/esp_trace_custom_library` demonstrates how to integrate an external trace library (encoder) with the ``esp_trace`` core.
 
 API Reference
 -------------

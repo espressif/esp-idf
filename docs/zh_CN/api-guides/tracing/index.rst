@@ -101,8 +101,8 @@ ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。以较
 示例
 ----
 
-- :example:`system/app_trace_basic`：基础应用程序跟踪
-- :example:`system/sysview_tracing`：SystemView 跟踪示例
-- :example:`system/sysview_tracing_heap_log`：基于 SystemView 的堆跟踪
-- :example:`system/gcov`：通过 JTAG 获取源代码覆盖率
-- :example:`system/esp_trace_custom_library`：外部跟踪库集成模板
+- :example:`system/tracing/app_trace_basic`：基础应用程序跟踪
+- :example:`system/tracing/sysview_tracing`：SystemView 跟踪示例
+- :example:`system/tracing/sysview_tracing_heap_log`：基于 SystemView 的堆跟踪
+- :example:`system/tracing/gcov`：通过 JTAG 获取源代码覆盖率
+- :example:`system/tracing/esp_trace_custom_library`：外部跟踪库集成模板
