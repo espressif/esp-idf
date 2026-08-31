@@ -1041,7 +1041,7 @@ static tGATT_STATUS gatt_build_primary_service_rsp (BT_HDR *p_msg, tGATT_TCB *p_
 **                  buffer.
 **
 ** Returns          TRUE: if data filled successfully.
-**                  FALSE: packet full.
+**                  FALSE: packet full, or format mismatch.
 **
 *******************************************************************************/
 static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SR_REG *p_rcb, BT_HDR *p_msg, UINT16 *p_len,
@@ -1084,8 +1084,10 @@ static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SR_REG *p_rcb, BT_HDR *p_msg,
                     gatt_convert_uuid32_to_uuid128(p, ((tGATT_ATTR32 *) p_attr)->uuid);
                     p += LEN_UUID_128;
                 } else {
-                    // UUID format mismatch in sequential attributes
-                    // A new request will be sent with the starting handle of the next attribute
+                    /* UUID format mismatch in sequential attributes: end this PDU so the
+                     * client sends a new ATT_FIND_INFORMATION_REQ from the next handle.
+                     * GATT_NO_RESOURCES is internal flow control (not an ATT error). */
+                    status = GATT_NO_RESOURCES;
                     break;
                 }
                 p_msg->len += info_pair_len[p_msg->offset - 1];
