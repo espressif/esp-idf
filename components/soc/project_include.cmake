@@ -40,10 +40,6 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
                                                    "-mno-cm-push-reverse"
                                                    "-mno-cm-popret")
 
-        if(CONFIG_SOC_CPU_HAS_ZB_EXTENSIONS)
-            set(_march "${_march}_zba_zbb_zbs")
-        endif()
-
         if((CONFIG_SOC_CPU_HAS_ZC_EXTENSIONS AND NOT CONFIG_SOC_CPU_ZCMP_WORKAROUND) OR
            CONFIG_COMPILER_ENABLE_RISCV_ZCMP)
             if(NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
