@@ -473,7 +473,7 @@ if(CONFIG_SOC_ECC_SUPPORTED)
 endif()
 
 if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
-   OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_SOFTWARE_KEY)
+        OR CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
     target_sources(tfpsacrypto PRIVATE
         "${COMPONENT_DIR}/port/psa_driver/esp_ecdsa/psa_crypto_driver_esp_ecdsa.c"
         "${COMPONENT_DIR}/port/psa_driver/esp_ecdsa/psa_crypto_driver_esp_ecdsa_transparent.c"

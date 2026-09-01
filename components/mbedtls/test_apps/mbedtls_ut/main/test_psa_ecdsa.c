@@ -391,7 +391,8 @@ TEST_CASE("mbedtls ECDSA signature verification rejects out-of-range r, s on SEC
 
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECC */
 
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_SOFTWARE_KEY
+/* The sign tests verify every signature, so they also need a verify implementation */
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN && (CONFIG_MBEDTLS_HARDWARE_ECC || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
 #define USE_ECDSA_KEY_FROM_KEY_MANAGER INT_MAX
 
 /*
@@ -514,7 +515,6 @@ void test_ecdsa_sign(esp_ecdsa_curve_t curve, const uint8_t *hash, const uint8_t
     psa_reset_key_attributes(&priv_attr);
 }
 
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 /* The following test cases need a key provisioned in eFuse or deployed
  * through the Key Manager */
 TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_key]")
@@ -945,9 +945,7 @@ TEST_CASE("mbedtls ECDSA signature generation verification, import and export er
 
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
-#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
-
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_SOFTWARE_KEY && (CONFIG_MBEDTLS_HARDWARE_ECC || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
+#ifdef ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED
 
 /*
  * Software-key tests: the private key is a plaintext (transparent) PSA key,
@@ -1044,5 +1042,5 @@ TEST_CASE("mbedtls ECDSA software fallback for combinations unsupported by the p
     psa_reset_key_attributes(&priv_attr);
 }
 
-#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_SOFTWARE_KEY && (CONFIG_MBEDTLS_HARDWARE_ECC || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY) */
-#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_SOFTWARE_KEY */
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN && (CONFIG_MBEDTLS_HARDWARE_ECC || CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY) */
