@@ -97,6 +97,8 @@ static void eloop_test_wifi_stop(void)
 {
     TEST_ESP_OK(esp_wifi_stop());
     TEST_ESP_OK(esp_wifi_deinit());
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(300 / portTICK_PERIOD_MS);
 }
 
 static void reset_timeout_ctx(struct timeout_test_ctx *ctx, void *sem)
@@ -269,7 +271,6 @@ TEST_CASE("Test eloop timers run", "[eloop]")
     vTaskDelay(250 / portTICK_PERIOD_MS);
     fired_before_stop = t;
     eloop_test_wifi_stop();
-    vTaskDelay(300 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(fired_before_stop, t);
     TEST_ASSERT_TRUE(t >= 1);
     TEST_ASSERT_TRUE(t < 6);
