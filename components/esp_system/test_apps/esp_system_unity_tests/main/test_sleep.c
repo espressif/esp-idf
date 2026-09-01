@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +96,8 @@ TEST_CASE("light sleep stress test", "[lightsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
+    /* vTaskDelete() only queues TCB/stack for idle; wait for two idle passes. */
+    vTaskDelay(2);
     vSemaphoreDelete(done);
 }
 
@@ -122,9 +124,12 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[lightsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
-    vSemaphoreDelete(done);
+    /* Stop the periodic timer first, otherwise it starves idle and the
+     * self-deleted worker looks like a leak to Unity. */
     esp_timer_stop(timer);
     esp_timer_delete(timer);
+    vTaskDelay(2);
+    vSemaphoreDelete(done);
 }
 #endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 
