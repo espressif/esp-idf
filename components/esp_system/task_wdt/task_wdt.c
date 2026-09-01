@@ -23,6 +23,7 @@
 #include "esp_task_wdt.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_private/esp_sys_event_app_init.h"
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/esp_task_wdt_impl.h"
 
@@ -57,6 +58,28 @@ extern bool g_panic_abort;
 
 /* Global flag marking whether the current ISR is a Task Watchdog ISR. */
 bool g_twdt_isr = false;
+
+#if CONFIG_ESP_TASK_WDT_INIT
+ESP_PRE_APP_MAIN_HANDLER_REGISTER(init_task_wdt, 120)
+{
+    (void)user_arg;
+    (void)ctx;
+    esp_task_wdt_config_t config = {
+        .timeout_ms = CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000,
+        .idle_core_mask = 0,
+#if CONFIG_ESP_TASK_WDT_PANIC
+        .trigger_panic = true,
+#endif
+    };
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    config.idle_core_mask |= BIT(0);
+#endif
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    config.idle_core_mask |= BIT(1);
+#endif
+    return esp_task_wdt_init(&config);
+}
+#endif
 
 // --------------------------------------------------- Definitions -----------------------------------------------------
 

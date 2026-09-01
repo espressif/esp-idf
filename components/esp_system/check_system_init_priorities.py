@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-# This file is used to check the order of execution of ESP_SYSTEM_INIT_FN functions.
+# This file checks the order of execution of system startup handlers.
 # It compares the priorities found in .c source files to the contents of system_init_fn.txt
 # In case of an inconsistency, the script prints the differences found and returns with a
 # non-zero exit code.
@@ -15,12 +15,47 @@ import re
 import sys
 
 COMMENT_REGEX = re.compile(r'//.*?$|/\*.*?\*/', re.DOTALL | re.MULTILINE)
-ESP_SYSTEM_INIT_FN_REGEX_SIMPLE = re.compile(r'\bESP_SYSTEM_INIT_FN\s*\(')
-ESP_SYSTEM_INIT_FN_REGEX = re.compile(
-    r'ESP_SYSTEM_INIT_FN\(([a-zA-Z0-9_]+)\s*,\s*([a-zA-Z\ _0-9\(\)|]+)\s*,\s*([a-zA-Z\ _0-9\(\)|]+)\s*,\s*([0-9]+)\)'
+ESP_SYSTEM_INIT_FN_REGEX = (
+    r'{macro}\((?P<func>[a-zA-Z0-9_]+)\s*,\s*'
+    r'(?P<stage>[a-zA-Z\ _0-9\(\)|]+)\s*,\s*'
+    r'(?P<affinity>[a-zA-Z\ _0-9\(\)|]+)\s*,\s*'
+    r'(?P<priority>[0-9]+)\)'
+)
+APP_INIT_FN_REGEX = r'{macro}\s*\(\s*(?P<func>[a-zA-Z0-9_]+)\s*,\s*(?P<priority>[0-9]+)\s*\)'
+STARTUP_REGISTRATIONS = (
+    (
+        'ESP_SYSTEM_INIT_FN',
+        re.compile(ESP_SYSTEM_INIT_FN_REGEX.format(macro='ESP_SYSTEM_INIT_FN')),
+        '',
+        '',
+    ),
+    (
+        'ESP_PRE_SCHEDULER_HANDLER_REGISTER',
+        re.compile(APP_INIT_FN_REGEX.format(macro='ESP_PRE_SCHEDULER_HANDLER_REGISTER')),
+        'PRE_SCHEDULER',
+        'BIT(0)',
+    ),
+    (
+        'ESP_PRE_SCHEDULER_HANDLER_REGISTER_PER_CPU',
+        re.compile(APP_INIT_FN_REGEX.format(macro='ESP_PRE_SCHEDULER_HANDLER_REGISTER_PER_CPU')),
+        'PRE_SCHEDULER',
+        'ESP_SYSTEM_INIT_ALL_CORES',
+    ),
+    (
+        'ESP_PRE_APP_MAIN_HANDLER_REGISTER',
+        re.compile(APP_INIT_FN_REGEX.format(macro='ESP_PRE_APP_MAIN_HANDLER_REGISTER')),
+        'PRE_APP_MAIN',
+        'MAIN_TASK',
+    ),
 )
 STARTUP_ENTRIES_FILE = 'components/esp_system/system_init_fn.txt'
 EXCLUDED_SOURCE_DIRS = {'test_apps', 'host_test', 'host_tests'}
+STAGE_ORDER = {
+    'CORE': 0,
+    'SECONDARY': 1,
+    'PRE_SCHEDULER': 2,
+    'PRE_APP_MAIN': 3,
+}
 
 
 class StartupEntry:
@@ -69,36 +104,36 @@ def main() -> None:
             file_contents = f_obj.read()
 
         file_contents_no_comments = strip_comments(file_contents)
-        if not ESP_SYSTEM_INIT_FN_REGEX_SIMPLE.search(file_contents_no_comments):
-            continue
+        for macro, pattern, default_stage, default_affinity in STARTUP_REGISTRATIONS:
+            count_expected = len(re.findall(rf'\b{macro}\s*\(', file_contents_no_comments))
+            found = list(pattern.finditer(file_contents_no_comments))
+            if len(found) != count_expected:
+                print(
+                    f'error: In {filename}, found {macro} {count_expected} time(s), '
+                    f'but regular expression matched {len(found)} time(s)',
+                    file=sys.stderr,
+                )
+                has_errors = True
 
-        count_expected = len(ESP_SYSTEM_INIT_FN_REGEX_SIMPLE.findall(file_contents_no_comments))
-        found = ESP_SYSTEM_INIT_FN_REGEX.findall(file_contents_no_comments)
-        if len(found) != count_expected:
-            print(
-                (
-                    f'error: In {filename}, found ESP_SYSTEM_INIT_FN {count_expected} time(s), '
-                    f'but regular expression matched {len(found)} time(s)'
-                ),
-                file=sys.stderr,
-            )
-            has_errors = True
-
-        for match in found:
-            entry = StartupEntry(
-                filename=relpath, func=match[0], stage=match[1], affinity=match[2], priority=int(match[3])
-            )
-            startup_entries.append(entry)
+            for match in found:
+                startup_entries.append(
+                    StartupEntry(
+                        relpath,
+                        match.group('func'),
+                        match.groupdict().get('stage') or default_stage,
+                        match.groupdict().get('affinity') or default_affinity,
+                        int(match.group('priority')),
+                    )
+                )
 
     #
-    # 2. Sort the ESP_SYSTEM_INIT_FN functions in C source files.
+    # 2. Sort the startup handlers in C source files.
     #    In addition to the stage and priority, we also add filename to the sort key,
     #    to have a stable sorting order in case when the same startup function is defined in multiple files,
     #    for example for different targets.
     #
-    def sort_key(entry: StartupEntry) -> tuple[str, int, str]:
-        # luckily 'core' and 'secondary' are in alphabetical order, so we can return the string
-        return (entry.stage, entry.priority, entry.filename)
+    def sort_key(entry: StartupEntry) -> tuple[int, int, str]:
+        return (STAGE_ORDER[entry.stage], entry.priority, entry.filename)
 
     startup_entries = list(sorted(startup_entries, key=sort_key))
     startup_entries_lines = [str(entry) for entry in startup_entries]

@@ -15,6 +15,7 @@
 #include "esp_heap_task_info_internal.h"
 #include "heap_memory_layout.h"
 
+#include "esp_private/esp_sys_event_app_init.h"
 #include "esp_private/startup_internal.h"
 
 static const char *TAG = "heap_init";
@@ -96,6 +97,14 @@ void heap_caps_enable_nonos_stack_heaps(void)
      * app_main is called so setting this variable here is as close as we can get
      * within the heap component to the actual start of the application */
     s_in_startup = false;
+}
+
+ESP_PRE_APP_MAIN_HANDLER_REGISTER(enable_nonos_stack_heaps, 100)
+{
+    (void)user_arg;
+    (void)ctx;
+    heap_caps_enable_nonos_stack_heaps();
+    return ESP_OK;
 }
 
 /* Initialize the heap allocator to use all of the memory not

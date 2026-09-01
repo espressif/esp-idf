@@ -3,6 +3,21 @@
 
 :link_to_translation:`en:[English]`
 
+FreeRTOS
+--------
+
+旧版 ``port_start_app_hook`` 已弃用，并将在 ESP-IDF v7.0 中移除。为保持原有执行顺序，请使用优先级为 ``999`` 的 ``ESP_PRE_SCHEDULER_HANDLER_REGISTER`` 处理函数替代。
+
+.. code-block:: c
+
+    #include "esp_private/esp_sys_event_app_init.h"
+
+    ESP_PRE_SCHEDULER_HANDLER_REGISTER(port_start_app_hook, 999)
+    {
+        // 特定于端口的启动行为
+        return ESP_OK;
+    }
+
 OTA 更新
 --------
 

@@ -19,8 +19,8 @@ idf_component_optional_requires(PRIVATE mbedtls)
 
 if(CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP)
     # ota_auto_confirm.c has no other externally referenced symbol, so force the linker to pull
-    # it in from the archive to override the weak esp_ota_confirm_rollback_hook() in freertos.
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_ota_confirm_rollback_hook")
+    # its static PRE_APP_MAIN event registration from the archive.
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_ota_auto_confirm_include")
 endif()
 
 idf_define_esp_err_codes(HEADERS include/esp_ota_ops.h)

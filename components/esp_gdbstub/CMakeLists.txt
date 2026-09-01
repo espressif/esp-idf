@@ -34,3 +34,12 @@ if(CONFIG_ESP_SYSTEM_PANIC_GDBSTUB)
     # Make sure the panic event registration in gdbstub.c is considered by the linker
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_gdbstub_panic_handler")
 endif()
+
+if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)
+    # Pull in the PRE_SCHEDULER registration from gdbstub.c.
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_gdbstub_init")
+    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+        # Pull in the Xtensa debug exception handler from its separate object file.
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u _xt_panic_gdbstub")
+    endif()
+endif()
