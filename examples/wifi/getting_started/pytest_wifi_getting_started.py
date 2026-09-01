@@ -5,6 +5,7 @@ import os.path
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 # @pytest.mark.supported_targets
 # This test should support all targets, even between different target types
@@ -33,7 +34,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32c61'],
+    soc_filtered_targets('SOC_WIFI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c2"]'),
     indirect=['target'],
 )
 def test_wifi_getting_started(dut: tuple[IdfDut, IdfDut]) -> None:

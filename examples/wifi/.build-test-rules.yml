@@ -43,9 +43,6 @@ examples/wifi/getting_started:
     - if: IDF_TARGET in ["esp32p4", "esp32h2"]
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET in ["esp32s31"]
-      temporary: true
-      reason: lack of runners
   depends_filepatterns:
     - examples/wifi/getting_started/**/*
 
@@ -82,14 +79,8 @@ examples/wifi/itwt:
 
 examples/wifi/power_save:
   <<: *wifi_depends_default
-  disable:
-    - if: SOC_WIFI_SUPPORTED != 1
-      temporary: true
-      reason: requires hardware support
-  disable_test:
-    - if: IDF_TARGET in ["esp32s31"]
-      temporary: true
-      reason: lack of runners
+  enable:
+    - if: SOC_WIFI_SUPPORTED == 1
   depends_components:
     - *common_components
     - esp_wifi
