@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,6 +11,8 @@
 #include "esp_wifi.h"
 
 #include "esp_heap_caps.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 // Some resources are lazy allocated in wifi and lwip
 // #define TEST_MEMORY_LEAK_THRESHOLD (-1546)
@@ -39,6 +41,8 @@ void setUp(void)
 void tearDown(void)
 {
     ESP_ERROR_CHECK(esp_wifi_deinit());
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");

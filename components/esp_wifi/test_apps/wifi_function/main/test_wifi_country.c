@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,6 +8,8 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "unity_test_utils.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #define TAG "test_wifi"
 #define EMPH_STR(s) "****** "s" ******"
@@ -36,6 +38,8 @@ TEST_CASE("wifi set country code", "[wifi_init]")
 
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
 
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
     TEST_ESP_OK(esp_wifi_init(&cfg));
@@ -56,7 +60,8 @@ TEST_CASE("wifi set country code", "[wifi_init]")
 
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
-    vTaskDelay(1);
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
 
     ESP_LOGI(TAG, "test passed...");
 }
