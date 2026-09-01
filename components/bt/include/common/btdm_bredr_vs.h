@@ -100,11 +100,6 @@ struct bt_hci_vs_legacy_rem_auth_evt {
 /**
 * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
 */
-#define ESP_BT_VS_DISCARD_PING_OCF                                  (0x0191)
-
-/**
-* @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
-*/
 #define ESP_BT_VS_LMP_DBG_ENABLE_OCF                                (0x019a)
 
 /**
@@ -116,6 +111,11 @@ struct bt_hci_vs_legacy_rem_auth_evt {
 * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
 */
 #define ESP_BT_VS_LMP_DBG_SAVE_OCF                                  (0x019c)
+
+/**
+* @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+*/
+#define ESP_BT_VS_DISCARD_PING_OCF                                  (0x019d)
 
 //
 // @brief HCI VS Events for Espressif's Internal-Use Debugging
