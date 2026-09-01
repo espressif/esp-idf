@@ -151,14 +151,18 @@ class PanicTestDut(IdfDut):
         if not self.coredump_output:
             self.coredump_output = open(output_file_name, 'w')
 
-        espcoredump_script = os.path.join(os.environ['IDF_PATH'], 'components', 'espcoredump', 'espcoredump.py')
+        prefix_map = os.path.join(self.app.binary_path, 'gdbinit', 'prefix_map')
         espcoredump_args = [
             sys.executable,
-            espcoredump_script,
+            '-m',
+            'esp_coredump',
             '--port',
             self.serial.port,
-            '-b115200',
+            '-b',
+            '115200',
             'info_corefile',
+            '--extra-gdbinit-file',
+            prefix_map,
         ]
         espcoredump_args += extra_args
         espcoredump_args.append(self.app.elf_file)
@@ -198,9 +202,7 @@ class PanicTestDut(IdfDut):
 
         output_file_name = os.path.join(self.logdir, 'coredump_uart_result.txt')
         coredump_elf_file = os.path.join(self.logdir, 'coredump_data.elf')
-        self._call_espcoredump(
-            ['--core-format', 'b64', '--core', coredump_file.name, '--save-core', coredump_elf_file], output_file_name
-        )
+        self._call_espcoredump(['-c', coredump_file.name, '-s', coredump_elf_file], output_file_name)
         if expected:
             self.expect_coredump(output_file_name, expected)
         return coredump_elf_file
@@ -209,7 +211,7 @@ class PanicTestDut(IdfDut):
         coredump_file_name = os.path.join(self.logdir, 'coredump_data.bin')
         logging.info('Writing flash binary core dump to %s', coredump_file_name)
         output_file_name = os.path.join(self.logdir, 'coredump_flash_result.txt')
-        self._call_espcoredump(['--core-format', 'raw', '--save-core', coredump_file_name], output_file_name)
+        self._call_espcoredump(['-s', coredump_file_name], output_file_name)
         if expected:
             self.expect_coredump(output_file_name, expected)
         return coredump_file_name

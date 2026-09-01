@@ -172,6 +172,9 @@ tools/test_apps/system/panic/coredump:
     - espcoredump
     - esp_system
     - spi_flash
+  depends_filepatterns:
+    - components/espcoredump/espcoredump.py
+    - tools/test_apps/system/panic/panic_base/test_panic_util/**/*
 
 tools/test_apps/system/panic/panic_base:
   enable:
