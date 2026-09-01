@@ -355,10 +355,10 @@
     .. doxygendefine:: ESP_BT_VS_DTM_TX_TEST_END_OCF
     .. doxygendefine:: ESP_BT_VS_DTM_RX_TEST_END_OCF
     .. doxygendefine:: ESP_BT_VS_PCA_OCF
-    .. doxygendefine:: ESP_BT_VS_DISCARD_PING_OCF
     .. doxygendefine:: ESP_BT_VS_LMP_DBG_ENABLE_OCF
     .. doxygendefine:: ESP_BT_VS_SEND_LMP_OCF
     .. doxygendefine:: ESP_BT_VS_LMP_DBG_SAVE_OCF
+    .. doxygendefine:: ESP_BT_VS_DISCARD_PING_OCF
 
     乐鑫内部调试 HCI 事件
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
