@@ -1940,7 +1940,6 @@ BOOLEAN btsnd_hcic_set_afh_channels (AFH_CHANNELS channels)
     return (TRUE);
 }
 
-#if (ENC_KEY_SIZE_CTRL_MODE == ENC_KEY_SIZE_CTRL_MODE_STD)
 BOOLEAN btsnd_hcic_set_min_enc_key_size (UINT8 size)
 {
     BT_HDR *p;
@@ -1963,6 +1962,5 @@ BOOLEAN btsnd_hcic_set_min_enc_key_size (UINT8 size)
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     return (TRUE);
 }
-#endif
 
 #endif /// CLASSIC_BT_INCLUDED == TRUE

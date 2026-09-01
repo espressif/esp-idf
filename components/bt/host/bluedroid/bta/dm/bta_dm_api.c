@@ -398,7 +398,6 @@ void BTA_DmSetAclPktTypes(BD_ADDR remote_addr, UINT16 pkt_types, tBTM_CMPL_CB *p
 ** Returns          void
 **
 *******************************************************************************/
-#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
 void BTA_DmSetMinEncKeySize(UINT8 key_size, tBTM_CMPL_CB *p_cb)
 {
     tBTA_DM_API_SET_MIN_ENC_KEY_SIZE *p_msg;
@@ -411,7 +410,6 @@ void BTA_DmSetMinEncKeySize(UINT8 key_size, tBTM_CMPL_CB *p_cb)
         bta_sys_sendmsg(p_msg);
     }
 }
-#endif
 #endif /// CLASSIC_BT_INCLUDED == TRUE
 
 #if (SDP_INCLUDED == TRUE)
