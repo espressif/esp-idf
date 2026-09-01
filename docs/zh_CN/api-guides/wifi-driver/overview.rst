@@ -924,6 +924,7 @@ Wi-Fi 带宽模式
 
           1. 当 STA 连接到位于 DFS 信道的 AP 时，SoftAP 允许通过 CSA (Channel Switch Announcement) 切换至相同的 DFS 信道。
           2. 当 STA 断开连接后，SoftAP 将通过 CSA 切换回非 DFS 信道，确保符合监管要求。
+          3. 如需要完全禁止 SoftAP 工作在 DFS 信道上，可通过 :cpp:func:`esp_wifi_set_country()` 将 ``policy`` 设为 ``WIFI_COUNTRY_POLICY_MANUAL``，并将 ``wifi_5g_channel_mask`` 限制为当前国家/地区的非 DFS 信道。``wifi_5g_channel_mask`` 仅在 policy 为 ``WIFI_COUNTRY_POLICY_MANUAL`` 时生效。注意：此时若目标 AP 工作在 DFS 信道上，STA 将无法与该 AP 建立连接。各国 DFS 信道范围见 :component_file:`esp_wifi/regulatory/esp_wifi_regulatory.txt`。
 
 ..
 
@@ -1058,7 +1059,7 @@ Wi-Fi 国家/地区代码
       * - policy
         - 国家/地区策略。当配置的国家/地区与连接 AP 的信息冲突时，此字段决定应使用哪一方的信息。详情见下文说明。
       * - wifi_5g_channel_mask
-        - 表示 station/AP 在 5 GHz 频段中可使用的信道掩码。信道值与位的对应关系详见 :cpp:enum:`wifi_5g_channel_bit_t`。
+        - 表示 station/AP 在 5 GHz 频段中可使用的信道掩码。信道值与位的对应关系详见 :cpp:enum:`wifi_5g_channel_bit_t`。掩码为 0 时，5 GHz 信道按当地监管规则允许使用。配置的掩码仅在 ``policy`` 为 ``WIFI_COUNTRY_POLICY_MANUAL`` 时生效。如需禁用 DFS 信道，请将掩码限制为当前国家/地区的非 DFS 信道；此时 STA 也无法连接到工作在 DFS 信道上的 AP。
 
     默认配置示例如下::
 
