@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -60,7 +60,8 @@ static void wifi_driver_can_start_on_APP_CPU_task(void* arg)
     TEST_ESP_OK(esp_wifi_init(&cfg));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit..."));
     TEST_ESP_OK(esp_wifi_deinit());
-    vTaskDelay(1);
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
     ESP_LOGI(TAG, EMPH_STR("event_deinit"));
     TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, "exit task...");
@@ -99,7 +100,8 @@ TEST_CASE("Calling esp_wifi_stop() with start", "[wifi_init]")
     TEST_ESP_OK(esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
-    vTaskDelay(1);
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
     ESP_LOGI(TAG, EMPH_STR("event_deinit"));
     TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, "test passed...");
@@ -116,7 +118,8 @@ TEST_CASE("Calling esp_wifi_stop() without start", "[wifi_init]")
     TEST_ESP_OK(esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
-    vTaskDelay(1);
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
     ESP_LOGI(TAG, EMPH_STR("event_deinit"));
     TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, "test passed...");
@@ -137,7 +140,8 @@ TEST_CASE("Calling esp_wifi_deinit() without stop", "[wifi_init]")
     TEST_ESP_OK(esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
-    vTaskDelay(1);
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
     ESP_LOGI(TAG, EMPH_STR("event_deinit"));
     TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, "test passed...");
@@ -154,7 +158,8 @@ TEST_CASE("Calling esp_wifi_connect() without start", "[wifi_init]")
     TEST_ESP_ERR(ESP_ERR_WIFI_NOT_STARTED, esp_wifi_connect());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
-    vTaskDelay(1);
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(pdMS_TO_TICKS(300));
     ESP_LOGI(TAG, EMPH_STR("event_deinit"));
     TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, "test passed...");
