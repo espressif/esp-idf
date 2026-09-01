@@ -571,6 +571,12 @@ static bool supports_reading_remote_extended_features(void)
     return HCI_READ_REMOTE_EXT_FEATURES_SUPPORTED(controller_param.supported_commands);
 }
 
+static bool supports_set_min_enc_key_size(void)
+{
+    assert(controller_param.readable);
+    return HCI_SET_MIN_ENC_KEY_SIZE_SUPPORTED(controller_param.supported_commands);
+}
+
 static bool supports_interlaced_inquiry_scan(void)
 {
     assert(controller_param.readable);
@@ -753,6 +759,7 @@ static const controller_t interface = {
     supports_secure_connections,
     supports_simultaneous_le_bredr,
     supports_reading_remote_extended_features,
+    supports_set_min_enc_key_size,
     supports_interlaced_inquiry_scan,
     supports_interlaced_page_scan,
     supports_rssi_with_inquiry_results,

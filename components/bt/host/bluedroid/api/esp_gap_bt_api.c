@@ -659,7 +659,6 @@ esp_err_t esp_bt_gap_set_acl_pkt_types(esp_bd_addr_t remote_bda, uint16_t pkt_ty
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
 esp_err_t esp_bt_gap_set_min_enc_key_size(uint8_t key_size)
 {
     btc_msg_t msg = {0};
@@ -678,7 +677,6 @@ esp_err_t esp_bt_gap_set_min_enc_key_size(uint8_t key_size)
     arg.set_min_enc_key_size.key_size = key_size;
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-#endif /* #if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE) */
 
 esp_err_t esp_bt_gap_set_device_name(const char *name)
 {
