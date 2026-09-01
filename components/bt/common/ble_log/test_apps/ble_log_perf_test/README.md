@@ -11,6 +11,9 @@ ESP32-C6). The transport is replaced by a software model
 (`CONFIG_BLE_LOG_PRPH_TEST=y`) that mimics DMA ownership transfer and link
 bandwidth, so the measurements isolate the LBM layer itself.
 
+Runtime dispatch behavior and latency are covered by the sibling
+`ble_log_rt_test` app.
+
 ## What Is Measured
 
 | Dimension | Metrics |
@@ -56,6 +59,9 @@ python3 tools/parse_perf_log.py capture.log --csv out.csv
 ```
 
 Run the same capture twice (old vs new LBM) and diff the CSV.
+
+The parser also renders the `BLE_LOG_RT_PERF` latency lines printed by the
+sibling `ble_log_rt_test` app.
 
 ## Supported Targets
 
