@@ -25,7 +25,7 @@ components/partition_table/test_gen_esp32part_host/check_sizes_test.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/spiffs/spiffsgen.py
 components/spiffs/test_spiffsgen/test_spiffsgen.py
-components/ulp/esp32ulp_mapgen.py
+components/ulp/subproject/esp32ulp_mapgen.py
 docs/check_lang_folder_sync.sh
 examples/build_system/cmake/idf_as_lib/build-esp32.sh
 examples/build_system/cmake/idf_as_lib/build-esp32c2.sh

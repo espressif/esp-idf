@@ -52,7 +52,7 @@
   - ".gitlab/ci/host-test.yml"
 
   - "components/ulp/ld/**/*"
-  - "components/ulp/cmake/**/*"
+  - "components/ulp/subproject/**/*"
   - "components/ulp/CMakeLists*.txt"
   - "components/ulp/component_ulp_common.cmake"
   - "components/ulp/project_include.cmake"

@@ -1,5 +1,5 @@
 # This is the CMake v1 (legacy) ULP child entry point, used by ulp_embed_binary.
-# CMake v2 full-subproject builds include components/ulp/cmake/ulp_project.cmake
+# CMake v2 full-subproject builds include components/ulp/subproject/ulp_project.cmake
 # instead.
 #
 # Legacy ULP child projects are plain CMake projects, so the parent-provided

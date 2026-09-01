@@ -10,7 +10,7 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                              s_sources exp_dep_srcs linker_script)
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
-        set(ulp_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake")
+        set(ulp_subproject_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/subproject")
         set(sources "")
         spaces2list(s_sources)
         foreach(source ${s_sources})
@@ -95,7 +95,7 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                                         "Only FSM type is available for ULP on this target.")
                 endif()
             endif()
-            set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-${idf_target}-ulp.cmake)
+            set(TOOLCHAIN_FLAG ${ulp_subproject_dir}/toolchain-${idf_target}-ulp.cmake)
             set(ULP_IS_RISCV OFF)
         elseif(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
             # If both FSM and RISC-V are enabled in sdkconfig and a TYPE was
@@ -105,21 +105,21 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 message(STATUS "Both RISCV and FSM are enabled, using '${type}' toolchain for ${app_name} ULP project.")
                 string(TOLOWER "${type}" type_lower)
                 if(type_lower STREQUAL "riscv")
-                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-ulp-riscv.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_subproject_dir}/toolchain-ulp-riscv.cmake)
                 elseif(type_lower STREQUAL "fsm")
-                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-${idf_target}-ulp.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_subproject_dir}/toolchain-${idf_target}-ulp.cmake)
                 else()
                     message(FATAL_ERROR "Invalid ULP_TYPE '${type}'; expected 'fsm' or 'riscv'.")
                 endif()
             else()
                 if(CONFIG_ULP_COPROC_TYPE_RISCV STREQUAL "y")
-                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-ulp-riscv.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_subproject_dir}/toolchain-ulp-riscv.cmake)
                 else()
-                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-${idf_target}-ulp.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_subproject_dir}/toolchain-${idf_target}-ulp.cmake)
                 endif()
             endif()
         elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
-                set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-lp-core-riscv.cmake)
+                set(TOOLCHAIN_FLAG ${ulp_subproject_dir}/toolchain-lp-core-riscv.cmake)
         endif()
 
         set(ulp_project_args)
@@ -133,7 +133,7 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 -DIDF_DEFAULT_PROJECT_NAME=${app_name}
                 -DULP_APP_NAME=${app_name}
                 -DIDF_BUILD_V2=y
-                -DCMAKE_MODULE_PATH=${ulp_cmake_dir}
+                -DCMAKE_MODULE_PATH=${ulp_subproject_dir}
                 # Internal marker for ULP child component graphs. Only the
                 # IDF_BUILD_V2 path sets it for now.
                 -D__ULP_BUILDV2=1
@@ -176,7 +176,7 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                 -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
                 # The v1 ULP child resolves include(IDFULPProject) via the module path.
-                -DCMAKE_MODULE_PATH=${ulp_cmake_dir})
+                -DCMAKE_MODULE_PATH=${ulp_subproject_dir})
         endif()
 
         externalproject_add(${app_name}
@@ -315,9 +315,9 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         set(ULP_TYPE "${ulp_resolved_type}")
     endif()
     __resolve_lp_core_linker("${ULP_LINKER_LAYOUT}" "${ulp_resolved_type}" LP_CORE_LINKER)
-    set(ulp_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake")
+    set(ulp_subproject_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/subproject")
 
-    __setup_ulp_project("${app_name}" "${ulp_cmake_dir}"
+    __setup_ulp_project("${app_name}" "${ulp_subproject_dir}"
                         "${ULP_PREFIX}" FALSE "${ULP_TYPE}"
                         "${app_name}"
                         "${s_sources}" "${exp_dep_srcs}" "${LP_CORE_LINKER}")
