@@ -1137,6 +1137,19 @@ void test_flash_counter(const esp_partition_t* part)
 TEST_CASE_FLASH("SPI flash counter test", test_flash_counter);
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
+TEST_CASE("main flash partition protection callbacks are registered", "[esp_flash]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(
+        ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "flash_test");
+    TEST_ASSERT_NOT_NULL(partition);
+    TEST_ASSERT_EQUAL_PTR(esp_flash_default_chip, partition->flash_chip);
+    TEST_ASSERT_NOT_NULL(esp_flash_default_chip->os_func->region_protected);
+    TEST_ASSERT_EQUAL(
+        ESP_OK,
+        esp_flash_default_chip->os_func->region_protected(
+            esp_flash_default_chip->os_func_data, partition->address, partition->erase_size));
+}
+
 #if CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
 TEST_CASE("test writes to dangerous regions like bootloader", "[esp_flash]")
 {
