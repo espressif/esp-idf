@@ -127,6 +127,10 @@ BLE_LOG_STATIC void ble_log_rt_run_hook(void)
         return;
     }
     rt_last_hook_os_ts = now;
+    /* Unified periodic output: best-effort flush of partially-filled OPEN
+     * transports ahead of the periodic snapshot, so parked frames do not
+     * wait for the next capacity seal. */
+    ble_log_lbm_flush_open_transports();
     (void)ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_PERIODIC,
                                     NULL, false);
 }
@@ -178,7 +182,14 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
     }
 
     ble_log_ts_info_t ts_info;
-    if (ble_log_ts_info_update(&ts_info)) {
+    bool ts_valid = ble_log_ts_info_update(&ts_info);
+
+    /* Unified periodic output: best-effort flush of partially-filled OPEN
+     * transports ahead of the periodic snapshot, so parked frames do not
+     * wait for the next capacity seal. */
+    ble_log_lbm_flush_open_transports();
+
+    if (ts_valid) {
         (void)ble_log_internal_snapshot(
             BLE_LOG_SNAPSHOT_REASON_PERIODIC |
             BLE_LOG_SNAPSHOT_REASON_TS_VALID,
