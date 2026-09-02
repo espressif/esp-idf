@@ -16,5 +16,10 @@ add_subdirectory(ble_ots)
 list(APPEND _srcs ${ble_ots_srcs})
 list(APPEND _include_dirs ${ble_ots_include_dirs})
 
+# Electronic Shelf Label (pulls in OTS via Kconfig select)
+add_subdirectory(ble_esl)
+list(APPEND _srcs ${ble_esl_srcs})
+list(APPEND _include_dirs ${ble_esl_include_dirs})
+
 set(nimble_profiles_srcs "${_srcs}" PARENT_SCOPE)
 set(nimble_profiles_include_dirs "${_include_dirs}" PARENT_SCOPE)

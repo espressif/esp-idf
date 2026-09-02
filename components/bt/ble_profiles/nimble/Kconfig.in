@@ -7,3 +7,6 @@
 
 # Object Transfer Service
 source "$IDF_PATH/components/bt/ble_profiles/nimble/ble_ots/Kconfig.in"
+
+# Electronic Shelf Label
+source "$IDF_PATH/components/bt/ble_profiles/nimble/ble_esl/Kconfig.in"

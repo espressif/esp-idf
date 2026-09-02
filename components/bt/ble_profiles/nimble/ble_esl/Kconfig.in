@@ -1,0 +1,146 @@
+menu "Electronic Shelf Label (ESL) (EXPERIMENTAL)"
+
+    config BLE_ESL_ENABLED
+        bool "Enable Electronic Shelf Label (ESL) (EXPERIMENTAL)"
+        depends on BT_NIMBLE_ENABLED
+        depends on IDF_EXPERIMENTAL_FEATURES
+        default n
+        help
+            Build the Electronic Shelf Label profile core on top of the NimBLE
+            host. The Tag and Access Point roles are selected separately below,
+            so a device only pays for the role it actually implements.
+
+            Both roles exchange commands over Periodic Advertising with
+            Responses (PAwR). Display images are transferred over the Object
+            Transfer Service, which is selected automatically when needed.
+
+            Note: this profile is experimental. Its public API, Kconfig option
+            names and event layout may change without notice in future releases,
+            and it is not recommended for production use yet. Enable
+            IDF_EXPERIMENTAL_FEATURES to make this option selectable.
+
+    config BLE_ESL_TAG_ROLE
+        bool "Enable ESL Tag role"
+        depends on BLE_ESL_ENABLED
+        default n
+        help
+            Enable the Electronic Shelf Label (ESL) Tag role.
+            When enabled, the device can operate as an ESL tag that
+            receives commands from an Access Point over PAwR.
+
+    config BLE_ESL_AP_ROLE
+        bool "Enable ESL Access Point role"
+        depends on BLE_ESL_ENABLED
+        default n
+        select BLE_OTS_ENABLED
+        select BLE_OTS_CLIENT_ENABLED
+        help
+            Enable the Electronic Shelf Label (ESL) Access Point role.
+            When enabled, the device can operate as an AP that manages
+            and synchronises ESL tags via PAwR. The AP always pulls in
+            the OTS client, which it uses to push images to the tags.
+
+    menu "Access Point Configuration"
+        depends on BLE_ESL_AP_ROLE
+
+        config BLE_ESL_AP_MAX_CONNECTIONS
+            int "Maximum simultaneous ACL connections"
+            default 8
+            range 1 BT_NIMBLE_MAX_CONNECTIONS
+            help
+                Maximum number of simultaneous ACL connections to ESL
+                devices. Increasing this value allows the AP to configure
+                more tags in parallel but consumes additional memory and
+                radio time. Must not exceed the NimBLE connection limit.
+
+        config BLE_ESL_AP_MAX_ESLS
+            int "Maximum number of tracked ESLs"
+            default 100
+            range 1 65535
+            help
+                Maximum number of ESL tags tracked across all states
+                (unassociated, synchronising, synchronised, etc.).
+                Increase this if the deployment manages a large number
+                of tags. Each tracked ESL consumes a small amount of
+                heap memory.
+
+    endmenu
+
+    menu "Tag Configuration"
+        depends on BLE_ESL_TAG_ROLE
+
+        config BLE_ESL_MAX_DISPLAYS
+            int "Maximum number of displays"
+            default 1
+            range 0 255
+            help
+                Maximum number of display devices exposed by the ESL tag.
+                Set this to match the actual number of e-ink or other
+                displays attached to the hardware.
+
+        config BLE_ESL_MAX_IMAGES
+            int "Maximum number of stored images"
+            default 4
+            range 1 255
+            help
+                Maximum number of images that can be stored on the tag.
+                This determines the number of OTS objects available for
+                image transfer. Increasing this value requires more
+                storage space (flash or RAM).
+
+        config BLE_ESL_MAX_LEDS
+            int "Maximum number of LEDs"
+            default 1
+            range 0 255
+            help
+                Maximum number of LEDs exposed by the ESL tag. Set this
+                to match the actual number of controllable LEDs on the
+                hardware.
+
+        config BLE_ESL_MAX_SENSORS
+            int "Maximum number of sensors"
+            default 1
+            range 0 255
+            help
+                Maximum number of sensors exposed by the ESL tag (e.g.
+                temperature, battery voltage). Set this to match the
+                actual number of sensors available on the hardware.
+
+        config BLE_ESL_OTS_SUPPORT
+            bool "Enable OTP Object Server for image storage"
+            default y
+            select BLE_OTS_ENABLED
+            select BLE_OTS_SERVER_ENABLED
+            help
+                Enable the Object Transfer Protocol (OTP) server so the
+                AP can push display images to this tag over GATT. Disable
+                this only if the tag has no display or images are
+                provisioned by other means.
+
+        config BLE_ESL_MAX_IMAGE_SIZE
+            int "Maximum image size (bytes)"
+            depends on BLE_ESL_OTS_SUPPORT
+            default 4096
+            range 1 4194304
+            help
+                Maximum size in octets reserved for each stored image
+                object (its OTS Allocated Size). An OACP Write is rejected
+                with Invalid Parameter when Offset + Length exceeds this
+                value, since the tag does not support the OACP Append
+                feature. Set this to the largest image the display can
+                hold. The underlying data buffer is still allocated on
+                demand, so this value only sets the accepted write limit.
+
+        config BLE_ESL_VENDOR_SPECIFIC
+            bool "Enable vendor-specific opcode support"
+            default n
+            help
+                Enable handling of vendor-specific ESL opcodes. When
+                enabled, the tag advertises a PnP ID in the Device
+                Information Service (DIS) and accepts vendor-defined
+                commands. Enable this if custom, manufacturer-specific
+                ESL operations are required.
+
+    endmenu
+
+endmenu
