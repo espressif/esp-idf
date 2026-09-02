@@ -341,7 +341,6 @@ semihosting
 
     tips-and-quirks
 
-
 相关文档
 --------
 
@@ -354,11 +353,10 @@ semihosting
     debugging-examples
     semihosting
     tips-and-quirks
-    ../app_trace
 
 - :doc:`using-debugger`
 - :doc:`debugging-examples`
 - :doc:`semihosting`
 - :doc:`tips-and-quirks`
-- :doc:`../app_trace`
+- :doc:`../tracing/index`
 - `ESP-Prog 调试板介绍 <https://docs.espressif.com/projects/espressif-esp-iot-solution/zh_CN/latest/hw-reference/ESP-Prog_guide.html>`__
