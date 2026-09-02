@@ -53,6 +53,18 @@ void bta_av_m24_set_br_info(UINT8 *codec_info, UINT32 bit_rate)
     codec_info[BTA_AV_M24_BR3_OFF] = (UINT8)(bit_rate & A2D_M24_IE_BR3_MSK);
 }
 
+UINT32 bta_av_m24_br_min(UINT32 br1, UINT32 br2)
+{
+    /* A2DP MPEG-2/4 AAC: bit rate 0 means "not known", not an upper bound of 0. */
+    if (br1 == 0) {
+        return br2;
+    }
+    if (br2 == 0) {
+        return br1;
+    }
+    return (br1 < br2) ? br1 : br2;
+}
+
 UINT8 bta_av_m24_cap_matches_cap(UINT8 *p_cap1, UINT8 *p_cap2)
 {
     tA2D_M24_CIE cap1;
@@ -62,8 +74,6 @@ UINT8 bta_av_m24_cap_matches_cap(UINT8 *p_cap1, UINT8 *p_cap2)
     UINT8 cap2_sf1;
     UINT8 cap1_sf2;
     UINT8 cap2_sf2;
-    UINT32 cap1_br;
-    UINT32 cap2_br;
 
     st = A2D_ParsM24Info(&cap1, p_cap1, TRUE);
     if (st != A2D_SUCCESS) {
@@ -88,13 +98,6 @@ UINT8 bta_av_m24_cap_matches_cap(UINT8 *p_cap1, UINT8 *p_cap2)
     }
     if ((cap1.ch & cap2.ch) == 0) {
         return A2D_NS_CHANNEL;
-    }
-
-    cap1_br = bta_av_m24_br(&cap1);
-    cap2_br = bta_av_m24_br(&cap2);
-
-    if (!cap1_br || !cap2_br) {
-        return A2D_NS_BIT_RATE;
     }
 
     return A2D_SUCCESS;
@@ -147,7 +150,8 @@ UINT8 bta_av_m24_cfg_in_external_codec_cap(UINT8 *p_cfg, UINT8 *p_cap)
 
     cfg_br = bta_av_m24_br(&cfg);
     cap_br = bta_av_m24_br(&cap);
-    if (cfg_br > cap_br) {
+    /* Cap 0 = unknown/unlimited; cfg 0 = bit rate not known in SetConfiguration. */
+    if (cap_br != 0 && cfg_br > cap_br) {
         return A2D_NS_BIT_RATE;
     }
 
@@ -158,7 +162,6 @@ tA2D_STATUS bta_av_m24_pick_pref_from_src_cap(const tA2D_M24_CIE *src_cap, tA2D_
 {
     UINT8 i;
     UINT32 src_br_max;
-    UINT32 p_pref_br;
     static const UINT8 sf2_order[] = {
         A2D_M24_IE_SAMP_FREQ2_96,
         A2D_M24_IE_SAMP_FREQ2_88,
@@ -191,11 +194,12 @@ tA2D_STATUS bta_av_m24_pick_pref_from_src_cap(const tA2D_M24_CIE *src_cap, tA2D_
         }
     }
 
-    if ((p_pref->drc & A2D_M24_IE_DRC_MSK) && !(src_cap->drc & A2D_M24_IE_DRC_MSK)) {
-        p_pref->drc = A2D_M24_IE_DRC_NS;
-    }
-
+    /* DRC: follow registered SEP capability (MPEG-2 AAC LC has no DRC) */
     if ((p_pref->obj_type & A2D_M24_IE_OBJ_TYPE_MSK) == A2D_M24_IE_OBJ_TYPE_2_AAC_LC) {
+        p_pref->drc = A2D_M24_IE_DRC_NS;
+    } else if (src_cap->drc & A2D_M24_IE_DRC_MSK) {
+        p_pref->drc = A2D_M24_IE_DRC_SUPPORT;
+    } else {
         p_pref->drc = A2D_M24_IE_DRC_NS;
     }
 
@@ -242,12 +246,7 @@ got_sf:
     }
 
     src_br_max = bta_av_m24_br(src_cap);
-    p_pref_br  = bta_av_m24_br(p_pref);
-    if (p_pref_br > src_br_max) {
-        p_pref_br = src_br_max;
-    }
-
-    bta_av_m24_set_br(p_pref, p_pref_br, (UINT8)(p_pref->vbr & A2D_M24_IE_VBR_MSK));
+    bta_av_m24_set_br(p_pref, src_br_max, (UINT8)(p_pref->vbr & A2D_M24_IE_VBR_MSK));
 
     return A2D_SUCCESS;
 }
