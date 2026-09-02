@@ -59,10 +59,9 @@ typedef struct {
 /* --------------------------------------- */
 /*     Protocol v7 Source ID Space         */
 /* --------------------------------------- */
-/* The frozen public ble_log_src_t values are the on-wire and statistic
- * source IDs: the frame source byte carries the enum value directly and
- * every source keeps its own wire sequence, matching the legacy wire
- * identity so existing decoders keep working. */
+/* The frozen public ble_log_src_t values are the base on-wire and statistic
+ * source IDs. Bit 7 of the frame source byte carries NON_YIELD metadata, so
+ * receivers must mask it before decoding the base source. */
 #define BLE_LOG_SRC_ID_MASK                     0x7f
 #define BLE_LOG_SRC_FLAG_NON_YIELD              0x80
 #define BLE_LOG_SRC_ID(source_meta)             ((source_meta) & BLE_LOG_SRC_ID_MASK)
@@ -115,9 +114,11 @@ typedef struct {
  * sources — and every lost or rejected attempt leaves a gap. INTERNAL
  * snapshot frames and the REDIR console stream keep their own separate
  * sequences (a gap counts a skipped snapshot or a dropped console batch).
- * None of the sequences is ever reset. The per-counter macros live next
- * to their counters in the owning translation units; the 24-bit wire
- * field is enforced where the frame meta is packed. */
+ * ble_log_init() resets all three sequences; its required INIT snapshot
+ * starts a new receiver epoch. They stay continuous through FLUSH within
+ * that epoch. The per-counter macros live next to their counters in the
+ * owning translation units; the 24-bit wire field is enforced where the
+ * frame meta is packed. */
 
 /* -------------------------------- */
 /*     Internal Snapshot Frame      */
@@ -226,18 +227,20 @@ bool ble_log_lbm_init(void);
 void ble_log_lbm_begin_deinit(void);
 void ble_log_lbm_deinit(void);
 bool ble_log_lbm_is_enabled(void);
-void ble_log_lbm_flush_open_transports(void);
+/* Best-effort system flush, gated by LBM lifetime rather than producers. */
+void ble_log_lbm_flush_open_trans(void);
 /* Deinit drain: seal every OPEN transport and dispatch it to the runtime
  * queue. Contract: called after ble_log_lbm_begin_deinit() (producer gate
  * closed, writers drained) and before ble_log_rt_deinit(); every transport
  * lock is then uncontended. The peripheral deinit wait completes the
  * delivery of the dispatched buffers. */
-void ble_log_lbm_drain_open_transports(void);
+void ble_log_lbm_drain_open_trans(void);
 void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
-void ble_log_internal_set_version_info(const ble_log_version_info_t *version_info);
+/* System output: gated by the LBM lifetime, not ble_log_enable(). A false
+ * wait_for_transport makes a busy dedicated transport a lossy fast path. */
 bool ble_log_internal_snapshot(uint16_t reason_flags,
                                const ble_log_ts_info_t *ts_info,
-                               bool required);
+                               bool wait_for_transport);
 
 /* Claim/commit: the public ble_log_src_t is accepted for API stability, but
  * only BLE_LOG_SRC_ENCODE is supported; its frames are stamped with the
