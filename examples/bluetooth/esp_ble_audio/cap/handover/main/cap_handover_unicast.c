@@ -6,52 +6,44 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-#include "cap_initiator.h"
+#include "cap_handover.h"
 
-/* One preset per sink stream: each ..._DEFINE allocates its own codec configuration
- * buffer, which is what lets the streams carry different Audio_Channel_Allocation
- * values. Extend both this list and sink_presets[] to drive more than two channels.
+/* One preset per sink stream: each owns its codec cfg buffer, which is what
+ * lets the streams carry different channel allocations.
  */
-ESP_BLE_AUDIO_BAP_LC3_UNICAST_PRESET_16_2_1_DEFINE(unicast_preset_left,
-                                                   ESP_BLE_AUDIO_LOCATION_FRONT_LEFT,
-                                                   ESP_BLE_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-ESP_BLE_AUDIO_BAP_LC3_UNICAST_PRESET_16_2_1_DEFINE(unicast_preset_right,
-                                                   ESP_BLE_AUDIO_LOCATION_FRONT_RIGHT,
-                                                   ESP_BLE_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-/* The return direction carries a single microphone channel. */
-ESP_BLE_AUDIO_BAP_LC3_UNICAST_PRESET_16_2_1_DEFINE(unicast_preset_mono,
-                                                   ESP_BLE_AUDIO_LOCATION_MONO_AUDIO,
-                                                   ESP_BLE_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-
+HANDOVER_LC3_PRESET_DEFINE(unicast_preset_left, ESP_BLE_AUDIO_LOCATION_FRONT_LEFT);
+HANDOVER_LC3_PRESET_DEFINE(unicast_preset_right, ESP_BLE_AUDIO_LOCATION_FRONT_RIGHT);
 static esp_ble_audio_bap_lc3_preset_t *const sink_presets[] = {
     &unicast_preset_left,
     &unicast_preset_right,
 };
+
 _Static_assert(ARRAY_SIZE(sink_presets) >= SINK_STREAM_COUNT,
                "Need one preset (one channel allocation) per sink stream");
 
 static esp_ble_audio_cap_unicast_group_t *unicast_group;
 
-static struct peer_config {
-    esp_ble_audio_cap_stream_t source_stream;
-    esp_ble_audio_cap_stream_t sink_streams[SINK_STREAM_COUNT];
-    esp_ble_audio_bap_ep_t *source_ep;
-    esp_ble_audio_bap_ep_t *sink_eps[SINK_STREAM_COUNT];
-    size_t sink_ep_count;
-
-    esp_ble_conn_t *conn;
-    uint16_t conn_handle;
-    bool disc_completed;
-    bool mtu_exchanged;
-} peer = {
+struct peer_config peer = {
     .conn_handle = CONN_HANDLE_INIT,
 };
 
-static example_audio_rx_metrics_t rx_metrics;
+esp_ble_audio_cap_unicast_group_t *unicast_group_get(void)
+{
+    return unicast_group;
+}
+
+void unicast_group_set(esp_ble_audio_cap_unicast_group_t *group)
+{
+    unicast_group = group;
+}
+
+esp_ble_audio_bap_lc3_preset_t *sink_preset_get(size_t idx)
+{
+    return (idx < ARRAY_SIZE(sink_presets)) ? sink_presets[idx] : NULL;
+}
 
 static const char *dir_str(esp_ble_audio_dir_t dir)
 {
@@ -66,35 +58,35 @@ static const char *stream_dir_str(const esp_ble_audio_bap_stream_t *stream)
         }
     }
 
-    if (stream == &peer.source_stream.bap_stream) {
-        return "SRC";
-    }
-
     return "???";
 }
 
 static int stream_index(const esp_ble_audio_bap_stream_t *stream)
 {
-    /* Index within the pool of its own direction, so logs read as "SNK #0" /
-     * "SNK #1" for the two channels of a stereo Acceptor.
-     */
+    /* Index within its own direction's pool, so logs read "SNK #0" / "SNK #1". */
     for (size_t i = 0; i < ARRAY_SIZE(peer.sink_streams); i++) {
         if (stream == &peer.sink_streams[i].bap_stream) {
             return (int)i;
         }
     }
 
-    if (stream == &peer.source_stream.bap_stream) {
-        return 0;
-    }
-
     return -1;
 }
 
+/* Ask whether the endpoint transmits; do not derive it from dir. These streams
+ * migrate, and dir means opposite things on the two endpoint kinds: the peer's
+ * direction on a unicast ASE (SINK), our own on a broadcast source (SOURCE).
+ * Testing dir == SINK therefore goes silent the moment a stream moves to a BIS.
+ */
 static bool is_tx_stream(esp_ble_audio_bap_stream_t *stream)
 {
     esp_ble_audio_bap_ep_info_t ep_info = {0};
     esp_err_t err;
+
+    /* Detached already: only teardown sees this, and unregistering is a no-op. */
+    if (stream->ep == NULL) {
+        return true;
+    }
 
     err = esp_ble_audio_bap_ep_get_info(stream->ep, &ep_info);
     if (err) {
@@ -102,7 +94,7 @@ static bool is_tx_stream(esp_ble_audio_bap_stream_t *stream)
         return false;
     }
 
-    return (ep_info.dir == ESP_BLE_AUDIO_DIR_SINK);
+    return ep_info.can_send;
 }
 
 static void unicast_stream_configured_cb(esp_ble_audio_bap_stream_t *stream,
@@ -135,18 +127,13 @@ static void unicast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
              stream_dir_str(stream), stream_index(stream));
 
     if (is_tx_stream(stream)) {
-        /* Only the source stream receives, so resetting the metrics here would let
-         * a sink stream starting later wipe the counters of a running source.
-         */
         cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
-        err = cap_initiator_tx_register_stream(cap_stream, false);
+        err = cap_handover_tx_register_stream(cap_stream, false);
         if (err) {
             ESP_LOGE(TAG, "[%s #%d] Failed to register TX, err %d",
                      stream_dir_str(stream), stream_index(stream), err);
         }
-    } else {
-        example_audio_rx_metrics_reset(&rx_metrics);
     }
 }
 
@@ -172,7 +159,7 @@ static void unicast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_
     if (is_tx_stream(stream)) {
         cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
-        (void)cap_initiator_tx_unregister_stream(cap_stream);
+        (void)cap_handover_tx_unregister_stream(cap_stream);
     }
 }
 
@@ -186,7 +173,7 @@ static void unicast_stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, u
     if (is_tx_stream(stream)) {
         cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
-        (void)cap_initiator_tx_unregister_stream(cap_stream);
+        (void)cap_handover_tx_unregister_stream(cap_stream);
     }
 }
 
@@ -196,21 +183,9 @@ static void unicast_stream_released_cb(esp_ble_audio_bap_stream_t *stream)
              stream_dir_str(stream), stream_index(stream));
 }
 
-static void unicast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
-                                   const esp_ble_iso_recv_info_t *info,
-                                   const uint8_t *data, uint16_t len)
-{
-    char name[24];
-
-    snprintf(name, sizeof(name), "%s #%d",
-             stream_dir_str(stream), stream_index(stream));
-    rx_metrics.last_sdu_len = len;
-    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, name);
-}
-
 static void unicast_stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
 {
-    cap_initiator_tx_stream_sent(stream, user_data);
+    cap_handover_tx_stream_sent(stream, user_data);
 }
 
 static esp_ble_audio_bap_stream_ops_t unicast_stream_ops = {
@@ -222,7 +197,6 @@ static esp_ble_audio_bap_stream_ops_t unicast_stream_ops = {
     .disabled         = unicast_stream_disabled_cb,
     .stopped          = unicast_stream_stopped_cb,
     .released         = unicast_stream_released_cb,
-    .recv             = unicast_stream_recv_cb,
     .sent             = unicast_stream_sent_cb,
     .disconnected     = unicast_stream_disconnected_cb,
 };
@@ -261,27 +235,9 @@ static int discover_sinks(void)
     return 0;
 }
 
-static int discover_sources(void)
-{
-    int err;
-
-    esp_ble_audio_cap_stream_ops_register(&peer.source_stream, &unicast_stream_ops);
-
-    err = esp_ble_audio_bap_unicast_client_discover(peer.conn_handle, ESP_BLE_AUDIO_DIR_SOURCE);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to discover sources, err %d", err);
-        return err;
-    }
-
-    ESP_LOGI(TAG, "Discovering source ASEs");
-
-    return 0;
-}
-
 static int unicast_group_create(void)
 {
-    /* The group keeps referencing these while it exists, so they outlive this call. */
-    static esp_ble_audio_cap_unicast_group_stream_param_t source_stream_param;
+    /* Referenced by the group while it exists, so they outlive this call. */
     static esp_ble_audio_cap_unicast_group_stream_param_t sink_stream_params[SINK_STREAM_COUNT];
     static esp_ble_audio_cap_unicast_group_stream_pair_param_t pair_params[SINK_STREAM_COUNT];
     esp_ble_audio_cap_unicast_group_param_t group_param = {0};
@@ -291,24 +247,11 @@ static int unicast_group_create(void)
     /* One CIS per sink stream. */
     for (size_t i = 0; i < peer.sink_ep_count; i++) {
         sink_stream_params[i].qos_cfg = &sink_presets[i]->qos;
-        sink_stream_params[i].stream  = &peer.sink_streams[i];
+        sink_stream_params[i].stream = &peer.sink_streams[i];
 
         pair_params[pair_count].rx_param = NULL;
         pair_params[pair_count].tx_param = &sink_stream_params[i];
         pair_count++;
-    }
-
-    /* The return direction shares the first CIS, making it bidirectional. */
-    if (peer.source_ep) {
-        source_stream_param.qos_cfg = &unicast_preset_mono.qos;
-        source_stream_param.stream  = &peer.source_stream;
-
-        if (pair_count == 0) {
-            pair_params[0].tx_param = NULL;
-            pair_count = 1;
-        }
-
-        pair_params[0].rx_param = &source_stream_param;
     }
 
     if (pair_count == 0) {
@@ -353,11 +296,8 @@ int unicast_group_delete(void)
 
 static int unicast_audio_start(void)
 {
-    /* codec_cfg is assigned to the stream and has to stay valid while it is
-     * non-idle, so the parameters cannot live on the stack.
-     */
-    static esp_ble_audio_cap_unicast_audio_start_stream_param_t
-    stream_param[SINK_STREAM_COUNT + 1];
+    /* codec_cfg has to stay valid while the stream is non-idle. */
+    static esp_ble_audio_cap_unicast_audio_start_stream_param_t stream_param[SINK_STREAM_COUNT];
     esp_ble_audio_cap_unicast_audio_start_param_t param = {0};
     int err;
 
@@ -366,14 +306,6 @@ static int unicast_audio_start(void)
         stream_param[param.count].stream = &peer.sink_streams[i];
         stream_param[param.count].ep = peer.sink_eps[i];
         stream_param[param.count].codec_cfg = &sink_presets[i]->codec_cfg;
-        param.count++;
-    }
-
-    if (peer.source_ep) {
-        stream_param[param.count].member.member = peer.conn;
-        stream_param[param.count].stream = &peer.source_stream;
-        stream_param[param.count].ep = peer.source_ep;
-        stream_param[param.count].codec_cfg = &unicast_preset_mono.codec_cfg;
         param.count++;
     }
 
@@ -396,6 +328,24 @@ static int unicast_audio_start(void)
     return 0;
 }
 
+int cap_handover_unicast_setup_and_start(void)
+{
+    int err;
+
+    err = unicast_group_create();
+    if (err) {
+        return err;
+    }
+
+    err = unicast_audio_start();
+    if (err) {
+        unicast_group_delete();
+        return err;
+    }
+
+    return 0;
+}
+
 static void discover_cb(esp_ble_conn_t *conn, int err, esp_ble_audio_dir_t dir)
 {
     if (conn->handle != peer.conn_handle) {
@@ -404,32 +354,24 @@ static void discover_cb(esp_ble_conn_t *conn, int err, esp_ble_audio_dir_t dir)
 
     peer.conn = conn;
 
-    if (dir == ESP_BLE_AUDIO_DIR_SINK) {
-        if (err) {
-            ESP_LOGE(TAG, "Discovery sinks failed, err %d", err);
-        } else {
-            ESP_LOGI(TAG, "Discover sinks complete");
-
-            discover_sources();
-        }
-    } else if (dir == ESP_BLE_AUDIO_DIR_SOURCE) {
-        if (err) {
-            ESP_LOGE(TAG, "Discovery sources failed, err %d", err);
-        } else {
-            ESP_LOGI(TAG, "Discover sources complete");
-
-            err = unicast_group_create();
-            if (err) {
-                return;
-            }
-
-            err = unicast_audio_start();
-            if (err) {
-                unicast_group_delete();
-                return;
-            }
-        }
+    /* Sink only: a broadcast Audio Stream has no return path, so the Acceptor's
+     * source ASEs take no part in a handover.
+     */
+    if (dir != ESP_BLE_AUDIO_DIR_SINK) {
+        return;
     }
+
+    if (err) {
+        ESP_LOGE(TAG, "Discovery sinks failed, err %d", err);
+        return;
+    }
+
+    ESP_LOGI(TAG, "Discover sinks complete");
+
+    /* The collocated Commander writes the broadcast source into the Acceptor's
+     * BASS, so discover that too. Its callback continues the unicast setup.
+     */
+    (void)cap_handover_proc_discover(peer.conn_handle);
 }
 
 static void pac_record_cb(esp_ble_conn_t *conn,
@@ -443,19 +385,13 @@ static void endpoint_cb(esp_ble_conn_t *conn,
                         esp_ble_audio_dir_t dir,
                         esp_ble_audio_bap_ep_t *ep)
 {
-    if (dir == ESP_BLE_AUDIO_DIR_SOURCE) {
-        if (peer.source_ep == NULL) {
-            ESP_LOGI(TAG, "[%s #0] Endpoint discovered", dir_str(dir));
-            peer.source_ep = ep;
-        }
-    } else if (dir == ESP_BLE_AUDIO_DIR_SINK) {
-        /* Keep every sink endpoint, up to one per stream: a stereo Acceptor
-         * exposes one sink ASE per channel and all of them are used.
-         */
-        if (peer.sink_ep_count < ARRAY_SIZE(peer.sink_eps)) {
-            ESP_LOGI(TAG, "[%s #%zu] Endpoint discovered", dir_str(dir), peer.sink_ep_count);
-            peer.sink_eps[peer.sink_ep_count++] = ep;
-        }
+    /* Keep every sink endpoint: a stereo Acceptor exposes one per channel and
+     * they are handed over together.
+     */
+    if (dir == ESP_BLE_AUDIO_DIR_SINK &&
+            peer.sink_ep_count < ARRAY_SIZE(peer.sink_eps)) {
+        ESP_LOGI(TAG, "[%s #%zu] Endpoint discovered", dir_str(dir), peer.sink_ep_count);
+        peer.sink_eps[peer.sink_ep_count++] = ep;
     }
 }
 
@@ -494,14 +430,25 @@ static void unicast_start_complete_cb(int err, esp_ble_conn_t *conn)
 {
     if (err) {
         ESP_LOGE(TAG, "Unicast start completed, err %d", err);
-    } else {
-        ESP_LOGI(TAG, "Unicast start completed");
+        return;
     }
+
+    ESP_LOGI(TAG, "Unicast start completed");
+
+    cap_handover_proc_unicast_started();
+}
+
+static void broadcast_stopped_cb(esp_ble_audio_cap_broadcast_source_t *source, uint8_t reason)
+{
+    ESP_LOGI(TAG, "Broadcast source stopped, reason 0x%02x", reason);
+
+    cap_handover_proc_broadcast_stopped(source);
 }
 
 static esp_ble_audio_cap_initiator_cb_t cap_cb = {
     .unicast_discovery_complete = unicast_discovery_complete_cb,
     .unicast_start_complete     = unicast_start_complete_cb,
+    .broadcast_stopped          = broadcast_stopped_cb,
 };
 
 static bool check_and_connect(uint8_t type, const uint8_t *data,
@@ -545,7 +492,7 @@ static bool check_and_connect(uint8_t type, const uint8_t *data,
                       event->ext_scan_recv.addr.val);
     if (err) {
         ESP_LOGE(TAG, "Failed to create conn, err %d", err);
-        cap_initiator_unicast_start();
+        cap_handover_unicast_start();
     }
 
     return false;   /* Stop parsing */
@@ -571,10 +518,9 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
 
     if (event->acl_connect.status) {
         ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
-        /* check_and_connect stopped scanning before conn_create. acl_disconnect
-         * (which restarts scan) only fires on an established connection, so
-         * we must resume here to avoid a no-scan / no-conn dead state. */
-        cap_initiator_unicast_start();
+        /* Scanning was stopped before conn_create and acl_disconnect only fires on
+         * an established connection, so resume here or nothing runs. */
+        cap_handover_unicast_start();
         return;
     }
 
@@ -583,6 +529,7 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
 
     peer.conn_handle = event->acl_connect.conn_handle;
+    memcpy(peer.dst, event->acl_connect.dst.val, sizeof(peer.dst));
 
     err = pairing_start(event->acl_connect.conn_handle);
     if (err) {
@@ -598,18 +545,21 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
 
     peer.conn_handle = CONN_HANDLE_INIT;
     peer.conn = NULL;
-    peer.source_ep = NULL;
+    memset(peer.dst, 0, sizeof(peer.dst));
     memset(peer.sink_eps, 0, sizeof(peer.sink_eps));
     peer.sink_ep_count = 0;
     peer.disc_completed = false;
     peer.mtu_exchanged = false;
 
+    /* Drop a broadcast source left running before reusing the stream objects. */
+    cap_handover_proc_reset();
+
     unicast_group_delete();
 
-    cap_initiator_unicast_start();
+    cap_handover_unicast_start();
 }
 
-static void security_change(esp_ble_iso_gap_app_event_t *event)
+static void security_change(esp_ble_audio_gap_app_event_t *event)
 {
     int err;
 
@@ -630,7 +580,7 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
     }
 }
 
-void cap_initiator_unicast_gap_cb(esp_ble_audio_gap_app_event_t *event)
+void cap_handover_unicast_gap_cb(esp_ble_audio_gap_app_event_t *event)
 {
     switch (event->type) {
     case ESP_BLE_AUDIO_GAP_EVENT_EXT_SCAN_RECV:
@@ -702,7 +652,7 @@ static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
     }
 }
 
-void cap_initiator_unicast_gatt_cb(esp_ble_audio_gatt_app_event_t *event)
+void cap_handover_unicast_gatt_cb(esp_ble_audio_gatt_app_event_t *event)
 {
     switch (event->type) {
     case ESP_BLE_AUDIO_GATT_EVENT_GATT_MTU_CHANGE:
@@ -716,12 +666,12 @@ void cap_initiator_unicast_gatt_cb(esp_ble_audio_gatt_app_event_t *event)
     }
 }
 
-int cap_initiator_unicast_start(void)
+int cap_handover_unicast_start(void)
 {
     return ext_scan_start();
 }
 
-int cap_initiator_unicast_init(void)
+int cap_handover_unicast_init(void)
 {
     int err;
 

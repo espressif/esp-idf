@@ -51,6 +51,7 @@ Application Examples
 
   * :example:`bluetooth/esp_ble_audio/cap/acceptor` demonstrates how to act as a CAP Acceptor for unicast and broadcast flows.
   * :example:`bluetooth/esp_ble_audio/cap/initiator` demonstrates how to act as a CAP Initiator for unicast and broadcast flows.
+  * :example:`bluetooth/esp_ble_audio/cap/handover` demonstrates how to perform CAP handovers between unicast and broadcast flows.
 
 * **TMAP (Telephony and Media Audio Profile)**
 

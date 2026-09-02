@@ -16,7 +16,11 @@ static uint8_t codec_data[] =
         ESP_BLE_AUDIO_CODEC_CAP_FREQ_ANY,               /* Sampling frequency Any */
         ESP_BLE_AUDIO_CODEC_CAP_DURATION_7_5 | \
         ESP_BLE_AUDIO_CODEC_CAP_DURATION_10,            /* Frame duration 7.5ms/10ms */
-        ESP_BLE_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2),  /* Supported channels 2 */
+        /* Bitfield, not a maximum: SUPPORT(1, 2) advertises both 1- and
+         * 2-channel configurations. A stereo Initiator may either configure two
+         * 1-channel streams (one per ASE) or a single 2-channel stream.
+         */
+        ESP_BLE_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2),
         30,                                             /* Minimum 30 octets per frame */
         155,                                            /* Maximum 155 octets per frame */
         2);                                             /* Maximum 2 codec frames per SDU */
@@ -86,12 +90,27 @@ static uint8_t ext_adv_data[] = {
 
 esp_ble_audio_cap_stream_t *stream_alloc(esp_ble_audio_dir_t dir)
 {
+    esp_ble_audio_cap_stream_t *pool;
+    size_t count;
+
     if (dir == ESP_BLE_AUDIO_DIR_SINK) {
-        return &peer.sink_stream;
+        pool = peer.sink_streams;
+        count = ARRAY_SIZE(peer.sink_streams);
+    } else if (dir == ESP_BLE_AUDIO_DIR_SOURCE) {
+        pool = peer.source_streams;
+        count = ARRAY_SIZE(peer.source_streams);
+    } else {
+        return NULL;
     }
 
-    if (dir == ESP_BLE_AUDIO_DIR_SOURCE) {
-        return &peer.source_stream;
+    /* A stream is free while no endpoint is attached to it: the stack attaches
+     * the endpoint right after the Config callback returns and detaches it on
+     * release, so the pool needs no separate in-use flag.
+     */
+    for (size_t i = 0; i < count; i++) {
+        if (pool[i].bap_stream.ep == NULL) {
+            return &pool[i];
+        }
     }
 
     return NULL;
@@ -99,10 +118,21 @@ esp_ble_audio_cap_stream_t *stream_alloc(esp_ble_audio_dir_t dir)
 
 void stream_released(const esp_ble_audio_cap_stream_t *cap_stream)
 {
-    if (cap_stream == &peer.source_stream) {
-        ESP_LOGI(TAG, "Source stream released");
-    } else if (cap_stream == &peer.sink_stream) {
-        ESP_LOGI(TAG, "Sink stream released");
+    /* Releasing detached the endpoint, which already returned the object to the
+     * pool (see stream_alloc), so there is nothing to book-keep here.
+     */
+    for (size_t i = 0; i < ARRAY_SIZE(peer.sink_streams); i++) {
+        if (cap_stream == &peer.sink_streams[i]) {
+            ESP_LOGI(TAG, "Sink stream #%zu released", i);
+            return;
+        }
+    }
+
+    for (size_t i = 0; i < ARRAY_SIZE(peer.source_streams); i++) {
+        if (cap_stream == &peer.source_streams[i]) {
+            ESP_LOGI(TAG, "Source stream #%zu released", i);
+            return;
+        }
     }
 }
 

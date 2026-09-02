@@ -63,6 +63,21 @@ static inline bool flag_test_and_set(uint8_t bit)
     return was;
 }
 
+/* The audio stack keeps addresses on-air (LSB-first) in bt_addr_le_t, Bluedroid takes
+ * and reports them MSB-first, NimBLE on-air. Convert whenever one meets the other; the
+ * reversal is its own inverse, so this serves both directions.
+ */
+static void addr_order_copy(uint8_t dst[6], const uint8_t src[6])
+{
+#if CONFIG_BT_BLUEDROID_ENABLED
+    for (size_t i = 0; i < 6; i++) {
+        dst[i] = src[5 - i];
+    }
+#else
+    memcpy(dst, src, 6);
+#endif
+}
+
 static struct broadcast_sink {
     esp_ble_audio_cap_stream_t cap_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
     const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state;
@@ -188,8 +203,15 @@ void broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event)
 }
 #endif /* CONFIG_EXAMPLE_SCAN_SELF */
 
+static void sink_availability_update(bool receiving);
+
 static void broadcast_sink_reset(void)
 {
+    /* Reception is over however we got here (Remove Source, PA loss, ACL drop),
+     * so the sink pool is free again even if no receive state said so.
+     */
+    sink_availability_update(false);
+
     broadcast_sink.recv_state = NULL;
     broadcast_sink.sink = NULL;
     broadcast_sink.requested_bis_sync = 0;
@@ -212,6 +234,29 @@ static void broadcast_sink_reset(void)
 #if CONFIG_EXAMPLE_SCAN_SELF
     check_start_scan();
 #endif /* CONFIG_EXAMPLE_SCAN_SELF */
+}
+
+struct base_subgroup_pick {
+    uint32_t bis_indexes;
+    bool found;
+};
+
+static bool base_pick_subgroup_cb(const esp_ble_audio_bap_base_subgroup_t *subgroup,
+                                  void *user_data)
+{
+    struct base_subgroup_pick *pick = user_data;
+
+    /* Keep the first subgroup only. BIS of different subgroups carry different
+     * codec configurations, so a sink synchronizes within one subgroup.
+     */
+    if (pick->found == false &&
+            esp_ble_audio_bap_base_subgroup_get_bis_indexes(subgroup,
+                                                            &pick->bis_indexes) == ESP_OK) {
+        pick->found = true;
+    }
+
+    /* Always continue: stopping early makes the iterator return -ECANCELED. */
+    return true;
 }
 
 static void check_sync_broadcast(void)
@@ -258,22 +303,33 @@ static void check_sync_broadcast(void)
     }
 
     if (broadcast_sink.requested_bis_sync == ESP_BLE_AUDIO_BAP_BIS_SYNC_NO_PREF) {
+        struct base_subgroup_pick pick = {0};
         uint32_t base_bis;
 
-        /* Get the first BIS index from the BASE */
-        err = esp_ble_audio_bap_base_get_bis_indexes(
-                  (esp_ble_audio_bap_base_t *)broadcast_sink.received_base, &base_bis);
-        if (err) {
+        /* Get the BIS indexes offered by the first subgroup of the BASE */
+        err = esp_ble_audio_bap_base_foreach_subgroup(
+                  (esp_ble_audio_bap_base_t *)broadcast_sink.received_base,
+                  base_pick_subgroup_cb, &pick);
+        if (err || pick.found == false) {
             ESP_LOGE(TAG, "Failed to get BIS indexes from BASE, err %d", err);
             return;
         }
 
+        base_bis = pick.bis_indexes;
         sync_bitfield = 0;
 
+        /* No Broadcast Assistant told us what to sync to, so take as many BIS as
+         * this sink has streams for: a stereo source advertises one BIS per
+         * channel and syncing to only the first would drop the other channel.
+         */
         for (uint8_t i = ESP_BLE_ISO_BIS_INDEX_MIN; i <= ESP_BLE_ISO_BIS_INDEX_MAX; i++) {
             if (base_bis & ESP_BLE_ISO_BIS_INDEX_BIT(i)) {
-                sync_bitfield = ESP_BLE_ISO_BIS_INDEX_BIT(i);
-                break;
+                sync_bitfield |= ESP_BLE_ISO_BIS_INDEX_BIT(i);
+
+                if (__builtin_popcount(sync_bitfield) >=
+                        CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT) {
+                    break;
+                }
             }
         }
 
@@ -327,7 +383,9 @@ static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 
     ESP_LOGI(TAG, "[SNK #%u] Stream started", idx);
 
-    example_audio_rx_metrics_reset(&rx_metrics[idx]);
+    if (idx < ARRAY_SIZE(rx_metrics)) {
+        example_audio_rx_metrics_reset(&rx_metrics[idx]);
+    }
 
     broadcast_sink.active_streams++;
     flag_clear(FLAG_BROADCAST_SYNCING);
@@ -411,6 +469,10 @@ static void broadcast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
     uint8_t idx = broadcast_stream_idx(stream);
     char obj_name[10];
 
+    if (idx >= ARRAY_SIZE(rx_metrics)) {
+        return;
+    }
+
     rx_metrics[idx].last_sdu_len = len;
     snprintf(obj_name, sizeof(obj_name), "SNK #%u", idx);
     example_audio_rx_metrics_on_recv(info, &rx_metrics[idx], TAG, obj_name);
@@ -460,15 +522,63 @@ static void syncable_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
     }
 }
 
+/* CAP 7.3.1.8 / 7.3.1.9: "Start of reception can affect an Acceptor's
+ * availability for unicast Audio Streams. In this case, the Acceptor will
+ * update its Available Audio Contexts characteristic."
+ *
+ * It does affect us: stream_alloc() hands unicast and broadcast the same sink
+ * pool, so while every sink stream carries a BIS there is none left to accept a
+ * unicast Config. Saying so keeps the Initiator's view honest instead of
+ * letting it discover the shortage through a NO_MEM.
+ *
+ * Driven off BIS_Sync rather than off a local "broadcasting" flag because that
+ * is the field the Assistant clears first when it stops our reception - which
+ * puts the restore well ahead of the unicast Config that follows in a
+ * broadcast-to-unicast handover.
+ */
+static void sink_availability_update(bool receiving)
+{
+    static bool reported_unavailable;
+    esp_ble_audio_context_t context;
+    esp_err_t err;
+
+    if (receiving == reported_unavailable) {
+        return;
+    }
+
+    context = receiving ? ESP_BLE_AUDIO_CONTEXT_TYPE_NONE : SINK_CONTEXT;
+
+    err = esp_ble_audio_pacs_set_available_contexts(ESP_BLE_AUDIO_DIR_SINK, context);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to update sink available contexts, err %d", err);
+        return;
+    }
+
+    reported_unavailable = receiving;
+
+    ESP_LOGI(TAG, "Sink available contexts now 0x%04x (%s broadcast)",
+             context, receiving ? "receiving" : "not receiving");
+}
+
 static void recv_state_updated_cb(esp_ble_conn_t *conn,
                                   const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state)
 {
+    bool receiving = false;
+
     ESP_LOGI(TAG, "Receive state updated, pa_sync 0x%02x encrypt 0x%02x",
              recv_state->pa_sync_state, recv_state->encrypt_state);
 
     for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
         ESP_LOGI(TAG, "subgroup %d bis_sync 0x%08x", i, recv_state->subgroups[i].bis_sync);
+
+        /* BIS_SYNC_FAILED is non-zero but carries no BIS (BASS 3.1.1.5). */
+        if (recv_state->subgroups[i].bis_sync != 0 &&
+                recv_state->subgroups[i].bis_sync != ESP_BLE_AUDIO_BAP_BIS_SYNC_FAILED) {
+            receiving = true;
+        }
     }
+
+    sink_availability_update(receiving);
 
     if (recv_state->pa_sync_state == ESP_BLE_AUDIO_BAP_PA_STATE_SYNCED) {
         broadcast_sink.recv_state = recv_state;
@@ -516,8 +626,11 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
 
         ESP_LOGI(TAG, "Waiting for PAST...");
     } else {
-        err = pa_sync_create(recv_state->addr.type, recv_state->addr.a.val,
-                             recv_state->adv_sid);
+        uint8_t addr[6];
+
+        addr_order_copy(addr, recv_state->addr.a.val);
+
+        err = pa_sync_create(recv_state->addr.type, addr, recv_state->adv_sid);
         if (err) {
             return err;
         }
@@ -662,7 +775,7 @@ void broadcast_pa_synced(esp_ble_audio_gap_app_event_t *event)
     int err;
 
     addr.type = event->pa_sync.addr.type;
-    memcpy(addr.a.val, event->pa_sync.addr.val, sizeof(addr.a.val));
+    addr_order_copy(addr.a.val, event->pa_sync.addr.val);
 
     if (broadcast_sink.sync_handle == PA_SYNC_HANDLE_INIT ||
             (broadcast_sink.recv_state &&

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: CAP Handover"
+
+    config EXAMPLE_HANDOVER_PERIOD_S
+        int "Seconds between automatic handovers (0 to disable)"
+        default 300
+        help
+            Once unicast audio is streaming the sample alternates between unicast
+            and broadcast every this many seconds. Set to 0 to stay on unicast
+            after the initial setup.
+
+endmenu
