@@ -50,7 +50,6 @@ void ble_log_redir_seal(ble_log_prph_trans_t *trans, ble_log_src_t src_code)
 
     uint16_t payload_len = trans->pos - BLE_LOG_FRAME_HEAD_LEN;
     ble_log_redir_t *redir = ble_log_prph_get_redir_lbm();
-    BLE_LOG_ASSERT(redir);
     /* REDIR keeps its own stream sequence: a raw console stream is not a
      * log attempt, so it never eats Global SNs or fakes loss gaps. The
      * stream has no core-stat slot. */
@@ -66,11 +65,7 @@ void ble_log_redir_seal(ble_log_prph_trans_t *trans, ble_log_src_t src_code)
     trans->pos += BLE_LOG_FRAME_TAIL_LEN;
 
     uint32_t infl = __atomic_add_fetch(&redir->inflight, 1, __ATOMIC_RELAXED);
-    uint32_t peak = BLE_LOG_ATOMIC_LOAD_RELAXED(redir->inflight_peak);
-    while (infl > peak &&
-           !__atomic_compare_exchange_n(&redir->inflight_peak, &peak, infl, true,
-                                        __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
-    }
+    ble_log_atomic_update_peak(&redir->inflight_peak, infl);
 
     BLE_LOG_ATOMIC_STORE_RELAXED(trans->state, BLE_LOG_TRANS_STATE_SENDING);
     ble_log_rt_submit_trans(trans);

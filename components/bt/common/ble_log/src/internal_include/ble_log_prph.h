@@ -61,6 +61,9 @@ typedef struct {
 
 bool ble_log_prph_init(size_t trans_cnt);
 void ble_log_prph_deinit(void);
+/* Allocates a transport whose storage is zeroed (every field except size
+ * starts at its zero value: state FREE, owner POOL, lock and pending_seal
+ * clear). Callers only need to set the non-zero identity fields. */
 bool ble_log_prph_trans_init(ble_log_prph_trans_t **trans, size_t trans_size);
 void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans);
 void ble_log_prph_send_trans(ble_log_prph_trans_t *trans);

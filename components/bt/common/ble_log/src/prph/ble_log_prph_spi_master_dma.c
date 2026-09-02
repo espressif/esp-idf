@@ -42,7 +42,6 @@ BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi
 
     /* Recycle transport */
     ble_log_prph_trans_t *trans = (ble_log_prph_trans_t *)(spi_trans->user);
-    trans->pos = 0;
     ble_log_lbm_recycle_trans(trans);
 }
 

@@ -28,9 +28,8 @@
 #error "BLE Log test app requires CONFIG_BLE_LOG_PRPH_TEST"
 #endif
 
-/* The runtime dispatch hook is throttled to one pass per
- * BLE_LOG_TS_TRIGGER_TIMEOUT_MS; let the window elapse between write bursts
- * so a hook pass is guaranteed to run after the settle delay. */
+/* Internal Snapshots use the production periodic cadence; let one full
+ * window elapse when a test needs to observe the next periodic sample. */
 #define TEST_HOOK_SETTLE_MS          (BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 100)
 #define TEST_READ_TIMEOUT_MS         (50)
 #define TEST_MAX_ROUNDS              (3)
@@ -56,6 +55,7 @@ typedef struct {
 
 static uint8_t s_read_buf[TEST_READ_BUF_SIZE];
 static bool s_claim_hook_armed;
+static bool s_init_snapshot_hook_armed;
 static uint32_t s_stale_claim_handle;
 static volatile bool s_locked_hook_armed;
 static volatile bool s_enable_hook_armed;
@@ -72,6 +72,7 @@ static SemaphoreHandle_t s_compression_hook_continue;
 
 void ble_log_test_claim_pre_publish_hook(void);
 void ble_log_test_claim_locked_hook(void);
+void ble_log_test_init_snapshot_before_acquire_hook(void);
 void ble_log_test_enable_before_lifecycle_lock_hook(void);
 void ble_log_test_disable_before_wake_hook(void);
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
@@ -97,7 +98,14 @@ void ble_log_test_claim_locked_hook(void)
         /* Runs while the claiming writer itself holds the OPEN transport
          * lock: the flush must skip the busy transport and leave the
          * pending-seal marker for the next claim. */
-        ble_log_lbm_flush_open_transports();
+        ble_log_lbm_flush_open_trans();
+    }
+}
+
+void ble_log_test_init_snapshot_before_acquire_hook(void)
+{
+    if (s_init_snapshot_hook_armed) {
+        vTaskDelay(pdMS_TO_TICKS(TEST_HOOK_SETTLE_MS));
     }
 }
 
@@ -178,6 +186,28 @@ static void capture_version_info_frame(const test_ble_log_frame_t *frame, void *
     }
 }
 
+typedef struct {
+    bool found;
+    uint16_t reason_flags;
+} first_snapshot_capture_t;
+
+static void capture_first_snapshot(const test_ble_log_frame_t *frame, void *ctx)
+{
+    first_snapshot_capture_t *capture = ctx;
+    if (capture->found || frame->src != BLE_LOG_SRC_INTERNAL ||
+            frame->payload_len != sizeof(uint32_t) +
+                                  sizeof(ble_log_internal_snapshot_t)) {
+        return;
+    }
+
+    ble_log_internal_snapshot_t snapshot;
+    memcpy(&snapshot, frame->payload + sizeof(uint32_t), sizeof(snapshot));
+    if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT) {
+        capture->found = true;
+        capture->reason_flags = snapshot.reason_flags;
+    }
+}
+
 /* Consumes pending test transports concurrently with the writer: transports
  * are recycled only once read, and the LBM has a small pool of them. */
 static void test_reader_task(void *arg)
@@ -230,7 +260,7 @@ TEST_CASE("BLE Log v7 framing matches golden bytes", "[ble_log][wire]")
     TEST_ASSERT_EQUAL_size_t(8, sizeof(ble_log_source_stat_t));
     TEST_ASSERT_EQUAL_size_t(134, sizeof(ble_log_internal_snapshot_t));
     TEST_ASSERT_EQUAL_size_t(
-        4, offsetof(ble_log_internal_snapshot_t, version_info));
+        3, offsetof(ble_log_internal_snapshot_t, version_info));
     TEST_ASSERT_EQUAL_size_t(
         62, offsetof(ble_log_internal_snapshot_t, ts.lc_ts));
     TEST_ASSERT_EQUAL_size_t(
@@ -335,6 +365,41 @@ TEST_CASE("BLE Log periodic tick reports build and chip versions", "[ble_log]")
     vSemaphoreDelete(ctx.done);
 }
 
+TEST_CASE("BLE Log INIT snapshot starts each receiver epoch", "[ble_log][wire]")
+{
+    ble_log_deinit();
+    s_init_snapshot_hook_armed = true;
+    bool initialized = ble_log_init();
+    s_init_snapshot_hook_armed = false;
+    TEST_ASSERT_TRUE(initialized);
+
+    size_t len = ble_log_prph_test_read(
+        s_read_buf, sizeof(s_read_buf), pdMS_TO_TICKS(1000), 0, NULL);
+    TEST_ASSERT_GREATER_THAN_size_t(0, len);
+
+    first_snapshot_capture_t capture = {0};
+    TEST_ASSERT_TRUE(test_ble_log_walk_frames(
+        s_read_buf, len, capture_first_snapshot, &capture));
+    TEST_ASSERT_TRUE(capture.found);
+    TEST_ASSERT_EQUAL_HEX16(BLE_LOG_SNAPSHOT_REASON_INIT,
+                            capture.reason_flags);
+}
+
+TEST_CASE("BLE Log sync IO APIs retain runtime lifecycle checks", "[ble_log]")
+{
+    ble_log_deinit();
+    TEST_ASSERT_FALSE(ble_log_ts_sync_io_toggle_enable(true));
+    TEST_ASSERT_FALSE(ble_log_sync_enable(true));
+
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(false));
+    TEST_ASSERT_TRUE(ble_log_sync_enable(false));
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                  0, 0, NULL) > 0) {
+    }
+}
+
 typedef struct {
     bool task_frame;
     bool non_yield_frame;
@@ -429,7 +494,7 @@ TEST_CASE("BLE Log marks non-yield context and commits claimed payload",
     claimed[0] = 0x44;
     ble_log_commit(fresh_handle, 1);
 
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
 
     frame_meta_capture_t capture = {0};
@@ -535,7 +600,7 @@ TEST_CASE("BLE Log serializes task context per compression source",
           "[ble_log][compression]")
 {
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
         while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
@@ -583,7 +648,7 @@ TEST_CASE("BLE Log serializes task context per compression source",
     xSemaphoreGive(writer.exit);
     TEST_ASSERT_TRUE(xSemaphoreTake(writer.exited, pdMS_TO_TICKS(1000)));
 
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
     compression_capture_t capture = {0};
     for (int i = 0; i < BLE_LOG_TRANS_TOTAL_CNT; i++) {
@@ -729,7 +794,7 @@ TEST_CASE("BLE Log preserves LL payload and rejects oversized records",
     };
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
         while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
@@ -762,7 +827,7 @@ TEST_CASE("BLE Log preserves LL payload and rejects oversized records",
                          BIT(BLE_LOG_LL_FLAG_TASK));
 #endif
 
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
     read_sequence_frames(captures, SEQUENCE_CAPTURE_COUNT);
 
@@ -789,7 +854,7 @@ TEST_CASE("BLE Log flush preserves source-local sequence continuity",
     const uint8_t before_marker = 0x71;
     const uint8_t after_marker = 0x72;
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
         while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
@@ -799,7 +864,7 @@ TEST_CASE("BLE Log flush preserves source-local sequence continuity",
 
     TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
                                        &before_marker, sizeof(before_marker)));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
     sequence_capture_t before = {
         .src = BLE_LOG_SRC_CUSTOM,
@@ -816,7 +881,7 @@ TEST_CASE("BLE Log flush preserves source-local sequence continuity",
 
     TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
                                        &after_marker, sizeof(after_marker)));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
     sequence_capture_t after = {
         .src = BLE_LOG_SRC_CUSTOM,
@@ -884,7 +949,7 @@ TEST_CASE("BLE Log pending-seal marker defers the busy transport flush",
     const uint8_t post_marker = 0xd4;
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
         while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
@@ -919,7 +984,7 @@ TEST_CASE("BLE Log pending-seal marker defers the busy transport flush",
     TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
                                        &post_marker, sizeof(post_marker)));
 
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
 
     marker_chunk_capture_t chunks[2] = {0};
@@ -938,7 +1003,7 @@ TEST_CASE("BLE Log deinit drain delivers parked open transports",
     const uint8_t markers[TEST_MARKER_CHUNK_MAX] = {0xe1, 0xe2, 0xe3, 0xe4};
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
         while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
@@ -956,7 +1021,7 @@ TEST_CASE("BLE Log deinit drain delivers parked open transports",
     /* Exercise the exact deinit-drain contract: close the producer gate and
      * wait for writers before sealing every OPEN transport. */
     ble_log_lbm_begin_deinit();
-    ble_log_lbm_drain_open_transports();
+    ble_log_lbm_drain_open_trans();
 
     marker_chunk_capture_t chunks[1] = {0};
     int chunk_count = read_marker_chunks(chunks, 1);
@@ -980,7 +1045,7 @@ TEST_CASE("BLE Log deinit hands residual transports to the peripheral",
     int recycled = 0;
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
         while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
@@ -1025,11 +1090,14 @@ static void capture_snapshot_loss(const test_ble_log_frame_t *frame, void *ctx)
     }
 }
 
-TEST_CASE("BLE Log periodic snapshot fails fast while its transport is busy",
+TEST_CASE("BLE Log periodic snapshot ignores producer gate and fails fast when busy",
           "[ble_log][lbm]")
 {
+    ble_log_ts_info_t ts_info;
+    ble_log_rt_ts_sample(&ts_info, false);
+
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
         while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
@@ -1038,24 +1106,34 @@ TEST_CASE("BLE Log periodic snapshot fails fast while its transport is busy",
     }
 
     TEST_ASSERT_TRUE(ble_log_enable(false));
+    bool submitted = false;
+    for (int attempt = 0; attempt < TEST_MAX_ROUNDS && !submitted; attempt++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+        submitted = ble_log_internal_snapshot(
+            BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, false);
+    }
+    TEST_ASSERT_TRUE_MESSAGE(submitted,
+                             "Periodic timer kept the Internal transport busy");
     TEST_ASSERT_FALSE(ble_log_internal_snapshot(
-        BLE_LOG_SNAPSHOT_REASON_PERIODIC, NULL, false));
+        BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, false));
     TEST_ASSERT_TRUE(ble_log_enable(true));
-
-    TEST_ASSERT_TRUE(ble_log_internal_snapshot(
-        BLE_LOG_SNAPSHOT_REASON_PERIODIC, NULL, false));
-    TEST_ASSERT_FALSE(ble_log_internal_snapshot(
-        BLE_LOG_SNAPSHOT_REASON_PERIODIC, NULL, false));
-    TEST_ASSERT_TRUE(ble_log_rt_drain());
-    TEST_ASSERT_GREATER_THAN_size_t(
-        0, ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
-                                  pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS), 0, NULL));
-
-    TEST_ASSERT_TRUE(ble_log_internal_snapshot(
-        BLE_LOG_SNAPSHOT_REASON_PERIODIC, NULL, false));
     TEST_ASSERT_TRUE(ble_log_rt_drain());
 
     snapshot_capture_t capture = {0};
+    size_t first_len = ble_log_prph_test_read(
+        s_read_buf, sizeof(s_read_buf), pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+        0, NULL);
+    TEST_ASSERT_GREATER_THAN_size_t(0, first_len);
+    TEST_ASSERT_TRUE(test_ble_log_walk_frames(
+        s_read_buf, first_len, capture_snapshot_loss, &capture));
+
+    TEST_ASSERT_TRUE(ble_log_internal_snapshot(
+        BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, false));
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+
     for (int i = 0; i < BLE_LOG_TRANS_TOTAL_CNT; i++) {
         size_t len = ble_log_prph_test_read(
             s_read_buf, sizeof(s_read_buf), pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
@@ -1137,7 +1215,7 @@ TEST_CASE("BLE Log deinit closes a parked LL writer before racing enable",
         BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
     while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL) > 0) {
     }
