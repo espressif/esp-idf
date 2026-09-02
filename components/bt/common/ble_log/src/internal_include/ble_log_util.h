@@ -131,4 +131,9 @@ bool ble_log_ref_count_try_acquire(volatile uint32_t *ref_count,
 /* Task-context wait; returns false if the count stays above max for one second. */
 bool ble_log_ref_count_wait(volatile uint32_t *ref_count, uint32_t max_ref_count);
 
+/* Monotonic-peak publish: stores value into *peak only when it exceeds the
+ * current peak. Relaxed atomics are enough - a lost race can only leave the
+ * recorded peak below a transient maximum, and peaks are diagnostics. */
+void ble_log_atomic_update_peak(volatile uint32_t *peak, uint32_t value);
+
 #endif /* __BLE_LOG_UTIL_H__ */

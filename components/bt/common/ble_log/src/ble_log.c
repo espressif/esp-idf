@@ -49,8 +49,13 @@ bool ble_log_init(void)
     }
 
     ble_log_inited = true;
-    if (!ble_log_enable(true) ||
-            !ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_INIT, NULL, true)) {
+    /* Queue the required INIT snapshot before starting the periodic path or
+     * opening the public producer gate, so it starts the receiver epoch.
+     * INIT/FLUSH samples never toggle sync IO. */
+    ble_log_ts_info_t ts_info;
+    ble_log_rt_ts_sample(&ts_info, false);
+    if (!ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_INIT, &ts_info, true) ||
+            !ble_log_rt_start_periodic() || !ble_log_enable(true)) {
         goto exit;
     }
     esp_err_t ret = esp_register_shutdown_handler(ble_log_shutdown_handler);
@@ -80,23 +85,24 @@ void ble_log_deinit(void)
     ble_log_inited = false;
     ble_log_lbm_begin_deinit();
 
-    /* Residual frames parked in OPEN transports would be discarded with
-     * the pool. Seal and dispatch them while the runtime queue is still
-     * alive; the peripheral deinit wait below completes the delivery. */
-    ble_log_lbm_drain_open_transports();
+    /* Seal and dispatch residual pool and UART0 REDIR data while the runtime
+     * queue is still alive. The peripheral waits below complete delivery. */
+    ble_log_lbm_drain_open_trans();
+#if BLE_LOG_UART_REDIR_ENABLED
+    (void)ble_log_prph_flush();
+#endif
 
     /* CRITICAL - Deinit ordering rationale:
      *
      * 1. The LBM writer gate is closed before submodule teardown. Writers
      *    already inside the gate keep a reference until they finish; later
-     *    writers are rejected. With writers gone, the deinit drain seals
-     *    the remaining OPEN transports and hands them to the runtime
-     *    queue, so residual frames are not discarded with the pool.
+     *    writers are rejected. With writers gone, the pool and REDIR drains
+     *    seal and dispatch every residual frame while runtime is still live.
      *
-     * 2. Runtime dispatch must be stopped FIRST to prevent it from sending
+     * 2. Runtime dispatch is stopped FIRST to prevent it from sending
      *    transports to an already-destroyed peripheral driver. Active
-     *    submissions and callbacks finish before the timers are deleted;
-     *    the queue is then drained and pending transports are discarded.
+     *    submissions and callbacks finish before the timers and queue are
+     *    deleted.
      *
      * 3. Peripheral interface is deinitialized SECOND. It waits for DMA
      *    operations started before runtime dispatch stopped, then destroys
@@ -104,7 +110,7 @@ void ble_log_deinit(void)
      *
      * 4. LBM is deinitialized LAST. At this point all DMA has completed
      *    (ensured by step 3) and all queued transports have been drained
-     *    (ensured by step 2), so freeing the buffers is safe. */
+     *    (ensured by steps 1 and 2), so freeing the buffers is safe. */
     ble_log_rt_deinit();
     ble_log_prph_deinit();
     ble_log_lbm_deinit();

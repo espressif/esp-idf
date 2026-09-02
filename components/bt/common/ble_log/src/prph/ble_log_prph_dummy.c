@@ -87,6 +87,5 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
  * SPI DMA) do the same work inside their asynchronous tx_done callbacks. */
 void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
-    trans->pos = 0;
     ble_log_lbm_recycle_trans(trans);
 }
