@@ -20,6 +20,8 @@
  * The number of BLE Log source code will directly determine the number of statistic manager
  * memory requirements, keep it as less as possible; it's recommended to use subcode for more
  * log data structure decoding */
+/* CRITICAL: this enum is a public ABI and must not be reordered or renamed.
+ * Its values are also the on-wire source IDs of protocol v7 frames. */
 typedef enum {
     /* Internal */
     BLE_LOG_SRC_INTERNAL = 0,
@@ -65,6 +67,8 @@ bool ble_log_enable(bool enable);
 /* Blocking; call only from a caller-owned task, not an ISR or system callback. */
 void ble_log_flush(void);
 bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len);
+uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle);
+void ble_log_commit(uint32_t handle, size_t actual_len);
 void ble_log_dump_to_console(void);
 #if CONFIG_BLE_LOG_LL_ENABLED
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,

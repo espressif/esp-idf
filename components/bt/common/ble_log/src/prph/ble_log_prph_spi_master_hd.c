@@ -10,7 +10,7 @@
 /* INCLUDE */
 #include "ble_log_prph_spi_master_hd.h"
 #include "ble_log_prph_spi_common.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 
 #include "hal/spi_ll.h"
 #include "hal/spi_types.h"
@@ -219,8 +219,7 @@ BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     if (spi_device_queue_trans(dev_handle, &ctx->end, 0) != ESP_OK) {
         uint8_t old_status = __atomic_fetch_or(&ctx->status, BLE_LOG_SPI_HD_END_QUEUE_FAILED, __ATOMIC_ACQ_REL);
         if (old_status & BLE_LOG_SPI_HD_DATA_DONE) {
-            /* Data already on the wire: drop it from the buffer so the next
-             * flush does not re-send these bytes (recycle keeps pos on purpose) */
+            /* Data is already on the wire; recycle it without re-sending. */
             trans->pos = 0;
             ble_log_lbm_recycle_trans(trans);
         }

@@ -9,7 +9,7 @@
 
 /* INCLUDE */
 #include "ble_log_prph_test.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 #include "esp_timer.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
