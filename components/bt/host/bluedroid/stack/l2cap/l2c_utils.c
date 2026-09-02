@@ -44,7 +44,7 @@
 #endif
 
 #if BT_SDP_BQB_INCLUDED
-extern BOOLEAN l2cap_bqb_ertm_mode_included_flag;
+extern BOOLEAN s_l2cap_bqb_ertm_mode_included_flag;
 #endif /* BT_SDP_BQB_INCLUDED */
 #if BT_CLASSIC_BQB_INCLUDED
 /* L2CAP/EXF/BV-08-C and L2CAP/FIX/BV-03-C. Default off so CID 0x0007 stays advertised. */
@@ -1720,7 +1720,7 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 #if BT_SDP_BQB_INCLUDED
-    if (l2cap_bqb_ertm_mode_included_flag) {
+    if (s_l2cap_bqb_ertm_mode_included_flag) {
         p_ccb->ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
         p_ccb->ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_ERTM;
     } else

@@ -73,7 +73,9 @@ static void sdp_disconnect_cfm (UINT16 l2cap_cid, UINT16 result);
 #if BT_SDP_BQB_INCLUDED
 static BOOLEAN s_sdp_bqb_disable_flag = FALSE;
 static BOOLEAN s_sdp_bqb_inact_timeout_flag = FALSE;
-BOOLEAN l2cap_bqb_ertm_mode_included_flag = FALSE;
+BOOLEAN s_l2cap_bqb_ertm_mode_included_flag = FALSE;
+/* L2CAP/COS/CFD/BV-09-C: first SDP L2CAP payload is at least 48 bytes */
+BOOLEAN s_sdp_bqb_data_len_min_48_flag = FALSE;
 #endif /* BT_SDP_BQB_INCLUDED */
 
 /*******************************************************************************
@@ -90,7 +92,6 @@ void sdp_bqb_disable_ctrl(BOOLEAN enable)
 {
     s_sdp_bqb_disable_flag = enable;
 }
-#endif /* BT_SDP_BQB_INCLUDED */
 
 /*******************************************************************************
 **
@@ -101,12 +102,10 @@ void sdp_bqb_disable_ctrl(BOOLEAN enable)
 ** Returns      void
 **
 *******************************************************************************/
-#if BT_SDP_BQB_INCLUDED
 void sdp_bqb_inact_timeout_ctrl(BOOLEAN enable)
 {
     s_sdp_bqb_inact_timeout_flag = enable;
 }
-#endif /* BT_SDP_BQB_INCLUDED */
 
 /*******************************************************************************
 **
@@ -117,10 +116,25 @@ void sdp_bqb_inact_timeout_ctrl(BOOLEAN enable)
 ** Returns      void
 **
 *******************************************************************************/
-#if BT_SDP_BQB_INCLUDED
 void l2cap_bqb_ertm_mode_included_ctrl(BOOLEAN enable)
 {
-    l2cap_bqb_ertm_mode_included_flag = enable;
+    s_l2cap_bqb_ertm_mode_included_flag = enable;
+}
+
+/*******************************************************************************
+**
+** Function     sdp_bqb_data_len_min_48_ctrl
+**
+** Description  Pad a short Service Search Attribute Request so the first
+**              SDP L2CAP payload is at least 48 bytes. A longer request is
+**              not truncated. Used by L2CAP/COS/CFD/BV-09-C.
+**
+** Returns      void
+**
+*******************************************************************************/
+void sdp_bqb_data_len_min_48_ctrl(BOOLEAN enable)
+{
+    s_sdp_bqb_data_len_min_48_flag = enable;
 }
 #endif /* BT_SDP_BQB_INCLUDED */
 
@@ -152,7 +166,7 @@ void sdp_init (void)
     sdp_cb.l2cap_my_cfg.flush_to_present  = TRUE;
     sdp_cb.l2cap_my_cfg.flush_to          = SDP_FLUSH_TO;
 #if BT_SDP_BQB_INCLUDED
-    if (l2cap_bqb_ertm_mode_included_flag) {
+    if (s_l2cap_bqb_ertm_mode_included_flag) {
         sdp_cb.l2cap_my_cfg.fcr_present         = TRUE;
         sdp_cb.l2cap_my_cfg.fcr.mode            = L2CAP_FCR_ERTM_MODE;
         sdp_cb.l2cap_my_cfg.fcr.tx_win_sz       = 8;
