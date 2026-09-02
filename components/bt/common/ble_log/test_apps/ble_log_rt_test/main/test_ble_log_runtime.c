@@ -448,7 +448,6 @@ TEST_CASE("BLE Log ISR-only submission arms runtime dispatch",
 #endif
 }
 
-#if CONFIG_BLE_LOG_TS_ENABLED
 TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
           "[ble_log][runtime][timestamp][ignore]")
 {
@@ -496,7 +495,6 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
         0, ts_count,
         "Periodic ESP timer did not emit a timestamp frame");
 }
-#endif
 
 TEST_CASE("BLE Log runtime dispatch yields to other timer callbacks",
           "[ble_log][runtime][ignore]")
@@ -729,7 +727,7 @@ TEST_CASE("BLE Log LBM inflight peak stays bounded under bursts",
         TEST_ASSERT_TRUE(write_runtime_marker(seq, NULL));
     }
 
-    /* Recycle the burst after its peak has been recorded. A runtime hook may
+    /* Recycle the burst after its peak has been recorded. A periodic tick may
      * also have occupied the dedicated Internal transport, so drain twice. */
     for (int round = 0; round < 2; round++) {
         TEST_ASSERT_TRUE(ble_log_rt_drain());
