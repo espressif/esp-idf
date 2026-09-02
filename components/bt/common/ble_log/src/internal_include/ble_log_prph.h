@@ -42,6 +42,12 @@ typedef struct {
     uint8_t id;
     uint8_t owner_kind;
 
+    /* Lazy flush marker, pool-owned: set by the periodic flusher (without
+     * holding atomic_lock) when the transport was busy at flush time; the
+     * next claim that takes the lock seals the buffered frames first.
+     * Cleared by seal_and_send and on recycle. */
+    volatile uint8_t pending_seal;
+
     uint8_t *buf;
     uint16_t size;
     uint16_t pos;
