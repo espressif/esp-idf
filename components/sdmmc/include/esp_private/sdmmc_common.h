@@ -17,6 +17,7 @@
 #pragma once
 
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
@@ -39,6 +40,27 @@ extern "C" {
 
 #define SDMMC_INIT_WAIT_DATA_READY_TIMEOUT_US  (5000 * 1000)
 #define SDMMC_READY_FOR_DATA_TIMEOUT_US        (5000 * 1000)
+
+/* Delay between two consecutive card status (CMD13) polls while waiting for the
+ * card to become ready. Starts at SDMMC_READY_POLL_PERIOD_START_US and doubles
+ * after every poll, up to one FreeRTOS tick period.
+ *
+ * Polling without a delay turns every write into a storm of hundreds of CMD13
+ * commands, which occupies the host controller and slows down unrelated work.
+ *
+ * While the delay is below one tick period it is busy-waited and doubles, so a
+ * handful of commands covers a busy period of a few milliseconds and a card that
+ * becomes ready early is noticed without waiting for the next tick.
+ *
+ * Once the delay reaches one tick period it stops growing: from there on
+ * vTaskDelay() already yields and one command per tick is not a storm, while a
+ * longer delay would only delay noticing that the card is ready. Long busy
+ * periods therefore cost one poll per tick and are detected within one tick.
+ *
+ * One tick period is a hard cap: a configured start period larger than that is
+ * clamped to it as well.
+ */
+#define SDMMC_READY_POLL_PERIOD_START_US       CONFIG_SD_READY_POLL_PERIOD_START_US
 
 /* These delay values are mostly useful for cases when CD pin is not used, and
  * the card is removed. In this case, SDMMC peripheral may not always return
@@ -175,6 +197,19 @@ static inline bool sdmmc_ready_for_data(uint32_t status)
 {
     return (status & MMC_R1_READY_FOR_DATA) && (MMC_R1_CURRENT_STATE_STATUS(status) == MMC_R1_CURRENT_STATE_TRAN);
 }
+
+/**
+ * @brief Wait before the next card status poll, and back off for the poll after that
+ *
+ * Delays for *period_us, then doubles *period_us. Both the delay and the stored
+ * period are capped at one FreeRTOS tick period, so a *period_us larger than that
+ * on entry is clamped rather than used as-is. A delay shorter than one tick period
+ * is busy-waited, since no shorter blocking sleep is available; one tick period
+ * blocks on vTaskDelay() so that other tasks can run.
+ *
+ * @param[in,out] period_us  Delay to apply now; updated to the delay to apply next time
+ */
+void sdmmc_poll_delay_and_backoff(uint32_t* period_us);
 
 void sdmmc_flip_byte_order(uint32_t* response, size_t size);
 
