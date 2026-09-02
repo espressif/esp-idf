@@ -601,3 +601,7 @@
 -
     re: "undefined reference to `esp_secure_boot_check_signature_on_update'"
     hint: "CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT requires the startup signature check from the esp_image_verify component, which is not in the build. Add esp_image_verify (or app_update, which includes it) to the calling component's PRIV_REQUIRES or to the project's COMPONENTS list."
+
+-
+    re: "Build property 'BUILD_COMPONENTS' is not supported"
+    hint: "The 'BUILD_COMPONENTS' build property does not exist in Build System v2, since components are not collected before they are evaluated. To check whether a component takes part in the build, use the '$<TARGET_EXISTS:idf::component_name>' generator expression instead. For details and a migration example, run 'idf.py docs -sp api-guides/build-system-v2/breaking-changes.html#cmakev2-build-components'"

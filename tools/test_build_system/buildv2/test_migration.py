@@ -118,3 +118,24 @@ def test_build_components_not_available(idf_py: IdfPyFunc) -> None:
     check_file = Path('build/build_components_check.txt')
     assert check_file.exists(), 'Variable check file should be written before the fatal error'
     assert check_file.read_text().strip() == 'NOT_FOUND', 'BUILD_COMPONENTS variable should not be available in v2'
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_build_components_rejected_through_shim(idf_py: IdfPyFunc) -> None:
+    """BUILD_COMPONENTS must be rejected even when building through the compatibility shim."""
+    logging.info('Testing BUILD_COMPONENTS rejection through the compatibility shim')
+
+    # Arm the shim via the v1 project.cmake, then query BUILD_COMPONENTS before the graph is configured.
+    Path('CMakeLists.txt').write_text(
+        'cmake_minimum_required(VERSION 3.22)\n'
+        'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
+        'idf_build_get_property(_bc BUILD_COMPONENTS)\n'
+        'project(build_test_app)\n'
+    )
+
+    result = idf_py('reconfigure', check=False)
+
+    assert result.returncode != 0, 'reconfigure must fail when BUILD_COMPONENTS is queried through the shim'
+    combined = (result.stdout or '') + (result.stderr or '')
+    assert 'BUILD_COMPONENTS' in combined, 'Error output must mention BUILD_COMPONENTS'
+    assert 'not supported' in combined.lower(), 'Error output must state that BUILD_COMPONENTS is not supported'
