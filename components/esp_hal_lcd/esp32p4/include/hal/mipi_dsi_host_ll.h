@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -663,6 +663,17 @@ static inline uint32_t mipi_dsi_host_ll_gen_read_payload_fifo(dsi_host_dev_t *de
 static inline bool mipi_dsi_host_ll_gen_is_read_cmd_busy(dsi_host_dev_t *dev)
 {
     return dev->cmd_pkt_status.gen_rd_cmd_busy;
+}
+
+/**
+ * @brief Has the low-power reception timed out?
+ *
+ * @param dev Pointer to the DSI Host controller register base address
+ * @return True if low-power reception timed out, False otherwise
+ */
+static inline bool mipi_dsi_host_ll_is_lp_rx_timeout(dsi_host_dev_t *dev)
+{
+    return dev->int_st1.to_lp_rx;
 }
 
 /**
