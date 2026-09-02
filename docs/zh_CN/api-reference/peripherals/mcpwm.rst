@@ -925,6 +925,49 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
 此函数会延迟安装 MCPWM 捕获的中断服务。中断服务只能通过 :cpp:type:`mcpwm_del_capture_channel` 移除。
 
+输入预分频
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+捕获通道内部按**固定顺序**串行处理输入：
+
+1. 先用 ``prescale`` 对 GPIO 波形做分频（``0`` 或 ``1`` 表示 bypass）；
+2. 再根据 ``pos_edge``/``neg_edge`` 决定哪些分频后的事件上报给软件。
+
+因此，硬件并不是先按物理 GPIO 边沿极性过滤，再对这些边沿做分频。对于 ``prescale > 1``：
+
+- 回调里看到的 :cpp:member:`cap_edge <mcpwm_capture_event_data_t::cap_edge>` 可能和 GPIO 的真实物理边沿不一致。
+- 相邻异沿之间的时间差**不代表脉宽**，并且**无法据此还原真实占空比**。
+
+计算周期或频率时，请始终使用相同上报边沿类型（同沿）的两次时间戳。
+
+.. note::
+
+    测量脉宽或占空比时，请保持 ``prescale = 1`` 并同时捕获双边沿。只有在输入过快、你只关心周期或频率时，才建议提高 ``prescale`` 来降低捕获速率。
+
+下图说明 ``prescale`` 对仅上升沿、仅下降沿和双边沿捕获时序的影响。
+
+.. figure:: /../_static/mcpwm/capture_prescale_rising.svg
+    :align: center
+    :alt: 仅上升沿捕获：prescale bypass 与 prescale 4。
+
+仅上升沿。``prescale = 1`` 时，每个上升沿都会捕获为 ``R``。``prescale > 1`` 时，首次捕获出现在 cycle ``prescale / 2 - 1``，之后每隔 ``prescale`` 个上升沿捕获一次。
+
+.. figure:: /../_static/mcpwm/capture_prescale_falling.svg
+    :align: center
+    :alt: 仅下降沿捕获：prescale bypass 与 prescale 4。
+
+仅下降沿。``prescale = 1`` 时，每个下降沿都会捕获为 ``F``。``prescale > 1`` 时，GPIO 的下降沿不会直接触发捕获；事件会落在上升沿步骤上，但 ``cap_edge`` 仍然上报 ``F``。
+
+.. figure:: /../_static/mcpwm/capture_prescale_both.svg
+    :align: center
+    :alt: 双边沿捕获：prescale bypass 与 prescale 4。
+
+双边沿。``prescale = 1`` 时，``R``/``F`` 与引脚真实边沿一致。``prescale > 1`` 时，捕获只会落在上升沿步骤上，而分频后的上报事件在 ``R``/``F`` 之间交替。
+
+.. warning::
+
+    当 ``prescale > 1`` 时，不要根据 :cpp:member:`mcpwm_capture_event_data_t::cap_edge` 去推断 GPIO 的真实跳变方向，也不要把相邻异沿间隔当作脉宽。
+
 启用或禁用捕获通道
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
