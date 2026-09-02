@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 400" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#555"/>
+    </marker>
+  </defs>
+  <rect width="700" height="400" fill="#ffffff" rx="8"/>
+  <text x="350" y="24" text-anchor="middle" font-size="13" fill="#333" font-weight="700">Rising-edge only</text>
+  <text x="350" y="42" text-anchor="middle" font-size="10" fill="#666">API prescale = same-edge ratio</text>
+
+  <text x="20" y="68" font-size="12" fill="#333" font-weight="700">A. prescale = 1 (bypass)</text>
+  <g transform="translate(80, 78)">
+    <text x="-10" y="36" text-anchor="end" font-size="11" fill="#1e88e5" font-weight="600">input</text>
+    <polyline fill="none" stroke="#1e88e5" stroke-width="2"
+      points="0,40 0,12 35,12 35,40 70,40 70,12 105,12 105,40 140,40 140,12 175,12 175,40 210,40"/>
+    <g fill="#1e88e5"><circle cx="0" cy="12" r="3.5"/><circle cx="70" cy="12" r="3.5"/><circle cx="140" cy="12" r="3.5"/></g>
+    <g fill="#ccc"><rect x="31" y="8" width="8" height="8"/><rect x="101" y="8" width="8" height="8"/><rect x="171" y="8" width="8" height="8"/></g>
+    <text x="-10" y="100" text-anchor="end" font-size="11" fill="#e53935" font-weight="600">capture</text>
+    <line x1="0" y1="92" x2="210" y2="92" stroke="#e53935" stroke-width="1.5"/>
+    <line x1="0" y1="12" x2="0" y2="92" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="70" y1="12" x2="70" y2="92" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="140" y1="12" x2="140" y2="92" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+    <polyline points="0,92 0,72 12,72 12,92" fill="none" stroke="#e53935" stroke-width="2"/>
+    <polyline points="70,92 70,72 82,72 82,92" fill="none" stroke="#e53935" stroke-width="2"/>
+    <polyline points="140,92 140,72 152,72 152,92" fill="none" stroke="#e53935" stroke-width="2"/>
+    <text x="6" y="66" text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">R</text>
+    <text x="76" y="66" text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">R</text>
+    <text x="146" y="66" text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">R</text>
+    <text x="250" y="40" font-size="10" fill="#555">Every rising edge -&gt; R</text>
+    <text x="250" y="58" font-size="10" fill="#888">Falling edges ignored</text>
+  </g>
+
+  <text x="20" y="228" font-size="12" fill="#333" font-weight="700">B. prescale = 4</text>
+  <g transform="translate(80, 250)">
+    <text x="-10" y="36" text-anchor="end" font-size="11" fill="#1e88e5" font-weight="600">input</text>
+    <polyline fill="none" stroke="#1e88e5" stroke-width="2"
+      points="0,40 0,12 35,12 35,40 70,40 70,12 105,12 105,40 140,40 140,12 175,12 175,40 210,40 210,12 245,12 245,40 280,40 280,12 315,12 315,40 350,40 350,12 385,12 385,40 420,40 420,12"/>
+    <!-- first at cycle 1, then every 4: cycle 1, 5 -->
+    <g fill="#bbb"><circle cx="0" cy="12" r="3"/><circle cx="140" cy="12" r="3"/><circle cx="210" cy="12" r="3"/><circle cx="280" cy="12" r="3"/><circle cx="420" cy="12" r="3"/></g>
+    <g fill="#1e88e5"><circle cx="70" cy="12" r="3.5"/><circle cx="350" cy="12" r="3.5"/></g>
+    <text x="70" y="-4" text-anchor="middle" font-size="9" fill="#1e88e5" font-weight="700">cycle 1</text>
+    <text x="350" y="-4" text-anchor="middle" font-size="9" fill="#1e88e5" font-weight="700">cycle 5</text>
+    <line x1="0" y1="52" x2="70" y2="52" stroke="#bbb" stroke-width="1"/>
+    <line x1="0" y1="48" x2="0" y2="56" stroke="#bbb"/><line x1="70" y1="48" x2="70" y2="56" stroke="#bbb"/>
+    <text x="35" y="68" text-anchor="middle" font-size="10" fill="#888">T</text>
+    <text x="-10" y="108" text-anchor="end" font-size="11" fill="#e53935" font-weight="600">capture</text>
+    <line x1="0" y1="100" x2="420" y2="100" stroke="#e53935" stroke-width="1.5"/>
+    <line x1="70" y1="12" x2="70" y2="100" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="350" y1="12" x2="350" y2="100" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+    <polyline points="70,100 70,80 82,80 82,100" fill="none" stroke="#e53935" stroke-width="2"/>
+    <polyline points="350,100 350,80 362,80 362,100" fill="none" stroke="#e53935" stroke-width="2"/>
+    <text x="76" y="74" text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">R</text>
+    <text x="356" y="74" text-anchor="middle" font-size="10" fill="#e53935" font-weight="700">R</text>
+    <text x="210" y="90" text-anchor="middle" font-size="10" fill="#555">first = prescale/2 - 1, then every 4</text>
+    <line x1="70" y1="118" x2="70" y2="130" stroke="#333"/><line x1="350" y1="118" x2="350" y2="130" stroke="#333"/>
+    <line x1="70" y1="124" x2="350" y2="124" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="210" y="146" text-anchor="middle" font-size="11" fill="#333" font-weight="600">same-edge = 4 x T = prescale x T</text>
+  </g>
+</svg>
