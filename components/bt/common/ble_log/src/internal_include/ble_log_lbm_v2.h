@@ -16,7 +16,6 @@
 /* INCLUDE */
 #include "ble_log.h"
 #include "ble_log_prph.h"
-#include "ble_log_ts.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -123,6 +122,15 @@ typedef struct {
 /* -------------------------------- */
 /*     Internal Snapshot Frame      */
 /* -------------------------------- */
+/* Clock sample captured at one instant by the runtime periodic tick. */
+typedef struct {
+    uint8_t int_src_code;
+    uint8_t io_level;
+    uint32_t lc_ts;
+    uint32_t esp_ts;
+    uint32_t os_ts;
+} __attribute__((packed)) ble_log_ts_info_t;
+
 #define BLE_LOG_SNAPSHOT_REASON_INIT            BIT(0)
 #define BLE_LOG_SNAPSHOT_REASON_PERIODIC        BIT(1)
 #define BLE_LOG_SNAPSHOT_REASON_FLUSH           BIT(2)

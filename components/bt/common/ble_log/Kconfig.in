@@ -92,18 +92,19 @@ if BLE_LOG_ENABLED
             Deprecated. Renamed to BLE_LOG_HCI_LOG_ENABLED; kept so sdkconfig
             files pinning the old name keep Host side HCI logging enabled.
 
-    config BLE_LOG_TS_ENABLED
-        bool "Enable BLE Log Timestamp Synchronization (TS)"
+    config BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+        bool "Toggle a GPIO on every BLE Log TS sync sample"
         default n
         help
-            Enable BLE Log TS with external logging module. Synchronization is
-            triggered periodically by an ESP Timer using task dispatch. The
-            timer does not wake the system from light sleep.
+            BLE Log TS sync always runs: every periodic output tick samples
+            the link-layer, ESP and OS clocks into the internal snapshot.
+            Enable this option to additionally toggle a GPIO on every
+            sample so an external logic analyzer can align the device
+            clocks with the capture.
 
-    if BLE_LOG_TS_ENABLED
+    if BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
         config BLE_LOG_SYNC_IO_NUM
             int "GPIO number for Timestamp Synchronization (TS) toggle output"
-            depends on BLE_LOG_TS_ENABLED
             default 0
             help
                 GPIO number for TS toggle output
@@ -252,27 +253,22 @@ if BLE_LOG_ENABLED
 
     config BLE_LOG_TS_TRIGGER_TIMEOUT_MS
         int
-        depends on BLE_LOG_TS_ENABLED
         default 1000
 
     config BLE_LOG_TS_TRIGGER_CHOICE
         bool
-        depends on BLE_LOG_TS_ENABLED
         default y
 
     config BLE_LOG_TS_TRIGGER_ESP_TIMER
         bool
-        depends on BLE_LOG_TS_ENABLED
         default y
 
     config BLE_LOG_TS_TRIGGER_TASK_EVENT
         bool
-        depends on BLE_LOG_TS_ENABLED
         default n
 
     config BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
         bool
-        depends on BLE_LOG_TS_ENABLED
         default n
 endif
 

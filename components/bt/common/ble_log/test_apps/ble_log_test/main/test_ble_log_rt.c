@@ -263,7 +263,7 @@ TEST_CASE("BLE Log v7 framing matches golden bytes", "[ble_log][wire]")
                              sizeof(golden_payload));
 }
 
-TEST_CASE("BLE Log runtime hook reports build and chip versions", "[ble_log]")
+TEST_CASE("BLE Log periodic tick reports build and chip versions", "[ble_log]")
 {
     static const uint8_t payload[TEST_PAYLOAD_LEN] = {0};
 
@@ -276,9 +276,10 @@ TEST_CASE("BLE Log runtime hook reports build and chip versions", "[ble_log]")
                                           TEST_READER_STACK_SIZE, &ctx,
                                           TEST_READER_PRIO, &reader));
     TEST_ASSERT_TRUE(ble_log_enable(true));
+    TEST_ASSERT_TRUE(ble_log_sync_enable(true));
 
-    /* A hook pass submits one consolidated Internal Snapshot containing the
-     * version, statistics, utilization, and optional TS sample. */
+    /* Each periodic tick submits one consolidated Internal Snapshot containing
+     * the version, statistics, utilization, and optional TS sample. */
     for (int round = 0; round < TEST_MAX_ROUNDS && ctx.capture.version_info_count == 0; round++) {
         vTaskDelay(pdMS_TO_TICKS(TEST_HOOK_SETTLE_MS));
         for (int i = 0; i < TEST_WRITES_PER_ROUND; i++) {
@@ -330,6 +331,7 @@ TEST_CASE("BLE Log runtime hook reports build and chip versions", "[ble_log]")
     TEST_ASSERT_EQUAL_UINT16((uint16_t)chip_info.model, vi->chip_model);
     TEST_ASSERT_EQUAL_UINT16(chip_info.revision, vi->chip_revision);
 
+    (void)ble_log_sync_enable(false);
     vSemaphoreDelete(ctx.done);
 }
 
