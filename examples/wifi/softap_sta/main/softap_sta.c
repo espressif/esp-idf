@@ -170,6 +170,86 @@ esp_netif_t *wifi_init_sta(void)
     return esp_netif_sta;
 }
 
+#if CONFIG_ESP_WIFI_DISABLE_DFS_CHANNELS
+extern const wifi_regdomain_t regdomain_table[];
+extern const wifi_regulatory_t regulatory_data[];
+
+static const wifi_regulatory_t *wifi_lookup_regulatory(const char *cc)
+{
+    for (int i = 0; regdomain_table[i].cn[0] != '#'; i++) {
+        if (regdomain_table[i].cn[0] == cc[0] && regdomain_table[i].cn[1] == cc[1]) {
+            return &regulatory_data[regdomain_table[i].regulatory_type];
+        }
+    }
+    return NULL;
+}
+
+static uint32_t wifi_get_non_dfs_5g_channel_mask(const wifi_regulatory_t *reg)
+{
+    uint32_t mask = 0;
+
+    for (int i = 0; i < reg->n_reg_rules; i++) {
+        const wifi_reg_rule_t *rule = &reg->reg_rules[i];
+        if (rule->is_dfs || rule->start_channel <= 14) {
+            continue;
+        }
+        for (uint8_t ch = rule->start_channel; ch <= rule->end_channel; ch += 4) {
+            mask |= CHANNEL_TO_BIT(ch);
+        }
+    }
+    return mask;
+}
+
+// static uint32_t wifi_get_non_dfs_5g_channel_mask_by_type(uint8_t type)
+// {
+//     return wifi_get_non_dfs_5g_channel_mask(&regulatory_data[type]);
+// }
+
+static esp_err_t wifi_configure_country_without_dfs_channels(void)
+{
+    const char *cc = CONFIG_ESP_WIFI_COUNTRY_CODE;
+    const wifi_regulatory_t *reg = wifi_lookup_regulatory(cc);
+    if (!reg) {
+        ESP_LOGE(TAG_STA, "Unknown country code '%s'", cc);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    wifi_country_t country = {0};
+    memcpy(country.cc, cc, 2);
+    country.policy = WIFI_COUNTRY_POLICY_MANUAL;
+    uint8_t schan = 0;
+    uint8_t echan = 0;
+    for (int i = 0; i < reg->n_reg_rules; i++) {
+        const wifi_reg_rule_t *rule = &reg->reg_rules[i];
+        if (rule->start_channel > 14) {
+            continue;
+        }
+        if (schan == 0 || rule->start_channel < schan) {
+            schan = rule->start_channel;
+        }
+        if (rule->end_channel > echan) {
+            echan = rule->end_channel;
+        }
+    }
+    if (schan != 0) {
+        country.schan = schan;
+        country.nchan = echan - schan + 1;
+    }
+
+    /* A zero mask does not mean "no 5 GHz channel allowed", it means "fall back to
+       the local regulatory rules", which would leave the DFS channels usable. Some
+       domains (AM for instance) mark every 5 GHz rule as DFS, so there the only way
+       to stay off DFS is to stay off 5 GHz altogether. */
+    country.wifi_5g_channel_mask = wifi_get_non_dfs_5g_channel_mask(reg);
+    if (country.wifi_5g_channel_mask == 0) {
+        ESP_ERROR_CHECK(esp_wifi_set_band_mode(WIFI_BAND_MODE_2G_ONLY));
+        ESP_LOGW(TAG_STA, "'%s' has no non-DFS 5 GHz channel, restricting to 2.4 GHz", cc);
+    }
+    ESP_ERROR_CHECK(esp_wifi_set_country(&country));
+    return ESP_OK;
+}
+#endif /* CONFIG_ESP_WIFI_DISABLE_DFS_CHANNELS */
+
 void softap_set_dns_addr(esp_netif_t *esp_netif_ap,esp_netif_t *esp_netif_sta)
 {
     esp_netif_dns_info_t dns;
@@ -231,6 +311,9 @@ void app_main(void)
     /* Start WiFi */
     ESP_ERROR_CHECK(esp_wifi_start() );
 
+#if CONFIG_ESP_WIFI_DISABLE_DFS_CHANNELS
+    ESP_ERROR_CHECK(wifi_configure_country_without_dfs_channels());
+#endif
     /*
      * Wait until either the connection is established (WIFI_CONNECTED_BIT) or
      * connection failed for the maximum number of re-tries (WIFI_FAIL_BIT).
