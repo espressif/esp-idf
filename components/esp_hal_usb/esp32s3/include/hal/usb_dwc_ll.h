@@ -91,21 +91,34 @@ extern "C" {
  * The remaining interrupt bits will still be set (when the corresponding event occurs)
  * but will not generate an interrupt. Therefore we must proxy through the
  * USB_DWC_LL_INTR_CHAN_CHHLTD interrupt to check the other interrupt bits.
+ *
+ * Note: Bits 31:14 of the HCINTi/HCINTMSKi registers are reserved, so all defined
+ * channel interrupts occupy bits 13:0 (i.e. the full set of interrupts is listed below).
+ *
+ * Interrupt availability by DMA mode (per the DWC_OTG databook):
+ * - Available only in Scatter/Gather (Descriptor) DMA mode (reserved in Buffer DMA mode):
+ *   DESC_LS_ROLL, XCS_XACT_ERR, BNAINTR (XCS_XACT_ERR and BNAINTR are not generated for isochronous channels)
+ * - Available only in Buffer DMA mode (the interrupt is masked by the core in Scatter/Gather DMA mode):
+ *   DATATGLERR, FRMOVRUN, XACTERR, NYET, ACK, NAK
+ * - Status bit set in both DMA modes, but the interrupt cannot be unmasked in Scatter/Gather DMA
+ *   mode (proxied through CHHLTD): BBLEER, STALL
+ * - Available in both DMA modes:
+ *   AHBERR, CHHLTD, XFERCOMPL
  */
-#define USB_DWC_LL_INTR_CHAN_DESC_LS_ROLL   (1 << 13)
-#define USB_DWC_LL_INTR_CHAN_XCS_XACT_ERR   (1 << 12)
-#define USB_DWC_LL_INTR_CHAN_BNAINTR        (1 << 11)
-#define USB_DWC_LL_INTR_CHAN_DATATGLERR     (1 << 10)
-#define USB_DWC_LL_INTR_CHAN_FRMOVRUN       (1 << 9)
-#define USB_DWC_LL_INTR_CHAN_BBLEER         (1 << 8)
-#define USB_DWC_LL_INTR_CHAN_XACTERR        (1 << 7)
-#define USB_DWC_LL_INTR_CHAN_NYET           (1 << 6)
-#define USB_DWC_LL_INTR_CHAN_ACK            (1 << 5)
-#define USB_DWC_LL_INTR_CHAN_NAK            (1 << 4)
-#define USB_DWC_LL_INTR_CHAN_STALL          (1 << 3)
-#define USB_DWC_LL_INTR_CHAN_AHBERR         (1 << 2)
-#define USB_DWC_LL_INTR_CHAN_CHHLTD         (1 << 1)
-#define USB_DWC_LL_INTR_CHAN_XFERCOMPL      (1 << 0)
+#define USB_DWC_LL_INTR_CHAN_DESC_LS_ROLL   (1 << 13)  /**< Descriptor list rollover */
+#define USB_DWC_LL_INTR_CHAN_XCS_XACT_ERR   (1 << 12)  /**< Excessive (3 consecutive) transaction errors */
+#define USB_DWC_LL_INTR_CHAN_BNAINTR        (1 << 11)  /**< Buffer Not Available */
+#define USB_DWC_LL_INTR_CHAN_DATATGLERR     (1 << 10)  /**< Data toggle error */
+#define USB_DWC_LL_INTR_CHAN_FRMOVRUN       (1 << 9)   /**< Frame overrun */
+#define USB_DWC_LL_INTR_CHAN_BBLEER         (1 << 8)   /**< Babble error */
+#define USB_DWC_LL_INTR_CHAN_XACTERR        (1 << 7)   /**< Transaction error (CRC failure, timeout, bit stuff error, false EOP) */
+#define USB_DWC_LL_INTR_CHAN_NYET           (1 << 6)   /**< NYET response received */
+#define USB_DWC_LL_INTR_CHAN_ACK            (1 << 5)   /**< ACK response received/transmitted */
+#define USB_DWC_LL_INTR_CHAN_NAK            (1 << 4)   /**< NAK response received */
+#define USB_DWC_LL_INTR_CHAN_STALL          (1 << 3)   /**< STALL response received */
+#define USB_DWC_LL_INTR_CHAN_AHBERR         (1 << 2)   /**< AHB error during AHB read/write */
+#define USB_DWC_LL_INTR_CHAN_CHHLTD         (1 << 1)   /**< Channel halted */
+#define USB_DWC_LL_INTR_CHAN_XFERCOMPL      (1 << 0)   /**< Transfer completed */
 
 /*
  * OTG mode configuration values for the GHWCFG2 register
@@ -488,9 +501,38 @@ static inline void usb_dwc_ll_hcfg_set_num_frame_list_entries(usb_dwc_dev_t *hw,
     hw->hcfg_reg.frlisten = frlisten;
 }
 
+/**
+ * @brief Enable Scatter-Gather (Descriptor) DMA mode
+ *
+ * Sets the HCFG.descdma bit to select Scatter-Gather (Descriptor) DMA instead of Buffer DMA.
+ * In Scatter-Gather DMA mode, each host channel uses a QTD descriptor list pointed to by HCDMA,
+ * rather than HCTSIZ.xfersize for the transfer length and HCDMA for the buffer address.
+ *
+ * @attention Must be called before any host channel transfers are started, typically from
+ *            usb_dwc_hal_port_enable(). Mutually exclusive with usb_dwc_ll_hcfg_en_buffer_dma().
+ *
+ * @param[in] hw Start address of the DWC_OTG registers
+ */
 static inline void usb_dwc_ll_hcfg_en_scatt_gatt_dma(usb_dwc_dev_t *hw)
 {
     hw->hcfg_reg.descdma = 1;
+}
+
+/**
+ * @brief Enable Buffer DMA mode
+ *
+ * Clears the HCFG.descdma bit to select Buffer DMA instead of Scatter-Gather (Descriptor) DMA.
+ * In Buffer DMA mode, each host channel uses HCTSIZ.xfersize for the transfer length and
+ * HCDMA for the buffer address, rather than a QTD descriptor list.
+ *
+ * @attention Must be called before any host channel transfers are started, typically from
+ *            usb_dwc_hal_port_enable(). Mutually exclusive with usb_dwc_ll_hcfg_en_scatt_gatt_dma().
+ *
+ * @param[in] hw Start address of the DWC_OTG registers
+ */
+static inline void usb_dwc_ll_hcfg_en_buffer_dma(usb_dwc_dev_t *hw)
+{
+    hw->hcfg_reg.descdma = 0;
 }
 
 static inline void usb_dwc_ll_hcfg_set_fsls_supp_only(usb_dwc_dev_t *hw)
@@ -805,6 +847,26 @@ static inline void usb_dwc_ll_hcchar_set_mps(volatile usb_dwc_host_chan_regs_t *
     chan->hcchar_reg.mps = mps;
 }
 
+/**
+ * @brief Set the Multi Count / Error Count (MC/EC) field of a host channel
+ *
+ * For non-periodic transfers in DMA mode, this field specifies the number of packets the internal
+ * DMA engine fetches for the channel before it changes arbitration. For periodic transfers (when
+ * split is disabled), it is the number of transactions to issue per microframe.
+ *
+ * The reset value 2'b00 is Reserved and yields undefined results, so this field must always be
+ * programmed to a non-zero value (1..3) before enabling the channel.
+ *
+ * @see USB-DWC databook §5.4.37 (HCCHARi, MC/EC field)
+ *
+ * @param[in] chan Channel registers
+ * @param[in] mc   Multi/Error count (valid range 1..3)
+ */
+static inline void usb_dwc_ll_hcchar_set_multi_count(volatile usb_dwc_host_chan_regs_t *chan, uint32_t mc)
+{
+    chan->hcchar_reg.ec = mc;
+}
+
 static inline void usb_dwc_ll_hcchar_init(volatile usb_dwc_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_dwc_xfer_type_t type, bool is_in, bool is_ls)
 {
     //Sets all persistent fields of the channel over its lifetimez
@@ -835,7 +897,16 @@ static inline void usb_dwc_ll_hcintmsk_set_intr_mask(volatile usb_dwc_host_chan_
 
 // ---------------------------- HCTSIZi Register -------------------------------
 
-static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
+/**
+ * @brief Initialize the HCTSIZ register for Scatter-Gather (Descriptor) DMA mode
+ *
+ * Sets default channel transfer parameters when a host channel is allocated in Scatter-Gather DMA mode.
+ * Unlike usb_dwc_ll_hctsiz_init_buffer_dma(), this function configures SCHED_INFO in xfersize[7:0],
+ * because in Descriptor DMA mode the transfer byte count is held in the QTD descriptors instead.
+ *
+ * @param[in] chan Channel registers
+ */
+static inline void usb_dwc_ll_hctsiz_init_desc_dma(volatile usb_dwc_host_chan_regs_t *chan)
 {
     usb_dwc_hctsiz_reg_t hctsiz;
     hctsiz.val = chan->hctsiz_reg.val;
@@ -849,6 +920,24 @@ static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *cha
      * Therefore, we set this field for all channels to ensure reliable operation.
      */
     hctsiz.xfersize |= 0xFF;
+    chan->hctsiz_reg.val = hctsiz.val;
+}
+
+/**
+ * @brief Initialize the HCTSIZ register for Buffer DMA mode
+ *
+ * Sets default channel transfer parameters when a host channel is allocated in Buffer DMA mode.
+ * Unlike usb_dwc_ll_hctsiz_init_desc_dma(), this function does not configure SCHED_INFO in xfersize,
+ * because in Buffer DMA mode the xfersize field holds the actual transfer byte count.
+ *
+ * @param[in] chan Channel registers
+ */
+static inline void usb_dwc_ll_hctsiz_init_buffer_dma(volatile usb_dwc_host_chan_regs_t *chan)
+{
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    hctsiz.dopng = 0;         // Don't do ping
+    hctsiz.pid = 0;           // Set PID to DATA0
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
@@ -910,6 +999,92 @@ static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_r
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
+/**
+ * @brief Configure a Buffer DMA transfer on a host channel
+ *
+ * Programs the HCTSIZ register with the transfer length, packet count, PID, and PING setting
+ * for a single Buffer DMA transfer. Must be called before enabling the channel.
+ *
+ * @param[in] chan     Channel registers
+ * @param[in] xfer_len Total number of bytes to transfer
+ * @param[in] pkt_cnt  Number of packets for this transfer (typically ceil(xfer_len / MPS))
+ * @param[in] pid_reg  HCTSIZ PID field value (0=DATA0, 2=DATA1, 3=SETUP). Use usb_dwc_ll_pid_to_reg() to convert.
+ * @param[in] dopng    true to enable PING protocol for High-Speed OUT transfers, false otherwise
+ */
+static inline void usb_dwc_ll_hctsiz_set_buffer_xfer(volatile usb_dwc_host_chan_regs_t *chan,
+                                                     uint32_t xfer_len, uint32_t pkt_cnt,
+                                                     uint32_t pid_reg, bool dopng)
+{
+    usb_dwc_hctsiz_reg_t hctsiz = { .val = 0 };
+    hctsiz.xfersize = xfer_len;
+    hctsiz.pktcnt   = pkt_cnt;
+    hctsiz.pid      = pid_reg;   // 0=DATA0, 2=DATA1, 3=SETUP
+    hctsiz.dopng    = dopng;
+    chan->hctsiz_reg.val = hctsiz.val;
+}
+
+/**
+ * @brief Get remaining transfer size from HCTSIZ
+ *
+ * Returns the xfersize field of the HCTSIZ register. During and after a Buffer DMA transfer,
+ * the hardware decrements this field; the difference from the initial value is the number of
+ * bytes transferred.
+ *
+ * @param[in] chan Channel registers
+ * @return Remaining number of bytes in the current or last transfer
+ */
+static inline uint32_t usb_dwc_ll_hctsiz_get_rem_xfersize(volatile usb_dwc_host_chan_regs_t *chan)
+{
+    return chan->hctsiz_reg.xfersize;
+}
+
+/**
+ * @brief Get the remaining packet count from HCTSIZ
+ *
+ * Returns the pktcnt field of the HCTSIZ register. The core decrements this field only on the
+ * successful transmission/reception of a packet (DWC_otg databook §5.4.41), so the number of packets
+ * successfully transferred is (initial pktcnt - this value). Unlike xfersize, it is not affected by
+ * OUT data that was prefetched into the TxFIFO and then flushed on a transaction error, which makes it
+ * the reliable basis for rewinding to the failed packet on a XactErr retry.
+ *
+ * @param[in] chan Channel registers
+ * @return Remaining number of packets in the current or last transfer
+ */
+static inline uint32_t usb_dwc_ll_hctsiz_get_pkt_cnt(volatile usb_dwc_host_chan_regs_t *chan)
+{
+    return chan->hctsiz_reg.pktcnt;
+}
+
+/**
+ * @brief Get the raw PID field from HCTSIZ
+ *
+ * Returns the 2-bit HCTSIZ.pid field exactly as stored in the register (0=DATA0, 2=DATA1, 3=SETUP).
+ * The core advances this field as packets complete, so reading it back yields the next expected PID.
+ * Unlike usb_dwc_ll_hctsiz_get_pid(), this preserves the SETUP encoding, so it can be fed straight back
+ * into usb_dwc_ll_hctsiz_set_buffer_xfer() when re-initializing a channel for a retry.
+ *
+ * @param[in] chan Channel registers
+ * @return Raw HCTSIZ.pid field value
+ */
+static inline uint32_t usb_dwc_ll_hctsiz_get_pid_reg(volatile usb_dwc_host_chan_regs_t *chan)
+{
+    return chan->hctsiz_reg.pid;
+}
+
+/**
+ * @brief Convert a logical USB PID to the HCTSIZ PID register encoding
+ *
+ * Maps the driver-level PID index to the value expected in the HCTSIZ.pid field.
+ *
+ * @param[in] pid Logical PID: 0=DATA0, 1=DATA1, 2=SETUP
+ * @return HCTSIZ PID register value: 0=DATA0, 2=DATA1, 3=SETUP
+ */
+static inline uint32_t usb_dwc_ll_pid_to_reg(int pid)
+{
+    static const uint32_t map[] = { 0, 2, 3 };  // DATA0, DATA1, SETUP
+    return map[pid];
+}
+
 // ---------------------------- HCDMAi Register --------------------------------
 
 static inline void usb_dwc_ll_hcdma_set_qtd_list_addr(volatile usb_dwc_host_chan_regs_t *chan, void *dmaaddr, uint32_t qtd_idx)
@@ -933,8 +1108,32 @@ static inline int usb_dwc_ll_hcdam_get_cur_qtd_idx(usb_dwc_host_chan_regs_t *cha
     return (chan->hcdma_reg.dmaaddr >> 3) & 0x3F;
 }
 
+/**
+ * @brief Set the DMA buffer address for Buffer DMA mode
+ *
+ * Writes the buffer address into the HCDMA register. In Buffer DMA mode, the core uses this
+ * address as the source (OUT) or destination (IN) for the transfer configured in HCTSIZ.
+ *
+ * @param[in] chan Channel registers
+ * @param[in] buf  DMA-capable buffer address
+ */
+static inline void usb_dwc_ll_hcdma_set_buff_addr(volatile usb_dwc_host_chan_regs_t *chan, void *buf)
+{
+    chan->hcdma_reg.dmaaddr = (uint32_t)buf;
+}
+
 // ---------------------------- HCDMABi Register -------------------------------
 
+/**
+ * @brief Get the current buffer address of a host channel
+ *
+ * Reads the HCDMAB register, which holds the current DMA buffer pointer for the channel.
+ *
+ * @note This register is only available in Scatter-Gather (Descriptor) DMA mode.
+ *
+ * @param[in] chan Channel registers
+ * @return Current buffer address of the channel
+ */
 static inline void *usb_dwc_ll_hcdmab_get_buff_addr(volatile usb_dwc_host_chan_regs_t *chan)
 {
     return (void *)chan->hcdmab_reg.hcdmab;

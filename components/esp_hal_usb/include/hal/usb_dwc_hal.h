@@ -19,7 +19,8 @@ that don't support USB OTG.
 #include "hal/assert.h"
 #endif // SOC_USB_OTG_SUPPORTED
 
-#define USB_DWC_HAL_INIT_HAS_CONFIG (1) // This version of HAL has usb_dwc_hal_init_with_config()
+#define USB_DWC_HAL_INIT_HAS_CONFIG (1)         // This version of HAL has usb_dwc_hal_init_with_config()
+#define USB_DWC_HAL_HAS_BUFFER_DMA (1)          // This version of HAL has buffer DMA mode
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +67,14 @@ typedef struct {
     uint32_t ptx_fifo_lines;                /**< Size of the Periodic FIFO in terms the number of FIFO lines */
 } usb_dwc_hal_fifo_config_t;
 
+/**
+ * @brief Host DMA mode
+ */
+typedef enum {
+    USB_DWC_HAL_DMA_MODE_DESC,              /**< Scatter/Gather (descriptor) DMA */
+    USB_DWC_HAL_DMA_MODE_BUFFER,            /**< Buffer DMA */
+} usb_dwc_hal_dma_mode_t;
+
 // USB DWC HAL configuration flags
 #define USB_DWC_HAL_CONFIG_FLAG_FSLS_ONLY (0x01u) // Init a High-Speed capable USB-DWC core as Full/Low-Speed only host
 
@@ -74,6 +83,8 @@ typedef struct {
  */
 typedef struct {
     uint32_t flags;                         /**< USB DWC HAL configuration flags, see USB_DWC_HAL_CONFIG_FLAG_* macros */
+    usb_dwc_hal_dma_mode_t dma_mode;        /**< Host DMA mode. USB_DWC_HAL_DMA_MODE_DESC (0) is the default, keeping
+                                                 backward compatibility with a NULL or zeroed configuration */
 } usb_dwc_hal_config_t;
 
 // --------------------- HAL Events ------------------------
@@ -107,13 +118,23 @@ typedef enum {
 
 /**
  * @brief Channel errors
+ * @note For backward compatibility
+ */
+typedef int usb_dwc_hal_chan_error_t;
+
+/**
+ * @brief Channel errors
  */
 typedef enum {
-    USB_DWC_HAL_CHAN_ERROR_XCS_XACT = 0,    /**< Excessive (three consecutive) transaction errors (e.g., no response, bad CRC etc */
-    USB_DWC_HAL_CHAN_ERROR_BNA,             /**< Buffer Not Available error (i.e., An inactive transfer descriptor was fetched by the channel) */
+    USB_DWC_HAL_CHAN_ERROR_XCS_XACT = 0,    /**< Transaction error (e.g., no response, bad CRC, timeout, bit stuff error, false EOP).
+                                                Scatter/Gather DMA mode: the core's excessive (three consecutive) transaction error (HCINT.XCS_XACT_ERR, bit 12). */
+    USB_DWC_HAL_CHAN_ERROR_XACT_ERR,        /**< Transaction error (e.g., no response, bad CRC, timeout, bit stuff error, false EOP).
+                                                 Buffer DMA mode: a single transaction error (HCINT.XactErr, bit 7); the HCD counts these and retries the channel. */
+    USB_DWC_HAL_CHAN_ERROR_BNA,             /**< Buffer Not Available error (Descriptor DMA) (i.e., An inactive transfer descriptor was fetched by the channel) */
     USB_DWC_HAL_CHAN_ERROR_PKT_BBL,         /**< Packet babbler error (packet exceeded MPS) */
     USB_DWC_HAL_CHAN_ERROR_STALL,           /**< STALL response received */
-} usb_dwc_hal_chan_error_t;
+    USB_DWC_HAL_CHAN_ERROR_DATA_TGL,        /**< Data toggle mismatch (Buffer DMA). Received PID did not match the expected toggle. Only applicable for periodic transfers */
+} usb_dwc_hal_chan_error_common_t;
 
 // ------------- Transfer Descriptor Related ---------------
 
@@ -170,7 +191,8 @@ typedef struct {
         struct {
             uint32_t active: 1;             /**< Debugging bit to indicate whether channel is enabled */
             uint32_t halt_requested: 1;     /**< A halt has been requested */
-            uint32_t reserved: 2;
+            uint32_t xact_err_rst_seen: 1;  /**< Reset the XactErr streak status bit (Buffer DMA only) */
+            uint32_t is_in: 1;              /**< Direction of the channel's endpoint: 1 = IN, 0 = OUT (cached from the EP characteristics) */
             uint32_t chan_idx: 4;           /**< The index number of the channel */
             uint32_t reserved24: 24;
         };
@@ -179,8 +201,31 @@ typedef struct {
     usb_dwc_host_chan_regs_t *regs;         /**< Pointer to the channel's register set */
     usb_dwc_hal_chan_error_t error;         /**< The last error that occurred on the channel */
     usb_dwc_xfer_type_t type;               /**< The transfer type of the channel */
+    int mps;                                /**< Maximum Packet Size of the endpoint (cached from the EP characteristics) */
+    struct {
+        int xfer_len;                       /**< Transfer size programmed in HCTSIZ for the ongoing DMA transfer.
+                                                 For IN transfers it is a space the application has reserved for the incoming data
+                                                 For OUT transfers its a length of data that the host sends to the device*/
+        uint8_t *xfer_addr;                 /**< Base DMA address programmed in HCDMA for the ongoing DMA transfer.
+                                                 Used to rewind HCDMA to the start of the failed packet on a XactErr retry. */
+        int xfer_pkt_cnt;                   /**< Packet count programmed in HCTSIZ at activation of the ongoing DMA transfer.
+                                                 Combined with the residual HCTSIZ.PktCnt, it yields the number of
+                                                 successfully transferred packets when rewinding on a XactErr retry (PktCnt
+                                                 decrements only on success, unlike XferSize). */
+    } buffer_dma;                           /**< State of the ongoing Buffer DMA transfer (Buffer DMA mode only) */
     void *chan_ctx;                         /**< Context variable for the owner of the channel */
 } usb_dwc_hal_chan_t;
+
+/**
+ * @brief Buffer DMA transfer parameters for usb_dwc_hal_chan_activate_buffer()
+ */
+typedef struct {
+    uint8_t *buf;                           /**< DMA-capable data buffer (must NOT be NULL even if len is 0, buffer DMA requires a valid memory pointer) */
+    int len;                                /**< Transfer length in bytes (can be 0 for zero-length transfers)
+                                                 For IN transfers a multiple of the endpoint's MPS.
+                                                 For OUT transfers it is the exact number of bytes to send */
+    int pid;                                /**< Logical PID: 0=DATA0, 1=DATA1, 2=SETUP */
+} usb_dwc_hal_buffer_xfer_t;
 
 /**
  * @brief HAL context structure
@@ -207,6 +252,7 @@ typedef struct {
         unsigned max_size_packet_limit;         /**< Maximum size of a transfer in packets */
 
         // Constant HAL configuration
+        usb_dwc_hal_dma_mode_t dma_mode;        /**< Selected host DMA mode */
         union {
             struct {
                 uint32_t fsls_only: 1;                  /**< Even if USB Core supports HS, force FS/LS only. Can be configured only during HAL init */
@@ -242,6 +288,9 @@ typedef struct {
  * @brief Initialize the HAL context and check if DWC_OTG is alive
  *
  * Same as `usb_dwc_hal_init()` but accepts configuration structure.
+ *
+ * @note If `config` is NULL, the default configuration is used: Scatter/Gather
+ *       (descriptor) DMA mode and no configuration flags.
  *
  * @attention The user must allocate memory for channel handlers with
  *            `hal->channels.hdls = malloc(hal->constant_config.chan_num_total * sizeof(usb_dwc_hal_chan_t*))`
@@ -351,8 +400,17 @@ void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_lim
  * (0 to 128K-1 bytes). The HCTSIZ register carries no transfer size in this mode (its XferSize/PktCnt
  * bits are instead NTD/SCHED_INFO), hence the GHWCFG3 transfer/packet counter widths do not apply.
  *
- * The returned value is floored to a whole number of maximum-sized packets, because an IN qTD's byte
- * count must be programmed as an integer multiple of the endpoint's MPS.
+ * The actual maximum transfer size of a transfer is the minimum of (xfer_size, packet_count * MPS), where MPS is the maximum packet size of the endpoint.
+ *
+ * The limit is DMA-mode aware and reflects how a single bulk/control transfer is programmed:
+ * - Buffer DMA:     min(max_size_byte_limit, MPS * max_size_packet_limit), i.e. whichever HCTSIZ
+ *                   field (XferSize or PktCnt) saturates first.
+ * - Scatter/Gather: the 17-bit non-isochronous qTD XferSize field, as a bulk/control transfer is
+ *                   described by a single descriptor.
+ * In both cases the returned value is floored to a whole number of maximum-sized packets, so the
+ * Buffer DMA IN path (which rounds the programmed size up to a multiple of MPS) cannot overflow the
+ * hardware fields. Periodic (INTR/ISOC) transfers are bounded by their descriptor list length, not
+ * by this value.
  *
  * @see USB-DWC databook Section 5.4.41 (HCTSIZi), USB-DWC programming guide Section 6
  *
@@ -434,7 +492,7 @@ void usb_dwc_hal_port_toggle_reset(usb_dwc_hal_context_t *hal, bool enable);
  * Entry:
  * - Host port enabled event triggered following a reset
  * Exit:
- * - Host port enabled to operate in scatter/gather DMA mode
+ * - Host port enabled to operate in a selected DMA mode
  * - DMA fifo sizes configured
  *
  * @param hal Context of the HAL layer
@@ -523,6 +581,7 @@ static inline void usb_dwc_hal_port_set_frame_list(usb_dwc_hal_context_t *hal, u
  * @note The periodic frame list must be set via usb_dwc_hal_port_set_frame_list() should be set before calling this
  *       function
  * @note This function must be called before activating any periodic channels
+ * @note This function is available only for Scatter-Gather DMA
  *
  * @param hal Context of the HAL layer
  */
@@ -543,6 +602,7 @@ static inline void usb_dwc_hal_port_periodic_enable(usb_dwc_hal_context_t *hal)
  *
  * @note Before disabling periodic scheduling, it is the user's responsibility to ensure that all periodic channels have
  *       halted safely.
+ * @note This function is available only for Scatter-Gather DMA
  *
  * @param hal Context of the HAL layer
  */
@@ -553,6 +613,15 @@ static inline void usb_dwc_hal_port_periodic_disable(usb_dwc_hal_context_t *hal)
     hal->flags.periodic_sched_enabled = 0;
 }
 
+/**
+ * @brief Get the current frame number
+ *
+ * Returns the frame number (HFNUM.FRNUM) currently being transmitted by the host port.
+ * The frame number increments on every SOF (FS/LS) or micro-SOF (HS).
+ *
+ * @param hal Context of the HAL layer
+ * @return uint32_t Current frame number
+ */
 static inline uint32_t usb_dwc_hal_port_get_cur_frame_num(usb_dwc_hal_context_t *hal)
 {
     return usb_dwc_ll_hfnum_get_frame_num(hal->dev);
@@ -751,6 +820,7 @@ static inline void usb_dwc_hal_chan_set_dir(usb_dwc_hal_chan_t *chan_obj, bool i
     //Cannot change direction whilst channel is still active or in error
     HAL_ASSERT(!chan_obj->flags.active);
     usb_dwc_ll_hcchar_set_dir(chan_obj->regs, is_in);
+    chan_obj->flags.is_in = is_in;
 }
 
 /**
@@ -792,12 +862,79 @@ static inline uint32_t usb_dwc_hal_chan_get_pid(usb_dwc_hal_chan_t *chan_obj)
 // ------------------- Channel Control ---------------------
 
 /**
- * @brief Activate a channel
+ * @brief Logical PID values for usb_dwc_hal_buffer_xfer_t.pid
+ */
+#define USB_DWC_HAL_PID_DATA0   0
+#define USB_DWC_HAL_PID_DATA1   1
+#define USB_DWC_HAL_PID_SETUP   2
+
+/**
+ * @brief Activate a channel for a Buffer DMA transfer
+ *
+ * Programs HCDMA with the data buffer address and HCTSIZ with transfer size and packet
+ * count, then enables the channel.
+ *
+ * For IN transfers, xfer->len is programmed as the transfer size unchanged: it must already be a multiple of the
+ * endpoint's MPS (DWC2 requirement). The HAL never rounds the length up itself.
+ *
+ * @note This function is available only for Buffer DMA
+ * @note This function should only be called on channels that were previously halted
+ * @note The buffer address must be DWORD aligned
+ * @note The transfer direction and MPS are taken from the channel's configured endpoint
+ *       characteristics (usb_dwc_hal_chan_set_ep_char() / usb_dwc_hal_chan_set_dir())
+ *
+ * @param hal Context of the HAL layer
+ * @param chan_obj Channel object
+ * @param xfer Buffer transfer parameters
+ */
+void usb_dwc_hal_chan_activate_buffer(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_obj, const usb_dwc_hal_buffer_xfer_t *xfer);
+
+/**
+ * @brief Get the number of bytes transferred in a completed Buffer DMA transfer
+ *
+ * The result is calculated from the transfer size programmed by
+ * usb_dwc_hal_chan_activate_buffer(). For IN transfers, the remaining transfer size is read back
+ * from HCTSIZ and subtracted from the programmed size. For OUT transfers, all programmed bytes
+ * were sent once the transfer completes (XferCompl), so the programmed size is returned as-is.
+ *
+ * @note This function is available only for Buffer DMA
+ *
+ * @param[in] chan_obj Channel object (transfer must have completed)
+ * @param[out] actual_len Number of bytes transferred
+ */
+void usb_dwc_hal_chan_get_buffer_result(usb_dwc_hal_chan_t *chan_obj, int *actual_len);
+
+/**
+ * @brief Retry a Buffer DMA transfer after a transaction error (XactErr)
+ *
+ * Re-initializes the channel as described in the DWC_otg programming guide: HCTSIZ is reprogrammed
+ * with the remaining transfer size and packet count (derived from the residual HCTSIZ.PktCnt, which
+ * the core decrements only for successfully transferred packets), the data PID is preserved as
+ * advanced by the core, the buffer pointer is rewound to the start of the failed packet, and the
+ * channel is re-enabled, resuming the transfer from the failed packet.
+ *
+ * @note This function is available only for Buffer DMA
+ * @note This function must only be called on a halted channel (e.g., after an error event)
+ * @note No equivalent exists for Scatter/Gather DMA mode: there the core performs immediate
+ *       transaction retries in hardware and only reports XactErr once they are exhausted,
+ *       so no software retry is needed.
+ *
+ * @param[in] hal      Context of the HAL layer (used to read the connected device speed)
+ * @param[in] chan_obj Channel object
+ */
+void usb_dwc_hal_chan_retry_buffer(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_obj);
+
+/**
+ * @brief Activate a channel (Scatter/Gather DMA mode)
  *
  * Activating a channel will cause the channel to start executing transfer descriptors.
  *
+ * @note This function is available only for Scatter-Gather DMA
  * @note This function should only be called on channels that were previously halted
  * @note An event will be generated when the channel is halted
+ * @note In Buffer DMA mode, completion is signaled on CHHLTD (channel disabled).
+ *       XFERCOMPL alone is ignored until the channel has fully halted.
+ * @note In Buffer DMA mode, use usb_dwc_hal_chan_activate_buffer() instead
  *
  * @param chan_obj Channel object
  * @param xfer_desc_list A filled transfer descriptor list
@@ -808,6 +945,8 @@ void usb_dwc_hal_chan_activate(usb_dwc_hal_chan_t *chan_obj, void *xfer_desc_lis
 
 /**
  * @brief Get the index of the current transfer descriptor
+ *
+ * @note This function is available only for Scatter-Gather DMA
  *
  * @param chan_obj Channel object
  * @return int Descriptor index
@@ -877,6 +1016,7 @@ static inline usb_dwc_hal_chan_error_t usb_dwc_hal_chan_get_error(usb_dwc_hal_ch
  * - For IN transfer entries, set the USB_DWC_HAL_XFER_DESC_FLAG_IN. The transfer size must also be an integer multiple of
  *   the endpoint's MPS
  *
+ * @note This function is available only for Scatter-Gather DMA
  * @note Critical section is not required for this function
  *
  * @param desc_list Transfer descriptor list
@@ -904,6 +1044,8 @@ static inline void usb_dwc_hal_xfer_desc_fill(void *desc_list, uint32_t desc_idx
 /**
  * @brief Clear a transfer descriptor (sets all its fields to NULL)
  *
+ * @note This function is available only for Scatter-Gather DMA
+ *
  * @param desc_list Transfer descriptor list
  * @param desc_idx Transfer descriptor index
  */
@@ -921,6 +1063,7 @@ static inline void usb_dwc_hal_xfer_desc_clear(void *desc_list, uint32_t desc_id
  * @param[out] xfer_rem_len Remaining length of the transfer in bytes
  * @param[out] xfer_status Status of the transfer
  *
+ * @note This function is available only for Scatter-Gather DMA
  * @note Critical section is not required for this function
  */
 static inline void usb_dwc_hal_xfer_desc_parse(void *desc_list, uint32_t desc_idx, int *xfer_rem_len, int *xfer_status)
@@ -958,8 +1101,7 @@ usb_dwc_hal_port_event_t usb_dwc_hal_decode_intr(usb_dwc_hal_context_t *hal);
 usb_dwc_hal_chan_t *usb_dwc_hal_get_chan_pending_intr(usb_dwc_hal_context_t *hal);
 
 /**
- * @brief Decode a particular channel's interrupt
- *
+ * @brief Decode a particular channel's interrupt for Scatter-Gather DMA Mode
  * - Reads and clears the interrupt register of the channel
  * - Returns the corresponding event for that channel
  *
@@ -968,7 +1110,38 @@ usb_dwc_hal_chan_t *usb_dwc_hal_get_chan_pending_intr(usb_dwc_hal_context_t *hal
  *       receive an interrupt. Each active channel must be manually halted.
  * @return usb_dwc_hal_chan_event_t Channel event
  */
-usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_obj);
+usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr_desc_dma(usb_dwc_hal_chan_t *chan_obj);
+
+/**
+ * @brief Decode a particular channel's interrupt for Buffer DMA Mode
+ * - Reads and clears the interrupt register of the channel
+ * - Returns the corresponding event for that channel
+ *
+ * @param chan_obj Channel object
+ * @note If the host port has an error (e.g., a sudden disconnect or an port error), any active channels will not
+ *       receive an interrupt. Each active channel must be manually halted.
+ * @return usb_dwc_hal_chan_event_t Channel event
+ */
+usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr_buffer_dma(usb_dwc_hal_chan_t *chan_obj);
+
+/**
+ * @brief Decode a particular channel's interrupt
+ * @attention This function is kept for bacwkard compatibility
+ *   for USB Host components supporting only Scatter-Gather DMA mode
+ *
+ * - Reads and clears the interrupt register of the channel
+ * - Returns the corresponding event for that channel
+ *
+ * @param hal Context of the HAL layer
+ * @param chan_obj Channel object
+ * @note If the host port has an error (e.g., a sudden disconnect or an port error), any active channels will not
+ *       receive an interrupt. Each active channel must be manually halted.
+ * @return usb_dwc_hal_chan_event_t Channel event
+ */
+static inline usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_obj)
+{
+    return usb_dwc_hal_chan_decode_intr_desc_dma(chan_obj);
+}
 
 #endif // SOC_USB_OTG_SUPPORTED
 
