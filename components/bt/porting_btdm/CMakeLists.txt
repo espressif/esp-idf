@@ -12,15 +12,15 @@ list(APPEND porting_srcs ${BTDM_COMMON_SRCS})
 list(APPEND porting_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}/controller/btdm_common/include")
 
 # ble
+list(APPEND porting_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}/controller/ble/include")
 if(CONFIG_BT_CTRL_BLE_ENABLE)
-    list(APPEND porting_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}/controller/ble/include")
     file(GLOB_RECURSE BLE_SRCS "controller/ble/src/*.c")
     list(APPEND porting_srcs ${BLE_SRCS})
 endif()
 
 # bredr
+list(APPEND porting_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}/controller/bredr/include")
 if(CONFIG_BT_CTRL_BREDR_ENABLE)
-    list(APPEND porting_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}/controller/bredr/include")
     file(GLOB_RECURSE BREDR_SRCS "controller/bredr/src/*.c")
     list(APPEND porting_srcs ${BREDR_SRCS})
 endif()

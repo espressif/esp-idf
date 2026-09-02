@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -169,11 +169,10 @@ hci_transport_deinit(void)
 {
     hci_driver_ops_t *ops;
 
-    r_ble_hci_trans_cfg_hs((esp_hci_internal_rx_cmd_fn *)hci_transport_controller_tx_dummy, NULL,
-                           (esp_hci_internal_rx_acl_fn *)hci_transport_controller_tx_dummy, NULL);
-
     ops = s_hci_transport_env.driver_ops;
     if (ops) {
+        r_ble_hci_trans_cfg_hs((esp_hci_internal_rx_cmd_fn *)hci_transport_controller_tx_dummy, NULL,
+                               (esp_hci_internal_rx_acl_fn *)hci_transport_controller_tx_dummy, NULL);
         ops->hci_driver_deinit();
     }
     memset(&s_hci_transport_env, 0, sizeof(hci_transport_env_t));

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,10 +34,9 @@
 #define _OS_MEMPOOL_H_
 
 #include <stdbool.h>
+#include "os/os.h"
 
-#include "os/os_error.h"
-#include "os/queue.h"
-#include "btdm_mempool.h"
+#include "syscfg/syscfg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,20 +77,28 @@ struct os_mempool {
     SLIST_HEAD(,os_memblock);
     /** Name for memory block */
     const char *name;
+#if MYNEWT_VAL(MP_BLOCK_REUSED)
+    /** The number of allocated blocks. */
+    uint16_t mp_alloc_blocks;
+#endif // MYNEWT_VAL(MP_BLOCK_REUSED)
 };
-
-static_assert(sizeof(struct os_mempool) == sizeof(struct btdm_mempool),
-              "Error: size of os_mempool");
 
 /**
  * Indicates an extended mempool.  Address can be safely cast to
  * (struct os_mempool_ext *).
  */
-#define OS_MEMPOOL_F_EXT        0x01
+#define OS_MEMPOOL_F_EXT         BIT(0)
 /* Flag to indicate runtime allocation mode */
-#define OS_MEMPOOL_F_RUNTIME    0x02
+#define OS_MEMPOOL_F_RUNTIME     BIT(1)
 /* Flag to indicate reuse block for runtime allocation mode */
-#define OS_MEMPOOL_F_REUSED     0x04
+#define OS_MEMPOOL_F_REUSED      BIT(2)
+/* Flag to indicate no address range comparison */
+#define OS_MEMPOOL_F_FRAG        BIT(3)
+/* Flag to indicate mempool source */
+#define OS_MEMPOOL_F_CONTROLLER  BIT(4)
+#define OS_MEMPOOL_F_LOW_PRIO    BIT(5)
+#define OS_MEMPOOL_F_FORBID      BIT(6)
+#define OS_MEMPOOL_F_COMBINATION BIT(7)
 
 struct os_mempool_ext;
 
@@ -116,12 +123,27 @@ struct os_mempool_ext;
 typedef os_error_t os_mempool_put_fn(struct os_mempool_ext *ome, void *data,
                                      void *arg);
 
+/**
+ * Block get callback function.  If configured, this callback gets executed
+ * whenever a block is fetched from the corresponding extended mempool.
+ *
+ * @param ome                   The extended mempool that a block is being
+ *                                  fetched.
+ * @param arg                   Optional argument configured along with the
+ *                                  callback.
+ *
+ * @return  void *              pointer of block, return NULL if get failed
+ */
+typedef void *os_mempool_get_fn(struct os_mempool_ext *ome, void *arg);
+
 struct os_mempool_ext {
     struct os_mempool mpe_mp;
 
     /* Callback that is executed immediately when a block is freed. */
     os_mempool_put_fn *mpe_put_cb;
     void *mpe_put_arg;
+    os_mempool_get_fn *mpe_get_cb;
+    void *mpe_get_arg;
 };
 
 #define OS_MEMPOOL_INFO_NAME_LEN (32)
@@ -156,19 +178,6 @@ struct os_mempool_info {
 struct os_mempool *os_mempool_info_get_next(struct os_mempool *,
                                             struct os_mempool_info *);
 
-/*
- * To calculate size of the memory buffer needed for the pool. NOTE: This size
- * is NOT in bytes! The size is the number of os_membuf_t elements required for
- * the memory pool.
- */
-#if MYNEWT_VAL(OS_MEMPOOL_GUARD)
-/*
- * Leave extra 4 bytes of guard area at the end.
- */
-#define OS_MEMPOOL_BLOCK_SZ(sz) ((sz) + sizeof(os_membuf_t))
-#else
-#define OS_MEMPOOL_BLOCK_SZ(sz) (sz)
-#endif
 #if (OS_ALIGNMENT == 4)
 typedef uint32_t os_membuf_t;
 #elif (OS_ALIGNMENT == 8)
@@ -184,123 +193,7 @@ typedef __uint128_t os_membuf_t;
 #define OS_MEMPOOL_BYTES(n,blksize)     \
     (sizeof (os_membuf_t) * OS_MEMPOOL_SIZE((n), (blksize)))
 
-#if SOC_ESP_NIMBLE_CONTROLLER && CONFIG_BT_CONTROLLER_ENABLED
-/**
- * Initialize a memory pool.
- *
- * @param mp            Pointer to a pointer to a mempool
- * @param blocks        The number of blocks in the pool
- * @param blocks_size   The size of the block, in bytes.
- * @param membuf        Pointer to memory to contain blocks.
- * @param name          Name of the pool.
- *
- * @return os_error_t
- */
-os_error_t r_os_mempool_init(struct os_mempool *mp, uint16_t blocks,
-                           uint32_t block_size, void *membuf, const char *name);
-#define os_mempool_init r_os_mempool_init
-/**
- * Initializes an extended memory pool.  Extended attributes (e.g., callbacks)
- * are not specified when this function is called; they are assigned manually
- * after initialization.
- *
- * @param mpe           The extended memory pool to initialize.
- * @param blocks        The number of blocks in the pool.
- * @param block_size    The size of each block, in bytes.
- * @param membuf        Pointer to memory to contain blocks.
- * @param name          Name of the pool.
- *
- * @return os_error_t
- */
-os_error_t r_os_mempool_ext_init(struct os_mempool_ext *mpe, uint16_t blocks,
-                               uint32_t block_size, void *membuf, const char *name);
-#define os_mempool_ext_init r_os_mempool_ext_init
-/**
- * Removes the specified mempool from the list of initialized mempools.
- *
- * @param mp                    The mempool to unregister.
- *
- * @return                      0 on success;
- *                              OS_INVALID_PARM if the mempool is not
- *                                  registered.
- */
-// os_error_t r_os_mempool_unregister(struct os_mempool *mp);
-#define os_mempool_unregister(mp)
-
-
-/**
- * Clears a memory pool.
- *
- * @param mp            The mempool to clear.
- *
- * @return os_error_t
- */
-os_error_t r_os_mempool_clear(struct os_mempool *mp);
-#define os_mempool_clear r_os_mempool_clear
-
-
-/**
- * Performs an integrity check of the specified mempool.  This function
- * attempts to detect memory corruption in the specified memory pool.
- *
- * @param mp                    The mempool to check.
- *
- * @return                      true if the memory pool passes the integrity
- *                                  check;
- *                              false if the memory pool is corrupt.
- */
-bool r_os_mempool_is_sane(const struct os_mempool *mp);
-#define os_mempool_is_sane r_os_mempool_is_sane
-
-
-/**
- * Checks if a memory block was allocated from the specified mempool.
- *
- * @param mp                    The mempool to check as parent.
- * @param block_addr            The memory block to check as child.
- *
- * @return                      0 if the block does not belong to the mempool;
- *                              1 if the block does belong to the mempool.
- */
-int r_os_memblock_from(const struct os_mempool *mp, const void *block_addr);
-#define os_memblock_from r_os_memblock_from
-
-
-/**
- * Get a memory block from a memory pool
- *
- * @param mp Pointer to the memory pool
- *
- * @return void* Pointer to block if available; NULL otherwise
- */
-void *r_os_memblock_get(struct os_mempool *mp);
-#define os_memblock_get r_os_memblock_get
-/**
- * Puts the memory block back into the pool, ignoring the put callback, if any.
- * This function should only be called from a put callback to free a block
- * without causing infinite recursion.
- *
- * @param mp Pointer to memory pool
- * @param block_addr Pointer to memory block
- *
- * @return os_error_t
- */
-os_error_t r_os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr);
-#define os_memblock_put_from_cb r_os_memblock_put_from_cb
-
-
-/**
- * Puts the memory block back into the pool
- *
- * @param mp Pointer to memory pool
- * @param block_addr Pointer to memory block
- *
- * @return os_error_t
- */
-os_error_t r_os_memblock_put(struct os_mempool *mp, void *block_addr);
-#define os_memblock_put r_os_memblock_put
-
-#else
+#if !CONFIG_BT_DUAL_MODE_ARCH
 /**
  * Initialize a memory pool.
  *
@@ -314,6 +207,24 @@ os_error_t r_os_memblock_put(struct os_mempool *mp, void *block_addr);
  */
 os_error_t os_mempool_init(struct os_mempool *mp, uint16_t blocks,
                            uint32_t block_size, void *membuf, const char *name);
+
+/**
+ * @brief Initialize a memory pool.
+ * INTERNAL USE ONLY
+ *
+ * @param mp            Pointer to a pointer to a mempool
+ * @param blocks        The number of blocks in the pool
+ * @param blocks_size   The size of the block, in bytes.
+ * @param membuf        Pointer to memory to contain blocks.
+ * @param name          Name of the pool.
+ * @param flags         Mempool flags
+ *
+ * @return os_error_t
+ */
+os_error_t
+os_mempool_init_internal(struct os_mempool *mp, uint16_t blocks,
+                         uint32_t block_size, void *membuf, const char *name,
+                         uint8_t flags);
 
 /**
  * Initializes an extended memory pool.  Extended attributes (e.g., callbacks)
@@ -330,6 +241,18 @@ os_error_t os_mempool_init(struct os_mempool *mp, uint16_t blocks,
  */
 os_error_t os_mempool_ext_init(struct os_mempool_ext *mpe, uint16_t blocks,
                                uint32_t block_size, void *membuf, const char *name);
+
+/**
+ * Assign the put and get callback for an extended memory pool.
+ *
+ * @param mpe      The extended memory pool
+ * @param put_cb   Block put callback function
+ * @param put_arg  Argument for put callback
+ * @param get_cb   Block put callback function
+ * @param get_arg  Argument for get callback
+ */
+void os_ext_mempool_register_cb(struct os_mempool_ext *mpe, void *put_cb, void *put_arg,
+                                void *get_cb, void *get_arg);
 
 /**
  * Removes the specified mempool from the list of initialized mempools.
@@ -413,7 +336,144 @@ os_error_t os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr);
  * @return os_error_t
  */
 os_error_t os_memblock_put(struct os_mempool *mp, void *block_addr);
-#endif
+
+/**
+ * @brief Set the mp_flags of memory pool
+ *
+ * @param mp Pointer to memory pool
+ * @param flags Flags value
+ */
+void os_mempool_flags_set(struct os_mempool *mp, uint8_t flags);
+
+/**
+ * @brief Clear the mp_flags of memory pool
+ *
+ * @param mp Pointer to memory pool
+ * @param flags Flags value
+ */
+void os_mempool_flags_clear(struct os_mempool *mp, uint8_t flags);
+
+/**
+ * @brief Deinitialize a memory pool.
+ *
+ * @param mp Pointer to memory pool
+ */
+void os_mempool_deinit(struct os_mempool *mp);
+
+ /**
+ * @brief Deinitialize all of memory pools.
+ *
+ * @param is_controller Whether called from controller.
+ *
+ * @return OS_OK on success; OS_INVALID_PARM if not found corresponding memory pools.
+ */
+os_error_t os_mempool_deinit_all(bool is_controller);
+
+#else /* !CONFIG_BT_DUAL_MODE_ARCH */
+#include "btdm_mempool.h"
+
+static_assert(sizeof(struct os_mempool) == sizeof(struct btdm_mempool), "Error: size of os_mempool");
+static_assert(sizeof(struct os_mempool_ext) == sizeof(struct btdm_mempool_ext), "Error: size of os_mempool_ext");
+static_assert(sizeof(struct os_memblock) == sizeof(struct btdm_memblock), "Error: size of os_memblock");
+
+static inline os_error_t
+os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
+                void *membuf, const char *name)
+{
+    return btdm_mempool_init((struct btdm_mempool *)mp, blocks, block_size,
+                             membuf, name);
+}
+
+static inline os_error_t
+os_mempool_ext_init(struct os_mempool_ext *mpe, uint16_t blocks,
+                    uint32_t block_size, void *membuf, const char *name)
+{
+    return btdm_mempool_ext_init((struct btdm_mempool_ext *)mpe, blocks,
+                                 block_size, membuf, name);
+}
+
+static inline void
+os_ext_mempool_register_cb(struct os_mempool_ext *mpe, void *put_cb,
+                            void *put_arg, void *get_cb, void *get_arg)
+{
+    btdm_mempool_ext_register_cb((struct btdm_mempool_ext *)mpe, put_cb,
+                                 put_arg, get_cb, get_arg);
+}
+
+static inline os_error_t
+os_mempool_unregister(struct os_mempool *mp)
+{
+    return btdm_mempool_unregister((struct btdm_mempool *)mp);
+}
+
+static inline os_error_t
+os_mempool_clear(struct os_mempool *mp)
+{
+    return btdm_mempool_clear((struct btdm_mempool *)mp);
+}
+
+static inline os_error_t
+os_mempool_ext_clear(struct os_mempool_ext *mpe)
+{
+    return btdm_mempool_ext_clear((struct btdm_mempool_ext *)mpe);
+}
+
+static inline bool
+os_mempool_is_sane(const struct os_mempool *mp)
+{
+    return btdm_mempool_is_sane((const struct btdm_mempool *)mp);
+}
+
+static inline int
+os_memblock_from(const struct os_mempool *mp, const void *block_addr)
+{
+    return btdm_memblock_from((const struct btdm_mempool *)mp, block_addr);
+}
+
+static inline void *
+os_memblock_get(struct os_mempool *mp)
+{
+    return btdm_memblock_get((struct btdm_mempool *)mp);
+}
+
+static inline os_error_t
+os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr)
+{
+    return btdm_memblock_put_from_cb((struct btdm_mempool *)mp, block_addr);
+}
+
+static inline os_error_t
+os_memblock_put(struct os_mempool *mp, void *block_addr)
+{
+    return btdm_memblock_put((struct btdm_mempool *)mp, block_addr);
+}
+
+static inline void
+os_mempool_flags_set(struct os_mempool *mp, uint8_t flags)
+{
+    btdm_mempool_flags_set((struct btdm_mempool *)mp, flags);
+}
+
+static inline void
+os_mempool_flags_clear(struct os_mempool *mp, uint8_t flags)
+{
+    btdm_mempool_flags_clear((struct btdm_mempool *)mp, flags);
+}
+
+static inline void
+os_mempool_deinit(struct os_mempool *mp)
+{
+    btdm_mempool_deinit((struct btdm_mempool *)mp);
+}
+
+static inline os_error_t
+os_mempool_deinit_all(bool is_controller)
+{
+    return (os_error_t)btdm_mempool_deinit_all(is_controller);
+}
+
+#endif /* !CONFIG_BT_DUAL_MODE_ARCH */
+
 
 #ifdef __cplusplus
 }

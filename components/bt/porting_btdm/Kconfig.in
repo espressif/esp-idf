@@ -27,6 +27,13 @@ config BT_CTRL_TASK_STACK_SIZE
     help
         This configures stack size of NimBLE controller task
 
+config BT_CTRL_ALLOW_MALLOC_FROM_SPIRAM
+    depends on SOC_SPIRAM_SUPPORTED
+    bool "Allow allocating controller memory from SPIRAM (EXPERIMENTAL)"
+    default n
+    help
+        Allocate part of memory from SPIRAM. Need to enable CONFIG_SPIRAM first.
+
 menuconfig BT_CTRL_SLEEP_ENABLE
     bool "Enable Bluetooth Controller sleep"
     default n

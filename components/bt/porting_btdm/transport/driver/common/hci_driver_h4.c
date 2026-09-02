@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include "esp_log.h"
 #include "esp_hci_internal.h"
 #include "common/hci_driver_h4.h"
 #include "common/hci_driver_util.h"
@@ -44,6 +45,8 @@
 #define HCI_H4_SM_W4_HEADER     1
 #define HCI_H4_SM_W4_PAYLOAD    2
 #define HCI_H4_SM_COMPLETED     3
+
+#define TAG                                              "HCI_H4"
 
 struct hci_h4_input_buffer {
     const uint8_t *buf;
@@ -166,10 +169,27 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
         conn_handle = btdm_get_le16(&h4sm->hdr[0]) & HCI_INTERNAL_CONN_MASK;
         h4sm->exp_len = h4sm->hdr[2] + 3;
         h4sm->pkt = h4sm->allocs->sync(conn_handle);
-        if (!h4sm->pkt) {
-            return -1;
+        if (h4sm->pkt != NULL) {
+            memcpy(h4sm->pkt->data, h4sm->hdr, h4sm->len);
         }
-        memcpy(h4sm->pkt->data, h4sm->hdr, h4sm->len);
+        /**
+         * According to the Bluetooth Core Specification, SCO flow control
+         * in the H2C direction is disabled by default. Therefore, occasional
+         * SCO buffer allocation failures are expected to be tolerated, in
+         * which case the packet should be discarded directly.
+         *
+         * When flow control is enabled, the controller guarantees that the
+         * number of SCO buffers matches the value reported by the response
+         * of "HCI Read Buffer Size" command. Therefore, allocation failures
+         * indicate incorrect credit management by the host, and no "Number
+         * Of Completed Packets" event is required.
+         *
+         * A corner case may occur during SCO disconnection, where packets
+         * continue to arrive before the "Disconnect Complete" event is
+         * received. In this case, the host is expected to reclaim the
+         * corresponding credits when handling the disconnect event, so no
+         * "Number Of Completed Packets" event is needed either.
+         */
         break;
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
 #if !CONFIG_BT_CONTROLLER_ENABLED

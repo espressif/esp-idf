@@ -33,13 +33,20 @@ function(register_bt_ctrl_libs)
         set(lib_path "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/lib_${TARGET_SRC_NAME}/${TARGET_SRC_NAME}-bt-lib")
         # BLE controller library
         if(NOT CONFIG_BT_DUAL_MODE_ARCH OR CONFIG_BT_CTRL_BLE_ENABLE)
-            if(EXISTS "${lib_path}/libble_app.a")
+            if(NOT EXISTS "${lib_path}/${idf_target}")
                 if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND EXISTS "${lib_path}/libble_app_flash.a")
                     add_prebuilt_library(libble_app "${lib_path}/libble_app_flash.a" REQUIRES esp_phy bt)
                 else()
                     add_prebuilt_library(libble_app "${lib_path}/libble_app.a" REQUIRES esp_phy bt)
                 endif()
             else()
+                file(GLOB ILLEGAL_LIB_FILES "${lib_path}/*.a")
+                if(ILLEGAL_LIB_FILES)
+                    message(FATAL_ERROR
+                        "${lib_path} should not contain the library files!"
+                    )
+                endif()
+
                 if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND EXISTS "${lib_path}/${idf_target}/libble_app_flash.a")
                     add_prebuilt_library(libble_app "${lib_path}/${idf_target}/libble_app_flash.a" REQUIRES esp_phy bt)
                 else()
@@ -87,7 +94,15 @@ if(CONFIG_IDF_DOC_BUILD AND CONFIG_SOC_BT_SUPPORTED)
         "${CMAKE_CURRENT_LIST_DIR}/../include/${TARGET_SRC_NAME}/include"
         ABSOLUTE
     )
-    set(bt_ctrl_include_dirs "${_bt_ctrl_absolute_include_dir}" PARENT_SCOPE)
+    get_filename_component(
+        _bt_ctrl_common_absolute_include_dir
+        "${CMAKE_CURRENT_LIST_DIR}/../include/common"
+        ABSOLUTE
+    )
+    set(bt_ctrl_include_dirs
+        "${_bt_ctrl_absolute_include_dir}"
+        "${_bt_ctrl_common_absolute_include_dir}"
+        PARENT_SCOPE)
     return()
 endif()
 

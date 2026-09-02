@@ -245,6 +245,8 @@ hci_transport_init(uint8_t hci_transport_mode)
         goto error;
     }
 
+    hci_cmd_proc_init();
+
     s_hci_transport_env.driver_ops = ops;
 #if UC_BT_CTRL_BLE_IS_ENABLE
     r_ble_hci_trans_cfg_hs((esp_hci_internal_rx_cmd_fn *)hci_transport_controller_le_evt_tx, NULL,
@@ -271,21 +273,21 @@ hci_transport_deinit(void)
 {
     hci_driver_ops_t *ops;
 
-    btdm_hci_trans_register_tx((btdm_hci_trans_tx_func_t *)hci_transport_controller_tx_dummy, false);
+    ops = s_hci_transport_env.driver_ops;
+    if (ops) {
+        btdm_hci_trans_register_tx((btdm_hci_trans_tx_func_t *)hci_transport_controller_tx_dummy, false);
 #if UC_BT_CTRL_BLE_IS_ENABLE
-    r_ble_hci_trans_cfg_hs((esp_hci_internal_rx_cmd_fn *)hci_transport_controller_le_tx_dummy, NULL,
+        r_ble_hci_trans_cfg_hs((esp_hci_internal_rx_cmd_fn *)hci_transport_controller_le_tx_dummy, NULL,
                            (esp_hci_internal_rx_acl_fn *)hci_transport_controller_le_tx_dummy, NULL);
 #if CONFIG_BT_LE_ISO_SUPPORT
-    ble_iso_trans_cfg_hs((esp_hci_internal_rx_iso_fn *)hci_transport_controller_le_iso_tx_dummy, NULL);
+        ble_iso_trans_cfg_hs((esp_hci_internal_rx_iso_fn *)hci_transport_controller_le_iso_tx_dummy, NULL);
 #endif // CONFIG_BT_LE_ISO_SUPPORT
 #endif // UC_BT_CTRL_BLE_IS_ENABLE
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
-    bredr_hci_trans_register_tx((btdm_hci_trans_tx_func_t *)hci_transport_controller_bredr_tx_dummy,
-                                (btdm_hci_trans_tx_func_t *)hci_transport_controller_bredr_tx_dummy,
-                                (btdm_hci_trans_tx_func_t *)hci_transport_controller_bredr_tx_dummy);
+        bredr_hci_trans_register_tx((btdm_hci_trans_tx_func_t *)hci_transport_controller_bredr_tx_dummy,
+                                    (btdm_hci_trans_tx_func_t *)hci_transport_controller_bredr_tx_dummy,
+                                    (btdm_hci_trans_tx_func_t *)hci_transport_controller_bredr_tx_dummy);
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
-    ops = s_hci_transport_env.driver_ops;
-    if (ops) {
         ops->hci_driver_deinit();
     }
     memset(&s_hci_transport_env, 0, sizeof(hci_transport_env_t));

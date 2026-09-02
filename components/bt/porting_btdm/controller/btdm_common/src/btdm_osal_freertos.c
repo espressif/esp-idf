@@ -11,6 +11,7 @@
 #include "btdm_osal_freertos.h"
 #include "btdm_user_cfg.h"
 #include "btdm_mempool.h"
+#include "btdm_mem_debug.h"
 
 #include "esp_mac.h"
 #include "esp_heap_caps.h"
@@ -30,11 +31,11 @@ extern int esp_rom_printf(const char *fmt, ...);
         }                                                                                          \
     } while (0)
 
-#define BTDM_MEMPOOL_ALLOC (1)
-
 #if (!defined(SOC_ESP_NIMBLE_CONTROLLER) || !SOC_ESP_NIMBLE_CONTROLLER)
 #error "not defined SOC_ESP_NIMBLE_CONTROLLER or SOC_ESP_NIMBLE_CONTROLLER is zero"
 #endif
+
+#define BTDM_OSAL_DYNAMIC_ALLOC (1)
 
 struct btdm_intr_alloc_params {
     union {
@@ -54,17 +55,8 @@ static const char *TAG __attribute__((unused)) = "BTDM OSAL";
 struct btdm_mempool s_btdm_osal_ev_pool;
 static btdm_membuf_t *s_btdm_osal_ev_buf = NULL;
 
-struct btdm_mempool s_btdm_osal_evq_pool;
-static btdm_membuf_t *s_btdm_osal_evq_buf = NULL;
-
 struct btdm_mempool s_btdm_osal_co_pool;
 static btdm_membuf_t *s_btdm_osal_co_buf = NULL;
-
-struct btdm_mempool s_btdm_osal_sem_pool;
-static btdm_membuf_t *s_btdm_osal_sem_buf = NULL;
-
-struct btdm_mempool s_btdm_osal_mutex_pool;
-static btdm_membuf_t *s_btdm_osal_mutex_buf = NULL;
 
 static uint16_t s_btdm_osal_evtq_deepth = 0;
 static uint8_t s_btdm_osal_intr_nest = 0;
@@ -90,56 +82,36 @@ in_isr(void)
 void
 wr_btdm_osal_eventq_init(struct btdm_osal_eventq *evq)
 {
-    struct btdm_osal_eventq_freertos *eventq = NULL;
+    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq;
 
-#if BTDM_MEMPOOL_ALLOC
-    if (!btdm_memblock_from(&s_btdm_osal_evq_pool, evq->eventq)) {
-        evq->eventq = btdm_memblock_get(&s_btdm_osal_evq_pool);
-        eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
-        BTDM_OSAL_ASSERT(eventq);
-        memset(eventq, 0, sizeof(*eventq));
-        eventq->q = xQueueCreate(s_btdm_osal_evtq_deepth, sizeof(struct btdm_osal_eventq *));
-        BTDM_OSAL_ASSERT(eventq->q);
-    } else {
-        eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
-        xQueueReset(eventq->q);
+    static_assert(sizeof(struct btdm_osal_eventq_freertos) == sizeof(struct btdm_osal_eventq),
+                  "size of btdm_osal_eventq_freertos and btdm_osal_eventq must be the same");
+
+    if (eventq->q) {
+        return;
     }
-#else
-    if (!evq->eventq) {
-        evq->eventq = btdm_osal_malloc(sizeof(struct btdm_osal_eventq_freertos),
-                                       BTDM_OSAL_MALLOC_F_INTERNAL);
-        eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
-        BTDM_OSAL_ASSERT(eventq);
-        memset(eventq, 0, sizeof(*eventq));
-        eventq->q = xQueueCreate(s_btdm_osal_evtq_deepth, sizeof(struct btdm_osal_eventq *));
-        BTDM_OSAL_ASSERT(eventq->q);
-    } else {
-        eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
-        xQueueReset(eventq->q);
-    }
-#endif
+
+    memset(eventq, 0, sizeof(*eventq));
+    eventq->q = xQueueCreate(s_btdm_osal_evtq_deepth, sizeof(struct btdm_osal_event *));
+
+    BTDM_OSAL_ASSERT(eventq->q);
 }
 
 void
 wr_btdm_osal_eventq_deinit(struct btdm_osal_eventq *evq)
 {
-    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
+    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq;
 
-    BTDM_OSAL_ASSERT(eventq);
+    BTDM_OSAL_ASSERT(eventq->q);
     vQueueDelete(eventq->q);
-#if BTDM_MEMPOOL_ALLOC
-    btdm_memblock_put(&s_btdm_osal_evq_pool, eventq);
-#else
-    btdm_osal_free((void *)eventq);
-#endif
-    evq->eventq = NULL;
+    eventq->q = NULL;
 }
 
 struct btdm_osal_event *IRAM_ATTR
 wr_btdm_osal_eventq_get(struct btdm_osal_eventq *evq, btdm_osal_time_t tmo)
 {
     struct btdm_osal_event *ev = NULL;
-    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
+    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq;
     BaseType_t woken;
     BaseType_t ret;
 
@@ -169,7 +141,7 @@ wr_btdm_osal_eventq_put(struct btdm_osal_eventq *evq, struct btdm_osal_event *ev
 {
     BaseType_t woken;
     BaseType_t ret;
-    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
+    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq;
     struct btdm_osal_event_freertos *event = (struct btdm_osal_event_freertos *)ev->event;
 
     if (event->queued) {
@@ -195,7 +167,7 @@ wr_btdm_osal_eventq_put_to_front(struct btdm_osal_eventq *evq, struct btdm_osal_
 {
     BaseType_t woken;
     BaseType_t ret;
-    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
+    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq;
     struct btdm_osal_event_freertos *event = (struct btdm_osal_event_freertos *)ev->event;
 
     if (event->queued) {
@@ -224,7 +196,7 @@ wr_btdm_osal_eventq_remove(struct btdm_osal_eventq *evq, struct btdm_osal_event 
     int i;
     int count;
     BaseType_t woken, woken2;
-    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
+    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq;
     struct btdm_osal_event_freertos *event = (struct btdm_osal_event_freertos *)ev->event;
 
     if (!event->queued) {
@@ -263,7 +235,7 @@ wr_btdm_osal_eventq_remove(struct btdm_osal_eventq *evq, struct btdm_osal_event 
         /* RISK: For multi-core, this mutex can't protect the queue from being changed by other cores
          * with wr_btdm_osal_eventq_put(). The count maybe less than the actual.
          */
-        portENTER_CRITICAL(&s_btsm_osal_intr_mutex);
+        portENTER_CRITICAL_SAFE(&s_btsm_osal_intr_mutex);
 
         count = uxQueueMessagesWaiting(eventq->q);
         for (i = 0; i < count; i++) {
@@ -278,7 +250,7 @@ wr_btdm_osal_eventq_remove(struct btdm_osal_eventq *evq, struct btdm_osal_event 
             BTDM_OSAL_ASSERT(ret == pdPASS);
         }
 
-        portEXIT_CRITICAL(&s_btsm_osal_intr_mutex);
+        portEXIT_CRITICAL_SAFE(&s_btsm_osal_intr_mutex);
     }
 
     event->queued = 0;
@@ -287,7 +259,7 @@ wr_btdm_osal_eventq_remove(struct btdm_osal_eventq *evq, struct btdm_osal_event 
 bool IRAM_ATTR
 wr_btdm_osal_eventq_is_empty(struct btdm_osal_eventq *evq)
 {
-    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq->eventq;
+    struct btdm_osal_eventq_freertos *eventq = (struct btdm_osal_eventq_freertos *)evq;
     return xQueueIsQueueEmptyFromISR(eventq->q);
 }
 
@@ -308,16 +280,17 @@ wr_btdm_osal_event_init(struct btdm_osal_event *ev, btdm_osal_event_fn *fn, void
 {
     struct btdm_osal_event_freertos *event = NULL;
 
-#if BTDM_MEMPOOL_ALLOC
-    if (!btdm_memblock_from(&s_btdm_osal_ev_pool, ev->event)) {
+    if (!ev->event) {
         ev->event = btdm_memblock_get(&s_btdm_osal_ev_pool);
     }
-#else
+
+#if BTDM_OSAL_DYNAMIC_ALLOC
     if (!ev->event) {
-        ev->event = btdm_osal_malloc(sizeof(struct btdm_osal_event_freertos),
-                                     BTDM_OSAL_MALLOC_F_INTERNAL);
+        ev->event =
+            btdm_osal_malloc(sizeof(struct btdm_osal_event_freertos), 0);
     }
-#endif
+#endif // BTDM_OSAL_DYNAMIC_ALLOC
+
     event = (struct btdm_osal_event_freertos *)ev->event;
     BTDM_OSAL_ASSERT(event);
 
@@ -329,16 +302,22 @@ wr_btdm_osal_event_init(struct btdm_osal_event *ev, btdm_osal_event_fn *fn, void
 void IRAM_ATTR
 wr_btdm_osal_event_deinit(struct btdm_osal_event *ev)
 {
-    if (!ev->event) {
+    struct btdm_osal_event_freertos *event = (struct btdm_osal_event_freertos *)ev->event;
+
+    if (!event) {
         return;
     }
 
-#if BTDM_MEMPOOL_ALLOC
-    btdm_memblock_put(&s_btdm_osal_ev_pool, ev->event);
-#else
-    btdm_osal_free(ev->event);
-#endif
     ev->event = NULL;
+
+#if BTDM_OSAL_DYNAMIC_ALLOC
+    if (!btdm_memblock_from(&s_btdm_osal_ev_pool, event)) {
+        btdm_osal_free(event);
+        return;
+    }
+#endif
+
+    btdm_memblock_put(&s_btdm_osal_ev_pool, event);
 }
 
 void IRAM_ATTR
@@ -381,57 +360,29 @@ wr_btdm_osal_event_set_arg(struct btdm_osal_event *ev, void *arg)
 btdm_osal_error_t
 wr_btdm_osal_mutex_init(struct btdm_osal_mutex *mu)
 {
-    struct btdm_osal_mutex_freertos *mutex = NULL;
-#if BTDM_MEMPOOL_ALLOC
-    if (!btdm_memblock_from(&s_btdm_osal_mutex_pool, mu->mutex)) {
-        mu->mutex = btdm_memblock_get(&s_btdm_osal_mutex_pool);
-        mutex = (struct btdm_osal_mutex_freertos *)mu->mutex;
+    struct btdm_osal_mutex_freertos *mutex = (struct btdm_osal_mutex_freertos *)mu;
+    static_assert(sizeof(struct btdm_osal_mutex_freertos) == sizeof(struct btdm_osal_mutex),
+                  "size of btdm_osal_mutex_freertos and btdm_osal_mutex must be the same");
 
-        if (!mutex) {
-            return BTDM_OSAL_INVALID_PARM;
-        }
+    mutex->handle = xSemaphoreCreateRecursiveMutex();
 
-        memset(mutex, 0, sizeof(*mutex));
-        mutex->handle = xSemaphoreCreateRecursiveMutex();
-        BTDM_OSAL_ASSERT(mutex->handle);
+    if (!mutex->handle) {
+        return BTDM_OSAL_ENOMEM;
     }
-#else
-    if (!mu->mutex) {
-        mu->mutex = btdm_osal_malloc(sizeof(struct btdm_osal_mutex_freertos),
-                                     BTDM_OSAL_MALLOC_F_INTERNAL);
-        mutex = (struct btdm_osal_mutex_freertos *)mu->mutex;
-
-        if (!mutex) {
-            return BTDM_OSAL_INVALID_PARM;
-        }
-
-        memset(mutex, 0, sizeof(*mutex));
-        mutex->handle = xSemaphoreCreateRecursiveMutex();
-        BTDM_OSAL_ASSERT(mutex->handle);
-    }
-#endif
-
     return BTDM_OSAL_OK;
 }
 
 btdm_osal_error_t
 wr_btdm_osal_mutex_deinit(struct btdm_osal_mutex *mu)
 {
-    struct btdm_osal_mutex_freertos *mutex = (struct btdm_osal_mutex_freertos *)mu->mutex;
+    struct btdm_osal_mutex_freertos *mutex = (struct btdm_osal_mutex_freertos *)mu;
 
-    if (!mutex) {
+    if (!mutex->handle) {
         return BTDM_OSAL_INVALID_PARM;
     }
 
-    BTDM_OSAL_ASSERT(mutex->handle);
     vSemaphoreDelete(mutex->handle);
-
-#if BTDM_MEMPOOL_ALLOC
-    btdm_memblock_put(&s_btdm_osal_mutex_pool, mutex);
-#else
-    btdm_osal_free((void *)mutex);
-#endif
-    mu->mutex = NULL;
+    mutex->handle = NULL;
 
     return BTDM_OSAL_OK;
 }
@@ -440,13 +391,11 @@ btdm_osal_error_t IRAM_ATTR
 wr_btdm_osal_mutex_pend(struct btdm_osal_mutex *mu, btdm_osal_time_t timeout)
 {
     BaseType_t ret;
-    struct btdm_osal_mutex_freertos *mutex = (struct btdm_osal_mutex_freertos *)mu->mutex;
+    struct btdm_osal_mutex_freertos *mutex = (struct btdm_osal_mutex_freertos *)mu;
 
-    if (!mutex) {
+    if (!mutex->handle) {
         return BTDM_OSAL_INVALID_PARM;
     }
-
-    BTDM_OSAL_ASSERT(mutex->handle);
 
     if (in_isr()) {
         ret = pdFAIL;
@@ -461,13 +410,11 @@ wr_btdm_osal_mutex_pend(struct btdm_osal_mutex *mu, btdm_osal_time_t timeout)
 btdm_osal_error_t IRAM_ATTR
 wr_btdm_osal_mutex_release(struct btdm_osal_mutex *mu)
 {
-    struct btdm_osal_mutex_freertos *mutex = (struct btdm_osal_mutex_freertos *)mu->mutex;
+    struct btdm_osal_mutex_freertos *mutex = (struct btdm_osal_mutex_freertos *)mu;
 
-    if (!mutex) {
+    if (!mutex->handle) {
         return BTDM_OSAL_INVALID_PARM;
     }
-
-    BTDM_OSAL_ASSERT(mutex->handle);
 
     if (in_isr()) {
         BTDM_OSAL_ASSERT(0);
@@ -488,36 +435,15 @@ wr_btdm_osal_mutex_release(struct btdm_osal_mutex *mu)
 btdm_osal_error_t
 wr_btdm_osal_sem_init(struct btdm_osal_sem *sem, uint16_t tokens)
 {
-    struct btdm_osal_sem_freertos *semaphore = NULL;
+    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem;
 
-#if BTDM_MEMPOOL_ALLOC
-    if (!btdm_memblock_from(&s_btdm_osal_sem_pool, sem->sem)) {
-        sem->sem = btdm_memblock_get(&s_btdm_osal_sem_pool);
-        semaphore = (struct btdm_osal_sem_freertos *)sem->sem;
+    static_assert(sizeof(struct btdm_osal_sem_freertos) == sizeof(struct btdm_osal_sem),
+                  "size of btdm_osal_sem_freertos and btdm_osal_sem must be the same");
 
-        if (!semaphore) {
-            return BTDM_OSAL_INVALID_PARM;
-        }
-
-        memset(semaphore, 0, sizeof(*semaphore));
-        semaphore->handle = xSemaphoreCreateCounting(128, tokens);
-        BTDM_OSAL_ASSERT(semaphore->handle);
+    semaphore->handle = xSemaphoreCreateCounting(128, tokens);
+    if (!semaphore->handle) {
+        return BTDM_OSAL_ENOMEM;
     }
-#else
-    if (!sem->sem) {
-        sem->sem = btdm_osal_malloc(sizeof(struct btdm_osal_sem_freertos),
-                                    BTDM_OSAL_MALLOC_F_INTERNAL);
-        semaphore = (struct btdm_osal_sem_freertos *)sem->sem;
-
-        if (!semaphore) {
-            return BTDM_OSAL_INVALID_PARM;
-        }
-
-        memset(semaphore, 0, sizeof(*semaphore));
-        semaphore->handle = xSemaphoreCreateCounting(128, tokens);
-        BTDM_OSAL_ASSERT(semaphore->handle);
-    }
-#endif
 
     return BTDM_OSAL_OK;
 }
@@ -525,21 +451,14 @@ wr_btdm_osal_sem_init(struct btdm_osal_sem *sem, uint16_t tokens)
 btdm_osal_error_t
 wr_btdm_osal_sem_deinit(struct btdm_osal_sem *sem)
 {
-    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem->sem;
+    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem;
 
-    if (!semaphore) {
+    if (!semaphore->handle) {
         return BTDM_OSAL_INVALID_PARM;
     }
 
-    BTDM_OSAL_ASSERT(semaphore->handle);
     vSemaphoreDelete(semaphore->handle);
-
-#if BTDM_MEMPOOL_ALLOC
-    btdm_memblock_put(&s_btdm_osal_sem_pool, semaphore);
-#else
-    btdm_osal_free((void *)semaphore);
-#endif
-    sem->sem = NULL;
+    semaphore->handle = NULL;
 
     return BTDM_OSAL_OK;
 }
@@ -549,13 +468,11 @@ wr_btdm_osal_sem_pend(struct btdm_osal_sem *sem, btdm_osal_time_t timeout)
 {
     BaseType_t woken;
     BaseType_t ret;
-    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem->sem;
+    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem;
 
-    if (!semaphore) {
+    if (!semaphore->handle) {
         return BTDM_OSAL_INVALID_PARM;
     }
-
-    BTDM_OSAL_ASSERT(semaphore->handle);
 
     if (in_isr()) {
         BTDM_OSAL_ASSERT(timeout == 0);
@@ -575,13 +492,11 @@ wr_btdm_osal_sem_release(struct btdm_osal_sem *sem)
 {
     BaseType_t ret;
     BaseType_t woken;
-    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem->sem;
+    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem;
 
-    if (!semaphore) {
+    if (!semaphore->handle) {
         return BTDM_OSAL_INVALID_PARM;
     }
-
-    BTDM_OSAL_ASSERT(semaphore->handle);
 
     if (in_isr()) {
         ret = xSemaphoreGiveFromISR(semaphore->handle, &woken);
@@ -599,7 +514,7 @@ wr_btdm_osal_sem_release(struct btdm_osal_sem *sem)
 uint16_t IRAM_ATTR
 wr_btdm_osal_sem_get_count(struct btdm_osal_sem *sem)
 {
-    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem->sem;
+    struct btdm_osal_sem_freertos *semaphore = (struct btdm_osal_sem_freertos *)sem;
     return uxSemaphoreGetCount(semaphore->handle);
 }
 
@@ -666,89 +581,58 @@ wr_btdm_osal_callout_init(struct btdm_osal_callout *co, struct btdm_osal_eventq 
 {
     struct btdm_osal_callout_freertos *callout = NULL;
 
-#if BTDM_MEMPOOL_ALLOC
-    if (!btdm_memblock_from(&s_btdm_osal_co_pool, co->co)) {
+    if (!co->co) {
         co->co = btdm_memblock_get(&s_btdm_osal_co_pool);
         callout = (struct btdm_osal_callout_freertos *)co->co;
-        BTDM_OSAL_ASSERT(callout);
-
-        memset(callout, 0, sizeof(*callout));
-        btdm_osal_event_init(&callout->ev, ev_cb, ev_arg);
-
-#if BTDM_OSAL_USE_ESP_TIMER
-        callout->evq = evq;
-
-        esp_timer_create_args_t create_args = {
-            .callback = btdm_osal_event_fn_wrapper,
-            .arg = callout,
-            .name = "nimble_timer"
-        };
-
-        if (esp_timer_create(&create_args, &callout->handle) != ESP_OK) {
-            btdm_osal_event_deinit(&callout->ev);
-            btdm_memblock_put(&s_btdm_osal_co_pool, callout);
-            co->co = NULL;
-            return -1;
+        if (callout) {
+            memset(callout, 0, sizeof(struct btdm_osal_callout_freertos));
         }
-#else
-        callout->handle = xTimerCreate("co", 1, pdFALSE, callout, os_callout_timer_cb);
-
-        if (!callout->handle) {
-            btdm_osal_event_deinit(&callout->ev);
-            btdm_memblock_put(&s_btdm_osal_co_pool, callout);
-            co->co = NULL;
-            return -1;
-        }
-#endif // BTDM_OSAL_USE_ESP_TIMER
-    } else {
-        callout = (struct btdm_osal_callout_freertos *)co->co;
-        BTDM_OSAL_ASSERT(callout);
-        callout->evq = evq;
-        btdm_osal_event_init(&callout->ev, ev_cb, ev_arg);
     }
-#else
 
+#if BTDM_OSAL_DYNAMIC_ALLOC
     if (!co->co) {
         co->co = btdm_osal_malloc(sizeof(struct btdm_osal_callout_freertos),
-                                  BTDM_OSAL_MALLOC_F_INTERNAL);
+                                  0);
         callout = (struct btdm_osal_callout_freertos *)co->co;
-        if (!callout) {
-            return -1;
+        if (callout) {
+            memset(callout, 0, sizeof(struct btdm_osal_callout_freertos));
         }
+    }
+#endif
 
-        memset(callout, 0, sizeof(*callout));
-        btdm_osal_event_init(&callout->ev, ev_cb, ev_arg);
+    callout = (struct btdm_osal_callout_freertos *)co->co;
+    if (!callout) {
+        return BTDM_OSAL_ENOMEM;
+    }
+
+    btdm_osal_event_init(&callout->ev, ev_cb, ev_arg);
+    callout->evq = evq;
+
+    if (callout->handle) {
+        return BTDM_OSAL_OK;
+    }
 
 #if BTDM_OSAL_USE_ESP_TIMER
-        callout->evq = evq;
+    esp_timer_create_args_t create_args = {
+        .callback = btdm_osal_event_fn_wrapper,
+        .arg = callout,
+        .name = "btdm_timer"
+    };
 
-        esp_timer_create_args_t create_args = {
-            .callback = btdm_osal_event_fn_wrapper, .arg = callout, .name = "nimble_timer"};
-
-        if (esp_timer_create(&create_args, &callout->handle) != ESP_OK) {
-            btdm_osal_event_deinit(&callout->ev);
-            btdm_osal_free((void *)callout);
-            co->co = NULL;
-            return -1;
-        }
-#else
-        callout->handle = xTimerCreate("co", 1, pdFALSE, callout, os_callout_timer_cb);
-
-        if (!callout->handle) {
-            btdm_osal_event_deinit(&callout->ev);
-            btdm_osal_free((void *)callout);
-            co->co = NULL;
-            return -1;
-        }
-#endif // BTDM_OSAL_USE_ESP_TIMER
-    } else {
-        callout = (struct btdm_osal_callout_freertos *)co->co;
-        BTDM_OSAL_ASSERT(callout);
-        callout->evq = evq;
-        btdm_osal_event_init(&callout->ev, ev_cb, ev_arg);
+    if (esp_timer_create(&create_args, &callout->handle) != ESP_OK) {
+        btdm_osal_callout_deinit(co);
+        return BTDM_OSAL_ENOMEM;
     }
-#endif // BTDM_MEMPOOL_ALLOC
-    return 0;
+#else // BTDM_OSAL_USE_ESP_TIMER
+    callout->handle = xTimerCreate("co", 1, pdFALSE, callout, os_callout_timer_cb);
+
+    if (!callout->handle) {
+        btdm_osal_callout_deinit(co);
+        return BTDM_OSAL_ENOMEM;
+    }
+#endif // BTDM_OSAL_USE_ESP_TIMER
+
+    return BTDM_OSAL_OK;
 }
 
 void
@@ -762,34 +646,36 @@ wr_btdm_osal_callout_deinit(struct btdm_osal_callout *co)
         return;
     }
 
-    if (!callout->handle) {
-        return;
+    if (callout->handle) {
+#if BTDM_OSAL_USE_ESP_TIMER
+        esp_err_t err = esp_timer_stop(callout->handle);
+
+        if (err != ESP_OK) {
+            /* ESP_ERR_INVALID_STATE is expected when timer is already stopped */
+            if (err != ESP_ERR_INVALID_STATE) {
+                ESP_LOGD(TAG, "Timer not stopped");
+            }
+        }
+        err = esp_timer_delete(callout->handle);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "Timer not deleted");
+        }
+#else
+        xTimerDelete(callout->handle, portMAX_DELAY);
+#endif // BTDM_OSAL_USE_ESP_TIMER
     }
 
     btdm_osal_event_deinit(&callout->ev);
-#if BTDM_OSAL_USE_ESP_TIMER
-    esp_err_t err = esp_timer_stop(callout->handle);
-
-    if (err != ESP_OK) {
-        /* ESP_ERR_INVALID_STATE is expected when timer is already stopped */
-        if (err != ESP_ERR_INVALID_STATE) {
-            ESP_LOGD(TAG, "Timer not stopped");
-        }
-    }
-    err = esp_timer_delete(callout->handle);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Timer not deleted");
-    }
-#else
-    xTimerDelete(callout->handle, portMAX_DELAY);
-#endif // BTDM_OSAL_USE_ESP_TIMER
-#if BTDM_MEMPOOL_ALLOC
-    btdm_memblock_put(&s_btdm_osal_co_pool, callout);
-#else
-    btdm_osal_free((void *)callout);
-#endif // BTDM_MEMPOOL_ALLOC
     co->co = NULL;
-    memset(co, 0, sizeof(struct btdm_osal_callout));
+
+#if BTDM_OSAL_DYNAMIC_ALLOC
+    if (!btdm_memblock_from(&s_btdm_osal_co_pool, callout)) {
+        btdm_osal_free((void *)callout);
+        return;
+    }
+#endif
+
+    btdm_memblock_put(&s_btdm_osal_co_pool, callout);
 }
 
 btdm_osal_error_t IRAM_ATTR
@@ -1151,16 +1037,33 @@ wr_btdm_osal_intr_free(btdm_osal_intr_handle_t intr_handle)
 void *
 wr_btdm_osal_malloc(uint32_t size, btdm_osal_malloc_flag_t flags)
 {
-    if (flags == BTDM_OSAL_MALLOC_F_INTERNAL) {
-        return heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
-    } else {
-        return heap_caps_malloc(size, MALLOC_CAP_8BIT);
+    void *ptr;
+
+#if UC_BT_CTRL_ALLOW_MALLOC_FROM_SPIRAM
+    if (flags & BTDM_OSAL_MALLOC_F_ALLOW_SPIRAM) {
+        ptr = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    } else
+#endif // UC_BT_CTRL_ALLOW_MALLOC_FROM_SPIRAM
+    {
+        ptr = heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     }
+
+#if BTDM_MEM_DEBUG
+    if (ptr) {
+        btdm_mem_debug_record(ptr, size);
+    }
+#endif // BTDM_MEM_DEBUG
+
+    return ptr;
 }
 
 void
 wr_btdm_osal_free(void *ptr)
 {
+#if BTDM_MEM_DEBUG
+    btdm_mem_debug_clear(ptr);
+#endif // BTDM_MEM_DEBUG
+
     heap_caps_free(ptr);
 }
 
@@ -1171,7 +1074,7 @@ wr_btdm_osal_mmgmt_block_malloc(uint32_t size)
     uint32_t *addr;
 
     // TODO: Only ble controller uses this function
-    addr = btdm_osal_malloc(size + 4, BTDM_OSAL_MALLOC_F_INTERNAL);
+    addr = btdm_osal_malloc(size + 4, 0);
     if (!addr) {
         return NULL;
     }
@@ -1253,7 +1156,6 @@ wr_btdm_osal_rand(void)
 int
 btdm_osal_elem_mempool_init(btdm_osal_elem_num_t *elem_num)
 {
-#if BTDM_MEMPOOL_ALLOC
     int rc;
 
     s_btdm_osal_evtq_deepth = elem_num->evt_count;
@@ -1262,7 +1164,7 @@ btdm_osal_elem_mempool_init(btdm_osal_elem_num_t *elem_num)
         s_btdm_osal_ev_buf = btdm_osal_malloc(
             BTDM_MEMPOOL_SIZE(elem_num->evt_count, sizeof(struct btdm_osal_event_freertos)) *
                 sizeof(btdm_membuf_t),
-            BTDM_OSAL_MALLOC_F_INTERNAL);
+            0);
         if (!s_btdm_osal_ev_buf) {
             return -1;
         }
@@ -1272,106 +1174,44 @@ btdm_osal_elem_mempool_init(btdm_osal_elem_num_t *elem_num)
         if (rc) {
             return -2;
         }
-    }
-
-    if (elem_num->evtq_count) {
-        s_btdm_osal_evq_buf = btdm_osal_malloc(
-            BTDM_MEMPOOL_SIZE(elem_num->evtq_count, sizeof(struct btdm_osal_eventq_freertos)) *
-                sizeof(btdm_membuf_t),
-            BTDM_OSAL_MALLOC_F_INTERNAL);
-        if (!s_btdm_osal_evq_buf) {
-            return -3;
-        }
-        rc = btdm_mempool_init(&s_btdm_osal_evq_pool, elem_num->evtq_count,
-                               sizeof(struct btdm_osal_eventq_freertos), s_btdm_osal_evq_buf,
-                               "s_btdm_osal_evq_pool");
-        if (rc) {
-            return -4;
-        }
+        btdm_mempool_flags_set(&s_btdm_osal_ev_pool, BTDM_MEMPOOL_F_CONTROLLER);
     }
 
     if (elem_num->co_count) {
         s_btdm_osal_co_buf = btdm_osal_malloc(
             BTDM_MEMPOOL_SIZE(elem_num->co_count, sizeof(struct btdm_osal_callout_freertos)) *
                 sizeof(btdm_membuf_t),
-            BTDM_OSAL_MALLOC_F_INTERNAL);
+            0);
         if (!s_btdm_osal_co_buf) {
-            return -5;
+            return -3;
         }
         rc = btdm_mempool_init(&s_btdm_osal_co_pool, elem_num->co_count,
                                sizeof(struct btdm_osal_callout_freertos), s_btdm_osal_co_buf,
                                "s_btdm_osal_co_pool");
         if (rc) {
-            return -6;
+            return -4;
         }
-    }
-
-    if (elem_num->sem_count) {
-        s_btdm_osal_sem_buf = btdm_osal_malloc(
-            BTDM_MEMPOOL_SIZE(elem_num->sem_count, sizeof(struct btdm_osal_sem_freertos)) *
-                sizeof(btdm_membuf_t),
-            BTDM_OSAL_MALLOC_F_INTERNAL);
-        if (!s_btdm_osal_sem_buf) {
-            return -7;
-        }
-        rc = btdm_mempool_init(&s_btdm_osal_sem_pool, elem_num->sem_count,
-                               sizeof(struct btdm_osal_sem_freertos),
-                               s_btdm_osal_sem_buf, "s_btdm_osal_sem_pool");
-        if (rc) {
-            return -8;
-        }
-    }
-
-    if (elem_num->mutex_count) {
-        s_btdm_osal_mutex_buf = btdm_osal_malloc(
-            BTDM_MEMPOOL_SIZE(elem_num->mutex_count, sizeof(struct btdm_osal_mutex_freertos)) *
-                sizeof(btdm_membuf_t),
-            BTDM_OSAL_MALLOC_F_INTERNAL);
-        if (!s_btdm_osal_mutex_buf) {
-            return -9;
-        }
-        rc = btdm_mempool_init(&s_btdm_osal_mutex_pool, elem_num->mutex_count,
-                               sizeof(struct btdm_osal_mutex_freertos), s_btdm_osal_mutex_buf,
-                               "s_btdm_osal_mutex_pool");
-        if (rc) {
-            return -10;
-        }
+        btdm_mempool_flags_set(&s_btdm_osal_co_pool, BTDM_MEMPOOL_F_CONTROLLER);
     }
 
     return 0;
-#else
-    return 0;
-#endif // BTDM_MEMPOOL_ALLOC
 }
 
 void
 btdm_osal_elem_mempool_deinit(void)
 {
-#if BTDM_MEMPOOL_ALLOC
     if (s_btdm_osal_ev_buf) {
         BTDM_OSAL_ASSERT(s_btdm_osal_ev_pool.mp_num_free == s_btdm_osal_ev_pool.mp_num_blocks);
+        btdm_mempool_deinit(&s_btdm_osal_ev_pool);
         btdm_osal_free(s_btdm_osal_ev_buf);
         s_btdm_osal_ev_buf = NULL;
     }
-    if (s_btdm_osal_evq_buf) {
-        BTDM_OSAL_ASSERT(s_btdm_osal_evq_pool.mp_num_free == s_btdm_osal_evq_pool.mp_num_blocks);
-        btdm_osal_free(s_btdm_osal_evq_buf);
-        s_btdm_osal_evq_buf = NULL;
-    }
+
+
     if (s_btdm_osal_co_buf) {
         BTDM_OSAL_ASSERT(s_btdm_osal_co_pool.mp_num_free == s_btdm_osal_co_pool.mp_num_blocks);
+        btdm_mempool_deinit(&s_btdm_osal_co_pool);
         btdm_osal_free(s_btdm_osal_co_buf);
         s_btdm_osal_co_buf = NULL;
     }
-    if (s_btdm_osal_sem_buf) {
-        BTDM_OSAL_ASSERT(s_btdm_osal_sem_pool.mp_num_free == s_btdm_osal_sem_pool.mp_num_blocks);
-        btdm_osal_free(s_btdm_osal_sem_buf);
-        s_btdm_osal_sem_buf = NULL;
-    }
-    if (s_btdm_osal_mutex_buf) {
-        BTDM_OSAL_ASSERT(s_btdm_osal_mutex_pool.mp_num_free == s_btdm_osal_mutex_pool.mp_num_blocks);
-        btdm_osal_free(s_btdm_osal_mutex_buf);
-        s_btdm_osal_mutex_buf = NULL;
-    }
-#endif // BTDM_MEMPOOL_ALLOC
 }
