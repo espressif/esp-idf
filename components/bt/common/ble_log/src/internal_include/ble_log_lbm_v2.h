@@ -219,6 +219,12 @@ void ble_log_lbm_begin_deinit(void);
 void ble_log_lbm_deinit(void);
 bool ble_log_lbm_is_enabled(void);
 void ble_log_lbm_flush_open_transports(void);
+/* Deinit drain: seal every OPEN transport and dispatch it to the runtime
+ * queue. Contract: called after ble_log_lbm_begin_deinit() (producer gate
+ * closed, writers drained) and before ble_log_rt_deinit(); every transport
+ * lock is then uncontended. The peripheral deinit wait completes the
+ * delivery of the dispatched buffers. */
+void ble_log_lbm_drain_open_transports(void);
 void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
 void ble_log_internal_set_version_info(const ble_log_version_info_t *version_info);
 bool ble_log_internal_snapshot(uint16_t reason_flags,

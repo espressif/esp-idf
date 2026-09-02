@@ -97,6 +97,7 @@ BLE_LOG_STATIC ble_log_internal_snapshot_t internal_snapshot;
 extern void ble_log_test_claim_pre_publish_hook(void) __attribute__((weak));
 extern void ble_log_test_enable_before_lifecycle_lock_hook(void) __attribute__((weak));
 extern void ble_log_test_disable_before_wake_hook(void) __attribute__((weak));
+extern void ble_log_test_claim_locked_hook(void) __attribute__((weak));
 #endif
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
@@ -217,6 +218,9 @@ BLE_LOG_STATIC void ble_log_pool_wake_all(void)
 BLE_LOG_IRAM_ATTR void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans)
 {
     trans->pos = 0;
+    /* A marker set while the transport was SENDING must not leak into its
+     * next lifecycle. */
+    BLE_LOG_ATOMIC_STORE_RELAXED(trans->pending_seal, false);
 
     if (trans->owner_kind == BLE_LOG_TRANS_OWNER_INTERNAL) {
         BLE_LOG_ATOMIC_STORE_RELEASE(trans->state, BLE_LOG_TRANS_STATE_FREE);
@@ -245,6 +249,10 @@ BLE_LOG_IRAM_ATTR void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans)
 /* -------------------------------------- */
 BLE_LOG_IRAM_ATTR void ble_log_pool_seal_and_send(ble_log_prph_trans_t *trans)
 {
+    /* Consumes any pending-seal marker: every seal path (capacity, claim,
+     * periodic flush, full drain) funnels through here while holding the
+     * lock. */
+    BLE_LOG_ATOMIC_STORE_RELAXED(trans->pending_seal, false);
     BLE_LOG_ATOMIC_STORE_RELAXED(trans->state, BLE_LOG_TRANS_STATE_SENDING);
     /* A claimed buffer is already absent from free_bitmap. Remove any OPEN
      * hint before releasing the SENDING buffer to the runtime task. */
@@ -290,7 +298,11 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_from(volatile uint32_t *bitmap,
         }
 
         if (expected_state == BLE_LOG_TRANS_STATE_OPEN &&
-            BLE_LOG_TRANS_FREE_SPACE(trans) < frame_len) {
+            (BLE_LOG_TRANS_FREE_SPACE(trans) < frame_len ||
+             BLE_LOG_ATOMIC_LOAD_ACQUIRE(trans->pending_seal))) {
+            /* No room for this frame, or a periodic flush left a
+             * pending-seal marker while the transport was busy: send the
+             * buffered frames and scan on for another transport. */
             ble_log_pool_seal_and_send(trans);   /* releases the lock */
             continue;
         }
@@ -324,7 +336,19 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_available(uint32_t frame_len, bool 
         ble_log_prph_trans_t *open_trans = g_pool.trans[open_id];
         if (BLE_LOG_CAS_ACQUIRE(&open_trans->atomic_lock)) {
             if (BLE_LOG_ATOMIC_LOAD_RELAXED(open_trans->state) == BLE_LOG_TRANS_STATE_OPEN) {
-                if (BLE_LOG_TRANS_FREE_SPACE(open_trans) >= frame_len) {
+                /* A pending-seal marker left by a periodic flush that lost
+                 * the lock race sends the buffered frames first; this claim
+                 * continues with another transport below. */
+                if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(open_trans->pending_seal) &&
+                    BLE_LOG_TRANS_FREE_SPACE(open_trans) >= frame_len) {
+#if CONFIG_BLE_LOG_PRPH_TEST
+                    /* Test point: the transport is locked and still listed
+                     * in open_bitmap, mirroring an in-progress writer for a
+                     * concurrent flush attempt. */
+                    if (ble_log_test_claim_locked_hook) {
+                        ble_log_test_claim_locked_hook();
+                    }
+#endif
                     ble_log_pool_bitmap_clear(&g_pool.open_bitmap, open_id);
                     return open_trans;
                 }
@@ -532,6 +556,9 @@ void ble_log_commit(uint32_t handle, size_t actual_len)
     if (actual_len == 0 || actual_len > claim->max_len) {
         ble_log_stat_mgr_mark_lost(src_code);
         if (trans->pos == 0) {
+            /* Returning straight to FREE bypasses seal_and_send: also drop
+             * any pending-seal marker here. */
+            BLE_LOG_ATOMIC_STORE_RELAXED(trans->pending_seal, false);
             BLE_LOG_ATOMIC_STORE_RELEASE(trans->state, BLE_LOG_TRANS_STATE_FREE);
             ble_log_pool_bitmap_set(&g_pool.free_bitmap, trans->id);
             BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
@@ -610,6 +637,7 @@ bool ble_log_lbm_init(void)
         g_pool.trans[id]->owner_kind = BLE_LOG_TRANS_OWNER_POOL;
         g_pool.trans[id]->state = BLE_LOG_TRANS_STATE_FREE;
         g_pool.trans[id]->atomic_lock = 0;
+        g_pool.trans[id]->pending_seal = 0;
     }
 
     if (!ble_log_prph_trans_init(&internal_trans, BLE_LOG_INTERNAL_TRANS_SIZE)) {
@@ -826,6 +854,12 @@ void ble_log_lbm_flush_open_transports(void)
         }
         ble_log_prph_trans_t *trans = g_pool.trans[id];
         if (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
+            /* A writer holds the buffer: leave a pending-seal marker for
+             * the next claim instead of waiting (the flusher never
+             * competes for a lock). The marker is serviced by the next
+             * writer on this transport, or by the next periodic pass once
+             * the lock is uncontended. */
+            BLE_LOG_ATOMIC_STORE_RELEASE(trans->pending_seal, true);
             continue;
         }
         if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) == BLE_LOG_TRANS_STATE_OPEN &&
@@ -837,6 +871,31 @@ void ble_log_lbm_flush_open_transports(void)
     }
 
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
+}
+
+void ble_log_lbm_drain_open_transports(void)
+{
+    /* Contract (see header): called after ble_log_lbm_begin_deinit() and
+     * before ble_log_rt_deinit(). The producer gate is closed and writers
+     * have drained, so no lock is held for longer than one frame copy. */
+    for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
+        if (!(BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.open_bitmap) & BIT(id))) {
+            continue;
+        }
+        ble_log_prph_trans_t *trans = g_pool.trans[id];
+        while (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
+        }
+        if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) == BLE_LOG_TRANS_STATE_OPEN &&
+            trans->pos > 0) {
+            ble_log_pool_seal_and_send(trans);   /* releases the lock */
+        } else {
+            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
+        }
+    }
+
+    /* Hand the sealed buffers to the peripheral before the runtime queue
+     * is destroyed; the peripheral deinit wait completes the delivery. */
+    (void)ble_log_rt_drain();
 }
 
 /* ------------------------ */
