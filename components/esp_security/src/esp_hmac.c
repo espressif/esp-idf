@@ -70,14 +70,10 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 
     esp_crypto_hmac_lock_acquire();
 
-    // We also enable SHA and DS here. SHA is used by HMAC, DS will otherwise hold SHA in reset state.
+    // SHA is used by HMAC, so enable it here.
     esp_crypto_hmac_enable_periph_clk(true);
 
     esp_crypto_sha_enable_periph_clk(true);
-
-#if SOC_DIG_SIGN_SUPPORTED
-    esp_crypto_ds_enable_periph_clk(true);
-#endif
 
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
     /*  Key Manager holds the key usage selector register(efuse vs own key).
@@ -93,9 +89,6 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     if (conf_error) {
         esp_crypto_sha_enable_periph_clk(false);
         esp_crypto_hmac_enable_periph_clk(false);
-#if SOC_DIG_SIGN_SUPPORTED
-        esp_crypto_ds_enable_periph_clk(false);
-#endif // SOC_DIG_SIGN_SUPPORTED
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
         esp_crypto_key_mgr_enable_periph_clk(false);
 #endif // SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
@@ -158,10 +151,6 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
     esp_crypto_key_mgr_enable_periph_clk(false);
 #endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
-
-#if SOC_DIG_SIGN_SUPPORTED
-    esp_crypto_ds_enable_periph_clk(false);
-#endif
 
     esp_crypto_sha_enable_periph_clk(false);
 
