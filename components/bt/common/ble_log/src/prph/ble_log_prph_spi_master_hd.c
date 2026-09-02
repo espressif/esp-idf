@@ -44,7 +44,6 @@ BLE_LOG_SPI_MASTER_HD_CB_ATTR BLE_LOG_STATIC void spi_master_hd_tx_done_cb(spi_t
         }
     }
 
-    ctx->trans->pos = 0;
     ble_log_lbm_recycle_trans(ctx->trans);
 }
 
@@ -220,7 +219,6 @@ BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
         uint8_t old_status = __atomic_fetch_or(&ctx->status, BLE_LOG_SPI_HD_END_QUEUE_FAILED, __ATOMIC_ACQ_REL);
         if (old_status & BLE_LOG_SPI_HD_DATA_DONE) {
             /* Data is already on the wire; recycle it without re-sending. */
-            trans->pos = 0;
             ble_log_lbm_recycle_trans(trans);
         }
     }

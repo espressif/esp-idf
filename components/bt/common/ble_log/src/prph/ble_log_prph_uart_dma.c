@@ -143,7 +143,6 @@ bool ble_log_prph_init(size_t trans_cnt)
         /* Redirection transports are not part of the global pool. */
         redir_lbm->trans[i]->id = BLE_LOG_TRANS_ID_NONE;
         redir_lbm->trans[i]->owner_kind = BLE_LOG_TRANS_OWNER_REDIR;
-        redir_lbm->trans[i]->state = BLE_LOG_TRANS_STATE_FREE;
     }
 
     /* Mutex initialization */
@@ -306,7 +305,11 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
 BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     if (uhci_transmit(dev_handle, trans->buf, trans->pos) != ESP_OK) {
-        /* No tx_done will fire on failure: recycle here to avoid leaking. */
+        /* The UHCI queue depth matches the transport count and each transport
+         * occupies at most one slot, so a full queue cannot occur here: this
+         * is a driver fault. The assert compiles out with NDEBUG; the recycle
+         * below still covers that case (no tx_done will fire on failure). */
+        BLE_LOG_ASSERT(false);
         ble_log_lbm_recycle_trans(trans);
     }
 }

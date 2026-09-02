@@ -16,7 +16,6 @@
 
 #include "esp_log.h"
 #include "esp_timer.h"
-#include "esp_chip_info.h"
 #if CONFIG_BLE_LOG_LL_ENABLED
 #include "esp_bt.h"
 #endif
@@ -29,10 +28,14 @@
 /* Link-layer clock sample; 0 when the controller exports no accessor. */
 #if CONFIG_BLE_LOG_LL_ENABLED
 #if CONFIG_BT_DUAL_MODE_ARCH
-/* The dual-mode-arch controller (ESP32-H4, ESP32-S31) does not export its
- * link-layer timer yet; its accessor is r_sched_timer_getCurrentTimeU32.
- * Call it once the controller libraries export the symbol. */
-#define BLE_LOG_GET_LC_TS 0
+/* Temporary fallback until the dual-mode controller libraries export the
+ * link-layer timer accessor. A strong library definition overrides it. */
+uint32_t r_sched_timer_getCurrentTimeU32(void) __attribute__((weak));
+uint32_t r_sched_timer_getCurrentTimeU32(void)
+{
+    return 0;
+}
+#define BLE_LOG_GET_LC_TS r_sched_timer_getCurrentTimeU32()
 /* ESP BLE Controller Gen 2 */
 #elif defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
     defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
@@ -53,9 +56,6 @@ extern uint32_t lld_read_clock_us(void);
 #define BLE_LOG_GET_LC_TS 0
 #endif /* CONFIG_BLE_LOG_LL_ENABLED */
 
-_Static_assert(sizeof(ble_log_version_info_t) == 58,
-               "Unexpected BLE Log version info frame size");
-
 BLE_LOG_STATIC uint32_t ble_log_rt_lc_ts_get(void)
 {
 #if CONFIG_BLE_LOG_LL_ENABLED
@@ -74,72 +74,33 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_inited = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t rt_ref_count = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR esp_timer_handle_t rt_defer_timer = NULL;
-BLE_LOG_STATIC ble_log_version_info_t rt_version_info;
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_ts_enabled = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR esp_timer_handle_t rt_ts_timer = NULL;
 /* Toggle IO phase; stays false when the toggle IO is compiled out. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_io_level = false;
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+/* Runtime IO control is independent from the always-on periodic snapshot. */
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_io_toggle_enabled = false;
+#endif
 
 /* PRIVATE FUNCTION DECLARATION */
 BLE_LOG_STATIC void ble_log_rt_defer_cb(void *arg);
 BLE_LOG_STATIC void ble_log_rt_dispatch(QueueHandle_t queue,
                                         UBaseType_t pending);
-BLE_LOG_STATIC void ble_log_rt_version_info_init(void);
-BLE_LOG_STATIC void ble_log_rt_ts_sample(ble_log_ts_info_t *info);
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
 
 /* PRIVATE FUNCTION */
-/* Copies a NUL-terminated commit string into a fixed-width zero-padded field */
-BLE_LOG_STATIC void ble_log_commit_copy(uint8_t *dst, const char *src, size_t len)
-{
-    BLE_LOG_MEMCPY(dst, src, strnlen(src, len));
-}
-
-BLE_LOG_STATIC void ble_log_rt_version_info_init(void)
-{
-    BLE_LOG_MEMSET(&rt_version_info, 0, sizeof(rt_version_info));
-    rt_version_info.int_src_code = BLE_LOG_INT_SRC_VERSION_INFO;
-    rt_version_info.version = BLE_LOG_VERSION;
-#ifdef BLE_LOG_IDF_COMMIT
-    BLE_LOG_MEMCPY(rt_version_info.idf_commit, BLE_LOG_IDF_COMMIT,
-                   BLE_LOG_IDF_COMMIT_LEN);
-#endif
-#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_CONTROLLER_GET_COMMIT)
-    ble_log_commit_copy(rt_version_info.controller_commit,
-                        BLE_LOG_CONTROLLER_GET_COMMIT(), BLE_LOG_LIB_COMMIT_LEN);
-#endif
-#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_BTDM_COMMON_GET_COMMIT)
-    ble_log_commit_copy(rt_version_info.btdm_common_commit,
-                        BLE_LOG_BTDM_COMMON_GET_COMMIT(), BLE_LOG_LIB_COMMIT_LEN);
-#endif
-#if CONFIG_BLE_MESH && CONFIG_BLE_MESH_V11_SUPPORT
-    const char *mesh_commit = strrchr(bt_mesh_v11_commit_str, ' ');
-    if (mesh_commit) {
-        ble_log_commit_copy(rt_version_info.mesh_commit, mesh_commit + 1,
-                            BLE_LOG_LIB_COMMIT_LEN);
-    }
-#endif
-#if CONFIG_BT_AUDIO && CONFIG_SOC_BLE_AUDIO_SUPPORTED
-    ble_log_commit_copy(rt_version_info.audio_commit, lib_audio_commit_get(),
-                        BLE_LOG_LIB_COMMIT_LEN);
-#endif
-    esp_chip_info_t chip_info;
-    esp_chip_info(&chip_info);
-    rt_version_info.chip_model = (uint16_t)chip_info.model;
-    rt_version_info.chip_revision = chip_info.revision;
-    ble_log_internal_set_version_info(&rt_version_info);
-}
-
 /* Captures the link-layer, ESP and OS clocks at one instant. */
-BLE_LOG_STATIC void ble_log_rt_ts_sample(ble_log_ts_info_t *info)
+void ble_log_rt_ts_sample(ble_log_ts_info_t *info, bool toggle_io)
 {
     info->int_src_code = BLE_LOG_INT_SRC_TS;
     BLE_LOG_ENTER_CRITICAL();
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    /* The critical section keeps the toggle IO edge and the clock samples
-     * adjacent, and excludes the phase write in ble_log_sync_enable. */
-    rt_ts_io_level = !rt_ts_io_level;
-    gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, rt_ts_io_level);
+    /* The critical section keeps the optional IO edge and clock samples
+     * adjacent, and serializes runtime IO control with the phase update. */
+    if (toggle_io && rt_ts_io_toggle_enabled) {
+        rt_ts_io_level = !rt_ts_io_level;
+        gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, rt_ts_io_level);
+    }
 #endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
     info->io_level = rt_ts_io_level;
     info->lc_ts = ble_log_rt_lc_ts_get();
@@ -165,6 +126,8 @@ BLE_LOG_STATIC void ble_log_rt_defer_cb(void *arg)
 {
     (void)arg;
 
+    /* Deinit clears the queue only after stop_blocking has waited for this
+     * callback, so a live gate implies a live queue. */
     if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited)) {
         return;
     }
@@ -186,18 +149,17 @@ BLE_LOG_STATIC void ble_log_rt_defer_cb(void *arg)
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
 {
     (void)arg;
-    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited) ||
-        !BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_ts_enabled)) {
+    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited)) {
         return;
     }
 
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info);
+    ble_log_rt_ts_sample(&ts_info, true);
 
     /* Unified periodic output: best-effort flush of partially-filled OPEN
      * transports ahead of the periodic snapshot, so parked frames do not
      * wait for the next capacity seal. */
-    ble_log_lbm_flush_open_transports();
+    ble_log_lbm_flush_open_trans();
 
     (void)ble_log_internal_snapshot(
         BLE_LOG_SNAPSHOT_REASON_PERIODIC |
@@ -212,8 +174,6 @@ bool ble_log_rt_init(void)
         return true;
     }
 
-    ble_log_rt_version_info_init();
-
     /* Configure the analyzer toggle IO */
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
     gpio_config_t sync_io_conf = {
@@ -221,7 +181,10 @@ bool ble_log_rt_init(void)
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = BIT64(CONFIG_BLE_LOG_SYNC_IO_NUM),
     };
-    if (gpio_config(&sync_io_conf) != ESP_OK) {
+    /* Program the output latch before enabling the driver to avoid a stale
+     * high level or a high glitch after deinit/reinit. */
+    if (gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 0) != ESP_OK ||
+            gpio_config(&sync_io_conf) != ESP_OK) {
         goto exit;
     }
 #endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
@@ -242,11 +205,13 @@ bool ble_log_rt_init(void)
         goto exit;
     }
 
-    /* TS sync is always on: the periodic tick drives the unified periodic
-     * output (TS sample, OPEN transport flush, snapshot). Test apps quiesce
-     * it with ble_log_sync_enable(false) for deterministic timing. */
+    /* Create the system-periodic path here; the top-level init starts it only
+     * after queuing INIT, then it runs through deinit. Runtime sync control
+     * affects only the optional analyzer IO toggle. */
     rt_ts_io_level = false;
-    BLE_LOG_ATOMIC_STORE_RELEASE(rt_ts_enabled, true);
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+    rt_ts_io_toggle_enabled = false;
+#endif
     esp_timer_create_args_t ts_timer_args = {
         .callback = ble_log_rt_ts_trigger,
         .arg = NULL,
@@ -255,8 +220,7 @@ bool ble_log_rt_init(void)
         /* Do not wake light sleep or replay every missed periodic callback. */
         .skip_unhandled_events = true,
     };
-    if (esp_timer_create(&ts_timer_args, &rt_ts_timer) != ESP_OK ||
-        esp_timer_start_periodic(rt_ts_timer, BLE_LOG_TS_TRIGGER_TIMEOUT_US) != ESP_OK) {
+    if (esp_timer_create(&ts_timer_args, &rt_ts_timer) != ESP_OK) {
         goto exit;
     }
 
@@ -266,6 +230,21 @@ bool ble_log_rt_init(void)
 exit:
     ble_log_rt_deinit();
     return false;
+}
+
+bool ble_log_rt_start_periodic(void)
+{
+    bool started = false;
+    if (!ble_log_ref_count_try_acquire(&rt_ref_count, &rt_inited)) {
+        return false;
+    }
+    if (rt_ts_timer &&
+            esp_timer_start_periodic(rt_ts_timer,
+                                     BLE_LOG_TS_TRIGGER_TIMEOUT_US) == ESP_OK) {
+        started = true;
+    }
+    BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
+    return started;
 }
 
 void ble_log_rt_deinit(void)
@@ -278,7 +257,6 @@ void ble_log_rt_deinit(void)
         ESP_LOGE(TAG, "Timed out waiting for BLE Log runtime references");
         BLE_LOG_ASSERT(false);
     }
-    BLE_LOG_ATOMIC_STORE_RELEASE(rt_ts_enabled, false);
     if (rt_ts_timer) {
         esp_timer_stop_blocking(rt_ts_timer, portMAX_DELAY);
         esp_timer_delete(rt_ts_timer);
@@ -294,7 +272,6 @@ void ble_log_rt_deinit(void)
     if (rt_queue_handle) {
         ble_log_prph_trans_t *trans = NULL;
         while (xQueueReceive(rt_queue_handle, &trans, 0) == pdTRUE) {
-            trans->pos = 0;
             ble_log_lbm_recycle_trans(trans);
         }
         vQueueDelete(rt_queue_handle);
@@ -304,6 +281,7 @@ void ble_log_rt_deinit(void)
     /* Release the toggle IO */
     rt_ts_io_level = false;
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+    rt_ts_io_toggle_enabled = false;
     gpio_reset_pin(CONFIG_BLE_LOG_SYNC_IO_NUM);
 #endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
 }
@@ -335,13 +313,13 @@ exit:
 BLE_LOG_IRAM_ATTR void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans)
 {
     if (!ble_log_ref_count_try_acquire(&rt_ref_count, &rt_inited)) {
+        /* No reference was taken, so this path must not release; it stays
+         * separate from the held-reference failures below. */
         ble_log_lbm_recycle_trans(trans);
         return;
     }
     if (!rt_queue_handle) {
-        BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
-        ble_log_lbm_recycle_trans(trans);
-        return;
+        goto fail;
     }
 
     bool in_isr = BLE_LOG_IN_ISR();
@@ -349,35 +327,46 @@ BLE_LOG_IRAM_ATTR void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans)
                         ? xQueueSendFromISR(rt_queue_handle, &trans, NULL)
                         : xQueueSend(rt_queue_handle, &trans, 0);
     if (queued != pdTRUE) {
-        BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
-        ble_log_lbm_recycle_trans(trans);
-        return;
+        goto fail;
     }
 
     /* An active timer keeps the deadline anchored to the first submission. */
     (void)esp_timer_start_once(rt_defer_timer, BLE_LOG_RT_DEFER_TIMEOUT_US);
     BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
+    return;
+
+fail:
+    BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
+    ble_log_lbm_recycle_trans(trans);
 }
 
-bool ble_log_sync_enable(bool enable)
+bool ble_log_ts_sync_io_toggle_enable(bool enable)
 {
     if (!ble_log_ref_count_try_acquire(&rt_ref_count, &rt_inited)) {
         return false;
     }
-    BLE_LOG_ATOMIC_STORE_RELEASE(rt_ts_enabled, enable);
+
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    /* Leave the toggle IO at a defined low level: when sync is disabled
-     * while the IO idles low, drive a short high pulse first so the
-     * analyzer sees a final falling edge. The critical section excludes
-     * the phase toggle in ble_log_rt_ts_sample. */
+    /* Restart the analyzer phase from low. When disabling an already-low IO,
+     * drive it high first so the external analyzer still sees a final
+     * falling edge. The periodic snapshot remains active in either state. */
     BLE_LOG_ENTER_CRITICAL();
+    rt_ts_io_toggle_enabled = enable;
     if (!enable && !rt_ts_io_level) {
         gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 1);
     }
     rt_ts_io_level = false;
     gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 0);
     BLE_LOG_EXIT_CRITICAL();
+#else
+    (void)enable;
 #endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
+
     BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
     return true;
+}
+
+bool ble_log_sync_enable(bool enable)
+{
+    return ble_log_ts_sync_io_toggle_enable(enable);
 }

@@ -155,7 +155,6 @@ void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     uint32_t idx = __atomic_load_n(&s_auto_recycle_idx, __ATOMIC_ACQUIRE);
     ble_log_prph_test_hook_reg_t reg = s_auto_recycle_slots[idx & 1];
     if (reg.hook) {
-        trans->pos = 0;
         ble_log_lbm_recycle_trans(trans);
         reg.hook(reg.ctx);
         __atomic_fetch_sub(&s_auto_recycle_busy, 1, __ATOMIC_RELEASE);
@@ -164,7 +163,6 @@ void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     __atomic_fetch_sub(&s_auto_recycle_busy, 1, __ATOMIC_RELEASE);
 
     if (xQueueSend(s_pending_trans, &trans, 0) != pdTRUE) {
-        trans->pos = 0;
         ble_log_lbm_recycle_trans(trans);
         BLE_LOG_ASSERT(false);
     }
@@ -217,7 +215,6 @@ size_t ble_log_prph_test_read(uint8_t *data, size_t len, TickType_t timeout,
         if (delay_us > 0 &&
                 (esp_timer_start_once(s_tx_timer, (uint64_t)delay_us) != ESP_OK ||
                  xSemaphoreTake(s_tx_done, portMAX_DELAY) != pdTRUE)) {
-            trans->pos = 0;
             ble_log_lbm_recycle_trans(trans);
             BLE_LOG_ASSERT(false);
             return 0;
@@ -233,7 +230,6 @@ size_t ble_log_prph_test_read(uint8_t *data, size_t len, TickType_t timeout,
     }
     size_t copied = len < trans->pos ? len : trans->pos;
     BLE_LOG_MEMCPY(data, trans->buf, copied);
-    trans->pos = 0;
     ble_log_lbm_recycle_trans(trans);
     if (uxQueueMessagesWaiting(s_pending_trans) == 0) {
         s_tx_deadline_us = 0;

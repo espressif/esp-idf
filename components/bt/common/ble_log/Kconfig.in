@@ -96,11 +96,11 @@ if BLE_LOG_ENABLED
         bool "Toggle a GPIO on every BLE Log TS sync sample"
         default n
         help
-            BLE Log TS sync always runs: every periodic output tick samples
-            the link-layer, ESP and OS clocks into the internal snapshot.
-            Enable this option to additionally toggle a GPIO on every
-            sample so an external logic analyzer can align the device
-            clocks with the capture.
+            Every periodic Internal Snapshot samples the link-layer, ESP and
+            OS clocks regardless of this option. Enable this option to build
+            the GPIO toggle used by external logic analyzers. It starts
+            disabled and low; ble_log_ts_sync_io_toggle_enable controls its
+            edges without stopping periodic snapshots.
 
     if BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
         config BLE_LOG_SYNC_IO_NUM
