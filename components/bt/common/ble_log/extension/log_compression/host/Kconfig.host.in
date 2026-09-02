@@ -3,6 +3,7 @@ menuconfig BLE_HOST_COMPRESSED_LOG_ENABLE
     bool "Enable BLE Host log compression(Preview)"
     depends on BLE_COMPRESSED_LOG_ENABLE
     depends on BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED
+    default y if BLE_LOG_HOST_LOG
     default n
     help
             Apply compression to host logs. Requires
