@@ -469,12 +469,18 @@ BT_HDR *l2cu_build_header (tL2C_LCB *p_lcb, UINT16 len, UINT8 cmd, UINT8 id)
 {
     BT_HDR  *p_buf;
     UINT8   *p;
+    UINT32  buf_size;
 
-    if (len + BT_HDR_SIZE + HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD > L2CAP_CMD_BUF_SIZE) {
+    /* Command parameter length is known; allocate only what this signalling PDU needs.
+     * Keep L2CAP_CMD_BUF_SIZE as the design upper bound (same as before).
+     */
+    buf_size = (UINT32)sizeof(BT_HDR) + L2CAP_SEND_CMD_OFFSET + len
+               + HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+    if (buf_size > L2CAP_CMD_BUF_SIZE) {
         return NULL;
     }
 
-    if ((p_buf = (BT_HDR *)osi_malloc(L2CAP_CMD_BUF_SIZE)) == NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(buf_size)) == NULL) {
         return (NULL);
     }
 
