@@ -621,6 +621,34 @@ TEST_CASE("custom certificate bundle init API - bound checking - Incorrect certi
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
 }
 
+TEST_CASE("custom certificate bundle init API - bound checking - Certificate extent beyond end of bundle", "[mbedtls]")
+{
+    uint8_t test_bundle[1024] = {0};
+    const size_t bundle_size = 64;
+    esp_err_t esp_ret;
+
+    /* Check that the esp_crt_bundle_set API will not accept a bundle whose only
+       certificate declares name/key lengths that run past the end of the bundle */
+    *((uint32_t*) &test_bundle[0]) = sizeof(uint32_t);   // 1 cert, starting right after the offset list
+    *((uint16_t*) &test_bundle[4]) = 100;   // Cert 1 name len
+    *((uint16_t*) &test_bundle[6]) = 100;   // Cert 1 key len: 4 + 100 + 100 > bundle_size
+
+    esp_ret = esp_crt_bundle_set(test_bundle, bundle_size);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+
+    /* Check that the esp_crt_bundle_set API will not accept a bundle where the last
+       certificate starts so close to the end that its 4-byte header (name len +
+       key len) would straddle the end of the bundle */
+    memset(test_bundle, 0, sizeof(test_bundle));
+    *((uint32_t*) &test_bundle[0]) = 2 * sizeof(uint32_t);   // 2 certs
+    *((uint32_t*) &test_bundle[4]) = bundle_size - 2;        // Cert 2 offset: 2 bytes before the end
+    *((uint16_t*) &test_bundle[8]) = 25;    // Cert 1 name len
+    *((uint16_t*) &test_bundle[10]) = 25;   // Cert 1 key len: cert 2 expected at 8 + 4 + 25 + 25 = bundle_size - 2
+
+    esp_ret = esp_crt_bundle_set(test_bundle, bundle_size);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+}
+
 #if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
 TEST_CASE("certificate bundle - expired cert rejected with time-date check", "[mbedtls]")
 {
