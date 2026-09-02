@@ -48,6 +48,7 @@
 #include "hal/color_hal.h"
 #include "rgb_lcd_rotation_sw.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/async_memcpy_dma2d.h"
 
 #if SOC_HAS(AXI_GDMA)
 #include "hal/axi_dma_ll.h"
@@ -89,6 +90,8 @@ static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel);
 static esp_err_t rgb_panel_reset(esp_lcd_panel_t *panel);
 static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel);
 static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data);
+static esp_err_t rgb_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data,
+                                          size_t src_x_size, size_t src_y_size, int src_x_start, int src_y_start, int src_x_end, int src_y_end);
 static esp_err_t rgb_panel_invert_color(esp_lcd_panel_t *panel, bool invert_color_data);
 static esp_err_t rgb_panel_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t rgb_panel_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
@@ -171,6 +174,11 @@ struct esp_rgb_panel_t {
         uint32_t bb_behind_cache: 1;     // Whether the bounce buffer is behind the cache
         uint32_t user_fb: 1;             // Whether the frame buffer is provided by user
     } flags;
+    // hook fields
+    esp_lcd_panel_draw_bitmap_hook_t draw_bitmap_hook; // Draw bitmap hook function
+    void* hook_ctx; // Hook context
+    bool (*on_hook_end)(esp_lcd_panel_handle_t panel); // Callback to be invoked when the draw bitmap hook completes its operation
+    async_memcpy_dma2d_handle_t fbcpy_handle; // DMA2D async 2D memcpy handle used for same-format frame buffer copy
 };
 
 static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel, const esp_lcd_rgb_panel_config_t *panel_config)
@@ -467,6 +475,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->base.reset = rgb_panel_reset;
     rgb_panel->base.init = rgb_panel_init;
     rgb_panel->base.draw_bitmap = rgb_panel_draw_bitmap;
+    rgb_panel->base.draw_bitmap_2d = rgb_panel_draw_bitmap_2d;
     rgb_panel->base.disp_on_off = rgb_panel_disp_on_off;
     rgb_panel->base.invert_color = rgb_panel_invert_color;
     rgb_panel->base.mirror = rgb_panel_mirror;
@@ -617,6 +626,10 @@ static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     int panel_id = rgb_panel->panel_id;
+    // check if the panel is using DMA2D draw bitmap hook
+    if (rgb_panel->fbcpy_handle) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "please call `esp_lcd_rgb_panel_disable_dma2d()` before deleting the panel");
+    }
     ESP_RETURN_ON_ERROR(lcd_rgb_panel_destroy(rgb_panel), TAG, "destroy rgb panel(%d) failed", panel_id);
     ESP_LOGD(TAG, "del rgb panel(%d)", panel_id);
     return ESP_OK;
@@ -702,22 +715,84 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
 
 static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
+    size_t src_x_size = x_end - x_start;
+    size_t src_y_size = y_end - y_start;
+    size_t src_x_start = 0;
+    size_t src_y_start = 0;
+    size_t src_x_end = src_x_size;
+    size_t src_y_end = src_y_size;
+    ESP_RETURN_ON_ERROR(rgb_panel_draw_bitmap_2d(panel, x_start, y_start, x_end, y_end, color_data, src_x_size, src_y_size, src_x_start, src_y_start, src_x_end, src_y_end),
+                        TAG, "draw bitmap failed");
+    return ESP_OK;
+}
+
+static void rgb_panel_update_dma_link(esp_rgb_panel_t *rgb_panel)
+{
+    if (!rgb_panel->bb_size && rgb_panel->flags.stream_mode) {
+        for (int i = 0; i < rgb_panel->num_fbs; i++) {
+            // Note, because of DMA prefetch, there's possibility that the old frame buffer might be sent out again
+            // it's hard to know the time when the new frame buffer starts
+            gdma_link_concat(rgb_panel->dma_fb_links[i], -1, rgb_panel->dma_fb_links[rgb_panel->cur_fb_index], 0);
+        }
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+        gdma_request_link_switch_event(rgb_panel->dma_chan);
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+    }
+}
+
+static bool rgb_panel_draw_bitmap_hook_end(esp_lcd_panel_t *panel)
+{
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    rgb_panel_update_dma_link(rgb_panel);
+    if (rgb_panel->on_color_trans_done) {
+        return rgb_panel->on_color_trans_done(panel, NULL, rgb_panel->user_ctx);
+    }
+    return false;
+}
+
+#if SOC_HAS(DMA2D)
+static bool async_fbcpy_done_cb(async_memcpy_dma2d_handle_t mcp, async_memcpy_dma2d_event_data_t *event, void *cb_args)
+{
+    bool need_yield = false;
+    esp_rgb_panel_t *rgb_panel = (esp_rgb_panel_t *)cb_args;
+    (void)mcp;
+    (void)event;
+
+    if (rgb_panel->on_hook_end) {
+        if (rgb_panel->on_hook_end(&rgb_panel->base)) {
+            need_yield = true;
+        }
+    }
+    return need_yield;
+}
+#endif // SOC_HAS(DMA2D)
+
+static esp_err_t rgb_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data,
+                                          size_t src_x_size, size_t src_y_size, int src_x_start, int src_y_start, int src_x_end, int src_y_end)
+{
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     ESP_RETURN_ON_FALSE(rgb_panel->num_fbs > 0, ESP_ERR_NOT_SUPPORTED, TAG, "no frame buffer installed");
     esp_lcd_rgb_panel_draw_buf_complete_cb_t cb = rgb_panel->on_color_trans_done;
 
+    uint8_t cur_fb_index = rgb_panel->cur_fb_index;
+    uint8_t *frame_buffer = rgb_panel->fbs[cur_fb_index];
     uint8_t *draw_buffer = (uint8_t *)color_data;
     size_t fb_size = rgb_panel->fb_size;
     int h_res = rgb_panel->timings.h_res;
     int v_res = rgb_panel->timings.v_res;
     int bytes_per_pixel = rgb_panel->fb_bits_per_pixel / 8;
-    uint32_t bytes_per_line = bytes_per_pixel * h_res;
 
     // adjust the flush window by adding extra gap
     x_start += rgb_panel->x_gap;
     y_start += rgb_panel->y_gap;
     x_end += rgb_panel->x_gap;
     y_end += rgb_panel->y_gap;
+
+    // save the original coordinates before clipping
+    int unclipped_x_start = x_start;
+    int unclipped_y_start = y_start;
+    int unclipped_x_end = x_end;
+    int unclipped_y_end = y_end;
 
     // clip to boundaries
     if (rgb_panel->rotate_mask & ROTATE_MASK_SWAP_XY) {
@@ -739,6 +814,20 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         return ESP_OK;
     }
 
+    // adjust the source coordinates to the clipped region
+    src_x_start += x_start - unclipped_x_start;
+    src_y_start += y_start - unclipped_y_start;
+    src_x_end -= unclipped_x_end - x_end;
+    src_y_end -= unclipped_y_end - y_end;
+
+    if (x_start >= x_end || y_start >= y_end || src_x_start >= src_x_end || src_y_start >= src_y_end) {
+        // no valid region to draw, skip
+        if (cb) {
+            cb(&rgb_panel->base, NULL, rgb_panel->user_ctx);
+        }
+        return ESP_OK;
+    }
+
     // check if we want to copy the draw buffer to the internal frame buffer
     bool draw_buf_copy_to_fb = true;
     uint8_t draw_buf_fb_index = 0;
@@ -750,17 +839,44 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         }
     }
 
-    if (draw_buf_copy_to_fb) {
+    if (rgb_panel->draw_bitmap_hook && draw_buf_copy_to_fb && !rgb_panel->rotate_mask) { // copy using draw bitmap hook
+        ESP_LOGV(TAG, "copy draw buffer by draw bitmap hook");
+        // Note, whether the previous draw operation is finished should be ensured by the hook.
+        // For the built-in DMA2D hook, cache maintenance of the source and destination
+        // buffers is handled inside the DMA2D async 2D memcpy driver.
+
+        esp_lcd_draw_bitmap_hook_data_t hook_data = {
+            .dst_data = frame_buffer,
+            .dst_x_size = h_res,
+            .dst_y_size = v_res,
+            .dst_x_start = x_start,
+            .dst_y_start = y_start,
+            .dst_x_end = x_end,
+            .dst_y_end = y_end,
+            .src_data = draw_buffer,
+            .src_x_size = src_x_size,
+            .src_y_size = src_y_size,
+            .src_x_start = src_x_start,
+            .src_y_start = src_y_start,
+            .src_x_end = src_x_end,
+            .src_y_end = src_y_end,
+            .bits_per_pixel = rgb_panel->fb_bits_per_pixel,
+            .on_hook_end = rgb_panel_draw_bitmap_hook_end,
+        };
+
+        ESP_RETURN_ON_ERROR(rgb_panel->draw_bitmap_hook(panel, &hook_data, rgb_panel->hook_ctx), TAG, "draw_bitmap_hook failed");
+        return ESP_OK;
+    } else if (draw_buf_copy_to_fb) { // copy by CPU
         // sync the draw buffer with the frame buffer by CPU copy
         ESP_LOGV(TAG, "copy draw buffer to frame buffer by CPU");
-        uint8_t *fb = rgb_panel->fbs[rgb_panel->cur_fb_index];
-        size_t bytes_to_flush = v_res * bytes_per_line;
-        uint8_t *flush_ptr = fb;
-
-        const uint8_t *from = (const uint8_t *)color_data;
+        uint8_t *fb = frame_buffer;
+        const uint8_t *from_base = draw_buffer;
         uint32_t copy_bytes_per_line = (x_end - x_start) * bytes_per_pixel;
-        size_t offset = y_start * copy_bytes_per_line + x_start * bytes_per_pixel;
-        uint8_t *to = fb;
+        uint32_t bytes_per_line = bytes_per_pixel * h_res;
+        uint32_t src_bytes_per_line = bytes_per_pixel * src_x_size;
+        size_t bytes_to_flush = 0;
+        uint8_t *flush_ptr = NULL;
+
         if (1 == bytes_per_pixel) {
             COPY_PIXEL_CODE_BLOCK(8)
         } else if (2 == bytes_per_pixel) {
@@ -769,22 +885,21 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
             COPY_PIXEL_CODE_BLOCK(24)
         }
         // do memory sync only when the frame buffer is mounted to the DMA link list and behind the cache
-        if (!rgb_panel->bb_size && rgb_panel->flags.fb_behind_cache) {
+        if (!rgb_panel->bb_size && rgb_panel->flags.fb_behind_cache && flush_ptr) {
             esp_cache_msync(flush_ptr, bytes_to_flush, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         }
         // after the draw buffer finished copying, notify the user to recycle the draw buffer
         if (cb) {
             cb(&rgb_panel->base, NULL, rgb_panel->user_ctx);
         }
-    } else {
-        ESP_LOGV(TAG, "draw buffer is part of the frame buffer");
-        // the new frame buffer index is changed
+    } else { // no copy, just do cache memory write back
+        ESP_LOGV(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
+        // only write back the LCD lines that updated by the draw buffer
         rgb_panel->cur_fb_index = draw_buf_fb_index;
-        // when this function is called, the frame buffer already reflects the draw buffer changes
-        // if the frame buffer is also mounted to the DMA, we need to do the sync between them
-        if (!rgb_panel->bb_size && rgb_panel->flags.fb_behind_cache) {
-            uint8_t *cache_sync_start = rgb_panel->fbs[draw_buf_fb_index] + (y_start * h_res) * bytes_per_pixel;
-            size_t cache_sync_size = (y_end - y_start) * bytes_per_line;
+        uint8_t *cache_sync_start = rgb_panel->fbs[draw_buf_fb_index] + (y_start * h_res) * bytes_per_pixel;
+        size_t cache_sync_size = (y_end - y_start) * h_res * bytes_per_pixel;
+        // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
+        if (rgb_panel->flags.fb_behind_cache) {
             esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         }
         // after the draw buffer finished copying, notify the user to recycle the draw buffer
@@ -793,18 +908,7 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         }
     }
 
-    if (!rgb_panel->bb_size) {
-        if (rgb_panel->flags.stream_mode) {
-            for (int i = 0; i < rgb_panel->num_fbs; i++) {
-                // Note, because of DMA prefetch, there's possibility that the old frame buffer might be sent out again
-                // it's hard to know the time when the new frame buffer starts
-                gdma_link_concat(rgb_panel->dma_fb_links[i], -1, rgb_panel->dma_fb_links[rgb_panel->cur_fb_index], 0);
-            }
-#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
-            ESP_RETURN_ON_ERROR(gdma_request_link_switch_event(rgb_panel->dma_chan), TAG, "request link switch event failed");
-#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
-        }
-    }
+    rgb_panel_update_dma_link(rgb_panel);
     return ESP_OK;
 }
 
@@ -1429,6 +1533,103 @@ IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
         portYIELD_FROM_ISR();
     }
 }
+
+esp_err_t esp_lcd_rgb_panel_register_hooks(esp_lcd_panel_handle_t panel, const esp_lcd_panel_hooks_t *hooks, void *hook_ctx)
+{
+    ESP_RETURN_ON_FALSE(panel && hooks, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+
+    rgb_panel->draw_bitmap_hook = hooks->draw_bitmap_hook;
+    rgb_panel->hook_ctx = hook_ctx;
+
+    return ESP_OK;
+}
+
+#if SOC_HAS(DMA2D)
+static esp_err_t rgb_panel_draw_bitmap_dma2d_hook(esp_lcd_panel_t *panel, const esp_lcd_draw_bitmap_hook_data_t *hook_data, void* hook_ctx)
+{
+    ESP_LOGV(TAG, "copy draw buffer by DMA2D");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    (void)hook_ctx;
+
+    // Built-in DMA2D draw hook only needs same-format 2D window copy.
+    // Use the private DMA2D async memcpy wrapper (thin layer over color convert).
+    async_memcpy_dma2d_trans_desc_t fbcpy_trans_config = {
+        .src_buffer = hook_data->src_data,
+        .dst_buffer = hook_data->dst_data,
+        .src_stride = hook_data->src_x_size,
+        .src_height = hook_data->src_y_size,
+        .dst_stride = hook_data->dst_x_size,
+        .dst_height = hook_data->dst_y_size,
+        .src_x = hook_data->src_x_start,
+        .src_y = hook_data->src_y_start,
+        .dst_x = hook_data->dst_x_start,
+        .dst_y = hook_data->dst_y_start,
+        .copy_width = hook_data->src_x_end - hook_data->src_x_start,
+        .copy_height = hook_data->src_y_end - hook_data->src_y_start,
+        .pixel_format = rgb_panel->in_color_format,
+    };
+    // The DMA2D async 2D memcpy backend owns source/destination cache sync for the
+    // copy path, so the LCD driver should not perform extra cache sync here.
+    // Save the completion callback and invoke it when the async frame buffer copy finishes.
+    rgb_panel->on_hook_end = hook_data->on_hook_end;
+    ESP_RETURN_ON_ERROR(esp_async_memcpy_dma2d(rgb_panel->fbcpy_handle, &fbcpy_trans_config, async_fbcpy_done_cb, rgb_panel), TAG, "async frame buffer copy failed");
+    return ESP_OK;
+}
+
+esp_err_t esp_lcd_rgb_panel_enable_dma2d(esp_lcd_panel_handle_t panel)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel");
+    esp_err_t ret = ESP_OK;
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+
+    // Check if built-in DMA2D draw bitmap hook is registered
+    ESP_RETURN_ON_FALSE(!rgb_panel->fbcpy_handle, ESP_ERR_INVALID_STATE, TAG, "draw bitmap DMA2D hook is already registered");
+
+    // Initialize the DMA2D async 2D memcpy backend used by the built-in copy hook.
+    // Use its default backlog to queue multiple frame buffer copy requests.
+    async_memcpy_dma2d_config_t fbcpy_config = {
+        .dma_burst_size = 128, // for better performance
+    };
+    ESP_RETURN_ON_ERROR(esp_async_memcpy_install_dma2d(&fbcpy_config, &rgb_panel->fbcpy_handle), TAG, "install async frame buffer copy backend failed");
+
+    // Register the DMA2D draw bitmap hook
+    esp_lcd_panel_hooks_t hooks = {
+        .draw_bitmap_hook = rgb_panel_draw_bitmap_dma2d_hook,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_rgb_panel_register_hooks(panel, &hooks, NULL), err, TAG, "register DMA2D draw bitmap hook failed");
+
+    return ESP_OK;
+
+err:
+    if (rgb_panel->fbcpy_handle) {
+        esp_async_memcpy_uninstall_dma2d(rgb_panel->fbcpy_handle);
+        rgb_panel->fbcpy_handle = NULL;
+    }
+    rgb_panel->on_hook_end = NULL;
+    return ret;
+}
+
+esp_err_t esp_lcd_rgb_panel_disable_dma2d(esp_lcd_panel_handle_t panel)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+
+    // Check if built-in DMA2D draw bitmap hook is registered
+    ESP_RETURN_ON_FALSE(rgb_panel->fbcpy_handle, ESP_ERR_INVALID_STATE, TAG, "draw bitmap DMA2D hook not registered");
+
+    // Clear the hook first so new draws stop entering the DMA2D path before uninstall.
+    esp_lcd_panel_hooks_t hooks = {
+        .draw_bitmap_hook = NULL,
+    };
+    ESP_RETURN_ON_ERROR(esp_lcd_rgb_panel_register_hooks(panel, &hooks, NULL), TAG, "unregister DMA2D draw bitmap hook failed");
+    ESP_RETURN_ON_ERROR(esp_async_memcpy_uninstall_dma2d(rgb_panel->fbcpy_handle), TAG, "uninstall DMA2D failed");
+    rgb_panel->fbcpy_handle = NULL;
+    rgb_panel->on_hook_end = NULL;
+
+    return ESP_OK;
+}
+#endif // SOC_HAS(DMA2D)
 
 #if CONFIG_LCD_ENABLE_DEBUG_LOG
 __attribute__((constructor))
