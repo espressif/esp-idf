@@ -90,11 +90,18 @@ void ble_log_deinit(void)
     ble_log_inited = false;
     ble_log_lbm_begin_deinit();
 
+    /* Residual frames parked in OPEN transports would be discarded with
+     * the pool. Seal and dispatch them while the runtime queue is still
+     * alive; the peripheral deinit wait below completes the delivery. */
+    ble_log_lbm_drain_open_transports();
+
     /* CRITICAL - Deinit ordering rationale:
      *
      * 1. The LBM writer gate is closed before submodule teardown. Writers
      *    already inside the gate keep a reference until they finish; later
-     *    writers are rejected.
+     *    writers are rejected. With writers gone, the deinit drain seals
+     *    the remaining OPEN transports and hands them to the runtime
+     *    queue, so residual frames are not discarded with the pool.
      *
      * 2. Runtime dispatch must be stopped FIRST to prevent it from sending
      *    transports to an already-destroyed peripheral driver. Active

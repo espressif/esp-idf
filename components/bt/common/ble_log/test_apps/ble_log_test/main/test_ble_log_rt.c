@@ -57,6 +57,7 @@ typedef struct {
 static uint8_t s_read_buf[TEST_READ_BUF_SIZE];
 static bool s_claim_hook_armed;
 static uint32_t s_stale_claim_handle;
+static volatile bool s_locked_hook_armed;
 static volatile bool s_enable_hook_armed;
 static SemaphoreHandle_t s_enable_hook_entered;
 static SemaphoreHandle_t s_enable_hook_continue;
@@ -70,6 +71,7 @@ static SemaphoreHandle_t s_compression_hook_continue;
 #endif
 
 void ble_log_test_claim_pre_publish_hook(void);
+void ble_log_test_claim_locked_hook(void);
 void ble_log_test_enable_before_lifecycle_lock_hook(void);
 void ble_log_test_disable_before_wake_hook(void);
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
@@ -85,6 +87,17 @@ void ble_log_test_claim_pre_publish_hook(void)
          * transport: a deleted check would frame stale claim metadata
          * (duplicate SN) on the wire. */
         ble_log_commit(s_stale_claim_handle, 1);
+    }
+}
+
+void ble_log_test_claim_locked_hook(void)
+{
+    if (s_locked_hook_armed) {
+        s_locked_hook_armed = false;
+        /* Runs while the claiming writer itself holds the OPEN transport
+         * lock: the flush must skip the busy transport and leave the
+         * pending-seal marker for the next claim. */
+        ble_log_lbm_flush_open_transports();
     }
 }
 
@@ -810,6 +823,179 @@ TEST_CASE("BLE Log flush preserves source-local sequence continuity",
     read_sequence_frames(&after, 1);
     TEST_ASSERT_TRUE(after.found);
     TEST_ASSERT_EQUAL_HEX32((before.sn + 1) & 0x00ffffffU, after.sn);
+}
+
+/* ------- pending-seal and deinit drain ------- */
+
+#define TEST_MARKER_CHUNK_MAX          (4)
+
+typedef struct {
+    uint8_t markers[TEST_MARKER_CHUNK_MAX];
+    int count;
+} marker_chunk_capture_t;
+
+static void capture_custom_marker(const test_ble_log_frame_t *frame, void *ctx)
+{
+    marker_chunk_capture_t *capture = ctx;
+    if (frame->src == BLE_LOG_SRC_CUSTOM &&
+            frame->payload_len == sizeof(uint32_t) + 1 &&
+            capture->count < TEST_MARKER_CHUNK_MAX) {
+        capture->markers[capture->count++] = frame->payload[sizeof(uint32_t)];
+    }
+}
+
+/* Reads every pending transport chunk, keeping only the chunks that carry
+ * CUSTOM marker frames; interleaved snapshot transports are consumed and
+ * ignored. */
+static int read_marker_chunks(marker_chunk_capture_t *chunks, int max_chunks)
+{
+    int marker_chunks = 0;
+    for (int i = 0; i < BLE_LOG_TRANS_TOTAL_CNT; i++) {
+        size_t len = ble_log_prph_test_read(
+            s_read_buf, sizeof(s_read_buf), pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+            0, NULL);
+        if (!len) {
+            break;
+        }
+        marker_chunk_capture_t chunk = {0};
+        TEST_ASSERT_TRUE(test_ble_log_walk_frames(s_read_buf, len,
+                                                  capture_custom_marker,
+                                                  &chunk));
+        if (chunk.count && marker_chunks < max_chunks) {
+            chunks[marker_chunks++] = chunk;
+        }
+    }
+    return marker_chunks;
+}
+
+static void auto_recycle_count(void *ctx)
+{
+    (*(int *)ctx)++;
+}
+
+TEST_CASE("BLE Log pending-seal marker defers the busy transport flush",
+          "[ble_log][lbm]")
+{
+    const uint8_t first_marker = 0xd1;
+    const uint8_t cursor_marker = 0xd2;
+    const uint8_t hooked_marker = 0xd3;
+    const uint8_t post_marker = 0xd4;
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_transports();
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+
+    /* Park one frame in an OPEN transport; the claim cursor stays on it. */
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
+                                       &first_marker, sizeof(first_marker)));
+
+    /* A prior test may leave open_cursor at any recycled transport. Prime
+     * it through either the direct path or the OPEN bitmap scan before
+     * arming the direct-path hook. */
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
+                                       &cursor_marker, sizeof(cursor_marker)));
+
+    /* The armed hook runs a flush while the claiming writer itself holds
+     * the transport lock: the flush must skip the busy transport and leave
+     * the pending-seal marker for the NEXT claim. */
+    s_locked_hook_armed = true;
+    bool hooked_write = ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
+                                          &hooked_marker,
+                                          sizeof(hooked_marker));
+    bool hook_ran = !s_locked_hook_armed;
+    s_locked_hook_armed = false;
+    TEST_ASSERT_TRUE(hooked_write);
+    TEST_ASSERT_TRUE(hook_ran);
+
+    /* The next writer must seal the flagged transport first and place its
+     * own frame in another one. */
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
+                                       &post_marker, sizeof(post_marker)));
+
+    ble_log_lbm_flush_open_transports();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+
+    marker_chunk_capture_t chunks[2] = {0};
+    TEST_ASSERT_EQUAL(2, read_marker_chunks(chunks, 2));
+    TEST_ASSERT_EQUAL(3, chunks[0].count);
+    TEST_ASSERT_EQUAL_HEX8(first_marker, chunks[0].markers[0]);
+    TEST_ASSERT_EQUAL_HEX8(cursor_marker, chunks[0].markers[1]);
+    TEST_ASSERT_EQUAL_HEX8(hooked_marker, chunks[0].markers[2]);
+    TEST_ASSERT_EQUAL(1, chunks[1].count);
+    TEST_ASSERT_EQUAL_HEX8(post_marker, chunks[1].markers[0]);
+}
+
+TEST_CASE("BLE Log deinit drain delivers parked open transports",
+          "[ble_log][lbm]")
+{
+    const uint8_t markers[TEST_MARKER_CHUNK_MAX] = {0xe1, 0xe2, 0xe3, 0xe4};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_transports();
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+
+    /* Sub-capacity burst: frames park in an OPEN transport that no
+     * capacity seal ever sends. */
+    for (int i = 0; i < TEST_MARKER_CHUNK_MAX; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
+                                           &markers[i], 1));
+    }
+
+    /* Exercise the exact deinit-drain contract: close the producer gate and
+     * wait for writers before sealing every OPEN transport. */
+    ble_log_lbm_begin_deinit();
+    ble_log_lbm_drain_open_transports();
+
+    marker_chunk_capture_t chunks[1] = {0};
+    int chunk_count = read_marker_chunks(chunks, 1);
+
+    /* Finish the partially-entered teardown and restore the module before
+     * assertions so the following Unity case starts from a valid lifetime. */
+    ble_log_deinit();
+    TEST_ASSERT_TRUE(ble_log_init());
+
+    TEST_ASSERT_EQUAL(1, chunk_count);
+    TEST_ASSERT_EQUAL(TEST_MARKER_CHUNK_MAX, chunks[0].count);
+    for (int i = 0; i < TEST_MARKER_CHUNK_MAX; i++) {
+        TEST_ASSERT_EQUAL_HEX8(markers[i], chunks[0].markers[i]);
+    }
+}
+
+TEST_CASE("BLE Log deinit hands residual transports to the peripheral",
+          "[ble_log][lbm]")
+{
+    const uint8_t marker = 0xf1;
+    int recycled = 0;
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_transports();
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
+                                       &marker, sizeof(marker)));
+
+    /* Auto-recycle turns every dispatched transport into a countable
+     * event, so the real deinit path is observable without a reader
+     * task racing the teardown. */
+    ble_log_prph_test_set_auto_recycle_hook(auto_recycle_count, &recycled);
+    ble_log_deinit();
+    TEST_ASSERT_GREATER_OR_EQUAL(1, recycled);
+    TEST_ASSERT_TRUE(ble_log_init());
 }
 
 #define SNAPSHOT_CAPTURE_MAX 8
