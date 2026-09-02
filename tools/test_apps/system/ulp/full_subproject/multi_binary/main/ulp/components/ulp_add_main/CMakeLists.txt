@@ -1,2 +1,1 @@
-idf_component_register(SRCS "main.c"
-                       REQUIRES lp_core)
+idf_component_register(SRCS "main.c")

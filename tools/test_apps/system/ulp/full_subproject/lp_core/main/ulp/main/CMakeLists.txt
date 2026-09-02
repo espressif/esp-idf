@@ -1,5 +1,5 @@
 idf_component_register(SRCS "main.c"
-                       REQUIRES lp_core ulp_sum ulp_math)
+                       REQUIRES ulp_sum ulp_math)
 
 # Linker script template processed by ldgen. The mapping[ulp_math_fast]
 # marker is resolved using the .lf fragment from the ulp_math component.

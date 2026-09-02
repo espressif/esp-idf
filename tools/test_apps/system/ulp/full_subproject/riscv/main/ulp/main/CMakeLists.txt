@@ -1,5 +1,4 @@
 idf_component_register(SRCS "main.c"
-                       REQUIRES ulp_riscv
                        LDFRAGMENTS "ulp_riscv_sections.lf")
 
 # Supplementary linker script template processed by ldgen. The mapping marker

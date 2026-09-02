@@ -64,11 +64,18 @@ function(__ulp_prepare_build)
         idf_build_set_property(${property} "")
     endforeach()
 
-    # Do not apply the default app component closure to ULP child projects.
-    # ULP components should contribute dependencies explicitly.
-    idf_build_set_property(__COMPONENT_REQUIRES_COMMON "")
-    idf_build_set_property(__COMMON_COMPONENT_INTERFACES "")
+    # A ULP program is built against the component for its architecture, so
+    # every component of the child gets it without naming it. Nothing else of
+    # the application component closure applies, and the interfaces are set
+    # here rather than through __init_common_components, which would also add
+    # the target's architecture component.
+    __ulp_arch_component(ulp_component)
+
+    idf_component_get_property(ulp_component_interface "${ulp_component}" COMPONENT_INTERFACE)
+    idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${ulp_component}")
+    idf_build_set_property(__COMMON_COMPONENT_INTERFACES "${ulp_component_interface}")
     idf_build_set_property(__COMMON_COMPONENTS_INITIALIZED YES)
+    idf_component_include("${ulp_component}")
 
     idf_build_set_property(__ULP_BUILD_PREPARED YES)
 endfunction()

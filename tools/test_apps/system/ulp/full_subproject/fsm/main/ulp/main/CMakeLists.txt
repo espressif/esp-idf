@@ -2,7 +2,7 @@ set(srcs
     "counter.S")
 
 idf_component_register(SRCS ${srcs}
-                       REQUIRES ulp_fsm ulp_wake
+                       REQUIRES ulp_wake
                        LDFRAGMENTS "ulp_fsm_sections.lf")
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ULP_BUILD_SYSTEM_FSM_EXAMPLE=1)

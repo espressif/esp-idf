@@ -1,2 +1,1 @@
-idf_component_register(SRCS "wake_up.S"
-                       REQUIRES ulp_fsm)
+idf_component_register(SRCS "wake_up.S")
