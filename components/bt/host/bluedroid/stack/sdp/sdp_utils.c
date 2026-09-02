@@ -306,14 +306,27 @@ void sdpu_build_n_send_error (tCONN_CB *p_ccb, UINT16 trans_num, UINT16 error_co
 {
     UINT8           *p_rsp, *p_rsp_start, *p_rsp_param_len;
     UINT16          rsp_param_len;
+    UINT16          buf_size;
     BT_HDR          *p_buf;
+    UINT16          len;
 
 
     SDP_TRACE_WARNING ("SDP - sdpu_build_n_send_error  code: 0x%x  CID: 0x%x\n",
                        error_code, p_ccb->connection_id);
 
+    /* pdu id(1), trans num(2), param len(2), error code(2) and the optional error text */
+    buf_size = sizeof(BT_HDR) + L2CAP_MIN_OFFSET + 7;
+    if (p_error_text) {
+        len = (UINT16)strlen(p_error_text);
+        if (len > SDP_DATA_BUF_SIZE - buf_size) {
+            buf_size = SDP_DATA_BUF_SIZE;
+        }else {
+            buf_size += len;
+        }
+    }
+
     /* Get a buffer to use to build and send the packet to L2CAP */
-    if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) == NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(buf_size)) == NULL) {
         SDP_TRACE_ERROR ("SDP - no buf for err msg\n");
         return;
     }
