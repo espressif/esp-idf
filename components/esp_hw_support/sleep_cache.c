@@ -32,6 +32,9 @@ void sleep_cache_suspend(void)
         // fully check the access to external memory, writeback & invalidate is needed here.
         Cache_WriteBack_Invalidate_All(CACHE_MAP_MASK);
 #endif
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+        esp_cpu_branch_prediction_disable();
+#endif
         spi_flash_disable_cache(esp_cpu_get_core_id(), &s_cache_state);
     }
 }
@@ -43,6 +46,9 @@ void sleep_cache_resume(void)
     assert(s_cache_suspend_cnt >= 0 && DRAM_STR("cache resume doesn't match suspend ops"));
     if (s_cache_suspend_cnt == 0) {
         spi_flash_restore_cache(esp_cpu_get_core_id(), s_cache_state);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+        esp_cpu_branch_prediction_enable();
+#endif
     }
 }
 
