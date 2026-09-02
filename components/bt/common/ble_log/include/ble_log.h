@@ -21,7 +21,7 @@
  * memory requirements, keep it as less as possible; it's recommended to use subcode for more
  * log data structure decoding */
 /* CRITICAL: this enum is a public ABI and must not be reordered or renamed.
- * Its values are also the on-wire source IDs of protocol v7 frames. */
+ * Its values are the base on-wire source IDs of protocol v7 frames. */
 typedef enum {
     /* Internal */
     BLE_LOG_SRC_INTERNAL = 0,
@@ -63,6 +63,7 @@ typedef enum {
 /* INTERFACE */
 bool ble_log_init(void);
 void ble_log_deinit(void);
+/* Controls public producers only; periodic system output remains active. */
 bool ble_log_enable(bool enable);
 /* Blocking; call only from a caller-owned task, not an ISR or system callback. */
 void ble_log_flush(void);
@@ -74,6 +75,11 @@ void ble_log_dump_to_console(void);
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
                           uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
 #endif /* CONFIG_BLE_LOG_LL_ENABLED */
+/* Task-context only. Controls the optional TS sync IO toggle, which starts
+ * disabled and low; this is a lifecycle-checked no-op when the toggle is not
+ * built. Periodic Internal Snapshots remain active in either state. */
+bool ble_log_ts_sync_io_toggle_enable(bool enable);
+/* Backward-compatible name for ble_log_ts_sync_io_toggle_enable(). */
 bool ble_log_sync_enable(bool enable);
 
 #endif /* __BLE_LOG_H__ */
