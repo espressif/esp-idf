@@ -10,7 +10,7 @@
 /* INCLUDE */
 #include "ble_log.h"
 #include "ble_log_rt.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 #include "ble_log_prph.h"
 #include "ble_log_util.h"
 #include "esp_log.h"
@@ -45,24 +45,24 @@ bool ble_log_init(void)
     }
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
-    /* Initialize BLE Log Runtime */
-    if (!ble_log_rt_init()) {
-        goto exit;
-    }
-
-    /* Initialize BLE Log LBM */
+    /* Allocate pool and dedicated Internal transport before runtime starts. */
     if (!ble_log_lbm_init()) {
         goto exit;
     }
 
-    /* Initialize BLE Log peripheral interface */
     if (!ble_log_prph_init(BLE_LOG_TRANS_TOTAL_CNT)) {
         goto exit;
     }
 
-    /* Initialization done */
+    if (!ble_log_rt_init()) {
+        goto exit;
+    }
+
     ble_log_inited = true;
-    ble_log_enable(true);
+    if (!ble_log_enable(true) ||
+            !ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_INIT, NULL, true)) {
+        goto exit;
+    }
     esp_err_t ret = esp_register_shutdown_handler(ble_log_shutdown_handler);
     if (ret == ESP_OK) {
         shutdown_handler_registered = true;
@@ -70,12 +70,6 @@ bool ble_log_init(void)
         ESP_LOGW(TAG, "Register shutdown handler failed, ret = 0x%x", ret);
     }
 
-    /* Write initialization done log */
-    ble_log_info_t ble_log_info = {
-        .int_src_code = BLE_LOG_INT_SRC_INIT_DONE,
-        .version = BLE_LOG_VERSION,
-    };
-    ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&ble_log_info, sizeof(ble_log_info_t));
     return true;
 
 exit:
@@ -94,9 +88,9 @@ void ble_log_deinit(void)
         }
     }
     ble_log_inited = false;
-    ble_log_lbm_close();
+    ble_log_lbm_begin_deinit();
 
-    /* CRITICAL — Deinit ordering rationale:
+    /* CRITICAL - Deinit ordering rationale:
      *
      * 1. The LBM writer gate is closed before submodule teardown. Writers
      *    already inside the gate keep a reference until they finish; later

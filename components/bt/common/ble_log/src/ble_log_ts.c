@@ -84,9 +84,11 @@ void ble_log_ts_reset(bool status)
         return;
     }
 
+    BLE_LOG_ENTER_CRITICAL();
     if (!status && !ts_info->io_level) {
         gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 1);
     }
     ts_info->io_level = 0;
     gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 0);
+    BLE_LOG_EXIT_CRITICAL();
 }

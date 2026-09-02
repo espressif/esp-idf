@@ -74,12 +74,12 @@ uint32_t ble_log_fast_checksum(const uint8_t *data, size_t len)
 
 BLE_LOG_IRAM_ATTR
 bool ble_log_ref_count_try_acquire(volatile uint32_t *ref_count,
-                                   const uint32_t *inited)
+                                   const uint32_t *gate)
 {
-    /* The seq_cst increment/check pairs with deinit's seq_cst gate close
-     * before it waits for the reference count. */
+    /* The seq_cst increment/check pairs with a seq_cst gate close before the
+     * owner waits for the reference count. */
     BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(ref_count);
-    if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(*inited)) {
+    if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(*gate)) {
         return true;
     }
     BLE_LOG_REF_COUNT_RELEASE(ref_count);

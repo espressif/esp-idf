@@ -11,7 +11,7 @@
 /* INCLUDE */
 #include "ble_log.h"
 #include "ble_log_rt.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -55,6 +55,7 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t rt_ref_count = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR esp_timer_handle_t rt_defer_timer = NULL;
 BLE_LOG_STATIC uint32_t rt_last_hook_os_ts = 0;
+BLE_LOG_STATIC ble_log_version_info_t rt_version_info;
 #if CONFIG_BLE_LOG_TS_ENABLED
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_ts_enabled = 0;
 BLE_LOG_STATIC esp_timer_handle_t rt_ts_timer = NULL;
@@ -63,6 +64,7 @@ BLE_LOG_STATIC esp_timer_handle_t rt_ts_timer = NULL;
 /* PRIVATE FUNCTION DECLARATION */
 BLE_LOG_STATIC void ble_log_rt_defer_cb(void *arg);
 BLE_LOG_STATIC bool ble_log_rt_dispatch(QueueHandle_t queue, UBaseType_t pending);
+BLE_LOG_STATIC void ble_log_rt_version_info_init(void);
 BLE_LOG_STATIC void ble_log_rt_run_hook(void);
 #if CONFIG_BLE_LOG_TS_ENABLED
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
@@ -75,53 +77,58 @@ BLE_LOG_STATIC void ble_log_commit_copy(uint8_t *dst, const char *src, size_t le
     BLE_LOG_MEMCPY(dst, src, strnlen(src, len));
 }
 
+BLE_LOG_STATIC void ble_log_rt_version_info_init(void)
+{
+    BLE_LOG_MEMSET(&rt_version_info, 0, sizeof(rt_version_info));
+    rt_version_info.int_src_code = BLE_LOG_INT_SRC_VERSION_INFO;
+    rt_version_info.version = BLE_LOG_VERSION;
+#ifdef BLE_LOG_IDF_COMMIT
+    BLE_LOG_MEMCPY(rt_version_info.idf_commit, BLE_LOG_IDF_COMMIT,
+                   BLE_LOG_IDF_COMMIT_LEN);
+#endif
+#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_CONTROLLER_GET_COMMIT)
+    ble_log_commit_copy(rt_version_info.controller_commit,
+                        BLE_LOG_CONTROLLER_GET_COMMIT(), BLE_LOG_LIB_COMMIT_LEN);
+#endif
+#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_BTDM_COMMON_GET_COMMIT)
+    ble_log_commit_copy(rt_version_info.btdm_common_commit,
+                        BLE_LOG_BTDM_COMMON_GET_COMMIT(), BLE_LOG_LIB_COMMIT_LEN);
+#endif
+#if CONFIG_BLE_MESH && CONFIG_BLE_MESH_V11_SUPPORT
+    const char *mesh_commit = strrchr(bt_mesh_v11_commit_str, ' ');
+    if (mesh_commit) {
+        ble_log_commit_copy(rt_version_info.mesh_commit, mesh_commit + 1,
+                            BLE_LOG_LIB_COMMIT_LEN);
+    }
+#endif
+#if CONFIG_BT_AUDIO && CONFIG_SOC_BLE_AUDIO_SUPPORTED
+    ble_log_commit_copy(rt_version_info.audio_commit, lib_audio_commit_get(),
+                        BLE_LOG_LIB_COMMIT_LEN);
+#endif
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+    rt_version_info.chip_model = (uint16_t)chip_info.model;
+    rt_version_info.chip_revision = chip_info.revision;
+    ble_log_internal_set_version_info(&rt_version_info);
+}
+
 BLE_LOG_STATIC void ble_log_rt_run_hook(void)
 {
+    if (!ble_log_lbm_is_enabled()) {
+        return;
+    }
+#if CONFIG_BLE_LOG_TS_ENABLED
+    if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_ts_enabled)) {
+        return;
+    }
+#endif
     uint32_t now = pdTICKS_TO_MS(xTaskGetTickCount());
     if ((uint32_t)(now - rt_last_hook_os_ts) < BLE_LOG_TS_TRIGGER_TIMEOUT_MS) {
         return;
     }
     rt_last_hook_os_ts = now;
-
-    /* Write version info: BLE Log version, idf commit (build-time),
-     * linked-in BLE lib commits, chip model/revision (efuse, runtime-only).
-     * Libs absent from the build leave their fields zero. */
-    ble_log_version_info_t version_info = {
-        .int_src_code = BLE_LOG_INT_SRC_VERSION_INFO,
-        .version = BLE_LOG_VERSION,
-    };
-#ifdef BLE_LOG_IDF_COMMIT
-    BLE_LOG_MEMCPY(version_info.idf_commit, BLE_LOG_IDF_COMMIT, BLE_LOG_IDF_COMMIT_LEN);
-#endif
-#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_CONTROLLER_GET_COMMIT)
-    ble_log_commit_copy(version_info.controller_commit, BLE_LOG_CONTROLLER_GET_COMMIT(),
-                        BLE_LOG_LIB_COMMIT_LEN);
-#endif
-#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_BTDM_COMMON_GET_COMMIT)
-    ble_log_commit_copy(version_info.btdm_common_commit, BLE_LOG_BTDM_COMMON_GET_COMMIT(),
-                        BLE_LOG_LIB_COMMIT_LEN);
-#endif
-#if CONFIG_BLE_MESH && CONFIG_BLE_MESH_V11_SUPPORT
-    /* The hash is the substring after the last space of the lib string */
-    const char *mesh_commit = strrchr(bt_mesh_v11_commit_str, ' ');
-    if (mesh_commit) {
-        ble_log_commit_copy(version_info.mesh_commit, mesh_commit + 1,
-                            BLE_LOG_LIB_COMMIT_LEN);
-    }
-#endif
-#if CONFIG_BT_AUDIO && CONFIG_SOC_BLE_AUDIO_SUPPORTED
-    ble_log_commit_copy(version_info.audio_commit, lib_audio_commit_get(),
-                        BLE_LOG_LIB_COMMIT_LEN);
-#endif
-    esp_chip_info_t chip_info;
-    esp_chip_info(&chip_info);
-    version_info.chip_model = (uint16_t)chip_info.model;
-    version_info.chip_revision = chip_info.revision;
-    ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)&version_info,
-                      sizeof(version_info));
-
-    ble_log_write_enh_stat();
-    ble_log_write_buf_util();
+    (void)ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_PERIODIC,
+                                    NULL, false);
 }
 
 BLE_LOG_STATIC bool ble_log_rt_dispatch(QueueHandle_t queue, UBaseType_t pending)
@@ -170,10 +177,12 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
         return;
     }
 
-    ble_log_ts_info_t *ts_info = NULL;
-    ble_log_ts_info_update(&ts_info);
-    if (ts_info) {
-        ble_log_write_hex(BLE_LOG_SRC_INTERNAL, (const uint8_t *)ts_info, sizeof(ble_log_ts_info_t));
+    ble_log_ts_info_t ts_info;
+    if (ble_log_ts_info_update(&ts_info)) {
+        (void)ble_log_internal_snapshot(
+            BLE_LOG_SNAPSHOT_REASON_PERIODIC |
+            BLE_LOG_SNAPSHOT_REASON_TS_VALID,
+            &ts_info, false);
     }
 }
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
@@ -185,6 +194,7 @@ bool ble_log_rt_init(void)
         return true;
     }
 
+    ble_log_rt_version_info_init();
     rt_queue_handle = xQueueCreate(BLE_LOG_TRANS_TOTAL_CNT, sizeof(ble_log_prph_trans_t *));
     if (!rt_queue_handle) {
         goto exit;
@@ -314,11 +324,12 @@ BLE_LOG_IRAM_ATTR void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans)
 #if CONFIG_BLE_LOG_TS_ENABLED
 bool ble_log_sync_enable(bool enable)
 {
-    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited)) {
+    if (!ble_log_ref_count_try_acquire(&rt_ref_count, &rt_inited)) {
         return false;
     }
     BLE_LOG_ATOMIC_STORE_RELEASE(rt_ts_enabled, enable);
     ble_log_ts_reset(enable);
+    BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
     return true;
 }
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
