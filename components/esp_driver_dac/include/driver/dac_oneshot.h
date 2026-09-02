@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,14 @@ esp_err_t dac_oneshot_del_channel(dac_oneshot_handle_t handle);
  *      - ESP_OK                Convert the digital value success
  */
 esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint8_t digi_value);
+
+/**
+ * @brief Get the DAC code bit width of a oneshot channel
+ *
+ * @param[in]  handle       The DAC oneshot channel handle
+ * @return                  The DAC code bit width, 0 if the input parameter is invalid
+ */
+uint8_t dac_oneshot_get_bitwidth(dac_oneshot_handle_t handle);
 
 #endif // SOC_DAC_SUPPORTED
 

@@ -12,10 +12,35 @@ menu "Example Configuration"
             bool "Asynchronous transmitting"
     endchoice
 
-    config EXAMPLE_AUDIO_SAMPLE_RATE
-        int "The audio sample rate (Unit: Hz)"
-        default 48000
+    config EXAMPLE_AUDIO_WAV_FILE
+        string "WAV file name"
+        default "hi_idf_audio.wav"
         help
-            The audio sample rate
+            WAV file under the example tools/ directory. It is converted to a DAC
+            code table at build time.
+
+    choice EXAMPLE_DAC_AUDIO_BITWIDTH_SEL
+        prompt "DAC audio table bit width"
+        default EXAMPLE_DAC_AUDIO_BITWIDTH_8 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
+        default EXAMPLE_DAC_AUDIO_BITWIDTH_12 if IDF_TARGET_ESP32S31
+        help
+            Bit width of the generated DAC codes. Must match the DAC channel configuration.
+
+        config EXAMPLE_DAC_AUDIO_BITWIDTH_8
+            bool "8 bits"
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
+        config EXAMPLE_DAC_AUDIO_BITWIDTH_10
+            bool "10 bits"
+            depends on IDF_TARGET_ESP32S31
+        config EXAMPLE_DAC_AUDIO_BITWIDTH_12
+            bool "12 bits"
+            depends on IDF_TARGET_ESP32S31
+    endchoice
+
+    config EXAMPLE_DAC_AUDIO_BITWIDTH
+        int
+        default 8 if EXAMPLE_DAC_AUDIO_BITWIDTH_8
+        default 10 if EXAMPLE_DAC_AUDIO_BITWIDTH_10
+        default 12 if EXAMPLE_DAC_AUDIO_BITWIDTH_12
 
 endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +90,14 @@ esp_err_t dac_cosine_start(dac_cosine_handle_t handle);
  *      - ESP_OK                Stop the cosine wave success
  */
 esp_err_t dac_cosine_stop(dac_cosine_handle_t handle);
+
+/**
+ * @brief Get the DAC code bit width of a cosine wave channel
+ *
+ * @param[in]  handle       The DAC cosine wave channel handle
+ * @return                  The DAC code bit width, 0 if the input parameter is invalid
+ */
+uint8_t dac_cosine_get_bitwidth(dac_cosine_handle_t handle);
 
 #endif // SOC_DAC_SUPPORTED
 
