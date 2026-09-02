@@ -1827,10 +1827,12 @@ static void sae_parse_token_container(struct sae_data *sae,
 		    pos, end - pos);
 	if (!sae_is_token_container_elem(pos, end))
 		return;
-	*token = pos + 3;
-	*token_len = pos[1] - 1;
+	if (token)
+		*token = pos + 3;
+	if (token_len)
+		*token_len = pos[1] - 1;
 	wpa_hexdump(MSG_DEBUG, "SAE: Anti-Clogging Token (in container)",
-		    *token, *token_len);
+		    pos + 3, pos[1] - 1);
 }
 
 
