@@ -267,7 +267,10 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     esp_err_t ret = ESP_OK;
     mcpwm_cap_channel_t *cap_chan = NULL;
     ESP_GOTO_ON_FALSE(cap_timer && config && ret_cap_channel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->prescale && config->prescale <= MCPWM_LL_GET(MAX_CAPTURE_PRESCALE), ESP_ERR_INVALID_ARG, err, TAG, "invalid prescale");
+    // prescale: same-edge ratio; 0/1 (bypass) or even.
+    uint32_t prescale = config->prescale ? config->prescale : 1;
+    ESP_GOTO_ON_FALSE((prescale == 1 || (prescale % 2) == 0) && (prescale / 2) < MCPWM_LL_GET(MAX_CAPTURE_PRESCALE),
+                      ESP_ERR_INVALID_ARG, err, TAG, "invalid prescale");
     if (config->intr_priority) {
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
                           TAG, "invalid interrupt priority:%d", config->intr_priority);
@@ -285,7 +288,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     mcpwm_ll_capture_enable_negedge(hal->dev, cap_chan_id, config->flags.neg_edge);
     mcpwm_ll_capture_enable_posedge(hal->dev, cap_chan_id, config->flags.pos_edge);
     mcpwm_ll_invert_input(hal->dev, cap_chan_id, config->flags.invert_cap_signal);
-    mcpwm_ll_capture_set_prescale(hal->dev, cap_chan_id, config->prescale);
+    mcpwm_ll_capture_set_prescale(hal->dev, cap_chan_id, prescale);
 
     if (config->gpio_num >= 0) {
         // GPIO configuration

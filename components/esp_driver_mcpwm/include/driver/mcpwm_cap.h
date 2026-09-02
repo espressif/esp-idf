@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,7 +141,11 @@ typedef struct {
     int gpio_num;                    /*!< GPIO used capturing input signal */
     int intr_priority;               /*!< MCPWM capture interrupt priority,
                                           if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
-    uint32_t prescale;               /*!< Prescale of input signal, effective frequency = cap_input_clk/prescale */
+    uint32_t prescale;               /*!< Input prescale ratio: same-edge capture spacing in input signal periods
+                                          (e.g. rising-to-rising). Effective capture rate = input_rate / prescale.
+                                          0 or 1: no prescaling (bypass); otherwise must be even.
+                                          Prescaling is applied before edge selection; with prescale > 1,
+                                          reported cap_edge may not match the physical GPIO edge. */
 
     /// Extra configuration flags for capture channel
     struct extra_capture_channel_flags {
