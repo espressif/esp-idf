@@ -152,6 +152,28 @@ static inline void rtcio_ll_input_disable(int rtcio_num)
 }
 
 /**
+ * @brief Enable RTCIO input hysteresis.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ */
+static inline void rtcio_ll_pin_input_hysteresis_enable(int rtcio_num)
+{
+    LP_IO_MUX.gpion[rtcio_num].gpion_hys_sel = 1;
+    LP_IO_MUX.gpion[rtcio_num].gpion_hys_en = 1;
+}
+
+/**
+ * @brief Disable RTCIO input hysteresis.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ */
+static inline void rtcio_ll_pin_input_hysteresis_disable(int rtcio_num)
+{
+    LP_IO_MUX.gpion[rtcio_num].gpion_hys_sel = 1;
+    LP_IO_MUX.gpion[rtcio_num].gpion_hys_en = 0;
+}
+
+/**
  * @brief Get RTCIO input level.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).

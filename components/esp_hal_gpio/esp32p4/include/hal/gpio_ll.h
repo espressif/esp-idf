@@ -297,6 +297,9 @@ static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t 
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO0-15
+        // On esp32p4, hysteresis of rtcio has different design.
+        // It share same suite of registers with LP control instead of independent registers.
+        // The `rtcio_ll_function_select` don't affect the hysteresis config.
         uint32_t hys_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys);
         hys_mask |= bit_mask;
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys, hys_mask);
