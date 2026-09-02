@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -167,7 +167,7 @@ peer_dsc_add(struct peer *peer, uint16_t chr_val_handle,
     if (prev == NULL) {
         SLIST_INSERT_HEAD(&chr->dscs, dsc, next);
     } else {
-        SLIST_NEXT(prev, next) = dsc;
+        SLIST_INSERT_AFTER(prev, dsc, next);
     }
 
     return 0;
@@ -196,6 +196,7 @@ peer_disc_dscs(struct peer *peer)
                                              peer_dsc_disced, peer);
                 if (rc != 0) {
                     peer_disc_complete(peer, rc);
+                    return;
                 }
 
                 peer->disc_prev_chr_val = chr->chr.val_handle;
@@ -357,7 +358,7 @@ peer_chr_add(struct peer *peer,  uint16_t svc_start_handle,
     if (prev == NULL) {
         SLIST_INSERT_HEAD(&svc->chrs, chr, next);
     } else {
-        SLIST_NEXT(prev, next) = chr;
+        SLIST_INSERT_AFTER(prev, chr, next);
     }
 
     return 0;
@@ -407,12 +408,15 @@ peer_disc_chrs(struct peer *peer)
     struct peer_svc *svc;
     int rc;
 
-    /* Search through the list of discovered service for the first service that
-     * contains undiscovered characteristics.  Then, discover all
-     * characteristics belonging to that service.
-     */
-    SLIST_FOREACH(svc, &peer->svcs, next) {
-        if (!peer_svc_is_empty(svc) && SLIST_EMPTY(&svc->chrs)) {
+    /* Advance past the last processed service, or start from the beginning. */
+    if (peer->cur_svc == NULL) {
+        svc = SLIST_FIRST(&peer->svcs);
+    } else {
+        svc = SLIST_NEXT(peer->cur_svc, next);
+    }
+
+    for (; svc != NULL; svc = SLIST_NEXT(svc, next)) {
+        if (!peer_svc_is_empty(svc)) {
             peer->cur_svc = svc;
             rc = ble_gattc_disc_all_chrs(peer->conn_handle,
                                          svc->svc.start_handle,
@@ -596,17 +600,24 @@ peer_disc_incs(struct peer *peer)
         if (peer->cur_svc == NULL) {
             if (peer->disc_prev_chr_val > 0) {
                 peer_disc_chrs(peer);
-                return;
             }
+            return;
         }
     }
+
+    /* Skip empty services rather than aborting include discovery early. */
+    while (peer->cur_svc != NULL && peer_svc_is_empty(peer->cur_svc)) {
+        peer->cur_svc = SLIST_NEXT(peer->cur_svc, next);
+    }
+
     svc = peer->cur_svc;
-    if (svc != NULL && !peer_svc_is_empty(svc)) {
+    if (svc != NULL) {
         rc = ble_gattc_find_inc_svcs(peer->conn_handle,
                                      svc->svc.start_handle,
                                      svc->svc.end_handle,
                                      peer_inc_disced, peer);
         if (rc != 0) {
+            peer->cur_svc = NULL;
             peer_disc_chrs(peer);
         }
     } else {
@@ -684,6 +695,10 @@ peer_svc_find_uuid(const struct peer *peer, const ble_uuid_t *uuid)
 {
     const struct peer_svc *svc;
 
+    if (peer == NULL || uuid == NULL) {
+        return NULL;
+    }
+
     SLIST_FOREACH(svc, &peer->svcs, next) {
         if (ble_uuid_cmp(&svc->svc.uuid.u, uuid) == 0) {
             return svc;
@@ -699,6 +714,10 @@ peer_chr_find_uuid(const struct peer *peer, const ble_uuid_t *svc_uuid,
 {
     const struct peer_svc *svc;
     const struct peer_chr *chr;
+
+    if (chr_uuid == NULL) {
+        return NULL;
+    }
 
     svc = peer_svc_find_uuid(peer, svc_uuid);
     if (svc == NULL) {
@@ -720,6 +739,10 @@ peer_dsc_find_uuid(const struct peer *peer, const ble_uuid_t *svc_uuid,
 {
     const struct peer_chr *chr;
     const struct peer_dsc *dsc;
+
+    if (dsc_uuid == NULL) {
+        return NULL;
+    }
 
     chr = peer_chr_find_uuid(peer, svc_uuid, chr_uuid);
     if (chr == NULL) {
@@ -810,6 +833,7 @@ peer_svc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
 #else
         /* All services discovered; start discovering characteristics. */
         if (peer->disc_prev_chr_val > 0) {
+            peer->cur_svc = NULL;
             peer_disc_chrs(peer);
         }
 #endif
@@ -979,6 +1003,7 @@ peer_free_mem(void)
 {
     free(peer_mem);
     peer_mem = NULL;
+    SLIST_INIT(&peers);
 
     free(peer_svc_mem);
     peer_svc_mem = NULL;

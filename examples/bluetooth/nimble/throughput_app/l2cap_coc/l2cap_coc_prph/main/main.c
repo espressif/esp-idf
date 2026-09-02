@@ -20,7 +20,7 @@
 
 static const char *TAG = "l2cap_coc_prph";
 
-#define L2CAP_COC_PSM       0x1002
+#define L2CAP_COC_PSM       0x0080  /* valid dynamic LE L2CAP CoC PSM (0x0080-0x00FF) */
 #define L2CAP_COC_MTU       CONFIG_EXAMPLE_L2CAP_COC_MTU
 #define COC_BUF_COUNT       (6 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 /* Block size must include mbuf headers so each SDU fits in one pool entry. */
@@ -28,6 +28,14 @@ static const char *TAG = "l2cap_coc_prph";
 #define LL_PACKET_LENGTH    251
 #define LL_PACKET_TIME      2120
 #define L2CAP_COC_UUID      0x1812
+/* App-level tag placed at the start of each CoC SDU.
+ * GAP reports both Coded S2 and Coded S8 as BLE_HCI_LE_PHY_CODED, so the
+ * receiver cannot distinguish those test segments from PHY events alone. */
+#define COC_SEGMENT_TAG_0   'L'
+#define COC_SEGMENT_TAG_1   '2'
+#define COC_SEGMENT_TAG_2   'C'
+#define COC_SEGMENT_TAG_3   'P'
+#define COC_SEGMENT_TAG_LEN 5
 
 static uint16_t              conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static struct ble_l2cap_chan *coc_chan    = NULL;
@@ -39,6 +47,9 @@ static uint32_t          rx_packets     = 0;
 static volatile bool     coc_active     = false;
 static const char       *phy_name       = "1M";
 static uint8_t           current_phy    = BLE_HCI_LE_PHY_1M;
+static uint8_t           current_segment_id = 0;
+/* Bumps when RX counters reset so the 1s live logger skips partial windows. */
+static volatile uint32_t rx_stats_gen = 0;
 
 void ble_store_config_init(void);
 
@@ -54,6 +65,17 @@ static const char *prph_phy_str(uint8_t phy)
     case BLE_HCI_LE_PHY_2M:    return "2M";
     case BLE_HCI_LE_PHY_CODED: return "Coded";
     default:                   return "1M";
+    }
+}
+
+static const char *prph_segment_str(uint8_t segment_id)
+{
+    switch (segment_id) {
+    case 1:  return "1M";
+    case 2:  return "2M";
+    case 3:  return "Coded S2";
+    case 4:  return "Coded S8";
+    default: return "Unknown";
     }
 }
 
@@ -74,6 +96,34 @@ static void prph_report_phy(int64_t end_time, int64_t start_time,
     ESP_LOGI(TAG, "| Bytes  : %-10" PRIu32 "                               |", bytes);
     ESP_LOGI(TAG, "| Time   : %-5lld s                                |", elapsed_ms / 1000);
     ESP_LOGI(TAG, "+-------------------------------------------------+");
+}
+
+static bool prph_get_segment_id(struct os_mbuf *om, uint8_t *segment_id)
+{
+    uint8_t header[COC_SEGMENT_TAG_LEN];
+
+    /* Segment tag is optional for compatibility with older centrals. */
+    if (OS_MBUF_PKTLEN(om) < COC_SEGMENT_TAG_LEN ||
+            os_mbuf_copydata(om, 0, COC_SEGMENT_TAG_LEN, header) != 0) {
+        return false;
+    }
+
+    if (header[0] != COC_SEGMENT_TAG_0 || header[1] != COC_SEGMENT_TAG_1 ||
+            header[2] != COC_SEGMENT_TAG_2 || header[3] != COC_SEGMENT_TAG_3 ||
+            header[4] < 1 || header[4] > 4) {
+        return false;
+    }
+
+    *segment_id = header[4];
+    return true;
+}
+
+static void prph_reset_rx_stats(int64_t start_time)
+{
+    rx_bytes       = 0;
+    rx_packets     = 0;
+    phy_start_time = start_time;
+    rx_stats_gen++;
 }
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
@@ -149,7 +199,11 @@ static void prph_advertise(void)
     fields.name_len              = strlen(name);
     fields.name_is_complete      = 1;
 #endif
-    fields.uuids16               = (ble_uuid16_t[]){ BLE_UUID16_INIT(L2CAP_COC_UUID) };
+    /* Must be static: ble_gap_adv_set_fields copies the pointer, not the data.
+     * A stack compound literal becomes dangling after prph_advertise returns,
+     * causing corruption when BLE_NIMBLE_ENABLE_CONN_REATTEMPT re-uses the pointer. */
+    static const ble_uuid16_t adv_uuids16[] = { BLE_UUID16_INIT(L2CAP_COC_UUID) };
+    fields.uuids16               = adv_uuids16;
     fields.num_uuids16           = 1;
     fields.uuids16_is_complete   = 1;
 
@@ -188,7 +242,11 @@ static int prph_l2cap_coc_accept(struct ble_l2cap_chan *chan)
         return BLE_HS_ENOMEM;
     }
     int rc = ble_l2cap_recv_ready(chan, sdu_rx);
-    if (rc != 0) {
+    /* ble_l2cap_coc_recv_ready stores sdu_rx AFTER the BLE_HS_EBUSY check but
+     * BEFORE the BLE_HS_ENOENT check.  On BLE_HS_EBUSY the buffer was never
+     * stored and must be freed here; on success or BLE_HS_ENOENT the buffer is
+     * owned by chan->coc_rx.sdus[] and freed by ble_l2cap_coc_cleanup_chan. */
+    if (rc != 0 && rc != BLE_HS_ENOENT) {
         os_mbuf_free_chain(sdu_rx);
     }
     return rc;
@@ -208,6 +266,8 @@ static int prph_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
         rx_bytes        = 0;
         rx_packets      = 0;
         coc_active      = true;
+        current_segment_id = 0;
+        rx_stats_gen++;
         phy_name = prph_phy_str(current_phy);
         return 0;
 
@@ -215,6 +275,8 @@ static int prph_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
         coc_active  = false;
         coc_chan     = NULL;
         current_phy  = BLE_HCI_LE_PHY_1M;
+        current_segment_id = 0;
+        rx_stats_gen++;
         {
             int64_t  end  = esp_timer_get_time();
             int64_t  st   = phy_start_time;
@@ -241,7 +303,21 @@ static int prph_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
 
     case BLE_L2CAP_EVENT_COC_DATA_RECEIVED:
         if (event->receive.sdu_rx) {
-            if (rx_packets == 0) {
+            uint8_t segment_id;
+
+            if (prph_get_segment_id(event->receive.sdu_rx, &segment_id) &&
+                    segment_id != current_segment_id) {
+                int64_t now = esp_timer_get_time();
+                /* First SDU of a new segment closes the previous segment. */
+                if (current_segment_id != 0) {
+                    prph_report_phy(now, phy_start_time, rx_bytes, rx_packets,
+                                    phy_name);
+                }
+                current_segment_id = segment_id;
+                phy_name = prph_segment_str(current_segment_id);
+                prph_reset_rx_stats(now);
+            } else if (rx_packets == 0) {
+                /* First SDU with no segment tag (or before any segment change). */
                 phy_start_time = esp_timer_get_time();
             }
             rx_bytes   += OS_MBUF_PKTLEN(event->receive.sdu_rx);
@@ -262,6 +338,7 @@ static void prph_stats_task(void *arg)
 {
     uint32_t prev_bytes = 0;
     int64_t  prev_time  = 0;
+    uint32_t seen_rx_gen = 0;
 
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -269,11 +346,21 @@ static void prph_stats_task(void *arg)
         if (!coc_active) {
             prev_bytes = 0;
             prev_time  = 0;
+            seen_rx_gen = rx_stats_gen;
             continue;
         }
 
         int64_t  now      = esp_timer_get_time();
         uint32_t bytes    = rx_bytes;
+        uint32_t rx_gen = rx_stats_gen;
+
+        /* RX counters were reset; restart the live 1s window. */
+        if (rx_gen != seen_rx_gen) {
+            prev_bytes = bytes;
+            prev_time  = now;
+            seen_rx_gen = rx_gen;
+            continue;
+        }
 
         if (prev_time > 0) {
             if (bytes < prev_bytes) {
@@ -312,6 +399,8 @@ static int prph_gap_event(struct ble_gap_event *event, void *arg)
         coc_chan     = NULL;
         coc_active   = false;
         current_phy  = BLE_HCI_LE_PHY_1M;
+        current_segment_id = 0;
+        rx_stats_gen++;
         phy_name     = "1M";
 #if CONFIG_EXAMPLE_EXTENDED_ADV
         ble_gap_ext_adv_stop(0);
@@ -325,40 +414,16 @@ static int prph_gap_event(struct ble_gap_event *event, void *arg)
                  event->phy_updated.rx_phy,
                  event->phy_updated.status);
         if (event->phy_updated.status == 0) {
-            if (coc_active) {
-                int64_t  end  = esp_timer_get_time();
-                int64_t  st   = phy_start_time;
-                uint32_t by   = rx_bytes;
-                uint32_t pk   = rx_packets;
-                prph_report_phy(end, st, by, pk, phy_name);
-                rx_bytes = 0; rx_packets = 0; phy_start_time = 0;
-            }
             current_phy = event->phy_updated.rx_phy;
-            phy_name = prph_phy_str(event->phy_updated.rx_phy);
+            rx_stats_gen++;
+            if (current_segment_id == 0) {
+                phy_name = prph_phy_str(event->phy_updated.rx_phy);
+            }
         }
         return 0;
 
     case BLE_GAP_EVENT_CONN_UPDATE:
         ESP_LOGI(TAG, "Conn params updated; status=%d", event->conn_update.status);
-        if (event->conn_update.status == 0 && coc_active &&
-                current_phy == BLE_HCI_LE_PHY_CODED) {
-            struct ble_gap_conn_desc desc;
-            if (ble_gap_conn_find(conn_handle, &desc) == 0) {
-                if (desc.conn_itvl != 16 && desc.conn_itvl != 32) {
-                    return 0;
-                }
-                if (strcmp(phy_name, "Coded") != 0) {
-                    int64_t  end = esp_timer_get_time();
-                    uint32_t by  = rx_bytes;
-                    uint32_t pk  = rx_packets;
-                    prph_report_phy(end, phy_start_time, by, pk, phy_name);
-                    rx_bytes = 0; rx_packets = 0; phy_start_time = 0;
-                }
-                phy_name = (desc.conn_itvl >= 32) ? "Coded S8" : "Coded S2";
-                ESP_LOGI(TAG, "Coding scheme updated to %s (CI=%u × 1.25ms)",
-                         phy_name, desc.conn_itvl);
-            }
-        }
         return 0;
 
     case BLE_GAP_EVENT_ADV_COMPLETE:

@@ -14,6 +14,12 @@
 #include "services/gap/ble_svc_gap.h"
 #include "ble_multi_conn_cent.h"
 
+#if !MYNEWT_VAL(BLE_EXT_ADV) || !MYNEWT_VAL(OPTIMIZE_MULTI_CONN)
+#error "This example requires NimBLE Extended Advertising and multi-connection optimization. " \
+       "Enable BT_NIMBLE_50_FEATURE_SUPPORT, BT_NIMBLE_EXT_ADV, and BT_NIMBLE_OPTIMIZE_MULTI_CONN; " \
+       "use a supported target from README.md (e.g. esp32h2, esp32c6) and run idf.py set-target."
+#endif
+
 #define BLE_PEER_NAME           "esp-multi-conn"
 #define BLE_PEER_MAX_NUM        (MYNEWT_VAL(BLE_MAX_CONNECTIONS) - 1)
 #define BLE_PREF_EVT_LEN_MS     (5)
@@ -96,18 +102,21 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_CONNECT:
         if (event->connect.status == 0) {
+            s_ble_multi_conn_num++;
             ESP_LOGI(TAG, "Connection established. Handle:%d, Total:%d", event->connect.conn_handle,
-                     ++s_ble_multi_conn_num);
+                     s_ble_multi_conn_num);
             /* Remember peer. */
             rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
                 ESP_LOGE(TAG, "Failed to add peer; rc=%d\n", rc);
+                ble_gap_terminate(event->connect.conn_handle, BLE_ERR_REM_USER_CONN_TERM);
             } else {
                 /* Perform service discovery */
                 rc = peer_disc_svc_by_uuid(event->connect.conn_handle, remote_svc_uuid,
                                         ble_cent_on_disc_complete, NULL);
                 if(rc != 0) {
                     ESP_LOGE(TAG, "Failed to discover services; rc=%d\n", rc);
+                    ble_gap_terminate(event->connect.conn_handle, BLE_ERR_REM_USER_CONN_TERM);
                 }
             }
         } else {
@@ -124,9 +133,10 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
 
+        s_ble_multi_conn_num--;
         ESP_LOGI(TAG, "Central disconnected; Handle:%d, Reason=%d, Total:%d",
                  event->disconnect.conn.conn_handle, event->disconnect.reason,
-                 --s_ble_multi_conn_num);
+                 s_ble_multi_conn_num);
 
         /* Resume scanning. */
         ble_cent_scan();
@@ -276,8 +286,8 @@ ble_cent_scan(void)
         return;
     }
 
-    struct ble_gap_ext_disc_params uncoded_disc_params;
-    struct ble_gap_ext_disc_params coded_disc_params;
+    struct ble_gap_ext_disc_params uncoded_disc_params = {0};
+    struct ble_gap_ext_disc_params coded_disc_params = {0};
 
     /* Perform a passive scan.  I.e., don't send follow-up scan requests to
      * each advertiser.
@@ -403,8 +413,10 @@ blecent_on_sync(void)
      * the `MINIMUM_CONN_INTERVAL` should be greater than ((261 * 8us) * 2 + 150us) * 10 = 43260us.
      *
      */
-    rc = ble_gap_common_factor_set(true, (BLE_PREF_CONN_ITVL_MS * 1000) / 625);
-    assert(rc == 0);
+    if (BLE_PEER_MAX_NUM > 0) {
+        rc = ble_gap_common_factor_set(true, (BLE_PREF_CONN_ITVL_MS * 1000) / 625);
+        assert(rc == 0);
+    }
 
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);

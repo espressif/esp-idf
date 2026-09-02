@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,36 +11,61 @@
 #include "host/ble_uuid.h"
 #include "gattc.h"
 
+int
+peer_addr_parse(const char *addr_str, uint8_t addr[PEER_ADDR_VAL_SIZE])
+{
+    if (addr_str == NULL) {
+        return 0;
+    }
+    return sscanf(addr_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+                  &addr[5], &addr[4], &addr[3],
+                  &addr[2], &addr[1], &addr[0]);
+}
+
 /**
  * Utility function to log an array of bytes.
  */
 void
 print_bytes(const uint8_t *bytes, int len)
 {
+    /* Build the entire hex string into a buffer first and log it in one call.
+     * Calling MODLOG_DFLT per byte adds a full log header and newline to each
+     * byte, breaking the intended colon-separated format and blocking the CPU. */
+    char buf[256];
+    int pos = 0;
     int i;
 
-    for (i = 0; i < len; i++) {
-        MODLOG_DFLT(DEBUG, "%s0x%02x", i != 0 ? ":" : "", bytes[i]);
+    for (i = 0; i < len && pos < (int)(sizeof(buf) - 5); i++) {
+        if (i != 0) {
+            buf[pos++] = ':';
+        }
+        pos += snprintf(buf + pos, sizeof(buf) - pos, "0x%02x", bytes[i]);
     }
+    buf[pos] = '\0';
+    MODLOG_DFLT(DEBUG, "%s", buf);
 }
 
 void
 print_mbuf(const struct os_mbuf *om)
 {
-    int colon, i;
+    char buf[512];
+    int pos = 0;
+    int colon = 0;
+    int i;
 
-    colon = 0;
-    while (om != NULL) {
-        if (colon) {
-            MODLOG_DFLT(INFO, ":");
-        } else {
-            colon = 1;
-        }
-        for (i = 0; i < om->om_len; i++) {
-            MODLOG_DFLT(INFO, "%s0x%02x", i != 0 ? ":" : "", om->om_data[i]);
+    while (om != NULL && pos < (int)(sizeof(buf) - 6)) {
+        for (i = 0; i < om->om_len && pos < (int)(sizeof(buf) - 6); i++) {
+            if (colon) {
+                buf[pos++] = ':';
+            } else {
+                colon = 1;
+            }
+            pos += snprintf(buf + pos, sizeof(buf) - pos, "0x%02x", om->om_data[i]);
         }
         om = SLIST_NEXT(om, om_next);
     }
+    buf[pos] = '\0';
+    MODLOG_DFLT(INFO, "%s", buf);
 }
 
 char *

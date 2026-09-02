@@ -1,10 +1,11 @@
-# This file was generated using idf.py save-defconfig. It can be edited manually.
-# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
-#
+# Minimal NimBLE config for multi-connection central (requires BLE 5.0 ext adv).
+# Supported targets: ESP32-C5, ESP32-C6, ESP32-C61, ESP32-H2, etc. (see README.md).
+
 CONFIG_BT_ENABLED=y
 CONFIG_BT_NIMBLE_ENABLED=y
-CONFIG_BT_NIMBLE_HCI_EVT_BUF_SIZE=70
+CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT=y
 CONFIG_BT_NIMBLE_EXT_ADV=y
+CONFIG_BT_NIMBLE_TRANSPORT_EVT_SIZE=70
 CONFIG_BT_NIMBLE_MAX_CONNECTIONS=70
 CONFIG_BT_NIMBLE_GATT_MAX_PROCS=70
 CONFIG_BT_NIMBLE_MSYS_1_BLOCK_COUNT=100

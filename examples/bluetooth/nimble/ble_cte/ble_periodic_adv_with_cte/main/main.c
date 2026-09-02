@@ -19,6 +19,11 @@
 static const char *TAG = "CTE_ADV_EXAMPLE";
 static uint8_t s_periodic_adv_raw_data[] = {0x0D, BLE_HS_ADV_TYPE_COMP_NAME, 'C','T','E',' ','P','e','r','i','o','d','i','c'};
 
+#if !(MYNEWT_VAL(BLE_EXT_ADV) && MYNEWT_VAL(BLE_PERIODIC_ADV) && MYNEWT_VAL(BLE_AOA_AOD))
+#error "This example requires NimBLE Extended Advertising, Periodic Advertising, and CTE (AoA/AoD). " \
+       "Use a supported target from README.md (e.g. esp32h2, esp32c5, esp32c61) and run idf.py set-target before build."
+#endif
+
 /**
  * @brief Configure and start periodic advertising with CTE
  */
@@ -49,10 +54,9 @@ static void start_periodic_adv_cte(uint8_t own_addr_type)
     assert(rc == 0);
 
     /* Configure advertising data */
-    struct ble_hs_adv_fields adv_fields = {
-        .name = (const uint8_t *)"CTE_Periodic_Adv",
-        .name_len = strlen((char *)adv_fields.name)
-    };
+    struct ble_hs_adv_fields adv_fields = {0};
+    adv_fields.name = (const uint8_t *)"CTE_Periodic_Adv";
+    adv_fields.name_len = strlen("CTE_Periodic_Adv");
 
     struct os_mbuf *data = os_msys_get_pkthdr(BLE_HS_ADV_MAX_FIELD_SZ, 0);
     assert(data);
@@ -193,7 +197,12 @@ void app_main(void)
     ESP_LOGI(TAG, "%s", direction_finding_logo);
 #if defined(CONFIG_EXAMPLE_ADV_DIRECTION_FINDING_AOD)
     ESP_LOGI(TAG, "DIRECTION_FINDING Example Periodic Adv AOD Mode");
-    ble_direction_finding_antenna_init(antenna_use_gpio,CONFIG_EXAMPLE_ANT_GPIO_BIT_COUNT);
+    rc = ble_direction_finding_antenna_init(antenna_use_gpio, CONFIG_EXAMPLE_ANT_GPIO_BIT_COUNT);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "Antenna init failed; rc=%d", rc);
+        nimble_port_deinit();
+        return;
+    }
 #elif defined(CONFIG_EXAMPLE_ADV_DIRECTION_FINDING_AOA)
     ESP_LOGI(TAG, "DIRECTION_FINDING Example Periodic Adv AOA Mode");
 #endif

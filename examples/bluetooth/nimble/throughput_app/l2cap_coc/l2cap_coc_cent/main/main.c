@@ -22,7 +22,7 @@
 
 static const char *TAG = "l2cap_coc_cent";
 
-#define L2CAP_COC_PSM       0x1002
+#define L2CAP_COC_PSM       0x0080  /* valid dynamic LE L2CAP CoC PSM (0x0080-0x00FF) */
 #define L2CAP_COC_MTU       CONFIG_EXAMPLE_L2CAP_COC_MTU
 #define COC_BUF_COUNT       (6 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 /* Block size must include mbuf headers so each SDU fits in one pool entry. */
@@ -30,37 +30,36 @@ static const char *TAG = "l2cap_coc_cent";
 #define LL_PACKET_LENGTH    251
 #define LL_PACKET_TIME      2120
 #define L2CAP_COC_UUID      0x1812
+/* App-level tag placed at the start of each CoC SDU.
+ * GAP reports both Coded S2 and Coded S8 as BLE_HCI_LE_PHY_CODED, so the
+ * receiver cannot distinguish those test segments from PHY events alone. */
+#define COC_SEGMENT_TAG_0   'L'
+#define COC_SEGMENT_TAG_1   '2'
+#define COC_SEGMENT_TAG_2   'C'
+#define COC_SEGMENT_TAG_3   'P'
 
 /* EventGroup bits */
 #define PHY_UPDATED_BIT     (1 << 0)
 #define COC_CONNECTED_BIT   (1 << 1)
-#define CONN_UPDATED_BIT    (1 << 2)
-#define TX_UNSTALLED_BIT    (1 << 3)
+#define TX_UNSTALLED_BIT    (1 << 2)
 
 /* Timeout / interval constants */
-#define CONN_PARAM_UPDATE_TIMEOUT_MS  5000
 #define PREDRAIN_TIMEOUT_MS          20000
 #define POSTDRAIN_TIMEOUT_MS          5000
 #define TX_YIELD_INTERVAL               50
+#define LINK_SETTLE_TIME_MS             100
 
 static EventGroupHandle_t    coc_event_group;
 static uint16_t              conn_handle  = BLE_HS_CONN_HANDLE_NONE;
 static struct ble_l2cap_chan *coc_chan     = NULL;
-static bool                  ci_is_slow          = false;
 static bool                  l2cap_connecting    = false;  /* guards double L2CAP connect */
 static volatile bool         chan_stalled         = false;
+static volatile int          phy_update_status    = BLE_HS_EUNKNOWN;
+static volatile uint8_t      active_tx_phy        = 0;
+static volatile uint8_t      active_rx_phy        = 0;
 static uint32_t             *cent_seg_tx_done = NULL;  /* points to segment SDU counter for async TX_UNSTALLED */
 static uint32_t             *cent_seg_tx_drop = NULL;  /* counts SDUs dropped (TX_UNSTALLED status != 0) */
 static uint16_t              cent_tx_sdu_len    = L2CAP_COC_MTU; /* min(local, peer) after COC connect */
-
-static const struct ble_gap_upd_params conn_params = {
-    .itvl_min            = 6,
-    .itvl_max            = 6,
-    .latency             = 0,
-    .supervision_timeout = 2000,
-    .min_ce_len          = 12,
-    .max_ce_len          = 24,
-};
 
 void ble_store_config_init(void);
 
@@ -74,31 +73,46 @@ typedef struct {
     uint8_t     phy_opts;   /* 0=none, 1=S2, 2=S8 */
     int         duration_s;
     const char *name;
-    bool        is_coded_s8;
+    uint8_t     segment_id; /* app-level RX summary boundary */
 } phy_entry_t;
 
 static const phy_entry_t phy_list[] = {
 #if CONFIG_EXAMPLE_TEST_PHY_1M
     { BLE_HCI_LE_PHY_1M_PREF_MASK, BLE_HCI_LE_PHY_1M_PREF_MASK, 0,
-      CONFIG_EXAMPLE_TEST_DURATION_1M, "1M", false },
+      CONFIG_EXAMPLE_TEST_DURATION_1M, "1M", 1 },
 #endif
 #if CONFIG_EXAMPLE_TEST_PHY_2M
     { BLE_HCI_LE_PHY_2M_PREF_MASK, BLE_HCI_LE_PHY_2M_PREF_MASK, 0,
-      CONFIG_EXAMPLE_TEST_DURATION_2M, "2M", false },
+      CONFIG_EXAMPLE_TEST_DURATION_2M, "2M", 2 },
 #endif
 #if CONFIG_EXAMPLE_TEST_PHY_CODED_S2
     { BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x01,
-      CONFIG_EXAMPLE_TEST_DURATION_CODED_S2, "Coded S2", false },
+      CONFIG_EXAMPLE_TEST_DURATION_CODED_S2, "Coded S2", 3 },
 #endif
 #if CONFIG_EXAMPLE_TEST_PHY_CODED_S8
     { BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x02,
-      CONFIG_EXAMPLE_TEST_DURATION_CODED_S8, "Coded S8", true },
+      CONFIG_EXAMPLE_TEST_DURATION_CODED_S8, "Coded S8", 4 },
 #endif
 };
 #define PHY_LIST_LEN  ((int)(sizeof(phy_list) / sizeof(phy_list[0])))
 
 static int cent_gap_event(struct ble_gap_event *event, void *arg);
 static int cent_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg);
+
+static bool coc_lost(void)
+{
+    return conn_handle == BLE_HS_CONN_HANDLE_NONE || coc_chan == NULL;
+}
+
+static void cent_set_segment_id(uint8_t *data, uint8_t segment_id)
+{
+    /* Keep this in the normal payload; no extra control packet is sent. */
+    data[0] = COC_SEGMENT_TAG_0;
+    data[1] = COC_SEGMENT_TAG_1;
+    data[2] = COC_SEGMENT_TAG_2;
+    data[3] = COC_SEGMENT_TAG_3;
+    data[4] = segment_id;
+}
 
 static void cent_l2cap_coc_mem_init(void)
 {
@@ -130,12 +144,9 @@ static void cent_l2cap_coc_connect(uint16_t conn_handle)
     if (rc != 0) {
         ESP_LOGE(TAG, "L2CAP COC connect failed; rc=%d", rc);
         l2cap_connecting = false;
-        /* EINVAL: NimBLE returns before chan alloc, sdu_rx not consumed — free it.
-         * ENOTCONN: NimBLE frees sdu_rx on all ENOTCONN paths (early !conn check
-         * and late TX failure via ble_l2cap_coc_cleanup_chan). Do not free here. */
-        if (rc == BLE_HS_EINVAL) {
-            os_mbuf_free_chain(sdu_rx);
-        }
+        /* NimBLE takes ownership of sdu_rx on ALL error paths from ble_l2cap_connect
+         * (freed via ble_l2cap_chan_free → ble_l2cap_coc_cleanup_chan or directly in
+         * ble_l2cap_sig_coc_connect validation). Never free here to avoid double-free. */
     }
 }
 
@@ -288,7 +299,7 @@ static int cent_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
         cent_seg_tx_drop    = NULL;
         l2cap_connecting    = false;
         xEventGroupClearBits(coc_event_group, COC_CONNECTED_BIT);
-        xEventGroupSetBits(coc_event_group, TX_UNSTALLED_BIT | CONN_UPDATED_BIT | PHY_UPDATED_BIT);
+        xEventGroupSetBits(coc_event_group, TX_UNSTALLED_BIT | PHY_UPDATED_BIT);
         return 0;
 
     case BLE_L2CAP_EVENT_COC_TX_UNSTALLED:
@@ -361,7 +372,18 @@ static void cent_send_task(void *arg)
 
         for (int i = 0; i < PHY_LIST_LEN && !lost_connection; i++) {
             const phy_entry_t *phy = &phy_list[i];
+            const uint8_t expected_phy =
+                    phy->tx_phys == BLE_HCI_LE_PHY_CODED_PREF_MASK ?
+                    BLE_GAP_LE_PHY_CODED : phy->tx_phys;
 
+            if (coc_lost()) {
+                lost_connection = true;
+                break;
+            }
+
+            phy_update_status = BLE_HS_EUNKNOWN;
+            active_tx_phy = 0;
+            active_rx_phy = 0;
             xEventGroupClearBits(coc_event_group, PHY_UPDATED_BIT);
 #if CONFIG_SOC_BLE_50_SUPPORTED
             rc = ble_gap_set_prefered_le_phy(conn_handle,
@@ -369,11 +391,19 @@ static void cent_send_task(void *arg)
                                               phy->rx_phys,
                                               phy->phy_opts);
             if (rc != 0) {
-                ESP_LOGE(TAG, "PHY switch to %s failed; rc=%d — continuing anyway",
+                ESP_LOGE(TAG, "PHY switch to %s failed; rc=%d; skipping measurement",
                          phy->name, rc);
-                xEventGroupSetBits(coc_event_group, PHY_UPDATED_BIT);
+                if (coc_lost()) {
+                    lost_connection = true;
+                    break;
+                }
+                continue;
             }
 #else
+            phy_update_status = 0;
+            /* No PHY-update event on non-BLE50; treat preferred PHY as applied (GAP id). */
+            active_tx_phy = expected_phy;
+            active_rx_phy = expected_phy;
             xEventGroupSetBits(coc_event_group, PHY_UPDATED_BIT);
 #endif
 
@@ -381,61 +411,33 @@ static void cent_send_task(void *arg)
                                                     pdTRUE, pdTRUE,
                                                     pdMS_TO_TICKS(5000));
             if (!(bits & PHY_UPDATED_BIT)) {
-                ESP_LOGW(TAG, "PHY update timeout for %s; continuing anyway", phy->name);
+                ESP_LOGE(TAG, "PHY update timeout for %s; skipping measurement", phy->name);
+                if (coc_lost()) {
+                    lost_connection = true;
+                    break;
+                }
+                continue;
             }
 
-            if (phy->is_coded_s8) {
-                /* CI=40ms, CE=32.5-40ms: fits 2 Coded S8 K-frames per CI and prevents credit starvation */
-                struct ble_gap_upd_params s8_params = {
-                    .itvl_min            = 32,
-                    .itvl_max            = 32,
-                    .latency             = 0,
-                    .supervision_timeout = 2000,
-                    .min_ce_len          = 52,
-                    .max_ce_len          = 64,
-                };
-                xEventGroupClearBits(coc_event_group, CONN_UPDATED_BIT);
-                rc = ble_gap_update_params(conn_handle, &s8_params);
-                if (rc == 0) {
-                    ESP_LOGI(TAG, "Coded S8: updating CI");
-                    ci_is_slow = true;
-                    xEventGroupWaitBits(coc_event_group, CONN_UPDATED_BIT, pdTRUE, pdTRUE,
-                                        pdMS_TO_TICKS(CONN_PARAM_UPDATE_TIMEOUT_MS));
-                } else {
-                    ESP_LOGW(TAG, "S8 CI update failed (rc=%d)", rc);
+            /* Measure only after the requested PHY is actually active. */
+            if (phy_update_status != 0 || active_tx_phy != expected_phy ||
+                    active_rx_phy != expected_phy) {
+                ESP_LOGE(TAG, "%s: PHY not applied (status=%d tx=%u rx=%u); skipping measurement",
+                         phy->name, phy_update_status, active_tx_phy, active_rx_phy);
+                if (coc_lost()) {
+                    lost_connection = true;
+                    break;
                 }
-            } else if (phy->tx_phys == BLE_HCI_LE_PHY_CODED_PREF_MASK) {
-                /* CI=20ms, CE=10-20ms: fits 2 Coded S2 K-frames per CI */
-                struct ble_gap_upd_params s2_params = {
-                    .itvl_min            = 16,
-                    .itvl_max            = 16,
-                    .latency             = 0,
-                    .supervision_timeout = 2000,
-                    .min_ce_len          = 16,
-                    .max_ce_len          = 32,
-                };
-                xEventGroupClearBits(coc_event_group, CONN_UPDATED_BIT);
-                rc = ble_gap_update_params(conn_handle, &s2_params);
-                if (rc == 0) {
-                    ESP_LOGI(TAG, "Coded S2: updating CI");
-                    ci_is_slow = true;
-                    xEventGroupWaitBits(coc_event_group, CONN_UPDATED_BIT, pdTRUE, pdTRUE,
-                                        pdMS_TO_TICKS(CONN_PARAM_UPDATE_TIMEOUT_MS));
-                } else {
-                    ESP_LOGW(TAG, "S2 CI update failed (rc=%d)", rc);
-                }
-            } else if (ci_is_slow) {
-                ci_is_slow = false;
-                xEventGroupClearBits(coc_event_group, CONN_UPDATED_BIT);
-                rc = ble_gap_update_params(conn_handle, &conn_params);
-                if (rc == 0) {
-                    ESP_LOGI(TAG, "%s: restoring CI to 6 ms", phy->name);
-                    xEventGroupWaitBits(coc_event_group, CONN_UPDATED_BIT, pdTRUE, pdTRUE,
-                                        pdMS_TO_TICKS(CONN_PARAM_UPDATE_TIMEOUT_MS));
-                } else {
-                    ESP_LOGW(TAG, "CI restore failed (rc=%d)", rc);
-                }
+                continue;
             }
+
+            struct ble_gap_conn_desc desc;
+            if (ble_gap_conn_find(conn_handle, &desc) == 0) {
+                /* Do not update CI here; repeated CI changes caused post-coded throughput drops. */
+                ESP_LOGI(TAG, "%s: preserving CI=%u",phy->name, desc.conn_itvl);
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(LINK_SETTLE_TIME_MS));
 
             if (chan_stalled) {
                 ESP_LOGI(TAG, "Pre-drain: waiting for unstall");
@@ -456,6 +458,8 @@ static void cent_send_task(void *arg)
 
             cent_seg_tx_done = &segment_sdus;
             cent_seg_tx_drop = &segment_drops;
+
+            cent_set_segment_id(value, phy->segment_id);
 
             xEventGroupClearBits(coc_event_group, TX_UNSTALLED_BIT);  /* clear stale signal from previous segment */
 
@@ -622,14 +626,16 @@ static int cent_gap_event(struct ble_gap_event *event, void *arg)
         conn_handle      = BLE_HS_CONN_HANDLE_NONE;
         coc_chan         = NULL;
         chan_stalled     = false;
-        ci_is_slow       = false;
         l2cap_connecting = false;
         xEventGroupClearBits(coc_event_group, COC_CONNECTED_BIT);
-        xEventGroupSetBits(coc_event_group, TX_UNSTALLED_BIT | CONN_UPDATED_BIT | PHY_UPDATED_BIT);
+        xEventGroupSetBits(coc_event_group, TX_UNSTALLED_BIT | PHY_UPDATED_BIT);
         cent_scan();
         return 0;
 
     case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE:
+        phy_update_status = event->phy_updated.status;
+        active_tx_phy = event->phy_updated.tx_phy;
+        active_rx_phy = event->phy_updated.rx_phy;
         ESP_LOGI(TAG, "PHY updated: tx=%d rx=%d status=%d",
                  event->phy_updated.tx_phy,
                  event->phy_updated.rx_phy,
@@ -646,7 +652,6 @@ static int cent_gap_event(struct ble_gap_event *event, void *arg)
             ESP_LOGW(TAG, "Connection parameter update failed (status=%d)",
                      event->conn_update.status);
         }
-        xEventGroupSetBits(coc_event_group, CONN_UPDATED_BIT);
         return 0;
 
     case BLE_GAP_EVENT_DATA_LEN_CHG:
@@ -713,6 +718,8 @@ void app_main(void)
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "nimble_port_init failed; rc=%d", ret);
+        vEventGroupDelete(coc_event_group);
+        coc_event_group = NULL;
         return;
     }
 
@@ -731,6 +738,9 @@ void app_main(void)
 
     if (xTaskCreate(cent_send_task, "cent_send_task", 4096, NULL, 5, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create cent_send_task");
+        nimble_port_deinit();
+        vEventGroupDelete(coc_event_group);
+        coc_event_group = NULL;
         return;
     }
 
