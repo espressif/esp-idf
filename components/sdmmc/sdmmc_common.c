@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_private/sdmmc_common.h"
 
@@ -441,12 +442,33 @@ uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t er
     }
 }
 
+void sdmmc_poll_delay_and_backoff(uint32_t* period_us)
+{
+    const uint32_t us_per_tick = portTICK_PERIOD_MS * 1000;
+    /* Clamp on entry as well: a configured start period longer than a tick would
+     * otherwise be used as-is and never brought back down to the cap. */
+    uint32_t delay_us = MIN(*period_us, us_per_tick);
+
+    if (delay_us < us_per_tick) {
+        /* No blocking sleep with sub-tick resolution is available, busy-wait instead.
+         * The point of the delay is to keep CMD13 off the bus, which this still does. */
+        esp_rom_delay_us(delay_us);
+    } else {
+        vTaskDelay(1);
+    }
+
+    /* Stop growing once the delay reaches one tick period. At that point vTaskDelay()
+     * already yields and one command per tick is not a storm, so a longer delay would
+     * only add overshoot to the time the card is detected as ready. */
+    *period_us = MIN(delay_us * 2, us_per_tick);
+}
+
 esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status)
 {
     assert(!host_is_spi(card));
     esp_err_t err = ESP_OK;
     size_t count = 0;
-    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    uint32_t poll_period_us = SDMMC_READY_POLL_PERIOD_START_US;
     int64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
     /* SD mode: wait for the card to become idle based on R1 status */
@@ -455,10 +477,7 @@ esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status)
         if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
         }
-        if (t1 - t0 > yield_delay_us) {
-            yield_delay_us *= 2;
-            vTaskDelay(1);
-        }
+        sdmmc_poll_delay_and_backoff(&poll_period_us);
         err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
