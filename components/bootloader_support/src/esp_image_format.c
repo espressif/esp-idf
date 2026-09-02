@@ -21,6 +21,7 @@
 #include "esp_app_desc.h"
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
+#include "hal/mmu_types.h"
 #include "hal/cache_ll.h"
 #include "spi_flash_mmap.h"
 #include "hal/efuse_hal.h"
@@ -94,7 +95,7 @@ typedef struct {
 static esp_err_t process_segment_data(const process_segment_data_t *segment_data);
 
 /* Verify the main image header */
-static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent);
+static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool do_verify, bool silent);
 
 /* Verify a segment header */
 static esp_err_t verify_segment_header(int index, const esp_image_segment_header_t *segment, uint32_t segment_data_offs, esp_image_metadata_t *metadata, bool silent);
@@ -382,7 +383,7 @@ err:
     return err;
 }
 
-static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent)
+static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool do_verify, bool silent)
 {
     esp_err_t err = ESP_OK;
 
@@ -397,11 +398,13 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
         FAIL_LOAD("image at 0x%"PRIx32" has invalid magic byte (nothing flashed here?)", src_addr);
     }
 
-    // Checking the chip revision header *will* print a bunch of other info
-    // regardless of silent setting as this may be important, but don't bother checking it
-    // if it looks like the app partition is erased or otherwise garbage
-    esp_image_type image_type = is_bootloader(src_addr) ? ESP_IMAGE_BOOTLOADER : ESP_IMAGE_APPLICATION;
-    CHECK_ERR(bootloader_common_check_chip_validity(image, image_type));
+    if (do_verify) {
+        // Checking the chip revision header *will* print a bunch of other info
+        // regardless of silent setting as this may be important, but don't bother checking it
+        // if it looks like the app partition is erased or otherwise garbage
+        esp_image_type image_type = is_bootloader(src_addr) ? ESP_IMAGE_BOOTLOADER : ESP_IMAGE_APPLICATION;
+        CHECK_ERR(bootloader_common_check_chip_validity(image, image_type));
+    }
 
     if (image->segment_count > ESP_IMAGE_MAX_SEGMENTS) {
         FAIL_LOAD("image at 0x%"PRIx32" segment count %d exceeds max %d", src_addr, image->segment_count, ESP_IMAGE_MAX_SEGMENTS);
@@ -576,8 +579,10 @@ static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_
                 bootloader_sha256_data(*sha_handle, &data->image, sizeof(esp_image_header_t));
             }
         }
-        CHECK_ERR(verify_image_header(data->start_addr, &data->image, silent));
     }
+
+    CHECK_ERR(verify_image_header(data->start_addr, &data->image, do_verify, silent));
+
     data->image_len = sizeof(esp_image_header_t);
     return ESP_OK;
 err:
@@ -809,6 +814,10 @@ static esp_err_t process_segment_data(const process_segment_data_t *segment_data
         ESP_LOGD(TAG, "additional anti-rollback check 0x%"PRIx32, segment_data->data_addr);
         size_t len = process_esp_app_desc_data(src, segment_data->sha_handle,
                                                segment_data->checksum, segment_data->metadata);
+        if (len > data_len) {
+            bootloader_munmap(data);
+            return ESP_ERR_IMAGE_INVALID;
+        }
         data_len -= len;
         src += len / 4;
         // In BOOTLOADER_BUILD, for DROM (segment #0) we do not load it into dest (only map it), do_load = false.
@@ -862,6 +871,14 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     uint32_t load_addr = segment->load_addr;
     bool map_segment = should_map(load_addr);
 
+    // Validate minimum length for segment #0
+    if (index == 0 && !is_bootloader(metadata->start_addr)) {
+        if (segment->data_len < sizeof(esp_app_desc_t)) {
+            ESP_LOGE(TAG, "Segment %d: length 0x%"PRIx32" is too short for app description", index, segment->data_len);
+            return ESP_ERR_IMAGE_INVALID;
+        }
+    }
+
 #if SOC_MMU_PAGE_SIZE_CONFIGURABLE
     esp_err_t err = ESP_FAIL;
 
@@ -880,7 +897,15 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
         }
 
         // Convert from log base 2 number to actual size while handling legacy image case (value 0)
-        metadata->mmu_page_size = (mmu_page_size > 0) ? (1UL << mmu_page_size) : SPI_FLASH_MMU_PAGE_SIZE;
+        const uint32_t min_mmu_page_size = __builtin_ctz(MMU_PAGE_SIZE_MIN);
+        const uint32_t max_mmu_page_size = __builtin_ctz(MMU_PAGE_SIZE_MAX);
+        if (mmu_page_size >= min_mmu_page_size && mmu_page_size <= max_mmu_page_size) {
+            metadata->mmu_page_size = (1UL << mmu_page_size);
+        } else {
+            // Fall back to default MMU page size
+            metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
+        }
+
         if (metadata->mmu_page_size != SPI_FLASH_MMU_PAGE_SIZE) {
             ESP_LOGI(TAG, "MMU page size mismatch, configured: 0x%x, found: 0x%"PRIx32, SPI_FLASH_MMU_PAGE_SIZE, metadata->mmu_page_size);
         }
