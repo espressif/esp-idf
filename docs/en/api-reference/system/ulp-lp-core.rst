@@ -117,7 +117,7 @@ During the build process, the following steps are taken to build ULP program:
 
     1. **Run each source file through the C compiler and assembler.** This step generates the object files ``.obj.c`` or ``.obj.S`` in the component build directory depending on the source file processed.
 
-    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
+    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/subproject/components/lp_core/ld`` directory.
 
     3. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file ``ulp_app_name.map`` generated at this stage may be useful for debugging purposes.
 
@@ -274,7 +274,7 @@ To enhance the capabilities of the ULP LP core coprocessor, it has access to per
 ULP LP Core Interrupts
 ----------------------
 
-The LP core coprocessor can be configured to handle interrupts from various sources. Examples of such interrupts could be LP IO low/high or LP timer interrupts. To register a handler for an interrupt, simply override any of the weak handlers provided by IDF. A complete list of handlers can be found in :component_file:`ulp_lp_core_interrupts.h <ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h>`. For details on which interrupts are available on a specific target, please consult **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#ulp>`__].
+The LP core coprocessor can be configured to handle interrupts from various sources. Examples of such interrupts could be LP IO low/high or LP timer interrupts. To register a handler for an interrupt, simply override any of the weak handlers provided by IDF. A complete list of handlers can be found in :component_file:`ulp_lp_core_interrupts.h <ulp/subproject/components/lp_core/include/ulp_lp_core_interrupts.h>`. For details on which interrupts are available on a specific target, please consult **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#ulp>`__].
 
 For example, to override the handler for the LP IO interrupt, you can define the following function in your ULP LP core code:
 

@@ -75,7 +75,7 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 
     2. **通过汇编器运行预处理过的汇编源码。** 此步骤会生成目标文件 (foo.ulp.o) 和清单 (foo.ulp.lst)。清单文件仅用于调试，不用于编译进程的后续步骤。
 
-    3. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/ld`` 目录中。
+    3. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/subproject/components/ulp_fsm/ld`` 目录中。
 
     4. **将目标文件链接到 ELF 输出文件** (``ulp_app_name.elf``)。此步骤生成的 .map 文件 (``ulp_app_name.map``) 默认用于调试。
 

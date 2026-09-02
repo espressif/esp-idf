@@ -1,6 +1,6 @@
-# CMake v2 default ULP project for ulp_embed_binary() callers. The ULP runtime
-# is built from the ulp component graph, and the legacy source list is attached
-# directly to the executable, matching the CMake v1 link semantics.
+# CMake v2 default ULP project for ulp_embed_binary() callers. The ULP program
+# is built against the component for its architecture, and the call-site source
+# list is linked before it, matching the build system v1 link semantics.
 include(${CMAKE_CURRENT_LIST_DIR}/ulp_project.cmake)
 
 if("${ULP_TYPE}" STREQUAL "fsm")
@@ -49,7 +49,9 @@ function(__ulp_embed_binary_add_legacy_sources executable)
     __idf_build_link_whole_archive(${executable} PRIVATE ${legacy_sources_lib} BEFORE)
 endfunction()
 
-set(executable_args COMPONENTS ulp)
+__ulp_arch_component(ulp_component)
+
+set(executable_args COMPONENTS ${ulp_component})
 if(NOT BUILD_FSM)
     list(APPEND executable_args MAPFILE_TARGET ${ULP_APP_NAME}_mapfile)
 endif()

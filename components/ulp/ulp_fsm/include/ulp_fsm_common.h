@@ -80,7 +80,7 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
  * 7. .text section
  * 8. .data section
  *
- * Linker script in components/ulp/ld/esp32.ulp.ld produces ELF files which
+ * Linker script in components/ulp/subproject/components/ulp_fsm/ld/ulp_fsm.ld produces ELF files which
  * correspond to this format. This linker script produces binaries with load_addr == 0.
  *
  * @param load_addr address where the program should be loaded, expressed in 32-bit words

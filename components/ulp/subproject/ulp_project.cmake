@@ -6,6 +6,11 @@
 # ulp_project_default, the ULP analogs of idf_project_init,
 # idf_build_executable, idf_build_binary and idf_project_default.
 
+# The components a ULP program is built against live inside this subproject, so
+# an application build does not discover them. Added before components are
+# searched for.
+list(APPEND EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/components")
+
 include(${IDF_PATH}/tools/cmakev2/idf.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/IDFULPProjectCommon.cmake)
 
@@ -16,6 +21,21 @@ if(__ULP_BUILDV2)
     # Explicitly included ULP dependencies still read NON_OS_BUILD to select their no-OS shape.
     idf_build_set_property(NON_OS_BUILD 1)
 endif()
+
+# The component a ULP program of the detected architecture is built against.
+function(__ulp_arch_component out_var)
+    if(BUILD_RISCV)
+        set(component ulp_riscv)
+    elseif(BUILD_LP_CORE)
+        set(component lp_core)
+    elseif(BUILD_FSM)
+        set(component ulp_fsm)
+    else()
+        idf_die("Unable to determine the ULP type. Set ULP_TYPE to riscv, lp_core or fsm.")
+    endif()
+
+    set(${out_var} "${component}" PARENT_SCOPE)
+endfunction()
 
 # Reset the compile/link state inherited from the parent app build and select
 # ULP-specific build behavior. Idempotent within a child configure.

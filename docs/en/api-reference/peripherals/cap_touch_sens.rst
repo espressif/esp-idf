@@ -415,7 +415,7 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
 
     .. only:: SOC_RISCV_COPROC_SUPPORTED
 
-        If you want to read or configure the touch sensor during the sleep, you can turn to the driver ``components/ulp/ulp_riscv/ulp_core/include/ulp_riscv_touch_ulp_core.h`` which based on the :doc:`Ultra Low Power (ULP) Coprocessor <../system/ulp>`.
+        If you want to read or configure the touch sensor during the sleep, you can turn to the driver ``components/ulp/subproject/components/ulp_riscv/include/ulp_riscv_touch_ulp_core.h`` which based on the :doc:`Ultra Low Power (ULP) Coprocessor <../system/ulp>`.
 
     .. list::
 

@@ -22,7 +22,7 @@
  * LP UART read_bytes return-value test (HP + LP):
  * The burst must fit in the hardware RX FIFO yet typically exceed the LP UART
  * driver's default RX FIFO full threshold (LP_UART_FULL_THRESH_DEFAULT in
- * components/ulp/lp_core/lp_core/lp_core_uart.c). If either value changes,
+ * components/ulp/subproject/components/lp_core/lp_core_uart.c). If either value changes,
  * revisit this guard.
  */
 #if (SOC_LP_UART_FIFO_LEN) < 12

@@ -117,7 +117,7 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
     1. **通过 C 编译器和汇编器运行每个源文件。** 此步骤会在组件构建目录中生成目标文件 ``.obj.c`` 或 ``.obj.S``，具体取决于处理的源文件。
 
-    2. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/ld`` 目录中。
+    2. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/subproject/components/lp_core/ld`` 目录中。
 
     3. **将对象文件链接到一个 ELF 输出文件中，** 即 ``ulp_app_name.elf``。在此阶段生成的映射文件 ``ulp_app_name.map`` 可用于调试。
 
@@ -274,7 +274,7 @@ ULP LP 内核支持的外设
 ULP LP 内核中断
 ---------------
 
-配置 LP 内核协处理器，可以处理各种类型的中断，例如 LP IO 低/高电平中断或是 LP 定时器中断。只需重写 IDF 提供的任何一个弱处理函数，就可以注册一个中断处理程序。所有处理程序可见 :component_file:`ulp_lp_core_interrupts.h <ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h>`。有关特定目标可使用的中断的详细信息，请参阅 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#ulp>`__]。
+配置 LP 内核协处理器，可以处理各种类型的中断，例如 LP IO 低/高电平中断或是 LP 定时器中断。只需重写 IDF 提供的任何一个弱处理函数，就可以注册一个中断处理程序。所有处理程序可见 :component_file:`ulp_lp_core_interrupts.h <ulp/subproject/components/lp_core/include/ulp_lp_core_interrupts.h>`。有关特定目标可使用的中断的详细信息，请参阅 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#ulp>`__]。
 
 例如，要重写 LP IO 中断的处理程序，可以在 ULP LP 内核代码中定义以下函数：
 

@@ -116,7 +116,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
     1. **通过 C 编译器和汇编器运行每个源文件。** 此步骤会在组件构建目录中生成目标文件 ``.obj.c`` 或 ``.obj.S``，具体取决于处理的源文件。
 
-    2. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/ld`` 目录中。
+    2. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/subproject/components/ulp_riscv/ld`` 目录中。
 
     3. **将对象文件链接到一个 ELF 输出文件中，** 即 ``ulp_app_name.elf``。在此阶段生成的映射文件 ``ulp_app_name.map`` 可用于调试。
 

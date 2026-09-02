@@ -117,6 +117,7 @@ def test_ulp_cmake_api_availability(
     project_dir.mkdir()
     _write_api_probe_project(project_dir, entry_point, add_native_executable)
     ulp_subproject_dir = idf_path / 'components' / 'ulp' / 'subproject'
+    lp_core_toolchain = ulp_subproject_dir / 'components' / 'lp_core' / 'toolchain-lp-core-riscv.cmake'
 
     cmake_args = (
         'cmake',
@@ -127,7 +128,7 @@ def test_ulp_cmake_api_availability(
         '-B',
         _cmake_path(build_dir),
         f'-DCMAKE_MODULE_PATH={_cmake_path(ulp_subproject_dir)}',
-        f'-DCMAKE_TOOLCHAIN_FILE={_cmake_path(ulp_subproject_dir / "toolchain-lp-core-riscv.cmake")}',
+        f'-DCMAKE_TOOLCHAIN_FILE={_cmake_path(lp_core_toolchain)}',
         f'-DIDF_PATH={_cmake_path(idf_path)}',
         '-DIDF_TARGET=esp32c6',
         f'-DSDKCONFIG_CMAKE={_cmake_path(project_dir / "sdkconfig.cmake")}',

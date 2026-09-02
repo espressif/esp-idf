@@ -51,7 +51,6 @@
 .patterns-host_test_ulp_linker: &patterns-host_test_ulp_linker
   - ".gitlab/ci/host-test.yml"
 
-  - "components/ulp/ld/**/*"
   - "components/ulp/subproject/**/*"
   - "components/ulp/CMakeLists*.txt"
   - "components/ulp/component_ulp_common.cmake"
