@@ -10,7 +10,7 @@
 /* INCLUDE */
 #include "ble_log_prph_spi_master_dma.h"
 #include "ble_log_prph_spi_common.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 
 #include "esp_timer.h"
 
@@ -26,6 +26,7 @@
 
 /* VARIABLE */
 BLE_LOG_STATIC bool prph_inited = false;
+BLE_LOG_STATIC bool bus_inited = false;
 BLE_LOG_STATIC spi_device_handle_t dev_handle = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t last_tx_done_ts = 0;
 
@@ -37,7 +38,7 @@ BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans);
 BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans)
 {
     /* SPI slave performance issue workaround */
-    last_tx_done_ts = esp_timer_get_time();
+    last_tx_done_ts = (uint32_t)esp_timer_get_time();
 
     /* Recycle transport */
     ble_log_prph_trans_t *trans = (ble_log_prph_trans_t *)(spi_trans->user);
@@ -47,6 +48,7 @@ BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi
 
 BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans)
 {
+    (void)spi_trans;
     /* SPI slave performance issue workaround */
     while ((esp_timer_get_time() - last_tx_done_ts) < BLE_LOG_SPI_TRANS_ITVL_MIN_US) {}
 }
@@ -74,6 +76,7 @@ bool ble_log_prph_init(size_t trans_cnt)
     if (spi_bus_initialize(BLE_LOG_SPI_BUS, &bus_config, SPI_DMA_CH_AUTO) != ESP_OK) {
         goto exit;
     }
+    bus_inited = true;
 
     spi_device_interface_config_t dev_config = {
         .clock_speed_hz = SPI_MASTER_FREQ_20M,
@@ -108,8 +111,10 @@ void ble_log_prph_deinit(void)
         dev_handle = NULL;
     }
 
-    /* Note: We don't care if the bus has been inited or not */
-    spi_bus_free(BLE_LOG_SPI_BUS);
+    if (bus_inited) {
+        spi_bus_free(BLE_LOG_SPI_BUS);
+        bus_inited = false;
+    }
 }
 
 bool ble_log_prph_trans_init(ble_log_prph_trans_t **trans, size_t trans_size)
