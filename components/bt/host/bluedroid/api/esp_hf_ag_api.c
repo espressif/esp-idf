@@ -241,7 +241,7 @@ esp_err_t esp_hf_ag_unknown_at_send(esp_bd_addr_t remote_addr, char *unat)
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (remote_addr == NULL || unat == NULL) {
+    if (remote_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     btc_msg_t msg;
