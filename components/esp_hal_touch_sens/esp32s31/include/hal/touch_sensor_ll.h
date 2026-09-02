@@ -631,19 +631,6 @@ static inline void touch_ll_sample_cfg_set_bias_voltage(uint8_t sample_cfg_id, u
     TOUCH_AON.freq_scan_para[sample_cfg_id].touch_freq_dbias = bias_volt;
 }
 
-/**
- * @brief Set the internal loop capacitance
- *        Can simulate the touch signal via the internal capacitance
- *        Need to turn off touch pad
- * @param cap   The internal capacitance
- */
-static inline void touch_ll_set_internal_loop_capacitance(int cap)
-{
-    bool enable = cap > 0;
-    TOUCH_AON.ana_para.touch_touch_en_cal = enable;
-    TOUCH_AON.ana_para.touch_touch_dcap_cal = enable ? cap : 0;
-}
-
 /************************ Filter register setting ************************/
 
 /**
@@ -1025,27 +1012,6 @@ static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
 static inline void touch_ll_sleep_read_proximity_cnt(uint32_t *prox_cnt)
 {
     *prox_cnt = HAL_FORCE_READ_U32_REG_FIELD(TOUCH_SENS.aprch_ch_data, slp_approach_cnt);
-}
-
-/**
- * @brief Enable or disable the internal capacitor, mainly for debug
- *
- * @param enable enable or disable the internal capacitor
- */
-static inline void touch_ll_enable_internal_capacitor(bool enable)
-{
-    TOUCH_AON.ana_para.touch_touch_en_cal = enable;
-}
-
-/**
- * @brief Set the internal capacitor, mainly for debug
- * @note  Only take effect when the internal capacitor is enabled
- *
- * @param cap the capacitor value
- */
-static inline void touch_ll_set_internal_capacitor(uint32_t cap)
-{
-    TOUCH_AON.ana_para.touch_touch_dcap_cal = cap;
 }
 
 #ifdef __cplusplus

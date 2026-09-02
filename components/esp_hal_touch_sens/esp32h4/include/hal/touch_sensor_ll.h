@@ -634,19 +634,6 @@ static inline void touch_ll_sample_cfg_set_bias_voltage(uint8_t sample_cfg_id, u
     TOUCH_AON.aon_freq_scan_para[sample_cfg_id].aon_touch_freq_dbias = bias_volt;
 }
 
-/**
- * @brief Set the internal loop capacitance
- *        Can simulate the touch signal via the internal capacitance
- *        Need to turn off touch pad
- * @param cap   The internal capacitance
- */
-static inline void touch_ll_set_internal_loop_capacitance(int cap)
-{
-    bool enable = cap > 0;
-    TOUCH_AON.aon_ana_para.aon_touch_touch_en_cal = enable;
-    TOUCH_AON.aon_ana_para.aon_touch_touch_dcap_cal = enable ? cap : 0;
-}
-
 /************************ Filter register setting ************************/
 
 /**

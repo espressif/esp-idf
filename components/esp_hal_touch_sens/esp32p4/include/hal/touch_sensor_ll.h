@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -639,19 +639,6 @@ static inline void touch_ll_sample_cfg_set_bias_voltage(uint8_t sample_cfg_id, u
 {
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
     LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_dbias = bias_volt;
-}
-
-/**
- * @brief Set the internal loop capacitance
- *        Can simulate the touch signal via the internal capacitance
- *        Need to turn off touch pad
- * @param cap   The internal capacitance
- */
-static inline void touch_ll_set_internal_loop_capacitance(int cap)
-{
-    bool enable = cap > 0;
-    LP_ANA_PERI.touch_ana_para.touch_touch_en_cal = enable;
-    LP_ANA_PERI.touch_ana_para.touch_touch_dcap_cal = enable ? cap : 0;
 }
 
 /************************ Filter register setting ************************/
