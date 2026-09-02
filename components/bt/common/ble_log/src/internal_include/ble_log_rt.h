@@ -12,7 +12,6 @@
 
 /* INCLUDE */
 #include "ble_log_prph.h"
-#include "ble_log_ts.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

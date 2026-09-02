@@ -15,9 +15,6 @@
 #include "ble_log_util.h"
 #include "esp_log.h"
 #include "esp_system.h"
-#if CONFIG_BLE_LOG_TS_ENABLED
-#include "ble_log_ts.h"
-#endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* VARIABLE */
 #define TAG "ble_log"
@@ -37,13 +34,6 @@ bool ble_log_init(void)
     if (ble_log_inited) {
         return true;
     }
-
-#if CONFIG_BLE_LOG_TS_ENABLED
-    /* Initialize BLE Log TS */
-    if (!ble_log_ts_init()) {
-        goto exit;
-    }
-#endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
     /* Allocate pool and dedicated Internal transport before runtime starts. */
     if (!ble_log_lbm_init()) {
@@ -118,9 +108,4 @@ void ble_log_deinit(void)
     ble_log_rt_deinit();
     ble_log_prph_deinit();
     ble_log_lbm_deinit();
-
-#if CONFIG_BLE_LOG_TS_ENABLED
-    /* Deinitialize BLE Log TS */
-    ble_log_ts_deinit();
-#endif /* CONFIG_BLE_LOG_TS_ENABLED */
 }

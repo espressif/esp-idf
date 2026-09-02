@@ -53,14 +53,15 @@ bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
 
 void setUp(void)
 {
+    /* The periodic TS tick is always on since TS sync became unconditional;
+     * quiesce it so timing-sensitive tests stay deterministic. */
+    (void)ble_log_sync_enable(false);
 }
 
 void tearDown(void)
 {
     ble_log_prph_test_set_auto_recycle_hook(NULL, NULL);
-#if CONFIG_BLE_LOG_TS_ENABLED
     (void)ble_log_sync_enable(false);
-#endif
 }
 
 void app_main(void)

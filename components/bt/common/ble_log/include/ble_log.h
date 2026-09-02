@@ -74,8 +74,6 @@ void ble_log_dump_to_console(void);
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
                           uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
 #endif /* CONFIG_BLE_LOG_LL_ENABLED */
-#if CONFIG_BLE_LOG_TS_ENABLED
 bool ble_log_sync_enable(bool enable);
-#endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 #endif /* __BLE_LOG_H__ */
