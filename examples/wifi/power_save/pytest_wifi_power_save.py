@@ -7,6 +7,7 @@ import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 bad_event_str = [
     'bcn_timeout',
@@ -44,7 +45,7 @@ def _run_test(dut: Dut) -> None:
 @pytest.mark.wifi_ap
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c2', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32c5', 'esp32c61'],
+    soc_filtered_targets('SOC_WIFI_SUPPORTED == 1'),
     indirect=['target'],
 )
 def test_wifi_power_save(dut: Dut) -> None:
@@ -59,7 +60,11 @@ def test_wifi_power_save(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_WIFI_SUPPORTED == 1 and SOC_PM_SUPPORT_TOP_PD == 1'),
+    indirect=['target'],
+)
 def test_wifi_power_save_pd_top(dut: Dut) -> None:
     _run_test(dut)
 
@@ -72,7 +77,11 @@ def test_wifi_power_save_pd_top(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_WIFI_SUPPORTED == 1 and SOC_PM_SUPPORT_PMU_MODEM_STATE == 1'),
+    indirect=['target'],
+)
 def test_wifi_power_save_pd_modem(dut: Dut) -> None:
     _run_test(dut)
 
