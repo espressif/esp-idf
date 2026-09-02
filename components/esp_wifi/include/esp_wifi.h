@@ -483,13 +483,14 @@ esp_err_t esp_wifi_restore(void);
   * @attention 4. This API attempts to connect to an Access Point (AP) only once. To enable reconnection in case of a connection failure, please use
   *               the 'failure_retry_cnt' feature in the 'wifi_sta_config_t'. Users are suggested to implement reconnection logic in their application
   *               for scenarios where the specified AP does not exist, or reconnection is desired after the device has received a disconnect event.
+  * @attention 5. This API will return ESP_ERR_WIFI_CONN if the station is already in CONNECTING state.
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_MODE: WiFi mode error
-  *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
+  *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong, or station is already in CONNECTING state
   *    - ESP_ERR_WIFI_SSID: SSID of AP which station connects is invalid
   */
 esp_err_t esp_wifi_connect(void);
@@ -1829,28 +1830,38 @@ esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
 /**
   * @brief      Send action frame on target channel
   *
+  * @attention 1. This API will return ESP_FAIL when called for STA interface (req->ifx == WIFI_IF_STA)
+  *               while the station is in CONNECTING state.
+  * @attention 2. When PMF is enabled, broadcast action frames must be non-robust.
+  * @attention 3. wait_time_ms must be greater than 0. If wait_time_ms is 0, the API returns ESP_ERR_WIFI_ARG.
+  *
   * @param    req   action tx request structure containing relevant fields
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
-  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
-  *    - ESP_FAIL: failed to send frame
+  *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
+  *    - ESP_ERR_WIFI_ARG: the <channel, sec_channel> pair is invalid or destination MAC address is all zeros, or wait_time_ms is 0
+  *    - ESP_FAIL: failed to send frame or STA is in CONNECTING state
   */
 esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
 
 /**
   * @brief      Remain on the target channel for required duration
   *
-  * @attention 1. The API returns ESP_ERR_INVALID_ARG when `req->allow_broadcast` is true and the device operates in AP+STA mode.
+  * @attention 1. The API returns ESP_ERR_WIFI_ARG when `req->allow_broadcast` is true and the device operates in AP+STA mode.
+  * @attention 2. The API returns ESP_FAIL when called for STA interface (req->ifx == WIFI_IF_STA)
+  *               while the station is in CONNECTING state.
+  * @attention 3. wait_time_ms must be greater than 0 for WIFI_ROC_REQ only.
   *
   * @param    req  roc request structure containing relevant fields
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
-  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
-  *    - ESP_FAIL: failed to perform roc operation
+  *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
+  *    - ESP_ERR_WIFI_ARG: the <channel, sec_channel> pair is invalid, allow_broadcast is true in AP+STA mode, or wait_time_ms is 0 for WIFI_ROC_REQ
+  *    - ESP_FAIL: failed to perform roc operation or STA is in CONNECTING state
   */
 esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
 
