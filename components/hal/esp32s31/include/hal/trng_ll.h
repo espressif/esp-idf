@@ -80,8 +80,8 @@ static inline uint32_t trng_ll_read_data(void)
 static inline void trng_ll_enable(void)
 {
     trng_ll_enable_bus_clock(true);
-    trng_ll_reset();
     trng_ll_enable_clock(true);
+    trng_ll_reset();
     trng_ll_enable_sample(true);
     trng_ll_enable_noise_crc(true);
 }
@@ -93,8 +93,8 @@ static inline void trng_ll_enable(void)
  */
 static inline void trng_ll_disable(void)
 {
-    trng_ll_enable_sample(false);
     trng_ll_enable_noise_crc(false);
+    trng_ll_enable_sample(false);
     trng_ll_enable_clock(false);
     trng_ll_enable_bus_clock(false);
 }
