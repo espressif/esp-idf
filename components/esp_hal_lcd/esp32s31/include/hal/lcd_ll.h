@@ -24,6 +24,7 @@
 #define LCD_LL_I80_BUS_NUM      1
 
 #define LCD_LL_SUPPORT_IOMUX    1
+#define LCD_LL_SUPPORT_RGB2RGB_CONV 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -278,17 +279,17 @@ static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t 
 static inline void lcd_ll_enable_color_convert(lcd_cam_dev_t *dev, bool en)
 {
     dev->lcd_rgb_yuv.lcd_conv_enable = en;
+    dev->lcd_rgb_yuv.lcd_conv_mem_clk_en = !en;
 }
 
 /**
- * @brief Set convert data line width
+ * @brief Set convert input data line width for YUV<->RGB conversion
  *
  * @param dev LCD register base address
  * @param width data line width
  */
-static inline void lcd_ll_set_convert_data_width(lcd_cam_dev_t *dev, uint32_t width)
+static inline void lcd_ll_set_yuv_convert_input_data_width(lcd_cam_dev_t *dev, uint32_t width)
 {
-    HAL_ASSERT(width == 8 || width == 16);
     dev->lcd_rgb_yuv.lcd_conv_mode_8bits_on = (width == 8) ? 1 : 0;
 }
 
@@ -338,6 +339,26 @@ static inline void lcd_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, lcd_yuv_conv_s
 }
 
 /**
+ * @brief Set the converter mode: RGB to RGB
+ *
+ * @param dev LCD register base address
+ * @param in_color_format Input color format
+ * @param out_color_format Output color format
+ */
+static inline void lcd_ll_set_rgb2rgb_convert_mode(lcd_cam_dev_t *dev, lcd_color_format_t in_color_format, lcd_color_format_t out_color_format)
+{
+    dev->lcd_rgb_yuv.lcd_conv_trans_mode = 0;
+    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
+    if (in_color_format == LCD_COLOR_FMT_RGB888 && out_color_format == LCD_COLOR_FMT_RGB565) {
+        dev->lcd_rgb_yuv.lcd_conv_rgb2rgb_mode = 0;
+    } else if (in_color_format == LCD_COLOR_FMT_RGB565 && out_color_format == LCD_COLOR_FMT_RGB888) {
+        dev->lcd_rgb_yuv.lcd_conv_rgb2rgb_mode = 1;
+    } else {
+        abort();
+    }
+}
+
+/**
  * @brief Set the converter mode: RGB to YUV
  *
  * @param dev LCD register base address
@@ -347,6 +368,7 @@ static inline void lcd_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, lcd_yuv_conv_s
 static inline void lcd_ll_set_rgb2yuv_convert_mode(lcd_cam_dev_t *dev, lcd_color_format_t in_color_format, lcd_color_format_t out_color_format)
 {
     (void)in_color_format;
+    dev->lcd_rgb_yuv.lcd_conv_rgb2rgb_mode = 2;
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
     dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
     switch (out_color_format) {
@@ -371,6 +393,7 @@ static inline void lcd_ll_set_rgb2yuv_convert_mode(lcd_cam_dev_t *dev, lcd_color
 static inline void lcd_ll_set_yuv2rgb_convert_mode(lcd_cam_dev_t *dev, lcd_color_format_t in_color_format, lcd_color_format_t out_color_format)
 {
     (void)out_color_format;
+    dev->lcd_rgb_yuv.lcd_conv_rgb2rgb_mode = 2;
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 0;
     dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
     switch (in_color_format) {
@@ -394,6 +417,7 @@ static inline void lcd_ll_set_yuv2rgb_convert_mode(lcd_cam_dev_t *dev, lcd_color
  */
 static inline void lcd_ll_set_yuv2yuv_convert_mode(lcd_cam_dev_t *dev, lcd_color_format_t in_color_format, lcd_color_format_t out_color_format)
 {
+    dev->lcd_rgb_yuv.lcd_conv_rgb2rgb_mode = 2;
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
     switch (in_color_format) {
     case LCD_COLOR_FMT_YUV422_UYVY:
@@ -476,9 +500,6 @@ static inline void lcd_ll_set_dma_read_stride(lcd_cam_dev_t *dev, uint32_t strid
         break;
     case 24:
         dev->lcd_user.lcd_byte_mode = 2;
-        break;
-    case 32:
-        dev->lcd_user.lcd_byte_mode = 3;
         break;
     default:
         abort();
