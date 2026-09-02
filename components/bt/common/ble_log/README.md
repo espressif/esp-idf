@@ -74,9 +74,9 @@ redirection flush) is the alignment reference against the core timeline.
 
 ### Sources
 
-The public `ble_log_src_t` ABI is frozen and its values are the on-wire
-source IDs of protocol v7 frames — the frame source byte carries the enum
-value directly, so existing decoders keep working:
+The public `ble_log_src_t` ABI is frozen and its values are the base on-wire
+source IDs of protocol v7 frames. Receivers must mask the `NON_YIELD` bit
+before decoding the base source:
 
 ```text
 0  INTERNAL
@@ -96,7 +96,10 @@ equal-timestamp records from different sources — and every lost or rejected
 attempt leaves a gap in the sequence. Internal Snapshot frames carry their
 own separate sequence (a gap counts skipped snapshots), and the REDIR
 console stream keeps its own sequence as well (a gap counts a dropped
-console batch). None of these sequences is reset.
+console batch). `ble_log_init()` resets all three sequences, and its required
+`INIT` snapshot starts a new receiver epoch. They remain continuous through
+`FLUSH` within that epoch. Callers must not write until `ble_log_init()`
+returns, so the `INIT` snapshot is submitted first.
 Actual ISR and critical-section records carry `NON_YIELD` in source bit 7.
 
 Controller-side HCI records are not emitted by BLE Log, and the controller no
@@ -121,6 +124,8 @@ The snapshot contains:
 - compact statistics for `CUSTOM` through `ENCODE` (one slot per public
   source in that range, `HOST` included).
 
+The periodic snapshot is an always-on system behavior from initialization
+until deinitialization. It cannot be stopped by the TS sync IO control API.
 A skipped periodic snapshot burns one snapshot SN instead: the gap in the
 snapshot sequence is the loss signal, and it is visible directly in the
 frame header without a dedicated payload field.
@@ -155,7 +160,20 @@ void ble_log_commit(uint32_t handle, size_t actual_len);
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *data,
                           uint32_t append_len, const uint8_t *append,
                           uint32_t flags);
+bool ble_log_ts_sync_io_toggle_enable(bool enable);
+bool ble_log_sync_enable(bool enable);  /* compatibility shim */
 ```
+
+`ble_log_enable()` gates public producers only. Periodic system output remains
+active while that gate is closed.
+
+`ble_log_ts_sync_io_toggle_enable()` controls only the optional external
+analyzer GPIO, which starts disabled and low. Disabling it leaves the IO low
+after a final falling edge;
+periodic clock sampling, OPEN transport flushing, and Internal Snapshots
+continue. When the GPIO feature is not built, the call remains a
+lifecycle-checked no-op. `ble_log_sync_enable()` is the backward-compatible
+name for the same behavior.
 
 `ble_log_flush()` is an ordinary FreeRTOS task API. Do not call it from an ISR,
 critical section, or the shared ESP Timer task.
@@ -197,7 +215,8 @@ canceled and counted as lost.
 | `CONFIG_BLE_LOG_POOL_TRANS_SIZE` | 640 | Bytes per shared transport; SPI builds require a multiple of four |
 | `CONFIG_BLE_LOG_LL_ENABLED` | target dependent | Controller LL logging |
 | `CONFIG_BLE_LOG_HCI_LOG_ENABLED` | target dependent | Host-side HCI capture |
-| `CONFIG_BLE_LOG_TS_ENABLED` | n | GPIO/LC timestamp synchronization |
+| `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional analyzer GPIO toggle |
+| `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting the GPIO toggle |
 
 Old multi-LBM sizing options remain hidden only so existing sdkconfig files can
 be parsed; they no longer control allocation.

@@ -51,6 +51,13 @@ typedef struct {
     uint32_t ts_count;
 } rt_marker_observer_t;
 
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+typedef struct {
+    bool found;
+    uint8_t io_level;
+} rt_snapshot_observer_t;
+#endif
+
 typedef struct {
     SemaphoreHandle_t done;
     uint32_t remaining;
@@ -122,6 +129,29 @@ static void observe_runtime_marker(const test_ble_log_frame_t *frame, void *ctx)
     }
 }
 
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+static void observe_periodic_snapshot(const test_ble_log_frame_t *frame,
+                                      void *ctx)
+{
+    rt_snapshot_observer_t *observer = ctx;
+    if (observer->found || frame->src != BLE_LOG_SRC_INTERNAL ||
+            frame->payload_len != sizeof(uint32_t) +
+                                  sizeof(ble_log_internal_snapshot_t)) {
+        return;
+    }
+
+    ble_log_internal_snapshot_t snapshot;
+    memcpy(&snapshot, frame->payload + sizeof(uint32_t), sizeof(snapshot));
+    uint16_t expected = BLE_LOG_SNAPSHOT_REASON_PERIODIC |
+                        BLE_LOG_SNAPSHOT_REASON_TS_VALID;
+    if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT &&
+            (snapshot.reason_flags & expected) == expected) {
+        observer->found = true;
+        observer->io_level = snapshot.ts.io_level;
+    }
+}
+#endif
+
 static TickType_t runtime_timeout_ticks(uint32_t timeout_ms)
 {
     uint64_t ticks = ((uint64_t)timeout_ms * configTICK_RATE_HZ + 999) / 1000;
@@ -159,11 +189,12 @@ static bool write_runtime_marker(uint32_t seq, int64_t *enqueued_at_us)
     return true;
 }
 
-static bool read_runtime_marker(uint32_t *seq, uint32_t *ts_count,
-                                int64_t *received_at_us)
+static bool read_runtime_marker_with_timeout(uint32_t *seq, uint32_t *ts_count,
+                                             int64_t *received_at_us,
+                                             uint32_t timeout_ms)
 {
     const int64_t deadline_us = esp_timer_get_time() +
-                                (int64_t)RT_READ_TIMEOUT_MS * 1000;
+                                (int64_t)timeout_ms * 1000;
     uint32_t observed_ts = 0;
 
     while (true) {
@@ -197,6 +228,13 @@ static bool read_runtime_marker(uint32_t *seq, uint32_t *ts_count,
     }
 }
 
+static bool read_runtime_marker(uint32_t *seq, uint32_t *ts_count,
+                                int64_t *received_at_us)
+{
+    return read_runtime_marker_with_timeout(seq, ts_count, received_at_us,
+                                            RT_READ_TIMEOUT_MS);
+}
+
 static bool runtime_stream_is_quiet(void)
 {
     const int64_t drain_deadline_us = esp_timer_get_time() +
@@ -228,6 +266,35 @@ static bool runtime_stream_is_quiet(void)
     }
     return false;
 }
+
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+static bool read_periodic_snapshot(uint8_t *io_level)
+{
+    const int64_t deadline_us = esp_timer_get_time() +
+                                (int64_t)BLE_LOG_TS_TRIGGER_TIMEOUT_US + 1000000;
+    while (true) {
+        TickType_t remaining;
+        if (!runtime_deadline_ticks(deadline_us, &remaining)) {
+            return false;
+        }
+        size_t len = ble_log_prph_test_read(s_capture, sizeof(s_capture),
+                                            remaining, 0, NULL);
+        if (!len) {
+            continue;
+        }
+
+        rt_snapshot_observer_t observer = {0};
+        if (!test_ble_log_walk_frames(s_capture, len,
+                                      observe_periodic_snapshot, &observer)) {
+            return false;
+        }
+        if (observer.found) {
+            *io_level = observer.io_level;
+            return true;
+        }
+    }
+}
+#endif
 
 static void refill_runtime_queue(void *arg)
 {
@@ -480,7 +547,7 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
     TEST_ASSERT_TRUE(ble_log_sync_enable(true));
     for (int i = 0; i < 3; i++) {
-        vTaskDelay(runtime_timeout_ticks(CONFIG_BLE_LOG_TS_TRIGGER_TIMEOUT_MS));
+        vTaskDelay(runtime_timeout_ticks(BLE_LOG_TS_TRIGGER_TIMEOUT_MS));
     }
     TEST_ASSERT_TRUE(ble_log_sync_enable(false));
 
@@ -494,6 +561,65 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
     TEST_ASSERT_GREATER_THAN_UINT32_MESSAGE(
         0, ts_count,
         "Periodic ESP timer did not emit a timestamp frame");
+}
+
+TEST_CASE("BLE Log sync IO control leaves periodic snapshots running",
+          "[ble_log][runtime][timestamp][ignore]")
+{
+#if !CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+    TEST_IGNORE_MESSAGE("Requires BLE Log TS sync IO toggle support");
+#else
+    const uint32_t seq = UINT32_C(0x41000);
+    uint32_t received_seq;
+    uint8_t io_level;
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+
+    TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(false));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+    TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
+                             "No periodic clock snapshot while sync IO was disabled");
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+
+    /* Establish the timer phase above, then park a partial OPEN transport and
+     * close the public producer gate. The next periodic callback must still
+     * flush the transport and emit its Internal Snapshot. */
+    prepare_payload(seq);
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, s_payload,
+                                       sizeof(rt_marker_t)));
+    TEST_ASSERT_TRUE(ble_log_enable(false));
+    bool marker_received = read_runtime_marker_with_timeout(
+        &received_seq, NULL, NULL,
+        BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 1000);
+    bool snapshot_received = read_periodic_snapshot(&io_level);
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+
+    TEST_ASSERT_TRUE_MESSAGE(
+        marker_received,
+        "Producer disable stopped the periodic OPEN transport flush");
+    TEST_ASSERT_EQUAL_UINT32(seq, received_seq);
+    TEST_ASSERT_TRUE_MESSAGE(
+        snapshot_received,
+        "Producer disable stopped periodic Internal Snapshots");
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+    TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(true));
+    bool high_seen = false;
+    for (int i = 0; i < 3 && !high_seen; i++) {
+        TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
+                                 "No periodic snapshot while sync IO was enabled");
+        high_seen = io_level != 0;
+    }
+    TEST_ASSERT_TRUE_MESSAGE(high_seen, "Enabled sync IO never toggled high");
+
+    /* Exercise the compatibility shim on disable. */
+    TEST_ASSERT_TRUE(ble_log_sync_enable(false));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+    TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
+                             "Sync IO disable stopped periodic snapshots");
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+#endif
 }
 
 TEST_CASE("BLE Log runtime dispatch yields to other timer callbacks",
@@ -737,8 +863,10 @@ TEST_CASE("BLE Log LBM inflight peak stays bounded under bursts",
     }
 
     /* Snapshot the retained peak through the dedicated Internal transport. */
+    ble_log_ts_info_t ts_info;
+    ble_log_rt_ts_sample(&ts_info, false);
     TEST_ASSERT_TRUE(ble_log_internal_snapshot(
-        BLE_LOG_SNAPSHOT_REASON_PERIODIC, NULL, true));
+        BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, true));
     TEST_ASSERT_TRUE(ble_log_rt_drain());
 
     const int64_t deadline_us = esp_timer_get_time() +

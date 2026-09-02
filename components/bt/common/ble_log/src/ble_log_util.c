@@ -25,9 +25,8 @@ BLE_LOG_DRAM_ATTR portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC BLE_LOG_INLINE
 uint32_t ror32(uint32_t word, uint32_t shift)
 {
-    if (unlikely(shift == 0)) {
-        return word;
-    }
+    /* The mask folds shift == 0 into a zero left-shift amount, so the
+     * expression needs no shift == 0 guard. */
     return (word >> shift) | (word << ((32 - shift) & 0x1F));
 }
 
@@ -97,4 +96,14 @@ bool ble_log_ref_count_wait(volatile uint32_t *ref_count, uint32_t max_ref_count
         vTaskDelay(1);
     }
     return true;
+}
+
+BLE_LOG_IRAM_ATTR
+void ble_log_atomic_update_peak(volatile uint32_t *peak, uint32_t value)
+{
+    uint32_t current = BLE_LOG_ATOMIC_LOAD_RELAXED(*peak);
+    while (value > current &&
+           !__atomic_compare_exchange_n(peak, &current, value, true,
+                                        __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
+    }
 }

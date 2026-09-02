@@ -13,6 +13,7 @@
 #include "ble_log_rt.h"
 
 #include "esp_timer.h"
+#include "esp_chip_info.h"
 
 #if CONFIG_BLE_LOG_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER
 #if CONFIG_BT_DUAL_MODE_ARCH
@@ -34,6 +35,34 @@
 
 /* Single-instruction clock read; a function would add an IRAM call site. */
 #define BLE_LOG_TIMESTAMP_NOW()                    ((uint32_t)esp_timer_get_time())
+
+#if CONFIG_BT_CONTROLLER_ENABLED
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+extern const char *btdm_controller_get_compile_version(void);
+#define BLE_LOG_CONTROLLER_GET_COMMIT() btdm_controller_get_compile_version()
+#elif !CONFIG_BT_DUAL_MODE_ARCH || CONFIG_BT_CTRL_BLE_ENABLE
+/* BR/EDR-only dual-mode builds do not link the BLE controller lib */
+extern char *ble_controller_get_compile_version(void);
+#define BLE_LOG_CONTROLLER_GET_COMMIT() ble_controller_get_compile_version()
+#endif
+#if CONFIG_BT_DUAL_MODE_ARCH
+/* BTDM common lib (dual-mode arch only) */
+extern const char *r_btdm_get_compile_version(void);
+#define BLE_LOG_BTDM_COMMON_GET_COMMIT() r_btdm_get_compile_version()
+#endif
+#endif
+
+#if CONFIG_BLE_MESH && CONFIG_BLE_MESH_V11_SUPPORT
+/* "Bluetooth Mesh v1.1 commit: <hash>" */
+extern const char bt_mesh_v11_commit_str[];
+#endif
+
+#if CONFIG_BT_AUDIO && CONFIG_SOC_BLE_AUDIO_SUPPORTED
+extern const char *lib_audio_commit_get(void);
+#endif
+
+_Static_assert(sizeof(ble_log_version_info_t) == 58,
+               "Unexpected BLE Log version info frame size");
 
 /* ------------------------------- */
 /*     Global Pool Context         */
@@ -77,6 +106,8 @@ typedef struct {
 } ble_log_pool_claim_t;
 
 /* VARIABLE */
+/* Process-lifetime count: a caller rejected by a closed gate may still owe
+ * its balancing release when the next LBM epoch starts. Never reset it. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t lbm_ref_count = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t lbm_inited = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t lbm_enabled = 0;
@@ -98,6 +129,7 @@ extern void ble_log_test_claim_pre_publish_hook(void) __attribute__((weak));
 extern void ble_log_test_enable_before_lifecycle_lock_hook(void) __attribute__((weak));
 extern void ble_log_test_disable_before_wake_hook(void) __attribute__((weak));
 extern void ble_log_test_claim_locked_hook(void) __attribute__((weak));
+extern void ble_log_test_init_snapshot_before_acquire_hook(void) __attribute__((weak));
 #endif
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
@@ -114,6 +146,7 @@ BLE_LOG_STATIC ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
                                                             bool use_reserve,
                                                             bool wait);
 BLE_LOG_STATIC void ble_log_pool_seal_and_send(ble_log_prph_trans_t *trans);
+BLE_LOG_STATIC void ble_log_pool_seal_open_trans(void);
 BLE_LOG_STATIC void ble_log_pool_write_frame(ble_log_prph_trans_t *trans,
                                              uint32_t frame_sn,
                                              uint8_t source_meta,
@@ -122,10 +155,14 @@ BLE_LOG_STATIC void ble_log_pool_write_frame(ble_log_prph_trans_t *trans,
                                              const uint8_t *addr, uint16_t len,
                                              const uint8_t *addr_append,
                                              uint16_t len_append, bool omdata);
+BLE_LOG_STATIC void ble_log_pool_finish_frame(ble_log_prph_trans_t *trans,
+                                              uint16_t payload_len,
+                                              ble_log_stat_mgr_t *stat_mgr);
 BLE_LOG_STATIC void ble_log_stat_mgr_mark_lost(ble_log_src_t src_code);
 BLE_LOG_STATIC void ble_log_snapshot_stats(ble_log_source_stat_t *snapshots);
 BLE_LOG_STATIC bool ble_log_pool_flush_all_trans(void);
 BLE_LOG_STATIC void ble_log_pool_wake_all(void);
+BLE_LOG_STATIC void ble_log_internal_version_info_init(void);
 
 /* ------------------------- */
 /*     BITMAP HELPERS        */
@@ -151,11 +188,7 @@ ble_log_pool_update_peak(uint32_t free_bitmap)
 {
     uint32_t used = BLE_LOG_POOL_TRANS_CNT -
                     __builtin_popcount(free_bitmap & BLE_LOG_POOL_ALL_MASK);
-    uint32_t peak = BLE_LOG_ATOMIC_LOAD_RELAXED(g_pool.inflight_peak);
-    while (used > peak &&
-           !__atomic_compare_exchange_n(&g_pool.inflight_peak, &peak, used, true,
-                                        __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
-    }
+    ble_log_atomic_update_peak(&g_pool.inflight_peak, used);
 }
 
 /* A newly available shared transport satisfies one waiter. The SEQ_CST fence
@@ -212,6 +245,19 @@ BLE_LOG_STATIC void ble_log_pool_wake_all(void)
     }
 }
 
+/* Waiter registration is one atomic RMW with ACQ_REL on both sides of the
+ * park: the register must be visible to a concurrent gate close before the
+ * task blocks, and the unregister must pair with the wake that released
+ * it. The RMW is a CAS loop plus barrier on Xtensa (several instructions),
+ * so it lives here once instead of at the four call sites of the IRAM
+ * acquire path. delta is +1 or -1. */
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void
+ble_log_pool_waiter_adjust(int delta)
+{
+    __atomic_add_fetch(&g_pool.waiting_task_count, (uint32_t)delta,
+                       __ATOMIC_ACQ_REL);
+}
+
 /* -------------------------------------- */
 /*     UNIFIED TRANSPORT RECYCLE          */
 /* -------------------------------------- */
@@ -262,6 +308,27 @@ BLE_LOG_IRAM_ATTR void ble_log_pool_seal_and_send(ble_log_prph_trans_t *trans)
      * is SENDING, so no other writer can find it. */
     BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
     ble_log_rt_submit_trans(trans);
+}
+
+/* Seals every OPEN transport in the pool. Caller contract: writers are
+ * gone (producer gate closed and drained), so each lock is uncontended
+ * and the acquire waits are bounded. */
+BLE_LOG_STATIC void ble_log_pool_seal_open_trans(void)
+{
+    for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
+        if (!(BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.open_bitmap) & BIT(id))) {
+            continue;
+        }
+        ble_log_prph_trans_t *trans = g_pool.trans[id];
+        while (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
+        }
+        if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) == BLE_LOG_TRANS_STATE_OPEN &&
+            trans->pos > 0) {
+            ble_log_pool_seal_and_send(trans);   /* releases the lock */
+        } else {
+            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
+        }
+    }
 }
 
 /* -------------------------------------- */
@@ -399,16 +466,16 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
             return trans;
         }
 
-        __atomic_add_fetch(&g_pool.waiting_task_count, 1, __ATOMIC_ACQ_REL);
+        ble_log_pool_waiter_adjust(1);
         __atomic_thread_fence(__ATOMIC_SEQ_CST);
 
         trans = ble_log_pool_try_claim_available(frame_len, use_reserve);
         if (trans) {
-            __atomic_sub_fetch(&g_pool.waiting_task_count, 1, __ATOMIC_ACQ_REL);
+            ble_log_pool_waiter_adjust(-1);
             return trans;
         }
         if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled)) {
-            __atomic_sub_fetch(&g_pool.waiting_task_count, 1, __ATOMIC_ACQ_REL);
+            ble_log_pool_waiter_adjust(-1);
             return NULL;
         }
 
@@ -417,7 +484,7 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
         BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
         xSemaphoreTake(g_pool.sem, portMAX_DELAY);
         BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(&lbm_ref_count);
-        __atomic_sub_fetch(&g_pool.waiting_task_count, 1, __ATOMIC_ACQ_REL);
+        ble_log_pool_waiter_adjust(-1);
 
         if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled)) {
             return NULL;
@@ -466,11 +533,21 @@ void ble_log_pool_write_frame(ble_log_prph_trans_t *trans, uint32_t frame_sn,
             BLE_LOG_MEMCPY(payload, addr_append, len_append);
         }
     }
-    /* Data integrity check */
-    uint32_t checksum = ble_log_fast_checksum((const uint8_t *)buf, BLE_LOG_FRAME_HEAD_LEN + payload_len);
+    /* Data integrity check, transport update and completion. */
+    ble_log_pool_finish_frame(trans, payload_len, stat_mgr);
+}
+
+/* Completes a frame whose head and payload are already in place at
+ * trans->pos: writes the checksum tail, advances pos, publishes the
+ * written-frame stat, then seals or publishes the transport. */
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
+void ble_log_pool_finish_frame(ble_log_prph_trans_t *trans, uint16_t payload_len,
+                               ble_log_stat_mgr_t *stat_mgr)
+{
+    uint8_t *buf = trans->buf + trans->pos;
+    uint32_t checksum = ble_log_fast_checksum(buf, BLE_LOG_FRAME_HEAD_LEN + payload_len);
     BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN + payload_len, &checksum, BLE_LOG_FRAME_TAIL_LEN);
 
-    /* Update transport and publish the completed core-stat record. */
     trans->pos += payload_len + BLE_LOG_FRAME_OVERHEAD;
     BLE_LOG_ATOMIC_ADD_RELAXED(stat_mgr->counters.written_frame_cnt, 1);
 
@@ -556,13 +633,12 @@ void ble_log_commit(uint32_t handle, size_t actual_len)
     if (actual_len == 0 || actual_len > claim->max_len) {
         ble_log_stat_mgr_mark_lost(src_code);
         if (trans->pos == 0) {
-            /* Returning straight to FREE bypasses seal_and_send: also drop
-             * any pending-seal marker here. */
-            BLE_LOG_ATOMIC_STORE_RELAXED(trans->pending_seal, false);
-            BLE_LOG_ATOMIC_STORE_RELEASE(trans->state, BLE_LOG_TRANS_STATE_FREE);
-            ble_log_pool_bitmap_set(&g_pool.free_bitmap, trans->id);
+            /* Returning straight to FREE: recycle covers pos, pending_seal,
+             * state, the free-bitmap hint and the waiter wake. The transport
+             * is in no bitmap while CLAIMED, so releasing the lock first
+             * keeps it invisible to scanners until recycle publishes it. */
             BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
-            ble_log_pool_notify_waiter(trans->id);
+            ble_log_lbm_recycle_trans(trans);
         } else {
             ble_log_pool_publish_open_and_unlock(trans);
         }
@@ -571,7 +647,6 @@ void ble_log_commit(uint32_t handle, size_t actual_len)
     }
 
     uint16_t payload_len = (uint16_t)(sizeof(uint32_t) + actual_len);
-    uint8_t *buf = trans->buf + trans->pos;
     ble_log_stat_mgr_t *stat_mgr = &stat_mgr_ctx[src_code];
     uint8_t source_meta = BLE_LOG_MAKE_SOURCE_META(src_code,
                                                     claim->non_yield);
@@ -579,21 +654,9 @@ void ble_log_commit(uint32_t handle, size_t actual_len)
         .length = payload_len,
         .frame_meta = BLE_LOG_MAKE_FRAME_META(source_meta, claim->frame_sn),
     };
-    BLE_LOG_MEMCPY(buf, &frame_head, BLE_LOG_FRAME_HEAD_LEN);
+    BLE_LOG_MEMCPY(trans->buf + trans->pos, &frame_head, BLE_LOG_FRAME_HEAD_LEN);
+    ble_log_pool_finish_frame(trans, payload_len, stat_mgr);
 
-    uint32_t checksum = ble_log_fast_checksum(buf,
-                                              BLE_LOG_FRAME_HEAD_LEN + payload_len);
-    BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN + payload_len,
-                   &checksum, BLE_LOG_FRAME_TAIL_LEN);
-
-    trans->pos += payload_len + BLE_LOG_FRAME_OVERHEAD;
-    BLE_LOG_ATOMIC_ADD_RELAXED(stat_mgr->counters.written_frame_cnt, 1);
-
-    if (BLE_LOG_TRANS_FREE_SPACE(trans) <= BLE_LOG_FRAME_OVERHEAD) {
-        ble_log_pool_seal_and_send(trans);
-    } else {
-        ble_log_pool_publish_open_and_unlock(trans);
-    }
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
 
@@ -628,16 +691,13 @@ bool ble_log_lbm_init(void)
         goto exit;
     }
 
-    /* Allocate the transport buffers of the global pool. */
+    /* Allocate the transport buffers of the global pool. trans_init zeroes
+     * the storage, so only the non-zero identity fields need setting. */
     for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
         if (!ble_log_prph_trans_init(&(g_pool.trans[id]), BLE_LOG_POOL_TRANS_SIZE)) {
             goto exit;
         }
         g_pool.trans[id]->id = (uint8_t)id;
-        g_pool.trans[id]->owner_kind = BLE_LOG_TRANS_OWNER_POOL;
-        g_pool.trans[id]->state = BLE_LOG_TRANS_STATE_FREE;
-        g_pool.trans[id]->atomic_lock = 0;
-        g_pool.trans[id]->pending_seal = 0;
     }
 
     if (!ble_log_prph_trans_init(&internal_trans, BLE_LOG_INTERNAL_TRANS_SIZE)) {
@@ -645,8 +705,6 @@ bool ble_log_lbm_init(void)
     }
     internal_trans->id = BLE_LOG_TRANS_ID_NONE;
     internal_trans->owner_kind = BLE_LOG_TRANS_OWNER_INTERNAL;
-    internal_trans->state = BLE_LOG_TRANS_STATE_FREE;
-    internal_trans->atomic_lock = 0;
 
     g_pool.free_bitmap = BLE_LOG_POOL_ALL_MASK;
     g_pool.open_bitmap = 0;
@@ -657,8 +715,8 @@ bool ble_log_lbm_init(void)
     internal_snapshot.int_src_code = BLE_LOG_INT_SRC_SNAPSHOT;
     internal_snapshot.pool.trans_cnt = BLE_LOG_POOL_TRANS_CNT;
     internal_snapshot.pool.non_yield_reserve_cnt = BLE_LOG_POOL_NON_YIELD_RESERVE_CNT;
+    ble_log_internal_version_info_init();
 
-    lbm_ref_count = 0;
     BLE_LOG_ATOMIC_STORE_RELEASE(lbm_enabled, false);
     BLE_LOG_ATOMIC_STORE_RELEASE(lbm_inited, true);
     return true;
@@ -692,7 +750,10 @@ void ble_log_lbm_begin_deinit(void)
 __attribute__((noinline)) BLE_LOG_STATIC
 void ble_log_snapshot_stats(ble_log_source_stat_t *snapshots)
 {
-    BLE_LOG_ENTER_CRITICAL();
+    /* The counter writers (claim/commit/write_hex_ll, some in IRAM/ISR
+     * context) use relaxed atomics and never take the spinlock, so an
+     * exclusive section here would exclude nobody. The relaxed loads
+     * are the whole protection. */
     for (int i = 0; i < BLE_LOG_SRC_CORE_COUNT; i++) {
         ble_log_stat_mgr_t *stat_mgr =
             &stat_mgr_ctx[BLE_LOG_SRC_CORE_FIRST + i];
@@ -701,7 +762,6 @@ void ble_log_snapshot_stats(ble_log_source_stat_t *snapshots)
         snapshots[i].lost_frame_cnt =
             BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr->counters.lost_frame_cnt);
     }
-    BLE_LOG_EXIT_CRITICAL();
 }
 
 void ble_log_lbm_deinit(void)
@@ -724,30 +784,71 @@ bool ble_log_lbm_is_enabled(void)
     return BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled);
 }
 
-void ble_log_internal_set_version_info(const ble_log_version_info_t *version_info)
+/* Copies a NUL-terminated commit string into a fixed-width zero-padded field */
+BLE_LOG_STATIC void ble_log_commit_copy(uint8_t *dst, const char *src, size_t len)
 {
-    if (version_info) {
-        BLE_LOG_MEMCPY(&internal_snapshot.version_info, version_info,
-                       sizeof(*version_info));
+    BLE_LOG_MEMCPY(dst, src, strnlen(src, len));
+}
+
+/* Fills the version-info record carried by internal snapshots, in place:
+ * no intermediate copy. ble_log_lbm_init zeroes internal_snapshot first. */
+BLE_LOG_STATIC void ble_log_internal_version_info_init(void)
+{
+    ble_log_version_info_t *vi = &internal_snapshot.version_info;
+    vi->int_src_code = BLE_LOG_INT_SRC_VERSION_INFO;
+    vi->version = BLE_LOG_VERSION;
+#ifdef BLE_LOG_IDF_COMMIT
+    BLE_LOG_MEMCPY(vi->idf_commit, BLE_LOG_IDF_COMMIT,
+                   BLE_LOG_IDF_COMMIT_LEN);
+#endif
+#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_CONTROLLER_GET_COMMIT)
+    ble_log_commit_copy(vi->controller_commit,
+                        BLE_LOG_CONTROLLER_GET_COMMIT(), BLE_LOG_LIB_COMMIT_LEN);
+#endif
+#if CONFIG_BT_CONTROLLER_ENABLED && defined(BLE_LOG_BTDM_COMMON_GET_COMMIT)
+    ble_log_commit_copy(vi->btdm_common_commit,
+                        BLE_LOG_BTDM_COMMON_GET_COMMIT(), BLE_LOG_LIB_COMMIT_LEN);
+#endif
+#if CONFIG_BLE_MESH && CONFIG_BLE_MESH_V11_SUPPORT
+    const char *mesh_commit = strrchr(bt_mesh_v11_commit_str, ' ');
+    if (mesh_commit) {
+        ble_log_commit_copy(vi->mesh_commit, mesh_commit + 1,
+                            BLE_LOG_LIB_COMMIT_LEN);
     }
+#endif
+#if CONFIG_BT_AUDIO && CONFIG_SOC_BLE_AUDIO_SUPPORTED
+    ble_log_commit_copy(vi->audio_commit, lib_audio_commit_get(),
+                        BLE_LOG_LIB_COMMIT_LEN);
+#endif
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+    vi->chip_model = (uint16_t)chip_info.model;
+    vi->chip_revision = chip_info.revision;
 }
 
 bool ble_log_internal_snapshot(uint16_t reason_flags,
                                const ble_log_ts_info_t *ts_info,
-                               bool required)
+                               bool wait_for_transport)
 {
-    const uint32_t *gate = required ? &lbm_inited : &lbm_enabled;
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, gate)) {
+#if CONFIG_BLE_LOG_PRPH_TEST
+    if ((reason_flags & BLE_LOG_SNAPSHOT_REASON_INIT) &&
+            ble_log_test_init_snapshot_before_acquire_hook) {
+        ble_log_test_init_snapshot_before_acquire_hook();
+    }
+#endif
+    /* Internal Snapshots are system output and outlive the public producer
+     * gate. Only LBM teardown stops new snapshots. */
+    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
         return false;
     }
     if (!internal_trans) {
         goto failed;
     }
 
-    /* Capture the complete occurrence sample before any dedicated-buffer
-     * drain or wait. Without a TS sync sample, esp_ts comes from the frame
-     * timestamp and os_ts from the current tick. */
-    uint32_t timestamp = ts_info ? ts_info->esp_ts : BLE_LOG_TIMESTAMP_NOW();
+    /* The caller sampled the clocks (with or without a sync IO toggle)
+     * before any dedicated-buffer drain or wait; the frame timestamp is
+     * that sample's esp_ts. */
+    uint32_t timestamp = ts_info->esp_ts;
     TickType_t start_tick = xTaskGetTickCount();
     for (;;) {
         if (BLE_LOG_CAS_ACQUIRE(&internal_trans->atomic_lock)) {
@@ -757,7 +858,7 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
             }
             BLE_LOG_CAS_RELEASE(&internal_trans->atomic_lock);
         }
-        if (!required ||
+        if (!wait_for_transport ||
             (xTaskGetTickCount() - start_tick) >= BLE_LOG_WAIT_TIMEOUT_TICKS) {
             goto lost;
         }
@@ -766,11 +867,10 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
     }
 
     internal_snapshot.reason_flags = reason_flags;
-    internal_snapshot.ts.io_level = ts_info ? ts_info->io_level : 0;
-    internal_snapshot.ts.lc_ts = ts_info ? ts_info->lc_ts : 0;
+    internal_snapshot.ts.io_level = ts_info->io_level;
+    internal_snapshot.ts.lc_ts = ts_info->lc_ts;
     internal_snapshot.ts.esp_ts = timestamp;
-    internal_snapshot.ts.os_ts = ts_info ? ts_info->os_ts
-                                         : pdTICKS_TO_MS(xTaskGetTickCount());
+    internal_snapshot.ts.os_ts = ts_info->os_ts;
     uint32_t free_bitmap = BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.free_bitmap) &
                            BLE_LOG_POOL_ALL_MASK;
     internal_snapshot.pool.inflight =
@@ -815,19 +915,7 @@ BLE_LOG_STATIC bool ble_log_pool_flush_all_trans(void)
 {
     /* New writes are disabled, so every held lock will be released after its
      * current frame copy. Seal every remaining OPEN transport. */
-    for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
-        ble_log_prph_trans_t *trans = g_pool.trans[id];
-        while (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
-        }
-        if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) == BLE_LOG_TRANS_STATE_OPEN &&
-            trans->pos > 0) {
-            ble_log_pool_bitmap_clear(&g_pool.open_bitmap, id);
-            ble_log_pool_seal_and_send(trans);   /* releases the lock */
-        } else {
-            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
-        }
-    }
-
+    ble_log_pool_seal_open_trans();
     TickType_t start_tick = xTaskGetTickCount();
     while ((BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.free_bitmap) &
             BLE_LOG_POOL_ALL_MASK) != BLE_LOG_POOL_ALL_MASK) {
@@ -842,9 +930,11 @@ BLE_LOG_STATIC bool ble_log_pool_flush_all_trans(void)
     return true;
 }
 
-void ble_log_lbm_flush_open_transports(void)
+void ble_log_lbm_flush_open_trans(void)
 {
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_enabled)) {
+    /* Periodic OPEN flush is system output, independent from the public
+     * producer gate. LBM teardown remains the lifetime boundary. */
+    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
         return;
     }
 
@@ -873,26 +963,12 @@ void ble_log_lbm_flush_open_transports(void)
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
 }
 
-void ble_log_lbm_drain_open_transports(void)
+void ble_log_lbm_drain_open_trans(void)
 {
     /* Contract (see header): called after ble_log_lbm_begin_deinit() and
      * before ble_log_rt_deinit(). The producer gate is closed and writers
      * have drained, so no lock is held for longer than one frame copy. */
-    for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
-        if (!(BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.open_bitmap) & BIT(id))) {
-            continue;
-        }
-        ble_log_prph_trans_t *trans = g_pool.trans[id];
-        while (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
-        }
-        if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) == BLE_LOG_TRANS_STATE_OPEN &&
-            trans->pos > 0) {
-            ble_log_pool_seal_and_send(trans);   /* releases the lock */
-        } else {
-            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
-        }
-    }
-
+    ble_log_pool_seal_open_trans();
     /* Hand the sealed buffers to the peripheral before the runtime queue
      * is destroyed; the peripheral deinit wait completes the delivery. */
     (void)ble_log_rt_drain();
@@ -973,8 +1049,15 @@ void ble_log_flush(void)
     }
 #endif
 
-    if (!ble_log_pool_flush_all_trans() ||
-        !ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_FLUSH, NULL, true)) {
+    if (!ble_log_pool_flush_all_trans()) {
+        goto restore;
+    }
+
+    /* One-shot FLUSH snapshot: sample after the pool drained so the clocks
+     * reflect the flush completion; no sync IO toggle (periodic flow only). */
+    ble_log_ts_info_t ts_info;
+    ble_log_rt_ts_sample(&ts_info, false);
+    if (!ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_FLUSH, &ts_info, true)) {
         goto restore;
     }
 
