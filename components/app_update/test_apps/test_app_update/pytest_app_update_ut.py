@@ -57,6 +57,7 @@ def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
     'config',
     [
         'rollback',
+        'rollback_disabled',
     ],
     indirect=True,
 )

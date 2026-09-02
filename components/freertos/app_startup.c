@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -196,6 +196,12 @@ static void main_task(void* args)
 #endif
     ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
 #endif // CONFIG_ESP_TASK_WDT
+
+    // app_update overrides it to auto-confirm an OTA rollback right before app_main.
+    void __attribute__((weak)) esp_ota_confirm_rollback_hook(void);
+    if (esp_ota_confirm_rollback_hook != NULL) {
+        esp_ota_confirm_rollback_hook();
+    }
 
     /*
     Note: Be careful when changing the "Calling app_main()" log below as multiple pytest scripts expect this log as a

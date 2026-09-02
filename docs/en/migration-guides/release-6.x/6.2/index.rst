@@ -7,3 +7,4 @@ Migration from 6.1 to 6.2
     :maxdepth: 1
 
     security
+    system

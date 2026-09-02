@@ -38,13 +38,24 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
 应用程序回滚
 ------------
 
-应用程序回滚的主要目的是确保设备在更新后正常工作。如果新版应用程序出现严重错误，该功能可使设备回滚到之前正常运行的应用版本。在使能回滚并且 OTA 升级应用程序至新版本后，可能出现的结果如下：
+应用程序回滚的主要目的是确保设备在更新后正常工作。如果新版应用程序出现严重错误，该功能可使设备回滚到之前正常运行的应用版本。
+
+应用程序回滚默认通过 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK` 启用。禁用该选项将移除 OTA 更新失败后的自动恢复路径，且下文所述的确认模式选项将不可用。
+
+应用程序回滚支持两种确认模式。两种模式都会启用回滚，并以 ``ESP_OTA_IMG_PENDING_VERIFY`` 状态启动新的 OTA 应用程序，区别仅在于确认应用程序的时间：
+
+* **确认应用程序在系统启动时自动确认** (:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP <CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP>`) 为默认模式。ESP-IDF 在 IDF 组件初始化完成后、调用 ``app_main`` 前将应用程序标记为有效。
+* **由应用程序决定确认时机** (:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP <CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP>`) 会保持待确认状态，直到应用程序显式确认或拒绝更新。应用程序可以通过这种方式检测首次启动、执行自测并选择确认时间。
+
+在这两种确认模式之间切换不会改变引导加载程序的回滚行为，只会改变应用程序中的确认点。因此，在自动确认和应用程序控制确认之间切换时，无需重新构建或更新已支持回滚的引导加载程序。
+
+如果应用程序在所选确认点之前复位、崩溃或掉电，引导加载程序会在下次启动时回滚到之前正常运行的应用程序。在使能回滚并且 OTA 升级应用程序至新版本后，可能出现的结果如下：
 
 * 应用程序运行正常，:cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 将正在运行的应用程序状态标记为 ``ESP_OTA_IMG_VALID``，启动此应用程序无限制。
 * 应用程序出现严重错误，无法继续工作，必须回滚到此前的版本，:cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 将正在运行的版本标记为 ``ESP_OTA_IMG_INVALID`` 然后复位。引导加载程序不会选取此版本，而是启动此前正常运行的版本。
-* 如果 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，则无需调用函数便可复位，回滚至之前的应用版本。
+* 如果应用程序在确认前复位，则回滚至之前的应用版本。
 
-可使用以下代码检测 OTA 更新后应用程序的首次启动。首次启动时，应用程序会检查其状态并执行检测。如果检测成功，应用程序调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 函数，确认应用运行成功。如果检测失败，应用程序调用 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 函数，回滚至之前的应用版本。
+以下代码展示了应用程序控制确认 (:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP <CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP>`)。OTA 更新后的首次启动时，应用程序会检查其状态并执行检测。如果检测成功，应用程序调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 函数，确认应用运行成功。如果检测失败，应用程序调用 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 函数，回滚至之前的应用版本。
 
 如果应用程序由于中止、重启或掉电无法启动或运行上述代码，引导加载程序在下一次启动尝试中会将该应用程序的状态标记为 ``ESP_OTA_IMG_INVALID``，并回滚至之前的应用版本。
 
@@ -84,23 +95,22 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
  ESP_OTA_IMG_UNDEFINED         没有限制，可以选取。
  ESP_OTA_IMG_INVALID           不会选取。
  ESP_OTA_IMG_ABORTED           不会选取。
- ESP_OTA_IMG_NEW               如使能 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`，
-                               则仅会选取一次。在引导加载程序中，状态立即变为
+ ESP_OTA_IMG_NEW               如使能应用程序回滚，则仅会选取一次。在引导加载程序中，状态立即变为
                                ``ESP_OTA_IMG_PENDING_VERIFY``。
- ESP_OTA_IMG_PENDING_VERIFY    如使能 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`，
-                               则不会选取，状态变为 ``ESP_OTA_IMG_ABORTED``。
+ ESP_OTA_IMG_PENDING_VERIFY    如使能应用程序回滚，则不会选取，状态变为
+                               ``ESP_OTA_IMG_ABORTED``。
 =============================  ========================================================
 
-如果 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能（默认情况），则 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 和 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 为可选功能，``ESP_OTA_IMG_NEW`` 和 ``ESP_OTA_IMG_PENDING_VERIFY`` 不会使用。
+如果禁用应用程序回滚，则 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 和 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 为可选功能，且不会使用 ``ESP_OTA_IMG_NEW`` 和 ``ESP_OTA_IMG_PENDING_VERIFY`` 状态。不建议在生产设备中禁用回滚，因为这会移除 OTA 更新失败后的自动恢复机制。
 
-Kconfig 中的 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户追踪新版应用程序的第一次启动。应用程序需调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 函数确认可以运行，否则将会在重启时回滚至旧版本。该功能可让用户在启动阶段控制应用程序的可操作性。新版应用程序仅有一次机会尝试是否能成功启动。
+使用应用程序控制确认时，可以追踪新版应用程序的第一次启动。应用程序需调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 函数确认可以运行，否则将在重启时回滚至旧版本。新版应用程序仅有一次机会成功到达确认点。
 
 .. _ota_rollback:
 
 回滚过程
 ^^^^^^^^
 
-:menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能时，回滚过程如下：
+应用程序控制确认的回滚过程如下：
 
 * 新版应用程序下载成功，:cpp:func:`esp_ota_set_boot_partition` 函数将分区设为可启动，状态设为 ``ESP_OTA_IMG_NEW``。该状态表示应用程序为新版本，第一次启动需要监测。
 * 重新启动 :cpp:func:`esp_restart`。
@@ -111,6 +121,21 @@ Kconfig 中的 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用
 * 若通过自测，则必须调用函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`，因为新版应用程序在等待确认其可操作性（``ESP_OTA_IMG_PENDING_VERIFY`` 状态）。
 * 若未通过自测，则调用函数 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`，回滚至之前能正常工作的应用程序版本，同时将无效的新版本应用程序设置为 ``ESP_OTA_IMG_INVALID``。
 * 如果新版应用程序可操作性没有确认，则状态一直为 ``ESP_OTA_IMG_PENDING_VERIFY``。下一次启动时，状态变更为 ``ESP_OTA_IMG_ABORTED``，阻止其再次启动，之后回滚到之前的版本。
+
+.. _ota_auto_confirm:
+
+自动确认 OTA 应用程序
+^^^^^^^^^^^^^^^^^^^^^
+
+自动确认是默认的确认模式。如果应用程序到达 ``app_main`` 即可视为 OTA 更新有效，请使用此模式。如果应用程序必须在自行定义的检查点确认更新，请改用应用程序控制确认。
+
+在此模式下，ESP-IDF 会在系统启动即将完成时，即 IDF 组件初始化完成后、调用 ``app_main`` 前，调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`。到达此处即视为首次启动成功。如果在此之前启动失败，应用程序将保持未确认状态，引导加载程序会在下次启动时选择之前正常运行的应用程序。
+
+自动确认不会验证在 ``app_main`` 中执行的应用程序特定初始化或诊断。自动确认还会在应用程序代码运行前将 OTA 状态更改为 ``ESP_OTA_IMG_VALID``。因此，应用程序代码无法使用 :cpp:func:`esp_ota_get_state_partition` 判断当前是否为新应用程序的首次启动。如需通过检查 ``ESP_OTA_IMG_PENDING_VERIFY`` 检测首次启动、执行自测，然后调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 或 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`，请选择应用程序控制确认。应用程序也可以自行维护持久化标记，记录上次运行的应用程序镜像。
+
+.. note::
+
+  防回滚机制不支持自动确认。使用防回滚机制的应用程序必须在自行定义的检查点显式确认新版本。
 
 意外复位
 ^^^^^^^^
@@ -138,11 +163,11 @@ Kconfig 中的 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用
 下文简单描述了如何设置应用程序状态：
 
 * ``ESP_OTA_IMG_VALID`` 由函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 设置。
-* 如果 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能，``ESP_OTA_IMG_UNDEFINED`` 由函数 :cpp:func:`esp_ota_set_boot_partition` 设置。
-* 如果 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，``ESP_OTA_IMG_NEW`` 由函数 :cpp:func:`esp_ota_set_boot_partition` 设置。
+* 如果禁用应用程序回滚，``ESP_OTA_IMG_UNDEFINED`` 由函数 :cpp:func:`esp_ota_set_boot_partition` 设置。
+* 如果使能应用程序回滚，``ESP_OTA_IMG_NEW`` 由函数 :cpp:func:`esp_ota_set_boot_partition` 设置。
 * ``ESP_OTA_IMG_INVALID`` 由函数 :cpp:func:`esp_ota_mark_app_invalid_rollback` 或 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 设置。
-* 如果应用程序的可操作性无法确认，发生重启（:menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能），则设置 ``ESP_OTA_IMG_ABORTED``。
-* 如果 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，选取的应用程序状态为 ``ESP_OTA_IMG_NEW``，则在引导加载程序中设置 ``ESP_OTA_IMG_PENDING_VERIFY``。
+* 如果使能应用程序回滚，并且应用程序在确认前重启，则设置 ``ESP_OTA_IMG_ABORTED``。
+* 如果使能应用程序回滚，且所选应用程序的状态为 ``ESP_OTA_IMG_NEW``，则引导加载程序将状态设置为 ``ESP_OTA_IMG_PENDING_VERIFY``。
 
 .. _anti-rollback:
 
@@ -155,7 +180,7 @@ Kconfig 中的 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用
 
 设置 :menuitem:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK`，启动防回滚机制。在引导加载程序中选取可启动的应用程序，会额外检查芯片和应用程序镜像的安全版本号。可启动固件中的应用安全版本号必须等于或高于芯片中的应用安全版本号。
 
-:menuitem:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` 和 :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 一起使用。此时，只有安全版本号等于或高于芯片中的应用安全版本号时才会回滚。
+防回滚机制使用应用程序控制确认。此时，只有安全版本号等于或高于芯片中的应用安全版本号时才会回滚。
 
 
 典型的防回滚机制
