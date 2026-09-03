@@ -825,7 +825,8 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
         bta_gattc_send_connect_cback(p_rcb,
                                      p_data->int_conn.remote_bda,
                                      p_data->int_conn.hdr.layer_specific, p_data->int_conn.conn_params, p_data->int_conn.role,
-                                     p_data->int_conn.ble_addr_type, p_data->int_conn.conn_handle);
+                                     p_data->int_conn.ble_addr_type, p_data->int_conn.conn_handle,
+                                     p_data->int_conn.adv_handle, p_data->int_conn.sync_handle);
 
     }
 }
@@ -1885,9 +1886,13 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
                 p_buf->int_conn.ble_addr_type = p_lcb->ble_addr_type;
                 #endif
                 p_buf->int_conn.conn_handle = p_lcb->handle;
+                l2cu_read_pawr_conn_handles(p_lcb, &p_buf->int_conn.adv_handle,
+                                            &p_buf->int_conn.sync_handle);
 
             } else {
                 APPL_TRACE_WARNING("gattc_conn_cb: conn params not found");
+                l2cu_read_pawr_conn_handles(NULL, &p_buf->int_conn.adv_handle,
+                                            &p_buf->int_conn.sync_handle);
             }
         }
         p_buf->int_conn.hdr.layer_specific   = conn_id;
