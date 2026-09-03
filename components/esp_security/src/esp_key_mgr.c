@@ -85,13 +85,27 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
     ESP_LOGV(TAG, "Key lock released for key type %d", key_type);
 }
 
+/* The Key Manager reset also resets AES and ECC, and the sequences guarded here
+   drive the state machine and write the shared key usage selector. Callers of
+   esp_key_mgr_acquire_hardware()/release_hardware() hold all three locks. */
+static void key_mgr_crypto_lock_acquire(void)
+{
+    esp_crypto_ecc_lock_acquire();
+    esp_crypto_sha_aes_lock_acquire();
+    esp_crypto_key_manager_lock_acquire();
+}
+
+static void key_mgr_crypto_lock_release(void)
+{
+    esp_crypto_key_manager_lock_release();
+    esp_crypto_sha_aes_lock_release();
+    esp_crypto_ecc_lock_release();
+}
+
 static void esp_key_mgr_acquire_hardware(bool deployment_mode)
 {
     if (deployment_mode) {
-        // We only need explicit locks in the deployment mode
-        esp_crypto_ecc_lock_acquire();
-        esp_crypto_sha_aes_lock_acquire();
-        esp_crypto_key_manager_lock_acquire();
+        key_mgr_crypto_lock_acquire();
         // The KM peripheral uses the external ECC block for the ECDH0/ECDH1
         // scalar multiplications; its bus clock must be on, otherwise the KM
         // deploys an incorrect key.
@@ -99,7 +113,6 @@ static void esp_key_mgr_acquire_hardware(bool deployment_mode)
         esp_crypto_ecc_enable_periph_clk(true);
 #endif
     }
-    // Reset the Key Manager Clock
     esp_crypto_key_mgr_enable_periph_clk(true);
 }
 
@@ -109,13 +122,12 @@ static void esp_key_mgr_release_hardware(bool deployment_mode)
 #if SOC_ECC_SUPPORTED
         esp_crypto_ecc_enable_periph_clk(false);
 #endif
-        esp_crypto_key_manager_lock_release();
-        esp_crypto_sha_aes_lock_release();
-        esp_crypto_ecc_lock_release();
     }
-
-    // Reset the Key Manager Clock
     esp_crypto_key_mgr_enable_periph_clk(false);
+
+    if (deployment_mode) {
+        key_mgr_crypto_lock_release();
+    }
 }
 
 static esp_key_mgr_key_purpose_t get_key_purpose(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_len_t key_len)
@@ -569,12 +581,12 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
 
     esp_key_mgr_acquire_key_lock(key_type);
 
+    key_mgr_crypto_lock_acquire();
     esp_key_mgr_acquire_hardware(false);
 
     esp_err_t esp_ret = key_mgr_recover_key(&key_recovery_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to recover key");
-        esp_key_mgr_release_key_lock(key_type);
         goto cleanup;
     }
 
@@ -583,7 +595,6 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         esp_ret = key_mgr_recover_key(&key_recovery_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover key");
-            esp_key_mgr_release_key_lock(key_type);
             goto cleanup;
         }
     }
@@ -591,19 +602,28 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
     // Set the Key Manager Static Register to use own key for the respective key type
     key_mgr_hal_set_key_usage(key_type, ESP_KEY_MGR_USE_OWN_KEY);
 
+    /* Released here: nothing after this point drives the peripheral. */
+    key_mgr_crypto_lock_release();
+
     ESP_LOGD(TAG, "Key activation for type %d successful", key_type);
     return ESP_OK;
 
 cleanup:
     ESP_LOGE(TAG, "Key activation failed");
     esp_key_mgr_release_hardware(false);
+    key_mgr_crypto_lock_release();
+    esp_key_mgr_release_key_lock(key_type);
     return esp_ret;
 }
 
 esp_err_t esp_key_mgr_deactivate_key(esp_key_mgr_key_type_t key_type)
 {
-    esp_key_mgr_release_key_lock(key_type);
+    key_mgr_crypto_lock_acquire();
     esp_key_mgr_release_hardware(false);
+    key_mgr_crypto_lock_release();
+
+    esp_key_mgr_release_key_lock(key_type);
+
     ESP_LOGD(TAG, "Key deactivation successful for type %d", key_type);
     return ESP_OK;
 }

@@ -251,11 +251,12 @@ static void ds_acquire_enable(void)
 {
     esp_crypto_ds_lock_acquire();
 
-    // We also enable SHA and HMAC here. SHA is used by HMAC, HMAC is used by DS.
+    /* DS first: its reset also resets AES, SHA and MPI, so anything enabled
+       before it would be reset again here. */
+    esp_crypto_ds_enable_periph_clk(true);
     esp_crypto_hmac_enable_periph_clk(true);
     esp_crypto_sha_enable_periph_clk(true);
     esp_crypto_mpi_enable_periph_clk(true);
-    esp_crypto_ds_enable_periph_clk(true);
 
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
     /*  Key Manager holds the key usage selector register(efuse vs own key).
@@ -278,10 +279,10 @@ static void ds_disable_release(void)
     esp_crypto_key_manager_lock_release();
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
 
-    esp_crypto_ds_enable_periph_clk(false);
     esp_crypto_mpi_enable_periph_clk(false);
     esp_crypto_sha_enable_periph_clk(false);
     esp_crypto_hmac_enable_periph_clk(false);
+    esp_crypto_ds_enable_periph_clk(false);
 
     esp_crypto_ds_lock_release();
 }

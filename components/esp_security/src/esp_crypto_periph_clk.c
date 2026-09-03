@@ -111,6 +111,7 @@ void esp_crypto_hmac_enable_periph_clk(bool enable)
         hmac_ll_enable_bus_clock(enable);
         if (enable) {
             hmac_ll_reset_register();
+            hmac_ll_clean();
         }
     }
 }
