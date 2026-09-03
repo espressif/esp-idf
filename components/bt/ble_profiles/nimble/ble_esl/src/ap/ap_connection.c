@@ -37,6 +37,13 @@ static const char *TAG = "esl_ap_conn";
 /** Connection-establishment timeout for the PAwR connection procedure (ms) */
 #define PAWR_CONNECT_TIMEOUT_MS  30000
 
+/* Bulk OTS transfers need a low-latency, full-length 2M ACL link. */
+#define ESL_CONN_ITVL_MIN        12   /* 15 ms */
+#define ESL_CONN_ITVL_MAX        24   /* 30 ms */
+#define ESL_CONN_TIMEOUT         400  /* 4 s */
+#define ESL_LL_TX_OCTETS         251
+#define ESL_LL_TX_TIME           2120
+
 /* ========================== Global State ========================== */
 
 ble_esl_ap_state_t *g_esl_ap = NULL;
@@ -55,6 +62,38 @@ static void handle_pairing_complete(struct ble_gap_event *event);
 static void handle_notify_rx(struct ble_gap_event *event);
 static esp_err_t ble_esl_ap_start_discovery(void);
 static void ble_esl_ap_maybe_resume_discovery(void);
+
+static void request_fast_esl_link(uint16_t conn_handle)
+{
+    struct ble_gap_upd_params params = {
+        .itvl_min = ESL_CONN_ITVL_MIN,
+        .itvl_max = ESL_CONN_ITVL_MAX,
+        .latency = 0,
+        .supervision_timeout = ESL_CONN_TIMEOUT,
+        .min_ce_len = 0,
+        .max_ce_len = 0,
+    };
+
+    int rc = ble_gap_update_params(conn_handle, &params);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        ESP_LOGW(TAG, "Fast interval request failed; conn=%u rc=%d",
+                 conn_handle, rc);
+    }
+
+    rc = ble_gap_set_data_len(conn_handle, ESL_LL_TX_OCTETS, ESL_LL_TX_TIME);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        ESP_LOGW(TAG, "Data length request failed; conn=%u rc=%d",
+                 conn_handle, rc);
+    }
+
+    rc = ble_gap_set_prefered_le_phy(conn_handle,
+                                     BLE_HCI_LE_PHY_2M_PREF_MASK,
+                                     BLE_HCI_LE_PHY_2M_PREF_MASK, 0);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        ESP_LOGW(TAG, "2M PHY request failed; conn=%u rc=%d",
+                 conn_handle, rc);
+    }
+}
 
 
 /* ========================== Tracking mutex ========================== */
@@ -784,6 +823,28 @@ static int ble_esl_ap_gap_event(struct ble_gap_event *event, void *arg)
                  event->mtu.conn_handle, event->mtu.value);
         return 0;
 
+    case BLE_GAP_EVENT_CONN_UPDATE: {
+        struct ble_gap_conn_desc desc;
+        if (ble_gap_conn_find(event->conn_update.conn_handle, &desc) == 0) {
+            ESP_LOGI(TAG, "ESL link updated: conn=%u interval=%u (%u ms) latency=%u status=%d",
+                     event->conn_update.conn_handle, desc.conn_itvl,
+                     desc.conn_itvl * 125 / 100, desc.conn_latency,
+                     event->conn_update.status);
+        }
+        return 0;
+    }
+
+    case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE:
+        ESP_LOGI(TAG, "ESL PHY updated: conn=%u tx=%u rx=%u status=%d",
+                 event->phy_updated.conn_handle, event->phy_updated.tx_phy,
+                 event->phy_updated.rx_phy, event->phy_updated.status);
+        return 0;
+
+    case BLE_GAP_EVENT_DATA_LEN_CHG:
+        ESP_LOGI(TAG, "ESL data length updated: conn=%u",
+                 event->data_len_chg.conn_handle);
+        return 0;
+
     default:
         return 0;
     }
@@ -1059,6 +1120,8 @@ static void handle_enc_change(struct ble_gap_event *event)
     }
     ble_esl_ap_tracking_unlock();
     ble_esl_ap_dispatch_state_evt(&snap);
+
+    request_fast_esl_link(conn_handle);
 
     if (conn->disc_done) {
         ESP_LOGD(TAG, "Encryption change on already-discovered conn_handle=%u; skipping discovery",

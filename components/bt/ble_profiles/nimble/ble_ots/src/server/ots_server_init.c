@@ -68,7 +68,7 @@ void ble_ots_server_unlock(void)
 /*****************************************************************************
  * L2CAP OTC MTU
  *****************************************************************************/
-#define OTS_L2CAP_COC_MTU   256
+#define OTS_L2CAP_COC_MTU   1024
 
 /*****************************************************************************
  * Directory Listing Object name
@@ -1515,13 +1515,21 @@ static int ots_l2cap_event_handle(struct ble_l2cap_event *event)
             return BLE_HS_ENOMEM;
         }
 
-        /* Provide an SDU receive buffer */
-        struct os_mbuf *sdu_rx = ble_hs_mbuf_from_flat(NULL, 0);
-        if (!sdu_rx) {
-            ESP_LOGE(TAG, "L2CAP accept: failed to allocate SDU rx buffer");
-            return BLE_HS_ENOMEM;
+        /* Pre-post the configured receive window. Each buffer contributes one
+         * peer credit; posting only one turns a bulk write into stop-and-wait. */
+        for (int i = 0; i < CONFIG_BT_NIMBLE_L2CAP_COC_SDU_BUFF_COUNT; i++) {
+            struct os_mbuf *sdu_rx = os_msys_get_pkthdr(OTS_L2CAP_COC_MTU, 0);
+            if (!sdu_rx) {
+                ESP_LOGE(TAG, "L2CAP accept: failed to allocate SDU rx buffer %d", i);
+                return BLE_HS_ENOMEM;
+            }
+            int rc = ble_l2cap_recv_ready(event->accept.chan, sdu_rx);
+            if (rc != 0) {
+                ESP_LOGE(TAG, "L2CAP accept: recv_ready failed rc=%d", rc);
+                os_mbuf_free_chain(sdu_rx);
+                return rc;
+            }
         }
-        ble_l2cap_recv_ready(event->accept.chan, sdu_rx);
         return 0;
     }
 
@@ -1564,7 +1572,7 @@ static int ots_l2cap_event_handle(struct ble_l2cap_event *event)
                                                   event->receive.sdu_rx);
 
         /* Provide a new SDU rx buffer for next receive */
-        struct os_mbuf *sdu_rx = ble_hs_mbuf_from_flat(NULL, 0);
+        struct os_mbuf *sdu_rx = os_msys_get_pkthdr(OTS_L2CAP_COC_MTU, 0);
         if (sdu_rx) {
             ble_l2cap_recv_ready(event->receive.chan, sdu_rx);
         }

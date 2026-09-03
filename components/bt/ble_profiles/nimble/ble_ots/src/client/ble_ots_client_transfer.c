@@ -25,7 +25,7 @@ static const char *TAG = "ots_client_transfer";
  * Constants
  *****************************************************************************/
 #define PSM_OTS                     0x0025
-#define OTC_MTU                     256
+#define OTC_MTU                     1024
 
 #define OACP_RESPONSE_OPCODE        0x60
 
