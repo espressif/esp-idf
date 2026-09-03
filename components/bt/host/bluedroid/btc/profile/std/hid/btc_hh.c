@@ -1305,7 +1305,7 @@ static void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
 static void btc_hh_data_path_deinit_inner(btc_hh_device_t *p_dev)
 {
     struct pkt_queue *queue;
-    struct osi_event *event;
+    struct osi_dynamic_event *event;
 
     if (p_dev == NULL) {
         return;
@@ -1319,7 +1319,7 @@ static void btc_hh_data_path_deinit_inner(btc_hh_device_t *p_dev)
     osi_mutex_unlock(&p_dev->lock);
 
     if (event != NULL) {
-        osi_event_delete(event);
+        osi_dynamic_event_delete(event);
     }
 
     if (queue != NULL) {
@@ -1332,7 +1332,7 @@ bool btc_hh_data_enqueue_linked_pkt(pkt_linked_item_t *linked_pkt)
     tBTA_HH_DATA_PKT *pkt = linked_pkt != NULL ? (tBTA_HH_DATA_PKT *)linked_pkt->data : NULL;
     btc_hh_device_t *p_dev = pkt != NULL ? btc_hh_find_connected_dev_by_handle(pkt->dev_handle) : NULL;
     struct pkt_queue *data_queue;
-    struct osi_event *data_ready;
+    struct osi_dynamic_event *data_ready;
     pkt_linked_item_t *old = NULL;
     bool enqueue_ok;
 
@@ -1357,7 +1357,7 @@ bool btc_hh_data_enqueue_linked_pkt(pkt_linked_item_t *linked_pkt)
 
     enqueue_ok = pkt_queue_enqueue(data_queue, linked_pkt);
     if (enqueue_ok && data_ready != NULL) {
-        osi_thread_post_event(data_ready, 0);
+        osi_dynamic_event_post(data_ready, 0);
     }
     osi_mutex_unlock(&p_dev->lock);
 
@@ -1423,7 +1423,7 @@ static bool btc_hh_data_path_init_inner(btc_hh_device_t *p_dev)
 {
     bool result = false;
     struct pkt_queue *data_queue = NULL;
-    struct osi_event *data_ready = NULL;
+    struct osi_dynamic_event *data_ready = NULL;
 
     do {
         if (p_dev == NULL) {
@@ -1446,13 +1446,13 @@ static bool btc_hh_data_path_init_inner(btc_hh_device_t *p_dev)
             break;
         }
 
-        data_ready = osi_event_create(btc_hh_data_pkt_handler, p_dev);
+        data_ready = osi_dynamic_event_create(btc_hh_data_pkt_handler, p_dev);
         if (data_ready == NULL) {
             BTC_TRACE_ERROR("%s: osi_event_create failed", __func__);
             break;
         }
 
-        if (!osi_event_bind(data_ready, btc_get_current_thread(), BTC_HH_DATA_QUEUE_IDX)) {
+        if (!osi_dynamic_event_bind(data_ready, btc_get_current_thread(), BTC_HH_DATA_QUEUE_IDX)) {
             BTC_TRACE_ERROR("%s: osi_event_bind failed", __func__);
             break;
         }
@@ -1470,7 +1470,7 @@ static bool btc_hh_data_path_init_inner(btc_hh_device_t *p_dev)
     if (!result) {
         btc_hh_data_path_deinit_inner(p_dev);
         if (data_ready != NULL) {
-            osi_event_delete(data_ready);
+            osi_dynamic_event_delete(data_ready);
         }
         if (data_queue != NULL) {
             pkt_queue_destroy(data_queue, bta_hh_co_data_linked_pkt_free);
@@ -1550,7 +1550,7 @@ static void btc_hh_data_pkt_handler(void *arg)
     }
 
     if (p_dev->data_ready != NULL && !pkt_queue_is_empty(p_dev->data_queue)) {
-        osi_thread_post_event(p_dev->data_ready, 0);
+        osi_dynamic_event_post(p_dev->data_ready, 0);
     }
 }
 

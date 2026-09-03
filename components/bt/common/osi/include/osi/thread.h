@@ -19,6 +19,7 @@
 
 struct osi_thread;
 struct osi_event;
+struct osi_dynamic_event;
 
 typedef struct osi_thread osi_thread_t;
 
@@ -81,10 +82,12 @@ const char *osi_thread_name(osi_thread_t *thread);
 int osi_thread_queue_wait_size(osi_thread_t *thread, int wq_idx);
 
 /*
- * brief: Create an osi_event struct and register the handler function and its argument
+ * brief: Create a session-stable osi_event and register its handler and argument.
  *        An osi_event is a kind of work that can be posted to the workqueue of osi_thread to process,
  *        but the work can have at most one instance the thread workqueue before it is processed. This
  *        allows the "single post, multiple data processing" jobs.
+ *        Delete is logical: storage remains valid until osi_thread_event_deinit(), allowing stale
+ *        posts during session teardown to be rejected without a global alive-list lock.
  * param func: the handler to process the job
  * param context: the argument to be passed to the handler function when the job is being processed
  * return: NULL if no memory, otherwise a valid struct pointer
@@ -103,7 +106,7 @@ struct osi_event *osi_event_create(osi_thread_func_t func, void *context);
 bool osi_event_bind(struct osi_event* event, osi_thread_t *thread, int queue_idx);
 
 /*
- * brief: Destroy the osi_event struct created by osi_event_create and free the allocated memory
+ * brief: Logically delete an osi_event. Its memory is reclaimed by osi_thread_event_deinit().
  * param event: the pointer to osi_event
  */
 void osi_event_delete(struct osi_event* event);
@@ -117,6 +120,18 @@ void osi_event_delete(struct osi_event* event);
  *       are expected to post the event sometime later to get the work handled.
  */
 bool osi_thread_post_event(struct osi_event *event, uint32_t timeout);
+
+/*
+ * Dynamic events may be created and destroyed repeatedly during one
+ * osi_thread event-subsystem session. Unlike session-stable osi_event objects,
+ * their storage can be released by delete, so all operations use a separate
+ * API whose post/bind entry points validate the opaque pointer without first
+ * dereferencing it.
+ */
+struct osi_dynamic_event *osi_dynamic_event_create(osi_thread_func_t func, void *context);
+bool osi_dynamic_event_bind(struct osi_dynamic_event *event, osi_thread_t *thread, int queue_idx);
+bool osi_dynamic_event_post(struct osi_dynamic_event *event, uint32_t timeout);
+void osi_dynamic_event_delete(struct osi_dynamic_event *event);
 
 int osi_thread_event_init(void);
 void osi_thread_event_deinit(void);
