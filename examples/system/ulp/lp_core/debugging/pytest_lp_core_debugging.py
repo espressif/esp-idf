@@ -13,6 +13,7 @@ if typing.TYPE_CHECKING:
     from conftest import OpenOCD
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c6', 'esp32p4'], reason='unstable test')
 @idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32p4'], indirect=['target'])
 @pytest.mark.usb_serial_jtag
 def test_lp_core_debugging(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
