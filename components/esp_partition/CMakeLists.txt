@@ -54,6 +54,22 @@ else()
     if(${target} STREQUAL "linux")
         # set BUILD_DIR because partition_linux.c uses a file created in the build directory
         target_compile_definitions(${COMPONENT_LIB} PRIVATE "BUILD_DIR=\"${build_dir}\"")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
+
+        # Create the linux_flash_data target that accumulates partition data entries
+        # registered by esp_partition_register_target(). The target may already exist if
+        # a project_include.cmake ran before this CMakeLists.txt.
+        if(NOT TARGET linux_flash_data)
+            add_custom_target(linux_flash_data)
+        endif()
+
+        # Generate a manifest file listing all partition data binaries to pre-load
+        # into the emulated flash. Each line has format: "<hex_offset> <absolute_path>".
+        # Generator expressions are evaluated after all CMakeLists.txt processing completes,
+        # so all entries accumulated by esp_partition_register_target() will be included.
+        file(GENERATE
+             OUTPUT "${build_dir}/linux_flash_data.txt"
+             CONTENT "$<JOIN:$<TARGET_PROPERTY:linux_flash_data,FLASH_DATA_ENTRIES>,\n>\n")
     endif()
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")
