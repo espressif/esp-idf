@@ -23,6 +23,12 @@ extern "C" {
 #define AXI_DMA_LL_GET_HW(id) (((id) == 0) ? (&AXI_DMA) : NULL)
 #define AXI_DMA_LL_SUPPORT(_feat) AXI_DMA_LL_SUPPORT_ ## _feat
 
+#define AXI_DMA_LL_SUPPORTED_BURST_SIZE_MASK (GDMA_BURST_SIZE_SUPPORT_8 | \
+                                              GDMA_BURST_SIZE_SUPPORT_16 | \
+                                              GDMA_BURST_SIZE_SUPPORT_32 | \
+                                              GDMA_BURST_SIZE_SUPPORT_64 | \
+                                              GDMA_BURST_SIZE_SUPPORT_128)
+
 // any "dummy" peripheral ID can be used for M2M mode
 #define AXI_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFC0)
 #define AXI_DMA_LL_RX_EVENT_MASK    (0x7F)

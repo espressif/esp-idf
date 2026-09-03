@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,18 @@ typedef enum {
     GDMA_CHANNEL_DIRECTION_TX, /*!< GDMA channel direction: TX */
     GDMA_CHANNEL_DIRECTION_RX, /*!< GDMA channel direction: RX */
 } gdma_channel_direction_t;
+
+/**
+ * @brief Bit definitions used by the LL layer to describe supported data burst sizes
+ */
+typedef enum {
+    GDMA_BURST_SIZE_SUPPORT_4   = 1U << 2,
+    GDMA_BURST_SIZE_SUPPORT_8   = 1U << 3,
+    GDMA_BURST_SIZE_SUPPORT_16  = 1U << 4,
+    GDMA_BURST_SIZE_SUPPORT_32  = 1U << 5,
+    GDMA_BURST_SIZE_SUPPORT_64  = 1U << 6,
+    GDMA_BURST_SIZE_SUPPORT_128 = 1U << 7,
+} gdma_burst_size_support_t;
 
 /**
  * @brief GDMA channel events that supported by the ETM module

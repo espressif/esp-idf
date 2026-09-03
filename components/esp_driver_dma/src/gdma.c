@@ -421,6 +421,9 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
         return ESP_ERR_INVALID_ARG;
     }
 
+    gdma_pair_t *pair = dma_chan->pair;
+    gdma_group_t *group = pair->group;
+    gdma_hal_context_t *hal = &group->hal;
     uint32_t max_data_burst_size = config->max_data_burst_size;
     size_t int_mem_alignment = 1;
     size_t ext_enc_mem_alignment = 1;
@@ -443,8 +446,7 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
 #endif
     }
     if (max_data_burst_size) {
-        // burst size must be power of 2
-        ESP_RETURN_ON_FALSE((max_data_burst_size & (max_data_burst_size - 1)) == 0, ESP_ERR_INVALID_ARG,
+        ESP_RETURN_ON_FALSE(gdma_hal_check_burst_size(hal, max_data_burst_size), ESP_ERR_INVALID_ARG,
                             TAG, "invalid max_data_burst_size: %"PRIu32, max_data_burst_size);
     }
 
@@ -476,10 +478,6 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
         ext_enc_mem_alignment = BIT(31);
         ext_no_enc_mem_alignment = BIT(31);
     }
-
-    gdma_pair_t *pair = dma_chan->pair;
-    gdma_group_t *group = pair->group;
-    gdma_hal_context_t *hal = &group->hal;
 
     // always enable descriptor burst as the descriptor is always word aligned and is in the internal SRAM
     bool en_desc_burst = true;

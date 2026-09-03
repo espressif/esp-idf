@@ -24,8 +24,10 @@ extern "C" {
     .role = i2s_role, \
     .dma_desc_num = 6, \
     .dma_frame_num = 240, \
+    .dma_burst_size = 0, \
     .auto_clear_after_cb = false, \
     .auto_clear_before_cb = false, \
+    .dma_buffer_in_psram = false, \
     .allow_pd = false, \
     .intr_priority = 0, \
     .tx_destination = I2S_DESTINATION_DMA, \
@@ -39,6 +41,8 @@ extern "C" {
  * @note The callbacks are all running under ISR environment
  * @note When CONFIG_I2S_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well.
+ * @note When CONFIG_I2S_ISR_IRAM_SAFE is enabled and the DMA buffers are in PSRAM, the callback must not access
+ *       the DMA buffer while the cache is disabled.
  */
 typedef struct {
     i2s_isr_callback_t on_recv;             /**< Callback of data received event, only for RX channel
@@ -70,6 +74,10 @@ typedef struct {
     uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots,
                                              *   it should be the multiple of `3` when the data bit width is 24.
                                              */
+    size_t              dma_burst_size;     /*!< DMA data burst size in bytes. Set to 0 to use driver default (32).
+                                             *   When non-zero, must be a chip-supported power of 2 (see GDMA driver or chip TRM).
+                                             *   Ignored on chips that do not support configurable burst size.
+                                             */
     union {
         bool            auto_clear;         /*!< Alias of `auto_clear_after_cb` */
         bool            auto_clear_after_cb; /*!< Set to auto clear DMA TX buffer after `on_sent` callback, I2S will always send zero automatically if no data to send.
@@ -86,6 +94,10 @@ typedef struct {
     int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     i2s_destination_t   tx_destination;     /*!< TX data path: DMA (memory) or Bluetooth (see `i2s_destination_t`). I2S0 only when set to `I2S_DESTINATION_BT`. Immutable after `i2s_new_channel`. */
     i2s_destination_t   rx_destination;     /*!< RX data path: DMA (memory) or Bluetooth. Same constraints as `tx_destination`. */
+    bool                dma_buffer_in_psram; /*!< Allocate the driver-owned DMA buffers in PSRAM.
+                                             *   The DMA descriptors are always allocated in internal RAM.
+                                             *   If PSRAM DMA is unsupported or allocation fails, channel initialization fails without falling back to internal RAM.
+                                             */
 } i2s_chan_config_t;
 
 /**
