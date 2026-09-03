@@ -97,19 +97,9 @@ psa_status_t esp_ecdsa_transparent_sign_hash_start(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    if (curve == ESP_ECDSA_CURVE_SECP192R1 && !esp_efuse_is_ecdsa_p192_curve_supported()) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    psa_status_t status = esp_ecdsa_validate_sha_alg(alg, curve);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    /* esp_ecdsa_validate_sha_alg has already pinned the hash algorithm to the curve,
-     * so the expected digest length follows from the curve. PSA does not force
-     * hash_length to match the algorithm, so the length is still checked here. */
-    if (hash_length != esp_ecdsa_expected_hash_len(curve)) {
+    /* Hash algorithm, eFuse curve and digest length checks shared with the opaque
+     * driver. Every failure falls back to the builtin implementation. */
+    if (esp_ecdsa_check_sign_request(alg, curve, hash_length) != PSA_SUCCESS) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
@@ -156,8 +146,6 @@ psa_status_t esp_ecdsa_transparent_sign_hash_complete(
     }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
-    uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
-
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_GEN,
         .curve = hal_curve,
@@ -167,29 +155,12 @@ psa_status_t esp_ecdsa_transparent_sign_hash_complete(
         .sw_key = operation->key,
     };
 
-    esp_ecdsa_acquire_hardware();
-
-    bool process_again = false;
-    int attempts = 0;
-
-    do {
-        ecdsa_hal_gen_signature(&conf, operation->sha, operation->r, operation->s, component_len);
-
-        process_again = !ecdsa_hal_get_operation_result()
-                        || !memcmp(operation->r, zeroes, component_len)
-                        || !memcmp(operation->s, zeroes, component_len);
-    } while (process_again && ++attempts < ESP_ECDSA_SIGN_MAX_ATTEMPTS);
-
-    esp_ecdsa_release_hardware();
-
-    if (process_again) {
+    psa_status_t status = esp_ecdsa_hw_sign(&conf, operation->sha, operation->r, operation->s,
+                                            component_len, ESP_ECDSA_SIGN_MAX_ATTEMPTS, signature);
+    if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to generate an ECDSA signature using the software key");
-        return PSA_ERROR_GENERIC_ERROR;
+        return status;
     }
-
-    // Convert r and s from little-endian to big-endian and copy to output
-    esp_ecdsa_change_endianness(operation->r, signature, component_len);
-    esp_ecdsa_change_endianness(operation->s, signature + component_len, component_len);
 
     *signature_length = 2 * component_len;
 
