@@ -385,6 +385,10 @@ TEST_CASE("Test TEE Secure Storage - Null Pointer and Zero Length", "[sec_storag
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_encrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_decrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
 
+    aead_ctx.input_len = MAX_AEAD_INPUT_LEN + 1;
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_encrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_decrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
+
     TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_id));
 
     key_cfg.type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
