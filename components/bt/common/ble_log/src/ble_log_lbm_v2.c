@@ -99,7 +99,6 @@ typedef struct {
  * only needs buf/size/pos and the lifecycle state for DMA handoff. */
 typedef struct {
     uint8_t src_code;      /* source of the pending claim */
-    uint8_t non_yield;     /* claimed from a non-yieldable context */
     uint16_t max_len;      /* maximum committed payload length */
     uint32_t frame_sn;     /* Global SN consumed at claim entry */
     uint32_t generation;   /* stale-handle detection, wraps 24-bit */
@@ -149,7 +148,7 @@ BLE_LOG_STATIC void ble_log_pool_seal_and_send(ble_log_prph_trans_t *trans);
 BLE_LOG_STATIC void ble_log_pool_seal_open_trans(void);
 BLE_LOG_STATIC void ble_log_pool_write_frame(ble_log_prph_trans_t *trans,
                                              uint32_t frame_sn,
-                                             uint8_t source_meta,
+                                             ble_log_src_t src_code,
                                              const uint8_t *prefix,
                                              uint16_t prefix_len,
                                              const uint8_t *addr, uint16_t len,
@@ -497,18 +496,17 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
 /* -------------------------------------- */
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_pool_write_frame(ble_log_prph_trans_t *trans, uint32_t frame_sn,
-                              uint8_t source_meta,
+                              ble_log_src_t src_code,
                               const uint8_t *prefix, uint16_t prefix_len,
                               const uint8_t *addr, uint16_t len,
                               const uint8_t *addr_append, uint16_t len_append, bool omdata)
 {
     uint8_t *buf = trans->buf + trans->pos;
     uint16_t payload_len = prefix_len + len + len_append;
-    ble_log_src_t src_code = (ble_log_src_t)BLE_LOG_SRC_ID(source_meta);
     ble_log_stat_mgr_t *stat_mgr = &stat_mgr_ctx[src_code];
     ble_log_frame_head_t frame_head = {
         .length = payload_len,
-        .frame_meta = BLE_LOG_MAKE_FRAME_META(source_meta, frame_sn),
+        .frame_meta = BLE_LOG_MAKE_FRAME_META(src_code, frame_sn),
     };
 
     /* Memory operation */
@@ -584,7 +582,7 @@ uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle)
                      xTaskGetSchedulerState() != taskSCHEDULER_RUNNING;
     size_t payload_capacity = sizeof(timestamp) + max_len;
     ble_log_prph_trans_t *trans =
-        ble_log_pool_acquire(payload_capacity, non_yield, false);
+        ble_log_pool_acquire(payload_capacity, non_yield, !non_yield);
     if (!trans) {
         ble_log_stat_mgr_mark_lost(src_code);
         BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
@@ -598,7 +596,6 @@ uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle)
 #endif
     ble_log_pool_claim_t *claim = &pool_claim_ctx[trans->id];
     claim->src_code = (uint8_t)src_code;
-    claim->non_yield = non_yield;
     claim->max_len = (uint16_t)max_len;
     claim->frame_sn = frame_sn;
     claim->generation = (claim->generation + 1) & 0x00ffffffU;
@@ -648,11 +645,9 @@ void ble_log_commit(uint32_t handle, size_t actual_len)
 
     uint16_t payload_len = (uint16_t)(sizeof(uint32_t) + actual_len);
     ble_log_stat_mgr_t *stat_mgr = &stat_mgr_ctx[src_code];
-    uint8_t source_meta = BLE_LOG_MAKE_SOURCE_META(src_code,
-                                                    claim->non_yield);
     ble_log_frame_head_t frame_head = {
         .length = payload_len,
-        .frame_meta = BLE_LOG_MAKE_FRAME_META(source_meta, claim->frame_sn),
+        .frame_meta = BLE_LOG_MAKE_FRAME_META(src_code, claim->frame_sn),
     };
     BLE_LOG_MEMCPY(trans->buf + trans->pos, &frame_head, BLE_LOG_FRAME_HEAD_LEN);
     ble_log_pool_finish_frame(trans, payload_len, stat_mgr);
@@ -1125,13 +1120,12 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
     uint32_t timestamp = BLE_LOG_TIMESTAMP_NOW();
     size_t payload_len = sizeof(timestamp) + len;
     ble_log_prph_trans_t *trans =
-        ble_log_pool_acquire(payload_len, !can_yield, false);
+        ble_log_pool_acquire(payload_len, !can_yield, can_yield);
     if (!trans) {
         goto failed;
     }
 
-    uint8_t source_meta = BLE_LOG_MAKE_SOURCE_META(src_code, !can_yield);
-    ble_log_pool_write_frame(trans, frame_sn, source_meta,
+    ble_log_pool_write_frame(trans, frame_sn, src_code,
                              (const uint8_t *)&timestamp, sizeof(timestamp),
                              addr, (uint16_t)len, NULL, 0, false);
 
@@ -1194,8 +1188,7 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
         goto failed;
     }
 
-    uint8_t source_meta = BLE_LOG_MAKE_SOURCE_META(src_code, non_yield);
-    ble_log_pool_write_frame(trans, frame_sn, source_meta,
+    ble_log_pool_write_frame(trans, frame_sn, src_code,
                              NULL, 0, addr, (uint16_t)len,
                              addr_append, (uint16_t)len_append, omdata);
 

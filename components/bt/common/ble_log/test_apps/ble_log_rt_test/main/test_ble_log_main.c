@@ -36,10 +36,8 @@ bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
         }
 
         if (observer) {
-            uint8_t source_meta = head.frame_meta & 0xff;
             test_ble_log_frame_t frame = {
-                .src = BLE_LOG_SRC_ID(source_meta),
-                .source_meta = source_meta,
+                .src = (ble_log_src_t)(head.frame_meta & 0xff),
                 .sn = head.frame_meta >> 8,
                 .payload = data + offset + BLE_LOG_FRAME_HEAD_LEN,
                 .payload_len = head.length,

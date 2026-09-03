@@ -14,7 +14,7 @@ It covers:
 
 - literal protocol-v7 framing and fixed Internal Snapshot ABI;
 - build, library, chip, and protocol versions inside the snapshot;
-- task and `NON_YIELD` source metadata plus HCI direction encoding;
+- task and critical-section writes plus HCI direction encoding;
 - direct compression claim/commit, stale handles, and per-source serialization;
 - oversized-record rejection, flush sequence continuity, pool exhaustion, and non-yield reserve use;
 - periodic snapshot busy/loss behavior;
