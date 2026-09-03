@@ -992,8 +992,8 @@ static UINT8 avdt_msg_prs_discover_rsp(tAVDT_MSG *p_msg, UINT8 *p, UINT16 len)
     if (p_msg->discover_rsp.num_seps > (len / 2)) {
         p_msg->discover_rsp.num_seps = (len / 2);
     }
-    if (p_msg->discover_rsp.num_seps > AVDT_NUM_SEPS) {
-        p_msg->discover_rsp.num_seps = AVDT_NUM_SEPS;
+    if (p_msg->discover_rsp.num_seps > AVDT_DIS_RES_MAX_NUM_SEPS) {
+        p_msg->discover_rsp.num_seps = AVDT_DIS_RES_MAX_NUM_SEPS;
     }
 
     /* parse out sep info */

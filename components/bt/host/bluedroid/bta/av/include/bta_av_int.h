@@ -145,8 +145,8 @@ enum {
 
 #define BTA_AV_LAST_EVT             BTA_AV_API_SET_DELAY_VALUE_EVT
 
-/* maximum number of SEPS in stream discovery results */
-#define BTA_AV_NUM_SEPS         32
+/* maximum number of SEPS in stream discovery results (keep in sync with AVDT) */
+#define BTA_AV_NUM_SEPS         AVDT_DIS_RES_MAX_NUM_SEPS
 
 /* initialization value for AVRC handle */
 #define BTA_AV_RC_HANDLE_NONE   0xFF
