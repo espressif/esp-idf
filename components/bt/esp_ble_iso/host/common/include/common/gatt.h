@@ -81,6 +81,16 @@ struct bt_le_gattc_notify_rx_event {
     ((const void *)((_event)->value != NULL ? (const uint8_t *)(_event)->value \
                                             : (const uint8_t *)""))
 
+/* Same collision on the read path: NULL data marks the end of a read, so a lib read
+ * handler that sees it reports ATT invalid-length. A zero-length value is a real
+ * response - MCS 3.5 requires an empty Track Title when there is no current track -
+ * so keep the pointer non-NULL for the value callback. The adapter emits the
+ * end-of-read callback itself and still passes NULL there, so the two stay distinct.
+ */
+#define READ_VALUE(_event) \
+    ((const uint8_t *)((_event)->value != NULL ? (const uint8_t *)(_event)->value \
+                                               : (const uint8_t *)""))
+
 struct bt_le_gatts_notify_tx_event {
     bool     is_notify;
     uint16_t conn_handle;
