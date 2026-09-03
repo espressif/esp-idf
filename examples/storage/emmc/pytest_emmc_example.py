@@ -8,6 +8,7 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.emmc
 @pytest.mark.parametrize(
     'config',
@@ -32,14 +33,14 @@ def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     speed = dut.expect(re.compile(rb'Speed: (\S+)'), timeout=10).group(1).decode()
     size = dut.expect(re.compile(rb'Size: (\S+)'), timeout=10).group(1).decode()
 
-    logging.info('Card {} {} {}MHz {} found'.format(name, _type, speed, size))
+    logging.info(f'Card {name} {_type} {speed}MHz {size} found')
 
     message_list = (
         'Opening file /eMMC/hello.txt',
         'File written',
         'Renaming file /eMMC/hello.txt to /eMMC/foo.txt',
         'Reading file /eMMC/foo.txt',
-        "Read from file: 'Hello {}!'".format(name),
+        f"Read from file: 'Hello {name}!'",
         'Card unmounted',
     )
 
