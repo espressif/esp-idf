@@ -282,6 +282,27 @@ TEST_CASE("efuse test write_field_cnt", "[efuse]")
     test_write_cnt();
 }
 
+TEST_CASE("secure version update handles sparse efuse field", "[efuse]")
+{
+    const uint32_t sparse_secure_version = 1U << 2;
+    const uint32_t expected_secure_version = 3;
+    size_t field_size = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
+
+    // Preload a non-sequential state that may remain after an earlier incomplete update:
+    // initial: bitmap 0b100, secure version 1;
+    esp_efuse_utility_erase_virt_blocks();
+    TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_SECURE_VERSION, &sparse_secure_version, field_size));
+    TEST_ASSERT_EQUAL_UINT32(1, esp_efuse_read_secure_version());
+
+    // update to 3: bitmap 0b111, secure version 3;
+    TEST_ESP_OK(esp_efuse_update_secure_version(expected_secure_version));
+    TEST_ASSERT_EQUAL_UINT32(expected_secure_version, esp_efuse_read_secure_version());
+
+    // repeated update: bitmap 0b111, secure version 3 (no change).
+    TEST_ESP_OK(esp_efuse_update_secure_version(expected_secure_version));
+    TEST_ASSERT_EQUAL_UINT32(expected_secure_version, esp_efuse_read_secure_version());
+}
+
 TEST_CASE("efuse test single bit functions", "[efuse]")
 {
     esp_efuse_utility_erase_virt_blocks();
