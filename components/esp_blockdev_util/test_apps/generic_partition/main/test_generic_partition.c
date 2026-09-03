@@ -85,19 +85,58 @@ TEST_CASE("generic partition translate helpers", "[generic_partition]")
     esp_blockdev_handle_t part = NULL;
     TEST_ESP_OK(esp_blockdev_generic_partition_get(parent, 4, 16, &part));
 
-    ssize_t parent_addr = esp_blockdev_generic_partition_translate_address_to_parent(part, 3);
-    TEST_ASSERT_GREATER_OR_EQUAL(0, parent_addr);
-    TEST_ASSERT_EQUAL_INT(7, parent_addr);
+    uint64_t parent_addr = 0;
+    TEST_ESP_OK(esp_blockdev_generic_partition_translate_address_to_parent(part, 3, &parent_addr));
+    TEST_ASSERT_EQUAL_UINT64(7, parent_addr);
 
-    ssize_t child_addr = esp_blockdev_generic_partition_translate_address_to_child(part, 10);
-    TEST_ASSERT_GREATER_OR_EQUAL(0, child_addr);
-    TEST_ASSERT_EQUAL_INT(6, child_addr);
+    uint64_t child_addr = 0;
+    TEST_ESP_OK(esp_blockdev_generic_partition_translate_address_to_child(part, 10, &child_addr));
+    TEST_ASSERT_EQUAL_UINT64(6, child_addr);
 
-    TEST_ASSERT_EQUAL_INT(-1, esp_blockdev_generic_partition_translate_address_to_parent(part, 20));
-    TEST_ASSERT_EQUAL_INT(-1, esp_blockdev_generic_partition_translate_address_to_child(part, 2));
+    parent_addr = UINT64_MAX;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      esp_blockdev_generic_partition_translate_address_to_parent(part, 20, &parent_addr));
+    TEST_ASSERT_EQUAL_UINT64(UINT64_MAX, parent_addr);
+
+    child_addr = UINT64_MAX;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      esp_blockdev_generic_partition_translate_address_to_child(part, 2, &child_addr));
+    TEST_ASSERT_EQUAL_UINT64(UINT64_MAX, child_addr);
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      esp_blockdev_generic_partition_translate_address_to_parent(part, 3, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      esp_blockdev_generic_partition_translate_address_to_child(part, 10, NULL));
 
     TEST_ESP_OK(part->ops->release(part));
     TEST_ESP_OK(parent->ops->release(parent));
+}
+
+TEST_CASE("generic partition supports byte ranges above 4 GiB", "[generic_partition]")
+{
+    const uint64_t partition_offset = UINT64_C(5) * 1024 * 1024 * 1024;
+    const uint64_t partition_size = UINT64_C(2) * 1024 * 1024 * 1024;
+    const uint64_t parent_size = partition_offset + partition_size;
+    esp_blockdev_t parent = {
+        .geometry = {
+            .disk_size = parent_size,
+            .read_size = 512,
+            .write_size = 512,
+            .erase_size = 512,
+        },
+    };
+
+    esp_blockdev_handle_t part = NULL;
+    TEST_ESP_OK(esp_blockdev_generic_partition_get(&parent, partition_offset, partition_size, &part));
+    TEST_ASSERT_EQUAL_UINT64(partition_size, part->geometry.disk_size);
+    uint64_t translated_address = 0;
+    TEST_ESP_OK(esp_blockdev_generic_partition_translate_address_to_parent(part, 512, &translated_address));
+    TEST_ASSERT_EQUAL_UINT64(partition_offset + 512, translated_address);
+    TEST_ESP_OK(esp_blockdev_generic_partition_translate_address_to_child(part, partition_offset + 512,
+                                                                          &translated_address));
+    TEST_ASSERT_EQUAL_UINT64(512, translated_address);
+
+    TEST_ESP_OK(part->ops->release(part));
 }
 
 typedef struct {
