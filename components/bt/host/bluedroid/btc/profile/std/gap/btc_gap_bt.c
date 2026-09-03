@@ -1088,8 +1088,11 @@ static void btc_gap_bt_get_dev_name_callback(UINT8 status, char *name)
     param.get_dev_name_cmpl.status = btc_btm_status_to_esp_status(status);
     param.get_dev_name_cmpl.name = (char *)osi_malloc(BTC_MAX_LOC_BD_NAME_LEN + 1);
     if (param.get_dev_name_cmpl.name) {
-        BCM_STRNCPY_S(param.get_dev_name_cmpl.name, name, BTC_MAX_LOC_BD_NAME_LEN);
-        param.get_dev_name_cmpl.name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
+        if (name != NULL) {
+            BCM_STRLCPY_S(param.get_dev_name_cmpl.name, name, BTC_MAX_LOC_BD_NAME_LEN + 1);
+        } else {
+            param.get_dev_name_cmpl.name[0] = '\0';
+        }
     } else {
         param.get_dev_name_cmpl.status = ESP_BT_STATUS_NOMEM;
     }
@@ -1179,8 +1182,7 @@ void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         btc_gap_bt_args_t *dst = (btc_gap_bt_args_t *)p_dest;
         dst->bt_set_dev_name.device_name = (char *)osi_malloc((BTC_MAX_LOC_BD_NAME_LEN + 1) * sizeof(char));
         if (dst->bt_set_dev_name.device_name) {
-            BCM_STRNCPY_S(dst->bt_set_dev_name.device_name, src->bt_set_dev_name.device_name, BTC_MAX_LOC_BD_NAME_LEN);
-            dst->bt_set_dev_name.device_name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
+            BCM_STRLCPY_S(dst->bt_set_dev_name.device_name, src->bt_set_dev_name.device_name, BTC_MAX_LOC_BD_NAME_LEN + 1);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
         }
