@@ -269,7 +269,7 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
     g_esl_ap->app_cb = config->callback;
     g_esl_ap->pawr_config = config->pawr_config;
     g_esl_ap->initialized = true;
-    g_esl_ap->started = false;
+    g_esl_ap->pawr_started = false;
     g_esl_ap->pawr_active = false;
 
     /* Initialize connection table */
@@ -388,9 +388,10 @@ esp_err_t ble_esl_ap_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Stop scanning and PAwR if active */
-    if (g_esl_ap->started) {
-        ble_esl_ap_stop();
+    /* Stop discovery then PAwR if the public start_pawr() path ran */
+    if (g_esl_ap->pawr_started) {
+        (void)ble_esl_ap_stop_scan();
+        (void)ble_esl_ap_stop_pawr();
     }
 
     /* Mark the module as no longer operational before touching connections:
@@ -461,27 +462,26 @@ esp_err_t ble_esl_ap_deinit(void)
     return ESP_OK;
 }
 
-esp_err_t ble_esl_ap_start(void)
+esp_err_t ble_esl_ap_start_pawr(void)
 {
     if (!g_esl_ap || !g_esl_ap->initialized) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (g_esl_ap->started) {
-        ESP_LOGW(TAG, "Already started");
+    if (g_esl_ap->pawr_started) {
+        ESP_LOGW(TAG, "PAwR already started");
         return ESP_ERR_INVALID_STATE;
     }
 
     g_esl_ap->scan_suppressed = true;
 
-    /* Start PAwR broadcasting; GAP discovery waits for explicit scan_start */
     esp_err_t ret = ble_esl_ap_pawr_start();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start PAwR: %s", esp_err_to_name(ret));
         return ret;
     }
 
-    g_esl_ap->started = true;
-    ESP_LOGI(TAG, "ESL AP started (PAwR active, scan idle until scan_start)");
+    g_esl_ap->pawr_started = true;
+    ESP_LOGI(TAG, "PAwR started (scan idle until start_scan)");
     return ESP_OK;
 }
 
@@ -520,7 +520,7 @@ static esp_err_t ble_esl_ap_start_discovery(void)
 
 static void ble_esl_ap_maybe_resume_discovery(void)
 {
-    if (!g_esl_ap || !g_esl_ap->started || g_esl_ap->scan_suppressed) {
+    if (!g_esl_ap || !g_esl_ap->pawr_started || g_esl_ap->scan_suppressed) {
         return;
     }
     if (ble_gap_disc_active()) {
@@ -531,7 +531,7 @@ static void ble_esl_ap_maybe_resume_discovery(void)
 
 esp_err_t ble_esl_ap_start_scan(void)
 {
-    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->started) {
+    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->pawr_started) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -545,7 +545,7 @@ esp_err_t ble_esl_ap_start_scan(void)
 
 esp_err_t ble_esl_ap_stop_scan(void)
 {
-    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->started) {
+    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->pawr_started) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -561,31 +561,19 @@ esp_err_t ble_esl_ap_stop_scan(void)
     return ESP_OK;
 }
 
-esp_err_t ble_esl_ap_stop(void)
+esp_err_t ble_esl_ap_stop_pawr(void)
 {
-    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->started) {
+    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->pawr_started) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Cancel any pending (not yet established) connection attempts */
-    ble_gap_conn_cancel();
-
-    /* Stop scanning */
-    if (ble_gap_disc_active()) {
-        int rc = ble_gap_disc_cancel();
-        if (rc != 0 && rc != BLE_HS_EALREADY) {
-            ESP_LOGW(TAG, "Failed to cancel discovery; rc=%d", rc);
-        }
-    }
-
-    /* Stop PAwR broadcasting */
     esp_err_t ret = ble_esl_ap_pawr_stop();
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "Failed to stop PAwR: %s", esp_err_to_name(ret));
     }
 
-    g_esl_ap->started = false;
-    ESP_LOGI(TAG, "ESL AP stopped");
+    g_esl_ap->pawr_started = false;
+    ESP_LOGI(TAG, "PAwR stopped");
     return ESP_OK;
 }
 

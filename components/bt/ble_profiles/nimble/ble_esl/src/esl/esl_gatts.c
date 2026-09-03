@@ -720,7 +720,7 @@ static void esl_ots_write_cb(ble_ots_server_event_t event,
         .image_write = {
             .image_index = image_index,
             .data = NULL,
-            .length = param->write_complete.bytes_received,
+            .length = success ? param->write_complete.bytes_received : 0,
             .offset = param->write_complete.offset,
         }
     };

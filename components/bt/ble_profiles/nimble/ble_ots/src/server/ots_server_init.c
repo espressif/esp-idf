@@ -68,7 +68,8 @@ void ble_ots_server_unlock(void)
 /*****************************************************************************
  * L2CAP OTC MTU
  *****************************************************************************/
-#define OTS_L2CAP_COC_MTU   1024
+#define OTS_L2CAP_COC_MTU       1024
+#define OTS_L2CAP_RX_WIN_MAX    8
 
 /*****************************************************************************
  * Directory Listing Object name
@@ -1516,17 +1517,36 @@ static int ots_l2cap_event_handle(struct ble_l2cap_event *event)
         }
 
         /* Pre-post the configured receive window. Each buffer contributes one
-         * peer credit; posting only one turns a bulk write into stop-and-wait. */
-        for (int i = 0; i < CONFIG_BT_NIMBLE_L2CAP_COC_SDU_BUFF_COUNT; i++) {
-            struct os_mbuf *sdu_rx = os_msys_get_pkthdr(OTS_L2CAP_COC_MTU, 0);
-            if (!sdu_rx) {
-                ESP_LOGE(TAG, "L2CAP accept: failed to allocate SDU rx buffer %d", i);
+         * peer credit; posting only one (the Kconfig default) is stop-and-wait.
+         * Raise CONFIG_BT_NIMBLE_L2CAP_COC_SDU_BUFF_COUNT and msys block size
+         * to actually pipeline a 1024-byte CoC write. Allocate all SDUs first
+         * so a later ENOMEM does not leave a half-posted window. */
+        int win = CONFIG_BT_NIMBLE_L2CAP_COC_SDU_BUFF_COUNT;
+        if (win < 1) {
+            win = 1;
+        } else if (win > OTS_L2CAP_RX_WIN_MAX) {
+            win = OTS_L2CAP_RX_WIN_MAX;
+        }
+        struct os_mbuf *sdu_bufs[OTS_L2CAP_RX_WIN_MAX];
+        int got = 0;
+        for (; got < win; got++) {
+            sdu_bufs[got] = os_msys_get_pkthdr(OTS_L2CAP_COC_MTU, 0);
+            if (!sdu_bufs[got]) {
+                ESP_LOGE(TAG, "L2CAP accept: failed to allocate SDU rx buffer %d", got);
+                while (got-- > 0) {
+                    os_mbuf_free_chain(sdu_bufs[got]);
+                }
                 return BLE_HS_ENOMEM;
             }
-            int rc = ble_l2cap_recv_ready(event->accept.chan, sdu_rx);
+        }
+        for (int i = 0; i < win; i++) {
+            int rc = ble_l2cap_recv_ready(event->accept.chan, sdu_bufs[i]);
             if (rc != 0) {
                 ESP_LOGE(TAG, "L2CAP accept: recv_ready failed rc=%d", rc);
-                os_mbuf_free_chain(sdu_rx);
+                os_mbuf_free_chain(sdu_bufs[i]);
+                for (int j = i + 1; j < win; j++) {
+                    os_mbuf_free_chain(sdu_bufs[j]);
+                }
                 return rc;
             }
         }

@@ -371,17 +371,26 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config);
 esp_err_t ble_esl_ap_deinit(void);
 
 /**
- * @brief Start AP operation (PAwR broadcasting; scan idle until scan_start)
+ * @brief Start PAwR broadcasting
  *
- * Starts PAwR broadcasting. GAP discovery is not started here; call
- * ble_esl_ap_start_scan() when the phone sends scan_start.
+ * Does not start GAP discovery. Call ble_esl_ap_start_scan() when the
+ * application wants to discover ESLs. Existing ACL connections are not
+ * affected.
  *
- * @note This function does not automatically initiate connections. The caller must handle
- *       scan results and call ble_esl_ap_connect() to establish connections.
- *
- * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not initialized or already started
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not initialized
+ *         or PAwR is already started
  */
-esp_err_t ble_esl_ap_start(void);
+esp_err_t ble_esl_ap_start_pawr(void);
+
+/**
+ * @brief Stop PAwR broadcasting
+ *
+ * Does not stop GAP discovery. Call ble_esl_ap_stop_scan() first if
+ * discovery is running. Existing ACL connections are not affected.
+ *
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if PAwR is not started
+ */
+esp_err_t ble_esl_ap_stop_pawr(void);
 
 /**
  * @brief Start GAP discovery if it is not already running
@@ -390,7 +399,7 @@ esp_err_t ble_esl_ap_start(void);
  * cancelling the current scan. Clears scan_suppressed so discovery can
  * auto-resume after connections end. PAwR broadcasting is not affected.
  *
- * @return ESP_OK on success; ESP_ERR_INVALID_STATE if AP not started
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if PAwR is not started
  */
 esp_err_t ble_esl_ap_start_scan(void);
 
@@ -400,18 +409,9 @@ esp_err_t ble_esl_ap_start_scan(void);
  * Sets scan_suppressed so discovery is not auto-resumed after connections
  * end. Call ble_esl_ap_start_scan() to scan again.
  *
- * @return ESP_OK on success; ESP_ERR_INVALID_STATE if AP not started
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if PAwR is not started
  */
 esp_err_t ble_esl_ap_stop_scan(void);
-
-/**
- * @brief Stop AP operation (scanning + PAwR broadcasting)
- *
- * Existing ACL connections are not affected.
- *
- * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not started
- */
-esp_err_t ble_esl_ap_stop(void);
 
 /**
  * @brief Initiate ACL connection to an ESL
@@ -547,12 +547,18 @@ bool ble_esl_ap_synchronize_in_progress(void);
 esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle);
 
 /**
- * @brief Persisted association used to seed AP tracking after reboot
+ * @brief In-memory association snapshot used to seed AP tracking after reboot
+ *
+ * Not an NVS/wire blob. Call after ble_esl_ap_init(); may be invoked
+ * multiple times (once per ESL), including after ble_esl_ap_start_pawr().
+ * Key material is not checked for all-zeros — the application must
+ * quarantine corrupt records. The AP Sync Key of the last successful
+ * restore is installed as the current PAwR key.
  */
-typedef struct __attribute__((packed)) {
-    uint16_t esl_addr;
-    uint8_t ble_addr[6];
-    uint8_t ble_addr_type;
+typedef struct {
+    ble_esl_address_t esl_address;     /*!< ESL Address (ESL_ID + Group_ID) */
+    uint8_t ble_addr[6];               /*!< Identity address of the ESL */
+    uint8_t ble_addr_type;             /*!< BLE address type */
     ble_esl_key_material_t ap_sync_key;
     ble_esl_key_material_t resp_key;
 } ble_esl_ap_persisted_esl_t;

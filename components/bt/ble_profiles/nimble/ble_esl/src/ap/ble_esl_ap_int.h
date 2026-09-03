@@ -230,7 +230,7 @@ typedef struct {
  */
 typedef struct {
     bool initialized;    /*!< Module has been initialized */
-    bool started;        /*!< Scanning + PAwR broadcasting active */
+    bool pawr_started;   /*!< ble_esl_ap_start_pawr() has succeeded */
     bool scan_suppressed; /*!< User/app requested scan stop; do not auto-resume */
 
     /* Application callback */

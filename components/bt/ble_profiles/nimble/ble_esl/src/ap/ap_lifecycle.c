@@ -181,6 +181,7 @@ static TaskHandle_t s_lifecycle_holder;
 
 _Static_assert(sizeof(ble_esl_key_material_t) == 24, "sync key packed 24");
 _Static_assert(sizeof(ble_esl_key_material_t) == 24, "resp key packed 24");
+/* In-memory compactness only — not an NVS/wire layout. */
 _Static_assert(offsetof(ble_esl_ap_persisted_esl_t, ap_sync_key) == 9, "flat key block start");
 _Static_assert(offsetof(ble_esl_ap_persisted_esl_t, resp_key) == 9 + 24, "resp key follows sync");
 
@@ -1710,17 +1711,19 @@ esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *inf
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (info->esl_addr == 0) {
+    uint16_t esl_addr = BLE_ESL_AP_ADDR_PACK(info->esl_address);
+
+    if (esl_addr == 0) {
         ESP_LOGI(TAG, "restore: esl_addr=0x0000 (esl_id=0 group_id=0)");
     }
 
-    if (BLE_ESL_AP_ADDR_ESL_ID(info->esl_addr) == BLE_ESL_BROADCAST_ADDRESS) {
+    if (info->esl_address.esl_id == BLE_ESL_BROADCAST_ADDRESS) {
         ESP_LOGE(TAG, "restore: broadcast esl_id not allowed");
         return ESP_ERR_INVALID_ARG;
     }
 
     ble_esl_ap_tracking_lock();
-    ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(info->esl_addr);
+    ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
     if (esl == NULL) {
         esl = ble_esl_ap_find_esl_by_ble_addr(info->ble_addr, info->ble_addr_type);
     }
@@ -1734,7 +1737,7 @@ esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *inf
     }
 
     esl->in_use = true;
-    esl->esl_addr = info->esl_addr;
+    esl->esl_addr = esl_addr;
     memcpy(esl->ble_addr, info->ble_addr, 6);
     esl->ble_addr_type = info->ble_addr_type;
     esl->conn_handle = BLE_ESL_AP_CONN_HANDLE_INVALID;
@@ -1746,22 +1749,22 @@ esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *inf
 
     ble_esl_ap_pawr_set_sync_key(&info->ap_sync_key);
 
-    esp_err_t ret = ble_esl_ap_pawr_set_response_key(info->esl_addr,
+    esp_err_t ret = ble_esl_ap_pawr_set_response_key(esl_addr,
                                                      &info->resp_key);
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "restore: set response key for 0x%04X failed: %s",
-                 info->esl_addr, esp_err_to_name(ret));
+                 esl_addr, esp_err_to_name(ret));
     }
 
-    ret = ble_esl_ap_update_esl_state(info->esl_addr,
+    ret = ble_esl_ap_update_esl_state(esl_addr,
                                       BLE_ESL_STATE_UNSYNCHRONIZED);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "restore: failed to mark ESL 0x%04X unsynchronized: %s",
-                 info->esl_addr, esp_err_to_name(ret));
+                 esl_addr, esp_err_to_name(ret));
         return ret;
     }
 
     ESP_LOGI(TAG, "Restored ESL 0x%04X from persistence (awaiting resync)",
-             info->esl_addr);
+             esl_addr);
     return ESP_OK;
 }

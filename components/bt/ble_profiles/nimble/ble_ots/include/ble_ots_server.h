@@ -105,9 +105,9 @@ typedef enum {
     BLE_OTS_SERVER_EVT_EXECUTE,          /*!< OACP Execute on current object */
     BLE_OTS_SERVER_EVT_CHECKSUM_REQUEST, /*!< OACP Calculate Checksum completed */
     BLE_OTS_SERVER_EVT_READ_COMPLETE,    /*!< Read transfer completed */
-    BLE_OTS_SERVER_EVT_DATA_WRITE,       /*!< Object data chunk received during write transfer */
     BLE_OTS_SERVER_EVT_WRITE_COMPLETE,   /*!< Write transfer completed */
     BLE_OTS_SERVER_EVT_METADATA_WRITTEN, /*!< Client wrote a metadata characteristic */
+    BLE_OTS_SERVER_EVT_DATA_WRITE,       /*!< Object data chunk received during write transfer */
 } ble_ots_server_event_t;
 
 /*****************************************************************************

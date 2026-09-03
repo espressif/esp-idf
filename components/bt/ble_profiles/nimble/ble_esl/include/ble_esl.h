@@ -96,7 +96,7 @@ typedef struct {
  */
 typedef enum {
     BLE_ESL_EVT_STATE_CHANGED = 0,      /*!< State transition occurred */
-    BLE_ESL_EVT_IMAGE_WRITE,            /*!< Image data received via OTS */
+    BLE_ESL_EVT_IMAGE_WRITE,            /*!< OTS image chunk or write completion */
     BLE_ESL_EVT_DISPLAY_IMAGE,          /*!< Display a stored image */
     BLE_ESL_EVT_REFRESH_DISPLAY,        /*!< Refresh the current display image */
     BLE_ESL_EVT_SENSOR_READ,            /*!< Read sensor data request */
@@ -117,11 +117,16 @@ typedef struct {
 
 /**
  * @brief Event data for BLE_ESL_EVT_IMAGE_WRITE
+ *
+ * Fired once per OTS fragment and once when the write transfer ends:
+ * - `data != NULL`: one fragment; the pointer is valid only during the callback
+ * - `data == NULL && length > 0`: write succeeded; `length` is the total size
+ * - `data == NULL && length == 0`: write failed or empty; the slot is incomplete
  */
 typedef struct {
     uint8_t image_index;                /*!< Image storage index (0 to Max_Image_Index) */
-    const uint8_t *data;                /*!< Pointer to received image data */
-    uint32_t length;                    /*!< Length of image data in bytes */
+    const uint8_t *data;                /*!< Fragment bytes, or NULL on completion */
+    uint32_t length;                    /*!< Fragment size, total size, or 0 on failure */
     uint32_t offset;                    /*!< Write offset within the image object */
 } ble_esl_image_write_evt_param_t;
 
@@ -331,8 +336,10 @@ bool ble_esl_image_is_complete(uint8_t image_index);
 /**
  * @brief Atomically snapshot a completed image into a caller buffer.
  *
- * Marks the slot incomplete while a concurrent write is in progress so that
- * Display Image never observes a torn frame.
+ * Copies only when the slot is marked complete. Concurrent OTS writes
+ * mark the slot incomplete via BLE_OTS_SERVER_EVT_DATA_WRITE so Display
+ * Image never observes a torn frame. This function does not change the
+ * complete flag itself.
  *
  * @param[in]  image_index Image index
  * @param[out] dst         Destination buffer
