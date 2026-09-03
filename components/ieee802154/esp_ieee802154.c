@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,6 @@
 #include "esp_ieee802154_util.h"
 #include "esp_log.h"
 #include "esp_coex_i154.h"
-#include "hal/ieee802154_ll.h"
 #include "hal/ieee802154_common_ll.h"
 
 esp_err_t esp_ieee802154_event_callback_list_register(esp_ieee802154_event_cb_list_t cb_list)
@@ -47,6 +46,11 @@ esp_err_t esp_ieee802154_disable(void)
     ieee802154_rf_disable();
     ieee802154_disable();
     return ieee802154_mac_deinit();
+}
+
+int8_t esp_ieee802154_get_receive_sensitivity(void)
+{
+    return IEEE802154_RX_SENSITIVITY;
 }
 
 uint8_t esp_ieee802154_get_channel(void)
@@ -165,96 +169,6 @@ esp_err_t esp_ieee802154_set_coordinator(bool enable)
     ieee802154_pib_set_coordinator(enable);
     return ESP_OK;
 }
-
-#if CONFIG_IEEE802154_MULTI_PAN_ENABLE
-
-uint16_t esp_ieee802154_get_multipan_panid(esp_ieee802154_multipan_index_t index)
-{
-    assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
-    return ieee802154_ll_get_multipan_panid(index);
-}
-
-esp_err_t esp_ieee802154_set_multipan_panid(esp_ieee802154_multipan_index_t index, uint16_t panid)
-{
-    assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
-    ieee802154_ll_set_multipan_panid(index, panid);
-    return ESP_OK;
-}
-
-uint16_t esp_ieee802154_get_multipan_short_address(esp_ieee802154_multipan_index_t index)
-{
-    assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
-    return ieee802154_ll_get_multipan_short_addr(index);
-}
-
-esp_err_t esp_ieee802154_set_multipan_short_address(esp_ieee802154_multipan_index_t index, uint16_t short_address)
-{
-    assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
-    ieee802154_ll_set_multipan_short_addr(index, short_address);
-    return ESP_OK;
-}
-
-esp_err_t esp_ieee802154_get_multipan_extended_address(esp_ieee802154_multipan_index_t index, uint8_t *ext_addr)
-{
-    assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
-    assert(ext_addr != NULL);
-    ieee802154_ll_get_multipan_ext_addr(index, ext_addr);
-    return ESP_OK;
-}
-
-esp_err_t esp_ieee802154_set_multipan_extended_address(esp_ieee802154_multipan_index_t index, const uint8_t *ext_addr)
-{
-    assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
-    assert(ext_addr != NULL);
-    ieee802154_ll_set_multipan_ext_addr(index, ext_addr);
-    return ESP_OK;
-}
-
-uint8_t esp_ieee802154_get_multipan_enable(void)
-{
-    return ieee802154_ll_get_multipan_enable_mask();
-}
-
-esp_err_t esp_ieee802154_set_multipan_enable(uint8_t mask)
-{
-    assert(mask < (1 << CONFIG_IEEE802154_INTERFACE_NUM));
-    ieee802154_ll_set_multipan_enable_mask(mask);
-    return ESP_OK;
-}
-
-esp_ieee802154_pending_mode_t esp_ieee802154_multipan_get_pending_mode(esp_ieee802154_multipan_index_t index)
-{
-    assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
-    return ieee802154_pib_get_pending_mode(index);
-}
-
-esp_err_t esp_ieee802154_multipan_set_pending_mode(esp_ieee802154_multipan_index_t inf_index, esp_ieee802154_pending_mode_t pending_mode)
-{
-    assert(inf_index < CONFIG_IEEE802154_INTERFACE_NUM);
-    ieee802154_pib_set_pending_mode(inf_index, pending_mode);
-    return ESP_OK;
-}
-
-esp_err_t esp_ieee802154_multipan_add_pending_addr(esp_ieee802154_multipan_index_t inf_index, const uint8_t *addr, bool is_short)
-{
-    assert(inf_index < CONFIG_IEEE802154_INTERFACE_NUM);
-    return ieee802154_add_pending_addr(inf_index, addr, is_short);
-}
-
-esp_err_t esp_ieee802154_multipan_clear_pending_addr(esp_ieee802154_multipan_index_t inf_index, const uint8_t *addr, bool is_short)
-{
-    assert(inf_index < CONFIG_IEEE802154_INTERFACE_NUM);
-    return ieee802154_clear_pending_addr(inf_index, addr, is_short);
-}
-
-esp_err_t esp_ieee802154_multipan_reset_pending_table(esp_ieee802154_multipan_index_t inf_index, bool is_short)
-{
-    assert(inf_index < CONFIG_IEEE802154_INTERFACE_NUM);
-    ieee802154_reset_pending_table(inf_index, is_short);
-    return ESP_OK;
-}
-
-#endif // CONFIG_IEEE802154_MULTI_PAN_ENABLE
 
 esp_err_t esp_ieee802154_set_ack_timeout(uint32_t timeout)
 {
