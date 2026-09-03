@@ -17,6 +17,10 @@ The example performs the operations mentioned above in a straightforward manner:
 by reading it back. For partitions, contents are compared to the originally written file. For the partition table, contents are verified against the partition table CSV
 file. An erased partition's contents is compared to a generated blank file.
 
+## When to use this example
+
+- You want to manipulate partitions from the *host* PC (read/write/erase, dump the partition table) using `parttool.py`.
+
 ## How to use example
 
 ### Build and Flash

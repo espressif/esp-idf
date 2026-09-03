@@ -18,6 +18,11 @@ This example demonstrates how to use an SD card with an ESP device over an SPI i
 1. Create a file using `fopen` and write to it using `fprintf`.
 1. Rename the file. Before renaming, check if destination file already exists using `stat` function, and remove it using `unlink` function.
 1. Open renamed file for reading, read back the line, and print it to the terminal.
+
+## When to use this example
+
+- You want to access a removable SD card over the SPI bus, which works on any target and uses flexible GPIOs.
+
 1. __OPTIONAL:__ Format the SD card, check if the file doesn't exist anymore.
 
 This example support SD (SDSC, SDHC, SDXC) cards.

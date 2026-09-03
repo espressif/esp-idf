@@ -15,6 +15,11 @@ Detailed functional description of NVS and API is provided in [documentation](ht
 
 Check another example *storage/nvs/nvs_rw_blob*, which shows how to read and write variable length binary data (blob).
 
+## When to use this example
+
+- You are new to NVS and want the simplest read/write of a single integer that survives reboots.
+- You need a starting template for storing small configuration/counter values.
+
 ## How to use example
 
 ### Hardware required

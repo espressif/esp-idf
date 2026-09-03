@@ -5,6 +5,10 @@
 
 This example demonstrates how to perform partition read, write and erase operations using API functions `esp_partition_read`, `esp_partition_write` and `esp_partition_erase`.
 
+## When to use this example
+
+- You want raw read/write/erase access to a flash partition without a filesystem on top.
+
 # Example Flow
 
 The example uses a [custom partition table](./partitions_example.csv), with a data partition `storage` used as the demo partition. For the most part the example code is well-commented so users should be able to follow along the code easily. Nevertheless, this section provides an overview of the code flow.
