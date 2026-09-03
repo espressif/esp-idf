@@ -35,7 +35,7 @@ def test_examples_perf_benchmark_spiflash(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32p4'], indirect=['target'])
 def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
     # SD card
     dut.expect('example: Mounting SD card - raw access', timeout=10)
@@ -59,7 +59,7 @@ def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s2', 'esp32c5'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s2', 'esp32c5', 'esp32p4'], indirect=['target'])
 def test_examples_perf_benchmark_sdcard_spi(dut: Dut) -> None:
     # SD card
     dut.expect('example: Mounting SD card - raw access', timeout=10)

@@ -13,3 +13,7 @@ CONFIG_EXAMPLE_TEST_SPIFLASH=n
 CONFIG_EXAMPLE_TEST_SD_CARD=y
 CONFIG_EXAMPLE_USE_SDSPI=y
 CONFIG_EXAMPLE_USE_SDMMC=n
+
+# The SD slot used for SPI mode is wired to the board with jump wires and is
+# powered externally, not from the on-chip LDO used by the SDMMC slot.
+CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO=n
