@@ -355,7 +355,7 @@ void BTA_AgCiData(UINT16 handle)
 *******************************************************************************/
 void BTA_AgAudioBuffAlloc(UINT16 size, UINT8 **pp_buff, UINT8 **pp_data)
 {
-    /* reserve 1 byte at last, when the size is mSBC frame size (57), then we got a buffer that can hold 60 bytes data */
+    /* reserve trailing space for H2 header and optional eSCO padding (mSBC: 57+2+1=60, LC3: 58+2=60) */
     BT_HDR *p_buf= (BT_HDR *)osi_calloc(sizeof(BT_HDR) + BTA_AG_BUFF_OFFSET_MIN + BTA_AG_H2_HEADER_LEN + size + 1);
     if (p_buf != NULL) {
         /* mSBC offset is large than CVSD, so this is also work in CVSD air mode */

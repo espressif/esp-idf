@@ -12,6 +12,7 @@
 #define BTA_HFP_CODEC_NONE           BTM_SCO_CODEC_NONE
 #define BTA_HFP_CODEC_CVSD           BTM_SCO_CODEC_CVSD      /* CVSD */
 #define BTA_HFP_CODEC_MSBC           BTM_SCO_CODEC_MSBC      /* mSBC */
+#define BTA_HFP_CODEC_LC3            BTM_SCO_CODEC_LC3       /* LC3-SWB */
 
 typedef UINT16 tBTA_HFP_PEER_CODEC;
 
@@ -25,6 +26,7 @@ typedef UINT8   tBTA_HFP_SCO_CODEC_TYPE;
 
 #define BTA_HFP_SCO_SAMP_RATE_8K     8000
 #define BTA_HFP_SCO_SAMP_RATE_16K    16000
+#define BTA_HFP_SCO_SAMP_RATE_32K    32000
 
 /* SCO codec information */
 typedef struct {

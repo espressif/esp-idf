@@ -1221,6 +1221,20 @@
 #define BTM_MSBC_FRAME_DATA_SIZE          57
 #endif
 
+/* LC3-SWB eSCO air frame (H2 + payload); same 60-byte eSCO packet as mSBC */
+#ifndef BTM_LC3_FRAME_SIZE
+#define BTM_LC3_FRAME_SIZE                  60
+#endif
+
+#ifndef BTM_LC3_FRAME_DATA_SIZE
+#define BTM_LC3_FRAME_DATA_SIZE             58
+#endif
+
+/* Transparent wideband air frame size (mSBC and LC3-SWB) */
+#ifndef BTM_HFP_TRANSPARENT_FRAME_SIZE
+#define BTM_HFP_TRANSPARENT_FRAME_SIZE      BTM_MSBC_FRAME_SIZE
+#endif
+
 /* The size in bytes of the BTM inquiry database. 5 As Default */
 #ifndef BTM_INQ_DB_SIZE
 #define BTM_INQ_DB_SIZE             5

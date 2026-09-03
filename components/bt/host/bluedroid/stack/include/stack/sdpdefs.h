@@ -279,6 +279,7 @@
 #if (BTM_WBS_INCLUDED == TRUE)
 #define UUID_CODEC_CVSD                         0x0001   /* CVSD */
 #define UUID_CODEC_MSBC                         0x0002   /* mSBC */
+#define UUID_CODEC_LC3                          0x0003   /* LC3-SWB */
 #endif
 
 /* Define all the 'Descriptor Type' values.
@@ -308,7 +309,7 @@
 #define LANG_ID_CODE_ENGLISH            ((UINT16) 0x656e)   /* "en" */
 #define LANG_ID_CHAR_ENCODE_UTF8        ((UINT16) 0x006a)   /* UTF-8 */
 
-/* Constants used for display purposes only.  These define ovelapping attribute values */
+/* Constants used for display purposes only.  These define overlapping attribute values */
 #define  ATTR_ID_VERS_OR_GRP_OR_DRELNUM_OR_IPSUB_OR_SPECID  0x0200
 #define  ATTR_ID_VEND_ID_OR_SERVICE_DB_STATE_OR_PARSE_VER   0x0201
 #define  ATTR_ID_PROD_ID_OR_HID_DEV_SUBCLASS                0x0202

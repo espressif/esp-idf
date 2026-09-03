@@ -694,6 +694,10 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
                 retval |= BTA_AG_CODEC_MSBC;
                 break;
 
+            case UUID_CODEC_LC3:
+                retval |= BTA_AG_CODEC_LC3;
+                break;
+
             default:
                 APPL_TRACE_ERROR("Unknown Codec UUID(%d) received", uuid_codec);
                 break;
@@ -706,6 +710,32 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
         }
     }
     return (retval);
+}
+
+/*******************************************************************************
+**
+** Function         bta_ag_select_sco_codec_from_peer
+**
+** Description      Select preferred SCO codec from peer capabilities (LC3 > mSBC > CVSD).
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_ag_select_sco_codec_from_peer(tBTA_AG_SCB *p_scb)
+{
+#if UC_BT_HFP_LC3_ENABLE
+    if (p_scb->peer_codecs & BTA_AG_CODEC_LC3) {
+        p_scb->sco_codec = BTA_AG_CODEC_LC3;
+        APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to LC3");
+    } else
+#endif
+    if (p_scb->peer_codecs & BTA_AG_CODEC_MSBC) {
+        p_scb->sco_codec = BTA_AG_CODEC_MSBC;
+        APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to MSBC");
+    } else {
+        p_scb->sco_codec = BTA_AG_CODEC_CVSD;
+        APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to CVSD");
+    }
 }
 #endif /* #if (BTM_WBS_INCLUDED == TRUE ) */
 
@@ -1167,13 +1197,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                 p_scb->peer_codecs = bta_ag_parse_bac(p_scb, p_arg);
                 p_scb->codec_updated = TRUE;
 
-                if (p_scb->peer_codecs & BTA_AG_CODEC_MSBC) {
-                    p_scb->sco_codec = UUID_CODEC_MSBC;
-                    APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to MSBC");
-                } else {
-                    p_scb->sco_codec = UUID_CODEC_CVSD;
-                    APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to CVSD");
-                }
+                bta_ag_select_sco_codec_from_peer(p_scb);
                 /* The above logic sets the stack preferred codec based on local and peer codec
                 capabilities. This can be overridden by the application depending on its preference
                 using the bta_ag_setcodec API. We send the peer_codecs to the application. */
@@ -1202,6 +1226,10 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
 
                 case UUID_CODEC_MSBC:
                     codec_type = BTA_AG_CODEC_MSBC;
+                    break;
+
+                case UUID_CODEC_LC3:
+                    codec_type = BTA_AG_CODEC_LC3;
                     break;
 
                 default:
@@ -1673,6 +1701,10 @@ void bta_ag_send_bcs(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 
             case BTA_AG_CODEC_MSBC:
                 codec_uuid = UUID_CODEC_MSBC;
+                break;
+
+            case BTA_AG_CODEC_LC3:
+                codec_uuid = UUID_CODEC_LC3;
                 break;
 
             default:

@@ -80,17 +80,17 @@ Step to initialize PBA Client connection:
 
 Supported targets provide two types of codec for HFP audio data: `CVSD` and `mSBC`.
 
-`CVSD` is the default setting and is also the widely used codec for voice audio. But, `mSBC` is designed to have a better voice quality through `HFP`. To select which one is in use, we provide `Wide Band Speech` item in the `menuconfig` path:
+`CVSD` is the default setting and is also the widely used codec for voice audio. But, `mSBC` is designed to have a better voice quality through `HFP`. To select which one is in use, we provide `Wideband Speech` item in the `menuconfig` path:
 
-`Component config --> Bluetooth --> Bluedroid Options --> Wide Band Speech`.
+`Component config --> Bluetooth --> Bluedroid Options --> Wideband Speech`.
 
-Switching on the `Wide Band Speech` means that the preferred codec is `mSBC`, but which one is actually being used also depends on the `Data Path` configuration.
+Switching on the `Wideband Speech` means that the preferred codec is `mSBC`, but which one is actually being used also depends on the `Data Path` configuration.
 
-- If you choose `PCM` for datapath, you can only use `CVSD` and hardware is responsible for the codec job. In the meanwhile, you cannot use `mSBC` by switching `Wide Band Speech` on, because the `mSBC` is implemented in the Bluedroid (Bluetooth Host Stack) by software.
+- If you choose `PCM` for datapath, you can only use `CVSD` and hardware is responsible for the codec job. In the meanwhile, you cannot use `mSBC` by switching `Wideband Speech` on, because the `mSBC` is implemented in the Bluedroid (Bluetooth Host Stack) by software.
 
-- If you choose `vHCI` for datapath with `Wide Band Speech` on, codec job is done in the Bluedroid and mSBC is being used.
+- If you choose `vHCI` for datapath with `Wideband Speech` on, codec job is done in the Bluedroid and mSBC is being used.
 
-- If you choose `vHCI` for datapath with `Wide Band Speech` off, hardware is responsible for the codec job and `CVSD` is in use.
+- If you choose `vHCI` for datapath with `Wideband Speech` off, hardware is responsible for the codec job and `CVSD` is in use.
 
 ### Build and Flash
 

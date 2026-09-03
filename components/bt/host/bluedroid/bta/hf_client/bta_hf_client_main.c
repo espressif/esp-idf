@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "common/bt_defs.h"
+#include "common/bt_target.h"
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
 #include "bta/bta_hf_client_api.h"
@@ -251,7 +252,11 @@ const tBTA_HF_CLIENT_ST_TBL bta_hf_client_st_tbl[] = {
     bta_hf_client_st_closing
 };
 
+#if UC_BT_HFP_LC3_ENABLE
+const int bta_hf_client_version = HFP_HF_VERSION_1_9;
+#else
 const int bta_hf_client_version = HFP_HF_VERSION_1_7;
+#endif
 
 /* HF Client control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
@@ -459,6 +464,16 @@ static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
     } else{
         bta_hf_client_cb.msbc_enabled = FALSE;
     }
+
+#if UC_BT_HFP_LC3_ENABLE
+    if (bta_hf_client_version >= HFP_HF_VERSION_1_9) {
+        bta_hf_client_cb.lc3_enabled = TRUE;
+    } else {
+        bta_hf_client_cb.lc3_enabled = FALSE;
+    }
+#else
+    bta_hf_client_cb.lc3_enabled = FALSE;
+#endif
 
     bta_hf_client_cb.scb.negotiated_codec = BTM_SCO_CODEC_CVSD;
 

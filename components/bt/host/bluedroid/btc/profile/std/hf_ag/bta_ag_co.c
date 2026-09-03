@@ -307,7 +307,7 @@ static void bta_ag_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN is_bad
         *length = (UINT8)frame_len;
     }
 
-// PLC_INCLUDED will be set to TRUE when enabling Wide Band Speech
+// PLC_INCLUDED will be set to TRUE when enabling Wideband Speech
 #if (PLC_INCLUDED == TRUE)
     switch(status) {
         case OI_OK:

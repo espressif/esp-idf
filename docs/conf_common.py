@@ -103,6 +103,7 @@ CLASSIC_BT_DOCS = [
     'migration-guides/release-5.x/5.3/bluetooth-classic.rst',
     'migration-guides/release-5.x/5.4/bluetooth-classic.rst',
     'migration-guides/release-6.x/6.0/bluetooth-classic.rst',
+    'migration-guides/release-6.x/6.2/bluetooth-classic.rst',
 ]
 
 BLUFI_DOCS = ['api-guides/ble/blufi.rst', 'api-reference/bluetooth/esp_blufi.rst']

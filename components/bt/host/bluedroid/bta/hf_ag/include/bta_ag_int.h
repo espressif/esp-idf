@@ -50,6 +50,7 @@
 #define HFP_VERSION_1_6         0x0106
 #define HFP_VERSION_1_7         0x0107
 #define HFP_VERSION_1_8         0x0108
+#define HFP_VERSION_1_9         0x0109
 
 #define HSP_VERSION_1_0         0x0100
 #define HSP_VERSION_1_2         0x0102
@@ -102,7 +103,9 @@
 /* mSBC H2 header length */
 #define BTA_AG_H2_HEADER_LEN                2
 /* mSBC frame size not include H1/H2 header */
-#define BTA_AG_MSBC_FRAME_SIZE              57
+#define BTA_AG_MSBC_FRAME_PAYLOAD_SIZE              57
+#define BTA_AG_LC3_FRAME_PAYLOAD_SIZE               58
+#define BTA_AG_LC3_VOHCI_FRAME_SIZE         60
 /* max user data len of sco packet type EV3 */
 #define BTA_AG_SCO_OUT_PKT_LEN_EV3          30
 /* max user data len of sco packet type 2-EV3 */

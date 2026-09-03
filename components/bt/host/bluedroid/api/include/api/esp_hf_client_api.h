@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@ typedef enum {
     ESP_HF_CLIENT_AUDIO_STATE_CONNECTING,                /*!< audio connection has been initiated */
     ESP_HF_CLIENT_AUDIO_STATE_CONNECTED,                 /*!< audio connection is established */
     ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC,            /*!< mSBC audio connection is established */
+    ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_LC3,             /*!< LC3-SWB audio connection is established */
 } esp_hf_client_audio_state_t;
 
 /// in-band ring tone state
@@ -66,6 +67,9 @@ typedef struct {
 /* HFP 1.7+ */
 #define ESP_HF_CLIENT_PEER_FEAT_HF_IND    0x400        /*!< HF Indicators */
 #define ESP_HF_CLIENT_PEER_FEAT_ESCO_S4   0x800        /*!< eSCO S4 Setting Supported */
+
+/* HFP 1.9 - local HF feature, maps to SDP SupportedFeatures bit 8 */
+#define ESP_HF_CLIENT_FEAT_SWB           0x00010000   /*!< Super Wideband Speech */
 
 /* CHLD feature masks of AG */
 #define ESP_HF_CLIENT_CHLD_FEAT_REL           0x01       /*!< 0  Release waiting call or held calls */

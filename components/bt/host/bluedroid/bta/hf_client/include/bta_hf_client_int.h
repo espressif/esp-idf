@@ -31,6 +31,7 @@
 #define HFP_VERSION_1_6         0x0106
 #define HFP_VERSION_1_7         0x0107
 #define HFP_VERSION_1_8         0x0108
+#define HFP_VERSION_1_9         0x0109
 
 /* RFCOMM MTU SIZE */
 #define BTA_HF_CLIENT_MTU       256
@@ -38,6 +39,13 @@
 /* profile role for connection */
 #define BTA_HF_CLIENT_ACP       0       /* accepted connection */
 #define BTA_HF_CLIENT_INT       1       /* initiating connection */
+
+/* feature mask that matches spec */
+#define BTA_HF_CLIENT_BRSF_FEAT_SPEC (BTA_HF_CLIENT_FEAT_ECNR    | BTA_HF_CLIENT_FEAT_3WAY  | \
+                                      BTA_HF_CLIENT_FEAT_CLI     | BTA_HF_CLIENT_FEAT_VREC  | \
+                                      BTA_HF_CLIENT_FEAT_VOL     | BTA_HF_CLIENT_FEAT_ECS   | \
+                                      BTA_HF_CLIENT_FEAT_ECC     | BTA_HF_CLIENT_FEAT_CODEC | \
+                                      BTA_HF_CLIENT_FEAT_HF_IND  | BTA_HF_CLIENT_FEAT_ESCO_S4)
 
 /* Timer to wait for retry in case of collision */
 #ifndef BTA_HF_CLIENT_COLLISION_TIMER
@@ -51,6 +59,8 @@
 #define BTA_HF_CLIENT_H2_HEADER_LEN             2
 /* mSBC frame size not include H1/H2 header */
 #define BTA_HF_CLIENT_MSBC_FRAME_SIZE           57
+#define BTA_HF_CLIENT_LC3_FRAME_SIZE            58
+#define BTA_HF_CLIENT_LC3_VOHCI_FRAME_SIZE      60
 /* max user data len of sco packet type EV3 */
 #define BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3       30
 /* max user data len of sco packet type 2-EV3 */
@@ -209,6 +219,7 @@ typedef struct {
     UINT8                      scn;
     tBTA_HF_CLIENT_CBACK       *p_cback;        /* application callback */
     BOOLEAN                    msbc_enabled;
+    BOOLEAN                    lc3_enabled;
 } tBTA_HF_CLIENT_CB;
 
 /*****************************************************************************

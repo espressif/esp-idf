@@ -106,7 +106,7 @@ hf_local_param_t *hf_local_param_ptr = NULL;
 #endif
 #endif
 
-/* wide band synchronous */
+/* Wideband synchronous */
 #ifndef BTC_HF_WBS_PREFERRED
 #define BTC_HF_WBS_PREFERRED   TRUE
 #endif
@@ -203,6 +203,38 @@ static BOOLEAN is_connected(int idx, bt_bdaddr_t *bd_addr)
     return FALSE;
 }
 
+static esp_hf_codec_mode_t btc_hf_bta_codec_to_esp(tBTA_AG_PEER_CODEC codec)
+{
+    if (codec == BTA_AG_CODEC_NONE) {
+        return ESP_HF_CODEC_NONE;
+    }
+    if (codec & BTA_AG_CODEC_LC3) {
+        return ESP_HF_CODEC_LC3;
+    }
+    if (codec & BTA_AG_CODEC_MSBC) {
+        return ESP_HF_CODEC_MSBC;
+    }
+    if (codec & BTA_AG_CODEC_CVSD) {
+        return ESP_HF_CODEC_CVSD;
+    }
+    return ESP_HF_CODEC_NONE;
+}
+
+static tBTA_AG_PEER_CODEC btc_hf_esp_codec_to_bta(esp_hf_codec_mode_t mode)
+{
+    switch (mode) {
+    case ESP_HF_CODEC_CVSD:
+        return BTA_AG_CODEC_CVSD;
+    case ESP_HF_CODEC_MSBC:
+        return BTA_AG_CODEC_MSBC;
+    case ESP_HF_CODEC_LC3:
+        return BTA_AG_CODEC_LC3;
+    case ESP_HF_CODEC_NONE:
+    default:
+        return BTA_AG_CODEC_NONE;
+    }
+}
+
 static int btc_hf_latest_connected_idx(void)
 {
     struct timespec   now, conn_time_delta;
@@ -265,7 +297,8 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG *param)
     else if (BTA_AG_CONN_EVT == event) {
         param_len = sizeof(tBTA_AG_CONN);
     }
-    else if ((BTA_AG_AUDIO_OPEN_EVT == event) || (BTA_AG_AUDIO_CLOSE_EVT == event) || (BTA_AG_AUDIO_MSBC_OPEN_EVT == event)) {
+    else if ((BTA_AG_AUDIO_OPEN_EVT == event) || (BTA_AG_AUDIO_CLOSE_EVT == event) ||
+             (BTA_AG_AUDIO_MSBC_OPEN_EVT == event) || (BTA_AG_AUDIO_LC3_OPEN_EVT == event)) {
         param_len = sizeof(tBTA_AG_AUDIO_STAT);
     }
     else if (param) {
@@ -463,6 +496,22 @@ bt_status_t btc_hf_disconnect(bt_bdaddr_t *bd_addr)
         return BT_STATUS_SUCCESS;
     }
     return BT_STATUS_FAIL;
+}
+
+bt_status_t btc_hf_set_codec(bt_bdaddr_t *bd_addr, esp_hf_codec_mode_t mode)
+{
+    int idx = btc_hf_idx_by_bdaddr(bd_addr);
+    if ((idx < 0) || (idx >= BTC_HF_NUM_CB) || !hf_local_param.initialized) {
+        return BT_STATUS_FAIL;
+    }
+    /* AT+BAC may arrive before SLC_CONNECTED; allow CONNECTED or SLC_CONNECTED */
+    if (!is_connected(idx, bd_addr)) {
+        BTIF_TRACE_WARNING("%s: HF AG not connected", __FUNCTION__);
+        return BT_STATUS_NOT_READY;
+    }
+
+    BTA_AgSetCodec(hf_local_param.btc_hf_cb[idx].handle, btc_hf_esp_codec_to_bta(mode));
+    return BT_STATUS_SUCCESS;
 }
 
 bt_status_t btc_hf_connect_audio(bt_bdaddr_t *bd_addr)
@@ -1299,6 +1348,12 @@ void btc_hf_call_handler(btc_msg_t *msg)
             break;
         }
 
+        case BTC_HF_SET_CODEC_EVT:
+        {
+            btc_hf_set_codec(&arg->set_codec.remote_addr, arg->set_codec.mode);
+            break;
+        }
+
         default:
             BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
     }
@@ -1446,6 +1501,20 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             CHECK_HF_IDX(idx);
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
+                memcpy(param.audio_stat.remote_addr, &hf_local_param.btc_hf_cb[idx].connected_bda,sizeof(esp_bd_addr_t));
+                hf_local_param.btc_hf_cb[idx].sync_conn_hdl = p_data->hdr.sync_conn_handle;
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
+                param.audio_stat.preferred_frame_size = p_data->audio_stat.preferred_frame_size;
+                btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
+            } while (0);
+            break;
+        }
+        case BTA_AG_AUDIO_LC3_OPEN_EVT:
+        {
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            do {
+                param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_LC3;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param.btc_hf_cb[idx].connected_bda,sizeof(esp_bd_addr_t));
                 hf_local_param.btc_hf_cb[idx].sync_conn_hdl = p_data->hdr.sync_conn_handle;
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
@@ -1641,18 +1710,24 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             CHECK_HF_IDX(idx);
             BTC_TRACE_DEBUG("AG Bitmap of peer-codecs %d", p_data->val.num);
 #if (BTM_WBS_INCLUDED == TRUE)
-            /* If the peer supports mSBC and the BTC preferred codec is also mSBC, then
-            ** we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC at the time
-            ** of SCO connection establishment */
+            /* Default stack preference; application may override in ESP_HF_BAC_RESPONSE_EVT */
+#if UC_BT_HFP_LC3_ENABLE
+            if (p_data->val.num & BTA_AG_CODEC_LC3) {
+                BTC_TRACE_DEBUG("%s btc_hf override-Preferred Codec to LC3", __FUNCTION__);
+                BTA_AgSetCodec(hf_local_param.btc_hf_cb[idx].handle, BTA_AG_CODEC_LC3);
+            } else
+#endif
             if ((btc_conf_hf_force_wbs == TRUE) && (p_data->val.num & BTA_AG_CODEC_MSBC)) {
                   BTC_TRACE_DEBUG("%s btc_hf override-Preferred Codec to MSBC", __FUNCTION__);
-                  BTA_AgSetCodec(hf_local_param.btc_hf_cb[idx].handle,BTA_AG_CODEC_MSBC);
-            }
-            else {
+                  BTA_AgSetCodec(hf_local_param.btc_hf_cb[idx].handle, BTA_AG_CODEC_MSBC);
+            } else {
                   BTC_TRACE_DEBUG("%s btc_hf override-Preferred Codec to CVSD", __FUNCTION__);
-                  BTA_AgSetCodec(hf_local_param.btc_hf_cb[idx].handle,BTA_AG_CODEC_CVSD);
+                  BTA_AgSetCodec(hf_local_param.btc_hf_cb[idx].handle, BTA_AG_CODEC_CVSD);
             }
 #endif
+            memcpy(param.bac_rep.remote_addr, &hf_local_param.btc_hf_cb[idx].connected_bda, sizeof(esp_bd_addr_t));
+            param.bac_rep.peer_codecs = p_data->val.num;
+            btc_hf_cb_to_app(ESP_HF_BAC_RESPONSE_EVT, &param);
             break;
         }
 #if (BTM_WBS_INCLUDED == TRUE)
@@ -1661,9 +1736,11 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                BTC_TRACE_DEBUG("Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.num);
-                memcpy(param.wbs_rep.remote_addr, &hf_local_param.btc_hf_cb[idx].connected_bda,sizeof(esp_bd_addr_t));
-                param.wbs_rep.codec = p_data->val.num;
+                BTC_TRACE_DEBUG("Set codec status %d codec %d", p_data->val.hdr.status, p_data->val.num);
+                memcpy(param.wbs_rep.remote_addr, &hf_local_param.btc_hf_cb[idx].connected_bda, sizeof(esp_bd_addr_t));
+                param.wbs_rep.status = (p_data->val.hdr.status == BTA_AG_SUCCESS) ?
+                                       ESP_BT_STATUS_SUCCESS : ESP_BT_STATUS_FAIL;
+                param.wbs_rep.codec = btc_hf_bta_codec_to_esp(p_data->val.num);
                 btc_hf_cb_to_app(ESP_HF_WBS_RESPONSE_EVT, &param);
             } while (0);
             break;
@@ -1674,10 +1751,9 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                BTC_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC", p_data->val.num);
-                memcpy(param.bcs_rep.remote_addr, &hf_local_param.btc_hf_cb[idx].connected_bda,sizeof(esp_bd_addr_t));
-                param.bcs_rep.mode = p_data->val.num;
-                /* No ESP_HF_WBS_NONE case, because HFP 1.6 supported device can send BCS */
+                BTC_TRACE_DEBUG("AG final selected codec is %d", p_data->val.num);
+                memcpy(param.bcs_rep.remote_addr, &hf_local_param.btc_hf_cb[idx].connected_bda, sizeof(esp_bd_addr_t));
+                param.bcs_rep.mode = btc_hf_bta_codec_to_esp(p_data->val.num);
                 btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
             } while (0);
             break;
