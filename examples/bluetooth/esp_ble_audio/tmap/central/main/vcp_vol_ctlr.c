@@ -39,9 +39,9 @@ static bool streams_started;
  * borrowing one of the stack's. Not an esp_timer callback either: that task is
  * shared with the BLE stack's own timers — the ISO TX schedulers post from it
  * every SDU interval — and it is serial, so a GATT write chain dispatched there
- * would sit in front of them. The audio APIs take the host lock themselves
- * (esp_ble_audio_cap_commander_* -> bt_cap_commander_*_safe -> k_lock), which is
- * what makes calling them from here safe. */
+ * would sit in front of them. The audio APIs take the host lock themselves, and
+ * with a bounded wait that returns ESP_ERR_TIMEOUT rather than blocking this
+ * task indefinitely, which is what makes calling them from here safe. */
 #define VOLUME_PERIOD_MS      (5 * 60 * 1000)   /* 5 minutes */
 #define VOLUME_TASK_STACK     3072
 #define VOLUME_TASK_PRIO      5

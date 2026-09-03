@@ -16,7 +16,12 @@ esp_err_t esp_ble_audio_gmap_cb_register(const esp_ble_audio_gmap_cb_t *cb)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_gmap_cb_register_safe(cb);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_gmap_cb_register(cb);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -30,7 +35,7 @@ esp_err_t esp_ble_audio_gmap_discover(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -243,7 +248,12 @@ esp_err_t esp_ble_audio_gmap_register(esp_ble_audio_gmap_role_t role,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_gmap_register_safe(role, features);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_gmap_register(role, features);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -261,7 +271,12 @@ esp_err_t esp_ble_audio_gmap_set_role(esp_ble_audio_gmap_role_t role,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_gmap_set_role_safe(role, features);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_gmap_set_role(role, features);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }

@@ -96,10 +96,8 @@ extern int r_ble_hci_trans_hs_iso_tx(const uint8_t *data, uint16_t length, void 
 extern void r_ble_ll_isoal_tx_comp_cb_set(void *cb);
 
 _IDF_ONLY
-int bt_le_iso_cb_register_safe(struct bt_le_iso_cb *cb)
+int bt_le_iso_cb_register(struct bt_le_iso_cb *cb)
 {
-    int err = 0;
-
     LOG_DBG("IsoCbReg");
 
     if (cb == NULL) {
@@ -107,24 +105,18 @@ int bt_le_iso_cb_register_safe(struct bt_le_iso_cb *cb)
         return -EINVAL;
     }
 
-    bt_le_host_lock();
-
     if (sys_slist_find(&iso_cbs, &cb->node, NULL)) {
         LOG_WRN("IsoCbRegExist");
-        err = -EEXIST;
-        goto end;
+        return -EEXIST;
     }
 
     sys_slist_append(&iso_cbs, &cb->node);
 
-end:
-    bt_le_host_unlock();
-
-    return err;
+    return 0;
 }
 
 _IDF_ONLY
-void bt_le_iso_cb_unregister_safe(struct bt_le_iso_cb *cb)
+void bt_le_iso_cb_unregister(struct bt_le_iso_cb *cb)
 {
     LOG_DBG("IsoCbUnreg");
 
@@ -133,9 +125,7 @@ void bt_le_iso_cb_unregister_safe(struct bt_le_iso_cb *cb)
         return;
     }
 
-    bt_le_host_lock();
     sys_slist_find_and_remove(&iso_cbs, &cb->node);
-    bt_le_host_unlock();
 }
 
 #if CONFIG_BT_ISO_UNICAST
@@ -896,7 +886,10 @@ int bt_le_iso_init(void)
 
     iso_features_set();
 
-    err = bt_le_iso_cb_register_safe(&iso_cb);
+    bt_le_host_lock();
+    err = bt_le_iso_cb_register(&iso_cb);
+    bt_le_host_unlock();
+
     if (err) {
         return err;
     }
@@ -923,7 +916,9 @@ void bt_le_iso_deinit(void)
 
     iso_features_unset();
 
-    bt_le_iso_cb_unregister_safe(&iso_cb);
+    bt_le_host_lock();
+    bt_le_iso_cb_unregister(&iso_cb);
+    bt_le_host_unlock();
 
 #if CONFIG_BT_ISO_TX
     r_ble_ll_isoal_tx_comp_cb_set(NULL);

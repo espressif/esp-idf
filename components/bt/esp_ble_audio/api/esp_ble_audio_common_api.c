@@ -57,7 +57,12 @@ esp_err_t esp_ble_audio_gattc_disc_start(uint16_t conn_handle)
 {
     int err;
 
-    err = bt_gattc_disc_start_safe(conn_handle);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_gattc_disc_start(conn_handle);
+
+    bt_le_host_unlock();
+
     /* -EALREADY means disc already in progress for this conn (e.g. peer sent
      * MTU exchange twice triggering two gatt_mtu_change events). The
      * caller's goal is already true, treat as success.
@@ -112,7 +117,19 @@ esp_err_t esp_ble_audio_common_init(esp_ble_audio_init_info_t *info)
         goto unregister_gatt;
     }
 
+    /* bt_le_host_init() creates iso_task last, so it runs unlocked; audio_init
+     * runs with the task already alive, appending to conn_cbs and filling the
+     * lib's ext_cfgs/ext_funcs - both read under this mutex. One lock for the
+     * whole sequence so the task never sees a half-registered service table. */
+    if (bt_le_host_lock_timeout() != 0) {
+        bt_le_host_deinit();
+        goto unregister_gatt;
+    }
+
     err = bt_le_audio_init();
+
+    bt_le_host_unlock();
+
     if (err) {
         bt_le_host_deinit();
         goto unregister_gatt;
@@ -201,7 +218,14 @@ esp_err_t esp_ble_audio_common_start(esp_ble_audio_start_info_t *info)
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
     }
 
+    /* One lock for the whole start rather than one per service registration:
+     * iso_task must not see a half-registered GATT table. See common_init. */
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
     err = bt_le_audio_start(info);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }

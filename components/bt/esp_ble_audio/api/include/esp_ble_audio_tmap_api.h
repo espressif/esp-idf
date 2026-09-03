@@ -69,8 +69,10 @@ esp_err_t esp_ble_audio_tmap_discover(uint16_t conn_handle,
  *          Previously registered value will be overwritten.
  *
  * @param   role    TMAP role(s).
+ *
+ * @return  ESP_OK on success, or an error code on failure.
  */
-void esp_ble_audio_tmap_set_role(esp_ble_audio_tmap_role_t role);
+esp_err_t esp_ble_audio_tmap_set_role(esp_ble_audio_tmap_role_t role);
 
 #ifdef __cplusplus
 }

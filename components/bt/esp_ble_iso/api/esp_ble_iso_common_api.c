@@ -59,7 +59,12 @@ esp_err_t esp_ble_iso_server_register(esp_ble_iso_server_t *server)
 {
     int err;
 
-    err = bt_iso_server_register_safe(server);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_server_register(server);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -71,7 +76,12 @@ esp_err_t esp_ble_iso_server_unregister(esp_ble_iso_server_t *server)
 {
     int err;
 
-    err = bt_iso_server_unregister_safe(server);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_server_unregister(server);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -86,7 +96,12 @@ esp_err_t esp_ble_iso_cig_create(esp_ble_iso_cig_param_t *param,
 {
     int err;
 
-    err = bt_iso_cig_create_safe(param, out_cig);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_cig_create(param, out_cig);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -99,7 +114,12 @@ esp_err_t esp_ble_iso_cig_reconfigure(esp_ble_iso_cig_t *cig,
 {
     int err;
 
-    err = bt_iso_cig_reconfigure_safe(cig, param);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_cig_reconfigure(cig, param);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -111,7 +131,12 @@ esp_err_t esp_ble_iso_cig_terminate(esp_ble_iso_cig_t *cig)
 {
     int err;
 
-    err = bt_iso_cig_terminate_safe(cig);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_cig_terminate(cig);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -130,7 +155,7 @@ esp_err_t esp_ble_iso_chan_connect(esp_ble_iso_connect_param_t *param,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -158,7 +183,12 @@ esp_err_t esp_ble_iso_chan_disconnect(esp_ble_iso_chan_t *chan)
 {
     int err;
 
-    err = bt_iso_chan_disconnect_safe(chan);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_chan_disconnect(chan);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -186,7 +216,12 @@ esp_err_t esp_ble_iso_setup_data_path(const esp_ble_iso_chan_t *chan, uint8_t di
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_iso_setup_data_path_safe(chan, dir, path);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_setup_data_path(chan, dir, path);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -202,7 +237,12 @@ esp_err_t esp_ble_iso_remove_data_path(const esp_ble_iso_chan_t *chan, uint8_t d
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_iso_remove_data_path_safe(chan, dir);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_remove_data_path(chan, dir);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -219,7 +259,12 @@ esp_err_t esp_ble_iso_big_register_cb(esp_ble_iso_big_cb_t *cb)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_iso_big_register_cb_safe(cb);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_big_register_cb(cb);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -236,8 +281,13 @@ esp_err_t esp_ble_iso_big_ext_adv_add(esp_ble_iso_ext_adv_info_t *info)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_le_ext_adv_new_safe(info->adv_handle, info->addr_type,
-                                 info->addr, info->sid);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_le_ext_adv_new(info->adv_handle, info->addr_type,
+                            info->addr, info->sid);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -253,7 +303,12 @@ esp_err_t esp_ble_iso_big_ext_adv_delete(esp_ble_iso_ext_adv_info_t *info)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_le_ext_adv_delete_safe(info->adv_handle);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_le_ext_adv_delete(info->adv_handle);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -269,7 +324,7 @@ esp_err_t esp_ble_iso_big_create(uint8_t adv_handle,
     void *adv;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     adv = bt_le_ext_adv_find(adv_handle);
     if (adv == NULL) {
@@ -298,7 +353,7 @@ esp_err_t esp_ble_iso_big_sync(uint16_t sync_handle,
     void *per_adv_sync;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
@@ -322,7 +377,12 @@ esp_err_t esp_ble_iso_big_terminate(esp_ble_iso_big_t *big)
 {
     int err;
 
-    err = bt_iso_big_terminate_safe(big);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_big_terminate(big);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -336,7 +396,12 @@ esp_err_t esp_ble_iso_chan_get_info(esp_ble_iso_chan_t *chan,
 {
     int err;
 
-    err = bt_iso_chan_get_info_safe(chan, info);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_chan_get_info(chan, info);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -350,7 +415,12 @@ esp_err_t esp_ble_iso_chan_get_tx_sync(esp_ble_iso_chan_t *chan,
 {
     int err;
 
-    err = bt_iso_chan_get_tx_sync_safe(chan, info);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_chan_get_tx_sync(chan, info);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -374,7 +444,12 @@ esp_err_t esp_ble_iso_chan_send(esp_ble_iso_chan_t *chan,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_iso_chan_send_safe(chan, &buf, seq_num);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_chan_send(chan, &buf, seq_num);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -399,7 +474,12 @@ esp_err_t esp_ble_iso_chan_send_ts(esp_ble_iso_chan_t *chan,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_iso_chan_send_ts_safe(chan, &buf, seq_num, ts);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_iso_chan_send_ts(chan, &buf, seq_num, ts);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }

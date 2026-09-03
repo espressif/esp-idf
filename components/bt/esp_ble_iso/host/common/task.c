@@ -76,6 +76,29 @@ static BT_ISO_CTRL_BSS_ATTR struct iso_dispatch_stats {
     uint32_t slow_count;
 } iso_stats[ISO_QUEUE_ITEM_TYPE_MAX];
 
+static inline bool iso_dispatch_is_timed(uint8_t type)
+{
+    return type != ISO_QUEUE_ITEM_TYPE_ISO_RX_DATA &&
+           type != ISO_QUEUE_ITEM_TYPE_ISO_TX_COMP;
+}
+
+static const char *iso_dispatch_type_name(uint8_t type)
+{
+    switch (type) {
+    case ISO_QUEUE_ITEM_TYPE_TIMER_EVENT:           return "timer";
+    case ISO_QUEUE_ITEM_TYPE_GAP_EVENT:             return "gap";
+    case ISO_QUEUE_ITEM_TYPE_EXT_ADV_REPORT:        return "ext-adv";
+    case ISO_QUEUE_ITEM_TYPE_PER_ADV_REPORT:        return "per-adv";
+    case ISO_QUEUE_ITEM_TYPE_GATT_EVENT:            return "gatt";
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+    case ISO_QUEUE_ITEM_TYPE_L2CAP_EVENT:           return "l2cap";
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
+    case ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT:         return "hci";
+    case ISO_QUEUE_ITEM_TYPE_BIGINFO_ADV_REPORT:    return "biginfo";
+    default:                                        return "other";
+    }
+}
+
 static void iso_dispatch_record(uint8_t type, int64_t elapsed_us)
 {
     struct iso_dispatch_stats *st;
@@ -91,7 +114,8 @@ static void iso_dispatch_record(uint8_t type, int64_t elapsed_us)
     }
     if (elapsed_us > ISO_DISPATCH_THRESHOLD_US) {
         st->slow_count++;
-        LOG_WRN("IsoCbSlow[%u][%lld]", type, (long long)elapsed_us);
+        LOG_WRN("IsoCbSlow[%s][%lldus]",
+                iso_dispatch_type_name(type), (long long)elapsed_us);
     }
 }
 
@@ -161,10 +185,9 @@ static void iso_queues_drain(void)
 static void iso_dispatch_item(const struct iso_queue_item *item)
 {
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
+    const bool timed = iso_dispatch_is_timed(item->type);
     int64_t elapsed_us;
-    int64_t start_us;
-
-    start_us = esp_timer_get_time();
+    int64_t start_us = timed ? esp_timer_get_time() : 0;
 #endif /* CONFIG_BT_ISO_DISPATCH_MONITOR */
 
     switch (item->type) {
@@ -201,8 +224,10 @@ static void iso_dispatch_item(const struct iso_queue_item *item)
     }
 
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
-    elapsed_us = esp_timer_get_time() - start_us;
-    iso_dispatch_record(item->type, elapsed_us);
+    if (timed) {
+        elapsed_us = esp_timer_get_time() - start_us;
+        iso_dispatch_record(item->type, elapsed_us);
+    }
 #endif /* CONFIG_BT_ISO_DISPATCH_MONITOR */
 }
 

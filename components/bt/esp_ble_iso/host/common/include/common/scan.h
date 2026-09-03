@@ -37,8 +37,6 @@ void bt_le_scan_recv_listener(uint16_t event_type,
 
 struct bt_le_per_adv_sync *bt_le_per_adv_sync_find(uint16_t sync_handle);
 
-struct bt_le_per_adv_sync *bt_le_per_adv_sync_find_safe(uint16_t sync_handle);
-
 int bt_le_per_adv_sync_new(uint16_t sync_handle,
                            uint8_t sid,
                            uint8_t phy,
@@ -48,14 +46,6 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
                            uint16_t conn_handle,
                            struct bt_le_per_adv_sync **out_sync);
 
-int bt_le_per_adv_sync_new_safe(uint16_t sync_handle,
-                                uint8_t sid,
-                                uint8_t phy,
-                                uint16_t interval,
-                                uint8_t addr_type,
-                                const uint8_t addr[6],
-                                uint16_t conn_handle,
-                                struct bt_le_per_adv_sync **out_sync);
 
 int bt_le_per_adv_sync_delete(uint16_t sync_handle);
 

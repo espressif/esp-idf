@@ -52,15 +52,6 @@ int k_work_submit(struct k_work *work)
     return 0;
 }
 
-int k_work_submit_safe(struct k_work *work)
-{
-    int err;
-    bt_le_host_lock();
-    err = k_work_submit(work);
-    bt_le_host_unlock();
-    return err;
-}
-
 bool k_work_is_pending(struct k_work *work)
 {
     bool is_pending;

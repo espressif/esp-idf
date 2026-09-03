@@ -109,16 +109,6 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
     return 0;
 }
 
-_IDF_ONLY
-int bt_gatt_service_register_safe(struct bt_gatt_service *svc)
-{
-    int err;
-    bt_le_host_lock();
-    err = bt_gatt_service_register(svc);
-    bt_le_host_unlock();
-    return err;
-}
-
 _LIB_ONLY
 int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 {
@@ -137,16 +127,6 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
     gatts_free_svc_ccc_cfg(svc);
 
     return 0;
-}
-
-_IDF_ONLY
-int bt_gatt_service_unregister_safe(struct bt_gatt_service *svc)
-{
-    int err;
-    bt_le_host_lock();
-    err = bt_gatt_service_unregister(svc);
-    bt_le_host_unlock();
-    return err;
 }
 
 _LIB_ONLY
@@ -1111,18 +1091,14 @@ int bt_gatts_sub_changed(uint16_t conn_handle,
 }
 
 _IDF_ONLY
-int bt_gattc_disc_start_safe(uint16_t conn_handle)
+int bt_gattc_disc_start(uint16_t conn_handle)
 {
-    int err;
     LOG_DBG("GattcDiscStart[%u]", conn_handle);
-    bt_le_host_lock();
 #if CONFIG_BT_BLUEDROID_ENABLED
-    err = bt_le_bluedroid_gattc_disc_start(conn_handle);
+    return bt_le_bluedroid_gattc_disc_start(conn_handle);
 #else
-    err = bt_le_nimble_gattc_disc_start(conn_handle);
+    return bt_le_nimble_gattc_disc_start(conn_handle);
 #endif
-    bt_le_host_unlock();
-    return err;
 }
 
 _LIB_ONLY

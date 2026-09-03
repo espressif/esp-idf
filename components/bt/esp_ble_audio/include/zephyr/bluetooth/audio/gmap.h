@@ -188,7 +188,7 @@ struct bt_gmap_cb {
  * @retval -EALREADY if callbacks have already be registered
  * @retval 0 on success
  */
-int bt_gmap_cb_register_safe(const struct bt_gmap_cb *cb);
+int bt_gmap_cb_register(const struct bt_gmap_cb *cb);
 
 /**
  * @brief Discover Gaming Service on a remote device.
@@ -205,7 +205,6 @@ int bt_gmap_cb_register_safe(const struct bt_gmap_cb *cb);
  * @retval 0 on success
  */
 int bt_gmap_discover(struct bt_conn *conn);
-int bt_gmap_discover_safe(struct bt_conn *conn);
 
 /**
  * @brief Adds GMAS instance to database and sets the received Gaming Audio Profile role(s).
@@ -218,7 +217,7 @@ int bt_gmap_discover_safe(struct bt_conn *conn);
  * @retval -ENOEXEC on service register failure
  * @retval 0 on success
  */
-int bt_gmap_register_safe(enum bt_gmap_role role, struct bt_gmap_feat features);
+int bt_gmap_register(enum bt_gmap_role role, struct bt_gmap_feat features);
 
 /**
  * @brief Set one or multiple Gaming Audio Profile roles and features dynamically.
@@ -238,7 +237,7 @@ int bt_gmap_register_safe(enum bt_gmap_role role, struct bt_gmap_feat features);
  * @retval -ECANCELED on service re-register failure
  * @retval 0 on success
  */
-int bt_gmap_set_role_safe(enum bt_gmap_role role, struct bt_gmap_feat features);
+int bt_gmap_set_role(enum bt_gmap_role role, struct bt_gmap_feat features);
 
 #ifdef __cplusplus
 }
