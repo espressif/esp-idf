@@ -548,6 +548,12 @@ ble_ots_server_obj_t *ble_ots_server_obj_db_lookup(ble_ots_obj_id_t object_id)
 int ble_ots_server_obj_data_read(ble_ots_obj_id_t object_id, uint32_t offset,
                                   uint32_t length, uint8_t *buf)
 {
+    return ble_ots_server_copy_object_data(object_id, offset, length, buf);
+}
+
+int ble_ots_server_copy_object_data(ble_ots_obj_id_t object_id, uint32_t offset,
+                                    uint32_t length, uint8_t *buf)
+{
     int rc = 0;
 
     if (!buf) {
@@ -564,7 +570,7 @@ int ble_ots_server_obj_data_read(ble_ots_obj_id_t object_id, uint32_t offset,
         rc = BLE_HS_ENOENT;
     } else if (offset + length > obj->current_size) {
         rc = BLE_HS_EINVAL;
-    } else if (obj->data) {
+    } else if (obj->data && length > 0) {
         memcpy(buf, obj->data + offset, length);
     }
 

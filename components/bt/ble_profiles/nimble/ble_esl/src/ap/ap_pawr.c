@@ -22,6 +22,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 
 #include "nimble/ble.h"
 #include "host/ble_hs.h"
@@ -37,6 +38,25 @@ static const char *TAG = "esl_ap_pawr";
 
 /** Mutex protecting the per-subevent pending TX buffers (g_esl_ap->pawr_pending) */
 static SemaphoreHandle_t s_pawr_mutex;
+static TaskHandle_t s_pawr_holder;
+
+static void pawr_lock(void)
+{
+    assert(s_pawr_mutex != NULL);
+    xSemaphoreTake(s_pawr_mutex, portMAX_DELAY);
+    s_pawr_holder = xTaskGetCurrentTaskHandle();
+}
+
+static void pawr_unlock(void)
+{
+    s_pawr_holder = NULL;
+    xSemaphoreGive(s_pawr_mutex);
+}
+
+bool ble_esl_ap_pawr_held(void)
+{
+    return s_pawr_holder == xTaskGetCurrentTaskHandle();
+}
 
 /** Advertising instance used for PAwR */
 #define PAWR_ADV_INSTANCE   0
@@ -88,6 +108,7 @@ void ble_esl_ap_pawr_deinit(void)
     if (s_pawr_mutex != NULL) {
         vSemaphoreDelete(s_pawr_mutex);
         s_pawr_mutex = NULL;
+        s_pawr_holder = NULL;
     }
 
     ESP_LOGI(TAG, "PAwR sub-module deinitialized");
@@ -216,11 +237,11 @@ esp_err_t ble_esl_ap_pawr_stop(void)
 
     /* Release pending TX buffers under the lock so the data-request callback
      * (host task) never dereferences a freed pointer. */
-    xSemaphoreTake(s_pawr_mutex, portMAX_DELAY);
+    pawr_lock();
     g_esl_ap->pawr_active = false;
     free(g_esl_ap->pawr_pending);
     g_esl_ap->pawr_pending = NULL;
-    xSemaphoreGive(s_pawr_mutex);
+    pawr_unlock();
 
     ESP_LOGI(TAG, "PAwR broadcaster stopped");
 
@@ -248,13 +269,16 @@ esp_err_t ble_esl_ap_pawr_set_response_key(uint16_t esl_addr,
         return ESP_ERR_INVALID_ARG;
     }
 
+    ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *entry = ble_esl_ap_find_esl(esl_addr);
     if (entry == NULL) {
+        ble_esl_ap_tracking_unlock();
         ESP_LOGE(TAG, "ESL 0x%04x not found for response key", esl_addr);
         return ESP_ERR_NOT_FOUND;
     }
 
     entry->resp_key = *key_mat;
+    ble_esl_ap_tracking_unlock();
 
     ESP_LOGI(TAG, "Response Key Material set for ESL 0x%04x", esl_addr);
     return ESP_OK;
@@ -304,14 +328,14 @@ esp_err_t ble_esl_ap_pawr_send(uint8_t group_id, const uint8_t *payload,
 
     /* The Randomizer is read and advanced under the lock: this function is a
      * public command path and may be called from any application task. */
-    xSemaphoreTake(s_pawr_mutex, portMAX_DELAY);
+    pawr_lock();
     esp_err_t enc_err = ble_esl_ead_encrypt(g_esl_ap->ap_sync_key.session_key,
                                             g_esl_ap->ap_sync_key.iv,
                                             g_esl_ap->randomizer,
                                             plaintext,
                                             plaintext_len,
                                             encrypted_payload);
-    xSemaphoreGive(s_pawr_mutex);
+    pawr_unlock();
     if (enc_err != ESP_OK) {
         ESP_LOGE(TAG, "EAD encrypt failed: 0x%x", enc_err);
         return enc_err;
@@ -349,9 +373,9 @@ esp_err_t ble_esl_ap_pawr_send(uint8_t group_id, const uint8_t *payload,
         return ESP_ERR_INVALID_SIZE;
     }
 
-    xSemaphoreTake(s_pawr_mutex, portMAX_DELAY);
+    pawr_lock();
     if (g_esl_ap->pawr_pending == NULL) {
-        xSemaphoreGive(s_pawr_mutex);
+        pawr_unlock();
         ESP_LOGE(TAG, "PAwR pending buffers not allocated");
         return ESP_ERR_INVALID_STATE;
     }
@@ -360,7 +384,7 @@ esp_err_t ble_esl_ap_pawr_send(uint8_t group_id, const uint8_t *payload,
     slot->len = pos;
     slot->repeats_left = PAWR_TX_REPEATS;
     slot->valid = true;
-    xSemaphoreGive(s_pawr_mutex);
+    pawr_unlock();
 
     ESP_LOGD(TAG, "PAwR sync packet queued for group %u (payload_len=%u, ad_len=%u)",
              group_id, payload_len, pos);
@@ -412,11 +436,19 @@ esp_err_t ble_esl_ap_pawr_parse_response(uint16_t esl_addr,
     uint8_t enc_payload_len = outer_len - 1;
 
     /* Step 1: Look up ESL entry by esl_addr */
+    uint8_t resp_key[BLE_ESL_SESSION_KEY_SIZE];
+    uint8_t resp_iv[BLE_ESL_IV_SIZE];
+
+    ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *entry = ble_esl_ap_find_esl(esl_addr);
     if (entry == NULL) {
+        ble_esl_ap_tracking_unlock();
         ESP_LOGE(TAG, "ESL 0x%04x not found for response decryption", esl_addr);
         return ESP_ERR_NOT_FOUND;
     }
+    memcpy(resp_key, entry->resp_key.session_key, BLE_ESL_SESSION_KEY_SIZE);
+    memcpy(resp_iv, entry->resp_key.iv, BLE_ESL_IV_SIZE);
+    ble_esl_ap_tracking_unlock();
 
     /* Step 2: Decrypt and verify MIC via ble_esl_ead_decrypt
      *   Input:  enc_payload = [Randomizer(5)] [Ciphertext(N)] [MIC(4)]
@@ -424,8 +456,8 @@ esp_err_t ble_esl_ap_pawr_parse_response(uint16_t esl_addr,
      */
     uint8_t plaintext[BLE_ESL_PAYLOAD_MAX_SIZE + 2]; /* inner AD max */
     size_t decrypted_len = 0;
-    esp_err_t err = ble_esl_ead_decrypt(entry->resp_key.session_key,
-                                        entry->resp_key.iv,
+    esp_err_t err = ble_esl_ead_decrypt(resp_key,
+                                        resp_iv,
                                         enc_payload,
                                         enc_payload_len,
                                         plaintext, sizeof(plaintext),
@@ -566,7 +598,7 @@ static void pawr_handle_subev_data_req(struct ble_gap_event *event)
         uint8_t pkt[BLE_ESL_AP_PAWR_MAX_AD_BUF_SIZE];
         uint8_t pkt_len = 0;
 
-        xSemaphoreTake(s_pawr_mutex, portMAX_DELAY);
+        pawr_lock();
         if (g_esl_ap->pawr_pending != NULL) {
             ble_esl_ap_pawr_pending_t *slot = &g_esl_ap->pawr_pending[sub];
             if (slot->valid && slot->len > 0) {
@@ -578,7 +610,7 @@ static void pawr_handle_subev_data_req(struct ble_gap_event *event)
                 }
             }
         }
-        xSemaphoreGive(s_pawr_mutex);
+        pawr_unlock();
 
         /* Allocate an mbuf (sized to the packet, or empty for idle subevents) */
         struct os_mbuf *mbuf = os_msys_get_pkthdr(pkt_len, 0);

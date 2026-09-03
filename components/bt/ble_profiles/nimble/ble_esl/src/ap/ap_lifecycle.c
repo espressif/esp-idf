@@ -16,8 +16,12 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <stddef.h>
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "host/ble_gap.h"
@@ -48,6 +52,10 @@ static const char *TAG = "esl_ap_lifecycle";
 _Static_assert(sizeof(ble_esl_key_material_t) == BLE_ESL_KEY_MATERIAL_SIZE,
                "ble_esl_key_material_t must match the on-air Key Material layout");
 
+#define LF_OP_NONE                      0
+#define LF_OP_CONFIGURE                 1
+#define LF_OP_ABS_TIME                  2
+
 /* ========================== Internal Context Structures ========================== */
 
 /**
@@ -57,6 +65,7 @@ typedef struct {
     uint16_t conn_handle;
     ble_esl_ap_esl_config_t config;
     uint16_t esl_addr;
+    uint32_t lf_generation;
 } configure_ctx_t;
 
 /**
@@ -117,6 +126,14 @@ static void configure_write_abs_time_cb(uint16_t conn_handle, esp_err_t status,
                                         const uint8_t *data, uint16_t data_len,
                                         void *user_data);
 
+typedef struct {
+    uint16_t conn_handle;
+    uint32_t generation;
+    bool public_event;
+    void *user_data;
+    ble_esl_ap_gatt_cb_t chained_cb;
+} write_abs_time_ctx_t;
+
 /* Read info chain callbacks */
 static void read_info_display_cb(uint16_t conn_handle, esp_err_t status,
                                  const uint8_t *data, uint16_t data_len,
@@ -159,11 +176,226 @@ static image_transfer_ctx_t *s_image_ctx = NULL;
 /** Active synchronize context (only one at a time; new requests are rejected while active) */
 static synchronize_ctx_t *s_sync_ctx = NULL;
 
+static SemaphoreHandle_t s_lifecycle_mutex;
+static TaskHandle_t s_lifecycle_holder;
+
+_Static_assert(sizeof(ble_esl_key_material_t) == 24, "sync key packed 24");
+_Static_assert(sizeof(ble_esl_key_material_t) == 24, "resp key packed 24");
+_Static_assert(offsetof(ble_esl_ap_persisted_esl_t, ap_sync_key) == 9, "flat key block start");
+_Static_assert(offsetof(ble_esl_ap_persisted_esl_t, resp_key) == 9 + 24, "resp key follows sync");
+
+static void lf_lock(void)
+{
+    assert(s_lifecycle_mutex != NULL);
+    xSemaphoreTake(s_lifecycle_mutex, portMAX_DELAY);
+    s_lifecycle_holder = xTaskGetCurrentTaskHandle();
+}
+
+static void lf_unlock(void)
+{
+    s_lifecycle_holder = NULL;
+    xSemaphoreGive(s_lifecycle_mutex);
+}
+
+bool ble_esl_ap_lifecycle_held(void)
+{
+    return s_lifecycle_holder == xTaskGetCurrentTaskHandle();
+}
+
+static bool lf_has_inflight_unlocked(void)
+{
+    if (g_esl_ap == NULL) {
+        return false;
+    }
+    for (int i = 0; i < CONFIG_BLE_ESL_AP_MAX_CONNECTIONS; i++) {
+        if (g_esl_ap->conns[i].in_use && g_esl_ap->conns[i].lf_op != LF_OP_NONE) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ble_esl_ap_lifecycle_has_inflight(void)
+{
+    if (s_lifecycle_mutex == NULL) {
+        return false;
+    }
+    lf_lock();
+    bool busy = lf_has_inflight_unlocked();
+    lf_unlock();
+    return busy;
+}
+
+void ble_esl_ap_lifecycle_disconnect_check(ble_esl_ap_conn_t *conn)
+{
+    if (conn == NULL || s_lifecycle_mutex == NULL) {
+        return;
+    }
+    lf_lock();
+    if (conn->lf_op != LF_OP_NONE) {
+        ESP_LOGW(TAG, "disconnect: leftover lifecycle op=%u conn=%u (GATT should have completed)",
+                 conn->lf_op, conn->conn_handle);
+        conn->lf_op = LF_OP_NONE;
+        conn->lf_generation++;
+    }
+    lf_unlock();
+}
+
+static esp_err_t lf_occupy(ble_esl_ap_conn_t *conn, uint8_t op)
+{
+    assert(ble_esl_ap_lifecycle_held());
+    if (conn->lf_op != LF_OP_NONE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    conn->lf_generation++;
+    conn->lf_op = op;
+    return ESP_OK;
+}
+
+static void lf_release(ble_esl_ap_conn_t *conn, uint32_t generation)
+{
+    assert(ble_esl_ap_lifecycle_held());
+    if (conn != NULL && conn->lf_generation == generation) {
+        conn->lf_op = LF_OP_NONE;
+    }
+}
+
+static esp_err_t write_abs_time_bytes(uint16_t conn_handle,
+                                      ble_esl_ap_gatt_cb_t cb, void *user_data)
+{
+    int64_t now_us = esp_timer_get_time();
+    uint32_t abs_time_ms = (uint32_t)(now_us / 1000ULL);
+    uint8_t abs_time_data[4] = {
+        (uint8_t)(abs_time_ms & 0xFF),
+        (uint8_t)((abs_time_ms >> 8) & 0xFF),
+        (uint8_t)((abs_time_ms >> 16) & 0xFF),
+        (uint8_t)((abs_time_ms >> 24) & 0xFF),
+    };
+    return ble_esl_ap_gatt_write(conn_handle, BLE_ESL_CHR_UUID_CURRENT_ABS_TIME,
+                                 abs_time_data, sizeof(abs_time_data), cb, user_data);
+}
+
+static void write_abs_time_gatt_cb(uint16_t conn_handle, esp_err_t status,
+                                   const uint8_t *data, uint16_t data_len,
+                                   void *user_data)
+{
+    (void)data;
+    (void)data_len;
+    write_abs_time_ctx_t *ctx = (write_abs_time_ctx_t *)user_data;
+    if (ctx == NULL) {
+        return;
+    }
+    if (g_esl_ap == NULL) {
+        free(ctx);
+        return;
+    }
+
+    bool emit = false;
+    ble_esl_ap_gatt_cb_t chained = ctx->chained_cb;
+    void *chained_ud = ctx->user_data;
+
+    lf_lock();
+    ble_esl_ap_conn_t *conn = ble_esl_ap_find_conn(conn_handle);
+    if (conn != NULL && conn->lf_generation == ctx->generation) {
+        if (ctx->public_event && conn->lf_op == LF_OP_ABS_TIME) {
+            conn->lf_op = LF_OP_NONE;
+            emit = true;
+        }
+    }
+    lf_unlock();
+
+    if (emit && g_esl_ap->app_cb != NULL) {
+        ble_esl_ap_abs_time_written_t evt = {
+            .conn_handle = conn_handle,
+            .status = status,
+        };
+        g_esl_ap->app_cb(BLE_ESL_AP_EVT_ABS_TIME_WRITTEN, &evt);
+    }
+    if (chained != NULL) {
+        chained(conn_handle, status, NULL, 0, chained_ud);
+    }
+    free(ctx);
+}
+
+esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle)
+{
+    if (g_esl_ap == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    ble_esl_ap_conn_t *conn = ble_esl_ap_find_conn(conn_handle);
+    if (conn == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    write_abs_time_ctx_t *ctx = calloc(1, sizeof(*ctx));
+    if (ctx == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    lf_lock();
+    esp_err_t occ = lf_occupy(conn, LF_OP_ABS_TIME);
+    uint32_t gen = conn->lf_generation;
+    lf_unlock();
+    if (occ != ESP_OK) {
+        free(ctx);
+        return occ;
+    }
+
+    ctx->conn_handle = conn_handle;
+    ctx->generation = gen;
+    ctx->public_event = true;
+
+    esp_err_t ret = write_abs_time_bytes(conn_handle, write_abs_time_gatt_cb, ctx);
+    if (ret != ESP_OK) {
+        lf_lock();
+        conn = ble_esl_ap_find_conn(conn_handle);
+        lf_release(conn, gen);
+        lf_unlock();
+        free(ctx);
+    }
+    return ret;
+}
+
+static esp_err_t write_abs_time_for_configure(uint16_t conn_handle, uint32_t generation,
+                                              void *configure_ctx)
+{
+    write_abs_time_ctx_t *ctx = calloc(1, sizeof(*ctx));
+    if (ctx == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    ctx->conn_handle = conn_handle;
+    ctx->generation = generation;
+    ctx->public_event = false;
+    ctx->chained_cb = configure_write_abs_time_cb;
+    ctx->user_data = configure_ctx;
+    esp_err_t ret = write_abs_time_bytes(conn_handle, write_abs_time_gatt_cb, ctx);
+    if (ret != ESP_OK) {
+        free(ctx);
+    }
+    return ret;
+}
+
+static void configure_release_slot(uint16_t conn_handle, uint32_t generation)
+{
+    lf_lock();
+    ble_esl_ap_conn_t *conn = ble_esl_ap_find_conn(conn_handle);
+    lf_release(conn, generation);
+    lf_unlock();
+}
+
 /* ========================== Lifecycle Init / Deinit ========================== */
 
 esp_err_t ble_esl_ap_lifecycle_init(void)
 {
     assert(g_esl_ap != NULL);
+
+    if (s_lifecycle_mutex == NULL) {
+        s_lifecycle_mutex = xSemaphoreCreateMutex();
+        if (s_lifecycle_mutex == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    s_lifecycle_holder = NULL;
 
     esp_timer_create_args_t timer_args = {
         .callback = lifecycle_timeout_cb,
@@ -176,6 +408,8 @@ esp_err_t ble_esl_ap_lifecycle_init(void)
     esp_err_t ret = esp_timer_create(&timer_args, &g_esl_ap->timeout_timer);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create lifecycle timer: %s", esp_err_to_name(ret));
+        vSemaphoreDelete(s_lifecycle_mutex);
+        s_lifecycle_mutex = NULL;
         return ret;
     }
 
@@ -184,6 +418,8 @@ esp_err_t ble_esl_ap_lifecycle_init(void)
         ESP_LOGE(TAG, "Failed to start lifecycle timer: %s", esp_err_to_name(ret));
         esp_timer_delete(g_esl_ap->timeout_timer);
         g_esl_ap->timeout_timer = NULL;
+        vSemaphoreDelete(s_lifecycle_mutex);
+        s_lifecycle_mutex = NULL;
         return ret;
     }
 
@@ -216,6 +452,12 @@ void ble_esl_ap_lifecycle_deinit(void)
         s_sync_ctx = NULL;
     }
 
+    if (s_lifecycle_mutex != NULL) {
+        vSemaphoreDelete(s_lifecycle_mutex);
+        s_lifecycle_mutex = NULL;
+        s_lifecycle_holder = NULL;
+    }
+
     ESP_LOGI(TAG, "Lifecycle sub-module deinitialized");
 }
 
@@ -237,7 +479,10 @@ static void lifecycle_timeout_cb(void *arg)
     }
 
     int64_t now_us = esp_timer_get_time();
+    ble_esl_ap_state_evt_snap_t snaps[CONFIG_BLE_ESL_AP_MAX_ESLS];
+    int snap_count = 0;
 
+    ble_esl_ap_tracking_lock();
     for (int i = 0; i < CONFIG_BLE_ESL_AP_MAX_ESLS; i++) {
         ble_esl_ap_esl_entry_t *esl = &g_esl_ap->esls[i];
         if (!esl->in_use) {
@@ -250,8 +495,14 @@ static void lifecycle_timeout_cb(void *arg)
                 (now_us - esl->last_sync_time_us) >= (int64_t)LIFECYCLE_TIMEOUT_US) {
                 ESP_LOGW(TAG, "ESL 0x%04X: sync timeout (60 min), transitioning to Unsynchronized",
                          esl->esl_addr);
-                ble_esl_ap_update_esl_state(esl->esl_addr,
-                                            BLE_ESL_STATE_UNSYNCHRONIZED);
+                if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+                    (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                             BLE_ESL_STATE_UNSYNCHRONIZED,
+                                                             &snaps[snap_count]);
+                    if (snaps[snap_count].pending) {
+                        snap_count++;
+                    }
+                }
             }
         } else if (esl->state == BLE_ESL_STATE_UNSYNCHRONIZED) {
             /* Check 60-minute reconnect timeout */
@@ -259,18 +510,35 @@ static void lifecycle_timeout_cb(void *arg)
                 (now_us - esl->unsync_entry_time_us) >= (int64_t)LIFECYCLE_TIMEOUT_US) {
                 ESP_LOGW(TAG, "ESL 0x%04X: unsync timeout (60 min), transitioning to Unassociated",
                          esl->esl_addr);
-                ble_esl_ap_update_esl_state(esl->esl_addr,
-                                            BLE_ESL_STATE_UNASSOCIATED);
+                if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+                    (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                             BLE_ESL_STATE_UNASSOCIATED,
+                                                             &snaps[snap_count]);
+                    if (snaps[snap_count].pending) {
+                        snap_count++;
+                    }
+                }
             }
         }
+    }
+    ble_esl_ap_tracking_unlock();
+
+    for (int i = 0; i < snap_count; i++) {
+        ble_esl_ap_dispatch_state_evt(&snaps[i]);
     }
 }
 
 /* ========================== Update ESL State ========================== */
 
-esp_err_t ble_esl_ap_update_esl_state(uint16_t esl_addr,
-                                      ble_esl_state_t new_state)
+esp_err_t ble_esl_ap_update_esl_state_locked(uint16_t esl_addr,
+                                             ble_esl_state_t new_state,
+                                             ble_esl_ap_state_evt_snap_t *snap)
 {
+    assert(ble_esl_ap_tracking_held());
+    if (snap != NULL) {
+        snap->pending = false;
+    }
+
     if (g_esl_ap == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -296,16 +564,12 @@ esp_err_t ble_esl_ap_update_esl_state(uint16_t esl_addr,
         esl->unsync_entry_time_us = 0;
     }
 
-    /* Fire state changed event to application */
-    ble_esl_ap_state_changed_t evt = {
-        .conn_handle = esl->conn_handle,
-        .esl_addr = ble_esl_ap_addr_unpack(esl_addr),
-        .old_state = old_state,
-        .new_state = new_state,
-    };
-
-    if (g_esl_ap->app_cb != NULL) {
-        g_esl_ap->app_cb(BLE_ESL_AP_EVT_STATE_CHANGED, &evt);
+    if (snap != NULL) {
+        snap->pending = true;
+        snap->evt.conn_handle = esl->conn_handle;
+        snap->evt.esl_addr = ble_esl_ap_addr_unpack(esl_addr);
+        snap->evt.old_state = old_state;
+        snap->evt.new_state = new_state;
     }
 
     /* Handle Unassociated cleanup */
@@ -319,6 +583,17 @@ esp_err_t ble_esl_ap_update_esl_state(uint16_t esl_addr,
     return ESP_OK;
 }
 
+esp_err_t ble_esl_ap_update_esl_state(uint16_t esl_addr,
+                                      ble_esl_state_t new_state)
+{
+    ble_esl_ap_state_evt_snap_t snap = { 0 };
+    ble_esl_ap_tracking_lock();
+    esp_err_t ret = ble_esl_ap_update_esl_state_locked(esl_addr, new_state, &snap);
+    ble_esl_ap_tracking_unlock();
+    ble_esl_ap_dispatch_state_evt(&snap);
+    return ret;
+}
+
 /* ========================== Get ESL State ========================== */
 
 ble_esl_state_t ble_esl_ap_get_esl_state(ble_esl_address_t esl_addr)
@@ -327,12 +602,12 @@ ble_esl_state_t ble_esl_ap_get_esl_state(ble_esl_address_t esl_addr)
         return BLE_ESL_STATE_UNASSOCIATED;
     }
 
+    ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(BLE_ESL_AP_ADDR_PACK(esl_addr));
-    if (esl == NULL) {
-        return BLE_ESL_STATE_UNASSOCIATED;
-    }
-
-    return esl->state;
+    ble_esl_state_t state = (esl == NULL) ? BLE_ESL_STATE_UNASSOCIATED
+                                          : esl->state;
+    ble_esl_ap_tracking_unlock();
+    return state;
 }
 
 /* ========================== Configure ========================== */
@@ -373,14 +648,14 @@ esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
     /* Store ESL address in connection context for cross-reference */
     conn->esl_addr = ctx->esl_addr;
 
-    /* Find or create ESL tracking entry */
+    ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(ctx->esl_addr);
     if (esl == NULL) {
-        /* Try to find by BLE address (may already exist from a prior association) */
         esl = ble_esl_ap_find_esl_by_ble_addr(conn->addr, conn->addr_type);
         if (esl == NULL) {
             esl = ble_esl_ap_alloc_esl();
             if (esl == NULL) {
+                ble_esl_ap_tracking_unlock();
                 ESP_LOGE(TAG, "configure: ESL tracking table full");
                 free(ctx);
                 return ESP_ERR_NO_MEM;
@@ -388,7 +663,6 @@ esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
         }
     }
 
-    /* Initialize/update the tracking entry */
     esl->in_use = true;
     esl->esl_addr = ctx->esl_addr;
     memcpy(esl->ble_addr, conn->addr, 6);
@@ -399,6 +673,17 @@ esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
 
     /* Store key material in the ESL tracking entry */
     esl->resp_key = config->resp_key;
+    ble_esl_ap_tracking_unlock();
+
+    lf_lock();
+    esp_err_t occ = lf_occupy(conn, LF_OP_CONFIGURE);
+    ctx->lf_generation = conn->lf_generation;
+    lf_unlock();
+    if (occ != ESP_OK) {
+        ble_esl_ap_update_esl_state(ctx->esl_addr, BLE_ESL_STATE_UNASSOCIATED);
+        free(ctx);
+        return occ;
+    }
 
     /* Set PAwR sync key (shared across all ESLs) */
     ble_esl_ap_pawr_set_sync_key(&config->ap_sync_key);
@@ -423,6 +708,7 @@ esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "configure: failed to initiate ESL Address write: %s",
                  esp_err_to_name(ret));
+        configure_release_slot(conn_handle, ctx->lf_generation);
         ble_esl_ap_update_esl_state(ctx->esl_addr, BLE_ESL_STATE_UNASSOCIATED);
         free(ctx);
         return ret;
@@ -461,6 +747,7 @@ static void configure_write_addr_cb(uint16_t conn_handle, esp_err_t status,
 
 fail:
     {
+        configure_release_slot(conn_handle, ctx->lf_generation);
         ble_esl_ap_update_esl_state(ctx->esl_addr, BLE_ESL_STATE_UNASSOCIATED);
         ble_esl_ap_configured_t evt = {
             .conn_handle = conn_handle,
@@ -501,6 +788,7 @@ static void configure_write_sync_key_cb(uint16_t conn_handle, esp_err_t status,
 
 fail:
     {
+        configure_release_slot(conn_handle, ctx->lf_generation);
         ble_esl_ap_update_esl_state(ctx->esl_addr, BLE_ESL_STATE_UNASSOCIATED);
         ble_esl_ap_configured_t evt = {
             .conn_handle = conn_handle,
@@ -527,19 +815,7 @@ static void configure_write_resp_key_cb(uint16_t conn_handle, esp_err_t status,
 
     ESP_LOGD(TAG, "configure: Response Key written, writing Absolute Time");
 
-    /* Step 4: Write ESL Current Absolute Time (4 bytes from esp_timer_get_time) */
-    int64_t now_us = esp_timer_get_time();
-    /* Convert microseconds to milliseconds for ESL Absolute Time */
-    uint32_t abs_time_ms = (uint32_t)(now_us / 1000ULL);
-    uint8_t abs_time_data[4];
-    abs_time_data[0] = (uint8_t)(abs_time_ms & 0xFF);
-    abs_time_data[1] = (uint8_t)((abs_time_ms >> 8) & 0xFF);
-    abs_time_data[2] = (uint8_t)((abs_time_ms >> 16) & 0xFF);
-    abs_time_data[3] = (uint8_t)((abs_time_ms >> 24) & 0xFF);
-
-    esp_err_t ret = ble_esl_ap_gatt_write(conn_handle, BLE_ESL_CHR_UUID_CURRENT_ABS_TIME,
-                                           abs_time_data, sizeof(abs_time_data),
-                                           configure_write_abs_time_cb, ctx);
+    esp_err_t ret = write_abs_time_for_configure(conn_handle, ctx->lf_generation, ctx);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "configure: failed to initiate Absolute Time write: %s",
                  esp_err_to_name(ret));
@@ -549,6 +825,7 @@ static void configure_write_resp_key_cb(uint16_t conn_handle, esp_err_t status,
 
 fail:
     {
+        configure_release_slot(conn_handle, ctx->lf_generation);
         ble_esl_ap_update_esl_state(ctx->esl_addr, BLE_ESL_STATE_UNASSOCIATED);
         ble_esl_ap_configured_t evt = {
             .conn_handle = conn_handle,
@@ -576,11 +853,15 @@ static void configure_write_abs_time_cb(uint16_t conn_handle, esp_err_t status,
                  ctx->esl_addr);
 
         /* Mark configuration as complete in the tracking entry */
+        ble_esl_ap_tracking_lock();
         ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(ctx->esl_addr);
         if (esl != NULL) {
             esl->config_complete = true;
         }
+        ble_esl_ap_tracking_unlock();
     }
+
+    configure_release_slot(conn_handle, ctx->lf_generation);
 
     /* Fire BLE_ESL_AP_EVT_CONFIGURED */
     ble_esl_ap_configured_t evt = {
@@ -1129,6 +1410,11 @@ void ble_esl_ap_lifecycle_handle_ots_event(uint16_t conn_id,
 
 /* ========================== Synchronize ========================== */
 
+bool ble_esl_ap_synchronize_in_progress(void)
+{
+    return s_sync_ctx != NULL;
+}
+
 esp_err_t ble_esl_ap_synchronize(uint16_t conn_handle)
 {
     if (g_esl_ap == NULL) {
@@ -1142,12 +1428,15 @@ esp_err_t ble_esl_ap_synchronize(uint16_t conn_handle)
     }
 
     /* Need a valid ESL address to proceed */
+    ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(conn->esl_addr);
     if (esl == NULL) {
+        ble_esl_ap_tracking_unlock();
         ESP_LOGE(TAG, "synchronize: ESL address 0x%04X not tracked for conn 0x%04X",
                  conn->esl_addr, conn_handle);
         return ESP_ERR_INVALID_STATE;
     }
+    ble_esl_ap_tracking_unlock();
 
     /* Only one synchronize procedure at a time */
     if (s_sync_ctx != NULL) {
@@ -1296,14 +1585,17 @@ void ble_esl_ap_lifecycle_handle_disconnect(uint16_t conn_handle)
     bool is_sync_disconnect = (s_sync_ctx != NULL &&
                                s_sync_ctx->conn_handle == conn_handle);
 
+    ble_esl_ap_state_evt_snap_t snaps[CONFIG_BLE_ESL_AP_MAX_ESLS];
+    int snap_count = 0;
+
     if (g_esl_ap != NULL) {
+        ble_esl_ap_tracking_lock();
         for (int i = 0; i < CONFIG_BLE_ESL_AP_MAX_ESLS; i++) {
             ble_esl_ap_esl_entry_t *esl = &g_esl_ap->esls[i];
             if (!esl->in_use || esl->conn_handle != conn_handle) {
                 continue;
             }
 
-            /* Clear the connection handle */
             esl->conn_handle = BLE_ESL_AP_CONN_HANDLE_INVALID;
 
             if (!is_sync_disconnect) {
@@ -1311,22 +1603,44 @@ void ble_esl_ap_lifecycle_handle_disconnect(uint16_t conn_handle)
                     if (esl->config_complete) {
                         ESP_LOGI(TAG, "link-loss in Configuring (config complete) for ESL 0x%04X, "
                                  "transitioning to Unsynchronized", esl->esl_addr);
-                        ble_esl_ap_update_esl_state(esl->esl_addr,
-                                                    BLE_ESL_STATE_UNSYNCHRONIZED);
+                        if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+                            (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                                     BLE_ESL_STATE_UNSYNCHRONIZED,
+                                                                     &snaps[snap_count]);
+                            if (snaps[snap_count].pending) {
+                                snap_count++;
+                            }
+                        }
                     } else {
                         ESP_LOGI(TAG, "link-loss in Configuring (config incomplete) for ESL 0x%04X, "
                                  "transitioning to Unassociated", esl->esl_addr);
-                        ble_esl_ap_update_esl_state(esl->esl_addr,
-                                                    BLE_ESL_STATE_UNASSOCIATED);
+                        if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+                            (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                                     BLE_ESL_STATE_UNASSOCIATED,
+                                                                     &snaps[snap_count]);
+                            if (snaps[snap_count].pending) {
+                                snap_count++;
+                            }
+                        }
                     }
                 } else if (esl->state == BLE_ESL_STATE_UPDATING) {
                     ESP_LOGI(TAG, "link-loss in Updating for ESL 0x%04X, "
                              "transitioning to Unsynchronized", esl->esl_addr);
-                    ble_esl_ap_update_esl_state(esl->esl_addr,
-                                                BLE_ESL_STATE_UNSYNCHRONIZED);
+                    if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+                        (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                                 BLE_ESL_STATE_UNSYNCHRONIZED,
+                                                                 &snaps[snap_count]);
+                        if (snaps[snap_count].pending) {
+                            snap_count++;
+                        }
+                    }
                 }
             }
             break;
+        }
+        ble_esl_ap_tracking_unlock();
+        for (int i = 0; i < snap_count; i++) {
+            ble_esl_ap_dispatch_state_evt(&snaps[i]);
         }
     }
 
@@ -1386,4 +1700,68 @@ void ble_esl_ap_lifecycle_handle_disconnect(uint16_t conn_handle)
         free(s_image_ctx);
         s_image_ctx = NULL;
     }
+}
+
+/* ========================== Persisted ESL Restore ========================== */
+
+esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *info)
+{
+    if (g_esl_ap == NULL || !g_esl_ap->initialized || info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (info->esl_addr == 0) {
+        ESP_LOGI(TAG, "restore: esl_addr=0x0000 (esl_id=0 group_id=0)");
+    }
+
+    if (BLE_ESL_AP_ADDR_ESL_ID(info->esl_addr) == BLE_ESL_BROADCAST_ADDRESS) {
+        ESP_LOGE(TAG, "restore: broadcast esl_id not allowed");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ble_esl_ap_tracking_lock();
+    ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(info->esl_addr);
+    if (esl == NULL) {
+        esl = ble_esl_ap_find_esl_by_ble_addr(info->ble_addr, info->ble_addr_type);
+    }
+    if (esl == NULL) {
+        esl = ble_esl_ap_alloc_esl();
+    }
+    if (esl == NULL) {
+        ble_esl_ap_tracking_unlock();
+        ESP_LOGE(TAG, "restore: ESL tracking table full");
+        return ESP_ERR_NO_MEM;
+    }
+
+    esl->in_use = true;
+    esl->esl_addr = info->esl_addr;
+    memcpy(esl->ble_addr, info->ble_addr, 6);
+    esl->ble_addr_type = info->ble_addr_type;
+    esl->conn_handle = BLE_ESL_AP_CONN_HANDLE_INVALID;
+    esl->config_complete = true;
+    esl->pending_pawr_cmd_opcode = 0;
+    esl->resp_key = info->resp_key;
+    esl->last_sync_time_us = 0;
+    ble_esl_ap_tracking_unlock();
+
+    ble_esl_ap_pawr_set_sync_key(&info->ap_sync_key);
+
+    esp_err_t ret = ble_esl_ap_pawr_set_response_key(info->esl_addr,
+                                                     &info->resp_key);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "restore: set response key for 0x%04X failed: %s",
+                 info->esl_addr, esp_err_to_name(ret));
+    }
+
+    ret = ble_esl_ap_update_esl_state(info->esl_addr,
+                                      BLE_ESL_STATE_UNSYNCHRONIZED);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "restore: failed to mark ESL 0x%04X unsynchronized: %s",
+                 info->esl_addr, esp_err_to_name(ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "Restored ESL 0x%04X from persistence (awaiting resync)",
+             info->esl_addr);
+    return ESP_OK;
 }

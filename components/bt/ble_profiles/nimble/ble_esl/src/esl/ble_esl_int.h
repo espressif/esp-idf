@@ -26,7 +26,18 @@ extern "C" {
 
 /* ========================== Constants ========================== */
 
-/** @brief Sync/Unsync state timeout: 60 minutes in microseconds (for esp_timer) */
+/**
+ * @brief Sync / Unsynchronized state timeout (microseconds for esp_timer).
+ *
+ * Default: 60 minutes. This matches the Bluetooth SIG ESL Service Specification
+ * mandatory timeout used for:
+ *   - SYNCHRONIZED → UNSYNCHRONIZED (no valid PAwR payload / sync lost fallback)
+ *   - UNSYNCHRONIZED → UNASSOCIATED (clear config and bond)
+ *
+ * This is a protocol-compliance parameter, not a product tuning knob. Do not
+ * expose a production Kconfig override. Test-only profiles may shorten it, but
+ * those builds must not be used for certification or mass production.
+ */
 #define ESL_STATE_TIMEOUT_US            (60ULL * 60ULL * 1000000ULL)
 
 /** @brief ECP Procedure Timeout in microseconds */

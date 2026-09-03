@@ -60,10 +60,18 @@ typedef struct {
     bool                    ap_sync_key_valid;  /* AP sync key written */
     bool                    resp_key_valid;     /* Response key written */
     bool                    address_valid;      /* ESL address written */
-    uint16_t                pawr_sync_handle;   /* Active PAwR periodic sync handle; BLE_HS_CONN_HANDLE_NONE if none */
+    /* Current vs retiring PAwR sync tracking (AP reboot / PAST switch).
+     * Only current_sync_handle drives SYNCHRONIZED/UPDATING sync bookkeeping.
+     * retiring_* tracks a locally terminated old sync so its SYNC_LOST does not
+     * look like a natural loss of the new train. */
+    uint16_t                current_sync_handle;    /* Valid periodic sync; BLE_HS_CONN_HANDLE_NONE if none */
+    uint32_t                sync_generation;        /* Bumps each time current_sync_handle is assigned a new value */
+    uint16_t                retiring_sync_handle;   /* Locally terminated old sync awaiting SYNC_LOST */
+    uint32_t                retiring_sync_generation; /* Snapshot of sync_generation when current was retired */
+    bool                    retiring_local_terminate; /* retiring SYNC_LOST is expected; do not change ESL state */
     bool                    past_received;      /* PAST completed in Updating state */
     bool                    pawr_synced;        /* Synchronized to the AP's PAwR train (retained across Updating) */
-    bool                    past_pending;       /* PAST re-arm deferred until SYNC_LOST frees pool slot */
+    bool                    past_pending;       /* Re-arm PAST only after retiring SYNC_LOST frees pool slot */
     bool                    update_complete_received; /* Update Complete cmd received in Updating state */
     bool                    deinit_pending;     /* ble_esl_deinit() is waiting for disconnect */
     SemaphoreHandle_t       deinit_sem;         /* Signaled when disconnect completes during deinit */

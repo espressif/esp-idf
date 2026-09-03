@@ -93,6 +93,9 @@ typedef struct {
     ble_ots_obj_id_t ots_obj_ids[CONFIG_BLE_ESL_MAX_IMAGES]; /* reverse map */
     uint8_t ots_obj_count;
     bool ots_initialized;                /* OTS server init state */
+    bool image_complete[CONFIG_BLE_ESL_MAX_IMAGES];
+    uint32_t image_length[CONFIG_BLE_ESL_MAX_IMAGES];
+    SemaphoreHandle_t image_lock;
 #endif
 } esl_gatts_ctx_t;
 
@@ -502,7 +505,172 @@ static int esl_gatt_access_cb(uint16_t conn_handle, uint16_t attr_handle,
 
 #if CONFIG_BLE_ESL_OTS_SUPPORT
 
-/* OTS object-ID reverse map, count and init state live in esl_gatts_ctx_t. */
+static void esl_image_state_reset(void)
+{
+    if (s_esl_gatts == NULL) {
+        return;
+    }
+    memset(s_esl_gatts->image_complete, 0, sizeof(s_esl_gatts->image_complete));
+    memset(s_esl_gatts->image_length, 0, sizeof(s_esl_gatts->image_length));
+}
+
+static bool esl_map_ots_obj_to_image_index(ble_ots_obj_id_t obj_id, uint8_t *out_image_index)
+{
+    if (out_image_index == NULL || s_esl_gatts == NULL) {
+        return false;
+    }
+
+    for (uint8_t i = 0; i < s_esl_gatts->ots_obj_count; i++) {
+        if (s_esl_gatts->ots_obj_ids[i] == obj_id) {
+            *out_image_index = i;
+            return true;
+        }
+    }
+
+    /* Fallback for base+index layout used by AP transfer helpers */
+    if (obj_id >= BLE_ESL_OTS_OBJECT_ID_BASE) {
+        uint64_t diff = obj_id - BLE_ESL_OTS_OBJECT_ID_BASE;
+        if (s_esl_gatts->ctx != NULL && diff < s_esl_gatts->ctx->config.num_images) {
+            *out_image_index = (uint8_t)diff;
+            return true;
+        }
+    }
+
+    ESP_LOGW(TAG, "OTS write: unknown obj_id=0x%06llx", (unsigned long long)obj_id);
+    return false;
+}
+
+static void esl_mark_image_incomplete(uint8_t image_index)
+{
+    if (s_esl_gatts == NULL || s_esl_gatts->image_lock == NULL ||
+            image_index >= CONFIG_BLE_ESL_MAX_IMAGES) {
+        return;
+    }
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
+    s_esl_gatts->image_complete[image_index] = false;
+    xSemaphoreGive(s_esl_gatts->image_lock);
+}
+
+static void esl_mark_image_complete(uint8_t image_index, uint32_t length, bool success)
+{
+    if (s_esl_gatts == NULL || s_esl_gatts->image_lock == NULL ||
+            image_index >= CONFIG_BLE_ESL_MAX_IMAGES) {
+        return;
+    }
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
+    if (success && length > 0) {
+        s_esl_gatts->image_complete[image_index] = true;
+        s_esl_gatts->image_length[image_index] = length;
+    } else {
+        s_esl_gatts->image_complete[image_index] = false;
+        s_esl_gatts->image_length[image_index] = 0;
+    }
+    xSemaphoreGive(s_esl_gatts->image_lock);
+}
+
+bool ble_esl_image_is_complete(uint8_t image_index)
+{
+    if (s_esl_gatts == NULL || s_esl_gatts->image_lock == NULL ||
+            image_index >= CONFIG_BLE_ESL_MAX_IMAGES) {
+        return false;
+    }
+    if (s_esl_gatts->ctx == NULL || image_index >= s_esl_gatts->ctx->config.num_images) {
+        return false;
+    }
+
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
+    bool complete = s_esl_gatts->image_complete[image_index];
+    xSemaphoreGive(s_esl_gatts->image_lock);
+    return complete;
+}
+
+esp_err_t ble_esl_image_snapshot(uint8_t image_index, uint8_t *dst, size_t capacity,
+                                 size_t *out_len)
+{
+    if (dst == NULL || capacity == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_esl_gatts == NULL || s_esl_gatts->image_lock == NULL ||
+            !s_esl_gatts->ots_initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (image_index >= s_esl_gatts->ots_obj_count ||
+            image_index >= CONFIG_BLE_ESL_MAX_IMAGES) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
+    if (!s_esl_gatts->image_complete[image_index]) {
+        xSemaphoreGive(s_esl_gatts->image_lock);
+        return ESP_ERR_INVALID_STATE;
+    }
+    uint32_t length = s_esl_gatts->image_length[image_index];
+    if (length == 0 || length > capacity) {
+        xSemaphoreGive(s_esl_gatts->image_lock);
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    ble_ots_obj_id_t obj_id = s_esl_gatts->ots_obj_ids[image_index];
+    int rc = ble_ots_server_copy_object_data(obj_id, 0, length, dst);
+    bool still_complete = s_esl_gatts->image_complete[image_index];
+    xSemaphoreGive(s_esl_gatts->image_lock);
+
+    if (rc != 0 || !still_complete) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (out_len != NULL) {
+        *out_len = length;
+    }
+    return ESP_OK;
+}
+
+esp_err_t ble_esl_image_restore(uint8_t image_index, const uint8_t *data, size_t len)
+{
+    if (data == NULL || len == 0 || len > CONFIG_BLE_ESL_MAX_IMAGE_SIZE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_esl_gatts == NULL || s_esl_gatts->image_lock == NULL ||
+            !s_esl_gatts->ots_initialized || s_esl_gatts->ctx == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (image_index >= s_esl_gatts->ots_obj_count ||
+            image_index >= s_esl_gatts->ctx->config.num_images ||
+            image_index >= CONFIG_BLE_ESL_MAX_IMAGES) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
+    s_esl_gatts->image_complete[image_index] = false;
+    s_esl_gatts->image_length[image_index] = 0;
+
+    ble_ots_obj_id_t obj_id = s_esl_gatts->ots_obj_ids[image_index];
+    int rc = ble_ots_server_set_object_data(obj_id, data, 0, (uint32_t)len);
+    if (rc != 0) {
+        xSemaphoreGive(s_esl_gatts->image_lock);
+        ESP_LOGE(TAG, "image_restore: set_object_data failed rc=%d index=%u",
+                 rc, image_index);
+        return ESP_FAIL;
+    }
+
+    s_esl_gatts->image_complete[image_index] = true;
+    s_esl_gatts->image_length[image_index] = (uint32_t)len;
+    xSemaphoreGive(s_esl_gatts->image_lock);
+    return ESP_OK;
+}
+
+void ble_esl_image_invalidate_all(void)
+{
+    if (s_esl_gatts == NULL) {
+        return;
+    }
+    if (s_esl_gatts->image_lock == NULL) {
+        esl_image_state_reset();
+        return;
+    }
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
+    esl_image_state_reset();
+    xSemaphoreGive(s_esl_gatts->image_lock);
+}
 
 /**
  * @brief OTS event callback — handles write-complete events,
@@ -511,41 +679,49 @@ static int esl_gatt_access_cb(uint16_t conn_handle, uint16_t attr_handle,
 static void esl_ots_write_cb(ble_ots_server_event_t event,
                               ble_ots_server_cb_param_t *param)
 {
-    if (event != BLE_OTS_SERVER_EVT_WRITE_COMPLETE || param == NULL) {
+    if (param == NULL) {
         return;
     }
 
-    ble_ots_obj_id_t obj_id = param->write_complete.object_id;
-    uint32_t offset = param->write_complete.offset;
-    uint32_t length = param->write_complete.bytes_received;
-
-    if (s_esl_gatts == NULL || s_esl_gatts->ctx == NULL) {
-        return;
-    }
-    /* Map obj_id back to image_index through the reverse map built by
-     * esl_setup_ots(). The OTS server assigns IDs from its own monotonic
-     * counter, so they are not guaranteed to start at
-     * BLE_ESL_OTS_OBJECT_ID_BASE nor to be contiguous. */
-    uint8_t image_index = 0;
-    bool found = false;
-    for (uint8_t i = 0; i < s_esl_gatts->ots_obj_count; i++) {
-        if (s_esl_gatts->ots_obj_ids[i] == obj_id) {
-            image_index = i;
-            found = true;
-            break;
+    if (event == BLE_OTS_SERVER_EVT_DATA_WRITE) {
+        uint8_t image_index;
+        if (!esl_map_ots_obj_to_image_index(param->data_write.object_id, &image_index)) {
+            return;
         }
-    }
-    if (!found) {
-        ESP_LOGW(TAG, "OTS write: unknown obj_id=0x%06llx", (unsigned long long)obj_id);
+
+        esl_mark_image_incomplete(image_index);
+
+        ble_esl_cb_param_t cb_param = {
+            .image_write = {
+                .image_index = image_index,
+                .data = param->data_write.data,
+                .length = param->data_write.data_len,
+                .offset = param->data_write.offset,
+            }
+        };
+        esl_notify_app(BLE_ESL_EVT_IMAGE_WRITE, &cb_param);
         return;
     }
+
+    if (event != BLE_OTS_SERVER_EVT_WRITE_COMPLETE) {
+        return;
+    }
+
+    uint8_t image_index;
+    if (!esl_map_ots_obj_to_image_index(param->write_complete.object_id, &image_index)) {
+        return;
+    }
+
+    bool success = (param->write_complete.status == BLE_OTS_TRANSFER_SUCCESS) &&
+                   (param->write_complete.bytes_received > 0);
+    esl_mark_image_complete(image_index, param->write_complete.bytes_received, success);
 
     ble_esl_cb_param_t cb_param = {
         .image_write = {
             .image_index = image_index,
             .data = NULL,
-            .length = length,
-            .offset = offset,
+            .length = param->write_complete.bytes_received,
+            .offset = param->write_complete.offset,
         }
     };
     esl_notify_app(BLE_ESL_EVT_IMAGE_WRITE, &cb_param);
@@ -557,6 +733,13 @@ static esp_err_t esl_setup_ots(const ble_esl_config_t *config)
         return ESP_OK;
     }
 
+    if (s_esl_gatts->image_lock == NULL) {
+        s_esl_gatts->image_lock = xSemaphoreCreateMutex();
+        if (s_esl_gatts->image_lock == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    esl_image_state_reset();
     s_esl_gatts->ots_obj_count = 0;
 
     ble_ots_server_config_t ots_config = {
@@ -632,6 +815,12 @@ static void esl_teardown_ots(void)
     if (s_esl_gatts->ots_initialized) {
         ble_ots_server_deinit();
         s_esl_gatts->ots_initialized = false;
+    }
+    esl_image_state_reset();
+    s_esl_gatts->ots_obj_count = 0;
+    if (s_esl_gatts->image_lock != NULL) {
+        vSemaphoreDelete(s_esl_gatts->image_lock);
+        s_esl_gatts->image_lock = NULL;
     }
 }
 #endif /* CONFIG_BLE_ESL_OTS_SUPPORT */
