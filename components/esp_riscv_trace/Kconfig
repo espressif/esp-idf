@@ -215,9 +215,13 @@ menu "RISC-V Trace Encoder Configurations"
         choice ESP_RISCV_TRACE_AHB_BURST_SELECT
             prompt "AHB burst type"
             depends on SOC_RISCV_TRACE_AHB_CONFIGURABLE
+            default ESP_RISCV_TRACE_AHB_BURST_INCR4 if ESP_RISCV_TRACE_BUFFER_IN_EXTERNAL
             default ESP_RISCV_TRACE_AHB_BURST_SINGLE
             help
-                AHB burst type used by the trace write master.
+                AHB burst type used by the trace write master. Single-beat
+                writes are too slow for PSRAM and lose most of the trace, so
+                the default is INCR4 when the buffer is in PSRAM. Switch back
+                to single if your board reports PSRAM controller errors.
 
             config ESP_RISCV_TRACE_AHB_BURST_SINGLE
                 bool "Single transfer"

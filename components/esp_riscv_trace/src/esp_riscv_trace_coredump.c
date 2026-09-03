@@ -64,8 +64,11 @@ static bool core_buffer_stable(const esp_riscv_trace_snapshot_core_desc_t *cd)
     if (!cd->head_valid) {
         return false;
     }
+    /* Bytes up to head_offset are already committed to memory. A non-empty
+     * FIFO at freeze time only means the tail may be truncated. */
     if (!cd->fifo_empty) {
-        return false;
+        ESP_DRAM_LOGD(TAG, "core %d FIFO not empty at freeze (tail may be truncated, head=%u/%u)",
+                      (int)cd->core_id, (unsigned)cd->head_offset, (unsigned)cd->capacity);
     }
     return range_readable(cd->buffer_addr, cd->capacity);
 }

@@ -249,7 +249,6 @@ err_alloc:
     return ret;
 }
 
-/* Common start work. Lock must be held. */
 static esp_err_t trace_start_locked(esp_riscv_trace_handle_t handle)
 {
     esp_err_t ret = ESP_OK;
@@ -266,7 +265,6 @@ static esp_err_t trace_start_locked(esp_riscv_trace_handle_t handle)
     return ret;
 }
 
-/* Common stop work. Lock must be held. Writes the final snapshot fields on the way out. */
 static esp_err_t trace_stop_locked(esp_riscv_trace_handle_t handle, uint32_t timeout_us)
 {
     esp_err_t ret = ESP_OK;

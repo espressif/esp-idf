@@ -58,7 +58,6 @@ typedef struct {
     bool fifo_overflow;
 } esp_riscv_trace_snapshot_panic_core_t;
 
-/* IRAM. No lock. Skips cores that are not present. */
 void esp_riscv_trace_snapshot_panic_write(const esp_riscv_trace_snapshot_panic_core_t *cores, int count);
 
 /* Waits for the encoder FIFOs to empty and records the final per-core status. */
