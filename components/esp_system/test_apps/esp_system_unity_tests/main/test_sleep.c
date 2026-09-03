@@ -98,6 +98,7 @@ TEST_CASE("light sleep stress test", "[lightsleep]")
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
     vSemaphoreDelete(done);
+    vTaskDelay(10);
 }
 
 static void timer_func(void* arg)
@@ -126,6 +127,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[lightsleep]")
     vSemaphoreDelete(done);
     esp_timer_stop(timer);
     esp_timer_delete(timer);
+    vTaskDelay(10);
 }
 #endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 
