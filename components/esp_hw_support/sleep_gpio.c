@@ -283,7 +283,7 @@ IRAM_ATTR void esp_sleep_restore_isolated_digital_gpio(void)
 }
 #endif // SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
 
-IRAM_ATTR void esp_sleep_isolate_digital_gpio(bool do_backup)
+IRAM_ATTR void esp_sleep_isolate_digital_gpio(bool dslp)
 {
     gpio_hal_context_t gpio_hal = { .dev = GPIO_HAL_GET_HW(GPIO_PORT_0) };
 #if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
@@ -306,7 +306,7 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(bool do_backup)
     DRAM_ATTR static volatile uint64_t s_pad_mask = SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK;
     uint64_t pad_mask = s_pad_mask;
 #if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
-    if (do_backup) {
+    if (!dslp) {
         s_gpio_isolate_backup.backuped = 0;
         s_gpio_isolate_backup.pu = 0;
         s_gpio_isolate_backup.pd = 0;
@@ -320,8 +320,10 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(bool do_backup)
     while (pad_mask) {
         gpio_num_t gpio_num = (gpio_num_t)__builtin_ctzll(pad_mask);
         if (!(hold_mask & (1ULL << gpio_num)) &&
-            !esp_gpio_is_reserved(BIT64(gpio_num))) {
-            if (do_backup) {
+            // for light sleep, we will skip the reserved GPIOs
+            // for deep sleep, since it does not return and reset the entire digital domain, it should be fine to isolate all digital IOs to minimize the leakage
+            (dslp || !esp_gpio_is_reserved(BIT64(gpio_num)))) {
+            if (!dslp) {
                 gpio_io_config_t io_config;
                 gpio_ll_backup_pad_config_for_sleep_isolate(gpio_num, &io_config);
                 if (io_config.pu) {
@@ -343,8 +345,8 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(bool do_backup)
         }
         pad_mask &= pad_mask - 1;
     }
-#else
-    (void)do_backup;
+#else // !SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+    (void)dslp;
     while (pad_mask) {
         gpio_num_t gpio_num = (gpio_num_t)__builtin_ctzll(pad_mask);
         if (!gpio_hal_is_digital_io_hold(&gpio_hal, gpio_num) &&

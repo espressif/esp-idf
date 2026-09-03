@@ -873,7 +873,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #endif
     if (deep_sleep) {
 #if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
-        esp_sleep_isolate_digital_gpio(false);
+        esp_sleep_isolate_digital_gpio(true);
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_SLEEP_SET_FLASH_DPD
@@ -915,7 +915,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
     } else {
 #if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
         if (sleep_flags & RTC_SLEEP_PD_DIG) {
-            esp_sleep_isolate_digital_gpio(true);
+            esp_sleep_isolate_digital_gpio(false);
         }
 #endif
         /* Cache Suspend 1: will wait cache idle in cache suspend */
