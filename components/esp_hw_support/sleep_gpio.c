@@ -116,7 +116,7 @@ void esp_sleep_gpio_pupd_config_workaround_unapply(void)
         }
     }
 }
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32
 
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
 void esp_sleep_config_gpio_isolate(void)

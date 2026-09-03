@@ -762,6 +762,15 @@ static inline void gpio_ll_set_output_signal_matrix_source(gpio_dev_t *hw, uint3
     hw->func_out_sel_cfg[gpio_num].inv_sel = out_inv;
 }
 
+/**
+ * @brief Clear all GPIO dedicated control signals
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_clear_dedicated_ctrl(void)
+{
+    // no dedicated ctrl pad
+}
+
 #ifdef __cplusplus
 }
 #endif
