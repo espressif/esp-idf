@@ -139,7 +139,8 @@ static tOBEX_TL_L2CAP_CCB *find_ccb_by_psm(UINT16 psm)
 {
     tOBEX_TL_L2CAP_CCB *p_ccb = NULL;
     for(int i = 0; i < OBEX_TL_L2CAP_NUM_CONN; ++i) {
-        if (obex_tl_l2cap_cb.ccb[i].allocated && obex_tl_l2cap_cb.ccb[i].vpsm == psm) {
+        if (obex_tl_l2cap_cb.ccb[i].allocated
+            && obex_tl_l2cap_cb.ccb[i].vpsm == psm) {
             p_ccb = &obex_tl_l2cap_cb.ccb[i];
             break;
         }
@@ -201,6 +202,11 @@ static void l2cap_sec_check_complete_term(BD_ADDR bd_addr, tBT_TRANSPORT transpo
 {
     tOBEX_TL_L2CAP_CCB *p_ccb = (tOBEX_TL_L2CAP_CCB *)p_ref_data;
 
+    if (p_ccb->allocated == 0 || memcmp(p_ccb->addr, bd_addr, BD_ADDR_LEN) != 0) {
+        OBEX_TL_L2CAP_TRACE_WARNING("CCB invalid or reallocated to another device, ignore sec_check_complete\n");
+        return;
+    }
+
     if (res == BTM_SUCCESS) {
         L2CA_ErtmConnectRsp(p_ccb->addr, p_ccb->id, p_ccb->lcid, L2CAP_CONN_OK, 0, &obex_tl_l2cap_etm_opts);
         tL2CAP_CFG_INFO cfg = {0};
@@ -214,8 +220,8 @@ static void l2cap_sec_check_complete_term(BD_ADDR bd_addr, tBT_TRANSPORT transpo
         L2CA_ErtmConnectRsp(p_ccb->addr, p_ccb->id, p_ccb->lcid, L2CAP_CONN_SECURITY_BLOCK, 0, &obex_tl_l2cap_etm_opts);
         tOBEX_TL_MSG msg = {0};
         msg.any.hdl = p_ccb->allocated;
-        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
         free_ccb(p_ccb);
+        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
     }
 }
 
@@ -231,6 +237,11 @@ static void l2cap_sec_check_complete_orig(BD_ADDR bd_addr, tBT_TRANSPORT transpo
 {
     tOBEX_TL_L2CAP_CCB *p_ccb = (tOBEX_TL_L2CAP_CCB *)p_ref_data;
 
+    if (p_ccb->allocated == 0 || memcmp(p_ccb->addr, bd_addr, BD_ADDR_LEN) != 0) {
+        OBEX_TL_L2CAP_TRACE_WARNING("CCB invalid or reallocated to another device, ignore sec_check_complete\n");
+        return;
+    }
+
     if (res == BTM_SUCCESS) {
         tL2CAP_CFG_INFO cfg = {0};
         cfg.mtu_present = TRUE;
@@ -242,8 +253,8 @@ static void l2cap_sec_check_complete_orig(BD_ADDR bd_addr, tBT_TRANSPORT transpo
         L2CA_DisconnectReq(p_ccb->lcid);
         tOBEX_TL_MSG msg = {0};
         msg.any.hdl = p_ccb->allocated;
-        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
         free_ccb(p_ccb);
+        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
     }
 }
 
@@ -312,8 +323,8 @@ void obex_tl_l2cap_connect_cfm(UINT16 lcid, UINT16 result)
         OBEX_TL_L2CAP_TRACE_WARNING("l2cap_connect_cfm result != L2CAP_CONN_OK: result: 0x%x\n", result);
         tOBEX_TL_MSG msg = {0};
         msg.any.hdl = p_ccb->allocated;
-        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
         free_ccb(p_ccb);
+        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
     }
 }
 
@@ -412,6 +423,11 @@ void obex_tl_l2cap_config_cfm(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
     if (p_ccb->initiator == FALSE && p_scb == NULL) {
         /* not a initiator, but can not find corresponding server */
         OBEX_TL_L2CAP_TRACE_ERROR("l2cap_config_cfm, not a initiator, but can not find corresponding server\n");
+        L2CA_DisconnectReq(p_ccb->lcid);
+        tOBEX_TL_MSG msg = {0};
+        msg.any.hdl = p_ccb->allocated;
+        free_ccb(p_ccb);
+        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
         return;
     }
 
@@ -420,8 +436,12 @@ void obex_tl_l2cap_config_cfm(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
         L2CA_DisconnectReq(p_ccb->lcid);
         tOBEX_TL_MSG msg = {0};
         msg.any.hdl = p_ccb->allocated;
-        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
         free_ccb(p_ccb);
+        obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
+        return;
+    }
+
+    if (p_ccb->status_flag & OBEX_TL_L2CAP_STATUS_FLAG_CONNECTED) {
         return;
     }
 
@@ -490,8 +510,8 @@ void obex_tl_l2cap_disconnect_ind(UINT16 lcid, BOOLEAN is_conf_needed)
 
     tOBEX_TL_MSG msg = {0};
     msg.any.hdl = p_ccb->allocated;
-    obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
     free_ccb(p_ccb);
+    obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
 }
 
 
@@ -545,63 +565,6 @@ void obex_tl_l2cap_congestion_status_ind(UINT16 lcid, BOOLEAN is_congested)
     }
 }
 
-/*******************************************************************************
-**
-** Function         obex_tl_l2cap_init
-**
-** Description      Initialize OBEX over L2CAP transport layer, callback
-**                  can not be NULL, must be called once before using any
-**                  other APIs
-**
-*******************************************************************************/
-UINT16 obex_tl_l2cap_init(tOBEX_TL_CBACK *callback)
-{
-    assert(callback != NULL);
-#if (OBEX_DYNAMIC_MEMORY)
-    if (!obex_tl_l2cap_cb_ptr) {
-        obex_tl_l2cap_cb_ptr = (tOBEX_TL_L2CAP_CB *)osi_malloc(sizeof(tOBEX_TL_L2CAP_CB));
-        if (!obex_tl_l2cap_cb_ptr) {
-            OBEX_TL_L2CAP_TRACE_ERROR("OBEX over L2CAP transport layer initialize failed, no memory\n");
-            return OBEX_TL_FAILED;
-        }
-    }
-#endif /* #if (OBEX_DYNAMIC_MEMORY) */
-    memset(&obex_tl_l2cap_cb, 0, sizeof(tOBEX_TL_L2CAP_CB));
-    obex_tl_l2cap_cb.callback = callback;
-    obex_tl_l2cap_cb.trace_level = BT_TRACE_LEVEL_ERROR;
-
-    tL2CAP_APPL_INFO *p_reg_info = &obex_tl_l2cap_cb.l2cap_reg_info;
-
-    p_reg_info->pL2CA_ConnectInd_Cb         = NULL;         /* obex_tl_l2cap_connect_ind or NULL, depend on server or not */
-    p_reg_info->pL2CA_ConnectCfm_Cb         = obex_tl_l2cap_connect_cfm;
-    p_reg_info->pL2CA_ConnectPnd_Cb         = NULL;
-    p_reg_info->pL2CA_ConfigInd_Cb          = obex_tl_l2cap_config_ind;
-    p_reg_info->pL2CA_ConfigCfm_Cb          = obex_tl_l2cap_config_cfm;
-    p_reg_info->pL2CA_DisconnectInd_Cb      = obex_tl_l2cap_disconnect_ind;
-    p_reg_info->pL2CA_DisconnectCfm_Cb      = NULL;
-    p_reg_info->pL2CA_QoSViolationInd_Cb    = obex_tl_l2cap_qos_violation_ind;
-    p_reg_info->pL2CA_DataInd_Cb            = obex_tl_l2cap_buf_data_ind;
-    p_reg_info->pL2CA_CongestionStatus_Cb   = obex_tl_l2cap_congestion_status_ind;
-    p_reg_info->pL2CA_TxComplete_Cb         = NULL;
-    return OBEX_TL_SUCCESS;
-}
-
-/*******************************************************************************
-**
-** Function         obex_tl_l2cap_deinit
-**
-** Description      Deinitialize OBEX over L2CAP transport layer
-**
-*******************************************************************************/
-void obex_tl_l2cap_deinit(void)
-{
-#if (OBEX_DYNAMIC_MEMORY)
-    if (obex_tl_l2cap_cb_ptr) {
-        osi_free(obex_tl_l2cap_cb_ptr);
-        obex_tl_l2cap_cb_ptr = NULL;
-    }
-#endif /* #if (OBEX_DYNAMIC_MEMORY) */
-}
 
 /*******************************************************************************
 **
@@ -642,9 +605,14 @@ UINT16 obex_tl_l2cap_connect(tOBEX_TL_SVR_INFO *server)
     else {
         p_ccb->our_mtu = server->l2cap.pref_mtu;
     }
+    bdcpy(p_ccb->addr, server->l2cap.addr);
     p_ccb->initiator = TRUE;
     p_ccb->lcid = L2CA_ErtmConnectReq(p_ccb->vpsm, server->l2cap.addr, &obex_tl_l2cap_etm_opts);
     if (p_ccb->lcid == 0) {
+        /* outgoing-only PSM was registered above; unload it on connect failure */
+        if (find_scb_by_psm(p_ccb->vpsm) == NULL) {
+            L2CA_Deregister(p_ccb->vpsm);
+        }
         free_ccb(p_ccb);
         return 0;
     }
@@ -776,12 +744,82 @@ void obex_tl_l2cap_unbind(UINT16 tl_hdl)
             L2CA_DisconnectReq(p_ccb->lcid);
             tOBEX_TL_MSG msg = {0};
             msg.any.hdl = p_ccb->allocated;
-            obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
             free_ccb(p_ccb);
+            obex_tl_l2cap_cb.callback(OBEX_TL_DIS_CONN_EVT, &msg);
         }
         L2CA_Deregister(p_scb->psm);
         free_scb(p_scb);
     }
+}
+
+/*******************************************************************************
+**
+** Function         obex_tl_l2cap_init
+**
+** Description      Initialize OBEX over L2CAP transport layer, callback
+**                  can not be NULL, must be called once before using any
+**                  other APIs
+**
+*******************************************************************************/
+UINT16 obex_tl_l2cap_init(tOBEX_TL_CBACK *callback)
+{
+    assert(callback != NULL);
+#if (OBEX_DYNAMIC_MEMORY)
+    if (!obex_tl_l2cap_cb_ptr) {
+        obex_tl_l2cap_cb_ptr = (tOBEX_TL_L2CAP_CB *)osi_malloc(sizeof(tOBEX_TL_L2CAP_CB));
+        if (!obex_tl_l2cap_cb_ptr) {
+            OBEX_TL_L2CAP_TRACE_ERROR("OBEX over L2CAP transport layer initialize failed, no memory\n");
+            return OBEX_TL_FAILED;
+        }
+    }
+#endif /* #if (OBEX_DYNAMIC_MEMORY) */
+    memset(&obex_tl_l2cap_cb, 0, sizeof(tOBEX_TL_L2CAP_CB));
+    obex_tl_l2cap_cb.callback = callback;
+    obex_tl_l2cap_cb.trace_level = BT_TRACE_LEVEL_ERROR;
+
+    tL2CAP_APPL_INFO *p_reg_info = &obex_tl_l2cap_cb.l2cap_reg_info;
+
+    p_reg_info->pL2CA_ConnectInd_Cb         = NULL;         /* obex_tl_l2cap_connect_ind or NULL, depend on server or not */
+    p_reg_info->pL2CA_ConnectCfm_Cb         = obex_tl_l2cap_connect_cfm;
+    p_reg_info->pL2CA_ConnectPnd_Cb         = NULL;
+    p_reg_info->pL2CA_ConfigInd_Cb          = obex_tl_l2cap_config_ind;
+    p_reg_info->pL2CA_ConfigCfm_Cb          = obex_tl_l2cap_config_cfm;
+    p_reg_info->pL2CA_DisconnectInd_Cb      = obex_tl_l2cap_disconnect_ind;
+    p_reg_info->pL2CA_DisconnectCfm_Cb      = NULL;
+    p_reg_info->pL2CA_QoSViolationInd_Cb    = obex_tl_l2cap_qos_violation_ind;
+    p_reg_info->pL2CA_DataInd_Cb            = obex_tl_l2cap_buf_data_ind;
+    p_reg_info->pL2CA_CongestionStatus_Cb   = obex_tl_l2cap_congestion_status_ind;
+    p_reg_info->pL2CA_TxComplete_Cb         = NULL;
+    return OBEX_TL_SUCCESS;
+}
+
+/*******************************************************************************
+**
+** Function         obex_tl_l2cap_deinit
+**
+** Description      Deinitialize OBEX over L2CAP transport layer
+**
+*******************************************************************************/
+void obex_tl_l2cap_deinit(void)
+{
+#if (OBEX_DYNAMIC_MEMORY)
+    if (obex_tl_l2cap_cb_ptr){
+#endif
+        for (int i = 0; i < OBEX_TL_L2CAP_NUM_CONN; ++i) {
+            if (obex_tl_l2cap_cb.ccb[i].allocated) {
+                obex_tl_l2cap_disconnect(obex_tl_l2cap_cb.ccb[i].allocated);
+            }
+        }
+        for (int i = 0; i < OBEX_TL_L2CAP_NUM_SERVER; ++i) {
+            if (obex_tl_l2cap_cb.scb[i].allocated) {
+                obex_tl_l2cap_unbind(obex_tl_l2cap_cb.scb[i].allocated << 8);
+            }
+        }
+#if (OBEX_DYNAMIC_MEMORY)
+        osi_free(obex_tl_l2cap_cb_ptr);
+        obex_tl_l2cap_cb_ptr = NULL;
+    }
+#endif /* #if (OBEX_DYNAMIC_MEMORY) */
 }
 
 static tOBEX_TL_OPS obex_tl_l2cap_ops = {
