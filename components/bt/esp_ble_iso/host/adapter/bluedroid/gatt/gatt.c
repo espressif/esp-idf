@@ -1759,7 +1759,7 @@ static void handle_gattc_read_chrc_event(struct bt_le_gattc_read_chrc_event *eve
         goto end;
     }
 
-    val = event->value;
+    val = READ_VALUE(event);
     vlen = event->len;
 
     /* By-UUID read: report the matched handle in params->by_uuid.start_handle (like
