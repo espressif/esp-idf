@@ -33,7 +33,8 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
     time.sleep(1)  # Wait for the USJ port to be ready
     dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
     with openocd_dut.run() as oocd:
-        if dut.target == 'esp32p4':
+        # PARTITION_TABLE_OFFSET=0x10000 moves the factory app to 0x20000
+        if dut.target in ('esp32p4', 'esp32h4'):
             oocd.write('esp appimage_offset 0x20000')
         with (
             open(gdb_logfile, 'w') as gdb_log,
