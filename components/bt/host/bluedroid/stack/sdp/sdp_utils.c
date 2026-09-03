@@ -956,6 +956,11 @@ UINT16 sdpu_get_attrib_seq_len(tSDP_RECORD *p_rec, tSDP_ATTR_SEQ *attr_seq)
 
             /* If doing a range, stick with this one till no more attributes found */
             if (start_id != end_id) {
+                // Check overflow
+                if (p_attr->id == UINT16_MAX) {
+                    is_range = FALSE;
+                    continue;
+                }
                 /* Update for next time through */
                 start_id = p_attr->id + 1;
                 xx--;
