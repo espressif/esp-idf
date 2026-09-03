@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,11 +14,12 @@
 
 static void mcpwm_capture_default_isr(void *args);
 
-static esp_err_t mcpwm_cap_timer_register_to_group(mcpwm_cap_timer_t *cap_timer, int group_id)
+static esp_err_t mcpwm_cap_timer_register_to_group(mcpwm_cap_timer_t *cap_timer, int group_id, soc_module_clk_t clk_src)
 {
-    mcpwm_group_t *group = mcpwm_acquire_group_handle(group_id);
-    ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", group_id);
+    mcpwm_group_t *group = NULL;
+    esp_err_t ret = ESP_OK;
 
+    ESP_GOTO_ON_ERROR(mcpwm_acquire_group_handle(group_id, clk_src, &group), err, TAG, "acquire group failed");
     bool new_timer = false;
     portENTER_CRITICAL(&group->spinlock);
     if (!group->cap_timer) {
@@ -27,14 +28,16 @@ static esp_err_t mcpwm_cap_timer_register_to_group(mcpwm_cap_timer_t *cap_timer,
     }
     portEXIT_CRITICAL(&group->spinlock);
 
-    if (!new_timer) {
-        mcpwm_release_group_handle(group);
-        group = NULL;
-    } else {
-        cap_timer->group = group;
-    }
-    ESP_RETURN_ON_FALSE(new_timer, ESP_ERR_NOT_FOUND, TAG, "no free cap timer in group (%d)", group_id);
+    ESP_GOTO_ON_FALSE(new_timer, ESP_ERR_NOT_FOUND, err, TAG, "no free cap timer in group (%d)", group_id);
+
+    cap_timer->group = group;
     return ESP_OK;
+
+err:
+    if (group) {
+        mcpwm_release_group_handle(group);
+    }
+    return ret;
 }
 
 static void mcpwm_cap_timer_unregister_from_group(mcpwm_cap_timer_t *cap_timer)
@@ -75,17 +78,21 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
 #endif // SOC_MCPWM_SUPPORT_SLEEP_RETENTION
 
+    mcpwm_capture_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_CAPTURE_CLK_SRC_DEFAULT;
+    soc_module_clk_t group_clk_src = 0;
+#if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+    group_clk_src = clk_src;
+#endif
+
     cap_timer = heap_caps_calloc(1, sizeof(mcpwm_cap_timer_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(cap_timer, ESP_ERR_NO_MEM, err, TAG, "no mem for capture timer");
 
-    ESP_GOTO_ON_ERROR(mcpwm_cap_timer_register_to_group(cap_timer, config->group_id), err, TAG, "register timer failed");
+    ESP_GOTO_ON_ERROR(mcpwm_cap_timer_register_to_group(cap_timer, config->group_id, group_clk_src), err, TAG, "register timer failed");
     mcpwm_group_t *group = cap_timer->group;
     int group_id = group->group_id;
 
-    mcpwm_capture_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_CAPTURE_CLK_SRC_DEFAULT;
 #if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
-    // capture timer clock source is same as the MCPWM group
-    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), err, TAG, "set group clock failed");
+    // capture timer clock source is same as the MCPWM group, already committed in mcpwm_acquire_group_handle()
 #if CONFIG_PM_ENABLE
     cap_timer->pm_lock = group->pm_lock;
 #endif

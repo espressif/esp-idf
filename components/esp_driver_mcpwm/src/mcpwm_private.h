@@ -271,7 +271,7 @@ struct mcpwm_cap_channel_t {
     void *user_data;                  // user data which would be passed to the capture callback
 };
 
-mcpwm_group_t *mcpwm_acquire_group_handle(int group_id);
+esp_err_t mcpwm_acquire_group_handle(int group_id, soc_module_clk_t clk_src, mcpwm_group_t **ret_group);
 void mcpwm_release_group_handle(mcpwm_group_t *group);
 esp_err_t mcpwm_check_intr_priority(mcpwm_group_t *group, int intr_priority);
 int mcpwm_get_intr_priority_flag(mcpwm_group_t *group);
