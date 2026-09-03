@@ -241,6 +241,13 @@ ROM ELF 文件会根据 ``IDF_PATH`` 和 ``ESP_ROM_ELF_DIR`` 环境变量的路�
 
     将环境变量 ``ESP_MONITOR_DECODE`` 设置为 ``0`` 或者调用 esp_idf_monitor 的特定命令行选项 ``python -m esp_idf_monitor --disable-address-decoding`` 来禁止地址解码。
 
+.. _idf-monitor-target-detection:
+
+自动检测目标芯片
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+默认情况下，在项目中运行 ``idf.py monitor`` 会连接项目已配置的目标芯片。对于尚未构建、也未配置目标芯片的项目，该命令可连接任意目标芯片：执行命令后，程序会自动检测默认串口上的芯片，并将其传给监视器。因此，可以在新项目中直接运行 ``idf.py monitor``，无需先调用 ``idf.py set-target``。
+
 连接时复位目标芯片
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
