@@ -81,7 +81,6 @@ typedef struct {
     bool is_persistent;                 /**< Cached persistence flag for use in complete */
 } esp_ecdsa_opaque_sign_hash_operation_t;
 
-#if defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED)
 /* The buffers are stored in the little-endian format */
 typedef struct {
     psa_algorithm_t alg;
@@ -92,7 +91,6 @@ typedef struct {
     uint8_t sha[MAX_ECDSA_SHA_LEN];
     size_t key_len;
 } esp_ecdsa_transparent_sign_hash_operation_t;
-#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
 #endif /* !(__DOXYGEN__) */
 #endif /* ESP_ECDSA_DRIVER_ENABLED */
 #ifdef __cplusplus

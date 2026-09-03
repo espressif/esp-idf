@@ -35,6 +35,24 @@ psa_status_t esp_ecdsa_validate_sha_alg(psa_algorithm_t alg, const esp_ecdsa_cur
 ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve);
 
 /**
+ * @brief Digest length that the peripheral expects for a curve.
+ *
+ * esp_ecdsa_validate_sha_alg pins the hash algorithm to the curve, so the
+ * expected digest length follows from the curve alone.
+ */
+static inline size_t esp_ecdsa_expected_hash_len(esp_ecdsa_curve_t curve)
+{
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    if (curve == ESP_ECDSA_CURVE_SECP384R1) {
+        return ECDSA_SHA_LEN_P384;
+    }
+#else
+    (void)curve;
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+    return ECDSA_SHA_LEN;
+}
+
+/**
  * @brief Acquire the ECDSA hardware (locks and peripheral clocks)
  */
 void esp_ecdsa_acquire_hardware(void);
