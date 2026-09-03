@@ -23,6 +23,8 @@ Thread
 
 - :example:`openthread/ot_sleepy_device/light_sleep` 演示了 Thread 浅睡眠功能。
 
+- :example:`openthread/ot_zb_multipan` 演示了如何在同一块主机上同时运行 OpenThread 和 Zigbee，并通过 multipan 共用一颗 802.15.4 RCP。
+
 API参考
 -------------
 

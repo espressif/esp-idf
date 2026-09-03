@@ -12,8 +12,10 @@
 #include "esp_radio_spinel.h"
 #include "esp_radio_spinel_platform.h"
 #include "esp_radio_spinel_adapter.hpp"
+#include "esp_radio_spinel_host.h"
 #include "esp_spinel_ncp_vendor_macro.h"
 #include "esp_radio_spinel_uart_interface.hpp"
+#include "esp_radio_spinel_uart_transport.hpp"
 #include "spinel_driver.hpp"
 #include "openthread/link.h"
 
@@ -21,9 +23,11 @@
 #define SPINEL_VENDOR_PROPERTY_BIT_COORDINATOR BIT(1)
 // Must match ot::Spinel::SpinelDriver::kVersionStringSize (private, spinel_driver.hpp).
 #define ESP_RADIO_SPINEL_RCP_VERSION_MAX_SIZE 128
-static esp_ieee802154_pending_mode_t s_spinel_vendor_property_pendingmode[ot::Spinel::kSpinelHeaderMaxNumIid] = {ESP_IEEE802154_AUTO_PENDING_DISABLE};
-static bool s_spinel_vendor_property_coordinator[ot::Spinel::kSpinelHeaderMaxNumIid] = {false};
-static uint64_t s_spinel_vendor_property_mask[ot::Spinel::kSpinelHeaderMaxNumIid] = {0};
+/* This file currently only supports Zigbee; OpenThread uses its own radio spinel path. */
+#define ESP_RADIO_SPINEL_INTERFACE_COUNT 1
+static esp_ieee802154_pending_mode_t s_spinel_vendor_property_pendingmode[ESP_RADIO_SPINEL_INTERFACE_COUNT] = {ESP_IEEE802154_AUTO_PENDING_DISABLE};
+static bool s_spinel_vendor_property_coordinator[ESP_RADIO_SPINEL_INTERFACE_COUNT] = {false};
+static uint64_t s_spinel_vendor_property_mask[ESP_RADIO_SPINEL_INTERFACE_COUNT] = {0};
 
 using ot::Spinel::RadioSpinel;
 using ot::Spinel::RadioSpinelCallbacks;
@@ -32,9 +36,9 @@ using esp::radio_spinel::UartSpinelInterface;
 using ot::Spinel::SpinelDriver;
 
 static SpinelInterfaceAdapter<UartSpinelInterface> s_spinel_interface;
-static RadioSpinel s_radio[ot::Spinel::kSpinelHeaderMaxNumIid];
-static esp_radio_spinel_callbacks_t s_esp_radio_spinel_callbacks[ot::Spinel::kSpinelHeaderMaxNumIid];
-static SpinelDriver s_spinel_driver[ot::Spinel::kSpinelHeaderMaxNumIid];
+static RadioSpinel s_radio[ESP_RADIO_SPINEL_INTERFACE_COUNT];
+static esp_radio_spinel_callbacks_t s_esp_radio_spinel_callbacks[ESP_RADIO_SPINEL_INTERFACE_COUNT];
+static SpinelDriver s_spinel_driver[ESP_RADIO_SPINEL_INTERFACE_COUNT];
 otRadioFrame s_transmit_frame;
 
 static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
@@ -216,24 +220,32 @@ esp_err_t esp_radio_spinel_uart_interface_enable(const esp_radio_spinel_uart_con
                                                  esp_radio_spinel_uart_deinit_handler aUartDeinitHandler,
                                                  esp_radio_spinel_idx_t idx)
 {
-    s_spinel_interface.GetSpinelInterface().RegisterUartInitHandler(aUartInitHandler);
-    s_spinel_interface.GetSpinelInterface().RegisterUartDeinitHandler(aUartDeinitHandler);
     ESP_RETURN_ON_FALSE(radio_uart_config != nullptr, ESP_ERR_INVALID_ARG, ESP_SPINEL_LOG_TAG, "radio_uart_config can not be NULL");
-    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(*radio_uart_config), ESP_SPINEL_LOG_TAG,
-                        "Spinel UART interface failed to enable");
+    esp_radio_spinel_uart_transport_hooks_t hooks = {
+        .uart_init = aUartInitHandler,
+        .uart_deinit = aUartDeinitHandler,
+    };
+    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(*radio_uart_config, &hooks),
+                        ESP_SPINEL_LOG_TAG, "Spinel UART interface failed to enable");
     ESP_LOGI(ESP_SPINEL_LOG_TAG, "Spinel UART interface has been successfully enabled");
     return ESP_OK;
 }
 
 void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
 {
-    spinel_iid_t iidList[ot::Spinel::kSpinelHeaderMaxNumIid];
     otInstance *instance = get_instance_from_index(idx);
 
-    // Multipan is not currently supported
-    iidList[0] = 0;
+#if CONFIG_OPENTHREAD_MULTIPAN_HOST_ENABLE
+    spinel_iid_t iidList[ESP_RADIO_SPINEL_IID_LIST_LEN] = {
+        static_cast<spinel_iid_t>(s_spinel_interface.GetSpinelInterface().GetIid()),
+        static_cast<spinel_iid_t>(SPINEL_HEADER_GET_IID(OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID)),
+    };
+#else
+    spinel_iid_t iidList[ESP_RADIO_SPINEL_IID_LIST_LEN] = {0};
+#endif
+
     s_spinel_driver[idx].SetCoprocessorResetFailureCallback(radio_spinel_coprocessor_reset_failure_callback, instance);
-    s_spinel_driver[idx].Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_spinel_driver[idx].Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ESP_RADIO_SPINEL_IID_LIST_LEN);
     s_radio[idx].SetCompatibilityErrorCallback(radio_spinel_compatibility_error_callback, instance);
     s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps, false);
     s_radio[idx].SetVendorRestorePropertiesCallback(esp_radio_spinel_restore_vendor_properities, instance);
@@ -283,6 +295,7 @@ esp_err_t esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, e
     s_transmit_frame.mPsdu = frame + 1;
     s_transmit_frame.mInfo.mTxInfo.mCsmaCaEnabled = cca;
     s_transmit_frame.mInfo.mTxInfo.mMaxCsmaBackoffs = CONFIG_OPENTHREAD_SPINEL_MAC_MAX_CSMA_BACKOFFS_DIRECT;
+    s_transmit_frame.mInfo.mTxInfo.mMaxFrameRetries = 15;
     s_transmit_frame.mChannel = channel;
     s_transmit_frame.mInfo.mTxInfo.mRxChannelAfterTxDone = channel;
     return (s_radio[idx].Transmit(s_transmit_frame) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
@@ -406,7 +419,8 @@ esp_err_t esp_radio_spinel_set_rcp_ready(esp_radio_spinel_idx_t idx)
     return ESP_OK;
 }
 
-// TZ-1261
+// TZ-1261: SPINEL_ONLY has no OpenThread MAC; FTD/MTD already provide this API.
+#if !CONFIG_OPENTHREAD_MULTIPAN_HOST_ENABLE
 uint32_t otLinkGetFrameCounter(otInstance *aInstance)
 {
     esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
@@ -418,6 +432,7 @@ __attribute__((weak)) uint32_t esp_radio_spinel_extern_get_frame_counter(esp_rad
     ESP_LOGW(ESP_SPINEL_LOG_TAG, "None function to get frame counter");
     return 0;
 }
+#endif
 
 namespace ot {
 namespace Spinel {
