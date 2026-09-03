@@ -981,6 +981,139 @@ cleanup:
     return ret;
 }
 
+
+#ifdef CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
+/*
+ * True if `path` names something inside the directory `dir`, that is, `dir` is
+ * a prefix of `path` ending at a component boundary. FAT names are matched
+ * case-insensitively, and ASCII case is folded here; a prefix that differs
+ * only in the case of a non-ASCII character is not recognised, which merely
+ * leaves such a rename to fail the way it does without this check.
+ */
+static bool fat_path_is_within(const char *dir, const char *path)
+{
+    size_t i;
+
+    for (i = 0; dir[i] != '\0'; i++) {
+        char a = dir[i];
+        char b = path[i];
+
+        if (b == '\0') {
+            return false;
+        }
+        if (a >= 'a' && a <= 'z') {
+            a -= 'a' - 'A';
+        }
+        if (b >= 'a' && b <= 'z') {
+            b -= 'a' - 'A';
+        }
+        if (a != b) {
+            return false;
+        }
+    }
+
+    /* `dir` is exhausted: what follows in `path` decides. A trailing separator
+     * on `dir` has already consumed the boundary. */
+    if (i > 0 && dir[i - 1] == '/') {
+        return path[i] != '\0';
+    }
+    return path[i] == '/' && path[i + 1] != '\0';
+}
+
+/*
+ * Handle f_rename() refusing an existing destination, applying the POSIX rules
+ * for what may replace what. Called with the context lock held and with paths
+ * that already carry the drive prefix. Returns 0 once the rename has been
+ * carried out, or the errno to report.
+ *
+ * f_rename() reports FR_EXIST only when the destination resolves to a
+ * different directory entry than the source, so renaming an entry to itself,
+ * including through another spelling of the same name, never gets here and
+ * succeeds on its own.
+ */
+static int vfs_fat_replace_destination(const char *src, const char *dst)
+{
+    FILINFO src_info;
+    FRESULT fr = f_stat(src, &src_info);
+    if (fr != FR_OK) {
+        return fresult_to_errno(fr);
+    }
+    FILINFO dst_info;
+    fr = f_stat(dst, &dst_info);
+    if (fr != FR_OK) {
+        return fresult_to_errno(fr);
+    }
+
+    bool src_is_dir = (src_info.fattrib & AM_DIR) != 0;
+    bool dst_is_dir = (dst_info.fattrib & AM_DIR) != 0;
+
+    /* POSIX only allows an entry to be replaced by one of the same kind. This
+     * has to be checked before removing anything: f_unlink() would happily
+     * delete an empty directory to make way for a file. */
+    if (src_is_dir && !dst_is_dir) {
+        return ENOTDIR;
+    }
+    if (!src_is_dir && dst_is_dir) {
+        return EISDIR;
+    }
+    if (dst_info.fattrib & AM_RDO) {
+        return EACCES;
+    }
+
+    fr = f_unlink(dst);
+    if (fr == FR_DENIED && dst_is_dir) {
+        /* A writable directory is only denied removal while it still has
+         * entries. */
+        return ENOTEMPTY;
+    }
+    if (fr != FR_OK) {
+        return fresult_to_errno(fr);
+    }
+
+    fr = f_rename(src, dst);
+    return (fr == FR_OK) ? 0 : fresult_to_errno(fr);
+}
+
+static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
+{
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    prepend_drive_to_path(fat_ctx, &src, &dst);
+
+    int posix_errno = 0;
+
+    if (fat_path_is_within(src, dst)) {
+        /* Moving a directory inside itself would detach its contents and link
+         * the directory into its own tree; f_rename() does not check for this
+         * and would corrupt the volume. POSIX asks for EINVAL, unless the
+         * source is not a directory at all, in which case the destination
+         * merely uses a file as a directory component. */
+        FILINFO src_info;
+        FRESULT stat_res = f_stat(src, &src_info);
+        posix_errno = (stat_res != FR_OK)           ? fresult_to_errno(stat_res)
+                      : (src_info.fattrib & AM_DIR) ? EINVAL
+                      :                               ENOTDIR;
+    } else {
+        FRESULT res = f_rename(src, dst);
+        if (res == FR_EXIST) {
+            posix_errno = vfs_fat_replace_destination(src, dst);
+        } else if (res != FR_OK) {
+            posix_errno = fresult_to_errno(res);
+        }
+    }
+
+    _lock_release(&fat_ctx->lock);
+
+    if (posix_errno != 0) {
+        ESP_LOGD(TAG, "%s: errno=%d", __func__, posix_errno);
+        errno = posix_errno;
+        return -1;
+    }
+    return 0;
+}
+
+#else // CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
+
 static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
@@ -997,6 +1130,8 @@ static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
     }
     return 0;
 }
+
+#endif // CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
 
 static DIR* vfs_fat_opendir(void* ctx, const char* name)
 {

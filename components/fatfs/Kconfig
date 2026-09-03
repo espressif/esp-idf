@@ -321,6 +321,38 @@ menu "FAT Filesystem support"
             This ensures that the link operation is atomic, but may cause performance for large files.
             It may create less fragmented file copy.
 
+    config FATFS_VFS_RENAME_REPLACES_DESTINATION
+        bool "Make rename() replace an existing destination (POSIX behavior)"
+        default n
+        help
+            POSIX rename() silently replaces the destination if it already exists,
+            while FatFs' f_rename() refuses with FR_EXIST, so by default rename() on a
+            FAT mount fails with EEXIST where it would succeed on other file systems.
+
+            Enable this option to emulate the POSIX behavior: when the destination
+            exists, it is removed and the rename is retried, with the whole sequence
+            performed under the same lock as the rename itself. The POSIX rules on what
+            may replace what are applied first, so that a directory is never silently
+            removed to make way for a file:
+
+            - a directory can only replace an empty directory (ENOTEMPTY otherwise),
+            - renaming a directory onto a file fails with ENOTDIR,
+            - renaming a file onto a directory fails with EISDIR.
+
+            Without this option all of these fail with EEXIST instead.
+
+            Moving a directory into its own subtree is also rejected with EINVAL, as
+            POSIX requires. f_rename() does not check for this and would link the
+            directory into its own tree, losing its contents; without this option that
+            call still succeeds and corrupts the volume.
+
+            Note that the emulation is not atomic, and that it cannot honour the POSIX
+            guarantee that a failed rename leaves an instance of the destination in
+            place. FAT offers no way to replace a directory entry in a single step, so
+            an interruption (such as a power loss) between removing the destination and
+            completing the rename can leave neither name present. Code that must not
+            lose the destination should copy to a temporary name and rename over it.
+
     config FATFS_USE_DYN_BUFFERS
         bool "Use dynamic buffers"
         default y
