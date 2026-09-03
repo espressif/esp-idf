@@ -81,11 +81,11 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
     uint32_t sec_ver_hw = esp_efuse_read_secure_version();
     // If secure_version is the same as in eFuse field than it is ok just go out.
     if (sec_ver_hw < secure_version) {
-        uint32_t num_bit_hw = (1ULL << sec_ver_hw) - 1;
-        uint32_t num_bit_app = (1ULL << secure_version) - 1;
-        // Repeated programming of programmed bits is strictly forbidden
-        uint32_t new_bits = num_bit_app - num_bit_hw; // get only new bits
-        esp_efuse_write_field_blob(ESP_EFUSE_SECURE_VERSION, &new_bits, size);
+        esp_err_t err = esp_efuse_write_field_cnt(ESP_EFUSE_SECURE_VERSION, secure_version - sec_ver_hw);
+        if (err != ESP_OK || esp_efuse_read_secure_version() < secure_version) {
+            ESP_LOGE(TAG, "Failed to update secure version in eFuse");
+            return ESP_FAIL;
+        }
         ESP_LOGI(TAG, "Anti-rollback is set. eFuse field is updated(%"PRIu32").", secure_version);
     } else if (sec_ver_hw > secure_version) {
         ESP_LOGE(TAG, "Anti-rollback is not set. secure_version of app is lower that eFuse field(%"PRIu32").", sec_ver_hw);
