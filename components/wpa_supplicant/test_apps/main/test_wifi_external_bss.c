@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,7 +105,8 @@ static void stop_wifi(void)
     }
     vTaskDelay(500 / portTICK_PERIOD_MS);
     TEST_ESP_OK(esp_wifi_deinit());
-    vTaskDelay(1);
+    /* Let the idle task reclaim the deleted Wi-Fi task's stack and TCB before the leak check. */
+    vTaskDelay(300 / portTICK_PERIOD_MS);
 }
 
 static void start_wifi_as_sta(void)
