@@ -586,6 +586,10 @@
 #else
 #undef PSA_WANT_ECC_MONTGOMERY_255
 #endif
+/* ESP-IDF exposes no Curve448 option, but the TF-PSA-Crypto default config
+ * wants it. Undefine it so that the Curve448 data and code stay out of the
+ * build. */
+#undef PSA_WANT_ECC_MONTGOMERY_448
 
 /**
  * \def MBEDTLS_ECP_NIST_OPTIM
