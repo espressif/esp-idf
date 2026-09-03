@@ -734,6 +734,15 @@ static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num
     PIN_SLP_OUTPUT_ENABLE(GPIO_PIN_MUX_REG[gpio_num]);
 }
 
+/**
+ * @brief Clear all GPIO dedicated control signals
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_clear_dedicated_ctrl(void)
+{
+    // no dedicated ctrl pad
+}
+
 #ifdef __cplusplus
 }
 #endif

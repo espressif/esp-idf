@@ -7,6 +7,8 @@
 #pragma once
 #include <stdint.h>
 #include "sdkconfig.h"
+#include "esp_attr.h"
+#include "hal/gpio_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +41,15 @@ void esp_sleep_gpio_pupd_config_workaround_apply(void);
 void esp_sleep_gpio_pupd_config_workaround_unapply(void);
 
 #endif // CONFIG_IDF_TARGET_ESP32
+
+/**
+ * @brief Clear all GPIO dedicated control signals
+ */
+FORCE_INLINE_ATTR void esp_sleep_gpio_clear_dedicated_ctrl(void)
+{
+    gpio_ll_clear_dedicated_ctrl();
+}
+
 #ifdef __cplusplus
 }
 #endif
