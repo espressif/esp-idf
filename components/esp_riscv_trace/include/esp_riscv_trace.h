@@ -42,9 +42,8 @@ typedef enum {
 /**
  * @brief AHB burst type used by the trace write master.
  *
- * These are the trace IP's custom hburst field codes, NOT the standard AMBA
- * HBURST encoding: 0=SINGLE, 1=INCR, 2=INCR4, 4=INCR8; values 3, 5, 6, 7 are
- * invalid. Do not "correct" 2/4 to the AMBA INCR4/INCR8 codes (3/5).
+ * Custom hburst field codes (0=SINGLE, 1=INCR, 2=INCR4, 4=INCR8).
+ * Values 3, 5, 6, 7 are invalid.
  */
 typedef enum {
     ESP_RISCV_TRACE_AHB_SINGLE = 0, /*!< Single transfer (hardware reset default) */
@@ -90,7 +89,7 @@ typedef enum {
  */
 typedef enum {
     ESP_RISCV_TRACE_FILTER_PRIV_USER       = 0, /*!< User mode */
-    ESP_RISCV_TRACE_FILTER_PRIV_SUPERVISOR = 1, /*!< Supervisor mode; needs SOC_RISCV_TRACE_PRIV_WIDTH >= 2 */
+    ESP_RISCV_TRACE_FILTER_PRIV_SUPERVISOR = 1, /*!< Supervisor mode. Requires SOC_RISCV_TRACE_PRIV_WIDTH >= 2 */
     ESP_RISCV_TRACE_FILTER_PRIV_MACHINE    = 3, /*!< Machine mode */
 } esp_riscv_trace_filter_priv_t;
 
@@ -99,7 +98,7 @@ typedef struct {
     esp_riscv_trace_filter_input_t input;              /*!< Input to compare (iaddr or tval) */
     esp_riscv_trace_filter_comparator_func_t function; /*!< Compare function */
     uint32_t match_value;                     /*!< 32-bit value compared against the input */
-    bool notify;                              /*!< Emit a packet reporting the matching address */
+    bool notify;                              /*!< Send a packet reporting the matching address */
 } esp_riscv_trace_filter_comparator_t;
 
 /**
@@ -109,7 +108,7 @@ typedef struct {
  * traces everything (the default). Apply via esp_riscv_trace_set_filter() before a capture.
  */
 typedef struct {
-    bool enable;                                   /*!< Master enable; false = trace everything */
+    bool enable;                                   /*!< Master enable. False = trace everything */
     bool match_comparators;                        /*!< Gate matching on the comparators below */
     esp_riscv_trace_filter_comparator_t primary;   /*!< Primary (P) comparator */
     esp_riscv_trace_filter_comparator_t secondary; /*!< Secondary (S) comparator */

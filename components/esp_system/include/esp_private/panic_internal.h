@@ -103,6 +103,11 @@ bool panic_memprot_fill_info(panic_info_t *info);
  */
 void panic_disable_all_wdts(void);
 
+/**
+ * @brief Stop instruction trace encoders on panic
+ */
+void esp_panic_handler_inst_trace_stop(void) __attribute__((weak));
+
 #ifdef __cplusplus
 }
 #endif

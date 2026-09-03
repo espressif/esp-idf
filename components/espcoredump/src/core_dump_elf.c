@@ -19,6 +19,7 @@
 #include "esp_app_desc.h"
 #include "esp_memory_utils.h"
 #include "esp_macros.h"
+#include "esp_private/esp_core_dump_extension.h"
 
 #define ELF_CLASS ELFCLASS32
 
@@ -78,9 +79,17 @@ typedef struct _core_dump_elf_t {
     uint16_t                        elf_stage;
     uint32_t                        elf_next_data_offset;
     uint16_t                        segs_count;
+    uint16_t                        phdr_index;     /* running program-header index within the current pass */
     core_dump_write_data_t          write_data;
     uint32_t                        note_data_size; /* can be used where static storage needed */
 } core_dump_elf_t;
+
+struct core_dump_sink_s {
+    core_dump_elf_t *self;
+    int seg_total;   /* provider PT_LOAD contribution for the current pass */
+    int note_bytes;  /* accumulated provider note-description bytes */
+    esp_err_t err;   /* first failure, if any */
+};
 
 typedef struct {
     core_dump_elf_t *self;
@@ -157,6 +166,8 @@ static int elf_add_segment(core_dump_elf_t *self,
 
     ELF_CHECK_ERR((data != NULL), ELF_PROC_ERR_OTHER,
                   "Invalid data for segment.");
+
+    self->phdr_index++;
 
     if (self->elf_stage == ELF_STAGE_CALC_SPACE) {
         self->segs_count++;
@@ -370,6 +381,8 @@ static int elf_process_note_segment(core_dump_elf_t *self, int notes_size)
 {
     int ret;
     elf_phdr seg_hdr = { 0 };
+
+    self->phdr_index++;
 
     if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
         // segment header for PR_STATUS notes
@@ -758,9 +771,95 @@ static int elf_write_core_dump_info(core_dump_elf_t *self)
     return ret;
 }
 
+esp_err_t esp_core_dump_sink_add_segment(core_dump_sink_t *sink, uint32_t vaddr,
+                                         const void *data, uint32_t size, uint32_t *out_index)
+{
+    if (sink->err != ESP_OK) {
+        return sink->err;
+    }
+    if (data == NULL || size == 0) {
+        sink->err = ESP_ERR_INVALID_ARG;
+        return sink->err;
+    }
+    if (size % 4 != 0) {
+        sink->err = ESP_ERR_INVALID_SIZE;
+        return sink->err;
+    }
+    uint32_t index = sink->self->phdr_index;
+    int ret = elf_add_segment(sink->self, PT_LOAD, vaddr, (void *)data, size);
+    if (ret <= 0) {
+        sink->err = ESP_FAIL;
+        return sink->err;
+    }
+    sink->seg_total += ret;
+    if (out_index != NULL) {
+        *out_index = index;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_core_dump_sink_add_note(core_dump_sink_t *sink, const char *name,
+                                      uint32_t type, const void *desc, uint32_t desc_size)
+{
+    if (sink->err != ESP_OK) {
+        return sink->err;
+    }
+    if (name == NULL || desc == NULL || desc_size == 0) {
+        sink->err = ESP_ERR_INVALID_ARG;
+        return sink->err;
+    }
+    int ret = elf_add_note(sink->self, name, type, (void *)desc, desc_size);
+    if (ret <= 0) {
+        sink->err = ESP_FAIL;
+        return sink->err;
+    }
+    sink->note_bytes += ret;
+    return ESP_OK;
+}
+
+bool esp_core_dump_sink_is_data_stage(const core_dump_sink_t *sink)
+{
+    return sink->self->elf_stage == ELF_STAGE_PLACE_DATA;
+}
+
+/* Linker-collected extra-write callbacks (ESP_COREDUMP_REGISTER_EXTRA). Weak so
+ * a build with no providers still links when the SURROUND section is empty. */
+extern const esp_core_dump_extra_cb_t _esp_coredump_extra_array_start __attribute__((weak));
+extern const esp_core_dump_extra_cb_t _esp_coredump_extra_array_end __attribute__((weak));
+
+/* Provider PT_LOAD segments first, then all provider notes wrapped in one
+ * trailing PT_NOTE segment. This ordering keeps every note's segment index
+ * stable and matches the segment/note byte order across passes. */
+static int elf_write_extra_providers(core_dump_elf_t *self)
+{
+    core_dump_sink_t sink = { .self = self, .seg_total = 0, .note_bytes = 0, .err = ESP_OK };
+
+    const esp_core_dump_extra_cb_t *start = &_esp_coredump_extra_array_start;
+    const esp_core_dump_extra_cb_t *end = &_esp_coredump_extra_array_end;
+    if (start != NULL && end != NULL) {
+        for (const esp_core_dump_extra_cb_t *it = start; it < end; ++it) {
+            if (*it != NULL) {
+                (*it)(&sink);
+                ELF_CHECK_ERR((sink.err == ESP_OK), ELF_PROC_ERR_OTHER,
+                              "coredump attachment failed (%d)", sink.err);
+            }
+        }
+    }
+
+    int total = sink.seg_total;
+    if (sink.note_bytes > 0) {
+        int ret = elf_process_note_segment(self, sink.note_bytes);
+        ELF_CHECK_ERR((ret > 0), ret, "attachment note segment processing failure, returned (%d).", ret);
+        total += ret;
+    }
+    return total;
+}
+
 static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self)
 {
     int tot_len = 0;
+
+    self->phdr_index = 0;
 
     int data_sz = elf_write_file_header(self, ELF_SEG_HEADERS_COUNT(self));
     if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
@@ -783,6 +882,11 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self)
     // this should go after tasks processing
     data_sz = elf_write_core_dump_info(self);
     ELF_CHECK_ERR((data_sz > 0), data_sz, "Version info writing failed. Returned (%d).", data_sz);
+    tot_len += data_sz;
+
+    // write segments and notes contributed by other components
+    data_sz = elf_write_extra_providers(self);
+    ELF_CHECK_ERR((data_sz >= 0), data_sz, "Coredump attachment writing failed. Returned (%d).", data_sz);
     tot_len += data_sz;
 
     return tot_len;

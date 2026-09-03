@@ -15,9 +15,8 @@
 
 static const char *TAG = "riscv_trace_filter";
 
-/* Iterations per call. High enough that the filtered window alone still emits at least one sync
- * packet, but low enough that the full baseline workload (the three calls in capture_and_count:
- * noise, filtered, noise) fits the buffer without wrapping. */
+/* Workload iterations per call. High enough that the filtered window produces at least one sync
+ * packet, but small enough to fit within the buffer without wrapping. */
 #define TRACE_FILTER_WORKLOAD_ITERATIONS 512
 
 static volatile uint32_t s_filter_sink;

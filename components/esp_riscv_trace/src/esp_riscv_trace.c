@@ -14,6 +14,7 @@
 #include "esp_err.h"
 #include "esp_cache.h"
 #include "esp_check.h"
+#include "esp_rom_sys.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/periph_ctrl.h"
@@ -22,6 +23,7 @@
 #include "hal/riscv_trace_hal.h"
 #include "hal/riscv_trace_ll.h"
 #include "esp_riscv_trace.h"
+#include "esp_riscv_trace_snapshot.h"
 #include "esp_riscv_trace_priv.h"
 
 #define ESP_RISCV_TRACE_OBJ_CAPS              (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -57,6 +59,7 @@ static uint8_t *alloc_aligned_buffer(size_t requested, uint32_t caps, size_t *ou
     return buf;
 }
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE || SOC_RISCV_TRACE_MEM_SUPPORT_PSRAM
 static esp_err_t sync_trace_buffer(uint8_t *buffer, size_t size, int flags)
 {
     if (esp_cache_get_line_size_by_addr(buffer) == 0) {
@@ -65,6 +68,15 @@ static esp_err_t sync_trace_buffer(uint8_t *buffer, size_t size, int flags)
     }
     return esp_cache_msync(buffer, size, flags);
 }
+#else
+static inline esp_err_t sync_trace_buffer(uint8_t *buffer, size_t size, int flags)
+{
+    (void)buffer;
+    (void)size;
+    (void)flags;
+    return ESP_OK;
+}
+#endif
 
 static esp_err_t clear_trace_buffer(esp_riscv_trace_handle_t handle)
 {
@@ -237,51 +249,160 @@ err_alloc:
     return ret;
 }
 
-esp_err_t esp_riscv_trace_start(esp_riscv_trace_core_t core_id)
+/* Common start work. Lock must be held. */
+static esp_err_t trace_start_locked(esp_riscv_trace_handle_t handle)
 {
     esp_err_t ret = ESP_OK;
-    esp_riscv_trace_handle_t handle = handle_from_core(core_id);
-
-    ESP_RETURN_ON_FALSE(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized", (int)core_id);
-
-    _lock_acquire(&handle->lock);
-    ESP_GOTO_ON_FALSE(handle->state == ESP_RISCV_TRACE_STATE_CREATED ||
-                      handle->state == ESP_RISCV_TRACE_STATE_STOPPED,
-                      ESP_ERR_INVALID_STATE, out, TAG, "not startable from this state");
-
-    ESP_GOTO_ON_ERROR(clear_trace_buffer(handle), out, TAG, "failed to sync cleared trace buffer");
+    ESP_RETURN_ON_FALSE_ISR(handle->state == ESP_RISCV_TRACE_STATE_CREATED ||
+                            handle->state == ESP_RISCV_TRACE_STATE_STOPPED,
+                            ESP_ERR_INVALID_STATE, TAG, "not startable from this state");
+    ESP_RETURN_ON_ERROR_ISR(clear_trace_buffer(handle), TAG, "failed to sync cleared trace buffer");
     riscv_trace_hal_prepare_capture(&handle->hal);
     riscv_trace_hal_set_auto_restart(&handle->hal, handle->auto_restart);
-    riscv_trace_hal_start(&handle->hal);
     handle->state = ESP_RISCV_TRACE_STATE_STARTED;
+    riscv_trace_hal_start(&handle->hal);
+    esp_riscv_trace_snapshot_start(handle->core_id);
 
-out:
+    return ret;
+}
+
+/* Common stop work. Lock must be held. Writes the final snapshot fields on the way out. */
+static esp_err_t trace_stop_locked(esp_riscv_trace_handle_t handle, uint32_t timeout_us)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE(handle->state == ESP_RISCV_TRACE_STATE_STARTED, ESP_ERR_INVALID_STATE, TAG,
+                        "trace not started");
+
+    bool flushed = riscv_trace_hal_stop(&handle->hal, timeout_us);
+    if (flushed) {
+        esp_err_t sync_ret = sync_trace_buffer(handle->buffer, handle->buffer_size,
+                                               ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        if (sync_ret != ESP_OK) {
+            ESP_LOGE(TAG, "failed to sync trace buffer after stop");
+            ret = sync_ret;
+        }
+    } else {
+        ESP_LOGE(TAG, "timed out waiting for trace FIFO to empty");
+        ret = ESP_ERR_TIMEOUT;
+    }
+
+    handle->state = ESP_RISCV_TRACE_STATE_STOPPED;
+
+    uint32_t fifo_status = riscv_trace_hal_read_fifo_status(&handle->hal);
+    uint32_t intr_status = riscv_trace_hal_read_intr_raw(&handle->hal);
+    uint32_t base = (uint32_t)handle->buffer;
+    uint32_t current = riscv_trace_hal_get_current_addr(&handle->hal);
+    bool head_valid = (current >= base) && (current <= base + handle->buffer_size);
+    esp_riscv_trace_snapshot_stop(handle->core_id, fifo_status, intr_status,
+                                  head_valid ? (current - base) : 0, head_valid);
+
+    return ret;
+}
+
+esp_err_t esp_riscv_trace_start(esp_riscv_trace_core_t core_id)
+{
+    esp_err_t ret;
+    esp_riscv_trace_handle_t handle = handle_from_core(core_id);
+
+    ESP_RETURN_ON_FALSE_ISR(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized",
+                            (int)core_id);
+
+    _lock_acquire(&handle->lock);
+    ret = trace_start_locked(handle);
     _lock_release(&handle->lock);
     return ret;
 }
 
 esp_err_t esp_riscv_trace_stop(esp_riscv_trace_core_t core_id, uint32_t timeout_us)
 {
-    esp_err_t ret = ESP_OK;
+    esp_err_t ret;
     esp_riscv_trace_handle_t handle = handle_from_core(core_id);
 
     ESP_RETURN_ON_FALSE(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized", (int)core_id);
 
     _lock_acquire(&handle->lock);
-    ESP_GOTO_ON_FALSE(handle->state == ESP_RISCV_TRACE_STATE_STARTED, ESP_ERR_INVALID_STATE, out, TAG,
-                      "trace not started");
-    ESP_GOTO_ON_FALSE(riscv_trace_hal_stop(&handle->hal, timeout_us), ESP_ERR_TIMEOUT, out, TAG,
-                      "timed out waiting for trace FIFO to empty");
-
-    ESP_GOTO_ON_ERROR(sync_trace_buffer(handle->buffer, handle->buffer_size,
-                                        ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
-                      out, TAG, "failed to sync trace buffer after stop");
-
-    handle->state = ESP_RISCV_TRACE_STATE_STOPPED;
-
-out:
+    ret = trace_stop_locked(handle, timeout_us);
     _lock_release(&handle->lock);
     return ret;
+}
+
+static uint16_t IRAM_ATTR snapshot_freeze_state(esp_riscv_trace_state_t state)
+{
+    switch (state) {
+    case ESP_RISCV_TRACE_STATE_STARTED: return ESP_RISCV_TRACE_SNAPSHOT_STATE_FROZEN;
+    case ESP_RISCV_TRACE_STATE_STOPPED: return ESP_RISCV_TRACE_SNAPSHOT_STATE_STOPPED;
+    default:                            return ESP_RISCV_TRACE_SNAPSHOT_STATE_READY;
+    }
+}
+
+#define ESP_RISCV_TRACE_PANIC_FLUSH_TIMEOUT_US 2000
+#define ESP_RISCV_TRACE_PANIC_FLUSH_STEP_US    10
+
+void esp_panic_handler_inst_trace_stop(void)
+{
+    /* Runs at panic entry before other core is stalled, so guard against both cores stopping at once. */
+    static uint32_t s_stopped;
+
+    if (!esp_cpu_compare_and_set(&s_stopped, 0, 1)) {
+        return;
+    }
+
+    for (int core = 0; core < SOC_CPU_CORES_NUM; core++) {
+        esp_riscv_trace_handle_t handle = s_handle[core];
+        if (handle == NULL) {
+            continue;
+        }
+        riscv_trace_ll_set_restart_ena(handle->hal.dev, false);
+        riscv_trace_ll_trigger_off(handle->hal.dev);
+    }
+}
+
+void esp_riscv_trace_snapshot_finalize(void)
+{
+    static uint32_t s_finalized;
+
+    if (!esp_cpu_compare_and_set(&s_finalized, 0, 1)) {
+        return;
+    }
+
+    /* Encoders were stopped at panic entry. Wait for each FIFO to empty and
+       record the final status. */
+    esp_riscv_trace_snapshot_panic_core_t status[SOC_CPU_CORES_NUM] = {0};
+    for (int core = 0; core < SOC_CPU_CORES_NUM; core++) {
+        esp_riscv_trace_handle_t handle = s_handle[core];
+        if (handle == NULL) {
+            continue;
+        }
+
+        void *dev = handle->hal.dev;
+        uint32_t waited_us = 0;
+        uint32_t fifo_status = riscv_trace_ll_get_fifo_status(dev);
+        while ((fifo_status & TRACE_FIFO_EMPTY_M) == 0) {
+            if (waited_us >= ESP_RISCV_TRACE_PANIC_FLUSH_TIMEOUT_US) {
+                break;
+            }
+            esp_rom_delay_us(ESP_RISCV_TRACE_PANIC_FLUSH_STEP_US);
+            waited_us += ESP_RISCV_TRACE_PANIC_FLUSH_STEP_US;
+            fifo_status = riscv_trace_ll_get_fifo_status(dev);
+        }
+        uint32_t base = (uint32_t)handle->buffer;
+        uint32_t current = riscv_trace_ll_get_mem_current_addr(dev);
+        uint32_t intr_status = riscv_trace_ll_get_intr_raw(dev);
+        bool head_valid = (current >= base) && (current <= base + handle->buffer_size);
+
+        status[core].present = true;
+        status[core].capturing = (handle->state == ESP_RISCV_TRACE_STATE_STARTED);
+        status[core].state = snapshot_freeze_state(handle->state);
+        status[core].head_valid = head_valid;
+        status[core].head_offset = head_valid ? (current - base) : 0;
+        status[core].fifo_status_raw = fifo_status;
+        status[core].intr_status_raw = intr_status;
+        status[core].fifo_empty = (fifo_status & TRACE_FIFO_EMPTY_M) != 0;
+        status[core].memory_full = (intr_status & TRACE_MEM_FULL_INTR_RAW_M) != 0;
+        status[core].fifo_overflow = (intr_status & TRACE_FIFO_OVERFLOW_INTR_RAW_M) != 0;
+    }
+
+    esp_riscv_trace_snapshot_panic_write(status, SOC_CPU_CORES_NUM);
 }
 
 esp_err_t esp_riscv_trace_get_buffer(esp_riscv_trace_core_t core_id, uint8_t **buffer,
@@ -393,8 +514,7 @@ esp_err_t esp_riscv_trace_set_filter(esp_riscv_trace_core_t core_id, const esp_r
 }
 #endif // SOC_RISCV_TRACE_FILTER_SUPPORTED
 
-/* Default per-core configuration for startup auto-init. Applications can override this by providing
- * their own (strong) definition of esp_riscv_trace_get_user_config(). */
+/* Default per-core configuration. Applications can override this function. */
 esp_riscv_trace_config_t __attribute__((weak)) esp_riscv_trace_get_user_config(int core_id)
 {
     (void)core_id;
@@ -407,7 +527,9 @@ ESP_SYSTEM_INIT_FN(esp_riscv_trace_early_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CO
     int core_id = esp_cpu_get_core_id();
     esp_riscv_trace_config_t config = esp_riscv_trace_get_user_config(core_id);
 
-    // Enable the clocks and reset the encoder core before accessing its registers.
+    esp_riscv_trace_snapshot_early_init(core_id);
+
+    /* Enable clock and reset the encoder before accessing registers. */
     PERIPH_RCC_ATOMIC() {
         riscv_trace_ll_enable_bus_clock(true);
         riscv_trace_ll_reset_register(core_id);
@@ -425,6 +547,18 @@ ESP_SYSTEM_INIT_FN(esp_riscv_trace_early_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CO
     esp_err_t ret = esp_riscv_trace_new(core_id, &config, &s_handle[core_id]);
     if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "early init failed on core %d: %s", core_id, esp_err_to_name(ret));
+        return ret;
     }
-    return ret;
+
+    esp_riscv_trace_snapshot_write_core_desc(core_id, s_handle[core_id]);
+
+#if CONFIG_ESP_RISCV_TRACE_AUTOSTART
+    /* Each core starts its own encoder, so the order between cores does not matter. */
+    esp_err_t start_ret = esp_riscv_trace_start(core_id);
+    if (start_ret != ESP_OK) {
+        ESP_EARLY_LOGW(TAG, "autostart failed on core %d: %s", core_id, esp_err_to_name(start_ret));
+    }
+#endif
+
+    return ESP_OK;
 }
