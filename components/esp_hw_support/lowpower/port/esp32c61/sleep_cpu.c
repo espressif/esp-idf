@@ -70,20 +70,6 @@ FORCE_INLINE_ATTR void restore_csr_enable_global_int(uint32_t mstatus_val, uint3
 #endif
 }
 
-#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
-FORCE_INLINE_ATTR uint32_t save_mintthresh_and_disable_global_int(void)
-{
-    /* Due to the reason described in IDF-14279, when mie is set to 0, mintthresh needs to be set to 0xff. */
-    // TODO: IDF-14279 DIG-661
-    return RV_READ_MINTTHRESH_AND_DISABLE_INTR();
-}
-
-FORCE_INLINE_ATTR void restore_mintthresh(uint32_t mintthresh_val)
-{
-    RV_RESTORE_MINTTHRESH(mintthresh_val);
-}
-#endif
-
 static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(void)
 {
     assert(s_cpu_retention.retent.non_critical_frame);
