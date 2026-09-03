@@ -446,6 +446,14 @@ __attribute__((always_inline)) static inline void ecdsa_ll_set_ecdsa_key_blk(ecd
 }
 
 /**
+ * @brief Check if the ECDSA peripheral uses MPI module's memory
+ */
+static inline bool ecdsa_ll_is_mpi_required(void)
+{
+    return false;
+}
+
+/**
  * @brief Check if the ECDSA peripheral is supported on this chip revision
  * For ESP32-C5, ECDSA is always supported
  */
