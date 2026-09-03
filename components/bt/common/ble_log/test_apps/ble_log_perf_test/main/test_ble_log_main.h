@@ -14,7 +14,6 @@
 
 typedef struct {
     ble_log_src_t src;
-    uint8_t source_meta;
     uint32_t sn;
     const uint8_t *payload;
     size_t payload_len;
