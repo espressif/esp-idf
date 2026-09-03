@@ -25,11 +25,18 @@ except ImportError:
 
 
 try:
-    from mcp.server.fastmcp import FastMCP
+    # mcp >= 2.0: FastMCP was renamed to MCPServer
+    from mcp.server import MCPServer as _MCPServer
 
     MCP_AVAILABLE = True
 except ImportError:
-    MCP_AVAILABLE = False
+    try:
+        # mcp 1.x fallback
+        from mcp.server.fastmcp import FastMCP as _MCPServer
+
+        MCP_AVAILABLE = True
+    except ImportError:
+        MCP_AVAILABLE = False
 
 
 def _is_valid_project_dir(directory: str) -> bool:
@@ -143,7 +150,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             )
 
         # Initialize MCP server — project validity is checked per-tool call
-        mcp = FastMCP('ESP-IDF')
+        mcp = _MCPServer('ESP-IDF')
 
         # === TOOLS (Actions) ===
         # Tool handlers spawn idf.py with stdin=subprocess.DEVNULL. The MCP server's
