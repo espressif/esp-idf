@@ -98,9 +98,9 @@ typedef bool (*bt_pacs_cap_foreach_func_t)(const struct bt_pacs_cap *cap,
  * @param func Callback function.
  * @param user_data Data to pass to the callback.
  */
-void bt_pacs_cap_foreach_safe(enum bt_audio_dir dir,
-                              bt_pacs_cap_foreach_func_t func,
-                              void *user_data);
+void bt_pacs_cap_foreach(enum bt_audio_dir dir,
+                         bt_pacs_cap_foreach_func_t func,
+                         void *user_data);
 
 /**
  * @brief Register the Published Audio Capability Service instance.
@@ -112,14 +112,14 @@ void bt_pacs_cap_foreach_safe(enum bt_audio_dir dir,
  * @retval -EALREADY Already registered
  * @retval -ENOEXEC Request was rejected by GATT
  */
-int bt_pacs_register_safe(const struct bt_pacs_register_param *param);
+int bt_pacs_register(const struct bt_pacs_register_param *param);
 
 /**
  * @brief Unregister the Published Audio Capability Service instance.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_pacs_unregister_safe(void);
+int bt_pacs_unregister(void);
 
 /**
  * @brief Register Published Audio Capability.
@@ -131,7 +131,7 @@ int bt_pacs_unregister_safe(void);
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_pacs_cap_register_safe(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
+int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
 
 /**
  * @brief Unregister Published Audio Capability.
@@ -143,7 +143,7 @@ int bt_pacs_cap_register_safe(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_pacs_cap_unregister_safe(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
+int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
 
 /**
  * @brief Set the location for an endpoint type
@@ -153,8 +153,8 @@ int bt_pacs_cap_unregister_safe(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_pacs_set_location_safe(enum bt_audio_dir dir,
-                              enum bt_audio_location location);
+int bt_pacs_set_location(enum bt_audio_dir dir,
+                         enum bt_audio_location location);
 
 /**
  * @brief Set the available contexts for an endpoint type
@@ -164,8 +164,8 @@ int bt_pacs_set_location_safe(enum bt_audio_dir dir,
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_pacs_set_available_contexts_safe(enum bt_audio_dir dir,
-                                        enum bt_audio_context contexts);
+int bt_pacs_set_available_contexts(enum bt_audio_dir dir,
+                                   enum bt_audio_context contexts);
 
 /**
  * @brief Get the available contexts for an endpoint type
@@ -174,7 +174,7 @@ int bt_pacs_set_available_contexts_safe(enum bt_audio_dir dir,
  *
  * @return Bitmask of available contexts.
  */
-enum bt_audio_context bt_pacs_get_available_contexts_safe(enum bt_audio_dir dir);
+enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir);
 
 /**
  * @brief Set the available contexts for a given connection
@@ -193,8 +193,6 @@ enum bt_audio_context bt_pacs_get_available_contexts_safe(enum bt_audio_dir dir)
  */
 int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_audio_dir dir,
                                                  enum bt_audio_context *contexts);
-int bt_pacs_conn_set_available_contexts_for_conn_safe(struct bt_conn *conn, enum bt_audio_dir dir,
-                                                      enum bt_audio_context *contexts);
 
 /**
  * @brief Get the available contexts for a given connection
@@ -211,8 +209,6 @@ int bt_pacs_conn_set_available_contexts_for_conn_safe(struct bt_conn *conn, enum
  */
 enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
                                                               enum bt_audio_dir dir);
-enum bt_audio_context bt_pacs_get_available_contexts_for_conn_safe(struct bt_conn *conn,
-                                                                   enum bt_audio_dir dir);
 
 /**
  * @brief Set the supported contexts for an endpoint type
@@ -222,8 +218,8 @@ enum bt_audio_context bt_pacs_get_available_contexts_for_conn_safe(struct bt_con
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_pacs_set_supported_contexts_safe(enum bt_audio_dir dir,
-                                        enum bt_audio_context contexts);
+int bt_pacs_set_supported_contexts(enum bt_audio_dir dir,
+                                   enum bt_audio_context contexts);
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,7 @@ esp_err_t esp_ble_audio_micp_mic_dev_register(esp_ble_audio_micp_mic_dev_registe
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     err = bt_micp_mic_dev_register(param);
     if (err) {
@@ -50,7 +50,12 @@ esp_err_t esp_ble_audio_micp_mic_dev_included_get(esp_ble_audio_micp_included_t 
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_micp_mic_dev_included_get_safe(included);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_dev_included_get(included);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -62,7 +67,12 @@ esp_err_t esp_ble_audio_micp_mic_dev_unmute(void)
 {
     int err;
 
-    err = bt_micp_mic_dev_unmute_safe();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_dev_unmute();
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -74,7 +84,12 @@ esp_err_t esp_ble_audio_micp_mic_dev_mute(void)
 {
     int err;
 
-    err = bt_micp_mic_dev_mute_safe();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_dev_mute();
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -86,7 +101,12 @@ esp_err_t esp_ble_audio_micp_mic_dev_mute_disable(void)
 {
     int err;
 
-    err = bt_micp_mic_dev_mute_disable_safe();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_dev_mute_disable();
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -98,7 +118,12 @@ esp_err_t esp_ble_audio_micp_mic_dev_mute_get(void)
 {
     int err;
 
-    err = bt_micp_mic_dev_mute_get_safe();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_dev_mute_get();
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -118,7 +143,12 @@ esp_err_t esp_ble_audio_micp_mic_ctlr_included_get(esp_ble_audio_micp_mic_ctlr_t
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_micp_mic_ctlr_included_get_safe(mic_ctlr, included);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_ctlr_included_get(mic_ctlr, included);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -132,7 +162,7 @@ esp_ble_audio_micp_mic_ctlr_t *esp_ble_audio_micp_mic_ctlr_get_by_conn(uint16_t 
     esp_ble_audio_micp_mic_ctlr_t *ret = NULL;
     void *conn;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -157,7 +187,7 @@ esp_err_t esp_ble_audio_micp_mic_ctlr_discover(uint16_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -183,7 +213,12 @@ esp_err_t esp_ble_audio_micp_mic_ctlr_unmute(esp_ble_audio_micp_mic_ctlr_t *mic_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_micp_mic_ctlr_unmute_safe(mic_ctlr);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_ctlr_unmute(mic_ctlr);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -199,7 +234,12 @@ esp_err_t esp_ble_audio_micp_mic_ctlr_mute(esp_ble_audio_micp_mic_ctlr_t *mic_ct
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_micp_mic_ctlr_mute_safe(mic_ctlr);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_ctlr_mute(mic_ctlr);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -215,7 +255,12 @@ esp_err_t esp_ble_audio_micp_mic_ctlr_mute_get(esp_ble_audio_micp_mic_ctlr_t *mi
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_micp_mic_ctlr_mute_get_safe(mic_ctlr);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_ctlr_mute_get(mic_ctlr);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -231,7 +276,12 @@ esp_err_t esp_ble_audio_micp_mic_ctlr_cb_register(esp_ble_audio_micp_mic_ctlr_cb
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_micp_mic_ctlr_cb_register_safe(cb);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_micp_mic_ctlr_cb_register(cb);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }

@@ -252,17 +252,6 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_find(uint16_t handle)
     return per_adv_sync;
 }
 
-_IDF_ONLY
-struct bt_le_per_adv_sync *bt_le_per_adv_sync_find_safe(uint16_t sync_handle)
-{
-    struct bt_le_per_adv_sync *per_adv_sync = NULL;
-    LOG_DBG("PaSyncFind[%u]", sync_handle);
-    bt_le_host_lock();
-    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
-    bt_le_host_unlock();
-    return per_adv_sync;
-}
-
 static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 {
     struct bt_le_per_adv_sync *per_adv_sync = NULL;
@@ -337,24 +326,6 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
     }
 
     return 0;
-}
-
-_IDF_ONLY
-int bt_le_per_adv_sync_new_safe(uint16_t sync_handle,
-                                uint8_t sid,
-                                uint8_t phy,
-                                uint16_t interval,
-                                uint8_t addr_type,
-                                const uint8_t addr[6],
-                                uint16_t conn_handle,
-                                struct bt_le_per_adv_sync **out_sync)
-{
-    int err;
-    bt_le_host_lock();
-    err = bt_le_per_adv_sync_new(sync_handle, sid, phy, interval, addr_type,
-                                 addr, conn_handle, out_sync);
-    bt_le_host_unlock();
-    return err;
 }
 
 int bt_le_per_adv_sync_delete(uint16_t sync_handle)

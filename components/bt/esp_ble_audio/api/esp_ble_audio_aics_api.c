@@ -10,16 +10,32 @@
 #if CONFIG_BT_AICS
 esp_ble_audio_aics_t *esp_ble_audio_aics_free_instance_get(void)
 {
-    return bt_aics_free_instance_get_safe();
+    esp_ble_audio_aics_t *inst;
+
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
+
+    inst = bt_aics_free_instance_get();
+
+    bt_le_host_unlock();
+
+    return inst;
 }
 
 void *esp_ble_audio_aics_svc_decl_get(esp_ble_audio_aics_t *aics)
 {
+    void *decl;
+
     if (aics == NULL) {
         return NULL;
     }
 
-    return bt_aics_svc_decl_get_safe(aics);
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
+
+    decl = bt_aics_svc_decl_get(aics);
+
+    bt_le_host_unlock();
+
+    return decl;
 }
 
 esp_err_t esp_ble_audio_aics_register(esp_ble_audio_aics_t *aics,
@@ -41,7 +57,12 @@ esp_err_t esp_ble_audio_aics_register(esp_ble_audio_aics_t *aics,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_register_safe(aics, param);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_register(aics, param);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -57,7 +78,12 @@ esp_err_t esp_ble_audio_aics_activate(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_activate_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_activate(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -73,7 +99,12 @@ esp_err_t esp_ble_audio_aics_deactivate(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_deactivate_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_deactivate(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -91,7 +122,12 @@ esp_err_t esp_ble_audio_aics_state_get(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_state_get_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_state_get(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -107,7 +143,12 @@ esp_err_t esp_ble_audio_aics_gain_setting_get(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_gain_setting_get_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_gain_setting_get(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -123,7 +164,12 @@ esp_err_t esp_ble_audio_aics_type_get(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_type_get_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_type_get(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -139,7 +185,12 @@ esp_err_t esp_ble_audio_aics_status_get(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_status_get_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_status_get(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -155,7 +206,12 @@ esp_err_t esp_ble_audio_aics_disable_mute(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_disable_mute_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_disable_mute(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -171,7 +227,12 @@ esp_err_t esp_ble_audio_aics_unmute(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_unmute_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_unmute(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -187,7 +248,12 @@ esp_err_t esp_ble_audio_aics_mute(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_mute_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_mute(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -203,7 +269,12 @@ esp_err_t esp_ble_audio_aics_gain_set_manual_only(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_gain_set_manual_only_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_gain_set_manual_only(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -219,7 +290,12 @@ esp_err_t esp_ble_audio_aics_gain_set_auto_only(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_gain_set_auto_only_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_gain_set_auto_only(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -235,7 +311,12 @@ esp_err_t esp_ble_audio_aics_manual_gain_set(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_manual_gain_set_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_manual_gain_set(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -251,7 +332,12 @@ esp_err_t esp_ble_audio_aics_automatic_gain_set(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_automatic_gain_set_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_automatic_gain_set(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -267,7 +353,12 @@ esp_err_t esp_ble_audio_aics_gain_set(esp_ble_audio_aics_t *inst, int8_t gain)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_gain_set_safe(inst, gain);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_gain_set(inst, gain);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -283,7 +374,12 @@ esp_err_t esp_ble_audio_aics_description_get(esp_ble_audio_aics_t *inst)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_description_get_safe(inst);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_description_get(inst);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -300,7 +396,12 @@ esp_err_t esp_ble_audio_aics_description_set(esp_ble_audio_aics_t *inst,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_aics_description_set_safe(inst, description);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_aics_description_set(inst, description);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -322,7 +423,7 @@ esp_err_t esp_ble_audio_aics_discover(uint16_t conn_handle, esp_ble_audio_aics_t
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -342,7 +443,15 @@ unlock:
 
 esp_ble_audio_aics_t *esp_ble_audio_aics_client_free_instance_get(void)
 {
-    return bt_aics_client_free_instance_get_safe();
+    esp_ble_audio_aics_t *inst;
+
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
+
+    inst = bt_aics_client_free_instance_get();
+
+    bt_le_host_unlock();
+
+    return inst;
 }
 
 esp_err_t esp_ble_audio_aics_client_cb_register(esp_ble_audio_aics_t *inst,
@@ -352,7 +461,11 @@ esp_err_t esp_ble_audio_aics_client_cb_register(esp_ble_audio_aics_t *inst,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_aics_client_cb_register_safe(inst, cb);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    bt_aics_client_cb_register(inst, cb);
+
+    bt_le_host_unlock();
 
     return ESP_OK;
 }

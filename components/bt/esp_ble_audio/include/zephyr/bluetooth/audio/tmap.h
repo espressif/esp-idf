@@ -102,7 +102,6 @@ struct bt_tmap_cb {
  * @return 0 on success or negative error value on failure.
  */
 int bt_tmap_register(enum bt_tmap_role role);
-int bt_tmap_register_safe(enum bt_tmap_role role);
 
 /**
  * @brief Perform service discovery as TMAP Client
@@ -113,7 +112,6 @@ int bt_tmap_register_safe(enum bt_tmap_role role);
  * @return 0 on success or negative error value on failure.
  */
 int bt_tmap_discover(struct bt_conn *conn, const struct bt_tmap_cb *tmap_cb);
-int bt_tmap_discover_safe(struct bt_conn *conn, const struct bt_tmap_cb *tmap_cb);
 
 /**
  * @brief Set one or multiple TMAP roles dynamically.
@@ -122,7 +120,7 @@ int bt_tmap_discover_safe(struct bt_conn *conn, const struct bt_tmap_cb *tmap_cb
  * @param role     TMAP role(s).
  *
  */
-void bt_tmap_set_role_safe(enum bt_tmap_role role);
+void bt_tmap_set_role(enum bt_tmap_role role);
 
 /**
  * @}

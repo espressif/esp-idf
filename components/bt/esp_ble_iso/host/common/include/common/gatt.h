@@ -306,7 +306,7 @@ int bt_gatts_sub_changed(uint16_t conn_handle,
                          uint8_t cur_indicate,
                          uint8_t reason);
 
-int bt_gattc_disc_start_safe(uint16_t conn_handle);
+int bt_gattc_disc_start(uint16_t conn_handle);
 
 struct gattc_sub *bt_gattc_sub_find(struct bt_conn *conn);
 

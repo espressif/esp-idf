@@ -35,6 +35,14 @@ static BT_ISO_CTRL_BSS_ATTR struct k_mutex host_mutex;
 
 extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
+/* bt_le_host_lock() retries every HOST_LOCK_POLL_MS, logging LockFail with both
+ * task names, and reboots once the wait reaches HOST_LOCK_ABORT_MS. Healthy
+ * holds are microseconds, so 5s is unambiguous - and nothing else would notice:
+ * both tasks are blocked rather than spinning, so idle keeps feeding the task
+ * watchdog. Set HOST_LOCK_ABORT_MS 0 to keep a wedge alive for inspection. */
+#define HOST_LOCK_POLL_MS   1000
+#define HOST_LOCK_ABORT_MS  5000
+
 #if HOST_LOCK_DEBUG
 void bt_le_host_lock_debug(const char *func, int line)
 #else /* HOST_LOCK_DEBUG */
@@ -43,17 +51,46 @@ void bt_le_host_lock(void)
 {
     /* LOG_DBG("%s: %d", func, line); */
 
-    int err = k_mutex_lock(&host_mutex, K_MUTEX_SHORT);
-    if (err) {
-        /* K_MUTEX_SHORT wait failed: the host stack is wedged. k_mutex_lock has
-         * already logged self/holder task names. Use libc abort() rather
-         * than BT_LE_ASSERT(0) — assert is a no-op under NDEBUG, which would
-         * let the caller enter the critical section without the mutex
-         * held and cause races. abort() halts in every build.
-         */
-        LOG_ERR("HostLockTimeout");
-        abort();
+    /* Never returns without the mutex: the caller's critical section would run
+     * unprotected, trading a deadlock for silent state corruption, and this API
+     * cannot report the failure anyway - it returns void, so every caller
+     * proceeds as if it holds the mutex. Retries and warns instead, then
+     * reboots - see HOST_LOCK_POLL_MS. */
+    unsigned waited_ms = 0;
+
+    while (k_mutex_lock(&host_mutex, HOST_LOCK_POLL_MS / portTICK_PERIOD_MS) != 0) {
+        waited_ms += HOST_LOCK_POLL_MS;
+
+        /* Usually an AB-BA inversion: two locks, two tasks, opposite orders.
+         *
+         *   iso_task: host_mutex held -> blocks on the application's lock
+         *             (an app callback dispatched from under the mutex)
+         *   app task: application's lock held -> blocks here on host_mutex
+         *
+         * Neither order is wrong by itself; the pair only deadlocks where the
+         * two paths overlap, so it need not reproduce. k_mutex_lock's LockFail
+         * on the line above names both tasks. */
+        LOG_WRN("HostLockTimeout[%ums]", waited_ms);
+
+#if HOST_LOCK_ABORT_MS
+        if (waited_ms >= HOST_LOCK_ABORT_MS) {
+            abort();
+        }
+#endif /* HOST_LOCK_ABORT_MS */
     }
+}
+
+int bt_le_host_lock_timeout(void)
+{
+    /* The bounded variant, for callers that can report the failure upward - see
+     * BT_LE_HOST_LOCK_OR_RETURN. Bounded by K_MUTEX_SHORT rather than
+     * HOST_LOCK_ABORT_MS so that disabling the abort does not turn this into a
+     * try-lock that fails on any contention. */
+    if (k_mutex_lock(&host_mutex, K_MUTEX_SHORT) != 0) {
+        return -EBUSY;
+    }
+
+    return 0;
 }
 
 #if HOST_LOCK_DEBUG
@@ -64,9 +101,9 @@ void bt_le_host_unlock(void)
 {
     /* LOG_DBG("%s: %d", func, line); */
 
-    /* Defense-in-depth: bt_le_host_lock now aborts on timeout, so this
-     * branch is unreachable in normal flow. Keep the check to catch any
-     * unbalanced unlock (callers releasing without prior lock).
+    /* Defense-in-depth: bt_le_host_lock never returns without the mutex,
+     * so this branch is unreachable in normal flow. Keep the check to
+     * catch any unbalanced unlock (callers releasing without prior lock).
      */
     if (xSemaphoreGetMutexHolder(host_mutex.handle) != xTaskGetCurrentTaskHandle()) {
         LOG_WRN("HostUnlockNotHolder");

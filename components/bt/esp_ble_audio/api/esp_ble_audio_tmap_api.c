@@ -14,7 +14,7 @@ esp_err_t esp_ble_audio_tmap_register(esp_ble_audio_tmap_role_t role)
     esp_err_t ret = ESP_OK;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     err = bt_tmap_register(role);
     if (err) {
@@ -49,7 +49,7 @@ esp_err_t esp_ble_audio_tmap_discover(uint16_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -67,8 +67,14 @@ unlock:
     return ret;
 }
 
-void esp_ble_audio_tmap_set_role(esp_ble_audio_tmap_role_t role)
+esp_err_t esp_ble_audio_tmap_set_role(esp_ble_audio_tmap_role_t role)
 {
-    bt_tmap_set_role_safe(role);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    bt_tmap_set_role(role);
+
+    bt_le_host_unlock();
+
+    return ESP_OK;
 }
 #endif /* CONFIG_BT_TMAP */

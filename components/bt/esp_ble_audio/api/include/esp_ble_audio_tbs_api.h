@@ -370,8 +370,10 @@ esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index, const char
  * @brief   Register the callbacks for TBS.
  *
  * @param   cbs Pointer to the callback structure.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
  */
-void esp_ble_audio_tbs_register_cb(esp_ble_audio_tbs_cb_t *cbs);
+esp_err_t esp_ble_audio_tbs_register_cb(esp_ble_audio_tbs_cb_t *cbs);
 
 /**
  * @brief   Register a Telephone Bearer.

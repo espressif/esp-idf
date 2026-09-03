@@ -574,12 +574,12 @@ BT_CONN_CB_DEFINE(client_conn_callbacks) = {
 
 int bt_gatt_ots_client_conn_cb_register(void)
 {
-    return bt_conn_cb_register_safe((void *)&bt_conn_cb_client_conn_callbacks);
+    return bt_conn_cb_register((void *)&bt_conn_cb_client_conn_callbacks);
 }
 
 void bt_gatt_ots_client_conn_cb_unregister(void)
 {
-    (void)bt_conn_cb_unregister_safe((void *)&bt_conn_cb_client_conn_callbacks);
+    (void)bt_conn_cb_unregister((void *)&bt_conn_cb_client_conn_callbacks);
 }
 
 int bt_ots_client_register(struct bt_ots_client *otc_inst)

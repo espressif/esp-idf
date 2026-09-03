@@ -563,7 +563,6 @@ struct bt_gatt_cpf {
  *  @return -EAGAIN if ``bt_init()`` has been called but ``settings_load()`` hasn't yet.
  */
 int bt_gatt_service_register(struct bt_gatt_service *svc);
-int bt_gatt_service_register_safe(struct bt_gatt_service *svc);
 
 /** @brief Unregister GATT service.
  *
@@ -572,7 +571,6 @@ int bt_gatt_service_register_safe(struct bt_gatt_service *svc);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
-int bt_gatt_service_unregister_safe(struct bt_gatt_service *svc);
 
 /** @brief to be used as return values for @ref bt_gatt_attr_func_t and @ref bt_gatt_read_func_t
  *  type callbacks.

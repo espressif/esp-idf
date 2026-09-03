@@ -17,7 +17,12 @@ esp_err_t esp_ble_audio_pacs_register(const esp_ble_audio_pacs_register_param_t 
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_pacs_register_safe(param);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_pacs_register(param);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -27,18 +32,24 @@ esp_err_t esp_ble_audio_pacs_register(const esp_ble_audio_pacs_register_param_t 
 
 esp_err_t esp_ble_audio_pacs_unregister(void)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
-    err = bt_pacs_unregister_safe();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_pacs_unregister();
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
     if (bt_le_pacs_deinit()) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
     }
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 static bool dir_is_valid(esp_ble_audio_dir_t dir)
@@ -61,7 +72,12 @@ esp_err_t esp_ble_audio_pacs_cap_register(esp_ble_audio_dir_t dir,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_pacs_cap_register_safe(dir, cap);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_pacs_cap_register(dir, cap);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -78,7 +94,12 @@ esp_err_t esp_ble_audio_pacs_cap_unregister(esp_ble_audio_dir_t dir,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_pacs_cap_unregister_safe(dir, cap);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_pacs_cap_unregister(dir, cap);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -95,7 +116,12 @@ esp_err_t esp_ble_audio_pacs_set_location(esp_ble_audio_dir_t dir,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_pacs_set_location_safe(dir, location);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_pacs_set_location(dir, location);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -112,7 +138,12 @@ esp_err_t esp_ble_audio_pacs_set_available_contexts(esp_ble_audio_dir_t dir,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_pacs_set_available_contexts_safe(dir, contexts);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_pacs_set_available_contexts(dir, contexts);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -122,11 +153,19 @@ esp_err_t esp_ble_audio_pacs_set_available_contexts(esp_ble_audio_dir_t dir,
 
 esp_ble_audio_context_t esp_ble_audio_pacs_get_available_contexts(esp_ble_audio_dir_t dir)
 {
+    esp_ble_audio_context_t contexts;
+
     if (dir_is_valid(dir) == false) {
         return ESP_BLE_AUDIO_CONTEXT_TYPE_NONE;
     }
 
-    return bt_pacs_get_available_contexts_safe(dir);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_BLE_AUDIO_CONTEXT_TYPE_NONE);
+
+    contexts = bt_pacs_get_available_contexts(dir);
+
+    bt_le_host_unlock();
+
+    return contexts;
 }
 
 esp_err_t esp_ble_audio_pacs_conn_set_available_contexts_for_conn(uint16_t conn_handle,
@@ -143,7 +182,7 @@ esp_err_t esp_ble_audio_pacs_conn_set_available_contexts_for_conn(uint16_t conn_
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -171,7 +210,7 @@ esp_ble_audio_context_t esp_ble_audio_pacs_get_available_contexts_for_conn(uint1
         return ESP_BLE_AUDIO_CONTEXT_TYPE_NONE;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_BLE_AUDIO_CONTEXT_TYPE_NONE);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -194,7 +233,12 @@ esp_err_t esp_ble_audio_pacs_set_supported_contexts(esp_ble_audio_dir_t dir,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_pacs_set_supported_contexts_safe(dir, contexts);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_pacs_set_supported_contexts(dir, contexts);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
