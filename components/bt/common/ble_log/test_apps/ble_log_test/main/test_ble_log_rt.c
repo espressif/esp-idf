@@ -242,16 +242,15 @@ static void capture_golden_frame(const test_ble_log_frame_t *frame, void *ctx)
 TEST_CASE("BLE Log v7 framing matches golden bytes", "[ble_log][wire]")
 {
     static const uint8_t golden_frame[] = {
-        0x05, 0x00, 0x87, 0xde, 0xc0, 0x00,
+        0x05, 0x00, 0x07, 0xde, 0xc0, 0x00,
         0x78, 0x56, 0x34, 0x12, 0xab,
-        0xf1, 0x12, 0x54, 0x88,
+        0xf1, 0x12, 0xd4, 0x88,
     };
     static const uint8_t golden_payload[] = {
         0x78, 0x56, 0x34, 0x12, 0xab,
     };
 
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_VERSION);
-    TEST_ASSERT_EQUAL_HEX8(0x80, BLE_LOG_SRC_FLAG_NON_YIELD);
     TEST_ASSERT_EQUAL_UINT8(1, BLE_LOG_SRC_CORE_FIRST);
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_SRC_CORE_COUNT);
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_SRC_ENCODE);
@@ -275,7 +274,7 @@ TEST_CASE("BLE Log v7 framing matches golden bytes", "[ble_log][wire]")
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_LL_FLAG_HCI_UPSTREAM);
 #endif
     TEST_ASSERT_EQUAL_HEX32(
-        0x00c0de87, BLE_LOG_MAKE_FRAME_META(0x87, 0x00c0de));
+        0x00c0de07, BLE_LOG_MAKE_FRAME_META(0x07, 0x00c0de));
     TEST_ASSERT_EQUAL_HEX32(
         0x00000007, BLE_LOG_MAKE_FRAME_META(0x07, 0x01000000));
 
@@ -286,7 +285,6 @@ TEST_CASE("BLE Log v7 framing matches golden bytes", "[ble_log][wire]")
                                               &capture));
     TEST_ASSERT_EQUAL_size_t(1, capture.count);
     TEST_ASSERT_EQUAL_UINT8(BLE_LOG_SRC_ENCODE, capture.frame.src);
-    TEST_ASSERT_EQUAL_HEX8(0x87, capture.frame.source_meta);
     TEST_ASSERT_EQUAL_HEX32(0x00c0de, capture.frame.sn);
     TEST_ASSERT_EQUAL_size_t(sizeof(golden_payload), capture.frame.payload_len);
     TEST_ASSERT_EQUAL_MEMORY(golden_payload, capture.frame.payload,
@@ -402,7 +400,7 @@ TEST_CASE("BLE Log sync IO APIs retain runtime lifecycle checks", "[ble_log]")
 
 typedef struct {
     bool task_frame;
-    bool non_yield_frame;
+    bool critical_frame;
     bool hci_downstream_frame;
     bool hci_upstream_frame;
     bool claimed_frame;
@@ -422,10 +420,9 @@ static void capture_frame_meta(const test_ble_log_frame_t *frame, void *ctx)
 
     uint8_t marker = frame->payload[sizeof(uint32_t)];
     if (frame->src == BLE_LOG_SRC_CUSTOM && marker == 0x11) {
-        capture->task_frame = !BLE_LOG_SRC_IS_NON_YIELD(frame->source_meta);
+        capture->task_frame = true;
     } else if (frame->src == BLE_LOG_SRC_CUSTOM && marker == 0x22) {
-        capture->non_yield_frame =
-            BLE_LOG_SRC_IS_NON_YIELD(frame->source_meta);
+        capture->critical_frame = true;
     } else if (frame->src == BLE_LOG_SRC_HCI && marker == 0x01) {
         capture->hci_downstream_frame = true;
     } else if (frame->src == BLE_LOG_SRC_HCI && marker == 0x82) {
@@ -437,7 +434,7 @@ static void capture_frame_meta(const test_ble_log_frame_t *frame, void *ctx)
     }
 }
 
-TEST_CASE("BLE Log marks non-yield context and commits claimed payload",
+TEST_CASE("BLE Log writes from critical sections and commits claimed payload",
           "[ble_log][lbm]")
 {
     const uint8_t task_marker = 0x11;
@@ -511,7 +508,7 @@ TEST_CASE("BLE Log marks non-yield context and commits claimed payload",
     }
 
     TEST_ASSERT_TRUE(capture.task_frame);
-    TEST_ASSERT_TRUE(capture.non_yield_frame);
+    TEST_ASSERT_TRUE(capture.critical_frame);
     TEST_ASSERT_TRUE(capture.hci_downstream_frame);
     TEST_ASSERT_TRUE(capture.hci_upstream_frame);
     TEST_ASSERT_TRUE(capture.claimed_frame);
@@ -1065,6 +1062,138 @@ TEST_CASE("BLE Log deinit hands residual transports to the peripheral",
     TEST_ASSERT_TRUE(ble_log_init());
 }
 
+typedef struct {
+    SemaphoreHandle_t started;
+    SemaphoreHandle_t done;
+    bool result;
+} blocked_writer_ctx_t;
+
+static void blocked_write_task(void *arg)
+{
+    blocked_writer_ctx_t *ctx = arg;
+    static const uint8_t marker = 0x57;
+    xSemaphoreGive(ctx->started);
+    ctx->result = ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker,
+                                    sizeof(marker));
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+static void blocked_claim_task(void *arg)
+{
+    blocked_writer_ctx_t *ctx = arg;
+    uint32_t handle;
+    xSemaphoreGive(ctx->started);
+    uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, 1, &handle);
+    ctx->result = payload != NULL;
+    if (payload) {
+        payload[0] = 0x58;
+    }
+    ble_log_commit(handle, 1);
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+typedef struct {
+    bool write_frame;
+    bool claim_frame;
+} blocked_capture_t;
+
+static void capture_blocked_markers(const test_ble_log_frame_t *frame, void *ctx)
+{
+    blocked_capture_t *capture = ctx;
+    if (frame->payload_len != sizeof(uint32_t) + 1) {
+        return;
+    }
+    uint8_t marker = frame->payload[sizeof(uint32_t)];
+    if (frame->src == BLE_LOG_SRC_CUSTOM && marker == 0x57) {
+        capture->write_frame = true;
+    } else if (frame->src == BLE_LOG_SRC_ENCODE && marker == 0x58) {
+        capture->claim_frame = true;
+    }
+}
+
+TEST_CASE("BLE Log task writers wait for a shared transport", "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+
+    /* Keep every task-usable transport SENDING in the test peripheral. */
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    blocked_writer_ctx_t writers[2] = {0};
+    for (int i = 0; i < 2; i++) {
+        writers[i].started = xSemaphoreCreateBinary();
+        writers[i].done = xSemaphoreCreateBinary();
+        TEST_ASSERT_NOT_NULL(writers[i].started);
+        TEST_ASSERT_NOT_NULL(writers[i].done);
+    }
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(blocked_write_task, "ble_log_wait1",
+                                  TEST_LIFECYCLE_STACK_SIZE, &writers[0],
+                                  TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(blocked_claim_task, "ble_log_wait2",
+                                  TEST_LIFECYCLE_STACK_SIZE, &writers[1],
+                                  TEST_LIFECYCLE_PRIO, NULL));
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_TRUE(xSemaphoreTake(writers[i].started,
+                                        pdMS_TO_TICKS(1000)));
+    }
+    vTaskDelay(1);
+    /* No shared transport is free: both yieldable writers must be parked. */
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(writers[i].done, 0));
+    }
+
+    /* Recycling transports wakes the parked writers; neither write is lost. */
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    for (int i = 0; i < 2; i++) {
+        size_t len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                            pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+                                            0, NULL);
+        TEST_ASSERT_GREATER_THAN_size_t(0, len);
+    }
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_TRUE(xSemaphoreTake(writers[i].done, pdMS_TO_TICKS(1000)));
+        TEST_ASSERT_TRUE(writers[i].result);
+    }
+
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    blocked_capture_t capture = {0};
+    for (int i = 0; i < BLE_LOG_TRANS_TOTAL_CNT; i++) {
+        size_t len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                            pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+                                            0, NULL);
+        if (!len) {
+            break;
+        }
+        TEST_ASSERT_TRUE(test_ble_log_walk_frames(s_read_buf, len,
+                                                  capture_blocked_markers,
+                                                  &capture));
+    }
+    TEST_ASSERT_TRUE(capture.write_frame);
+    TEST_ASSERT_TRUE(capture.claim_frame);
+
+    for (int i = 0; i < 2; i++) {
+        vSemaphoreDelete(writers[i].started);
+        vSemaphoreDelete(writers[i].done);
+    }
+}
+
 #define SNAPSHOT_CAPTURE_MAX 8
 
 typedef struct {
@@ -1229,12 +1358,6 @@ TEST_CASE("BLE Log deinit closes a parked LL writer before racing enable",
                                            sizeof(full_payload)));
     }
     static const uint8_t reserve_marker = 0x56;
-    TEST_ASSERT_FALSE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM,
-                                        &reserve_marker,
-                                        sizeof(reserve_marker)));
-    uint32_t exhausted_handle;
-    TEST_ASSERT_NULL(ble_log_claim(BLE_LOG_SRC_ENCODE, 1,
-                                   &exhausted_handle));
 
     portMUX_TYPE reserve_mux = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&reserve_mux);
