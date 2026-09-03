@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -7,7 +7,6 @@ import subprocess
 import sys
 import typing
 from pathlib import Path
-from typing import Union
 
 try:
     EXT_IDF_PATH = os.environ['IDF_PATH']  # type: str
@@ -16,8 +15,66 @@ except KeyError:
     exit(1)
 
 
-EnvDict = typing.Dict[str, str]
+EnvDict = dict[str, str]
 IdfPyFunc = typing.Callable[..., subprocess.CompletedProcess]
+
+
+_LOG_ERROR_MARKERS = (
+    'CMake Error',
+    'FAILED:',
+    'fatal error',
+    'ninja: build stopped',
+    'HINT:',
+)
+
+
+def _clip_log_output(text: str | None, max_lines: int = 80, max_line_len: int = 400) -> str:
+    """Last ``max_lines`` of process output for logging, plus failure lines.
+
+    pytest.ini enables ``log_cli``, so ``logging.error(full_stdout)`` after a
+    failed build is one record. On Windows CI that live-log can stall for hours
+    even when the line count is small: CMake's ``-- Component paths:`` line is
+    a single multi-KB (sometimes multi-MB) string.
+    """
+    if not text:
+        return ''
+    lines = text.splitlines()
+
+    def _short(line: str) -> str:
+        if len(line) <= max_line_len:
+            return line
+        return line[:max_line_len] + f'... [{len(line) - max_line_len} chars omitted]'
+
+    omitted = max(0, len(lines) - max_lines)
+    tail_start = len(lines) - max_lines if omitted else 0
+    tail = lines[tail_start:]
+
+    failures: list[str] = []
+    for idx, line in enumerate(lines):
+        if idx >= tail_start:
+            break
+        if any(marker in line for marker in _LOG_ERROR_MARKERS):
+            failures.append(line)
+            if len(failures) >= 40:
+                break
+
+    parts: list[str] = []
+    if failures:
+        parts.append('[... failure lines ...]')
+        parts.extend(_short(line) for line in failures)
+    if omitted:
+        parts.append(f'[... {omitted} lines omitted ...]')
+    parts.extend(_short(line) for line in tail)
+    return '\n'.join(parts)
+
+
+def normalize_output(text: str) -> str:
+    """Collapse all whitespace runs to a single space.
+
+    Use for content assertions on messages that include file paths: long paths can
+    push lines past COLUMNS=200 and cause Rich to insert a mid-message line break.
+    """
+    return ' '.join(text.split())
 
 
 def find_python(path_var: str) -> str:
@@ -41,11 +98,12 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
         sys.executable,
         os.path.join(idf_path, 'tools', 'idf_tools.py'),
         'export',
-        '--format=key-value'
+        '--format=key-value',
     ]
     keys_values = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode()
-    idf_tool_py_env = {key: os.path.expandvars(value) for key, value in
-                       [line.split('=') for line in keys_values.splitlines()]}
+    idf_tool_py_env = {
+        key: os.path.expandvars(value) for key, value in [line.split('=') for line in keys_values.splitlines()]
+    }
     env_vars = {}  # type: EnvDict
     env_vars.update(os.environ)
     env_vars.update(idf_tool_py_env)
@@ -55,13 +113,15 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
     return env_vars
 
 
-def run_idf_py(*args: str,
-               env: typing.Optional[EnvDict] = None,
-               idf_path: typing.Optional[typing.Union[str,Path]] = None,
-               workdir: typing.Optional[str] = None,
-               check: bool = True,
-               python: typing.Optional[str] = None,
-               input_str: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+def run_idf_py(
+    *args: str,
+    env: EnvDict | None = None,
+    idf_path: str | Path | None = None,
+    workdir: str | None = None,
+    check: bool = True,
+    python: str | None = None,
+    input_str: str | None = None,
+) -> subprocess.CompletedProcess:
     """
     Run idf.py command with given arguments, raise an exception on failure
     :param args: arguments to pass to idf.py
@@ -86,27 +146,36 @@ def run_idf_py(*args: str,
 
     cmd = [
         python,
-        os.path.join(idf_path, 'tools', 'idf.py')
+        os.path.join(idf_path, 'tools', 'idf.py'),
     ]
     cmd += args  # type: ignore
-    logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
+    logging.debug(f'running {" ".join(cmd)} in {workdir}')
     try:
         return subprocess.run(
-            cmd, env=env, cwd=workdir,
-            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
+            cmd,
+            env=env,
+            cwd=workdir,
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='backslashreplace',
+            input=input_str,
+        )
     except subprocess.CalledProcessError as e:
-        logging.error('The following idf.py command has failed: {}'.format(' '.join(cmd)))
-        logging.error('Working directory: {}'.format(workdir))
-        logging.error('Stdout: {}'.format(e.stdout))
-        logging.error('Stderr: {}'.format(e.stderr))
+        logging.error(f'The following idf.py command has failed: {" ".join(cmd)}')
+        logging.error(f'Working directory: {workdir}')
+        logging.error(f'Stdout: {_clip_log_output(e.stdout)}')
+        logging.error(f'Stderr: {_clip_log_output(e.stderr)}')
         raise
 
 
-def run_cmake(*cmake_args: str,
-              env: typing.Optional[EnvDict] = None,
-              check: bool = True,
-              workdir: typing.Optional[Union[Path,str]] = None) -> subprocess.CompletedProcess:
+def run_cmake(
+    *cmake_args: str,
+    env: EnvDict | None = None,
+    check: bool = True,
+    workdir: Path | str | None = None,
+) -> subprocess.CompletedProcess:
     """
     Run cmake command with given arguments, raise an exception on failure
     :param cmake_args: arguments to pass cmake
@@ -120,27 +189,33 @@ def run_cmake(*cmake_args: str,
     if workdir:
         build_dir = Path(workdir, 'build')
     else:
-        build_dir = (Path(os.getcwd()) / 'build')
+        build_dir = Path(os.getcwd()) / 'build'
 
     build_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = ['cmake'] + list(cmake_args)
 
-    logging.debug('running {} in {}'.format(' '.join(cmd), build_dir))
+    logging.debug(f'running {" ".join(cmd)} in {build_dir}')
     try:
         return subprocess.run(
-            cmd, env=env, cwd=build_dir,
-            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, encoding='utf-8', errors='backslashreplace')
+            cmd,
+            env=env,
+            cwd=build_dir,
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='backslashreplace',
+        )
     except subprocess.CalledProcessError as e:
-        logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
-        logging.error('Working directory: {}'.format(workdir))
-        logging.error('Stdout: {}'.format(e.stdout))
-        logging.error('Stderr: {}'.format(e.stderr))
+        logging.error(f'The following cmake command has failed: {" ".join(cmd)}')
+        logging.error(f'Working directory: {workdir}')
+        logging.error(f'Stdout: {_clip_log_output(e.stdout)}')
+        logging.error(f'Stderr: {_clip_log_output(e.stderr)}')
         raise
 
 
-def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
+def run_cmake_and_build(*cmake_args: str, env: EnvDict | None = None) -> None:
     """
     Run cmake command with given arguments and build afterwards, raise an exception on failure
     :param cmake_args: arguments to pass cmake
