@@ -67,7 +67,9 @@ void ble_log_deinit(void);
 bool ble_log_enable(bool enable);
 /* Blocking; call only from a caller-owned task, not an ISR or system callback. */
 void ble_log_flush(void);
+/* Waits for a shared transport in yieldable contexts; ISR and critical-section callers fail fast. */
 bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len);
+/* Same backpressure as ble_log_write_hex(): yieldable claims wait for a shared transport. */
 uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle);
 void ble_log_commit(uint32_t handle, size_t actual_len);
 void ble_log_dump_to_console(void);

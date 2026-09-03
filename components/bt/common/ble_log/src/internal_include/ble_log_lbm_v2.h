@@ -31,10 +31,8 @@ typedef struct {
 #define BLE_LOG_FRAME_HEAD_LEN                  (sizeof(ble_log_frame_head_t))
 #define BLE_LOG_FRAME_TAIL_LEN                  (sizeof(uint32_t))
 #define BLE_LOG_FRAME_OVERHEAD                  (BLE_LOG_FRAME_HEAD_LEN + BLE_LOG_FRAME_TAIL_LEN)
-#define BLE_LOG_MAKE_SOURCE_META(src, non_yield) \
-    (((src) & BLE_LOG_SRC_ID_MASK) | ((non_yield) ? BLE_LOG_SRC_FLAG_NON_YIELD : 0))
-#define BLE_LOG_MAKE_FRAME_META(source_meta, sn) \
-    (((source_meta) & 0xffU) | (((sn) & 0x00ffffffU) << 8))
+#define BLE_LOG_MAKE_FRAME_META(src, sn) \
+    (((src) & 0xffU) | (((sn) & 0x00ffffffU) << 8))
 
 /* ------------------------------------- */
 /*     Unified Buffer Pool Defines       */
@@ -59,13 +57,8 @@ typedef struct {
 /* --------------------------------------- */
 /*     Protocol v7 Source ID Space         */
 /* --------------------------------------- */
-/* The frozen public ble_log_src_t values are the base on-wire and statistic
- * source IDs. Bit 7 of the frame source byte carries NON_YIELD metadata, so
- * receivers must mask it before decoding the base source. */
-#define BLE_LOG_SRC_ID_MASK                     0x7f
-#define BLE_LOG_SRC_FLAG_NON_YIELD              0x80
-#define BLE_LOG_SRC_ID(source_meta)             ((source_meta) & BLE_LOG_SRC_ID_MASK)
-#define BLE_LOG_SRC_IS_NON_YIELD(source_meta)   (((source_meta) & BLE_LOG_SRC_FLAG_NON_YIELD) != 0)
+/* The frozen public ble_log_src_t values are the on-wire and statistic
+ * source IDs: the frame source byte carries the bare enum value. */
 
 /* Statistic slots in the Internal Snapshot: every public source that can
  * produce frames, i.e. CUSTOM through ENCODE. INTERNAL frames carry their

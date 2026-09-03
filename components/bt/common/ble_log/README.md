@@ -19,8 +19,9 @@ flowchart TD
 
 The shared pool contains `CONFIG_BLE_LOG_POOL_TRANS_CNT` transports. The last
 `CONFIG_BLE_LOG_POOL_NON_YIELD_RESERVE_CNT` transports are reserved for ISR and
-other contexts that cannot yield. Ordinary public writes are non-blocking.
-Only the ordinary controller LL task path waits for a shared transport.
+other contexts that cannot yield. Every yieldable-context writer, from the
+public API and claims to the controller LL task, waits for a shared transport;
+only ISR and critical-section writers fail fast.
 
 The Internal Snapshot and UART0 redirection transports are not members of the
 bitmap pool.
@@ -48,8 +49,7 @@ offset  size  field
 `frame_meta` is:
 
 ```text
-bits 0..6    base source
-bit 7        NON_YIELD
+bits 0..7    source
 bits 8..31   sequence number, low 24 bits
 ```
 
@@ -74,9 +74,8 @@ redirection flush) is the alignment reference against the core timeline.
 
 ### Sources
 
-The public `ble_log_src_t` ABI is frozen and its values are the base on-wire
-source IDs of protocol v7 frames. Receivers must mask the `NON_YIELD` bit
-before decoding the base source:
+The public `ble_log_src_t` ABI is frozen and its values are the on-wire
+source IDs of protocol v7 frames:
 
 ```text
 0  INTERNAL
@@ -100,7 +99,6 @@ console batch). `ble_log_init()` resets all three sequences, and its required
 `INIT` snapshot starts a new receiver epoch. They remain continuous through
 `FLUSH` within that epoch. Callers must not write until `ble_log_init()`
 returns, so the `INIT` snapshot is submitted first.
-Actual ISR and critical-section records carry `NON_YIELD` in source bit 7.
 
 Controller-side HCI records are not emitted by BLE Log, and the controller no
 longer maintains its own internal LL HCI log. Host-side Bluedroid and NimBLE

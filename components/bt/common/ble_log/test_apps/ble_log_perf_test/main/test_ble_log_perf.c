@@ -979,8 +979,9 @@ TEST_CASE("BLE Log write_hex cycles (single writer, link=0)", "[ble_log][perf][c
     }
 }
 
-/* Saturated link: most writes fail. Measures the drop-path cost and
- * cross-checks client failed counts against the LBM's lost counters. */
+/* Saturated link: yieldable writers park on backpressure instead of dropping;
+ * measures the park/wake cost and cross-checks client failed counts against
+ * the LBM's lost counters. */
 TEST_CASE("BLE Log write_hex drop path cycles (link=2Mbps)", "[ble_log][perf][cycle][ignore]")
 {
     perf_run_cfg_t cfg = {
