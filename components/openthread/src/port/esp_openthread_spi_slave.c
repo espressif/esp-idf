@@ -121,13 +121,15 @@ err:
 
 void esp_openthread_spi_slave_deinit(void)
 {
-    spi_slave_free(s_spi_config->host_device);
-    s_spi_config->slave_config.post_setup_cb = NULL;
-    s_spi_config->slave_config.post_trans_cb = NULL;
-    heap_caps_free(s_spi_config);
+    if (s_spi_config != NULL) {
+        spi_slave_free(s_spi_config->host_device);
+        s_spi_config->slave_config.post_setup_cb = NULL;
+        s_spi_config->slave_config.post_trans_cb = NULL;
+        heap_caps_free(s_spi_config);
+        s_spi_config = NULL;
+    }
     heap_caps_free(s_spi_transaction);
     heap_caps_free(s_pending_transaction);
-    s_spi_config = NULL;
     s_spi_transaction = NULL;
     s_pending_transaction = NULL;
     return;
