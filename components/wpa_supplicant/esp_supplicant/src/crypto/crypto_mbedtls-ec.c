@@ -66,7 +66,13 @@ static int crypto_ec_point_mul_ecc_hw(const mbedtls_ecp_group *grp,
     ecc_point_t p_hw = { 0 };
     ecc_point_t r_hw = { 0 };
     unsigned char scalar_le[MAX_SIZE] = { 0 };
-    size_t curve_len = grp->pbits / 8;
+    size_t curve_len;
+
+    if (!grp || !p || !k || !res) {
+        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    }
+
+    curve_len = grp->pbits / 8;
 
     if (!crypto_ec_point_mul_curve_supported(grp)) {
         return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
@@ -969,7 +975,11 @@ static int crypto_ec_point_mul_p256_window4_core(const mbedtls_ecp_group *grp,
     int ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
     bool started = false;
 
-    if (!grp || grp->id != MBEDTLS_ECP_DP_SECP256R1 ||
+    if (!grp || !p || !k || !r) {
+        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    }
+
+    if (grp->id != MBEDTLS_ECP_DP_SECP256R1 ||
             mbedtls_mpi_cmp_int(&p->MBEDTLS_PRIVATE(Z), 1) != 0) {
         return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
     }
@@ -1166,6 +1176,10 @@ int crypto_ec_point_mul(struct crypto_ec *e, const struct crypto_ec_point *p,
                         struct crypto_ec_point *res)
 {
     int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+
+    if (!e || !p || !b || !res) {
+        return -1;
+    }
 
 #if CONFIG_MBEDTLS_HARDWARE_ECC
     ret = crypto_ec_point_mul_ecc_hw((mbedtls_ecp_group *)e,
