@@ -509,7 +509,9 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
         INACTIVE_TIMER_COUNT = 64,
         NUM_TIMERS = 256,
     };
-    const uint64_t long_period = (1ULL << 56) - 1;
+    /* Keep the first alarm within the range supported by older targets while
+     * retaining enough digits to exceed TIMER_INFO_LINE_LEN. */
+    const uint64_t long_period = 1000000000000ULL;
     /* Keep large test buffers off the Unity task stack on smaller targets. */
     static esp_timer_handle_t inactive_timers[INACTIVE_TIMER_COUNT];
     static char inactive_names[INACTIVE_TIMER_COUNT][30];
@@ -542,7 +544,7 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
     fflush(stream);
     fclose(stream);
     TEST_ASSERT_NOT_NULL(strstr(dump_buf, "Timer stats:"));
-    TEST_ASSERT_NOT_NULL(strstr(dump_buf, "72057594037927935"));
+    TEST_ASSERT_NOT_NULL(strstr(dump_buf, "1000000000000"));
 #if !CONFIG_IDF_TARGET_LINUX
     TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
 #endif
