@@ -98,6 +98,9 @@
 
     {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、安全性和可靠性，适用于各种应用场景和不同功耗需求。
 
+    .. important::
+
+        {IDF_TARGET_NAME} 不具备内置 Wi-Fi 或蓝牙功能。如需使用 Wi-Fi 或蓝牙，请连接外部无线 SoC（如 ESP32-C5 或 ESP32-C6）。详情请参阅 :doc:`../api-guides/wifi-expansion`。
 
 .. only:: not esp32p4
 
