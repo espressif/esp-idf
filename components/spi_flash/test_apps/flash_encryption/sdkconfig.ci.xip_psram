@@ -1,0 +1,11 @@
+# Flash Encryption + external PSRAM .bss regression config for IDF-15875.
+# Places .ext_ram.bss in external PSRAM so a boot-time CPU frequency switch
+# under PSRAM-XIP can be exercised; without the fix the external .bss is
+# corrupted during boot.
+# On esp32p4, CONFIG_CACHE_L2_CACHE_LINE_128B is required to reproduce.
+CONFIG_CACHE_L2_CACHE_LINE_128B=y
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_BOOT_INIT=y
+CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
+CONFIG_SPIRAM_SPEED_250M=y
+CONFIG_SPIRAM_XIP_FROM_PSRAM=y
