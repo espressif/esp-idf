@@ -82,10 +82,8 @@ build_template_app:
     - run_cmd idf-build-apps build
       -p tools/test_apps/system/clang_build_test
       -t $IDF_TARGET
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components \"${MR_MODIFIED_COMPONENTS}\"
+      --modified-files \"${MR_MODIFIED_FILES}\"
       $TEST_BUILD_OPTS_EXTRA
 
 build_clang_test_apps_xtensa:
@@ -110,61 +108,6 @@ build_clang_test_apps_riscv:
 ####################
 # Dynamic Pipeline #
 ####################
-generate_build_child_pipeline:
-  extends:
-    - .build_template
-  tags: [fast_run, shiny]
-  dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - pipeline_variables
-    - job: baseline_manifest_sha
-      optional: true
-  artifacts:
-    paths:
-      - build_child_pipeline.yml
-      - test_related_apps.txt
-      - non_test_related_apps.txt
-    expire_in: 1 week
-    when: always
-  script:
-    - run_cmd idf-ci --debug gitlab build-child-pipeline
-      -p components
-      -p examples
-      -p tools/test_apps
-      --modified-files $MR_MODIFIED_FILES
-
-build_child_pipeline:
-  stage: build
-  needs:
-    - job: fast_template_app
-      optional: true
-      artifacts: false
-    - pipeline_variables
-    - generate_build_child_pipeline
-  variables:
-    MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
-    MR_MODIFIED_FILES: $MR_MODIFIED_FILES
-    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-  # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
-  inherit:
-    variables: false
-  trigger:
-    include:
-      - artifact: build_child_pipeline.yml
-        job: generate_build_child_pipeline
-    strategy: depend
-
-generate_prebuild_report:
-  extends:
-    - .build_template
-  tags: [fast_run, shiny]
-  needs:
-    - pipeline_variables
-  artifacts:
-    paths:
-      - prebuild_report.html
-    expire_in: 1 week
-    when: always
-  script:
-    - run_cmd idf-ci build collect --format html -o prebuild_report.html
-    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/prebuild_report.html"
+# !!!
+# configurations moved to ci/actions/common/idf/
+# !!!

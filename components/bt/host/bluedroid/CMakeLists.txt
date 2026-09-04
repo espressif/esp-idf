@@ -26,6 +26,12 @@ function(set_bluedroid_host_compile_flags)
         set_source_files_properties("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/device/controller.c"
                                     PROPERTIES COMPILE_FLAGS "-Wno-unterminated-string-initialization")
     endif()
+
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        # Prevent an Xtensa Clang vectorizer crash when compiling this source at -O2.
+        set_source_files_properties("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/stack/gatt/gatt_sr.c"
+                                    PROPERTIES COMPILE_FLAGS "-fno-vectorize -fno-slp-vectorize")
+    endif()
 endfunction()
 
 set(bluedroid_host_srcs "" PARENT_SCOPE)
