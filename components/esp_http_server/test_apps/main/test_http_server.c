@@ -605,6 +605,56 @@ TEST_CASE("Unknown Transfer-Encoding is rejected with 501", "[HTTP SERVER][secur
     TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
 }
 
+/* ---- Unrecognized request method (RFC 9110 section 15.6.2) ---- */
+
+/* http_parser stops on a method token it does not know, before the URL
+ * callback ever runs. The server must map that parser error to 501, not to
+ * the generic 400 used for malformed syntax, and must close the session:
+ * parsing aborted mid-request, so the stream has no safe continuation. */
+TEST_CASE("Unknown HTTP method is rejected with 501", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_plain_test_server(8101, ESP_HTTPD_DEF_CTRL_PORT + 20);
+    httpd_uri_t get_any = {
+        .uri = "/any", .method = HTTP_GET, .handler = te_ok_handler,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_uri_handler(hd, &get_any));
+    /* "FOO" is a syntactically valid token that no server implements. The
+     * pipelined GET behind it must never be answered. */
+    mock_server_request_t req = {
+        .data = "FOO /any HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "\r\n"
+                "GET /any HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8101, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    assert_single_response_then_close(resp);
+    mock_server_assert_status(resp, 501);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+/* Guard: only the unknown-method parser error maps to 501. Any other
+ * request-line syntax error must still be answered with 400. */
+TEST_CASE("Malformed request line is rejected with 400", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_plain_test_server(8102, ESP_HTTPD_DEF_CTRL_PORT + 21);
+    mock_server_request_t req = {
+        .data = "GET /any HTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8102, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
 #ifdef CONFIG_HTTPD_WS_SUPPORT
 TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERVER][websocket]")
 {
