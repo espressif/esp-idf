@@ -49,6 +49,7 @@ static BOOLEAN bta_hf_client_is_transparent_codec(tBTM_SCO_CODEC_TYPE codec)
     return (codec == BTM_SCO_CODEC_MSBC || codec == BTM_SCO_CODEC_LC3);
 }
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE )
 static UINT32 bta_hf_client_sco_get_pcm_rate(tBTM_SCO_CODEC_TYPE codec)
 {
     if (codec == BTM_SCO_CODEC_LC3) {
@@ -59,6 +60,8 @@ static UINT32 bta_hf_client_sco_get_pcm_rate(tBTM_SCO_CODEC_TYPE codec)
     }
     return BTA_HFP_SCO_SAMP_RATE_8K;
 }
+#endif
+
 #define BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S1  4   /* eSCO setting for CVSD S1 */
 
 static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
