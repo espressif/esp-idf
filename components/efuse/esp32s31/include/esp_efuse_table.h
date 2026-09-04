@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 1cdb8731d5e8193ceb48139f9db95994
+// md5_digest_table d75d0e39a18319b5287c3790c42a8d06
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -64,9 +64,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_DISABLE_SOFT_K[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SEC_DPA_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_XTS_DPA_CLK_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_XTS_DPA_PSEUDO_LEVEL[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RMA_NONCE_ENA[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RMA_CHIP_INFO_SOURCE[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RMA_DISABLE_FAST_VEF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SDC_NONCE_ENA[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SDC_CHIP_INFO_SOURCE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SDC_DISABLE_FAST_VEF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ENA_XTS_SHADOW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ENA_SPI_BOOT_CRYPT_SCRAMBLER[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RE_ENABLE_JTAG_SOURCE[];
@@ -98,8 +98,20 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LP_HP_DBIAS_VOL_GAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP_CALIBRATION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V8_DREF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V8_MUL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
@@ -117,6 +129,18 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_KEY4[];
 #define ESP_EFUSE_WR_DIS_KEY4 ESP_EFUSE_WR_DIS_BLOCK_KEY4
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2[];
 #define ESP_EFUSE_WR_DIS_SYS_DATA_PART2 ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_DIFF_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_DIFF_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_P_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_P_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_N_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_N_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_DIFF_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_DIFF_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_P_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_P_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_N_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_N_B[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_DEVICE_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SOFT_DIS_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS[];
@@ -130,6 +154,19 @@ extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_KEY3[];
 #define ESP_EFUSE_RD_DIS_KEY3 ESP_EFUSE_RD_DIS_BLOCK_KEY3
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_KEY4[];
 #define ESP_EFUSE_RD_DIS_KEY4 ESP_EFUSE_RD_DIS_BLOCK_KEY4
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_DIFF_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_DIFF_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_P_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_P_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_N_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_N_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_DIFF_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_DIFF_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_P_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_P_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_N_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_N_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_USB_DEVICE_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS[];
@@ -190,11 +227,11 @@ extern const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION
 extern const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_UPDATE_IN_ROM[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RMA_ENA[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RMA_SESSION_COUNTER[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RMA_NONCE_ENA[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RMA_CHIP_INFO_SOURCE[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RMA_DISABLE_FAST_VEF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SDC_ENA[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SDC_SESSION_COUNTER[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SDC_NONCE_ENA[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SDC_CHIP_INFO_SOURCE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SDC_DISABLE_FAST_VEF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PVT_0_GLITCH_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PVT_0_GLITCH_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PVT_1_GLITCH_EN[];
@@ -218,7 +255,19 @@ extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LP_HP_DBIAS_VOL_GAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PVT_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIBRATION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V8_DREF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V8_MUL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 #define ESP_EFUSE_BLOCK_USR_DATA ESP_EFUSE_USER_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
@@ -234,8 +283,18 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY3[];
 #define ESP_EFUSE_BLOCK_KEY3 ESP_EFUSE_KEY3
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY4[];
 #define ESP_EFUSE_BLOCK_KEY4 ESP_EFUSE_KEY4
-extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART2[];
-#define ESP_EFUSE_BLOCK_SYS_DATA2 ESP_EFUSE_SYS_DATA_PART2
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_DIFF_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_DIFF_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_P_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_P_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_N_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_N_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_DIFF_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_DIFF_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_P_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_P_B[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_N_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_N_B[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_DEVICE_EXCHG_PINS[];
 
 #ifdef __cplusplus
