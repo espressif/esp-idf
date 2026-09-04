@@ -682,6 +682,13 @@ static err_t netif_mld_mac_filter_cb(struct netif *netif, const ip6_addr_t *grou
     }
     return ERR_OK;
 }
+
+static void netif_mld_mac_filter_all_nodes(struct netif *netif, enum netif_mac_filter_action action)
+{
+    ip6_addr_t all_nodes;
+    ip6_addr_set_allnodes_linklocal(&all_nodes);
+    netif_mld_mac_filter_cb(netif, &all_nodes, action);
+}
 #endif /* LWIP_IPV6 && LWIP_IPV6_MLD */
 
 static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_netif_config_t *cfg)
@@ -953,6 +960,11 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
         if (netif_is_up(esp_netif->lwip_netif)) {
             netif_set_down(esp_netif->lwip_netif);
         }
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+        if (esp_netif->driver_set_mac_filter) {
+            netif_mld_mac_filter_all_nodes(esp_netif->lwip_netif, NETIF_DEL_MAC_FILTER);
+        }
+#endif
         netif_remove(esp_netif->lwip_netif);
 #if ESP_GRATUITOUS_ARP
         if (esp_netif->flags & ESP_NETIF_FLAG_GARP) {
@@ -1044,6 +1056,8 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 #endif
 #if LWIP_IPV6 && LWIP_IPV6_MLD
         netif_set_mld_mac_filter(esp_netif->lwip_netif, netif_mld_mac_filter_cb);
+        /* ff02::1 is implicitly joined and therefore absent from the MLD group list. */
+        netif_mld_mac_filter_all_nodes(esp_netif->lwip_netif, NETIF_ADD_MAC_FILTER);
         /* Align L2 multicast filters with current MLD groups, since mld6 processing
          * may have started before the callback was registered. */
         if (esp_netif->lwip_netif && (esp_netif->lwip_netif->flags & NETIF_FLAG_MLD6)) {
