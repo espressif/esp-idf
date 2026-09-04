@@ -936,6 +936,7 @@ def iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 # TODO: IDF-6820: ESP32-S2 / ESP32-S3 -> Fix incorrect panic reason: Unhandled debug exception
+# ESP32-S3: the DBUS-alias write to IRAM text is not trapped by the PMS (IBUS-only monitor, TRM 15.3.2)
 @idf_parametrize(
     'config,target,markers',
     configs_with_xfail(CONFIGS_MEMPROT_IDRAM, 'Incorrect panic reason may be observed', targets=('esp32s2', 'esp32s3')),
@@ -975,10 +976,15 @@ def dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+# TODO: IDF-6820: ESP32-S2 / ESP32-S3 -> Fix multiple panic reasons in different runs
+# On ESP32-S3 the DRAM execute cases race: the fetch raises InstructionFetchError and the cache's
+# MMU entry fault interrupt at about the same time. IRAM writes raise no CPU exception (PMS
+# interrupt only), so they do not.
 @idf_parametrize(
     'config,target,markers',
-    configs_with_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
+    configs_with_xfail(
+        CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface', targets=('esp32s2', 'esp32s3')
+    ),
     indirect=['config', 'target'],
 )
 def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1014,10 +1020,13 @@ def dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+# TODO: IDF-6820: ESP32-S2 / ESP32-S3 -> Fix multiple panic reasons in different runs
+# See test_dram_reg1_execute_violation for why the DRAM execute cases race on ESP32-S3.
 @idf_parametrize(
     'config,target,markers',
-    configs_with_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
+    configs_with_xfail(
+        CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface', targets=('esp32s2', 'esp32s3')
+    ),
     indirect=['config', 'target'],
 )
 def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1072,10 +1081,16 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-# TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
+# TODO: IDF-6820: ESP32-S2 / ESP32-S3 -> Fix multiple panic reasons in different runs
+# On ESP32-S3 the PMS answers a rejected fetch with zeros, so an IllegalInstruction may race the
+# PMS interrupt.
 @idf_parametrize(
     'config,target,markers',
-    configs_with_xfail(CONFIGS_MEMPROT_RTC_FAST_MEM, 'Multiple panic reasons for the same test may surface'),
+    configs_with_xfail(
+        CONFIGS_MEMPROT_RTC_FAST_MEM,
+        'Multiple panic reasons for the same test may surface',
+        targets=('esp32s2', 'esp32s3'),
+    ),
     indirect=['config', 'target'],
 )
 def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
