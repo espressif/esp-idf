@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "sys/param.h"
+#include "esp_err.h"
 #include "esp_log.h"
 #include "jpeg_private.h"
 #include "private/jpeg_param.h"
@@ -16,8 +17,17 @@
 
 static void emit_byte(jpeg_enc_header_info_t *header_info, uint8_t i)
 {
+    if (header_info->header_len >= header_info->header_buf_size) {
+        header_info->header_buf_overflow = true;
+        return;
+    }
     header_info->header_buf[header_info->header_len] = i;
     header_info->header_len = header_info->header_len + 1;
+}
+
+static esp_err_t emit_check(jpeg_enc_header_info_t *header_info)
+{
+    return header_info->header_buf_overflow ? ESP_ERR_INVALID_ARG : ESP_OK;
 }
 
 static void emit_word(jpeg_enc_header_info_t *header_info, uint16_t i)
@@ -71,7 +81,7 @@ static void compute_quant_table(uint32_t *quant_table, const uint32_t *basic_tab
 esp_err_t emit_soi_marker(jpeg_enc_header_info_t *header_info)
 {
     emit_marker(header_info, JPEG_M_SOI & 0xff);
-    return ESP_OK;
+    return emit_check(header_info);
 }
 
 esp_err_t emit_app0_marker(jpeg_enc_header_info_t *header_info)
@@ -98,7 +108,7 @@ esp_err_t emit_app0_marker(jpeg_enc_header_info_t *header_info)
     // No thumbnail image
     emit_byte(header_info, 0);
     emit_byte(header_info, 0);
-    return ESP_OK;
+    return emit_check(header_info);
 }
 
 esp_err_t emit_dqt_marker(jpeg_enc_header_info_t *header_info)
@@ -115,7 +125,7 @@ esp_err_t emit_dqt_marker(jpeg_enc_header_info_t *header_info)
         }
     }
 
-    return ESP_OK;
+    return emit_check(header_info);
 }
 
 esp_err_t emit_sof_marker(jpeg_enc_header_info_t *header_info)
@@ -175,7 +185,7 @@ esp_err_t emit_sof_marker(jpeg_enc_header_info_t *header_info)
         emit_byte(header_info, (comp_h_samp[i] << 4) + comp_v_samp[i]);
         emit_byte(header_info, (i > 0));
     }
-    return ESP_OK;
+    return emit_check(header_info);
 }
 
 esp_err_t emit_dht_marker(jpeg_enc_header_info_t *header_info)
@@ -199,7 +209,7 @@ esp_err_t emit_dht_marker(jpeg_enc_header_info_t *header_info)
         emit_dht(header_info, m_huff_bits[1][1], m_huff_val[1][1], 1, true);
     }
 
-    return ESP_OK;
+    return emit_check(header_info);
 }
 
 esp_err_t emit_sos_marker(jpeg_enc_header_info_t *header_info)
@@ -221,7 +231,7 @@ esp_err_t emit_sos_marker(jpeg_enc_header_info_t *header_info)
     emit_byte(header_info, 0); /* spectral selection */
     emit_byte(header_info, 63);
     emit_byte(header_info, 0);
-    return ESP_OK;
+    return emit_check(header_info);
 }
 
 esp_err_t emit_com_marker(jpeg_enc_header_info_t *header_info)
@@ -240,5 +250,5 @@ esp_err_t emit_com_marker(jpeg_enc_header_info_t *header_info)
         emit_byte(header_info, 0);
     }
 
-    return ESP_OK;
+    return emit_check(header_info);
 }
