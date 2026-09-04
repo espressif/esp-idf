@@ -374,7 +374,7 @@ esp_err_t httpd_stop(httpd_handle_t handle);
  */
 typedef struct httpd_req {
     httpd_handle_t  handle;                     /*!< Handle to server instance */
-    int             method;                     /*!< The type of HTTP request, -1 if unsupported method, HTTP_ANY for wildcard method to support every method */
+    int             method;                     /*!< The type of HTTP request (enum http_method); a request with an unrecognized method is rejected with 501 before any URI handler runs */
     const char      uri[CONFIG_HTTPD_MAX_URI_LEN + 1]; /*!< The URI of this request (1 byte extra for null termination) */
     size_t          content_len;                /*!< Length of the request body */
     void           *aux;                        /*!< Internally used members */
@@ -582,10 +582,11 @@ typedef enum {
      */
     HTTPD_500_INTERNAL_SERVER_ERROR = 0,
 
-    /* For methods not supported by http_parser. Presently
-     * http_parser halts parsing when such methods are
-     * encountered and so the server responds with 400 Bad
-     * Request error instead.
+    /* For request methods that http_parser does not recognize,
+     * and for requests carrying a Transfer-Encoding header (no
+     * transfer coding is implemented). Parsing aborted mid-request
+     * in both cases, so the server closes the session after the
+     * response regardless of what a custom error handler returns.
      */
     HTTPD_501_METHOD_NOT_IMPLEMENTED,
 
@@ -593,8 +594,8 @@ typedef enum {
     HTTPD_505_VERSION_NOT_SUPPORTED,
 
     /* Returned when http_parser halts parsing due to incorrect
-     * syntax of request, unsupported method in request URI or
-     * due to chunked encoding / upgrade field present in headers
+     * syntax of request or due to an upgrade field present in
+     * headers that the server does not handle
      */
     HTTPD_400_BAD_REQUEST,
 
