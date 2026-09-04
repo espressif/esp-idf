@@ -83,7 +83,8 @@ esp_err_t esp_isp_new_ae_controller(isp_proc_handle_t isp_proc, const esp_isp_ae
                          (ae_config->window.btm_right.y >= ae_config->window.top_left.y) &&
                          (ae_config->window.btm_right.y < ISP_LL_AE_WINDOW_MAX_RANGE)), ESP_ERR_INVALID_ARG, TAG, "invalid window");
 
-    isp_ae_ctlr_t ae_ctlr = heap_caps_calloc(1, sizeof(isp_ae_controller_t), ISP_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variable
+    isp_ae_ctlr_t ae_ctlr = heap_caps_calloc(1, sizeof(isp_ae_controller_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(ae_ctlr, ESP_ERR_NO_MEM, TAG, "no mem");
     ae_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_ae_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(ae_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for ae event queue");

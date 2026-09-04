@@ -139,7 +139,8 @@ esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_a
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(isp_proc && awb_cfg && ret_hdl, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
-    isp_awb_ctlr_t awb_ctlr = heap_caps_calloc(1, sizeof(isp_awb_controller_t), ISP_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variable
+    isp_awb_ctlr_t awb_ctlr = heap_caps_calloc(1, sizeof(isp_awb_controller_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(awb_ctlr, ESP_ERR_NO_MEM, TAG, "no mem for awb controller");
     awb_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_awb_stat_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(awb_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for awb event queue");
