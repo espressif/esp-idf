@@ -89,7 +89,8 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if load_addr is out of range
- *      - ESP_ERR_INVALID_SIZE if program_size doesn't match (TEXT_OFFSET + TEXT_SIZE + DATA_SIZE)
+ *      - ESP_ERR_INVALID_SIZE if program_size doesn't match (TEXT_OFFSET + TEXT_SIZE + DATA_SIZE),
+ *        or if TEXT_SIZE + DATA_SIZE + BSS_SIZE exceeds the reserved ULP memory region
  *      - ESP_ERR_NOT_SUPPORTED if the magic number is incorrect
  */
 esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t* program_binary, size_t program_size);
