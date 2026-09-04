@@ -10,5 +10,8 @@ CONFIG_ESP_TASK_WDT_INIT=n
 
 CONFIG_VFS_MAX_COUNT=10
 
+# Exercise the synthetic parent directory listing (opt-in feature)
+CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT=y
+
 # We should still run tests for all variants...
 CONFIG_VFS_SUPPRESS_CTX_DEPRECATION=y
