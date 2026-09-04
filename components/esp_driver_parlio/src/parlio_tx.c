@@ -163,7 +163,10 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
         .access_ext_mem = true, // support transmit PSRAM buffer
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(tx_unit->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
-    gdma_get_alignment_constraints(tx_unit->dma_chan, &tx_unit->int_mem_align, &tx_unit->ext_mem_align);
+    gdma_channel_alignment_info_t align_info;
+    gdma_get_channel_alignment_constraints(tx_unit->dma_chan, &align_info);
+    tx_unit->int_mem_align = align_info.int_mem_alignment;
+    tx_unit->ext_mem_align = align_info.ext_enc_mem_alignment;
 
     // create DMA link list
     size_t buffer_alignment = MAX(tx_unit->int_mem_align, tx_unit->ext_mem_align);
@@ -463,7 +466,7 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
 
 static void parlio_mount_buffer(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
 {
-    size_t buffer_alignment = esp_ptr_internal(t->payload) ? tx_unit->int_mem_align : tx_unit->ext_mem_align;
+    size_t buffer_alignment = gdma_get_buffer_alignment_constraint(tx_unit->dma_chan, t->payload);
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
     size_t payload_bytes = (t->payload_bits + 7) / 8;
     gdma_buffer_mount_config_t mount_config = {
@@ -701,7 +704,7 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     }
 #endif // !PARLIO_LL_SUPPORT(TX_EOF_FROM_DMA)
 
-    size_t alignment = esp_ptr_external_ram(payload) ? tx_unit->ext_mem_align : tx_unit->int_mem_align;
+    size_t alignment = gdma_get_buffer_alignment_constraint(tx_unit->dma_chan, payload);
     // check alignment
     ESP_RETURN_ON_FALSE(((uint32_t)payload & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload address %p not aligned to %d", payload, alignment);
     ESP_RETURN_ON_FALSE((payload_bits & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload size %d not aligned to %d", payload_bits, alignment);
