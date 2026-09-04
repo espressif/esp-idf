@@ -93,14 +93,14 @@ static esp_err_t aes_gcm_crypt_common(example_aes_gcm_ctx_t *ctx, uint8_t *tag, 
 
     if (is_encrypt) {
         size_t output_tag_len = 0;
-        status = psa_aead_finish(&operation, output + output_len, ctx->input_len + tag_len - output_len, &output_len, tag, tag_len, &output_tag_len);
+        status = psa_aead_finish(&operation, output + output_len, ctx->input_len - output_len, &output_len, tag, tag_len, &output_tag_len);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "Error in finishing encryption: %d", status);
             goto cleanup;
         }
     } else {
         size_t plaintext_len = 0;
-        status = psa_aead_verify(&operation, output, ctx->input_len, &plaintext_len, tag, tag_len);
+        status = psa_aead_verify(&operation, output + output_len, ctx->input_len - output_len, &plaintext_len, tag, tag_len);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "Error in verifying decryption: %d", status);
             goto cleanup;
