@@ -1405,10 +1405,14 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
     errno = 0;
     int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size_rx, client->timeout_ms);
     if (rlen >= 0) {
-        // When tls error is ESP_TLS_ERR_SSL_WANT_READ (-0x6900), esp_trasnport_read returns ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT (0x0).
-        // We should not execute http_parser_execute() on this condition as it sets the internal state machine in an
-        // invalid state.
-        if (!(client->is_async && rlen == 0)) {
+        // esp_transport_read() returns 0 (ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) whenever the
+        // underlying poll times out with no data ready -- e.g. when tls error is
+        // ESP_TLS_ERR_SSL_WANT_READ (-0x6900) -- and this can happen in blocking mode too, not
+        // just when client->is_async. We must not execute http_parser_execute() with len==0 in
+        // this case: a len==0 call is only valid to signal genuine end-of-stream, and calling it
+        // while the parser is mid-header/mid-body (as it will be on a mid-response stall) sets
+        // HPE_INVALID_EOF_STATE and permanently wedges the parser for the rest of the connection.
+        if (rlen != 0) {
             http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
             HTTP_PARSER_RETURN_ON_ERROR(TAG, client->parser, ESP_FAIL);
         }
@@ -1608,9 +1612,16 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                         if (client->connection_info.method != HTTP_METHOD_HEAD && !client->is_chunk_complete) {
                             ESP_LOGE(TAG, "Incomplete chunked data received %d", ret);
 
-                            if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
+                            // `ret` is the raw, untranslated value from esp_http_client_get_data()
+                            // (i.e. esp_transport_read()'s own ERR_TCP_TRANSPORT_* enum, e.g. 0/-1),
+                            // not the translated ESP_ERR_TCP_TRANSPORT_* esp_err_t codes (0xe001/0xe002)
+                            // produced by esp_transport_translate_error(). Comparing against the
+                            // translated codes here made both branches below unreachable, so every
+                            // timeout/clean-close during body reading was misreported as the generic
+                            // ESP_ERR_HTTP_INCOMPLETE_DATA.
+                            if (ret == ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
                                 err = ESP_ERR_HTTP_READ_TIMEOUT;
-                            } else if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN) {
+                            } else if (ret == ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN) {
                                 err = ESP_ERR_HTTP_CONNECTION_CLOSED;
                             } else {
                                 err = ESP_ERR_HTTP_INCOMPLETE_DATA;
@@ -1629,9 +1640,9 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                         if (client->connection_info.method != HTTP_METHOD_HEAD && client->response->data_process < client->response->content_length) {
                             ESP_LOGE(TAG, "Incomlete data received, ret=%d, %"PRId64"/%"PRId64" bytes", ret, client->response->data_process, client->response->content_length);
 
-                            if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
+                            if (ret == ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
                                 err = ESP_ERR_HTTP_READ_TIMEOUT;
-                            } else if (ret == ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN) {
+                            } else if (ret == ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN) {
                                 err = ESP_ERR_HTTP_CONNECTION_CLOSED;
                             } else {
                                 err = ESP_ERR_HTTP_INCOMPLETE_DATA;
