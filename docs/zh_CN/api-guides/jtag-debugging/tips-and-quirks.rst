@@ -115,7 +115,7 @@ GDB 具有 FreeRTOS 支持的 Python 扩展模块。在系统要求满足的情�
     提高调试速度
     ^^^^^^^^^^^^^^^^^^^^^^^
 
-    启用 :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` 将预先分配 8 KB 的 RAM, 且预编译的存根二进制文件将嵌入到 RAM 中，因此运行时将无需加载存根二进制文件，从而提高整体调试速度。在使用 flash 断点时，上述优化可以有效降低添加和删除断点的延迟。但要注意，RAM 使用量的增加可能会占用其他任务所需的内存。
+    启用 :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` 将预先分配 12 KB 的 RAM, 且预编译的存根二进制文件将嵌入到 RAM 中，因此运行时将无需加载存根二进制文件，从而提高整体调试速度。在使用 flash 断点时，上述优化可以有效降低添加和删除断点的延迟。但要注意，RAM 使用量的增加可能会占用其他任务所需的内存。
 
     .. _jtag-debugging-tip-debugger-startup-commands:
 
