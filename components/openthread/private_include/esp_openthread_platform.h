@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-#define WORKFLOW_MAX_NAMELEN 16
+#define WORKFLOW_MAX_NAMELEN 32
 
 /**
  * @brief update function declaration
@@ -60,11 +60,13 @@ typedef struct esp_openthread_platform_workflow {
  *
  * @param[in]  updatefcn   The update function of the workflow added to the list.
  * @param[in]  processfcn  The process function of the workflow added to the list.
- * @param[in]  name        The name of the added workflow
+ * @param[in]  name        The name of the added workflow. Must be non-empty and shorter
+ *                         than WORKFLOW_MAX_NAMELEN (including the terminating '\\0').
  *
  * @return
  *   - ESP_OK on success
  *   - ESP_ERR_NO_MEM on allocation failure
+ *   - ESP_ERR_INVALID_ARG if name is NULL, empty, or too long
  *   - ESP_FAIL on other failures
  *
  */
