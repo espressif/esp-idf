@@ -11,6 +11,7 @@
 #define MIPI_DSI_DEFAULT_TIMEOUT_CLOCK_FREQ_MHZ 10
 // TxClkEsc frequency must be configured between 2 and 20 MHz
 #define MIPI_DSI_DEFAULT_ESCAPE_CLOCK_FREQ_MHZ  18
+#define MIPI_DSI_DEFAULT_HOST_LP_RX_TIMEOUT_COUNT     0x7FFF
 
 esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lcd_dsi_bus_handle_t *ret_bus)
 {
@@ -122,9 +123,11 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     mipi_dsi_host_ll_set_timeout_clock_division(hal->host, (uint32_t)roundf(bus_config->lane_bit_rate_mbps / 8.0f / MIPI_DSI_DEFAULT_TIMEOUT_CLOCK_FREQ_MHZ));
     // Set the divider to get the TX Escape clock, clock source is the high-speed byte clock
     mipi_dsi_host_ll_set_escape_clock_division(hal->host, (uint32_t)roundf(bus_config->lane_bit_rate_mbps / 8.0f / MIPI_DSI_DEFAULT_ESCAPE_CLOCK_FREQ_MHZ));
-    // set the timeout intervals to zero, means to disable the timeout mechanism
-    mipi_dsi_host_ll_set_timeout_count(hal->host, 0, 0, 0, 0, 0, 0, 0);
-    // DSI host will wait indefinitely for a read response from the DSI device
+    // Enable host timeout detection for command mode transactions.
+    mipi_dsi_host_ll_set_timeout_count(hal->host, 0,
+                                       MIPI_DSI_DEFAULT_HOST_LP_RX_TIMEOUT_COUNT,
+                                       0, 0, 0, 0, 0);
+    // Set the maximum time required to perform a read command, measured in lane byte clock cycles.
     mipi_dsi_phy_ll_set_max_read_time(hal->host, 6000);
     // set how long the DSI host will wait before sending the next transmission
     mipi_dsi_phy_ll_set_stop_wait_time(hal->host, 0x3F);

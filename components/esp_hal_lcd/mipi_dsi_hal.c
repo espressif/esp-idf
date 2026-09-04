@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,18 @@
 #include "hal/mipi_dsi_periph.h"
 
 HAL_LOG_ATTR_TAG(TAG, "dsi_hal");
+
+static inline bool mipi_dsi_hal_host_wait_timeout(mipi_dsi_hal_context_t *hal,
+                                                  bool (*condition)(mipi_dsi_host_soc_handle_t host),
+                                                  bool (*timeout)(mipi_dsi_host_soc_handle_t host))
+{
+    while (condition(hal->host)) {
+        if (timeout(hal->host)) {
+            return true;
+        }
+    }
+    return timeout(hal->host);
+}
 
 void mipi_dsi_hal_init(mipi_dsi_hal_context_t *hal, const mipi_dsi_hal_config_t *config)
 {
@@ -82,6 +94,8 @@ void mipi_dsi_hal_configure_phy_pll(mipi_dsi_hal_context_t *hal, uint32_t phy_cl
     }
 
     mipi_dsi_hal_phy_write_register(hal, 0x44, hs_freq_sel << 1);
+    // enable 1~1.5Gbps analog circuity support
+    mipi_dsi_hal_phy_write_register(hal, 0x22, (lane_bit_rate_mbps >= 1000) ? 0x88 : 0x80);
     // make use of the N and M factors that configured in the 0x17 and 0x18
     mipi_dsi_hal_phy_write_register(hal, 0x19, 0x30);
     mipi_dsi_hal_phy_write_register(hal, 0x17, pll_N - 1);
@@ -203,7 +217,7 @@ void mipi_dsi_hal_host_gen_write_long_packet(mipi_dsi_hal_context_t *hal, uint8_
     mipi_dsi_host_ll_gen_set_packet_header(hal->host, vc, dt, wc_msb, wc_lsb);
 }
 
-void mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_t vc, mipi_dsi_data_type_t dt, uint16_t header_data, void *ret_buffer, uint16_t buffer_size)
+bool mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_t vc, mipi_dsi_data_type_t dt, uint16_t header_data, void *ret_buffer, uint16_t buffer_size)
 {
     uint8_t *receive_buffer = (uint8_t *)ret_buffer;
     // set the maximum returned data size, it should equal to the parameter size of the read command
@@ -215,9 +229,13 @@ void mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_
     // listen to the same virtual channel as the one sent to
     mipi_dsi_host_ll_gen_set_rx_vcid(hal->host, vc);
     mipi_dsi_hal_host_gen_write_short_packet(hal, vc, dt, header_data);
-    while (mipi_dsi_host_ll_gen_is_read_cmd_busy(hal->host));
+    if (mipi_dsi_hal_host_wait_timeout(hal, mipi_dsi_host_ll_gen_is_read_cmd_busy, mipi_dsi_host_ll_is_lp_rx_timeout)) {
+        return false;
+    }
     // wait data to come into the fifo
-    while (mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host));
+    if (mipi_dsi_hal_host_wait_timeout(hal, mipi_dsi_host_ll_gen_is_read_fifo_empty, mipi_dsi_host_ll_is_lp_rx_timeout)) {
+        return false;
+    }
     uint32_t temp = 0;
     uint32_t counter = 0;
     while (!mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
@@ -229,12 +247,13 @@ void mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_
             }
         }
     }
+    return true;
 }
 
-void mipi_dsi_hal_host_gen_read_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t vc, uint32_t command, uint32_t command_bytes, void *ret_param, uint16_t param_buf_size)
+bool mipi_dsi_hal_host_gen_read_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t vc, uint32_t command, uint32_t command_bytes, void *ret_param, uint16_t param_buf_size)
 {
     uint16_t header_data = command & ((1U << (8 * command_bytes)) - 1);
-    mipi_dsi_hal_host_gen_read_short_packet(hal, vc, MIPI_DSI_DT_DCS_READ_0, header_data, ret_param, param_buf_size);
+    return mipi_dsi_hal_host_gen_read_short_packet(hal, vc, MIPI_DSI_DT_DCS_READ_0, header_data, ret_param, param_buf_size);
 }
 
 void mipi_dsi_hal_host_dpi_set_horizontal_timing(mipi_dsi_hal_context_t *hal, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp)
