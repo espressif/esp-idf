@@ -1817,6 +1817,9 @@ typedef struct {
     BOOLEAN is_pair_cancel;
     BOOLEAN smp_over_br;
     tSMP_AUTH_REQ auth_mode;
+    /* Mirrors tSMP_CMPL.keep_bond; layouts must stay identical because
+       btm_proc_smp_cback casts tSMP_EVT_DATA to tBTM_LE_EVT_DATA. */
+    BOOLEAN keep_bond;
 } tBTM_LE_COMPLT;
 #endif
 
