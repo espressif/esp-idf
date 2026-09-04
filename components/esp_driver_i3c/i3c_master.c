@@ -706,7 +706,8 @@ esp_err_t i3c_new_master_bus(const i3c_master_bus_config_t *bus_config, i3c_mast
     esp_err_t ret = ESP_OK;
     i3c_master_bus_t *i3c_master_handle = NULL;
 
-    i3c_master_handle = (i3c_master_bus_t*) heap_caps_calloc(1, sizeof(i3c_master_bus_t), I3C_MASTER_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variable
+    i3c_master_handle = (i3c_master_bus_t*) heap_caps_calloc(1, sizeof(i3c_master_bus_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(i3c_master_handle, ESP_ERR_NO_MEM, TAG, "no mem for i3c master bus handle");
 
     s_i3c_master_platform.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
