@@ -1203,10 +1203,6 @@ config SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED
     bool
     default y
 
-config SOC_PM_RETENTION_MODULE_NUM
-    int
-    default 32
-
 config SOC_PM_TOP_DEPENDS_ON_RTC_PERIPH
     bool
     default y

@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdlib.h>
+#include <string.h>
 #include "esp_attr.h"
 
 #include "soc/soc_caps.h"
@@ -51,7 +53,7 @@ esp_err_t sleep_phy_link_init(void **link_context)
     esp_err_t err = ESP_OK;
 
 #if SOC_PM_PAU_REGDMA_LINK_MODEM
-    static regdma_link_config_t phy_modem_config[] = {
+    static const regdma_link_config_t phy_modem_config_template[] = {
         [0] = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(0), MODEM_FE_DATA_BASE, MODEM_FE_DATA_BASE, 41, 0, 0),
         [1] = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(1), MODEM_FE_CTRL_BASE, MODEM_FE_CTRL_BASE, 87, 0, 0),
 
@@ -106,12 +108,18 @@ esp_err_t sleep_phy_link_init(void **link_context)
         [39] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x25), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0),
         [40] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x26), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1)
     };
+    regdma_link_config_t *phy_modem_config = malloc(sizeof(phy_modem_config_template));
+    if (phy_modem_config == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(phy_modem_config, phy_modem_config_template, sizeof(phy_modem_config_template));
+
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
     phy_modem_config[8].write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
     phy_modem_config[24].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
 
     void *link = NULL;
-    for (int i = ARRAY_SIZE(phy_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
+    for (int i = ARRAY_SIZE(phy_modem_config_template) - 1; (err == ESP_OK) && (i >= 0); i--) {
         void *next = regdma_link_init_safe(&phy_modem_config[i], false, 0, link);
         if (next) {
             link = next;
@@ -120,6 +128,7 @@ esp_err_t sleep_phy_link_init(void **link_context)
             err = ESP_ERR_NO_MEM;
         }
     }
+    free(phy_modem_config);
     if (err == ESP_OK) {
         pau_regdma_set_modem_link_addr(link);
 

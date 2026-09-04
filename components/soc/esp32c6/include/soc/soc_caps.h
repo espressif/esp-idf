@@ -493,8 +493,6 @@
 #define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
 #define SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED    (1)
 
-#define SOC_PM_RETENTION_MODULE_NUM         (32)
-
 #define SOC_PM_TOP_DEPENDS_ON_RTC_PERIPH    (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/

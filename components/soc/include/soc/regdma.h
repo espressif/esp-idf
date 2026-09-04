@@ -18,6 +18,8 @@ extern "C" {
 
 #if SOC_PAU_SUPPORTED
 
+#include "soc/retention_periph_defs.h"
+
 #define REGDMA_LINK_ENTRY_NUM   (SOC_PM_PAU_LINK_NUM) /* Maximum number of REG DMA linked list entries */
 
 #ifndef ARRAY_SIZE
@@ -192,15 +194,15 @@ typedef struct regdma_link_branch_write_wait_body {
     volatile uint32_t   mask;
 } regdma_link_branch_write_wait_body_t;
 
-ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM <= 16, "regdma link entry number should equal to and less than 16");
+ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM < 16, "regdma link entry number must be less than 16 to pack module into stats");
 typedef struct regdma_link_stats {
     volatile uint32_t   ref: REGDMA_LINK_ENTRY_NUM, /* a bitmap, identifies which entry has referenced the current link */
-#if REGDMA_LINK_ENTRY_NUM < 16
-             reserve: 16 - REGDMA_LINK_ENTRY_NUM,
-#endif
+             module: 16 - REGDMA_LINK_ENTRY_NUM, /* module id; width leaves room beside ref within the low 16 bits */
              id: 16; /* REGDMA linked list node unique identifier */
-    volatile int    module; /* a number used to identify the module to which the current node belongs */
 } regdma_link_stats_t;
+ESP_STATIC_ASSERT(sizeof(regdma_link_stats_t) == 4, "regdma_link_stats_t must be 4 bytes");
+ESP_STATIC_ASSERT(SLEEP_RETENTION_MODULE_MAX < (1u << (16 - REGDMA_LINK_ENTRY_NUM)),
+                  "module id exceeds bitfield width");
 
 typedef struct regdma_link_continuous {
     regdma_link_stats_t             stat;
