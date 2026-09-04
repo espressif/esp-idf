@@ -62,6 +62,8 @@
 #endif // CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 #include "esp_rom_gpio.h"
 #if CONFIG_BT_ENABLED
+#include "esp_private/sleep_modem.h"
+
 
 /* Macro definition
  ************************************************************************
@@ -1850,7 +1852,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_init();
 #endif
-    esp_phy_modem_init();
+    esp_phy_modem_init(SLEEP_MODEM_BT);
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
@@ -2049,7 +2051,7 @@ static void bt_controller_deinit_internal(void)
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_deinit();
 #endif
-    esp_phy_modem_deinit();
+    esp_phy_modem_deinit(SLEEP_MODEM_BT);
 
 #if CONFIG_BT_CTRL_LE_LOG_EN
     esp_bt_controller_log_deinit();

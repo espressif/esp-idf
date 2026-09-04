@@ -46,8 +46,8 @@ if(CONFIG_BT_CTRL_SLEEP_ENABLE AND CONFIG_SOC_PM_MODEM_LOCK_CLK_WORKAROUND)
             APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u sleep_power_system_retention_init")
 endif()
 
-if(CONFIG_SOC_PM_SUPPORT_PMU_MODEM_STATE)
-    list(APPEND srcs "port/${target}/sleep_modem_state.c")
+if(CONFIG_SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY)
+    list(APPEND srcs "port/${target}/sleep_phy.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
