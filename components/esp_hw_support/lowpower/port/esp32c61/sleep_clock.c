@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include "soc/lp_analog_peri_reg.h"
 #include "soc/pcr_reg.h"
 #include "soc/pmu_reg.h"
+#include "soc/ecdsa_reg.h"
 #include "modem/i2c_ana_mst_reg.h"
 #include "modem/modem_lpcon_reg.h"
 #include "modem/modem_syscon_reg.h"
@@ -34,7 +35,10 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         [9] = {.config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(9),  LP_ANA_POWER_GLITCH_CNTL_REG, 0,                              LP_ANA_POWER_GLITCH_RESET_ENA_M,0, 1), .owner = ENTRY(0) | ENTRY(1)}, /* Disable power glitch detector on sleep backup */
         [10] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_PCR_LINK(10), LP_ANA_POWER_GLITCH_CNTL_REG, 0xF,                            LP_ANA_POWER_GLITCH_RESET_ENA_M,1, 0), .owner = ENTRY(0) | ENTRY(1)}, /* Enable power glitch detector on wakeup restore */
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-        [11] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(11), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    63,     0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        [11] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(11), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    62,     0, 0, 0xfd73ffff, 0xfdff7fff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        /* TOP PD wake: ECDSA CLK_EN defaults to 1 and starts mem clean; wait idle before restoring ECDSA clock */
+        [12] = { .config = REGDMA_LINK_WAIT_INIT(REGDMA_PCR_LINK(12), ECDSA_STATE_REG, 0, ECDSA_BUSY_M, 1, 0), .owner = ENTRY(0) | ENTRY(1) },
+        [13] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(13), PCR_ECDSA_CONF_REG, PCR_ECDSA_CONF_REG, 1, 0, 0), .owner = ENTRY(0) | ENTRY(1) },
 #endif
     };
 
