@@ -125,14 +125,22 @@ tBTA_DM_RM *const p_bta_dm_rm_cfg = (tBTA_DM_RM *) &bta_dm_rm_cfg;
 #endif
 
 #if (BTA_PAN_INCLUDED == TRUE)
-#  define BTA_DM_NUM_PM_ENTRY         (BTA_DM_NUM_PM_ENTRY_BASE + 3)
+#  define BTA_DM_NUM_PM_PAN_ENTRY     3
 #  define BTA_DM_NUM_PM_SPEC          (BTA_DM_NUM_PM_SPEC_BASE + 2)
 #  define BTA_DM_PM_PANU_SPEC_IDX     BTA_DM_NUM_PM_SPEC_BASE
 #  define BTA_DM_PM_NAP_SPEC_IDX      (BTA_DM_NUM_PM_SPEC_BASE + 1)
 #else
-#  define BTA_DM_NUM_PM_ENTRY         BTA_DM_NUM_PM_ENTRY_BASE
+#  define BTA_DM_NUM_PM_PAN_ENTRY     0
 #  define BTA_DM_NUM_PM_SPEC          BTA_DM_NUM_PM_SPEC_BASE
 #endif
+
+#if (BTA_PBA_CLIENT_INCLUDED == TRUE)
+#  define BTA_DM_NUM_PM_PBC_ENTRY     1
+#else
+#  define BTA_DM_NUM_PM_PBC_ENTRY     0
+#endif
+
+#define BTA_DM_NUM_PM_ENTRY           (BTA_DM_NUM_PM_ENTRY_BASE + BTA_DM_NUM_PM_PAN_ENTRY + BTA_DM_NUM_PM_PBC_ENTRY)
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
 
@@ -154,6 +162,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG bta_dm_pm_cfg[BTA_DM_NUM_PM_ENTRY + 1] 
     , {BTA_ID_PAN, BTUI_PAN_ID_PANU, BTA_DM_PM_PANU_SPEC_IDX}  /* PANU spec table */
     , {BTA_ID_PAN, BTUI_PAN_ID_NAP,  BTA_DM_PM_NAP_SPEC_IDX}   /* NAP spec table */
     , {BTA_ID_PAN, BTUI_PAN_ID_GN,   BTA_DM_PM_NAP_SPEC_IDX}   /* GN reuses NAP spec table */
+#endif
+#if (BTA_PBA_CLIENT_INCLUDED == TRUE)
+    , {BTA_ID_PBC, BTA_ALL_APP_ID, 2}  /* pbc reuses ftc/opc spec table */
 #endif
 };
 
@@ -197,7 +208,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
         }
     },
 
-    /* FTC, OPC, JV : 2 */
+    /* FTC, OPC, JV, PBC : 2 */
     {
         (BTA_DM_PM_SNIFF),                                             /* allow sniff */
   #if (BTM_SSR_INCLUDED == TRUE)
