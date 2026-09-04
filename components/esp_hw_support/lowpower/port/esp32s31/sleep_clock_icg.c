@@ -126,9 +126,6 @@ void sleep_clock_icg_retention_clock_config(sleep_retention_module_bitmap_t *mod
 #if !CONFIG_SPIRAM
     clocks_mask &= ~PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_MSPI_PSRAM);
 #endif
-#if !CONFIG_SECURE_ENABLE_TEE
-    clocks_mask &= ~PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_SEC);
-#endif
 
     esp_sleep_enter_critical_safe();
     s_retention_icg_flags[0] = PMU_SLEEP_CLK_ICG_FUNC_LO(clocks_mask);
