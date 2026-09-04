@@ -478,6 +478,22 @@ static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
         0xFF, 0xFF, 0xFF, 0xFF, /**/ 0x5B, 0x53, 0x96, 0xD8, /**/
         //                      /*******************************/
     };
+    const uint8_t bypass_in_rgb888_buf[64] __attribute__((aligned(64))) = {
+        0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,
+        0x80, 0x40, 0xA0,
+    };
+    const uint8_t bypass_in_a8_buf[64] __attribute__((aligned(64))) = {
+        0x00, 0x7F, 0x80, 0xFF,
+    };
+    const uint8_t bypass_out_argb8888_buf_expected[16] = {
+        0xFF, 0xFF, 0xFF, 0x00,
+        0xFF, 0xFF, 0xFF, 0x7F,
+        0xFF, 0xFF, 0xFF, 0x80,
+        0x80, 0x40, 0xA0, 0xFF,
+    };
+    uint8_t bypass_out_argb8888_buf[64] __attribute__((aligned(64))) = {};
 
 #if CONFIG_PM_ENABLE
     enable_pm_strategy(auto_light_sleep);
@@ -557,6 +573,31 @@ static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
         }
         printf("\n");
         TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, out_buf_len);
+
+        ppa_blend_oper_config_t bypass_oper_config = {};
+        bypass_oper_config.in_bg.buffer = bypass_in_rgb888_buf;
+        bypass_oper_config.in_bg.pic_w = w;
+        bypass_oper_config.in_bg.pic_h = h;
+        bypass_oper_config.in_bg.block_w = w;
+        bypass_oper_config.in_bg.block_h = h;
+        bypass_oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_RGB888;
+        bypass_oper_config.in_fg.buffer = bypass_in_a8_buf;
+        bypass_oper_config.in_fg.pic_w = w;
+        bypass_oper_config.in_fg.pic_h = h;
+        bypass_oper_config.in_fg.block_w = w;
+        bypass_oper_config.in_fg.block_h = h;
+        bypass_oper_config.in_fg.blend_cm = PPA_BLEND_COLOR_MODE_A8;
+        bypass_oper_config.out.buffer = bypass_out_argb8888_buf;
+        bypass_oper_config.out.buffer_size = sizeof(bypass_out_argb8888_buf);
+        bypass_oper_config.out.pic_w = w;
+        bypass_oper_config.out.pic_h = h;
+        bypass_oper_config.out.blend_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
+        bypass_oper_config.bypass_blend = true;
+        bypass_oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+
+        TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &bypass_oper_config));
+        TEST_ASSERT_EQUAL_UINT8_ARRAY(bypass_out_argb8888_buf_expected, bypass_out_argb8888_buf,
+                                      sizeof(bypass_out_argb8888_buf_expected));
 
         memcpy(in_fg_buf, in_fg_buf_template, 64);
         esp_cache_msync((void *)in_fg_buf, 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
