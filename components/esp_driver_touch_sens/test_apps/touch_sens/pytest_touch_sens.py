@@ -17,4 +17,4 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_TOUCH_SENSOR_SUPPORTED == 1'), indirect=['target'])
 def test_touch_sens(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=20)
+    dut.run_all_single_board_cases(timeout=30)

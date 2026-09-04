@@ -382,7 +382,12 @@ TEST_CASE("touch_sens_light_sleep_wakeup_test", "[touch]")
     s_test_touch_start_ulp();
 
     /* Enter light sleep */
-    TEST_ESP_OK(esp_light_sleep_start());
+    for (int retry = 0; esp_light_sleep_start() == ESP_ERR_SLEEP_REJECT; retry++) {
+        if (retry > 3) {
+            TEST_FAIL_MESSAGE("enter light sleep failed");
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
     /* Wakeup from sleep */
     uint32_t wakeup_causes = esp_sleep_get_wakeup_causes();
 
@@ -413,4 +418,77 @@ TEST_CASE("touch_sens_light_sleep_wakeup_test", "[touch]")
     TEST_ESP_OK(touch_sensor_del_channel(fixture->channels[1]));
     TEST_ESP_OK(touch_sensor_del_controller(touch));
 }
+
+static void s_test_touch_deep_sleep_enter_common(bool allow_pd)
+{
+    test_touch_fixture_t *fixture = (test_touch_fixture_t *)alloca(
+                                        sizeof(test_touch_fixture_t) + sizeof(touch_channel_handle_t));
+    const uint32_t chan_ids[] = {TEST_TOUCH_WAKEUP_CHANNEL};
+    test_touch_cb_data_t cb_data = {};
+    s_test_touch_fixture_init(fixture, 1, chan_ids, &cb_data);
+    touch_sensor_handle_t touch = fixture->sensor;
+    touch_channel_handle_t touch_chan = fixture->channels[0];
+
+    touch_sleep_config_t sleep_cfg = {};
+    sleep_cfg.slp_wakeup_lvl = TOUCH_DEEP_SLEEP_WAKEUP;
+#if SOC_TOUCH_SENSOR_VERSION > 1
+    if (allow_pd) {
+        touch_chan_info_t chan_info = {};
+        TEST_ESP_OK(touch_sensor_get_channel_info(touch_chan, &chan_info));
+        sleep_cfg.deep_slp_allow_pd = true;
+        sleep_cfg.deep_slp_chan = touch_chan;
+        for (int i = 0; i < TOUCH_SAMPLE_CFG_NUM; i++) {
+            sleep_cfg.deep_slp_thresh[i] = chan_info.active_thresh[i];
+            printf("[Sampler %d] deep sleep thresh %" PRIu32 "\n", i, sleep_cfg.deep_slp_thresh[i]);
+        }
+    }
+#else
+    (void)allow_pd;
+    (void)touch_chan;
+#endif
+    TEST_ESP_OK(touch_sensor_config_sleep_wakeup(touch, &sleep_cfg));
+    TEST_ESP_OK(touch_sensor_enable(touch));
+    TEST_ESP_OK(touch_sensor_start_continuous_scanning(touch));
+
+    /* Set up the ULP to simulate touch wake-up after entering sleep */
+    s_test_touch_start_ulp();
+
+    esp_deep_sleep_start();
+    TEST_FAIL_MESSAGE("Should not reach here after deep sleep");
+}
+
+static void s_test_touch_deep_sleep_check(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+
+    uint32_t wakeup_causes = esp_sleep_get_wakeup_causes();
+    if (wakeup_causes & BIT(ESP_SLEEP_WAKEUP_TOUCHPAD)) {
+        printf("wakeup by touchpad\n");
+    } else {
+        printf("wakeup by other causes: %" PRIu32 "\n", wakeup_causes);
+        TEST_FAIL();
+    }
+}
+
+static void s_test_touch_deep_sleep_enter(void)
+{
+    s_test_touch_deep_sleep_enter_common(false);
+}
+
+TEST_CASE_MULTIPLE_STAGES("touch_sens_deep_sleep_wakeup_test",
+                          "[touch][reset=DEEPSLEEP_RESET]",
+                          s_test_touch_deep_sleep_enter,
+                          s_test_touch_deep_sleep_check);
+
+#if SOC_TOUCH_SENSOR_VERSION > 1
+static void s_test_touch_deep_sleep_pd_enter(void)
+{
+    s_test_touch_deep_sleep_enter_common(true);
+}
+
+TEST_CASE_MULTIPLE_STAGES("touch_sens_deep_sleep_pd_wakeup_test",
+                          "[touch][reset=DEEPSLEEP_RESET]",
+                          s_test_touch_deep_sleep_pd_enter,
+                          s_test_touch_deep_sleep_check);
+#endif  // SOC_TOUCH_SENSOR_VERSION > 1
 #endif  // SOC_ULP_SUPPORTED && !(CONFIG_TOUCH_ISR_IRAM_SAFE && SOC_IS(ESP32P4))

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#define TEST_TOUCH_WAKEUP_CHANNEL        3
+#define TEST_TOUCH_WAKEUP_CHANNEL        4
 #define TEST_TOUCH_SIMULATE_HOLD_TIME_US 10000
 
 #ifndef __ASSEMBLER__
