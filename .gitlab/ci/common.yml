@@ -20,7 +20,6 @@ include:
     file: "templates/idf/common-scripts.yml"
     inputs:
       ci_python_constraint_file: "espidf.constraints.v6.0.txt"
-      ci_python_constraint_branch: "backport/idf-ci-1.0-idf-v6.0"
       macos_image: "registry.hub.docker.com/espressif/macos-idf:sequoia-v6.0"
       windows_image: "windows_11_idf_v6_0"
 
