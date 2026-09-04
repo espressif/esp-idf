@@ -4251,12 +4251,36 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     }
 
     if (p_acl && p_acl->transport == BT_TRANSPORT_LE) {
-        if (status == HCI_ERR_KEY_MISSING || status == HCI_ERR_AUTH_FAILURE ||
-                status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE) {
-            p_dev_rec->sec_flags &= ~ (BTM_SEC_LE_LINK_KEY_KNOWN);
+        BOOLEAN disconnect = (status != HCI_SUCCESS);
+        BD_ADDR pseudo_addr;
+
+        /* btm_ble_link_encrypted() runs the SMP state machine and the upper layer
+           callbacks, which may retire p_dev_rec, so keep our own copy of the address. */
+        memcpy(pseudo_addr, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN);
+
+#if (BLE_SMP_UNBOND_ON_KEY_MISSING == TRUE)
+        /* The peer answered our LL_ENC_REQ saying it no longer holds the LTK. Forget our
+           copy and keep the link up so the application can pair again right away. This is
+           unauthenticated, an impersonator can report the same error to strip the stored
+           security level, which is why the option defaults to disabled. */
+        if (disconnect && status == HCI_ERR_KEY_MISSING && p_acl->link_role == BTM_ROLE_MASTER) {
+            BTM_TRACE_WARNING("%s peer reports no LTK, dropping the local LE keys\n", __func__);
+            p_dev_rec->sec_flags &= ~(BTM_SEC_LE_LINK_KEY_KNOWN);
             p_dev_rec->ble.key_type = BTM_LE_KEY_NONE;
+            disconnect = FALSE;
         }
-        btm_ble_link_encrypted(p_dev_rec->ble.pseudo_addr, encr_enable);
+#endif  ///BLE_SMP_UNBOND_ON_KEY_MISSING == TRUE
+
+        btm_ble_link_encrypted(pseudo_addr, encr_enable);
+
+        /* A peer that refuses to encrypt must not be able to drop our bond, otherwise it
+           can strip the stored security level and then re-pair at a weaker one. Tear the
+           link down instead and keep the keys until the application unbonds. */
+        if (disconnect && BTM_IsAclConnectionUp(pseudo_addr, BT_TRANSPORT_LE)) {
+            BTM_TRACE_WARNING("%s LE encryption failed (status 0x%02x), disconnecting\n",
+                              __func__, status);
+            btm_remove_acl(pseudo_addr, BT_TRANSPORT_LE);
+        }
         return;
     } else {
         /* BR/EDR connection, update the encryption key size to be 16 as always */
