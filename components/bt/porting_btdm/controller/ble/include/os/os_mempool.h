@@ -382,16 +382,16 @@ static inline os_error_t
 os_mempool_init(struct os_mempool *mp, uint16_t blocks, uint32_t block_size,
                 void *membuf, const char *name)
 {
-    return btdm_mempool_init((struct btdm_mempool *)mp, blocks, block_size,
-                             membuf, name);
+    return (os_error_t)btdm_mempool_init((struct btdm_mempool *)mp, blocks,
+                                         block_size, membuf, name);
 }
 
 static inline os_error_t
 os_mempool_ext_init(struct os_mempool_ext *mpe, uint16_t blocks,
                     uint32_t block_size, void *membuf, const char *name)
 {
-    return btdm_mempool_ext_init((struct btdm_mempool_ext *)mpe, blocks,
-                                 block_size, membuf, name);
+    return (os_error_t)btdm_mempool_ext_init((struct btdm_mempool_ext *)mpe,
+                                             blocks, block_size, membuf, name);
 }
 
 static inline void
@@ -405,19 +405,19 @@ os_ext_mempool_register_cb(struct os_mempool_ext *mpe, void *put_cb,
 static inline os_error_t
 os_mempool_unregister(struct os_mempool *mp)
 {
-    return btdm_mempool_unregister((struct btdm_mempool *)mp);
+    return (os_error_t)btdm_mempool_unregister((struct btdm_mempool *)mp);
 }
 
 static inline os_error_t
 os_mempool_clear(struct os_mempool *mp)
 {
-    return btdm_mempool_clear((struct btdm_mempool *)mp);
+    return (os_error_t)btdm_mempool_clear((struct btdm_mempool *)mp);
 }
 
 static inline os_error_t
 os_mempool_ext_clear(struct os_mempool_ext *mpe)
 {
-    return btdm_mempool_ext_clear((struct btdm_mempool_ext *)mpe);
+    return (os_error_t)btdm_mempool_ext_clear((struct btdm_mempool_ext *)mpe);
 }
 
 static inline bool
@@ -441,13 +441,14 @@ os_memblock_get(struct os_mempool *mp)
 static inline os_error_t
 os_memblock_put_from_cb(struct os_mempool *mp, void *block_addr)
 {
-    return btdm_memblock_put_from_cb((struct btdm_mempool *)mp, block_addr);
+    return (os_error_t)btdm_memblock_put_from_cb((struct btdm_mempool *)mp,
+                                                 block_addr);
 }
 
 static inline os_error_t
 os_memblock_put(struct os_mempool *mp, void *block_addr)
 {
-    return btdm_memblock_put((struct btdm_mempool *)mp, block_addr);
+    return (os_error_t)btdm_memblock_put((struct btdm_mempool *)mp, block_addr);
 }
 
 static inline void

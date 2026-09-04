@@ -20,10 +20,6 @@
 #include "../../common/btdm_bredr.h"
 #endif // SOC_BT_CLASSIC_SUPPORTED
 
-#if SOC_BLE_SUPPORTED
-#include "../../common/btdm_le.h"
-#endif /* SOC_BLE_SUPPORTED */
-
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "driver/uart.h"
 #endif
@@ -111,6 +107,10 @@ typedef struct {
     uint8_t type;     /*!< Type of the Bluetooth address (public, random, etc.) */
     uint8_t val[6];   /*!< Array containing the 6-byte Bluetooth address value */
 } esp_ble_addr_t;
+
+#if SOC_BLE_SUPPORTED
+#include "../../common/btdm_le.h"
+#endif /* SOC_BLE_SUPPORTED */
 
 #define BTDM_CONFIG_VERSION     0x20260127
 #define BTDM_CONFIG_MAGIC_VALUE 0x5a5aa5a5
