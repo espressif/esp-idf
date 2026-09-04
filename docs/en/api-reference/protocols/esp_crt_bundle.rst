@@ -91,7 +91,7 @@ With this functionality enabled, certificate verification is performed in a mann
 
 .. note::
 
-    Enabling cross-signed certificate support increases run-time heap utilization by approximately 700 bytes, but reduces the flash footprint as the bundle size is reduced.
+    Enabling cross-signed certificate support increases peak run-time heap usage during the TLS handshake by approximately 1 KB. This is a transient allocation (a candidate CA certificate built during certificate verification) that is freed once the handshake completes, and the exact amount scales with the maximum supported RSA key size. It also reduces the flash footprint, as the bundle size is reduced.
 
 Key Points:
 
