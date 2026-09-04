@@ -12,7 +12,7 @@ validate the BLE Log transport on target.
 
 It covers:
 
-- literal protocol-v7 framing and fixed Internal Snapshot ABI;
+- literal protocol-v8 framing and fixed Internal Snapshot ABI;
 - build, library, chip, and protocol versions inside the snapshot;
 - task and critical-section writes plus HCI direction encoding;
 - direct compression claim/commit, stale handles, and per-source serialization;
