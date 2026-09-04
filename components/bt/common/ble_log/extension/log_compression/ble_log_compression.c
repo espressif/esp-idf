@@ -9,9 +9,9 @@
 
 // Private includes
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "sdkconfig.h"
 #include "ble_log_lbm_v2.h"
+#include "ble_log_task_registry.h"
 #include "ble_log_util.h"
 #include "log_compression/utils.h"
 
@@ -39,69 +39,30 @@ _Static_assert(CONFIG_BLE_HOST_COMPRESSED_LOG_BUFFER_LEN <=
         } \
     } while (0)
 
-#if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
-char * mesh_last_task_handle = NULL;
-static ble_log_atomic_lock_t mesh_source_lock;
-#endif
-
-#if CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE
-char * iso_last_task_handle = NULL;
-static ble_log_atomic_lock_t iso_source_lock;
-#endif
-
-#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && CONFIG_BT_BLUEDROID_ENABLED
-char * host_last_task_handle = NULL;
-static ble_log_atomic_lock_t host_source_lock;
-#endif
-
-#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && CONFIG_BT_NIMBLE_ENABLED
-char * nimble_last_task_handle = NULL;
-static ble_log_atomic_lock_t nimble_source_lock;
-#endif
-
-#if CONFIG_BLE_LOG_PRPH_TEST
-extern void ble_log_test_compression_after_lock_hook(uint8_t source)
-__attribute__((weak));
-#endif
-
 /* The maximum number of supported parameters is 64 */
 #define LOG_HEADER(log_type, info) ((log_type << 6) | (info & 0x3f))
 
 int ble_compressed_log_cb_get(uint8_t source, ble_cp_log_buffer_mgmt_t *mgmt)
 {
-    char ** last_handle = NULL;
-    ble_log_atomic_lock_t *source_lock = NULL;
     uint16_t claim_len = 0;
-    char * cur_handle = pcTaskGetName(NULL);
 
     switch (source)
     {
 #if CONFIG_BLE_MESH_COMPRESSED_LOG_ENABLE
     case BLE_COMPRESSED_LOG_OUT_SOURCE_MESH:
     case BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB:
-        last_handle = &mesh_last_task_handle;
-        source_lock = &mesh_source_lock;
         claim_len = CONFIG_BLE_MESH_COMPRESSED_LOG_BUFFER_LEN;
         break;
 #endif
 #if CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE
     case BLE_COMPRESSED_LOG_OUT_SOURCE_ISO:
     case BLE_COMPRESSED_LOG_OUT_SOURCE_AUDIO_LIB:
-        last_handle = &iso_last_task_handle;
-        source_lock = &iso_source_lock;
         claim_len = CONFIG_BLE_ISO_COMPRESSED_LOG_BUFFER_LEN;
         break;
 #endif
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
     case BLE_COMPRESSED_LOG_OUT_SOURCE_HOST:
         claim_len = CONFIG_BLE_HOST_COMPRESSED_LOG_BUFFER_LEN;
-#if CONFIG_BT_BLUEDROID_ENABLED
-        last_handle = &host_last_task_handle;
-        source_lock = &host_source_lock;
-#elif CONFIG_BT_NIMBLE_ENABLED
-        last_handle = &nimble_last_task_handle;
-        source_lock = &nimble_source_lock;
-#endif
         break;
 #endif
     default:
@@ -111,38 +72,21 @@ int ble_compressed_log_cb_get(uint8_t source, ble_cp_log_buffer_mgmt_t *mgmt)
 
     mgmt->len = claim_len;
     mgmt->idx = 0;
-    mgmt->source_lock = source_lock;
-    mgmt->last_task_handle = last_handle;
-    mgmt->current_task_handle = cur_handle;
-    mgmt->task_switched = false;
-    mgmt->buffer = ble_log_claim(BLE_LOG_SRC_ENCODE, claim_len, &mgmt->handle);
+    mgmt->buffer = ble_log_claim(BLE_LOG_SRC_ENCODE, claim_len,
+                                 &mgmt->handle, true);
     if (!mgmt->buffer) {
         return -1;
     }
-    if (!BLE_LOG_CAS_ACQUIRE(source_lock)) {
+    /* Resolve the task id only after the claim succeeded: the claim's
+     * lifetime reference pins the current registry epoch, so the id
+     * cannot cross an init/deinit boundary (which reassigns ids from 0).
+     * Resolving before the claim instead left a window where a full
+     * deinit/reinit completed and the stale id named a different task. */
+    uint8_t task_id = ble_log_task_id_current();
+    if (ble_log_cp_push_u8(mgmt, source) != 0 ||
+        ble_log_cp_push_u8(mgmt, task_id) != 0) {
         ble_log_commit(mgmt->handle, 0);
         return -1;
-    }
-#if CONFIG_BLE_LOG_PRPH_TEST
-    if (ble_log_test_compression_after_lock_hook) {
-        ble_log_test_compression_after_lock_hook(source);
-    }
-#endif
-
-    if (ble_log_cp_push_u8(mgmt, source) != 0) {
-        ble_log_commit(mgmt->handle, 0);
-        BLE_LOG_CAS_RELEASE(source_lock);
-        return -1;
-    }
-    char *previous_handle = __atomic_load_n(last_handle, __ATOMIC_RELAXED);
-    if (previous_handle == NULL || previous_handle != cur_handle) {
-        if (ble_log_cp_push_u8(
-                mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_TASK_SWITCH)) != 0) {
-            ble_log_commit(mgmt->handle, 0);
-            BLE_LOG_CAS_RELEASE(source_lock);
-            return -1;
-        }
-        mgmt->task_switched = true;
     }
     return 0;
 }
@@ -150,18 +94,12 @@ int ble_compressed_log_cb_get(uint8_t source, ble_cp_log_buffer_mgmt_t *mgmt)
 static inline int ble_compressed_log_commit(ble_cp_log_buffer_mgmt_t *mgmt)
 {
     ble_log_commit(mgmt->handle, mgmt->idx);
-    if (mgmt->task_switched) {
-        __atomic_store_n(mgmt->last_task_handle, mgmt->current_task_handle,
-                         __ATOMIC_RELAXED);
-    }
-    BLE_LOG_CAS_RELEASE(mgmt->source_lock);
     return 0;
 }
 
 static inline int ble_compressed_log_abort(ble_cp_log_buffer_mgmt_t *mgmt)
 {
     ble_log_commit(mgmt->handle, 0);
-    BLE_LOG_CAS_RELEASE(mgmt->source_lock);
     return 0;
 }
 
@@ -357,8 +295,11 @@ int ble_log_compressed_hex_print_buf(uint8_t source, uint32_t log_index, uint8_t
     }
 
     if (buf == NULL) {
-        ble_log_cp_push_u8(&mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_NULL_BUF));
-        ble_log_cp_push_u16(&mgmt, log_index);
+        if (ble_log_cp_push_u8(&mgmt, LOG_HEADER(LOG_TYPE_INFO, LOG_TYPE_INFO_NULL_BUF)) != 0 ||
+            ble_log_cp_push_u16(&mgmt, log_index) != 0) {
+            ble_compressed_log_abort(&mgmt);
+            return 0;
+        }
         ble_compressed_log_commit(&mgmt);
         return 0;
     }

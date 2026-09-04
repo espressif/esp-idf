@@ -7,7 +7,7 @@
 #define __BLE_LOG_LBM_V2_H__
 
 /* -------------------------------------------------- */
-/*     BLE Log - Unified Transport Pool (v7)          */
+/*     BLE Log - Unified Transport Pool (v8)          */
 /* -------------------------------------------------- */
 /* Replaces the legacy multi-LBM design (ble_log_lbm.h) with one shared
  * transport pool. Written as a new module so the legacy implementation
@@ -44,6 +44,8 @@ typedef struct {
 #define BLE_LOG_TRANS_SIZE                      BLE_LOG_POOL_TRANS_SIZE
 #define BLE_LOG_MAX_PAYLOAD_LEN                 (BLE_LOG_POOL_TRANS_SIZE - BLE_LOG_FRAME_OVERHEAD)
 #define BLE_LOG_TRANS_INTERNAL_CNT              (1)
+/* Dedicated transport of the task-id registry binding broadcast. */
+#define BLE_LOG_TRANS_TASK_BINDING_CNT           (1)
 
 #if BLE_LOG_UART_REDIR_ENABLED
 #define BLE_LOG_TRANS_REDIR_CNT                 BLE_LOG_TRANS_BUF_CNT
@@ -52,10 +54,11 @@ typedef struct {
 #endif
 
 #define BLE_LOG_TRANS_TOTAL_CNT                 \
-    (BLE_LOG_POOL_TRANS_CNT + BLE_LOG_TRANS_INTERNAL_CNT + BLE_LOG_TRANS_REDIR_CNT)
+    (BLE_LOG_POOL_TRANS_CNT + BLE_LOG_TRANS_INTERNAL_CNT + \
+     BLE_LOG_TRANS_TASK_BINDING_CNT + BLE_LOG_TRANS_REDIR_CNT)
 
 /* --------------------------------------- */
-/*     Protocol v7 Source ID Space         */
+/*     Protocol v8 Source ID Space         */
 /* --------------------------------------- */
 /* The frozen public ble_log_src_t values are the on-wire and statistic
  * source IDs: the frame source byte carries the bare enum value. */
@@ -105,9 +108,10 @@ typedef struct {
  * REDIR: consumed at API entry (before pool contention), it orders all
  * log attempts — including equal-timestamp records from different
  * sources — and every lost or rejected attempt leaves a gap. INTERNAL
- * snapshot frames and the REDIR console stream keep their own separate
- * sequences (a gap counts a skipped snapshot or a dropped console batch).
- * ble_log_init() resets all three sequences; its required INIT snapshot
+ * snapshot frames, the periodic task-binding broadcast, and the REDIR
+ * console stream keep their own separate sequences (a gap counts a
+ * skipped snapshot, a skipped broadcast window, or a dropped console
+ * batch). ble_log_init() resets all of them; its required INIT snapshot
  * starts a new receiver epoch. They stay continuous through FLUSH within
  * that epoch. The per-counter macros live next to their counters in the
  * owning translation units; the 24-bit wire field is enforced where the
@@ -235,10 +239,18 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
                                const ble_log_ts_info_t *ts_info,
                                bool wait_for_transport);
 
+/* The task-id registry (protocol v8 attribution) lives in its own module:
+ * ble_log_task_registry.c/h, like the UART redirection writer. */
+
 /* Claim/commit: the public ble_log_src_t is accepted for API stability, but
  * only BLE_LOG_SRC_ENCODE is supported; its frames are stamped with the
- * ENCODE source ID on the wire. */
-uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle);
+ * ENCODE source ID on the wire. wait_for_transport=false turns a busy pool
+ * into a lossy fast path (NULL, as in a non-yieldable context) instead of
+ * waiting, for output that must not block its caller (e.g. the shared ESP
+ * timer task); true waits in yieldable contexts, never in non-yieldable
+ * ones. */
+uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
+                       uint32_t *handle, bool wait_for_transport);
 void ble_log_commit(uint32_t handle, size_t actual_len);
 
 #if BLE_LOG_UART_REDIR_ENABLED

@@ -12,6 +12,7 @@
 #include "ble_log.h"
 #include "ble_log_rt.h"
 #include "ble_log_lbm_v2.h"
+#include "ble_log_task_registry.h"
 #include "ble_log_util.h"
 
 #include "esp_log.h"
@@ -158,8 +159,12 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
 
     /* Unified periodic output: best-effort flush of partially-filled OPEN
      * transports ahead of the periodic snapshot, so parked frames do not
-     * wait for the next capacity seal. */
+     * wait for the next capacity seal. The task-id binding broadcast
+     * rides the same window, ahead of the snapshot, on its own dedicated
+     * transport: a receiver that missed a binding converges on the next
+     * one, and the snapshot never waits behind it. */
     ble_log_lbm_flush_open_trans();
+    ble_log_task_bindings_publish();
 
     (void)ble_log_internal_snapshot(
         BLE_LOG_SNAPSHOT_REASON_PERIODIC |
