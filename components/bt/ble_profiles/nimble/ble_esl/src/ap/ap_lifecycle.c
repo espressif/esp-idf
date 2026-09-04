@@ -480,52 +480,47 @@ static void lifecycle_timeout_cb(void *arg)
     }
 
     int64_t now_us = esp_timer_get_time();
-    ble_esl_ap_state_evt_snap_t snaps[CONFIG_BLE_ESL_AP_MAX_ESLS];
-    int snap_count = 0;
+    int i = 0;
 
-    ble_esl_ap_tracking_lock();
-    for (int i = 0; i < CONFIG_BLE_ESL_AP_MAX_ESLS; i++) {
-        ble_esl_ap_esl_entry_t *esl = &g_esl_ap->esls[i];
-        if (!esl->in_use) {
-            continue;
-        }
+    while (i < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+        ble_esl_ap_state_evt_snap_t snap = { 0 };
 
-        if (esl->state == BLE_ESL_STATE_SYNCHRONIZED) {
-            /* Check 60-minute sync timeout */
-            if (esl->last_sync_time_us != 0 &&
-                (now_us - esl->last_sync_time_us) >= (int64_t)LIFECYCLE_TIMEOUT_US) {
-                ESP_LOGW(TAG, "ESL 0x%04X: sync timeout (60 min), transitioning to Unsynchronized",
-                         esl->esl_addr);
-                if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+        ble_esl_ap_tracking_lock();
+        for (; i < CONFIG_BLE_ESL_AP_MAX_ESLS; i++) {
+            ble_esl_ap_esl_entry_t *esl = &g_esl_ap->esls[i];
+            if (!esl->in_use) {
+                continue;
+            }
+
+            if (esl->state == BLE_ESL_STATE_SYNCHRONIZED) {
+                /* Check 60-minute sync timeout */
+                if (esl->last_sync_time_us != 0 &&
+                    (now_us - esl->last_sync_time_us) >= (int64_t)LIFECYCLE_TIMEOUT_US) {
+                    ESP_LOGW(TAG, "ESL 0x%04X: sync timeout (60 min), transitioning to Unsynchronized",
+                             esl->esl_addr);
                     (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
                                                              BLE_ESL_STATE_UNSYNCHRONIZED,
-                                                             &snaps[snap_count]);
-                    if (snaps[snap_count].pending) {
-                        snap_count++;
-                    }
+                                                             &snap);
+                    i++;
+                    break;
                 }
-            }
-        } else if (esl->state == BLE_ESL_STATE_UNSYNCHRONIZED) {
-            /* Check 60-minute reconnect timeout */
-            if (esl->unsync_entry_time_us != 0 &&
-                (now_us - esl->unsync_entry_time_us) >= (int64_t)LIFECYCLE_TIMEOUT_US) {
-                ESP_LOGW(TAG, "ESL 0x%04X: unsync timeout (60 min), transitioning to Unassociated",
-                         esl->esl_addr);
-                if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
+            } else if (esl->state == BLE_ESL_STATE_UNSYNCHRONIZED) {
+                /* Check 60-minute reconnect timeout */
+                if (esl->unsync_entry_time_us != 0 &&
+                    (now_us - esl->unsync_entry_time_us) >= (int64_t)LIFECYCLE_TIMEOUT_US) {
+                    ESP_LOGW(TAG, "ESL 0x%04X: unsync timeout (60 min), transitioning to Unassociated",
+                             esl->esl_addr);
                     (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
                                                              BLE_ESL_STATE_UNASSOCIATED,
-                                                             &snaps[snap_count]);
-                    if (snaps[snap_count].pending) {
-                        snap_count++;
-                    }
+                                                             &snap);
+                    i++;
+                    break;
                 }
             }
         }
-    }
-    ble_esl_ap_tracking_unlock();
+        ble_esl_ap_tracking_unlock();
 
-    for (int i = 0; i < snap_count; i++) {
-        ble_esl_ap_dispatch_state_evt(&snaps[i]);
+        ble_esl_ap_dispatch_state_evt(&snap);
     }
 }
 
@@ -1586,8 +1581,7 @@ void ble_esl_ap_lifecycle_handle_disconnect(uint16_t conn_handle)
     bool is_sync_disconnect = (s_sync_ctx != NULL &&
                                s_sync_ctx->conn_handle == conn_handle);
 
-    ble_esl_ap_state_evt_snap_t snaps[CONFIG_BLE_ESL_AP_MAX_ESLS];
-    int snap_count = 0;
+    ble_esl_ap_state_evt_snap_t snap = { 0 };
 
     if (g_esl_ap != NULL) {
         ble_esl_ap_tracking_lock();
@@ -1604,45 +1598,28 @@ void ble_esl_ap_lifecycle_handle_disconnect(uint16_t conn_handle)
                     if (esl->config_complete) {
                         ESP_LOGI(TAG, "link-loss in Configuring (config complete) for ESL 0x%04X, "
                                  "transitioning to Unsynchronized", esl->esl_addr);
-                        if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
-                            (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
-                                                                     BLE_ESL_STATE_UNSYNCHRONIZED,
-                                                                     &snaps[snap_count]);
-                            if (snaps[snap_count].pending) {
-                                snap_count++;
-                            }
-                        }
+                        (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                                 BLE_ESL_STATE_UNSYNCHRONIZED,
+                                                                 &snap);
                     } else {
                         ESP_LOGI(TAG, "link-loss in Configuring (config incomplete) for ESL 0x%04X, "
                                  "transitioning to Unassociated", esl->esl_addr);
-                        if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
-                            (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
-                                                                     BLE_ESL_STATE_UNASSOCIATED,
-                                                                     &snaps[snap_count]);
-                            if (snaps[snap_count].pending) {
-                                snap_count++;
-                            }
-                        }
+                        (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                                 BLE_ESL_STATE_UNASSOCIATED,
+                                                                 &snap);
                     }
                 } else if (esl->state == BLE_ESL_STATE_UPDATING) {
                     ESP_LOGI(TAG, "link-loss in Updating for ESL 0x%04X, "
                              "transitioning to Unsynchronized", esl->esl_addr);
-                    if (snap_count < CONFIG_BLE_ESL_AP_MAX_ESLS) {
-                        (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
-                                                                 BLE_ESL_STATE_UNSYNCHRONIZED,
-                                                                 &snaps[snap_count]);
-                        if (snaps[snap_count].pending) {
-                            snap_count++;
-                        }
-                    }
+                    (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                             BLE_ESL_STATE_UNSYNCHRONIZED,
+                                                             &snap);
                 }
             }
             break;
         }
         ble_esl_ap_tracking_unlock();
-        for (int i = 0; i < snap_count; i++) {
-            ble_esl_ap_dispatch_state_evt(&snaps[i]);
-        }
+        ble_esl_ap_dispatch_state_evt(&snap);
     }
 
     /* Step 2: Handle synchronize procedure completion if this disconnect
