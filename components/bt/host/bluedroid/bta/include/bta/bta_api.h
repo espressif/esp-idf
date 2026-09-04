@@ -749,6 +749,12 @@ typedef struct {
     tBT_DEVICE_TYPE dev_type;
     UINT8           auth_mode;
     BOOLEAN           sc_support;         /* Denotes if peer device supported secure connection while bonding. */
+    /* TRUE when the stack refused the procedure on purpose (hardened re-pairing)
+       and the existing bond must not be erased. */
+    BOOLEAN         keep_bond;
+    /* TRUE when the local device was Central (HCI master) for this LE procedure.
+       Used with REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL / _AS_PERIPHERAL. */
+    BOOLEAN         is_central;
 } tBTA_DM_AUTH_CMPL;
 
 
