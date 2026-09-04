@@ -426,28 +426,28 @@ menu "GATT / ATT"
     config BT_NIMBLE_GATT_CACHING_MAX_SVCS
         int "Maximum number of services per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 8
         help
             Set this option to set the upper limit on number of services per connection to be cached.
 
     config BT_NIMBLE_GATT_CACHING_MAX_INCL_SVCS
         int "Maximum number of included services per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 8
         help
             Set this option to set the upper limit on number of included services per connection to be cached.
 
     config BT_NIMBLE_GATT_CACHING_MAX_CHRS
         int "Maximum number of characteristics per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 58
         help
             Set this option to set the upper limit on number of characteristics per connection to be cached.
 
     config BT_NIMBLE_GATT_CACHING_MAX_DSCS
         int "Maximum number of descriptors per connection"
         depends on BT_NIMBLE_GATT_CACHING
-        default 64
+        default 58
         help
             Set this option to set the upper limit on number of descriptors per connection to be cached.
 
@@ -1356,6 +1356,14 @@ menu "Extra Features"
             Disabling IRAM-optimized paths will place functions in FLASH (.irom.text)
             instead of DRAM (.iram.text/.text in internal RAM). Suitable for low-speed
             GAP/GATT operations to reduce RAM usage.
+
+    config BT_NIMBLE_GAP_ALLOW_ADV_RESTART
+        bool "Allow restarting ongoing advertising"
+        default n
+        help
+            If enabled, stop ongoing advertising before starting it again with
+            new parameters,if any. If disabled, starting advertising while it is already
+            active returns BLE_HS_EALREADY.
 
 endmenu
 

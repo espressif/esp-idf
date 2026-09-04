@@ -502,6 +502,10 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
             blufi_env.aggr_buf = NULL;
         }
 
+        if (!blufi_env.enabled) {
+            return 0;
+        }
+
         btc_msg_t msg;
         esp_blufi_cb_param_t param;
 
