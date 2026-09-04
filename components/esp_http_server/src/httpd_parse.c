@@ -68,12 +68,10 @@ static esp_err_t verify_url (http_parser *parser)
     const char *at = parser_data->last.at;
     size_t  length = parser_data->last.length;
 
+    /* http_parser stops with HPE_INVALID_METHOD before the URL callback for
+     * any method token it does not know, so the method is always valid here.
+     * That parser error is mapped to 501 in parse_block(). */
     r->method = parser->method;
-    if (r->method < 0) {
-        ESP_LOGW(TAG, LOG_FMT("HTTP method not supported (%d)"), r->method);
-        parser_data->error = HTTPD_501_METHOD_NOT_IMPLEMENTED;
-        return ESP_FAIL;
-    }
 
     if (sizeof(r->uri) < (length + 1)) {
         ESP_LOGW(TAG, LOG_FMT("URI length (%"NEWLIB_NANO_COMPAT_FORMAT") greater than supported (%"NEWLIB_NANO_COMPAT_FORMAT")"),
@@ -600,6 +598,17 @@ static int read_block(httpd_req_t *req, http_parser *parser, size_t offset, size
     return nbytes;
 }
 
+/* Map an http_parser failure to the HTTP status sent back. An unrecognized
+ * request method is a 501 (RFC 9110 section 15.6.2), every other parser
+ * error means the request syntax is malformed. */
+static httpd_err_code_t parser_errno_to_err_code(const http_parser *parser)
+{
+    if (HTTP_PARSER_ERRNO(parser) == HPE_INVALID_METHOD) {
+        return HTTPD_501_METHOD_NOT_IMPLEMENTED;
+    }
+    return HTTPD_400_BAD_REQUEST;
+}
+
 static int parse_block(http_parser *parser, size_t offset, size_t length)
 {
     parser_data_t        *data  = (parser_data_t *)(parser->data);
@@ -661,10 +670,16 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
         return 0;
     } else if (nparsed != length) {
         /* http_parser error */
-        data->error  = HTTPD_400_BAD_REQUEST;
+        data->error  = parser_errno_to_err_code(parser);
         data->status = PARSING_FAILED;
         ESP_LOGW(TAG, LOG_FMT("incomplete (%"NEWLIB_NANO_COMPAT_FORMAT"/%"NEWLIB_NANO_COMPAT_FORMAT") with parser error = %d"),
                  NEWLIB_NANO_COMPAT_CAST(nparsed), NEWLIB_NANO_COMPAT_CAST(length), parser->http_errno);
+        return -1;
+    } else if (HTTP_PARSER_ERRNO(parser) != HPE_OK) {
+        /* http_parser error */
+        data->error  = parser_errno_to_err_code(parser);
+        data->status = PARSING_FAILED;
+        ESP_LOGE(TAG, LOG_FMT("parser error: %s"), http_errno_description(HTTP_PARSER_ERRNO(parser)));
         return -1;
     }
 
