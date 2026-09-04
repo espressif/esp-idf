@@ -32,23 +32,19 @@ enum {
 #define LOG_TYPE_ZERO_ARGS 0
 #define LOG_TYPE_HEX_ARGS  1
 #define LOG_TYPE_HEX_BUF   2
-/* This type of message is used to update log information,
- * such as there is currently a new task log */
+/* Informational in-band records (protocol v8). Task-id bindings used to
+ * be one of these; they are broadcast as INTERNAL frames on the periodic
+ * snapshot window now (see ble_log_task_registry.h), keeping the ENCODE
+ * stream user records only. */
 #define LOG_TYPE_INFO  3
 
-#define LOG_TYPE_INFO_TASK_ID_UPDATE 0
 #define LOG_TYPE_INFO_NULL_BUF 1
-#define LOG_TYPE_INFO_TASK_SWITCH 2
 
 typedef struct {
     uint8_t *buffer;        /* claim() payload pointer */
     uint16_t idx;           /* bytes written so far */
     uint16_t len;           /* claimed capacity (max_len) */
     uint32_t handle;        /* claim handle for commit/abort */
-    volatile uint32_t *source_lock;
-    char **last_task_handle;
-    char *current_task_handle;
-    bool task_switched;
 } ble_cp_log_buffer_mgmt_t;
 
 static inline int ble_log_cp_buffer_safe_check(ble_cp_log_buffer_mgmt_t *pbuf_mgmt, uint16_t write_len)
