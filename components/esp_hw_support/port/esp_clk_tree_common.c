@@ -409,8 +409,8 @@ end:
  * dispatchers route into.
  *
  * Semantics:
- *   - acquire: ref_cnt++; on first acquire enable the gate.
- *   - release: ref_cnt--; on last release disable the gate.
+ *   - acquire: ref_cnt++; on first acquire acquire_parent then enable the gate.
+ *   - release: ref_cnt--; on last release disable the gate and release_parent.
  *   - select_upstream: program the mux to source from `upstream`.
  *   - freq_set: pick a divider for `state->cur_upstream` (if `select_upstream`
  *               was called) or auto-pick an upstream that divides cleanly
@@ -436,14 +436,21 @@ esp_err_t esp_clk_tree_derived_clk_acquire(soc_module_clk_t clk_src)
         return ESP_ERR_NOT_SUPPORTED;
     }
     esp_clk_tree_derived_clk_state_t *state = desc->state;
-
+    esp_err_t ret = ESP_OK;
     esp_os_enter_critical(&s_derived_clk_spinlock);
     state->ref_cnt++;
     if (state->ref_cnt == 1) {
-        desc->set_gate(true);
+        if (desc->acquire_parent != NULL) {
+            ret = desc->acquire_parent();
+        }
+        if (ret == ESP_OK) {
+            desc->set_gate(true);
+        } else {
+            state->ref_cnt--;
+        }
     }
     esp_os_exit_critical(&s_derived_clk_spinlock);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t esp_clk_tree_derived_clk_release(soc_module_clk_t clk_src)
@@ -455,6 +462,7 @@ esp_err_t esp_clk_tree_derived_clk_release(soc_module_clk_t clk_src)
     esp_clk_tree_derived_clk_state_t *state = desc->state;
 
     bool released_too_many = false;
+    esp_err_t ret = ESP_OK;
     esp_os_enter_critical(&s_derived_clk_spinlock);
     if (state->ref_cnt <= 0) {
         state->ref_cnt = 0;
@@ -465,13 +473,17 @@ esp_err_t esp_clk_tree_derived_clk_release(soc_module_clk_t clk_src)
             desc->set_gate(false);
             state->cur_upstream = SOC_MOD_CLK_INVALID;
             state->cur_divider = 0;
+            if (desc->release_parent != NULL) {
+                ret = desc->release_parent();
+            }
         }
     }
     esp_os_exit_critical(&s_derived_clk_spinlock);
     if (released_too_many) {
         ESP_HW_LOGW(TAG, "derived clk %d released without matching acquire", (int)clk_src);
+        return ESP_OK;
     }
-    return ESP_OK;
+    return ret;
 }
 
 /**
@@ -521,6 +533,7 @@ esp_err_t esp_clk_tree_derived_clk_freq_set(soc_module_clk_t clk_src,
     if (desc == NULL || desc->state == NULL || desc->upstreams == NULL) {
         return ESP_ERR_NOT_SUPPORTED;
     }
+
     esp_clk_tree_derived_clk_state_t *state = desc->state;
     ESP_RETURN_ON_FALSE(expt_freq_hz > 0, ESP_ERR_INVALID_ARG, TAG, "freq must be > 0");
 
@@ -551,32 +564,49 @@ esp_err_t esp_clk_tree_derived_clk_freq_set(soc_module_clk_t clk_src,
     // (e.g. another peer ran enable_src already but hasn't called freq_set
     // yet). Mirrors MPLL's `cur == 0 || ref_cnt < 2` check.
     bool first_commit = (state->cur_divider == 0);
+    bool upstream_changed = false;
     if (state->ref_cnt < 2 || same_config || first_commit) {
         // First-time configuration: also program the mux. When the caller
         // already invoked `select_upstream`, `state->cur_upstream` already
         // matches `upstream` so the mux is left untouched.
-        if (state->cur_upstream != upstream && desc->set_src != NULL) {
-            desc->set_src(mux_sel);
+        if (state->cur_upstream != upstream) {
+            upstream_changed = true;
+            if (desc->set_src != NULL) {
+                desc->set_src(mux_sel);
+            }
         }
-        desc->set_divider(divider);
+        if (desc->set_divider != NULL) {
+            desc->set_divider(divider);
+        }
         state->cur_upstream = upstream;
         state->cur_divider = divider;
     } else {
         ret = ESP_ERR_INVALID_STATE;
+    }
+    if (ret == ESP_OK && upstream_changed && desc->acquire_parent != NULL) {
+        ret = desc->acquire_parent();
     }
     esp_os_exit_critical(&s_derived_clk_spinlock);
     reported_upstream = state->cur_upstream;
     reported_divider = state->cur_divider;
 
     if (real_freq_hz != NULL) {
-        uint32_t up_hz = 0;
-        if (reported_upstream != SOC_MOD_CLK_INVALID && reported_divider != 0 &&
-            esp_clk_tree_src_get_freq_hz(reported_upstream,
-                                         ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
-                                         &up_hz) == ESP_OK) {
-            *real_freq_hz = up_hz / reported_divider;
+        if (desc->set_divider == NULL) {
+            if (esp_clk_tree_src_get_freq_hz(clk_src,
+                                            ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
+                                            real_freq_hz) != ESP_OK) {
+                *real_freq_hz = 0;
+            }
         } else {
-            *real_freq_hz = 0;
+            uint32_t up_hz = 0;
+            if (reported_upstream != SOC_MOD_CLK_INVALID && reported_divider != 0 &&
+                esp_clk_tree_src_get_freq_hz(reported_upstream,
+                                             ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
+                                             &up_hz) == ESP_OK) {
+                *real_freq_hz = up_hz / reported_divider;
+            } else {
+                *real_freq_hz = 0;
+            }
         }
     }
     return ret;
@@ -626,7 +656,33 @@ esp_err_t esp_clk_tree_src_select_upstream(soc_module_clk_t clk_src,
         // Divider for the previous upstream is no longer meaningful; the next
         // `set_freq_hz` call will program a fresh divider for `upstream`.
         state->cur_divider = 0;
+        if (desc->acquire_parent != NULL) {
+            ret = desc->acquire_parent();
+        }
     }
     esp_os_exit_critical(&s_derived_clk_spinlock);
     return ret;
+}
+
+bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
+{
+#if SOC_CLK_MPLL_SUPPORTED
+    if (clk_circuit == SOC_ROOT_CIRCUIT_CLK_MPLL) {
+        bool on;
+        esp_os_enter_critical(&s_periph_mpll_spinlock);
+        on = s_mpll_ref_cnt > 0;
+        esp_os_exit_critical(&s_periph_mpll_spinlock);
+        return on;
+    }
+#endif
+#if SOC_CLK_APLL_SUPPORTED
+    if (clk_circuit == SOC_ROOT_CIRCUIT_CLK_APLL) {
+        bool on;
+        esp_os_enter_critical(&s_periph_apll_spinlock);
+        on = s_apll_ref_cnt > 0;
+        esp_os_exit_critical(&s_periph_apll_spinlock);
+        return on;
+    }
+#endif
+    return esp_clk_tree_port_is_power_on(clk_circuit);
 }

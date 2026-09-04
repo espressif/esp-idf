@@ -433,7 +433,7 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
     case UART_SCLK_RTC:
         sel_value = 1;
         break;
-    case UART_SCLK_PLL_F80M:
+    case UART_SCLK_REF_F80M:
         sel_value = 2;
         break;
     default:
@@ -484,7 +484,7 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
             *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
             break;
         case 2:
-            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F80M;
+            *source_clk = (soc_module_clk_t)UART_SCLK_REF_F80M;
             break;
         }
     } else {

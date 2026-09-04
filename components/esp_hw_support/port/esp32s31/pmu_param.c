@@ -36,6 +36,7 @@ ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
         .top_pd_en          = 0  \
     }, \
     .clk_power = {            \
+        .xpd_xtalx2    = 0,   \
         .i2c_iso_en    = 0,   \
         .i2c_retention = 0,   \
         .xpd_bb_i2c    = 1,   \

@@ -60,11 +60,13 @@ typedef struct {
 typedef struct {
     soc_module_clk_t clk_id;                              /*!< Module clock id this descriptor belongs to */
     void (*set_src)(uint8_t mux_sel);                     /*!< Optional: program the upstream PLL mux. NULL when the clock has no mux (e.g. ESP32-P4 PLL_F50M is fixed to MPLL). */
-    void (*set_divider)(uint32_t divider);                /*!< Required: program the divider register (divider value, not the raw "div_num - 1" form). */
+    void (*set_divider)(uint32_t divider);                /*!< Optional: program the divider register (divider value, not div_num - 1). NULL when HW divider is fixed. */
     void (*set_gate)(bool enable);                        /*!< Required: enable/disable the clock gate. */
     const esp_clk_tree_derived_upstream_t *upstreams;     /*!< Required: candidate upstream PLLs in preference order (used by both auto-pick and explicit-upstream paths). */
     size_t upstream_count;                                /*!< Required: number of entries in `upstreams[]`. */
     esp_clk_tree_derived_clk_state_t *state;              /*!< Required: pointer to a statically-allocated mutable state slot owned by the target. Engine reads/writes ref_cnt / cur_upstream / cur_divider through this pointer. */
+    esp_err_t (*acquire_parent)(void);                    /*!< Optional: power upstream (first acquire or after mux/div commit). Called with s_derived_clk_spinlock held.*/
+    esp_err_t (*release_parent)(void);                    /*!< Optional: release upstream on last release. Called with s_derived_clk_spinlock held.*/
 } esp_clk_tree_derived_clk_desc_t;
 
 /**

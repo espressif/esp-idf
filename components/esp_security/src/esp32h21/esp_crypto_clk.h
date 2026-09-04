@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "soc/soc.h"
 #include "soc/pcr_reg.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "hal/sec_ll.h"
 
 #pragma once
 
@@ -18,5 +19,5 @@ static inline void esp_crypto_clk_init(void)
 {
     // Set crypto clock (`clk_sec`) to use 96M PLL clock
     esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F96M, true);
-    REG_SET_FIELD(PCR_SEC_CONF_REG, PCR_SEC_CLK_SEL, 0x3);
+    sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_PLL_F96M);
 }

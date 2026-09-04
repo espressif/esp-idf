@@ -144,6 +144,9 @@ uint32_t rtc_clk_cal_internal(soc_clk_freq_calculation_src_t cal_clk_sel, uint32
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
     clk_ll_freq_calculation_set_divider(1);
+    // Back to always on clock source, Otherwise, if the source for this calibration is subsequently turned off,
+    // the next calibration will not be able to switch to the new calibration source.
+    clk_ll_freq_calulation_set_target(CLK_CAL_RC_SLOW);
 
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
     if (cal_clk_sel == CLK_CAL_32K_XTAL && !dig_32k_xtal_enabled) {

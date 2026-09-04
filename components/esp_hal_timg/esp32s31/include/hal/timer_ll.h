@@ -104,7 +104,7 @@ static inline void _timer_ll_set_clock_source(int group_id, uint32_t timer_num, 
     case GPTIMER_CLK_SRC_XTAL:
         clk_id = 0;
         break;
-    case GPTIMER_CLK_SRC_PLL_F80M:
+    case GPTIMER_CLK_SRC_REF_F80M:
         clk_id = 2;
         break;
     case GPTIMER_CLK_SRC_RC_FAST:

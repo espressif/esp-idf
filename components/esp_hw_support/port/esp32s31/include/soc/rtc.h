@@ -88,6 +88,10 @@ typedef struct {
     uint32_t slow_clk_dcap : 8;                //!< RC_SLOW clock adjustment parameter (higher value leads to lower frequency)
     uint32_t clk_8m_dfreq : 8;                 //!< RC_FAST clock adjustment parameter (higher value leads to higher frequency)
     uint32_t rc32k_dfreq : 10;                 //!< Internal RC32K clock adjustment parameter (higher value leads to higher frequency)
+    uint32_t disable_apll : 1;                 //!< Whether to disable APLL  in rtc_clk_init
+    uint32_t disable_mpll : 1;                 //!< Whether to disable MPLL  in rtc_clk_init
+    uint32_t disable_cpll : 1;                 //!< Whether to disable CPLL  in rtc_clk_init
+    uint32_t disable_bbpll : 1;                //!< Whether to disable BBPLL in rtc_clk_init
 } rtc_clk_config_t;
 
 /**
@@ -103,6 +107,10 @@ typedef struct {
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
     .rc32k_dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT, \
+    .disable_apll = 1, \
+    .disable_mpll = 1, \
+    .disable_cpll = 0, /* Keep CPLL: Flash (bootloader) and typical CPU freqs use it */ \
+    .disable_bbpll = 1, \
 }
 
 /**
@@ -225,6 +233,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
  */
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config);
 
+#ifndef BOOTLOADER_BUILD
 /**
  * @brief Switch CPU frequency (optimized for speed)
  *
@@ -246,6 +255,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config);
  * @param config  CPU frequency configuration structure
  */
 void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config);
+#endif
 
 /**
  * @brief Get the currently used CPU frequency configuration
@@ -253,17 +263,16 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config);
  */
 void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
 
+#ifndef BOOTLOADER_BUILD
 /**
  * @brief Switch CPU clock source to XTAL
  *
  * Short form for filling in rtc_cpu_freq_config_t structure and calling
  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
  * Assumes that XTAL frequency has been determined — don't call in startup code.
- *
- * @note On ESP32S31, this function always disables CPLL after switching the CPU clock source to XTAL,
- * since there is no peripheral relies on CPLL clock (except Flash/PSRAM if their clock source selects CPLL).
  */
 void rtc_clk_cpu_freq_set_xtal(void);
+#endif
 
 /**
  * @brief Get the current APB frequency.
