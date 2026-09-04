@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,14 @@ void sha_hal_write_digest(esp_sha_type sha_type, void *digest_state);
  */
 void sha_hal_hash_dma(size_t num_blocks, bool first_block);
 #endif
+
+/**
+ * @brief Check whether the SHA peripheral can run the SM3 mode.
+ *
+ * @return true if SM3 is available. false if the chip has no SM3 hardware
+ *         or if an eFuse disables it.
+ */
+bool sha_hal_is_sm3_supported(void);
 
 #if SOC_SHA_SUPPORT_SHA512_T
 /**

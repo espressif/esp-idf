@@ -139,6 +139,11 @@ void sha_hal_write_digest(esp_sha_type sha_type, void *digest_state)
 }
 #endif //SOC_SHA_SUPPORT_RESUME
 
+bool sha_hal_is_sm3_supported(void)
+{
+    return sha_ll_is_sm3_supported();
+}
+
 #if SOC_SHA_SUPPORT_SHA512_T
 
 /* Calculates and sets the initial digiest for SHA512_t */
