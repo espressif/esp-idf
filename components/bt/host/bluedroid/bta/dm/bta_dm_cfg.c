@@ -117,12 +117,20 @@ tBTA_DM_CFG *const p_bta_dm_cfg = (tBTA_DM_CFG *) &bta_dm_cfg;
 tBTA_DM_RM *const p_bta_dm_rm_cfg = (tBTA_DM_RM *) &bta_dm_rm_cfg;
 
 #if BLE_INCLUDED == TRUE
-#  define BTA_DM_NUM_PM_ENTRY         10  /* number of entries in bta_dm_pm_cfg except the first */
+#  define BTA_DM_NUM_PM_ENTRY_BASE    10  /* number of entries in bta_dm_pm_cfg except the first */
 #  define BTA_DM_NUM_PM_SPEC          10  /* number of entries in bta_dm_pm_spec */
 #else
-#  define BTA_DM_NUM_PM_ENTRY         8  /* number of entries in bta_dm_pm_cfg except the first */
+#  define BTA_DM_NUM_PM_ENTRY_BASE    8  /* number of entries in bta_dm_pm_cfg except the first */
 #  define BTA_DM_NUM_PM_SPEC          8  /* number of entries in bta_dm_pm_spec */
 #endif
+
+#if (BTA_PBA_CLIENT_INCLUDED == TRUE)
+#  define BTA_DM_NUM_PM_PBC_ENTRY     1
+#else
+#  define BTA_DM_NUM_PM_PBC_ENTRY     0
+#endif
+
+#define BTA_DM_NUM_PM_ENTRY           (BTA_DM_NUM_PM_ENTRY_BASE + BTA_DM_NUM_PM_PBC_ENTRY)
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
 
@@ -139,6 +147,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG bta_dm_pm_cfg[BTA_DM_NUM_PM_ENTRY + 1] 
 #if BLE_INCLUDED == TRUE
     , {BTA_ID_GATTC,  BTA_ALL_APP_ID,   8} /* gattc spec table */
     , {BTA_ID_GATTS,  BTA_ALL_APP_ID,   9} /* gatts spec table */
+#endif
+#if (BTA_PBA_CLIENT_INCLUDED == TRUE)
+    , {BTA_ID_PBC, BTA_ALL_APP_ID, 2}  /* pbc reuses ftc/opc spec table */
 #endif
 };
 
@@ -182,7 +193,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
         }
     },
 
-    /* FTC, OPC, JV : 2 */
+    /* FTC, OPC, JV, PBC : 2 */
     {
         (BTA_DM_PM_SNIFF),                                             /* allow sniff */
   #if (BTM_SSR_INCLUDED == TRUE)
