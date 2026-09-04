@@ -21,7 +21,7 @@
  * memory requirements, keep it as less as possible; it's recommended to use subcode for more
  * log data structure decoding */
 /* CRITICAL: this enum is a public ABI and must not be reordered or renamed.
- * Its values are the base on-wire source IDs of protocol v7 frames. */
+ * Its values are the base on-wire source IDs of protocol v8 frames. */
 typedef enum {
     /* Internal */
     BLE_LOG_SRC_INTERNAL = 0,
@@ -69,8 +69,12 @@ bool ble_log_enable(bool enable);
 void ble_log_flush(void);
 /* Waits for a shared transport in yieldable contexts; ISR and critical-section callers fail fast. */
 bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len);
-/* Same backpressure as ble_log_write_hex(): yieldable claims wait for a shared transport. */
-uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle);
+/* Same backpressure as ble_log_write_hex(): yieldable claims wait for a
+ * shared transport when wait_for_transport is true; pass false for a lossy
+ * fast path from contexts that must not block (system periodic output).
+ * Non-yieldable contexts (ISR, critical section) fail fast either way. */
+uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
+                       uint32_t *handle, bool wait_for_transport);
 void ble_log_commit(uint32_t handle, size_t actual_len);
 void ble_log_dump_to_console(void);
 #if CONFIG_BLE_LOG_LL_ENABLED

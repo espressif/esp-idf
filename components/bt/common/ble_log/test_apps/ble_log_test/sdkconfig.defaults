@@ -4,3 +4,8 @@ CONFIG_BLE_LOG_PRPH_TEST=y
 CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
 CONFIG_UNITY_ENABLE_64BIT=y
 CONFIG_BLE_MESH=y
+# Exercise the compressed-log encoders and the task-id registry (protocol v8).
+CONFIG_BLE_COMPRESSED_LOG_ENABLE=y
+CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE=y
+# Small registry so the table-full degradation is reachable on target.
+CONFIG_BLE_LOG_TASK_ID_MAX=4
