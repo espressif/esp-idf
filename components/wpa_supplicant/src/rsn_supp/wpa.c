@@ -3378,8 +3378,10 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
             wpa_sm_set_pmk_from_pmksa(sm);
             goto done;
         } else {
-            /* If PMKID mismatches, derive keys again */
+            /* If PMKID mismatches, abort assoc due to invalid pmkid*/
             wpa_printf(MSG_DEBUG, "OWE : Invalid PMKID in response");
+            os_free(parsed_rsn_data);
+            return 1;
         }
     }
 
@@ -3392,11 +3394,8 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
         goto fail;
     }
 
-    /* If STA or AP does not have PMKID, or PMKID mismatches, proceed with normal association */
-    dh_len += 2;
-
+    dh_len -=1;
     dh_ie += 3;
-    dh_len -=3;
     group = WPA_GET_LE16(dh_ie);
 
     /* Only group 19 is supported */

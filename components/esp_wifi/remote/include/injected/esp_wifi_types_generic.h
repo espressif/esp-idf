@@ -199,7 +199,8 @@ typedef enum {
     .scan_time.active.min = WIFI_ACTIVE_SCAN_MIN_DEFAULT_TIME, \
     .scan_time.active.max = WIFI_ACTIVE_SCAN_MAX_DEFAULT_TIME, \
     .scan_time.passive = WIFI_PASSIVE_SCAN_DEFAULT_TIME, \
-    .home_chan_dwell_time = WIFI_SCAN_HOME_CHANNEL_DWELL_DEFAULT_TIME\
+    .home_chan_dwell_time = WIFI_SCAN_HOME_CHANNEL_DWELL_DEFAULT_TIME, \
+    .max_offchan_duration_ms = 0 \
 }
 
 /**
@@ -265,6 +266,7 @@ typedef struct {
 typedef struct {
     wifi_scan_time_t scan_time;  /**< Scan time per channel */
     uint8_t home_chan_dwell_time;/**< Time spent at home channel between scanning consecutive channels.*/
+    uint16_t max_offchan_duration_ms; /**< Maximum accumulated off-channel scan duration before returning to home channel (0 = use WIFI_ACTIVE_SCAN_MAX_DEFAULT_TIME, range: 1-4500ms). */
 } wifi_scan_default_params_t;
 
 /**
@@ -832,7 +834,7 @@ typedef struct {
     wifi_action_tx_t type;      /**< ACTION TX operation type */
     uint8_t channel;            /**< Channel on which to perform ACTION TX Operation */
     wifi_second_chan_t sec_channel;    /**< Secondary channel */
-    uint32_t wait_time_ms;      /**< Duration to wait for on target channel */
+    uint32_t wait_time_ms;      /**< Duration to wait for on target channel (must be greater than 0) */
     bool no_ack;                /**< Indicates no ack required */
     wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive action frames */
     uint8_t op_id;              /**< Unique Identifier for operation provided by wifi driver */
@@ -868,7 +870,7 @@ typedef struct {
     wifi_roc_t type;                   /**< ROC operation type */
     uint8_t channel;                   /**< Channel on which to perform ROC Operation */
     wifi_second_chan_t sec_channel;    /**< Secondary channel */
-    uint32_t wait_time_ms;             /**< Duration to wait for on target channel */
+    uint32_t wait_time_ms;             /**< Duration to wait for on target channel (must be greater than 0 for WIFI_ROC_REQ only) */
     wifi_action_rx_cb_t rx_cb;         /**< Rx Callback to receive action mgmt frames */
     uint8_t op_id;                     /**< ID of this specific ROC operation provided by wifi driver */
     wifi_action_roc_done_cb_t done_cb; /**< Callback to function that will be called upon ROC done. If assigned, WIFI_EVENT_ROC_DONE event will not be posted */

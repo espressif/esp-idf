@@ -37,7 +37,7 @@ int  wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
         return wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
     } else if (wpa_ie_len >=1 && wpa_ie[0] == WLAN_EID_RSNX){
         return wpa_parse_wpa_ie_rsnxe(wpa_ie, wpa_ie_len, data);
-    } else if (wpa_ie[0] == WLAN_EID_WAPI) {
+    } else if (wpa_ie_len >= 1 && wpa_ie[0] == WLAN_EID_WAPI) {
         return 0;
 #ifdef CONFIG_WPA3_COMPAT
     } else if (wpa_ie_len >= 6 && wpa_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
@@ -49,6 +49,38 @@ int  wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
                WPA_GET_BE32(&wpa_ie[2]) == RSNXE_OVERRIDE_IE_VENDOR_TYPE) {
         return wpa_parse_wpa_ie_rsnxe(wpa_ie, wpa_ie_len, data);
 #endif
+    }
+
+    return wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, data);
+}
+
+/**
+ * wpa_parse_wpa_ie_scan_only - Parse WPA/RSN IE for scan result display
+ * @wpa_ie: Pointer to WPA or RSN IE
+ * @wpa_ie_len: Length of the WPA/RSN IE
+ * @data: Pointer to data area for parsing results
+ * Returns: 0 on success, -1 on failure
+ *
+ * Parse WPA/RSN IE without build-time feature restrictions so scan results
+ * can report all advertised ciphers and AKMs.
+ */
+int wpa_parse_wpa_ie_scan_only(const u8 *wpa_ie, size_t wpa_ie_len,
+			       struct wpa_ie_data *data)
+{
+    if (wpa_ie_len >= 1 && wpa_ie[0] == WLAN_EID_RSN) {
+        return wpa_parse_wpa_ie_rsn_scan_only(wpa_ie, wpa_ie_len, data);
+    } else if (wpa_ie_len >= 1 && wpa_ie[0] == WLAN_EID_RSNX) {
+        return wpa_parse_wpa_ie_rsnxe_scan_only(wpa_ie, wpa_ie_len, data);
+    } else if (wpa_ie_len >= 1 && wpa_ie[0] == WLAN_EID_WAPI) {
+        return 0;
+    } else if (wpa_ie_len >= 6 && wpa_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
+               wpa_ie[1] >= 4 &&
+               WPA_GET_BE32(&wpa_ie[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
+        return wpa_parse_wpa_ie_rsn_scan_only(wpa_ie, wpa_ie_len, data);
+    } else if (wpa_ie_len >= 6 && wpa_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
+               wpa_ie[1] >= 4 &&
+               WPA_GET_BE32(&wpa_ie[2]) == RSNXE_OVERRIDE_IE_VENDOR_TYPE) {
+        return wpa_parse_wpa_ie_rsnxe_scan_only(wpa_ie, wpa_ie_len, data);
     }
 
     return wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, data);
