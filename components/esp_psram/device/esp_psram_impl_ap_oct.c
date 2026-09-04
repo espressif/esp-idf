@@ -413,7 +413,7 @@ static void s_configure_psram_ecc(void)
 }
 #endif  //#if CONFIG_SPIRAM_ECC_ENABLE
 
-esp_err_t esp_psram_impl_enable(void)
+static esp_err_t s_probe(void)
 {
 #if SOC_CLK_MPLL_SUPPORTED
     // We need to use the acquire and freq_set functions directly instead of general clk_tree API for IRAM safe function
@@ -482,13 +482,13 @@ esp_err_t esp_psram_impl_enable(void)
     return ESP_OK;
 }
 
-uint8_t esp_psram_impl_get_cs_io(void)
+static uint8_t s_get_cs_io(void)
 {
     ESP_EARLY_LOGD(TAG, "psram CS IO is dedicated");
     return -1;
 }
 
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -502,7 +502,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * If ECC is enabled, available PSRAM size will be 7/8 times its physical size.
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_available_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -522,7 +522,7 @@ static struct {
     uint64_t halfsleep_wakeup_tick;
 } s_halfsleep_ctx = {0};
 
-void esp_psram_impl_enter_halfsleep_mode(void)
+static void s_enter_halfsleep_mode(void)
 {
     // Backup MR4
     psram_ctrlr_ll_common_transaction(PSRAM_CTRLR_LL_MSPI_ID_3,
@@ -554,7 +554,7 @@ void esp_psram_impl_enter_halfsleep_mode(void)
                                       false);
 }
 
-void esp_psram_impl_exit_halfsleep_mode(void)
+static void s_exit_halfsleep_mode(void)
 {
     // Record the tick exiting halfsleep mode
     s_halfsleep_ctx.halfsleep_wakeup_tick = rtc_time_get();
@@ -563,7 +563,7 @@ void esp_psram_impl_exit_halfsleep_mode(void)
     psram_ctrlr_ll_half_sleep_wakeup();
 }
 
-void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+static void s_resume_from_halfsleep_mode(uint32_t slowclk_period)
 {
     uint64_t halfsleep_exit_tick  = s_halfsleep_ctx.halfsleep_wakeup_tick + rtc_time_us_to_slowclk(CONFIG_PM_SLP_SPIRAM_HALFSLEEP_EXIT_WAIT_DELAY, slowclk_period);
     while (rtc_time_get() < halfsleep_exit_tick) {
@@ -579,3 +579,14 @@ void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
                                       NULL, 0,
                                       false);
 }
+
+const esp_psram_impl_t g_psram_impl_oct = {
+    .mode = PSRAM_MODE_OCT,
+    .probe = s_probe,
+    .get_physical_size = s_get_physical_size,
+    .get_available_size = s_get_available_size,
+    .get_cs_io = s_get_cs_io,
+    .enter_halfsleep_mode = s_enter_halfsleep_mode,
+    .exit_halfsleep_mode = s_exit_halfsleep_mode,
+    .resume_from_halfsleep_mode = s_resume_from_halfsleep_mode,
+};

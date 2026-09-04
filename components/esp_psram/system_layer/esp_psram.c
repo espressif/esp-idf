@@ -30,6 +30,8 @@
 #include "esp_private/esp_psram_extram.h"
 #include "esp_private/esp_mmu_map_private.h"
 #include "esp_private/esp_psram_impl.h"
+#include "esp_private/mspi_timing_tuning.h"
+#include "esp_private/spi_flash_os.h"
 #include "esp_private/esp_psram_mspi.h"
 #include "esp_private/mspi_mem_barrier.h"
 #include "esp_private/startup_internal.h"
@@ -886,3 +888,95 @@ size_t esp_psram_get_heap_size_to_protect(void)
     }
 }
 #endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
+
+static PSRAM_HALFSLEEP_DATA_ATTR const esp_psram_impl_t *s_impl;
+
+esp_err_t esp_psram_impl_enable(void)
+{
+    static const esp_psram_impl_t *const s_impl_candidates[] = {
+#if CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
+        &g_psram_impl_quad,
+#endif
+#if CONFIG_SPIRAM_MODE_HEX_SUPPORTED
+        &g_psram_impl_hex,
+#endif
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+        &g_psram_impl_oct,
+#endif
+    };
+
+    esp_err_t ret = ESP_ERR_NOT_SUPPORTED;
+    for (size_t i = 0; i < sizeof(s_impl_candidates) / sizeof(s_impl_candidates[0]); i++) {
+        const esp_psram_impl_t *impl = s_impl_candidates[i];
+
+        ret = impl->probe();
+        if (ret != ESP_OK) {
+            //A failed probe leaves SPI1 in whatever state its command sequence needed, restore it before the next one runs
+            spi_flash_set_rom_required_regs();
+            continue;
+        }
+
+        s_impl = impl;
+        //The tuning drives the chip in its own line mode, so publish the mode before `configure` runs it
+        mspi_timing_psram_set_dtr_mode(impl->mode != PSRAM_MODE_QUAD);
+
+        if (impl->configure) {
+            ret = impl->configure();
+            if (ret != ESP_OK) {
+                s_impl = NULL;
+            }
+        }
+        return ret;
+    }
+
+    return ret;
+}
+
+esp_err_t esp_psram_impl_get_mode(psram_mode_t *out_mode)
+{
+    if (!out_mode) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!s_impl) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    *out_mode = s_impl->mode;
+    return ESP_OK;
+}
+
+esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+{
+    return s_impl ? s_impl->get_physical_size(out_size_bytes) : ESP_ERR_INVALID_STATE;
+}
+
+esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+{
+    return s_impl ? s_impl->get_available_size(out_size_bytes) : ESP_ERR_INVALID_STATE;
+}
+
+uint8_t esp_psram_impl_get_cs_io(void)
+{
+    return s_impl ? s_impl->get_cs_io() : (uint8_t) -1;
+}
+
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+{
+    if (s_impl) {
+        s_impl->enter_halfsleep_mode();
+    }
+}
+
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+{
+    if (s_impl) {
+        s_impl->exit_halfsleep_mode();
+    }
+}
+
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+{
+    if (s_impl) {
+        s_impl->resume_from_halfsleep_mode(slowclk_period);
+    }
+}
