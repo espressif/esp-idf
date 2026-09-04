@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/param.h>
 #include <esp_log.h>
 #include <esp_err.h>
@@ -371,9 +372,24 @@ static esp_err_t cb_headers_complete(http_parser *parser)
         return ESP_FAIL;
     }
 
-    /* In absence of body/chunked encoding, http_parser sets content_len to -1 */
-    r->content_len = ((int)parser->content_length != -1 ?
-                      parser->content_length : 0);
+    /* In absence of body/chunked encoding, http_parser sets content_len to ULLONG_MAX */
+    if (parser->content_length != ULLONG_MAX) {
+        /* Content-Length was specified. Reject any value above UINT32_MAX: it is
+         * the largest body length the server can represent in r->content_len on
+         * every target, and rejecting larger values prevents the 64->32-bit
+         * truncation that would otherwise enable request smuggling (CWE-681). */
+        if (parser->content_length > UINT32_MAX) {
+            ESP_LOGW(TAG, LOG_FMT("Content-Length %" PRIu64
+                                  " exceeds UINT32_MAX; rejecting with 413"),
+                     (uint64_t)parser->content_length);
+            parser_data->error = HTTPD_413_CONTENT_TOO_LARGE;
+            parser_data->status = PARSING_FAILED;
+            return ESP_FAIL;
+        }
+        r->content_len = (size_t)parser->content_length;
+    } else {
+        r->content_len = 0;
+    }
 
     ESP_LOGD(TAG, LOG_FMT("bytes read     = %" PRId32 ""),  parser->nread);
     ESP_LOGD(TAG, LOG_FMT("content length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST(r->content_len));
