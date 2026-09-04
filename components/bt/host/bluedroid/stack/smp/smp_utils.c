@@ -1044,6 +1044,10 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
     evt_data.cmplt.reason = p_cb->status;
     evt_data.cmplt.smp_over_br = p_cb->smp_over_br;
     evt_data.cmplt.auth_mode = 0;
+#if (BLE_INCLUDED == TRUE && BLE_SMP_HARDENED_REPAIRING == TRUE)
+    /* Copied before smp_reset_control_value() zeros the control block. */
+    evt_data.cmplt.keep_bond = p_cb->keep_bond_on_fail;
+#endif
 #if (BLE_INCLUDED == TRUE)
     tBTM_SEC_DEV_REC    *p_rec = btm_find_dev (p_cb->pairing_bda);
     if (p_cb->status == SMP_SUCCESS) {
@@ -1284,6 +1288,104 @@ BOOLEAN smp_parameter_unconditionally_invalid(tSMP_CB *p_cb)
 {
     return FALSE;
 }
+
+#if (BLE_INCLUDED == TRUE && BLE_SMP_HARDENED_REPAIRING == TRUE)
+/*******************************************************************************
+**
+** Function         smp_repairing_is_allowed
+**
+** Description      Called once the association model of a pairing procedure is known.
+**                  First pairing (no stored bond) is always allowed. On re-pairing,
+**                  refuses when the peer drops AuthReq bits it announced in a Security
+**                  Request, when the association model would weaken MITM/SC relative to
+**                  the stored bond, or when the encryption key would get shorter.
+**
+** Returns          TRUE when the pairing may continue. Otherwise FALSE, and *p_reason
+**                  holds the SMP failure code to report to the peer. Also sets
+**                  p_cb->keep_bond_on_fail so BTA/BTC keep the stored bond even when
+**                  REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL / _AS_PERIPHERAL is enabled. The
+**                  caller should drop the link so the peer cannot retry with other
+**                  parameters until one gets through.
+**
+*******************************************************************************/
+BOOLEAN smp_repairing_is_allowed(tSMP_CB *p_cb, UINT8 *p_reason)
+{
+    const UINT16 level_bits = SMP_AUTH_YN_BIT | SMP_SC_SUPPORT_BIT;
+    tBTM_SEC_DEV_REC *p_dev_rec;
+    UINT16 new_auth = p_cb->auth_mode;
+    UINT16 sec_req_level;
+    UINT16 old_auth;
+    UINT8 new_key_size;
+
+    p_dev_rec = btm_find_dev(p_cb->pairing_bda);
+    if (p_dev_rec == NULL ||
+            !(p_dev_rec->ble.key_type & (BTM_LE_KEY_PENC | BTM_LE_KEY_LENC))) {
+        /* First pairing with this peer, there is nothing to downgrade. A Security
+           Request that outruns what IO capabilities can deliver must not block it. */
+        SMP_TRACE_DEBUG("LE first pairing, skip downgrade check, BDA:0x%02X%02X%02X%02X%02X%02X",
+                        p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],
+                        p_cb->pairing_bda[3], p_cb->pairing_bda[4], p_cb->pairing_bda[5]);
+        return TRUE;
+    }
+
+    /* A Security Request carries no authentication, but the pairing command that
+       follows must still claim the level it announced, otherwise the peer can
+       advertise a high level to force a re-pairing and then drop those bits in the
+       Pairing Response. Compare against peer_auth_req (the pairing command), not
+       against the association-model result: IO capabilities that force Just Works
+       are a local limitation, not a peer AuthReq downgrade. Only bits this side
+       also asked for are enforced. */
+    sec_req_level = p_cb->sec_req_auth_req & p_cb->loc_auth_req & level_bits;
+
+    if (p_cb->sec_req_rcvd &&
+            ((p_cb->peer_auth_req & sec_req_level) != sec_req_level)) {
+        SMP_TRACE_ERROR("LE re-pair refuse: SR 0x%02x pair 0x%02x loc 0x%02x, BDA:0x%02X%02X%02X%02X%02X%02X",
+                        p_cb->sec_req_auth_req, p_cb->peer_auth_req, p_cb->loc_auth_req,
+                        p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],
+                        p_cb->pairing_bda[3], p_cb->pairing_bda[4], p_cb->pairing_bda[5]);
+        *p_reason = SMP_PAIR_AUTH_FAIL;
+        /* Keep the existing bond: this is a local policy refusal, not a peer that
+           proved the stored keys are gone. BTC must not erase NVS on this path. */
+        p_cb->keep_bond_on_fail = TRUE;
+        return FALSE;
+    }
+
+    old_auth = p_dev_rec->ble.auth_mode;
+    /* Bonds created before auth_mode was recorded, or restored from an older NVS layout,
+       only carry the security level. */
+    if (p_dev_rec->ble.keys.sec_level >= SMP_SEC_AUTHENTICATED) {
+        old_auth |= SMP_AUTH_YN_BIT;
+    }
+
+    if ((new_auth & old_auth & level_bits) != (old_auth & level_bits)) {
+        SMP_TRACE_ERROR("LE re-pair refuse: auth 0x%02x < bonded 0x%02x, BDA:0x%02X%02X%02X%02X%02X%02X",
+                        new_auth, old_auth,
+                        p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],
+                        p_cb->pairing_bda[3], p_cb->pairing_bda[4], p_cb->pairing_bda[5]);
+        *p_reason = SMP_PAIR_AUTH_FAIL;
+        p_cb->keep_bond_on_fail = TRUE;
+        return FALSE;
+    }
+
+    new_key_size = (p_cb->loc_enc_size < p_cb->peer_enc_size) ? p_cb->loc_enc_size
+                                                              : p_cb->peer_enc_size;
+    if (new_key_size < p_dev_rec->ble.keys.key_size) {
+        SMP_TRACE_ERROR("LE re-pair refuse: key size %d < bonded %d, BDA:0x%02X%02X%02X%02X%02X%02X",
+                        new_key_size, p_dev_rec->ble.keys.key_size,
+                        p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],
+                        p_cb->pairing_bda[3], p_cb->pairing_bda[4], p_cb->pairing_bda[5]);
+        *p_reason = SMP_ENC_KEY_SIZE;
+        p_cb->keep_bond_on_fail = TRUE;
+        return FALSE;
+    }
+
+    SMP_TRACE_DEBUG("LE re-pair allowed: auth 0x%02x->0x%02x key %d->%d, BDA:0x%02X%02X%02X%02X%02X%02X",
+                    old_auth, new_auth, p_dev_rec->ble.keys.key_size, new_key_size,
+                    p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],
+                    p_cb->pairing_bda[3], p_cb->pairing_bda[4], p_cb->pairing_bda[5]);
+    return TRUE;
+}
+#endif  ///BLE_INCLUDED == TRUE && BLE_SMP_HARDENED_REPAIRING == TRUE
 
 /*******************************************************************************
 **
