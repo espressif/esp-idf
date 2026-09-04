@@ -864,7 +864,7 @@ if BLE_MESH
 
     config BLE_MESH_IVU_RECOVERY_IVI
         bool "Recovery the IV index when the latest whole IV update procedure is missed"
-        default n
+        default y
         help
             According to Section 3.10.5 of Mesh Specification v1.0.1.
             If a node in Normal Operation receives a Secure Network beacon with an IV index
