@@ -8,6 +8,8 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "twai_private.h"
+#include "freertos/semphr.h"
+#include "freertos/timers.h"
 #include "esp_private/twai_interface.h"
 #include "esp_private/twai_utils.h"
 #include "esp_private/twai_frame_queue.h"
@@ -322,6 +324,26 @@ static void _node_isr_main(void *arg)
     }
 }
 
+static void _node_pended_flush_marker(void *sem, uint32_t unused)
+{
+    (void)unused;
+    xSemaphoreGive((SemaphoreHandle_t)sem);
+}
+
+static void _node_flush_pended_set_bits(void)
+{
+    StaticSemaphore_t sem_storage;
+    SemaphoreHandle_t sem = xSemaphoreCreateBinaryStatic(&sem_storage);
+    assert(sem);
+
+    // The `xEventGroupSetBitsFromISR` which used in ISR is not done immediately but just called `xTimerPendFunctionCall`,
+    // wait a semaphore from xTimerPendFunctionCall again is able to ensure the timer task fifo is all done.
+    if (xTimerPendFunctionCall(_node_pended_flush_marker, sem, 0, portMAX_DELAY) == pdPASS) {
+        xSemaphoreTake(sem, portMAX_DELAY);
+    }
+    vSemaphoreDelete(sem);
+}
+
 static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
 {
 #ifdef CONFIG_PM_ENABLE
@@ -348,6 +370,8 @@ static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
     }
     twai_frame_queue_del(twai_ctx->tx_queue);
     if (twai_ctx->event_group) {
+        // xEventGroupSetBitsFromISR is not done immediately, need flush it before deleting
+        _node_flush_pended_set_bits();
         vEventGroupDeleteWithCaps(twai_ctx->event_group);
     }
     if (twai_ctx->ctrlr_id != -1) {
@@ -767,7 +791,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 #endif //CONFIG_PM_ENABLE
 
     // Set clock source, enable bus clock and reset controller
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(node->curr_clk_src, true), TAG, "enable clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(node->curr_clk_src, true), err, TAG, "enable clock source failed");
     ESP_LOGD(TAG, "set clock source to %d, freq: %ld Hz", node->curr_clk_src, node->src_freq_hz);
     _twai_rcc_clock_sel(node->ctrlr_id, node->curr_clk_src);
     _twai_rcc_clock_ctrl(ctrlr_id, true);

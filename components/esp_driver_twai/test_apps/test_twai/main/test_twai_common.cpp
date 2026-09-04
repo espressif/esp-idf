@@ -999,3 +999,65 @@ TEST_CASE("twai schedule transmit", "[twai]")
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));
 }
+
+static IRAM_ATTR bool test_event_tx_done_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
+{
+    *((bool *)user_ctx) = true;
+    return false;
+}
+
+static void test_driver_event_group(void *args)
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO; // Using same pin for test without transceiver
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 500000;
+    node_config.tx_queue_depth = 1;
+    node_config.flags.enable_loopback = true;
+    node_config.flags.enable_self_test = true;
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    bool tx_done = false;
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_tx_done = test_event_tx_done_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, &tx_done));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    twai_frame_t tx_frame = {};
+    TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 100));
+
+    // TX done ISR has pended xEventGroupSetBitsFromISR now, but this high-priority
+    // task get run before lower-priority timer task, so xEventGroupSetBitsFromISR not actually finish now.
+    while (!tx_done);
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+
+    // alloc some memory to let deleted node's memory got polluted
+    void *blocks[20] = {};
+    for (int i = 1; i < 20; i++) {
+        blocks[i] = heap_caps_calloc(i, 8, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    }
+    for (int i = 0; i < 20; i++) {
+        free(blocks[i]);
+    }
+    vTaskDelete(NULL);
+}
+
+//   twai_task           twai_isr               timer task
+//      tx                  |                        |
+//       |               tx done                     |
+//       |          trigger timer task               |
+//       |             to set event                  |
+//  delete node                            (low priority not run)
+//                                           (start set event
+//                                           but node deleted)
+//===============================================================
+TEST_CASE("twai delete event group before setbits", "[twai]")
+{
+    // let twai task higher than timer task so it can run first
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreate(test_driver_event_group, "twai_del", 4096, NULL, configTIMER_TASK_PRIORITY + 1, NULL));
+    vTaskDelay(pdMS_TO_TICKS(500));
+}

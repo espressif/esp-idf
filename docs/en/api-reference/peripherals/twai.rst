@@ -210,6 +210,8 @@ Stopping and Deleting the Node
 
 When the TWAI node is no longer needed, you should call :cpp:func:`twai_node_delete` to release software and hardware resources. Make sure the TWAI controller is stopped before deleting the node.
 
+Note: Due to the design of the driver, please do not call the delete function in the FreeRTOS timer task.
+
 Advanced Features
 =================
 
