@@ -331,6 +331,19 @@ static esp_err_t emac_esp_dma_get_valid_recv_len(emac_esp_dma_handle_t emac_esp_
                 *ret_len = 0;
                 return ESP_FAIL;
             }
+            /* The Rx checksum offload engine cannot drop erroneous frames in
+               hardware since that requires Receive Store Forward (the Rx FIFO
+               is smaller than a full frame on most targets). Its per-frame
+               verdict is delivered in the enhanced descriptor extended status
+               instead - drop bad frames here so the network stack can rely on
+               hardware-verified IP/TCP/UDP/ICMP checksums. */
+            if (desc_iter->RDES0.ExtendStatusAvailable &&
+                    !desc_iter->ExtendedStatus.IPChecksumBypass &&
+                    (desc_iter->ExtendedStatus.IPHeadErr || desc_iter->ExtendedStatus.IPPayloadErr)) {
+                emac_esp_dma_flush_recv_frame(emac_esp_dma);
+                *ret_len = 0;
+                return ESP_FAIL;
+            }
             /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
             *ret_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
             break;
