@@ -16,6 +16,8 @@ extern "C" {
 
 int bt_le_bluedroid_bass_init(void);
 
+int bt_le_bluedroid_bass_deinit(void);
+
 int bt_le_bluedroid_bass_start(void);
 
 #ifdef __cplusplus

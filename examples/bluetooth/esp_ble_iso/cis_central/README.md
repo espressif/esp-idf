@@ -9,7 +9,9 @@
 
 This is a raw BLE Connected Isochronous Stream (CIS) example operating directly at the ISO transport layer over either the NimBLE or Bluedroid host (selected at build time via Kconfig). It is **not** a BAP/CAP (BLE Audio profile) example — it does not implement Unicast Server/Client, ASCS, PACS, or any LC3 codec; it only exercises the underlying CIG/CIS plumbing.
 
-The central scans for a peer advertising the name `CIS Peripheral`, opens an ACL link, optionally pairs (security level `ESP_BLE_ISO_SECURITY_NO_MITM`), creates a single-CIS CIG (10 ms SDU interval, 2M PHY, RTN 2, 120-byte SDU, sequential/unframed), connects the CIS, configures the input data path to the HCI in transparent format, and then drives a software TX scheduler that submits one SDU every 10 ms.
+The central scans for a peer advertising the name `CIS Peripheral`, opens an ACL link, optionally pairs (security level `ESP_BLE_ISO_SECURITY_NO_MITM`), creates a **two-CIS** CIG (10 ms SDU interval, 2M PHY, RTN 2, 120-byte SDU, sequential/unframed), connects both CIS, configures each input data path to the HCI in transparent format, and then drives one software TX scheduler per CIS that submits one SDU every 10 ms.
+
+Both CIS ride the same ACL connection to the same peer, which is what `esp_ble_iso_chan_connect()` expresses: it takes one ACL handle plus a channel count. Each stream is otherwise independent — its own timer, sequence numbering and TX counters — because the controller establishes them one after another, so a shared scheduler would send on a CIS that is not up yet and would report both streams under a single name.
 
 The transmitted payload is a dummy buffer filled with the current sequence number byte — there is no real audio data, the example just demonstrates the ISO transport mechanics via the `esp_ble_iso_*` APIs.
 
@@ -26,7 +28,7 @@ The transmitted payload is a dummy buffer filled with the current sequence numbe
 idf.py menuconfig
 ```
 
-No build-time options — runtime defaults are baked into source.
+No menuconfig options — runtime defaults are baked into source. The number of CIS is the `CIS_COUNT` macro in `main/main.c`; raising it also requires `CONFIG_BT_ISO_MAX_CHAN` in `sdkconfig.defaults` to be at least that value (the host default is 1, so a second CIS is rejected without it).
 
 ### Security & Pairing
 
@@ -60,9 +62,9 @@ For `esp32s31`, replace the chip overlay accordingly.
 2. Start passive extended scanning for a device whose Complete Local Name is `CIS Peripheral`.
 3. Cancel scan and create an ACL connection (interval 80 ms, supervision 5 s) once the target is matched.
 4. On ACL connect, initiate pairing because the configured security level is `ESP_BLE_ISO_SECURITY_NO_MITM`.
-5. After the security change, call `esp_ble_iso_cig_create` (one CIS, 10 ms latencies and SDU interval, sequential/unframed, SCA unknown) and `esp_ble_iso_chan_connect` over the ACL handle.
-6. On CIS connect, set up the input data path (HCI / transparent) and start the periodic TX scheduler.
-7. The scheduler invokes `esp_ble_iso_chan_send` every 10 ms with an incrementing sequence number on a 120-byte dummy SDU.
+5. After the security change, call `esp_ble_iso_cig_create` (two CIS, 10 ms latencies and SDU interval, sequential/unframed, SCA unknown) and `esp_ble_iso_chan_connect` once for both channels over the same ACL handle.
+6. The controller establishes the CIS one at a time. On each CIS connect, set up that channel's input data path (HCI / transparent) and start its own periodic TX scheduler.
+7. Each scheduler invokes `esp_ble_iso_chan_send` every 10 ms on its own channel, with a per-CIS incrementing sequence number on a 120-byte dummy SDU.
 
 ## Expected Log
 
@@ -76,17 +78,22 @@ I CIS_CEN: Connected: handle <h> role <r> peer XX:XX:XX:XX:XX:XX
 I CIS_CEN: Security: handle <h> level <l> bonded <b>
 ```
 
-CIS setup and streaming phase (TX log emitted every `LOG_INTERVAL_PACKETS` SDUs by the shared utility):
+CIS setup and streaming phase. The two CIS come up a couple of hundred milliseconds apart, and each reports its own count (TX log emitted every `LOG_INTERVAL_PACKETS` SDUs by the shared utility):
 
 ```
 I CIS_CEN: [CIS #0] Connected
+I CIS_CEN: [CIS #1] Connected
 I CIS_CEN: [CIS #0] TX: <count> packets
+I CIS_CEN: [CIS #1] TX: <count> packets
 ```
 
-Disconnect path:
+There should be no `IsoSendChanNotConn` errors in the gap between the two `Connected` lines: each CIS only starts its timer once it is established, so nothing is submitted to a stream that is still connecting.
+
+Disconnect path (per CIS, then the ACL):
 
 ```
 I CIS_CEN: [CIS #0] Disconnected, reason 0x<rr>
+I CIS_CEN: [CIS #1] Disconnected, reason 0x<rr>
 I CIS_CEN: Disconnected: handle <h> reason 0x<rr>
 ```
 
@@ -97,6 +104,6 @@ Run [cis_peripheral](../cis_peripheral/) on a second board.
 1. Flash and run `cis_peripheral` first; it begins extended advertising as `CIS Peripheral`.
 2. Flash and run `cis_central` on the second board; it scans and matches that name.
 3. The central creates the ACL connection and initiates pairing.
-4. After the security change, the central creates the CIG and connects the CIS.
-5. Both sides set up their data paths (input on central, output on peripheral).
-6. The central streams 120-byte SDUs every 10 ms; the peripheral reports `RX: <count> packets` periodically.
+4. After the security change, the central creates the CIG and connects both CIS over that one ACL.
+5. Both sides set up a data path per CIS (input on central, output on peripheral).
+6. The central streams 120-byte SDUs every 10 ms on each CIS; the peripheral reports `RX: <count> packets` per CIS periodically.

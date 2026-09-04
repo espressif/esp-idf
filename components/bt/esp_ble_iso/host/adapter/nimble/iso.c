@@ -37,9 +37,9 @@ static int hci_cmd_read_iso_tx_sync(struct net_buf *buf, struct net_buf **rsp)
     uint16_t conn_handle;
     int status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
-    assert(buf->len >= 5);
+    BT_LE_ASSERT(buf->len >= 5);
 
     conn_handle = sys_get_le16(buf->data + 3);
 
@@ -87,9 +87,9 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
     uint8_t *rp;
     int status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
-    assert(buf->len >= 18);
+    BT_LE_ASSERT(buf->len >= 18);
 
     cig_id              = buf->data[3];
     sdu_interval_c_to_p = sys_get_le24(buf->data + 4);
@@ -101,17 +101,17 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
     mtl_p_to_c          = sys_get_le16(buf->data + 15);
     cis_count           = buf->data[17];
 
-    assert(buf->len >= 18 + cis_count * sizeof(struct ble_hci_le_cis_params));
+    BT_LE_ASSERT(buf->len >= 18 + cis_count * sizeof(struct ble_hci_le_cis_params));
 
     /* The cis_count can be 0 */
     if (cis_count) {
-        cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
-        assert(cis_params);
+        cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
+        BT_LE_ASSERT(cis_params);
     }
 
     rp_len = sizeof(struct ble_hci_le_set_cig_params_rp) + cis_count * 2;
-    rp = calloc(1, rp_len);
-    assert(rp);
+    rp = bt_le_ext_calloc(1, rp_len);
+    BT_LE_ASSERT(rp);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_id         = buf->data[18 + i * sizeof(struct ble_hci_le_cis_params)];
@@ -180,9 +180,9 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
     uint8_t *rp;
     int status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
-    assert(buf->len >= 18);
+    BT_LE_ASSERT(buf->len >= 18);
 
     cig_id              = buf->data[3];
     sdu_interval_c_to_p = sys_get_le24(buf->data + 4);
@@ -195,17 +195,17 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
     framing             = buf->data[16];
     cis_count           = buf->data[17];
 
-    assert(buf->len >= 18 + cis_count * sizeof(struct ble_hci_le_cis_params_test));
+    BT_LE_ASSERT(buf->len >= 18 + cis_count * sizeof(struct ble_hci_le_cis_params_test));
 
     /* The cis_count can be 0 */
     if (cis_count) {
-        cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
-        assert(cis_params);
+        cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
+        BT_LE_ASSERT(cis_params);
     }
 
     rp_len = sizeof(struct ble_hci_le_set_cig_params_test_rp) + cis_count * 2;
-    rp = calloc(1, rp_len);
-    assert(rp);
+    rp = bt_le_ext_calloc(1, rp_len);
+    BT_LE_ASSERT(rp);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_id         = buf->data[18 + i * sizeof(struct ble_hci_le_cis_params_test)];
@@ -269,15 +269,15 @@ static int hci_cmd_create_cis(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 4);
+    BT_LE_ASSERT(buf->len >= 4);
 
     /* The cis_count shall be at least 1 */
     cis_count = buf->data[3];
 
-    assert(buf->len >= 4 + cis_count * sizeof(struct ble_hci_le_create_cis_params));
+    BT_LE_ASSERT(buf->len >= 4 + cis_count * sizeof(struct ble_hci_le_create_cis_params));
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_create_cis_params));
-    assert(cis_params);
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_create_cis_params));
+    BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_handle  = sys_get_le16(buf->data + 4 + i * sizeof(struct ble_hci_le_create_cis_params));
@@ -306,7 +306,7 @@ static int hci_cmd_remove_cig(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 4);
+    BT_LE_ASSERT(buf->len >= 4);
 
     cig_id = buf->data[3];
 
@@ -331,7 +331,7 @@ static int hci_cmd_accept_cis_req(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 5);
+    BT_LE_ASSERT(buf->len >= 5);
 
     cis_handle = sys_get_le16(buf->data + 3);
 
@@ -357,7 +357,7 @@ static int hci_cmd_reject_cis_req(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 6);
+    BT_LE_ASSERT(buf->len >= 6);
 
     cis_handle = sys_get_le16(buf->data + 3);
     reason = buf->data[5];
@@ -394,7 +394,7 @@ static int hci_cmd_create_big(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 34);
+    BT_LE_ASSERT(buf->len >= 34);
 
     big_handle   = buf->data[3];
     adv_handle   = buf->data[4];
@@ -456,7 +456,7 @@ static int hci_cmd_create_big_test(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 39);
+    BT_LE_ASSERT(buf->len >= 39);
 
     big_handle   = buf->data[3];
     adv_handle   = buf->data[4];
@@ -512,7 +512,7 @@ static int hci_cmd_terminate_big(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 5);
+    BT_LE_ASSERT(buf->len >= 5);
 
     big_handle = buf->data[3];
     reason     = buf->data[4];
@@ -545,7 +545,7 @@ static int hci_cmd_big_create_sync(struct net_buf *buf, struct net_buf **rsp)
 
     ARG_UNUSED(rsp);
 
-    assert(buf->len >= 27);
+    BT_LE_ASSERT(buf->len >= 27);
 
     big_handle   = buf->data[3];
     sync_handle  = sys_get_le16(buf->data + 4);
@@ -556,7 +556,7 @@ static int hci_cmd_big_create_sync(struct net_buf *buf, struct net_buf **rsp)
     num_bis      = buf->data[26];
     bis          = buf->data + 27;
 
-    assert(buf->len >= 27 + num_bis);
+    BT_LE_ASSERT(buf->len >= 27 + num_bis);
 
     ble_hs_lock();
 
@@ -584,9 +584,9 @@ static int hci_cmd_big_terminate_sync(struct net_buf *buf, struct net_buf **rsp)
     uint8_t big_handle;
     int status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
-    assert(buf->len >= 4);
+    BT_LE_ASSERT(buf->len >= 4);
 
     big_handle = buf->data[3];
 
@@ -625,9 +625,9 @@ static int hci_cmd_setup_iso_data_path(struct net_buf *buf, struct net_buf **rsp
     uint8_t *codec_cfg;
     int status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
-    assert(buf->len >= 16);
+    BT_LE_ASSERT(buf->len >= 16);
 
     conn_handle         = sys_get_le16(buf->data + 3);
     data_path_direction = buf->data[5];
@@ -639,7 +639,7 @@ static int hci_cmd_setup_iso_data_path(struct net_buf *buf, struct net_buf **rsp
     codec_cfg_len       = buf->data[15];
     codec_cfg           = buf->data + 16;
 
-    assert(buf->len >= 16 + codec_cfg_len);
+    BT_LE_ASSERT(buf->len >= 16 + codec_cfg_len);
 
     ble_hs_lock();
 
@@ -677,9 +677,9 @@ static int hci_cmd_remove_iso_data_path(struct net_buf *buf, struct net_buf **rs
     uint16_t conn_handle;
     int status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
-    assert(buf->len >= 6);
+    BT_LE_ASSERT(buf->len >= 6);
 
     conn_handle         = sys_get_le16(buf->data + 3);
     data_path_direction = buf->data[5];
@@ -792,8 +792,8 @@ static void iso_evt_rx(uint8_t event, const void *data,
 
     qdata_len = len + 2;
 
-    qdata = calloc(1, qdata_len);
-    assert(qdata);
+    qdata = bt_le_ext_calloc(1, qdata_len);
+    BT_LE_ASSERT(qdata);
 
     qdata[0] = le_meta;
     qdata[1] = event;
@@ -808,7 +808,9 @@ static void iso_evt_rx(uint8_t event, const void *data,
 
     err = bt_le_iso_task_post(q_type, qdata, qdata_len);
     if (err) {
-        LOG_ERR("[N]IsoPostEvtFail[%d][%02x]", err, event);
+        if (q_type == ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT) {
+            ISO_POST_FAIL_LOG(err, "[N]IsoPostEvtFail[%d][%02x]", err, event);
+        }
         free(qdata);
     }
 }

@@ -26,6 +26,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -35,9 +36,9 @@ static const ble_uuid16_t ascs_uuid_ase_cp = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_CP
 static const ble_uuid16_t ascs_uuid_ase_snk = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_SNK_VAL);
 static const ble_uuid16_t ascs_uuid_ase_src = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_SRC_VAL);
 
-static uint16_t ase_control_point_handle;
-static uint16_t ase_snk_handle[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT];
-static uint16_t ase_src_handle[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t ase_control_point_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t ase_snk_handle[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t ase_src_handle[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 static struct ble_gatt_svc_def gatt_svc_ascs[] = {
     {
@@ -61,7 +62,7 @@ static void ascs_svc_add_ase_cp_chr(struct ble_gatt_chr_def *chr)
     chr->arg = NULL;
     chr->descriptors = NULL;    /* NULL if no descriptors. Do not include CCCD */
     chr->flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP | \
-                 BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC;
+                 BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
     chr->min_key_size = 16;
     chr->val_handle = &ase_control_point_handle;
 }
@@ -78,7 +79,7 @@ static void ascs_svc_add_ase_snk_chr(struct ble_gatt_chr_def *chrs)
         chr->access_cb = bt_le_nimble_gatts_access_cb_safe;
         chr->arg = UINT_TO_POINTER(i);
         chr->descriptors = NULL;  /* NULL if no descriptors. Do not include CCCD */
-        chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC;
+        chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
         chr->min_key_size = 16;
         chr->val_handle = &ase_snk_handle[i];
     }
@@ -97,7 +98,7 @@ static void ascs_svc_add_ase_src_chr(struct ble_gatt_chr_def *chrs)
         chr->access_cb = bt_le_nimble_gatts_access_cb_safe;
         chr->arg = UINT_TO_POINTER(i);
         chr->descriptors = NULL;  /* NULL if no descriptors. Do not include CCCD */
-        chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC;
+        chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
         chr->min_key_size = 16;
         chr->val_handle = &ase_src_handle[i];
     }
@@ -127,7 +128,7 @@ int bt_le_nimble_ascs_attr_handle_set(void)
         return -ENODEV;
     }
 
-    assert(ase_control_point_handle >= 2);
+    BT_LE_ASSERT(ase_control_point_handle >= 2);
     start_handle = ase_control_point_handle - 2;    /* server attr handle & char def handle */
 #if CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0
     end_handle = ase_src_handle[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT - 1] + 1;  /* cccd attr handle */
@@ -201,6 +202,7 @@ static int ascs_svc_check(void)
 
 int bt_le_nimble_ascs_init(void)
 {
+    bool ascs_added = false;
     uint16_t chr_count;
     int rc;
 
@@ -209,8 +211,8 @@ int bt_le_nimble_ascs_init(void)
 
     LOG_DBG("[N]AscsInit[%u]", chr_count);
 
-    gatt_svc_ascs[0].characteristics = calloc(chr_count, sizeof(struct ble_gatt_chr_def));
-    assert(gatt_svc_ascs[0].characteristics);
+    gatt_svc_ascs[0].characteristics = bt_le_ext_calloc(chr_count, sizeof(struct ble_gatt_chr_def));
+    BT_LE_ASSERT(gatt_svc_ascs[0].characteristics);
 
     ascs_svc_add_ase_cp_chr((void *)(gatt_svc_ascs[0].characteristics + 0));
 
@@ -233,6 +235,7 @@ int bt_le_nimble_ascs_init(void)
         LOG_ERR("[N]AscsAddSvcsFail[%d]", rc);
         goto free;
     }
+    ascs_added = true;
 
     rc = ascs_svc_check();
     if (rc) {
@@ -242,7 +245,18 @@ int bt_le_nimble_ascs_init(void)
     return 0;
 
 free:
-    free((void *)gatt_svc_ascs[0].characteristics);
-    gatt_svc_ascs[0].characteristics = NULL;
+    /* Once ble_gatts_add_svcs() succeeds NimBLE keeps the svc_def pointer and
+     * offers no per-service unregister, so an added service must be leaked
+     * rather than freed into a dangling entry of its global list. */
+    if (!ascs_added) {
+        free((void *)gatt_svc_ascs[0].characteristics);
+        gatt_svc_ascs[0].characteristics = NULL;
+    }
     return rc;
+}
+
+int bt_le_nimble_ascs_deinit(void)
+{
+    LOG_DBG("[N]AscsDeinit");
+    return 0;
 }

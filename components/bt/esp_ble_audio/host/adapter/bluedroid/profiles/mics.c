@@ -18,15 +18,17 @@
 
 #include "common/host.h"
 
+#include "common/audio_attr.h"
+
 #include "../../../lib/include/audio.h"
 
 LOG_MODULE_REGISTER(LEA_MICS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #define AICS_INST_COUNT     CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT
 
-static uint8_t inc_aics_svc_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t inc_aics_svc_count;
 
-static struct inc_svc_inst inc_aics_insts[AICS_INST_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct inc_svc_inst inc_aics_insts[AICS_INST_COUNT];
 
 struct inc_svc_inst *mics_not_included_inst(void)
 {
@@ -37,6 +39,11 @@ struct inc_svc_inst *mics_not_included_inst(void)
     }
 
     return NULL;
+}
+
+void bt_le_bluedroid_mics_state_reset(void)
+{
+    inc_aics_svc_count = 0;
 }
 
 int bt_le_bluedroid_mics_init(void *micp_inc)

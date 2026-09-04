@@ -28,6 +28,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -39,7 +40,7 @@ LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #if CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE
 #define CSIS_CHR_FLAGS_SIRK \
-    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC)
+    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC)
 #else /* CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE */
 #define CSIS_CHR_FLAGS_SIRK \
     (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC)
@@ -47,14 +48,14 @@ LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #if CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE
 #define CSIS_CHR_FLAGS_SET_SIZE \
-    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC)
+    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC)
 #else /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE */
 #define CSIS_CHR_FLAGS_SET_SIZE \
     (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC)
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE */
 
 #define CSIS_CHR_FLAGS_SET_LOCK \
-    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE | \
+    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
      BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC)
 
 #define CSIS_CHR_FLAGS_RANK \
@@ -62,7 +63,7 @@ LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #if CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE
 #define CSIS_CHR_FLAGS_SET_NAME \
-    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC)
+    (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC)
 #else /* CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE */
 #define CSIS_CHR_FLAGS_SET_NAME \
     (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC)
@@ -75,7 +76,7 @@ static const ble_uuid16_t csis_uuid_set_lock = BLE_UUID16_INIT(BT_UUID_CSIS_SET_
 static const ble_uuid16_t csis_uuid_rank = BLE_UUID16_INIT(BT_UUID_CSIS_RANK_VAL);
 static const ble_uuid16_t csis_uuid_set_name = BLE_UUID16_INIT(BT_UUID_CSIS_SET_NAME_VAL);
 
-static struct csis_inst {
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct csis_inst {
     struct bt_gatt_service *svc_p;
     uint16_t sirk_handle;
     uint16_t set_size_handle;
@@ -84,10 +85,13 @@ static struct csis_inst {
     uint16_t set_name_handle;
 } csis_insts[CSIS_SVC_COUNT];
 
-static uint8_t csis_svc_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_svc_count;
+
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_reg_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR bool csis_registered;
 
 /* Extra one for terminating the CSIS service array */
-static struct ble_gatt_svc_def gatt_svc_csis[CSIS_SVC_COUNT + 1];
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def gatt_svc_csis[CSIS_SVC_COUNT + 1];
 
 struct ble_gatt_svc_def *cas_get_included_csis(void *csis_svc_p)
 {
@@ -123,7 +127,7 @@ static int csis_svc_check(void)
         struct ble_gatt_svc_def *csis = &gatt_svc_csis[i];
         struct bt_gatt_service *svc = csis_insts[i].svc_p;
 
-        assert(svc);
+        BT_LE_ASSERT(svc);
 
         for (const struct ble_gatt_chr_def *chr = csis->characteristics;
                 chr && chr->uuid; chr++) {
@@ -134,7 +138,7 @@ static int csis_svc_check(void)
             for (size_t j = 0; j < svc->attr_count; j++) {
                 uuid = (const struct bt_uuid_16 *)(svc->attrs + j)->uuid;
 
-                if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+                if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                         uuid->val == check->value) {
                     chr_found = true;
                     break;
@@ -160,8 +164,15 @@ int bt_le_nimble_csis_attr_handle_set(void)
     for (size_t i = 0; i < csis_svc_count; i++) {
         struct bt_gatt_service *zsvc = csis_insts[i].svc_p;
 
-        assert(zsvc);
-        assert(csis_insts[i].sirk_handle >= 2);
+        BT_LE_ASSERT(zsvc);
+
+        /* Zero means no registration round ever covered this instance, so it is
+         * absent from the ATT database and there is no range to anchor. Happens
+         * when CSIS is first registered after the boot's ble_gatts_start(). */
+        if (csis_insts[i].sirk_handle < 2) {
+            LOG_ERR("[N]CsisNoAttrHdl[%u]", i);
+            return -1;
+        }
 
         /* SIRK is always the first characteristic, so its value handle anchors the range. */
         start_handle = csis_insts[i].sirk_handle - 2;    /* server attr handle & char def handle */
@@ -180,7 +191,7 @@ int bt_le_nimble_csis_attr_handle_set(void)
             const struct bt_uuid_16 *uuid = (const struct bt_uuid_16 *)(zsvc->attrs + j)->uuid;
             uint16_t chr_handle = 0;
 
-            if (uuid->uuid.type != BT_UUID_TYPE_16) {
+            if (!uuid || uuid->uuid.type != BT_UUID_TYPE_16) {
                 continue;
             }
 
@@ -244,8 +255,8 @@ static void csis_svc_init(struct csis_inst *inst,
     svc->uuid = &csis_uuid_svc.u;
     svc->includes = NULL;
 
-    svc->characteristics = calloc(CSIS_CHR_COUNT, sizeof(struct ble_gatt_chr_def));
-    assert(svc->characteristics);
+    svc->characteristics = bt_le_ext_calloc(CSIS_CHR_COUNT, sizeof(struct ble_gatt_chr_def));
+    BT_LE_ASSERT(svc->characteristics);
 
     /* Build the NimBLE characteristics from the ones actually present in the Zephyr
      * service. Optional characteristics (set size, lock, rank) may be absent depending
@@ -254,7 +265,7 @@ static void csis_svc_init(struct csis_inst *inst,
     for (size_t i = 0; i < zsvc->attr_count; i++) {
         const struct bt_uuid_16 *uuid = (const struct bt_uuid_16 *)zsvc->attrs[i].uuid;
 
-        if (uuid->uuid.type != BT_UUID_TYPE_16) {
+        if (!uuid || uuid->uuid.type != BT_UUID_TYPE_16) {
             continue;
         }
 
@@ -291,11 +302,17 @@ static void csis_svc_init(struct csis_inst *inst,
      * the terminator slot. Trips if the switch matches a 6th char: a new CSIS case added
      * without bumping the (5 + 1), or a duplicate UUID in the Zephyr service table.
      */
-    assert(chr_cnt < CSIS_CHR_COUNT);
+    BT_LE_ASSERT(chr_cnt < CSIS_CHR_COUNT);
+}
+
+void bt_le_nimble_csis_state_reset(void)
+{
+    csis_svc_count = 0;
 }
 
 int bt_le_nimble_csis_init(void *svc, uint8_t count)
 {
+    bool csis_added = false;
     int rc;
 
     LOG_DBG("[N]CsisInit[%u]", count);
@@ -305,11 +322,27 @@ int bt_le_nimble_csis_init(void *svc, uint8_t count)
         return -1;
     }
 
+    /* The attribute table is built by the boot's single ble_gatts_start(), so a
+     * different instance count now needs a table this boot cannot produce. Fail
+     * here, not later on a handle NimBLE never assigned. */
+    if (csis_registered && count != csis_reg_count) {
+        LOG_ERR("[N]CsisCountChanged[%u][%u]", csis_reg_count, count);
+        return -1;
+    }
+
     csis_svc_count = count;
 
+    /* Refreshed every cycle: the lib frees and reallocates its service objects,
+     * while the NimBLE defs below are built once and stay in the database. */
     for (size_t i = 0; i < csis_svc_count; i++) {
         csis_insts[i].svc_p = ((struct bt_gatt_service **)svc)[i];
+    }
 
+    if (csis_registered) {
+        return 0;
+    }
+
+    for (size_t i = 0; i < csis_svc_count; i++) {
         csis_svc_init(&csis_insts[i], &gatt_svc_csis[i], csis_insts[i].svc_p);
     }
 
@@ -324,19 +357,36 @@ int bt_le_nimble_csis_init(void *svc, uint8_t count)
         LOG_ERR("[N]CsisAddSvcsFail[%d]", rc);
         goto free;
     }
+    csis_added = true;
 
     rc = csis_svc_check();
     if (rc) {
         goto free;
     }
 
+    csis_reg_count = count;
+    csis_registered = true;
+
     return 0;
 
 free:
-    for (size_t i = 0; i < csis_svc_count; i++) {
-        free((void *)gatt_svc_csis[i].characteristics);
-        gatt_svc_csis[i].characteristics = NULL;
+    /* Once ble_gatts_add_svcs() succeeds NimBLE keeps the svc_def pointer and
+     * offers no per-service unregister, so an added service must be leaked
+     * rather than freed into a dangling entry of its global list. */
+    if (!csis_added) {
+        for (size_t i = 0; i < csis_svc_count; i++) {
+            free((void *)gatt_svc_csis[i].characteristics);
+            gatt_svc_csis[i].characteristics = NULL;
+        }
     }
     csis_svc_count = 0;
     return rc;
+}
+
+int bt_le_nimble_csis_deinit(void *csis_svc)
+{
+    ARG_UNUSED(csis_svc);
+
+    LOG_DBG("[N]CsisDeinit");
+    return 0;
 }

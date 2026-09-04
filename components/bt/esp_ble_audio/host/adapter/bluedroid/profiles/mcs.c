@@ -16,6 +16,7 @@
 #include "bluedroid/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -29,7 +30,7 @@ LOG_MODULE_REGISTER(LEA_MCS, CONFIG_BT_ISO_LOG_LEVEL);
 /* GMCS includes a single secondary OTS instance. Mirrors the CAS->CSIS included-
  * secondary pattern: create the secondary before the primary so the include
  * declaration in the GMCS table resolves to OTS's live handle. */
-static struct inc_svc_inst inc_ots_inst;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct inc_svc_inst inc_ots_inst;
 
 struct inc_svc_inst *gmcs_not_included_inst(void)
 {
@@ -61,11 +62,27 @@ static int bluedroid_gmcs_ots_init(void)
 
 static int bluedroid_gmcs_ots_start(void)
 {
+    /* svc_p comes from bluedroid_gmcs_ots_init(), which only runs once the app
+     * calls media_proxy_pl_init(); NULL means MCS was never registered. The
+     * count-guarded loops in vcs.c / mics.c / csis.c skip for the same reason. */
+    if (inc_ots_inst.svc_p == NULL) {
+        LOG_DBG("[B]GmcsOtsNotReg");
+        return 0;
+    }
+
     bt_le_bluedroid_set_svc_in_progress(OTS_IN_PROGRESS);
 
     return bt_le_bluedroid_svc_start(inc_ots_inst.svc_p);
 }
 #endif /* CONFIG_BT_OTS */
+
+void bt_le_bluedroid_mcs_state_reset(void)
+{
+#if CONFIG_BT_OTS
+    inc_ots_inst.svc_p = NULL;
+    inc_ots_inst.included = false;
+#endif /* CONFIG_BT_OTS */
+}
 
 int bt_le_bluedroid_gmcs_init(void)
 {
@@ -150,6 +167,7 @@ int bt_le_bluedroid_mcs_init(void)
          * (created during gmcs_init). Reset the flag so it re-resolves per instance. */
         inc_ots_inst.included = false;
 #endif /* CONFIG_BT_OTS */
+
         err = bt_le_bluedroid_svc_init(&list[i]);
         if (err) {
             return err;

@@ -19,6 +19,8 @@ extern "C" {
 
 int bt_le_nimble_gmcs_attr_handle_set(void);
 
+void bt_le_nimble_mcs_state_reset(void);
+
 int bt_le_nimble_gmcs_init(bool ots_included);
 
 int bt_le_nimble_mcs_attr_handle_set(void);

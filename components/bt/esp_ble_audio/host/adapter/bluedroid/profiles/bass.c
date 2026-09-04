@@ -38,6 +38,21 @@ int bt_le_bluedroid_bass_init(void)
     return bt_le_bluedroid_svc_init(bass_svc);
 }
 
+int bt_le_bluedroid_bass_deinit(void)
+{
+    struct bt_gatt_service *bass_svc;
+
+    LOG_DBG("[B]BassDeinit");
+
+    bass_svc = lib_bap_bass_svc_get();
+    if (!bass_svc) {
+        LOG_ERR("[B]BassSvcGetFail");
+        return -ENODEV;
+    }
+
+    return bt_le_bluedroid_svc_deinit(bass_svc);
+}
+
 int bt_le_bluedroid_bass_start(void)
 {
     struct bt_gatt_service *bass_svc;

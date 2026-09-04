@@ -62,12 +62,25 @@ int ext_adv_start(const uint8_t *ext_data, uint16_t ext_len)
 {
     struct ble_gap_ext_adv_params ext_params = {0};
     struct os_mbuf *data = NULL;
+    const uint8_t addr[6] = ADV_ADDR;
+    uint8_t addr_le[6];
     int err;
+
+    /* NimBLE takes the address least significant byte first. */
+    for (size_t i = 0; i < sizeof(addr); i++) {
+        addr_le[i] = addr[sizeof(addr) - 1 - i];
+    }
+
+    err = ble_hs_id_set_rnd(addr_le);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to set the static random address, err %d", err);
+        return err;
+    }
 
     ext_params.connectable = 1;
     ext_params.scannable = 0;
     ext_params.legacy_pdu = 0;
-    ext_params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    ext_params.own_addr_type = BLE_OWN_ADDR_RANDOM;
     ext_params.primary_phy = BLE_HCI_LE_PHY_1M;
     ext_params.secondary_phy = BLE_HCI_LE_PHY_2M;
     ext_params.tx_power = ADV_TX_POWER;

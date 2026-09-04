@@ -4,13 +4,30 @@ function(register_ble_audio_libs)
     endif()
 
     if(CONFIG_SOC_BLE_AUDIO_SUPPORTED)
-        add_prebuilt_library(ble_audio "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/lib/lib/${idf_target}/libble_audio.a")
+        # Compressed-log builds link the log_compressed/ prebuilt lib (its logs
+        # call bt_le_audio_lib_compressed_out(), which is only functional under
+        # the same config); otherwise link the normal lib.
+        set(ble_audio_lib_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/lib/lib/${idf_target}")
+        if(CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE)
+            set(ble_audio_lib "${ble_audio_lib_dir}/log_compressed/libble_audio.a")
+            if(NOT EXISTS "${ble_audio_lib}")
+                message(FATAL_ERROR
+                    "BLE_ISO_COMPRESSED_LOG_ENABLE is set but the compressed lib is missing:\n"
+                    "  ${ble_audio_lib}\n"
+                    "Build and copy it (in lib/ble_audio_development/tools/lib/):\n"
+                    "  ./compile.sh ${idf_target} -c && ./copy_lib.sh ${idf_target} -c")
+            endif()
+        else()
+            set(ble_audio_lib "${ble_audio_lib_dir}/libble_audio.a")
+        endif()
+        add_prebuilt_library(ble_audio "${ble_audio_lib}")
         target_link_libraries(${COMPONENT_LIB} PRIVATE ble_audio)
     endif()
 endfunction()
 
 set(ble_audio_srcs "" PARENT_SCOPE)
 set(ble_audio_include_dirs "" PARENT_SCOPE)
+set(ble_audio_ldscripts "" PARENT_SCOPE)
 
 # API headers that are used in the docs are also compiled
 # even if CONFIG_BT_ENABLED=n as long as CONFIG_IDF_DOC_BUILD=y
@@ -144,12 +161,24 @@ endif()
 
 if(CONFIG_BT_OTS OR CONFIG_BT_OTS_CLIENT)
     list(APPEND ble_audio_include_dirs
+        "${CMAKE_CURRENT_LIST_DIR}/host/services"
         "${CMAKE_CURRENT_LIST_DIR}/host/services/ots"
     )
 
     list(APPEND ble_audio_srcs
         "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/ots_l2cap.c"
+        "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/adapter/l2cap.c"
     )
+
+    if(CONFIG_BT_NIMBLE_ENABLED)
+        list(APPEND ble_audio_srcs
+            "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/adapter/nimble/l2cap.c"
+        )
+    else()
+        list(APPEND ble_audio_srcs
+            "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/adapter/bluedroid/l2cap.c"
+        )
+    endif()
 
     if(CONFIG_BT_OTS)
         list(APPEND ble_audio_srcs
@@ -176,3 +205,4 @@ endif()
 # Export the variables to the parent scope
 set(ble_audio_srcs "${ble_audio_srcs}" PARENT_SCOPE)
 set(ble_audio_include_dirs "${ble_audio_include_dirs}" PARENT_SCOPE)
+set(ble_audio_ldscripts "${CMAKE_CURRENT_LIST_DIR}/linker.lf" PARENT_SCOPE)

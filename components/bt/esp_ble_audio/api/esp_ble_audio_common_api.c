@@ -11,7 +11,11 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#include <zephyr/logging/log.h>
+
 #include "esp_ble_audio_common_api.h"
+
+LOG_MODULE_REGISTER(LEA_API, CONFIG_BT_ISO_LOG_LEVEL);
 
 esp_err_t esp_ble_audio_data_parse(const uint8_t ltv[], size_t size,
                                    bool (*func)(uint8_t type,
@@ -65,7 +69,7 @@ esp_err_t esp_ble_audio_gattc_disc_start(uint16_t conn_handle)
     return ESP_OK;
 }
 
-void esp_ble_audio_gap_app_post_event(uint8_t type, void *param)
+void esp_ble_audio_gap_app_post_event(uint16_t type, void *param)
 {
     bt_le_gap_app_post_event(type, param);
 }
@@ -125,6 +129,52 @@ unregister_gap:
         bt_le_gap_app_cb_unregister();
     }
     return ESP_FAIL;
+}
+
+esp_err_t esp_ble_audio_common_deinit(const esp_ble_iso_deinit_info_t *info)
+{
+    bool reset_ext_adv = true;
+    bool reset_pa_sync = true;
+    int err;
+
+    if (info) {
+        if (!info->reset_acl_conn) {
+            LOG_WRN("ConnKeepUnsupported");
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+
+        reset_ext_adv = info->reset_ext_adv;
+        reset_pa_sync = info->reset_pa_sync;
+    }
+
+    if (bt_le_host_check_idle()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    err = bt_le_iso_task_deinit();
+    if (err) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    bt_le_audio_deinit();
+
+    err = bt_le_host_deinit();
+    if (err) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    if (reset_ext_adv) {
+        bt_le_ext_adv_state_reset();
+    }
+
+    if (reset_pa_sync) {
+        bt_le_per_adv_sync_state_reset();
+    }
+
+    bt_le_gatt_app_cb_unregister();
+    bt_le_gap_app_cb_unregister();
+
+    return ESP_OK;
 }
 
 esp_err_t esp_ble_audio_common_start(esp_ble_audio_start_info_t *info)

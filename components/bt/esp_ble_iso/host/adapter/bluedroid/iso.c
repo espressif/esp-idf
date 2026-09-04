@@ -29,6 +29,26 @@ LOG_MODULE_REGISTER(ISO_BISO, CONFIG_BT_ISO_LOG_LEVEL);
  * path (bt_le_bluedroid_hci_send_sync) nor the fire-and-forget BTM_*
  * calls need bt_le_host_lock; single-task affinity is the serialization.
  *
+ * The bt_le_bluedroid_hci_drain_downstream() call after each fire-and-forget
+ * BTM_* command below compiles away by default: what actually keeps a
+ * concurrent BTU ACL post from being rejected inside our POSTING window is
+ * ISO_TASK_PRIO sitting above BTU. See common/task.h for both.
+ *
+ * TODO:
+ * The opposite direction is uncovered for these commands. If BTU's own POSTING
+ * window rejects the post one of them makes, it strands in command_queue until
+ * the next successful post from anyone — unbounded when the link happens to go
+ * quiet. send_sync survives this via its kick loop, which works only because
+ * the sem wait deschedules us so BTU can clear POSTING; fire-and-forget has no
+ * response to wait on, so it has no equivalent. Raising ISO_TASK_PRIO above BTU
+ * makes us win that race more often, so the odds went up.
+ *
+ * Not observed yet. Each call site below names the event that goes missing when
+ * it happens. The fix is an explicit yield (vTaskDelay(1)) after the BTM call,
+ * so BTU can clear POSTING, then a re-post via
+ * bt_le_bluedroid_hci_drain_downstream() — add it only once this shows up, and
+ * only at the site that showed it.
+ *
  * iso_sem is the legacy sync-response mechanism for the USE_DIRECT_HCI=0
  * fallback only (set_cig_params / read_tx_sync): iso_evt_rx fills the
  * file-scope tx_sync / set_cig_params buffers on BTU, then gives the
@@ -47,9 +67,9 @@ LOG_MODULE_REGISTER(ISO_BISO, CONFIG_BT_ISO_LOG_LEVEL);
  * zero would yield bogus packet_seq_num / cis_handle to the lib).
  * K_SEM_SHORT must exceed the worst-case BTU dispatch chain. */
 
-static struct k_sem iso_sem;
+static BT_ISO_CTRL_BSS_ATTR struct k_sem iso_sem;
 
-static struct {
+static BT_ISO_EXT_RAM_BSS_ATTR struct {
     uint8_t  status;
     uint16_t conn_handle;
     uint16_t packet_seq_num;
@@ -57,7 +77,7 @@ static struct {
     uint32_t time_offset;
 } tx_sync;
 
-static struct {
+static BT_ISO_EXT_RAM_BSS_ATTR struct {
     uint8_t  status;
     uint8_t  cig_id;
     uint8_t  cis_count;
@@ -69,7 +89,7 @@ static int hci_cmd_read_iso_tx_sync(struct net_buf *buf, struct net_buf **rsp)
     uint16_t conn_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     conn_handle = sys_get_le16(buf->data + 3);
 
@@ -89,7 +109,7 @@ static int hci_cmd_read_iso_tx_sync(struct net_buf *buf, struct net_buf **rsp)
         tx_sync.packet_seq_num = sys_get_le16(rsp_buf + 2);
         tx_sync.tx_time_stamp  = sys_get_le32(rsp_buf + 4);
         tx_sync.time_offset    = sys_get_le24(rsp_buf + 8) & 0xFFFFFF;
-        assert(tx_sync.conn_handle == conn_handle);
+        BT_LE_ASSERT(tx_sync.conn_handle == conn_handle);
     }
 #else /* USE_DIRECT_HCI */
     bt_le_host_lock();
@@ -100,7 +120,7 @@ static int hci_cmd_read_iso_tx_sync(struct net_buf *buf, struct net_buf **rsp)
         LOG_ERR("[B]RdIsoTxSyncRspTimeout[0x%03x]", conn_handle);
         status = BTM_ERR_PROCESSING;
     } else {
-        assert(tx_sync.conn_handle == conn_handle);
+        BT_LE_ASSERT(tx_sync.conn_handle == conn_handle);
         status = tx_sync.status;
     }
     bt_le_host_unlock();
@@ -134,7 +154,7 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
     uint8_t cis_count;
     uint8_t cig_id;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     cig_id    = buf->data[3];
     cis_count = buf->data[17];
@@ -162,8 +182,8 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
         for (uint8_t i = 0; i < rsp_cis_count; i++) {
             set_cig_params.cis_handle[i] = sys_get_le16(rsp_buf + 2 + i * 2);
         }
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
     }
 #else /* USE_DIRECT_HCI */
     struct ble_hci_le_cis_params *cis_params;
@@ -183,8 +203,8 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
     mtl_c_to_p          = sys_get_le16(buf->data + 13);
     mtl_p_to_c          = sys_get_le16(buf->data + 15);
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
-    assert(cis_params);
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
+    BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_id         = buf->data[18 + i * sizeof(struct ble_hci_le_cis_params)];
@@ -213,8 +233,8 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
         LOG_ERR("[B]SetCigParamsRspTimeout[%u]", cig_id);
         status = BTM_ERR_PROCESSING;
     } else {
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
         status = set_cig_params.status;
         if (status) {
             LOG_ERR("[B]SetCigParamsCtrlFail[%u][%02x]", cig_id, status);
@@ -250,7 +270,7 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
     uint8_t cis_count;
     uint8_t cig_id;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     cig_id    = buf->data[3];
     cis_count = buf->data[17];
@@ -278,8 +298,8 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
         for (uint8_t i = 0; i < rsp_cis_count; i++) {
             set_cig_params.cis_handle[i] = sys_get_le16(rsp_buf + 2 + i * 2);
         }
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
     }
 #else /* USE_DIRECT_HCI */
     struct ble_hci_le_cis_params_test *cis_params;
@@ -301,8 +321,8 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
     packing             = buf->data[15];
     framing             = buf->data[16];
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
-    assert(cis_params);
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
+    BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_id         = buf->data[18 + i * sizeof(struct ble_hci_le_cis_params_test)];
@@ -335,8 +355,8 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
         LOG_ERR("[B]SetCigParamsTestRspTimeout[%u]", cig_id);
         status = BTM_ERR_PROCESSING;
     } else {
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
         status = set_cig_params.status;
         if (status) {
             LOG_ERR("[B]SetCigParamsTestCtrlFail[%u][%02x]", cig_id, status);
@@ -376,17 +396,19 @@ static int hci_cmd_create_cis(struct net_buf *buf, struct net_buf **rsp)
 
     cis_count = buf->data[3];
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_cis_hdls));
-    assert(cis_params);
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_cis_hdls));
+    BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
-        cis_params[i].cis_hdl  = sys_get_le16(buf->data + 4 + i * sizeof(struct ble_hci_cis_hdls));
+        cis_params[i].cis_hdl = sys_get_le16(buf->data + 4 + i * sizeof(struct ble_hci_cis_hdls));
         cis_params[i].acl_hdl = sys_get_le16(buf->data + 6 + i * sizeof(struct ble_hci_cis_hdls));
     }
 
     /* No direct_hci variant: HCI Create CIS returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleCreateCis(cis_count, (void *)cis_params);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
     free(cis_params);
@@ -423,8 +445,10 @@ static int hci_cmd_accept_cis_req(struct net_buf *buf, struct net_buf **rsp)
     cis_handle = sys_get_le16(buf->data + 3);
 
     /* No direct_hci variant: HCI Accept CIS Request returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_CIS_ESTABLISHED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleAcceptCisReq(cis_handle);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -483,7 +507,8 @@ static int hci_cmd_create_big(struct net_buf *buf, struct net_buf **rsp)
     bst_code     = buf->data + 18;
 
     /* No direct_hci variant: HCI Create BIG returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigCreate(big_handle,
                               adv_handle,
                               num_bis,
@@ -496,6 +521,7 @@ static int hci_cmd_create_big(struct net_buf *buf, struct net_buf **rsp)
                               framing,
                               encryption,
                               bst_code);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -542,7 +568,8 @@ static int hci_cmd_create_big_test(struct net_buf *buf, struct net_buf **rsp)
     bst_code     = buf->data + 23;
 
     /* No direct_hci variant: HCI Create BIG Test returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigCreateTest(big_handle,
                                   adv_handle,
                                   num_bis,
@@ -559,6 +586,7 @@ static int hci_cmd_create_big_test(struct net_buf *buf, struct net_buf **rsp)
                                   pto,
                                   encryption,
                                   bst_code);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -577,8 +605,10 @@ static int hci_cmd_terminate_big(struct net_buf *buf, struct net_buf **rsp)
     reason     = buf->data[4];
 
     /* No direct_hci variant: HCI Terminate BIG returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigTerminate(big_handle, reason);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -609,7 +639,8 @@ static int hci_cmd_big_create_sync(struct net_buf *buf, struct net_buf **rsp)
     bis          = buf->data + 27;
 
     /* No direct_hci variant: HCI BIG Create Sync returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleBigSyncCreate(big_handle,
                                   sync_handle,
                                   encryption,
@@ -618,6 +649,7 @@ static int hci_cmd_big_create_sync(struct net_buf *buf, struct net_buf **rsp)
                                   sync_timeout,
                                   num_bis,
                                   bis);
+    bt_le_bluedroid_hci_drain_downstream();
 
     net_buf_unref(buf);
 
@@ -629,7 +661,7 @@ static int hci_cmd_big_terminate_sync(struct net_buf *buf, struct net_buf **rsp)
     uint8_t big_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     big_handle = buf->data[3];
 
@@ -661,7 +693,7 @@ static int hci_cmd_setup_iso_data_path(struct net_buf *buf, struct net_buf **rsp
     uint16_t conn_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     conn_handle = sys_get_le16(buf->data + 3);
 
@@ -721,7 +753,7 @@ static int hci_cmd_remove_iso_data_path(struct net_buf *buf, struct net_buf **rs
     uint16_t conn_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     conn_handle = sys_get_le16(buf->data + 3);
 
@@ -858,8 +890,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_disconn_complete ev = {0};
 
         qdata_len = 2 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.status = 0x00;
         ev.handle = params->btm_cis_disconnectd_evt.cis_handle;
@@ -875,8 +907,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_cis_established ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.status = iso_hci_status(params->btm_cis_established_evt.status);
         ev.conn_handle = params->btm_cis_established_evt.conn_handle;
@@ -906,8 +938,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_cis_req ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.acl_handle = params->btm_cis_request_evt.acl_handle;
         ev.cis_handle = params->btm_cis_request_evt.cis_handle;
@@ -925,8 +957,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_complete ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev) + params->btm_big_cmpl.num_bis * 2;
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.status = iso_hci_status(params->btm_big_cmpl.status);
         ev.big_handle = params->btm_big_cmpl.big_handle;
@@ -956,8 +988,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_terminate ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.big_handle = params->btm_big_term.big_handle;
         ev.reason = params->btm_big_term.reason;
@@ -973,8 +1005,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_sync_established ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev) + params->btm_big_sync_estab.num_bis * 2;
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.status = iso_hci_status(params->btm_big_sync_estab.status);
         ev.big_handle = params->btm_big_sync_estab.big_handle;
@@ -1002,8 +1034,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_sync_lost ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.big_handle = params->btm_big_sync_lost.big_handle;
         ev.reason = params->btm_big_sync_lost.reason;
@@ -1019,8 +1051,8 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_biginfo_adv_report ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
-        assert(qdata);
+        qdata = bt_le_ext_calloc(1, qdata_len);
+        BT_LE_ASSERT(qdata);
 
         ev.sync_handle = params->btm_biginfo_report.sync_handle;
         ev.num_bis = params->btm_biginfo_report.num_bis;
@@ -1057,7 +1089,9 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
     err = bt_le_iso_task_post(q_type, qdata, qdata_len);
     if (err) {
-        LOG_ERR("[B]IsoPostEvtFail[%d][%02x]", err, event);
+        if (q_type == ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT) {
+            ISO_POST_FAIL_LOG(err, "[B]IsoPostEvtFail[%d][%02x]", err, event);
+        }
         free(qdata);
     }
 }
@@ -1241,8 +1275,10 @@ int bt_le_bluedroid_iso_disconnect(uint16_t conn_handle, uint8_t reason)
     LOG_DBG("[B]IsoDisconn[0x%03x][%02x]", conn_handle, reason);
 
     /* No direct_hci variant: HCI Disconnect returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_CIS_DISCONNECTED_EVT. */
+     * outcome arrives via BTM_BLE_ISO_CIS_DISCONNECTED_EVT.
+     * A lost post (file-top TODO) means that event never arrives. */
     status = BTM_BleDisconCis(conn_handle, reason);
+    bt_le_bluedroid_hci_drain_downstream();
 
     if (status != BTM_SUCCESS) {
         LOG_ERR("[B]IsoDisconnFail[0x%03x][%02x]", conn_handle, status);
@@ -1275,7 +1311,7 @@ int bt_le_bluedroid_iso_init(void)
     err = iso_enable_cis();
     if (err) {
         /* Roll back local init so a retry doesn't trip k_sem_create's
-         * assert(handle == NULL). Reverse order of init, skipping the
+         * BT_LE_ASSERT(handle == NULL). Reverse order of init, skipping the
          * disable_cis step since enable never took effect. */
 #if CONFIG_BT_ISO_RX
         ble_host_register_rx_iso_data_cb(NULL);
@@ -1296,8 +1332,12 @@ int bt_le_bluedroid_iso_init(void)
 void bt_le_bluedroid_iso_deinit(void)
 {
 #if CONFIG_BT_ISO_UNICAST
-    /* Mirror bt_le_iso_init() which enables bit 32 only on unicast build. */
-    iso_disable_cis();
+    /* Core 6.0 Vol 4 Part E 7.8.115: LE Set Host Feature is Command Disallowed
+     * while any connection exists, and the ACL outlives ISO deinit. Skip - a
+     * stale host-support bit is harmless and the next init sets it again. */
+    if (bt_le_acl_conn_count() == 0) {
+        iso_disable_cis();
+    }
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 #if CONFIG_BT_ISO_RX

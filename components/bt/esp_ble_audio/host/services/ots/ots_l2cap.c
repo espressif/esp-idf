@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,10 +47,11 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
     len = MIN(l2cap_ctx->ot_chan.tx.mtu, CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU);
     len = MIN(len, l2cap_ctx->tx.len - l2cap_ctx->tx.len_sent);
 
-    /* Prepare buffer for sending. */
-    buf = net_buf_alloc(&ot_chan_tx_pool, K_FOREVER);
+    /* Single-buffer pool, and iso_task is both the only allocator and the only
+     * path that releases it, so waiting here would self-deadlock. */
+    buf = net_buf_alloc(&ot_chan_tx_pool, K_NO_WAIT);
     if (buf == NULL) {
-        LOG_ERR("OtsTxBufAllocFail");
+        LOG_ERR("OtsL2capTxBufAllocFail");
         return -ENOMEM;
     }
 
@@ -58,7 +60,7 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 
     ret = bt_l2cap_chan_send(&l2cap_ctx->ot_chan.chan, buf);
     if (ret < 0) {
-        LOG_ERR("Unable to send data over CoC: %d", ret);
+        LOG_WRN("OtsL2capChanSendFail[%d]", ret);
         net_buf_unref(buf);
 
         return -ENOEXEC;
@@ -67,7 +69,7 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
     /* Mark that L2CAP TX was accepted. */
     l2cap_ctx->tx.len_sent += len;
 
-    LOG_DBG("Sending TX chunk with %d bytes on L2CAP CoC", len);
+    LOG_DBG("OtsL2capTxChunk[%u]", len);
 
     return 0;
 }
@@ -75,9 +77,9 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 #if (CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU > BT_L2CAP_SDU_RX_MTU)
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
-    LOG_DBG("Channel %p allocating buffer", chan);
+    LOG_DBG("OtsL2capAllocBuf");
 
-    return net_buf_alloc(&ot_chan_rx_pool, K_FOREVER);
+    return net_buf_alloc(&ot_chan_rx_pool, K_NO_WAIT);
 }
 #endif
 
@@ -86,19 +88,18 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
     struct bt_l2cap_le_chan *l2chan = CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
     struct bt_gatt_ots_l2cap *l2cap_ctx;
 
-    LOG_DBG("Outgoing data channel %p transmitted", chan);
+    LOG_DBG("OtsL2capSent");
 
     l2cap_ctx = CONTAINER_OF(l2chan, struct bt_gatt_ots_l2cap, ot_chan);
 
     /* Ongoing TX - sending next chunk. */
     if (l2cap_ctx->tx.len != l2cap_ctx->tx.len_sent) {
         if (ots_l2cap_send(l2cap_ctx)) {
-            /* Send failed - clean up TX state to unblock channel. */
-            LOG_ERR("Failed to send next chunk, aborting TX");
-            memset(&l2cap_ctx->tx, 0, sizeof(l2cap_ctx->tx));
-            if (l2cap_ctx->tx_done) {
-                l2cap_ctx->tx_done(l2cap_ctx, chan->conn);
-            }
+            /* Do not call tx_done: it means success to upper layers
+             * (oacp_read would skip unread bytes; write_obj_tx_done
+             * would report a full write). Abort via disconnect → closed. */
+            LOG_WRN("OtsL2capTxAbort");
+            (void)bt_l2cap_chan_disconnect(chan);
         }
 
         return;
@@ -107,7 +108,7 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
     /* TX completed - notify upper layers and clean up. */
     memset(&l2cap_ctx->tx, 0, sizeof(l2cap_ctx->tx));
 
-    LOG_DBG("Scheduled TX on L2CAP CoC is complete");
+    LOG_DBG("OtsL2capTxComp");
 
     if (l2cap_ctx->tx_done) {
         l2cap_ctx->tx_done(l2cap_ctx, chan->conn);
@@ -119,7 +120,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
     struct bt_l2cap_le_chan *l2chan = CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
     struct bt_gatt_ots_l2cap *l2cap_ctx;
 
-    LOG_DBG("Incoming data channel %p received", chan);
+    LOG_DBG("OtsL2capRecv");
 
     l2cap_ctx = CONTAINER_OF(l2chan, struct bt_gatt_ots_l2cap, ot_chan);
 
@@ -132,12 +133,12 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
-    LOG_DBG("Channel %p status %lu", chan, atomic_get(status));
+    LOG_DBG("OtsL2capStatus[%u]", atomic_get(status));
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
-    LOG_DBG("Channel %p connected", chan);
+    LOG_DBG("OtsL2capConnected");
 }
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
@@ -145,7 +146,7 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
     struct bt_l2cap_le_chan *l2chan = CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan);
     struct bt_gatt_ots_l2cap *l2cap_ctx;
 
-    LOG_DBG("Channel %p disconnected", chan);
+    LOG_DBG("OtsL2capDisconnected");
 
     l2cap_ctx = CONTAINER_OF(l2chan, struct bt_gatt_ots_l2cap, ot_chan);
 
@@ -155,6 +156,12 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
     if (l2cap_ctx->closed) {
         l2cap_ctx->closed(l2cap_ctx, chan->conn);
     }
+
+    /* Contexts are reused via find_free_l2cap_ctx; drop procedure hooks
+     * so a later accept/connect cannot invoke stale callbacks. */
+    l2cap_ctx->closed = NULL;
+    l2cap_ctx->rx_done = NULL;
+    l2cap_ctx->tx_done = NULL;
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
@@ -173,7 +180,7 @@ static inline void l2cap_chan_init(struct bt_l2cap_le_chan *chan)
     chan->rx.mtu = CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU;
     chan->chan.ops = &l2cap_ops;
 
-    LOG_DBG("RX MTU set to %u", chan->rx.mtu);
+    LOG_DBG("OtsL2capRxMtu[%u]", chan->rx.mtu);
 }
 
 static struct bt_gatt_ots_l2cap *find_free_l2cap_ctx(void)
@@ -196,7 +203,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 {
     struct bt_gatt_ots_l2cap *l2cap_ctx;
 
-    LOG_DBG("Incoming conn %p", (void *)conn);
+    LOG_DBG("OtsL2capIncomingConn");
 
     l2cap_ctx = find_free_l2cap_ctx();
     if (l2cap_ctx) {
@@ -216,7 +223,7 @@ static struct bt_l2cap_server l2cap_server = {
     .accept = l2cap_accept,
 };
 
-static int bt_gatt_ots_l2cap_init(void)
+int bt_gatt_ots_l2cap_init(void)
 {
     int err;
 
@@ -224,11 +231,11 @@ static int bt_gatt_ots_l2cap_init(void)
 
     err = bt_l2cap_server_register(&l2cap_server);
     if (err) {
-        LOG_ERR("Unable to register OTS PSM");
+        LOG_ERR("OtsL2capPsmRegFail");
         return err;
     }
 
-    LOG_DBG("Initialized OTS L2CAP");
+    LOG_DBG("OtsL2capInit");
 
     return 0;
 }
@@ -245,7 +252,7 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
     int err;
 
     if (l2cap_ctx->tx.len != 0) {
-        LOG_ERR("L2CAP TX in progress");
+        LOG_WRN("OtsL2capTxInProgress");
 
         return -EAGAIN;
     }
@@ -253,11 +260,11 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
     l2cap_ctx->tx.data = data;
     l2cap_ctx->tx.len = len;
 
-    LOG_DBG("Starting TX on L2CAP CoC with %d byte packet", len);
+    LOG_DBG("OtsL2capTxStart[%u]", len);
 
     err = ots_l2cap_send(l2cap_ctx);
     if (err) {
-        LOG_ERR("Unable to send data over CoC: %d", err);
+        LOG_WRN("OtsL2capSendFail[%d]", err);
         memset(&l2cap_ctx->tx, 0, sizeof(l2cap_ctx->tx));
 
         return err;
@@ -268,6 +275,10 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 int bt_gatt_ots_l2cap_register(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
+    if (sys_slist_find(&channels, &l2cap_ctx->node, NULL)) {
+        return -EALREADY;
+    }
+
     sys_slist_append(&channels, &l2cap_ctx->node);
 
     return 0;
@@ -275,6 +286,11 @@ int bt_gatt_ots_l2cap_register(struct bt_gatt_ots_l2cap *l2cap_ctx)
 
 int bt_gatt_ots_l2cap_unregister(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
+    if (l2cap_ctx->ot_chan.chan.conn) {
+        LOG_WRN("OtsL2capUnregBusy");
+        return -EBUSY;
+    }
+
     sys_slist_find_and_remove(&channels, &l2cap_ctx->node);
 
     return 0;
@@ -288,31 +304,41 @@ int bt_gatt_ots_l2cap_connect(struct bt_conn *conn,
     struct bt_gatt_ots_l2cap *ctx;
 
     if (!conn) {
-        LOG_WRN("Invalid Connection");
+        LOG_WRN("OtsL2capConnNull");
         return -ENOTCONN;
     }
 
     if (!l2cap_ctx) {
-        LOG_WRN("Invalid context");
+        LOG_WRN("OtsL2capCtxNull");
         return -EINVAL;
     }
 
+    /* Callers owning a context pass it in, so the context they later use in
+     * their callbacks is the one actually connected. The global free-list
+     * lookup would otherwise hand out another instance's (or the server's)
+     * context whenever more than one is registered. */
+    ctx = *l2cap_ctx;
     *l2cap_ctx = NULL;
 
-    ctx = find_free_l2cap_ctx();
     if (!ctx) {
-        return -ENOMEM;
+        ctx = find_free_l2cap_ctx();
+        if (!ctx) {
+            return -ENOMEM;
+        }
+    } else if (ctx->ot_chan.chan.conn) {
+        LOG_WRN("OtsL2capCtxAlreadyConnected");
+        return -EBUSY;
     }
 
     l2cap_chan_init(&ctx->ot_chan);
     (void)memset(&ctx->tx, 0, sizeof(ctx->tx));
 
-    LOG_DBG("Connecting L2CAP CoC");
+    LOG_DBG("OtsL2capConnecting");
     err = bt_l2cap_chan_connect(conn, &ctx->ot_chan.chan, BT_GATT_OTS_L2CAP_PSM);
     if (err) {
-        LOG_WRN("Unable to connect to psm %u (err %d)", BT_GATT_OTS_L2CAP_PSM, err);
+        LOG_WRN("OtsL2capConnFail[%u][%d]", BT_GATT_OTS_L2CAP_PSM, err);
     } else {
-        LOG_DBG("L2CAP connection pending");
+        LOG_DBG("OtsL2capConnPending");
         *l2cap_ctx = ctx;
     }
 
@@ -323,6 +349,3 @@ int bt_gatt_ots_l2cap_disconnect(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
     return bt_l2cap_chan_disconnect(&l2cap_ctx->ot_chan.chan);
 }
-
-SYS_INIT(bt_gatt_ots_l2cap_init, APPLICATION,
-         CONFIG_APPLICATION_INIT_PRIORITY);

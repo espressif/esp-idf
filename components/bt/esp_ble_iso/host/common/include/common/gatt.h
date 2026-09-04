@@ -72,12 +72,24 @@ struct bt_le_gattc_notify_rx_event {
     uint8_t *value;
 };
 
+/* Neither adapter allocates a buffer for a zero-length notification, but NULL data is
+ * how gatt.c completes an unsubscribe: a lib notify handler that sees it drops its
+ * subscription. A zero-length notification is a real PDU (BASS sends one for an emptied
+ * Broadcast Receive State), so keep the pointer non-NULL when handing it to the lib.
+ */
+#define NOTIFY_VALUE(_event) \
+    ((const void *)((_event)->value != NULL ? (const uint8_t *)(_event)->value \
+                                            : (const uint8_t *)""))
+
 struct bt_le_gatts_notify_tx_event {
     bool     is_notify;
     uint16_t conn_handle;
     uint16_t conn_id;
     uint16_t attr_handle;
-    uint8_t  status;
+    /* int, not uint8_t: NimBLE reports BLE_HS_ERR_ATT_BASE(0x100)+att_code for a
+     * failed indication; uint8_t truncates 0x10e -> 0x0e == BLE_HS_EDONE (success),
+     * masking the failure as confirmation. */
+    int      status;
 };
 
 /* Bluedroid-side adapter events. NimBLE produces ACL connect/disconnect via
@@ -293,6 +305,8 @@ void bt_le_acl_conn_disconnected_gatt_listener(uint16_t conn_handle);
 void bt_le_acl_conn_bond_deleted_gatt_listener(uint8_t id, const bt_addr_le_t *peer);
 
 void bt_le_gatt_handle_event(uint8_t *data, size_t data_len);
+
+void bt_le_gatt_event_free(void *data);
 
 #ifdef __cplusplus
 }

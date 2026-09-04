@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: TMAP Central (CG & UMS)"
+
+    choice EXAMPLE_TMAP_CEN_TOPOLOGY
+        prompt "Unicast topology"
+        default EXAMPLE_TMAP_CEN_TOPO_1P_2CIS
+        help
+            How many TMAP peripherals to connect and how many CIS carry the
+            streams. The first CIS is always bidirectional — one sink and one
+            source endpoint of the same peripheral share it — and a second CIS,
+            when present, is transmit-only.
+
+        config EXAMPLE_TMAP_CEN_TOPO_1P_1CIS
+            bool "1 peripheral, 1 CIS (TX+RX)"
+            help
+                One peripheral. Its sink and source ASEs are paired into a single
+                bidirectional CIS.
+
+                Build the peripheral as "Single headset" with the "Mono" location,
+                which is its default.
+
+        config EXAMPLE_TMAP_CEN_TOPO_1P_2CIS
+            bool "1 peripheral, 2 CISes (TX+RX, TX)"
+            help
+                One peripheral exposing two sink ASEs. The first sink shares a
+                bidirectional CIS with the source ASE; the second sink gets its
+                own transmit-only CIS, and the two are rendered front left and
+                front right.
+
+                Build the peripheral as "Single headset" with the "Stereo"
+                location, so its PACS advertises both channels, and with at least
+                two sink ASEs (CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT).
+
+        config EXAMPLE_TMAP_CEN_TOPO_2P_2CIS
+            bool "2 peripherals (coordinated set), 2 CISes (TX+RX, TX)"
+            select BT_CSIP_SET_COORDINATOR
+            help
+                Two peripherals that belong to one CSIP coordinated set, both
+                served by a single CIG. The rank 1 member gets the bidirectional
+                CIS, the rank 2 member a transmit-only one; which channel each
+                renders comes from its own PACS Audio Locations, not from rank.
+
+                Build the peripheral twice as "Duo headset", one with the "Left"
+                location and one with "Right" — their ranks default from that and
+                must stay distinct. Both share the SIRK hardcoded in the example.
+
+    endchoice
+
+endmenu

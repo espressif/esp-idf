@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -33,7 +34,11 @@ static uint8_t codec_meta[] =
 static const esp_ble_audio_codec_cap_t lc3_codec_cap =
     ESP_BLE_AUDIO_CODEC_CAP_LC3(codec_data, codec_meta);
 
-static esp_ble_audio_pacs_cap_t cap = {
+static esp_ble_audio_pacs_cap_t cap_sink = {
+    .codec_cap = &lc3_codec_cap,
+};
+
+static esp_ble_audio_pacs_cap_t cap_source = {
     .codec_cap = &lc3_codec_cap,
 };
 
@@ -47,12 +52,21 @@ static struct audio_sink {
 
 static size_t configured_sink_stream_count;
 
+/* Per source ASE: a shared sequence number jumps by the stream count. */
 static struct audio_source {
-    esp_ble_audio_bap_stream_t *stream;
-    uint16_t seq_num;
+    esp_ble_audio_bap_stream_t  *stream;
+    example_audio_tx_scheduler_t scheduler;
+    uint16_t                     seq_num;
+    uint8_t                     *data;
+    uint8_t                      index;
+    bool                         running;
 } source_streams[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 static size_t configured_source_stream_count;
+
+static void unicast_server_tx(struct audio_source *src);
+
+static void source_tx_stop(esp_ble_audio_bap_stream_t *stream);
 
 static const esp_ble_audio_bap_qos_cfg_pref_t qos_pref =
     ESP_BLE_AUDIO_BAP_QOS_CFG_PREF(true,                /* Unframed PDUs supported */
@@ -110,6 +124,17 @@ static int stream_index(const esp_ble_audio_bap_stream_t *stream)
         }
     }
     return -1;
+}
+
+static struct audio_source *source_by_stream(const esp_ble_audio_bap_stream_t *stream)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(source_streams); i++) {
+        if (source_streams[i].stream == stream) {
+            return &source_streams[i];
+        }
+    }
+
+    return NULL;
 }
 
 static int config_cb(esp_ble_conn_t *conn,
@@ -360,7 +385,10 @@ static int release_cb(esp_ble_audio_bap_stream_t *stream,
 
     for (size_t i = 0; i < ARRAY_SIZE(source_streams); i++) {
         if (source_streams[i].stream == stream) {
-            memset(&source_streams[i], 0, sizeof(source_streams[i]));
+            /* Per-session fields only; the work item and index persist. */
+            source_tx_stop(stream);
+            source_streams[i].stream = NULL;
+            source_streams[i].seq_num = 0;
             if (configured_source_stream_count > 0) {
                 configured_source_stream_count--;
             }
@@ -412,14 +440,76 @@ static void stream_enabled(esp_ble_audio_bap_stream_t *stream)
 
 static void stream_started(esp_ble_audio_bap_stream_t *stream)
 {
+    struct audio_source *src;
+    int err;
+
     ESP_LOGI(TAG, "[%s #%d] Stream started",
              stream_dir_str(stream), stream_index(stream));
 
     for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
         if (sink_streams[i].stream == stream) {
             example_audio_rx_metrics_reset(&sink_streams[i].rx_metrics);
-            break;
+            return;
         }
+    }
+
+    /* Source stream: feed the uplink half of the bidirectional CIS. */
+    src = source_by_stream(stream);
+    if (src == NULL) {
+        return;
+    }
+
+    if (stream->qos == NULL || stream->qos->sdu == 0 || stream->qos->interval == 0) {
+        ESP_LOGE(TAG, "[SRC #%u] Invalid stream qos", src->index);
+        return;
+    }
+
+    if (src->data == NULL) {
+        src->data = calloc(1, stream->qos->sdu);
+        if (src->data == NULL) {
+            ESP_LOGE(TAG, "[SRC #%u] Failed to alloc TX buffer, SDU %u",
+                     src->index, stream->qos->sdu);
+            return;
+        }
+    }
+
+    src->seq_num = 0;
+    example_audio_tx_scheduler_reset(&src->scheduler);
+
+    /* Note: esp timer is not accurate enough */
+    err = example_audio_tx_scheduler_start(&src->scheduler, stream->qos->interval);
+    if (err) {
+        ESP_LOGE(TAG, "[SRC #%u] Failed to start tx scheduler, err %d", src->index, err);
+        return;
+    }
+
+    src->running = true;
+
+    unicast_server_tx(src);
+}
+
+/* Keyed on the stream, not the endpoint state: the ISO disconnected callback runs
+ * before the endpoint leaves streaming. */
+static void source_tx_stop(esp_ble_audio_bap_stream_t *stream)
+{
+    struct audio_source *src;
+    int err;
+
+    src = source_by_stream(stream);
+    if (src == NULL || !src->running) {
+        return;
+    }
+
+    err = example_audio_tx_scheduler_stop(&src->scheduler);
+    if (err) {
+        ESP_LOGE(TAG, "[SRC #%u] Failed to stop tx scheduler, err %d", src->index, err);
+    }
+
+    src->running = false;
+
+    if (src->data != NULL) {
+        free(src->data);
+        src->data = NULL;
     }
 }
 
@@ -427,6 +517,78 @@ static void stream_stopped(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
     ESP_LOGI(TAG, "[%s #%d] Stream stopped, reason 0x%02x",
              stream_dir_str(stream), stream_index(stream), reason);
+
+    source_tx_stop(stream);
+}
+
+static void stream_disconnected(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
+{
+    ESP_LOGI(TAG, "[%s #%d] ISO disconnected, reason 0x%02x",
+             stream_dir_str(stream), stream_index(stream), reason);
+
+    source_tx_stop(stream);
+}
+
+static void stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_data)
+{
+    struct audio_source *src;
+    char name[24];
+
+    src = source_by_stream(stream);
+    if (src == NULL) {
+        return;
+    }
+
+    snprintf(name, sizeof(name), "SRC #%u", src->index);
+    example_audio_tx_scheduler_on_sent(&src->scheduler, user_data, TAG, name);
+}
+
+static void unicast_server_tx(struct audio_source *src)
+{
+    esp_ble_audio_bap_ep_info_t ep_info = {0};
+    esp_ble_audio_bap_stream_t *stream;
+    esp_err_t err;
+
+    stream = src->stream;
+
+    if (stream == NULL || stream->ep == NULL) {
+        return;
+    }
+
+    err = esp_ble_audio_bap_ep_get_info(stream->ep, &ep_info);
+    if (err) {
+        return;
+    }
+
+    if (ep_info.state != ESP_BLE_AUDIO_BAP_EP_STATE_STREAMING) {
+        return;
+    }
+
+    if (stream->qos == NULL || stream->qos->sdu == 0) {
+        ESP_LOGE(TAG, "[SRC #%u] Invalid stream qos", src->index);
+        return;
+    }
+
+    if (src->data == NULL) {
+        ESP_LOGE(TAG, "[SRC #%u] TX buffer unavailable, SDU %u", src->index, stream->qos->sdu);
+        return;
+    }
+
+    memset(src->data, (uint8_t)src->seq_num, stream->qos->sdu);
+
+    err = esp_ble_audio_bap_stream_send(stream, src->data, stream->qos->sdu, src->seq_num);
+    if (err) {
+        /* Backpressure is normal; a stuck stream shows up as its TX count stalling. */
+        return;
+    }
+
+    src->seq_num++;
+}
+
+/* Each stream has its own timer, so this only ever feeds its own stream. */
+static void tx_scheduler_cb(void *arg)
+{
+    unicast_server_tx(arg);
 }
 
 static void stream_recv(esp_ble_audio_bap_stream_t *stream,
@@ -451,10 +613,12 @@ static void stream_recv(esp_ble_audio_bap_stream_t *stream,
 }
 
 static esp_ble_audio_bap_stream_ops_t stream_ops = {
-    .enabled = stream_enabled,
-    .started = stream_started,
-    .stopped = stream_stopped,
-    .recv    = stream_recv,
+    .enabled      = stream_enabled,
+    .started      = stream_started,
+    .stopped      = stream_stopped,
+    .recv         = stream_recv,
+    .sent         = stream_sent,
+    .disconnected = stream_disconnected,
 };
 
 static esp_ble_audio_bap_unicast_server_register_param_t param = {
@@ -493,16 +657,16 @@ int bap_unicast_sr_init(void)
         return err;
     }
 
-#if CONFIG_EXAMPLE_TMAP_PER_LEFT
+#if CONFIG_EXAMPLE_TMAP_PER_LEFT || CONFIG_EXAMPLE_TMAP_PER_STEREO
     location |= ESP_BLE_AUDIO_LOCATION_FRONT_LEFT;
-#endif /* CONFIG_EXAMPLE_TMAP_PER_LEFT */
-#if CONFIG_EXAMPLE_TMAP_PER_RIGHT
+#endif /* CONFIG_EXAMPLE_TMAP_PER_LEFT || CONFIG_EXAMPLE_TMAP_PER_STEREO */
+#if CONFIG_EXAMPLE_TMAP_PER_RIGHT || CONFIG_EXAMPLE_TMAP_PER_STEREO
     location |= ESP_BLE_AUDIO_LOCATION_FRONT_RIGHT;
-#endif /* CONFIG_EXAMPLE_TMAP_PER_RIGHT */
+#endif /* CONFIG_EXAMPLE_TMAP_PER_RIGHT || CONFIG_EXAMPLE_TMAP_PER_STEREO */
 
 #if CONFIG_BT_PAC_SNK
     /* Register CT required capabilities */
-    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SINK, &cap);
+    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SINK, &cap_sink);
     if (err) {
         ESP_LOGE(TAG, "Failed to register pacs capabilities, err %d", err);
         return err;
@@ -529,7 +693,7 @@ int bap_unicast_sr_init(void)
 
 #if CONFIG_BT_PAC_SRC
     /* Register CT required capabilities */
-    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SOURCE, &cap);
+    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SOURCE, &cap_source);
     if (err) {
         ESP_LOGE(TAG, "Failed to register pacs capabilities, err %d", err);
         return err;
@@ -558,7 +722,21 @@ int bap_unicast_sr_init(void)
         esp_ble_audio_bap_stream_cb_register(&streams[i], &stream_ops);
     }
 
-    ESP_LOGI(TAG, "BAP unicast server initialized");
+    for (size_t i = 0; i < ARRAY_SIZE(source_streams); i++) {
+        /* Own timer per stream, fed with its own context. */
+        source_streams[i].index = (uint8_t)i;
+
+        err = example_audio_tx_scheduler_init(&source_streams[i].scheduler,
+                                              tx_scheduler_cb,
+                                              &source_streams[i]);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to init tx scheduler[%zu], err %d", i, err);
+            return err;
+        }
+    }
+
+    ESP_LOGI(TAG, "BAP unicast server initialized: %u sink / %u source ASE",
+             CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT);
 
     return 0;
 }

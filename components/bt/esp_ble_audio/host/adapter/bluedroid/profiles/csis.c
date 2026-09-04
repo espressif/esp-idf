@@ -16,6 +16,7 @@
 #include "bluedroid/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -23,11 +24,16 @@ LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #define CSIS_SVC_COUNT      CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 
-static struct csis_inst {
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct csis_inst {
     struct bt_gatt_service *svc_p;
 } csis_insts[CSIS_SVC_COUNT];
 
-static uint8_t csis_svc_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_svc_count;
+
+void bt_le_bluedroid_csis_state_reset(void)
+{
+    csis_svc_count = 0;
+}
 
 int bt_le_bluedroid_csis_init(void *svc, uint8_t count)
 {
@@ -55,6 +61,18 @@ int bt_le_bluedroid_csis_init(void *svc, uint8_t count)
     csis_svc_count = count;
 
     return 0;
+}
+
+int bt_le_bluedroid_csis_deinit(void *csis_svc)
+{
+    LOG_DBG("[B]CsisDeinit");
+
+    if (csis_svc == NULL) {
+        LOG_ERR("[B]CsisSvcNull");
+        return -EINVAL;
+    }
+
+    return bt_le_bluedroid_svc_deinit(csis_svc);
 }
 
 int bt_le_bluedroid_csis_start(void)

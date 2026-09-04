@@ -209,23 +209,14 @@ static int bis_sync_req_cb(esp_ble_conn_t *conn,
              stream_started ? "streaming" : "not streaming");
 
     if (stream_started && requested_bis_sync == 0) {
-        /* The stream stopped callback will be called as part of this, and
-         * we do not need to wait for any events from the controller. Thus,
-         * when this returns, the `stream_started` is back to false.
+        /* stop() tears down the BIG; broadcast_sink_stopped_cb deletes the
+         * sink after BASS bis_sync has been cleared.
          */
         err = esp_ble_audio_bap_broadcast_sink_stop(broadcast_sink);
         if (err) {
             ESP_LOGE(TAG, "Failed to stop broadcast sink, err %d", err);
             return -EIO;
         }
-
-        err = esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);
-        if (err) {
-            ESP_LOGE(TAG, "Failed to delete broadcast sink, err %d", err);
-            return -EIO;
-        }
-
-        broadcast_sink = NULL;
     }
 
     return 0;
@@ -319,9 +310,36 @@ static void syncable_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
     }
 }
 
+static void broadcast_sink_stopped_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
+                                      uint8_t reason)
+{
+    esp_err_t err;
+
+    ESP_LOGI(TAG, "Broadcast sink stopped, reason 0x%02x", reason);
+
+    stream_started = false;
+
+    /* Called from big_stopped after update_recv_state_big_cleared(), so
+     * BASS bis_sync is already 0 and rem_src inside delete can succeed.
+     * Do not delete from stream_ops.stopped — that runs before bis_sync clear.
+     */
+    if (broadcast_sink == NULL) {
+        return;
+    }
+
+    err = esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to delete broadcast sink, err %d", err);
+        return;
+    }
+
+    broadcast_sink = NULL;
+}
+
 static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
     .base_recv = base_recv_cb,
     .syncable  = syncable_cb,
+    .stopped   = broadcast_sink_stopped_cb,
 };
 
 static int stream_index(const esp_ble_audio_bap_stream_t *stream)
@@ -352,21 +370,14 @@ static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 
 static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
-    esp_err_t err;
-
     ESP_LOGI(TAG, "[SNK #%d] Stream stopped, reason 0x%02x (%u/%u)",
              stream_index(stream), reason, stream_count_stopped, stream_count);
 
     if (++stream_count_stopped == stream_count) {
         stream_started = false;
-
-        err = esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);
-        if (err) {
-            ESP_LOGE(TAG, "Failed to delete broadcast sink, err %d", err);
-            return;
-        }
-
-        broadcast_sink = NULL;
+        /* Sink delete is deferred to broadcast_sink_stopped_cb (after BASS
+         * bis_sync clear). Deleting here races rem_src and leaves WRNs.
+         */
     }
 }
 

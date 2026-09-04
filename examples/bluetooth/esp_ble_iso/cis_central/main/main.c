@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -31,17 +32,37 @@
 #define CIS_PHY                 ESP_BLE_ISO_PHY_2M
 #define CIS_RTN                 2
 #define CIS_SDU_SIZE            120
+#define CIS_COUNT               2
 
 static bool acl_connected;
 
-static uint16_t iso_seq_num;
-static uint8_t iso_data[CIS_SDU_SIZE];
-
 static esp_ble_iso_cig_t *out_cig;
 
-static example_iso_tx_scheduler_t tx_scheduler;
+/* Each CIS is streamed independently: it comes up at its own time and carries
+ * its own sequence numbering, so it gets its own timer and TX counters instead
+ * of sharing one scheduler (which would report both under a single name). */
+struct cis_ctx {
+    esp_ble_iso_chan_t         chan;
+    example_iso_tx_scheduler_t scheduler;
+    uint16_t                   seq_num;
+    uint8_t                    data[CIS_SDU_SIZE];
+    char                       name[8];
+};
 
-static void iso_chan_send(void);
+static struct cis_ctx cis_ctxs[CIS_COUNT];
+
+static void iso_chan_send(struct cis_ctx *ctx);
+
+static struct cis_ctx *ctx_by_chan(const esp_ble_iso_chan_t *chan)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
+        if (&cis_ctxs[i].chan == chan) {
+            return &cis_ctxs[i];
+        }
+    }
+
+    return NULL;
+}
 
 static void iso_connected_cb(esp_ble_iso_chan_t *chan)
 {
@@ -49,38 +70,40 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         .pid    = ESP_BLE_ISO_DATA_PATH_HCI,
         .format = ESP_BLE_ISO_CODING_FORMAT_TRANSPARENT,
     };
+    struct cis_ctx *ctx = ctx_by_chan(chan);
     esp_err_t err;
 
-    ESP_LOGI(TAG, "[CIS #0] Connected");
+    ESP_LOGI(TAG, "[%s] Connected", ctx->name);
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_INPUT, &data_path);
     if (err) {
-        ESP_LOGE(TAG, "[CIS #0] Failed to setup data path, err %d", err);
+        ESP_LOGE(TAG, "[%s] Failed to setup data path, err %d", ctx->name, err);
         return;
     }
 
-    iso_seq_num = 0;
-    example_iso_tx_scheduler_reset(&tx_scheduler);
+    ctx->seq_num = 0;
+    example_iso_tx_scheduler_reset(&ctx->scheduler);
 
     /* Note: esp timer is not accurate enough */
-    err = example_iso_tx_scheduler_start(&tx_scheduler, CIG_SDU_INTERVAL_US);
+    err = example_iso_tx_scheduler_start(&ctx->scheduler, CIG_SDU_INTERVAL_US);
     if (err) {
-        ESP_LOGE(TAG, "[CIS #0] Scheduler start failed, err %d", err);
+        ESP_LOGE(TAG, "[%s] Scheduler start failed, err %d", ctx->name, err);
         return;
     }
 
-    iso_chan_send();
+    iso_chan_send(ctx);
 }
 
 static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 {
+    struct cis_ctx *ctx = ctx_by_chan(chan);
     esp_err_t err;
 
-    ESP_LOGI(TAG, "[CIS #0] Disconnected, reason 0x%02x", reason);
+    ESP_LOGI(TAG, "[%s] Disconnected, reason 0x%02x", ctx->name, reason);
 
-    err = example_iso_tx_scheduler_stop(&tx_scheduler);
+    err = example_iso_tx_scheduler_stop(&ctx->scheduler);
     if (err) {
-        ESP_LOGE(TAG, "[CIS #0] Scheduler stop failed, err %d", err);
+        ESP_LOGE(TAG, "[%s] Scheduler stop failed, err %d", ctx->name, err);
     }
 
     /* Per BT Core 6.0 §7.7.5: a CIS on the Central retains its handle and
@@ -91,13 +114,15 @@ static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
      */
     err = esp_ble_iso_remove_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_INPUT);
     if (err) {
-        ESP_LOGE(TAG, "[CIS #0] Failed to remove data path, err %d", err);
+        ESP_LOGE(TAG, "[%s] Failed to remove data path, err %d", ctx->name, err);
     }
 }
 
 static void iso_sent_cb(esp_ble_iso_chan_t *chan, void *user_data)
 {
-    example_iso_tx_scheduler_on_sent(&tx_scheduler, user_data, TAG, "CIS #0");
+    struct cis_ctx *ctx = ctx_by_chan(chan);
+
+    example_iso_tx_scheduler_on_sent(&ctx->scheduler, user_data, TAG, ctx->name);
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -117,23 +142,20 @@ static esp_ble_iso_chan_qos_t iso_qos = {
     .rx = NULL,
 };
 
-static esp_ble_iso_chan_t iso_chan = {
-    .ops = &iso_ops,
-    .qos = &iso_qos,
-};
-
 static void create_cig_and_cis(uint16_t acl_handle)
 {
-    esp_ble_iso_connect_param_t connect_param = {0};
+    esp_ble_iso_connect_param_t connect_param[CIS_COUNT] = {0};
     esp_ble_iso_cig_param_t cig_param = {0};
-    esp_ble_iso_chan_t *channels[1] = {0};
+    esp_ble_iso_chan_t *channels[CIS_COUNT] = {0};
     int err;
+
+    for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
+        channels[i] = &cis_ctxs[i].chan;
+    }
 
     if (out_cig) {
         goto connect;
     }
-
-    channels[0] = &iso_chan;
 
     cig_param.cis_channels = channels;
     cig_param.num_cis = ARRAY_SIZE(channels);
@@ -152,37 +174,41 @@ static void create_cig_and_cis(uint16_t acl_handle)
     }
 
 connect:
-    connect_param.iso_chan = &iso_chan;
+    /* Both CIS ride the same ACL to the peer. */
+    for (size_t i = 0; i < ARRAY_SIZE(connect_param); i++) {
+        connect_param[i].iso_chan = &cis_ctxs[i].chan;
+    }
 
-    err = esp_ble_iso_chan_connect(&connect_param, acl_handle, 1);
+    err = esp_ble_iso_chan_connect(connect_param, acl_handle, ARRAY_SIZE(connect_param));
     if (err) {
         ESP_LOGE(TAG, "Failed to create CIS, err %d", err);
         return;
     }
 }
 
-static void iso_chan_send(void)
+static void iso_chan_send(struct cis_ctx *ctx)
 {
     int err;
 
-    memset(iso_data, (uint8_t)iso_seq_num, sizeof(iso_data));
+    memset(ctx->data, (uint8_t)ctx->seq_num, sizeof(ctx->data));
 
-    err = esp_ble_iso_chan_send(&iso_chan,
-                                iso_data,
-                                sizeof(iso_data),
-                                iso_seq_num);
+    err = esp_ble_iso_chan_send(&ctx->chan,
+                                ctx->data,
+                                sizeof(ctx->data),
+                                ctx->seq_num);
     if (err) {
-        ESP_LOGD(TAG, "[CIS #0] Send failed, err %d", err);
+        ESP_LOGD(TAG, "[%s] Send failed, err %d", ctx->name, err);
         return;
     }
 
-    iso_seq_num++;
+    ctx->seq_num++;
 }
 
+/* Each CIS has its own timer, so the scheduler only ever feeds its own channel;
+ * a CIS that is not established yet has no timer running and is never sent to. */
 static void tx_scheduler_cb(void *arg)
 {
-    (void)arg;
-    iso_chan_send();
+    iso_chan_send(arg);
 }
 
 static bool data_cb(uint8_t type, const uint8_t *data,
@@ -343,12 +369,21 @@ void app_main(void)
         return;
     }
 
-    err = example_iso_tx_scheduler_init(&tx_scheduler,
-                                        tx_scheduler_cb,
-                                        NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to init tx scheduler, err %d", err);
-        return;
+    /* All CIS share the callbacks and TX QoS; each keeps its own timer, fed
+     * with its own context so the scheduler knows which channel to send on. */
+    for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
+        cis_ctxs[i].chan.ops = &iso_ops;
+        cis_ctxs[i].chan.qos = &iso_qos;
+        snprintf(cis_ctxs[i].name, sizeof(cis_ctxs[i].name), "CIS #%zu", i);
+
+        err = example_iso_tx_scheduler_init(&cis_ctxs[i].scheduler,
+                                            tx_scheduler_cb,
+                                            &cis_ctxs[i]);
+        if (err) {
+            ESP_LOGE(TAG, "[%s] Failed to init tx scheduler, err %d",
+                     cis_ctxs[i].name, err);
+            return;
+        }
     }
 
     err = set_device_name();

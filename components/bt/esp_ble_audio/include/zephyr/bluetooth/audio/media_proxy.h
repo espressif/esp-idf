@@ -1601,6 +1601,7 @@ int bt_media_proxy_pl_register_safe(struct media_proxy_pl_calls *pl_calls);
  *
  * TODO: Move to player header file
  */
+int bt_media_proxy_pl_init(void);
 int bt_media_proxy_pl_init_safe(void);
 
 /**

@@ -23,14 +23,48 @@
 #include "bluedroid/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 LOG_MODULE_REGISTER(LEA_GSRV, CONFIG_BT_ISO_LOG_LEVEL);
 
-static uint8_t svc_in_progress;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t svc_in_progress;
 
-static uint16_t inc_svc_handle;
-static uint16_t svc_handle;
-static uint16_t chrc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_svc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t svc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t chrc_handle;
+
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t aics_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t vocs_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t mcs_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t ots_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t tbs_count;
+
+/* Every service svc_init() created, so the deinit can delete each one:
+ * BTA_GATTS_AppDeregister() clears BTA's srvc_cb[] but leaves gatt_cb.sr_reg[],
+ * which is the table GATTS_StartService() checks on the next init. */
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct bt_gatt_service *created_svcs[CONFIG_BT_GATT_MAX_SR_PROFILES];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t created_svc_count;
+
+static void svc_created_record(struct bt_gatt_service *svc)
+{
+    for (uint8_t i = 0; i < created_svc_count; i++) {
+        if (created_svcs[i] == svc) {
+            /* Re-created in place: gtbs_init has no "already added" guard, and
+             * the tbs/mcs loops re-enter for each newly registered instance. */
+            return;
+        }
+    }
+
+    if (created_svc_count == ARRAY_SIZE(created_svcs)) {
+        /* Same ceiling as the stack's, so reaching it means the static_assert on
+         * TOTAL_SERVICE_COUNT is out of date rather than that we over-created. */
+        LOG_ERR("[B]SvcRecordFull[%u]", svc_in_progress);
+        return;
+    }
+
+    created_svcs[created_svc_count++] = svc;
+}
 
 static bool is_primary_svc(void)
 {
@@ -172,15 +206,14 @@ static void inc_svc_add_cb(uint16_t service_id, uint16_t attr_id, uint8_t status
     int result = status;
 
     if (service_id != svc_handle) {
+        /* Stale after timeout; take already failed — ignore without give. */
         LOG_ERR("[B]IncSvcAddMismatch[%u][%u][%u]",
                 svc_in_progress, service_id, svc_handle);
-        result = -1;
-        goto end;
+        return;
     }
 
     inc_svc_handle = attr_id;
 
-end:
     bt_le_bluedroid_gatts_sem_give(result);
 }
 
@@ -189,9 +222,8 @@ static void chrc_add_cb(uint16_t service_id, uint16_t attr_id,
 {
     int result = status;
 
-    if (service_id != svc_handle || ((tBT_UUID *)uuid)->len != 2) {
-        /* uuid16 is only meaningful when len == 2; for 32/128-bit UUIDs the
-         * union access would log the first 2 bytes of a wider value. */
+    if (service_id != svc_handle) {
+        /* Stale after timeout; take already failed — ignore without give. */
         if (((tBT_UUID *)uuid)->len == 2) {
             LOG_ERR("[B]ChrcAddMismatch[%u][%u][%u][2][0x%04x]",
                     svc_in_progress, service_id, svc_handle,
@@ -201,6 +233,13 @@ static void chrc_add_cb(uint16_t service_id, uint16_t attr_id,
                     svc_in_progress, service_id, svc_handle,
                     ((tBT_UUID *)uuid)->len);
         }
+        return;
+    }
+
+    if (((tBT_UUID *)uuid)->len != 2) {
+        LOG_ERR("[B]ChrcAddMismatch[%u][%u][%u][%u][nonU16]",
+                svc_in_progress, service_id, svc_handle,
+                ((tBT_UUID *)uuid)->len);
         result = -1;
         goto end;
     }
@@ -213,14 +252,13 @@ end:
 
 static void svc_start_cb(uint16_t service_id, uint8_t status)
 {
-    int result = status;
-
     if (service_id != svc_handle) {
+        /* Stale after timeout; take already failed — ignore without give. */
         LOG_ERR("[B]SvcStartMismatch[%u][%u]", service_id, svc_handle);
-        result = -1;
+        return;
     }
 
-    bt_le_bluedroid_gatts_sem_give(result);
+    bt_le_bluedroid_gatts_sem_give(status);
 }
 
 static struct gatts_svc_cb svc_cb = {
@@ -232,7 +270,59 @@ static struct gatts_svc_cb svc_cb = {
 
 void bt_le_bluedroid_audio_gatts_init(void)
 {
+    svc_in_progress = 0;
+    inc_svc_handle = 0;
+    svc_handle = 0;
+    chrc_handle = 0;
+
+    created_svc_count = 0;
+
+    aics_count = 0;
+    csis_count = 0;
+    vocs_count = 0;
+    mcs_count = 0;
+    ots_count = 0;
+    tbs_count = 0;
+
     bt_le_bluedroid_gatts_svc_cb_register(&svc_cb);
+}
+
+int bt_le_bluedroid_svc_deinit(struct bt_gatt_service *svc)
+{
+    if (svc == NULL || svc->attrs == NULL) {
+        LOG_ERR("[B]SvcDeinitNoSvc");
+        return -EINVAL;
+    }
+
+    if (svc->attrs[0].handle == 0) {
+        LOG_DBG("[B]SvcDeinitNotCreated");
+        return 0;
+    }
+
+    LOG_DBG("[B]SvcDeinit[0x%04x]", svc->attrs[0].handle);
+
+    BTA_GATTS_DeleteService(svc->attrs[0].handle);
+    svc->attrs[0].handle = 0;
+
+    return 0;
+}
+
+void bt_le_bluedroid_audio_gatts_deinit(void)
+{
+    /* Reverse creation order, so an included secondary outlives the primary that
+     * includes it. Each delete logs upstream's "Active Service Found" at ERROR;
+     * that is its successful lookup, not a failure. */
+
+    while (created_svc_count > 0) {
+        struct bt_gatt_service *svc = created_svcs[--created_svc_count];
+
+        created_svcs[created_svc_count] = NULL;
+
+        /* Already-unregistered entries fall out as a no-op inside. */
+        (void)bt_le_bluedroid_svc_deinit(svc);
+    }
+
+    bt_le_bluedroid_gatts_svc_cb_register(NULL);
 }
 
 int bt_le_bluedroid_set_svc_in_progress(uint8_t value)
@@ -409,17 +499,6 @@ static struct inc_svc_inst *get_not_included_inst(void)
 
 static uint8_t get_svc_inst_id(uint16_t svc_uuid)
 {
-    /* Note:
-     * For LE Audio, some service could have multiple instances.
-     */
-
-    static uint8_t aics_count;
-    static uint8_t csis_count;
-    static uint8_t vocs_count;
-    static uint8_t mcs_count;
-    static uint8_t ots_count;
-    static uint8_t tbs_count;
-
     switch (svc_uuid) {
     case BT_UUID_AICS_VAL:
         return aics_count++;
@@ -455,7 +534,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
     uint8_t inst_id;
     tBT_UUID uuid;
 
-    assert(svc);
+    BT_LE_ASSERT(svc);
 
     for (size_t i = 0; i < svc->attr_count; i++) {
         curr_attr = &svc->attrs[i];
@@ -469,7 +548,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
                 return -1;
             }
 
-            assert(curr_attr->user_data);
+            BT_LE_ASSERT(curr_attr->user_data);
 
             bt_le_bluedroid_gatt_uuid_convert(curr_attr->user_data, &uuid);
             inst_id = get_svc_inst_id(uuid.uu.uuid16);
@@ -495,7 +574,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
                 return -1;
             }
 
-            assert(curr_attr->user_data);
+            BT_LE_ASSERT(curr_attr->user_data);
 
             bt_le_bluedroid_gatt_uuid_convert(curr_attr->user_data, &uuid);
             inst_id = get_svc_inst_id(uuid.uu.uuid16);
@@ -560,7 +639,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
             next_attr = &svc->attrs[i + 1];
             perm = bt_le_bluedroid_gatt_perm_convert(next_attr->perm);
 
-            assert(curr_attr->user_data);
+            BT_LE_ASSERT(curr_attr->user_data);
 
             chrc = curr_attr->user_data;
             bt_le_bluedroid_gatt_uuid_convert(chrc->uuid, &uuid);
@@ -606,18 +685,29 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
         }
     }
 
+    /* Created, so the deinit has to delete it. attr_count 0 is a service the
+     * application never registered; svc_init walked nothing. */
+    if (svc->attr_count > 0 && svc->attrs[0].handle != 0) {
+        svc_created_record(svc);
+    }
+
     return 0;
 }
 
 int bt_le_bluedroid_svc_start(struct bt_gatt_service *svc)
 {
-    assert(svc);
+    BT_LE_ASSERT(svc);
+
+    /* App may not register this svc; skip rather than fail audio_start.
+     * Unused CAP Acceptor capabilities stop at handle 0, GMAS at NULL
+     * attrs - only bt_gmap_register() allocates them. */
+    if (svc->attrs == NULL) {
+        LOG_DBG("[B]SvcNotReg[%u]", svc_in_progress);
+        return 0;
+    }
 
     svc_handle = svc->attrs[0].handle;
 
-    /* App may not register this svc (e.g. CAP Acceptor single mode keeps
-     * unused capability built). Skip rather than fail audio_start.
-     */
     if (svc_handle == 0) {
         LOG_DBG("[B]SvcNotInit[%u]", svc_in_progress);
         return 0;
@@ -627,7 +717,9 @@ int bt_le_bluedroid_svc_start(struct bt_gatt_service *svc)
     BTA_GATTS_StartService(svc_handle, BTA_GATT_TRANSPORT_LE);
 
     if (bt_le_bluedroid_gatts_sem_take()) {
-        LOG_ERR("[B]SvcStartFail");
+        /* Which service and which handle: BTA only says "already started" or
+         * "not created", neither of which names the caller. */
+        LOG_ERR("[B]SvcStartFail[%u][0x%04x]", svc_in_progress, svc_handle);
         return -1;
     }
 

@@ -31,6 +31,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -71,26 +72,26 @@ LOG_MODULE_REGISTER(LEA_MCS, CONFIG_BT_ISO_LOG_LEVEL);
     (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC)
 
 #define INC_OTS_CHR_FLAGS_ACTION_CP \
-    (BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_INDICATE | BLE_GATT_CHR_F_WRITE_ENC)
+    (BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_INDICATE | BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC)
 
 #define INC_OTS_CHR_FLAGS_LIST_CP \
-    (BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_INDICATE | BLE_GATT_CHR_F_WRITE_ENC)
+    (BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_INDICATE | BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC)
 
-static uint8_t inc_ots_svc_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t inc_ots_svc_count;
 
-static struct bt_ots *ots;
-static uint16_t inc_ots_chr_feature_handle;
-static uint16_t inc_ots_chr_name_handle;
-static uint16_t inc_ots_chr_type_handle;
-static uint16_t inc_ots_chr_size_handle;
-static uint16_t inc_ots_chr_id_handle;
-static uint16_t inc_ots_chr_props_handle;
-static uint16_t inc_ots_chr_action_cp_handle;
-static uint16_t inc_ots_chr_list_cp_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct bt_ots *ots;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_feature_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_name_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_type_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_size_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_props_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_action_cp_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_ots_chr_list_cp_handle;
 
-static struct ble_gatt_svc_def *gatt_svc_inc_ots;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def *gatt_svc_inc_ots;
 
-static struct ble_gatt_svc_def **gmcs_inc_svcs;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def **gmcs_inc_svcs;
 
 static const ble_uuid16_t inc_ots_uuid_svc = BLE_UUID16_INIT(BT_UUID_OTS_VAL);
 static const ble_uuid16_t inc_ots_uuid_feature = BLE_UUID16_INIT(BT_UUID_OTS_FEATURE_VAL);
@@ -103,34 +104,34 @@ static const ble_uuid16_t inc_ots_uuid_action_cp = BLE_UUID16_INIT(BT_UUID_OTS_A
 static const ble_uuid16_t inc_ots_uuid_list_cp = BLE_UUID16_INIT(BT_UUID_OTS_LIST_CP_VAL);
 #endif /* CONFIG_BT_OTS */
 
-static uint16_t mcs_player_name_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_player_name_handle;
 #if CONFIG_BT_OTS
-static uint16_t mcs_icon_obj_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_icon_obj_id_handle;
 #endif /* CONFIG_BT_OTS */
-static uint16_t mcs_icon_url_handle;
-static uint16_t mcs_track_changed_handle;
-static uint16_t mcs_track_title_handle;
-static uint16_t mcs_track_duration_handle;
-static uint16_t mcs_track_position_handle;
-static uint16_t mcs_playback_speed_handle;
-static uint16_t mcs_seeking_speed_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_icon_url_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_track_changed_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_track_title_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_track_duration_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_track_position_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_playback_speed_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_seeking_speed_handle;
 #if CONFIG_BT_OTS
-static uint16_t mcs_track_segments_obj_id_handle;
-static uint16_t mcs_current_track_obj_id_handle;
-static uint16_t mcs_next_track_obj_id_handle;
-static uint16_t mcs_parent_group_obj_id_handle;
-static uint16_t mcs_current_group_obj_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_track_segments_obj_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_current_track_obj_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_next_track_obj_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_parent_group_obj_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_current_group_obj_id_handle;
 #endif /* CONFIG_BT_OTS */
-static uint16_t mcs_playing_order_handle;
-static uint16_t mcs_playing_orders_handle;
-static uint16_t mcs_media_state_handle;
-static uint16_t mcs_media_control_point_handle;
-static uint16_t mcs_media_control_opcodes_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_playing_order_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_playing_orders_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_media_state_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_media_control_point_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_media_control_opcodes_handle;
 #if CONFIG_BT_OTS
-static uint16_t mcs_search_control_point_handle;
-static uint16_t mcs_search_results_obj_id_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_search_control_point_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mcs_search_results_obj_id_handle;
 #endif /* CONFIG_BT_OTS */
-static uint16_t ccid_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t ccid_handle;
 
 static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
     {
@@ -145,7 +146,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_player_name_handle,
             },
@@ -173,7 +174,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_NOTIFY,
+                .flags = BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_track_changed_handle,
             }, {
@@ -181,7 +182,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_track_title_handle,
             }, {
@@ -189,7 +190,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_track_duration_handle,
             }, {
@@ -198,7 +199,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | \
+                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_track_position_handle,
@@ -208,7 +209,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | \
+                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_playback_speed_handle,
@@ -217,7 +218,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_seeking_speed_handle,
             },
@@ -236,7 +237,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | \
+                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_current_track_obj_id_handle,
@@ -246,7 +247,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | \
+                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_next_track_obj_id_handle,
@@ -255,7 +256,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_parent_group_obj_id_handle,
             }, {
@@ -264,7 +265,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | \
+                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_current_group_obj_id_handle,
@@ -276,7 +277,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | \
+                BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_playing_order_handle,
@@ -293,7 +294,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_media_state_handle,
             }, {
@@ -302,7 +303,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP | \
-                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC,
+                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_media_control_point_handle,
             }, {
@@ -310,7 +311,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_media_control_opcodes_handle,
             },
@@ -321,7 +322,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP | \
-                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC,
+                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_search_control_point_handle,
             }, {
@@ -329,7 +330,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &mcs_search_results_obj_id_handle,
             },
@@ -355,7 +356,7 @@ static struct ble_gatt_svc_def gatt_svc_gmcs[] = {
 /* Discrete MCS (0x1848): INSTANCE_COUNT instances sharing GMCS's characteristic table
  * and OTS include (val_handle vars are write-only here, so sharing is safe). Built in
  * bt_le_nimble_mcs_init as an N+1 NULL-terminated array for the GATT DB lifetime. */
-static struct ble_gatt_svc_def *gatt_svc_mcs;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def *gatt_svc_mcs;
 static const ble_uuid16_t mcs_uuid_svc = BLE_UUID16_INIT(BT_UUID_MCS_VAL);
 
 #if CONFIG_BT_OTS
@@ -365,9 +366,9 @@ static int inc_ots_attr_handle_set(void)
     uint16_t start_handle;
     uint16_t end_handle;
 
-    assert(ots && ots->service);
+    BT_LE_ASSERT(ots && ots->service);
 
-    assert(inc_ots_chr_feature_handle >= 2);
+    BT_LE_ASSERT(inc_ots_chr_feature_handle >= 2);
     start_handle = inc_ots_chr_feature_handle - 2;  /* server attr handle & char def handle */
     end_handle = inc_ots_chr_list_cp_handle + 1;    /* cccd for chr Object List Control Point */
 
@@ -471,7 +472,7 @@ static int gmcs_svc_check(void)
         for (size_t i = 0; i < gmcs_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(gmcs_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;
@@ -497,8 +498,8 @@ static int inc_ots_svc_check(void)
      * the service exist in the service defined by Zephyr.
      */
 
-    assert(gatt_svc_inc_ots);
-    assert(ots && ots->service);
+    BT_LE_ASSERT(gatt_svc_inc_ots);
+    BT_LE_ASSERT(ots && ots->service);
 
     LOG_DBG("[N]IncOtsSvcCheck");
 
@@ -511,7 +512,7 @@ static int inc_ots_svc_check(void)
         for (size_t i = 0; i < ots->service->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(ots->service->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;
@@ -550,7 +551,7 @@ static int inc_ots_svc_init(void)
     uint8_t chr_count;
 
     attrs = bt_ots_svc_decl_get(ots);
-    assert(attrs);
+    BT_LE_ASSERT(attrs);
 
     chr_count = 0;
 
@@ -574,8 +575,8 @@ static int inc_ots_svc_init(void)
     svc->includes = NULL;
 
     /* An additional characteristic consist of all 0s indicating end of characteristics */
-    svc->characteristics = calloc(INC_OTS_CHR_COUNT + 1, sizeof(struct ble_gatt_chr_def));
-    assert(svc->characteristics);
+    svc->characteristics = bt_le_ext_calloc(INC_OTS_CHR_COUNT + 1, sizeof(struct ble_gatt_chr_def));
+    BT_LE_ASSERT(svc->characteristics);
 
     /* Characteristic - OTS Feature */
     inc_ots_chr_init((void *)&svc->characteristics[0],
@@ -629,8 +630,18 @@ static int inc_ots_svc_init(void)
 }
 #endif /* CONFIG_BT_OTS */
 
+void bt_le_nimble_mcs_state_reset(void)
+{
+#if CONFIG_BT_OTS
+    inc_ots_svc_count = 0;
+#endif /* CONFIG_BT_OTS */
+}
+
 int bt_le_nimble_gmcs_init(bool ots_included)
 {
+#if CONFIG_BT_OTS
+    bool inc_ots_added = false;
+#endif /* CONFIG_BT_OTS */
     int rc;
 
     LOG_DBG("[N]GmcsInit[%u]", ots_included);
@@ -640,15 +651,15 @@ int bt_le_nimble_gmcs_init(bool ots_included)
         inc_ots_svc_count = 1;
 
         /* Extra one for terminating the included service array with NULL */
-        gmcs_inc_svcs = calloc(2, sizeof(struct ble_gatt_svc_def *));
-        assert(gmcs_inc_svcs);
+        gmcs_inc_svcs = bt_le_ext_calloc(2, sizeof(struct ble_gatt_svc_def *));
+        BT_LE_ASSERT(gmcs_inc_svcs);
 
         /* Extra one for terminating the OTS service array */
-        gatt_svc_inc_ots = calloc(2, sizeof(struct ble_gatt_svc_def));
-        assert(gatt_svc_inc_ots);
+        gatt_svc_inc_ots = bt_le_ext_calloc(2, sizeof(struct ble_gatt_svc_def));
+        BT_LE_ASSERT(gatt_svc_inc_ots);
 
         ots = lib_mcs_get_ots();
-        assert(ots && ots->service);
+        BT_LE_ASSERT(ots && ots->service);
 
         rc = inc_ots_svc_init();
         if (rc) {
@@ -668,6 +679,7 @@ int bt_le_nimble_gmcs_init(bool ots_included)
             LOG_ERR("[N]IncOtsAddSvcsFail[%d]", rc);
             goto free;
         }
+        inc_ots_added = true;
 
         rc = inc_ots_svc_check();
         if (rc) {
@@ -702,18 +714,23 @@ int bt_le_nimble_gmcs_init(bool ots_included)
 
 free:
 #if CONFIG_BT_OTS
+    /* Once ble_gatts_add_svcs() succeeds NimBLE keeps the svc_def pointer and
+     * offers no per-service unregister, so an added service must be leaked
+     * rather than freed into a dangling entry of its global list. */
     if (ots_included) {
         inc_ots_svc_count = 0;
 
         free(gmcs_inc_svcs);
         gmcs_inc_svcs = NULL;
 
-        if (gatt_svc_inc_ots[0].characteristics) {
-            free((void *)gatt_svc_inc_ots[0].characteristics);
-            gatt_svc_inc_ots[0].characteristics = NULL;
+        if (!inc_ots_added) {
+            if (gatt_svc_inc_ots[0].characteristics) {
+                free((void *)gatt_svc_inc_ots[0].characteristics);
+                gatt_svc_inc_ots[0].characteristics = NULL;
+            }
+            free(gatt_svc_inc_ots);
+            gatt_svc_inc_ots = NULL;
         }
-        free(gatt_svc_inc_ots);
-        gatt_svc_inc_ots = NULL;
     }
     gatt_svc_gmcs[0].includes = NULL;
 #endif /* CONFIG_BT_OTS */
@@ -778,7 +795,7 @@ static int mcs_svc_check(void)
         for (size_t i = 0; i < mcs_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(mcs_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;
@@ -797,6 +814,7 @@ static int mcs_svc_check(void)
 int bt_le_nimble_mcs_init(void)
 {
     uint8_t count = CONFIG_BT_MCS_INSTANCE_COUNT;
+    bool mcs_added = false;
     int rc;
 
     /* NULL when CONFIG_BT_MCS_INSTANCE_COUNT == 0: nothing discrete to add. */
@@ -809,8 +827,8 @@ int bt_le_nimble_mcs_init(void)
 
     /* One ble_gatt_svc_def per instance + a zeroed terminator. Persists for the
      * GATT DB lifetime (NimBLE references these defs until ble_gatts_start). */
-    gatt_svc_mcs = calloc(count + 1, sizeof(struct ble_gatt_svc_def));
-    assert(gatt_svc_mcs);
+    gatt_svc_mcs = bt_le_ext_calloc(count + 1, sizeof(struct ble_gatt_svc_def));
+    BT_LE_ASSERT(gatt_svc_mcs);
 
     for (int i = 0; i < count; i++) {
         gatt_svc_mcs[i].type = BLE_GATT_SVC_TYPE_PRIMARY;
@@ -836,6 +854,7 @@ int bt_le_nimble_mcs_init(void)
         LOG_ERR("[N]McsAddSvcsFail[%d]", rc);
         goto free;
     }
+    mcs_added = true;
 
     rc = mcs_svc_check();
     if (rc) {
@@ -845,7 +864,12 @@ int bt_le_nimble_mcs_init(void)
     return 0;
 
 free:
-    free(gatt_svc_mcs);
-    gatt_svc_mcs = NULL;
+    /* Once ble_gatts_add_svcs() succeeds NimBLE keeps the svc_def pointer and
+     * offers no per-service unregister, so an added service must be leaked
+     * rather than freed into a dangling entry of its global list. */
+    if (!mcs_added) {
+        free(gatt_svc_mcs);
+        gatt_svc_mcs = NULL;
+    }
     return rc;
 }

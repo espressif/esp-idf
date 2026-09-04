@@ -21,6 +21,30 @@
 extern "C" {
 #endif
 
+/* Byte order of `val` is the active host's, NOT a single fixed convention:
+ *
+ *   NimBLE   on-air / LSB-first, val[0] is the least significant octet.
+ *   Bluedroid MSB-first, val[0] is the most significant octet - the order
+ *            esp_bd_addr_t uses and the order every esp_ble_gap_* API expects.
+ *
+ * That is deliberate: an address delivered by an event is normally handed
+ * straight back to the same host's API (create sync, connect, disconnect), so
+ * leaving it untouched keeps those paths correct on both hosts.
+ *
+ * The cost is that `bt_addr_le_t` in this port does not mean one thing either.
+ * On Bluedroid its contents follow whichever path filled it:
+ *
+ *   conn->le.dst          MSB - stored verbatim from the connect event and
+ *                         passed back to BTA_GATTC_* unchanged.
+ *   bt_bond_info.addr     MSB - read from the Bluedroid bond store as is.
+ *   per_adv_sync->addr    LSB - bt_le_per_adv_sync_new() reverses it, because
+ *                         it is compared against addresses off the air.
+ *   BASS recv_state->addr LSB - arrives over ATT, where BASS defines LSB-first.
+ *
+ * So an application only has to convert where the two meet: comparing an event
+ * address against one the audio layer holds (a Broadcast Receive State, say)
+ * needs a reversal under CONFIG_BT_BLUEDROID_ENABLED and none under NimBLE.
+ */
 struct bt_le_addr {
     uint8_t type;
     uint8_t val[6];
@@ -57,6 +81,9 @@ struct bt_le_gap_app_pa_sync_past_param {
     uint8_t adv_phy;
     uint16_t per_adv_itvl;
     uint8_t adv_ca;
+    /* PAST sender, not the advertiser in addr above; conn_handle is resolved
+     * from it on Bluedroid. */
+    struct bt_le_addr src_addr;
     /* ACL conn that delivered the PAST. */
     uint16_t conn_handle;
 };
@@ -300,7 +327,9 @@ void bt_le_gap_app_biginfo_event(uint8_t *param);
 
 void bt_le_gap_handle_event(uint8_t *data, size_t data_len);
 
-void bt_le_gap_app_post_event(uint8_t type, void *param);
+void bt_le_gap_event_free(void *data);
+
+void bt_le_gap_app_post_event(uint16_t type, void *param);
 
 #ifdef __cplusplus
 }

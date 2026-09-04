@@ -131,6 +131,7 @@ int bt_vcp_vol_rend_included_get_safe(struct bt_vcp_included *included);
  *
  * @return 0 if success, errno on failure.
  */
+int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param);
 int bt_vcp_vol_rend_register_safe(struct bt_vcp_vol_rend_register_param *param);
 
 /**

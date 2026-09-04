@@ -16,7 +16,7 @@ esp_err_t esp_ble_audio_pbp_get_announcement(const uint8_t meta[], size_t meta_l
     int err;
 
     if (pba_data_buf == NULL ||
-            pba_data_buf->size < (meta_len + ESP_BLE_AUDIO_PBP_MIN_PBA_SIZE)) {
+            net_buf_simple_tailroom(pba_data_buf) < (meta_len + ESP_BLE_AUDIO_PBP_MIN_PBA_SIZE)) {
         return ESP_ERR_INVALID_ARG;
     }
 

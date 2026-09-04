@@ -24,26 +24,11 @@
 #else
 #include "host/ble_gap.h"
 #include "host/ble_store.h"
+
+#include "utils/assert.h"
 #endif
 
 LOG_MODULE_REGISTER(ISO_UTILS, CONFIG_BT_ISO_LOG_LEVEL);
-
-struct bt_dev bt_dev;
-
-uint8_t bt_get_phy(uint8_t hci_phy)
-{
-    switch (hci_phy) {
-    case BT_HCI_LE_PHY_1M:
-        return BT_GAP_LE_PHY_1M;
-    case BT_HCI_LE_PHY_2M:
-        return BT_GAP_LE_PHY_2M;
-    case BT_HCI_LE_PHY_CODED:
-        return BT_GAP_LE_PHY_CODED;
-    default:
-        LOG_WRN("UnknownHciPhy[%u]", hci_phy);
-        return 0;
-    }
-}
 
 /* Query the active host's persistent bond store (the old local key_pool was never
  * populated, so bt_le_bond_exists() was always false). `id` ignored (single identity);
@@ -57,7 +42,7 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
     int num = esp_ble_get_bond_device_num();
     esp_ble_bond_dev_t *list;
 
-    assert(func);
+    BT_LE_ASSERT(func);
     (void)id;
 
     LOG_DBG("[B]ForeachBond[%d]", num);
@@ -152,7 +137,7 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
     ble_addr_t peers[CONFIG_BT_MAX_PAIRED];
     int num = 0;
 
-    assert(func);
+    BT_LE_ASSERT(func);
     (void)id;
 
     if (ble_store_util_bonded_peers(peers, &num, ARRAY_SIZE(peers)) != 0) {

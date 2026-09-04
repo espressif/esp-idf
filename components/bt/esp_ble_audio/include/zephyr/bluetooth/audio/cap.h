@@ -996,19 +996,21 @@ struct bt_cap_handover_broadcast_to_unicast_param {
 
     /** @brief Broadcast ID of the @p broadcast_source
      *
-     * Ignored if @p reception_stop_param is not NULL.
+     * Always required: receive state notifications are matched against the
+     * {broadcast_id, adv_sid, adv_type} triple to decide that reception stopped,
+     * whether or not @p reception_stop_param is given.
      */
     uint32_t broadcast_id;
 
     /** @brief Advertising set ID of the @p broadcast_source
      *
-     * Ignored if @p reception_stop_param is not NULL.
+     * Always required, see @p broadcast_id.
      */
     uint8_t adv_sid;
 
     /** @brief Advertising type of the advertising address of @p broadcast_source
      *
-     * Ignored if @p reception_stop_param is not NULL.
+     * Always required, see @p broadcast_id.
      */
     uint8_t adv_type;
 

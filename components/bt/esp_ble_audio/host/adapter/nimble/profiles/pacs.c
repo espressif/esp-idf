@@ -24,27 +24,28 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
 LOG_MODULE_REGISTER(LEA_PACS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #if CONFIG_BT_PAC_SNK
-static uint16_t pacs_snk_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_snk_handle;
 #if CONFIG_BT_PAC_SNK_LOC
-static uint16_t pacs_snk_loc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_snk_loc_handle;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if CONFIG_BT_PAC_SRC
-static uint16_t pacs_src_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_src_handle;
 #if CONFIG_BT_PAC_SRC_LOC
-static uint16_t pacs_src_loc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_src_loc_handle;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SRC */
 
-static uint16_t pacs_ava_ctx_handle;
-static uint16_t pacs_sup_ctx_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_ava_ctx_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_sup_ctx_handle;
 
 static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
     {
@@ -61,7 +62,7 @@ static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
 #if CONFIG_BT_PAC_SNK_NOTIFIABLE
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
 #else /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC,
 #endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
@@ -76,13 +77,13 @@ static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
 #if CONFIG_BT_PAC_SNK_LOC_WRITEABLE && CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | \
+                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_WRITE_ENC,
 #elif CONFIG_BT_PAC_SNK_LOC_WRITEABLE && !CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
 #elif !CONFIG_BT_PAC_SNK_LOC_WRITEABLE && CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
 #else /* !CONFIG_BT_PAC_SNK_LOC_WRITEABLE && !CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC,
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE && CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
@@ -98,7 +99,7 @@ static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
 #if CONFIG_BT_PAC_SRC_NOTIFIABLE
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
 #else /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC,
 #endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
@@ -113,13 +114,13 @@ static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
 #if CONFIG_BT_PAC_SRC_LOC_WRITEABLE && CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | \
+                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC | \
                 BLE_GATT_CHR_F_WRITE_ENC,
 #elif CONFIG_BT_PAC_SRC_LOC_WRITEABLE && !CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE | \
                 BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC,
 #elif !CONFIG_BT_PAC_SRC_LOC_WRITEABLE && CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
 #else /* !CONFIG_BT_PAC_SRC_LOC_WRITEABLE && !CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC,
 #endif /* CONFIG_BT_PAC_SRC_LOC_WRITEABLE && CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
@@ -133,7 +134,7 @@ static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
                 .val_handle = &pacs_ava_ctx_handle,
             }, {
@@ -142,7 +143,7 @@ static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
 #if CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
 #else /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC,
 #endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
@@ -172,13 +173,13 @@ int bt_le_nimble_pacs_attr_handle_set(void)
     }
 
 #if CONFIG_BT_PAC_SNK
-    assert(pacs_snk_handle >= 2);
+    BT_LE_ASSERT(pacs_snk_handle >= 2);
     start_handle = pacs_snk_handle - 2;     /* server attr handle & char def handle */
 #elif CONFIG_BT_PAC_SRC
-    assert(pacs_src_handle >= 2);
+    BT_LE_ASSERT(pacs_src_handle >= 2);
     start_handle = pacs_src_handle - 2;     /* server attr handle & char def handle */
 #else
-    assert(pacs_ava_ctx_handle >= 2);
+    BT_LE_ASSERT(pacs_ava_ctx_handle >= 2);
     start_handle = pacs_ava_ctx_handle - 2; /* server attr handle & char def handle */
 #endif
 #if CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE
@@ -233,7 +234,7 @@ static int pacs_svc_check(void)
         for (size_t i = 0; i < pacs_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(pacs_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;
@@ -272,5 +273,11 @@ int bt_le_nimble_pacs_init(void)
         return rc;
     }
 
+    return 0;
+}
+
+int bt_le_nimble_pacs_deinit(void)
+{
+    LOG_DBG("[N]PacsDeinit");
     return 0;
 }

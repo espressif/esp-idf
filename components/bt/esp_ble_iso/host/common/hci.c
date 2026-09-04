@@ -15,6 +15,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/gap.h>
 
 #include <../host/hci_core.h>
 #include <../host/iso_internal.h>
@@ -22,6 +24,24 @@
 #include "common/host.h"
 
 LOG_MODULE_REGISTER(ISO_HCI, CONFIG_BT_ISO_LOG_LEVEL);
+
+/* Device/HCI state, not an ISO packet, task-context -> eligible for PSRAM. */
+BT_ISO_EXT_RAM_BSS_ATTR struct bt_dev bt_dev;
+
+uint8_t bt_get_phy(uint8_t hci_phy)
+{
+    switch (hci_phy) {
+    case BT_HCI_LE_PHY_1M:
+        return BT_GAP_LE_PHY_1M;
+    case BT_HCI_LE_PHY_2M:
+        return BT_GAP_LE_PHY_2M;
+    case BT_HCI_LE_PHY_CODED:
+        return BT_GAP_LE_PHY_CODED;
+    default:
+        LOG_WRN("UnknownHciPhy[%u]", hci_phy);
+        return 0;
+    }
+}
 
 struct cmd_data {
     /** HCI status of the command completion */
@@ -34,7 +54,7 @@ struct cmd_data {
     struct bt_hci_cmd_state_set *state;
 };
 
-static struct cmd_data cmd_data;
+static BT_ISO_EXT_RAM_BSS_ATTR struct cmd_data cmd_data;
 
 #define cmd(buf)    (&cmd_data)
 
@@ -49,7 +69,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
     LOG_DBG("HciCmdCreate[%04x][%u]", opcode, param_len);
 
     buf = net_buf_alloc(&hci_cmd_pool, K_NO_WAIT);
-    assert(buf);
+    BT_LE_ASSERT(buf);
 
     net_buf_reserve(buf, BT_BUF_RESERVE);
 

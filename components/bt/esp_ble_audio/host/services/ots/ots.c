@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,7 +122,7 @@ static ssize_t ots_feature_read(struct bt_conn *conn,
 {
     struct bt_ots *ots = (struct bt_ots *) attr->user_data;
 
-    LOG_DBG("OTS Feature GATT Read Operation");
+    LOG_DBG("OtsFeatRd");
 
     return bt_gatt_attr_read(conn, attr, buf, len, offset, &ots->features,
                              sizeof(ots->features));
@@ -133,15 +134,15 @@ static ssize_t ots_obj_name_read(struct bt_conn *conn,
 {
     struct bt_ots *ots = (struct bt_ots *) attr->user_data;
 
-    LOG_DBG("OTS Object Name GATT Read Operation");
+    LOG_DBG("OtsObjNameRd");
 
     if (!ots->cur_obj) {
-        LOG_DBG("No Current Object selected in OTS!");
+        LOG_WRN("OtsCurObjNotSel");
         return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
     }
 
     if (!ots->cur_obj->metadata.name) {
-        LOG_DBG("Current Object has no name!");
+        LOG_WRN("OtsCurObjNoName");
         return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
     }
 
@@ -161,26 +162,26 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
     int rc = 0;
     char name[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
 
-    LOG_DBG("OTS Object Name GATT Write Operation");
+    LOG_DBG("OtsObjNameWr");
 
     if (!ots->cur_obj) {
-        LOG_DBG("No Current Object selected in OTS!");
+        LOG_WRN("OtsCurObjNotSel");
         return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
     }
 
     if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
             ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
-        LOG_DBG("Rejecting name write for the directory list object.");
+        LOG_WRN("OtsDirListNameWrRej");
         return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
     }
 
     if (offset > 0) {
-        LOG_DBG("Rejecting a long write, offset must be 0!");
+        LOG_WRN("OtsNameWrInvOft");
         return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
     }
 
     if (len == 0 || len > CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
-        LOG_DBG("Invalid object name length!");
+        LOG_WRN("OtsInvObjNameLen");
         return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
     }
 
@@ -191,7 +192,7 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
     rc = bt_gatt_ots_obj_manager_first_obj_get(ots->obj_manager, &obj);
     while (rc == 0) {
         if (obj != ots->cur_obj && strcmp(name, obj->metadata.name) == 0) {
-            LOG_DBG("Object name is duplicated!");
+            LOG_WRN("OtsObjNameDup");
             return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NAME_ALREADY_EXISTS);
         }
         rc = bt_gatt_ots_obj_manager_next_obj_get(ots->obj_manager, obj, &obj);
@@ -220,10 +221,10 @@ static ssize_t ots_obj_type_read(struct bt_conn *conn,
     struct bt_ots *ots = (struct bt_ots *) attr->user_data;
     struct bt_ots_obj_metadata *obj_meta;
 
-    LOG_DBG("OTS Object Type GATT Read Operation");
+    LOG_DBG("OtsObjTypeRd");
 
     if (!ots->cur_obj) {
-        LOG_DBG("No Current Object selected in OTS!");
+        LOG_WRN("OtsCurObjNotSel");
         return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
     }
 
@@ -248,10 +249,10 @@ static ssize_t ots_obj_size_read(struct bt_conn *conn,
 {
     struct bt_ots *ots = (struct bt_ots *) attr->user_data;
 
-    LOG_DBG("OTS Object Size GATT Read Operation");
+    LOG_DBG("OtsObjSizeRd");
 
     if (!ots->cur_obj) {
-        LOG_DBG("No Current Object selected in OTS!");
+        LOG_WRN("OtsCurObjNotSel");
         return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
     }
 
@@ -268,10 +269,10 @@ static ssize_t ots_obj_id_read(struct bt_conn *conn,
     uint8_t id[BT_OTS_OBJ_ID_SIZE];
     char id_str[BT_OTS_OBJ_ID_STR_LEN];
 
-    LOG_DBG("OTS Object ID GATT Read Operation");
+    LOG_DBG("OtsObjIdRd");
 
     if (!ots->cur_obj) {
-        LOG_DBG("No Current Object selected in OTS!");
+        LOG_WRN("OtsCurObjNotSel");
         return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
     }
 
@@ -279,7 +280,7 @@ static ssize_t ots_obj_id_read(struct bt_conn *conn,
 
     bt_ots_obj_id_to_str(ots->cur_obj->id, id_str,
                          sizeof(id_str));
-    LOG_DBG("Current Object ID: %s", id_str);
+    LOG_DBG("OtsCurObjId[%s]", id_str);
 
     return bt_gatt_attr_read(conn, attr, buf, len, offset, id, sizeof(id));
 }
@@ -290,10 +291,10 @@ static ssize_t ots_obj_prop_read(struct bt_conn *conn,
 {
     struct bt_ots *ots = (struct bt_ots *) attr->user_data;
 
-    LOG_DBG("OTS Object Properties GATT Read Operation");
+    LOG_DBG("OtsObjPropRd");
 
     if (!ots->cur_obj) {
-        LOG_DBG("No Current Object selected in OTS!");
+        LOG_WRN("OtsCurObjNotSel");
         return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
     }
 
@@ -310,15 +311,25 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
     struct bt_gatt_ots_object *new_obj;
     struct bt_ots_obj_created_desc created_desc;
 
+    /* Directory listing Object Type is 16- or 128-bit only (same as OACP Create). */
+    switch (param->type.uuid.type) {
+    case BT_UUID_TYPE_16:
+    case BT_UUID_TYPE_128:
+        break;
+    default:
+        LOG_ERR("OtsObjAddInvType[%u]", param->type.uuid.type);
+        return -EINVAL;
+    }
+
     if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list &&
             !bt_ots_dir_list_is_idle(ots->dir_list)) {
-        LOG_DBG("Directory Listing Object is being read");
+        LOG_DBG("OtsDirListBusy");
         return -EBUSY;
     }
 
     err = bt_gatt_ots_obj_manager_obj_add(ots->obj_manager, &new_obj);
     if (err) {
-        LOG_ERR("No space available in the object manager");
+        LOG_ERR("OtsObjMgrNoSpace");
         return err;
     }
 
@@ -330,11 +341,14 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
         if (err) {
             (void)bt_gatt_ots_obj_manager_obj_delete(new_obj);
 
+            if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+                bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
+            }
             return err;
         }
 
         if (!ots_obj_validate_prop_against_oacp(created_desc.props, ots->features.oacp)) {
-            LOG_ERR("Object properties (0x%04X) are not a subset of OACP (0x%04X)",
+            LOG_ERR("OtsObjPropNotSubsetOacp[%04x][%04x]",
                     created_desc.props, ots->features.oacp);
 
             (void)bt_ots_obj_delete(ots, new_obj->id);
@@ -342,28 +356,36 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
         }
 
         if (created_desc.name == NULL) {
-            LOG_ERR("Object name must be set by application after object creation.");
+            LOG_ERR("OtsObjNameNotSet");
 
             (void)bt_ots_obj_delete(ots, new_obj->id);
             return -ECANCELED;
         }
 
         if (created_desc.size.alloc < param->size) {
-            LOG_ERR("Object allocated size must >= requested size.");
+            LOG_ERR("OtsObjAllocSizeTooSmall");
 
             (void)bt_ots_obj_delete(ots, new_obj->id);
             return -ECANCELED;
         }
     } else {
         /* obj_created callback is required to populate the descriptor */
-        LOG_ERR("obj_created callback is not set");
+        LOG_ERR("OtsObjCreatedCbNotSet");
 
         (void)bt_gatt_ots_obj_manager_obj_delete(new_obj);
+
+        if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+            bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
+        }
         return -EINVAL;
     }
 
     new_obj->metadata.type = param->type;
-    new_obj->metadata.name = created_desc.name;
+    /* Own the name: a client name write copies into metadata.name, and the
+     * application's buffer may be read-only or shorter than the max name. */
+    strncpy(new_obj->metadata.name_c, created_desc.name, CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
+    new_obj->metadata.name_c[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN] = '\0';
+    new_obj->metadata.name = new_obj->metadata.name_c;
     new_obj->metadata.size = created_desc.size;
     new_obj->metadata.props = created_desc.props;
 
@@ -386,7 +408,7 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
     }
 
     if (obj->metadata.name == NULL) {
-        LOG_ERR("Object name is NULL");
+        LOG_ERR("OtsObjNameNull");
 
         (void)bt_ots_obj_delete(ots, obj->id);
         return -ECANCELED;
@@ -394,14 +416,14 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
 
     name_len = strlen(obj->metadata.name);
     if (name_len == 0 || name_len > CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
-        LOG_ERR("Invalid name length %zu", name_len);
+        LOG_ERR("OtsInvNameLen[%zu]", name_len);
 
         (void)bt_ots_obj_delete(ots, obj->id);
         return -ECANCELED;
     }
 
     if (obj->metadata.size.cur > param->size) {
-        LOG_ERR("Object current size must be less than or equal to requested size.");
+        LOG_ERR("OtsObjCurSizeTooBig");
 
         (void)bt_ots_obj_delete(ots, obj->id);
         return -ECANCELED;
@@ -416,7 +438,7 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
     struct bt_gatt_ots_object *obj;
 
     CHECKIF(!BT_OTS_VALID_OBJ_ID(id)) {
-        LOG_DBG("Invalid object ID 0x%016llx", id);
+        LOG_WRN("OtsInvObjId[%016llx]", id);
 
         return -EINVAL;
     }
@@ -432,7 +454,7 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 
     if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list &&
             !bt_ots_dir_list_is_idle(ots->dir_list)) {
-        LOG_DBG("Directory Listing Object is being read");
+        LOG_DBG("OtsDirListBusy");
         return -EBUSY;
     }
 
@@ -446,6 +468,11 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
     err = bt_gatt_ots_obj_manager_obj_delete(obj);
     if (err) {
         return err;
+    }
+
+    if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+        /* Object removed from the list: drop stale anchor and refresh size. */
+        bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
     }
 
     if (ots->cur_obj == obj) {
@@ -464,18 +491,48 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots)
 
 static void oacp_indicate_work_handler(struct k_work *work)
 {
-    struct bt_gatt_ots_indicate *ind = CONTAINER_OF(work, struct bt_gatt_ots_indicate, work);
+    struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+    struct bt_gatt_ots_indicate *ind =
+        CONTAINER_OF(dwork, struct bt_gatt_ots_indicate, work);
     struct bt_ots *ots = CONTAINER_OF(ind, struct bt_ots, oacp_ind);
+    int err;
 
-    bt_gatt_indicate(NULL, &ots->oacp_ind.params);
+    if (!ind->conn) {
+        LOG_WRN("OtsOacpIndNoConn");
+        ots->oacp_ind.ind_in_flight = false;
+        return;
+    }
+
+    LOG_INF("OtsOacpInd[%04x]", ind->conn->handle);
+
+    err = bt_gatt_indicate(ind->conn, &ots->oacp_ind.params);
+    if (err) {
+        LOG_ERR("OtsOacpIndFail[%04x][%d]", ind->conn->handle, err);
+        ots->oacp_ind.ind_in_flight = false;
+    }
 }
 
 static void olcp_indicate_work_handler(struct k_work *work)
 {
-    struct bt_gatt_ots_indicate *ind = CONTAINER_OF(work, struct bt_gatt_ots_indicate, work);
+    struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+    struct bt_gatt_ots_indicate *ind =
+        CONTAINER_OF(dwork, struct bt_gatt_ots_indicate, work);
     struct bt_ots *ots = CONTAINER_OF(ind, struct bt_ots, olcp_ind);
+    int err;
 
-    bt_gatt_indicate(NULL, &ots->olcp_ind.params);
+    if (!ind->conn) {
+        LOG_WRN("OtsOlcpIndNoConn");
+        ots->olcp_ind.ind_in_flight = false;
+        return;
+    }
+
+    LOG_INF("OtsOlcpInd[%04x]", ind->conn->handle);
+
+    err = bt_gatt_indicate(ind->conn, &ots->olcp_ind.params);
+    if (err) {
+        LOG_ERR("OtsOlcpIndFail[%04x][%d]", ind->conn->handle, err);
+        ots->olcp_ind.ind_in_flight = false;
+    }
 }
 
 int bt_ots_init(struct bt_ots *ots,
@@ -506,6 +563,9 @@ int bt_ots_init(struct bt_ots *ots,
 
     /* Check OACP supported features against Kconfig. */
     if (ots_init->features.oacp & (~((uint32_t) OACP_FEAT))) {
+        /* cb is what bt_ots_instances_rewind() reads to decide there is an init
+         * to reverse, so every bail after the assignment above has to undo it. */
+        ots->cb = NULL;
         return -ENOTSUP;
     }
 
@@ -514,25 +574,32 @@ int bt_ots_init(struct bt_ots *ots,
              "Object creation requires object write to be supported");
 
     ots->features.oacp = ots_init->features.oacp;
-    LOG_DBG("OACP features: 0x%04X", ots->features.oacp);
+    LOG_DBG("OtsOacpFeat[%04x]", ots->features.oacp);
 
     /* Check OLCP supported features against Kconfig. */
     if (ots_init->features.olcp & (~((uint32_t) OLCP_FEAT))) {
+        ots->cb = NULL;
         return -ENOTSUP;
     }
     ots->features.olcp = ots_init->features.olcp;
-    LOG_DBG("OLCP features: 0x%04X", ots->features.olcp);
+    LOG_DBG("OtsOlcpFeat[%04x]", ots->features.olcp);
 
     /* Register L2CAP context. */
     err = bt_gatt_ots_l2cap_register(&ots->l2cap);
     if (err) {
+        ots->cb = NULL;
         return err;
     }
 
     err = bt_gatt_service_register(ots->service);
     if (err) {
-        bt_gatt_ots_l2cap_unregister(&ots->l2cap);
+        int unreg_err = bt_gatt_ots_l2cap_unregister(&ots->l2cap);
 
+        if (unreg_err) {
+            LOG_ERR("OtsL2capUnregFail[%d]", unreg_err);
+        }
+
+        ots->cb = NULL;
         return err;
     }
 
@@ -540,10 +607,10 @@ int bt_ots_init(struct bt_ots *ots,
         bt_ots_dir_list_init(&ots->dir_list, ots->obj_manager);
     }
 
-    k_work_init(&ots->oacp_ind.work, oacp_indicate_work_handler);
-    k_work_init(&ots->olcp_ind.work, olcp_indicate_work_handler);
+    k_work_init_delayable(&ots->oacp_ind.work, oacp_indicate_work_handler);
+    k_work_init_delayable(&ots->olcp_ind.work, olcp_indicate_work_handler);
 
-    LOG_DBG("Initialized OTS");
+    LOG_DBG("OtsInit");
 
     return 0;
 }
@@ -616,6 +683,7 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
     char id_str[BT_OTS_OBJ_ID_STR_LEN];
     struct bt_gatt_ots_object *obj;
     struct bt_gatt_ots_object *next_obj;
+    bool deleted = false;
     int err;
 
     err = bt_gatt_ots_obj_manager_first_obj_get(ots->obj_manager, &next_obj);
@@ -629,18 +697,43 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
 
         if (strlen(obj->metadata.name) == 0) {
             bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
-            LOG_DBG("Deleting object with %s ID due to empty name", id_str);
+            LOG_DBG("OtsDelEmptyNameObj[%s]", id_str);
 
             if (ots->cb && ots->cb->obj_deleted) {
                 ots->cb->obj_deleted(ots, conn, obj->id);
             }
 
             if (bt_gatt_ots_obj_manager_obj_delete(obj)) {
-                LOG_ERR("Failed to remove object with %s ID from object manager",
+                LOG_ERR("OtsObjMgrDelFail[%s]",
                         id_str);
+            } else {
+                deleted = true;
             }
         }
     }
+
+    /* Refresh once after the loop: while empty-name objects are being deleted
+     * the manager still holds not-yet-removed ones, and dir_list_update_size
+     * would assert (name_len > 0) on them.
+     */
+    if (deleted && IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+        bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
+    }
+}
+
+static void ots_ind_on_disconnect(struct bt_gatt_ots_indicate *ind, struct bt_conn *conn)
+{
+    if (ind->conn != conn) {
+        LOG_INF("OtsIndSkipDisc[%04x][%04x]",
+                ind->conn ? ind->conn->handle : 0xFFFF, conn->handle);
+        return;
+    }
+
+    LOG_INF("OtsIndClrOnDisc[%04x]", conn->handle);
+
+    (void)k_work_cancel_delayable(&ind->work);
+    ind->ind_in_flight = false;
+    ind->conn = NULL;
 }
 
 static void ots_conn_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -652,7 +745,10 @@ static void ots_conn_disconnected(struct bt_conn *conn, uint8_t reason)
             index < instance_cnt;
             instance++, index++) {
 
-        LOG_DBG("Processing disconnect for OTS instance %u", index);
+        LOG_DBG("OtsInstDisconnect[%u]", index);
+
+        ots_ind_on_disconnect(&instance->oacp_ind, conn);
+        ots_ind_on_disconnect(&instance->olcp_ind, conn);
 
         if (instance->cur_obj != NULL) {
             __ASSERT(instance->cur_obj->state.type == BT_GATT_OTS_OBJECT_IDLE_STATE,
@@ -678,7 +774,39 @@ struct bt_ots *bt_ots_free_instance_get(void)
     return &BT_GATT_OTS_INSTANCE_LIST_START[instance_cnt++];
 }
 
-static int bt_gatt_ots_instances_prepare(void)
+/* Both pools only count up, so without this a second init finds them exhausted
+ * (McsNoFreeOtsInst / OtsObjMgrInstUnavail). Safe here: the profile that took an
+ * instance has dropped its reference by now. */
+void bt_ots_instances_rewind(void)
+{
+    for (struct bt_ots *instance = BT_GATT_OTS_INSTANCE_LIST_START;
+            instance != BT_GATT_OTS_INSTANCE_LIST_END; instance++) {
+        /* cb is the marker for "bt_ots_init() ran here": it is set on entry and
+         * cleared again on every failure path, so it is exactly the set of
+         * instances with something to reverse. Reverse order of that function. */
+        if (instance->cb != NULL) {
+            k_work_deinit_delayable(&instance->olcp_ind.work);
+            k_work_deinit_delayable(&instance->oacp_ind.work);
+
+            if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+                bt_ots_dir_list_deinit(&instance->dir_list);
+            }
+
+            (void)bt_gatt_service_unregister(instance->service);
+            (void)bt_gatt_ots_l2cap_unregister(&instance->l2cap);
+            instance->cb = NULL;
+        }
+
+        if (instance->obj_manager != NULL) {
+            bt_gatt_ots_obj_manager_release(instance->obj_manager);
+            instance->obj_manager = NULL;
+        }
+    }
+
+    instance_cnt = 0;
+}
+
+int bt_gatt_ots_instances_prepare(void)
 {
     uint32_t index;
     struct bt_ots *instance;
@@ -690,7 +818,7 @@ static int bt_gatt_ots_instances_prepare(void)
         instance->obj_manager = bt_gatt_ots_obj_manager_assign();
 
         if (!instance->obj_manager) {
-            LOG_ERR("OTS Object manager instance not available");
+            LOG_ERR("OtsObjMgrInstUnavail");
             return -ENOMEM;
         }
 
@@ -709,10 +837,12 @@ static int bt_gatt_ots_instances_prepare(void)
     return 0;
 }
 
-SYS_INIT(bt_gatt_ots_instances_prepare, APPLICATION,
-         CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
 int bt_gatt_ots_conn_cb_register(void)
 {
     return bt_conn_cb_register_safe((void *)&bt_conn_cb_conn_callbacks);
+}
+
+void bt_gatt_ots_conn_cb_unregister(void)
+{
+    (void)bt_conn_cb_unregister_safe((void *)&bt_conn_cb_conn_callbacks);
 }

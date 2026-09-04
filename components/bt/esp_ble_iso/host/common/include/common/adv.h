@@ -22,6 +22,8 @@ int bt_le_ext_adv_new_safe(uint8_t adv_handle, uint8_t addr_type,
 
 int bt_le_ext_adv_delete_safe(uint8_t adv_handle);
 
+void bt_le_ext_adv_state_reset(void);
+
 #ifdef __cplusplus
 }
 #endif

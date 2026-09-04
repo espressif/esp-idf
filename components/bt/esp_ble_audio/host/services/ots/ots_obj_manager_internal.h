@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +42,8 @@ int bt_gatt_ots_obj_manager_obj_delete(struct bt_gatt_ots_object *obj);
 bool bt_gatt_ots_obj_manager_obj_contains(void *obj_manager, struct bt_gatt_ots_object *obj);
 
 void *bt_gatt_ots_obj_manager_assign(void);
+
+void bt_gatt_ots_obj_manager_release(void *obj_manager);
 
 #ifdef __cplusplus
 }

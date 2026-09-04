@@ -20,6 +20,7 @@
 
 #include "nimble/init.h"
 #include "common/init.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -159,6 +160,9 @@ LOG_MODULE_REGISTER(LEA_NINIT, CONFIG_BT_ISO_LOG_LEVEL);
 
 _Static_assert(TOTAL_CCCDS_COUNT <= CONFIG_BT_NIMBLE_MAX_CCCDS, "Too small BT_NIMBLE_MAX_CCCDS");
 
+static BT_AUDIO_EXT_RAM_BSS_ATTR bool nimble_svcs_registered;
+static BT_AUDIO_EXT_RAM_BSS_ATTR bool nimble_gatts_started;
+
 int bt_le_nimble_audio_init(void)
 {
     int err = 0;
@@ -167,6 +171,23 @@ int bt_le_nimble_audio_init(void)
     if (err) {
         LOG_ERR("[N]SetPrefMtuFail[%d]", err);
         return err;
+    }
+
+#if CONFIG_BT_CSIP_SET_MEMBER
+    bt_le_nimble_csis_state_reset();
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if CONFIG_BT_VCP_VOL_REND
+    bt_le_nimble_vcs_state_reset();
+#endif /* CONFIG_BT_VCP_VOL_REND */
+#if CONFIG_BT_MICP_MIC_DEV
+    bt_le_nimble_mics_state_reset();
+#endif /* CONFIG_BT_MICP_MIC_DEV */
+#if CONFIG_BT_MCS
+    bt_le_nimble_mcs_state_reset();
+#endif /* CONFIG_BT_MCS */
+
+    if (nimble_svcs_registered) {
+        return 0;
     }
 
     ble_svc_gap_init();
@@ -221,6 +242,8 @@ int bt_le_nimble_audio_init(void)
     }
 #endif /* CONFIG_BT_HAS */
 #endif /* (BLE_AUDIO_SVC_DEFERRED_ADD == 0) */
+
+    nimble_svcs_registered = true;
 
     return err;
 }
@@ -442,6 +465,14 @@ int bt_le_nimble_micp_mic_dev_init(void)
 }
 #endif /* CONFIG_BT_MICP_MIC_DEV */
 
+void bt_le_nimble_audio_deinit(void)
+{
+    LOG_DBG("[N]AudioDeinit");
+
+    /* Nothing to release: the services added here are boot-scoped and the defs
+     * NimBLE holds reference no lib memory, so resources_deinit() is safe. */
+}
+
 int bt_le_nimble_audio_start(void *info)
 {
     struct bt_gatt_service *inc_csis_svc = NULL;
@@ -499,10 +530,17 @@ int bt_le_nimble_audio_start(void *info)
     }
 #endif /* CONFIG_BT_GMAP */
 
-    err = ble_gatts_start();
-    if (err) {
-        LOG_ERR("[N]GattsStartFail[%d]", err);
-        return err;
+    /* Once per boot: ble_gatts_start() resets the whole ATT database and only
+     * re-registers defs added since the last start, so calling it again drops
+     * other owners' services. attr_handle_set() still runs every cycle. */
+    if (!nimble_gatts_started) {
+        err = ble_gatts_start();
+        if (err) {
+            LOG_ERR("[N]GattsStartFail[%d]", err);
+            return err;
+        }
+
+        nimble_gatts_started = true;
     }
 
     err = nimble_gatt_attr_handle_set();

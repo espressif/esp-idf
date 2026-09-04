@@ -28,6 +28,7 @@ struct net_buf;
 struct bt_le_iso_cb {
     void (*cis_dis)(struct net_buf *buf);
     void (*cis_est)(struct net_buf *buf);
+    void (*cis_est_v2)(struct net_buf *buf);
     void (*cis_req)(struct net_buf *buf);
     void (*big_create)(struct net_buf *buf);
     void (*big_term)(struct net_buf *buf);
@@ -73,6 +74,10 @@ int bt_le_iso_tx(struct bt_iso_chan *chan,
 int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg);
 
 int bt_le_iso_disconnect(uint16_t conn_handle, uint8_t reason);
+
+void bt_le_iso_state_reset(void);
+
+size_t bt_le_iso_report_busy(void);
 
 int bt_le_iso_init(void);
 

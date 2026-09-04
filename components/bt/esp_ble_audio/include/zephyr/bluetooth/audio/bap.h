@@ -1505,6 +1505,7 @@ struct bt_bap_unicast_server_cb {
  *
  * @return 0 in case of success, negative error code otherwise.
  */
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param);
 int bt_bap_unicast_server_register_safe(const struct bt_bap_unicast_server_register_param *param);
 
 /**
@@ -1521,6 +1522,7 @@ int bt_bap_unicast_server_register_safe(const struct bt_bap_unicast_server_regis
  *
  * @return 0 in case of success, negative error code otherwise.
  */
+int bt_bap_unicast_server_unregister(void);
 int bt_bap_unicast_server_unregister_safe(void);
 
 /**
@@ -1974,7 +1976,8 @@ struct bt_bap_unicast_client_cb {
      * @param dir       The type of remote endpoints and capabilities discovered.
      * @param codec_cap Remote capabilities.
      *
-     * If discovery procedure has complete both @p codec and @p ep are set to NULL.
+     * Called once per record; the end of the procedure is reported by the
+     * discover callback below, not by a NULL @p codec_cap.
      */
     void (*pac_record)(struct bt_conn *conn, enum bt_audio_dir dir,
                        const struct bt_audio_codec_cap *codec_cap);
@@ -1988,21 +1991,21 @@ struct bt_bap_unicast_client_cb {
      * @param dir      The type of remote endpoints and capabilities discovered.
      * @param ep       Remote endpoint.
      *
-     * If discovery procedure has complete both @p codec and @p ep are set to NULL.
+     * Called once per endpoint; the end of the procedure is reported by the
+     * discover callback below, not by a NULL @p ep.
      */
     void (*endpoint)(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep);
 
     /**
      * @brief BAP discovery callback function.
      *
-     * If discovery procedure has completed @p ep is set to NULL and @p err is 0.
+     * Called once the discovery procedure has completed, for the direction it
+     * covered.
      *
      * @param conn     Connection to the remote unicast server.
      * @param err      Error value. 0 on success, GATT error on positive value or errno on
      *                 negative value.
      * @param dir      The type of remote endpoints and capabilities discovered.
-     *
-     * If discovery procedure has complete both @p codec and @p ep are set to NULL.
      */
     void (*discover)(struct bt_conn *conn, int err, enum bt_audio_dir dir);
 
@@ -2695,6 +2698,7 @@ int bt_bap_broadcast_sink_delete_safe(struct bt_bap_broadcast_sink *sink);
  *
  * @return 0 in case of success or negative value in case of error.
  */
+int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
 int bt_bap_scan_delegator_register_safe(struct bt_bap_scan_delegator_cb *cb);
 
 /**
@@ -2705,6 +2709,7 @@ int bt_bap_scan_delegator_register_safe(struct bt_bap_scan_delegator_cb *cb);
  *
  * @return 0 in case of success or negative value in case of error.
  */
+int bt_bap_scan_delegator_unregister(void);
 int bt_bap_scan_delegator_unregister_safe(void);
 
 /**

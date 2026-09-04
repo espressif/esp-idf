@@ -6,6 +6,9 @@
 
 config BT_AUDIO
     bool # hidden
+    # esp_ble_audio needs esp_ble_iso's headers (<zephyr/*>) and symbols
+    # (bt_gatt_*/bt_conn_*/k_*), and both are gated on BT_ISO.
+    select BT_ISO
     help
         This option enables Bluetooth Audio support. The specific
         features that are available may depend on other features
@@ -99,6 +102,40 @@ menu "OTS Options"
     rsource "host/services/ots/Kconfig.ots.in"
 endmenu
 
+config BT_AUDIO_BSS_SEG_EXTERNAL_MEMORY
+    bool "Place BLE Audio .bss segment in external SPIRAM"
+    depends on BT_ISO_BSS_SEG_EXTERNAL_MEMORY
+    default n
+    help
+        Place the zero-initialized (.bss) static data of the BLE Audio
+        profiles in external SPIRAM instead of internal DRAM. Covers both the
+        esp_ble_audio IDF source files and the .bss of the prebuilt BLE Audio
+        library (libble_audio.a), the latter relocated via a linker fragment.
+
+        Depends on BT_ISO_BSS_SEG_EXTERNAL_MEMORY: the audio layer sits on top
+        of the ISO/host layer, so its static data is moved to SPIRAM only when
+        the ISO layer's is, keeping the placement coherent.
+
+        Requires SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY. Only .bss is moved;
+        initialized (.data) statistics stay internal.
+
+config BT_AUDIO_HEAP_EXTERNAL_MEMORY
+    bool "Place BLE Audio heap allocations in external SPIRAM"
+    depends on BT_ISO_HEAP_EXTERNAL_MEMORY
+    default n
+    help
+        Route BLE Audio runtime heap allocations to external SPIRAM instead of
+        internal DRAM. Covers both the esp_ble_audio profiles and the prebuilt
+        BLE Audio library (libble_audio.a): both allocate via idf_ext_calloc /
+        idf_ext_malloc, which this switch points at the ISO layer's SPIRAM
+        helper (heap_caps_*(MALLOC_CAP_SPIRAM)).
+
+        Depends on BT_ISO_HEAP_EXTERNAL_MEMORY: the audio allocator hook reuses
+        the ISO layer's helper, available only when the ISO layer routes to
+        SPIRAM too.
+
+        On SPIRAM exhaustion allocations return NULL (no internal fallback).
+
 config BT_AUDIO_NO_LOG
     bool "Disable BLE Audio Lib Debug Log"
     default n
@@ -117,6 +154,8 @@ menu "BLE Audio Lib Debug Log Level"
 
     choice BT_AUDIO_LOG_LEVEL
         prompt "BLE_AUDIO_LIB_LOG_LEVEL"
+        default BT_AUDIO_LOG_LEVEL_INFO if BT_LOG_CRITICAL_ONLY_ISO
+        default BT_AUDIO_LOG_LEVEL_DEBUG if BLE_COMPRESSED_LOG_ENABLE
         default BT_AUDIO_LOG_LEVEL_WARNING
         depends on !BT_AUDIO_NO_LOG
         help

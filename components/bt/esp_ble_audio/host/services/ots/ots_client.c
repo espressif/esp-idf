@@ -2,6 +2,7 @@
  *  @brief Bluetooth Object Transfer Client
  *
  * SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,13 +132,14 @@ static void read_next_metadata(struct bt_conn *conn,
 static int read_attr(struct bt_conn *conn,
                      struct bt_otc_internal_instance_t *inst,
                      uint16_t handle, bt_gatt_read_func_t cb);
+static void oacp_clr_cur_inst(struct bt_otc_internal_instance_t *inst);
 
 /* L2CAP callbacks */
 static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
                     struct bt_conn *conn)
 {
     /* Not doing any writes yet */
-    LOG_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+    LOG_ERR("OtsCliUnexpCall");
 }
 
 static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -147,16 +149,16 @@ static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
     size_t written;
 
     if (cur_inst == NULL) {
-        LOG_ERR("OTS instance invalid");
+        LOG_ERR("OtsCliInstInv");
         return;
     }
 
     written = cur_inst->sent_size;
-    LOG_DBG("ctx: %p, conn: %p, written: %d", l2cap_ctx, (void *)conn, written);
+    LOG_DBG("OtsCliObjWritten[%zu]", written);
 
     err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
     if (err < 0) {
-        LOG_WRN("Disconnecting L2CAP returned error %d", err);
+        LOG_WRN("OtsCliL2capDiscErr[%d]", err);
     }
 
     if ((cur_inst->otc_inst != NULL) && (cur_inst->otc_inst->cb != NULL)) {
@@ -172,36 +174,40 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
                        struct bt_conn *conn, struct net_buf *buf)
 {
     if (cur_inst == NULL) {
-        LOG_ERR("OTS instance invalid");
+        LOG_ERR("OtsCliInstInv");
         return -EINVAL;
     }
 
     const uint32_t offset = cur_inst->rcvd_size;
+    uint32_t len = buf->len;
     bool is_complete = false;
     const struct bt_ots_obj_metadata *cur_object =
             &cur_inst->otc_inst->cur_object;
     int cb_ret;
 
-    LOG_DBG("Incoming L2CAP data, context: %p, conn: %p, len: %u, offset: %u", l2cap_ctx,
-            (void *)conn, buf->len, offset);
+    LOG_DBG("OtsCliL2capRecv[%u][%u]", buf->len, offset);
 
-    cur_inst->rcvd_size += buf->len;
-
-    if (cur_inst->rcvd_size >= cur_object->size.cur) {
-        is_complete = true;
+    if (offset >= cur_object->size.cur) {
+        LOG_WRN("OtsCliRecvPastEnd[%u][%u]", offset, cur_object->size.cur);
+        (void)bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
+        cur_inst = NULL;
+        return -EMSGSIZE;
     }
 
-    if (cur_inst->rcvd_size > cur_object->size.cur) {
-        LOG_WRN("Received %u but expected maximum %u", cur_inst->rcvd_size,
-                cur_object->size.cur);
+    if (offset + len > cur_object->size.cur) {
+        LOG_WRN("OtsCliRecvExceedMax[%u][%u]", offset + len, cur_object->size.cur);
+        len = cur_object->size.cur - offset;
     }
+
+    cur_inst->rcvd_size = offset + len;
+    is_complete = (cur_inst->rcvd_size >= cur_object->size.cur);
 
     if (cur_inst->otc_inst->cb != NULL && cur_inst->otc_inst->cb->obj_data_read != NULL) {
         cb_ret = cur_inst->otc_inst->cb->obj_data_read(cur_inst->otc_inst, conn, offset,
-                                                       buf->len, buf->data,
+                                                       len, buf->data,
                                                        is_complete);
     } else {
-        LOG_ERR("obj_data_read callback not set");
+        LOG_ERR("OtsCliObjDataRdCbNull");
         return -EINVAL;
     }
 
@@ -209,11 +215,10 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
         const uint32_t rcv_size = cur_object->size.cur;
         int err;
 
-        LOG_DBG("Received the whole object (%u bytes). "
-                "Disconnecting L2CAP CoC", rcv_size);
+        LOG_DBG("OtsCliRecvWholeObj[%u]", rcv_size);
         err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
         if (err < 0) {
-            LOG_WRN("Disconnecting L2CAP returned error %d", err);
+            LOG_WRN("OtsCliL2capDiscErr[%d]", err);
         }
 
         cur_inst = NULL;
@@ -221,12 +226,11 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
         const uint32_t rcv_size = cur_object->size.cur;
         int err;
 
-        LOG_DBG("Stopped receiving after%u bytes. "
-                "Disconnecting L2CAP CoC", rcv_size);
+        LOG_DBG("OtsCliRecvStopped[%u]", rcv_size);
         err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
 
         if (err < 0) {
-            LOG_WRN("Disconnecting L2CAP returned error %d", err);
+            LOG_WRN("OtsCliL2capDiscErr[%d]", err);
         }
 
         cur_inst = NULL;
@@ -238,10 +242,15 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
                         struct bt_conn *conn)
 {
-    LOG_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
-    if (cur_inst) {
-        cur_inst = NULL;
-    }
+    struct bt_otc_internal_instance_t *inst =
+        CONTAINER_OF(l2cap_ctx, struct bt_otc_internal_instance_t, l2cap_ctx);
+
+    ARG_UNUSED(conn);
+
+    LOG_DBG("OtsCliL2capClosed");
+
+    /* Only release if this channel belonged to the active transfer. */
+    oacp_clr_cur_inst(inst);
 }
 /* End L2CAP callbacks */
 
@@ -249,14 +258,14 @@ static void print_oacp_response(enum bt_gatt_ots_oacp_proc_type req_opcode,
                                 enum bt_gatt_ots_oacp_res_code result_code)
 {
     if (req_opcode < ARRAY_SIZE(lit_request)) {
-        LOG_DBG("Request OP Code: %s", lit_request[req_opcode]);
+        LOG_DBG("OtsCliReqOpcode[%s]", lit_request[req_opcode]);
     } else {
-        LOG_DBG("Request OP Code: Unknown (0x%02X)", req_opcode);
+        LOG_DBG("OtsCliReqOpcodeUnk[%02x]", req_opcode);
     }
     if (result_code < ARRAY_SIZE(lit_result)) {
-        LOG_DBG("Result Code    : %s", lit_result[result_code]);
+        LOG_DBG("OtsCliResultCode[%s]", lit_result[result_code]);
     } else {
-        LOG_DBG("Result Code    : Unknown (0x%02X)", result_code);
+        LOG_DBG("OtsCliResultCodeUnk[%02x]", result_code);
     }
 }
 
@@ -264,14 +273,14 @@ static void print_olcp_response(enum bt_gatt_ots_olcp_proc_type req_opcode,
                                 enum bt_gatt_ots_olcp_res_code result_code)
 {
     if (req_opcode < ARRAY_SIZE(lit_olcp_request)) {
-        LOG_DBG("Request OP Code: %s", lit_olcp_request[req_opcode]);
+        LOG_DBG("OtsCliReqOpcode[%s]", lit_olcp_request[req_opcode]);
     } else {
-        LOG_DBG("Request OP Code: Unknown (0x%02X)", req_opcode);
+        LOG_DBG("OtsCliReqOpcodeUnk[%02x]", req_opcode);
     }
     if (result_code < ARRAY_SIZE(lit_olcp_result)) {
-        LOG_DBG("Result Code    : %s", lit_olcp_result[result_code]);
+        LOG_DBG("OtsCliResultCode[%s]", lit_olcp_result[result_code]);
     } else {
-        LOG_DBG("Result Code    : Unknown (0x%02X)", result_code);
+        LOG_DBG("OtsCliResultCodeUnk[%02x]", result_code);
     }
 }
 
@@ -296,7 +305,7 @@ static struct bt_otc_internal_instance_t *lookup_inst_by_handle(uint16_t handle)
         }
     }
 
-    LOG_DBG("Could not find OTS instance with handle 0x%04x", handle);
+    LOG_DBG("OtsCliLkupInstNotFound[%04x]", handle);
 
     return NULL;
 }
@@ -312,7 +321,7 @@ static void on_object_selected(struct bt_conn *conn,
         otc_inst->cb->obj_selected(otc_inst, conn, res);
     }
 
-    LOG_DBG("Object selected");
+    LOG_DBG("OtsCliObjSel");
 }
 
 static void olcp_ind_handler(struct bt_conn *conn,
@@ -322,8 +331,10 @@ static void olcp_ind_handler(struct bt_conn *conn,
     enum bt_gatt_ots_olcp_proc_type op_code;
     struct net_buf_simple net_buf;
 
-    if (length < sizeof(op_code)) {
-        LOG_DBG("Invalid indication length: %u", length);
+    /* Op Code is 1 byte on the wire; sizeof(enum) is 4 here and would reject
+     * every valid 3-byte response. */
+    if (length < sizeof(uint8_t)) {
+        LOG_WRN("OtsCliInvIndLen[%u]", length);
         return;
     }
 
@@ -331,12 +342,11 @@ static void olcp_ind_handler(struct bt_conn *conn,
 
     op_code = net_buf_simple_pull_u8(&net_buf);
 
-    LOG_DBG("OLCP indication");
+    LOG_DBG("OtsCliOlcpInd");
 
     if (op_code == BT_GATT_OTS_OLCP_PROC_RESP) {
         if (net_buf.len < (sizeof(uint8_t) + sizeof(uint8_t))) {
-            LOG_DBG("Invalid indication length for op_code %u: %u", op_code,
-                    net_buf.len);
+            LOG_WRN("OtsCliInvIndLenForOpcode[%u][%u]", op_code, net_buf.len);
             return;
         }
 
@@ -349,61 +359,72 @@ static void olcp_ind_handler(struct bt_conn *conn,
 
         switch (req_opcode) {
         case BT_GATT_OTS_OLCP_PROC_FIRST:
-            LOG_DBG("First");
+            LOG_DBG("OtsCliFirst");
             on_object_selected(conn, result_code, otc_inst);
             break;
         case BT_GATT_OTS_OLCP_PROC_LAST:
-            LOG_DBG("Last");
+            LOG_DBG("OtsCliLast");
             on_object_selected(conn, result_code, otc_inst);
             break;
         case BT_GATT_OTS_OLCP_PROC_PREV:
-            LOG_DBG("Previous");
+            LOG_DBG("OtsCliPrev");
             on_object_selected(conn, result_code, otc_inst);
             break;
         case BT_GATT_OTS_OLCP_PROC_NEXT:
-            LOG_DBG("Next");
+            LOG_DBG("OtsCliNext");
             on_object_selected(conn, result_code, otc_inst);
             break;
         case BT_GATT_OTS_OLCP_PROC_GOTO:
-            LOG_DBG("Goto");
+            LOG_DBG("OtsCliGoto");
             on_object_selected(conn, result_code, otc_inst);
             break;
         case BT_GATT_OTS_OLCP_PROC_ORDER:
-            LOG_DBG("Order");
+            LOG_DBG("OtsCliOrder");
             on_object_selected(conn, result_code, otc_inst);
             break;
         case BT_GATT_OTS_OLCP_PROC_REQ_NUM_OBJS:
-            LOG_DBG("Request number of objects");
+            LOG_DBG("OtsCliReqNumObjs");
             if (net_buf.len == sizeof(uint32_t)) {
                 uint32_t obj_cnt =
                     net_buf_simple_pull_le32(&net_buf);
-                LOG_DBG("Number of objects %u", obj_cnt);
+                LOG_DBG("OtsCliNumObjs[%u]", obj_cnt);
             }
             break;
         case BT_GATT_OTS_OLCP_PROC_CLEAR_MARKING:
-            LOG_DBG("Clear marking");
+            LOG_DBG("OtsCliClearMarking");
             break;
         default:
-            LOG_DBG("Invalid indication req opcode %u", req_opcode);
+            LOG_WRN("OtsCliInvIndReqOpcode[%u]", req_opcode);
             break;
         }
     } else {
-        LOG_DBG("Invalid indication opcode %u", op_code);
+        LOG_WRN("OtsCliInvIndOpcode[%u]", op_code);
+    }
+}
+
+static void oacp_clr_cur_inst(struct bt_otc_internal_instance_t *inst)
+{
+    if (cur_inst == inst) {
+        cur_inst = NULL;
     }
 }
 
 static void oacp_ind_handler(struct bt_conn *conn,
-                             struct bt_ots_client *otc_inst,
+                             struct bt_otc_internal_instance_t *inst,
                              const void *data, uint16_t length)
 {
+    struct bt_ots_client *otc_inst = inst->otc_inst;
     enum bt_gatt_ots_oacp_proc_type op_code;
     enum bt_gatt_ots_oacp_proc_type req_opcode;
     enum bt_gatt_ots_oacp_res_code result_code;
     uint32_t checksum;
     struct net_buf_simple net_buf;
 
-    if (length < sizeof(op_code)) {
-        LOG_DBG("Invalid indication length: %u", length);
+    /* Op Code is 1 byte on the wire; sizeof(enum) is 4 here and would reject
+     * every valid 3-byte response. */
+    if (length < sizeof(uint8_t)) {
+        LOG_WRN("OtsCliInvIndLen[%u]", length);
+        oacp_clr_cur_inst(inst);
         return;
     }
 
@@ -411,35 +432,44 @@ static void oacp_ind_handler(struct bt_conn *conn,
 
     op_code = net_buf_simple_pull_u8(&net_buf);
 
-    LOG_DBG("OACP indication");
+    LOG_DBG("OtsCliOacpInd");
 
     if (op_code == BT_GATT_OTS_OACP_PROC_RESP) {
-        if (net_buf.len >= (sizeof(req_opcode) + sizeof(result_code))) {
+        if (net_buf.len >= (sizeof(uint8_t) + sizeof(uint8_t))) {
             req_opcode = net_buf_simple_pull_u8(&net_buf);
             result_code = net_buf_simple_pull_u8(&net_buf);
         } else {
-            LOG_ERR("Invalid indication data len %u", net_buf.len);
+            LOG_WRN("OtsCliInvIndDataLen[%u]", net_buf.len);
+            oacp_clr_cur_inst(inst);
             return;
         }
 
         if (req_opcode == BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC) {
             if (net_buf.len == sizeof(checksum)) {
                 checksum = net_buf_simple_pull_le32(&net_buf);
-                LOG_DBG("Object checksum 0x%08x", checksum);
+                LOG_DBG("OtsCliObjChecksum[%08x]", checksum);
                 if (otc_inst->cb && otc_inst->cb->obj_checksum_calculated) {
                     otc_inst->cb->obj_checksum_calculated(
                         otc_inst, conn, result_code, checksum);
                 }
             } else {
-                LOG_ERR("Invalid indication data len %u after opcode and result "
-                        "pulled", net_buf.len);
-                return;
+                LOG_WRN("OtsCliInvChecksumLen[%u]", net_buf.len);
             }
+            /* Checksum never uses L2CAP; always release cur_inst. */
+            oacp_clr_cur_inst(inst);
+        } else if ((req_opcode == BT_GATT_OTS_OACP_PROC_READ ||
+                    req_opcode == BT_GATT_OTS_OACP_PROC_WRITE) &&
+                   result_code != BT_GATT_OTS_OACP_RES_SUCCESS) {
+            /* Read/Write SUCCESS still waits on L2CAP (rx/tx_done/closed). */
+            LOG_DBG("OtsCliOacpFailClr[%02x][%02x]", req_opcode, result_code);
+            oacp_clr_cur_inst(inst);
+            (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
         }
 
         print_oacp_response(req_opcode, result_code);
     } else {
-        LOG_DBG("Invalid indication opcode %u", op_code);
+        LOG_WRN("OtsCliInvIndOpcode[%u]", op_code);
+        oacp_clr_cur_inst(inst);
     }
 }
 
@@ -461,7 +491,7 @@ uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
      */
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
@@ -471,7 +501,7 @@ uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
         if (handle == inst->otc_inst->olcp_handle) {
             olcp_ind_handler(conn, inst->otc_inst, data, length);
         } else if (handle == inst->otc_inst->oacp_handle) {
-            oacp_ind_handler(conn, inst->otc_inst, data, length);
+            oacp_ind_handler(conn, inst, data, length);
         }
     }
     return BT_GATT_ITER_CONTINUE;
@@ -491,14 +521,14 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
     net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
     inst->busy = false;
 
     if (err) {
-        LOG_DBG("err: 0x%02X", err);
+        LOG_WRN("OtsCliRdErr[%02x]", err);
     } else if (data) {
         if (length == OTS_FEATURE_LEN) {
             inst->otc_inst->features.oacp =
@@ -507,10 +537,9 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
             inst->otc_inst->features.olcp =
                 net_buf_simple_pull_le32(&net_buf);
 
-            LOG_DBG("features : oacp 0x%x, olcp 0x%x", inst->otc_inst->features.oacp,
-                    inst->otc_inst->features.olcp);
+            LOG_DBG("OtsCliFeat[%x][%x]", inst->otc_inst->features.oacp, inst->otc_inst->features.olcp);
         } else {
-            LOG_DBG("Invalid length %u (expected %u)", length, OTS_FEATURE_LEN);
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, OTS_FEATURE_LEN);
             cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
         }
     }
@@ -518,8 +547,50 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
     return BT_GATT_ITER_STOP;
 }
 
+/* Disconnect fires no subscription callback, so the OLCP/OACP indication that
+ * releases busy never arrives — an in-flight procedure would strand -EBUSY. */
+static void ots_client_conn_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+    ARG_UNUSED(conn);
+    ARG_UNUSED(reason);
+
+    for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
+        struct bt_otc_internal_instance_t *inst = &otc_insts[i];
+
+        if (inst->otc_inst == NULL || !inst->busy) {
+            continue;
+        }
+
+        LOG_WRN("OtsCliDisconnBusy[%d]", i);
+
+        inst->busy = false;
+        oacp_clr_cur_inst(inst);
+    }
+}
+
+BT_CONN_CB_DEFINE(client_conn_callbacks) = {
+    .disconnected = ots_client_conn_disconnected,
+};
+
+int bt_gatt_ots_client_conn_cb_register(void)
+{
+    return bt_conn_cb_register_safe((void *)&bt_conn_cb_client_conn_callbacks);
+}
+
+void bt_gatt_ots_client_conn_cb_unregister(void)
+{
+    (void)bt_conn_cb_unregister_safe((void *)&bt_conn_cb_client_conn_callbacks);
+}
+
 int bt_ots_client_register(struct bt_ots_client *otc_inst)
 {
+    /* A NULL inst would leave the slot marked free after registering its
+     * L2CAP node, so the next call re-appends the same node and self-links it. */
+    if (otc_inst == NULL) {
+        LOG_ERR("OtsCliInvInst");
+        return -EINVAL;
+    }
+
     for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
         int err;
 
@@ -527,10 +598,10 @@ int bt_ots_client_register(struct bt_ots_client *otc_inst)
             continue;
         }
 
-        LOG_DBG("%u", i);
+        LOG_DBG("OtsCliRegInst[%d]", i);
         err = bt_gatt_ots_l2cap_register(&otc_insts[i].l2cap_ctx);
         if (err) {
-            LOG_WRN("Could not register L2CAP context %d", err);
+            LOG_WRN("OtsCliL2capCtxRegFail[%d]", err);
             return err;
         }
 
@@ -541,18 +612,41 @@ int bt_ots_client_register(struct bt_ots_client *otc_inst)
     return -ENOMEM;
 }
 
+__attribute__((unused))
 int bt_ots_client_unregister(uint8_t index)
 {
-    if (index < ARRAY_SIZE(otc_insts)) {
-        bt_gatt_ots_l2cap_unregister(&otc_insts[index].l2cap_ctx);
-        memset(&otc_insts[index], 0, sizeof(otc_insts[index]));
-    } else {
+    int err;
+
+    if (index >= ARRAY_SIZE(otc_insts)) {
         return -EINVAL;
     }
+
+    err = bt_gatt_ots_l2cap_unregister(&otc_insts[index].l2cap_ctx);
+    if (err) {
+        LOG_WRN("OtsCliL2capUnregFail[%d]", err);
+        return err;
+    }
+
+    if (cur_inst == &otc_insts[index]) {
+        LOG_DBG("OtsCliUnregClrCurInst[%u]", index);
+        cur_inst = NULL;
+    }
+
+    memset(&otc_insts[index], 0, sizeof(otc_insts[index]));
 
     return 0;
 }
 
+void bt_ots_client_unregister_all(void)
+{
+    for (uint8_t i = 0; i < ARRAY_SIZE(otc_insts); i++) {
+        if (otc_insts[i].otc_inst != NULL) {
+            (void)bt_ots_client_unregister(i);
+        }
+    }
+}
+
+__attribute__((unused))
 int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
                                struct bt_conn *conn)
 {
@@ -561,20 +655,20 @@ int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
         int err;
 
         if (!conn) {
-            LOG_WRN("Invalid Connection");
+            LOG_WRN("OtsCliInvConn");
             return -ENOTCONN;
         } else if (!otc_inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (!otc_inst->feature_handle) {
-            LOG_DBG("Handle not set");
+            LOG_DBG("OtsCliHdlNotSet");
             return -EINVAL;
         }
 
         inst = lookup_inst_by_handle(otc_inst->start_handle);
 
         if (!inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (inst->busy) {
             return -EBUSY;
@@ -592,7 +686,7 @@ int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
         return err;
     }
 
-    LOG_DBG("Not supported");
+    LOG_DBG("OtsCliNotSupp");
     return -EOPNOTSUPP;
 }
 
@@ -602,14 +696,22 @@ static void write_olcp_cb(struct bt_conn *conn, uint8_t err,
     struct bt_otc_internal_instance_t *inst =
         lookup_inst_by_handle(params->handle);
 
-    LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
+    LOG_DBG("OtsCliWrCpCb[%02x]", err);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return;
     }
 
-    inst->busy = false;
+    /* Keep busy until OLCP indication; only release on write failure.
+     * Notify the app — without an indication, obj_selected would never fire.
+     */
+    if (err) {
+        LOG_WRN("OtsCliOlcpWrFail[%02x]", err);
+        inst->busy = false;
+        on_object_selected(conn, BT_GATT_OTS_OLCP_RES_OPERATION_FAILED,
+                           inst->otc_inst);
+    }
 }
 
 static int write_olcp(struct bt_otc_internal_instance_t *inst,
@@ -640,12 +742,13 @@ static int write_olcp(struct bt_otc_internal_instance_t *inst,
     return err;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
                             struct bt_conn *conn,
                             uint64_t obj_id)
 {
     CHECKIF(!BT_OTS_VALID_OBJ_ID(obj_id)) {
-        LOG_DBG("Invalid object ID 0x%016llx", obj_id);
+        LOG_WRN("OtsCliInvObjId[%016llx]", obj_id);
 
         return -EINVAL;
     }
@@ -655,20 +758,20 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
         uint8_t param[BT_OTS_OBJ_ID_SIZE];
 
         if (!conn) {
-            LOG_WRN("Invalid Connection");
+            LOG_WRN("OtsCliInvConn");
             return -ENOTCONN;
         } else if (!otc_inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (!otc_inst->olcp_handle) {
-            LOG_DBG("Handle not set");
+            LOG_DBG("OtsCliHdlNotSet");
             return -EINVAL;
         }
 
         inst = lookup_inst_by_handle(otc_inst->start_handle);
 
         if (!inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (inst->busy) {
             return -EBUSY;
@@ -682,10 +785,11 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
                           param, BT_OTS_OBJ_ID_SIZE);
     }
 
-    LOG_DBG("Not supported");
+    LOG_DBG("OtsCliNotSupp");
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
                                struct bt_conn *conn)
 {
@@ -693,20 +797,20 @@ int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
         struct bt_otc_internal_instance_t *inst;
 
         if (!conn) {
-            LOG_WRN("Invalid Connection");
+            LOG_WRN("OtsCliInvConn");
             return -ENOTCONN;
         } else if (!otc_inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (!otc_inst->olcp_handle) {
-            LOG_DBG("Handle not set");
+            LOG_DBG("OtsCliHdlNotSet");
             return -EINVAL;
         }
 
         inst = lookup_inst_by_handle(otc_inst->start_handle);
 
         if (!inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (inst->busy) {
             return -EBUSY;
@@ -716,10 +820,11 @@ int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
                           NULL, 0);
     }
 
-    LOG_DBG("Not supported");
+    LOG_DBG("OtsCliNotSupp");
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
                               struct bt_conn *conn)
 {
@@ -727,20 +832,20 @@ int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
         struct bt_otc_internal_instance_t *inst;
 
         if (!conn) {
-            LOG_WRN("Invalid Connection");
+            LOG_WRN("OtsCliInvConn");
             return -ENOTCONN;
         } else if (!otc_inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (!otc_inst->olcp_handle) {
-            LOG_DBG("Handle not set");
+            LOG_DBG("OtsCliHdlNotSet");
             return -EINVAL;
         }
 
         inst = lookup_inst_by_handle(otc_inst->start_handle);
 
         if (!inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (inst->busy) {
             return -EBUSY;
@@ -751,10 +856,11 @@ int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
 
     }
 
-    LOG_DBG("Not supported");
+    LOG_DBG("OtsCliNotSupp");
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
                               struct bt_conn *conn)
 {
@@ -762,20 +868,20 @@ int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
         struct bt_otc_internal_instance_t *inst;
 
         if (!conn) {
-            LOG_WRN("Invalid Connection");
+            LOG_WRN("OtsCliInvConn");
             return -ENOTCONN;
         } else if (!otc_inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (!otc_inst->olcp_handle) {
-            LOG_DBG("Handle not set");
+            LOG_DBG("OtsCliHdlNotSet");
             return -EINVAL;
         }
 
         inst = lookup_inst_by_handle(otc_inst->start_handle);
 
         if (!inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (inst->busy) {
             return -EBUSY;
@@ -785,10 +891,11 @@ int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
                           NULL, 0);
     }
 
-    LOG_DBG("Not supported");
+    LOG_DBG("OtsCliNotSupp");
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
                               struct bt_conn *conn)
 {
@@ -796,20 +903,20 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
         struct bt_otc_internal_instance_t *inst;
 
         if (!conn) {
-            LOG_WRN("Invalid Connection");
+            LOG_WRN("OtsCliInvConn");
             return -ENOTCONN;
         } else if (!otc_inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (!otc_inst->olcp_handle) {
-            LOG_DBG("Handle not set");
+            LOG_DBG("OtsCliHdlNotSet");
             return -EINVAL;
         }
 
         inst = lookup_inst_by_handle(otc_inst->start_handle);
 
         if (!inst) {
-            LOG_ERR("Invalid OTC instance");
+            LOG_ERR("OtsCliInvInst");
             return -EINVAL;
         } else if (inst->busy) {
             return -EBUSY;
@@ -819,7 +926,7 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
                           NULL, 0);
     }
 
-    LOG_DBG("Not supported");
+    LOG_DBG("OtsCliNotSupp");
     return -EOPNOTSUPP;
 }
 
@@ -833,18 +940,18 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 
     net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-    LOG_DBG("handle %d, length %u", params->single.handle, length);
+    LOG_DBG("OtsCliRdCb[%u][%u]", params->single.handle, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
     if (err) {
-        LOG_DBG("err: 0x%02X", err);
+        LOG_WRN("OtsCliRdErr[%02x]", err);
     } else if (data) {
         if (length != OTS_SIZE_LEN) {
-            LOG_DBG("Invalid length %u (expected %u)", length, OTS_SIZE_LEN);
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, OTS_SIZE_LEN);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
         } else {
             struct bt_ots_obj_metadata *cur_object =
@@ -854,21 +961,14 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
             cur_object->size.alloc =
                 net_buf_simple_pull_le32(&net_buf);
 
-            LOG_DBG("Object Size : current size %u, "
-                    "allocated size %u",
-                    cur_object->size.cur,
-                    cur_object->size.alloc);
+            LOG_DBG("OtsCliObjSize[%u][%u]", cur_object->size.cur, cur_object->size.alloc);
 
             if (cur_object->size.cur == 0) {
-                LOG_WRN("Obj size read returned a current "
-                        "size of 0");
+                LOG_WRN("OtsCliObjSizeZero");
             } else if (cur_object->size.cur >
                        cur_object->size.alloc &&
                        cur_object->size.alloc != 0) {
-                LOG_WRN("Allocated size %u is smaller than "
-                        "current size %u",
-                        cur_object->size.alloc,
-                        cur_object->size.cur);
+                LOG_WRN("OtsCliAllocLtCurSize[%u][%u]", cur_object->size.alloc, cur_object->size.cur);
             }
 
             BT_OTS_SET_METADATA_REQ_SIZE(inst->metadata_read);
@@ -876,7 +976,7 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
     }
 
     if (err) {
-        LOG_WRN("err: 0x%02X", err);
+        LOG_WRN("OtsCliMetaRdErr[%02x]", err);
         if (!inst->metadata_err) {
             inst->metadata_err = err;
         }
@@ -897,15 +997,15 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 
     net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-    LOG_DBG("handle %d, length %u", params->single.handle, length);
+    LOG_DBG("OtsCliRdCb[%u][%u]", params->single.handle, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
     if (err) {
-        LOG_DBG("err: 0x%02X", err);
+        LOG_WRN("OtsCliRdErr[%02x]", err);
     } else if (data) {
         if (length == BT_OTS_OBJ_ID_SIZE) {
             uint64_t obj_id = net_buf_simple_pull_le48(&net_buf);
@@ -914,7 +1014,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
                     &inst->otc_inst->cur_object;
 
             (void)bt_ots_obj_id_to_str(obj_id, t, sizeof(t));
-            LOG_DBG("Object Id : %s", t);
+            LOG_DBG("OtsCliObjId[%s]", t);
 
             if (cur_object->id != OTS_CLIENT_UNKNOWN_ID &&
                     cur_object->id != obj_id) {
@@ -922,21 +1022,21 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 
                 (void)bt_ots_obj_id_to_str(cur_object->id, str,
                                            sizeof(str));
-                LOG_INF("Read Obj Id %s not selected obj Id %s", t, str);
+                LOG_INF("OtsCliRdObjIdNotSel[%s][%s]", t, str);
             } else {
-                LOG_INF("Read Obj Id confirmed correct Obj Id");
+                LOG_INF("OtsCliRdObjIdConfirmed");
                 cur_object->id = obj_id;
 
                 BT_OTS_SET_METADATA_REQ_ID(inst->metadata_read);
             }
         } else {
-            LOG_DBG("Invalid length %u (expected %u)", length, BT_OTS_OBJ_ID_SIZE);
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, BT_OTS_OBJ_ID_SIZE);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
         }
     }
 
     if (err) {
-        LOG_WRN("err: 0x%02X", err);
+        LOG_WRN("OtsCliMetaRdErr[%02x]", err);
         if (!inst->metadata_err) {
             inst->metadata_err = err;
         }
@@ -954,10 +1054,10 @@ static uint8_t read_obj_name_cb(struct bt_conn *conn, uint8_t err,
     struct bt_otc_internal_instance_t *inst =
         lookup_inst_by_handle(params->single.handle);
 
-    LOG_DBG("handle %d, length %u", params->single.handle, length);
+    LOG_DBG("OtsCliRdCb[%u][%u]", params->single.handle, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
@@ -968,14 +1068,13 @@ static uint8_t read_obj_name_cb(struct bt_conn *conn, uint8_t err,
 
             BT_OTS_SET_METADATA_REQ_NAME(inst->metadata_read);
         } else {
-            LOG_WRN("Invalid length %u (expected max %u)", length,
-                    CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
         }
     }
 
     if (err) {
-        LOG_WRN("err: 0x%02X", err);
+        LOG_WRN("OtsCliMetaRdErr[%02x]", err);
         if (!inst->metadata_err) {
             inst->metadata_err = err;
         }
@@ -993,10 +1092,10 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
     struct bt_otc_internal_instance_t *inst =
         lookup_inst_by_handle(params->single.handle);
 
-    LOG_DBG("handle %d, length %u", params->single.handle, length);
+    LOG_DBG("OtsCliRdCb[%u][%u]", params->single.handle, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
@@ -1007,22 +1106,22 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
                     &inst->otc_inst->cur_object.type.uuid;
 
             if (!bt_uuid_create(uuid, data, length)) {
-                LOG_WRN("Failed to create UUID from data");
+                LOG_WRN("OtsCliUuidCreateFail");
                 err = BT_ATT_ERR_UNLIKELY;
             } else {
                 bt_uuid_to_str(uuid, uuid_str, sizeof(uuid_str));
-                LOG_DBG("UUID type read: %s", uuid_str);
+                LOG_DBG("OtsCliUuidTypeRd[%s]", uuid_str);
 
                 BT_OTS_SET_METADATA_REQ_TYPE(inst->metadata_read);
             }
         } else {
-            LOG_WRN("Invalid length %u (expected max %u)", length, OTS_TYPE_MAX_LEN);
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, OTS_TYPE_MAX_LEN);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
         }
     }
 
     if (err) {
-        LOG_WRN("err: 0x%02X", err);
+        LOG_WRN("OtsCliMetaRdErr[%02x]", err);
         if (!inst->metadata_err) {
             inst->metadata_err = err;
         }
@@ -1043,10 +1142,10 @@ static uint8_t read_obj_created_cb(struct bt_conn *conn, uint8_t err,
 
     net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-    LOG_DBG("handle %d, length %u", params->single.handle, length);
+    LOG_DBG("OtsCliRdCb[%u][%u]", params->single.handle, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
@@ -1055,15 +1154,15 @@ static uint8_t read_obj_created_cb(struct bt_conn *conn, uint8_t err,
             date_time_decode(
                 &net_buf,
                 &inst->otc_inst->cur_object.first_created);
+            BT_OTS_SET_METADATA_REQ_CREATED(inst->metadata_read);
         } else {
-            LOG_WRN("Invalid length %u (expected max %u)", length,
-                    BT_OTS_DATE_TIME_FIELD_SIZE);
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, BT_OTS_DATE_TIME_FIELD_SIZE);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
         }
     }
 
     if (err) {
-        LOG_WRN("err: 0x%02X", err);
+        LOG_WRN("OtsCliMetaRdErr[%02x]", err);
         if (!inst->metadata_err) {
             inst->metadata_err = err;
         }
@@ -1084,10 +1183,10 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
 
     net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-    LOG_DBG("handle %d, length %u", params->single.handle, length);
+    LOG_DBG("OtsCliRdCb[%u][%u]", params->single.handle, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
@@ -1095,15 +1194,15 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
         if (length == BT_OTS_DATE_TIME_FIELD_SIZE) {
             date_time_decode(&net_buf,
                              &inst->otc_inst->cur_object.modified);
+            BT_OTS_SET_METADATA_REQ_MODIFIED(inst->metadata_read);
         } else {
-            LOG_WRN("Invalid length %u (expected max %u)", length,
-                    BT_OTS_DATE_TIME_FIELD_SIZE);
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, BT_OTS_DATE_TIME_FIELD_SIZE);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
         }
     }
 
     if (err) {
-        LOG_WRN("err: 0x%02X", err);
+        LOG_WRN("OtsCliMetaRdErr[%02x]", err);
         if (!inst->metadata_err) {
             inst->metadata_err = err;
         }
@@ -1119,10 +1218,11 @@ static int read_attr(struct bt_conn *conn,
                      uint16_t handle, bt_gatt_read_func_t cb)
 {
     if (!handle) {
-        LOG_DBG("Handle not set");
-        return -EINVAL;
+        /* Characteristic not discovered — skip without poisoning metadata_err. */
+        LOG_DBG("OtsCliHdlNotSet");
+        return -ENOENT;
     } else if (cb == NULL) {
-        LOG_ERR("No callback set");
+        LOG_ERR("OtsCliCbNull");
         return -EINVAL;
     }
 
@@ -1146,35 +1246,37 @@ static uint8_t read_obj_properties_cb(struct bt_conn *conn, uint8_t err,
 
     net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-    LOG_INF("handle %d, length %u", params->single.handle, length);
+    LOG_DBG("OtsCliRdCb[%u][%u]", params->single.handle, length);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return BT_GATT_ITER_STOP;
     }
 
     if (err) {
-        LOG_WRN("err: 0x%02X", err);
-    } else if (data && length == OTS_PROPERTIES_LEN) {
-        struct bt_ots_obj_metadata *cur_object =
-                &inst->otc_inst->cur_object;
+        LOG_WRN("OtsCliMetaRdErr[%02x]", err);
+    } else if (data) {
+        if (length != OTS_PROPERTIES_LEN) {
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, OTS_PROPERTIES_LEN);
+            cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+        } else {
+            struct bt_ots_obj_metadata *cur_object =
+                    &inst->otc_inst->cur_object;
 
-        cur_object->props = net_buf_simple_pull_le32(&net_buf);
+            cur_object->props = net_buf_simple_pull_le32(&net_buf);
 
-        LOG_INF("Object properties (raw) : 0x%x", cur_object->props);
+            LOG_INF("OtsCliObjPropsRaw[%x]", cur_object->props);
 
-        if (!BT_OTS_OBJ_GET_PROP_READ(cur_object->props)) {
-            LOG_WRN("Obj properties: Obj read not supported");
+            if (!BT_OTS_OBJ_GET_PROP_READ(cur_object->props)) {
+                LOG_WRN("OtsCliObjRdNotSupp");
+            }
+
+            BT_OTS_SET_METADATA_REQ_PROPS(inst->metadata_read);
         }
-
-        BT_OTS_SET_METADATA_REQ_PROPS(inst->metadata_read);
-    } else {
-        LOG_WRN("Invalid length %u (expected %u)", length, OTS_PROPERTIES_LEN);
-        cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
     }
 
     if (cb_err) {
-        LOG_WRN("err: 0x%02X", cb_err);
+        LOG_WRN("OtsCliMetaRdErr[%02x]", cb_err);
         if (!inst->metadata_err) {
             inst->metadata_err = cb_err;
         }
@@ -1191,14 +1293,21 @@ static void write_oacp_cp_cb(struct bt_conn *conn, uint8_t err,
     struct bt_otc_internal_instance_t *inst =
         lookup_inst_by_handle(params->handle);
 
-    LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
+    LOG_DBG("OtsCliWrCpCb[%02x]", err);
 
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return;
     }
 
-    inst->busy = false;
+    /* Keep busy until OACP indication; only release on write failure. */
+    if (err) {
+        LOG_WRN("OtsCliOacpWrFail[%02x]", err);
+        inst->busy = false;
+        oacp_clr_cur_inst(inst);
+        /* oacp_read may already have connected L2CAP before the GATT write. */
+        (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
+    }
 }
 
 static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
@@ -1208,16 +1317,17 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
         lookup_inst_by_handle(params->handle);
     uint32_t len;
 
-    LOG_DBG("Write Object request %s (0x%02X)", err ? "failed" : "successful", err);
+    LOG_DBG("OtsCliWrObjReqCb[%02x]", err);
     if (!inst) {
-        LOG_ERR("Instance not found");
+        LOG_ERR("OtsCliInstNotFound");
         return;
     }
 
     if (err) {
-        LOG_WRN("OACP Write request failed (0x%02X), aborting L2CAP send", err);
+        LOG_WRN("OtsCliOacpWrReqFail[%02x]", err);
         inst->busy = false;
         cur_inst = NULL;
+        (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
         return;
     }
 
@@ -1225,9 +1335,9 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
     inst->l2cap_ctx.tx.len = 0;
     err = bt_gatt_ots_l2cap_send(&inst->l2cap_ctx, inst->l2cap_ctx.tx.data, len);
     if (err) {
-        LOG_WRN("L2CAP CoC error: %d while trying to execute OACP "
-                "Write procedure", err);
+        LOG_WRN("OtsCliL2capSendErr[%d]", err);
         cur_inst = NULL;
+        (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
     }
 
     inst->busy = false;
@@ -1242,7 +1352,7 @@ static int oacp_read(struct bt_conn *conn,
     struct bt_gatt_ots_l2cap *l2cap;
 
     if (!inst->otc_inst->oacp_handle) {
-        LOG_DBG("Handle not set");
+        LOG_DBG("OtsCliHdlNotSet");
         return -EINVAL;
     } else if (inst->busy) {
         return -EBUSY;
@@ -1254,9 +1364,10 @@ static int oacp_read(struct bt_conn *conn,
      * transfer?
      */
 
+    l2cap = &inst->l2cap_ctx;
     err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
     if (err) {
-        LOG_DBG("Could not connect l2cap: %d", err);
+        LOG_WRN("OtsCliL2capConnectFail[%d]", err);
         return err;
     }
 
@@ -1287,6 +1398,8 @@ static int oacp_read(struct bt_conn *conn,
     if (!err) {
         inst->busy = true;
         cur_inst = inst;
+    } else {
+        (void)bt_gatt_ots_l2cap_disconnect(l2cap);
     }
 
     inst->rcvd_size = 0;
@@ -1302,7 +1415,7 @@ static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *i
     struct bt_gatt_ots_l2cap *l2cap;
 
     if (!inst->otc_inst->oacp_handle) {
-        LOG_DBG("Handle not set");
+        LOG_DBG("OtsCliHdlNotSet");
         return -EINVAL;
     } else if (inst->busy) {
         return -EBUSY;
@@ -1310,9 +1423,10 @@ static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *i
         return -EBUSY;
     }
 
+    l2cap = &inst->l2cap_ctx;
     err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
     if (err) {
-        LOG_DBG("Could not connect l2cap: %d", err);
+        LOG_WRN("OtsCliL2capConnectFail[%d]", err);
         return err;
     }
 
@@ -1346,6 +1460,8 @@ static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *i
     if (!err) {
         inst->busy = true;
         cur_inst = inst;
+    } else {
+        (void)bt_gatt_ots_l2cap_disconnect(l2cap);
     }
 
     inst->rcvd_size = 0;
@@ -1359,13 +1475,13 @@ static int oacp_checksum(struct bt_conn *conn, struct bt_otc_internal_instance_t
     int err;
 
     if (!inst->otc_inst->oacp_handle) {
-        LOG_DBG("Handle not set");
+        LOG_DBG("OtsCliHdlNotSet");
         return -EINVAL;
     } else if (inst->busy) {
-        LOG_DBG("Client is busy");
+        LOG_DBG("OtsCliBusy");
         return -EBUSY;
     } else if (cur_inst) {
-        LOG_DBG("Previous operation is not finished");
+        LOG_DBG("OtsCliPrevOpNotFinished");
         return -EBUSY;
     }
 
@@ -1401,28 +1517,29 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
     struct bt_otc_internal_instance_t *inst;
 
     if (!conn) {
-        LOG_WRN("Invalid Connection");
+        LOG_WRN("OtsCliInvConn");
         return -ENOTCONN;
     } else if (!otc_inst) {
-        LOG_ERR("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
 
     inst = lookup_inst_by_handle(otc_inst->start_handle);
 
     if (!inst) {
-        LOG_ERR("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
 
     if (otc_inst->cur_object.size.cur == 0) {
-        LOG_WRN("Unknown object size");
+        LOG_WRN("OtsCliUnkObjSize");
         return -EINVAL;
     }
 
     return oacp_read(conn, inst);
 }
 
+__attribute__((unused))
 int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
                                     struct bt_conn *conn, const void *buf, size_t len,
                                     off_t offset, enum bt_ots_oacp_write_op_mode mode)
@@ -1430,18 +1547,18 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
     struct bt_otc_internal_instance_t *inst;
 
     CHECKIF(!conn) {
-        LOG_WRN("Invalid Connection");
+        LOG_WRN("OtsCliInvConn");
         return -ENOTCONN;
     }
 
     CHECKIF(!otc_inst) {
-        LOG_ERR("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
 
     CHECKIF((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
             (mode != BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE)) {
-        LOG_ERR("Invalid write object mode parameter %d", mode);
+        LOG_ERR("OtsCliInvWrObjMode[%d]", mode);
         return -EINVAL;
     }
 
@@ -1449,60 +1566,60 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
      *  Offset and Length field are UINT32 Length
      */
     CHECKIF(len > UINT32_MAX) {
-        LOG_ERR("length %zu exceeds UINT32", len);
+        LOG_ERR("OtsCliLenExceedsUint32[%zu]", len);
         return -EINVAL;
     }
 
     CHECKIF(len == 0) {
-        LOG_ERR("length equals zero");
+        LOG_ERR("OtsCliLenZero");
         return -EINVAL;
     }
 
     CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
-        LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
+        LOG_ERR("OtsCliOftExceedsUint32[%ld]", offset);
         return -EINVAL;
     }
 
     CHECKIF(offset > otc_inst->cur_object.size.cur) {
-        LOG_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
+        LOG_ERR("OtsCliOftExceedsCurSize[%ld][%u]", offset, otc_inst->cur_object.size.cur);
         return -EINVAL;
     }
 
     CHECKIF((offset < otc_inst->cur_object.size.cur) &&
             !BT_OTS_OBJ_GET_PROP_PATCH(otc_inst->cur_object.props)) {
-        LOG_ERR("Patch is not supported");
+        LOG_ERR("OtsCliPatchNotSupp");
         return -EACCES;
     }
 
     CHECKIF(((uint64_t)len + (uint64_t)offset > otc_inst->cur_object.size.alloc) &&
             !BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
-        LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
-                , (len + offset), otc_inst->cur_object.size.alloc);
+        LOG_ERR("OtsCliAppendNotSupp[%zu][%u]", (len + offset), otc_inst->cur_object.size.alloc);
         return -EINVAL;
     }
 
     inst = lookup_inst_by_handle(otc_inst->start_handle);
 
     if (!inst) {
-        LOG_ERR("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
 
     return oacp_write(conn, inst, buf, (uint32_t)len, (uint32_t)offset, mode);
 }
 
+__attribute__((unused))
 int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_conn *conn,
                                       off_t offset, size_t len)
 {
     struct bt_otc_internal_instance_t *inst;
 
     CHECKIF(!conn) {
-        LOG_DBG("Invalid Connection");
+        LOG_WRN("OtsCliInvConn");
         return -ENOTCONN;
     }
 
     CHECKIF(!otc_inst) {
-        LOG_DBG("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
 
@@ -1510,29 +1627,28 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
      *  Offset and Length field are UINT32 Length
      */
     CHECKIF(len > UINT32_MAX) {
-        LOG_DBG("length %zu exceeds UINT32", len);
+        LOG_WRN("OtsCliLenExceedsUint32[%zu]", len);
         return -EINVAL;
     }
 
     CHECKIF(len == 0) {
-        LOG_DBG("length equals zero");
+        LOG_WRN("OtsCliLenZero");
         return -EINVAL;
     }
 
     CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
-        LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", offset);
+        LOG_WRN("OtsCliOftExceedsUint32[%ld]", offset);
         return -EINVAL;
     }
 
     CHECKIF((len + offset) > otc_inst->cur_object.size.cur) {
-        LOG_DBG("The sum of offset (%ld) and length (%zu) equals %lu which exceeds "
-                "the Current Size %zu.", offset, len, (len + offset), otc_inst->cur_object.size.cur);
+        LOG_WRN("OtsCliOftLenExceedSize[%ld][%zu][%u]", offset, len, otc_inst->cur_object.size.cur);
         return -EINVAL;
     }
 
     inst = lookup_inst_by_handle(otc_inst->start_handle);
     if (!inst) {
-        LOG_DBG("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
 
@@ -1546,7 +1662,7 @@ static void read_next_metadata(struct bt_conn *conn,
         inst->metadata_to_read ^ inst->metadata_read_attempted;
     int err = 0;
 
-    LOG_DBG("Attempting to read metadata 0x%02X", metadata_remaining);
+    LOG_DBG("OtsCliRdNextMeta[%02x]", metadata_remaining);
 
     if (BT_OTS_GET_METADATA_REQ_NAME(metadata_remaining)) {
         BT_OTS_SET_METADATA_REQ_NAME(inst->metadata_read_attempted);
@@ -1588,7 +1704,11 @@ static void read_next_metadata(struct bt_conn *conn,
     }
 
     if (err) {
-        LOG_DBG("Metadata read failed (%d), trying next", err);
+        LOG_INF("OtsCliMetaRdFailTryNext[%d]", err);
+        /* -ENOENT: handle not discovered, skip. Other errors: keep first. */
+        if (err != -ENOENT && !inst->metadata_err) {
+            inst->metadata_err = err;
+        }
         read_next_metadata(conn, inst);
     }
 }
@@ -1600,20 +1720,20 @@ int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
     struct bt_otc_internal_instance_t *inst;
 
     if (!conn) {
-        LOG_WRN("Invalid Connection");
+        LOG_WRN("OtsCliInvConn");
         return -ENOTCONN;
     } else if (!otc_inst) {
-        LOG_ERR("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     } else if (!metadata) {
-        LOG_WRN("No metadata to read");
+        LOG_WRN("OtsCliNoMetaToRd");
         return -ENOEXEC;
     }
 
     inst = lookup_inst_by_handle(otc_inst->start_handle);
 
     if (!inst) {
-        LOG_ERR("Invalid OTC instance");
+        LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     } else if (inst->busy) {
         return -EBUSY;
@@ -1638,16 +1758,12 @@ static int decode_record(struct net_buf_simple *buf,
     rec->len = net_buf_simple_pull_le16(buf);
 
     if (rec->len < 2 || rec->len > start_len) {
-        LOG_WRN("incorrect DirListing record length %u, "
-                "longer than remaining size %u",
-                rec->len, start_len);
+        LOG_WRN("OtsCliDirRecLenInv[%u][%u]", rec->len, start_len);
         return -EINVAL;
     }
 
     if ((start_len - buf->len) + BT_OTS_OBJ_ID_SIZE > rec->len) {
-        LOG_WRN("incorrect DirListing record, reclen %u too short, "
-                "includes only record length",
-                rec->len);
+        LOG_WRN("OtsCliDirRecTooShortNoObjId[%u]", rec->len);
         return -EINVAL;
     }
 
@@ -1658,14 +1774,12 @@ static int decode_record(struct net_buf_simple *buf,
         char t[BT_OTS_OBJ_ID_STR_LEN];
 
         (void)bt_ots_obj_id_to_str(rec->metadata.id, t, sizeof(t));
-        LOG_DBG("Object ID 0x%s", t);
+        LOG_DBG("OtsCliObjId[%s]", t);
     }
 #endif
 
     if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
-        LOG_WRN("incorrect DirListing record, reclen %u too short, "
-                "includes only record length + ObjId",
-                rec->len);
+        LOG_WRN("OtsCliDirRecTooShortNoNameLen[%u]", rec->len);
         return -EINVAL;
     }
 
@@ -1675,15 +1789,12 @@ static int decode_record(struct net_buf_simple *buf,
         uint8_t *name;
 
         if ((start_len - buf->len) + rec->name_len > rec->len) {
-            LOG_WRN("incorrect DirListing record, remaining length "
-                    "%u shorter than name length %u",
-                    rec->len - (start_len - buf->len),
-                    rec->name_len);
+            LOG_WRN("OtsCliDirRecNameExceedsRemaining[%u][%u]", rec->len - (start_len - buf->len), rec->name_len);
             return -EINVAL;
         }
 
         if (rec->name_len >= sizeof(rec->metadata.name_c)) {
-            LOG_WRN("Name length %u too long, invalid record", rec->name_len);
+            LOG_WRN("OtsCliDirRecNameLenTooLong[%u]", rec->name_len);
             return -EINVAL;
         }
 
@@ -1695,36 +1806,31 @@ static int decode_record(struct net_buf_simple *buf,
     rec->flags = 0;
 
     if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
-        LOG_WRN("incorrect DirListing record, reclen %u too short, "
-                "does not include flags", rec->len);
+        LOG_WRN("OtsCliDirRecTooShortNoFlags[%u]", rec->len);
         return -EINVAL;
     }
 
     rec->flags = net_buf_simple_pull_u8(buf);
-    LOG_DBG("flags 0x%x", rec->flags);
+    LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
 
     if (BT_OTS_DIR_LIST_GET_FLAG_TYPE_128(rec->flags)) {
         uint8_t *uuid;
 
         if ((start_len - buf->len) + BT_UUID_SIZE_128 > rec->len) {
-            LOG_WRN("incorrect DirListing record, reclen %u "
-                    "flags indicates uuid128, too short",
-                    rec->len);
-            LOG_INF("flags 0x%x", rec->flags);
+            LOG_WRN("OtsCliDirRecTooShortUuid128[%u]", rec->len);
+            LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
             return -EINVAL;
         }
 
         uuid = net_buf_simple_pull_mem(buf, BT_UUID_SIZE_128);
         if (!bt_uuid_create(&rec->metadata.type.uuid, uuid, BT_UUID_SIZE_128)) {
-            LOG_DBG("Failed to create UUID");
+            LOG_WRN("OtsCliUuidCreateFail");
             return -EINVAL;
         }
     } else {
         if ((start_len - buf->len) + BT_UUID_SIZE_16 > rec->len) {
-            LOG_WRN("incorrect DirListing record, reclen %u "
-                    "flags indicates uuid16, too short",
-                    rec->len);
-            LOG_INF("flags 0x%x", rec->flags);
+            LOG_WRN("OtsCliDirRecTooShortUuid16[%u]", rec->len);
+            LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
             return -EINVAL;
         }
 
@@ -1735,10 +1841,8 @@ static int decode_record(struct net_buf_simple *buf,
 
     if (BT_OTS_DIR_LIST_GET_FLAG_CUR_SIZE(rec->flags)) {
         if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
-            LOG_WRN("incorrect DirListing record, reclen %u "
-                    "flags indicates cur_size, too short",
-                    rec->len);
-            LOG_INF("flags 0x%x", rec->flags);
+            LOG_WRN("OtsCliDirRecTooShortCurSize[%u]", rec->len);
+            LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
             return -EINVAL;
         }
 
@@ -1747,10 +1851,8 @@ static int decode_record(struct net_buf_simple *buf,
 
     if (BT_OTS_DIR_LIST_GET_FLAG_ALLOC_SIZE(rec->flags)) {
         if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
-            LOG_WRN("incorrect DirListing record, reclen %u "
-                    "flags indicates allocated size, too short",
-                    rec->len);
-            LOG_INF("flags 0x%x", rec->flags);
+            LOG_WRN("OtsCliDirRecTooShortAllocSize[%u]", rec->len);
+            LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
             return -EINVAL;
         }
 
@@ -1759,10 +1861,8 @@ static int decode_record(struct net_buf_simple *buf,
 
     if (BT_OTS_DIR_LIST_GET_FLAG_FIRST_CREATED(rec->flags)) {
         if ((start_len - buf->len) + BT_OTS_DATE_TIME_FIELD_SIZE > rec->len) {
-            LOG_WRN("incorrect DirListing record, reclen %u "
-                    "too short flags indicates first_created",
-                    rec->len);
-            LOG_INF("flags 0x%x", rec->flags);
+            LOG_WRN("OtsCliDirRecTooShortFirstCreated[%u]", rec->len);
+            LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
             return -EINVAL;
         }
 
@@ -1771,10 +1871,8 @@ static int decode_record(struct net_buf_simple *buf,
 
     if (BT_OTS_DIR_LIST_GET_FLAG_LAST_MODIFIED(rec->flags)) {
         if ((start_len - buf->len) + BT_OTS_DATE_TIME_FIELD_SIZE > rec->len) {
-            LOG_WRN("incorrect DirListing record, reclen %u "
-                    "flags indicates las_mod, too short",
-                    rec->len);
-            LOG_INF("flags 0x%x", rec->flags);
+            LOG_WRN("OtsCliDirRecTooShortLastModified[%u]", rec->len);
+            LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
             return -EINVAL;
         }
 
@@ -1783,10 +1881,8 @@ static int decode_record(struct net_buf_simple *buf,
 
     if (BT_OTS_DIR_LIST_GET_FLAG_PROPERTIES(rec->flags)) {
         if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
-            LOG_WRN("incorrect DirListing record, reclen %u "
-                    "flags indicates properties, too short",
-                    rec->len);
-            LOG_INF("flags 0x%x", rec->flags);
+            LOG_WRN("OtsCliDirRecTooShortProps[%u]", rec->len);
+            LOG_DBG("OtsCliDirRecFlags[%x]", rec->flags);
             return -EINVAL;
         }
 
@@ -1800,6 +1896,7 @@ static int decode_record(struct net_buf_simple *buf,
     return rec->len;
 }
 
+__attribute__((unused))
 int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
                                     bt_ots_client_dirlisting_cb cb)
 {
@@ -1816,18 +1913,21 @@ int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
     while (net_buf.len) {
         int ret;
 
+        /* Optional fields written only when flagged; clear between records. */
+        memset(&record, 0, sizeof(record));
+
         count++;
 
         if (net_buf.len < sizeof(uint16_t)) {
-            LOG_WRN("incorrect DirListing record, len %u too short", net_buf.len);
+            LOG_WRN("OtsCliDirRecBufTooShort[%u]", net_buf.len);
             return -EINVAL;
         }
 
-        LOG_DBG("Decoding record %u", count);
+        LOG_DBG("OtsCliDecodeRec[%d]", count);
         ret = decode_record(&net_buf, &record);
 
         if (ret < 0) {
-            LOG_WRN("DirListing, record %u invalid", count);
+            LOG_WRN("OtsCliDirRecInv[%d]", count);
             return ret;
         }
 
@@ -1844,59 +1944,59 @@ int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
 void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
                              uint16_t count)
 {
-    LOG_INF("--- Displaying %u metadata records ---", count);
+    LOG_INF("OtsCliDisplayMetaRecords[%u]", count);
 
     for (int i = 0; i < count; i++) {
         char t[BT_OTS_OBJ_ID_STR_LEN];
 
         (void)bt_ots_obj_id_to_str(metadata[i].id, t, sizeof(t));
-        LOG_INF("Object ID: 0x%s", t);
-        LOG_INF("Object name: %s", metadata[i].name_c);
-        LOG_INF("Object Current Size: %u", metadata[i].size.cur);
-        LOG_INF("Object Allocate Size: %u", metadata[i].size.alloc);
+        LOG_INF("OtsCliObjId[%s]", t);
+        LOG_INF("OtsCliObjName[%s]", metadata[i].name_c);
+        LOG_INF("OtsCliObjCurSize[%u]", metadata[i].size.cur);
+        LOG_INF("OtsCliObjAllocSize[%u]", metadata[i].size.alloc);
 
         if (!bt_uuid_cmp(&metadata[i].type.uuid,
                          BT_UUID_OTS_TYPE_MPL_ICON)) {
-            LOG_INF("Type: Icon Obj Type");
+            LOG_INF("OtsCliObjTypeIcon");
         } else if (!bt_uuid_cmp(&metadata[i].type.uuid,
                                 BT_UUID_OTS_TYPE_TRACK_SEGMENT)) {
-            LOG_INF("Type: Track Segment Obj Type");
+            LOG_INF("OtsCliObjTypeTrackSegment");
         } else if (!bt_uuid_cmp(&metadata[i].type.uuid,
                                 BT_UUID_OTS_TYPE_TRACK)) {
-            LOG_INF("Type: Track Obj Type");
+            LOG_INF("OtsCliObjTypeTrack");
         } else if (!bt_uuid_cmp(&metadata[i].type.uuid,
                                 BT_UUID_OTS_TYPE_GROUP)) {
-            LOG_INF("Type: Group Obj Type");
+            LOG_INF("OtsCliObjTypeGroup");
         } else if (!bt_uuid_cmp(&metadata[i].type.uuid,
                                 BT_UUID_OTS_DIRECTORY_LISTING)) {
-            LOG_INF("Type: Directory Listing");
+            LOG_INF("OtsCliObjTypeDirListing");
         }
 
-        LOG_INF("Properties:0x%x", metadata[i].props);
+        LOG_INF("OtsCliProps[%x]", metadata[i].props);
 
         if (BT_OTS_OBJ_GET_PROP_APPEND(metadata[i].props)) {
-            LOG_INF(" - append permitted");
+            LOG_INF("OtsCliPropAppend");
         }
         if (BT_OTS_OBJ_GET_PROP_DELETE(metadata[i].props)) {
-            LOG_INF(" - delete permitted");
+            LOG_INF("OtsCliPropDelete");
         }
         if (BT_OTS_OBJ_GET_PROP_EXECUTE(metadata[i].props)) {
-            LOG_INF(" - execute permitted");
+            LOG_INF("OtsCliPropExecute");
         }
         if (BT_OTS_OBJ_GET_PROP_MARKED(metadata[i].props)) {
-            LOG_INF(" - marked");
+            LOG_INF("OtsCliPropMarked");
         }
         if (BT_OTS_OBJ_GET_PROP_PATCH(metadata[i].props)) {
-            LOG_INF(" - patch permitted");
+            LOG_INF("OtsCliPropPatch");
         }
         if (BT_OTS_OBJ_GET_PROP_READ(metadata[i].props)) {
-            LOG_INF(" - read permitted");
+            LOG_INF("OtsCliPropRd");
         }
         if (BT_OTS_OBJ_GET_PROP_TRUNCATE(metadata[i].props)) {
-            LOG_INF(" - truncate permitted");
+            LOG_INF("OtsCliPropTrunc");
         }
         if (BT_OTS_OBJ_GET_PROP_WRITE(metadata[i].props)) {
-            LOG_INF(" - write permitted");
+            LOG_INF("OtsCliPropWr");
         }
     }
 }

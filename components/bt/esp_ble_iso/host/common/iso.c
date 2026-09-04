@@ -44,7 +44,18 @@ LOG_MODULE_REGISTER(ISO_SHIM, CONFIG_BT_ISO_LOG_LEVEL);
 #define ISO_PKT_COMP_SDU        (0b10)
 #define ISO_PKT_LAST_FRAG       (0b11)
 
-static sys_slist_t iso_cbs = SYS_SLIST_STATIC_INIT(&iso_cbs);
+/* Both callbacks that feed the iso task from the controller task (iso_tx_comp_cb,
+ * bt_le_iso_rx) can fail to hand off an item, and neither may log there:
+ * esp_log_write is a blocking UART write (~3 ms/line at 115200), so reporting at
+ * the failure rate would spend most of a second inside it and deepen the very
+ * congestion it reports. They only count; the matching iso-task handler reports
+ * once every ISO_DROP_REPORT_STEP items, by which point the queue has room again
+ * so the report never competes with the burst that caused it. Causes are counted
+ * apart because they need different fixes: a full queue means the iso task is
+ * behind, a failed alloc means the heap is exhausted. */
+#define ISO_DROP_REPORT_STEP    100
+
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t iso_cbs;
 
 #if CONFIG_BT_ISO_UNICAST
 static void hci_le_cis_disconnected(struct net_buf *buf);
@@ -60,6 +71,7 @@ static struct bt_le_iso_cb iso_cb = {
 #if CONFIG_BT_ISO_UNICAST
     .cis_dis    = hci_le_cis_disconnected,
     .cis_est    = hci_le_cis_established,
+    .cis_est_v2 = hci_le_cis_established_v2,
 #if CONFIG_BT_ISO_PERIPHERAL
     .cis_req    = hci_le_cis_req,
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
@@ -135,12 +147,11 @@ static void hci_le_cis_disconnected(struct net_buf *buf)
     LOG_DBG("CisDisconnectedEvt[%u]", evt->handle);
 
     iso = bt_conn_lookup_handle(evt->handle, BT_CONN_TYPE_ISO);
-    assert(iso);
+    BT_LE_ASSERT(iso);
 
     iso->err = evt->reason;
 
     bt_iso_disconnected(iso);
-    bt_conn_unref(iso);
 }
 
 static int iso_cis_disconn_evt_listener_safe(uint8_t *data)
@@ -181,6 +192,27 @@ static int iso_cis_est_evt_listener_safe(uint8_t *data)
         if (listener->cis_est) {
             buf.data = data + 1;    /* The first octet is subev_code */
             listener->cis_est(&buf);
+        }
+    }
+
+    bt_le_host_unlock();
+
+    return 0;
+}
+
+static int iso_cis_est_evt_v2_listener_safe(uint8_t *data)
+{
+    struct bt_le_iso_cb *listener = NULL;
+    struct net_buf buf = {0};
+
+    LOG_DBG("CisEstEvtV2Listener");
+
+    bt_le_host_lock();
+
+    SYS_SLIST_FOR_EACH_CONTAINER(&iso_cbs, listener, node) {
+        if (listener->cis_est_v2) {
+            buf.data = data + 1;    /* The first octet is subev_code */
+            listener->cis_est_v2(&buf);
         }
     }
 
@@ -346,7 +378,7 @@ static void handle_iso_event(uint8_t *data, size_t data_len)
 
 #if CONFIG_BT_ISO_UNICAST
     if (le_meta == false) {
-        assert(event == BT_HCI_EVT_DISCONN_COMPLETE);
+        BT_LE_ASSERT(event == BT_HCI_EVT_DISCONN_COMPLETE);
         iso_cis_disconn_evt_listener_safe(data + 2);
         return;
     }
@@ -358,6 +390,9 @@ static void handle_iso_event(uint8_t *data, size_t data_len)
 #if CONFIG_BT_ISO_UNICAST
     case BT_HCI_EVT_LE_CIS_ESTABLISHED:
         iso_cis_est_evt_listener_safe(data + 2);
+        break;
+    case BT_HCI_EVT_LE_CIS_ESTABLISHED_V2:
+        iso_cis_est_evt_v2_listener_safe(data + 2);
         break;
 #if CONFIG_BT_ISO_PERIPHERAL
     case BT_HCI_EVT_LE_CIS_REQ:
@@ -385,14 +420,14 @@ static void handle_iso_event(uint8_t *data, size_t data_len)
         break;
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
     default:
-        assert(0);
+        LOG_ERR("HandleIsoEvtUnknown[%u]", event);
         break;
     }
 }
 
 void bt_le_iso_handle_hci_event(uint8_t *data, size_t data_len)
 {
-    assert(data && data_len);
+    BT_LE_ASSERT(data && data_len);
     handle_iso_event(data, data_len);
     free(data);
 }
@@ -407,13 +442,13 @@ struct iso_tx_sdu_node {
     sys_snode_t node;
 };
 
-static sys_slist_t iso_tx_sdu_list = SYS_SLIST_STATIC_INIT(&iso_tx_sdu_list);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t iso_tx_sdu_list;
 
 static int iso_tx_sdu_insert(struct bt_iso_chan *chan, const uint8_t *sdu, uint16_t sdu_len)
 {
     struct iso_tx_sdu_node *sdu_node;
 
-    sdu_node = calloc(1, sizeof(*sdu_node));
+    sdu_node = bt_le_int_calloc(1, sizeof(*sdu_node));
     if (sdu_node == NULL) {
         LOG_ERR("IsoTxSduInsertNoMem[%u]", sizeof(*sdu_node));
         return -ENOMEM;
@@ -441,6 +476,15 @@ static void iso_tx_sdu_clear(uint16_t handle, bool is_big)
 
     SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&iso_tx_sdu_list, sdu_node, sdu_tmp, node) {
         iso = sdu_node->chan->iso;
+
+        /* Peripheral CIS clears chan->iso during disconnect (before this runs);
+         * the SDU is orphaned — drop it instead of dereferencing NULL. */
+        if (iso == NULL) {
+            sys_slist_remove(&iso_tx_sdu_list, prev, &sdu_node->node);
+            free((void *)sdu_node->sdu);
+            free(sdu_node);
+            continue;
+        }
 
         if ((is_big == false && iso->handle == handle) ||
                 (is_big && iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER &&
@@ -513,7 +557,7 @@ static int iso_tx_now(struct bt_iso_chan *chan, const uint8_t *sdu,
      * Check if ISO SDU needs to be fragmented here.
      */
 
-    pkt = malloc(4 + data_total_len);
+    pkt = bt_le_int_malloc(4 + data_total_len);
     if (pkt == NULL) {
         LOG_ERR("IsoTxNowNoMem[%u]", 4 + data_total_len);
         return -ENOMEM;
@@ -603,6 +647,11 @@ struct iso_tx_comp_event {
     struct bt_iso_tx_cb_info info;
 };
 
+/* See ISO_DROP_REPORT_STEP. */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_tx_comp_drop_cnt;   /* task queue full */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_tx_comp_nomem_cnt;  /* evt alloc failed */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_tx_comp_reported;
+
 void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
 {
     struct iso_tx_comp_event *evt = (struct iso_tx_comp_event *)data;
@@ -611,10 +660,18 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
     struct bt_conn *iso;
     bt_conn_tx_cb_t cb;
     sys_snode_t *node;
+    uint32_t dropped;
     void *ud;
     int err;
 
-    assert(data && data_len == sizeof(*evt));
+    BT_LE_ASSERT(data && data_len == sizeof(*evt));
+
+    dropped = iso_tx_comp_drop_cnt + iso_tx_comp_nomem_cnt;
+    if (dropped - iso_tx_comp_reported >= ISO_DROP_REPORT_STEP) {
+        iso_tx_comp_reported = dropped;
+        LOG_WRN("IsoTxCompDrop[q=%u][nomem=%u]",
+                iso_tx_comp_drop_cnt, iso_tx_comp_nomem_cnt);
+    }
 
     bt_le_host_lock();
 
@@ -647,7 +704,7 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
              * If using controller from other vendors, the pkt buffer may
              * needs to be freed here.
              */
-             LOG_WRN("IsoTxCompFail[%d]", err);
+            LOG_WRN("IsoTxCompFail[%d]", err);
         }
 
         free(sdu_node);
@@ -659,7 +716,7 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
     }
 
     chan = iso->iso.chan;
-    assert(chan);
+    BT_LE_ASSERT(chan);
 
     cb = NULL;
     ud = NULL;
@@ -687,11 +744,11 @@ static void iso_tx_comp_cb(uint16_t conn_handle, void *info, size_t size)
      * the event to the ISO task for processing.
      */
 
-    assert(size == sizeof(struct bt_iso_tx_cb_info));
+    BT_LE_ASSERT(size == sizeof(struct bt_iso_tx_cb_info));
 
-    evt = calloc(1, sizeof(*evt));
+    evt = bt_le_int_calloc(1, sizeof(*evt));
     if (evt == NULL) {
-        LOG_ERR("IsoTxCompNoMem[%u]", sizeof(*evt));
+        iso_tx_comp_nomem_cnt++;
         return;
     }
 
@@ -700,7 +757,7 @@ static void iso_tx_comp_cb(uint16_t conn_handle, void *info, size_t size)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_ISO_TX_COMP, evt, sizeof(*evt));
     if (err) {
-        LOG_ERR("IsoTxCompPostFail[%d]", err);
+        iso_tx_comp_drop_cnt++;
         free(evt);
     }
 }
@@ -713,11 +770,23 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
 #endif /* CONFIG_BT_ISO_TX */
 
 #if CONFIG_BT_ISO_RX
+/* See ISO_DROP_REPORT_STEP. */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_rx_drop_cnt;   /* task queue full */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_rx_nomem_cnt;  /* rx_data alloc failed */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_rx_reported;
+
 void bt_le_iso_handle_rx_data(uint8_t *data, size_t data_len)
 {
     struct net_buf buf = {0};
+    uint32_t dropped;
 
-    assert(data && data_len);
+    BT_LE_ASSERT(data && data_len);
+
+    dropped = iso_rx_drop_cnt + iso_rx_nomem_cnt;
+    if (dropped - iso_rx_reported >= ISO_DROP_REPORT_STEP) {
+        iso_rx_reported = dropped;
+        LOG_WRN("IsoRxDrop[q=%u][nomem=%u]", iso_rx_drop_cnt, iso_rx_nomem_cnt);
+    }
 
     bt_le_host_lock();
     net_buf_simple_init_with_data(&buf.b, (void *)data, data_len);
@@ -743,9 +812,9 @@ int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg)
 
     ARG_UNUSED(arg);
 
-    rx_data = calloc(1, len);
+    rx_data = bt_le_int_calloc(1, len);
     if (rx_data == NULL) {
-        LOG_ERR("IsoRxNoMem[%u]", len);
+        iso_rx_nomem_cnt++;
         return -ENOMEM;
     }
 
@@ -753,7 +822,7 @@ int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_ISO_RX_DATA, rx_data, len);
     if (err) {
-        LOG_ERR("IsoRxPostFail[%d]", err);
+        iso_rx_drop_cnt++;
         free(rx_data);
         return -EIO;
     }

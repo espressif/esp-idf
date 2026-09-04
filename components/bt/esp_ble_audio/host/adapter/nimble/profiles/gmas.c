@@ -24,6 +24,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -35,9 +36,9 @@ LOG_MODULE_REGISTER(LEA_GMAS, CONFIG_BT_ISO_LOG_LEVEL);
 #define GMAS_MAX_CHRS  (1 + 4)   /* GMAP Role + up to one feature char per role */
 
 static const ble_uuid16_t gmas_svc_uuid = BLE_UUID16_INIT(BT_UUID_GMAS_VAL);
-static ble_uuid16_t gmas_chr_uuids[GMAS_MAX_CHRS];
-static struct ble_gatt_chr_def gmas_chrs[GMAS_MAX_CHRS + 1];
-static struct ble_gatt_svc_def gatt_svc_gmas[2];
+static BT_AUDIO_EXT_RAM_BSS_ATTR ble_uuid16_t gmas_chr_uuids[GMAS_MAX_CHRS];
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_chr_def gmas_chrs[GMAS_MAX_CHRS + 1];
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def gatt_svc_gmas[2];
 
 /* Mirror the lib's GMAS table (primary + role char + registered feature chars,
    each value attr following a 0x2803 declaration) into the NimBLE service def. */
@@ -49,7 +50,7 @@ static int gmas_build_svc(struct bt_gatt_service *gmas_svc)
     for (size_t i = 0; i < gmas_svc->attr_count; i++) {
         const struct bt_uuid_16 *u = (const struct bt_uuid_16 *)gmas_svc->attrs[i].uuid;
 
-        if (u->uuid.type != BT_UUID_TYPE_16) {
+        if (!u || u->uuid.type != BT_UUID_TYPE_16) {
             prev_decl = false;
             continue;
         }
@@ -146,7 +147,7 @@ static int gmas_svc_check(void)
         for (size_t i = 0; i < gmas_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(gmas_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;

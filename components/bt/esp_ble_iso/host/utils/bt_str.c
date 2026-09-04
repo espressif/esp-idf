@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,10 +19,12 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
+#include "utils/iso_attr.h"
+
 const char *bt_hex(const void *buf, size_t len)
 {
     static const char hex[] = "0123456789abcdef";
-    static char str[129];
+    static BT_ISO_EXT_RAM_BSS_ATTR char str[129];
     const uint8_t *b = buf;
     size_t i;
 
@@ -39,7 +42,7 @@ const char *bt_hex(const void *buf, size_t len)
 
 const char *bt_addr_str(const bt_addr_t *addr)
 {
-    static char str[BT_ADDR_STR_LEN];
+    static BT_ISO_EXT_RAM_BSS_ATTR char str[BT_ADDR_STR_LEN];
 
     bt_addr_to_str(addr, str, sizeof(str));
 
@@ -48,7 +51,7 @@ const char *bt_addr_str(const bt_addr_t *addr)
 
 const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
-    static char str[BT_ADDR_LE_STR_LEN];
+    static BT_ISO_EXT_RAM_BSS_ATTR char str[BT_ADDR_LE_STR_LEN];
 
     bt_addr_le_to_str(addr, str, sizeof(str));
 
@@ -57,7 +60,7 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr)
 
 const char *bt_uuid_str(const struct bt_uuid *uuid)
 {
-    static char str[BT_UUID_STR_LEN];
+    static BT_ISO_EXT_RAM_BSS_ATTR char str[BT_UUID_STR_LEN];
 
     bt_uuid_to_str(uuid, str, sizeof(str));
 

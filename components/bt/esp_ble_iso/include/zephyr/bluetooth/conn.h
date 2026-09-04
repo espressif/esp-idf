@@ -231,44 +231,6 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
  */
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 
-/** @brief Set security level for a connection.
- *
- *  This function enable security (encryption) for a connection. If the device
- *  has bond information for the peer with sufficiently strong key encryption
- *  will be enabled. If the connection is already encrypted with sufficiently
- *  strong key this function does nothing.
- *
- *  If the device has no bond information for the peer and is not already paired
- *  then the pairing procedure will be initiated. Note that @p sec has no effect
- *  on the security level selected for the pairing process. The selection is
- *  instead controlled by the values of the registered @ref bt_conn_auth_cb. If
- *  the device has bond information or is already paired and the keys are too
- *  weak then the pairing procedure will be initiated.
- *
- *  This function may return an error if the required level of security defined using
- *  @p sec is not possible to achieve due to local or remote device limitation
- *  (e.g., input output capabilities), or if the maximum number of paired devices
- *  has been reached.
- *
- *  This function may return an error if the pairing procedure has already been
- *  initiated by the local device or the peer device.
- *
- *  @note When @kconfig{CONFIG_BT_SMP_SC_ONLY} is enabled then the security
- *        level will always be level 4.
- *
- *  @note When @kconfig{CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY} is enabled then the
- *        security level will always be level 3.
- *
- *  @note When @ref BT_SECURITY_FORCE_PAIR within @p sec is enabled then the pairing
- *        procedure will always be initiated.
- *
- *  @param conn Connection object.
- *  @param sec Requested minimum security level.
- *
- *  @return 0 on success or negative error
- */
-int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
-
 enum bt_security_err {
     /** Security procedure successful. */
     BT_SECURITY_ERR_SUCCESS,
@@ -417,6 +379,7 @@ int bt_conn_cb_register_safe(struct bt_conn_cb *cb);
  * @retval -ENOENT if @p cb was not registered
  */
 int bt_conn_cb_unregister(struct bt_conn_cb *cb);
+int bt_conn_cb_unregister_safe(struct bt_conn_cb *cb);
 
 /**
  *  @brief Register a callback structure for connection events.

@@ -8,12 +8,13 @@
 #define HOST_NIMBLE_GATT_H_
 
 #include <stdint.h>
-#include <assert.h>
 
 #include <zephyr/bluetooth/uuid.h>
 
 #include "host/ble_uuid.h"
 #include "host/ble_gatt.h"
+
+#include "utils/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +36,7 @@ static inline uint8_t BT_LE_NIMBLE_GATT_UUID_TO_Z(uint8_t type)
     } else if (type == BLE_UUID_TYPE_128) {
         return BT_UUID_TYPE_128;
     } else {
-        assert(0);
+        BT_LE_ASSERT(0);
         return BT_UUID_TYPE_16;
     }
 }
@@ -96,6 +97,10 @@ int bt_le_nimble_gattc_db_auto_disc(uint16_t conn_handle);
 
 void bt_le_nimble_gattc_db_remove(uint16_t conn_handle);
 
+void bt_le_nimble_gattc_db_init(void);
+
+void bt_le_nimble_gattc_db_deinit(void);
+
 enum {
     GATTC_NRP_READ_BY_UUID,
     GATTC_NRP_READ_LONG,
@@ -109,15 +114,17 @@ enum {
 
 void bt_le_nimble_gatts_nrp_indicate_cb(uint16_t conn_handle,
                                         int16_t attr_handle,
-                                        uint8_t status);
+                                        int status);
 
 int bt_le_nimble_gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params);
 
-/* err is forwarded only to the INDICATE func cb; other NRP types invoke their
- * own func with err in cb_safe and pass 0 here. */
 int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *params, uint8_t err);
 
 void bt_le_nimble_gatt_nrp_clear(uint16_t conn_handle);
+
+void bt_le_nimble_gatt_nrp_init(void);
+
+void bt_le_nimble_gatt_nrp_deinit(void);
 
 #ifdef __cplusplus
 }

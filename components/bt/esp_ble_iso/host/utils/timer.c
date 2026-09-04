@@ -28,24 +28,22 @@ static void iso_timer_cb(void *arg)
     struct k_work *work = arg;
     int err;
 
-    assert(work);
-    assert(work->timer);
-    assert(work->handler);
+    BT_LE_ASSERT(work);
+    BT_LE_ASSERT(work->timer);
+    BT_LE_ASSERT(work->handler);
 
-    err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_TIMER_EVENT, work, 0);
+    err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_TIMER_EVENT, work, work->gen);
     if (err) {
-        LOG_ERR("IsoTimerPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "TimerCbPostFail[%d]", err);
     }
 }
 
 int k_work_submit(struct k_work *work)
 {
-    LOG_DBG("WorkSubmit[%p]", work);
-
-    assert(work);
+    BT_LE_ASSERT(work);
 
     if (work->handler == NULL) {
-        LOG_WRN("WorkHdlrNull");
+        LOG_WRN("TimerSubmitHdlrNull");
         return -EINVAL;
     }
 
@@ -67,62 +65,56 @@ bool k_work_is_pending(struct k_work *work)
 {
     bool is_pending;
 
-    LOG_DBG("WorkIsPending[%p]", work);
-
-    assert(work);
+    BT_LE_ASSERT(work);
 
     if (work->handler == NULL) {
-        LOG_WRN("WorkHdlrNull");
+        LOG_WRN("TimerIsPendingHdlrNull");
         return false;
     }
 
     is_pending = (work->timer ? esp_timer_is_active(work->timer) : false);
 
-    LOG_DBG("%sPending", is_pending ? "Is" : "Not");
+    LOG_DBG("TimerIsPendingRet[%s]", is_pending ? "Is" : "Not");
 
     return is_pending;
 }
 
 void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
-    LOG_DBG("WorkInit[%p]", work);
+    BT_LE_ASSERT(work);
 
-    assert(work);
+    /* Clear timer/timeout_us/gen too: callers must not have to zero-init */
+    memset(work, 0, sizeof(*work));
 
     work->handler = handler;
 }
 
 struct k_work_delayable *k_work_delayable_from_work(struct k_work *work)
 {
-    LOG_DBG("DworkFromWork[%p]", work);
-
-    assert(work);
-
+    BT_LE_ASSERT(work);
     return (struct k_work_delayable *)work;
 }
 
 void k_work_init_delayable(struct k_work_delayable *dwork,
                            k_work_handler_t handler)
 {
-    LOG_DBG("DworkInit[%p]", dwork);
-
-    assert(dwork);
+    BT_LE_ASSERT(dwork);
 
     const esp_timer_create_args_t timer_args = {
         .callback = &iso_timer_cb,
         .arg = &dwork->work,
-        .name = "iso_timer",
+        .name = "IsoTimer",
     };
     int err;
 
     if (dwork->work.timer) {
-        LOG_WRN("TimerCreated");
+        LOG_WRN("TimerInitAlreadyCreated");
         return;
     }
 
     err = esp_timer_create(&timer_args, (esp_timer_handle_t *)&dwork->work.timer);
     if (err) {
-        LOG_ERR("CreateTimerFail[%d]", err);
+        LOG_ERR("TimerInitCreateFail[%d]", err);
         /* Reset handler so the object remains in a clean uninitialized state */
         dwork->work.handler = NULL;
         return;
@@ -135,18 +127,21 @@ void k_work_deinit_delayable(struct k_work_delayable *dwork)
 {
     int err;
 
-    LOG_DBG("DworkDeinit[%p]", dwork);
-
-    assert(dwork);
+    BT_LE_ASSERT(dwork);
 
     if (dwork->work.timer == NULL) {
-        LOG_INF("TimerNotCreated");
+        LOG_INF("TimerDeinitNotCreated");
         return;
     }
 
+    dwork->work.gen++;
+
+    /* esp_timer_delete rejects a running timer */
+    esp_timer_stop(dwork->work.timer);
+
     err = esp_timer_delete(dwork->work.timer);
     if (err) {
-        LOG_ERR("DeleteTimerFail[%d]", err);
+        LOG_ERR("TimerDeinitDelFail[%d]", err);
         return;
     }
 
@@ -155,16 +150,15 @@ void k_work_deinit_delayable(struct k_work_delayable *dwork)
 
 int k_work_cancel_delayable(struct k_work_delayable *dwork)
 {
-    LOG_DBG("DworkCancel[%p]", dwork);
-
-    assert(dwork);
+    BT_LE_ASSERT(dwork);
 
     if (dwork->work.timer == NULL) {
-        LOG_INF("TimerNotCreated");
+        LOG_INF("TimerCancelNotCreated");
         return -EINVAL;
     }
 
     esp_timer_stop(dwork->work.timer);
+    dwork->work.gen++;
 
     return 0;
 }
@@ -172,18 +166,18 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork)
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
                                   struct k_work_sync *sync)
 {
-    LOG_DBG("DworkCancelSync[%p]", dwork);
-
-    assert(dwork);
+    BT_LE_ASSERT(dwork);
 
     ARG_UNUSED(sync);
 
     if (dwork->work.timer == NULL) {
-        LOG_INF("TimerNotCreated");
+        LOG_INF("TimerCancelSyncNotCreated");
         return false;
     }
 
     esp_timer_stop(dwork->work.timer);
+
+    dwork->work.gen++;
 
     /* TODO: check the return result */
     return false;
@@ -193,16 +187,16 @@ int k_work_schedule(struct k_work_delayable *dwork, k_timeout_t ms)
 {
     int err;
 
-    LOG_DBG("WorkSchedule[%p][%u]", dwork, ms);
-
-    assert(dwork);
+    BT_LE_ASSERT(dwork);
 
     if (dwork->work.timer == NULL) {
-        LOG_WRN("TimerNotCreated");
+        LOG_WRN("TimerSchNotCreated");
         return -EINVAL;
     }
 
     esp_timer_stop(dwork->work.timer);
+
+    dwork->work.gen++;
 
     dwork->work.timeout_us = esp_timer_get_time() + (int64_t)ms * 1000;
 
@@ -213,7 +207,7 @@ int k_work_schedule(struct k_work_delayable *dwork, k_timeout_t ms)
 
     err = esp_timer_start_once(dwork->work.timer, ms * 1000);
     if (err) {
-        LOG_ERR("StartTimerFail[%d]", err);
+        LOG_ERR("TimerSchStartFail[%d]", err);
         return -EIO;
     }
 
@@ -224,16 +218,16 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t ms)
 {
     int err;
 
-    LOG_DBG("WorkReschedule[%p][%u]", dwork, ms);
-
-    assert(dwork);
+    BT_LE_ASSERT(dwork);
 
     if (dwork->work.timer == NULL) {
-        LOG_WRN("TimerNotCreated");
+        LOG_WRN("TimerReschNotCreated");
         return -EINVAL;
     }
 
     esp_timer_stop(dwork->work.timer);
+
+    dwork->work.gen++;
 
     dwork->work.timeout_us = esp_timer_get_time() + (int64_t)ms * 1000;
 
@@ -244,7 +238,7 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t ms)
 
     err = esp_timer_start_once(dwork->work.timer, ms * 1000);
     if (err) {
-        LOG_ERR("RestartTimerFail[%d]", err);
+        LOG_ERR("TimerReschStartFail[%d]", err);
         return -EIO;
     }
 
@@ -255,21 +249,21 @@ int k_work_schedule_periodic_us(struct k_work_delayable *dwork, uint64_t period_
 {
     int err;
 
-    LOG_DBG("WorkSchedulePeriodicUs[%p][%llu]", dwork, (unsigned long long)period_us);
-
-    assert(dwork);
-    assert(period_us > 0);
+    BT_LE_ASSERT(dwork);
+    BT_LE_ASSERT(period_us > 0);
 
     if (dwork->work.timer == NULL) {
-        LOG_WRN("TimerNotCreated");
+        LOG_WRN("TimerPeriodicNotCreated");
         return -EINVAL;
     }
 
     esp_timer_stop(dwork->work.timer);
 
+    dwork->work.gen++;
+
     err = esp_timer_start_periodic(dwork->work.timer, period_us);
     if (err) {
-        LOG_ERR("StartPeriodicTimerFail[%d]", err);
+        LOG_ERR("TimerPeriodicStartFail[%d]", err);
         return -EIO;
     }
 
@@ -289,17 +283,15 @@ k_timeout_t k_work_delayable_remaining_get(struct k_work_delayable *dwork)
     k_timeout_t timeout;
     int64_t delta_us;
 
-    LOG_DBG("DworkRemainingGet[%p]", dwork);
-
-    assert(dwork);
+    BT_LE_ASSERT(dwork);
 
     if (dwork->work.timer == NULL) {
-        LOG_WRN("TimerNotCreated");
+        LOG_WRN("TimerRemainingNotCreated");
         return 0;
     }
 
     if (dwork->work.timeout_us == 0) {
-        LOG_DBG("WorkTimeoutZero");
+        LOG_DBG("TimerRemainingTimeoutZero");
         return 0;
     }
 
@@ -307,14 +299,19 @@ k_timeout_t k_work_delayable_remaining_get(struct k_work_delayable *dwork)
 
     timeout = (delta_us > 0 ? (k_timeout_t)(delta_us / 1000) : 0);
 
-    LOG_DBG("Timeout[%u]", timeout);
+    LOG_DBG("TimerRemaining[%u]", timeout);
 
     return timeout;
 }
 
-void bt_le_timer_handle_event(void *arg)
+void bt_le_timer_handle_event(void *arg, size_t gen)
 {
     struct k_work *work = arg;
 
-    k_work_submit_safe(work);
+    bt_le_host_lock();
+    /* Drop the event if the work was re-armed or cancelled after it fired */
+    if ((uint32_t)gen == work->gen) {
+        k_work_submit(work);
+    }
+    bt_le_host_unlock();
 }

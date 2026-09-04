@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,11 +50,12 @@ int bt_gatt_ots_l2cap_unregister(struct bt_gatt_ots_l2cap *l2cap_ctx);
 /** @brief Connect OTS L2CAP channel
  *
  *  This function is for the OTS client to make an L2CAP connection to
- *  the OTS server.  One of the available registered L2CAP contexts
- *  will be used for the connection.
+ *  the OTS server.
  *
- * @param[in]  conn       Connection pointer
- * @param[out] l2cap_ctx  The context that was connected
+ * @param[in]     conn       Connection pointer
+ * @param[in,out] l2cap_ctx  On entry, the caller's context to connect, or NULL
+ *                           to pick any free registered one. On success, set
+ *                           to the connected context; NULL on failure.
  *
  * @return     0 in case of success or negative value in case of error
  */

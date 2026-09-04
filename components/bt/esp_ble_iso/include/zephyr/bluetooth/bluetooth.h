@@ -407,6 +407,16 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
                                                           uint8_t sid);
 
 /**
+ * @brief Look up a local extended advertising set by advertiser address.
+ *
+ * @param adv_addr Advertiser address.
+ * @param sid      The advertising set ID.
+ *
+ * @return Extended advertising set object or NULL if not found.
+ */
+struct bt_le_ext_adv *bt_le_ext_adv_lookup_addr(const bt_addr_le_t *adv_addr, uint8_t sid);
+
+/**
  * @brief Register periodic advertising sync callbacks.
  *
  * Adds the callback structure to the list of callback structures for periodic
@@ -421,6 +431,19 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
  * @retval -EEXIST if @p cb was already registered.
  */
 int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
+
+/**
+ * @brief Unregister periodic advertising sync callbacks.
+ *
+ * Counterpart of @ref bt_le_per_adv_sync_cb_register(). The list is boot-scoped,
+ * so a module that stops listening must remove itself or keep being invoked.
+ *
+ * @param cb Callback struct previously registered.
+ *
+ * @retval 0 Success.
+ * @retval -ENOENT if @p cb was not registered.
+ */
+int bt_le_per_adv_sync_cb_unregister(struct bt_le_per_adv_sync_cb *cb);
 
 /** LE scan parameters */
 struct bt_le_scan_param {

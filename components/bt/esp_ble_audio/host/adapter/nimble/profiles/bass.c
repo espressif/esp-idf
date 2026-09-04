@@ -26,6 +26,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -34,8 +35,8 @@ LOG_MODULE_REGISTER(LEA_BASS, CONFIG_BT_ISO_LOG_LEVEL);
 static const ble_uuid16_t bass_uuid_control_point = BLE_UUID16_INIT(BT_UUID_BASS_CONTROL_POINT_VAL);
 static const ble_uuid16_t bass_uuid_recv_state = BLE_UUID16_INIT(BT_UUID_BASS_RECV_STATE_VAL);
 
-static uint16_t bass_control_point_handle;
-static uint16_t bass_recv_state_handle[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t bass_control_point_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t bass_recv_state_handle[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static struct ble_gatt_svc_def gatt_svc_bass[] = {
     {
@@ -74,7 +75,7 @@ static void bass_svc_add_recv_state_chr(struct ble_gatt_chr_def *chrs)
         chr->access_cb = bt_le_nimble_gatts_access_cb_safe;
         chr->arg = UINT_TO_POINTER(i);
         chr->descriptors = NULL;  /* NULL if no descriptors. Do not include CCCD */
-        chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC;
+        chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
         chr->min_key_size = 16;
         chr->val_handle = &bass_recv_state_handle[i];
     }
@@ -103,7 +104,7 @@ int bt_le_nimble_bass_attr_handle_set(void)
         return -ENODEV;
     }
 
-    assert(bass_control_point_handle >= 2);
+    BT_LE_ASSERT(bass_control_point_handle >= 2);
     start_handle = bass_control_point_handle - 2;     /* server attr handle & char def handle */
     end_handle = bass_recv_state_handle[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT - 1] + 1; /* cccd attr handle */
 
@@ -153,7 +154,7 @@ static int bass_svc_check(void)
         for (size_t i = 0; i < bass_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(bass_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;
@@ -171,6 +172,7 @@ static int bass_svc_check(void)
 
 int bt_le_nimble_bass_init(void)
 {
+    bool bass_added = false;
     uint16_t chr_count;
     int rc;
 
@@ -179,8 +181,8 @@ int bt_le_nimble_bass_init(void)
 
     LOG_DBG("[N]BassInit[%u]", chr_count);
 
-    gatt_svc_bass->characteristics = calloc(chr_count, sizeof(struct ble_gatt_chr_def));
-    assert(gatt_svc_bass->characteristics);
+    gatt_svc_bass->characteristics = bt_le_ext_calloc(chr_count, sizeof(struct ble_gatt_chr_def));
+    BT_LE_ASSERT(gatt_svc_bass->characteristics);
 
     bass_svc_add_control_point_chr((void *)(gatt_svc_bass->characteristics + 0));
 
@@ -197,6 +199,7 @@ int bt_le_nimble_bass_init(void)
         LOG_ERR("[N]BassAddSvcsFail[%d]", rc);
         goto free;
     }
+    bass_added = true;
 
     rc = bass_svc_check();
     if (rc) {
@@ -206,7 +209,18 @@ int bt_le_nimble_bass_init(void)
     return 0;
 
 free:
-    free((void *)gatt_svc_bass->characteristics);
-    gatt_svc_bass->characteristics = NULL;
+    /* Once ble_gatts_add_svcs() succeeds NimBLE keeps the svc_def pointer and
+     * offers no per-service unregister, so an added service must be leaked
+     * rather than freed into a dangling entry of its global list. */
+    if (!bass_added) {
+        free((void *)gatt_svc_bass->characteristics);
+        gatt_svc_bass->characteristics = NULL;
+    }
     return rc;
+}
+
+int bt_le_nimble_bass_deinit(void)
+{
+    LOG_DBG("[N]BassDeinit");
+    return 0;
 }

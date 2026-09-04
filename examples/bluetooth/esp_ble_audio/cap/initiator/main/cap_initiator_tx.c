@@ -13,7 +13,12 @@
 
 #include "cap_initiator.h"
 
-static struct tx_stream tx_streams[IS_ENABLED(CONFIG_EXAMPLE_UNICAST) + IS_ENABLED(CONFIG_EXAMPLE_BROADCAST)];
+/* One slot per stream the sample can transmit on, in every enabled mode: the
+ * unicast sink streams and the broadcast source streams are distinct objects.
+ */
+static struct tx_stream tx_streams[SINK_STREAM_COUNT *
+                                   (IS_ENABLED(CONFIG_EXAMPLE_UNICAST) +
+                                    IS_ENABLED(CONFIG_EXAMPLE_BROADCAST))];
 
 static const char *cap_stream_tx_label(const esp_ble_audio_cap_stream_t *cap_stream)
 {
