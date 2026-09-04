@@ -144,3 +144,12 @@ esp_err_t dac_cosine_stop(dac_cosine_handle_t handle)
 
     return ESP_OK;
 }
+
+uint8_t dac_cosine_get_bitwidth(dac_cosine_handle_t handle)
+{
+    if (!handle) {
+        return 0;
+    }
+
+    return SOC_DAC_RESOLUTION;
+}

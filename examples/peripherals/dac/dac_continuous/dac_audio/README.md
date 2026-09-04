@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 | ESP32-S2 |
 | ----------------- | ----- | -------- |
 
-# DAC Constant Example
+# DAC Continuous Audio Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -14,13 +14,23 @@ This example shows how to play a piece of audio by DAC driver.
 ### Hardware Required
 
 * A development board with ESP32 or ESP32-S2 SoC
-    - Note that some ESP32-S2 DevKits have LED on it which is connected to GPIO18 (same pin as DAC channel2), so the output voltage of DAC channel 1 can't go down due the this LED.
+* DAC channel to GPIO mapping: see [GPIO Summary](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html#gpio-summary) (switch the chip target on the documentation page if needed)
+* Note that some ESP32-S2 DevKits have an LED on the DAC1 pin, so that channel's output may not go fully low
 * An Audio Power Amplifier like `NS4150`
 * A speaker or earphone to play the audio
 
 ### Configure the Project
 
-This example uses the audio that stored in a buffer, which is put in `audio_example_file.h`. You can also create your own audio buffer by the python script `generate_audio_file.py`.
+The audio table and sample rate are extracted at build time from a WAV file under `tools/` and written into a generated header in the build directory. In menuconfig, under ``Example Configuration``:
+
+* ``WAV file name``: file under `tools/` (default `hi_idf_audio.wav`)
+* ``DAC audio table bit width``: Please select based on the DAC channel configuration
+
+You can also run the converter by hand to inspect the table:
+
+```
+python tools/generate_audio_file.py --bitwidth 8 -o audio_example_file.h tools/hi_idf_audio.wav
+```
 
 ### Build and Flash
 
@@ -41,12 +51,12 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 You can see the following logs on the monitor:
 
 ```
-I (277) dac audio: DAC audio example start
-I (277) dac audio: --------------------------------------
-I (287) dac audio: DAC initialized success, DAC DMA is ready
-I (297) dac audio: Audio size 79512 bytes, played at frequency 16000 Hz
-I (5137) dac audio: Audio size 79512 bytes, played at frequency 16000 Hz
-I (9967) dac audio: Audio size 79512 bytes, played at frequency 16000 Hz
+I (277) dac_audio: DAC audio example start
+I (277) dac_audio: --------------------------------------
+I (287) dac_audio: DAC initialized success, DAC DMA is ready
+I (297) dac_audio: Audio size 95824 bytes, played at frequency 48000 Hz synchronously
+Play count: 1
+Play count: 2
 ...
 ```
 

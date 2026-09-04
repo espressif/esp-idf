@@ -129,11 +129,11 @@
       -
       -
     * - GPIO25
-      - ADC2_CH8
+      - ADC2_CH8, DAC0
       - RTC_GPIO6
       -
     * - GPIO26
-      - ADC2_CH9
+      - ADC2_CH9, DAC1
       - RTC_GPIO7
       -
     * - GPIO27
