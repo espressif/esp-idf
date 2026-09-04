@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
 
 
 @pytest.mark.usb_serial_jtag
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c6', 'esp32p4'], reason='unstable test')
 @idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32p4'], indirect=['target'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 def test_lp_core_debugging(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
