@@ -32,6 +32,8 @@
 #include "bignum_impl.h"
 
 #include "mbedtls/bignum.h"
+/* For mbedtls_mpi_core_mul(), used by the small-operand software fallback. */
+#include "bignum_core.h"
 
 #include "hal/mpi_hal.h"
 
@@ -506,6 +508,31 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 
 static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t z_words);
 static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t y_words, size_t z_words);
+static int mpi_mult_mpi_soft(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y);
+
+/* Below this operand size the hardware unit is slower than a software
+   multiply. The peripheral's per-call cost is fixed -- crypto lock, clock
+   enable, the hardware passes, clock disable, unlock -- and does not shrink
+   with the operands, while a software multiply is O(n^2). Measured on an
+   ESP32-D0WD-V3 at 240 MHz, microseconds per mbedtls_mpi_mul_mpi():
+
+        operand bits    software    hardware
+             256           9.78       19.49
+             384          21.8        23.4
+             512          29.22       22.15
+            1024         100.80       36.04
+            4096        1467.20      457.92
+
+   so the crossover sits between 384 and 512 bits. That matters because an
+   ECDHE-ECDSA handshake is thousands of 256-bit multiplies: with the
+   peripheral taking all of them, a P-256 ECDSA verify costs 416.99 ms
+   against 327.75 ms in software on the same build.
+
+   Expressed in bits of one operand as presented to the hardware, matching
+   the SOC_RSA_MAX_BIT_LEN test below it. */
+#ifndef SOC_MPI_HW_MIN_BIT_LEN
+#define SOC_MPI_HW_MIN_BIT_LEN 512
+#endif
 
 /* Z = X * Y */
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y )
@@ -537,6 +564,19 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
         ret = mbedtls_mpi_copy(Z, X);
         Z->MBEDTLS_PRIVATE(s) *= Y->MBEDTLS_PRIVATE(s);
         return ret;
+    }
+
+    /* Too small for the hardware unit to be worth its per-call cost. Tested on
+       the real operand size, not on hw_words: mpi_ll_calculate_hardware_words()
+       rounds up to a multiple of 16 words, so a 256-bit operand is already
+       presented to the peripheral as 512 bits and hw_words would never be below
+       the threshold. That rounding is also why the hardware cost is flat from
+       256 to 512 bits while the software cost is not.
+
+       Done before the grow below, because the software path handles Z aliasing
+       X or Y itself. */
+    if (MAX(x_bits, y_bits) < SOC_MPI_HW_MIN_BIT_LEN) {
+        return mpi_mult_mpi_soft(Z, X, Y);
     }
 
     /* Grow Z to result size early, avoid interim allocations */
@@ -579,6 +619,66 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
 
 cleanup:
+    return ret;
+}
+
+/* Software multiply, for operands below SOC_MPI_HW_MIN_BIT_LEN.
+
+   MBEDTLS_MPI_MUL_MPI_ALT compiles the library's own mbedtls_mpi_mul_mpi()
+   out entirely, and unlike exp_mod -- which has MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK
+   and mbedtls_mpi_exp_mod_soft() for exactly this purpose -- there is no
+   upstream mul_mpi equivalent to fall back to. So this mirrors the library
+   implementation, over the same mbedtls_mpi_core_mul() it would have used.
+
+   Z may alias X or Y, which is why the operands are copied first and why this
+   is called before the caller grows Z. */
+static int mpi_mult_mpi_soft(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y)
+{
+    int ret = 0;
+    mbedtls_mpi TX, TY;
+    size_t i, j;
+
+    mbedtls_mpi_init(&TX);
+    mbedtls_mpi_init(&TY);
+
+    if (Z == X) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&TX, X));
+        X = &TX;
+    }
+    if (Z == Y) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&TY, Y));
+        Y = &TY;
+    }
+
+    for (i = X->MBEDTLS_PRIVATE(n); i > 0; i--) {
+        if (X->MBEDTLS_PRIVATE(p)[i - 1] != 0) {
+            break;
+        }
+    }
+    for (j = Y->MBEDTLS_PRIVATE(n); j > 0; j--) {
+        if (Y->MBEDTLS_PRIVATE(p)[j - 1] != 0) {
+            break;
+        }
+    }
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(Z, i + j));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(Z, 0));
+
+    if (i > 0 && j > 0) {
+        mbedtls_mpi_core_mul(Z->MBEDTLS_PRIVATE(p),
+                             X->MBEDTLS_PRIVATE(p), i,
+                             Y->MBEDTLS_PRIVATE(p), j);
+    }
+
+    /* Do not shortcut a zero result: that would leak its zero-ness more than
+       the library implementation does. */
+    Z->MBEDTLS_PRIVATE(s) = (i == 0 || j == 0)
+                            ? 1
+                            : X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
+
+cleanup:
+    mbedtls_mpi_free(&TY);
+    mbedtls_mpi_free(&TX);
     return ret;
 }
 
