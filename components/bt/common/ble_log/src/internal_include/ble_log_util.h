@@ -85,7 +85,7 @@ extern void esp_panic_handler_feed_wdts(void);
 #define BLE_LOG_CAS_RELEASE(cas_lock) \
     __atomic_store_n((cas_lock), 0, __ATOMIC_RELEASE)
 
-#define BLE_LOG_VERSION                         (7)
+#define BLE_LOG_VERSION                         (8)
 #define BLE_LOG_IDF_COMMIT_LEN                  (12)
 /* Lib commit hashes are at most 10 hex chars; zero-padded when shorter */
 #define BLE_LOG_LIB_COMMIT_LEN                  (10)
@@ -101,6 +101,9 @@ typedef enum {
     BLE_LOG_INT_SRC_FINAL_STAT,
     BLE_LOG_INT_SRC_VERSION_INFO,
     BLE_LOG_INT_SRC_SNAPSHOT,
+    /* protocol v8: periodic task-id binding broadcast; its frames carry a
+     * sequence of their own (a gap counts a skipped broadcast window). */
+    BLE_LOG_INT_SRC_TASK_BINDING,
     BLE_LOG_INT_SRC_MAX,
 } ble_log_int_src_t;
 
