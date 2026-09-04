@@ -34,7 +34,7 @@ callback drains the queue depth captured at entry and schedules another fixed
 defer only for arrivals left behind, so it does not continuously monopolize
 the shared ESP Timer task.
 
-## Version 7 frame
+## Version 8 frame
 
 All multi-byte fields use the target's little-endian representation.
 
@@ -75,7 +75,7 @@ redirection flush) is the alignment reference against the core timeline.
 ### Sources
 
 The public `ble_log_src_t` ABI is frozen and its values are the on-wire
-source IDs of protocol v7 frames:
+source IDs of protocol v8 frames:
 
 ```text
 0  INTERNAL
@@ -93,12 +93,14 @@ Log sources except INTERNAL and REDIR share one 24-bit Global SN: it is
 consumed at API entry, so it totally orders log attempts — including
 equal-timestamp records from different sources — and every lost or rejected
 attempt leaves a gap in the sequence. Internal Snapshot frames carry their
-own separate sequence (a gap counts skipped snapshots), and the REDIR
-console stream keeps its own sequence as well (a gap counts a dropped
-console batch). `ble_log_init()` resets all three sequences, and its required
-`INIT` snapshot starts a new receiver epoch. They remain continuous through
-`FLUSH` within that epoch. Callers must not write until `ble_log_init()`
-returns, so the `INIT` snapshot is submitted first.
+own separate sequence (a gap counts skipped snapshots), the periodic
+task-binding broadcast keeps its own sequence as well (a gap counts a
+skipped broadcast window), and the REDIR console stream keeps its own
+sequence too (a gap counts a dropped console batch). `ble_log_init()`
+resets all the sequences, and its required `INIT` snapshot starts a new
+receiver epoch. They remain continuous through `FLUSH` within that epoch.
+Callers must not write until `ble_log_init()` returns, so the `INIT`
+snapshot is submitted first.
 
 `CONFIG_BLE_LOG_HCI_LOG_ENABLED` controls HCI logging. Bluedroid and legacy
 VHCI NimBLE retain Host-side capture and suppress duplicate Controller HCI
@@ -111,8 +113,11 @@ bit 7. Disabling HCI logging suppresses records from both capture paths.
 
 ## Internal Snapshot
 
-All BLE Log-owned Internal information is emitted as one fixed-layout frame
-from one dedicated 148-byte transport. Its logical frame length is 148 bytes.
+All BLE Log-owned internal information is emitted as fixed-layout frames
+from dedicated transports: the snapshot frame is 148 logical bytes on its
+own transport, and the periodic task-binding broadcast has its own
+transport sized to the registry (one full binding frame per window;
+`CONFIG_BLE_LOG_TASK_ID_MAX` entries of 19 bytes plus a timestamp).
 
 The snapshot contains:
 
@@ -155,7 +160,8 @@ void ble_log_deinit(void);
 bool ble_log_enable(bool enable);
 void ble_log_flush(void);
 bool ble_log_write_hex(ble_log_src_t source, const uint8_t *data, size_t len);
-uint8_t *ble_log_claim(ble_log_src_t source, size_t maximum, uint32_t *handle);
+uint8_t *ble_log_claim(ble_log_src_t source, size_t maximum,
+                       uint32_t *handle, bool wait_for_transport);
 void ble_log_commit(uint32_t handle, size_t actual_len);
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *data,
                           uint32_t append_len, const uint8_t *append,
@@ -187,7 +193,8 @@ Compression encoders write directly into shared-pool storage:
 
 ```c
 uint32_t handle;
-uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, maximum, &handle);
+uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, maximum,
+                                 &handle, true);
 if (payload) {
     size_t encoded = encode(payload, maximum);
     ble_log_commit(handle, encoded);
@@ -195,15 +202,38 @@ if (payload) {
 ```
 
 `ble_log_claim()` reserves the hidden frame header, ESP Timer timestamp, and
-checksum. Every successful claim must be committed exactly once before
+checksum. It waits for a shared transport in yieldable contexts when
+`wait_for_transport` is true (writer backpressure); pass false for a lossy
+fast path from contexts that must not block, such as the shared ESP Timer
+task. Non-yieldable contexts (ISR, critical section) fail fast either way.
+Every successful claim must be committed exactly once before
 `ble_log_deinit()`; `ble_log_commit(handle, 0)` cancels it. Handles include a
 transport generation so a stale handle cannot commit a later claim in the same
 lifecycle.
 
 Mesh, ISO, Bluedroid, and NimBLE compression no longer allocate three static
-payload buffers per channel. Each logical compression source uses a non-blocking
-trylock so its task-switch state follows commit order; a contending record is
-canceled and counted as lost.
+payload buffers per channel. Every ENCODE record names its writer: the byte
+after the source is a task id from a name-keyed registry. The registry is a
+self-contained module (`ble_log_task_registry.c/h`, structured like the
+UART redirection writer: a small append-only table shared by every ENCODE
+writer; RAM cost 16 bytes per entry, sized by `CONFIG_BLE_LOG_TASK_ID_MAX`).
+
+The registry broadcast is module-owned system output: every periodic snapshot
+window, one INTERNAL frame (`BLE_LOG_INT_SRC_TASK_BINDING`) packs one
+fixed-layout record per registered entry, binding each id to its task name.
+It rides the registry's own dedicated transport with a sequence of its own
+(a window skipped despite a non-empty registry leaves a gap in the binding
+sequence, never in the snapshot sequence), is never counted in the
+per-source written/lost stats, and never contends with the snapshot
+transport or with user records for pool transports. A receiver that joined
+late or lost a frame converges on the next window; a record of a new task
+keeps its id and is bound by name at the next window. Announcements are
+idempotent on the wire and best effort (a busy binding transport — the
+previous broadcast still in DMA — skips a window).
+Attribution is a property of the record, so concurrent writers to one source
+need no serialization and never drop a record on contention. When the registry
+is full, a new task degrades to the unknown id (`0xFF`) and its records are
+still emitted.
 
 ## Configuration
 
@@ -215,6 +245,7 @@ canceled and counted as lost.
 | `CONFIG_BLE_LOG_POOL_TRANS_SIZE` | 640 | Bytes per shared transport; SPI builds require a multiple of four |
 | `CONFIG_BLE_LOG_LL_ENABLED` | target dependent | Controller LL logging |
 | `CONFIG_BLE_LOG_HCI_LOG_ENABLED` | y | HCI capture from Host or Controller, selected by transport |
+| `CONFIG_BLE_LOG_TASK_ID_MAX` | 16 | Task-id registry size, range 2..32; 16 bytes of RAM per entry |
 | `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional analyzer GPIO toggle |
 | `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting the GPIO toggle |
 
@@ -235,7 +266,8 @@ cd ../ble_log_perf_test
 idf.py build
 ```
 
-`ble_log_test` validates golden v7 bytes, the consolidated Internal Snapshot,
+`ble_log_test` validates golden v8 bytes, the consolidated Internal Snapshot,
 source/HCI metadata and capture selection, pool exhaustion and reserve use,
-snapshot busy loss, stale claims, and enable/disable/deinit races. `ble_log_rt_test` covers batched
-dispatch, timer behavior, inflight statistics, and repeated deinit races.
+snapshot busy loss, stale claims, and enable/disable/deinit races.
+`ble_log_rt_test` covers batched dispatch, timer behavior, inflight statistics,
+and repeated deinit races.

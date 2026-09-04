@@ -10,6 +10,7 @@
 /* INCLUDE */
 #include "ble_log.h"
 #include "ble_log_lbm_v2.h"
+#include "ble_log_task_registry.h"
 #include "ble_log_rt.h"
 
 #include "esp_timer.h"
@@ -560,7 +561,16 @@ void ble_log_pool_finish_frame(ble_log_prph_trans_t *trans, uint16_t payload_len
 /* ---------------------------------------------- */
 /*     CLAIM / COMMIT INTERFACE (holds lock)      */
 /* ---------------------------------------------- */
-uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle)
+
+/* Claim with a caller-chosen wait policy. wait_for_transport=true applies
+ * backpressure in a yieldable context (the writer waits for a shared
+ * transport instead of dropping); false is a lossy fast path that returns
+ * NULL on a busy pool, for callers that must never block (e.g. system
+ * periodic output on the shared ESP timer task). Non-yieldable contexts
+ * (ISR, scheduler suspended) never wait whatever the policy: they keep
+ * their dedicated reserve and fail fast on contention. */
+uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
+                       uint32_t *handle, bool wait_for_transport)
 {
     if (!handle || src_code != BLE_LOG_SRC_ENCODE || max_len == 0 ||
         max_len > UINT16_MAX || BLE_LOG_IN_ISR()) {
@@ -581,8 +591,12 @@ uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len, uint32_t *handle)
     bool non_yield = !xPortCanYield() ||
                      xTaskGetSchedulerState() != taskSCHEDULER_RUNNING;
     size_t payload_capacity = sizeof(timestamp) + max_len;
-    ble_log_prph_trans_t *trans =
-        ble_log_pool_acquire(payload_capacity, non_yield, !non_yield);
+    /* Non-yieldable contexts never wait, whatever the requested policy:
+     * blocking there would suspend the only context that can free the
+     * transport. wait_for_transport=false is the lossy fast path for
+     * yieldable contexts that must not block. */
+    ble_log_prph_trans_t *trans = ble_log_pool_acquire(
+        payload_capacity, non_yield, wait_for_transport && !non_yield);
     if (!trans) {
         ble_log_stat_mgr_mark_lost(src_code);
         BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
@@ -706,6 +720,11 @@ bool ble_log_lbm_init(void)
     BLE_LOG_MEMSET(stat_mgr_ctx, 0, sizeof(stat_mgr_ctx));
     g_frame_sn = 0;
     g_snapshot_sn = 0;
+    /* Task registry: fresh epoch (registry, sequence and its dedicated
+     * transport) for the new receiver epoch. */
+    if (!ble_log_task_registry_init()) {
+        goto exit;
+    }
     BLE_LOG_MEMSET(&internal_snapshot, 0, sizeof(internal_snapshot));
     internal_snapshot.int_src_code = BLE_LOG_INT_SRC_SNAPSHOT;
     internal_snapshot.pool.trans_cnt = BLE_LOG_POOL_TRANS_CNT;
@@ -728,6 +747,11 @@ void ble_log_lbm_begin_deinit(void)
     ble_log_lbm_disable();
     BLE_LOG_ATOMIC_STORE_SEQ_CST(lbm_inited, false);
     BLE_LOG_EXIT_CRITICAL();
+
+    /* Close the task-registry gate with the LBM gate: its broadcast is
+     * system output, so only teardown stops it. The publish path never
+     * blocks, so this drain is immediate. */
+    ble_log_task_registry_begin_deinit();
 
     /* Wake any blocked task writers and wait until BOTH the reference count
      * and the waiting-task count drain to zero. Blocked writers hold no
@@ -763,6 +787,7 @@ void ble_log_lbm_deinit(void)
 {
     ble_log_lbm_begin_deinit();
 
+    ble_log_task_registry_deinit();
     ble_log_prph_trans_deinit(&internal_trans);
     for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
         ble_log_prph_trans_deinit(&(g_pool.trans[id]));

@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "esp_chip_info.h"
@@ -19,6 +20,7 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
+#include "ble_log_task_registry.h"
 #include "test_ble_log_main.h"
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
 #include "log_compression/utils.h"
@@ -64,11 +66,6 @@ static SemaphoreHandle_t s_enable_hook_continue;
 static volatile bool s_disable_hook_armed;
 static SemaphoreHandle_t s_disable_hook_entered;
 static SemaphoreHandle_t s_disable_hook_continue;
-#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
-static volatile bool s_compression_hook_armed;
-static SemaphoreHandle_t s_compression_hook_entered;
-static SemaphoreHandle_t s_compression_hook_continue;
-#endif
 
 void ble_log_test_claim_pre_publish_hook(void);
 void ble_log_test_claim_locked_hook(void);
@@ -76,7 +73,6 @@ void ble_log_test_init_snapshot_before_acquire_hook(void);
 void ble_log_test_enable_before_lifecycle_lock_hook(void);
 void ble_log_test_disable_before_wake_hook(void);
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
-void ble_log_test_compression_after_lock_hook(uint8_t source);
 extern int ble_log_compressed_hex_print(uint8_t source, uint32_t log_index,
                                         size_t args_cnt, ...);
 #endif
@@ -124,17 +120,6 @@ void ble_log_test_disable_before_wake_hook(void)
         xSemaphoreTake(s_disable_hook_continue, portMAX_DELAY);
     }
 }
-
-#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
-void ble_log_test_compression_after_lock_hook(uint8_t source)
-{
-    if (s_compression_hook_armed &&
-            source == BLE_COMPRESSED_LOG_OUT_SOURCE_HOST) {
-        xSemaphoreGive(s_compression_hook_entered);
-        xSemaphoreTake(s_compression_hook_continue, portMAX_DELAY);
-    }
-}
-#endif
 
 /* A commit field is hex characters, zero-padded after a shorter value;
  * anything else (garbage, non-hex, zeros after data) is invalid. */
@@ -239,7 +224,7 @@ static void capture_golden_frame(const test_ble_log_frame_t *frame, void *ctx)
     capture->count++;
 }
 
-TEST_CASE("BLE Log v7 framing matches golden bytes", "[ble_log][wire]")
+TEST_CASE("BLE Log v8 framing matches golden bytes", "[ble_log][wire]")
 {
     static const uint8_t golden_frame[] = {
         0x05, 0x00, 0x07, 0xde, 0xc0, 0x00,
@@ -250,7 +235,7 @@ TEST_CASE("BLE Log v7 framing matches golden bytes", "[ble_log][wire]")
         0x78, 0x56, 0x34, 0x12, 0xab,
     };
 
-    TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_VERSION);
+    TEST_ASSERT_EQUAL_UINT8(8, BLE_LOG_VERSION);
     TEST_ASSERT_EQUAL_UINT8(1, BLE_LOG_SRC_CORE_FIRST);
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_SRC_CORE_COUNT);
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_SRC_ENCODE);
@@ -495,7 +480,7 @@ TEST_CASE("BLE Log writes from critical sections and commits claimed payload",
 #endif
 
     uint32_t handle;
-    uint8_t *claimed = ble_log_claim(BLE_LOG_SRC_ENCODE, 8, &handle);
+    uint8_t *claimed = ble_log_claim(BLE_LOG_SRC_ENCODE, 8, &handle, true);
     TEST_ASSERT_NOT_NULL(claimed);
     claimed[0] = 0x33;
     ble_log_commit(handle, 1);
@@ -506,7 +491,7 @@ TEST_CASE("BLE Log writes from critical sections and commits claimed payload",
     s_stale_claim_handle = handle;
     s_claim_hook_armed = true;
     uint32_t fresh_handle;
-    claimed = ble_log_claim(BLE_LOG_SRC_ENCODE, 8, &fresh_handle);
+    claimed = ble_log_claim(BLE_LOG_SRC_ENCODE, 8, &fresh_handle, true);
     s_claim_hook_armed = false;
     TEST_ASSERT_NOT_NULL(claimed);
     TEST_ASSERT_NOT_EQUAL(handle, fresh_handle);
@@ -554,135 +539,184 @@ TEST_CASE("BLE Log writes from critical sections and commits claimed payload",
 }
 
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
-#define TEST_CP_INDEX_FIRST    UINT16_C(0x601)
-#define TEST_CP_INDEX_DROPPED  UINT16_C(0x602)
-#define TEST_CP_INDEX_SECOND   UINT16_C(0x603)
-#define TEST_CP_TASK_SWITCH    UINT8_C(0xc2)
-#define TEST_CP_ZERO_ARGS      UINT8_C(0x40)
+#define TEST_CP_TASK_UNKNOWN      UINT8_C(0xff)
+#define TEST_CP_ZERO_ARGS         UINT8_C(0x40)
+#define TEST_CP_WRITER_RECORDS    8
+#define TEST_CP_INDEX_MAIN_A      UINT16_C(0x600)
+#define TEST_CP_INDEX_MAIN_B      UINT16_C(0x601)
+#define TEST_CP_INDEX_BASE_A      UINT16_C(0x700)
+#define TEST_CP_INDEX_BASE_B      UINT16_C(0x710)
+#define TEST_CP_INDEX_FILL_A      UINT16_C(0x720)
+#define TEST_CP_INDEX_FILL_B      UINT16_C(0x721)
+#define TEST_CP_INDEX_FILLER      UINT16_C(0x722)
+#define TEST_CP_NAME_MAX          17
 
 typedef struct {
-    bool first_found;
-    uint32_t first_sn;
-    bool dropped_found;
-    bool second_found;
-    bool second_switched;
-    uint32_t second_sn;
-    bool third_found;
-    bool third_switched;
-    uint32_t third_sn;
+    /* id-to-name bindings learned from INTERNAL task-binding records */
+    char names[CONFIG_BLE_LOG_TASK_ID_MAX][TEST_CP_NAME_MAX];
+    uint8_t announce_cnt[CONFIG_BLE_LOG_TASK_ID_MAX];
+    /* per-writer record accounting */
+    uint8_t main_records;
+    uint8_t a_records;
+    uint8_t b_records;
+    uint8_t filler_records;
+    uint8_t fill_a_records;
+    uint8_t fill_b_records;
+    bool a_id_set;
+    bool a_id_mismatch;
+    uint8_t a_id;
+    bool b_id_set;
+    bool b_id_mismatch;
+    uint8_t b_id;
+    bool main_id_set;
+    bool main_id_mismatch;
+    uint8_t main_id;
+    bool filler_unknown;
+    bool fill_a_id_set;
+    uint8_t fill_a_id;
+    bool fill_b_unknown;
 } compression_capture_t;
 
 typedef struct {
-    SemaphoreHandle_t committed;
-    SemaphoreHandle_t exit;
-    SemaphoreHandle_t exited;
+    SemaphoreHandle_t token;
+    SemaphoreHandle_t peer_token;
+    SemaphoreHandle_t done;
+    uint16_t index_base;
 } compression_writer_ctx_t;
 
-static void capture_compressed_frame(const test_ble_log_frame_t *frame,
-                                     void *ctx)
-{
-    compression_capture_t *capture = ctx;
-    if (frame->src != BLE_LOG_SRC_ENCODE ||
-            frame->payload_len < sizeof(uint32_t) + 4) {
-        return;
-    }
-
-    const uint8_t *record = frame->payload + sizeof(uint32_t);
-    size_t offset = 0;
-    if (record[offset++] != BLE_COMPRESSED_LOG_OUT_SOURCE_HOST) {
-        return;
-    }
-    size_t record_len = frame->payload_len - sizeof(uint32_t);
-    bool switched = record[offset] == TEST_CP_TASK_SWITCH;
-    offset += switched;
-    if (record_len - offset < 3 || record[offset++] != TEST_CP_ZERO_ARGS) {
-        return;
-    }
+typedef struct {
+    SemaphoreHandle_t done;
     uint16_t log_index;
-    memcpy(&log_index, record + offset, sizeof(log_index));
-
-    if (log_index == TEST_CP_INDEX_FIRST) {
-        capture->first_found = true;
-        capture->first_sn = frame->sn;
-    } else if (log_index == TEST_CP_INDEX_DROPPED) {
-        capture->dropped_found = true;
-    } else if (log_index == TEST_CP_INDEX_SECOND) {
-        capture->second_found = true;
-        capture->second_switched = switched;
-        capture->second_sn = frame->sn;
-    } else if (log_index == TEST_CP_INDEX_SECOND + 1) {
-        capture->third_found = true;
-        capture->third_switched = switched;
-        capture->third_sn = frame->sn;
-    }
-}
+} compression_once_ctx_t;
 
 static void compression_writer_task(void *arg)
 {
     compression_writer_ctx_t *ctx = arg;
-    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
-                                 TEST_CP_INDEX_SECOND, 0);
-    xSemaphoreGive(ctx->committed);
-    xSemaphoreTake(ctx->exit, portMAX_DELAY);
-    xSemaphoreGive(ctx->exited);
+    for (int i = 0; i < TEST_CP_WRITER_RECORDS; i++) {
+        xSemaphoreTake(ctx->token, portMAX_DELAY);
+        ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
+                                     ctx->index_base + i, 0);
+        xSemaphoreGive(ctx->peer_token);
+    }
+    xSemaphoreGive(ctx->done);
     vTaskDelete(NULL);
 }
 
-TEST_CASE("BLE Log serializes task context per compression source",
-          "[ble_log][compression]")
+static void compression_once_task(void *arg)
 {
-    TEST_ASSERT_TRUE(ble_log_enable(true));
-    ble_log_lbm_flush_open_trans();
-    for (int round = 0; round < 2; round++) {
-        TEST_ASSERT_TRUE(ble_log_rt_drain());
-        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
-                                      0, 0, NULL) > 0) {
+    compression_once_ctx_t *ctx = arg;
+    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
+                                 ctx->log_index, 0);
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+/* Walks one ENCODE frame: [ts 4B][source 1B][task_id 1B][header 1B]...
+ * and one INTERNAL task-binding frame: [ts 4B][int_src 1B][task_id 1B]
+ * [name 17B] (the periodic registry broadcast). */
+static void capture_compressed_frame(const test_ble_log_frame_t *frame,
+                                     void *ctx)
+{
+    compression_capture_t *capture = ctx;
+    /* Bindings ride the INTERNAL stream: one frame per periodic window,
+     * packing one fixed-layout record per registered entry. */
+    if (frame->src == BLE_LOG_SRC_INTERNAL &&
+            frame->payload_len >= sizeof(uint32_t) +
+                                  sizeof(ble_log_task_binding_t) &&
+            (frame->payload_len - sizeof(uint32_t)) %
+                sizeof(ble_log_task_binding_t) == 0) {
+        const uint8_t *record = frame->payload + sizeof(uint32_t);
+        size_t records = (frame->payload_len - sizeof(uint32_t)) /
+                         sizeof(ble_log_task_binding_t);
+        for (size_t r = 0; r < records; r++, record += sizeof(ble_log_task_binding_t)) {
+            if (record[0] != BLE_LOG_INT_SRC_TASK_BINDING) {
+                continue;
+            }
+            uint8_t task_id = record[1];
+            const uint8_t *name = record + 2;
+            if (task_id < CONFIG_BLE_LOG_TASK_ID_MAX) {
+                capture->announce_cnt[task_id]++;
+                if (capture->announce_cnt[task_id] == 1) {
+                    memcpy(capture->names[task_id], name,
+                           sizeof(capture->names[task_id]));
+                } else if (strcmp(capture->names[task_id],
+                                  (const char *)name) != 0) {
+                    /* same id re-announced with a different name */
+                    capture->names[task_id][0] = '\0';
+                }
+            }
+        }
+        return;
+    }
+    if (frame->src != BLE_LOG_SRC_ENCODE) {
+        return;
+    }
+    const uint8_t *record = frame->payload + sizeof(uint32_t);
+    size_t record_len = frame->payload_len - sizeof(uint32_t);
+    if (record_len < 3 ||
+            record[0] != BLE_COMPRESSED_LOG_OUT_SOURCE_HOST) {
+        return;
+    }
+    uint8_t task_id = record[1];
+    uint8_t header = record[2];
+
+    if (header != TEST_CP_ZERO_ARGS || record_len < 5) {
+        return;
+    }
+    uint16_t log_index;
+    memcpy(&log_index, record + 3, sizeof(log_index));
+
+    if (log_index == TEST_CP_INDEX_MAIN_A || log_index == TEST_CP_INDEX_MAIN_B) {
+        capture->main_records++;
+        if (!capture->main_id_set) {
+            capture->main_id_set = true;
+            capture->main_id = task_id;
+        } else if (capture->main_id != task_id) {
+            capture->main_id_mismatch = true;
+        }
+    } else if (log_index >= TEST_CP_INDEX_BASE_A &&
+               log_index < TEST_CP_INDEX_BASE_A + TEST_CP_WRITER_RECORDS) {
+        capture->a_records++;
+        if (!capture->a_id_set) {
+            capture->a_id_set = true;
+            capture->a_id = task_id;
+        } else if (capture->a_id != task_id) {
+            capture->a_id_mismatch = true;
+        }
+    } else if (log_index >= TEST_CP_INDEX_BASE_B &&
+               log_index < TEST_CP_INDEX_BASE_B + TEST_CP_WRITER_RECORDS) {
+        capture->b_records++;
+        if (!capture->b_id_set) {
+            capture->b_id_set = true;
+            capture->b_id = task_id;
+        } else if (capture->b_id != task_id) {
+            capture->b_id_mismatch = true;
+        }
+    } else if (log_index >= TEST_CP_INDEX_FILLER &&
+               log_index < TEST_CP_INDEX_FILLER + CONFIG_BLE_LOG_TASK_ID_MAX - 1) {
+        capture->filler_records++;
+        if (task_id == TEST_CP_TASK_UNKNOWN) {
+            capture->filler_unknown = true;
+        }
+    } else if (log_index == TEST_CP_INDEX_FILL_A) {
+        capture->fill_a_records++;
+        if (task_id != TEST_CP_TASK_UNKNOWN) {
+            capture->fill_a_id_set = true;
+            capture->fill_a_id = task_id;
+        }
+    } else if (log_index == TEST_CP_INDEX_FILL_B) {
+        capture->fill_b_records++;
+        if (task_id == TEST_CP_TASK_UNKNOWN) {
+            capture->fill_b_unknown = true;
         }
     }
+}
 
-    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
-                                 TEST_CP_INDEX_FIRST, 0);
-
-    s_compression_hook_entered = xSemaphoreCreateBinary();
-    s_compression_hook_continue = xSemaphoreCreateBinary();
-    compression_writer_ctx_t writer = {
-        .committed = xSemaphoreCreateBinary(),
-        .exit = xSemaphoreCreateBinary(),
-        .exited = xSemaphoreCreateBinary(),
-    };
-    TEST_ASSERT_NOT_NULL(s_compression_hook_entered);
-    TEST_ASSERT_NOT_NULL(s_compression_hook_continue);
-    TEST_ASSERT_NOT_NULL(writer.committed);
-    TEST_ASSERT_NOT_NULL(writer.exit);
-    TEST_ASSERT_NOT_NULL(writer.exited);
-
-    s_compression_hook_armed = true;
-    TEST_ASSERT_EQUAL(
-        pdTRUE,
-        xTaskCreate(compression_writer_task, "ble_log_cp",
-                    TEST_LIFECYCLE_STACK_SIZE, &writer,
-                    TEST_LIFECYCLE_PRIO, NULL));
-    TEST_ASSERT_TRUE(xSemaphoreTake(s_compression_hook_entered,
-                                    pdMS_TO_TICKS(1000)));
-
-    /* This call claims pool space but fails the per-source trylock. It must
-     * cancel immediately, count one lost ENCODE SN, and leave task state to
-     * the lock owner. */
-    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
-                                 TEST_CP_INDEX_DROPPED, 0);
-    xSemaphoreGive(s_compression_hook_continue);
-    TEST_ASSERT_TRUE(xSemaphoreTake(writer.committed,
-                                    pdMS_TO_TICKS(1000)));
-    s_compression_hook_armed = false;
-
-    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
-                                 TEST_CP_INDEX_SECOND + 1, 0);
-    xSemaphoreGive(writer.exit);
-    TEST_ASSERT_TRUE(xSemaphoreTake(writer.exited, pdMS_TO_TICKS(1000)));
-
+static void compression_drain_and_capture(compression_capture_t *capture)
+{
     ble_log_lbm_flush_open_trans();
     TEST_ASSERT_TRUE(ble_log_rt_drain());
-    compression_capture_t capture = {0};
+    memset(capture, 0, sizeof(*capture));
     for (int i = 0; i < BLE_LOG_TRANS_TOTAL_CNT; i++) {
         size_t len = ble_log_prph_test_read(
             s_read_buf, sizeof(s_read_buf), pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
@@ -691,29 +725,267 @@ TEST_CASE("BLE Log serializes task context per compression source",
             break;
         }
         TEST_ASSERT_TRUE(test_ble_log_walk_frames(
-            s_read_buf, len, capture_compressed_frame, &capture));
+            s_read_buf, len, capture_compressed_frame, capture));
+    }
+}
+
+static void compression_reset_streams(void)
+{
+    /* Wipe the task-id registry so neither compression case depends on the
+     * other's registrations or on test-case order. */
+    ble_log_test_task_registry_reset();
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+}
+
+static uint8_t compression_announced_id(const compression_capture_t *capture,
+                                         const char *name)
+{
+    for (int i = 0; i < CONFIG_BLE_LOG_TASK_ID_MAX; i++) {
+        if (capture->announce_cnt[i] > 0 &&
+                strcmp(capture->names[i], name) == 0) {
+            return (uint8_t)i;
+        }
+    }
+    return TEST_CP_TASK_UNKNOWN;
+}
+
+/* Protocol v8: task attribution is a property of the record. Two writers
+ * interleave records on one compression source; every record carries its
+ * writer's id and no record is dropped for contention (there is no source
+ * lock to contend). Bindings are broadcast on the periodic window only
+ * (the LBM task-binding publish), so it is driven once before the capture
+ * below. */
+TEST_CASE("BLE Log attributes compressed records to their writer task",
+          "[ble_log][compression]")
+{
+    compression_reset_streams();
+
+    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
+                                 TEST_CP_INDEX_MAIN_A, 0);
+
+    compression_writer_ctx_t writer_a = {
+        .token = xSemaphoreCreateBinary(),
+        .peer_token = NULL,
+        .done = xSemaphoreCreateBinary(),
+        .index_base = TEST_CP_INDEX_BASE_A,
+    };
+    compression_writer_ctx_t writer_b = {
+        .token = xSemaphoreCreateBinary(),
+        .peer_token = NULL,
+        .done = xSemaphoreCreateBinary(),
+        .index_base = TEST_CP_INDEX_BASE_B,
+    };
+    writer_a.peer_token = writer_b.token;
+    writer_b.peer_token = writer_a.token;
+    TEST_ASSERT_NOT_NULL(writer_a.token);
+    TEST_ASSERT_NOT_NULL(writer_b.token);
+    TEST_ASSERT_NOT_NULL(writer_a.done);
+    TEST_ASSERT_NOT_NULL(writer_b.done);
+
+    TEST_ASSERT_EQUAL(pdTRUE,
+        xTaskCreate(compression_writer_task, "cp_wr_a",
+                    TEST_LIFECYCLE_STACK_SIZE, &writer_a,
+                    TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_EQUAL(pdTRUE,
+        xTaskCreate(compression_writer_task, "cp_wr_b",
+                    TEST_LIFECYCLE_STACK_SIZE, &writer_b,
+                    TEST_LIFECYCLE_PRIO, NULL));
+
+    xSemaphoreGive(writer_a.token);
+    TEST_ASSERT_TRUE(xSemaphoreTake(writer_a.done, pdMS_TO_TICKS(2000)));
+    TEST_ASSERT_TRUE(xSemaphoreTake(writer_b.done, pdMS_TO_TICKS(2000)));
+
+    /* A second record from the main task must not register a new entry:
+     * its records keep the registered id. Periodic publish may repeat
+     * the binding in this window, always with the same name. */
+    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
+                                 TEST_CP_INDEX_MAIN_B, 0);
+
+    /* Bindings ride the periodic window only: drive the LBM broadcast
+     * once so this capture carries every registered writer's binding. */
+    ble_log_task_bindings_publish();
+
+    compression_capture_t capture;
+    compression_drain_and_capture(&capture);
+
+    const char *main_name = pcTaskGetName(NULL);
+    TEST_ASSERT_NOT_NULL(main_name);
+
+    /* All records present: contention between interleaved writers no
+     * longer drops records. */
+    TEST_ASSERT_EQUAL_UINT8(TEST_CP_WRITER_RECORDS, capture.a_records);
+    TEST_ASSERT_EQUAL_UINT8(TEST_CP_WRITER_RECORDS, capture.b_records);
+    TEST_ASSERT_EQUAL_UINT8(2, capture.main_records);
+
+    /* Every record of a writer carries that writer's announced id. */
+    TEST_ASSERT_TRUE(capture.a_id_set);
+    TEST_ASSERT_FALSE(capture.a_id_mismatch);
+    TEST_ASSERT_TRUE(capture.b_id_set);
+    TEST_ASSERT_FALSE(capture.b_id_mismatch);
+    TEST_ASSERT_TRUE(capture.main_id_set);
+    TEST_ASSERT_FALSE(capture.main_id_mismatch);
+    TEST_ASSERT_NOT_EQUAL(TEST_CP_TASK_UNKNOWN,
+                          compression_announced_id(&capture, "cp_wr_a"));
+    TEST_ASSERT_NOT_EQUAL(TEST_CP_TASK_UNKNOWN,
+                          compression_announced_id(&capture, "cp_wr_b"));
+    TEST_ASSERT_NOT_EQUAL(TEST_CP_TASK_UNKNOWN,
+                          compression_announced_id(&capture, main_name));
+    TEST_ASSERT_EQUAL_UINT8(compression_announced_id(&capture, "cp_wr_a"),
+                            capture.a_id);
+    TEST_ASSERT_EQUAL_UINT8(compression_announced_id(&capture, "cp_wr_b"),
+                            capture.b_id);
+    TEST_ASSERT_EQUAL_UINT8(compression_announced_id(&capture, main_name),
+                            capture.main_id);
+
+    /* Every writer is announced at least once by the driven publish (a
+     * production tick may add another, with the same name), and the
+     * capture rejects a same-id rename. */
+    TEST_ASSERT_TRUE(
+        capture.announce_cnt[compression_announced_id(&capture, "cp_wr_a")] >= 1);
+    TEST_ASSERT_TRUE(
+        capture.announce_cnt[compression_announced_id(&capture, "cp_wr_b")] >= 1);
+    TEST_ASSERT_TRUE(
+        capture.announce_cnt[compression_announced_id(&capture, main_name)] >= 1);
+
+    vSemaphoreDelete(writer_a.token);
+    vSemaphoreDelete(writer_b.token);
+    vSemaphoreDelete(writer_a.done);
+    vSemaphoreDelete(writer_b.done);
+}
+
+/* Periodic binding publish: bindings are broadcast on the snapshot window
+ * (the LBM periodic publish); a task's first record already carries its
+ * id and is bound by name at the next window. Drive the publish
+ * synchronously so the window is deterministic: capture the main task's
+ * record first to learn its id, then the driven publish binds that id to
+ * the name and announces no other id. */
+TEST_CASE("BLE Log republishes task bindings on the periodic window",
+          "[ble_log][compression]")
+{
+    compression_reset_streams();
+
+    const char *main_name = pcTaskGetName(NULL);
+    TEST_ASSERT_NOT_NULL(main_name);
+
+    /* First window: the record carries the registered id, but no binding
+     * is guaranteed yet (a production tick may or may not have landed in
+     * this window, so no announce assertion is made here). */
+    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
+                                 TEST_CP_INDEX_MAIN_A, 0);
+    compression_capture_t first;
+    compression_drain_and_capture(&first);
+    TEST_ASSERT_TRUE(first.main_id_set);
+    uint8_t main_id = first.main_id;
+    TEST_ASSERT_NOT_EQUAL(TEST_CP_TASK_UNKNOWN, main_id);
+
+    /* One synchronous publish; a production tick may add another with the
+     * same id, so only presence and id/name stability are asserted. */
+    ble_log_task_bindings_publish();
+    compression_capture_t second;
+    compression_drain_and_capture(&second);
+
+    TEST_ASSERT_TRUE(second.announce_cnt[main_id] >= 1);
+    TEST_ASSERT_EQUAL_UINT8(main_id,
+                            compression_announced_id(&second, main_name));
+    /* Publishing never fabricates bindings: no other id is announced. */
+    for (int i = 0; i < CONFIG_BLE_LOG_TASK_ID_MAX; i++) {
+        if (i != main_id) {
+            TEST_ASSERT_EQUAL_UINT8(0, second.announce_cnt[i]);
+        }
+    }
+}
+
+/* The registry is sized by CONFIG_BLE_LOG_TASK_ID_MAX (4 in this
+ * app) and wiped between cases, so this case fills it itself: one-shot
+ * filler tasks consume every slot but the last, cp_fill_a takes the last
+ * free slot, and cp_fill_b beyond the registry degrades to the unknown id
+ * (0xFF) and its record is still emitted. Bindings are broadcast on the
+ * periodic window only, so the publish is driven once before the
+ * capture. */
+TEST_CASE("BLE Log degrades to the unknown task id when the registry is full",
+          "[ble_log][compression]")
+{
+    compression_reset_streams();
+
+    /* Consume every slot but the last with distinct one-shot tasks. The
+     * name is copied into the task's TCB, so one buffer is reused. */
+    compression_once_ctx_t filler[CONFIG_BLE_LOG_TASK_ID_MAX - 1];
+    char filler_name[8];
+    for (int i = 0; i < CONFIG_BLE_LOG_TASK_ID_MAX - 1; i++) {
+        filler[i].done = xSemaphoreCreateBinary();
+        TEST_ASSERT_NOT_NULL(filler[i].done);
+        filler[i].log_index = TEST_CP_INDEX_FILLER + i;
+        snprintf(filler_name, sizeof(filler_name), "cp_f%d", i);
+        TEST_ASSERT_EQUAL(pdTRUE,
+            xTaskCreate(compression_once_task, filler_name,
+                        TEST_LIFECYCLE_STACK_SIZE, &filler[i],
+                        TEST_LIFECYCLE_PRIO, NULL));
+        TEST_ASSERT_TRUE(xSemaphoreTake(filler[i].done, pdMS_TO_TICKS(2000)));
     }
 
-    TEST_ASSERT_TRUE(capture.first_found);
-    TEST_ASSERT_FALSE(capture.dropped_found);
-    TEST_ASSERT_TRUE(capture.second_found);
-    TEST_ASSERT_TRUE(capture.second_switched);
-    TEST_ASSERT_TRUE(capture.third_found);
-    TEST_ASSERT_TRUE(capture.third_switched);
-    /* The blocked writer claims its SN before taking the compression lock;
-     * the rejected contender burns the following SN. */
-    TEST_ASSERT_EQUAL_HEX32((capture.first_sn + 1) & 0x00ffffffU,
-                            capture.second_sn);
-    TEST_ASSERT_EQUAL_HEX32((capture.second_sn + 2) & 0x00ffffffU,
-                            capture.third_sn);
+    compression_once_ctx_t fill_a = {
+        .done = xSemaphoreCreateBinary(),
+        .log_index = TEST_CP_INDEX_FILL_A,
+    };
+    compression_once_ctx_t fill_b = {
+        .done = xSemaphoreCreateBinary(),
+        .log_index = TEST_CP_INDEX_FILL_B,
+    };
+    TEST_ASSERT_NOT_NULL(fill_a.done);
+    TEST_ASSERT_NOT_NULL(fill_b.done);
 
-    vSemaphoreDelete(writer.committed);
-    vSemaphoreDelete(writer.exit);
-    vSemaphoreDelete(writer.exited);
-    vSemaphoreDelete(s_compression_hook_entered);
-    vSemaphoreDelete(s_compression_hook_continue);
-    s_compression_hook_entered = NULL;
-    s_compression_hook_continue = NULL;
+    TEST_ASSERT_EQUAL(pdTRUE,
+        xTaskCreate(compression_once_task, "cp_fill_a",
+                    TEST_LIFECYCLE_STACK_SIZE, &fill_a,
+                    TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_TRUE(xSemaphoreTake(fill_a.done, pdMS_TO_TICKS(2000)));
+
+    TEST_ASSERT_EQUAL(pdTRUE,
+        xTaskCreate(compression_once_task, "cp_fill_b",
+                    TEST_LIFECYCLE_STACK_SIZE, &fill_b,
+                    TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_TRUE(xSemaphoreTake(fill_b.done, pdMS_TO_TICKS(2000)));
+
+    /* Bindings ride the periodic window only: drive the LBM broadcast
+     * once so the capture carries every registered name. */
+    ble_log_task_bindings_publish();
+
+    compression_capture_t capture;
+    compression_drain_and_capture(&capture);
+
+    /* The fillers consumed the first slots: every record emitted with a
+     * valid id. */
+    TEST_ASSERT_EQUAL_UINT8(CONFIG_BLE_LOG_TASK_ID_MAX - 1,
+                            capture.filler_records);
+    TEST_ASSERT_FALSE(capture.filler_unknown);
+
+    /* The last free slot still works: valid id, bound by the driven
+     * periodic publish. */
+    TEST_ASSERT_EQUAL_UINT8(1, capture.fill_a_records);
+    TEST_ASSERT_TRUE(capture.fill_a_id_set);
+    TEST_ASSERT_NOT_EQUAL(TEST_CP_TASK_UNKNOWN,
+                          compression_announced_id(&capture, "cp_fill_a"));
+    TEST_ASSERT_EQUAL_UINT8(compression_announced_id(&capture, "cp_fill_a"),
+                            capture.fill_a_id);
+
+    /* Beyond the registry: unknown id, no binding, log still emitted. */
+    TEST_ASSERT_EQUAL_UINT8(1, capture.fill_b_records);
+    TEST_ASSERT_TRUE(capture.fill_b_unknown);
+    TEST_ASSERT_EQUAL_UINT8(TEST_CP_TASK_UNKNOWN,
+                            compression_announced_id(&capture, "cp_fill_b"));
+
+    for (int i = 0; i < CONFIG_BLE_LOG_TASK_ID_MAX - 1; i++) {
+        vSemaphoreDelete(filler[i].done);
+    }
+    vSemaphoreDelete(fill_a.done);
+    vSemaphoreDelete(fill_b.done);
 }
 #endif /* CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE */
 
@@ -1119,7 +1391,7 @@ static void blocked_claim_task(void *arg)
     blocked_writer_ctx_t *ctx = arg;
     uint32_t handle;
     xSemaphoreGive(ctx->started);
-    uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, 1, &handle);
+    uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, 1, &handle, true);
     ctx->result = payload != NULL;
     if (payload) {
         payload[0] = 0x58;

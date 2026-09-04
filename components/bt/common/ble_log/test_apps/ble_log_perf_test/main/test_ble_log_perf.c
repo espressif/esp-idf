@@ -1031,6 +1031,88 @@ TEST_CASE("BLE Log write_hex_ll append cycles (32+32B)", "[ble_log][perf][cycle]
 #endif
 
 #if CONFIG_BLE_COMPRESSED_LOG_ENABLE
+/* ---------------------- */
+/*  Attribution cycles    */
+/* ---------------------- */
+
+/* Compressed records attribute every record to their writer task by
+ * normalizing the FreeRTOS task name to NUL-padded words and scanning
+ * the registry. A hand-rolled copy (no libc calls) was measured on
+ * ESP32-H2 at -Og against this libc version: the two trade places
+ * across name lengths (inline wins ~31 cycles on 3-char names, loses
+ * ~31 on full 16-char names, ties in between) against ~1.6k cycles per
+ * compressed record - no variant is meaningfully faster. The module
+ * keeps the libc version because it is three lines; this case records
+ * the numbers so the decision does not get re-litigated blind. */
+#define NORM_WORDS     4    /* BLE_CP_TASK_NAME_WORDS, private to the module */
+#define NORM_LEN       (NORM_WORDS * sizeof(uint32_t))
+#define NORM_ROUNDS    5
+#define NORM_ITERS     20000
+
+typedef void (*norm_fn_t)(const char *name, uint32_t w[NORM_WORDS]);
+
+static void norm_libc(const char *name, uint32_t w[NORM_WORDS])
+{
+    memset(w, 0, NORM_LEN);
+    memcpy(w, name, strnlen(name, NORM_LEN));
+}
+
+static void norm_inline(const char *name, uint32_t w[NORM_WORDS])
+{
+    for (unsigned i = 0; i < NORM_WORDS; i++) {
+        uint32_t v = 0;
+        for (unsigned b = 0; b < sizeof(uint32_t); b++) {
+            uint8_t c = (uint8_t)*name;
+            if (c == '\0') {
+                break;
+            }
+            v |= (uint32_t)c << (8 * b);
+            name++;
+        }
+        w[i] = v;
+    }
+}
+
+static volatile uint32_t s_norm_sink;
+
+static uint32_t norm_bench_once(norm_fn_t fn, const char *name)
+{
+    uint32_t sink = 0;
+    uint32_t start = esp_cpu_get_cycle_count();
+    for (uint32_t i = 0; i < NORM_ITERS; i++) {
+        uint32_t w[NORM_WORDS];
+        fn(name, w);
+        sink ^= w[0] ^ w[1] ^ w[2] ^ w[3];
+    }
+    s_norm_sink = sink; /* the copies must stay live */
+    return (esp_cpu_get_cycle_count() - start) / NORM_ITERS;
+}
+
+TEST_CASE("BLE Log task-name normalization cycles", "[ble_log][perf][cycle][ignore]")
+{
+    static const char *const names[] = {"BTU", "NIMBLE_HOST", "0123456789ABCDEF"};
+    for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        /* both variants must agree on every shape before timing them */
+        uint32_t wa[NORM_WORDS], wb[NORM_WORDS];
+        norm_libc(names[i], wa);
+        norm_inline(names[i], wb);
+        TEST_ASSERT_EQUAL_UINT32_ARRAY(wa, wb, NORM_WORDS);
+
+        uint32_t best_libc = UINT32_MAX;
+        uint32_t best_inline = UINT32_MAX;
+        for (int r = 0; r < NORM_ROUNDS; r++) { /* interleaved rounds */
+            uint32_t a = norm_bench_once(norm_libc, names[i]);
+            uint32_t b = norm_bench_once(norm_inline, names[i]);
+            best_libc = a < best_libc ? a : best_libc;
+            best_inline = b < best_inline ? b : best_inline;
+        }
+        printf("BLE_LOG_PERF norm name=%-16s libc=%4" PRIu32 " inline=%4" PRIu32
+               " delta=%+" PRId32 " cycles/call\n",
+               names[i], best_libc, best_inline,
+               (int32_t)best_libc - (int32_t)best_inline);
+    }
+}
+
 /* Compressed records are log_index + 0..2 U32 args, not a raw payload
  * length. One case per arg count splits encode vs downstream write_hex
  * cost for each workload shape. */
