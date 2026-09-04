@@ -22,6 +22,7 @@
 #include "hal/cache_hal.h"
 #endif
 #include "esp_private/cache_utils.h"
+#include "esp_cpu.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
 #include "esp_private/mspi_timing_by_mspi_delay.h"
@@ -633,8 +634,21 @@ static void restore_cache(uint32_t cpuid, uint32_t saved_state)
 }
 #else // ESP_TEE_BUILD
 
-#define disable_cache(cpuid, saved_state) spi_flash_disable_cache(cpuid, saved_state)
-#define restore_cache(cpuid, saved_state) spi_flash_restore_cache(cpuid, saved_state)
+static void disable_cache(uint32_t cpuid, uint32_t *saved_state)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_disable();
+#endif
+    spi_flash_disable_cache(cpuid, saved_state);
+}
+
+static void restore_cache(uint32_t cpuid, uint32_t saved_state)
+{
+    spi_flash_restore_cache(cpuid, saved_state);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
+}
 
 #endif
 
