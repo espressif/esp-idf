@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +106,11 @@ esp_err_t esp_openthread_start(const esp_openthread_config_t *config);
 
 /**
  * @brief This function performs OpenThread stack and platform driver deinitialization and delete the handle task.
+ *
+ * @note Thread must already be inactive (`otThreadSetEnabled(false)` and
+ *       `otIp6SetEnabled(false)`). If border routing was initialized, call
+ *       `esp_openthread_border_router_deinit()` first.
+ *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if Thread is already active
