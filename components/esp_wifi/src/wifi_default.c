@@ -169,6 +169,16 @@ static void wifi_default_action_ap_stop(void *arg, esp_event_base_t base, int32_
 static void wifi_default_action_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
+        /* IP_EVENT_STA_GOT_IP is shared by every WIFI_STA-type esp_netif. A second such netif that
+         * is not the Wi-Fi STA (e.g. one whose netif reuses the default WIFI_STA inherent config)
+         * posts the same event id. Acting on it here would spuriously call
+         * esp_wifi_internal_set_sta_ip() for a Wi-Fi STA that has not obtained an
+         * IP, and log the Wi-Fi netif's description for the other interface's address. Only handle
+         * the event that belongs to the Wi-Fi STA netif. */
+        if (event->esp_netif != s_wifi_netifs[WIFI_IF_STA]) {
+            return;
+        }
         ESP_LOGD(TAG, "Got IP wifi default handler entered");
         int ret = esp_wifi_internal_set_sta_ip();
         if (ret != ESP_OK) {
