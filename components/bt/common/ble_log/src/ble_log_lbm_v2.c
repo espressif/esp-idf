@@ -1145,10 +1145,14 @@ BLE_LOG_IRAM_ATTR
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
                           uint32_t len_append, const uint8_t *addr_append, uint32_t flag)
 {
-    /* Controller-side HCI logging duplicates the retained Host-side HCI path. */
-    if ((flag & BIT(BLE_LOG_LL_FLAG_HCI)) ||
-        (flag & BIT(BLE_LOG_LL_FLAG_HCI_UPSTREAM)) ||
-        (!addr && len) || (!addr_append && len_append)) {
+#if !CONFIG_BLE_LOG_HCI_LOG_ENABLED || CONFIG_BT_BLUEDROID_ENABLED || \
+    CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE
+    /* Bluedroid and legacy NimBLE already capture HCI on the Host side. */
+    if (flag & (BIT(BLE_LOG_LL_FLAG_HCI) | BIT(BLE_LOG_LL_FLAG_HCI_UPSTREAM))) {
+        return;
+    }
+#endif
+    if ((!addr && len) || (!addr_append && len_append)) {
         return;
     }
 
@@ -1160,11 +1164,17 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
      * ties between equal-timestamp records from different sources. */
     uint32_t frame_sn = BLE_LOG_GET_GLOBAL_SN();
 
-    /* Controller-side HCI records are dropped above, so only the LL task
-     * and ISR identities remain: ISR-flagged records keep their own
-     * LL_ISR source ID, everything else is LL_TASK. */
-    ble_log_src_t src_code = (flag & BIT(BLE_LOG_LL_FLAG_ISR)) ?
-                             BLE_LOG_SRC_LL_ISR : BLE_LOG_SRC_LL_TASK;
+    /* Preserve the controller flag-to-source mapping and ISR precedence. */
+    ble_log_src_t src_code;
+    if (flag & BIT(BLE_LOG_LL_FLAG_ISR)) {
+        src_code = BLE_LOG_SRC_LL_ISR;
+    } else if (flag & BIT(BLE_LOG_LL_FLAG_HCI)) {
+        src_code = BLE_LOG_SRC_LL_HCI;
+    } else if (flag & BIT(BLE_LOG_LL_FLAG_HCI_UPSTREAM)) {
+        src_code = BLE_LOG_SRC_HCI;
+    } else {
+        src_code = BLE_LOG_SRC_LL_TASK;
+    }
 
     bool is_isr = BLE_LOG_IN_ISR();
     bool can_yield = !is_isr && xPortCanYield() &&
