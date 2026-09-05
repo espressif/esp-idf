@@ -247,6 +247,11 @@ static osi_alarm_err_t alarm_set(osi_alarm_t *alarm, period_ms_t timeout, bool i
     }
 
     int64_t timeout_us = 1000 * (int64_t)timeout;
+    /* Stop the timer first in case it is already running. Calling
+     * esp_timer_start_once/periodic on an active timer returns
+     * ESP_ERR_INVALID_STATE, silently dropping the alarm. This mirrors the
+     * pattern used in alarm_free(). */
+    esp_timer_stop(alarm->alarm_hdl);
     esp_err_t stat;
     if (is_periodic) {
         stat = esp_timer_start_periodic(alarm->alarm_hdl, (uint64_t)timeout_us);
