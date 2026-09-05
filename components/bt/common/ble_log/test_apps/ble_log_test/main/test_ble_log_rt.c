@@ -403,6 +403,8 @@ typedef struct {
     bool critical_frame;
     bool hci_downstream_frame;
     bool hci_upstream_frame;
+    int ll_hci_frame_cnt;
+    int ll_hci_upstream_frame_cnt;
     bool claimed_frame;
     bool stale_protected_frame;
     int encode_frame_cnt;
@@ -431,6 +433,18 @@ static void capture_frame_meta(const test_ble_log_frame_t *frame, void *ctx)
         capture->claimed_frame = true;
     } else if (frame->src == BLE_LOG_SRC_ENCODE && marker == 0x44) {
         capture->stale_protected_frame = true;
+    } else if (marker == 0x51 || marker == 0x52) {
+        static const uint8_t controller_timestamp[] = {0x78, 0x56, 0x34, 0x12};
+        TEST_ASSERT_EQUAL_size_t(sizeof(controller_timestamp) + 1, frame->payload_len);
+        TEST_ASSERT_EQUAL_MEMORY(controller_timestamp, frame->payload,
+                                 sizeof(controller_timestamp));
+        if (marker == 0x51) {
+            TEST_ASSERT_EQUAL_UINT8(BLE_LOG_SRC_LL_HCI, frame->src);
+            capture->ll_hci_frame_cnt++;
+        } else {
+            TEST_ASSERT_EQUAL_UINT8(BLE_LOG_SRC_HCI, frame->src);
+            capture->ll_hci_upstream_frame_cnt++;
+        }
     }
 }
 
@@ -467,6 +481,18 @@ TEST_CASE("BLE Log writes from critical sections and commits claimed payload",
     /* The HCI macro requires one writable type byte. Exercise invalid public
      * input at the validating API instead. */
     TEST_ASSERT_FALSE(ble_log_write_hex(BLE_LOG_SRC_HCI, NULL, 1));
+
+#if CONFIG_BLE_LOG_LL_ENABLED
+    /* Controller records keep their existing payload, including timestamp.
+     * Exercise both contiguous and appended payloads at the real LL entry. */
+    static const uint8_t ll_hci_payload[] = {0x78, 0x56, 0x34, 0x12, 0x51};
+    const uint8_t ll_hci_upstream = 0x52;
+    ble_log_write_hex_ll(sizeof(ll_hci_payload), ll_hci_payload, 0, NULL,
+                         BIT(BLE_LOG_LL_FLAG_HCI));
+    ble_log_write_hex_ll(sizeof(ll_hci_payload) - 1, ll_hci_payload,
+                         sizeof(ll_hci_upstream), &ll_hci_upstream,
+                         BIT(BLE_LOG_LL_FLAG_HCI_UPSTREAM));
+#endif
 
     uint32_t handle;
     uint8_t *claimed = ble_log_claim(BLE_LOG_SRC_ENCODE, 8, &handle);
@@ -511,6 +537,15 @@ TEST_CASE("BLE Log writes from critical sections and commits claimed payload",
     TEST_ASSERT_TRUE(capture.critical_frame);
     TEST_ASSERT_TRUE(capture.hci_downstream_frame);
     TEST_ASSERT_TRUE(capture.hci_upstream_frame);
+#if CONFIG_BLE_LOG_LL_ENABLED && CONFIG_BLE_LOG_HCI_LOG_ENABLED && \
+    !CONFIG_BT_BLUEDROID_ENABLED && !CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE
+    TEST_ASSERT_EQUAL(1, capture.ll_hci_frame_cnt);
+    TEST_ASSERT_EQUAL(1, capture.ll_hci_upstream_frame_cnt);
+#else
+    /* Disabled HCI or an existing Host capture must suppress duplicates. */
+    TEST_ASSERT_EQUAL(0, capture.ll_hci_frame_cnt);
+    TEST_ASSERT_EQUAL(0, capture.ll_hci_upstream_frame_cnt);
+#endif
     TEST_ASSERT_TRUE(capture.claimed_frame);
     TEST_ASSERT_TRUE(capture.stale_protected_frame);
     /* Exactly the two committed claims: a stale commit that slipped past
