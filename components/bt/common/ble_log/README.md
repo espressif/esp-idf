@@ -100,12 +100,14 @@ console batch). `ble_log_init()` resets all three sequences, and its required
 `FLUSH` within that epoch. Callers must not write until `ble_log_init()`
 returns, so the `INIT` snapshot is submitted first.
 
-Controller-side HCI records are not emitted by BLE Log, and the controller no
-longer maintains its own internal LL HCI log. Host-side Bluedroid and NimBLE
-HCI capture (`CONFIG_BLE_LOG_HCI_LOG_ENABLED`) is the single HCI logging
-switch and the authoritative `HCI` stream for both Host and Controller
-traffic. Its direction bit continues to use HCI payload byte 0 bit 7; this is
-independent of the source metadata bit.
+`CONFIG_BLE_LOG_HCI_LOG_ENABLED` controls HCI logging. Bluedroid and legacy
+VHCI NimBLE retain Host-side capture and suppress duplicate Controller HCI
+records. Other configurations, including non-legacy NimBLE, retain Controller
+HCI records through the LL callback (requires `CONFIG_BLE_LOG_LL_ENABLED`).
+Controller flags preserve their source mapping: `HCI` to `LL_HCI` and
+`HCI_UPSTREAM` to `HCI`, with ISR precedence. Controller payloads are forwarded
+unchanged. Host-side capture retains its direction bit in HCI payload byte 0
+bit 7. Disabling HCI logging suppresses records from both capture paths.
 
 ## Internal Snapshot
 
@@ -212,7 +214,7 @@ canceled and counted as lost.
 | `CONFIG_BLE_LOG_POOL_NON_YIELD_RESERVE_CNT` | 1 | ISR/critical reserve count |
 | `CONFIG_BLE_LOG_POOL_TRANS_SIZE` | 640 | Bytes per shared transport; SPI builds require a multiple of four |
 | `CONFIG_BLE_LOG_LL_ENABLED` | target dependent | Controller LL logging |
-| `CONFIG_BLE_LOG_HCI_LOG_ENABLED` | target dependent | Host-side HCI capture |
+| `CONFIG_BLE_LOG_HCI_LOG_ENABLED` | y | HCI capture from Host or Controller, selected by transport |
 | `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional analyzer GPIO toggle |
 | `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting the GPIO toggle |
 
@@ -234,6 +236,6 @@ idf.py build
 ```
 
 `ble_log_test` validates golden v7 bytes, the consolidated Internal Snapshot,
-source/HCI metadata, pool exhaustion and reserve use, snapshot busy loss,
-stale claims, and enable/disable/deinit races. `ble_log_rt_test` covers batched
+source/HCI metadata and capture selection, pool exhaustion and reserve use,
+snapshot busy loss, stale claims, and enable/disable/deinit races. `ble_log_rt_test` covers batched
 dispatch, timer behavior, inflight statistics, and repeated deinit races.

@@ -77,12 +77,12 @@ if BLE_LOG_ENABLED
         bool "Enable BLE HCI Logging"
         default y
         help
-            Enable HCI packet logging captured on the Host side
-            (Bluedroid / NimBLE HCI HAL). This is the single HCI
-            logging switch for both Host and Controller traffic:
-            the controller no longer maintains its own internal
-            LL HCI log, and controller-side HCI records are not
-            emitted separately.
+            Enable HCI packet logging. Bluedroid and legacy VHCI NimBLE
+            capture on the Host side and suppress duplicate Controller
+            HCI records. Other configurations, including non-legacy
+            NimBLE, retain Controller HCI records through the LL callback
+            and require BLE_LOG_LL_ENABLED. Disabling this option
+            suppresses HCI records from both capture paths.
 
     config BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
         bool "Enable BLE Host side HCI Logging"
