@@ -431,7 +431,8 @@ int bt_le_per_adv_sync_report_recv_listener(uint16_t sync_handle,
 
     per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
-        LOG_ERR("PaSyncNotFound[%u]", sync_handle);
+        /* Reports queued before a terminate arrive after the sync is deleted. */
+        LOG_INF("PaSyncNotFound[%u]", sync_handle);
         return -ENODEV;
     }
 
@@ -463,7 +464,8 @@ void hci_le_biginfo_adv_report(struct net_buf *buf)
 
     per_adv_sync = bt_le_per_adv_sync_find(evt->sync_handle);
     if (per_adv_sync == NULL) {
-        LOG_ERR("PaSyncNotFound[%u]", evt->sync_handle);
+        /* Same post-teardown race as the PA report path above. */
+        LOG_INF("PaSyncNotFound[%u]", evt->sync_handle);
         return;
     }
 
@@ -487,47 +489,6 @@ void hci_le_biginfo_adv_report(struct net_buf *buf)
             listener->biginfo(per_adv_sync, &biginfo);
         }
     }
-}
-
-_LIB_ONLY
-int bt_le_scan_start(const struct bt_le_scan_param *param, void *cb)
-{
-    int err = 0;
-
-    if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) == false) {
-#if CONFIG_BT_BLUEDROID_ENABLED
-        ARG_UNUSED(cb);
-        err = bt_le_bluedroid_scan_start(param);
-#else
-        err = bt_le_nimble_scan_start(param, cb);
-#endif
-        if (err == 0) {
-            atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
-        }
-    } else {
-        err = -EALREADY;
-    }
-
-    return err;
-}
-
-_LIB_ONLY
-int bt_le_scan_stop(void)
-{
-    int err = 0;
-
-    if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-#if CONFIG_BT_BLUEDROID_ENABLED
-        err = bt_le_bluedroid_scan_stop();
-#else
-        err = bt_le_nimble_scan_stop();
-#endif
-        if (err == 0) {
-            atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
-        }
-    }
-
-    return err;
 }
 
 static void past_features_set(void)

@@ -1564,35 +1564,39 @@ esp_err_t esp_ble_audio_bap_base_get_subgroup_codec_id(const esp_ble_audio_bap_b
 }
 
 esp_err_t esp_ble_audio_bap_base_get_subgroup_codec_data(const esp_ble_audio_bap_base_subgroup_t *subgroup,
-                                                         uint8_t **data)
+                                                         uint8_t **data, size_t *data_len)
 {
-    int err;
+    int ret;
 
-    if (subgroup == NULL || data == NULL) {
+    if (subgroup == NULL || data == NULL || data_len == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_bap_base_get_subgroup_codec_data(subgroup, data);
-    if (err) {
+    ret = bt_bap_base_get_subgroup_codec_data(subgroup, data);
+    if (ret < 0) {
         return ESP_FAIL;
     }
+
+    *data_len = ret;
 
     return ESP_OK;
 }
 
 esp_err_t esp_ble_audio_bap_base_get_subgroup_codec_meta(const esp_ble_audio_bap_base_subgroup_t *subgroup,
-                                                         uint8_t **meta)
+                                                         uint8_t **meta, size_t *meta_len)
 {
-    int err;
+    int ret;
 
-    if (subgroup == NULL || meta == NULL) {
+    if (subgroup == NULL || meta == NULL || meta_len == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_bap_base_get_subgroup_codec_meta(subgroup, meta);
-    if (err) {
+    ret = bt_bap_base_get_subgroup_codec_meta(subgroup, meta);
+    if (ret < 0) {
         return ESP_FAIL;
     }
+
+    *meta_len = ret;
 
     return ESP_OK;
 }

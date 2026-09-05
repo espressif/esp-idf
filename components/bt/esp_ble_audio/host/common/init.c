@@ -185,7 +185,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260903)
+#define LEA_VERSION     (0x20260905)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -1086,8 +1086,6 @@ struct lib_ext_funcs {
     /* Scan */
     int (*_scan_cb_register)(struct bt_le_scan_cb *cb);
     void (*_scan_cb_unregister)(struct bt_le_scan_cb *cb);
-    int (*_scan_start)(const struct bt_le_scan_param *param, void *cb);
-    int (*_scan_stop)(void);
     int (*_pa_sync_cb_register)(struct bt_le_per_adv_sync_cb *cb);
     int (*_pa_sync_cb_unregister)(struct bt_le_per_adv_sync_cb *cb);
     int (*_pa_sync_get_info)(struct bt_le_per_adv_sync *per_adv_sync,
@@ -1300,8 +1298,6 @@ static const struct lib_ext_funcs ext_funcs = {
 
     ._scan_cb_register = (void *)bt_le_scan_cb_register,
     ._scan_cb_unregister = (void *)bt_le_scan_cb_unregister,
-    ._scan_start = (void *)bt_le_scan_start,
-    ._scan_stop = (void *)bt_le_scan_stop,
     ._pa_sync_cb_register = (void *)bt_le_per_adv_sync_cb_register,
     ._pa_sync_cb_unregister = (void *)bt_le_per_adv_sync_cb_unregister,
     ._pa_sync_get_info = (void *)bt_le_per_adv_sync_get_info,
