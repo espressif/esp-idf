@@ -32,7 +32,9 @@ Wear Levelling access API functions
 
 This is the set of API functions for working with data in flash:
 
-- ``wl_mount`` - initializes the wear levelling module and mounts the specified partition
+- ``wl_mount`` - initializes the wear levelling module and mounts the specified partition, formatting it if it does not already contain a valid instance
+- ``wl_mount_no_format`` - like ``wl_mount``, but never writes; mounts only an already-valid instance, or returns ``ESP_ERR_NOT_FOUND`` and leaves flash untouched
+- ``wl_probe`` - checks whether a partition holds a valid instance without writing to flash
 - ``wl_unmount`` - unmounts the partition and deinitializes the wear levelling module
 - ``wl_erase_range`` - erases a range of addresses in flash
 - ``wl_write`` - writes data to a partition
