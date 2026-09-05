@@ -202,6 +202,11 @@ static ssize_t usb_serial_jtag_write(__attribute__((unused)) void *ctx, int fd, 
         }
         s_ctx.tx_func(fd, c);
     }
+    // Flush the TX FIFO so the final bytes of the write reach the host. Otherwise
+    // the trailing bytes (and the zero-length packet that terminates a
+    // 64-byte-multiple transfer) can linger and never be delivered across a USB
+    // re-enumeration, wedging the host CDC pipe after a chip reset. See #17432.
+    usb_serial_jtag_ll_txfifo_flush();
     _lock_release_recursive(&s_ctx.write_lock);
     return size;
 }
