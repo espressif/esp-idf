@@ -1297,7 +1297,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream);
  * @param seq_num  Packet Sequence number. This value shall be incremented for each call to this
  *                 function and at least once per SDU interval for a specific channel.
  *
- * @return Bytes sent in case of success or negative value in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, uint16_t seq_num);
 
@@ -1315,7 +1315,7 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, uint16
  * @param ts       Timestamp of the SDU in microseconds (us). This value can be used to transmit
  *                 multiple SDUs in the same SDU interval in a CIG or BIG.
  *
- * @return Bytes sent in case of success or negative value in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_send_ts(struct bt_bap_stream *stream, struct net_buf *buf, uint16_t seq_num,
                           uint32_t ts);
@@ -1336,7 +1336,7 @@ int bt_bap_stream_send_ts(struct bt_bap_stream *stream, struct net_buf *buf, uin
  * @retval 0 on success
  * @retval -EINVAL if the stream is invalid, if the stream is not configured for sending or if it is
  *         not connected with a isochronous stream
- * @retval Any return value from bt_iso_chan_get_tx_sync()
+ * @retval 0 on success, or any negative value from bt_iso_chan_get_tx_sync()
  */
 int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_info *info);
 
@@ -2891,6 +2891,13 @@ struct bt_bap_broadcast_assistant_cb {
      * Called when the scanner finds an advertiser that advertises the
      * BT_UUID_BROADCAST_AUDIO UUID.
      *
+     * Delivered only while bt_bap_broadcast_assistant_scan_start() has been
+     * called with start_scan set to true, and only for what the application's
+     * own scanner reports — this port never starts a scanner of its own. Leave
+     * the member NULL if the application already parses its own scan results.
+     * Note it carries no advertising data either, so filtering on anything
+     * besides the Broadcast ID has to happen in that scanner.
+     *
      * @param info          Advertiser information.
      * @param broadcast_id  24-bit broadcast ID.
      */
@@ -2993,16 +3000,25 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn);
  *
  * This will let the Broadcast Audio Scan Service server know that this device
  * is actively scanning for broadcast sources.
- * The function can optionally also start scanning, if the caller does not want
- * to start scanning itself.
  *
- * Scan results, if @p start_scan is true, is sent to the
- * bt_bap_broadcast_assistant_scan_cb callback.
+ * Unlike upstream Zephyr, this port never touches the scanner: the application
+ * starts it first, through whichever GAP API its host provides, and then calls
+ * this. @p start_scan therefore no longer means "start scanning" — it only says
+ * whether the Broadcast Audio Announcements the application's scanner picks up
+ * should also be parsed and delivered to the `scan` member of
+ * @ref bt_bap_broadcast_assistant_cb. The Remote Scan Started operation is
+ * written to the server either way.
+ *
+ * That makes @p start_scan redundant with the `scan` member being set: true
+ * without a `scan` callback only costs the parsing, false with one means it
+ * never fires. It stays for API compatibility - upstream plans to drop it - and
+ * bt_bap_broadcast_assistant_scan_stop() has no counterpart to it, always
+ * taking delivery back down.
  *
  * @param conn          Connection to the Broadcast Audio Scan Service server.
  *                      Used to let the server know that we are scanning.
- * @param start_scan    Start scanning if true. If false, the application should
- *                      enable scan itself.
+ * @param start_scan    Deliver scan results to the `scan` callback if true.
+ *                      Either way the application owns the scanner itself.
 
  * @retval 0 Success
  * @retval -EINVAL @p conn is NULL of if @p conn has not done discovery
@@ -3017,6 +3033,11 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn,
 
 /**
  * @brief Stop remote scanning for BISes for a server.
+ *
+ * Writes the Remote Scan Stopped operation and, if this @p conn had asked for
+ * scan results, stops delivering them to the `scan` callback. The application's
+ * own scanner is left running — it started it, and this port never drives the
+ * scanner from here (see bt_bap_broadcast_assistant_scan_start()).
  *
  * @param conn   Connection to the server.
 

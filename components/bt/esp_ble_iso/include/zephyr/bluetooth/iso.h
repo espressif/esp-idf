@@ -933,7 +933,9 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *                 each call to this function and at least once per SDU
  *                 interval for a specific channel.
  *
- * @return Number of octets sent in case of success or negative value in case of error.
+ * @note Unlike the upstream API, this returns 0 rather than the octet count.
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num);
 
@@ -957,7 +959,9 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
  *                 This value can be used to transmit multiple
  *                 SDUs in the same SDU interval in a CIG or BIG.
  *
- * @return Number of octets sent in case of success or negative value in case of error.
+ * @note Unlike the upstream API, this returns 0 rather than the octet count.
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
                         uint32_t ts);

@@ -16,13 +16,13 @@
  */
 static void diag_log_cis_dir(const char *phase, size_t idx, const char *dir,
                              uint16_t iso_interval,
-                             const struct bt_iso_unicast_tx_info *info)
+                             const esp_ble_iso_unicast_tx_info_t *info)
 {
     ESP_LOGI(TAG, "[%s][%zu] %s {ft %u bn %u latency %lu us sdu_interval %s}",
              phase, idx, dir,
              iso_interval != 0 ? (unsigned)(info->flush_timeout / iso_interval) : 0U,
              info->bn, (unsigned long)info->latency,
-             info->sdu_interval == BT_ISO_SDU_INTERVAL_UNKNOWN ? "unknown (v1 event)"
+             info->sdu_interval == ESP_BLE_ISO_SDU_INTERVAL_UNKNOWN ? "unknown (v1 event)"
                                                                : "see qos");
 }
 
