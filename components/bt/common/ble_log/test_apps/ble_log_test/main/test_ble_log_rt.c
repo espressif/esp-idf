@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "esp_chip_info.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -67,11 +68,21 @@ static volatile bool s_disable_hook_armed;
 static SemaphoreHandle_t s_disable_hook_entered;
 static SemaphoreHandle_t s_disable_hook_continue;
 
+/* Stale-hint candidate flush (pool lost-wakeup interleaving). */
+static volatile bool s_flush_hint_hook_armed;
+static volatile bool s_flush_stale_hook_armed;
+static volatile bool s_flush_hint_drained;
+static volatile int s_flush_hint_id = -1;
+static SemaphoreHandle_t s_stale_writer_start;
+static SemaphoreHandle_t s_stale_writer_started;
+
 void ble_log_test_claim_pre_publish_hook(void);
 void ble_log_test_claim_locked_hook(void);
 void ble_log_test_init_snapshot_before_acquire_hook(void);
 void ble_log_test_enable_before_lifecycle_lock_hook(void);
 void ble_log_test_disable_before_wake_hook(void);
+void ble_log_test_flush_hint_seen_hook(uint8_t id);
+void ble_log_test_flush_stale_locked_hook(void);
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
 extern int ble_log_compressed_hex_print(uint8_t source, uint32_t log_index,
                                         size_t args_cnt, ...);
@@ -119,6 +130,42 @@ void ble_log_test_disable_before_wake_hook(void)
         xSemaphoreGive(s_disable_hook_entered);
         xSemaphoreTake(s_disable_hook_continue, portMAX_DELAY);
     }
+}
+
+void ble_log_test_flush_hint_seen_hook(uint8_t id)
+{
+    if (!s_flush_hint_hook_armed) {
+        return;
+    }
+    s_flush_hint_hook_armed = false;
+    s_flush_hint_id = id;
+    /* Play the other core between the flusher's hint read and its candidate
+     * lock: seal, send and recycle the one OPEN transport. The recycle
+     * notification runs while no writer is registered yet, so only the
+     * flusher's own candidate release can re-advertise it. drain dispatches
+     * to the peripheral queue; the peripheral releases on read, and that
+     * queue holds only the hinted transport (the other shared ones are
+     * pinned by open claims), so one read recycles exactly it. */
+    ble_log_lbm_flush_open_trans();
+    s_flush_hint_drained = ble_log_rt_drain();
+    if (s_flush_hint_drained) {
+        s_flush_hint_drained =
+            ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL) > 0;
+    }
+}
+
+void ble_log_test_flush_stale_locked_hook(void)
+{
+    if (!s_flush_stale_hook_armed) {
+        return;
+    }
+    s_flush_stale_hook_armed = false;
+    /* The flusher holds the recycled transport's candidate lock. Start the
+     * writer: with every other shared transport pinned by a claim, its two
+     * scans bounce off this lock and it parks before this hook returns. */
+    xSemaphoreGive(s_stale_writer_start);
+    (void)xSemaphoreTake(s_stale_writer_started, portMAX_DELAY);
+    vTaskDelay(pdMS_TO_TICKS(20));
 }
 
 /* A commit field is hex characters, zero-padded after a shorter value;
@@ -1501,6 +1548,291 @@ TEST_CASE("BLE Log task writers wait for a shared transport", "[ble_log][lbm]")
     }
 }
 
+typedef struct {
+    SemaphoreHandle_t done;
+    bool write_result;
+} stale_writer_ctx_t;
+
+static void stale_candidate_writer_task(void *arg)
+{
+    stale_writer_ctx_t *ctx = arg;
+    (void)xSemaphoreTake(s_stale_writer_start, portMAX_DELAY);
+    xSemaphoreGive(s_stale_writer_started);
+    const uint8_t marker = 0x61;
+    ctx->write_result = ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker, 1);
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("BLE Log flush re-advertises a stale candidate for parked writers",
+          "[ble_log][lbm]")
+{
+    /* Deterministic lost-wakeup interleaving: the periodic flusher reads an
+     * OPEN hint, the hinted transport is sealed, sent and recycled before
+     * the flusher takes its candidate lock, and a task writer registers
+     * and parks while that lock is held. Only the flusher's release can
+     * then re-advertise the FREE transport; a bare unlock loses the
+     * writer. */
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL) > 0) {
+    }
+
+    /* Pin every shared transport but one with an open claim: claimed
+     * transports are in no bitmap and never enter the runtime queue. */
+    uint32_t pinned[BLE_LOG_POOL_TRANS_CNT] = {0};
+    int pinned_cnt = 0;
+    for (; pinned_cnt < BLE_LOG_POOL_SHARED_CNT - 1; pinned_cnt++) {
+        uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, 1,
+                                         &pinned[pinned_cnt], false);
+        TEST_ASSERT_NOT_NULL(payload);
+    }
+
+    /* The last shared transport stays OPEN, so the armed flush targets it. */
+    const uint8_t marker = 0x61;
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker, 1));
+
+    stale_writer_ctx_t ctx = {.done = xSemaphoreCreateBinary()};
+    s_stale_writer_start = xSemaphoreCreateBinary();
+    s_stale_writer_started = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(ctx.done);
+    TEST_ASSERT_NOT_NULL(s_stale_writer_start);
+    TEST_ASSERT_NOT_NULL(s_stale_writer_started);
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(stale_candidate_writer_task, "ble_log_stale",
+                                  TEST_LIFECYCLE_STACK_SIZE, &ctx,
+                                  TEST_LIFECYCLE_PRIO, NULL));
+
+    s_flush_hint_id = -1;
+    s_flush_hint_drained = false;
+    s_flush_hint_hook_armed = true;
+    s_flush_stale_hook_armed = true;
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(s_flush_hint_drained);
+    TEST_ASSERT_TRUE(s_flush_hint_id >= 0);
+
+    bool completed = xSemaphoreTake(ctx.done, pdMS_TO_TICKS(1000)) == pdTRUE;
+    if (!completed) {
+        /* Lost wake: un-park the writer, release the pinned claims and
+         * restore the gate before failing, so later cases stay clean. */
+        TEST_ASSERT_TRUE(ble_log_enable(false));
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(ctx.done, pdMS_TO_TICKS(1000)));
+        TEST_ASSERT_FALSE(ctx.write_result);
+        for (int i = 0; i < pinned_cnt; i++) {
+            ble_log_commit(pinned[i], 0);
+        }
+        TEST_ASSERT_TRUE(ble_log_enable(true));
+        TEST_FAIL_MESSAGE("stale-candidate release lost the parked writer's wake");
+    }
+    TEST_ASSERT_TRUE(ctx.write_result);
+
+    for (int i = 0; i < pinned_cnt; i++) {
+        ble_log_commit(pinned[i], 0);
+    }
+
+    /* The recovered writer's frame reaches the peripheral. */
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    TEST_ASSERT_GREATER_THAN_size_t(
+        0, ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                  pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS), 0, NULL));
+
+    vSemaphoreDelete(ctx.done);
+    vSemaphoreDelete(s_stale_writer_start);
+    vSemaphoreDelete(s_stale_writer_started);
+}
+
+typedef struct {
+    SemaphoreHandle_t done;
+    uint8_t marker;
+    bool result;
+    bool finished;
+} conc_writer_ctx_t;
+
+#define CONC_WRITER_CNT   (4)
+#define CONC_FRAMES_EACH  (96)
+
+static void conc_writer_task(void *arg)
+{
+    conc_writer_ctx_t *ctx = arg;
+    for (uint16_t i = 0; i < CONC_FRAMES_EACH; i++) {
+        uint8_t payload[3] = {ctx->marker, (uint8_t)(i >> 8), (uint8_t)i};
+        if (!ble_log_write_hex(BLE_LOG_SRC_CUSTOM, payload, sizeof(payload))) {
+            ctx->result = false;
+            break;
+        }
+    }
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+typedef struct {
+    size_t frames;
+    size_t per_marker[CONC_WRITER_CNT];
+    uint32_t sn[CONC_WRITER_CNT * CONC_FRAMES_EACH];
+    size_t sn_count;
+} conc_capture_t;
+
+static void capture_conc_frame(const test_ble_log_frame_t *frame, void *ctx_)
+{
+    conc_capture_t *cap = ctx_;
+    if (frame->src != BLE_LOG_SRC_CUSTOM || frame->payload_len != 4 + 3) {
+        return;
+    }
+    cap->frames++;
+    uint8_t marker = frame->payload[4];
+    for (int w = 0; w < CONC_WRITER_CNT; w++) {
+        if (marker == 0xa0 + w) {
+            cap->per_marker[w]++;
+        }
+    }
+    if (cap->sn_count < CONC_WRITER_CNT * CONC_FRAMES_EACH) {
+        cap->sn[cap->sn_count++] = frame->sn;
+    }
+}
+
+typedef struct {
+    SemaphoreHandle_t done;
+    uint32_t hammer_cnt;
+    bool taken;
+} hammer_ctx_t;
+
+static void hammer_claim_task(void *arg)
+{
+    hammer_ctx_t *ctx = arg;
+    uint32_t committed = 0;
+    const uint8_t marker = 0xb0;
+    for (int i = 0; i < 4000; i++) {
+        uint32_t handle;
+        uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, 1,
+                                         &handle, false);
+        if (payload) {
+            payload[0] = marker;
+            ble_log_commit(handle, 1);
+            committed++;
+        }
+    }
+    ctx->hammer_cnt = committed;
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+typedef struct {
+    uint32_t sn[CONC_WRITER_CNT * CONC_FRAMES_EACH + 16 * 1024];
+    size_t sn_count;
+} hammer_capture_t;
+
+static void capture_hammer_frame(const test_ble_log_frame_t *frame, void *ctx_)
+{
+    hammer_capture_t *cap = ctx_;
+    if (frame->src == BLE_LOG_SRC_ENCODE &&
+            cap->sn_count < CONC_WRITER_CNT * CONC_FRAMES_EACH + 16 * 1024) {
+        cap->sn[cap->sn_count++] = frame->sn;
+    }
+}
+
+static size_t count_unique_sn(const uint32_t *sn, size_t n)
+{
+    size_t unique = 0;
+    for (size_t i = 0; i < n; i++) {
+        bool first = true;
+        for (size_t j = 0; j < i; j++) {
+            if (sn[j] == sn[i]) {
+                first = false;
+                break;
+            }
+        }
+        unique += first;
+    }
+    return unique;
+}
+
+typedef struct {
+    SemaphoreHandle_t done;
+    bool write_result;
+    bool claim_result;
+} timer_writer_ctx_t;
+
+static void timer_writer_cb(void *arg)
+{
+    timer_writer_ctx_t *ctx = arg;
+    const uint8_t marker = 0x59;
+    ctx->write_result = ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker, 1);
+    uint32_t handle;
+    uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, 1, &handle, true);
+    ctx->claim_result = payload != NULL;
+    if (payload) {
+        payload[0] = marker;
+        ble_log_commit(handle, 1);
+    }
+#if CONFIG_BLE_LOG_LL_ENABLED
+    ble_log_write_hex_ll(1, &marker, 0, NULL, BIT(BLE_LOG_LL_FLAG_TASK));
+#endif
+#if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
+    ble_log_compressed_hex_print(BLE_COMPRESSED_LOG_OUT_SOURCE_HOST, 0x730, 0);
+#endif
+    xSemaphoreGive(ctx->done);
+}
+
+TEST_CASE("BLE Log ESP Timer writers never wait for shared transports",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL) > 0) {
+    }
+    /* The test peripheral holds these transports until explicitly read.
+     * Reserve capacity remains available but must not be used by this callback. */
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    timer_writer_ctx_t ctx = {.done = xSemaphoreCreateBinary()};
+    TEST_ASSERT_NOT_NULL(ctx.done);
+    esp_timer_handle_t timer;
+    const esp_timer_create_args_t args = {
+        .callback = timer_writer_cb,
+        .arg = &ctx,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "ble_log_writer",
+    };
+    TEST_ESP_OK(esp_timer_create(&args, &timer));
+
+    bool returned = true;
+    bool results_match = true;
+    /* First fire with shared capacity exhausted, then again after recycle:
+     * both callbacks must return, but only the second may write/claim. */
+    for (int attempt = 0; attempt < 2; attempt++) {
+        TEST_ESP_OK(esp_timer_start_once(timer, 1));
+        bool completed = xSemaphoreTake(ctx.done, pdMS_TO_TICKS(1000)) == pdTRUE;
+        returned &= completed;
+        if (!completed) {
+            /* A regressed writer may be parked. Wake it before waiting for
+             * callback completion; never delete a task inside a pool API. */
+            TEST_ASSERT_TRUE(ble_log_enable(false));
+        }
+        TEST_ESP_OK(esp_timer_stop_blocking(timer, portMAX_DELAY));
+        (void)xSemaphoreTake(ctx.done, 0);
+        results_match &= ctx.write_result == (attempt != 0) &&
+                         ctx.claim_result == (attempt != 0);
+
+        ble_log_lbm_flush_open_trans();
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL) > 0) {
+        }
+        TEST_ASSERT_TRUE(ble_log_enable(true));
+    }
+    TEST_ESP_OK(esp_timer_delete(timer));
+    vSemaphoreDelete(ctx.done);
+    TEST_ASSERT_TRUE_MESSAGE(returned, "ESP Timer writer waited for a shared transport");
+    TEST_ASSERT_TRUE(results_match);
+}
+
 #define SNAPSHOT_CAPTURE_MAX 8
 
 typedef struct {
@@ -1777,3 +2109,411 @@ TEST_CASE("BLE Log disable keeps waiter semaphore alive during deinit",
     TEST_ASSERT_TRUE(ble_log_init());
 }
 #endif /* CONFIG_BLE_LOG_LL_ENABLED */
+
+/* ------------------------------------------------------------------ */
+/* Review blocker repro: pool waiter self-wake spin.                   */
+/* A cancelled claim publishes FREE state before the free-bitmap hint; */
+/* a waiter scanning that transport from the stale open-cursor hint    */
+/* must PARK. Unconditional notification on the unlocked FREE state    */
+/* lets the waiter mint and consume its own wake tokens in a tight     */
+/* loop: the writer never parks, and the publisher suspended inside    */
+/* the recycle window can never run to publish the bitmap.            */
+/* ------------------------------------------------------------------ */
+static volatile bool s_spin_hook_armed;
+static SemaphoreHandle_t s_spin_writer_start;
+static SemaphoreHandle_t s_spin_writer_entered;
+static SemaphoreHandle_t s_spin_canceller_hold;
+
+typedef struct {
+    SemaphoreHandle_t done;
+    volatile bool result;
+} spin_writer_ctx_t;
+
+static void spin_writer_task(void *arg)
+{
+    spin_writer_ctx_t *ctx = arg;
+    (void)xSemaphoreTake(s_spin_writer_start, portMAX_DELAY);
+    xSemaphoreGive(s_spin_writer_entered);
+    const uint8_t marker = 0xC1;
+    ctx->result = ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker, 1);
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+typedef struct {
+    SemaphoreHandle_t done;
+    uint32_t handle;
+} spin_cancel_ctx_t;
+
+static void spin_canceller_task(void *arg)
+{
+    spin_cancel_ctx_t *ctx = arg;
+    s_spin_hook_armed = true;
+    ble_log_commit(ctx->handle, 0);
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+void ble_log_test_recycle_pre_bitmap_hook(ble_log_prph_trans_t *trans);
+
+void ble_log_test_recycle_pre_bitmap_hook(ble_log_prph_trans_t *trans)
+{
+    (void)trans;
+    if (!s_spin_hook_armed) {
+        return;
+    }
+    s_spin_hook_armed = false;
+    /* Deterministic preemption between the FREE publication and the
+     * free-bitmap hint: release the waiting writer, then stay suspended
+     * exactly like a publisher preempted in this window. */
+    xSemaphoreGive(s_spin_writer_start);
+    (void)xSemaphoreTake(s_spin_canceller_hold, portMAX_DELAY);
+}
+
+typedef struct {
+    volatile bool stop;
+    volatile uint32_t loops;
+} canary_ctx_t;
+
+static void spin_canary_task(void *arg)
+{
+    canary_ctx_t *ctx = arg;
+    while (!ctx->stop) {
+        ctx->loops++;
+        vTaskDelay(1);
+    }
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("BLE Log pool waiter parks instead of self-waking on an unpublished FREE",
+          "[ble_log][lbm][repro]")
+{
+    canary_ctx_t canary = {0};
+    spin_writer_ctx_t wctx = {.done = xSemaphoreCreateBinary()};
+    spin_cancel_ctx_t cctx = {.done = xSemaphoreCreateBinary()};
+    s_spin_writer_start = xSemaphoreCreateBinary();
+    s_spin_writer_entered = xSemaphoreCreateBinary();
+    s_spin_canceller_hold = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(wctx.done);
+    TEST_ASSERT_NOT_NULL(cctx.done);
+    TEST_ASSERT_NOT_NULL(s_spin_writer_start);
+    TEST_ASSERT_NOT_NULL(s_spin_writer_entered);
+    TEST_ASSERT_NOT_NULL(s_spin_canceller_hold);
+
+    /* Fresh pool: the first shared transport must land on id 0 so the
+     * stale open-cursor hint (still 0 from init) points at it. */
+    ble_log_deinit();
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+
+    TEST_ASSERT_NOT_NULL(ble_log_claim(BLE_LOG_SRC_ENCODE, 1,
+                                       &cctx.handle, false));
+    TEST_ASSERT_EQUAL(0, cctx.handle & 0xff);
+    uint32_t pinned[BLE_LOG_POOL_TRANS_CNT] = {0};
+    int pinned_cnt = 0;
+    for (; pinned_cnt < BLE_LOG_POOL_SHARED_CNT - 1; pinned_cnt++) {
+        TEST_ASSERT_NOT_NULL(ble_log_claim(BLE_LOG_SRC_ENCODE, 1,
+                                           &pinned[pinned_cnt], false));
+    }
+
+    /* The canary shares the writer's core: it only progresses while the
+     * writer is parked; a spinning writer monopolizes the core. */
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreatePinnedToCore(spin_canary_task, "ble_log_canary",
+                                              TEST_LIFECYCLE_STACK_SIZE, &canary,
+                                              1, NULL, 1));
+    vTaskDelay(pdMS_TO_TICKS(20));
+    uint32_t canary_base = canary.loops;
+    TEST_ASSERT_GREATER_THAN(0, canary_base);
+
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreatePinnedToCore(spin_writer_task, "ble_log_spin",
+                                              TEST_LIFECYCLE_STACK_SIZE, &wctx,
+                                              TEST_LIFECYCLE_PRIO + 1, NULL, 1));
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreatePinnedToCore(spin_canceller_task, "ble_log_cancel",
+                                              TEST_LIFECYCLE_STACK_SIZE, &cctx,
+                                              TEST_LIFECYCLE_PRIO - 1, NULL, 0));
+
+    TEST_ASSERT_TRUE(xSemaphoreTake(s_spin_writer_entered, pdMS_TO_TICKS(1000)));
+    /* Let the writer reach its steady state (parked or spinning), then
+     * sample the canary across a second window: a parked writer leaves
+     * the core to the canary; a spinning writer monopolizes it. */
+    vTaskDelay(pdMS_TO_TICKS(30));
+    uint32_t canary_settled = canary.loops;
+    vTaskDelay(pdMS_TO_TICKS(100));
+    uint32_t canary_now = canary.loops;
+    bool completed_early = xSemaphoreTake(wctx.done, 0) == pdTRUE;
+    printf("B1 sample: writer completed_early=%d canary %u -> %u during hold (core1: %s)\n",
+           completed_early, (unsigned)canary_settled, (unsigned)canary_now,
+           canary_now == canary_settled ? "MONOPOLIZED by spinning writer" : "progressing, writer parked");
+
+    /* Let the suspended publisher finish the recycle and observe the
+     * recovery: the writer must complete once the bitmap is published. */
+    xSemaphoreGive(s_spin_canceller_hold);
+    TEST_ASSERT_TRUE(xSemaphoreTake(cctx.done, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_TRUE(xSemaphoreTake(wctx.done, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_TRUE(wctx.result);
+
+    for (int i = 0; i < pinned_cnt; i++) {
+        ble_log_commit(pinned[i], 0);
+    }
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                  0, 0, NULL) > 0) {
+    }
+
+    canary.stop = true;
+    vTaskDelay(pdMS_TO_TICKS(5));
+    vSemaphoreDelete(wctx.done);
+    vSemaphoreDelete(cctx.done);
+    vSemaphoreDelete(s_spin_writer_start);
+    vSemaphoreDelete(s_spin_writer_entered);
+    vSemaphoreDelete(s_spin_canceller_hold);
+    s_spin_writer_start = NULL;
+    s_spin_writer_entered = NULL;
+    s_spin_canceller_hold = NULL;
+
+    /* Contract: while its only exit is suspended, the waiter must be
+     * PARKED (canary progresses across the hold window), never spinning
+     * on self-minted tokens (canary frozen = core monopolized). */
+    TEST_ASSERT_GREATER_THAN(canary_settled, canary_now);
+}
+
+/* ------------------------------------------------------------------ */
+/* Review blocker repro: flush drain straddle.                         */
+/* The drain loop reads the writer refcount and the waiter count as    */
+/* two separate loads. A writer waking between them is in-flight (ref  */
+/* re-acquired, waiter unregistered, gate not yet checked) when the    */
+/* drain concludes; flush then snapshots and re-enables producers      */
+/* while the pre-existing writer still owns its reference.             */
+/* ------------------------------------------------------------------ */
+static volatile bool s_straddle_acquire_armed;
+static volatile bool s_straddle_flush_armed;
+static volatile int s_straddle_flush_evals;
+static volatile bool s_straddle_hog_stop;
+static volatile bool s_straddle_writer_frozen_at_return;
+static volatile bool s_straddle_writer_result;
+static volatile int64_t s_straddle_flush_us;
+static SemaphoreHandle_t s_straddle_freeze;
+static SemaphoreHandle_t s_straddle_inflight;
+static SemaphoreHandle_t s_straddle_flush_start;
+static SemaphoreHandle_t s_straddle_flush_done;
+static SemaphoreHandle_t s_straddle_writer_started;
+static SemaphoreHandle_t s_straddle_writer_done;
+static SemaphoreHandle_t s_straddle_reader_start;
+
+void ble_log_test_acquire_after_unregister_hook(void);
+void ble_log_test_flush_drain_between_loads_hook(void);
+static void straddle_hog_task(void *arg);
+
+void ble_log_test_acquire_after_unregister_hook(void)
+{
+    if (!s_straddle_acquire_armed) {
+        return;
+    }
+    s_straddle_acquire_armed = false;
+    /* The writer is in-flight: reference re-acquired, waiter
+     * unregistered, producer gate not yet observed. Any preemption of
+     * this task leaves exactly this state behind. */
+    xSemaphoreGive(s_straddle_inflight);
+    (void)xSemaphoreTake(s_straddle_freeze, portMAX_DELAY);
+}
+
+void ble_log_test_flush_drain_between_loads_hook(void)
+{
+    if (!s_straddle_flush_armed) {
+        return;
+    }
+    switch (++s_straddle_flush_evals) {
+    case 1:
+        /* Evaluation #1, before this iteration's wake_all: start a hog on
+         * the writer's core (idle: the writer is parked) so the wake token
+         * minted moments later stays unconsumed. */
+        (void)xTaskCreatePinnedToCore(straddle_hog_task, "ble_log_strh",
+                                      TEST_LIFECYCLE_STACK_SIZE, NULL,
+                                      TEST_LIFECYCLE_PRIO + 2, NULL, 0);
+        break;
+    case 2:
+        /* Evaluation #2, between the two condition loads: stop the hog so
+         * the parked writer consumes the wake and runs its real post-take
+         * handoff steps (re-acquire + unregister) inside this window.
+         * Only now may the link recycle transports: the writer is
+         * in-flight and unregistered, so recycles mint no wake tokens. */
+        s_straddle_flush_armed = false;
+        s_straddle_hog_stop = true;
+        if (xSemaphoreTake(s_straddle_inflight, pdMS_TO_TICKS(2000)) == pdTRUE) {
+            xSemaphoreGive(s_straddle_reader_start);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+static void straddle_writer_task(void *arg)
+{
+    (void)arg;
+    xSemaphoreGive(s_straddle_writer_started);
+    const uint8_t marker = 0xD2;
+    s_straddle_writer_result = ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker, 1);
+    xSemaphoreGive(s_straddle_writer_done);
+    vTaskDelete(NULL);
+}
+
+static void straddle_flusher_task(void *arg)
+{
+    (void)arg;
+    (void)xSemaphoreTake(s_straddle_flush_start, portMAX_DELAY);
+    int64_t t0 = esp_timer_get_time();
+    ble_log_flush();
+    s_straddle_flush_us = esp_timer_get_time() - t0;
+    s_straddle_writer_frozen_at_return = !s_straddle_acquire_armed;
+    xSemaphoreGive(s_straddle_flush_done);
+    vTaskDelete(NULL);
+}
+
+static void straddle_hog_task(void *arg)
+{
+    (void)arg;
+    while (!s_straddle_hog_stop) {
+    }
+    vTaskDelete(NULL);
+}
+
+static volatile bool s_straddle_reader_stop;
+
+static void straddle_reader_task(void *arg)
+{
+    (void)arg;
+    /* Recycle transports the way a real link does, so flush_all_trans
+     * completes and the measured flush duration reflects the writer
+     * drain rather than the transport wait. Blocked until the drain has
+     * handed the writer off: recycling earlier would wake the parked
+     * writer before the straddle point. */
+    (void)xSemaphoreTake(s_straddle_reader_start, portMAX_DELAY);
+    while (!s_straddle_reader_stop) {
+        (void)ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                    pdMS_TO_TICKS(10), 0, NULL);
+    }
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("BLE Log flush drain does not straddle an in-flight parked writer",
+          "[ble_log][lbm][repro]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    s_straddle_freeze = xSemaphoreCreateBinary();
+    s_straddle_inflight = xSemaphoreCreateBinary();
+    s_straddle_flush_start = xSemaphoreCreateBinary();
+    s_straddle_flush_done = xSemaphoreCreateBinary();
+    s_straddle_writer_started = xSemaphoreCreateBinary();
+    s_straddle_writer_done = xSemaphoreCreateBinary();
+    s_straddle_reader_start = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_straddle_freeze);
+    TEST_ASSERT_NOT_NULL(s_straddle_inflight);
+    TEST_ASSERT_NOT_NULL(s_straddle_flush_start);
+    TEST_ASSERT_NOT_NULL(s_straddle_flush_done);
+    TEST_ASSERT_NOT_NULL(s_straddle_writer_started);
+    TEST_ASSERT_NOT_NULL(s_straddle_writer_done);
+    TEST_ASSERT_NOT_NULL(s_straddle_reader_start);
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+
+    /* Keep every task-usable transport SENDING in the test peripheral. */
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+
+    /* The writer parks on the full shared pool. */
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreatePinnedToCore(straddle_writer_task, "ble_log_strw",
+                                              TEST_LIFECYCLE_STACK_SIZE, NULL,
+                                              TEST_LIFECYCLE_PRIO, NULL, 0));
+    TEST_ASSERT_TRUE(xSemaphoreTake(s_straddle_writer_started, pdMS_TO_TICKS(1000)));
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    /* The eval#1 hook starts the hog on the writer's core so the first
+     * wake stays unconsumed; the eval#2 hook stops it exactly between
+     * the two condition loads. */
+    s_straddle_flush_evals = 0;
+    s_straddle_flush_armed = true;
+    s_straddle_acquire_armed = true;
+    s_straddle_hog_stop = false;
+    s_straddle_reader_stop = false;
+    s_straddle_writer_frozen_at_return = false;
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(straddle_reader_task, "ble_log_strr",
+                                  TEST_READER_STACK_SIZE, NULL,
+                                  TEST_READER_PRIO, NULL));
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreatePinnedToCore(straddle_flusher_task, "ble_log_strf",
+                                              TEST_READER_STACK_SIZE, NULL,
+                                              TEST_READER_PRIO + 2, NULL, 1));
+    xSemaphoreGive(s_straddle_flush_start);
+
+    TEST_ASSERT_TRUE(xSemaphoreTake(s_straddle_flush_done, pdMS_TO_TICKS(10000)));
+    int64_t flush_ms = s_straddle_flush_us / 1000;
+    bool writer_done_early = xSemaphoreTake(s_straddle_writer_done, 0) == pdTRUE;
+    printf("B2 sample: flush returned in %lld ms, writer in-flight at return=%d, writer already done=%d\n",
+           (long long)flush_ms, s_straddle_writer_frozen_at_return,
+           writer_done_early);
+
+    /* Transports are already claimable (the reader kept the link busy);
+     * release the frozen writer: on the straddle it observes the
+     * re-enabled gate and completes its pre-flush write after flush
+     * already returned. */
+    xSemaphoreGive(s_straddle_freeze);
+    TEST_ASSERT_TRUE(xSemaphoreTake(s_straddle_writer_done, pdMS_TO_TICKS(1000)));
+    printf("B2 outcome: frozen writer passed the re-enabled gate and wrote=%d\n",
+           s_straddle_writer_result);
+
+    s_straddle_reader_stop = true;
+    vTaskDelay(pdMS_TO_TICKS(30));
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                  0, 0, NULL) > 0) {
+    }
+
+    vSemaphoreDelete(s_straddle_freeze);
+    vSemaphoreDelete(s_straddle_inflight);
+    vSemaphoreDelete(s_straddle_flush_start);
+    vSemaphoreDelete(s_straddle_flush_done);
+    vSemaphoreDelete(s_straddle_writer_started);
+    vSemaphoreDelete(s_straddle_writer_done);
+    vSemaphoreDelete(s_straddle_reader_start);
+    s_straddle_freeze = NULL;
+    s_straddle_inflight = NULL;
+    s_straddle_flush_start = NULL;
+    s_straddle_flush_done = NULL;
+    s_straddle_writer_started = NULL;
+    s_straddle_writer_done = NULL;
+    s_straddle_reader_start = NULL;
+
+    /* Contract: when a writer was in-flight at flush return, flush must
+     * have held the drain for the full documented timeout (1s) instead
+     * of concluding between the two counter loads. */
+    if (s_straddle_writer_frozen_at_return) {
+        TEST_ASSERT_GREATER_OR_EQUAL(950, (int)flush_ms);
+    }
+}
