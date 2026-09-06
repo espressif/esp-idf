@@ -26,6 +26,9 @@
 #endif // CONFIG_BT_DUAL_MODE_ARCH
 #endif /* CONFIG_BLE_LOG_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
 
+/* hint: private API; keep this declaration in sync with esp_timer_impl.h. */
+extern TaskHandle_t esp_timer_impl_get_timer_task_handle(void);
+
 /* MACRO */
 #define BLE_LOG_POOL_MASK(count)                   (0xFFFFFFFFu >> (32 - (count)))
 #define BLE_LOG_POOL_ALL_MASK                      BLE_LOG_POOL_MASK(BLE_LOG_POOL_TRANS_CNT)
@@ -130,6 +133,11 @@ extern void ble_log_test_enable_before_lifecycle_lock_hook(void) __attribute__((
 extern void ble_log_test_disable_before_wake_hook(void) __attribute__((weak));
 extern void ble_log_test_claim_locked_hook(void) __attribute__((weak));
 extern void ble_log_test_init_snapshot_before_acquire_hook(void) __attribute__((weak));
+extern void ble_log_test_flush_hint_seen_hook(uint8_t id) __attribute__((weak));
+extern void ble_log_test_flush_stale_locked_hook(void) __attribute__((weak));
+extern void ble_log_test_recycle_pre_bitmap_hook(ble_log_prph_trans_t *trans) __attribute__((weak));
+extern void ble_log_test_flush_drain_between_loads_hook(void) __attribute__((weak));
+extern void ble_log_test_acquire_after_unregister_hook(void) __attribute__((weak));
 #endif
 
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
@@ -221,6 +229,31 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void ble_log_pool_notify_waiter(uint8_t id)
     }
 }
 
+/* Releases a candidate lock that was taken on a stale bitmap hint without
+ * changing the transport state. The transport may have become claimable
+ * while the lock was held (recycle does not take this lock), and a waiter
+ * whose scan bounced off this lock depends on this release for its wake:
+ * availability is re-checked only AFTER the release, inside the same
+ * SC-fenced window as the waiter-count read. SENDING/CLAIMED must not
+ * mint: unconditional notification would let a registered scanning waiter
+ * wake itself on a full pool. A FREE transport notifies only when its
+ * free-bitmap hint is already published: state alone does not make it
+ * claimable (a preempted recycler sits between the FREE store and the
+ * bitmap set), and notifying an unadvertised transport lets a waiter
+ * mint and consume its own wake tokens in a self-sustaining spin. */
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void
+ble_log_pool_release_candidate(ble_log_prph_trans_t *trans)
+{
+    BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
+    __atomic_thread_fence(__ATOMIC_SEQ_CST);
+    ble_log_trans_state_t st = BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state);
+    if (st == BLE_LOG_TRANS_STATE_OPEN ||
+        (st == BLE_LOG_TRANS_STATE_FREE &&
+         (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.free_bitmap) & BIT(trans->id)))) {
+        ble_log_pool_notify_waiter(trans->id);
+    }
+}
+
 /* Publish OPEN and release ownership as one operation so notification can
  * never be moved before the lock release. */
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void
@@ -286,6 +319,11 @@ BLE_LOG_IRAM_ATTR void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans)
 
     /* Publish FREE state before advertising the pool bitmap hint. */
     BLE_LOG_ATOMIC_STORE_RELEASE(trans->state, BLE_LOG_TRANS_STATE_FREE);
+#if CONFIG_BLE_LOG_PRPH_TEST
+    if (ble_log_test_recycle_pre_bitmap_hook) {
+        ble_log_test_recycle_pre_bitmap_hook(trans);
+    }
+#endif
     ble_log_pool_bitmap_set(&g_pool.free_bitmap, trans->id);
     ble_log_pool_notify_waiter(trans->id);
 }
@@ -358,9 +396,14 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_from(volatile uint32_t *bitmap,
         if (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
             continue;
         }
-        if (BLE_LOG_ATOMIC_LOAD_RELAXED(trans->state) != expected_state) {
+        /* Acceptance load: pairs with the recycler's STORE_RELEASE(FREE),
+         * which publishes pos/pending_seal without holding this lock (the
+         * last lock release predates the recycle). The OPEN domain is
+         * already covered by that lock pairing; the acquire is required
+         * for FREE acceptance. */
+        if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(trans->state) != expected_state) {
             /* The bitmap is only a hint; another owner may have changed state. */
-            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
+            ble_log_pool_release_candidate(trans);
             continue;
         }
 
@@ -421,7 +464,7 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_available(uint32_t frame_len, bool 
                 }
                 ble_log_pool_seal_and_send(open_trans);   /* releases the lock */
             } else {
-                BLE_LOG_CAS_RELEASE(&open_trans->atomic_lock);
+                ble_log_pool_release_candidate(open_trans);
             }
         }
     }
@@ -462,7 +505,10 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
     for (;;) {
         ble_log_prph_trans_t *trans =
             ble_log_pool_try_claim_available(frame_len, use_reserve);
-        if (trans || !wait || !BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled)) {
+        /* The shared ESP Timer task cannot wait for its own dispatcher.
+         * Check its identity only on the yieldable, would-wait path. */
+        if (trans || !wait || !BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled) ||
+                xTaskGetCurrentTaskHandle() == esp_timer_impl_get_timer_task_handle()) {
             return trans;
         }
 
@@ -485,6 +531,11 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
         xSemaphoreTake(g_pool.sem, portMAX_DELAY);
         BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(&lbm_ref_count);
         ble_log_pool_waiter_adjust(-1);
+#if CONFIG_BLE_LOG_PRPH_TEST
+        if (ble_log_test_acquire_after_unregister_hook) {
+            ble_log_test_acquire_after_unregister_hook();
+        }
+#endif
 
         if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled)) {
             return NULL;
@@ -563,12 +614,9 @@ void ble_log_pool_finish_frame(ble_log_prph_trans_t *trans, uint16_t payload_len
 /* ---------------------------------------------- */
 
 /* Claim with a caller-chosen wait policy. wait_for_transport=true applies
- * backpressure in a yieldable context (the writer waits for a shared
- * transport instead of dropping); false is a lossy fast path that returns
- * NULL on a busy pool, for callers that must never block (e.g. system
- * periodic output on the shared ESP timer task). Non-yieldable contexts
- * (ISR, scheduler suspended) never wait whatever the policy: they keep
- * their dedicated reserve and fail fast on contention. */
+ * backpressure in ordinary yieldable tasks; false returns NULL on a busy
+ * pool. The shared ESP Timer task never waits, regardless of that policy.
+ * Non-yieldable contexts retain their reserve and fail-fast behavior. */
 uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
                        uint32_t *handle, bool wait_for_transport)
 {
@@ -756,10 +804,24 @@ void ble_log_lbm_begin_deinit(void)
     /* Wake any blocked task writers and wait until BOTH the reference count
      * and the waiting-task count drain to zero. Blocked writers hold no
      * reference while parked, so waiting on ref_count alone could free the
-     * pool while a woken task still touches it (use-after-free). */
+     * pool while a woken task still touches it (use-after-free). The two
+     * counters are read separately: a writer waking between the loads
+     * re-acquires its reference before unregistering, so a zero waiter
+     * count alone is not a drain. The SC fence pairs with that acquire:
+     * once the waiter load has observed the unregister, the re-read below
+     * must observe the re-acquired reference. */
     TickType_t ticks_waited = 0;
-    while ((BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) > 0) ||
-           (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.waiting_task_count) > 0)) {
+    while (true) {
+        bool drained = false;
+        if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) == 0) {
+            if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.waiting_task_count) == 0) {
+                __atomic_thread_fence(__ATOMIC_SEQ_CST);
+                drained = BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) == 0;
+            }
+        }
+        if (drained) {
+            break;
+        }
         ble_log_pool_wake_all();
         vTaskDelay(1);
         BLE_LOG_ASSERT(ticks_waited++ < BLE_LOG_WAIT_TIMEOUT_TICKS);
@@ -872,7 +934,9 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
     TickType_t start_tick = xTaskGetTickCount();
     for (;;) {
         if (BLE_LOG_CAS_ACQUIRE(&internal_trans->atomic_lock)) {
-            if (BLE_LOG_ATOMIC_LOAD_RELAXED(internal_trans->state) ==
+            /* Acceptance load: pairs with the dedicated transport's
+             * lock-free recycle publication (pos=0, STORE_RELEASE(FREE)). */
+            if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(internal_trans->state) ==
                 BLE_LOG_TRANS_STATE_FREE) {
                 break;
             }
@@ -963,6 +1027,13 @@ void ble_log_lbm_flush_open_trans(void)
             continue;
         }
         ble_log_prph_trans_t *trans = g_pool.trans[id];
+#if CONFIG_BLE_LOG_PRPH_TEST
+        /* Test point: the OPEN hint was just observed; a test can play the
+         * other core before this scan takes the candidate lock. */
+        if (ble_log_test_flush_hint_seen_hook) {
+            ble_log_test_flush_hint_seen_hook((uint8_t)id);
+        }
+#endif
         if (!BLE_LOG_CAS_ACQUIRE(&trans->atomic_lock)) {
             /* A writer holds the buffer: leave a pending-seal marker for
              * the next claim instead of waiting (the flusher never
@@ -976,7 +1047,14 @@ void ble_log_lbm_flush_open_trans(void)
             trans->pos > 0) {
             ble_log_pool_seal_and_send(trans);
         } else {
-            BLE_LOG_CAS_RELEASE(&trans->atomic_lock);
+#if CONFIG_BLE_LOG_PRPH_TEST
+            /* Test point: this scan holds a candidate lock taken on a
+             * stale hint; the transport state is not OPEN. */
+            if (ble_log_test_flush_stale_locked_hook) {
+                ble_log_test_flush_stale_locked_hook();
+            }
+#endif
+            ble_log_pool_release_candidate(trans);
         }
     }
 
@@ -1053,8 +1131,29 @@ void ble_log_flush(void)
     bool lbm_enabled_copy = BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled);
     ble_log_lbm_disable();
     TickType_t start_tick = xTaskGetTickCount();
-    while ((BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) > 1) ||
-           (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.waiting_task_count) > 0)) {
+    bool writers_drained = false;
+    while (!writers_drained) {
+        if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) <= 1) {
+#if CONFIG_BLE_LOG_PRPH_TEST
+            if (ble_log_test_flush_drain_between_loads_hook) {
+                ble_log_test_flush_drain_between_loads_hook();
+            }
+#endif
+            if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.waiting_task_count) == 0) {
+                /* The refcount and the waiter count are two separate
+                 * loads: a writer waking between them re-acquires its
+                 * reference BEFORE unregistering, so a zero waiter count
+                 * alone is not a drain. The SC fence pairs with that
+                 * re-acquire: once this load has observed the unregister,
+                 * the re-read must observe the re-acquired reference. */
+                __atomic_thread_fence(__ATOMIC_SEQ_CST);
+                writers_drained =
+                    BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) <= 1;
+            }
+        }
+        if (writers_drained) {
+            break;
+        }
         ble_log_pool_wake_all();
         if ((xTaskGetTickCount() - start_tick) >= BLE_LOG_WAIT_TIMEOUT_TICKS) {
             BLE_LOG_CONSOLE("@EW: Timed out waiting for BLE Log writers\n");

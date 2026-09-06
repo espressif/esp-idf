@@ -246,9 +246,9 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
  * only BLE_LOG_SRC_ENCODE is supported; its frames are stamped with the
  * ENCODE source ID on the wire. wait_for_transport=false turns a busy pool
  * into a lossy fast path (NULL, as in a non-yieldable context) instead of
- * waiting, for output that must not block its caller (e.g. the shared ESP
- * timer task); true waits in yieldable contexts, never in non-yieldable
- * ones. */
+ * waiting. true requests backpressure in ordinary yieldable tasks; the
+ * shared ESP Timer task and non-yieldable contexts never wait, regardless
+ * of the requested policy. */
 uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
                        uint32_t *handle, bool wait_for_transport);
 void ble_log_commit(uint32_t handle, size_t actual_len);
