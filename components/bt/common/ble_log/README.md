@@ -19,9 +19,12 @@ flowchart TD
 
 The shared pool contains `CONFIG_BLE_LOG_POOL_TRANS_CNT` transports. The last
 `CONFIG_BLE_LOG_POOL_NON_YIELD_RESERVE_CNT` transports are reserved for ISR and
-other contexts that cannot yield. Every yieldable-context writer, from the
-public API and claims to the controller LL task, waits for a shared transport;
-only ISR and critical-section writers fail fast.
+other contexts that cannot yield. Ordinary yieldable task writers, from the
+public API and claims to the controller LL task, wait for a shared transport
+unless a claim explicitly opts out. Writers on the shared ESP Timer task never
+wait for a transport: its callbacks must return so dispatch can progress.
+While yieldable, they use shared transports only; ISR and critical-section
+writers retain reserve access and fail-fast behavior.
 
 The Internal Snapshot and UART0 redirection transports are not members of the
 bitmap pool.
@@ -202,10 +205,11 @@ if (payload) {
 ```
 
 `ble_log_claim()` reserves the hidden frame header, ESP Timer timestamp, and
-checksum. It waits for a shared transport in yieldable contexts when
-`wait_for_transport` is true (writer backpressure); pass false for a lossy
-fast path from contexts that must not block, such as the shared ESP Timer
-task. Non-yieldable contexts (ISR, critical section) fail fast either way.
+checksum. It waits for a shared transport in ordinary yieldable tasks when
+`wait_for_transport` is true (writer backpressure); pass false to opt out.
+The shared ESP Timer task and non-yieldable contexts fail fast either way.
+A busy-pool rejection leaves a Global SN gap and increments the source's loss
+counter, just like other pool acquisition failures.
 Every successful claim must be committed exactly once before
 `ble_log_deinit()`; `ble_log_commit(handle, 0)` cancels it. Handles include a
 transport generation so a stale handle cannot commit a later claim in the same

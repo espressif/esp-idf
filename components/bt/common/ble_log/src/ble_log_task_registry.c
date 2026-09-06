@@ -164,7 +164,9 @@ BLE_LOG_STATIC bool ble_log_task_binding_send(uint8_t cnt, uint32_t timestamp)
     if (!BLE_LOG_CAS_ACQUIRE(&binding_trans->atomic_lock)) {
         return false;
     }
-    if (BLE_LOG_ATOMIC_LOAD_RELAXED(binding_trans->state) !=
+    /* Acceptance load: pairs with the dedicated transport's lock-free
+     * recycle publication (pos=0, STORE_RELEASE(FREE)). */
+    if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(binding_trans->state) !=
         BLE_LOG_TRANS_STATE_FREE) {
         BLE_LOG_CAS_RELEASE(&binding_trans->atomic_lock);
         return false;
