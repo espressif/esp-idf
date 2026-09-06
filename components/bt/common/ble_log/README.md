@@ -60,19 +60,21 @@ The checksum is `ble_log_fast_checksum()` over the six-byte header and exactly
 `payload length` bytes. It excludes the checksum field and peripheral-only DMA
 padding.
 
-Core frames (all sources except REDIR) begin their payload with:
+Core frame payloads follow the writer entry point, not a single rule:
 
-```text
-[4-byte low32 esp_timer_get_time() microseconds][source payload]
-```
+- Public write / claim path (`write_hex`, compressed encoder): the API
+  prepends a `[4-byte low32 esp_timer_get_time() microseconds]` before
+  the source payload. The timestamp is captured at API entry before any
+  pool mutex wait. It wraps approximately every 71.6 minutes and must be
+  unwrapped modulo 2^32 by the receiver.
+- LL callback path (`write_hex_ll`, covering the LL_TASK / LL_HCI /
+  LL_ISR sources): controller payloads are forwarded raw, with no ESP
+  timestamp prefix — the on-wire layout is exactly what the controller
+  handed over.
 
-The timestamp is captured at API entry before any pool mutex wait. It wraps
-approximately every 71.6 minutes and must be unwrapped modulo 2^32 by the
-receiver.
-
-UART0 redirection payload is the raw console stream with no timestamp
-prefix: the redirection stream keeps its own frame sequence, and its
-receiver-side arrival time (aggregation delay bounded by the periodic
+UART0 redirection payload is likewise the raw console stream with no
+timestamp prefix: the redirection stream keeps its own frame sequence, and
+its receiver-side arrival time (aggregation delay bounded by the periodic
 redirection flush) is the alignment reference against the core timeline.
 
 ### Sources
