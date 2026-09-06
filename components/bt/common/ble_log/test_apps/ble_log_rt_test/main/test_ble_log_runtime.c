@@ -932,6 +932,13 @@ TEST_CASE("BLE Log runtime survives deinit racing submissions",
     /* Stop the writer and join with a bound before asserting so a Unity
      * longjmp cannot leak the writer into later tests. */
     __atomic_store_n(&ctx->stop, true, __ATOMIC_RELEASE);
+    /* A writer parked inside ble_log_claim() cannot observe stop: only the
+     * deinit waiter wake returns it. Deinit here, before the join, so its
+     * drain closes the producer gate, wakes any parked writer and waits
+     * for it to leave the pool API. The vTaskDelete fallback below can
+     * then never cut a task down inside pool bookkeeping (which would
+     * leak waiting_task_count and hang the recovery deinit). */
+    ble_log_deinit();
     const int64_t join_deadline_us = esp_timer_get_time() +
                                      (int64_t)RT_JOIN_TIMEOUT_MS * 1000;
     while (!__atomic_load_n(&ctx->exited, __ATOMIC_ACQUIRE)) {
@@ -949,8 +956,8 @@ TEST_CASE("BLE Log runtime survives deinit racing submissions",
 
     /* Recover module state before any assertion can abort the test: a
      * failed re-init leaves the module deinit-ed and tearDown does not
-     * restore it, which would cascade into every later test. */
-    ble_log_deinit();
+     * restore it, which would cascade into every later test. Deinit ran
+     * before the join (see above); only the init half remains. */
     bool recovered = ble_log_init();
     reinit_ok = reinit_ok && recovered;
 

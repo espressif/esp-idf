@@ -492,13 +492,18 @@ static void observe_perf_frame(const test_ble_log_frame_t *frame, void *ctx)
         if (snapshot.int_src_code != BLE_LOG_INT_SRC_SNAPSHOT) {
             return;
         }
-        for (int i = 0; i < BLE_LOG_SRC_CORE_COUNT; i++) {
-            int src = BLE_LOG_SRC_CORE_FIRST + i;
-            sink->stat_written[src] = snapshot.stats[i].written_frame_cnt;
-            sink->stat_lost[src] = snapshot.stats[i].lost_frame_cnt;
+        /* Latch the final counters only from the FLUSH snapshot: periodic
+         * snapshots keep arriving after it and carry interval counters
+         * that the flush reset; letting them through would overwrite the
+         * final result the run report and assertions rely on. */
+        if (snapshot.reason_flags & BLE_LOG_SNAPSHOT_REASON_FLUSH) {
+            for (int i = 0; i < BLE_LOG_SRC_CORE_COUNT; i++) {
+                int src = BLE_LOG_SRC_CORE_FIRST + i;
+                sink->stat_written[src] = snapshot.stats[i].written_frame_cnt;
+                sink->stat_lost[src] = snapshot.stats[i].lost_frame_cnt;
+            }
+            sink->stat_final_seen = true;
         }
-        sink->stat_final_seen =
-            (snapshot.reason_flags & BLE_LOG_SNAPSHOT_REASON_FLUSH) != 0;
     }
 }
 
