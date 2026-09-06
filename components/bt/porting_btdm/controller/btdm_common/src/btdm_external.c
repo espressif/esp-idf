@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "btdm_external.h"
+#include "btdm_user_cfg.h"
 
 extern const int8_t *bt_bb_get_tx_pwr_table(uint8_t *length);
 extern const int8_t *bt_bb_tx_pwr_table_get(uint8_t *length, uint8_t modem_cfg);
