@@ -72,7 +72,7 @@ menu "Example Configuration"
 
         config EXAMPLE_I2S_MCLK_IO
             int "I2S MCLK GPIO (set -1 if the codec does not use an external MCLK)"
-            default 2
+            default -1
             help
                 Set the GPIO number used for the I2S MCLK signal. When set to -1, no MCLK
                 is generated and the ES8389 derives its clock from BCLK.

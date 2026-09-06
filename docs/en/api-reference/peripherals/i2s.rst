@@ -449,7 +449,7 @@ The examples of the I2S driver can be found in the directory :example:`periphera
 Standard TX/RX Usage
 ^^^^^^^^^^^^^^^^^^^^
 
-- :example:`peripherals/i2s/i2s_codec/i2s_es8311` demonstrates how to use the I2S ES8311 audio codec with {IDF_TARGET_NAME} to play music or echo sounds, featuring high performance and low power multi-bit delta-sigma audio ADC and DAC, with options to customize music and adjust mic gain and volume.
+- :example:`peripherals/i2s/wav_player` demonstrates how to play an embedded WAV file through I2S STD TX to an ES8311 or ES8389 codec DAC on {IDF_TARGET_NAME}.
 - :example:`peripherals/i2s/i2s_basic/i2s_std` demonstrates how to use the I2S standard mode in either simplex or full-duplex mode on {IDF_TARGET_NAME}.
 - :example:`peripherals/i2s/mic_recorder` demonstrates how to record audio from an analog microphone connected to an ES8389 codec through the I2S STD interface.
 
