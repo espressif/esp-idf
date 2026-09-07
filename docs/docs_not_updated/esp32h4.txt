@@ -1,5 +1,5 @@
 index.rst
-api-guides/openthread.rst
+api-guides/openthread/index.rst
 api-guides/wifi-expansion.rst
 api-guides/deep-sleep-stub.rst
 api-guides/esp-wifi-mesh.rst
