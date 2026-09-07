@@ -182,7 +182,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 static int handle_auth_frame(u8 *frame, size_t len,
                              u8 *sender, int8_t rssi, u8 channel)
 {
-    if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK || gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_SAE) {
+    if (wpa_key_mgmt_ft(gWpaSm.key_mgmt)) {
         if (len < 6) {
             return -1;
         }
@@ -200,7 +200,7 @@ static int handle_auth_frame(u8 *frame, size_t len,
 static int handle_assoc_frame(u8 *frame, size_t len,
                               u8 *sender, int8_t rssi, u8 channel)
 {
-    if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK || gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_SAE) {
+    if (wpa_key_mgmt_ft(gWpaSm.key_mgmt)) {
         if (len < 6) { /* Cap info + status code */
             return -1;
         }

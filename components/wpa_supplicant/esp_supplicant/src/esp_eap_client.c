@@ -623,6 +623,16 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     case EAP_CODE_SUCCESS:
         if (sm->eapKeyData) {
             wpa_set_pmk(sm->eapKeyData, 0, NULL, false);
+#ifdef CONFIG_IEEE80211R
+            /* For FT-EAP, the XXKey used in the FT key hierarchy is the
+             * second half of the MSK (PMK is the first half). */
+            if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X &&
+                    sm->eapKeyDataLen >= 2 * PMK_LEN) {
+                wpa_sm_set_xxkey(sm->eapKeyData + PMK_LEN, PMK_LEN);
+            } else if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) {
+                wpa_sm_set_xxkey(NULL, 0);
+            }
+#endif /* CONFIG_IEEE80211R */
             os_free(sm->eapKeyData);
             sm->eapKeyData = NULL;
             wpa_printf(MSG_INFO, ">>>>>EAP FINISH");
@@ -631,6 +641,11 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
             eap_deinit_prev_method(sm, "EAP Success");
         } else {
             wpa_printf(MSG_INFO, ">>>>>EAP FAILED, receive EAP_SUCCESS but pmk is empty, potential attack!");
+#ifdef CONFIG_IEEE80211R
+            if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) {
+                wpa_sm_set_xxkey(NULL, 0);
+            }
+#endif /* CONFIG_IEEE80211R */
             ret = WPA2_ENT_EAP_STATE_FAIL;
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_FAIL);
         }

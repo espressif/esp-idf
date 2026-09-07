@@ -171,7 +171,9 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         return -1;
     }
 
-    if ( (sm->ap_notify_completed_rsne == true) || (key_mgmt == WPA_KEY_MGMT_IEEE8021X) ) {
+    if ( (sm->ap_notify_completed_rsne == true) ||
+         (key_mgmt == WPA_KEY_MGMT_IEEE8021X) ||
+         (key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) ) {
         min_len = sizeof(*hdr) + RSN_SELECTOR_LEN + 2 + RSN_SELECTOR_LEN + 2 + RSN_SELECTOR_LEN + 2;
     } else {
         min_len = sizeof(*hdr) + RSN_SELECTOR_LEN;
@@ -195,7 +197,9 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
     RSN_SELECTOR_PUT(pos, suite);
     pos += RSN_SELECTOR_LEN;
 
-    if ( (sm->ap_notify_completed_rsne == false) && (key_mgmt != WPA_KEY_MGMT_IEEE8021X) ) {
+    if ( (sm->ap_notify_completed_rsne == false) &&
+         (key_mgmt != WPA_KEY_MGMT_IEEE8021X) &&
+         (key_mgmt != WPA_KEY_MGMT_FT_IEEE8021X) ) {
         hdr->len = (pos - rsn_ie) - 2;
         return (pos - rsn_ie);
     }
@@ -237,6 +241,10 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE_EXT_KEY);
     } else if (key_mgmt == WPA_KEY_MGMT_FT_SAE) {
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_SAE);
+#ifdef CONFIG_IEEE80211R
+    } else if (key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY) {
+        RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_SAE_EXT_KEY);
+#endif /* CONFIG_IEEE80211R */
 #endif /* CONFIG_WPA3_SAE */
 #ifdef CONFIG_OWE_STA
     } else if (key_mgmt == WPA_KEY_MGMT_OWE) {
@@ -263,7 +271,7 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 #ifdef CONFIG_IEEE80211W
     if (sm->pmf_cfg.capable) {
         capab |= WPA_CAPABILITY_MFPC;
-        if (sm->pmf_cfg.required || key_mgmt == WPA_KEY_MGMT_SAE || key_mgmt == WPA_KEY_MGMT_OWE) {
+        if (sm->pmf_cfg.required || wpa_key_mgmt_sae(key_mgmt) || key_mgmt == WPA_KEY_MGMT_OWE) {
             capab |= WPA_CAPABILITY_MFPR;
         }
     }
