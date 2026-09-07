@@ -805,13 +805,14 @@ static void i2c_master_isr_handler_default(void *arg)
         i2c_master->trans_done = true;
         i2c_master->event = I2C_EVENT_DONE;
     }
-    if (i2c_master->event != I2C_EVENT_ALIVE) {
-        xQueueSendFromISR(i2c_master->event_queue, (void *)&i2c_master->event, &HPTaskAwoken);
-    }
     if (i2c_master->contains_read == true) {
         if (int_mask & I2C_LL_INTR_MST_COMPLETE || int_mask & I2C_LL_INTR_END_DETECT) {
             i2c_isr_receive_handler(i2c_master);
         }
+    }
+    /* Wait for the ISR to finish copying RX FIFO before notifying the waiter so the caller's buffer is complete */
+    if (i2c_master->event != I2C_EVENT_ALIVE) {
+        xQueueSendFromISR(i2c_master->event_queue, (void *)&i2c_master->event, &HPTaskAwoken);
     }
 
     if (i2c_master->async_trans) {
