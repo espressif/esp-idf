@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
+import posixpath
 import sys
 from textwrap import indent
 
@@ -46,10 +47,13 @@ def generate_gdbinit_rom_add_symbols(target: str) -> str:
     for i, k in enumerate(roms[target], 1):
         indent_str = base_ident * i
         rom_file = f'{target}_rev{k["rev"]}_rom.elf'
+        # GDB wants a POSIX path. posixpath.join inserts '/' even when
+        # ESP_ROM_ELF_DIR has no trailing separator (common on Windows).
+        rom_path = posixpath.join(rom_elfs_dir, rom_file)
         build_date_addr = int(k['build_date_str_addr'], base=16)
         r.append(indent(f'# if $_streq((char *) {hex(build_date_addr)}, "{k["build_date_str"]}")', indent_str))
         r.append(indent(get_rom_if_condition_str(build_date_addr, k['build_date_str']), indent_str))
-        r.append(indent(f'add-symbol-file {rom_elfs_dir}{rom_file}', indent_str + base_ident))
+        r.append(indent(f'add-symbol-file {rom_path}', indent_str + base_ident))
         r.append(indent('else', indent_str))
         if i == len(roms[target]):
             # In case no one known ROM ELF fits - print warning
