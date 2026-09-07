@@ -484,7 +484,8 @@ static ESP_TIMER_IRAM_ATTR void timer_list_unlock(esp_timer_dispatch_t timer_typ
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 ESP_TIMER_IRAM_ATTR
 #endif
-static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
+// Keep this as a standalone symbol because ldgen maps it by name.
+static void __attribute__((noinline, noclone)) timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 {
     timer_list_lock(dispatch_method);
     esp_timer_handle_t it;
