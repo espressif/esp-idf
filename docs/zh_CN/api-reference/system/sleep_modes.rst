@@ -649,16 +649,16 @@ UART 输出处理
 可通过调用 :cpp:func:`esp_sleep_set_console_uart_handling_mode` 覆盖默认行为，并选择下列模式之一（参见 :cpp:enum:`esp_sleep_uart_handling_mode_t`）：
 
 - :cpp:enumerator:`ESP_SLEEP_AUTO_FLUSH_SUSPEND_UART` （默认）：根据睡眠类型和电源域自动选择冲刷或挂起，如上所述。
-- :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` ：进入睡眠前始终等待控制台 UART TX FIFO 中的数据全部发送完毕。适用于必须保证所有调试输出可见的场景；进入睡眠时间会更长，芯片处于 Active 状态的时间变长进而增加功耗。
-- :cpp:enumerator:`ESP_SLEEP_ALWAYS_SUSPEND_UART` ：等待当前 UART 帧发完后挂起 UART。若 Light-sleep 期间 UART 保持供电，唤醒后会继续发送；若 UART 电源域掉电，未发送的数据将丢失。
-- :cpp:enumerator:`ESP_SLEEP_ALWAYS_DISCARD_UART` ：丢弃控制台 UART FIFO 中所有未发送数据并立即进入睡眠。适用于追求最快进入睡眠和最低功耗、且可接受丢弃调试输出的场景。
-- :cpp:enumerator:`ESP_SLEEP_NO_HANDLING` ：进入睡眠前不对控制台 UART 做任何处理。仅在确认 UART 状态安全时使用（例如无待发数据或已禁用控制台 UART）。
+- :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART`：进入睡眠前始终等待控制台 UART TX FIFO 中的数据全部发送完毕。适用于必须保证所有调试输出可见的场景；进入睡眠时间会更长，芯片处于 Active 状态的时间变长进而增加功耗。
+- :cpp:enumerator:`ESP_SLEEP_ALWAYS_SUSPEND_UART`：等待当前 UART 帧发完后挂起 UART。若 Light-sleep 期间 UART 保持供电，唤醒后会继续发送；若 UART 电源域掉电，未发送的数据将丢失。
+- :cpp:enumerator:`ESP_SLEEP_ALWAYS_DISCARD_UART`：丢弃控制台 UART FIFO 中所有未发送数据并立即进入睡眠。适用于追求最快进入睡眠和最低功耗、且可接受丢弃调试输出的场景。
+- :cpp:enumerator:`ESP_SLEEP_NO_HANDLING`：进入睡眠前不对控制台 UART 做任何处理。仅在确认 UART 状态安全时使用（例如无待发数据或已禁用控制台 UART）。
 
 .. note::
 
-   睡眠流程在临界区中执行，当使用会冲刷控制台 UART 的模式（如 :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` ，或 HP 外设域掉电时的 Light-sleep/Deep-sleep 默认行为）时，请将 :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 配置为**大于** ``SOC_UART_FIFO_LEN`` ×（当前波特率下发送一个字符所需时间）。否则若 TX FIFO 中积压数据过多，冲刷时间可能超过中断看门狗超时，会在进入睡眠过程中触发看门狗复位。
+    睡眠流程在临界区中执行，当使用会冲刷控制台 UART 的模式（如 :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART`，或 HP 外设域掉电时的 Light-sleep/Deep-sleep 默认行为）时，请将 :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 配置为**大于** ``SOC_UART_FIFO_LEN`` ×（当前波特率下发送一个字符所需时间）。否则若 TX FIFO 中积压数据过多，冲刷时间可能超过中断看门狗超时，会在进入睡眠过程中触发看门狗复位。
 
-示例：在每次睡眠前确保所有调试输出已发出：:
+示例：在每次睡眠前确保所有调试输出已发出：
 
 .. code-block:: c
 
@@ -666,7 +666,7 @@ UART 输出处理
     esp_sleep_set_console_uart_handling_mode(ESP_SLEEP_ALWAYS_FLUSH_UART);
     esp_light_sleep_start();
 
-示例：尽量缩短进入睡眠时间并允许丢弃控制台输出：:
+示例：尽量缩短进入睡眠时间并允许丢弃控制台输出：
 
 .. code-block:: c
 
