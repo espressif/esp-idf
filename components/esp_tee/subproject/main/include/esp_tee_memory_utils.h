@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/ext_mem_defs.h"
@@ -40,6 +41,20 @@ FORCE_INLINE_ATTR bool esp_tee_buf_in_ree(const void *p, size_t len)
 FORCE_INLINE_ATTR bool esp_tee_ptr_in_ree(const void *p)
 {
     return esp_tee_buf_in_ree(p, 4);
+}
+
+/* NOTE: re-points a REE string argument at a TEE-resident copy */
+FORCE_INLINE_ATTR void tee_snapshot_ree_str(const char **name, char *buf, size_t buf_len)
+{
+    const char *src = *name;
+    if (src == NULL || buf_len == 0) {
+        return;
+    }
+
+    memcpy(buf, src, buf_len);
+    buf[buf_len - 1] = '\0';
+
+    *name = buf;
 }
 
 #ifdef __cplusplus

@@ -22,6 +22,7 @@
 .equ SAVE_REGS, 32
 .equ CONTEXT_SIZE, (SAVE_REGS * 4)
 .equ MAGIC, 0x1f
+.equ NS_INT_RTN_MAGIC, (MAGIC << 12)
 
 /* Macro which first allocates space on the stack to save general
  * purpose registers, and then save them. GP register is excluded.
@@ -220,6 +221,24 @@
     ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE t0 t1
     1:
 #endif
+.endm
+
+/**
+ * SVC_LOCK_ACQUIRE / SVC_LOCK_RELEASE
+ * Hold _s_svc_lock for the duration of a secure service call, so that a call issued
+ * while another one is active branches to \fail instead of clobbering it.
+ *
+ * Clobbers: \tx
+ */
+.macro SVC_LOCK_ACQUIRE tx, fail
+    la      \tx, _s_svc_lock
+    amoswap.w.aq \tx, \tx, (\tx)
+    bnez    \tx, \fail
+.endm
+
+.macro SVC_LOCK_RELEASE tx
+    la      \tx, _s_svc_lock
+    amoswap.w.rl zero, zero, (\tx)
 .endm
 
 /**

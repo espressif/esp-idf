@@ -17,15 +17,17 @@
 
 #if !ESP_TEE_BUILD
 #include "esp_private/startup_internal.h"
+#else
+#include "esp_fault.h"
 #endif
 
 #include "hal/rtc_timer_hal.h"
 
 #if SOC_RNG_CLOCK_IS_INDEPENDENT
 #include "hal/lp_clkrst_ll.h"
-#if SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE || SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
-#include "hal/rng_ll.h"
 #endif
+#if (SOC_RNG_CLOCK_IS_INDEPENDENT && (SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE || SOC_RNG_RTC_TIMER_ENTROPY_SOURCE)) || ESP_TEE_BUILD
+#include "hal/rng_ll.h"
 #endif
 
 #if defined CONFIG_IDF_TARGET_ESP32S3
@@ -74,6 +76,9 @@ uint32_t IRAM_ATTR esp_random(void)
     uint32_t result = 0;
     for (size_t i = 0; i < sizeof(result); i++) {
         do {
+#if ESP_TEE_BUILD
+            ESP_FAULT_ASSERT(rng_ll_is_enabled());
+#endif
             ccount = esp_cpu_get_cycle_count();
             result ^= REG_READ(WDEV_RND_REG);
         } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,18 +8,21 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "soc/soc.h"
+#include "soc/lpperi_reg.h"
 #include "soc/lpperi_struct.h"
-#include "hal/lp_clkrst_ll.h"
 
-#define RNG_LL_DEPENDS_ON_LP_PERIPH 1
-//For ESP32C5, RNG needs to be reset and enabled again when wakeup from sleep
-#define RNG_LL_NEEDS_RESET_WHEN_WAKEUP 1
 //Default value for the RNG timer clock divider
 #define RNG_LL_CFG_PSCALE              255
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static inline uint32_t rng_ll_read_data(void)
+{
+    return REG_READ(LPPERI_RNG_DATA_SYNC_REG);
+}
 
 /**
  * @brief Enable or disable RNG sampling.
@@ -28,7 +31,7 @@ extern "C" {
  */
 static inline void rng_ll_enable_sample(bool enable)
 {
-    LPPERI.rng_cfg.rng_sample_enable = enable;
+    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RNG_SAMPLE_ENABLE, enable);
 }
 
 /**
@@ -38,7 +41,7 @@ static inline void rng_ll_enable_sample(bool enable)
  */
 static inline void rng_ll_set_timer_prescaler(uint8_t prescaler)
 {
-    LPPERI.rng_cfg.rng_timer_pscale = prescaler;
+    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_PSCALE, prescaler);
 }
 
 /**
@@ -48,7 +51,7 @@ static inline void rng_ll_set_timer_prescaler(uint8_t prescaler)
  */
 static inline void rng_ll_enable_rtc_timer(bool enable)
 {
-    LPPERI.rng_cfg.rtc_timer_en = enable ? 0x3 : 0x0;
+    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RTC_TIMER_EN, enable ? 0x3 : 0x0);
 }
 
 /**
@@ -58,7 +61,7 @@ static inline void rng_ll_enable_rtc_timer(bool enable)
  */
 static inline void rng_ll_enable_rng_timer(bool enable)
 {
-    LPPERI.rng_cfg.rng_timer_en = enable;
+    REG_SET_FIELD(LPPERI_RNG_CFG_REG, LPPERI_RNG_TIMER_EN, enable);
 }
 
 /**
@@ -77,7 +80,7 @@ static inline void rng_ll_reset(void)
  */
 static inline void rng_ll_enable(void)
 {
-    _lp_clkrst_ll_enable_rng_clock(true);
+    LPPERI.clk_en.rng_ck_en = 1;
     rng_ll_set_timer_prescaler(RNG_LL_CFG_PSCALE);
     rng_ll_enable_sample(true);
     rng_ll_enable_rtc_timer(true);
@@ -94,7 +97,7 @@ static inline void rng_ll_disable(void)
     rng_ll_enable_sample(false);
     rng_ll_enable_rtc_timer(false);
     rng_ll_enable_rng_timer(false);
-    _lp_clkrst_ll_enable_rng_clock(false);
+    LPPERI.clk_en.rng_ck_en = 0;
 }
 
 /**
