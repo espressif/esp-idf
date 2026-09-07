@@ -916,6 +916,37 @@ static int vfs_fat_unlink(void* ctx, const char *path)
     return 0;
 }
 
+/* Copy whole file from src into dst. Callers open src at offset 0. */
+static FRESULT vfs_fat_copy_contents(FIL *src, FIL *dst, void *buf, size_t buf_size)
+{
+    size_t size_left = f_size(src);
+
+    while (size_left > 0) {
+        UINT will_copy = (UINT) ((size_left < buf_size) ? size_left : buf_size);
+        UINT read = 0;
+        FRESULT res = f_read(src, buf, will_copy, &read);
+        if (res != FR_OK) {
+            return res;
+        }
+        if (read != will_copy) {
+            return FR_DISK_ERR;
+        }
+
+        UINT written = 0;
+        res = f_write(dst, buf, will_copy, &written);
+        if (res != FR_OK) {
+            return res;
+        }
+        if (written != will_copy) {
+            return FR_DISK_ERR;
+        }
+
+        size_left -= will_copy;
+    }
+
+    return FR_OK;
+}
+
 static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
@@ -929,62 +960,42 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
     void* buf = NULL;
 
     _lock_acquire(&fat_ctx->lock);
-    do {
-        prepend_drive_to_path(fat_ctx, &n1, &n2);
 
-        const size_t copy_buf_size = fat_ctx->fs.csize;
-        pf1 = (FIL*) ff_memalloc(sizeof(FIL));
-        pf2 = (FIL*) ff_memalloc(sizeof(FIL));
-        buf = ff_memalloc(copy_buf_size);
-        if (buf == NULL || pf1 == NULL || pf2 == NULL) {
-            ESP_LOGD(TAG, "alloc failed, pf1=%p, pf2=%p, buf=%p", pf1, pf2, buf);
-            errno = ENOMEM;
-            ret = -1;
-            break;
-        }
+    prepend_drive_to_path(fat_ctx, &n1, &n2);
 
-        memset(pf1, 0, sizeof(*pf1));
-        memset(pf2, 0, sizeof(*pf2));
+    const size_t copy_buf_size = fat_ctx->fs.csize;
+    pf1 = (FIL*) ff_memalloc(sizeof(FIL));
+    pf2 = (FIL*) ff_memalloc(sizeof(FIL));
+    buf = ff_memalloc(copy_buf_size);
+    if (buf == NULL || pf1 == NULL || pf2 == NULL) {
+        ESP_LOGD(TAG, "alloc failed, pf1=%p, pf2=%p, buf=%p", pf1, pf2, buf);
+        errno = ENOMEM;
+        ret = -1;
+        goto cleanup;
+    }
 
-        res = f_open(pf1, n1, FA_READ | FA_OPEN_EXISTING);
-        if (res != FR_OK) {
-            break;
-        }
-        opened_old = true;
+    memset(pf1, 0, sizeof(*pf1));
+    memset(pf2, 0, sizeof(*pf2));
 
-        res = f_open(pf2, n2, FA_WRITE | FA_CREATE_NEW);
+    res = f_open(pf1, n1, FA_READ | FA_OPEN_EXISTING);
+    if (res != FR_OK) {
+        goto cleanup;
+    }
+    opened_old = true;
+
+    res = f_open(pf2, n2, FA_WRITE | FA_CREATE_NEW);
 #if !CONFIG_FATFS_LINK_LOCK
-        _lock_release(&fat_ctx->lock);
-        lock_held = false;
+    _lock_release(&fat_ctx->lock);
+    lock_held = false;
 #endif
-        if (res != FR_OK) {
-            break;
-        }
-        opened_new = true;
+    if (res != FR_OK) {
+        goto cleanup;
+    }
+    opened_new = true;
 
-        size_t size_left = f_size(pf1);
-        while (size_left > 0) {
-            UINT will_copy = (size_left < copy_buf_size) ? size_left : copy_buf_size;
-            UINT read = 0;
-            res = f_read(pf1, buf, will_copy, &read);
-            if (res != FR_OK) {
-                break;
-            } else if (read != will_copy) {
-                res = FR_DISK_ERR;
-                break;
-            }
-            UINT written = 0;
-            res = f_write(pf2, buf, will_copy, &written);
-            if (res != FR_OK) {
-                break;
-            } else if (written != will_copy) {
-                res = FR_DISK_ERR;
-                break;
-            }
-            size_left -= will_copy;
-        }
-    } while (0);
+    res = vfs_fat_copy_contents(pf1, pf2, buf, copy_buf_size);
 
+cleanup:
     if (opened_new) {
         f_close(pf2);
     }
@@ -1245,30 +1256,26 @@ static FRESULT f_write_zero_mem(FIL* fp, FSIZE_t data_size, FSIZE_t buf_size, UI
         *bytes_written = 0;
     }
 
-    do {
-        if (data_size > buf_size) { // prevent unsigned underflow
-            for (; i < (data_size - buf_size); i += buf_size) { // write chunks of buf_size
-                res = f_write(fp, buf, (UINT) buf_size, &bw);
-                if (res != FR_OK) {
-                    break;
-                }
-                if (bytes_written != NULL) {
-                    *bytes_written += bw;
-                }
-            }
+    if (data_size > buf_size) { // prevent unsigned underflow
+        for (; i < (data_size - buf_size); i += buf_size) { // write chunks of buf_size
+            res = f_write(fp, buf, (UINT) buf_size, &bw);
             if (res != FR_OK) {
-                break;
+                goto cleanup;
             }
-        }
-
-        if (i < data_size) { // write the remaining data
-            res = f_write(fp, buf, (UINT) (data_size - i), &bw);
-            if (res == FR_OK && bytes_written != NULL) {
+            if (bytes_written != NULL) {
                 *bytes_written += bw;
             }
         }
-    } while (0);
+    }
 
+    if (i < data_size) { // write the remaining data
+        res = f_write(fp, buf, (UINT) (data_size - i), &bw);
+        if (res == FR_OK && bytes_written != NULL) {
+            *bytes_written += bw;
+        }
+    }
+
+cleanup:
     ff_memfree(buf);
     return res;
 }
