@@ -615,7 +615,7 @@ static void emac_esp32_rx_task(void *arg)
     while (1) {
         // block indefinitely until got notification from underlay event
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        do {
+        while (1) {
             /* set max expected frame len */
             uint32_t frame_len = ETH_MAX_PACKET_SIZE;
             buffer = emac_esp_dma_alloc_recv_buf(emac->emac_dma_hndl, &frame_len);
@@ -645,9 +645,21 @@ static void emac_esp32_rx_task(void *arg)
                 ESP_LOGE(TAG, "no mem for receive buffer");
                 /* ensures that interface to EMAC does not get stuck with unprocessed frames */
                 emac_esp_dma_flush_recv_frame(emac->emac_dma_hndl);
-            }
-            emac_esp_dma_get_remain_frames(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
+            } else {
+                /* no valid frame: either the ring is drained or an erroneous frame was flushed with frames still behind it */
+                emac_esp_dma_get_remain_frames(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
+                if (emac->frames_remain == 0) {
 #if CONFIG_ETH_SOFT_FLOW_CONTROL
+                    /* ring drained, release any standing pause before idling */
+                    emac_hal_send_pause_frame(&emac->hal, false);
+#endif
+                    break;
+                }
+                /* erroneous frame flushed; keep draining the frames behind it */
+                continue;
+            }
+#if CONFIG_ETH_SOFT_FLOW_CONTROL
+            emac_esp_dma_get_remain_frames(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
             // we need to do extra checking of remained frames in case there are no unhandled frames left, but pause frame is still undergoing
             if ((emac->free_rx_descriptor < emac->flow_control_low_water_mark) && emac->do_flow_ctrl && emac->frames_remain) {
                 emac_hal_send_pause_frame(&emac->hal, true);
@@ -655,7 +667,7 @@ static void emac_esp32_rx_task(void *arg)
                 emac_hal_send_pause_frame(&emac->hal, false);
             }
 #endif
-        } while (emac->frames_remain);
+        }
     }
 }
 
