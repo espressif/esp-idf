@@ -14,7 +14,7 @@ set(embed_files)
 
 if(CONFIG_ESP_PHY_ENABLED)
 
-    set(srcs "src/phy_override.c" "src/lib_printf.c" "src/phy_common.c")
+    set(srcs "src/phy_override.c" "src/lib_printf.c" "src/phy_common.c" "src/phy_debug.c")
 
     if(CONFIG_APP_NO_BLOBS)
         set(link_binary_libs 0)
