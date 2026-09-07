@@ -599,6 +599,8 @@ esp_err_t ble_esl_image_snapshot(uint8_t image_index, uint8_t *dst, size_t capac
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Never call OTS APIs while holding image_lock: the write callback
+     * takes image_lock with the OTS mutex already held (ABBA). */
     xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
     if (!s_esl_gatts->image_complete[image_index]) {
         xSemaphoreGive(s_esl_gatts->image_lock);
@@ -609,13 +611,17 @@ esp_err_t ble_esl_image_snapshot(uint8_t image_index, uint8_t *dst, size_t capac
         xSemaphoreGive(s_esl_gatts->image_lock);
         return ESP_ERR_INVALID_SIZE;
     }
-
     ble_ots_obj_id_t obj_id = s_esl_gatts->ots_obj_ids[image_index];
-    int rc = ble_ots_server_copy_object_data(obj_id, 0, length, dst);
-    bool still_complete = s_esl_gatts->image_complete[image_index];
     xSemaphoreGive(s_esl_gatts->image_lock);
 
-    if (rc != 0 || !still_complete) {
+    int rc = ble_ots_server_copy_object_data(obj_id, 0, length, dst);
+
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
+    bool still_valid = s_esl_gatts->image_complete[image_index] &&
+                       (s_esl_gatts->image_length[image_index] == length);
+    xSemaphoreGive(s_esl_gatts->image_lock);
+
+    if (rc != 0 || !still_valid) {
         return ESP_ERR_INVALID_STATE;
     }
     if (out_len != NULL) {
@@ -642,16 +648,17 @@ esp_err_t ble_esl_image_restore(uint8_t image_index, const uint8_t *data, size_t
     xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
     s_esl_gatts->image_complete[image_index] = false;
     s_esl_gatts->image_length[image_index] = 0;
-
     ble_ots_obj_id_t obj_id = s_esl_gatts->ots_obj_ids[image_index];
+    xSemaphoreGive(s_esl_gatts->image_lock);
+
     int rc = ble_ots_server_set_object_data(obj_id, data, 0, (uint32_t)len);
     if (rc != 0) {
-        xSemaphoreGive(s_esl_gatts->image_lock);
         ESP_LOGE(TAG, "image_restore: set_object_data failed rc=%d index=%u",
                  rc, image_index);
         return ESP_FAIL;
     }
 
+    xSemaphoreTake(s_esl_gatts->image_lock, portMAX_DELAY);
     s_esl_gatts->image_complete[image_index] = true;
     s_esl_gatts->image_length[image_index] = (uint32_t)len;
     xSemaphoreGive(s_esl_gatts->image_lock);
