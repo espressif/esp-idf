@@ -215,7 +215,7 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
     timer_list_lock(dispatch_method);
 
     /* Check if the timer is armed once the list is locked.
-     * Otherwise another task may arm the timer inbetween the check
+     * Otherwise another task may arm the timer between the check
      * and us locking the list, resulting in us inserting the
      * timer to s_timers a second time. This will create a loop
      * in s_timers. */
@@ -406,10 +406,11 @@ static IRAM_ATTR void timer_list_unlock(esp_timer_dispatch_t timer_type)
     portEXIT_CRITICAL_SAFE(&s_timer_lock[timer_type]);
 }
 
+// Keep this as a standalone symbol because ldgen maps it by name.
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-static IRAM_ATTR bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
+static IRAM_ATTR __attribute__((noinline, noclone)) bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #else
-static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
+static __attribute__((noinline, noclone)) bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #endif
 {
     timer_list_lock(dispatch_method);

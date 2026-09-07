@@ -1,0 +1,6 @@
+[mapping:esp_timer_wifi_pm]
+archive: libesp_timer.a
+entries:
+    if ESP_WIFI_SLP_IRAM_OPT = y && IDF_TARGET_ESP32 = y:
+        esp_timer:timer_task (noflash)
+        esp_timer:timer_process_alarm (noflash)
