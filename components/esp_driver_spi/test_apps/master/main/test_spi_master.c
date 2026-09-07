@@ -18,6 +18,7 @@
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/gpio.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
@@ -678,6 +679,59 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     };
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, flags_expected | SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, flags_expected | SPICOMMON_BUSFLAG_SLAVE, &flags_o));
+}
+
+TEST_CASE("spi data output inversion", "[spi]")
+{
+    for (int invert = 0; invert < 2; invert++) {
+        ESP_LOGI(TAG, "Testing data output inversion: %s", invert ? "enabled" : "disabled");
+
+        spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+        buscfg.data_io_default_level = false;
+        buscfg.flags |= invert ? SPICOMMON_BUSFLAG_DATA_OUT_INV : 0;
+        spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+        spi_device_handle_t handle = NULL;
+
+        TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_DISABLED));
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &handle));
+
+        if (invert) {
+            const spi_bus_attr_t *bus_attr = spi_bus_get_attr(TEST_SPI_HOST);
+            TEST_ASSERT_TRUE(bus_attr->flags & SPICOMMON_BUSFLAG_GPIO_PINS);
+        }
+
+        /* Check inversion during a transaction. Add MOSI-to-MISO loopback after bus initialization to preserve the selected MOSI output route. */
+        TEST_ESP_OK(gpio_matrix_input(buscfg.mosi_io_num, spi_periph_signal[TEST_SPI_HOST].spiq_in, false));
+        uint8_t tx_data = 0xA5;
+        uint8_t rx_data = 0;
+        spi_transaction_t trans = {
+            .length = sizeof(tx_data) * 8,
+            .tx_buffer = &tx_data,
+            .rx_buffer = &rx_data,
+        };
+        TEST_ESP_OK(spi_device_polling_transmit(handle, &trans));
+
+        uint8_t expected_rx_data = invert ? 0x5A : 0xA5;
+        ESP_LOGI(TAG, "Loopback: TX=0x%02X, RX=0x%02X (expected=0x%02X)",
+                 (unsigned)tx_data, (unsigned)rx_data, (unsigned)expected_rx_data);
+        TEST_ASSERT_EQUAL_HEX8(expected_rx_data, rx_data);
+
+        /* Check the MOSI idle level after the transaction. */
+        bool expected_idle_level = buscfg.data_io_default_level;
+#if !SPI_LL_MOSI_FREE_LEVEL
+        if (invert) {
+            /* GPIO Matrix inversion also affects the idle level when the target cannot configure it. */
+            expected_idle_level = !buscfg.data_io_default_level;
+        }
+#endif
+
+        int actual_idle_level = gpio_get_level(PIN_NUM_MOSI);
+        ESP_LOGI(TAG, "Idle: MOSI=%d (expected=%d)", actual_idle_level, expected_idle_level);
+        TEST_ASSERT_EQUAL_INT(expected_idle_level, actual_idle_level);
+
+        TEST_ESP_OK(spi_bus_remove_device(handle));
+        TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    }
 }
 
 TEST_CASE("SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)", "[spi]")
