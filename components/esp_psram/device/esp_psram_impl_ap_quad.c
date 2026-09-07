@@ -30,7 +30,7 @@ static void config_psram_spi_phases(void);
 
 static uint8_t s_psram_cs_io = (uint8_t) -1;
 
-uint8_t esp_psram_impl_get_cs_io(void)
+static uint8_t s_get_cs_io(void)
 {
     return s_psram_cs_io;
 }
@@ -337,13 +337,10 @@ static bool s_check_2tmode(void)
     return is_2t;
 }
 
-esp_err_t esp_psram_impl_enable(void)
+static esp_err_t s_probe(void)
 {
     psram_gpio_config();
     psram_set_cs_timing();
-#if CONFIG_SPIRAM_ECC_ENABLE
-    s_configure_psram_ecc();
-#endif
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     //enter MSPI slow mode to init PSRAM device registers (early init: see mspi_timing_enter_low_speed_early)
@@ -408,6 +405,15 @@ esp_err_t esp_psram_impl_enable(void)
     psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_1, true);
     psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_1, page_size);
 
+    return ESP_OK;
+}
+
+static esp_err_t s_configure(void)
+{
+#if CONFIG_SPIRAM_ECC_ENABLE
+    s_configure_psram_ecc();
+#endif
+
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly
     mspi_timing_psram_tuning();
@@ -437,15 +443,15 @@ static void config_psram_spi_phases(void)
 
 /******************************* Halfsleep Mode *******************************/
 // This PSRAM device does not support halfsleep mode
-PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR static void s_enter_halfsleep_mode(void)
 {
 }
 
-PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR static void s_exit_halfsleep_mode(void)
 {
 }
 
-PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR static void s_resume_from_halfsleep_mode(uint32_t slowclk_period)
 {
 }
 
@@ -454,7 +460,7 @@ PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(
  *
  * Consider moving these to another file if this kind of APIs grows dramatically
  *-------------------------------------------------------------------------------*/
-esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_physical_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -468,7 +474,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
  * This function is to get the available physical psram size in bytes.
  * If ECC is enabled, available PSRAM size will be 7/8 times its physical size.
  */
-esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
+static esp_err_t s_get_available_size(uint32_t *out_size_bytes)
 {
     if (!out_size_bytes) {
         return ESP_ERR_INVALID_ARG;
@@ -481,3 +487,15 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
 #endif
     return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }
+
+const esp_psram_impl_t g_psram_impl_quad = {
+    .mode = PSRAM_MODE_QUAD,
+    .probe = s_probe,
+    .configure = s_configure,
+    .get_physical_size = s_get_physical_size,
+    .get_available_size = s_get_available_size,
+    .get_cs_io = s_get_cs_io,
+    .enter_halfsleep_mode = s_enter_halfsleep_mode,
+    .exit_halfsleep_mode = s_exit_halfsleep_mode,
+    .resume_from_halfsleep_mode = s_resume_from_halfsleep_mode,
+};

@@ -3,21 +3,21 @@ archive: libesp_psram.a
 entries:
 
     if SPIRAM = y:
-        if SPIRAM_MODE_QUAD = y:
+        if SPIRAM_MODE_QUAD_SUPPORTED = y:
             if IDF_TARGET_ESP32 = n && IDF_TARGET_ESP32S2 = n:
                 esp_psram_impl_ap_quad (noflash)
 
         if IDF_TARGET_ESP32S3 = y:
-            if SPIRAM_MODE_OCT = y:
+            if SPIRAM_MODE_OCT_SUPPORTED = y:
                 esp_psram_impl_octal (noflash)
 
         if IDF_TARGET_ESP32S2 = y || IDF_TARGET_ESP32S3 = y:
             mmu_psram_flash (noflash)
 
-        if SPIRAM_MODE_HEX = y:
+        if SPIRAM_MODE_HEX_SUPPORTED = y:
             esp_psram_impl_ap_hex (noflash)
 
-        if SPIRAM_MODE_OCT = y:
+        if SPIRAM_MODE_OCT_SUPPORTED = y:
             esp_psram_impl_ap_oct (noflash)
 
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:

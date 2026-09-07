@@ -22,6 +22,7 @@
 #include "hal/mspi_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/mspi_timing_config.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_by_mspi_delay.h"
 #include "bootloader_flash.h"
 #include "esp32s3/rom/spi_flash.h"
@@ -59,7 +60,7 @@ typedef enum {
 
 static uint8_t s_rom_flash_extra_dummy[2] = {NOT_INIT_INT, NOT_INIT_INT};
 
-#if CONFIG_SPIRAM_MODE_QUAD
+#if CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
 static uint8_t s_psram_extra_dummy;
 extern void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
                            uint32_t cmd, int cmd_bit_len,
@@ -204,21 +205,31 @@ void mspi_timing_config_flash_read_data(uint8_t *buf, uint32_t addr, uint32_t le
 //-------------------------------------PSRAM timing tuning register config-------------------------------------//
 void mspi_timing_get_psram_tuning_configs(mspi_timing_config_t *config)
 {
-#if MSPI_TIMING_PSRAM_DTR_MODE
-#define PSRAM_MODE  DTR_MODE
-#else //MSPI_TIMING_PSRAM_STR_MODE
-#define PSRAM_MODE  STR_MODE
-#endif
-
+#if MSPI_TIMING_PSRAM_DTR_NEEDS_TUNING
+    if (mspi_timing_psram_is_dtr_mode()) {
 #if CONFIG_SPIRAM_SPEED_80M
-    *config = MSPI_TIMING_PSRAM_GET_TUNING_CONFIG(MSPI_TIMING_CORE_CLOCK_MHZ, 80, PSRAM_MODE);
+        *config = MSPI_TIMING_PSRAM_GET_TUNING_CONFIG(MSPI_TIMING_CORE_CLOCK_MHZ, 80, DTR_MODE);
 #elif CONFIG_SPIRAM_SPEED_120M
-    *config = MSPI_TIMING_PSRAM_GET_TUNING_CONFIG(MSPI_TIMING_CORE_CLOCK_MHZ, 120, PSRAM_MODE);
+        *config = MSPI_TIMING_PSRAM_GET_TUNING_CONFIG(MSPI_TIMING_CORE_CLOCK_MHZ, 120, DTR_MODE);
 #else
-    assert(false && "should never reach here");
+        assert(false && "should never reach here");
+#endif
+        return;
+    }
 #endif
 
-#undef PSRAM_MODE
+#if MSPI_TIMING_PSRAM_STR_NEEDS_TUNING
+    if (!mspi_timing_psram_is_dtr_mode()) {
+#if CONFIG_SPIRAM_SPEED_120M
+        *config = MSPI_TIMING_PSRAM_GET_TUNING_CONFIG(MSPI_TIMING_CORE_CLOCK_MHZ, 120, STR_MODE);
+#else
+        assert(false && "should never reach here");
+#endif
+        return;
+    }
+#endif
+
+    assert(false && "should never reach here");
 }
 
 void mspi_timing_psram_init(uint32_t psram_freq_mhz)
@@ -237,9 +248,13 @@ static void s_set_psram_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t 
 
 static void s_set_psram_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
 {
-#if CONFIG_SPIRAM_MODE_OCT
-    mspi_timing_ll_set_octal_psram_extra_dummy(spi_num, extra_dummy);
-#elif CONFIG_SPIRAM_MODE_QUAD
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+    if (mspi_timing_psram_is_dtr_mode()) {
+        mspi_timing_ll_set_octal_psram_extra_dummy(spi_num, extra_dummy);
+        return;
+    }
+#endif
+#if CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
     //HW workaround: Use normal dummy register to set extra dummy, the calibration dedicated extra dummy register doesn't work for quad mode
     mspi_timing_ll_set_quad_psram_dummy(spi_num, (QPI_PSRAM_FAST_READ_DUMMY + extra_dummy - 1));
 #endif
@@ -255,10 +270,14 @@ void mspi_timing_config_psram_set_tuning_regs(const void *configs, uint8_t id)
      */
     s_set_psram_din_mode_num(0, params->spi_din_mode, params->spi_din_num);
 
-#if CONFIG_SPIRAM_MODE_OCT
-    //On 728, for SPI1, flash and psram share the extra dummy register
-    s_set_flash_extra_dummy(1, params->extra_dummy_len);
-#elif CONFIG_SPIRAM_MODE_QUAD
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+    if (mspi_timing_psram_is_dtr_mode()) {
+        //On 728, for SPI1, flash and psram share the extra dummy register
+        s_set_flash_extra_dummy(1, params->extra_dummy_len);
+        return;
+    }
+#endif
+#if CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
     //Update this `s_psram_extra_dummy`, the `s_psram_read_data` will set dummy according to this `s_psram_extra_dummy`
     s_psram_extra_dummy = params->extra_dummy_len;
     mspi_timing_ll_set_quad_flash_dummy(1, params->extra_dummy_len - 1);
@@ -268,16 +287,20 @@ void mspi_timing_config_psram_set_tuning_regs(const void *configs, uint8_t id)
 //-------------------------------------------PSRAM Read/Write------------------------------------------//
 static void s_psram_write_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
-#if CONFIG_SPIRAM_MODE_OCT
-    esp_rom_opiflash_exec_cmd(1, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
-                            OPI_PSRAM_SYNC_WRITE, 16,
-                            addr, 32,
-                            OCT_PSRAM_WR_DUMMY_NUM,
-                            buf, len * 8,
-                            NULL, 0,
-                            BIT(1),
-                            false);
-#elif CONFIG_SPIRAM_MODE_QUAD
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+    if (mspi_timing_psram_is_dtr_mode()) {
+        esp_rom_opiflash_exec_cmd(1, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
+                                OPI_PSRAM_SYNC_WRITE, 16,
+                                addr, 32,
+                                OCT_PSRAM_WR_DUMMY_NUM,
+                                buf, len * 8,
+                                NULL, 0,
+                                BIT(1),
+                                false);
+        return;
+    }
+#endif
+#if CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
     psram_exec_cmd(1, 0,
                    QPI_PSRAM_WRITE, 8,
                    addr, 24,
@@ -291,17 +314,21 @@ static void s_psram_write_data(uint8_t *buf, uint32_t addr, uint32_t len)
 
 static void s_psram_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
-#if CONFIG_SPIRAM_MODE_OCT
-    mspi_timing_ll_clear_fifo(1);
-    esp_rom_opiflash_exec_cmd(1, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
-                            OPI_PSRAM_SYNC_READ, 16,
-                            addr, 32,
-                            OCT_PSRAM_RD_DUMMY_NUM,
-                            NULL, 0,
-                            buf, len * 8,
-                            BIT(1),
-                            false);
-#elif CONFIG_SPIRAM_MODE_QUAD
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+    if (mspi_timing_psram_is_dtr_mode()) {
+        mspi_timing_ll_clear_fifo(1);
+        esp_rom_opiflash_exec_cmd(1, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
+                                OPI_PSRAM_SYNC_READ, 16,
+                                addr, 32,
+                                OCT_PSRAM_RD_DUMMY_NUM,
+                                NULL, 0,
+                                buf, len * 8,
+                                BIT(1),
+                                false);
+        return;
+    }
+#endif
+#if CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
     psram_exec_cmd(1, 0,
                    QPI_PSRAM_FAST_READ, 8,
                    addr, 24,

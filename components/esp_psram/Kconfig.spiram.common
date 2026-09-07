@@ -2,6 +2,18 @@
 #
 # sourced into the "SPIRAM config" submenu for a specific chip.
 
+config SPIRAM_MODE_QUAD_SUPPORTED
+    bool
+    default y if SPIRAM_MODE_QUAD || SPIRAM_MODE_AUTO
+
+config SPIRAM_MODE_OCT_SUPPORTED
+    bool
+    default y if SPIRAM_MODE_OCT || SPIRAM_MODE_AUTO
+
+config SPIRAM_MODE_HEX_SUPPORTED
+    bool
+    default y if SPIRAM_MODE_HEX
+
 config SPIRAM_BOOT_HW_INIT
     bool "Initialise the PSRAM related hardware"
     depends on SPIRAM

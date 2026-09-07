@@ -44,6 +44,43 @@ extern "C" {
 #endif
 
 /**
+ * @brief PSRAM line mode
+ */
+typedef enum {
+    PSRAM_MODE_QUAD,
+    PSRAM_MODE_OCT,
+    PSRAM_MODE_HEX,
+} psram_mode_t;
+
+/**
+ * @brief Driver for one PSRAM line mode
+ *
+ * More than one of these may be built in, in which case `esp_psram_impl_enable` probes them in
+ * turn and the first chip to answer decides which one is used for the rest of the runtime.
+ */
+typedef struct {
+    psram_mode_t mode;
+    esp_err_t (*probe)(void);
+    esp_err_t (*configure)(void);
+    esp_err_t (*get_physical_size)(uint32_t *out_size_bytes);
+    esp_err_t (*get_available_size)(uint32_t *out_size_bytes);
+    uint8_t (*get_cs_io)(void);
+    void (*enter_halfsleep_mode)(void);
+    void (*exit_halfsleep_mode)(void);
+    void (*resume_from_halfsleep_mode)(uint32_t slowclk_period);
+} esp_psram_impl_t;
+
+#if CONFIG_SPIRAM_MODE_QUAD_SUPPORTED
+extern const esp_psram_impl_t g_psram_impl_quad;
+#endif
+#if CONFIG_SPIRAM_MODE_OCT_SUPPORTED
+extern const esp_psram_impl_t g_psram_impl_oct;
+#endif
+#if CONFIG_SPIRAM_MODE_HEX_SUPPORTED
+extern const esp_psram_impl_t g_psram_impl_hex;
+#endif
+
+/**
  * @brief To get the physical psram size in bytes.
  *
  * @param[out] out_size_bytes    physical psram size in bytes.
@@ -66,6 +103,17 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes);
  *        - ESP_ERR_INVALID_STATE: On esp32, when VSPI peripheral is needed but cannot be claimed
  */
 esp_err_t esp_psram_impl_enable(void);
+
+/**
+ * @brief Get the line mode of the psram that was detected by `esp_psram_impl_enable`
+ *
+ * @param[out] out_mode    detected psram line mode
+ *
+ * @return
+ *        - ESP_OK:                On success
+ *        - ESP_ERR_INVALID_STATE: `esp_psram_impl_enable` has not succeeded yet
+ */
+esp_err_t esp_psram_impl_get_mode(psram_mode_t *out_mode);
 
 /**
  * @brief get psram CS IO
