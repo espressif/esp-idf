@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import typing
+import uuid
 from pathlib import Path
 
 try:
@@ -66,6 +67,41 @@ def _clip_log_output(text: str | None, max_lines: int = 80, max_line_len: int = 
         parts.append(f'[... {omitted} lines omitted ...]')
     parts.extend(_short(line) for line in tail)
     return '\n'.join(parts)
+
+
+def _log_process_failure(
+    command_name: str,
+    cmd: list[str],
+    workdir: Path | str,
+    error: subprocess.CalledProcessError,
+) -> None:
+    """Save the untouched output to files, then log one clipped record.
+
+    The files keep the whole output available whatever the failure is, so the
+    clipped record no longer has to carry everything needed to debug it. Writing
+    them before logging also means the output survives a stalled live log.
+    """
+    log_dir = Path(workdir) / 'failed_command_logs'
+    saved_paths: dict[str, Path] = {}
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        prefix = f'{command_name}_{uuid.uuid4().hex}'
+        for stream_name, output in (('stdout', error.stdout), ('stderr', error.stderr)):
+            output_path = log_dir / f'{prefix}.{stream_name}.txt'
+            output_path.write_text(output or '', encoding='utf-8')
+            saved_paths[stream_name] = output_path
+    except OSError as write_error:
+        logging.error('Full output of the failed command could not be saved: %s', write_error)
+
+    message = [
+        f'The following {command_name} command has failed: {" ".join(cmd)}',
+        f'Working directory: {workdir}',
+    ]
+    for stream_name, output_path in saved_paths.items():
+        message.append(f'Full {stream_name}: {output_path}')
+    message.append(f'Stdout: {_clip_log_output(error.stdout)}')
+    message.append(f'Stderr: {_clip_log_output(error.stderr)}')
+    logging.error('\n'.join(message))
 
 
 def normalize_output(text: str) -> str:
@@ -155,10 +191,7 @@ def run_idf_py(
             input=input_str,
         )
     except subprocess.CalledProcessError as e:
-        logging.error('The following idf.py command has failed: {}'.format(' '.join(cmd)))
-        logging.error(f'Working directory: {workdir}')
-        logging.error(f'Stdout: {_clip_log_output(e.stdout)}')
-        logging.error(f'Stderr: {_clip_log_output(e.stderr)}')
+        _log_process_failure('idf.py', cmd, workdir, e)
         raise
 
 
@@ -200,10 +233,7 @@ def run_cmake(
             errors='backslashreplace',
         )
     except subprocess.CalledProcessError as e:
-        logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
-        logging.error(f'Working directory: {workdir}')
-        logging.error(f'Stdout: {_clip_log_output(e.stdout)}')
-        logging.error(f'Stderr: {_clip_log_output(e.stderr)}')
+        _log_process_failure('cmake', cmd, build_dir, e)
         raise
 
 
