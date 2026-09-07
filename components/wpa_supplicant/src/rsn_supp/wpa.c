@@ -187,7 +187,8 @@ static bool is_wpa2_enterprise_connection(void)
         authmode = esp_wifi_sta_get_prof_authmode_internal();
         if ((authmode == WPA2_AUTH_ENT) ||
             (authmode == WPA2_AUTH_ENT_SHA256) ||
-            (authmode == WPA2_AUTH_ENT_SHA384_SUITE_B)) {
+            (authmode == WPA2_AUTH_ENT_SHA384_SUITE_B) ||
+            (authmode == WPA2_AUTH_FT_EAP)) {
             return true;
         }
     }
@@ -255,7 +256,7 @@ int  wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
     if (key_mic &&
         wpa_eapol_key_mic(kck, kck_len, sm->key_mgmt, ver, msg, msg_len,
                   key_mic)) {
-        wpa_msg(NULL, MSG_ERROR,
+        wpa_printf(MSG_ERROR,
             "WPA: Failed to generate EAPOL-Key version %d key_mgmt 0x%x MIC",
             ver, sm->key_mgmt);
         goto out;
@@ -418,7 +419,9 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
 
 #ifdef CONFIG_WPA3_SAE
 #ifdef CONFIG_IEEE80211R
-    if (sm && sm->pmksa && (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE)) {
+    if (sm && sm->pmksa && (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE ||
+                            sm->key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY) &&
+        sm->pmk_len == PMK_LEN) {
         os_memcpy(sm->xxkey, sm->pmk, sm->pmk_len);
         sm->xxkey_len = sm->pmk_len;
     }
@@ -436,7 +439,9 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
 #ifdef CONFIG_IEEE80211R
         sm->xxkey_len = 0;
 #ifdef CONFIG_WPA3_SAE
-        if (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE && sm->pmk_len == PMK_LEN) {
+        if ((sm->key_mgmt == WPA_KEY_MGMT_FT_SAE ||
+             sm->key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY) &&
+            sm->pmk_len == PMK_LEN) {
             /* Need to allow FT key derivation to proceed with
              * PMK from SAE being used as the XXKey in cases where
              * the PMKID in msg 1/4 matches the PMKSA entry that was
@@ -2243,7 +2248,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     }
     if (wpa_use_akm_defined(sm->key_mgmt) &&
         ver != WPA_KEY_INFO_TYPE_AKM_DEFINED) {
-        wpa_msg(NULL, MSG_INFO,
+        wpa_printf(MSG_INFO,
                 "RSN: Unsupported EAPOL-Key descriptor version %d (expected AKM defined = 0)",
                 ver);
         goto out;
@@ -2283,7 +2288,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     if (sm->pairwise_cipher == WPA_CIPHER_GCMP &&
         !wpa_use_akm_defined(sm->key_mgmt) &&
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
-        wpa_msg(NULL, MSG_INFO,
+        wpa_printf(MSG_INFO,
                 "WPA: GCMP is used, but EAPOL-Key "
                 "descriptor version (%d) is not 2", ver);
         goto out;
@@ -2648,6 +2653,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     sm->proto = wpa_proto;
     if (auth_mode == WPA2_AUTH_ENT || (auth_mode == WPA_AUTH_UNSPEC)) {
         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X; /* for wpa2 enterprise */
+    } else if (auth_mode == WPA2_AUTH_FT_EAP) {
+        sm->key_mgmt = WPA_KEY_MGMT_FT_IEEE8021X; /* for wpa2 FT enterprise */
     } else if (auth_mode == WPA2_AUTH_ENT_SHA256) {
         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SHA256; /* for wpa2 enterprise sha256 */
     } else if (auth_mode == WPA2_AUTH_PSK_SHA256) {
@@ -2668,6 +2675,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
         sm->key_mgmt = WPA_KEY_MGMT_DPP;
     } else if (auth_mode == WPA3_AUTH_FT_SAE) {
         sm->key_mgmt = WPA_KEY_MGMT_FT_SAE;
+    } else if (auth_mode == WPA3_AUTH_FT_SAE_EXT) {
+        sm->key_mgmt = WPA_KEY_MGMT_FT_SAE_EXT_KEY;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
@@ -2695,6 +2704,25 @@ void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pm
     }
 }
 
+#ifdef CONFIG_IEEE80211R
+void wpa_sm_set_xxkey(const u8 *xxkey, size_t len)
+{
+    struct wpa_sm *sm = &gWpaSm;
+
+    if (len == 0 || !xxkey) {
+        os_memset(sm->xxkey, 0, sizeof(sm->xxkey));
+        sm->xxkey_len = 0;
+        return;
+    }
+    if (len > PMK_LEN) {
+        wpa_printf(MSG_DEBUG, "FT: Too long XXKey (%u)", (unsigned int) len);
+        return;
+    }
+    os_memcpy(sm->xxkey, xxkey, len);
+    sm->xxkey_len = len;
+}
+#endif /* CONFIG_IEEE80211R */
+
 int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_t group_cipher, char *passphrase, uint8_t *ssid, int ssid_len)
 {
     int res = 0;
@@ -2712,7 +2740,8 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
      * is part of libraries,
      * TODO Correct this in future during NVS restructuring */
     if ((sm->key_mgmt == WPA_KEY_MGMT_SAE ||
-         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY || sm->key_mgmt == WPA_KEY_MGMT_FT_SAE) &&
+         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY || sm->key_mgmt == WPA_KEY_MGMT_FT_SAE ||
+         sm->key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY) &&
         (os_memcmp(sm->bssid, bssid, ETH_ALEN) == 0) &&
         (os_memcmp(sm->ssid, ssid, ssid_len) != 0)) {
         use_pmk_cache = false;
@@ -2801,7 +2830,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
     }
 #endif
 #ifdef CONFIG_IEEE80211R
-    if (sm->key_mgmt == WPA_KEY_MGMT_FT_PSK || sm->key_mgmt == WPA_KEY_MGMT_FT_SAE) {
+    if (wpa_key_mgmt_ft(sm->key_mgmt)) {
         const u8 *ie, *md = NULL;
         struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
         if (!bss) {
@@ -2948,7 +2977,9 @@ void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
         sm->key_mgmt == WPA_KEY_MGMT_OWE ||
         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY ||
         sm->key_mgmt == WPA_KEY_MGMT_DPP ||
-        sm->key_mgmt == WPA_KEY_MGMT_FT_SAE)
+        sm->key_mgmt == WPA_KEY_MGMT_FT_SAE ||
+        sm->key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY ||
+        sm->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */
@@ -3347,6 +3378,10 @@ void wpa_sm_drop_sa(struct wpa_sm *sm)
     os_memset(&sm->tptk, 0, sizeof(sm->tptk));
     os_memset(&sm->gtk, 0, sizeof(sm->gtk));
     os_memset(&sm->igtk, 0, sizeof(sm->igtk));
+#ifdef CONFIG_IEEE80211R
+    sm->xxkey_len = 0;
+    os_memset(sm->xxkey, 0, sizeof(sm->xxkey));
+#endif /* CONFIG_IEEE80211R */
 }
 
 #ifdef CONFIG_OWE_STA

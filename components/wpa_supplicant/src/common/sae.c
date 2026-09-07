@@ -2179,6 +2179,12 @@ u16 sae_parse_commit(struct sae_data *sae, const u8 *data, size_t len,
 		    RSN_AUTH_KEY_MGMT_SAE_EXT_KEY) {
 			sae->akmp = WPA_KEY_MGMT_SAE_EXT_KEY;
 		}
+#ifdef CONFIG_IEEE80211R
+		else if (sae->peer_akm_suite_selector ==
+			 RSN_AUTH_KEY_MGMT_FT_SAE_EXT_KEY) {
+			sae->akmp = WPA_KEY_MGMT_FT_SAE_EXT_KEY;
+		}
+#endif /* CONFIG_IEEE80211R */
 	}
 
 	/*

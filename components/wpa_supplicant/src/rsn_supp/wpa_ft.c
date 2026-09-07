@@ -225,6 +225,10 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_PSK);
 	else if (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE)
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_SAE);
+#ifdef CONFIG_WPA3_SAE
+	else if (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY)
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_SAE_EXT_KEY);
+#endif /* CONFIG_WPA3_SAE */
 	else {
 		wpa_printf(MSG_WARNING, "FT: Invalid key management type (%d)",
 			   sm->key_mgmt);
@@ -341,12 +345,13 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 							       ric_ies_len);
                 if (rsnxe_len)
                     ftie->mic_control[1] += 1;
-		if (wpa_ft_mic(kck, kck_len, sm->own_addr, target_ap, 5,
+		if (wpa_ft_mic(sm->key_mgmt, kck, kck_len, sm->own_addr, target_ap, 5,
 			       ((u8 *) mdie) - 2, 2 + sizeof(*mdie),
 			       ftie_pos, 2 + *ftie_len,
 			       (u8 *) rsnie, 2 + rsnie->len,
-                               rsnxe_len ? rsnxe : NULL, rsnxe_len, ric_ies,
-			       ric_ies_len, ftie->mic) < 0) {
+			       ric_ies, ric_ies_len,
+			       rsnxe_len ? rsnxe : NULL, rsnxe_len,
+			       ftie->mic) < 0) {
 			wpa_printf(MSG_INFO, "FT: Failed to calculate MIC");
 			os_free(buf);
 			return NULL;
@@ -879,13 +884,13 @@ int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
 		return -1;
 	}
 
-	if (wpa_ft_mic(sm->ptk.kck, sm->ptk.kck_len, sm->own_addr, src_addr, 6,
+	if (wpa_ft_mic(sm->key_mgmt, sm->ptk.kck, sm->ptk.kck_len, sm->own_addr, src_addr, 6,
 		       parse.mdie - 2, parse.mdie_len + 2,
 		       parse.ftie - 2, parse.ftie_len + 2,
 		       parse.rsn - 2, parse.rsn_len + 2,
-                       parse.rsnxe ? parse.rsnxe - 2 : NULL,
-                       parse.rsnxe ? parse.rsnxe_len + 2 : 0,
 		       parse.ric, parse.ric_len,
+		       parse.rsnxe ? parse.rsnxe - 2 : NULL,
+		       parse.rsnxe ? parse.rsnxe_len + 2 : 0,
 		       mic) < 0) {
 		wpa_printf(MSG_DEBUG, "FT: Failed to calculate MIC");
 		return -1;
