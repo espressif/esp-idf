@@ -36,7 +36,7 @@ API 指南
    low-power-mode/index
    lwip
    memory-types
-   openthread
+   openthread/index
    partition-tables
    performance/index
    reproducible-builds
