@@ -679,16 +679,19 @@ esp_err_t esp_transport_ssl_session_ticket_operation(esp_transport_handle_t t, e
             break;
         case ESP_TRANSPORT_SESSION_TICKET_SAVE:
             esp_tls_free_client_session(ssl->session_ticket);
+            ssl->cfg.client_session = NULL;
             ssl->session_ticket = esp_tls_get_client_session(ssl->tls);
             break;
         case ESP_TRANSPORT_SESSION_TICKET_USE:
             if (ssl->session_ticket == NULL) {
+                ssl->cfg.client_session = NULL;
                 return ESP_ERR_INVALID_STATE;
             }
             ssl->cfg.client_session = ssl->session_ticket;
             break;
         case ESP_TRANSPORT_SESSION_TICKET_FREE:
             esp_tls_free_client_session(ssl->session_ticket);
+            ssl->cfg.client_session = NULL;
             ssl->session_ticket = NULL;
             break;
     }
