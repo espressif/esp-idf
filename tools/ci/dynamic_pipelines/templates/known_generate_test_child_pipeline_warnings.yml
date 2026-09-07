@@ -24,7 +24,9 @@ no_runner_tags:
   - esp32c6,jtag
   - esp32c61,jtag
   - esp32h2,jtag
-  - esp32h4,usb_host_flash_disk
+  # Temporarily disable all esp32h4 target tests while switching runners
+  - esp32h4,*
+  - esp32h4_2,*
   - esp32p4,jtag
   - esp32s2,usb_host_flash_disk
   - esp32s31,usb_host_flash_disk
