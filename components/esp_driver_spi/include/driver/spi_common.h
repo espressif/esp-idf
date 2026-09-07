@@ -65,6 +65,7 @@ extern "C"
 #define SPICOMMON_BUSFLAG_OCTAL         (SPICOMMON_BUSFLAG_QUAD|SPICOMMON_BUSFLAG_IO4_IO7)  ///< Check existing of MOSI/MISO/WP/HD/SPIIO4/SPIIO5/SPIIO6/SPIIO7 pins as output. Or indicates bus able to work under octal mode.
 #define SPICOMMON_BUSFLAG_NATIVE_PINS   SPICOMMON_BUSFLAG_IOMUX_PINS
 #define SPICOMMON_BUSFLAG_SLP_ALLOW_PD  (1<<9)     ///< Allow to power down the peripheral during light sleep, and auto recover then.
+#define SPICOMMON_BUSFLAG_DATA_OUT_INV  (1<<10)    ///< Invert output data signals through the GPIO matrix.
 
 /**
  * @brief SPI DMA channels
@@ -94,6 +95,7 @@ typedef spi_common_dma_t spi_dma_chan_t;
  * delay, which may cause incorrect read for >40MHz speeds.
  *
  * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t referring to these lines will be ignored and can thus safely be left uninitialized.
+ * @note Setting `SPICOMMON_BUSFLAG_DATA_OUT_INV` routes all configured bus signals through GPIO matrix and inverts data output signals, including their idle levels.
  */
 typedef struct {
     union {
