@@ -602,8 +602,11 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
     }
 
+    bool data_out_inv = bus_config->flags & SPICOMMON_BUSFLAG_DATA_OUT_INV;
     //check if the selected pins correspond to the iomux pins of the peripheral
-    bool use_iomux = !(flags & SPICOMMON_BUSFLAG_GPIO_PINS) && bus_uses_iomux_pins(host, bus_config);
+    bool use_iomux = !data_out_inv &&
+                     !(flags & SPICOMMON_BUSFLAG_GPIO_PINS) &&
+                     bus_uses_iomux_pins(host, bus_config);
     if (use_iomux) {
         temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
     } else {
@@ -613,6 +616,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     uint32_t missing_flag = flags & ~temp_flag;
     missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;  //don't check this flag
     missing_flag &= ~SPICOMMON_BUSFLAG_SLP_ALLOW_PD;
+    missing_flag &= ~SPICOMMON_BUSFLAG_DATA_OUT_INV;
 
     if (missing_flag != 0) {
         //check pins existence
@@ -653,7 +657,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->mosi_io_num >= 0) {
             if (mosi_need_output || (temp_flag & SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT_OUTPUT);
-                esp_rom_gpio_connect_out_signal(bus_config->mosi_io_num, spi_periph_signal[host].spid_out, false, false);
+                esp_rom_gpio_connect_out_signal(bus_config->mosi_io_num, spi_periph_signal[host].spid_out, data_out_inv, false);
             } else {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT);
             }
@@ -666,7 +670,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->miso_io_num >= 0) {
             if (miso_need_output || (temp_flag & SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT_OUTPUT);
-                esp_rom_gpio_connect_out_signal(bus_config->miso_io_num, spi_periph_signal[host].spiq_out, false, false);
+                esp_rom_gpio_connect_out_signal(bus_config->miso_io_num, spi_periph_signal[host].spiq_out, data_out_inv, false);
             } else {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT);
             }
@@ -678,7 +682,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         }
         if (bus_config->quadwp_io_num >= 0) {
             gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_INPUT_OUTPUT);
-            esp_rom_gpio_connect_out_signal(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_out, false, false);
+            esp_rom_gpio_connect_out_signal(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_out, data_out_inv, false);
             esp_rom_gpio_connect_in_signal(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in, false);
 #if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num]);
@@ -687,7 +691,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         }
         if (bus_config->quadhd_io_num >= 0) {
             gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_INPUT_OUTPUT);
-            esp_rom_gpio_connect_out_signal(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_out, false, false);
+            esp_rom_gpio_connect_out_signal(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_out, data_out_inv, false);
             esp_rom_gpio_connect_in_signal(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in, false);
 #if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num]);
@@ -718,7 +722,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             for (size_t i = 0; i < sizeof(io_nums) / sizeof(io_nums[0]); i++) {
                 if (io_nums[i] >= 0) {
                     gpio_set_direction(io_nums[i], GPIO_MODE_INPUT_OUTPUT);
-                    esp_rom_gpio_connect_out_signal(io_nums[i], io_signals[i][0], false, false);
+                    esp_rom_gpio_connect_out_signal(io_nums[i], io_signals[i][0], data_out_inv, false);
                     esp_rom_gpio_connect_in_signal(io_nums[i], io_signals[i][1], false);
 #if CONFIG_IDF_TARGET_ESP32S2
                     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[io_nums[i]]);
