@@ -9,6 +9,8 @@
 #include "esp_log.h"
 #include "unity.h"
 #include "esp_flash.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
@@ -494,5 +496,125 @@ TEST_CASE("Test flash encrypted write over boundary", "[flash_encryption]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, UINT32_MAX - SECTOR_SIZE + 1, buf, flash_size - SECTOR_SIZE));
 }
 #endif //CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
+
+#ifdef CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+// IDF-15875: when the .ext_ram.bss segment is placed in external PSRAM and the CPU
+// frequency switch (run from PSRAM-XIP) corrupts it during boot, this buffer
+// would contain non-zero words. Assert it is all-zero after boot.
+#define PSRAM_BSS_SIZE 171936
+EXT_RAM_BSS_ATTR static uint8_t s_big_bss[PSRAM_BSS_SIZE];
+
+static int count_nonzero_psram_bss_words(int *first, uint32_t *first_v)
+{
+    volatile uint32_t *w = (volatile uint32_t *)s_big_bss;
+    const int n = PSRAM_BSS_SIZE / 4;
+    int nz = 0;
+
+    *first = -1;
+    *first_v = 0;
+
+    for (int i = 0; i < n; i++) {
+        uint32_t v = w[i];
+        if (v != 0) {
+            if (*first < 0) {
+                *first = i;
+                *first_v = v;
+            }
+            nz++;
+        }
+    }
+
+    return nz;
+}
+
+static void assert_psram_heap_integrity(const char *label)
+{
+    bool ok = heap_caps_check_integrity_all(true);
+
+    printf("[%s] heap integrity: %s\n", label, ok ? "OK" : "CORRUPT");
+    TEST_ASSERT_TRUE_MESSAGE(ok,
+            "heap integrity check failed while reproducing flash-encryption xip_psram path");
+}
+
+static void exercise_flash_encryption_psram_repro_rounds(void)
+{
+    for (int i = 0; i < 16; i++) {
+        SemaphoreHandle_t mutex = xSemaphoreCreateMutex();
+        uint8_t *internal = heap_caps_malloc(256, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        uint8_t *psram = heap_caps_malloc(1024, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+
+        TEST_ASSERT_NOT_NULL_MESSAGE(mutex, "failed to create mutex during repro setup");
+        TEST_ASSERT_NOT_NULL_MESSAGE(internal, "failed to allocate internal buffer during repro setup");
+        TEST_ASSERT_NOT_NULL_MESSAGE(psram, "failed to allocate psram buffer during repro setup");
+
+        memset(internal, 0x5a, 256);
+        memset(psram, 0xa5, 1024);
+
+        assert_psram_heap_integrity("after-round");
+
+        vSemaphoreDelete(mutex);
+        free(psram);
+        free(internal);
+    }
+}
+
+static void touch_psram_bss_and_check(size_t bytes, const char *label)
+{
+    printf("touching ext_ram .bss: first %u bytes ...\n", (unsigned)bytes);
+    memset(s_big_bss, 0xa5, bytes);
+    assert_psram_heap_integrity(label);
+}
+
+static void assert_psram_bss_zero_initialized(const char *stage)
+{
+    const int n = PSRAM_BSS_SIZE / 4;
+    int first = -1;
+    uint32_t first_v = 0;
+    int nz = count_nonzero_psram_bss_words(&first, &first_v);
+
+    printf("[%s] PSRAM .bss @ %p  words=%d  NON-ZERO words = %d / %d\n",
+           stage, (void *)s_big_bss, n, nz, n);
+    if (nz) {
+        printf("[%s] first non-zero @word %d (0x%" PRIxPTR ") = 0x%" PRIx32 "\n",
+               stage,
+               first, (uintptr_t)s_big_bss + first * 4, first_v);
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(0, nz,
+            "external .bss was not zero-initialized (corrupted during boot, see IDF-15875)");
+}
+
+TEST_CASE("external PSRAM .bss is zero-initialized after boot", "[flash_encryption][psram][bss]")
+{
+    assert_psram_bss_zero_initialized("boot");
+}
+
+TEST_CASE("external PSRAM .bss survives flash-encryption heap activity", "[flash_encryption][psram][bss_repro]")
+{
+    const size_t touch_steps[] = {
+        4 * 1024,
+        8 * 1024,
+        16 * 1024,
+        32 * 1024,
+        64 * 1024,
+    };
+    const char *labels[] = {
+        "after-bss-touch 4KB",
+        "after-bss-touch 8KB",
+        "after-bss-touch 16KB",
+        "after-bss-touch 32KB",
+        "after-bss-touch 64KB",
+    };
+
+    TEST_ASSERT_EQUAL(sizeof(touch_steps) / sizeof(touch_steps[0]), sizeof(labels) / sizeof(labels[0]));
+
+    assert_psram_bss_zero_initialized("boot");
+    assert_psram_heap_integrity("boot");
+    exercise_flash_encryption_psram_repro_rounds();
+
+    for (size_t i = 0; i < sizeof(touch_steps) / sizeof(touch_steps[0]); i++) {
+        touch_psram_bss_and_check(touch_steps[i], labels[i]);
+    }
+}
+#endif // CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
 #endif // CONFIG_SECURE_FLASH_ENC_ENABLED
