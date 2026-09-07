@@ -43,6 +43,7 @@ FORMAL_TO_USUAL = {v: k for k, v in USUAL_TO_FORMAL.items()}
 # Reset to [] once bringup is complete.
 BYPASS_CHECK_TEST_TARGETS: list[str] = [
     'esp32h21',
+    'esp32h4',
 ]
 
 

@@ -34,7 +34,6 @@ check_public_headers:
         esp32p4 \
         esp32c61 \
         esp32h21 \
-        esp32h4 \
         esp32s31"
       for libc in newlib picolibc; do
         for target in ${targets}; do
