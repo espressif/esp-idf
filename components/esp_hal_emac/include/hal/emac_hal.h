@@ -19,20 +19,6 @@ extern "C" {
 #if SOC_EMAC_SUPPORTED
 #include "hal/emac_ll.h"
 
-/**
- * @brief Macros to check descriptors datatype size
-*/
-#define STR(s) #s
-#define TYPE_SIZE_ERR_MSG(DATATYPE, SIZE)  #DATATYPE " should occupy " STR(SIZE) " bytes in memory"
-#define ASSERT_TYPE_SIZE(DATATYPE, SIZE) ESP_STATIC_ASSERT(sizeof(DATATYPE) == SIZE, TYPE_SIZE_ERR_MSG(DATATYPE, SIZE))
-
-#if SOC_IS(ESP32P4)
-// Descriptor must be 64B aligned for ESP32P4 due to cache arrangement
-#define EMAC_HAL_DMA_DESC_SIZE                              (64)
-#else
-#define EMAC_HAL_DMA_DESC_SIZE                              (32)
-#endif
-
 /* DMA descriptor control bits */
 #define EMAC_HAL_TDES0_INTR_ON_COMPLET                      (1 << 30)
 #define EMAC_HAL_TDES0_CRC_APPEND_DISABLE                   (1 << 27)
@@ -52,6 +38,7 @@ extern "C" {
 /**
 * @brief Ethernet DMA TX Descriptor
 *
+* Hardware layout is 32 bytes. Cache-line padding (e.g. 64B on ESP32-P4) must be applied at allocation time.
 */
 typedef struct {
     volatile union {
@@ -101,17 +88,13 @@ typedef struct {
     uint32_t Reserved2;           /*!< Reserved */
     uint32_t TimeStampLow;        /*!< Transmit Frame Timestamp Low */
     uint32_t TimeStampHigh;       /*!< Transmit Frame Timestamp High */
-
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    // descriptor must be aligned (due to cache arrangement)
-    uint8_t CacheAlign[EMAC_HAL_DMA_DESC_SIZE - 32]; // 32 is size of EMAC DMA descriptor without alignment
-#endif
 } eth_dma_tx_descriptor_t;
-ASSERT_TYPE_SIZE(eth_dma_tx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
+ESP_STATIC_ASSERT(sizeof(eth_dma_tx_descriptor_t) == 32, "eth_dma_tx_descriptor_t should occupy 32 bytes in memory");
 
 /**
 * @brief Ethernet DMA RX Descriptor
 *
+* Hardware layout is 32 bytes. Cache-line padding (e.g. 64B on ESP32-P4) must be applied at allocation time.
 */
 typedef struct {
     volatile union {
@@ -179,14 +162,8 @@ typedef struct {
     uint32_t Reserved;      /*!< Reserved */
     uint32_t TimeStampLow;  /*!< Receive frame timestamp low */
     uint32_t TimeStampHigh; /*!< Receive frame timestamp high */
-
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    // descriptor must be aligned (due to cache arrangement)
-    uint8_t CacheAlign[EMAC_HAL_DMA_DESC_SIZE - 32]; // 32 is size of EMAC DMA descriptor without alignment
-#endif
 } eth_dma_rx_descriptor_t;
-
-ASSERT_TYPE_SIZE(eth_dma_rx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
+ESP_STATIC_ASSERT(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
 
 typedef struct emac_mac_dev_s *emac_mac_soc_regs_t;
 typedef struct emac_dma_dev_s *emac_dma_soc_regs_t;
