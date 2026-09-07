@@ -32,7 +32,8 @@ endif()
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS include
                        PRIV_REQUIRES "${priv_requires}"
-                       PRIV_INCLUDE_DIRS private_include)
+                       PRIV_INCLUDE_DIRS private_include
+                       LDFRAGMENTS linker.lf)
 
 # Forces the linker to include esp_timer_init.c
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_timer_init_include_func")
