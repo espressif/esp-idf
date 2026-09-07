@@ -305,7 +305,8 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
         }
 
         if (data[1] == BLE_HCI_EVCODE_HW_ERROR) {
-            assert(0);
+            esp_rom_printf("HCI HW error from controller, hw_code=%d\n",
+                           (totlen > BLE_HCI_EVENT_HDR_LEN) ? data[3] : 0);
         }
 
         /* Allocate LE Advertising Report Event from lo pool only */
