@@ -33,7 +33,7 @@ typedef struct {
 /**
  * @brief Set the target time for the PTP clock.
  *
- * @param clk_id Identifier of the clock to set the target time for
+ * @param clock_id Identifier of the clock to set the target time for
  * @param tp Pointer to the target time
  *
  * @return
