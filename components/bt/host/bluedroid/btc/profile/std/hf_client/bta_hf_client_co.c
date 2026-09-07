@@ -499,11 +499,23 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
         return;
     }
 
+    if (p_buf->len < HCI_SCO_PREAMBLE_SIZE) {
+        APPL_TRACE_ERROR("%s SCO packet too short: %u", __func__, p_buf->len);
+        osi_free(p_buf);
+        return;
+    }
+
     UINT8 *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
+    UINT8 * const data_end = p + p_buf->len;
     UINT8 pkt_size = 0;
 
     STREAM_SKIP_UINT16(p);
     STREAM_TO_UINT8 (pkt_size, p);
+
+    UINT16 rem = (data_end > p) ? (UINT16)(data_end - p) : 0;
+    if (pkt_size > rem) {
+        pkt_size = (UINT8)rem;
+    }
 
 #if (BTC_HFP_EXT_CODEC == TRUE)
     if (hf_air_mode == BTM_SCO_AIR_MODE_CVSD) {
@@ -559,15 +571,16 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
                 pkt_size = BTM_MSBC_FRAME_SIZE;
             }
             UINT16 data_len = pkt_size;
-            if (BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)) {
+            if (data_len >= 2 && BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)) {
                 /* H2 header sync word found, skip */
                 p += 2;
                 data_len -= 2;
-            }
-            else if (!bta_hf_client_co_cb.is_bad_frame){
+            } else if (data_len >= 1 && !bta_hf_client_co_cb.is_bad_frame) {
                 /* not a bad frame, assume as H1 header */
                 p += 1;
                 data_len -= 1;
+            } else {
+                bta_hf_client_co_cb.is_bad_frame = true;
             }
             btc_hf_client_audio_data_cb_to_app((uint8_t *)p_buf, (uint8_t *)p, data_len, bta_hf_client_co_cb.is_bad_frame);
             bta_hf_client_co_cb.is_bad_frame = false;

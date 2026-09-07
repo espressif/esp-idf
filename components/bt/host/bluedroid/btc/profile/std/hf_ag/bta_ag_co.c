@@ -586,6 +586,12 @@ uint32_t bta_ag_sco_co_out_data(UINT8 *p_buf)
 *******************************************************************************/
 void bta_ag_sco_co_in_data(BT_HDR *p_buf, tBTM_SCO_DATA_FLAG status)
 {
+    if (p_buf->len < HCI_SCO_PREAMBLE_SIZE) {
+        APPL_TRACE_ERROR("%s SCO packet too short: %u", __func__, p_buf->len);
+        osi_free(p_buf);
+        return;
+    }
+
     UINT8 *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT8 * const data_end = p + p_buf->len;
     UINT8 pkt_size = 0;
@@ -638,7 +644,7 @@ void bta_ag_sco_co_in_data(BT_HDR *p_buf, tBTM_SCO_DATA_FLAG status)
                     }
                     btc_hf_audio_data_cb_to_app((uint8_t *)p_new_buf, (uint8_t *)p_data, data_len,
                                                 bta_ag_co_cb.is_bad_frame);
-                    bta_ag_co_cb.is_bad_frame = FALSE;
+                    bta_ag_co_cb.is_bad_frame = false;
                 }
             }
             bta_ag_co_cb.rx_first_pkt = !bta_ag_co_cb.rx_first_pkt;
@@ -648,15 +654,16 @@ void bta_ag_sco_co_in_data(BT_HDR *p_buf, tBTM_SCO_DATA_FLAG status)
                 pkt_size = BTM_MSBC_FRAME_SIZE;
             }
             UINT16 data_len = pkt_size;
-            if (BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)) {
+            if (data_len >= 2 && BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)) {
                 /* H2 header sync word found, skip */
                 p += 2;
                 data_len -= 2;
-            }
-            else if (!bta_ag_co_cb.is_bad_frame){
+            } else if (data_len >= 1 && !bta_ag_co_cb.is_bad_frame) {
                 /* not a bad frame, assume as H1 header */
                 p += 1;
                 data_len -= 1;
+            } else {
+                bta_ag_co_cb.is_bad_frame = true;
             }
             btc_hf_audio_data_cb_to_app((uint8_t *)p_buf, (uint8_t *)p, data_len, bta_ag_co_cb.is_bad_frame);
             bta_ag_co_cb.is_bad_frame = false;
