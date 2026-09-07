@@ -37,7 +37,9 @@ The intervals at which this periodic scan will take place can also be configured
 
 **Roaming Methods**
 
-Currently 2 methods of roaming are supported by the roaming app. (Roaming App Settings --> Roaming Methods)
+Currently 3 methods of roaming are supported by the roaming app. (Roaming App Settings --> Roaming Methods)
+
+Priority while connected: **802.11v BTM > 802.11k assisted > legacy**.
 
 1) Network Assisted Roaming:
 
@@ -45,13 +47,17 @@ Enabled by “Support Network Assisted Roaming using 802.11v”, this method pri
 
 Please note that for this to work as expected, the APs should be setup in a network where they are aware of each other. If the network is expected to preserve IP configuration across a roaming event, `Skip IP renew after roaming` can also be enabled. This is relevant only when the roam keeps the same IP state, such as 802.11r or BTM-based roaming.
 
-2) Legacy Roaming approach.
+2) 802.11k assisted roaming:
 
-Enabled by “Support Legacy roaming approach”, this is designed for scenarios where there is no support for 802.11v amongst the APs of the network. In this scenario, upon determining the better AP to connect to, the station forcibly will disconnect and attempt to connect to the AP with the better AP.
+Enabled by “Support 802.11k assisted roaming using neighbor reports”. After BTM retries are exhausted (or when BTM is unavailable), the station uses Neighbor Report information to scan only AP-advertised channels and look for a better AP. On success it uses a directed reconnect. Neighbor Report Request retries are configured separately from BTM retries.
 
-Please note that if both approaches are enabled, there is an additional configuration (“Retry count after which to switch to legacy roaming”) that allows developers to decide how many times should the station attempt to roam using the Network Assisted roaming methods before switching to using the legacy approach.
+3) Legacy Roaming approach.
 
-**Please note that at least one of the two roaming methods needs to be selected.**
+Enabled by “Support Legacy roaming approach”, this is designed for scenarios where there is no support for 802.11v/802.11k amongst the APs of the network, or after higher-priority methods have been exhausted. In this scenario, upon determining the better AP to connect to, the station forcibly will disconnect and attempt to connect to the AP with the better AP.
+
+Please note that if BTM is enabled together with 11k and/or legacy, “Retry count after which to switch to 11k/legacy roaming” controls how many BTM attempts are made before falling through. 11k has its own independent retry count for Neighbor Report Requests.
+
+**Please note that at least one of the roaming methods needs to be selected.**
 
 
 **Scan configuration**
