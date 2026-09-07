@@ -127,3 +127,13 @@ OpenThread 边界路由器连接了 Thread 网络和其他 IP 网络，提供 IP
 在初始化过程中，调用 :cpp:func:`esp_openthread_border_router_init` 会启用所有边界路由功能。
 
 要了解更多有关边界路由器的详细信息，请参阅 :example:`openthread/ot_br` 示例和其中的 README 文件。
+
+Thread 认证
+-----------
+
+有关 Thread 继承认证的信息，请参阅 :doc:`Thread 认证 <ot-certification>`。
+
+.. toctree::
+    :maxdepth: 1
+
+    ot-certification
