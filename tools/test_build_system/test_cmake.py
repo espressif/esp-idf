@@ -440,3 +440,14 @@ def test_cmake_preset_sdkconfig_defaults_integration(test_app_copy: Path) -> Non
     sdkconfig_content = sdkconfig_path.read_text()
     assert 'CONFIG_LWIP_IPV6=y' in sdkconfig_content
     assert 'CONFIG_ESP_TASK_WDT_TIMEOUT_S=15' in sdkconfig_content
+
+
+def test_cmake_llvm_optimizations_framework(idf_copy: Path) -> None:
+    logging.info('Test CMake configuration of the LLVM optimization framework')
+    test_project = idf_copy / 'tools' / 'cmake' / 'tests' / 'llvm_optimizations'
+    # The standalone test project fakes the compiler ID and CONFIG_* variables to
+    # verify component/source scope flag selection, custom options, non-leakage
+    # to unselected sources, exported IDF_LLVM_OPT_* for stock CMake, and the
+    # non-Clang no-op. run_cmake raises on failure.
+    # Windows runners default to NMake; nmake is absent. Ninja is on PATH.
+    run_cmake(str(test_project), '-G', 'Ninja')

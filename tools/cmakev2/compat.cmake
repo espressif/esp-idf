@@ -3,6 +3,8 @@
 
 include_guard(GLOBAL)
 
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/llvm_optimizations.cmake)
+
 #[[
     check_expected_tool_version()
 
@@ -607,6 +609,7 @@ endfunction()
                                [REQUIRED_IDF_TARGETS <target>...]
                                [EMBED_FILES <file>...]
                                [EMBED_TXTFILES <file>...]
+                               [ENABLE_LLVM_OPT]
                                [WHOLE_ARCHIVE])
 
     *SRCS[in,opt]*
@@ -659,12 +662,16 @@ endfunction()
 
         Link the component as --whole-archive.
 
+    *ENABLE_LLVM_OPT[in,opt]*
+
+        Enable the LLVM optimizations selected in menuconfig for this component.
+
     Register a new component with the build system using the provided options.
     This function also automatically links all commonly required and managed
     components to the component's target.
 #]]
 function(idf_component_register)
-    set(options WHOLE_ARCHIVE)
+    set(options WHOLE_ARCHIVE ENABLE_LLVM_OPT)
     set(one_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES
@@ -737,8 +744,13 @@ function(idf_component_register)
         endif()
     endforeach()
 
+    __idf_llvm_opt_publish_flags()
+
     if(sources OR ARG_EMBED_FILES OR ARG_EMBED_TXTFILES)
         add_library("${COMPONENT_TARGET}" STATIC ${sources})
+        if(ARG_ENABLE_LLVM_OPT)
+            __idf_apply_llvm_opt_to_target("${COMPONENT_TARGET}")
+        endif()
 
         foreach(include_dir IN LISTS include_dirs)
             target_include_directories("${COMPONENT_TARGET}" PUBLIC "${include_dir}")

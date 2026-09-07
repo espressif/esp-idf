@@ -471,6 +471,74 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
 
 请注意，上述两条命令只能在组件 CMakeLists 文件的 ``idf_component_register`` 命令之后调用。
 
+.. only:: esp32p4
+
+    .. _cmake-llvm-optimizations:
+
+    LLVM 优化
+    ^^^^^^^^^^^^^^^^^^
+
+    ESP-IDF 可以把额外的 LLVM/Clang 优化应用到选定的源文件上：在 menuconfig 中启用相应选项，再在 CMake 里标记组件或文件列表。menuconfig 选项对应的编译器标志由 ESP-IDF 设置，项目无需手写这些标志。
+
+    在 :ref:`project-configuration-menu` 的 Compiler options > LLVM optimizations 下启用 :menuitem:`CONFIG_COMPILER_LLVM_MEMCPY_OPTIMIZATION`。相关标志仅应用于你在 CMake 中选定的组件或源文件。
+
+    应用于整个组件：
+
+    .. code-block:: cmake
+
+      idf_component_register(SRCS "foo.c" "bar.c"
+                             INCLUDE_DIRS "."
+                             ENABLE_LLVM_OPT)
+
+    应用于一个或多个源文件（在 ``idf_component_register`` 之后调用）：
+
+    .. code-block:: cmake
+
+      idf_component_enable_llvm_opt(SRCS "foo.c" "bar.c")
+
+    源文件路径必须与传递给 ``idf_component_register`` 的路径一致。与 ``set_source_files_properties`` 一样，通过 ``SRC_DIRS`` 查找到的源文件不支持按文件选择优化。
+
+    LVGL 等第三方组件不会调用上述 helper。在 ``idf_component_register`` 之后，用标准 CMake 命令取出依赖的库 target 并套用导出的标志。``IDF_LLVM_OPT_ALL`` 包含 menuconfig 中已启用的全部 LLVM 优化对应的标志；``IDF_LLVM_OPT_MEMCPY`` 只包含 :menuitem:`CONFIG_COMPILER_LLVM_MEMCPY_OPTIMIZATION` 对应的标志。当对应选项关闭或编译器不是 Clang 时，二者均为空：
+
+    managed ``lvgl`` 组件的库 target（组件仓库名为 :code:`lvgl__lvgl`，不是它的源文件列表）：
+
+    .. code-block:: cmake
+
+      idf_component_get_property(lvgl_lib "lvgl__lvgl" COMPONENT_LIB)
+      if(IDF_LLVM_OPT_ALL)
+          target_compile_options(${lvgl_lib} PRIVATE ${IDF_LLVM_OPT_ALL})
+      endif()
+
+    若只应用 memcpy 优化：
+
+    .. code-block:: cmake
+
+      idf_component_get_property(lvgl_lib "lvgl__lvgl" COMPONENT_LIB)
+      if(IDF_LLVM_OPT_MEMCPY)
+          target_compile_options(${lvgl_lib} PRIVATE ${IDF_LLVM_OPT_MEMCPY})
+      endif()
+
+    这样无需修改第三方的 CMakeLists。不要对大型组件中的全部源文件启用；见下方限制。
+
+    高级用户可以追加额外的 Clang 或 LLVM 标志。这些标志会与 menuconfig 中启用的 LLVM 优化一起应用。省略 ``SRCS`` 时，自定义标志将应用于整个组件：
+
+    .. code-block:: cmake
+
+      idf_component_enable_llvm_opt(
+          SRCS "foo.c"
+          OPTIONS "-mllvm=-my-custom-llvm-option")
+
+    当前 menuconfig 选项使用 RISC-V PIE 扩展加速 ``memcpy``。请安装并选用乐鑫 Clang 工具链（``IDF_TOOLCHAIN=clang``）；当活动编译器为 GCC 时，IDF 不会注入这些标志。后续可在不改动 CMake 启用 API 的情况下，通过 menuconfig 添加新选项。示例见 :example:`system/llvm_opt` 与 :example:`system/llvm_memcpy_opt`。
+
+    使用限制：
+
+    - 需要乐鑫 Clang 工具链。如果所选编译器不是 Clang，``ENABLE_LLVM_OPT``、``idf_component_enable_llvm_opt``、``IDF_LLVM_OPT_ALL`` 和 ``IDF_LLVM_OPT_MEMCPY`` 不会产生任何效果。
+    - 当前仅在 ESP32-P4 上完成验证。
+    - 仅在优化热点路径时启用。优先对已测量的文件列表启用。结果依赖对齐、长度、芯片修订以及 Flash/Cache 布局。
+    - **不要** 对整个工程或大型组件中的全部源文件启用。生成代码会使用 PIE 协处理器：某个尚未拥有 PIE 的任务第一次执行 PIE 指令时会陷入内核，内核惰性保存上一任拥有者的寄存器并恢复当前任务的寄存器；每个这样的任务都会重复该切换，整体应用可能反而变慢。额外代码体积（I-cache）也可能有影响，但是次要因素。详见 :doc:`../api-reference/system/freertos_idf`。
+    - 不要在 ISR 中使用该 memcpy 选项：中断上下文中使用 PIE 协处理器不被允许，并会导致运行中止。
+    - 不要把 CMake 标记当作全局 ``-O`` 替代。
+
 
 .. _component-configuration:
 
@@ -1564,6 +1632,10 @@ ESP-IDF 组件命令
   - KCONFIG - 覆盖默认的 Kconfig 文件。
   - KCONFIG_PROJBUILD - 覆盖默认的 Kconfig.projbuild 文件。
   - WHOLE_ARCHIVE - 如果指定了此参数，链接时会在组件库的前后分别添加 ``-Wl,--whole-archive`` 和 ``-Wl,--no-whole-archive``。这与设置 ``WHOLE_ARCHIVE`` 组件属性的效果一致。
+
+.. only:: esp32p4
+
+  在 ESP32-P4 上，``idf_component_register`` 还接受 ``ENABLE_LLVM_OPT``，用于将 menuconfig 中启用的 LLVM 优化应用于组件中的所有源文件。如果所选编译器不是 Clang，该参数会被忽略。详见 :ref:`cmake-llvm-optimizations`。
 
 以下内容用于 :ref:`将数据嵌入到组件中<cmake_embed_data>`，并在确定组件是否仅用于配置时被视为源文件。这意味着，即使组件没有指定源文件，如果组件指定了以下其中之一，仍然会在内部为组件创建一个静态库。
 

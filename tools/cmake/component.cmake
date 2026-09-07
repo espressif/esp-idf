@@ -1,3 +1,5 @@
+include(${CMAKE_CURRENT_LIST_DIR}/llvm_optimizations.cmake)
+
 #
 # Internal function for retrieving component properties from a component target.
 #
@@ -440,8 +442,9 @@ endfunction()
 # @param[in, optional] KCONFIG (single value) override the default Kconfig
 # @param[in, optional] KCONFIG_PROJBUILD (single value) override the default Kconfig
 # @param[in, optional] WHOLE_ARCHIVE (option) link the component as --whole-archive
+# @param[in, optional] ENABLE_LLVM_OPT (option) enable the LLVM optimizations selected in menuconfig
 function(idf_component_register)
-    set(options WHOLE_ARCHIVE)
+    set(options WHOLE_ARCHIVE ENABLE_LLVM_OPT)
     set(single_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES
@@ -487,9 +490,16 @@ function(idf_component_register)
 
     idf_build_get_property(config_dir CONFIG_DIR)
 
+    # Publish IDF_LLVM_OPT_* even when this component does not opt in, so the
+    # application can apply them to a third-party target with standard CMake.
+    __idf_llvm_opt_publish_flags()
+
     # The contents of 'sources' is from the __component_add_sources call
     if(sources OR __EMBED_FILES OR __EMBED_TXTFILES)
         add_library(${component_lib} STATIC ${sources})
+        if(__ENABLE_LLVM_OPT)
+            __idf_apply_llvm_opt_to_target(${component_lib})
+        endif()
         __component_set_property(${component_target} COMPONENT_TYPE LIBRARY)
         __component_add_include_dirs(${component_lib} "${__INCLUDE_DIRS}" PUBLIC)
         __component_add_include_dirs(${component_lib} "${__PRIV_INCLUDE_DIRS}" PRIVATE)
