@@ -36,7 +36,25 @@ static const char* TAG = "phy_comm";
 static volatile uint16_t s_phy_modem_flag = 0;
 
 #if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
+#define RFPLL BIT(0)
+#define WIFI_POWER BIT(1)
+#define BT154_POWER BIT(2)
+#define RXCAL BIT(3)
+#define TXCAL BIT(4)
+
+typedef struct {
+    int16_t temp_curr;
+    int16_t temp_rfpll;
+    int16_t temp_wifi_power;
+    int16_t temp_bt_power;
+    int16_t temp_rxcal;
+    int16_t temp_txcal;
+    uint16_t flag;
+} phy_param_track_result_t;
+
 extern void phy_param_track_tot(bool en_wifi, bool en_ble_154);
+extern const phy_param_track_result_t* phy_debug_get_track_result();
+
 static esp_timer_handle_t phy_track_pll_timer;
 #if CONFIG_ESP_WIFI_ENABLED
 static volatile int64_t s_wifi_prev_timestamp;
@@ -98,15 +116,37 @@ static void phy_track_pll_internal(void)
     }
 #endif
     if (wifi_track_pll || ble_154_track_pll) {
+        phy_param_track_tot(wifi_track_pll, ble_154_track_pll);
 #if CONFIG_ESP_PHY_PLL_TRACK_DEBUG
+// TODO:Support other targets
+#if CONFIG_IDF_TARGET_ESP32S31
+        const phy_param_track_result_t* result = phy_debug_get_track_result();
+        if (result && result->flag != 0) {
 #if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
-        ESP_LOGI("PLL_TRACK", "BT or IEEE802154 tracks PLL: %s", ble_154_track_pll ? "True" : "False");
+            ESP_LOGI("TEMP_TRACK", "BT or IEEE802154 tracks: %s", ble_154_track_pll ? "True" : "False");
 #endif
 #if CONFIG_ESP_WIFI_ENABLED
-        ESP_LOGI("PLL_TRACK", "Wi-Fi tracks PLL: %s", wifi_track_pll ? "True" : "False");
+            ESP_LOGI("TEMP_TRACK", "Wi-Fi tracks: %s", wifi_track_pll ? "True" : "False");
+#endif
+            if (result->flag & RFPLL) {
+                ESP_LOGI("TEMP_TRACK", "RFPLL processed, temperature: %d", result->temp_rfpll);
+            }
+            if (result->flag & WIFI_POWER) {
+                ESP_LOGI("TEMP_TRACK", "WIFI_POWER processed, temperature: %d", result->temp_wifi_power);
+            }
+            if (result->flag & BT154_POWER) {
+                ESP_LOGI("TEMP_TRACK", "BT154_POWER processed, temperature: %d", result->temp_bt_power);
+            }
+            if (result->flag & RXCAL) {
+                ESP_LOGI("TEMP_TRACK", "RXCAL processed, temperature: %d", result->temp_rxcal);
+            }
+            if (result->flag & TXCAL) {
+                ESP_LOGI("TEMP_TRACK", "TXCAL processed, temperature: %d", result->temp_txcal);
+            }
+            ESP_LOGI("TEMP_TRACK", "Current temperature: %d", result->temp_curr);
+        }
 #endif
 #endif
-        phy_param_track_tot(wifi_track_pll, ble_154_track_pll);
     }
 }
 
@@ -122,7 +162,7 @@ void phy_track_pll_init(void)
 {
     const esp_timer_create_args_t phy_track_pll_timer_args = {
             .callback = &phy_track_pll_timer_callback,
-            .name = "phy-track-pll-timer"
+            .name = "phy-track-timer"
     };
     ESP_ERROR_CHECK(esp_timer_create(&phy_track_pll_timer_args, &phy_track_pll_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(phy_track_pll_timer, PHY_TRACK_PLL_PERIOD_IN_US));
