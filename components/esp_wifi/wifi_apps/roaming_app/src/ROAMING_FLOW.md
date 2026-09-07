@@ -36,7 +36,7 @@ flowchart TD
 
     D --> E{"Runtime event"}
     E -- "Low RSSI or periodic scan" --> F["Find the best candidate AP"]
-    E -- "Periodic RRM timer" --> G["Refresh cached neighbor list for BTM"]
+    E -- "Periodic RRM timer" --> G["Refresh cached neighbor list for BTM and 11k"]
     G --> E
     E -- "Disconnect event" --> H{"Reconnect allowed?"}
     H -- "No" --> I["No action"]
@@ -52,15 +52,17 @@ flowchart TD
 
     O -- "No, still connected" --> P["Stay on current AP"]
     O -- "No, disconnected recovery" --> Q["Schedule retry with a fresh scan"]
-    O -- "Yes" --> R{"How to roam?"}
+    O -- "Yes" --> R{"How to roam? Priority: 11v then 11k then legacy"}
 
     R -- "BTM query can be used" --> S["Send BTM query and wait for AP or network action"]
+    R -- "11k assisted can be used" --> S11k["NR channel scan then directed reconnect"]
     R -- "Directed reconnect is used" --> T["Start reconnect to the selected AP"]
     R -- "No method available" --> U["No roam action"]
 
     P --> E
     Q --> E
     S --> E
+    S11k --> E
     T --> E
     K --> E
 ```
@@ -83,7 +85,7 @@ flowchart TD
     H -- "Low RSSI" --> I["Candidate discovery"]
     H -- "Periodic scan timer" --> I
     H -- "Periodic RRM timer" --> J["Send neighbor report request"]
-    J --> K["Update cached BTM neighbor list"]
+    J --> K["Update cached neighbor list and NR channels"]
     K --> H
     H -- "Disconnect event" --> L{"Reconnect allowed?"}
     L -- "No" --> M["No action"]
@@ -145,24 +147,41 @@ flowchart TD
 
 ## 4. Roam Execution
 
+Method priority while connected is **802.11v BTM > 802.11k assisted > legacy**.
+
 ```mermaid
 flowchart TD
     A["roaming_app_trigger_roam(candidate)"] --> B{"Station connected?"}
     B -- "No" --> C["Start reconnect to selected AP"]
     B -- "Yes" --> D{"Inside backoff window?"}
-    D -- "Yes" --> X["Ignore request"]
+    D -- "Yes" --> X["Defer request"]
     D -- "No" --> E{"BTM enabled and supported by current AP?"}
 
     E -- "Yes" --> F{"BTM retries remaining?"}
     F -- "Yes" --> G{"Submit BTM query?"}
     G -- "Yes" --> H["Send BTM query with selected candidate<br/>and cached neighbor list"]
     H --> I["Wait for AP or network action"]
-    G -- "No" --> J{"Legacy roaming enabled?"}
-    F -- "No" --> J
+    G -- "No" --> Rrm
+    F -- "No" --> Rrm
 
-    E -- "No" --> J
-    J -- "Yes" --> K["Start directed reconnect to selected AP"]
-    J -- "No" --> L["No roam action"]
+    E -- "No" --> Rrm
+    Rrm{"11k assisted enabled and RRM supported?"}
+    Rrm -- "Yes" --> NrAvail{"Neighbor report channels cached?"}
+    NrAvail -- "Yes" --> ChanScan["Scan only NR channels"]
+    NrAvail -- "No" --> NrReq{"NR request retries remaining?"}
+    NrReq -- "Yes" --> SendNr["Send Neighbor Report Request"]
+    SendNr --> WaitNr["Wait for neighbor report or timeout"]
+    WaitNr -- "Got report" --> ChanScan
+    WaitNr -- "Timeout with retries" --> SendNr
+    WaitNr -- "Retries exhausted" --> Legacy
+    NrReq -- "No" --> Legacy
+    ChanScan --> Found{"Better AP found?"}
+    Found -- "Yes" --> K["Directed reconnect to selected AP"]
+    Found -- "No" --> Legacy
+
+    Legacy{"Legacy roaming enabled?"}
+    Legacy -- "Yes" --> K
+    Legacy -- "No" --> L["No roam action"]
 ```
 
 ### Configuration used in this stage
@@ -171,6 +190,7 @@ flowchart TD
 | --- | --- |
 | Backoff | `ESP_WIFI_ROAMING_BACKOFF_TIME` |
 | BTM path | `ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM`, `ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT` |
+| 11k path | `ESP_WIFI_ROAMING_11K_ASSISTED_ROAM`, `ESP_WIFI_ROAMING_11K_RETRY_COUNT` |
 | Legacy path | `ESP_WIFI_ROAMING_LEGACY_ROAMING` |
 | Post-roam IP behavior | `ESP_WIFI_ROAMING_IP_RENEW_SKIP` |
 
@@ -181,6 +201,7 @@ flowchart TD
 | Low RSSI roaming | `ESP_WIFI_ROAMING_LOW_RSSI_ROAMING`, `ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD`, `ESP_WIFI_ROAMING_LOW_RSSI_OFFSET` |
 | Periodic scan roaming | `ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR`, `ESP_WIFI_ROAMING_PERIODIC_SCAN_THRESHOLD`, `ESP_WIFI_ROAMING_SCAN_MONITOR_INTERVAL`, `ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF` |
 | Network-assisted roaming | `ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM`, `ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT` |
+| 802.11k assisted roaming | `ESP_WIFI_ROAMING_11K_ASSISTED_ROAM`, `ESP_WIFI_ROAMING_11K_RETRY_COUNT` |
 | Post-roam IP behavior | `ESP_WIFI_ROAMING_IP_RENEW_SKIP` |
 | Legacy roaming | `ESP_WIFI_ROAMING_LEGACY_ROAMING` |
 | Periodic RRM / neighbor reports | `ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING`, `ESP_WIFI_ROAMING_RRM_MONITOR_TIME`, `ESP_WIFI_ROAMING_RRM_MONITOR_THRESHOLD` |
@@ -191,7 +212,8 @@ flowchart TD
 
 ## 6. Behavioral Notes
 
-- A periodic RRM event does not directly trigger roaming. Its purpose is to refresh the cached neighbor list used by the BTM path.
+- A periodic RRM event does not directly trigger roaming. Its purpose is to refresh the cached neighbor list used by the BTM path and the standalone 11k path.
+- Standalone 11k roaming runs after BTM retries are exhausted or when BTM is unavailable, as long as the current AP supports RRM. It scans only channels from the neighbor report and then uses directed reconnect.
 - While connected, candidate ranking uses the stronger of two values: the RSSI from the current connection and the RSSI for the same BSSID in the latest scan results.
 - After a disconnect, the app checks whether the disconnected BSSID is blacklisted. This covers both BSSIDs that were already blacklisted and BSSIDs that become blacklisted because the latest failure reached the configured threshold.
 - After a disconnect, the app does not compare other APs against the failed AP's scan RSSI. This lets it choose any valid AP that is not blacklisted.

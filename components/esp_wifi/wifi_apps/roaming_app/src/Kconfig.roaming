@@ -92,15 +92,37 @@ menu "Roaming Methods"
             Note that this moves the responsibility to the AP's network, and hence isn't
             guaranteed to cause the station to attempt to roam each time.
 
+    config ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+        bool "Support 802.11k assisted roaming using neighbor reports"
+        depends on ESP_WIFI_RRM_SUPPORT
+        default y
+        help
+            After 802.11v BTM retries are exhausted (or when BTM is unavailable), use
+            802.11k Neighbor Report information to scan only AP-advertised channels and
+            look for a better AP. On success, roam using a directed reconnect.
+            Priority order is 802.11v > 802.11k > legacy.
+
     config ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT
-        int "Retry count after which to switch to legacy roaming"
+        int "Retry count after which to switch to 11k/legacy roaming"
         depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
-        depends on ESP_WIFI_ROAMING_LEGACY_ROAMING
+        depends on ESP_WIFI_ROAMING_LEGACY_ROAMING || ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
         range 1 5
         default 2
         help
             Retry threshold after which the station should stop using Network Assisted
-            roaming methods and start using legacy roaming instead.
+            802.11v BTM roaming and fall back to 802.11k assisted roaming (if enabled)
+            or legacy roaming.
+
+    config ESP_WIFI_ROAMING_11K_RETRY_COUNT
+        int "Retry count for 802.11k neighbor report requests"
+        depends on ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+        range 1 5
+        default 2
+        help
+            Number of Neighbor Report Request retries for the standalone 802.11k
+            roaming path. Independent of the 802.11v BTM retry count. After these
+            retries are exhausted without a usable neighbor report, the station
+            falls back to legacy roaming if enabled.
 
     config ESP_WIFI_ROAMING_IP_RENEW_SKIP
         bool "Skip IP renew after roaming"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,21 @@ extern "C" {
 #define NETWORK_ASSISTED_ROAMING_ENABLED 0
 #endif
 
+/* 802.11k assisted roaming */
+#ifdef CONFIG_ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+#define RRM_ASSISTED_ROAMING_ENABLED CONFIG_ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+#else
+#define RRM_ASSISTED_ROAMING_ENABLED 0
+#endif
+
+#ifdef CONFIG_ESP_WIFI_ROAMING_11K_RETRY_COUNT
+#define RRM_ROAM_RETRY_COUNT CONFIG_ESP_WIFI_ROAMING_11K_RETRY_COUNT
+#else
+#define RRM_ROAM_RETRY_COUNT 0
+#endif
+
+#define RRM_NEIGHBOR_REPORT_TIMEOUT_SEC 1
+
 /* Periodic RRM configuration */
 #ifdef CONFIG_ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
 #define PERIODIC_RRM_MONITORING CONFIG_ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
@@ -85,6 +100,12 @@ extern "C" {
 #define RRM_MONITOR_TIME 232
 #define RRM_MONITOR_RSSI_THRESHOLD -100
 #endif /*PERIODIC_RRM_MONITORING*/
+
+/* Neighbor report list/event support for periodic RRM and/or 11k roam */
+#define RRM_NEIGHBOR_LIST_SUPPORT (PERIODIC_RRM_MONITORING || RRM_ASSISTED_ROAMING_ENABLED)
+
+/* Track BTM retries when a lower-priority fallback method exists */
+#define BTM_RETRY_FALLBACK_ENABLED ((LEGACY_ROAM_ENABLED || RRM_ASSISTED_ROAMING_ENABLED) && NETWORK_ASSISTED_ROAMING_ENABLED)
 
 #define MAX_SCAN_CHAN_LIST_COUNT 14
 
@@ -122,7 +143,7 @@ struct roaming_app {
 #if LOW_RSSI_ROAMING_ENABLED
     int8_t current_low_rssi_threshold;
 #endif
-#if LEGACY_ROAM_ENABLED && NETWORK_ASSISTED_ROAMING_ENABLED
+#if BTM_RETRY_FALLBACK_ENABLED
     uint8_t btm_attempt;
 #endif
 #if LEGACY_ROAM_ENABLED
@@ -130,6 +151,8 @@ struct roaming_app {
 #endif
 #if PERIODIC_RRM_MONITORING
     bool periodic_rrm_active;
+#endif
+#if RRM_NEIGHBOR_LIST_SUPPORT
     bool rrm_request_active;
 #endif
 #if PERIODIC_SCAN_MONITORING
@@ -148,6 +171,16 @@ struct roaming_app {
 #endif
     bool allow_reconnect;
     struct cand_bss *pending_roam_bss;
+    wifi_scan_channel_bitmap_t default_channel_bitmap;
+    wifi_scan_channel_bitmap_t rrm_channel_bitmap;
+    bool rrm_channels_valid;
+#if RRM_ASSISTED_ROAMING_ENABLED
+    uint8_t rrm_attempt;
+    bool rrm_roam_pending;
+    bool rrm_scan_active;
+    bool force_legacy_roam;
+    struct cand_bss *pending_rrm_fallback_bss;
+#endif
 };
 
 #ifdef __cplusplus

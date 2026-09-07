@@ -44,6 +44,7 @@ extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done
 static int wifi_post_roam_event(struct cand_bss *bss);
 static void determine_best_ap(int8_t rssi_threshold);
 static bool is_bssid_blacklisted(const uint8_t *bssid);
+static bool conduct_scan(void);
 static void roaming_app_refresh_scan_config_filters(void);
 static void roaming_app_apply_runtime_config(void);
 static void roaming_app_invalidate_scan_cache(void);
@@ -54,7 +55,17 @@ static void roaming_app_trigger_roam_internal_handler(void *ctx, void *data);
 #if PERIODIC_RRM_MONITORING
 static void init_periodic_rrm_event(void);
 static void roaming_app_periodic_rrm_internal_handler(void *data, void *ctx);
+#endif
+#if RRM_NEIGHBOR_LIST_SUPPORT
 static void roaming_app_neighbor_report_recv_internal_handler(void *ctx, void *data);
+static void roaming_app_clear_rrm_channel_cache(void);
+#endif
+#if RRM_ASSISTED_ROAMING_ENABLED
+static void roaming_app_rrm_neighbor_timeout_handler(void *ctx, void *data);
+static bool trigger_rrm_assisted_roam(const struct cand_bss *bss);
+static void roaming_app_rrm_fallback_to_legacy(void);
+static void roaming_app_clear_rrm_roam_state(void);
+static void roaming_app_restore_default_scan_channels(void);
 #endif
 #if PERIODIC_SCAN_MONITORING
 static void init_periodic_scan_roam_event(void);
@@ -521,7 +532,7 @@ static bool roaming_app_connected_roam_method_available(void)
 {
 #if NETWORK_ASSISTED_ROAMING_ENABLED
     if (g_roaming_app.config.btm_roaming_enabled && g_roaming_app.current_bss.btm_support) {
-#if LEGACY_ROAM_ENABLED && NETWORK_ASSISTED_ROAMING_ENABLED
+#if BTM_RETRY_FALLBACK_ENABLED
         if (g_roaming_app.btm_attempt <= g_roaming_app.config.btm_retry_cnt) {
             return true;
         }
@@ -530,6 +541,17 @@ static bool roaming_app_connected_roam_method_available(void)
 #endif
     }
 #endif /*NETWORK_ASSISTED_ROAMING_ENABLED*/
+
+#if RRM_ASSISTED_ROAMING_ENABLED
+    if (g_roaming_app.config.rrm_roaming_enabled && g_roaming_app.current_bss.rrm_support) {
+        if (g_roaming_app.rrm_channels_valid ||
+                g_roaming_app.rrm_attempt <= g_roaming_app.config.rrm_retry_cnt ||
+                g_roaming_app.rrm_roam_pending ||
+                g_roaming_app.rrm_scan_active) {
+            return true;
+        }
+    }
+#endif /*RRM_ASSISTED_ROAMING_ENABLED*/
 
 #if LEGACY_ROAM_ENABLED
     if (g_roaming_app.config.legacy_roam_enabled) {
@@ -594,8 +616,10 @@ static void roaming_app_stop_periodic_monitors(void)
 {
 #if PERIODIC_RRM_MONITORING
     g_roaming_app.periodic_rrm_active = false;
-    g_roaming_app.rrm_request_active = false;
     eloop_cancel_timeout(roaming_app_periodic_rrm_internal_handler, NULL, NULL);
+#endif
+#if RRM_NEIGHBOR_LIST_SUPPORT
+    g_roaming_app.rrm_request_active = false;
 #endif
 
 #if PERIODIC_SCAN_MONITORING
@@ -610,6 +634,18 @@ static void roaming_app_set_disconnected_state(const wifi_event_sta_disconnected
     g_roaming_app.current_bss.btm_support = false;
     g_roaming_app.current_bss.rrm_support = false;
     g_roaming_app.current_bss.ap.rssi = -128;
+
+#if RRM_ASSISTED_ROAMING_ENABLED
+    roaming_app_clear_rrm_roam_state();
+#endif
+#if RRM_NEIGHBOR_LIST_SUPPORT
+    g_roaming_app.rrm_request_active = false;
+    roaming_app_clear_rrm_channel_cache();
+    if (g_roaming_app.btm_neighbor_list) {
+        os_free(g_roaming_app.btm_neighbor_list);
+        g_roaming_app.btm_neighbor_list = NULL;
+    }
+#endif
 
     if (disconn) {
         memcpy(g_roaming_app.current_bss.ap.bssid, disconn->bssid, ETH_ALEN);
@@ -1123,9 +1159,13 @@ static void roaming_app_connected_event_handler(void *ctx, void *data)
     } else {
         ESP_LOGE(ROAMING_TAG, "Failed to Initialise roaming events");
     }
-#if LEGACY_ROAM_ENABLED && NETWORK_ASSISTED_ROAMING_ENABLED
+#if BTM_RETRY_FALLBACK_ENABLED
     g_roaming_app.btm_attempt = 0;
-#endif /*LEGACY_ROAM_ENABLED && NETWORK_ASSISTED_ROAMING_ENABLED*/
+#endif /*BTM_RETRY_FALLBACK_ENABLED*/
+#if RRM_ASSISTED_ROAMING_ENABLED
+    g_roaming_app.rrm_attempt = 0;
+    roaming_app_clear_rrm_roam_state();
+#endif /*RRM_ASSISTED_ROAMING_ENABLED*/
 #if LEGACY_ROAM_ENABLED
     g_roaming_app.force_roam_ongoing = false;
 #endif /*LEGACY_ROAM_ENABLED*/
@@ -1160,7 +1200,7 @@ void roam_sta_disconnected(void *data)
     }
 }
 
-#if PERIODIC_RRM_MONITORING
+#if RRM_NEIGHBOR_LIST_SUPPORT
 static int roaming_app_append_string(char *buf, size_t buf_len, size_t *len, const char *fmt, ...)
 {
     va_list ap;
@@ -1182,6 +1222,28 @@ static int roaming_app_append_string(char *buf, size_t buf_len, size_t *len, con
     return 0;
 }
 
+static void roaming_app_clear_rrm_channel_cache(void)
+{
+    memset(&g_roaming_app.rrm_channel_bitmap, 0, sizeof(g_roaming_app.rrm_channel_bitmap));
+    g_roaming_app.rrm_channels_valid = false;
+}
+
+static void roaming_app_add_rrm_channel(uint8_t channel)
+{
+    if (channel >= 1 && channel <= 14) {
+        g_roaming_app.rrm_channel_bitmap.ghz_2_channels |= (1 << channel);
+        g_roaming_app.rrm_channels_valid = true;
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+    } else if (channel >= 36 && channel <= 177) {
+        uint8_t bit_number = CHANNEL_TO_BIT_NUMBER(channel);
+        if (bit_number != 0) {
+            g_roaming_app.rrm_channel_bitmap.ghz_5_channels |= BIT(bit_number);
+            g_roaming_app.rrm_channels_valid = true;
+        }
+#endif
+    }
+}
+
 static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
 {
     size_t len = 0;
@@ -1198,6 +1260,8 @@ static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
      * Optional Subelements[variable]
      */
 #define NR_IE_MIN_LEN (ETH_ALEN + 4 + 1 + 1 + 1)
+
+    roaming_app_clear_rrm_channel_cache();
 
     if (!report || report_len == 0) {
         ESP_LOGE(ROAMING_TAG, "RRM neighbor report is not valid");
@@ -1256,6 +1320,7 @@ static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
                  MAC2STR(nr), WPA_GET_LE32(nr + ETH_ALEN),
                  nr[ETH_ALEN + 4], nr[ETH_ALEN + 5],
                  nr[ETH_ALEN + 6]);
+        roaming_app_add_rrm_channel(nr[ETH_ALEN + 5]);
         /* neighbor start */
         if (roaming_app_append_string(buf, MAX_NEIGHBOR_LEN, &len,
                                       " neighbor=" MACSTR ",0x%04" PRIx32 ",%u,%u,%u",
@@ -1276,9 +1341,210 @@ cleanup:
     if (ret < 0) {
         os_free(buf);
         buf = NULL;
+        roaming_app_clear_rrm_channel_cache();
     }
     return buf;
 }
+
+#if RRM_ASSISTED_ROAMING_ENABLED
+static void roaming_app_restore_default_scan_channels(void)
+{
+    g_roaming_app.config.scan_config.channel_bitmap = g_roaming_app.default_channel_bitmap;
+    if (g_roaming_app.config.scan_config.channel_bitmap.ghz_2_channels ||
+            g_roaming_app.config.scan_config.channel_bitmap.ghz_5_channels) {
+        g_roaming_app.config.scan_config.channel = 0;
+    }
+}
+
+static void roaming_app_clear_rrm_roam_state(void)
+{
+    eloop_cancel_timeout(roaming_app_rrm_neighbor_timeout_handler, NULL, NULL);
+    if (g_roaming_app.rrm_scan_active) {
+        roaming_app_restore_default_scan_channels();
+        g_roaming_app.rrm_scan_active = false;
+    }
+    g_roaming_app.rrm_roam_pending = false;
+    g_roaming_app.force_legacy_roam = false;
+    if (g_roaming_app.pending_rrm_fallback_bss) {
+        os_free(g_roaming_app.pending_rrm_fallback_bss);
+        g_roaming_app.pending_rrm_fallback_bss = NULL;
+    }
+}
+
+static void roaming_app_rrm_fallback_to_legacy(void)
+{
+    struct cand_bss *fallback = g_roaming_app.pending_rrm_fallback_bss;
+
+    g_roaming_app.pending_rrm_fallback_bss = NULL;
+    g_roaming_app.rrm_roam_pending = false;
+    if (g_roaming_app.rrm_scan_active) {
+        roaming_app_restore_default_scan_channels();
+        g_roaming_app.rrm_scan_active = false;
+    }
+
+    /* Fallback to original candidate only if legacy roam is enabled. */
+#if LEGACY_ROAM_ENABLED
+    if (fallback && g_roaming_app.sta_connected && g_roaming_app.config.legacy_roam_enabled) {
+        ESP_LOGD(ROAMING_TAG, "11k roam did not find a better AP, falling back to legacy");
+        g_roaming_app.force_legacy_roam = true;
+        if (wifi_post_roam_event(fallback)) {
+            ESP_LOGE(ROAMING_TAG, "Failed to post legacy fallback roam event");
+            g_roaming_app.force_legacy_roam = false;
+        }
+    } else if (!fallback) {
+        ESP_LOGD(ROAMING_TAG, "11k roam finished with no candidate and no legacy fallback");
+    } else {
+        ESP_LOGD(ROAMING_TAG, "11k roam finished; legacy roam disabled, staying on current AP");
+    }
+#else
+    ESP_LOGD(ROAMING_TAG, "11k roam finished with no usable candidate");
+#endif
+    os_free(fallback);
+}
+
+static bool roaming_app_apply_rrm_scan_channels(void)
+{
+    if (!g_roaming_app.rrm_channels_valid) {
+        return false;
+    }
+
+    g_roaming_app.config.scan_config.channel_bitmap = g_roaming_app.rrm_channel_bitmap;
+    g_roaming_app.config.scan_config.channel = 0;
+    return true;
+}
+
+static bool roaming_app_start_rrm_channel_scan(void)
+{
+    if (g_roaming_app.scan_ongoing) {
+        ESP_LOGD(ROAMING_TAG, "Scan already ongoing, deferring 11k channel scan");
+        return false;
+    }
+
+    if (!roaming_app_apply_rrm_scan_channels()) {
+        ESP_LOGD(ROAMING_TAG, "No usable NR channels for 11k scan");
+        return false;
+    }
+
+    g_roaming_app.rrm_scan_active = true;
+    g_roaming_app.rrm_roam_pending = false;
+    g_roaming_app.scan_ongoing = true;
+    g_roaming_app.current_rssi_threshold = 0;
+    roaming_app_invalidate_scan_cache();
+
+    if (!conduct_scan()) {
+        g_roaming_app.scan_ongoing = false;
+        roaming_app_restore_default_scan_channels();
+        g_roaming_app.rrm_scan_active = false;
+        return false;
+    }
+
+    ESP_LOGI(ROAMING_TAG, "Issued 11k channel-restricted scan");
+    roaming_app_mark_roam_attempt();
+    return true;
+}
+
+static bool roaming_app_send_rrm_neighbor_request(void)
+{
+    if (!g_roaming_app.sta_connected || !g_roaming_app.current_bss.rrm_support) {
+        return false;
+    }
+
+    if (esp_rrm_send_neighbor_report_request() < 0) {
+        ESP_LOGE(ROAMING_TAG, "failed to send neighbor report request for 11k roam");
+        return false;
+    }
+
+    g_roaming_app.rrm_request_active = true;
+    g_roaming_app.rrm_roam_pending = true;
+    g_roaming_app.rrm_attempt++;
+    eloop_cancel_timeout(roaming_app_rrm_neighbor_timeout_handler, NULL, NULL);
+    if (eloop_register_timeout(RRM_NEIGHBOR_REPORT_TIMEOUT_SEC, 0,
+                               roaming_app_rrm_neighbor_timeout_handler, NULL, NULL) != 0) {
+        ESP_LOGW(ROAMING_TAG, "Could not register 11k neighbor report timeout");
+    }
+    ESP_LOGD(ROAMING_TAG, "Sent Neighbor Report Request for 11k roam (attempt %u)",
+             g_roaming_app.rrm_attempt);
+    roaming_app_mark_roam_attempt();
+    return true;
+}
+
+static void roaming_app_rrm_neighbor_timeout_handler(void *ctx, void *data)
+{
+    (void) ctx;
+    (void) data;
+
+    if (!g_roaming_app.app_active || !g_roaming_app.rrm_roam_pending) {
+        return;
+    }
+
+    ESP_LOGD(ROAMING_TAG, "Timed out waiting for Neighbor Report for 11k roam");
+    g_roaming_app.rrm_request_active = false;
+
+    if (g_roaming_app.rrm_attempt <= g_roaming_app.config.rrm_retry_cnt) {
+        if (roaming_app_send_rrm_neighbor_request()) {
+            return;
+        }
+    }
+
+    ESP_LOGD(ROAMING_TAG, "11k neighbor report retries exhausted");
+#if BTM_RETRY_FALLBACK_ENABLED
+    g_roaming_app.btm_attempt = 0;
+#endif
+    g_roaming_app.rrm_attempt = 0;
+    roaming_app_rrm_fallback_to_legacy();
+}
+
+static bool trigger_rrm_assisted_roam(const struct cand_bss *bss)
+{
+    if (!g_roaming_app.config.rrm_roaming_enabled || !g_roaming_app.current_bss.rrm_support) {
+        return false;
+    }
+
+    if (g_roaming_app.rrm_roam_pending || g_roaming_app.rrm_scan_active) {
+        ESP_LOGD(ROAMING_TAG, "11k roam already in progress");
+        return true;
+    }
+
+    if (!g_roaming_app.rrm_channels_valid &&
+            g_roaming_app.rrm_attempt > g_roaming_app.config.rrm_retry_cnt) {
+        ESP_LOGD(ROAMING_TAG, "Not using 11k roam as neighbor request retries are exhausted");
+#if BTM_RETRY_FALLBACK_ENABLED
+        g_roaming_app.btm_attempt = 0;
+#endif
+        g_roaming_app.rrm_attempt = 0;
+        return false;
+    }
+
+    if (g_roaming_app.pending_rrm_fallback_bss) {
+        os_free(g_roaming_app.pending_rrm_fallback_bss);
+        g_roaming_app.pending_rrm_fallback_bss = NULL;
+    }
+    if (bss) {
+        g_roaming_app.pending_rrm_fallback_bss = os_zalloc(sizeof(*bss));
+        if (g_roaming_app.pending_rrm_fallback_bss) {
+            os_memcpy(g_roaming_app.pending_rrm_fallback_bss, bss, sizeof(*bss));
+        }
+    }
+
+    if (g_roaming_app.rrm_channels_valid) {
+        if (roaming_app_start_rrm_channel_scan()) {
+            return true;
+        }
+        roaming_app_rrm_fallback_to_legacy();
+        return true;
+    }
+
+    if (roaming_app_send_rrm_neighbor_request()) {
+        return true;
+    }
+
+    if (g_roaming_app.pending_rrm_fallback_bss) {
+        os_free(g_roaming_app.pending_rrm_fallback_bss);
+        g_roaming_app.pending_rrm_fallback_bss = NULL;
+    }
+    return false;
+}
+#endif /*RRM_ASSISTED_ROAMING_ENABLED*/
 
 static void roaming_app_neighbor_report_recv_internal_handler(void *ctx, void *data)
 {
@@ -1320,8 +1586,19 @@ static void roaming_app_neighbor_report_recv_internal_handler(void *ctx, void *d
         os_free(g_roaming_app.btm_neighbor_list);
         g_roaming_app.btm_neighbor_list = NULL;
     }
-    /* create neighbor list */
+    /* create neighbor list and channel cache */
     g_roaming_app.btm_neighbor_list = get_btm_neighbor_list(pos + 1, report_len - 1);
+
+#if RRM_ASSISTED_ROAMING_ENABLED
+    if (g_roaming_app.rrm_roam_pending) {
+        eloop_cancel_timeout(roaming_app_rrm_neighbor_timeout_handler, NULL, NULL);
+        if (g_roaming_app.rrm_channels_valid && roaming_app_start_rrm_channel_scan()) {
+            goto cleanup;
+        }
+        ESP_LOGD(ROAMING_TAG, "Received neighbor report but could not start 11k scan");
+        roaming_app_rrm_fallback_to_legacy();
+    }
+#endif /*RRM_ASSISTED_ROAMING_ENABLED*/
 
 cleanup:
     if (neighbor_report_event) {
@@ -1349,7 +1626,7 @@ static void roaming_app_neighbor_report_recv_handler(void* arg, esp_event_base_t
         os_free(event_copy);
     }
 }
-#endif /*PERIODIC_RRM_MONITORING*/
+#endif /*RRM_NEIGHBOR_LIST_SUPPORT*/
 
 #if LOW_RSSI_ROAMING_ENABLED
 static void roaming_app_rssi_low_internal_handler(void *ctx, void *data)
@@ -1450,7 +1727,7 @@ static bool trigger_network_assisted_roam(struct cand_bss *bss)
     }
     ESP_LOGD(ROAMING_TAG, "Sent BTM Query");
     roaming_app_mark_roam_attempt();
-#if LEGACY_ROAM_ENABLED
+#if BTM_RETRY_FALLBACK_ENABLED
     g_roaming_app.btm_attempt++;
 #endif
     os_free(query_list);
@@ -1515,6 +1792,9 @@ static bool trigger_targeted_reconnect(struct cand_bss *bss, bool disconnect_fir
 void roaming_app_trigger_roam(struct cand_bss *bss)
 {
     struct timeval now;
+#if RRM_ASSISTED_ROAMING_ENABLED
+    bool force_legacy = false;
+#endif
 
     if (!g_roaming_app.app_active) {
         goto free_bss;
@@ -1528,7 +1808,15 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
         os_free(g_roaming_app.pending_roam_bss);
         g_roaming_app.pending_roam_bss = NULL;
     }
-    if (g_roaming_app.sta_connected && roaming_app_roam_backoff_active(&now, 0)) {
+#if RRM_ASSISTED_ROAMING_ENABLED
+    force_legacy = g_roaming_app.force_legacy_roam;
+    g_roaming_app.force_legacy_roam = false;
+#endif
+    if (g_roaming_app.sta_connected && roaming_app_roam_backoff_active(&now, 0)
+#if RRM_ASSISTED_ROAMING_ENABLED
+            && !force_legacy
+#endif
+       ) {
         const struct timeval *anchor = roaming_app_get_backoff_anchor();
         long elapsed_sec = time_diff_sec(&now, anchor);
         long remaining_sec = (long)g_roaming_app.config.backoff_time - elapsed_sec;
@@ -1543,22 +1831,32 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
         g_roaming_app.pending_roam_bss = bss;
         return;
     }
+#if RRM_ASSISTED_ROAMING_ENABLED
+    if (force_legacy && g_roaming_app.sta_connected) {
+        trigger_targeted_reconnect(bss, true);
+        goto free_bss;
+    }
+#endif
 #if NETWORK_ASSISTED_ROAMING_ENABLED
     if (g_roaming_app.sta_connected && g_roaming_app.config.btm_roaming_enabled && g_roaming_app.current_bss.btm_support) {
-#if LEGACY_ROAM_ENABLED && NETWORK_ASSISTED_ROAMING_ENABLED
+#if BTM_RETRY_FALLBACK_ENABLED
         if (g_roaming_app.btm_attempt <= g_roaming_app.config.btm_retry_cnt) {
 #endif
             if (trigger_network_assisted_roam(bss)) {
                 goto free_bss;
             }
-#if LEGACY_ROAM_ENABLED && NETWORK_ASSISTED_ROAMING_ENABLED
+#if BTM_RETRY_FALLBACK_ENABLED
         } else {
             ESP_LOGD(ROAMING_TAG, "Not Sending BTM query as this method has failed too many times.");
-            g_roaming_app.btm_attempt = 0;
         }
 #endif
     }
 #endif /*NETWORK_ASSISTED_ROAMING_ENABLED*/
+#if RRM_ASSISTED_ROAMING_ENABLED
+    if (g_roaming_app.sta_connected && trigger_rrm_assisted_roam(bss)) {
+        goto free_bss;
+    }
+#endif /*RRM_ASSISTED_ROAMING_ENABLED*/
     if (!g_roaming_app.sta_connected) {
         if (trigger_targeted_reconnect(bss, false)) {
             goto free_bss;
@@ -1640,6 +1938,11 @@ static void periodic_rrm_request(struct timeval *now)
     if (!roaming_app_get_ap_info(&g_roaming_app.current_bss.ap)) {
         return;
     }
+#if RRM_ASSISTED_ROAMING_ENABLED
+    if (g_roaming_app.rrm_roam_pending || g_roaming_app.rrm_scan_active) {
+        return;
+    }
+#endif
     if (esp_rrm_is_rrm_supported_connection() && (g_roaming_app.current_bss.ap.rssi < g_roaming_app.config.rrm_monitor_rssi_threshold)) {
         if (esp_rrm_send_neighbor_report_request() < 0) {
             ESP_LOGE(ROAMING_TAG, "failed to send neighbor report request");
@@ -1880,18 +2183,46 @@ static void parse_scan_results_and_roam(void)
     if (best_ap) {
         if (!roaming_app_can_act_on_candidate(&now, true)) {
             os_free(best_ap);
+#if RRM_ASSISTED_ROAMING_ENABLED
+            if (g_roaming_app.rrm_scan_active) {
+                roaming_app_rrm_fallback_to_legacy();
+            }
+#endif
             return;
         }
         ESP_LOGI(ROAMING_TAG,"Found a better AP "MACSTR" at channel %d", MAC2STR(best_ap->bssid), best_ap->channel);
+#if RRM_ASSISTED_ROAMING_ENABLED
+        if (g_roaming_app.rrm_scan_active) {
+            g_roaming_app.force_legacy_roam = true;
+            if (g_roaming_app.pending_rrm_fallback_bss) {
+                os_free(g_roaming_app.pending_rrm_fallback_bss);
+                g_roaming_app.pending_rrm_fallback_bss = NULL;
+            }
+            g_roaming_app.rrm_roam_pending = false;
+        }
+#endif
         if (wifi_post_roam_event(best_ap)) {
             ESP_LOGE(ROAMING_TAG, "Posting of roaming event failed");
+#if RRM_ASSISTED_ROAMING_ENABLED
+            if (g_roaming_app.rrm_scan_active) {
+                g_roaming_app.force_legacy_roam = false;
+                roaming_app_rrm_fallback_to_legacy();
+            }
+#endif
         }
         os_free(best_ap);
     } else {
         ESP_LOGI(ROAMING_TAG, "Could not find a better AP with the threshold set to %d", g_roaming_app.current_rssi_threshold + 1);
+#if RRM_ASSISTED_ROAMING_ENABLED
+        if (g_roaming_app.rrm_scan_active) {
+            roaming_app_rrm_fallback_to_legacy();
+        } else
+#endif
+        {
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
-        roaming_app_retry_blacklist_recovery_if_needed();
+            roaming_app_retry_blacklist_recovery_if_needed();
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
+        }
     }
 }
 
@@ -1907,19 +2238,39 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
             g_roaming_app.scanned_aps.current_count = 0;
             ESP_LOGW(ROAMING_TAG, "Failed to fetch scan results: %s", esp_err_to_name(err));
             g_roaming_app.scan_ongoing = false;
+#if RRM_ASSISTED_ROAMING_ENABLED
+            if (g_roaming_app.rrm_scan_active) {
+                roaming_app_rrm_fallback_to_legacy();
+            } else
+#endif
+            {
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
-            roaming_app_retry_blacklist_recovery_if_needed();
+                roaming_app_retry_blacklist_recovery_if_needed();
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
+            }
             return;
         }
         gettimeofday(&g_roaming_app.scanned_aps.time, NULL);
         print_ap_records(&g_roaming_app.scanned_aps);
         parse_scan_results_and_roam();
+#if RRM_ASSISTED_ROAMING_ENABLED
+        if (g_roaming_app.rrm_scan_active) {
+            roaming_app_restore_default_scan_channels();
+            g_roaming_app.rrm_scan_active = false;
+        }
+#endif
     } else {
         ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
+#if RRM_ASSISTED_ROAMING_ENABLED
+        if (g_roaming_app.rrm_scan_active) {
+            roaming_app_rrm_fallback_to_legacy();
+        } else
+#endif
+        {
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
-        roaming_app_retry_blacklist_recovery_if_needed();
+            roaming_app_retry_blacklist_recovery_if_needed();
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
+        }
     }
     g_roaming_app.scan_ongoing = false;
 }
@@ -2108,7 +2459,13 @@ static int8_t parse_scan_chan_list(void)
             g_roaming_app.config.scan_config.channel_bitmap.ghz_2_channels |= (1 << channel);
 #if CONFIG_SOC_WIFI_SUPPORT_5G
         } else if (channel >= 36 && channel <= 177) {
-            g_roaming_app.config.scan_config.channel_bitmap.ghz_5_channels |= CHANNEL_TO_BIT(channel);
+            uint8_t bit_number = CHANNEL_TO_BIT_NUMBER(channel);
+            if (bit_number == 0) {
+                ESP_LOGE(ROAMING_TAG, "Channel out of range: %d", channel);
+                ret = -1;
+                goto cleanup;
+            }
+            g_roaming_app.config.scan_config.channel_bitmap.ghz_5_channels |= BIT(bit_number);
 #endif
         } else {
             ESP_LOGE(ROAMING_TAG, "Channel out of range: %d", channel);
@@ -2117,6 +2474,7 @@ static int8_t parse_scan_chan_list(void)
         }
         token = strsep(&scan_chan_string_p, ",");
     }
+    g_roaming_app.default_channel_bitmap = g_roaming_app.config.scan_config.channel_bitmap;
 
 cleanup:
     if (scan_chan_string) {
@@ -2146,6 +2504,8 @@ static esp_err_t init_config_params(void)
     g_roaming_app.config.legacy_roam_enabled = LEGACY_ROAM_ENABLED;
     g_roaming_app.config.btm_retry_cnt = BSS_TM_RETRY_COUNT;
     g_roaming_app.config.btm_roaming_enabled = NETWORK_ASSISTED_ROAMING_ENABLED;
+    g_roaming_app.config.rrm_retry_cnt = RRM_ROAM_RETRY_COUNT;
+    g_roaming_app.config.rrm_roaming_enabled = RRM_ASSISTED_ROAMING_ENABLED;
 
     g_roaming_app.config.rrm_monitor = PERIODIC_RRM_MONITORING;
     g_roaming_app.config.rrm_monitor_time = RRM_MONITOR_TIME;
@@ -2167,6 +2527,8 @@ static esp_err_t init_config_params(void)
     ESP_LOGD(ROAMING_TAG, "legacy_roam_enabled=%d, btm_retry_cnt=%d btm_roaming_enabled=%d",
                         g_roaming_app.config.legacy_roam_enabled,
                         g_roaming_app.config.btm_retry_cnt, g_roaming_app.config.btm_roaming_enabled);
+    ESP_LOGD(ROAMING_TAG, "rrm_roaming_enabled=%d, rrm_retry_cnt=%d",
+                        g_roaming_app.config.rrm_roaming_enabled, g_roaming_app.config.rrm_retry_cnt);
 
     ESP_LOGD(ROAMING_TAG, "rrm_monitor=%d, rrm_monitor_time=%d rrm_monitor_rssi_threshold=%d",
                         g_roaming_app.config.rrm_monitor,
@@ -2180,6 +2542,8 @@ static esp_err_t init_scan_config(void)
 {
     if (strcmp(DEFAULT_PREFERRED_SCAN_CHAN_LIST, SCAN_PREFERRED_CHAN_LIST)) {
         ESP_ERROR_CHECK(parse_scan_chan_list());
+    } else {
+        memset(&g_roaming_app.default_channel_bitmap, 0, sizeof(g_roaming_app.default_channel_bitmap));
     }
 
     g_roaming_app.config.scan_config.scan_type = 0;
@@ -2197,7 +2561,7 @@ void roam_init_app(void)
     return;
 #endif
 
-#if !NETWORK_ASSISTED_ROAMING_ENABLED && !LEGACY_ROAM_ENABLED
+#if !NETWORK_ASSISTED_ROAMING_ENABLED && !LEGACY_ROAM_ENABLED && !RRM_ASSISTED_ROAMING_ENABLED
     ESP_LOGE(ROAMING_TAG, "No roaming method enabled. Roaming app cannot be initialized");
     return;
 #endif
@@ -2212,11 +2576,11 @@ void roam_init_app(void)
 #endif /*LOW_RSSI_ROAMING_ENABLED*/
     ESP_ERROR_CHECK(init_scan_config());
     ESP_ERROR_CHECK(init_config_params());
-#if PERIODIC_RRM_MONITORING
+#if RRM_NEIGHBOR_LIST_SUPPORT
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
                                                &roaming_app_neighbor_report_recv_handler, NULL));
-#endif /*PERIODIC_RRM_MONITORING*/
     g_roaming_app.app_active = true;
+#endif /*RRM_NEIGHBOR_LIST_SUPPORT*/
     ESP_LOGI(ROAMING_TAG, "Roaming app initialization done");
 }
 
@@ -2235,9 +2599,12 @@ static void roaming_app_cancel_pending_events(void)
 #if LOW_RSSI_ROAMING_ENABLED
     eloop_cancel_timeout(roaming_app_rssi_low_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
 #endif /*LOW_RSSI_ROAMING_ENABLED*/
-#if PERIODIC_RRM_MONITORING
+#if RRM_NEIGHBOR_LIST_SUPPORT
     eloop_cancel_timeout(roaming_app_neighbor_report_recv_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
-#endif /*PERIODIC_RRM_MONITORING*/
+#endif /*RRM_NEIGHBOR_LIST_SUPPORT*/
+#if RRM_ASSISTED_ROAMING_ENABLED
+    eloop_cancel_timeout(roaming_app_rrm_neighbor_timeout_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
+#endif /*RRM_ASSISTED_ROAMING_ENABLED*/
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     eloop_cancel_timeout(roaming_app_blacklist_recovery_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(roaming_app_blacklist_add_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
@@ -2253,12 +2620,16 @@ static int roaming_app_deinit_internal(void *ctx, void *data)
     roaming_app_cancel_pending_events();
     roaming_app_stop_periodic_monitors();
     roaming_app_reset_connect_hint_state();
-#if PERIODIC_RRM_MONITORING
+#if RRM_ASSISTED_ROAMING_ENABLED
+    roaming_app_clear_rrm_roam_state();
+#endif
+#if RRM_NEIGHBOR_LIST_SUPPORT
     if (g_roaming_app.btm_neighbor_list) {
         os_free(g_roaming_app.btm_neighbor_list);
         g_roaming_app.btm_neighbor_list = NULL;
     }
-#endif /*PERIODIC_RRM_MONITORING*/
+    roaming_app_clear_rrm_channel_cache();
+#endif /*RRM_NEIGHBOR_LIST_SUPPORT*/
     return ESP_OK;
 }
 
@@ -2269,7 +2640,7 @@ void roam_deinit_app(void)
     return;
 #endif
 
-#if !NETWORK_ASSISTED_ROAMING_ENABLED && !LEGACY_ROAM_ENABLED
+#if !NETWORK_ASSISTED_ROAMING_ENABLED && !LEGACY_ROAM_ENABLED && !RRM_ASSISTED_ROAMING_ENABLED
     ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be de-initialized");
     return;
 #endif
@@ -2287,11 +2658,11 @@ void roam_deinit_app(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
                                                  &roaming_app_rssi_low_handler));
 #endif /*LOW_RSSI_ROAMING_ENABLED*/
-#if PERIODIC_RRM_MONITORING
+#if RRM_NEIGHBOR_LIST_SUPPORT
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
                                                  &roaming_app_neighbor_report_recv_handler));
-#endif /*PERIODIC_RRM_MONITORING*/
     g_roaming_app.app_active = false;
+#endif /*RRM_NEIGHBOR_LIST_SUPPORT*/
 }
 
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
@@ -2478,6 +2849,8 @@ static int update_config_params(void *data)
     ESP_LOGI(ROAMING_TAG, "legacy_roam_enabled=%d, btm_retry_cnt=%d btm_roaming_enabled=%d",
                         g_roaming_app.config.legacy_roam_enabled,
                         g_roaming_app.config.btm_retry_cnt, g_roaming_app.config.btm_roaming_enabled);
+    ESP_LOGI(ROAMING_TAG, "rrm_roaming_enabled=%d, rrm_retry_cnt=%d",
+                        g_roaming_app.config.rrm_roaming_enabled, g_roaming_app.config.rrm_retry_cnt);
 
     ESP_LOGI(ROAMING_TAG, "rrm_monitor=%d, rrm_monitor_time=%d rrm_monitor_rssi_threshold=%d",
                         g_roaming_app.config.rrm_monitor,
