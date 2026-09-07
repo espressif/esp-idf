@@ -192,6 +192,18 @@ void test_adjtime_function(test_adjtime_mode_t mode, test_clock_adjtime_units_t 
         TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, &tv_outdelta, mode, units), -1);
     }
 
+    // a multi-day delta must be rejected, not silently
+    // truncated into the 32-bit timex.offset (µs) field and applied as a small slew.
+    if (mode == TEST_ADJTIME_MODE_LEGACY) {
+        tv_delta.tv_sec = 400L * 24 * 60 * 60; // 400 days
+        tv_delta.tv_usec = 123456;
+        TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, NULL, mode, units), -1);
+
+        tv_delta.tv_sec = -400L * 24 * 60 * 60;
+        tv_delta.tv_usec = -123456;
+        TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, NULL, mode, units), -1);
+    }
+
     tv_delta.tv_sec = 0;
     tv_delta.tv_usec = -900000;
     TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, &tv_outdelta, mode, units), 0);
