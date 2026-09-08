@@ -181,10 +181,12 @@ extern "C" {
 // Forces to not inline function
 #define NOINLINE_ATTR __attribute__((noinline))
 
-#if !defined(__clang__) && __GNUC__ >= 15
-// Marks a character array as not null-terminated to avoid string-related optimizations or warnings
-#define NONSTRING_ATTR __attribute__ ((nonstring))
-#else
+#if defined(__has_attribute)
+#if __has_attribute(nonstring)
+#define NONSTRING_ATTR __attribute__((nonstring))
+#endif
+#endif
+#ifndef NONSTRING_ATTR
 #define NONSTRING_ATTR
 #endif
 
