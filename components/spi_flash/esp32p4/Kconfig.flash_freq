@@ -4,7 +4,6 @@ choice ESPTOOLPY_FLASHFREQ
     default ESPTOOLPY_FLASHFREQ_80M
     config ESPTOOLPY_FLASHFREQ_120M
         bool "120 MHz"
-        depends on IDF_EXPERIMENTAL_FEATURES
         depends on !ESP32P4_REV_MIN_0
     config ESPTOOLPY_FLASHFREQ_80M
         bool "80 MHz"
