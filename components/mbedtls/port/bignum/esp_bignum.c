@@ -32,6 +32,8 @@
 #include "bignum_impl.h"
 
 #include "mbedtls/bignum.h"
+/* For mbedtls_platform_zeroize(), used on the small-operand stack copies. */
+#include "mbedtls/platform_util.h"
 /* For mbedtls_mpi_core_mul(), used by the small-operand software fallback. */
 #include "bignum_core.h"
 
@@ -677,12 +679,26 @@ static int mpi_mult_mpi_soft(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls
     if (ret == 0) {
         ret = mbedtls_mpi_lset(Z, 0);
     }
-    if (ret != 0) {
-        return ret;
+
+    if (ret == 0 && i > 0 && j > 0) {
+        mbedtls_mpi_core_mul(Z->MBEDTLS_PRIVATE(p), xp, i, yp, j);
     }
 
-    if (i > 0 && j > 0) {
-        mbedtls_mpi_core_mul(Z->MBEDTLS_PRIVATE(p), xp, i, yp, j);
+    /* The stack copies can hold secret-dependent limbs: with the routing
+       threshold in place, P-256 field multiplies reach this path, and their
+       operands are intermediates of a scalar multiplication. The heap MPIs
+       these copies replaced were wiped by mbedtls_mpi_free(), so wipe here too
+       rather than quietly dropping that property. The multiply is folded into
+       the branch above so that this runs on the error path as well. */
+    if (xp == tx) {
+        mbedtls_platform_zeroize(tx, i * sizeof(mbedtls_mpi_uint));
+    }
+    if (yp == ty) {
+        mbedtls_platform_zeroize(ty, j * sizeof(mbedtls_mpi_uint));
+    }
+
+    if (ret != 0) {
+        return ret;
     }
 
     /* Do not shortcut a zero result: that would leak its zero-ness more than
