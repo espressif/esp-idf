@@ -1,0 +1,11 @@
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Whole-disk block device: SPI flash 'storage' data partition
+CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH=y
+
+# FATFS
+# CONFIG_FATFS_SECTOR_4096=y # Does nothing in this case as the partitions are generated at run-time
+CONFIG_FATFS_VFS_FSTAT_BLKSIZE=4096

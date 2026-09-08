@@ -18,6 +18,21 @@ examples/storage/emmc:
     - if: IDF_TARGET in ["esp32s3", "esp32p4"]
       reason: only support on esp32s3 and esp32p4
 
+examples/storage/generic_partition_bdl:
+  depends_components:
+    - esp_blockdev
+    - esp_blockdev_util
+    - esp_partition
+    - fatfs
+    - vfs
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdspi
+    - esp_driver_spi
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+
 examples/storage/partition_api/partition_find:
   depends_components:
     - esp_partition
