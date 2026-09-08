@@ -5,7 +5,9 @@
 
 This test application checks the list of components included into the build when "G1" components are added to the build. If G1 components don't have any dependencies outside of G1, then only G1 components themselves should be built.
 
-Currently, this is not the case, and many other components are added to the build. See `extra_components_which_shouldnt_be_included` list inside CMakeLists.txt.
+Currently, this is not the case, and many other components are added to the build. See `extra_components_which_shouldnt_be_included` list inside `g1_check.cmake`.
+
+This app is built with build system v1. The sibling app `../g1_components_cmakev2` performs the same check with build system v2 and shares `g1_setup.cmake`, `g1_check.cmake`, `check_dependencies.py` and `main` with this one. The expected component lists differ between the two build systems, because v2 can express dependencies that are conditional on Kconfig options; both files branch on `IDF_BUILD_V2` where that matters.
 
 The purpose of this example is to:
 

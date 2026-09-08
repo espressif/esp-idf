@@ -82,6 +82,11 @@ tools/test_apps/system/g0_components:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h21", "esp32h4", "esp32s31"] # preview targets
 
 tools/test_apps/system/g1_components:
+  disable:
+    - if: IDF_BUILD_V2 == "1"
+      reason: the cmake v2 component closure is checked by g1_components_cmakev2
+
+tools/test_apps/system/g1_components_cmakev2:
 
 tools/test_apps/system/gdb:
   disable_test:
