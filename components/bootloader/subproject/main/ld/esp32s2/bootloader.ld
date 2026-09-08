@@ -199,12 +199,12 @@ SECTIONS
    */
   .xt.prop 0 :
   {
-    KEEP (*(.xt.prop .gnu.linkonce.prop.*))
+    *(.xt.prop .gnu.linkonce.prop.*)
   }
 
   .xt.lit 0 :
   {
-    KEEP (*(.xt.lit .gnu.linkonce.p.*))
+    *(.xt.lit .gnu.linkonce.p.*)
   }
 
   .xtensa.info 0: { *(.xtensa.info) }
