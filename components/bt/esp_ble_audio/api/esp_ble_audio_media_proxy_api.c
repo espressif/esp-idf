@@ -19,7 +19,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_register(esp_ble_audio_media_proxy_ctrl
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_register_safe(ctrl_cbs);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_register(ctrl_cbs);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -35,7 +40,7 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_discover_player(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -63,7 +68,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_player_name(esp_ble_audio_media_pla
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_player_name_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_player_name(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -79,7 +89,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_icon_id(esp_ble_audio_media_player_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_icon_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_icon_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -95,7 +110,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_icon_url(esp_ble_audio_media_player
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_icon_url_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_icon_url(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -111,7 +131,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_track_title(esp_ble_audio_media_pla
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_track_title_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_track_title(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -127,7 +152,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_track_duration(esp_ble_audio_media_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_track_duration_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_track_duration(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -143,7 +173,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_track_position(esp_ble_audio_media_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_track_position_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_track_position(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -160,7 +195,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_set_track_position(esp_ble_audio_media_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_set_track_position_safe(player, position);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_set_track_position(player, position);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -176,7 +216,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_playback_speed(esp_ble_audio_media_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_playback_speed_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_playback_speed(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -193,7 +238,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_set_playback_speed(esp_ble_audio_media_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_set_playback_speed_safe(player, speed);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_set_playback_speed(player, speed);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -209,7 +259,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_seeking_speed(esp_ble_audio_media_p
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_seeking_speed_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_seeking_speed(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -225,7 +280,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_track_segments_id(esp_ble_audio_med
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_track_segments_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_track_segments_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -241,7 +301,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_current_track_id(esp_ble_audio_medi
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_current_track_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_current_track_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -259,7 +324,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_set_current_track_id(esp_ble_audio_medi
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_set_current_track_id_safe(player, id);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_set_current_track_id(player, id);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -275,7 +345,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_next_track_id(esp_ble_audio_media_p
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_next_track_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_next_track_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -293,7 +368,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_set_next_track_id(esp_ble_audio_media_p
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_set_next_track_id_safe(player, id);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_set_next_track_id(player, id);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -309,7 +389,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_parent_group_id(esp_ble_audio_media
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_parent_group_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_parent_group_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -325,7 +410,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_current_group_id(esp_ble_audio_medi
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_current_group_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_current_group_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -343,7 +433,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_set_current_group_id(esp_ble_audio_medi
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_set_current_group_id_safe(player, id);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_set_current_group_id(player, id);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -359,7 +454,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_playing_order(esp_ble_audio_media_p
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_playing_order_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_playing_order(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -376,7 +476,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_set_playing_order(esp_ble_audio_media_p
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_set_playing_order_safe(player, order);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_set_playing_order(player, order);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -392,7 +497,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_playing_orders_supported(esp_ble_au
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_playing_orders_supported_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_playing_orders_supported(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -408,7 +518,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_media_state(esp_ble_audio_media_pla
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_media_state_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_media_state(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -432,7 +547,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_send_command(esp_ble_audio_media_player
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_send_command_safe(player, command);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_send_command(player, command);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -448,7 +568,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_commands_supported(esp_ble_audio_me
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_commands_supported_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_commands_supported(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -467,7 +592,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_send_search(esp_ble_audio_media_player_
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_send_search_safe(player, search);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_send_search(player, search);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -483,7 +613,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_search_results_id(esp_ble_audio_med
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_search_results_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_search_results_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -499,7 +634,12 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_content_ctrl_id(esp_ble_audio_media
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_ctrl_get_content_ctrl_id_safe(player);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_ctrl_get_content_ctrl_id(player);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -561,7 +701,12 @@ esp_err_t esp_ble_audio_media_proxy_pl_register(esp_ble_audio_media_proxy_pl_cal
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_pl_register_safe(pl_calls);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_pl_register(pl_calls);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -574,7 +719,7 @@ esp_err_t esp_ble_audio_media_proxy_pl_init(void)
     esp_err_t ret = ESP_OK;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     err = bt_media_proxy_pl_init();
     if (err) {
@@ -606,7 +751,12 @@ esp_err_t esp_ble_audio_media_proxy_pl_set_player_name(char *name)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_pl_set_player_name_safe(name);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_pl_set_player_name(name);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -622,7 +772,12 @@ esp_err_t esp_ble_audio_media_proxy_pl_set_track_title(char *title)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_media_proxy_pl_set_track_title_safe(title);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_media_proxy_pl_set_track_title(title);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -634,6 +789,14 @@ esp_err_t esp_ble_audio_media_proxy_pl_set_track_title(char *title)
 #if CONFIG_BT_MCS && CONFIG_BT_OTS
 struct bt_ots *esp_ble_audio_mcs_get_ots(void)
 {
-    return bt_mcs_get_ots_safe();
+    struct bt_ots *ots;
+
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
+
+    ots = lib_mcs_get_ots();
+
+    bt_le_host_unlock();
+
+    return ots;
 }
 #endif /* CONFIG_BT_MCS && CONFIG_BT_OTS */

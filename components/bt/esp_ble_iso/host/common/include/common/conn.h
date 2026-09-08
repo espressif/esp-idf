@@ -41,8 +41,6 @@ int bt_le_acl_conn_new(uint16_t conn_handle,
                        bt_addr_le_t *dst,
                        uint8_t sec_level);
 
-int bt_le_acl_conn_new_safe(uint16_t conn_handle, uint8_t role, uint8_t addr_type,
-                            const uint8_t *addr, uint8_t sec_level);
 
 int bt_le_acl_conn_delete(uint16_t conn_handle);
 

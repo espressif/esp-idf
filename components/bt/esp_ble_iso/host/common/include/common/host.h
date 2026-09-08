@@ -42,6 +42,21 @@ void bt_le_host_lock(void);
 void bt_le_host_unlock(void);
 #endif /* HOST_LOCK_DEBUG */
 
+int bt_le_host_lock_timeout(void);
+
+/* For the app-facing api/ wrappers, which run on the application's own tasks:
+ * acquire, or bail out with the caller's failure value so a task holding a lock
+ * of its own never waits here indefinitely - that is the AB-BA edge that
+ * bt_le_host_lock() can only warn about. Safe only where nothing has happened
+ * yet, which is why every api/ wrapper takes the lock before it touches state.
+ * Silent by design: k_mutex_lock already logs LockFail with both task names. */
+#define BT_LE_HOST_LOCK_OR_RETURN(_err)             \
+    do {                                            \
+        if (bt_le_host_lock_timeout() != 0) {       \
+            return (_err);                          \
+        }                                           \
+    } while (0)
+
 int bt_le_host_init(void);
 
 int bt_le_host_check_idle(void);

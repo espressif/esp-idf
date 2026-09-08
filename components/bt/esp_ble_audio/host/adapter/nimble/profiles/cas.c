@@ -123,7 +123,7 @@ int bt_le_nimble_cas_init(void *csis_svc_p)
     }
 
     /* Insert CAS to the GATT db list */
-    rc = bt_gatt_service_register_safe(cas_svc);
+    rc = bt_gatt_service_register(cas_svc);
     if (rc) {
         LOG_ERR("[N]CasSvcRegFail[%d]", rc);
     }

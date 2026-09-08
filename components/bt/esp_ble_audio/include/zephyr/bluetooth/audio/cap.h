@@ -77,8 +77,8 @@ struct bt_cap_unicast_group;
  *
  * @return 0 if success, errno on failure.
  */
-int bt_cap_acceptor_register_safe(const struct bt_csip_set_member_register_param *param,
-                                  struct bt_csip_set_member_svc_inst **svc_inst);
+int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *param,
+                             struct bt_csip_set_member_svc_inst **svc_inst);
 
 /** Callback structure for CAP procedures */
 struct bt_cap_initiator_cb {
@@ -166,7 +166,6 @@ struct bt_cap_initiator_cb {
  * @retval -ENOMEM Could not allocated memory for the request
  */
 int bt_cap_initiator_unicast_discover(struct bt_conn *conn);
-int bt_cap_initiator_unicast_discover_safe(struct bt_conn *conn);
 
 /** Type of CAP set */
 enum bt_cap_set_type {
@@ -207,7 +206,7 @@ struct bt_cap_stream {
  * @param stream Stream object.
  * @param ops    Stream operations structure.
  */
-void bt_cap_stream_ops_register_safe(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops);
+void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops);
 
 /**
  * @brief Send data to Common Audio Profile stream without timestamp
@@ -224,7 +223,7 @@ void bt_cap_stream_ops_register_safe(struct bt_cap_stream *stream, struct bt_bap
  * @retval -EINVAL if stream object is NULL
  * @retval Any return value from bt_bap_stream_send()
  */
-int bt_cap_stream_send_safe(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num);
+int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num);
 
 /**
  * @brief Send data to Common Audio Profile stream with timestamp
@@ -243,8 +242,8 @@ int bt_cap_stream_send_safe(struct bt_cap_stream *stream, struct net_buf *buf, u
  * @retval -EINVAL if stream object is NULL
  * @retval Any return value from bt_bap_stream_send()
  */
-int bt_cap_stream_send_ts_safe(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
-                               uint32_t ts);
+int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
+                          uint32_t ts);
 
 /**
  * @brief Get ISO transmission timing info for a Common Audio Profile stream
@@ -259,7 +258,7 @@ int bt_cap_stream_send_ts_safe(struct bt_cap_stream *stream, struct net_buf *buf
  * @retval -EINVAL if stream object is NULL
  * @retval Any return value from bt_bap_stream_get_tx_sync()
  */
-int bt_cap_stream_get_tx_sync_safe(struct bt_cap_stream *stream, struct bt_iso_tx_info *info);
+int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info);
 
 /** Parameter struct for each stream in the unicast group */
 struct bt_cap_unicast_group_stream_param {
@@ -344,8 +343,8 @@ struct bt_cap_unicast_group_param {
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_cap_unicast_group_create_safe(const struct bt_cap_unicast_group_param *param,
-                                     struct bt_cap_unicast_group **unicast_group);
+int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
+                                struct bt_cap_unicast_group **unicast_group);
 
 /**
  * @brief Reconfigure unicast group.
@@ -362,8 +361,8 @@ int bt_cap_unicast_group_create_safe(const struct bt_cap_unicast_group_param *pa
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_cap_unicast_group_reconfig_safe(struct bt_cap_unicast_group *unicast_group,
-                                       const struct bt_cap_unicast_group_param *param);
+int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
+                                  const struct bt_cap_unicast_group_param *param);
 
 /**
  * @brief Add streams to a unicast group as a unicast client
@@ -384,9 +383,9 @@ int bt_cap_unicast_group_reconfig_safe(struct bt_cap_unicast_group *unicast_grou
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_cap_unicast_group_add_streams_safe(struct bt_cap_unicast_group *unicast_group,
-                                          const struct bt_cap_unicast_group_stream_pair_param params[],
-                                          size_t num_param);
+int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
+                                     const struct bt_cap_unicast_group_stream_pair_param params[],
+                                     size_t num_param);
 
 /**
  * @brief Delete audio unicast group.
@@ -398,7 +397,7 @@ int bt_cap_unicast_group_add_streams_safe(struct bt_cap_unicast_group *unicast_g
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_cap_unicast_group_delete_safe(struct bt_cap_unicast_group *unicast_group);
+int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group);
 
 /** Callback function for bt_cap_unicast_group_foreach_stream()
  *
@@ -422,9 +421,9 @@ typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream 
  * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL @p unicast_group or @p func were NULL.
  */
-int bt_cap_unicast_group_foreach_stream_safe(struct bt_cap_unicast_group *unicast_group,
-                                             bt_cap_unicast_group_foreach_stream_func_t func,
-                                             void *user_data);
+int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
+                                        bt_cap_unicast_group_foreach_stream_func_t func,
+                                        void *user_data);
 
 /** Structure holding information of audio stream endpoint */
 struct bt_cap_unicast_group_info {
@@ -441,8 +440,8 @@ struct bt_cap_unicast_group_info {
  * @retval 0 Success
  * @retval -EINVAL  @p unicast_group or @p info are NULL
  */
-int bt_cap_unicast_group_get_info_safe(const struct bt_cap_unicast_group *unicast_group,
-                                       struct bt_cap_unicast_group_info *info);
+int bt_cap_unicast_group_get_info(const struct bt_cap_unicast_group *unicast_group,
+                                  struct bt_cap_unicast_group_info *info);
 
 /** Stream specific parameters for the bt_cap_initiator_unicast_audio_start() function */
 struct bt_cap_unicast_audio_start_stream_param {
@@ -530,7 +529,7 @@ struct bt_cap_unicast_audio_stop_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_register_cb_safe(const struct bt_cap_initiator_cb *cb);
+int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
 
 /**
  * @brief Unregister Common Audio Profile Initiator callbacks
@@ -540,7 +539,7 @@ int bt_cap_initiator_register_cb_safe(const struct bt_cap_initiator_cb *cb);
  * @retval 0 Success
  * @retval -EINVAL @p cb is NULL or @p cb was not registered
  */
-int bt_cap_initiator_unregister_cb_safe(const struct bt_cap_initiator_cb *cb);
+int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
 
 /**
  * @brief Setup and start unicast audio streams for a set of devices.
@@ -560,7 +559,7 @@ int bt_cap_initiator_unregister_cb_safe(const struct bt_cap_initiator_cb *cb);
  * @retval -EINVAL if any parameter is invalid
  * @retval -EALREADY All streams are already in the streaming state
  */
-int bt_cap_initiator_unicast_audio_start_safe(const struct bt_cap_unicast_audio_start_param *param);
+int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
 
 /**
  * @brief Update unicast audio streams.
@@ -575,7 +574,7 @@ int bt_cap_initiator_unicast_audio_start_safe(const struct bt_cap_unicast_audio_
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_audio_update_safe(const struct bt_cap_unicast_audio_update_param *param);
+int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param *param);
 
 /**
  * @brief Stop unicast audio streams.
@@ -593,7 +592,7 @@ int bt_cap_initiator_unicast_audio_update_safe(const struct bt_cap_unicast_audio
  * @retval -EINVAL if any parameter is invalid
  * @retval -EALREADY if no state changes will occur
  */
-int bt_cap_initiator_unicast_audio_stop_safe(const struct bt_cap_unicast_audio_stop_param *param);
+int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 
 /**
  * @brief Cancel any current Common Audio Profile procedure
@@ -618,7 +617,7 @@ int bt_cap_initiator_unicast_audio_stop_safe(const struct bt_cap_unicast_audio_s
  * @retval 0 on success
  * @retval -EALREADY if no procedure is active
  */
-int bt_cap_initiator_unicast_audio_cancel_safe(void);
+int bt_cap_initiator_unicast_audio_cancel(void);
 
 /**
  * Parameters part of @p bt_cap_initiator_broadcast_subgroup_param for
@@ -737,7 +736,7 @@ struct bt_cap_initiator_broadcast_create_param {
  *         configuration data.
  * @retval -ENOEXEC The broadcast source failed to be created for other reasons
  */
-int bt_cap_initiator_broadcast_audio_create_safe(
+int bt_cap_initiator_broadcast_audio_create(
     const struct bt_cap_initiator_broadcast_create_param *param,
     struct bt_cap_broadcast_source **broadcast_source);
 
@@ -762,8 +761,6 @@ int bt_cap_initiator_broadcast_audio_create_safe(
  */
 int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
                                            struct bt_le_ext_adv *adv);
-int bt_cap_initiator_broadcast_audio_start_safe(struct bt_cap_broadcast_source *broadcast_source,
-                                                struct bt_le_ext_adv *adv);
 
 /**
  * @brief Update broadcast audio streams for a Common Audio Profile broadcast source.
@@ -779,8 +776,8 @@ int bt_cap_initiator_broadcast_audio_start_safe(struct bt_cap_broadcast_source *
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_update_safe(struct bt_cap_broadcast_source *broadcast_source,
-                                                 const uint8_t meta[], size_t meta_len);
+int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
+                                            const uint8_t meta[], size_t meta_len);
 
 /**
  * @brief Stop broadcast audio streams for a Common Audio Profile broadcast source.
@@ -794,7 +791,7 @@ int bt_cap_initiator_broadcast_audio_update_safe(struct bt_cap_broadcast_source 
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_stop_safe(struct bt_cap_broadcast_source *broadcast_source);
+int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source);
 
 /**
  * @brief Delete Common Audio Profile broadcast source
@@ -813,7 +810,7 @@ int bt_cap_initiator_broadcast_audio_stop_safe(struct bt_cap_broadcast_source *b
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_delete_safe(struct bt_cap_broadcast_source *broadcast_source);
+int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source);
 
 /**
  * @brief Get the Broadcast Audio Stream Endpoint of a Common Audio Profile broadcast source
@@ -830,8 +827,8 @@ int bt_cap_initiator_broadcast_audio_delete_safe(struct bt_cap_broadcast_source 
  *
  * @return int      0 if on success, errno on error.
  */
-int bt_cap_initiator_broadcast_get_base_safe(struct bt_cap_broadcast_source *broadcast_source,
-                                             struct net_buf_simple *base_buf);
+int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
+                                        struct net_buf_simple *base_buf);
 
 /** Callback function for bt_cap_initiator_broadcast_foreach_stream()
  *
@@ -855,9 +852,9 @@ typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_s
  * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL    @p broadcast_source or @p func were NULL.
  */
-int bt_cap_initiator_broadcast_foreach_stream_safe(struct bt_cap_broadcast_source *broadcast_source,
-                                                   bt_cap_initiator_broadcast_foreach_stream_func_t func,
-                                                   void *user_data);
+int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *broadcast_source,
+                                              bt_cap_initiator_broadcast_foreach_stream_func_t func,
+                                              void *user_data);
 
 /** Parameters for  bt_cap_handover_unicast_to_broadcast() */
 struct bt_cap_handover_unicast_to_broadcast_param {
@@ -948,7 +945,7 @@ struct bt_cap_handover_cb {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_handover_register_cb_safe(const struct bt_cap_handover_cb *cb);
+int bt_cap_handover_register_cb(const struct bt_cap_handover_cb *cb);
 
 /**
  * @brief Unregister Common Audio Profile Handover callbacks
@@ -958,7 +955,7 @@ int bt_cap_handover_register_cb_safe(const struct bt_cap_handover_cb *cb);
  * @retval 0 Success
  * @retval -EINVAL @p cb is NULL or @p cb was not registered
  */
-int bt_cap_handover_unregister_cb_safe(const struct bt_cap_handover_cb *cb);
+int bt_cap_handover_unregister_cb(const struct bt_cap_handover_cb *cb);
 
 /**
  * @brief Hands over the sink streams in a unicast group to a broadcast source.
@@ -978,8 +975,6 @@ int bt_cap_handover_unregister_cb_safe(const struct bt_cap_handover_cb *cb);
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_handover_unicast_to_broadcast(
-    const struct bt_cap_handover_unicast_to_broadcast_param *param);
-int bt_cap_handover_unicast_to_broadcast_safe(
     const struct bt_cap_handover_unicast_to_broadcast_param *param);
 
 /** Parameters for  bt_cap_handover_broadcast_to_unicast() */
@@ -1040,7 +1035,7 @@ struct bt_cap_handover_broadcast_to_unicast_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_handover_broadcast_to_unicast_safe(
+int bt_cap_handover_broadcast_to_unicast(
     const struct bt_cap_handover_broadcast_to_unicast_param *param);
 
 /** Callback structure for CAP procedures */
@@ -1166,7 +1161,7 @@ struct bt_cap_commander_cb {
  * @retval -EINVAL @p cb is NULL
  * @retval -EALREADY Callbacks are already registered
  */
-int bt_cap_commander_register_cb_safe(const struct bt_cap_commander_cb *cb);
+int bt_cap_commander_register_cb(const struct bt_cap_commander_cb *cb);
 
 /**
  * @brief Unregister Common Audio Profile Commander callbacks
@@ -1176,7 +1171,7 @@ int bt_cap_commander_register_cb_safe(const struct bt_cap_commander_cb *cb);
  * @retval 0 Success
  * @retval -EINVAL @p cb is NULL or @p cb was not registered
  */
-int bt_cap_commander_unregister_cb_safe(const struct bt_cap_commander_cb *cb);
+int bt_cap_commander_unregister_cb(const struct bt_cap_commander_cb *cb);
 
 /**
  * @brief Discovers audio support on a remote device.
@@ -1197,7 +1192,6 @@ int bt_cap_commander_unregister_cb_safe(const struct bt_cap_commander_cb *cb);
  * @retval -EBUSY Already doing discovery for @p conn
  */
 int bt_cap_commander_discover(struct bt_conn *conn);
-int bt_cap_commander_discover_safe(struct bt_conn *conn);
 
 /**
  * @brief Cancel any current Common Audio Profile commander procedure
@@ -1222,7 +1216,7 @@ int bt_cap_commander_discover_safe(struct bt_conn *conn);
  * @retval 0 on success
  * @retval -EALREADY if no procedure is active
  */
-int bt_cap_commander_cancel_safe(void);
+int bt_cap_commander_cancel(void);
 
 /**
  * Parameters part of @ref bt_cap_commander_broadcast_reception_start_param for
@@ -1279,7 +1273,7 @@ struct bt_cap_commander_broadcast_reception_start_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_broadcast_reception_start_safe(
+int bt_cap_commander_broadcast_reception_start(
     const struct bt_cap_commander_broadcast_reception_start_param *param);
 
 /** Member parameters for stopping broadcast reception  */
@@ -1314,7 +1308,7 @@ struct bt_cap_commander_broadcast_reception_stop_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_broadcast_reception_stop_safe(
+int bt_cap_commander_broadcast_reception_stop(
     const struct bt_cap_commander_broadcast_reception_stop_param *param);
 
 /** Member parameters for distributing broadcast code */
@@ -1358,7 +1352,7 @@ struct bt_cap_commander_distribute_broadcast_code_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_distribute_broadcast_code_safe(
+int bt_cap_commander_distribute_broadcast_code(
     const struct bt_cap_commander_distribute_broadcast_code_param *param);
 
 /** Parameters for changing absolute volume  */
@@ -1383,7 +1377,7 @@ struct bt_cap_commander_change_volume_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_change_volume_safe(const struct bt_cap_commander_change_volume_param *param);
+int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_param *param);
 
 /**
  * Parameters part of @ref bt_cap_commander_change_volume_offset_param for
@@ -1420,7 +1414,7 @@ struct bt_cap_commander_change_volume_offset_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_change_volume_offset_safe(
+int bt_cap_commander_change_volume_offset(
     const struct bt_cap_commander_change_volume_offset_param *param);
 
 /** Parameters for changing volume mute state */
@@ -1449,7 +1443,7 @@ struct bt_cap_commander_change_volume_mute_state_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_change_volume_mute_state_safe(
+int bt_cap_commander_change_volume_mute_state(
     const struct bt_cap_commander_change_volume_mute_state_param *param);
 
 /** Parameters for changing microphone mute state */
@@ -1478,7 +1472,7 @@ struct bt_cap_commander_change_microphone_mute_state_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_change_microphone_mute_state_safe(
+int bt_cap_commander_change_microphone_mute_state(
     const struct bt_cap_commander_change_microphone_mute_state_param *param);
 
 /**
@@ -1512,7 +1506,7 @@ struct bt_cap_commander_change_microphone_gain_setting_param {
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_commander_change_microphone_gain_setting_safe(
+int bt_cap_commander_change_microphone_gain_setting(
     const struct bt_cap_commander_change_microphone_gain_setting_param *param);
 #ifdef __cplusplus
 }

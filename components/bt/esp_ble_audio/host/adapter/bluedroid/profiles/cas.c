@@ -79,7 +79,7 @@ int bt_le_bluedroid_cas_init(void *csis_svc_p)
     }
 #else /* CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER */
     /* Insert CAS to the GATT db list */
-    err = bt_gatt_service_register_safe(cas_svc);
+    err = bt_gatt_service_register(cas_svc);
     if (err) {
         LOG_ERR("[B]CasSvcRegFail[%d]", err);
     }

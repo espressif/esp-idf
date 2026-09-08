@@ -114,7 +114,7 @@ struct bt_vocs_discover_param {
  *
  * @return Volume Offset Control Service instance in case of success or NULL in case of error.
  */
-struct bt_vocs *bt_vocs_free_instance_get_safe(void);
+struct bt_vocs *bt_vocs_free_instance_get(void);
 
 /**
  * @brief Get the service declaration attribute.
@@ -125,7 +125,7 @@ struct bt_vocs *bt_vocs_free_instance_get_safe(void);
  *
  * @return Pointer to the attributes of the service.
  */
-void *bt_vocs_svc_decl_get_safe(struct bt_vocs *vocs);
+void *bt_vocs_svc_decl_get(struct bt_vocs *vocs);
 
 /**
  * @brief Get the connection pointer of a client instance
@@ -138,7 +138,7 @@ void *bt_vocs_svc_decl_get_safe(struct bt_vocs *vocs);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vocs_client_conn_get_safe(const struct bt_vocs *vocs, struct bt_conn **conn);
+int bt_vocs_client_conn_get(const struct bt_vocs *vocs, struct bt_conn **conn);
 
 /**
  * @brief Register the Volume Offset Control Service instance.
@@ -148,8 +148,8 @@ int bt_vocs_client_conn_get_safe(const struct bt_vocs *vocs, struct bt_conn **co
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vocs_register_safe(struct bt_vocs *vocs,
-                          const struct bt_vocs_register_param *param);
+int bt_vocs_register(struct bt_vocs *vocs,
+                     const struct bt_vocs_register_param *param);
 
 /**
  * @brief Callback function for the offset state.
@@ -252,7 +252,7 @@ struct bt_vocs_cb {
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_vocs_state_get_safe(struct bt_vocs *inst);
+int bt_vocs_state_get(struct bt_vocs *inst);
 
 /**
  * @brief Set the Volume Offset Control Service offset state.
@@ -262,7 +262,7 @@ int bt_vocs_state_get_safe(struct bt_vocs *inst);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_vocs_state_set_safe(struct bt_vocs *inst, int16_t offset);
+int bt_vocs_state_set(struct bt_vocs *inst, int16_t offset);
 
 /**
  * @brief Read the Volume Offset Control Service location.
@@ -273,7 +273,7 @@ int bt_vocs_state_set_safe(struct bt_vocs *inst, int16_t offset);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_vocs_location_get_safe(struct bt_vocs *inst);
+int bt_vocs_location_get(struct bt_vocs *inst);
 
 /**
  * @brief Set the Volume Offset Control Service location.
@@ -283,7 +283,7 @@ int bt_vocs_location_get_safe(struct bt_vocs *inst);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_vocs_location_set_safe(struct bt_vocs *inst, uint32_t location);
+int bt_vocs_location_set(struct bt_vocs *inst, uint32_t location);
 
 /**
  * @brief Read the Volume Offset Control Service output description.
@@ -294,7 +294,7 @@ int bt_vocs_location_set_safe(struct bt_vocs *inst, uint32_t location);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_vocs_description_get_safe(struct bt_vocs *inst);
+int bt_vocs_description_get(struct bt_vocs *inst);
 
 /**
  * @brief Set the Volume Offset Control Service description.
@@ -304,7 +304,7 @@ int bt_vocs_description_get_safe(struct bt_vocs *inst);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_vocs_description_set_safe(struct bt_vocs *inst, const char *description);
+int bt_vocs_description_set(struct bt_vocs *inst, const char *description);
 
 /**
  * @brief Registers the callbacks for the Volume Offset Control Service client.
@@ -312,14 +312,14 @@ int bt_vocs_description_set_safe(struct bt_vocs *inst, const char *description);
  * @param inst  Pointer to the Volume Offset Control Service client instance.
  * @param cb    Pointer to the callback structure.
  */
-void bt_vocs_client_cb_register_safe(struct bt_vocs *inst, struct bt_vocs_cb *cb);
+void bt_vocs_client_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb);
 
 /**
  * @brief Returns a pointer to a Volume Offset Control Service client instance.
  *
  * @return Pointer to the instance, or NULL if no free instances are left.
  */
-struct bt_vocs *bt_vocs_client_free_instance_get_safe(void);
+struct bt_vocs *bt_vocs_client_free_instance_get(void);
 
 /**
  * @brief Discover a Volume Offset Control Service.
@@ -334,8 +334,6 @@ struct bt_vocs *bt_vocs_client_free_instance_get_safe(void);
  */
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *inst,
                      const struct bt_vocs_discover_param *param);
-int bt_vocs_discover_safe(struct bt_conn *conn, struct bt_vocs *inst,
-                          const struct bt_vocs_discover_param *param);
 
 #ifdef __cplusplus
 }
