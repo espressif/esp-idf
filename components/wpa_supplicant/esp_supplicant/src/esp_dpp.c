@@ -26,6 +26,7 @@ static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
 static bool s_dpp_listen_in_progress;
+static bool roc_in_progress;
 static struct esp_dpp_context_t s_dpp_ctx;
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
 static uint8_t s_current_tx_op_id;
@@ -251,8 +252,10 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
         esp_wifi_sta_notify_dpp_config_set_internal(true);
     } else if (dpp_akm_sae(conf->akm)) {
         wifi_cfg->sta.threshold.authmode = WIFI_AUTH_WPA3_PSK;
+        esp_wifi_sta_notify_dpp_config_set_internal(false);
     } else if (dpp_akm_psk(conf->akm)) {
         wifi_cfg->sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+        esp_wifi_sta_notify_dpp_config_set_internal(false);
     }
 
     if (conf->connector) {
@@ -381,17 +384,17 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
         status = dpp_get_attr(&buf[2], len, DPP_ATTR_STATUS, &status_len);
         if (!status || status_len != 1) {
             wpa_printf(MSG_ERROR, "DPP: Peer did not include Status");
-            return ESP_FAIL;
+            goto fail;
         }
         if (status[0] != DPP_STATUS_OK) {
             wpa_printf(MSG_ERROR, "DPP: Peer rejected network introduction: Status %u", status[0]);
-            return ESP_FAIL;
+            goto fail;
         }
 
         connector = dpp_get_attr(&buf[2], len, DPP_ATTR_CONNECTOR, &connector_len);
         if (!connector) {
             wpa_printf(MSG_ERROR, "DPP: Peer did not include its Connector");
-            return ESP_FAIL;
+            goto fail;
         }
 
         res = dpp_peer_intro(&intro, auth->conf_obj[i].connector,
@@ -436,6 +439,9 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
         goto fail;
     }
 
+    if (roc_in_progress) {
+        esp_supp_dpp_stop_listen();
+    }
     wpa_printf(MSG_DEBUG,
                "DPP: Try connection after successful network introduction");
     if (dpp_connect(rx_param->sa, true) != 0) {
@@ -448,6 +454,7 @@ fail:
     if (entry != NULL) {
         os_free(entry);
     }
+    esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_FAILURE);
     return ESP_FAIL;
 }
 
@@ -596,6 +603,7 @@ static void esp_dpp_task(void *pvParameters)
                     dpp_auth_deinit(s_dpp_ctx.dpp_auth);
                     s_dpp_ctx.dpp_auth = NULL;
                 }
+                os_bzero(&s_dpp_ctx, sizeof(s_dpp_ctx));
                 task_del = true;
                 break;
 
@@ -641,6 +649,7 @@ static void esp_dpp_task(void *pvParameters)
                 }
                 wpa_printf(MSG_DEBUG, "Started DPP listen operation %d", req.op_id);
                 s_dpp_listen_in_progress = true;
+                roc_in_progress = true;
             }
             break;
 
@@ -736,6 +745,7 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
     } else if (event_id == WIFI_EVENT_ROC_DONE) {
         wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
         /*@TODO : Decide flow for when ROC fails*/
+        roc_in_progress = false;
         if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb && evt->status == WIFI_ROC_DONE) {
             esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
         }
@@ -921,7 +931,7 @@ esp_err_t esp_supp_dpp_start_listen(void)
 
     if (!s_dpp_ctx.dpp_global || s_dpp_ctx.id < 1) {
         wpa_printf(MSG_ERROR, "DPP: failed to start listen as dpp not initialized or bootstrapped.");
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_STATE;
     }
 
     if (esp_wifi_get_user_init_flag_internal() == 0) {
@@ -935,6 +945,7 @@ esp_err_t esp_supp_dpp_start_listen(void)
 esp_err_t esp_supp_dpp_stop_listen(void)
 {
     s_dpp_listen_in_progress = false;
+    roc_in_progress = false;
     wifi_roc_req_t req = {0};
     req.ifx = WIFI_IF_STA;
     req.type = WIFI_ROC_CANCEL;
@@ -1001,6 +1012,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
     }
 
     s_dpp_listen_in_progress = false;
+    roc_in_progress = false;
     s_dpp_ctx.dpp_event_cb = cb;
 
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
@@ -1031,10 +1043,23 @@ esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
     struct wpabuf *buf;
+    uint8_t curr_chan;
 
     if (!auth) {
         wpa_printf(MSG_ERROR, "DPP: No authentication context for network introduction");
         return ESP_ERR_INVALID_ARG;
+    }
+
+    curr_chan = esp_wifi_sta_get_bss_channel_internal(bssid);
+    if (curr_chan == 0) {
+        curr_chan = auth->curr_chan;
+        wpa_printf(MSG_WARNING,
+                   "DPP: AP channel unknown for " MACSTR ", using provisioning channel %d",
+                   MAC2STR(bssid), curr_chan);
+    } else if (curr_chan != auth->curr_chan) {
+        wpa_printf(MSG_INFO,
+                   "DPP: Peer Discovery on AP operating channel %d (provisioning channel %d)",
+                   curr_chan, auth->curr_chan);
     }
 
     for (int i = 0; i < auth->num_conf_obj; i++) {
@@ -1042,8 +1067,12 @@ esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid)
         buf = dpp_build_peer_disc_req(auth, &auth->conf_obj[i]);
 
         if (buf) {
-            if (esp_dpp_send_action_frame(bssid, wpabuf_head(buf), wpabuf_len(buf), auth->curr_chan, OFFCHAN_TX_WAIT_TIME, WIFI_OFFCHAN_TX_CONNECTING_REQ) != ESP_OK) {
-                wpabuf_free(buf);
+            esp_err_t tx_ret = esp_dpp_send_action_frame(bssid, wpabuf_head(buf),
+                                                         wpabuf_len(buf), curr_chan,
+                                                         OFFCHAN_TX_WAIT_TIME,
+                                                         WIFI_OFFCHAN_TX_CONNECTING_REQ);
+            wpabuf_free(buf);
+            if (tx_ret != ESP_OK) {
                 return ESP_FAIL;
             }
             wpabuf_free(buf);
@@ -1056,6 +1085,10 @@ esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid)
 
 esp_err_t esp_supp_dpp_deinit(void)
 {
+    if (s_dpp_listen_in_progress) {
+        esp_supp_dpp_stop_listen();
+    }
+    esp_wifi_sta_notify_dpp_config_set_internal(false);
 
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                  &offchan_event_handler);
