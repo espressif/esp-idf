@@ -197,12 +197,22 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *h
     /* Enable Receive Store Forward */
     emac_ll_recv_store_forward_enable(hal->dma_regs, true);
 #else
-    /* Disable Receive Store Forward (Rx FIFO is only 256B) */
+    /* Disable Receive Store Forward (Rx FIFO is only 256B, verified on
+       ESP32-S31: with store-and-forward enabled, frames larger than the
+       FIFO are never forwarded to memory). The Rx checksum offload engine
+       therefore cannot drop bad frames in hardware; its per-frame verdict
+       in the enhanced Rx descriptor extended status (RDES4) is checked
+       by the DMA driver instead. */
     emac_ll_recv_store_forward_enable(hal->dma_regs, false);
 #endif
     /* Enable Flushing of Received Frames because of the unavailability of receive descriptors or buffers */
     emac_ll_flush_recv_frame_enable(hal->dma_regs, true);
-    /* Disable Transmit Store Forward */
+    /* Disable Transmit Store Forward. Note this rules out TDES0.CIC payload
+       checksum insertion (requires the full frame in the Tx FIFO); only the
+       IP header checksum insertion part of CIC is effective. On ESP32-S31,
+       enabling store-and-forward was observed to stop all transmission
+       (frames never reach the wire), consistent with a Tx FIFO smaller
+       than a full Ethernet frame. */
     emac_ll_trans_store_forward_enable(hal->dma_regs, false);
     /* Flush Transmit FIFO */
     emac_hal_flush_trans_fifo(hal);
