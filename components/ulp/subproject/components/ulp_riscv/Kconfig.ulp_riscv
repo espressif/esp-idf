@@ -1,0 +1,20 @@
+# Sourced by the ULP coprocessor driver on the HP core, in
+# components/ulp/Kconfig. Not named Kconfig, which would also attach it to
+# this component and define every option twice.
+
+config ULP_RISCV_INTERRUPT_ENABLE
+    depends on ULP_COPROC_TYPE_RISCV
+    bool
+    prompt "Enable ULP RISC-V interrupts"
+    default "n"
+    help
+        Turn on this setting to enable interrupts on the ULP RISC-V core.
+
+config ULP_RISCV_UART_BAUDRATE
+    depends on ULP_COPROC_TYPE_RISCV
+    int
+    prompt "Baudrate used by the bitbanged ULP RISC-V UART driver"
+    default 9600
+    help
+        The accuracy of the bitbanged UART driver is limited, it is not
+        recommended to increase the value above 19200.
