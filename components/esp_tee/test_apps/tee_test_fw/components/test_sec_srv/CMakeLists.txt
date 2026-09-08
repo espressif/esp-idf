@@ -11,7 +11,7 @@ if(esp_tee_build)
                      "src/test_panic.c"
                      "src/test_sec_srv.c"
                      "src/test_heap.c")
-    list(APPEND priv_requires main)
+    list(APPEND priv_requires main esp_tee tee_flash_mgr bootloader_support esp_hal_timg)
 else()
     list(APPEND srcs "src/test_dummy_srv_wrapper.c")
     list(APPEND priv_requires esp_tee)
