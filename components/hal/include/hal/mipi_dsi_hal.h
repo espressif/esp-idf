@@ -104,8 +104,9 @@ void mipi_dsi_hal_host_gen_write_dcs_command(mipi_dsi_hal_context_t *hal, uint8_
  * @param command_bytes Number of bytes of the command
  * @param ret_param Pointer to the buffer to store the returned parameters
  * @param param_buf_size Size of the buffer to store the returned parameters
+ * @return True if the command response is received, False if LP RX times out
  */
-void mipi_dsi_hal_host_gen_read_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t vc,
+bool mipi_dsi_hal_host_gen_read_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t vc,
                                             uint32_t command, uint32_t command_bytes, void *ret_param, uint16_t param_buf_size);
 
 /**
@@ -140,8 +141,9 @@ void mipi_dsi_hal_host_gen_write_short_packet(mipi_dsi_hal_context_t *hal, uint8
  * @param header_data Data to be filled into the DSI packet header
  * @param ret_buffer Pointer to the buffer to store the returned data
  * @param buffer_size Size of the buffer to store the returned data
+ * @return True if the packet response is received, False if LP RX times out
  */
-void mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_t vc,
+bool mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_t vc,
                                              mipi_dsi_data_type_t dt, uint16_t header_data, void *ret_buffer, uint16_t buffer_size);
 
 /**
