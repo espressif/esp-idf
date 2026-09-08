@@ -400,6 +400,11 @@ esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t
         break;
     case ESP_BLE_ENHANCED_PWR_TYPE_ADV:
     case ESP_BLE_ENHANCED_PWR_TYPE_CONN:
+#if SOC_BLE_ISO_SUPPORTED
+    case ESP_BLE_ENHANCED_PWR_TYPE_BIG_CTRL:
+    case ESP_BLE_ENHANCED_PWR_TYPE_BIS:
+    case ESP_BLE_ENHANCED_PWR_TYPE_CIS:
+#endif // SOC_BLE_ISO_SUPPORTED
         if (r_ble_txpwr_set(power_type, handle, power_level) == 0) {
             stat = ESP_OK;
         }
@@ -464,6 +469,11 @@ esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t
         break;
     case ESP_BLE_ENHANCED_PWR_TYPE_ADV:
     case ESP_BLE_ENHANCED_PWR_TYPE_CONN:
+#if SOC_BLE_ISO_SUPPORTED
+    case ESP_BLE_ENHANCED_PWR_TYPE_BIG_CTRL:
+    case ESP_BLE_ENHANCED_PWR_TYPE_BIS:
+    case ESP_BLE_ENHANCED_PWR_TYPE_CIS:
+#endif // SOC_BLE_ISO_SUPPORTED
         tx_level = r_ble_txpwr_get(power_type, handle);
         break;
     default:
