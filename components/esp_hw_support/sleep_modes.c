@@ -1277,11 +1277,11 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
         }
     }
 #endif
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_BROWNOUT_DET
     /* Due to hardware limitations, on S2 the brownout detector sometimes trigger during deep sleep
        to circumvent this we disable the brownout detector before sleeping  */
     esp_brownout_disable();
-#endif //CONFIG_IDF_TARGET_ESP32S2
+#endif //CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_BROWNOUT_DET
 
     esp_sync_timekeeping_timers();
 
@@ -1412,6 +1412,12 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 #endif
 
     esp_sleep_exit_critical();
+
+#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_BROWNOUT_DET
+    /* Brownout was disabled before attempting deep sleep; restore it after rejection. */
+    esp_brownout_init();
+#endif //CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_BROWNOUT_DET
+
     return err;
 }
 
