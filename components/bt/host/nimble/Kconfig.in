@@ -791,6 +791,16 @@ menu "BLE 5.x Features"
                 default n
                 help
                     This enables controller PAwR (Periodic Advertisement with Response).
+
+            config BT_NIMBLE_DBAF
+                bool "Enable BLE Decision-Based Advertising Filtering (DBAF)"
+                depends on ((BT_CONTROLLER_ENABLED && SOC_BLE_DBAF_SUPPORTED) || BT_CONTROLLER_DISABLED) # NOERROR
+                default n
+                help
+                    Enable Decision-Based Advertising Filtering (Bluetooth Core 6.0).
+                    Supports LE Set Decision Data and LE Set Decision Instructions HCI
+                    commands, plus Use Decision PDUs advertising properties and
+                    decision scanning / initiator filter policies.
         endif
 
         config BT_NIMBLE_EXT_SCAN
