@@ -53,6 +53,24 @@ menu "Example Configuration"
             Enable ISP crop functionality. When enabled, you can configure
             the crop area for the ISP pipeline.
 
+    config EXAMPLE_ISP_ENABLE_DPC
+        depends on (ESP32P4_REV_MIN_FULL >= 300)
+        bool "Enable ISP dead pixel correction"
+        default y
+        help
+            Enable the ISP Dead Pixel Correction (DPC) example. This feature
+            requires ESP32-P4 revision v3.0 or later.
+
+    config EXAMPLE_ISP_DPC_STATIC_CALIBRATION
+        depends on EXAMPLE_ISP_ENABLE_DPC
+        bool "Enable ISP DPC static calibration"
+        default n
+        help
+            Enable static DPC calibration using camera input. At startup, the
+            example prompts the user to provide uniform white and black images,
+            then press Enter after each image is ready.
+            Dynamic DPC remains enabled regardless of this option.
+
     menu "ISP Crop Configuration"
         visible if EXAMPLE_ISP_CROP_ENABLE
 

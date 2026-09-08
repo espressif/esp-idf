@@ -47,7 +47,7 @@ ISP 流水线
         isp_chs [label = "对比度 &\n 色调 & 饱和度", width = 150, height = 70];
         isp_yuv [label = "YUV 限制\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BLC -> BF -> LSC -> 去马赛克 -> WBG -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> 裁剪 -> isp_tail;
+        isp_header -> BLC -> DPC -> BF -> LSC -> 去马赛克 -> WBG -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> 裁剪 -> isp_tail;
 
         LSC -> HIST
         去马赛克 -> WBG
@@ -74,6 +74,7 @@ ISP 驱动程序提供以下服务：
 - :ref:`isp-hist-statistics` - 涵盖如何单次或连续获取直方图统计信息。
 - :ref:`isp-bf` - 涵盖如何启用和配置 BF 功能。
 - :ref:`isp-blc` - 涵盖如何启用和配置 BLC 功能。
+- :ref:`isp-dpc` - 涵盖如何配置静态和动态坏点校正。
 - :ref:`isp-lsc` - 涵盖如何启用和配置 LSC 功能。
 - :ref:`isp-ccm-config` - 涵盖如何配置 CCM。
 - :ref:`isp-demosaic` - 涵盖如何配置去马赛克功能。
@@ -588,6 +589,184 @@ ISP BLC 控制器
     ESP_ERROR_CHECK(esp_isp_blc_set_correction_offset(isp_proc, &blc_offset));
 
 
+.. _isp-dpc:
+
+ISP DPC 控制器
+^^^^^^^^^^^^^^
+
+坏点校正 (DPC) 在后续 ISP 处理阶段之前校正 RAW Bayer 图像中的坏点。由于 Bayer 图像中相邻像素的颜色不同，DPC 以当前像素为中心，从同色的 8 个邻域像素构成 3×3 同色邻域。检测到坏点后，硬件使用该邻域的中值替换中心像素。
+
+DPC 支持两种可组合的校正方式：
+
+- **静态校正**：适用于位置固定的坏点。软件通过均匀白场标定暗坏点、通过均匀黑场标定亮坏点，合并标定结果后得到坐标表；也可以直接使用预先标定的坐标表。配置时，驱动将坐标表写入硬件 LUT，硬件在每帧中对命中坐标的像素进行中值替换。
+- **动态校正**：适用于瞬时或未知位置的坏点，无需预先提供坐标表。动态方法 1 使用同色邻域的最小值、最大值及绝对阈值检测亮、暗坏点。动态方法 2 先按邻域最大值的比例范围筛选中心像素，再用邻域估计值和自适应亮、暗因子进行二次检测。
+
+两种方式可以同时启用。请在 DPC 禁用时分别调用 :cpp:func:`esp_isp_dpc_static_configure` 和 :cpp:func:`esp_isp_dpc_dynamic_configure` 配置需要的校正方式，再调用 :cpp:func:`esp_isp_dpc_configure` 配置通用 DPC 设置，最后调用 :cpp:func:`esp_isp_dpc_enable` 启用。若要修改静态坏点坐标表，须先禁用 DPC，再重新配置。
+
+静态校正和标定
+~~~~~~~~~~~~~~
+
+静态校正接受 0 到 512 个 :cpp:type:`esp_isp_dpc_pixel_coord_t` 坐标。每个坐标包含 ``x`` 和 ``y`` 字段。坐标数组必须按 y/x 严格升序、无重复，且所有坐标必须位于输入图像范围内。:cpp:func:`esp_isp_dpc_static_configure` 在调用期间将坐标转换为硬件 LUT 格式，因此该调用返回后，调用方可释放坐标数组。
+
+使用均匀白场帧检测暗坏点，使用均匀黑场帧检测亮坏点。每次调用标定启动 API 都会在内部启用 DPC，并接收一帧对应的输入图像。读取结果会再次禁用 DPC，因此可继续下一次标定，或开始最终的静态校正配置。
+
+以下流程完成标定并启用静态校正。``white_frame`` 和 ``black_frame`` 必须分别为均匀的 RAW 白场和黑场输入帧。建议按以下方式获取：
+
+- **白场帧**：使传感器视场完全覆盖均匀、无纹理的明亮目标，例如均匀积分球光源或离焦的纯白漫反射板。避免阴影、渐晕、反光和饱和区域。
+- **黑场帧**：完全遮光，例如盖上镜头盖或在暗箱中采集。避免漏光、状态指示灯和其他杂散光进入传感器。
+
+将每帧送入 ISP 并等待处理完成的具体方式取决于所使用的输入源。以下以 DMA 输入为例，``output_frame`` 为 DMA 输出缓冲区。
+
+.. code-block:: c
+
+    esp_isp_dpc_calibration_config_t white_calibration_config = {
+        .threshold = 0xf0,
+        .enable_output = true,
+    };
+    esp_isp_dpc_calibration_config_t black_calibration_config = {
+        .threshold = 0x0a,
+        .enable_output = true,
+    };
+    static esp_isp_dpc_calibration_ref_t white_ref;
+    static esp_isp_dpc_calibration_ref_t black_ref;
+    static esp_isp_dpc_calibration_ref_t merged_ref;
+
+    // 使用白场检测暗坏点。
+    esp_isp_dpc_static_calibration_start_once(isp_proc, ESP_ISP_DPC_CALIBRATION_IMAGE_WHITE, &white_calibration_config);
+    // 将 white_frame 输入 ISP，并等待该帧处理完成。
+    // 例如，使用 DMA 输入：
+    esp_isp_dma_process_frame(isp_proc, output_frame, white_frame, 1000);
+    esp_isp_dpc_calibration_read_result(isp_proc, 1000, &white_ref);
+
+    // 使用黑场检测亮坏点。
+    esp_isp_dpc_static_calibration_start_once(isp_proc, ESP_ISP_DPC_CALIBRATION_IMAGE_BLACK, &black_calibration_config);
+    // 将 black_frame 输入 ISP，并等待该帧处理完成。
+    // 例如，使用 DMA 输入：
+    esp_isp_dma_process_frame(isp_proc, output_frame, black_frame, 1000);
+    esp_isp_dpc_calibration_read_result(isp_proc, 1000, &black_ref);
+
+    // 合并、排序和去重后，再写入静态 LUT。
+    const esp_isp_dpc_calibration_ref_t *calibration_refs[] = {
+        &white_ref,
+        &black_ref,
+    };
+    esp_isp_dpc_calibration_merge_result(calibration_refs, 2, &merged_ref);
+    esp_isp_dpc_static_config_t static_dpc_config = {
+        .dead_pixel_coords = merged_ref.dead_pixel_coords,
+        .dead_pixel_count = merged_ref.dead_pixel_count,
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_static_configure(isp_proc, &static_dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
+:cpp:func:`esp_isp_dpc_calibration_merge_result` 是一个纯软件工具 API，可传入任意正数个引用，且不访问 ISP 处理器或硬件。函数会合并所有坐标、按 y/x 排序并去重。合并后的坐标表最多包含 :c:macro:`ESP_ISP_DPC_MAX_DEAD_PIXELS` 个唯一坐标。
+
+如需合并 N 个引用，将其地址组成数组，并将数组及元素数量传入 :cpp:func:`esp_isp_dpc_calibration_merge_result`：
+
+.. code-block:: c
+
+    const esp_isp_dpc_calibration_ref_t *refs[] = {
+        &ref_0,
+        &ref_1,
+        &ref_2,
+    };
+    const size_t ref_count = sizeof(refs) / sizeof(refs[0]);
+    static esp_isp_dpc_calibration_ref_t merged_ref;
+
+    ESP_ERROR_CHECK(esp_isp_dpc_calibration_merge_result(refs, ref_count, &merged_ref));
+
+如果已有传感器出厂标定或其他方式得到的坏点坐标表，则可跳过上述白场/黑场标定流程，直接将坐标数组传给 :cpp:func:`esp_isp_dpc_static_configure`：
+
+.. code-block:: c
+
+    static const esp_isp_dpc_pixel_coord_t factory_bad_pixels[] = {
+        {.x = 24, .y = 24},
+        {.x = 56, .y = 24},
+        {.x = 25, .y = 72},
+    };
+    esp_isp_dpc_static_config_t static_dpc_config = {
+        .dead_pixel_coords = factory_bad_pixels,
+        .dead_pixel_count = sizeof(factory_bad_pixels) / sizeof(factory_bad_pixels[0]),
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_static_configure(isp_proc, &static_dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
+动态校正
+~~~~~~~~
+
+动态方法 1
+++++++++++
+
+动态方法 1 使用绝对阈值。设 ``min8`` 和 ``max8`` 分别为 8 个同色邻域像素的最小值和最大值：像素值大于 ``max8 + high_threshold`` 时为亮坏点候选；小于 ``min8 - low_threshold`` 时为暗坏点候选。
+
+.. code-block:: c
+
+    esp_isp_dpc_dynamic_config_t dpc_config = {
+        .method = ESP_ISP_DPC_DYNAMIC_METHOD_1,
+        .method_1 = {
+            .high_threshold = 48,
+            .low_threshold = 48,
+        },
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_dynamic_configure(isp_proc, &dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
+动态方法 2
+++++++++++
+
+动态方法 2 分两层检测坏点。
+
+第一层使用 8 个同色邻域像素的最大值 ``max8`` 筛选中心像素 ``pixel_center``。正常范围为 ``max8 * first_stage_lower_ratio < pixel_center < max8 * first_stage_upper_ratio``：落在该范围内的像素通过第一层；等于边界或不在该范围内的像素进入第二层。第一层比例使用定点数表示：``value = integer + decimal / ISP_DPC_RATIO_MAX``。有效取值范围为 0.0 到 1.0。表示小数时，``integer`` 设为 0，``decimal`` 取值为 0 ... ``ISP_DPC_RATIO_MAX - 1``；例如 0.5 配置为 ``integer = 0``、``decimal = 8``。表示 1.0 时，``integer`` 设为 1，``decimal`` 设为 0。
+
+- ``first_stage_lower_ratio``\ （取值范围 ``0.0`` 到 ``1.0``）：第一层正常范围的下界。增大该值会使更多偏暗像素进入第二层检测；减小该值会让更多偏暗像素直接通过第一层。
+- ``first_stage_upper_ratio``\ （取值范围 ``0.0`` 到 ``1.0``）：第一层正常范围的上界。增大该值会让更多偏亮像素直接通过第一层；减小该值会使更多偏亮像素进入第二层检测。该值必须大于 ``first_stage_lower_ratio``，否则配置函数返回 ``ESP_ERR_INVALID_ARG``。
+
+第二层计算 8 个邻域像素的均值 ``est``、中心像素与 ``est`` 的绝对差 ``dif = abs(est - pixel_center)``，以及两者的均值 ``avg``。当 ``est >= pixel_center`` 且 ``dif > avg * dark_deviation_factor`` 时，检测为暗坏点候选；当 ``est < pixel_center`` 且 ``dif > (255 - avg) * bright_deviation_factor`` 时，检测为亮坏点候选。偏差因子使用定点数表示：``value = integer + decimal / ISP_DPC_DEVIATION_FACTOR_MAX``。有效取值范围为 0.0 到 1.0。表示小数时，``integer`` 设为 0，``decimal`` 取值为 0 ... ``ISP_DPC_DEVIATION_FACTOR_MAX - 1``；例如 0.5 配置为 ``integer = 0``、``decimal = 16``。表示 1.0 时，``integer`` 设为 1，``decimal`` 设为 0。
+
+- ``dark_deviation_factor``\ （取值范围 ``0.0`` 到 ``1.0``）：第二层暗坏点判定的灵敏度。减小该值会降低暗坏点所需的偏差，更容易校正偏暗像素；增大该值则更保守。
+- ``bright_deviation_factor``\ （取值范围 ``0.0`` 到 ``1.0``）：第二层亮坏点判定的灵敏度。减小该值会降低亮坏点所需的偏差，更容易校正偏亮像素；增大该值则更保守。
+
+.. code-block:: c
+
+    esp_isp_dpc_dynamic_config_t dpc_config = {
+        .method = ESP_ISP_DPC_DYNAMIC_METHOD_2,
+        .method_2 = {
+            .first_stage_lower_ratio = {
+                .integer = 0,
+                .decimal = 8,
+            },
+            .first_stage_upper_ratio = {
+                .integer = 1,
+                .decimal = 0,
+            },
+            .bright_deviation_factor = {
+                .integer = 0,
+                .decimal = 16,
+            },
+            .dark_deviation_factor = {
+                .integer = 0,
+                .decimal = 16,
+            },
+        },
+    };
+    esp_isp_dpc_config_t common_dpc_config = {
+        .flags.update_once_configured = true,
+    };
+    esp_isp_dpc_dynamic_configure(isp_proc, &dpc_config);
+    esp_isp_dpc_configure(isp_proc, &common_dpc_config);
+    esp_isp_dpc_enable(isp_proc);
+
 .. _isp-lsc:
 
 ISP LSC 控制器
@@ -981,6 +1160,9 @@ API 参考
 .. include-build-file:: inc/isp_lsc.inc
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_demosaic.inc
+.. include-build-file:: inc/isp_dpc.inc
+.. include-build-file:: inc/isp_dpc_dynamic.inc
+.. include-build-file:: inc/isp_dpc_static.inc
 .. include-build-file:: inc/isp_sharpen.inc
 .. include-build-file:: inc/isp_gamma.inc
 .. include-build-file:: inc/isp_hist.inc

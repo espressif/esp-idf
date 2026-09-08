@@ -20,6 +20,7 @@
 #include "driver/isp_ccm.h"
 #include "driver/isp_color.h"
 #include "driver/isp_demosaic.h"
+#include "driver/isp_dpc.h"
 #include "driver/isp_gamma.h"
 #include "driver/isp_hist.h"
 #include "driver/isp_lsc.h"

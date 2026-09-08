@@ -95,6 +95,7 @@ typedef struct isp_processor_t {
     ISP_ATOMIC_TYPE(isp_fsm_t)  lsc_fsm;
     ISP_ATOMIC_TYPE(isp_fsm_t)  sharpen_fsm;
     ISP_ATOMIC_TYPE(isp_fsm_t)  wbg_fsm;
+    ISP_ATOMIC_TYPE(isp_fsm_t)  dpc_fsm;
     esp_isp_evt_cbs_t           cbs;
     void                        *user_data;
 
@@ -112,6 +113,7 @@ typedef struct isp_processor_t {
 
     struct {
         uint32_t                wbg_update_once_configured: 1;
+        uint32_t                dpc_update_once_configured: 1;
     } sub_module_flags;
 
 } isp_processor_t;
