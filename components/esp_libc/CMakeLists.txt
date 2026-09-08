@@ -83,7 +83,6 @@ else()
          list(APPEND EXTRA_LINK_FLAGS "-Wl,--wrap=__bufio_setvbuf")
     if(CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
         list(APPEND srcs "src/picolibc/getreent.c")
-        list(APPEND srcs "src/picolibc/fopencookie.c")
     endif()
 endif()
 
