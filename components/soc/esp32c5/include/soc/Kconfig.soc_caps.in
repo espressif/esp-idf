@@ -911,6 +911,10 @@ config SOC_SHA_SUPPORT_SHA512_T
     bool
     default y
 
+config SOC_SHA_SUPPORT_SM3
+    bool
+    default y
+
 config SOC_ECC_CONSTANT_TIME_POINT_MUL
     bool
     default y

@@ -271,6 +271,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
     $(PROJECT_PATH)/components/esp_security/include/esp_ds.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_sm3.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_debug_helpers.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \

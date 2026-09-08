@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -204,6 +204,18 @@ static inline void sha_ll_t_string_set(uint32_t t_string)
 static inline void sha_ll_t_len_set(uint8_t t_len)
 {
     REG_WRITE(SHA_T_LENGTH_REG, t_len);
+}
+
+/**
+ * @brief Check whether the SHA peripheral can run the SM3 mode.
+ *
+ * This chip has no SM3 hardware.
+ *
+ * @return false
+ */
+static inline bool sha_ll_is_sm3_supported(void)
+{
+    return false;
 }
 
 #ifdef __cplusplus

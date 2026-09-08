@@ -44,6 +44,9 @@ inline static size_t state_length(esp_sha_type type)
         return SHA1_STATE_LEN_WORDS;
     case SHA2_224:
     case SHA2_256:
+#if SOC_SHA_SUPPORT_SM3
+    case SM3:
+#endif
         return SHA256_STATE_LEN_WORDS;
 #if SOC_SHA_SUPPORT_SHA384
     case SHA2_384:
@@ -135,6 +138,11 @@ void sha_hal_write_digest(esp_sha_type sha_type, void *digest_state)
     sha_ll_write_digest(sha_type, digest_state, state_length(sha_type));
 }
 #endif //SOC_SHA_SUPPORT_RESUME
+
+bool sha_hal_is_sm3_supported(void)
+{
+    return sha_ll_is_sm3_supported();
+}
 
 #if SOC_SHA_SUPPORT_SHA512_T
 

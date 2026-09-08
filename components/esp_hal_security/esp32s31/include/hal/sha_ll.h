@@ -9,6 +9,7 @@
 #include "hal/sha_types.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hwcrypto_reg.h"
+#include "soc/efuse_struct.h"
 
 /* ESP32-S31 SHA register header uses SHA_2_SM_3_H_MEM/M_MEM naming
  * instead of SHA_H_MEM/M_MEM. Define compatibility macros. */
@@ -209,6 +210,20 @@ static inline void sha_ll_t_string_set(uint32_t t_string)
 static inline void sha_ll_t_len_set(uint8_t t_len)
 {
     REG_WRITE(SHA_T_LENGTH_REG, t_len);
+}
+
+/**
+ * @brief Check whether the SHA peripheral can run the SM3 mode.
+ *
+ * The DIS_SM_CRYPT eFuse disables SM2 and SM3 permanently. The function reads
+ * the eFuse shadow register directly, so it reports the real chip state also
+ * when CONFIG_EFUSE_VIRTUAL is enabled.
+ *
+ * @return true if SM3 is available, false if the eFuse disables it
+ */
+static inline bool sha_ll_is_sm3_supported(void)
+{
+    return !EFUSE.rd_repeat_data1.dis_sm_crypt;
 }
 
 #ifdef __cplusplus
