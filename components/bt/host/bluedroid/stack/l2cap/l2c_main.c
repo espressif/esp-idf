@@ -979,6 +979,14 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
         case L2CAP_CMD_ECHO_REQ:
+#if BT_CLASSIC_BQB_INCLUDED
+            /* L2CAP/COS/CED/BI-01-C: if ICS does not claim Echo (L2CAP 2/4),
+             * PTS treats 0x08 as unsupported and expects Command Reject. */
+            if (s_l2cap_bqb_echo_rej_flag) {
+                l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
+                break;
+            }
+#endif /* BT_CLASSIC_BQB_INCLUDED */
             l2cu_send_peer_echo_rsp (p_lcb, id, NULL, 0);
             break;
 
