@@ -961,11 +961,14 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
             netif_set_down(esp_netif->lwip_netif);
         }
 #if LWIP_IPV6 && LWIP_IPV6_MLD
-        if (esp_netif->driver_set_mac_filter) {
+        if (esp_netif->driver_set_mac_filter && esp_netif->lwip_netif->mld_mac_filter) {
             netif_mld_mac_filter_all_nodes(esp_netif->lwip_netif, NETIF_DEL_MAC_FILTER);
         }
 #endif
         netif_remove(esp_netif->lwip_netif);
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+        netif_set_mld_mac_filter(esp_netif->lwip_netif, NULL);
+#endif
 #if ESP_GRATUITOUS_ARP
         if (esp_netif->flags & ESP_NETIF_FLAG_GARP) {
             netif_unset_garp_flag(esp_netif->lwip_netif);
