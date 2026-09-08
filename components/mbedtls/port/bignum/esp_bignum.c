@@ -622,6 +622,10 @@ cleanup:
     return ret;
 }
 
+/* Largest operand this path can see. The caller only routes here below
+   SOC_MPI_HW_MIN_BIT_LEN bits, which bounds the stack copies below. */
+#define MPI_SOFT_MAX_WORDS  ((SOC_MPI_HW_MIN_BIT_LEN + 31) / 32)
+
 /* Software multiply, for operands below SOC_MPI_HW_MIN_BIT_LEN.
 
    MBEDTLS_MPI_MUL_MPI_ALT compiles the library's own mbedtls_mpi_mul_mpi()
@@ -634,21 +638,20 @@ cleanup:
    is called before the caller grows Z. */
 static int mpi_mult_mpi_soft(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y)
 {
-    int ret = 0;
-    mbedtls_mpi TX, TY;
+    /* Z may alias X or Y, and Z is cleared before the operands are read, so an
+       aliased operand has to be copied first. The library copies into a heap
+       MPI. Here the operands are bounded by the routing threshold, so the copy
+       fits on the stack. That matters: inside an RSA-2048 public operation every
+       small multiply aliases Z with an operand, and the allocation costs about
+       4.4 us, more than the multiply itself. */
+    mbedtls_mpi_uint tx[MPI_SOFT_MAX_WORDS];
+    mbedtls_mpi_uint ty[MPI_SOFT_MAX_WORDS];
+    const mbedtls_mpi_uint *xp = X->MBEDTLS_PRIVATE(p);
+    const mbedtls_mpi_uint *yp = Y->MBEDTLS_PRIVATE(p);
+    /* Read both signs before Z is written, because Z may be X or Y. */
+    const int z_sign = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
     size_t i, j;
-
-    mbedtls_mpi_init(&TX);
-    mbedtls_mpi_init(&TY);
-
-    if (Z == X) {
-        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&TX, X));
-        X = &TX;
-    }
-    if (Z == Y) {
-        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&TY, Y));
-        Y = &TY;
-    }
+    int ret;
 
     for (i = X->MBEDTLS_PRIVATE(n); i > 0; i--) {
         if (X->MBEDTLS_PRIVATE(p)[i - 1] != 0) {
@@ -661,25 +664,31 @@ static int mpi_mult_mpi_soft(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls
         }
     }
 
-    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(Z, i + j));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(Z, 0));
+    if (Z == X) {
+        memcpy(tx, xp, i * sizeof(mbedtls_mpi_uint));
+        xp = tx;
+    }
+    if (Z == Y) {
+        memcpy(ty, yp, j * sizeof(mbedtls_mpi_uint));
+        yp = ty;
+    }
+
+    ret = mbedtls_mpi_grow(Z, i + j);
+    if (ret == 0) {
+        ret = mbedtls_mpi_lset(Z, 0);
+    }
+    if (ret != 0) {
+        return ret;
+    }
 
     if (i > 0 && j > 0) {
-        mbedtls_mpi_core_mul(Z->MBEDTLS_PRIVATE(p),
-                             X->MBEDTLS_PRIVATE(p), i,
-                             Y->MBEDTLS_PRIVATE(p), j);
+        mbedtls_mpi_core_mul(Z->MBEDTLS_PRIVATE(p), xp, i, yp, j);
     }
 
     /* Do not shortcut a zero result: that would leak its zero-ness more than
        the library implementation does. */
-    Z->MBEDTLS_PRIVATE(s) = (i == 0 || j == 0)
-                            ? 1
-                            : X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
-
-cleanup:
-    mbedtls_mpi_free(&TY);
-    mbedtls_mpi_free(&TX);
-    return ret;
+    Z->MBEDTLS_PRIVATE(s) = (i == 0 || j == 0) ? 1 : z_sign;
+    return 0;
 }
 
 int mbedtls_mpi_mul_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_uint b )
