@@ -451,6 +451,206 @@ TEST_CASE("power down between WL status 1 and WL status 2 update", "[wear_levell
 }
 
 /* ======================================================================== */
+/* Non-destructive mount (wl_mount_no_format / wl_probe) tests              */
+/* ======================================================================== */
+
+// Offset and size of the WL config/state tail region - the only region wl_mount() formats
+static void get_wl_tail_region(const esp_partition_t *partition, size_t *tail_offset, size_t *tail_size)
+{
+    size_t offset_state_1, offset_state_2, size_state = 0;
+    calculate_wl_state_address_info(partition, &offset_state_1, &offset_state_2, &size_state);
+    *tail_offset = offset_state_1;
+    *tail_size = partition->size - offset_state_1;
+}
+
+TEST_CASE("wl_mount_no_format on fresh flash returns NOT_FOUND and does not touch flash", "[wear_levelling]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    size_t tail_offset, tail_size;
+    get_wl_tail_region(partition, &tail_offset, &tail_size);
+
+    // Erase the whole partition, then snapshot the tail
+    REQUIRE(esp_partition_erase_range(partition, 0, partition->size) == ESP_OK);
+
+    uint8_t *before = (uint8_t *) malloc(tail_size);
+    uint8_t *after = (uint8_t *) malloc(tail_size);
+    REQUIRE(before != NULL);
+    REQUIRE(after != NULL);
+    REQUIRE(esp_partition_read(partition, tail_offset, before, tail_size) == ESP_OK);
+
+    wl_handle_t wl_handle = WL_INVALID_HANDLE;
+    REQUIRE(wl_mount_no_format(partition, &wl_handle) == ESP_ERR_NOT_FOUND);
+    REQUIRE(wl_handle == WL_INVALID_HANDLE);
+
+    // Tail must still be all-0xFF
+    REQUIRE(esp_partition_read(partition, tail_offset, after, tail_size) == ESP_OK);
+    REQUIRE(memcmp(before, after, tail_size) == 0);
+    for (size_t i = 0; i < tail_size; i++) {
+        REQUIRE(after[i] == 0xFF);
+    }
+
+    free(before);
+    free(after);
+}
+
+TEST_CASE("wl_mount_no_format on a valid instance succeeds and reads the same data", "[wear_levelling]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    // Create a valid instance with wl_mount()
+    REQUIRE(esp_partition_erase_range(partition, 0, partition->size) == ESP_OK);
+
+    wl_handle_t wl_handle = WL_INVALID_HANDLE;
+    REQUIRE(wl_mount(partition, &wl_handle) == ESP_OK);
+
+    size_t sector_size = wl_sector_size(wl_handle);
+    uint8_t *pattern = (uint8_t *) malloc(sector_size);
+    uint8_t *readback = (uint8_t *) malloc(sector_size);
+    REQUIRE(pattern != NULL);
+    REQUIRE(readback != NULL);
+    for (size_t i = 0; i < sector_size; i++) {
+        pattern[i] = (uint8_t)(i * 7 + 1);
+    }
+
+    REQUIRE(wl_erase_range(wl_handle, 0, sector_size) == ESP_OK);
+    REQUIRE(wl_write(wl_handle, 0, pattern, sector_size) == ESP_OK);
+    REQUIRE(wl_unmount(wl_handle) == ESP_OK);
+
+    // No-format mount must succeed and expose the same data
+    wl_handle = WL_INVALID_HANDLE;
+    REQUIRE(wl_mount_no_format(partition, &wl_handle) == ESP_OK);
+    REQUIRE(wl_handle != WL_INVALID_HANDLE);
+
+    REQUIRE(wl_read(wl_handle, 0, readback, sector_size) == ESP_OK);
+    REQUIRE(memcmp(pattern, readback, sector_size) == 0);
+
+    REQUIRE(wl_unmount(wl_handle) == ESP_OK);
+
+    free(pattern);
+    free(readback);
+}
+
+TEST_CASE("wl_mount_no_format on foreign data returns NOT_FOUND and does not touch flash", "[wear_levelling]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    size_t tail_offset, tail_size;
+    get_wl_tail_region(partition, &tail_offset, &tail_size);
+
+    // Fill the tail with non-0xFF, non-WL bytes (the case wl_mount() would reformat)
+    uint8_t *foreign = (uint8_t *) malloc(tail_size);
+    uint8_t *after = (uint8_t *) malloc(tail_size);
+    REQUIRE(foreign != NULL);
+    REQUIRE(after != NULL);
+    for (size_t i = 0; i < tail_size; i++) {
+        foreign[i] = (uint8_t)(0xA5 ^ (i & 0x7F));
+    }
+    REQUIRE(esp_partition_erase_range(partition, tail_offset, tail_size) == ESP_OK);
+    REQUIRE(esp_partition_write(partition, tail_offset, foreign, tail_size) == ESP_OK);
+
+    wl_handle_t wl_handle = WL_INVALID_HANDLE;
+    REQUIRE(wl_mount_no_format(partition, &wl_handle) == ESP_ERR_NOT_FOUND);
+    REQUIRE(wl_handle == WL_INVALID_HANDLE);
+
+    // Foreign data must be byte-identical
+    REQUIRE(esp_partition_read(partition, tail_offset, after, tail_size) == ESP_OK);
+    REQUIRE(memcmp(foreign, after, tail_size) == 0);
+
+    free(foreign);
+    free(after);
+}
+
+TEST_CASE("wl_mount_no_format on a degraded instance returns NOT_FOUND without writing", "[wear_levelling]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    // Create a valid instance
+    REQUIRE(esp_partition_erase_range(partition, 0, partition->size) == ESP_OK);
+    wl_handle_t wl_handle = WL_INVALID_HANDLE;
+    REQUIRE(wl_mount(partition, &wl_handle) == ESP_OK);
+    REQUIRE(wl_unmount(wl_handle) == ESP_OK);
+
+    // Resolve the state/tail offsets while the instance is still valid (this mounts internally)
+    size_t offset_state_1, offset_state_2, size_state = 0;
+    calculate_wl_state_address_info(partition, &offset_state_1, &offset_state_2, &size_state);
+    size_t tail_offset, tail_size;
+    get_wl_tail_region(partition, &tail_offset, &tail_size);
+
+    // Corrupt one state copy, as a power-down mid-update would. wl_mount() would recover
+    // this, but wl_mount_no_format() must refuse without writing anything.
+    uint8_t *blank = (uint8_t *) malloc(size_state);
+    REQUIRE(blank != NULL);
+    memset(blank, 0xFF, size_state);
+    REQUIRE(esp_partition_erase_range(partition, offset_state_1, size_state) == ESP_OK);
+    REQUIRE(esp_partition_write(partition, offset_state_1, blank, size_state) == ESP_OK);
+
+    uint8_t *before = (uint8_t *) malloc(tail_size);
+    uint8_t *after = (uint8_t *) malloc(tail_size);
+    REQUIRE(before != NULL);
+    REQUIRE(after != NULL);
+    REQUIRE(esp_partition_read(partition, tail_offset, before, tail_size) == ESP_OK);
+
+    wl_handle = WL_INVALID_HANDLE;
+    REQUIRE(wl_mount_no_format(partition, &wl_handle) == ESP_ERR_NOT_FOUND);
+    REQUIRE(wl_handle == WL_INVALID_HANDLE);
+
+    REQUIRE(esp_partition_read(partition, tail_offset, after, tail_size) == ESP_OK);
+    REQUIRE(memcmp(before, after, tail_size) == 0);
+
+    // Sanity: wl_mount() still recovers the same degraded instance
+    REQUIRE(wl_mount(partition, &wl_handle) == ESP_OK);
+    REQUIRE(wl_unmount(wl_handle) == ESP_OK);
+
+    free(blank);
+    free(before);
+    free(after);
+}
+
+TEST_CASE("wl_probe reports presence without modifying flash", "[wear_levelling]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    size_t tail_offset, tail_size;
+    get_wl_tail_region(partition, &tail_offset, &tail_size);
+
+    // FRESH: probe on erased flash returns NOT_FOUND and leaves it all-0xFF.
+    REQUIRE(esp_partition_erase_range(partition, 0, partition->size) == ESP_OK);
+
+    uint8_t *before = (uint8_t *) malloc(tail_size);
+    uint8_t *after = (uint8_t *) malloc(tail_size);
+    REQUIRE(before != NULL);
+    REQUIRE(after != NULL);
+    REQUIRE(esp_partition_read(partition, tail_offset, before, tail_size) == ESP_OK);
+
+    REQUIRE(wl_probe(partition) == ESP_ERR_NOT_FOUND);
+
+    REQUIRE(esp_partition_read(partition, tail_offset, after, tail_size) == ESP_OK);
+    REQUIRE(memcmp(before, after, tail_size) == 0);
+    for (size_t i = 0; i < tail_size; i++) {
+        REQUIRE(after[i] == 0xFF);
+    }
+
+    // VALID: probe reports presence, and (no flush on teardown) leaves the tail unchanged
+    wl_handle_t wl_handle = WL_INVALID_HANDLE;
+    REQUIRE(wl_mount(partition, &wl_handle) == ESP_OK);
+    REQUIRE(wl_unmount(wl_handle) == ESP_OK);
+
+    REQUIRE(esp_partition_read(partition, tail_offset, before, tail_size) == ESP_OK);
+    REQUIRE(wl_probe(partition) == ESP_OK);
+    REQUIRE(esp_partition_read(partition, tail_offset, after, tail_size) == ESP_OK);
+    REQUIRE(memcmp(before, after, tail_size) == 0);
+
+    free(before);
+    free(after);
+}
+
+/* ======================================================================== */
 /* BDL (Block Device Layer) interface tests                                 */
 /* ======================================================================== */
 
