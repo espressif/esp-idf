@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include "esp_bit_defs.h"
 #include "soc/lp_analog_peri_struct.h"
+#include "hal/assert.h"
 #include "hal/regi2c_ctrl.h"
 #include "hal/psdet_types.h"
 #include "soc/regi2c_brownout.h"
@@ -65,10 +66,13 @@ static inline void brownout_ll_reset_config(bool reset_ena, uint32_t reset_wait,
 /**
  * @brief Set brown out threshold voltage
  *
- * @param threshold brownout threshold
+ * @note Only level 7 (~2.96V) is valid on ESP32-H21.
+ *
+ * @param threshold dcdc_brno from CONFIG_ESP_BROWNOUT_DET_LVL
  */
 static inline void brownout_ll_set_threshold(uint8_t threshold)
 {
+    HAL_ASSERT(threshold == 7);
     REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD, threshold);
 }
 
