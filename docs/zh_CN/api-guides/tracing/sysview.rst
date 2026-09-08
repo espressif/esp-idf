@@ -136,5 +136,5 @@ Start 子命令语法：
 应用示例
 --------
 
-- :example:`system/sysview_tracing` 演示如何使用 SEGGER SystemView 记录 FreeRTOS 任务与系统事件。
-- :example:`system/sysview_tracing_heap_log` 演示如何在记录 SystemView 事件的同时，对堆内存分配进行跟踪。
+- :example:`system/tracing/sysview_tracing` 演示如何使用 SEGGER SystemView 记录 FreeRTOS 任务与系统事件。
+- :example:`system/tracing/sysview_tracing_heap_log` 演示如何在记录 SystemView 事件的同时，对堆内存分配进行跟踪。

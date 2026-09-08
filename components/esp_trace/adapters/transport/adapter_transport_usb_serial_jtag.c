@@ -15,6 +15,8 @@
  * is responsible for serializing access using esp_trace_lock_init(), esp_trace_lock_take(),
  * and esp_trace_lock_give(). All transport operations (read, write, flush_nolock) are
  * invoked while the encoder holds the lock, so no transport-level locking is required.
+ *
+ * Logging: use ESP_EARLY_LOGx only, ESP_LOGx is not safe in ISR context.
  */
 
 #include <stdlib.h>
@@ -29,6 +31,7 @@
 #include "esp_cpu.h"
 #include "esp_attr.h"
 #include "esp_rom_caps.h"
+#include "esp_rom_sys.h"
 #include "esp_heap_caps.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/usb_serial_jtag_ll.h"
@@ -51,7 +54,6 @@ static const char *TAG = "usj_transport";
  */
 typedef enum {
     USJ_TX_IDLE,
-    USJ_TX_SHORT_PENDING,
     USJ_TX_ZLP_PENDING,
 } usj_tx_state_t;
 
@@ -67,11 +69,8 @@ typedef struct {
     uint32_t flush_thresh;              ///< Flush threshold in bytes
 } usj_ctx_t;
 
-/*
- * flush_nolock() runs with interrupts masked, so normal flushes use a short
- * fixed timeout even if an encoder requests a longer one.
- */
-#define USJ_FLUSH_TIMEOUT_US            (1000)      // 1 ms
+/* Default flush timeout, used on non-masked paths (e.g. panic handler). */
+#define USJ_FLUSH_TIMEOUT_US            (1000000)   // 1 s
 #define USJ_FLUSH_THRESH_BYTES          (0)         // 0 bytes
 #define USJ_FLUSH_MAX_INTR_MASKED_US    (2000)      // 2 ms
 #define USJ_FLUSH_POLL_STEP_US          (100)       // delay between no-progress polls
@@ -84,7 +83,7 @@ typedef struct {
 static uint32_t usj_write_fifo(usj_ctx_t *ctx, esp_trace_rb_t *rb)
 {
     if (!usb_serial_jtag_ll_txfifo_writable()) {
-        /* FIFO is full, no blocking */
+        /* Previous packet is not sent yet */
         return 0;
     }
 
@@ -97,27 +96,26 @@ static uint32_t usj_write_fifo(usj_ctx_t *ctx, esp_trace_rb_t *rb)
     uint32_t written = usb_serial_jtag_ll_write_txfifo(ptr, to_send);
     esp_trace_rb_consume(rb, written);
 
-    ctx->tx_state = usb_serial_jtag_ll_txfifo_writable() ? USJ_TX_SHORT_PENDING : USJ_TX_ZLP_PENDING;
+    /* Checked before wr_done, which also clears the writable flag */
+    ctx->tx_state = usb_serial_jtag_ll_txfifo_writable() ? USJ_TX_IDLE : USJ_TX_ZLP_PENDING;
+
+    /* Send the packet. A no-op if the HW already flushed a full FIFO. */
+    usb_serial_jtag_ll_txfifo_flush();
 
     return written;
 }
 
-static uint32_t usj_fill_txfifo(usj_ctx_t *ctx, bool commit_short)
+static uint32_t usj_fill_txfifo(usj_ctx_t *ctx)
 {
     esp_trace_rb_t *rb = &ctx->tx_ring;
     uint32_t total_written = 0;
 
-    while (esp_trace_rb_data_len(rb) > 0 && usb_serial_jtag_ll_txfifo_writable()) {
+    while (esp_trace_rb_data_len(rb) > 0) {
         uint32_t written = usj_write_fifo(ctx, rb);
         if (written == 0) {
             break;
         }
         total_written += written;
-    }
-
-    if (commit_short && ctx->tx_state == USJ_TX_SHORT_PENDING) {
-        usb_serial_jtag_ll_txfifo_flush();
-        ctx->tx_state = USJ_TX_IDLE;
     }
 
     return total_written;
@@ -127,7 +125,15 @@ static void usj_read_rx_fifo(usj_ctx_t *ctx)
 {
     uint8_t tmp[USJ_HW_FIFO_SIZE];
     while (usb_serial_jtag_ll_rxfifo_data_available()) {
-        uint32_t n = usb_serial_jtag_ll_read_rxfifo(tmp, sizeof(tmp));
+        /* Read only what fits, the rest stays in the HW FIFO */
+        uint32_t space = esp_trace_rb_free_len(&ctx->rx_ring);
+        if (space == 0) {
+            break;
+        }
+        if (space > sizeof(tmp)) {
+            space = sizeof(tmp);
+        }
+        uint32_t n = usb_serial_jtag_ll_read_rxfifo(tmp, space);
         if (n == 0) {
             break;
         }
@@ -185,22 +191,23 @@ static esp_err_t usj_init(esp_trace_transport_t *tp, const void *tp_cfg)
         /* Initialize TX ring buffer */
         esp_err_t ret = esp_trace_rb_init(&ctx->tx_ring, CONFIG_ESP_TRACE_USJ_TX_BUFFER_SIZE);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to initialize TX ring buffer");
+            ESP_EARLY_LOGE(TAG, "Failed to initialize TX ring buffer");
             goto err_ctx;
         }
 
         /* Initialize RX ring buffer to capture host commands */
         ret = esp_trace_rb_init(&ctx->rx_ring, USJ_RX_BUFFER_SIZE);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to initialize RX ring buffer");
+            ESP_EARLY_LOGE(TAG, "Failed to initialize RX ring buffer");
             goto err_tx_ring;
         }
 
-#if ESP_ROM_HAS_ETS_PRINTF_BUG
         /* Make sure no printf output is sent to USB-Serial-JTAG */
+#if ESP_ROM_HAS_ETS_PRINTF_BUG
         extern bool g_usb_print;
         g_usb_print = false;
 #endif
+        esp_rom_install_channel_putc(2, NULL);
 
     }
 
@@ -267,13 +274,15 @@ static esp_err_t usj_write(esp_trace_transport_t *tp, const void *data, size_t s
     /* Read any new RX data into the RX ring buffer to avoid losing host commands in case of heavy trace output */
     usj_read_rx_fifo(ctx);
 
-    /* Add data to TX ring buffer */
-    esp_trace_rb_put(rb, (const uint8_t *)data, size);
+    esp_err_t ret = esp_trace_rb_put(rb, (const uint8_t *)data, size);
+    if (ret != ESP_OK) {
+        /* Free what the HW can take, then retry before dropping the record */
+        usj_fill_txfifo(ctx);
+        ret = esp_trace_rb_put(rb, (const uint8_t *)data, size);
+    }
+    usj_fill_txfifo(ctx);
 
-    /* Try to move data to HW FIFO immediately, without forcing a short packet. */
-    usj_fill_txfifo(ctx, false);
-
-    return ESP_OK;
+    return ret;
 }
 
 static esp_err_t usj_down_buffer_config(esp_trace_transport_t *tp, uint8_t *buf, uint32_t size)
@@ -292,7 +301,7 @@ static esp_err_t usj_flush_with_timeout(usj_ctx_t *ctx, uint32_t tmo_us)
     esp_trace_rb_t *rb = &ctx->tx_ring;
 
     uint32_t pending = esp_trace_rb_data_len(rb);
-    if (pending < ctx->flush_thresh && ctx->tx_state == USJ_TX_IDLE) {
+    if ((pending == 0 || pending < ctx->flush_thresh) && ctx->tx_state == USJ_TX_IDLE) {
         return ESP_OK;
     }
 
@@ -300,9 +309,11 @@ static esp_err_t usj_flush_with_timeout(usj_ctx_t *ctx, uint32_t tmo_us)
     esp_trace_tmo_init(&timeout, tmo_us);
 
     while (esp_trace_rb_data_len(rb) > 0 || ctx->tx_state != USJ_TX_IDLE) {
-        uint32_t written = usj_fill_txfifo(ctx, true);
+        uint32_t written = usj_fill_txfifo(ctx);
 
-        if (ctx->tx_state == USJ_TX_ZLP_PENDING && usb_serial_jtag_ll_txfifo_writable()) {
+        /* Ring is empty: send a ZLP if the last packet filled the endpoint */
+        if (esp_trace_rb_data_len(rb) == 0 && ctx->tx_state == USJ_TX_ZLP_PENDING
+                && usb_serial_jtag_ll_txfifo_writable()) {
             usb_serial_jtag_ll_txfifo_flush();
             ctx->tx_state = USJ_TX_IDLE;
             continue;
@@ -363,7 +374,7 @@ static esp_err_t usj_set_config(esp_trace_transport_t *tp, esp_trace_transport_c
         ctx->flush_thresh = *(const uint32_t *)value;
         return ESP_OK;
     default:
-        ESP_LOGE(TAG, "Key %d is not supported", key);
+        ESP_EARLY_LOGE(TAG, "Key %d is not supported", key);
         return ESP_ERR_NOT_SUPPORTED;
     }
 }
@@ -387,7 +398,7 @@ static esp_err_t usj_get_config(esp_trace_transport_t *tp, esp_trace_transport_c
         *(uint32_t *)value = ctx->flush_thresh;
         return ESP_OK;
     default:
-        ESP_LOGE(TAG, "Key %d is not supported", key);
+        ESP_EARLY_LOGE(TAG, "Key %d is not supported", key);
         return ESP_ERR_NOT_SUPPORTED;
     }
 }

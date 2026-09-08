@@ -136,5 +136,5 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
 Application Examples
 --------------------
 
-- :example:`system/sysview_tracing` demonstrates how to trace FreeRTOS task and system events using SEGGER SystemView.
-- :example:`system/sysview_tracing_heap_log` demonstrates heap allocation tracing alongside SystemView events.
+- :example:`system/tracing/sysview_tracing` demonstrates how to trace FreeRTOS task and system events using SEGGER SystemView.
+- :example:`system/tracing/sysview_tracing_heap_log` demonstrates heap allocation tracing alongside SystemView events.
