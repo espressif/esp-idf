@@ -73,7 +73,8 @@ const soc_parlio_signal_desc_t soc_parlio_signals[1] = {
 */
 #define PARLIO_RETENTION_REGS_CNT 8
 #define PARLIO_RETENTION_REGS_BASE (DR_REG_PARL_IO_BASE + 0x0)
-static const uint32_t parlio_regs_map[4] = {0x60457, 0x0, 0x0, 0x0};
+const uint32_t parlio_regs_map[4] = {0x60457, 0x0, 0x0, 0x0};
+const uint32_t parlio_regs_cnt = PARLIO_RETENTION_REGS_CNT;
 static const regdma_entries_config_t parlio_regs_retention[] = {
     // backup stage: save configuration registers
     // restore stage: restore the configuration registers
