@@ -150,7 +150,7 @@ esp_err_t sdmmc_init_sd_wait_data_ready(sdmmc_card_t* card)
     /* Wait for the card to be ready for data transfers */
     uint32_t status = 0;
     uint32_t count = 0;
-    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    uint32_t poll_period_us = SDMMC_READY_POLL_PERIOD_START_US;
     int64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
@@ -159,10 +159,7 @@ esp_err_t sdmmc_init_sd_wait_data_ready(sdmmc_card_t* card)
             ESP_LOGE(TAG, "init wait data ready - timeout");
             return ESP_ERR_TIMEOUT;
         }
-        if (t1 - t0 > yield_delay_us) {
-            yield_delay_us *= 2;
-            vTaskDelay(1);
-        }
+        sdmmc_poll_delay_and_backoff(&poll_period_us);
         esp_err_t err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
             return err;
@@ -396,7 +393,7 @@ static esp_err_t read_tuning_block(sdmmc_card_t *card)
 
     uint32_t status = 0;
     size_t count = 0;
-    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    uint32_t poll_period_us = SDMMC_READY_POLL_PERIOD_START_US;
     int64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
@@ -405,10 +402,7 @@ static esp_err_t read_tuning_block(sdmmc_card_t *card)
             ESP_LOGW(TAG, "read sectors dma - timeout");
             return ESP_ERR_TIMEOUT;
         }
-        if (t1 - t0 > yield_delay_us) {
-            yield_delay_us *= 2;
-            vTaskDelay(1);
-        }
+        sdmmc_poll_delay_and_backoff(&poll_period_us);
         ret = sdmmc_send_cmd_send_status(card, &status);
         if (ret != ESP_OK) {
             ESP_LOGW(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, ret);

@@ -5,4 +5,39 @@ menu "SD Protocol Layer Configuration"
         help
             Enable SDIO support.
             Disabling this will skip SDIO-specific initialization steps
+
+    config SD_READY_POLL_PERIOD_START_US
+        int "Initial delay between card status polls (us)"
+        default 100
+        range 1 10000
+        help
+            While waiting for the card to leave its busy state (for example after a write),
+            the driver polls it with CMD13 (SEND_STATUS). This is the delay before the
+            first re-poll; the delay then doubles after every poll, up to one FreeRTOS
+            tick period.
+
+            Polling back-to-back without a delay turns every write into a storm of
+            hundreds of CMD13 commands, which occupies the host controller and slows down
+            unrelated work on both cores.
+
+            The exponential backoff means a card that becomes ready after 1.5 ms is
+            detected at about 1.5 ms rather than at the next FreeRTOS tick, using a
+            handful of commands instead of hundreds. Once the delay reaches one tick
+            period it stops growing, so a long busy period costs one poll per tick and
+            is detected within one tick of the card becoming ready.
+
+            Lower this value to detect very short busy periods sooner, at the cost of
+            more commands on the bus. Values larger than one FreeRTOS tick period are
+            clamped to it, so the largest useful setting depends on CONFIG_FREERTOS_HZ.
+
+            Delays shorter than one FreeRTOS tick period are spent busy-waiting, since
+            there is no shorter blocking sleep available; a delay of one tick blocks on
+            vTaskDelay() and lets other tasks run.
+
+            The busy-waited part of the ramp does not yield, so lower-priority tasks on
+            that core are held off for its duration. It lasts at most until the backoff
+            reaches one tick: with the default 100 us start, about 1.5 ms at a 1 kHz
+            tick (100+200+400+800 us) and about 12.7 ms at a 100 Hz tick. A card that
+            becomes ready sooner ends the wait sooner. No CMD13 is issued during the
+            delays, so the host controller and the bus stay idle throughout.
 endmenu
