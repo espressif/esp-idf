@@ -608,8 +608,6 @@ static void roaming_app_set_disconnected_state(const wifi_event_sta_disconnected
     g_roaming_app.current_bss.btm_support = false;
     g_roaming_app.current_bss.rrm_support = false;
     g_roaming_app.current_bss.ap.rssi = -128;
-    g_roaming_app.current_bss.ap.authmode = WIFI_AUTH_OPEN;
-    memset(g_roaming_app.current_bss.ap.ssid, 0, sizeof(g_roaming_app.current_bss.ap.ssid));
 
     if (disconn) {
         memcpy(g_roaming_app.current_bss.ap.bssid, disconn->bssid, ETH_ALEN);
