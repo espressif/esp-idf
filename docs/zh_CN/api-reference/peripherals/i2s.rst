@@ -449,7 +449,7 @@ I2S 驱动例程请参考 :example:`peripherals/i2s` 目录。以下为每种模
 标准 TX/RX 模式的应用
 ^^^^^^^^^^^^^^^^^^^^^
 
-- :example:`peripherals/i2s/i2s_codec/i2s_es8311` 演示了如何在 {IDF_TARGET_NAME} 上使用 I2S ES8311 音频编解码器来播放音乐或回声，具有高性能和低功耗的多位 delta-sigma 音频 ADC 和 DAC，提供自定义音乐、调整麦克风增益和音量的选项。
+- :example:`peripherals/i2s/wav_player` 演示了如何在 {IDF_TARGET_NAME} 上使用 I2S STD TX，将嵌入的 WAV 音频通过 ES8311 或 ES8389 音频编解码器播放。
 - :example:`peripherals/i2s/i2s_basic/i2s_std` 演示了如何在 {IDF_TARGET_NAME} 上以单工或全双工模式使用 I2S 标准模式。
 - :example:`peripherals/i2s/mic_recorder` 演示了如何通过 I2S STD 接口，使用 ES8389 音频编解码器录制模拟麦克风的音频。
 

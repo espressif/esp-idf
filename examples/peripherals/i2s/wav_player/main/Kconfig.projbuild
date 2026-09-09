@@ -1,0 +1,79 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_DAC_TYPE
+        prompt "DAC / codec type"
+        default EXAMPLE_DAC_TYPE_ES8311
+        help
+            Select the DAC codec connected to the board. Both options use I2S STD TX
+            to send PCM and I2C to configure the codec:
+
+            - ES8311: low-power mono ADC/DAC codec used on boards such as ESP-BOX
+              and ESP32-S3-Korvo-2.
+            - ES8389: stereo ADC/DAC codec used on boards such as ESP32-S31-Korvo-1.
+
+        config EXAMPLE_DAC_TYPE_ES8311
+            bool "ES8311 codec"
+            select CODEC_ES8311_SUPPORT
+
+        config EXAMPLE_DAC_TYPE_ES8389
+            bool "ES8389 codec"
+            select CODEC_ES8389_SUPPORT
+    endchoice
+
+    menu "Example IO Configuration"
+        config EXAMPLE_PA_CTRL_IO
+            int "Power amplifier enable IO"
+            default -1
+            help
+                GPIO connected to the board's speaker-amplifier enable
+                (often labeled EN, CTRL, PA, or INT). This is not a pin
+                on the ES8311 or ES8389. The codec driver raises it when
+                the DAC starts. Set -1 if the board has no amplifier
+                enable, or if that pin is already strapped high.
+
+        config EXAMPLE_I2C_SDA_IO
+            int "I2C SDA IO"
+            default 0
+            help
+                Set the GPIO number used for the I2C SDA signal towards the codec.
+
+        config EXAMPLE_I2C_SCL_IO
+            int "I2C SCL IO"
+            default 1
+            help
+                Set the GPIO number used for the I2C SCL signal towards the codec.
+
+        config EXAMPLE_I2S_MCLK_IO
+            int "I2S MCLK IO (set -1 if the codec does not use an external MCLK)"
+            default -1
+            help
+                Set the GPIO number used for the I2S MCLK signal. When set to -1, no MCLK
+                is generated and the codec derives its clock from BCLK.
+
+        config EXAMPLE_I2S_BCLK_IO
+            int "I2S BCLK IO"
+            default 3
+            help
+                Set the GPIO number used for the I2S BCLK signal towards the codec.
+
+        config EXAMPLE_I2S_WS_IO
+            int "I2S WS/LRCK IO"
+            default 4
+            help
+                Set the GPIO number used for the I2S WS/LRCK signal towards the codec.
+
+        config EXAMPLE_I2S_DOUT_IO
+            int "I2S DOUT IO"
+            default 7
+            help
+                Set the GPIO number used for sending PCM data to the codec.
+    endmenu
+
+    config EXAMPLE_VOICE_VOLUME
+        int "Voice volume"
+        range 0 100
+        default 60
+        help
+            Set the codec output volume.
+
+endmenu

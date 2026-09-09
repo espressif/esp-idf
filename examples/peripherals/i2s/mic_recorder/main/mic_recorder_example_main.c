@@ -132,10 +132,36 @@ static void record_from_pdm_microphone(uint8_t *pcm_data, size_t pcm_size)
 #endif
 
 #if CONFIG_EXAMPLE_MIC_TYPE_AMIC
+static i2s_chan_handle_t i2s_rx_init(void)
+{
+    /* Simplex RX. I2S_ROLE_MASTER: the SoC drives BCLK/WS (and optional MCLK)
+     * so the ES8389 can run as I2S slave. */
+    i2s_chan_handle_t rx_handle = NULL;
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(EXAMPLE_BITS_PER_SAMPLE, EXAMPLE_CHANNEL_COUNT),
+        .gpio_cfg = {
+            .mclk = CONFIG_EXAMPLE_I2S_MCLK_IO,
+            .bclk = CONFIG_EXAMPLE_I2S_BCLK_IO,
+            .ws = CONFIG_EXAMPLE_I2S_WS_IO,
+            .din = CONFIG_EXAMPLE_I2S_DIN_IO,
+            .dout = GPIO_NUM_NC,
+        },
+    };
+
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    /* Clocks must be running before the codec PLL is started over I2C. */
+    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+    return rx_handle;
+}
+
 static void record_from_es8389_microphone(uint8_t *pcm_data, size_t pcm_size)
 {
-    /* The analog signal is sampled by the ES8389 ADC. I2S RX receives its digital samples
-     * and, as bus master, generates the BCLK/WS (and optional MCLK) required by the codec. */
+    i2s_chan_handle_t rx_handle = i2s_rx_init();
+
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
     i2c_master_bus_config_t i2c_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -149,7 +175,6 @@ static void record_from_es8389_microphone(uint8_t *pcm_data, size_t pcm_size)
     };
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_cfg, &i2c_bus_handle));
 
-    /* I2C configures codec registers; PCM samples use I2S. */
     audio_codec_i2c_cfg_t i2c_cfg = {
         .bus_handle = i2c_bus_handle,
         .addr = ES8389_CODEC_DEFAULT_ADDR,
@@ -162,33 +187,12 @@ static void record_from_es8389_microphone(uint8_t *pcm_data, size_t pcm_size)
         .ctrl_if = ctrl_if,
         .codec_mode = ESP_CODEC_DEV_WORK_MODE_ADC,
         .pa_pin = GPIO_NUM_NC,
-        /* When MCLK is unused, the ES8389 derives its clock from BCLK. */
         .use_mclk = CONFIG_EXAMPLE_I2S_MCLK_IO >= 0,
         .mclk_div = EXAMPLE_MCLK_MULTIPLE,
     };
     const audio_codec_if_t *codec_if = es8389_codec_new(&es8389_cfg);
     ESP_ERROR_CHECK(codec_if ? ESP_OK : ESP_FAIL);
 
-    /* Recording needs only an RX channel. In master mode, RX also drives BCLK/WS. */
-    i2s_chan_handle_t rx_handle = NULL;
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
-
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(EXAMPLE_BITS_PER_SAMPLE, EXAMPLE_CHANNEL_COUNT),
-        .gpio_cfg = {
-            .mclk = CONFIG_EXAMPLE_I2S_MCLK_IO,
-            .bclk = CONFIG_EXAMPLE_I2S_BCLK_IO,
-            .ws = CONFIG_EXAMPLE_I2S_WS_IO,
-            .dout = GPIO_NUM_NC,
-            .din = CONFIG_EXAMPLE_I2S_DIN_IO,
-        },
-    };
-    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
-    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
-
-    /* Pass the already-configured RX channel to the codec data interface. */
     audio_codec_i2s_cfg_t i2s_cfg = {
         .rx_handle = rx_handle,
     };
@@ -200,8 +204,8 @@ static void record_from_es8389_microphone(uint8_t *pcm_data, size_t pcm_size)
         .codec_if = codec_if,
         .data_if = data_if,
     };
-    esp_codec_dev_handle_t codec_handle = esp_codec_dev_new(&dev_cfg);
-    ESP_ERROR_CHECK(codec_handle ? ESP_OK : ESP_FAIL);
+    esp_codec_dev_handle_t codec_dev = esp_codec_dev_new(&dev_cfg);
+    ESP_ERROR_CHECK(codec_dev ? ESP_OK : ESP_FAIL);
 
     esp_codec_dev_sample_info_t sample_cfg = {
         .bits_per_sample = EXAMPLE_BITS_PER_SAMPLE,
@@ -210,8 +214,8 @@ static void record_from_es8389_microphone(uint8_t *pcm_data, size_t pcm_size)
         .sample_rate = EXAMPLE_SAMPLE_RATE,
         .mclk_multiple = EXAMPLE_MCLK_MULTIPLE,
     };
-    ESP_ERROR_CHECK(esp_codec_dev_open(codec_handle, &sample_cfg));
-    ESP_ERROR_CHECK(esp_codec_dev_set_in_gain(codec_handle, CONFIG_EXAMPLE_MIC_GAIN));
+    ESP_ERROR_CHECK(esp_codec_dev_open(codec_dev, &sample_cfg));
+    ESP_ERROR_CHECK(esp_codec_dev_set_in_gain(codec_dev, CONFIG_EXAMPLE_MIC_GAIN));
     ESP_LOGI(TAG, "ES8389 codec initialized");
 
     /* Discard the startup PCM to skip the microphone or codec startup transient. */
@@ -219,9 +223,8 @@ static void record_from_es8389_microphone(uint8_t *pcm_data, size_t pcm_size)
     ESP_LOGI(TAG, "Starting ES8389 recording for %d seconds!", EXAMPLE_RECORD_TIME_SECONDS);
     capture_pcm(rx_handle, pcm_data, pcm_size);
 
-    /* Closing the input device disables RX before its channel is deleted. */
-    ESP_ERROR_CHECK(esp_codec_dev_close(codec_handle));
-    esp_codec_dev_delete(codec_handle);
+    ESP_ERROR_CHECK(esp_codec_dev_close(codec_dev));
+    esp_codec_dev_delete(codec_dev);
     ESP_ERROR_CHECK(audio_codec_delete_codec_if(codec_if));
     ESP_ERROR_CHECK(audio_codec_delete_data_if(data_if));
     ESP_ERROR_CHECK(audio_codec_delete_ctrl_if(ctrl_if));
