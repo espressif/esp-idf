@@ -241,6 +241,13 @@ The ROM ELF file is automatically loaded from a location based on the ``IDF_PATH
 
     Set environment variable ``ESP_MONITOR_DECODE`` to ``0`` or call esp_idf_monitor with specific command line option: ``python -m esp_idf_monitor --disable-address-decoding`` to disable address decoding.
 
+.. _idf-monitor-target-detection:
+
+Automatic Target Detection
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, ``idf.py monitor`` connects to the target that has been set for the project. However, on an unbuilt project where no target has been configured, it can connect to any target — it will automatically detect the chip on the default serial port and pass it to the monitor. This allows running ``idf.py monitor`` on a clean project without having to call ``idf.py set-target`` first.
+
 Target Reset on Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
