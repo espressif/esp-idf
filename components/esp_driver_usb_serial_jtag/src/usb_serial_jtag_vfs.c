@@ -704,12 +704,11 @@ esp_err_t usb_serial_jtag_vfs_dev_port_init(const esp_console_dev_usb_serial_jta
     return ESP_OK;
 }
 
-esp_err_t usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_config_t *config)
+void usb_serial_jtag_vfs_dev_port_deinit(const esp_console_dev_usb_serial_jtag_config_t *config)
 {
     (void)config;
     usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
-    return ESP_OK;
 }
 
 #endif

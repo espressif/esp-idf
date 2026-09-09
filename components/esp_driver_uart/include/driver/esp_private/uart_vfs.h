@@ -50,9 +50,8 @@ esp_err_t uart_vfs_dev_port_init(const esp_console_dev_uart_config_t *config,
  * console backend.
  *
  * @param config Pointer to the UART VFS device configuration.
- * @return ESP_OK if deinitialization completes successfully, or an error code if it fails.
  */
-esp_err_t uart_vfs_dev_port_deinit(const esp_console_dev_uart_config_t *config);
+void uart_vfs_dev_port_deinit(const esp_console_dev_uart_config_t *config);
 
 #ifdef __cplusplus
 }

@@ -14,6 +14,18 @@ extern "C" {
 
 #define ESP_VFS_DEV_CONSOLE "/dev/console"
 
+/**
+ * @brief Register the default console VFS backend(s) selected in Kconfig.
+ *
+ * Sets up the primary (and any Kconfig-selected secondary) console sink and
+ * mounts them under /dev/console. This function is automatically called from
+ * startup code to enable serial output; applications normally do not need to
+ * call it themselves.
+ *
+ * @return ESP_OK on success, or an error code from the underlying VFS registration.
+ */
+esp_err_t esp_stdio_register(void);
+
 #if CONFIG_VFS_SUPPORT_IO
 
 #include "esp_vfs_common.h"
@@ -134,7 +146,7 @@ esp_err_t esp_stdio_install_io_driver(void);
  * If a user has taken over the primary console with esp_stdio_push_primary(),
  * this function is a no-op.
  */
-esp_err_t esp_stdio_uninstall_io_driver(void);
+void esp_stdio_uninstall_io_driver(void);
 
 #ifdef __cplusplus
 }

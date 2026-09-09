@@ -30,7 +30,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 )
 def test_esp_system(dut: Dut) -> None:
     # esp32p4 32MB PSRAM initialize in startup takes more than 30 sec
-    dut.run_all_single_board_cases(timeout=120)
+    dut.run_all_single_board_cases(timeout=60)
 
 
 def esp_reset_and_wait_ready(dut: Dut) -> None:

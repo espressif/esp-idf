@@ -205,7 +205,7 @@ TEST_CASE("install/uninstall are no-ops with user primary", "[esp_stdio]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_push_primary(h));
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_install_io_driver());
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_uninstall_io_driver());
+    esp_stdio_uninstall_io_driver();
     TEST_ASSERT_EQUAL(0, mock_a.open_count);  /* driver not initialised by install */
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_pop_primary(NULL));

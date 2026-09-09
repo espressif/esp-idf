@@ -358,7 +358,7 @@ static const esp_vfs_fs_ops_t s_vfs_console = {
 #endif
 };
 
-static esp_err_t esp_stdio_register(void)
+esp_err_t esp_stdio_register(void)
 {
     _lock_init(&s_lock);
 

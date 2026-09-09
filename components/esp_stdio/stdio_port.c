@@ -73,30 +73,28 @@ esp_err_t esp_stdio_install_io_driver(void)
     return ret;
 }
 
-esp_err_t esp_stdio_uninstall_io_driver(void)
+void esp_stdio_uninstall_io_driver(void)
 {
 #if CONFIG_VFS_SUPPORT_IO
     /* If a user primary is registered, deinit is the caller's responsibility. */
     if (esp_stdio_has_user_primary()) {
-        return ESP_OK;
+        return;
     }
 #endif // CONFIG_VFS_SUPPORT_IO
 
-    esp_err_t ret = ESP_FAIL;
 #if CONFIG_IDF_TARGET_LINUX
     linux_port_config_t config = ESP_CONSOLE_DEV_LINUX_CONFIG_DEFAULT();
-    ret = linux_vfs_dev_port_deinit(&config);
+    linux_vfs_dev_port_deinit(&config);
 #elif CONFIG_VFS_SUPPORT_IO
 #if CONFIG_ESP_CONSOLE_UART
     esp_console_dev_uart_config_t config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    ret = uart_vfs_dev_port_deinit(&config);
+    uart_vfs_dev_port_deinit(&config);
 #elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
     esp_console_dev_usb_serial_jtag_config_t config = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
-    ret = usb_serial_jtag_vfs_dev_port_deinit(&config);
+    usb_serial_jtag_vfs_dev_port_deinit(&config);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     esp_console_dev_usb_cdc_config_t config = ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT();
-    ret = cdcacm_vfs_dev_port_deinit(&config);
+    cdcacm_vfs_dev_port_deinit(&config);
 #endif
 #endif
-    return ret;
 }
