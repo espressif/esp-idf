@@ -64,9 +64,8 @@ typedef struct {
  * source IDs: the frame source byte carries the bare enum value. */
 
 /* Statistic slots in the Internal Snapshot: every public source that can
- * produce frames, i.e. CUSTOM through ENCODE. INTERNAL frames carry their
- * own snapshot sequence in the frame header; REDIR is a raw console
- * stream. */
+ * produce core frames, i.e. CUSTOM through ENCODE. Snapshots share the
+ * Global SN but have no statistic slot; REDIR is a raw console stream. */
 #define BLE_LOG_SRC_CORE_FIRST                  BLE_LOG_SRC_CUSTOM
 #define BLE_LOG_SRC_CORE_COUNT                  (BLE_LOG_SRC_ENCODE - BLE_LOG_SRC_CORE_FIRST + 1)
 
@@ -93,6 +92,9 @@ typedef struct {
 typedef struct {
     uint32_t written_frame_cnt;
     uint32_t lost_frame_cnt;
+    /* Successfully committed logical frame bytes, including head and tail,
+     * excluding DMA padding. Not a physical-TX acknowledgement. */
+    uint32_t written_bytes_cnt;
 } __attribute__((packed)) ble_log_source_stat_t;
 
 /* Runtime per-source counters. The aligned wrapper keeps the embedded
@@ -104,18 +106,17 @@ typedef struct {
 
 #define BLE_LOG_GET_FRAME_SN(VAR)               BLE_LOG_ATOMIC_ADD_RELAXED(VAR, 1)
 
-/* One 24-bit Global SN is shared by the log sources except INTERNAL and
- * REDIR: consumed at API entry (before pool contention), it orders all
- * log attempts — including equal-timestamp records from different
- * sources — and every lost or rejected attempt leaves a gap. INTERNAL
- * snapshot frames, the periodic task-binding broadcast, and the REDIR
- * console stream keep their own separate sequences (a gap counts a
- * skipped snapshot, a skipped broadcast window, or a dropped console
- * batch). ble_log_init() resets all of them; its required INIT snapshot
- * starts a new receiver epoch. They stay continuous through FLUSH within
- * that epoch. The per-counter macros live next to their counters in the
- * owning translation units; the 24-bit wire field is enforced where the
- * frame meta is packed. */
+/* Core logs and INTERNAL snapshots share one 24-bit Global SN. Core logs
+ * consume it after entry validation and gate acceptance, before contention;
+ * failed log attempts leave gaps accounted for by lost_frame_cnt. Snapshots
+ * only consume it after acquiring their dedicated transport. Busy/skipped
+ * snapshots are not in core loss statistics and advance only the separate
+ * 24-bit anchor_count, never the Global SN.
+ * Task-binding broadcasts and REDIR retain independent header sequences.
+ * ble_log_init() resets every sequence; INIT starts a new receiver epoch.
+ * FLUSH resets interval statistics, but never the sequences or anchor count.
+ * Allocation order is not physical TX order; a snapshot is not a drain
+ * barrier. The wire SN is masked to 24 bits when frame_meta is packed. */
 
 /* -------------------------------- */
 /*     Internal Snapshot Frame      */
@@ -137,6 +138,9 @@ typedef struct {
 typedef struct {
     uint8_t int_src_code;
     uint16_t reason_flags;
+    /* Snapshot attempts (INIT/PERIODIC/FLUSH), including skipped points.
+     * Little-endian low 24 bits; the runtime counter remains uint32_t. */
+    uint8_t anchor_count[3];
     ble_log_version_info_t version_info;
 
     /* Clock samples captured at the same instant, mirroring
@@ -203,14 +207,14 @@ _Static_assert((BLE_LOG_POOL_TRANS_SIZE & 3U) == 0,
 #endif
 _Static_assert(sizeof(ble_log_version_info_t) == 58,
                "Unexpected BLE Log version information size");
-_Static_assert(sizeof(ble_log_source_stat_t) == 8,
+_Static_assert(sizeof(ble_log_source_stat_t) == 12,
                "Unexpected BLE Log source statistic size");
 _Static_assert(offsetof(ble_log_stat_mgr_t, counters) == 0 &&
-               sizeof(ble_log_stat_mgr_t) == 8,
+               sizeof(ble_log_stat_mgr_t) == 12,
                "stat manager layout must keep the counters word-aligned");
-_Static_assert(sizeof(ble_log_internal_snapshot_t) == 134,
+_Static_assert(sizeof(ble_log_internal_snapshot_t) == 165,
                "Unexpected BLE Log Internal Snapshot size");
-_Static_assert(BLE_LOG_INTERNAL_FRAME_LEN == 148,
+_Static_assert(BLE_LOG_INTERNAL_FRAME_LEN == 179,
                "Unexpected BLE Log Internal frame size");
 _Static_assert(BLE_LOG_INTERNAL_TRANS_SIZE >= BLE_LOG_INTERNAL_FRAME_LEN,
                "Internal transport is too small");

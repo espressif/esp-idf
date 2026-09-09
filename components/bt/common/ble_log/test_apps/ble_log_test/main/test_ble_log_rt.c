@@ -218,9 +218,18 @@ static void capture_version_info_frame(const test_ble_log_frame_t *frame, void *
     }
 }
 
+static uint32_t snapshot_anchor_count(const ble_log_internal_snapshot_t *snapshot)
+{
+    return (uint32_t)snapshot->anchor_count[0] |
+           ((uint32_t)snapshot->anchor_count[1] << 8) |
+           ((uint32_t)snapshot->anchor_count[2] << 16);
+}
+
 typedef struct {
     bool found;
     uint16_t reason_flags;
+    uint32_t sn;
+    uint32_t anchor_count;
 } first_snapshot_capture_t;
 
 static void capture_first_snapshot(const test_ble_log_frame_t *frame, void *ctx)
@@ -237,6 +246,8 @@ static void capture_first_snapshot(const test_ble_log_frame_t *frame, void *ctx)
     if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT) {
         capture->found = true;
         capture->reason_flags = snapshot.reason_flags;
+        capture->sn = frame->sn;
+        capture->anchor_count = snapshot_anchor_count(&snapshot);
     }
 }
 
@@ -288,19 +299,27 @@ TEST_CASE("BLE Log v8 framing matches golden bytes", "[ble_log][wire]")
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_SRC_ENCODE);
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_INT_SRC_VERSION_INFO);
     TEST_ASSERT_EQUAL_UINT8(8, BLE_LOG_INT_SRC_SNAPSHOT);
-    TEST_ASSERT_EQUAL_size_t(8, sizeof(ble_log_source_stat_t));
-    TEST_ASSERT_EQUAL_size_t(134, sizeof(ble_log_internal_snapshot_t));
+    TEST_ASSERT_EQUAL_size_t(12, sizeof(ble_log_source_stat_t));
+    TEST_ASSERT_EQUAL_size_t(165, sizeof(ble_log_internal_snapshot_t));
     TEST_ASSERT_EQUAL_size_t(
-        3, offsetof(ble_log_internal_snapshot_t, version_info));
+        3, offsetof(ble_log_internal_snapshot_t, anchor_count));
     TEST_ASSERT_EQUAL_size_t(
-        62, offsetof(ble_log_internal_snapshot_t, ts.lc_ts));
+        6, offsetof(ble_log_internal_snapshot_t, version_info));
     TEST_ASSERT_EQUAL_size_t(
-        66, offsetof(ble_log_internal_snapshot_t, ts.esp_ts));
+        65, offsetof(ble_log_internal_snapshot_t, ts.lc_ts));
     TEST_ASSERT_EQUAL_size_t(
-        70, offsetof(ble_log_internal_snapshot_t, ts.os_ts));
+        69, offsetof(ble_log_internal_snapshot_t, ts.esp_ts));
     TEST_ASSERT_EQUAL_size_t(
-        78, offsetof(ble_log_internal_snapshot_t, stats));
-    TEST_ASSERT_EQUAL_UINT32(148, BLE_LOG_INTERNAL_FRAME_LEN);
+        73, offsetof(ble_log_internal_snapshot_t, ts.os_ts));
+    TEST_ASSERT_EQUAL_size_t(
+        81, offsetof(ble_log_internal_snapshot_t, stats));
+    TEST_ASSERT_EQUAL_UINT32(179, BLE_LOG_INTERNAL_FRAME_LEN);
+    TEST_ASSERT_EQUAL_UINT32(180, BLE_LOG_INTERNAL_TRANS_SIZE);
+    const ble_log_internal_snapshot_t anchor_fixture = {
+        .anchor_count = {0x56, 0x34, 0x12},
+    };
+    TEST_ASSERT_EQUAL_size_t(3, sizeof(anchor_fixture.anchor_count));
+    TEST_ASSERT_EQUAL_HEX32(0x123456, snapshot_anchor_count(&anchor_fixture));
 #if CONFIG_BLE_LOG_LL_ENABLED
     TEST_ASSERT_EQUAL_UINT8(4, BLE_LOG_LL_FLAG_HCI);
     TEST_ASSERT_EQUAL_UINT8(7, BLE_LOG_LL_FLAG_HCI_UPSTREAM);
@@ -413,6 +432,8 @@ TEST_CASE("BLE Log INIT snapshot starts each receiver epoch", "[ble_log][wire]")
     TEST_ASSERT_TRUE(capture.found);
     TEST_ASSERT_EQUAL_HEX16(BLE_LOG_SNAPSHOT_REASON_INIT,
                             capture.reason_flags);
+    TEST_ASSERT_EQUAL_UINT32(0, capture.sn);
+    TEST_ASSERT_EQUAL_UINT32(0, capture.anchor_count);
 }
 
 TEST_CASE("BLE Log sync IO APIs retain runtime lifecycle checks", "[ble_log]")
@@ -1185,21 +1206,23 @@ TEST_CASE("BLE Log preserves LL payload and rejects oversized records",
     TEST_ASSERT_TRUE(captures[CUSTOM_BEFORE].found);
     TEST_ASSERT_FALSE(captures[CUSTOM_OVERSIZED].found);
     TEST_ASSERT_TRUE(captures[CUSTOM_AFTER].found);
-    TEST_ASSERT_EQUAL_HEX32(
-        (captures[CUSTOM_BEFORE].sn + 2) & 0x00ffffffU,
-        captures[CUSTOM_AFTER].sn);
+    /* Periodic snapshots may allocate additional Global SNs between writes. */
+    uint32_t custom_delta = (captures[CUSTOM_AFTER].sn -
+                             captures[CUSTOM_BEFORE].sn) & 0x00ffffffU;
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(2, custom_delta);
+    TEST_ASSERT_LESS_THAN_UINT32(0x00800000U, custom_delta);
 #if CONFIG_BLE_LOG_LL_ENABLED
     TEST_ASSERT_TRUE(captures[LL_BEFORE].found);
     TEST_ASSERT_FALSE(captures[LL_PRIMARY_OVERSIZED].found);
     TEST_ASSERT_FALSE(captures[LL_APPEND_OVERSIZED].found);
     TEST_ASSERT_TRUE(captures[LL_AFTER].found);
-    TEST_ASSERT_EQUAL_HEX32(
-        (captures[LL_BEFORE].sn + 3) & 0x00ffffffU,
-        captures[LL_AFTER].sn);
+    uint32_t ll_delta = (captures[LL_AFTER].sn - captures[LL_BEFORE].sn) & 0x00ffffffU;
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(3, ll_delta);
+    TEST_ASSERT_LESS_THAN_UINT32(0x00800000U, ll_delta);
 #endif
 }
 
-TEST_CASE("BLE Log flush preserves source-local sequence continuity",
+TEST_CASE("BLE Log flush snapshot consumes the continuous Global SN",
           "[ble_log][wire]")
 {
     const uint8_t before_marker = 0x71;
@@ -1240,7 +1263,11 @@ TEST_CASE("BLE Log flush preserves source-local sequence continuity",
     };
     read_sequence_frames(&after, 1);
     TEST_ASSERT_TRUE(after.found);
-    TEST_ASSERT_EQUAL_HEX32((before.sn + 1) & 0x00ffffffU, after.sn);
+    /* At least the FLUSH snapshot consumes a Global SN between the logs;
+     * periodic snapshots may consume additional numbers during the reads. */
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(
+        2, (after.sn - before.sn) & 0x00ffffffU);
+    TEST_ASSERT_LESS_THAN_UINT32(0x00800000U, (after.sn - before.sn) & 0x00ffffffU);
 }
 
 /* ------- pending-seal and deinit drain ------- */
@@ -2048,6 +2075,7 @@ TEST_CASE("BLE Log ESP Timer writers never wait for shared transports",
 
 typedef struct {
     uint32_t sn[SNAPSHOT_CAPTURE_MAX];
+    ble_log_internal_snapshot_t snapshot[SNAPSHOT_CAPTURE_MAX];
     int count;
 } snapshot_capture_t;
 
@@ -2065,7 +2093,8 @@ static void capture_snapshot_loss(const test_ble_log_frame_t *frame, void *ctx)
     if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT &&
             (snapshot.reason_flags & BLE_LOG_SNAPSHOT_REASON_PERIODIC) &&
             capture->count < SNAPSHOT_CAPTURE_MAX) {
-        capture->sn[capture->count++] = frame->sn;
+        capture->sn[capture->count] = frame->sn;
+        capture->snapshot[capture->count++] = snapshot;
     }
 }
 
@@ -2109,6 +2138,27 @@ TEST_CASE("BLE Log periodic snapshot ignores producer gate and fails fast when b
     TEST_ASSERT_TRUE(test_ble_log_walk_frames(
         s_read_buf, first_len, capture_snapshot_loss, &capture));
 
+    /* Interleave successful and rejected log attempts with snapshots. These
+     * consume Global SNs but must not consume snapshot anchor counts. */
+    static const uint8_t marker[] = {0xa5, 0x5a, 0x33};
+    static const uint8_t oversized[BLE_LOG_MAX_PAYLOAD_LEN] = {0};
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, marker, sizeof(marker)));
+    TEST_ASSERT_FALSE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, oversized, sizeof(oversized)));
+    uint32_t log_attempts = 2;
+    uint32_t handle;
+    uint8_t *claimed = ble_log_claim(BLE_LOG_SRC_ENCODE, sizeof(marker), &handle, true);
+    TEST_ASSERT_NOT_NULL(claimed);
+    memcpy(claimed, marker, sizeof(marker));
+    ble_log_commit(handle, sizeof(marker));
+    claimed = ble_log_claim(BLE_LOG_SRC_ENCODE, sizeof(marker), &handle, true);
+    TEST_ASSERT_NOT_NULL(claimed);
+    ble_log_commit(handle, 0); /* An aborted claim contributes no written bytes. */
+    log_attempts += 2;
+#if CONFIG_BLE_LOG_LL_ENABLED
+    ble_log_write_hex_ll(sizeof(marker), marker, 0, NULL, BIT(BLE_LOG_LL_FLAG_TASK));
+    log_attempts++;
+#endif
+
     TEST_ASSERT_TRUE(ble_log_internal_snapshot(
         BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, false));
     TEST_ASSERT_TRUE(ble_log_rt_drain());
@@ -2123,16 +2173,69 @@ TEST_CASE("BLE Log periodic snapshot ignores producer gate and fails fast when b
         TEST_ASSERT_TRUE(test_ble_log_walk_frames(
             s_read_buf, len, capture_snapshot_loss, &capture));
     }
-    /* The busy periodic attempt burned one snapshot SN: the gap in the
-     * snapshot sequence is the loss signal. */
+    /* Busy snapshots only advance anchor_count. Each captured snapshot and
+     * each ordinary log attempt consumes one Global SN; skipped snapshots
+     * must not create unaccounted gaps in that sequence. */
     TEST_ASSERT_GREATER_OR_EQUAL_INT(2, capture.count);
     bool gap_seen = false;
     for (int i = 1; i < capture.count; i++) {
-        if (((capture.sn[i] - capture.sn[i - 1]) & 0x00ffffffU) >= 2) {
+        if (((snapshot_anchor_count(&capture.snapshot[i]) -
+              snapshot_anchor_count(&capture.snapshot[i - 1])) & 0x00ffffffU) >= 2) {
             gap_seen = true;
         }
     }
     TEST_ASSERT_TRUE(gap_seen);
+    int last = capture.count - 1;
+    TEST_ASSERT_EQUAL_UINT32(
+        ((uint32_t)last + log_attempts) & 0x00ffffffU,
+        (capture.sn[last] - capture.sn[0]) & 0x00ffffffU);
+    const ble_log_source_stat_t *before_stat = &capture.snapshot[0].stats[0];
+    const ble_log_source_stat_t *after_stat = &capture.snapshot[last].stats[0];
+    TEST_ASSERT_EQUAL_UINT32(1, after_stat->written_frame_cnt - before_stat->written_frame_cnt);
+    TEST_ASSERT_EQUAL_UINT32(1, after_stat->lost_frame_cnt - before_stat->lost_frame_cnt);
+    TEST_ASSERT_EQUAL_UINT32(BLE_LOG_FRAME_OVERHEAD + sizeof(uint32_t) + sizeof(marker),
+                            after_stat->written_bytes_cnt - before_stat->written_bytes_cnt);
+    unsigned encode_slot = BLE_LOG_SRC_ENCODE - BLE_LOG_SRC_CORE_FIRST;
+    before_stat = &capture.snapshot[0].stats[encode_slot];
+    after_stat = &capture.snapshot[last].stats[encode_slot];
+    TEST_ASSERT_EQUAL_UINT32(1, after_stat->written_frame_cnt - before_stat->written_frame_cnt);
+    TEST_ASSERT_EQUAL_UINT32(1, after_stat->lost_frame_cnt - before_stat->lost_frame_cnt);
+    TEST_ASSERT_EQUAL_UINT32(BLE_LOG_FRAME_OVERHEAD + sizeof(uint32_t) + sizeof(marker),
+                            after_stat->written_bytes_cnt - before_stat->written_bytes_cnt);
+#if CONFIG_BLE_LOG_LL_ENABLED
+    unsigned ll_slot = BLE_LOG_SRC_LL_TASK - BLE_LOG_SRC_CORE_FIRST;
+    TEST_ASSERT_EQUAL_UINT32(BLE_LOG_FRAME_OVERHEAD + sizeof(marker),
+                            capture.snapshot[last].stats[ll_slot].written_bytes_cnt -
+                            capture.snapshot[0].stats[ll_slot].written_bytes_cnt);
+#endif
+
+    uint32_t previous_anchor = snapshot_anchor_count(&capture.snapshot[last]);
+    uint32_t previous_sn = capture.sn[last];
+    ble_log_prph_test_set_auto_recycle_hook(auto_recycle_noop, NULL);
+    ble_log_flush();
+    ble_log_prph_test_set_auto_recycle_hook(NULL, NULL);
+    capture.count = 0;
+    TEST_ASSERT_TRUE(ble_log_internal_snapshot(
+        BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, true));
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    for (int i = 0; i < BLE_LOG_TRANS_TOTAL_CNT && !capture.count; i++) {
+        size_t len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                           pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS), 0, NULL);
+        TEST_ASSERT_GREATER_THAN_size_t(0, len);
+        TEST_ASSERT_TRUE(test_ble_log_walk_frames(s_read_buf, len, capture_snapshot_loss, &capture));
+    }
+    TEST_ASSERT_GREATER_THAN_INT(0, capture.count);
+    TEST_ASSERT_EQUAL_UINT32(0, capture.snapshot[0].stats[0].written_frame_cnt);
+    TEST_ASSERT_EQUAL_UINT32(0, capture.snapshot[0].stats[0].lost_frame_cnt);
+    TEST_ASSERT_EQUAL_UINT32(0, capture.snapshot[0].stats[0].written_bytes_cnt);
+    TEST_ASSERT_EQUAL_UINT32(0, capture.snapshot[0].stats[encode_slot].written_bytes_cnt);
+    uint32_t anchor_delta = (snapshot_anchor_count(&capture.snapshot[0]) -
+                             previous_anchor) & 0x00ffffffU;
+    uint32_t sn_delta = (capture.sn[0] - previous_sn) & 0x00ffffffU;
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(2, anchor_delta); /* FLUSH + next sample */
+    TEST_ASSERT_LESS_THAN_UINT32(0x00800000U, anchor_delta);
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32(2, sn_delta);
+    TEST_ASSERT_LESS_OR_EQUAL_UINT32(anchor_delta, sn_delta);
 }
 
 #if CONFIG_BLE_LOG_LL_ENABLED
