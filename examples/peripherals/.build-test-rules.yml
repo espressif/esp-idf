@@ -196,6 +196,9 @@ examples/peripherals/i2s/i2s_advance/i2s_usb:
     - if: IDF_TARGET in ["esp32h4", "esp32s31"]
       temporary: true
       reason: usb_device_uac does not support esp32h4 or esp32s31
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16158)'
   depends_components:
     - esp_driver_i2s
     - esp_driver_dma
@@ -820,6 +823,9 @@ examples/peripherals/twai/twai_utils:
 examples/peripherals/twai/usb_twai_adapter:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1 or SOC_USB_OTG_SUPPORTED != 1
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16156)'
   depends_components:
     - esp_driver_twai
     - esp_hal_twai
@@ -853,6 +859,9 @@ examples/peripherals/uart/uart_echo_rs485:
 examples/peripherals/usb/device:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16156)'
   disable_test:
     - if: IDF_TARGET not in ["esp32s2", "esp32p4"]
       temporary: true
@@ -874,12 +883,18 @@ examples/peripherals/usb/device/cherryusb_serial_device:
 examples/peripherals/usb/device/tusb_cdc_acm_wakeup:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1 or SOC_PM_SUPPORT_USB_WAKEUP != 1
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16156)'
 
 examples/peripherals/usb/device/tusb_msc:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
     - if: CONFIG_NAME == "sdmmc" and SOC_SDMMC_HOST_SUPPORTED != 1
       reason: Only USB-OTG supported targets with SDMMC support
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16156)'
   disable_test:
     - if: IDF_TARGET not in ["esp32s2", "esp32p4"]
       temporary: true
@@ -895,6 +910,9 @@ examples/peripherals/usb/device/tusb_ncm:
     - if: SOC_USB_OTG_SUPPORTED != 1
     - if: (SOC_WIFI_SUPPORTED != 1) and (IDF_TARGET not in ["esp32p4"])
       reason: no integrated Wi-Fi (ESP32-P4 uses esp_wifi_remote with a co-processor)
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16156)'
   disable_test:
     - if: IDF_TARGET not in ["esp32s2"]
       temporary: true
