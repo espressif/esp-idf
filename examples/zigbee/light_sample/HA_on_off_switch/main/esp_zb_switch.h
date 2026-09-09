@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier:  LicenseRef-Included
+ * SPDX-License-Identifier: LicenseRef-Included
  *
  * Zigbee HA_on_off_switch Example
  *
@@ -11,34 +11,43 @@
  * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
  * CONDITIONS OF ANY KIND, either express or implied.
  */
-#include "esp_zigbee_core.h"
-#include "switch_driver.h"
 
-/* Zigbee configuration */
-#define MAX_CHILDREN                    10         /* the max amount of connected devices */
-#define INSTALLCODE_POLICY_ENABLE       false      /* enable the install code policy for security */
-#define HA_ONOFF_SWITCH_ENDPOINT        1          /* esp light switch device endpoint */
-#define ESP_ZB_PRIMARY_CHANNEL_MASK     (1l << 13) /* Zigbee primary channel mask use in the example */
+#pragma once
 
-/* Basic manufacturer information */
-#define ESP_MANUFACTURER_NAME "\x09""ESPRESSIF"      /* Customized manufacturer name */
-#define ESP_MODEL_IDENTIFIER "\x07"CONFIG_IDF_TARGET /* Customized model identifier */
+#define ESP_ZIGBEE_PRIMARY_CHANNEL_MASK   (1U << CONFIG_ZB_EXAMPLE_PRIMARY_CHANNEL)
+#define ESP_ZIGBEE_SECONDARY_CHANNEL_MASK CONFIG_ZB_EXAMPLE_SECONDARY_CHANNEL_MASK
 
-#define ESP_ZB_ZC_CONFIG()                                                              \
-    {                                                                                   \
-        .esp_zb_role = ESP_ZB_DEVICE_TYPE_COORDINATOR,                                  \
-        .install_code_policy = INSTALLCODE_POLICY_ENABLE,                               \
-        .nwk_cfg.zczr_cfg = {                                                           \
-            .max_children = MAX_CHILDREN,                                               \
-        },                                                                              \
+#define ESP_ZIGBEE_HA_ON_OFF_SWITCH_EP_ID (1)
+
+#define ESP_ZIGBEE_STORAGE_PARTITION_NAME "nvs"
+
+#define ESP_MANUFACTURER_NAME "\x09""ESPRESSIF"
+#define ESP_MODEL_IDENTIFIER  "\x07" CONFIG_IDF_TARGET
+
+#define ESP_ZIGBEE_ZED_CONFIG()                         \
+    {                                                   \
+        .device_type = EZB_NWK_DEVICE_TYPE_END_DEVICE,  \
+        .install_code_policy = false,                   \
+        .zed_config = {                                 \
+            .ed_timeout = EZB_NWK_ED_TIMEOUT_64MIN,     \
+            .keep_alive = 4000,                         \
+        },                                              \
     }
 
-#define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
-    {                                                           \
-        .radio_mode = ZB_RADIO_MODE_NATIVE,                     \
+#if CONFIG_SOC_IEEE802154_SUPPORTED
+#define ESP_ZIGBEE_PLATFORM_CONFIG()                                 \
+    {                                                                \
+        .storage_partition_name = ESP_ZIGBEE_STORAGE_PARTITION_NAME, \
+        .radio_config = {                                            \
+            .radio_mode = ESP_ZIGBEE_RADIO_MODE_NATIVE,              \
+        },                                                           \
     }
+#else
+#warning "The example is not for IEEE 802.15.4-disabled SoC usage, please refer to esp_zigbee_gateway for RCP configuration"
+#endif
 
-#define ESP_ZB_DEFAULT_HOST_CONFIG()                            \
-    {                                                           \
-        .host_connection_mode = ZB_HOST_CONNECTION_MODE_NONE,   \
-    }
+#define ESP_ZIGBEE_DEFAULT_CONFIG()                      \
+    {                                                    \
+        .device_config = ESP_ZIGBEE_ZED_CONFIG(),        \
+        .platform_config = ESP_ZIGBEE_PLATFORM_CONFIG(), \
+    };
