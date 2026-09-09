@@ -164,15 +164,36 @@ typedef enum esp_power_level esp_power_level_t;
 typedef enum esp_ble_power_type esp_ble_power_type_t;
 
 /**
- * @brief The enhanced type of which tx power, could set Advertising/Connection/Default and etc.
+ * @brief The enhanced type of which TX power, could set Advertising/Connection/Default and etc.
+ *
+ * This TX power type is used for the API `esp_ble_tx_power_set_enhanced()` and
+ * `esp_ble_tx_power_get_enhanced()`.
+ *
+ * @note
+ *       1. The connection / ISO TX power can only be set after the corresponding
+ *          link (ACL / BIS / CIS) is established. After disconnecting or
+ *          terminating the ISO stream, the corresponding TX power will not be affected.
+ *       2. `ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT` can be used to set the TX power for
+ *          power types that have not been set before, including Advertising, Scan,
+ *          Init, Connection and ISO types (BIG control / BIS / CIS).
+ *          It will not affect the TX power values which have already been set for
+ *          those power types.
+ *       3. If none of power type is set, the system will use the menuconfig default
+ *          TX power for all power types.
  */
 typedef enum {
-    ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT = 0,
-    ESP_BLE_ENHANCED_PWR_TYPE_ADV,
-    ESP_BLE_ENHANCED_PWR_TYPE_SCAN,
-    ESP_BLE_ENHANCED_PWR_TYPE_INIT,
-    ESP_BLE_ENHANCED_PWR_TYPE_CONN,
-    ESP_BLE_ENHANCED_PWR_TYPE_MAX,
+    ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT = 0, /*!< TX power for states that have not been set before
+                                                (including unset ISO types) */
+    ESP_BLE_ENHANCED_PWR_TYPE_ADV,         /*!< TX power for Advertising state */
+    ESP_BLE_ENHANCED_PWR_TYPE_SCAN,        /*!< TX power for Scanning state */
+    ESP_BLE_ENHANCED_PWR_TYPE_INIT,        /*!< TX power for Initiating state */
+    ESP_BLE_ENHANCED_PWR_TYPE_CONN,        /*!< TX power for Connection state */
+#if SOC_BLE_ISO_SUPPORTED
+    ESP_BLE_ENHANCED_PWR_TYPE_BIG_CTRL,    /*!< TX power for BIG control subevents */
+    ESP_BLE_ENHANCED_PWR_TYPE_BIS,         /*!< TX power for BIS */
+    ESP_BLE_ENHANCED_PWR_TYPE_CIS,         /*!< TX power for CIS */
+#endif // SOC_BLE_ISO_SUPPORTED
+    ESP_BLE_ENHANCED_PWR_TYPE_MAX,         /*!< Reserved */
 } esp_ble_enhanced_power_type_t;
 
 #if SOC_BLE_ISO_SUPPORTED
@@ -311,26 +332,46 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
 /**
- * @brief  ENHANCED API for Setting BLE TX power
- *         Connection Tx power should only be set after connection created.
- * @param  power_type : The enhanced type of which tx power, could set
- * Advertising/Connection/Default and etc
- * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power
- * types.
- * @param  power_level: Power level(index) corresponding to absolute value(dbm)
- * @return              ESP_OK - success, other - failed
+ * @brief  Set BLE TX power for the specified Advertising, Connection or ISO handle
+ *
+ * For the TX power type: `ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT`, `ESP_BLE_ENHANCED_PWR_TYPE_SCAN`,
+ * `ESP_BLE_ENHANCED_PWR_TYPE_INIT`, this API will ignore the input handle number, and set 0
+ * internally. Setting `ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT` also covers unset ISO power types
+ * (BIG control / BIS / CIS).
+ *
+ * For the TX power type: `ESP_BLE_ENHANCED_PWR_TYPE_ADV`, `ESP_BLE_ENHANCED_PWR_TYPE_CONN`,
+ * and ISO types `ESP_BLE_ENHANCED_PWR_TYPE_BIG_CTRL` / `ESP_BLE_ENHANCED_PWR_TYPE_BIS` /
+ * `ESP_BLE_ENHANCED_PWR_TYPE_CIS` (when `SOC_BLE_ISO_SUPPORTED`), this API will set the TX power
+ * for the target handle.
+ *
+ * @note Connection / ISO TX power should only be set after the corresponding link is created.
+ *
+ * @param  power_type  The enhanced type of TX power
+ * @param  handle      The handle of Advertising, Connection, BIG, BIS or CIS; use 0 for other
+ *                     enhanced power types
+ * @param  power_level Power level (index) corresponding to absolute value (dBm)
+ * @return             ESP_OK - success, other - failed
  */
 esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle,
                                         esp_power_level_t power_level);
 
 /**
- * @brief  ENHANCED API of Getting BLE TX power
- *         Connection Tx power should only be get after connection created.
- * @param  power_type : The enhanced type of which tx power, could set
- * Advertising/Connection/Default and etc
- * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power
- * types.
- * @return             >= 0 - Power level, < 0 - Invalid
+ * @brief  Get BLE TX power of the specified Advertising, Connection or ISO handle
+ *
+ * For the TX power type: `ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT`, `ESP_BLE_ENHANCED_PWR_TYPE_SCAN`,
+ * `ESP_BLE_ENHANCED_PWR_TYPE_INIT`, this API will ignore the input handle number.
+ *
+ * For the TX power type: `ESP_BLE_ENHANCED_PWR_TYPE_ADV`, `ESP_BLE_ENHANCED_PWR_TYPE_CONN`,
+ * and ISO types `ESP_BLE_ENHANCED_PWR_TYPE_BIG_CTRL` / `ESP_BLE_ENHANCED_PWR_TYPE_BIS` /
+ * `ESP_BLE_ENHANCED_PWR_TYPE_CIS` (when `SOC_BLE_ISO_SUPPORTED`), this API will return the TX
+ * power of the target handle.
+ *
+ * @note Connection / ISO TX power should only be get after the corresponding link is created.
+ *
+ * @param  power_type The enhanced type of TX power
+ * @param  handle     The handle of Advertising, Connection, BIG, BIS or CIS; use 0 for other
+ *                    enhanced power types
+ * @return            >= 0 - Power level, < 0 - Invalid
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type,
                                                 uint16_t handle);
