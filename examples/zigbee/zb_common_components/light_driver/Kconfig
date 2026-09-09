@@ -1,0 +1,13 @@
+menu "ESP Zigbee DevKit LED Configuration"
+
+    config GPIO_LED_ON_DEVKIT
+        int "LED GPIO on devkit"
+        default 8 if IDF_TARGET_ESP32H2
+        default 8 if IDF_TARGET_ESP32C6
+        default 27 if IDF_TARGET_ESP32C5
+        default 8
+
+        help
+            The GPIO connected to the LED on the devkits
+
+endmenu

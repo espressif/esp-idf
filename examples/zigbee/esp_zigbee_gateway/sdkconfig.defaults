@@ -8,12 +8,28 @@ CONFIG_PARTITION_TABLE_OFFSET=0x8000
 CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
-CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+#
+# Serial flasher config
+#
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+# end of Serial flasher config
 
 #
-# Zboss
+# Event
+#
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+#end of Event
+
+
+#
+# Zigbee
 #
 CONFIG_ZB_ENABLED=y
 CONFIG_ZB_ZCZR=y
-# end of Zboss
-# end of Component config
+# end of Zigbee
+
+#
+# ESP Zigbee gateway RCP update
+#
+CONFIG_AUTO_UPDATE_RCP=n
+# end of ESP Zigbee gateway RCP update

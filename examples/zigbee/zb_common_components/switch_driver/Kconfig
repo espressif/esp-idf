@@ -1,0 +1,27 @@
+menu "ESP Zigbee DevKit GPIO Configuration"
+    config GPIO_BOOT_ON_DEVKIT
+        int "BOOT GPIO on devkit"
+        default 9 if IDF_TARGET_ESP32H2
+        default 9 if IDF_TARGET_ESP32C6
+        default 28 if IDF_TARGET_ESP32C5
+        default 9
+
+        help
+            The GPIO connected to the BOOT button on the devkits
+
+    config GPIO_EXT1_WAKEUP_SOURCE
+        int "External wakeup GPIO"
+        default 9 if IDF_TARGET_ESP32H2
+        default 7 if IDF_TARGET_ESP32C6
+        default 7 if IDF_TARGET_ESP32S31
+        default 6 if IDF_TARGET_ESP32C5
+        range 7 14 if IDF_TARGET_ESP32H2
+        range 0 7 if IDF_TARGET_ESP32C6
+        range 0 7 if IDF_TARGET_ESP32S31
+        range 0 6 if IDF_TARGET_ESP32C5
+        default 9
+
+        help
+            The GPIO can be used as external wake up source for sleep device
+
+endmenu
