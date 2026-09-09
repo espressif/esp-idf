@@ -52,7 +52,9 @@ typedef bool (*async_crc_isr_cb_t)(async_crc_handle_t crc_hdl, async_crc_event_d
 typedef struct {
     uint32_t backlog;         /*!< Maximum number of pending CRC requests that can be queued per driver instance.
                                    Higher values use more memory but provide better throughput for bursty workloads. */
-    size_t dma_burst_size;    /*!< DMA transfer burst size, in bytes */
+    size_t dma_burst_size;    /*!< DMA transfer burst size, in bytes, must be a power of 2.
+                                   Set to 0 to use the driver default.
+                                   Set to 1 to disable the data burst. */
     uint32_t intr_priority;   /*!< DMA interrupt priority. 0 means default low/medium priority. */
 } async_crc_config_t;
 

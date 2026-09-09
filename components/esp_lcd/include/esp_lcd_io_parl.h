@@ -30,7 +30,7 @@ typedef struct {
     uint32_t pclk_hz;        /*!< Frequency of pixel clock */
     parlio_clock_source_t clk_src; /*!< Clock source for the Parlio peripheral */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
-    size_t dma_burst_size;     /*!< DMA burst size, in bytes */
+    size_t dma_burst_size;     /*!< DMA burst size, in bytes, must be a power of 2. Set to 0 to use the driver default. Set to 1 to disable the data burst. */
     size_t trans_queue_depth; /*!< Transaction queue size, larger queue, higher throughput */
     int lcd_cmd_bits;   /*!< Bit-width of LCD command */
     int lcd_param_bits; /*!< Bit-width of LCD parameter */

@@ -92,7 +92,11 @@ Select a DMA backend explicitly when installing the driver. The AHB GDMA backend
     :SOC_LP_AHB_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_lp_ahb`
     :SOC_DW_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_dw_gdma`
 
-For a single blocking copy, set :cpp:member:`async_memcpy_config_t::backlog` to 1. Increase it when multiple copies can be pending. :cpp:member:`async_memcpy_config_t::dma_burst_size` controls the burst size in bytes; start with 16 and tune it only after measuring your workload. Set :cpp:member:`async_memcpy_config_t::weight` to 0 unless weighted arbitration is supported and your application needs to adjust its average bus bandwidth.
+For a single blocking copy, set :cpp:member:`async_memcpy_config_t::backlog` to 1. Increase it when multiple copies can be pending.
+
+:cpp:member:`async_memcpy_config_t::dma_burst_size` controls the burst size in bytes; start with 16 and tune it only after measuring your workload. Set it to ``0`` to use the driver default (16 bytes), or to ``1`` to disable the data burst.
+
+Set :cpp:member:`async_memcpy_config_t::weight` to 0 unless weighted arbitration is supported and your application needs to adjust its average bus bandwidth.
 
 Scenario 2: Continue Working While DMA Copies
 ==============================================

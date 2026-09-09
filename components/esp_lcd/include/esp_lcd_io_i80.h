@@ -29,7 +29,7 @@ typedef struct {
     gpio_num_t data_gpio_nums[ESP_LCD_I80_BUS_WIDTH_MAX]; /*!< GPIOs used for data lines */
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
-    size_t dma_burst_size;     /*!< DMA burst size, in bytes */
+    size_t dma_burst_size;     /*!< DMA burst size, in bytes, must be a power of 2. Set to 0 to use the driver default. Set to 1 to disable the data burst. */
     /// Extra configuration flags for I80 bus
     struct extra_i80_bus_flags {
         uint32_t allow_pd: 1;   /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.

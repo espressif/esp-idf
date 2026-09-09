@@ -162,25 +162,20 @@ static void test_memory_copy_blocking(async_memcpy_handle_t driver)
         .align = 16,
     };
     for (int i = 0; i < sizeof(test_buffer_size) / sizeof(test_buffer_size[0]); i++) {
-        // Test different align edge
-        for (int off = 0; off < 4; off++) {
-            test_context.buffer_size = test_buffer_size[i];
-            test_context.seed = i;
-            if (!gdma_test_mspi_strict_alignment_required()) {
-                test_context.src_offset = off;
-                test_context.dst_offset = off;
-            }
-            async_memcpy_setup_testbench(&test_context);
+        test_context.buffer_size = test_buffer_size[i];
+        test_context.seed = i;
+        async_memcpy_setup_testbench(&test_context);
 
-            TEST_ESP_OK(esp_memcpy_blocking(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, -1));
-            async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, test_context.dst_buf,
-                                                    test_context.from_addr, test_context.to_addr);
-        }
+        TEST_ESP_OK(esp_memcpy_blocking(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, -1));
+        async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, test_context.dst_buf,
+                                                test_context.from_addr, test_context.to_addr);
     }
 }
 
 TEST_CASE("memory copy by DMA (blocking)", "[async mcp]")
 {
+    // Aligned copies with the driver default burst.
+    // Unaligned dest is covered by "memory copy with dest address unaligned" case.
     async_memcpy_config_t config = {
         .backlog = 1,
         .dma_burst_size = 0,
@@ -247,63 +242,83 @@ TEST_CASE("memory copy by DMA (blocking)", "[async mcp]")
     }
 }
 
-TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
+typedef esp_err_t (*test_mcp_install_fn)(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+
+// SRAM can disable burst to cover the unaligned software path on chips whose RX
+// burst requires dest alignment. PSRAM cannot: the external-memory block size
+// (e.g. ESP32-S3 ext_mem_bk_size) is programmed together with the burst size and
+// must match the cache line. Dest is cache-split so the DMA body stays aligned.
+[[maybe_unused]] static void test_unaligned_dest_with_backend(const char *name, test_mcp_install_fn install, bool psram_capable)
 {
-    [[maybe_unused]] async_memcpy_config_t driver_config = {
+    async_memcpy_config_t config = {
         .backlog = 4,
         .dma_burst_size = 32,
     };
-    [[maybe_unused]] async_memcpy_handle_t driver = NULL;
+    async_memcpy_handle_t driver = NULL;
 
+#if SOC_GDMA_SUPPORTED && (GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT || CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION)
+    config.dma_burst_size = 1;
+#endif
+
+    printf("Testing memcpy by %s\r\n", name);
+    TEST_ESP_OK(install(&config, &driver));
+    test_memcpy_with_dest_addr_unaligned(driver, false, false);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+
+#if SOC_HAS(SPIRAM)
+    if (psram_capable) {
+        config.dma_burst_size = 32;
+#if CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+        // Weighted arbitration still needs every buffer aligned to the burst
+        // size, including the TX source body. Keep burst disabled there.
+        config.dma_burst_size = 1;
+#endif
+        printf("Testing memcpy by %s (PSRAM)\r\n", name);
+        TEST_ESP_OK(install(&config, &driver));
+        test_memcpy_with_dest_addr_unaligned(driver, true, true);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+    }
+#else
+    (void)psram_capable;
+#endif // SOC_HAS(SPIRAM)
+}
+
+TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
+{
     if (gdma_test_mspi_strict_alignment_required()) {
         TEST_PASS_MESSAGE("MSPI strict alignment required (Flash Encryption / PSRAM ECC), skip this test");
     }
 
 #if SOC_CP_DMA_SUPPORTED
-    printf("Testing memcpy by CP DMA\r\n");
-    TEST_ESP_OK(esp_async_memcpy_install_cpdma(&driver_config, &driver));
-    test_memcpy_with_dest_addr_unaligned(driver, false, false);
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+    test_unaligned_dest_with_backend("CP DMA", esp_async_memcpy_install_cpdma, false);
 #endif // SOC_CP_DMA_SUPPORTED
 
-#if SOC_HAS(AHB_GDMA) && !GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT && !CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
-    printf("Testing memcpy by AHB GDMA\r\n");
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver));
-    test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if GDMA_LL_GET(AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
-    test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // GDMA_LL_GET(AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#if SOC_HAS(AHB_GDMA)
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
+    test_unaligned_dest_with_backend("AHB GDMA", esp_async_memcpy_install_gdma_ahb, true);
+#else
+    test_unaligned_dest_with_backend("AHB GDMA", esp_async_memcpy_install_gdma_ahb, false);
+#endif
 #endif // SOC_HAS(AHB_GDMA)
 
-#if SOC_HAS(AXI_GDMA) && !CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
-    printf("Testing memcpy by AXI GDMA\r\n");
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver));
-    test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if GDMA_LL_GET(AXI_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
-    test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // GDMA_LL_GET(AXI_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#if SOC_HAS(AXI_GDMA)
+#if GDMA_LL_GET(AXI_PSRAM_CAPABLE)
+    test_unaligned_dest_with_backend("AXI GDMA", esp_async_memcpy_install_gdma_axi, true);
+#else
+    test_unaligned_dest_with_backend("AXI GDMA", esp_async_memcpy_install_gdma_axi, false);
+#endif
 #endif // SOC_HAS(AXI_GDMA)
 
-#if SOC_HAS(LP_AHB_GDMA) && !CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
-    printf("Testing memcpy by LP AHB GDMA\r\n");
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver));
-    test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
-    test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE) && SOC_HAS(SPIRAM)
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#if SOC_HAS(LP_AHB_GDMA)
+#if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+    test_unaligned_dest_with_backend("LP AHB GDMA", esp_async_memcpy_install_gdma_lp_ahb, true);
+#else
+    test_unaligned_dest_with_backend("LP AHB GDMA", esp_async_memcpy_install_gdma_lp_ahb, false);
+#endif
 #endif // SOC_HAS(LP_AHB_GDMA)
 
 #if SOC_HAS(DW_GDMA)
-    printf("Testing memcpy by DW_GDMA\r\n");
-    TEST_ESP_OK(esp_async_memcpy_install_dw_gdma(&driver_config, &driver));
-    test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if SOC_HAS(SPIRAM)
-    test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // SOC_HAS(SPIRAM)
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+    test_unaligned_dest_with_backend("DW_GDMA", esp_async_memcpy_install_dw_gdma, true);
 #endif // SOC_HAS(DW_GDMA)
 }
 

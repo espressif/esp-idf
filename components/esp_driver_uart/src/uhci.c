@@ -204,7 +204,7 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
 
     gdma_transfer_config_t transfer_cfg = {
         .access_ext_mem = true,
-        .max_data_burst_size = config->dma_burst_size,
+        .max_data_burst_size = config->dma_burst_size ? config->dma_burst_size : UHCI_DEFAULT_DMA_BURST_SIZE,
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(uhci_ctrl->tx_dir.dma_chan, &transfer_cfg), TAG, "Config DMA tx channel transfer failed");
 

@@ -43,7 +43,7 @@ typedef struct {
  *
  * @param[in]   asrc_idx             ASRC hardware index
  * @param[in]   user_data            User context passed to GDMA callbacks
- * @param[in]   max_data_burst_size  Maximum data burst size
+ * @param[in]   max_data_burst_size  Maximum data burst size. Set to 0 to use the adapter default. Set to 1 to disable the data burst.
  * @param[out]  dma_tx_chan          Returned GDMA TX channel handle
  * @param[out]  dma_rx_chan          Returned GDMA RX channel handle
  *

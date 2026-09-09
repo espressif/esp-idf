@@ -30,6 +30,8 @@
 ESP_LOG_ATTR_TAG(TAG, "async_mcp.gdma");
 
 #define MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
+/// Default DMA burst size (in bytes), used when the user leaves `dma_burst_size` as 0
+#define MCP_GDMA_DEFAULT_BURST_SIZE  16
 
 /// @brief Transaction object for async memcpy
 typedef struct async_memcpy_transaction_t {
@@ -138,8 +140,10 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
         ESP_GOTO_ON_ERROR(gdma_set_weight(mcp_gdma->tx_channel, config->weight), err, TAG, "Set GDMA tx channel weight failed");
     }
 #endif
+    // Note: 0 means "unset" in the config struct, fall back to the driver default burst size.
+    // To disable the data burst explicitly, set `dma_burst_size` to 1.
     gdma_transfer_config_t transfer_cfg = {
-        .max_data_burst_size = config->dma_burst_size,
+        .max_data_burst_size = config->dma_burst_size ? config->dma_burst_size : MCP_GDMA_DEFAULT_BURST_SIZE,
         .access_ext_mem = true, // allow to do memory copy from/to external memory
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(mcp_gdma->tx_channel, &transfer_cfg), err, TAG, "config transfer for tx channel failed");
