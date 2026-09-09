@@ -67,7 +67,7 @@ On boot you should see, in order:
 
 ## Testing Zigbee Join
 
-Flash another ESP32 (capable of 802.15.4) with `examples/zigbee/light_sample/HA_on_off_light`. After this host forms the Zigbee network and opens the network for 180 s, the light sample should join automatically.
+Flash another ESP32 (capable of 802.15.4) with `examples/zigbee/light_sample/HA_on_off_switch`. After this host forms the Zigbee network and opens the network for 180 s, the Zigbee On/Off switch sample should join automatically.
 
 Then bring up Wi-Fi and Thread the usual way:
 
