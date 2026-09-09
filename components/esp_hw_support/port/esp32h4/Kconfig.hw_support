@@ -1,6 +1,6 @@
 choice ESP32H4_REV_MIN
     prompt "Minimum Supported ESP32-H4 Revision"
-    default ESP32H4_REV_MIN_0
+    default ESP32H4_REV_MIN_2
     help
         Required minimum chip revision. ESP-IDF will check for it and
         reject to boot if the chip revision fails the check.
@@ -9,15 +9,12 @@ choice ESP32H4_REV_MIN
         The complied binary will only support chips above this revision,
         this will also help to reduce binary size.
 
-    config ESP32H4_REV_MIN_0
-        bool "Rev v0.0"
     config ESP32H4_REV_MIN_2
         bool "Rev v0.2"
 endchoice
 
 config ESP32H4_REV_MIN_FULL
     int
-    default 0 if ESP32H4_REV_MIN_0
     default 2 if ESP32H4_REV_MIN_2
 
 config ESP_REV_MIN_FULL
