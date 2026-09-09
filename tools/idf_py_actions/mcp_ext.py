@@ -14,6 +14,8 @@ from typing import Any
 
 from esp_idf_monitor.base.constants import EXIT_EXPECT_TIMEOUT
 from esp_idf_monitor.base.constants import EXIT_SCRIPT_ERROR
+from esp_pylib.logger import log
+from esp_pylib.serial_ports import get_port_names
 from rich_click import Context
 
 from idf_py_actions.errors import FatalError
@@ -98,7 +100,7 @@ def _is_valid_project_dir(directory: str) -> bool:
     normalised_patterns = [''.join(p.split()) for p in CMAKE_PROJECT_LINE]
 
     try:
-        with open(str(cmakelists_path), encoding='utf-8') as f:
+        with open(cmakelists_path, encoding='utf-8') as f:
             for line in f:
                 line_normalised = ''.join(line.split())
                 if any(line_normalised.startswith(pattern) for pattern in normalised_patterns):
@@ -389,6 +391,8 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def start_mcp_server(action_name: str, ctx: Context, args: PropertyDict, **kwargs: Any) -> None:
         """Start MCP server for ESP-IDF project integration"""
+        # MCP stdio transport consumes stdout; keep informational output on stderr.
+        log.set_info_stream(sys.stderr)
 
         if not MCP_AVAILABLE:
             raise FatalError(
@@ -403,7 +407,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         # the MCP client knows when (not) to pass project_dir.
         startup_default_dir = resolve_default_project_dir(project_path)
         if startup_default_dir is not None:
-            print(f'INFO: Starting ESP-IDF MCP Server. Default project: {startup_default_dir}', file=sys.stderr)
+            log.note(f'Starting ESP-IDF MCP Server. Default project: {startup_default_dir}')
             bound_hint = (
                 f"This MCP server was launched with '{startup_default_dir}' as the default ESP-IDF "
                 'project. Leave project_dir as None to operate on this project. Only set project_dir '
@@ -411,11 +415,10 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 'user explicitly asks to operate on a different ESP-IDF project.'
             )
         else:
-            print(
-                'INFO: Starting ESP-IDF MCP Server. No project directory configured at startup. '
+            log.note(
+                'Starting ESP-IDF MCP Server. No project directory configured at startup. '
                 'Pass project_dir in each tool call, or set IDF_MCP_WORKSPACE_FOLDER, '
-                'or restart with: idf.py -C <project_dir> mcp-server',
-                file=sys.stderr,
+                'or restart with: idf.py -C <project_dir> mcp-server'
             )
             bound_hint = (
                 'This MCP server was launched without a project context. You MUST pass project_dir '
@@ -452,16 +455,16 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     effective_dir,
                     'build',
                 ]
-                print(f'INFO: Building project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
+                log.note(f'Building project with command: {" ".join(cmd)} in path: {effective_dir}')
                 result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
-                    print('INFO: Build successful', file=sys.stderr)
+                    log.note('Build successful')
                     return 'Successfully built project'
                 else:
-                    print(f'ERROR: Build failed: {result.stderr}', file=sys.stderr)
+                    log.err(f'Build failed: {result.stderr}')
                     return f'Build failed: {result.stderr}'
             except Exception as e:
-                print(f'ERROR: Build failed: {str(e)}', file=sys.stderr)
+                log.err(f'Build failed: {e}')
                 return f'Build failed: {str(e)}'
 
         @mcp.tool(
@@ -493,16 +496,16 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     'set-target',
                     target,
                 ]
-                print(f'INFO: Setting target with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
+                log.note(f'Setting target with command: {" ".join(cmd)} in path: {effective_dir}')
                 result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
-                    print(f'INFO: Target set to: {target}', file=sys.stderr)
+                    log.note(f'Target set to: {target}')
                     return f'Target set to: {target}'
                 else:
-                    print(f'ERROR: Failed to set target: {result.stderr}', file=sys.stderr)
+                    log.err(f'Failed to set target: {result.stderr}')
                     return f'Failed to set target: {result.stderr}'
             except Exception as e:
-                print(f'ERROR: Failed to set target: {str(e)}', file=sys.stderr)
+                log.err(f'Failed to set target: {e}')
                 return f'Error setting target: {str(e)}'
 
         @mcp.tool(
@@ -535,17 +538,17 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     '-C',
                     effective_dir,
                 ] + flash_args
-                print(f'INFO: Flashing project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
+                log.note(f'Flashing project with command: {" ".join(cmd)} in path: {effective_dir}')
                 result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
                 if result.returncode == 0:
-                    print('INFO: Flash successful', file=sys.stderr)
+                    log.note('Flash successful')
                     return f'Successfully flashed project{" to port " + port if port else ""}'
                 else:
-                    print(f'ERROR: Flash failed: {result.stderr}', file=sys.stderr)
+                    log.err(f'Flash failed: {result.stderr}')
                     return f'Flash failed: {result.stderr}'
             except Exception as e:
-                print(f'ERROR: Flash failed: {str(e)}', file=sys.stderr)
+                log.err(f'Flash failed: {e}')
                 return f'Error flashing: {str(e)}'
 
         @mcp.tool(
@@ -628,8 +631,8 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             if no_reset:
                 cmd.append('--no-reset')
 
-            print(f'INFO: Running monitor: {" ".join(cmd)} (hard timeout {hard_timeout:g}s)', file=sys.stderr)
-            print(f'INFO: Monitor script:\n{script}', file=sys.stderr)
+            log.note(f'Running monitor: {" ".join(cmd)} (hard timeout {hard_timeout:g}s)')
+            log.note(f'Monitor script:\n{script}')
 
             try:
                 result = subprocess.run(
@@ -643,7 +646,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     timeout=hard_timeout,
                 )
             except subprocess.TimeoutExpired as e:
-                print(f'ERROR: Monitor killed after {hard_timeout:g}s', file=sys.stderr)
+                log.note(f'Monitor killed after {hard_timeout:g}s')
                 output = decode_stream(e.output)
                 parts = [
                     f'The monitor did not exit on its own and was killed after {hard_timeout:g} seconds '
@@ -656,10 +659,10 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     parts.append(f'Last output before the kill:\n{output_tail}')
                 return '\n'.join(parts)
             except Exception as e:
-                print(f'ERROR: Monitor failed to run: {e}', file=sys.stderr)
+                log.err(f'Monitor failed to run: {e}')
                 return f'Failed to run the monitor: {e}'
 
-            print(f'INFO: Monitor exited with code {result.returncode}', file=sys.stderr)
+            log.note(f'Monitor exited with code {result.returncode}')
             output = result.stdout or ''
             parts = [_monitor_status(result.returncode), _save_monitor_output(output)]
             if result.returncode != 0:
@@ -696,18 +699,18 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     'create-project',
                     name,
                 ]
-                print(f'INFO: Creating project "{name}" in {parent_dir}', file=sys.stderr)
+                log.note(f'Creating project "{name}" in {parent_dir}')
                 result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
                     project_path_new = os.path.join(parent_dir, name)
-                    print(f'INFO: Project "{name}" created at {project_path_new}', file=sys.stderr)
+                    log.note(f'Project "{name}" created at {project_path_new}')
                     return f'Project "{name}" created at {project_path_new}'
                 else:
                     output = result.stderr or result.stdout
-                    print(f'ERROR: Failed to create project: {output}', file=sys.stderr)
+                    log.err(f'Failed to create project: {output}')
                     return f'Failed to create project "{name}": {output}'
             except Exception as e:
-                print(f'ERROR: Failed to create project: {str(e)}', file=sys.stderr)
+                log.err(f'Failed to create project: {e}')
                 return f'Failed to create project "{name}": {str(e)}'
 
         @mcp.tool(description=f'Remove build artifacts from the ESP-IDF project (runs `idf.py clean`). {bound_hint}')
@@ -732,16 +735,16 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     effective_dir,
                     'clean',
                 ]
-                print(f'INFO: Cleaning project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
+                log.note(f'Cleaning project with command: {" ".join(cmd)} in path: {effective_dir}')
                 result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
                 if result.returncode == 0:
-                    print('INFO: Project cleaned successfully', file=sys.stderr)
+                    log.note('Project cleaned successfully')
                     return 'Project cleaned successfully'
                 else:
-                    print(f'ERROR: Clean failed: {result.stderr}', file=sys.stderr)
+                    log.err(f'Clean failed: {result.stderr}')
                     return f'Clean failed: {result.stderr}'
             except Exception as e:
-                print(f'ERROR: Error cleaning: {str(e)}', file=sys.stderr)
+                log.err(f'Error cleaning: {e}')
                 return f'Error cleaning: {str(e)}'
 
         # === RESOURCES (Data Access) ===
@@ -810,10 +813,8 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         def get_connected_devices() -> str:
             """Get list of connected devices"""
             try:
-                import serial.tools.list_ports
-
-                devices_on_ports = [p.device.strip() for p in serial.tools.list_ports.comports()]
-                print(f'Devices: {devices_on_ports}', file=sys.stderr)
+                devices_on_ports = [name.strip() for name in get_port_names()]
+                log.note(f'Devices: {devices_on_ports}')
                 devices = {'available_ports': devices_on_ports if devices_on_ports else []}
                 return json.dumps(devices, indent=2)
             except Exception as e:
@@ -821,14 +822,14 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
         # Start the MCP server. Diagnostics should go to stderr — stdout is reserved
         # for the JSON-RPC transport and any non-JSON bytes can confuse MCP clients.
-        print('MCP Server running on stdio...', file=sys.stderr)
+        log.note('MCP Server running on stdio...')
 
         try:
             mcp.run()
         except KeyboardInterrupt:
-            print('\nMCP Server stopped.', file=sys.stderr)
+            log.note('MCP Server stopped.')
         except Exception as e:
-            print(f'MCP Server error: {e}', file=sys.stderr)
+            log.err(f'MCP Server error: {e}')
 
     # Return the action extension
     return {

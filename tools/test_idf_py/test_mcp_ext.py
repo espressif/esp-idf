@@ -95,6 +95,24 @@ def mcp_ext(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[types.Modu
     rich_click = types.ModuleType('rich_click')
     rich_click.Context = object  # type: ignore[attr-defined]
 
+    # Stub esp_pylib modules used by mcp_ext
+    esp_pylib_pkg = types.ModuleType('esp_pylib')
+    logger_mod = types.ModuleType('esp_pylib.logger')
+    serial_ports_mod = types.ModuleType('esp_pylib.serial_ports')
+
+    class _MockLog:
+        def note(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def err(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def set_info_stream(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    logger_mod.log = _MockLog()  # type: ignore[attr-defined]
+    serial_ports_mod.get_port_names = lambda **kwargs: []  # type: ignore[attr-defined]
+
     # Stub idf_py_actions hierarchy
     idf_py_actions_pkg = types.ModuleType('idf_py_actions')
     errors_mod = types.ModuleType('idf_py_actions.errors')
@@ -127,6 +145,9 @@ def mcp_ext(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[types.Modu
 
     stubs = {
         'rich_click': rich_click,
+        'esp_pylib': esp_pylib_pkg,
+        'esp_pylib.logger': logger_mod,
+        'esp_pylib.serial_ports': serial_ports_mod,
         'idf_py_actions': idf_py_actions_pkg,
         'idf_py_actions.errors': errors_mod,
         'idf_py_actions.tools': tools_mod,
