@@ -13,7 +13,7 @@ ESP Trace
 应用示例
 --------
 
-- :example:`system/esp_trace_custom_library` 演示如何将外部跟踪库（编码器）与 ``esp_trace`` 核心集成。
+- :example:`system/tracing/esp_trace_custom_library` 演示如何将外部跟踪库（编码器）与 ``esp_trace`` 核心集成。
 
 API 参考
 --------

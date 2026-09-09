@@ -271,6 +271,14 @@ class OpenOCD:
             return ''
         return to_str(resp)
 
+    def consume_output(self, duration: float) -> None:
+        if self.telnet is None:
+            return
+        end = time.time() + duration
+        while time.time() < end:
+            self.telnet.read_very_eager()
+            time.sleep(0.05)
+
     def apptrace_wait_stop(self, timeout: int = 30) -> None:
         stopped = False
         end_before = time.time() + timeout

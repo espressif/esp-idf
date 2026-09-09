@@ -5,7 +5,7 @@
     Build example `sysview_tracing_heap_log` project.
 
     ```
-    cd $IDF_PATH/examples/system/sysview_tracing_heap_log
+    cd $IDF_PATH/examples/system/tracing/sysview_tracing_heap_log
     idf.py set target esp32
     idf.py build
     cp build/sysview_tracing_heap_log.elf $IDF_PATH/tools/esp_app_trace/test/sysview/
@@ -18,12 +18,12 @@
     Flash the example and run OpenOCD and GDB using the following command in a separate console
 
     ```
-    cd $IDF_PATH/examples/system/sysview_tracing_heap_log
+    cd $IDF_PATH/examples/system/tracing/sysview_tracing_heap_log
     idf.py openocd
     ```
 
     ```
-    cd $IDF_PATH/examples/system/sysview_tracing_heap_log
+    cd $IDF_PATH/examples/system/tracing/sysview_tracing_heap_log
     xtensa-esp32-elf-gdb -x $IDF_PATH/tools/esp_app_trace/test/sysview/gdbinit build/sysview_tracing_heap_log.elf
     ```
     When program stops at `heap_trace_stop`  quit GDB and OpenOCD
@@ -39,12 +39,12 @@
     Flash the example and run OpenOCD and GDB using the following command in a separate console
 
     ```
-    cd $IDF_PATH/examples/system/sysview_tracing_heap_log
+    cd $IDF_PATH/examples/system/tracing/sysview_tracing_heap_log
     idf.py openocd
     ```
 
     ```
-    cd $IDF_PATH/examples/system/sysview_tracing_heap_log
+    cd $IDF_PATH/examples/system/tracing/sysview_tracing_heap_log
     xtensa-esp32-elf-gdb -x $IDF_PATH/tools/esp_app_trace/test/sysview/gdbinit-mcore build/sysview_tracing_heap_log.elf
     ```
     When program stops at `heap_trace_stop`  quit GDB and OpenOCD
