@@ -1133,6 +1133,19 @@ again:
     p_ccb->le_coc_xmit_busy = FALSE;
 }
 
+/* Number of SDU buffers this channel currently owns for transmission. The SDU
+ * under fragmentation was already dequeued but still holds its buffer, so it
+ * counts towards the channel's footprint. */
+static UINT16 l2c_ble_le_coc_xmit_depth(tL2C_CCB *p_ccb)
+{
+    UINT16 depth = fixed_queue_length(p_ccb->xmit_hold_q);
+
+    if (p_ccb->le_coc_tx_sdu != NULL) {
+        depth++;
+    }
+    return depth;
+}
+
 UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data)
 {
     tL2C_CCB *p_ccb;
@@ -1150,6 +1163,19 @@ UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data)
     if (p_data->len > p_ccb->peer_conn_cfg.mtu) {
         L2C_BLE_COC_TRACE_WARN("SDU too large lcid=0x%04x len=%u mtu=%u",
                                lcid, p_data->len, p_ccb->peer_conn_cfg.mtu);
+        osi_free(p_data);
+        return L2CAP_DW_FAILED;
+    }
+
+    /* Refuse the SDU rather than let xmit_hold_q grow without bound: a caller
+     * that cannot observe L2CAP_DW_CONGESTED (BTA_GATTS_HandleValueIndication
+     * returns void, so esp_ble_gatts_send_indicate never sees it) would
+     * otherwise keep queueing until the heap is exhausted. L2CAP_DW_FAILED maps
+     * to GATT_INTERNAL_ERROR in attp_send_msg_to_l2cap, which does reach a GATT
+     * server through BTA_GATTS_CONF_EVT. */
+    if (l2c_ble_le_coc_xmit_depth(p_ccb) >= L2CAP_LE_COC_MAX_XMIT_SDU) {
+        L2C_BLE_COC_TRACE_WARN("xmit queue full lcid=0x%04x depth=%u, drop SDU len=%u",
+                               lcid, L2CAP_LE_COC_MAX_XMIT_SDU, p_data->len);
         osi_free(p_data);
         return L2CAP_DW_FAILED;
     }
@@ -1187,6 +1213,29 @@ BOOLEAN l2c_ble_le_coc_is_congested(UINT16 lcid)
         return TRUE;
     }
     return FALSE;
+}
+
+UINT16 l2c_ble_le_coc_get_sendable_num(UINT16 lcid)
+{
+    tL2C_CCB *p_ccb;
+    UINT16 depth;
+
+    p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
+    if (p_ccb == NULL || !p_ccb->le_coc_active || p_ccb->chnl_state != CST_OPEN) {
+        return 0;
+    }
+
+    /* Without a TX credit the peer cannot accept another K-frame, so anything
+     * handed down now would only sit in xmit_hold_q holding heap. */
+    if (p_ccb->peer_conn_cfg.credits == 0) {
+        return 0;
+    }
+
+    depth = l2c_ble_le_coc_xmit_depth(p_ccb);
+    if (depth >= L2CAP_LE_COC_MAX_XMIT_SDU) {
+        return 0;
+    }
+    return (UINT16)(L2CAP_LE_COC_MAX_XMIT_SDU - depth);
 }
 
 BOOLEAN l2c_ble_le_coc_give_credits(UINT16 lcid, UINT16 credits)

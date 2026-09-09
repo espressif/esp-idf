@@ -550,18 +550,16 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
 ** Returns          void
 **
 *******************************************************************************/
-static void gatt_channel_congestion(tGATT_TCB *p_tcb, BOOLEAN congested)
+void gatt_notify_app_congestion(tGATT_TCB *p_tcb, BOOLEAN congested)
 {
     UINT8 i = 0;
     tGATT_REG *p_reg = NULL;
     UINT16 conn_id;
-#if (GATTC_INCLUDED == TRUE)
-    /* if uncongested, check to see if there is any more pending data */
-    if (p_tcb != NULL && congested == FALSE) {
-        gatt_cl_send_next_cmd_inq(p_tcb);
+
+    if (p_tcb == NULL) {
+        return;
     }
-#endif  ///GATTC_INCLUDED == TRUE
-    /* notifying all applications for the connection up event */
+
     for (i = 0, p_reg = gatt_cb.cl_rcb ; i < GATT_MAX_APPS; i++, p_reg++) {
         if (p_reg->in_use) {
             if (p_reg->app_cb.p_congestion_cb) {
@@ -570,6 +568,18 @@ static void gatt_channel_congestion(tGATT_TCB *p_tcb, BOOLEAN congested)
             }
         }
     }
+}
+
+static void gatt_channel_congestion(tGATT_TCB *p_tcb, BOOLEAN congested)
+{
+#if (GATTC_INCLUDED == TRUE)
+    /* if uncongested, check to see if there is any more pending data */
+    if (p_tcb != NULL && congested == FALSE) {
+        gatt_cl_send_next_cmd_inq(p_tcb);
+    }
+#endif  ///GATTC_INCLUDED == TRUE
+    /* notifying all applications for the connection up event */
+    gatt_notify_app_congestion(p_tcb, congested);
 }
 
 /*******************************************************************************

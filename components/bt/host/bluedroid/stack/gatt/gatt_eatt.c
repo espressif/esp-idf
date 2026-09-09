@@ -61,6 +61,7 @@ typedef struct {
     UINT16  peer_cl_feat_handle;
     UINT8   peer_cl_feat_val;   /* current Client Supported Features value read back */
     UINT8   tx_rr;              /* round-robin cursor for server-initiated PDUs */
+    BOOLEAN congested;          /* last congestion state reported to the applications */
     tGATT_EATT_BEARER bearers[GATT_EATT_MAX_CHAN];
 } tGATT_EATT_CONN;
 
@@ -168,6 +169,10 @@ static tGATT_EATT_BEARER *gatt_eatt_alloc_bearer(tGATT_EATT_CONN *ec, UINT16 lci
     return NULL;
 }
 
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec);
+#endif
+
 static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
 {
     BD_ADDR peer_bda;
@@ -224,6 +229,12 @@ static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
             p_tcb->eatt_att_mtu = 0;
         }
     }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    /* Losing a bearer frees up the connection's aggregate TX headroom. Without
+     * this, a bearer that congested and then disconnected would leave the
+     * applications throttled for the rest of the connection. */
+    gatt_eatt_relax_congestion(ec);
+#endif
 }
 
 static void gatt_eatt_free_conn(tGATT_EATT_CONN *ec)
@@ -818,9 +829,101 @@ static void gatt_eatt_disconnect_ind(UINT16 lcid, BOOLEAN local_init)
     }
 }
 
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+/* Sum the TX headroom of the bearers a server-initiated PDU can actually reach.
+ * Mirrors gatt_eatt_get_server_tx_bearer's bearer choice without advancing its
+ * round-robin cursor, so this stays a pure query. */
+static UINT16 gatt_eatt_sendable_num(tGATT_EATT_CONN *ec)
+{
+    UINT32 num = 0;
+
+    if (ec->default_lcid != 0 && gatt_eatt_find_bearer(ec, ec->default_lcid) != NULL) {
+        return l2c_ble_le_coc_get_sendable_num(ec->default_lcid);
+    }
+
+    for (int i = 0; i < GATT_EATT_MAX_CHAN; i++) {
+        if (ec->bearers[i].in_use) {
+            num += l2c_ble_le_coc_get_sendable_num(ec->bearers[i].lcid);
+        }
+    }
+    return (num > 0xFFFF) ? 0xFFFF : (UINT16)num;
+}
+
+BOOLEAN gatt_eatt_get_sendable_num(BD_ADDR bd_addr, UINT16 *p_num)
+{
+    tGATT_EATT_CONN *ec = gatt_eatt_find_conn_by_bda(bd_addr);
+
+    if (ec == NULL || ec->bearer_count == 0) {
+        return FALSE;
+    }
+    if (p_num != NULL) {
+        *p_num = gatt_eatt_sendable_num(ec);
+    }
+    return TRUE;
+}
+
+static void gatt_eatt_report_congestion(tGATT_EATT_CONN *ec, BOOLEAN congested)
+{
+    tGATT_TCB *p_tcb;
+
+    if (congested == ec->congested) {
+        return;
+    }
+
+    p_tcb = gatt_find_tcb_by_addr(ec->peer_bda, BT_TRANSPORT_LE);
+    if (p_tcb == NULL) {
+        return;
+    }
+
+    ec->congested = congested;
+    GATT_EATT_TRACE_DEBUG("congestion conn_id=%u congested=%u", ec->conn_id, congested);
+    gatt_notify_app_congestion(p_tcb, congested);
+}
+
+static void gatt_eatt_update_congestion(tGATT_EATT_CONN *ec)
+{
+    if (ec == NULL || !ec->in_use) {
+        return;
+    }
+
+    /* The application-facing congestion event is per connection while credits
+     * are per bearer, and server PDUs round-robin over every bearer. Report the
+     * connection congested only once no bearer has room left; reporting on the
+     * first congested bearer would stall a server that still has usable ones. */
+    gatt_eatt_report_congestion(ec, (ec->bearer_count != 0) &&
+                                    (gatt_eatt_sendable_num(ec) == 0));
+}
+
+/* Losing a bearer may only clear congestion, never assert it. A bearer going
+ * away is not backpressure, and the bearers that remain raise their own
+ * callback once they genuinely run out of credits. Asserting from here would
+ * also fire while a connection is being torn down, since free_conn releases the
+ * bearers one by one and disconnect_ind runs per bearer when the ACL drops: the
+ * intermediate steps see the already-released CCBs as having no headroom, so the
+ * applications would be left latched on a congested state that no later event
+ * on this connection can ever clear. */
+static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec)
+{
+    if (ec == NULL || !ec->in_use || !ec->congested) {
+        return;
+    }
+
+    /* No bearers left means EATT no longer carries this connection's server
+     * PDUs; they fall back to the ATT fixed channel, which drives congestion
+     * from its own path. */
+    if (ec->bearer_count == 0 || gatt_eatt_sendable_num(ec) != 0) {
+        gatt_eatt_report_congestion(ec, FALSE);
+    }
+}
+#endif /* BLE_EATT_SERVER_INCLUDED */
+
 static void gatt_eatt_congestion(UINT16 lcid, BOOLEAN congested)
 {
-    /* Deliberately a no-op on EATT decongestion. EATT client commands are never
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    tL2C_CCB *p_ccb;
+#endif
+
+    /* Deliberately not gatt_channel_congestion(): EATT client commands are never
      * queued in cl_cmd_q: attp_cl_send_cmd() sends them straight to L2CAP, which
      * owns their credit-based flow control. cl_cmd_q only holds legacy commands
      * bound to the ATT fixed channel, and its resend is driven solely by the ATT
@@ -828,9 +931,20 @@ static void gatt_eatt_congestion(UINT16 lcid, BOOLEAN congested)
      * handler (gatt_client_handle_server_rsp). Calling gatt_cl_send_next_cmd_inq
      * here would flush that legacy queue onto the ATT fixed channel with
      * eatt_tx/rx_bearer == 0; if that channel were still congested the commands
-     * would be dropped as GATT_BUSY (permanently dequeued + failed). */
-    UNUSED(lcid);
+     * would be dropped as GATT_BUSY (permanently dequeued + failed). Only the
+     * application fan-out is wanted, so that a GATT server sending notifications
+     * over EATT gets the same backpressure it gets on the legacy bearer. */
     UNUSED(congested);
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
+    if (p_ccb == NULL || p_ccb->p_lcb == NULL) {
+        return;
+    }
+    gatt_eatt_update_congestion(gatt_eatt_find_conn_by_bda(p_ccb->p_lcb->remote_bd_addr));
+#else
+    UNUSED(lcid);
+#endif
 }
 
 static void gatt_eatt_data_ind_l2c(UINT16 lcid, BT_HDR *p_buf)

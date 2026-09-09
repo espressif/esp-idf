@@ -33,6 +33,10 @@ UINT16 gatt_eatt_get_available_bearer(BD_ADDR bd_addr, UINT8 op);
  * round-robin across the connection's bearers. Returns L2CAP_ATT_CID when no
  * EATT bearer is available so the caller falls back to the legacy ATT channel. */
 UINT16 gatt_eatt_get_server_tx_bearer(BD_ADDR bd_addr);
+/* How many more server PDUs the peer's EATT bearers can take right now.
+ * Returns FALSE when the peer has no EATT bearer, so the caller keeps using the
+ * ATT fixed channel accounting. */
+BOOLEAN gatt_eatt_get_sendable_num(BD_ADDR bd_addr, UINT16 *p_num);
 #endif
 BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid);
 BOOLEAN gatt_eatt_mark_busy(BD_ADDR bd_addr, UINT16 lcid, UINT8 op, UINT16 clcb_idx);

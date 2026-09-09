@@ -37,6 +37,9 @@
 #include "stack/btm_api.h"
 #include "osi/allocator.h"
 #include "gatt_int.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 #include "device/controller.h"
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
@@ -2564,6 +2567,31 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
                 *(param->get_num) = att_max_num - att_acl_pkt_num - (btc_buf + btu_buf);
             }
         }
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        /* Server notifications and indications are routed onto an EATT bearer
+         * once the peer has one (GATTS_HandleValueNotification), so they leave
+         * through a dynamic CoC channel and the fixed-channel queue measured
+         * above stays empty no matter how much is in flight. Clamp with the
+         * bearers' own headroom so the caller is not told to keep sending while
+         * the real backlog grows there.
+         *
+         * Clamp rather than replace: a client's write-without-response still
+         * goes out on the fixed channel, because attp_cl_send_cmd() excludes
+         * GATT_CMD_WRITE from EATT bearer selection. A dual-role application
+         * shares this counter for both, so the answer has to bound both paths. */
+        UINT16 eatt_num = 0;
+        if (gatt_eatt_get_sendable_num(p_tcb->peer_bda, &eatt_num)) {
+            INT16 eatt_avail = (INT16)eatt_num - (btc_buf + btu_buf);
+
+            if (eatt_avail < 0) {
+                eatt_avail = 0;
+            }
+            if ((UINT16)eatt_avail < *(param->get_num)) {
+                *(param->get_num) = (UINT16)eatt_avail;
+            }
+        }
+#endif
         xSemaphoreGive(buff_semaphore);
         break;
     }
