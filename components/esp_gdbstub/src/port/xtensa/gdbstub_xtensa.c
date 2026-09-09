@@ -40,6 +40,8 @@ static void update_regfile_common(esp_gdbstub_gdb_regfile_t *dst)
 }
 
 #if XCHAL_HAVE_FP
+#define GDBSTUB_CSA_NOT_INITIALIZED ((void *) 0xFFFFFFFF)
+
 /** @brief Read FPU registers to memory
 */
 static void gdbstub_read_fpu_regs(xtensa_fpu_regs_t *fpu)
@@ -71,8 +73,27 @@ static void gdbstub_read_fpu_regs(xtensa_fpu_regs_t *fpu)
     asm volatile ("s32i %0, %1, 0" : "=a" (tmp) : "a" (&fpu->fsr));
 }
 
-static void *esp_gdbstub_coproc_saved_area(void *tcb, int coproc)
+static void *esp_gdbstub_coproc_saved_area(void *tcb, int coproc, bool is_read)
 {
+    /*
+     * Coprocessors have lazy register saving:
+     * 1. Defer saving coprocessor registers until a task actually uses a coprocessor instruction.
+     *    This triggers an exception when the instruction is executed.
+     * 2. In the exception handler:
+     *    - Enable the coprocessor and designate the task as the new coprocessor owner.
+     *    - If another task previously owned the coprocessor, save its registers.
+     *    - Restore the coprocessor registers for the new owner before execution resumes.
+     *
+     * To determine whether to read/write coprocessor registers directly or use stack memory:
+     * - Check if the current task is the coprocessor owner:
+     *   - Yes: Perform direct read/write operations.
+     *   - No: Read/write from the stack.
+     *
+     * If this task has never used the coprocessor:
+     * - Read: return GDBSTUB_CSA_NOT_INITIALIZED (GDB shows zeroes, do not init CSA).
+     * - Write: zero-init the save area and set XT_CPSTORED so the exception handler
+     *   restores GDB-written values on the first coprocessor instruction.
+     */
     /**
      * Offset to start of the CPSA area on the stack. See uxInitialiseStackCPSA().
      */
@@ -115,15 +136,28 @@ static void *esp_gdbstub_coproc_saved_area(void *tcb, int coproc)
         }
     }
 
-    /* TODO IDF-15054:
-     * - Handle case when coprocessor instructions have not been called yet for this task
-     */
+    if (_xt_coproc_owner_sa[core][coproc] == (uintptr_t)cpsa_header) {
+        return NULL;
+    }
+
     if ((cpsa_header->xt_cpstored & coproc_bit) ||
         (cpsa_header->xt_cp_cs_st & coproc_bit)) {
         return cpsa_header->xt_cp_asa;
     }
 
-    return NULL;
+    if (is_read) {
+        /* Don't initialize CSA for read. (Just return zeroed registers) */
+        return GDBSTUB_CSA_NOT_INITIALIZED;
+    }
+
+    /*
+     * Ignore XT_CPENABLE to write the frame if the coprocessor has not been used by this task yet.
+     * Setting XT_CPSTORED ensures the registers are restored when the task's coprocessor
+     * context is switched.
+     */
+    memset(cpsa_header->xt_cp_asa, 0, sizeof(xtensa_fpu_regs_t));
+    cpsa_header->xt_cpstored |= coproc_bit;
+    return cpsa_header->xt_cp_asa;
 }
 
 static uint32_t enable_coproc(int coproc)
@@ -146,7 +180,7 @@ static uint32_t enable_coproc(int coproc)
 
 static void write_fpu_regs_to_regfile(void *tcb, esp_gdbstub_gdb_regfile_t *dst)
 {
-    xtensa_fpu_regs_t *fpu_save_area = esp_gdbstub_coproc_saved_area(tcb, XCHAL_CP_ID_FPU);
+    xtensa_fpu_regs_t *fpu_save_area = esp_gdbstub_coproc_saved_area(tcb, XCHAL_CP_ID_FPU, true);
 
     /*
      * In case of current thread is the owner of FPU, that means FPU registers was not stored to thread TCB.
@@ -163,6 +197,8 @@ static void write_fpu_regs_to_regfile(void *tcb, esp_gdbstub_gdb_regfile_t *dst)
 
         /* Restore FPU enabled state */
         WSR(XT_REG_CPENABLE, cp_enabled);
+    } else if (fpu_save_area == GDBSTUB_CSA_NOT_INITIALIZED) {
+        memset(&dst->fpu, 0, sizeof(dst->fpu));
     } else {
         /* FPU registers was stored to thread TCB, copy them to the register file */
         memcpy (&dst->fpu, fpu_save_area, sizeof(dst->fpu));
@@ -454,7 +490,7 @@ static void gdbstub_write_fpu_regs(esp_gdbstub_frame_t *frame, uint32_t reg_inde
     }
 
     tcb = esp_gdbstub_find_tcb_by_frame(frame);
-    fpu_save_area = esp_gdbstub_coproc_saved_area((void *)tcb, XCHAL_CP_ID_FPU);
+    fpu_save_area = esp_gdbstub_coproc_saved_area((void *)tcb, XCHAL_CP_ID_FPU, false);
 
     if (fpu_save_area == NULL) {
         uint32_t cp_enabled = enable_coproc(XCHAL_CP_ID_FPU);
