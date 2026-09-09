@@ -25,6 +25,7 @@
 #endif
 
 #include "esp_private/esp_sys_event_panic.h"
+#include "esp_private/esp_sys_event_app_init.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/crosscore_int.h"
 
@@ -450,6 +451,14 @@ void esp_gdbstub_init(void)
 #endif
     esp_intr_alloc(ETS_UART0_INTR_SOURCE, 0, esp_gdbstub_int, NULL, NULL);
     esp_gdbstub_init_dports();
+}
+
+ESP_PRE_SCHEDULER_HANDLER_REGISTER(init_gdbstub, 130)
+{
+    (void)user_arg;
+    (void)ctx;
+    esp_gdbstub_init();
+    return ESP_OK;
 }
 #endif /* CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME */
 

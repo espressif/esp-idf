@@ -23,6 +23,16 @@ SECTIONS
         PROVIDE(_esysev_inits_end = .);
 
         . = ALIGN(4);
+        PROVIDE(_esysev_presc_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.esysev_presc.*)))
+        PROVIDE(_esysev_presc_end = .);
+
+        . = ALIGN(4);
+        PROVIDE(_esysev_pream_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.esysev_pream.*)))
+        PROVIDE(_esysev_pream_end = .);
+
+        . = ALIGN(4);
         PROVIDE(_esysev_panic_start = .);
         KEEP(*(SORT_BY_INIT_PRIORITY(.esysev_panic.*)))
         PROVIDE(_esysev_panic_end = .);

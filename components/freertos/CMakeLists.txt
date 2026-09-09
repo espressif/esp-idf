@@ -223,20 +223,10 @@ else()
         idf_component_optional_requires(PUBLIC esp_trace)
     endif()
 
-    if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)
-        # [refactor-todo]: app_startup.c esp_startup_start_app_other_cores() calls esp_gdbstub_init() (called on CPU0).
-        # This should be resolved when link-time registration of startup functions is added.
-        idf_component_optional_requires(PRIVATE esp_gdbstub)
-    endif()
-
     if(CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER)
         # [refactor-todo]: esp_timer is required by FreeRTOS when we use esp_timer_get_time() to do profiling
         # Introduce a port wrapper function to avoid including esp_timer.h into the public header
         idf_component_optional_requires(PUBLIC esp_timer)
-    endif()
-
-    if(CONFIG_SPIRAM)
-        idf_component_optional_requires(PRIVATE esp_psram)
     endif()
 
     if(CONFIG_PM_TRACE)

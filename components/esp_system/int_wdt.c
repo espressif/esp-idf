@@ -23,6 +23,7 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_int_wdt.h"
+#include "esp_private/esp_sys_event_app_init.h"
 #include "mwdt_priv.h"
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
@@ -192,6 +193,22 @@ void esp_int_wdt_cpu_init(void)
     esp_cpu_intr_set_priority(ETS_INT_WDT_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 #endif
     esp_intr_enable_source(ETS_INT_WDT_INUM);
+}
+
+ESP_PRE_SCHEDULER_HANDLER_REGISTER(init_int_wdt, 100)
+{
+    (void)user_arg;
+    (void)ctx;
+    esp_int_wdt_init();
+    return ESP_OK;
+}
+
+ESP_PRE_SCHEDULER_HANDLER_REGISTER_PER_CPU(init_int_wdt_cpu, 110)
+{
+    (void)user_arg;
+    (void)ctx;
+    esp_int_wdt_cpu_init();
+    return ESP_OK;
 }
 
 void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_pause(void)

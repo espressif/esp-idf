@@ -11,6 +11,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_private/esp_sys_event_app_init.h"
 #include "soc/periph_defs.h"
 #include "soc/system_intr.h"
 #include "hal/crosscore_int_ll.h"
@@ -111,6 +112,14 @@ void esp_crosscore_int_init(void)
     err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_0_SOURCE, flags, esp_crosscore_isr, (void*)&reason[0], NULL);
 #endif
     ESP_ERROR_CHECK(err);
+}
+
+ESP_PRE_SCHEDULER_HANDLER_REGISTER_PER_CPU(init_crosscore_interrupt, 120)
+{
+    (void)user_arg;
+    (void)ctx;
+    esp_crosscore_int_init();
+    return ESP_OK;
 }
 
 static void ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask)

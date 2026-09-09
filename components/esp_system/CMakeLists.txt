@@ -198,6 +198,11 @@ endif()
 
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_system_include_startup_funcs")
 
+if(CONFIG_ESP_INT_WDT)
+    # Pull in the PRE_SCHEDULER registrations from int_wdt.c.
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_int_wdt_init")
+endif()
+
 # [refactor-todo] requirements due to init code, should be removable
 # once link-time registration of component init functions is used.
 if(NOT CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT)

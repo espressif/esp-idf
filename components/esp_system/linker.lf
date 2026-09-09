@@ -12,6 +12,14 @@ entries:
 entries:
     .esysev_inits+
 
+[sections:esysev_presc]
+entries:
+    .esysev_presc+
+
+[sections:esysev_pream]
+entries:
+    .esysev_pream+
+
 [sections:esysev_panic]
 entries:
     .esysev_panic+
@@ -26,6 +34,8 @@ entries:
     esysev_shdn  -> flash_rodata
     esysev_initc -> flash_rodata
     esysev_inits -> flash_rodata
+    esysev_presc -> flash_rodata
+    esysev_pream -> flash_rodata
     esysev_panic -> flash_rodata
     esysev_paneb -> flash_rodata
 
@@ -36,6 +46,8 @@ entries:
         esysev_shdn  -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_shdn),
         esysev_initc -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_initc),
         esysev_inits -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_inits),
+        esysev_presc -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_presc),
+        esysev_pream -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_pream),
         esysev_panic -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_panic),
         esysev_paneb -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_paneb)
 

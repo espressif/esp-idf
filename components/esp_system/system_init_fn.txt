@@ -1,7 +1,7 @@
-# This file documents the expected order of execution of ESP_SYSTEM_INIT_FN functions.
+# This file documents the expected order of execution of system startup handlers.
 #
-# When adding new ESP_SYSTEM_INIT_FN functions or changing init priorities of existing functions,
-# keep this file up to date. This is checked in CI.
+# When adding startup handlers or changing their priorities, keep this file up to date.
+# This is checked in CI.
 # When adding new functions or changing the priorities, please read the comments and see if
 # they need to be updated to be consistent with the changes you are making.
 #
@@ -9,7 +9,7 @@
 # Each line has the following format:
 #   stage: prio: function_name in path/to/source_file on affinity_expression
 # Where:
-#   stage: which startup stage the function is executed in (CORE or SECONDARY)
+#   stage: which startup stage the function is executed in (CORE, SECONDARY, PRE_SCHEDULER, or PRE_APP_MAIN)
 #   prio: priority value (higher value means function is executed later)
 #   affinity_expression: bit map of cores the function is executed on
 
@@ -148,4 +148,35 @@ SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_s
 # Now that the application is about to start, disable boot watchdog
 SECONDARY: 999: init_disable_rtc_wdt in components/esp_system/startup_funcs.c on BIT(0)
 
-# DO NOT add new init functions here. Add them to the correct stage above.
+# DO NOT add new init functions at the end of a stage. Add them at the correct priority.
+
+
+########### PRE_SCHEDULER startup stage ###########
+
+# If the interrupt watchdog is disabled, validate the ESP32 ECO3 cache lock configuration instead.
+PRE_SCHEDULER:  90: check_cache_lock_bug in components/esp_system/startup_funcs.c on BIT(0)
+
+# Initialize the interrupt watchdog globally, then enable it on each core.
+PRE_SCHEDULER: 100: init_int_wdt in components/esp_system/int_wdt.c on BIT(0)
+PRE_SCHEDULER: 110: init_int_wdt_cpu in components/esp_system/int_wdt.c on ESP_SYSTEM_INIT_ALL_CORES
+
+# Cross-core interrupts must be available before each core starts its scheduler.
+PRE_SCHEDULER: 120: init_crosscore_interrupt in components/esp_system/crosscore_int.c on ESP_SYSTEM_INIT_ALL_CORES
+
+# Runtime GDB stub initialization requires cross-core interrupts.
+PRE_SCHEDULER: 130: init_gdbstub in components/esp_gdbstub/src/gdbstub.c on BIT(0)
+
+
+########### PRE_APP_MAIN startup stage ###########
+
+# Reclaim startup stacks only after every core has completed FreeRTOS initialization.
+PRE_APP_MAIN: 100: enable_nonos_stack_heaps in components/heap/heap_caps_init.c on MAIN_TASK
+
+# Reserve the internal DMA pool after startup stack memory has been reclaimed.
+PRE_APP_MAIN: 110: reserve_dma_pool in components/esp_psram/system_layer/esp_psram.c on MAIN_TASK
+
+# Initialize the task watchdog after the scheduler is available.
+PRE_APP_MAIN: 120: init_task_wdt in components/esp_system/task_wdt/task_wdt.c on MAIN_TASK
+
+# Confirm the running OTA image immediately before calling app_main.
+PRE_APP_MAIN: 200: esp_ota_auto_confirm in components/app_update/ota_auto_confirm.c on MAIN_TASK

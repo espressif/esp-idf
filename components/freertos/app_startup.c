@@ -12,20 +12,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
-#include "esp_private/esp_int_wdt.h"
-#include "esp_private/crosscore_int.h"
-#include "esp_task_wdt.h"
-#include "esp_freertos_hooks.h"
-#include "esp_heap_caps_init.h"
-#include "esp_chip_info.h"
-#if CONFIG_SPIRAM
-/* Required by esp_psram_extram_reserve_dma_pool() */
-#include "esp_psram.h"
-#include "esp_private/esp_psram_extram.h"
-#endif
-#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
-#include "esp_gdbstub.h"                    /* Required by esp_gdbstub_init() */
-#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#include "esp_private/esp_sys_event_internal.h"
 
 /* ------------------------------------------------- App/OS Startup ----------------------------------------------------
  * - Functions related to application and FreeRTOS startup
@@ -56,26 +43,18 @@ CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE should be identic
 static void main_task(void* args);
 ESP_LOG_ATTR_TAG(APP_START_TAG, "app_start");
 
+static void run_app_startup_event(esp_sys_event_id_t id)
+{
+    ESP_SYS_EVENT_FOREACH(handler, id) {
+        ESP_ERROR_CHECK(handler->handler(NULL, NULL));
+    }
+}
+
 // ------------------ CPU0 App Startup ---------------------
 
 void esp_startup_start_app(void)
 {
-#if CONFIG_ESP_INT_WDT
-    esp_int_wdt_init();
-    // Initialize the interrupt watch dog for CPU0.
-    esp_int_wdt_cpu_init();
-#elif CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    // If the INT WDT isn't enabled on ESP32 ECO3, issue an error regarding the cache lock bug
-    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
-#endif
-
-    // Initialize the cross-core interrupt on CPU0
-    esp_crosscore_int_init();
-
-#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
-    void esp_gdbstub_init(void);
-    esp_gdbstub_init();
-#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    run_app_startup_event(ESP_SYS_EVENT_PRE_SCHEDULER);
 
     BaseType_t res = xTaskCreatePinnedToCore(main_task, "main",
                                              ESP_TASK_MAIN_STACK, NULL,
@@ -87,11 +66,21 @@ void esp_startup_start_app(void)
     If a particular FreeRTOS port has port/arch specific OS startup behavior, they can implement a function of type
     "void port_start_app_hook(void)" in their `port.c` files. This function will be called below, thus allowing each
     FreeRTOS port to implement port specific app startup behavior.
+
+    Deprecated: Register a PRE_SCHEDULER handler with priority 999 to preserve this ordering.
     */
-    void __attribute__((weak)) port_start_app_hook(void);
+    // TODO: IDF-16135
+    void __attribute__((weak, deprecated("port_start_app_hook is deprecated and will be removed in IDF 7.0. Use ESP_PRE_SCHEDULER_HANDLER_REGISTER instead.")))
+    port_start_app_hook(void);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     if (port_start_app_hook != NULL) {
+        ESP_EARLY_LOGW(APP_START_TAG,
+                       "port_start_app_hook is deprecated and will be removed in IDF 7.0. "
+                       "Use ESP_PRE_SCHEDULER_HANDLER_REGISTER instead.");
         port_start_app_hook();
     }
+#pragma GCC diagnostic pop
 
     ESP_EARLY_LOGD(APP_START_TAG, "Starting scheduler on CPU0");
     vTaskStartScheduler();
@@ -113,13 +102,7 @@ void esp_startup_start_app_other_cores(void)
         ;
     }
 
-#if CONFIG_ESP_INT_WDT
-    // Initialize the interrupt watch dog for CPU1.
-    esp_int_wdt_cpu_init();
-#endif
-
-    // Initialize the cross-core interrupt on CPU1
-    esp_crosscore_int_init();
+    run_app_startup_event(ESP_SYS_EVENT_PRE_SCHEDULER);
 
     ESP_EARLY_LOGD(APP_START_TAG, "Starting scheduler on CPU%d", xPortGetCoreID());
     xPortStartScheduler();
@@ -154,54 +137,13 @@ static void wait_for_all_cores_ready(void)
 #endif // !CONFIG_FREERTOS_UNICORE
 }
 
-// Reinitialize the startup stack heaps, so it can be used for heap allocation.
-static void reclaim_startup_stack_memory_for_heap(void)
-{
-    wait_for_all_cores_ready();
-    // [refactor-todo] check if there is a way to move the following block to esp_system startup
-    heap_caps_enable_nonos_stack_heaps();
-
-    // Now we have startup stack RAM available for heap, enable any DMA pool memory
-#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
-    if (esp_psram_is_initialized()) {
-        esp_err_t r = esp_psram_extram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
-        if (r != ESP_OK) {
-            ESP_LOGE(MAIN_TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
-            abort();
-        }
-    }
-#endif
-}
-
 static void main_task(void* args)
 {
     ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
 
-    reclaim_startup_stack_memory_for_heap();
+    wait_for_all_cores_ready();
 
-    // Initialize TWDT if configured to do so
-#if CONFIG_ESP_TASK_WDT_INIT
-    esp_task_wdt_config_t twdt_config = {
-        .timeout_ms = CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000,
-        .idle_core_mask = 0,
-#if CONFIG_ESP_TASK_WDT_PANIC
-        .trigger_panic = true,
-#endif
-    };
-#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    twdt_config.idle_core_mask |= (1 << 0);
-#endif
-#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    twdt_config.idle_core_mask |= (1 << 1);
-#endif
-    ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
-#endif // CONFIG_ESP_TASK_WDT
-
-    // app_update overrides it to auto-confirm an OTA rollback right before app_main.
-    void __attribute__((weak)) esp_ota_confirm_rollback_hook(void);
-    if (esp_ota_confirm_rollback_hook != NULL) {
-        esp_ota_confirm_rollback_hook();
-    }
+    run_app_startup_event(ESP_SYS_EVENT_PRE_APP_MAIN);
 
     /*
     Note: Be careful when changing the "Calling app_main()" log below as multiple pytest scripts expect this log as a

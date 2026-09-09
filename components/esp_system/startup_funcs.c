@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
 #include "sdkconfig.h"
 #include "esp_attr.h"
@@ -13,8 +14,10 @@
 #include "esp_check.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_chip_info.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
+#include "esp_private/esp_sys_event_app_init.h"
 #include "esp_private/startup_internal.h"
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_caps.h"
@@ -49,6 +52,16 @@ void esp_system_include_startup_funcs(void)
 }
 
 // [refactor-todo] Most of these init functions should be moved to the respective components.
+
+#if !CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+ESP_PRE_SCHEDULER_HANDLER_REGISTER(check_cache_lock_bug, 90)
+{
+    (void)user_arg;
+    (void)ctx;
+    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
+    return ESP_OK;
+}
+#endif
 
 ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
 {

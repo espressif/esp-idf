@@ -3,6 +3,21 @@ System
 
 :link_to_translation:`zh_CN:[中文]`
 
+FreeRTOS
+---------
+
+The legacy ``port_start_app_hook`` is deprecated and will be removed in ESP-IDF v7.0. To preserve the previous execution order, replace it with an ``ESP_PRE_SCHEDULER_HANDLER_REGISTER`` handler at priority ``999``.
+
+.. code-block:: c
+
+    #include "esp_private/esp_sys_event_app_init.h"
+
+    ESP_PRE_SCHEDULER_HANDLER_REGISTER(port_start_app_hook, 999)
+    {
+        // Port-specific startup behavior
+        return ESP_OK;
+    }
+
 OTA Updates
 -----------
 
