@@ -92,6 +92,14 @@ esp_err_t esp_console_internal_set_event_fd(esp_console_repl_com_t *repl_com)
     }
     xSemaphoreGive(repl_com->state_mux);
 
+    repl_com->task_ready = xSemaphoreCreateBinary();
+    if (repl_com->task_ready == NULL) {
+        ESP_LOGE(TAG, "task_ready create error");
+        vSemaphoreDelete(repl_com->state_mux);
+        repl_com->state_mux = NULL;
+        return ESP_ERR_NO_MEM;
+    }
+
     return ESP_OK;
 }
 
@@ -122,6 +130,9 @@ esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
     // delete the semaphore for the repl state
     vSemaphoreDelete(repl_com->state_mux);
     repl_com->state_mux =  NULL;
+
+    vSemaphoreDelete(repl_com->task_ready);
+    repl_com->task_ready = NULL;
 
     /* Unregister the heap function to avoid memory leak, since it is created
      * every time a console init is called. */
