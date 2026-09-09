@@ -13,7 +13,6 @@
 #include "soc/pmu_icg_mapping.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/clk_tree_defs.h"
-#include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 
@@ -337,7 +336,7 @@ uint32_t get_act_hp_dbias(void)
     uint32_t blk_version = efuse_hal_blk_version();
     uint32_t hp_cali_dbias_efuse = 0;
     if (blk_version >= 2 && blk_version != 100) {
-        hp_cali_dbias_efuse = efuse_ll_get_active_hp_dbias();
+        hp_cali_dbias_efuse = pmu_ll_get_active_hp_dbias();
     }
     if (hp_cali_dbias_efuse > 0) {
         hp_cali_dbias = hp_cali_dbias_efuse + 16;
@@ -358,7 +357,7 @@ uint32_t get_act_lp_dbias(void)
     uint32_t blk_version = efuse_hal_blk_version();
     uint32_t lp_cali_dbias_efuse = 0;
     if (blk_version >= 2 && blk_version != 100) {
-        lp_cali_dbias_efuse = efuse_ll_get_active_lp_dbias();
+        lp_cali_dbias_efuse = pmu_ll_get_active_lp_dbias();
     }
     if (lp_cali_dbias_efuse > 0) {
         //efuse dbias need to add 4 to near to dcdc voltage

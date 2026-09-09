@@ -16,10 +16,46 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
+#include "soc/efuse_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys3.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys3.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_lslp_dbg(void)
+{
+    return EFUSE.rd_mac_sys3.lslp_hp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_lslp_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys3.lslp_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_dslp_dbg(void)
+{
+    return EFUSE.rd_mac_sys3.dslp_lp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_dslp_lp_dbias(void)
+{
+    return (EFUSE.rd_mac_sys4.dslp_lp_dbias_1 << 4) | EFUSE.rd_mac_sys3.dslp_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t pmu_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE.rd_mac_sys4.lp_hp_dbias_vol_gap;
+}
 
 /**
  * @brief Set the power domain that needs to be powered down in the digital power

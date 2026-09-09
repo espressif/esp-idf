@@ -33,7 +33,7 @@ uint32_t get_lslp_dbg(void)
     uint32_t pmu_dbg_atten_lightsleep = PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT;
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 3) {
-        pmu_dbg_atten_lightsleep = efuse_ll_get_lslp_dbg();
+        pmu_dbg_atten_lightsleep = pmu_ll_get_lslp_dbg();
     } else {
         ESP_HW_LOGD(TAG, "blk_version is less than 3, lslp dbg not burnt in efuse\n");
     }
@@ -46,7 +46,7 @@ uint32_t get_lslp_hp_dbias(void)
     uint32_t pmu_hp_dbias_lightsleep_0v6 = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT;
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 3) {
-        pmu_hp_dbias_lightsleep_0v6 = efuse_ll_get_lslp_hp_dbias();
+        pmu_hp_dbias_lightsleep_0v6 = pmu_ll_get_lslp_hp_dbias();
     } else {
         ESP_HW_LOGD(TAG, "blk_version is less than 3, lslp hp dbias not burnt in efuse\n");
     }
@@ -59,7 +59,7 @@ uint32_t get_dslp_dbg(void)
     uint32_t pmu_dbg_atten_deepsleep = PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT;
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 3) {
-        pmu_dbg_atten_deepsleep = efuse_ll_get_dslp_dbg() + EFUSE_BURN_OFFSET_DSLP_DBG;
+        pmu_dbg_atten_deepsleep = pmu_ll_get_dslp_dbg() + EFUSE_BURN_OFFSET_DSLP_DBG;
     } else {
         ESP_HW_LOGD(TAG, "blk_version is less than 3, dslp dbg not burnt in efuse\n");
     }
@@ -72,7 +72,7 @@ uint32_t get_dslp_lp_dbias(void)
     uint32_t pmu_lp_dbias_deepsleep_0v7 = PMU_LP_DBIAS_DEEPSLEEP_0V7_DEFAULT;
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 3) {
-        pmu_lp_dbias_deepsleep_0v7 = efuse_ll_get_dslp_lp_dbias() + EFUSE_BURN_OFFSET_DSLP_LP_DBIAS;
+        pmu_lp_dbias_deepsleep_0v7 = pmu_ll_get_dslp_lp_dbias() + EFUSE_BURN_OFFSET_DSLP_LP_DBIAS;
     } else {
         ESP_HW_LOGD(TAG, "blk_version is less than 3, dslp lp dbias not burnt in efuse\n");
     }
