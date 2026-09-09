@@ -263,7 +263,7 @@ static int process_gpio_wakeup(int argc, char **argv)
             .pin_bit_mask = BIT64(io_wakeup_num),
             .mode = GPIO_MODE_INPUT,
             .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_up_en = GPIO_PULLUP_ENABLE,
             .intr_type = (io_wakeup_type == 0) ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL
         };
         ESP_ERROR_CHECK(gpio_config(&config));
