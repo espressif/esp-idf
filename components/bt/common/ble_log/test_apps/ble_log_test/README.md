@@ -17,5 +17,6 @@ It covers:
 - task and critical-section writes plus HCI direction encoding;
 - direct compression claim/commit, stale handles, and per-source serialization;
 - oversized-record rejection, flush sequence continuity, pool exhaustion, and non-yield reserve use;
-- periodic snapshot busy/loss behavior;
+- shared log/snapshot Global SN, independent 24-bit anchor counts, and snapshot busy/loss behavior;
+- successful logical-byte counts for public, claim/commit, and LL writes, plus FLUSH reset;
 - enable, disable, parked-writer, and deinit races.
