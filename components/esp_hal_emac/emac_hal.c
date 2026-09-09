@@ -356,7 +356,8 @@ static inline uint32_t nanosecond2subsecond(emac_hal_context_t *hal, uint32_t na
 
 esp_err_t emac_hal_get_rxdesc_timestamp(emac_hal_context_t *hal, eth_dma_rx_descriptor_t *rxdesc, uint32_t *seconds, uint32_t *nano_seconds)
 {
-    if (!rxdesc->RDES0.TSAvailIPChecksumErrGiantFrame) {
+    eth_dma_rdes0_t rdes0 = { .Value = rxdesc->RDES0.Value };
+    if (!rdes0.TSAvailIPChecksumErrGiantFrame) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -366,13 +367,15 @@ esp_err_t emac_hal_get_rxdesc_timestamp(emac_hal_context_t *hal, eth_dma_rx_desc
     if (nano_seconds) {
         *nano_seconds = subsecond2nanosecond(hal, rxdesc->TimeStampLow);
     }
-    rxdesc->RDES0.TSAvailIPChecksumErrGiantFrame = 0;
+    rdes0.TSAvailIPChecksumErrGiantFrame = 0;
+    rxdesc->RDES0.Value = rdes0.Value;
     return ESP_OK;
 }
 
 esp_err_t emac_hal_get_txdesc_timestamp(emac_hal_context_t *hal, eth_dma_tx_descriptor_t *txdesc, uint32_t *seconds, uint32_t *nano_seconds)
 {
-    if (txdesc->TDES0.Own == EMAC_LL_DMADESC_OWNER_DMA || !txdesc->TDES0.TxTimestampStatus) {
+    eth_dma_tdes0_t tdes0 = { .Value = txdesc->TDES0.Value };
+    if (tdes0.Own == EMAC_LL_DMADESC_OWNER_DMA || !tdes0.TxTimestampStatus) {
         return ESP_ERR_INVALID_STATE;
     }
     if (seconds) {
@@ -381,7 +384,8 @@ esp_err_t emac_hal_get_txdesc_timestamp(emac_hal_context_t *hal, eth_dma_tx_desc
     if (nano_seconds) {
         *nano_seconds = subsecond2nanosecond(hal, txdesc->TimeStampLow);
     }
-    txdesc->TDES0.TxTimestampStatus = 0;
+    tdes0.TxTimestampStatus = 0;
+    txdesc->TDES0.Value = tdes0.Value;
     return ESP_OK;
 }
 
