@@ -284,8 +284,6 @@ void bta_pba_client_api_disable(tBTA_PBA_CLIENT_DATA *p_data)
     if (!bta_sys_is_register(BTA_ID_PBC)) {
         return;
     }
-    /* deregister with BTA system manager */
-    bta_sys_deregister(BTA_ID_PBC);
 
     /* close all connections */
     for (int i = 0; i < PBA_CLIENT_MAX_CONNECTION; ++i) {
@@ -297,6 +295,7 @@ void bta_pba_client_api_disable(tBTA_PBA_CLIENT_DATA *p_data)
     /* store and clear callback function */
     tBTA_PBA_CLIENT_CBACK *p_cback = bta_pba_client_cb.p_cback;
     bta_pba_client_cb.p_cback = NULL;
+    bta_sys_deregister(BTA_ID_PBC);
 
     if(p_cback) {
         p_cback(BTA_PBA_CLIENT_DISABLE_EVT, NULL);

@@ -2079,6 +2079,7 @@ void bta_av_dereg_comp(tBTA_AV_DATA *p_data)
 #endif
 
         if (p_cb->disabling) {
+            bta_sys_deregister(BTA_ID_AV);
             p_cb->disabling     = FALSE;
             bta_av_cb.features  = 0;
         }

@@ -93,7 +93,6 @@ void BTA_HhDisable(void)
 {
     BT_HDR  *p_buf;
 
-    bta_sys_deregister(BTA_ID_HH);
     if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR))) != NULL) {
         p_buf->event = BTA_HH_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
