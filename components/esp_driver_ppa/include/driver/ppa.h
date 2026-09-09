@@ -49,6 +49,8 @@ typedef struct {
 /**
  * @brief Register a PPA client to do a specific PPA operation
  *
+ * No two tasks should share the same PPA client.
+ *
  * @param[in] config Pointer to a collection of configurations for the client
  * @param[out] ret_client Returned client handle
  *
