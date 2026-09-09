@@ -41,6 +41,21 @@ menu "Roaming triggers"
             between nearby APs with similar RSSI. Prefer a small value here (e.g. 3-5);
             use ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF for larger proactive improvements.
 
+    config ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD_RESET_SEC
+        depends on ESP_WIFI_ROAMING_LOW_RSSI_ROAMING
+        int "Restore default low RSSI threshold after (seconds), 0 disables"
+        range 0 255
+        default 30
+        help
+            Default is 30 seconds. Set to 0 to disable.
+            When the stepped low RSSI threshold stays below the configured value (for example
+            after a failed roam while still associated to a weak AP), low RSSI events may stop.
+            If the threshold is not raised again by improved RSSI, start a timer: after this
+            many seconds without another threshold update, restore the threshold to
+            ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD.
+            The timer is not armed while periodic scan monitoring is enabled (scan_monitor),
+            since periodic scans already provide an independent recovery path.
+
     config ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
         bool "Conduct periodic scans to check if a better AP is available"
         default y
