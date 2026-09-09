@@ -301,11 +301,22 @@ int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED);
             if (cfg->crt_bundle_attach != NULL || cfg->cacert_buf != NULL || cfg->use_global_ca_store == true) {
-                if (mbedtls_ssl_get_peer_cert(&tls->ssl) != NULL) {
-                    /* This is to check whether handshake failed due to invalid certificate*/
+                /* Check whether the handshake failed because of an invalid certificate.
+                 * Three values are not certificate failures:
+                 * - 0xFFFFFFFF is the initial value of verify_result. mbedTLS sets it in
+                 *   mbedtls_ssl_session_init() to mark the result as not available, and also
+                 *   returns it when the session context is absent.
+                 * - 0 means that the peer certificate passed verification, and that the
+                 *   handshake failed for a different reason.
+                 * - MBEDTLS_X509_BADCERT_SKIP_VERIFY means that mbedTLS did not verify a
+                 *   certificate at all. A TLS 1.3 handshake that resumes a session uses a
+                 *   PSK key exchange, and mbedTLS marks the result as skipped. */
+                uint32_t verify_result = mbedtls_ssl_get_verify_result(&tls->ssl);
+                if (verify_result != 0 && verify_result != 0xFFFFFFFF
+                        && verify_result != MBEDTLS_X509_BADCERT_SKIP_VERIFY) {
                     esp_mbedtls_verify_certificate(tls);
                 } else {
-                    ESP_LOGD(TAG, "Skipping certificate verification - no peer certificate received");
+                    ESP_LOGD(TAG, "Skipping certificate verification - handshake did not fail on the peer certificate");
                 }
             }
             tls->conn_state = ESP_TLS_FAIL;
