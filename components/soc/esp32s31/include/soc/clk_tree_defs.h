@@ -170,6 +170,16 @@ typedef enum {
 //////////////////////////////////////////////////LCD///////////////////////////////////////////////////////////////////
 
 /**
+ * @brief Type of LCD core clock source
+ */
+typedef enum {
+    LCD_CORE_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    LCD_CORE_CLK_SRC_PLL120M = SOC_MOD_CLK_PLL_F120M, /*!< Select PLL_F120M as the source clock */
+    LCD_CORE_CLK_SRC_APLL = SOC_MOD_CLK_APLL,         /*!< Select APLL as the source clock */
+    LCD_CORE_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F120M, /*!< Select PLL_F120M as the default choice */
+} soc_periph_lcd_core_clk_src_t;
+
+/**
  * @brief Array initializer for all supported clock sources of LCD
  */
 #define SOC_LCD_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL, SOC_MOD_CLK_APLL}
@@ -185,6 +195,16 @@ typedef enum {
 } soc_periph_lcd_clk_src_t;
 
 //////////////////////////////////////////////////CAM///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Type of CAM core clock source
+ */
+typedef enum {
+    CAM_CORE_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    CAM_CORE_CLK_SRC_PLL120M = SOC_MOD_CLK_PLL_F120M, /*!< Select PLL_F120M as the source clock */
+    CAM_CORE_CLK_SRC_APLL = SOC_MOD_CLK_APLL,         /*!< Select APLL as the source clock */
+    CAM_CORE_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F120M, /*!< Select PLL_F120M as the default choice */
+} soc_periph_cam_core_clk_src_t;
 
 /**
  * @brief Array initializer for all supported clock sources of CAM
