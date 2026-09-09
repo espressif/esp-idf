@@ -937,6 +937,39 @@ esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_lis
     return (ret == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gap_set_bond_device_except(esp_bd_addr_t bd_addr, bool except)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+#if (SMP_INCLUDED == TRUE)
+    return (btc_storage_set_bond_except((bt_bdaddr_t *)bd_addr, except) == BT_STATUS_SUCCESS)
+           ? ESP_OK : ESP_FAIL;
+#else
+    (void)except;
+    return ESP_FAIL;
+#endif
+}
+
+esp_err_t esp_ble_gap_is_bond_device_excepted(esp_bd_addr_t bd_addr, bool *excepted)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (bd_addr == NULL || excepted == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+#if (SMP_INCLUDED == TRUE)
+    return (btc_storage_get_bond_except((bt_bdaddr_t *)bd_addr, excepted) == BT_STATUS_SUCCESS)
+           ? ESP_OK : ESP_FAIL;
+#else
+    return ESP_FAIL;
+#endif
+}
+
 esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len)
 {
     if(len != ESP_BT_OCTET16_LEN) {
