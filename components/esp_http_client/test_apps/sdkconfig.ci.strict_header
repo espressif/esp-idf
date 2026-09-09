@@ -1,2 +1,14 @@
 CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER=y
 CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT=y
+
+# Enable HTTP Basic Authentication so the 401-retry path (auth_type
+# auto-detected from WWW-Authenticate and process_again set) is compiled
+# in and can be pinned by test_http_client_auth.c and the adapted 401
+# case in test_http_client_basic.c. Off by default upstream (unencrypted
+# credentials without TLS); this is a test-only config, not a client-code
+# change - the mock transport never touches the network. Must be kept in
+# sync with sdkconfig.ci.default: pytest_esp_http_client_ut.py runs the
+# full unfiltered suite against both the 'default' and 'strict_header'
+# configs (see docs/en/contribute/esp-idf-tests-with-pytest.rst), so any
+# sdkconfig.ci.* file that suite parametrizes over must carry this option.
+CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH=y

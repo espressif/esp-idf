@@ -7,3 +7,13 @@ CONFIG_COMPILER_STACK_CHECK_MODE_STRONG=y
 CONFIG_COMPILER_STACK_CHECK=y
 
 CONFIG_ESP_TASK_WDT_EN=n
+
+# Enable custom transport for mock testing
+CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT=y
+
+# Enable HTTP Basic Authentication so the 401-retry path (auth_type
+# auto-detected from WWW-Authenticate and process_again set) is compiled
+# in and can be pinned by test_http_client_auth.c. Off by default upstream
+# (unencrypted credentials without TLS); this is a test-only config, not a
+# client-code change - the mock transport never touches the network.
+CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH=y
