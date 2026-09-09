@@ -96,6 +96,42 @@ FORCE_INLINE_ATTR eth_dma_tx_descriptor_t *emac_esp_dma_next_tx_desc(eth_dma_tx_
     return (eth_dma_tx_descriptor_t *)EMAC_DESC_TO_NC(desc->Buffer2NextDescAddr);
 }
 
+FORCE_INLINE_ATTR eth_dma_tdes0_t emac_esp_dma_tdes0_load(const eth_dma_tx_descriptor_t *desc)
+{
+    return (eth_dma_tdes0_t) {
+        .Value = desc->TDES0.Value
+    };
+}
+
+FORCE_INLINE_ATTR void emac_esp_dma_tdes0_store(eth_dma_tx_descriptor_t *desc, eth_dma_tdes0_t tdes0)
+{
+    desc->TDES0.Value = tdes0.Value;
+}
+
+FORCE_INLINE_ATTR eth_dma_tdes1_t emac_esp_dma_tdes1_load(const eth_dma_tx_descriptor_t *desc)
+{
+    return (eth_dma_tdes1_t) {
+        .Value = desc->TDES1.Value
+    };
+}
+
+FORCE_INLINE_ATTR void emac_esp_dma_tdes1_store(eth_dma_tx_descriptor_t *desc, eth_dma_tdes1_t tdes1)
+{
+    desc->TDES1.Value = tdes1.Value;
+}
+
+FORCE_INLINE_ATTR eth_dma_rdes0_t emac_esp_dma_rdes0_load(const eth_dma_rx_descriptor_t *desc)
+{
+    return (eth_dma_rdes0_t) {
+        .Value = desc->RDES0.Value
+    };
+}
+
+FORCE_INLINE_ATTR void emac_esp_dma_rdes0_store(eth_dma_rx_descriptor_t *desc, eth_dma_rdes0_t rdes0)
+{
+    desc->RDES0.Value = rdes0.Value;
+}
+
 void emac_esp_dma_reset(emac_esp_dma_handle_t emac_esp_dma)
 {
     /* the chain is linked by cacheable addresses since it is walked by the DMA too */
@@ -107,11 +143,13 @@ void emac_esp_dma_reset(emac_esp_dma_handle_t emac_esp_dma)
     emac_esp_dma->tx_desc = EMAC_DESC_TO_NC(tx_desc_c);
     /* init rx chain */
     for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
+        eth_dma_rdes1_t rdes1 = { 0 };
         /* Set Buffer1 size and Second Address Chained bit */
-        emac_esp_dma->rx_desc[i].RDES1.SecondAddressChained = 1;
-        emac_esp_dma->rx_desc[i].RDES1.ReceiveBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
+        rdes1.SecondAddressChained = 1;
+        rdes1.ReceiveBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
         /* Enable Ethernet DMA Rx Descriptor interrupt */
-        emac_esp_dma->rx_desc[i].RDES1.DisableInterruptOnComplete = 0;
+        rdes1.DisableInterruptOnComplete = 0;
+        emac_esp_dma->rx_desc[i].RDES1.Value = rdes1.Value;
         /* point to the buffer */
         emac_esp_dma->rx_desc[i].Buffer1Addr = (uint32_t)(emac_esp_dma->rx_buf[i]);
         /* point to next descriptor */
@@ -122,15 +160,17 @@ void emac_esp_dma_reset(emac_esp_dma_handle_t emac_esp_dma)
             emac_esp_dma->rx_desc[i].Buffer2NextDescAddr = (uint32_t)rx_desc_c;
         }
         /* Set Own bit of the Rx descriptor Status: DMA (last, the descriptor must be fully initialized first) */
-        emac_esp_dma->rx_desc[i].RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+        eth_dma_rdes0_t rdes0 = { 0 };
+        rdes0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+        emac_esp_dma->rx_desc[i].RDES0.Value = rdes0.Value;
     }
 
     /* init tx chain */
     for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
         /* Set Own bit of the Tx descriptor Status: CPU */
-        emac_esp_dma->tx_desc[i].TDES0.Own = EMAC_LL_DMADESC_OWNER_CPU;
-        emac_esp_dma->tx_desc[i].TDES0.SecondAddressChained = 1;
-        emac_esp_dma->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
+        eth_dma_tdes1_t tdes1 = { 0 };
+        tdes1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
+        emac_esp_dma->tx_desc[i].TDES1.Value = tdes1.Value;
         /* point to the buffer */
         emac_esp_dma->tx_desc[i].Buffer1Addr = (uint32_t)(emac_esp_dma->tx_buf[i]);
         /* point to next descriptor */
@@ -140,6 +180,10 @@ void emac_esp_dma_reset(emac_esp_dma_handle_t emac_esp_dma)
         if (i == CONFIG_ETH_DMA_TX_BUFFER_NUM - 1) {
             emac_esp_dma->tx_desc[i].Buffer2NextDescAddr = (uint32_t)tx_desc_c;
         }
+        eth_dma_tdes0_t tdes0 = { 0 };
+        tdes0.Own = EMAC_LL_DMADESC_OWNER_CPU;
+        tdes0.SecondAddressChained = 1;
+        emac_esp_dma->tx_desc[i].TDES0.Value = tdes0.Value;
     }
 
     /* set base address of the first descriptor */
@@ -207,35 +251,34 @@ uint32_t emac_esp_dma_transmit_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t
     eth_dma_tx_descriptor_t *desc_iter = emac_esp_dma->tx_desc;
     /* A frame is transmitted in multiple descriptor */
     for (size_t i = 0; i < bufcount; i++) {
+        eth_dma_tdes0_t tdes0 = emac_esp_dma_tdes0_load(desc_iter);
         /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
-        if (desc_iter->TDES0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
+        if (tdes0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
             goto err;
         }
         /* Clear FIRST and LAST segment bits */
-        desc_iter->TDES0.FirstSegment = 0;
-        desc_iter->TDES0.LastSegment = 0;
-        desc_iter->TDES0.Value &= ~(EMAC_TDES0_FS_CTRL_FLAGS_MASK | EMAC_TDES0_LS_CTRL_FLAGS_MASK);
+        tdes0.FirstSegment = 0;
+        tdes0.LastSegment = 0;
+        tdes0.Value &= ~(EMAC_TDES0_FS_CTRL_FLAGS_MASK | EMAC_TDES0_LS_CTRL_FLAGS_MASK);
+        uint32_t copy_len;
         if (i == 0) {
             /* Setting the first segment bit */
-            desc_iter->TDES0.FirstSegment = 1;
-            desc_iter->TDES0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_FS_CTRL_FLAGS_MASK;
+            tdes0.FirstSegment = 1;
+            tdes0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_FS_CTRL_FLAGS_MASK;
         }
         if (i == (bufcount - 1)) {
             /* Setting the last segment bit */
-            desc_iter->TDES0.LastSegment = 1;
-            desc_iter->TDES0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_LS_CTRL_FLAGS_MASK;
-            /* Program size */
-            desc_iter->TDES1.TransmitBuffer1Size = lastlen;
-            /* copy data from uplayer stack buffer */
-            memcpy((void *)(desc_iter->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, lastlen);
-            sentout += lastlen;
+            tdes0.LastSegment = 1;
+            tdes0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_LS_CTRL_FLAGS_MASK;
+            copy_len = lastlen;
         } else {
-            /* Program size */
-            desc_iter->TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
-            /* copy data from uplayer stack buffer */
-            memcpy((void *)(desc_iter->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, CONFIG_ETH_DMA_BUFFER_SIZE);
-            sentout += CONFIG_ETH_DMA_BUFFER_SIZE;
+            copy_len = CONFIG_ETH_DMA_BUFFER_SIZE;
         }
+        desc_iter->TDES1.TransmitBuffer1Size = copy_len;
+        emac_esp_dma_tdes0_store(desc_iter, tdes0);
+        /* copy data from uplayer stack buffer */
+        memcpy((void *)(desc_iter->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, copy_len);
+        sentout += copy_len;
         DMA_CACHE_WB(desc_iter->Buffer1Addr, CONFIG_ETH_DMA_BUFFER_SIZE);
         /* Point to next descriptor */
         desc_iter = emac_esp_dma_next_tx_desc(desc_iter);
@@ -264,29 +307,32 @@ uint32_t emac_esp_dma_transmit_frame_ext(emac_esp_dma_handle_t emac_esp_dma, ema
 #endif
     /* A frame is transmitted in multiple descriptor */
     while (dma_bufcount < CONFIG_ETH_DMA_TX_BUFFER_NUM) {
+        eth_dma_tdes0_t tdes0 = emac_esp_dma_tdes0_load(desc_iter);
         /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
-        if (desc_iter->TDES0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
+        if (tdes0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
             goto err;
         }
         /* Clear FIRST and LAST segment bits */
-        desc_iter->TDES0.FirstSegment = 0;
-        desc_iter->TDES0.LastSegment = 0;
-        desc_iter->TDES0.Value &= ~(EMAC_TDES0_FS_CTRL_FLAGS_MASK | EMAC_TDES0_LS_CTRL_FLAGS_MASK);
-        desc_iter->TDES1.TransmitBuffer1Size = 0;
+        tdes0.FirstSegment = 0;
+        tdes0.LastSegment = 0;
+        tdes0.Value &= ~(EMAC_TDES0_FS_CTRL_FLAGS_MASK | EMAC_TDES0_LS_CTRL_FLAGS_MASK);
+        eth_dma_tdes1_t tdes1 = emac_esp_dma_tdes1_load(desc_iter);
+        tdes1.TransmitBuffer1Size = 0;
         if (dma_bufcount == 0) {
             /* Setting the first segment bit */
-            desc_iter->TDES0.FirstSegment = 1;
-            desc_iter->TDES0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_FS_CTRL_FLAGS_MASK;
+            tdes0.FirstSegment = 1;
+            tdes0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_FS_CTRL_FLAGS_MASK;
         }
 
+        uint32_t buf1_addr = desc_iter->Buffer1Addr;
         while (buffs_cnt > 0) {
             /* Check if input buff data fits to currently available space in the descriptor */
             if (lastlen < avail_len) {
                 /* copy data from uplayer stack buffer */
-                memcpy((void *)(desc_iter->Buffer1Addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, lastlen);
+                memcpy((void *)(buf1_addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, lastlen);
                 sentout += lastlen;
                 avail_len -= lastlen;
-                desc_iter->TDES1.TransmitBuffer1Size += lastlen;
+                tdes1.TransmitBuffer1Size += lastlen;
 
                 /* Update processed input buffers info */
                 buffs_cnt--;
@@ -296,7 +342,7 @@ uint32_t emac_esp_dma_transmit_frame_ext(emac_esp_dma_handle_t emac_esp_dma, ema
                 /* There is only limited available space in the current descriptor, use it all */
             } else {
                 /* copy data from uplayer stack buffer */
-                memcpy((void *)(desc_iter->Buffer1Addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, avail_len);
+                memcpy((void *)(buf1_addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, avail_len);
                 sentout += avail_len;
                 lastlen -= avail_len;
                 /* If lastlen is not zero, input buff will be fragmented over multiple descriptors */
@@ -311,26 +357,29 @@ uint32_t emac_esp_dma_transmit_frame_ext(emac_esp_dma_handle_t emac_esp_dma, ema
                     lastlen = buffs_array->size;
                 }
                 avail_len = CONFIG_ETH_DMA_BUFFER_SIZE;
-                desc_iter->TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
+                tdes1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
                 /* The descriptor is full here so exit and use the next descriptor */
                 break;
             }
         }
-        DMA_CACHE_WB(desc_iter->Buffer1Addr, CONFIG_ETH_DMA_BUFFER_SIZE);
+        emac_esp_dma_tdes1_store(desc_iter, tdes1);
+        DMA_CACHE_WB(buf1_addr, CONFIG_ETH_DMA_BUFFER_SIZE);
         /* Increase counter of utilized DMA buffers */
         dma_bufcount++;
 
         /* If all input buffers processed, mark as LAST segment and finish the coping */
         if (buffs_cnt == 0) {
             /* Setting the last segment bit */
-            desc_iter->TDES0.LastSegment = 1;
-            desc_iter->TDES0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_LS_CTRL_FLAGS_MASK;
+            tdes0.LastSegment = 1;
+            tdes0.Value |= emac_esp_dma->tx_desc_flags & EMAC_TDES0_LS_CTRL_FLAGS_MASK;
+            emac_esp_dma_tdes0_store(desc_iter, tdes0);
 #if SOC_EMAC_IEEE1588V2_SUPPORTED
             desc_last = desc_iter;
 #endif
             break;
         }
 
+        emac_esp_dma_tdes0_store(desc_iter, tdes0);
         /* Point to next descriptor */
         desc_iter = emac_esp_dma_next_tx_desc(desc_iter);
     }
@@ -366,22 +415,26 @@ static esp_err_t emac_esp_dma_get_valid_recv_len(emac_esp_dma_handle_t emac_esp_
     uint32_t used_descs = 0;
 
     /* Traverse descriptors owned by CPU */
-    while ((desc_iter->RDES0.Own == EMAC_LL_DMADESC_OWNER_CPU) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
+    while (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) {
+        eth_dma_rdes0_t rdes0 = emac_esp_dma_rdes0_load(desc_iter);
+        if (rdes0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
+            break;
+        }
         used_descs++;
         /* Last segment in frame */
-        if (desc_iter->RDES0.LastDescriptor) {
+        if (rdes0.LastDescriptor) {
             /* Since Store Forward must be disabled on some targets, DMA descriptors may contain erroneous frames */
             /* In addition, "Descriptor Error" (no free descriptors) may truncate a frame even if Store Forward is enabled */
-            if (desc_iter->RDES0.ErrSummary) {
+            if (rdes0.ErrSummary) {
                 emac_esp_dma_flush_recv_frame(emac_esp_dma);
                 return ESP_FAIL;
             }
             /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
-            *ret_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
+            *ret_len = rdes0.FrameLength - ETH_CRC_LENGTH;
             break;
         }
         /* First segment in frame */
-        if (desc_iter->RDES0.FirstDescriptor) {
+        if (rdes0.FirstDescriptor) {
             emac_esp_dma->rx_desc = desc_iter;
         }
         /* point to next descriptor */
@@ -398,10 +451,14 @@ void emac_esp_dma_get_remain_frames(emac_esp_dma_handle_t emac_esp_dma, uint32_t
     uint32_t used_descs = 0;
 
     /* Traverse descriptors owned by CPU */
-    while ((desc_iter->RDES0.Own == EMAC_LL_DMADESC_OWNER_CPU) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
+    while (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) {
+        eth_dma_rdes0_t rdes0 = emac_esp_dma_rdes0_load(desc_iter);
+        if (rdes0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
+            break;
+        }
         used_descs++;
         /* Last segment in frame */
-        if (desc_iter->RDES0.LastDescriptor) {
+        if (rdes0.LastDescriptor) {
             (*remain_frames)++;
         }
         /* point to next descriptor */
@@ -475,8 +532,13 @@ uint32_t emac_esp_dma_receive_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t 
         DMA_CACHE_INVALIDATE(desc_iter->Buffer1Addr, CONFIG_ETH_DMA_BUFFER_SIZE);
         memcpy(buf, (void *)(desc_iter->Buffer1Addr), copy_len);
         /* `copy_len` does not include CRC (which may be stored in separate buffer), hence check if we reached the last descriptor */
-        while (!desc_iter->RDES0.LastDescriptor) {
-            desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+        while (1) {
+            eth_dma_rdes0_t rdes0 = emac_esp_dma_rdes0_load(desc_iter);
+            if (rdes0.LastDescriptor) {
+                break;
+            }
+            rdes0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+            emac_esp_dma_rdes0_store(desc_iter, rdes0);
             desc_iter = emac_esp_dma_next_rx_desc(desc_iter);
         }
 #if SOC_EMAC_IEEE1588V2_SUPPORTED
@@ -488,7 +550,7 @@ uint32_t emac_esp_dma_receive_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t 
             }
         }
 #endif
-        /* return last descriptor to DMA */
+        /* return last descriptor to DMA (reload after timestamp may have updated RDES0) */
         desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 
         /* update rxdesc */
@@ -503,15 +565,18 @@ void emac_esp_dma_flush_recv_frame(emac_esp_dma_handle_t emac_esp_dma)
 {
     eth_dma_rx_descriptor_t *desc_iter = emac_esp_dma->rx_desc;
 
-    /* While not last descriptor => return back to DMA */
-    while (!desc_iter->RDES0.LastDescriptor) {
-        desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-        desc_iter = emac_esp_dma_next_rx_desc(desc_iter);
+    while (1) {
+        eth_dma_rdes0_t rdes0 = emac_esp_dma_rdes0_load(desc_iter);
+        rdes0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+        emac_esp_dma_rdes0_store(desc_iter, rdes0);
+        eth_dma_rx_descriptor_t *next = emac_esp_dma_next_rx_desc(desc_iter);
+        if (rdes0.LastDescriptor) {
+            /* update rxdesc */
+            emac_esp_dma->rx_desc = next;
+            break;
+        }
+        desc_iter = next;
     }
-    /* the last descriptor */
-    desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-    /* update rxdesc */
-    emac_esp_dma->rx_desc = emac_esp_dma_next_rx_desc(desc_iter);
     /* poll rx demand */
     emac_hal_receive_poll_demand(&emac_esp_dma->hal);
 }
