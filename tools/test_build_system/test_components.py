@@ -307,7 +307,6 @@ dependencies:
     )
 
 
-@pytest.mark.buildv2_skip('cmakev2 does not support EXCLUDE_COMPONENTS')
 def test_exclude_components_not_passed(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Components in EXCLUDE_COMPONENTS not passed to idf_component_manager')
     idf_py('create-component', '-C', 'components', 'to_be_excluded')

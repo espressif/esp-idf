@@ -469,6 +469,19 @@ function(__init_components)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(prefix PREFIX)
 
+    # Add the names from the EXCLUDE_COMPONENTS environment or CMake variable to
+    # the EXCLUDE_COMPONENTS build property. Read the variable here, not when
+    # idf.cmake is included. A project may set it after include(project.cmake)
+    # and before project(), as in build system v1. The list may be separated by
+    # spaces or semicolons.
+    __get_default_value(VARIABLE EXCLUDE_COMPONENTS
+                        DEFAULT ""
+                        OUTPUT exclude_components)
+    spaces2list(exclude_components)
+    if(exclude_components)
+        idf_build_set_property(EXCLUDE_COMPONENTS "${exclude_components}" APPEND)
+    endif()
+
     idf_build_get_property(project_components_source PROJECT_COMPONENTS_SOURCE)
     if(NOT project_components_source)
         set(project_components_source "project_components")
@@ -744,6 +757,18 @@ endfunction()
 .. cmakev2:build_property:: IDF_COMPONENT_OPTIONAL_REQUIRES_MODE
 
     How :cmakev2:ref:`idf_component_optional_requires` is resolved, ``IMMEDIATE`` or ``DEFERRED``.
+
+.. cmakev2:build_property:: EXCLUDE_COMPONENTS
+
+    List of component names to skip during component discovery. An excluded
+    component has no interface target. Its Kconfig files are not collected and
+    its ``project_include.cmake`` is not included. A component that requires
+    an excluded component fails with ``Failed to resolve component``. Set the
+    property before ``idf_project_init()``. Names in the ``EXCLUDE_COMPONENTS``
+    environment or CMake variable are added to the property. This keeps
+    ``idf.py -DEXCLUDE_COMPONENTS=<name>`` and a variable set before
+    ``project()`` working. Unlike build system v1, a dependency does not add
+    an excluded component back, see :ref:`cmakev2-exclude-components`.
 
 .. cmakev2:build_property:: PROJECT_DEFAULT_EXTRA_COMPONENTS
 

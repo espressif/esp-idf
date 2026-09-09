@@ -102,6 +102,8 @@ When two directories provide a component with the same name, the higher priority
 
 Components published under a namespace (for example ``espressif__led_strip``) are also reachable under their short name (``led_strip``) when that short name is unambiguous.
 
+Components named in the ``EXCLUDE_COMPONENTS`` build property are skipped during discovery. An excluded component has no interface target. Its Kconfig files are not collected and its ``project_include.cmake`` is not included. Names in the ``EXCLUDE_COMPONENTS`` CMake or environment variable are added to the property. This keeps ``idf.py -DEXCLUDE_COMPONENTS=<name>`` and a variable set before ``project()`` working. Unlike v1, a dependency does not add an excluded component back, see :ref:`cmakev2-exclude-components`. A project can also set the property with :cmakev2:ref:`idf_build_set_property` before ``idf_project_init()``.
+
 .. _cmakev2-design-discovery-inclusion:
 
 Discovery vs. Inclusion

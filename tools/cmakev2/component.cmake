@@ -558,6 +558,8 @@ endfunction()
     the same. Only the directory, priority, and source are updated in the
     already initialized component.
 
+    Components named in the ``EXCLUDE_COMPONENTS`` build property are skipped.
+
     The name of the initialized component is added to the
     ``COMPONENTS_DISCOVERED`` build property, and its interface target is added
     to the ``COMPONENT_INTERFACES`` build property. These two lists are used by
@@ -596,6 +598,15 @@ function(__init_component)
     if("${component_priority}" STREQUAL "NOTFOUND")
         idf_die("Unknown component source '${component_source}' "
                 "for directory '${component_directory}'")
+    endif()
+
+    # Skip components named in the EXCLUDE_COMPONENTS build property. They get
+    # no interface target, no Kconfig collection and no project_include.cmake.
+    idf_build_get_property(exclude_components EXCLUDE_COMPONENTS)
+    if(component_name IN_LIST exclude_components)
+        idf_dbg("Component '${component_name}' in '${component_directory}' "
+                "is excluded by EXCLUDE_COMPONENTS")
+        return()
     endif()
 
     # Collect Kconfig files from this component directory.
