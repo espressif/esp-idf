@@ -156,18 +156,35 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
 
 #if CONFIG_IDF_TARGET_ESP32P4
     // Hardware bug workaround (DIG-734)
-    uint32_t w_out = srm_trans_desc->in.block_w * srm_trans_desc->scale_x_int + srm_trans_desc->in.block_w * srm_trans_desc->scale_x_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
+    uint32_t in_block_w, in_block_h;
+    uint32_t scale_x_int, scale_x_frag, scale_y_int, scale_y_frag;
+    if (srm_trans_desc->rotation_angle == PPA_SRM_ROTATION_ANGLE_90 || srm_trans_desc->rotation_angle == PPA_SRM_ROTATION_ANGLE_270) {
+        in_block_w = srm_trans_desc->in.block_h;
+        in_block_h = srm_trans_desc->in.block_w;
+        scale_x_int = srm_trans_desc->scale_y_int;
+        scale_x_frag = srm_trans_desc->scale_y_frag;
+        scale_y_int = srm_trans_desc->scale_x_int;
+        scale_y_frag = srm_trans_desc->scale_x_frag;
+    } else {
+        in_block_w = srm_trans_desc->in.block_w;
+        in_block_h = srm_trans_desc->in.block_h;
+        scale_x_int = srm_trans_desc->scale_x_int;
+        scale_x_frag = srm_trans_desc->scale_x_frag;
+        scale_y_int = srm_trans_desc->scale_y_int;
+        scale_y_frag = srm_trans_desc->scale_y_frag;
+    }
+    uint32_t w_out = in_block_w * scale_x_int + in_block_w * scale_x_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
     uint32_t w_divisor = (ppa_out_color_mode == PPA_SRM_COLOR_MODE_ARGB8888 || ppa_out_color_mode == PPA_SRM_COLOR_MODE_RGB888) ? 32 : 64;
     uint32_t w_left = w_out % w_divisor;
     w_left = (w_left == 0) ? w_divisor : w_left;
     uint32_t h_mb = (ppa_ll_srm_get_mb_size(platform->hal.dev) == PPA_LL_SRM_MB_SIZE_16_16) ? 16 : 32;
-    uint32_t h_in_left = srm_trans_desc->in.block_h % h_mb;
+    uint32_t h_in_left = in_block_h % h_mb;
     h_in_left = (h_in_left == 0) ? h_mb : h_in_left;
-    uint32_t h_left = h_in_left * srm_trans_desc->scale_y_int + h_in_left * srm_trans_desc->scale_y_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
+    uint32_t h_left = h_in_left * scale_y_int + h_in_left * scale_y_frag / PPA_LL_SRM_SCALING_FRAG_MAX;
     const uint32_t dma2d_fifo_depth_bits = 12 * 128;
     uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)ppa_out_color_mode);
     bool bypass_mb_order = false;
-    if (((w_out > w_divisor) || (srm_trans_desc->in.block_h > h_mb)) && // will be cut into more than one trans unit
+    if (((w_out > w_divisor) || (in_block_h > h_mb)) && // will be cut into more than one trans unit
             ((w_left * h_left * out_pixel_depth) < dma2d_fifo_depth_bits)
        ) {
         bypass_mb_order = true;
