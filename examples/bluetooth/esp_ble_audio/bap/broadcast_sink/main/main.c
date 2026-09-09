@@ -14,6 +14,14 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
+#include "sdkconfig.h"
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+#include "esp_bt_defs.h"
+#else
+#include "nimble/ble.h"
+#endif
+
 #include "esp_ble_audio_lc3_defs.h"
 #include "esp_ble_audio_bap_api.h"
 #include "esp_ble_audio_pacs_api.h"
@@ -48,6 +56,9 @@ static uint16_t sync_handle = PA_SYNC_HANDLE_INIT;
 static bool pa_syncing;
 
 static uint16_t conn_handle = CONN_HANDLE_INIT;
+#if CONFIG_EXAMPLE_PAST
+static uint8_t peer_addr[6];
+#endif /* CONFIG_EXAMPLE_PAST */
 static volatile bool stream_started;
 static volatile bool base_received;
 static uint32_t bis_index_bitfield;
@@ -81,6 +92,26 @@ static esp_ble_audio_pacs_cap_t cap = {
     .codec_cap = &codec_cap,
 };
 
+#if CONFIG_EXAMPLE_SCAN_OFFLOAD
+/* Connectable advertising so a Broadcast Assistant can find us and drive sync
+ * over BASS. The Assistant matches on the BASS UUID; PACS is advertised too so
+ * it can check our capabilities before picking a source. */
+static uint8_t ext_adv_data[] = {
+    /* Flags */
+    0x02, EXAMPLE_AD_TYPE_FLAGS, (EXAMPLE_AD_FLAGS_GENERAL | EXAMPLE_AD_FLAGS_NO_BREDR),
+    /* Incomplete List of 16-bit Service UUIDs */
+    0x05, EXAMPLE_AD_TYPE_UUID16_SOME,
+    (ESP_BLE_AUDIO_UUID_BASS_VAL & 0xFF), ((ESP_BLE_AUDIO_UUID_BASS_VAL >> 8) & 0xFF),
+    (ESP_BLE_AUDIO_UUID_PACS_VAL & 0xFF), ((ESP_BLE_AUDIO_UUID_PACS_VAL >> 8) & 0xFF),
+    /* Service Data - Broadcast Audio Scan Service */
+    0x03, EXAMPLE_AD_TYPE_SERVICE_DATA16,
+    (ESP_BLE_AUDIO_UUID_BASS_VAL & 0xFF), ((ESP_BLE_AUDIO_UUID_BASS_VAL >> 8) & 0xFF),
+    /* Complete Device Name */
+    0x13, EXAMPLE_AD_TYPE_NAME_COMPLETE,
+    'B', 'A', 'P', ' ', 'B', 'r', 'o', 'a', 'd', 'c', 'a', 's', 't', ' ', 'S', 'i', 'n', 'k',
+};
+#endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
+
 static void recv_state_updated_cb(esp_ble_conn_t *conn,
                                   const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state)
 {
@@ -96,28 +127,114 @@ static void recv_state_updated_cb(esp_ble_conn_t *conn,
     }
 }
 
+/* recv_state->addr carries the on-air (LSB-first) order the BASS PDU used;
+ * pa_sync_create() takes the active host's own order — MSB-first under
+ * Bluedroid, on-air under NimBLE. */
+static void addr_le_to_host(uint8_t dst[6], const uint8_t src[6])
+{
+#if CONFIG_BT_BLUEDROID_ENABLED
+    for (size_t i = 0; i < 6; i++) {
+        dst[i] = src[5 - i];
+    }
+#else
+    memcpy(dst, src, 6);
+#endif
+}
+
+/* Likewise the address type: BASS 3.1.1.4 carries only 0x00 public (device or
+ * identity) and 0x01 random (device or static identity); pa_sync_create() wants
+ * the host's own enum. */
+static uint8_t addr_type_le_to_host(uint8_t type)
+{
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return (type == BT_ADDR_LE_PUBLIC ||
+            type == BT_ADDR_LE_PUBLIC_ID) ? BLE_ADDR_TYPE_PUBLIC : BLE_ADDR_TYPE_RANDOM;
+#else
+    return (type == BT_ADDR_LE_PUBLIC ||
+            type == BT_ADDR_LE_PUBLIC_ID) ? BLE_ADDR_PUBLIC : BLE_ADDR_RANDOM;
+#endif
+}
+
 static int pa_sync_req_cb(esp_ble_conn_t *conn,
                           const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state,
                           bool past_available, uint16_t pa_interval)
 {
-    ESP_LOGI(TAG, "Received request to sync to PA (PAST %savailable): %u",
-             past_available ? "" : "not ",
-             recv_state->pa_sync_state);
+    uint8_t addr[6];
+    int err;
 
-    req_recv_state = recv_state;
+    ESP_LOGI(TAG, "Assistant requests PA sync to 0x%06lx (PAST %savailable)",
+             (unsigned long)recv_state->broadcast_id,
+             past_available ? "" : "not ");
 
-    if (recv_state->pa_sync_state == ESP_BLE_AUDIO_BAP_PA_STATE_SYNCED ||
-            recv_state->pa_sync_state == ESP_BLE_AUDIO_BAP_PA_STATE_INFO_REQ ||
-            sync_handle != PA_SYNC_HANDLE_INIT) {
-        /* Already syncing */
-        ESP_LOGW(TAG, "Rejecting PA sync request");
-        return -EALREADY;
+    /* BASS 3.1.1.4 lets the server answer either way for 0x01 and 0x02 alike:
+     * request SyncInfo, or establish the sync itself. Rejecting is not an
+     * option, so EXAMPLE_PAST only picks which of the two we take. */
+
+    if (pa_syncing || sync_handle != PA_SYNC_HANDLE_INIT) {
+        if (recv_state->broadcast_id == broadcaster_broadcast_id) {
+            /* Already on the requested train — nothing left to do. */
+            req_recv_state = recv_state;
+            return 0;
+        }
+
+        ESP_LOGW(TAG, "Busy with 0x%06lx, rejecting",
+                 (unsigned long)broadcaster_broadcast_id);
+        return -EBUSY;
     }
 
+    /* Drive the sync straight off the receive state instead of waiting to
+     * stumble across the source in our own scan: ext_scan_recv() stops
+     * creating syncs the moment req_recv_state is set, so nothing else would.
+     */
+    addr_le_to_host(addr, recv_state->addr.a.val);
+
+#if CONFIG_EXAMPLE_PAST
     if (past_available) {
-        ESP_LOGW(TAG, "Currently not support PAST");
-        return -ENOTSUP;
+        err = pa_sync_with_past(conn_handle, peer_addr);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to enable PAST receive, err %d", err);
+            return -EIO;
+        }
+
+        /* Ask for the transfer; the sync arrives on PA_SYNC_PAST. */
+        err = esp_ble_audio_bap_scan_delegator_set_pa_state(
+                  recv_state->src_id, ESP_BLE_AUDIO_BAP_PA_STATE_INFO_REQ);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to set PA state to INFO_REQ, err %d", err);
+            return -EIO;
+        }
+
+        ESP_LOGI(TAG, "Waiting for SyncInfo transfer...");
+        goto pending;
     }
+#endif /* CONFIG_EXAMPLE_PAST */
+
+#if CONFIG_EXAMPLE_SCAN_OFFLOAD
+    /* Without a transfer the SyncInfo only exists on air, and this controller
+     * needs the scanner up to pick it out; pa_sync() takes it back down. */
+    err = ext_scan_start();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to start scanning, err %d", err);
+        return -EIO;
+    }
+#endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
+
+    err = pa_sync_create(addr_type_le_to_host(recv_state->addr.type), addr,
+                         recv_state->adv_sid);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to create PA sync, err %d", err);
+#if CONFIG_EXAMPLE_SCAN_OFFLOAD
+        ext_scan_stop();
+#endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
+        return -EIO;
+    }
+
+#if CONFIG_EXAMPLE_PAST
+pending:
+#endif /* CONFIG_EXAMPLE_PAST */
+    req_recv_state = recv_state;
+    broadcaster_broadcast_id = recv_state->broadcast_id;
+    pa_syncing = true;
 
     return 0;
 }
@@ -334,6 +451,13 @@ static void broadcast_sink_stopped_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
     }
 
     broadcast_sink = NULL;
+
+#if !CONFIG_EXAMPLE_SCAN_OFFLOAD
+    /* No Assistant owns this source, so the receive state was ours and the
+     * delete took it with it. Drop the pointer before pa_sync_lost() reads
+     * a src_id that no longer exists. */
+    req_recv_state = NULL;
+#endif /* !CONFIG_EXAMPLE_SCAN_OFFLOAD */
 }
 
 static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
@@ -457,7 +581,13 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
-    if (pa_syncing == false && req_recv_state == NULL) {
+    /* A connected Assistant owns source selection: without this gate, the
+     * synthesized PA_SYNC_LOST that follows its terminate request would clear
+     * req_recv_state and we would immediately re-sync the very train it just
+     * told us to drop. Anything already streaming keeps running — the gate
+     * only stops us from starting something new. */
+    if (pa_syncing == false && req_recv_state == NULL &&
+            conn_handle == CONN_HANDLE_INIT) {
         broadcaster_broadcast_id = sr.broadcast_id;
 
         err = pa_sync_create(event->ext_scan_recv.addr.type,
@@ -481,6 +611,25 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
     if (event->pa_sync.status) {
         ESP_LOGE(TAG, "PA sync failed, status %d", event->pa_sync.status);
+
+#if CONFIG_EXAMPLE_SCAN_OFFLOAD
+        /* Nothing left for the scanner armed by pa_sync_req_cb() to do. */
+        if (event->type == ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC) {
+            rc = ext_scan_stop();
+            if (rc) {
+                ESP_LOGW(TAG, "Failed to stop scanning, err %d", rc);
+            }
+        }
+#endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
+
+        /* Report it so the assistant can retry or pick another source. Clearing
+         * req_recv_state also lets our own scan take another run at it —
+         * ext_scan_recv() is gated on it being NULL. */
+        if (req_recv_state != NULL) {
+            esp_ble_audio_bap_scan_delegator_set_pa_state(req_recv_state->src_id,
+                                                          ESP_BLE_AUDIO_BAP_PA_STATE_FAILED);
+            req_recv_state = NULL;
+        }
         return;
     }
 
@@ -488,13 +637,13 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
     ESP_LOGI(TAG, "Broadcast source PA synced, creating Broadcast Sink");
 
-    /* PA sync is established; the BASE / BIGInfo reports will arrive
-     * via the PA sync channel, so the extended scanner is no longer
-     * needed. Stop it now — pa_sync_lost() will restart it on loss.
-     */
-    rc = ext_scan_stop();
-    if (rc) {
-        ESP_LOGW(TAG, "Failed to stop scanning, err %d", rc);
+    /* BASE / BIGInfo arrive over the PA channel from here on. A transferred
+     * sync never started a scanner, so there is nothing to take down. */
+    if (event->type == ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC) {
+        rc = ext_scan_stop();
+        if (rc) {
+            ESP_LOGW(TAG, "Failed to stop scanning, err %d", rc);
+        }
     }
 
     err = esp_ble_audio_bap_broadcast_sink_create(event->pa_sync.sync_handle,
@@ -512,6 +661,14 @@ static void pa_sync_lost(esp_ble_audio_gap_app_event_t *event)
              event->pa_sync_lost.sync_handle, event->pa_sync_lost.reason);
 
     if (sync_handle == event->pa_sync_lost.sync_handle) {
+        /* Publish it before dropping the pointer. A Modify Source asking us to
+         * sync again is ignored while the receive state still reads SYNCED, and
+         * set_pa_state() is also what re-arms the pa_sync_req callback. */
+        if (req_recv_state != NULL) {
+            esp_ble_audio_bap_scan_delegator_set_pa_state(
+                req_recv_state->src_id, ESP_BLE_AUDIO_BAP_PA_STATE_NOT_SYNCED);
+        }
+
         sync_handle = PA_SYNC_HANDLE_INIT;
         pa_syncing = false;
         base_received = false;
@@ -531,9 +688,46 @@ static void pa_sync_lost(esp_ble_audio_gap_app_event_t *event)
             broadcast_sink = NULL;
         }
 
+#if !CONFIG_EXAMPLE_SCAN_OFFLOAD
         ext_scan_start();
+#endif /* !CONFIG_EXAMPLE_SCAN_OFFLOAD */
     }
 }
+
+#if CONFIG_EXAMPLE_SCAN_OFFLOAD
+static void acl_connect(esp_ble_audio_gap_app_event_t *event)
+{
+    if (event->acl_connect.status) {
+        ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
+        ext_adv_start(ext_adv_data, sizeof(ext_adv_data));
+        return;
+    }
+
+    ESP_LOGI(TAG, "Broadcast Assistant connected: handle %u",
+             event->acl_connect.conn_handle);
+
+#if CONFIG_EXAMPLE_PAST
+    memcpy(peer_addr, event->acl_connect.dst.val, sizeof(peer_addr));
+#endif /* CONFIG_EXAMPLE_PAST */
+
+    /* base_recv_cb() only falls back to BIS_SYNC_NO_PREF while nobody is
+     * driving us over BASS — without this the fallback would keep overwriting
+     * whatever the assistant asked for in bis_sync_req_cb(). */
+    conn_handle = event->acl_connect.conn_handle;
+}
+
+static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
+{
+    ESP_LOGI(TAG, "Broadcast Assistant disconnected: handle %u reason 0x%02x",
+             event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
+
+    conn_handle = CONN_HANDLE_INIT;
+
+    /* Extended advertising stops on connect; re-arm so the assistant (or
+     * another one) can come back. */
+    ext_adv_start(ext_adv_data, sizeof(ext_adv_data));
+}
+#endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
 
 static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
 {
@@ -542,11 +736,22 @@ static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
         ext_scan_recv(event);
         break;
     case ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC:
+#if CONFIG_EXAMPLE_PAST
+    case ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC_PAST:
+#endif /* CONFIG_EXAMPLE_PAST */
         pa_sync(event);
         break;
     case ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC_LOST:
         pa_sync_lost(event);
         break;
+#if CONFIG_EXAMPLE_SCAN_OFFLOAD
+    case ESP_BLE_AUDIO_GAP_EVENT_ACL_CONNECT:
+        acl_connect(event);
+        break;
+    case ESP_BLE_AUDIO_GAP_EVENT_ACL_DISCONNECT:
+        acl_disconnect(event);
+        break;
+#endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
     default:
         break;
     }
@@ -624,5 +829,23 @@ void app_main(void)
         return;
     }
 
+#if CONFIG_EXAMPLE_SCAN_OFFLOAD
+    err = set_device_name();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to set device name, err %d", err);
+        return;
+    }
+
+    err = ext_adv_start(ext_adv_data, sizeof(ext_adv_data));
+    if (err) {
+        ESP_LOGE(TAG, "Failed to start advertising, err %d", err);
+        return;
+    }
+#else
+    /* Scanning is the thing being offloaded, so it only runs when nobody else
+     * is doing it for us. Self-syncing would register a local receive state
+     * for the source and the Assistant's Add Source for the same one would
+     * come back as a duplicate. */
     ext_scan_start();
+#endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
 }

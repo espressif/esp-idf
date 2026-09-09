@@ -6,9 +6,25 @@ menu "Example: Broadcast Sink"
 
     config EXAMPLE_SCAN_OFFLOAD
         bool "Whether to wait for a Broadcast Assistant"
-        select BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
         help
-            If set to true, the example will start advertising connectable
-            for Broadcast Assistants.
+            If set to true, the example advertises connectable for Broadcast
+            Assistants and never picks a source itself — an Assistant selects
+            one and drives PA / BIS sync over BASS. The scanner only runs
+            while a requested periodic sync is being established.
+
+            If set to false, the example scans for TARGET_DEVICE_NAME and
+            syncs on its own, without advertising.
+
+    config EXAMPLE_PAST
+        bool "Accept a transferred PA sync from the Assistant (PAST)"
+        depends on EXAMPLE_SCAN_OFFLOAD
+        default y
+        select BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER if BT_NIMBLE_ENABLED
+        select BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER if BT_BLUEDROID_ENABLED
+        help
+            When the Assistant offers PA_Sync = 0x01, answer SyncInfo Request
+            and let it hand its sync over, so no scanning is needed. Off means
+            always establishing the sync locally instead, which BASS 3.1.1.4
+            allows for either request value.
 
 endmenu

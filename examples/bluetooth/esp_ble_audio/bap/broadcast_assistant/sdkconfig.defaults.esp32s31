@@ -1,0 +1,6 @@
+# Override some defaults so BT stack is enabled
+# by default in this example
+
+CONFIG_IDF_TARGET="esp32s31"
+
+CONFIG_BT_LE_ISO_SUPPORT=y

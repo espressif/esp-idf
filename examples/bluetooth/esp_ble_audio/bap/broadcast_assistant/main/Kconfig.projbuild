@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: Broadcast Assistant"
+
+    config EXAMPLE_PAST
+        bool "Transfer the local PA sync to the Scan Delegator (PAST)"
+        default y
+        select BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER if BT_BLUEDROID_ENABLED
+        select BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER if BT_NIMBLE_ENABLED
+        help
+            Offer the sync used to read the BASE in Add Source (PA_Sync = 0x01)
+            and hand it over on request, so the delegator never scans for the
+            source. Off advertises 0x02 and leaves the delegator to sync itself;
+            the host PAST-send feature must then be off as well, which on NimBLE
+            (default y) means CONFIG_BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER=n.
+
+endmenu

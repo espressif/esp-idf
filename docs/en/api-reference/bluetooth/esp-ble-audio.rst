@@ -42,6 +42,7 @@ Application Examples
 
 * **BAP (Basic Audio Profile)**
 
+  * :example:`bluetooth/esp_ble_audio/bap/broadcast_assistant` demonstrates how to act as a BAP Broadcast Assistant that scans for a broadcast source and adds it to a Scan Delegator over BASS.
   * :example:`bluetooth/esp_ble_audio/bap/broadcast_sink` demonstrates how to act as a BAP Broadcast Sink that synchronizes to a broadcast source and receives BIS audio streams.
   * :example:`bluetooth/esp_ble_audio/bap/broadcast_source` demonstrates how to act as a BAP Broadcast Source that creates a BIG and sends broadcast audio over BIS.
   * :example:`bluetooth/esp_ble_audio/bap/unicast_client` demonstrates how to discover and connect to a unicast server and establish BAP unicast streams.

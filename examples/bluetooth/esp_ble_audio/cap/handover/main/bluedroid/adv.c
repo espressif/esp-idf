@@ -169,7 +169,7 @@ int local_public_addr_get(uint8_t addr[6])
     }
 
     /* Bluedroid hands out addresses MSB-first; the caller feeds this to the audio
-     * stack, which stores a bt_addr_le_t and puts it on air LSB-first.
+     * stack, which puts it on air LSB-first.
      */
     for (size_t i = 0; i < 6; i++) {
         addr[i] = bda[5 - i];
