@@ -441,7 +441,9 @@ static void lcd_spi_post_trans_color_cb(spi_transaction_t *trans)
 
     if (lcd_trans->flags.en_trans_done_cb) {
         if (spi_panel_io->on_color_trans_done) {
-            spi_panel_io->on_color_trans_done(&spi_panel_io->base, NULL, spi_panel_io->user_ctx);
+            if (spi_panel_io->on_color_trans_done(&spi_panel_io->base, NULL, spi_panel_io->user_ctx)) {
+                portYIELD_FROM_ISR();
+            }
         }
     }
 }
