@@ -214,9 +214,10 @@ hwlp_restore_if_used:
     lw    a3, RV_COPROC_SA+HWLP_COPROC_IDX*4(a0)      /* a0 = RvCoprocSaveArea->sa_coprocs[HWLP_COPROC_IDX] */
     /* This will set the dirty flag for sure, a2 is preserved */
     hwlp_restore_regs a3
-#if SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1
+#if SOC_CPU_HAS_HWLOOP_STATE_BUG && CONFIG_ESP32P4_REV_MIN_FULL < 300
     /* The hardware doesn't update the HWLP state properly after executing the last instruction,
-     * as such, we must manually put the state of the HWLP to dirty now if any counter is not 0 */
+     * as such, we must manually put the state of the HWLP to dirty now if any counter is not 0.
+     * This erratum is fixed in silicon revision v3.0. */
     csrr  a3, CSR_LOOP0_COUNT
     bnez  a3, _hwlp_restore_end
     csrr  a3, CSR_LOOP1_COUNT
@@ -224,7 +225,7 @@ hwlp_restore_if_used:
     /* The counters are 0, mark the HWLP coprocessor as disabled in the enable flag and clean the state */
     xori  a2, a2, 1 << HWLP_COPROC_IDX
     sw    a2, RV_COPROC_ENABLE(a0)
-#endif /* SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1 */
+#endif /* SOC_CPU_HAS_HWLOOP_STATE_BUG && CONFIG_ESP32P4_REV_MIN_FULL < 300 */
     csrwi CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
 _hwlp_restore_end:
     lw    ra, (sp)
@@ -792,13 +793,13 @@ no_context_switch:
     csrwi   CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
     /* If the HWLP coprocessor has a hardware bug with its state, manually set the state to DIRTY
      * if it was already dirty before the interrupt, else, keep it to CLEAN */
-#if SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1
+#if SOC_CPU_HAS_HWLOOP_STATE_BUG && CONFIG_ESP32P4_REV_MIN_FULL < 300
     andi    a1, s8, 1 << HWLP_COPROC_IDX
     beqz    a1, 1f
     /* To re-enable the HWLP coprocessor, set the status to DIRTY */
     csrwi   CSR_HWLP_STATE_REG, HWLP_DIRTY_STATE
 1:
-#endif /* SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1 */
+#endif /* SOC_CPU_HAS_HWLOOP_STATE_BUG && CONFIG_ESP32P4_REV_MIN_FULL < 300 */
 #endif /* SOC_CPU_HAS_HWLOOP */
 
 #if SOC_CPU_HAS_PIE
