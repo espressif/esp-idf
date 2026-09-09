@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include "esp_err.h"
-#include "soc/cache_periph.h"
+#include "hal/cache_types.h"
 
 #ifdef __cplusplus
 extern "C" {

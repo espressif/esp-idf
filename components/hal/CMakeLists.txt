@@ -46,6 +46,10 @@ else()
     endif()
 endif()
 
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/cache_periph.c")
+    list(APPEND srcs "${target}/cache_periph.c")
+endif()
+
 if(NOT esp_tee_build AND NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
 

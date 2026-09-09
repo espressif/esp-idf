@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
-#include "soc/cache_periph.h"
+#include "hal/cache_periph.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
 #include "esp32c6/rom/cache.h"

@@ -12,7 +12,7 @@
 #include "soc/cache_reg.h"
 #include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
-#include "soc/cache_periph.h"
+#include "hal/cache_periph.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
 #include "esp32c61/rom/cache.h"

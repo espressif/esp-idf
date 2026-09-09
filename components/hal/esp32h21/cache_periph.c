@@ -1,11 +1,11 @@
 /*
  * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/cache_reg.h"
-#include "soc/cache_periph.h"
+#include "hal/cache_periph.h"
 
 /*
  * ESP32-H21 cache profile counter units.

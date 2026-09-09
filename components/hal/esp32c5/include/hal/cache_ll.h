@@ -13,7 +13,7 @@
 #include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
 #include "rom/cache.h"
-#include "soc/cache_periph.h"
+#include "hal/cache_periph.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
 #include "esp32c5/rom/cache.h"

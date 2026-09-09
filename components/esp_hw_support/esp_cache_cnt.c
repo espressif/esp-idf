@@ -7,7 +7,7 @@
 /*
  * Chip-agnostic implementation of the cache access counter API, built on
  * top of the cache profile counter functions of hal/cache_ll.h and the
- * unit descriptor table in soc/cache_periph.h.
+ * unit descriptor table in hal/cache_periph.h.
  */
 
 #include <inttypes.h>
