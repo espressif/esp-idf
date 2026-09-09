@@ -771,7 +771,6 @@ static void osi_thread_generic_event_handler(void *context)
 
     osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
     OSI_EVENT_CLEAR_FLAG(event, OSI_EVENT_FLAG_RUNNING);
-    OSI_TRACE_DEBUG("%s exit ev=%p flags=0x%x", __func__, event, event->flags);
     should_free = osi_event_release_locked(event);
     osi_event_unlock_and_maybe_free(event, should_free);
 }
