@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # NOTE: unittest is by default sorting tests based on their names,
 # so the order if which the tests are started may be different from
@@ -15,7 +15,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from typing import List  # noqa: F401
 
 try:
     import idf_tools
@@ -30,7 +29,7 @@ PYTHON_DIR_BACKUP = tempfile.mkdtemp()
 PYTHON_BINARY = os.path.join('Scripts', 'python.exe') if sys.platform == 'win32' else os.path.join('bin', 'python')
 REQ_SATISFIED = 'Python requirements are satisfied'
 # Python 3.8 and 3.9 has a different error message that does not include the "No package metadata was found for" part
-REQ_MISSING = r'Package was not found and is required by the application: (No package metadata was found for )?{}'
+REQ_MISSING = r'Package was not found and is\s+required by the application: (No package metadata was found for )?{}'
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
 REQ_DOCS = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.docs.txt'))
 CONSTR = 'Constraint file: {}'.format(os.path.join(TOOLS_DIR, 'espidf.constraints'))
@@ -54,8 +53,16 @@ def tearDownModule():  # type: () -> None
 
 
 class BasePythonInstall(unittest.TestCase):
-    def run_tool(self, cmd):  # type: (List[str]) -> str
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600)
+    def run_tool(self, cmd):  # type: (list[str]) -> str
+        # Match tools/test_mkdfu/conftest.py: wide COLUMNS avoids Rich line wrapping mid-message,
+        # NO_COLOR strips ANSI so string asserts stay stable.
+        env = os.environ.copy()
+        env['COLUMNS'] = '1000'
+        env['LINES'] = '40'
+        env['NO_COLOR'] = '1'
+        env.pop('FORCE_COLOR', None)
+        env.pop('PY_COLORS', None)
+        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600, env=env)
         decoded_output = ret.stdout.decode('utf-8', 'ignore')
         with open(os.path.join(IDF_PATH, 'tools', 'test_idf_tools', 'test_python_env_logs.txt'), 'a+') as w:
             # stack() returns list of callers frame records. [1] represent caller of this function
@@ -63,11 +70,11 @@ class BasePythonInstall(unittest.TestCase):
             w.write(decoded_output)
         return decoded_output
 
-    def run_idf_tools(self, args):  # type: (List[str]) -> str
+    def run_idf_tools(self, args):  # type: (list[str]) -> str
         cmd = [sys.executable, '../idf_tools.py'] + args
         return self.run_tool(cmd)
 
-    def run_in_venv(self, args):  # type: (List[str]) -> str
+    def run_in_venv(self, args):  # type: (list[str]) -> str
         _, _, python_venv, _ = idf_tools.get_python_env_path()
         cmd = [python_venv] + args
         return self.run_tool(cmd)

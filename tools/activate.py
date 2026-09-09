@@ -1,16 +1,19 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
-Ensure that the Python version used to initiate this script is appropriate for
-running the ESP-IDF shell activation. The primary goal is to perform the minimum
-necessary checks to identify the virtual environment with the default user Python
-and then launch activate.py using the ESP-IDF Python virtual environment.
+Bootstrap entry point for ESP-IDF shell activation.
+
+This script runs under the user's system Python (before the IDF virtualenv is
+active). It only locates the IDF Python environment via idf_tools and re-invokes
+tools/export_utils/activate_venv.py with that interpreter. CLI parsing and
+esp-pylib / rich-click usage happen in activate_venv.py inside the venv.
 """
+
 import os
 import sys
-from subprocess import run
 from subprocess import SubprocessError
+from subprocess import run
 
 
 def die(msg: str) -> None:
@@ -38,12 +41,26 @@ os.environ['IDF_PYTHON_ENV_PATH'] = idf_python_env_path
 os.environ['ESP_IDF_VERSION'] = idf_version
 
 if not os.path.exists(virtualenv_python):
-    die((f'ESP-IDF Python virtual environment "{virtualenv_python}" '
-         f'not found. Please run the install script to set it up before '
-         f'proceeding.'))
+    die(
+        f'ESP-IDF Python virtual environment "{virtualenv_python}" '
+        f'not found. Please run the install script to set it up before '
+        f'proceeding.'
+    )
 
 try:
-    run([virtualenv_python, os.path.join(idf_path, 'tools', 'export_utils', 'activate_venv.py')] + sys.argv[1:], check=True, env=os.environ.copy())
+    # Forward CLI args unchanged; activate_venv.py (rich-click) parses them in the venv.
+    run(
+        [virtualenv_python, os.path.join(idf_path, 'tools', 'export_utils', 'activate_venv.py')] + sys.argv[1:],
+        check=True,
+        env=os.environ.copy(),
+    )
 except (OSError, SubprocessError) as e:
-    die('\n'.join(['Activation script failed', str(e),
-                   'To view detailed debug information, set ESP_IDF_EXPORT_DEBUG=1 and run the export script again.']))
+    die(
+        '\n'.join(
+            [
+                'Activation script failed',
+                str(e),
+                'To view detailed debug information, set ESP_IDF_EXPORT_DEBUG=1 and run the export script again.',
+            ]
+        )
+    )

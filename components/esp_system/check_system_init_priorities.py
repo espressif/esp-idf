@@ -14,6 +14,10 @@ import os
 import re
 import sys
 
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import log
+from rich.markup import escape
+
 COMMENT_REGEX = re.compile(r'//.*?$|/\*.*?\*/', re.DOTALL | re.MULTILINE)
 ESP_SYSTEM_INIT_FN_REGEX = (
     r'{macro}\((?P<func>[a-zA-Z0-9_]+)\s*,\s*'
@@ -80,10 +84,11 @@ def strip_comments(contents: str) -> str:
 
 
 def main() -> None:
+    install_exception_reporting()
     try:
         idf_path = os.environ['IDF_PATH']
     except KeyError:
-        raise SystemExit('IDF_PATH must be set before running this script')
+        log.die('IDF_PATH must be set before running this script')
 
     has_errors = False
     startup_entries: list[StartupEntry] = []
@@ -108,10 +113,9 @@ def main() -> None:
             count_expected = len(re.findall(rf'\b{macro}\s*\(', file_contents_no_comments))
             found = list(pattern.finditer(file_contents_no_comments))
             if len(found) != count_expected:
-                print(
-                    f'error: In {filename}, found {macro} {count_expected} time(s), '
+                log.err(
+                    f'In {filename}, found {macro} {count_expected} time(s), '
                     f'but regular expression matched {len(found)} time(s)',
-                    file=sys.stderr,
                 )
                 has_errors = True
 
@@ -153,19 +157,16 @@ def main() -> None:
     #
     diff_lines = list(difflib.unified_diff(startup_entries_expected_lines, startup_entries_lines, lineterm=''))
     if len(diff_lines) > 0:
-        print(
-            (
-                "error: startup order doesn't match the reference file. "
-                f'please update {STARTUP_ENTRIES_FILE} to match the actual startup order:'
-            ),
-            file=sys.stderr,
+        log.err(
+            "startup order doesn't match the reference file. "
+            f'please update {STARTUP_ENTRIES_FILE} to match the actual startup order:'
         )
         for line in diff_lines:
-            print(f'{line}', file=sys.stderr)
+            log.print(escape(line), file=sys.stderr)
         has_errors = True
 
     if has_errors:
-        raise SystemExit(1)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

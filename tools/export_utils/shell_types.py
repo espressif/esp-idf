@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import base64
 import getpass
@@ -17,9 +17,8 @@ from tempfile import TemporaryDirectory
 from tempfile import gettempdir
 from typing import TextIO
 
-from console_output import debug
 from console_output import status_message
-from console_output import warn
+from esp_pylib.logger import log
 from utils import conf
 from utils import run_cmd
 
@@ -42,7 +41,7 @@ class Shell:
             self.tmp_dir_path = Path(gettempdir()) / f'esp_idf_activate_{username_safe}'
         except Exception as e:
             self.tmp_dir_path = Path(gettempdir()) / 'esp_idf_activate'
-            warn(f'Failed to get username with error: {e}. Using default temporary directory {self.tmp_dir_path}.')
+            log.warn(f'Failed to get username with error: {e}. Using default temporary directory {self.tmp_dir_path}.')
 
         if not conf.ARGS.debug and os.path.exists(self.tmp_dir_path):
             # Do not cleanup temporary directory when debugging
@@ -55,7 +54,7 @@ class Shell:
                         if current_time - file_creation_time > timedelta(hours=1):
                             item.unlink()
                 except Exception as e:
-                    warn(f'Failed to clean temp activation directory with file {item}: {e}')
+                    log.warn(f'Failed to clean temp activation directory with file {item}: {e}')
 
         self.tmp_dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -90,7 +89,7 @@ class UnixShell(Shell):
 
         with NamedTemporaryFile(dir=self.tmp_dir_path, delete=False, prefix='activate_') as fd:
             self.script_file_path = Path(fd.name)
-        debug(f'Temporary script file path: {self.script_file_path}')
+        log.debug(f'Temporary script file path: {self.script_file_path}')
 
         self.new_esp_idf_env['IDF_TOOLS_INSTALL_CMD'] = os.path.join(conf.IDF_PATH, 'install.sh')
         self.new_esp_idf_env['IDF_TOOLS_EXPORT_CMD'] = os.path.join(conf.IDF_PATH, 'export.sh')
@@ -189,7 +188,7 @@ class ZshShell(UnixShell):
         # Create a temporary directory to use as ZDOTDIR
         tmpdir = TemporaryDirectory()
         tmpdir_path = Path(tmpdir.name)
-        debug(f'Temporary ZDOTDIR {tmpdir_path} with .zshrc file')
+        log.debug(f'Temporary ZDOTDIR {tmpdir_path} with .zshrc file')
 
         # Copy init script to the custom ZDOTDIR
         zshrc_path = tmpdir_path / '.zshrc'
@@ -232,7 +231,7 @@ class PowerShell(Shell):
 
         with NamedTemporaryFile(dir=self.tmp_dir_path, delete=False, prefix='activate_', suffix='.ps1') as fd:
             self.script_file_path = Path(fd.name)
-        debug(f'Temporary script file path: {self.script_file_path}')
+        log.debug(f'Temporary script file path: {self.script_file_path}')
 
         self.new_esp_idf_env['IDF_TOOLS_INSTALL_CMD'] = os.path.join(conf.IDF_PATH, 'install.ps1')
         self.new_esp_idf_env['IDF_TOOLS_EXPORT_CMD'] = os.path.join(conf.IDF_PATH, 'export.ps1')
@@ -284,7 +283,7 @@ class WinCmd(Shell):
 
         with NamedTemporaryFile(dir=self.tmp_dir_path, delete=False, prefix='activate_', suffix='.bat') as fd:
             self.script_file_path = Path(fd.name)
-        debug(f'Temporary script file path: {self.script_file_path}')
+        log.debug(f'Temporary script file path: {self.script_file_path}')
 
         self.new_esp_idf_env['IDF_TOOLS_INSTALL_CMD'] = os.path.join(conf.IDF_PATH, 'install.bat')
         self.new_esp_idf_env['IDF_TOOLS_EXPORT_CMD'] = os.path.join(conf.IDF_PATH, 'export.bat')

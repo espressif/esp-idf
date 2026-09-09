@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import copy
@@ -9,12 +9,12 @@ import re
 import struct
 import sys
 from typing import Any
-from typing import cast
-from typing import Dict
-from typing import List
-from typing import Tuple
-from typing import Type
 from typing import TypedDict
+from typing import cast
+
+from esp_pylib.errors import FatalError
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import log
 
 # Increase this if you change the on-disk binary output format of the BitScrambler so it's
 # not compatible with previous versions
@@ -55,21 +55,21 @@ class Opcode(TypedDict, total=False):
     ctr_val: int
     tgt: int
     h: int
-    l: int
+    l: int  # noqa: E741
     ctr_add: int
     ctl_cond_src: Input
 
 
 class Inst(TypedDict, total=False):
     op: Opcode
-    mux: Dict[int, Input]
+    mux: dict[int, Input]
     write: int
     read: int
 
 
 class Chipcfg(TypedDict, total=False):
     chipname: str
-    extra_instruction_groups: List[str]
+    extra_instruction_groups: list[str]
     support_all: bool
 
 
@@ -112,7 +112,7 @@ class Chipcfg(TypedDict, total=False):
 # rewrite this and assign it to me - Jeroen)
 
 
-def bsasm_parse(src: str) -> List[Element]:
+def bsasm_parse(src: str) -> list[Element]:
     # Small hack: we trigger processing things on a newline. If a file is read without
     # a newline at the end of the last instruction, we'd erroneously ignore the last element.
     # Easiest way to fix it is to make sure the src always ends in a newline.
@@ -126,7 +126,7 @@ def bsasm_parse(src: str) -> List[Element]:
     # We keep track of row/col for error reporting
     line = 0
     column = 0
-    elements: List[Element] = []
+    elements: list[Element] = []
     curr_element: Element = {}
     in_comment = False  # True if we're anywhere between a # and a newline.
     for ch in src:
@@ -169,11 +169,9 @@ def bsasm_parse(src: str) -> List[Element]:
                 finish_element = True
                 state = ST_AFTER_COMMA
             elif state == ST_AFTER_COMMA:
-                raise RuntimeError(
-                    f'Line {line} column {column}: Empty subinstruction found'
-                )
+                raise FatalError(f'Line {line} column {column}: Empty subinstruction found')
             elif state == ST_WH_PRE:
-                raise RuntimeError(f'Line {line} column {column}: Stray comma found')
+                raise FatalError(f'Line {line} column {column}: Stray comma found')
         elif ch == ':':
             # This indicates the current element is a label; a colon is not used anywhere else.
             if state == ST_ELEMENT:
@@ -184,11 +182,9 @@ def bsasm_parse(src: str) -> List[Element]:
                     finish_element = True
                     state = ST_WH_PRE
                 else:
-                    raise RuntimeError(
-                        f'Line {line} column {column}: Stray semicolon found'
-                    )
+                    raise FatalError(f'Line {line} column {column}: Stray semicolon found')
             else:
-                raise RuntimeError(f'Line {line} column {column}: Stray semicolon found')
+                raise FatalError(f'Line {line} column {column}: Stray semicolon found')
         else:
             # Any other characters.
             if state == ST_ELEMENT:
@@ -203,9 +199,7 @@ def bsasm_parse(src: str) -> List[Element]:
         # Handle starting and finishing of elements
         if start_element:
             if 'line' in curr_element:
-                raise RuntimeError(
-                    f'Line {line} column {column}: Internal error: Element started twice!'
-                )
+                raise FatalError(f'Line {line} column {column}: Internal error: Element started twice!')
             curr_element['line'] = line
             curr_element['column'] = column
             curr_element['text'] = ch
@@ -213,9 +207,7 @@ def bsasm_parse(src: str) -> List[Element]:
             curr_element['is_label'] = False
         if finish_element:
             if 'line' not in curr_element:
-                raise RuntimeError(
-                    f'Line {line} column {column}: Internal error: Element finished while none started'
-                )
+                raise FatalError(f'Line {line} column {column}: Internal error: Element finished while none started')
             elements.append(curr_element)
             curr_element = {}
 
@@ -231,8 +223,9 @@ def bsasm_parse(src: str) -> List[Element]:
 # Specific syntax error exception. Reports details about the element[s] to make debugging
 # assembly sources easier.
 
-class bsasm_syntax_error(Exception):
-    def __new__(cls: Type['bsasm_syntax_error'], *args: str, **kwargs: str) -> 'bsasm_syntax_error':  # noqa: F821
+
+class bsasm_syntax_error(FatalError):
+    def __new__(cls: type['bsasm_syntax_error'], *args: str, **kwargs: str) -> 'bsasm_syntax_error':  # noqa: F821
         return cast(bsasm_syntax_error, super().__new__(cls))
 
     def __init__(self, *args: Any) -> None:  # noqa: F821
@@ -243,14 +236,11 @@ class bsasm_syntax_error(Exception):
         else:
             ele1 = args[0]
             ele2 = args[1]
-            message = args[1]
-            self.msg = 'Line {} col {}: "{}" and line {} col {}: "{}": {}'.format(ele1['line'],
-                                                                                  ele1['column'],
-                                                                                  ele1['text'],
-                                                                                  ele2['line'],
-                                                                                  ele2['column'],
-                                                                                  ele2['text'],
-                                                                                  message)
+            message = args[2]
+            self.msg = 'Line {} col {}: "{}" and line {} col {}: "{}": {}'.format(
+                ele1['line'], ele1['column'], ele1['text'], ele2['line'], ele2['column'], ele2['text'], message
+            )
+        super().__init__(self.msg)
 
     def __str__(self) -> str:  # noqa: F821
         return self.msg
@@ -260,12 +250,12 @@ class bsasm_syntax_error(Exception):
 class Meta_inst_def(TypedDict, total=False):
     op: str
     default: int
-    enum: Dict[str, int]
+    enum: dict[str, int]
     min: int
     max: int
 
 
-meta_inst_defs: List[Meta_inst_def] = [
+meta_inst_defs: list[Meta_inst_def] = [
     # RX_FETCH_MODE: 0 - on startup fill M0/M1, 1 - don't
     {'op': 'prefetch', 'default': 1, 'enum': {'true': 1, 'false': 0, '1': 1, '0': 0}},
     # Amount of bytes read from input or written to output (depending on eof_on)
@@ -288,11 +278,11 @@ def is_meta(ele: Element) -> bool:
 
 
 # Parse a config meta-instruction: check if the values are within range and convert from enums to values
-def parse_meta_cfg(ele: Element) -> Tuple[str, int]:
+def parse_meta_cfg(ele: Element) -> tuple[str, int]:
     words = ele['text'].lower().split(' ')
     meta_key = ''
     if len(words) != 3:
-        raise bsasm_syntax_error(ele, f'too many arguments to cfg statement')
+        raise bsasm_syntax_error(ele, 'too many arguments to cfg statement')
     for meta_inst_def in meta_inst_defs:
         if meta_inst_def['op'] == words[1]:
             if 'enum' in meta_inst_def:
@@ -300,17 +290,13 @@ def parse_meta_cfg(ele: Element) -> Tuple[str, int]:
                     meta_key = words[1]
                     meta_value = meta_inst_def['enum'][words[2]]
                 else:
-                    raise bsasm_syntax_error(
-                        ele, f'{words[2]} is not an allowed value for {words[1]}'
-                    )
+                    raise bsasm_syntax_error(ele, f'{words[2]} is not an allowed value for {words[1]}')
             else:
                 v = parse_val(ele, words[2], meta_inst_def['min'], meta_inst_def['max'])
                 meta_key = words[1]
                 meta_value = v
     if meta_key == '':
-        raise bsasm_syntax_error(
-            ele, f'{words[1]} is not a recognized meta-instruction'
-        )
+        raise bsasm_syntax_error(ele, f'{words[1]} is not a recognized meta-instruction')
     return (meta_key, meta_value)
 
 
@@ -340,8 +326,9 @@ def parse_output_range(ele: Element, text: str) -> range:
 
 # Resolve an input to a mux selection number and CTL_LUT_SEL/CTL_SRC_SEL/rel_addr
 # settings, if those need those to be in a specific state.
-def parse_input(ele: Element, text: str, meta: Dict[str, int]) -> Input:
+def parse_input(ele: Element, text: str, meta: dict[str, int]) -> Input:
     # Note that strings in the input def arrays need to be lower case.
+    # fmt: off
     inputs = (
         # REG_MEM0
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15',
@@ -373,6 +360,7 @@ def parse_input(ele: Element, text: str, meta: Dict[str, int]) -> Input:
         'l0', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14', 'l15',
         'l16', 'l17', 'l18', 'l19', 'l20', 'l21', 'l22', 'l23', 'l24', 'l25', 'l26', 'l27', 'l28', 'l29', 'l30', 'l31',
     )
+    # fmt: on
 
     # Note where in the counter reg / mem1 reg region the LUT starts, if enabled
     lut_starts = {8: 24, 16: 16, 32: 0}
@@ -418,9 +406,7 @@ def parse_input(ele: Element, text: str, meta: Dict[str, int]) -> Input:
         raise bsasm_syntax_error(ele, f"'Input {text} is not valid.")
 
     if ret['input'] >= 64 and rel_addr:
-        raise bsasm_syntax_error(
-            ele, f"'LUT input {text} cannot be relatively addressed."
-        )
+        raise bsasm_syntax_error(ele, f"'LUT input {text} cannot be relatively addressed.")
 
     if ret['input'] < 64:
         ret['flags']['rel_addr'] = rel_addr
@@ -451,13 +437,11 @@ def check_input_compatible(in1: Input, in2: Input) -> None:
 # Returns a dictionary with the selected input in 'muxsel' plus a 'flags' dictionary. If a
 # rel_addr/lutsel/ctrsel key is in the 'flags' field, that bit must be set or cleared in
 # the instruction; if it's not set, the value of that bit doesn't matter for that input.
-def parse_input_range(ele: Element, text: str, meta: Dict[str, int]) -> List[Input]:
+def parse_input_range(ele: Element, text: str, meta: dict[str, int]) -> list[Input]:
     # Validate the range and split into start and optionally end fields
     b = re.findall(r'^([a-z0-9><=+]+)(?:\.\.([a-z0-9<>=+]+))?$', text)
     if not b:
-        raise bsasm_syntax_error(
-            ele, f'{text} not a valid input selection or range of input selections)'
-        )
+        raise bsasm_syntax_error(ele, f'{text} not a valid input selection or range of input selections)')
     start = parse_input(ele, b[0][0], meta)
     if b[0][1] != '':
         end = parse_input(ele, b[0][1], meta)
@@ -485,8 +469,13 @@ def parse_input_range(ele: Element, text: str, meta: Dict[str, int]) -> List[Inp
         pass
     elif math.floor(start['input'] / 32) != math.floor(end['input'] / 32):
         errtxt = f'{text} is not a valid range of input selections. '
-        if 'flags' in start and 'lutsel' in start['flags'] and start['flags']['lutsel'] == 1 \
-                and ('flags' not in end or 'lutsel' not in end['flags']) and end['input'] < 32:
+        if (
+            'flags' in start
+            and 'lutsel' in start['flags']
+            and start['flags']['lutsel'] == 1
+            and ('flags' not in end or 'lutsel' not in end['flags'])
+            and end['input'] < 32
+        ):
             errtxt += 'Did you forget an L at the end of the range? (e.g. L0..31 instead of L0..L31)'
         else:
             errtxt += 'Try splitting up the range.'
@@ -514,7 +503,7 @@ def parse_input_range(ele: Element, text: str, meta: Dict[str, int]) -> List[Inp
         r = range(start['input'], end['input'] + 1)
     else:
         r = range(start['input'], end['input'] - 1, -1)
-    ret: List[Input] = []
+    ret: list[Input] = []
     for i in r:
         n: Input = {'muxsel': i, 'flags': flags, 'ele': ele}
         ret.append(n)
@@ -533,14 +522,12 @@ def parse_val(ele: Element, text: str, minimum: int, maximum: int) -> int:
     except ValueError:
         raise bsasm_syntax_error(ele, f"'{text}' is not an integer")
     if n < minimum or n > maximum:
-        raise bsasm_syntax_error(
-            ele, f"'{text}' is out of range [{minimum}..{maximum}]"
-        )
+        raise bsasm_syntax_error(ele, f"'{text}' is out of range [{minimum}..{maximum}]")
     return n
 
 
 # Return an IP for a label text
-def resolve_label(ele: Element, text: str, labels: Dict[str, int]) -> int:
+def resolve_label(ele: Element, text: str, labels: dict[str, int]) -> int:
     if text in labels:
         return labels[text]
     # No match. We could technically also see if the label is a direct IP, but I think
@@ -565,35 +552,31 @@ def check_chip_supports_inst(chipcfg: Chipcfg, instgroup: str, ele: Element) -> 
 
     if instgroup not in chipcfg['extra_instruction_groups']:
         name = chipcfg['chipname']
-        raise bsasm_syntax_error(
-            ele, f'Chip {name} does not support this instruction'
-        )
+        raise bsasm_syntax_error(ele, f'Chip {name} does not support this instruction')
 
 
 def add_op_to_inst(inst: Inst, op: Opcode, ele: Element) -> None:
     if 'op' in inst:
-        raise bsasm_syntax_error(
-            inst['op']['ele'], ele, f'Cannot have multiple opcodes in one instruction'
-        )
+        raise bsasm_syntax_error(inst['op']['ele'], ele, 'Cannot have multiple opcodes in one instruction')
     op['ele'] = ele
     inst['op'] = op
 
 
 # Takes the elements generated by the parse routine and converts it to a
 # representation of the bits in the Bitscrambler program.
-def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst], Dict[str, int], List[int]]:
+def bsasm_assemble(elements: list[Element], chipcfg: Chipcfg) -> tuple[list[Inst], dict[str, int], list[int]]:
     # This assembler uses two passes: the first finds and resolves global
     # stuff, the second one encodes the actual instructions.
 
     # Set the meta-instruction values to their defaults
-    meta: Dict[str, int] = {}
+    meta: dict[str, int] = {}
     for meta_inst_def in meta_inst_defs:
         meta[meta_inst_def['op']] = meta_inst_def['default']
 
     # Pass 1a: find IPs for labels, mark meta instructions
     # ToDo: also resolve 'def' symbols here once we implement them
     ip = 0
-    ip_for_label: Dict[str, int] = {}
+    ip_for_label: dict[str, int] = {}
     inst_is_meta = False
     inst_start = True
     for ele in elements:
@@ -627,9 +610,7 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
                 (key, val) = parse_meta_cfg(ele)
                 meta[key] = val
                 if ele['more_in_instruction']:
-                    raise bsasm_syntax_error(
-                        ele, 'garbage after cfg statement detected'
-                    )
+                    raise bsasm_syntax_error(ele, 'garbage after cfg statement detected')
         inst_start = not ele['more_in_instruction']
 
     # Pass 1C: parse LUT data instructions. We do this after the meta instructions pass
@@ -637,7 +618,7 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
     # Note a lut can be written both as 'lut 1 2 3' as well as 'lut 1,2,3' so we need
     # to account for both cases.
     lut_minmax_vals = {
-        8:  (-128, 255),
+        8: (-128, 255),
         16: (-32768, 65537),
         32: (-2147483648, 4294967296 - 1),
     }
@@ -660,7 +641,7 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
 
     # Pass 2: Parse any instructions
     valid_read_write = [0, 8, 16, 32]
-    insts: List[Inst] = []
+    insts: list[Inst] = []
     def_inst: Inst = {'mux': {}}
     inst = copy.deepcopy(def_inst)
     op: Opcode
@@ -677,9 +658,7 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
                 i = 0
                 for out in outs:
                     if out in inst['mux']:
-                        raise bsasm_syntax_error(
-                            ele, f'output {out} already set earlier in instruction'
-                        )
+                        raise bsasm_syntax_error(ele, f'output {out} already set earlier in instruction')
                     if len(ins) == 1:
                         # set range input
                         inst['mux'][out] = ins[0]
@@ -692,25 +671,21 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
                 check_arg_ct(ele, words, 2)
                 no = parse_val(ele, words[1], 0, 32)
                 if no not in valid_read_write:
-                    raise bsasm_syntax_error(
-                        ele, f'{no} is not a valid amount of bits to write'
-                    )
+                    raise bsasm_syntax_error(ele, f'{no} is not a valid amount of bits to write')
                 inst['write'] = no
             elif words[0] == 'read':
                 # Read x bits from input fifo
                 check_arg_ct(ele, words, 2)
                 no = parse_val(ele, words[1], 0, 32)
                 if no not in valid_read_write:
-                    raise bsasm_syntax_error(
-                        ele, f'{no} is not a valid amount of bits to write'
-                    )
+                    raise bsasm_syntax_error(ele, f'{no} is not a valid amount of bits to write')
                 inst['read'] = no
             elif re.match('loop[ab]', words[0]):
                 # LOOPc end_val ctr_add tgt
                 check_arg_ct(ele, words, 4)
                 op = {'op': OP_LOOP, 'ele': ele}
                 op['c'] = 1 if words[0][4] == 'b' else 0
-                op['end_val'] = parse_val(ele, words[1], -32768, 65535) & 0xffff
+                op['end_val'] = parse_val(ele, words[1], -32768, 65535) & 0xFFFF
                 op['ctr_add'] = parse_val(ele, words[2], -16, 15) & 31
                 op['tgt'] = resolve_label(ele, words[3], ip_for_label)
                 add_op_to_inst(inst, op, ele)
@@ -725,7 +700,7 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
                 else:
                     op['h'] = 1 if words[0][4] == 'h' else 0
                     op['l'] = 1 if words[0][4] == 'l' else 0
-                op['ctr_add'] = parse_val(ele, words[1], -32768, 65535) & 0xffff
+                op['ctr_add'] = parse_val(ele, words[1], -32768, 65535) & 0xFFFF
                 add_op_to_inst(inst, op, ele)
             elif re.match('if(n)?', words[0]):
                 # IF[N] ctl_cond_src tgt
@@ -745,7 +720,7 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
                 else:
                     op['h'] = 1 if words[0][6] == 'h' else 0
                     op['l'] = 1 if words[0][6] == 'l' else 0
-                op['ctr_add'] = parse_val(ele, words[1], -32768, 65535) & 0xffff
+                op['ctr_add'] = parse_val(ele, words[1], -32768, 65535) & 0xFFFF
                 add_op_to_inst(inst, op, ele)
             elif re.match('ldcti[ab]([hl])?', words[0]):
                 # LDCTIc[h|l]
@@ -790,11 +765,7 @@ def bsasm_assemble(elements: List[Element], chipcfg: Chipcfg) -> Tuple[List[Inst
             else:
                 raise bsasm_syntax_error(ele, 'unknown instruction')
 
-            if (
-                (not ele['more_in_instruction'])
-                and (not ele['is_label'])
-                and (not ele['is_meta'])
-            ):
+            if (not ele['more_in_instruction']) and (not ele['is_label']) and (not ele['is_meta']):
                 insts.append(inst)
                 inst = copy.deepcopy(def_inst)
     return (insts, meta, lut)
@@ -838,9 +809,9 @@ class bitstream:
 
 
 # This encodes all the instructions into binary.
-def insts_to_binary(insts: List[Inst], meta: Dict[str, int], lut: list) -> bytearray:
+def insts_to_binary(insts: list[Inst], meta: dict[str, int], lut: list) -> bytearray:
     if len(insts) > 8:
-        raise RuntimeError('Program has more than eight instructions.')
+        raise FatalError('Program has more than eight instructions.')
     ret = bytearray()
 
     # We need to reformat the LUT into 32-bit values, if not already in that format.
@@ -955,13 +926,13 @@ def insts_to_binary(insts: List[Inst], meta: Dict[str, int], lut: list) -> bytea
         bits.add_bits(flags['ctrsel'], 1)
         bits.add_bits(flags['lutsel'], 1)
         if bits.size() != 257:
-            raise RuntimeError(f'Internal error: instruction size is {bits.size()}!')
+            raise FatalError(f'Internal error: instruction size is {bits.size()}!')
         # Pad instruction field to 36 bytes = 9 32-bit words
         bits.add_bits(0, 31)
         ret += bits.to_bytearray()
 
     for i in lut_reformatted:
-        ret += struct.pack('<I', i & 0xffffffff)
+        ret += struct.pack('<I', i & 0xFFFFFFFF)
 
     return ret
 
@@ -969,11 +940,10 @@ def insts_to_binary(insts: List[Inst], meta: Dict[str, int], lut: list) -> bytea
 # Return the contents of a file
 def read_file(filename: str) -> str:
     try:
-        with open(filename, 'r') as f:
-            file_content = f.read()
-    except OSError:
-        print(f'Error opening {filename}: {sys.exc_info()[0]}')
-    return file_content
+        with open(filename) as f:
+            return f.read()
+    except OSError as e:
+        raise FatalError(f'Error opening {filename}: {e}') from e
 
 
 # Write a bytestring to a file
@@ -983,29 +953,35 @@ def write_file(filename: str, data: bytearray) -> None:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        prog=sys.argv[0],
-        description='BitScrambler program assembler')
-    parser.add_argument('infile', help='File name of assembly source to be assembled into a binary')
-    parser.add_argument('outfile', help='File name of output binary', nargs='?', default=argparse.SUPPRESS)
-    parser.add_argument('-c', help='Set chip capabilities json file; if set, returns an error when \
-            an unsupported instruction is assembled',  default=argparse.SUPPRESS)
-    args = parser.parse_args()
+    install_exception_reporting()
+    try:
+        parser = argparse.ArgumentParser(prog=sys.argv[0], description='BitScrambler program assembler')
+        parser.add_argument('infile', help='File name of assembly source to be assembled into a binary')
+        parser.add_argument('outfile', help='File name of output binary', nargs='?', default=argparse.SUPPRESS)
+        parser.add_argument(
+            '-c',
+            help='Set chip capabilities json file; if set, returns an error when \
+                an unsupported instruction is assembled',
+            default=argparse.SUPPRESS,
+        )
+        args = parser.parse_args()
 
-    chipcfg = Chipcfg()
-    if 'c' in args:
-        with open(args.c) as chipcfg_json:
-            chipcfg = json.load(chipcfg_json)
-    else:
-        chipcfg = {'chipname': 'chip', 'extra_instruction_groups': [], 'support_all': True}
+        chipcfg = Chipcfg()
+        if 'c' in args:
+            with open(args.c) as chipcfg_json:
+                chipcfg = json.load(chipcfg_json)
+        else:
+            chipcfg = {'chipname': 'chip', 'extra_instruction_groups': [], 'support_all': True}
 
-    if 'outfile' in args:
-        outfile = args.outfile
-    else:
-        outfile = re.sub('.bsasm', '', args.infile) + '.bsbin'
-    asm = read_file(args.infile)
-    tokens = bsasm_parse(asm)
-    insts, meta, lut = bsasm_assemble(tokens, chipcfg)
-    out_data = insts_to_binary(insts, meta, lut)
-    write_file(outfile, out_data)
-    print(f'Written {len(insts)} instructions and {len(lut)} 32-bit words of LUT.')
+        if 'outfile' in args:
+            outfile = args.outfile
+        else:
+            outfile = re.sub('.bsasm', '', args.infile) + '.bsbin'
+        asm = read_file(args.infile)
+        tokens = bsasm_parse(asm)
+        insts, meta, lut = bsasm_assemble(tokens, chipcfg)
+        out_data = insts_to_binary(insts, meta, lut)
+        write_file(outfile, out_data)
+        log.print(f'Written {len(insts)} instructions and {len(lut)} 32-bit words of LUT.')
+    except FatalError as e:
+        log.die(str(e), exit_code=2)
