@@ -45,7 +45,9 @@ typedef struct {
     /* Lazy flush marker, pool-owned: set by the periodic flusher (without
      * holding atomic_lock) when the transport was busy at flush time; the
      * next claim that takes the lock seals the buffered frames first.
-     * Cleared by seal_and_send and on recycle. */
+     * Cleared by seal_and_send and on recycle, but a delayed flusher may
+     * store true afterwards. Such a stale hint permits an extra partial
+     * seal in the next lifecycle, never sending a writer-owned buffer. */
     volatile uint8_t pending_seal;
 
     uint8_t *buf;

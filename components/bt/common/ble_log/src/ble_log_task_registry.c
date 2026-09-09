@@ -36,7 +36,7 @@ BLE_LOG_STATIC volatile uint8_t s_task_cnt;
 BLE_LOG_STATIC ble_log_atomic_lock_t s_task_reg_lock;
 
 /* The binding broadcast keeps its own 24-bit frame sequence, separate
- * from the snapshot sequence (see ble_log_lbm_v2.h): a gap counts a
+ * from the log/snapshot Global SN (see ble_log_lbm_v2.h): a gap counts a
  * broadcast window skipped despite a non-empty registry, never a lost
  * snapshot. ble_log_task_registry_init resets it. */
 BLE_LOG_STATIC uint32_t g_task_binding_sn;

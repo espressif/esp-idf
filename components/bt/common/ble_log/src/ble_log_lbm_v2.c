@@ -74,9 +74,10 @@ _Static_assert(sizeof(ble_log_version_info_t) == 58,
 typedef struct {
     ble_log_prph_trans_t *trans[BLE_LOG_POOL_TRANS_CNT];
 
-    /* Hint bitmaps: a set bit means "this buffer is likely FREE/OPEN". The
-     * real ownership is the per-buffer atomic_lock; bitmaps only accelerate
-     * candidate lookup and may be transiently stale. */
+    /* Bitmaps accelerate lookup; cached candidates may be stale. Ownership
+     * still requires the per-buffer lock and a state check. FREE acceptance
+     * also requires atomically taking a published FREE bit: state=FREE alone
+     * can precede the recycler's bitmap publication. OPEN is only a hint. */
     volatile uint32_t free_bitmap;
     volatile uint32_t open_bitmap;
 
@@ -117,12 +118,12 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t lbm_enabled = 0;
 BLE_LOG_STATIC volatile bool flush_in_progress = false;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_pool_t g_pool;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_stat_mgr_t stat_mgr_ctx[BLE_LOG_SRC_MAX];
-/* Global SN (the log sources except INTERNAL and REDIR) and the separate
- * Internal Snapshot sequence; see ble_log_lbm_v2.h. */
+/* Global SN (core logs and snapshots) and the snapshot-only anchor count;
+ * task bindings and REDIR retain independent sequences. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t g_frame_sn;
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t g_snapshot_sn;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t g_anchor_count;
 #define BLE_LOG_GET_GLOBAL_SN()                 BLE_LOG_GET_FRAME_SN(g_frame_sn)
-#define BLE_LOG_GET_SNAPSHOT_SN()               BLE_LOG_GET_FRAME_SN(g_snapshot_sn)
+#define BLE_LOG_GET_ANCHOR_COUNT()              BLE_LOG_GET_FRAME_SN(g_anchor_count)
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_prph_trans_t *internal_trans;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_pool_claim_t pool_claim_ctx[BLE_LOG_POOL_TRANS_CNT];
 BLE_LOG_STATIC ble_log_internal_snapshot_t internal_snapshot;
@@ -187,7 +188,8 @@ ble_log_pool_bitmap_set(volatile uint32_t *bitmap, uint8_t id)
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 uint32_t ble_log_pool_bitmap_clear(volatile uint32_t *bitmap, uint8_t id)
 {
-    /* Clearing a hint publishes no data; ownership is already held by lock. */
+    /* Clearing publishes no data; ownership is held by lock. For FREE, the
+     * returned bit also confirms that recycle publication completed. */
     return __atomic_fetch_and(bitmap, ~BIT(id), __ATOMIC_RELAXED);
 }
 
@@ -297,8 +299,10 @@ ble_log_pool_waiter_adjust(int delta)
 BLE_LOG_IRAM_ATTR void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans)
 {
     trans->pos = 0;
-    /* A marker set while the transport was SENDING must not leak into its
-     * next lifecycle. */
+    /* Clear existing requests. A flusher delayed after a failed try-lock may
+     * store true after this clear, even in the next lifecycle. That hint may
+     * cause an extra partial seal; it never grants permission to send a
+     * buffer still owned by a writer. */
     BLE_LOG_ATOMIC_STORE_RELAXED(trans->pending_seal, false);
 
     if (trans->owner_kind == BLE_LOG_TRANS_OWNER_INTERNAL) {
@@ -419,6 +423,10 @@ ble_log_prph_trans_t *ble_log_pool_try_claim_from(volatile uint32_t *bitmap,
 
         uint32_t previous = ble_log_pool_bitmap_clear(bitmap, id);
         if (bitmap == &g_pool.free_bitmap) {
+            if (!(previous & BIT(id))) {
+                ble_log_pool_release_candidate(trans);
+                continue;
+            }
             ble_log_pool_update_peak(previous & ~BIT(id));
         }
         /* Keep packing the same OPEN transport instead of scanning the rest
@@ -600,6 +608,8 @@ void ble_log_pool_finish_frame(ble_log_prph_trans_t *trans, uint16_t payload_len
 
     trans->pos += payload_len + BLE_LOG_FRAME_OVERHEAD;
     BLE_LOG_ATOMIC_ADD_RELAXED(stat_mgr->counters.written_frame_cnt, 1);
+    BLE_LOG_ATOMIC_ADD_RELAXED(stat_mgr->counters.written_bytes_cnt,
+                              payload_len + BLE_LOG_FRAME_OVERHEAD);
 
     /* Completion: seal if nearly full, otherwise publish as OPEN. */
     if (BLE_LOG_TRANS_FREE_SPACE(trans) <= BLE_LOG_FRAME_OVERHEAD) {
@@ -767,7 +777,7 @@ bool ble_log_lbm_init(void)
     g_pool.open_bitmap = 0;
     BLE_LOG_MEMSET(stat_mgr_ctx, 0, sizeof(stat_mgr_ctx));
     g_frame_sn = 0;
-    g_snapshot_sn = 0;
+    g_anchor_count = 0;
     /* Task registry: fresh epoch (registry, sequence and its dedicated
      * transport) for the new receiver epoch. */
     if (!ble_log_task_registry_init()) {
@@ -842,6 +852,8 @@ void ble_log_snapshot_stats(ble_log_source_stat_t *snapshots)
             BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr->counters.written_frame_cnt);
         snapshots[i].lost_frame_cnt =
             BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr->counters.lost_frame_cnt);
+        snapshots[i].written_bytes_cnt =
+            BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr->counters.written_bytes_cnt);
     }
 }
 
@@ -963,7 +975,16 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
         (uint8_t)BLE_LOG_ATOMIC_LOAD_RELAXED(g_pool.inflight_peak);
     ble_log_snapshot_stats(internal_snapshot.stats);
 
-    uint32_t frame_sn = BLE_LOG_GET_SNAPSHOT_SN();
+    /* Only a snapshot that acquired its transport consumes a Global SN.
+     * Busy snapshots are not in the core loss statistics; their gaps belong
+     * exclusively to anchor_count. The transport lock serializes successful
+     * snapshots, so no extra critical section is needed for these counters. */
+    uint32_t frame_sn = BLE_LOG_GET_GLOBAL_SN();
+    uint32_t anchor_count = BLE_LOG_GET_ANCHOR_COUNT();
+    for (unsigned i = 0; i < sizeof(internal_snapshot.anchor_count); i++) {
+        internal_snapshot.anchor_count[i] = (uint8_t)(anchor_count >> (8U * i));
+    }
+
     ble_log_frame_head_t frame_head = {
         .length = sizeof(timestamp) + sizeof(internal_snapshot),
         .frame_meta = BLE_LOG_MAKE_FRAME_META(BLE_LOG_SRC_INTERNAL, frame_sn),
@@ -987,9 +1008,7 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
     return true;
 
 lost:
-    /* A skipped snapshot burns one snapshot SN: the gap in the snapshot
-     * sequence is the loss signal. */
-    (void)BLE_LOG_GET_SNAPSHOT_SN();
+    (void)BLE_LOG_GET_ANCHOR_COUNT();
 failed:
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     return false;
@@ -1023,14 +1042,13 @@ void ble_log_lbm_flush_open_trans(void)
     }
 
     for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
-        if (!(BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.open_bitmap) & BIT(id))) {
-            continue;
-        }
+        /* Scan the bounded pool, including writers absent from OPEN hints. */
         ble_log_prph_trans_t *trans = g_pool.trans[id];
 #if CONFIG_BLE_LOG_PRPH_TEST
-        /* Test point: the OPEN hint was just observed; a test can play the
-         * other core before this scan takes the candidate lock. */
-        if (ble_log_test_flush_hint_seen_hook) {
+        /* Preserve the stale-OPEN-hint test's target without filtering the
+         * production scan. Unrelated FREE candidates must not fire its hooks. */
+        bool had_open_hint = BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.open_bitmap) & BIT(id);
+        if (had_open_hint && ble_log_test_flush_hint_seen_hook) {
             ble_log_test_flush_hint_seen_hook((uint8_t)id);
         }
 #endif
@@ -1050,7 +1068,7 @@ void ble_log_lbm_flush_open_trans(void)
 #if CONFIG_BLE_LOG_PRPH_TEST
             /* Test point: this scan holds a candidate lock taken on a
              * stale hint; the transport state is not OPEN. */
-            if (ble_log_test_flush_stale_locked_hook) {
+            if (had_open_hint && ble_log_test_flush_stale_locked_hook) {
                 ble_log_test_flush_stale_locked_hook();
             }
 #endif
@@ -1192,11 +1210,11 @@ void ble_log_flush(void)
     }
 
     /* FLUSH is not a segment boundary: reset interval counters while the
-     * Global SN and the snapshot sequence stay continuous. Snapshot loss is
-     * lifecycle-cumulative in the snapshot sequence and is preserved. */
+     * Global SN and snapshot anchor count stay continuous. */
     for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
         BLE_LOG_ATOMIC_STORE_RELAXED(stat_mgr_ctx[i].counters.written_frame_cnt, 0);
         BLE_LOG_ATOMIC_STORE_RELAXED(stat_mgr_ctx[i].counters.lost_frame_cnt, 0);
+        BLE_LOG_ATOMIC_STORE_RELAXED(stat_mgr_ctx[i].counters.written_bytes_cnt, 0);
     }
     BLE_LOG_ATOMIC_STORE_RELAXED(g_pool.inflight_peak, 0);
 #if BLE_LOG_UART_REDIR_ENABLED
