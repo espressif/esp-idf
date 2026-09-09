@@ -72,8 +72,8 @@ BLE_LOG_STATIC void esp_timer_cb_flush_log(void *arg)
 {
     (void)arg;
 
-    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(prph_inited) ||
-            !ble_log_lbm_is_enabled()) {
+    /* Producer disable stops new writes, not periodic draining of old data. */
+    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(prph_inited)) {
         return;
     }
 
