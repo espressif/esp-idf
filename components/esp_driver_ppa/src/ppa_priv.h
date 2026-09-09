@@ -213,6 +213,7 @@ typedef struct ppa_trans_s {
     SemaphoreHandle_t sem;                        // Semaphore to block when the transaction has not finished
     ppa_client_t *client;                         // Pointer to the client who requested the transaction
     void *user_data;                              // User registered event data (per transaction)
+    bool blocking;                                // Set before enqueue when the caller will wait on `sem`; ISR must not recycle until that wait returns
 } ppa_trans_t;
 
 typedef struct {

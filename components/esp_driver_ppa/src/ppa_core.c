@@ -473,7 +473,8 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
     esp_err_t pm_lock_ret __attribute__((unused));
     bool start_now = false;
 
-    if (mode == PPA_TRANS_MODE_BLOCKING) {
+    trans_elm->blocking = (mode == PPA_TRANS_MODE_BLOCKING);
+    if (trans_elm->blocking) {
         // Ensure no transaction semaphore before transaction starts
         // A recycled transaction element may still hold the give from a previous
         // non-blocking use (the ISR gives it unconditionally and nobody took it)
@@ -521,6 +522,11 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
 
     if (mode == PPA_TRANS_MODE_BLOCKING) {
         xSemaphoreTake(trans_elm->sem, portMAX_DELAY); // Given in the ISR
+        // Recycle transaction elm after the semaphore take
+        portENTER_CRITICAL(&ppa_client->spinlock);
+        ppa_recycle_transaction(ppa_client, trans_elm);
+        ppa_client->trans_cnt--;
+        portEXIT_CRITICAL(&ppa_client->spinlock);
     }
 
 err:
@@ -556,10 +562,12 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
     xSemaphoreGiveFromISR(trans_elm->sem, &HPTaskAwoken);
     need_yield |= (HPTaskAwoken == pdTRUE);
 
-    // Then recycle transaction elm
-    need_yield |= ppa_recycle_transaction(client, trans_elm);
-
-    client->trans_cnt--;
+    // Non-blocking callers already returned, so recycle transaction elm here
+    // Blocking callers still wait on `sem` and recycle after that take (ppa_do_operation)
+    if (!trans_elm->blocking) {
+        need_yield |= ppa_recycle_transaction(client, trans_elm);
+        client->trans_cnt--;
+    }
     portEXIT_CRITICAL_ISR(&client->spinlock);
 
     // If there is next trans in PPA engine queue, send it to DMA queue; otherwise the engine is idle (flag cleared above)
