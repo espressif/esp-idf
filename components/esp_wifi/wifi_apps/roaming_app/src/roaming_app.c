@@ -2535,6 +2535,9 @@ static void parse_scan_results_and_roam(void)
         os_free(best_ap);
     } else {
         ESP_LOGI(ROAMING_TAG, "Could not find a better AP with the threshold set to %d", g_roaming_app.current_rssi_threshold + 1);
+        /* A miss (e.g. near AP did not answer probe) must not be reused by the next
+         * low-RSSI / periodic trigger within SCAN_RESULTS_USABILITY_WINDOW. */
+        roaming_app_invalidate_scan_cache();
 #if RRM_ASSISTED_ROAMING_ENABLED
         if (g_roaming_app.rrm_scan_active) {
             roaming_app_rrm_fallback_to_legacy();
