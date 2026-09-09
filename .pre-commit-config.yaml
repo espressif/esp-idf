@@ -142,6 +142,7 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - pyparsing
+          - 'esp-pylib>=1.1.0'
       - id: check-all-apps-readmes
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
