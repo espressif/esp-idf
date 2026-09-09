@@ -40,7 +40,10 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      - Reset the target board and re-starts the application via the RTS line (if connected).
    * - * Ctrl + F
      - Build and flash the project
-     - Pause idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.
+     - Pause idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Uses :ref:`fast reflashing <flash-with-idf-py>` by default when previously flashed binaries are available. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.
+   * - * Ctrl + E (or E)
+     - Build and full flash the project
+     - Same as Ctrl + F (runs the ``flash`` target), but disables fast reflashing by setting the ``IDF_FLASH_FULL`` environment variable. Equivalent to ``idf.py flash -a``/``--all``. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``. Requires esp-idf-monitor 1.10.0 or later.
    * - * Ctrl + A (or A)
      - Build and flash the app only
      - Pause idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``.
