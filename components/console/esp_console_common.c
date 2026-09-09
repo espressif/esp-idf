@@ -29,15 +29,6 @@ void esp_console_repl_task(void *args)
      * function is called. */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    if (repl_com->state_mux != NULL) {
-        xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    }
-
-    /* Tell esp_console_start_repl() that state_mux is now held. */
-    if (repl_com->task_ready != NULL) {
-        xSemaphoreGive(repl_com->task_ready);
-    }
-
     /* Change standard input and output of the task if the requested UART is
      * NOT the default one. This block will replace stdin, stdout and stderr.
      */
@@ -361,10 +352,5 @@ esp_err_t esp_console_start_repl(esp_console_repl_t *repl)
 
     repl_com->state = CONSOLE_REPL_STATE_START;
     xTaskNotifyGive(repl_com->task_hdl);
-
-    /* Return only once the task holds state_mux, so a stop can join it. */
-    if (repl_com->task_ready != NULL) {
-        xSemaphoreTake(repl_com->task_ready, portMAX_DELAY);
-    }
     return ESP_OK;
 }

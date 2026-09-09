@@ -42,7 +42,6 @@ typedef struct {
     TaskHandle_t task_hdl;              // REPL task handle
     size_t max_cmdline_length;          // Maximum length of a command line. If 0, default value will be used.
     size_t max_cmdline_args;            // Maximum number of command line arguments to parse. If 0, default value will be used.
-    SemaphoreHandle_t task_ready;       // Given once the REPL task holds state_mux
 } esp_console_repl_com_t;
 
 typedef struct {

@@ -455,6 +455,7 @@ esp_err_t esp_console_start_repl(esp_console_repl_t *repl);
  * @brief Stop REPL environment
  *
  * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
+ * @note This function waits for the console task to exit before it returns.
  * @return
  *      - ESP_OK on success
  *      - others on failure
