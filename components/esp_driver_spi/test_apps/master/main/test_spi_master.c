@@ -32,6 +32,7 @@
 #include "test_utils.h"
 #include "test_spi_utils.h"
 #include "spi_performance.h"
+#include "esp_async_memcpy.h"
 
 const static char TAG[] = "test_spi";
 
@@ -2240,7 +2241,81 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
     spi_bus_remove_device(dev_handle);
     spi_bus_free(TEST_SPI_HOST);
 }
-#endif
+
+#if SOC_GDMA_SUPPORTED  // only gmda support psram
+#define TEST_PSRAM_DMA_XFER_LEN     4000
+#define TEST_PSRAM_DMA_XFER_CNT     2000
+static void psram_dma_disturber_task(void *arg)
+{
+    async_memcpy_handle_t mcp;
+    uint8_t *src = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT | MALLOC_CAP_CACHE_ALIGNED);
+    uint8_t *dst = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT | MALLOC_CAP_CACHE_ALIGNED);
+    TEST_ASSERT_NOT_NULL(src);
+    TEST_ASSERT_NOT_NULL(dst);
+    TEST_ASSERT(esp_ptr_external_ram(src));
+    async_memcpy_config_t mcp_cfg = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&mcp_cfg, &mcp));
+
+    while (!*((volatile bool *)arg)) {
+        TEST_ESP_OK(esp_memcpy_blocking(mcp, dst, src, TEST_PSRAM_DMA_XFER_LEN, -1));
+    }
+    TEST_ESP_OK(esp_async_memcpy_uninstall(mcp));
+    free(src);
+    free(dst);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("SPI Master DMA trans under concurrent PSRAM GDMA traffic", "[spi]")
+{
+    spi_device_handle_t spi;
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.clock_speed_hz = IDF_TARGET_MAX_SPI_CLK_FREQ;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
+
+    uint8_t *tx = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    uint8_t *rx = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(tx);
+    TEST_ASSERT_NOT_NULL(rx);
+    test_fill_random_to_buffers_dualboard(1001, tx, rx, TEST_PSRAM_DMA_XFER_LEN);
+
+    // check spi transaction first
+    spi_transaction_t trans = {
+        .length = TEST_PSRAM_DMA_XFER_LEN * 8,
+        .tx_buffer = tx,
+        .rx_buffer = rx,
+    };
+    TEST_ESP_OK(spi_device_transmit(spi, &trans));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(tx, rx, TEST_PSRAM_DMA_XFER_LEN);
+
+    // start concurrent PSRAM GDMA traffic task
+    bool stop_mcp = false;
+    TEST_ASSERT(xTaskCreate(psram_dma_disturber_task, "psram_dma", 4096, &stop_mcp, uxTaskPriorityGet(NULL), NULL) == pdPASS);
+
+    // start spi transaction with concurrent PSRAM GDMA task
+    uint32_t mismatched = 0;
+    for (int n = 0; n < TEST_PSRAM_DMA_XFER_CNT; n++) {
+        memset(rx, 0, TEST_PSRAM_DMA_XFER_LEN);
+        TEST_ESP_OK(spi_device_transmit(spi, &trans));
+        if (memcmp(tx, rx, TEST_PSRAM_DMA_XFER_LEN) != 0) {
+            mismatched++;
+        }
+    }
+
+    stop_mcp = true; // stop GDMA traffic task
+    free(tx);
+    free(rx);
+    TEST_ESP_OK(spi_bus_remove_device(spi));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+
+    printf("%" PRIu32 " of %d transfers mismatched\n", mismatched, TEST_PSRAM_DMA_XFER_CNT);
+    TEST_ASSERT_EQUAL_UINT32(0, mismatched);
+    vTaskDelay(10);
+}
+#endif // SOC_GDMA_SUPPORTED
+#endif // CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
 
 #if SOC_SPI_SUPPORT_DDR_CLOCK
 TEST_CASE("Test master cmd/data DDR/SDR", "[spi]")
