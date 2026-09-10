@@ -32,6 +32,8 @@ idf_flash_binary(app1_binary
 # Generate flasher_args.json and metadata for the primary app1 binary.
 # app1 is the only app registered in the global 'flash' target (app2 omits FLASH),
 # so flasher_args.json correctly contains app1 as the sole app binary.
+# app1 uses the default output paths (build/project_description.json and
+# build/gdbinit). app2 below must use distinct paths so it does not overwrite them.
 idf_build_generate_flasher_args()
 idf_build_generate_metadata(BINARY app1_binary)
 
@@ -51,6 +53,14 @@ idf_build_binary(app2.elf
 idf_flash_binary(app2_binary
                  TARGET app2-flash
                  NAME "app2")
+
+# Generate metadata for app2. idf_build_generate_metadata writes the
+# project_description.json and the gdbinit files to shared default paths, so
+# pass a distinct OUTPUT_FILE and GDBINIT_DIR to keep app2's files from
+# overwriting app1's.
+idf_build_generate_metadata(BINARY app2_binary
+                            OUTPUT_FILE "${CMAKE_BINARY_DIR}/project_description_app2.json"
+                            GDBINIT_DIR "${CMAKE_BINARY_DIR}/gdbinit/app2")
 
 # Create menuconfig and confserver targets for app2 binary
 idf_create_menuconfig(app2.elf TARGET app2-menuconfig)

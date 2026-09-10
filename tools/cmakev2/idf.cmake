@@ -21,10 +21,11 @@ set(CMAKE_MODULE_PATH
 # for both cmakev1 and cmakev2.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
-# The gdbinit.cmake file from cmakev1 contains a single function,
-# __generate_gdbinit, which is used in the generation of
-# project_description.json.
-include(${CMAKE_CURRENT_LIST_DIR}/../cmake/gdbinit.cmake)
+# gdbinit.cmake provides __generate_gdbinit, used to produce the per-executable
+# gdbinit files referenced from project_description.json. It takes the
+# application ELF path and output directory as arguments so multi-executable
+# projects do not overwrite a single shared gdbinit directory.
+include(${CMAKE_CURRENT_LIST_DIR}/gdbinit.cmake)
 
 # The openocd.cmake file from cmakev1 contains a single function,
 # __get_openocd_options, which is used in the generation of
