@@ -99,6 +99,70 @@ static void increment32_j0(esp_gcm_context *ctx, uint8_t *j)
     }
 }
 
+/* The low 32 bits of a counter block, which is where GCM counts. Read byte by byte:
+ * a counter block is a plain uint8_t array and carries no alignment. */
+static uint32_t gcm_counter_low(const uint8_t *j)
+{
+    const uint8_t *low = j + AES_BLOCK_BYTES - 4;
+    return ((uint32_t) low[0] << 24) | ((uint32_t) low[1] << 16) |
+           ((uint32_t) low[2] << 8) | (uint32_t) low[3];
+}
+
+/*
+ * Run the CTR phase of GCM over `length` bytes of input.
+ *
+ * GCM applies the standard incrementing function INC_32 to the counter block, so
+ * only its low 32 bits count and the high 96 bits never change. esp_aes_crypt_ctr()
+ * increments all 16 bytes, and so does the AES peripheral in CTR mode, so a wrap
+ * inside the call carries into byte 11 and the keystream after the wrap is wrong.
+ * The tag still verifies, because GHASH runs over the ciphertext, which makes the
+ * corruption silent.
+ *
+ * The call is therefore split so that no chunk spans the wrap, and the high 96 bits
+ * are restored after each chunk. That is correct whatever the increment width of the
+ * path underneath: a chunk that does not reach the wrap leaves those bytes alone.
+ */
+static int esp_gcm_ctr_crypt(esp_gcm_context *ctx, uint8_t *counter,
+                             const unsigned char *input, size_t length,
+                             unsigned char *output)
+{
+    /* The invariant part of every counter block of this operation. */
+    uint8_t fixed[AES_BLOCK_BYTES - 4];
+    int ret = 0;
+
+    memcpy(fixed, counter, sizeof(fixed));
+
+    while (length > 0 && ret == 0) {
+        /* Bytes still available from the keystream block that an earlier call left
+         * partly consumed. They come out before `counter` is used again. */
+        uint64_t room = ctx->nc_off ? (AES_BLOCK_BYTES - ctx->nc_off) : 0;
+        /* Counter values usable before INC_32 wraps: the current one up to 2^32-1. */
+        room += ((1ULL << 32) - gcm_counter_low(counter)) * AES_BLOCK_BYTES;
+
+        size_t chunk = (room < (uint64_t) length) ? (size_t) room : length;
+
+        ret = esp_aes_crypt_ctr(&ctx->aes_ctx, chunk, &ctx->nc_off, counter,
+                                ctx->stream_block, input, output);
+        if (ret == 0) {
+            input += chunk;
+            output += chunk;
+            length -= chunk;
+            /* A chunk ends on a block boundary unless it is the last one, so this
+             * undoes any carry the generic increment made past bit 32. */
+            memcpy(counter, fixed, sizeof(fixed));
+            /* esp_aes_crypt_ctr() has already advanced ctx->nc_off and
+             * ctx->stream_block for this chunk, so the counter has to be committed
+             * with them. A later chunk that fails must not leave the context with an
+             * advanced keystream offset and a rewound counter: the next operation on
+             * the context would then repeat counter values and reuse keystream. */
+            memcpy(ctx->J0, counter, AES_BLOCK_BYTES);
+        }
+    }
+
+    mbedtls_platform_zeroize(fixed, sizeof(fixed));
+    return ret;
+}
+
 /* Function to xor two data blocks */
 static void xor_data(uint8_t *d, const uint8_t *s)
 {
@@ -562,11 +626,11 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
      * branch above is already in place and the data length does not change. */
     int ret = 0;
     if (input_length > 0) {
-        ret = esp_aes_crypt_ctr(&ctx->aes_ctx, input_length, &ctx->nc_off, nonce_counter, ctx->stream_block, input, output);
+        ret = esp_gcm_ctr_crypt(ctx, nonce_counter, input, input_length, output);
     }
     if (ret == 0 && input_length > 0) {
-        /* ICB gets auto incremented after GCTR operation here so update the context */
-        memcpy(ctx->J0, nonce_counter, AES_BLOCK_BYTES);
+        /* The ICB is auto incremented during the GCTR operation, and
+         * esp_gcm_ctr_crypt() commits it to the context per chunk. */
 
         /* Keep updating the length counter for final tag calculation */
         ctx->data_len += input_length;
