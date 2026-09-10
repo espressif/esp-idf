@@ -80,9 +80,15 @@ TEST_CASE("(BDL) diskio register, format, write and read on partition", "[fatfs]
     TEST_ASSERT_EQUAL(FR_OK, f_mkfs(drv, &opt, work_area, sizeof(work_area)));
 
     FATFS fs;
+#if FF_USE_DYN_BUFFER
+    fs.win = NULL;
+#endif
     TEST_ASSERT_EQUAL(FR_OK, f_mount(&fs, drv, 1));
 
     FIL file;
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+    file.buf = NULL;
+#endif
     UINT bw;
     TEST_ASSERT_EQUAL(FR_OK, f_open(&file, "test.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE));
 
