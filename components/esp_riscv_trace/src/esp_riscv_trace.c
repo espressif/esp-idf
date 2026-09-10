@@ -19,6 +19,7 @@
 #include "esp_private/startup_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_cpu.h"
+#include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/riscv_trace_hal.h"
 #include "hal/riscv_trace_ll.h"
@@ -171,6 +172,28 @@ static esp_err_t validate_filter_config(const esp_riscv_trace_filter_config_t *c
     }
     return ESP_OK;
 }
+
+/* Configure the encoder filter to skip mask ROM instructions */
+__attribute__((unused))
+static void apply_default_rom_filter(esp_riscv_trace_handle_t handle)
+{
+    riscv_trace_hal_filter_config_t hal_filter = {
+        .enable = true,
+        .match_comparators = true,
+        .primary = {
+            .input = (uint32_t)ESP_RISCV_TRACE_FILTER_INPUT_IADDR,
+            .function = (uint32_t)ESP_RISCV_TRACE_FILTER_COMPARATOR_GE,
+            .match_value = SOC_IROM_MASK_LOW,
+        },
+        .secondary = {
+            .input = (uint32_t)ESP_RISCV_TRACE_FILTER_INPUT_IADDR,
+            .function = (uint32_t)ESP_RISCV_TRACE_FILTER_COMPARATOR_LT,
+            .match_value = SOC_IROM_MASK_HIGH,
+        },
+        .match_mode = (uint32_t)ESP_RISCV_TRACE_FILTER_MODE_NAND,
+    };
+    riscv_trace_hal_set_filter(&handle->hal, &hal_filter);
+}
 #endif // SOC_RISCV_TRACE_FILTER_SUPPORTED
 
 static esp_err_t validate_trace_config(esp_riscv_trace_core_t core_id, const esp_riscv_trace_config_t *config,
@@ -239,6 +262,10 @@ static esp_err_t esp_riscv_trace_new(esp_riscv_trace_core_t core_id, const esp_r
     handle->state = ESP_RISCV_TRACE_STATE_CREATED;
     handle->auto_restart = config->auto_restart;
     *ret_handle = handle;
+
+#if CONFIG_ESP_RISCV_TRACE_FILTER_OUT_ROM
+    apply_default_rom_filter(handle);
+#endif
 
     ESP_EARLY_LOGD(TAG, "RISC-V trace encoder initialized on core %d", core_id);
 

@@ -247,6 +247,15 @@ menu "RISC-V Trace Encoder Configurations"
             help
                 Maximum number of beats for an undefined-length INCR burst.
 
+        config ESP_RISCV_TRACE_FILTER_OUT_ROM
+            bool "Exclude ROM code from trace"
+            depends on SOC_RISCV_TRACE_FILTER_SUPPORTED
+            default y
+            help
+                Configure the encoder address filter to skip instructions executed in
+                mask ROM. This leaves more buffer space for application trace.
+                Calling esp_riscv_trace_set_filter overrides this setting.
+
     endif # ESP_RISCV_TRACE_ENABLE
 
 endmenu
