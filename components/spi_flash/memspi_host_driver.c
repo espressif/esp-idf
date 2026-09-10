@@ -11,8 +11,7 @@
 #include "esp_memory_utils.h"
 #include "hal/mspi_ll.h"
 #include "esp_flash_err.h"
-#include "esp_flash_partitions.h"
-#include "esp_flash_chips/spi_flash_defs.h"
+#include "spi_flash_defs.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/memspi_host_driver.h"
 

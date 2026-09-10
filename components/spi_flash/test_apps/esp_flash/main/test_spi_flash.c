@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,7 +10,6 @@
 #include <freertos/semphr.h>
 
 #include "unity.h"
-#include "spi_flash_mmap.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "ccomp_timer.h"
@@ -20,6 +19,8 @@
 #include "esp_timer.h"
 #include "esp_partition.h"
 #include "bootloader_flash.h"   //for bootloader_flash_xmc_startup
+#include "esp_flash.h"
+#include "spi_flash_mmap.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
 
@@ -96,11 +97,11 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
 
     SemaphoreHandle_t done = xSemaphoreCreateCounting(4, 0);
     struct flash_test_ctx ctx[] = {
-            { .offset = 0x10 + 6, .done = done },
-            { .offset = 0x10 + 7, .done = done },
-            { .offset = 0x10 + 8, .done = done },
+        { .offset = 0x10 + 6, .done = done },
+        { .offset = 0x10 + 7, .done = done },
+        { .offset = 0x10 + 8, .done = done },
 #ifndef CONFIG_FREERTOS_UNICORE
-            { .offset = 0x10 + 9, .done = done }
+        { .offset = 0x10 + 9, .done = done }
 #endif
     };
 
@@ -111,7 +112,7 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
     xTaskCreatePinnedToCore(flash_test_task, "t3", 2048, &ctx[3], 3, NULL, 1);
 #endif
 
-    const size_t task_count = sizeof(ctx)/sizeof(ctx[0]);
+    const size_t task_count = sizeof(ctx) / sizeof(ctx[0]);
     for (int i = 0; i < task_count; ++i) {
         xSemaphoreTake(done, portMAX_DELAY);
     }

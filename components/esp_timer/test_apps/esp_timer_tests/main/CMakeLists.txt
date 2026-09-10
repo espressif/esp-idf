@@ -20,7 +20,7 @@ if(NOT ${target} STREQUAL "linux")
         list(APPEND srcs "test_esp_timer_dfs.c")
     endif()
 
-    set(priv_requires cmock test_utils esp_timer spi_flash esp_psram esp_driver_gpio esp_pm)
+    set(priv_requires cmock test_utils esp_timer esp_mspi esp_psram esp_driver_gpio esp_pm)
     list(APPEND srcs "test_ets_timer.c")
 else()
     set(priv_requires cmock test_utils esp_timer)

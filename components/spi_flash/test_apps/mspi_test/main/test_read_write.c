@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,7 @@ static void setup_tests(void)
 static void fill(char *dest, int32_t start, int32_t len)
 {
     for (int32_t i = 0; i < len; i++) {
-        *(dest + i) = (char) (start + i);
+        *(dest + i) = (char)(start + i);
     }
 }
 
@@ -330,8 +330,7 @@ TEST_CASE("esp_flash_write can write from external RAM buffer", "[spi_flash]")
     TEST_ASSERT_NOT_NULL(buf_ext);
 
     srand(0);
-    for (size_t i = 0; i < SPI_FLASH_SEC_SIZE / sizeof(uint32_t); i++)
-    {
+    for (size_t i = 0; i < SPI_FLASH_SEC_SIZE / sizeof(uint32_t); i++) {
         uint32_t val = rand();
         buf_ext[i] = val;
     }

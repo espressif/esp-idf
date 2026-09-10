@@ -23,6 +23,7 @@
 #include "esp_flash_chips/spi_flash_defs.h"
 #include "esp_private/memspi_host_driver.h"
 #include "esp_private/mspi_timing_tuning.h"
+#include "esp_private/spi_flash_os.h"
 #include "esp_flash.h"
 #include "esp_flash_chips/esp_flash_types.h"
 #include "bootloader_flash_priv.h"

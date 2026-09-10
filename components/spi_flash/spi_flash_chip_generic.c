@@ -12,7 +12,7 @@
 #include "esp_rom_caps.h"
 
 #include "hal/spi_flash_encrypt_hal.h"
-#include "esp_flash_chips/spi_flash_defs.h"
+#include "spi_flash_defs.h"
 #include "esp_flash_chips/spi_flash_chip_generic.h"
 #include "esp_private/spi_flash_os.h"
 

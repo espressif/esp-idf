@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 #include "soc/soc_caps.h"
+#include "soc/soc.h"
 #include "sdkconfig.h"
 
 /* Declarations used inside TEE binary, only */

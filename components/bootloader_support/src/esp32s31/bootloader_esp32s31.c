@@ -16,7 +16,7 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_soc.h"
 #include "esp_efuse.h"
 #include "esp_private/bootloader_flash_internal.h"
@@ -33,6 +33,7 @@
 #include "hal/assist_debug_ll.h"
 #include "esp_rom_sys.h"
 #include "soc/regi2c_bias.h"
+#include "soc/regi2c_mpll.h"
 #include "hal/regi2c_ctrl.h"
 #include "hal/psram_ctrlr_ll.h"
 

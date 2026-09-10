@@ -5,7 +5,7 @@
  */
 #include "sdkconfig.h"
 
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_sha.h"
 #include "bootloader_sha_flash.h"
 #include "esp_log.h"

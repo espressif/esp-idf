@@ -39,7 +39,7 @@
 #endif
 #define DECLARE_PRIVATE_IDENTIFIERS
 #include "psa/crypto.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "esp_attestation_utils.h"
 #include "esp_macros.h"
 

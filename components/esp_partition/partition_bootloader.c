@@ -7,7 +7,7 @@
 
 #include "esp_partition.h"
 #include "esp_flash_partitions.h"  // esp_partition_table_verify
-#include "bootloader_flash_priv.h" // bootloader_ssupport/bootloader_flash/include
+#include "esp_private/bootloader_flash_internal.h" // bootloader_ssupport/bootloader_flash/include
 #include "esp_log.h"
 
 ESP_LOG_ATTR_TAG(TAG, "partition_bootloader");
@@ -55,7 +55,7 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_p
             internal_partition.subtype = partition->subtype;
             internal_partition.address = partition->pos.offset;
             internal_partition.size = partition->pos.size;
-            internal_partition.erase_size = SPI_FLASH_SEC_SIZE;
+            internal_partition.erase_size = FLASH_SECTOR_SIZE;
             strncpy(internal_partition.label, (char*) partition->label, sizeof(internal_partition.label) - 1);
             internal_partition.encrypted = partition->flags & PART_FLAG_ENCRYPTED;
             internal_partition.readonly = partition->flags & PART_FLAG_READONLY;

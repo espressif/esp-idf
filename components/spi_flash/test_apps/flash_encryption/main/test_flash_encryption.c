@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -50,7 +50,7 @@ static void setup_tests(void)
 static void verify_erased_flash(size_t offset, size_t length)
 {
     uint8_t *readback = (uint8_t *)heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    printf("verify erased 0x%" PRIx32 " - 0x%" PRIx32 "\n", (uint32_t) offset, (uint32_t) (offset + length));
+    printf("verify erased 0x%" PRIx32 " - 0x%" PRIx32 "\n", (uint32_t) offset, (uint32_t)(offset + length));
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
                           esp_flash_read(NULL, readback, offset, length));
     for (int i = 0; i < length; i++) {
@@ -64,19 +64,19 @@ TEST_CASE("test 16 byte encrypted writes", "[flash_encryption]")
     setup_tests();
 
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
-                      esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
+                          esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
 
     uint8_t fortyeight_bytes[0x30]; // 0, 1, 2, 3, 4... 47
-    for(int i = 0; i < sizeof(fortyeight_bytes); i++) {
+    for (int i = 0; i < sizeof(fortyeight_bytes); i++) {
         fortyeight_bytes[i] = i;
     }
 
     /* Verify unaligned start or length fails */
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG,
-                      esp_flash_write_encrypted(NULL, start + 1, fortyeight_bytes, 32));
+                          esp_flash_write_encrypted(NULL, start + 1, fortyeight_bytes, 32));
 
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_SIZE,
-                      esp_flash_write_encrypted(NULL, start, fortyeight_bytes, 15));
+                          esp_flash_write_encrypted(NULL, start, fortyeight_bytes, 15));
 
     /* ensure nothing happened to the flash yet */
     verify_erased_flash(start, 0x20);
@@ -87,8 +87,8 @@ TEST_CASE("test 16 byte encrypted writes", "[flash_encryption]")
 
     /* Slip in an unaligned esp_flash_read_encrypted() test */
     uint8_t buf[0x10];
-    esp_flash_read_encrypted(NULL, start+0x10, buf, 0x10);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(fortyeight_bytes+0x10, buf, 16);
+    esp_flash_read_encrypted(NULL, start + 0x10, buf, 0x10);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(fortyeight_bytes + 0x10, buf, 16);
 
     /* Write 16 bytes unaligned */
     test_encrypted_write(start + 0x30, fortyeight_bytes, 0x10);
@@ -124,7 +124,7 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption]")
 {
     const int MAX_LEN = 192;
     //buffer to hold the read data
-    WORD_ALIGNED_ATTR uint8_t buffer_to_write[MAX_LEN+4];
+    WORD_ALIGNED_ATTR uint8_t buffer_to_write[MAX_LEN + 4];
     //test with unaligned buffer
     uint8_t* data_buf = &buffer_to_write[3];
 
@@ -145,7 +145,7 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption]")
     do {
         //the encrypted write only works at 16-byte boundary
         int skip = (rand() % 4) * 16;
-        int len = ((rand() % (MAX_LEN/16)) + 1) * 16;
+        int len = ((rand() % (MAX_LEN / 16)) + 1) * 16;
 
         for (int i = 0; i < MAX_LEN; i++) {
             data_buf[i] = rand();
@@ -159,7 +159,7 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption]")
             len = SPI_FLASH_SEC_SIZE - offset;
         }
 
-        printf("write %d bytes to 0x%08" PRIx32 "...\n", len, (uint32_t) (start + offset));
+        printf("write %d bytes to 0x%08" PRIx32 "...\n", len, (uint32_t)(start + offset));
         err = esp_flash_write_encrypted(NULL, start + offset, data_buf, len);
         TEST_ESP_OK(err);
 
@@ -169,7 +169,7 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption]")
 
     offset = 0;
     do {
-        int len = ((rand() % (MAX_LEN/16)) + 1) * 16;
+        int len = ((rand() % (MAX_LEN / 16)) + 1) * 16;
         if (offset + len > SPI_FLASH_SEC_SIZE) {
             len = SPI_FLASH_SEC_SIZE - offset;
         }
@@ -177,7 +177,7 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption]")
         err = esp_flash_read_encrypted(NULL, start + offset, data_buf, len);
         TEST_ESP_OK(err);
 
-        printf("compare %d bytes at 0x%08" PRIx32 "...\n", len, (uint32_t) (start + offset));
+        printf("compare %d bytes at 0x%08" PRIx32 "...\n", len, (uint32_t)(start + offset));
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(cmp_buf + offset, data_buf, len);
         offset += len;
@@ -208,19 +208,19 @@ TEST_CASE("test 16 byte encrypted writes (esp_flash)", "[flash_encryption]")
     setup_tests();
 
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
-                      esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
+                          esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
 
     uint8_t fortyeight_bytes[0x30]; // 0, 1, 2, 3, 4... 47
-    for(int i = 0; i < sizeof(fortyeight_bytes); i++) {
+    for (int i = 0; i < sizeof(fortyeight_bytes); i++) {
         fortyeight_bytes[i] = i;
     }
 
     /* Verify unaligned start or length fails */
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG,
-                      esp_flash_write_encrypted(NULL, start+1, fortyeight_bytes, 32));
+                          esp_flash_write_encrypted(NULL, start + 1, fortyeight_bytes, 32));
 
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_SIZE,
-                      esp_flash_write_encrypted(NULL, start, fortyeight_bytes, 15));
+                          esp_flash_write_encrypted(NULL, start, fortyeight_bytes, 15));
 
     /* ensure nothing happened to the flash yet */
     verify_erased_flash(start, 0x20);
@@ -231,8 +231,8 @@ TEST_CASE("test 16 byte encrypted writes (esp_flash)", "[flash_encryption]")
 
     /* Slip in an unaligned esp_flash_read_encrypted() test */
     uint8_t buf[0x10];
-    esp_flash_read_encrypted(NULL, start+0x10, buf, 0x10);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(fortyeight_bytes+0x10, buf, 16);
+    esp_flash_read_encrypted(NULL, start + 0x10, buf, 0x10);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(fortyeight_bytes + 0x10, buf, 16);
 
     /* Write 16 bytes unaligned */
     test_encrypted_write_new_impl(start + 0x30, fortyeight_bytes, 0x10);
@@ -392,7 +392,7 @@ TEST_CASE("test read & write encrypted data with large buffer(n*64+32+16)", "[fl
     TEST_ESP_OK(ccomp_timer_start());
     TEST_ESP_OK(esp_flash_write_encrypted(NULL, start, large_const_buffer, sizeof(large_const_buffer)));
     int64_t write_time = ccomp_timer_stop();
-    IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time/sizeof(large_const_buffer))*1024);
+    IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time / sizeof(large_const_buffer)) * 1024);
 
     uint8_t *buf = (uint8_t*)heap_caps_malloc(sizeof(large_const_buffer), MALLOC_CAP_8BIT);
 
@@ -412,7 +412,7 @@ TEST_CASE("test read & write encrypted data with large buffer(n*64+32+16)", "[fl
         TEST_ESP_OK(ccomp_timer_start());
         TEST_ESP_OK(esp_flash_write_encrypted(NULL, start, large_const_buffer, sizeof(large_const_buffer)));
         write_time = ccomp_timer_stop();
-        IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time/sizeof(large_const_buffer))*1024);
+        IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time / sizeof(large_const_buffer)) * 1024);
 
         buf = (uint8_t*)heap_caps_malloc(sizeof(large_const_buffer), MALLOC_CAP_8BIT);
 
@@ -446,7 +446,7 @@ TEST_CASE("test read & write encrypted data with large buffer in ram", "[flash_e
     TEST_ESP_OK(ccomp_timer_start());
     TEST_ESP_OK(esp_flash_write_encrypted(NULL, start, large_const_buffer_dram, sizeof(large_const_buffer_dram)));
     int64_t write_time = ccomp_timer_stop();
-    IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time/sizeof(large_const_buffer_dram))*1024);
+    IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time / sizeof(large_const_buffer_dram)) * 1024);
     uint8_t *buf = (uint8_t*)heap_caps_malloc(sizeof(large_const_buffer_dram), MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
 
     TEST_ESP_OK(esp_flash_read_encrypted(NULL, start, buf, sizeof(large_const_buffer_dram)));
@@ -457,7 +457,7 @@ TEST_CASE("test read & write encrypted data with large buffer in ram", "[flash_e
 #if CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
 TEST_CASE("test encrypted writes to dangerous regions like bootloader", "[flash_encryption]")
 {
-    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, 4*4096));
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, 4 * 4096));
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_PARTITION_TABLE_OFFSET, 4096));
     char buffer[32] = {0xa5};
     // Encrypted writes to bootloader region not allowed
@@ -475,20 +475,20 @@ TEST_CASE("Test flash encrypted write over boundary", "[flash_encryption]")
     const uint32_t SECTOR_SIZE = 4096;
     uint8_t buf[0];
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 0, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 0, flash_size + SECTOR_SIZE));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, SECTOR_SIZE, flash_size));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2, flash_size/2 + SECTOR_SIZE));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2 + SECTOR_SIZE, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size / 2, flash_size / 2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size / 2 + SECTOR_SIZE, flash_size / 2));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, 2 * SECTOR_SIZE));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 2 * SECTOR_SIZE, flash_size - SECTOR_SIZE));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, flash_size - SECTOR_SIZE));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, UINT32_MAX - SECTOR_SIZE + 1));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, UINT32_MAX - SECTOR_SIZE + 1, flash_size - SECTOR_SIZE));
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, 0, buf, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, 0, buf, flash_size + SECTOR_SIZE));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, SECTOR_SIZE, buf, flash_size));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size/2, buf, flash_size/2 + SECTOR_SIZE));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size/2 + SECTOR_SIZE, buf, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size / 2, buf, flash_size / 2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size / 2 + SECTOR_SIZE, buf, flash_size / 2));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size - SECTOR_SIZE, buf, 2 * SECTOR_SIZE));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, 2 * SECTOR_SIZE, buf, flash_size - SECTOR_SIZE));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size - SECTOR_SIZE, buf, flash_size - SECTOR_SIZE));

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include "bootloader_flash_override.h"
-#include "bootloader_flash_priv.h"
 #include "bootloader_flash_custom.h"
 #include "esp_rom_spiflash.h"
 #include "esp_attr.h"

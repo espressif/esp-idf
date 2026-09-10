@@ -114,6 +114,7 @@ SECTIONS
     *libtee_sec_storage.a:*(.literal .text .literal.* .text.*)
     *libtee_ota_ops.a:*(.literal .text .literal.* .text.*)
     *libtee_attestation.a:*(.literal .text .literal.* .text.*)
+    *libesp_mspi.a:*(.literal .text .literal.* .text.*)
 
     /* Align the end of code region as per PMP region granularity */
     ALIGNED_SYMBOL(_esp_pmp_align_size, _tee_iram_end)
@@ -175,6 +176,7 @@ SECTIONS
     *libhal.a:mmu_hal.c*(.rodata .srodata .rodata.* .srodata.*)
     *libhal.a:cache_hal.c*(.rodata .srodata .rodata.* .srodata.*)
     *libesp_hal_mspi.a:*(.rodata .srodata .rodata.* .srodata.*)
+    *libesp_mspi.a:*(.rodata .rodata.* .srodata .srodata.*)
     _tee_rodata_end = ABSOLUTE(.);
     _tee_dram_end = ABSOLUTE(.);
   } > sram_tee_seg

@@ -8,7 +8,7 @@
 #include "bootloader_flash_config.h"
 #include "flash_qio_mode.h"
 #include "sdkconfig.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_attr.h"
@@ -19,6 +19,7 @@
 #include "soc/io_mux_reg.h"
 #include "esp_private/spi_flash_os.h"
 #include "bootloader_flash_override.h"
+#include "spi_flash_defs.h"
 
 
 ESP_LOG_ATTR_TAG(TAG, "qio_mode");

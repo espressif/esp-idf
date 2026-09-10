@@ -69,7 +69,13 @@ CORE: 118: init_vfs_nullfs in components/vfs/nullfs.c on BIT(0)
 CORE: 119: init_vfs_console in components/esp_stdio/stdio_vfs.c on BIT(0)
 CORE: 120: init_libc_stdio in components/esp_libc/src/init.c on BIT(0)
 
+CORE: 125: init_flash_dpd in components/esp_mspi/flash_ops.c on BIT(0)
+
 CORE: 130: init_flash in components/spi_flash/esp_flash_spi_init.c on BIT(0)
+
+# Register partition-based flash write protection callback into spi_flash, right after init_flash.
+CORE: 131: esp_partition_flash_region_protection_init in components/esp_partition/partition_target.c on BIT(0)
+
 CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
 CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)
 
@@ -142,7 +148,7 @@ SECONDARY: 230: usb_serial_jtag_conn_status_init in components/esp_driver_usb_se
 
 # psram adjust timing point need a separate task which should be created at startup.
 # Valid only `CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR` is enabled.
-SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi/mspi_timing_tuning/port/esp32s3/mspi_timing_by_mspi_delay.c on BIT(0)
+SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_mspi/mspi_timing_tuning/port/esp32s3/mspi_timing_by_mspi_delay.c on BIT(0)
 
 # Has to be the last step!
 # Now that the application is about to start, disable boot watchdog

@@ -47,7 +47,6 @@ DRAM_ATTR static uint32_t s_isr_interval_t2;
 DRAM_ATTR static uint32_t s_isr_interval_time;
 DRAM_ATTR static uint32_t times = 0;
 
-
 static NOINLINE_ATTR void func_in_flash(void)
 {
     /**
@@ -66,7 +65,7 @@ static NOINLINE_ATTR void func_in_flash(void)
 static bool IRAM_ATTR gptimer_alarm_suspend_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     s_isr_t1 = esp_cpu_get_cycle_count();
-    if (s_isr_interval_t1 != 0 ) {
+    if (s_isr_interval_t1 != 0) {
         s_isr_interval_t2 = esp_cpu_get_cycle_count();
         s_isr_interval_time += (s_isr_interval_t2 - s_isr_interval_t1);
     }

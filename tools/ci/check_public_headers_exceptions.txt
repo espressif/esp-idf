@@ -92,7 +92,6 @@ components/bootloader_support/bootloader_flash/include/bootloader_flash.h
 components/bootloader_support/bootloader_flash/include/bootloader_flash_priv.h
 components/esp_hw_support/include/esp_private/regdma_link.h
 components/lwip/include/lwip/netdb.h
-components/spi_flash/include/esp_private/spi_flash_os.h
 
 ### To be fixed: files which don't compile for esp32s2 target:
 

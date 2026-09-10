@@ -1,9 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
-#include "bootloader_flash_priv.h"
+#include "esp_bit_defs.h"
+#include "bootloader_flash_override.h"
+#include "spi_flash_defs.h"
 #include "esp_rom_spiflash.h"
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
@@ -17,7 +19,7 @@ Overview
 Step-by-Step Implementation
 
 	1.	Include Necessary Headers:
-	•	bootloader_flash_priv.h: For private bootloader functions.
+	•	bootloader_flash_override.h: For `bootloader_execute_flash_command` function.
 	•	esp_rom_spiflash.h: For ROM SPI flash functions.
 	•	esp_rom_sys.h: For basic ROM system functions.
 	•	esp_attr.h and esp_log.h: For attributes and logging.

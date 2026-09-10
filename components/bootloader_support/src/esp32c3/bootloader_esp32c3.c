@@ -34,7 +34,6 @@
 #include "soc/regi2c_lp_bias.h"
 #include "soc/regi2c_bias.h"
 #include "bootloader_console.h"
-#include "bootloader_flash_priv.h"
 #include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_soc.h"
 #include "esp_efuse.h"

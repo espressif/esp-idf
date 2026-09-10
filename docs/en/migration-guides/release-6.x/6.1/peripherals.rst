@@ -9,6 +9,16 @@ LCD
 - The :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_refresh_done` callback has been deprecated. Please use :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_frame_buf_complete` to know when a frame buffer can be safely reused.
 - The VSYNC timing event for the MIPI DSI DPI panel is now reported by :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_vsync`.
 
+SPI Flash
+---------
+
+- ``bootloader_flash_priv.h`` header file is deprecated. Its contents have been split into two headers:
+
+  - ``bootloader_flash_override.h`` for the utility APIs intended for custom flash chip support, such as ``bootloader_execute_flash_command``, ``bootloader_flash_read_sfdp``, and the status register read/write helpers. This header is not considered a stable API, but it remains available to applications and custom bootloader components.
+  - ``esp_private/bootloader_flash_internal.h`` for the APIs that are internal to ESP-IDF, such as ``bootloader_mmap``, ``bootloader_munmap``, and ``bootloader_flash_read``. These may change without notice.
+
+  The deprecated ``bootloader_flash_priv.h`` still includes both headers, so existing code keeps compiling until the header is removed.
+
 UART
 -----
 

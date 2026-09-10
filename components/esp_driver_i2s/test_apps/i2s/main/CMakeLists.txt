@@ -11,6 +11,6 @@ if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity esp_driver_pcnt spi_flash
-                                     esp_driver_gpio esp_driver_i2s esp_driver_uart esp_psram esp_driver_gptimer
+                       PRIV_REQUIRES unity esp_driver_pcnt esp_driver_gpio esp_driver_i2s esp_driver_uart
+                                     esp_psram esp_mspi esp_driver_gptimer
                        WHOLE_ARCHIVE)

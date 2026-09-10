@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,26 @@ extern "C" {
 
 typedef unsigned (*bootloader_flash_read_status_fn_t)(void);
 typedef void (*bootloader_flash_write_status_fn_t)(unsigned);
+
+/**
+ * @brief Execute a user command on the flash
+ *
+ * @param command The command value to execute.
+ * @param mosi_data MOSI data to send
+ * @param mosi_len Length of MOSI data, in bits
+ * @param miso_len Length of MISO data to receive, in bits
+ * @return Received MISO data
+ */
+uint32_t bootloader_execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len);
+
+/**
+ * @brief Read the SFDP of the flash
+ *
+ * @param sfdp_addr Address of the parameter to read
+ * @param miso_byte_num Bytes to read
+ * @return The read SFDP, little endian, 4 bytes at most
+ */
+uint32_t bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_num);
 
 typedef struct __attribute__((packed))
 {

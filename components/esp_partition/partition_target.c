@@ -20,6 +20,8 @@
 #include "spi_flash_mmap.h"
 #include "bootloader_common.h"
 #include "esp_private/esp_partition_utils.h"
+#include "esp_private/startup_internal.h"
+#include "esp_private/esp_flash_internal.h"
 
 #define HASH_LEN 32 /* SHA-256 digest length */
 
@@ -280,3 +282,19 @@ uint32_t esp_partition_get_main_flash_sector_size(void)
 {
     return SPI_FLASH_SEC_SIZE;
 }
+
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+ESP_SYSTEM_INIT_FN(esp_partition_flash_region_protection_init, CORE, BIT(0), 131)
+{
+    esp_flash_partition_ops_t ops = {
+        .check_main_flash_region_safe = esp_partition_main_flash_region_safe,
+        .check_region_writable = esp_partition_is_flash_region_writable,
+    };
+    return esp_flash_register_partition_ops(esp_flash_default_chip, &ops);
+}
+
+void esp_partition_flash_region_protection_include_func(void)
+{
+    // Linker hook function, exists to make the linker examine this file
+}
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP

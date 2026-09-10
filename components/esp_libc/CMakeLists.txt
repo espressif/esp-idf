@@ -82,7 +82,7 @@ else()
     list(APPEND ldfragments src/picolibc/libc.lf)
 endif()
 
-set(priv_reqs soc spi_flash)
+set(priv_reqs soc esp_mspi)
 
 if(IDF_BUILD_V2)
     if(CONFIG_VFS_SUPPORT_IO)

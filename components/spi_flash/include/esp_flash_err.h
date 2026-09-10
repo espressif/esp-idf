@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "esp_err.h"
+#include "spi_flash_err.h"
 
 #ifdef __cplusplus
 extern "C" {

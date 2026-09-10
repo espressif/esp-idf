@@ -1,0 +1,3 @@
+dependencies:
+  test_utils:
+    path: ${IDF_PATH}/tools/test_apps/components/test_utils

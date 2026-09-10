@@ -11,6 +11,6 @@ set(srcs
 idf_component_register(
     SRCS ${srcs}
     # esp_psram is required for CONFIG_SPIRAM, used by the release configs
-    PRIV_REQUIRES esp_driver_spi spi_flash esp_driver_gpio esp_psram
+    PRIV_REQUIRES esp_driver_spi esp_driver_gpio esp_mspi esp_psram
     WHOLE_ARCHIVE
 )

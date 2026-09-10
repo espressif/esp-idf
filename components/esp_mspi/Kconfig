@@ -1,0 +1,85 @@
+menu "MSPI Flash configuration"
+    depends on !APP_BUILD_TYPE_PURE_RAM_APP
+
+    menu "SPI Flash behavior when brownout"
+
+        config SPI_FLASH_BROWNOUT_RESET_XMC
+            bool "Enable sending reset when brownout for XMC flash chips"
+            default y
+            select SPI_FLASH_BROWNOUT_RESET
+            help
+                When this option is selected, the patch will be enabled for XMC.
+                Follow the recommended flow by XMC for better stability.
+
+                DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+        config SPI_FLASH_BROWNOUT_RESET
+            bool
+            default y
+            select ESP_BROWNOUT_USE_INTR
+            help
+                When brownout happens during flash erase/write operations,
+                send reset command to stop the flash operations to improve stability.
+
+    endmenu
+
+    menu "Optional and Experimental MSPI Features (READ DOCS FIRST)"
+
+        comment "Features here require specific hardware (READ DOCS FIRST!)"
+
+        config SPI_FLASH_UNDER_HIGH_FREQ
+            bool
+            default y if ESPTOOLPY_FLASHFREQ_120M
+            help
+                This is a helper config for HPM. Invisible for users.
+
+        choice SPI_FLASH_HPM
+            prompt "High Performance Mode (READ DOCS FIRST, > 80MHz)"
+            depends on SOC_SPI_MEM_FLASH_SUPPORT_HPM && !ESPTOOLPY_OCT_FLASH
+            default SPI_FLASH_HPM_AUTO
+            help
+                Whether the High Performance Mode of Flash is enabled. As an optional feature, user needs to manually
+                enable this option as a confirmation. To be back-compatible with earlier IDF version, this option is
+                automatically enabled with warning when Flash running > 80Mhz.
+
+            config SPI_FLASH_HPM_ENA
+                # Not using name of SPI_FLASH_HPM_ENABLE because it was used as an invisible option and we don't want
+                # to inherit the value of that one
+                bool "Enable"
+            config SPI_FLASH_HPM_AUTO
+                bool "Auto (Not recommended)"
+            config SPI_FLASH_HPM_DIS
+                bool "Disabled"
+        endchoice
+
+        config SPI_FLASH_HPM_ON
+            bool
+            # For ESP32-S3, it's enabled by default. For later chips it should be disabled by default
+            default y if (IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4) && ((SPI_FLASH_HPM_ENA || SPI_FLASH_HPM_AUTO)) || \
+                (!IDF_TARGET_ESP32S3 && SPI_FLASH_HPM_ENA)
+            help
+                This option is invisible, and will be selected automatically
+                when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
+
+        choice SPI_FLASH_HPM_DC
+            prompt "Support HPM using DC (READ DOCS FIRST)"
+            depends on SPI_FLASH_HPM_ON
+            default SPI_FLASH_HPM_DC_AUTO
+            help
+                This feature needs your bootloader to be compiled DC-aware (BOOTLOADER_FLASH_DC_AWARE=y). Otherwise the
+                chip will not be able to boot after a reset.
+
+            config SPI_FLASH_HPM_DC_AUTO
+                bool "Auto (Enable when bootloader support enabled (BOOTLOADER_FLASH_DC_AWARE))"
+            config SPI_FLASH_HPM_DC_DISABLE
+                bool "Disable (READ DOCS FIRST)"
+        endchoice
+
+        config SPI_FLASH_HPM_DC_ON
+            bool
+            default y if SPI_FLASH_HPM_DC_AUTO && BOOTLOADER_FLASH_DC_AWARE
+            help
+                This is a helper config for HPM. Whether HPM-DC is enabled is also determined by bootloader.
+                Invisible for users.
+    endmenu
+endmenu

@@ -13,7 +13,7 @@ set(extra_components_which_shouldnt_be_included
     bootloader
 
     # bootloader_support is a dependency of the following G1 components:
-    #    spi_flash, esp_system, esp_hw_support.
+    #    esp_system, esp_hw_support, esp_mspi.
     # as well as the following non G1 components:
     #    efuse, app_update, esp_partition
     # Challenging to remove: IDF-8581 for more details
@@ -23,7 +23,7 @@ set(extra_components_which_shouldnt_be_included
     cxx
 
     # esp_driver_gpio is a dependency of esp_pm (should be removed from g1 builds),
-    # as well as spi_flash, esp_hw_support, IDF-10387
+    # as well as esp_hw_support, IDF-10387
     esp_driver_gpio
 
     # esp_app_format is dependency of bootloader_support, app_update, efuse.
@@ -76,6 +76,9 @@ set(extra_components_which_shouldnt_be_included
 
     # esp_security is required by spi_flash
     esp_security
+
+    # spi_flash is pulled in by bootloader_support (non-bootloader build).
+    spi_flash
 )
 
 if(NOT IDF_BUILD_V2)

@@ -3,7 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs "test_ringbuf_main.c"
          "test_ringbuf_common.c")
 
-set(priv_requires esp_ringbuf spi_flash unity)
+set(priv_requires esp_ringbuf unity esp_mspi)
 
 if(NOT ${target} STREQUAL "linux")
     list(APPEND srcs "test_ringbuf_target.c")

@@ -30,7 +30,7 @@
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/hp_system_reg.h"
 #include "bootloader_console.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_soc.h"
 #include "esp_private/bootloader_flash_internal.h"
 #include "esp_efuse.h"

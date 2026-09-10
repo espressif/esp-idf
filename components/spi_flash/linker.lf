@@ -2,10 +2,7 @@
 archive: libspi_flash.a
 entries:
     if APP_BUILD_TYPE_PURE_RAM_APP = n:
-        flash_brownout_hook (noflash)
-
         if SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM = y:
-            spi_flash_wrap (noflash)
             spi_flash_chip_generic (noflash)
             spi_flash_chip_issi (noflash)
             spi_flash_chip_mxic (noflash)
@@ -40,9 +37,6 @@ entries:
             if IDF_TARGET_ESP32S3 = y:
                 spi_flash_chip_mxic_opi (noflash)
 
-            if ESPTOOLPY_OCT_FLASH = y || ESPTOOLPY_FLASH_MODE_AUTO_DETECT = y:
-                spi_flash_oct_flash_init (noflash)
-
             if SPI_FLASH_VERIFY_WRITE = y:
                 esp_flash_api: s_verify_write (noflash)
 
@@ -74,17 +68,6 @@ entries:
 
                 if SPI_FLASH_WARN_SETTING_ZERO_TO_ONE = y:
                     esp_flash_api: s_check_setting_zero_to_one (noflash)
-
-
-        if SPI_FLASH_HPM_ON = y:
-            spi_flash_hpm_enable (noflash)
-
-        if ESP_SLEEP_SET_FLASH_DPD = y:
-            spi_flash_dpd_enable (noflash)
-
-        if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD = y:
-            flash_ops: esp_mspi_get_io (noflash)
-            flash_ops: s_mspi_io_num_default (noflash)
 
 [mapping:spi_flash_hal]
 archive: libesp_hal_mspi.a

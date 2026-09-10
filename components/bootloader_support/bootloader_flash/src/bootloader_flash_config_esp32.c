@@ -25,7 +25,8 @@
 #include "flash_qio_mode.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
+#include "spi_flash_defs.h"
 #include "bootloader_init.h"
 
 #define FLASH_CLK_IO    MSPI_IOMUX_PIN_NUM_CLK

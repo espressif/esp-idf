@@ -4,17 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
-
-#include <bootloader_flash_priv.h>
-#include <esp_log.h>
-#include "esp_efuse.h"
 #include "sdkconfig.h"
+#include "esp_efuse.h"
+#include "esp_log.h"
+#include "esp_flash_encrypt.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "soc/soc_caps.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
+#include "hal/spi_flash_types.h"
+#include "spi_flash_defs.h"
+#include "spi_flash_err.h"
 
 #if !NON_OS_BUILD
 #include "spi_flash_mmap.h"
+// This dependency will be removed in the future.  IDF-5025
+#include "esp_flash.h"
 #endif
 #include "hal/spi_flash_ll.h"
 #include "rom/spi_flash.h"
@@ -22,9 +27,6 @@
 #if !CONFIG_IDF_TARGET_ESP32
 #include "hal/spimem_flash_ll.h"
 #endif
-
-// This dependency will be removed in the future.  IDF-5025
-#include "esp_flash.h"
 
 #include "esp_rom_spiflash.h"
 
@@ -64,7 +66,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
         return NULL; /* existing mapping in use... */
     }
     const void *result = NULL;
-    uint32_t src_page = src_addr & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
+    uint32_t src_page = src_addr & ~(CONFIG_MMU_PAGE_SIZE - 1);
     size += (src_addr - src_page);
     esp_err_t err = spi_flash_mmap(src_page, size, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, &result, &map);
     if (err != ESP_OK) {
@@ -123,7 +125,6 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
-#include "esp_flash_chips/spi_flash_defs.h"
 
 #if ESP_TEE_BUILD
 #include "esp_fault.h"
@@ -362,7 +363,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32
     uint32_t count = GET_REQUIRED_MMU_PAGES(size, src_paddr);
     int e = cache_flash_mmu_set(0, 0, FLASH_MMAP_VADDR, src_paddr_aligned, 64, count);
-    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)FLASH_MMAP_VADDR, count * SPI_FLASH_MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)FLASH_MMAP_VADDR, count * CONFIG_MMU_PAGE_SIZE);
     if (e != 0) {
         ESP_EARLY_LOGE(TAG, "cache_flash_mmu_set failed: %d", e);
         Cache_Read_Enable(0);
@@ -491,20 +492,20 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #else
             cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
             //---------------Invalidating entries at to-be-mapped v_addr------------------------
-            cache_hal_invalidate_addr(FLASH_READ_VADDR, SPI_FLASH_MMU_PAGE_SIZE);
+            cache_hal_invalidate_addr(FLASH_READ_VADDR, CONFIG_MMU_PAGE_SIZE);
 #endif
 #endif
 
             //---------------Do mapping------------------------
             ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08" PRIx32 " (was 0x%08" PRIx32 ")", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
-            //Should never fail if we only map a SPI_FLASH_MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
+            //Should never fail if we only map a CONFIG_MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
             // Return value unused if asserts are disabled
             int e __attribute__((unused)) = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
             assert(e == 0);
 #else
             uint32_t actual_mapped_len = 0;
-            mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_READ_VADDR, map_at, SPI_FLASH_MMU_PAGE_SIZE - 1, &actual_mapped_len);
+            mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_READ_VADDR, map_at, CONFIG_MMU_PAGE_SIZE - 1, &actual_mapped_len);
 #endif
             current_read_mapping = map_at;
 
@@ -1015,15 +1016,6 @@ esp_err_t IRAM_ATTR bootloader_flash_reset_chip(void)
     bootloader_execute_flash_command(0x99, 0, 0, 0);
 
     return ESP_OK;
-}
-
-bool IRAM_ATTR bootloader_flash_is_octal_mode_enabled(void)
-{
-#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
-    return efuse_ll_get_flash_type();
-#else
-    return false;
-#endif
 }
 
 esp_rom_spiflash_read_mode_t bootloader_flash_get_spi_mode(void)

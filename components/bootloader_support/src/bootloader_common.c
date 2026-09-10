@@ -15,7 +15,7 @@
 #include "esp_rom_sys.h"
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
 #include "bootloader_sha_flash.h"

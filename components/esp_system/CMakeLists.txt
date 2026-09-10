@@ -12,7 +12,7 @@ if(${target} STREQUAL "linux")
                         "freertos_hooks.c"
                         "startup.c"
                         INCLUDE_DIRS "include"
-                        PRIV_REQUIRES spi_flash)
+                        PRIV_REQUIRES esp_mspi)
 
     # Add custom ld file (used to place system init functions).
     # Mach-O (Apple) does not support linker scripts; section bounds are resolved
@@ -39,10 +39,10 @@ if(BOOTLOADER_BUILD OR esp_tee_build)
     if(esp_tee_build)
         list(APPEND include_dirs "port/include/private")
     endif()
-    # "_esp_error_check_failed()" requires spi_flash module
+    # "_esp_error_check_failed()" requires esp_mspi module
     # Bootloader relies on some Kconfig options defined in esp_system.
     idf_component_register(SRCS "${srcs}" INCLUDE_DIRS "${include_dirs}"
-                           REQUIRES spi_flash)
+                           PRIV_REQUIRES esp_mspi)
 else()
     list(APPEND srcs "crosscore_int.c"
             "esp_ipc.c"
@@ -96,7 +96,7 @@ else()
         list(APPEND srcs "debug_assist.c")
     endif()
 
-    set(priv_requires spi_flash esp_timer esp_mm
+    set(priv_requires esp_mspi esp_timer esp_mm
                       esp_hal_clock esp_hal_mspi esp_hal_wdt esp_hal_debug_assist
                       esp_hal_uart esp_hal_dma esp_hal_security
                       # [refactor-todo] requirements due to init code,

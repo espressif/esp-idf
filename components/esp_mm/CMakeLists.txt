@@ -6,8 +6,8 @@ endif()
 
 set(includes "include")
 
-# Note: requires spi_flash for cache_utils, will be refactored
-set(priv_requires heap spi_flash esp_hal_dma)
+# Note: requires esp_mspi for cache_utils
+set(priv_requires heap esp_hal_dma esp_mspi)
 
 set(srcs)
 

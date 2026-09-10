@@ -24,8 +24,9 @@
 #include "esp_flash_chips/spi_flash_chip_driver.h"
 #include "esp_private/memspi_host_driver.h"
 #include "esp_private/esp_flash_internal.h"
-#include "esp_flash_chips/spi_flash_defs.h"
+#include "spi_flash_defs.h"
 #include "spi_flash_mmap.h"
+#include "esp_flash.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral

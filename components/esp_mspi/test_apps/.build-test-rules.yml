@@ -1,0 +1,20 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_mspi/test_apps/mspi:
+  depends_components:
+    - esp_mspi
+    - esp_hal_mspi
+    - spi_flash
+    - esp_psram
+  disable:
+    - if: IDF_TARGET not in ["esp32s3", "esp32p4", "esp32c61", "esp32c5", "esp32s31"]
+    - if: CONFIG_NAME in ["generic_timing_tuning_log_safe", "generic_timing_tuning_xip"] and IDF_TARGET in ["esp32s31"]
+    - if: CONFIG_NAME == "120sdr_120sdr" and IDF_TARGET in ["esp32s3", "esp32p4", "esp32s31"]
+
+components/esp_mspi/test_apps/no_flash_delay:
+  depends_components:
+    - esp_mspi
+    - esp_hal_mspi
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]
+      reason: Testing on a single target is sufficient

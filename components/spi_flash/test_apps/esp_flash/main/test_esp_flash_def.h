@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -120,7 +120,6 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
             LOG_ERASE(bus, erase_2, chip); \
         } while (0)
 
-
 #if defined(CONFIG_SPIRAM)
 //SPI1 CS1 occupied by PSRAM
 #define BYPASS_MULTIPLE_CHIP    1
@@ -182,77 +181,77 @@ static const char TAG[] = "test_esp_flash";
 
 #if CONFIG_IDF_TARGET_ESP32
 flashtest_config_t config_list[] = {
-    FLASHTEST_CONFIG_COMMON,
-    /* current runner doesn't have a flash on SPI2_HOST */
-    // {
-    //     .io_mode = TEST_SPI_READ_MODE,
-    //     .freq_mhz = TEST_SPI_SPEED,
-    //     .host_id = SPI2_HOST,
-    //     .cs_id = 0,
-    //     // uses GPIO matrix on esp32s2 regardless if FORCE_GPIO_MATRIX
-    //     .cs_io_num = SPI2_PIN_NUM_CS,
-    //     .input_delay_ns = 20,
-    // },
-    {
-        .io_mode = TEST_SPI_READ_MODE,
-        .freq_mhz = TEST_SPI_SPEED,
-        .host_id = SPI3_HOST,
-        .cs_id = 0,
-        .cs_io_num = SPI3_PIN_NUM_CS,
-        .input_delay_ns = 0,
-    },
-};
+                                       FLASHTEST_CONFIG_COMMON,
+                                       /* current runner doesn't have a flash on SPI2_HOST */
+                                       // {
+                                       //     .io_mode = TEST_SPI_READ_MODE,
+                                       //     .freq_mhz = TEST_SPI_SPEED,
+                                       //     .host_id = SPI2_HOST,
+                                       //     .cs_id = 0,
+                                       //     // uses GPIO matrix on esp32s2 regardless if FORCE_GPIO_MATRIX
+                                       //     .cs_io_num = SPI2_PIN_NUM_CS,
+                                       //     .input_delay_ns = 20,
+                                       // },
+                                       {
+                                           .io_mode = TEST_SPI_READ_MODE,
+                                           .freq_mhz = TEST_SPI_SPEED,
+                                           .host_id = SPI3_HOST,
+                                           .cs_id = 0,
+                                           .cs_io_num = SPI3_PIN_NUM_CS,
+                                           .input_delay_ns = 0,
+                                       },
+                                   };
 #elif CONFIG_IDF_TARGET_ESP32S2
 flashtest_config_t config_list[] = {
-    FLASHTEST_CONFIG_COMMON,
-    {
-        .io_mode = TEST_SPI_READ_MODE,
-        .freq_mhz = TEST_SPI_SPEED,
-        .host_id = SPI2_HOST,
-        .cs_id = 0,
-        .cs_io_num = SPI2_PIN_NUM_CS,
-        .input_delay_ns = 0,
-    },
-    {
-        .io_mode = TEST_SPI_READ_MODE,
-        .freq_mhz = TEST_SPI_SPEED,
-        .host_id = SPI3_HOST,
-        .cs_id = 0,
-        // uses GPIO matrix on esp32s2 regardless of FORCE_GPIO_MATRIX
-        .cs_io_num = SPI2_PIN_NUM_CS,
-        .input_delay_ns = 0,
-    },
-};
+                                       FLASHTEST_CONFIG_COMMON,
+                                       {
+                                           .io_mode = TEST_SPI_READ_MODE,
+                                           .freq_mhz = TEST_SPI_SPEED,
+                                           .host_id = SPI2_HOST,
+                                           .cs_id = 0,
+                                           .cs_io_num = SPI2_PIN_NUM_CS,
+                                           .input_delay_ns = 0,
+                                       },
+                                       {
+                                           .io_mode = TEST_SPI_READ_MODE,
+                                           .freq_mhz = TEST_SPI_SPEED,
+                                           .host_id = SPI3_HOST,
+                                           .cs_id = 0,
+                                           // uses GPIO matrix on esp32s2 regardless of FORCE_GPIO_MATRIX
+                                           .cs_io_num = SPI2_PIN_NUM_CS,
+                                           .input_delay_ns = 0,
+                                       },
+                                   };
 #elif CONFIG_IDF_TARGET_ESP32S3
 flashtest_config_t config_list[] = {
-    /* No SPI1 CS1 flash on esp32S3 test */
-    {
-        /* no need to init */
-        .host_id = -1,
-    },
-    {
-        .io_mode = TEST_SPI_READ_MODE,
-        .freq_mhz = TEST_SPI_SPEED,
-        .host_id = SPI2_HOST,
-        .cs_id = 0,
-        .cs_io_num = SPI2_PIN_NUM_CS,
-        .input_delay_ns = 0,
-    },
-};
+                                       /* No SPI1 CS1 flash on esp32S3 test */
+                                       {
+                                           /* no need to init */
+                                           .host_id = -1,
+                                       },
+                                       {
+                                           .io_mode = TEST_SPI_READ_MODE,
+                                           .freq_mhz = TEST_SPI_SPEED,
+                                           .host_id = SPI2_HOST,
+                                           .cs_id = 0,
+                                           .cs_io_num = SPI2_PIN_NUM_CS,
+                                           .input_delay_ns = 0,
+                                       },
+                                   };
 #else
 flashtest_config_t config_list[] = {
-    /* No SPI1 CS1 flash on esp32c3 test */
-    {
-        /* no need to init */
-        .host_id = -1,
-    },
-    {
-        .io_mode = TEST_SPI_READ_MODE,
-        .freq_mhz = TEST_SPI_SPEED,
-        .host_id = SPI2_HOST,
-        .cs_id = 0,
-        .cs_io_num = SPI2_PIN_NUM_CS,
-        .input_delay_ns = 0,
-    },
-};
+                                       /* No SPI1 CS1 flash on esp32c3 test */
+                                       {
+                                           /* no need to init */
+                                           .host_id = -1,
+                                       },
+                                       {
+                                           .io_mode = TEST_SPI_READ_MODE,
+                                           .freq_mhz = TEST_SPI_SPEED,
+                                           .host_id = SPI2_HOST,
+                                           .cs_id = 0,
+                                           .cs_io_num = SPI2_PIN_NUM_CS,
+                                           .input_delay_ns = 0,
+                                       },
+                                   };
 #endif
