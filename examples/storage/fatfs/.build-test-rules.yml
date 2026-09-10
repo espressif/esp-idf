@@ -9,6 +9,17 @@ examples/storage/fatfs:
     - if: IDF_TARGET != "esp32"
       reason: only one target needed
 
+examples/storage/fatfs/bdl_wl:
+  depends_components:
+    - *common_components
+    - esp_blockdev
+    - fatfs
+    - vfs
+    - wear_leveling
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+
 examples/storage/fatfs/ext_flash:
   depends_components:
     - *common_components
