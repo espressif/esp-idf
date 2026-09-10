@@ -119,6 +119,7 @@ struct scanned_ap_info {
 struct cand_bss {
     uint8_t channel;
     uint8_t bssid[ETH_ALEN];
+    bool force_legacy_roam;
 };
 
 struct roam_bss_info {
@@ -171,14 +172,14 @@ struct roaming_app {
 #endif
     bool allow_reconnect;
     struct cand_bss *pending_roam_bss;
-    wifi_scan_channel_bitmap_t default_channel_bitmap;
     wifi_scan_channel_bitmap_t rrm_channel_bitmap;
     bool rrm_channels_valid;
 #if RRM_ASSISTED_ROAMING_ENABLED
     uint8_t rrm_attempt;
     bool rrm_roam_pending;
     bool rrm_scan_active;
-    bool force_legacy_roam;
+    wifi_scan_channel_bitmap_t saved_scan_channel_bitmap;
+    uint8_t saved_scan_channel;
     struct cand_bss *pending_rrm_fallback_bss;
 #endif
 };
