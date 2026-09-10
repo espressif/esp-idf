@@ -491,6 +491,7 @@
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
 #define SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE   (1)
 #define SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED   (1)
+// #define SOC_ECDSA_USES_MPI 1 // TODO: [ESP32H21] IDF-16142
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-H21 has 2 UARTs

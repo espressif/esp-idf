@@ -414,6 +414,14 @@ static inline bool ecdsa_ll_is_deterministic_mode_supported(void)
 }
 
 /**
+ * @brief Check if the ECDSA peripheral uses MPI module's memory
+ */
+static inline bool ecdsa_ll_is_mpi_required(void)
+{
+    return false;
+}
+
+/**
  * @brief Check if the ECDSA peripheral is supported on this chip revision
  * For ESP32-C5, ECDSA is always supported
  */

@@ -111,6 +111,7 @@ void esp_crypto_hmac_enable_periph_clk(bool enable)
         hmac_ll_enable_bus_clock(enable);
         if (enable) {
             hmac_ll_reset_register();
+            hmac_ll_clean();
         }
     }
 }
@@ -141,15 +142,28 @@ void esp_crypto_ecdsa_enable_periph_clk(bool enable)
 #endif
 
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
-void esp_crypto_key_mgr_enable_periph_clk(bool enable)
+static void key_mgr_configure_periph_clk(bool enable, bool reset)
 {
     KEY_MANAGER_RCC_ATOMIC() {
         key_mgr_ll_power_up();
         key_mgr_ll_enable_bus_clock(enable);
         key_mgr_ll_enable_peripheral_clock(enable);
-        if (enable) {
+        if (enable && reset) {
             key_mgr_ll_reset_register();
         }
     }
+}
+
+void esp_crypto_key_mgr_enable_periph_clk(bool enable)
+{
+    /* Caller must hold esp_crypto_key_manager_lock: this reset also covers
+       the XTS-AES flash encryption key-usage selector. */
+    key_mgr_configure_periph_clk(enable, enable);
+}
+
+void esp_crypto_key_mgr_enable_periph_clk_no_reset(bool enable)
+{
+    /* Caller must hold esp_crypto_key_manager_lock to serialize selector writes. */
+    key_mgr_configure_periph_clk(enable, false);
 }
 #endif
