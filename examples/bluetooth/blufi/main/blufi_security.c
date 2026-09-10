@@ -47,7 +47,7 @@
 #define BLUFI_DEC_DOMAIN_STR "blufi_dec"
 
 #if !SOC_MPI_SUPPORTED
-#define BLUFI_DH_PREGEN_STACK_SIZE   4096
+#define BLUFI_DH_PREGEN_STACK_SIZE   6144
 #define BLUFI_DH_PREGEN_PRIO        (tskIDLE_PRIORITY + 1)
 #define BLUFI_DH_PREGEN_WAIT_MS      30000
 #define BLUFI_DH_HEAVY_CRYPTO_WDT_MS 30000
@@ -125,11 +125,15 @@ static void blufi_cleanup_negotiation(bool abort_enc, bool abort_dec)
  * with BLE advertising so only key agreement remains on the critical path
  * when the phone sends its DH parameters.
  */
+#define BLUFI_PREGEN_DONE_BIT   BIT0
+
 static psa_key_id_t s_pregen_private_key;
 static uint8_t s_pregen_public_key[DH_SELF_PUB_KEY_LEN];
 static size_t s_pregen_public_key_len;
-static SemaphoreHandle_t s_pregen_done;
 static bool s_pregen_ok;
+static bool s_pregen_busy;
+static EventGroupHandle_t s_pregen_evt;
+static SemaphoreHandle_t s_pregen_req;
 static TaskHandle_t s_pregen_task_hdl;
 static void (*s_pregen_complete_cb)(void);
 
@@ -143,12 +147,8 @@ static void blufi_wdt_set_timeout(uint32_t timeout_ms)
     esp_task_wdt_reconfigure(&cfg);
 }
 
-static void blufi_dh_pregen_task(void *arg)
+static void blufi_dh_pregen_generate(void)
 {
-    (void)arg;
-
-    blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
-
     psa_key_attributes_t attr = psa_key_attributes_init();
     psa_set_key_type(&attr, PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919));
     psa_set_key_bits(&attr, 3072);
@@ -170,44 +170,88 @@ static void blufi_dh_pregen_task(void *arg)
     }
 
     BLUFI_INFO("DH keypair pre-generation %s", s_pregen_ok ? "done" : "FAILED");
-
-    blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
-
-    xSemaphoreGive(s_pregen_done);
-
-    if (s_pregen_complete_cb) {
-        void (*cb)(void) = s_pregen_complete_cb;
-        s_pregen_complete_cb = NULL;
-        cb();
-    }
-
-    vTaskSuspend(NULL);
 }
 
-static void blufi_dh_pregen_start_impl(void (*done_cb)(void))
+/*
+ * The worker outlives every connection.  Creating it per keypair would mean
+ * asking for BLUFI_DH_PREGEN_STACK_SIZE of contiguous internal heap at the
+ * worst possible moment - right after a disconnect, with Wi-Fi and the BLE host
+ * fully up - which is where xTaskCreate() fails.
+ */
+static void blufi_dh_pregen_task(void *arg)
 {
-    if (s_pregen_done != NULL) {
-        return;
+    (void)arg;
+
+    while (true) {
+        xSemaphoreTake(s_pregen_req, portMAX_DELAY);
+
+        blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
+        blufi_dh_pregen_generate();
+        blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+
+        s_pregen_busy = false;
+        xEventGroupSetBits(s_pregen_evt, BLUFI_PREGEN_DONE_BIT);
+
+        if (s_pregen_complete_cb) {
+            void (*cb)(void) = s_pregen_complete_cb;
+            s_pregen_complete_cb = NULL;
+            cb();
+        }
+    }
+}
+
+static bool blufi_dh_pregen_worker_ensure(void)
+{
+    if (s_pregen_task_hdl != NULL) {
+        return true;
     }
 
-    s_pregen_private_key = 0;
-    s_pregen_public_key_len = 0;
-    s_pregen_ok = false;
-    s_pregen_task_hdl = NULL;
-    s_pregen_complete_cb = done_cb;
-    s_pregen_done = xSemaphoreCreateBinary();
-    if (s_pregen_done == NULL) {
-        BLUFI_ERROR("Failed to create pre-gen semaphore");
-        return;
+    if (s_pregen_evt == NULL) {
+        s_pregen_evt = xEventGroupCreate();
+    }
+    if (s_pregen_req == NULL) {
+        s_pregen_req = xSemaphoreCreateBinary();
+    }
+    if (s_pregen_evt == NULL || s_pregen_req == NULL) {
+        BLUFI_ERROR("Failed to create pre-gen sync objects");
+        return false;
     }
 
     if (xTaskCreate(blufi_dh_pregen_task, "blufi_pregen",
                     BLUFI_DH_PREGEN_STACK_SIZE, NULL,
                     BLUFI_DH_PREGEN_PRIO, &s_pregen_task_hdl) != pdPASS) {
         BLUFI_ERROR("Failed to create pre-gen task");
-        vSemaphoreDelete(s_pregen_done);
-        s_pregen_done = NULL;
+        s_pregen_task_hdl = NULL;
+        return false;
     }
+
+    return true;
+}
+
+static void blufi_dh_pregen_start_impl(void (*done_cb)(void))
+{
+    if (!blufi_dh_pregen_worker_ensure()) {
+        /* Advertise anyway; negotiation falls back to inline key generation. */
+        if (done_cb) {
+            done_cb();
+        }
+        return;
+    }
+
+    /* A keypair is already banked, or one is on its way. */
+    if (s_pregen_busy || (s_pregen_ok && s_pregen_private_key != 0)) {
+        if (done_cb) {
+            done_cb();
+        }
+        return;
+    }
+
+    s_pregen_public_key_len = 0;
+    s_pregen_ok = false;
+    s_pregen_complete_cb = done_cb;
+    s_pregen_busy = true;
+    xEventGroupClearBits(s_pregen_evt, BLUFI_PREGEN_DONE_BIT);
+    xSemaphoreGive(s_pregen_req);
 }
 
 void blufi_dh_pregen_start(void)
@@ -222,29 +266,30 @@ void blufi_dh_pregen_start_with_cb(void (*done_cb)(void))
 
 void blufi_dh_pregen_wait(void)
 {
-    if (s_pregen_done == NULL) {
+    if (s_pregen_evt == NULL) {
         return;
     }
-    xSemaphoreTake(s_pregen_done, portMAX_DELAY);
-    xSemaphoreGive(s_pregen_done);
+    xEventGroupWaitBits(s_pregen_evt, BLUFI_PREGEN_DONE_BIT,
+                        pdFALSE, pdTRUE, portMAX_DELAY);
 }
 
-static void blufi_dh_pregen_cleanup(void)
+/**
+ * @brief Hand the banked keypair to the caller, which takes ownership of it
+ *
+ * @return The private key id, or 0 when no usable keypair is banked
+ */
+static psa_key_id_t blufi_dh_pregen_take(void)
 {
-    if (s_pregen_done != NULL) {
-        xSemaphoreTake(s_pregen_done, portMAX_DELAY);
-        vSemaphoreDelete(s_pregen_done);
-        s_pregen_done = NULL;
+    if (!s_pregen_ok || s_pregen_private_key == 0) {
+        return 0;
     }
-    if (s_pregen_task_hdl != NULL) {
-        vTaskDelete(s_pregen_task_hdl);
-        s_pregen_task_hdl = NULL;
-    }
-    if (s_pregen_private_key != 0) {
-        psa_destroy_key(s_pregen_private_key);
-        s_pregen_private_key = 0;
-    }
+
+    psa_key_id_t key = s_pregen_private_key;
+    s_pregen_private_key = 0;
     s_pregen_ok = false;
+    xEventGroupClearBits(s_pregen_evt, BLUFI_PREGEN_DONE_BIT);
+
+    return key;
 }
 #endif /* !SOC_MPI_SUPPORTED */
 
@@ -384,18 +429,26 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
          * heap before key agreement, and widen the task WDT window. */
         bool used_pregen = false;
 
-        if (s_pregen_done != NULL &&
-            xSemaphoreTake(s_pregen_done, pdMS_TO_TICKS(BLUFI_DH_PREGEN_WAIT_MS)) == pdTRUE) {
-            xSemaphoreGive(s_pregen_done);
-            if (s_pregen_ok && s_pregen_private_key != 0) {
-                private_key = s_pregen_private_key;
-                s_pregen_private_key = 0;
-                memcpy(blufi_sec->self_public_key, s_pregen_public_key, s_pregen_public_key_len);
-                public_key_len = s_pregen_public_key_len;
+        if (s_pregen_evt != NULL &&
+            (xEventGroupWaitBits(s_pregen_evt, BLUFI_PREGEN_DONE_BIT, pdFALSE, pdTRUE,
+                                 pdMS_TO_TICKS(BLUFI_DH_PREGEN_WAIT_MS)) & BLUFI_PREGEN_DONE_BIT)) {
+            size_t pregen_len = s_pregen_public_key_len;
+            private_key = blufi_dh_pregen_take();
+            if (private_key != 0) {
+                memcpy(blufi_sec->self_public_key, s_pregen_public_key, pregen_len);
+                public_key_len = pregen_len;
                 used_pregen = true;
                 BLUFI_INFO("Using pre-generated DH keypair");
             }
         }
+
+        /* Release the DH parameter buffer before any further modular
+         * exponentiation.  Both the inline keypair generation and the key
+         * agreement below need a single ~4.2 kB contiguous internal
+         * allocation, so nothing reclaimable may be held across them. */
+        uint8_t peer_pub[DH_SELF_PUB_KEY_LEN];
+        memcpy(peer_pub, param, pub_len);
+        blufi_cleanup_dh_param();
 
         if (!used_pregen) {
             BLUFI_INFO("Pre-gen unavailable, generating DH keypair inline");
@@ -412,7 +465,6 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
                 BLUFI_ERROR("%s psa_generate_key failed %d\n", __func__, status);
                 blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
                 btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
-                blufi_cleanup_dh_param();
                 return;
             }
             psa_reset_key_attributes(&keygen_attr);
@@ -424,18 +476,8 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
                 blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
                 psa_destroy_key(private_key);
                 btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
-                blufi_cleanup_dh_param();
                 return;
             }
-        }
-
-        uint8_t peer_pub[DH_SELF_PUB_KEY_LEN];
-        memcpy(peer_pub, param, pub_len);
-        blufi_cleanup_dh_param();
-
-        if (s_pregen_task_hdl != NULL) {
-            vTaskDelete(s_pregen_task_hdl);
-            s_pregen_task_hdl = NULL;
         }
 
         blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
@@ -738,9 +780,9 @@ void blufi_security_deinit(void)
         return;
     }
 
-#if !SOC_MPI_SUPPORTED
-    blufi_dh_pregen_cleanup();
-#endif
+    /* The pre-generation worker and any keypair it has banked deliberately
+     * survive the disconnect: the next connection reuses them, and its task
+     * stack could not be reallocated once Wi-Fi and the BLE host are up. */
 
     /* Clean up all resources */
     blufi_cleanup_negotiation(true, true);

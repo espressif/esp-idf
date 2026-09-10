@@ -520,6 +520,13 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
+#if !SOC_MPI_SUPPORTED
+    /* Software 3072-bit modular exponentiation needs ~4.2 kB of contiguous
+     * internal heap.  Start it before Wi-Fi and the BLE host claim their pools,
+     * otherwise the allocation fails with PSA_ERROR_INSUFFICIENT_MEMORY. */
+    blufi_dh_pregen_start();
+#endif
+
     initialise_wifi();
 
 #if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
@@ -537,7 +544,6 @@ void app_main(void)
     }
 
 #if !SOC_MPI_SUPPORTED
-    blufi_dh_pregen_start();
     blufi_dh_pregen_wait();
     esp_blufi_adv_start();
 #endif
