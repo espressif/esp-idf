@@ -414,7 +414,8 @@ esp_err_t esp_radio_spinel_rcp_deinit(esp_radio_spinel_idx_t idx);
 /**
  * @brief Get the version of RCP.
  *
- * @param[in]  running_rcp_version  A pointer to the RCP version string.
+ * @param[in]  running_rcp_version  A pointer to a caller-allocated buffer of at least 128 bytes,
+ *                                  to be filled with the null-terminated RCP version string.
  * @param[in]  idx                  The index of 802.15.4 related protocol stack.
  *
  * @return

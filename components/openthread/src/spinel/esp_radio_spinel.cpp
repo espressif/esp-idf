@@ -134,7 +134,7 @@ void TransmitDone(otInstance *aInstance, otRadioFrame *aFrame, otRadioFrame *aAc
         uint8_t *frame = (uint8_t *)calloc(1, aFrame->mLength + 1);
         uint8_t *ack = nullptr;
         if (frame) {
-            esp_ieee802154_frame_info_t ack_info;
+            esp_ieee802154_frame_info_t ack_info = {};
             frame[0] = aFrame->mLength;
             memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
             if (aAckFrame) {
@@ -142,6 +142,11 @@ void TransmitDone(otInstance *aInstance, otRadioFrame *aFrame, otRadioFrame *aAc
                 if (ack) {
                     ack[0] = aAckFrame->mLength;
                     memcpy((void *)(ack + 1), aAckFrame->mPsdu, ack[0]);
+                    ack_info.rssi = aAckFrame->mInfo.mRxInfo.mRssi;
+                    ack_info.channel = aAckFrame->mChannel;
+                    ack_info.lqi = aAckFrame->mInfo.mRxInfo.mLqi;
+                    ack_info.timestamp = aAckFrame->mInfo.mRxInfo.mTimestamp;
+                    ack_info.pending = aAckFrame->mInfo.mRxInfo.mAckedWithFramePending;
                 } else {
                     ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to alloc memory for ack");
                 }
@@ -404,7 +409,7 @@ esp_err_t esp_radio_spinel_rcp_version_get(char *running_rcp_version, esp_radio_
 {
     const char *rcp_version = s_radio[idx].GetVersion();
     ESP_RETURN_ON_FALSE(rcp_version != nullptr, ESP_FAIL, ESP_SPINEL_LOG_TAG, "Fail to get rcp version");
-    strcpy(running_rcp_version, rcp_version);
+    strlcpy(running_rcp_version, rcp_version, ESP_RADIO_SPINEL_RCP_VERSION_MAX_SIZE);
     return ESP_OK;
 }
 
