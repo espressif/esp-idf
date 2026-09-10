@@ -111,6 +111,7 @@ typedef enum {
 } trace_malloc_mode_t;
 
 void *__real_heap_caps_malloc_base( size_t size, uint32_t caps);
+void *__real_heap_caps_calloc_base(size_t n, size_t size, uint32_t caps);
 void *__real_heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps);
 void *__real_heap_caps_aligned_alloc_base(size_t alignment, size_t size, uint32_t caps);
 void __real_heap_caps_free(void *p);
@@ -131,6 +132,28 @@ static HEAP_IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t alignm
         .address = p,
         .ccount = ccount,
         .size = size,
+        .freed = false,
+    };
+    get_call_stack(rec.alloced_by);
+    record_allocation(&rec);
+    return p;
+}
+
+/* trace any 'calloc' event */
+static HEAP_IRAM_ATTR __attribute__((noinline)) void *trace_calloc(size_t n, size_t size, uint32_t caps)
+{
+    uint32_t ccount = get_ccount();
+    size_t size_bytes;
+    void *p = __real_heap_caps_calloc_base(n, size, caps);
+
+    if (__builtin_mul_overflow(n, size, &size_bytes)) {
+        size_bytes = 0;
+    }
+
+    heap_trace_record_t rec = {
+        .address = p,
+        .ccount = ccount,
+        .size = size_bytes,
         .freed = false,
     };
     get_call_stack(rec.alloced_by);
@@ -186,6 +209,11 @@ HEAP_IRAM_ATTR void *__wrap_heap_caps_realloc_base(void *ptr, size_t size, uint3
 HEAP_IRAM_ATTR void *__wrap_heap_caps_malloc_base(size_t size, uint32_t caps)
 {
     return trace_malloc(0, size, caps, TRACE_MALLOC_DEFAULT);
+}
+
+HEAP_IRAM_ATTR void *__wrap_heap_caps_calloc_base(size_t n, size_t size, uint32_t caps)
+{
+    return trace_calloc(n, size, caps);
 }
 
 HEAP_IRAM_ATTR void *__wrap_heap_caps_aligned_alloc_base(size_t alignment, size_t size, uint32_t caps)
