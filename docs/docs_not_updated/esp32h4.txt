@@ -120,13 +120,6 @@ api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
 api-reference/peripherals/spi_flash/spi_flash_optional_feature.rst
 api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom.rst
 api-reference/peripherals/sdmmc_host.rst
-api-reference/system/mm_sync.rst
-api-reference/system/mm.rst
-api-reference/system/esp_https_ota.rst
-api-reference/system/sleep_modes.rst
-api-reference/system/ota.rst
-api-reference/system/inc/power_management_esp32h4.rst
-api-reference/system/power_management.rst
 security/tee/index.rst
 security/tee/tee-advanced.rst
 security/tee/tee-sec-storage.rst

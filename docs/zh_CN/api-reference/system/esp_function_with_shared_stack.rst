@@ -15,8 +15,9 @@
   .. list::
 
      - 使用线程局部存储 (TLS)
-     :esp32p4: - 使用浮点运算器 (FPU)
-     :esp32p4: - 使用 AI 协处理器
+     :SOC_CPU_HAS_FPU: - 使用浮点运算器 (FPU)
+     :SOC_CPU_HAS_PIE: - 使用 AI 协处理器
+     :SOC_CPU_HAS_DSP: - 使用 DSP 协处理器
      - 调用 vTaskDelete(NULL) 删除当前运行的任务
 
   此外，从共享堆栈上运行的函数中，或该函数调用的任何函数中调用回溯，回溯信息都可能不正确。这方面的限制十分严格，因此将来 :cpp:func:`esp_execute_shared_stack_function` 可能会被弃用。如有用例必须使用 :cpp:func:`esp_execute_shared_stack_function` 函数才能实现，请提交 `GitHub Issue <https://github.com/espressif/esp-idf/issues>`_。
