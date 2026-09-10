@@ -150,6 +150,9 @@ UART 驱动程序函数通过 :cpp:type:`uart_port_t` 识别不同的 UART 控�
   // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19, DTR: UNUSED, DSR: UNUSED)
   ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
+.. note::
+
+    上方管脚编号仅为示例。许多开发板的板载 USB 至 UART 桥接到 UART0 的默认 TX/RX 管脚。若需要通过其他端口或其他管脚与 PC 通信，则需在这些管脚上另接 USB 至 UART 桥。
 
 .. _uart-api-running-uart-communication:
 
