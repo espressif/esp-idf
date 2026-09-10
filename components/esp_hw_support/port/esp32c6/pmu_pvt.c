@@ -21,7 +21,6 @@
 #include "soc/regi2c_dig_reg.h"
 #include "regi2c_ctrl.h"
 #include "soc/rtc.h"
-#include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 
@@ -36,7 +35,7 @@ static uint8_t get_lp_hp_gap(void)
     int8_t pvt_offset = 0;
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 3) {
-        uint8_t offset_read = efuse_ll_get_dbias_vol_gap();
+        uint8_t offset_read = pmu_ll_get_dbias_vol_gap();
         bool offset_flag = offset_read >> 4;
         uint8_t offset_value = offset_read & 0xf;
         if (offset_flag) {

@@ -17,7 +17,6 @@
 #include "hal/lp_aon_hal.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
-#include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 #include "soc/regi2c_bias.h"
@@ -36,7 +35,7 @@ uint32_t get_slp_lp_dbias(void)
     uint32_t pmu_lp_dbias_sleep_0v7 = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT;
     unsigned blk_version = efuse_hal_blk_version();
     if (blk_version >= 3) {
-        pmu_lp_dbias_sleep_0v7 = efuse_ll_get_dslp_dbias();
+        pmu_lp_dbias_sleep_0v7 = pmu_ll_get_dslp_dbias();
         if (pmu_lp_dbias_sleep_0v7 == 0) {
             pmu_lp_dbias_sleep_0v7 = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT;
             ESP_HW_LOGD(TAG, "slp dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);

@@ -16,11 +16,27 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
+#include "soc/efuse_struct.h"
 #include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_4.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_4.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t pmu_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE.rd_mac_sys_5.lp_dcdc_dbias_vol_gap;
+}
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_interrupt_raw(pmu_dev_t *hw)
 {

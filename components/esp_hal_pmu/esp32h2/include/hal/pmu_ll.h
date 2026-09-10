@@ -16,10 +16,31 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
+#include "soc/efuse_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_2.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_2.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t pmu_ll_get_dslp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_2.dslp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t pmu_ll_get_dbias_vol_gap(void)
+{
+    return (EFUSE.rd_mac_sys_3.dbias_vol_gap_sign << 4) | (EFUSE.rd_mac_sys_3.dbias_vol_gap_value2 << 1) | EFUSE.rd_mac_sys_2.dbias_vol_gap_value1;
+}
 
 /**
  * @brief Set the power domain that needs to be powered down in the digital power

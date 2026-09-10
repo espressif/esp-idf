@@ -20,7 +20,6 @@
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
 #include "soc/rtc.h"
-#include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 
@@ -36,7 +35,7 @@ static uint8_t get_lp_hp_gap(void)
     uint32_t blk_version = efuse_hal_blk_version();
     uint8_t lp_hp_gap_efuse = 0;
     if (blk_version >= 2) {
-        lp_hp_gap_efuse = efuse_ll_get_dbias_vol_gap();
+        lp_hp_gap_efuse = pmu_ll_get_dbias_vol_gap();
         bool gap_flag = lp_hp_gap_efuse >> 4;
         uint8_t gap_abs_value = lp_hp_gap_efuse & 0xf;
         if (gap_flag) {

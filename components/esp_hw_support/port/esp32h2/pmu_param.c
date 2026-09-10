@@ -12,7 +12,6 @@
 #include "pmu_param.h"
 #include "soc/pmu_icg_mapping.h"
 #include "esp_private/esp_pmu.h"
-#include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 #include "soc/clk_tree_defs.h"
@@ -419,7 +418,7 @@ uint32_t get_act_hp_dbias(void)
     unsigned blk_version = efuse_hal_blk_version();
     uint32_t hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
     if (blk_version >= 3) {
-        hp_cali_dbias = efuse_ll_get_active_hp_dbias();
+        hp_cali_dbias = pmu_ll_get_active_hp_dbias();
         if (hp_cali_dbias != 0) {
             //efuse dbias need to add 2 to meet the CPU frequency switching
             if (hp_cali_dbias + 2 > 31) {
@@ -444,7 +443,7 @@ uint32_t get_act_lp_dbias(void)
     unsigned blk_version = efuse_hal_blk_version();
     uint32_t lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
     if (blk_version >= 3) {
-        lp_cali_dbias = efuse_ll_get_active_lp_dbias();
+        lp_cali_dbias = pmu_ll_get_active_lp_dbias();
         if (lp_cali_dbias != 0) {
             //efuse dbias need to add 2 to meet the CPU frequency switching
             if (lp_cali_dbias + 2 > 31) {
