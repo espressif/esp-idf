@@ -18,3 +18,7 @@ examples/lowpower/vbat:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: not supported yet
+
+examples/lowpower/vddbat:
+  enable:
+    - if: SOC_VDDBAT_PROTECT_SUPPORTED == 1

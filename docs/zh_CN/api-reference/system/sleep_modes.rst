@@ -721,6 +721,7 @@ UART 输出处理
     :SOC_PM_SUPPORT_USB_WAKEUP: - :example:`peripherals/usb/device/tusb_cdc_acm_wakeup` 演示如何使用 USB 2.0 将芯片从 Light-sleep 唤醒。
     :SOC_TOUCH_SENSOR_SUPPORTED and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP: - :example:`peripherals/touch_sensor/touch_sens_sleep` 演示如何使用触摸传感器唤醒 Light-sleep 或 Deep-sleep。
     :SOC_VBAT_SUPPORTED: - :example:`lowpower/vbat` 演示如何在 Deep-sleep 期间使用备用电池电源（VBAT），使 RTC 定时器在主电源断开后继续运行。
+    :SOC_VDDBAT_PROTECT_SUPPORTED: - :example:`lowpower/vddbat` 演示应用程序在 VDDBAT 欠压回调里进入 Deep-sleep，并在电池电压恢复后唤醒。
 
 API 参考
 -------------
