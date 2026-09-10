@@ -12,7 +12,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 例如：
 
-- 对于从 APB 获得时钟频率的外设，其驱动可以要求在使用该外设时，将 APB 频率设置为 80 MHz。
+- 对于从 APB 获得时钟频率的外设，其驱动可以要求在使用该外设时，将 APB 频率设置为芯片支持的最大值。
 - RTOS 可以要求 CPU 在有任务准备开始运行时以最高配置频率工作。
 - 一些外设可能需要中断才能启用，因此其驱动也会要求禁用 Light-sleep 模式。
 
@@ -61,8 +61,10 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 
 电源管理锁
-----------------------
-{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz, 或 240 MHz", esp32c61="80 MHz 或 160 MHz"}
+----------
+
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz, 或 240 MHz", esp32c61="80 MHz 或 160 MHz", esp32h4="48 MHz, 64 MHz, 或 96 MHz", esp32s31="240 MHz 或 320 MHz"}
+{IDF_TARGET_MAX_APB_FREQ: default="80 MHz", esp32c2="40 MHz", esp32c5="40 MHz", esp32c6="40 MHz", esp32c61="40 MHz", esp32h2="32 MHz", esp32h21="32 MHz", esp32h4="32 MHz", esp32p4="90 MHz", esp32s31="53.3 MHz"}
 
 应用程序可以通过获取或释放管理锁来控制电源管理算法。应用程序获取电源管理锁后，电源管理算法的操作将受到下面的限制。释放电源管理锁后，限制解除。
 
@@ -79,7 +81,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
   * - ``ESP_PM_CPU_FREQ_MAX``
     - 请求使用 :cpp:func:`esp_pm_configure` 将 CPU 频率设置为最大值。{IDF_TARGET_NAME} 可以将该值设置为 {IDF_TARGET_MAX_CPU_FREQ}。
   * - ``ESP_PM_APB_FREQ_MAX``
-    - 请求将 APB 频率设置为最大值，{IDF_TARGET_NAME} 支持的最大频率为 80 MHz。
+    - 请求将 APB 频率设置为最大值，{IDF_TARGET_NAME} 支持的最大频率为 {IDF_TARGET_MAX_APB_FREQ}。
   * - ``ESP_PM_NO_LIGHT_SLEEP``
     - 禁止自动切换至 Light-sleep 模式。
 

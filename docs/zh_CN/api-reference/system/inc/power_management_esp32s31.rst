@@ -1,3 +1,29 @@
-.. note::
 
-    To be updated.
+.. flat-table::
+    :widths: 1 3 3
+
+    * - CPU 最高频率
+      - 电源管理锁获取情况
+      - APB 频率和 CPU 频率
+    * - :rspan:`2` 320
+      - 获取 ``ESP_PM_CPU_FREQ_MAX``
+      -
+        - CPU: 320 MHz
+        - APB: 53.3 MHz
+    * - 获取 ``ESP_PM_APB_FREQ_MAX``，未获得 ``ESP_PM_CPU_FREQ_MAX``
+      -
+        - CPU: 53.3 MHz
+        - APB: 53.3 MHz
+    * - 无
+      - 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值
+    * - :rspan:`2` 240
+      - 获取 ``ESP_PM_CPU_FREQ_MAX``
+      -
+        - CPU: 240 MHz
+        - APB: 40 MHz
+    * - 获取 ``ESP_PM_APB_FREQ_MAX``，未获得 ``ESP_PM_CPU_FREQ_MAX``
+      -
+        - CPU: 40 MHz
+        - APB: 40 MHz
+    * - 无
+      - 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值

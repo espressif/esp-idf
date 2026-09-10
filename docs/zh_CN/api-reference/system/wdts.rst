@@ -141,13 +141,12 @@ TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配�
 
 以下配置选项控制 TWDT 配置，默认情况下全部启用：
 
-{IDF_TARGET_IDLE_TASK:default="空闲任务", esp32="CPU0 空闲任务", esp32s3="CPU0 空闲任务"}
-
 .. list::
 
     - :ref:`CONFIG_ESP_TASK_WDT_EN` - 启用 TWDT 功能。如果禁用此选项， TWDT 即使运行时已初始化也无法使用。
     - :ref:`CONFIG_ESP_TASK_WDT_INIT` - TWDT 在启动期间自动初始化。禁用此选项时，仍可以调用 :cpp:func:`esp_task_wdt_init` 在运行时初始化 TWDT。
-    - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - 在启动期间将 {IDF_TARGET_IDLE_TASK}注册到 TWDT。如果禁用此选项。如果禁用此选项，仍然可以通过再次调用 :cpp:func:`esp_task_wdt_init`，或者使用 :cpp:func:`esp_task_wdt_add` 并传入通过 :cpp:func:`xTaskGetIdleTaskHandleForCore` 获取的空闲任务句柄来订阅空闲任务。
+    :not SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - 在启动期间将空闲任务注册到 TWDT。如果禁用此选项，仍然可以通过再次调用 :cpp:func:`esp_task_wdt_init`，或者使用 :cpp:func:`esp_task_wdt_add` 并传入通过 :cpp:func:`xTaskGetIdleTaskHandleForCore` 获取的空闲任务句柄来订阅空闲任务。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - 在启动期间将 CPU0 空闲任务注册到 TWDT。如果禁用此选项，仍然可以通过再次调用 :cpp:func:`esp_task_wdt_init`，或者使用 :cpp:func:`esp_task_wdt_add` 并传入通过 :cpp:func:`xTaskGetIdleTaskHandleForCore` 获取的空闲任务句柄来订阅空闲任务。
     :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 空闲任务在启动时订阅了 TWDT。
 
 
