@@ -283,6 +283,16 @@ void phy_wait_freq_hw_hop_done(void);
 void phy_track_temp_debug(uint8_t debug_flag, uint8_t track_temp);
 #endif
 
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
+/**
+ * @brief Get the PHY init data type that is currently applied to the PHY
+ *
+ * @return the applied init data type, ESP_PHY_INIT_DATA_TYPE_DEFAULT as long as no
+ *         certified init data has been selected by a country code
+ */
+phy_init_data_type_t esp_phy_get_init_data_type(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
