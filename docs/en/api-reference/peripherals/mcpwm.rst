@@ -936,6 +936,49 @@ The parameter ``user_data`` of :cpp:func:`mcpwm_capture_channel_register_event_c
 
 This function will lazy install interrupt service for the MCPWM capture channel, whereas the service can only be removed in :cpp:type:`mcpwm_del_capture_channel`.
 
+Input Prescale
+~~~~~~~~~~~~~~
+
+The capture channel processes the input in a **fixed, serial** order:
+
+1. **First** divide the GPIO waveform by ``prescale`` (``0`` or ``1`` means bypass);
+2. **Then** use ``pos_edge``/``neg_edge`` to decide which post-prescale events are reported to software.
+
+So hardware does **not** first filter physical GPIO edges by polarity and only then divide them. With ``prescale > 1``:
+
+- The :cpp:member:`cap_edge <mcpwm_capture_event_data_t::cap_edge>` seen in the callback may not match the physical GPIO edge.
+- Adjacent opposite-edge gaps are **not pulse width**, and **the true duty cycle cannot be recovered** from them.
+
+Always compute period or frequency from timestamps of the same reported edge type.
+
+.. note::
+
+    Keep ``prescale = 1`` and capture both edges when measuring pulse width or duty cycle. Raise ``prescale`` only when you need to reduce the capture rate for fast inputs and you only care about period or frequency.
+
+The figures below show how ``prescale`` affects capture timing for rising-only, falling-only, and both-edge modes.
+
+.. figure:: /../_static/mcpwm/capture_prescale_rising.svg
+    :align: center
+    :alt: Rising-edge only capture with prescale bypass and prescale 4.
+
+Rising-edge only. With ``prescale = 1`` every rising edge captures as ``R``. With ``prescale > 1``, the first capture is at cycle ``prescale / 2 - 1``, then every ``prescale``-th rising edge.
+
+.. figure:: /../_static/mcpwm/capture_prescale_falling.svg
+    :align: center
+    :alt: Falling-edge only capture with prescale bypass and prescale 4.
+
+Falling-edge only. With ``prescale = 1`` every falling edge captures as ``F``. With ``prescale > 1``, GPIO falling edges do not directly produce captures; events land on rising steps while ``cap_edge`` still reports ``F``.
+
+.. figure:: /../_static/mcpwm/capture_prescale_both.svg
+    :align: center
+    :alt: Both-edge capture with prescale bypass and prescale 4.
+
+Both-edge capture. With ``prescale = 1``, ``R``/``F`` match the physical pin edges. With ``prescale > 1``, captures fire on rising pin steps only, while reported ``R``/``F`` alternate after prescaling.
+
+.. warning::
+
+    Do not infer the physical GPIO transition from :cpp:member:`mcpwm_capture_event_data_t::cap_edge` when ``prescale > 1``, and do not treat adjacent opposite-edge gaps as pulse width.
+
 Enable and Disable Capture Channel
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
