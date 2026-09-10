@@ -1,0 +1,5 @@
+CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION=y
+CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN=y
+
+# ignore task watchdog triggered by unity_run_menu
+CONFIG_ESP_TASK_WDT_INIT=n
