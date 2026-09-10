@@ -865,11 +865,13 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     }
 #if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
     spi_hal_clear_intr_mask(hal, SPI_LL_INTR_IN_FULL | SPI_LL_INTR_OUT_EMPTY);
+#if !SPI_LL_SUPPORT_FD_TX_WAIT_DMA
     if (esp_ptr_dma_ext_capable(hal_trans.send_buffer)) {
         // ! Delay here is required for EDMA to pass data from PSRAM to GPSPI
         esp_rom_delay_us(SPI_EDMA_SETUP_TIME_US(hal_dev->timing_conf.real_freq));
     }
-#endif
+#endif // !SPI_LL_SUPPORT_FD_TX_WAIT_DMA
+#endif // CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
     //Kick off transfer
     spi_hal_user_start(hal);
 }
