@@ -228,6 +228,7 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
     TBlobIndexList blobIdxList;
     err = populateBlobIndices(blobIdxList);
     if(err != ESP_OK) {
+        blobIdxList.clearAndFreeNodes();
         mState = StorageState::INVALID;
         return ESP_ERR_NO_MEM;
     }
