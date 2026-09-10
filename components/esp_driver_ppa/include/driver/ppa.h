@@ -249,6 +249,7 @@ typedef struct {
     color_pixel_rgb888_data_t fg_ck_rgb_high_thres;/*!< The higher threshold of the color-keying range for the foreground, in RGB888 format */
     color_pixel_rgb888_data_t ck_rgb_default_val;  /*!< The color to overwrite when a pixel, where its background element and foreground element are both within their color-keying ranges, in RGB888 format */
     bool ck_reverse_bg2fg;                         /*!< If this bit is set, in color-keying, for the pixel, where its background element is in the color range, but its foreground element is not in the color range, it will output the foreground element instead of the background element */
+    bool bypass_blend;                             /*!< Bypass blend arithmetic. The background color is forwarded through the output format converter, while an A4/A8 foreground supplies the output alpha */
 
     ppa_trans_mode_t mode;                         /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
     void *user_data;                               /*!< User registered data to be passed into `done_cb` callback function */
