@@ -54,6 +54,8 @@ generate_pytest_child_pipeline:
     - job: build_non_test_related_apps  # make sure all build jobs are passed
       optional: true
     - pipeline: $PARENT_PIPELINE_ID
+      job: build_clang_test_apps_esp32s3
+    - pipeline: $PARENT_PIPELINE_ID
       job: pipeline_variables
   artifacts:
     paths:
