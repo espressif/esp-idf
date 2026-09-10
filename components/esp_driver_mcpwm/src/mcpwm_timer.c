@@ -145,6 +145,13 @@ err:
     return ret;
 }
 
+esp_err_t mcpwm_timer_get_resolution(mcpwm_timer_handle_t timer, uint32_t *out_resolution)
+{
+    ESP_RETURN_ON_FALSE(timer && out_resolution, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *out_resolution = timer->resolution_hz;
+    return ESP_OK;
+}
+
 esp_err_t mcpwm_del_timer(mcpwm_timer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
