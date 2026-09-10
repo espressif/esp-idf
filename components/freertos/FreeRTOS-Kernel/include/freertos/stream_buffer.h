@@ -307,7 +307,7 @@ typedef void (* StreamBufferCallbackFunction_t)( StreamBufferHandle_t xStreamBuf
  * into the stream buffer.
  *
  * @param xDataLengthBytes   The maximum number of bytes to copy from pvTxData
- * into the stream buffer.
+ * into the stream buffer.  This value must be greater than 0.
  *
  * @param xTicksToWait The maximum amount of time the task should remain in the
  * Blocked state to wait for enough space to become available in the stream
@@ -396,7 +396,7 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
  * buffer.
  *
  * @param xDataLengthBytes The maximum number of bytes to copy from pvTxData
- * into the stream buffer.
+ * into the stream buffer.  This value must be greater than 0.
  *
  * @param pxHigherPriorityTaskWoken  It is possible that a stream buffer will
  * have a task blocked on it waiting for data.  Calling

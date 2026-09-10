@@ -337,6 +337,7 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * on a 32-bit architecture, so on most 32-bit architecture setting
  * xDataLengthBytes to 20 will reduce the free space in the message buffer by 24
  * bytes (20 bytes of message data and 4 bytes to hold the message length).
+ * xDataLengthBytes must be greater than 0.
  *
  * @param xTicksToWait The maximum amount of time the calling task should remain
  * in the Blocked state to wait for enough space to become available in the
@@ -440,6 +441,7 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * on a 32-bit architecture, so on most 32-bit architecture setting
  * xDataLengthBytes to 20 will reduce the free space in the message buffer by 24
  * bytes (20 bytes of message data and 4 bytes to hold the message length).
+ * xDataLengthBytes must be greater than 0.
  *
  * @param pxHigherPriorityTaskWoken  It is possible that a message buffer will
  * have a task blocked on it waiting for data.  Calling
