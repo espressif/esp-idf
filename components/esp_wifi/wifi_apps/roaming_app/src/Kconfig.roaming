@@ -95,12 +95,14 @@ menu "Roaming Methods"
     config ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
         bool "Support 802.11k assisted roaming using neighbor reports"
         depends on ESP_WIFI_RRM_SUPPORT
-        default y
+        default n
         help
             After 802.11v BTM retries are exhausted (or when BTM is unavailable), use
             802.11k Neighbor Report information to scan only AP-advertised channels and
             look for a better AP. On success, roam using a directed reconnect.
-            Priority order is 802.11v > 802.11k > legacy.
+            Priority order is 802.11v > 802.11k > legacy. Enable periodic RRM monitoring
+            to keep the neighbor channel cache warm. Disabled by default so existing
+            BTM/legacy roaming setups are unchanged unless this is opted in.
 
     config ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT
         int "Retry count after which to switch to 11k/legacy roaming"
@@ -190,10 +192,11 @@ config ESP_WIFI_ROAMING_BACKOFF_TIME
 config ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
     bool "Send periodic neighbor report request to AP for internal list updation"
     depends on ESP_WIFI_RRM_SUPPORT
+    depends on ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
     default n
     help
         This option will enable station to keep sending RRM neighbor list request to AP and
-        update its internal list.
+        update its internal list. Available when 802.11k assisted roaming is enabled.
 
 config ESP_WIFI_ROAMING_RRM_MONITOR_TIME
     int "Time interval (in seconds) between neighbor report requests to an AP"
