@@ -1,6 +1,7 @@
 config BT_PRF_TASK_ENABLED
     bool "Enable the shared BLE profile task (event queue worker)"
     depends on BT_ENABLED
+    select BT_OSAL_ENABLED
     default n
     help
         Build the shared BLE profile task: a single process-wide event queue
