@@ -528,6 +528,17 @@ Dead time specific configuration is listed in the :cpp:type:`mcpwm_dead_time_con
 
     However, you can apply ``posedge delay`` to generator A and ``negedge delay`` to generator B. You can also set both ``posedge delay`` and ``negedge delay`` for generator B, while letting generator A bypass the dead time module. Note that if ``negedge delay`` and ``posedge delay`` are both set for generator A, generator B will not be available. Where generator A is the first generator requested through the operator handle and generator B is the second generator requested through an operator handle.
 
+.. important::
+
+    Because of the topology of the rising-edge and falling-edge delay resources, it is recommended to call :cpp:func:`mcpwm_generator_set_dead_time` once for each generator to declare the intended routing. Even when only one generator needs a delay, call :cpp:func:`mcpwm_generator_set_dead_time` on the other generator with a zero-delay configuration to avoid unexpectedly affecting the other path, for example:
+
+    .. code-block:: c
+
+        mcpwm_dead_time_config_t dead_time = { .negedge_delay_ticks = 2 };
+        ESP_ERROR_CHECK(mcpwm_generator_set_dead_time(gen_a, gen_a, &dead_time));
+        dead_time.negedge_delay_ticks = 0;
+        ESP_ERROR_CHECK(mcpwm_generator_set_dead_time(gen_b, gen_b, &dead_time));
+
 .. note::
 
     It is also possible to generate the required dead time by setting `Generator Actions on Events <#generator-actions-on-events>`__, especially by controlling edge placement using different comparators. However, if the more classical edge delay-based dead time with polarity control is required, then the dead time submodule should be used.
