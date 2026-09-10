@@ -10,6 +10,7 @@ from esp_pylib.logger import log
 from nvs_parser import NVS_Entry
 from nvs_parser import NVS_Partition
 from nvs_parser import nvs_const
+from rich.text import Text
 
 
 class NVS_Logger:
@@ -27,39 +28,41 @@ class NVS_Logger:
         self.output_format = out_format
 
     def info(self, *args: Any, **kwargs: Any) -> None:
+        # Dumped lines (e.g. 32-byte raw entries) are longer than 80 columns and must not be hard-wrapped.
+        kwargs.setdefault('soft_wrap', True)
         log.print(*args, **kwargs)
 
     def error(self, *args: Any, **kwargs: Any) -> None:
-        log.err(*args)
+        log.err(*(Text(str(a)) for a in args))
 
+    # Messages are plain text (they embed partition keys and '[namespace]' names), never markup.
     def warn(self, message: str) -> None:
-        log.warn(message)
+        log.warn(Text(message))
 
     def err(self, message: str) -> None:
-        log.err(message)
+        log.err(Text(message))
 
-    def _style(self, text: str, style: str) -> str:
-        if self._color_enabled:
-            return f'[{style}]{text}[/{style}]'
-        return text
+    def style(self, text: Any, style: str) -> Text:
+        # Text instead of escaped markup: escape() doubles a trailing backslash of partition data when no tag follows.
+        return Text.styled(str(text), style if self._color_enabled else '')
 
-    def red(self, text: str) -> str:
-        return self._style(text, 'red')
+    def red(self, text: Any) -> Text:
+        return self.style(text, 'red')
 
-    def green(self, text: str) -> str:
-        return self._style(text, 'green')
+    def green(self, text: Any) -> Text:
+        return self.style(text, 'green')
 
-    def yellow(self, text: str) -> str:
-        return self._style(text, 'yellow')
+    def yellow(self, text: Any) -> Text:
+        return self.style(text, 'yellow')
 
-    def blue(self, text: str) -> str:
-        return self._style(text, 'blue')
+    def blue(self, text: Any) -> Text:
+        return self.style(text, 'blue')
 
-    def cyan(self, text: str) -> str:
-        return self._style(text, 'cyan')
+    def cyan(self, text: Any) -> Text:
+        return self.style(text, 'cyan')
 
-    def bold(self, text: str) -> str:
-        return self._style(text, 'bold')
+    def bold(self, text: Any) -> Text:
+        return self.style(text, 'bold')
 
 
 nvs_log = NVS_Logger()
@@ -121,17 +124,16 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
         if page.is_empty:
             nvs_log.info(nvs_log.bold(f'Page Empty, Page address: 0x{page.start_address:x}'))
         else:
-            if page.header['crc']['original'] == page.header['crc']['computed']:  # Color CRC32
-                crc = nvs_log.green(f'{page.header["crc"]["original"]: >8x}')
-            else:
-                crc = nvs_log.red(f'{page.header["crc"]["original"]: >8x}')
+            crc_ok = page.header['crc']['original'] == page.header['crc']['computed']  # Color CRC32
+            crc = nvs_log.style(f'{page.header["crc"]["original"]: >8x}', 'bold green' if crc_ok else 'bold red')
             nvs_log.info(
                 nvs_log.bold(
                     f'Page no. {page.header["page_index"]}'
                     + f', Status: {page.header["status"]}'
                     + f', Version: {page.header["version"]}'
-                    + f', CRC32: {crc}'
+                    + ', CRC32: '
                 )
+                + crc
                 + nvs_log.bold(f', Page address: 0x{page.start_address:x}')
             )
 
@@ -183,7 +185,8 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                 + f', Type: {entry.metadata["type"]:<10}'
                 + f', Span: {entry.metadata["span"]:03d}'
                 + f', Chunk Index: {entry.metadata["chunk_index"]:03d}'
-                + f', CRC32: {crc}'
+                + ', CRC32: '
+                + crc
                 + f' | {entry.key}: ',
                 end='',
             )
@@ -195,7 +198,7 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                 'blob',
             ]:  # Entry is non-variable length
                 if entry.data is not None:
-                    nvs_log.info(entry.data['value'])
+                    nvs_log.info(str(entry.data['value']), markup=False)
                 else:
                     nvs_log.info(entry.data)  # None
             else:
@@ -210,12 +213,12 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                         crc = nvs_log.green(f'{entry.metadata["crc"]["data_original"]:x}')
                     else:
                         crc = nvs_log.red(f'{entry.metadata["crc"]["data_original"]:x}')
-                    nvs_log.info(f'Size={entry.data["size"]}, CRC32={crc}')
+                    nvs_log.info(Text(f'Size={entry.data["size"]}, CRC32=') + crc)
 
             # Dump all children entries
             if entry.metadata['span'] != 1:
                 for i, data in enumerate(entry.children):
-                    nvs_log.info(f'{"": >6}0x{(i * nvs_const.entry_size):03x}  {data.dump_raw()}')
+                    nvs_log.info(f'{"": >6}0x{(i * nvs_const.entry_size):03x}  {data.dump_raw()}', markup=False)
 
         # Dump trailing empty entries
         if len(empty_entries) >= 3:
@@ -296,7 +299,7 @@ def dump_key_value_pairs(nvs_partition: NVS_Partition) -> None:
                     continue
                 else:
                     nvs_log.info(
-                        ' '
+                        Text(' ')
                         + nvs_log.cyan(ns[entry.metadata['namespace']])
                         + ':'
                         + nvs_log.yellow(entry.key)
@@ -365,7 +368,7 @@ def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
             if entry is empty_entry:
                 nvs_log.info(nvs_log.yellow(f'  {"":->63} Missing data {"":-<64}'))
             else:
-                nvs_log.info(f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}')
+                nvs_log.info(f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}', markup=False)
         nvs_log.info()
 
     # Dump strings
@@ -379,7 +382,7 @@ def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
             + f'Size: {string.data["size"]}'
         )
         for i, entry in enumerate(string.children):
-            nvs_log.info(f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}')
+            nvs_log.info(f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}', markup=False)
         nvs_log.info()
 
     # Dump legacy blobs
@@ -393,7 +396,7 @@ def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
             + f'Size: {blob.data["size"]}'
         )
         for i, entry in enumerate(blob.children):
-            nvs_log.info(f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}')
+            nvs_log.info(f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}', markup=False)
         nvs_log.info()
 
 

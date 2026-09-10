@@ -130,7 +130,7 @@ CSV 配置文件示例如下::
 
 **使用方法**::
 
-        python mfg_gen.py [-h] {generate,generate-key} ...
+        python mfg_gen.py [OPTIONS] COMMAND [ARGS]...
 
 **可选参数**：
 
@@ -156,10 +156,7 @@ CSV 配置文件示例如下::
 
 **使用方法**::
 
-        python mfg_gen.py generate [-h] [--fileid FILEID] [--version {1,2}] [--keygen]
-                                        [--keyfile KEYFILE] [--inputkey INPUTKEY]
-                                        [--outdir OUTDIR]
-                                        conf values prefix size
+        python mfg_gen.py generate [OPTIONS] CONF VALUES PREFIX SIZE
 
 **位置参数**：
 
@@ -223,7 +220,7 @@ CSV 配置文件示例如下::
 
 **使用方法**::
 
-        python mfg_gen.py generate-key [-h] [--keyfile KEYFILE] [--outdir OUTDIR]
+        python mfg_gen.py generate-key [OPTIONS]
 
 **可选参数：**
 +-------------------+----------------------------------------------+

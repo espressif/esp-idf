@@ -7,18 +7,17 @@
 # SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
-import argparse
 import hashlib
 import os
 import re
 import sys
 from datetime import datetime
 
+import rich_click as click
 from esp_pylib.errors import FatalError
 from esp_pylib.excepthook import install_exception_reporting
 from esp_pylib.logger import Verbosity
 from esp_pylib.logger import log
-from rich.markup import escape
 
 __version__ = '1.0'
 
@@ -30,7 +29,7 @@ quiet = False
 def status(msg: str) -> None:
     """Print non-critical status to stderr (suppressed by --quiet)."""
     if not quiet:
-        log.print(msg, file=sys.stderr)
+        log.print(msg, file=sys.stderr, markup=False)
 
 
 def get_copyright():
@@ -477,7 +476,7 @@ class FuseDefinition:
 
 
 def process_input_file(file, type_table):
-    status('Parsing efuse CSV input file ' + escape(file.name) + ' ...')
+    status('Parsing efuse CSV input file ' + file.name + ' ...')
     input_contents = file.read()
     table = FuseTable.from_csv(input_contents)
     status('Verifying efuse table...')
@@ -509,12 +508,12 @@ def create_output_files(name, output_table, debug):
 
     # src files are the same
     if ckeck_md5_in_file(output_table.md5_digest_table, file_c_path) is False:
-        status('Creating efuse *.h file ' + escape(file_h_path) + ' ...')
+        status('Creating efuse *.h file ' + file_h_path + ' ...')
         output = output_table.to_header(file_name)
         with open(file_h_path, 'w', encoding='utf-8') as f:
             f.write(output)
 
-        status('Creating efuse *.c file ' + escape(file_c_path) + ' ...')
+        status('Creating efuse *.c file ' + file_c_path + ' ...')
         output = output_table.to_c_file(file_name, debug)
         with open(file_c_path, 'w', encoding='utf-8') as f:
             f.write(output)
@@ -523,54 +522,50 @@ def create_output_files(name, output_table, debug):
         print('Source files do not require updating correspond to csv file.')
 
 
-def main():
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help='ESP32 eFuse Manager',
+)
+@click.option('--idf_target', '-t', 'target_chip', default='esp32', help='Target chip type')
+@click.option('--quiet', '-q', 'quiet_flag', is_flag=True, help="Don't print non-critical status messages")
+@click.option('--debug', is_flag=True, default=False, help='Create header file with debug info')
+@click.option('--info', is_flag=True, help='Print info about range of used bits')
+@click.option('--max_blk_len', 'max_blk_len_arg', type=int, default=256, help='Max number of bits in BLOCKs')
+@click.argument('common_input', type=click.File('r'))
+@click.argument('custom_input', type=click.File('r'), required=False)
+def main(target_chip, quiet_flag, debug, info, max_blk_len_arg, common_input, custom_input):
     global max_blk_len
     global idf_target
     global quiet
 
-    parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
-    parser.add_argument('--idf_target', '-t', help='Target chip type', default='esp32')
-    parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages", action='store_true')
-    parser.add_argument('--debug', help='Create header file with debug info', default=False, action='store_false')
-    parser.add_argument('--info', help='Print info about range of used bits', default=False, action='store_true')
-    parser.add_argument('--max_blk_len', help='Max number of bits in BLOCKs', type=int, default=256)
-    parser.add_argument('common_input', help='Path to common CSV file to parse.', type=argparse.FileType('r'))
-    parser.add_argument(
-        'custom_input', help='Path to custom CSV file to parse.', type=argparse.FileType('r'), nargs='?', default=None
-    )
+    idf_target = target_chip
 
-    args = parser.parse_args()
-
-    idf_target = args.idf_target
-
-    max_blk_len = args.max_blk_len
+    max_blk_len = max_blk_len_arg
     # Always print Max bits before applying --quiet (pre-pylib behavior).
     print(f'Max number of bits in BLK {max_blk_len:d}')
     if max_blk_len not in [256, 192, 128]:
         raise InputError(f'Unsupported block length = {max_blk_len:d}')
 
-    quiet = args.quiet
+    quiet = quiet_flag
     if quiet:
         log.set_verbosity(Verbosity.SILENT)
-    debug = args.debug
-    info = args.info
 
-    common_table = process_input_file(args.common_input, 'common_table')
+    common_table = process_input_file(common_input, 'common_table')
     two_table = common_table
-    if args.custom_input is not None:
-        custom_table = process_input_file(args.custom_input, 'custom_table')
+    custom_table = None
+    if custom_input is not None:
+        custom_table = process_input_file(custom_input, 'custom_table')
         two_table += custom_table
         two_table.verify()
 
     # save files.
     if info is False:
-        if args.custom_input is None:
-            create_output_files(args.common_input.name, common_table, debug)
+        if custom_input is None:
+            create_output_files(common_input.name, common_table, debug)
         else:
-            create_output_files(args.custom_input.name, custom_table, debug)
+            create_output_files(custom_input.name, custom_table, debug)
     else:
         print(two_table.show_range_used_bits())
-    return 0
 
 
 class InputError(FatalError):

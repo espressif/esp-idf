@@ -1,15 +1,16 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
-
-import argparse
 import struct
-import sys
 
 import elftools.elf.elffile as elffile
 import espytrace.apptrace as apptrace
+import rich_click as click
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import log
+from rich.markup import escape
 
 
 class ESPLogTraceParserError(RuntimeError):
@@ -44,10 +45,8 @@ def logtrace_parse(fname):
         except OSError as e:
             raise ESPLogTraceParserError(f'Failed to read log record header ({e})!')
         if len(trc_buf) < ESP32_LOGTRACE_HDR_SZ:
-            # print "EOF"
             if len(trc_buf) > 0:
-                print(f'Unprocessed {len(trc_buf)} bytes of log record header!')
-                # data_ok = False
+                log.warn(f'Unprocessed {len(trc_buf)} bytes of log record header!')
             break
         try:
             nargs, fmt_addr = struct.unpack(ESP32_LOGTRACE_HDR_FMT, trc_buf)
@@ -60,20 +59,16 @@ def logtrace_parse(fname):
         except OSError as e:
             raise ESPLogTraceParserError(f'Failed to read log record args ({e})!')
         if len(trc_buf) < args_sz:
-            # print("EOF")
             if len(trc_buf) > 0:
-                print(f'Unprocessed {len(trc_buf)} bytes of log record args!')
-                # data_ok = False
+                log.warn(f'Unprocessed {len(trc_buf)} bytes of log record args!')
             break
         try:
             log_args = struct.unpack(f'<{nargs}L', trc_buf)
         except struct.error as e:
             raise ESPLogTraceParserError(f'Failed to unpack log record args ({e})!')
-        # print(log_args)
         recs.append(ESPLogTraceRecord(fmt_addr, list(log_args)))
 
     ftrc.close()
-    # sorted(recs, key=lambda rec: rec.fmt_addr)
     return recs
 
 
@@ -98,49 +93,41 @@ def logtrace_formated_print(recs, elfname, no_err):
                 if arg_str:
                     lrec.args[i] = arg_str
             i += 1
-        # print("\nFmt = {%s}, args = %d/%s" % lrec)
         fmt_str = fmt_str.replace('%p', '%x')
-        # print("=====> " + fmt_str % lrec.args)
         try:
+            # Decoded target logs are payload: use plain print (faster; preserves tabs).
             print(fmt_str % tuple(lrec.args), end='')
-            # print(".", end='')
-            pass
         except Exception as e:
             if not no_err:
-                print(f'Print error ({e})')
+                log.err(escape(f'Print error ({e})'))
                 print(f'\nFmt = {{{fmt_str}}}, args = {len(lrec.args)}/{lrec.args}')
     felf.stream.close()
 
 
-def main():
-    parser = argparse.ArgumentParser(description='ESP32 Log Trace Parsing Tool')
-
-    parser.add_argument('trace_file', help='Path to log trace file', type=str)
-    parser.add_argument('elf_file', help='Path to program ELF file', type=str)
-    # parser.add_argument('--print-details', '-d', help='Print detailed stats', action='store_true')
-    parser.add_argument('--no-errors', '-n', help='Do not print errors', action='store_true')
-    args = parser.parse_args()
-
-    # parse trace file
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help=('ESP32 Log Trace Parsing Tool\n\nTRACE_FILE: Path to log trace file\n\nELF_FILE: Path to program ELF file'),
+)
+@click.argument('trace_file', type=click.Path(dir_okay=False))
+@click.argument('elf_file', type=click.Path(dir_okay=False))
+@click.option('--no-errors', '-n', is_flag=True, help='Do not print errors')
+def main(trace_file, elf_file, no_errors):
     try:
-        print(f"Parse trace file '{args.trace_file}'...")
-        lrecs = logtrace_parse(args.trace_file)
-        print('Parsing completed.')
+        log.note(escape(f"Parse trace file '{trace_file}'..."))
+        lrecs = logtrace_parse(trace_file)
+        log.note('Parsing completed.')
     except ESPLogTraceParserError as e:
-        print(f'Failed to parse log trace ({e})!')
-        sys.exit(2)
-    # print recs
-    # get format strings and print info
-    print('====================================================================')
+        log.die(escape(f'Failed to parse log trace ({e})!'), exit_code=2)
+    log.print('====================================================================')
     try:
-        logtrace_formated_print(lrecs, args.elf_file, args.no_errors)
+        logtrace_formated_print(lrecs, elf_file, no_errors)
     except ESPLogTraceParserError as e:
-        print(f'Failed to print log trace ({e})!')
-        sys.exit(2)
-    print('\n====================================================================\n')
+        log.die(escape(f'Failed to print log trace ({e})!'), exit_code=2)
+    log.print('\n====================================================================\n')
 
-    print(f'Log records count: {len(lrecs)}')
+    log.print(f'Log records count: {len(lrecs)}')
 
 
 if __name__ == '__main__':
+    install_exception_reporting()
     main()

@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 # SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-import argparse
 import copy
 import json
 import math
 import re
 import struct
-import sys
 from typing import Any
 from typing import TypedDict
 from typing import cast
 
+import rich_click as click
 from esp_pylib.errors import FatalError
 from esp_pylib.excepthook import install_exception_reporting
 from esp_pylib.logger import log
@@ -952,36 +951,39 @@ def write_file(filename: str, data: bytearray) -> None:
         f.write(data)
 
 
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help='BitScrambler program assembler',
+)
+@click.argument('infile', type=click.Path(exists=True, dir_okay=False))
+@click.argument('outfile', required=False)
+@click.option(
+    '-c',
+    'chipcfg_path',
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Set chip capabilities json file; if set, returns an error when an unsupported instruction is assembled'),
+)
+def main(infile: str, outfile: str | None, chipcfg_path: str | None) -> None:
+    chipcfg: Chipcfg
+    if chipcfg_path is not None:
+        with open(chipcfg_path) as chipcfg_json:
+            chipcfg = json.load(chipcfg_json)
+    else:
+        chipcfg = {'chipname': 'chip', 'extra_instruction_groups': [], 'support_all': True}
+
+    if outfile is None:
+        outfile = re.sub('.bsasm', '', infile) + '.bsbin'
+    asm = read_file(infile)
+    tokens = bsasm_parse(asm)
+    insts, meta, lut = bsasm_assemble(tokens, chipcfg)
+    out_data = insts_to_binary(insts, meta, lut)
+    write_file(outfile, out_data)
+    log.print(f'Written {len(insts)} instructions and {len(lut)} 32-bit words of LUT.')
+
+
 if __name__ == '__main__':
     install_exception_reporting()
     try:
-        parser = argparse.ArgumentParser(prog=sys.argv[0], description='BitScrambler program assembler')
-        parser.add_argument('infile', help='File name of assembly source to be assembled into a binary')
-        parser.add_argument('outfile', help='File name of output binary', nargs='?', default=argparse.SUPPRESS)
-        parser.add_argument(
-            '-c',
-            help='Set chip capabilities json file; if set, returns an error when \
-                an unsupported instruction is assembled',
-            default=argparse.SUPPRESS,
-        )
-        args = parser.parse_args()
-
-        chipcfg = Chipcfg()
-        if 'c' in args:
-            with open(args.c) as chipcfg_json:
-                chipcfg = json.load(chipcfg_json)
-        else:
-            chipcfg = {'chipname': 'chip', 'extra_instruction_groups': [], 'support_all': True}
-
-        if 'outfile' in args:
-            outfile = args.outfile
-        else:
-            outfile = re.sub('.bsasm', '', args.infile) + '.bsbin'
-        asm = read_file(args.infile)
-        tokens = bsasm_parse(asm)
-        insts, meta, lut = bsasm_assemble(tokens, chipcfg)
-        out_data = insts_to_binary(insts, meta, lut)
-        write_file(outfile, out_data)
-        log.print(f'Written {len(insts)} instructions and {len(lut)} 32-bit words of LUT.')
+        main()
     except FatalError as e:
         log.die(str(e), exit_code=2)
