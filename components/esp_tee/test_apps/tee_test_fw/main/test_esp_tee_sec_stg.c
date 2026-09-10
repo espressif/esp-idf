@@ -385,9 +385,18 @@ TEST_CASE("Test TEE Secure Storage - Null Pointer and Zero Length", "[sec_storag
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_encrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_tee_sec_storage_aead_decrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
 
-    aead_ctx.input_len = MAX_AEAD_INPUT_LEN + 1;
-    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_encrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
-    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_decrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), data));
+    const size_t oversized_len = MAX_AEAD_INPUT_LEN + 1;
+    uint8_t *oversized = heap_caps_malloc(oversized_len, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(oversized);
+
+    aead_ctx.input = oversized;
+    aead_ctx.input_len = oversized_len;
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_encrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), oversized));
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_tee_sec_storage_aead_decrypt(&aead_ctx, iv, sizeof(iv), tag, sizeof(tag), oversized));
+
+    free(oversized);
+    aead_ctx.input = data;
+    aead_ctx.input_len = sizeof(data);
 
     TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_id));
 
