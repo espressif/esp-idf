@@ -26,6 +26,10 @@ On {IDF_TARGET_NAME}, ESP-IDF provides implementations of VFS drivers for I/O ov
 
 Standard I/O is not limited to these options, though. See below on enabling custom destinations for standard I/O.
 
+.. note::
+
+    The console path is separate from an application UART that you open with the :doc:`UART driver <../api-reference/peripherals/uart>` on other pins. If a UART peripheral provides console output, a USB-to-UART bridge chip is required. Many development boards already include this bridge chip onboard for console communication between the PC and the default UART0. If a USB or USB Serial/JTAG peripheral provides console output, no adapter chip is needed. The USB connector on the development board connects directly to the chip's USB D+/D- pins. Traffic on other UART ports does not appear in ``idf.py monitor`` unless a given port is configured as the console. For details, see :doc:`Establish Serial Connection with {IDF_TARGET_NAME} <../get-started/establish-serial-connection>`.
+
 Configuration
 -------------
 

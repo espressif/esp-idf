@@ -26,6 +26,10 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 
 不过，标准 I/O 并不限于这些选项。请参见下文，了解如何为标准 I/O 启用自定义目标。
 
+.. note::
+
+    控制台通路与通过 :doc:`UART 驱动 <../api-reference/peripherals/uart>` 在其他管脚上打开的应用 UART 彼此独立。若控制台输出由 UART 外设提供，则需要 USB 至 UART 桥芯片，许多开发板上已板载该桥芯片，用于 PC 与默认 UART0 之间的控制台通信；若控制台输出由 USB 或 USB Serial/JTAG 外设提供，则无需转接芯片，开发板上的 USB 接口直连芯片的 USB D+/D- 管脚。除非将某端口配置为控制台，否则其他 UART 端口上的数据不会出现在 ``idf.py monitor`` 中。有关详细信息，请参阅 :doc:`与 {IDF_TARGET_NAME} 创建串口连接 <../get-started/establish-serial-connection>`。
+
 配置
 -----
 

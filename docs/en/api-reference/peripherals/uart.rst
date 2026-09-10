@@ -150,6 +150,9 @@ The same macro :c:macro:`UART_PIN_NO_CHANGE` should be specified for pins that w
   // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19, DTR: UNUSED, DSR: UNUSED)
   ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
+.. note::
+
+    The pin numbers above are only an example. On many development boards, the onboard USB-to-UART bridge is connected to the UART0 default TX/RX pins. If you need to communicate with a PC over other ports or pins, connect a separate USB-to-UART bridge to those pins.
 
 .. _uart-api-running-uart-communication:
 

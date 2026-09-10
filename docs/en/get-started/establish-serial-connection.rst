@@ -20,6 +20,8 @@ Some development boards have the USB-to-UART bridge installed. If a board does n
 
     The {IDF_TARGET_NAME} supports the USB peripheral. In this case, the USB-to-UART bridge is not needed and the device can be flashed directly.
 
+    The USB peripheral and its USB PHY are separate from the UART controllers. UART controllers output UART signals on GPIOs, so connecting a UART to a PC over USB still requires an onboard or external USB-to-UART bridge.
+
     .. blockdiag::
         :scale: 70%
         :caption: SoC with Supported USB

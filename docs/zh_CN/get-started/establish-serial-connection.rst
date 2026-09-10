@@ -20,6 +20,8 @@
 
     {IDF_TARGET_NAME} 支持 USB 外设。无需 USB 至 UART 桥，便可直接烧录设备。
 
+    USB 外设及其 USB PHY 与 UART 控制器彼此独立。UART 控制器在 GPIO 上输出 UART 信号，因此若要通过 USB 将 UART 连接到 PC，仍需使用板载或外部的 USB 至 UART 桥。
+
     .. blockdiag::
         :scale: 70%
         :caption: 支持 USB 的 SoC

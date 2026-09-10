@@ -12,8 +12,9 @@ configured UART.
 
 ### Hardware Required
 
-The example can be run on any development board, that is based on the Espressif SoC. The board shall be connected to a computer with a single USB cable for flashing and monitoring. The external interface should have 3.3V outputs. You may
-use e.g. 3.3V compatible USB-to-Serial dongle.
+The example can be run on any development board, that is based on the Espressif SoC. The board shall be connected to a computer with a single USB cable for flashing and monitoring.
+
+This example echoes on a separate UART (default GPIO4/GPIO5), not on the port used for flashing and monitoring. Use an external 3.3 V compatible USB-to-Serial dongle: connect one end to the PC and the other end to the specific UART pins.
 
 ### Setup the Hardware
 
