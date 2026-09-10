@@ -16,6 +16,7 @@
 #include <sys/unistd.h>
 #include <sys/lock.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include "inttypes_ext.h"
 #include "freertos/FreeRTOS.h"
@@ -210,12 +211,151 @@ int esp_vfs_fsync(int fd)
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
 
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+
+// Synthetic directories: a virtual read-only directory is synthesized above the registered
+// mount points, so the mount point hierarchy can be browsed from the root downward even
+// though no filesystem is mounted there. Each lists the next path component of the mount
+// points below it, and can be traversed to any depth until a real VFS is reached.
+// dd_vfs_idx == VFS_SYNTHETIC_DIR_IDX marks such a DIR.
+#define VFS_SYNTHETIC_DIR_IDX 0xFFFF
+
+typedef struct {
+    DIR dir;
+    struct dirent de;
+    size_t next_index;
+    char child_prefix[ESP_VFS_PATH_MAX + 2]; // directory + '/', the prefix a child mount shares
+} vfs_synthetic_dir_t;
+
+// The prefix every mount directly under directory "dir" must share: "/" for the root,
+// otherwise "dir" with a trailing '/'. A single trailing separator on "dir" is ignored so
+// that "/dev" and "/dev/" behave alike (as they do for real mounts). Returns false for a
+// non-absolute path or if the result doesn't fit.
+static bool vfs_synthetic_child_prefix(const char *dir, char *out, size_t out_size)
+{
+    if (dir == NULL || dir[0] != '/') {
+        return false;
+    }
+    size_t len = strlen(dir);
+    if (len > 1 && dir[len - 1] == '/') {
+        len--;
+    }
+    if (len == 1) { // root ("/")
+        if (out_size < 2) {
+            return false;
+        }
+        out[0] = '/';
+        out[1] = '\0';
+        return true;
+    }
+    if (len + 2 > out_size) {
+        return false;
+    }
+    memcpy(out, dir, len);
+    out[len] = '/';
+    out[len + 1] = '\0';
+    return true;
+}
+
+// If "prefix" is a mount below child_prefix, copy its next path component into out.
+static bool vfs_synthetic_component(const char *prefix, const char *child_prefix, size_t child_prefix_len, char *out, size_t out_size)
+{
+    if (prefix == NULL || strncmp(prefix, child_prefix, child_prefix_len) != 0) {
+        return false;
+    }
+    const char *start = prefix + child_prefix_len;
+    const char *sep = strchr(start, '/');
+    size_t len = sep ? (size_t)(sep - start) : strlen(start);
+    if (len == 0 || len >= out_size) {
+        return false;
+    }
+    memcpy(out, start, len);
+    out[len] = '\0';
+    return true;
+}
+
+// A directory is synthetic when at least one registered mount lives underneath it.
+static bool vfs_is_synthetic_dir(const char *dir)
+{
+    char child_prefix[ESP_VFS_PATH_MAX + 2];
+    if (!vfs_synthetic_child_prefix(dir, child_prefix, sizeof(child_prefix))) {
+        return false;
+    }
+    size_t child_prefix_len = strlen(child_prefix);
+    char component[NAME_MAX + 1];
+    size_t count = get_vfs_count();
+    for (size_t i = 0; i < count; ++i) {
+        const vfs_entry_t *vfs = get_vfs_for_index((int)i);
+        if (vfs != NULL && vfs_synthetic_component(vfs->path_prefix, child_prefix, child_prefix_len, component, sizeof(component))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static DIR *vfs_synthetic_opendir(const char *dir)
+{
+    vfs_synthetic_dir_t *sdir = calloc(1, sizeof(vfs_synthetic_dir_t));
+    if (sdir == NULL) {
+        __errno_r(__getreent()) = ENOMEM;
+        return NULL;
+    }
+    if (!vfs_synthetic_child_prefix(dir, sdir->child_prefix, sizeof(sdir->child_prefix))) {
+        free(sdir);
+        __errno_r(__getreent()) = ENAMETOOLONG;
+        return NULL;
+    }
+    sdir->dir.dd_vfs_idx = VFS_SYNTHETIC_DIR_IDX;
+    return &sdir->dir;
+}
+
+static struct dirent *vfs_synthetic_readdir(vfs_synthetic_dir_t *sdir)
+{
+    char component[sizeof(sdir->de.d_name)];
+    size_t child_prefix_len = strlen(sdir->child_prefix);
+    size_t count = get_vfs_count();
+    while (sdir->next_index < count) {
+        size_t i = sdir->next_index++;
+        const vfs_entry_t *vfs = get_vfs_for_index((int)i);
+        if (vfs == NULL || !vfs_synthetic_component(vfs->path_prefix, sdir->child_prefix, child_prefix_len, component, sizeof(component))) {
+            continue;
+        }
+        // Skip components already emitted: sibling mounts can share the same next component.
+        bool duplicate = false;
+        for (size_t j = 0; j < i && !duplicate; ++j) {
+            const vfs_entry_t *prev = get_vfs_for_index((int)j);
+            char prev_component[sizeof(component)];
+            if (prev != NULL && vfs_synthetic_component(prev->path_prefix, sdir->child_prefix, child_prefix_len, prev_component, sizeof(prev_component))) {
+                duplicate = strcmp(prev_component, component) == 0;
+            }
+        }
+        if (duplicate) {
+            continue;
+        }
+        sdir->de.d_ino = 0;
+        sdir->de.d_type = DT_DIR;
+        memcpy(sdir->de.d_name, component, strlen(component) + 1);
+        return &sdir->de;
+    }
+    return NULL;
+}
+
+#endif // CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+
 int esp_vfs_stat(struct _reent *r, const char *path, struct stat *st)
 {
     VFS_RETURN_ON_NULL_PTR(r, path, EINVAL, -1);
     VFS_RETURN_ON_NULL_PTR(r, st, EINVAL, -1);
     const vfs_entry_t *vfs = get_vfs_for_path(path);
     if (vfs == NULL) {
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+        if (vfs_is_synthetic_dir(path)) {
+            memset(st, 0, sizeof(*st));
+            st->st_mode = S_IFDIR | 0555;
+            st->st_nlink = 1;
+            return 0;
+        }
+#endif
         VFS_RETURN_ERR(r, ENOENT, -1);
     }
     const char *path_within_vfs = translate_path(vfs, path);
@@ -307,6 +447,11 @@ DIR *esp_vfs_opendir(const char *name)
     VFS_RETURN_ON_NULL_PTR(r, name, EINVAL, NULL);
     const vfs_entry_t *vfs = get_vfs_for_path(name);
     if (vfs == NULL) {
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+        if (vfs_is_synthetic_dir(name)) {
+            return vfs_synthetic_opendir(name);
+        }
+#endif
         VFS_RETURN_ERR(r, ENOENT, NULL);
     }
     const char *path_within_vfs = translate_path(vfs, name);
@@ -322,6 +467,11 @@ struct dirent *esp_vfs_readdir(DIR *pdir)
 {
     struct _reent __attribute__((unused)) *r = __getreent();
     VFS_RETURN_ON_NULL_PTR(r, pdir, EBADF, NULL);
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+    if (pdir->dd_vfs_idx == VFS_SYNTHETIC_DIR_IDX) {
+        return vfs_synthetic_readdir((vfs_synthetic_dir_t *)pdir);
+    }
+#endif
     const vfs_entry_t *vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     if (vfs == NULL) {
         VFS_RETURN_ERR(r, EBADF, NULL);
@@ -337,6 +487,16 @@ int esp_vfs_readdir_r(DIR *pdir, struct dirent *entry, struct dirent* *out_diren
     VFS_RETURN_ON_NULL_PTR(r, pdir, EINVAL, -1);
     VFS_RETURN_ON_NULL_PTR(r, entry, EINVAL, -1);
     VFS_RETURN_ON_NULL_PTR(r, out_dirent, EINVAL, -1);
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+    if (pdir->dd_vfs_idx == VFS_SYNTHETIC_DIR_IDX) {
+        struct dirent *next = vfs_synthetic_readdir((vfs_synthetic_dir_t *)pdir);
+        if (next != NULL) {
+            memcpy(entry, next, sizeof(*entry));
+        }
+        *out_dirent = next != NULL ? entry : NULL;
+        return 0;
+    }
+#endif
     const vfs_entry_t *vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     if (vfs == NULL) {
         VFS_RETURN_ERR(r, EBADF, -1);
@@ -350,6 +510,11 @@ long esp_vfs_telldir(DIR *pdir)
 {
     struct _reent __attribute__((unused)) *r = __getreent();
     VFS_RETURN_ON_NULL_PTR(r, pdir, EBADF, -1);
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+    if (pdir->dd_vfs_idx == VFS_SYNTHETIC_DIR_IDX) {
+        return (long)((vfs_synthetic_dir_t *)pdir)->next_index;
+    }
+#endif
     const vfs_entry_t *vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     if (vfs == NULL) {
         VFS_RETURN_ERR(r, EBADF, -1);
@@ -363,6 +528,12 @@ void esp_vfs_seekdir(DIR *pdir, long loc)
 {
     struct _reent __attribute__((unused)) *r = __getreent();
     VFS_RETURNV_ON_NULL_PTR(r, pdir, EBADF);
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+    if (pdir->dd_vfs_idx == VFS_SYNTHETIC_DIR_IDX) {
+        ((vfs_synthetic_dir_t *)pdir)->next_index = loc < 0 ? 0 : (size_t)loc;
+        return;
+    }
+#endif
     const vfs_entry_t *vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     if (vfs == NULL) {
         VFS_RETURNV_ERR(r, EBADF);
@@ -379,6 +550,12 @@ int esp_vfs_closedir(DIR *pdir)
 {
     struct _reent __attribute__((unused)) *r = __getreent();
     VFS_RETURN_ON_NULL_PTR(r, pdir, EBADF, -1);
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+    if (pdir->dd_vfs_idx == VFS_SYNTHETIC_DIR_IDX) {
+        free(pdir);
+        return 0;
+    }
+#endif
     const vfs_entry_t *vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     if (vfs == NULL) {
         VFS_RETURN_ERR(r, EBADF, -1);
