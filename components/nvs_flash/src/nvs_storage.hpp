@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,9 @@ public:
         }
     };
 
-    esp_err_t init(uint32_t baseSector, uint32_t sectorCount);
+    esp_err_t init(uint32_t baseSector, uint32_t sectorCount, bool allowRepair = true);
+
+    esp_err_t enableWrite();
 
     bool isValid() const;
 
@@ -71,11 +73,11 @@ public:
 
     esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, const bool purgeAfterErase);
 
-    esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize);
+    esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize, bool allowRepair = true);
 
-    esp_err_t findKey(const uint8_t nsIndex, const char* key, ItemType* datatype);
+    esp_err_t findKey(const uint8_t nsIndex, const char* key, ItemType* datatype, bool allowRepair = true);
 
-    esp_err_t getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize);
+    esp_err_t getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize, bool allowRepair = true);
 
     esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, const bool purgeAfterErase);
 
@@ -117,7 +119,7 @@ public:
 
     esp_err_t writeMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize, VerOffset chunkStart, const bool purgeAfterErase);
 
-    esp_err_t readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize);
+    esp_err_t readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize, bool allowRepair = true);
 
     esp_err_t cmpMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize);
 
@@ -129,7 +131,7 @@ public:
 
     esp_err_t fillStats(nvs_stats_t& nvsStats);
 
-    esp_err_t calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries);
+    esp_err_t calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries, bool allowRepair = true);
 
     bool findEntry(nvs_opaque_iterator_t* it, const char* name);
 
@@ -146,7 +148,7 @@ protected:
 
     void clearNamespaces();
 
-    esp_err_t populateBlobIndices(TBlobIndexList&);
+    esp_err_t populateBlobIndices(TBlobIndexList&, bool allowRepair);
 
     void eraseMismatchedBlobIndexes(TBlobIndexList&);
 
@@ -154,7 +156,7 @@ protected:
 
     void fillEntryInfo(Item &item, nvs_entry_info_t &info);
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY, size_t* itemIndex = NULL);
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY, size_t* itemIndex = NULL, bool allowRepair = true);
 
 protected:
     Partition *mPartition;
@@ -163,6 +165,9 @@ protected:
     TNamespaces mNamespaces;
     CompressedEnumTable<bool, 1, 256> mNamespaceUsage;
     StorageState mState = StorageState::INVALID;
+    uint32_t mBaseSector = 0;
+    uint32_t mSectorCount = 0;
+    bool mWriteEnabled = false;
 };
 
 } // namespace nvs

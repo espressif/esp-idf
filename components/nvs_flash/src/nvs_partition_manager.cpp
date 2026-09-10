@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,7 +91,9 @@ esp_err_t NVSPartitionManager::init_custom(Partition *partition, uint32_t baseSe
         }
     }
 
-    esp_err_t err = storage->init(baseSector, sectorCount);
+    // Initialization must not modify flash before a caller explicitly opens
+    // the storage for writing. A read-write open performs the repair pass.
+    esp_err_t err = storage->init(baseSector, sectorCount, false);
     if (new_storage != nullptr) {
         if (err == ESP_OK) {
             nvs_storage_list.push_back(new_storage);
@@ -201,6 +203,12 @@ esp_err_t NVSPartitionManager::open_handle(const char *part_name,
         return ESP_ERR_NOT_ALLOWED;
     }
 
+    if (WANTS_WRITE_MODE(open_mode)) {
+        esp_err_t err = sHandle->enableWrite();
+        if (err != ESP_OK) {
+            return err;
+        }
+    }
 
     esp_err_t err = sHandle->createOrOpenNamespace(ns_name, WANTS_WRITE_MODE(open_mode), nsIndex);
     if (err != ESP_OK) {

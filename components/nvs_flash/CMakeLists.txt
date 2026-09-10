@@ -102,6 +102,12 @@ else()
             src/nvs_cxx_api.cpp
             PROPERTIES COMPILE_OPTIONS
             "-Wno-error=analyzer-use-of-uninitialized-value;-Wno-analyzer-use-of-uninitialized-value")
+        # In-place page rebuild unlinks list nodes before destroying them. -fanalyzer reports
+        # that as a leak of '<unknown>' in intrusive_list::erase (lines that only rewrite linkage).
+        set_source_files_properties(
+            src/nvs_pagemanager.cpp
+            PROPERTIES COMPILE_OPTIONS
+            "-Wno-analyzer-malloc-leak")
     endif()
 
 endif() #non-OS build

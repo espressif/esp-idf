@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +69,18 @@ struct ExceptionlessAllocatable {
 #else
         return std::malloc(size);
 #endif
+    }
+
+    /**
+     * In-place construction. Deleting the throwing operator new hides the global
+     * placement new, so a type that rebuilds an existing object needs this overload.
+     * No memory is allocated.
+     */
+    void *operator new(std::size_t, void *ptr) noexcept {
+        return ptr;
+    }
+
+    void operator delete(void *, void *) noexcept {
     }
 
     /**

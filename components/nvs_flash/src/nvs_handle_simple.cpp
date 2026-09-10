@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ esp_err_t NVSHandleSimple::get_typed_item(ItemType datatype, const char *key, vo
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
-    return mStoragePtr->readItem(mNsIndex, datatype, key, data, dataSize);
+    return mStoragePtr->readItem(mNsIndex, datatype, key, data, dataSize, !mReadOnly);
 }
 
 esp_err_t NVSHandleSimple::set_string(const char *key, const char* str)
@@ -49,21 +49,21 @@ esp_err_t NVSHandleSimple::get_string(const char *key, char* out_str, size_t len
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
-    return mStoragePtr->readItem(mNsIndex, nvs::ItemType::SZ, key, out_str, len);
+    return mStoragePtr->readItem(mNsIndex, nvs::ItemType::SZ, key, out_str, len, !mReadOnly);
 }
 
 esp_err_t NVSHandleSimple::get_blob(const char *key, void* out_blob, size_t len)
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
-    return mStoragePtr->readItem(mNsIndex, nvs::ItemType::BLOB, key, out_blob, len);
+    return mStoragePtr->readItem(mNsIndex, nvs::ItemType::BLOB, key, out_blob, len, !mReadOnly);
 }
 
 esp_err_t NVSHandleSimple::get_item_size(ItemType datatype, const char *key, size_t &size)
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
-    return mStoragePtr->getItemDataSize(mNsIndex, datatype, key, size);
+    return mStoragePtr->getItemDataSize(mNsIndex, datatype, key, size, !mReadOnly);
 }
 
 esp_err_t NVSHandleSimple::find_key(const char* key, nvs_type_t &nvstype)
@@ -71,7 +71,7 @@ esp_err_t NVSHandleSimple::find_key(const char* key, nvs_type_t &nvstype)
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
     nvs::ItemType datatype;
-    esp_err_t err = mStoragePtr->findKey(mNsIndex, key, &datatype);
+    esp_err_t err = mStoragePtr->findKey(mNsIndex, key, &datatype, !mReadOnly);
     if(err != ESP_OK)
         return err;
 
@@ -121,7 +121,7 @@ esp_err_t NVSHandleSimple::get_used_entry_count(size_t& used_entries)
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
     size_t used_entry_count;
-    esp_err_t err = mStoragePtr->calcEntriesInNamespace(mNsIndex, used_entry_count);
+    esp_err_t err = mStoragePtr->calcEntriesInNamespace(mNsIndex, used_entry_count, !mReadOnly);
     if(err == ESP_OK){
         used_entries = used_entry_count;
     }
@@ -137,7 +137,7 @@ esp_err_t NVSHandleSimple::fillStats(nvs_stats_t& nvsStats) {
 }
 
 esp_err_t NVSHandleSimple::calcEntriesInNamespace(size_t& usedEntries) {
-    return mStoragePtr->calcEntriesInNamespace(mNsIndex, usedEntries);
+    return mStoragePtr->calcEntriesInNamespace(mNsIndex, usedEntries, !mReadOnly);
 }
 
 bool NVSHandleSimple::findEntry(nvs_opaque_iterator_t* it, const char* name) {

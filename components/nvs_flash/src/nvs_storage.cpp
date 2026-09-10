@@ -49,7 +49,7 @@ void Storage::clearNamespaces()
     mNamespaces.clearAndFreeNodes();
 }
 
-esp_err_t Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
+esp_err_t Storage::populateBlobIndices(TBlobIndexList& blobIdxList, bool allowRepair)
 {
     for(auto it = mPageManager.begin(); it != mPageManager.end(); ++it) {
         Page& p = *it;
@@ -60,7 +60,8 @@ esp_err_t Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
          * logic in pagemanager will remove the earlier index. So we should never find a
          * duplicate index at this point */
 
-        while(p.findItem(Page::NS_ANY, ItemType::BLOB_IDX, nullptr, itemIndex, item) == ESP_OK) {
+        while(p.findItem(Page::NS_ANY, ItemType::BLOB_IDX, nullptr, itemIndex, item,
+                Page::CHUNK_ANY, VerOffset::VER_ANY, allowRepair) == ESP_OK) {
             BlobIndexNode* entry = new (std::nothrow) BlobIndexNode;
 
             if(!entry) return ESP_ERR_NO_MEM;
@@ -180,11 +181,21 @@ void Storage::eraseOrphanDataBlobs(TBlobIndexList& blobIdxList)
     }
 }
 
-esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
+esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount, bool allowRepair)
 {
-    auto err = mPageManager.load(mPartition, baseSector, sectorCount);
+    const bool hadActiveImage = (mState == StorageState::ACTIVE);
+    mBaseSector = baseSector;
+    mSectorCount = sectorCount;
+    mWriteEnabled = false;
+
+    bool pagesReplaced = false;
+    auto err = mPageManager.load(mPartition, baseSector, sectorCount, allowRepair, &pagesReplaced);
     if(err != ESP_OK) {
-        mState = StorageState::INVALID;
+        // First init has no image to keep. A reload that already dropped the live pages
+        // cannot keep serving handles. An allocation failure before that point leaves them intact.
+        if (pagesReplaced || !hadActiveImage) {
+            mState = StorageState::INVALID;
+        }
         return err;
     }
 
@@ -195,7 +206,8 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         Page& p = *it;
         size_t itemIndex = 0;
         Item item;
-        while(p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item) == ESP_OK) {
+        while(p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item,
+                Page::CHUNK_ANY, VerOffset::VER_ANY, allowRepair) == ESP_OK) {
             NamespaceEntry* entry = new (std::nothrow) NamespaceEntry;
 
             if(!entry) {
@@ -207,10 +219,12 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
             err = item.getValue(entry->mIndex);
             if(err != ESP_OK) {
                 delete entry;
+                mState = StorageState::INVALID;
                 return err;
             }
             if(mNamespaceUsage.set(entry->mIndex, true) != ESP_OK) {
                 delete entry;
+                mState = StorageState::INVALID;
                 return ESP_FAIL;
             }
             mNamespaces.push_back(entry);
@@ -218,36 +232,54 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         }
     }
     if(mNamespaceUsage.set(0, true) != ESP_OK) {
+        mState = StorageState::INVALID;
         return ESP_FAIL;
     }
     if(mNamespaceUsage.set(255, true) != ESP_OK) {
+        mState = StorageState::INVALID;
         return ESP_FAIL;
     }
 
     // Populate list of multi-page index entries.
     TBlobIndexList blobIdxList;
-    err = populateBlobIndices(blobIdxList);
+    err = populateBlobIndices(blobIdxList, allowRepair);
     if(err != ESP_OK) {
         blobIdxList.clearAndFreeNodes();
         mState = StorageState::INVALID;
         return ESP_ERR_NO_MEM;
     }
 
-    // remove blob indexes with mismatched blob data length or chunk count
-    eraseMismatchedBlobIndexes(blobIdxList);
+    if (allowRepair) {
+        // remove blob indexes with mismatched blob data length or chunk count
+        eraseMismatchedBlobIndexes(blobIdxList);
 
-    // Remove the entries for which there is no parent multi-page index.
-    eraseOrphanDataBlobs(blobIdxList);
+        // Remove the entries for which there is no parent multi-page index.
+        eraseOrphanDataBlobs(blobIdxList);
+    }
 
     // Purge the blob index list
     blobIdxList.clearAndFreeNodes();
 
     mState = StorageState::ACTIVE;
+    mWriteEnabled = allowRepair;
 
 #ifdef DEBUG_STORAGE
-    debugCheck();
+    if (allowRepair) {
+        debugCheck();
+    }
 #endif
     return ESP_OK;
+}
+
+esp_err_t Storage::enableWrite()
+{
+    if (mWriteEnabled) {
+        return ESP_OK;
+    }
+    if (mPartition->get_readonly()) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+    return init(mBaseSector, mSectorCount, true);
 }
 
 bool Storage::isValid() const
@@ -255,17 +287,19 @@ bool Storage::isValid() const
     return mState == StorageState::ACTIVE;
 }
 
-esp_err_t Storage::findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx, VerOffset chunkStart, size_t* itemIndex)
+esp_err_t Storage::findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx, VerOffset chunkStart, size_t* itemIndex, bool allowRepair)
 {
     for(auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
         size_t tmpItemIndex = 0;
-        auto err = it->findItem(nsIndex, datatype, key, tmpItemIndex, item, chunkIdx, chunkStart);
+        auto err = it->findItem(nsIndex, datatype, key, tmpItemIndex, item, chunkIdx, chunkStart, allowRepair);
         if(err == ESP_OK) {
             page = it;
             if(itemIndex) {
                 *itemIndex = tmpItemIndex;
             }
             return ESP_OK;
+        } else if (err != ESP_ERR_NVS_NOT_FOUND && err != ESP_ERR_NVS_TYPE_MISMATCH) {
+            return err;
         }
     }
     return ESP_ERR_NVS_NOT_FOUND;
@@ -394,6 +428,12 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
 {
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+    if (!mWriteEnabled) {
+        auto err = enableWrite();
+        if (err != ESP_OK) {
+            return err;
+        }
     }
 
     // pointer to the page where the existing item was found
@@ -613,6 +653,12 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
+    if (canCreate && !mWriteEnabled) {
+        auto err = enableWrite();
+        if (err != ESP_OK) {
+            return err;
+        }
+    }
     auto it = std::find_if(mNamespaces.begin(), mNamespaces.end(), [=] (const NamespaceEntry& e) -> bool {
         return strncmp(nsName, e.mName, sizeof(e.mName) - 1) == 0;
     });
@@ -661,7 +707,7 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
     return ESP_OK;
 }
 
-esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize)
+esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize, bool allowRepair)
 {
     Item item;
     Page* findPage = nullptr;
@@ -669,7 +715,8 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
 
 
     // First read the blob index
-    auto err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item);
+    auto err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item,
+            Page::CHUNK_ANY, VerOffset::VER_ANY, nullptr, allowRepair);
     if(err != ESP_OK) {
         return err;
     }
@@ -683,7 +730,9 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
     // Now read related blob data chunks
     // Remember the itemIndex as it is used to fast locate the entry in the page
     for(uint8_t chunkNum = 0; chunkNum < chunkCount; chunkNum++) {
-        err = findItem(nsIndex, ItemType::BLOB_DATA, key, findPage, item, static_cast<uint8_t> (chunkStart) + chunkNum, nvs::VerOffset::VER_ANY, &itemIndex);
+        err = findItem(nsIndex, ItemType::BLOB_DATA, key, findPage, item,
+                static_cast<uint8_t> (chunkStart) + chunkNum, nvs::VerOffset::VER_ANY,
+                &itemIndex, allowRepair);
         if(err != ESP_OK) {
             if(err == ESP_ERR_NVS_NOT_FOUND) {
                 break;
@@ -697,7 +746,8 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
             break;
         }
 
-        err = findPage->readVariableLengthItemData(item, itemIndex, static_cast<uint8_t*>(data) + offset);
+        err = findPage->readVariableLengthItemData(item, itemIndex,
+                static_cast<uint8_t*>(data) + offset, allowRepair);
         if(err != ESP_OK) {
             return err;
         }
@@ -707,12 +757,17 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
         offset += item.varLength.dataSize;
     }
 
-    if(err == ESP_ERR_NVS_NOT_FOUND || err == ESP_ERR_NVS_INVALID_LENGTH) {
+    if(err == ESP_ERR_NVS_NOT_FOUND || err == ESP_ERR_NVS_INVALID_LENGTH || offset != dataSize) {
         // cleanup if a chunk is not found or the size is inconsistent
-        eraseMultiPageBlob(nsIndex, key, Page::DEFAULT_PURGE_AFTER_ERASE);
+        if (allowRepair) {
+            auto eraseErr = eraseMultiPageBlob(nsIndex, key, Page::DEFAULT_PURGE_AFTER_ERASE);
+            if (eraseErr != ESP_OK && eraseErr != ESP_ERR_NVS_NOT_FOUND) {
+                return eraseErr;
+            }
+        }
+        // The index was found above, so this is a damaged blob rather than a missing one.
+        return ESP_ERR_NVS_NOT_FOUND;
     }
-
-    NVS_ASSERT_OR_RETURN(offset == dataSize, ESP_FAIL);
 
     return err;
 }
@@ -773,7 +828,7 @@ esp_err_t Storage::cmpMultiPageBlob(uint8_t nsIndex, const char* key, const void
     return err;
 }
 
-esp_err_t Storage::readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize)
+esp_err_t Storage::readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize, bool allowRepair)
 {
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
@@ -782,17 +837,25 @@ esp_err_t Storage::readItem(uint8_t nsIndex, ItemType datatype, const char* key,
     Item item;
     Page* findPage = nullptr;
     if(datatype == ItemType::BLOB) {
-        auto err = readMultiPageBlob(nsIndex, key, data, dataSize);
-        if(err != ESP_ERR_NVS_NOT_FOUND) {
-            return err;
-        } // else check if the blob is stored with earlier version format without index
+        // Absence of a blob index selects the legacy single-page format. A present index
+        // is the current value, so a damaged chunk or CRC must not expose an older blob.
+        auto indexErr = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item,
+                Page::CHUNK_ANY, VerOffset::VER_ANY, nullptr, allowRepair);
+        if(indexErr == ESP_OK) {
+            return readMultiPageBlob(nsIndex, key, data, dataSize, allowRepair);
+        }
+        if(indexErr != ESP_ERR_NVS_NOT_FOUND) {
+            return indexErr;
+        }
     }
 
-    auto err = findItem(nsIndex, datatype, key, findPage, item);
+    auto err = findItem(nsIndex, datatype, key, findPage, item,
+            Page::CHUNK_ANY, VerOffset::VER_ANY, nullptr, allowRepair);
     if(err != ESP_OK) {
         return err;
     }
-    return findPage->readItem(nsIndex, datatype, key, data, dataSize);
+    return findPage->readItem(nsIndex, datatype, key, data, dataSize,
+            Page::CHUNK_ANY, VerOffset::VER_ANY, allowRepair);
 
 }
 
@@ -800,6 +863,12 @@ esp_err_t Storage::eraseMultiPageBlob(uint8_t nsIndex, const char* key, const bo
 {
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+    if (!mWriteEnabled) {
+        auto enableErr = enableWrite();
+        if (enableErr != ESP_OK) {
+            return enableErr;
+        }
     }
     Item item;
     Page* findPage = nullptr;
@@ -902,6 +971,12 @@ esp_err_t Storage::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
+    if (!mWriteEnabled) {
+        auto enableErr = enableWrite();
+        if (enableErr != ESP_OK) {
+            return enableErr;
+        }
+    }
 
     Item item;
     Page* findPage = nullptr;
@@ -925,6 +1000,12 @@ esp_err_t Storage::eraseNamespace(uint8_t nsIndex, const bool purgeAfterErase)
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
+    if (!mWriteEnabled) {
+        auto enableErr = enableWrite();
+        if (enableErr != ESP_OK) {
+            return enableErr;
+        }
+    }
 
     for(auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
         while(true) {
@@ -944,6 +1025,12 @@ esp_err_t Storage::purgeNamespace(uint8_t nsIndex){
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
+    if (!mWriteEnabled) {
+        auto enableErr = enableWrite();
+        if (enableErr != ESP_OK) {
+            return enableErr;
+        }
+    }
 
     for(auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
         auto err = it->purgeErasedItems(nsIndex);
@@ -954,7 +1041,7 @@ esp_err_t Storage::purgeNamespace(uint8_t nsIndex){
     return ESP_OK;
 }
 
-esp_err_t Storage::findKey(const uint8_t nsIndex, const char* key, ItemType* datatype)
+esp_err_t Storage::findKey(const uint8_t nsIndex, const char* key, ItemType* datatype, bool allowRepair)
 {
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
@@ -962,7 +1049,8 @@ esp_err_t Storage::findKey(const uint8_t nsIndex, const char* key, ItemType* dat
 
     Item item;
     Page* findPage = nullptr;
-    auto err = findItem(nsIndex, ItemType::ANY, key, findPage, item);
+    auto err = findItem(nsIndex, ItemType::ANY, key, findPage, item,
+            Page::CHUNK_ANY, VerOffset::VER_ANY, nullptr, allowRepair);
     if(err != ESP_OK) {
         return err;
     }
@@ -974,7 +1062,7 @@ esp_err_t Storage::findKey(const uint8_t nsIndex, const char* key, ItemType* dat
     return err;
 }
 
-esp_err_t Storage::getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize)
+esp_err_t Storage::getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize, bool allowRepair)
 {
     if(mState != StorageState::ACTIVE) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
@@ -987,7 +1075,8 @@ esp_err_t Storage::getItemDataSize(uint8_t nsIndex, ItemType datatype, const cha
     // If requested datatype is BLOB, first try to find the item with datatype BLOB_IDX - new format
     // If not found, try to find the item with datatype BLOB - old format.
     if(datatype == ItemType::BLOB) {
-        err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item);
+        err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item,
+                Page::CHUNK_ANY, VerOffset::VER_ANY, nullptr, allowRepair);
         if(err == ESP_OK) {
             dataSize = item.blobIndex.dataSize;
             return err;
@@ -996,7 +1085,8 @@ esp_err_t Storage::getItemDataSize(uint8_t nsIndex, ItemType datatype, const cha
         }
     }
 
-    err = findItem(nsIndex, datatype, key, findPage, item);
+    err = findItem(nsIndex, datatype, key, findPage, item,
+            Page::CHUNK_ANY, VerOffset::VER_ANY, nullptr, allowRepair);
     if(err != ESP_OK) {
         return err;
     }
@@ -1044,7 +1134,7 @@ esp_err_t Storage::fillStats(nvs_stats_t& nvsStats)
     return mPageManager.fillStats(nvsStats);
 }
 
-esp_err_t Storage::calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries)
+esp_err_t Storage::calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries, bool allowRepair)
 {
     usedEntries = 0;
 
@@ -1056,7 +1146,8 @@ esp_err_t Storage::calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries)
         size_t itemIndex = 0;
         Item item;
         while(true) {
-            auto err = it->findItem(nsIndex, ItemType::ANY, nullptr, itemIndex, item);
+            auto err = it->findItem(nsIndex, ItemType::ANY, nullptr, itemIndex, item,
+                    Page::CHUNK_ANY, VerOffset::VER_ANY, allowRepair);
             if(err == ESP_ERR_NVS_NOT_FOUND) {
                 break;
             }
@@ -1130,7 +1221,8 @@ bool Storage::nextEntry(nvs_opaque_iterator_t* it)
 
     for(auto page = it->page; page != mPageManager.end(); ++page) {
         do {
-            err = page->findItem(it->nsIndex, (ItemType)it->type, nullptr, it->entryIndex, item);
+            err = page->findItem(it->nsIndex, (ItemType)it->type, nullptr, it->entryIndex,
+                    item, Page::CHUNK_ANY, VerOffset::VER_ANY, false);
             it->entryIndex += item.span;
             if(err == ESP_OK && isIterableItem(item) && !isMultipageBlob(item)) {
                 fillEntryInfo(item, it->entry_info);

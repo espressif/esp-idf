@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,7 @@ public:
         return mState;
     }
 
-    esp_err_t load(Partition *partition, uint32_t sectorNumber);
+    esp_err_t load(Partition *partition, uint32_t sectorNumber, bool allowRepair = true);
 
     esp_err_t getSeqNumber(uint32_t& seqNumber) const;
 
@@ -82,21 +82,21 @@ public:
 
     esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY);
 
-    esp_err_t readVariableLengthItemData(const Item& item, const size_t index, void* data);
+    esp_err_t readVariableLengthItemData(const Item& item, const size_t index, void* data, bool allowRepair = true);
 
-    esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY, bool allowRepair = true);
 
     esp_err_t cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, const bool purgeAfterErase, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, const bool purgeAfterErase, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY, bool writeToFlash = true);
 
     esp_err_t purgeErasedItems(uint8_t nsIndex);
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY, bool allowRepair = true);
 
-    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY, bool allowRepair = true);
 
-    esp_err_t eraseEntryAndSpan(size_t index, const bool purgeAfterErase);
+    esp_err_t eraseEntryAndSpan(size_t index, const bool purgeAfterErase, bool writeToFlash = true);
 
     template<typename T>
     esp_err_t writeItem(uint8_t nsIndex, const char* key, const T& value)
@@ -172,7 +172,7 @@ protected:
         INVALID = NVS_CONST_ENTRY_STATE_INVALID // entry is in inconsistent state (write started but ESB_WRITTEN has not been set yet)
     };
 
-    esp_err_t mLoadEntryTable();
+    esp_err_t mLoadEntryTable(bool allowRepair);
 
     esp_err_t initialize();
 
@@ -227,6 +227,7 @@ protected:
     HashList mHashList;
 
     Partition *mPartition;
+    CompressedEnumTable<bool, 1, ENTRY_COUNT> mInconsistentEntries;
 
     static const uint32_t HEADER_OFFSET = NVS_CONST_PAGE_HEADER_OFFSET;
     static const uint32_t ENTRY_TABLE_OFFSET = NVS_CONST_PAGE_ENTRY_TABLE_OFFSET;

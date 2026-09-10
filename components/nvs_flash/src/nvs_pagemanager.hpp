@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@ public:
 
     PageManager() {}
 
-    esp_err_t load(Partition *partition, uint32_t baseSector, uint32_t sectorCount);
+    esp_err_t load(Partition *partition, uint32_t baseSector, uint32_t sectorCount, bool allowRepair = true, bool *pagesReplaced = nullptr);
 
     TPageListIterator begin()
     {
