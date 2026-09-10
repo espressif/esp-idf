@@ -172,6 +172,31 @@ flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 
 
     由于 mmap 是由 cache 支持的，因此，mmap 也仅能用在主 flash 上。
 
+.. only:: not esp32
+
+    .. _blocks_write_flag:
+
+    关于 :cpp:enumerator:`SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE` 标志
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        当缓存映射存在时发生 flash 擦除/写入，通常会导致某些缓存区域被无效化并重新加载。为提高性能，在确定以下条件时，建议指定此标志：
+
+        1. 此映射将在短时间内结束，且
+        2. 在映射结束之前，不需要擦除或写入 flash。
+
+        此标志将阻止所有写入，直到对应的 munmap 被调用。大多数依赖于 flash 映射的 ESP-IDF API 内部使用此标志。
+
+        .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND or SOC_SPIRAM_XIP_SUPPORTED
+
+            此标志还有助于在使用以下模式时防止缓存被禁用。有关更多详细信息，请参阅相应文档。
+
+            .. list::
+
+                :SOC_SPIRAM_XIP_SUPPORTED: - :ref:`xip_from_psram`
+                :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :ref:`auto-suspend`
+
+        此标志通过 SPI Flash 驱动程序中的锁来实现。当调用带有此标志的 :cpp:func:`spi_flash_mmap` （或类似 mmap 的 API）时获取锁，直到对应的 unmap 被调用时释放。内部有一个引用计数器，允许对 flash 进行并发映射。只有在最后一个带有此标志的 flash 映射被撤销（计数器等于 0）后，flash 擦除/写入 API 才能开始执行。
+
 SPI flash 实现
 --------------
 

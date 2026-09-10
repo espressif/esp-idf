@@ -17,6 +17,7 @@
 #include "hal/mspi_ll.h"
 #if !ESP_TEE_BUILD
 #include "esp_private/esp_cache_private.h"
+#include "hal/cache_ll.h"
 #else
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"

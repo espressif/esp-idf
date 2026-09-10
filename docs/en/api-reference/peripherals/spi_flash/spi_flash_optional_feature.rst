@@ -40,7 +40,7 @@ The support for ESP32-P4 may be added in the future.
 
     List of flash chips that support this feature:
 
-    1. XM25QxxC series
+    1. XM25xxD series
     2. GD25QxxE series
     3. FM25Q32
 
