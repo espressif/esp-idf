@@ -73,6 +73,7 @@ from urllib.parse import urljoin
 from urllib.parse import urlparse
 from urllib.request import urlopen
 from urllib.response import addinfourl
+from urllib.request import Request                                                                                       
 
 try:
     from exceptions import WindowsError
@@ -572,54 +573,86 @@ def splittype(url: str) -> tuple[str | None, str]:
 def urlretrieve_ctx(
     url: str,
     filename: str,
-    reporthook: Callable[[int, int, int], None] | None = None,
-    data: bytes | None = None,
-    context: SSLContext | None = None,
-) -> tuple[str, addinfourl]:
+    reporthook: Optional[Callable[[int, int, int], None]] = None,
+    data: Optional[bytes] = None,
+    context: Optional[SSLContext] = None,
+) -> Tuple[str, addinfourl]:
     """
     Retrieve data from given URL. An alternative version of urlretrieve which takes SSL context as an argument.
+
+    Resumes via HTTP Range when the server closes the connection before
+    Content-Length bytes have been received. CPython's http.client silently
+    returns b'' on early EOF instead of raising IncompleteRead, so we detect
+    the short read ourselves and continue from where we left off.
     """
     url_type, path = splittype(url)
 
-    # urlopen doesn't have context argument in Python <=2.7.9
     extra_urlopen_args = {}
     if context:
         extra_urlopen_args['context'] = context
-    with contextlib.closing(urlopen(url, data, **extra_urlopen_args)) as fp:  # type: ignore
-        headers = fp.info()
 
-        # Just return the local path and the "headers" for file://
-        # URLs. No sense in performing a copy unless requested.
-        if url_type == 'file' and not filename:
-            return os.path.normpath(path), headers
+    max_attempts = 8
+    bs = 1024 * 8
+    read = 0
+    size = -1
+    headers: Optional[addinfourl] = None
+    tfp = None
+    blocknum = 0
 
-        # Handle temporary file setup.
-        tfp = open(filename, 'wb')
+    try:
+        for attempt in range(max_attempts):
+            if attempt == 0:
+                req: Union[str, Request] = url
+            else:
+                req = Request(url, headers={'Range': f'bytes={read}-'})
 
-        with tfp:
-            result = filename, headers
-            bs = 1024 * 8
-            size = int(headers.get('content-length', -1))
-            read = 0
-            blocknum = 0
+            with contextlib.closing(urlopen(req, data, **extra_urlopen_args)) as fp:  # type: ignore
+                resp_headers = fp.info()
 
-            if reporthook:
-                reporthook(blocknum, bs, size)
+                if attempt == 0:
+                    headers = resp_headers
+                    if url_type == 'file' and not filename:
+                        return os.path.normpath(path), headers
+                    size = int(resp_headers.get('content-length', -1))
+                    tfp = open(filename, 'wb')
+                    if reporthook:
+                        reporthook(0, bs, size)
+                else:
+                    status = getattr(fp, 'status', None) or fp.getcode()
+                    if status != 206:
+                        raise ContentTooShortError(
+                            f'server did not honor Range request (status {status}) after partial download of {read}/{size} bytes',
+                            (filename, headers),
+                        )
 
-            while True:
-                block = fp.read(bs)
-                if not block:
-                    break
-                read += len(block)
-                tfp.write(block)
-                blocknum += 1
-                if reporthook:
-                    reporthook(blocknum, bs, size)
+                while True:
+                    block = fp.read(bs)
+                    if not block:
+                        break
+                    read += len(block)
+                    tfp.write(block)
+                    blocknum += 1
+                    if reporthook:
+                        reporthook(blocknum, bs, size)
 
+            if size < 0 or read >= size:
+                break
+
+            warn(f'short read: got {read}/{size} bytes, resuming (attempt {attempt + 2}/{max_attempts})')
+            time.sleep(min(2 ** attempt, 30))
+    finally:
+        if tfp is not None:
+            tfp.close()
+
+    result = filename, headers
     if size >= 0 and read < size:
-        raise ContentTooShortError(f'retrieval incomplete: got only {read} out of {size} bytes', result)
+        raise ContentTooShortError(
+            f'retrieval incomplete: got only {read} out of {size} bytes after {max_attempts} attempts',
+            result,
+        )
 
     return result
+
 
 
 def download(url: str, destination: str) -> None | Exception:
