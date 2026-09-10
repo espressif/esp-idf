@@ -94,6 +94,37 @@ void test_fatfs_overwrite_append(const char* filename)
     TEST_ASSERT_EQUAL(0, fclose(f_r));
 }
 
+void test_fatfs_fcntl_setfl(const char* filename)
+{
+    unlink(filename);
+    int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    int flags = fcntl(fd, F_GETFL);
+    TEST_ASSERT_NOT_EQUAL(-1, flags);
+    TEST_ASSERT_EQUAL(O_RDWR, flags & O_ACCMODE);
+    TEST_ASSERT_EQUAL(0, flags & O_APPEND);
+
+    /* F_SETFL must not clobber O_ACCMODE when arg is only a status flag. */
+    TEST_ASSERT_EQUAL(0, fcntl(fd, F_SETFL, O_APPEND));
+    flags = fcntl(fd, F_GETFL);
+    TEST_ASSERT_EQUAL(O_RDWR, flags & O_ACCMODE);
+    TEST_ASSERT_NOT_EQUAL(0, flags & O_APPEND);
+
+    TEST_ASSERT_EQUAL(4, write(fd, "AAAA", 4));
+    TEST_ASSERT_NOT_EQUAL(-1, lseek(fd, 0, SEEK_SET));
+    TEST_ASSERT_EQUAL(4, write(fd, "BBBB", 4));
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    char buf[10] = { 0 };
+    FILE *f_r = fopen(filename, "r");
+    TEST_ASSERT_NOT_NULL(f_r);
+    TEST_ASSERT_EQUAL(8, fread(buf, 1, 8, f_r));
+    TEST_ASSERT_EQUAL_STRING_LEN("AAAABBBB", buf, 8);
+    TEST_ASSERT_EQUAL(0, fclose(f_r));
+    unlink(filename);
+}
+
 void test_fatfs_read_file(const char* filename)
 {
     FILE* f = fopen(filename, "r");
