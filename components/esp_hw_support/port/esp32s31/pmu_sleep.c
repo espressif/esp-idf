@@ -14,10 +14,13 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/pmu_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/sleep_clock_icg.h"
 #include "pmu_param.h"
 #include "hal/clk_tree_hal.h"
+#include "hal/clk_tree_ll.h"
 #include "hal/lp_aon_hal.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
@@ -399,6 +402,10 @@ bool pmu_sleep_finish(bool dslp)
         esp_psram_impl_exit_halfsleep_mode();
 #endif
 #endif
+        /* PLL_SOURCE retention may leave BBPLL powered on; align HW to clk_tree ref. */
+        if (!esp_clk_tree_is_power_on(SOC_ROOT_CIRCUIT_CLK_BBPLL) && !HP_SYS_CLKRST.modem_conf.modem_pll_clk_en) {
+            clk_ll_bbpll_disable();
+        }
     }
 
 #if !SOC_APM_SUPPORTED
