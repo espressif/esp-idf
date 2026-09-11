@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -526,8 +526,9 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel);
 #endif //SOC_LEDC_SUPPORT_FADE_STOP
 
 /**
- * @brief A thread-safe API to set duty for LEDC channel and return when duty updated.
+ * @brief A thread-safe API to set duty for LEDC channel and update it.
  *
+ * @note  The new duty takes effect from the next PWM cycle, see ledc_update_duty().
  * @note  For ESP32, hardware does not support any duty change while a fade operation is running in progress on that channel.
  *        Other duty operations will have to wait until the fade operation has finished.
  *

@@ -181,6 +181,12 @@ static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
     ledc_fade_t *fade = s_ledc_fade_rec[mode][channel];
     if (fade) {
         xSemaphoreTake(fade->ledc_fade_sem, portMAX_DELAY);
+#if !SOC_LEDC_SUPPORT_FADE_STOP
+        // Reconfiguring a channel while its last duty update is still pending corrupts that update
+        while (ledc_ll_get_duty_start(p_ledc_obj[mode]->ledc_hal.dev, mode, channel)) {
+            vTaskDelay(1);
+        }
+#endif
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_ll_enable_interrupt(p_ledc_obj[mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(mode, channel), false);
         portEXIT_CRITICAL(&ledc_spinlock);
