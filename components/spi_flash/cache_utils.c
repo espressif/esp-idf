@@ -62,6 +62,9 @@ static inline bool esp_task_stack_is_sane_cache_disabled(void)
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
            || esp_ptr_in_rtc_dram_fast(sp)
 #endif
+#if SOC_MEM_SPM_SUPPORTED
+           || esp_ptr_in_spm(sp)
+#endif
            ;
 }
 
