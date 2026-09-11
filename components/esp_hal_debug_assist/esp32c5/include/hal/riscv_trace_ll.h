@@ -60,6 +60,11 @@ static inline void riscv_trace_ll_set_mem_start_addr(trace_dev_t *hw, uint32_t a
     hw->mem_start_addr.mem_start_addr = addr;
 }
 
+static inline uint32_t riscv_trace_ll_get_mem_start_addr(trace_dev_t *hw)
+{
+    return hw->mem_start_addr.mem_start_addr;
+}
+
 static inline void riscv_trace_ll_set_mem_end_addr(trace_dev_t *hw, uint32_t addr)
 {
     hw->mem_end_addr.mem_end_addr = addr;
