@@ -25,9 +25,8 @@
 #if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 #include "esp_secure_boot.h"
 #endif
-#include "sdkconfig.h"
 
-#if __has_include("esp_app_desc.h")
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 #include "esp_app_desc.h"
 #endif
 
