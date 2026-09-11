@@ -8,7 +8,9 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_check.h"
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
+#endif
 #include "glitch_filter_priv.h"
 #include "hal/gpio_ll.h"
 #include "esp_clk_tree.h"

@@ -12,7 +12,9 @@
 #include "esp_private/io_mux.h"
 #include "soc/soc_caps.h"
 #include "hal/gpio_glitch_filter_ll.h"
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
+#endif
 #include "esp_clk_tree.h"
 #include "esp_private/esp_clk_tree_common.h"
 

@@ -4,3 +4,4 @@
 # symbol to y whenever it is processed, which happens for every discovered
 # component under IDF_BUILD_V2 regardless of the COMPONENTS restriction.
 CONFIG_VFS_SUPPORT_IO=n
+CONFIG_PM_ENABLE=n
