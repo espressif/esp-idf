@@ -5,6 +5,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <assert.h>
 #include "lwip/dhcp.h"
@@ -1320,7 +1321,7 @@ POOL_CHECK:
 
 #if DHCPS_DEBUG
         DHCPS_LOG("dhcps: xid changed\n");
-        DHCPS_LOG("dhcps: client_address.addr = %x\n", dhcps->client_address.addr);
+        DHCPS_LOG("dhcps: client_address.addr = %" PRIx32 "\n", dhcps->client_address.addr);
 #endif
         return ret;
     }
