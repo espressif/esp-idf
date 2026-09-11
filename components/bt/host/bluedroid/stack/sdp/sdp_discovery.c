@@ -205,6 +205,12 @@ void sdp_disc_connected (tCONN_CB *p_ccb)
         p_ccb->disc_state = SDP_DISC_WAIT_SEARCH_ATTR;
 
         process_service_search_attr_rsp (p_ccb, NULL, NULL);
+#if BT_SDP_BQB_INCLUDED
+    } else if (p_ccb->is_attr_only) {
+        /* BQB SA-only: skip SS and send Service Attribute Request. */
+        p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
+        process_service_attr_rsp (p_ccb, NULL, NULL);
+#endif
     } else {
         /* First step is to get a list of the handles from the server. */
         /* We are not searching for a specific attribute, so we will   */
@@ -346,6 +352,14 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *
         /* stay in the same state */
         sdp_snd_service_search_req(p_ccb, cont_len, p_reply);
     } else {
+#if BT_SDP_BQB_INCLUDED
+        if (p_ccb->is_search_only) {
+            /* BQB SS-only: report handles and close, do not auto-send SA. */
+            sdp_bqb_save_search_handles(p_ccb->handles, p_ccb->num_handles);
+            sdp_disconnect (p_ccb, SDP_SUCCESS);
+            return;
+        }
+#endif
         /* change state */
         p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
 
