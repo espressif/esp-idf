@@ -136,6 +136,147 @@ void sdp_bqb_data_len_min_48_ctrl(BOOLEAN enable)
 {
     s_sdp_bqb_data_len_min_48_flag = enable;
 }
+
+#if SDP_CLIENT_ENABLED == TRUE
+#ifndef SDP_BQB_DB_SIZE
+#define SDP_BQB_DB_SIZE  1500
+#endif
+
+#define SDP_BQB_OP_NONE  0
+#define SDP_BQB_OP_SS    1
+#define SDP_BQB_OP_SA    2
+
+typedef void (*sdp_bqb_ss_cb_t)(UINT16 status, UINT16 num_handles, const UINT32 *handles);
+typedef void (*sdp_bqb_sa_cb_t)(UINT16 status, UINT32 handle);
+
+static UINT8 __attribute__((aligned(4))) s_bqb_db_buf[SDP_BQB_DB_SIZE];
+static UINT32 s_bqb_handles[SDP_MAX_DISC_SERVER_RECS];
+static UINT16 s_bqb_num_handles;
+static UINT32 s_bqb_sa_handle;
+static sdp_bqb_ss_cb_t s_bqb_ss_cb;
+static sdp_bqb_sa_cb_t s_bqb_sa_cb;
+static BOOLEAN s_bqb_busy;
+static UINT8 s_bqb_op;
+
+static void sdp_bqb_disc_reset(void)
+{
+    s_bqb_busy = FALSE;
+    s_bqb_op = SDP_BQB_OP_NONE;
+    s_bqb_ss_cb = NULL;
+    s_bqb_sa_cb = NULL;
+    s_bqb_num_handles = 0;
+    s_bqb_sa_handle = 0;
+}
+
+void sdp_bqb_save_search_handles(const UINT32 *handles, UINT16 num)
+{
+    if (handles == NULL) {
+        s_bqb_num_handles = 0;
+        return;
+    }
+    if (num > SDP_MAX_DISC_SERVER_RECS) {
+        num = SDP_MAX_DISC_SERVER_RECS;
+    }
+    s_bqb_num_handles = num;
+    memcpy(s_bqb_handles, handles, (size_t)num * sizeof(UINT32));
+}
+
+static void sdp_bqb_disc_cmpl(UINT16 status, void *user_data)
+{
+    UINT8 op = s_bqb_op;
+    sdp_bqb_ss_cb_t ss_cb = s_bqb_ss_cb;
+    sdp_bqb_sa_cb_t sa_cb = s_bqb_sa_cb;
+
+    UNUSED(user_data);
+    s_bqb_busy = FALSE;
+    s_bqb_op = SDP_BQB_OP_NONE;
+    s_bqb_ss_cb = NULL;
+    s_bqb_sa_cb = NULL;
+
+    if (op == SDP_BQB_OP_SS && ss_cb) {
+        ss_cb(status, s_bqb_num_handles, s_bqb_handles);
+    } else if (op == SDP_BQB_OP_SA && sa_cb) {
+        sa_cb(status, s_bqb_sa_handle);
+    }
+}
+
+BOOLEAN sdp_bqb_service_search(UINT8 *bd_addr, UINT16 uuid16, sdp_bqb_ss_cb_t cb)
+{
+    tCONN_CB *p_ccb;
+    tSDP_UUID uuid;
+
+    if (bd_addr == NULL || cb == NULL || s_bqb_busy) {
+        return FALSE;
+    }
+
+    memset(&uuid, 0, sizeof(uuid));
+    uuid.len = 2;
+    uuid.uu.uuid16 = uuid16;
+
+    if (!SDP_InitDiscoveryDb((tSDP_DISCOVERY_DB *)s_bqb_db_buf, SDP_BQB_DB_SIZE,
+                             1, &uuid, 0, NULL)) {
+        return FALSE;
+    }
+
+    p_ccb = sdp_conn_originate(bd_addr);
+    if (!p_ccb) {
+        return FALSE;
+    }
+
+    p_ccb->disc_state = SDP_DISC_WAIT_CONN;
+    p_ccb->p_db = (tSDP_DISCOVERY_DB *)s_bqb_db_buf;
+    p_ccb->p_cb = NULL;
+    p_ccb->p_cb2 = sdp_bqb_disc_cmpl;
+    p_ccb->user_data = NULL;
+    p_ccb->is_attr_search = FALSE;
+    p_ccb->is_search_only = TRUE;
+    p_ccb->is_attr_only = FALSE;
+
+    s_bqb_num_handles = 0;
+    memset(s_bqb_handles, 0, sizeof(s_bqb_handles));
+    s_bqb_ss_cb = cb;
+    s_bqb_op = SDP_BQB_OP_SS;
+    s_bqb_busy = TRUE;
+    return TRUE;
+}
+
+BOOLEAN sdp_bqb_service_attr(UINT8 *bd_addr, UINT32 handle, sdp_bqb_sa_cb_t cb)
+{
+    tCONN_CB *p_ccb;
+
+    if (bd_addr == NULL || cb == NULL || s_bqb_busy) {
+        return FALSE;
+    }
+
+    if (!SDP_InitDiscoveryDb((tSDP_DISCOVERY_DB *)s_bqb_db_buf, SDP_BQB_DB_SIZE,
+                             0, NULL, 0, NULL)) {
+        return FALSE;
+    }
+
+    p_ccb = sdp_conn_originate(bd_addr);
+    if (!p_ccb) {
+        return FALSE;
+    }
+
+    p_ccb->disc_state = SDP_DISC_WAIT_CONN;
+    p_ccb->p_db = (tSDP_DISCOVERY_DB *)s_bqb_db_buf;
+    p_ccb->p_cb = NULL;
+    p_ccb->p_cb2 = sdp_bqb_disc_cmpl;
+    p_ccb->user_data = NULL;
+    p_ccb->is_attr_search = FALSE;
+    p_ccb->is_search_only = FALSE;
+    p_ccb->is_attr_only = TRUE;
+    p_ccb->handles[0] = handle;
+    p_ccb->num_handles = 1;
+    p_ccb->cur_handle = 0;
+
+    s_bqb_sa_handle = handle;
+    s_bqb_sa_cb = cb;
+    s_bqb_op = SDP_BQB_OP_SA;
+    s_bqb_busy = TRUE;
+    return TRUE;
+}
+#endif /* SDP_CLIENT_ENABLED == TRUE */
 #endif /* BT_SDP_BQB_INCLUDED */
 
 /*******************************************************************************
@@ -158,6 +299,9 @@ void sdp_init (void)
 #endif /* #if SDP_DYNAMIC_MEMORY */
     /* Clears all structures and local SDP database (if Server is enabled) */
     memset (&sdp_cb, 0, sizeof (tSDP_CB));
+#if BT_SDP_BQB_INCLUDED && (SDP_CLIENT_ENABLED == TRUE)
+    sdp_bqb_disc_reset();
+#endif
 
     sdp_cb.server_db.p_record_list  = list_new(osi_free_func);
     /* Initialize the L2CAP configuration. We only care about MTU and flush */
@@ -223,6 +367,9 @@ void sdp_init (void)
 
 void sdp_deinit (void)
 {
+#if BT_SDP_BQB_INCLUDED && (SDP_CLIENT_ENABLED == TRUE)
+    sdp_bqb_disc_reset();
+#endif
 #if SDP_DYNAMIC_MEMORY == FALSE
     list_free(sdp_cb.server_db.p_record_list);
 #else
