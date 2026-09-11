@@ -72,7 +72,7 @@ menu "Example Configuration"
             prompt "Ethernet"
         config EXAMPLE_WIRED_INTERFACE_IS_USB
             bool
-            depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            depends on SOC_USB_OTG_SUPPORTED
             prompt "USB NCM"
     endchoice
 

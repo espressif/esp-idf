@@ -3,11 +3,12 @@ dependencies:
   espressif/esp_tinyusb:
     version: "^2.0.0"
     rules:
-      - if: "idf_version >=4.4"
-      - if: "target in [esp32s2, esp32s3]"
+      - if: "$CONFIG{EXAMPLE_WIRED_INTERFACE_IS_ETHERNET} == False"
   dns_server:
     path: ${IDF_PATH}/examples/protocols/http_server/captive_portal/components/dns_server
   espressif/ethernet_init:
     version: "^1.3.0"
+    rules:
+      - if: "$CONFIG{EXAMPLE_WIRED_INTERFACE_IS_ETHERNET} == True"
   espressif/network_provisioning:
     version: "^1.0.5"

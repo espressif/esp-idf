@@ -1,0 +1,3 @@
+-
+    re: "error: implicit declaration of function 'tinyusb_net_init';"
+    hint: "NCM class must be enabled in TinyUSB configuration.\nIn idf.py menuconfig, go to (Top) > Component config > TinyUSB Stack > Network driver (ECM/NCM/RNDIS) > Network mode and select 'NCM'."

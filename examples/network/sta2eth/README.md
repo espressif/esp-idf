@@ -7,7 +7,7 @@
 
 This example aims to demonstrate 1-1 bridge using WiFi station and one of these interfaces (so called *wired* in this example)
 - Ethernet (supported for all targets)
-- USB acting as NCM device (supported for ESP32-S2 and ESP32-S3)
+- USB acting as NCM device (supported for ESP32-S2, ESP32-S3 and ESP32-S31)
 
 It also allows for reconfiguring WiFi settings using a virtual network in the Ethernet. The reconfiguration mode is initialized if the WiFi settings are not available, connection fails or manually by long pressing the Boot button (GPIO0).
 It is possible to configure WiFi settings (SSID and password) in a browser on a hostname `"http://wifi.settings"` or using unified provisioning.
@@ -22,7 +22,7 @@ This example also supports runtime configuration of WiFi settings by means of a 
 
 ### Hardware Required
 
-Any board with either Ethernet of USB-OTG supported.
+Any WiFi enabled board with either Ethernet of USB-OTG supported.
 
 ### Configure the project
 
@@ -30,7 +30,11 @@ Open the project configuration menu (`idf.py menuconfig`).
 
 In the `Example Configuration` menu choose the provisioning method:
 * `EXAMPLE_WIFI_CONFIGURATION_MANUAL` for manual configuration using a webpage
-* `EXAMPLE_WIFI_CONFIGURATION_PROVISIONING` for standard provisioning over the virtual USB network 
+* `EXAMPLE_WIFI_CONFIGURATION_PROVISIONING` for standard provisioning over the virtual USB network
+
+In the `Example Configuration` menu choose your wired interface:
+* `EXAMPLE_WIRED_INTERFACE_IS_ETHERNET` for ethernet - supported on all targets
+* `EXAMPLE_WIRED_INTERFACE_IS_USB` for USB - supported only on targets with USB-OTG peripheral. For this configuration, you must also enable NCM in TinyUSB by setting `TINYUSB_NET_MODE_NCM` in menuconfig 
 
 To provision the device using network provisioning tools (if `EXAMPLE_WIFI_CONFIGURATION_PROVISIONING` is selected) you can use idf provisioning utility with transport set to `softap`:
 ```bash
