@@ -384,7 +384,10 @@ void esp_clk_tree_initialize(void)
         if (cpu_src != SOC_CPU_CLK_SRC_CPLL && flash_clk_src != FLASH_CLK_SRC_CPLL) {
             clk_ll_cpll_disable();
         }
+#if !CONFIG_ESP_ENABLE_PVT
+        // PLL_F160M must always on if PVT is enabled.
         _clk_gate_ll_ref_160m_clk_en(false);
+#endif
         _clk_gate_ll_ref_120m_clk_en(false);
         _clk_gate_ll_ref_80m_clk_en(false);
         _clk_gate_ll_ref_60m_clk_en(false);
@@ -531,7 +534,12 @@ FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gat
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
-    if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID || clk_src == SOC_MOD_CLK_XTAL) {
+    if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID || clk_src == SOC_MOD_CLK_XTAL
+#if CONFIG_ESP_ENABLE_PVT
+        // PLL_F160M must always on if PVT is enabled.
+        || clk_src == SOC_MOD_CLK_PLL_F160M
+#endif
+    ) {
         /* Not managed by esp_clk_tree*/
         return ESP_OK;
     }

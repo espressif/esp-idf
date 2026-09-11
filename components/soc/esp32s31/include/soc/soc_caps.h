@@ -81,6 +81,7 @@
 // #define SOC_APM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14620
 #define SOC_PAU_SUPPORTED                  1
 #define SOC_PMU_SUPPORTED                  1
+#define SOC_PMU_PVT_SUPPORTED              1
 #define SOC_RTC_TIMER_SUPPORTED            1
 #define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
