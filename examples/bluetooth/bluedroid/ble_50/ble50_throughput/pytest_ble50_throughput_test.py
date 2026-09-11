@@ -19,6 +19,7 @@ BLE50_THROUGHPUT_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 

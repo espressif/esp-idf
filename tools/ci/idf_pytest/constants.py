@@ -17,6 +17,7 @@ SUPPORTED_TARGETS = [
     'esp32c61',
     'esp32s31',
     'esp32h4',
+    'esp32h21',
 ]
 PREVIEW_TARGETS: list[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 

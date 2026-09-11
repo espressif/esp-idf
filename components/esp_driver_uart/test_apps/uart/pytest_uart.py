@@ -16,6 +16,7 @@ input_argv = {
     'esp32c5': ['uart', 'lp_uart'],
     'esp32c61': ['uart'],
     'esp32h4': ['uart'],
+    'esp32h21': ['uart'],
     'esp32s31': ['uart', 'lp_uart'],
 }
 

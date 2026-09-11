@@ -29,6 +29,6 @@ def test_flash_auto_suspend(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c5', 'esp32c61', 'esp32s31'], indirect=['target'])
+@idf_parametrize('target', ['esp32c5', 'esp32c61', 'esp32s31', 'esp32h21'], indirect=['target'])
 def test_flash_auto_suspend_generic(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=30)

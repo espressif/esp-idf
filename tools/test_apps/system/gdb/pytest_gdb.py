@@ -49,7 +49,7 @@ def test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 
 @pytest.mark.usb_serial_jtag
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32h21'], indirect=['target'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 def test_idf_gdb_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_idf_gdb(openocd_dut, dut)

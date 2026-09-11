@@ -15,7 +15,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61'],
+    ['esp32', 'esp32s2', 'esp32s3', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32c61'],
     indirect=['target'],
 )
 def test_pure_ram_loadable_app(dut: IdfDut) -> None:
@@ -33,7 +33,7 @@ def test_pure_ram_loadable_app(dut: IdfDut) -> None:
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61'],
+    ['esp32', 'esp32s2', 'esp32s3', 'esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32c61'],
     indirect=['target'],
 )
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded.dut import Dut
@@ -8,7 +8,19 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c5', 'esp32p4', 'esp32c61', 'esp32s31'],
+    [
+        'esp32',
+        'esp32s2',
+        'esp32s3',
+        'esp32c3',
+        'esp32c6',
+        'esp32h2',
+        'esp32c5',
+        'esp32p4',
+        'esp32c61',
+        'esp32s31',
+        'esp32h21',
+    ],
     indirect=['target'],
 )
 def test_adc_oneshot(dut: Dut) -> None:

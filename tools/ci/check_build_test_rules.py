@@ -41,9 +41,7 @@ FORMAL_TO_USUAL = {v: k for k, v in USUAL_TO_FORMAL.items()}
 
 # Targets under bringup: suppress check-test-scripts warnings for these.
 # Reset to [] once bringup is complete.
-BYPASS_CHECK_TEST_TARGETS: list[str] = [
-    'esp32h21',
-]
+BYPASS_CHECK_TEST_TARGETS: list[str] = []
 
 
 def print_diff_table(

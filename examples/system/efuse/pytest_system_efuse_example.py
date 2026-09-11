@@ -60,7 +60,7 @@ def test_examples_efuse_linux(dut: Dut) -> None:
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'],
+    ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
 def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
@@ -91,7 +91,7 @@ def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
         else:
             dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 4')
         dut.expect('Not disabling UART bootloader encryption')
-        if dut.app.target != 'esp32h2':
+        if dut.app.target not in ('esp32h2', 'esp32h21'):
             dut.expect('Disable UART bootloader cache...')
         dut.expect('Disable JTAG...')
     dut.expect('bootloader encrypted successfully')
@@ -140,7 +140,7 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 2')
     dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 3')
     dut.expect('Not disabling UART bootloader encryption')
-    if dut.app.target != 'esp32h2':
+    if dut.app.target not in ('esp32h2', 'esp32h21'):
         dut.expect('Disable UART bootloader cache...')
     dut.expect('Disable JTAG...')
 
@@ -169,7 +169,7 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'],
+    ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
 def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
@@ -208,7 +208,7 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
         dut.expect('Disable ROM BASIC interpreter fallback...')
     else:
         dut.expect('Not disabling UART bootloader encryption')
-        if dut.app.target != 'esp32h2':
+        if dut.app.target not in ('esp32h2', 'esp32h21'):
             dut.expect('Disable UART bootloader cache...')
         dut.expect('Disable JTAG...')
     dut.expect('bootloader encrypted successfully')
@@ -239,7 +239,7 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'],
+    ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
 def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
@@ -269,7 +269,7 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
         else:
             dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 4')
         dut.expect('Disable UART bootloader encryption')
-        if dut.app.target != 'esp32h2':
+        if dut.app.target not in ('esp32h2', 'esp32h21'):
             dut.expect('Disable UART bootloader cache...')
         dut.expect('Disable JTAG...')
     dut.expect('bootloader encrypted successfully')
@@ -656,7 +656,7 @@ def example_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'],
+    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32h21', 'esp32p4', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
@@ -679,7 +679,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_ecdsa_p384_esp32xx(dut: Dut) ->
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'],
+    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32h21', 'esp32p4', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
 def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> None:
@@ -1058,7 +1058,7 @@ def example_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
         dut.expect(r'Writing EFUSE_BLK_KEY\d with purpose 4')
 
     dut.expect('Not disabling UART bootloader encryption')
-    if dut.app.target != 'esp32h2':
+    if dut.app.target not in ('esp32h2', 'esp32h21'):
         dut.expect('Disable UART bootloader cache...')
     dut.expect('Disable JTAG...')
 
@@ -1098,7 +1098,7 @@ def example_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe'], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'],
+    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
 def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:

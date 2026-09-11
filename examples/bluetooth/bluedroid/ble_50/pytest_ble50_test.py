@@ -25,7 +25,7 @@ BLE50_SECURITY_CI_CONFIGS = ['name']
 )
 @idf_parametrize(
     'target',
-    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_ble50_security_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -116,7 +116,7 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: tuple[IdfDut, Idf
 )
 @idf_parametrize(
     'target',
-    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_period_adv_sync_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -191,7 +191,7 @@ def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: tuple[IdfDut, Id
 )
 @idf_parametrize(
     'target',
-    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_ble50_security_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -342,7 +342,9 @@ def _run_ble_power_control_func(dut: tuple[IdfDut, IdfDut]) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32h2', 'esp32c61', 'esp32s31', 'esp32h4'], indirect=['target'])
+@idf_parametrize(
+    'target', ['esp32c6', 'esp32c5', 'esp32h2', 'esp32c61', 'esp32s31', 'esp32h4', 'esp32h21'], indirect=['target']
+)
 def test_ble_power_control_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     _run_ble_power_control_func(dut)
 
@@ -446,7 +448,9 @@ def _run_ble_conn_subrating_func(dut: tuple[IdfDut, IdfDut]) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32h2', 'esp32c6', 'esp32c5', 'esp32c61', 'esp32h4', 'esp32s31'], indirect=['target'])
+@idf_parametrize(
+    'target', ['esp32h2', 'esp32c6', 'esp32c5', 'esp32c61', 'esp32h4', 'esp32s31', 'esp32h21'], indirect=['target']
+)
 def test_ble_conn_subrating_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     _run_ble_conn_subrating_func(dut)
 
@@ -504,7 +508,6 @@ def _run_ble_periodic_adv_sync_with_cte_func(dut: tuple[IdfDut, IdfDut]) -> None
 # Case 9: ble periodic adv/sync with CTE test
 # EXAMPLE_CI_ID=19
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -582,7 +585,6 @@ def _run_ble_connection_with_cte_func(dut: tuple[IdfDut, IdfDut]) -> None:
 # Case 10: ble connection peripheral/central with CTE test
 # EXAMPLE_CI_ID=20
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -649,7 +651,6 @@ def _run_ble_pawr_adv_sync_func(dut: tuple[IdfDut, IdfDut]) -> None:
 # Case 11: ble pawr advertiser and synchronizer test
 # EXAMPLE_CI_ID=21
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -743,7 +744,9 @@ def _run_ble_multi_adv_func(dut: IdfDut) -> None:
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32s31'], indirect=['target']
+    'target',
+    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32s31', 'esp32h21'],
+    indirect=['target'],
 )
 def test_ble_multi_adv_func(dut: IdfDut) -> None:
     _run_ble_multi_adv_func(dut)

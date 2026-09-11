@@ -15,7 +15,9 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4'], indirect=['target']
+    'target',
+    ['esp32', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4', 'esp32h21'],
+    indirect=['target'],
 )
 def test_mcpwm(dut: Dut) -> None:
     dut.run_all_single_board_cases()

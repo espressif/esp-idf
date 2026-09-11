@@ -57,6 +57,8 @@ def esp_enter_flash_mode(dut: Dut) -> None:
             'esp32p4|esp32s3',
             'esp32c3|esp32c5',
             'esp32c5|esp32c3',
+            'esp32h2|esp32h21',
+            'esp32h21|esp32h2',
         ]
     ],
     indirect=True,

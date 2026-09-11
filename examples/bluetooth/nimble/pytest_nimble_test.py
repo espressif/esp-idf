@@ -25,7 +25,7 @@ CUR_DIR = Path(__file__).parent.resolve()
 )
 @idf_parametrize(
     'target',
-    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4'],
+    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4', 'esp32h21'],
     indirect=['target'],
 )
 def test_power_save_conn(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -136,7 +136,7 @@ CTE_PERIODIC_ADV_SYNC_APP_PATH = (
     f'{str(CUR_DIR / "ble_cte" / "ble_periodic_adv_with_cte")}|'
     f'{str(CUR_DIR / "ble_cte" / "ble_periodic_sync_with_cte")}'
 )
-NIMBLE_CTE_TARGETS = ['esp32h2', 'esp32c5', 'esp32c61', 'esp32s31', 'esp32h4']
+NIMBLE_CTE_TARGETS = ['esp32h2', 'esp32c5', 'esp32c61', 'esp32s31', 'esp32h4', 'esp32h21']
 
 
 def _run_nimble_periodic_adv_sync_with_cte_func(dut: tuple[IdfDut, IdfDut]) -> None:
@@ -215,6 +215,7 @@ NIMBLE_CTS_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -337,6 +338,7 @@ NIMBLE_HTP_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -461,6 +463,7 @@ NIMBLE_SPP_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -687,6 +690,7 @@ NIMBLE_PHY_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -1243,6 +1247,7 @@ NIMBLE_BLECENT_BLEPRPH_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -1405,7 +1410,6 @@ NIMBLE_MULTI_ADV_TARGETS = [
 
 # Case 24: NimBLE multi-adv single-DUT smoke test
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -1634,6 +1638,7 @@ NIMBLE_L2CAP_COC_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 

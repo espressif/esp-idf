@@ -23,7 +23,9 @@ def get_flash_encryption_marks(target: str) -> tuple[pytest.MarkDecorator, ...]:
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4'], indirect=['target']
+    'target',
+    ['esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4', 'esp32h21'],
+    indirect=['target'],
 )
 def test_uhci(dut: Dut) -> None:
     dut.run_all_single_board_cases()

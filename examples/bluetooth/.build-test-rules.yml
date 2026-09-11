@@ -521,9 +521,6 @@ examples/bluetooth/nimble/ble_multi_adv:
     - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runner
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
     - examples/bluetooth/nimble/pytest_nimble_test.py

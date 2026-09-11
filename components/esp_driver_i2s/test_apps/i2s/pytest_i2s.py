@@ -27,7 +27,6 @@ def get_flash_encryption_marks(target: str) -> tuple[pytest.MarkDecorator, ...]:
     soc_filtered_targets('SOC_I2S_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5", "esp32s3"]'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 def test_i2s(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
