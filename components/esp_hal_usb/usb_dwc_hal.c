@@ -156,7 +156,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
 #endif // SOC_IS(ESP32P4)
 }
 
-void usb_dwc_hal_init(usb_dwc_hal_context_t *hal, int port_id)
+void usb_dwc_hal_init_with_config(usb_dwc_hal_context_t *hal, int port_id, const usb_dwc_hal_config_t *config)
 {
     // Check if a peripheral is alive by reading the core ID registers
     HAL_ASSERT(port_id < SOC_USB_OTG_PERIPH_NUM);
@@ -180,6 +180,13 @@ void usb_dwc_hal_init(usb_dwc_hal_context_t *hal, int port_id)
     hal->constant_config.chan_num_total = usb_dwc_ll_ghwcfg_get_channel_num(dev);
     hal->constant_config.max_size_byte_limit = (1U << usb_dwc_ll_ghwcfg_get_xfer_size_width(dev)) - 1;
     hal->constant_config.max_size_packet_limit = (1U << usb_dwc_ll_ghwcfg_get_packet_size_width(dev)) - 1;
+
+    // Check passed configuration flags
+    if (config) {
+        if (config->flags & USB_DWC_HAL_CONFIG_FLAG_FSLS_ONLY) {
+            hal->constant_config.flags.fsls_only = 1;
+        }
+    }
 
     set_defaults(hal);
 }
@@ -299,6 +306,15 @@ static inline void debounce_lock_enable(usb_dwc_hal_context_t *hal)
     //Disable the hprt (connection) and disconnection interrupts to prevent repeated triggerings
     usb_dwc_ll_gintmsk_dis_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_DISCONNINT);
     hal->flags.dbnc_lock_enabled = 1;
+}
+
+void usb_dwc_hal_port_toggle_reset(usb_dwc_hal_context_t *hal, bool enable)
+{
+    // If the core is connected to HS PHY but configuration is FS/LS only
+    if (enable && hal->constant_config.hsphy_type && hal->constant_config.flags.fsls_only) {
+        usb_dwc_ll_hcfg_set_fsls_supp_only(hal->dev);
+    }
+    usb_dwc_ll_hprt_set_port_reset(hal->dev, enable);
 }
 
 void usb_dwc_hal_port_enable(usb_dwc_hal_context_t *hal)
