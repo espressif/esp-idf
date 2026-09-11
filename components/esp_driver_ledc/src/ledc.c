@@ -207,6 +207,13 @@ static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
         ledc_enable_intr_type(mode, channel, LEDC_INTR_DISABLE);
         portEXIT_CRITICAL(&ledc_spinlock);
     }
+#if !SOC_LEDC_SUPPORT_FADE_STOP
+    // On such target, re-configure fade parameters while last update is still in progress is not allowed
+    // And the wait should be out of any spinlock
+    while (!ledc_ll_is_duty_update_done(p_ledc_obj[mode]->ledc_hal.dev, mode, channel)) {
+        vTaskDelay(1);
+    }
+#endif
 }
 
 static void _ledc_fade_hw_release(ledc_mode_t mode, ledc_channel_t channel)
