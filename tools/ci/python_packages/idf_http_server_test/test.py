@@ -131,7 +131,7 @@ import time
 _verbose_ = False
 
 
-class Session(object):
+class Session:
     def __init__(self, addr, port, timeout=15):
         self.client = socket.create_connection((addr, int(port)), timeout=timeout)
         self.target = addr
@@ -146,9 +146,9 @@ class Session(object):
             self.client.sendall(request.encode())
             if data:
                 self.client.sendall(data.encode())
-        except socket.error as err:
+        except OSError as err:
             self.client.close()
-            logging.info('Socket Error in send :{}'.format(err))
+            logging.info(f'Socket Error in send :{err}')
             rval = False
         return rval
 
@@ -215,9 +215,9 @@ class Session(object):
                 if len(line_comp) == 2:
                     headers[line_comp[0]] = line_comp[1].lstrip()
             return headers
-        except socket.error as err:
+        except OSError as err:
             self.client.close()
-            logging.info('Socket Error in recv :{}'.format(err))
+            logging.info(f'Socket Error in recv :{err}')
             return None
 
     def read_resp_data(self):
@@ -228,19 +228,19 @@ class Session(object):
                     read_data += self.client.recv(self.content_len).decode()
             else:
                 chunk_data_buf = ''
-                while (True):
+                while True:
                     # Read one character into temp  buffer
                     read_ch = self.client.recv(1)
                     # Check CRLF
-                    if (read_ch == '\r'):
+                    if read_ch == '\r':
                         read_ch = self.client.recv(1).decode()
-                        if (read_ch == '\n'):
+                        if read_ch == '\n':
                             # If CRLF decode length of chunk
                             chunk_len = int(chunk_data_buf, 16)
                             # Keep adding to contents
                             self.content_len += chunk_len
                             rem_len = chunk_len
-                            while (rem_len):
+                            while rem_len:
                                 new_data = self.client.recv(rem_len)
                                 read_data += new_data
                                 rem_len -= len(new_data)
@@ -259,9 +259,9 @@ class Session(object):
                     # character to chunked data buffer
                     chunk_data_buf += read_ch
             return read_data
-        except socket.error as err:
+        except OSError as err:
             self.client.close()
-            logging.info('Socket Error in recv :{}'.format(err))
+            logging.info(f'Socket Error in recv :{err}')
             return None
 
     def close(self):
@@ -271,17 +271,17 @@ class Session(object):
 def test_val(text, expected, received):
     if expected != received:
         logging.info(' Fail!')
-        logging.info('  [reason] {}:'.format(text))
-        logging.info('        expected: {}'.format(expected))
-        logging.info('        received: {}'.format(received))
+        logging.info(f'  [reason] {text}:')
+        logging.info(f'        expected: {expected}')
+        logging.info(f'        received: {received}')
         return False
     return True
 
 
-class adder_thread (threading.Thread):
-    def __init__(self, id, dut, port):
+class adder_thread(threading.Thread):
+    def __init__(self, thread_id, dut, port):
         threading.Thread.__init__(self)
-        self.id = id
+        self.id = thread_id
         self.dut = dut
         self.depth = 3
         self.session = Session(dut, port)
@@ -290,8 +290,8 @@ class adder_thread (threading.Thread):
         self.response = []
 
         # Pipeline 3 requests
-        if (_verbose_):
-            logging.info('   Thread: Using adder start {}'.format(self.id))
+        if _verbose_:
+            logging.info(f'   Thread: Using adder start {self.id}')
 
         for _ in range(self.depth):
             self.session.send_post('/adder', str(self.id))
@@ -306,8 +306,9 @@ class adder_thread (threading.Thread):
             logging.info('Error : missing response packets')
             return False
         for i in range(len(self.response)):
-            if not test_val('Thread' + str(self.id) + ' response[' + str(i) + ']',
-                            str(self.id * (i + 1)), str(self.response[i])):
+            if not test_val(
+                'Thread' + str(self.id) + ' response[' + str(i) + ']', str(self.id * (i + 1)), str(self.response[i])
+            ):
                 return False
         return True
 
@@ -506,7 +507,7 @@ def parallel_sessions_adder(dut, port, max_sessions):
         if not test_val('Thread' + str(i) + ' Failed', t[i].adder_result(), True):
             res = False
         t[i].close()
-    if (res):
+    if res:
         logging.info('Success')
     return res
 
@@ -570,12 +571,12 @@ def leftover_data_test(dut, port):
 
 def spillover_session(dut, port, max_sess):
     # Session max_sess_sessions + 1 is rejected
-    logging.info('[test] Session max_sess_sessions ({}) + 1 is rejected =>'.format(max_sess))
+    logging.info(f'[test] Session max_sess_sessions ({max_sess}) + 1 is rejected =>')
     s = []
     _verbose_ = True
     for i in range(max_sess + 1):
-        if (_verbose_):
-            logging.info('Executing {}'.format(i))
+        if _verbose_:
+            logging.info(f'Executing {i}')
         try:
             a = http.client.HTTPConnection(dut + ':' + port, timeout=15)
             a.request('GET', url='/hello')
@@ -585,8 +586,8 @@ def spillover_session(dut, port, max_sess):
                 break
             s.append(a)
         except Exception:
-            if (_verbose_):
-                logging.info('Connection {} rejected'.format(i))
+            if _verbose_:
+                logging.info(f'Connection {i} rejected')
             a.close()
             break
 
@@ -595,8 +596,8 @@ def spillover_session(dut, port, max_sess):
         a.close()
 
     # Check if number of connections is equal to max_sess
-    logging.info(['Fail','Success'][len(s) == max_sess])
-    return (len(s) == max_sess)
+    logging.info(['Fail', 'Success'][len(s) == max_sess])
+    return len(s) == max_sess
 
 
 def recv_timeout_test(dut, port):
@@ -616,11 +617,12 @@ def recv_timeout_test(dut, port):
 def packet_size_limit_test(dut, port, test_size):
     logging.info('[test] send size limit test =>')
     retry = 5
-    while (retry):
+    while retry:
         retry -= 1
-        logging.info('data size = {}'.format(test_size))
+        logging.info(f'data size = {test_size}')
         s = http.client.HTTPConnection(dut + ':' + port, timeout=15)
-        random_data = ''.join(string.printable[random.randint(0,len(string.printable)) - 1] for _ in list(range(test_size)))
+        printable = string.printable
+        random_data = ''.join(printable[random.randint(0, len(printable)) - 1] for _ in list(range(test_size)))
         path = '/echo'
         s.request('POST', url=path, body=random_data)
         resp = s.getresponse()
@@ -634,7 +636,7 @@ def packet_size_limit_test(dut, port, test_size):
             logging.info('Retry...')
             continue
         resp = resp.read().decode()
-        result = (resp == random_data)
+        result = resp == random_data
         if not result:
             test_val('Data size', str(len(random_data)), str(len(resp)))
             s.close()
@@ -653,77 +655,59 @@ def arbitrary_termination_test(dut, port):
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nCustom: SomeValue\r\n\r\n',
             'code': '200',
-            'header': 'SomeValue'
+            'header': 'SomeValue',
         },
         {
             'request': 'POST /echo HTTP/1.1\nHost: ' + dut + '\r\nCustom: SomeValue\r\n\r\n',
             'code': '200',
-            'header': 'SomeValue'
+            'header': 'SomeValue',
         },
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\nCustom: SomeValue\r\n\r\n',
             'code': '200',
-            'header': 'SomeValue'
+            'header': 'SomeValue',
         },
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nCustom: SomeValue\n\r\n',
             'code': '200',
-            'header': 'SomeValue'
+            'header': 'SomeValue',
         },
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nCustom: SomeValue\r\n\n',
             'code': '200',
-            'header': 'SomeValue'
+            'header': 'SomeValue',
         },
         {
             'request': 'POST /echo HTTP/1.1\nHost: ' + dut + '\nCustom: SomeValue\n\n',
             'code': '200',
-            'header': 'SomeValue'
+            'header': 'SomeValue',
         },
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nContent-Length: 5\n\r\nABCDE',
             'code': '200',
-            'body': 'ABCDE'
+            'body': 'ABCDE',
         },
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nContent-Length: 5\r\n\nABCDE',
             'code': '200',
-            'body': 'ABCDE'
+            'body': 'ABCDE',
         },
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nContent-Length: 5\n\nABCDE',
             'code': '200',
-            'body': 'ABCDE'
+            'body': 'ABCDE',
         },
         {
             'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nContent-Length: 5\n\n\rABCD',
             'code': '200',
-            'body': '\rABCD'
+            'body': '\rABCD',
         },
-        {
-            'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\r\nCustom: SomeValue\r\r\n\r\r\n',
-            'code': '400'
-        },
-        {
-            'request': 'POST /echo HTTP/1.1\r\r\nHost: ' + dut + '\r\n\r\n',
-            'code': '400'
-        },
-        {
-            'request': 'POST /echo HTTP/1.1\r\n\rHost: ' + dut + '\r\n\r\n',
-            'code': '400'
-        },
-        {
-            'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\rCustom: SomeValue\r\n',
-            'code': '400'
-        },
-        {
-            'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nCustom: Some\rValue\r\n',
-            'code': '400'
-        },
-        {
-            'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nCustom- SomeValue\r\n\r\n',
-            'code': '400'
-        }
+        {'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\r\nCustom: SomeValue\r\r\n\r\r\n', 'code': '400'},
+        {'request': 'POST /echo HTTP/1.1\r\r\nHost: ' + dut + '\r\n\r\n', 'code': '400'},
+        {'request': 'POST /echo HTTP/1.1\r\n\rHost: ' + dut + '\r\n\r\n', 'code': '400'},
+        {'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\rCustom: SomeValue\r\n', 'code': '400'},
+        {'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nCustom: Some\rValue\r\n', 'code': '400'},
+        {'request': 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nCustom- SomeValue\r\n\r\n', 'code': '400'},
     ]
     for case in cases:
         s = Session(dut, port)
@@ -751,7 +735,9 @@ def code_500_server_error_test(dut, port):
     s = Session(dut, port)
     # Sending a very large content length will cause malloc to fail
     content_len = 2**30
-    s.client.sendall(('POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\nContent-Length: ' + str(content_len) + '\r\n\r\nABCD').encode())
+    request = 'POST /echo HTTP/1.1\r\nHost: ' + dut + '\r\n'
+    request += 'Content-Length: ' + str(content_len) + '\r\n\r\nABCD'
+    s.client.sendall(request.encode())
     s.read_resp_hdrs()
     s.read_resp_data()
     if not test_val('Server Error', '500', s.status):
@@ -859,7 +845,9 @@ def code_411_length_required(dut, port):
     logging.info('[test] 411 Length Required =>')
     s = Session(dut, port)
     path = '/echo'
-    s.client.sendall(('POST ' + path + ' HTTP/1.1\r\nHost: ' + dut + '\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n').encode())
+    request = 'POST ' + path + ' HTTP/1.1\r\nHost: ' + dut + '\r\n'
+    request += 'Content-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n'
+    s.client.sendall(request.encode())
     s.read_resp_hdrs()
     s.read_resp_data()
     # Presently server sends back 400 Bad Request
@@ -909,9 +897,9 @@ def send_postx_hdr_len(dut, port, length):
     custom_hdr_field = '\r\nCustom: '
     custom_hdr_val = 'x' * (length - len(host) - len(custom_hdr_field) - len('\r\n\r\n') + len('0'))
     request = ('POST ' + path + ' HTTP/1.1\r\n' + host + custom_hdr_field + custom_hdr_val + '\r\n\r\n').encode()
-    s.client.sendall(request[:length // 2])
+    s.client.sendall(request[: length // 2])
     time.sleep(1)
-    s.client.sendall(request[length // 2:])
+    s.client.sendall(request[length // 2 :])
     hdr = s.read_resp_hdrs()
     resp = s.read_resp_data()
     s.close()
@@ -936,7 +924,9 @@ def test_upgrade_not_supported(dut, port):
     logging.info('[test] Upgrade Not Supported =>')
     s = Session(dut, port)
     # path = "/hello"
-    s.client.sendall(('OPTIONS * HTTP/1.1\r\nHost:' + dut + '\r\nUpgrade: TLS/1.0\r\nConnection: Upgrade\r\n\r\n').encode())
+    request = 'OPTIONS * HTTP/1.1\r\nHost:' + dut + '\r\n'
+    request += 'Upgrade: TLS/1.0\r\nConnection: Upgrade\r\n\r\n'
+    s.client.sendall(request.encode())
     s.read_resp_hdrs()
     s.read_resp_data()
     if not test_val('Client Error', '400', s.status):
@@ -956,15 +946,15 @@ if __name__ == '__main__':
     max_hdr_len = 512
 
     parser = argparse.ArgumentParser(description='Run HTTPD Test')
-    parser.add_argument('-4','--ipv4', help='IPv4 address')
-    parser.add_argument('-6','--ipv6', help='IPv6 address')
-    parser.add_argument('-p','--port', help='Port')
+    parser.add_argument('-4', '--ipv4', help='IPv4 address')
+    parser.add_argument('-6', '--ipv6', help='IPv6 address')
+    parser.add_argument('-p', '--port', help='Port')
     args = vars(parser.parse_args())
 
     dut4 = args['ipv4']
     dut6 = args['ipv6']
     port = args['port']
-    dut  = dut4
+    dut = dut4
 
     _verbose_ = True
 
