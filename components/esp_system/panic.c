@@ -364,6 +364,12 @@ void esp_panic_handler(panic_info_t *info)
         }
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
+#if __riscv
+        // Interrupts can trigger before the breakpoint is hit,
+        // so disable them on global level to avoid any further execution.
+        RV_CLEAR_CSR(mstatus, MSTATUS_MPIE | MSTATUS_SPIE | MSTATUS_UPIE);
+        panic_print_str(", disabling global interrupts,");
+#endif
         panic_print_str(" and returning...\r\n");
 #if CONFIG_APPTRACE_ENABLE
 #if CONFIG_APPTRACE_SV_ENABLE
@@ -375,7 +381,13 @@ void esp_panic_handler(panic_info_t *info)
 #endif
 
         disable_all_wdts();
-        esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
+        // use breakpoint 0
+        if (esp_cpu_set_breakpoint(0, info->addr) != ESP_OK) {
+#if __riscv
+            // Halt here if unable to set a breakpoint.
+            asm("ebreak");
+#endif
+        }
         return;
     }
 #endif //CONFIG_ESP_DEBUG_OCDAWARE
