@@ -116,7 +116,7 @@ void esp_pm_impl_waiti(void);
 /**
  * @brief Execute a planned tickless WAITI from the idle task, if any.
  *
- * Handles RTOS PM lock release around WFI. Call once from esp_vApplicationIdleHook();
+ * Handles RTOS PM lock release around WFI. Call once from esp_vApplicationIdleHook().
  *
  * @return true if tickless WAITI ran (idle hook should return early)
  */

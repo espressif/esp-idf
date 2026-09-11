@@ -102,13 +102,20 @@ else()
                       # [refactor-todo] requirements due to init code,
                       # should be removable once using component init functions
                       # link-time registration is used.
-                      bootloader_support esp_pm)
+                      bootloader_support)
 
     if(NOT IDF_BUILD_V2)
         # panic.c only calls into the ROM CDC console under CONFIG_ESP_CONSOLE_USB_CDC,
         # but requirements are resolved before Kconfig here, so the dependency has to
         # be unconditional. Under v2 it is added below based on the config value.
         list(APPEND priv_requires esp_usb_cdc_rom_console)
+
+        # [refactor-todo] IDF-16183: esp_system no longer uses esp_pm, but the
+        # components that do can only link it if it is already in the build, so a
+        # central component has to keep it there. The dependency is unconditional
+        # because requirements are resolved before Kconfig here. Under v2 it is
+        # added below based on the config value.
+        list(APPEND priv_requires esp_pm)
     endif()
 
     idf_component_register(SRCS "${srcs}"
@@ -119,6 +126,14 @@ else()
     if(IDF_BUILD_V2 AND CONFIG_ESP_CONSOLE_USB_CDC)
         idf_component_include(esp_usb_cdc_rom_console)
         target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_usb_cdc_rom_console)
+    endif()
+
+    if(IDF_BUILD_V2 AND CONFIG_PM_ENABLE)
+        # [refactor-todo] IDF-16183: esp_system does not use esp_pm, so it is only
+        # included and not linked. Something has to keep esp_pm in the build so that
+        # its startup registration is linked, and the components that use power
+        # management only include it under their own narrower conditions.
+        idf_component_include(esp_pm)
     endif()
 
     add_subdirectory(port)
@@ -207,10 +222,6 @@ endif()
 # once link-time registration of component init functions is used.
 if(NOT CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT)
     idf_component_optional_requires(PRIVATE esp_app_format)
-endif()
-
-if(CONFIG_PM_ENABLE)
-    idf_component_optional_requires(PRIVATE pm)
 endif()
 
 if(NOT BOOTLOADER_BUILD)

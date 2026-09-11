@@ -1346,8 +1346,9 @@ ESP_SYSTEM_INIT_FN(init_pm, SECONDARY, BIT(0), 201)
     esp_pm_impl_init();
     return ESP_OK;
 }
-#endif // CONFIG_PM_ENABLE
 
+/* Without CONFIG_PM_ENABLE, the weak defaults in esp_system/freertos_hooks.c
+ * are used instead of these idle hooks. */
 void esp_pm_impl_idle_hook(void)
 {
     int core_id = xPortGetCoreID();
@@ -1371,6 +1372,7 @@ void esp_pm_impl_idle_hook(void)
 #endif
     ESP_PM_TRACE_ENTER(IDLE, core_id);
 }
+#endif // CONFIG_PM_ENABLE
 
 void IRAM_ATTR esp_pm_impl_isr_hook(void)
 {
@@ -1402,6 +1404,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }
 
+#if CONFIG_PM_ENABLE
 void esp_pm_impl_waiti(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -1419,6 +1422,7 @@ void esp_pm_impl_waiti(void)
     esp_cpu_wait_for_intr();
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
+#endif // CONFIG_PM_ENABLE
 
 #if CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED && CONFIG_PM_ENABLE
 void esp_pm_impl_cpu_max_freq_force_init(uint32_t limit_freq_mhz)

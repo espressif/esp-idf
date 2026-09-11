@@ -14,10 +14,30 @@
 #include "sdkconfig.h"
 #include "esp_cpu.h"
 
-#if CONFIG_PM_ENABLE
-#include "esp_pm.h"
-#include "esp_private/pm_impl.h"
-#endif // CONFIG_PM_ENABLE
+// Strong definitions in esp_pm/pm_impl.c override these weak defaults at
+// link time when esp_pm is in the build. Declared locally to avoid an
+// esp_system -> esp_pm dependency.
+void __attribute__((weak)) esp_pm_impl_idle_hook(void);
+void __attribute__((weak)) esp_pm_impl_waiti(void);
+#if CONFIG_PM_TICKLESS_IDLE_WAITI
+bool __attribute__((weak)) esp_pm_impl_tickless_waiti(void);
+#endif
+
+void __attribute__((weak)) esp_pm_impl_idle_hook(void)
+{
+}
+
+void __attribute__((weak)) esp_pm_impl_waiti(void)
+{
+    esp_cpu_wait_for_intr();
+}
+
+#if CONFIG_PM_TICKLESS_IDLE_WAITI
+bool __attribute__((weak)) esp_pm_impl_tickless_waiti(void)
+{
+    return false;
+}
+#endif
 
 //We use just a static array here because it's not expected many components will need
 //an idle or tick hook.
@@ -59,12 +79,8 @@ void esp_vApplicationIdleHook(void)
         return;
     }
 
-#ifdef CONFIG_PM_ENABLE
     esp_pm_impl_idle_hook();
     esp_pm_impl_waiti();
-#else
-    esp_cpu_wait_for_intr();
-#endif
 }
 
 esp_err_t esp_register_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t new_idle_cb, UBaseType_t cpuid)
