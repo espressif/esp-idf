@@ -54,14 +54,8 @@ set(extra_components_which_shouldnt_be_included
     #   should be removed from G1-only build.
     esptool_py
 
-    # partition_table is pulled in by app_update, esptool_py, bootloader, esp_partition; all to be removed
-    partition_table
-
-    # esp_partition is a new component for separated IDF partition APIs. Pulled in from app_update and efuse,
-    # both which should be removed
-    esp_partition
-
-    # esp_blockdev is a new component for separated IDF block storage device APIs. Pulled in from esp_partition
+    # esp_blockdev provides block storage device APIs. spi_flash pulls it into
+    # both V1 and V2; esp_partition also requires it when included.
     esp_blockdev
 
     # pthread is required by cxx. See [refactor-todo] about cxx, can it work without pthread?
@@ -75,6 +69,13 @@ set(extra_components_which_shouldnt_be_included
 )
 
 if(NOT IDF_BUILD_V2)
+    # V1 includes esp_partition through efuse, and partition_table through
+    # esp_partition. In V2 these leave the linked closure when virtual efuses
+    # in flash are disabled. esptool_py still includes partition_table as a
+    # private requirement, but config-only components do not propagate private
+    # requirements into the V2 linked closure checked below.
+    list(APPEND extra_components_which_shouldnt_be_included esp_partition partition_table)
+
     # esp_usb_cdc_rom_console is used by the panic handler. Under build system v1
     # requirements are resolved before Kconfig, so esp_system has to depend on it
     # unconditionally. Build system v2 only pulls it in when the console is set to

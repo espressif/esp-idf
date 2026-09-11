@@ -38,14 +38,22 @@ if(non_os_build)
 else()
     list(APPEND srcs "src/esp_efuse_startup.c")
     if(${target} STREQUAL "linux")
-        set(priv_requires soc esp_system esp_partition esp_hal_security)
+        set(priv_requires soc esp_system esp_hal_security)
     else()
-        set(priv_requires bootloader_support soc esp_system esp_partition esp_app_format esp_hal_security)
+        set(priv_requires bootloader_support soc esp_system esp_app_format esp_hal_security)
+    endif()
+    if(NOT IDF_BUILD_V2)
+        # V1 resolves requirements before Kconfig is available.
+        list(APPEND priv_requires esp_partition)
     endif()
     idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${private_include}")
+    if(IDF_BUILD_V2 AND CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH)
+        idf_component_include(esp_partition)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_partition)
+    endif()
     idf_define_esp_err_codes(HEADERS include/esp_efuse.h)
     if(NOT ${target} STREQUAL "linux")
         # Forces the linker to include esp_efuse_startup.c
