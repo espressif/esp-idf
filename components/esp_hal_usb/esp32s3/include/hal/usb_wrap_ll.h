@@ -17,6 +17,7 @@
 /* ----------------------------- Macros & Types ----------------------------- */
 
 #define USB_WRAP_LL_EXT_PHY_SUPPORTED           1   // Can route to an external FSLS PHY
+#define USB_WRAP_LL_DEPENDS_ON_BBPLL            1   // USB PHY depends on BBPLL
 
 #ifdef __cplusplus
 extern "C" {
