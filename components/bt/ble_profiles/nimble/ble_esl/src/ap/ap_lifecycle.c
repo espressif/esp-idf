@@ -173,6 +173,8 @@ void ble_esl_ap_lifecycle_handle_ots_event(uint16_t conn_id,
 
 /** Active image transfer context (one at a time) */
 static image_transfer_ctx_t *s_image_ctx = NULL;
+static bool s_image_pumping;
+static bool s_image_done;
 
 /** Active synchronize context (only one at a time; new requests are rejected while active) */
 static synchronize_ctx_t *s_sync_ctx = NULL;
@@ -1192,6 +1194,8 @@ esp_err_t ble_esl_ap_transfer_image(const ble_esl_ap_image_transfer_params_t *pa
     s_image_ctx->data_len = params->data_len;
     s_image_ctx->truncate = params->truncate;
     s_image_ctx->otc_mtu = 256;  /* Default L2CAP OTC MTU; updated on CHANNEL_OPEN */
+    s_image_pumping = false;
+    s_image_done = false;
 
     /* Step 1: Select the target object via OLCP Go To (over GATT).
      * Per the OTS spec, the Current Object must be selected *before* the
@@ -1255,6 +1259,46 @@ static void image_transfer_finish(uint16_t conn_id, esp_err_t status)
 
     free(s_image_ctx);
     s_image_ctx = NULL;
+    s_image_pumping = false;
+    s_image_done = false;
+}
+
+/* NimBLE CoC TX has a single SDU slot. Keep filling it until the stack is
+ * busy or stalled; DATA_SENT / TX_UNSTALLED refill. Do not finish from the
+ * nested DATA_SENT that send_data() dispatches on success. */
+static int image_transfer_pump(uint16_t conn_id)
+{
+    if (s_image_ctx == NULL || s_image_pumping) {
+        return 0;
+    }
+
+    s_image_pumping = true;
+    int rc = 0;
+    for (int burst = 0; burst < 4; burst++) {
+        uint32_t offset = s_image_ctx->sent_offset;
+        if (offset >= s_image_ctx->data_len) {
+            break;
+        }
+        uint32_t left = s_image_ctx->data_len - offset;
+        uint16_t chunk = (left > s_image_ctx->otc_mtu) ?
+                         s_image_ctx->otc_mtu : (uint16_t)left;
+        rc = ble_ots_client_send_data(conn_id, s_image_ctx->data + offset, chunk);
+        if (rc == BLE_HS_EBUSY) {
+            rc = 0;
+            break;
+        }
+        if (rc != 0) {
+            break;
+        }
+        s_image_ctx->sent_offset += chunk;
+    }
+    s_image_pumping = false;
+    if (rc == 0 && s_image_done) {
+        ESP_LOGI(TAG, "transfer_image: image transfer complete for index %d",
+                 s_image_ctx->image_index);
+        image_transfer_finish(conn_id, ESP_OK);
+    }
+    return rc;
 }
 
 /**
@@ -1337,15 +1381,11 @@ void ble_esl_ap_lifecycle_handle_ots_event(uint16_t conn_id,
     case BLE_OTS_CLIENT_EVT_OACP_RESPONSE: {
         const ble_ots_client_oacp_response_t *oacp = (const ble_ots_client_oacp_response_t *)param;
         if (oacp->request_opcode == 0x06 && oacp->result_code == 0x01) {
-            /* OACP Write success — send the first chunk of data.
-             * One send_data() call becomes one L2CAP SDU, so it must not
-             * exceed the negotiated OTC MTU (max SDU size) or ble_l2cap_send
-             * rejects it with BLE_HS_EBADDATA. Chunk by otc_mtu. */
+            /* OACP Write success — fill the CoC TX slot. One send_data() call
+             * is one L2CAP SDU and must stay within otc_mtu. */
             ESP_LOGD(TAG, "transfer_image: OACP Write accepted, sending data");
-            uint16_t chunk_len = (s_image_ctx->data_len > s_image_ctx->otc_mtu) ?
-                                  s_image_ctx->otc_mtu : (uint16_t)s_image_ctx->data_len;
-            s_image_ctx->sent_offset = chunk_len;
-            int rc = ble_ots_client_send_data(conn_id, s_image_ctx->data, chunk_len);
+            s_image_done = false;
+            int rc = image_transfer_pump(conn_id);
             if (rc != 0) {
                 ESP_LOGE(TAG, "transfer_image: send_data failed; rc=%d", rc);
                 image_transfer_finish(conn_id, ESP_FAIL);
@@ -1361,26 +1401,19 @@ void ble_esl_ap_lifecycle_handle_ots_event(uint16_t conn_id,
     case BLE_OTS_CLIENT_EVT_DATA_SENT: {
         const ble_ots_client_data_sent_t *sent = (const ble_ots_client_data_sent_t *)param;
         if (sent->remaining == 0) {
-            /* Transfer complete */
-            ESP_LOGI(TAG, "transfer_image: image transfer complete for index %d",
-                     s_image_ctx->image_index);
-            image_transfer_finish(conn_id, ESP_OK);
-        } else {
-            /* Send the next chunk, capped at the negotiated OTC MTU (one SDU). */
-            uint32_t offset = s_image_ctx->data_len - sent->remaining;
-            uint16_t chunk_len = (sent->remaining > s_image_ctx->otc_mtu) ?
-                                  s_image_ctx->otc_mtu : (uint16_t)sent->remaining;
-            s_image_ctx->sent_offset = offset + chunk_len;
-            ESP_LOGD(TAG, "transfer_image: sending next chunk at offset %lu, %u bytes "
-                     "(%lu remaining)", (unsigned long)offset, chunk_len,
-                     (unsigned long)sent->remaining);
-            int rc = ble_ots_client_send_data(conn_id,
-                                               s_image_ctx->data + offset,
-                                               chunk_len);
-            if (rc != 0) {
-                ESP_LOGE(TAG, "transfer_image: send_data failed for chunk; rc=%d", rc);
-                image_transfer_finish(conn_id, ESP_FAIL);
+            if (s_image_pumping) {
+                s_image_done = true;
+            } else {
+                ESP_LOGI(TAG, "transfer_image: image transfer complete for index %d",
+                         s_image_ctx->image_index);
+                image_transfer_finish(conn_id, ESP_OK);
             }
+            break;
+        }
+        int rc = image_transfer_pump(conn_id);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "transfer_image: send_data failed for chunk; rc=%d", rc);
+            image_transfer_finish(conn_id, ESP_FAIL);
         }
         break;
     }

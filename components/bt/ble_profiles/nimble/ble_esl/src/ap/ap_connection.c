@@ -37,10 +37,15 @@ static const char *TAG = "esl_ap_conn";
 /** Connection-establishment timeout for the PAwR connection procedure (ms) */
 #define PAWR_CONNECT_TIMEOUT_MS  30000
 
-/* Bulk OTS transfers need a low-latency, full-length 2M ACL link. */
-#define ESL_CONN_ITVL_MIN        12   /* 15 ms */
-#define ESL_CONN_ITVL_MAX        24   /* 30 ms */
+/* Bulk OTS transfers need a low-latency, full-length 2M ACL link.
+ * One 1024-byte CoC SDU is ~5 DLE PDUs. With max_ce_len=0 the controller
+ * typically sends one PDU per event, which caps a 15 ms link at ~17 KB/s
+ * (the rate measured on 460800-byte badge frames). A long CE lets one
+ * event carry the whole SDU; NimBLE CoC still only holds one TX SDU. */
+#define ESL_CONN_ITVL_MIN        6    /* 7.5 ms */
+#define ESL_CONN_ITVL_MAX        12   /* 15 ms */
 #define ESL_CONN_TIMEOUT         400  /* 4 s */
+#define ESL_CONN_CE_LEN_MAX      0xffff
 #define ESL_LL_TX_OCTETS         251
 #define ESL_LL_TX_TIME           2120
 
@@ -71,7 +76,7 @@ static void request_fast_esl_link(uint16_t conn_handle)
         .latency = 0,
         .supervision_timeout = ESL_CONN_TIMEOUT,
         .min_ce_len = 0,
-        .max_ce_len = 0,
+        .max_ce_len = ESL_CONN_CE_LEN_MAX,
     };
 
     int rc = ble_gap_update_params(conn_handle, &params);
