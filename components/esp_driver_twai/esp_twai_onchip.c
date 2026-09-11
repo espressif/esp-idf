@@ -116,7 +116,9 @@ static esp_err_t _node_config_io(twai_onchip_ctx_t *node, const twai_onchip_node
 
     uint64_t reserve_mask = 0;
     // Set RX pin
-    gpio_set_pull_mode(node_config->io_cfg.rx, GPIO_PULLUP_ONLY);    // pullup to avoid noise if no connection to transceiver
+    if (GPIO_IS_VALID_OUTPUT_GPIO(node_config->io_cfg.rx)) {
+        gpio_set_pull_mode(node_config->io_cfg.rx, GPIO_PULLUP_ONLY);    // pullup (if possible) to avoid noise if no connection to transceiver
+    }
     gpio_matrix_input(node_config->io_cfg.rx, twai_periph_signals[node->ctrlr_id].rx_sig, false);
 
     // Set TX pin
