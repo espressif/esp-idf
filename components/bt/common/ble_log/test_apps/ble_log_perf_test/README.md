@@ -28,9 +28,12 @@ Runtime dispatch behavior and latency are covered by the sibling
 - `throughput`: fixed 32B / 64B / 128B / mixed 8-64B payload profiles, each at
   2 Mbps, 20 Mbps, and unlimited link. Runs 3 write_hex writers + LL task + LL
   HCI + compressed writer + 1 kHz ISR writer concurrently.
-- `write_hex cycles`: single writer, no link cap, payload 8/32/64/128 B.
-- `write_hex drop path cycles`: saturated 2 Mbps link, measures the cost of a
-  failed (dropped) write.
+- `write_hex cycles`: single writer, no link cap, payload 8/32/64/128 B. The
+  scheduler remains active during each measured call, followed by an unmeasured
+  one-tick pacing delay so the no-loss profile does not become a saturation test.
+- `write_hex drop path cycles`: saturated 2 Mbps link, measures the backpressure
+  cost of a parked write (wait and wake on transport recycle) without the
+  no-loss pacing delay.
 - `write_hex_ll cycles`: payload 8/32/64/128 B; plus a 32+32 B append case.
 - `compressed write cycles`: workload matrix of the compressed entry points —
   U32 args (0/1/2/mixed), U64 values (full 8B / leading-zero LZ / zero),

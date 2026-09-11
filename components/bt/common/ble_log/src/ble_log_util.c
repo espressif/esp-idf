@@ -25,9 +25,8 @@ BLE_LOG_DRAM_ATTR portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC BLE_LOG_INLINE
 uint32_t ror32(uint32_t word, uint32_t shift)
 {
-    if (unlikely(shift == 0)) {
-        return word;
-    }
+    /* The mask folds shift == 0 into a zero left-shift amount, so the
+     * expression needs no shift == 0 guard. */
     return (word >> shift) | (word << ((32 - shift) & 0x1F));
 }
 
@@ -74,12 +73,12 @@ uint32_t ble_log_fast_checksum(const uint8_t *data, size_t len)
 
 BLE_LOG_IRAM_ATTR
 bool ble_log_ref_count_try_acquire(volatile uint32_t *ref_count,
-                                   const uint32_t *inited)
+                                   const uint32_t *gate)
 {
-    /* The seq_cst increment/check pairs with deinit's seq_cst gate close
-     * before it waits for the reference count. */
+    /* The seq_cst increment/check pairs with a seq_cst gate close before the
+     * owner waits for the reference count. */
     BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(ref_count);
-    if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(*inited)) {
+    if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(*gate)) {
         return true;
     }
     BLE_LOG_REF_COUNT_RELEASE(ref_count);
@@ -97,4 +96,14 @@ bool ble_log_ref_count_wait(volatile uint32_t *ref_count, uint32_t max_ref_count
         vTaskDelay(1);
     }
     return true;
+}
+
+BLE_LOG_IRAM_ATTR
+void ble_log_atomic_update_peak(volatile uint32_t *peak, uint32_t value)
+{
+    uint32_t current = BLE_LOG_ATOMIC_LOAD_RELAXED(*peak);
+    while (value > current &&
+           !__atomic_compare_exchange_n(peak, &current, value, true,
+                                        __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
+    }
 }

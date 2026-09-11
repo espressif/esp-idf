@@ -10,7 +10,7 @@
 #include "unity_test_runner.h"
 
 #include "ble_log.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 #include "test_ble_log_main.h"
 
 bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
@@ -36,7 +36,7 @@ bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
 
         if (observer) {
             test_ble_log_frame_t frame = {
-                .src = head.frame_meta & 0xff,
+                .src = (ble_log_src_t)(head.frame_meta & 0xff),
                 .sn = head.frame_meta >> 8,
                 .payload = data + offset + BLE_LOG_FRAME_HEAD_LEN,
                 .payload_len = head.length,
@@ -50,6 +50,9 @@ bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
 
 void setUp(void)
 {
+    /* Preserve the external test-system contract: every test starts with the
+     * optional sync IO disabled and low. Periodic snapshots remain active. */
+    (void)ble_log_sync_enable(false);
 }
 
 void tearDown(void)

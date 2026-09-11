@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "ble_log.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
 #include "esp_timer.h"
@@ -24,7 +24,6 @@
 
 #define RT_SAMPLE_COUNT             (32)
 #define RT_BURST_SIZE               (4)
-#define RT_TASK_POOL_TRANS_COUNT    ((BLE_LOG_LBM_ATOMIC_TASK_CNT + 1) * BLE_LOG_TRANS_BUF_CNT)
 #define RT_READ_TIMEOUT_MS          (100)
 #define RT_QUIET_TIMEOUT_MS         (10)
 #define RT_QUIET_DRAIN_DEADLINE_MS  (2000)
@@ -37,7 +36,7 @@
 #define RT_CONSUMER_DELAY_MS        (30)
 #define RT_RECEIVE_MAX_LATENCY_US   (10000)
 #define RT_BURST_SPAN_MAX_US        (500)
-#define RT_PEAK_WRITES              (8)
+#define RT_PEAK_WRITES              (BLE_LOG_POOL_SHARED_CNT)
 #define RT_DEINIT_ROUNDS            (200)
 #define RT_JOIN_TIMEOUT_MS          (5000)
 
@@ -51,6 +50,13 @@ typedef struct {
     uint32_t seq;
     uint32_t ts_count;
 } rt_marker_observer_t;
+
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+typedef struct {
+    bool found;
+    uint8_t io_level;
+} rt_snapshot_observer_t;
+#endif
 
 typedef struct {
     SemaphoreHandle_t done;
@@ -100,9 +106,14 @@ static void observe_runtime_marker(const test_ble_log_frame_t *frame, void *ctx)
 {
     rt_marker_observer_t *observer = ctx;
     if (frame->src == BLE_LOG_SRC_INTERNAL &&
-            frame->payload_len > sizeof(uint32_t) &&
-            frame->payload[sizeof(uint32_t)] == BLE_LOG_INT_SRC_TS) {
-        observer->ts_count++;
+            frame->payload_len == sizeof(uint32_t) +
+                                  sizeof(ble_log_internal_snapshot_t)) {
+        ble_log_internal_snapshot_t snapshot;
+        memcpy(&snapshot, frame->payload + sizeof(uint32_t), sizeof(snapshot));
+        if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT &&
+            (snapshot.reason_flags & BLE_LOG_SNAPSHOT_REASON_TS_VALID)) {
+            observer->ts_count++;
+        }
     }
 
     if (frame->src != BLE_LOG_SRC_CUSTOM ||
@@ -117,6 +128,29 @@ static void observe_runtime_marker(const test_ble_log_frame_t *frame, void *ctx)
         observer->seq = marker.seq;
     }
 }
+
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+static void observe_periodic_snapshot(const test_ble_log_frame_t *frame,
+                                      void *ctx)
+{
+    rt_snapshot_observer_t *observer = ctx;
+    if (observer->found || frame->src != BLE_LOG_SRC_INTERNAL ||
+            frame->payload_len != sizeof(uint32_t) +
+                                  sizeof(ble_log_internal_snapshot_t)) {
+        return;
+    }
+
+    ble_log_internal_snapshot_t snapshot;
+    memcpy(&snapshot, frame->payload + sizeof(uint32_t), sizeof(snapshot));
+    uint16_t expected = BLE_LOG_SNAPSHOT_REASON_PERIODIC |
+                        BLE_LOG_SNAPSHOT_REASON_TS_VALID;
+    if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT &&
+            (snapshot.reason_flags & expected) == expected) {
+        observer->found = true;
+        observer->io_level = snapshot.ts.io_level;
+    }
+}
+#endif
 
 static TickType_t runtime_timeout_ticks(uint32_t timeout_ms)
 {
@@ -155,11 +189,12 @@ static bool write_runtime_marker(uint32_t seq, int64_t *enqueued_at_us)
     return true;
 }
 
-static bool read_runtime_marker(uint32_t *seq, uint32_t *ts_count,
-                                int64_t *received_at_us)
+static bool read_runtime_marker_with_timeout(uint32_t *seq, uint32_t *ts_count,
+                                             int64_t *received_at_us,
+                                             uint32_t timeout_ms)
 {
     const int64_t deadline_us = esp_timer_get_time() +
-                                (int64_t)RT_READ_TIMEOUT_MS * 1000;
+                                (int64_t)timeout_ms * 1000;
     uint32_t observed_ts = 0;
 
     while (true) {
@@ -193,6 +228,13 @@ static bool read_runtime_marker(uint32_t *seq, uint32_t *ts_count,
     }
 }
 
+static bool read_runtime_marker(uint32_t *seq, uint32_t *ts_count,
+                                int64_t *received_at_us)
+{
+    return read_runtime_marker_with_timeout(seq, ts_count, received_at_us,
+                                            RT_READ_TIMEOUT_MS);
+}
+
 static bool runtime_stream_is_quiet(void)
 {
     const int64_t drain_deadline_us = esp_timer_get_time() +
@@ -224,6 +266,35 @@ static bool runtime_stream_is_quiet(void)
     }
     return false;
 }
+
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+static bool read_periodic_snapshot(uint8_t *io_level)
+{
+    const int64_t deadline_us = esp_timer_get_time() +
+                                (int64_t)BLE_LOG_TS_TRIGGER_TIMEOUT_US + 1000000;
+    while (true) {
+        TickType_t remaining;
+        if (!runtime_deadline_ticks(deadline_us, &remaining)) {
+            return false;
+        }
+        size_t len = ble_log_prph_test_read(s_capture, sizeof(s_capture),
+                                            remaining, 0, NULL);
+        if (!len) {
+            continue;
+        }
+
+        rt_snapshot_observer_t observer = {0};
+        if (!test_ble_log_walk_frames(s_capture, len,
+                                      observe_periodic_snapshot, &observer)) {
+            return false;
+        }
+        if (observer.found) {
+            *io_level = observer.io_level;
+            return true;
+        }
+    }
+}
+#endif
 
 static void refill_runtime_queue(void *arg)
 {
@@ -275,18 +346,21 @@ static void observe_buf_util(const test_ble_log_frame_t *frame, void *ctx)
 {
     rt_peak_observer_t *observer = ctx;
     if (frame->src != BLE_LOG_SRC_INTERNAL ||
-            frame->payload_len < sizeof(uint32_t) + sizeof(ble_log_buf_util_t) ||
-            frame->payload[sizeof(uint32_t)] != BLE_LOG_INT_SRC_BUF_UTIL) {
+        frame->payload_len != sizeof(uint32_t) +
+                              sizeof(ble_log_internal_snapshot_t)) {
         return;
     }
 
-    ble_log_buf_util_t util;
-    memcpy(&util, frame->payload + sizeof(uint32_t), sizeof(util));
-    observer->buf_util_frames++;
-    if (util.inflight_peak > observer->max_inflight_peak) {
-        observer->max_inflight_peak = util.inflight_peak;
+    ble_log_internal_snapshot_t snapshot;
+    memcpy(&snapshot, frame->payload + sizeof(uint32_t), sizeof(snapshot));
+    if (snapshot.int_src_code != BLE_LOG_INT_SRC_SNAPSHOT) {
+        return;
     }
-    if (util.inflight_peak > util.trans_cnt) {
+    observer->buf_util_frames++;
+    if (snapshot.pool.inflight_peak > observer->max_inflight_peak) {
+        observer->max_inflight_peak = snapshot.pool.inflight_peak;
+    }
+    if (snapshot.pool.inflight_peak > snapshot.pool.trans_cnt) {
         observer->over_limit = true;
     }
 }
@@ -441,7 +515,6 @@ TEST_CASE("BLE Log ISR-only submission arms runtime dispatch",
 #endif
 }
 
-#if CONFIG_BLE_LOG_TS_ENABLED
 TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
           "[ble_log][runtime][timestamp][ignore]")
 {
@@ -474,7 +547,7 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
     TEST_ASSERT_TRUE(ble_log_sync_enable(true));
     for (int i = 0; i < 3; i++) {
-        vTaskDelay(runtime_timeout_ticks(CONFIG_BLE_LOG_TS_TRIGGER_TIMEOUT_MS));
+        vTaskDelay(runtime_timeout_ticks(BLE_LOG_TS_TRIGGER_TIMEOUT_MS));
     }
     TEST_ASSERT_TRUE(ble_log_sync_enable(false));
 
@@ -489,7 +562,65 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
         0, ts_count,
         "Periodic ESP timer did not emit a timestamp frame");
 }
+
+TEST_CASE("BLE Log sync IO control leaves periodic snapshots running",
+          "[ble_log][runtime][timestamp][ignore]")
+{
+#if !CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+    TEST_IGNORE_MESSAGE("Requires BLE Log TS sync IO toggle support");
+#else
+    const uint32_t seq = UINT32_C(0x41000);
+    uint32_t received_seq;
+    uint8_t io_level;
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+
+    TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(false));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+    TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
+                             "No periodic clock snapshot while sync IO was disabled");
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+
+    /* Establish the timer phase above, then park a partial OPEN transport and
+     * close the public producer gate. The next periodic callback must still
+     * flush the transport and emit its Internal Snapshot. */
+    prepare_payload(seq);
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, s_payload,
+                                       sizeof(rt_marker_t)));
+    TEST_ASSERT_TRUE(ble_log_enable(false));
+    bool marker_received = read_runtime_marker_with_timeout(
+        &received_seq, NULL, NULL,
+        BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 1000);
+    bool snapshot_received = read_periodic_snapshot(&io_level);
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+
+    TEST_ASSERT_TRUE_MESSAGE(
+        marker_received,
+        "Producer disable stopped the periodic OPEN transport flush");
+    TEST_ASSERT_EQUAL_UINT32(seq, received_seq);
+    TEST_ASSERT_TRUE_MESSAGE(
+        snapshot_received,
+        "Producer disable stopped periodic Internal Snapshots");
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+    TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(true));
+    bool high_seen = false;
+    for (int i = 0; i < 3 && !high_seen; i++) {
+        TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
+                                 "No periodic snapshot while sync IO was enabled");
+        high_seen = io_level != 0;
+    }
+    TEST_ASSERT_TRUE_MESSAGE(high_seen, "Enabled sync IO never toggled high");
+
+    /* Exercise the compatibility shim on disable. */
+    TEST_ASSERT_TRUE(ble_log_sync_enable(false));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+    TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
+                             "Sync IO disable stopped periodic snapshots");
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
 #endif
+}
 
 TEST_CASE("BLE Log runtime dispatch yields to other timer callbacks",
           "[ble_log][runtime][ignore]")
@@ -654,7 +785,7 @@ TEST_CASE("BLE Log runtime dispatch latency", "[ble_log][runtime][perf][ignore]"
     print_latency_stats("burst_last", RT_BURST_SIZE, s_burst_last_latency_us);
 }
 
-TEST_CASE("BLE Log runtime drains the full task pool in one batch",
+TEST_CASE("BLE Log runtime drains the full shared pool in one batch",
           "[ble_log][runtime][ignore]")
 {
 #if !CONFIG_FREERTOS_UNICORE
@@ -666,8 +797,8 @@ TEST_CASE("BLE Log runtime drains the full task pool in one batch",
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
 
-    /* Flush from this ordinary test task so every task-pool transport is free
-     * before constructing the callback-entry snapshot. */
+    /* Flush from this ordinary test task so every shared-pool transport is
+     * free before constructing the callback-entry snapshot. */
     ble_log_prph_test_set_auto_recycle_hook(noop_callback, NULL);
     ble_log_flush();
     ble_log_prph_test_set_auto_recycle_hook(NULL, NULL);
@@ -678,15 +809,15 @@ TEST_CASE("BLE Log runtime drains the full task pool in one batch",
      * without an artificial item cap. */
     bool wrote = true;
     vTaskSuspendAll();
-    for (uint32_t i = 0; i < RT_TASK_POOL_TRANS_COUNT; i++) {
+    for (uint32_t i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
         prepare_payload(base_seq + i);
         wrote = wrote &&
                 ble_log_write_hex(BLE_LOG_SRC_CUSTOM, s_payload, sizeof(s_payload));
     }
     (void)xTaskResumeAll();
-    TEST_ASSERT_TRUE_MESSAGE(wrote, "Full task-pool enqueue failed");
+    TEST_ASSERT_TRUE_MESSAGE(wrote, "Full shared-pool enqueue failed");
 
-    for (uint32_t i = 0; i < RT_TASK_POOL_TRANS_COUNT; i++) {
+    for (uint32_t i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
         uint32_t received_seq;
         int64_t received_at_us;
         TEST_ASSERT_TRUE_MESSAGE(read_runtime_marker(&received_seq, NULL,
@@ -722,10 +853,20 @@ TEST_CASE("BLE Log LBM inflight peak stays bounded under bursts",
         TEST_ASSERT_TRUE(write_runtime_marker(seq, NULL));
     }
 
-    /* Snapshot the recorded peaks. A full marker forces the partial BUF_UTIL
-     * transport to roll over through the normal LBM submission path. */
-    ble_log_write_buf_util();
-    TEST_ASSERT_TRUE(write_runtime_marker(UINT32_C(0x81000), NULL));
+    /* Recycle the burst after its peak has been recorded. A periodic tick may
+     * also have occupied the dedicated Internal transport, so drain twice. */
+    for (int round = 0; round < 2; round++) {
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_capture, sizeof(s_capture),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+
+    /* Snapshot the retained peak through the dedicated Internal transport. */
+    ble_log_ts_info_t ts_info;
+    ble_log_rt_ts_sample(&ts_info, false);
+    TEST_ASSERT_TRUE(ble_log_internal_snapshot(
+        BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, true));
     TEST_ASSERT_TRUE(ble_log_rt_drain());
 
     const int64_t deadline_us = esp_timer_get_time() +
@@ -747,7 +888,7 @@ TEST_CASE("BLE Log LBM inflight peak stays bounded under bursts",
 
     TEST_ASSERT_GREATER_THAN_UINT32_MESSAGE(
         0, observer.buf_util_frames,
-        "No BUF_UTIL snapshots observed after flush");
+        "No Internal utilization snapshot observed");
     TEST_ASSERT_FALSE_MESSAGE(observer.over_limit,
                               "inflight_peak exceeded the LBM transport count");
     TEST_ASSERT_GREATER_THAN_UINT32_MESSAGE(
@@ -763,6 +904,7 @@ TEST_CASE("BLE Log runtime survives deinit racing submissions",
           "[ble_log][runtime][ignore]")
 {
     rt_deinit_writer_ctx_t *ctx = &s_deinit_race;
+    TaskHandle_t writer_task = NULL;
     bool reinit_ok = true;
     memset(ctx, 0, sizeof(*ctx));
     prepare_payload(UINT32_C(0x70000));
@@ -770,13 +912,14 @@ TEST_CASE("BLE Log runtime survives deinit racing submissions",
 #if CONFIG_FREERTOS_UNICORE
     BaseType_t task_created = xTaskCreate(
         deinit_writer_task, "ble_log_deinit_wr", 4096, ctx,
-        uxTaskPriorityGet(NULL), NULL);
+        uxTaskPriorityGet(NULL), &writer_task);
 #else
     /* Pin the writer away from this core so submissions run concurrently
      * with deinit instead of alternating at yield points. */
     BaseType_t task_created = xTaskCreatePinnedToCore(
         deinit_writer_task, "ble_log_deinit_wr", 4096, ctx,
-        uxTaskPriorityGet(NULL), NULL, (xPortGetCoreID() == 0) ? 1 : 0);
+        uxTaskPriorityGet(NULL), &writer_task,
+        (xPortGetCoreID() == 0) ? 1 : 0);
 #endif
     TEST_ASSERT_EQUAL_MESSAGE(pdPASS, task_created, "Writer task create failed");
 
@@ -786,9 +929,16 @@ TEST_CASE("BLE Log runtime survives deinit racing submissions",
         taskYIELD();
     }
 
-    /* Stop the writer and join with a bound before touching ctx or asserting:
-     * a unity longjmp past a live writer would leave it on a dead stack. */
+    /* Stop the writer and join with a bound before asserting so a Unity
+     * longjmp cannot leak the writer into later tests. */
     __atomic_store_n(&ctx->stop, true, __ATOMIC_RELEASE);
+    /* A writer parked inside ble_log_claim() cannot observe stop: only the
+     * deinit waiter wake returns it. Deinit here, before the join, so its
+     * drain closes the producer gate, wakes any parked writer and waits
+     * for it to leave the pool API. The vTaskDelete fallback below can
+     * then never cut a task down inside pool bookkeeping (which would
+     * leak waiting_task_count and hang the recovery deinit). */
+    ble_log_deinit();
     const int64_t join_deadline_us = esp_timer_get_time() +
                                      (int64_t)RT_JOIN_TIMEOUT_MS * 1000;
     while (!__atomic_load_n(&ctx->exited, __ATOMIC_ACQUIRE)) {
@@ -799,16 +949,20 @@ TEST_CASE("BLE Log runtime survives deinit racing submissions",
         vTaskDelay(join_ticks);
     }
 
+    bool writer_exited = __atomic_load_n(&ctx->exited, __ATOMIC_ACQUIRE);
+    if (!writer_exited && writer_task) {
+        vTaskDelete(writer_task);
+    }
+
     /* Recover module state before any assertion can abort the test: a
      * failed re-init leaves the module deinit-ed and tearDown does not
-     * restore it, which would cascade into every later test. */
-    ble_log_deinit();
+     * restore it, which would cascade into every later test. Deinit ran
+     * before the join (see above); only the init half remains. */
     bool recovered = ble_log_init();
     reinit_ok = reinit_ok && recovered;
 
-    TEST_ASSERT_TRUE_MESSAGE(
-        __atomic_load_n(&ctx->exited, __ATOMIC_ACQUIRE),
-        "Writer task did not exit after stop");
+    TEST_ASSERT_TRUE_MESSAGE(writer_exited,
+                             "Writer task did not exit after stop");
     TEST_ASSERT_TRUE_MESSAGE(reinit_ok, "BLE Log re-init failed during the race");
     TEST_ASSERT_GREATER_THAN_UINT32_MESSAGE(
         RT_DEINIT_ROUNDS, ctx->attempts,

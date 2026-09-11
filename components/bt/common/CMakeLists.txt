@@ -170,8 +170,10 @@ list(APPEND bt_common_priv_include_dirs
 if(CONFIG_BLE_LOG_ENABLED)
     list(APPEND bt_common_srcs
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log.c"
-        "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_lbm.c"
+        "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_lbm_v2.c"
+        "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_redir.c"
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_rt.c"
+        "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_task_registry.c"
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_util.c"
     )
 
@@ -183,11 +185,6 @@ if(CONFIG_BLE_LOG_ENABLED)
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/internal_include"
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/internal_include/prph"
     )
-
-    # Timestamp synchronization extension
-    if(CONFIG_BLE_LOG_TS_ENABLED)
-        list(APPEND bt_common_srcs "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_ts.c")
-    endif()
 
     # Peripheral interface implementation
     if(CONFIG_BLE_LOG_PRPH_DUMMY)

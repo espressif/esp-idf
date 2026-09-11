@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "ble_log.h"
-#include "ble_log_lbm.h"
+#include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "log_compression/utils.h"
 #include "esp_cpu.h"
@@ -125,7 +125,7 @@ typedef struct {
     uint32_t ll_flag;          /* UINT32_MAX: use ble_log_write_hex */
     bool compressed;           /* call ble_log_compressed_hex_print instead */
     bool record_cycles;
-    bool isolate_write;        /* vTaskSuspendAll around the timed write */
+    bool pace_after_write;     /* one tick outside a no-loss timed call */
     const uint8_t *ll_append;  /* write_hex_ll append part */
     size_t ll_append_len;
     const perf_compress_cfg_t *compress_cfg;
@@ -174,7 +174,6 @@ typedef struct {
     bool compress;
     bool isr;
     bool measure_cycles;
-    bool isolate_write;
     bool expect_no_loss;
     const uint8_t *ll_append;
     size_t ll_append_len;
@@ -316,8 +315,7 @@ static void print_run_separator(const char *tag, const perf_run_cfg_t *cfg)
            tag, (unsigned)cfg->run_idx, (unsigned)cfg->run_total,
            cfg->mode_name, cfg->profile_name);
     print_link(cfg->bytes_per_second);
-    printf(" isolate=%s ============\n",
-           cfg->isolate_write ? "sched" : "none");
+    printf(" isolate=none ============\n");
 }
 
 /* ---------------- */
@@ -349,9 +347,6 @@ static void perf_writer_task(void *arg)
         size_t payload_len = w->profile[frame_index % w->profile_count];
         memcpy(payload, &frame_index, sizeof(frame_index));
 
-        if (w->isolate_write) {
-            vTaskSuspendAll();
-        }
         uint32_t start_cycles = w->record_cycles ? esp_cpu_get_cycle_count() : 0;
 
         bool ok;
@@ -427,9 +422,6 @@ static void perf_writer_task(void *arg)
         if (w->record_cycles) {
             write_cycles = esp_cpu_get_cycle_count() - start_cycles;
         }
-        if (w->isolate_write) {
-            xTaskResumeAll();
-        }
 
         if (ok) {
             w->cycles->ok_frames++;
@@ -443,7 +435,14 @@ static void perf_writer_task(void *arg)
             }
         }
         frame_index++;
-        taskYIELD();
+        if (w->pace_after_write) {
+            /* Cycle profiles measure one production-semantics call, then
+             * yield enough time for deferred dispatch and sink recycling.
+             * Throughput and explicit drop profiles remain unpaced. */
+            vTaskDelay(1);
+        } else {
+            taskYIELD();
+        }
     }
 
     xSemaphoreGive(w->done);
@@ -485,21 +484,26 @@ static void observe_perf_frame(const test_ble_log_frame_t *frame, void *ctx)
         sink->frames_by_src[frame->src]++;
     }
 
-    /* Capture enhanced statistics records (written/lost per source).
-     * Frames carry a 4-byte os_timestamp prefix before the record. */
     if (frame->src == BLE_LOG_SRC_INTERNAL &&
-            frame->payload_len == sizeof(uint32_t) + sizeof(ble_log_enh_stat_t) &&
-            frame->payload[sizeof(uint32_t)] == BLE_LOG_INT_SRC_ENH_STAT) {
-        ble_log_enh_stat_t stat;
-        memcpy(&stat, frame->payload + sizeof(uint32_t), sizeof(stat));
-        if (stat.src_code < BLE_LOG_SRC_MAX) {
-            sink->stat_written[stat.src_code] = stat.written_frame_cnt;
-            sink->stat_lost[stat.src_code] = stat.lost_frame_cnt;
+        frame->payload_len == sizeof(uint32_t) +
+                              sizeof(ble_log_internal_snapshot_t)) {
+        ble_log_internal_snapshot_t snapshot;
+        memcpy(&snapshot, frame->payload + sizeof(uint32_t), sizeof(snapshot));
+        if (snapshot.int_src_code != BLE_LOG_INT_SRC_SNAPSHOT) {
+            return;
         }
-    } else if (frame->src == BLE_LOG_SRC_INTERNAL &&
-            frame->payload_len == sizeof(uint32_t) + sizeof(ble_log_final_stat_t) &&
-            frame->payload[sizeof(uint32_t)] == BLE_LOG_INT_SRC_FINAL_STAT) {
-        sink->stat_final_seen = true;
+        /* Latch the final counters only from the FLUSH snapshot: periodic
+         * snapshots keep arriving after it and carry interval counters
+         * that the flush reset; letting them through would overwrite the
+         * final result the run report and assertions rely on. */
+        if (snapshot.reason_flags & BLE_LOG_SNAPSHOT_REASON_FLUSH) {
+            for (int i = 0; i < BLE_LOG_SRC_CORE_COUNT; i++) {
+                int src = BLE_LOG_SRC_CORE_FIRST + i;
+                sink->stat_written[src] = snapshot.stats[i].written_frame_cnt;
+                sink->stat_lost[src] = snapshot.stats[i].lost_frame_cnt;
+            }
+            sink->stat_final_seen = true;
+        }
     }
 }
 
@@ -541,7 +545,7 @@ static void fill_writer(perf_writer_t *w, const char *name, ble_log_src_t src,
     w->ll_flag = ll_flag;
     w->compressed = compressed;
     w->record_cycles = cfg->measure_cycles;
-    w->isolate_write = cfg->isolate_write;
+    w->pace_after_write = cfg->measure_cycles && cfg->expect_no_loss;
     w->ll_append = cfg->ll_append;
     w->ll_append_len = cfg->ll_append_len;
     w->compress_cfg = cfg->compress_cfg;
@@ -651,8 +655,8 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
     }
 
     if (ll_hci) {
-        fill_writer(&writers[writer_count], "write_hex_ll_hci", BLE_LOG_SRC_LL_HCI,
-                    BIT(BLE_LOG_LL_FLAG_HCI), false, cfg, &ll_hci_cycles, start);
+        fill_writer(&writers[writer_count], "write_hex_hci", BLE_LOG_SRC_HCI,
+                    UINT32_MAX, false, cfg, &ll_hci_cycles, start);
         TEST_ASSERT_EQUAL(pdPASS,
                           xTaskCreatePinnedToCore(perf_writer_task, "perf_hci",
                                                   PERF_WRITER_STACK_SIZE,
@@ -744,6 +748,8 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
     }
     sink.stop = true;
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sink.done, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_TRUE_MESSAGE(sink.stat_final_seen,
+                             "Final statistics snapshot was not received");
 
     uint8_t discard[BLE_LOG_TRANS_SIZE];
     while (ble_log_prph_test_read(discard, sizeof(discard), 0, 0, NULL)) {
@@ -753,12 +759,12 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
     printf("BLE_LOG_PERF mode=%s profile=%s payload=%uB ",
            cfg->mode_name, cfg->profile_name, cfg->profile[0]);
     print_link(cfg->bytes_per_second);
-    printf(" isolate=%s duration=%" PRIu64 " ms\n",
-           cfg->isolate_write ? "sched" : "none", elapsed_us / 1000);
+    printf(" isolate=none duration=%" PRIu64 " ms\n", elapsed_us / 1000);
     printf("BLE_LOG_PERF flush=%" PRIu32 " cycles\n", flush_cycles);
 
     uint64_t ok_total = 0;
     uint64_t failed_total = 0;
+    uint64_t custom_failed_total = 0;
     for (i = 0; i < cfg->custom_writer_count; i++) {
         char name[32];
         snprintf(name, sizeof(name), "write_hex%" PRIu32, i);
@@ -769,6 +775,7 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
         }
         ok_total += custom_cycles[i].ok_frames;
         failed_total += custom_cycles[i].failed_frames;
+        custom_failed_total += custom_cycles[i].failed_frames;
     }
 #if CONFIG_BLE_LOG_LL_ENABLED
     if (ll_task) {
@@ -782,9 +789,9 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
     }
     if (ll_hci) {
         if (cfg->measure_cycles) {
-            print_cycles("write_hex_ll_hci", &ll_hci_cycles, true);
+            print_cycles("write_hex_hci", &ll_hci_cycles, false);
         } else {
-            print_writer_counts("write_hex_ll_hci", &ll_hci_cycles);
+            print_writer_counts("write_hex_hci", &ll_hci_cycles);
         }
         ok_total += ll_hci_cycles.ok_frames;
         failed_total += ll_hci_cycles.failed_frames;
@@ -827,10 +834,12 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
         }
     }
 #endif
+    uint64_t ll_frames = sink.frames_by_src[BLE_LOG_SRC_LL_TASK] +
+                         sink.frames_by_src[BLE_LOG_SRC_LL_HCI] +
+                         sink.frames_by_src[BLE_LOG_SRC_LL_ISR];
     uint64_t sink_frames = sink.frames_by_src[BLE_LOG_SRC_CUSTOM] +
-                           sink.frames_by_src[BLE_LOG_SRC_LL_TASK] +
-                           sink.frames_by_src[BLE_LOG_SRC_LL_HCI] +
-                           sink.frames_by_src[BLE_LOG_SRC_LL_ISR] +
+                           ll_frames +
+                           sink.frames_by_src[BLE_LOG_SRC_HCI] +
                            sink.frames_by_src[BLE_LOG_SRC_ENCODE];
     printf("BLE_LOG_PERF total ok=%" PRIu64 " failed=%" PRIu64
            " sink_frames=%" PRIu64 " sink_bytes=%" PRIu64
@@ -840,19 +849,21 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
     if (!cfg->measure_cycles) {
         print_throughput(sink.transport_bytes, elapsed_us, cfg->bytes_per_second);
     }
-    printf("BLE_LOG_PERF stat written=[custom=%" PRIu64 " ll_task=%" PRIu64
-           " ll_hci=%" PRIu64 " ll_isr=%" PRIu64 " encode=%" PRIu64
-           "] lost=[custom=%" PRIu64 " ll_task=%" PRIu64 " ll_hci=%" PRIu64
-           " ll_isr=%" PRIu64 " encode=%" PRIu64 "]\n",
+    printf("BLE_LOG_PERF stat written=[custom=%" PRIu64 " ll=%" PRIu64
+           " hci=%" PRIu64 " encode=%" PRIu64
+           "] lost=[custom=%" PRIu64 " ll=%" PRIu64
+           " hci=%" PRIu64 " encode=%" PRIu64 "]\n",
            sink.stat_written[BLE_LOG_SRC_CUSTOM],
-           sink.stat_written[BLE_LOG_SRC_LL_TASK],
-           sink.stat_written[BLE_LOG_SRC_LL_HCI],
+           sink.stat_written[BLE_LOG_SRC_LL_TASK] +
+           sink.stat_written[BLE_LOG_SRC_LL_HCI] +
            sink.stat_written[BLE_LOG_SRC_LL_ISR],
+           sink.stat_written[BLE_LOG_SRC_HCI],
            sink.stat_written[BLE_LOG_SRC_ENCODE],
            sink.stat_lost[BLE_LOG_SRC_CUSTOM],
-           sink.stat_lost[BLE_LOG_SRC_LL_TASK],
-           sink.stat_lost[BLE_LOG_SRC_LL_HCI],
+           sink.stat_lost[BLE_LOG_SRC_LL_TASK] +
+           sink.stat_lost[BLE_LOG_SRC_LL_HCI] +
            sink.stat_lost[BLE_LOG_SRC_LL_ISR],
+           sink.stat_lost[BLE_LOG_SRC_HCI],
            sink.stat_lost[BLE_LOG_SRC_ENCODE]);
 
     print_run_separator("END", cfg);
@@ -862,13 +873,19 @@ static void run_perf_case(const perf_run_cfg_t *cfg)
     TEST_ASSERT_GREATER_THAN_UINT64(0, ok_total);
     if (cfg->expect_no_loss) {
         TEST_ASSERT_EQUAL_UINT64(0, failed_total);
-        TEST_ASSERT_EQUAL_UINT64(0, sink.stat_lost[BLE_LOG_SRC_CUSTOM]);
-        TEST_ASSERT_EQUAL_UINT64(0, sink.stat_lost[BLE_LOG_SRC_LL_TASK]);
-        TEST_ASSERT_EQUAL_UINT64(0, sink.stat_lost[BLE_LOG_SRC_LL_HCI]);
-        TEST_ASSERT_EQUAL_UINT64(0, sink.stat_lost[BLE_LOG_SRC_LL_ISR]);
-        TEST_ASSERT_EQUAL_UINT64(0, sink.stat_lost[BLE_LOG_SRC_ENCODE]);
+        for (int i = 0; i < BLE_LOG_SRC_CORE_COUNT; i++) {
+            TEST_ASSERT_EQUAL_UINT64(0,
+                sink.stat_lost[BLE_LOG_SRC_CORE_FIRST + i]);
+        }
     } else if (sink.stat_final_seen) {
-        TEST_ASSERT_EQUAL_UINT64(failed_total, sink.stat_lost[BLE_LOG_SRC_CUSTOM]);
+        TEST_ASSERT_EQUAL_UINT64(custom_failed_total,
+                                 sink.stat_lost[BLE_LOG_SRC_CUSTOM]);
+#if CONFIG_BLE_LOG_LL_ENABLED
+        if (ll_hci) {
+            TEST_ASSERT_EQUAL_UINT64(ll_hci_cycles.failed_frames,
+                                     sink.stat_lost[BLE_LOG_SRC_HCI]);
+        }
+#endif
 #if CONFIG_BLE_COMPRESSED_LOG_ENABLE
         if (compress) {
             /* Every hex_print call reaches write_hex(ENCODE) exactly once;
@@ -934,7 +951,6 @@ static void run_cycle_case(const char *name, const uint16_t *profile, size_t cou
         .ll_hci = ll_hci,
         .compress = compress_cfg != NULL,
         .measure_cycles = true,
-        .isolate_write = true,
         .expect_no_loss = true,
         .compress_cfg = compress_cfg,
     };
@@ -968,8 +984,9 @@ TEST_CASE("BLE Log write_hex cycles (single writer, link=0)", "[ble_log][perf][c
     }
 }
 
-/* Saturated link: most writes fail. Measures the drop-path cost and
- * cross-checks client failed counts against the LBM's lost counters. */
+/* Saturated link: yieldable writers park on backpressure instead of dropping;
+ * measures the park/wake cost and cross-checks client failed counts against
+ * the LBM's lost counters. */
 TEST_CASE("BLE Log write_hex drop path cycles (link=2Mbps)", "[ble_log][perf][cycle][ignore]")
 {
     perf_run_cfg_t cfg = {
@@ -982,7 +999,6 @@ TEST_CASE("BLE Log write_hex drop path cycles (link=2Mbps)", "[ble_log][perf][cy
         .bytes_per_second = PERF_LINK_2MBPS_BPS,
         .custom_writer_count = 1,
         .measure_cycles = true,
-        .isolate_write = true,
     };
     run_perf_case(&cfg);
 }
@@ -1011,7 +1027,6 @@ TEST_CASE("BLE Log write_hex_ll append cycles (32+32B)", "[ble_log][perf][cycle]
         .custom_writer_count = 0,
         .ll_task = true,
         .measure_cycles = true,
-        .isolate_write = true,
         .expect_no_loss = true,
         .ll_append = append_buf,
         .ll_append_len = 32,
@@ -1021,6 +1036,88 @@ TEST_CASE("BLE Log write_hex_ll append cycles (32+32B)", "[ble_log][perf][cycle]
 #endif
 
 #if CONFIG_BLE_COMPRESSED_LOG_ENABLE
+/* ---------------------- */
+/*  Attribution cycles    */
+/* ---------------------- */
+
+/* Compressed records attribute every record to their writer task by
+ * normalizing the FreeRTOS task name to NUL-padded words and scanning
+ * the registry. A hand-rolled copy (no libc calls) was measured on
+ * ESP32-H2 at -Og against this libc version: the two trade places
+ * across name lengths (inline wins ~31 cycles on 3-char names, loses
+ * ~31 on full 16-char names, ties in between) against ~1.6k cycles per
+ * compressed record - no variant is meaningfully faster. The module
+ * keeps the libc version because it is three lines; this case records
+ * the numbers so the decision does not get re-litigated blind. */
+#define NORM_WORDS     4    /* BLE_CP_TASK_NAME_WORDS, private to the module */
+#define NORM_LEN       (NORM_WORDS * sizeof(uint32_t))
+#define NORM_ROUNDS    5
+#define NORM_ITERS     20000
+
+typedef void (*norm_fn_t)(const char *name, uint32_t w[NORM_WORDS]);
+
+static void norm_libc(const char *name, uint32_t w[NORM_WORDS])
+{
+    memset(w, 0, NORM_LEN);
+    memcpy(w, name, strnlen(name, NORM_LEN));
+}
+
+static void norm_inline(const char *name, uint32_t w[NORM_WORDS])
+{
+    for (unsigned i = 0; i < NORM_WORDS; i++) {
+        uint32_t v = 0;
+        for (unsigned b = 0; b < sizeof(uint32_t); b++) {
+            uint8_t c = (uint8_t)*name;
+            if (c == '\0') {
+                break;
+            }
+            v |= (uint32_t)c << (8 * b);
+            name++;
+        }
+        w[i] = v;
+    }
+}
+
+static volatile uint32_t s_norm_sink;
+
+static uint32_t norm_bench_once(norm_fn_t fn, const char *name)
+{
+    uint32_t sink = 0;
+    uint32_t start = esp_cpu_get_cycle_count();
+    for (uint32_t i = 0; i < NORM_ITERS; i++) {
+        uint32_t w[NORM_WORDS];
+        fn(name, w);
+        sink ^= w[0] ^ w[1] ^ w[2] ^ w[3];
+    }
+    s_norm_sink = sink; /* the copies must stay live */
+    return (esp_cpu_get_cycle_count() - start) / NORM_ITERS;
+}
+
+TEST_CASE("BLE Log task-name normalization cycles", "[ble_log][perf][cycle][ignore]")
+{
+    static const char *const names[] = {"BTU", "NIMBLE_HOST", "0123456789ABCDEF"};
+    for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        /* both variants must agree on every shape before timing them */
+        uint32_t wa[NORM_WORDS], wb[NORM_WORDS];
+        norm_libc(names[i], wa);
+        norm_inline(names[i], wb);
+        TEST_ASSERT_EQUAL_UINT32_ARRAY(wa, wb, NORM_WORDS);
+
+        uint32_t best_libc = UINT32_MAX;
+        uint32_t best_inline = UINT32_MAX;
+        for (int r = 0; r < NORM_ROUNDS; r++) { /* interleaved rounds */
+            uint32_t a = norm_bench_once(norm_libc, names[i]);
+            uint32_t b = norm_bench_once(norm_inline, names[i]);
+            best_libc = a < best_libc ? a : best_libc;
+            best_inline = b < best_inline ? b : best_inline;
+        }
+        printf("BLE_LOG_PERF norm name=%-16s libc=%4" PRIu32 " inline=%4" PRIu32
+               " delta=%+" PRId32 " cycles/call\n",
+               names[i], best_libc, best_inline,
+               (int32_t)best_libc - (int32_t)best_inline);
+    }
+}
+
 /* Compressed records are log_index + 0..2 U32 args, not a raw payload
  * length. One case per arg count splits encode vs downstream write_hex
  * cost for each workload shape. */

@@ -286,3 +286,7 @@ CONFIG_BT_NIMBLE_HCI_EVT_LO_BUF_COUNT                       CONFIG_BT_NIMBLE_TRA
 
 CONFIG_BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN               CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
 CONFIG_BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS              CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
+
+# BLE Log: periodic Internal Snapshots are always enabled now; the legacy
+# TS switch only gates the analyzer toggle IO.
+CONFIG_BLE_LOG_TS_ENABLED                                   CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED

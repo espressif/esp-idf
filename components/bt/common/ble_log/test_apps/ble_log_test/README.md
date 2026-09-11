@@ -7,12 +7,16 @@
 | Supported Targets |
 | ----------------- |
 
-This test app verifies the BLE Log runtime behaviour on target, using the
-in-memory test peripheral (`CONFIG_BLE_LOG_PRPH_TEST=y`) to capture the
-transport stream written by the runtime dispatch hook.
+This app uses the in-memory test peripheral (`CONFIG_BLE_LOG_PRPH_TEST=y`) to
+validate the BLE Log transport on target.
 
-Currently covered:
+It covers:
 
-- `BLE_LOG_INT_SRC_VERSION_INFO` frame: BLE Log version, ESP-IDF build commit,
-  controller lib commit, btdm_common lib commit, BLE Mesh and BLE Audio lib
-  commits, chip model and chip revision
+- literal protocol-v8 framing and fixed Internal Snapshot ABI;
+- build, library, chip, and protocol versions inside the snapshot;
+- task and critical-section writes plus HCI direction encoding;
+- direct compression claim/commit, stale handles, and per-source serialization;
+- oversized-record rejection, flush sequence continuity, pool exhaustion, and non-yield reserve use;
+- shared log/snapshot Global SN, independent 24-bit anchor counts, and snapshot busy/loss behavior;
+- successful logical-byte counts for public, claim/commit, and LL writes, plus FLUSH reset;
+- enable, disable, parked-writer, and deinit races.

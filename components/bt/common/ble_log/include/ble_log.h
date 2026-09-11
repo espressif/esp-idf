@@ -20,6 +20,8 @@
  * The number of BLE Log source code will directly determine the number of statistic manager
  * memory requirements, keep it as less as possible; it's recommended to use subcode for more
  * log data structure decoding */
+/* CRITICAL: this enum is a public ABI and must not be reordered or renamed.
+ * Its values are the base on-wire source IDs of protocol v8 frames. */
 typedef enum {
     /* Internal */
     BLE_LOG_SRC_INTERNAL = 0,
@@ -45,30 +47,45 @@ typedef enum {
 #define BLE_LOG_HCI_DOWNSTREAM  0
 #define BLE_LOG_HCI_UPSTREAM    1
 
-/* HCI Log Write Macro
- * Encodes direction in MSB of data[0] (HCI type byte) before writing.
- * Safe because ble_log_write_hex -> ble_log_lbm_write_trans does synchronous memcpy.
- * Parser reads MSB to determine direction; old firmware with MSB=0 defaults to "sent". */
-#define ble_log_write_hci(direction, data, len) do {    \
-    (data)[0] |= ((direction) << 7);                   \
-    ble_log_write_hex(BLE_LOG_SRC_HCI, (data), (len)); \
-    (data)[0] &= 0x7F;                                 \
+/* Encodes HCI direction in payload byte 0 bit 7 for the synchronous copy,
+ * then restores the complete original HCI type byte. The caller guarantees a
+ * non-NULL buffer with len > 0. */
+#define ble_log_write_hci(direction, data, len) do {                  \
+    uint8_t *const ble_log_hci_data__ = (data);                       \
+    const uint8_t ble_log_hci_type__ = ble_log_hci_data__[0];         \
+    ble_log_hci_data__[0] = (ble_log_hci_type__ & 0x7fU) |            \
+                            ((direction) ? 0x80U : 0U);               \
+    (void)ble_log_write_hex(BLE_LOG_SRC_HCI, ble_log_hci_data__,      \
+                            (len));                                   \
+    ble_log_hci_data__[0] = ble_log_hci_type__;                       \
 } while (0)
 
 /* INTERFACE */
 bool ble_log_init(void);
 void ble_log_deinit(void);
+/* Controls public producers only; periodic system output remains active. */
 bool ble_log_enable(bool enable);
 /* Blocking; call only from a caller-owned task, not an ISR or system callback. */
 void ble_log_flush(void);
+/* Waits for a shared transport in ordinary yieldable tasks. The shared ESP
+ * Timer task, ISR and critical-section callers fail fast when none is available. */
 bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len);
+/* Same backpressure as ble_log_write_hex(): ordinary yieldable tasks wait
+ * when wait_for_transport is true; false opts out. The shared ESP Timer
+ * task and non-yieldable contexts fail fast regardless of this flag. */
+uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
+                       uint32_t *handle, bool wait_for_transport);
+void ble_log_commit(uint32_t handle, size_t actual_len);
 void ble_log_dump_to_console(void);
 #if CONFIG_BLE_LOG_LL_ENABLED
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
                           uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
 #endif /* CONFIG_BLE_LOG_LL_ENABLED */
-#if CONFIG_BLE_LOG_TS_ENABLED
+/* Task-context only. Controls the optional TS sync IO toggle, which starts
+ * disabled and low; this is a lifecycle-checked no-op when the toggle is not
+ * built. Periodic Internal Snapshots remain active in either state. */
+bool ble_log_ts_sync_io_toggle_enable(bool enable);
+/* Backward-compatible name for ble_log_ts_sync_io_toggle_enable(). */
 bool ble_log_sync_enable(bool enable);
-#endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 #endif /* __BLE_LOG_H__ */

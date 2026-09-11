@@ -27,9 +27,11 @@
 #define BLE_LOG_ATOMIC_LOAD_RELAXED(VAR)         __atomic_load_n(&(VAR), __ATOMIC_RELAXED)
 #define BLE_LOG_ATOMIC_STORE_RELEASE(VAR, VALUE) __atomic_store_n(&(VAR), (VALUE), __ATOMIC_RELEASE)
 #define BLE_LOG_ATOMIC_STORE_RELAXED(VAR, VALUE) __atomic_store_n(&(VAR), (VALUE), __ATOMIC_RELAXED)
+#define BLE_LOG_ATOMIC_ADD_RELAXED(VAR, VALUE)   __atomic_fetch_add(&(VAR), (VALUE), __ATOMIC_RELAXED)
+
+typedef uint32_t ble_log_atomic_lock_t;
 
 /* Reference counting macros */
-#define BLE_LOG_REF_COUNT_ACQUIRE(VAR)          __atomic_fetch_add(VAR, 1, __ATOMIC_ACQUIRE)
 #define BLE_LOG_REF_COUNT_RELEASE(VAR)          __atomic_fetch_sub(VAR, 1, __ATOMIC_RELEASE)
 /* Closing gate: pairs an inited-flag store with a reference-count load (and
  * vice versa) at seq_cst so deinit and a submitter cannot both observe the
@@ -76,22 +78,14 @@ extern void esp_panic_handler_feed_wdts(void);
 #define BLE_LOG_FEED_WDT()                      esp_panic_handler_feed_wdts()
 
 /* INLINE */
-BLE_LOG_IRAM_ATTR static inline
-bool ble_log_cas_acquire(volatile bool *cas_lock)
-{
-    bool expected = false;
-    return __atomic_compare_exchange_n(
-        cas_lock, &expected, true, false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED
-    );
-}
+/* Compare-and-swap lock as macros: single-instruction acquire/release used
+ * from several IRAM sites; a function would add an IRAM call site each. */
+#define BLE_LOG_CAS_ACQUIRE(cas_lock) \
+    (__atomic_exchange_n((cas_lock), 1, __ATOMIC_ACQUIRE) == 0)
+#define BLE_LOG_CAS_RELEASE(cas_lock) \
+    __atomic_store_n((cas_lock), 0, __ATOMIC_RELEASE)
 
-BLE_LOG_IRAM_ATTR static inline
-void ble_log_cas_release(volatile bool *cas_lock)
-{
-    __atomic_store_n(cas_lock, false, __ATOMIC_RELEASE);
-}
-
-#define BLE_LOG_VERSION                         (6)
+#define BLE_LOG_VERSION                         (8)
 #define BLE_LOG_IDF_COMMIT_LEN                  (12)
 /* Lib commit hashes are at most 10 hex chars; zero-padded when shorter */
 #define BLE_LOG_LIB_COMMIT_LEN                  (10)
@@ -106,6 +100,10 @@ typedef enum {
     BLE_LOG_INT_SRC_BUF_UTIL,
     BLE_LOG_INT_SRC_FINAL_STAT,
     BLE_LOG_INT_SRC_VERSION_INFO,
+    BLE_LOG_INT_SRC_SNAPSHOT,
+    /* protocol v8: periodic task-id binding broadcast; its frames carry a
+     * sequence of their own (a gap counts a skipped broadcast window). */
+    BLE_LOG_INT_SRC_TASK_BINDING,
     BLE_LOG_INT_SRC_MAX,
 } ble_log_int_src_t;
 
@@ -131,9 +129,14 @@ uint32_t ble_log_fast_checksum(const uint8_t *data, size_t len);
 
 /* Acquire a lifetime reference only while the closing gate remains open. */
 bool ble_log_ref_count_try_acquire(volatile uint32_t *ref_count,
-                                   const uint32_t *inited);
+                                   const uint32_t *gate);
 
 /* Task-context wait; returns false if the count stays above max for one second. */
 bool ble_log_ref_count_wait(volatile uint32_t *ref_count, uint32_t max_ref_count);
+
+/* Monotonic-peak publish: stores value into *peak only when it exceeds the
+ * current peak. Relaxed atomics are enough - a lost race can only leave the
+ * recorded peak below a transient maximum, and peaks are diagnostics. */
+void ble_log_atomic_update_peak(volatile uint32_t *peak, uint32_t value);
 
 #endif /* __BLE_LOG_UTIL_H__ */

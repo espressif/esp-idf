@@ -1,55 +1,57 @@
 config BLE_LOG_ENABLED
     bool "Enable BT Log Async Output (Dev Only)"
     select BLE_COMPRESSED_LOG_ENABLE
-    select BLE_HOST_COMPRESSED_LOG_ENABLE if BT_BLUEDROID_ENABLED
+    select BLE_HOST_COMPRESSED_LOG_ENABLE if BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED
     select ESP_TIMER_IN_IRAM
     default n
     help
         Enable BT Log Async Output
 
 if BLE_LOG_ENABLED
-    config BLE_LOG_LBM_AUTO_FLUSH
-        bool "Enable automatic BLE Log LBM buffer flush"
-        default n
+    config BLE_LOG_POOL_TRANS_CNT
+        int "Number of transport buffers in the unified pool"
+        range 2 32
+        default 8
         help
-            Periodically flush partially-filled BLE Log LBM transport buffers
-            that remain pending, reducing latency for low-volume or
-            intermittent logging.
+            Total number of transports shared by ordinary, Link Layer, ISR,
+            and critical-section log writers. Availability is represented by
+            32-bit bitmaps, so the maximum is 32.
 
-    config BLE_LOG_LBM_TRANS_BUF_SIZE
-        int "Total buffer memory per common LBM (bytes)"
-        default 2048
-        help
-            Total buffer memory allocated for each common pool log buffer
-            manager (LBM). This memory is divided equally among internal
-            transport buffers. Must be a multiple of BLE_LOG_TRANS_BUF_CNT
-            (currently 4).
-
-            The common pool contains:
-            - BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT atomic LBMs (task context)
-            - BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT atomic LBMs (ISR context)
-            - 2 spinlock-protected LBMs (one for task, one for ISR fallback)
-
-            Total common pool memory:
-            (ATOMIC_TASK_CNT + ATOMIC_ISR_CNT + 2) * BLE_LOG_LBM_TRANS_BUF_SIZE
-
-    config BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT
-        int "Count of log buffer managers with atomic lock protection for task context"
-        default 2
-        help
-            BLE Log module will search for an LBM with atomic lock protection first; if
-            all LBMs with atomic lock protection are unavailable, BLE Log module will
-            try to use the LBM with spin lock protection. So the more LBMs with atomic
-            lock protection are created, the better the logging performance will be.
-
-    config BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT
-        int "Count of log buffer managers with atomic lock protection for ISR context"
+    config BLE_LOG_POOL_NON_YIELD_RESERVE_CNT
+        int "Transport buffers reserved for non-yieldable contexts"
+        range 1 31
         default 1
         help
-            BLE Log module will search for an LBM with atomic lock protection first; if
-            all LBMs with atomic lock protection are unavailable, BLE Log module will
-            try to use the LBM with spin lock protection. So the more LBMs with atomic
-            lock protection are created, the more ISRs can nest.
+            Buffers that ordinary task writers cannot consume. ISR and
+            critical-section writers try the shared region first, then this
+            reserve. The value must remain below BLE_LOG_POOL_TRANS_CNT.
+
+    config BLE_LOG_POOL_TRANS_SIZE
+        int "Per-transport buffer size (bytes)"
+        range 640 10240
+        default 640
+        help
+            Size of every unified-pool transport. One complete frame must fit
+            in one transport. SPI builds require a multiple of four so they
+            can append peripheral-only zero padding to each logical frame.
+
+    config BLE_LOG_TASK_ID_MAX
+        int "Maximum number of distinct logging tasks"
+        range 2 32
+        default 16
+        help
+            Size of the task-id registry (protocol v8). Every ENCODE record
+            carries the one-byte id of the task that formatted it; the
+            registry maps task names to those stable ids. One binding record
+            per registered entry is broadcast as an INTERNAL frame on every
+            periodic snapshot window, so a receiver that missed or lost a
+            binding converges on the next window. A task that starts logging
+            after the registry is full falls back to the unknown id (0xFF)
+            and its records are still emitted.
+
+            RAM cost is 16 bytes per entry (256 bytes at the default 16)
+            plus one dedicated binding transport (320 bytes at 16 entries,
+            624 at 32; the broadcast frame must fit in one transport).
 
     config BLE_LOG_IS_ESP_CONTROLLER
         bool "Current BLE Controller is ESP BLE Controller"
@@ -77,44 +79,9 @@ if BLE_LOG_ENABLED
         help
             Enable BLE Log for Link Layer
 
-    if BLE_LOG_LL_ENABLED
-        config BLE_LOG_LBM_LL_TRANS_BUF_SIZE
-            int "Total buffer memory per Link Layer LBM (bytes)"
-            default 2048
-            help
-                Total buffer memory allocated for each Link Layer dedicated
-                log buffer manager (LBM). This memory is divided equally among
-                internal transport buffers. Must be a multiple of
-                BLE_LOG_TRANS_BUF_CNT (currently 4).
-
-                There are 2 Link Layer LBMs without lock protection (each is
-                accessed from a single context only):
-                - LL task LBM (Link Layer task context logs)
-                - LL HCI LBM (Link Layer HCI context logs)
-
-                Total LL pool memory: 2 * BLE_LOG_LBM_LL_TRANS_BUF_SIZE
-
-        config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
-            bool "Enable LL HCI Log Payload Length Limit"
-            default n
-            help
-                Enable length limit for LL HCI Log payload (addr_append).
-                When enabled, if len_append exceeds the configured limit,
-                it will be truncated to the maximum length.
-
-        config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT
-            int "LL HCI Log Payload Length Limit (bytes)"
-            depends on BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
-            default 32
-            help
-                Maximum length for LL HCI Log payload (len_append).
-                When the feature is enabled and len_append exceeds this value,
-                it will be truncated.
-    endif
-
     config BLE_LOG_HOST_LOG
         bool "Enable BLE Log for Host"
-        depends on BT_BLUEDROID_ENABLED
+        depends on BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED
         default y
         help
             Enable BLE Log for the Host stack (Bluedroid or NimBLE).
@@ -124,26 +91,30 @@ if BLE_LOG_ENABLED
             the standard UART logging path. Disable this option to keep
             BLE Log enabled for the controller/link layer only.
 
-    config BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
-        bool "Enable BLE Host side HCI Logging"
-        default y if BLE_LOG_IS_ESP_LEGACY_CONTROLLER
+    config BLE_LOG_HCI_LOG_ENABLED
+        bool "Enable BLE HCI Logging"
+        default y
         help
-            Enable HCI packet logging captured on the Host side
-            (Bluedroid / NimBLE HCI HAL). Useful for correlating
-            host events with controller-side HCI traces.
+            Enable HCI packet logging. Bluedroid and legacy VHCI NimBLE
+            capture on the Host side and suppress duplicate Controller
+            HCI records. Other configurations, including non-legacy
+            NimBLE, retain Controller HCI records through the LL callback
+            and require BLE_LOG_LL_ENABLED. Disabling this option
+            suppresses HCI records from both capture paths.
 
-    config BLE_LOG_TS_ENABLED
-        bool "Enable BLE Log Timestamp Synchronization (TS)"
+    config BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+        bool "Toggle a GPIO on every BLE Log TS sync sample"
         default n
         help
-            Enable BLE Log TS with external logging module. Synchronization is
-            triggered periodically by an ESP Timer using task dispatch. The
-            timer does not wake the system from light sleep.
+            Every periodic Internal Snapshot samples the link-layer, ESP and
+            OS clocks regardless of this option. Enable this option to build
+            the GPIO toggle used by external logic analyzers. It starts
+            disabled and low; ble_log_ts_sync_io_toggle_enable controls its
+            edges without stopping periodic snapshots.
 
-    if BLE_LOG_TS_ENABLED
+    if BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
         config BLE_LOG_SYNC_IO_NUM
             int "GPIO number for Timestamp Synchronization (TS) toggle output"
-            depends on BLE_LOG_TS_ENABLED
             default 0
             help
                 GPIO number for TS toggle output
@@ -165,8 +136,11 @@ if BLE_LOG_ENABLED
             bool "Test only transport"
             help
                 Test transport that models DMA ownership and optional
-                link-rate backpressure. Selected by BLE Log test apps
-                only; not shown in menuconfig.
+                link-rate backpressure. Intended for the BLE Log test apps
+                only: outside them nothing drains the transmitted buffers,
+                so selecting this transport in a production build stalls
+                log output. The BLE Log test apps select it through their
+                sdkconfig.defaults.
 
         config BLE_LOG_PRPH_SPI_MASTER_DMA
             bool "Utilize SPI master DMA driver as transport"
@@ -240,6 +214,35 @@ if BLE_LOG_ENABLED
         int
         default 512
 
+    config BLE_LOG_LBM_TRANS_BUF_SIZE
+        int
+        default 2048
+
+    config BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT
+        int
+        default 2
+
+    config BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT
+        int
+        default 1
+
+    config BLE_LOG_LBM_LL_TRANS_BUF_SIZE
+        int
+        default 2048
+
+    config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
+        bool
+        default n
+
+    config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT
+        int
+        depends on BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
+        default 32
+
+    config BLE_LOG_LBM_AUTO_FLUSH
+        bool
+        default n
+
     config BLE_LOG_ENH_STAT_ENABLED
         bool
         default y
@@ -260,28 +263,31 @@ if BLE_LOG_ENABLED
 
     config BLE_LOG_TS_TRIGGER_TIMEOUT_MS
         int
-        depends on BLE_LOG_TS_ENABLED
         default 1000
 
     config BLE_LOG_TS_TRIGGER_CHOICE
         bool
-        depends on BLE_LOG_TS_ENABLED
         default y
 
     config BLE_LOG_TS_TRIGGER_ESP_TIMER
         bool
-        depends on BLE_LOG_TS_ENABLED
         default y
 
     config BLE_LOG_TS_TRIGGER_TASK_EVENT
         bool
-        depends on BLE_LOG_TS_ENABLED
         default n
 
     config BLE_LOG_TS_TRIGGER_ESP_TIMER_ISR_DISPATCH_METHOD
         bool
-        depends on BLE_LOG_TS_ENABLED
         default n
+
+    # Deprecated: renamed to BLE_LOG_HCI_LOG_ENABLED. No prompt, so it
+    # never appears in menuconfig; kept so sdkconfig files pinning the old
+    # name keep Host side HCI logging enabled.
+    config BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
+        bool
+        default n
+        select BLE_LOG_HCI_LOG_ENABLED
 endif
 
 menu "Legacy SPI Log Output (Deprecated - use BT Log Async Output instead)"
