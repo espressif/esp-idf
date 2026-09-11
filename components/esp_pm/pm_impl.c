@@ -25,6 +25,7 @@
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/startup_internal.h"
 
 #include "soc/rtc.h"
 #include "hal/uart_ll.h"
@@ -1336,6 +1337,16 @@ void esp_pm_impl_init(void)
     esp_pm_configure(&cfg);
 #endif //CONFIG_PM_DFS_INIT_AUTO
 }
+
+#if CONFIG_PM_ENABLE
+/* The interrupt vectors call esp_pm_impl_isr_hook() when CONFIG_PM_ENABLE is set,
+ * which links this file, and with it this registration, into every such app. */
+ESP_SYSTEM_INIT_FN(init_pm, SECONDARY, BIT(0), 201)
+{
+    esp_pm_impl_init();
+    return ESP_OK;
+}
+#endif // CONFIG_PM_ENABLE
 
 void esp_pm_impl_idle_hook(void)
 {
