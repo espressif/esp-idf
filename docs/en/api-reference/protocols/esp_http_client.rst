@@ -226,6 +226,8 @@ Expected data types for different HTTP Client events in the event loop are as fo
 
 The :cpp:type:`esp_http_client_handle_t` received along with the event data will be valid until :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` is not received. This handle has been sent primarily to differentiate between different client connections and must not be used for any other purpose, as it may change based on client connection state.
 
+For :cpp:enumerator:`HTTP_EVENT_ERROR <esp_http_client_event_id_t::HTTP_EVENT_ERROR>`, a callback handler finds the cause of the failure, the ``esp_err_t`` the failing call returns, in :cpp:member:`esp_http_client_event_t::error`, which always belongs to the event the handler receives. The event-loop payload stays the client handle. The transport's own record of the failure, with the TLS detail, is available through :cpp:func:`esp_http_client_get_and_clear_last_tls_error`.
+
 TLS Protocol Version
 --------------------
 

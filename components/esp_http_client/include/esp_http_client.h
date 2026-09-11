@@ -34,7 +34,11 @@ struct esp_transport_item_t;
  * @brief   HTTP Client events id
  */
 typedef enum {
-    HTTP_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
+    HTTP_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution.
+                                     error holds the esp_err_t the failing call returns. data is the
+                                     transport's esp_tls_error_handle_t (NULL when no transport was
+                                     selected yet) with what the transport recorded: last_error, and
+                                     the TLS detail in esp_tls_error_code and esp_tls_flags */
     HTTP_EVENT_ON_CONNECTED,    /*!< Once the HTTP has been connected to the server, no data exchange has been performed */
     HTTP_EVENT_HEADERS_SENT,     /*!< After sending all the headers to the server */
     HTTP_EVENT_HEADER_SENT = HTTP_EVENT_HEADERS_SENT, /*!< This header has been kept for backward compatibility
@@ -54,11 +58,15 @@ typedef enum {
 typedef struct esp_http_client_event {
     esp_http_client_event_id_t event_id;    /*!< event_id, to know the cause of the event */
     esp_http_client_handle_t client;        /*!< esp_http_client_handle_t context */
-    void *data;                             /*!< data of the event */
+    void *data;                             /*!< data of the event, see the event_id description */
     int data_len;                           /*!< data length of data */
     void *user_data;                        /*!< user_data context, from esp_http_client_config_t user_data */
     char *header_key;                       /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header key */
     char *header_value;                     /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header value */
+    esp_err_t error;                        /*!< For HTTP_EVENT_ERROR: the esp_err_t the failing call returns: an ESP_ERR_HTTP_* code,
+                                                 ESP_FAIL where the call reports a plain failure (for example a failed POST body write),
+                                                 or the esp_err_t of a failed connect or prepare (ESP_ERR_INVALID_ARG,
+                                                 ESP_ERR_INVALID_STATE, ESP_ERR_NO_MEM). ESP_OK for every other event */
 } esp_http_client_event_t;
 
 /**

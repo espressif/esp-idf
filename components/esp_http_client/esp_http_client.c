@@ -139,6 +139,7 @@ struct esp_http_client {
     esp_transport_keep_alive_t  keep_alive_cfg;
     struct ifreq                *if_name;
     unsigned                    cache_data_in_fetch_hdr: 1;
+    esp_err_t                   last_error;             /*!< esp_err_t of the failed call, handed to the callback in event.error */
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     session_ticket_state_t      session_ticket_state;
 #endif
@@ -201,6 +202,7 @@ static esp_err_t http_dispatch_event(esp_http_client_t *client, esp_http_client_
         event->user_data = client->user_data;
         event->data = data;
         event->data_len = len;
+        event->error = (event_id == HTTP_EVENT_ERROR) ? client->last_error : ESP_OK;
         return client->event_handler(event);
     }
     return ESP_OK;
@@ -212,6 +214,19 @@ static void http_dispatch_event_to_event_loop(int32_t event_id, const void* even
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post http_client event: %"PRId32", error: %s", event_id, esp_err_to_name(err));
     }
+}
+
+/* Raise HTTP_EVENT_ERROR for a failed request. err is the esp_err_t the failing
+ * call returns; the callback receives it in esp_http_client_event_t::error, so
+ * the handler learns the cause before the caller does. The event payload stays
+ * the transport's error handle (NULL when no transport was selected yet),
+ * untouched: what the transport recorded, and the TLS detail, remain readable
+ * there. */
+static void http_dispatch_error(esp_http_client_handle_t client, esp_err_t err)
+{
+    client->last_error = err;
+    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
+    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
 }
 
 static int http_on_message_begin(http_parser *parser)
@@ -1483,8 +1498,12 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
             }
 
             if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
-                http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                /* A FIN mid body is a closed connection, any other failure is
+                 * incomplete data. The body loop in esp_http_client_perform() also
+                 * maps a read timeout, which the branch above already handled here.
+                 * The return value keeps the documented -1. */
+                http_dispatch_error(client, rlen == ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN
+                                    ? ESP_ERR_HTTP_CONNECTION_CLOSED : ESP_ERR_HTTP_INCOMPLETE_DATA);
                 return ESP_FAIL;
             }
             return ridx;
@@ -1520,8 +1539,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     if (client->is_async && err == ESP_ERR_HTTP_CONNECTING) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
-                    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                    http_dispatch_error(client, err);
                     return err;
                 }
                 /* falls through */
@@ -1530,8 +1548,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     if (client->is_async && errno == EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
-                    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                    http_dispatch_error(client, err);
                     return err;
                 }
 #if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
@@ -1543,8 +1560,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     if (client->is_async && errno == EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
-                    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                    http_dispatch_error(client, err);
                     return err;
                 }
                 /* falls through */
@@ -1563,12 +1579,10 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     if (esp_transport_get_errno(client->transport) == ENOTCONN) {
                         ESP_LOGW(TAG, "Close connection due to FIN received");
                         esp_http_client_close(client);
-                        http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                        http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                        http_dispatch_error(client, ESP_ERR_HTTP_CONNECTION_CLOSED);
                         return ESP_ERR_HTTP_CONNECTION_CLOSED;
                     }
-                    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                    http_dispatch_error(client, ESP_ERR_HTTP_FETCH_HEADER);
                     return ESP_ERR_HTTP_FETCH_HEADER;
                 }
                 /* falls through */
@@ -1578,8 +1592,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                 client->cache_data_in_fetch_hdr = 1;
                 if ((err = esp_http_check_response(client)) != ESP_OK) {
                     ESP_LOGE(TAG, "Error response");
-                    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                    http_dispatch_error(client, err);
                     return err;
                 }
                 while (client->response->is_chunked && !client->is_chunk_complete) {
@@ -1633,8 +1646,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                 }
 
                 if (err != ESP_OK) {
-                    http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-                    http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+                    http_dispatch_error(client, err);
                 } else {
                     http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
                     http_dispatch_event_to_event_loop(HTTP_EVENT_ON_FINISH, &client, sizeof(esp_http_client_handle_t));
@@ -1949,16 +1961,14 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
         if (client->is_async && err == ESP_ERR_HTTP_CONNECTING) {
             return ESP_ERR_HTTP_EAGAIN;
         }
-        http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-        http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+        http_dispatch_error(client, err);
         return err;
     }
     if ((err = esp_http_client_request_send(client, write_len)) != ESP_OK) {
         if (client->is_async && errno == EAGAIN) {
             return ESP_ERR_HTTP_EAGAIN;
         }
-        http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
-        http_dispatch_event_to_event_loop(HTTP_EVENT_ERROR, &client, sizeof(esp_http_client_handle_t));
+        http_dispatch_error(client, err);
         return err;
     }
     return ESP_OK;
