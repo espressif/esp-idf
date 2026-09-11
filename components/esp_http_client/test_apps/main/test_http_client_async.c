@@ -12,6 +12,10 @@
  * is_async is set and the transport reports EAGAIN/would-block at various
  * stages (connect, read, write). They are characterization tests, not
  * behavioral specs: assert values reflect what master actually does.
+ *
+ * The last case is not a characterization case. It pins the contract that
+ * esp_http_client_event_t::error reports the cause of the current request, not
+ * the cause left behind by the previous one.
  */
 
 #include <string.h>
@@ -34,6 +38,36 @@ static const char *resp_200 =
     "Content-Length: 5\r\n"
     "\r\n"
     "hello";
+
+/* Byte count of the status line plus the headers plus the empty line of resp_200. */
+#define RESP_200_HEADER_LEN 38
+
+/* Upper bound on the ESP_ERR_HTTP_EAGAIN retries below. A mock that blocks for
+ * ever must fail the test, not hang the CI job. */
+#define MAX_EAGAIN_RETRIES 100
+
+static esp_err_t s_event_error;
+
+/* Records what HTTP_EVENT_ERROR carried, for the error-code case below. */
+static esp_err_t error_event_handler(esp_http_client_event_t *evt)
+{
+    if (evt->event_id == HTTP_EVENT_ERROR) {
+        s_event_error = evt->error;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t perform_until_done(esp_http_client_handle_t client)
+{
+    for (int i = 0; i < MAX_EAGAIN_RETRIES; i++) {
+        esp_err_t err = esp_http_client_perform(client);
+        if (err != ESP_ERR_HTTP_EAGAIN) {
+            return err;
+        }
+    }
+    TEST_FAIL_MESSAGE("esp_http_client_perform() kept returning ESP_ERR_HTTP_EAGAIN");
+    return ESP_FAIL;
+}
 
 TEST_CASE("async connect yields EAGAIN then completes", "[esp_http_client][async][p0]")
 {
@@ -148,6 +182,47 @@ TEST_CASE("async write would-block on header send aborts the request", "[esp_htt
     size_t req_len = 0;
     TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_last_request(mock, req, sizeof(req), &req_len));
     TEST_ASSERT_EQUAL(0, req_len);             /* nothing reached the wire: no body, so no duplicate either */
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+/* A failed async connect leaves the client in HTTP_STATE_CONNECTING. The next
+ * request on the same handle must report its own cause. The URL uses https:
+ * because the async connect-failure path returns ESP_ERR_INVALID_ARG for a plain
+ * http: URL. The client keeps the custom transport whatever the scheme is. */
+TEST_CASE("a failed async connect does not leak its cause into the next request's HTTP_EVENT_ERROR", "[esp_http_client][async][p0][negative]")
+{
+    mock_http_transport_config_t mc = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mc.mode = MOCK_TRANSPORT_MODE_CONNECT_FAIL;
+    esp_transport_handle_t mock = mock_http_transport_create(&mc);
+    TEST_ASSERT_NOT_NULL(mock);
+
+    esp_http_client_config_t cfg = {
+        .url = "https://test-server.local/",
+        .is_async = true,
+        .transport = mock,
+        .event_handler = error_event_handler,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&cfg);
+    TEST_ASSERT_NOT_NULL(client);
+    s_event_error = ESP_OK;
+
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_CONNECT, perform_until_done(client));
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_CONNECT, s_event_error);
+
+    mc.mode = MOCK_TRANSPORT_MODE_INCOMPLETE_READ;
+    mc.response_data = resp_200;
+    mc.read_bytes_before_error = RESP_200_HEADER_LEN + 2;
+    TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_set_config(mock, &mc));
+    s_event_error = ESP_OK;
+
+    /* The mock ends the body with a 0 read; the client maps that result,
+     * ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT, to ESP_ERR_HTTP_READ_TIMEOUT. A real
+     * transport ends a cut body with -1 or -2, so the literal here follows the
+     * mock and must be revisited when the mock adopts the real convention. */
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_READ_TIMEOUT, perform_until_done(client));
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_READ_TIMEOUT, s_event_error);
 
     esp_http_client_cleanup(client);
     mock_http_transport_destroy(mock);
