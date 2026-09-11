@@ -63,6 +63,37 @@ extern "C" {
 #define RTC_CNTL_SCK_DCAP_DEFAULT    128
 #define RTC_CNTL_RC32K_DFREQ_DEFAULT 700
 
+#if CONFIG_ESP_ENABLE_PVT
+/*
+set pvt default param
+*/
+#define PVT_CHANNEL0_SEL        33
+#define PVT_CHANNEL1_SEL        37
+#define PVT_CHANNEL0_CFG        0x11fff
+#define PVT_CHANNEL1_CFG        0x17fff
+#define PVT_CHANNEL2_CFG        0x10000
+#define PVT_CMD0                0x24
+#define PVT_CMD1                0x5
+#define PVT_CMD2                0x427
+#define PVT_TARGET              0xffff
+#define PVT_CLK_DIV             1
+#define PVT_EDG_MODE            1
+#define PVT_DELAY_NUM_HIGH      151
+#define PVT_DELAY_NUM_LOW       141
+#define PVT_PUMP_CHANNEL_CODE   1
+#define PVT_PUMP_BITMAP         22
+#define PVT_PUMP_DRV            0
+#define PVT_DELAY_NUM_PUMP      134
+
+/**
+ * @brief Enable or disable auto dbias functions
+ *
+ * @param enable  true to enable, false to disable
+ */
+void pvt_auto_dbias_enable(bool enable);
+
+#endif //#if CONFIG_ESP_ENABLE_PVT
+
 /**
  * @brief CPU clock configuration structure
  */
