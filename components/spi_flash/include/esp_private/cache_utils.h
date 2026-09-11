@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,7 +97,11 @@ bool spi_flash_cache_enabled(void);
 void spi_flash_enable_cache(uint32_t cpuid);
 
 /**
- * @brief Suspend the Cache access to external memory, will disable branch predictor if supported.
+ * @brief Suspend the Cache access to external memory.
+ *
+ * @note Callers must disable branch prediction around this window when
+ *       SOC_BRANCH_PREDICTOR_SUPPORTED, otherwise speculative fetches can
+ *       raise cache access-fail errors while the cache is suspended.
  *
  * @param cpuid       the core number to enable the cache for, meaning less on shared cache.
  * @param saved_state Cache status hold by hal (Used only on ROM impl. in idf, this param unused)
@@ -105,7 +109,10 @@ void spi_flash_enable_cache(uint32_t cpuid);
 void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
 
 /**
- * @brief Resume the Cache access to external memory, will enable branch predictor if supported.
+ * @brief Resume the Cache access to external memory.
+ *
+ * @note Callers that disabled branch prediction for the suspend window must
+ *       re-enable it after this call when SOC_BRANCH_PREDICTOR_SUPPORTED.
  *
  * @param cpuid       the core number to enable the cache for, meaning less on shared cache.
  * @param saved_state Cache status hold by hal (Used only on ROM impl. in idf, this param unused)
