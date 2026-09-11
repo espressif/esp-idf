@@ -1043,10 +1043,10 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
 {
     int bb_size_px = panel->bb_size / (panel->fb_bits_per_pixel / 8);
     bool do_restart = false;
+    portENTER_CRITICAL_ISR(&panel->spinlock);
 #if CONFIG_LCD_RGB_RESTART_IN_VSYNC
     do_restart = true;
 #else
-    portENTER_CRITICAL_ISR(&panel->spinlock);
     if (panel->flags.need_restart) {
         panel->flags.need_restart = false;
         do_restart = true;
@@ -1054,9 +1054,10 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
     if (panel->bb_eof_count < panel->expect_eof_count) {
         do_restart = true;
     }
+#endif // CONFIG_LCD_RGB_RESTART_IN_VSYNC
+    // DMA restart always relaunches from bounce buffer 0. Keep the software index in sync
     panel->bb_eof_count = 0;
     portEXIT_CRITICAL_ISR(&panel->spinlock);
-#endif // CONFIG_LCD_RGB_RESTART_IN_VSYNC
 
     if (!do_restart) {
         return;
@@ -1106,6 +1107,7 @@ static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
     // pre-fill bounce buffers if needed
     if (rgb_panel->bb_size) {
         rgb_panel->bounce_pos_px = 0;
+        rgb_panel->bb_eof_count = 0;
         lcd_rgb_panel_fill_bounce_buffer(rgb_panel, rgb_panel->bounce_buffer[0]);
         lcd_rgb_panel_fill_bounce_buffer(rgb_panel, rgb_panel->bounce_buffer[1]);
     }
