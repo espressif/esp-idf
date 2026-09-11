@@ -11,9 +11,10 @@ project(fault_assert_opt_check)
 
 # Regression guard: fail the build if ESP_FAULT_ASSERT() gets optimized away.
 idf_build_get_property(python PYTHON)
+idf_build_get_property(elf EXECUTABLE)
 add_custom_command(
-    TARGET ${CMAKE_PROJECT_NAME}.elf POST_BUILD
+    TARGET ${elf} POST_BUILD
     COMMAND ${python} "${CMAKE_CURRENT_SOURCE_DIR}/check_fault_asserts.py"
-            "$<TARGET_FILE:${CMAKE_PROJECT_NAME}.elf>" "${CMAKE_OBJDUMP}"
+            "$<TARGET_FILE:${elf}>" "${CMAKE_OBJDUMP}"
     COMMENT "Verifying ESP_FAULT_ASSERT() survived optimization"
     VERBATIM)
