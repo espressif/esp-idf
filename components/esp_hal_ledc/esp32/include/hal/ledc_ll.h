@@ -556,6 +556,20 @@ static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode
 }
 
 /**
+ * @brief Get whether the last duty update or fade has finished
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, high-speed mode or low-speed mode
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
+ *
+ * @return True if duty_start has been self-cleared
+ */
+static inline bool ledc_ll_is_duty_update_done(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
+{
+    return !hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start;
+}
+
+/**
  * @brief Set the duty start
  *
  * @param hw Beginning address of the peripheral registers
@@ -568,7 +582,10 @@ static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode
 {
     // wait until the last duty change took effect (duty_start bit will be self-cleared when duty update or fade is done)
     // this is necessary on ESP32 only, otherwise, internal logic might mess up (later targets with SOC_LEDC_SUPPORT_FADE_STOP allow to re-configure parameters while last update is still in progress)
-    while (hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start);
+    // The real wait is done before writing new fade parameters, otherwise, the new fade parameters could overwrite the last unfinished duty operation.
+    // Also this LL is always wrapped by spinlock, which makes a long real wait at here improper.
+    // The wait here is just as a last guard to avoid hardware mess up.
+    while (!ledc_ll_is_duty_update_done(hw, speed_mode, channel_num));
     hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start = 1;
 }
 
