@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <sys/lock.h>
+#include "esp_intr_alloc.h"
 #include "hal/riscv_trace_hal.h"
 #include "esp_riscv_trace.h"
 #include "esp_riscv_trace_snapshot.h"
@@ -36,6 +37,8 @@ struct esp_riscv_trace_context_t {
     uint8_t *buffer;
     size_t buffer_size;
     bool auto_restart;
+    intr_handle_t intr_handle;      /*!< NULL when no trace interrupt is registered for this core. */
+    uint32_t intr_mask;             /*!< Interrupt bits enabled while capturing (riscv_trace_intr_t flags). */
 };
 
 /* Snapshot writes. */

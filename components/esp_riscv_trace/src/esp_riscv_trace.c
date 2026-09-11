@@ -21,6 +21,7 @@
 #include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
+#include "soc/interrupts.h"
 #include "hal/riscv_trace_hal.h"
 #include "hal/riscv_trace_ll.h"
 #include "esp_riscv_trace.h"
@@ -196,6 +197,57 @@ static void apply_default_rom_filter(esp_riscv_trace_handle_t handle)
 }
 #endif // SOC_RISCV_TRACE_FILTER_SUPPORTED
 
+static int trace_intr_source_for_core(int core_id)
+{
+#if SOC_CPU_CORES_NUM > 1
+    switch (core_id) {
+    case 0: return ETS_CORE0_TRACE_INTR_SOURCE;
+    case 1: return ETS_CORE1_TRACE_INTR_SOURCE;
+    default: return -1;
+    }
+#else
+    return (core_id == 0) ? ETS_TRACE_INTR_SOURCE : -1;
+#endif
+}
+
+/* Trace encoder interrupt handler. For now it only reports which sources fired
+ * and masks them. Memory-full and FIFO-overflow handling is filled in later.
+ * Runs from IRAM so it stays valid with the cache disabled. */
+static void IRAM_ATTR trace_isr(void *arg)
+{
+    esp_riscv_trace_handle_t handle = (esp_riscv_trace_handle_t)arg;
+    trace_dev_t *dev = (trace_dev_t *)handle->hal.dev;
+
+    uint32_t fired = riscv_trace_ll_get_intr_raw(dev) & handle->intr_mask;
+    if (fired == 0) {
+        return;
+    }
+
+    bool mem_full = (fired & RISCV_TRACE_INTR_MEM_FULL) != 0;
+    bool fifo_ov = (fired & RISCV_TRACE_INTR_FIFO_OVERFLOW) != 0;
+    ESP_EARLY_LOGD(TAG, "trace isr core %d mem_full=%d fifo_ov=%d", handle->core_id, mem_full, fifo_ov);
+
+    /* Stop and panic freeze read the raw bits. Mask the sources that fired instead of clearing them. */
+    riscv_trace_ll_set_intr_ena(dev, handle->intr_mask & ~fired);
+}
+
+static void trace_alloc_interrupt(esp_riscv_trace_handle_t handle)
+{
+    int source = trace_intr_source_for_core(handle->core_id);
+    if (source < 0) {
+        ESP_EARLY_LOGW(TAG, "core %d has no trace interrupt", handle->core_id);
+        return;
+    }
+
+    riscv_trace_hal_set_intr_enable(&handle->hal, 0);
+
+    esp_err_t r = esp_intr_alloc(source, ESP_INTR_FLAG_IRAM, trace_isr, handle, &handle->intr_handle);
+    if (r != ESP_OK) {
+        handle->intr_handle = NULL;
+        ESP_EARLY_LOGW(TAG, "core %d trace interrupt alloc failed: %s", handle->core_id, esp_err_to_name(r));
+    }
+}
+
 static esp_err_t validate_trace_config(esp_riscv_trace_core_t core_id, const esp_riscv_trace_config_t *config,
                                        esp_riscv_trace_handle_t *ret_handle)
 {
@@ -251,7 +303,6 @@ static esp_err_t esp_riscv_trace_new(esp_riscv_trace_core_t core_id, const esp_r
         .resync_threshold = config->resync_threshold,
         .ahb_burst = config->ahb_burst,
         .ahb_max_incr = config->ahb_max_incr,
-        .intr_mask = config->intr_mask,
     };
     riscv_trace_hal_init(core_id, &hal_config, &hal_ctx);
 
@@ -261,6 +312,16 @@ static esp_err_t esp_riscv_trace_new(esp_riscv_trace_core_t core_id, const esp_r
     handle->buffer_size = trace_mem_size;
     handle->state = ESP_RISCV_TRACE_STATE_CREATED;
     handle->auto_restart = config->auto_restart;
+
+    /* FIFO overflow signals lost packets in any mode, so keep it enabled
+     * always. Memory-full only matters in non-loop mode, where the encoder
+     * stops when the buffer fills. Sources are enabled at capture start. */
+    handle->intr_mask = RISCV_TRACE_INTR_FIFO_OVERFLOW;
+    if (config->mem_mode == ESP_RISCV_TRACE_MEM_NON_LOOP) {
+        handle->intr_mask |= RISCV_TRACE_INTR_MEM_FULL;
+    }
+    trace_alloc_interrupt(handle);
+
     *ret_handle = handle;
 
 #if CONFIG_ESP_RISCV_TRACE_FILTER_OUT_ROM
@@ -285,6 +346,9 @@ static esp_err_t trace_start_locked(esp_riscv_trace_handle_t handle)
     ESP_RETURN_ON_ERROR_ISR(clear_trace_buffer(handle), TAG, "failed to sync cleared trace buffer");
     riscv_trace_hal_prepare_capture(&handle->hal);
     riscv_trace_hal_set_auto_restart(&handle->hal, handle->auto_restart);
+    if (handle->intr_handle != NULL) {
+        riscv_trace_hal_set_intr_enable(&handle->hal, handle->intr_mask);
+    }
     handle->state = ESP_RISCV_TRACE_STATE_STARTED;
     riscv_trace_hal_start(&handle->hal);
     esp_riscv_trace_snapshot_start(handle->core_id);
@@ -297,6 +361,10 @@ static esp_err_t trace_stop_locked(esp_riscv_trace_handle_t handle, uint32_t tim
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(handle->state == ESP_RISCV_TRACE_STATE_STARTED, ESP_ERR_INVALID_STATE, TAG,
                         "trace not started");
+
+    if (handle->intr_handle != NULL) {
+        riscv_trace_hal_set_intr_enable(&handle->hal, 0);
+    }
 
     bool flushed = riscv_trace_hal_stop(&handle->hal, timeout_us);
     if (flushed) {
