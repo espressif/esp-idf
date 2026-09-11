@@ -69,6 +69,7 @@ typedef enum {
 typedef enum {
     SOC_ROOT_CIRCUIT_CLK_BBPLL,        /*!< BBPLL_CLK is the output of the PLL generator circuit */
     SOC_ROOT_CIRCUIT_CLK_XTAL_X2,      /*!< XTAL_X2_CLK is the output of the XTAL_X2 generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_MAX,
 } soc_root_clk_circuit_t;
 
 /**
@@ -140,6 +141,8 @@ typedef enum {
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 32MHz crystal */
+    SOC_MOD_CLK_XTAL_X2,                       /*!< XTAL_X2_CLK is the output of the XTAL_X2 generator circuit (64MHz); CPU clock source, not the gated F64M */
+    SOC_MOD_CLK_BBPLL,                         /*!< BBPLL_CLK is the output of the PLL generator circuit (96MHz); CPU clock source, not the gated F96M */
     SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -1545,36 +1545,36 @@ typedef union {
  */
 typedef union {
     struct {
-        /** pll_240m_clk_en : R/W; bitpos: [0]; default: 1;
+        /** pll_96m_clk_en : R/W; bitpos: [0]; default: 1;
          *  This field is used to open 96 MHz clock (SPLL) driven from SPLL. 0: close, 1:
          *  open(default). Only available when high-speed clock-source SPLL is active.
          */
-        uint32_t pll_240m_clk_en:1;
-        /** pll_160m_clk_en : R/W; bitpos: [1]; default: 1;
+        uint32_t pll_96m_clk_en:1;
+        /** pll_64m_clk_en : R/W; bitpos: [1]; default: 1;
          *  This field is used to open 64 MHz clock (div3 of SPLL) driven from SPLL. 0: close,
          *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
-        uint32_t pll_160m_clk_en:1;
-        /** pll_120m_clk_en : R/W; bitpos: [2]; default: 1;
+        uint32_t pll_64m_clk_en:1;
+        /** pll_48m_clk_en : R/W; bitpos: [2]; default: 1;
          *  This field is used to open 48 MHz clock (div4 of SPLL) driven from SPLL. 0: close,
          *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
-        uint32_t pll_120m_clk_en:1;
-        /** pll_80m_clk_en : R/W; bitpos: [3]; default: 1;
+        uint32_t pll_48m_clk_en:1;
+        /** pll_32m_clk_en : R/W; bitpos: [3]; default: 1;
          *  This field is used to open 32 MHz clock (div6  of SPLL) driven from SPLL. 0: close,
          *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
-        uint32_t pll_80m_clk_en:1;
-        /** pll_48m_clk_en : R/W; bitpos: [4]; default: 1;
+        uint32_t pll_32m_clk_en:1;
+        /** pll_16m_clk_en : R/W; bitpos: [4]; default: 1;
          *  This field is used to open 16 MHz clock (div10 of SPLL) driven from SPLL. 0: close,
          *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
-        uint32_t pll_48m_clk_en:1;
-        /** pll_40m_clk_en : R/W; bitpos: [5]; default: 1;
+        uint32_t pll_16m_clk_en:1;
+        /** pll_8m_clk_en : R/W; bitpos: [5]; default: 1;
          *  This field is used to open 8 MHz clock (div12 of SPLL) driven from SPLL. 0: close,
          *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
-        uint32_t pll_40m_clk_en:1;
+        uint32_t pll_8m_clk_en:1;
         uint32_t reserved_6:26;
     };
     uint32_t val;

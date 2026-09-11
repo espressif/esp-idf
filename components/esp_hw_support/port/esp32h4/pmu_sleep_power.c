@@ -20,17 +20,37 @@ ESP_LOG_ATTR_TAG(TAG, "sleep_power");
 
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
 
+#define XTALX2_TIE_HIGH_MASK  (PMU_TIE_HIGH_XTALX2_M | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG_M)
+#define XTALX2_TIE_HIGH_ON    (PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG)
+#define BBPLL_TIE_HIGH_MASK   (PMU_TIE_HIGH_XPD_BBPLL_M | PMU_TIE_HIGH_XPD_BBPLL_I2C_M | PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_M)
+#define BBPLL_TIE_HIGH_ON     (PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C | PMU_TIE_HIGH_GLOBAL_BBPLL_ICG)
+
+typedef struct {
+    void *regdma_desc[2];
+} pmu_sleep_power_clock_context_t;
+
 static esp_err_t sleep_power_system_retention_init(void *arg)
 {
     const static sleep_retention_entries_config_t power_regs_retention[] = {
         /* During the modem-to-active transition, the MODEM lock keeps the xtalx2, bbpll xpd status unchanged.
-        * Therefore, if xtalx2, bbpll is disabled in modem state, we need to set xtalx2, bbpll tie-high to enable it in active state. */
-        [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(0),   PMU_IMM_HP_CK_POWER_REG,   PMU_TIE_HIGH_XTALX2    | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG,  PMU_TIE_HIGH_XTALX2_M    | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG_M,  1,  0),  .owner = ENTRY(2) },
-        [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(1),   PMU_IMM_HP_CK_POWER_REG,   PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C,      PMU_TIE_HIGH_XPD_BBPLL_M | PMU_TIE_HIGH_XPD_BBPLL_I2C_M,      1,  0),  .owner = ENTRY(2) },
+         * Therefore, if xtalx2, bbpll is disabled in modem state, we need to set xtalx2, bbpll tie-high to enable it in active state.
+         *
+         * XTALX2 and BBPLL write values are back-filled before sleep by pmu_sleep_power_clock_config(). */
+        [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(0),  PMU_IMM_HP_CK_POWER_REG,  XTALX2_TIE_HIGH_ON,  XTALX2_TIE_HIGH_MASK,  1,  0),  .owner = ENTRY(2) },
+        [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(1),  PMU_IMM_HP_CK_POWER_REG,  BBPLL_TIE_HIGH_ON,   BBPLL_TIE_HIGH_MASK,   1,  0),  .owner = ENTRY(2) },
     };
     esp_err_t err = sleep_retention_entries_create(power_regs_retention, ARRAY_SIZE(power_regs_retention), REGDMA_LINK_PRI_POWER, SLEEP_RETENTION_MODULE_POWER);
+
+    pmu_sleep_power_clock_context_t *clk = (pmu_sleep_power_clock_context_t *)arg;
+    int id_array[ARRAY_SIZE(clk->regdma_desc)] = { REGDMA_POWER_LINK(0), REGDMA_POWER_LINK(1) };
+    for (int i = 0; i < ARRAY_SIZE(id_array); i++) {
+        void *head = sleep_retention_find_link_by_id(id_array[i]);
+        if (head) {
+            clk->regdma_desc[i] = head;
+        }
+    }
+
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for clock power retention");
-    ESP_LOGI(TAG, "Clock power sleep retention initialization");
     return ESP_OK;
 }
 
@@ -67,32 +87,45 @@ static esp_err_t sleep_power_analog_wait_ctrl_init(void *arg)
     return ESP_OK;
 }
 
+typedef struct {
+#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
+    pmu_sleep_power_clock_context_t clock;
+#endif
+    pmu_sleep_power_ana_wait_context_t ana_wait;
+} pmu_sleep_power_context_t;
+
 static esp_err_t sleep_power_retention_init(void *arg)
 {
+    pmu_sleep_power_context_t *ctx = (pmu_sleep_power_context_t *)arg;
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
-    ESP_RETURN_ON_ERROR(sleep_power_system_retention_init(arg), TAG, "system retention init failed");
+    ESP_RETURN_ON_ERROR(sleep_power_system_retention_init(&ctx->clock), TAG, "system retention init failed");
 #endif
-    ESP_RETURN_ON_ERROR(sleep_power_analog_wait_ctrl_init(arg), TAG, "analog wait ctrl retention init failed");
+    ESP_RETURN_ON_ERROR(sleep_power_analog_wait_ctrl_init(&ctx->ana_wait), TAG, "analog wait ctrl retention init failed");
     return ESP_OK;
 }
 
 static esp_err_t sleep_power_retention_deinit(void *arg)
 {
-    pmu_sleep_power_ana_wait_context_t *ana_wait_ctx = (pmu_sleep_power_ana_wait_context_t *)arg;
+    pmu_sleep_power_context_t *ctx = (pmu_sleep_power_context_t *)arg;
+#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
+    for (int i = 0; i < ARRAY_SIZE(ctx->clock.regdma_desc); i++) {
+        ctx->clock.regdma_desc[i] = NULL;
+    }
+#endif
     for (int i = 0; i < ANALOG_WAIT_CTRL_NUM; i++) {
-        ana_wait_ctx->regdma_desc[i] = NULL;
+        ctx->ana_wait.regdma_desc[i] = NULL;
     }
     return ESP_OK;
 }
 
 ESP_SYSTEM_INIT_FN(sleep_power_startup_init, SECONDARY, BIT(0), 108)
 {
-    static DRAM_ATTR pmu_sleep_power_ana_wait_context_t ana_wait_ctx;
+    static DRAM_ATTR pmu_sleep_power_context_t power_context = { 0 };
 
     sleep_retention_module_init_param_t init_param = {
         .cbs = {
-            .create  = { .handle = sleep_power_retention_init,   .arg = &ana_wait_ctx },
-            .destroy = { .handle = sleep_power_retention_deinit, .arg = &ana_wait_ctx },
+            .create  = { .handle = sleep_power_retention_init,   .arg = &power_context },
+            .destroy = { .handle = sleep_power_retention_deinit, .arg = &power_context },
         },
         .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
     };
@@ -101,8 +134,13 @@ ESP_SYSTEM_INIT_FN(sleep_power_startup_init, SECONDARY, BIT(0), 108)
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to init power retention module, err=%d", err);
     } else {
+#if PMU_SLEEP_PRIV_ENABLED
         pmu_sleep_data_t *data = (pmu_sleep_data_t *)PMU_instance()->priv;
-        data->func[PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT] = &ana_wait_ctx;
+        data->func[PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT] = &power_context.ana_wait;
+#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
+        data->func[PMU_SLEEP_PRIV_MODEM_LOCK_CLK_POWER] = &power_context.clock;
+#endif
+#endif
     }
 
     return ESP_OK;
@@ -123,3 +161,21 @@ void pmu_sleep_power_analog_wait_config(void *data, const uint16_t analog_wait[A
         regdma_link_set_write_wait_content(ana_wait_ctx->regdma_desc[i], (uint32_t)analog_wait[i] << PMU_ANA_WAIT_TARGET_S, PMU_ANA_WAIT_TARGET_M);
     }
 }
+
+#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
+void pmu_sleep_power_clock_config(void *data, const uint32_t config)
+{
+    pmu_sleep_data_t *datap = (pmu_sleep_data_t *)data;
+    if (!datap || !datap->func[PMU_SLEEP_PRIV_MODEM_LOCK_CLK_POWER]) {
+        return;
+    }
+
+    pmu_sleep_power_clock_context_t *clk = (pmu_sleep_power_clock_context_t *)datap->func[PMU_SLEEP_PRIV_MODEM_LOCK_CLK_POWER];
+    if (clk->regdma_desc[0]) {
+        regdma_link_set_write_wait_content(clk->regdma_desc[0], config & XTALX2_TIE_HIGH_MASK, XTALX2_TIE_HIGH_MASK);
+    }
+    if (clk->regdma_desc[1]) {
+        regdma_link_set_write_wait_content(clk->regdma_desc[1], config & BBPLL_TIE_HIGH_MASK,  BBPLL_TIE_HIGH_MASK);
+    }
+}
+#endif

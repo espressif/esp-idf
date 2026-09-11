@@ -2,7 +2,7 @@ menu "ESP Security Specific"
 
     config ESP_CRYPTO_CLK_ON_DEMAND
         bool "Enable on-demand crypto clock management"
-        depends on IDF_TARGET_ESP32S31
+        depends on IDF_TARGET_ESP32S31 || IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21
         default y if PM_ENABLE
         default n
         help
