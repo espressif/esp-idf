@@ -85,12 +85,13 @@ esp_err_t esp_console_internal_set_event_fd(esp_console_repl_com_t *repl_com)
         return ESP_FAIL;
     }
 
-    repl_com->state_mux = xSemaphoreCreateMutex();
+    /* Empty on purpose, and the task only ever gives it, never takes it: a
+     * mutex created given lets a stop take it before the task has run. */
+    repl_com->state_mux = xSemaphoreCreateBinary();
     if (repl_com->state_mux == NULL) {
         ESP_LOGE(TAG, "state_mux create error");
         return ESP_ERR_NO_MEM;
     }
-    xSemaphoreGive(repl_com->state_mux);
 
     return ESP_OK;
 }
@@ -103,6 +104,7 @@ esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
 {
     // set the state to deinit to force the while loop in
     // esp_console_repl_task to break
+    const bool was_started = (repl_com->state == CONSOLE_REPL_STATE_START);
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
 
     if (s_interrupt_reading_fd == -1) {
@@ -117,7 +119,9 @@ esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
     // wait for the task to notify that
     // esp_console_repl_task returned
     assert(repl_com->state_mux != NULL);
-    xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+    if (was_started) {
+        xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+    }
 
     // delete the semaphore for the repl state
     vSemaphoreDelete(repl_com->state_mux);

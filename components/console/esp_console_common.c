@@ -29,10 +29,6 @@ void esp_console_repl_task(void *args)
      * function is called. */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    if (repl_com->state_mux != NULL) {
-        xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    }
-
     /* Change standard input and output of the task if the requested UART is
      * NOT the default one. This block will replace stdin, stdout and stderr.
      */
@@ -338,6 +334,10 @@ esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_confi
 _exit:
     if (universal_repl) {
         esp_console_deinit();
+        /* Only common_deinit() deletes state_mux, and the weak set_event_fd() never creates it. */
+        if (universal_repl->repl_com.state_mux) {
+            vSemaphoreDelete(universal_repl->repl_com.state_mux);
+        }
         free(universal_repl);
     }
     if (ret_repl) {

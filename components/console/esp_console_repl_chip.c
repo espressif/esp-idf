@@ -152,6 +152,10 @@ static esp_err_t esp_console_new_repl_uart_legacy(const esp_console_dev_uart_con
 _exit:
     if (uart_repl) {
         esp_console_deinit();
+        /* Only common_deinit() deletes state_mux, and the weak set_event_fd() never creates it. */
+        if (uart_repl->repl_com.state_mux) {
+            vSemaphoreDelete(uart_repl->repl_com.state_mux);
+        }
         free(uart_repl);
     }
     if (ret_repl) {
