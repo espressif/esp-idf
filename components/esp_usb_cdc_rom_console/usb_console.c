@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,35 +20,27 @@
 #include "esp_private/usb_console.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/startup_internal.h"
-#include "soc/periph_defs.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/usb_struct.h"
-#include "soc/usb_reg.h"
+#include "soc/usb_periph.h"
 #include "hal/soc_hal.h"
+#include "hal/usb_dwc_ll.h"
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/usb/usb_dc.h"
-#include "esp32s2/rom/usb/cdc_acm.h"
-#include "esp32s2/rom/usb/usb_dfu.h"
-#include "esp32s2/rom/usb/usb_device.h"
-#include "esp32s2/rom/usb/usb_os_glue.h"
-#include "esp32s2/rom/usb/usb_persist.h"
-#include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/usb/usb_dc.h"
-#include "esp32s3/rom/usb/cdc_acm.h"
-#include "esp32s3/rom/usb/usb_dfu.h"
-#include "esp32s3/rom/usb/usb_device.h"
-#include "esp32s3/rom/usb/usb_os_glue.h"
-#include "esp32s3/rom/usb/usb_persist.h"
-#include "esp32s3/rom/usb/chip_usb_dw_wrapper.h"
-#endif
+#include "rom/usb/usb_dc.h"
+#include "rom/usb/cdc_acm.h"
+#include "rom/usb/usb_dfu.h"
+#include "rom/usb/usb_device.h"
+#include "rom/usb/usb_os_glue.h"
+#include "rom/usb/usb_persist.h"
+#include "rom/usb/chip_usb_dw_wrapper.h"
 
 #include "esp_private/esp_vfs_cdcacm_select.h"
 
 #define CDC_WORK_BUF_SIZE (ESP_ROM_CDC_ACM_WORK_BUF_MIN + CONFIG_ESP_CONSOLE_USB_CDC_RX_BUF_SIZE)
+
+/* The ROM CDC ACM driver only ever drives the first USB-DWC controller */
+#define USB_CONSOLE_DWC_CTRL_IDX 0
 
 typedef enum {
     REBOOT_NONE,
@@ -241,7 +233,8 @@ void esp_usb_console_on_restart_timeout(void *arg)
 void esp_usb_console_poll_interrupts(void)
 {
     const int max_poll_count = 10;
-    for (int i = 0; (USB0.gintsts & USB0.gintmsk) != 0 && i < max_poll_count; i++) {
+    usb_dwc_dev_t *hw = USB_DWC_LL_GET_HW(USB_CONSOLE_DWC_CTRL_IDX);
+    for (int i = 0; usb_dwc_ll_gintsts_read_pending_intrs(hw) != 0 && i < max_poll_count; i++) {
         usb_dc_check_poll_for_interrupts();
     }
 }
@@ -301,7 +294,8 @@ esp_err_t esp_usb_console_init(void)
      *   Since the handler function is in IRAM, we can register the interrupt as IRAM capable.
      *   It is not because we actually need the interrupt to work with cache disabled!
      */
-    err = esp_intr_alloc(ETS_USB_INTR_SOURCE, ISR_FLAG | ESP_INTR_FLAG_INTRDISABLED,
+    err = esp_intr_alloc(usb_dwc_info.controllers[USB_CONSOLE_DWC_CTRL_IDX].irq,
+                         ISR_FLAG | ESP_INTR_FLAG_INTRDISABLED,
                          esp_usb_console_interrupt, NULL, &s_usb_int_handle);
     if (err != ESP_OK) {
         esp_unregister_shutdown_handler(esp_usb_console_before_restart);
@@ -320,7 +314,7 @@ esp_err_t esp_usb_console_init(void)
     usb_dfu_set_detach_cb(esp_usb_console_dfu_detach_cb);
 
     /* Enable interrupts on USB peripheral side */
-    USB0.gahbcfg |= USB_GLBLLNTRMSK_M;
+    usb_dwc_ll_gahbcfg_en_global_intr(USB_DWC_LL_GET_HW(USB_CONSOLE_DWC_CTRL_IDX));
 
     /* Enable the interrupt handler */
     esp_intr_enable(s_usb_int_handle);

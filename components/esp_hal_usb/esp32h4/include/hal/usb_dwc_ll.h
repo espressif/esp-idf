@@ -319,6 +319,17 @@ static inline void usb_dwc_ll_gintsts_clear_intrs(usb_dwc_dev_t *hw, uint32_t in
     hw->gintsts_reg.val = intr_msk;
 }
 
+/**
+ * @brief Reads the pending interrupts, i.e. those which are both asserted and unmasked
+ *
+ * @param hw Start address of the DWC_OTG registers
+ * @return uint32_t Mask of pending interrupts
+ */
+static inline uint32_t usb_dwc_ll_gintsts_read_pending_intrs(usb_dwc_dev_t *hw)
+{
+    return hw->gintsts_reg.val & hw->gintmsk_reg.val;
+}
+
 // --------------------------- GINTMSK Register --------------------------------
 
 static inline void usb_dwc_ll_gintmsk_en_intrs(usb_dwc_dev_t *hw, uint32_t intr_mask)
