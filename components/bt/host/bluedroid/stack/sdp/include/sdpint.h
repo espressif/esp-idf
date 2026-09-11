@@ -200,6 +200,10 @@ typedef struct {
 
     UINT8             disc_state;
     UINT8             is_attr_search;
+#if BT_SDP_BQB_INCLUDED
+    UINT8             is_search_only;           /* BQB: stop after SS, do not auto-SA */
+    UINT8             is_attr_only;             /* BQB: skip SS, send SA for handles[] */
+#endif
 #endif  /* SDP_CLIENT_ENABLED == TRUE */
 
 #if SDP_SERVER_ENABLED == TRUE
@@ -309,6 +313,9 @@ extern void     sdp_server_handle_client_req (tCONN_CB *p_ccb, BT_HDR *p_msg);
 #if SDP_CLIENT_ENABLED == TRUE
 extern void sdp_disc_connected (tCONN_CB *p_ccb);
 extern void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg);
+#if BT_SDP_BQB_INCLUDED
+extern void sdp_bqb_save_search_handles(const UINT32 *handles, UINT16 num);
+#endif
 #else
 #define sdp_disc_connected(p_ccb)
 #define sdp_disc_server_rsp(p_ccb, p_msg)

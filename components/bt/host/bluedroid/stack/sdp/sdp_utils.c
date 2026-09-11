@@ -151,6 +151,10 @@ void sdpu_release_ccb (tCONN_CB *p_ccb)
     p_ccb->con_state = SDP_STATE_IDLE;
 #if SDP_CLIENT_ENABLED == TRUE
     p_ccb->is_attr_search = FALSE;
+#if BT_SDP_BQB_INCLUDED
+    p_ccb->is_search_only = FALSE;
+    p_ccb->is_attr_only = FALSE;
+#endif
 #endif
 
     /* Free the response buffer */
