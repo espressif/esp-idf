@@ -612,7 +612,7 @@ static void s_spi_common_gpio_check_reserve(gpio_num_t gpio_num)
     }
 }
 
-static void s_spi_common_bus_via_gpio(gpio_num_t gpio_num, int in_sig, int out_sig, uint64_t *io_mask)
+static void s_spi_common_bus_via_gpio(gpio_num_t gpio_num, int in_sig, int out_sig, bool out_inv, uint64_t *io_mask)
 {
     assert(GPIO_IS_VALID_GPIO(gpio_num));  //coverity check
     if (in_sig != -1) {
@@ -622,7 +622,7 @@ static void s_spi_common_bus_via_gpio(gpio_num_t gpio_num, int in_sig, int out_s
         // For gpio_matrix, reserve output pins, see 'esp_gpio_reserve.h'
         *io_mask |= BIT64(gpio_num);
         s_spi_common_gpio_check_reserve(gpio_num);
-        gpio_matrix_output(gpio_num, out_sig, false, false);
+        gpio_matrix_output(gpio_num, out_sig, out_inv, false);
     }
     gpio_func_sel(gpio_num, PIN_FUNC_GPIO);
 }
@@ -696,8 +696,11 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
     }
 
+    bool data_out_inv = bus_config->flags & SPICOMMON_BUSFLAG_DATA_OUT_INV;
     //check if the selected pins correspond to the iomux pins of the peripheral
-    bool use_iomux = !(flags & SPICOMMON_BUSFLAG_GPIO_PINS) && bus_uses_iomux_pins(host, bus_config);
+    bool use_iomux = !data_out_inv &&
+                     !(flags & SPICOMMON_BUSFLAG_GPIO_PINS) &&
+                     bus_uses_iomux_pins(host, bus_config);
     if (use_iomux) {
         temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
     } else {
@@ -707,6 +710,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     uint32_t missing_flag = flags & ~temp_flag;
     missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;  //don't check this flag
     missing_flag &= ~SPICOMMON_BUSFLAG_SLP_ALLOW_PD;
+    missing_flag &= ~SPICOMMON_BUSFLAG_DATA_OUT_INV;
 
     if (missing_flag != 0) {
         //check pins existence
@@ -761,23 +765,25 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->mosi_io_num >= 0) {
             int in_sig  = spi_periph_signal[host].spid_in; // always connect input in case sio master is used
             int out_sig = spi_periph_signal[host].spid_out;// always connect output in case sio slave is used, output capability is checked in slave hd driver
-            s_spi_common_bus_via_gpio(bus_config->mosi_io_num, in_sig, out_sig, &gpio_reserv);
+            s_spi_common_bus_via_gpio(bus_config->mosi_io_num, in_sig, out_sig, data_out_inv, &gpio_reserv);
         }
         if (bus_config->miso_io_num >= 0) {
             int in_sig = ((flags & SPICOMMON_BUSFLAG_MASTER) || (temp_flag & SPICOMMON_BUSFLAG_DUAL)) ? spi_periph_signal[host].spiq_in : -1;
             int out_sig = (!(flags & SPICOMMON_BUSFLAG_MASTER) || (temp_flag & SPICOMMON_BUSFLAG_DUAL)) ? spi_periph_signal[host].spiq_out : -1;
-            s_spi_common_bus_via_gpio(bus_config->miso_io_num, in_sig, out_sig, &gpio_reserv);
+            s_spi_common_bus_via_gpio(bus_config->miso_io_num, in_sig, out_sig, data_out_inv, &gpio_reserv);
         }
         if (bus_config->sclk_io_num >= 0) {
             int in_sig = (flags & SPICOMMON_BUSFLAG_MASTER) ? -1 : spi_periph_signal[host].spiclk_in;
             int out_sig = (flags & SPICOMMON_BUSFLAG_MASTER) ? spi_periph_signal[host].spiclk_out : -1;
-            s_spi_common_bus_via_gpio(bus_config->sclk_io_num, in_sig, out_sig, &gpio_reserv);
+            s_spi_common_bus_via_gpio(bus_config->sclk_io_num, in_sig, out_sig, false, &gpio_reserv);
         }
         if (bus_config->quadwp_io_num >= 0) {
-            s_spi_common_bus_via_gpio(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in, spi_periph_signal[host].spiwp_out, &gpio_reserv);
+            s_spi_common_bus_via_gpio(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in,
+                                      spi_periph_signal[host].spiwp_out, data_out_inv, &gpio_reserv);
         }
         if (bus_config->quadhd_io_num >= 0) {
-            s_spi_common_bus_via_gpio(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in, spi_periph_signal[host].spihd_out, &gpio_reserv);
+            s_spi_common_bus_via_gpio(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in,
+                                      spi_periph_signal[host].spihd_out, data_out_inv, &gpio_reserv);
         }
 #if SOC_SPI_SUPPORT_OCT
         if (flags & SPICOMMON_BUSFLAG_OCTAL) {
@@ -790,7 +796,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             };
             for (size_t i = 0; i < sizeof(io_nums) / sizeof(io_nums[0]); i++) {
                 if (io_nums[i] >= 0) {
-                    s_spi_common_bus_via_gpio(io_nums[i], io_signals[i][1], io_signals[i][0], &gpio_reserv);
+                    s_spi_common_bus_via_gpio(io_nums[i], io_signals[i][1], io_signals[i][0], data_out_inv, &gpio_reserv);
                 }
             }
         }
