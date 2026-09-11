@@ -11,6 +11,7 @@ from console_output import status_message
 from esp_pylib.excepthook import install_exception_reporting
 from esp_pylib.logger import log
 from rich.markup import escape
+from rich.text import Text
 from shell_types import SHELL_CLASSES
 from shell_types import SUPPORTED_SHELLS
 from utils import conf
@@ -108,18 +109,18 @@ def detect_shell(args: Any) -> str:
 
 
 @status_message('Detecting outdated tools in system', rv_on_ok=True)
-def print_uninstall_msg() -> Any:
+def print_uninstall_msg() -> Text:
     stdout = run_cmd([sys.executable, conf.IDF_TOOLS_PY, 'uninstall', '--dry-run'])
     if stdout:
         python_cmd = 'python.exe' if sys.platform == 'win32' else 'python'
-        msg = (
-            f'Found tools that are not used by active ESP-IDF version.\n'
-            f'[bright_cyan]{stdout}\n'
-            f'To free up even more space, remove installation packages of those tools.\n'
-            f'Use option {python_cmd} {conf.IDF_TOOLS_PY} uninstall --remove-archives.'
+        msg = Text('Found tools that are not used by active ESP-IDF version.\n', style='green')
+        msg.append(
+            f'{stdout}\nTo free up even more space, remove installation packages of those tools.\n'
+            f'Use option {python_cmd} {conf.IDF_TOOLS_PY} uninstall --remove-archives.',
+            style='bright_cyan',
         )
     else:
-        msg = 'OK - no outdated tools found'
+        msg = Text('OK - no outdated tools found', style='green')
 
     return msg
 
