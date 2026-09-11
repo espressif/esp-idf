@@ -342,7 +342,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
                     }
 
                 } else {
-                    p_cmd->status        = GATT_NOT_FOUND;
+                    p_cmd->status = GATT_INVALID_HANDLE;
                     break;
                 }
 
@@ -352,7 +352,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
             /* Sanity check on the buffer length */
             if (p_buf->len <= 1) {
                 GATT_TRACE_ERROR("process_read_multi_rsp - nothing found!!");
-                p_cmd->status = GATT_NOT_FOUND;
+                p_cmd->status = GATT_INVALID_HANDLE;
                 osi_free (p_buf);
                 GATT_TRACE_DEBUG(" osi_free (p_buf)");
             } else if (p_cmd->p_rsp_msg != NULL) {
@@ -443,7 +443,7 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
                     p += len;
                     p_buf->len += (2+len);
                 } else {
-                    p_cmd->status = GATT_NOT_FOUND;
+                    p_cmd->status = GATT_INVALID_HANDLE;
                     break;
                 }
 
@@ -452,7 +452,7 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
             /* Sanity check on the buffer length */
             if (p_buf->len <= 1) {
                 GATT_TRACE_ERROR("%s - nothing found!!", __func__);
-                p_cmd->status = GATT_NOT_FOUND;
+                p_cmd->status = GATT_INVALID_HANDLE;
                 osi_free (p_buf);
             } else if (p_cmd->p_rsp_msg != NULL) {
                 osi_free (p_buf);
