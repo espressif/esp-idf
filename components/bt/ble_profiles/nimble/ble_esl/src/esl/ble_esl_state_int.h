@@ -30,12 +30,12 @@ extern "C" {
 
 /* ========================== Configuration Bitmask ========================== */
 
-#define CONFIG_BIT_ADDRESS      (1 << 0)
-#define CONFIG_BIT_AP_SYNC_KEY  (1 << 1)
-#define CONFIG_BIT_RESP_KEY     (1 << 2)
-#define CONFIG_BIT_ABS_TIME     (1 << 3)
-#define CONFIG_COMPLETE_MASK    (CONFIG_BIT_ADDRESS | CONFIG_BIT_AP_SYNC_KEY | \
-                                 CONFIG_BIT_RESP_KEY | CONFIG_BIT_ABS_TIME)
+#define ESL_CONFIG_BIT_ADDRESS      (1 << 0)
+#define ESL_CONFIG_BIT_AP_SYNC_KEY  (1 << 1)
+#define ESL_CONFIG_BIT_RESP_KEY     (1 << 2)
+#define ESL_CONFIG_BIT_ABS_TIME     (1 << 3)
+#define ESL_CONFIG_COMPLETE_MASK    (ESL_CONFIG_BIT_ADDRESS | ESL_CONFIG_BIT_AP_SYNC_KEY | \
+                                     ESL_CONFIG_BIT_RESP_KEY | ESL_CONFIG_BIT_ABS_TIME)
 
 /* ========================== Internal State Context ========================== */
 typedef struct {
@@ -65,9 +65,7 @@ typedef struct {
      * retiring_* tracks a locally terminated old sync so its SYNC_LOST does not
      * look like a natural loss of the new train. */
     uint16_t                current_sync_handle;    /* Valid periodic sync; BLE_HS_CONN_HANDLE_NONE if none */
-    uint32_t                sync_generation;        /* Bumps each time current_sync_handle is assigned a new value */
     uint16_t                retiring_sync_handle;   /* Locally terminated old sync awaiting SYNC_LOST */
-    uint32_t                retiring_sync_generation; /* Snapshot of sync_generation when current was retired */
     bool                    retiring_local_terminate; /* retiring SYNC_LOST is expected; do not change ESL state */
     bool                    past_received;      /* PAST completed in Updating state */
     bool                    pawr_synced;        /* Synchronized to the AP's PAwR train (retained across Updating) */

@@ -413,7 +413,7 @@ esp_err_t ble_esl_export_persisted_tag(ble_esl_persisted_tag_t *out);
  *
  * Performs bare field assignment (does NOT call esl_state_transition). Sets
  * state to UNSYNCHRONIZED and config_complete to Address|AP Sync|Resp only
- * (CONFIG_BIT_ABS_TIME cleared). Does not start advertising or timers —
+ * (Absolute Time bit cleared). Does not start advertising or timers —
  * ble_esl_start() must follow to arm unsync_timer and connectable advertising.
  *
  * @param[in] info Valid association snapshot

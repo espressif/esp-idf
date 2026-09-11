@@ -106,6 +106,7 @@ typedef struct {
 typedef struct {
     ble_esl_ap_cb_t callback;             /*!< Application event callback (must not be NULL) */
     ble_esl_ap_pawr_config_t pawr_config; /*!< PAwR timing parameters */
+    ble_esl_key_material_t ap_sync_key;   /*!< PAwR train Sync Key (one per AP, not per ESL) */
 } ble_esl_ap_config_t;
 
 /* ========================== Connection Event Structures ========================== */
@@ -159,7 +160,6 @@ typedef struct {
 typedef struct {
     uint8_t esl_id;                       /*!< ESL_ID to assign (0x00–0xFE) */
     uint8_t group_id;                     /*!< Group_ID to assign (0x00–0x7F) */
-    ble_esl_key_material_t ap_sync_key;   /*!< AP Sync Key Material (session key + IV) */
     ble_esl_key_material_t resp_key;      /*!< ESL Response Key Material (session key + IV) */
 } ble_esl_ap_esl_config_t;
 
@@ -348,12 +348,24 @@ typedef struct {
  * Registers the application callback, stores PAwR timing parameters,
  * and allocates internal resources. Must be called before any other API.
  *
- * @param config Pointer to AP configuration (callback + PAwR timing)
+ * @param config Pointer to AP configuration (callback, PAwR timing, AP Sync Key)
  * @return ESP_OK on success; ESP_ERR_INVALID_ARG if config/callback is NULL or
  *         num_subevents is outside 1–128;
  *         ESP_ERR_INVALID_STATE if already initialized
  */
 esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config);
+
+/**
+ * @brief Set or replace the AP-wide PAwR Sync Key Material
+ *
+ * One key encrypts the whole PAwR train. ble_esl_ap_init() installs
+ * config->ap_sync_key; call this to rekey or restore a persisted network
+ * key. Does not rewrite already-configured ESLs over GATT.
+ *
+ * @param key AP Sync Key Material (session key + IV)
+ * @return ESP_OK on success; ESP_ERR_INVALID_ARG / ESP_ERR_INVALID_STATE
+ */
+esp_err_t ble_esl_ap_set_sync_key(const ble_esl_key_material_t *key);
 
 /**
  * @brief Deinitialize the AP module
@@ -483,12 +495,13 @@ esp_err_t ble_esl_ap_abort_tag_connections(void);
 /**
  * @brief Write ESL configuration characteristics
  *
- * Writes ESL Address, AP Sync Key Material, ESL Response Key Material, and
- * ESL Current Absolute Time in sequence. Async — result via
+ * Writes ESL Address, the AP-wide Sync Key already installed by
+ * ble_esl_ap_init() / ble_esl_ap_set_sync_key(), ESL Response Key Material,
+ * and ESL Current Absolute Time in sequence. Async — result via
  * BLE_ESL_AP_EVT_CONFIGURED.
  *
  * @param conn_handle Connection handle of the connected ESL
- * @param config      Pointer to configuration parameters
+ * @param config      Pointer to per-ESL parameters (address + response key)
  * @return ESP_OK if operation initiated; error code on failure
  */
 esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
@@ -537,14 +550,17 @@ bool ble_esl_ap_synchronize_in_progress(void);
 /**
  * @brief Write ESL Current Absolute Time on an encrypted ACL link
  *
- * Uses the current boot monotonic clock (esp_timer_get_time()/1000).
- * Completion is BLE_ESL_AP_EVT_ABS_TIME_WRITTEN (once, if this returns ESP_OK).
+ * @p abs_time_ms is the ESL 32-bit millisecond counter (wrapping), not a
+ * POSIX/RTC timestamp. The application owns the epoch (boot monotonic,
+ * persisted network time, SNTP-derived, etc.). Completion is
+ * BLE_ESL_AP_EVT_ABS_TIME_WRITTEN (once, if this returns ESP_OK).
  * Rejected while configure occupies the same connection.
  *
  * @param conn_handle Connection handle of the connected ESL
+ * @param abs_time_ms Absolute time in milliseconds to write to the ESL
  * @return ESP_OK if the GATT write was initiated
  */
-esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle);
+esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle, uint32_t abs_time_ms);
 
 /**
  * @brief In-memory association snapshot used to seed AP tracking after reboot
@@ -552,15 +568,14 @@ esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle);
  * Not an NVS/wire blob. Call after ble_esl_ap_init(); may be invoked
  * multiple times (once per ESL), including after ble_esl_ap_start_pawr().
  * Key material is not checked for all-zeros — the application must
- * quarantine corrupt records. The AP Sync Key of the last successful
- * restore is installed as the current PAwR key.
+ * quarantine corrupt records. The AP Sync Key is AP-wide: restore it
+ * once via ble_esl_ap_init() / ble_esl_ap_set_sync_key(), not per ESL.
  */
 typedef struct {
     ble_esl_address_t esl_address;     /*!< ESL Address (ESL_ID + Group_ID) */
     uint8_t ble_addr[6];               /*!< Identity address of the ESL */
     uint8_t ble_addr_type;             /*!< BLE address type */
-    ble_esl_key_material_t ap_sync_key;
-    ble_esl_key_material_t resp_key;
+    ble_esl_key_material_t resp_key;   /*!< Per-ESL Response Key Material */
 } ble_esl_ap_persisted_esl_t;
 
 esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *info);

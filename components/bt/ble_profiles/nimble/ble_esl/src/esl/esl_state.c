@@ -11,7 +11,6 @@
 
 #include <string.h>
 #include <assert.h>
-#include <inttypes.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -58,7 +57,6 @@ static void clear_retiring_sync(void)
         return;
     }
     s_ctx->retiring_sync_handle = BLE_HS_CONN_HANDLE_NONE;
-    s_ctx->retiring_sync_generation = 0;
     s_ctx->retiring_local_terminate = false;
 }
 
@@ -68,7 +66,6 @@ static void clear_current_sync_bookkeeping(void)
         return;
     }
     s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
-    /* sync_generation is monotonic across NONE assignments; do not reset. */
 }
 
 static void install_current_sync(uint16_t sync_handle)
@@ -77,11 +74,6 @@ static void install_current_sync(uint16_t sync_handle)
         return;
     }
     s_ctx->current_sync_handle = sync_handle;
-    if (s_ctx->sync_generation == UINT32_MAX) {
-        s_ctx->sync_generation = 1;
-    } else {
-        s_ctx->sync_generation++;
-    }
 }
 
 /**
@@ -112,10 +104,8 @@ static esp_err_t retire_current_sync(bool rearm_past)
     }
 
     uint16_t old_handle = s_ctx->current_sync_handle;
-    uint32_t old_generation = s_ctx->sync_generation;
 
     s_ctx->retiring_sync_handle = old_handle;
-    s_ctx->retiring_sync_generation = old_generation;
     s_ctx->retiring_local_terminate = true;
     s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
     s_ctx->past_pending = rearm_past;
@@ -130,8 +120,8 @@ static esp_err_t retire_current_sync(bool rearm_past)
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Retired sync handle=%u gen=%" PRIu32 " rearm_past=%d",
-             old_handle, old_generation, rearm_past);
+    ESP_LOGI(TAG, "Retired sync handle=%u rearm_past=%d",
+             old_handle, rearm_past);
     return ESP_OK;
 }
 
@@ -155,9 +145,7 @@ static void adopt_past_sync(uint16_t sync_handle)
         }
 
         uint16_t old_handle = s_ctx->current_sync_handle;
-        uint32_t old_generation = s_ctx->sync_generation;
         s_ctx->retiring_sync_handle = old_handle;
-        s_ctx->retiring_sync_generation = old_generation;
         s_ctx->retiring_local_terminate = true;
         s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
         s_ctx->past_pending = false;
@@ -176,7 +164,7 @@ static void adopt_past_sync(uint16_t sync_handle)
     }
 
     if (s_ctx->current_sync_handle == sync_handle) {
-        /* Same handle reported again — keep generation. */
+        /* Same handle reported again. */
         return;
     }
 
@@ -455,7 +443,7 @@ void esl_notify_update_complete(void)
     case BLE_ESL_STATE_CONFIGURING:
         /* First provisioning also requires all mandatory configuration writes. */
         if (s_ctx->past_received &&
-            (s_ctx->config_complete & CONFIG_COMPLETE_MASK) == CONFIG_COMPLETE_MASK) {
+            (s_ctx->config_complete & ESL_CONFIG_COMPLETE_MASK) == ESL_CONFIG_COMPLETE_MASK) {
             esl_state_transition(BLE_ESL_STATE_SYNCHRONIZED);
         } else {
             ESP_LOGI(TAG, "Update Complete received in Configuring — waiting for PAST / config");
@@ -748,7 +736,7 @@ static void handle_gap_disconnect(struct ble_gap_event *event)
 
     switch (s_ctx->state) {
     case BLE_ESL_STATE_CONFIGURING:
-        if ((s_ctx->config_complete & CONFIG_COMPLETE_MASK) == CONFIG_COMPLETE_MASK) {
+        if ((s_ctx->config_complete & ESL_CONFIG_COMPLETE_MASK) == ESL_CONFIG_COMPLETE_MASK) {
             /* Configuration complete — go to Unsynchronized */
             esl_state_transition(BLE_ESL_STATE_UNSYNCHRONIZED);
         } else {
@@ -977,7 +965,7 @@ static void handle_gap_periodic_transfer(struct ble_gap_event *event)
          * advance the state machine before provisioning finishes. */
         s_ctx->past_received = true;
         if (s_ctx->update_complete_received &&
-            (s_ctx->config_complete & CONFIG_COMPLETE_MASK) == CONFIG_COMPLETE_MASK) {
+            (s_ctx->config_complete & ESL_CONFIG_COMPLETE_MASK) == ESL_CONFIG_COMPLETE_MASK) {
             esl_state_transition(BLE_ESL_STATE_SYNCHRONIZED);
         } else {
             ESP_LOGI(TAG, "PAST received in Configuring — waiting for Update Complete / config");
@@ -1118,9 +1106,7 @@ static int esl_gap_event_handler(struct ble_gap_event *event, void *arg)
         uint16_t lost_handle = event->periodic_sync_lost.sync_handle;
         esl_sync_lost_ctx_t lost_ctx = {
             .current_sync_handle = s_ctx->current_sync_handle,
-            .sync_generation = s_ctx->sync_generation,
             .retiring_sync_handle = s_ctx->retiring_sync_handle,
-            .retiring_sync_generation = s_ctx->retiring_sync_generation,
             .retiring_local_terminate = s_ctx->retiring_local_terminate,
         };
         esl_sync_lost_class_t kind = esl_classify_sync_lost(&lost_ctx, lost_handle);
@@ -1711,9 +1697,7 @@ esp_err_t ble_esl_restore_persisted_tag(const ble_esl_persisted_tag_t *info)
     s_ctx->pawr_synced = false;
     s_ctx->update_complete_received = false;
     s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
-    s_ctx->sync_generation = 0;
     s_ctx->retiring_sync_handle = BLE_HS_CONN_HANDLE_NONE;
-    s_ctx->retiring_sync_generation = 0;
     s_ctx->retiring_local_terminate = false;
     s_ctx->state = BLE_ESL_STATE_UNSYNCHRONIZED;
 

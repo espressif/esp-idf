@@ -6,7 +6,7 @@
 
 /**
  * @file esl_persisted_tag_map.h
- * @brief Pure helpers for TAG persisted snapshot field mapping (host-testable).
+ * @brief Helpers for TAG persisted snapshot field mapping.
  */
 #pragma once
 
@@ -14,20 +14,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include "ble_esl_common.h"
+#include "ble_esl_state_int.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef CONFIG_BIT_ADDRESS
-#define CONFIG_BIT_ADDRESS      (1 << 0)
-#define CONFIG_BIT_AP_SYNC_KEY  (1 << 1)
-#define CONFIG_BIT_RESP_KEY     (1 << 2)
-#define CONFIG_BIT_ABS_TIME     (1 << 3)
-#endif
-
+/* Persist does not store Absolute Time; restore must leave that bit clear. */
 #define ESL_PERSISTED_CONFIG_MASK \
-    (CONFIG_BIT_ADDRESS | CONFIG_BIT_AP_SYNC_KEY | CONFIG_BIT_RESP_KEY)
+    (ESL_CONFIG_BIT_ADDRESS | ESL_CONFIG_BIT_AP_SYNC_KEY | ESL_CONFIG_BIT_RESP_KEY)
 
 typedef struct {
     ble_esl_address_t esl_address;

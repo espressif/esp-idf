@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Pure classification helpers for PERIODIC_SYNC_LOST (host-testable).
+ *
+ * SYNC_LOST carries only a handle. Handle reuse cannot be detected here, so
+ * classification uses current vs retiring handles plus the local-terminate
+ * flag — not a generation counter.
  */
 
 #pragma once
@@ -27,28 +31,9 @@ typedef enum {
 
 typedef struct {
     uint16_t current_sync_handle;
-    uint32_t sync_generation;
     uint16_t retiring_sync_handle;
-    uint32_t retiring_sync_generation;
     bool retiring_local_terminate;
 } esl_sync_lost_ctx_t;
-
-static inline uint32_t esl_sync_lost_generation_hint(const esl_sync_lost_ctx_t *ctx,
-                                                     uint16_t evt_sync_handle)
-{
-    if (ctx == NULL) {
-        return 0;
-    }
-    if (evt_sync_handle == ctx->current_sync_handle &&
-            ctx->current_sync_handle != ESL_SYNC_HANDLE_NONE) {
-        return ctx->sync_generation;
-    }
-    if (evt_sync_handle == ctx->retiring_sync_handle &&
-            ctx->retiring_sync_handle != ESL_SYNC_HANDLE_NONE) {
-        return ctx->retiring_sync_generation;
-    }
-    return 0;
-}
 
 static inline esl_sync_lost_class_t esl_classify_sync_lost(const esl_sync_lost_ctx_t *ctx,
                                                            uint16_t evt_sync_handle)
@@ -65,9 +50,7 @@ static inline esl_sync_lost_class_t esl_classify_sync_lost(const esl_sync_lost_c
 
     if (evt_sync_handle == ctx->current_sync_handle &&
             ctx->current_sync_handle != ESL_SYNC_HANDLE_NONE) {
-        if (esl_sync_lost_generation_hint(ctx, evt_sync_handle) == ctx->sync_generation) {
-            return ESL_SYNC_LOST_CURRENT_NATURAL;
-        }
+        return ESL_SYNC_LOST_CURRENT_NATURAL;
     }
 
     return ESL_SYNC_LOST_STALE;

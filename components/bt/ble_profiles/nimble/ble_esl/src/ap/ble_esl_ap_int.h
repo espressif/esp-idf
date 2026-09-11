@@ -247,6 +247,7 @@ typedef struct {
 
     /* PAwR broadcaster state */
     ble_esl_key_material_t ap_sync_key;            /*!< AP Sync Key Material */
+    bool ap_sync_key_valid;                        /*!< Sync key installed via init/setter */
     uint8_t randomizer[BLE_ESL_RANDOMIZER_SIZE];   /*!< Current AP Randomizer (5 octets, LE) */
     bool pawr_active;                              /*!< PAwR broadcaster is running */
     ble_esl_ap_pawr_pending_t *pawr_pending;      /*!< Per-subevent pending TX buffers (num_subevents entries) */

@@ -64,6 +64,7 @@ _Static_assert(sizeof(ble_esl_key_material_t) == BLE_ESL_KEY_MATERIAL_SIZE,
 typedef struct {
     uint16_t conn_handle;
     ble_esl_ap_esl_config_t config;
+    ble_esl_key_material_t ap_sync_key; /*!< Snapshot of the AP-wide sync key */
     uint16_t esl_addr;
     uint32_t lf_generation;
 } configure_ctx_t;
@@ -182,8 +183,7 @@ static TaskHandle_t s_lifecycle_holder;
 _Static_assert(sizeof(ble_esl_key_material_t) == 24, "sync key packed 24");
 _Static_assert(sizeof(ble_esl_key_material_t) == 24, "resp key packed 24");
 /* In-memory compactness only — not an NVS/wire layout. */
-_Static_assert(offsetof(ble_esl_ap_persisted_esl_t, ap_sync_key) == 9, "flat key block start");
-_Static_assert(offsetof(ble_esl_ap_persisted_esl_t, resp_key) == 9 + 24, "resp key follows sync");
+_Static_assert(offsetof(ble_esl_ap_persisted_esl_t, resp_key) == 9, "resp key follows identity");
 
 static void lf_lock(void)
 {
@@ -261,11 +261,9 @@ static void lf_release(ble_esl_ap_conn_t *conn, uint32_t generation)
     }
 }
 
-static esp_err_t write_abs_time_bytes(uint16_t conn_handle,
+static esp_err_t write_abs_time_bytes(uint16_t conn_handle, uint32_t abs_time_ms,
                                       ble_esl_ap_gatt_cb_t cb, void *user_data)
 {
-    int64_t now_us = esp_timer_get_time();
-    uint32_t abs_time_ms = (uint32_t)(now_us / 1000ULL);
     uint8_t abs_time_data[4] = {
         (uint8_t)(abs_time_ms & 0xFF),
         (uint8_t)((abs_time_ms >> 8) & 0xFF),
@@ -318,7 +316,7 @@ static void write_abs_time_gatt_cb(uint16_t conn_handle, esp_err_t status,
     free(ctx);
 }
 
-esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle)
+esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle, uint32_t abs_time_ms)
 {
     if (g_esl_ap == NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -346,7 +344,8 @@ esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle)
     ctx->generation = gen;
     ctx->public_event = true;
 
-    esp_err_t ret = write_abs_time_bytes(conn_handle, write_abs_time_gatt_cb, ctx);
+    esp_err_t ret = write_abs_time_bytes(conn_handle, abs_time_ms,
+                                         write_abs_time_gatt_cb, ctx);
     if (ret != ESP_OK) {
         lf_lock();
         conn = ble_esl_ap_find_conn(conn_handle);
@@ -369,7 +368,9 @@ static esp_err_t write_abs_time_for_configure(uint16_t conn_handle, uint32_t gen
     ctx->public_event = false;
     ctx->chained_cb = configure_write_abs_time_cb;
     ctx->user_data = configure_ctx;
-    esp_err_t ret = write_abs_time_bytes(conn_handle, write_abs_time_gatt_cb, ctx);
+    uint32_t abs_time_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
+    esp_err_t ret = write_abs_time_bytes(conn_handle, abs_time_ms,
+                                         write_abs_time_gatt_cb, ctx);
     if (ret != ESP_OK) {
         free(ctx);
     }
@@ -624,6 +625,11 @@ esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (!g_esl_ap->ap_sync_key_valid) {
+        ESP_LOGE(TAG, "configure: AP Sync Key not set");
+        return ESP_ERR_INVALID_STATE;
+    }
+
     /* Validate connection handle */
     ble_esl_ap_conn_t *conn = ble_esl_ap_find_conn(conn_handle);
     if (conn == NULL) {
@@ -639,6 +645,7 @@ esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
 
     ctx->conn_handle = conn_handle;
     memcpy(&ctx->config, config, sizeof(ble_esl_ap_esl_config_t));
+    ctx->ap_sync_key = g_esl_ap->ap_sync_key;
     ctx->esl_addr = BLE_ESL_AP_MAKE_ADDR(config->esl_id, config->group_id);
 
     /* Store ESL address in connection context for cross-reference */
@@ -680,9 +687,6 @@ esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
         free(ctx);
         return occ;
     }
-
-    /* Set PAwR sync key (shared across all ESLs) */
-    ble_esl_ap_pawr_set_sync_key(&config->ap_sync_key);
 
     /* Set per-ESL response key */
     esp_err_t ret = ble_esl_ap_pawr_set_response_key(ctx->esl_addr,
@@ -731,8 +735,8 @@ static void configure_write_addr_cb(uint16_t conn_handle, esp_err_t status,
 
     /* Step 2: Write AP Sync Key Material (24 bytes: 16-byte key + 8-byte IV) */
     esp_err_t ret = ble_esl_ap_gatt_write(conn_handle, BLE_ESL_CHR_UUID_AP_SYNC_KEY,
-                                           (const uint8_t *)&ctx->config.ap_sync_key,
-                                           sizeof(ctx->config.ap_sync_key),
+                                           (const uint8_t *)&ctx->ap_sync_key,
+                                           sizeof(ctx->ap_sync_key),
                                            configure_write_sync_key_cb, ctx);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "configure: failed to initiate AP Sync Key write: %s",
@@ -1699,13 +1703,23 @@ esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *inf
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (!g_esl_ap->ap_sync_key_valid) {
+        ESP_LOGE(TAG, "restore: AP Sync Key not set");
+        return ESP_ERR_INVALID_STATE;
+    }
+
     ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
     if (esl == NULL) {
         esl = ble_esl_ap_find_esl_by_ble_addr(info->ble_addr, info->ble_addr_type);
     }
+    bool created = false;
+    ble_esl_ap_esl_entry_t backup = { 0 };
     if (esl == NULL) {
         esl = ble_esl_ap_alloc_esl();
+        created = true;
+    } else {
+        backup = *esl;
     }
     if (esl == NULL) {
         ble_esl_ap_tracking_unlock();
@@ -1722,24 +1736,26 @@ esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *inf
     esl->pending_pawr_cmd_opcode = 0;
     esl->resp_key = info->resp_key;
     esl->last_sync_time_us = 0;
-    ble_esl_ap_tracking_unlock();
 
-    ble_esl_ap_pawr_set_sync_key(&info->ap_sync_key);
-
-    esp_err_t ret = ble_esl_ap_pawr_set_response_key(esl_addr,
-                                                     &info->resp_key);
+    ble_esl_ap_state_evt_snap_t snap = { 0 };
+    esp_err_t ret = ble_esl_ap_update_esl_state_locked(esl_addr,
+                                                       BLE_ESL_STATE_UNSYNCHRONIZED,
+                                                       &snap);
     if (ret != ESP_OK) {
-        ESP_LOGW(TAG, "restore: set response key for 0x%04X failed: %s",
-                 esl_addr, esp_err_to_name(ret));
-    }
-
-    ret = ble_esl_ap_update_esl_state(esl_addr,
-                                      BLE_ESL_STATE_UNSYNCHRONIZED);
-    if (ret != ESP_OK) {
+        if (created) {
+            memset(esl, 0, sizeof(*esl));
+            esl->in_use = false;
+            esl->conn_handle = BLE_ESL_AP_CONN_HANDLE_INVALID;
+        } else {
+            *esl = backup;
+        }
+        ble_esl_ap_tracking_unlock();
         ESP_LOGE(TAG, "restore: failed to mark ESL 0x%04X unsynchronized: %s",
                  esl_addr, esp_err_to_name(ret));
         return ret;
     }
+    ble_esl_ap_tracking_unlock();
+    ble_esl_ap_dispatch_state_evt(&snap);
 
     ESP_LOGI(TAG, "Restored ESL 0x%04X from persistence (awaiting resync)",
              esl_addr);

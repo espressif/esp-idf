@@ -241,7 +241,7 @@ static int handle_write_esl_address(struct os_mbuf *om)
 
     s_esl_gatts->ctx->esl_address = addr;
     s_esl_gatts->ctx->address_valid = true;
-    s_esl_gatts->ctx->config_complete |= CONFIG_BIT_ADDRESS;
+    s_esl_gatts->ctx->config_complete |= ESL_CONFIG_BIT_ADDRESS;
     ESP_LOGI(TAG, "ESL Address set: id=0x%02x group=0x%02x",
              addr.esl_id, BLE_ESL_ADDR_GROUP_ID(addr));
     return 0;
@@ -261,7 +261,7 @@ static int handle_write_ap_sync_key(struct os_mbuf *om)
     }
 
     s_esl_gatts->ctx->ap_sync_key_valid = true;
-    s_esl_gatts->ctx->config_complete |= CONFIG_BIT_AP_SYNC_KEY;
+    s_esl_gatts->ctx->config_complete |= ESL_CONFIG_BIT_AP_SYNC_KEY;
     ESP_LOGI(TAG, "AP Sync Key Material written");
     return 0;
 }
@@ -280,7 +280,7 @@ static int handle_write_resp_key(struct os_mbuf *om)
     }
 
     s_esl_gatts->ctx->resp_key_valid = true;
-    s_esl_gatts->ctx->config_complete |= CONFIG_BIT_RESP_KEY;
+    s_esl_gatts->ctx->config_complete |= ESL_CONFIG_BIT_RESP_KEY;
     ESP_LOGI(TAG, "ESL Response Key Material written");
     return 0;
 }
@@ -300,7 +300,7 @@ static int handle_write_abs_time(struct os_mbuf *om)
 
     s_esl_gatts->ctx->abs_time_base = time_val;
     s_esl_gatts->ctx->abs_time_offset_us = esp_timer_get_time();
-    s_esl_gatts->ctx->config_complete |= CONFIG_BIT_ABS_TIME;
+    s_esl_gatts->ctx->config_complete |= ESL_CONFIG_BIT_ABS_TIME;
     ESP_LOGI(TAG, "ESL Absolute Time set: %" PRIu32 " ms", time_val);
     return 0;
 }

@@ -269,6 +269,8 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
     g_esl_ap->app_cb = config->callback;
     g_esl_ap->pawr_config = config->pawr_config;
     g_esl_ap->initialized = true;
+    ble_esl_ap_pawr_set_sync_key(&config->ap_sync_key);
+    g_esl_ap->ap_sync_key_valid = true;
     g_esl_ap->pawr_started = false;
     g_esl_ap->pawr_active = false;
 
@@ -332,6 +334,19 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
     }
 
     ESP_LOGI(TAG, "ESL AP initialized");
+    return ESP_OK;
+}
+
+esp_err_t ble_esl_ap_set_sync_key(const ble_esl_key_material_t *key)
+{
+    if (g_esl_ap == NULL || !g_esl_ap->initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (key == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ble_esl_ap_pawr_set_sync_key(key);
+    g_esl_ap->ap_sync_key_valid = true;
     return ESP_OK;
 }
 
