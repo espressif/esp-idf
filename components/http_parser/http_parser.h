@@ -132,6 +132,12 @@ typedef int (*http_cb) (http_parser*);
   /* RFC-2068, section 19.6.1.2 */  \
   XX(31, LINK,        LINK)         \
   XX(32, UNLINK,      UNLINK)       \
+  XX(33, QUERY,       QUERY)        /* RFC 10008; packed id 33, not llhttp 46 */
+
+/* HTTP_METHOD_MAP ids must stay packed 0..N-1: method_strings[] and
+ * the request-line matcher index by enumerator value. HTTP_QUERY is an
+ * enumerator, not a #define. Test this macro for compile-time support. */
+#define HTTP_PARSER_HAS_QUERY 1
 
 enum http_method
   {
