@@ -722,6 +722,54 @@ TEST_CASE("Unknown HTTP method is rejected with 501", "[HTTP SERVER]")
     TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
 }
 
+/* RFC 10008 QUERY is a known method (packed id 33) and may carry a body.
+ * Before http_parser learned QUERY this request was a 501. */
+static int s_query_method;
+static char s_query_body[32];
+
+static esp_err_t query_echo_handler(httpd_req_t *req)
+{
+    s_query_method = req->method;
+    int ret = httpd_req_recv(req, s_query_body, sizeof(s_query_body) - 1);
+    if (ret < 0) {
+        return ESP_FAIL;
+    }
+    s_query_body[ret] = '\0';
+    return httpd_resp_send(req, s_query_body, ret);
+}
+
+TEST_CASE("QUERY method is parsed and can carry a body", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+    s_query_method = -1;
+    s_query_body[0] = '\0';
+    TEST_ASSERT_EQUAL(33, HTTP_QUERY);
+    TEST_ASSERT_EQUAL_STRING("QUERY", http_method_str(HTTP_QUERY));
+#ifndef HTTP_PARSER_HAS_QUERY
+    TEST_FAIL_MESSAGE("HTTP_PARSER_HAS_QUERY must be defined");
+#endif
+    httpd_handle_t hd = start_plain_test_server(8103, ESP_HTTPD_DEF_CTRL_PORT + 22);
+    httpd_uri_t query_uri = {
+        .uri = "/search", .method = HTTP_QUERY, .handler = query_echo_handler,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_uri_handler(hd, &query_uri));
+    mock_server_request_t req = {
+        .data = "QUERY /search HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Content-Type: application/json\r\n"
+                "Content-Length: 7\r\n"
+                "\r\n"
+                "{\"q\":1}",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8103, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 200);
+    TEST_ASSERT_EQUAL(HTTP_QUERY, s_query_method);
+    TEST_ASSERT_EQUAL_STRING("{\"q\":1}", s_query_body);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
 /* Guard: only the unknown-method parser error maps to 501. Any other
  * request-line syntax error must still be answered with 400. */
 TEST_CASE("Malformed request line is rejected with 400", "[HTTP SERVER]")

@@ -178,6 +178,11 @@ static const char *method_strings[] =
 #undef XX
   };
 
+/* HTTP_METHOD_MAP ids must stay packed 0..N-1: http_method_str() and
+ * the request-line matcher index this table by enum value. */
+_Static_assert(HTTP_QUERY == 33, "HTTP_QUERY must stay packed at 33");
+_Static_assert(ARRAY_SIZE(method_strings) == 34, "QUERY must be the last packed method");
+
 
 /* Tokens as defined by rfc 2616. Also lowercases them.
  *        token       = 1*<any CHAR except CTLs or separators>
@@ -1008,6 +1013,7 @@ reexecute:
           case 'S': parser->method = HTTP_SUBSCRIBE; /* or SEARCH */ break;
           case 'T': parser->method = HTTP_TRACE; break;
           case 'U': parser->method = HTTP_UNLOCK; /* or UNSUBSCRIBE, UNBIND, UNLINK */ break;
+          case 'Q': parser->method = HTTP_QUERY; break;
           default:
             SET_ERRNO(HPE_INVALID_METHOD);
             goto error;
@@ -1826,7 +1832,7 @@ reexecute:
         /* Here we call the headers_complete callback. This is somewhat
          * different than other callbacks because if the user returns 1, we
          * will interpret that as saying that this message has no body. This
-         * is needed for the annoying case of recieving a response to a HEAD
+         * is needed for the annoying case of receiving a response to a HEAD
          * request.
          *
          * We'd like to use CALLBACK_NOTIFY_NOADVANCE() here but we cannot, so
@@ -1912,7 +1918,7 @@ reexecute:
             && parser->content_length != ULLONG_MAX);
 
         /* The difference between advancing content_length and p is because
-         * the latter will automaticaly advance on the next loop iteration.
+         * the latter will automatically advance on the next loop iteration.
          * Further, if content_length ends up at 0, we want to see the last
          * byte again for our message complete callback.
          */
@@ -2384,7 +2390,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
       case s_dead:
         return 1;
 
-      /* Skip delimeters */
+      /* Skip delimiters */
       case s_req_schema_slash:
       case s_req_schema_slash_slash:
       case s_req_server_start:
