@@ -115,6 +115,8 @@ typedef void* httpd_handle_t;
 /**
  * @brief   HTTP Method Type wrapper over "enum http_method"
  *          available in "http_parser" library
+ *
+ *          Includes RFC 10008 HTTP_QUERY (safe, idempotent, may carry a body).
  */
 typedef enum http_method httpd_method_t;
 
