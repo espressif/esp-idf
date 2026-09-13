@@ -179,4 +179,22 @@ menu "Partition Table"
             bootloaders which cannot recognize the MD5 checksum in the partition
             table.
 
+    config PARTITION_TABLE_MD5_TOLERATE_MISSING
+        bool "Load a partition table that has no MD5 checksum"
+        default n
+        depends on PARTITION_TABLE_MD5
+        help
+            Load a partition table that carries no MD5 checksum instead of rejecting it.
+            A checksum that is present is still verified, and the partition table
+            generated for this app still carries one.
+
+            Enable this for an app that has to run against a partition table it did not
+            bring with it - one generated before ESP-IDF v3.1 or with PARTITION_TABLE_MD5
+            turned off - such as an app migrating a device onto a new partition table.
+
+            If this option and Flash Encryption are enabled at the same time, and any
+            data partitions in the partition table are marked Encrypted, then the
+            partition encrypted flag should be manually verified in the app before
+            accessing the partition (see CVE-2021-27926).
+
 endmenu
