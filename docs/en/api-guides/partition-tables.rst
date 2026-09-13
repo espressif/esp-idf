@@ -299,6 +299,8 @@ MD5 Checksum
 
 The binary format of the partition table contains an MD5 checksum computed based on the partition table. This checksum is used for checking the integrity of the partition table during the boot.
 
+An app that has to load a partition table generated without one can enable :menuitem:`CONFIG_PARTITION_TABLE_MD5_TOLERATE_MISSING`, which accepts a table with no checksum while still verifying one that is present and still generating one for the app's own table.
+
 .. only:: esp32
 
     The MD5 checksum generation can be disabled by the ``--disable-md5sum`` option of ``gen_esp32part.py`` or by the :menuitem:`CONFIG_PARTITION_TABLE_MD5` option. This is useful for example when one :menuitem:`uses a bootloader from ESP-IDF before v3.1 <CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS>` which cannot process MD5 checksums and the boot fails with the error message ``invalid magic number 0xebeb``.

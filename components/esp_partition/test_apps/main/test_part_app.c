@@ -212,6 +212,15 @@
      TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
  }
 
+#if CONFIG_PARTITION_TABLE_MD5_TOLERATE_MISSING
+ TEST(esp_partition, test_table_without_md5)
+ {
+     //this build flashes a partition table with the MD5 checksum record stripped out,
+     //so reaching any partition at all proves the table was accepted
+     TEST_ASSERT_NOT_NULL(esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage1"));
+ }
+#endif
+
  TEST_GROUP_RUNNER(esp_partition)
  {
      RUN_TEST_CASE(esp_partition, test_bdl_interface)
@@ -219,6 +228,9 @@
      RUN_TEST_CASE(esp_partition, test_bdl_two_partitions)
      RUN_TEST_CASE(esp_partition, test_bdl_interface_limits)
      RUN_TEST_CASE(esp_partition, test_bdl_interface_readonly)
+#if CONFIG_PARTITION_TABLE_MD5_TOLERATE_MISSING
+     RUN_TEST_CASE(esp_partition, test_table_without_md5)
+#endif
  }
 
  void app_main(void)
