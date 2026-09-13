@@ -40,6 +40,10 @@ typedef struct {
     const unsigned char *aad;             /*!< The additional data. */
     esp_aes_context aes_ctx;
     esp_aes_gcm_state gcm_state;
+    size_t nc_off;                        /*!< CTR keystream offset carried across update calls. */
+    uint8_t stream_block[16];             /*!< CTR keystream residual carried across update calls. */
+    uint8_t ghash_buf[16];                /*!< Partial (< 16 B) block pending GHASH. */
+    size_t ghash_buf_len;                 /*!< Number of valid bytes in ghash_buf (0..15). */
     /* Software context needed for soft fallback for non-AES ciphers */
     void *ctx_soft;
 } esp_gcm_context;
