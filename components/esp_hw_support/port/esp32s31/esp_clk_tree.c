@@ -546,33 +546,31 @@ static const esp_clk_tree_gated_clk_t s_gated_ref_clks[] = {
 FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gated_clk_t *entry, bool enable)
 {
     int16_t prev_ref_cnt;
-    bool released_too_many = false;
 
+    /* Hold s_clk_tree_spinlock for refcnt only; parent/gate (may take PERIPH_RCC)
+     * run outside to avoid clk_tree <-> PERIPH_RCC deadlock. */
     esp_os_enter_critical(&s_clk_tree_spinlock);
     if (enable) {
         prev_ref_cnt = s_mod_clk_gate_ref_cnt[entry->clk_id]++;
-        if (prev_ref_cnt == 0) {
-            if (entry->parent_power != NULL) {
-                entry->parent_power(true);
-            }
-            ENABLE_CLK_GATE(entry->set_gate, true);
-        }
     } else {
         prev_ref_cnt = s_mod_clk_gate_ref_cnt[entry->clk_id]--;
         if (prev_ref_cnt <= 0) {
             s_mod_clk_gate_ref_cnt[entry->clk_id] = 0;
-            released_too_many = true;
-        } else if (prev_ref_cnt == 1) {
-            ENABLE_CLK_GATE(entry->set_gate, false);
-            if (entry->parent_power != NULL) {
-                entry->parent_power(false);
-            }
+            esp_os_exit_critical(&s_clk_tree_spinlock);
+            ESP_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", entry->clk_id);
+            return ESP_OK;
         }
     }
     esp_os_exit_critical(&s_clk_tree_spinlock);
 
-    if (released_too_many) {
-        ESP_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", entry->clk_id);
+    if ((enable && prev_ref_cnt == 0) || (!enable && prev_ref_cnt == 1)) {
+        if (enable && entry->parent_power != NULL) {
+            entry->parent_power(true);
+        }
+        ENABLE_CLK_GATE(entry->set_gate, enable);
+        if (!enable && entry->parent_power != NULL) {
+            entry->parent_power(false);
+        }
     }
     return ESP_OK;
 }
