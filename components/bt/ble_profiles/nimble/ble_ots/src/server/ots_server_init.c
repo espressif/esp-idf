@@ -68,7 +68,8 @@ void ble_ots_server_unlock(void)
 /*****************************************************************************
  * L2CAP OTC MTU
  *****************************************************************************/
-#define OTS_L2CAP_COC_MTU   256
+#define OTS_L2CAP_COC_MTU       1024
+#define OTS_L2CAP_RX_WIN_MAX    8
 
 /*****************************************************************************
  * Directory Listing Object name
@@ -548,6 +549,12 @@ ble_ots_server_obj_t *ble_ots_server_obj_db_lookup(ble_ots_obj_id_t object_id)
 int ble_ots_server_obj_data_read(ble_ots_obj_id_t object_id, uint32_t offset,
                                   uint32_t length, uint8_t *buf)
 {
+    return ble_ots_server_copy_object_data(object_id, offset, length, buf);
+}
+
+int ble_ots_server_copy_object_data(ble_ots_obj_id_t object_id, uint32_t offset,
+                                    uint32_t length, uint8_t *buf)
+{
     int rc = 0;
 
     if (!buf) {
@@ -564,7 +571,7 @@ int ble_ots_server_obj_data_read(ble_ots_obj_id_t object_id, uint32_t offset,
         rc = BLE_HS_ENOENT;
     } else if (offset + length > obj->current_size) {
         rc = BLE_HS_EINVAL;
-    } else if (obj->data) {
+    } else if (obj->data && length > 0) {
         memcpy(buf, obj->data + offset, length);
     }
 
@@ -1509,13 +1516,40 @@ static int ots_l2cap_event_handle(struct ble_l2cap_event *event)
             return BLE_HS_ENOMEM;
         }
 
-        /* Provide an SDU receive buffer */
-        struct os_mbuf *sdu_rx = ble_hs_mbuf_from_flat(NULL, 0);
-        if (!sdu_rx) {
-            ESP_LOGE(TAG, "L2CAP accept: failed to allocate SDU rx buffer");
-            return BLE_HS_ENOMEM;
+        /* Pre-post the configured receive window. Each buffer contributes one
+         * peer credit; posting only one (the Kconfig default) is stop-and-wait.
+         * Raise CONFIG_BT_NIMBLE_L2CAP_COC_SDU_BUFF_COUNT and msys block size
+         * to actually pipeline a 1024-byte CoC write. Allocate all SDUs first
+         * so a later ENOMEM does not leave a half-posted window. */
+        int win = CONFIG_BT_NIMBLE_L2CAP_COC_SDU_BUFF_COUNT;
+        if (win < 1) {
+            win = 1;
+        } else if (win > OTS_L2CAP_RX_WIN_MAX) {
+            win = OTS_L2CAP_RX_WIN_MAX;
         }
-        ble_l2cap_recv_ready(event->accept.chan, sdu_rx);
+        struct os_mbuf *sdu_bufs[OTS_L2CAP_RX_WIN_MAX];
+        int got = 0;
+        for (; got < win; got++) {
+            sdu_bufs[got] = os_msys_get_pkthdr(OTS_L2CAP_COC_MTU, 0);
+            if (!sdu_bufs[got]) {
+                ESP_LOGE(TAG, "L2CAP accept: failed to allocate SDU rx buffer %d", got);
+                while (got-- > 0) {
+                    os_mbuf_free_chain(sdu_bufs[got]);
+                }
+                return BLE_HS_ENOMEM;
+            }
+        }
+        for (int i = 0; i < win; i++) {
+            int rc = ble_l2cap_recv_ready(event->accept.chan, sdu_bufs[i]);
+            if (rc != 0) {
+                ESP_LOGE(TAG, "L2CAP accept: recv_ready failed rc=%d", rc);
+                os_mbuf_free_chain(sdu_bufs[i]);
+                for (int j = i + 1; j < win; j++) {
+                    os_mbuf_free_chain(sdu_bufs[j]);
+                }
+                return rc;
+            }
+        }
         return 0;
     }
 
@@ -1558,7 +1592,7 @@ static int ots_l2cap_event_handle(struct ble_l2cap_event *event)
                                                   event->receive.sdu_rx);
 
         /* Provide a new SDU rx buffer for next receive */
-        struct os_mbuf *sdu_rx = ble_hs_mbuf_from_flat(NULL, 0);
+        struct os_mbuf *sdu_rx = os_msys_get_pkthdr(OTS_L2CAP_COC_MTU, 0);
         if (sdu_rx) {
             ble_l2cap_recv_ready(event->receive.chan, sdu_rx);
         }

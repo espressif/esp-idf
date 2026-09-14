@@ -11,15 +11,23 @@
  */
 
 #include <string.h>
+#include <assert.h>
 #include "esp_log.h"
 #include "esp_err.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/task.h"
 
 #include "nimble/ble.h"
 #include "host/ble_hs.h"
 #include "host/ble_gap.h"
+#include "host/ble_hs_adv.h"
+#include "nimble/hci_common.h"
 
 #include "ble_esl_ap.h"
 #include "ble_esl_ap_int.h"
+#include "ble_esl_common.h"
 
 static const char *TAG = "esl_ap_conn";
 
@@ -29,9 +37,24 @@ static const char *TAG = "esl_ap_conn";
 /** Connection-establishment timeout for the PAwR connection procedure (ms) */
 #define PAWR_CONNECT_TIMEOUT_MS  30000
 
+/* Bulk OTS transfers need a low-latency, full-length 2M ACL link.
+ * One 1024-byte CoC SDU is ~5 DLE PDUs. With max_ce_len=0 the controller
+ * typically sends one PDU per event, which caps a 15 ms link at ~17 KB/s
+ * (the rate measured on 460800-byte badge frames). A long CE lets one
+ * event carry the whole SDU; NimBLE CoC still only holds one TX SDU. */
+#define ESL_CONN_ITVL_MIN        6    /* 7.5 ms */
+#define ESL_CONN_ITVL_MAX        12   /* 15 ms */
+#define ESL_CONN_TIMEOUT         400  /* 4 s */
+#define ESL_CONN_CE_LEN_MAX      0xffff
+#define ESL_LL_TX_OCTETS         251
+#define ESL_LL_TX_TIME           2120
+
 /* ========================== Global State ========================== */
 
 ble_esl_ap_state_t *g_esl_ap = NULL;
+
+static SemaphoreHandle_t s_tracking_mutex;
+static TaskHandle_t s_tracking_holder;
 
 /* ========================== Forward Declarations ========================== */
 
@@ -42,7 +65,77 @@ static void handle_disconnect_event(struct ble_gap_event *event);
 static void handle_enc_change(struct ble_gap_event *event);
 static void handle_pairing_complete(struct ble_gap_event *event);
 static void handle_notify_rx(struct ble_gap_event *event);
+static esp_err_t ble_esl_ap_start_discovery(void);
+static void ble_esl_ap_maybe_resume_discovery(void);
 
+static void request_fast_esl_link(uint16_t conn_handle)
+{
+    struct ble_gap_upd_params params = {
+        .itvl_min = ESL_CONN_ITVL_MIN,
+        .itvl_max = ESL_CONN_ITVL_MAX,
+        .latency = 0,
+        .supervision_timeout = ESL_CONN_TIMEOUT,
+        .min_ce_len = 0,
+        .max_ce_len = ESL_CONN_CE_LEN_MAX,
+    };
+
+    int rc = ble_gap_update_params(conn_handle, &params);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        ESP_LOGW(TAG, "Fast interval request failed; conn=%u rc=%d",
+                 conn_handle, rc);
+    }
+
+    rc = ble_gap_set_data_len(conn_handle, ESL_LL_TX_OCTETS, ESL_LL_TX_TIME);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        ESP_LOGW(TAG, "Data length request failed; conn=%u rc=%d",
+                 conn_handle, rc);
+    }
+
+    rc = ble_gap_set_prefered_le_phy(conn_handle,
+                                     BLE_HCI_LE_PHY_2M_PREF_MASK,
+                                     BLE_HCI_LE_PHY_2M_PREF_MASK, 0);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        ESP_LOGW(TAG, "2M PHY request failed; conn=%u rc=%d",
+                 conn_handle, rc);
+    }
+}
+
+
+/* ========================== Tracking mutex ========================== */
+
+void ble_esl_ap_tracking_lock(void)
+{
+    assert(s_tracking_mutex != NULL);
+    assert(xTaskGetCurrentTaskHandle() != s_tracking_holder);
+    assert(!ble_esl_ap_pawr_held());
+    assert(!ble_esl_ap_lifecycle_held());
+    xSemaphoreTake(s_tracking_mutex, portMAX_DELAY);
+    s_tracking_holder = xTaskGetCurrentTaskHandle();
+}
+
+void ble_esl_ap_tracking_unlock(void)
+{
+    assert(s_tracking_mutex != NULL);
+    assert(s_tracking_holder == xTaskGetCurrentTaskHandle());
+    s_tracking_holder = NULL;
+    xSemaphoreGive(s_tracking_mutex);
+}
+
+bool ble_esl_ap_tracking_held(void)
+{
+    return s_tracking_holder == xTaskGetCurrentTaskHandle();
+}
+
+void ble_esl_ap_dispatch_state_evt(const ble_esl_ap_state_evt_snap_t *snap)
+{
+    if (snap == NULL || !snap->pending) {
+        return;
+    }
+    if (g_esl_ap != NULL && g_esl_ap->app_cb != NULL) {
+        ble_esl_ap_state_changed_t evt = snap->evt;
+        g_esl_ap->app_cb(BLE_ESL_AP_EVT_STATE_CHANGED, &evt);
+    }
+}
 
 /* ========================== Helper Functions ========================== */
 
@@ -88,6 +181,7 @@ void ble_esl_ap_free_conn(ble_esl_ap_conn_t *conn)
 
 ble_esl_ap_esl_entry_t *ble_esl_ap_find_esl(uint16_t esl_addr)
 {
+    assert(ble_esl_ap_tracking_held());
     if (!g_esl_ap) {
         return NULL;
     }
@@ -103,6 +197,7 @@ ble_esl_ap_esl_entry_t *ble_esl_ap_find_esl(uint16_t esl_addr)
 ble_esl_ap_esl_entry_t *ble_esl_ap_find_esl_by_ble_addr(const uint8_t *addr,
                                                          uint8_t addr_type)
 {
+    assert(ble_esl_ap_tracking_held());
     if (!g_esl_ap || !addr) {
         return NULL;
     }
@@ -118,6 +213,7 @@ ble_esl_ap_esl_entry_t *ble_esl_ap_find_esl_by_ble_addr(const uint8_t *addr,
 
 ble_esl_ap_esl_entry_t *ble_esl_ap_alloc_esl(void)
 {
+    assert(ble_esl_ap_tracking_held());
     if (!g_esl_ap) {
         return NULL;
     }
@@ -134,7 +230,10 @@ ble_esl_ap_esl_entry_t *ble_esl_ap_alloc_esl(void)
 
 bool ble_esl_ap_is_associated(const uint8_t *addr, uint8_t addr_type)
 {
-    return (ble_esl_ap_find_esl_by_ble_addr(addr, addr_type) != NULL);
+    ble_esl_ap_tracking_lock();
+    bool found = (ble_esl_ap_find_esl_by_ble_addr(addr, addr_type) != NULL);
+    ble_esl_ap_tracking_unlock();
+    return found;
 }
 
 /* ========================== Public APIs ========================== */
@@ -163,10 +262,21 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
         return ESP_ERR_NO_MEM;
     }
 
+    s_tracking_mutex = xSemaphoreCreateMutex();
+    if (s_tracking_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create tracking mutex");
+        free(g_esl_ap);
+        g_esl_ap = NULL;
+        return ESP_ERR_NO_MEM;
+    }
+    s_tracking_holder = NULL;
+
     g_esl_ap->app_cb = config->callback;
     g_esl_ap->pawr_config = config->pawr_config;
     g_esl_ap->initialized = true;
-    g_esl_ap->started = false;
+    ble_esl_ap_pawr_set_sync_key(&config->ap_sync_key);
+    g_esl_ap->ap_sync_key_valid = true;
+    g_esl_ap->pawr_started = false;
     g_esl_ap->pawr_active = false;
 
     /* Initialize connection table */
@@ -185,6 +295,8 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
     esp_err_t ret = ble_esl_ap_lifecycle_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init lifecycle sub-module: %s", esp_err_to_name(ret));
+        vSemaphoreDelete(s_tracking_mutex);
+        s_tracking_mutex = NULL;
         free(g_esl_ap);
         g_esl_ap = NULL;
         return ret;
@@ -194,6 +306,8 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init PAwR sub-module: %s", esp_err_to_name(ret));
         ble_esl_ap_lifecycle_deinit();
+        vSemaphoreDelete(s_tracking_mutex);
+        s_tracking_mutex = NULL;
         free(g_esl_ap);
         g_esl_ap = NULL;
         return ret;
@@ -204,6 +318,8 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
         ESP_LOGE(TAG, "Failed to init command sub-module: %s", esp_err_to_name(ret));
         ble_esl_ap_pawr_deinit();
         ble_esl_ap_lifecycle_deinit();
+        vSemaphoreDelete(s_tracking_mutex);
+        s_tracking_mutex = NULL;
         free(g_esl_ap);
         g_esl_ap = NULL;
         return ret;
@@ -215,12 +331,27 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config)
         ble_esl_ap_command_deinit();
         ble_esl_ap_pawr_deinit();
         ble_esl_ap_lifecycle_deinit();
+        vSemaphoreDelete(s_tracking_mutex);
+        s_tracking_mutex = NULL;
         free(g_esl_ap);
         g_esl_ap = NULL;
         return ret;
     }
 
     ESP_LOGI(TAG, "ESL AP initialized");
+    return ESP_OK;
+}
+
+esp_err_t ble_esl_ap_set_sync_key(const ble_esl_key_material_t *key)
+{
+    if (g_esl_ap == NULL || !g_esl_ap->initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (key == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ble_esl_ap_pawr_set_sync_key(key);
+    g_esl_ap->ap_sync_key_valid = true;
     return ESP_OK;
 }
 
@@ -272,9 +403,15 @@ esp_err_t ble_esl_ap_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Stop scanning and PAwR if active */
-    if (g_esl_ap->started) {
-        ble_esl_ap_stop();
+    if (ble_esl_ap_lifecycle_has_inflight()) {
+        ESP_LOGE(TAG, "deinit refused: configure or Absolute Time still in-flight");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Stop discovery then PAwR if the public start_pawr() path ran */
+    if (g_esl_ap->pawr_started) {
+        (void)ble_esl_ap_stop_scan();
+        (void)ble_esl_ap_stop_pawr();
     }
 
     /* Mark the module as no longer operational before touching connections:
@@ -335,21 +472,41 @@ esp_err_t ble_esl_ap_deinit(void)
     g_esl_ap = NULL;
     free(ap);
 
+    if (s_tracking_mutex != NULL) {
+        vSemaphoreDelete(s_tracking_mutex);
+        s_tracking_mutex = NULL;
+        s_tracking_holder = NULL;
+    }
+
     ESP_LOGI(TAG, "ESL AP deinitialized");
     return ESP_OK;
 }
 
-esp_err_t ble_esl_ap_start(void)
+esp_err_t ble_esl_ap_start_pawr(void)
 {
     if (!g_esl_ap || !g_esl_ap->initialized) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (g_esl_ap->started) {
-        ESP_LOGW(TAG, "Already started");
+    if (g_esl_ap->pawr_started) {
+        ESP_LOGW(TAG, "PAwR already started");
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Start GAP General Discovery (scanning) */
+    g_esl_ap->scan_suppressed = true;
+
+    esp_err_t ret = ble_esl_ap_pawr_start();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start PAwR: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    g_esl_ap->pawr_started = true;
+    ESP_LOGI(TAG, "PAwR started (scan idle until start_scan)");
+    return ESP_OK;
+}
+
+static esp_err_t ble_esl_ap_start_discovery(void)
+{
     uint8_t own_addr_type;
     int rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
@@ -357,10 +514,17 @@ esp_err_t ble_esl_ap_start(void)
         return ESP_FAIL;
     }
 
+    if (ble_gap_disc_active()) {
+        return ESP_OK;
+    }
+
     struct ble_gap_disc_params disc_params = {0};
-    disc_params.filter_duplicates = 1;
-    disc_params.passive = 0;  /* Active scan for General Discovery */
-    disc_params.itvl = 0;     /* Use defaults */
+    /* Disable duplicate filtering so an ONLINE TAG that reboots and resumes
+     * Unsynchronized advertising is reported again in the same long-lived
+     * discovery session (filter_duplicates=1 would suppress the re-advertise). */
+    disc_params.filter_duplicates = 0;
+    disc_params.passive = 0;
+    disc_params.itvl = 0;
     disc_params.window = 0;
     disc_params.filter_policy = 0;
     disc_params.limited = 0;
@@ -371,45 +535,65 @@ esp_err_t ble_esl_ap_start(void)
         ESP_LOGE(TAG, "Failed to start GAP discovery; rc=%d", rc);
         return ESP_FAIL;
     }
-
-    /* Start PAwR broadcasting */
-    esp_err_t ret = ble_esl_ap_pawr_start();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start PAwR: %s", esp_err_to_name(ret));
-        ble_gap_disc_cancel();
-        return ret;
-    }
-
-    g_esl_ap->started = true;
-    ESP_LOGI(TAG, "ESL AP started (scanning + PAwR)");
     return ESP_OK;
 }
 
-esp_err_t ble_esl_ap_stop(void)
+static void ble_esl_ap_maybe_resume_discovery(void)
 {
-    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->started) {
+    if (!g_esl_ap || !g_esl_ap->pawr_started || g_esl_ap->scan_suppressed) {
+        return;
+    }
+    if (ble_gap_disc_active()) {
+        return;
+    }
+    (void)ble_esl_ap_start_discovery();
+}
+
+esp_err_t ble_esl_ap_start_scan(void)
+{
+    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->pawr_started) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Cancel any pending (not yet established) connection attempts */
-    ble_gap_conn_cancel();
+    g_esl_ap->scan_suppressed = false;
+    esp_err_t ret = ble_esl_ap_start_discovery();
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "GAP discovery started");
+    }
+    return ret;
+}
 
-    /* Stop scanning */
+esp_err_t ble_esl_ap_stop_scan(void)
+{
+    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->pawr_started) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    g_esl_ap->scan_suppressed = true;
     if (ble_gap_disc_active()) {
         int rc = ble_gap_disc_cancel();
         if (rc != 0 && rc != BLE_HS_EALREADY) {
             ESP_LOGW(TAG, "Failed to cancel discovery; rc=%d", rc);
+            return ESP_FAIL;
         }
     }
+    ESP_LOGI(TAG, "GAP discovery stopped (scan suppressed)");
+    return ESP_OK;
+}
 
-    /* Stop PAwR broadcasting */
+esp_err_t ble_esl_ap_stop_pawr(void)
+{
+    if (!g_esl_ap || !g_esl_ap->initialized || !g_esl_ap->pawr_started) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     esp_err_t ret = ble_esl_ap_pawr_stop();
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "Failed to stop PAwR: %s", esp_err_to_name(ret));
     }
 
-    g_esl_ap->started = false;
-    ESP_LOGI(TAG, "ESL AP stopped");
+    g_esl_ap->pawr_started = false;
+    ESP_LOGI(TAG, "PAwR stopped");
     return ESP_OK;
 }
 
@@ -464,14 +648,8 @@ esp_err_t ble_esl_ap_connect(const uint8_t *addr, uint8_t addr_type)
         ESP_LOGE(TAG, "Failed to initiate connection; rc=%d", rc);
         ble_esl_ap_free_conn(conn);
 
-        /* Resume scanning if we were started */
-        if (g_esl_ap->started) {
-            struct ble_gap_disc_params disc_params = {0};
-            disc_params.filter_duplicates = 1;
-            disc_params.passive = 0;
-            ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                         ble_esl_ap_gap_event, NULL);
-        }
+        /* Resume scanning if started */
+        ble_esl_ap_maybe_resume_discovery();
         return ESP_FAIL;
     }
 
@@ -488,17 +666,29 @@ esp_err_t ble_esl_ap_connect_synced(ble_esl_address_t esl_addr)
 
     uint16_t addr_key = BLE_ESL_AP_ADDR_PACK(esl_addr);
 
-    /* The ESL must be tracked and currently Synchronized to our PAwR train.
-     * Only a Synchronized ESL is reachable via the Periodic Advertising
-     * Connection procedure; in other states use ble_esl_ap_connect(). */
+    /* The ESL must be tracked. The tag side must still be on our PAwR train
+     * (Synchronized at the ESL); AP runtime may be Unsynchronized after reboot
+     * while the tag is still reachable via Periodic Advertising Connection. */
+    uint8_t ble_addr[6];
+    uint8_t ble_addr_type;
+    ble_esl_state_t esl_state;
+
+    ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(addr_key);
     if (!esl) {
+        ble_esl_ap_tracking_unlock();
         ESP_LOGE(TAG, "connect_synced: ESL 0x%04X not tracked", addr_key);
         return ESP_ERR_NOT_FOUND;
     }
-    if (esl->state != BLE_ESL_STATE_SYNCHRONIZED) {
-        ESP_LOGE(TAG, "connect_synced: ESL 0x%04X not Synchronized (state=%d)",
-                 addr_key, esl->state);
+    esl_state = esl->state;
+    memcpy(ble_addr, esl->ble_addr, 6);
+    ble_addr_type = esl->ble_addr_type;
+    ble_esl_ap_tracking_unlock();
+
+    if (esl_state != BLE_ESL_STATE_SYNCHRONIZED &&
+            esl_state != BLE_ESL_STATE_UNSYNCHRONIZED) {
+        ESP_LOGE(TAG, "connect_synced: ESL 0x%04X bad state for PAwR connect (state=%d)",
+                 addr_key, esl_state);
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -508,13 +698,13 @@ esp_err_t ble_esl_ap_connect_synced(ble_esl_address_t esl_addr)
         ESP_LOGE(TAG, "connect_synced: max connections reached");
         return ESP_ERR_NO_MEM;
     }
-    memcpy(conn->addr, esl->ble_addr, 6);
-    conn->addr_type = esl->ble_addr_type;
+    memcpy(conn->addr, ble_addr, 6);
+    conn->addr_type = ble_addr_type;
     conn->esl_addr = addr_key;
 
     ble_addr_t peer_addr;
-    peer_addr.type = esl->ble_addr_type;
-    memcpy(peer_addr.val, esl->ble_addr, 6);
+    peer_addr.type = ble_addr_type;
+    memcpy(peer_addr.val, ble_addr, 6);
 
     uint8_t own_addr_type;
     int rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -544,14 +734,8 @@ esp_err_t ble_esl_ap_connect_synced(ble_esl_address_t esl_addr)
         ESP_LOGE(TAG, "connect_synced: ble_gap_connect_with_synced failed; rc=%d", rc);
         ble_esl_ap_free_conn(conn);
 
-        /* Resume scanning if we were started */
-        if (g_esl_ap->started && !ble_gap_disc_active()) {
-            struct ble_gap_disc_params disc_params = {0};
-            disc_params.filter_duplicates = 1;
-            disc_params.passive = 0;
-            ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                         ble_esl_ap_gap_event, NULL);
-        }
+        /* Resume scanning if started */
+        ble_esl_ap_maybe_resume_discovery();
         return ESP_FAIL;
     }
 
@@ -580,7 +764,23 @@ esp_err_t ble_esl_ap_disconnect(uint16_t conn_handle)
     return ESP_OK;
 }
 
-/* ========================== GAP Event Handler ========================== */
+esp_err_t ble_esl_ap_abort_tag_connections(void)
+{
+    if (!g_esl_ap || !g_esl_ap->initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ble_gap_conn_cancel();
+
+    for (int i = 0; i < CONFIG_BLE_ESL_AP_MAX_CONNECTIONS; i++) {
+        ble_esl_ap_conn_t *conn = &g_esl_ap->conns[i];
+        if (conn->in_use && conn->conn_handle != BLE_ESL_AP_CONN_HANDLE_INVALID) {
+            (void)ble_esl_ap_disconnect(conn->conn_handle);
+        }
+    }
+
+    return ESP_OK;
+}
 
 static int ble_esl_ap_gap_event(struct ble_gap_event *event, void *arg)
 {
@@ -631,12 +831,62 @@ static int ble_esl_ap_gap_event(struct ble_gap_event *event, void *arg)
                  event->mtu.conn_handle, event->mtu.value);
         return 0;
 
+    case BLE_GAP_EVENT_CONN_UPDATE: {
+        struct ble_gap_conn_desc desc;
+        if (ble_gap_conn_find(event->conn_update.conn_handle, &desc) == 0) {
+            ESP_LOGI(TAG, "ESL link updated: conn=%u interval=%u (%u ms) latency=%u status=%d",
+                     event->conn_update.conn_handle, desc.conn_itvl,
+                     desc.conn_itvl * 125 / 100, desc.conn_latency,
+                     event->conn_update.status);
+        }
+        return 0;
+    }
+
+    case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE:
+        ESP_LOGI(TAG, "ESL PHY updated: conn=%u tx=%u rx=%u status=%d",
+                 event->phy_updated.conn_handle, event->phy_updated.tx_phy,
+                 event->phy_updated.rx_phy, event->phy_updated.status);
+        return 0;
+
+    case BLE_GAP_EVENT_DATA_LEN_CHG:
+        ESP_LOGI(TAG, "ESL data length updated: conn=%u",
+                 event->data_len_chg.conn_handle);
+        return 0;
+
     default:
         return 0;
     }
 }
 
 /* ========================== Scan Result Handling ========================== */
+
+static bool adv_contains_esl_uuid16(const uint8_t *data, uint8_t len)
+{
+    if (data == NULL || len < 4) {
+        return false;
+    }
+    uint8_t i = 0;
+    while (i + 1 < len) {
+        uint8_t field_len = data[i];
+        if (field_len == 0 || (uint16_t)i + 1u + field_len > len) {
+            break;
+        }
+        uint8_t type = data[i + 1];
+        if (type == BLE_HS_ADV_TYPE_INCOMP_UUIDS16 ||
+                type == BLE_HS_ADV_TYPE_COMP_UUIDS16) {
+            const uint8_t *uuids = &data[i + 2];
+            uint8_t uuid_bytes = (uint8_t)(field_len - 1);
+            for (uint8_t off = 0; off + 1 < uuid_bytes; off += 2) {
+                uint16_t uuid = (uint16_t)uuids[off] | ((uint16_t)uuids[off + 1] << 8);
+                if (uuid == BLE_ESL_SVC_UUID) {
+                    return true;
+                }
+            }
+        }
+        i = (uint8_t)(i + 1 + field_len);
+    }
+    return false;
+}
 
 static void handle_scan_result(struct ble_gap_event *event)
 {
@@ -648,6 +898,8 @@ static void handle_scan_result(struct ble_gap_event *event)
     int8_t rssi;
     const uint8_t *data;
     uint8_t length_data;
+    bool is_connectable = false;
+    bool data_complete = true;
 
     if (event->type == BLE_GAP_EVENT_EXT_DISC) {
         const struct ble_gap_ext_disc_desc *ext = &event->ext_disc;
@@ -655,15 +907,24 @@ static void handle_scan_result(struct ble_gap_event *event)
         rssi        = ext->rssi;
         data        = ext->data;
         length_data = ext->length_data;
+        is_connectable = (ext->props & BLE_HCI_ADV_CONN_MASK) != 0;
+        data_complete = (ext->data_status == BLE_GAP_EXT_ADV_DATA_STATUS_COMPLETE);
     } else {
         const struct ble_gap_disc_desc *disc = &event->disc;
         addr        = disc->addr;
         rssi        = disc->rssi;
         data        = disc->data;
         length_data = disc->length_data;
+        is_connectable = (disc->event_type == BLE_HCI_ADV_RPT_EVTYPE_ADV_IND ||
+                          disc->event_type == BLE_HCI_ADV_RPT_EVTYPE_DIR_IND);
+        data_complete = true;
     }
 
     bool associated = ble_esl_ap_is_associated(addr.val, addr.type);
+    bool advertises_esl = false;
+    if (data_complete) {
+        advertises_esl = adv_contains_esl_uuid16(data, length_data);
+    }
 
     ble_esl_ap_scan_result_t result;
     memcpy(result.addr, addr.val, 6);
@@ -672,6 +933,9 @@ static void handle_scan_result(struct ble_gap_event *event)
     result.adv_data     = data;
     result.adv_data_len = length_data;
     result.is_associated = associated;
+    result.is_connectable = is_connectable;
+    result.data_complete = data_complete;
+    result.advertises_esl_service = advertises_esl;
 
     g_esl_ap->app_cb(BLE_ESL_AP_EVT_SCAN_RESULT, &result);
 }
@@ -706,16 +970,7 @@ static void handle_connect_event(struct ble_gap_event *event, void *arg)
         }
 
         /* Resume scanning if started */
-        if (g_esl_ap->started && !ble_gap_disc_active()) {
-            uint8_t own_addr_type;
-            if (ble_hs_id_infer_auto(0, &own_addr_type) == 0) {
-                struct ble_gap_disc_params disc_params = {0};
-                disc_params.filter_duplicates = 1;
-                disc_params.passive = 0;
-                ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                             ble_esl_ap_gap_event, NULL);
-            }
-        }
+        ble_esl_ap_maybe_resume_discovery();
         return;
     }
 
@@ -744,16 +999,7 @@ static void handle_connect_event(struct ble_gap_event *event, void *arg)
         ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 
         /* Resume scanning if started */
-        if (g_esl_ap->started && !ble_gap_disc_active()) {
-            uint8_t own_addr_type;
-            if (ble_hs_id_infer_auto(0, &own_addr_type) == 0) {
-                struct ble_gap_disc_params disc_params = {0};
-                disc_params.filter_duplicates = 1;
-                disc_params.passive = 0;
-                ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                             ble_esl_ap_gap_event, NULL);
-            }
-        }
+        ble_esl_ap_maybe_resume_discovery();
         return;
     }
 
@@ -763,16 +1009,7 @@ static void handle_connect_event(struct ble_gap_event *event, void *arg)
         ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 
         /* Resume scanning if started */
-        if (g_esl_ap->started && !ble_gap_disc_active()) {
-            uint8_t own_addr_type;
-            if (ble_hs_id_infer_auto(0, &own_addr_type) == 0) {
-                struct ble_gap_disc_params disc_params = {0};
-                disc_params.filter_duplicates = 1;
-                disc_params.passive = 0;
-                ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                             ble_esl_ap_gap_event, NULL);
-            }
-        }
+        ble_esl_ap_maybe_resume_discovery();
         return;
     }
 
@@ -794,16 +1031,7 @@ static void handle_connect_event(struct ble_gap_event *event, void *arg)
     ESP_LOGI(TAG, "Initiate encryption; conn_handle=%u", conn_handle);
 
     /* Resume scanning if started */
-    if (g_esl_ap->started && !ble_gap_disc_active()) {
-        uint8_t own_addr_type;
-        if (ble_hs_id_infer_auto(0, &own_addr_type) == 0) {
-            struct ble_gap_disc_params disc_params = {0};
-            disc_params.filter_duplicates = 1;
-            disc_params.passive = 0;
-            ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                         ble_esl_ap_gap_event, NULL);
-        }
-    }
+    ble_esl_ap_maybe_resume_discovery();
 }
 
 /* ========================== Disconnect Event Handling ========================== */
@@ -850,21 +1078,13 @@ static void handle_disconnect_event(struct ble_gap_event *event)
     /* Let lifecycle module complete any pending synchronize procedure
      * and handle link-loss state transitions */
     ble_esl_ap_lifecycle_handle_disconnect(conn_handle);
+    ble_esl_ap_lifecycle_disconnect_check(conn);
 
     /* Free connection slot */
     ble_esl_ap_free_conn(conn);
 
     /* Resume scanning if started */
-    if (g_esl_ap->started && !ble_gap_disc_active()) {
-        uint8_t own_addr_type;
-        if (ble_hs_id_infer_auto(0, &own_addr_type) == 0) {
-            struct ble_gap_disc_params disc_params = {0};
-            disc_params.filter_duplicates = 1;
-            disc_params.passive = 0;
-            ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
-                         ble_esl_ap_gap_event, NULL);
-        }
-    }
+    ble_esl_ap_maybe_resume_discovery();
 }
 
 /* ======================================================================== */
@@ -893,6 +1113,8 @@ static void handle_enc_change(struct ble_gap_event *event)
      * Advertising Connection procedure) — the ESL has entered the Updating
      * state. Track it so ble_esl_ap_configure()/synchronize() see a valid state
      * and link-loss recovery routes it back to Unsynchronized. */
+    ble_esl_ap_state_evt_snap_t snap = { 0 };
+    ble_esl_ap_tracking_lock();
     ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl_by_ble_addr(conn->addr,
                                                                   conn->addr_type);
     if (esl != NULL &&
@@ -900,8 +1122,14 @@ static void handle_enc_change(struct ble_gap_event *event)
          esl->state == BLE_ESL_STATE_UNSYNCHRONIZED)) {
         esl->conn_handle = conn_handle;
         conn->esl_addr = esl->esl_addr;
-        ble_esl_ap_update_esl_state(esl->esl_addr, BLE_ESL_STATE_UPDATING);
+        (void)ble_esl_ap_update_esl_state_locked(esl->esl_addr,
+                                                 BLE_ESL_STATE_UPDATING,
+                                                 &snap);
     }
+    ble_esl_ap_tracking_unlock();
+    ble_esl_ap_dispatch_state_evt(&snap);
+
+    request_fast_esl_link(conn_handle);
 
     if (conn->disc_done) {
         ESP_LOGD(TAG, "Encryption change on already-discovered conn_handle=%u; skipping discovery",

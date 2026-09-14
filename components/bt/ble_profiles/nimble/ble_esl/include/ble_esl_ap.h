@@ -54,6 +54,8 @@ typedef enum {
     /* Command events (ap_command.c) */
     BLE_ESL_AP_EVT_RESPONSE,          /*!< Command response received from ESL */
     BLE_ESL_AP_EVT_CMD_TIMEOUT,       /*!< ECP procedure timeout (30 seconds) */
+    BLE_ESL_AP_EVT_CMD_FAILED,        /*!< ECP write/notification failed */
+    BLE_ESL_AP_EVT_ABS_TIME_WRITTEN,  /*!< Public Absolute Time write complete */
 } ble_esl_ap_evt_t;
 
 /* ========================== Response Types ========================== */
@@ -104,6 +106,7 @@ typedef struct {
 typedef struct {
     ble_esl_ap_cb_t callback;             /*!< Application event callback (must not be NULL) */
     ble_esl_ap_pawr_config_t pawr_config; /*!< PAwR timing parameters */
+    ble_esl_key_material_t ap_sync_key;   /*!< PAwR train Sync Key (one per AP, not per ESL) */
 } ble_esl_ap_config_t;
 
 /* ========================== Connection Event Structures ========================== */
@@ -117,7 +120,10 @@ typedef struct {
     int8_t rssi;                /*!< Received signal strength (dBm) */
     const uint8_t *adv_data;    /*!< Raw advertising data (valid during callback) */
     uint16_t adv_data_len;      /*!< Advertising data length in octets */
-    bool is_associated;         /*!< true = Unsynchronized (known), false = Unassociated */
+    bool is_associated;         /*!< true = address present in AP ESL table (not TAG state) */
+    bool is_connectable;        /*!< true when report is connectable advertising */
+    bool data_complete;         /*!< true when advertising data is complete (not truncated) */
+    bool advertises_esl_service; /*!< true when complete AD contains ESL Service UUID 0x1857 */
 } ble_esl_ap_scan_result_t;
 
 /**
@@ -154,7 +160,6 @@ typedef struct {
 typedef struct {
     uint8_t esl_id;                       /*!< ESL_ID to assign (0x00–0xFE) */
     uint8_t group_id;                     /*!< Group_ID to assign (0x00–0x7F) */
-    ble_esl_key_material_t ap_sync_key;   /*!< AP Sync Key Material (session key + IV) */
     ble_esl_key_material_t resp_key;      /*!< ESL Response Key Material (session key + IV) */
 } ble_esl_ap_esl_config_t;
 
@@ -197,6 +202,14 @@ typedef struct {
     uint16_t conn_handle;   /*!< Connection handle */
     esp_err_t status;       /*!< ESP_OK if all mandatory chars written */
 } ble_esl_ap_configured_t;
+
+/**
+ * @brief Absolute Time write event (BLE_ESL_AP_EVT_ABS_TIME_WRITTEN)
+ */
+typedef struct {
+    uint16_t conn_handle;   /*!< Connection handle */
+    esp_err_t status;       /*!< GATT write status */
+} ble_esl_ap_abs_time_written_t;
 
 /**
  * @brief Image transferred event data (BLE_ESL_AP_EVT_IMAGE_TRANSFERRED)
@@ -302,6 +315,15 @@ typedef struct {
     uint8_t group_id;  /*!< Group_ID of the timed-out ESL */
 } esl_ap_cmd_timeout_t;
 
+/**
+ * @brief Command transport failure event data (BLE_ESL_AP_EVT_CMD_FAILED)
+ */
+typedef struct {
+    uint8_t esl_id;    /*!< ESL_ID of the failed command target */
+    uint8_t group_id;  /*!< Group_ID of the failed command target */
+    esp_err_t status;  /*!< ECP transport status */
+} esl_ap_cmd_failed_t;
+
 /* ========================== Command Parameter Structures ========================== */
 
 /**
@@ -326,12 +348,24 @@ typedef struct {
  * Registers the application callback, stores PAwR timing parameters,
  * and allocates internal resources. Must be called before any other API.
  *
- * @param config Pointer to AP configuration (callback + PAwR timing)
+ * @param config Pointer to AP configuration (callback, PAwR timing, AP Sync Key)
  * @return ESP_OK on success; ESP_ERR_INVALID_ARG if config/callback is NULL or
  *         num_subevents is outside 1–128;
  *         ESP_ERR_INVALID_STATE if already initialized
  */
 esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config);
+
+/**
+ * @brief Set or replace the AP-wide PAwR Sync Key Material
+ *
+ * One key encrypts the whole PAwR train. ble_esl_ap_init() installs
+ * config->ap_sync_key; call this to rekey or restore a persisted network
+ * key. Does not rewrite already-configured ESLs over GATT.
+ *
+ * @param key AP Sync Key Material (session key + IV)
+ * @return ESP_OK on success; ESP_ERR_INVALID_ARG / ESP_ERR_INVALID_STATE
+ */
+esp_err_t ble_esl_ap_set_sync_key(const ble_esl_key_material_t *key);
 
 /**
  * @brief Deinitialize the AP module
@@ -342,32 +376,54 @@ esp_err_t ble_esl_ap_init(const ble_esl_ap_config_t *config);
  *       stopped, the still connected links stay tracked and ESP_FAIL is
  *       returned; the caller may retry this function.
  *
- * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not initialized;
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not initialized
+ *         or if a configure / Absolute Time write is still in-flight;
  *         ESP_FAIL if an active connection could not be terminated
  */
 esp_err_t ble_esl_ap_deinit(void);
 
 /**
- * @brief Start AP operation (scanning + PAwR broadcasting)
+ * @brief Start PAwR broadcasting
  *
- * Begins GAP General Discovery for ESLs and starts PAwR broadcasting.
- * Discovered ESLs are reported via BLE_ESL_AP_EVT_SCAN_RESULT.
+ * Does not start GAP discovery. Call ble_esl_ap_start_scan() when the
+ * application wants to discover ESLs. Existing ACL connections are not
+ * affected.
  *
- * @note This function does not automatically initiate connections. The caller must handle
- *       scan results and call ble_esl_ap_connect() to establish connections.
- *
- * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not initialized or already started
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not initialized
+ *         or PAwR is already started
  */
-esp_err_t ble_esl_ap_start(void);
+esp_err_t ble_esl_ap_start_pawr(void);
 
 /**
- * @brief Stop AP operation (scanning + PAwR broadcasting)
+ * @brief Stop PAwR broadcasting
  *
- * Existing ACL connections are not affected.
+ * Does not stop GAP discovery. Call ble_esl_ap_stop_scan() first if
+ * discovery is running. Existing ACL connections are not affected.
  *
- * @return ESP_OK on success; ESP_ERR_INVALID_STATE if not started
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if PAwR is not started
  */
-esp_err_t ble_esl_ap_stop(void);
+esp_err_t ble_esl_ap_stop_pawr(void);
+
+/**
+ * @brief Start GAP discovery if it is not already running
+ *
+ * Idempotent: if discovery is already active, returns ESP_OK without
+ * cancelling the current scan. Clears scan_suppressed so discovery can
+ * auto-resume after connections end. PAwR broadcasting is not affected.
+ *
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if PAwR is not started
+ */
+esp_err_t ble_esl_ap_start_scan(void);
+
+/**
+ * @brief Stop GAP discovery without affecting PAwR broadcasting
+ *
+ * Sets scan_suppressed so discovery is not auto-resumed after connections
+ * end. Call ble_esl_ap_start_scan() to scan again.
+ *
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE if PAwR is not started
+ */
+esp_err_t ble_esl_ap_stop_scan(void);
 
 /**
  * @brief Initiate ACL connection to an ESL
@@ -425,18 +481,27 @@ esp_err_t ble_esl_ap_connect_synced(ble_esl_address_t esl_addr);
  */
 esp_err_t ble_esl_ap_disconnect(uint16_t conn_handle);
 
+/**
+ * @brief Cancel pending Tag connects and terminate active Tag ACL links.
+ *
+ * Does not complete in-flight configure / Absolute Time; GATT failure
+ * callbacks still deliver those events.
+ */
+esp_err_t ble_esl_ap_abort_tag_connections(void);
+
 /* ========================== Public APIs: Lifecycle ========================== */
 /* Implemented in ble_esl_ap_lifecycle.c                                       */
 
 /**
  * @brief Write ESL configuration characteristics
  *
- * Writes ESL Address, AP Sync Key Material, ESL Response Key Material, and
- * ESL Current Absolute Time in sequence. Async — result via
+ * Writes ESL Address, the AP-wide Sync Key already installed by
+ * ble_esl_ap_init() / ble_esl_ap_set_sync_key(), ESL Response Key Material,
+ * and ESL Current Absolute Time in sequence. Async — result via
  * BLE_ESL_AP_EVT_CONFIGURED.
  *
  * @param conn_handle Connection handle of the connected ESL
- * @param config      Pointer to configuration parameters
+ * @param config      Pointer to per-ESL parameters (address + response key)
  * @return ESP_OK if operation initiated; error code on failure
  */
 esp_err_t ble_esl_ap_configure(uint16_t conn_handle,
@@ -478,6 +543,44 @@ esp_err_t ble_esl_ap_transfer_image(const ble_esl_ap_image_transfer_params_t *pa
 esp_err_t ble_esl_ap_synchronize(uint16_t conn_handle);
 
 /**
+ * @brief Return true while Update Complete → PAST → wait-for-disconnect is active
+ */
+bool ble_esl_ap_synchronize_in_progress(void);
+
+/**
+ * @brief Write ESL Current Absolute Time on an encrypted ACL link
+ *
+ * @p abs_time_ms is the ESL 32-bit millisecond counter (wrapping), not a
+ * POSIX/RTC timestamp. The application owns the epoch (boot monotonic,
+ * persisted network time, SNTP-derived, etc.). Completion is
+ * BLE_ESL_AP_EVT_ABS_TIME_WRITTEN (once, if this returns ESP_OK).
+ * Rejected while configure occupies the same connection.
+ *
+ * @param conn_handle Connection handle of the connected ESL
+ * @param abs_time_ms Absolute time in milliseconds to write to the ESL
+ * @return ESP_OK if the GATT write was initiated
+ */
+esp_err_t ble_esl_ap_write_absolute_time(uint16_t conn_handle, uint32_t abs_time_ms);
+
+/**
+ * @brief In-memory association snapshot used to seed AP tracking after reboot
+ *
+ * Not an NVS/wire blob. Call after ble_esl_ap_init(); may be invoked
+ * multiple times (once per ESL), including after ble_esl_ap_start_pawr().
+ * Key material is not checked for all-zeros — the application must
+ * quarantine corrupt records. The AP Sync Key is AP-wide: restore it
+ * once via ble_esl_ap_init() / ble_esl_ap_set_sync_key(), not per ESL.
+ */
+typedef struct {
+    ble_esl_address_t esl_address;     /*!< ESL Address (ESL_ID + Group_ID) */
+    uint8_t ble_addr[6];               /*!< Identity address of the ESL */
+    uint8_t ble_addr_type;             /*!< BLE address type */
+    ble_esl_key_material_t resp_key;   /*!< Per-ESL Response Key Material */
+} ble_esl_ap_persisted_esl_t;
+
+esp_err_t ble_esl_ap_restore_persisted_esl(const ble_esl_ap_persisted_esl_t *info);
+
+/**
  * @brief Get the AP's tracked state for a specific ESL
  *
  * Synchronous. Returns BLE_ESL_STATE_UNASSOCIATED if not found.
@@ -493,20 +596,38 @@ ble_esl_state_t ble_esl_ap_get_esl_state(ble_esl_address_t esl_addr);
 /**
  * @brief Send Ping command (opcode 0x00)
  *
- * Verifies ESL reachability. Expected response: Basic State.
+ * Unicast: verifies ESL reachability; expected response Basic State.
+ * Broadcast (`esl_id` 0xFF): queues a PAwR TLV for all ESLs in `group_id`;
+ * no Tag response is produced.
  *
- * @param esl_id   Target ESL_ID (0x00–0xFE, or 0xFF for broadcast)
+ * @param esl_id   Target ESL_ID (0x00–0xFE, or 0xFF for group broadcast)
  * @param group_id Group_ID (0x00–0x7F)
  * @return ESP_OK on successful dispatch; error code on failure
  */
 esp_err_t ble_esl_ap_ping(uint8_t esl_id, uint8_t group_id);
 
 /**
+ * @brief Send a PAwR-only command (atomic state check + transmit)
+ *
+ * Never uses ECP. Unicast is allowed only when the ESL is Synchronized or
+ * Unsynchronized. Opcode must be on the PAwR allowlist; vendor opcodes are
+ * rejected (use ble_esl_ap_vendor_command()).
+ *
+ * @param params      TLV parameter bytes; params[0] must equal esl_id
+ * @param params_len  Must equal BLE_ESL_TLV_PARAMS_LEN(opcode)
+ */
+esp_err_t ble_esl_ap_pawr_command(uint8_t esl_id, uint8_t group_id,
+                                  uint8_t opcode, const uint8_t *params,
+                                  uint8_t params_len);
+
+/**
  * @brief Send Display Image command (opcode 0x20)
  *
- * Immediately display a stored image. Expected response: Display State.
+ * Immediately display a stored image.
+ * Unicast: expected response Display State.
+ * Broadcast (`esl_id` 0xFF): queues PAwR for the group; no Tag response.
  *
- * @param esl_id        Target ESL_ID (0x00–0xFE, or 0xFF for broadcast)
+ * @param esl_id        Target ESL_ID (0x00–0xFE, or 0xFF for group broadcast)
  * @param group_id      Group_ID (0x00–0x7F)
  * @param display_index Index of the target display
  * @param image_index   Index of the stored image to show
@@ -535,9 +656,11 @@ esp_err_t ble_esl_ap_display_timed_image(uint8_t esl_id, uint8_t group_id,
 /**
  * @brief Send Refresh Display command (opcode 0x11)
  *
- * Refresh current display without changing image. Expected response: Display State.
+ * Refresh current display without changing image.
+ * Unicast: expected response Display State.
+ * Broadcast (`esl_id` 0xFF): queues PAwR for the group; no Tag response.
  *
- * @param esl_id        Target ESL_ID (0x00–0xFE, or 0xFF for broadcast)
+ * @param esl_id        Target ESL_ID (0x00–0xFE, or 0xFF for group broadcast)
  * @param group_id      Group_ID (0x00–0x7F)
  * @param display_index Index of the display to refresh
  * @return ESP_OK on successful dispatch; error code on failure
@@ -549,9 +672,10 @@ esp_err_t ble_esl_ap_refresh_display(uint8_t esl_id, uint8_t group_id,
  * @brief Send LED Control command (opcode 0xB0)
  *
  * Immediately control LED color, brightness, and flashing pattern.
- * Expected response: LED State.
+ * Unicast: expected response LED State.
+ * Broadcast (`esl_id` 0xFF): queues PAwR for the group; no Tag response.
  *
- * @param esl_id    Target ESL_ID (0x00–0xFE, or 0xFF for broadcast)
+ * @param esl_id    Target ESL_ID (0x00–0xFE, or 0xFF for group broadcast)
  * @param group_id  Group_ID (0x00–0x7F)
  * @param led_index Index of the target LED
  * @param settings  Pointer to LED control settings
@@ -593,12 +717,13 @@ esp_err_t ble_esl_ap_read_sensor(uint8_t esl_id, uint8_t group_id,
                                  uint8_t sensor_index);
 
 /**
- * @brief Send Unassociate from AP command (opcode 0x01)
+ * @brief Send Unassociate from AP command (opcode 0x01) — ECP only
  *
  * Disassociates the ESL. Expected response: Basic State. On success,
  * the ESL's tracked state transitions to Unassociated.
+ * Broadcast (`esl_id` 0xFF) is rejected with ESP_ERR_INVALID_ARG.
  *
- * @param esl_id   Target ESL_ID (0x00–0xFE, or 0xFF for broadcast)
+ * @param esl_id   Target ESL_ID (0x00–0xFE)
  * @param group_id Group_ID (0x00–0x7F)
  * @return ESP_OK on successful dispatch; error code on failure
  */

@@ -171,6 +171,10 @@ typedef struct {
 
     /* ESL tracking cross-reference */
     uint16_t esl_addr;                   /*!< Assigned ESL Address (valid after configure) */
+
+    /* Per-connection lifecycle slot (protected by lifecycle mutex) */
+    uint32_t lf_generation;
+    uint8_t lf_op;                       /*!< 0=none, 1=configure, 2=abs-time */
 } ble_esl_ap_conn_t;
 
 /* ========================== Per-ESL Tracking Entry ========================== */
@@ -226,7 +230,8 @@ typedef struct {
  */
 typedef struct {
     bool initialized;    /*!< Module has been initialized */
-    bool started;        /*!< Scanning + PAwR broadcasting active */
+    bool pawr_started;   /*!< ble_esl_ap_start_pawr() has succeeded */
+    bool scan_suppressed; /*!< User/app requested scan stop; do not auto-resume */
 
     /* Application callback */
     ble_esl_ap_cb_t app_cb;
@@ -242,6 +247,7 @@ typedef struct {
 
     /* PAwR broadcaster state */
     ble_esl_key_material_t ap_sync_key;            /*!< AP Sync Key Material */
+    bool ap_sync_key_valid;                        /*!< Sync key installed via init/setter */
     uint8_t randomizer[BLE_ESL_RANDOMIZER_SIZE];   /*!< Current AP Randomizer (5 octets, LE) */
     bool pawr_active;                              /*!< PAwR broadcaster is running */
     ble_esl_ap_pawr_pending_t *pawr_pending;      /*!< Per-subevent pending TX buffers (num_subevents entries) */
@@ -252,6 +258,34 @@ typedef struct {
 
 /** Global pointer to the AP module state (allocated by init, freed by deinit) */
 extern ble_esl_ap_state_t *g_esl_ap;
+
+/**
+ * @brief Snapshot of BLE_ESL_AP_EVT_STATE_CHANGED for dispatch after unlock
+ */
+typedef struct {
+    bool pending;
+    ble_esl_ap_state_changed_t evt;
+} ble_esl_ap_state_evt_snap_t;
+
+void ble_esl_ap_tracking_lock(void);
+void ble_esl_ap_tracking_unlock(void);
+bool ble_esl_ap_tracking_held(void);
+bool ble_esl_ap_pawr_held(void);
+bool ble_esl_ap_lifecycle_held(void);
+bool ble_esl_ap_lifecycle_has_inflight(void);
+void ble_esl_ap_lifecycle_disconnect_check(ble_esl_ap_conn_t *conn);
+
+void ble_esl_ap_dispatch_state_evt(const ble_esl_ap_state_evt_snap_t *snap);
+
+/**
+ * @brief Update ESL state; caller must already hold the tracking mutex.
+ *
+ * Does not invoke app_cb. Fills @p snap when a state-changed event should be
+ * delivered after unlock.
+ */
+esp_err_t ble_esl_ap_update_esl_state_locked(uint16_t esl_addr,
+                                             ble_esl_state_t new_state,
+                                             ble_esl_ap_state_evt_snap_t *snap);
 
 /* ========================== Helpers ========================== */
 
@@ -266,17 +300,16 @@ ble_esl_ap_conn_t *ble_esl_ap_find_conn(uint16_t conn_handle);
 /**
  * @brief Find an ESL tracking entry by ESL Address
  *
- * @param esl_addr ESL Address (ESL_ID | Group_ID << 8)
- * @return Pointer to ESL entry, or NULL if not found
+ * Caller must already hold the tracking mutex. The returned pointer is only
+ * valid until the matching unlock. Do not call this as an internally locking
+ * lookup.
  */
 ble_esl_ap_esl_entry_t *ble_esl_ap_find_esl(uint16_t esl_addr);
 
 /**
  * @brief Find an ESL tracking entry by BLE address
  *
- * @param addr     6-byte BLE address
- * @param addr_type Address type
- * @return Pointer to ESL entry, or NULL if not found
+ * Caller must already hold the tracking mutex. See ble_esl_ap_find_esl().
  */
 ble_esl_ap_esl_entry_t *ble_esl_ap_find_esl_by_ble_addr(const uint8_t *addr,
                                                          uint8_t addr_type);
@@ -298,7 +331,7 @@ void ble_esl_ap_free_conn(ble_esl_ap_conn_t *conn);
 /**
  * @brief Allocate a free ESL tracking entry
  *
- * @return Pointer to free entry, or NULL if table is full
+ * Caller must already hold the tracking mutex.
  */
 ble_esl_ap_esl_entry_t *ble_esl_ap_alloc_esl(void);
 

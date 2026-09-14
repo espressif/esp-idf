@@ -107,6 +107,7 @@ typedef enum {
     BLE_OTS_SERVER_EVT_READ_COMPLETE,    /*!< Read transfer completed */
     BLE_OTS_SERVER_EVT_WRITE_COMPLETE,   /*!< Write transfer completed */
     BLE_OTS_SERVER_EVT_METADATA_WRITTEN, /*!< Client wrote a metadata characteristic */
+    BLE_OTS_SERVER_EVT_DATA_WRITE,       /*!< Object data chunk received during write transfer */
 } ble_ots_server_event_t;
 
 /*****************************************************************************
@@ -174,6 +175,18 @@ typedef struct {
 } ble_ots_server_evt_read_complete_t;
 
 /**
+ * @brief Event data for BLE_OTS_SERVER_EVT_DATA_WRITE.
+ *
+ * The @p data pointer is valid only for the duration of the callback.
+ */
+typedef struct {
+    ble_ots_obj_id_t object_id;          /*!< Object ID being written */
+    uint32_t offset;                     /*!< Byte offset within the object */
+    const uint8_t *data;                 /*!< Pointer to received chunk data */
+    uint16_t data_len;                   /*!< Length of chunk data in octets */
+} ble_ots_server_evt_data_write_t;
+
+/**
  * @brief Event data for BLE_OTS_SERVER_EVT_WRITE_COMPLETE.
  */
 typedef struct {
@@ -209,6 +222,7 @@ typedef union {
     ble_ots_server_oacp_execute_evt_t   execute;          /*!< BLE_OTS_SERVER_EVT_EXECUTE */
     ble_ots_server_oacp_checksum_evt_t  checksum;         /*!< BLE_OTS_SERVER_EVT_CHECKSUM_REQUEST */
     ble_ots_server_evt_read_complete_t  read_complete;    /*!< BLE_OTS_SERVER_EVT_READ_COMPLETE */
+    ble_ots_server_evt_data_write_t     data_write;       /*!< BLE_OTS_SERVER_EVT_DATA_WRITE */
     ble_ots_server_evt_write_complete_t write_complete;   /*!< BLE_OTS_SERVER_EVT_WRITE_COMPLETE */
     ble_ots_server_metadata_evt_t       metadata_written; /*!< BLE_OTS_SERVER_EVT_METADATA_WRITTEN */
 } ble_ots_server_cb_param_t;
@@ -322,6 +336,22 @@ int ble_ots_server_set_object_data(ble_ots_obj_id_t object_id,
                                     const uint8_t *data,
                                     uint32_t offset,
                                     uint32_t length);
+
+/**
+ * @brief Copy object content into a caller-owned buffer under the OTS mutex.
+ *
+ * Performs an atomic snapshot of [offset, offset+length) against the object's
+ * current_size. Suitable for application reads that must not race with OACP
+ * writes.
+ *
+ * @param object_id Object ID of the source object
+ * @param offset    Byte offset within the object
+ * @param length    Number of octets to copy
+ * @param buf       Destination buffer (must be >= length octets)
+ * @return 0 on success, non-zero on failure (ENOENT / EINVAL)
+ */
+int ble_ots_server_copy_object_data(ble_ots_obj_id_t object_id, uint32_t offset,
+                                    uint32_t length, uint8_t *buf);
 
 /**
  * @brief Trigger Object Changed indication for a server-initiated change.

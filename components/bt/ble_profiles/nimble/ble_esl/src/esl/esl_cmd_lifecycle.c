@@ -161,6 +161,7 @@ static esp_err_t handle_ping(const uint8_t *params, uint8_t params_len,
 static esp_err_t handle_unassociate(const uint8_t *params, uint8_t params_len,
                                     ble_esl_cmd_result_t *result)
 {
+    ESP_LOGI(TAG, "Unassociate ECP command received");
     uint16_t bitmap = 0;
     esp_err_t ret = esl_build_basic_state(&bitmap);
     if (ret != ESP_OK) {

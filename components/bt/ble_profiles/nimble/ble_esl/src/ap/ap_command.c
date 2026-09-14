@@ -154,6 +154,9 @@ static void parse_response(uint8_t esl_id, uint8_t group_id,
 static esp_err_t dispatch_command(uint8_t esl_id, uint8_t group_id,
                                   uint8_t opcode, const uint8_t *params,
                                   uint8_t params_len, bool ecp_only);
+static esp_err_t pawr_send_unicast(uint16_t esl_addr, uint8_t esl_id, uint8_t group_id,
+                                   uint8_t opcode, const uint8_t *params,
+                                   uint8_t params_len);
 static esp_err_t build_led_params(uint8_t esl_id, uint8_t led_index,
                                   const esl_ap_led_settings_t *settings,
                                   uint8_t *out_params, uint8_t *out_len);
@@ -386,8 +389,19 @@ static void ecp_response_cb(uint16_t conn_handle, esp_err_t status,
     if (status != ESP_OK) {
         ESP_LOGE(TAG, "ECP write/notification failed: status=0x%X, conn=0x%04X",
                  status, conn_handle);
+        uint8_t esl_id = ctx->esl_id;
+        uint8_t group_id = ctx->group_id;
         free_ecp_ctx(ctx);
         xSemaphoreGive(s_ecp_ctx_mutex);
+
+        if (g_esl_ap != NULL && g_esl_ap->app_cb != NULL) {
+            esl_ap_cmd_failed_t failed_evt = {
+                .esl_id = esl_id,
+                .group_id = group_id,
+                .status = status,
+            };
+            g_esl_ap->app_cb(BLE_ESL_AP_EVT_CMD_FAILED, &failed_evt);
+        }
         return;
     }
 
@@ -492,6 +506,13 @@ static void parse_response(uint8_t esl_id, uint8_t group_id,
                  esl_id, response.basic_state.service_needed,
                  response.basic_state.synchronized);
 
+        /* Basic State after Ping must NOT auto-promote ESL runtime to
+         * SYNCHRONIZED. Product ONLINE is owned exclusively by the recovery
+         * coordinator after a generation-validated confirmation Ping. PAST
+         * success may still move ESL runtime to SYNCHRONIZED via the
+         * synchronize path; that is separate from product availability. */
+        (void)cmd_opcode;
+
         /* For Unassociate command, transition ESL to Unassociated state */
         if (cmd_opcode == BLE_ESL_CMD_UNASSOCIATE) {
             uint16_t esl_addr = BLE_ESL_AP_MAKE_ADDR(esl_id, group_id);
@@ -548,6 +569,128 @@ static void parse_response(uint8_t esl_id, uint8_t group_id,
     if (g_esl_ap != NULL && g_esl_ap->app_cb != NULL) {
         g_esl_ap->app_cb(BLE_ESL_AP_EVT_RESPONSE, &response);
     }
+}
+
+/* ========================== PAwR Unicast Helper ========================== */
+
+static esp_err_t pawr_send_unicast(uint16_t esl_addr, uint8_t esl_id, uint8_t group_id,
+                                   uint8_t opcode, const uint8_t *params,
+                                   uint8_t params_len)
+{
+    uint8_t tlv_buf[BLE_ESL_TLV_MAX_SIZE];
+    uint8_t tlv_len = 0;
+    esp_err_t ret = ble_esl_tlv_encode(opcode, params, params_len,
+                                       tlv_buf, &tlv_len);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "TLV encode failed: 0x%X", ret);
+        return ret;
+    }
+
+    uint8_t payload_buf[BLE_ESL_PAYLOAD_MAX_SIZE];
+    uint8_t payload_len = 0;
+    const uint8_t *tlv_ptrs[] = { tlv_buf };
+    const uint8_t tlv_lens[] = { tlv_len };
+
+    ret = ble_esl_payload_encode(group_id, tlv_ptrs, tlv_lens, 1,
+                                 payload_buf, &payload_len);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Payload encode failed: 0x%X", ret);
+        return ret;
+    }
+
+    ble_esl_ap_tracking_lock();
+    ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
+    if (esl != NULL) {
+        esl->pending_pawr_cmd_opcode = opcode;
+    }
+    ble_esl_ap_tracking_unlock();
+
+    pawr_record_slot_mapping(group_id, esl_id);
+
+    ret = ble_esl_ap_pawr_send(group_id, payload_buf, payload_len);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "PAwR send failed: 0x%X", ret);
+    }
+    return ret;
+}
+
+static bool pawr_opcode_allowed(uint8_t opcode)
+{
+    switch (opcode) {
+    case BLE_ESL_CMD_PING:
+    case BLE_ESL_CMD_SERVICE_RESET:
+    case BLE_ESL_CMD_READ_SENSOR:
+    case BLE_ESL_CMD_REFRESH_DISPLAY:
+    case BLE_ESL_CMD_DISPLAY_IMAGE:
+    case BLE_ESL_CMD_DISPLAY_TIMED_IMAGE:
+    case BLE_ESL_CMD_LED_CONTROL:
+    case BLE_ESL_CMD_LED_TIMED_CONTROL:
+        return true;
+    default:
+        return false;
+    }
+}
+
+esp_err_t ble_esl_ap_pawr_command(uint8_t esl_id, uint8_t group_id,
+                                  uint8_t opcode, const uint8_t *params,
+                                  uint8_t params_len)
+{
+    if (g_esl_ap == NULL || !g_esl_ap->initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (group_id > BLE_ESL_GROUP_ID_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (BLE_ESL_TLV_TAG(opcode) == BLE_ESL_CMD_VENDOR_TAG) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (!pawr_opcode_allowed(opcode)) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (params == NULL || params_len != BLE_ESL_TLV_PARAMS_LEN(opcode) ||
+            params[0] != esl_id) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t tlv_buf[BLE_ESL_TLV_MAX_SIZE];
+    uint8_t tlv_len = 0;
+    esp_err_t ret = ble_esl_tlv_encode(opcode, params, params_len,
+                                       tlv_buf, &tlv_len);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    uint8_t payload_buf[BLE_ESL_PAYLOAD_MAX_SIZE];
+    uint8_t payload_len = 0;
+    const uint8_t *tlv_ptrs[] = { tlv_buf };
+    const uint8_t tlv_lens[] = { tlv_len };
+    ret = ble_esl_payload_encode(group_id, tlv_ptrs, tlv_lens, 1,
+                                 payload_buf, &payload_len);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    if (esl_id == BLE_ESL_BROADCAST_ADDRESS) {
+        return ble_esl_ap_pawr_send(group_id, payload_buf, payload_len);
+    }
+
+    uint16_t esl_addr = BLE_ESL_AP_MAKE_ADDR(esl_id, group_id);
+    ble_esl_ap_tracking_lock();
+    ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
+    if (esl == NULL) {
+        ble_esl_ap_tracking_unlock();
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (esl->state != BLE_ESL_STATE_SYNCHRONIZED &&
+            esl->state != BLE_ESL_STATE_UNSYNCHRONIZED) {
+        ble_esl_ap_tracking_unlock();
+        return ESP_ERR_INVALID_STATE;
+    }
+    esl->pending_pawr_cmd_opcode = opcode;
+    pawr_record_slot_mapping(group_id, esl_id);
+    ret = ble_esl_ap_pawr_send(group_id, payload_buf, payload_len);
+    ble_esl_ap_tracking_unlock();
+    return ret;
 }
 
 /* ========================== Transport Dispatch ========================== */
@@ -615,19 +758,27 @@ static esp_err_t dispatch_command(uint8_t esl_id, uint8_t group_id,
 
     /* Unicast: determine transport based on ESL tracked state */
     uint16_t esl_addr = BLE_ESL_AP_MAKE_ADDR(esl_id, group_id);
-    ble_esl_state_t state = ble_esl_ap_get_esl_state(ble_esl_addr_make(esl_id, group_id));
+    uint16_t conn_handle = BLE_ESL_AP_CONN_HANDLE_INVALID;
+    ble_esl_state_t state;
+
+    ble_esl_ap_tracking_lock();
+    ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
+    if (esl == NULL) {
+        ble_esl_ap_tracking_unlock();
+        ESP_LOGE(TAG, "ESL 0x%04X not tracked — cannot dispatch command", esl_addr);
+        return ESP_ERR_INVALID_STATE;
+    }
+    state = esl->state;
+    conn_handle = esl->conn_handle;
+    ble_esl_ap_tracking_unlock();
 
     switch (state) {
     case BLE_ESL_STATE_CONFIGURING:
     case BLE_ESL_STATE_UPDATING: {
-        /* ECP transport (connection-oriented) */
-        ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
-        if (esl == NULL || esl->conn_handle == BLE_ESL_AP_CONN_HANDLE_INVALID) {
+        if (conn_handle == BLE_ESL_AP_CONN_HANDLE_INVALID) {
             ESP_LOGE(TAG, "No active connection for ESL 0x%04X", esl_addr);
             return ESP_ERR_INVALID_STATE;
         }
-
-        uint16_t conn_handle = esl->conn_handle;
 
         xSemaphoreTake(s_ecp_ctx_mutex, portMAX_DELAY);
 
@@ -682,6 +833,8 @@ static esp_err_t dispatch_command(uint8_t esl_id, uint8_t group_id,
         xSemaphoreGive(s_ecp_ctx_mutex);
 
         /* Write the TLV to ECP characteristic */
+        ESP_LOGI(TAG, "ECP write opcode=0x%02X conn=%u esl_id=%u group=%u tlv_len=%u",
+                 opcode, conn_handle, esl_id, group_id, tlv_len);
         ret = ble_esl_ap_ecp_write(conn_handle, tlv_buf, tlv_len,
                                    ecp_response_cb, ctx);
         if (ret != ESP_OK) {
@@ -703,37 +856,21 @@ static esp_err_t dispatch_command(uint8_t esl_id, uint8_t group_id,
             return ESP_ERR_INVALID_STATE;
         }
 
-        /* PAwR transport (connectionless) */
-        uint8_t payload_buf[BLE_ESL_PAYLOAD_MAX_SIZE];
-        uint8_t payload_len = 0;
-        const uint8_t *tlv_ptrs[] = { tlv_buf };
-        const uint8_t tlv_lens[] = { tlv_len };
+        return pawr_send_unicast(esl_addr, esl_id, group_id, opcode, params, params_len);
+    }
 
-        ret = ble_esl_payload_encode(group_id, tlv_ptrs, tlv_lens, 1,
-                                     payload_buf, &payload_len);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Payload encode failed: 0x%X", ret);
-            return ret;
+    case BLE_ESL_STATE_UNSYNCHRONIZED: {
+        /* PAwR unicast still works for tags on connectable ext adv after AP reboot */
+        if (ecp_only) {
+            ESP_LOGE(TAG, "Command 0x%02X is ECP-only, cannot send in Unsynchronized state",
+                     opcode);
+            return ESP_ERR_INVALID_STATE;
         }
 
-        /* Store the command opcode for response correlation */
-        ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
-        if (esl != NULL) {
-            esl->pending_pawr_cmd_opcode = opcode;
-        }
-
-        /* Record the response slot mapping for this group (Issue 9) */
-        pawr_record_slot_mapping(group_id, esl_id);
-
-        ret = ble_esl_ap_pawr_send(group_id, payload_buf, payload_len);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "PAwR send failed: 0x%X", ret);
-        }
-        return ret;
+        return pawr_send_unicast(esl_addr, esl_id, group_id, opcode, params, params_len);
     }
 
     case BLE_ESL_STATE_UNASSOCIATED:
-    case BLE_ESL_STATE_UNSYNCHRONIZED:
     default:
         ESP_LOGE(TAG, "ESL 0x%04X in state %d — cannot dispatch command",
                  esl_addr, state);
@@ -1050,23 +1187,27 @@ void ble_esl_ap_command_handle_pawr_response(uint8_t group_id,
      * the correct ESL entry.
      */
     uint16_t esl_addr = pawr_lookup_slot(group_id, response_slot);
-    ble_esl_ap_esl_entry_t *esl = NULL;
+    uint8_t cmd_opcode = 0;
+    uint8_t esl_id = 0;
     if (esl_addr != ESL_ADDR_INVALID) {
-        esl = ble_esl_ap_find_esl(esl_addr);
-    }
-
-    if (esl == NULL) {
+        ble_esl_ap_tracking_lock();
+        ble_esl_ap_esl_entry_t *esl = ble_esl_ap_find_esl(esl_addr);
+        if (esl == NULL) {
+            ble_esl_ap_tracking_unlock();
+            ESP_LOGW(TAG, "PAwR response from unknown ESL: group=%u slot=%u",
+                     group_id, response_slot);
+            return;
+        }
+        esl_addr = esl->esl_addr;
+        esl_id = BLE_ESL_AP_ADDR_ESL_ID(esl_addr);
+        cmd_opcode = esl->pending_pawr_cmd_opcode;
+        esl->pending_pawr_cmd_opcode = 0;
+        ble_esl_ap_tracking_unlock();
+    } else {
         ESP_LOGW(TAG, "PAwR response from unknown ESL: group=%u slot=%u",
                  group_id, response_slot);
         return;
     }
-
-    esl_addr = esl->esl_addr;
-    uint8_t esl_id = BLE_ESL_AP_ADDR_ESL_ID(esl_addr);
-
-    /* Retrieve and clear the stored command opcode for response correlation */
-    uint8_t cmd_opcode = esl->pending_pawr_cmd_opcode;
-    esl->pending_pawr_cmd_opcode = 0;
 
     /* Decrypt and parse the PAwR response */
     ble_esl_ap_parsed_response_t parsed;

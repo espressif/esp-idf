@@ -100,17 +100,10 @@ static void build_display_state_response(ble_esl_cmd_result_t *result,
 }
 
 /**
- * @brief Check if an image slot contains valid data
+ * @brief Check if an image slot contains valid data.
  *
- * An image is considered available if:
- * - The image_writable_mask is NULL: all images are read-only (static/pre-loaded)
- *   and therefore always available.
- * - The image_writable_mask entry is false: the image is read-only (protected)
- *   and therefore always available.
- * - The image_writable_mask entry is true: the image is writable and assumed
- *   to have been written by the AP.
- *
- * In other words, any valid image index within range is considered available.
+ * Writable OTS-backed images require a successful write-complete. Read-only
+ * preloaded images (writable_mask false / NULL) remain always available.
  */
 static bool is_image_available(uint8_t image_index)
 {
@@ -121,10 +114,16 @@ static bool is_image_available(uint8_t image_index)
     if (image_index >= config->num_images) {
         return false;
     }
-    /* All valid image indices are considered available:
-     * - Read-only images (no writable mask, or mask[i] == false) are
-     *   static/pre-loaded and always available.
-     * - Writable images (mask[i] == true) are assumed written by the AP. */
+
+#if CONFIG_BLE_ESL_OTS_SUPPORT
+    bool writable = true;
+    if (config->image_writable_mask != NULL) {
+        writable = config->image_writable_mask[image_index];
+    }
+    if (writable) {
+        return ble_esl_image_is_complete(image_index);
+    }
+#endif
     return true;
 }
 

@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include "esp_err.h"
 #include "ble_esl_common.h"
 
@@ -95,7 +96,7 @@ typedef struct {
  */
 typedef enum {
     BLE_ESL_EVT_STATE_CHANGED = 0,      /*!< State transition occurred */
-    BLE_ESL_EVT_IMAGE_WRITE,            /*!< Image data received via OTS */
+    BLE_ESL_EVT_IMAGE_WRITE,            /*!< OTS image chunk or write completion */
     BLE_ESL_EVT_DISPLAY_IMAGE,          /*!< Display a stored image */
     BLE_ESL_EVT_REFRESH_DISPLAY,        /*!< Refresh the current display image */
     BLE_ESL_EVT_SENSOR_READ,            /*!< Read sensor data request */
@@ -116,11 +117,16 @@ typedef struct {
 
 /**
  * @brief Event data for BLE_ESL_EVT_IMAGE_WRITE
+ *
+ * Fired once per OTS fragment and once when the write transfer ends:
+ * - `data != NULL`: one fragment; the pointer is valid only during the callback
+ * - `data == NULL && length > 0`: write succeeded; `length` is the total size
+ * - `data == NULL && length == 0`: write failed or empty; the slot is incomplete
  */
 typedef struct {
     uint8_t image_index;                /*!< Image storage index (0 to Max_Image_Index) */
-    const uint8_t *data;                /*!< Pointer to received image data */
-    uint32_t length;                    /*!< Length of image data in bytes */
+    const uint8_t *data;                /*!< Fragment bytes, or NULL on completion */
+    uint32_t length;                    /*!< Fragment size, total size, or 0 on failure */
     uint32_t offset;                    /*!< Write offset within the image object */
 } ble_esl_image_write_evt_param_t;
 
@@ -317,6 +323,103 @@ esp_err_t ble_esl_set_service_needed(bool flag);
  */
 esp_err_t ble_esl_report_sensor_data(uint8_t sensor_index, uint8_t error_code,
                                      const uint8_t *data, uint8_t data_len);
+
+#if CONFIG_BLE_ESL_OTS_SUPPORT
+/**
+ * @brief Query whether an OTS image slot has a successfully completed write.
+ *
+ * @param[in] image_index Image index (0 .. num_images-1)
+ * @return true if a successful OTS write completed for this slot
+ */
+bool ble_esl_image_is_complete(uint8_t image_index);
+
+/**
+ * @brief Atomically snapshot a completed image into a caller buffer.
+ *
+ * Copies only when the slot is marked complete. Concurrent OTS writes
+ * mark the slot incomplete via BLE_OTS_SERVER_EVT_DATA_WRITE so Display
+ * Image never observes a torn frame. This function does not change the
+ * complete flag itself.
+ *
+ * @param[in]  image_index Image index
+ * @param[out] dst         Destination buffer
+ * @param[in]  capacity    Capacity of dst in bytes
+ * @param[out] out_len     Actual copied length (may be NULL)
+ *
+ * @return
+ *  - ESP_OK on success
+ *  - ESP_ERR_INVALID_ARG / ESP_ERR_INVALID_STATE / ESP_ERR_INVALID_SIZE
+ */
+esp_err_t ble_esl_image_snapshot(uint8_t image_index, uint8_t *dst, size_t capacity,
+                                 size_t *out_len);
+
+/**
+ * @brief Load image bytes into an OTS object and mark the slot complete.
+ *
+ * Intended for boot-time restore from persistent storage after ble_esl_init()
+ * and before ble_esl_start(). Does not emit BLE_ESL_EVT_IMAGE_WRITE.
+ *
+ * Uses ble_ots_server_set_object_data(), which may generate Object Changed
+ * indications; do not call while a BLE connection is active.
+ *
+ * @param[in] image_index Image index (0 .. num_images-1)
+ * @param[in] data        Full image payload
+ * @param[in] len         Payload length (1 .. CONFIG_BLE_ESL_MAX_IMAGE_SIZE)
+ *
+ * @return
+ *  - ESP_OK on success
+ *  - ESP_ERR_INVALID_ARG / ESP_ERR_INVALID_STATE / ESP_FAIL
+ */
+esp_err_t ble_esl_image_restore(uint8_t image_index, const uint8_t *data, size_t len);
+
+/**
+ * @brief Mark all OTS image slots incomplete (RAM-side only).
+ *
+ * Used after Unassociate / Factory Reset so Display cannot read wiped images
+ * in the same boot before the flash erase worker finishes.
+ */
+void ble_esl_image_invalidate_all(void);
+#endif
+
+/* ========================== Persisted Association Snapshot ========================== */
+
+/**
+ * @brief POD snapshot of TAG association credentials (no NimBLE private types).
+ *
+ * Absolute Time and PAwR sync handles are intentionally omitted.
+ */
+typedef struct {
+    ble_esl_address_t esl_address;
+    ble_esl_key_material_t ap_sync_key;
+    ble_esl_key_material_t resp_key;
+    uint8_t peer_addr_type;   /*!< BLE address type of bonded AP */
+    uint8_t peer_addr[6];     /*!< Identity address of bonded AP (little-endian) */
+} ble_esl_persisted_tag_t;
+
+/**
+ * @brief Export a complete association snapshot
+ *
+ * Succeeds only when ESL address, both key materials, bonded peer, and the
+ * three mandatory config bits (address/ap_sync/resp) are valid. Absolute Time
+ * is not required for export.
+ *
+ * @param[out] out Snapshot destination
+ * @return ESP_OK on success; ESP_ERR_INVALID_STATE when incomplete
+ */
+esp_err_t ble_esl_export_persisted_tag(ble_esl_persisted_tag_t *out);
+
+/**
+ * @brief Restore association into RAM after ble_esl_init(), before ble_esl_start()
+ *
+ * Performs bare field assignment (does NOT call esl_state_transition). Sets
+ * state to UNSYNCHRONIZED and config_complete to Address|AP Sync|Resp only
+ * (Absolute Time bit cleared). Does not start advertising or timers —
+ * ble_esl_start() must follow to arm unsync_timer and connectable advertising.
+ *
+ * @param[in] info Valid association snapshot
+ * @return ESP_OK on success; ESP_ERR_INVALID_ARG / ESP_ERR_INVALID_STATE on failure
+ */
+esp_err_t ble_esl_restore_persisted_tag(const ble_esl_persisted_tag_t *info);
 
 #ifdef __cplusplus
 }

@@ -30,12 +30,12 @@ extern "C" {
 
 /* ========================== Configuration Bitmask ========================== */
 
-#define CONFIG_BIT_ADDRESS      (1 << 0)
-#define CONFIG_BIT_AP_SYNC_KEY  (1 << 1)
-#define CONFIG_BIT_RESP_KEY     (1 << 2)
-#define CONFIG_BIT_ABS_TIME     (1 << 3)
-#define CONFIG_COMPLETE_MASK    (CONFIG_BIT_ADDRESS | CONFIG_BIT_AP_SYNC_KEY | \
-                                 CONFIG_BIT_RESP_KEY | CONFIG_BIT_ABS_TIME)
+#define ESL_CONFIG_BIT_ADDRESS      (1 << 0)
+#define ESL_CONFIG_BIT_AP_SYNC_KEY  (1 << 1)
+#define ESL_CONFIG_BIT_RESP_KEY     (1 << 2)
+#define ESL_CONFIG_BIT_ABS_TIME     (1 << 3)
+#define ESL_CONFIG_COMPLETE_MASK    (ESL_CONFIG_BIT_ADDRESS | ESL_CONFIG_BIT_AP_SYNC_KEY | \
+                                     ESL_CONFIG_BIT_RESP_KEY | ESL_CONFIG_BIT_ABS_TIME)
 
 /* ========================== Internal State Context ========================== */
 typedef struct {
@@ -60,10 +60,16 @@ typedef struct {
     bool                    ap_sync_key_valid;  /* AP sync key written */
     bool                    resp_key_valid;     /* Response key written */
     bool                    address_valid;      /* ESL address written */
-    uint16_t                pawr_sync_handle;   /* Active PAwR periodic sync handle; BLE_HS_CONN_HANDLE_NONE if none */
+    /* Current vs retiring PAwR sync tracking (AP reboot / PAST switch).
+     * Only current_sync_handle drives SYNCHRONIZED/UPDATING sync bookkeeping.
+     * retiring_* tracks a locally terminated old sync so its SYNC_LOST does not
+     * look like a natural loss of the new train. */
+    uint16_t                current_sync_handle;    /* Valid periodic sync; BLE_HS_CONN_HANDLE_NONE if none */
+    uint16_t                retiring_sync_handle;   /* Locally terminated old sync awaiting SYNC_LOST */
+    bool                    retiring_local_terminate; /* retiring SYNC_LOST is expected; do not change ESL state */
     bool                    past_received;      /* PAST completed in Updating state */
     bool                    pawr_synced;        /* Synchronized to the AP's PAwR train (retained across Updating) */
-    bool                    past_pending;       /* PAST re-arm deferred until SYNC_LOST frees pool slot */
+    bool                    past_pending;       /* Re-arm PAST only after retiring SYNC_LOST frees pool slot */
     bool                    update_complete_received; /* Update Complete cmd received in Updating state */
     bool                    deinit_pending;     /* ble_esl_deinit() is waiting for disconnect */
     SemaphoreHandle_t       deinit_sem;         /* Signaled when disconnect completes during deinit */

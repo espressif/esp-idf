@@ -27,6 +27,8 @@
 #include "ble_esl.h"
 #include "ble_esl_int.h"
 #include "ble_esl_state_int.h"
+#include "esl_sync_lost.h"
+#include "esl_persisted_tag_map.h"
 
 static const char *TAG = "esl_state";
 
@@ -43,6 +45,131 @@ static void ecp_timeout_cb(void *arg);
 static esp_err_t esl_start_advertising(void);
 static esp_err_t esl_stop_advertising(void);
 static bool is_transition_valid(ble_esl_state_t from, ble_esl_state_t to);
+static void enable_past_reception(uint16_t conn_handle);
+static void install_current_sync(uint16_t sync_handle);
+static esp_err_t retire_current_sync(bool rearm_past);
+static void clear_retiring_sync(void);
+static void clear_current_sync_bookkeeping(void);
+
+static void clear_retiring_sync(void)
+{
+    if (s_ctx == NULL) {
+        return;
+    }
+    s_ctx->retiring_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->retiring_local_terminate = false;
+}
+
+static void clear_current_sync_bookkeeping(void)
+{
+    if (s_ctx == NULL) {
+        return;
+    }
+    s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+}
+
+static void install_current_sync(uint16_t sync_handle)
+{
+    if (s_ctx == NULL || sync_handle == BLE_HS_CONN_HANDLE_NONE) {
+        return;
+    }
+    s_ctx->current_sync_handle = sync_handle;
+}
+
+/**
+ * @brief Move current sync into retiring and terminate it locally.
+ *
+ * @param rearm_past If true, set past_pending so SYNC_LOST re-arms PAST after
+ *                   the controller frees the reception pool slot.
+ * @return ESP_OK on success, ESP_ERR_INVALID_STATE if another retire is active,
+ *         ESP_FAIL if terminate failed (fields rolled back).
+ */
+static esp_err_t retire_current_sync(bool rearm_past)
+{
+    if (s_ctx == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (s_ctx->current_sync_handle == BLE_HS_CONN_HANDLE_NONE) {
+        if (rearm_past && s_ctx->conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+            enable_past_reception(s_ctx->conn_handle);
+        }
+        return ESP_OK;
+    }
+
+    if (s_ctx->retiring_sync_handle != BLE_HS_CONN_HANDLE_NONE) {
+        ESP_LOGW(TAG, "retire_current_sync: retiring already active (handle=%u)",
+                 s_ctx->retiring_sync_handle);
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    uint16_t old_handle = s_ctx->current_sync_handle;
+
+    s_ctx->retiring_sync_handle = old_handle;
+    s_ctx->retiring_local_terminate = true;
+    s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->past_pending = rearm_past;
+
+    int rc = ble_gap_periodic_adv_sync_terminate(old_handle);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        ESP_LOGE(TAG, "retire_current_sync: terminate(%u) failed rc=%d — rolling back",
+                 old_handle, rc);
+        s_ctx->current_sync_handle = old_handle;
+        s_ctx->past_pending = false;
+        clear_retiring_sync();
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Retired sync handle=%u rearm_past=%d",
+             old_handle, rearm_past);
+    return ESP_OK;
+}
+
+/**
+ * @brief Install a newly received PAST sync, retiring any previous current sync.
+ */
+static void adopt_past_sync(uint16_t sync_handle)
+{
+    if (s_ctx == NULL || sync_handle == BLE_HS_CONN_HANDLE_NONE) {
+        return;
+    }
+
+    if (s_ctx->current_sync_handle != BLE_HS_CONN_HANDLE_NONE &&
+            s_ctx->current_sync_handle != sync_handle) {
+        /* Move old current to retiring, then install the new handle immediately
+         * so a late SYNC_LOST for the old handle cannot affect the new current. */
+        if (s_ctx->retiring_sync_handle != BLE_HS_CONN_HANDLE_NONE) {
+            ESP_LOGW(TAG, "adopt_past_sync: dropping stale retiring handle=%u",
+                     s_ctx->retiring_sync_handle);
+            clear_retiring_sync();
+        }
+
+        uint16_t old_handle = s_ctx->current_sync_handle;
+        s_ctx->retiring_sync_handle = old_handle;
+        s_ctx->retiring_local_terminate = true;
+        s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+        s_ctx->past_pending = false;
+
+        install_current_sync(sync_handle);
+
+        int rc = ble_gap_periodic_adv_sync_terminate(old_handle);
+        if (rc != 0 && rc != BLE_HS_EALREADY) {
+            ESP_LOGW(TAG, "adopt_past_sync: terminate old handle=%u rc=%d",
+                     old_handle, rc);
+            /* New current is already installed; clear retiring bookkeeping so a
+             * missing SYNC_LOST cannot block future retires indefinitely. */
+            clear_retiring_sync();
+        }
+        return;
+    }
+
+    if (s_ctx->current_sync_handle == sync_handle) {
+        /* Same handle reported again. */
+        return;
+    }
+
+    install_current_sync(sync_handle);
+}
 
 /* ========================== State Machine ========================== */
 
@@ -316,7 +443,7 @@ void esl_notify_update_complete(void)
     case BLE_ESL_STATE_CONFIGURING:
         /* First provisioning also requires all mandatory configuration writes. */
         if (s_ctx->past_received &&
-            (s_ctx->config_complete & CONFIG_COMPLETE_MASK) == CONFIG_COMPLETE_MASK) {
+            (s_ctx->config_complete & ESL_CONFIG_COMPLETE_MASK) == ESL_CONFIG_COMPLETE_MASK) {
             esl_state_transition(BLE_ESL_STATE_SYNCHRONIZED);
         } else {
             ESP_LOGI(TAG, "Update Complete received in Configuring — waiting for PAST / config");
@@ -347,22 +474,22 @@ void esl_notify_update_complete(void)
  */
 static esp_err_t esl_terminate_pawr_sync(void)
 {
-    if (s_ctx == NULL || s_ctx->pawr_sync_handle == BLE_HS_CONN_HANDLE_NONE) {
+    if (s_ctx == NULL || s_ctx->current_sync_handle == BLE_HS_CONN_HANDLE_NONE) {
         return ESP_OK;
     }
 
-    int rc = ble_gap_periodic_adv_sync_terminate(s_ctx->pawr_sync_handle);
+    int rc = ble_gap_periodic_adv_sync_terminate(s_ctx->current_sync_handle);
     if (rc != 0 && rc != BLE_HS_ENOTCONN) {
         /* Anything other than ENOTCONN (host no longer knows this sync, e.g. it
          * was lost concurrently) means the host still holds the periodic sync.
          * Keep the handle so the caller can retry, and keep pawr_synced so the
          * Basic State Synchronized bit stays truthful. */
         ESP_LOGW(TAG, "Failed to terminate PAwR sync %u: rc=%d",
-                 s_ctx->pawr_sync_handle, rc);
+                 s_ctx->current_sync_handle, rc);
         return ESP_FAIL;
     }
 
-    s_ctx->pawr_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
     s_ctx->pawr_synced = false;
     return ESP_OK;
 }
@@ -609,7 +736,7 @@ static void handle_gap_disconnect(struct ble_gap_event *event)
 
     switch (s_ctx->state) {
     case BLE_ESL_STATE_CONFIGURING:
-        if ((s_ctx->config_complete & CONFIG_COMPLETE_MASK) == CONFIG_COMPLETE_MASK) {
+        if ((s_ctx->config_complete & ESL_CONFIG_COMPLETE_MASK) == ESL_CONFIG_COMPLETE_MASK) {
             /* Configuration complete — go to Unsynchronized */
             esl_state_transition(BLE_ESL_STATE_UNSYNCHRONIZED);
         } else {
@@ -643,8 +770,19 @@ static void enable_past_reception(uint16_t conn_handle)
 
     int rc = ble_gap_periodic_adv_sync_receive(conn_handle, &sync_params,
                                                esl_gap_event_handler, NULL);
+    if (rc == BLE_HS_ENOMEM &&
+            s_ctx != NULL &&
+            s_ctx->current_sync_handle != BLE_HS_CONN_HANDLE_NONE) {
+        /* Controller PAST reception pool is full while an old sync is still
+         * held. Retire it and re-arm PAST only after the deferred SYNC_LOST. */
+        ESP_LOGW(TAG, "PAST receive ENOMEM — retiring current sync before re-arm");
+        if (retire_current_sync(true) == ESP_OK) {
+            return;
+        }
+    }
     if (rc != 0) {
         ESP_LOGE(TAG, "ble_gap_periodic_adv_sync_receive failed: rc=%d", rc);
+        return;
     }
 
     ESP_LOGI(TAG, "Enable PAST reception: conn_handle=%u", conn_handle);
@@ -802,21 +940,11 @@ static void handle_gap_periodic_transfer(struct ble_gap_event *event)
     uint16_t sync_handle = event->periodic_transfer.sync_handle;
     ESP_LOGI(TAG, "PAST received: sync_handle=%d, state=%d", sync_handle, s_ctx->state);
 
-    /* Terminate the previous PAwR sync if one was still alive (kept during
-     * SYNCHRONIZED → UPDATING because ble_gap_periodic_adv_sync_terminate
-     * defers pool-entry freeing and would cause enable_past_reception to fail
-     * with ENOMEM if freed synchronously). */
-    if (s_ctx->pawr_sync_handle != BLE_HS_CONN_HANDLE_NONE &&
-        s_ctx->pawr_sync_handle != sync_handle) {
-        int term_rc = ble_gap_periodic_adv_sync_terminate(s_ctx->pawr_sync_handle);
-        if (term_rc != 0 && term_rc != BLE_HS_ENOTCONN) {
-            /* Not fatal: the new sync from PAST supersedes the old one, which is
-             * dropped when the host tears down its stale entry. */
-            ESP_LOGW(TAG, "Failed to terminate stale PAwR sync %u: rc=%d",
-                     s_ctx->pawr_sync_handle, term_rc);
-        }
-    }
-    s_ctx->pawr_sync_handle = sync_handle;
+    /* Adopt the new train through the unique retire helper so a late SYNC_LOST
+     * for the previous handle cannot be mistaken for natural loss of the new
+     * current sync (or re-arm PAST incorrectly). */
+    s_ctx->past_pending = false;
+    adopt_past_sync(sync_handle);
 
     /* Enable PAwR subevent reception and response slots for our group/subevent. */
     uint8_t group_id = BLE_ESL_ADDR_GROUP_ID(s_ctx->esl_address);
@@ -837,7 +965,7 @@ static void handle_gap_periodic_transfer(struct ble_gap_event *event)
          * advance the state machine before provisioning finishes. */
         s_ctx->past_received = true;
         if (s_ctx->update_complete_received &&
-            (s_ctx->config_complete & CONFIG_COMPLETE_MASK) == CONFIG_COMPLETE_MASK) {
+            (s_ctx->config_complete & ESL_CONFIG_COMPLETE_MASK) == ESL_CONFIG_COMPLETE_MASK) {
             esl_state_transition(BLE_ESL_STATE_SYNCHRONIZED);
         } else {
             ESP_LOGI(TAG, "PAST received in Configuring — waiting for Update Complete / config");
@@ -974,18 +1102,59 @@ static int esl_gap_event_handler(struct ble_gap_event *event, void *arg)
         handle_gap_periodic_report(event);
         return 0;
 
-    case BLE_GAP_EVENT_PERIODIC_SYNC_LOST:
-        /* Fired asynchronously after ble_gap_periodic_adv_sync_terminate frees
-         * the periodic sync pool slot. If PAST was deferred, arm it now. */
-        if (s_ctx->past_pending &&
-            s_ctx->state == BLE_ESL_STATE_UPDATING &&
-            s_ctx->conn_handle != BLE_HS_CONN_HANDLE_NONE) {
-            s_ctx->past_pending = false;
-            ESP_LOGI(TAG, "SYNC_LOST: re-arming PAST reception (conn=%d)",
-                     s_ctx->conn_handle);
-            enable_past_reception(s_ctx->conn_handle);
+    case BLE_GAP_EVENT_PERIODIC_SYNC_LOST: {
+        uint16_t lost_handle = event->periodic_sync_lost.sync_handle;
+        esl_sync_lost_ctx_t lost_ctx = {
+            .current_sync_handle = s_ctx->current_sync_handle,
+            .retiring_sync_handle = s_ctx->retiring_sync_handle,
+            .retiring_local_terminate = s_ctx->retiring_local_terminate,
+        };
+        esl_sync_lost_class_t kind = esl_classify_sync_lost(&lost_ctx, lost_handle);
+        ESP_LOGI(TAG, "SYNC_LOST: handle=%u class=%d state=%d",
+                 lost_handle, (int)kind, s_ctx->state);
+
+        switch (kind) {
+        case ESL_SYNC_LOST_RETIRING_LOCAL: {
+            bool rearm = s_ctx->past_pending;
+            clear_retiring_sync();
+            if (rearm &&
+                    s_ctx->state == BLE_ESL_STATE_UPDATING &&
+                    s_ctx->conn_handle != BLE_HS_CONN_HANDLE_NONE) {
+                s_ctx->past_pending = false;
+                ESP_LOGI(TAG, "SYNC_LOST(retiring): re-arming PAST (conn=%d)",
+                         s_ctx->conn_handle);
+                enable_past_reception(s_ctx->conn_handle);
+            } else {
+                s_ctx->past_pending = false;
+            }
+            break;
+        }
+
+        case ESL_SYNC_LOST_CURRENT_NATURAL:
+            clear_current_sync_bookkeeping();
+            if (s_ctx->state == BLE_ESL_STATE_SYNCHRONIZED) {
+                /* Natural loss of the active train: become discoverable for
+                 * AP reboot recovery (ACL + PAST). */
+                esl_state_transition(BLE_ESL_STATE_UNSYNCHRONIZED);
+            } else if (s_ctx->state == BLE_ESL_STATE_UPDATING) {
+                /* Keep UPDATING while ACL is alive; disconnect path will move
+                 * to UNSYNCHRONIZED if PAST never completes. */
+                ESP_LOGI(TAG, "SYNC_LOST(current) in UPDATING — cleared handle only");
+            } else {
+                ESP_LOGI(TAG, "SYNC_LOST(current) in state=%d — bookkeeping only",
+                         s_ctx->state);
+            }
+            break;
+
+        case ESL_SYNC_LOST_STALE:
+        default:
+            /* Includes CONFIGURING-era late events and reused handle numbers.
+             * Never release current/retiring, never change state, never re-arm. */
+            ESP_LOGD(TAG, "SYNC_LOST stale handle=%u — ignored", lost_handle);
+            break;
         }
         return 0;
+    }
 
     case BLE_GAP_EVENT_NOTIFY_TX:
         esl_handle_ecp_notify_tx(event->notify_tx.conn_handle,
@@ -1139,7 +1308,9 @@ esp_err_t ble_esl_init(const ble_esl_config_t *config)
     memcpy(&s_ctx->config, config, sizeof(ble_esl_config_t));
     s_ctx->state = BLE_ESL_STATE_UNASSOCIATED;
     s_ctx->conn_handle = BLE_HS_CONN_HANDLE_NONE;
-    s_ctx->pawr_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->retiring_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->pawr_synced = false;
     s_ctx->initialized = true;
 
     /* Configure security as mandated by the ESL Profile: LE Secure Connections
@@ -1323,7 +1494,7 @@ esp_err_t ble_esl_deinit(void)
      * as the retry for a teardown that ble_esl_stop() could not complete. */
     if (esl_terminate_pawr_sync() != ESP_OK) {
         ESP_LOGW(TAG, "PAwR sync %u still active while deinitializing",
-                 s_ctx->pawr_sync_handle);
+                 s_ctx->current_sync_handle);
     }
 
     /* Deinit sub-modules */
@@ -1420,7 +1591,7 @@ esp_err_t ble_esl_stop(void)
 
     if (sync_err != ESP_OK) {
         ESP_LOGW(TAG, "ESL stopped, but PAwR sync %u could not be terminated",
-                 s_ctx->pawr_sync_handle);
+                 s_ctx->current_sync_handle);
         return sync_err;
     }
 
@@ -1449,5 +1620,87 @@ esp_err_t ble_esl_register_cb(ble_esl_cb_t callback)
 
     s_ctx->app_cb = callback;
     ESP_LOGI(TAG, "Application callback registered");
+    return ESP_OK;
+}
+
+esp_err_t ble_esl_export_persisted_tag(ble_esl_persisted_tag_t *out)
+{
+    if (out == NULL || s_ctx == NULL || !s_ctx->initialized) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esl_persisted_tag_ram_t ram = {
+        .address_valid = s_ctx->address_valid,
+        .ap_sync_key_valid = s_ctx->ap_sync_key_valid,
+        .resp_key_valid = s_ctx->resp_key_valid,
+        .has_bonded_peer = s_ctx->has_bonded_peer,
+        .config_complete = s_ctx->config_complete,
+        .peer_addr_type = s_ctx->bonded_peer_addr.type,
+        .esl_address = s_ctx->esl_address,
+        .ap_sync_key = s_ctx->ap_sync_key,
+        .resp_key = s_ctx->resp_key,
+    };
+    memcpy(ram.peer_addr, s_ctx->bonded_peer_addr.val, 6);
+
+    esl_persisted_tag_dto_t dto;
+    if (!esl_persisted_fill_dto(&ram, &dto)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    out->esl_address = dto.esl_address;
+    out->ap_sync_key = dto.ap_sync_key;
+    out->resp_key = dto.resp_key;
+    out->peer_addr_type = dto.peer_addr_type;
+    memcpy(out->peer_addr, dto.peer_addr, 6);
+    return ESP_OK;
+}
+
+esp_err_t ble_esl_restore_persisted_tag(const ble_esl_persisted_tag_t *info)
+{
+    if (info == NULL || s_ctx == NULL || !s_ctx->initialized) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_ctx->started) {
+        ESP_LOGE(TAG, "restore_persisted_tag must be called before ble_esl_start()");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esl_persisted_tag_dto_t dto = {
+        .esl_address = info->esl_address,
+        .ap_sync_key = info->ap_sync_key,
+        .resp_key = info->resp_key,
+        .peer_addr_type = info->peer_addr_type,
+    };
+    memcpy(dto.peer_addr, info->peer_addr, 6);
+
+    esl_persisted_tag_ram_t ram;
+    memset(&ram, 0, sizeof(ram));
+    if (!esl_persisted_apply_dto(&dto, &ram)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Bare assignment — do NOT call esl_state_transition(). */
+    s_ctx->esl_address = ram.esl_address;
+    s_ctx->ap_sync_key = ram.ap_sync_key;
+    s_ctx->resp_key = ram.resp_key;
+    s_ctx->address_valid = true;
+    s_ctx->ap_sync_key_valid = true;
+    s_ctx->resp_key_valid = true;
+    s_ctx->has_bonded_peer = true;
+    s_ctx->bonded_peer_addr.type = ram.peer_addr_type;
+    memcpy(s_ctx->bonded_peer_addr.val, ram.peer_addr, 6);
+    s_ctx->config_complete = ram.config_complete; /* ABS_TIME bit clear */
+    s_ctx->abs_time_base = 0;
+    s_ctx->abs_time_offset_us = 0;
+    s_ctx->past_received = false;
+    s_ctx->past_pending = false;
+    s_ctx->pawr_synced = false;
+    s_ctx->update_complete_received = false;
+    s_ctx->current_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->retiring_sync_handle = BLE_HS_CONN_HANDLE_NONE;
+    s_ctx->retiring_local_terminate = false;
+    s_ctx->state = BLE_ESL_STATE_UNSYNCHRONIZED;
+
+    ESP_LOGI(TAG, "Restored association, state=UNSYNCHRONIZED");
     return ESP_OK;
 }

@@ -407,6 +407,14 @@ void ble_ots_server_otc_receive_cb(uint16_t conn_handle, struct ble_l2cap_chan *
     int write_err = 0;
     while (cur != NULL && written < data_len) {
         if (cur->om_len > 0) {
+            ble_ots_server_cb_param_t data_param;
+            memset(&data_param, 0, sizeof(data_param));
+            data_param.data_write.object_id = cs->transfer_object_id;
+            data_param.data_write.offset = write_offset + written;
+            data_param.data_write.data = cur->om_data;
+            data_param.data_write.data_len = cur->om_len;
+            ble_ots_server_dispatch_event(BLE_OTS_SERVER_EVT_DATA_WRITE, &data_param);
+
             int rc = ble_ots_server_obj_data_write(cs->transfer_object_id,
                                                     write_offset + written,
                                                     cur->om_data, cur->om_len);
