@@ -48,6 +48,9 @@ extern "C" {
 #define PPA_IS_CM_ALPHA(color_type_id) \
             (color_type_id == ESP_COLOR_FOURCC_ALPHA8 || color_type_id == ESP_COLOR_FOURCC_ALPHA4)
 
+#define PPA_IS_CM_CLUT(color_type_id) \
+            (color_type_id == ESP_COLOR_FOURCC_CLUT8 || color_type_id == ESP_COLOR_FOURCC_CLUT4)
+
 #define PPA_ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define PPA_ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
@@ -255,6 +258,8 @@ struct ppa_platform_t {
     uint32_t dma_desc_mem_size;                 // Alignment requirement for the 2D-DMA descriptor to satisfy cache line size
     struct {
         uint32_t allow_pd: 1;                   // If set, driver allows the power domain to be powered off when system enters sleep mode
+        uint32_t bg_clut_ready: 1;              // If set, the blending engine background CLUT memory has been powered on and filled with user content
+        uint32_t fg_clut_ready: 1;              // If set, the blending engine foreground CLUT memory has been powered on and filled with user content
     } flags;                                    // Configuration flags
 };
 
