@@ -755,11 +755,7 @@ def code_501_method_not_impl(dut, port):
     s.client.sendall(('ABC ' + path + ' HTTP/1.1\r\nHost: ' + dut + '\r\n\r\n').encode())
     s.read_resp_hdrs()
     s.read_resp_data()
-    # Presently server sends back 400 Bad Request
-    # if not test_val("Server Error", "501", s.status):
-    #     s.close()
-    #     return False
-    if not test_val('Server Error', '400', s.status):
+    if not test_val('Server Error', '501', s.status):
         s.close()
         return False
     s.close()
@@ -786,7 +782,9 @@ def code_400_bad_request(dut, port):
     logging.info('[test] 400 Bad Request =>')
     s = Session(dut, port)
     path = '/hello'
-    s.client.sendall(('XYZ ' + path + ' HTTP/1.1\r\nHost: ' + dut + '\r\n\r\n').encode())
+    # An unknown method token gets 501, so send a malformed HTTP version to
+    # make the parser report a request-line syntax error.
+    s.client.sendall(('GET ' + path + ' HTP/1.1\r\nHost: ' + dut + '\r\n\r\n').encode())
     s.read_resp_hdrs()
     s.read_resp_data()
     if not test_val('Client Error', '400', s.status):
@@ -850,11 +848,9 @@ def code_411_length_required(dut, port):
     s.client.sendall(request.encode())
     s.read_resp_hdrs()
     s.read_resp_data()
-    # Presently server sends back 400 Bad Request
-    # if not test_val("Client Error", "411", s.status):
-    #    s.close()
-    #    return False
-    if not test_val('Client Error', '400', s.status):
+    # The server implements no transfer coding, so it replies 501 to every
+    # request that carries a Transfer-Encoding header.
+    if not test_val('Server Error', '501', s.status):
         s.close()
         return False
     s.close()
