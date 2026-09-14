@@ -279,28 +279,27 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal)
 *----------------------------------------------------------------------------*/
 void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len)
 {
-    spi_ll_set_conf_phase_bits_len(hal->hw, conf_len);
+    spi_ll_set_conf_phase_bitlen(hal->hw, conf_len);
 }
 
 void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t *conf_buffer)
 {
-    spi_ll_init_conf_buffer(hal->hw, conf_buffer);
+    spi_sct_ll_init_conf_buffer(hal->hw, (spi_ll_sct_full_reg_t *)conf_buffer);
 }
 
 void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t *conf_buffer)
 {
-    spi_ll_format_line_mode_conf_buff(hal->hw, hal->trans_config.line_mode, conf_buffer);
-    spi_ll_format_prep_phase_conf_buffer(hal->hw, config->cs_setup, conf_buffer);
-    spi_ll_format_cmd_phase_conf_buffer(hal->hw, config->cmd, config->cmd_bits, dev->tx_lsbfirst, conf_buffer);
-    spi_ll_format_addr_phase_conf_buffer(hal->hw, config->addr, config->addr_bits, dev->rx_lsbfirst, conf_buffer);
-    spi_ll_format_dummy_phase_conf_buffer(hal->hw, config->dummy_bits, conf_buffer);
-    spi_ll_format_dout_phase_conf_buffer(hal->hw, config->tx_bitlen, conf_buffer);
-    spi_ll_format_din_phase_conf_buffer(hal->hw, config->rx_bitlen, conf_buffer);
-    spi_ll_format_done_phase_conf_buffer(hal->hw, config->cs_hold, conf_buffer);
-    spi_ll_format_conf_phase_conf_buffer(hal->hw, config->seg_end, conf_buffer);
-#if SPI_LL_SUPPORT_SEG_GAP
-    spi_ll_format_conf_bitslen_buffer(hal->hw, config->seg_gap_len, conf_buffer);
-#endif
+    spi_ll_sct_full_reg_t *sct_cfg = (spi_ll_sct_full_reg_t *)conf_buffer;
+
+    spi_sct_ll_set_line_mode(sct_cfg, hal->trans_config.line_mode);
+    spi_sct_ll_set_cs_setup(sct_cfg, config->cs_setup);
+    spi_sct_ll_set_cs_hold(sct_cfg, config->cs_hold);
+    spi_sct_ll_set_command(sct_cfg, config->cmd, config->cmd_bits, dev->tx_lsbfirst);
+    spi_sct_ll_set_addr(sct_cfg, config->addr, config->addr_bits, dev->tx_lsbfirst);
+    spi_sct_ll_set_dummy(sct_cfg, config->dummy_bits);
+    spi_sct_ll_set_mosi_bitlen(sct_cfg, config->tx_bitlen);
+    spi_sct_ll_set_miso_bitlen(sct_cfg, config->rx_bitlen);
+    spi_sct_ll_mark_sct_end(sct_cfg, config->seg_end);
 }
 
 #endif  //#ifdef SPI_LL_PERIPH_HAS_SCT

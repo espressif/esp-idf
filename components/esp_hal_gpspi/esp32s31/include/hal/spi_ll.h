@@ -32,21 +32,26 @@ extern "C" {
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_TRANS_DONE_INT_ENA | SPI_SLV_WR_DMA_DONE_INT_ENA | SPI_SLV_RD_DMA_DONE_INT_ENA | SPI_SLV_WR_BUF_DONE_INT_ENA | SPI_SLV_RD_BUF_DONE_INT_ENA)
 /// These 2 masks together will set SPI transaction to one line mode
-#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
-#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
+#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_OCT | SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_OCT | \
+    SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_OCT | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
+#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_OCT | SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 
 #define SPI_LL_PERIPH_CS_NUM(i)         (((i)==0)? 2: (((i)==1)? 6: 3))
+#define SPI_LL_PERIPH_HAS_SCT(host)     ((host) == SPI2_HOST)  //If peripheral support SCT (DMA Segmented Configured Transaction) mode
+#define SPI_LL_PERIPH_CLK_DIV_MAX       ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
+#define SPI_LL_PERIPH_BITWIDTH(host)    ((host == 2) ? 4 : 8)  // Supported line mode: SPI3: 1, 2, 4, SPI1/2: 1, 2, 4, 8
 #define SPI_LL_DMA_MAX_BIT_LEN          SPI_MS_DATA_BITLEN
 #define SPI_LL_CPU_MAX_BIT_LEN          (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_TX_MINI_EXTRA_BITS       1            //Minimum length of TX non byte aligned data in bits
 #define SPI_LL_RX_MINI_EXTRA_BITS       1            //Minimum length of RX non byte aligned data in bits
 #define SPI_LL_MAX_PRE_DIV_NUM          (SPI_CLKDIV_PRE + 1)
 #define SPI_LL_SRC_PRE_DIV_MAX          (HP_SYS_CLKRST_REG_GPSPI2_MST_CLK_DIV_NUM + 1)   //source pre divider max before peripheral
-#define SPI_LL_PERIPH_CLK_DIV_MAX       ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
 #define SPI_LL_MOSI_FREE_LEVEL          1            //Default level after bus initialized
-#define SPI_LL_PERIPH_BITWIDTH(host)    ((host == 2) ? 4 : 8) // Supported line mode: SPI3: 1, 2, 4, SPI1/2: 1, 2, 4, 8
+#define SPI_LL_SCT_MAGIC_NUMBER         (0x2)
+#define SPI_LL_SCT_CONF_BUF_NUM         (1 + 14)     //1-word-bitmap + 14-word-regs according to TRM
+#define SPI_LL_MAX_SCT_CONF_LEN         SPI_CONF_BITLEN
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -1299,6 +1304,267 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
 }
 
 #undef SPI_LL_UNUSED_INT_MASK
+
+/*------------------------------------------------------------------------------
+ * Segmented-Configure-Transfer
+ *----------------------------------------------------------------------------*/
+
+typedef union {
+    struct {
+        /** bitmap : R/W; bitpos: [27:0]; default: 0;
+         *  SPI SCT bitmap.
+         */
+        uint32_t bitmap: 28;
+        /** magic_value : R/W; bitpos: [31:28]; default: 0;
+         *  SPI SCT magic value which compare with 'dma_seg_magic_value'
+         *  to check if the bitmap is valid.
+         */
+        uint32_t magic_value: 4;
+    };
+    uint32_t val;
+} spi_ll_sct_bitmap_reg_t;
+
+typedef struct spi_ll_sct_full_reg_t {
+    volatile spi_ll_sct_bitmap_reg_t bitmap;
+    volatile spi_addr_reg_t addr;
+    volatile spi_ctrl_reg_t ctrl;
+    volatile spi_clock_reg_t clock;
+    volatile spi_user_reg_t user;
+    volatile spi_user1_reg_t user1;
+    volatile spi_user2_reg_t user2;
+    volatile spi_ms_dlen_reg_t ms_dlen;
+    volatile spi_misc_reg_t misc;
+    volatile spi_din_mode_reg_t din_mode;
+    volatile spi_din_num_reg_t din_num;
+    volatile spi_dout_mode_reg_t dout_mode;
+    volatile spi_dma_conf_reg_t dma_conf;
+    volatile spi_dma_int_ena_reg_t dma_int_ena;
+    volatile spi_dma_int_clr_reg_t dma_int_clr;
+} spi_ll_sct_full_reg_t;
+
+/**
+ * Enable/Disable the conf phase
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param enable True: enable; False: disable
+ */
+static inline void spi_ll_enable_conf_phase(spi_dev_t *hw, bool enable)
+{
+    hw->slave.usr_conf = enable;
+}
+
+/**
+ * Set conf phase bits len to HW for segment config trans mode.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param conf_bitlen Value of field conf_bitslen in cmd reg.
+ */
+static inline void spi_ll_set_conf_phase_bitlen(spi_dev_t *hw, uint32_t conf_bitlen)
+{
+    if (conf_bitlen <= SPI_LL_MAX_SCT_CONF_LEN) {
+        hw->cmd.conf_bitlen = conf_bitlen;
+    }
+}
+
+/**
+ * Set Segmented-Configure-Transfer required magic value
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param magic_value magic value
+ */
+static inline void spi_ll_set_magic_number(spi_dev_t *hw, uint8_t magic_value)
+{
+    hw->slave.dma_seg_magic_value = magic_value;
+}
+
+/**
+ * Initialize the conf buffer:
+ *
+ * - init bitmap
+ * - save all register values into the rest of the conf buffer words
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ */
+__attribute__((always_inline))
+static inline void spi_sct_ll_init_conf_buffer(spi_dev_t *hw, spi_ll_sct_full_reg_t *sct_cfg)
+{
+    sct_cfg->bitmap.bitmap = 0x7FFF;
+    sct_cfg->bitmap.magic_value = SPI_LL_SCT_MAGIC_NUMBER;
+    sct_cfg->addr.val = hw->addr.val;
+    sct_cfg->ctrl.val = hw->ctrl.val;
+    sct_cfg->clock.val = hw->clock.val;
+    sct_cfg->user.val = hw->user.val;
+    sct_cfg->user1.val = hw->user1.val;
+    sct_cfg->user2.val = hw->user2.val;
+    sct_cfg->ms_dlen.val = hw->ms_dlen.val;
+    sct_cfg->misc.val = hw->misc.val;
+    sct_cfg->din_mode.val = hw->din_mode.val;
+    sct_cfg->din_num.val = hw->din_num.val;
+    sct_cfg->dout_mode.val = hw->dout_mode.val;
+    sct_cfg->dma_conf.val = hw->dma_conf.val;
+    sct_cfg->dma_int_ena.val = hw->dma_int_ena.val;
+    sct_cfg->dma_int_clr.val = hw->dma_int_clr.val;
+}
+
+/**
+ * Update the conf buffer for conf phase
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param is_end Is this transaction the end of this segment.
+ */
+static inline void spi_sct_ll_mark_sct_end(spi_ll_sct_full_reg_t *sct_cfg, bool is_end)
+{
+    sct_cfg->user.usr_conf_nxt = !is_end;
+}
+
+/**
+ * Set SPI to work in full duplex or half duplex mode.
+ *
+ * @param sct_cfg      Beginning address of the SCT conf buffer.
+ * @param half_duplex True to work in half duplex mode, otherwise in full duplex mode.
+ */
+static inline void spi_sct_ll_set_duplex(spi_ll_sct_full_reg_t *sct_cfg, bool half_duplex)
+{
+    sct_cfg->user.doutdin = !half_duplex;
+}
+
+/**
+ * Set CS setup time for a transaction in SCT
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param setup CS setup time
+ */
+static inline void spi_sct_ll_set_cs_setup(spi_ll_sct_full_reg_t *sct_cfg, uint8_t setup)
+{
+    sct_cfg->user.cs_setup = !!setup;
+    sct_cfg->user1.cs_setup_time = setup - 1;
+}
+
+/**
+ * Set CS keep active for a transaction in SCT
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param cs_active True to keep CS active, otherwise to release CS.
+ */
+static inline void spi_sct_ll_set_cs_keep(spi_ll_sct_full_reg_t *sct_cfg, bool cs_active)
+{
+    sct_cfg->misc.cs_keep_active = cs_active;
+}
+
+/**
+ * Set CS hold time post trans for a transaction in SCT
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param hold CS hold time
+ */
+static inline void spi_sct_ll_set_cs_hold(spi_ll_sct_full_reg_t *sct_cfg, int hold)
+{
+    sct_cfg->user.cs_hold = !!hold;
+    sct_cfg->user1.cs_hold_time = hold;
+}
+
+/**
+ * Update the line mode of conf buffer for conf phase
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param line_mode line mode struct of each phase.
+ */
+static inline void spi_sct_ll_set_line_mode(spi_ll_sct_full_reg_t *sct_cfg, spi_line_mode_t line_mode)
+{
+    sct_cfg->ctrl.val &= ~SPI_LL_ONE_LINE_CTRL_MASK;
+    sct_cfg->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
+    sct_cfg->ctrl.fcmd_dual = (line_mode.cmd_lines == 2);
+    sct_cfg->ctrl.fcmd_quad = (line_mode.cmd_lines == 4);
+    sct_cfg->ctrl.fcmd_oct = (line_mode.cmd_lines == 8);
+    sct_cfg->ctrl.faddr_dual = (line_mode.addr_lines == 2);
+    sct_cfg->ctrl.faddr_quad = (line_mode.addr_lines == 4);
+    sct_cfg->ctrl.faddr_oct = (line_mode.addr_lines == 8);
+    sct_cfg->ctrl.fread_dual = (line_mode.data_lines == 2);
+    sct_cfg->user.fwrite_dual = (line_mode.data_lines == 2);
+    sct_cfg->ctrl.fread_quad = (line_mode.data_lines == 4);
+    sct_cfg->user.fwrite_quad = (line_mode.data_lines == 4);
+    sct_cfg->ctrl.fread_oct = (line_mode.data_lines == 8);
+    sct_cfg->user.fwrite_oct = (line_mode.data_lines == 8);
+}
+
+/**
+ * Update the conf buffer for cmd phase
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param cmd Command value
+ * @param cmdlen Length of the cmd phase
+ * @param lsbfirst Whether LSB first
+ */
+static inline void spi_sct_ll_set_command(spi_ll_sct_full_reg_t *sct_cfg, uint16_t cmd, int cmdlen, bool lsbfirst)
+{
+    sct_cfg->user.usr_command = !!cmdlen;
+    if (cmdlen > 0) {
+        sct_cfg->user2.usr_command_bitlen = cmdlen - 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(sct_cfg->user2, usr_command_value, lsbfirst ? cmd : HAL_SPI_SWAP_DATA_TX(cmd, cmdlen));
+    }
+}
+
+/**
+ * Update the conf buffer for addr phase
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param addr Address to set
+ * @param addrlen Length of the address phase
+ * @param lsbfirst whether the LSB first feature is enabled.
+ */
+static inline void spi_sct_ll_set_addr(spi_ll_sct_full_reg_t *sct_cfg, uint64_t addr, int addrlen, bool lsbfirst)
+{
+    sct_cfg->user.usr_addr = !!addrlen;
+    if (addrlen > 0) {
+        sct_cfg->user1.usr_addr_bitlen = addrlen - 1;
+        sct_cfg->addr.val = lsbfirst ? HAL_SWAP32(addr) : (addr << (32 - addrlen));
+    }
+}
+
+/**
+ * Update the conf buffer for dummy phase
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param dummy_n Dummy cycles used. 0 to disable the dummy phase.
+ */
+static inline void spi_sct_ll_set_dummy(spi_ll_sct_full_reg_t *sct_cfg, int dummy_n)
+{
+    sct_cfg->user.usr_dummy = !!dummy_n;
+    if (dummy_n > 0) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(sct_cfg->user1, usr_dummy_cyclelen, dummy_n - 1);
+    }
+}
+
+/**
+ * Update the conf buffer for dout phase
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param bitlen output length, in bits.
+ */
+static inline void spi_sct_ll_set_mosi_bitlen(spi_ll_sct_full_reg_t *sct_cfg, int bitlen)
+{
+    sct_cfg->user.usr_mosi = !!bitlen;
+    sct_cfg->dma_conf.dma_tx_ena = !!bitlen;
+    if (bitlen) {
+        sct_cfg->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
+}
+
+/**
+ * Update the conf buffer for din phase
+ *
+ * @param sct_cfg Beginning address of the SCT conf buffer.
+ * @param bitlen input length, in bits.
+ */
+static inline void spi_sct_ll_set_miso_bitlen(spi_ll_sct_full_reg_t *sct_cfg, int bitlen)
+{
+    sct_cfg->user.usr_miso = !!bitlen;
+    sct_cfg->dma_conf.dma_rx_ena = !!bitlen;
+    if (bitlen) {
+        sct_cfg->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
+}
 
 /**
  * Get the base spi command

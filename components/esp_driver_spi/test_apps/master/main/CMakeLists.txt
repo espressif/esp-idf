@@ -7,9 +7,8 @@ set(srcs
     "test_spi_bus_lock.c"
 )
 
-# TODO: IDF-10593 ～ IDF-10585: SCT is temporarily supported on follow chips
-set(sct_targets esp32s2 esp32s3 esp32c2 esp32c3 esp32c6 esp32h2 esp32h21)
-if("${target}" IN_LIST sct_targets)
+# esp32p4 don't support because sct internal api part don't using dma link list driver
+if(NOT CONFIG_IDF_TARGET_ESP32P4)
     # sct test using slave hd APIs, need slave hd support
     # tmp skip sct test under iram_safe, both sct and slave hd are not cleaned
     if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2 AND NOT CONFIG_COMPILER_DUMP_RTL_FILES)

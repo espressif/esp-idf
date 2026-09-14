@@ -135,7 +135,6 @@ typedef struct {
 typedef struct {
     /* CONF State */
     bool seg_end;                       ///< True: this segment is the end; False: this segment isn't the end;
-    uint32_t seg_gap_len;               ///< spi clock length of CS inactive on config phase for sct
     /* PREP State */
     int cs_setup;                       ///< Setup time of CS active edge before the first SPI clock
     /* CMD State */
