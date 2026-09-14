@@ -32,6 +32,7 @@ repos:
             .*.yuv|
             .*.rgb|
             .*.gray|
+            .*.ppm|
             .*COPYING.*|
             docs/sphinx-known-warnings\.txt
           )$

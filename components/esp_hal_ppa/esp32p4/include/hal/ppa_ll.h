@@ -21,6 +21,9 @@
 #define PPA_LL_BLEND0_CLUT_MEM_ADDR_OFFSET  0x400
 #define PPA_LL_BLEND1_CLUT_MEM_ADDR_OFFSET  0x800
 
+/// Number of 32-bit ARGB8888 entries in each of CLUT memories
+#define PPA_LL_CLUT_MAX_ENTRY_NUM         256
+
 #define PPA_LL_SRM_SCALING_INT_MAX   (PPA_SR_SCAL_X_INT_V + 1)
 #define PPA_LL_SRM_SCALING_FRAG_MAX  (PPA_SR_SCAL_X_FRAG_V + 1)
 
@@ -758,8 +761,8 @@ static inline bool ppa_ll_blend_is_color_mode_supported(ppa_blend_color_mode_t c
     case PPA_BLEND_COLOR_MODE_RGB565:
     case PPA_BLEND_COLOR_MODE_A8:
     case PPA_BLEND_COLOR_MODE_A4:
-        // case PPA_BLEND_COLOR_MODE_L8:
-        // case PPA_BLEND_COLOR_MODE_L4:
+    case PPA_BLEND_COLOR_MODE_L8:
+    case PPA_BLEND_COLOR_MODE_L4:
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     case PPA_BLEND_COLOR_MODE_YUV420:
     case PPA_BLEND_COLOR_MODE_YUV422_UYVY:
@@ -794,12 +797,12 @@ static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_c
     case PPA_BLEND_COLOR_MODE_RGB565:
         val = 2;
         break;
-        // case PPA_BLEND_COLOR_MODE_L8:
-        //     val = 4;
-        //     break;
-        // case PPA_BLEND_COLOR_MODE_L4:
-        //     val = 5;
-        //     break;
+    case PPA_BLEND_COLOR_MODE_L8:
+        val = 4;
+        break;
+    case PPA_BLEND_COLOR_MODE_L4:
+        val = 5;
+        break;
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     case PPA_BLEND_COLOR_MODE_YUV420:
         val = 8;
@@ -848,12 +851,12 @@ static inline void ppa_ll_blend_set_rx_fg_color_mode(ppa_dev_t *dev, ppa_blend_c
     case PPA_BLEND_COLOR_MODE_RGB565:
         val = 2;
         break;
-    // case PPA_BLEND_COLOR_MODE_L8:
-    //     val = 4;
-    //     break;
-    // case PPA_BLEND_COLOR_MODE_L4:
-    //     val = 5;
-    //     break;
+    case PPA_BLEND_COLOR_MODE_L8:
+        val = 4;
+        break;
+    case PPA_BLEND_COLOR_MODE_L4:
+        val = 5;
+        break;
     case PPA_BLEND_COLOR_MODE_A8:
         val = 6;
         break;
@@ -1277,99 +1280,100 @@ static inline void ppa_ll_configure_clut_access_mode(ppa_dev_t *dev, bool fifo_m
 }
 
 /**
- * @brief Force clock and power on for PPA blending BLEND CLUT mem
+ * @brief Force clock and power on for PPA CLUT mem
  *
  * @param dev Peripheral instance address
  */
-static inline void ppa_ll_blend_enable_clut_mem(ppa_dev_t *dev)
+static inline void ppa_ll_enable_clut_mem(ppa_dev_t *dev)
 {
     dev->clut_conf.blend_clut_mem_clk_ena = 1;
     dev->clut_conf.blend_clut_mem_force_pu = 1; // force clut mem remain power when memory domain PD
 }
 
 /**
- * @brief Force clock and power off for PPA blending BLEND CLUT mem
+ * @brief Force clock and power off for PPA CLUT mem
  *
  * @param dev Peripheral instance address
  */
-static inline void ppa_ll_blend_disable_clut_mem(ppa_dev_t *dev)
+static inline void ppa_ll_disable_clut_mem(ppa_dev_t *dev)
 {
     dev->clut_conf.blend_clut_mem_clk_ena = 0;
     dev->clut_conf.blend_clut_mem_force_pu = 0;
 }
 
 /**
- * @brief Reset PPA blending BLEND0 CLUT mem and read address
+ * @brief Reset a PPA CLUT FIFO mode write counter and read address
+ *
+ * @note Only the write counter and the read address are reset, the entries stored in the CLUT keep their content. They
+ *       decide which entry the next write or read goes to while the CLUT is accessed in FIFO mode.
  *
  * @param dev Peripheral instance address
+ * @param clut_id Selects which CLUT to reset, see `ppa_clut_id_t`
  */
-static inline void ppa_ll_blend_reset_rx_bg_clut_mem(ppa_dev_t *dev)
+static inline void ppa_ll_reset_clut_fifo_ptr(ppa_dev_t *dev, ppa_clut_id_t clut_id)
 {
-    dev->clut_conf.blend0_clut_mem_rst = 1;
-    dev->clut_conf.blend0_clut_mem_rst = 0;
-    dev->clut_conf.blend0_clut_mem_rdaddr_rst = 1;
-    dev->clut_conf.blend0_clut_mem_rdaddr_rst = 0;
+    switch (clut_id) {
+    case PPA_CLUT_BLEND_BG:
+        dev->clut_conf.blend0_clut_mem_rst = 1;
+        dev->clut_conf.blend0_clut_mem_rst = 0;
+        dev->clut_conf.blend0_clut_mem_rdaddr_rst = 1;
+        dev->clut_conf.blend0_clut_mem_rdaddr_rst = 0;
+        break;
+    case PPA_CLUT_BLEND_FG:
+        dev->clut_conf.blend1_clut_mem_rst = 1;
+        dev->clut_conf.blend1_clut_mem_rst = 0;
+        dev->clut_conf.blend1_clut_mem_rdaddr_rst = 1;
+        dev->clut_conf.blend1_clut_mem_rdaddr_rst = 0;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
- * @brief Reset PPA blending BLEND1 CLUT mem and read address
+ * @brief Write a PPA CLUT mem entry through FIFO mode
  *
  * @param dev Peripheral instance address
+ * @param clut_id Selects which CLUT to write, see `ppa_clut_id_t`
+ * @param data The data to be written into the CLUT entry in ARGB8888 format
  */
-static inline void ppa_ll_blend_reset_rx_fg_clut_mem(ppa_dev_t *dev)
+static inline void ppa_ll_wr_clut_data_by_fifo(ppa_dev_t *dev, ppa_clut_id_t clut_id, uint32_t data)
 {
-    dev->clut_conf.blend1_clut_mem_rst = 1;
-    dev->clut_conf.blend1_clut_mem_rst = 0;
-    dev->clut_conf.blend1_clut_mem_rdaddr_rst = 1;
-    dev->clut_conf.blend1_clut_mem_rdaddr_rst = 0;
+    switch (clut_id) {
+    case PPA_CLUT_BLEND_BG:
+        dev->blend0_clut_data.rdwr_word_blend0_clut = data;
+        break;
+    case PPA_CLUT_BLEND_FG:
+        dev->blend1_clut_data.rdwr_word_blend1_clut = data;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
- * @brief Write PPA blending BLEND0 CLUT mem entry through FIFO mode
+ * @brief Write a PPA CLUT mem entry through memory mode
  *
  * @param dev Peripheral instance address
- * @param data The data to be written into BLEND0 CLUT entry in ARGB8888 format
- */
-static inline void ppa_ll_blend_wr_rx_bg_clut_data_by_fifo(ppa_dev_t *dev, uint32_t data)
-{
-    dev->blend0_clut_data.rdwr_word_blend0_clut = data;
-}
-
-/**
- * @brief Write PPA blending BLEND1 CLUT mem entry through FIFO mode
- *
- * @param dev Peripheral instance address
- * @param data The data to be written into BLEND1 CLUT entry in ARGB8888 format
- */
-static inline void ppa_ll_blend_wr_rx_fg_clut_data_by_fifo(ppa_dev_t *dev, uint32_t data)
-{
-    dev->blend1_clut_data.rdwr_word_blend1_clut = data;
-}
-
-/**
- * @brief Write PPA blending BLEND0 CLUT mem entry through memory mode
- *
- * @param dev Peripheral instance address
+ * @param clut_id Selects which CLUT to write, see `ppa_clut_id_t`
  * @param idx Entry index to the CLUT mem
- * @param data The data to be written into BLEND0 CLUT entry in ARGB8888 format
+ * @param data The data to be written into the CLUT entry in ARGB8888 format
  */
-static inline void ppa_ll_blend_wr_rx_bg_clut_data_by_mem(ppa_dev_t *dev, uint32_t idx, uint32_t data)
+static inline void ppa_ll_wr_clut_data_by_mem(ppa_dev_t *dev, ppa_clut_id_t clut_id, uint32_t idx, uint32_t data)
 {
-    volatile uint32_t *blend0_clut_mem = (uint32_t *)((uint32_t)dev + PPA_LL_BLEND0_CLUT_MEM_ADDR_OFFSET);
-    blend0_clut_mem[idx] = data;
-}
-
-/**
- * @brief Write PPA blending BLEND1 CLUT mem entry through memory mode
- *
- * @param dev Peripheral instance address
- * @param idx Entry index to the CLUT mem
- * @param data The data to be written into BLEND1 CLUT entry in ARGB8888 format
- */
-static inline void ppa_ll_blend_wr_rx_fg_clut_data_by_mem(ppa_dev_t *dev, uint32_t idx, uint32_t data)
-{
-    volatile uint32_t *blend1_clut_mem = (uint32_t *)((uint32_t)dev + PPA_LL_BLEND1_CLUT_MEM_ADDR_OFFSET);
-    blend1_clut_mem[idx] = data;
+    uint32_t offset = 0;
+    switch (clut_id) {
+    case PPA_CLUT_BLEND_BG:
+        offset = PPA_LL_BLEND0_CLUT_MEM_ADDR_OFFSET;
+        break;
+    case PPA_CLUT_BLEND_FG:
+        offset = PPA_LL_BLEND1_CLUT_MEM_ADDR_OFFSET;
+        break;
+    default:
+        abort();
+    }
+    volatile uint32_t *clut_mem = (uint32_t *)((uint32_t)dev + offset);
+    clut_mem[idx] = data;
 }
 
 #ifdef __cplusplus

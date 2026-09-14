@@ -97,6 +97,24 @@ typedef uint32_t esp_color_fourcc_t;
 #define ESP_COLOR_FOURCC_ALPHA8         ESP_COLOR_FOURCC('A', 'L', 'P', '8') /* 8 bpp, an 8-bit alpha-only format */
 
 /**
+ * CLUT4 (Color Look-Up Table index, 4 bits)
+ * Each pixel is an index into a color look-up table, instead of a color value itself
+ * Memory Layout:
+ *    Addr0  Addr1  Addr2  Addr3
+ *    I0I1   I2I3   I4I5   I6I7
+ */
+#define ESP_COLOR_FOURCC_CLUT4          ESP_COLOR_FOURCC('C', '4', ' ', ' ') /* 4 bpp, a 4-bit color look-up table index */
+
+/**
+ * CLUT8 (Color Look-Up Table index, 8 bits)
+ * Each pixel is an index into a color look-up table, instead of a color value itself
+ * Memory Layout:
+ *    Addr0  Addr1  Addr2  Addr3
+ *    I0     I1     I2     I3
+ */
+#define ESP_COLOR_FOURCC_CLUT8          ESP_COLOR_FOURCC('C', '8', ' ', ' ') /* 8 bpp, an 8-bit color look-up table index */
+
+/**
  * YUV444
  * Memory Layout:
  *    +--+--+--+ +--+--+--+
