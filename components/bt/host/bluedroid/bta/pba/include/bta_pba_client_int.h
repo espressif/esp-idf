@@ -127,6 +127,7 @@ typedef struct {
     UINT16                      max_rx;                     /* max rx bytes */
     UINT16                      max_tx;                     /* max tx bytes */
     BOOLEAN                     authenticate;               /* whether we are authenticated */
+    BOOLEAN                     pm_open;                    /* TRUE after bta_sys_conn_open until conn_close */
     tBTA_PBA_CLIENT_OP          operation;                  /* ongoing or last operations */
     UINT8                       state;                      /* main state machine */
     UINT8                       allocated;                  /* index + 1 if allocated, otherwise 0 */
