@@ -223,14 +223,12 @@ TEST_CASE("(WL) can ftruncate", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
-#if FF_USE_EXPAND
 TEST_CASE("(WL) can esp_vfs_fat_create_contiguous_file", "[fatfs][wear_levelling]")
 {
     test_setup();
     test_fatfs_create_contiguous_file("/spiflash", "/spiflash/expand.txt");
     test_teardown();
 }
-#endif
 
 TEST_CASE("(WL) stat returns correct values", "[fatfs][wear_levelling]")
 {

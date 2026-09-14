@@ -1436,7 +1436,6 @@ void test_fatfs_info(const char* base_path, const char* filepath)
     TEST_ASSERT_EQUAL(free_bytes, free_bytes_new);
 }
 
-#if FF_USE_EXPAND
 void test_fatfs_create_contiguous_file(const char* base_path, const char* full_path)
 {
     size_t desired_file_size = 64;
@@ -1459,4 +1458,3 @@ void test_fatfs_create_contiguous_file(const char* base_path, const char* full_p
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_TRUE(is_contiguous);
 }
-#endif
