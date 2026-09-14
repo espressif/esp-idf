@@ -279,7 +279,8 @@ static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
  */
 static inline int temperature_sensor_ll_load_calib_param(void)
 {
-    return 0; // IDF-15117
+    uint32_t cal_temp = EFUSE.rd_mac_sys5.temp_calib;
+    return (cal_temp & BIT(9)) ? -(int)(cal_temp & ~BIT(9)) : (int)cal_temp;
 }
 
 /**
