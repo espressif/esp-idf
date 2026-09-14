@@ -12,8 +12,10 @@ uint32_t color_hal_pixel_format_fourcc_get_bit_depth(esp_color_fourcc_t four_cha
 {
     switch (four_character_code) {
     case ESP_COLOR_FOURCC_ALPHA4:
+    case ESP_COLOR_FOURCC_CLUT4:
         return 4;
     case ESP_COLOR_FOURCC_ALPHA8:
+    case ESP_COLOR_FOURCC_CLUT8:
     case ESP_COLOR_FOURCC_GREY:
     case ESP_COLOR_FOURCC_RAW8:
         return 8;

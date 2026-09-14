@@ -121,7 +121,7 @@ Similarly, some notes to avoid confusion in configuring :cpp:type:`ppa_blend_ope
 
     - :cpp:member:`ppa_out_pic_blk_config_t::buffer` can be the same pointer to one of the input's :cpp:member:`ppa_in_pic_blk_config_t::buffer` for a blend operation.
     - The blocks' width/height of FG and BG should be identical, and are the width/height values for the output block.
-    - If the color mode of the input picture is ``PPA_BLEND_COLOR_MODE_A4``, then its ``block_w`` and ``block_offset_x`` fields must be even.
+    - If the color mode of the input picture is ``PPA_BLEND_COLOR_MODE_A4`` or ``PPA_BLEND_COLOR_MODE_L4``, then its ``block_w`` and ``block_offset_x`` fields must be even.
 
 Fill
 ~~~~
@@ -129,6 +129,13 @@ Fill
 Call :cpp:func:`ppa_do_fill` to fill a target block inside a picture.
 
 :cpp:type:`ppa_trans_mode_t` is a field configurable to all the PPA operation APIs. It decides whether you want the call to the PPA operation API to block until the transaction finishes or to return immediately after the transaction is pushed to the internal queue.
+
+Color Look-Up Table (CLUT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The PPA supports indexed (also known as palletized) pictures, whose pixels are indexes into a Color Look-Up Table (CLUT) instead of color values. Call :cpp:func:`ppa_set_color_lookup_table` to fill a CLUT, selecting which one with :cpp:type:`ppa_clut_id_t`.
+
+To use such a picture, select one of the indexed color modes of the operation, L8 for an 8-bit index per pixel or L4 for a 4-bit index per pixel. An indexed picture can only be an input picture.
 
 .. _ppa-buffer-alignment:
 
@@ -176,6 +183,7 @@ Application Examples
 ^^^^^^^^^^^^^^^^^^^^
 
 * :example:`peripherals/ppa/ppa_dsi` - PPA with DSI display example. The image used in this example will be first scaled up, rotated at counter-clockwise direction and rotated back, mirrored and mirror back, and scaled down. Then the image will be blended with a whole red image with less transparency. Next the `ESP32` word will be color-keyed out. Lastly a frame will be filled around the `ESP32`.
+* :example:`peripherals/ppa/ppa_palette` - PPA color look-up table example. The example draws a small dashboard interface into an L8 index picture whose pixels store interface roles instead of colors, then restyles the whole screen into a day, a night and a high contrast theme by only refilling the CLUT before each blend. The three results are emitted as base64 for host-side PPM reconstruction and golden-image comparison.
 
 API Reference
 -------------
