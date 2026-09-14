@@ -25,6 +25,14 @@ static const char *type_pull_vcard_entry = "x-bt/vcard";
 #define TYPE_LEN_PULL_VCARD_LISTING         19
 #define TYPE_LEN_PULL_VCARD_ENTRY           11
 
+static void bta_pba_client_pm_conn_close(tBTA_PBA_CLIENT_CCB *p_ccb)
+{
+    if (p_ccb->pm_open) {
+        bta_sys_conn_close(BTA_ID_PBC, p_ccb->allocated, p_ccb->bd_addr);
+        p_ccb->pm_open = FALSE;
+    }
+}
+
 static void free_ccb(tBTA_PBA_CLIENT_CCB *p_ccb)
 {
     UINT8 sdp_seq;
@@ -51,6 +59,8 @@ static void close_goepc_and_report(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_E
     conn.handle = p_ccb->allocated;
     conn.error = reason;
     bdcpy(conn.bd_addr, p_ccb->bd_addr);
+
+    bta_pba_client_pm_conn_close(p_ccb);
 
     /* free ccb */
     free_ccb(p_ccb);
@@ -425,6 +435,7 @@ void bta_pba_client_api_req(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_
     if (ret != GOEP_SUCCESS) {
         goto error;
     }
+    bta_sys_busy(BTA_ID_PBC, p_ccb->allocated, p_ccb->bd_addr);
     return;
 
 error:
@@ -550,6 +561,11 @@ void bta_pba_client_authenticate(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DAT
 void bta_pba_client_connect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data)
 {
     tBTA_PBA_CLIENT_CONN conn;
+    UNUSED(p_data);
+
+    bta_sys_conn_open(BTA_ID_PBC, p_ccb->allocated, p_ccb->bd_addr);
+    p_ccb->pm_open = TRUE;
+
     conn.handle = p_ccb->allocated;
     conn.peer_supported_repo = p_ccb->peer_supported_repo;
     conn.peer_supported_feat = p_ccb->peer_supported_feat;
@@ -680,6 +696,7 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
             }
             bta_pba_client_report_get_headers(p_ccb, p_data->goep_response.pkt, &info, TRUE);
             p_data->goep_response.pkt = NULL;
+            bta_sys_idle(BTA_ID_PBC, p_ccb->allocated, p_ccb->bd_addr);
             return;
         }
         /* unexpected response code or body data not found */
@@ -687,6 +704,7 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
         report_error_data_event(p_ccb, reason);
         osi_free(p_data->goep_response.pkt);
         p_data->goep_response.pkt = NULL;
+        bta_sys_idle(BTA_ID_PBC, p_ccb->allocated, p_ccb->bd_addr);
 
         /* state machine is good, don't goto error */
     }
@@ -699,6 +717,7 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
             report_error_data_event(p_ccb, reason);
         }
         osi_free(p_data->goep_response.pkt);
+        bta_sys_idle(BTA_ID_PBC, p_ccb->allocated, p_ccb->bd_addr);
     }
     else if (p_data->goep_response.opcode == OBEX_OPCODE_DISCONNECT) {
         /* received disconnect response, close goep connection now */
@@ -756,6 +775,7 @@ void bta_pba_client_goep_connect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DAT
 
 void bta_pba_client_goep_disconnect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p_data)
 {
+    UNUSED(p_data);
     p_ccb->goep_handle = 0;
 
     /* report connection closed event */
@@ -763,6 +783,7 @@ void bta_pba_client_goep_disconnect(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_
     conn.handle = p_ccb->allocated;
     bdcpy(conn.bd_addr, p_ccb->bd_addr);
     conn.error = BTA_PBA_CLIENT_GOEP_ERROR;
+    bta_pba_client_pm_conn_close(p_ccb);
     free_ccb(p_ccb);
     bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
 }
