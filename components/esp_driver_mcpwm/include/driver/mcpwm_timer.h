@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,17 @@ typedef struct {
  *      - ESP_FAIL: Create MCPWM timer failed because of other error
  */
 esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle_t *ret_timer);
+
+/**
+ * @brief Get MCPWM timer resolution, in Hz
+ *
+ * @param[in] timer MCPWM timer handle, allocated by `mcpwm_new_timer()`
+ * @param[out] out_resolution Returned timer resolution, in Hz
+ * @return
+ *      - ESP_OK: Get timer resolution successfully
+ *      - ESP_ERR_INVALID_ARG: Get timer resolution failed because of invalid argument
+ */
+esp_err_t mcpwm_timer_get_resolution(mcpwm_timer_handle_t timer, uint32_t *out_resolution);
 
 /**
  * @brief Delete MCPWM timer
