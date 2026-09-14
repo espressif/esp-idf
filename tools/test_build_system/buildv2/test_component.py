@@ -348,3 +348,60 @@ def test_local_component_shadows_managed_dep_in_manifest(idf_py: IdfPyFunc) -> N
     paths = data.get('build_component_paths', [])
     assert any(p.endswith('/components/lvgl') for p in paths), f'local lvgl not in build_component_paths: {paths}'
     assert not any('lvgl__lvgl' in p for p in paths), f'managed lvgl__lvgl should not be in build: {paths}'
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_component_scope_isolation(idf_py: IdfPyFunc) -> None:
+    """A component does not see the variables and directory properties of the
+    component that requires it.
+
+    leak_src sets 'srcs', adds a compile definition and requires leak_dst.
+    leak_dst appends to 'srcs' without initializing it, like many cmakev1
+    components. Without the isolation leak_dst appends to the 'srcs' of
+    leak_src and the configuration fails.
+    """
+    logging.info('Testing scope isolation of a recursively evaluated component')
+
+    src_dir = Path('components/leak_src')
+    src_dir.mkdir(parents=True)
+    (src_dir / 'CMakeLists.txt').write_text(
+        'set(srcs "leak_src.c")\n'
+        'set(leak_marker "set by leak_src")\n'
+        'add_compile_definitions(LEAK_SRC_DIRECTORY)\n'
+        'idf_component_register(SRCS ${srcs} REQUIRES leak_dst)\n'
+    )
+    (src_dir / 'leak_src.c').write_text('void leak_src_func(void) {}\n')
+
+    dst_dir = Path('components/leak_dst')
+    dst_dir.mkdir(parents=True)
+    (dst_dir / 'CMakeLists.txt').write_text(
+        'list(APPEND srcs "leak_dst.c")\n'
+        'idf_component_register(SRCS ${srcs})\n'
+        # leak_marker is set by leak_src. ARG_REQUIRES and sources are local
+        # variables of the idf_component_register() call of leak_src.
+        'foreach(variable leak_marker ARG_REQUIRES sources)\n'
+        '    if(DEFINED ${variable})\n'
+        '        message(FATAL_ERROR "leak_dst sees ${variable}=${${variable}}")\n'
+        '    endif()\n'
+        'endforeach()\n'
+    )
+    (dst_dir / 'leak_dst.c').write_text('void leak_dst_func(void) {}\n')
+
+    replace_in_file(
+        'main/CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'REQUIRES leak_src',
+    )
+
+    idf_py('reconfigure')
+
+    with open('build/compile_commands.json') as f:
+        commands = json.load(f)
+    defined = {Path(c['file']).name: '-DLEAK_SRC_DIRECTORY' in c['command'] for c in commands}
+    assert defined['leak_src.c'], 'definition missing on the component target'
+    assert not defined['leak_dst.c'], 'definition leaked into the required component'
+
+    # With the isolation disabled leak_dst sees the variables of leak_src.
+    ret = idf_py('-DIDF_COMPONENT_SCOPE_ISOLATION=NO', 'reconfigure', check=False)
+    assert ret.returncode != 0
+    assert 'leak_dst sees leak_marker=set by leak_src' in ret.stderr

@@ -133,10 +133,30 @@ Evaluation is recursive and depth first. While a component is being evaluated, i
 
 Two consequences follow from evaluating components as ordinary, nested CMake code:
 
-- **Variable hygiene.** A component may be evaluated within the variable scope of the component that pulled it in. A component must initialize every variable it uses rather than relying on it being unset. See :ref:`cmakev2-recursive-evaluation`.
+- **Scope isolation.** Because components are evaluated recursively, the variables and the directory properties of one component would leak into another. The build system isolates the scope of a component to prevent this. See `Component Scope`_.
 - **No precomputed component list.** There is no point at which the full set of components is known before evaluation, so the v1 ``BUILD_COMPONENTS`` property does not exist in v2. See :ref:`cmakev2-build-components`.
 
 Circular dependencies are tolerated because the interface target of every component exists from discovery, before any component is evaluated. If component A requires B and B requires A, then while B is being evaluated it can already link A's interface target, and A finishes evaluating after B. The build system tracks the chain of in-progress evaluations to avoid infinite recursion.
+
+.. _cmakev2-component-scope:
+
+Component Scope
+---------------
+
+Components are evaluated recursively. While a component is being evaluated, the components it requires are evaluated inside it with ``add_subdirectory``. CMake gives such a directory a copy of every variable and of the directory properties visible at the call. Without further action, a component would see the variables of the component that requires it, for example its ``srcs`` list, and could append to them.
+
+The build system isolates the scope of a component to prevent this. It records the variables visible at the first component inclusion. Before a component is evaluated, every variable that is not in the record is hidden. A component therefore sees the same variables at any depth: the variables of the project, the variables of the build system, and the ``COMPONENT_*`` variables. The directory properties are handled in the same way. They are set to the values of the project directory, so a component does not inherit, for example, a compile option added by the component that requires it.
+
+The isolation is not complete. The variables in the record stay visible in every component, and their values are not reset between components. Make sure every variable a component sets is initialized before use. The common mistake is appending to a list that was never set:
+
+.. code-block:: cmake
+
+    # Wrong
+    list(APPEND srcs main.c)
+
+    # Correct
+    set(srcs)
+    list(APPEND srcs main.c)
 
 Dependency Resolution
 =====================

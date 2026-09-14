@@ -83,10 +83,6 @@ Differences from v1
 
 :cmakev2:ref:`idf_component_register` behaves the same in v1 and v2, with one exception: the v2 version does not support the ``KCONFIG`` and ``KCONFIG_PROJBUILD`` arguments for Kconfig files whose names do not follow the standard ``Kconfig`` and ``Kconfig.projbuild`` convention. See :ref:`cmakev2-kconfig-file-names`.
 
-.. important::
-
-    Make sure every variable used in the component's ``CMakeLists.txt`` is initialized before use. In v2 a component may be evaluated within the variable scope of another component, so a variable can already hold a value set by that component. A common mistake is appending to a CMake list without first initializing it. This is explained in :ref:`cmakev2-recursive-evaluation`.
-
 For the complete list of differences that may require changes to a v1 component, see :doc:`breaking-changes`. To keep a single component building under both v1 and v2, see :doc:`managing-compatibility`.
 
 .. _cmakev2-component-native:
