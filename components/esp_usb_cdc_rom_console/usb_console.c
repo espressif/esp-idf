@@ -27,6 +27,7 @@
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
+#include "rom/usb/usb_common.h"
 #include "rom/usb/usb_dc.h"
 #include "rom/usb/cdc_acm.h"
 #include "rom/usb/usb_dfu.h"
@@ -266,6 +267,11 @@ void esp_usb_console_before_restart(void)
  */
 static void esp_usb_console_rom_cleanup(void)
 {
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    /* Reset the descriptor pointer left by the second-stage bootloader before
+     * its RAM image is reclaimed by the application heap. */
+    rom_usb_cdc_set_descriptor_patch();
+#endif
     usb_dev_deinit();
     usb_dw_ctrl_deinit();
     uart_acm_dev = NULL;
