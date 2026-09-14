@@ -58,6 +58,19 @@ typedef enum {
     MIPI_DSI_PATTERN_BER_VERTICAL,   /*!< Vertical Bit Error Rate(BER) pattern */
 } mipi_dsi_pattern_type_t;
 
+/**
+ * @brief MIPI DSI DPI video burst type
+ *
+ * Selects how pixel packets are scheduled in DPI video mode:
+ * burst vs non-burst, and sync pulses vs sync events.
+ */
+typedef enum {
+    MIPI_DSI_VIDEO_BURST_WITH_SYNC_PULSES,      /*!< Burst mode with sync pulses */
+    MIPI_DSI_VIDEO_NON_BURST_WITH_SYNC_PULSES,  /*!< Non-burst mode with sync pulses */
+    MIPI_DSI_VIDEO_NON_BURST_WITH_SYNC_EVENTS,  /*!< Non-burst mode with sync events */
+    MIPI_DSI_VIDEO_BURST_TYPE_MAX,              /*!< Number of burst types, used for parameter check */
+} mipi_dsi_video_burst_type_t;
+
 #if SOC_MIPI_DSI_SUPPORTED
 
 /**
