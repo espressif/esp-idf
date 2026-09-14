@@ -1,0 +1,3 @@
+# don't enable s3 psram in default because s3 burger runner don't has psram
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y

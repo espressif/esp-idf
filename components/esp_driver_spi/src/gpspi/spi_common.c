@@ -483,7 +483,9 @@ esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer(spi_host_device_t 
     need_malloc |= (use_psram || bus_attr->cache_align_int > 1) ? (((uint32_t)buffer | len) & (alignment - 1)) : (((uint32_t)buffer) & (alignment - 1));
     uint32_t align_len = (len + alignment - 1) & (~(alignment - 1));   // up align alignment
     ESP_EARLY_LOGV(SPI_TAG, "SPI%d %s %p, len %d, is_ptr_ext %d, use_psram: %d, alignment: %d, need_malloc: %d from %s", host_id + 1, is_tx ? "TX" : "RX", buffer, len, is_ptr_ext, use_psram, alignment, need_malloc, (mem_cap & MALLOC_CAP_SPIRAM) ? "psram" : "internal");
-
+#if CONFIG_SECURE_FLASH_ENC_ENABLED || CONFIG_SPIRAM_ECC_ENABLE
+    ESP_RETURN_ON_FALSE_ISR(!(use_psram && (len & (alignment - 1))), ESP_ERR_INVALID_ARG, SPI_TAG, "len %d must align to alignment %d when using psram buffer with encryption or ECC", len, alignment);
+#endif
     if (need_malloc) {
         ESP_RETURN_ON_FALSE_ISR(auto_malloc, ESP_ERR_INVALID_STATE, SPI_TAG, "%s addr&len not align to %d, or not dma_capable, suggest use 'heap_caps_malloc' or enable auto_align", is_tx ? "TX" : "RX", alignment);
         uint32_t *temp = heap_caps_aligned_alloc(alignment, align_len, mem_cap);

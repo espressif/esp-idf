@@ -71,6 +71,10 @@ SPI 从机半双工模式
 
     请注意该功能共享 MSPI 总线带宽（总线频率 * 总线位宽），因此主机对该设备的传输带宽应小于 PSRAM 带宽，否则 **可能会丢失传输数据**，此时获取传输结果会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 
+    .. note::
+
+        当开启加密功能时，使用 PSRAM Buffer 的传输有更严格的对齐要求，通常为仅支持 16 字节对齐的传输。对于不对齐的传输，会返回 :c:macro:`ESP_ERR_INVALID_ARG` 错误。
+
 应用程序需要检查数据发送的结果。为此，应用程序可以调用 :cpp:func:`spi_slave_hd_get_trans_res`，并将通道参数设置为 :cpp:enumerator:`SPI_SLAVE_CHAN_TX`。该函数将阻塞程序，直到主设备发起的 Rd_DMA 命令事务成功完成或超时。函数中的参数 ``out_trans`` 将输出刚刚完成的数据描述符的指针，从而提供有关已完成的发送操作的信息。
 
 通过 DMA 通道从主设备接收数据的操作与发送数据类似。应用程序需要使用正确的数据描述符调用 :cpp:func:`spi_slave_hd_queue_trans`，并将通道参数设置为 :cpp:enumerator:`SPI_SLAVE_CHAN_RX`。随后，应用程序调用 :cpp:func:`spi_slave_hd_get_trans_res` 获取接收 buffer 的描述符，然后处理接收 buffer 中的数据。

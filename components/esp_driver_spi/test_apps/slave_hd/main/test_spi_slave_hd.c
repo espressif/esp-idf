@@ -532,10 +532,10 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
     same_pin_func_sel(0, TEST_SLAVE_HOST, bus_cfg, slave_hd_cfg.spics_io_num);
 
     const int send_buf_size = 1024;
-    WORD_ALIGNED_ATTR uint8_t* slave_send_buf = malloc(send_buf_size * 2);
-    WORD_ALIGNED_ATTR uint8_t* master_send_buf = malloc(send_buf_size * 2);
-    WORD_ALIGNED_ATTR uint8_t* slave_recv_buf = malloc(send_buf_size * 2);
-    WORD_ALIGNED_ATTR uint8_t* master_recv_buf = malloc(send_buf_size * 2);
+    uint8_t* slave_send_buf = heap_caps_malloc(send_buf_size * 2, MALLOC_CAP_DMA);
+    uint8_t* master_send_buf = heap_caps_malloc(send_buf_size * 2, MALLOC_CAP_DMA);
+    uint8_t* slave_recv_buf = heap_caps_malloc(send_buf_size * 2, MALLOC_CAP_DMA);
+    uint8_t* master_recv_buf = heap_caps_malloc(send_buf_size * 2, MALLOC_CAP_DMA);
 
     memset(slave_recv_buf, 0xcc, send_buf_size * 2);
     memset(master_recv_buf, 0xcc, send_buf_size * 2);
@@ -1095,16 +1095,19 @@ static esp_err_t (*hd_get_trans_res[2])(spi_host_device_t host_id, spi_slave_cha
     spi_slave_hd_get_trans_res, spi_slave_hd_get_append_trans_res
 };
 
-#define TEST_PSRAM_TRANS_LEN 1000
+#define TEST_PSRAM_TRANS_LEN 1600
 TEST_CASE("test slave hd edma segment and append mode", "[spi]")
 {
     uint8_t *mst_tx = heap_caps_malloc(TEST_PSRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
     uint8_t *mst_rx = heap_caps_malloc(TEST_PSRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
-    uint8_t *slv_tx = heap_caps_malloc(TEST_PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM);
-    uint8_t *slv_rx = heap_caps_malloc(TEST_PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM);
+    uint8_t *slv_tx = heap_caps_malloc(TEST_PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *slv_rx = heap_caps_malloc(TEST_PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     spi_slave_hd_data_t *ret_trans, tx_data = {
         .data = slv_tx,
         .len = TEST_PSRAM_TRANS_LEN,
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,  // encrypted chip has different alignment
+#endif
     }, rx_data = {
         .data = slv_rx,
         .len = TEST_PSRAM_TRANS_LEN,
@@ -1120,26 +1123,26 @@ TEST_CASE("test slave hd edma segment and append mode", "[spi]")
         bus_cfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
         spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
         slave_hd_cfg.flags |= i ? SPI_SLAVE_HD_APPEND_MODE : 0;
-        TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
-        same_pin_func_sel(0, TEST_SLAVE_HOST, bus_cfg, slave_hd_cfg.spics_io_num);
+        TEST_ESP_OK(spi_slave_hd_init(TEST_SPI_HOST, &bus_cfg, &slave_hd_cfg));
+        same_pin_func_sel(0, TEST_SPI_HOST, bus_cfg, slave_hd_cfg.spics_io_num);
         vTaskDelay(1);
 
-        TEST_ESP_OK(hd_trans[i](TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &tx_data, portMAX_DELAY));
-        TEST_ESP_OK(hd_trans[i](TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &rx_data, portMAX_DELAY));
+        TEST_ESP_OK(hd_trans[i](TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &tx_data, portMAX_DELAY));
+        TEST_ESP_OK(hd_trans[i](TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &rx_data, portMAX_DELAY));
 
         // tx append transaction
         printf("tx %d bytes\n", TEST_PSRAM_TRANS_LEN);
         essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, false, mst_tx, TEST_PSRAM_TRANS_LEN, -1);
-        TEST_ESP_OK(hd_get_trans_res[i](TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
+        TEST_ESP_OK(hd_get_trans_res[i](TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
 
         // rx append transaction
         printf("rx %d bytes\n", TEST_PSRAM_TRANS_LEN);
         essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, true, mst_rx, TEST_PSRAM_TRANS_LEN, -1);
-        TEST_ESP_OK(hd_get_trans_res[i](TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
+        TEST_ESP_OK(hd_get_trans_res[i](TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
 
         spitest_cmp_or_dump(slv_rx, mst_tx, TEST_PSRAM_TRANS_LEN);
         spitest_cmp_or_dump(mst_rx, slv_tx, TEST_PSRAM_TRANS_LEN);
-        spi_slave_hd_deinit(TEST_SLAVE_HOST);
+        spi_slave_hd_deinit(TEST_SPI_HOST);
         printf("test done\n");
     }
     free(mst_tx);
