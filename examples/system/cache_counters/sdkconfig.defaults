@@ -1,0 +1,2 @@
+# No target-independent default options; per-target options are in
+# sdkconfig.defaults.<target>. This file must exist for those to be applied.

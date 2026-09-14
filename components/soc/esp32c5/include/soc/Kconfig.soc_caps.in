@@ -423,6 +423,14 @@ config SOC_CACHE_FREEZE_SUPPORTED
     bool
     default y
 
+config SOC_CACHE_CNT_SUPPORTED
+    bool
+    default y
+
+config SOC_CACHE_CNT_UNITS_NUM
+    int
+    default 2
+
 config SOC_CPU_CORES_NUM
     int
     default 1

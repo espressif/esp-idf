@@ -152,6 +152,8 @@
 /*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_CACHE_WRITEBACK_SUPPORTED           1
 #define SOC_CACHE_FREEZE_SUPPORTED              1
+#define SOC_CACHE_CNT_SUPPORTED                 1
+#define SOC_CACHE_CNT_UNITS_NUM                 4   //Number of cache profile counter units
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               (2U)

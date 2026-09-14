@@ -5,6 +5,22 @@ examples/system/base_mac_address:
     - *common_components
     - esp_hw_support
 
+examples/system/cache_counters:
+  enable:
+    - if: SOC_CACHE_CNT_SUPPORTED == 1
+  disable:
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+    - if: CONFIG_NAME == "default" and SOC_SPIRAM_SUPPORTED == 1
+      reason: the psram config subsumes the default config
+  depends_components:
+    - esp_hw_support
+    - hal
+    - soc
+
 examples/system/deep_sleep:
   disable:
     - if: SOC_DEEP_SLEEP_SUPPORTED != 1

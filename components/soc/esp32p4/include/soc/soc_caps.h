@@ -174,6 +174,8 @@
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
 #define SOC_CACHE_WRITEBACK_SUPPORTED           1
 #define SOC_CACHE_FREEZE_SUPPORTED              1
+#define SOC_CACHE_CNT_SUPPORTED                 1
+#define SOC_CACHE_CNT_UNITS_NUM                 6   //Number of cache profile counter units
 #define SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE      1
 
 /*-------------------------- CPU CAPS ----------------------------------------*/

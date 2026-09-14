@@ -6,11 +6,33 @@
 
 #pragma once
 
+#include <stdint.h>
 #include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Kind of traffic observed by a cache profile counter unit
+ */
+typedef enum {
+    CACHE_PROFILE_TRAFFIC_INST,     /*!< Instruction fetches */
+    CACHE_PROFILE_TRAFFIC_DATA,     /*!< Data accesses */
+    CACHE_PROFILE_TRAFFIC_UNIFIED,  /*!< Mixed/unknown (unified request bus) */
+} cache_profile_traffic_t;
+
+/**
+ * @brief One of the counters of a cache profile counter unit
+ */
+typedef enum {
+    CACHE_PROFILE_COUNTER_HIT,         /*!< Completed accesses ("hit" counter) */
+    CACHE_PROFILE_COUNTER_MISS,        /*!< Miss stall events ("miss" counter) */
+    CACHE_PROFILE_COUNTER_CONFLICT,    /*!< Requester conflicts */
+    CACHE_PROFILE_COUNTER_NXTLVL_RD,   /*!< Line fills from the next level */
+    CACHE_PROFILE_COUNTER_NXTLVL_WR,   /*!< Write-backs to the next level */
+    CACHE_PROFILE_COUNTER_MAX,
+} cache_profile_counter_t;
 
 typedef enum {
     CACHE_TYPE_DATA,
