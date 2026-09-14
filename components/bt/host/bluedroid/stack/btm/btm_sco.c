@@ -479,6 +479,12 @@ void  btm_route_sco_data(BT_HDR *p_msg)
     UINT8       pkt_size = 0;
     UINT8       pkt_status = 0;
 
+    if (len < HCI_SCO_PREAMBLE_SIZE) {
+        BTM_TRACE_WARNING("SCO packet too short: %u", len);
+        osi_free(p_msg);
+        return;
+    }
+
     /* Extract Packet_Status_Flag and handle */
     STREAM_TO_UINT16 (handle, p);
     pkt_status = HCID_GET_EVENT(handle);
