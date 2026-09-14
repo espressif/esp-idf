@@ -136,6 +136,7 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
     entry->reauth_time = now.sec + dot11RSNAConfigPMKLifetime / 100 * dot11RSNAConfigPMKReauthThreshold;
     entry->akmp = akmp;
     os_memcpy(entry->aa, aa, ETH_ALEN);
+    os_memcpy(entry->spa, spa, ETH_ALEN);
     entry->network_ctx = network_ctx;
 
     return pmksa_cache_add_entry(pmksa, entry);
@@ -306,19 +307,23 @@ void pmksa_cache_deinit(struct rsn_pmksa_cache *pmksa)
  * pmksa_cache_get - Fetch a PMKSA cache entry
  * @pmksa: Pointer to PMKSA cache data from pmksa_cache_init()
  * @aa: Authenticator address or %NULL to match any
+ * @spa: Supplicant address or %NULL to skip SPA matching (not recommended)
  * @pmkid: PMKID or %NULL to match any
  * @network_ctx: Network context or %NULL to match any
  * Returns: Pointer to PMKSA cache entry or %NULL if no match was found
  */
 struct rsn_pmksa_cache_entry * pmksa_cache_get(struct rsn_pmksa_cache *pmksa,
-        const u8 *aa, const u8 *pmkid,
-        const void *network_ctx)
+        const u8 *aa, const u8 *spa, const u8 *pmkid,
+        const void *network_ctx, int akmp)
 {
     struct rsn_pmksa_cache_entry *entry = pmksa->pmksa;
     while (entry) {
         if ((aa == NULL || os_memcmp(entry->aa, aa, ETH_ALEN) == 0) &&
+                (spa == NULL ||
+                 os_memcmp(entry->spa, spa, ETH_ALEN) == 0) &&
                 (pmkid == NULL ||
                  os_memcmp(entry->pmkid, pmkid, PMKID_LEN) == 0) &&
+                (!akmp || akmp == entry->akmp) &&
                 (network_ctx == NULL || network_ctx == entry->network_ctx))
             return entry;
         entry = entry->next;
@@ -362,7 +367,7 @@ pmksa_cache_clone_entry(struct rsn_pmksa_cache *pmksa,
  */
 struct rsn_pmksa_cache_entry *
 pmksa_cache_get_opportunistic(struct rsn_pmksa_cache *pmksa, void *network_ctx,
-        const u8 *aa)
+        const u8 *aa, int akmp)
 {
     struct rsn_pmksa_cache_entry *entry = pmksa->pmksa;
 
@@ -370,7 +375,8 @@ pmksa_cache_get_opportunistic(struct rsn_pmksa_cache *pmksa, void *network_ctx,
     if (network_ctx == NULL)
         return NULL;
     while (entry) {
-        if (entry->network_ctx == network_ctx) {
+        if (entry->network_ctx == network_ctx &&
+                (!akmp || akmp == entry->akmp)) {
             entry = pmksa_cache_clone_entry(pmksa, entry, aa);
             if (entry) {
                 wpa_printf(MSG_DEBUG, "RSN: added "
@@ -435,15 +441,15 @@ int pmksa_cache_set_current(struct wpa_sm *sm, const u8 *pmkid,
 
     sm->cur_pmksa = NULL;
     if (pmkid)
-        sm->cur_pmksa = pmksa_cache_get(pmksa, NULL, pmkid,
-                network_ctx);
+        sm->cur_pmksa = pmksa_cache_get(pmksa, NULL, sm->own_addr, pmkid,
+                network_ctx, sm->key_mgmt);
     if (sm->cur_pmksa == NULL && bssid)
-        sm->cur_pmksa = pmksa_cache_get(pmksa, bssid, NULL,
-                network_ctx);
+        sm->cur_pmksa = pmksa_cache_get(pmksa, bssid, sm->own_addr, NULL,
+                network_ctx, sm->key_mgmt);
     if (sm->cur_pmksa == NULL && try_opportunistic && bssid)
         sm->cur_pmksa = pmksa_cache_get_opportunistic(pmksa,
                 network_ctx,
-                bssid);
+                bssid, sm->key_mgmt);
     if (sm->cur_pmksa) {
         wpa_hexdump(MSG_DEBUG, "RSN: PMKSA cache entry found - PMKID",
                 sm->cur_pmksa->pmkid, PMKID_LEN);
@@ -471,7 +477,7 @@ int pmksa_cache_list(struct rsn_pmksa_cache *pmksa, char *buf, size_t len)
     struct rsn_pmksa_cache_entry *entry;
     struct os_reltime now;
     ret = os_snprintf(pos, buf + len - pos,
-            "Index / AA / PMKID / expiration (in seconds) / "
+            "Index / AA / SPA / PMKID / expiration (in seconds) / "
             "opportunistic\n");
     if (os_snprintf_error(buf + len - pos, ret))
         return pos - buf;
@@ -481,8 +487,8 @@ int pmksa_cache_list(struct rsn_pmksa_cache *pmksa, char *buf, size_t len)
     os_get_reltime(&now);
     while (entry) {
         i++;
-        ret = os_snprintf(pos, buf + len - pos, "%d " MACSTR " ",
-                i, MAC2STR(entry->aa));
+        ret = os_snprintf(pos, buf + len - pos, "%d " MACSTR " " MACSTR " ",
+                i, MAC2STR(entry->aa), MAC2STR(entry->spa));
         if (os_snprintf_error(buf + len - pos, ret))
             return pos - buf;
         pos += ret;
