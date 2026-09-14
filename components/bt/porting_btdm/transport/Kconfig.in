@@ -133,4 +133,12 @@ menu "Bluetooth controller HCI"
             Deprecated: this option is no longer used after HCI UART DMA
             switched to UHCI driver APIs, and will be removed in a future release.
 
+    config BT_CTRL_NONBLOCK_CMD_BUF
+        bool "Return NULL when no HCI command buffer is available instead of blocking"
+        default y if BT_CTRL_UART_HCI_DMA_MODE || BT_NIMBLE_ENABLED
+        default n
+        help
+            By default, the API will block if no HCI command buffer is available.
+            It is recommended to enable this option when HCI Tx and Rx processing run within the same task.
+            Otherwise, the task may deadlock.
 endmenu
