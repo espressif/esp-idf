@@ -208,6 +208,33 @@ static inline void rtcio_ll_input_disable(int rtcio_num)
 }
 
 /**
+ * @brief Enable RTCIO input hysteresis.
+ * @note  On esp32p4, hysteresis of rtcio has different design.
+ *        It share same suite of registers with HP control instead of independent registers.
+ *        The `rtcio_ll_function_select` don't affect the hysteresis config.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ */
+static inline void rtcio_ll_pin_input_hysteresis_enable(int rtcio_num)
+{
+    uint32_t hys_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys);
+    hys_mask |= BIT(rtcio_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys, hys_mask);
+}
+
+/**
+ * @brief Disable RTCIO input hysteresis.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ */
+static inline void rtcio_ll_pin_input_hysteresis_disable(int rtcio_num)
+{
+    uint32_t hys_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys);
+    hys_mask &= ~BIT(rtcio_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys, hys_mask);
+}
+
+/**
  * @brief Get RTCIO input level.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).

@@ -172,6 +172,30 @@ esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num);
  */
 esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num);
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+/**
+ * @brief Enable RTC GPIO input hysteresis.
+ *
+ * @param gpio_num GPIO number (e.g. GPIO_NUM_12)
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
+ */
+esp_err_t rtc_gpio_hysteresis_en(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable RTC GPIO input hysteresis.
+ *
+ * @param gpio_num GPIO number (e.g. GPIO_NUM_12)
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
+ */
+esp_err_t rtc_gpio_hysteresis_dis(gpio_num_t gpio_num);
+#endif
+
 /**
  * @brief Set RTC GPIO pad drive capability
  *

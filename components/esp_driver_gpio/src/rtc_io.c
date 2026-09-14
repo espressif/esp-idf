@@ -184,6 +184,28 @@ esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+esp_err_t rtc_gpio_hysteresis_en(gpio_num_t gpio_num)
+{
+    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
+    RTCIO_ENTER_CRITICAL();
+    rtcio_hal_input_hysteresis_soft_enable(rtc_io_number_get(gpio_num), true);
+    RTCIO_EXIT_CRITICAL();
+
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_hysteresis_dis(gpio_num_t gpio_num)
+{
+    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
+    RTCIO_ENTER_CRITICAL();
+    rtcio_hal_input_hysteresis_soft_enable(rtc_io_number_get(gpio_num), false);
+    RTCIO_EXIT_CRITICAL();
+
+    return ESP_OK;
+}
+#endif
+
 esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");

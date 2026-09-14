@@ -78,6 +78,22 @@ extern "C" {
  */
 #define rtcio_hal_input_disable(rtcio_num) rtcio_ll_input_disable(rtcio_num)
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+/**
+ * Control RTCIO input hysteresis enable/disable by software.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
+ * @param enable enable or disable the hysteresis.
+ */
+#define rtcio_hal_input_hysteresis_soft_enable(rtcio_num, enable) do { \
+    if (enable) { \
+        rtcio_ll_pin_input_hysteresis_enable(rtcio_num); \
+    } else { \
+        rtcio_ll_pin_input_hysteresis_disable(rtcio_num); \
+    } \
+} while (0)
+#endif
+
 /**
  * @brief Set RTC GPIO pad drive capability.
  *
