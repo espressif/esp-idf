@@ -362,6 +362,124 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
 
 
+.. _idf-monitor-command-stream:
+
+命令流模式
+===================
+
+要使用交互式快捷键，监视器的输入端必须连接到终端 (TTY)。但当输入来自管道或文件，或者完全没有连接输入（例如在持续集成作业中）时，监视器会自动切换到命令流模式。在该模式下，它会从重定向的输入中按行读取命令。
+
+当计划将多个 ``idf.py`` 命令串联使用时，建议通过 ``--command-file`` 从文件读取，而不是从管道读取，以避免影响其他工具的标准输入。若在不带诸如 ``flash`` 等附加命令的情况下调用 ``idf.py monitor``，则通过管道读取命令是安全的。请参阅以下示例以了解推荐的用法。
+
+.. code-block:: bash
+
+    idf.py monitor --command-file commands.txt
+    idf.py flash monitor --command-file commands.txt
+
+即使标准输入不是 TTY，将数据通过管道传给 ``idf.py monitor`` 也同样可行：
+
+.. code-block:: bash
+
+    printf 'reset\nexpect --timeout 10 ALL TESTS PASSED\n' | idf.py monitor
+
+命令
+~~~~~~~~
+
+.. list-table::
+    :widths: 30 70
+    :header-rows: 1
+
+    * - 命令
+      - 操作
+    * - ``reset``
+      - 使用 RTS 线对芯片执行硬复位。
+    * - ``flash``
+      - 运行构建系统的 ``flash`` 目标（默认为快速烧录）。
+    * - ``flash-all``
+      - 以完整烧录的方式运行 ``flash`` 目标，禁用快速烧录（等同于 ``idf.py flash -a``）。
+    * - ``app-flash``
+      - 运行构建系统的 ``app-flash`` 目标。
+    * - ``send <text>``
+      - 向设备发送 ``<text>``，并在其后附加已配置的行结束序列。
+    * - ``sleep <seconds>``
+      - 暂停命令处理指定时长，同时串口输出继续进行（接受浮点值和 ``inf``）。
+    * - ``expect <regex>``
+      - 等待直到某条串口输出行通过 ``re.search`` 与该 Python 正则表达式匹配。
+    * - ``expect --timeout <seconds> <regex>``
+      - 最多等待给定时长以获得匹配，该时长必须为正数且有限。超时会报告错误并中止剩余命令。
+    * - ``output``
+      - 切换是否打印串口输出。
+    * - ``log``
+      - 切换是否将输出保存到日志文件。
+    * - ``timestamps``
+      - 切换是否在串口输出前添加时间戳。
+    * - ``bootloader``
+      - 将芯片复位进入下载 (bootloader) 模式。
+    * - ``exit``
+      - 清空待处理的串口输出后退出 IDF 监视器。
+
+空行和以 ``#`` 开头的行会被忽略。每条已处理的命令都会回显到标准错误，因此当标准输出被重定向到文件时，脚本的进度仍然可见。
+
+``expect`` 在等待新的输出之前，还会检查一个有界缓冲区中最近接收的行。匹配前会移除行尾，因此 ``$`` 锚点同时适用于 LF 和 CRLF 输出。``expect`` 命令还能匹配没有行尾的提示符。
+
+结束命令流
+~~~~~~~~~~~~~~~~~~~~~~~
+
+在读取到至少一条命令后，遇到 EOF 将结束会话。因此，命令文件可以以 ``exit``、最后一个 ``expect``，或直接 EOF 结束。若标准输入从一开始就是空的（例如重定向自 ``/dev/null``，或在 Docker 运行时未使用 ``-i``），IDF 监视器将进入仅监视模式，并持续显示串口输出，直至被外部以 ``Ctrl+C`` 或 ``SIGTERM`` 停止。
+
+示例
+~~~~~~~~
+
+等待匹配某个正则表达式，然后退出：
+
+.. code-block:: bash
+
+    printf 'expect ALL TESTS PASSED\n' | idf.py monitor > test.log
+
+作为最后一条命令，``expect`` 会在匹配到该正则表达式后让监视器退出。未指定 ``--timeout`` 时，它将一直等待。
+
+最多等待十秒以匹配某个正则表达式：
+
+.. code-block:: bash
+
+    printf 'reset\nexpect --timeout 10 Hello world!\n' | idf.py monitor > boot.log
+
+若未匹配到该正则表达式，则不会执行后续命令。IDF 监视器在退出前会清空待处理的输出并刷新日志。
+
+复位设备并捕获十秒的启动输出：
+
+.. code-block:: bash
+
+    printf 'reset\nsleep 10\n' | idf.py monitor > boot.log
+
+无需 ``exit`` 命令，因为 EOF 会结束非空的命令流。
+
+驱动控制台应用程序：
+
+.. code-block:: bash
+
+    idf.py monitor <<'EOF'
+    reset
+    expect esp>
+    send free
+    expect \d+
+    exit
+    EOF
+
+以仅监视模式运行：
+
+.. code-block:: bash
+
+    idf.py monitor < /dev/null
+
+
+.. note::
+
+    由于命令流模式没有终端，无法从目标的 GDB stub 启动交互式 GDB 会话。
+
+ESP-IDF 的 MCP ``monitor device`` 工具会使用此模式。参见 :ref:`mcp-monitor-device`。
+
+
 .. _configuration-file:
 
 配置文件
@@ -428,5 +546,5 @@ IDF 监视器已知问题
 如果在使用 IDF 监视器过程中遇到问题，可以访问 `IDF 监视器的 GitHub 仓库 <https://github.com/espressif/esp-idf-monitor/issues>`_ 查看已知问题及其当前状态。如果遇到的问题没有相关记录，可以提交一个新的问题报告。
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
-.. _IDF 监视器文档: https://github.com/espressif/esp-idf-monitor/blob/v1.5.0/README.md#documentation
+.. _IDF 监视器文档: https://github.com/espressif/esp-idf-monitor/blob/v1.10.0/README.md#documentation
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/

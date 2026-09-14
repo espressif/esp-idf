@@ -660,8 +660,8 @@ def _log_path_from(result: str) -> Path:
 class TestMonitorDevice:
     """Covers what the MCP tool itself is responsible for: turning a script and
     exit code into a status message, wiring subprocess/log-file plumbing, and
-    forwarding its own arguments. Behaviour of esp-idf-monitor's non-interactive
-    command mode (e.g. what makes an 'expect --timeout' line valid) is exercised
+    forwarding its own arguments. Behaviour of esp-idf-monitor's command-stream
+    mode (e.g. what makes an 'expect --timeout' line valid) is exercised
     by esp-idf-monitor's own tests, not duplicated here."""
 
     @pytest.mark.parametrize(
