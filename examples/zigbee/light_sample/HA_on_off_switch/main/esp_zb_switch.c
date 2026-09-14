@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier:  LicenseRef-Included
+ * SPDX-License-Identifier: LicenseRef-Included
  *
  * Zigbee HA_on_off_switch Example
  *
@@ -12,189 +12,272 @@
  * CONDITIONS OF ANY KIND, either express or implied.
  */
 
-#include "string.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_err.h"
 #include "esp_check.h"
+#include "esp_err.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "ha/esp_zigbee_ha_standard.h"
-#include "zcl_utility.h"
+
+#include "switch_driver.h"
+#include "alarm_timer.h"
+
+#include "esp_zigbee.h"
+#include "ezbee/zha.h"
+
 #include "esp_zb_switch.h"
 
-#if defined ZB_ED_ROLE
-#error Define ZB_COORDINATOR_ROLE in idf.py menuconfig to compile light switch source code.
-#endif
-typedef struct light_bulb_device_params_s {
-    esp_zb_ieee_addr_t ieee_addr;
-    uint8_t  endpoint;
-    uint16_t short_addr;
-} light_bulb_device_params_t;
+static const char *TAG = "ON_OFF_SWITCH";
 
-static switch_func_pair_t button_func_pair[] = {
-    {GPIO_INPUT_IO_TOGGLE_SWITCH, SWITCH_ONOFF_TOGGLE_CONTROL}
-};
-
-static const char *TAG = "ESP_ZB_ON_OFF_SWITCH";
-
-static void zb_buttons_handler(switch_func_pair_t *button_func_pair)
+static void button_event_handler(switch_driver_handle_t handle)
 {
-    if (button_func_pair->func == SWITCH_ONOFF_TOGGLE_CONTROL) {
-        /* implemented light switch toggle functionality */
-        esp_zb_zcl_on_off_cmd_t cmd_req;
-        cmd_req.zcl_basic_cmd.src_endpoint = HA_ONOFF_SWITCH_ENDPOINT;
-        cmd_req.address_mode = ESP_ZB_APS_ADDR_MODE_DST_ADDR_ENDP_NOT_PRESENT;
-        cmd_req.on_off_cmd_id = ESP_ZB_ZCL_CMD_ON_OFF_TOGGLE_ID;
-        esp_zb_lock_acquire(portMAX_DELAY);
-        esp_zb_zcl_on_off_cmd_req(&cmd_req);
-        esp_zb_lock_release();
-        ESP_EARLY_LOGI(TAG, "Send 'on_off toggle' command");
-    }
+    ESP_RETURN_ON_FALSE(handle != SWITCH_INV_HANDLE, , TAG, "Invalid switch handle");
+
+    ezb_zcl_on_off_cmd_t cmd_req = {
+        .cmd_ctrl =
+            {
+                .dst_addr.addr_mode = EZB_ADDR_MODE_NONE,
+                .src_ep             = ESP_ZIGBEE_HA_ON_OFF_SWITCH_EP_ID,
+            },
+    };
+    esp_zigbee_lock_acquire(portMAX_DELAY);
+    ezb_zcl_on_off_toggle_cmd_req(&cmd_req);
+    esp_zigbee_lock_release();
+    ESP_EARLY_LOGI(TAG, "Sent ZCL On/Off Toggle request");
 }
 
 static esp_err_t deferred_driver_init(void)
 {
-    ESP_RETURN_ON_FALSE(switch_driver_init(button_func_pair, PAIR_SIZE(button_func_pair), zb_buttons_handler), ESP_FAIL, TAG,
-                        "Failed to initialize switch driver");
+    static bool is_inited = false;
+
+    ESP_RETURN_ON_FALSE(!is_inited, ESP_OK, TAG, "Deferred driver already initialized");
+
+    switch_driver_config_t config = {
+        .gpio_num = CONFIG_GPIO_BOOT_ON_DEVKIT,
+        .event_cb = button_event_handler,
+    };
+    switch_driver_handle_t handle = switch_driver_init(&config);
+
+    is_inited = handle == SWITCH_INV_HANDLE ? false : true;
+
+    return is_inited ? ESP_OK : ESP_FAIL;
+}
+
+static void zdo_bind_ha_light_device_result(const ezb_zdp_bind_req_result_t *result, void *user_ctx)
+{
+    assert(result);
+    if (result->error == EZB_ERR_NONE) {
+        if (result->rsp && result->rsp->status == EZB_ZDP_STATUS_SUCCESS) {
+            ESP_LOGI(TAG, "Bound HA light device successfully");
+        } else {
+            ESP_LOGE(TAG, "Failed to bind HA light device with status (0x%02x)", result->rsp->status);
+        }
+    } else {
+        ESP_LOGE(TAG, "Failed to bind HA light device with error (0x%04x)", result->error);
+    }
+}
+
+static ezb_err_t zdo_bind_ha_light_device(uint16_t dst_short_addr, uint8_t dst_ep)
+{
+    ezb_err_t          ret      = EZB_ERR_FAIL;
+    ezb_zdo_bind_req_t bind_req = {
+        .dst_nwk_addr = ezb_nwk_get_short_address(),
+        .field =
+            {
+                .src_ep        = ESP_ZIGBEE_HA_ON_OFF_SWITCH_EP_ID,
+                .cluster_id    = EZB_ZCL_CLUSTER_ID_ON_OFF,
+                .dst_addr_mode = EZB_ADDR_MODE_EXT,
+                .dst_ep        = dst_ep,
+            },
+        .cb       = zdo_bind_ha_light_device_result,
+        .user_ctx = NULL,
+    };
+    ezb_nwk_get_extended_address(&bind_req.field.src_addr);
+
+    ESP_RETURN_ON_ERROR(ezb_address_extended_by_short(dst_short_addr, &bind_req.field.dst_addr.extended_addr), TAG,
+                        "Failed to get extended address for destination device(0x%04hx)", dst_short_addr);
+
+    ret = ezb_zdo_bind_req(&bind_req);
+    if (ret == EZB_ERR_NONE) {
+        ESP_LOGI(TAG, "Attempt to bind HA light device (short address: 0x%04hx)", dst_short_addr);
+    } else {
+        ESP_LOGE(TAG, "Failed to bind HA light device (short address: 0x%04hx) with error(0x%04x)", dst_short_addr, ret);
+    }
+    return ret;
+}
+
+static void zdo_find_ha_light_device_result(const ezb_zdo_match_desc_req_result_t *result, void *user_ctx)
+{
+    assert(result);
+    if (result->error == EZB_ERR_NONE) {
+        if (result->rsp && result->rsp->status == EZB_ZDP_STATUS_SUCCESS && result->rsp->match_length > 0 &&
+            result->rsp->match_list) {
+            for (size_t i = 0; i < result->rsp->match_length; i++) {
+                zdo_bind_ha_light_device(result->rsp->nwk_addr_of_interest, result->rsp->match_list[i]);
+            }
+        }
+    } else {
+        ESP_LOGE(TAG, "Failed to find HA light device in the network with error(0x%04x)", result->error);
+    }
+}
+
+static ezb_err_t zdo_find_ha_light_device(void)
+{
+    ezb_err_t ret             = EZB_ERR_FAIL;
+    uint16_t  cluster_list[1] = {EZB_ZCL_CLUSTER_ID_ON_OFF};
+
+    ezb_zdo_match_desc_req_t req = {
+        .dst_nwk_addr = 0xFFFD,
+        .field =
+            {
+                .nwk_addr_of_interest = 0xFFFD,
+                .profile_id           = EZB_AF_HA_PROFILE_ID,
+                .num_in_clusters      = 1,
+                .num_out_clusters     = 0,
+                .cluster_list         = cluster_list,
+            },
+        .cb       = zdo_find_ha_light_device_result,
+        .user_ctx = NULL,
+    };
+    ret = ezb_zdo_match_desc_req(&req);
+    if (ret == EZB_ERR_NONE) {
+        ESP_LOGI(TAG, "Attempt to find HA light device");
+    } else {
+        ESP_LOGE(TAG, "Failed to find HA light device with error(0x%04x)", ret);
+    }
+    return ret;
+}
+
+static void esp_zigbee_alarm_bdb_commissioning(alarm_timer_arg_t arg)
+{
+    esp_zigbee_lock_acquire(portMAX_DELAY);
+    (void)ezb_bdb_start_top_level_commissioning(arg);
+    esp_zigbee_lock_release();
+}
+
+static bool esp_zigbee_app_signal_handler(const ezb_app_signal_t *app_signal)
+{
+    ezb_app_signal_type_t signal_type = ezb_app_signal_get_type(app_signal);
+
+    switch (signal_type) {
+    case EZB_ZDO_SIGNAL_SKIP_STARTUP:
+        ESP_LOGI(TAG, "Initialize Zigbee stack");
+        ezb_bdb_start_top_level_commissioning(EZB_BDB_MODE_INITIALIZATION);
+        break;
+    case EZB_BDB_SIGNAL_DEVICE_FIRST_START:
+    case EZB_BDB_SIGNAL_DEVICE_REBOOT: {
+        ezb_bdb_comm_status_t status = *((ezb_bdb_comm_status_t *)ezb_app_signal_get_params(app_signal));
+        if (status == EZB_BDB_STATUS_SUCCESS) {
+            ESP_LOGI(TAG, "Deferred driver initialization %s", deferred_driver_init() ? "failed" : "successful");
+            ESP_LOGI(TAG, "Device started up in%s factory-reset mode", ezb_bdb_is_factory_new() ? "" : " non");
+            if (ezb_bdb_is_factory_new()) {
+                ezb_bdb_start_top_level_commissioning(EZB_BDB_MODE_NETWORK_STEERING);
+            } else {
+                ESP_LOGI(TAG, "Device reboot");
+            }
+        } else {
+            ESP_LOGW(TAG, "The %s failed with status(0x%02x), please retry", ezb_app_signal_to_string(signal_type), status);
+            alarm_timer_schedule(esp_zigbee_alarm_bdb_commissioning, EZB_BDB_MODE_INITIALIZATION, 1000);
+        }
+    } break;
+    case EZB_BDB_SIGNAL_STEERING: {
+        ezb_bdb_comm_status_t status = *((ezb_bdb_comm_status_t *)ezb_app_signal_get_params(app_signal));
+        if (status == EZB_BDB_STATUS_SUCCESS) {
+            ezb_extpanid_t extended_pan_id;
+            ezb_nwk_get_extended_panid(&extended_pan_id);
+            ESP_LOGI(TAG, "Joined network successfully: PAN ID(0x%04hx, EXT: 0x%llx), Channel(%d), Short Address(0x%04hx)",
+                     ezb_nwk_get_panid(), extended_pan_id.u64, ezb_nwk_get_current_channel(), ezb_nwk_get_short_address());
+            zdo_find_ha_light_device();
+        } else {
+            ESP_LOGW(TAG, "Failed to join network with status(0x%02x)", status);
+            alarm_timer_schedule(esp_zigbee_alarm_bdb_commissioning, EZB_BDB_MODE_NETWORK_STEERING, 1000);
+        }
+    } break;
+    case EZB_ZDO_SIGNAL_LEAVE: {
+        const ezb_zdo_signal_leave_params_t *leave_params = ezb_app_signal_get_params(app_signal);
+        ESP_LOGI(TAG, "Left network successfully with type(0x%02x)", leave_params->leave_type);
+    } break;
+    case EZB_NWK_SIGNAL_PERMIT_JOIN_STATUS: {
+        uint8_t duration = *(uint8_t *)ezb_app_signal_get_params(app_signal);
+        if (duration) {
+            ESP_LOGI(TAG, "Network(0x%04hx) is open for %d seconds", ezb_nwk_get_panid(), duration);
+        } else {
+            ESP_LOGW(TAG, "Network(0x%04hx) closed, devices joining not allowed.", ezb_nwk_get_panid());
+        }
+    } break;
+    case EZB_ZDO_SIGNAL_LEAVE_INDICATION: {
+        const ezb_zdo_signal_leave_indication_params_t *leave_ind_params = ezb_app_signal_get_params(app_signal);
+        ESP_LOGI(TAG, "Zigbee Node(0x%04hx) is leaving network", leave_ind_params->short_addr);
+    } break;
+    default:
+        ESP_LOGI(TAG, "Zigbee APP Signal: %s(type: 0x%02x)", ezb_app_signal_to_string(signal_type), signal_type);
+        break;
+    }
+    return true;
+}
+
+static void esp_zigbee_zcl_core_action_handler(ezb_zcl_core_action_callback_id_t callback_id, void *message)
+{
+    switch (callback_id) {
+    case EZB_ZCL_CORE_DEFAULT_RSP_CB_ID: {
+        ezb_zcl_cmd_default_rsp_message_t *default_rsp = (ezb_zcl_cmd_default_rsp_message_t *)message;
+        ESP_LOGI(TAG, "Received ZCL Default Response with status(0x%02x)", default_rsp->in.status_code);
+    } break;
+    default:
+        ESP_LOGW(TAG, "ZCL Core Action: ID(0x%04lx)", callback_id);
+        break;
+    }
+}
+
+esp_err_t esp_zigbee_create_zha_on_off_switch_device(void)
+{
+    ezb_af_device_desc_t           dev_desc   = ezb_af_create_device_desc();
+    ezb_zha_on_off_switch_config_t switch_cfg = EZB_ZHA_ON_OFF_SWITCH_CONFIG();
+    ezb_af_ep_desc_t               ep_desc    = ezb_zha_create_on_off_switch(ESP_ZIGBEE_HA_ON_OFF_SWITCH_EP_ID, &switch_cfg);
+    ezb_zcl_cluster_desc_t         basic_desc = {0};
+
+    basic_desc = ezb_af_endpoint_get_cluster_desc(ep_desc, EZB_ZCL_CLUSTER_ID_BASIC, EZB_ZCL_CLUSTER_SERVER);
+    ezb_zcl_basic_cluster_desc_add_attr(basic_desc, EZB_ZCL_ATTR_BASIC_MANUFACTURER_NAME_ID, (void *)ESP_MANUFACTURER_NAME);
+    ezb_zcl_basic_cluster_desc_add_attr(basic_desc, EZB_ZCL_ATTR_BASIC_MODEL_IDENTIFIER_ID, (void *)ESP_MODEL_IDENTIFIER);
+
+    ESP_ERROR_CHECK(ezb_af_device_add_endpoint_desc(dev_desc, ep_desc));
+    ESP_ERROR_CHECK(ezb_af_device_desc_register(dev_desc));
+
+    ezb_zcl_core_action_handler_register(esp_zigbee_zcl_core_action_handler);
+
     return ESP_OK;
 }
 
-static void bdb_start_top_level_commissioning_cb(uint8_t mode_mask)
+esp_err_t esp_zigbee_setup_commissioning(void)
 {
-    ESP_RETURN_ON_FALSE(esp_zb_bdb_start_top_level_commissioning(mode_mask) == ESP_OK, , TAG, "Failed to start Zigbee bdb commissioning");
+    ezb_aps_secur_enable_distributed_security(false);
+    ESP_ERROR_CHECK(ezb_bdb_set_primary_channel_set(ESP_ZIGBEE_PRIMARY_CHANNEL_MASK));
+    ESP_ERROR_CHECK(ezb_bdb_set_secondary_channel_set(ESP_ZIGBEE_SECONDARY_CHANNEL_MASK));
+    ESP_ERROR_CHECK(ezb_app_signal_add_handler(esp_zigbee_app_signal_handler));
+
+    return ESP_OK;
 }
 
-static void bind_cb(esp_zb_zdp_status_t zdo_status, void *user_ctx)
+static void esp_zigbee_stack_main_task(void *pvParameters)
 {
-    if (zdo_status == ESP_ZB_ZDP_STATUS_SUCCESS) {
-        ESP_LOGI(TAG, "Bound successfully!");
-        if (user_ctx) {
-            light_bulb_device_params_t *light = (light_bulb_device_params_t *)user_ctx;
-            ESP_LOGI(TAG, "The light originating from address(0x%x) on endpoint(%d)", light->short_addr, light->endpoint);
-            free(light);
-        }
-    }
-}
+    esp_zigbee_config_t config = ESP_ZIGBEE_DEFAULT_CONFIG();
 
-static void user_find_cb(esp_zb_zdp_status_t zdo_status, uint16_t addr, uint8_t endpoint, void *user_ctx)
-{
-    if (zdo_status == ESP_ZB_ZDP_STATUS_SUCCESS) {
-        ESP_LOGI(TAG, "Found light");
-        esp_zb_zdo_bind_req_param_t bind_req;
-        light_bulb_device_params_t *light = (light_bulb_device_params_t *)malloc(sizeof(light_bulb_device_params_t));
-        light->endpoint = endpoint;
-        light->short_addr = addr;
-        esp_zb_ieee_address_by_short(light->short_addr, light->ieee_addr);
-        esp_zb_get_long_address(bind_req.src_address);
-        bind_req.src_endp = HA_ONOFF_SWITCH_ENDPOINT;
-        bind_req.cluster_id = ESP_ZB_ZCL_CLUSTER_ID_ON_OFF;
-        bind_req.dst_addr_mode = ESP_ZB_ZDO_BIND_DST_ADDR_MODE_64_BIT_EXTENDED;
-        memcpy(bind_req.dst_address_u.addr_long, light->ieee_addr, sizeof(esp_zb_ieee_addr_t));
-        bind_req.dst_endp = endpoint;
-        bind_req.req_dst_addr = esp_zb_get_short_address();
-        ESP_LOGI(TAG, "Try to bind On/Off");
-        esp_zb_zdo_device_bind_req(&bind_req, bind_cb, (void *)light);
-    }
-}
+    ESP_ERROR_CHECK(esp_zigbee_init(&config));
 
-void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
-{
-    uint32_t *p_sg_p       = signal_struct->p_app_signal;
-    esp_err_t err_status = signal_struct->esp_err_status;
-    esp_zb_app_signal_type_t sig_type = *p_sg_p;
-    esp_zb_zdo_signal_device_annce_params_t *dev_annce_params = NULL;
-    switch (sig_type) {
-    case ESP_ZB_ZDO_SIGNAL_SKIP_STARTUP:
-        ESP_LOGI(TAG, "Initialize Zigbee stack");
-        esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_INITIALIZATION);
-        break;
-    case ESP_ZB_BDB_SIGNAL_DEVICE_FIRST_START:
-    case ESP_ZB_BDB_SIGNAL_DEVICE_REBOOT:
-        if (err_status == ESP_OK) {
-            ESP_LOGI(TAG, "Deferred driver initialization %s", deferred_driver_init() ? "failed" : "successful");
-            ESP_LOGI(TAG, "Device started up in %s factory-reset mode", esp_zb_bdb_is_factory_new() ? "" : "non");
-            if (esp_zb_bdb_is_factory_new()) {
-                ESP_LOGI(TAG, "Start network formation");
-                esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_FORMATION);
-            } else {
-                esp_zb_bdb_open_network(180);
-                ESP_LOGI(TAG, "Device rebooted");
-            }
-        } else {
-            ESP_LOGE(TAG, "Failed to initialize Zigbee stack (status: %s)", esp_err_to_name(err_status));
-        }
-        break;
-    case ESP_ZB_BDB_SIGNAL_FORMATION:
-        if (err_status == ESP_OK) {
-            esp_zb_ieee_addr_t extended_pan_id;
-            esp_zb_get_extended_pan_id(extended_pan_id);
-            ESP_LOGI(TAG, "Formed network successfully (Extended PAN ID: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx, Channel:%d, Short Address: 0x%04hx)",
-                     extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
-                     extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
-                     esp_zb_get_pan_id(), esp_zb_get_current_channel(), esp_zb_get_short_address());
-            esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
-        } else {
-            ESP_LOGI(TAG, "Restart network formation (status: %s)", esp_err_to_name(err_status));
-            esp_zb_scheduler_alarm((esp_zb_callback_t)bdb_start_top_level_commissioning_cb, ESP_ZB_BDB_MODE_NETWORK_FORMATION, 1000);
-        }
-        break;
-    case ESP_ZB_BDB_SIGNAL_STEERING:
-        if (err_status == ESP_OK) {
-            ESP_LOGI(TAG, "Network steering started");
-        }
-        break;
-    case ESP_ZB_ZDO_SIGNAL_DEVICE_ANNCE:
-        dev_annce_params = (esp_zb_zdo_signal_device_annce_params_t *)esp_zb_app_signal_get_params(p_sg_p);
-        ESP_LOGI(TAG, "New device commissioned or rejoined (short: 0x%04hx)", dev_annce_params->device_short_addr);
-        esp_zb_zdo_match_desc_req_param_t  cmd_req;
-        cmd_req.dst_nwk_addr = dev_annce_params->device_short_addr;
-        cmd_req.addr_of_interest = dev_annce_params->device_short_addr;
-        esp_zb_zdo_find_on_off_light(&cmd_req, user_find_cb, NULL);
-        break;
-    case ESP_ZB_NWK_SIGNAL_PERMIT_JOIN_STATUS:
-        if (err_status == ESP_OK) {
-            if (*(uint8_t *)esp_zb_app_signal_get_params(p_sg_p)) {
-                ESP_LOGI(TAG, "Network(0x%04hx) is open for %d seconds", esp_zb_get_pan_id(), *(uint8_t *)esp_zb_app_signal_get_params(p_sg_p));
-            } else {
-                ESP_LOGW(TAG, "Network(0x%04hx) closed, devices joining not allowed.", esp_zb_get_pan_id());
-            }
-        }
-        break;
-    default:
-        ESP_LOGI(TAG, "ZDO signal: %s (0x%x), status: %s", esp_zb_zdo_signal_to_string(sig_type), sig_type,
-                 esp_err_to_name(err_status));
-        break;
-    }
-}
+    ESP_ERROR_CHECK(esp_zigbee_setup_commissioning());
 
-static void esp_zb_task(void *pvParameters)
-{
-    /* initialize Zigbee stack */
-    esp_zb_cfg_t zb_nwk_cfg = ESP_ZB_ZC_CONFIG();
-    esp_zb_init(&zb_nwk_cfg);
-    esp_zb_on_off_switch_cfg_t switch_cfg = ESP_ZB_DEFAULT_ON_OFF_SWITCH_CONFIG();
-    esp_zb_ep_list_t *esp_zb_on_off_switch_ep = esp_zb_on_off_switch_ep_create(HA_ONOFF_SWITCH_ENDPOINT, &switch_cfg);
-    zcl_basic_manufacturer_info_t info = {
-        .manufacturer_name = ESP_MANUFACTURER_NAME,
-        .model_identifier = ESP_MODEL_IDENTIFIER,
-    };
+    ESP_ERROR_CHECK(esp_zigbee_create_zha_on_off_switch_device());
 
-    esp_zcl_utility_add_ep_basic_manufacturer_info(esp_zb_on_off_switch_ep, HA_ONOFF_SWITCH_ENDPOINT, &info);
-    esp_zb_device_register(esp_zb_on_off_switch_ep);
-    esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
-    ESP_ERROR_CHECK(esp_zb_start(false));
-    esp_zb_stack_main_loop();
+    ESP_ERROR_CHECK(esp_zigbee_start(false));
+
+    esp_zigbee_launch_mainloop();
+
+    esp_zigbee_deinit();
+
+    vTaskDelete(NULL);
 }
 
 void app_main(void)
 {
-    esp_zb_platform_config_t config = {
-        .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
-        .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
-    };
     ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_zb_platform_config(&config));
-
-    xTaskCreate(esp_zb_task, "Zigbee_main", 4096, NULL, 5, NULL);
+    ESP_LOGI(TAG, "Start ESP Zigbee Stack");
+    xTaskCreate(esp_zigbee_stack_main_task, "Zigbee_main", 4096, NULL, 5, NULL);
 }

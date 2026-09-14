@@ -1,0 +1,12 @@
+menu "Zigbee Example Configuration"
+
+    config ZB_EXAMPLE_PRIMARY_CHANNEL
+        int "Zigbee primary channel"
+        range 11 26
+        default 13
+
+    config ZB_EXAMPLE_SECONDARY_CHANNEL_MASK
+        hex "Zigbee secondary channel mask"
+        default 0x07FFF800
+
+endmenu
