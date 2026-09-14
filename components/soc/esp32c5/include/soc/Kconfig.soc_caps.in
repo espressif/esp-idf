@@ -1707,6 +1707,10 @@ config SOC_PM_SUPPORT_RTC_PERIPH_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+    bool
+    default y
+
 config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default y
@@ -1739,10 +1743,6 @@ config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool
     default y
 
-config SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
-    int
-    default 4
-
 config SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY
     bool
     default y
@@ -1751,13 +1751,17 @@ config SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
     bool
     default y
 
+config SOC_PM_PAU_REGDMA_LINK_IDX_PHY
+    int
+    default 4
+
 config SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED
     bool
     default y
 
 config SOC_PM_RETENTION_MODULE_NUM
     int
-    default 32
+    default 40
 
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool

@@ -37,8 +37,8 @@ typedef struct {
  */
 void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_addr_t *link_addr);
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
-#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+#if SOC_PM_PAU_REGDMA_LINK_MODEM
 /**
  * @brief Set regdma modem link address
  *
@@ -49,12 +49,20 @@ void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_
 #endif
 
 /**
+ * @brief Wait until regdma completes
+ *
+ * @param hal           regdma hal context
+ */
+void pau_hal_regdma_wait_done(pau_hal_context_t *hal);
+
+/**
  * @brief Start transmission on regdma modem link
  *
  * @param hal           regdma hal context
  * @param backup_or_restore        false:restore true:backup
+ * @param blocking                 software wait till regdma completes
  */
-void pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore);
+void pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore, bool blocking);
 
 /**
  * @brief Stop transmission on regdma modem link
@@ -69,8 +77,9 @@ void pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal);
  *
  * @param hal           regdma hal context
  * @param backup_or_restore        false: restore, true: backup
+ * @param blocking                 software wait till regdma completes
  */
-void pau_hal_start_regdma_wifimac_link(pau_hal_context_t *hal, bool backup_or_restore);
+void pau_hal_start_regdma_wifimac_link(pau_hal_context_t *hal, bool backup_or_restore, bool blocking);
 
 /**
  * @brief Stop transmission on regdma WiFi MAC SEL link
@@ -79,6 +88,33 @@ void pau_hal_start_regdma_wifimac_link(pau_hal_context_t *hal, bool backup_or_re
  */
 void pau_hal_stop_regdma_wifimac_link(pau_hal_context_t *hal);
 #endif
+/**
+ * @brief Enable regdma done interrupt
+ *
+ * @param hal            regdma hal context
+ */
+#define pau_hal_regdma_done_int_enable(hal)    pau_ll_set_regdma_backup_done_intr_enable((hal)->dev)
+
+/**
+ * @brief Disable regdma done interrupt
+ *
+ * @param hal            regdma hal context
+ */
+#define pau_hal_regdma_done_int_disable(hal)    pau_ll_set_regdma_backup_done_intr_disable((hal)->dev)
+
+/**
+ * @brief Get regdma done interrupt status
+ *
+ * @param hal            regdma hal context
+ */
+bool pau_hal_get_regdma_done_status(pau_hal_context_t *hal);
+
+/**
+ * @brief Clear regdma done interrupt status
+ *
+ * @param hal            regdma hal context
+ */
+#define pau_hal_clear_regdma_backup_done_intr_state(hal)    pau_ll_clear_regdma_backup_done_intr_state((hal)->dev)
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
