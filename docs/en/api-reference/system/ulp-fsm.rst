@@ -75,7 +75,7 @@ The additional PREFIX argument can be a C style prefix (like ``ulp2_``) or a C++
 
     2. **Run preprocessed assembly sources through the assembler.** This produces object (foo.ulp.o) and listing (foo.ulp.lst) files. Listing files are generated for debugging purposes and are not used at later stages of the build process.
 
-    3. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
+    3. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/subproject/components/ulp_fsm/ld`` directory.
 
     4. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file (``ulp_app_name.map``) generated at this stage may be useful for debugging purposes.
 

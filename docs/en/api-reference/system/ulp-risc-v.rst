@@ -116,7 +116,7 @@ During the build process, the following steps are taken to build ULP program:
 
     1. **Run each source file through the C compiler and assembler.** This step generates the object files ``.obj.c`` or ``.obj.S`` in the component build directory depending on the source file processed.
 
-    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
+    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/subproject/components/ulp_riscv/ld`` directory.
 
     3. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file ``ulp_app_name.map`` generated at this stage may be useful for debugging purposes.
 

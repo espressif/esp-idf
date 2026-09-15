@@ -1,3 +1,8 @@
+# The directory of this file, captured while it is being processed:
+# CMAKE_CURRENT_LIST_DIR inside a function resolves at call time, which is the
+# caller's directory, not this one.
+set(__ULP_SUBPROJECT_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
 macro(ulp_detect_build_type)
     # Logic to determine ULP type and set reusable flags
     set(BUILD_RISCV OFF)
@@ -49,7 +54,7 @@ function(ulp_add_build_binary_targets ulp_app_name)
         set(ULP_BASE_ADDR "0x50000000")
     endif()
 
-    set(ULP_MAP_GEN ${PYTHON} ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
+    set(ULP_MAP_GEN ${PYTHON} ${__ULP_SUBPROJECT_DIR}/esp32ulp_mapgen.py)
 
     # Dump the list of global symbols in a convenient format
     add_custom_command(OUTPUT ${ulp_app_name}.sym

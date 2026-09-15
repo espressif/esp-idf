@@ -80,7 +80,7 @@ r_type_insn(0b0000001, 0, regnum_ ## _rs, 0b010, regnum_ ## _qd, 0b0001011)
 
 /**
  * Instruction: retirq
- * Description: This instruction copies the value of Q0 to CPU PC, and renables interrupts
+ * Description: This instruction copies the value of Q0 to CPU PC, and re-enables interrupts
  */
 #define retirq_insn() \
 r_type_insn(0b0000010, 0, 0, 0b000, 0, 0b0001011)

@@ -415,7 +415,7 @@
 
     .. only:: SOC_RISCV_COPROC_SUPPORTED
 
-        若需要在睡眠过程中进行读数、配置等操作，可通过运行在 :doc:`超低功耗协处理器 ULP <../system/ulp>` 上的触摸传感器驱动 ``components/ulp/ulp_riscv/ulp_core/include/ulp_riscv_touch_ulp_core.h`` 实现。
+        若需要在睡眠过程中进行读数、配置等操作，可通过运行在 :doc:`超低功耗协处理器 ULP <../system/ulp>` 上的触摸传感器驱动 ``components/ulp/subproject/components/ulp_riscv/include/ulp_riscv_touch_ulp_core.h`` 实现。
 
     .. list::
 

@@ -1,5 +1,5 @@
 # This is the CMake v1 (legacy) ULP child entry point, used by ulp_embed_binary.
-# CMake v2 full-subproject builds include components/ulp/cmake/ulp_project.cmake
+# CMake v2 full-subproject builds include components/ulp/subproject/ulp_project.cmake
 # instead.
 #
 # Legacy ULP child projects are plain CMake projects, so the parent-provided
@@ -103,11 +103,11 @@ function(ulp_apply_default_sources ulp_app_name)
     # replaces the layout, swapped in by the wrapper. This is supported for the
     # LP-core type only.
     if(BUILD_RISCV)
-        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld.in)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ld/ulp_riscv.ld.in)
     elseif(BUILD_LP_CORE)
-        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/lp_core_riscv.ld.in)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/subproject/components/lp_core/ld/lp_core_riscv.ld.in)
     elseif(BUILD_FSM)
-        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld.in)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/subproject/components/ulp_fsm/ld/ulp_fsm.ld.in)
     else()
         message(FATAL_ERROR "Unable to determine ULP type. ")
     endif()
@@ -143,24 +143,27 @@ function(ulp_apply_default_sources ulp_app_name)
     if(BUILD_RISCV)
         #risc-v ulp uses extra files for building:
         list(APPEND ULP_S_SOURCES
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_vectors.S"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/start.S"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_lock.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_uart.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_print.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_i2c.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_touch.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_gpio.c"
-            "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_interrupt.c")
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_vectors.S"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/start.S"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_adc.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_lock.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_uart.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_print.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_i2c.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_utils.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_touch.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_gpio.c"
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ulp_riscv_interrupt.c")
 
         target_sources(${ulp_app_name} PRIVATE ${ULP_S_SOURCES})
         #Makes the csr utillies for riscv visible:
-        target_include_directories(${ulp_app_name} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include"
-                                                        "${IDF_PATH}/components/ulp/ulp_riscv/shared/include"
-                                                        "${IDF_PATH}/components/riscv/include")
-        target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.peripherals.ld)
+        target_include_directories(${ulp_app_name} PRIVATE
+            "${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/include"
+            "${IDF_PATH}/components/ulp/ulp_riscv/shared/include"
+            "${IDF_PATH}/components/riscv/include")
+        target_link_options(${ulp_app_name}
+            PRIVATE SHELL:-T
+            ${IDF_PATH}/components/ulp/subproject/components/ulp_riscv/ld/${IDF_TARGET}.peripherals.ld)
         target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
         target_compile_definitions(${ulp_app_name} PRIVATE ULP_RISCV_REGISTER_OPS)
 
@@ -191,31 +194,31 @@ function(ulp_apply_default_sources ulp_app_name)
 
     elseif(BUILD_LP_CORE)
         list(APPEND ULP_S_SOURCES
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/port/${IDF_TARGET}/vector_table.S"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/start.S"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/vector.S"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/port/${IDF_TARGET}/vector_table.S"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_memory_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_pmp.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_panic.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_interrupt.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_ubsan.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_mailbox.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_startup.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_pmp.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_utils.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_print.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_panic.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_interrupt.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_ubsan.c"
+        "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_mailbox.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_adc_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_vad_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_critical_section_shared.c")
 
         if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
             list(APPEND ULP_S_SOURCES
-                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c")
+                "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_i2c.c")
         endif()
 
         if(CONFIG_SOC_LP_SPI_SUPPORTED)
             list(APPEND ULP_S_SOURCES
-                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c")
+                "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_spi.c")
         endif()
 
         if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
@@ -224,20 +227,20 @@ function(ulp_apply_default_sources ulp_app_name)
                 "${IDF_PATH}/components/esp_driver_uart/src/uart_wakeup.c"
                 "${IDF_PATH}/components/esp_hal_uart/uart_hal_iram.c"
                 "${IDF_PATH}/components/esp_hal_uart/uart_hal.c"
-                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_uart.c")
+                "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_uart.c")
         endif()
 
         if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
             list(APPEND ULP_S_SOURCES
-                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_hw.c")
+                "${IDF_PATH}/components/ulp/subproject/components/lp_core/port/lp_core_mailbox_impl_hw.c")
         else()
             list(APPEND ULP_S_SOURCES
-                "${IDF_PATH}/components/ulp/lp_core/lp_core/port/lp_core_mailbox_impl_sw.c")
+                "${IDF_PATH}/components/ulp/subproject/components/lp_core/port/lp_core_mailbox_impl_sw.c")
         endif()
 
         if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
             list(APPEND ULP_S_SOURCES
-                "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_touch.c")
+                "${IDF_PATH}/components/ulp/subproject/components/lp_core/lp_core_touch.c")
         endif()
 
         set(target_folder ${IDF_TARGET})
@@ -257,8 +260,9 @@ function(ulp_apply_default_sources ulp_app_name)
         endif()
 
         target_sources(${ulp_app_name} PRIVATE ${ULP_S_SOURCES})
-        target_include_directories(${ulp_app_name} PRIVATE "${IDF_PATH}/components/ulp/lp_core/lp_core/include"
-                                                        "${IDF_PATH}/components/ulp/lp_core/shared/include")
+        target_include_directories(${ulp_app_name} PRIVATE
+            "${IDF_PATH}/components/ulp/subproject/components/lp_core/include"
+            "${IDF_PATH}/components/ulp/lp_core/shared/include")
         target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
 
     endif()

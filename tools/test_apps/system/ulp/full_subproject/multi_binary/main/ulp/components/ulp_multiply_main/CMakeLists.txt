@@ -1,2 +1,1 @@
-idf_component_register(SRCS "main.c"
-                       REQUIRES ulp)
+idf_component_register(SRCS "main.c")
