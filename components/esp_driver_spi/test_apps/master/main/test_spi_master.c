@@ -732,14 +732,8 @@ TEST_CASE("spi data output inversion", "[spi]")
                  (unsigned)tx_data, (unsigned)rx_data, (unsigned)expected_rx_data);
         TEST_ASSERT_EQUAL_HEX8(expected_rx_data, rx_data);
 
-        /* Check the MOSI idle level after the transaction. */
-        bool expected_idle_level = buscfg.data_io_default_level;
-#if !SPI_LL_MOSI_FREE_LEVEL
-        if (invert) {
-            /* GPIO Matrix inversion also affects the idle level when the target cannot configure it. */
-            expected_idle_level = !buscfg.data_io_default_level;
-        }
-#endif
+        /* Check the MOSI idle level after the transaction. GPIO Matrix inversion affects the idle level also. */
+        bool expected_idle_level = invert ? !buscfg.data_io_default_level : buscfg.data_io_default_level;
 
         int actual_idle_level = gpio_get_level(PIN_NUM_MOSI);
         ESP_LOGI(TAG, "Idle: MOSI=%d (expected=%d)", actual_idle_level, expected_idle_level);
