@@ -5096,6 +5096,7 @@ void bt_mesh_lib_ext_func_dummy_call(void)
 
 int bt_mesh_v11_ext_init(void)
 {
+    bt_mesh_lib_log_info("%s", bt_mesh_v11_commit_str);
     return bt_mesh_v11_init(&bt_mesh_ext_cfg, sizeof(bt_mesh_ext_cfg),
                             &bt_mesh_ext_func, sizeof(bt_mesh_ext_func));
 }

@@ -26,6 +26,8 @@ int bt_mesh_v11_init(const void *cfg, size_t cfg_size,
 
 int bt_mesh_v11_deinit(void);
 
+extern const char bt_mesh_v11_commit_str[];
+
 #define BLE_MESH_TAG_SEND_SEGMENTED     BIT(0)
 #define BLE_MESH_TAG_IMMUTABLE_CRED     BIT(1)
 #define BLE_MESH_TAG_USE_DIRECTED       BIT(2)
