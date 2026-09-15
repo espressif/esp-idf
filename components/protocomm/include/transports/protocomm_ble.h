@@ -152,6 +152,31 @@ typedef struct protocomm_ble_config {
      * BLE characteristic notify flag
      */
     unsigned ble_notify:1;
+
+    /**
+     * Reuse a Bluetooth stack the application has already brought up.
+     *
+     * When 0 (default), protocomm_ble_start() initialises and enables the
+     * controller and Bluedroid itself, and fails if the application has
+     * already done so.
+     *
+     * When 1, the controller and Bluedroid must ALREADY BE ENABLED, and
+     * protocomm_ble_start() brings up neither -- so provisioning can start in
+     * a firmware that owns its own BLE. A half-started stack (controller
+     * merely inited, or Bluedroid inited but not enabled) is rejected with
+     * ESP_ERR_INVALID_STATE rather than completed: finishing it would leave
+     * protocomm owning layers it did not create, and an error unwind could
+     * not then restore the state the caller had.
+     *
+     * Scope: this covers starting only. It does not provide GAP/GATTS
+     * coexistence -- protocomm registers its own GAP and GATTS callbacks
+     * and Bluedroid keeps one of each, so the application's callbacks are
+     * replaced for the duration. protocomm_ble_stop() still disables and
+     * deinitialises the stack unless keep_ble_on is set, because nothing
+     * else unregisters the app id, the callbacks or the advertising that
+     * protocomm_ble_start() installs.
+     */
+    unsigned reuse_ble_stack:1;
 } protocomm_ble_config_t;
 
 /**
@@ -159,6 +184,10 @@ typedef struct protocomm_ble_config {
  *
  * Initialize and start required BLE service for provisioning. This includes
  * the initialization for characteristics/service for BLE.
+ *
+ * By default this brings the Bluetooth stack up and fails if the application
+ * already has. Set config->reuse_ble_stack to start on a stack the
+ * application owns; see that field for what it does and does not cover.
  *
  * @param[in] pc        Protocomm instance pointer obtained from protocomm_new()
  * @param[in] config    Pointer to config structure for initializing BLE
