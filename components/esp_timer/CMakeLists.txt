@@ -14,7 +14,6 @@ else()
     elseif(CONFIG_ESP_TIMER_IMPL_SYSTIMER)
         list(APPEND srcs "src/esp_timer_impl_systimer.c")
     endif()
-
     if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
         list(APPEND srcs "src/esp_timer_etm.c")
     endif()
@@ -22,7 +21,8 @@ else()
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
                            PRIV_REQUIRES esp_hal_timg esp_hal_systimer
-                           PRIV_INCLUDE_DIRS private_include)
+                           PRIV_INCLUDE_DIRS private_include
+                           LDFRAGMENTS linker.lf)
 
     # Forces the linker to include esp_timer_init.c
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_timer_init_include_func")
