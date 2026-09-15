@@ -577,7 +577,7 @@ uint8_t esp_ieee802154_get_recent_lqi(void);
  *
  * @return
  *      - ESP_OK on success.
- *      - ESP_ERR_INVALID_ARG if frame, key, or addr is NULL.
+ *      - ESP_ERR_INVALID_ARG if frame, key, or addr is NULL, or if the frame security payload offset is invalid.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uint8_t *addr);
