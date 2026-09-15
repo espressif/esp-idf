@@ -57,7 +57,7 @@ void pmu_sleep_enable_regdma_backup(void)
     pmu_hal_hp_set_sleep_active_backup_enable(PMU_instance()->hal);
 }
 
-void pmu_sleep_disable_regdma_backup(void)
+IRAM_ATTR void pmu_sleep_disable_regdma_backup(void)
 {
     assert(PMU_instance()->hal);
     pmu_hal_hp_set_sleep_active_backup_disable(PMU_instance()->hal);
