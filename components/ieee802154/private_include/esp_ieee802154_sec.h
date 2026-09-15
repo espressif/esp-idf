@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "esp_err.h"
 
 #define IEEE802154_SECURITY_ADDR_SIZE 8
 #define IEEE802154_SECURITY_KEY_SIZE  16
@@ -21,8 +22,12 @@ extern "C" {
  * @param[in]  key  The key using in the encryption process.
  * @param[in]  addr  The address using in the encryption process.
  *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG if the security payload offset cannot be parsed.
+ *
  */
-void ieee802154_transmit_security_config(uint8_t *frame, uint8_t *key, uint8_t *addr);
+esp_err_t ieee802154_transmit_security_config(uint8_t *frame, uint8_t *key, uint8_t *addr);
 
 /**
  * @brief  Clear the encryption enabled configuration.
