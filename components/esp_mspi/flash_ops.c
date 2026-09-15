@@ -99,6 +99,14 @@ const spi_flash_guard_funcs_t *IRAM_ATTR spi_flash_guard_get(void)
 
 #if CONFIG_SPI_FLASH_ROM_IMPL
 #include "esp_heap_caps.h"
+#if ESP_ROM_HAS_SPI_FLASH_MMAP
+#if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+#include "soc/mmu.h"
+#define ROM_MMAP_PAGE_NUM   (CACHE_DROM_MMU_MAX_END / sizeof(uint32_t))
+#else
+#define ROM_MMAP_PAGE_NUM   128
+#endif
+#endif
 
 void IRAM_ATTR *spi_flash_malloc_internal(size_t size)
 {
@@ -115,7 +123,7 @@ void IRAM_ATTR spi_flash_rom_impl_init(void)
     spi_flash_mmap_os_func_set(spi_flash_malloc_internal, heap_caps_free);
 
     extern esp_err_t spi_flash_mmap_page_num_init(uint32_t page_num);
-    spi_flash_mmap_page_num_init(128);
+    spi_flash_mmap_page_num_init(ROM_MMAP_PAGE_NUM);
 #endif // ESP_ROM_HAS_SPI_FLASH_MMAP
 }
 #endif
