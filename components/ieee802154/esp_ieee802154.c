@@ -42,10 +42,11 @@ esp_err_t esp_ieee802154_enable(void)
 
 esp_err_t esp_ieee802154_disable(void)
 {
+    esp_err_t err = ieee802154_mac_deinit();
     esp_btbb_disable();
     ieee802154_rf_disable();
     ieee802154_disable();
-    return ieee802154_mac_deinit();
+    return err;
 }
 
 int8_t esp_ieee802154_get_receive_sensitivity(void)
