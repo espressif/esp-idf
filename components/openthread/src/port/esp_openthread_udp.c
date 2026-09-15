@@ -101,7 +101,7 @@ static void udp_recv_task(void *ctx)
 {
     udp_recv_task_t *task = (udp_recv_task_t *)ctx;
 
-    otMessageInfo message_info;
+    otMessageInfo message_info = {0};
     otMessage *message = NULL;
     otMessageSettings msg_settings = { .mLinkSecurityEnabled = false, .mPriority = OT_MESSAGE_PRIORITY_NORMAL };
     struct pbuf *recv_buf = task->recv_buf;
@@ -112,6 +112,7 @@ static void udp_recv_task(void *ctx)
     memset(&message_info.mSockAddr, 0, sizeof(message_info.mSockAddr));
     message_info.mHopLimit = task->hop_limit;
     message_info.mPeerPort = task->port;
+    message_info.mIsHostInterface = task->is_host_interface;
 #if CONFIG_LWIP_IPV4
     if (task->addr.type == IPADDR_TYPE_V4) {
         ip4_2_ipv4_mapped_ipv6(ip_2_ip6(&task->addr), ip_2_ip4(&task->addr));
