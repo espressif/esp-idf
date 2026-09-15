@@ -119,7 +119,7 @@ esp_err_t sleep_phy_link_init(void **link_context)
     wifi_modem_config[24].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
 
     void *link = NULL;
-    for (int i = ARRAY_SIZE(wifi_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
+    for (int i = ARRAY_SIZE(wifi_modem_config_template) - 1; (err == ESP_OK) && (i >= 0); i--) {
         void *next = regdma_link_init_safe(&wifi_modem_config[i], false, 0, link);
         if (next) {
             link = next;
