@@ -14,11 +14,11 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/pmu_struct.h"
-#include "soc/hp_sys_clkrst_struct.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/sleep_clock_icg.h"
 #include "pmu_param.h"
+#include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/lp_aon_hal.h"
@@ -402,9 +402,25 @@ bool pmu_sleep_finish(bool dslp)
         esp_psram_impl_exit_halfsleep_mode();
 #endif
 #endif
-        /* PLL_SOURCE retention may leave BBPLL powered on; align HW to clk_tree ref. */
-        if (!esp_clk_tree_is_power_on(SOC_ROOT_CIRCUIT_CLK_BBPLL) && !HP_SYS_CLKRST.modem_conf.modem_pll_clk_en) {
-            clk_ll_bbpll_disable();
+        const bool modem_pll_clk_enabled = clk_gate_ll_modem_pll_clk_is_enabled();
+        assert(modem_pll_clk_enabled == clk_gate_ll_modem_clk_source_is_pll());
+        if (!modem_pll_clk_enabled) { // wake up from non-modem clock retention
+            /* Workaround for issue WIFI-7620
+             * The BA bitmap and start sequence number are updated in the read-only
+             * registers only after the PLL clock is available. */
+            bool ref_160_enabled = clk_gate_ll_ref_160m_clk_is_enabled();
+            if (!ref_160_enabled) {
+                _clk_gate_ll_ref_160m_clk_en(true);
+            }
+            _clk_gate_ll_modem_pll_source_cg_en(true);
+            _clk_gate_ll_modem_pll_source_cg_en(false);
+            if (!ref_160_enabled) {
+                _clk_gate_ll_ref_160m_clk_en(false);
+            }
+
+            if (!esp_clk_tree_is_power_on(SOC_ROOT_CIRCUIT_CLK_BBPLL)) { // clear align HW to clk_tree ref
+                clk_ll_bbpll_disable();
+            }
         }
     }
 
