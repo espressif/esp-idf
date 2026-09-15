@@ -74,7 +74,7 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
     #define N_REGS_LPCON() (((MODEM_LPCON_MODEM_INTR_STATUS_REG - MODEM_LPCON_TEST_CONF_REG) / 4) + 1)
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
-        /* !!! pll_source_regs_retention link above does not above guarantee that the PMU has released the clock gate for the PLL.
+        /* !!! pll_source_regs_retention link above does not guarantee that the PMU has released the clock gate for the PLL.
          * And due to hardware limitations, REGDMA is also unable to obtain the PMU's PLL gate status when the chip is in PD_TOP mode.
          * So WORKAROUND with issue a dummy write to MODEM_SYSCON_DATE_REG as the first REGDMA node to avoid an APB access timeout
          * during the subsequent REGDMA operations. */
@@ -82,7 +82,8 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(1), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, N_REGS_SYSCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK(0), MODEM_LPCON_TEST_CONF_REG, MODEM_LPCON_TEST_CONF_REG, N_REGS_LPCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
         [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(0), HP_SYS_CLKRST_REF_160M_CTRL0_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN, HP_SYS_CLKRST_REG_REF_160M_CLK_EN_M, 1, 0), .owner = ENTRY(1)},
-        [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(1), HP_SYS_CLKRST_MODEM_CONF_REG, 0x3d, 0x3d, 1, 0), .owner = ENTRY(1)},
+        [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(1), HP_SYS_CLKRST_MODEM_CONF_REG, 0x15, 0xff, 1, 0), .owner = ENTRY(1)},
+        [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(2), HP_SYS_CLKRST_MODEM_CONF_REG, 0x1d, 0xff, 1, 0), .owner = ENTRY(1)},
     };
 
     esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
