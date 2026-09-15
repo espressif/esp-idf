@@ -352,6 +352,19 @@ bt_status_t btc_hf_client_disconnect_audio( bt_bdaddr_t *bd_addr )
     return BT_STATUS_FAIL;
 }
 
+bt_status_t btc_hf_client_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len)
+{
+#if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTA_HFP_EXT_CODEC == TRUE)
+    CHECK_HF_CLIENT_SLC_CONNECTED();
+
+    if (sync_conn_hdl != ESP_INVALID_CONN_HANDLE && hf_client_local_param.btc_hf_client_cb.sync_conn_hdl == sync_conn_hdl) {
+        BTA_HfClientAudioDataSend(sync_conn_hdl, p_buff_start, p_data, data_len);
+        return BT_STATUS_SUCCESS;
+    }
+#endif
+    return BT_STATUS_FAIL;
+}
+
 /*******************************************************************************
 **
 ** Function         btc_hf_client_start_voice_recognition
