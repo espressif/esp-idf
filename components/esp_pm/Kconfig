@@ -15,6 +15,9 @@ menu "Power Management"
         bool "Support for power management"
         # SMP FreeRTOS currently does not support power management IDF-4997
         depends on (!FREERTOS_SMP && SOC_PM_SUPPORTED) || __DOXYGEN__
+        # Without FREERTOS_PORT_THREAD_SAFE_CLAIM, dual-core auto light sleep must use a safe stall that often
+        # rejects when the peer is in an ISR/critical section, which significantly increases power consumption..
+        select FREERTOS_PORT_THREAD_SAFE_CLAIM if !FREERTOS_UNICORE
         default n
         help
             If enabled, application is compiled with support for power management.
@@ -22,6 +25,10 @@ menu "Power Management"
             longer time to enter idle state), and it also reduces accuracy of
             RTOS ticks and timers used for timekeeping.
             Enable this option if application uses power management APIs.
+
+            On dual-core targets this also enables FREERTOS_PORT_THREAD_SAFE_CLAIM.
+            Without it, automatic light sleep frequently fails to stall the other CPU and
+            is rejected, which can keep idle power much higher than expected.
 
     config PM_DFS_INIT_AUTO
         bool "Enable dynamic frequency scaling (DFS) at startup"

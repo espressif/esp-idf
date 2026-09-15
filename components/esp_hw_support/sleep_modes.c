@@ -1502,7 +1502,16 @@ static SLEEP_FN_ATTR esp_err_t sleep_smp_cpu_sleep_prepare(void)
     // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
     esp_int_wdt_livelock_workaround(false);
 #endif
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+    esp_err_t ipc_isr_err = ESP_OK;
+    esp_ipc_isr_stall_other_cpu();
+#else
+    /* Dual-core PM_ENABLE selects THREAD_SAFE_CLAIM, so auto light sleep always takes
+     * the blocking path above. This safe-stall fallback is for non-PM callers of
+     * esp_light_sleep_start(): reject and let the upper layer decide whether to retry.
+     */
     esp_err_t ipc_isr_err = esp_ipc_isr_stall_other_cpu_safe();
+#endif
     if (ipc_isr_err == ESP_OK) {
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
         // Run CPU retention in the context of the other safely stalled CPU.
