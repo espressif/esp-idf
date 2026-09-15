@@ -116,7 +116,6 @@ int hci_start_up(void)
     const size_t workqueue_len[] = {HCI_HOST_TASK_WORKQUEUE0_LEN, HCI_HOST_TASK_WORKQUEUE1_LEN};
 #if (!CONFIG_BT_BLUEDROID_HCI_TASK_STACK_IN_EXT_MEM)
     hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE,
-                                        HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len);
                                         HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len, false);
 #else
     hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE,
@@ -129,7 +128,6 @@ int hci_start_up(void)
     osi_event_bind(hci_host_env.downstream_data_ready, hci_host_thread, HCI_DOWNSTREAM_DATA_QUEUE_IDX);
 
     packet_fragmenter->init(&packet_fragmenter_callbacks);
-    hal->open(&hal_callbacks, hci_host_thread);
     if (!hal->open(&hal_callbacks, hci_host_thread)) {
         goto error;
     }
@@ -165,7 +163,6 @@ bool hci_downstream_data_post(uint32_t timeout)
         HCI_TRACE_WARNING("%s downstream_data_ready event not created", __func__);
         return false;
     }
-    return osi_thread_post_event(hci_host_env.downstream_data_ready, timeout);
 
     ret = osi_thread_post_event(hci_host_env.downstream_data_ready, timeout);
     if (!ret) {
@@ -472,13 +469,10 @@ static void command_timed_out(void *context)
         // We shouldn't try to recover the stack from this command timeout.
         // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
     {
-        hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
-        HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, metadata->opcode);
         HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, opcode);
 #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
         /* Unblock synchronous command if it matches the timed out opcode */
         BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
-        if (sync_info && sync_info->opcode == metadata->opcode && sync_info->sync_sem) {
         if (sync_info && sync_info->opcode == opcode && sync_info->sync_sem) {
             HCI_TRACE_WARNING("%s unblocking sync_sem for timed out opcode 0x%04x", __func__, sync_info->opcode);
             btsnd_hci_ble_set_status(HCI_ERR_HOST_TIMEOUT);
@@ -486,7 +480,6 @@ static void command_timed_out(void *context)
             osi_sem_give(&sync_info->sync_sem);
         }
 #endif
-        UNUSED(metadata);
     }
 }
 
@@ -586,12 +579,6 @@ static bool filter_incoming_event(BT_HDR *packet)
         if (metadata->command_status_cb) {
             metadata->command_status_cb(status, &metadata->command, metadata->context);
 #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
-            BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
-            if(!sync_info) {
-                HCI_TRACE_WARNING("%s sync_info is NULL. opcode = 0x%x", __func__, opcode);
-            } else {
-                if (sync_info->sync_sem && sync_info->opcode == opcode) {
-                    btsnd_hci_ble_set_status(status);
             /* No Command Complete follows a failed Command Status (Core Spec Vol 4 Part E). */
             if (status != HCI_SUCCESS) {
                 BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
@@ -602,7 +589,6 @@ static bool filter_incoming_event(BT_HDR *packet)
                     sync_info->opcode = 0;
                 }
             }
-#endif
 #endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
         }
 
@@ -643,7 +629,6 @@ static void dispatch_reassembled(BT_HDR *packet)
 {
     // Events should already have been dispatched before this point
     //Tell Up-layer received packet.
-    if (btu_task_post(SIG_BTU_HCI_MSG, packet, OSI_THREAD_MAX_TIMEOUT) == false) {
     do {
         if ((packet->event & BT_EVT_MASK) == BT_EVT_TO_BTU_HCI_ACL) {
             if (btu_hci_acl_data_post(packet)) {
@@ -832,12 +817,6 @@ const char *hci_status_code_to_string(uint8_t status)
         case HCI_ERR_CONN_TOUT_DUE_TO_MIC_FAILURE:   return "MIC Failure";           /* 0x3D */
         case HCI_ERR_CONN_FAILED_ESTABLISHMENT:      return "Conn Failed";           /* 0x3E */
         case HCI_ERR_MAC_CONNECTION_FAILED:          return "Previously Used";       /* 0x3F */
-        default: {
-            static char buf[24];
-            snprintf(buf, sizeof(buf), "Unknown Status (0x%02X)", status);
-            return buf;
-            return "Unknown Status";
-        }
         default:                                     return "Unknown Status";
     }
 }
@@ -866,3 +845,4 @@ int get_hci_work_queue_size(int wq_idx)
 {
     return osi_thread_queue_wait_size(hci_host_thread, wq_idx);
 }
+
