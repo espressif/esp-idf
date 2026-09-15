@@ -16,6 +16,39 @@
 
 static const char *TAG = "psa_crypto_driver_esp_aes";
 
+#if defined(MBEDTLS_PSA_CHECK_ECB_BUFFER_OVERLAP)
+/* Whether the ECB update would write over input it has not read yet.
+ *
+ * Completing a pending partial block writes a whole block while consuming only
+ * block_length - unprocessed_len bytes of input, so the output cursor ends up
+ * unprocessed_len bytes ahead of the input cursor and stays there for every
+ * block that follows. There is no correct result to produce in that case.
+ *
+ * Comparing unrelated pointers is only meaningful on a flat address space, which
+ * is why this is behind a macro esp_config.h defines. */
+static bool esp_aes_ecb_overlap_unsafe(const uint8_t *input, size_t input_length,
+                                       const uint8_t *output, size_t unprocessed_len,
+                                       size_t block_length)
+{
+    uintptr_t in = (uintptr_t) input;
+    uintptr_t out = (uintptr_t) output;
+
+    /* Nothing is written until a whole block has been gathered. */
+    if ((unprocessed_len + input_length) < block_length) {
+        return false;
+    }
+
+    /* Every byte is read before it is written. This is where the PSA API asks
+     * callers to put the output, so it covers output == input as well. */
+    if ((out + unprocessed_len) <= in) {
+        return false;
+    }
+
+    /* Unsafe unless the writes land past everything this call reads. */
+    return out < (in + input_length);
+}
+#endif /* MBEDTLS_PSA_CHECK_ECB_BUFFER_OVERLAP */
+
 static psa_status_t esp_aes_cipher_setup(
     esp_aes_operation_t *esp_aes_driver_ctx,
     const psa_key_attributes_t *attributes,
@@ -318,6 +351,15 @@ psa_status_t esp_aes_cipher_update(
         return PSA_SUCCESS;
     }
     else if (esp_aes_driver_ctx->aes_alg == PSA_ALG_ECB_NO_PADDING) {
+#if defined(MBEDTLS_PSA_CHECK_ECB_BUFFER_OVERLAP)
+        if (esp_aes_ecb_overlap_unsafe(input, input_length, output,
+                                       esp_aes_driver_ctx->unprocessed_len,
+                                       esp_aes_driver_ctx->block_length)) {
+            ret = MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA;
+            goto exit;
+        }
+#endif /* MBEDTLS_PSA_CHECK_ECB_BUFFER_OVERLAP */
+
         /* esp_aes_crypt_ecb  will only process a single block at a time in
          * ECB mode. Abstract this away to match the PSA API behaviour. */
         ret = esp_aes_ecb_update(esp_aes_driver_ctx,
