@@ -220,6 +220,9 @@ IEEE802154_STATIC IEEE802154_NOINLINE void update_mpf_index(void)
         is_target_panid_present = (ieee802154_frame_get_dest_panid(frame, target_panid) == ESP_OK) ? true : false;
     }
     dest_addr_mode = ieee802154_frame_get_dst_addr(frame, dest_addr);
+    if (dest_addr_mode == IEEE802154_FRAME_INVALID_VALUE) {
+        return;
+    }
     // Check is this packet is Broadcast
     if (is_broadcast_addr(dest_addr, dest_addr_mode) || (is_target_panid_present && is_broadcast_panid(target_panid))) {
         return;
