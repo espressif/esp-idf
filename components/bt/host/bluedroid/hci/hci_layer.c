@@ -306,7 +306,6 @@ static void transmit_command(
 
     fixed_pkt_queue_enqueue(hci_host_env.command_queue, linked_pkt, FIXED_PKT_QUEUE_MAX_TIMEOUT);
     hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
-
 }
 
 static future_t *transmit_command_futured(BT_HDR *command)
@@ -356,7 +355,7 @@ static void event_command_ready(fixed_pkt_queue_t *queue)
 
     if (metadata->flags_src & HCI_CMD_MSG_F_SRC_NOACK) {
         packet_fragmenter->fragment_and_dispatch(&metadata->command);
-        hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;
+        hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb)osi_free_func;
         free_func(wait_entry);
         return;
     }
@@ -432,54 +431,57 @@ static void restart_command_waiting_response_timer(command_waiting_response_t *c
 static void command_timed_out(void *context)
 {
     command_waiting_response_t *cmd_wait_q = (command_waiting_response_t *)context;
-    pkt_linked_item_t *wait_entry;
-    uint16_t opcode = 0;
+    pkt_linked_item_t *wait_entry = NULL;
 
     osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
-    wait_entry = (list_is_empty(cmd_wait_q->commands_pending_response) ?
-                  NULL : list_front(cmd_wait_q->commands_pending_response));
-    if (wait_entry != NULL) {
-        hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
-        opcode = metadata->opcode;
-        UNUSED(opcode);
+    if (!list_is_empty(cmd_wait_q->commands_pending_response)) {
+        wait_entry = list_front(cmd_wait_q->commands_pending_response);
+        list_remove(cmd_wait_q->commands_pending_response, wait_entry);
     }
     osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
     if (wait_entry == NULL) {
-        HCI_TRACE_ERROR("%s with no commands pending response", __func__);
+        /* Alarm callback executed after the command already completed (stale callback) */
+        HCI_TRACE_WARNING("%s with no commands pending response (stale callback)", __func__);
+        return;
+    }
+
+    restart_command_waiting_response_timer(cmd_wait_q);
+
+    hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
+    command_opcode_t opcode = metadata->opcode;
+    HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, opcode);
+
 #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
-        /* Unblock any orphaned synchronous BLE command waiting on sync_sem */
-        BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
-        if (sync_info && sync_info->opcode != 0 && sync_info->sync_sem) {
-            HCI_TRACE_WARNING("%s unblocking orphaned sync_sem for opcode 0x%04x", __func__, sync_info->opcode);
-            btsnd_hci_ble_set_status(HCI_ERR_HOST_TIMEOUT);
-            sync_info->opcode = 0;
-            osi_sem_give(&sync_info->sync_sem);
-        }
+    /* Unblock synchronous command if it matches the timed out opcode */
+    BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
+    if (sync_info && sync_info->opcode == opcode && sync_info->sync_sem) {
+        HCI_TRACE_WARNING("%s unblocking sync_sem for timed out opcode 0x%04x", __func__, sync_info->opcode);
+        btsnd_hci_ble_set_status(HCI_ERR_HOST_TIMEOUT);
+        sync_info->opcode = 0;
+        osi_sem_give(&sync_info->sync_sem);
+    }
 #endif
-        /* Recover credits if stuck at 0 with no pending commands */
-        if (hci_host_env.command_credits == 0) {
-            HCI_TRACE_WARNING("%s HCI credits stuck at 0 with empty queue, recovering to 1", __func__);
-            hci_host_env.command_credits = 1;
-            if (!fixed_pkt_queue_is_empty(hci_host_env.command_queue)) {
-                hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
-            }
+
+    if (metadata->command_status_cb) {
+        metadata->command_status_cb(HCI_ERR_HOST_TIMEOUT, &metadata->command, metadata->context);
+    } else {
+        if (metadata->flags_vnd & HCI_CMD_MSG_F_VND_FUTURE) {
+            future_ready((future_t *)(metadata->complete_future), NULL);
         }
-    } else
-        // We shouldn't try to recover the stack from this command timeout.
-        // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
-    {
-        HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, opcode);
-#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
-        /* Unblock synchronous command if it matches the timed out opcode */
-        BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
-        if (sync_info && sync_info->opcode == opcode && sync_info->sync_sem) {
-            HCI_TRACE_WARNING("%s unblocking sync_sem for timed out opcode 0x%04x", __func__, sync_info->opcode);
-            btsnd_hci_ble_set_status(HCI_ERR_HOST_TIMEOUT);
-            sync_info->opcode = 0;
-            osi_sem_give(&sync_info->sync_sem);
-        }
-#endif
+        hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb)osi_free_func;
+        free_func(wait_entry);
+    }
+
+    /* Restore the credit spent by the timed-out command */
+    if (hci_host_env.command_credits <= 0) {
+        hci_host_env.command_credits = 1;
+    } else {
+        hci_host_env.command_credits++;
+    }
+
+    if (!fixed_pkt_queue_is_empty(hci_host_env.command_queue)) {
+        hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
     }
 }
 
@@ -614,7 +616,7 @@ intercepted:
 
         // If it has a callback, it's responsible for freeing the command
         if (event_code == HCI_COMMAND_COMPLETE_EVT || !metadata->command_status_cb) {
-            hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;
+            hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb)osi_free_func;
             free_func(wait_entry);
         }
     } else {
@@ -817,7 +819,11 @@ const char *hci_status_code_to_string(uint8_t status)
         case HCI_ERR_CONN_TOUT_DUE_TO_MIC_FAILURE:   return "MIC Failure";           /* 0x3D */
         case HCI_ERR_CONN_FAILED_ESTABLISHMENT:      return "Conn Failed";           /* 0x3E */
         case HCI_ERR_MAC_CONNECTION_FAILED:          return "Previously Used";       /* 0x3F */
-        default:                                     return "Unknown Status";
+        default: {
+            static char buf[24];
+            snprintf(buf, sizeof(buf), "Unknown Status (0x%02X)", status);
+            return buf;
+        }
     }
 }
 #endif
