@@ -518,9 +518,9 @@ esp_err_t rmt_tx_register_event_callbacks(rmt_channel_handle_t channel, const rm
     return ESP_OK;
 }
 
-esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, const void *payload, size_t payload_bytes, const rmt_transmit_config_t *config)
+esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, const void *payload, size_t payload_size, const rmt_transmit_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(channel && encoder && payload && payload_bytes && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(channel && encoder && payload && payload_size && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
 #if !SOC_RMT_SUPPORT_TX_LOOP_COUNT
     ESP_RETURN_ON_FALSE(config->loop_count <= 1, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
@@ -547,7 +547,7 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     memset(t, 0, sizeof(rmt_tx_trans_desc_t));
     t->encoder = encoder;
     t->payload = payload;
-    t->payload_bytes = payload_bytes;
+    t->payload_size = payload_size;
     // treat loop_count == 1 as no loop
     t->loop_count = config->loop_count == 1 ? 0 : config->loop_count;
     t->remain_loop_count = t->loop_count;
@@ -650,7 +650,7 @@ size_t rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t
 {
     rmt_encode_state_t encode_state = RMT_ENCODING_RESET;
     rmt_encoder_handle_t encoder = t->encoder;
-    size_t encoded_symbols = encoder->encode(encoder, &tx_chan->base, t->payload, t->payload_bytes, &encode_state);
+    size_t encoded_symbols = encoder->encode(encoder, &tx_chan->base, t->payload, t->payload_size, &encode_state);
     bool is_mem_full = encode_state & RMT_ENCODING_MEM_FULL;
     bool need_eof_mark = (encode_state & RMT_ENCODING_WITH_EOF) == 0;
 
