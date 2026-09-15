@@ -38,7 +38,13 @@ entries:
     if IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
         rtc_sleep:rtc_sleep_pu (noflash)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
-        pmu_sleep (noflash)
+        if SPIRAM_FLASH_LOAD_TO_PSRAM = y || PM_SLP_IRAM_OPT = y:
+            pmu_sleep (noflash)
+        else:
+            if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE != y:
+                pmu_sleep:pmu_sleep_start (noflash)
+                pmu_sleep:pmu_sleep_finish (noflash)
+            pmu_sleep:pmu_sleep_get_wakup_retention_cost (noflash)
         sleep_mspi (noflash)
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)

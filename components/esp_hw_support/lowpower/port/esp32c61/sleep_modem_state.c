@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdlib.h>
+#include <string.h>
 #include "esp_attr.h"
 
 #include "soc/soc_caps.h"
@@ -44,7 +46,7 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
     esp_err_t err = ESP_OK;
 
 #if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
-    static regdma_link_config_t wifi_modem_config[] = {
+    static const regdma_link_config_t wifi_modem_config_template[] = {
         [0]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x00), MODEM_LPCON_CLK_CONF_REG,         MODEM_LPCON_CLK_I2C_MST_EN,        MODEM_LPCON_CLK_I2C_MST_EN_M,       1, 0), /* I2C MST enable */
 
         /* PMU or software to trigger enable RF PHY */
@@ -94,12 +96,18 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
         [34] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x22), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0),
         [35] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x23), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1)
     };
+    regdma_link_config_t *wifi_modem_config = malloc(sizeof(wifi_modem_config_template));
+    if (wifi_modem_config == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(wifi_modem_config, wifi_modem_config_template, sizeof(wifi_modem_config_template));
+
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
     wifi_modem_config[4].write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
     wifi_modem_config[19].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
 
     void *link = NULL;
-    for (int i = ARRAY_SIZE(wifi_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
+    for (int i = ARRAY_SIZE(wifi_modem_config_template) - 1; (err == ESP_OK) && (i >= 0); i--) {
         void *next = regdma_link_init_safe(&wifi_modem_config[i], false, 0, link);
         if (next) {
             link = next;
@@ -108,6 +116,7 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
             err = ESP_ERR_NO_MEM;
         }
     }
+    free(wifi_modem_config);
     if (err == ESP_OK) {
         pau_regdma_set_modem_link_addr(link);
 

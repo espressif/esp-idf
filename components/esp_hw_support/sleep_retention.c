@@ -110,6 +110,7 @@ static inline sleep_retention_module_attribute_t get_attributes(struct sleep_ret
 
 static inline bool module_is_passive(struct sleep_retention_module_object * const self)
 {
+    assert(self);
     return (get_attributes(self) & SLEEP_RETENTION_MODULE_ATTR_PASSIVE) ? true : false;
 }
 
@@ -184,7 +185,7 @@ typedef struct {
 #define SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES       (8u)
 #define SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY    (0)
 #define SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY     (SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES - 1)
-#define SLEEP_RETENTION_MODULE_INVALID                  ((sleep_retention_module_t)(-1)) /* the final node does not belong to any module */
+#define SLEEP_RETENTION_MODULE_INVALID                  ((sleep_retention_module_t)(SLEEP_RETENTION_MODULE_MAX)) /* the final node does not belong to any module */
     struct {
         sleep_retention_entries_t entries;
         uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM;
@@ -199,7 +200,7 @@ typedef struct {
     sleep_retention_module_bitmap_t inited_modules;
     sleep_retention_module_bitmap_t created_modules;
 
-    struct sleep_retention_module_object instance[SLEEP_RETENTION_MODULE_MAX + 1];
+    struct sleep_retention_module_object *instance[SLEEP_RETENTION_MODULE_MAX];
 
 #define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
 } sleep_retention_t;
@@ -212,6 +213,33 @@ static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
 
 #define SLEEP_RETENTION_ENTRY_BITMAP_MASK       (BIT(REGDMA_LINK_ENTRY_NUM) - 1)
 #define SLEEP_RETENTION_ENTRY_BITMAP(bitmap)    ((bitmap) & SLEEP_RETENTION_ENTRY_BITMAP_MASK)
+
+
+static struct sleep_retention_module_object * instance(sleep_retention_module_t module)
+{
+    return (module >= SLEEP_RETENTION_MODULE_MAX) ? NULL : s_retention.instance[module];
+}
+
+static esp_err_t instance_allocate(sleep_retention_module_t module)
+{
+    if (s_retention.instance[module] != NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    struct sleep_retention_module_object *obj = (struct sleep_retention_module_object *)heap_caps_calloc(
+        1, sizeof(struct sleep_retention_module_object), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (obj == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    s_retention.instance[module] = obj;
+    return ESP_OK;
+}
+
+static void instance_free(sleep_retention_module_t module)
+{
+    heap_caps_free(s_retention.instance[module]);
+    s_retention.instance[module] = NULL;
+}
+
 
 static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module);
 static void sleep_retention_entries_join(void);
@@ -325,7 +353,7 @@ static void sleep_retention_entries_stats(void)
 
 void sleep_retention_dump_modules(FILE *out)
 {
-    for (int i = SLEEP_RETENTION_MODULE_MIN; i <= SLEEP_RETENTION_MODULE_MAX; i++) {
+    for (int i = SLEEP_RETENTION_MODULE_MIN; i < SLEEP_RETENTION_MODULE_MAX; i++) {
         bool inited = sleep_retention_is_module_inited(i);
         bool created = sleep_retention_is_module_created(i);
         bool is_top = is_top_domain_module(i);
@@ -489,13 +517,17 @@ static void sleep_retention_entries_all_destroy_wrapper(sleep_retention_module_t
             priority++;
         }
     } while (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES);
-    s_retention.created_modules.bitmap[module >> 5] &= ~BIT(module % 32);
+    /* INVALID (== MAX) is a non-module sentinel; skip bitmap updates. */
+    if (module < SLEEP_RETENTION_MODULE_MAX) {
+        s_retention.created_modules.bitmap[module >> 5] &= ~BIT(module % 32);
+    }
     _lock_release_recursive(&s_retention.lock);
 }
 
 static void sleep_retention_entries_do_destroy(sleep_retention_module_t module)
 {
-    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_MAX);
+    /* Allow SLEEP_RETENTION_MODULE_INVALID for final-default rollback. */
+    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_INVALID);
     _lock_acquire_recursive(&s_retention.lock);
     sleep_retention_entries_join();
     sleep_retention_entries_stats();
@@ -505,7 +537,7 @@ static void sleep_retention_entries_do_destroy(sleep_retention_module_t module)
 
 static void sleep_retention_entries_destroy(sleep_retention_module_t module)
 {
-    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(SLEEP_RETENTION_MODULE_MIN <= module && module < SLEEP_RETENTION_MODULE_MAX);
     _lock_acquire_recursive(&s_retention.lock);
     sleep_retention_entries_do_destroy(module);
     uint32_t created_modules = 0;
@@ -636,7 +668,7 @@ esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t 
     if (priority >= SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t err = sleep_retention_entries_check_and_create_final_default();
@@ -677,7 +709,7 @@ sleep_retention_module_bitmap_t IRAM_ATTR sleep_retention_get_created_modules(vo
 
 bool sleep_retention_is_module_inited(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return false;
     }
     _lock_acquire_recursive(&s_retention.lock);
@@ -688,7 +720,7 @@ bool sleep_retention_is_module_inited(sleep_retention_module_t module)
 
 bool sleep_retention_is_module_created(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return false;
     }
     _lock_acquire_recursive(&s_retention.lock);
@@ -733,7 +765,7 @@ bool IRAM_ATTR sleep_retention_module_bitmap_eq(sleep_retention_module_bitmap_t 
 
 esp_err_t sleep_retention_module_init(sleep_retention_module_t module, sleep_retention_module_init_param_t *param)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
     if (param == NULL || param->cbs.create.handle == NULL) {
@@ -755,10 +787,14 @@ esp_err_t sleep_retention_module_init(sleep_retention_module_t module, sleep_ret
     if (module_is_created(module) || module_is_inited(module)) {
         err = ESP_ERR_INVALID_STATE;
     } else {
-        sleep_retention_module_object_ctor(&s_retention.instance[module], &param->cbs);
-        set_dependencies(&s_retention.instance[module], param->depends);
-        set_attributes(&s_retention.instance[module], param->attribute);
-        s_retention.inited_modules.bitmap[module >> 5] |= BIT(module % 32);
+        err = instance_allocate(module);
+        if (err == ESP_OK) {
+            struct sleep_retention_module_object *mod = instance(module);
+            sleep_retention_module_object_ctor(mod, &param->cbs);
+            set_dependencies(mod, param->depends);
+            set_attributes(mod, param->attribute);
+            s_retention.inited_modules.bitmap[module >> 5] |= BIT(module % 32);
+        }
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
@@ -766,7 +802,7 @@ esp_err_t sleep_retention_module_init(sleep_retention_module_t module, sleep_ret
 
 esp_err_t sleep_retention_module_deinit(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -776,9 +812,11 @@ esp_err_t sleep_retention_module_deinit(sleep_retention_module_t module)
     if (module_is_created(module) || !module_is_inited(module)) {
         err = ESP_ERR_INVALID_STATE;
     } else {
-        clr_attributes(&s_retention.instance[module]);
-        clr_dependencies(&s_retention.instance[module]);
-        sleep_retention_module_object_dtor(&s_retention.instance[module]);
+        struct sleep_retention_module_object *mod = instance(module);
+        clr_attributes(mod);
+        clr_dependencies(mod);
+        sleep_retention_module_object_dtor(mod);
+        instance_free(module);
         s_retention.inited_modules.bitmap[module >> 5] &= ~BIT(module % 32);
         uint32_t inited_modules = 0;
         for (int i = 0; i < SLEEP_RETENTION_MODULE_BITMAP_SZ; i++) {
@@ -797,27 +835,30 @@ esp_err_t sleep_retention_module_deinit(sleep_retention_module_t module)
 
 static esp_err_t sleep_retention_passive_module_allocate(sleep_retention_module_t module)
 {
-    assert(module >= SLEEP_RETENTION_MODULE_MIN && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(module >= SLEEP_RETENTION_MODULE_MIN && module < SLEEP_RETENTION_MODULE_MAX);
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
-    assert(module_is_passive(&s_retention.instance[module]) && "Illegal dependency");
     assert(module_is_inited(module) && "All passive module must be inited first!");
+    struct sleep_retention_module_object *mod = instance(module);
+    assert(module_is_passive(mod) && "Illegal dependency");
     if (!module_is_created(module)) {
-        sleep_retention_module_bitmap_t depends = get_dependencies(&s_retention.instance[module]);
+        sleep_retention_module_bitmap_t depends = get_dependencies(mod);
         for (int i = 0; ((err == ESP_OK) && (i < SLEEP_RETENTION_MODULE_BITMAP_SZ)); i++) {
             uint32_t bitmap = depends.bitmap[i];
             for (int j = 0; (err == ESP_OK) && bitmap; bitmap >>= 1, j++) {
                 if (bitmap & BIT(0)) {
-                    set_reference(&s_retention.instance[(i << 5) + j], module);
-                    err = sleep_retention_passive_module_allocate((i << 5) + j);
+                    sleep_retention_module_t dep_module = (sleep_retention_module_t)((i << 5) + j);
+                    assert(module_is_inited(dep_module));
+                    set_reference(instance(dep_module), module);
+                    err = sleep_retention_passive_module_allocate(dep_module);
                 }
             }
         }
         if (err == ESP_OK) {
-            sleep_retention_callback_t fn = s_retention.instance[module].cbs.create.handle;
+            sleep_retention_callback_t fn = mod->cbs.create.handle;
             if (fn) {
-                err = (*fn)(s_retention.instance[module].cbs.create.arg);
+                err = (*fn)(mod->cbs.create.arg);
             }
         }
     }
@@ -827,37 +868,42 @@ static esp_err_t sleep_retention_passive_module_allocate(sleep_retention_module_
 
 esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
-    if (!module_is_passive(&s_retention.instance[module])) {
-        if (module_is_inited(module) && !module_is_created(module)) {
-            sleep_retention_module_bitmap_t depends = get_dependencies(&s_retention.instance[module]);
+    if (!module_is_inited(module)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        struct sleep_retention_module_object *mod = instance(module);
+        if (module_is_passive(mod)) {
+            err = ESP_ERR_NOT_ALLOWED;
+        } else if (!module_is_created(module)) {
+            sleep_retention_module_bitmap_t depends = get_dependencies(mod);
             for (int i = 0; ((err == ESP_OK) && (i < SLEEP_RETENTION_MODULE_BITMAP_SZ)); i++) {
                 uint32_t bitmap = depends.bitmap[i];
                 for (int j = 0; (err == ESP_OK) && bitmap; bitmap >>= 1, j++) {
                     if (bitmap & BIT(0)) {
-                        set_reference(&s_retention.instance[(i << 5) + j], module);
-                        if (module_is_passive(&s_retention.instance[(i << 5) + j])) { /* the callee ensures this module is inited */
-                            err = sleep_retention_passive_module_allocate((i << 5) + j);
+                        sleep_retention_module_t dep_module = (sleep_retention_module_t)((i << 5) + j);
+                        assert(module_is_inited(dep_module));
+                        set_reference(instance(dep_module), module);
+                        if (module_is_inited(dep_module) && module_is_passive(instance(dep_module))) {
+                            err = sleep_retention_passive_module_allocate(dep_module);
                         }
                     }
                 }
             }
             if (err == ESP_OK) {
-                sleep_retention_callback_t fn = s_retention.instance[module].cbs.create.handle;
+                sleep_retention_callback_t fn = mod->cbs.create.handle;
                 if (fn) {
-                    err = (*fn)(s_retention.instance[module].cbs.create.arg);
+                    err = (*fn)(mod->cbs.create.arg);
                 }
             }
         } else {
             err = ESP_ERR_INVALID_STATE;
         }
-    } else {
-        err = ESP_ERR_NOT_ALLOWED;
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
@@ -865,23 +911,26 @@ esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module)
 
 static esp_err_t sleep_retention_passive_module_free(sleep_retention_module_t module)
 {
-    assert(module >= SLEEP_RETENTION_MODULE_MIN && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(module >= SLEEP_RETENTION_MODULE_MIN && module < SLEEP_RETENTION_MODULE_MAX);
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
-    assert(module_is_passive(&s_retention.instance[module]) && "Illegal dependency");
     assert(module_is_inited(module) && "All passive module must be inited first!");
+    struct sleep_retention_module_object *mod = instance(module);
+    assert(module_is_passive(mod) && "Illegal dependency");
     if (module_is_created(module)) {
-        if (!references_exist(&s_retention.instance[module])) {
+        if (!references_exist(mod)) {
             sleep_retention_entries_destroy(module);
 
-            sleep_retention_module_bitmap_t depends = get_dependencies(&s_retention.instance[module]);
+            sleep_retention_module_bitmap_t depends = get_dependencies(mod);
             for (int i = 0; ((err == ESP_OK) && (i < SLEEP_RETENTION_MODULE_BITMAP_SZ)); i++) {
                 uint32_t bitmap = depends.bitmap[i];
                 for (int j = 0; (err == ESP_OK) && bitmap; bitmap >>= 1, j++) {
                     if (bitmap & BIT(0)) {
-                        clr_reference(&s_retention.instance[(i << 5) + j], module);
-                        err = sleep_retention_passive_module_free((i << 5) + j);
+                        sleep_retention_module_t dep_module = (sleep_retention_module_t)((i << 5) + j);
+                        assert(module_is_inited(dep_module));
+                        clr_reference(instance(dep_module), module);
+                        err = sleep_retention_passive_module_free(dep_module);
                     }
                 }
             }
@@ -893,24 +942,31 @@ static esp_err_t sleep_retention_passive_module_free(sleep_retention_module_t mo
 
 esp_err_t sleep_retention_module_free(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
-    if (!module_is_passive(&s_retention.instance[module])) {
-        if (module_is_inited(module) && module_is_created(module)) {
+    if (!module_is_inited(module)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        struct sleep_retention_module_object *mod = instance(module);
+        if (module_is_passive(mod)) {
+            err = ESP_ERR_NOT_ALLOWED;
+        } else if (module_is_created(module)) {
             sleep_retention_entries_destroy(module);
 
-            sleep_retention_module_bitmap_t depends = get_dependencies(&s_retention.instance[module]);
+            sleep_retention_module_bitmap_t depends = get_dependencies(mod);
             for (int i = 0; ((err == ESP_OK) && (i < SLEEP_RETENTION_MODULE_BITMAP_SZ)); i++) {
                 uint32_t bitmap = depends.bitmap[i];
                 for (int j = 0; (err == ESP_OK) && bitmap; bitmap >>= 1, j++) {
                     if (bitmap & BIT(0)) {
-                        clr_reference(&s_retention.instance[(i << 5) + j], module);
-                        if (module_is_passive(&s_retention.instance[(i << 5) + j])) {
-                            err = sleep_retention_passive_module_free((i << 5) + j);
+                        sleep_retention_module_t dep_module = (sleep_retention_module_t)((i << 5) + j);
+                        assert(module_is_inited(dep_module));
+                        clr_reference(instance(dep_module), module);
+                        if (module_is_inited(dep_module) && module_is_passive(instance(dep_module))) {
+                            err = sleep_retention_passive_module_free(dep_module);
                         }
                     }
                 }
@@ -918,8 +974,6 @@ esp_err_t sleep_retention_module_free(sleep_retention_module_t module)
         } else {
             err = ESP_ERR_INVALID_STATE;
         }
-    } else {
-        err = ESP_ERR_NOT_ALLOWED;
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
