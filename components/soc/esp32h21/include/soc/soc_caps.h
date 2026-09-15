@@ -246,7 +246,7 @@
 #define SOC_I2C_SLAVE_SUPPORT_BROADCAST         (1)
 #define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE     (1)
 
-// #define SOC_I2C_SUPPORT_SLEEP_RETENTION         (1) // TODO: [ESP32H21] IDF-11579
+#define SOC_I2C_SUPPORT_SLEEP_RETENTION         (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_HW_VERSION_2        (1)
