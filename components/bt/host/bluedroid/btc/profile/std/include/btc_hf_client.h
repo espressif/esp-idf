@@ -176,6 +176,8 @@ void btc_hf_client_incoming_data_cb_to_app(const uint8_t *data, uint32_t len);
 
 uint32_t btc_hf_client_outgoing_data_cb_to_app(uint8_t *data, uint32_t len);
 
+bt_status_t btc_hf_client_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len);
+
 void btc_hf_client_get_profile_status(esp_hf_client_profile_status_t *param);
 #endif  ///BTC_HF_CLIENT_INCLUDED == TRUE
 

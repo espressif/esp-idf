@@ -645,8 +645,10 @@ esp_err_t esp_hf_client_audio_data_send(esp_hf_sync_conn_hdl_t sync_conn_hdl, es
         return ESP_ERR_INVALID_ARG;
     }
 
-    BTA_HfClientAudioDataSend(sync_conn_hdl, (uint8_t *)audio_buf, audio_buf->data, audio_buf->data_len);
-    return ESP_OK;
+    if (btc_hf_client_audio_data_send(sync_conn_hdl, (uint8_t *)audio_buf, audio_buf->data, audio_buf->data_len) == BT_STATUS_SUCCESS) {
+        return ESP_OK;
+    }
+    return ESP_FAIL;
 }
 
 esp_err_t esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t channels)
