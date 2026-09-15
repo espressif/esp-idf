@@ -6,6 +6,8 @@
 
 #include "esp_private/sleep_clock.h"
 #include "soc/pcr_reg.h"
+#include "soc/ds_reg.h"
+#include "soc/ecdsa_reg.h"
 #include "modem/i2c_ana_mst_reg.h"
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
@@ -29,9 +31,15 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         [4] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(4),   I2C_ANA_MST_ANA_CONF0_REG,      0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
         [5] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
         /* Clock configuration retention */
-        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(6),   DR_REG_PCR_BASE,                DR_REG_PCR_BASE,                N_REGS_PCR(),                   0, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7),   PCR_BUS_CLK_UPDATE_REG,         PCR_BUS_CLOCK_UPDATE,           PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [8] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(8),   PCR_BUS_CLK_UPDATE_REG,         0x0,                            PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [6] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(6), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR() - 2, 0, 0,
+                                                   0xffffffff, 0xfd7fffff, 0x1fffff, 0x0), .owner = ENTRY(0) | ENTRY(2) },
+        [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7), PCR_BUS_CLK_UPDATE_REG,         PCR_BUS_CLOCK_UPDATE,           PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [8] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(8), PCR_BUS_CLK_UPDATE_REG,         0x0,                            PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        /* TOP PD wake: DS/ECDSA CLK_EN defaults to 1 and start mem clean; wait idle before restoring their clocks */
+        [9] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(9),   DS_QUERY_BUSY_REG,              0,                              DS_QUERY_BUSY_M,                1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [10] = { .config = REGDMA_LINK_WAIT_INIT     (REGDMA_PCR_LINK(10),  ECDSA_STATE_REG,                0,                              ECDSA_BUSY_M,                   1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [11] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(11), PCR_DS_CONF_REG, PCR_DS_CONF_REG, 2, 0, 0,
+                                                    0x5, 0x0, 0x0, 0x0), .owner = ENTRY(0) | ENTRY(2) },
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);

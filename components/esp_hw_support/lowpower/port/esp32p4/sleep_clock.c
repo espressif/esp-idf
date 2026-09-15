@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/lpperi_reg.h"
+#include "soc/ds_reg.h"
+#include "soc/ecdsa_reg.h"
 #include "pmu_bit_defs.h"
 
 ESP_LOG_ATTR_TAG(TAG, "sleep_clock");
@@ -26,11 +28,16 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         /* Stop SYSPLL self-calibration */
         [3] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(3),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,   HP_SYS_CLKRST_REG_SYS_PLL_CAL_STOP,            HP_SYS_CLKRST_REG_SYS_PLL_CAL_STOP_M,            1, 0), .owner = ENTRY(0) },
         /* Clock configuration retention */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(4), DR_REG_HP_SYS_CLKRST_BASE,         DR_REG_HP_SYS_CLKRST_BASE,                     N_REGS_PCR(),                                    0, 0), .owner = ENTRY(0) },  /* pcr */
+        [4] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(4), DR_REG_HP_SYS_CLKRST_BASE, DR_REG_HP_SYS_CLKRST_BASE, N_REGS_PCR() - 1, 0, 0,
+                                                   0xffffffff, 0x0ffffbff, 0x0, 0x0), .owner = ENTRY(0) },
         [5] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5), HP_SYS_CLKRST_ROOT_CLK_CTRL0_REG,  HP_SYS_CLKRST_REG_SOC_CLK_DIV_UPDATE,          HP_SYS_CLKRST_REG_SOC_CLK_DIV_UPDATE_M,          1, 0), .owner = ENTRY(0) },
         [6] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(6), HP_SYS_CLKRST_ROOT_CLK_CTRL0_REG,  0x0,                                           HP_SYS_CLKRST_REG_SOC_CLK_DIV_UPDATE_M,          1, 0), .owner = ENTRY(0) },
         [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7), HP_SYS_CLKRST_PERI_CLK_CTRL02_REG, HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE, HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) },
         [8] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(8), HP_SYS_CLKRST_PERI_CLK_CTRL02_REG, 0x0,                                           HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) },
+        /* TOP PD wake: DS/ECDSA CLK_EN defaults to 1 and start mem clean; wait idle before restoring their clocks */
+        [9] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(9), DS_QUERY_BUSY_REG,                 0,                                             DS_QUERY_BUSY_M,                                 1, 0), .owner = ENTRY(0) },
+        [10] = { .config = REGDMA_LINK_WAIT_INIT     (REGDMA_PCR_LINK(10), ECDSA_STATE_REG,                  0,                                             ECDSA_BUSY_M,                                    1, 0), .owner = ENTRY(0) },
+        [11] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(11), HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_PERI_CLK_CTRL25_REG,            1,                                               0, 0), .owner = ENTRY(0) },
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);

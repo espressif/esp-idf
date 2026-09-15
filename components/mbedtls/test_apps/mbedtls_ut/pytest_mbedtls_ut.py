@@ -198,3 +198,39 @@ def test_mbedtls_cross_signed(dut: Dut) -> None:
             'certificate bundle - expired cert rejected with time-date check',
         ]
     )
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'pd_top',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    list(
+        filter(
+            lambda t: t != 'esp32c5',
+            soc_filtered_targets('SOC_PM_SUPPORT_TOP_PD == 1 and SOC_PAU_SUPPORTED == 1'),
+        )
+    ),
+    indirect=['target'],
+)
+def test_mbedtls_crypto_pd_top_lightsleep(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='pd_top')
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c5_rev1
+@pytest.mark.parametrize(
+    'config',
+    [
+        'pd_top',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_mbedtls_crypto_pd_top_lightsleep_esp32c5_eco3(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='pd_top')
