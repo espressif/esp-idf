@@ -22,9 +22,17 @@
 
     {IDF_TARGET_NAME} 有一个核，28 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 4 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
-.. only:: esp32p4 or esp32h4
+.. only:: esp32p4
 
     {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，每个核还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+
+.. only:: esp32h4
+
+    {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，每个核还有 2 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+
+.. only:: esp32s31
+
+    {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
 .. only:: esp32c5 or esp32c61
 

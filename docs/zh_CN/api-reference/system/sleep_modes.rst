@@ -680,7 +680,7 @@ UART 输出处理
 
 :cpp:func:`esp_sleep_get_wakeup_cause` 函数可用于检测是何种唤醒源在睡眠期间被触发。
 
-.. only:: SOC_TOUCH_SENSOR_SUPPORTED
+.. only:: SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
 
     对于触摸传感器唤醒源，可以调用函数 :cpp:func:`esp_sleep_get_touchpad_wakeup_status` 来确认触发唤醒的触摸管脚。
 

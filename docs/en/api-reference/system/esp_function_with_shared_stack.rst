@@ -15,8 +15,9 @@ A given function can be executed with a user-allocated stack space which is inde
   .. list::
 
      - Use thread-local storage
-     :esp32p4: - Use the floating-point unit
-     :esp32p4: - Use the AI co-processor
+     :SOC_CPU_HAS_FPU: - Use the floating-point unit
+     :SOC_CPU_HAS_PIE: - Use the AI co-processor
+     :SOC_CPU_HAS_DSP: - Use the DSP co-processor
      - Call vTaskDelete(NULL) to delete the currently running task
 
   Furthermore, backtraces will be wrong when called from the function running on the shared stack or any of its callees. The limitations are quite severe, so that we might deprecate :cpp:func:`esp_execute_shared_stack_function` in the future. If you have any use case which can only be implemented using :cpp:func:`esp_execute_shared_stack_function`, please open a `GitHub Issue <https://github.com/espressif/esp-idf/issues>`_.

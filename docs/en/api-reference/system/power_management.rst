@@ -12,7 +12,7 @@ Application components can express their requirements by creating and acquiring 
 
 For example:
 
-- Driver for a peripheral clocked from APB can request the APB frequency to be set to 80 MHz while the peripheral is used.
+- Driver for a peripheral clocked from APB can request the APB frequency to be set to the maximum supported value while the peripheral is used.
 - RTOS can request the CPU to run at the highest configured frequency while there are tasks ready to run.
 - A peripheral driver may need interrupts to be enabled, which means it has to request disabling Light-sleep.
 
@@ -63,7 +63,9 @@ Dynamic frequency scaling (DFS) and automatic Light-sleep can be enabled in an a
 
 Power Management Locks
 ----------------------
-{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, or 240 MHz", esp32s3="80 MHz, 160 MHz, or 240 MHz", esp32c2="80 MHz or 120 MHz", esp32c3="80 MHz or 160 MHz", esp32c6="80 MHz or 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz or 240 MHz", esp32c61="80 MHz or 160 MHz"}
+
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, or 240 MHz", esp32s3="80 MHz, 160 MHz, or 240 MHz", esp32c2="80 MHz or 120 MHz", esp32c3="80 MHz or 160 MHz", esp32c6="80 MHz or 160 MHz", esp32p4="360 MHz", esp32c5="80 MHz, 160 MHz or 240 MHz", esp32c61="80 MHz or 160 MHz", esp32h4="48 MHz, 64 MHz, or 96 MHz", esp32s31="240 MHz or 320 MHz"}
+{IDF_TARGET_MAX_APB_FREQ: default="80 MHz", esp32c2="40 MHz", esp32c5="40 MHz", esp32c6="40 MHz", esp32c61="40 MHz", esp32h2="32 MHz", esp32h21="32 MHz", esp32h4="32 MHz", esp32p4="90 MHz", esp32s31="53.3 MHz"}
 
 Applications have the ability to acquire/release locks in order to control the power management algorithm. When an application acquires a lock, the power management algorithm operation is restricted in a way described below. When the lock is released, such restrictions are removed.
 
@@ -80,7 +82,7 @@ Power management locks have acquire/release counters. If the lock has been acqui
   * - ``ESP_PM_CPU_FREQ_MAX``
     - Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to {IDF_TARGET_MAX_CPU_FREQ}.
   * - ``ESP_PM_APB_FREQ_MAX``
-    - Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
+    - Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is {IDF_TARGET_MAX_APB_FREQ}.
   * - ``ESP_PM_NO_LIGHT_SLEEP``
     - Disables automatic switching to Light-sleep.
 

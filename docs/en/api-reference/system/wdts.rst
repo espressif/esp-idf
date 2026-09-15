@@ -141,13 +141,12 @@ The default timeout period for the TWDT is set using config item :ref:`CONFIG_ES
 
 The following config options control TWDT configuration. They are all enabled by default:
 
-{IDF_TARGET_IDLE_TASK:default="Idle task", esp32="CPU0 Idle task", esp32s3="CPU0 Idle task", esp32p4="CPU0 Idle task"}
-
 .. list::
 
     - :ref:`CONFIG_ESP_TASK_WDT_EN` - enables TWDT feature. If this option is disabled, TWDT cannot be used, even if initialized at runtime.
     - :ref:`CONFIG_ESP_TASK_WDT_INIT` - initializes the TWDT automatically during startup. If this option is disabled, it is still possible to initialize the Task WDT at runtime by calling :cpp:func:`esp_task_wdt_init`.
-    - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - subscribes {IDF_TARGET_IDLE_TASK} to the TWDT during startup. If this option is disabled, it is still possible to subscribe the idle task by calling :cpp:func:`esp_task_wdt_init` again, or by using :cpp:func:`esp_task_wdt_add` and passing the idle task handle obtained via :cpp:func:`xTaskGetIdleTaskHandleForCore`.
+    :not SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - subscribes Idle task to the TWDT during startup. If this option is disabled, it is still possible to subscribe the idle task by calling :cpp:func:`esp_task_wdt_init` again, or by using :cpp:func:`esp_task_wdt_add` and passing the idle task handle obtained via :cpp:func:`xTaskGetIdleTaskHandleForCore`.
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - subscribes CPU0 Idle task to the TWDT during startup. If this option is disabled, it is still possible to subscribe the idle task by calling :cpp:func:`esp_task_wdt_init` again, or by using :cpp:func:`esp_task_wdt_add` and passing the idle task handle obtained via :cpp:func:`xTaskGetIdleTaskHandleForCore`.
     :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - Subscribes CPU1 Idle task to the TWDT during startup.
 
 
