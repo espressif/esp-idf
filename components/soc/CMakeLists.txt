@@ -62,16 +62,8 @@ if(target STREQUAL "esp32")
     list(APPEND srcs "${target_folder}/dport_access.c")
 endif()
 
-if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
-    list(APPEND srcs "${target_folder}/debug_probe_periph.c")
-endif()
-
 if(CONFIG_SOC_MPI_SUPPORTED)
     list(APPEND srcs "${target_folder}/mpi_periph.c")
-endif()
-
-if(CONFIG_SOC_BOD_SUPPORTED)
-    list(APPEND srcs "${target_folder}/power_supply_periph.c")
 endif()
 
 set(ldfragments "linker.lf")

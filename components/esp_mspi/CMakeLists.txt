@@ -11,7 +11,7 @@ endif()
 if(non_os_build OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     # efuse is required by esp_mspi_align.c to query the flash encryption state
     set(priv_requires bootloader_support soc esp_hal_gpio efuse)
-    set(requires hal esp_hal_mspi)
+    set(requires esp_hal_mspi esp_hal_cache)
     set(srcs "spi_flash_wrap.c" "spi_flash_os_tee_stub.c")
     if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_mspi_align/esp_mspi_align.c")

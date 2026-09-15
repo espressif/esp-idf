@@ -1,0 +1,9 @@
+[mapping:esp_hal_cache]
+archive: libesp_hal_cache.a
+entries:
+    if APP_BUILD_TYPE_PURE_RAM_APP = n:
+        if IDF_TARGET_ESP32 = y:
+            cache_hal_esp32 (noflash)
+        else:
+            cache_hal (noflash)
+        mmu_hal (noflash)

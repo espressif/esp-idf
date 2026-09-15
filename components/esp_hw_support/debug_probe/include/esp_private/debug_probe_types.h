@@ -12,7 +12,7 @@
 #include "soc/soc_caps.h"
 #include "hal/debug_probe_types.h"
 #if SOC_DEBUG_PROBE_SUPPORTED
-#include "soc/debug_probe_targets.h"
+#include "hal/debug_probe_targets.h"
 #endif
 
 #ifdef __cplusplus

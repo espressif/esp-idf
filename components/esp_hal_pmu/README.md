@@ -39,6 +39,9 @@ The HAL architecture consists of two primary layers:
 - Control ready wait cycle configuration (isolate/reset)
 - Power mode transitions (active, sleep, modem)
 
+### Brownout Detection
+- Brownout detector control (enable/disable, thresholds, reset behavior)
+
 ### Sleep and Wakeup
 - Sleep mode configuration
 - Wakeup source management

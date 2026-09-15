@@ -14,7 +14,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "soc/soc_caps.h"
-#include "soc/debug_probe_periph.h"
+#include "hal/debug_probe_periph.h"
 #include "soc/io_mux_reg.h"
 #include "driver/rtc_io.h"
 #include "driver/lp_io.h"

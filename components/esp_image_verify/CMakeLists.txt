@@ -54,7 +54,7 @@ endif()
 # from bootloader_support's public include path.
 set(requires bootloader_support esp_app_format esp_bootloader_format)
 
-set(priv_requires spi_flash efuse esp_hal_security)
+set(priv_requires spi_flash efuse esp_hal_security esp_hal_cache)
 
 if(BOOTLOADER_BUILD)
     list(APPEND priv_requires micro-ecc)
