@@ -493,7 +493,9 @@ TEST_CASE("ana_cmpr capture timestamps", "[ana_cmpr]")
     printf("ana_cmpr capture timestamps: current=%" PRIu32 ", previous=%" PRIu32 ", delta_ticks=%" PRIu32 ", delta_us=%" PRIu32 "\r\n",
            current, previous, delta_ticks, delta_us);
 #if CONFIG_IDF_TARGET_ESP32H4
-    TEST_ASSERT_UINT_WITHIN(50, 100, delta_us);
+    // the overhead of trigger_scan() is ~10 us * resample_limit (3) = ~30 us,
+    // plus the 100 us delay we inserted, so the total delta_us should be around 130 us
+    TEST_ASSERT_UINT_WITHIN(30, 130, delta_us);
 #else
     // We insert ~100 us delay between two trigger_scan() calls.
     TEST_ASSERT_UINT_WITHIN(20, 100, delta_us);
