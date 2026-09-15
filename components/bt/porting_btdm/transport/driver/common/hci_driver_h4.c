@@ -227,7 +227,7 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
 #endif // !CONFIG_BT_CONTROLLER_ENABLED
 #if CONFIG_BT_LE_ISO_SUPPORT
     case HCI_H4_ISO:
-        h4sm->exp_len = (btdm_get_le16(&h4sm->hdr[2]) & 0x7fff) + 4;
+        h4sm->exp_len = (btdm_get_le16(&h4sm->hdr[2]) & 0x3fff) + 4;
         h4sm->buf = h4sm->allocs->iso(h4sm->exp_len);
         if (!h4sm->buf) {
             return -1;
