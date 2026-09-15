@@ -838,6 +838,7 @@ const char *hci_status_code_to_string(uint8_t status)
             return buf;
             return "Unknown Status";
         }
+        default:                                     return "Unknown Status";
     }
 }
 #endif
