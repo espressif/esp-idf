@@ -590,6 +590,10 @@ esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uin
  * @param[in]  frame_info     The frame information. Refer to `esp_ieee802154_frame_info_t`.
  * @param[out] enhack_frame   The Enh-ack frame need to be generated via this function, HW will send it back after AIFS.
  *
+ * @warning The buffer pointed to by `enhack_frame` is 128 bytes long. Byte 0 stores the PSDU length, and bytes 1 to 127
+ *          store the PSDU. The callback must not write beyond `enhack_frame[127]` and must not set `enhack_frame[0]`
+ *          to a value greater than 127.
+ *
  * @return
  *        - ESP_OK if Enh-Ack generates done.
  *        - ESP_FAIL if Enh-Ack generates failed.
