@@ -59,6 +59,11 @@
  */
 #define MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
 
+/* In ECB mode, reject an input/output overlap that cannot be honoured, rather than returning a wrong result. */
+#ifdef MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
+#define MBEDTLS_PSA_CHECK_ECB_BUFFER_OVERLAP
+#endif // MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
+
 /**
  * \name SECTION: System support
  *
