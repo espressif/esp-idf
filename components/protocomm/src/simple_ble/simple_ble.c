@@ -425,6 +425,20 @@ esp_err_t simple_ble_deinit(void)
     return ESP_OK;
 }
 
+/* Whether simple_ble_start() itself brought the stack up, so that its own
+ * error paths do not tear down a stack the application already had running.
+ * Only meaningful when cfg->reuse_ble_stack is set; without it every step
+ * below runs unconditionally, exactly as before.
+ *
+ * simple_ble_stop() deliberately does NOT consult these: it also has to undo
+ * the GATTS/GAP callbacks, the registered app and the advertising this module
+ * installs, and the only thing that does so today is disabling Bluedroid.
+ * Skipping that would leave those registrations live with g_ble_cfg_p freed. */
+#ifdef CONFIG_BT_CONTROLLER_ENABLED
+static bool s_controller_started_here;
+#endif
+static bool s_bluedroid_started_here;
+
 /* Expects the pointer stays valid throughout */
 esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
 {
@@ -433,40 +447,52 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     esp_err_t ret;
 
 #ifdef CONFIG_BT_CONTROLLER_ENABLED
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
-        return ret;
+    s_controller_started_here = false;
+    if (!cfg->reuse_ble_stack || esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
+        esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+        ret = esp_bt_controller_init(&bt_cfg);
+        if (ret) {
+            ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
+            return ret;
+        }
+        s_controller_started_here = true;
     }
 
+    if (!cfg->reuse_ble_stack || esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
 #ifdef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
-    ESP_LOGE(TAG, "Configuration mismatch. Select BLE Only or BTDM mode from menuconfig");
-    ret = ESP_FAIL;
-    goto err_bt_deinit;
-#elif CONFIG_BTDM_CTRL_MODE_BTDM
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
-#else  //For all other chips supporting BLE Only
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-#endif
-
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
+        ESP_LOGE(TAG, "Configuration mismatch. Select BLE Only or BTDM mode from menuconfig");
+        ret = ESP_FAIL;
         goto err_bt_deinit;
+#elif CONFIG_BTDM_CTRL_MODE_BTDM
+        ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+#else  //For all other chips supporting BLE Only
+        ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+#endif
+
+        if (ret) {
+            ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
+            goto err_bt_deinit;
+        }
     }
 #endif
 
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
-    if (ret) {
-        ESP_LOGE(TAG, "%s init bluetooth failed %d", __func__, ret);
-        goto err_bt_disable;
+    s_bluedroid_started_here = false;
+    if (!cfg->reuse_ble_stack || esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
+        esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+        ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+        if (ret) {
+            ESP_LOGE(TAG, "%s init bluetooth failed %d", __func__, ret);
+            goto err_bt_disable;
+        }
+        s_bluedroid_started_here = true;
     }
 
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable bluetooth failed %d", __func__, ret);
-        goto err_bluedroid_deinit;
+    if (!cfg->reuse_ble_stack || esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        ret = esp_bluedroid_enable();
+        if (ret) {
+            ESP_LOGE(TAG, "%s enable bluetooth failed %d", __func__, ret);
+            goto err_bluedroid_deinit;
+        }
     }
     ret = esp_ble_gatts_register_callback(gatts_profile_event_handler);
     if (ret) {
@@ -517,14 +543,24 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     return ESP_OK;
 
 err_bluedroid_disable:
-    esp_bluedroid_disable();
+    if (s_bluedroid_started_here) {
+        esp_bluedroid_disable();
+    }
 err_bluedroid_deinit:
-    esp_bluedroid_deinit();
+    if (s_bluedroid_started_here) {
+        esp_bluedroid_deinit();
+        s_bluedroid_started_here = false;
+    }
 err_bt_disable:
 #ifdef CONFIG_BT_CONTROLLER_ENABLED
-    esp_bt_controller_disable();
+    if (s_controller_started_here) {
+        esp_bt_controller_disable();
+    }
 err_bt_deinit:
-    esp_bt_controller_deinit();
+    if (s_controller_started_here) {
+        esp_bt_controller_deinit();
+        s_controller_started_here = false;
+    }
 #endif
     return ret;
 }
