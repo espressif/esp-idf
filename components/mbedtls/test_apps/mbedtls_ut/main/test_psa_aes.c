@@ -128,6 +128,175 @@ TEST_CASE("PSA AES-ECB multipart", "[psa-aes]")
     psa_destroy_key(key_id);
 }
 
+/* AES-256-ECB of plaintext[i] = i * 7 + 1 under key_256, taken from OpenSSL
+ * rather than from this library, so that an implementation which is
+ * consistently wrong cannot satisfy the test:
+ *
+ *     openssl enc -aes-256-ecb -nopad \
+ *         -K 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+ */
+static const uint8_t ecb_kat_256[112] = {
+    0x95, 0xc9, 0x03, 0x0d, 0x4a, 0xca, 0x42, 0x59,
+    0x7e, 0x1f, 0x19, 0x9a, 0x95, 0xe1, 0xa5, 0xe8,
+    0x20, 0x28, 0x07, 0x2a, 0xe8, 0xf3, 0x51, 0x29,
+    0x6d, 0x4d, 0x31, 0xb9, 0xe3, 0xb1, 0xc2, 0x17,
+    0x89, 0x75, 0xd2, 0xb7, 0x77, 0x38, 0x93, 0x6b,
+    0x1c, 0x52, 0x6f, 0x57, 0x9d, 0x11, 0x67, 0x9c,
+    0xc1, 0x68, 0x42, 0x46, 0xc4, 0x76, 0x3e, 0x6c,
+    0xef, 0x37, 0xa3, 0xd0, 0x1f, 0x2c, 0x24, 0x30,
+    0xe7, 0xe2, 0x56, 0x2d, 0x6e, 0xa5, 0x21, 0x85,
+    0x9c, 0x64, 0x21, 0x8d, 0x77, 0xe2, 0xfe, 0xa9,
+    0xc3, 0xe6, 0x87, 0xde, 0x3b, 0xac, 0x65, 0xb5,
+    0x94, 0x7a, 0x34, 0xc7, 0x24, 0xd1, 0xe5, 0x6a,
+    0x8c, 0x50, 0xeb, 0xa7, 0x69, 0xed, 0x47, 0xfc,
+    0x48, 0xfa, 0xe4, 0x00, 0x78, 0xbc, 0x7f, 0x29,
+};
+
+/* PSA lets a caller split a message across update() calls at any byte boundary,
+ * so an update can start with a partial block held over from the call before it.
+ * Completing that block writes a whole block while consuming fewer than a block
+ * of input, which leaves the output cursor ahead of the input cursor for the
+ * rest of the call: the writes land on input bytes that have not been read yet,
+ * and there is no correct result to produce.
+ *
+ * The table below pins both sides of that. The overlaps which must still be
+ * honoured have to keep working, and the ones which cannot be honoured have to
+ * be refused rather than quietly producing wrong ciphertext.
+ */
+TEST_CASE("PSA AES-ECB in-place overlap", "[psa-aes]")
+{
+    const size_t SZ = 128;
+    const size_t PAD = 16;
+    const uint8_t canary = 0xA5;
+
+    uint8_t *plaintext = malloc(SZ);
+    uint8_t *reference = malloc(SZ);
+    uint8_t *scratch = malloc(SZ);
+    /* DMA-capable internal memory: on the hardware path this buffer is handed
+       to the AES accelerator as both source and destination. The PAD bytes of
+       slack hold a canary, so a write past the ciphertext fails an assertion
+       here instead of damaging the heap somewhere else. */
+    uint8_t *buf = heap_caps_malloc(SZ + PAD, INTERNAL_DMA_CAPS);
+
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(reference);
+    TEST_ASSERT_NOT_NULL(scratch);
+    TEST_ASSERT_NOT_NULL(buf);
+
+    /* Every block must differ, otherwise a bug that reordered, repeated or
+       dropped blocks would produce identical ciphertext and go unnoticed. */
+    for (size_t i = 0; i < SZ; i++) {
+        plaintext[i] = (uint8_t)(i * 7 + 1);
+    }
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+
+    psa_key_id_t key_id;
+    psa_algorithm_t alg = PSA_ALG_ECB_NO_PADDING;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, sizeof(key_256) * 8);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_import_key(&attributes, key_256, sizeof(key_256), &key_id));
+    psa_reset_key_attributes(&attributes);
+
+    psa_cipher_operation_t op = PSA_CIPHER_OPERATION_INIT;
+    psa_status_t status;
+    size_t out_len;
+
+    /* Reference, from separate buffers, anchored to the OpenSSL vector so that
+       everything compared against it below is trustworthy. */
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_encrypt_setup(&op, key_id, alg));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&op, plaintext, SZ, reference, SZ, &out_len));
+    TEST_ASSERT_EQUAL_size_t(SZ, out_len);
+    psa_cipher_abort(&op);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(ecb_kat_256, reference, sizeof(ecb_kat_256));
+
+    /* In-place, with the second call's output at a chosen distance from its
+       input: the overlap that must still be honoured, the one that corrupts,
+       the one a check on output == input alone would let through, and output
+       placed past everything the call reads. */
+    static const struct {
+        const char *name;
+        size_t first;
+        size_t second;
+        int delta;
+        bool safe;
+    } overlap_cases[] = {
+        { "output == input, nothing pending",     32, 32,  0, true  },
+        { "output == input, one byte pending",    33, 31,  0, false },
+        { "output == input + 1, nothing pending", 32, 32,  1, false },
+        { "output past the end of the input",     32, 32, 32, true  },
+    };
+
+#if CONFIG_MBEDTLS_HARDWARE_AES
+    const psa_status_t unsafe_status = PSA_ERROR_INVALID_ARGUMENT;
+#else
+    /* The software path rejects these too once the mbedtls submodule carries
+       the same ECB overlap check. Until then it accepts and mis-frames the
+       output. Drop this branch with the submodule bump. */
+    const psa_status_t unsafe_status = PSA_SUCCESS;
+#endif
+
+    for (size_t c = 0; c < sizeof(overlap_cases) / sizeof(overlap_cases[0]); c++) {
+        const size_t first = overlap_cases[c].first;
+        const size_t second = overlap_cases[c].second;
+        size_t len1, pending, expected_len;
+        uint8_t *in2, *out2;
+
+        memcpy(buf, plaintext, SZ);
+        memset(buf + SZ, canary, PAD);
+        op = (psa_cipher_operation_t)PSA_CIPHER_OPERATION_INIT;
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_encrypt_setup(&op, key_id, alg));
+
+        /* Exactly in place with nothing pending is always supported, and the
+           size of this call decides what the next one has to carry. */
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&op, buf, first, buf,
+                                                         SZ + PAD, &len1));
+        TEST_ASSERT_EQUAL_size_t(first / 16 * 16, len1);
+        pending = first - len1;
+
+        in2 = buf + first;
+        out2 = in2 + overlap_cases[c].delta;
+        expected_len = (pending + second) / 16 * 16;
+
+        /* Rejected calls must leave the buffer exactly as it is now. */
+        memcpy(scratch, buf, SZ);
+
+        out_len = 0;
+        status = psa_cipher_update(&op, in2, second, out2,
+                                   SZ + PAD - (size_t)(out2 - buf), &out_len);
+
+        if (overlap_cases[c].safe) {
+            TEST_ASSERT_EQUAL_MESSAGE(PSA_SUCCESS, status, overlap_cases[c].name);
+            TEST_ASSERT_EQUAL_size_t(expected_len, out_len);
+            /* This call continues the stream, so what it writes is the
+               ciphertext that follows whatever the first call produced. */
+            if (out_len != 0) {
+                TEST_ASSERT_EQUAL_HEX8_ARRAY(reference + len1, out2, out_len);
+            }
+        } else {
+            TEST_ASSERT_EQUAL_MESSAGE(unsafe_status, status, overlap_cases[c].name);
+            if (status != PSA_SUCCESS) {
+                TEST_ASSERT_EQUAL_size_t(0, out_len);
+                TEST_ASSERT_EQUAL_HEX8_ARRAY(scratch, buf, SZ);
+            }
+        }
+
+        for (size_t i = SZ; i < SZ + PAD; i++) {
+            TEST_ASSERT_EQUAL_HEX8(canary, buf[i]);
+        }
+        psa_cipher_abort(&op);
+    }
+
+    free(plaintext);
+    free(reference);
+    free(scratch);
+    free(buf);
+    psa_destroy_key(key_id);
+}
+
 
 static void aes_cbc_test(unsigned int SZ)
 {
