@@ -36,41 +36,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
         BOOLEAN sc_support)
 {
     bdstr_t bdstr;
-    bt_bdaddr_t bd_addr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-
-    /* device not in bond list and exceed the maximum number of bonded devices, delete the inactive bonded device */
-    if (btc_storage_get_num_all_bond_devices() >= BTM_SEC_MAX_BONDS && !btc_config_has_section(bdstr)) {
-        const btc_config_section_iter_t *iter = btc_config_section_begin();
-        const btc_config_section_iter_t *remove_iter = NULL;
-        /* find the last bdaddr-formatted device section */
-        while (iter != btc_config_section_end()) {
-            const char *name = btc_config_section_name(iter);
-            if (name && string_is_bdaddr(name)) {
-                remove_iter = iter;
-            }
-            iter = btc_config_section_next(iter);
-        }
-
-        if (remove_iter != NULL) {
-            const char *remove_section = btc_config_section_name(remove_iter);
-            if (string_to_bdaddr(remove_section, &bd_addr)) {
-                // delete device info
-                BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_BR_EDR);
-                BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_LE);
-
-                // delete config info
-                if (btc_config_remove_section(remove_section)) {
-                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the first device info : %02x:%02x:%02x:%02x:%02x:%02x",
-                                        bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
-                }
-            } else {
-                BTC_TRACE_ERROR("Failed to convert section name to bdaddr: %s", remove_section);
-            }
-        } else {
-            BTC_TRACE_WARNING("No bdaddr-formatted section found to remove");
-        }
-    }
 
     BTC_TRACE_DEBUG("add to storage: Remote device:%s\n", bdstr);
 
@@ -79,6 +45,33 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     ret &= btc_config_set_int(bdstr, BTC_STORAGE_PIN_LENGTH_STR, (int)pin_length);
     ret &= btc_config_set_bin(bdstr, BTC_STORAGE_LINK_KEY_STR, link_key, sizeof(LINK_KEY));
     ret &= btc_config_set_bin(bdstr, BTC_STORAGE_SC_SUPPORT, (uint8_t *)&sc_support, sizeof(sc_support));
+#if (SMP_INCLUDED == TRUE)
+    /* Evict after the write so the new device is newest and is not selected. */
+    btc_storage_evict_overflow_bonded_devices(BTM_SEC_MAX_BONDS);
+#else
+    {
+        uint16_t count = 0;
+        const btc_config_section_iter_t *iter = btc_config_section_begin();
+        const btc_config_section_iter_t *remove_iter = NULL;
+        while (iter != btc_config_section_end()) {
+            const char *name = btc_config_section_name(iter);
+            if (name && string_is_bdaddr(name)) {
+                count++;
+                remove_iter = iter;
+            }
+            iter = btc_config_section_next(iter);
+        }
+        if (count > BTM_SEC_MAX_BONDS && remove_iter != NULL) {
+            const char *remove_section = btc_config_section_name(remove_iter);
+            bt_bdaddr_t bd_addr;
+            if (string_to_bdaddr(remove_section, &bd_addr)) {
+                BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_BR_EDR);
+                BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_LE);
+                btc_config_remove_section(remove_section);
+            }
+        }
+    }
+#endif
     /* write bonded info immediately */
     btc_config_flush();
     btc_config_unlock();
@@ -141,10 +134,13 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
 {
     bt_status_t status = BT_STATUS_FAIL;
     uint16_t dev_cnt = 0;
-    const btc_config_section_iter_t *remove_iter = NULL;
-    bt_bdaddr_t bd_addr;
 
     btc_config_lock();
+    /* Drop oldest non-excepted overflow first so excepted bonds are not trimmed. */
+    btc_storage_evict_overflow_bonded_devices(BTM_SEC_MAX_BONDS);
+#if (BLE_INCLUDED == TRUE)
+    btc_storage_check_excepted_bond_limit();
+#endif
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end(); iter = btc_config_section_next(iter)) {
         const char *name = btc_config_section_name(iter);
         if (!string_is_bdaddr(name)) {
@@ -165,25 +161,10 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
 #endif  ///BLE_INCLUDED == TRUE
             }
         } else {
-            /* delete the exceeded device info from nvs */
-            remove_iter = iter;
-            while (remove_iter != btc_config_section_end()) {
-                const char *remove_section = btc_config_section_name(remove_iter);
-                string_to_bdaddr(remove_section, &bd_addr);
-                if (!string_is_bdaddr(remove_section)) {
-                    remove_iter = btc_config_section_next(remove_iter);
-                    continue;
-                }
-                remove_iter = btc_config_section_next(remove_iter);
-                /* delete config info */
-                if (btc_config_remove_section(remove_section)) {
-                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %02x:%02x:%02x:%02x:%02x:%02x",
-                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
-                }
-            }
-            /* write into nvs */
-            btc_config_flush();
-            break;
+            /* Leftover overflow is excepted (eviction refuses to delete them).
+             * Keep the NVS entries but do not load extra BTM records. */
+            BTC_TRACE_WARNING("skip loading overflow bonded device %s (excepted or no evictable candidate)", name);
+            continue;
         }
     }
     btc_config_unlock();
