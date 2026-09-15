@@ -123,7 +123,7 @@ patterns = [
 
 [gitlab.artifacts.s3.configs.longterm]
 bucket = "longterm"
-if_clause = 'CI_COMMIT_REF_NAME == "master"'
+if_clause = 'CI_COMMIT_REF_PROTECTED == "true"'
 patterns = [
     '**/build*/size*.json',
 ]
