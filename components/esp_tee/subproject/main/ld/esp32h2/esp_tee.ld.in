@@ -184,21 +184,21 @@ SECTIONS
   .dram.tee.heap (NOLOAD): ALIGN(0x10)
   {
     _tee_heap_start = ABSOLUTE(.);
-    . = ORIGIN(sram_tee_seg) + LENGTH(sram_tee_seg);
+    . = MAX(ABSOLUTE(.), ORIGIN(sram_tee_seg) + LENGTH(sram_tee_seg));
     _tee_heap_end = ABSOLUTE(.);
   } > sram_tee_seg
 
   .dram.tee.stack (NOLOAD): ALIGN(0x10)
   {
     _tee_stack_bottom = ABSOLUTE(.);
-    . = ORIGIN(stack_tee_seg) + LENGTH(stack_tee_seg);
+    . = MAX(ABSOLUTE(.), ORIGIN(stack_tee_seg) + LENGTH(stack_tee_seg));
     _tee_stack = ABSOLUTE(.);
   } > stack_tee_seg
 
   .dram.tee.intr_stack (NOLOAD): ALIGN(0x10)
   {
     _tee_intr_stack_bottom = ABSOLUTE(.);
-    . = ORIGIN(intr_stack_tee_seg) + LENGTH(intr_stack_tee_seg);
+    . = MAX(ABSOLUTE(.), ORIGIN(intr_stack_tee_seg) + LENGTH(intr_stack_tee_seg));
     _tee_intr_stack = ABSOLUTE(.);
   } > intr_stack_tee_seg
 
