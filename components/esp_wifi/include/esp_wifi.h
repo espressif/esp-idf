@@ -120,6 +120,7 @@ typedef struct {
     int                    espnow_max_encrypt_num; /**< Maximum encrypt number of peers supported by espnow */
     int                    tx_hetb_queue_num;      /**< WiFi TX HE TB QUEUE number for STA HE TB PPDU transmission */
     bool                   dump_hesigb_enable;     /**< enable dump sigb field */
+    int                    wifi_task_stack_size;    /**< WIFI task stack size */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -290,6 +291,24 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_ENABLE_PASSIVE_HIDDEN_AP 0
 #endif
 
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA
+#define WIFI_ENABLE_WPA3_OWE_STA (1<<11)
+#else
+#define WIFI_ENABLE_WPA3_OWE_STA 0
+#endif
+
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA || CONFIG_ESP_WIFI_ENABLE_WPA3_SAE
+#define WIFI_TASK_STACK_SIZE_BASE   6144
+#else
+#define WIFI_TASK_STACK_SIZE_BASE   3072
+#endif
+
+#if !WIFI_NANO_FORMAT_ENABLED
+#define WIFI_TASK_STACK_SIZE (WIFI_TASK_STACK_SIZE_BASE + 512)
+#else
+#define WIFI_TASK_STACK_SIZE WIFI_TASK_STACK_SIZE_BASE
+#endif
+
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
@@ -300,6 +319,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_WIFI_ENT_BIT (1<<7)
 #define CONFIG_FEATURE_BSS_MAX_IDLE_BIT (1<<8)
 #define CONFIG_FEATURE_WIFI_PASSIVE_HIDDEN_AP_BIT (1<<9)
+#define CONFIG_FEATURE_WPA3_OWE_STA_BIT (1<<10)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
@@ -311,7 +331,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
                            WIFI_ENABLE_11R  | \
                            WIFI_ENABLE_ENTERPRISE | \
                            WIFI_ENABLE_BSS_MAX_IDLE | \
-                           WIFI_ENABLE_PASSIVE_HIDDEN_AP)
+                           WIFI_ENABLE_PASSIVE_HIDDEN_AP | \
+                           WIFI_ENABLE_WPA3_OWE_STA)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
@@ -339,6 +360,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
     .espnow_max_encrypt_num = CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM, \
     .tx_hetb_queue_num = WIFI_TX_HETB_QUEUE_NUM, \
     .dump_hesigb_enable = WIFI_DUMP_HESIGB_ENABLED, \
+    .wifi_task_stack_size = WIFI_TASK_STACK_SIZE, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 }
 
