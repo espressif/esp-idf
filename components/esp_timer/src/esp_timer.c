@@ -383,10 +383,11 @@ static IRAM_ATTR void timer_list_unlock(esp_timer_dispatch_t timer_type)
     portEXIT_CRITICAL_SAFE(&s_timer_lock[timer_type]);
 }
 
+// Keep this as a standalone symbol because ldgen maps it by name.
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-static IRAM_ATTR bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
+static IRAM_ATTR __attribute__((noinline, noclone)) bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #else
-static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
+static __attribute__((noinline, noclone)) bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #endif
 {
     timer_list_lock(dispatch_method);
