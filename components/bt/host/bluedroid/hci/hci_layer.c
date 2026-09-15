@@ -306,6 +306,7 @@ static void transmit_command(
 
     fixed_pkt_queue_enqueue(hci_host_env.command_queue, linked_pkt, FIXED_PKT_QUEUE_MAX_TIMEOUT);
     hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
+
 }
 
 static future_t *transmit_command_futured(BT_HDR *command)
@@ -355,7 +356,7 @@ static void event_command_ready(fixed_pkt_queue_t *queue)
 
     if (metadata->flags_src & HCI_CMD_MSG_F_SRC_NOACK) {
         packet_fragmenter->fragment_and_dispatch(&metadata->command);
-        hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb)osi_free_func;
+        hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;
         free_func(wait_entry);
         return;
     }
@@ -473,11 +474,9 @@ static void command_timed_out(void *context)
         free_func(wait_entry);
     }
 
-    /* Restore the credit spent by the timed-out command */
+    /* Ensure at least one credit is available so downstream command processing does not stall */
     if (hci_host_env.command_credits <= 0) {
         hci_host_env.command_credits = 1;
-    } else {
-        hci_host_env.command_credits++;
     }
 
     if (!fixed_pkt_queue_is_empty(hci_host_env.command_queue)) {
@@ -616,7 +615,7 @@ intercepted:
 
         // If it has a callback, it's responsible for freeing the command
         if (event_code == HCI_COMMAND_COMPLETE_EVT || !metadata->command_status_cb) {
-            hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb)osi_free_func;
+            hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;
             free_func(wait_entry);
         }
     } else {
@@ -630,7 +629,7 @@ intercepted:
 static void dispatch_reassembled(BT_HDR *packet)
 {
     // Events should already have been dispatched before this point
-    //Tell Up-layer received packet.
+    // Tell Up-layer received packet.
     do {
         if ((packet->event & BT_EVT_MASK) == BT_EVT_TO_BTU_HCI_ACL) {
             if (btu_hci_acl_data_post(packet)) {
@@ -819,11 +818,7 @@ const char *hci_status_code_to_string(uint8_t status)
         case HCI_ERR_CONN_TOUT_DUE_TO_MIC_FAILURE:   return "MIC Failure";           /* 0x3D */
         case HCI_ERR_CONN_FAILED_ESTABLISHMENT:      return "Conn Failed";           /* 0x3E */
         case HCI_ERR_MAC_CONNECTION_FAILED:          return "Previously Used";       /* 0x3F */
-        default: {
-            static char buf[24];
-            snprintf(buf, sizeof(buf), "Unknown Status (0x%02X)", status);
-            return buf;
-        }
+        default:                                     return "Unknown Status";
     }
 }
 #endif
