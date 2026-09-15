@@ -465,6 +465,10 @@ To have better control of the calling sequence of functions, send mixed transact
 GPIO Matrix and IO_MUX
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. note::
+
+    Enabling :c:macro:`SPICOMMON_BUSFLAG_DATA_OUT_INV` forces all configured SPI bus signals through the GPIO Matrix, even when dedicated IO_MUX pins are selected. Since the GPIO Matrix and IO_MUX have target-specific timing and frequency differences, consider the limitations described below when selecting the SPI clock frequency.
+
 .. only:: esp32
 
     Most of ESP32's peripheral signals have a direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
