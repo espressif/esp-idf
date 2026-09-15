@@ -328,8 +328,39 @@ void l2cble_notify_le_connection (BD_ADDR bda)
 ** Returns          void
 **
 *******************************************************************************/
+static void l2cble_store_pawr_conn_handles(tL2C_LCB *p_lcb, UINT8 adv_handle, UINT16 sync_handle)
+{
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    /* Keep the outgoing adv_handle if the controller reports NONE (non-PAwR central). */
+    if (adv_handle != L2C_BLE_PAWR_ADV_HANDLE_NONE) {
+        p_lcb->adv_handle = adv_handle;
+    }
+    p_lcb->sync_handle = sync_handle;
+#else
+    UNUSED(p_lcb);
+    UNUSED(adv_handle);
+    UNUSED(sync_handle);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+}
+
+void l2cu_read_pawr_conn_handles(const tL2C_LCB *p_lcb, UINT8 *adv_handle, UINT16 *sync_handle)
+{
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    if (p_lcb != NULL) {
+        *adv_handle = p_lcb->adv_handle;
+        *sync_handle = p_lcb->sync_handle;
+        return;
+    }
+#else
+    UNUSED(p_lcb);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    *adv_handle = L2C_BLE_PAWR_ADV_HANDLE_NONE;
+    *sync_handle = L2C_BLE_PAWR_SYNC_HANDLE_NONE;
+}
+
 void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
-                               UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout)
+                               UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout,
+                               UINT8 adv_handle, UINT16 sync_handle)
 {
     tL2C_LCB            *p_lcb;
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_or_alloc_dev (bda);
@@ -380,6 +411,8 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
     p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
     p_lcb->updating_param_flag = false;
     p_lcb->ble_addr_type = type;
+
+    l2cble_store_pawr_conn_handles(p_lcb, adv_handle, sync_handle);
 
     /* If there are any preferred connection parameters, set them now */
     if ( (p_dev_rec->conn_params.min_conn_int     >= BLE_CONN_INT_MIN_HOST_CHECK ) &&
@@ -435,7 +468,8 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
 **
 *******************************************************************************/
 void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
-                                  UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout)
+                                  UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout,
+                                  UINT8 adv_handle, UINT16 sync_handle)
 {
     tL2C_LCB            *p_lcb;
     tBTM_SEC_DEV_REC    *p_dev_rec;
@@ -482,6 +516,8 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     p_lcb->updating_param_flag = false;
     p_lcb->ble_addr_type = type;
 
+    l2cble_store_pawr_conn_handles(p_lcb, adv_handle, sync_handle);
+
     /* Tell BTM Acl management about the link */
     p_dev_rec = btm_find_or_alloc_dev (bda);
 
@@ -518,7 +554,8 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
 **
 *******************************************************************************/
 void l2cble_conn_comp(UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE type,
-                      UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout)
+                      UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout,
+                      UINT8 adv_handle, UINT16 sync_handle)
 {
 #if (BLE_TOPOLOGY_CHECK == TRUE)
     btm_ble_update_link_topology_mask(role, TRUE);
@@ -528,9 +565,11 @@ void l2cble_conn_comp(UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE typ
     btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
     if (role == HCI_ROLE_MASTER) {
-        l2cble_scanner_conn_comp(handle, bda, type, conn_interval, conn_latency, conn_timeout);
+        l2cble_scanner_conn_comp(handle, bda, type, conn_interval, conn_latency, conn_timeout,
+                                 adv_handle, sync_handle);
     } else {
-        l2cble_advertiser_conn_comp(handle, bda, type, conn_interval, conn_latency, conn_timeout);
+        l2cble_advertiser_conn_comp(handle, bda, type, conn_interval, conn_latency, conn_timeout,
+                                    adv_handle, sync_handle);
     }
 }
 

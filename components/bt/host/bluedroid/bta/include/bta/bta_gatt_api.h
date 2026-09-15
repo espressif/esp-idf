@@ -415,6 +415,8 @@ typedef struct {
     tBTA_GATT_CONN_PARAMS conn_params;
     UINT8               ble_addr_type;
     UINT16              conn_handle;
+    UINT8               adv_handle;
+    UINT16              sync_handle;
 } tBTA_GATTC_CONNECT;
 
 typedef struct {
@@ -635,6 +637,8 @@ typedef struct {
     tBTA_GATT_CONN_PARAMS conn_params;
     UINT8               ble_addr_type;
     UINT16              conn_handle;
+    UINT8               adv_handle;
+    UINT16              sync_handle;
 } tBTA_GATTS_CONN;
 
 typedef struct {

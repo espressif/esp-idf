@@ -212,6 +212,10 @@ typedef union {
         esp_gatt_conn_params_t conn_params; /*!< Current connection parameters */
         esp_ble_addr_type_t ble_addr_type;  /*!< Remote device address type */
         uint16_t conn_handle;               /*!< HCI connection handle */
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+        uint8_t adv_handle;                 /*!< PAwR Advertising_Handle from connection complete; ESP_BLE_PAWR_ADV_HANDLE_NONE if N/A */
+        uint16_t sync_handle;               /*!< PAwR Sync_Handle from connection complete; ESP_BLE_PAWR_SYNC_HANDLE_NONE if N/A */
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
     } connect;                              /*!< Callback parameter for the event `ESP_GATTC_CONNECT_EVT` */
 
     /**

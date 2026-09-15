@@ -719,6 +719,13 @@ typedef struct {
                                                                 PHY when the long-range capability is really required. */
 } esp_ble_gatt_creat_conn_params_t;
 
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+/** @brief Invalid Advertising_Handle in PAwR connection complete events. */
+#define ESP_BLE_PAWR_ADV_HANDLE_NONE    0xFF
+/** @brief Invalid Sync_Handle in PAwR connection complete events. */
+#define ESP_BLE_PAWR_SYNC_HANDLE_NONE   0xFFFF
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
+
 /** @brief Represents a creat connection element. */
 typedef struct {
     esp_bd_addr_t remote_bda;                              /*!< The Bluetooth address of the remote device */
