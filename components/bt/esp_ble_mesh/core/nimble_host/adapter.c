@@ -20,6 +20,7 @@
 #include "mesh/common.h"
 #include "prov_pvnr.h"
 #include "scan.h"
+#include "adv_common.h"
 #include "btc_ble_mesh_ble.h"
 
 /** @def BT_UUID_MESH_PROV
@@ -1184,6 +1185,13 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
     uint16_t interval = 0;
     uint8_t buf_len = 0;
     int err = 0;
+    enum bt_mesh_adv_inst_type inst_type =
+        bt_mesh_get_adv_inst_idx_by_inst_id(inst_id);
+
+    if (inst_type >= BLE_MESH_ADV_INST_TYPES_NUM) {
+        BT_ERR("Invalid adv inst id %u", inst_id);
+        return -EINVAL;
+    }
 
     err = ble_gap_ext_adv_active(inst_id);
     if (err) {
@@ -1310,9 +1318,9 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
     adv_params.itvl_min = interval;
     adv_params.itvl_max = interval;
 
-    if (memcmp(&adv_params, &last_param[inst_id].param,
+    if (memcmp(&adv_params, &last_param[inst_type].param,
         sizeof(struct ble_gap_ext_adv_params))) {
-        if (last_param[inst_id].set) {
+        if (last_param[inst_type].set) {
             err = ble_gap_ext_adv_remove(inst_id);
             if (err != 0 && err != BLE_HS_EALREADY) {
                 BT_ERR("Advertising rm failed: err %d", err);
@@ -1323,7 +1331,7 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
                 return err;
             }
         }
-        last_param[inst_id].set = true;
+        last_param[inst_type].set = true;
         err = ble_gap_ext_adv_configure(inst_id, &adv_params, NULL, gap_event_cb, NULL);
         if (err != 0) {
             BT_ERR("Advertising config failed: err %d", err);
@@ -1334,7 +1342,7 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
             return err;
         }
 
-        memcpy(&last_param[inst_id].param, &adv_params, sizeof(struct ble_gap_ext_adv_params));
+        memcpy(&last_param[inst_type].param, &adv_params, sizeof(struct ble_gap_ext_adv_params));
     }
 
     err = ble_gap_ext_adv_set_data(inst_id, data);

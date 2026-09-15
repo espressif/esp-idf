@@ -22,6 +22,7 @@
 #include "mesh/common.h"
 #include "prov_pvnr.h"
 #include "scan.h"
+#include "adv_common.h"
 #include "net.h"
 #include "beacon.h"
 #include "btc_ble_mesh_ble.h"
@@ -671,6 +672,13 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
     tBTA_DM_BLE_EXT_ADV ext_adv = {0};
     uint16_t interval = 0U;
     int err = 0;
+    enum bt_mesh_adv_inst_type inst_type =
+        bt_mesh_get_adv_inst_idx_by_inst_id(inst_id);
+
+    if (inst_type >= BLE_MESH_ADV_INST_TYPES_NUM) {
+        BT_ERR("Invalid adv inst id %u", inst_id);
+        return -EINVAL;
+    }
 
     assert(param);
 
@@ -746,17 +754,17 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
     ext_adv_params.interval_min = interval;
     ext_adv_params.interval_max = interval;
 
-    if (memcmp(&ext_adv_params, &last_param[inst_id].param, sizeof(tBTA_DM_BLE_GAP_EXT_ADV_PARAMS))) {
-        if (last_param[inst_id].set) {
+    if (memcmp(&ext_adv_params, &last_param[inst_type].param, sizeof(tBTA_DM_BLE_GAP_EXT_ADV_PARAMS))) {
+        if (last_param[inst_type].set) {
             BTA_DmBleGapExtAdvSetRemove(inst_id);
         }
 
-        last_param[inst_id].set = true;
+        last_param[inst_type].set = true;
 
         /* Check if we can start adv using BTM_BleSetAdvParamsStartAdvCheck */
         BTA_DmBleGapExtAdvSetParams(inst_id, &ext_adv_params);
 
-        memcpy(&last_param[inst_id].param, &ext_adv_params, sizeof(tBTA_DM_BLE_GAP_EXT_ADV_PARAMS));
+        memcpy(&last_param[inst_type].param, &ext_adv_params, sizeof(tBTA_DM_BLE_GAP_EXT_ADV_PARAMS));
     }
 
     err = set_adv_data(BLE_MESH_HCI_OP_SET_ADV_DATA, inst_id, ad, ad_len);
