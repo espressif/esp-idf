@@ -30,7 +30,7 @@
 #include "esp_gatt_common_api.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
-#include "ble_ead.h"
+#include "esp_ble_ead.h"
 
 #define TAG "ENC_ADV_CENT"
 
@@ -51,7 +51,7 @@ typedef struct {
     bool valid;
     esp_bd_addr_t addr;
     bool key_material_exist;
-    ble_ead_key_material_t key_material;
+    esp_ble_ead_key_material_t key_material;
 } peer_info_t;
 
 static peer_info_t peers[MAX_PEERS] = {0};
@@ -142,26 +142,26 @@ static void decrypt_enc_adv_data(const uint8_t *adv_data, uint8_t adv_len, const
             const uint8_t *enc_data = &adv_data[offset + 2];
             uint8_t enc_data_len = len - 1;  /* Exclude type byte */
 
-            if (enc_data_len < BLE_EAD_RANDOMIZER_SIZE + BLE_EAD_MIC_SIZE) {
+            if (enc_data_len < ESP_BLE_EAD_RANDOMIZER_SIZE + ESP_BLE_EAD_MIC_SIZE) {
                 ESP_LOGW(TAG, "Encrypted data too short");
                 break;
             }
 
             uint8_t dec_data[32];  /* Buffer for decrypted data */
-            size_t dec_len = BLE_EAD_DECRYPTED_PAYLOAD_SIZE(enc_data_len);
+            size_t dec_len = ESP_BLE_EAD_DECRYPTED_PAYLOAD_SIZE(enc_data_len);
             if (dec_len > sizeof(dec_data)) {
                 ESP_LOGW(TAG, "Encrypted AD would yield %zu plaintext bytes; example buffer is %zu — skip",
                          dec_len, sizeof(dec_data));
                 break;
             }
 
-            int rc = ble_ead_decrypt(
+            esp_err_t rc = esp_ble_ead_decrypt(
                 peers[peer_idx].key_material.session_key,
                 peers[peer_idx].key_material.iv,
                 enc_data, enc_data_len,
                 dec_data, sizeof(dec_data));
 
-            if (rc == 0) {
+            if (rc == ESP_OK) {
                 size_t safe_dec_len = dec_len;
                 if (safe_dec_len > sizeof(dec_data)) {
                     ESP_LOGW(TAG, "dec_len %zu > buffer %zu, clamping for log/parse",
@@ -448,17 +448,17 @@ static void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
                      param->read.handle, param->read.value_len);
 
             if (param->read.handle == key_material_char_handle &&
-                param->read.value_len == sizeof(ble_ead_key_material_t)) {
+                param->read.value_len == sizeof(esp_ble_ead_key_material_t)) {
                 /* Store key material */
                 int peer_idx = find_peer(gattc_remote_bda);
                 if (peer_idx >= 0) {
                     memcpy(&peers[peer_idx].key_material, param->read.value,
-                           sizeof(ble_ead_key_material_t));
+                           sizeof(esp_ble_ead_key_material_t));
                     peers[peer_idx].key_material_exist = true;
 
                     ESP_LOGI(TAG, "Key material received:");
                     ESP_LOG_BUFFER_HEX(TAG, &peers[peer_idx].key_material,
-                                        sizeof(ble_ead_key_material_t));
+                                        sizeof(esp_ble_ead_key_material_t));
                 }
 
                 /* Disconnect and resume scanning */

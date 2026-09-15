@@ -355,6 +355,12 @@ if(CONFIG_BT_BLE_FEAT_CTE_EN)
     )
 endif()
 
+if(CONFIG_BT_BLE_FEAT_ENC_ADV_DATA)
+    list(APPEND bluedroid_host_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/api/esp_ble_ead.c"
+    )
+endif()
+
 if(CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND)
     list(APPEND bluedroid_host_srcs
         "${CMAKE_CURRENT_LIST_DIR}/stack/btm/btm_ble_pseudo.c"

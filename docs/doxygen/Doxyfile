@@ -85,6 +85,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/esp_ble_iso/api/include/esp_ble_iso_common_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_ble_ead.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_main.h \

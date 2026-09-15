@@ -364,6 +364,7 @@ typedef enum {
     ESP_BLE_AD_TYPE_TRANS_DISC_DATA          = 0x26,    /* relate to BTM_BLE_AD_TYPE_TRANS_DISC_DATA in stack/btm_ble_api.h */
     ESP_BLE_AD_TYPE_LE_SUPPORT_FEATURE       = 0x27,    /* relate to BTM_BLE_AD_TYPE_LE_SUPPORT_FEATURE in stack/btm_ble_api.h */
     ESP_BLE_AD_TYPE_CHAN_MAP_UPDATE          = 0x28,    /* relate to BTM_BLE_AD_TYPE_CHAN_MAP_UPDATE in stack/btm_ble_api.h */
+    ESP_BLE_AD_TYPE_ENC_ADV_DATA             = 0x31,    /* relate to BTM_BLE_AD_TYPE_ENC_ADV_DATA in stack/btm_ble_api.h */
     ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE    = 0xFF,    /* relate to BTM_BLE_AD_MANUFACTURER_SPECIFIC_TYPE in stack/btm_ble_api.h */
 } esp_ble_adv_data_type;
 
@@ -3584,7 +3585,10 @@ esp_err_t esp_ble_gap_get_device_name(void);
  *
  *                 This function sets the session key and IV that will be exposed
  *                 through the Key Material characteristic (UUID 0x2B88) in the GAP service.
- *                 The Key Material allows central devices to decrypt encrypted advertising data.
+ *                 A central can read the characteristic over an encrypted GATT link and
+ *                 decrypt Encrypted Advertising Data with esp_ble_ead_decrypt().
+ *                 Enabling this API also requires CONFIG_BT_GATTS_KEY_MATERIAL_CHAR,
+ *                 which selects CONFIG_BT_BLE_FEAT_ENC_ADV_DATA.
  *
  * @param[in]      session_key - 16-byte (128-bit) session key for AES-CCM encryption
  * @param[in]      iv          - 8-byte (64-bit) initialization vector
@@ -3593,6 +3597,7 @@ esp_err_t esp_ble_gap_get_device_name(void);
  *                  - ESP_OK : success
  *                  - other  : failed
  *
+ * @see            esp_ble_ead_encrypt, esp_ble_ead_decrypt
  */
 esp_err_t esp_ble_gap_set_key_material(const uint8_t session_key[16], const uint8_t iv[8]);
 #endif // CONFIG_BT_GATTS_KEY_MATERIAL_CHAR
