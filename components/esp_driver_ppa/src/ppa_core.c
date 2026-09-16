@@ -235,6 +235,7 @@ wrap_up:
 
     if (ret != ESP_OK && *ret_engine != NULL) {
         ppa_engine_release(*ret_engine);
+        *ret_engine = NULL;
     }
 
     return ret;
@@ -504,20 +505,7 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
         assert((pm_lock_ret == ESP_OK) && "acquire pm_lock failed");
 #endif
         ret = ppa_dma2d_enqueue(trans_elm);
-        if (ret != ESP_OK) {
-            portENTER_CRITICAL(&ppa_engine_base->spinlock);
-            STAILQ_REMOVE(&ppa_engine_base->trans_stailq, trans_elm, ppa_trans_s, entry);
-            ppa_engine_base->busy = false;
-            portEXIT_CRITICAL(&ppa_engine_base->spinlock);
-#if CONFIG_PM_ENABLE
-            pm_lock_ret = esp_pm_lock_release(ppa_engine_base->pm_lock);
-            assert((pm_lock_ret == ESP_OK) && "release pm_lock failed");
-#endif
-            portENTER_CRITICAL(&ppa_client->spinlock);
-            ppa_client->trans_cnt--;
-            portEXIT_CRITICAL(&ppa_client->spinlock);
-            goto err;
-        }
+        assert((ret == ESP_OK) && "enqueue to 2D-DMA failed");
     }
 
     if (mode == PPA_TRANS_MODE_BLOCKING) {
@@ -529,7 +517,6 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
         portEXIT_CRITICAL(&ppa_client->spinlock);
     }
 
-err:
     return ret;
 }
 
@@ -572,7 +559,8 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
 
     // If there is next trans in PPA engine queue, send it to DMA queue; otherwise the engine is idle (flag cleared above)
     if (next_start_trans) {
-        ppa_dma2d_enqueue(next_start_trans);
+        esp_err_t ret = ppa_dma2d_enqueue(next_start_trans);
+        assert(ret == ESP_OK);
     } else {
 #if CONFIG_PM_ENABLE
         esp_err_t pm_lock_ret = esp_pm_lock_release(engine_base->pm_lock);
