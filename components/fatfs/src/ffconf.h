@@ -43,8 +43,10 @@
 /* This option switches fast seek feature. (0:Disable or 1:Enable) */
 
 
-#define FF_USE_EXPAND	0
-/* This option switches f_expand(). (0:Disable or 1:Enable) */
+#define FF_USE_EXPAND	1
+/* This option switches f_expand(). (0:Disable or 1:Enable)
+/  Required by esp_vfs_fat_create_contiguous_file(); kept enabled so that
+/  public API links against f_expand (regression in IDFGH-18260 / #19067). */
 
 
 #define FF_USE_CHMOD	1

@@ -611,3 +611,30 @@ TEST_CASE("can create and remove directories", "[fatfs]")
     test_mkdir_rmdir();
     test_teardown();
 }
+
+static void test_create_contiguous_file()
+{
+    const char *base_path = "/linux";
+    const char *full_path = "/linux/expand.txt";
+    const uint64_t desired_size = 64;
+
+    // Start from a clean slate (create fails if the file already has non-zero size)
+    remove(full_path);
+
+    REQUIRE(esp_vfs_fat_create_contiguous_file(base_path, full_path, desired_size, true) == ESP_OK);
+
+    struct stat st;
+    REQUIRE(stat(full_path, &st) == 0);
+    REQUIRE(st.st_size == static_cast<off_t>(desired_size));
+
+    bool is_contiguous = false;
+    REQUIRE(esp_vfs_fat_test_contiguous_file(base_path, full_path, &is_contiguous) == ESP_OK);
+    REQUIRE(is_contiguous);
+}
+
+TEST_CASE("esp_vfs_fat_create_contiguous_file allocates contiguous space", "[fatfs]")
+{
+    test_setup();
+    test_create_contiguous_file();
+    test_teardown();
+}
