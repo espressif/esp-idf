@@ -475,29 +475,8 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 }
 
 #ifndef BOOTLOADER_BUILD
-void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
+void rtc_clk_modem_pll_lock_release(void)
 {
-    //                          IDF-11064
-    if (cpu_freq_mhz == 240) {
-        esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, true);
-        rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
-    } else if (cpu_freq_mhz == 160) {
-        esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, true);
-        rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
-    } else {// cpu_freq_mhz is 80
-        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 101)) {// (use 240mhz pll if max cpu freq is 240MHz)
-#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240
-            esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, true);
-            rtc_clk_cpu_freq_to_pll_240_mhz(cpu_freq_mhz);
-#else
-            esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, true);
-            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
-#endif
-        } else {// (fixed for chip rev. >= ECO3)
-            esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, true);
-            rtc_clk_cpu_freq_to_pll_160_mhz(cpu_freq_mhz);
-        }
-    }
     clk_ll_cpu_clk_src_lock_release();
 }
 #endif

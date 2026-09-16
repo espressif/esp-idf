@@ -55,10 +55,6 @@
 #include "hal/timer_ll.h"
 #endif
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
-#include "esp_private/pm_impl.h"
-#endif
-
 #if !SOC_PMU_SUPPORTED
 #include "hal/rtc_cntl_ll.h"
 #endif
@@ -1218,15 +1214,13 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_m
         sleep_cache_suspend();
     }
 #endif
-    // Restore CPU frequency
+    // Restore CPU frequency (Will fallback to rtc_clk_cpu_freq_set_config if PLL source is not configured.)
+    rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && !SOC_PM_BBPLL_PD_IN_MODEM_STATE && !SOC_PM_MODEM_STATE_USE_XTAL
     if (pmu_sleep_pll_already_enabled()) {
-        rtc_clk_cpu_freq_to_pll_and_pll_lock_release(esp_pm_impl_get_cpu_freq(PM_MODE_CPU_MAX));
-    } else
-#endif
-    {
-        rtc_clk_cpu_freq_set_config(&cpu_freq_config);
+        rtc_clk_modem_pll_lock_release();
     }
+#endif
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
 
     if (!deep_sleep) {
