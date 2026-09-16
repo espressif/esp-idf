@@ -1292,7 +1292,6 @@ static void roaming_app_neighbor_report_recv_internal_handler(void *ctx, void *d
         goto cleanup;
     }
 
-    uint8_t report_len = neighbor_report_event->report_len;
     /* dump report info */
     ESP_LOGD(ROAMING_TAG, "rrm: neighbor report len=%d", report_len);
     ESP_LOG_BUFFER_HEXDUMP(ROAMING_TAG, pos, report_len, ESP_LOG_DEBUG);
