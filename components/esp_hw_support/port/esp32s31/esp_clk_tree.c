@@ -243,68 +243,6 @@ static int16_t s_root_pll_power_ref_cnt[SOC_ROOT_CIRCUIT_CLK_MAX] = { 0 };
 
 static bool s_clk_tree_initialized = false;
 
-static int16_t esp_clk_tree_root_pll_power_acquire(soc_root_clk_circuit_t clk_circuit)
-{
-    int16_t prev;
-
-    assert(clk_circuit == SOC_ROOT_CIRCUIT_CLK_BBPLL || clk_circuit == SOC_ROOT_CIRCUIT_CLK_CPLL
-           || clk_circuit == SOC_ROOT_CIRCUIT_CLK_XTAL_X2);
-
-    esp_os_enter_critical(&s_clk_tree_spinlock);
-    prev = s_root_pll_power_ref_cnt[clk_circuit]++;
-    if (prev == 0) {
-        switch (clk_circuit) {
-        case SOC_ROOT_CIRCUIT_CLK_BBPLL:
-            clk_ll_bbpll_enable();
-            break;
-        case SOC_ROOT_CIRCUIT_CLK_CPLL:
-            clk_ll_cpll_enable();
-            break;
-        case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
-            clk_ll_xtalx2_enable();
-            break;
-        default:
-            break;
-        }
-    }
-    esp_os_exit_critical(&s_clk_tree_spinlock);
-    return prev;
-}
-
-static int16_t esp_clk_tree_root_pll_power_release(soc_root_clk_circuit_t clk_circuit)
-{
-    int16_t prev;
-
-    assert(clk_circuit == SOC_ROOT_CIRCUIT_CLK_BBPLL || clk_circuit == SOC_ROOT_CIRCUIT_CLK_CPLL
-           || clk_circuit == SOC_ROOT_CIRCUIT_CLK_XTAL_X2);
-
-    esp_os_enter_critical(&s_clk_tree_spinlock);
-    prev = s_root_pll_power_ref_cnt[clk_circuit];
-    if (prev <= 0) {
-        esp_os_exit_critical(&s_clk_tree_spinlock);
-        ESP_EARLY_LOGW(TAG, "soc_root_clk_circuit_t %d disabled multiple times!!", clk_circuit);
-        return prev;
-    }
-    s_root_pll_power_ref_cnt[clk_circuit] = prev - 1;
-    if (prev == 1) {
-        switch (clk_circuit) {
-        case SOC_ROOT_CIRCUIT_CLK_BBPLL:
-            clk_ll_bbpll_disable();
-            break;
-        case SOC_ROOT_CIRCUIT_CLK_CPLL:
-            clk_ll_cpll_disable();
-            break;
-        case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
-            clk_ll_xtalx2_disable();
-            break;
-        default:
-            break;
-        }
-    }
-    esp_os_exit_critical(&s_clk_tree_spinlock);
-    return prev;
-}
-
 static uint32_t esp_clk_tree_ref_500m_pll_get_freq_hz(uint32_t div_num)
 {
     uint32_t up_hz;
@@ -476,25 +414,41 @@ void esp_clk_tree_initialize(void)
 
 bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
-    if (clk_circuit >= SOC_ROOT_CIRCUIT_CLK_MAX) {
+    if (clk_circuit != SOC_ROOT_CIRCUIT_CLK_BBPLL
+            && clk_circuit != SOC_ROOT_CIRCUIT_CLK_CPLL
+            && clk_circuit != SOC_ROOT_CIRCUIT_CLK_XTAL_X2) {
         return false;
     }
 
     bool toggled = false;
-    switch (clk_circuit) {
-    case SOC_ROOT_CIRCUIT_CLK_CPLL:
-    case SOC_ROOT_CIRCUIT_CLK_BBPLL:
-    case SOC_ROOT_CIRCUIT_CLK_XTAL_X2: {
-        if (enable) {
-            toggled = (esp_clk_tree_root_pll_power_acquire(clk_circuit) == 0);
-        } else {
-            toggled = (esp_clk_tree_root_pll_power_release(clk_circuit) == 1);
+    esp_os_enter_critical(&s_clk_tree_spinlock);
+    if (enable) {
+        s_root_pll_power_ref_cnt[clk_circuit]++;
+    } else if (s_root_pll_power_ref_cnt[clk_circuit] <= 0) {
+        esp_os_exit_critical(&s_clk_tree_spinlock);
+        ESP_EARLY_LOGW(TAG, "soc_root_clk_circuit_t %d disabled multiple times!!", clk_circuit);
+        return false;
+    }
+    if (s_root_pll_power_ref_cnt[clk_circuit] == 1) {
+        switch (clk_circuit) {
+        case SOC_ROOT_CIRCUIT_CLK_BBPLL:
+            enable ? clk_ll_bbpll_enable() : clk_ll_bbpll_disable();
+            break;
+        case SOC_ROOT_CIRCUIT_CLK_CPLL:
+            enable ? clk_ll_cpll_enable() : clk_ll_cpll_disable();
+            break;
+        case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
+            enable ? clk_ll_xtalx2_enable() : clk_ll_xtalx2_disable();
+            break;
+        default:
+            break;
         }
-        break;
+        toggled = true;
     }
-    default:
-        break;
+    if (!enable) {
+        s_root_pll_power_ref_cnt[clk_circuit]--;
     }
+    esp_os_exit_critical(&s_clk_tree_spinlock);
     return toggled;
 }
 
