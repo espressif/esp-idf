@@ -68,26 +68,55 @@ void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries)
     pau_hal_set_regdma_entry_link_addr(PAU_instance()->hal, link_entries);
 }
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY || SOC_PM_SUPPORT_PMU_MODEM_STATE
 #if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
 void pau_regdma_set_modem_link_addr(void *link_addr)
 {
     pau_hal_set_regdma_modem_link_addr(PAU_instance()->hal, link_addr);
 }
-#endif
+#endif // SOC_PM_PAU_REGDMA_LINK_WIFIMAC
 
-void IRAM_ATTR pau_regdma_trigger_modem_link_backup(void)
+void IRAM_ATTR pau_regdma_trigger_modem_link_backup(bool blocking)
 {
-    pau_hal_start_regdma_modem_link(PAU_instance()->hal, true);
+    pau_hal_start_regdma_modem_link(PAU_instance()->hal, true, blocking);
+    if (blocking) {
+        pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
+    }
+}
+
+void IRAM_ATTR pau_regdma_trigger_modem_link_restore(bool blocking)
+{
+    pau_hal_start_regdma_modem_link(PAU_instance()->hal, false, blocking);
+    if (blocking) {
+        pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
+    }
+}
+
+void IRAM_ATTR pau_regdma_modem_link_complete(void)
+{
     pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
 }
 
-void IRAM_ATTR pau_regdma_trigger_modem_link_restore(void)
+void IRAM_ATTR pau_regdma_done_int_enable(void)
 {
-    pau_hal_start_regdma_modem_link(PAU_instance()->hal, false);
-    pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
+    pau_hal_regdma_done_int_enable(PAU_instance()->hal);
 }
-#endif
+
+void IRAM_ATTR pau_regdma_done_int_disable(void)
+{
+    pau_hal_regdma_done_int_disable(PAU_instance()->hal);
+}
+
+bool IRAM_ATTR pau_get_regdma_done_status(void)
+{
+    return pau_hal_get_regdma_done_status(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_clear_regdma_done_status(void)
+{
+    pau_hal_clear_regdma_backup_done_intr_state(PAU_instance()->hal);
+}
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY || SOC_PM_SUPPORT_PMU_MODEM_STATE */
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 void IRAM_ATTR pau_regdma_set_system_link_addr(void *link_addr)

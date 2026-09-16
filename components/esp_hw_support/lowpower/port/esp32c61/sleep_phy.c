@@ -39,7 +39,7 @@ typedef struct {
     void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1];
 } sleep_modem_state_phy_link_context_t;
 
-esp_err_t sleep_modem_state_phy_link_init(void **link_head)
+esp_err_t sleep_phy_link_init(void **link_context)
 {
     esp_err_t err = ESP_OK;
 
@@ -124,14 +124,14 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
         }
         if (err == ESP_OK) {
             phy_link_context.link_head = link;
-            *link_head = (void *)&phy_link_context;
+            *link_context = (void *)&phy_link_context;
         }
     }
 #endif
     return err;
 }
 
-void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t flags)
+void IRAM_ATTR sleep_phy_link_config(void *link_context, uint32_t flags)
 {
     sleep_modem_state_phy_link_context_t *phy_link_context = (sleep_modem_state_phy_link_context_t *)link_context;
 
@@ -144,10 +144,10 @@ void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t fl
     }
 }
 
-esp_err_t sleep_modem_state_phy_link_deinit(void *link_head)
+esp_err_t sleep_phy_link_deinit(void *link_context)
 {
 #if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
-    regdma_link_destroy(((sleep_modem_state_phy_link_context_t *)link_head)->link_head, 0);
+    regdma_link_destroy(((sleep_modem_state_phy_link_context_t *)link_context)->link_head, 0);
 #endif
     return ESP_OK;
 }

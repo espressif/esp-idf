@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ static uint8_t s_btbb_access_ref = 0;
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_retention.h"
 #include "btbb_retention_reg.h"
+#include "esp_private/phy.h"
 static const char* TAG = "btbb_init";
 
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
@@ -31,11 +32,14 @@ static const char* TAG = "btbb_init";
 static esp_err_t btbb_sleep_retention_init(void *arg)
 {
     const static sleep_retention_entries_config_t btbb_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_BT_BB_LINK(0x00), BB_PART_0_ADDR, BB_PART_0_ADDR, BB_PART_0_SIZE, 0, 0), .owner = BTBB_LINK_OWNER },
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_BT_BB_LINK(0x01), BB_PART_1_ADDR, BB_PART_1_ADDR, BB_PART_1_SIZE, 0, 0), .owner = BTBB_LINK_OWNER },
+        { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_BT_BB_LINK(0x00), BB_PART_0_ADDR, BB_PART_0_ADDR, BB_PART_0_SIZE, 0, 0), .owner = BTBB_LINK_OWNER },
+        { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_BT_BB_LINK(0x01), BB_PART_1_ADDR, BB_PART_1_ADDR, BB_PART_1_SIZE, 0, 0), .owner = BTBB_LINK_OWNER },
 #if BB_PART_CNT > 2
-        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_BT_BB_LINK(0x02), BB_PART_2_ADDR, BB_PART_2_ADDR, BB_PART_2_SIZE, 0, 0), .owner = BTBB_LINK_OWNER },
+        { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_BT_BB_LINK(0x02), BB_PART_2_ADDR, BB_PART_2_ADDR, BB_PART_2_SIZE, 0, 0), .owner = BTBB_LINK_OWNER },
 #endif // BB_PART_CNT > 2
+#if BB_PART_CNT > 3
+        { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_BT_BB_LINK(0x03), BB_PART_3_ADDR, BB_PART_3_ADDR, BB_PART_3_SIZE, 0, 0), .owner = BTBB_LINK_OWNER },
+#endif // BB_PART_CNT > 3
     };
     esp_err_t err = sleep_retention_entries_create(btbb_regs_retention, ARRAY_SIZE(btbb_regs_retention), REGDMA_LINK_PRI_BT_MAC_BB, SLEEP_RETENTION_MODULE_BT_BB);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for btbb retention");
@@ -63,14 +67,28 @@ void esp_btbb_enable(void)
     if (s_btbb_access_ref == 0) {
         bt_bb_v2_init_cmplx(BTBB_ENABLE_VERSION_PRINT);
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+        esp_err_t err = ESP_OK;
+#if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
+        err = esp_phy_fe_sleep_data_init();
+        if (err != ESP_OK) {
+            _lock_release(&s_btbb_access_lock);
+            return;
+        }
+#endif // (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
         sleep_retention_module_init_param_t init_param = {
             .cbs     = { .create = { .handle = btbb_sleep_retention_init, .arg = NULL } },
             .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_MODEM)
         };
-        esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BT_BB, &init_param);
+#if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
+        init_param.depends.bitmap[SLEEP_RETENTION_MODULE_PHY_FE >> 5] |= BIT(SLEEP_RETENTION_MODULE_PHY_FE % 32);
+#endif // (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
+        err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BT_BB, &init_param);
         if (err == ESP_OK) {
             err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_BT_BB);
             if (err != ESP_OK) {
+#if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
+                esp_phy_fe_sleep_data_deinit();
+#endif // (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
                 ESP_LOGW(TAG, "failed to allocate sleep retention linked list for btbb retention");
             }
         } else {
@@ -88,6 +106,9 @@ void esp_btbb_disable(void)
     if (s_btbb_access_ref && (--s_btbb_access_ref == 0)) {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
         btbb_sleep_retention_deinit();
+#if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
+        esp_phy_fe_sleep_data_deinit();
+#endif // (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
 #endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     }
     _lock_release(&s_btbb_access_lock);

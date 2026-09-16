@@ -45,7 +45,7 @@ typedef struct {
     void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1];
 } sleep_modem_state_phy_link_context_t;
 
-static esp_err_t sleep_modem_state_phy_wifi_init(void *arg)
+static esp_err_t sleep_phy_retention_init(void *arg)
 {
     #define WIFIMAC_ENTRY() (BIT(SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC))
 
@@ -96,12 +96,12 @@ static esp_err_t sleep_modem_state_phy_wifi_init(void *arg)
 }
 #endif
 
-esp_err_t sleep_modem_state_phy_link_init(void **link_head)
+esp_err_t sleep_phy_link_init(void **link_context)
 {
     esp_err_t err = ESP_OK;
 
 #if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
-    sleep_retention_module_init_param_t init_param = { .cbs = { .create = { .handle = sleep_modem_state_phy_wifi_init, .arg = NULL } } };
+    sleep_retention_module_init_param_t init_param = { .cbs = { .create = { .handle = sleep_phy_retention_init, .arg = NULL } } };
     err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_MODEM_PHY, &init_param);
     if (err == ESP_OK) {
         err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_MODEM_PHY);
@@ -118,7 +118,7 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
                 }
             }
             if (err == ESP_OK) {
-                *link_head = (void *)&phy_link_context;
+                *link_context = (void *)&phy_link_context;
             }
         }
     }
@@ -126,7 +126,7 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
     return err;
 }
 
-void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t flags)
+void IRAM_ATTR sleep_phy_link_config(void *link_context, uint32_t flags)
 {
 #if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
     sleep_modem_state_phy_link_context_t *phy_link_context = (sleep_modem_state_phy_link_context_t *)link_context;
@@ -141,7 +141,7 @@ void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t fl
 #endif
 }
 
-esp_err_t sleep_modem_state_phy_link_deinit(void *link_head)
+esp_err_t sleep_phy_link_deinit(void *link_head)
 {
     esp_err_t err = ESP_OK;
 #if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC

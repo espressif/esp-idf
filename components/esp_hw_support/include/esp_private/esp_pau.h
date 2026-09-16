@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,23 +25,58 @@ extern "C" {
  */
 void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries);
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY || SOC_PM_SUPPORT_PMU_MODEM_STATE
 /**
- * @brief Set the address of WiFi MAC REGDMA Link in modem state
+ * @brief Set the address of modem REGDMA Link in modem state
  * @param link_addr linked lists address
  */
 void pau_regdma_set_modem_link_addr(void *link_addr);
 
 /**
  * @brief Software trigger regdma to perform modem link backup
+ *
+ * @param blocking software waits for regdma to complete
  */
-void pau_regdma_trigger_modem_link_backup(void);
+void pau_regdma_trigger_modem_link_backup(bool blocking);
 
 /**
  * @brief Software trigger regdma to perform modem link restore
+ *
+ * @param blocking software waits for regdma to complete
  */
-void pau_regdma_trigger_modem_link_restore(void);
-#endif
+void pau_regdma_trigger_modem_link_restore(bool blocking);
+
+/**
+ * @brief Completion process of regdma for modem link retention
+ *
+ */
+ void pau_regdma_modem_link_complete(void);
+
+/**
+ * @brief Enable pau done interrupt
+ *
+ */
+void pau_regdma_done_int_enable(void);
+
+/**
+ * @brief Disable pau done interrupt
+ *
+ */
+void pau_regdma_done_int_disable(void);
+
+/**
+ * @brief Check pau done interrupt status
+ *
+ */
+bool pau_get_regdma_done_status(void);
+
+/**
+ * @brief Clear pau done interrupt status
+ *
+ */
+void pau_clear_regdma_done_status(void);
+
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY || SOC_PM_SUPPORT_PMU_MODEM_STATE */
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**
