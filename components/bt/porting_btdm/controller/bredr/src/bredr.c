@@ -128,6 +128,7 @@ extern int bredr_ctrl_feat_coex_en(void);
 extern int bredr_ctrl_feat_sam_en(void);
 extern int bredr_ctrl_feat_mws_en(void);
 
+extern void bredr_ctrl_get_btdm_info(uint32_t *version, uint32_t *size);
 extern const char *co_orca_get_git_version_str(void);
 extern void r_orca_log_set_printf(bredr_log_printf_fn printf_fn);
 /* Shutdown */
@@ -917,6 +918,14 @@ int esp_bredr_controller_init(esp_bt_controller_config_t *cfg)
 
     cfg->bredr.mempool_size = 1024 * (cfg->bredr.max_acl_conn + 2);
     cfg->bredr.mempool_ops = &s_orca_mempool_ops;
+
+    uint32_t bredr_btdm_version = 0;
+    uint32_t bredr_btdm_size = 0;
+    bredr_ctrl_get_btdm_info(&bredr_btdm_version, &bredr_btdm_size);
+    if ((cfg->btdm.version != bredr_btdm_version) || (sizeof(esp_bt_ctrl_btdm_config_t) != bredr_btdm_size)) {
+        ESP_LOGE(BREDR_LOG_TAG, "btdm version used by bredr check failed, version:%x, size:%d", bredr_btdm_version, bredr_btdm_size);
+        return ESP_ERR_INVALID_VERSION;
+    }
 
     status = bredr_controller_init(&cfg->bredr);
     if (status != 0) {
