@@ -32,6 +32,10 @@
 #include "bignum_impl.h"
 
 #include "mbedtls/bignum.h"
+/* For mbedtls_platform_zeroize(), used on the small-operand stack copies. */
+#include "mbedtls/platform_util.h"
+/* For mbedtls_mpi_core_mul(), used by the small-operand software fallback. */
+#include "bignum_core.h"
 
 #include "hal/mpi_hal.h"
 
@@ -506,6 +510,127 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 
 static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t z_words);
 static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t y_words, size_t z_words);
+static int mpi_mult_mpi_soft(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y);
+
+/* Below this operand size the hardware unit is slower than a software
+   multiply. The peripheral's per-call cost is fixed -- crypto lock, clock
+   enable, the hardware passes, clock disable, unlock -- and does not shrink
+   with the operands, while a software multiply is O(n^2). Measured on an
+   ESP32-D0WD-V3 at 240 MHz, microseconds per mbedtls_mpi_mul_mpi():
+
+        operand bits    software    hardware
+             256           9.78       19.49
+             384          21.8        23.4
+             512          29.22       22.15
+            1024         100.80       36.04
+            4096        1467.20      457.92
+
+   so the crossover sits between 384 and 512 bits. That matters because an
+   ECDHE-ECDSA handshake is thousands of 256-bit multiplies: with the
+   peripheral taking all of them, a P-256 ECDSA verify costs 416.99 ms
+   against 327.75 ms in software on the same build.
+
+   Expressed in bits of one operand as presented to the hardware, matching
+   the SOC_RSA_MAX_BIT_LEN test below it. */
+/* The value is chosen to route the operand sizes that actually occur, not to
+   match the measured crossover to the bit. Near the threshold those sizes are
+   few -- 256 and 384 for P-256 and P-384, 1024 and above for RSA -- so the
+   constant only has to decide which side of 256 and 384 it falls on, and every
+   value between two of those sizes behaves identically. Smaller operands reach
+   the test as well, but sit below every candidate and route the same way
+   whichever one is chosen.
+
+   The per-target values, the measurements behind them, and how the choice was
+   made for the parts whose crossover sits near 384 are in the commit message.
+   That choice is not uniform: it is made on the size of the loss on each side,
+   which is one-sided at 240 MHz but close to even at 80 MHz.
+
+   Not named SOC_: this depends on the CPU frequency the build runs at and not
+   on the silicon alone, so it does not belong in soc_caps.h. The #ifndef still
+   lets a header set it first if that ever changes.
+
+   Under CONFIG_PM_ENABLE the CPU frequency varies at run time and this follows
+   the configured maximum, so a build sitting at a lower frequency uses a
+   constant slightly too high. Near the crossover the two costs are equal by
+   definition, so that error is small. */
+#ifndef ESP_MPI_HW_MIN_BIT_LEN
+
+/* The per-target chain below tests CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ. In #if an
+   undefined identifier is 0, which would read as the slowest clock and pick the
+   smaller constant with no diagnostic -- the wrong side of 384 on the parts
+   where that matters. This file gets the symbol transitively; nothing
+   force-includes sdkconfig.h. Require it rather than assume it. */
+#if !defined(CONFIG_MBEDTLS_MPI_HW_MIN_BIT_LEN) || CONFIG_MBEDTLS_MPI_HW_MIN_BIT_LEN <= 0
+#if !defined(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
+#error "CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ is not visible here; include sdkconfig.h"
+#endif
+#endif
+
+#if defined(CONFIG_MBEDTLS_MPI_HW_MIN_BIT_LEN) && CONFIG_MBEDTLS_MPI_HW_MIN_BIT_LEN > 0
+/* Measured by the user and set in Kconfig; it wins over everything below. */
+#define ESP_MPI_HW_MIN_BIT_LEN CONFIG_MBEDTLS_MPI_HW_MIN_BIT_LEN
+
+#elif defined(CONFIG_IDF_TARGET_ESP32)          /* Xtensa LX6 */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ <= 80
+#define ESP_MPI_HW_MIN_BIT_LEN 384
+#else
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+#endif
+
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)        /* Xtensa LX7 */
+/* No frequency split, deliberately: the crossover is 325 bits at 240 MHz and a
+   lower clock only moves it down, so it stays inside the 256..384 band at every
+   frequency and the whole band maps to one constant. */
+#define ESP_MPI_HW_MIN_BIT_LEN 384
+
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)        /* Xtensa LX7 */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ <= 80
+#define ESP_MPI_HW_MIN_BIT_LEN 384
+#else
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+#endif
+
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)        /* RISC-V */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ <= 80
+#define ESP_MPI_HW_MIN_BIT_LEN 256
+#else
+#define ESP_MPI_HW_MIN_BIT_LEN 384
+#endif
+
+#elif defined(CONFIG_IDF_TARGET_ESP32C5)        /* RISC-V */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ <= 160
+#define ESP_MPI_HW_MIN_BIT_LEN 384
+#else
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+#endif
+
+#elif defined(CONFIG_IDF_TARGET_ESP32C6)        /* RISC-V */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ <= 120
+#define ESP_MPI_HW_MIN_BIT_LEN 384
+#else
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+#endif
+
+#elif defined(CONFIG_IDF_TARGET_ESP32H2)        /* RISC-V */
+#if CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ <= 64
+#define ESP_MPI_HW_MIN_BIT_LEN 384
+#else
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+#endif
+
+#elif defined(CONFIG_IDF_TARGET_ESP32P4)        /* RISC-V */
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+
+#elif defined(CONFIG_IDF_TARGET_ESP32S31)       /* RISC-V, despite the S prefix */
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+
+#else
+/* Not measured on this target. 512 keeps P-256 and P-384 in software, which is
+   the case the accelerator is known to lose, and leaves RSA on the unit. */
+#define ESP_MPI_HW_MIN_BIT_LEN 512
+#endif
+
+#endif /* ESP_MPI_HW_MIN_BIT_LEN */
 
 /* Z = X * Y */
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y )
@@ -513,10 +638,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     int ret = 0;
     size_t x_bits = mbedtls_mpi_bitlen(X);
     size_t y_bits = mbedtls_mpi_bitlen(Y);
-    size_t x_words = bits_to_words(x_bits);
-    size_t y_words = bits_to_words(y_bits);
-    size_t z_words = bits_to_words(x_bits + y_bits);
-    size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
+    size_t x_words, y_words, z_words, hw_words;
     /* Short-circuit eval if either argument is 0 or 1.
 
        This is needed as the mpi modular division
@@ -538,6 +660,27 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
         Z->MBEDTLS_PRIVATE(s) *= Y->MBEDTLS_PRIVATE(s);
         return ret;
     }
+
+    /* Too small for the hardware unit to be worth its per-call cost. Tested on
+       the real operand size, not on hw_words: mpi_ll_calculate_hardware_words()
+       rounds up to a multiple of 16 words, so a 256-bit operand is already
+       presented to the peripheral as 512 bits and hw_words would never be below
+       the threshold. That rounding is also why the hardware cost is flat from
+       256 to 512 bits while the software cost is not.
+
+       Done before the grow below, because the software path handles Z aliasing
+       X or Y itself. */
+    if (MAX(x_bits, y_bits) < ESP_MPI_HW_MIN_BIT_LEN) {
+        return mpi_mult_mpi_soft(Z, X, Y);
+    }
+
+    /* Only the hardware path below needs these, and this function is on the hot
+       path for the small multiplies the test above diverts, so they are computed
+       after it rather than before. */
+    x_words  = bits_to_words(x_bits);
+    y_words  = bits_to_words(y_bits);
+    z_words  = bits_to_words(x_bits + y_bits);
+    hw_words = mpi_hal_calc_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
 
     /* Grow Z to result size early, avoid interim allocations */
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, z_words) );
@@ -580,6 +723,96 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
 
 cleanup:
     return ret;
+}
+
+/* Largest operand this path can see. The caller only routes here below
+   ESP_MPI_HW_MIN_BIT_LEN bits, which bounds the stack copies below.
+   BITS_TO_LIMBS() comes from bignum_core.h, included above, and is the
+   library's own rounding-up in units of mbedtls_mpi_uint. */
+#define MPI_SOFT_MAX_WORDS  BITS_TO_LIMBS(ESP_MPI_HW_MIN_BIT_LEN)
+
+/* Software multiply, for operands below ESP_MPI_HW_MIN_BIT_LEN.
+
+   MBEDTLS_MPI_MUL_MPI_ALT compiles the library's own mbedtls_mpi_mul_mpi()
+   out entirely, and unlike exp_mod -- which has MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK
+   and mbedtls_mpi_exp_mod_soft() for exactly this purpose -- there is no
+   upstream mul_mpi equivalent to fall back to. So this mirrors the library
+   implementation, over the same mbedtls_mpi_core_mul() it would have used.
+
+   Z may alias X or Y, which is why the operands are copied first and why this
+   is called before the caller grows Z. */
+static int mpi_mult_mpi_soft(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y)
+{
+    /* Z may alias X or Y, and Z is cleared before the operands are read, so an
+       aliased operand has to be copied first. The library copies into a heap
+       MPI. Here the operands are bounded by the routing threshold, so the copy
+       fits on the stack. That matters: inside an RSA-2048 public operation every
+       small multiply aliases Z with an operand, and the allocation costs about
+       4.4 us, more than the multiply itself. */
+    mbedtls_mpi_uint tx[MPI_SOFT_MAX_WORDS];
+    mbedtls_mpi_uint ty[MPI_SOFT_MAX_WORDS];
+    const mbedtls_mpi_uint *xp = X->MBEDTLS_PRIVATE(p);
+    const mbedtls_mpi_uint *yp = Y->MBEDTLS_PRIVATE(p);
+    /* Read both signs before Z is written, because Z may be X or Y. */
+    const int z_sign = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
+    size_t i, j;
+    int ret;
+
+    for (i = X->MBEDTLS_PRIVATE(n); i > 0; i--) {
+        if (X->MBEDTLS_PRIVATE(p)[i - 1] != 0) {
+            break;
+        }
+    }
+    for (j = Y->MBEDTLS_PRIVATE(n); j > 0; j--) {
+        if (Y->MBEDTLS_PRIVATE(p)[j - 1] != 0) {
+            break;
+        }
+    }
+
+    if (Z == X) {
+        memcpy(tx, xp, i * sizeof(mbedtls_mpi_uint));
+        xp = tx;
+    }
+    if (Z == Y) {
+        memcpy(ty, yp, j * sizeof(mbedtls_mpi_uint));
+        yp = ty;
+    }
+
+    ret = mbedtls_mpi_grow(Z, i + j);
+    if (ret == 0) {
+        ret = mbedtls_mpi_lset(Z, 0);
+    }
+
+    /* i and j are both >= 1 on the only path that reaches this function: the
+       caller returns early for operands of 0 or 1 bits before the routing test
+       that leads here. This test and the sign fallback below therefore mirror
+       the library implementation so the function stays correct on its own
+       terms, rather than guarding a case that can occur today. */
+    if (ret == 0 && i > 0 && j > 0) {
+        mbedtls_mpi_core_mul(Z->MBEDTLS_PRIVATE(p), xp, i, yp, j);
+    }
+
+    /* The stack copies can hold secret-dependent limbs: with the routing
+       threshold in place, P-256 field multiplies reach this path, and their
+       operands are intermediates of a scalar multiplication. The heap MPIs
+       these copies replaced were wiped by mbedtls_mpi_free(), so wipe here too
+       rather than quietly dropping that property. The multiply is folded into
+       the branch above so that this runs on the error path as well. */
+    if (xp == tx) {
+        mbedtls_platform_zeroize(tx, i * sizeof(mbedtls_mpi_uint));
+    }
+    if (yp == ty) {
+        mbedtls_platform_zeroize(ty, j * sizeof(mbedtls_mpi_uint));
+    }
+
+    if (ret != 0) {
+        return ret;
+    }
+
+    /* A zero magnitude must carry a positive sign; see the note above on why
+       that case is not reachable from the current caller. */
+    Z->MBEDTLS_PRIVATE(s) = (i == 0 || j == 0) ? 1 : z_sign;
+    return 0;
 }
 
 int mbedtls_mpi_mul_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_uint b )

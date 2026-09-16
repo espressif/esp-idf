@@ -1397,6 +1397,34 @@ menu "mbedTLS"
 
                 These operations are used by RSA.
 
+        config MBEDTLS_MPI_HW_MIN_BIT_LEN
+            int "Smallest operand the MPI accelerator is used for (bits)"
+            depends on MBEDTLS_HARDWARE_MPI
+            range 0 SOC_RSA_MAX_BIT_LEN
+            default 0
+            help
+                A multiplication whose larger operand is smaller than this is
+                done in software instead of on the hardware unit.
+
+                The unit's per-call cost is fixed - crypto lock, clock enable,
+                the hardware passes, clock disable, unlock - and does not shrink
+                with the operands, while a software multiply is O(n^2). Below
+                some size the unit therefore costs more than it saves. That size
+                depends on the chip and on the CPU frequency, because a software
+                multiply is entirely CPU bound while the unit's cost is only
+                partly so.
+
+                This matters most for elliptic curve cryptography, which is
+                thousands of 256-bit multiplications. An ECDHE-ECDSA handshake
+                is measurably slower with the unit taking all of them.
+
+                Leave this at 0 to use the built-in value for this target and
+                CPU frequency. Set it only if you have measured your own.
+
+                This also sizes two stack buffers in the software multiply, at
+                one word per 32 bits, so a large value costs stack on every
+                call.
+
         config MBEDTLS_LARGE_KEY_SOFTWARE_MPI
             bool "Fallback to software implementation for larger MPI values"
             depends on MBEDTLS_HARDWARE_MPI
