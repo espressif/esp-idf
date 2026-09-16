@@ -174,3 +174,72 @@ Once you have created a custom VFS driver, use :cpp:func:`esp_vfs_register_fs()`
     stderr = f;
 
 Note that logging functions (``ESP_LOGE()``, etc.) write their output to ``stdout``. Keep this in mind when using logging within the implementation of your custom VFS (or any components which it calls). For example, if the custom VFS driver's ``write()`` operation fails and uses ``ESP_LOGE()`` to log the error, this will cause the output to be sent to ``stdout``, which would again call the custom VFS driver's ``write()`` operation. This would result in an infinite loop. It is recommended to keep track of this re-entry condition in the VFS driver's ``write()`` implementation, and return immediately if the write operation is still in progress.
+
+Console I/O multiplexer
+-----------------------
+
+In addition to redirecting ``stdout`` and ``stderr`` manually (as shown above), ESP-IDF provides a console I/O multiplexer that lets an application register one or more custom VFS backends and switch between them at runtime, without reassigning the ``stdin``/``stdout``/``stderr`` streams itself.
+
+The multiplexer is exposed on ``/dev/console`` and manages backends in two roles:
+
+- **Primary** — the active read and write backend. Both application input (``stdin``) and output (``stdout``/``stderr``) go through it. Primaries are kept on a stack: pushing a new primary suspends the previous one, and popping restores it. The default console selected in Kconfig sits at the base of the stack and is always kept as the ultimate fallback.
+- **Auxiliary** — a write-only sink. Every byte written to ``stdout`` and ``stderr`` is fanned out to all registered auxiliaries in addition to the primary. This is useful, for example, to mirror console output to a log file or a network connection while keeping the interactive console on the physical interface.
+
+The maximum number of backends that can be registered at once (primaries plus auxiliaries, including the Kconfig default) is set by :ref:`CONFIG_ESP_STDIO_MAX_VFS_ENTRIES`.
+
+API overview
+^^^^^^^^^^^^
+
+The multiplexer API is declared in ``esp_stdio.h`` and is available when ``CONFIG_VFS_SUPPORT_IO`` is enabled:
+
+- ``esp_stdio_register_io()`` — register a VFS backend as a write-only auxiliary and return an opaque handle. The backend starts receiving the write fan-out immediately.
+- ``esp_stdio_push_primary()`` — promote a previously registered handle to the active read and write primary. The current primary is suspended on the stack.
+- ``esp_stdio_pop_primary()`` — remove a primary from the stack, returning it to auxiliary status. Passing ``NULL`` removes the current (top) primary; passing a specific handle removes it from wherever it sits in the stack.
+- ``esp_stdio_unregister_io()`` — remove a backend from the multiplexer entirely. If it is currently the active primary, it is popped first.
+
+The backend is described by an ``esp_stdio_io_config_t`` structure:
+
+.. list::
+
+    - ``vfs_ops`` — pointer to the VFS operations table (must not be ``NULL``).
+    - ``vfs_ctx`` — context pointer forwarded to every VFS callback.
+    - ``path`` — path passed to ``open()`` inside the driver, for example ``"/"``.
+
+.. note::
+
+    The ops table, context, and path string passed in the configuration must remain valid until the backend is removed with ``esp_stdio_unregister_io()``.
+
+Example
+^^^^^^^
+
+The following example registers a custom backend, makes it the active console, and later restores the previous one:
+
+.. code-block:: c
+
+    #include "esp_stdio.h"
+
+    // A VFS operations table implemented by the application.
+    extern const esp_vfs_fs_ops_t my_console_vfs;
+
+    esp_stdio_handle_t handle;
+    esp_stdio_io_config_t config = {
+        .vfs_ops = &my_console_vfs,
+        .vfs_ctx = NULL,
+        .path = "/",
+    };
+
+    // Register as a write-only auxiliary: output is now mirrored to it.
+    ESP_ERROR_CHECK(esp_stdio_register_io(&config, &handle));
+
+    // Promote it to the active read + write primary.
+    ESP_ERROR_CHECK(esp_stdio_push_primary(handle));
+
+    // ... application uses the custom console for stdin/stdout/stderr ...
+
+    // Restore the previous primary (the custom backend reverts to auxiliary).
+    ESP_ERROR_CHECK(esp_stdio_pop_primary(handle));
+
+    // Remove the backend from the multiplexer entirely.
+    ESP_ERROR_CHECK(esp_stdio_unregister_io(handle));
+
+The same re-entrancy caveat described above for logging applies here: the backend's ``write()`` implementation must not trigger logging that would recursively write to the console.

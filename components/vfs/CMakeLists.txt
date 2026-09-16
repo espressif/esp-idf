@@ -6,11 +6,13 @@ if(${target} STREQUAL "linux")
     set(inc)
     set(priv_inc)
 
-    list(APPEND inc include)
+    # linux_include provides stubs (sys/reent.h, dirent.h, errno.h) required by
+    # esp_vfs.h unconditionally, so expose it for all Linux builds regardless of
+    # VFS_SUPPORT_IO, which now defaults to n on Linux.
+    list(APPEND inc include linux_include)
     if(CONFIG_VFS_SUPPORT_IO)
-        list(APPEND inc linux_include)
         list(APPEND priv_inc private_include)
-        list(APPEND srcs "vfs_linux.c" "vfs_linux_default_coop.c" "vfs.c" "vfs_calls.c")
+        list(APPEND srcs "vfs_linux.c" "vfs_linux_default_coop.c" "vfs.c" "vfs_calls.c" "nullfs.c")
     endif()
 
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
