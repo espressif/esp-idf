@@ -898,6 +898,18 @@ static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* i
 }
 #endif
 
+#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
+static void phy_deep_sleep_prepare(void)
+{
+    if (phy_get_modem_flag() != 0) {
+        phy_close_rf();
+#if !CONFIG_IDF_TARGET_ESP32
+        phy_xpd_tsens();
+#endif
+    }
+}
+#endif
+
 void esp_phy_load_cal_and_init(void)
 {
     char * phy_version = get_phy_version_str();
@@ -989,12 +1001,7 @@ void esp_phy_load_cal_and_init(void)
     esp_phy_release_init_data(init_data);
 #endif
 #if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
-    ESP_ERROR_CHECK(esp_deep_sleep_register_phy_hook(&phy_close_rf));
-#endif
-#if !CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
-    ESP_ERROR_CHECK(esp_deep_sleep_register_phy_hook(&phy_xpd_tsens));
-#endif
+    ESP_ERROR_CHECK(esp_deep_sleep_register_phy_hook(&phy_deep_sleep_prepare));
 #endif
 
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
