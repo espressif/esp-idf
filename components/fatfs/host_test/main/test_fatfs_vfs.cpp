@@ -611,3 +611,29 @@ TEST_CASE("can create and remove directories", "[fatfs]")
     test_mkdir_rmdir();
     test_teardown();
 }
+
+TEST_CASE("esp_vfs_fat_create_contiguous_file works (requires FF_USE_EXPAND)", "[fatfs]")
+{
+    /* Do not gate this case on FF_USE_EXPAND: with expand disabled the test app
+     * fails to link (undefined reference to f_expand), catching ffconf regressions. */
+    STATIC_REQUIRE(FF_USE_EXPAND == 1);
+
+    test_setup();
+
+    const char *base_path = "/linux";
+    const char *full_path = "/linux/expand.txt";
+    constexpr uint64_t desired_size = 64;
+
+    remove(full_path);
+    REQUIRE(esp_vfs_fat_create_contiguous_file(base_path, full_path, desired_size, true) == ESP_OK);
+
+    struct stat st;
+    REQUIRE(stat(full_path, &st) == 0);
+    REQUIRE(st.st_size == (off_t)desired_size);
+
+    bool is_contiguous = false;
+    REQUIRE(esp_vfs_fat_test_contiguous_file(base_path, full_path, &is_contiguous) == ESP_OK);
+    REQUIRE(is_contiguous);
+
+    test_teardown();
+}
