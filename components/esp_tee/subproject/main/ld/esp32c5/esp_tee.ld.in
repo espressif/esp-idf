@@ -15,6 +15,12 @@
 
 #define SRAM_TEE_SEG_SIZE          (CONFIG_SECURE_TEE_IRAM_SIZE + SRAM_TEE_DRAM_SIZE)
 
+#define SRAM_TEE_HEAP_MIN_SIZE     (0x2000)
+
+#define TEE_IRAM_USED              (_tee_iram_end - SRAM_TEE_SEG_START)
+#define TEE_DRAM_REQUIRED          (_tee_heap_start + SRAM_TEE_HEAP_MIN_SIZE - _tee_dram_start)
+#define TEE_HEAP_SIZE              (_tee_heap_end - _tee_heap_start)
+
 /* TEE interrupt stack is placed at the end of the TEE DRAM segment.
  * The top of the TEE stack is before the end of interrupt stack
  * and the bottom of the stack is at _heap_end.
@@ -241,7 +247,7 @@ SECTIONS
 #include "elf_misc.ld.in"
 }
 
-ASSERT ((_tee_iram_end <= _tee_dram_start),
-        "Error: TEE IRAM segment overflowed into the DRAM segment! Increase CONFIG_SECURE_TEE_IRAM_SIZE as required.");
-ASSERT((_tee_heap_end >= _tee_heap_start + 0x2000),
-        "Error: TEE heap size is too small - minimum is 8KB (0x2000)! Increase CONFIG_SECURE_TEE_DRAM_SIZE as required.");
+ASSERT((TEE_HEAP_SIZE >= SRAM_TEE_HEAP_MIN_SIZE) || (TEE_IRAM_USED <= CONFIG_SECURE_TEE_IRAM_SIZE),
+        "Error: TEE IRAM overflow! Increase CONFIG_SECURE_TEE_IRAM_SIZE as required.");
+ASSERT((TEE_HEAP_SIZE >= SRAM_TEE_HEAP_MIN_SIZE) || (TEE_DRAM_REQUIRED <= SRAM_TEE_DRAM_SIZE),
+        "Error: TEE DRAM overflow (data + bss + rodata + 8KB minimum heap)! Increase CONFIG_SECURE_TEE_DRAM_SIZE as required.");
