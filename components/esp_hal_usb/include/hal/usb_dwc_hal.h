@@ -335,19 +335,19 @@ void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_lim
 /**
  * @brief Get Transfer Size limit
  *
- * There are 2 constraints on the size of a transfer:
- * 1. Maximum transfer size: The maximum total size of data that can be transferred in a single transfer.
- *    This is determined by the width of the transfer size counter in the hardware
- * 2. Maximum packet count: The maximum number of packets that can be transferred in a single transfer.
- *    This is determined by the width of the packet counter in the hardware
+ * In Scatter/Gather DMA mode, a bulk/control transfer is described by a single non-isochronous qTD,
+ * so the transfer size is bounded by the qTD's 17-bit "Total bytes to transfer" field
+ * (0 to 128K-1 bytes). The HCTSIZ register carries no transfer size in this mode (its XferSize/PktCnt
+ * bits are instead NTD/SCHED_INFO), hence the GHWCFG3 transfer/packet counter widths do not apply.
  *
- * The actual maximum transfer size of a transfer is the minimum of (xfer_size, packet_count * MPS), where MPS is the maximum packet size of the endpoint.
+ * The returned value is floored to a whole number of maximum-sized packets, because an IN qTD's byte
+ * count must be programmed as an integer multiple of the endpoint's MPS.
  *
- * @see USB-DWC databook Table 5-26
+ * @see USB-DWC databook Section 5.4.41 (HCTSIZi), USB-DWC programming guide Section 6
  *
  * @param[in] hal Context of the HAL layer
  * @param[in] mps Maximum packet size of the endpoint in bytes
- * @return Maximum transfer size in bytes based on the hardware counters
+ * @return Maximum transfer size in bytes for a single bulk/control transfer
  */
 size_t usb_dwc_hal_get_xfer_size_limit(usb_dwc_hal_context_t *hal, uint16_t mps);
 
