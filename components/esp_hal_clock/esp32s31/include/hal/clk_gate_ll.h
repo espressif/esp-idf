@@ -325,12 +325,55 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_160m_clk_en(bool enable)
 {
     HP_SYS_CLKRST.ref_160m_ctrl0.reg_ref_160m_clk_en = enable;
 }
+
+/**
+ * Check if the clock gate for ref_160m is enabled
+ * @return true if enabled, false otherwise
+ */
+FORCE_INLINE_ATTR bool clk_gate_ll_ref_160m_clk_is_enabled(void)
+{
+    return HP_SYS_CLKRST.ref_160m_ctrl0.reg_ref_160m_clk_en;
+}
+
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define clk_gate_ll_ref_160m_clk_en(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         _clk_gate_ll_ref_160m_clk_en(__VA_ARGS__); \
     } while(0)
+
+/**
+ * Check if the clock gate for modem PLL is enabled
+ * @return true if enabled, false otherwise
+ */
+FORCE_INLINE_ATTR bool clk_gate_ll_modem_pll_clk_is_enabled(void)
+{
+    return HP_SYS_CLKRST.modem_conf.modem_pll_clk_en;
+}
+
+/**
+ * Check if the clock gate for modem clock source is PLL
+ * @return true if PLL, false otherwise
+ */
+FORCE_INLINE_ATTR bool clk_gate_ll_modem_clk_source_is_pll(void)
+{
+    return HP_SYS_CLKRST.modem_conf.modem_clk_source_sel;
+}
+
+/**
+ * Enable or disable the clock gate for modem PLL source
+ * @param  enable Enable / disable
+ */
+FORCE_INLINE_ATTR void _clk_gate_ll_modem_pll_source_cg_en(bool enable)
+{
+    if (enable) {
+        HP_SYS_CLKRST.modem_conf.val = 0x15;
+        HP_SYS_CLKRST.modem_conf.val = 0x1d;
+    } else {
+        HP_SYS_CLKRST.modem_conf.val = 0x2d;
+        HP_SYS_CLKRST.modem_conf.val = 0x25;
+    }
+}
 
 /**
  * Enable or disable the clock gate for ref_240m (derived from BBPLL).

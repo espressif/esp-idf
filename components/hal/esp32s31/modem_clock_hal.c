@@ -120,13 +120,19 @@ uint32_t IRAM_ATTR modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_c
 void IRAM_ATTR modem_clock_hal_enable_soc_pll_source_cg(modem_clock_hal_context_t *hal, bool enable)
 {
     (void)hal;
-    HP_SYS_CLKRST.modem_conf.val = enable ? 0x3d : 0x25;
+    if (enable) {
+        HP_SYS_CLKRST.modem_conf.val = 0x15;
+        HP_SYS_CLKRST.modem_conf.val = 0x1d;
+    } else {
+        HP_SYS_CLKRST.modem_conf.val = 0x2d;
+        HP_SYS_CLKRST.modem_conf.val = 0x25;
+    }
 }
 
 bool IRAM_ATTR modem_clock_hal_soc_pll_source_cg_is_enabled(modem_clock_hal_context_t *hal)
 {
     (void)hal;
-    return (HP_SYS_CLKRST.modem_conf.val == 0x3d);
+    return (HP_SYS_CLKRST.modem_conf.val == 0x1d);
 }
 
 void IRAM_ATTR modem_clock_hal_enable_modem_common_fe_clock(modem_clock_hal_context_t *hal, bool enable)

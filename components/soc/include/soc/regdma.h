@@ -37,6 +37,7 @@ extern "C" {
 #define REGDMA_MODEMLPCON_LINK(_pri)        ((0x03 << 8) | _pri)
 #define REGDMA_PAU_LINK(_pri)               ((0x04 << 8) | _pri)
 #define REGDMA_PVT_LINK(_pri)               ((0x05 << 8) | _pri)
+#define REGDMA_PLL_LINK(_pri)               ((0x06 << 8) | _pri)
 
 #define REGDMA_CACHE_LINK(_pri)             ((0x0c << 8) | _pri)
 #define REGDMA_INTMTX_LINK(_pri)            ((0x0d << 8) | _pri)
@@ -79,9 +80,10 @@ extern "C" {
 
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
-#define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
-#define REGDMA_LINK_PRI_MODEM_CLK               REGDMA_LINK_PRI_1
-#define REGDMA_LINK_PRI_CLOCK_ICG               REGDMA_LINK_PRI_1
+#define REGDMA_LINK_PRI_PLL_SOURCE              REGDMA_LINK_PRI_0
+#define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_1
+#define REGDMA_LINK_PRI_MODEM_CLK               REGDMA_LINK_PRI_2
+#define REGDMA_LINK_PRI_CLOCK_ICG               REGDMA_LINK_PRI_2
 #define REGDMA_LINK_PRI_CRITICAL_TEE_APM        REGDMA_LINK_PRI_2
 #define REGDMA_LINK_PRI_WIFI_MAC_BB             REGDMA_LINK_PRI_3
 #define REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM    REGDMA_LINK_PRI_4
