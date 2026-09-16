@@ -15,6 +15,7 @@ from _pytest.fixtures import FixtureRequest
 from _pytest.main import Session
 from _pytest.nodes import Item
 from test_build_system_helpers import EXT_IDF_PATH
+from test_build_system_helpers import FAILED_COMMAND_LOG_DIR_ENV
 from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import get_idf_build_env
@@ -186,21 +187,33 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(scope='session')
 def _session_work_dir(request: FixtureRequest) -> typing.Generator[tuple[Path, bool], None, None]:
     work_dir = request.config.getoption('--work-dir')
+    previous_log_dir = os.environ.get(FAILED_COMMAND_LOG_DIR_ENV)
 
     if work_dir:
-        work_dir = os.path.join(work_dir, datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d_%H-%M-%S'))
-        logging.debug(f'using work directory: {work_dir}')
-        os.makedirs(work_dir, exist_ok=True)
+        # resolve allows using relative paths with --work-dir option
+        work_dir_path = Path(work_dir).resolve() / datetime.datetime.now(datetime.timezone.utc).strftime(
+            '%Y-%m-%d_%H-%M-%S'
+        )
+        logging.debug(f'using work directory: {work_dir_path}')
+        os.makedirs(work_dir_path, exist_ok=True)
         clean_dir = None
         is_temp_dir = False
     else:
-        work_dir = mkdtemp()
-        logging.debug(f'created temporary work directory: {work_dir}')
-        clean_dir = work_dir
+        work_dir_path = Path(mkdtemp()).resolve()
+        logging.debug(f'created temporary work directory: {work_dir_path}')
+        clean_dir = work_dir_path
         is_temp_dir = True
 
-    # resolve allows using relative paths with --work-dir option
-    yield Path(work_dir).resolve(), is_temp_dir
+    log_dir = work_dir_path / 'failed_command_logs'
+    log_dir.mkdir(parents=True, exist_ok=True)
+    os.environ[FAILED_COMMAND_LOG_DIR_ENV] = str(log_dir)
+
+    yield work_dir_path, is_temp_dir
+
+    if previous_log_dir is None:
+        os.environ.pop(FAILED_COMMAND_LOG_DIR_ENV, None)
+    else:
+        os.environ[FAILED_COMMAND_LOG_DIR_ENV] = previous_log_dir
 
     if clean_dir:
         logging.debug(f'cleaning up {clean_dir}')

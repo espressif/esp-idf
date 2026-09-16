@@ -13,6 +13,7 @@ from .file_utils import bin_files_differ
 from .file_utils import file_contains
 from .file_utils import replace_in_file
 from .idf_utils import EXT_IDF_PATH
+from .idf_utils import FAILED_COMMAND_LOG_DIR_ENV
 from .idf_utils import EnvDict
 from .idf_utils import IdfPyFunc
 from .idf_utils import find_python
@@ -33,6 +34,7 @@ __all__ = [
     'run_idf_py',
     'EXT_IDF_PATH',
     'EnvDict',
+    'FAILED_COMMAND_LOG_DIR_ENV',
     'IdfPyFunc',
     'Snapshot',
     'get_snapshot',

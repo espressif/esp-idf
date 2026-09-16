@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 import stat
-import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -95,13 +94,16 @@ def test_hints_no_color_output_when_noninteractive(idf_py: IdfPyFunc) -> None:
         'main/build_test_app.c', '// placeholder_inside_main', 'esp_chip_info_t chip_info; esp_chip_info(&chip_info);'
     )
 
-    with pytest.raises(subprocess.CalledProcessError) as exc_info:
-        idf_py('build')
+    # Expected failure: do not go through run_idf_py(check=True). That path
+    # still has to write one logging.error record, and on Windows CI that write
+    # is what hangs shard 3/6 after this test.
+    ret = idf_py('build', check=False)
 
     # the shared esp_pylib logger drops color escape sequences on
     # non-interactive (non-TTY) output, so the hint appears without any ANSI color codes.
-    assert 'esp_chip_info.h' in exc_info.value.stdout
-    assert '\x1b[' not in exc_info.value.stdout
+    assert ret.returncode != 0
+    assert 'esp_chip_info.h' in ret.stdout
+    assert '\x1b[' not in ret.stdout
 
 
 @pytest.mark.usefixtures('test_app_copy')

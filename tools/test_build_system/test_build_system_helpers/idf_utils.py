@@ -19,6 +19,10 @@ except KeyError:
 EnvDict = dict[str, str]
 IdfPyFunc = typing.Callable[..., subprocess.CompletedProcess]
 
+# Session fixture in conftest.py sets this to the pytest --work-dir tree so
+# failed-command files survive --cleanup-idf-copy of the app directory.
+FAILED_COMMAND_LOG_DIR_ENV = 'IDF_TEST_FAILED_COMMAND_LOG_DIR'
+
 
 _LOG_ERROR_MARKERS = (
     'CMake Error',
@@ -29,44 +33,23 @@ _LOG_ERROR_MARKERS = (
 )
 
 
-def _clip_log_output(text: str | None, max_lines: int = 80, max_line_len: int = 400) -> str:
-    """Last ``max_lines`` of process output for logging, plus failure lines.
+def _shorten_log_line(line: str, max_line_len: int = 200) -> str:
+    if len(line) <= max_line_len:
+        return line
+    return line[:max_line_len] + f'... [{len(line) - max_line_len} chars omitted]'
 
-    pytest.ini enables ``log_cli``, so ``logging.error(full_stdout)`` after a
-    failed build is one record. On Windows CI that live-log can stall for hours
-    even when the line count is small: CMake's ``-- Component paths:`` line is
-    a single multi-KB (sometimes multi-MB) string.
-    """
+
+def _failure_lines(text: str | None, max_lines: int = 20) -> list[str]:
+    """Marker lines only. Do not send build tails over the CI live log."""
     if not text:
-        return ''
-    lines = text.splitlines()
-
-    def _short(line: str) -> str:
-        if len(line) <= max_line_len:
-            return line
-        return line[:max_line_len] + f'... [{len(line) - max_line_len} chars omitted]'
-
-    omitted = max(0, len(lines) - max_lines)
-    tail_start = len(lines) - max_lines if omitted else 0
-    tail = lines[tail_start:]
-
-    failures: list[str] = []
-    for idx, line in enumerate(lines):
-        if idx >= tail_start:
-            break
+        return []
+    lines: list[str] = []
+    for line in text.splitlines():
         if any(marker in line for marker in _LOG_ERROR_MARKERS):
-            failures.append(line)
-            if len(failures) >= 40:
+            lines.append(_shorten_log_line(line))
+            if len(lines) >= max_lines:
                 break
-
-    parts: list[str] = []
-    if failures:
-        parts.append('[... failure lines ...]')
-        parts.extend(_short(line) for line in failures)
-    if omitted:
-        parts.append(f'[... {omitted} lines omitted ...]')
-    parts.extend(_short(line) for line in tail)
-    return '\n'.join(parts)
+    return lines
 
 
 def _log_process_failure(
@@ -75,13 +58,14 @@ def _log_process_failure(
     workdir: Path | str,
     error: subprocess.CalledProcessError,
 ) -> None:
-    """Save the untouched output to files, then log one clipped record.
+    """Save the untouched output to files, then log paths and failure lines.
 
-    The files keep the whole output available whatever the failure is, so the
-    clipped record no longer has to carry everything needed to debug it. Writing
-    them before logging also means the output survives a stalled live log.
+    The files keep the whole output. The live log only names those files and
+    repeats a few marker lines: a 12 KB record of clipped stdout still hangs
+    Windows CI the same way an unclipped one did.
     """
-    log_dir = Path(workdir) / 'failed_command_logs'
+    env_log_dir = os.environ.get(FAILED_COMMAND_LOG_DIR_ENV)
+    log_dir = Path(env_log_dir) if env_log_dir else Path(workdir) / 'failed_command_logs'
     saved_paths: dict[str, Path] = {}
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -99,8 +83,10 @@ def _log_process_failure(
     ]
     for stream_name, output_path in saved_paths.items():
         message.append(f'Full {stream_name}: {output_path}')
-    message.append(f'Stdout: {_clip_log_output(error.stdout)}')
-    message.append(f'Stderr: {_clip_log_output(error.stderr)}')
+    failure_lines = _failure_lines(error.stdout) + _failure_lines(error.stderr)
+    if failure_lines:
+        message.append('Failure lines:')
+        message.extend(failure_lines)
     logging.error('\n'.join(message))
 
 
