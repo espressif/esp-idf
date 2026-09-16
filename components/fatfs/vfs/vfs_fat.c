@@ -982,44 +982,74 @@ cleanup:
 }
 
 
-#ifdef CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
+#ifdef CONFIG_FATFS_VFS_RENAME_REJECTS_SELF_NESTING
 /*
- * True if `path` names something inside the directory `dir`, that is, `dir` is
- * a prefix of `path` ending at a component boundary. FAT names are matched
- * case-insensitively, and ASCII case is folded here; a prefix that differs
- * only in the case of a non-ASCII character is not recognised, which merely
- * leaves such a rename to fail the way it does without this check.
+ * Start cluster of the directory named by `path`, or 0 if `path` does not name
+ * a directory. A FAT12/FAT16 root directory has no cluster and reports 0 as
+ * well, so a zero result carries no identity and must not be compared.
  */
-static bool fat_path_is_within(const char *dir, const char *path)
+static DWORD fat_dir_start_cluster(const char *path)
 {
-    size_t i;
-
-    for (i = 0; dir[i] != '\0'; i++) {
-        char a = dir[i];
-        char b = path[i];
-
-        if (b == '\0') {
-            return false;
-        }
-        if (a >= 'a' && a <= 'z') {
-            a -= 'a' - 'A';
-        }
-        if (b >= 'a' && b <= 'z') {
-            b -= 'a' - 'A';
-        }
-        if (a != b) {
-            return false;
-        }
+    FF_DIR dir;
+    if (f_opendir(&dir, path) != FR_OK) {
+        return 0;
     }
-
-    /* `dir` is exhausted: what follows in `path` decides. A trailing separator
-     * on `dir` has already consumed the boundary. */
-    if (i > 0 && dir[i - 1] == '/') {
-        return path[i] != '\0';
-    }
-    return path[i] == '/' && path[i + 1] != '\0';
+    DWORD start_cluster = dir.obj.sclust;
+    f_closedir(&dir);
+    return start_cluster;
 }
 
+/*
+ * Reject moving a directory into its own subtree. f_rename() does not check for
+ * this and would leave the directory reachable only from inside itself, which
+ * corrupts the volume. Called with the context lock held and with paths that
+ * already carry the drive prefix. Returns 0 if the rename may proceed, or the
+ * errno to report.
+ *
+ * FatFs resolves names through directory entries, so a destination spelled
+ * differently from the source, through an 8.3 alias or a case difference FatFs
+ * folds, still leads back to the same directory. Each ancestor of `dst` is
+ * therefore resolved and compared by start cluster rather than by path bytes.
+ */
+static int vfs_fat_check_self_nesting(const char *src, const char *dst)
+{
+    DWORD src_cluster = fat_dir_start_cluster(src);
+    if (src_cluster == 0) {
+        /* Only a directory has a subtree to be moved into. */
+        return 0;
+    }
+
+    char dst_buf[FILENAME_MAX + 3];
+    size_t dst_len = strlen(dst);
+    if (dst_len >= sizeof(dst_buf)) {
+        return ENAMETOOLONG;
+    }
+    memcpy(dst_buf, dst, dst_len + 1);
+
+    char *cursor = dst_buf;
+    if (cursor[0] != '\0' && cursor[1] == ':') {
+        cursor += 2;
+    }
+    while (*cursor == '/') {
+        cursor++;
+    }
+
+    /* Each separator ends an ancestor of `dst`. `dst` itself is not examined:
+     * renaming an entry onto itself is not nesting. */
+    for (char *sep = strchr(cursor, '/'); sep != NULL; sep = strchr(sep + 1, '/')) {
+        *sep = '\0';
+        DWORD ancestor_cluster = fat_dir_start_cluster(dst_buf);
+        *sep = '/';
+        if (ancestor_cluster != 0 && ancestor_cluster == src_cluster) {
+            return EINVAL;
+        }
+    }
+
+    return 0;
+}
+#endif // CONFIG_FATFS_VFS_RENAME_REJECTS_SELF_NESTING
+
+#ifdef CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
 /*
  * Handle f_rename() refusing an existing destination, applying the POSIX rules
  * for what may replace what. Called with the context lock held and with paths
@@ -1073,34 +1103,40 @@ static int vfs_fat_replace_destination(const char *src, const char *dst)
     fr = f_rename(src, dst);
     return (fr == FR_OK) ? 0 : fresult_to_errno(fr);
 }
+#endif // CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
+
+/*
+ * Carry out the rename itself. Called with the context lock held and with paths
+ * that already carry the drive prefix. Returns 0 on success, or the errno to
+ * report.
+ */
+static int vfs_fat_rename_locked(const char *src, const char *dst)
+{
+#ifdef CONFIG_FATFS_VFS_RENAME_REJECTS_SELF_NESTING
+    int nesting_errno = vfs_fat_check_self_nesting(src, dst);
+    if (nesting_errno != 0) {
+        return nesting_errno;
+    }
+#endif
+
+    FRESULT res = f_rename(src, dst);
+#ifdef CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
+    if (res == FR_EXIST) {
+        return vfs_fat_replace_destination(src, dst);
+    }
+#endif
+    return (res == FR_OK) ? 0 : fresult_to_errno(res);
+}
 
 static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     _lock_acquire(&fat_ctx->lock);
+    vfs_fat_invalidate_stat_cache(fat_ctx, src);
+    vfs_fat_invalidate_stat_cache(fat_ctx, dst);
     prepend_drive_to_path(fat_ctx, &src, &dst);
 
-    int posix_errno = 0;
-
-    if (fat_path_is_within(src, dst)) {
-        /* Moving a directory inside itself would detach its contents and link
-         * the directory into its own tree; f_rename() does not check for this
-         * and would corrupt the volume. POSIX asks for EINVAL, unless the
-         * source is not a directory at all, in which case the destination
-         * merely uses a file as a directory component. */
-        FILINFO src_info;
-        FRESULT stat_res = f_stat(src, &src_info);
-        posix_errno = (stat_res != FR_OK)           ? fresult_to_errno(stat_res)
-                      : (src_info.fattrib & AM_DIR) ? EINVAL
-                      :                               ENOTDIR;
-    } else {
-        FRESULT res = f_rename(src, dst);
-        if (res == FR_EXIST) {
-            posix_errno = vfs_fat_replace_destination(src, dst);
-        } else if (res != FR_OK) {
-            posix_errno = fresult_to_errno(res);
-        }
-    }
+    int posix_errno = vfs_fat_rename_locked(src, dst);
 
     _lock_release(&fat_ctx->lock);
 
@@ -1111,27 +1147,6 @@ static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
     }
     return 0;
 }
-
-#else // CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
-
-static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
-{
-    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    _lock_acquire(&fat_ctx->lock);
-    vfs_fat_invalidate_stat_cache(fat_ctx, src);
-    vfs_fat_invalidate_stat_cache(fat_ctx, dst);
-    prepend_drive_to_path(fat_ctx, &src, &dst);
-    FRESULT res = f_rename(src, dst);
-    _lock_release(&fat_ctx->lock);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        return -1;
-    }
-    return 0;
-}
-
-#endif // CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
 
 static DIR* vfs_fat_opendir(void* ctx, const char* name)
 {

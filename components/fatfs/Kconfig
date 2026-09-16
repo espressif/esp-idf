@@ -341,17 +341,35 @@ menu "FAT Filesystem support"
 
             Without this option all of these fail with EEXIST instead.
 
-            Moving a directory into its own subtree is also rejected with EINVAL, as
-            POSIX requires. f_rename() does not check for this and would link the
-            directory into its own tree, losing its contents; without this option that
-            call still succeeds and corrupts the volume.
-
             Note that the emulation is not atomic, and that it cannot honour the POSIX
             guarantee that a failed rename leaves an instance of the destination in
             place. FAT offers no way to replace a directory entry in a single step, so
             an interruption (such as a power loss) between removing the destination and
             completing the rename can leave neither name present. Code that must not
             lose the destination should copy to a temporary name and rename over it.
+
+    config FATFS_VFS_RENAME_REJECTS_SELF_NESTING
+        bool "Make rename() reject moving a directory into its own subtree"
+        default n
+        help
+            Moving a directory into its own subtree, such as renaming "/a" to "/a/b",
+            cannot be represented on FAT. f_rename() does not check for it and links
+            the directory into its own tree, after which the directory is reachable
+            only from inside itself and the volume is corrupt.
+
+            Enable this option to detect the case and fail with EINVAL, as POSIX
+            requires, leaving the volume untouched.
+
+            FatFs matches names by directory entry rather than by path bytes, so a
+            destination spelled differently from the source - through an 8.3 alias, or
+            through a name differing only in the case of a non-ASCII character - still
+            denotes the same directory. The check therefore resolves each component of
+            the destination and compares start clusters, rather than comparing the two
+            paths as strings.
+
+            The check only runs when the source is a directory, so renaming a file
+            costs one extra directory open that fails immediately. Renaming a directory
+            additionally opens each component of the destination path.
 
     config FATFS_USE_DYN_BUFFERS
         bool "Use dynamic buffers"

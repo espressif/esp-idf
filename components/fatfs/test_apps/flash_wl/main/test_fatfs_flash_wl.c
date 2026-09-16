@@ -406,7 +406,7 @@ TEST_CASE("(WL) rename obeys the POSIX rules on directories", "[fatfs][wear_leve
 /* Only meaningful with the option enabled: without it f_rename() happily moves
  * the directory into its own tree, which corrupts the volume, so there is no
  * safe way to exercise the case. */
-#ifdef CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
+#ifdef CONFIG_FATFS_VFS_RENAME_REJECTS_SELF_NESTING
 TEST_CASE("(WL) rename refuses to move a directory into itself", "[fatfs][wear_levelling]")
 {
     test_setup();
@@ -422,6 +422,30 @@ TEST_CASE("(WL) rename refuses to move a directory into itself", "[fatfs][wear_l
     TEST_ASSERT_EQUAL(0, stat(dir, &st));
     TEST_ASSERT_TRUE(S_ISDIR(st.st_mode));
 
+    /* Nesting is rejected at any depth, not just directly below the source. */
+    errno = 0;
+    TEST_ASSERT_EQUAL(-1, rename(dir, "/spiflash/mv_d/a/b"));
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+
+    /* The destination is matched by directory entry rather than by path bytes,
+     * so a spelling that differs only in case is caught as well. */
+    errno = 0;
+    TEST_ASSERT_EQUAL(-1, rename(dir, "/spiflash/MV_D/child"));
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+    TEST_ASSERT_EQUAL(0, stat(dir, &st));
+    TEST_ASSERT_TRUE(S_ISDIR(st.st_mode));
+
+    /* The 8.3 alias of a long name denotes the same directory, which a
+     * comparison of path bytes would not recognise. */
+    const char *long_dir = "/spiflash/longdirname";
+    TEST_ASSERT_EQUAL(0, mkdir(long_dir, 0755));
+    errno = 0;
+    TEST_ASSERT_EQUAL(-1, rename(long_dir, "/spiflash/LONGDI~1/child"));
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+    TEST_ASSERT_EQUAL(0, stat(long_dir, &st));
+    TEST_ASSERT_TRUE(S_ISDIR(st.st_mode));
+    TEST_ASSERT_EQUAL(0, rmdir(long_dir));
+
     /* A name that merely shares a prefix is a different directory, and moving
      * the directory elsewhere stays allowed. */
     TEST_ASSERT_EQUAL(0, rename(dir, "/spiflash/mv_dd"));
@@ -431,7 +455,7 @@ TEST_CASE("(WL) rename refuses to move a directory into itself", "[fatfs][wear_l
 
     test_teardown();
 }
-#endif // CONFIG_FATFS_VFS_RENAME_REPLACES_DESTINATION
+#endif // CONFIG_FATFS_VFS_RENAME_REJECTS_SELF_NESTING
 
 TEST_CASE("(WL) can create and remove directories", "[fatfs][wear_levelling]")
 {
