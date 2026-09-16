@@ -96,6 +96,7 @@ struct hci_h4_sm {
     uint8_t state;
     uint8_t pkt_type;
     uint8_t min_len;
+    uint8_t reset_match_idx;
     uint16_t len;
     uint16_t exp_len;
     uint8_t hdr[4];
@@ -115,6 +116,17 @@ void hci_h4_sm_init(struct hci_h4_sm *h4sm,
                     const struct hci_h4_frees *frees,
                     hci_h4_frame_cb *frame_cb);
 
+/**
+ * @brief Feed received H4 data into the parser state machine.
+ *
+ * @return  Number of bytes of `buf` that have been parsed, which may be less
+ *          than `len` (0 included) when a buffer allocation failed. The
+ *          unparsed data has to be submitted again, the allocation is retried
+ *          on the next call.
+ *          A negative value means the stream cannot be parsed anymore and the
+ *          current packet has been dropped, the caller should report a sync
+ *          loss.
+ */
 int hci_h4_sm_rx(struct hci_h4_sm *h4sm, const uint8_t *buf, uint16_t len);
 
 #endif /* _HCI_H4_H_ */
