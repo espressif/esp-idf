@@ -386,10 +386,21 @@ static void btdm_hci_uhci_tx_process_task(void *arg)
         if (s_btdm_hci_uart_env.tl_stopping) {
             break;
         }
-        if (uhci_transmit(s_btdm_hci_uart_env.uhci_handle, s_btdm_hci_uart_env.tx.buf,
-                          s_btdm_hci_uart_env.tx.size) != ESP_OK) {
-            ESP_LOGE(BT_LOG_TAG, "HCI UART transmit failed");
-            btdm_hci_uart_tl_complete_request(&s_btdm_hci_uart_env.tx, ESP_BT_HCI_TL_STATUS_OK);
+
+        esp_err_t ret;
+        do {
+            ret = uhci_transmit(s_btdm_hci_uart_env.uhci_handle, s_btdm_hci_uart_env.tx.buf,
+                                s_btdm_hci_uart_env.tx.size);
+            if (ret == ESP_ERR_INVALID_STATE) {
+                /* The depth-one TX queue is still owned by the preceding DMA transfer. */
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
+        } while (ret == ESP_ERR_INVALID_STATE && !s_btdm_hci_uart_env.tl_stopping);
+
+        if (ret != ESP_OK && !s_btdm_hci_uart_env.tl_stopping) {
+            ESP_LOGE(BT_LOG_TAG, "HCI UART transmit failed: %s", esp_err_to_name(ret));
+            /* The TL API has no failure status: never complete an unqueued request as success. */
+            assert(ret == ESP_OK);
         }
     }
 
@@ -706,7 +717,10 @@ esp_err_t btdm_hci_uart_tl_install(void)
         }
     }
 
-    ESP_ERROR_CHECK(uart_param_config(CONFIG_BT_CTRL_HCI_UART_PORT, &uart_config));
+    esp_err_t ret = uart_param_config(CONFIG_BT_CTRL_HCI_UART_PORT, &uart_config);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 #if CONFIG_BT_CTRL_HCI_UART_FLOW_CTRL_EN && !CONFIG_BT_CTRL_HCI_UART_DTM_MODE
     const int hci_uart_rts_pin = CONFIG_BT_CTRL_HCI_UART_RTS_PIN;
     const int hci_uart_cts_pin = CONFIG_BT_CTRL_HCI_UART_CTS_PIN;
@@ -714,9 +728,11 @@ esp_err_t btdm_hci_uart_tl_install(void)
     const int hci_uart_rts_pin = UART_PIN_NO_CHANGE;
     const int hci_uart_cts_pin = UART_PIN_NO_CHANGE;
 #endif
-    ESP_ERROR_CHECK(uart_set_pin(CONFIG_BT_CTRL_HCI_UART_PORT, CONFIG_BT_CTRL_HCI_UART_TX_PIN,
-                                 CONFIG_BT_CTRL_HCI_UART_RX_PIN, hci_uart_rts_pin,
-                                 hci_uart_cts_pin));
+    ret = uart_set_pin(CONFIG_BT_CTRL_HCI_UART_PORT, CONFIG_BT_CTRL_HCI_UART_TX_PIN,
+                       CONFIG_BT_CTRL_HCI_UART_RX_PIN, hci_uart_rts_pin, hci_uart_cts_pin);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     uhci_controller_config_t uhci_cfg = {
         .uart_port = CONFIG_BT_CTRL_HCI_UART_PORT,
@@ -728,16 +744,23 @@ esp_err_t btdm_hci_uart_tl_install(void)
         .rx_eof_flags.idle_eof = 1,
     };
 
-    ESP_ERROR_CHECK(uhci_new_controller(&uhci_cfg, &s_btdm_hci_uart_env.uhci_handle));
+    ret = uhci_new_controller(&uhci_cfg, &s_btdm_hci_uart_env.uhci_handle);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     uhci_event_callbacks_t uhci_cbs = {
         .on_rx_trans_event = btdm_hci_uhci_rx_event_cb,
         .on_tx_trans_done = btdm_hci_uhci_tx_done_cb,
     };
 
-    ESP_ERROR_CHECK(uhci_register_event_callbacks(s_btdm_hci_uart_env.uhci_handle, &uhci_cbs, NULL));
+    ret = uhci_register_event_callbacks(s_btdm_hci_uart_env.uhci_handle, &uhci_cbs, NULL);
+    if (ret != ESP_OK) {
+        btdm_hci_uart_tl_cleanup();
+        return ret;
+    }
 
-    esp_err_t ret = btdm_hci_uhci_rx_prepare();
+    ret = btdm_hci_uhci_rx_prepare();
     if (ret != ESP_OK) {
         btdm_hci_uart_tl_cleanup();
         return ret;
@@ -756,23 +779,7 @@ esp_err_t btdm_hci_uart_tl_install(void)
 
 esp_err_t esp_bt_hci_uart_reconfig_pin(int tx_pin, int rx_pin)
 {
-    uart_config_t uart_config = {
-        .baud_rate = CONFIG_BT_CTRL_HCI_UART_BAUDRATE,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .rx_flow_ctrl_thresh = BTDM_HCI_UART_RX_THRS,
-        .source_clk = UART_SCLK_DEFAULT,
-    };
-    esp_err_t ret;
-
-    ret = uart_param_config(CONFIG_BT_CTRL_HCI_UART_PORT, &uart_config);
-    if (ret != ESP_OK) {
-        return ret;
-    }
-
-    ret = uart_set_pin(CONFIG_BT_CTRL_HCI_UART_PORT, tx_pin, rx_pin, -1, -1);
+    esp_err_t ret = uart_set_pin(CONFIG_BT_CTRL_HCI_UART_PORT, tx_pin, rx_pin, -1, -1);
     if (ret != ESP_OK) {
         return ret;
     }
