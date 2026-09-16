@@ -82,9 +82,7 @@ if(NOT non_os_build)
                               esp_timer
                               esp_hal_touch_sens # for touch sensor wakeup (introduced in sleep_modes.c)
                               esp_hal_i2s  # required by `sleep_system_peripheral.c`
-                              esp_pm)
-
-    list(APPEND priv_requires esp_mm
+                              esp_mm
                               esp_hal_mspi
                               esp_hal_uart
     )
