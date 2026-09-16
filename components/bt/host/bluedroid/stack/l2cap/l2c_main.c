@@ -1002,6 +1002,14 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
         case L2CAP_CMD_INFO_REQ:
+#if BT_CLASSIC_BQB_INCLUDED
+            /* L2CAP/COS/CED/BI-01-C: if ICS does not claim Information Request
+             * (L2CAP 2/6), PTS treats 0x0A as unsupported and expects Command Reject. */
+            if (s_l2cap_bqb_info_rej_flag) {
+                l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
+                break;
+            }
+#endif /* BT_CLASSIC_BQB_INCLUDED */
             if (cmd_len < L2CAP_INFO_REQ_LEN) {
                 L2CAP_TRACE_WARNING ("L2CAP - cmd info req too short, cmd_len: %d", cmd_len);
                 break;
