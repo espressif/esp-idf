@@ -13,7 +13,12 @@ esp_err_t esp_ble_audio_tbs_accept(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_accept_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_accept(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -25,7 +30,12 @@ esp_err_t esp_ble_audio_tbs_hold(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_hold_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_hold(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -37,7 +47,12 @@ esp_err_t esp_ble_audio_tbs_retrieve(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_retrieve_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_retrieve(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -49,7 +64,12 @@ esp_err_t esp_ble_audio_tbs_terminate(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_terminate_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_terminate(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -67,7 +87,12 @@ esp_err_t esp_ble_audio_tbs_originate(uint8_t bearer_index,
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_originate_safe(bearer_index, uri, call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_originate(bearer_index, uri, call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -83,7 +108,12 @@ esp_err_t esp_ble_audio_tbs_join(uint8_t call_index_cnt, uint8_t *call_indexes)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_join_safe(call_index_cnt, call_indexes);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_join(call_index_cnt, call_indexes);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -95,7 +125,12 @@ esp_err_t esp_ble_audio_tbs_remote_answer(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_remote_answer_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_remote_answer(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -107,7 +142,12 @@ esp_err_t esp_ble_audio_tbs_remote_hold(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_remote_hold_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_remote_hold(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -119,7 +159,12 @@ esp_err_t esp_ble_audio_tbs_remote_retrieve(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_remote_retrieve_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_remote_retrieve(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -131,7 +176,12 @@ esp_err_t esp_ble_audio_tbs_remote_terminate(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_remote_terminate_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_remote_terminate(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -152,7 +202,12 @@ esp_err_t esp_ble_audio_tbs_remote_incoming(uint8_t bearer_index,
         return ESP_ERR_INVALID_ARG;
     }
 
-    ret = bt_tbs_remote_incoming_safe(bearer_index, to, from, friendly_name);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    ret = bt_tbs_remote_incoming(bearer_index, to, from, friendly_name);
+
+    bt_le_host_unlock();
+
     if (ret < 0) {
         return ESP_FAIL;
     }
@@ -171,7 +226,12 @@ esp_err_t esp_ble_audio_tbs_add_call(uint8_t bearer_index, uint8_t state,
         return ESP_ERR_INVALID_ARG;
     }
 
-    ret = bt_tbs_add_call_safe(bearer_index, state, uri, call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    ret = bt_tbs_add_call(bearer_index, state, uri, call_index);
+
+    bt_le_host_unlock();
+
     if (ret < 0) {
         return ESP_FAIL;
     }
@@ -183,7 +243,12 @@ esp_err_t esp_ble_audio_tbs_set_auto_alerting(uint8_t bearer_index, bool enable)
 {
     int err;
 
-    err = bt_tbs_set_auto_alerting_safe(bearer_index, enable);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_set_auto_alerting(bearer_index, enable);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -195,7 +260,12 @@ esp_err_t esp_ble_audio_tbs_set_call_alerting(uint8_t call_index)
 {
     int err;
 
-    err = bt_tbs_set_call_alerting_safe(call_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_set_call_alerting(call_index);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -212,7 +282,12 @@ esp_err_t esp_ble_audio_tbs_set_bearer_provider_name(uint8_t bearer_index, const
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_set_bearer_provider_name_safe(bearer_index, name);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_set_bearer_provider_name(bearer_index, name);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -229,7 +304,12 @@ esp_err_t esp_ble_audio_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t 
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_set_bearer_technology_safe(bearer_index, new_technology);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_set_bearer_technology(bearer_index, new_technology);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -246,7 +326,12 @@ esp_err_t esp_ble_audio_tbs_set_signal_strength(uint8_t bearer_index, uint8_t ne
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_set_signal_strength_safe(bearer_index, new_signal_strength);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_set_signal_strength(bearer_index, new_signal_strength);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -264,7 +349,12 @@ esp_err_t esp_ble_audio_tbs_set_status_flags(uint8_t bearer_index, uint16_t stat
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_set_status_flags_safe(bearer_index, status_flags);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_set_status_flags(bearer_index, status_flags);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -280,7 +370,12 @@ esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index, const char
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_set_uri_scheme_list_safe(bearer_index, uri_scheme_list);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_set_uri_scheme_list(bearer_index, uri_scheme_list);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -288,9 +383,15 @@ esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index, const char
     return ESP_OK;
 }
 
-void esp_ble_audio_tbs_register_cb(esp_ble_audio_tbs_cb_t *cbs)
+esp_err_t esp_ble_audio_tbs_register_cb(esp_ble_audio_tbs_cb_t *cbs)
 {
-    bt_tbs_register_cb_safe(cbs);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    bt_tbs_register_cb(cbs);
+
+    bt_le_host_unlock();
+
+    return ESP_OK;
 }
 
 static bool valid_register_param(const esp_ble_audio_tbs_register_param_t *param)
@@ -344,7 +445,7 @@ esp_err_t esp_ble_audio_tbs_register_bearer(const esp_ble_audio_tbs_register_par
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     err = bt_tbs_register_bearer(param);
     if (err < 0) {
@@ -369,24 +470,30 @@ end:
 
 esp_err_t esp_ble_audio_tbs_unregister_bearer(uint8_t bearer_index)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
-    err = bt_tbs_unregister_bearer_safe(bearer_index);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_unregister_bearer(bearer_index);
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
     if (bearer_index == ESP_BLE_AUDIO_TBS_GTBS_INDEX) {
         if (bt_le_gtbs_deinit()) {
-            return ESP_FAIL;
+            ret = ESP_FAIL;
         }
     } else if (bt_le_tbs_deinit(bearer_index)) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
     }
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 #endif /* CONFIG_BT_TBS */
 
@@ -397,7 +504,7 @@ esp_err_t esp_ble_audio_tbs_client_discover(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -424,7 +531,7 @@ esp_err_t esp_ble_audio_tbs_client_set_signal_strength_interval(uint16_t conn_ha
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -480,7 +587,7 @@ esp_err_t esp_ble_audio_tbs_client_originate_call(uint16_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -508,7 +615,7 @@ esp_err_t esp_ble_audio_tbs_client_terminate_call(uint16_t conn_handle,
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -536,7 +643,7 @@ esp_err_t esp_ble_audio_tbs_client_hold_call(uint16_t conn_handle,
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -564,7 +671,7 @@ esp_err_t esp_ble_audio_tbs_client_accept_call(uint16_t conn_handle,
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -592,7 +699,7 @@ esp_err_t esp_ble_audio_tbs_client_retrieve_call(uint16_t conn_handle,
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -626,7 +733,7 @@ esp_err_t esp_ble_audio_tbs_client_join_calls(uint16_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -652,7 +759,7 @@ esp_err_t esp_ble_audio_tbs_client_read_bearer_provider_name(uint16_t conn_handl
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -678,7 +785,7 @@ esp_err_t esp_ble_audio_tbs_client_read_bearer_uci(uint16_t conn_handle, uint8_t
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -704,7 +811,7 @@ esp_err_t esp_ble_audio_tbs_client_read_technology(uint16_t conn_handle, uint8_t
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -730,7 +837,7 @@ esp_err_t esp_ble_audio_tbs_client_read_uri_list(uint16_t conn_handle, uint8_t i
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -756,7 +863,7 @@ esp_err_t esp_ble_audio_tbs_client_read_signal_strength(uint16_t conn_handle, ui
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -782,7 +889,7 @@ esp_err_t esp_ble_audio_tbs_client_read_signal_interval(uint16_t conn_handle, ui
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -808,7 +915,7 @@ esp_err_t esp_ble_audio_tbs_client_read_current_calls(uint16_t conn_handle, uint
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -834,7 +941,7 @@ esp_err_t esp_ble_audio_tbs_client_read_ccid(uint16_t conn_handle, uint8_t inst_
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -860,7 +967,7 @@ esp_err_t esp_ble_audio_tbs_client_read_call_uri(uint16_t conn_handle, uint8_t i
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -886,7 +993,7 @@ esp_err_t esp_ble_audio_tbs_client_read_status_flags(uint16_t conn_handle, uint8
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -911,7 +1018,7 @@ esp_err_t esp_ble_audio_tbs_client_read_call_state(uint16_t conn_handle, uint8_t
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -936,7 +1043,7 @@ esp_err_t esp_ble_audio_tbs_client_read_remote_uri(uint16_t conn_handle, uint8_t
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -962,7 +1069,7 @@ esp_err_t esp_ble_audio_tbs_client_read_friendly_name(uint16_t conn_handle, uint
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -988,7 +1095,7 @@ esp_err_t esp_ble_audio_tbs_client_read_optional_opcodes(uint16_t conn_handle, u
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -1015,7 +1122,12 @@ esp_err_t esp_ble_audio_tbs_client_register_cb(esp_ble_audio_tbs_client_cb_t *cb
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_client_register_cb_safe(cbs);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_tbs_client_register_cb(cbs);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -1029,7 +1141,7 @@ esp_ble_audio_tbs_instance_t *esp_ble_audio_tbs_client_get_by_ccid(uint16_t conn
     esp_ble_audio_tbs_instance_t *ret = NULL;
     void *conn;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -1049,7 +1161,7 @@ esp_ble_audio_tbs_instance_t *esp_ble_audio_tbs_client_get_by_index(uint16_t con
     esp_ble_audio_tbs_instance_t *ret = NULL;
     void *conn;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {

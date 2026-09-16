@@ -13,7 +13,12 @@ esp_err_t esp_ble_audio_mcc_init(esp_ble_audio_mcc_cb_t *cb)
 {
     int err;
 
-    err = bt_mcc_init_safe(cb);
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_mcc_init(cb);
+
+    bt_le_host_unlock();
+
     if (err) {
         return ESP_FAIL;
     }
@@ -27,7 +32,7 @@ esp_err_t esp_ble_audio_mcc_discover_mcs(uint16_t conn_handle, bool subscribe)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -51,7 +56,7 @@ esp_err_t esp_ble_audio_mcc_read_player_name(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -76,7 +81,7 @@ esp_err_t esp_ble_audio_mcc_read_icon_url(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -102,7 +107,7 @@ esp_err_t esp_ble_audio_mcc_read_track_title(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -128,7 +133,7 @@ esp_err_t esp_ble_audio_mcc_read_track_duration(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -154,7 +159,7 @@ esp_err_t esp_ble_audio_mcc_read_track_position(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -180,7 +185,7 @@ esp_err_t esp_ble_audio_mcc_set_track_position(uint16_t conn_handle, int32_t pos
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -206,7 +211,7 @@ esp_err_t esp_ble_audio_mcc_read_playback_speed(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -232,7 +237,7 @@ esp_err_t esp_ble_audio_mcc_set_playback_speed(uint16_t conn_handle, int8_t spee
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -258,7 +263,7 @@ esp_err_t esp_ble_audio_mcc_read_seeking_speed(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -284,7 +289,7 @@ esp_err_t esp_ble_audio_mcc_read_playing_order(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -310,7 +315,7 @@ esp_err_t esp_ble_audio_mcc_set_playing_order(uint16_t conn_handle, uint8_t orde
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -336,7 +341,7 @@ esp_err_t esp_ble_audio_mcc_read_playing_orders_supported(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -362,7 +367,7 @@ esp_err_t esp_ble_audio_mcc_read_media_state(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -400,7 +405,7 @@ esp_err_t esp_ble_audio_mcc_send_cmd(uint16_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -426,7 +431,7 @@ esp_err_t esp_ble_audio_mcc_read_opcodes_supported(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -452,7 +457,7 @@ esp_err_t esp_ble_audio_mcc_read_content_control_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -478,7 +483,7 @@ esp_err_t esp_ble_audio_mcc_read_icon_obj_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -502,7 +507,7 @@ esp_err_t esp_ble_audio_mcc_read_segments_obj_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -526,7 +531,7 @@ esp_err_t esp_ble_audio_mcc_read_current_track_obj_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -554,7 +559,7 @@ esp_err_t esp_ble_audio_mcc_set_current_track_obj_id(uint16_t conn_handle, uint6
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -578,7 +583,7 @@ esp_err_t esp_ble_audio_mcc_read_next_track_obj_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -606,7 +611,7 @@ esp_err_t esp_ble_audio_mcc_set_next_track_obj_id(uint16_t conn_handle, uint64_t
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -630,7 +635,7 @@ esp_err_t esp_ble_audio_mcc_read_current_group_obj_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -658,7 +663,7 @@ esp_err_t esp_ble_audio_mcc_set_current_group_obj_id(uint16_t conn_handle, uint6
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -682,7 +687,7 @@ esp_err_t esp_ble_audio_mcc_read_parent_group_obj_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -713,7 +718,7 @@ esp_err_t esp_ble_audio_mcc_send_search(uint16_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -737,7 +742,7 @@ esp_err_t esp_ble_audio_mcc_read_search_results_obj_id(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -761,7 +766,7 @@ esp_err_t esp_ble_audio_mcc_otc_read_object_metadata(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -785,7 +790,7 @@ esp_err_t esp_ble_audio_mcc_otc_read_icon_object(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -809,7 +814,7 @@ esp_err_t esp_ble_audio_mcc_otc_read_track_segments_object(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -833,7 +838,7 @@ esp_err_t esp_ble_audio_mcc_otc_read_current_track_object(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -857,7 +862,7 @@ esp_err_t esp_ble_audio_mcc_otc_read_next_track_object(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -881,7 +886,7 @@ esp_err_t esp_ble_audio_mcc_otc_read_current_group_object(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -905,7 +910,7 @@ esp_err_t esp_ble_audio_mcc_otc_read_parent_group_object(uint16_t conn_handle)
     void *conn;
     int err;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
@@ -929,7 +934,7 @@ struct bt_ots_client *esp_ble_audio_mcc_otc_inst(uint16_t conn_handle)
     struct bt_ots_client *ret = NULL;
     void *conn;
 
-    bt_le_host_lock();
+    BT_LE_HOST_LOCK_OR_RETURN(NULL);
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {

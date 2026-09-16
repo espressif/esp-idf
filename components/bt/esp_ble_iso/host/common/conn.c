@@ -214,16 +214,6 @@ int bt_conn_cb_register(struct bt_conn_cb *cb)
     return 0;
 }
 
-_IDF_ONLY
-int bt_conn_cb_register_safe(struct bt_conn_cb *cb)
-{
-    int err;
-    bt_le_host_lock();
-    err = bt_conn_cb_register(cb);
-    bt_le_host_unlock();
-    return err;
-}
-
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
     LOG_DBG("ConnCbUnreg");
@@ -239,16 +229,6 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb)
     }
 
     return 0;
-}
-
-_IDF_ONLY
-int bt_conn_cb_unregister_safe(struct bt_conn_cb *cb)
-{
-    int err;
-    bt_le_host_lock();
-    err = bt_conn_cb_unregister(cb);
-    bt_le_host_unlock();
-    return err;
 }
 
 _LIB_ONLY
@@ -406,27 +386,6 @@ int bt_le_acl_conn_new(uint16_t conn_handle,
     }
 
     return (conn ? 0 : -ENOMEM);
-}
-
-_IDF_ONLY
-int bt_le_acl_conn_new_safe(uint16_t conn_handle, uint8_t role, uint8_t addr_type,
-                            const uint8_t *addr, uint8_t sec_level)
-{
-    bt_addr_le_t dst;
-    int err;
-
-    if (addr == NULL) {
-        return -EINVAL;
-    }
-
-    dst.type = addr_type;
-    bt_addr_copy(&dst.a, (const bt_addr_t *)addr);
-
-    bt_le_host_lock();
-    err = bt_le_acl_conn_new(conn_handle, role, &dst, sec_level);
-    bt_le_host_unlock();
-
-    return err;
 }
 
 /* Point conn->le.keys at this ACL connection's LTK slot, filled with the bonded

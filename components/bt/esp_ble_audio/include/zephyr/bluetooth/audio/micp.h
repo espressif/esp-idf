@@ -95,7 +95,6 @@ struct bt_micp_included {
  * @return 0 if success, errno on failure.
  */
 int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param);
-int bt_micp_mic_dev_register_safe(struct bt_micp_mic_dev_register_param *param);
 
 /**
  * @brief Get Microphone Device included services
@@ -109,7 +108,7 @@ int bt_micp_mic_dev_register_safe(struct bt_micp_mic_dev_register_param *param);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_micp_mic_dev_included_get_safe(struct bt_micp_included *included);
+int bt_micp_mic_dev_included_get(struct bt_micp_included *included);
 
 /**
  * @brief Struct to hold the Microphone Device callbacks
@@ -134,14 +133,14 @@ struct bt_micp_mic_dev_cb {
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_unmute_safe(void);
+int bt_micp_mic_dev_unmute(void);
 
 /**
  * @brief Mute the Microphone Device.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_mute_safe(void);
+int bt_micp_mic_dev_mute(void);
 
 /**
  * @brief Disable the mute functionality on the Microphone Device.
@@ -150,14 +149,14 @@ int bt_micp_mic_dev_mute_safe(void);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_mute_disable_safe(void);
+int bt_micp_mic_dev_mute_disable(void);
 
 /**
  * @brief Read the mute state on the Microphone Device.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_mute_get_safe(void);
+int bt_micp_mic_dev_mute_get(void);
 
 /**
  * @brief Struct to hold the Microphone Controller callbacks
@@ -229,8 +228,8 @@ struct bt_micp_mic_ctlr_cb {
  *
  * @return 0 if success, errno on failure.
  */
-int bt_micp_mic_ctlr_included_get_safe(struct bt_micp_mic_ctlr *mic_ctlr,
-                                       struct bt_micp_included *included);
+int bt_micp_mic_ctlr_included_get(struct bt_micp_mic_ctlr *mic_ctlr,
+                                  struct bt_micp_included *included);
 
 /**
  * @brief Get the connection pointer of a Microphone Controller instance
@@ -242,8 +241,8 @@ int bt_micp_mic_ctlr_included_get_safe(struct bt_micp_mic_ctlr *mic_ctlr,
  *
  * @return 0 if success, errno on failure.
  */
-int bt_micp_mic_ctlr_conn_get_safe(const struct bt_micp_mic_ctlr *mic_ctlr,
-                                   struct bt_conn **conn);
+int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
+                              struct bt_conn **conn);
 
 /**
  * @brief Get the volume controller from a connection pointer
@@ -274,8 +273,6 @@ struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn
  */
 int bt_micp_mic_ctlr_discover(struct bt_conn *conn,
                               struct bt_micp_mic_ctlr **mic_ctlr);
-int bt_micp_mic_ctlr_discover_safe(struct bt_conn *conn,
-                                   struct bt_micp_mic_ctlr **mic_ctlr);
 
 /**
  * @brief Unmute a remote Microphone Device.
@@ -284,7 +281,7 @@ int bt_micp_mic_ctlr_discover_safe(struct bt_conn *conn,
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_ctlr_unmute_safe(struct bt_micp_mic_ctlr *mic_ctlr);
+int bt_micp_mic_ctlr_unmute(struct bt_micp_mic_ctlr *mic_ctlr);
 
 /**
  * @brief Mute a remote Microphone Device.
@@ -293,7 +290,7 @@ int bt_micp_mic_ctlr_unmute_safe(struct bt_micp_mic_ctlr *mic_ctlr);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_ctlr_mute_safe(struct bt_micp_mic_ctlr *mic_ctlr);
+int bt_micp_mic_ctlr_mute(struct bt_micp_mic_ctlr *mic_ctlr);
 
 /**
  * @brief Read the mute state of a remote Microphone Device.
@@ -302,7 +299,7 @@ int bt_micp_mic_ctlr_mute_safe(struct bt_micp_mic_ctlr *mic_ctlr);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_ctlr_mute_get_safe(struct bt_micp_mic_ctlr *mic_ctlr);
+int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr);
 
 /**
  * @brief Registers the callbacks used by Microphone Controller.
@@ -313,7 +310,7 @@ int bt_micp_mic_ctlr_mute_get_safe(struct bt_micp_mic_ctlr *mic_ctlr);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_micp_mic_ctlr_cb_register_safe(struct bt_micp_mic_ctlr_cb *cb);
+int bt_micp_mic_ctlr_cb_register(struct bt_micp_mic_ctlr_cb *cb);
 #ifdef __cplusplus
 }
 #endif

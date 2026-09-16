@@ -598,7 +598,7 @@ struct bt_mcc_cb {
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mcc_init_safe(struct bt_mcc_cb *cb);
+int bt_mcc_init(struct bt_mcc_cb *cb);
 
 /**
  * @brief Discover Media Control Service
@@ -615,7 +615,6 @@ int bt_mcc_init_safe(struct bt_mcc_cb *cb);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe);
-int bt_mcc_discover_mcs_safe(struct bt_conn *conn, bool subscribe);
 
 /**
  * @brief Read Media Player Name
@@ -625,7 +624,6 @@ int bt_mcc_discover_mcs_safe(struct bt_conn *conn, bool subscribe);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_player_name(struct bt_conn *conn);
-int bt_mcc_read_player_name_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Icon Object ID
@@ -635,7 +633,6 @@ int bt_mcc_read_player_name_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_icon_obj_id(struct bt_conn *conn);
-int bt_mcc_read_icon_obj_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Icon Object URL
@@ -645,7 +642,6 @@ int bt_mcc_read_icon_obj_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_icon_url(struct bt_conn *conn);
-int bt_mcc_read_icon_url_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Track Title
@@ -655,7 +651,6 @@ int bt_mcc_read_icon_url_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_track_title(struct bt_conn *conn);
-int bt_mcc_read_track_title_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Track Duration
@@ -665,7 +660,6 @@ int bt_mcc_read_track_title_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_track_duration(struct bt_conn *conn);
-int bt_mcc_read_track_duration_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Track Position
@@ -675,7 +669,6 @@ int bt_mcc_read_track_duration_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_track_position(struct bt_conn *conn);
-int bt_mcc_read_track_position_safe(struct bt_conn *conn);
 
 /**
  * @brief Set Track position
@@ -686,7 +679,6 @@ int bt_mcc_read_track_position_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos);
-int bt_mcc_set_track_position_safe(struct bt_conn *conn, int32_t pos);
 
 /**
  * @brief Read Playback speed
@@ -696,7 +688,6 @@ int bt_mcc_set_track_position_safe(struct bt_conn *conn, int32_t pos);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_playback_speed(struct bt_conn *conn);
-int bt_mcc_read_playback_speed_safe(struct bt_conn *conn);
 
 /**
  * @brief Set Playback Speed
@@ -707,7 +698,6 @@ int bt_mcc_read_playback_speed_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed);
-int bt_mcc_set_playback_speed_safe(struct bt_conn *conn, int8_t speed);
 
 /**
  * @brief Read Seeking speed
@@ -717,7 +707,6 @@ int bt_mcc_set_playback_speed_safe(struct bt_conn *conn, int8_t speed);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_seeking_speed(struct bt_conn *conn);
-int bt_mcc_read_seeking_speed_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Track Segments Object ID
@@ -727,7 +716,6 @@ int bt_mcc_read_seeking_speed_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_segments_obj_id(struct bt_conn *conn);
-int bt_mcc_read_segments_obj_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Current Track Object ID
@@ -737,7 +725,6 @@ int bt_mcc_read_segments_obj_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_current_track_obj_id(struct bt_conn *conn);
-int bt_mcc_read_current_track_obj_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Set Current Track Object ID
@@ -750,7 +737,6 @@ int bt_mcc_read_current_track_obj_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t id);
-int bt_mcc_set_current_track_obj_id_safe(struct bt_conn *conn, uint64_t id);
 
 /**
  * @brief Read Next Track Object ID
@@ -760,7 +746,6 @@ int bt_mcc_set_current_track_obj_id_safe(struct bt_conn *conn, uint64_t id);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_next_track_obj_id(struct bt_conn *conn);
-int bt_mcc_read_next_track_obj_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Set Next Track Object ID
@@ -773,7 +758,6 @@ int bt_mcc_read_next_track_obj_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t id);
-int bt_mcc_set_next_track_obj_id_safe(struct bt_conn *conn, uint64_t id);
 
 /**
  * @brief Read Current Group Object ID
@@ -783,7 +767,6 @@ int bt_mcc_set_next_track_obj_id_safe(struct bt_conn *conn, uint64_t id);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_current_group_obj_id(struct bt_conn *conn);
-int bt_mcc_read_current_group_obj_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Set Current Group Object ID
@@ -796,7 +779,6 @@ int bt_mcc_read_current_group_obj_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t id);
-int bt_mcc_set_current_group_obj_id_safe(struct bt_conn *conn, uint64_t id);
 
 /**
  * @brief Read Parent Group Object ID
@@ -806,7 +788,6 @@ int bt_mcc_set_current_group_obj_id_safe(struct bt_conn *conn, uint64_t id);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn);
-int bt_mcc_read_parent_group_obj_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Playing Order
@@ -816,7 +797,6 @@ int bt_mcc_read_parent_group_obj_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_playing_order(struct bt_conn *conn);
-int bt_mcc_read_playing_order_safe(struct bt_conn *conn);
 
 /**
  * @brief Set Playing Order
@@ -827,7 +807,6 @@ int bt_mcc_read_playing_order_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order);
-int bt_mcc_set_playing_order_safe(struct bt_conn *conn, uint8_t order);
 
 /**
  * @brief Read Playing Orders Supported
@@ -837,7 +816,6 @@ int bt_mcc_set_playing_order_safe(struct bt_conn *conn, uint8_t order);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_playing_orders_supported(struct bt_conn *conn);
-int bt_mcc_read_playing_orders_supported_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Media State
@@ -847,7 +825,6 @@ int bt_mcc_read_playing_orders_supported_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_media_state(struct bt_conn *conn);
-int bt_mcc_read_media_state_safe(struct bt_conn *conn);
 
 /**
  * @brief Send a command
@@ -860,7 +837,6 @@ int bt_mcc_read_media_state_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd);
-int bt_mcc_send_cmd_safe(struct bt_conn *conn, const struct mpl_cmd *cmd);
 
 /**
  * @brief Read Opcodes Supported
@@ -870,7 +846,6 @@ int bt_mcc_send_cmd_safe(struct bt_conn *conn, const struct mpl_cmd *cmd);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
-int bt_mcc_read_opcodes_supported_safe(struct bt_conn *conn);
 
 /**
  * @brief Send a Search command
@@ -883,7 +858,6 @@ int bt_mcc_read_opcodes_supported_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search);
-int bt_mcc_send_search_safe(struct bt_conn *conn, const struct mpl_search *search);
 
 /**
  * @brief Search Results Group Object ID
@@ -893,7 +867,6 @@ int bt_mcc_send_search_safe(struct bt_conn *conn, const struct mpl_search *searc
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_search_results_obj_id(struct bt_conn *conn);
-int bt_mcc_read_search_results_obj_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Read Content Control ID
@@ -903,7 +876,6 @@ int bt_mcc_read_search_results_obj_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_read_content_control_id(struct bt_conn *conn);
-int bt_mcc_read_content_control_id_safe(struct bt_conn *conn);
 
 /**
  * @brief Read the current object metadata
@@ -913,7 +885,6 @@ int bt_mcc_read_content_control_id_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_otc_read_object_metadata(struct bt_conn *conn);
-int bt_mcc_otc_read_object_metadata_safe(struct bt_conn *conn);
 
 /**
  * @brief Read the Icon Object
@@ -923,7 +894,6 @@ int bt_mcc_otc_read_object_metadata_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_otc_read_icon_object(struct bt_conn *conn);
-int bt_mcc_otc_read_icon_object_safe(struct bt_conn *conn);
 
 /**
  * @brief Read the Track Segments Object
@@ -933,7 +903,6 @@ int bt_mcc_otc_read_icon_object_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn);
-int bt_mcc_otc_read_track_segments_object_safe(struct bt_conn *conn);
 
 /**
  * @brief Read the Current Track Object
@@ -943,7 +912,6 @@ int bt_mcc_otc_read_track_segments_object_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_otc_read_current_track_object(struct bt_conn *conn);
-int bt_mcc_otc_read_current_track_object_safe(struct bt_conn *conn);
 
 /**
  * @brief Read the Next Track Object
@@ -953,7 +921,6 @@ int bt_mcc_otc_read_current_track_object_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_otc_read_next_track_object(struct bt_conn *conn);
-int bt_mcc_otc_read_next_track_object_safe(struct bt_conn *conn);
 
 /**
  * @brief Read the Current Group Object
@@ -963,7 +930,6 @@ int bt_mcc_otc_read_next_track_object_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_otc_read_current_group_object(struct bt_conn *conn);
-int bt_mcc_otc_read_current_group_object_safe(struct bt_conn *conn);
 
 /**
  * @brief Read the Parent Group Object
@@ -973,7 +939,6 @@ int bt_mcc_otc_read_current_group_object_safe(struct bt_conn *conn);
  * @return 0 if success, errno on failure.
  */
 int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn);
-int bt_mcc_otc_read_parent_group_object_safe(struct bt_conn *conn);
 
 /**
  * @brief Look up MCC OTC instance
@@ -984,7 +949,6 @@ int bt_mcc_otc_read_parent_group_object_safe(struct bt_conn *conn);
  *
  */
 struct bt_ots_client *bt_mcc_otc_inst(struct bt_conn *conn);
-struct bt_ots_client *bt_mcc_otc_inst_safe(struct bt_conn *conn);
 
 #ifdef __cplusplus
 }

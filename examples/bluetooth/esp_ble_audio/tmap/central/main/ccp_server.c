@@ -47,7 +47,11 @@ int ccp_server_init(void)
     uint8_t bearer_index;
     int err;
 
-    esp_ble_audio_tbs_register_cb(&tbs_cbs);
+    err = esp_ble_audio_tbs_register_cb(&tbs_cbs);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to register tbs callbacks (err %d)", err);
+        return err;
+    }
 
     err = esp_ble_audio_tbs_register_bearer(&gtbs_param, &bearer_index);
     if (err) {

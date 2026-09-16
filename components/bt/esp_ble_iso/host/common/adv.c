@@ -79,26 +79,21 @@ void bt_le_ext_adv_state_reset(void)
     memset(ext_adv_pool, 0, sizeof(ext_adv_pool));
 }
 
-int bt_le_ext_adv_new_safe(uint8_t adv_handle, uint8_t addr_type,
-                           const uint8_t *addr, uint8_t sid)
+int bt_le_ext_adv_new(uint8_t adv_handle, uint8_t addr_type,
+                      const uint8_t *addr, uint8_t sid)
 {
-    struct bt_le_ext_adv *adv = NULL;
-    int err = 0;
-
-    bt_le_host_lock();
+    struct bt_le_ext_adv *adv;
 
     adv = ext_adv_find(adv_handle);
     if (adv) {
         LOG_WRN("ExtAdvExist[%u]", adv_handle);
-        err = -EEXIST;
-        goto end;
+        return -EEXIST;
     }
 
     adv = ext_adv_new();
     if (adv == NULL) {
         LOG_ERR("NoFreeExtAdv[%u]", adv_handle);
-        err = -ENOMEM;
-        goto end;
+        return -ENOMEM;
     }
 
     adv->handle = adv_handle;
@@ -106,33 +101,23 @@ int bt_le_ext_adv_new_safe(uint8_t adv_handle, uint8_t addr_type,
     bt_addr_copy(&adv->addr.a, (const bt_addr_t *)addr);
     adv->sid = sid;
 
-end:
-    bt_le_host_unlock();
-
-    return err;
+    return 0;
 }
 
 _IDF_ONLY
-int bt_le_ext_adv_delete_safe(uint8_t adv_handle)
+int bt_le_ext_adv_delete(uint8_t adv_handle)
 {
-    struct bt_le_ext_adv *adv = NULL;
-    int err = 0;
-
-    bt_le_host_lock();
+    struct bt_le_ext_adv *adv;
 
     adv = ext_adv_find(adv_handle);
     if (adv == NULL) {
         LOG_ERR("ExtAdvNotFound[%u]", adv_handle);
-        err = -ENODEV;
-        goto end;
+        return -ENODEV;
     }
 
     ext_adv_delete(adv);
 
-end:
-    bt_le_host_unlock();
-
-    return err;
+    return 0;
 }
 
 _LIB_ONLY

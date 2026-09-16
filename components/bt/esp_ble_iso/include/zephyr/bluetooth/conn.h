@@ -365,7 +365,6 @@ struct bt_conn_cb {
  * @retval -EEXIST if @p cb was already registered.
  */
 int bt_conn_cb_register(struct bt_conn_cb *cb);
-int bt_conn_cb_register_safe(struct bt_conn_cb *cb);
 
 /**
  * @brief Unregister connection callbacks.
@@ -379,7 +378,6 @@ int bt_conn_cb_register_safe(struct bt_conn_cb *cb);
  * @retval -ENOENT if @p cb was not registered
  */
 int bt_conn_cb_unregister(struct bt_conn_cb *cb);
-int bt_conn_cb_unregister_safe(struct bt_conn_cb *cb);
 
 /**
  *  @brief Register a callback structure for connection events.

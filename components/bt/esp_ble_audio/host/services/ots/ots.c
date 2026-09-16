@@ -839,10 +839,10 @@ int bt_gatt_ots_instances_prepare(void)
 
 int bt_gatt_ots_conn_cb_register(void)
 {
-    return bt_conn_cb_register_safe((void *)&bt_conn_cb_conn_callbacks);
+    return bt_conn_cb_register((void *)&bt_conn_cb_conn_callbacks);
 }
 
 void bt_gatt_ots_conn_cb_unregister(void)
 {
-    (void)bt_conn_cb_unregister_safe((void *)&bt_conn_cb_conn_callbacks);
+    (void)bt_conn_cb_unregister((void *)&bt_conn_cb_conn_callbacks);
 }

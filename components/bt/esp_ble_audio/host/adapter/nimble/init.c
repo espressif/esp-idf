@@ -429,7 +429,7 @@ int bt_le_nimble_vcp_vol_rend_init(void)
 
     memset(&vcp_included, 0, sizeof(vcp_included));
 
-    err = bt_vcp_vol_rend_included_get_safe(&vcp_included);
+    err = bt_vcp_vol_rend_included_get(&vcp_included);
     if (err) {
         return err;
     }
@@ -451,7 +451,7 @@ int bt_le_nimble_micp_mic_dev_init(void)
 
     memset(&micp_included, 0, sizeof(micp_included));
 
-    err = bt_micp_mic_dev_included_get_safe(&micp_included);
+    err = bt_micp_mic_dev_included_get(&micp_included);
     if (err) {
         return err;
     }

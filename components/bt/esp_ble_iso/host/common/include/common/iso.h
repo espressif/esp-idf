@@ -55,9 +55,9 @@ struct bt_iso_tx_cb_info {
     } pkt[2];
 };
 
-int bt_le_iso_cb_register_safe(struct bt_le_iso_cb *cb);
+int bt_le_iso_cb_register(struct bt_le_iso_cb *cb);
 
-void bt_le_iso_cb_unregister_safe(struct bt_le_iso_cb *cb);
+void bt_le_iso_cb_unregister(struct bt_le_iso_cb *cb);
 
 void bt_le_iso_handle_hci_event(uint8_t *data, size_t data_len);
 
