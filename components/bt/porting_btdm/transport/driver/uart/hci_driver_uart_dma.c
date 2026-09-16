@@ -53,6 +53,9 @@ typedef struct {
     uhci_transmit_buffer_info_t *tx_segments;         /*!< Scratch array of UHCI TX segments for one multi-buffer transaction. */
     volatile hci_trans_tx_state_t hci_tx_state;       /*!< Only one HCI packet is in flight (tx-list entries cannot be mixed). */
     volatile bool rx_copy_overflow;                   /*!< Set in ISR when rx_copy_ringbuf cannot accept a DMA slice. */
+    uint8_t *rx_pending_item;                         /*!< Original xRingbufferReceive() pointer; held until H4 consumes the slice. */
+    uint8_t *rx_pending_data;                         /*!< Unparsed remainder of rx_pending_item (item + already consumed). */
+    size_t rx_pending_len;                            /*!< Bytes still to feed to hci_h4_sm_rx() from rx_pending_data. */
 } hci_driver_uart_dma_env_t;
 
 /* Max UHCI TX segments in one uhci_multi_buffer_transmit(); maps to max_transmit_buffer_count. */
@@ -77,13 +80,24 @@ typedef struct {
  */
 #define HCI_UHCI_RX_DESC_MEM                (UC_BT_CTRL_HCI_TRANS_RX_MEM_NUM * HCI_RX_DMA_RING_SIZE)
 #define HCI_RX_COPY_RINGBUF_SIZE            HCI_RX_DMA_RING_SIZE
-
 static const char *TAG = "uart_dma";
 static hci_driver_uart_dma_env_t s_hci_driver_uart_dma_env;
 static struct hci_h4_sm s_hci_driver_uart_h4_sm;
 static portMUX_TYPE s_hci_tx_state_mux = portMUX_INITIALIZER_UNLOCKED;
 
 static int hci_driver_uart_dma_tx_submit(void);
+
+static void
+hci_driver_uart_dma_rx_pending_clear(void)
+{
+    if (s_hci_driver_uart_dma_env.rx_pending_item && s_hci_driver_uart_dma_env.rx_copy_ringbuf) {
+        vRingbufferReturnItem(s_hci_driver_uart_dma_env.rx_copy_ringbuf,
+                              s_hci_driver_uart_dma_env.rx_pending_item);
+    }
+    s_hci_driver_uart_dma_env.rx_pending_item = NULL;
+    s_hci_driver_uart_dma_env.rx_pending_data = NULL;
+    s_hci_driver_uart_dma_env.rx_pending_len = 0;
+}
 
 /**
  * @brief Free the DMA ring, software RX ringbuf and TX segment scratch array.
@@ -94,6 +108,8 @@ static int hci_driver_uart_dma_tx_submit(void);
 static void
 hci_driver_uart_dma_memory_deinit(void)
 {
+    hci_driver_uart_dma_rx_pending_clear();
+
     if (s_hci_driver_uart_dma_env.rx_copy_ringbuf) {
         vRingbufferDelete(s_hci_driver_uart_dma_env.rx_copy_ringbuf);
         s_hci_driver_uart_dma_env.rx_copy_ringbuf = NULL;
@@ -424,17 +440,54 @@ hci_driver_uart_dma_h4_frame_cb(uint8_t pkt_type, void *data, int pkt_len, uint8
 }
 
 /**
+ * @brief Feed one H4 slice and either return the ringbuf item or hold the remainder.
+ *
+ * @return true  if the caller may continue with the next ringbuf item.
+ *         false if H4 consumed fewer bytes than offered (typically OOM); the
+ *               unparsed tail is stored in rx_pending_* and must be retried
+ *               on the next process_rx() entry.
+ */
+static bool
+hci_driver_uart_dma_h4_feed(uint8_t *item, uint8_t *data, size_t item_size)
+{
+    int ret;
+
+    ESP_LOGD(TAG, "uart rx");
+    ESP_LOG_BUFFER_HEXDUMP(TAG, data, item_size, ESP_LOG_DEBUG);
+    ret = hci_h4_sm_rx(s_hci_driver_uart_dma_env.h4_sm, data, (uint16_t)item_size);
+    if (ret < 0) {
+        ESP_LOGW(TAG, "parse rx data error!\n");
+#if UC_BT_CTRL_BLE_IS_ENABLE
+        r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
+#endif // #if UC_BT_CTRL_BLE_IS_ENABLE
+    } else if ((size_t)ret < item_size) {
+        /* Keep the ringbuf item checked out so the unparsed bytes stay valid. */
+        s_hci_driver_uart_dma_env.rx_pending_item = item;
+        s_hci_driver_uart_dma_env.rx_pending_data = data + ret;
+        s_hci_driver_uart_dma_env.rx_pending_len = item_size - (size_t)ret;
+        return false;
+    }
+
+    vRingbufferReturnItem(s_hci_driver_uart_dma_env.rx_copy_ringbuf, item);
+    s_hci_driver_uart_dma_env.rx_pending_item = NULL;
+    s_hci_driver_uart_dma_env.rx_pending_data = NULL;
+    s_hci_driver_uart_dma_env.rx_pending_len = 0;
+
+    return true;
+}
+
+/**
  * @brief Drain the software RX ringbuf into the H4 state machine.
  *
  * Timeout is 0: the process task is already woken by process_sem. Chunks may be
  * one DMA node or a short EOF tail; H4 concatenates them into HCI packets.
+ * If H4 returns a partial consume, the remainder is retried first on the next call.
  */
 static void
 hci_driver_uart_dma_process_rx(void)
 {
     size_t item_size;
     uint8_t *rx_data;
-    int ret;
 
     if (s_hci_driver_uart_dma_env.rx_copy_overflow) {
         ESP_LOGE(TAG, "RX software ring buffer overflow, HCI stream may lose sync");
@@ -444,17 +497,17 @@ hci_driver_uart_dma_process_rx(void)
 #endif // #if UC_BT_CTRL_BLE_IS_ENABLE
     }
 
+    if (s_hci_driver_uart_dma_env.rx_pending_item) {
+        if (!hci_driver_uart_dma_h4_feed(s_hci_driver_uart_dma_env.rx_pending_item,
+                                         s_hci_driver_uart_dma_env.rx_pending_data,
+                                         s_hci_driver_uart_dma_env.rx_pending_len)) {
+            return;
+        }
+    }
+
     while ((rx_data = xRingbufferReceive(s_hci_driver_uart_dma_env.rx_copy_ringbuf, &item_size, 0)) != NULL) {
-        ESP_LOGD(TAG, "uart rx");
-        ESP_LOG_BUFFER_HEXDUMP(TAG, rx_data, item_size, ESP_LOG_DEBUG);
-        ret = hci_h4_sm_rx(s_hci_driver_uart_dma_env.h4_sm, rx_data, (uint16_t)item_size);
-        /* Return the item before parsing the next slice so the ringbuf can accept more ISR copies. */
-        vRingbufferReturnItem(s_hci_driver_uart_dma_env.rx_copy_ringbuf, rx_data);
-        if (ret < 0) {
-            ESP_LOGW(TAG, "parse rx data error!\n");
-#if UC_BT_CTRL_BLE_IS_ENABLE
-            r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
-#endif // #if UC_BT_CTRL_BLE_IS_ENABLE
+        if (!hci_driver_uart_dma_h4_feed(rx_data, rx_data, item_size)) {
+            return;
         }
     }
 }

@@ -239,6 +239,7 @@ extern int btdm_common_sched_bredr_on_sched_hw_list_done(void *param);
 extern int hci_tl_bredr_on_rx_cmd_c2h_num_pkt(void *param);
 extern int hci_tl_bredr_on_rx_cmd_set_c2h_flow_ctrl(void *param);
 extern int odm_afh_on_coex_wifi_channel_change(void *param);
+extern int olc_acl_on_coex_schm_update(void *param);
 extern int olc_intc_on_hal_exit_isr(void *param);
 extern int olc_sleep_on_sched_actual_time_get(void *param);
 extern int olc_sleep_on_sched_get_earlist_ticks(void *param);
@@ -406,11 +407,14 @@ const void * const _base_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH(
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
 
 const void * const _btdm_coex_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH(
-#if UC_BT_CTRL_BLE_IS_ENABLE
     [1] = BTDM_BROKER_ENTRY_DEF_FLASH(
+#if UC_BT_CTRL_BLE_IS_ENABLE
               brk_sym_coexHook_WcEp3uxRHd6HYgB0pn0L,
-          ),
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              olc_acl_on_coex_schm_update,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
+          ),
     [2] = BTDM_BROKER_ENTRY_DEF_FLASH(
 #if UC_BT_CTRL_BLE_IS_ENABLE
               brk_sym_coexHook_wiWNhAUWlHyTZ7Z5ZC5Z,
