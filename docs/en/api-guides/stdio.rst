@@ -184,17 +184,19 @@ In addition to redirecting ``stdout`` and ``stderr`` manually (as shown above), 
 
 The multiplexer is exposed on ``/dev/console`` and manages backends in two roles:
 
-- **Primary** — the active read and write backend. Both application input (``stdin``) and output (``stdout``/``stderr``) go through it. Primaries are kept on a stack: pushing a new primary suspends the previous one, and popping restores it. The default console selected in Kconfig sits at the base of the stack and is always kept as the ultimate fallback.
+- **Primary** — the active read and write backend. Both application input (``stdin``) and output (``stdout``/``stderr``) go through it. Exactly one backend is the primary at any time. Use :cpp:func:`esp_stdio_set_primary` to choose it; the call returns the previously active primary so the application can restore it later. The previous primary is not removed — it stays registered as a write-only auxiliary. The default console selected in Kconfig is registered automatically at boot and starts as the primary.
 - **Auxiliary** — a write-only sink. Every byte written to ``stdout`` and ``stderr`` is fanned out to all registered auxiliaries in addition to the primary. This is useful, for example, to mirror console output to a log file or a network connection while keeping the interactive console on the physical interface.
 
-The maximum number of backends that can be registered at once (primaries plus auxiliaries, including the Kconfig default) is set by :ref:`CONFIG_ESP_STDIO_MAX_VFS_ENTRIES`.
+A backend is added with :cpp:func:`esp_stdio_register_driver` (initially as an auxiliary) and removed with :cpp:func:`esp_stdio_unregister_driver`. The backend currently acting as the primary cannot be unregistered; promote another one with :cpp:func:`esp_stdio_set_primary` first.
+
+The maximum number of backends that can be registered at once (the primary plus all auxiliaries, including the Kconfig default) is set by :ref:`CONFIG_ESP_STDIO_MAX_VFS_ENTRIES`.
 
 The multiplexer API is declared in ``esp_stdio.h`` and is available when ``CONFIG_VFS_SUPPORT_IO`` is enabled. See the :ref:`API reference <esp-stdio-api-reference>` below for the full behavior of each call.
 
 Example
 ^^^^^^^
 
-The following example registers a custom backend, makes it the active console, and later restores the previous one:
+The following example registers a custom backend, makes it the active console, and later reverts to the previous one:
 
 .. code-block:: c
 
@@ -204,25 +206,25 @@ The following example registers a custom backend, makes it the active console, a
     extern const esp_vfs_fs_ops_t my_console_vfs;
 
     esp_stdio_handle_t handle;
-    esp_stdio_io_config_t config = {
+    esp_stdio_handle_t previous_primary;
+    esp_stdio_driver_config_t config = {
         .vfs_ops = &my_console_vfs,
         .vfs_ctx = NULL,
         .path = "/",
     };
 
-    // Register as a write-only auxiliary: output is now mirrored to it.
-    ESP_ERROR_CHECK(esp_stdio_register_io(&config, &handle));
+    // Register the backend (added as a write-only auxiliary).
+    ESP_ERROR_CHECK(esp_stdio_register_driver(&config, &handle));
 
-    // Promote it to the active read + write primary.
-    ESP_ERROR_CHECK(esp_stdio_push_primary(handle));
+    // Promote it to the active read + write primary, saving the previous one.
+    ESP_ERROR_CHECK(esp_stdio_set_primary(handle, &previous_primary));
 
     // ... application uses the custom console for stdin/stdout/stderr ...
 
-    // Restore the previous primary (the custom backend reverts to auxiliary).
-    ESP_ERROR_CHECK(esp_stdio_pop_primary(handle));
-
-    // Remove the backend from the multiplexer entirely.
-    ESP_ERROR_CHECK(esp_stdio_unregister_io(handle));
+    // Restore the previous primary, then remove the custom backend. The active
+    // primary cannot be unregistered, so the restore must come first.
+    ESP_ERROR_CHECK(esp_stdio_set_primary(previous_primary, NULL));
+    ESP_ERROR_CHECK(esp_stdio_unregister_driver(handle));
 
 The same re-entrancy caveat described above for logging applies here: the backend's ``write()`` implementation must not trigger logging that would recursively write to the console.
 
