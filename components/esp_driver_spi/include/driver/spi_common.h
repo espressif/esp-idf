@@ -95,9 +95,8 @@ typedef spi_common_dma_t spi_dma_chan_t;
  * delay, which may cause incorrect read for >40MHz speeds.
  *
  * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t referring to these lines will be ignored and can thus safely be left uninitialized.
- * @note When `SPICOMMON_BUSFLAG_DATA_OUT_INV` is set in `flags`, all configured bus signals are routed through the GPIO matrix.
- * @note On ESP32, `data_io_default_level` only supports 0. When
-         `SPICOMMON_BUSFLAG_DATA_OUT_INV` is set, the idle data level is also inverted.
+ * @note Setting `SPICOMMON_BUSFLAG_DATA_OUT_INV` routes all configured bus signals through GPIO matrix and inverts data output signals, including their idle levels.
+ * @note On ESP32, `data_io_default_level` only supports 0.
  */
 typedef struct {
     union {
@@ -126,7 +125,7 @@ typedef struct {
         };
         int iocfg[9];               ///< GPIO config in array format follow the above order.
     };
-    bool data_io_default_level; ///< Output data IO default level when no transaction.
+    bool data_io_default_level; ///< Default level of output data signals when no transaction in progress.
     int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to hardware fifo length (usually 64 bytes) if DMA is disabled.
     uint32_t dma_burst_size; ///< DMA data burst size in bytes. Only used when DMA is enabled. Set to 0 to use driver default. When non-zero, must be one of the chip-supported values (see GDMA driver or chip TRM). Ignored on chips that do not support configurable burst size.
     uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
