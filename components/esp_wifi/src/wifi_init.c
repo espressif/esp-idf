@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,7 +258,7 @@ static esp_err_t wifi_deinit_internal(void)
 #endif
 #endif /* CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
 #ifdef CONFIG_ESP_PHY_ENABLED
-    esp_phy_modem_deinit();
+    esp_phy_modem_deinit(SLEEP_MODEM_WIFI);
 #endif
     s_wifi_inited = false;
 
@@ -450,10 +450,10 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         esp_wifi_mac_pd_mem_init();
 #endif
 #ifdef CONFIG_ESP_PHY_ENABLED
-        esp_phy_modem_init();
+        esp_phy_modem_init(SLEEP_MODEM_WIFI);
 #endif
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-        if (sleep_modem_wifi_modem_state_enabled()) {
+        if (sleep_modem_wifi_modem_state_is_enabled()) {
             esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
             esp_wifi_internal_modem_state_configure(true); /* require WiFi to enable automatically receives the beacon */
 #if ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED

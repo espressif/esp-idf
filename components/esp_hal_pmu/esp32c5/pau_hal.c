@@ -15,14 +15,26 @@ void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_
     pau_ll_set_regdma_link_addr((uint32_t)(*link_addr)[0]);
 }
 
-void IRAM_ATTR pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore)
+void IRAM_ATTR pau_hal_regdma_wait_done(pau_hal_context_t *hal)
+{
+    while (!(pau_ll_get_regdma_intr_raw_signal(hal->dev) & PAU_DONE_INT_RAW));
+}
+
+void IRAM_ATTR pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore, bool blocking)
 {
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
-    pau_ll_select_regdma_entry_link(hal->dev, SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC);
+    pau_ll_select_regdma_entry_link(hal->dev, SOC_PM_PAU_REGDMA_LINK_IDX_PHY);
     pau_ll_set_regdma_entry_link_backup_direction(hal->dev, backup_or_restore);
     pau_ll_set_regdma_entry_link_backup_start_enable(hal->dev, true);
 
-    while (!(pau_ll_get_regdma_intr_raw_signal(hal->dev) & PAU_DONE_INT_RAW));
+    if (blocking) {
+        pau_hal_regdma_wait_done(hal);
+    }
+}
+
+bool IRAM_ATTR pau_hal_get_regdma_done_status(pau_hal_context_t *hal)
+{
+    return (pau_ll_get_regdma_intr_status(hal->dev) & 0x1);
 }
 
 void IRAM_ATTR pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal)
@@ -33,14 +45,16 @@ void IRAM_ATTR pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal)
 }
 
 #if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
-void IRAM_ATTR pau_hal_start_regdma_wifimac_link(pau_hal_context_t *hal, bool backup_or_restore)
+void IRAM_ATTR pau_hal_start_regdma_wifimac_link(pau_hal_context_t *hal, bool backup_or_restore, bool blocking)
 {
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
     pau_ll_set_regdma_select_wifimac_link(hal->dev);
     pau_ll_set_regdma_wifimac_link_backup_direction(hal->dev, backup_or_restore);
     pau_ll_set_regdma_wifimac_link_backup_start_enable(hal->dev);
 
-    while (!(pau_ll_get_regdma_intr_raw_signal(hal->dev) & PAU_DONE_INT_RAW));
+    if (blocking) {
+        pau_hal_regdma_wait_done(hal);
+    }
 }
 
 void IRAM_ATTR pau_hal_stop_regdma_wifimac_link(pau_hal_context_t *hal)

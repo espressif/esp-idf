@@ -48,9 +48,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "bt_osi_mem.h"
 
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
-#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/esp_modem_clock.h"
 
 #include "freertos/FreeRTOS.h"
@@ -957,7 +955,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     os_msys_init();
 
-    esp_phy_modem_init();
+    esp_phy_modem_init(SLEEP_MODEM_BT);
     periph_module_enable(PERIPH_BT_MODULE);
     periph_module_reset(PERIPH_BT_MODULE);
 
@@ -1037,7 +1035,7 @@ controller_init_err:
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
 modem_deint:
-    esp_phy_modem_deinit();
+    esp_phy_modem_deinit(SLEEP_MODEM_BT);
     periph_module_disable(PERIPH_BT_MODULE);
 
 free_mem:
@@ -1077,7 +1075,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
     npl_freertos_mempool_deinit();
 
-    esp_phy_modem_deinit();
+    esp_phy_modem_deinit(SLEEP_MODEM_BT);
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
