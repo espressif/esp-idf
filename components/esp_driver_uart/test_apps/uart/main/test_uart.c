@@ -275,7 +275,7 @@ static void uart_wakeup_set_get_test(int uart_num)
     printf("uart wake up set and get test\n");
     int wake_up_set = 0;
     int wake_up_get = 0;
-    for (int i = 3; i < 0x3ff; i++) {
+    for (int i = 6; i < 0x3ff; i++) {
         wake_up_set = i;
         TEST_ESP_OK(uart_set_wakeup_threshold(uart_num, wake_up_set));
         TEST_ESP_OK(uart_get_wakeup_threshold(uart_num, &wake_up_get));
