@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include "esp_assert.h"
+#include "esp_err.h"
 #include "hal/lcd_types.h"
 #include "hal/gpio_types.h"
 #include "hal/color_types.h"
@@ -71,6 +72,58 @@ typedef struct {
     lcd_color_range_t out_color_range; /*!< Color range of the output color */
     lcd_yuv_conv_std_t conv_std;       /*!< YUV conversion standard: BT601, BT709 */
 } esp_lcd_color_conv_yuv_config_t;
+
+/**
+ * @brief Type of draw bitmap hook data
+ */
+typedef struct {
+    void *dst_data;       /*!< Destination buffer (usually frame buffer) */
+    int dst_x_size;       /*!< Destination bitmap width */
+    int dst_y_size;       /*!< Destination bitmap height */
+    int dst_x_start;      /*!< Destination start x coordinate */
+    int dst_y_start;      /*!< Destination start y coordinate */
+    int dst_x_end;        /*!< Destination end x coordinate (exclusive) */
+    int dst_y_end;        /*!< Destination end y coordinate (exclusive) */
+    const void *src_data; /*!< Source bitmap data */
+    int src_x_size;       /*!< Source bitmap width */
+    int src_y_size;       /*!< Source bitmap height */
+    int src_x_start;      /*!< Source start x coordinate */
+    int src_y_start;      /*!< Source start y coordinate */
+    int src_x_end;        /*!< Source end x coordinate (exclusive) */
+    int src_y_end;        /*!< Source end y coordinate (exclusive) */
+    int bits_per_pixel;   /*!< Bits per pixel */
+    bool (*on_hook_end)(esp_lcd_panel_handle_t panel); /*!< Callback to be invoked by an asynchronous hook after the custom draw
+                                                            operation completes. This notifies the panel driver to finish the draw
+                                                            transaction. If a color transfer done callback has been registered, it
+                                                            also invokes that callback */
+} esp_lcd_draw_bitmap_hook_data_t;
+
+/**
+ * @brief draw bitmap hook function type for custom pixel processing operations
+ *
+ * This hook allows users to implement custom operations like scaling, rotation,
+ * color space conversion, etc. using hardware accelerators like PPA or DMA2D.
+ *
+ * @note For asynchronous operations, the hook should call hook_data->on_hook_end() after the operation is complete.
+ *       The panel driver does not wait for a previous draw to finish; the hook must handle synchronization itself.
+ *       The simplest approach is to serialize draws. To queue multiple transactions (e.g. via PPA), keep per-transaction
+ *       hook_data, keep source buffers valid until completion, and handle overlapping destinations carefully.
+ *
+ * @param[in] panel LCD panel handle
+ * @param[in] hook_data Hook data
+ * @param[in] hook_ctx Hook context
+ * @return
+ *          - ESP_OK on success
+ *          - Other error codes on failure
+ */
+typedef esp_err_t (*esp_lcd_panel_draw_bitmap_hook_t)(esp_lcd_panel_handle_t panel, const esp_lcd_draw_bitmap_hook_data_t *hook_data, void* hook_ctx);
+
+/**
+ * @brief Type of LCD panel hooks
+ */
+typedef struct {
+    esp_lcd_panel_draw_bitmap_hook_t draw_bitmap_hook; /*!< Draw bitmap hook function */
+} esp_lcd_panel_hooks_t;
 
 #ifdef __cplusplus
 }

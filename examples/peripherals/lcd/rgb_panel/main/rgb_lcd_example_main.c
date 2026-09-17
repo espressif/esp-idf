@@ -271,6 +271,12 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
 
+#if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
+    // use DMA2D to copy draw buffer to frame buffer
+    ESP_LOGI(TAG, "RGB panel added DMA2D draw bitmap hook");
+    ESP_ERROR_CHECK(esp_lcd_rgb_panel_enable_dma2d(panel_handle));
+#endif
+
     ESP_LOGI(TAG, "Initialize RGB LCD panel");
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
