@@ -292,7 +292,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #endif
 
 #if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA
-#define WIFI_ENABLE_WPA3_OWE_STA (1<<11)
+#define WIFI_ENABLE_WPA3_OWE_STA (1<<10)
 #else
 #define WIFI_ENABLE_WPA3_OWE_STA 0
 #endif
