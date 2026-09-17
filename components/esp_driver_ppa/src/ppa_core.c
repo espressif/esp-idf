@@ -531,6 +531,7 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
     // Save callback contexts
     ppa_event_callback_t done_cb = client->done_cb;
     void *trans_elm_user_data = trans_elm->user_data;
+    bool blocking_mode = trans_elm->blocking;
 
     ppa_trans_t *next_start_trans = NULL;
     portENTER_CRITICAL_ISR(&engine_base->spinlock);
@@ -551,7 +552,7 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
 
     // Non-blocking callers already returned, so recycle transaction elm here
     // Blocking callers still wait on `sem` and recycle after that take (ppa_do_operation)
-    if (!trans_elm->blocking) {
+    if (!blocking_mode) {
         need_yield |= ppa_recycle_transaction(client, trans_elm);
         client->trans_cnt--;
     }
@@ -568,8 +569,8 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
 #endif
     }
 
-    // Process last transaction's callback
-    if (done_cb) {
+    // Process last transaction's callback (for blocking transaction, users are able to do action after the operation returns by themselves)
+    if (!blocking_mode && done_cb) {
         ppa_event_data_t edata = {};
         need_yield |= done_cb(client, &edata, trans_elm_user_data);
     }

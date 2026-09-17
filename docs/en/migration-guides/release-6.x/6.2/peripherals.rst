@@ -25,3 +25,11 @@ Unified ``dma_burst_size`` Default
      - Disable data burst
    * - ``N`` (``N > 1``, power of 2)
      - User-specified burst size
+
+PPA
+---
+
+Blocking Operation Behavior Change
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For any blocking PPA operation, now the registered ``on_trans_done`` callback function will not be invoked upon completion. Users should perform necessary actions after the operation returns by themselves manually. For non-blocking PPA operations, all behaviors remain unchanged.

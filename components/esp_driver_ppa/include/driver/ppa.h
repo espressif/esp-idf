@@ -98,7 +98,8 @@ typedef bool (*ppa_event_callback_t)(ppa_client_handle_t ppa_client, ppa_event_d
  * @brief Group of supported PPA callbacks
  */
 typedef struct {
-    ppa_event_callback_t on_trans_done;     /*!< Invoked when a PPA transaction finishes */
+    ppa_event_callback_t on_trans_done;     /*!< Invoked when a PPA transaction finishes
+                                                 Note that this callback will not be invoked if the PPA operation is performed with `PPA_TRANS_MODE_BLOCKING` mode. */
 } ppa_event_callbacks_t;
 
 /**
@@ -161,8 +162,8 @@ typedef struct {
  * @brief Modes to perform the PPA operations
  */
 typedef enum {
-    PPA_TRANS_MODE_BLOCKING,        /*!< `ppa_do_xxx` function will block until the PPA operation is finished */
-    PPA_TRANS_MODE_NON_BLOCKING,    /*!< `ppa_do_xxx` function will return immediately after the PPA operation is pushed to the internal queue */
+    PPA_TRANS_MODE_BLOCKING,        /*!< `ppa_do_xxx` function will block until the PPA operation is finished. Registered `on_trans_done` callback function will not be invoked upon completion automatically. */
+    PPA_TRANS_MODE_NON_BLOCKING,    /*!< `ppa_do_xxx` function will return immediately after the PPA operation is pushed to the internal queue. Registered `on_trans_done` callback function will be invoked upon completion automatically. */
 } ppa_trans_mode_t;
 
 /**
@@ -192,7 +193,8 @@ typedef struct {
     };
 
     ppa_trans_mode_t mode;                      /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
-    void *user_data;                            /*!< User registered data to be passed into `done_cb` callback function */
+    void *user_data;                            /*!< User registered data to be passed into `on_trans_done` callback function
+                                                     A blocking transaction should set this field to NULL, since the callback function will not be invoked upon completion for blocking mode. */
 } ppa_srm_oper_config_t;
 
 /**

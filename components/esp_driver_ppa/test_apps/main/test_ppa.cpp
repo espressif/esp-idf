@@ -221,6 +221,7 @@ TEST_CASE("ppa_pending_transactions_in_queue", "[PPA]")
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_unregister_client(ppa_client_a_handle));
 
     oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+    oper_config.user_data = NULL;
     TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_b_handle, &oper_config));
     // Every PPA engine can only process one operation at a time
     // Transactions are being processed with First-In-First-Out
