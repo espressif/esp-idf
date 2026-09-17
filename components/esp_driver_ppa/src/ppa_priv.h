@@ -62,7 +62,7 @@ struct ppa_engine_t {
     ppa_platform_t *platform;                     // PPA driver platform
     ppa_engine_type_t type;                       // Type of the PPA engine
     portMUX_TYPE spinlock;                        // Engine level spinlock
-    SemaphoreHandle_t sem;                        // Semaphore for whether the engine is processing a transaction
+    bool busy;                                    // Whether the engine has a transaction running or queued; only read/written under `spinlock`
     STAILQ_HEAD(trans, ppa_trans_s) trans_stailq; // link head of pending transactions for the PPA engine
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;                 // Power management lock
