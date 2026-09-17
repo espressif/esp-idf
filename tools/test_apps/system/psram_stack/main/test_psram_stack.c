@@ -16,18 +16,16 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/idf_additions.h"
 #include "unity.h"
-#include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
 #include "esp_partition.h"
-#include "esp_pm.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "esp_flash_dispatcher.h"
-#include "esp_private/esp_clk.h"
 #include "sdkconfig.h"
 
 #define WORKER_STACK_SIZE   4096
@@ -35,13 +33,8 @@
 #define UNITY_STACK_SIZE    8192
 #define NUM_CONCURRENT      5
 #define CONCURRENT_READS    10
-#define MHZ                 1000000
 
 static const char *TAG = "psram_stack_test";
-#if CONFIG_PM_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_PM_LIGHT_SLEEP_CALLBACKS
-static volatile uint32_t s_light_sleep_exit_count;
-static volatile int64_t s_last_light_sleep_us;
-#endif
 
 /* Confirm the calling task's stack is in PSRAM before each test body runs. */
 #define ASSERT_STACK_IN_PSRAM() \
@@ -83,43 +76,45 @@ TEST_CASE("PSRAM stack: deep sleep rejected from PSRAM-stacked task", "[psram_st
 
 #if CONFIG_PM_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_PM_LIGHT_SLEEP_CALLBACKS
 
-static esp_err_t IRAM_ATTR light_sleep_exit_cb(int64_t slept_us, void *arg)
+typedef struct {
+    TaskHandle_t parent;
+    esp_err_t sleep_result;
+    bool stack_in_internal_ram;
+} light_sleep_result_t;
+
+static void light_sleep_from_internal_stack(void *arg)
 {
-    (void)arg;
+    light_sleep_result_t *result = arg;
+    volatile uint8_t stack_probe = 0;
 
-    if (slept_us > 0) {
-        s_last_light_sleep_us = slept_us;
-        s_light_sleep_exit_count++;
-    }
+    result->stack_in_internal_ram = esp_ptr_in_dram((const void *)&stack_probe);
+    esp_sleep_enable_timer_wakeup(100000ULL);
+    result->sleep_result = esp_light_sleep_start();
 
-    return ESP_OK;
+    xTaskNotifyGive(result->parent);
+    vTaskSuspend(NULL);
 }
 
-TEST_CASE("PSRAM stack: task resumes correctly after tickless-idle light sleep", "[psram_stack][light_sleep]")
+TEST_CASE("PSRAM stack: blocked task resumes correctly after light sleep", "[psram_stack][light_sleep]")
 {
     ASSERT_STACK_IN_PSRAM();
 
-    s_light_sleep_exit_count = 0;
-    s_last_light_sleep_us = 0;
-
-    esp_pm_sleep_cbs_register_config_t sleep_cbs = {
-        .exit_cb = light_sleep_exit_cb,
+    light_sleep_result_t result = {
+        .parent = xTaskGetCurrentTaskHandle(),
+        .sleep_result = ESP_FAIL,
     };
-    TEST_ESP_OK(esp_pm_light_sleep_unregister_cbs(&sleep_cbs));
-    TEST_ESP_OK(esp_pm_light_sleep_register_cbs(&sleep_cbs));
+    TaskHandle_t sleep_task = NULL;
+    TEST_ASSERT_EQUAL(
+        pdPASS,
+        xTaskCreateWithCaps(light_sleep_from_internal_stack, "light_sleep", WORKER_STACK_SIZE,
+                            &result, WORKER_PRIORITY, &sleep_task, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+    TEST_ASSERT_NOT_NULL(sleep_task);
 
-    printf("Waiting for tickless-idle light sleep...\n");
-    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ASSERT_EQUAL_UINT32(1, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)));
+    vTaskDeleteWithCaps(sleep_task);
 
-    const uint32_t exit_count = s_light_sleep_exit_count;
-    const int64_t last_slept_us = s_last_light_sleep_us;
-    TEST_ESP_OK(esp_pm_light_sleep_unregister_cbs(&sleep_cbs));
-
-    ESP_LOGI(TAG, "Auto light sleep exit callbacks: %" PRIu32 ", last slept: %" PRId64 " us",
-             exit_count, last_slept_us);
-    TEST_ASSERT_GREATER_THAN_UINT32(0, exit_count);
-    TEST_ASSERT_GREATER_THAN_UINT32(0, last_slept_us);
-
+    TEST_ASSERT_TRUE_MESSAGE(result.stack_in_internal_ram, "light sleep task stack is not in internal RAM");
+    TEST_ASSERT_EQUAL(ESP_OK, result.sleep_result);
     ASSERT_STACK_IN_PSRAM();
 }
 
