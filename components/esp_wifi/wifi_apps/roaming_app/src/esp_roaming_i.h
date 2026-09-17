@@ -104,9 +104,6 @@ extern "C" {
 /* Neighbor report list/event support for periodic RRM and/or 11k roam */
 #define RRM_NEIGHBOR_LIST_SUPPORT (PERIODIC_RRM_MONITORING || RRM_ASSISTED_ROAMING_ENABLED)
 
-/* Track BTM retries when a lower-priority fallback method exists */
-#define BTM_RETRY_FALLBACK_ENABLED ((LEGACY_ROAM_ENABLED || RRM_ASSISTED_ROAMING_ENABLED) && NETWORK_ASSISTED_ROAMING_ENABLED)
-
 #define MAX_SCAN_CHAN_LIST_COUNT 14
 
 #define MAX_NEIGHBOR_LEN 512
@@ -119,7 +116,6 @@ struct scanned_ap_info {
 struct cand_bss {
     uint8_t channel;
     uint8_t bssid[ETH_ALEN];
-    bool force_legacy_roam;
 };
 
 struct roam_bss_info {
@@ -144,7 +140,7 @@ struct roaming_app {
 #if LOW_RSSI_ROAMING_ENABLED
     int8_t current_low_rssi_threshold;
 #endif
-#if BTM_RETRY_FALLBACK_ENABLED
+#if NETWORK_ASSISTED_ROAMING_ENABLED
     uint8_t btm_attempt;
 #endif
 #if LEGACY_ROAM_ENABLED
@@ -178,9 +174,9 @@ struct roaming_app {
     uint8_t rrm_attempt;
     bool rrm_roam_pending;
     bool rrm_scan_active;
+    bool rrm_roam_exhausted;
     wifi_scan_channel_bitmap_t saved_scan_channel_bitmap;
     uint8_t saved_scan_channel;
-    struct cand_bss *pending_rrm_fallback_bss;
 #endif
 };
 
