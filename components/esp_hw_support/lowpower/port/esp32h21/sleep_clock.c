@@ -6,6 +6,7 @@
 
 #include "esp_private/sleep_clock.h"
 #include "soc/pcr_reg.h"
+#include "soc/pmu_reg.h"
 #include "soc/ds_reg.h"
 #include "soc/ecdsa_reg.h"
 #include "modem/i2c_ana_mst_reg.h"
@@ -20,26 +21,32 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     #define N_REGS_PCR()    (((PCR_PWDET_SAR_CLK_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
 
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
+        /* Force BBPLL on (same effects as clk_ll_bbpll_enable) */
+        [0]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(0),   PMU_IMM_HP_CK_POWER_REG,        PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C,    PMU_TIE_HIGH_XPD_BBPLL_M | PMU_TIE_HIGH_XPD_BBPLL_I2C_M,  1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [1]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(1),   PMU_IMM_HP_CK_POWER_REG,        PMU_TIE_HIGH_GLOBAL_BBPLL_ICG,                          PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_M,                          1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [2]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(2),   PMU_HP_ACTIVE_HP_CK_POWER_REG,  PMU_HP_ACTIVE_XPD_BBPLL_I2C | PMU_HP_ACTIVE_XPD_BBPLL,  PMU_HP_ACTIVE_XPD_BBPLL_I2C_M | PMU_HP_ACTIVE_XPD_BBPLL_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) },
         /* Enable i2c master clock */
-        [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(0),   MODEM_LPCON_CLK_CONF_REG,       MODEM_LPCON_CLK_I2C_MST_EN,     MODEM_LPCON_CLK_I2C_MST_EN_M,   1, 0), .owner = ENTRY(0) },
+        [3]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(3),   MODEM_LPCON_CLK_CONF_REG,       MODEM_LPCON_CLK_I2C_MST_EN,     MODEM_LPCON_CLK_I2C_MST_EN_M,   1, 0), .owner = ENTRY(0) },
         /* Start BBPLL self-calibration */
-        [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(1),   I2C_ANA_MST_ANA_CONF0_REG,      0,                              I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
-        [2] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(2),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_LOW,   I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
+        [4]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(4),   I2C_ANA_MST_ANA_CONF0_REG,      0,                              I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
+        [5]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_LOW,   I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
         /* Wait calibration done */
-        [3] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(3),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_CAL_DONE,         I2C_MST_BBPLL_CAL_DONE,         1, 0), .owner = ENTRY(0) },
+        [6]  = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(6),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_CAL_DONE,         I2C_MST_BBPLL_CAL_DONE,         1, 0), .owner = ENTRY(0) },
         /* Stop BBPLL self-calibration */
-        [4] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(4),   I2C_ANA_MST_ANA_CONF0_REG,      0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
-        [5] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
-        /* Clock configuration retention */
-        [6] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(6), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR() - 2, 0, 0,
-                                                   0xffffffff, 0xfd7fffff, 0x1fffff, 0x0), .owner = ENTRY(0) | ENTRY(2) },
-        [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7), PCR_BUS_CLK_UPDATE_REG,         PCR_BUS_CLOCK_UPDATE,           PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [8] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(8), PCR_BUS_CLK_UPDATE_REG,         0x0,                            PCR_BUS_CLOCK_UPDATE_M,         1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [7]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7),   I2C_ANA_MST_ANA_CONF0_REG,      0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
+        [8]  = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(8),   I2C_ANA_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
+        /* Clock configuration retention, PCR_SEC_CONF_REG / PCR_ECDSA_CONF_REG / PCR_DS_CONF_REG is excluded here and restored by REGDMA_PCR_LINK(17) after the DS/ECDSA modules are idle */
+        [9]  = { .config = REGDMA_LINK_ADDR_MAP_INIT  (REGDMA_PCR_LINK(9),   DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR() - 3, 0, 0,       0xffffffff, 0xfd7fffff, 0x1f7fff, 0x0), .owner = ENTRY(0) | ENTRY(2) },
+        [10] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(10),  PCR_BUS_CLK_UPDATE_REG,         PCR_BUS_CLOCK_UPDATE,           PCR_BUS_CLOCK_UPDATE_M,          1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [11] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(11),  PCR_BUS_CLK_UPDATE_REG,         0x0,                            PCR_BUS_CLOCK_UPDATE_M,          1, 0), .owner = ENTRY(0) | ENTRY(2) },
         /* TOP PD wake: DS/ECDSA CLK_EN defaults to 1 and start mem clean; wait idle before restoring their clocks */
-        [9] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(9),   DS_QUERY_BUSY_REG,              0,                              DS_QUERY_BUSY_M,                1, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [10] = { .config = REGDMA_LINK_WAIT_INIT     (REGDMA_PCR_LINK(10),  ECDSA_STATE_REG,                0,                              ECDSA_BUSY_M,                   1, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [11] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(11), PCR_DS_CONF_REG, PCR_DS_CONF_REG, 2, 0, 0,
-                                                    0x5, 0x0, 0x0, 0x0), .owner = ENTRY(0) | ENTRY(2) },
+        [12] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(12),  PCR_SEC_CONF_REG,               0,                              PCR_SEC_CLK_SEL_M,               1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [13] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(13),  PCR_ECDSA_CONF_REG,             5,                              7,                               1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [14] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(14),  PCR_DS_CONF_REG,                5,                              7,                               1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [15] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(15),  DS_QUERY_BUSY_REG,              0,                              DS_QUERY_BUSY_M,                 1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [16] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(16),  ECDSA_STATE_REG,                0,                              ECDSA_BUSY_M,                    1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        // Restore PCR_DS_CONF_REG & PCR_ECDSA_CONF_REG & PCR_SEC_CONF_REG
+        [17] = { .config = REGDMA_LINK_ADDR_MAP_INIT  (REGDMA_PCR_LINK(17),  PCR_DS_CONF_REG, PCR_DS_CONF_REG, 3, 0, 0, 0x1000005, 0x0, 0x0, 0x0), .owner = ENTRY(0) | ENTRY(2) },
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
