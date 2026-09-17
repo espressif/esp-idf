@@ -47,6 +47,7 @@ BLE_DOCS = [
     'api-guides/low-power-mode/low-power-mode-ble.rst',
     'api-reference/bluetooth/bt_le.rst',
     'api-reference/bluetooth/esp_gap_ble.rst',
+    'api-reference/bluetooth/esp_ble_ead.rst',
     'api-reference/bluetooth/esp_gatt_defs.rst',
     'api-reference/bluetooth/esp_gatts.rst',
     'api-reference/bluetooth/esp_gattc.rst',

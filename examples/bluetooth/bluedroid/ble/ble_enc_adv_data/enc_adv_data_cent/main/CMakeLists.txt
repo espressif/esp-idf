@@ -4,5 +4,5 @@ else()
     set(MAIN_SRC "enc_adv_data_cent.c")
 endif()
 
-idf_component_register(SRCS ${MAIN_SRC} "ble_ead.c"
+idf_component_register(SRCS ${MAIN_SRC}
                        INCLUDE_DIRS ".")

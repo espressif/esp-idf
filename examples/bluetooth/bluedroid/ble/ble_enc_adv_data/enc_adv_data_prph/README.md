@@ -5,6 +5,8 @@
 
 This example demonstrates how to use BLE Encrypted Advertising Data (EAD) feature with Bluedroid stack.
 
+Encryption uses the host APIs in `esp_ble_ead.h` (`esp_ble_ead_encrypt`). Enable `CONFIG_BT_BLE_FEAT_ENC_ADV_DATA` (already set in `sdkconfig.defaults`).
+
 ## Overview
 
 The Encrypted Advertising Data feature (introduced in Bluetooth Core Specification 5.4) allows devices to encrypt portions of their advertising data using AES-CCM. This enables:
@@ -30,7 +32,7 @@ The Encrypted Advertising Data feature (introduced in Bluetooth Core Specificati
 │  ┌──────────────────────────────────────────────────────────────────────┐  │
 │  │                     BLE Advertising Packet                            │  │
 │  ├──────────┬─────────────┬────────────────┬────────────────────────────┤  │
-│  │  Flags   │  Name "key" │  UUID 0x2C01   │  Encrypted Data (AD 0x31) │  │
+│  │  Flags   │  Name "key" │  UUID 0x1800   │  Encrypted Data (AD 0x31) │  │
 │  │  (3B)    │    (5B)     │     (4B)       │         (16B)              │  │
 │  └──────────┴─────────────┴────────────────┴────────────────────────────┘  │
 │                                                                             │
@@ -89,7 +91,7 @@ Offset  Length  Type  Data                    Description
 ──────  ──────  ────  ────                    ───────────
 0       2       0x01  0x06                    Flags: LE General Discoverable
 3       4       0x09  'k' 'e' 'y'             Complete Local Name
-8       3       0x03  0x01 0x2C               16-bit Service UUID: 0x2C01
+8       3       0x03  0x00 0x18               16-bit Service UUID: 0x1800
 12      16      0x31  [Encrypted Payload]     Encrypted Advertising Data
 
 Encrypted Payload Detail:
