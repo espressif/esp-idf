@@ -49,7 +49,7 @@ def generate_gdbinit_rom_add_symbols(target: str) -> str:
         build_date_addr = int(k['build_date_str_addr'], base=16)
         r.append(indent(f'# if $_streq((char *) {hex(build_date_addr)}, "{k["build_date_str"]}")', indent_str))
         r.append(indent(get_rom_if_condition_str(build_date_addr, k['build_date_str']), indent_str))
-        r.append(indent(f'add-symbol-file {rom_elfs_dir}{rom_file}', indent_str + base_ident))
+        r.append(indent(f'add-symbol-file {os.path.join(rom_elfs_dir, rom_file)}', indent_str + base_ident))
         r.append(indent('else', indent_str))
         if i == len(roms[target]):
             # In case no one known ROM ELF fits - print warning
