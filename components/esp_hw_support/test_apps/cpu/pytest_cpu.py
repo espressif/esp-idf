@@ -25,6 +25,7 @@ def _run_non_recoverable_case(dut: IdfDut, test_name: str, expected_reason: str)
     'config,target',
     [
         ('default', 'supported_targets'),
+        ('default', 'esp32h21'),
     ],
     indirect=['config', 'target'],
 )
@@ -37,6 +38,7 @@ def test_cpu(dut: IdfDut) -> None:
     'config,target',
     [
         ('default', 'supported_targets'),
+        ('default', 'esp32h21'),
     ],
     indirect=['config', 'target'],
 )
@@ -49,6 +51,7 @@ def test_cpu_reset(dut: IdfDut) -> None:
     'config,target',
     [
         ('default', 'supported_targets'),
+        ('default', 'esp32h21'),
     ],
     indirect=['config', 'target'],
 )

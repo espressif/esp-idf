@@ -203,7 +203,7 @@ extern "C" {
 #define STPC2       0xBF2
 
 /* Espressif's custom CSR for the current privilege mode */
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21
 #define CSR_PRV_MODE   0xC10
 #else
 #define CSR_PRV_MODE   0x810
