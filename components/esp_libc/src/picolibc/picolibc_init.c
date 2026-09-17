@@ -116,12 +116,13 @@ void esp_libc_init(void)
     syscall_table_ptr = &s_stub_table;
 #endif
 
-    environ = malloc(sizeof(char*));
-    if (environ == 0) {
-        // if allocation fails this early in startup process, there's nothing else other than to panic.
-        abort();
-    }
-    environ[0] = NULL;
+    /*
+     * Static empty list. Do not malloc() here: first setenv() would leak it.
+     * setenv() mallocs environ.
+     */
+    static char *s_empty_environ[] = { NULL };
+    extern char **environ;
+    environ = s_empty_environ;
 
     esp_libc_locks_init();
 }
