@@ -719,6 +719,8 @@ void esp_hf_client_audio_buff_free(esp_hf_audio_buff_t *audio_buf);
  *                  If the length of the audio data is equal to preferred_frame_size indicated by
  *                  ESP_HF_CLIENT_AUDIO_STATE_EVT, then we can reduce one memory copy inside the Bluedroid stack.
  *                  This function is only used in the case that Voice Over HCI is enabled.
+ *                  On success, the stack takes ownership of audio_buf and will free it internally.
+ *                  On failure, the caller is responsible for freeing audio_buf with esp_hf_client_audio_buff_free.
  *
  * @param[in]       sync_conn_hdl: (e)SCO connection handle
  *
@@ -728,6 +730,7 @@ void esp_hf_client_audio_buff_free(esp_hf_audio_buff_t *audio_buf);
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_ERR_INVALID_ARG: invalid parameter
+ *                  - ESP_FAIL: others
  *
  */
 esp_err_t esp_hf_client_audio_data_send(esp_hf_sync_conn_hdl_t sync_conn_hdl, esp_hf_audio_buff_t *audio_buf);

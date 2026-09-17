@@ -1013,10 +1013,10 @@ bt_status_t btc_hf_ci_sco_data(void)
 bt_status_t btc_hf_ag_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len)
 {
 #if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTA_HFP_EXT_CODEC == TRUE)
-    /* currently, sync_conn_hdl is not used */
     int idx = btc_hf_latest_connected_idx();
     CHECK_HF_SLC_CONNECTED(idx);
-    if (idx != BTC_HF_INVALID_IDX) {
+
+    if (sync_conn_hdl != ESP_INVALID_CONN_HANDLE && hf_local_param.btc_hf_cb[idx].sync_conn_hdl == sync_conn_hdl) {
         BTA_AgAudioDataSend(hf_local_param.btc_hf_cb[idx].handle, p_buff_start, p_data, data_len);
         return BT_STATUS_SUCCESS;
     }
