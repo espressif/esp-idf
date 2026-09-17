@@ -76,6 +76,11 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(config && ret_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
+    size_t burst_size = config->dma_burst_size ? config->dma_burst_size : SDMMC_LL_DMA_BURST_SIZE_DEFAULT;
+    ESP_RETURN_ON_FALSE(burst_size == 1 ||
+                        (burst_size >= 4 && burst_size <= 256 && (burst_size & (burst_size - 1)) == 0),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid dma_burst_size");
+
     sd_host_sdmmc_ctlr_t *ctlr = heap_caps_calloc(1, sizeof(sd_host_sdmmc_ctlr_t), SD_HOST_SDMMC_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_NO_MEM, TAG, "no mem for sd host controller context");
 
@@ -130,6 +135,7 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
     sdmmc_ll_enable_interrupt(ctlr->hal.dev, 0xffffffff, false);
     sdmmc_ll_enable_global_interrupt(ctlr->hal.dev, false);
     sdmmc_ll_init_dma(ctlr->hal.dev);
+    sdmmc_ll_set_dma_burst_size(ctlr->hal.dev, burst_size);
 
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ctlr->drv.del_ctlr = sd_host_del_sdmmc_controller;

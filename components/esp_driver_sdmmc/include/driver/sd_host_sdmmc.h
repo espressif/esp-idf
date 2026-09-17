@@ -22,6 +22,7 @@ extern "C" {
 typedef struct {
     uint32_t event_queue_items;    ///< Event queue items. If 0, fallback to default queue item number (4)
     uint32_t dma_desc_num;         ///< Number of DMA descriptor, fallback to default dma descriptor number (4)
+    size_t dma_burst_size;         ///< DMA burst size in bytes, a power of two in 4..256. 0 for the default, 1 to disable the burst
 } sd_host_sdmmc_cfg_t;
 
 /**
