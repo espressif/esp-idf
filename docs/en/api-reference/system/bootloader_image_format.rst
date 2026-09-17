@@ -68,6 +68,7 @@ The ``DRAM0`` segment of the bootloader binary starts with the :cpp:type:`esp_bo
  * ``version``: bootloader version, see :menuitem:`CONFIG_BOOTLOADER_PROJECT_VER`
  * ``idf_ver``: ESP-IDF version. [#f1]_
  * ``date`` and ``time``: compile date and time
+ * ``partition_table_offset``: partition table offset, see :ref:`CONFIG_PARTITION_TABLE_OFFSET` (0 if not recorded)
  * ``reserved2``: reserved for the future IDF use
 
 .. [#f1] The maximum length is 32 characters, including null-termination character.
