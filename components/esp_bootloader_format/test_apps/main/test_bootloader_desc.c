@@ -33,11 +33,18 @@ TEST(esp_bootloader_format, esp_ota_get_bootloader_description)
     printf("\tESP-IDF version from 2nd stage bootloader: %s\n", desc.idf_ver);
     printf("\tESP-IDF version from app: %s\n", esp_get_idf_version());
     TEST_ASSERT_EQUAL(0, memcmp(desc.idf_ver, esp_get_idf_version(), strlen(esp_get_idf_version())));
+    TEST_ASSERT_EQUAL_HEX32(CONFIG_PARTITION_TABLE_OFFSET, desc.partition_table_offset);
+}
+
+TEST(esp_bootloader_format, esp_partition_table_get_offset)
+{
+    TEST_ASSERT_EQUAL_HEX32(CONFIG_PARTITION_TABLE_OFFSET, esp_partition_table_get_offset());
 }
 
 TEST_GROUP_RUNNER(esp_bootloader_format)
 {
     RUN_TEST_CASE(esp_bootloader_format, esp_ota_get_bootloader_description)
+    RUN_TEST_CASE(esp_bootloader_format, esp_partition_table_get_offset)
 }
 
 void app_main(void)
