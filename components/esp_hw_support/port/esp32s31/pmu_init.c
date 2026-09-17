@@ -22,6 +22,8 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_hw_log.h"
 #include "hal/regi2c_ctrl_ll.h"
+#include "soc/rtc.h"
+#include "hal/efuse_hal.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
@@ -239,4 +241,16 @@ void pmu_init(void)
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
     pmu_power_domain_force_default(PMU_instance());
+
+#if CONFIG_ESP_ENABLE_PVT
+    /*setup pvt function*/
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 1) {
+        pvt_auto_dbias_enable(true);
+        esp_rom_delay_us(1000);
+    }
+    else {
+        ESP_HW_LOGW(TAG, "blk_version is less than 1, pvt function not supported in efuse.");
+    }
+#endif
 }

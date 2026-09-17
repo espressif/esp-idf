@@ -70,6 +70,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     // No need to wait UART0 TX idle since its default clock source is XTAL, should not be affected by system clock configuration
 
+    SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL); // Hand over control of dbias to pmu
+
     /* Disable PLLs to save power, the PLLs will be enabled by the user in application code */
     rtc_clk_pll_disable(cfg);
 

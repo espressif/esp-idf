@@ -16,10 +16,16 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
+#include "soc/efuse_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+FORCE_INLINE_ATTR int32_t pmu_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE.rd_mac_sys5.lp_hp_dbias_vol_gap;
+}
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_interrupt_raw(pmu_dev_t *hw)
 {

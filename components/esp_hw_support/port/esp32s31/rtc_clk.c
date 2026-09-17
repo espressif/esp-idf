@@ -22,6 +22,7 @@
 #include "esp_attr.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "hal/clk_gate_ll.h"
+#include "esp_private/esp_pmu.h"
 
 static const char *TAG = "rtc_clk";
 
@@ -336,7 +337,7 @@ __attribute__((weak)) void rtc_clk_set_cpu_switch_to_pll(int event_id)
 {
 }
 
-static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_t new_src, uint32_t new_src_freq_mhz)
+static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_t old_src, soc_cpu_clk_src_t new_src, uint32_t new_src_freq_mhz)
 {
 #ifdef BOOTLOADER_BUILD
     if (new_src == SOC_CPU_CLK_SRC_CPLL) {
@@ -364,12 +365,24 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
         }
         s_cur_bbpll_freq = CLK_LL_PLL_480M_FREQ_MHZ;
     }
+    if (((old_src != SOC_CPU_CLK_SRC_CPLL) && (old_src != SOC_CPU_CLK_SRC_PLL_F240M)) &&
+        ((new_src == SOC_CPU_CLK_SRC_CPLL) || (new_src == SOC_CPU_CLK_SRC_PLL_F240M))) {
+#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
+        pvt_auto_dbias_enable(true);
+#endif
+    }
 #endif
 }
 
 #ifndef BOOTLOADER_BUILD
-static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t old_src)
+static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t old_src, soc_cpu_clk_src_t new_src)
 {
+    if (((old_src == SOC_CPU_CLK_SRC_CPLL) || (old_src == SOC_CPU_CLK_SRC_PLL_F240M)) &&
+        ((new_src != SOC_CPU_CLK_SRC_CPLL) && (new_src != SOC_CPU_CLK_SRC_PLL_F240M))) {
+#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
+        pvt_auto_dbias_enable(false);
+#endif
+    }
     if (old_src == SOC_CPU_CLK_SRC_CPLL) {
         assert(s_is_cpll_acquired);
         esp_clk_tree_enable_src(SOC_MOD_CLK_CPLL, false);
@@ -390,15 +403,15 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t 
 
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
 {
+    soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
 #ifdef BOOTLOADER_BUILD
     // Always trigger clock source preparing in bootloader
     bool src_changed = true;
 #else
-    soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
     bool src_changed = (old_cpu_clk_src != config->source);
 #endif
     if (src_changed) {
-        rtc_clk_update_pll_state_on_cpu_src_switching_start(config->source, config->source_freq_mhz);
+        rtc_clk_update_pll_state_on_cpu_src_switching_start(old_cpu_clk_src, config->source, config->source_freq_mhz);
     }
 
     if (config->source == SOC_CPU_CLK_SRC_XTAL) {
@@ -415,7 +428,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
 
 #ifndef BOOTLOADER_BUILD
     if (src_changed) {
-        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src);
+        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src, config->source);
     }
 #endif
 }
@@ -516,9 +529,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1, false);
-    if (old_cpu_clk_src != SOC_CPU_CLK_SRC_XTAL) {
-        rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src);
-    }
+    rtc_clk_update_pll_state_on_cpu_src_switching_end(old_cpu_clk_src, SOC_CPU_CLK_SRC_XTAL);
 }
 
 FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
@@ -537,6 +548,9 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1, false);
     s_cur_cpll_freq = 0;
     s_cur_bbpll_freq = 0;
+#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
+    pvt_auto_dbias_enable(false);
+#endif
 }
 
 void rtc_clk_apll_enable(bool enable)

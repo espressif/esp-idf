@@ -384,7 +384,10 @@ void esp_clk_tree_initialize(void)
         if (cpu_src != SOC_CPU_CLK_SRC_CPLL && flash_clk_src != FLASH_CLK_SRC_CPLL) {
             clk_ll_cpll_disable();
         }
+#if !CONFIG_ESP_ENABLE_PVT
+        // PLL_F160M must always on if PVT is enabled.
         _clk_gate_ll_ref_160m_clk_en(false);
+#endif
         _clk_gate_ll_ref_120m_clk_en(false);
         _clk_gate_ll_ref_80m_clk_en(false);
         _clk_gate_ll_ref_60m_clk_en(false);
@@ -401,6 +404,9 @@ void esp_clk_tree_initialize(void)
     s_clk_tree_initialized = true;
 #if CONFIG_USJ_ENABLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
     /* Bootloader / USJ may keep BBPLL 480M on; declare a permanent hold. */
+    esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, true);
+#endif
+#if CONFIG_ESP_ENABLE_PVT
     esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, true);
 #endif
     /* Flash + CPU: sync clk_tree refs with HW already selected at boot. */
@@ -484,7 +490,11 @@ static const esp_clk_tree_gated_clk_t s_gated_ref_clks[] = {
     [ESP_CLK_TREE_GATED_CLK_PLL_F20M]   = { SOC_MOD_CLK_PLL_F20M,     _clk_gate_ll_ref_20m_clk_en,     esp_clk_tree_parent_bbpll },
     [ESP_CLK_TREE_GATED_CLK_PLL_F60M]   = { SOC_MOD_CLK_PLL_F60M,     _clk_gate_ll_ref_60m_clk_en,     esp_clk_tree_parent_bbpll },
     [ESP_CLK_TREE_GATED_CLK_PLL_F120M]  = { SOC_MOD_CLK_PLL_F120M,    _clk_gate_ll_ref_120m_clk_en,    esp_clk_tree_parent_bbpll },
+#if CONFIG_ESP_ENABLE_PVT
+    [ESP_CLK_TREE_GATED_CLK_PLL_F160M]  = { SOC_MOD_CLK_PLL_F160M,    NULL,                            esp_clk_tree_parent_bbpll },
+#else
     [ESP_CLK_TREE_GATED_CLK_PLL_F160M]  = { SOC_MOD_CLK_PLL_F160M,    _clk_gate_ll_ref_160m_clk_en,    esp_clk_tree_parent_bbpll },
+#endif
     [ESP_CLK_TREE_GATED_CLK_PLL_F240M]  = { SOC_MOD_CLK_PLL_F240M,    _clk_gate_ll_ref_240m_clk_en,    esp_clk_tree_parent_bbpll },
 };
 

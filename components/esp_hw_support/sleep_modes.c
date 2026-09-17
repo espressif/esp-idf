@@ -247,6 +247,7 @@
 #elif CONFIG_IDF_TARGET_ESP32S31
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US           (324)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US        (780)
+#define PVT_REINIT_COST_US                      (95)
 #endif
 
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
