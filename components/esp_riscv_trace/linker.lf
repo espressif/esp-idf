@@ -1,0 +1,18 @@
+[mapping:esp_riscv_trace]
+archive: libesp_riscv_trace.a
+entries:
+    # These run from the panic path. They need IRAM only when the panic handler
+    # itself runs without flash cache.
+    if ESP_PANIC_HANDLER_IRAM = y:
+        esp_riscv_trace:esp_panic_handler_inst_trace_stop (noflash)
+        esp_riscv_trace:snapshot_freeze_state (noflash)
+        esp_riscv_trace_snapshot:esp_riscv_trace_snapshot_panic_write (noflash)
+        esp_riscv_trace_snapshot:panic_write_begin (noflash)
+        esp_riscv_trace_snapshot:panic_write_end (noflash)
+
+[mapping:esp_riscv_trace_coredump]
+archive: libesp_riscv_trace.a
+entries:
+    # The coredump provider runs from the panic path.
+    if ESP_PANIC_HANDLER_IRAM = y && ESP_COREDUMP_ENABLE = y:
+        esp_riscv_trace_coredump (noflash)

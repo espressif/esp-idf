@@ -148,6 +148,15 @@ static void panic_handler(void *frame, bool pseudo_excause)
     kasan_disable_checks();
 #endif
 
+#if CONFIG_ESP_RISCV_TRACE_ENABLE
+    /* Stop the instruction trace as early as possible so the capture ends at the
+       crash rather than inside the panic handler. This only stops the encoders.
+       The FIFO flush and snapshot run later at coredump time. */
+    if (esp_panic_handler_inst_trace_stop) {
+        esp_panic_handler_inst_trace_stop();
+    }
+#endif
+
     /* If watchdogs are enabled, the panic handler runs the risk of getting aborted pre-emptively because
      * an overzealous watchdog decides to reset it. Hence, we feed the WDTs here.
      *

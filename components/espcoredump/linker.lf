@@ -72,6 +72,20 @@ entries:
     else:
         * (default)
 
+[sections:esp_coredump_extra]
+entries:
+    .esp_coredump_extra+
+
+[scheme:esp_coredump_extra_default]
+entries:
+    esp_coredump_extra -> dram0_data
+
+[mapping:esp_coredump_extra]
+archive: *
+entries:
+    * (esp_coredump_extra_default);
+        esp_coredump_extra -> dram0_data KEEP() SORT(name) ALIGN(4, pre) SURROUND(esp_coredump_extra_array)
+
 [mapping:spi_flash_override]
 archive: libspi_flash.a
 entries:

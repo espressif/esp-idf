@@ -7,11 +7,27 @@ menu "RISC-V Trace Encoder Configurations"
         help
             Build the ESP RISC-V trace encoder driver and expose its runtime API.
 
+            When core dump is also enabled, a panic freezes the snapshot and the
+            coredump writer stores an ESP_RISCV_TRACE note plus the per-core buffers.
+
     if ESP_RISCV_TRACE_ENABLE
+
+        config ESP_RISCV_TRACE_AUTOSTART
+            bool "Start capture automatically at startup"
+            default y if ESP_COREDUMP_ENABLE
+            default n
+            help
+                Start the encoder on every selected core during system startup,
+                before the scheduler runs. If a panic happens after that point,
+                the core dump includes the recent execution history even if the
+                application did not start tracing manually.
+
+                In loop mode with periodic resync (the defaults), the buffer
+                keeps the latest trace data before the panic.
 
         config ESP_RISCV_TRACE_BUFFER_SIZE
             int "Trace buffer size (bytes)"
-            default 2048
+            default 8192
             help
                 Size in bytes of the trace buffer allocated by the driver.
 
@@ -163,9 +179,18 @@ menu "RISC-V Trace Encoder Configurations"
 
         choice ESP_RISCV_TRACE_RESYNC_MODE_SELECT
             prompt "Resynchronization mode"
+            default ESP_RISCV_TRACE_RESYNC_MODE_PACKET if ESP_RISCV_TRACE_MEM_MODE_LOOP
             default ESP_RISCV_TRACE_RESYNC_MODE_DISABLED
             help
                 Periodic resynchronization mode of the trace encoder.
+
+                In loop memory mode the initial synchronization packet is
+                overwritten once the ring buffer wraps, leaving the decoder
+                with no anchor. PACKET writes a fresh sync every
+                RESYNC_THRESHOLD packets so a wrapped capture stays
+                decodable. DISABLED is safe only with non-loop memory mode,
+                where the encoder stops before the initial sync can be
+                overwritten.
 
             config ESP_RISCV_TRACE_RESYNC_MODE_DISABLED
                 bool "Disabled"
@@ -190,9 +215,13 @@ menu "RISC-V Trace Encoder Configurations"
         choice ESP_RISCV_TRACE_AHB_BURST_SELECT
             prompt "AHB burst type"
             depends on SOC_RISCV_TRACE_AHB_CONFIGURABLE
+            default ESP_RISCV_TRACE_AHB_BURST_INCR4 if ESP_RISCV_TRACE_BUFFER_IN_EXTERNAL
             default ESP_RISCV_TRACE_AHB_BURST_SINGLE
             help
-                AHB burst type used by the trace write master.
+                AHB burst type used by the trace write master. Single-beat
+                writes are too slow for PSRAM and lose most of the trace, so
+                the default is INCR4 when the buffer is in PSRAM. Switch back
+                to single if your board reports PSRAM controller errors.
 
             config ESP_RISCV_TRACE_AHB_BURST_SINGLE
                 bool "Single transfer"
@@ -217,6 +246,15 @@ menu "RISC-V Trace Encoder Configurations"
             default 0
             help
                 Maximum number of beats for an undefined-length INCR burst.
+
+        config ESP_RISCV_TRACE_FILTER_OUT_ROM
+            bool "Exclude ROM code from trace"
+            depends on SOC_RISCV_TRACE_FILTER_SUPPORTED
+            default y
+            help
+                Configure the encoder address filter to skip instructions executed in
+                mask ROM. This leaves more buffer space for application trace.
+                Calling esp_riscv_trace_set_filter overrides this setting.
 
     endif # ESP_RISCV_TRACE_ENABLE
 

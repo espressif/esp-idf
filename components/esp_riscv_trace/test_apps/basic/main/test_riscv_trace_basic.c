@@ -41,7 +41,7 @@ typedef struct {
     size_t syncs;
 } trace_walk_result_t;
 
-/* A branchy workload so the encoder emits many Format 1 (branch) packets. */
+/* Branchy workload so the encoder produces many Format 1 (branch) packets. */
 static void IRAM_ATTR branchy_work(void)
 {
     uint32_t acc = s_trace_sink;

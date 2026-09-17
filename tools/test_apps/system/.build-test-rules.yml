@@ -165,11 +165,13 @@ tools/test_apps/system/panic/coredump:
   disable:
     - if: CONFIG_NAME in ["coredump_flash_extram_stack_bss", "coredump_flash_extram_stack_heap"] and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "coredump_flash_extram_stack_bss_xip" and SOC_SPIRAM_XIP_SUPPORTED != 1
+    - if: CONFIG_NAME == "coredump_flash_riscv_trace" and SOC_RISCV_TRACE_SUPPORTED != 1
     - if: IDF_TARGET in ["esp32h21"]
       temporary: true
       reason: IDF-11543
   depends_components:
     - espcoredump
+    - esp_riscv_trace
     - esp_system
     - spi_flash
 
