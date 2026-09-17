@@ -21,6 +21,15 @@ menu "ESP-Driver:UHCI Configurations"
             If this option is not selected, UHCI interrupt will be disabled for a long time and
             may cause data lost when doing spi flash operation.
 
+    config UHCI_RECV_FUNC_IN_IRAM
+        bool "Place UHCI receive function into IRAM"
+        default n
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
+        help
+            Place uhci_receive() into IRAM for better performance and fewer cache misses.
+            This also allows uhci_receive() to be called from the RX-done callback (ISR context),
+            for example to re-arm reception with a new buffer and minimize the RX gap.
+
     config UHCI_ISR_CACHE_SAFE
         bool "Allow UHCI ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
         select UHCI_ISR_HANDLER_IN_IRAM
@@ -30,6 +39,8 @@ menu "ESP-Driver:UHCI Configurations"
             Enable this option to allow the ISR for UHCI to execute even when the cache is disabled.
             This can be useful in scenarios where the cache might be turned off, but the UHCI
             functionality is still required to operate correctly.
+            To also call uhci_receive() from the ISR while the cache is disabled, enable
+            UHCI_RECV_FUNC_IN_IRAM as well.
 
     config UHCI_ENABLE_DEBUG_LOG
         bool "Enable debug log"

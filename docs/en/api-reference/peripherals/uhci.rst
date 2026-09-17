@@ -200,6 +200,30 @@ This mechanism allows the user to achieve continuous and fast reception using a 
 
     The parameter ``read_buffer`` of :cpp:func:`uhci_receive` cannot be freed until receive finishes.
 
+Continuous Reception
+^^^^^^^^^^^^^^^^^^^^^
+
+:cpp:func:`uhci_receive` is a one-shot API: it stops the DMA after a single frame and has to be re-armed for the next one. During that re-arm gap incoming bytes can be lost. For continuous streaming, use :cpp:func:`uhci_start_receive_continuous` instead. It keeps the GDMA running across EOFs, so the reception never idles and no data is dropped between frames.
+
+The provided ``read_buffer`` is split across the DMA nodes and used as a ring: each finished frame (for example, a UART idle or length EOF) is delivered through the :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` callback with :cpp:member:`uhci_rx_event_data_t::flags::totally_received` set to 1, while a filled-but-not-yet-complete node is delivered with it set to 0. The callback hands out a pointer directly into the ring buffer (zero-copy), so the application must consume the data before the DMA wraps around and overwrites it. Size the buffer according to the expected throughput and consumer latency; overrun protection is not provided.
+
+Call :cpp:func:`uhci_stop_receive` to end the session and return the controller to the idle state, after which it can be re-armed or deleted.
+
+.. code:: c
+
+    // Register callback and start continuous reception.
+    ESP_ERROR_CHECK(uhci_register_event_callbacks(uhci_ctrl, &uhci_cbs, ctx));
+    ESP_ERROR_CHECK(uhci_start_receive_continuous(uhci_ctrl, pdata, buffer_size));
+
+    // ... consume the frames delivered through on_rx_trans_event ...
+
+    // Stop the session before freeing pdata or deleting the controller.
+    ESP_ERROR_CHECK(uhci_stop_receive(uhci_ctrl));
+
+.. note::
+
+    The parameter ``read_buffer`` of :cpp:func:`uhci_start_receive_continuous` must stay valid until :cpp:func:`uhci_stop_receive` returns.
+
 Uninstall UHCI controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
