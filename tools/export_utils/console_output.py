@@ -6,6 +6,7 @@ from typing import Any
 from typing import cast
 
 from rich.markup import escape
+from rich.text import Text
 from utils import conf
 
 try:
@@ -36,7 +37,7 @@ def configure_output(*, no_color: bool = False, quiet: bool = False, debug: bool
 def status_message(msg: str, msg_result: str = '', rv_on_ok: bool = False, die_on_err: bool = True) -> Callable:
     def inner(func: Callable) -> Callable:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            log.print(f'[dark_orange]*[/dark_orange] {escape(msg)} ... ', file=sys.stderr, end='')
+            log.print(f'[dark_orange]*[/dark_orange] {msg} ... ', file=sys.stderr, end='')
 
             try:
                 rv = func(*args, **kwargs)
@@ -49,9 +50,10 @@ def status_message(msg: str, msg_result: str = '', rv_on_ok: bool = False, die_o
                 log.die(escape(str(e)))
 
             if rv_on_ok:
-                log.print(f'[green]{escape(str(rv))}[/green]', file=sys.stderr)
+                result = rv if isinstance(rv, Text) else Text(str(rv), style='green')
+                log.print(result, file=sys.stderr)
             elif msg_result:
-                log.print(f'[green]{escape(msg_result)}[/green]', file=sys.stderr)
+                log.print(f'[green]{msg_result}[/green]', file=sys.stderr)
             else:
                 log.print('[green]OK[/green]', file=sys.stderr)
 
