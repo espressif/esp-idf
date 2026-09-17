@@ -291,6 +291,28 @@ class TestDeprecations(TestWithoutExtensions):
         self.assertNotIn('"test_0" is deprecated', output)
 
 
+class TestMachineReadableStdout(TestWithoutExtensions):
+    """Executing action / Done are omitted when a task owns stdout."""
+
+    def _cli(self) -> Any:
+        return idf.init_cli()
+
+    def test_uses_machine_readable_stdout_mcp_server(self):
+        from types import SimpleNamespace
+
+        task = SimpleNamespace(name='mcp-server', action_args={})
+        self.assertTrue(self._cli()._uses_machine_readable_stdout(task))
+
+    def test_uses_machine_readable_stdout_help_json(self):
+        from types import SimpleNamespace
+
+        cli = self._cli()
+        with_json = SimpleNamespace(name='help', action_args={'json_option': True})
+        without_json = SimpleNamespace(name='help', action_args={'json_option': False})
+        self.assertTrue(cli._uses_machine_readable_stdout(with_json))
+        self.assertFalse(cli._uses_machine_readable_stdout(without_json))
+
+
 class TestHelpOutput(TestWithoutExtensions):
     def action_test_idf_py(self, commands: list[str], schema: Any) -> None:
         env = dict(**os.environ)
