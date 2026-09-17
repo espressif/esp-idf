@@ -2,17 +2,20 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Turn captured BLE Log perf monitor output into tables / CSV.
-
-Capture with:  idf.py -p PORT monitor | tee capture.log
-Then:          python3 parse_perf_log.py capture.log            # markdown tables
-               python3 parse_perf_log.py capture.log --csv out.csv
-"""
+# Keep annotations compatible with Python 3.9 in release/v5.3.
+from __future__ import annotations
 
 import csv
 import re
 import sys
 from typing import TypedDict
+
+USAGE = """Turn captured BLE Log perf monitor output into tables / CSV.
+
+Capture with:  idf.py -p PORT monitor | tee capture.log
+Then:          python3 parse_perf_log.py capture.log            # markdown tables
+               python3 parse_perf_log.py capture.log --csv out.csv
+"""
 
 KV = re.compile(r'(\w+)=(\S+)')
 
@@ -32,7 +35,7 @@ def fields(line: str) -> dict[str, str]:
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print(__doc__)
+        print(USAGE)
         return 1
     path = sys.argv[1]
     csv_path = None
@@ -65,7 +68,7 @@ def main() -> int:
         elif 'mode' in kv:
             cur['head'].update(kv)  # duration etc.
         else:
-            cur['other'].append(line[len('BLE_LOG_PERF ') :])
+            cur['other'].append(line.removeprefix('BLE_LOG_PERF '))
 
     if not runs and not rt_rows:
         print(f'no BLE_LOG_PERF or BLE_LOG_RT_PERF lines found in {path}')
