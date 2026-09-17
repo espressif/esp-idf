@@ -34,6 +34,8 @@ def generate_gdbinit_rom_add_symbols(target: str) -> str:
     if os.name == 'nt':
         # convert to posix-path for windows
         rom_elfs_dir = rom_elfs_dir.replace('\\', '/')
+    if not rom_elfs_dir.endswith('/'):
+        rom_elfs_dir += '/'
     with open(ROMS_JSON) as f:
         roms = json.load(f)
     if target not in roms:
