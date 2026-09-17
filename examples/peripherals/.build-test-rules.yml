@@ -261,6 +261,15 @@ examples/peripherals/jpeg/jpeg_encode:
     - *common_components
     - esp_driver_jpeg
 
+examples/peripherals/lcd/dsi_hdmi_bridge:
+  disable:
+    - if: SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_dma
+    - esp_hal_lcd
+    - esp_lcd
+    - soc
+
 examples/peripherals/lcd/i2c_oled:
   disable:
     - if: SOC_I2C_SUPPORTED != 1

@@ -52,15 +52,6 @@ typedef enum {
 } mipi_dsi_ll_color_coding_t;
 
 /**
- * @brief MIPI DSI Video mode burst type
- */
-typedef enum {
-    MIPI_DSI_LL_VIDEO_NON_BURST_WITH_SYNC_PULSES, // Non-burst mode with sync pulses
-    MIPI_DSI_LL_VIDEO_NON_BURST_WITH_SYNC_EVENTS, // Non-burst mode with sync events
-    MIPI_DSI_LL_VIDEO_BURST_WITH_SYNC_PULSES,     // Burst mode with sync pulses
-} mipi_dsi_ll_video_burst_type_t;
-
-/**
  * @brief Set the DSI Host controller power state
  *
  * @param dev Pointer to the DSI Host controller register base address
@@ -284,11 +275,25 @@ static inline void mipi_dsi_host_ll_dpi_enable_lp_command(dsi_host_dev_t *dev, b
  * @brief Set MIPI DSI video burst type
  *
  * @param dev Pointer to the DSI Host controller register base address
- * @param mode Video mode type
+ * @param type Video burst type
  */
-static inline void mipi_dsi_host_ll_dpi_set_video_burst_type(dsi_host_dev_t *dev, mipi_dsi_ll_video_burst_type_t type)
+static inline void mipi_dsi_host_ll_dpi_set_video_burst_type(dsi_host_dev_t *dev, mipi_dsi_video_burst_type_t type)
 {
-    dev->vid_mode_cfg.vid_mode_type = type;
+    // Public enum order is not the DSI Host VID_MODE_TYPE encoding.
+    switch (type) {
+    case MIPI_DSI_VIDEO_NON_BURST_WITH_SYNC_PULSES:
+        dev->vid_mode_cfg.vid_mode_type = 0;
+        break;
+    case MIPI_DSI_VIDEO_NON_BURST_WITH_SYNC_EVENTS:
+        dev->vid_mode_cfg.vid_mode_type = 1;
+        break;
+    case MIPI_DSI_VIDEO_BURST_WITH_SYNC_PULSES:
+        dev->vid_mode_cfg.vid_mode_type = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
 }
 
 /**
