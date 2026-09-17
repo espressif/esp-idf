@@ -113,7 +113,7 @@
  #include "../../common/btdm_le.h"
  #endif /* SOC_BLE_SUPPORTED */
 
- #define BTDM_CONFIG_VERSION     0x20260911
+ #define BTDM_CONFIG_VERSION     0x20260916
  #define BTDM_CONFIG_MAGIC_VALUE 0x5a5aa5a5
 
  /* Types definition
@@ -133,6 +133,7 @@
     uint8_t sleep_en;                       /*!< Enable sleep functionality */
     uint8_t version_num;                    /*!< Hardware version number of this chip */
     uint8_t bluetooth_mode;                 /*!< Controller mode: BR/EDR, BLE or Dual Mode */
+    uint8_t etm_triggered_rf;               /*!< Enable enabling RF using ETM */
     uint32_t magic;                         /*!< Magic number for configuration validation */
  } esp_bt_ctrl_btdm_config_t;
 
@@ -157,6 +158,13 @@
  #define BTDM_CONTROLLER_MODE_EFF                    ESP_BT_MODE_BTDM
  #endif // defined(CONFIG_BTDM_CTRL_MODE_BLE_ONLY)
 
+ #if CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+ #define MODEM_ETM_CHAN_EN               (0x600C8800)
+ #define MODEM_ETM_CHAN_SET              (0x600C8804)
+ #define MODEM_ETM_CHAN_CLR              (0x600C8808)
+ #define MODEM_ETM_CHAN_MASK             (BIT(11))
+ #endif // CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+
  #if SOC_BT_CLASSIC_SUPPORTED
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT()                                                       \
      {                                                                                             \
@@ -173,6 +181,7 @@
                 .sleep_en = UC_BT_CTRL_SLEEP_ENABLE,                                               \
                 .version_num = 0,                                                                  \
                 .bluetooth_mode = BTDM_CONTROLLER_MODE_EFF,                                        \
+                .etm_triggered_rf = UC_BT_CTRL_SLEEP_ETM_TRIGGERED_RF,                             \
                 .magic = BTDM_CONFIG_MAGIC_VALUE,                                                  \
              },                                                                                    \
      }
@@ -191,6 +200,7 @@
                 .sleep_en = UC_BT_CTRL_SLEEP_ENABLE,                                                \
                 .version_num = 0,                                                                   \
                 .bluetooth_mode = BTDM_CONTROLLER_MODE_EFF,                                         \
+                .etm_triggered_rf = UC_BT_CTRL_SLEEP_ETM_TRIGGERED_RF,                              \
                 .magic = BTDM_CONFIG_MAGIC_VALUE,                                                   \
              },                                                                                     \
      }

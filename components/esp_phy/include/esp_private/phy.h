@@ -217,7 +217,7 @@ void phy_ant_clr_update_flag(void);
  */
 void phy_ant_update(void);
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 /**
  * @brief Get the REGDMA config value of the BBPLL in analog i2c master burst mode
  *
@@ -290,6 +290,10 @@ void esp_phy_sleep_data_deinit(void);
  *
  */
 void phy_wait_freq_hw_hop_done(void);
+
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+void phy_regi2c_lock_apply(bool enable);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 
 #if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
 /**

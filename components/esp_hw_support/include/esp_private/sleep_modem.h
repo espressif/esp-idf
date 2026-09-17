@@ -285,6 +285,7 @@ esp_err_t sleep_phy_link_deinit(void *link_context);
  * @param flags A bitmap to indicate the PHY link regdma description configuration flag
  */
 void sleep_phy_link_config(void *link_context, uint32_t flags);
+
 #endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 #ifdef __cplusplus

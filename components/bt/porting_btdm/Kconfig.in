@@ -62,6 +62,16 @@ choice BT_CTRL_LP_CLK_SRC
 
 endchoice
 
+config BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+    bool "Use ETM to trigger RF enable/disable to optimize power consumption"
+    default n
+    select ESP_PHY_HW_SWITCH_RF
+    depends on SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY && BT_CTRL_SLEEP_ENABLE && BT_CTRL_SUPPORT_ETM_WAKEUP
+    help
+        Trigger RF enable/disable via ETM to accelerate the wakeup process.
+        Use with caution: undefined behavior may arise when ADC or temperature
+        sensor are enabled.
+
 config BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM
     bool "Put sleep related code into IRAM to optimize power consumption"
     default n

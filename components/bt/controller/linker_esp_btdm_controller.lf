@@ -86,6 +86,10 @@ entries:
 [mapping:bt]
 archive: libbt.a
 entries:
+    if BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM = y:
+        btdm_lp:btdm_lp_sleep_cb (noflash)
+        btdm_lp:btdm_lp_wake_up_cb (noflash)
+
     if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
         * (bt_extram_bss);
             bt_bss -> extern_ram ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),

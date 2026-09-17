@@ -1195,6 +1195,18 @@ config SOC_PM_SUPPORT_RTC_PERIPH_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+    bool
+    default y
+
+config SOC_PM_SUPPORT_PMU_MODEM_STATE
+    bool
+    default y
+
+config SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    bool
+    default y
+
 config SOC_PM_SUPPORT_PMU_CLK_ICG
     bool
     default y
@@ -1225,11 +1237,19 @@ config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
 
 config SOC_PM_PAU_LINK_NUM
     int
-    default 4
+    default 5
 
 config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool
     default y
+
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 64
+
+config SOC_PM_PAU_REGDMA_LINK_IDX_PHY
+    int
+    default 4
 
 config SOC_PM_TOP_DEPENDS_ON_RTC_PERIPH
     bool

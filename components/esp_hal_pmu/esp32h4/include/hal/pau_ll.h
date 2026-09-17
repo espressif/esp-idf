@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -220,6 +220,21 @@ static inline void pau_ll_set_regdma_link_wait_retry_count(int count)
 static inline void pau_ll_set_regdma_link_wait_read_interval(int interval)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, aon_read_interval_aon, interval);
+}
+
+static inline void pau_ll_select_regdma_etm_entry_link0(pau_dev_t *dev, int link)
+{
+    dev->regdma_etm_ctrl.etm_link_sel_0 &= ~0xF;
+    dev->regdma_etm_ctrl.etm_link_sel_0 |= (link & 0xF);
+}
+
+static inline void pau_ll_set_regdma_etm_entry_link0_backup_direction(pau_dev_t *dev, bool to_mem)
+{
+    if (to_mem) {
+        dev->regdma_etm_ctrl.etm_link_sel_0 |= BIT(4);
+    } else {
+        dev->regdma_etm_ctrl.etm_link_sel_0 &= ~BIT(4);
+    }
 }
 
 #ifdef __cplusplus

@@ -213,6 +213,38 @@ void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int inte
 void pau_hal_lp_sys_initialize(void);
 #endif
 
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+/**
+ * @brief Set the configuration of the REGDMA etm modem link
+ *
+ * @param hal           regdma hal context
+ */
+void pau_hal_set_etm_modem_link_config(pau_hal_context_t *hal);
+
+/**
+ * @brief Stop transmission on REGDMA etm modem link
+ *
+ * @param hal           regdma hal context
+ */
+void pau_hal_stop_etm_modem_link(pau_hal_context_t *hal);
+
+/**
+ * @brief Check if the ETM task is triggered
+ *
+ * @param hal           regdma hal context
+ * @param index         the index of the ETM task
+ */
+bool pau_hal_check_etm_task_triggered(pau_hal_context_t *hal, uint8_t index);
+
+/**
+ * @brief Clear the ETM task triggered status
+ *
+ * @param hal           regdma hal context
+ * @param index         the index of the ETM task
+ */
+void pau_hal_clear_etm_task_triggered(pau_hal_context_t *hal, uint8_t index);
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+
 #endif
 
 #ifdef __cplusplus

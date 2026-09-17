@@ -26,6 +26,12 @@ menu "Example Configuration"
         default 3 if BLE_SM_IO_CAP_NO_IO
         default 4 if BLE_SM_IO_CAP_KEYBOARD_DISP
 
+    config EXAMPLE_USE_SCLI
+        bool
+        default y if BLE_SM_IO_CAP_DISP_YES_NO || BLE_SM_IO_CAP_KEYBOARD_ONLY || BLE_SM_IO_CAP_KEYBOARD_DISP
+        default n
+        select UART_ISR_IN_IRAM
+
     config EXAMPLE_BONDING
         bool
         default n

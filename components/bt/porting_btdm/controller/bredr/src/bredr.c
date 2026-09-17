@@ -966,7 +966,7 @@ int bredr_stack_reset(void)
 }
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-esp_err_t sleep_modem_bredr_mac_modem_state_init(void)
+esp_err_t sleep_modem_bredr_mac_retention_create(void)
 {
     uint8_t size;
     const sleep_retention_entries_config_t *bredr_mac_modem_config = r_bredr_mac_retention_link_get(&size);

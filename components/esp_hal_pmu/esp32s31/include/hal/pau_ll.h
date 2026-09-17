@@ -124,6 +124,21 @@ static inline void pau_ll_clear_regdma_backup_error_intr_state(pau_dev_t *dev)
     dev->int_clr.error_int_clr = 1;
 }
 
+static inline void pau_ll_select_regdma_etm_entry_link0(pau_dev_t *dev, int link)
+{
+    dev->regdma_etm_ctrl.etm_link_sel_0 &= ~0x7;
+    dev->regdma_etm_ctrl.etm_link_sel_0 |= (link & 0x7);
+}
+
+static inline void pau_ll_set_regdma_etm_entry_link0_backup_direction(pau_dev_t *dev, bool to_mem)
+{
+    if (to_mem) {
+        dev->regdma_etm_ctrl.etm_link_sel_0 |= BIT(3);
+    } else {
+        dev->regdma_etm_ctrl.etm_link_sel_0 &= ~BIT(3);
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif

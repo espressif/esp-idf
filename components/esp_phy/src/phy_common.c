@@ -54,6 +54,10 @@ typedef struct {
 
 extern void phy_param_track_tot(bool en_wifi, bool en_ble_154);
 extern const phy_param_track_result_t* phy_debug_get_track_result();
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+extern void phy_i2c_enter_critical(void);
+extern void phy_i2c_exit_critical(void);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 
 static esp_timer_handle_t phy_track_pll_timer;
 #if CONFIG_ESP_WIFI_ENABLED
@@ -366,7 +370,7 @@ esp_err_t esp_phy_get_ant(esp_phy_ant_config_t *config)
     return ESP_OK;
 }
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 typedef enum {
     PHY_I2C_MST_CMD_TYPE_RF_OFF = 0,
     PHY_I2C_MST_CMD_TYPE_RF_ON,
@@ -376,8 +380,13 @@ typedef enum {
 
 static uint32_t phy_ana_i2c_master_burst_config(phy_i2c_master_command_attribute_t *attr, int size, phy_i2c_master_command_type_t type)
 {
+#if CONFIG_IDF_TARGET_ESP32H4
+    #define I2C0_BURST_VAL(valid, start, end) (((valid) << 15) | ((end) << 7) | (start))
+    #define I2C1_BURST_VAL(valid, start, end) (((valid) << 31) | ((end) << 23) | ((start) << 16))
+#else
     #define I2C1_BURST_VAL(en, start, end) (((en) << 31) | ((end) << 22) | ((start) << 16))
     #define I2C0_BURST_VAL(en, start, end) (((en) << 15) | ((end) <<  6) | ((start) <<  0))
+#endif // !CONFIG_IDF_TARGET_ESP32H4
 
     uint32_t brust = 0;
     for (int i = 0; i < size; i++) {
@@ -436,3 +445,15 @@ __attribute__((weak)) void phy_wait_freq_hw_hop_done(void)
     }
     return;
 }
+
+
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+void IRAM_ATTR phy_regi2c_lock_apply(bool enable)
+{
+    if (enable) {
+        phy_i2c_enter_critical();
+    } else {
+        phy_i2c_exit_critical();
+    }
+}
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
