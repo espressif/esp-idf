@@ -991,7 +991,7 @@ esp_err_t esp_ota_get_bootloader_description(const esp_partition_t *bootloader_p
         partition.flash_chip = esp_flash_default_chip;
         partition.encrypted = esp_efuse_is_flash_encryption_enabled();
         partition.address = CONFIG_BOOTLOADER_OFFSET_IN_FLASH;
-        partition.size = CONFIG_PARTITION_TABLE_OFFSET - CONFIG_BOOTLOADER_OFFSET_IN_FLASH;
+        partition.size = esp_partition_table_get_offset() - CONFIG_BOOTLOADER_OFFSET_IN_FLASH;
     } else {
         memcpy(&partition, bootloader_partition, sizeof(partition));
     }
@@ -1415,7 +1415,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
     /* Check if bootloder can be verified with any key other than the one being revoked */
     esp_partition_pos_t bootloader_pos = {
         .offset = ESP_BOOTLOADER_OFFSET,
-        .size   = (ESP_PARTITION_TABLE_OFFSET - ESP_BOOTLOADER_OFFSET),
+        .size   = (esp_partition_table_get_offset() - ESP_BOOTLOADER_OFFSET),
     };
 
     if (!validate_img(index, &bootloader_pos)) {

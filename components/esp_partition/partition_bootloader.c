@@ -21,12 +21,13 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_p
     // Inspired by the implementation in bootloader_support component in bootloader_support.c
     const esp_partition_info_t *partitions = NULL;
 
-    partitions = bootloader_mmap(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
+    const uint32_t partition_table_offset = esp_partition_table_get_offset();
+    partitions = bootloader_mmap(partition_table_offset, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
-        ESP_LOGV(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
+        ESP_LOGV(TAG, "bootloader_mmap(0x%" PRIx32 ", 0x%x) failed", partition_table_offset, ESP_PARTITION_TABLE_MAX_LEN);
         return NULL;
     }
-    ESP_LOGV(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_OFFSET, (intptr_t)partitions);
+    ESP_LOGV(TAG, "mapped partition table 0x%" PRIx32 " at 0x%x", partition_table_offset, (intptr_t)partitions);
 
     esp_err_t err = esp_partition_table_verify(partitions, true, &partition_count);
     if (err != ESP_OK) {
