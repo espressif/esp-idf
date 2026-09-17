@@ -851,7 +851,7 @@ btdm_broker_init(void)
 {
 #if UC_BT_CTRL_BLE_IS_ENABLE
     extern const char *ble_controller_get_compile_version(void);
-    if (memcmp(ble_controller_get_compile_version(), "4c3f1e9", 7) != 0) {
+    if (memcmp(ble_controller_get_compile_version(), "42d079e", 7) != 0) {
         return -1;
     }
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
