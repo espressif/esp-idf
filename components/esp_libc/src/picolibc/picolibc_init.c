@@ -116,7 +116,6 @@ void esp_libc_init(void)
     syscall_table_ptr = &s_stub_table;
 #endif
 
-    extern char **environ;
     environ = malloc(sizeof(char*));
     if (environ == 0) {
         // if allocation fails this early in startup process, there's nothing else other than to panic.
