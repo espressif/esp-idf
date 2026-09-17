@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_stdio_cli_config.h"
 
