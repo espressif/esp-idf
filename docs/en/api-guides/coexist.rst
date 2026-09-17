@@ -6,7 +6,11 @@ RF Coexistence
 Overview
 ---------------
 
-ESP boards now support three modules: Bluetooth (BT & BLE), IEEE 802.15.4 (Thread / Zigbee), and Wi-Fi. Each type of board has only one 2.4 GHz ISM band RF module, shared by two or three modules. Consequently, a module cannot receive or transmit data while another module is engaged in data transmission or reception. In such scenarios, {IDF_TARGET_NAME} employs the time-division multiplexing method to manage the reception and transmission of packets.
+ESP chips support up to three radio modules: Bluetooth (BT & BLE), IEEE 802.15.4 (Thread / Zigbee), and Wi-Fi. Each chip has only one RF path, shared by these two or three modules. Different modules cannot use the RF path to transmit or receive at the same time. Therefore, time-division multiplexing is used to manage packet transmission and reception among these modules.
+
+.. only:: esp32c5
+
+    This shared RF path is used whether Wi-Fi operates on 2.4 GHz or 5 GHz.
 
 
 Supported Coexistence Scenario for {IDF_TARGET_NAME}
