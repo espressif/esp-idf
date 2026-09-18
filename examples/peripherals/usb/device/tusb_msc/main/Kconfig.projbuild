@@ -2,19 +2,25 @@ menu "TinyUSB MSC Example Configuration"
 
     orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
 
-    choice EXAMPLE_STORAGE_MEDIA
-        prompt "Storage Media Used"
-        default EXAMPLE_STORAGE_MEDIA_SPIFLASH
+    config EXAMPLE_STORAGE_MEDIA_SPIFLASH
+        bool "SPI Flash LUN"
+        default y
         help
-            Select the storage media that is exposed to USB host.
+            Expose an internal SPI Flash FAT partition as a USB MSC LUN.
+            This should be used only for demo purposes. Sharing the same flash for
+            both code and storage degrades performance
 
-        config EXAMPLE_STORAGE_MEDIA_SPIFLASH
-            bool "SPI FLASH"
+    config EXAMPLE_STORAGE_MEDIA_SDMMC
+        bool "SDMMC Card LUN"
+        depends on SOC_SDMMC_HOST_SUPPORTED
+        default n
+        help
+            Expose an SD/MMC card as a USB MSC LUN.
+            Enable together with SPI Flash LUN to present two LUNs to the USB host.
 
-        config EXAMPLE_STORAGE_MEDIA_SDMMC
-            bool "SDMMC CARD"
-            depends on SOC_SDMMC_HOST_SUPPORTED
-    endchoice
+    if !EXAMPLE_STORAGE_MEDIA_SPIFLASH && !EXAMPLE_STORAGE_MEDIA_SDMMC
+        comment "At least one storage media must be enabled"
+    endif
 
     if EXAMPLE_STORAGE_MEDIA_SDMMC
 

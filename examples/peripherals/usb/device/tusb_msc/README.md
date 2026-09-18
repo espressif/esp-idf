@@ -10,9 +10,11 @@ This example contains code to make ESP based device recognizable by USB-hosts as
 It either allows the embedded application i.e. example to access the partition or Host PC accesses the partition over USB MSC.
 They can't be allowed to access the partition at the same time.
 
-This example supports storage media of two types:
+This example can expose one or two Logical Unit Numbers (LUNs) to the USB host. Each LUN is an independent storage medium:
 1. SPI Flash
 2. SD MMC Card
+
+Enable either option, or both, in menuconfig. Enabling both presents two LUNs to the USB host.
 
 Data is read/written from/to SPI Flash through wear-levelling APIs. Wear leveling is a technique that helps to distribute wear and tear among sectors more evenly without requiring any attention from the user. As a result, it helps in extending the life of each sector of the Flash memory.
 
@@ -36,8 +38,8 @@ As a USB stack, a TinyUSB component is used.
 
 ### Hardware Required
 
-1. If the storage media is SPI Flash, any ESP board that have USB-OTG is supported.
-2. If the storage media is SD MMC Card, any ESP board with SD MMC card slot and an SD card is required. For Ex - ESP32-S3-USB-OTG
+1. For the SPI Flash LUN, any ESP board that has USB-OTG is supported.
+2. For the SD MMC Card LUN, an ESP board with an SD MMC card slot and an SD card is required.
 
 ### Pin Assignment
 
@@ -56,7 +58,7 @@ When using SD MMC Card as storage media, additional pins are required beyond the
 GPIOs and SD bus settings can be configured in two ways:
 
 1. Using menuconfig: Run `idf.py menuconfig` in the project directory, open "TinyUSB MSC Example Configuration", and:
-   - Select "SDMMC CARD" for "Storage Media Used"
+   - Enable "SDMMC Card LUN". Leave "SPI Flash LUN" enabled to expose two LUNs, or disable it to expose only the SD card.
    - Select "SD/MMC bus width" — "4 lines (D0 - D3)" or "1 line (D0)" (see `CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_1`)
    - On ESP32-S3 and ESP32-P4: set the GPIO numbers for the SD card interface
 2. Using target-specific defaults: Pin and LDO defaults for each chip are in ``sdkconfig.defaults.esp32s3``, ``sdkconfig.defaults.esp32p4``, and ``sdkconfig.defaults.esp32s31``. These are applied automatically when you set the target with ``idf.py set-target``.
@@ -113,8 +115,8 @@ GPIO23        | D3          | not used in 1-line SD mode, but card's D3 pin must
 
 ### Build and Flash
 
-1. By default, the example will compile to access SPI Flash as storage media. Here, SPI Flash Wear Levelling WL_SECTOR_SIZE is set to 512 and WL_SECTOR_MODE is set to PERF in Menuconfig.
-2. In order to access SD MMC card as storage media, change the configuration as described in [SD MMC Configuration](#sd-mmc-configuration) above.
+1. By default, the example compiles with the SPI Flash LUN enabled. SPI Flash Wear Levelling ``WL_SECTOR_SIZE`` is set to 512 and ``WL_SECTOR_MODE`` is set to PERF in menuconfig.
+2. To add an SD MMC LUN (or use SD MMC only), change the configuration as described in [SD MMC Configuration](#sd-mmc-configuration) above. Enabling both SPI Flash and SD MMC exposes two LUNs to the USB host.
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
@@ -141,8 +143,7 @@ I (344) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldow
 I (354) example_main: Initializing storage...
 I (364) example_main: Initializing wear levelling
 I (374) example_main: Mount storage...
-I (374) example_main:
-ls command output:
+I (374) example_main: ls /data:
 .fseventsd
 _pic.jpg
 .__pic.jpg
@@ -187,16 +188,16 @@ help
   Print the list of registered commands
 
 read
-  read BASE_PATH/README.MD and print its contents
+  read README.MD from each application-mounted LUN and print its contents
 
 write
-  create file BASE_PATH/README.MD if it does not exist
+  create file README.MD on each application-mounted LUN if it does not exist
 
 size
-  show storage size and sector size
+  show storage size and sector size of each application-mounted LUN
 
 expose
-  Expose Storage to Host
+  Expose all LUNs to Host
 
 status
   Status of storage exposure over USB
@@ -206,34 +207,35 @@ exit
 
 esp32s3>
 esp32s3> read
-E (80054) example_main: storage exposed over USB. Application can't read from storage.
+E (80054) example_main: spiflash storage exposed over USB. Application can't read from storage.
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3> write
-E (83134) example_main: storage exposed over USB. Application can't write to storage.
+E (83134) example_main: spiflash storage exposed over USB. Application can't write to storage.
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3> size
-E (85354) example_main: storage exposed over USB. Application can't access storage
+E (85354) example_main: spiflash storage exposed over USB. Application can't access storage
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3> status
-storage exposed over USB: Yes
+spiflash storage exposed over USB: Yes
 esp32s3> expose
-E (108344) example_main: storage is already exposed
+E (108344) example_main: spiflash storage is already exposed
 Command returned non-zero error code: 0xffffffff (ESP_FAIL)
 esp32s3>
 esp32s3>
 esp32s3> read
+[spiflash]
 Mass Storage Devices are one of the most common USB devices. It use Mass Storage Class (MSC) that allow access to their internal data storage.
 In this example, ESP chip will be recognised by host (PC) as Mass Storage Device.
 Upon connection to USB host (PC), the example application will initialize the storage module and then the storage will be seen as removable device on PC.
 esp32s3> write
 esp32s3> size
-Storage Capacity 0MB
+spiflash Storage Capacity 0MB
 esp32s3> status
-storage exposed over USB: No
+spiflash storage exposed over USB: No
 esp32s3> expose
-I (181224) example_main: Unmount storage...
+I (181224) example_main: Unmount spiflash storage...
 esp32s3> status
-storage exposed over USB: Yes
+spiflash storage exposed over USB: Yes
 esp32s3>
 esp32s3>
 ```
