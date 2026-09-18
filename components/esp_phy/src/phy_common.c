@@ -54,10 +54,6 @@ typedef struct {
 
 extern void phy_param_track_tot(bool en_wifi, bool en_ble_154);
 extern const phy_param_track_result_t* phy_debug_get_track_result();
-#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
-extern void phy_i2c_enter_critical(void);
-extern void phy_i2c_exit_critical(void);
-#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 
 static esp_timer_handle_t phy_track_pll_timer;
 #if CONFIG_ESP_WIFI_ENABLED
@@ -69,6 +65,10 @@ static volatile int64_t s_bt_154_prev_timestamp;
 #define PHY_TRACK_PLL_PERIOD_IN_US (CONFIG_ESP_PHY_PLL_TRACK_PERIOD_MS * 1000)
 static void phy_track_pll_internal(void);
 #endif
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+extern void phy_i2c_enter_critical(void);
+extern void phy_i2c_exit_critical(void);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 
 static esp_phy_ant_gpio_config_t s_phy_ant_gpio_config = { 0 };
 static esp_phy_ant_config_t s_phy_ant_config = { 0 };
