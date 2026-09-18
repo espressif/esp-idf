@@ -37,8 +37,8 @@ extern "C" {
 
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 
-#define ANALOG_CMPR_LL_NEG_CROSS_INTR_MASK(unit, src_chan)   0x02
 #define ANALOG_CMPR_LL_POS_CROSS_INTR_MASK(unit, src_chan)   0x01
+#define ANALOG_CMPR_LL_NEG_CROSS_INTR_MASK(unit, src_chan)   0x02
 #define ANALOG_CMPR_LL_ANY_CROSS_INTR_MASK(unit, src_chan)   (ANALOG_CMPR_LL_NEG_CROSS_INTR_MASK(unit, src_chan) | ANALOG_CMPR_LL_POS_CROSS_INTR_MASK(unit, src_chan))
 #define ANALOG_CMPR_LL_ALL_INTR_MASK(unit)                   0x07
 
