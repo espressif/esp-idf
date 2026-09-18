@@ -560,6 +560,7 @@ static esp_err_t emac_esp32_transmit_ctrl_bufs(esp_eth_mac_t *mac, void *ctrl, c
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     emac_esp_dma_transmit_buff_t buff_array[buf_count];
+    esp_err_t ret = ESP_OK;
 
     uint32_t exp_len = 0;
     for (size_t i = 0; i < buf_count; i++) {
@@ -567,6 +568,7 @@ static esp_err_t emac_esp32_transmit_ctrl_bufs(esp_eth_mac_t *mac, void *ctrl, c
         buff_array[i].size = bufs[i].len;
         exp_len += buff_array[i].size;
     }
+    ESP_GOTO_ON_FALSE(exp_len > 0, ESP_ERR_INVALID_ARG, err, TAG, "expected length is 0");
 
     eth_mac_time_t *ts = (eth_mac_time_t *)ctrl;
     uint32_t sent_len = emac_esp_dma_transmit_frame_ext(emac->emac_dma_hndl, buff_array, (uint32_t)buf_count, ts);
@@ -575,7 +577,8 @@ static esp_err_t emac_esp32_transmit_ctrl_bufs(esp_eth_mac_t *mac, void *ctrl, c
         ESP_LOGD(TAG, "insufficient TX buffer size");
         return ESP_ERR_NO_MEM;
     }
-    return ESP_OK;
+err:
+    return ret;
 }
 
 static esp_err_t emac_esp32_transmit_ctrl_vargs(esp_eth_mac_t *mac, void *ctrl, uint32_t argc, va_list args)

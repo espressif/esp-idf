@@ -96,7 +96,7 @@ struct esp_eth_mac_s {
     *
     * @return
     *      - ESP_OK: transmit packet successfully
-    *      - ESP_ERR_INVALID_SIZE: number of actually sent bytes differs to expected
+    *      - ESP_ERR_NO_MEM: insufficient memory to handle complete frame
     *      - ESP_FAIL: transmit packet failed because some other error occurred
     *
     * @note Returned error codes may differ for each specific MAC chip.
@@ -117,7 +117,8 @@ struct esp_eth_mac_s {
     *
     * @return
     *      - ESP_OK: transmit packet successfully
-    *      - ESP_ERR_INVALID_SIZE: number of actually sent bytes differs to expected
+    *      - ESP_ERR_INVALID_ARG: invalid argument (e.g. total frame length is zero)
+    *      - ESP_ERR_NO_MEM: insufficient memory to handle complete frame
     *      - ESP_FAIL: transmit packet failed because some other error occurred
     *
     * @note Returned error codes may differ for each specific MAC chip.
@@ -140,7 +141,8 @@ struct esp_eth_mac_s {
     *
     * @return
     *      - ESP_OK: transmit packet successfully
-    *      - ESP_ERR_INVALID_SIZE: number of actually sent bytes differs to expected
+    *      - ESP_ERR_INVALID_ARG: invalid argument (e.g. total frame length is zero)
+    *      - ESP_ERR_NO_MEM: insufficient memory to handle complete frame
     *      - ESP_FAIL: transmit packet failed because some other error occurred
     *
     * @note Returned error codes may differ for each specific MAC chip.
@@ -162,7 +164,8 @@ struct esp_eth_mac_s {
     *
     * @return
     *      - ESP_OK: transmit packet successfully
-    *      - ESP_ERR_INVALID_SIZE: number of actually sent bytes differs to expected
+    *      - ESP_ERR_INVALID_ARG: invalid argument (e.g. total frame length is zero)
+    *      - ESP_ERR_NO_MEM: insufficient memory to handle complete frame
     *      - ESP_FAIL: transmit packet failed because some other error occurred
     *
     * @note Returned error codes may differ for each specific MAC chip.
