@@ -46,7 +46,7 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#elif SOC_PM_SUPPORT_PMU_MODEM_STATE
+#elif SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #include "esp_private/sleep_modem.h"
 #endif
 #include "hal/efuse_hal.h"
