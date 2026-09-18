@@ -109,14 +109,14 @@ esp_err_t esp_sleep_release_lp_use_xtal(void);
 /**
  * @brief Soft-isolate valid digital IO pads (SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK) for leakage control
  *
- * Skips pads that are digitally held and pads reserved by the driver.
+ * Skips pads that are digitally held and pads reserved by the driver (only for light sleep).
  * MSPI signal pads are not in this pass; use esp_sleep_isolate_mspi_gpio() after cache/MSPI idle.
  *
- * @param do_backup  If true, back up each pad's pu/pd/ie/oe/fun_sel before isolating so that
- *                   esp_sleep_restore_isolated_digital_gpio() can restore them later.
- *                   Pass false when restore is not needed (e.g. deep sleep).
+ * @param dslp  If false, back up each pad's pu/pd/ie/oe/fun_sel before isolating so that
+ *              esp_sleep_restore_isolated_digital_gpio() can restore them later after wakeup.
+ *              Pass true indicating that backup/restore is not needed, just isolate the pads (i.e. deep sleep).
  */
-void esp_sleep_isolate_digital_gpio(bool do_backup);
+void esp_sleep_isolate_digital_gpio(bool dslp);
 
 /**
  * @brief Backup and isolate (or pull up) the five base MSPI lines (CLK/Q/D/HD/WP)

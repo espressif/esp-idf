@@ -41,6 +41,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/rtc_io_hal.h"
 #include "hal/clk_tree_hal.h"
+#include "rom/rtc.h"
 
 #if RNG_LL_NEEDS_RESET_WHEN_WAKEUP
 #include "hal/rng_ll.h"
@@ -66,6 +67,7 @@
 
 #include "soc/rtc.h"
 
+#include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_ll.h"
 #if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED || SOC_SLEEP_TGWDT_STOP_WORKAROUND
 #include "hal/wdt_hal.h"
@@ -80,6 +82,7 @@
 #endif
 #include "hal/temperature_sensor_hal.h"
 #include "hal/mspi_ll.h"
+#include "hal/gpio_ll.h"
 #if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
 #include "hal/lp_aon_hal.h"
 #endif
@@ -99,60 +102,17 @@
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/sar_periph_ctrl.h"
 
-#if SOC_PM_SUPPORT_EXT1_WAKEUP && SOC_RTCIO_PIN_COUNT > 0
 #include "esp_private/sleep_gpio.h"
-#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #include "esp_private/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/rtc.h"
-#include "hal/gpio_ll.h"
-#include "hal/clk_gate_ll.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/rtc.h"
-#include "hal/gpio_ll.h"
-#include "hal/clk_gate_ll.h"
-#elif CONFIG_IDF_TARGET_ESP32C61
-#include "esp32c61/rom/rtc.h"
-#include "hal/gpio_ll.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
-#include "soc/extmem_reg.h"
-#include "hal/gpio_ll.h"
-#elif CONFIG_IDF_TARGET_ESP32H21
-#include "esp32h21/rom/rtc.h"
-#include "hal/gpio_ll.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/rtc.h"
-#include "hal/gpio_ll.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/rtc.h"
-#include "hal/gpio_ll.h"
-#include "hal/clk_gate_ll.h"
-#elif CONFIG_IDF_TARGET_ESP32S31
-#include "esp32s31/rom/rtc.h"
-#include "hal/gpio_ll.h"
-#include "hal/clk_gate_ll.h"
 #endif
 
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 #include "esp_private/eco3_livelock_workaround.h"
-#endif
-
-#if SOC_MSPI_HAS_INDEPENT_IOMUX
-#include "hal/mspi_ll.h"
 #endif
 
 #include "hal/rtc_timer_hal.h"
@@ -872,8 +832,9 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
     }
 #endif
     if (deep_sleep) {
+        esp_sleep_gpio_clear_dedicated_ctrl();
 #if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
-        esp_sleep_isolate_digital_gpio(false);
+        esp_sleep_isolate_digital_gpio(true);
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP_SLEEP_SET_FLASH_DPD
@@ -915,7 +876,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
     } else {
 #if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
         if (sleep_flags & RTC_SLEEP_PD_DIG) {
-            esp_sleep_isolate_digital_gpio(true);
+            esp_sleep_isolate_digital_gpio(false);
         }
 #endif
         /* Cache Suspend 1: will wait cache idle in cache suspend */

@@ -28,6 +28,7 @@
 #include "soc/lp_system_reg.h"
 #include "soc/pmu_struct.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "soc/cnnt_io_mux_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/interrupts.h"
 #include "hal/gpio_types.h"
@@ -879,6 +880,17 @@ __attribute__((always_inline))
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     IO_MUX.gpio[gpio_num].mcu_oe = 1;
+}
+
+/**
+ * @brief Clear all GPIO dedicated control signals (e.g. sdmmc, emac)
+ *
+ * Set is done in each peripheral's own LL layer.
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_clear_dedicated_ctrl(void)
+{
+    CNNT_PAD_CTRL.ctrl.val = 0;
 }
 
 #ifdef __cplusplus

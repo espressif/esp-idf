@@ -234,11 +234,13 @@ static inline void sdmmc_ll_mem_set_low_power_mode(sdmmc_dev_t *dev, sdmmc_ll_me
  * @brief Set SDMMC pad pin dedicated ctrl
  *
  * @param dev Peripheral instance address
+ * @param slot Slot index
  * @param enable True to enable, False to disable
  */
-static inline void sdmmc_ll_pad_set_pin_dedicated_ctrl(sdmmc_dev_t *dev, bool enable)
+static inline void sdmmc_ll_pad_set_pin_dedicated_ctrl(sdmmc_dev_t *dev, uint32_t slot, bool enable)
 {
     (void)dev;
+    (void)slot;
     (void)enable;
 }
 

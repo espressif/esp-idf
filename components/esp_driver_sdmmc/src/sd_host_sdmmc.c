@@ -108,9 +108,6 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
 #endif //CONFIG_PM_ENABLE
 
     sdmmc_hal_init(&ctlr->hal);
-    PERIPH_RCC_ATOMIC() {
-        sdmmc_ll_pad_set_pin_dedicated_ctrl(ctlr->hal.dev, true);
-    }
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SDMMC_CLK_SRC_DEFAULT, true), err, TAG, "failed to acquire clk");
     uint32_t src_freq_hz = 0;
     esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_freq_hz);
@@ -396,6 +393,11 @@ static esp_err_t sd_host_controller_remove_sdmmc_slot(sd_host_slot_handle_t slot
         gpio_output_disable(slot_ctx->io_config.d5_io);
         gpio_output_disable(slot_ctx->io_config.d6_io);
         gpio_output_disable(slot_ctx->io_config.d7_io);
+    }
+
+    // release the pads so that they can be used as normal GPIOs
+    PERIPH_RCC_ATOMIC() {
+        sdmmc_ll_pad_set_pin_dedicated_ctrl(ctlr->hal.dev, slot_ctx->slot_id, false);
     }
 
     xSemaphoreGive(ctlr->mutex);
@@ -1392,6 +1394,10 @@ static esp_err_t sdmmc_slot_io_config(sd_host_sdmmc_slot_t *slot, const sd_host_
         GPIO_NUM_CHECK(slot_gpio->d5_io);
         GPIO_NUM_CHECK(slot_gpio->d6_io);
         GPIO_NUM_CHECK(slot_gpio->d7_io);
+    }
+
+    PERIPH_RCC_ATOMIC() {
+        sdmmc_ll_pad_set_pin_dedicated_ctrl(slot->ctlr->hal.dev, slot_id, true);
     }
 
     configure_pin(slot_gpio->clk_io, sdmmc_slot_gpio_sig[slot_id].clk, GPIO_MODE_OUTPUT, "clk", use_gpio_matrix);
