@@ -10,6 +10,8 @@ CONFIG_BT_NIMBLE_ENABLED=y
 
 # Enable support for power management
 CONFIG_PM_ENABLE=y
+CONFIG_PM_DFS_INIT_AUTO=y
+CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
 # Enable tickless idle mode
 CONFIG_FREERTOS_USE_TICKLESS_IDLE=y
 # Set the tick rate at which FreeRTOS does pre-emptive context switching.
@@ -17,3 +19,19 @@ CONFIG_FREERTOS_HZ=1000
 # Minimum number of ticks to enter sleep mode for
 CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP=3
 CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=4000
+CONFIG_ESP_MODEM_CLOCK_ENABLE_CHECKING=y
+
+# Place sleep-related PM code in IRAM
+CONFIG_PM_SLP_IRAM_OPT=y
+# Place RTOS idle and PM ISR related code in IRAM
+CONFIG_PM_RTOS_IDLE_OPT=y
+# Place FreeRTOS functions in IRAM
+CONFIG_FREERTOS_IN_IRAM=y
+# Disable secondary console
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+# Disable USB Serial/JTAG
+CONFIG_USJ_ENABLE_USB_SERIAL_JTAG=n
+# Disable HW PC recording
+CONFIG_ESP_SYSTEM_HW_PC_RECORD=n
+# Used QIO Flash SPI mode
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
