@@ -19,7 +19,9 @@ menu "Ethernet"
             default 512
             help
                 Set the size of each buffer used by Ethernet MAC DMA.
-                !! Important !! Make sure it is 64B aligned for ESP32P4/S31!
+                On targets where internal RAM is accessed through L1 cache (ESP32-P4),
+                this size must be a multiple of the cache line size (64 bytes), e.g.
+                256, 512, 1536.
 
         config ETH_DMA_RX_BUFFER_NUM
             int "Amount of Ethernet DMA Rx buffers"
