@@ -77,11 +77,6 @@ extern bool pm_get_wifimac_regdma_link_selection(void);
 #endif
 #endif
 
-#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
-extern void phy_i2c_enter_critical(void);
-extern void phy_i2c_exit_critical(void);
-#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
-
 static const char* TAG = "phy_init";
 
 static _lock_t s_phy_access_lock;
@@ -315,16 +310,16 @@ void esp_phy_enable(esp_phy_modem_t modem)
                     }
                     bool wifimac_link_is_sel = false;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && \
-    SOC_PM_PAU_REGDMA_LINK_IDX_PHY && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+SOC_PM_PAU_REGDMA_LINK_IDX_PHY && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
 /*
- * A race exists between SoC wakeup and modem state sleep. After modem initiates sleep,
- * SoC may wake up before REGDMA completes RF close, leaving mac_modem_sleep_flag uncleared
- * (it depends on regdma done). The stale flag can incorrectly trigger a sleep request
- * on the next modem entry, causing abnormal sleep behavior.
- *
- * Therefore, this workaround ensures that mac_modem_sleep_flag is properly
- * cleared by regdma closing RF with wifimac link.
- * See WIFI-7246 for details.
+* A race exists between SoC wakeup and modem state sleep. After modem initiates sleep,
+* SoC may wake up before REGDMA completes RF close, leaving mac_modem_sleep_flag uncleared
+* (it depends on regdma done). The stale flag can incorrectly trigger a sleep request
+* on the next modem entry, causing abnormal sleep behavior.
+*
+* Therefore, this workaround ensures that mac_modem_sleep_flag is properly
+* cleared by regdma closing RF with wifimac link.
+* See WIFI-7246 for details.
 */
                     wifimac_link_is_sel = pm_get_wifimac_regdma_link_selection();
 #endif
@@ -402,7 +397,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
             if (!sleep_modem_wifi_modem_state_is_enabled()) {
                 modem_flags |= SLEEP_MODEM_SKIP_WIFI_RETENTION;
             }
-             bool wifimac_link_is_sel = false;
+            bool wifimac_link_is_sel = false;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && \
     SOC_PM_PAU_REGDMA_LINK_IDX_PHY && SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
             wifimac_link_is_sel = pm_get_wifimac_regdma_link_selection();
@@ -474,17 +469,6 @@ void esp_wifi_bt_power_domain_off(void)
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 }
 
-#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
-void IRAM_ATTR esp_phy_regi2c_lock_apply(bool enable)
-{
-    if (enable) {
-        phy_i2c_enter_critical();
-    } else {
-        phy_i2c_exit_critical();
-    }
-}
-#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
-
 void esp_phy_modem_init(uint8_t modem)
 {
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP || CONFIG_ESP_PHY_HW_SWITCH_RF
@@ -497,7 +481,7 @@ void esp_phy_modem_init(uint8_t modem)
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 #if (SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP) || CONFIG_ESP_PHY_HW_SWITCH_RF
 #if SOC_PM_REGDMA_MODEM_LINK_PROTECT
-    pau_regdma_register_modem_link_protect(esp_phy_regi2c_lock_apply);
+    pau_regdma_register_modem_link_protect(phy_regi2c_lock_apply);
 #endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     if (sleep_modem_phy_init(modem) != ESP_OK) {
         ESP_LOGE(TAG, "failed to initialize sleep modem phy");

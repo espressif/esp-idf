@@ -20,17 +20,32 @@
 #if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #include "esp_private/sleep_modem.h"
 #endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+#include "esp_private/esp_pau.h"
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+
 
 #ifndef PHY_INIT_MODEM_CLOCK_REQUIRED_BITS
 #warning "PHY_INIT_MODEM_CLOCK_REQUIRED_BITS not defined; using default value 0"
 #define PHY_INIT_MODEM_CLOCK_REQUIRED_BITS 0
 #endif
 
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
 static const char* TAG = "phy_init";
+
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+static uint8_t s_phy_modem_init_ref = 0;
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
 
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
 extern void phy_version_print(void);
+
+#if CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+bool btdm_lp_check_phy_etm_task_triggered(void);
+void btdm_lp_disable_etm_phy_retention_task(void);
+#endif // CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
 static _lock_t s_phy_access_lock;
 
 /* Reference count of enabling PHY */
@@ -58,10 +73,34 @@ void IRAM_ATTR phy_exit_critical(uint32_t level)
     }
 }
 
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+static bool phy_retention_link_is_triggered(void)
+{
+    bool ret = false;
+#if CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+    if (btdm_lp_check_phy_etm_task_triggered()) {
+        return true;
+    }
+#endif // CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+
+    return ret;
+}
+
+static void phy_disable_etm_phy_retention_link(void)
+{
+#if CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+    btdm_lp_disable_etm_phy_retention_task();
+#endif // CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+}
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+
 void esp_phy_enable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
     if (phy_get_modem_flag() == 0) {
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+        phy_disable_etm_phy_retention_link();
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
         modem_clock_module_enable(PERIPH_PHY_MODULE);
 #endif
@@ -79,7 +118,15 @@ void esp_phy_enable(esp_phy_modem_t modem)
         } else {
 #if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
             if (sleep_modem_phy_link_enabled() && sleep_modem_phy_link_done()) {
-                sleep_modem_do_phy_retention(true, false, SLEEP_MODEM_SKIP_I2C_MST_CLK_RETENTION);
+                if (!phy_retention_link_is_triggered()) {
+                    sleep_modem_do_phy_retention(true, false, SLEEP_MODEM_SKIP_I2C_MST_CLK_RETENTION);
+                }
+#if CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
+                else {
+                    pau_regdma_wait_work_done();
+                    pau_regdma_stop_etm_modem_link();
+                }
+#endif // CONFIG_BT_CTRL_SLEEP_ETM_TRIGGERED_RF
             } else
 #endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
             {
@@ -141,6 +188,10 @@ void esp_phy_modem_init(uint8_t modem)
 {
 #if CONFIG_ESP_PHY_HW_SWITCH_RF
     _lock_acquire(&s_phy_access_lock);
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    s_phy_modem_init_ref++;
+    pau_regdma_register_modem_link_protect(phy_regi2c_lock_apply);
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     if (sleep_modem_phy_init(modem) != ESP_OK) {
         ESP_LOGE(TAG, "failed to initialize sleep modem phy");
     }
@@ -152,6 +203,17 @@ void esp_phy_modem_deinit(uint8_t modem)
 {
 #if CONFIG_ESP_PHY_HW_SWITCH_RF
     _lock_acquire(&s_phy_access_lock);
+
+#if SOC_PM_REGDMA_MODEM_LINK_PROTECT
+    if (s_phy_modem_init_ref == 0) {
+        _lock_release(&s_phy_access_lock);
+        return;
+    }
+    s_phy_modem_init_ref--;
+    if (s_phy_modem_init_ref == 0) {
+        pau_regdma_unregister_modem_link_protect();
+    }
+#endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
     sleep_modem_phy_deinit(modem);
     _lock_release(&s_phy_access_lock);
 #endif // CONFIG_ESP_PHY_HW_SWITCH_RF
