@@ -5,7 +5,8 @@ set(requires "unity"
              "esp_hal_wdt"
              "esp_timer"
              "nvs_flash"
-             "esp_psram")
+             "esp_psram"
+             "esp_hal_cache")
 
 set(SRC  "test_app_main.c"
           "test_backtrace.c"

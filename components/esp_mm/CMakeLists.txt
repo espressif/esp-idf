@@ -7,6 +7,8 @@ endif()
 set(includes "include")
 
 # Note: requires esp_mspi for cache_utils
+# REQUIRES esp_hal_cache — esp_mmu_map.h (public header) includes hal/mmu_types.h
+set(requires esp_hal_cache)
 set(priv_requires heap esp_hal_dma esp_mspi)
 
 set(srcs)
@@ -28,5 +30,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
+                       REQUIRES ${requires}
                        PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)

@@ -6,6 +6,10 @@ endif()
 set(srcs)
 set(public_include "include" "${target}/include")
 
+if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
+    list(APPEND srcs "${target}/debug_probe_periph.c")
+endif()
+
 if(CONFIG_SOC_RISCV_TRACE_SUPPORTED)
     list(APPEND srcs "riscv_trace_hal.c")
 endif()

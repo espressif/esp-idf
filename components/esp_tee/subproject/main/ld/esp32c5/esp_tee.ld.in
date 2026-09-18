@@ -101,8 +101,8 @@ SECTIONS
     *libmain.a:esp_tee_intr.c*(.literal .text .literal.* .text.*)
     *libmain.a:esp_tee_apm_intr.c*(.literal .text .literal.* .text.*)
     /* HAL */
-    *libhal.a:mmu_hal.c*(.literal .text .literal.* .text.*)
-    *libhal.a:cache_hal.c*(.literal .text .literal.* .text.*)
+    *libesp_hal_cache.a:mmu_hal.c*(.literal .text .literal.* .text.*)
+    *libesp_hal_cache.a:cache_hal.c*(.literal .text .literal.* .text.*)
     *libesp_hal_security.a:apm_hal.c*(.literal .text .literal.* .text.*)
     *libesp_hal_mspi.a:*(.literal .text .literal.* .text.*)
     *libesp_hal_wdt.a:*(.literal .text .literal.* .text.*)
@@ -175,8 +175,8 @@ SECTIONS
     *libmain.a:panic_helper_riscv.*(.rodata .srodata .rodata.* .srodata.*)
     *libmain.a:esp_tee_apm_intr.c.*(.rodata .srodata .rodata.* .srodata.*)
     /* HAL (noflash) */
-    *libhal.a:mmu_hal.c*(.rodata .srodata .rodata.* .srodata.*)
-    *libhal.a:cache_hal.c*(.rodata .srodata .rodata.* .srodata.*)
+    *libesp_hal_cache.a:mmu_hal.c*(.rodata .srodata .rodata.* .srodata.*)
+    *libesp_hal_cache.a:cache_hal.c*(.rodata .srodata .rodata.* .srodata.*)
     *libesp_hal_mspi.a:*(.rodata .srodata .rodata.* .srodata.*)
     *libesp_mspi.a:*(.rodata .rodata.* .srodata .srodata.*)
     _tee_rodata_end = ABSOLUTE(.);

@@ -24,7 +24,7 @@ elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
 
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS "${include_dirs}"
-                           PRIV_REQUIRES esp_hal_dma)
+                           PRIV_REQUIRES esp_hal_dma esp_hal_cache)
     if(public_compile_definitions)
         target_compile_definitions(${COMPONENT_LIB} PUBLIC ${public_compile_definitions})
     endif()

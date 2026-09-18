@@ -28,28 +28,6 @@ if(CONFIG_SOC_EFUSE_SUPPORTED)
     list(APPEND srcs "efuse_hal.c" "${target}/efuse_hal.c")
 endif()
 
-if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-    if(CONFIG_SOC_MMU_PERIPH_NUM)
-        list(APPEND srcs "mmu_hal.c")
-    endif()
-
-    # We wrap Cache ROM APIs as Cache HAL APIs for: 1. internal ram ; 2. unified APIs
-    # ESP32 cache structure / ROM APIs are different and we have a patch `cache_hal_esp32.c` for it.
-    if(${target} STREQUAL "esp32")
-        list(APPEND srcs "esp32/cache_hal_esp32.c")
-    elseif(NOT ${target} STREQUAL "linux")
-        list(APPEND srcs "cache_hal.c")
-    endif()
-else()
-    if(CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)
-        list(APPEND srcs "cache_hal.c")
-    endif()
-endif()
-
-if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/cache_periph.c")
-    list(APPEND srcs "${target}/cache_periph.c")
-endif()
-
 if(NOT esp_tee_build AND NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
 
@@ -62,13 +40,10 @@ if(NOT esp_tee_build AND NOT BOOTLOADER_BUILD)
     endif()
 endif()
 
-set(ldfragments linker.lf)
-
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
-                       REQUIRES ${requires}
-                       LDFRAGMENTS ${ldfragments})
+                       REQUIRES ${requires})
 
 if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")

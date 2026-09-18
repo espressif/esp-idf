@@ -36,6 +36,7 @@ endif()
 
 if(CONFIG_SOC_BOD_SUPPORTED)
     list(APPEND srcs "brownout_hal.c")
+    list(APPEND srcs "${target}/power_supply_periph.c")
 endif()
 
 if(CONFIG_SOC_VBAT_SUPPORTED)

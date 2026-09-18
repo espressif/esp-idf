@@ -24,7 +24,7 @@
 #include "esp_check.h"
 #include "soc/rtc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/power_supply_periph.h"
+#include "hal/power_supply_periph.h"
 
 #if CONFIG_ESP_VBAT_INIT_AUTO
 #if CONFIG_ESP_VBAT_ISR_CACHE_SAFE

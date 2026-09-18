@@ -4,5 +4,5 @@ idf_component_register(SRCS "test_app_main.c"
                             "test_esp_err_to_name.c"
                             "test_esp_macro.c"
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES unity esp_mm esp_psram
+                       PRIV_REQUIRES unity esp_mm esp_psram esp_hal_cache
                        WHOLE_ARCHIVE)

@@ -25,7 +25,7 @@
 #include "sdkconfig.h"
 #include "esp_rom_serial_output.h"
 #include "hal/uart_ll.h"
-#include "soc/power_supply_periph.h"
+#include "hal/power_supply_periph.h"
 #include "esp_brownout.h"
 #include "esp_check.h"
 #include "esp_memory_utils.h"

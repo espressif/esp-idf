@@ -12,7 +12,7 @@ endif()
 
 if(non_os_build OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     set(srcs "")
-    set(priv_requires bootloader_support soc esp_hal_gpio)
+    set(priv_requires bootloader_support soc esp_hal_gpio esp_hal_cache)
 else()
     set(srcs "")
 

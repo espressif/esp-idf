@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(public_include "include")
-set(requires esp_hal_dma)
+set(requires esp_hal_dma esp_hal_cache)
 set(srcs "src/esp_dma_utils.c" "src/gdma_link.c")
 
 if(CONFIG_SOC_GDMA_SUPPORTED)

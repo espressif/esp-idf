@@ -27,7 +27,7 @@ if(esp_tee_build)
     # from bootloader_utility_tee.c.
     idf_component_register(SRCS ${tee_srcs}
                            INCLUDE_DIRS ${tee_inc_dirs}
-                           PRIV_REQUIRES efuse esp_app_format esptool_py esp_hal_security
+                           PRIV_REQUIRES efuse esp_app_format esptool_py esp_hal_security esp_hal_cache
                                          esp_image_verify)
     return()
 endif()
@@ -74,7 +74,7 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     # micro-ecc is only needed for secure boot sources built under BOOTLOADER_BUILD.
     # For CONFIG_APP_BUILD_TYPE_RAM (loadable ELF app) we don't build those sources,
     # and micro-ecc lives in the bootloader subproject so it isn't available in app builds.
-    set(priv_requires spi_flash efuse esp_bootloader_format esp_app_format esptool_py)
+    set(priv_requires spi_flash efuse esp_bootloader_format esp_app_format esptool_py esp_hal_cache)
     if(BOOTLOADER_BUILD)
         list(APPEND priv_requires micro-ecc esp_image_verify)
     endif()
@@ -97,7 +97,7 @@ else()
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h`.
-    set(priv_requires spi_flash efuse heap esp_bootloader_format esp_app_format
+    set(priv_requires spi_flash efuse heap esp_bootloader_format esp_app_format esp_hal_cache
         esptool_py)
     # `esp_hal_ana_conv` is required by bootloader_random_esp32xx.c
     list(APPEND priv_requires esp_mspi esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv
