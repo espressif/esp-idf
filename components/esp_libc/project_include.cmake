@@ -1,46 +1,12 @@
-# Get picolibc specs option with --gc-sections flag removed
-function(get_picolibc_specs_path out_var)
-    set(modified_specs_path "${CMAKE_CURRENT_BINARY_DIR}/specs/picolibc.specs")
-    set(${out_var} "${modified_specs_path}" PARENT_SCOPE)
-
-    # Return if modified specs file already exists to avoid regeneration
-    if(EXISTS "${modified_specs_path}")
-        return()
-    endif()
-
-    # Find the original picolibc.specs file in the toolchain directory
-    execute_process(
-        COMMAND ${CMAKE_C_COMPILER} --print-file-name=picolibc.specs
-        OUTPUT_VARIABLE picolibc_specs_path
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-
-    if(picolibc_specs_path AND EXISTS "${picolibc_specs_path}")
-        # Read the original specs file
-        file(READ "${picolibc_specs_path}" specs_content)
-
-        # Remove --gc-sections flag from the content
-        string(REGEX REPLACE "--gc-sections" "" specs_content "${specs_content}")
-
-        # Write the modified specs file
-        file(WRITE "${modified_specs_path}" "${specs_content}")
-    else()
-        # Fallback: use original specs if not found
-        message(WARNING "picolibc.specs not found in toolchain, using default")
-        set(${out_var} "picolibc.specs" PARENT_SCOPE)
-    endif()
-endfunction()
-
 if(CONFIG_IDF_TOOLCHAIN_GCC)
+    idf_toolchain_remove_flags(COMPILE_OPTIONS "-mdisable-hardware-atomics"
+                                               "-specs=picolibc.specs"
+                                               "-D__STDC_WANT_LIB_EXT1__=0"
+                                               "--specs=nano.specs")
     if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
         idf_toolchain_add_flags(COMPILE_OPTIONS "-mdisable-hardware-atomics")
-    else()
-        idf_toolchain_remove_flags(COMPILE_OPTIONS "-mdisable-hardware-atomics")
     endif()
 
-    idf_toolchain_remove_flags(COMPILE_OPTIONS "-specs=picolibc.specs")
-    idf_toolchain_remove_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
     if(CONFIG_LIBC_PICOLIBC)
         idf_toolchain_add_flags(COMPILE_OPTIONS "-specs=picolibc.specs")
         if(LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
@@ -50,8 +16,6 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
 
     if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
         idf_toolchain_add_flags(LINK_OPTIONS "--specs=nano.specs")
-    else()
-        idf_toolchain_remove_flags(LINK_OPTIONS "--specs=nano.specs")
     endif()
 
     idf_toolchain_rerun_abi_detection()
