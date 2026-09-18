@@ -21,7 +21,15 @@ entries:
         rtc_sleep (noflash_text)
     rtc_time (noflash_text)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
-        pmu_sleep (noflash)
+        if SPIRAM_FLASH_LOAD_TO_PSRAM = y || PM_SLP_IRAM_OPT = y:
+            pmu_sleep (noflash)
+        else:
+            if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE != y:
+                pmu_sleep:pmu_sleep_start (noflash)
+                pmu_sleep:pmu_sleep_finish (noflash)
+            if SOC_PM_RETENTION_HAS_CLOCK_BUG = y && ESP_PHY_MAC_BB_PD = y:
+                pmu_sleep:pmu_sleep_pll_already_enabled (noflash)
+            pmu_sleep:pmu_sleep_get_wakup_retention_cost (noflash)
         sleep_mspi (noflash)
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
