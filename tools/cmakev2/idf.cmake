@@ -53,6 +53,7 @@ include(component)
 include(build)
 include(kconfig)
 include(project)
+include(subproject)
 include(manager)
 include(compat)
 include(ldgen)
@@ -297,6 +298,13 @@ function(__init_idf_target)
         if("$ENV{_IDF_PY_SET_TARGET_ACTION}" STREQUAL "1")
             idf_dbg("The target consistency check for the target specified in ${sdkconfig} "
                     "was skipped because the set-target action is being executed.")
+        elseif(IDF_SUBPROJECT_OWN_CONFIG)
+            # A subproject does not choose its target. The project that builds
+            # it passes IDF_TARGET down, and the subproject's sdkconfig is
+            # rewritten for that target on the next build, so right after
+            # 'idf.py set-target' the two targets differ.
+            idf_dbg("The target consistency check for the target specified in ${sdkconfig} "
+                    "was skipped because the subproject keeps a configuration of its own.")
         elseif(NOT "${sdkconfig_target}" STREQUAL "${target}")
             idf_die("Target '${sdkconfig_target}' in sdkconfig '${sdkconfig}' "
                     "does not match currently selected IDF_TARGET '${target}'. "

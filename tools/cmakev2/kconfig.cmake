@@ -39,6 +39,19 @@ set(CONFIGDEP_MIN_KCONFIG_VERSION "3.6.0")
 function(__init_kconfig)
     idf_build_get_property(idf_path IDF_PATH)
 
+    # externalproject_add gives a subproject the main project's whole
+    # environment, and __get_default_value below prefers the environment over
+    # the command line. In the main project's environment, SDKCONFIG is the
+    # main project's sdkconfig path, SDKCONFIG_DEFAULTS lists the main
+    # project's defaults files and GENERATE_SDKCONFIG says whether to write an
+    # sdkconfig. A subproject that kept the three variables would use the main
+    # project's sdkconfig and overwrite it.
+    if(IDF_SUBPROJECT_OWN_CONFIG)
+        unset(ENV{SDKCONFIG})
+        unset(ENV{SDKCONFIG_DEFAULTS})
+        unset(ENV{GENERATE_SDKCONFIG})
+    endif()
+
     # Initialize the SDKCONFIG file path build property.
     __get_default_value(VARIABLE SDKCONFIG
                         DEFAULT "${CMAKE_SOURCE_DIR}/sdkconfig"
