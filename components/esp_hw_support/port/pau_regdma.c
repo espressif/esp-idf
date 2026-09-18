@@ -234,3 +234,20 @@ bool IRAM_ATTR pau_regdma_enable_aon_link_entry(bool enable)
     return origin_bypass_en;
 }
 #endif
+
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+void IRAM_ATTR pau_regdma_set_etm_modem_link_config(void)
+{
+    pau_hal_set_etm_modem_link_config(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_regdma_stop_etm_modem_link(void)
+{
+    pau_hal_stop_etm_modem_link(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_regdma_wait_done(void)
+{
+    pau_hal_regdma_wait_done(PAU_instance()->hal);
+}
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY

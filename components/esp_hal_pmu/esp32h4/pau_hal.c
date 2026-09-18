@@ -90,3 +90,16 @@ void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int inte
     pau_ll_set_regdma_link_wait_retry_count(count);
     pau_ll_set_regdma_link_wait_read_interval(interval);
 }
+
+void IRAM_ATTR pau_hal_set_etm_modem_link_config(pau_hal_context_t *hal)
+{
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+    pau_ll_select_regdma_etm_entry_link0(hal->dev, SOC_PM_PAU_REGDMA_LINK_IDX_PHY);
+    pau_ll_set_regdma_etm_entry_link0_backup_direction(hal->dev, false);
+}
+
+void IRAM_ATTR pau_hal_stop_etm_modem_link(pau_hal_context_t *hal)
+{
+    pau_ll_select_regdma_etm_entry_link0(hal->dev, 0); /* restore link select to default */
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+}
