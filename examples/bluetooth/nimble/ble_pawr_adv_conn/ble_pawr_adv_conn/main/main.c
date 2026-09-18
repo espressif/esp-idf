@@ -18,6 +18,10 @@
 #define BLE_PAWR_RSP_SLOT_SPACING             (10)  /*!< Time between response slots (N * 0.125 ms) */
 #define BLE_PAWR_NUM_RSP_SLOTS                (25)   /*!< Number of subevent response slots          */
 #define BLE_PAWR_SUB_DATA_LEN                 (20)
+/* Give the controller a few periodic intervals to report the outcome of a
+ * synchronized connection attempt before retrying from another subevent.
+ */
+#define BLE_PAWR_CONN_TIMEOUT_MS              (3 * BLE_PAWR_EVENT_PERIODIC_INTERVAL_MS)
 
 #define TAG  "NimBLE_BLE_PAwR_CONN"
 
@@ -162,7 +166,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             phy_mask = 0x01;
 
             if (conn == 0) {
-                rc = ble_gap_connect_with_synced(own_addr_type,adv_handle,subevent,&peer_addr,30000,phy_mask,NULL,NULL,NULL,gap_event_cb,NULL);
+                rc = ble_gap_connect_with_synced(own_addr_type,adv_handle,subevent,&peer_addr,BLE_PAWR_CONN_TIMEOUT_MS,phy_mask,NULL,NULL,NULL,gap_event_cb,NULL);
                 if (rc != 0 ) {
                     ESP_LOGI(TAG,"Error: Failed to connect to device , rc = %d\n",rc);
                 } else {
