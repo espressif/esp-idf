@@ -8,6 +8,7 @@ set(g1_components freertos log heap esp_libc esp_system esp_hw_support esp_mm es
 # Most of these HAL components are required by `clk.c` in `esp_system` for peripherals clock initialization.
 set(esp_hal_components
     esp_hal_ana_conv
+    esp_hal_cache
     esp_hal_cam
     esp_hal_dma
     esp_hal_gpio
