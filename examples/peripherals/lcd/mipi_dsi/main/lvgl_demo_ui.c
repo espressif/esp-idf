@@ -109,7 +109,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_obj_set_style_arc_opa(arc, 0, 0);
     lv_obj_set_style_arc_width(arc, 15, LV_PART_INDICATOR);
     lv_obj_set_style_arc_color(arc, lv_palette_main(LV_PALETTE_BLUE), LV_PART_INDICATOR);
-    lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_clickable(arc, false);
 
     // animation
     lv_anim_t a;
@@ -129,7 +129,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_obj_set_style_arc_opa(arc, 0, 0);
     lv_obj_set_style_arc_width(arc, 15, LV_PART_INDICATOR);
     lv_obj_set_style_arc_color(arc, lv_palette_main(LV_PALETTE_RED), LV_PART_INDICATOR);
-    lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_clickable(arc, false);
     lv_obj_center(arc);
 
     lv_anim_set_exec_cb(&a, scale1_indic2_anim_cb);
@@ -145,7 +145,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_obj_set_style_arc_opa(arc, 0, 0);
     lv_obj_set_style_arc_width(arc, 15, LV_PART_INDICATOR);
     lv_obj_set_style_arc_color(arc, lv_palette_main(LV_PALETTE_GREEN), LV_PART_INDICATOR);
-    lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_clickable(arc, false);
     lv_obj_center(arc);
 
     lv_anim_set_exec_cb(&a, scale1_indic3_anim_cb);
