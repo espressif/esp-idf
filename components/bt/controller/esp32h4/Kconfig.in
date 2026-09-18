@@ -1,1 +1,5 @@
 source "$IDF_PATH/components/bt/porting_btdm/Kconfig.in"
+
+config BT_CTRL_SUPPORT_ETM_WAKEUP
+    bool
+    default y
