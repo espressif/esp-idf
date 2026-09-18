@@ -219,7 +219,6 @@ inline __attribute__((always_inline)) bool sleep_modem_phy_link_done(void)
 {
     return (s_sleep_modem.phy_link_done == 1);
 }
-
 #endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 bool modem_domain_pd_allowed(void)
@@ -257,21 +256,21 @@ bool modem_domain_pd_allowed(void)
 uint32_t sleep_modem_reject_triggers(void)
 {
     uint32_t reject_triggers = 0;
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && SOC_WIFI_SUPPORTED
     reject_triggers = sleep_modem_wifi_modem_state_is_enabled() ? PMU_MODEM_WAKEUP_PROTECT : 0;
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && SOC_WIFI_SUPPORTED */
     return reject_triggers;
 }
 
 bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_light_sleep(void)
 {
     bool skip = false;
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && SOC_WIFI_SUPPORTED
     /* To block the system from entering sleep before modem link done. In light
      * sleep mode, the system may switch to modem state, which will cause
      * hardware to fail to enable RF */
     skip = sleep_modem_wifi_modem_state_is_enabled() && !sleep_modem_phy_link_done();
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && SOC_WIFI_SUPPORTED */
     return skip;
 }
 

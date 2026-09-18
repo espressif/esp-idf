@@ -99,7 +99,7 @@ static esp_err_t sleep_phy_retention_init(void *arg)
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
     phy_modem_config[4].config.write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
     phy_modem_config[15].config.write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
-    esp_err_t err = sleep_retention_entries_create(phy_modem_config, ARRAY_SIZE(phy_modem_config_template), 7, SLEEP_RETENTION_MODULE_MODEM_PHY);
+    esp_err_t err = sleep_retention_entries_create(phy_modem_config, ARRAY_SIZE(phy_modem_config_template), 5, SLEEP_RETENTION_MODULE_MODEM_PHY);
     free(phy_modem_config);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate modem phy link");
     return ESP_OK;

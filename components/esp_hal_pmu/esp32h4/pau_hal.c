@@ -11,6 +11,7 @@
 #include "hal/pau_hal.h"
 #include "hal/pau_types.h"
 #include "hal/lp_aon_ll.h"
+#include "hal/pau_etm_ll.h"
 
 void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_addr_t *link_addr)
 {
@@ -102,4 +103,14 @@ void IRAM_ATTR pau_hal_stop_etm_modem_link(pau_hal_context_t *hal)
 {
     pau_ll_select_regdma_etm_entry_link0(hal->dev, 0); /* restore link select to default */
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+}
+
+bool IRAM_ATTR pau_hal_check_etm_task_triggered(pau_hal_context_t *hal, uint8_t index)
+{
+    return pau_etm_ll_get_regdma_task_start_status(index);
+}
+
+void IRAM_ATTR pau_hal_clear_etm_task_triggered(pau_hal_context_t *hal, uint8_t index)
+{
+    pau_etm_ll_clear_regdma_task_start_status(index);
 }

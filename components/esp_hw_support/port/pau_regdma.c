@@ -246,8 +246,18 @@ void IRAM_ATTR pau_regdma_stop_etm_modem_link(void)
     pau_hal_stop_etm_modem_link(PAU_instance()->hal);
 }
 
-void IRAM_ATTR pau_regdma_wait_done(void)
+void IRAM_ATTR pau_regdma_wait_work_done(void)
 {
     pau_hal_regdma_wait_done(PAU_instance()->hal);
+}
+
+bool IRAM_ATTR pau_regdma_check_etm_task_triggered(uint8_t index)
+{
+    return pau_hal_check_etm_task_triggered(PAU_instance()->hal, index);
+}
+
+void IRAM_ATTR pau_regdma_clear_etm_task_triggered(uint8_t index)
+{
+    pau_hal_clear_etm_task_triggered(PAU_instance()->hal, index);
 }
 #endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY

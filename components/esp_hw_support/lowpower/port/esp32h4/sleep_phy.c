@@ -41,12 +41,11 @@ typedef struct {
     #define DESC_MODEM_SYSCON_CLK_DIS (3)
     void *regdma_desc[DESC_MODEM_SYSCON_CLK_DIS + 1];
 } sleep_phy_link_context_t;
-
 #define SYSCON_FE_CLOCK_MSK             (MODEM_SYSCON_CLK_FE_APB_EN|MODEM_SYSCON_CLK_FE_32M_EN|MODEM_SYSCON_CLK_FE_SDM_EN|MODEM_SYSCON_CLK_FE_ADC_EN|MODEM_SYSCON_CLK_FE_16M_EN|MODEM_SYSCON_CLK_FE_TXLOGAIN_EN)
 esp_err_t sleep_phy_retention_init(void *args)
 {
     #define PHY_ENTRY() (BIT(SOC_PM_PAU_REGDMA_LINK_IDX_PHY))
-    static sleep_retention_entries_config_t phy_modem_config[] = {
+    static const sleep_retention_entries_config_t phy_modem_config_template[] = {
         /* Open modem clock for PHY */
         [0] =  { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x00),      MODEM_LPCON_CLK_CONF_REG,         MODEM_LPCON_CLK_I2C_MST_EN, MODEM_LPCON_CLK_I2C_MST_EN_M, 1, 0), .owner = PHY_ENTRY() }, /* I2C MST enable */
         [1] =  { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x01),      MODEM_SYSCON_CLK_CONF1_REG,       SYSCON_FE_CLOCK_MSK,                              SYSCON_FE_CLOCK_MSK,        1, 0), .owner = PHY_ENTRY() }, /* FE clock */
@@ -84,10 +83,16 @@ esp_err_t sleep_phy_retention_init(void *args)
         [27] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1b), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0), .owner = PHY_ENTRY() },
         [28] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1c), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1), .owner = PHY_ENTRY() },
     };
+    sleep_retention_entries_config_t *phy_modem_config = malloc(sizeof(phy_modem_config_template));
+    if (phy_modem_config == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(phy_modem_config, phy_modem_config_template, sizeof(phy_modem_config_template));
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
     phy_modem_config[0x0a].config.write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
     phy_modem_config[0x13].config.write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
-    esp_err_t err = sleep_retention_entries_create(phy_modem_config, ARRAY_SIZE(phy_modem_config), 7, SLEEP_RETENTION_MODULE_MODEM_PHY);
+    esp_err_t err = sleep_retention_entries_create(phy_modem_config, ARRAY_SIZE(phy_modem_config_template), 5, SLEEP_RETENTION_MODULE_MODEM_PHY);
+    free(phy_modem_config);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to init modem phy link");
     return err;
 }
