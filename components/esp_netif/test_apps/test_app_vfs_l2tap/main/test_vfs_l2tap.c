@@ -228,12 +228,12 @@ static void ethernet_deinit(test_vfs_eth_network_t *network_hndls)
 {
     TEST_ESP_OK(esp_eth_stop(network_hndls->eth_handle));
     TEST_ESP_OK(esp_eth_del_netif_glue(network_hndls->glue));
+    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
+    esp_netif_destroy(network_hndls->eth_netif);
     esp_eth_driver_uninstall(network_hndls->eth_handle);
     TEST_ESP_OK(network_hndls->phy->del(network_hndls->phy));
     TEST_ESP_OK(network_hndls->mac->del(network_hndls->mac));
-    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    esp_netif_destroy(network_hndls->eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
