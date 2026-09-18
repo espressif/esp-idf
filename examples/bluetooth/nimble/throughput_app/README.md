@@ -22,13 +22,43 @@ There are two example folders inside `gatt/`: `bleprph_throughput` (peripheral) 
 
 Build and flash two ESP32 boards with `bleprph_throughput` and `blecent_throughput` examples. The central automatically scans and connects to the peripheral based on device name (`nimble_prph`). After connection, the user may optionally configure connection parameters (`MTU`, `connection interval`, `latency`, `supervision timeout`, `connection event length`). Then the user specifies the throughput test type (`read`, `write` or `notify`) and test duration in seconds.
 
-Below are sample throughput numbers for a 60-second test run (MTU = 512, conn itvl = 7.5ms, DLE = 251 bytes, 1M PHY):
+Below are sample application throughput numbers measured in a shield box (MTU = 512, conn itvl = 7.5ms, DLE = 251 bytes). Open-air results are typically lower and can vary with RF environment and board.
 
-|GATT Method | Measurement Time | Application Throughput|
-|----------- | ---------------- | ----------------------|
-|NOTIFY    	 | 60 seconds       | ~340 Kbps             |
-|READ	     | 60 seconds       | ~200 Kbps             |
-|WRITE	     | 60 seconds       | ~500 Kbps             |
+**WRITE**
+
+| Chip     | 1M PHY     | 2M PHY     | Coded S=2  | Coded S=8 |
+|----------|------------|------------|------------|-----------|
+| ESP32-C6 | ~755 kbps  | ~1.34 Mbps | ~349 kbps  | ~101 kbps |
+| ESP32-C5 | ~754 kbps  | ~1.34 Mbps | ~349 kbps  | ~101 kbps |
+| ESP32-C2 | ~794 kbps  | ~1.34 Mbps | ~353 kbps  | ~101 kbps |
+| ESP32-C61| ~754 kbps  | ~1.33 Mbps | ~349 kbps  | ~101 kbps |
+| ESP32-S3 | ~753 kbps  | ~1.34 Mbps | ~273 kbps  | ~65 kbps  |
+| ESP32-C3 | ~752 kbps  | ~1.34 Mbps | ~273 kbps  | ~60 kbps  |
+| ESP32-H2 | ~754 kbps  | ~1.34 Mbps | ~349 kbps  | ~101 kbps |
+
+**NOTIFY**
+
+| Chip     | 1M PHY     | 2M PHY     | Coded S=2  | Coded S=8 |
+|----------|------------|------------|------------|-----------|
+| ESP32-C6 | ~764 kbps  | ~1.35 Mbps | ~352 kbps  | ~104 kbps |
+| ESP32-C5 | ~762 kbps  | ~1.36 Mbps | ~350 kbps  | ~102 kbps |
+| ESP32-C2 | ~792 kbps  | ~1.38 Mbps | ~353 kbps  | ~101 kbps |
+| ESP32-C61| ~757 kbps  | ~1.34 Mbps | ~352 kbps  | ~102 kbps |
+| ESP32-S3 | ~755 kbps  | ~1.35 Mbps | ~274 kbps  | ~62 kbps  |
+| ESP32-C3 | ~757 kbps  | ~1.34 Mbps | ~275 kbps  | ~65 kbps  |
+| ESP32-H2 | ~763 kbps  | ~1.37 Mbps | ~354 kbps  | ~105 kbps |
+
+**READ**
+
+| Chip     | 1M PHY     | 2M PHY     | Coded S=2  | Coded S=8 |
+|----------|------------|------------|------------|-----------|
+| ESP32-C6 | ~198 kbps  | ~198 kbps  | ~99 kbps   | ~39 kbps  |
+| ESP32-C5 | ~198 kbps  | ~198 kbps  | ~98 kbps   | ~38 kbps  |
+| ESP32-C2 | ~195 kbps  | ~195 kbps  | ~99 kbps   | ~39 kbps  |
+| ESP32-C61| ~198 kbps  | ~198 kbps  | ~99 kbps   | ~39 kbps  |
+| ESP32-S3 | ~198 kbps  | ~198 kbps  | ~99 kbps   | ~27 kbps  |
+| ESP32-C3 | ~198 kbps  | ~198 kbps  | ~99 kbps   | ~26 kbps  |
+| ESP32-H2 | ~198 kbps  | ~198 kbps  | ~99 kbps   | ~39 kbps  |
 
 The notify throughput output is displayed on the `bleprph_throughput` console, while read/write throughput results are shown on the `blecent_throughput` console.
 
@@ -71,7 +101,7 @@ L2CAP CoC provides a direct channel between two devices without the ATT/GATT ove
 
 Build and flash two ESP32 boards with `l2cap_coc_prph` and `l2cap_coc_cent` examples. The central automatically scans and connects — no user input required. The test runs continuously, cycling through enabled PHYs.
 
-Below are sample throughput numbers (MTU = 2048, DLE = 251 bytes, conn itvl = 7.5ms, ESP32-C6):
+Below are sample throughput numbers measured in a shield box (MTU = 2048, DLE = 251 bytes, conn itvl = 7.5ms, ESP32-C6). Open-air results are typically lower and can vary with RF environment and board.
 
 | PHY | Measurement Time | Application Throughput |
 |-----|-----------------|------------------------|
