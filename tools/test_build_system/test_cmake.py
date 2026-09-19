@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -89,6 +90,70 @@ def test_build_cmake_library_with_toolchain_flags(test_app_copy: Path, request: 
         'Ninja',
         f'-DSDKCONFIG_DEFAULTS={import_lib_path / "sdkconfig.defaults"};{test_app_copy / "sdkconfig.defaults"}',
     )
+
+
+def _run_cmake_from_dir(cmd: list[str], cwd: Path) -> None:
+    logging.debug('running {} in {}'.format(' '.join(cmd), cwd))
+    try:
+        subprocess.run(
+            cmd,
+            cwd=cwd,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='backslashreplace',
+        )
+    except subprocess.CalledProcessError as e:
+        logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
+        logging.error(f'Working directory: {cwd}')
+        logging.error(f'Stdout: {e.stdout}')
+        logging.error(f'Stderr: {e.stderr}')
+        raise
+
+
+@pytest.mark.skipif(
+    sys.platform == 'win32',
+    reason='Symlink build directories are not exercised on Windows CI runners',
+)
+def test_build_cmake_library_symlink_build_dir(test_app_copy: Path, request: pytest.FixtureRequest) -> None:
+    """Reconfigure import_lib with CMAKE_BINARY_DIR as realpath then as a symlink.
+
+    First configure uses -B <physical dir> so CMAKE_C_FLAGS records
+    @<realpath>/toolchain/cflags. Second uses -B <symlink> so
+    IDF_TOOLCHAIN_BUILD_DIR keeps the symlink spelling. Without REALPATH
+    normalization, add_flags does not recognize the cached @ref and writes it
+    into the response file (gcc then recurses).
+
+    import_lib's ExternalProject also passes -DCMAKE_TOOLCHAIN_FILE, which is
+    the same path-mismatch surface as a nested IDF/external cmake.
+    """
+    logging.info('Configuring import_lib with realpath then symlink build dir')
+    idf_path = Path(os.environ['IDF_PATH'])
+    is_buildv2 = request.config.getoption('buildv2', False)
+    if is_buildv2:
+        import_lib_path = idf_path / 'examples' / 'build_system' / 'cmakev2' / 'features' / 'import_lib'
+    else:
+        import_lib_path = idf_path / 'examples' / 'build_system' / 'cmake' / 'import_lib'
+
+    real_build = test_app_copy / 'build_real'
+    real_build.mkdir()
+    link_build = test_app_copy / 'build'
+    link_build.symlink_to(real_build.resolve(), target_is_directory=True)
+
+    # Do not use run_cmake() as cwd: chdir into a symlink makes Linux getcwd()
+    # return the physical path, which hides the second-configure spelling.
+    cmake_base = ['cmake', '-G', 'Ninja', '-S', str(import_lib_path)]
+    _run_cmake_from_dir(cmake_base + ['-B', str(real_build)], test_app_copy)
+    _run_cmake_from_dir(cmake_base + ['-B', str(link_build)], test_app_copy)
+
+    # Response files must not contain @refs (recursion into toolchain response files).
+    toolchain_dir = link_build / 'toolchain'
+    for resp_name in ('cflags', 'cxxflags', 'asmflags', 'ldflags'):
+        resp_file = toolchain_dir / resp_name
+        assert resp_file.is_file(), f'missing response file {resp_file}'
+        for line in resp_file.read_text(encoding='utf-8').splitlines():
+            assert not line.startswith('@'), f'recursive @response-file ref in {resp_name}: {line}'
 
 
 def check_flag_in_compile_commands(build_dir: Path, flag_to_find: str) -> None:

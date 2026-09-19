@@ -66,7 +66,12 @@ endif()
 #    directory as the toolchain file. We simply set IDF_TOOLCHAIN_BUILD_DIR to
 #    point to that existing directory.
 if(_idf_toolchain_dir STREQUAL _current_toolchain_dir)
-    set(IDF_TOOLCHAIN_BUILD_DIR "${CMAKE_BINARY_DIR}/toolchain"
+    # Create then REALPATH so cached value matches symlink-resolved spelling used
+    # later when comparing @response-file paths (see toolchain_flags.cmake).
+    set(_idf_toolchain_build_dir "${CMAKE_BINARY_DIR}/toolchain")
+    file(MAKE_DIRECTORY "${_idf_toolchain_build_dir}")
+    file(REAL_PATH "${_idf_toolchain_build_dir}" _idf_toolchain_build_dir)
+    set(IDF_TOOLCHAIN_BUILD_DIR "${_idf_toolchain_build_dir}"
         CACHE PATH "Path to toolchain build directory containing response files and toolchain file copy" FORCE)
 
     # Copy toolchain file into the build directory and update CMAKE_TOOLCHAIN_FILE
@@ -74,7 +79,6 @@ if(_idf_toolchain_dir STREQUAL _current_toolchain_dir)
     # CMAKE_BINARY_DIR values between base IDF-project builds and external projects.
     # For external project builds, compiler response files are located in the same
     # directory as CMAKE_TOOLCHAIN_FILE, making them easy to find.
-    file(MAKE_DIRECTORY "${IDF_TOOLCHAIN_BUILD_DIR}")
     file(COPY "${CMAKE_TOOLCHAIN_FILE}" DESTINATION "${IDF_TOOLCHAIN_BUILD_DIR}")
     set(CMAKE_TOOLCHAIN_FILE "${IDF_TOOLCHAIN_BUILD_DIR}/${_toolchain_filename}")
 
