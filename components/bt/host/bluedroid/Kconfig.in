@@ -217,13 +217,16 @@ config BT_HFP_AG_ENABLE
 choice BT_HFP_AUDIO_DATA_PATH
     prompt "audio(SCO) data path"
     depends on BT_HFP_ENABLE
+    default BT_HFP_AUDIO_DATA_PATH_HCI if IDF_TARGET_ESP32S31
     help
         SCO data path, i.e. HCI or PCM. This option is set using API
         "esp_bredr_sco_datapath_set" in Bluetooth host. Default SCO data
         path can also be set in Bluetooth Controller.
+        ESP32-S31 does not support PCM SCO routing, so only HCI is available.
 
     config BT_HFP_AUDIO_DATA_PATH_PCM
         bool "PCM"
+        depends on !IDF_TARGET_ESP32S31
     config BT_HFP_AUDIO_DATA_PATH_HCI
         bool "HCI"
 endchoice

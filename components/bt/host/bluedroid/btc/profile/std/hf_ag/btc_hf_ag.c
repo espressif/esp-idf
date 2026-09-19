@@ -203,6 +203,7 @@ static BOOLEAN is_connected(int idx, bt_bdaddr_t *bd_addr)
     return FALSE;
 }
 
+#if (BTM_WBS_INCLUDED == TRUE)
 static esp_hf_codec_mode_t btc_hf_bta_codec_to_esp(tBTA_AG_PEER_CODEC codec)
 {
     if (codec == BTA_AG_CODEC_NONE) {
@@ -219,6 +220,7 @@ static esp_hf_codec_mode_t btc_hf_bta_codec_to_esp(tBTA_AG_PEER_CODEC codec)
     }
     return ESP_HF_CODEC_NONE;
 }
+#endif
 
 static tBTA_AG_PEER_CODEC btc_hf_esp_codec_to_bta(esp_hf_codec_mode_t mode)
 {
