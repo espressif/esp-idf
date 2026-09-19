@@ -1627,6 +1627,7 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
     UINT32     event = 0;
     int        rc = 0;
     UINT16     length;
+    UINT16     hdr_overhead, capacity;
 
     RFCOMM_TRACE_API ("PORT_WriteData() max_len:%d", max_len);
 
@@ -1669,6 +1670,13 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
 
     osi_mutex_global_unlock();
 
+    hdr_overhead = (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD + L2CAP_FCS_LEN);
+    capacity = RFCOMM_DATA_BUF_SIZE - hdr_overhead;
+    /* Data beyond the peer MTU can never be placed in the buffer, so don't allocate room for it */
+    if (p_port->peer_mtu < capacity) {
+        capacity = p_port->peer_mtu;
+    }
+
     while (max_len) {
         /* if we're over buffer high water mark, we're done */
         if ((p_port->tx.queue_size  > PORT_TX_HIGH_WM)
@@ -1677,18 +1685,15 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
         }
 
         /* continue with rfcomm data write */
-        p_buf = (BT_HDR *)osi_malloc(RFCOMM_DATA_BUF_SIZE);
+        p_buf = (BT_HDR *)osi_malloc(hdr_overhead + capacity);
         if (!p_buf) {
             break;
         }
 
         p_buf->offset         = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
-        p_buf->layer_specific = RFCOMM_DATA_BUF_SIZE - (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD + L2CAP_FCS_LEN);
-        /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len */
+        p_buf->layer_specific = capacity;
+        /* Length for each buffer is the smaller of the buffer capacity or max_len */
         length = p_buf->layer_specific;
-        if (p_port->peer_mtu < length) {
-            length = p_port->peer_mtu;
-        }
         if (max_len < length) {
             length = max_len;
         }
