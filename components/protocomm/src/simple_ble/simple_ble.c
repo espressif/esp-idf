@@ -445,6 +445,13 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
      * a static: the teardown is wholly within this call. */
     const bool started_here = !cfg->reuse_ble_stack;
 
+    /* The application's GAP and GATTS callbacks on a reused stack, captured
+     * before the registrations below replace them so that the unwind can hand
+     * them back. There is nothing to capture when protocomm brings the stack
+     * up itself: the unwind then disables Bluedroid, which drops them anyway. */
+    esp_gatts_cb_t app_gatts_cb = NULL;
+    esp_gap_ble_cb_t app_gap_cb = NULL;
+
     /* reuse_ble_stack means "reuse a RUNNING stack", not "finish bringing one
      * up". A half-started stack -- controller merely inited, or Bluedroid
      * inited but not enabled -- is rejected rather than completed: finishing
@@ -465,6 +472,8 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
                      esp_bluedroid_get_status());
             return ESP_ERR_INVALID_STATE;
         }
+        app_gatts_cb = esp_ble_gatts_get_callback();
+        app_gap_cb = esp_ble_gap_get_callback();
     }
 
 #ifdef CONFIG_BT_CONTROLLER_ENABLED
@@ -519,17 +528,22 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
         goto err_bluedroid_disable;
     }
 
-    uint16_t app_id = 0x55;
-    ret = esp_ble_gatts_app_register(app_id);
-    if (ret) {
-        ESP_LOGE(TAG, "gatts app register error, error code = 0x%x", ret);
-        goto err_bluedroid_disable;
-    }
-
+    /* Set the MTU before registering the app, so that registering the app is
+     * the last step that can fail: nothing here can take a registration back
+     * (its gatts_if only arrives later, in ESP_GATTS_REG_EVT), and this way a
+     * start that fails on a reused stack leaves no app id behind. The MTU is
+     * a plain default in the GATT layer with no dependency on registration. */
     esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(500);
     if (local_mtu_ret) {
         ESP_LOGE(TAG, "set local  MTU failed, error code = 0x%x", local_mtu_ret);
         ret = local_mtu_ret;
+        goto err_bluedroid_disable;
+    }
+
+    uint16_t app_id = 0x55;
+    ret = esp_ble_gatts_app_register(app_id);
+    if (ret) {
+        ESP_LOGE(TAG, "gatts app register error, error code = 0x%x", ret);
         goto err_bluedroid_disable;
     }
     ESP_LOGD(TAG, "Free mem at end of simple_ble_init %" PRIu32, esp_get_free_heap_size());
@@ -558,6 +572,14 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
 err_bluedroid_disable:
     if (started_here) {
         esp_bluedroid_disable();
+    } else {
+        /* Hand the application back the callbacks the registrations above
+         * replaced, so its stack keeps working after this failure. Where a
+         * registration itself failed the saved value is still the current one
+         * and this is a no-op. The local MTU is not put back: Bluedroid has no
+         * getter for it, and a successful start changes it just the same. */
+        esp_ble_gatts_register_callback(app_gatts_cb);
+        esp_ble_gap_register_callback(app_gap_cb);
     }
 err_bluedroid_deinit:
     if (started_here) {

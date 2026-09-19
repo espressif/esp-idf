@@ -171,10 +171,12 @@ typedef struct protocomm_ble_config {
      * Scope: this covers starting only. It does not provide GAP/GATTS
      * coexistence -- protocomm registers its own GAP and GATTS callbacks
      * and Bluedroid keeps one of each, so the application's callbacks are
-     * replaced for the duration. protocomm_ble_stop() still disables and
-     * deinitialises the stack unless keep_ble_on is set, because nothing
-     * else unregisters the app id, the callbacks or the advertising that
-     * protocomm_ble_start() installs.
+     * replaced for the duration. If protocomm_ble_start() fails after
+     * replacing them it puts the application's callbacks back before
+     * returning, so a failed start leaves the application's stack working.
+     * protocomm_ble_stop() still disables and deinitialises the stack unless
+     * keep_ble_on is set, because nothing else unregisters the app id, the
+     * callbacks or the advertising that protocomm_ble_start() installs.
      */
     unsigned reuse_ble_stack:1;
 } protocomm_ble_config_t;
