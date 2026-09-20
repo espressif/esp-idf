@@ -389,7 +389,7 @@ LEDC 驱动不使用电源管理锁来防止系统进入 Light-sleep 。相反�
 
     高速模式的优点是可平稳地改变定时器设置。也就是说，高速模式下如定时器设置改变，此变更会自动应用于定时器的下一次溢出中断。而更新低速定时器时，设置变更应由软件显式触发。LED PWM 驱动的设置将在硬件层面被修改，比如在调用函数 :cpp:func:`ledc_timer_config` 时。
 
-    更多关于速度模式的详细信息请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **LED PWM 控制器 (LEDC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]。
+    更多关于速度模式的详细信息请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **LED PWM 控制器 (LEDC)** [`PDF <{IDF_TARGET_TRM_CN_URL}#ledpwm>`__]。
 
     .. _ledc-api-supported-range-frequency-duty-resolution:
 
@@ -400,7 +400,7 @@ LEDC 驱动不使用电源管理锁来防止系统进入 Light-sleep 。相反�
 频率和占空比分辨率支持范围
 -------------------------------------------------
 
-LED PWM 控制器主要用于驱动 LED。该控制器 PWM 占空比设置的分辨率范围较广。比如，PWM 频率为 5 kHz 时，占空比分辨率最大可为 13 位。这意味着占空比可为 0 至 100% 之间的任意值，分辨率为 ~0.012%（2 ** 13 = 8192 LED 亮度的离散电平）。然而，这些参数取决于为 LED PWM 控制器定时器计时的时钟信号，LED PWM 控制器为通道提供时钟（具体可参考 :ref:`定时器配置 <ledc-api-configure-timer>` 和 **{IDF_TARGET_NAME} 技术参考手册** > **LED PWM 计时器 (LEDC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]）。
+LED PWM 控制器主要用于驱动 LED。该控制器 PWM 占空比设置的分辨率范围较广。比如，PWM 频率为 5 kHz 时，占空比分辨率最大可为 13 位。这意味着占空比可为 0 至 100% 之间的任意值，分辨率为 ~0.012%（2 ** 13 = 8192 LED 亮度的离散电平）。然而，这些参数取决于为 LED PWM 控制器定时器计时的时钟信号，LED PWM 控制器为通道提供时钟（具体可参考 :ref:`定时器配置 <ledc-api-configure-timer>` 和 **{IDF_TARGET_NAME} 技术参考手册** > **LED PWM 计时器 (LEDC)** [`PDF <{IDF_TARGET_TRM_CN_URL}#ledpwm>`__]）。
 
 LED PWM 控制器可用于生成频率较高的信号，足以为数码相机模组等其他设备提供时钟。此时，最大频率可为 40 MHz，占空比分辨率为 1 位。也就是说，占空比固定为 50%，无法调整。
 

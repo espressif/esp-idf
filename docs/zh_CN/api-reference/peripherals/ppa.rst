@@ -113,7 +113,7 @@ PPA 操作包括：
 
 注意，此公式对 FG 和 BG 的处理是不对称的。当 :math:`A_f = 1` 时， :math:`C_{out} = C_f`，:math:`A_{out} = 1`，这意味着如果 FG 图片的色彩模式为 ``PPA_BLEND_COLOR_MODE_RGB565`` 或 ``PPA_BLEND_COLOR_MODE_RGB888``，PPA 硬件会填充 Alpha 值为 255（即 :math:`A_f = 1`），叠加结果将与 FG 块相同。
 
-如果将 :cpp:member:`ppa_blend_oper_config_t::bg_ck_en` 或 :cpp:member:`ppa_blend_oper_config_t::fg_ck_en` 设置为 ``true``，则色键（color-key，也叫 Chroma-key）范围内的像素不会按照正常 Alpha Blending 流程输出。请查看 **{IDF_TARGET_NAME} 技术参考手册** > **像素处理加速器 (PPA)** > **功能描述** > **图层叠加 (BLEND)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ppa>`__] 了解详细规则。
+如果将 :cpp:member:`ppa_blend_oper_config_t::bg_ck_en` 或 :cpp:member:`ppa_blend_oper_config_t::fg_ck_en` 设置为 ``true``，则色键（color-key，也叫 Chroma-key）范围内的像素不会按照正常 Alpha Blending 流程输出。请查看 **{IDF_TARGET_NAME} 技术参考手册** > **像素处理加速器 (PPA)** > **功能描述** > **图层叠加 (BLEND)** [`PDF <{IDF_TARGET_TRM_CN_URL}#ppa>`__] 了解详细规则。
 
 注意以下几点事项，避免在配置 :cpp:type:`ppa_blend_oper_config_t` 时产生混淆：
 

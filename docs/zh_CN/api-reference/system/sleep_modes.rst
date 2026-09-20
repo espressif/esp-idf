@@ -178,7 +178,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
 .. only:: SOC_ULP_SUPPORTED
 
-    关于 RTC 时钟选项的更多细节，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **ULP 协处理器** [`PDF <{IDF_TARGET_TRM_EN_URL}#ulp>`__]。
+    关于 RTC 时钟选项的更多细节，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **ULP 协处理器** [`PDF <{IDF_TARGET_TRM_CN_URL}#ulp>`__]。
 
 在这种唤醒模式下，无需为睡眠模式中的 RTC 外设或内存供电。
 

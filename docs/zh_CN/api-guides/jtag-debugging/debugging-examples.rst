@@ -157,7 +157,7 @@
 
 在 “Memory” 选项卡下，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。
 
-关于该寄存器的更多详细信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *IO MUX 和 GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__] 章节。
+关于该寄存器的更多详细信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *IO MUX 和 GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_CN_URL}#iomuxgpio>`__] 章节。
 
 同样在 ``blink.c`` 项目文件中，在两个 ``gpio_set_level`` 语句的后面各设置一个断点，单击 “Memory” 选项卡，然后单击 “Add Memory Monitor” 按钮，在弹出的对话框中输入 ``0x3FF44004``。
 
@@ -515,7 +515,7 @@
 
 为了演示 ``x`` 和 ``set`` 的使用，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。
 
-关于该寄存器的更多详细信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *IO MUX 和 GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__] 章节。
+关于该寄存器的更多详细信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *IO MUX 和 GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_CN_URL}#iomuxgpio>`__] 章节。
 
 同样在 ``blink.c`` 项目文件中，在两个 ``gpio_set_level`` 语句的后面各设置一个断点。输入两次 ``c`` 命令后停止在断点处，然后输入 ``x /1wx 0x3FF44004`` 来显示 ``GPIO_OUT_REG`` 寄存器的值::
 
@@ -648,7 +648,7 @@
 
 .. note::
 
-    ESP-IDF 在安装 Pyhton 包时会自动安装 freertos-gdb Python 模块，详情请参考 :ref:`get-started-set-up-tools`。
+    ESP-IDF 在安装 Python 包时会自动安装 freertos-gdb Python 模块，详情请参考 :ref:`get-started-set-up-tools`。
 
     如果使用 ``idf.py gdb`` 命令运行 GDB，FreeRTOS 扩展会自动加载。也可以使用 GDB 内部命令 ``python import freertos_gdb`` 使能该模块。
 

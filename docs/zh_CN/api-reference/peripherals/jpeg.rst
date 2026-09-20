@@ -10,7 +10,7 @@ JPEG 常用于数字图像，尤其是数码摄影图像的有损压缩。压缩
 
 {IDF_TARGET_NAME} 的 JPEG 编解码器是一种基于 JPEG 基线标准的图像编解码器，可以压缩和解压缩图像，从而降低传输图像所需的带宽或存储图像所需的空间，可以处理高分辨率的图像。但请注意，编解码器引擎不能同时作为编码器和解码器工作。
 
-关于更多 JPEG 编解码器的硬件特性，请参考 {IDF_TARGET_NAME} 技术参考手册中的 `JPEG 编解码器 <{IDF_TARGET_TRM_EN_URL}#jpegcodec>`__ 章节，了解更多详情。
+关于更多 JPEG 编解码器的硬件特性，请参考 {IDF_TARGET_NAME} 技术参考手册中的 `JPEG 编解码器 <{IDF_TARGET_TRM_CN_URL}#jpegcodec>`__ 章节，了解更多详情。
 
 功能概述
 --------
