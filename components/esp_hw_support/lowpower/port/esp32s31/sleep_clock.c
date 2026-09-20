@@ -54,10 +54,12 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         [2] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(2), HP_SYS_CLKRST_ROOT_CLK_CTRL0_REG,         0x0,                                           HP_SYS_CLKRST_REG_SOC_CLK_UPDATE_M,              1, 0), .owner = ENTRY(0) | ENTRY(1)},
         [3] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(3), HP_SYS_CLKRST_SDIO_HOST_FUNC_CTRL0_REG,   HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE, HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(1)},
         [4] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(4), HP_SYS_CLKRST_SDIO_HOST_FUNC_CTRL0_REG,   0x0,                                           HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(1)},
-        /* TOP PD wake: DS/ECDSA CLK_EN defaults to 1 and start mem clean; wait idle before restoring their clocks */
-        [5] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(5), DS_QUERY_BUSY_REG,                        0,                                             DS_QUERY_BUSY_M,                                 1, 0), .owner = ENTRY(0) | ENTRY(1)},
-        [6] = { .config = REGDMA_LINK_WAIT_INIT     (REGDMA_PCR_LINK(6), ECDSA_STATE_REG,                         0,                                             ECDSA_BUSY_M,                                    1, 0), .owner = ENTRY(0) | ENTRY(1)},
-        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(7), HP_SYS_CLKRST_CRYPTO_CTRL0_REG,          HP_SYS_CLKRST_CRYPTO_CTRL0_REG,                1,                                               0, 0), .owner = ENTRY(0) | ENTRY(1)},
+        /*  TOP PD wake: DS/ECDSA CLK_EN defaults to 1 and start mem clean; wait idle before restoring their clocks, need back to XTAL src and enable the module at first, since if the TOP domain is not powered-down during last sleep,
+            the clock src/gate might be in disable state, in that case we will never reach the IDLE state. (0x00415555: the reset value of HP_SYS_CLKRST_CRYPTO_CTRL0_REG, will restore it at REGDMA_PCR_LINK(8) node) */
+        [5]  = { .config = REGDMA_LINK_WRITE_INIT    (REGDMA_PCR_LINK(5), HP_SYS_CLKRST_CRYPTO_CTRL0_REG,           0x00415555,                                    0xFFFFFFFF,                                      1, 0), .owner = ENTRY(0) | ENTRY(1)},
+        [6] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(6), DS_QUERY_BUSY_REG,                        0,                                             DS_QUERY_BUSY_M,                                 1, 0), .owner = ENTRY(0) | ENTRY(1)},
+        [7] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(7), ECDSA_STATE_REG,                          0,                                             ECDSA_BUSY_M,                                    1, 0), .owner = ENTRY(0) | ENTRY(1)},
+        [8] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(8), HP_SYS_CLKRST_CRYPTO_CTRL0_REG,           HP_SYS_CLKRST_CRYPTO_CTRL0_REG,                1,                                               0, 0), .owner = ENTRY(0) | ENTRY(1)},
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
