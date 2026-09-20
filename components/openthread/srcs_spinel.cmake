@@ -19,6 +19,7 @@ set(spinel_srcs
     # ESP spinel sources
     src/spinel/esp_radio_spinel.cpp
     src/spinel/esp_radio_spinel_uart_interface.cpp
+    src/spinel/esp_radio_spinel_uart_transport.cpp
     # ESP port (minimal)
     src/port/esp_openthread_alarm.c
     src/port/esp_openthread_logging.c
