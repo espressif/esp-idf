@@ -258,6 +258,7 @@ typedef struct {
                                                             Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap.
                                                             Also, note that only allowed channels configured by wifi_country_t can be scanned. */
     bool coex_background_scan;                         /**< Enable it to scan return home channel under coexist */
+    uint8_t max_scan_ap_num;                           /**< Max AP records to keep during the scan, sorted by RSSI. 0 means no limit. */
 } wifi_scan_config_t;
 
 /**
