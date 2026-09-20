@@ -281,7 +281,7 @@ ESP-TLS 支持通过 PSA Crypto 不透明驱动接口在 ESP32 系列芯片上�
     ESP-TLS 的数字签名
     ----------------------------------
 
-    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 RSA 数字签名外设 (RSA_DS)，但只有当 ESP-TLS 以 MbedTLS（默认协议栈）为底层 SSL/TLS 协议栈时，才支持使用 TLS 的 RSA 数字签名。有关 RSA_DS 的详细信息，请参阅 :doc:`RSA 数字签名外设 (RSA_DS) </api-reference/peripherals/ds>`。有关 RSA 数字签名的技术细节（例如私钥参数计算），请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **RSA 数字签名外设 (RSA_DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]。在使用 RSA 数字签名前，应预先配置 RSA 数字签名外设，请参阅 :ref:`configure-the-ds-peripheral`。
+    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 RSA 数字签名外设 (RSA_DS)，但只有当 ESP-TLS 以 MbedTLS（默认协议栈）为底层 SSL/TLS 协议栈时，才支持使用 TLS 的 RSA 数字签名。有关 RSA_DS 的详细信息，请参阅 :doc:`RSA 数字签名外设 (RSA_DS) </api-reference/peripherals/ds>`。有关 RSA 数字签名的技术细节（例如私钥参数计算），请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **RSA 数字签名外设 (RSA_DS)** [`PDF <{IDF_TARGET_TRM_CN_URL}#digsig>`__]。在使用 RSA 数字签名前，应预先配置 RSA 数字签名外设，请参阅 :ref:`configure-the-ds-peripheral`。
 
     RSA 数字签名外设必须用所需的加密私钥参数初始化，相应参数在配置 RSA 数字签名外设时获取。具备所需的数字签名上下文，即数字签名参数时，ESP-TLS 会在内部初始化 RSA 数字签名外设。要将数字签名上下文传递给 ESP-TLS 上下文，请参阅以下代码段。注意，在删除 TLS 连接之前，不应释放传递给 ESP-TLS 上下文的数字签名上下文。
 

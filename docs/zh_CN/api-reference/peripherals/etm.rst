@@ -171,4 +171,4 @@ API 参考
 .. include-build-file:: inc/esp_systick_etm.inc
 
 .. [1]
-   不同 ESP 芯片系列的 ETM 通道数量可能不同。要了解更多详情，请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **事件任务矩阵 (ETM)** [`PDF <{IDF_TARGET_TRM_EN_URL}#evntaskmatrix>`__]。驱动程序对通道申请数量不做限制，但当硬件资源用尽时，驱动程序将返回错误。因此，每次进行通道分配（即调用 :cpp:func:`esp_etm_new_channel`）时，请注意检查返回值。
+   不同 ESP 芯片系列的 ETM 通道数量可能不同。要了解更多详情，请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **事件任务矩阵 (ETM)** [`PDF <{IDF_TARGET_TRM_CN_URL}#evntaskmatrix>`__]。驱动程序对通道申请数量不做限制，但当硬件资源用尽时，驱动程序将返回错误。因此，每次进行通道分配（即调用 :cpp:func:`esp_etm_new_channel`）时，请注意检查返回值。

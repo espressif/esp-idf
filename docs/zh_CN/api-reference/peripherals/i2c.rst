@@ -20,7 +20,7 @@ I2C 是一种串行同步半双工通信协议，总线上可以同时挂载多�
 
 .. only:: SOC_LP_I2C_SUPPORTED
 
-    此外，{IDF_TARGET_NAME} 芯片还有 1 个低功耗 (LP) I2C 控制器，是常规 I2C 的简化版本。通常，LP I2C 控制器的 RAM 较小，仅支持基本的 I2C 功能，不支持从机模式。有关 HP I2C 和 LP I2C 的所有差异，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *I2C 控制器 (I2C)* > *特性* [`PDF <{IDF_TARGET_TRM_EN_URL}#i2c>`__]。
+    此外，{IDF_TARGET_NAME} 芯片还有 1 个低功耗 (LP) I2C 控制器，是常规 I2C 的简化版本。通常，LP I2C 控制器的 RAM 较小，仅支持基本的 I2C 功能，不支持从机模式。有关 HP I2C 和 LP I2C 的所有差异，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *I2C 控制器 (I2C)* > *特性* [`PDF <{IDF_TARGET_TRM_CN_URL}#i2c>`__]。
 
     当 HP I2C 不足以满足需求时，可以使用 LP I2C 外设。但请注意，LP I2C 不支持某些 HP I2C 功能，在使用 LP I2C 前，请阅读相关文档。
 
