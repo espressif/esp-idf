@@ -125,7 +125,7 @@ esp_err_t sleep_pau_retention_init(void)
 }
 #endif
 
-#if CONFIG_ESP_ENABLE_PVT
+#if CONFIG_ESP_ENABLE_PVT && SOC_PVT_RETENTION_BY_REGDMA
 esp_err_t sleep_pvt_retention_init(void)
 {
     esp_err_t err = sleep_retention_entries_create(pvt_regs_retention, ARRAY_SIZE(pvt_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
