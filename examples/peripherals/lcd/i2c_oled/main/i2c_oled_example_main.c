@@ -76,7 +76,7 @@ static void example_lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uin
     esp_lcd_panel_handle_t panel_handle = lv_display_get_user_data(disp);
 
     // This is necessary because LVGL reserves 2 x 4 bytes in the buffer, as these are assumed to be used as a palette. Skip the palette here
-    // More information about the monochrome, please refer to https://docs.lvgl.io/9.2/porting/display.html#monochrome-displays
+    // More information about the monochrome, please refer to https://docs.lvgl.io/master/main-modules/display/color_format.html#monochrome-displays
     px_map += EXAMPLE_LVGL_PALETTE_SIZE;
 
     uint16_t hor_res = lv_display_get_physical_horizontal_resolution(disp);
