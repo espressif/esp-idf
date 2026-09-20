@@ -96,6 +96,9 @@ void pmksa_cache_free_entry(struct rsn_pmksa_cache *pmksa,
  */
 void pmksa_cache_auth_flush(struct rsn_pmksa_cache *pmksa)
 {
+	if (pmksa == NULL)
+		return;
+
 	while (pmksa->pmksa) {
 		wpa_printf(MSG_DEBUG, "RSN: Flush PMKSA cache entry for "
 			   MACSTR, MAC2STR(pmksa->pmksa->spa));

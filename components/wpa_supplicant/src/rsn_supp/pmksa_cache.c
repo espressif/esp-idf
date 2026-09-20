@@ -281,6 +281,9 @@ void pmksa_cache_flush(struct rsn_pmksa_cache *pmksa, void *network_ctx,
 {
     struct rsn_pmksa_cache_entry *entry, *prev = NULL, *tmp;
 
+    if (pmksa == NULL)
+        return;
+
     entry = pmksa->pmksa;
     while (entry) {
         if ((entry->network_ctx == network_ctx ||
