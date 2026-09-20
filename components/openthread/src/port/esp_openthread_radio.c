@@ -403,11 +403,15 @@ bool otPlatRadioGetPromiscuous(otInstance *aInstance)
 
 void otPlatRadioEnableSrcMatch(otInstance *aInstance, bool aEnable)
 {
+    if (aEnable) {
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
-    esp_ieee802154_set_pending_mode(ESP_IEEE802154_AUTO_PENDING_ENHANCED);
+        esp_ieee802154_set_pending_mode(ESP_IEEE802154_AUTO_PENDING_ENHANCED);
 #else
-    esp_ieee802154_set_pending_mode(ESP_IEEE802154_AUTO_PENDING_ENABLE);
+        esp_ieee802154_set_pending_mode(ESP_IEEE802154_AUTO_PENDING_ENABLE);
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
+    } else {
+        esp_ieee802154_set_pending_mode(ESP_IEEE802154_AUTO_PENDING_DISABLE);
+    }
 }
 
 otError otPlatRadioAddSrcMatchShortEntry(otInstance *aInstance, uint16_t aShortAddress)
