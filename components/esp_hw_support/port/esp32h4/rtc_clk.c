@@ -437,13 +437,8 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 }
 #endif
 
-void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
+void rtc_clk_modem_pll_lock_release(void)
 {
-    if (cpu_freq_mhz == 96 || cpu_freq_mhz == 48) {
-        rtc_clk_cpu_freq_to_pll_mhz(cpu_freq_mhz);
-    } else { // cpu_freq_mhz == 64
-        rtc_clk_cpu_freq_to_xtal_x2(cpu_freq_mhz, 1);
-    }
     clk_ll_cpu_clk_src_lock_release();
 }
 

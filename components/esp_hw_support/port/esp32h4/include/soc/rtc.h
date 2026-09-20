@@ -285,17 +285,14 @@ void rtc_clk_cpu_freq_set_xtal(void);
 #endif
 
 /**
- * @brief Switch root clock source to PLL (only used by sleep) release root clock source locked by PMU
+ * @brief Release root clock source locked by PMU
  *
  * wifi receiving beacon frame in PMU modem state strongly depends on the BBPLL
  * clock, PMU will forcibly lock the root clock source as PLL, when the root
  * clock source of the software system is selected as PLL, we need to release
- * the root clock source locking and switch the root clock source to PLL in the
- * sleep process (a critical section).
- *
- * @param[in] Maximum CPU frequency, in MHz
+ * the root clock source locking in the sleep process (a critical section).
  */
-void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz);
+void rtc_clk_modem_pll_lock_release(void);
 
 /**
  * @brief Get the current APB frequency.
