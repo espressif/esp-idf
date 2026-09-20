@@ -45,8 +45,8 @@ typedef union {
 
     struct write_arg {
         uint16_t handle;
-        BD_ADDR dst;
-        BD_ADDR src;
+        esp_pan_mac_addr_t dst;
+        esp_pan_mac_addr_t src;
         uint16_t protocol;
         uint16_t len;
         uint8_t *data;
@@ -56,15 +56,15 @@ typedef union {
     struct set_pfilter_arg {
         uint16_t handle;
         uint16_t num_filters;
-        uint16_t *start_array;
-        uint16_t *end_array;
+        const uint16_t *start_array;
+        const uint16_t *end_array;
     } set_pfilter;
 
     struct set_mfilter_arg {
         uint16_t handle;
         uint16_t num_filters;
-        esp_bd_addr_t *start_array;
-        esp_bd_addr_t *end_array;
+        const esp_pan_mac_addr_t *start_array;
+        const esp_pan_mac_addr_t *end_array;
     } set_mfilter;
 } btc_pan_args_t;
 
