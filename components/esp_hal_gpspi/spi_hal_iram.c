@@ -179,8 +179,11 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
     }
     spi_ll_set_miso_delay(hw, miso_delay_mode, miso_delay_num);
 
+#if SPI_LL_SUPPORT_FD_TX_WAIT_DMA
+    // enable tx data wait only when tx is used, otherwise rx only trans will hang on start
+    spi_ll_master_enable_fd_wait_dma_tx_data(hw, trans->send_buffer && trans->tx_bitlen);
+#endif
     spi_ll_set_mosi_bitlen(hw, trans->tx_bitlen);
-
     if (dev->half_duplex) {
         spi_ll_set_miso_bitlen(hw, trans->rx_bitlen);
     } else {

@@ -50,6 +50,7 @@ extern "C" {
 #define SPI_LL_SCT_CONF_BUF_NUM         (1 + 14)     //1-word-bitmap + 14-word-regs according to TRM
 #define SPI_LL_SCT_MAGIC_NUMBER         (0x2)
 #define SPI_LL_MOSI_FREE_LEVEL          1            //Default level after bus initialized
+#define SPI_LL_SUPPORT_FD_TX_WAIT_DMA   1            //support tx wait data on fd mode
 /**
  * The data structure holding calculated clock configuration. Since the
  * calculation needs long time, it should be calculated during initialization and
@@ -274,6 +275,17 @@ static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
 static inline void spi_ll_user_start(spi_dev_t *hw)
 {
     hw->cmd.usr = 1;
+}
+
+/**
+ * Configure whether a master full-duplex transfer waits for DMA TX data before it starts
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable True to start only once the TX AFIFO holds DMA data, false to start immediately
+ */
+static inline void spi_ll_master_enable_fd_wait_dma_tx_data(spi_dev_t *hw, bool enable)
+{
+    hw->slave.mst_fd_wait_dma_tx_data = enable;
 }
 
 /**
