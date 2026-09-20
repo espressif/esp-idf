@@ -37,6 +37,7 @@
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/freertos_idf_additions_priv.h"
+#include "esp_private/esp_int_wdt.h"
 #include "esp_log.h"
 
 ESP_LOG_ATTR_TAG(TAG, "cache");
@@ -178,6 +179,11 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
         }
     }
 
+    // Pause the interrupt watchdog: flash erase/write can hold non-IRAM
+    // interrupts (and, for the duration of the ROM erase call, all
+    // interrupts) off this core for long enough to trip it. Balanced by
+    // esp_int_wdt_resume() in spi_flash_enable_interrupts_caches_and_other_cpu().
+    esp_int_wdt_pause();
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
@@ -224,6 +230,9 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
 #endif
     // Re-enable non-iram interrupts
     esp_intr_noniram_enable();
+    // Resume and feed the interrupt watchdog paused in
+    // spi_flash_disable_interrupts_caches_and_other_cpu().
+    esp_int_wdt_resume();
 
     // Resume tasks on the current CPU, if the scheduler has started.
     // NOTE: enabling non-IRAM interrupts has to happen before this,

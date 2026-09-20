@@ -8,6 +8,7 @@
 
 #include "esp_attr.h"
 #include "esp_private/cache_utils.h"
+#include "esp_private/esp_int_wdt.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -67,11 +68,17 @@ uint32_t IRAM_ATTR esp_tee_service_call_with_noniram_intr_disabled(int argc, ...
 
     /* NOTE: Disabling the scheduler and non-IRAM residing interrupts */
     spi_flash_op_lock();
+    // Secure services reachable through this path include TEE OTA
+    // begin/write/end, which erase/write flash from the secure world and
+    // can hold non-IRAM interrupts off this core long enough to trip the
+    // interrupt watchdog. Balanced below.
+    esp_int_wdt_pause();
     esp_intr_noniram_disable();
 
     val = _u2m_switch(argc, ap);
 
     esp_intr_noniram_enable();
+    esp_int_wdt_resume();
     spi_flash_op_unlock();
 
     va_end(ap);
