@@ -48,8 +48,10 @@ int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
 #if SOC_AES_SUPPORTED
 void esp_crypto_aes_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     AES_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         aes_ll_enable_bus_clock(enable);
         if (enable) {
             aes_ll_reset_register();
@@ -61,14 +63,19 @@ void esp_crypto_aes_enable_periph_clk(bool enable)
         }
 #endif
     }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
+    }
 }
 #endif
 
 #if SOC_SHA_SUPPORTED
 void esp_crypto_sha_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     SHA_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         sha_ll_enable_bus_clock(enable);
         if (enable) {
             sha_ll_reset_register();
@@ -80,14 +87,19 @@ void esp_crypto_sha_enable_periph_clk(bool enable)
         }
 #endif
     }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
+    }
 }
 #endif
 
 #if SOC_MPI_SUPPORTED
 void esp_crypto_mpi_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     MPI_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         mpi_ll_enable_bus_clock(enable);
         if (enable) {
             mpi_ll_power_up();
@@ -96,14 +108,19 @@ void esp_crypto_mpi_enable_periph_clk(bool enable)
             mpi_ll_power_down();
         }
     }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
+    }
 }
 #endif
 
 #if SOC_ECC_SUPPORTED
 void esp_crypto_ecc_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     ECC_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         ecc_ll_enable_bus_clock(enable);
         if (enable) {
             ecc_ll_power_up();
@@ -112,18 +129,26 @@ void esp_crypto_ecc_enable_periph_clk(bool enable)
             ecc_ll_power_down();
         }
     }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
+    }
 }
 #endif
 
 #if SOC_HMAC_SUPPORTED && !CONFIG_IDF_TARGET_ESP32S2
 void esp_crypto_hmac_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     HMAC_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         hmac_ll_enable_bus_clock(enable);
         if (enable) {
             hmac_ll_reset_register();
         }
+    }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
     }
 }
 #endif
@@ -131,12 +156,17 @@ void esp_crypto_hmac_enable_periph_clk(bool enable)
 #if SOC_DIG_SIGN_SUPPORTED && !CONFIG_IDF_TARGET_ESP32S2
 void esp_crypto_ds_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     DS_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         ds_ll_enable_bus_clock(enable);
         if (enable) {
             ds_ll_reset_register();
         }
+    }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
     }
 }
 #endif
@@ -144,12 +174,17 @@ void esp_crypto_ds_enable_periph_clk(bool enable)
 #if SOC_ECDSA_SUPPORTED
 void esp_crypto_ecdsa_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     ECDSA_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         ecdsa_ll_enable_bus_clock(enable);
         if (enable) {
             ecdsa_ll_reset_register();
         }
+    }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
     }
 }
 #endif
@@ -157,14 +192,19 @@ void esp_crypto_ecdsa_enable_periph_clk(bool enable)
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 void esp_crypto_key_mgr_enable_periph_clk(bool enable)
 {
+    if (enable) {
+        esp_crypto_common_clk_enable(true);
+    }
     KEY_MANAGER_RCC_ATOMIC() {
-        esp_crypto_common_clk_enable(enable);
         key_mgr_ll_power_up();
         key_mgr_ll_enable_bus_clock(enable);
         key_mgr_ll_enable_peripheral_clock(enable);
         if (enable) {
             key_mgr_ll_reset_register();
         }
+    }
+    if (!enable) {
+        esp_crypto_common_clk_enable(false);
     }
 }
 #endif
