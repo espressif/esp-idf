@@ -24,6 +24,8 @@
 
 /* INTERFACE */
 bool ble_log_rt_init(void);
+/* Identity is ready when init succeeds and cleared by deinit. Task context only. */
+bool ble_log_rt_is_timer_task(void);
 /* Starts the always-on periodic path after the epoch INIT frame is queued. */
 bool ble_log_rt_start_periodic(void);
 void ble_log_rt_deinit(void);

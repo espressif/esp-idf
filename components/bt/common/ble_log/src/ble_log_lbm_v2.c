@@ -26,9 +26,6 @@
 #endif // CONFIG_BT_DUAL_MODE_ARCH
 #endif /* CONFIG_BLE_LOG_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
 
-/* hint: private API; keep this declaration in sync with esp_timer_impl.h. */
-extern TaskHandle_t esp_timer_impl_get_timer_task_handle(void);
-
 /* MACRO */
 #define BLE_LOG_POOL_MASK(count)                   (0xFFFFFFFFu >> (32 - (count)))
 #define BLE_LOG_POOL_ALL_MASK                      BLE_LOG_POOL_MASK(BLE_LOG_POOL_TRANS_CNT)
@@ -516,7 +513,7 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
         /* The shared ESP Timer task cannot wait for its own dispatcher.
          * Check its identity only on the yieldable, would-wait path. */
         if (trans || !wait || !BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled) ||
-                xTaskGetCurrentTaskHandle() == esp_timer_impl_get_timer_task_handle()) {
+                ble_log_rt_is_timer_task()) {
             return trans;
         }
 
