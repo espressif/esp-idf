@@ -23,7 +23,6 @@
 
 #define PAN_TAG                 "PAN_PANU_DEMO"
 #define EXAMPLE_DEVICE_NAME     "ESP_PAN_PANU"
-#define ETH_ADDR_LEN            6
 
 static const char remote_device_name[] = CONFIG_EXAMPLE_PEER_DEVICE_NAME;
 
@@ -31,7 +30,7 @@ static esp_bd_addr_t peer_bd_addr = {0};
 static uint8_t peer_bdname_len = 0;
 static char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1] = {0};
 
-static uint8_t s_local_mac[ETH_ADDR_LEN] = {0};
+static esp_pan_mac_addr_t s_local_mac = {0};
 static bool s_peer_found = false;
 
 static const esp_bt_inq_mode_t inq_mode = ESP_BT_INQ_MODE_GENERAL_INQUIRY;
@@ -47,12 +46,6 @@ static char *bda2str(uint8_t *bda, char *str, size_t size)
     sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
             bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
     return str;
-}
-
-static void bdaddr_to_eth_mac(const uint8_t *bda, uint8_t *mac)
-{
-    memcpy(mac, bda, ETH_ADDR_LEN);
-    mac[0] = (mac[0] | 0x02) & 0xFE;
 }
 
 static bool get_name_from_eir(uint8_t *eir, char *bdname, uint8_t *bdname_len)
@@ -312,7 +305,8 @@ void app_main(void)
     esp_bt_pin_code_t pin_code;
     esp_bt_gap_set_pin(pin_type, 0, pin_code);
 
-    bdaddr_to_eth_mac(esp_bt_dev_get_address(), s_local_mac);
+    /* BNEP uses the local BD_ADDR as the Ethernet MAC. */
+    memcpy(s_local_mac, esp_bt_dev_get_address(), ESP_PAN_MAC_ADDR_LEN);
     ESP_ERROR_CHECK(pan_netif_init(s_local_mac));
 
     esp_pan_cfg_t pan_cfg = ESP_PAN_DEFAULT_CONFIG();
