@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/lock.h>
 #include <sys/param.h>
 
@@ -194,7 +195,7 @@ esp_err_t sleep_modem_wifi_modem_state_init(void)
     ESP_LOGD(TAG, "Modem link i2c master configuration: (%d,%d,%d), (%d,%d,%d)", cmd.config[0].host_id, cmd.config[0].start,
             cmd.config[0].end, cmd.config[1].host_id, cmd.config[1].start, cmd.config[1].end);
 
-    static regdma_link_config_t wifi_modem_config[] = {
+    static const regdma_link_config_t wifi_modem_config_template[] = {
         [0] = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(0), MODEM_FE_DATA_BASE, MODEM_FE_DATA_BASE, 41, 0, 0),
         [1] = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(1), MODEM_FE_CTRL_BASE, MODEM_FE_CTRL_BASE, 87, 0, 0),
 
@@ -246,12 +247,18 @@ esp_err_t sleep_modem_wifi_modem_state_init(void)
         [37] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x23), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0),
         [38] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x24), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1)
     };
+    regdma_link_config_t *wifi_modem_config = malloc(sizeof(wifi_modem_config_template));
+    if (wifi_modem_config == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(wifi_modem_config, wifi_modem_config_template, sizeof(wifi_modem_config_template));
+
     wifi_modem_config[7].write_wait.value  = I2C_BURST_VAL(cmd.config[1].host_id, cmd.config[1].start, cmd.config[1].end);
     wifi_modem_config[22].write_wait.value = I2C_BURST_VAL(cmd.config[0].host_id, cmd.config[0].start, cmd.config[0].end);
 
     void *link = NULL;
     if (s_sleep_modem.wifi.phy_link == NULL) {
-        for (int i = ARRAY_SIZE(wifi_modem_config) - 1; (err == ESP_OK) && (i >= 0); i--) {
+        for (int i = ARRAY_SIZE(wifi_modem_config_template) - 1; (err == ESP_OK) && (i >= 0); i--) {
             void *next = regdma_link_init_safe(&wifi_modem_config[i], false, 0, link);
             if (next) {
                 link = next;
@@ -281,6 +288,7 @@ esp_err_t sleep_modem_wifi_modem_state_init(void)
             }
         }
     }
+    free(wifi_modem_config);
     return err;
 }
 

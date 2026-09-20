@@ -12,6 +12,7 @@
 #include "soc/soc.h"
 #include "soc/lp_aon_struct.h"
 #include "hal/misc.h"
+#include "esp_attr.h"
 #include "esp32h2/rom/rtc.h"
 
 
@@ -75,7 +76,7 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
  *         Set the flag to inform
  * @param true: deepsleep      false: lightsleep
  */
-static inline  void lp_aon_ll_inform_wakeup_type(bool dslp)
+FORCE_INLINE_ATTR void lp_aon_ll_inform_wakeup_type(bool dslp)
 {
     if (dslp) {
         REG_SET_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
