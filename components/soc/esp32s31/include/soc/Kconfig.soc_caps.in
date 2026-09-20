@@ -1783,6 +1783,10 @@ config SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
     bool
     default y
 
+config SOC_BT_H2C_ENC_KEY_CTRL_ENH_VSC_SUPPORTED
+    bool
+    default y
+
 config SOC_I2S_HW_VERSION_2
     bool
     default y

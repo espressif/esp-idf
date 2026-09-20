@@ -1028,12 +1028,10 @@ void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
 void bta_dm_set_min_enc_key_size (tBTA_DM_MSG *p_data)
 {
     BTM_SetMinEncKeySize(p_data->set_min_enc_key_size.key_size, p_data->set_min_enc_key_size.set_min_enc_key_size_cb);
 }
-#endif
 
 #endif
 /*******************************************************************************
