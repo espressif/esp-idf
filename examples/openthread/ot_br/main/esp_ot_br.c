@@ -134,4 +134,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_coex_wifi_i154_enable());
 #endif
 #endif
+#if CONFIG_OPENTHREAD_NETWORK_AUTO_START
+    ot_network_auto_start();
+#endif
 }
