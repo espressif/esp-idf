@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -181,25 +181,25 @@ static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel)
      * If enabled(default), ADC RTC controller sampling will cause the DAC channel output voltage.
      */
     if (hal->unit == ADC_UNIT_1) {
-        dac_ll_rtc_sync_by_adc(false);
+        dac_ll_sync_by_adc(false);
     }
 
 #if SOC_IS(ESP32)
     if (hal->unit == ADC_UNIT_2) {
         if (channel == ADC_CHANNEL_8) {
-            dac_ll_power_down(DAC_CHAN_0);  // the same as DAC channel 0
+            dac_ll_pad_power_down(DAC_CHAN_0);  // the same as DAC channel 0
         }
         if (channel == ADC_CHANNEL_9) {
-            dac_ll_power_down(DAC_CHAN_1);
+            dac_ll_pad_power_down(DAC_CHAN_1);
         }
     }
 #elif SOC_IS(ESP32S2)
     if (hal->unit == ADC_UNIT_2) {
         if (channel == ADC_CHANNEL_6) {
-            dac_ll_power_down(DAC_CHAN_0);  // the same as DAC channel 0
+            dac_ll_pad_power_down(DAC_CHAN_0);  // the same as DAC channel 0
         }
         if (channel == ADC_CHANNEL_7) {
-            dac_ll_power_down(DAC_CHAN_1);
+            dac_ll_pad_power_down(DAC_CHAN_1);
         }
     }
 #else

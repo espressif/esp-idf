@@ -15,15 +15,6 @@ extern "C" {
 
 #if SOC_DAC_SUPPORTED
 
-/**
- * ESP32:
- * - DAC channel 0: GPIO25
- * - DAC channel 1: GPIO26
- * ESP32S2:
- * - DAC channel 0: GPIO17
- * - DAC channel 1: GPIO18
- */
-
 typedef enum {
     DAC_CHAN_0 = 0,
     DAC_CHAN_1 = 1,

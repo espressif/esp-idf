@@ -16,6 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
 #include "hal/adc_ll.h"
+#include "hal/dac_ll.h"
 #include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "hal/clk_tree_ll.h"
@@ -148,6 +149,7 @@ esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq
 
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "enable DAC digital clock source failed");
     s_ddp->clk_src = clk_src;
+    dac_ll_dma_clk_inv(true);
     ESP_GOTO_ON_ERROR(s_dac_priv_dma_set_clock(clk_src, freq_hz), err, TAG, "Failed to set clock of DMA peripheral");
 
     i2s_ll_enable_builtin_adc_dac(s_ddp->periph_dev, true);
@@ -188,6 +190,7 @@ esp_err_t dac_priv_dma_deinit(void)
     }
 
     if (s_ddp->clk_src) {
+        dac_ll_dma_clk_inv(false);
         ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)s_ddp->clk_src, false), TAG, "disable DAC digital clock source failed");
         s_ddp->clk_src = 0;
     }

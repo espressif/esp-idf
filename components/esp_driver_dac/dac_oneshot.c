@@ -29,14 +29,14 @@ esp_err_t dac_oneshot_new_channel(const dac_oneshot_config_t *oneshot_cfg, dac_o
     handle->cfg = *oneshot_cfg;
 
     /* Register and enable the dac channel */
-    ESP_GOTO_ON_ERROR(dac_priv_register_channel(oneshot_cfg->chan_id), err2, TAG, "register dac channel %d failed", oneshot_cfg->chan_id);
-    ESP_GOTO_ON_ERROR(dac_priv_enable_channel(oneshot_cfg->chan_id), err1, TAG, "enable dac channel %d failed", oneshot_cfg->chan_id);
+    ESP_GOTO_ON_ERROR(dac_priv_channel_register(oneshot_cfg->chan_id), err2, TAG, "register dac channel %d failed", oneshot_cfg->chan_id);
+    ESP_GOTO_ON_ERROR(dac_priv_channel_enable(oneshot_cfg->chan_id, DAC_DATA_SOURCE_DIRECT), err1, TAG, "enable dac channel %d failed", oneshot_cfg->chan_id);
 
     *ret_handle = handle;
     return ret;
 
 err1:
-    dac_priv_deregister_channel(oneshot_cfg->chan_id);
+    dac_priv_channel_deregister(oneshot_cfg->chan_id);
 err2:
     free(handle);
     return ret;
@@ -47,8 +47,8 @@ esp_err_t dac_oneshot_del_channel(dac_oneshot_handle_t handle)
     DAC_NULL_POINTER_CHECK(handle);
 
     /* Disable and deregister the channel */
-    ESP_RETURN_ON_ERROR(dac_priv_disable_channel(handle->cfg.chan_id), TAG, "disable dac channel %d failed", handle->cfg.chan_id);
-    ESP_RETURN_ON_ERROR(dac_priv_deregister_channel(handle->cfg.chan_id), TAG, "deregister dac channel %d failed", handle->cfg.chan_id);
+    ESP_RETURN_ON_ERROR(dac_priv_channel_disable(handle->cfg.chan_id), TAG, "disable dac channel %d failed", handle->cfg.chan_id);
+    ESP_RETURN_ON_ERROR(dac_priv_channel_deregister(handle->cfg.chan_id), TAG, "deregister dac channel %d failed", handle->cfg.chan_id);
 
     /* Free resources */
     free(handle);
@@ -64,7 +64,7 @@ esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint8_t digi_v
 
     /* Set the voltage by the digital value */
     DAC_ENTER_CRITICAL_SAFE();
-    dac_ll_update_output_value(handle->cfg.chan_id, digi_value);
+    dac_ll_pad_set_output_code(handle->cfg.chan_id, digi_value);
     DAC_EXIT_CRITICAL_SAFE();
 
     return ESP_OK;

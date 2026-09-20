@@ -219,7 +219,7 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     /* Register the channels */
     dac_channel_mask_t registered_chan_mask = 0;
     DAC_CHANNEL_MASK_FOREACH(chan, cont_cfg->chan_mask) {
-        ESP_GOTO_ON_ERROR(dac_priv_register_channel(chan), err_dereg, TAG, "register dac channel %"PRIu32" failed", chan);
+        ESP_GOTO_ON_ERROR(dac_priv_channel_register(chan), err_dereg, TAG, "register dac channel %"PRIu32" failed", chan);
         registered_chan_mask |= BIT(chan);
     }
 
@@ -258,11 +258,6 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     ESP_GOTO_ON_ERROR(dac_priv_dma_init(handle->cfg.clk_src, handle->cfg.freq_hz, handle->cfg.chan_mode == DAC_CHANNEL_MODE_ALTER, &cbs, handle),
                       err_desc, TAG, "Failed to initialize DAC DMA peripheral");
 
-    /* Connect DAC module to the DMA peripheral */
-    DAC_ENTER_CRITICAL();
-    dac_ll_digi_enable_dma(true);
-    DAC_EXIT_CRITICAL();
-
     /* FSM: WAIT -> REGISTERED */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_REGISTERED);
 
@@ -287,7 +282,7 @@ err_free:
 err_dereg:
     /* Deregister registered channels */
     DAC_CHANNEL_MASK_FOREACH(chan, registered_chan_mask) {
-        dac_priv_deregister_channel(chan);
+        dac_priv_channel_deregister(chan);
     }
     /* FSM: WAIT -> IDLE */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_IDLE);
@@ -307,11 +302,6 @@ esp_err_t dac_continuous_del_channels(dac_continuous_handle_t handle)
 
     /* Deinitialize DMA peripheral */
     ESP_RETURN_ON_ERROR(dac_priv_dma_deinit(), TAG, "Failed to deinitialize DAC DMA peripheral");
-
-    /* Disconnect DAC module from the DMA peripheral */
-    DAC_ENTER_CRITICAL();
-    dac_ll_digi_enable_dma(false);
-    DAC_EXIT_CRITICAL();
 
     /* Free allocated resources */
     s_dac_free_dma_desc(handle);
@@ -334,7 +324,7 @@ esp_err_t dac_continuous_del_channels(dac_continuous_handle_t handle)
 
     /* Deregister the channels */
     DAC_CHANNEL_MASK_FOREACH(chan, handle->cfg.chan_mask) {
-        dac_priv_deregister_channel(chan);
+        dac_priv_channel_deregister(chan);
     }
 
     free(handle);
@@ -386,13 +376,9 @@ esp_err_t dac_continuous_enable(dac_continuous_handle_t handle)
 #endif
 
     DAC_CHANNEL_MASK_FOREACH(chan, handle->cfg.chan_mask) {
-        dac_priv_enable_channel(chan);
+        dac_priv_channel_enable(chan, DAC_DATA_SOURCE_DMA);
     }
     dac_priv_dma_enable();
-
-    DAC_ENTER_CRITICAL();
-    dac_ll_digi_enable_dma(true);
-    DAC_EXIT_CRITICAL();
 
     /* FSM: WAIT -> ENABLED */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_ENABLED);
@@ -421,12 +407,8 @@ esp_err_t dac_continuous_disable(dac_continuous_handle_t handle)
 
     dac_priv_dma_disable();
 
-    DAC_ENTER_CRITICAL();
-    dac_ll_digi_enable_dma(false);
-    DAC_EXIT_CRITICAL();
-
     DAC_CHANNEL_MASK_FOREACH(chan, handle->cfg.chan_mask) {
-        dac_priv_disable_channel(chan);
+        dac_priv_channel_disable(chan);
     }
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_release(handle->pm_lock);
