@@ -1577,6 +1577,71 @@ TEST_CASE("BLE Log task writers wait for a shared transport", "[ble_log][lbm]")
 
 typedef struct {
     SemaphoreHandle_t done;
+    bool initialize;
+    bool initialized;
+    bool is_timer_task;
+} timer_identity_ctx_t;
+
+static void timer_identity_cb(void *arg)
+{
+    timer_identity_ctx_t *ctx = arg;
+    if (ctx->initialize) {
+        ctx->initialized = ble_log_init();
+    }
+    ctx->is_timer_task = ble_log_rt_is_timer_task();
+    xSemaphoreGive(ctx->done);
+}
+
+TEST_CASE("BLE Log timer identity survives failed init and reinit",
+          "[ble_log][runtime]")
+{
+    ble_log_deinit();
+    timer_identity_ctx_t ctx = {
+        .done = xSemaphoreCreateBinary(),
+        .initialize = true,
+    };
+    TEST_ASSERT_NOT_NULL(ctx.done);
+    esp_timer_handle_t timer;
+    const esp_timer_create_args_t args = {
+        .callback = timer_identity_cb,
+        .arg = &ctx,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "ble_log_identity_test",
+    };
+    TEST_ESP_OK(esp_timer_create(&args, &timer));
+
+    /* The timer task cannot execute the init probe while it waits for it.
+     * Init must time out, cancel the probe and leave no stale callback arg. */
+    TEST_ESP_OK(esp_timer_start_once(timer, 1));
+    bool completed = xSemaphoreTake(ctx.done, pdMS_TO_TICKS(3000)) == pdTRUE;
+    TEST_ESP_OK(esp_timer_stop_blocking(timer, portMAX_DELAY));
+    TEST_ASSERT_TRUE(completed);
+    TEST_ASSERT_FALSE(ctx.initialized);
+    TEST_ASSERT_FALSE(ctx.is_timer_task);
+
+    ctx.initialize = false;
+    for (int attempt = 0; attempt < 2; attempt++) {
+        TEST_ASSERT_TRUE(ble_log_init());
+        TEST_ASSERT_FALSE(ble_log_rt_is_timer_task());
+        TEST_ESP_OK(esp_timer_start_once(timer, 1));
+        completed = xSemaphoreTake(ctx.done, pdMS_TO_TICKS(1000)) == pdTRUE;
+        TEST_ESP_OK(esp_timer_stop_blocking(timer, portMAX_DELAY));
+        TEST_ASSERT_TRUE(completed);
+        TEST_ASSERT_TRUE(ctx.is_timer_task);
+        ble_log_deinit();
+        TEST_ESP_OK(esp_timer_start_once(timer, 1));
+        completed = xSemaphoreTake(ctx.done, pdMS_TO_TICKS(1000)) == pdTRUE;
+        TEST_ESP_OK(esp_timer_stop_blocking(timer, portMAX_DELAY));
+        TEST_ASSERT_TRUE(completed);
+        TEST_ASSERT_FALSE(ctx.is_timer_task);
+    }
+    TEST_ESP_OK(esp_timer_delete(timer));
+    vSemaphoreDelete(ctx.done);
+    TEST_ASSERT_TRUE(ble_log_init());
+}
+
+typedef struct {
+    SemaphoreHandle_t done;
     bool write_result;
 } stale_writer_ctx_t;
 
