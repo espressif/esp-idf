@@ -389,7 +389,7 @@ static esp_err_t _node_delete(twai_node_handle_t node)
     twai_hal_deinit(twai_ctx->hal);
     _twai_rcc_clock_ctrl(twai_ctx->ctrlr_id, false);
     // curr_clk_src must not NULL as we already set to Default in twai_new_node_onchip
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(twai_ctx->curr_clk_src, false), TAG, "disable clock source failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_release_src(twai_ctx->curr_clk_src), TAG, "disable clock source failed");
     _node_destroy(twai_ctx);
     return ESP_OK;
 }
@@ -779,7 +779,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 #endif //CONFIG_PM_ENABLE
 
     // Set clock source, enable bus clock and reset controller
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(node->curr_clk_src, true), err, TAG, "enable clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(node->curr_clk_src), err, TAG, "enable clock source failed");
     ESP_LOGD(TAG, "set clock source to %d, freq: %ld Hz", node->curr_clk_src, node->src_freq_hz);
     _twai_rcc_clock_sel(node->ctrlr_id, node->curr_clk_src);
     _twai_rcc_clock_ctrl(ctrlr_id, true);

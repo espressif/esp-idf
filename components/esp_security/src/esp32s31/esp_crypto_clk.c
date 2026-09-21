@@ -27,7 +27,11 @@ DEFINE_CRIT_SECTION_LOCK_STATIC(s_crypto_common_clk_mux);
 static void esp_crypto_pll_f240m_enable(bool enable)
 {
 #if !NON_OS_BUILD
-    esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, enable);
+    if (enable) {
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F240M);
+    } else {
+        esp_clk_tree_release_src(SOC_MOD_CLK_PLL_F240M);
+    }
 #else
     /* Bootloader: BBPLL is already on; no esp_clk_tree in NON_OS. */
     _clk_gate_ll_ref_240m_clk_en(enable);

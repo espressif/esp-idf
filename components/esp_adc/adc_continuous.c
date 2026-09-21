@@ -324,7 +324,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     }
 
 #if !CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src), true));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src)));
 #endif
     adc_hal_digi_init(&handle->hal);
     adc_hal_digi_controller_config(&handle->hal, &handle->hal_digi_ctrlr_cfg);
@@ -370,7 +370,7 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
 
     adc_hal_digi_deinit();
 #if !CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src), false));
+    ESP_ERROR_CHECK(esp_clk_tree_release_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src)));
 #endif
     if (handle->use_adc2) {
         adc_lock_release(ADC_UNIT_2);

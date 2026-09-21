@@ -24,6 +24,7 @@
 #include "soc/chip_revision.h"
 #include "esp_attr.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/esp_clk_tree_common.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
@@ -331,7 +332,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
             rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_480M_FREQ_MHZ);
         }
 #ifndef BOOTLOADER_BUILD
-        esp_clk_tree_enable_src((new_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M, true);
+        esp_clk_tree_acquire_src((new_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M);
 #endif
     }
 }
@@ -340,7 +341,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t 
 {
     if ((old_src == SOC_CPU_CLK_SRC_PLL_F160M) || (old_src == SOC_CPU_CLK_SRC_PLL_F240M)) {
 #ifndef BOOTLOADER_BUILD
-        esp_clk_tree_enable_src((old_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M, false);
+        esp_clk_tree_release_src((old_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M);
 #endif
         if ((new_src != SOC_CPU_CLK_SRC_PLL_F160M) && (new_src != SOC_CPU_CLK_SRC_PLL_F240M) && !s_bbpll_digi_consumers_ref_count && !fast_switching) {
             // We don't turn off the bbpll if some consumers depend on bbpll
@@ -459,7 +460,7 @@ FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
 #ifndef BOOTLOADER_BUILD
     if (old_cpu_clk_src != SOC_MOD_CLK_XTAL) {
-        esp_clk_tree_enable_src(old_cpu_clk_src, false);
+        esp_clk_tree_release_src(old_cpu_clk_src);
     }
 #endif
     s_cur_pll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep

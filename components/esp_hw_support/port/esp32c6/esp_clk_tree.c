@@ -91,7 +91,7 @@ bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
     return false; // TODO: PM-653
 }
 
-esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
 {
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID) {
         // some conditions is legal, e.g. -1 means external clock source
@@ -99,7 +99,7 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
     }
 
     int16_t prev_ref_cnt = 0;
-    if (enable) {
+    if (acquire) {
         prev_ref_cnt = atomic_fetch_add(&s_pll_src_cg_ref_cnt[clk_src], 1);
     } else {
         prev_ref_cnt = atomic_fetch_sub(&s_pll_src_cg_ref_cnt[clk_src], 1);
@@ -109,10 +109,10 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
             return ESP_OK;
         }
     }
-    if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
+    if ((prev_ref_cnt == 0 && acquire) || (prev_ref_cnt == 1 && !acquire)) {
         switch (clk_src) {
         case SOC_MOD_CLK_RC_FAST:
-            enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable();
+            acquire ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable();
             break;
         default:
             break;

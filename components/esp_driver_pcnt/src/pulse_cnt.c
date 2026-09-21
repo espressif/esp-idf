@@ -248,7 +248,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
 
     pcnt_clock_source_t pcnt_clk_src = config->clk_src ? config->clk_src : PCNT_CLK_SRC_DEFAULT;
     ESP_GOTO_ON_ERROR(pcnt_select_periph_clock(unit, pcnt_clk_src), err, TAG, "select periph clock failed");
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)group->clk_src, true), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)group->clk_src), err, TAG, "clock source enable failed");
 
     // to accumulate count value, we should install the interrupt handler first, and in the ISR we do the accumulation
     bool to_install_isr = (config->flags.accum_count == 1);
@@ -333,7 +333,7 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
 
     ESP_LOGD(TAG, "del unit (%d,%d)", group_id, unit_id);
     // disable clock source
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)group->clk_src, false), TAG, "clock source disable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)group->clk_src), TAG, "clock source disable failed");
     // recycle memory resource
     ESP_RETURN_ON_ERROR(pcnt_destroy(unit), TAG, "destroy pcnt unit failed");
     return ESP_OK;

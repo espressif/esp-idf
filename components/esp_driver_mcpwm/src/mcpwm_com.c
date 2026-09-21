@@ -144,7 +144,7 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
         }
         // release the group clock source acquired in mcpwm_select_periph_clock_unsafe()
         if (group->clk_src) {
-            esp_clk_tree_enable_src(group->clk_src, false);
+            esp_clk_tree_release_src(group->clk_src);
         }
 #if CONFIG_PM_ENABLE
         if (group->pm_lock) {
@@ -180,7 +180,7 @@ static esp_err_t mcpwm_select_periph_clock_unsafe(mcpwm_group_t *group, soc_modu
     }
 
     group->clk_src = clk_src;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true),
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src),
                       err, TAG, "clock source enable failed");
 #if CONFIG_PM_ENABLE
     // to make the mcpwm works reliable, the source clock must stay alive and unchanged
@@ -200,7 +200,7 @@ static esp_err_t mcpwm_select_periph_clock_unsafe(mcpwm_group_t *group, soc_modu
 
 #if CONFIG_PM_ENABLE
 err_clock_enabled:
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    esp_clk_tree_release_src((soc_module_clk_t)clk_src);
 #endif
 err:
     group->clk_src = 0;

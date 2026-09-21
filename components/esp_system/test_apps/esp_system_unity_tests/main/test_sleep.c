@@ -184,7 +184,7 @@ TEST_CASE("light sleep and frequency switching", "[lightsleep]")
 #elif SOC_UART_SUPPORT_XTAL_CLK
     clk_source = UART_SCLK_XTAL;
 #endif
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true);
+    esp_clk_tree_acquire_src((soc_module_clk_t)clk_source);
     PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }

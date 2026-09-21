@@ -1521,7 +1521,7 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
 #endif
     // since the enum value of default clock on some chips may be 0, we use mode to check if the clock is enabled
     if (handle->mode != I2S_COMM_MODE_NONE) {
-        esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+        esp_clk_tree_release_src((soc_module_clk_t)clk_src);
     }
 
 #if CONFIG_PM_ENABLE
@@ -1901,9 +1901,9 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
 #if SOC_I2S_SUPPORTS_APLL
     if (handle->clk_src == I2S_CLK_SRC_APLL) {
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false), err, TAG, "APLL disable failed");
+        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src(SOC_MOD_CLK_APLL), err, TAG, "APLL disable failed");
         handle->sclk_hz = i2s_set_get_apll_freq(new_mclk);
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true), err, TAG, "APLL enable failed");
+        ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL), err, TAG, "APLL enable failed");
     }
 #endif
     /* Calculate the new divider */

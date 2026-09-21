@@ -117,7 +117,7 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
 static esp_err_t gptimer_destroy(gptimer_t *timer)
 {
     if (timer->clk_src) {
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(timer->clk_src), false), TAG, "clock source disable failed");
+        ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)(timer->clk_src)), TAG, "clock source disable failed");
     }
 #if CONFIG_PM_ENABLE
     if (timer->pm_lock) {

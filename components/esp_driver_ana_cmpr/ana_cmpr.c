@@ -146,7 +146,7 @@ static void ana_cmpr_destroy_unit(ana_cmpr_handle_t cmpr)
     }
 #endif
     if (cmpr->clk_src != SOC_MOD_CLK_INVALID) {
-        esp_clk_tree_enable_src(cmpr->clk_src, false);
+        esp_clk_tree_release_src(cmpr->clk_src);
     }
 
     free(cmpr);
@@ -330,7 +330,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
 
     // Set clock source (use default if not specified in config)
     soc_module_clk_t clk_src = config->clk_src ? config->clk_src : ANA_CMPR_CLK_SRC_DEFAULT;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), err, TAG, "enable clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src), err, TAG, "enable clock source failed");
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
     analog_cmpr_ll_set_clk_src(unit_id, clk_src);
     // Set clock divider to 1
@@ -343,7 +343,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     ret = io_mux_acquire_clock_source(clk_src);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "clock source conflicts with other IOMUX consumers");
-        esp_clk_tree_enable_src(clk_src, false);
+        esp_clk_tree_release_src(clk_src);
         goto err;
     }
     ana_cmpr_hdl->io_mux_acquired = true;

@@ -129,7 +129,7 @@ bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
         clk_src_en_func(enable); \
     }
 
-esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
 {
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID) {
         // some conditions is legal, e.g. -1 means external clock source
@@ -140,7 +140,7 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
     }
 
     int16_t prev_ref_cnt = 0;
-    if (enable) {
+    if (acquire) {
         prev_ref_cnt = atomic_fetch_add(&s_pll_src_cg_ref_cnt[clk_src], 1);
     } else {
         prev_ref_cnt = atomic_fetch_sub(&s_pll_src_cg_ref_cnt[clk_src], 1);
@@ -150,18 +150,18 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
             return ESP_OK;
         }
     }
-    if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
+    if ((prev_ref_cnt == 0 && acquire) || (prev_ref_cnt == 1 && !acquire)) {
         switch (clk_src) {
-            case SOC_MOD_CLK_RC_FAST:   enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable();  break;
-            case SOC_MOD_CLK_PLL_F12M:  ENABLE_CLK_GATE(clk_gate_ll_ref_12m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F20M:  ENABLE_CLK_GATE(clk_gate_ll_ref_20m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F40M:  ENABLE_CLK_GATE(clk_gate_ll_ref_40m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F48M:  ENABLE_CLK_GATE(clk_gate_ll_ref_48m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F60M:  ENABLE_CLK_GATE(clk_gate_ll_ref_60m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F80M:  ENABLE_CLK_GATE(clk_gate_ll_ref_80m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F120M: ENABLE_CLK_GATE(clk_gate_ll_ref_120m_clk_en, enable); break;
-            case SOC_MOD_CLK_PLL_F160M: ENABLE_CLK_GATE(clk_gate_ll_ref_160m_clk_en, enable); break;
-            case SOC_MOD_CLK_PLL_F240M: ENABLE_CLK_GATE(clk_gate_ll_ref_240m_clk_en, enable); break;
+            case SOC_MOD_CLK_RC_FAST:   acquire ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable();  break;
+            case SOC_MOD_CLK_PLL_F12M:  ENABLE_CLK_GATE(clk_gate_ll_ref_12m_clk_en, acquire);  break;
+            case SOC_MOD_CLK_PLL_F20M:  ENABLE_CLK_GATE(clk_gate_ll_ref_20m_clk_en, acquire);  break;
+            case SOC_MOD_CLK_PLL_F40M:  ENABLE_CLK_GATE(clk_gate_ll_ref_40m_clk_en, acquire);  break;
+            case SOC_MOD_CLK_PLL_F48M:  ENABLE_CLK_GATE(clk_gate_ll_ref_48m_clk_en, acquire);  break;
+            case SOC_MOD_CLK_PLL_F60M:  ENABLE_CLK_GATE(clk_gate_ll_ref_60m_clk_en, acquire);  break;
+            case SOC_MOD_CLK_PLL_F80M:  ENABLE_CLK_GATE(clk_gate_ll_ref_80m_clk_en, acquire);  break;
+            case SOC_MOD_CLK_PLL_F120M: ENABLE_CLK_GATE(clk_gate_ll_ref_120m_clk_en, acquire); break;
+            case SOC_MOD_CLK_PLL_F160M: ENABLE_CLK_GATE(clk_gate_ll_ref_160m_clk_en, acquire); break;
+            case SOC_MOD_CLK_PLL_F240M: ENABLE_CLK_GATE(clk_gate_ll_ref_240m_clk_en, acquire); break;
             default: break;
         }
     }

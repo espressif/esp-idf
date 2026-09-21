@@ -20,7 +20,7 @@ TEST_CASE("regi2c basic read/write test", "[regi2c]")
 
 #if CONFIG_IDF_TARGET_ESP32
     // For ESP32, we need to enable the APLL clock before accessing the APLL regi2c registers
-    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true));
+    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL));
 #endif
 
     /* ---- Part 1: full-register read / write ---- */
@@ -92,6 +92,6 @@ TEST_CASE("regi2c basic read/write test", "[regi2c]")
 
 #if CONFIG_IDF_TARGET_ESP32
     // Disable APLL clock
-    TEST_ESP_OK(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false));
+    TEST_ESP_OK(esp_clk_tree_release_src(SOC_MOD_CLK_APLL));
 #endif
 }

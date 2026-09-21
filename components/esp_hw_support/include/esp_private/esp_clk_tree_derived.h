@@ -86,7 +86,7 @@ const esp_clk_tree_derived_clk_desc_t *esp_clk_tree_get_derived_clk_desc(soc_mod
  * @brief Acquire a derived clock (refcount-based)
  *
  * Increments the descriptor's reference counter and enables the gate on the
- * first acquire. Public callers should use `esp_clk_tree_enable_src(clk, true)`
+ * first acquire. Public callers should use `esp_clk_tree_acquire_src(clk)`
  * which dispatches here for any clock with a registered descriptor.
  */
 esp_err_t esp_clk_tree_derived_clk_acquire(soc_module_clk_t clk_src);
@@ -95,7 +95,7 @@ esp_err_t esp_clk_tree_derived_clk_acquire(soc_module_clk_t clk_src);
  * @brief Release a derived clock previously acquired
  *
  * Decrements the descriptor's reference counter and disables the gate on the
- * last release. Public callers should use `esp_clk_tree_enable_src(clk, false)`.
+ * last release. Public callers should use `esp_clk_tree_release_src(clk)`.
  */
 esp_err_t esp_clk_tree_derived_clk_release(soc_module_clk_t clk_src);
 

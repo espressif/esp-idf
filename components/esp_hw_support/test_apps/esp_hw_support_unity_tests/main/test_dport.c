@@ -144,7 +144,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
 
         esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
         rtc_clk_cpu_freq_set_config(&new_config);
-        esp_clk_tree_enable_src((soc_module_clk_t)UART_SCLK_DEFAULT, true);
+        esp_clk_tree_acquire_src((soc_module_clk_t)UART_SCLK_DEFAULT);
         uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
 
         uint32_t sclk_freq;
@@ -161,7 +161,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
     // return old freq.
     esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     rtc_clk_cpu_freq_set_config(&old_config);
-    esp_clk_tree_enable_src((soc_module_clk_t)UART_SCLK_DEFAULT, true);
+    esp_clk_tree_acquire_src((soc_module_clk_t)UART_SCLK_DEFAULT);
     uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
 
     uint32_t sclk_freq;

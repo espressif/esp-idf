@@ -285,7 +285,7 @@ FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gat
     return ESP_OK;
 }
 
-esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
 {
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID || clk_src == SOC_MOD_CLK_XTAL) {
         /* Not managed by esp_clk_tree */
@@ -300,14 +300,14 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
     // these clock sources have their own reference counting
     switch (clk_src) {
     case SOC_MOD_CLK_APLL:
-        if (enable) {
+        if (acquire) {
             esp_clk_tree_apll_acquire();
         } else {
             esp_clk_tree_apll_release();
         }
         return ESP_OK;
     case SOC_MOD_CLK_MPLL:
-        if (enable) {
+        if (acquire) {
             return esp_clk_tree_mpll_acquire();
         } else {
             esp_clk_tree_mpll_release();
@@ -328,10 +328,10 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
         // refcount/lock engine route through that engine instead of the
         // global s_pll_src_cg_ref_cnt array below.
         if (esp_clk_tree_get_derived_clk_desc(clk_src) != NULL) {
-            return enable ? esp_clk_tree_derived_clk_acquire(clk_src)
+            return acquire ? esp_clk_tree_derived_clk_acquire(clk_src)
                           : esp_clk_tree_derived_clk_release(clk_src);
         }
         return ESP_OK;
     }
-    return esp_clk_tree_enable_gated_clk(&s_gated_ref_clks[gated_clk_id], enable);
+    return esp_clk_tree_enable_gated_clk(&s_gated_ref_clks[gated_clk_id], acquire);
 }

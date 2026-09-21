@@ -203,15 +203,15 @@ void esp_clk_tree_initialize(void)
     s_clk_tree_initialized = true;
 #if CONFIG_USJ_ENABLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
     /* Bootloader / USJ may keep PLL_F48M on; declare a permanent hold. */
-    esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F48M, true);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F48M);
 #endif
     /* Flash + CPU: sync clk_tree refs with HW already selected at boot.
      * Flash uses gated F64M; CPU holds the ungated XTAL_X2 / PLL root, not the F64M / F96M gates. */
-    esp_clk_tree_enable_src(SOC_MOD_CLK_XTAL_X2_F64M, true);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2_F64M);
     if (cpu_src == SOC_CPU_CLK_SRC_PLL) {
-        esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, true);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
     } else if (cpu_src == SOC_CPU_CLK_SRC_XTAL_X2) {
-        esp_clk_tree_enable_src(SOC_MOD_CLK_XTAL_X2, true);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2);
     }
 }
 
@@ -312,7 +312,7 @@ FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gat
     return ESP_OK;
 }
 
-esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
 {
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID || clk_src == SOC_MOD_CLK_XTAL) {
         /* Not managed by esp_clk_tree */
@@ -326,10 +326,10 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
     esp_clk_tree_gated_clk_id_t gated_clk_id;
     switch (clk_src) {
     case SOC_MOD_CLK_XTAL_X2:
-        esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
+        esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, acquire);
         return ESP_OK;
     case SOC_MOD_CLK_BBPLL:
-        esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, enable);
+        esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, acquire);
         return ESP_OK;
     // case SOC_MOD_CLK_RC_FAST:       gated_clk_id = ESP_CLK_TREE_GATED_CLK_RC_FAST;       break;
     case SOC_MOD_CLK_PLL_F48M:      gated_clk_id = ESP_CLK_TREE_GATED_CLK_PLL_F48M;      break;
@@ -338,5 +338,5 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
     default:
         return ESP_OK;
     }
-    return esp_clk_tree_enable_gated_clk(&s_gated_ref_clks[gated_clk_id], enable);
+    return esp_clk_tree_enable_gated_clk(&s_gated_ref_clks[gated_clk_id], acquire);
 }

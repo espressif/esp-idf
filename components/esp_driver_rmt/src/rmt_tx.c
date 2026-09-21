@@ -383,7 +383,7 @@ static esp_err_t rmt_del_tx_channel(rmt_channel_handle_t channel)
     // recycle memory resource
     ESP_RETURN_ON_ERROR(rmt_tx_destroy(tx_chan), TAG, "destroy tx channel failed");
     // disable the clock source at last
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clk_src, false), TAG, "clock source disable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_release_src(clk_src), TAG, "clock source disable failed");
     return ESP_OK;
 }
 

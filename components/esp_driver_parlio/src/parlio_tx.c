@@ -84,7 +84,7 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
         }
     }
     if (tx_unit->clk_src) {
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)tx_unit->clk_src, false), TAG, "clock source disable failed");
+        ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)tx_unit->clk_src), TAG, "clock source disable failed");
     }
     free(tx_unit);
     return ESP_OK;
@@ -301,7 +301,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     parlio_group_t *group = unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     // select the clock source
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(config->clk_src), true), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)(config->clk_src)), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
 
     // install interrupt service

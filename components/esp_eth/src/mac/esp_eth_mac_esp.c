@@ -294,7 +294,7 @@ static esp_err_t emac_enable_ref_out_clock(emac_esp32_t *emac, const emac_clk_in
 #if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 static esp_err_t emac_config_phy_ref_clk_clock(emac_esp32_t *emac, soc_module_clk_t phy_ref_src, soc_module_clk_t upstream_src)
 {
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(phy_ref_src, true), TAG, "PHY_REF_CLK enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(phy_ref_src), TAG, "PHY_REF_CLK enable failed");
     esp_err_t up_ret = esp_clk_tree_src_select_upstream(phy_ref_src, upstream_src);
     if (up_ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "PHY_REF_CLK upstream is already selected by another peripheral; reusing existing routing");
@@ -337,13 +337,13 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac, const emac_clk_info_t
             }
             ESP_LOGD(TAG, "info->clk_id: %i, info->clk_name: %s, pll_expt_freq: %" PRIu32 " Hz", info->clk_id, info->clk_name, pll_expt_freq);
             ESP_RETURN_ON_FALSE(pll_expt_freq > 0, ESP_ERR_NOT_SUPPORTED, TAG, "No %s on %" PRIi32 " Hz grid divides %" PRIu32 " Hz", info->clk_name, info->step_hz, *freq_hz);
-            ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(info->clk_id, true), TAG, "%s enable failed", info->clk_name);
+            ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(info->clk_id), TAG, "%s enable failed", info->clk_name);
             esp_err_t ret = esp_clk_tree_src_set_freq_hz(info->clk_id, pll_expt_freq, &real_freq);
             ESP_LOGD(TAG, "Clock set frequency: %" PRIu32 " Hz", real_freq);
             if (ret == ESP_ERR_INVALID_STATE) {
                 ESP_LOGW(TAG, "%s is occupied already, it is working at %" PRIu32 " Hz", info->clk_name, real_freq);
             } else if (ret != ESP_OK) {
-                esp_clk_tree_enable_src(info->clk_id, false);
+                esp_clk_tree_release_src(info->clk_id);
                 ESP_RETURN_ON_ERROR(ret, TAG, "Set %s clock failed", info->clk_name);
             }
             *freq_hz = real_freq;
@@ -833,7 +833,7 @@ static void emac_esp_free_driver_obj(emac_esp32_t *emac)
 
         for (int32_t i = 0; i < EMAC_USED_PLL_CLK_MAX_COUNT; i++) {
             if (emac->pll_clk_used[i] != EMAC_UNDEFINED_PLL_CLK) {
-                esp_clk_tree_enable_src(emac->pll_clk_used[i], false);
+                esp_clk_tree_release_src(emac->pll_clk_used[i]);
             }
         }
 
