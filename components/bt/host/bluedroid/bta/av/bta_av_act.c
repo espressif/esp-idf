@@ -1340,6 +1340,7 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
     int     xx;
     UINT8   mask;
     tBTA_AV_LCB *p_lcb = NULL;
+    tBTA_AV_RCB *p_rcb = NULL;
 
     APPL_TRACE_DEBUG("bta_av_sig_chg event: %d", event);
     if (event == AVDT_CONNECT_IND_EVT) {
@@ -1414,6 +1415,20 @@ void bta_av_sig_chg(tBTA_AV_DATA *p_data)
                         (bdcmp(p_cb->p_scb[xx]->peer_addr, p_data->str_msg.bd_addr) == 0)) {
                     p_cb->p_scb[xx]->disc_rsn = p_data->str_msg.hdr.offset;
                     bta_av_ssm_execute(p_cb->p_scb[xx], BTA_AV_AVDT_DISCONNECT_EVT, NULL);
+                }
+            }
+        }
+
+        /* The acceptor RCB of this link gets its shdl only when a stream opens. If no stream
+         * opened, nothing deletes the RCB and its AVCTP ccb leaks until the device reboots. */
+        if (p_lcb && p_lcb->lidx != 0 && p_lcb->lidx != (BTA_AV_NUM_LINKS + 1)) {
+            for (xx = 0; xx < BTA_AV_NUM_RCB; xx++) {
+                p_rcb = &p_cb->rcb[xx];
+                if (p_rcb->handle != BTA_AV_RC_HANDLE_NONE && p_rcb->lidx == p_lcb->lidx &&
+                        p_rcb->shdl == 0 && !(p_rcb->status & BTA_AV_RC_CONN_MASK)) {
+                    APPL_TRACE_DEBUG("bta_av_sig_chg: delete unused rcb[%d] handle:%d lidx:%d", xx,
+                                     p_rcb->handle, p_rcb->lidx);
+                    bta_av_del_rc(p_rcb);
                 }
             }
         }
@@ -1513,6 +1528,39 @@ static void bta_av_acp_sig_timer_cback (TIMER_LIST_ENT *p_tle)
 
 /*******************************************************************************
 **
+** Function         bta_av_mask_peer_rc_categories
+**
+** Description      Keep only SDP Supported Features bits defined for the
+**                  advertised AVRCP profile version.
+**                  Category 1-4: 1.0+; TG App Settings / Group Navigation: 1.3+;
+**                  Browsing / TG Multiple Players: 1.4+.
+**
+** Returns          version-valid Supported Features bitmap
+**
+*******************************************************************************/
+static UINT16 bta_av_mask_peer_rc_categories(UINT16 service_uuid, UINT16 version,
+                                             UINT16 categories)
+{
+    UINT16 mask = AVRC_SUPF_CT_CAT1 | AVRC_SUPF_CT_CAT2 |
+                  AVRC_SUPF_CT_CAT3 | AVRC_SUPF_CT_CAT4;
+    BOOLEAN is_tg = (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+
+    if (version >= AVRC_REV_1_3 && is_tg) {
+        mask |= (AVRC_SUPF_TG_APP_SETTINGS | AVRC_SUPF_TG_GROUP_NAVI);
+    }
+
+    if (version >= AVRC_REV_1_4) {
+        mask |= AVRC_SUPF_CT_BROWSE;
+        if (is_tg) {
+            mask |= AVRC_SUPF_TG_MULTI_PLAYER;
+        }
+    }
+
+    return (UINT16)(categories & mask);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_av_check_peer_rc_features
 **
 ** Description      check supported AVRC features on the peer device from the SDP
@@ -1552,22 +1600,26 @@ tBTA_AV_FEAT bta_av_check_peer_rc_features (UINT16 service_uuid, UINT16 *rc_feat
             /* get profile version (if failure, version parameter is not updated) */
             SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_rc_version);
             APPL_TRACE_DEBUG("peer_rc_version 0x%x", peer_rc_version);
+        }
 
-            if (peer_rc_version >= AVRC_REV_1_3) {
-                peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
-            }
+        /* Supported Features is Mandatory since AVRCP 1.0 (Table 8.1 / 8.2) */
+        if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES)) != NULL) {
+            categories = p_attr->attr_value.v.u16;
+        }
+    }
 
-            if (peer_rc_version >= AVRC_REV_1_4) {
-                peer_features |= (BTA_AV_FEAT_ADV_CTRL);
-                /* get supported categories */
-                if ((p_attr = SDP_FindAttributeInRec(p_rec,
-                                                     ATTR_ID_SUPPORTED_FEATURES)) != NULL) {
-                    categories = p_attr->attr_value.v.u16;
-                    if (categories & AVRC_SUPF_CT_BROWSE) {
-                        peer_features |= (BTA_AV_FEAT_BROWSE);
-                    }
-                }
-            }
+    categories = bta_av_mask_peer_rc_categories(service_uuid, peer_rc_version, categories);
+
+    /* AVRCP 1.3: Metadata Transfer / Vendor Unique (Table 3.1 items 10-15) */
+    if (peer_rc_version >= AVRC_REV_1_3) {
+        peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
+    }
+
+    /* AVRCP 1.4: Advanced Control and Browsing (Table 3.1 / Table 8.x bit 6) */
+    if (peer_rc_version >= AVRC_REV_1_4) {
+        peer_features |= BTA_AV_FEAT_ADV_CTRL;
+        if (categories & AVRC_SUPF_CT_BROWSE) {
+            peer_features |= BTA_AV_FEAT_BROWSE;
         }
     }
 
@@ -1575,7 +1627,7 @@ tBTA_AV_FEAT bta_av_check_peer_rc_features (UINT16 service_uuid, UINT16 *rc_feat
         *rc_features = categories;
     }
 
-    APPL_TRACE_DEBUG("peer_features:x%x, rc:x%x", peer_features, categories);
+    APPL_TRACE_DEBUG("peer_features:x%x, rc:x%x ver:x%x", peer_features, categories, peer_rc_version);
     return peer_features;
 }
 

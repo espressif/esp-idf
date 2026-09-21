@@ -865,11 +865,9 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
     case HID_TRANS_GET_IDLE:
     case HID_TRANS_SET_IDLE:
         cid = p_hcon->ctrl_cid;
-        buf_size = HID_CONTROL_BUF_SIZE;
         break;
     case HID_TRANS_DATA:
         cid = p_hcon->intr_cid;
-        buf_size = HID_INTERRUPT_BUF_SIZE;
         break;
     default:
         rc = HID_ERR_INVALID_PARAM;
@@ -884,6 +882,8 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
 
     do {
         if ( buf == NULL || blank_datc ) {
+            /* HID header byte, an optional report id byte and the inlined data bytes */
+            buf_size = BT_HDR_SIZE + L2CAP_MIN_OFFSET + 2 + use_data;
             if ((p_buf = (BT_HDR *)osi_malloc(buf_size)) == NULL) {
                 rc = HID_ERR_NO_RESOURCES;
                 goto error;
@@ -895,6 +895,8 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
             bytes_copied = 0;
             blank_datc = FALSE;
         } else if ( (buf->len > (p_hcon->rem_mtu_size - 1))) {
+            /* HID header byte plus a full (rem_mtu_size - 1) payload segment */
+            buf_size = BT_HDR_SIZE + L2CAP_MIN_OFFSET + p_hcon->rem_mtu_size + use_data;
             if ((p_buf = (BT_HDR *)osi_malloc(buf_size)) == NULL) {
                 rc = HID_ERR_NO_RESOURCES;
                 goto error;

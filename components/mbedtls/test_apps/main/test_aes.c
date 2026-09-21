@@ -67,7 +67,7 @@ static const uint8_t iv[] = {
     print(as_c_array(plain))
     ct = encryptor.update(plain) + encryptor.finalize()
 
-    print("Chipertext: {}".format(as_c_array(ct)))
+    print("Ciphertext: {}".format(as_c_array(ct)))
 */
 TEST_CASE("mbedtls CBC AES-256 test", "[aes]")
 {
@@ -85,11 +85,11 @@ TEST_CASE("mbedtls CBC AES-256 test", "[aes]")
     memcpy(nonce, iv, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -100,19 +100,19 @@ TEST_CASE("mbedtls CBC AES-256 test", "[aes]")
     memset(decryptedtext, 0x0, SZ);
 
     // Encrypt
-    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
     // Decrypt
     memcpy(nonce, iv, 16);
     mbedtls_aes_setkey_dec(&ctx, key_256, 256);
-    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, chipertext, decryptedtext);
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -134,11 +134,11 @@ TEST_CASE("mbedtls CBC AES-256 DMA buffer align test", "[aes]")
     memcpy(nonce, iv, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -149,19 +149,19 @@ TEST_CASE("mbedtls CBC AES-256 DMA buffer align test", "[aes]")
     memset(decryptedtext, 0x0, SZ);
 
     // Encrypt
-    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
     // Decrypt
     memcpy(nonce, iv, 16);
     mbedtls_aes_setkey_dec(&ctx, key_256, 256);
-    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, chipertext, decryptedtext);
+    mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -183,11 +183,11 @@ TEST_CASE("mbedtls CTR AES-256 test", "[aes]")
     memcpy(nonce, iv, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -198,19 +198,19 @@ TEST_CASE("mbedtls CTR AES-256 test", "[aes]")
     memset(decryptedtext, 0x0, SZ);
 
     // Encrypt
-    mbedtls_aes_crypt_ctr(&ctx, SZ, &nc_off, nonce, stream_block, plaintext, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_ctr(&ctx, SZ, &nc_off, nonce, stream_block, plaintext, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
     // Decrypt
     nc_off = 0;
     memcpy(nonce, iv, 16);
-    mbedtls_aes_crypt_ctr(&ctx, SZ, &nc_off, nonce, stream_block, chipertext, decryptedtext);
+    mbedtls_aes_crypt_ctr(&ctx, SZ, &nc_off, nonce, stream_block, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -231,11 +231,11 @@ TEST_CASE("mbedtls OFB AES-256 test", "[aes]")
     memcpy(nonce, iv, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -246,19 +246,19 @@ TEST_CASE("mbedtls OFB AES-256 test", "[aes]")
     memset(decryptedtext, 0x0, SZ);
 
     // Encrypt
-    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, plaintext, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, plaintext, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
     // Decrypt
     nc_off = 0;
     memcpy(nonce, iv, 16);
-    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, chipertext, decryptedtext);
+    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -278,11 +278,11 @@ TEST_CASE("mbedtls CFB-8 AES-256 test", "[aes]")
     memcpy(nonce, iv, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -293,18 +293,18 @@ TEST_CASE("mbedtls CFB-8 AES-256 test", "[aes]")
     memset(decryptedtext, 0x0, SZ);
 
     // Encrypt
-    mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
     // Decrypt
     memcpy(nonce, iv, 16);
-    mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, chipertext, decryptedtext);
+    mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -325,11 +325,11 @@ TEST_CASE("mbedtls CFB-128 AES-256 test", "[aes]")
     memcpy(nonce, iv, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -340,19 +340,19 @@ TEST_CASE("mbedtls CFB-128 AES-256 test", "[aes]")
     memset(decryptedtext, 0x0, SZ);
 
     // Encrypt
-    mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_ENCRYPT,  SZ, &nc_off, nonce, plaintext, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_ENCRYPT,  SZ, &nc_off, nonce, plaintext, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
     // Decrypt
     nc_off = 0;
     memcpy(nonce, iv, 16);
-    mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_DECRYPT, SZ, &nc_off, nonce, chipertext, decryptedtext);
+    mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_DECRYPT, SZ, &nc_off, nonce, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -401,11 +401,11 @@ static void aes_ctr_stream_test(void)
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -419,7 +419,7 @@ static void aes_ctr_stream_test(void)
     for (int bytes_to_process = 1; bytes_to_process < SZ; bytes_to_process++) {
         ESP_LOGD("test", "bytes_to_process %d", bytes_to_process);
         memset(nonce, 0xEE, 16);
-        memset(chipertext, 0x0, SZ);
+        memset(ciphertext, 0x0, SZ);
         memset(decryptedtext, 0x0, SZ);
 
         size_t offset = 0;
@@ -429,12 +429,12 @@ static void aes_ctr_stream_test(void)
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
 
             mbedtls_aes_crypt_ctr(&ctx, length, &offset, nonce,
-                                  stream_block, plaintext + idx, chipertext + idx );
+                                  stream_block, plaintext + idx, ciphertext + idx );
         }
         ESP_LOG_BUFFER_HEXDUMP("expected", expected_cipher, SZ, ESP_LOG_DEBUG);
-        ESP_LOG_BUFFER_HEXDUMP("actual  ", chipertext, SZ, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEXDUMP("actual  ", ciphertext, SZ, ESP_LOG_DEBUG);
 
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, ciphertext, SZ);
 
         // Decrypt
         memset(nonce, 0xEE, 16);
@@ -444,7 +444,7 @@ static void aes_ctr_stream_test(void)
             // Limit length of last call to avoid exceeding buffer size
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
             mbedtls_aes_crypt_ctr(&ctx, length, &offset, nonce,
-                                  stream_block, chipertext + idx, decryptedtext + idx );
+                                  stream_block, ciphertext + idx, decryptedtext + idx );
         }
         ESP_LOG_BUFFER_HEXDUMP("decrypted", decryptedtext, SZ, ESP_LOG_DEBUG);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
@@ -452,7 +452,7 @@ static void aes_ctr_stream_test(void)
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -505,11 +505,11 @@ TEST_CASE("mbedtls OFB stream test", "[aes]")
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -529,10 +529,10 @@ TEST_CASE("mbedtls OFB stream test", "[aes]")
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = ( (idx + bytes_to_process) > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_aes_crypt_ofb(&ctx, length, &offset, iv, plaintext + idx, chipertext + idx);
+            mbedtls_aes_crypt_ofb(&ctx, length, &offset, iv, plaintext + idx, ciphertext + idx);
 
         }
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, ciphertext, SZ);
 
         // Decrypt
         memset(iv, 0xEE, 16);
@@ -541,14 +541,14 @@ TEST_CASE("mbedtls OFB stream test", "[aes]")
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_aes_crypt_ofb(&ctx, length, &offset, iv, chipertext + idx, decryptedtext + idx);
+            mbedtls_aes_crypt_ofb(&ctx, length, &offset, iv, ciphertext + idx, decryptedtext + idx);
         }
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
     }
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -595,11 +595,11 @@ TEST_CASE("mbedtls CFB8 stream test", "[aes]")
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -616,16 +616,16 @@ TEST_CASE("mbedtls CFB8 stream test", "[aes]")
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = ( (idx + bytes_to_process) > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_ENCRYPT, length, iv, plaintext + idx, chipertext + idx);
+            mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_ENCRYPT, length, iv, plaintext + idx, ciphertext + idx);
 
         }
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, ciphertext, SZ);
 
         memset(iv, 0xEE, 16);
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = ( (idx + bytes_to_process) > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_DECRYPT, length, iv, chipertext + idx, decryptedtext + idx);
+            mbedtls_aes_crypt_cfb8(&ctx, MBEDTLS_AES_DECRYPT, length, iv, ciphertext + idx, decryptedtext + idx);
 
         }
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
@@ -633,7 +633,7 @@ TEST_CASE("mbedtls CFB8 stream test", "[aes]")
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -680,11 +680,11 @@ TEST_CASE("mbedtls CFB128 stream test", "[aes]")
     memset(key, 0x44, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -703,24 +703,24 @@ TEST_CASE("mbedtls CFB128 stream test", "[aes]")
     for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
         // Limit length of last call to avoid exceeding buffer size
         size_t length = ( (idx + bytes_to_process) > SZ) ? (SZ - idx) : bytes_to_process;
-        mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_ENCRYPT, length, &offset, iv, plaintext + idx, chipertext + idx);
+        mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_ENCRYPT, length, &offset, iv, plaintext + idx, ciphertext + idx);
 
     }
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, ciphertext, SZ);
 
     offset = 0;
     memset(iv, 0xEE, 16);
     for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
         // Limit length of last call to avoid exceeding buffer size
         size_t length = ( (idx + bytes_to_process) > SZ) ? (SZ - idx) : bytes_to_process;
-        mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_DECRYPT, length, &offset, iv, chipertext + idx, decryptedtext + idx);
+        mbedtls_aes_crypt_cfb128(&ctx, MBEDTLS_AES_DECRYPT, length, &offset, iv, ciphertext + idx, decryptedtext + idx);
 
     }
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -804,11 +804,11 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
     memcpy(nonce, iv, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -819,30 +819,30 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
     memset(decryptedtext, 0x0, SZ);
 
     // Encrypt
-    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, plaintext, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, plaintext, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
 
     // Decrypt
     nc_off = 0;
     memcpy(nonce, iv, 16);
-    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, chipertext, decryptedtext);
+    mbedtls_aes_crypt_ofb(&ctx, SZ, &nc_off, nonce, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
 
 
 const uint8_t expected_cipher_ctr_end[] = {
-    0x93, 0xca, 0xe0, 0x44, 0x96, 0x6d, 0xcb, 0xb2,
-    0xcf, 0x8a, 0x8d, 0x73, 0x8c, 0x6b, 0xfa, 0x4d,
-    0xd6, 0xc4, 0x18, 0x49, 0xdd, 0xc6, 0xbf, 0xc2,
-    0xb9, 0xf0, 0x09, 0x69, 0x45, 0x42, 0xc6, 0x05,
+    0x42, 0xf6, 0x3b, 0x8e, 0x11, 0x43, 0xc8, 0xc7,
+    0xd9, 0x85, 0xf3, 0xdc, 0x39, 0x6b, 0x33, 0x98,
+    0x8c, 0xc0, 0xf5, 0x92, 0xb4, 0x04, 0xf9, 0x2f,
+    0xdf, 0x12, 0xc0, 0xa1, 0xd2, 0xdc, 0x71, 0x88,
 };
 
 
@@ -852,17 +852,17 @@ void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
     uint8_t nonce[16];
     uint8_t key[16];
     uint8_t stream_block[16];
-    size_t SZ = 32*200;
+    size_t SZ = 32*200 + 33;
     size_t ALIGNMENT_SIZE_BYTES = 64;
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
     // allocate memory according the requested caps
-    uint8_t *chipertext = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, output_buf_caps);
+    uint8_t *ciphertext = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, output_buf_caps);
     uint8_t *plaintext = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, input_buf_caps);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -877,14 +877,14 @@ void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
         // Encrypt with input buffer in external ram
         offset = 0;
         memset(nonce, 0x2F, 16);
-        mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, plaintext + i, chipertext + i);
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ctr_end, chipertext + i + SZ - 32, 32);
+        mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, plaintext + i, ciphertext + i);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ctr_end, ciphertext + i + SZ - 32, 32);
 
         // Decrypt
         offset = 0;
         memset(nonce, 0x2F, 16);
         // Decrypt with input buffer in instruction memory, the crypto DMA can't access this
-        mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, chipertext + i, decryptedtext);
+        mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, ciphertext + i, decryptedtext);
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
@@ -892,7 +892,7 @@ void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
 
     mbedtls_aes_free(&ctx);
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -911,7 +911,7 @@ void aes_psram_one_buf_ctr_test(void)
     uint8_t nonce[16];
     uint8_t key[16];
     uint8_t stream_block[16];
-    size_t SZ = 32*200;
+    size_t SZ = 32*200 + 33;
     size_t ALIGNMENT_SIZE_BYTES = 32;
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
@@ -1483,10 +1483,10 @@ void aes_ext_flash_ctr_test(uint32_t output_buf_caps)
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
-    uint8_t *chipertext = heap_caps_malloc(SZ, output_buf_caps);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, output_buf_caps);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
     mbedtls_aes_init(&ctx);
@@ -1497,19 +1497,19 @@ void aes_ext_flash_ctr_test(uint32_t output_buf_caps)
     // Encrypt with input buffer in external flash
     offset = 0;
     memset(nonce, 0x2F, 16);
-    mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, long_input, chipertext);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_long_input_end, chipertext + SZ - 32, 32);
+    mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, long_input, ciphertext);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_long_input_end, ciphertext + SZ - 32, 32);
 
     // Decrypt
     offset = 0;
     memset(nonce, 0x2F, 16);
     // Decrypt with input buffer in external flash, the crypto DMA can't access this
-    mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, chipertext, decryptedtext);
+    mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, ciphertext, decryptedtext);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(long_input, decryptedtext, SZ);
 
     mbedtls_aes_free(&ctx);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 

@@ -8,8 +8,8 @@
 
 #include "esp_log.h"
 #include "esp_radio_spinel.h"
+#include "esp_radio_spinel_uart_transport.hpp"
 #include "lib/spinel/spinel_interface.hpp"
-#include "lib/hdlc/hdlc.hpp"
 #include "openthread/error.h"
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
 #include "esp_openthread_types.h"
@@ -19,7 +19,11 @@ namespace esp {
 namespace radio_spinel {
 
 /**
- * This class defines an UART interface to the Radio Co-processor (RCP).
+ * This class defines a UART spinel interface to the Radio Co-processor (RCP).
+ *
+ * HDLC and UART I/O are owned by the transport layer. This class only waits on
+ * the transport wait fd. Complete spinel frames are delivered by the transport
+ * into the RxFrameBuffer bound at Init, via the receive callback.
  *
  */
 class UartSpinelInterface : public ot::Spinel::SpinelInterface {
@@ -66,7 +70,7 @@ public:
      * @retval OT_ERROR_NONE     Successfully encoded and sent the spinel frame.
      * @retval OT_ERROR_BUSY     Failed due to another operation is on going.
      * @retval OT_ERROR_NO_BUFS  Insufficient buffer space available to encode the frame.
-     * @retval OT_ERROR_FAILED   Failed to call the SPI driver to send the frame.
+     * @retval OT_ERROR_FAILED   Failed to call the UART driver to send the frame.
      *
      */
     otError SendFrame(const uint8_t *aFrame, uint16_t aLength);
@@ -74,10 +78,10 @@ public:
     /**
      * Waits for receiving part or all of spinel frame within specified interval.
      *
-     * @param[in]  aTimeout  The timeout value in microseconds.
+     * @param[in]  aTimeoutUs  The timeout value in microseconds.
      *
      * @retval OT_ERROR_NONE             Part or all of spinel frame is received.
-     * @retval OT_ERROR_RESPONSE_TIMEOUT No spinel frame is received within @p aTimeout.
+     * @retval OT_ERROR_RESPONSE_TIMEOUT No spinel frame is received within @p aTimeoutUs.
      *
      */
     otError WaitForFrame(uint64_t aTimeoutUs);
@@ -139,80 +143,69 @@ public:
     otError ResetConnection(void) { return OT_ERROR_NONE; }
 
     /**
-     * @brief   This method enable the HDLC interface.
+     * Enable the spinel UART transport.
+     *
+     * Multipan: allocates a free spinel IID. Use GetIid() after Enable succeeds.
+     *
+     * @param[in] radio_uart_config  UART configuration.
+     * @param[in] hooks              Optional UART init/deinit hooks. May be nullptr.
      *
      * @return
      *      - ESP_OK on success
-     *      - ESP_ERR_NO_MEM if allocation has failed
-     *      - ESP_ERROR on failure
+     *      - ESP_ERR_INVALID_STATE if already enabled
+     *      - ESP_ERR_NO_MEM if a multipan host slot or rx queue cannot be allocated
+     *      - ESP_FAIL on failure
      */
-    esp_err_t Enable(const esp_radio_spinel_uart_config_t &radio_uart_config);
+    esp_err_t Enable(const esp_radio_spinel_uart_config_t &radio_uart_config,
+                     const esp_radio_spinel_uart_transport_hooks_t *hooks = nullptr);
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
-    esp_err_t Enable(const esp_openthread_uart_config_t &radio_uart_config);
+    /**
+     * Enable the spinel UART transport using OpenThread UART config.
+     *
+     * @param[in] radio_uart_config  OpenThread UART configuration.
+     * @param[in] hooks              Optional UART init/deinit hooks. May be nullptr.
+     *
+     * @return
+     *      - ESP_OK on success
+     *      - ESP_ERR_INVALID_STATE if already enabled
+     *      - ESP_ERR_NO_MEM if a multipan host slot or rx queue cannot be allocated
+     *      - ESP_FAIL on failure
+     */
+    esp_err_t Enable(const esp_openthread_uart_config_t &radio_uart_config,
+                     const esp_radio_spinel_uart_transport_hooks_t *hooks = nullptr);
 #endif
 
     /**
-     * @brief  This method disable the HDLC interface.
+     * Disable the spinel UART transport.
      *
+     * @return
+     *      - ESP_OK on success
+     *      - ESP_FAIL on failure
      */
     esp_err_t Disable(void);
 
-    void RegisterUartInitHandler(esp_radio_spinel_uart_init_handler handler)
-    {
-        if (mUartInitHandler != NULL) {
-            ESP_LOGW(ESP_SPINEL_LOG_TAG, "UartInitHandler already registered, will overwrite (prev=%p, new=%p)", mUartInitHandler, handler);
-        }
-        mUartInitHandler = handler;
-    }
-
-    void RegisterUartDeinitHandler(esp_radio_spinel_uart_deinit_handler handler) { mUartDeinitHandler = handler; }
+    /**
+     * Returns the allocated spinel IID.
+     *
+     * Valid after Enable() succeeds. Returns -1 if the interface is not enabled.
+     *
+     */
+    int8_t GetIid(void) const { return m_iid; }
 
 private:
-
-    enum {
-        /**
-         * Maximum wait time in Milliseconds for socket to become writable (see `SendFrame`).
-         *
-         */
-        kMaxWaitTime = 2000,
-    };
-
-    esp_err_t InitUart(const esp_radio_spinel_uart_config_t &radio_uart_config);
-
-    esp_err_t DeinitUart(void);
-
-    int TryReadAndDecode(void);
-
-    otError WaitForWritable(void);
-
-    otError Write(const uint8_t *frame, uint16_t length);
-
-    esp_err_t TryRecoverUart(void);
-
-    static void HandleHdlcFrame(void *context, otError error);
-    void HandleHdlcFrame(otError error);
+    int TryReadSpinel(void);
 
     ReceiveFrameCallback m_receiver_frame_callback;
     void *m_receiver_frame_context;
     RxFrameBuffer *m_receive_frame_buffer;
-
-    ot::Hdlc::Decoder m_hdlc_decoder;
-    uint8_t *m_uart_rx_buffer;
-
-    esp_radio_spinel_uart_config_t m_uart_config;
-    int m_uart_fd;
-
+    int m_wait_fd;
+    int8_t m_iid;
     otRcpInterfaceMetrics mInterfaceMetrics;
+    esp_radio_spinel_rcp_failure_handler mRcpFailureHandler;
 
     // Non-copyable, intentionally not implemented.
     UartSpinelInterface(const UartSpinelInterface &);
     UartSpinelInterface &operator=(const UartSpinelInterface &);
-
-    esp_radio_spinel_rcp_failure_handler mRcpFailureHandler;
-    esp_radio_spinel_uart_init_handler mUartInitHandler;
-    esp_radio_spinel_uart_deinit_handler mUartDeinitHandler;
-
-    ot::Spinel::FrameBuffer<kMaxFrameSize> encoder_buffer;
 };
 
 } // namespace radio_spinel

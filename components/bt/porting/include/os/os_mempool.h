@@ -358,6 +358,29 @@ void os_mempool_flags_set(struct os_mempool *mp, uint8_t flags);
  */
 void os_mempool_flags_clear(struct os_mempool *mp, uint8_t flags);
 
+/**
+ * @brief Deinitialize a memory pool.
+ *
+ * @param mp Pointer to memory pool
+ */
+void os_mempool_deinit(struct os_mempool *mp);
+
+ /**
+ * @brief Deinitialize all of memory pools.
+ *
+ * @param is_controller Whether called from controller.
+ *
+ * @return OS_OK on success; OS_INVALID_PARM if not found corresponding memory pools.
+ */
+os_error_t os_mempool_deinit_all(bool is_controller);
+
+/**
+ * @brief Check if there are any live memory pools.
+ *
+ * @return true if there are any live memory pools; false otherwise.
+ */
+bool os_mempool_has_live_pool(void);
+
 #ifdef __cplusplus
 }
 #endif
