@@ -35,6 +35,7 @@
 #include "bta/bta_hh_co.h"
 #include "bta/utl.h"
 #include "osi/allocator.h"
+#include "stack/sdp_api.h"
 
 /*****************************************************************************
 **  Constants
@@ -128,6 +129,9 @@ void bta_hh_api_disable(void)
     if (bta_hh_cb.p_cback == NULL) {
         return;
     }
+
+    /* Drop in-flight SDP before tearing down connections / HID host. */
+    bta_hh_free_disc_db();
 
     /* no live connection, signal DISC_CMPL_EVT directly */
     if (!bta_hh_cb.cnt_num) {
@@ -243,7 +247,7 @@ static void bta_hh_sdp_cback(UINT16 result, UINT16 attr_mask,
     }
 
     /* free disc_db when SDP is completed */
-    utl_freebuf((void **)&bta_hh_cb.p_disc_db);
+    bta_hh_free_disc_db();
 
     /* send SDP_CMPL_EVT into state machine */
     data.status = status;
@@ -301,7 +305,7 @@ static void bta_hh_di_sdp_cback(UINT16 result)
 
 
     if (status != BTA_HH_OK) {
-        utl_freebuf((void **)&bta_hh_cb.p_disc_db);
+        bta_hh_free_disc_db();
         /* send SDP_CMPL_EVT into state machine */
         data.status = status;
         bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &data);
@@ -384,7 +388,7 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
                     Status 0x%2X", status);
 #endif
                 status = BTA_HH_ERR_SDP;
-                utl_freebuf((void **)&bta_hh_cb.p_disc_db);
+                bta_hh_free_disc_db();
             } else {
                 status = BTA_HH_OK;
             }
