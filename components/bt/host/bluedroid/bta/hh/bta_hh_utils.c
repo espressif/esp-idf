@@ -22,6 +22,7 @@
 
 #include "osi/allocator.h"
 #include "bta_hh_int.h"
+#include "stack/sdp_api.h"
 
 /* if SSR max latency is not defined by remote device, set the default value
    as half of the link supervision timeout */
@@ -464,6 +465,25 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(BD_ADDR bd_addr, UINT16 *p_max_ssr_lat, UIN
 
 /*******************************************************************************
 **
+** Function         bta_hh_free_disc_db
+**
+** Description      Cancel any in-flight SDP search using the HID discovery
+**                  database, then free it.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_hh_free_disc_db(void)
+{
+    if (bta_hh_cb.p_disc_db) {
+        /* SDP (DI discover / HID_HostGetSDPRecord) may still write this buffer. */
+        SDP_CancelServiceSearch(bta_hh_cb.p_disc_db);
+        utl_freebuf((void **)&bta_hh_cb.p_disc_db);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         bta_hh_cleanup_disable
 **
 ** Description      when disable finished, cleanup control block and send callback
@@ -479,7 +499,7 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status)
     for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx ++) {
         utl_freebuf((void **)&bta_hh_cb.kdev[xx].dscp_info.descriptor.dsc_list);
     }
-    utl_freebuf((void **)&bta_hh_cb.p_disc_db);
+    bta_hh_free_disc_db();
 
     bta_sys_deregister(BTA_ID_HH);
 
