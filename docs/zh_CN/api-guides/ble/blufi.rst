@@ -18,6 +18,8 @@ BluFi 流程的关键部分包括数据的分片、加密以及校验和验证�
 
    对于新项目或需要添加 Wi-Fi 配网功能的场景，建议使用 `network_provisioning`_ 组件。该组件更加现代、安全，并且仍在积极维护中。
 
+   BluFi 应用程序回调函数（``esp_blufi_callbacks_t::event_cb`` 和安全处理函数）运行在 `BTC_TASK` 任务中，而不是 NimBLE Host 任务中。请在 ``Component config`` > ``Bluetooth`` > ``Common Options`` 下配置 :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`。:ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE` 不会改变 ``BTC_TASK`` 的栈大小。
+
 
 快速入门
 --------

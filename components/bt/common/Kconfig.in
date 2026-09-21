@@ -1,3 +1,15 @@
+config BT_BTC_TASK_STACK_SIZE
+    int "Bluetooth event (callback to application) task stack size"
+    depends on BT_BLUEDROID_ENABLED || BT_NIMBLE_BLUFI_ENABLE || (BT_NIMBLE_ENABLED && BLE_MESH)
+    default 3072 if BT_BLUEDROID_ENABLED
+    default 4096 if BT_NIMBLE_ENABLED
+    help
+        Stack size of BTC_TASK, which delivers Bluetooth events and profile
+        callbacks to the application.
+
+        With Bluedroid this task is always created. With NimBLE it is created
+        when BluFi or ESP BLE Mesh is enabled.
+
 config BT_ALARM_MAX_NUM
     int "Maximum number of Bluetooth alarms"
     default 50

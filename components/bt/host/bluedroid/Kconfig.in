@@ -1,9 +1,9 @@
-config BT_BTC_TASK_STACK_SIZE
-    int "Bluetooth event (callback to application) task stack size"
+config BT_BLUEDROID_PINNED_TO_CORE
+    int
     depends on BT_BLUEDROID_ENABLED
-    default 3072
-    help
-        This select btc task stack size
+    default 0 if BT_BLUEDROID_PINNED_TO_CORE_0
+    default 1 if BT_BLUEDROID_PINNED_TO_CORE_1
+    default 0
 
 choice BT_BLUEDROID_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which Bluedroid run"
@@ -18,13 +18,6 @@ choice BT_BLUEDROID_PINNED_TO_CORE_CHOICE
         bool "Core 1 (APP CPU)"
         depends on !FREERTOS_UNICORE
 endchoice
-
-config BT_BLUEDROID_PINNED_TO_CORE
-    int
-    depends on BT_BLUEDROID_ENABLED
-    default 0 if BT_BLUEDROID_PINNED_TO_CORE_0
-    default 1 if BT_BLUEDROID_PINNED_TO_CORE_1
-    default 0
 
 config BT_BTU_TASK_STACK_SIZE
     int "Bluetooth Bluedroid Host Stack task stack size"
