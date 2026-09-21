@@ -15,12 +15,21 @@ function(__esp_blockdev_ioctl_check_post_elf target)
         return()
     endif()
 
+    # On macOS, Apple Clang needs the SDK sysroot to resolve system headers
+    # (e.g. <stdio.h> via esp_err.h) during preprocessing.
+    set(ioctl_compiler_flags)
+    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_OSX_SYSROOT)
+        # Use --compiler-flag=VALUE so argparse does not treat -isysroot as an option.
+        list(APPEND ioctl_compiler_flags "--compiler-flag=-isysroot${CMAKE_OSX_SYSROOT}")
+    endif()
+
     add_custom_command(
         TARGET ${target}
         POST_BUILD
         COMMAND ${python}
                 "${ESP_BLOCKDEV_COMPONENT_DIR}/tools/check_ioctl_overlap.py"
                 --compiler ${CMAKE_C_COMPILER}
+                ${ioctl_compiler_flags}
                 --include-dir "${ESP_BLOCKDEV_COMPONENT_DIR}/include"
                 --include-dir "${idf_path}/components/esp_common/include"
                 --include-dir "${CMAKE_BINARY_DIR}/config"
