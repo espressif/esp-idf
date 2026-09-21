@@ -21,10 +21,11 @@
     - examples/openthread/*
     - examples/openthread/**/*
 
+# Sleep tests need both the sleepy device and its ot_cli leader firmware.
 .openthread_sleep_dependencies: &openthread_sleep_dependencies
-  depends_components:
+  depends_components+:
     - esp_hw_support
-    - soc
+    - esp_pm
 
 examples/openthread/ot_br:
   enable:
@@ -46,7 +47,7 @@ examples/openthread/ot_cli:
   disable_test:
     - if: IDF_TARGET not in ["esp32h2", "esp32c6"]
       reason: only test on esp32h2 and esp32c6
-  <<: *openthread_dependencies
+  <<: [*openthread_dependencies, *openthread_sleep_dependencies]
 
 examples/openthread/ot_rcp:
   enable:
