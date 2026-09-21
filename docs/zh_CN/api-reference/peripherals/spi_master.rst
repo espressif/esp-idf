@@ -291,11 +291,9 @@ SPI 总线传输事务由五个阶段构成，详见下表（任意阶段均可�
 
 若未满足以上要求，传输事务效率将受到临时缓冲区分配和复制的影响。
 
-.. only:: not esp32
+.. note::
 
-    .. note::
-
-        启用 DMA 时，GP-SPI2 单次传输的最大长度不再受 32 KB 限制，可传输无限长度，该长度由 :cpp:member:`spi_bus_config_t::max_transfer_sz` 配置。对超过 32 KB 的传输，驱动将根据对齐要求进行分段，段落间 CS 保持有效，但时钟会短暂停止。 GP-SPI3 单次 DMA 传输的最大长度仍为 32 KB。
+    启用 DMA 时， GP-SPI 单次传输的最大长度不再受 32 KB 限制，可传输无限长度，该长度由 :cpp:member:`spi_bus_config_t::max_transfer_sz` 配置。对超过 32 KB 的传输，驱动将根据对齐要求进行分段，段落间 CS 保持有效，但时钟会短暂停止 3~30us。`spi_device_polling_xxx` 接口仍暂不支持超长传输。
 
 如果使用多条数据线传输，请在结构体 :cpp:type:`spi_device_interface_config_t` 中的 ``flags`` 设置 ``SPI_DEVICE_HALFDUPLEX`` 标志信号。结构体 :cpp:type:`spi_transaction_t` 中的 ``flags`` 应按照 :ref:`transaction-line-mode` 中的描述设置。
 

@@ -182,9 +182,9 @@ typedef struct {
     const uint32_t *buffer_to_send;    //equals to tx_data, if SPI_TRANS_USE_RXDATA is applied; otherwise if original buffer wasn't in DMA-capable memory, this gets the address of a temporary buffer that is;
     //otherwise sets to the original buffer or NULL if no buffer is assigned.
     uint32_t *buffer_to_rcv;           //similar to buffer_to_send
+    uint32_t mounted_len;              //bytes already mounted to HW/DMA for software-split transactions
 #ifdef SPI_LL_PERIPH_HAS_SCT
     spi_ll_sct_full_reg_t *sct_conf_buffer;    // non-NULL: auto-split oversize trans into SCT segments
-    uint32_t reserved;
 #endif
 } spi_trans_priv_t;
 
@@ -883,6 +883,38 @@ static void SPI_MASTER_ISR_ATTR s_spi_dma_start(spi_device_t *dev, const spi_hal
     }
 }
 
+static SPI_MASTER_ISR_ATTR bool s_spi_trans_needs_sw_split(spi_host_t *host, const spi_transaction_t *trans)
+{
+#ifdef SPI_LL_PERIPH_HAS_SCT
+    if (SPI_LL_PERIPH_HAS_SCT(host->id)) {
+        return false;
+    }
+#endif
+    return MAX(trans->length, trans->rxlength) > SPI_LL_DMA_MAX_BIT_LEN;
+}
+
+static void SPI_MASTER_ISR_ATTR s_spi_format_sw_split_segment(spi_device_t *dev, spi_trans_priv_t *trans_buf, spi_hal_trans_config_t *hal_trans)
+{
+    spi_transaction_t *trans = trans_buf->trans;
+    size_t total_len = MAX((trans->length + 7) / 8, (trans->rxlength + 7) / 8);
+    size_t seg_len = MIN(dev->host->bus_attr->aligned_chunk_sz, total_len - trans_buf->mounted_len);
+    size_t offset_bits = trans_buf->mounted_len * 8;
+
+    hal_trans->tx_bitlen = (offset_bits < trans->length) ? MIN(trans->length - offset_bits, seg_len * 8) : 0;
+    hal_trans->rx_bitlen = (offset_bits < trans->rxlength) ? MIN(trans->rxlength - offset_bits, seg_len * 8) : 0;
+    hal_trans->send_buffer = (hal_trans->tx_bitlen && trans_buf->buffer_to_send) ? (uint8_t *)trans_buf->buffer_to_send + trans_buf->mounted_len : NULL;
+    hal_trans->rcv_buffer = (hal_trans->rx_bitlen && trans_buf->buffer_to_rcv) ? (uint8_t *)trans_buf->buffer_to_rcv + trans_buf->mounted_len : NULL;
+
+    if (trans_buf->mounted_len > 0) {
+        hal_trans->cmd_bits = 0;
+        hal_trans->addr_bits = 0;
+        hal_trans->dummy_bits = 0;
+        hal_trans->cs_setup = 0;
+    }
+    trans_buf->mounted_len += seg_len;
+    hal_trans->cs_keep_active = (trans_buf->mounted_len < total_len) || hal_trans->cs_keep_active;
+}
+
 static void SPI_MASTER_ISR_ATTR spi_format_hal_trans_struct(spi_device_t *dev, spi_trans_priv_t *trans_buf, spi_hal_trans_config_t *hal_trans)
 {
     spi_transaction_t *trans = trans_buf->trans;
@@ -922,6 +954,10 @@ static void SPI_MASTER_ISR_ATTR spi_format_hal_trans_struct(spi_device_t *dev, s
 #endif
     hal_trans->line_mode.addr_lines = (trans->flags & SPI_TRANS_MULTILINE_ADDR) ? hal_trans->line_mode.data_lines : 1;
     hal_trans->line_mode.cmd_lines = (trans->flags & SPI_TRANS_MULTILINE_CMD) ? hal_trans->line_mode.data_lines : 1;
+
+    if (s_spi_trans_needs_sw_split(dev->host, trans)) {
+        s_spi_format_sw_split_segment(dev, trans_buf, hal_trans);
+    }
 }
 
 // The function is called to send a new transaction, in ISR or in the task.
@@ -933,6 +969,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     spi_transaction_t *trans = trans_buf->trans;
     spi_hal_context_t *hal = &(dev->host->hal);
     spi_hal_dev_config_t *hal_dev = &(dev->hal_dev);
+    bool call_pre_cb = !(s_spi_trans_needs_sw_split(host, trans) && trans_buf->mounted_len != 0);
 
     dev->host->cur_cs = dev->id;
 
@@ -955,7 +992,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     spi_hal_enable_data_line(hal->hw, !!hal_trans.send_buffer, !!hal_trans.rcv_buffer);
 
     //Call pre-transmission callback, if any
-    if (dev->cfg.pre_cb) {
+    if (call_pre_cb && dev->cfg.pre_cb) {
         dev->cfg.pre_cb(trans);
     }
 #if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
@@ -969,6 +1006,19 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
 #endif // CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
     //Kick off transfer
     spi_hal_user_start(hal, hal_trans.is_seg_trans);
+}
+
+static SPI_MASTER_ISR_ATTR bool s_spi_sw_split_has_next(spi_host_t *host)
+{
+#ifdef SPI_LL_PERIPH_HAS_SCT
+    if (host->sct_mode_enabled) {
+        return false;
+    }
+#endif
+    spi_trans_priv_t *trans_buf = &host->cur_trans_buf;
+    spi_transaction_t *trans = trans_buf->trans;
+    size_t total_len = MAX((trans->length + 7) / 8, (trans->rxlength + 7) / 8);
+    return s_spi_trans_needs_sw_split(host, trans) && trans_buf->mounted_len < total_len;
 }
 
 // The function is called when a transaction is done, in ISR or in the task.
@@ -1074,6 +1124,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
     BaseType_t do_yield = pdFALSE;
     spi_host_t *host = (spi_host_t *)arg;
     const spi_bus_attr_t* bus_attr = host->bus_attr;
+    spi_bus_lock_handle_t lock = host->bus_attr->lock;
 #if CONFIG_IDF_TARGET_ESP32
     //only for esp32 dma workaround usage
     const spi_dma_ctx_t *dma_ctx = host->dma_ctx;
@@ -1093,13 +1144,24 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
      * (d) -> (a) -> (b) -> (c), and in this case the interrupt is disabled while there's pending BG request in the queue.
      * To avoid this, interrupt is disabled here, and re-enabled later if required.
      */
-    if (!spi_bus_lock_bg_entry(bus_attr->lock)) {
+    if (!spi_bus_lock_bg_entry(lock)) {
         /*------------ deal with the in-flight transaction -----------------*/
         assert(host->cur_cs != DEV_NUM_MAX);
+        // check if software split long trans is all finished.
+        if (s_spi_sw_split_has_next(host)) {
+            spi_new_trans(host->device[host->cur_cs], &host->cur_trans_buf);
+            do {
+            } while (!spi_bus_lock_bg_exit(lock, true, &do_yield));
+
+            if (do_yield) {
+                portYIELD_FROM_ISR();
+            }
+            return; // a long trans is not fully finished
+        }
+
         //Okay, transaction is done.
         const int cs = host->cur_cs;
         //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
-
         if (bus_attr->dma_enabled) {
 #if CONFIG_IDF_TARGET_ESP32
             //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
@@ -1140,8 +1202,6 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
     /*------------ new transaction starts here ------------------*/
     assert(host->cur_cs == DEV_NUM_MAX);
-
-    spi_bus_lock_handle_t lock = host->bus_attr->lock;
     BaseType_t trans_found = pdFALSE;
 
     // There should be remaining requests
@@ -1268,17 +1328,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
 
     SPI_CHECK(!txlen_extra || (txlen_extra >= SPI_LL_TX_MINI_EXTRA_BITS), "tx %d-bit is not supported on this(or this version) chip", ESP_ERR_NOT_SUPPORTED, trans_desc->length);
     SPI_CHECK(!rxlen_extra || (rxlen_extra >= SPI_LL_RX_MINI_EXTRA_BITS), "rx %d-bit is not supported on this chip", ESP_ERR_NOT_SUPPORTED, trans_desc->rxlength);
-    if (bus_attr->dma_enabled) {
-#ifdef SPI_LL_PERIPH_HAS_SCT
-        if (!SPI_LL_PERIPH_HAS_SCT(host->id)) {
-            SPI_CHECK(trans_desc->length <= SPI_LL_DMA_MAX_BIT_LEN, "txdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
-            SPI_CHECK(trans_desc->rxlength <= SPI_LL_DMA_MAX_BIT_LEN, "rxdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
-        }
-#else
-        SPI_CHECK(trans_desc->length <= SPI_LL_DMA_MAX_BIT_LEN, "txdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
-        SPI_CHECK(trans_desc->rxlength <= SPI_LL_DMA_MAX_BIT_LEN, "rxdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
-#endif
-    } else {
+    if (!bus_attr->dma_enabled) {
         SPI_CHECK(trans_desc->length <= SPI_LL_CPU_MAX_BIT_LEN, "txdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
         SPI_CHECK(trans_desc->rxlength <= SPI_LL_CPU_MAX_BIT_LEN, "rxdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
     }
@@ -1521,6 +1571,17 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot send polling transaction while the previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE);
 
     spi_host_t *host = handle->host;
+    if (host->bus_attr->dma_enabled) {
+#ifdef SPI_LL_PERIPH_HAS_SCT
+        if (!SPI_LL_PERIPH_HAS_SCT(host->id)) {
+            SPI_CHECK(trans_desc->length <= SPI_LL_DMA_MAX_BIT_LEN, "polling_trans don't support txdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
+            SPI_CHECK(trans_desc->rxlength <= SPI_LL_DMA_MAX_BIT_LEN, "polling_trans don't support rxdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
+        }
+#else
+        SPI_CHECK(trans_desc->length <= SPI_LL_DMA_MAX_BIT_LEN, "polling_trans don't support txdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
+        SPI_CHECK(trans_desc->rxlength <= SPI_LL_DMA_MAX_BIT_LEN, "polling_trans don't support rxdata transfer > hardware max supported len", ESP_ERR_INVALID_ARG);
+#endif
+    }
     spi_trans_priv_t priv_polling_trans = { .trans = trans_desc, };
     ret = setup_priv_desc(host, &priv_polling_trans);
     if (ret != ESP_OK) {
@@ -1614,15 +1675,7 @@ esp_err_t spi_bus_get_max_transaction_len(spi_host_device_t host_id, size_t *max
 
     spi_host_t *host = bus_driver_ctx[host_id];
     if (host->bus_attr->dma_enabled) {
-#ifdef SPI_LL_PERIPH_HAS_SCT
-        if (SPI_LL_PERIPH_HAS_SCT(host_id)) {
-            *max_bytes = host->bus_attr->max_transfer_sz;
-        } else {
-            *max_bytes = MIN(host->bus_attr->max_transfer_sz, (SPI_LL_DMA_MAX_BIT_LEN / 8));
-        }
-#else
-        *max_bytes = MIN(host->bus_attr->max_transfer_sz, (SPI_LL_DMA_MAX_BIT_LEN / 8));
-#endif
+        *max_bytes = host->bus_attr->max_transfer_sz;
     } else {
         *max_bytes = MIN(host->bus_attr->max_transfer_sz, (SPI_LL_CPU_MAX_BIT_LEN / 8));
     }
