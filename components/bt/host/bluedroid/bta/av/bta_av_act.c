@@ -31,6 +31,7 @@
 #include "bta_av_int.h"
 #include "stack/avdt_api.h"
 #include "bta/utl.h"
+#include "stack/sdp_api.h"
 #include "stack/l2c_api.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
@@ -1302,7 +1303,14 @@ void bta_av_disable(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
 
     bta_av_close_all_rc(p_cb);
 
-    utl_freebuf((void **) &p_cb->p_disc_db);
+    /* Clear disc first so a late BTA_AV_SDP_AVRC_DISC_EVT hits
+     * bta_av_rc_disc_done()'s if (!p_cb->disc) and does not scan p_disc_db. */
+    p_cb->disc = 0;
+    if (p_cb->p_disc_db) {
+        /* SDP may still be writing into this buffer (AVRCP discovery). */
+        SDP_CancelServiceSearch(p_cb->p_disc_db);
+        utl_freebuf((void **) &p_cb->p_disc_db);
+    }
 
     /* disable audio/video - de-register all channels,
      * expect BTA_AV_DEREG_COMP_EVT when deregister is complete */
@@ -1757,7 +1765,10 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     }
 #endif
     p_cb->disc = 0;
-    utl_freebuf((void **) &p_cb->p_disc_db);
+    if (p_cb->p_disc_db) {
+        SDP_CancelServiceSearch(p_cb->p_disc_db);
+        utl_freebuf((void **) &p_cb->p_disc_db);
+    }
 
     APPL_TRACE_DEBUG("peer_features 0x%x, local features 0x%x", peer_features, p_cb->features);
 
