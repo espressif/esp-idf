@@ -36,6 +36,28 @@ static inline __attribute__((always_inline)) void sec_ll_crypto_clk_src_sel(soc_
     PCR.sec_conf.sec_clk_sel = reg_val;
 }
 
+/**
+ * @brief Get the selected crypto clock source.
+ *
+ * @return Currently selected clock source.
+ */
+static inline __attribute__((always_inline)) soc_module_clk_t sec_ll_crypto_get_clk_src_sel(void)
+{
+    switch (PCR.sec_conf.sec_clk_sel) {
+    case 0:
+        return SOC_MOD_CLK_XTAL;
+    case 1:
+        return SOC_MOD_CLK_RC_FAST;
+    case 2:
+        return SOC_MOD_CLK_XTAL_X2_F64M;
+    case 3:
+        return SOC_MOD_CLK_PLL_F96M;
+    default:
+        HAL_ASSERT(false);
+        return SOC_MOD_CLK_XTAL;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif
