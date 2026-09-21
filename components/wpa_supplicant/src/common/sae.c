@@ -406,6 +406,7 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 	    crypto_bignum_to_bin(y, x_y + SAE_MAX_ECC_PRIME_LEN,
 				 SAE_MAX_ECC_PRIME_LEN, prime_len) < 0) {
 		wpa_printf(MSG_DEBUG, "SAE: Could not solve y");
+		res = -1;
 		goto fail;
 	}
 
