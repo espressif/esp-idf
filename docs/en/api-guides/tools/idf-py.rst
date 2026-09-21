@@ -329,9 +329,7 @@ To use the MCP server with an AI assistant, configure your agent or IDE to start
 
 .. note::
 
-    ``mcp-server`` uses stdout for the MCP JSON-RPC transport. ``idf.py``
-    does not print its usual informational messages (such as
-    ``Executing action:``) when this command is used.
+    ``mcp-server`` uses stdout for the MCP JSON-RPC transport. ``idf.py`` does not print its usual informational messages (such as ``Executing action:``) when this command is used. To keep stdout from being polluted, this command cannot be combined with other ``idf.py`` commands.
 
 Available Tools and Resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
