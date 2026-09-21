@@ -27,7 +27,7 @@ g1_g0_components = [
 expected_dep_violations = {
     'esp_system': ['esp_timer', 'bootloader_support', 'esp_pm'],
     'spi_flash': ['bootloader_support', 'app_update', 'esp_driver_gpio'],
-    'esp_hw_support': ['efuse', 'bootloader_support', 'esp_driver_gpio', 'esp_timer', 'esp_pm', 'esp_security'],
+    'esp_hw_support': ['efuse', 'bootloader_support', 'esp_driver_gpio', 'esp_timer', 'esp_security'],
     'cxx': ['pthread'],
 }
 
