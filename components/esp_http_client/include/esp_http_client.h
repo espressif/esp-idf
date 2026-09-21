@@ -261,6 +261,7 @@ typedef struct {
 typedef enum {
     /* 2xx - Success */
     HttpStatus_Ok                = 200,
+    HttpStatus_NoContent         = 204,
     HttpStatus_PartialContent    = 206,
 
     /* 3xx - Redirection */
@@ -738,9 +739,14 @@ int esp_http_client_chunk_write_end(esp_http_client_handle_t client, bool last_c
  *
  * @return
  *     - (0) if stream doesn't contain content-length header, or chunked encoding (checked by `esp_http_client_is_chunked_response`)
+ *     - (0) if the status is 204 No Content or 304 Not Modified and the request is not HEAD,
+ *       because no body follows. `esp_http_client_get_content_length()` still reports the
+ *       Content-Length header value.
  *     - (-1: ESP_FAIL) if any errors
  *     - (-ESP_ERR_HTTP_EAGAIN = -0x7007) if call is timed-out before any data was ready
- *     - Download data length defined by content-length header
+ *     - Download data length defined by content-length header. For a response to a HEAD
+ *       request, with any status, this is the length that the server declares for the
+ *       resource. No body follows, and `esp_http_client_read()` returns 0.
  */
 int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client);
 
@@ -782,6 +788,12 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client);
 /**
  * @brief      Get http response content length (from header Content-Length)
  *             the valid value if this function invoke after `esp_http_client_perform`
+ *
+ * @note       A response to a HEAD request, a 204 No Content and a 304 Not Modified
+ *             carry no body, although the server can still send a Content-Length
+ *             header. This function reports the declared value, but
+ *             `esp_http_client_read()` returns 0 at once for such a response. Check
+ *             the status code and the request method before you read that many bytes.
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -917,6 +929,10 @@ esp_err_t esp_http_client_add_auth(esp_http_client_handle_t client);
 
 /**
  * @brief      Checks if entire data in the response has been read without any error.
+ *
+ * @note       A response to a HEAD request, a 204 No Content and a 304 Not Modified
+ *             carry no body, so this function returns true for them after the
+ *             headers are read, even if the server sent a Content-Length header.
  *
  * @param[in]  client   The esp_http_client handle
  *
