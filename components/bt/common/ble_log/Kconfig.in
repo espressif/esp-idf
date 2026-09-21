@@ -1,7 +1,6 @@
 config BLE_LOG_ENABLED
     bool "Enable BT Log Async Output (Dev Only)"
     select BLE_COMPRESSED_LOG_ENABLE
-    select ESP_TIMER_IN_IRAM
     default n
     help
         Enable BT Log Async Output

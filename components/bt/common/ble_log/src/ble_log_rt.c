@@ -17,6 +17,7 @@
 
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "freertos/semphr.h"
 #if CONFIG_BLE_LOG_LL_ENABLED
 #include "esp_bt.h"
 #endif
@@ -25,6 +26,7 @@
 /* MACRO */
 #define TAG                                      "ble_log_rt"
 #define BLE_LOG_RT_DEFER_TIMEOUT_US              (1000)
+#define BLE_LOG_RT_PROBE_TIMEOUT_MS              (1000)
 
 /* Link-layer clock sample; 0 when the controller exports no accessor. */
 #if CONFIG_BLE_LOG_LL_ENABLED
@@ -76,6 +78,7 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t rt_ref_count = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR esp_timer_handle_t rt_defer_timer = NULL;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR esp_timer_handle_t rt_ts_timer = NULL;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR TaskHandle_t rt_timer_task_handle = NULL;
 /* Toggle IO phase; stays false when the toggle IO is compiled out. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_io_level = false;
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
@@ -90,6 +93,44 @@ BLE_LOG_STATIC void ble_log_rt_dispatch(QueueHandle_t queue,
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
 
 /* PRIVATE FUNCTION */
+BLE_LOG_STATIC void ble_log_rt_probe_cb(void *arg)
+{
+    BLE_LOG_ATOMIC_STORE_RELEASE(rt_timer_task_handle, xTaskGetCurrentTaskHandle());
+    xSemaphoreGive((SemaphoreHandle_t)arg);
+}
+
+/* Release branches do not expose esp_timer's private task handle accessor.
+ * Learn the shared task identity before opening the runtime producer gate. */
+BLE_LOG_STATIC bool ble_log_rt_probe_timer_task(void)
+{
+    SemaphoreHandle_t done = xSemaphoreCreateBinary();
+    if (!done) {
+        return false;
+    }
+    esp_timer_handle_t timer = NULL;
+    const esp_timer_create_args_t args = {
+        .callback = ble_log_rt_probe_cb,
+        .arg = done,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "ble_log_probe",
+    };
+    bool ready = esp_timer_create(&args, &timer) == ESP_OK &&
+                 esp_timer_start_once(timer, 1) == ESP_OK &&
+                 xSemaphoreTake(done, pdMS_TO_TICKS(BLE_LOG_RT_PROBE_TIMEOUT_MS)) == pdTRUE;
+    if (timer) {
+        /* Also cancel a timed-out probe. A notification can arrive before
+         * the callback returns on another core: keep its argument alive. */
+        ESP_ERROR_CHECK(esp_timer_stop_blocking(timer, portMAX_DELAY));
+        ESP_ERROR_CHECK(esp_timer_delete(timer));
+    }
+    vSemaphoreDelete(done);
+    if (!ready) {
+        BLE_LOG_ATOMIC_STORE_RELEASE(rt_timer_task_handle, NULL);
+        ESP_LOGE(TAG, "Failed to identify ESP Timer task");
+    }
+    return ready;
+}
+
 /* Captures the link-layer, ESP and OS clocks at one instant. */
 void ble_log_rt_ts_sample(ble_log_ts_info_t *info, bool toggle_io)
 {
@@ -177,6 +218,14 @@ bool ble_log_rt_init(void)
 {
     if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited)) {
         return true;
+    }
+
+    if (BLE_LOG_IN_ISR() || !xPortCanYield() ||
+            xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
+        return false;
+    }
+    if (!ble_log_rt_probe_timer_task()) {
+        goto exit;
     }
 
     /* Configure the analyzer toggle IO */
@@ -283,12 +332,20 @@ void ble_log_rt_deinit(void)
         rt_queue_handle = NULL;
     }
 
+    BLE_LOG_ATOMIC_STORE_RELEASE(rt_timer_task_handle, NULL);
+
     /* Release the toggle IO */
     rt_ts_io_level = false;
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
     rt_ts_io_toggle_enabled = false;
     gpio_reset_pin(CONFIG_BLE_LOG_SYNC_IO_NUM);
 #endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
+}
+
+BLE_LOG_IRAM_ATTR bool ble_log_rt_is_timer_task(void)
+{
+    TaskHandle_t task = BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_timer_task_handle);
+    return task != NULL && task == xTaskGetCurrentTaskHandle();
 }
 
 bool ble_log_rt_drain(void)
