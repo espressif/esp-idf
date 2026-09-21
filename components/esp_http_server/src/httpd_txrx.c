@@ -783,9 +783,12 @@ int httpd_req_to_sockfd(httpd_req_t *r)
 static int httpd_sock_err(const char *ctx, int sockfd)
 {
     int errval;
-    ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, errno);
+    /* Save errno before it is logged. The log backend can overwrite errno,
+     * for example when a disconnected secondary console sets EIO. */
+    int sock_err = errno;
+    ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, sock_err);
 
-    switch (errno) {
+    switch (sock_err) {
     case EAGAIN:
     case EINTR:
         errval = HTTPD_SOCK_ERR_TIMEOUT;
