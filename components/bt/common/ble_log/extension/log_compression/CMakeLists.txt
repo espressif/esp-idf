@@ -65,7 +65,15 @@ if(CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE AND CONFIG_BT_BLUEDROID_ENABLED)
     list(APPEND LOG_COMPRESSED_MODULE "BLE_HOST")
 
     # update config file
-    set(HOST_CODE_PATH "host/bluedroid")
+    # BTC and OSI are shared at the source-tree level, but their TRACE macros
+    # and runtime log-level controls belong to Bluedroid. Keep them in the
+    # same compression module so they share host_log_index.h and follow the
+    # Bluedroid host-compression switch.
+    set(HOST_CODE_PATH
+        "host/bluedroid"
+        "common/btc"
+        "common/osi"
+    )
     set(HOST_LOG_INDEX_HEADER "host_log_index.h")
     set(BLE_HOST_LOG_SCRIPT_PATH
         "${CMAKE_CURRENT_LIST_DIR}/scripts/module_scripts/bluedroid/make_bluedroid_log_macro.py")
@@ -158,9 +166,10 @@ if(LOG_COMPRESSED_MODULE)
         endif()
         set(YML_IN  "${BT_ROOT_PATH}/common/ble_log/extension/log_compression/scripts/configs/module_info.yml.in")
 
-        # BLE_ISO has multiple code paths; rewrite CMake list ";" → YAML ", "
-        # into a sibling variable so BLE_ISO_CODE_PATH itself stays a CMake
-        # list usable by any later code that wants to iterate or append.
+        # Modules may have multiple code paths; rewrite CMake lists ";" →
+        # YAML ", " into sibling variables so the originals remain CMake
+        # lists usable by any later code that wants to iterate or append.
+        string(REPLACE ";" ", " HOST_CODE_PATH_YAML "${HOST_CODE_PATH}")
         string(REPLACE ";" ", " BLE_ISO_CODE_PATH_YAML "${BLE_ISO_CODE_PATH}")
 
         configure_file(${YML_IN} ${CONFIG_FILE_PATH} @ONLY)
