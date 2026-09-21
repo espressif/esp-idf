@@ -268,6 +268,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             dependencies: list | None,
             order_dependencies: list | None,
             action_args: dict,
+            forbid_chaining: bool = False,
         ) -> None:
             self.callback = callback
             self.check = check
@@ -276,6 +277,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.order_dependencies = order_dependencies
             self.action_args = action_args
             self.aliases = aliases
+            self.forbid_chaining = forbid_chaining
 
         def __call__(self, context: Context, global_args: PropertyDict, action_args: dict | None = None) -> None:
             if action_args is None:
@@ -304,6 +306,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             order_dependencies: list | None = None,
             check: Callable | None = None,
             hidden: bool = False,
+            forbid_chaining: bool = False,
             **kwargs: Any,
         ) -> None:
             super().__init__(name, **kwargs)
@@ -311,6 +314,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.name: str = self.name or self.callback.__name__
             self.deprecated: dict | str | bool = deprecated
             self.hidden: bool = hidden
+            self.forbid_chaining: bool = forbid_chaining
 
             if aliases is None:
                 aliases = []
@@ -351,6 +355,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                         order_dependencies=order_dependencies,
                         action_args=action_args,
                         aliases=self.aliases,
+                        forbid_chaining=self.forbid_chaining,
                     )
 
                 self.callback: Callable = wrapped_callback
@@ -773,6 +778,15 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     'found in the list of commands more than once. '
                     'Only first occurrence will be executed.'
                 )
+
+            # Guard user-requested chaining only; auto-injected dependencies are not counted.
+            if len(tasks) > 1:
+                for task in tasks:
+                    if task.forbid_chaining:
+                        raise FatalError(
+                            f'Command "{task.name}" is not allowed to be chained with other commands. '
+                            'Please use it as a standalone idf.py command.'
+                        )
 
             for task in tasks:
                 # Set propagated global options.

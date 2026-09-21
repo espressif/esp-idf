@@ -160,6 +160,14 @@ class TestDependencyManagement(TestWithoutExtensions):
             ' '.join(capturedOutput.getvalue().split()),
         )
 
+    def test_forbid_chaining(self):
+        for args in (['--dry-run', 'build', 'mcp-server'], ['--dry-run', 'mcp-server', 'build']):
+            with self.assertRaises(idf.FatalError) as ctx:
+                idf.init_cli()(args=args, standalone_mode=False)
+            self.assertIn('not allowed to be chained with other commands', str(ctx.exception))
+            self.assertIn('Please use it as a standalone idf.py command', str(ctx.exception))
+            self.assertIn('mcp-server', str(ctx.exception))
+
 
 class TestIdfVersionSeeding(TestWithoutExtensions):
     def test_idf_version_seeded_when_unset(self):
