@@ -15,6 +15,7 @@ from _pytest.fixtures import FixtureRequest
 from _pytest.main import Session
 from _pytest.nodes import Item
 from test_build_system_helpers import EXT_IDF_PATH
+from test_build_system_helpers import FAILED_COMMAND_LOG_DIR_ENV
 from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import get_idf_build_env
@@ -36,7 +37,31 @@ def _get_git_submodule_paths(repo_path: Path) -> list[str]:
     return submodule_paths
 
 
-def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
+def _is_materialized_submodule(path: Path) -> bool:
+    """Whether path holds submodule content rather than a placeholder.
+
+    ``git worktree add`` leaves a submodule as an empty directory or as a
+    gitlink file, and both are unusable as component sources.
+    """
+    try:
+        return path.is_dir() and any(path.iterdir())
+    except OSError:
+        return False
+
+
+def _copy_submodule(src_submodule: Path, dst_submodule: Path) -> None:
+    """Replace the worktree placeholder with the submodule content of the source repo."""
+    # rmtree() cannot remove a gitlink file (even with ignore_errors=True), and
+    # copytree() would then leave a file where CMake expects a directory
+    # (e.g. mbedtls/include).
+    if dst_submodule.is_file() or dst_submodule.is_symlink():
+        dst_submodule.unlink()
+    elif dst_submodule.exists():
+        shutil.rmtree(dst_submodule)
+    shutil.copytree(src_submodule, dst_submodule, symlinks=True, ignore=shutil.ignore_patterns('.git'))
+
+
+def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str | None:
     """
     Create IDF copy using git worktree (fast) + copying submodule directories.
 
@@ -44,6 +69,12 @@ def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
     appear as empty directories. We copy submodule content from the source
     repo (which has them already checked out) instead of running git submodule
     update (which can fail due to auth issues on CI).
+
+    Return the worktree branch name, or None if a submodule could not be
+    materialized. In that case the worktree is removed again and the caller
+    creates the copy with shutil.copytree instead. Leaving a placeholder behind
+    would produce a copy that only fails once a test builds it, as a missing
+    include directory or source file of the affected component.
 
     After copying submodules, remove the worktree's top-level ``.git`` file so
     the result matches the old ``shutil.copytree`` behavior (no git repo at
@@ -67,18 +98,15 @@ def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
         src_submodule = path_from / submodule_rel_path
         dst_submodule = path_to / submodule_rel_path
 
-        # Only copy if the source submodule is a populated directory. A gitlink
-        # file or empty dir means the source checkout did not materialize it.
-        if src_submodule.is_dir() and any(src_submodule.iterdir()):
+        # Nothing to copy when the source checkout did not materialize the submodule.
+        if _is_materialized_submodule(src_submodule):
             logging.debug(f'copying submodule {submodule_rel_path}')
-            # Worktree submodule paths are often gitlink files; rmtree() cannot
-            # remove those (even with ignore_errors=True), and copytree() then
-            # leaves a file where CMake expects a directory (e.g. mbedtls/include).
-            if dst_submodule.is_file() or dst_submodule.is_symlink():
-                dst_submodule.unlink()
-            elif dst_submodule.exists():
-                shutil.rmtree(dst_submodule)
-            shutil.copytree(src_submodule, dst_submodule, symlinks=True, ignore=shutil.ignore_patterns('.git'))
+            _copy_submodule(src_submodule, dst_submodule)
+
+        if not _is_materialized_submodule(dst_submodule):
+            logging.warning(f'submodule {submodule_rel_path} could not be copied into {path_to}')
+            _cleanup_worktree(path_from, path_to, branch_name)
+            return None
 
     # Match old shutil-based idf_copy: no top-level .git (see docstring above).
     (path_to / '.git').unlink(missing_ok=True)
@@ -159,21 +187,33 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(scope='session')
 def _session_work_dir(request: FixtureRequest) -> typing.Generator[tuple[Path, bool], None, None]:
     work_dir = request.config.getoption('--work-dir')
+    previous_log_dir = os.environ.get(FAILED_COMMAND_LOG_DIR_ENV)
 
     if work_dir:
-        work_dir = os.path.join(work_dir, datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d_%H-%M-%S'))
-        logging.debug(f'using work directory: {work_dir}')
-        os.makedirs(work_dir, exist_ok=True)
+        # resolve allows using relative paths with --work-dir option
+        work_dir_path = Path(work_dir).resolve() / datetime.datetime.now(datetime.timezone.utc).strftime(
+            '%Y-%m-%d_%H-%M-%S'
+        )
+        logging.debug(f'using work directory: {work_dir_path}')
+        os.makedirs(work_dir_path, exist_ok=True)
         clean_dir = None
         is_temp_dir = False
     else:
-        work_dir = mkdtemp()
-        logging.debug(f'created temporary work directory: {work_dir}')
-        clean_dir = work_dir
+        work_dir_path = Path(mkdtemp()).resolve()
+        logging.debug(f'created temporary work directory: {work_dir_path}')
+        clean_dir = work_dir_path
         is_temp_dir = True
 
-    # resolve allows using relative paths with --work-dir option
-    yield Path(work_dir).resolve(), is_temp_dir
+    log_dir = work_dir_path / 'failed_command_logs'
+    log_dir.mkdir(parents=True, exist_ok=True)
+    os.environ[FAILED_COMMAND_LOG_DIR_ENV] = str(log_dir)
+
+    yield work_dir_path, is_temp_dir
+
+    if previous_log_dir is None:
+        os.environ.pop(FAILED_COMMAND_LOG_DIR_ENV, None)
+    else:
+        os.environ[FAILED_COMMAND_LOG_DIR_ENV] = previous_log_dir
 
     if clean_dir:
         logging.debug(f'cleaning up {clean_dir}')
@@ -310,6 +350,8 @@ def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[P
         # Clean up any partial worktree before fallback
         if path_to.exists():
             shutil.rmtree(path_to, ignore_errors=True)
+
+    if branch_name is None:
         _create_idf_copy_via_shutil(path_from, path_to)
 
     os.environ['IDF_PATH'] = str(path_to)
