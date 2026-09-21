@@ -35,6 +35,7 @@
 
 #include "bta_av_int.h"
 #include "stack/avdt_api.h"
+#include "stack/sdp_api.h"
 #include "bta/utl.h"
 #include "stack/l2c_api.h"
 #include "stack/l2cdefs.h"
@@ -1035,7 +1036,7 @@ void bta_av_cleanup(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 
     /* free any buffers */
     utl_freebuf((void **) &p_scb->p_cap);
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    bta_av_free_sdb(p_scb, NULL);
     p_scb->avdt_version = 0;
 
     /* initialize some control block variables */
@@ -1082,7 +1083,10 @@ void bta_av_cleanup(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 void bta_av_free_sdb(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     UNUSED(p_data);
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    if (p_scb->p_disc_db) {
+        SDP_CancelServiceSearch(p_scb->p_disc_db);
+        utl_freebuf((void **) &p_scb->p_disc_db);
+    }
 }
 
 /*******************************************************************************
@@ -1589,7 +1593,7 @@ void bta_av_connect_req (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     UNUSED(p_data);
 
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    bta_av_free_sdb(p_scb, NULL);
 
     if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
         /* SNK initiated L2C connection while SRC was doing SDP.    */
@@ -1616,7 +1620,7 @@ void bta_av_sdp_failed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         p_scb->open_status = BTA_AV_FAIL_SDP;
     }
 
-    utl_freebuf((void **) &p_scb->p_disc_db);
+    bta_av_free_sdb(p_scb, NULL);
     bta_av_str_closed(p_scb, p_data);
 }
 
