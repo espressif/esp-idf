@@ -22,6 +22,8 @@ BluFi 流程的关键部分包括数据的分片、加密以及校验和验证�
 
    来实现现代化、安全且有持续维护的解决方案。
 
+   BluFi 应用程序回调函数（``esp_blufi_callbacks_t::event_cb`` 和安全处理函数）运行在 `BTC_TASK` 任务中，而不是 NimBLE Host 任务中。请在 ``Component config`` > ``Bluetooth`` > ``Common Options`` 下配置 :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`。:ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE` 不会改变 ``BTC_TASK`` 的栈大小。
+
 BluFi 流程
 -----------
 
@@ -520,7 +522,6 @@ BluFi 会在调用完 Negotiate_data_handler 后，发送 Negotiate_data_handler
 2. **Network Provisioning 组件（推荐使用）** – 或者可以使用 ESP-IDF 提供的 network_provisioning 组件，实现安全、可直接使用的配网解决方案：
 
    `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_
-
 
 
 GATT 相关说明
