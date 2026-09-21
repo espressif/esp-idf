@@ -24,6 +24,7 @@
 #define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
 #define I2S_LL_SUPPORT(_feat)   I2S_LL_SUPPORT_ ## _feat
 #define I2S_LL_INST_NUM         1
+#define I2S_LL_PCM2PDM_SUPPORTED_PORT_MASK    (1U << 0)  // PCM2PDM is supported on I2S0
 
 #ifdef __cplusplus
 extern "C" {
@@ -428,7 +429,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 
 /**
  * @brief Configure I2S RX module clock divider
- * @note mclk on ESP32H2 is shared by both TX and RX channel
+ * @note mclk on ESP32H21 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
@@ -833,7 +834,7 @@ static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pcm2pdm_en)
  */
 static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm2pcm_en)
 {
-    HAL_ASSERT(!pdm2pcm_en);  // H2 does not have PDM2PCM filter
+    HAL_ASSERT(!pdm2pcm_en);  // H21 does not have PDM2PCM filter
     hw->rx_conf.rx_pdm_en = true;
     hw->rx_conf.rx_tdm_en = false;
 }
@@ -1264,8 +1265,7 @@ static inline bool i2s_ll_is_destination_supported(int port_id, i2s_destination_
  */
 static inline bool i2s_ll_is_pcm2pdm_supported(int port_id)
 {
-    (void)port_id;
-    return false;
+    return (I2S_LL_PCM2PDM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
 }
 
 /**

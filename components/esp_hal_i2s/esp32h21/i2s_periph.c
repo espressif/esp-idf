@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,8 +25,9 @@ const i2s_signal_conn_t i2s_periph_signal[I2S_LL_GET(INST_NUM)] = {
         .s_tx_ws_sig  = I2SO_WS_IN_IDX,
         .s_rx_ws_sig  = I2SI_WS_IN_IDX,
 
-        .data_out_sig = I2SO_SD_OUT_IDX,
-        .data_in_sig  = I2SI_SD_IN_IDX,
+        .data_out_sigs[0] = I2SO_SD_OUT_IDX,
+        .data_out_sigs[1] = I2SO_SD1_OUT_IDX,
+        .data_in_sigs[0]  = I2SI_SD_IN_IDX,
 
         .irq          = ETS_I2S0_INTR_SOURCE,
     }
