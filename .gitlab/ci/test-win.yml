@@ -55,7 +55,9 @@ test_tools_win:
 # Build tests
 .test_build_system_template_win:
   extends: .host_test_win_template
-  timeout: 4 hours
+  # Shard 6/6 can take ~2h1m on master; 2h is too tight. 3h still cuts the
+  # 4h freeze cost without failing a healthy long shard.
+  timeout: 3 hours
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -65,9 +67,13 @@ test_tools_win:
     reports:
       junit: XUNIT_RESULT.xml
   script:
+    # CI_PROJECT_DIR is relative on these runners (builds/espressif/esp-idf), so it
+    # cannot be used after cd. The job starts in the directory artifact paths are
+    # relative to, so record it before cd and build absolute paths from it.
+    - $Env:IDF_TEST_PROJECT_DIR = (Get-Location).Path
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME} --durations=10
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --work-dir "$Env:IDF_TEST_PROJECT_DIR\test_build_system" --junitxml="$Env:IDF_TEST_PROJECT_DIR\XUNIT_RESULT.xml" --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME} --durations=10
 
 pytest_build_system_win:
   extends:
@@ -91,9 +97,10 @@ pytest_build_system_win_minimal_cmake:
         Write-Error "ERROR: Wrong CMake version! Detected: $actualVersion, but expected: $Env:MINIMAL_CMAKE_VERSION"
         exit 1
       }
+    - $Env:IDF_TEST_PROJECT_DIR = (Get-Location).Path
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest -k cmake --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME} --durations=10
+    - pytest -k cmake --work-dir "$Env:IDF_TEST_PROJECT_DIR\test_build_system" --junitxml="$Env:IDF_TEST_PROJECT_DIR\XUNIT_RESULT.xml" --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME} --durations=10
 
 pytest_buildv2_system_win:
   extends:
@@ -101,11 +108,13 @@ pytest_buildv2_system_win:
     - .rules:labels:buildv2
   parallel: 6
   script:
+    - $Env:IDF_TEST_PROJECT_DIR = (Get-Location).Path
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - pytest
       --buildv2
       --parallel-count ${CI_NODE_TOTAL}
       --parallel-index ${CI_NODE_INDEX}
-      --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+      --work-dir "$Env:IDF_TEST_PROJECT_DIR\test_build_system"
+      --junitxml="$Env:IDF_TEST_PROJECT_DIR\XUNIT_RESULT.xml"
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}

@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import typing
+import uuid
 from pathlib import Path
 
 try:
@@ -18,6 +19,10 @@ except KeyError:
 EnvDict = dict[str, str]
 IdfPyFunc = typing.Callable[..., subprocess.CompletedProcess]
 
+# Session fixture in conftest.py sets this to the pytest --work-dir tree so
+# failed-command files survive --cleanup-idf-copy of the app directory.
+FAILED_COMMAND_LOG_DIR_ENV = 'IDF_TEST_FAILED_COMMAND_LOG_DIR'
+
 
 _LOG_ERROR_MARKERS = (
     'CMake Error',
@@ -28,44 +33,61 @@ _LOG_ERROR_MARKERS = (
 )
 
 
-def _clip_log_output(text: str | None, max_lines: int = 80, max_line_len: int = 400) -> str:
-    """Last ``max_lines`` of process output for logging, plus failure lines.
+def _shorten_log_line(line: str, max_line_len: int = 200) -> str:
+    if len(line) <= max_line_len:
+        return line
+    return line[:max_line_len] + f'... [{len(line) - max_line_len} chars omitted]'
 
-    pytest.ini enables ``log_cli``, so ``logging.error(full_stdout)`` after a
-    failed build is one record. On Windows CI that live-log can stall for hours
-    even when the line count is small: CMake's ``-- Component paths:`` line is
-    a single multi-KB (sometimes multi-MB) string.
-    """
+
+def _failure_lines(text: str | None, max_lines: int = 20) -> list[str]:
+    """Marker lines only. Do not send build tails over the CI live log."""
     if not text:
-        return ''
-    lines = text.splitlines()
-
-    def _short(line: str) -> str:
-        if len(line) <= max_line_len:
-            return line
-        return line[:max_line_len] + f'... [{len(line) - max_line_len} chars omitted]'
-
-    omitted = max(0, len(lines) - max_lines)
-    tail_start = len(lines) - max_lines if omitted else 0
-    tail = lines[tail_start:]
-
-    failures: list[str] = []
-    for idx, line in enumerate(lines):
-        if idx >= tail_start:
-            break
+        return []
+    lines: list[str] = []
+    for line in text.splitlines():
         if any(marker in line for marker in _LOG_ERROR_MARKERS):
-            failures.append(line)
-            if len(failures) >= 40:
+            lines.append(_shorten_log_line(line))
+            if len(lines) >= max_lines:
                 break
+    return lines
 
-    parts: list[str] = []
-    if failures:
-        parts.append('[... failure lines ...]')
-        parts.extend(_short(line) for line in failures)
-    if omitted:
-        parts.append(f'[... {omitted} lines omitted ...]')
-    parts.extend(_short(line) for line in tail)
-    return '\n'.join(parts)
+
+def _log_process_failure(
+    command_name: str,
+    cmd: list[str],
+    workdir: Path | str,
+    error: subprocess.CalledProcessError,
+) -> None:
+    """Save the untouched output to files, then log paths and failure lines.
+
+    The files keep the whole output. The live log only names those files and
+    repeats a few marker lines: a 12 KB record of clipped stdout still hangs
+    Windows CI the same way an unclipped one did.
+    """
+    env_log_dir = os.environ.get(FAILED_COMMAND_LOG_DIR_ENV)
+    log_dir = Path(env_log_dir) if env_log_dir else Path(workdir) / 'failed_command_logs'
+    saved_paths: dict[str, Path] = {}
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        prefix = f'{command_name}_{uuid.uuid4().hex}'
+        for stream_name, output in (('stdout', error.stdout), ('stderr', error.stderr)):
+            output_path = log_dir / f'{prefix}.{stream_name}.txt'
+            output_path.write_text(output or '', encoding='utf-8')
+            saved_paths[stream_name] = output_path
+    except OSError as write_error:
+        logging.error('Full output of the failed command could not be saved: %s', write_error)
+
+    message = [
+        f'The following {command_name} command has failed: {" ".join(cmd)}',
+        f'Working directory: {workdir}',
+    ]
+    for stream_name, output_path in saved_paths.items():
+        message.append(f'Full {stream_name}: {output_path}')
+    failure_lines = _failure_lines(error.stdout) + _failure_lines(error.stderr)
+    if failure_lines:
+        message.append('Failure lines:')
+        message.extend(failure_lines)
+    logging.error('\n'.join(message))
 
 
 def normalize_output(text: str) -> str:
@@ -155,10 +177,7 @@ def run_idf_py(
             input=input_str,
         )
     except subprocess.CalledProcessError as e:
-        logging.error('The following idf.py command has failed: {}'.format(' '.join(cmd)))
-        logging.error(f'Working directory: {workdir}')
-        logging.error(f'Stdout: {_clip_log_output(e.stdout)}')
-        logging.error(f'Stderr: {_clip_log_output(e.stderr)}')
+        _log_process_failure('idf.py', cmd, workdir, e)
         raise
 
 
@@ -200,10 +219,7 @@ def run_cmake(
             errors='backslashreplace',
         )
     except subprocess.CalledProcessError as e:
-        logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
-        logging.error(f'Working directory: {workdir}')
-        logging.error(f'Stdout: {_clip_log_output(e.stdout)}')
-        logging.error(f'Stderr: {_clip_log_output(e.stderr)}')
+        _log_process_failure('cmake', cmd, build_dir, e)
         raise
 
 

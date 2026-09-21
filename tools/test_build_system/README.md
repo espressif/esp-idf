@@ -31,7 +31,7 @@ If you are working on a bug fix or a feature and one of the tests starts to fail
 
 1. Find the name of the failing test in the CI job log
 1. Follow the steps in the section above to run that one test
-1. By default, the fixtures which create temporary directories will remove them after the test. To prevent the directories from being removed, run `pytest` with `--work-dir /some/path` flag. The temporary directories will be created under `/some/path`, and you will be able to inspect them once the test fails.
+1. By default, the fixtures which create temporary directories will remove them after the test. To prevent the directories from being removed, run `pytest` with `--work-dir /some/path` flag. The temporary directories will be created under `/some/path`, and you will be able to inspect them once the test fails. Failed `idf.py` / `cmake` output is also written to `failed_command_logs/` under that work directory.
 1. You can increase the logging level to see the commands being executed by the test by running `pytest` with `--log-cli-level DEBUG` argument.
 
 ## Adding new tests
