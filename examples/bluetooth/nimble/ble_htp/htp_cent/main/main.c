@@ -498,9 +498,21 @@ ble_htp_cent_connect_if_interesting(void *disc)
 #endif
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
-    addr = &((struct ble_gap_ext_disc_desc *)disc)->addr;
+    struct ble_gap_ext_disc_desc *disc_desc = disc;
 #else
-    addr = &((struct ble_gap_disc_desc *)disc)->addr;
+    struct ble_gap_disc_desc *disc_desc = disc;
+#endif
+
+    addr = &disc_desc->addr;
+
+#if MYNEWT_VAL(BLE_HOST_BASED_PRIVACY)
+    /*
+     * With host-based privacy, the advertising report's peer address may be
+     * resolved to the identity address by the Host. The Controller does not
+     * perform peer RPA resolution, so use the current OTA address when
+     * initiating the connection.
+     */
+    addr = &disc_desc->ota_addr;
 #endif
 
 #if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID

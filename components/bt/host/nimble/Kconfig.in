@@ -323,6 +323,17 @@ menu "GAP"
             Use this option to do host based Random Private Address resolution.
             This option is valid only for ESP32
 
+    config BT_NIMBLE_HOST_BASED_PRIVACY_RESOLVE_ON_SCAN
+        bool "Resolve peer RPA while scanning"
+        default y
+        depends on BT_NIMBLE_HOST_BASED_PRIVACY
+        help
+            Enable this option to resolve peer Resolvable Private Addresses (RPAs)
+            to their identity addresses in scan results. This is useful when an
+            application needs to identify a peer while scanning, for example, to
+            match a bonded device. When disabled, scan results retain the peer's
+            on-air RPA, and the RPA is resolved when the connection is established.
+
     config BT_NIMBLE_HOST_ALLOW_CONNECT_WITH_SCAN
         bool "Allow Connections with scanning in progress"
         depends on BT_NIMBLE_ENABLED && !(IDF_TARGET_ESP32C2)
