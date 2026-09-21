@@ -70,7 +70,7 @@ tools/test_apps/system/esp_intr_dump:
 
 tools/test_apps/system/flash_auto_suspend_iram_reduction:
   disable:
-    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2
+    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2"
       reason: Targets do not support auto-suspend
   disable_test:
     - if: IDF_TARGET != "esp32c3"
