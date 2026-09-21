@@ -754,6 +754,15 @@ void bta_jv_disable (tBTA_JV_MSG *p_data)
     tBTA_JV_STATUS evt_data;
     evt_data = BTA_JV_SUCCESS;
 
+    /* An SDP search still in progress keeps writing into p_bta_jv_cfg->p_sdp_db,
+     * which BTA_JvFree() releases once BTA_JV_DISABLE_EVT is handled. Cancel it
+     * first: the connection control block then rejects any late response instead
+     * of parsing it into freed memory. */
+    if (bta_jv_cb.sdp_active != BTA_JV_SDP_ACT_NONE) {
+        APPL_TRACE_WARNING("%s: SDP discovery active, cancelling it", __func__);
+        SDP_CancelServiceSearch(p_bta_jv_cfg->p_sdp_db);
+    }
+
     // clear all the pm_cb slots
     for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
         if (bta_jv_cb.pm_cb[i].state != BTA_JV_PM_FREE_ST) {
