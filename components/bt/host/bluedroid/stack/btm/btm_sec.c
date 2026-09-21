@@ -473,7 +473,12 @@ void BTM_SetSecureConnectionsOnly (BOOLEAN secure_connections_only_mode)
                   secure_connections_only_mode);
 
     btm_cb.devcb.secure_connections_only = secure_connections_only_mode;
+#if BT_CLASSIC_BQB_INCLUDED
+    /* GAP/SEC/SEM/BV-30-C and BV-25-C must be able to leave SC Only. */
+    btm_cb.security_mode = secure_connections_only_mode ? BTM_SEC_MODE_SC : BTM_SEC_MODE_SP;
+#else
     btm_cb.security_mode = BTM_SEC_MODE_SC;
+#endif
 }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
