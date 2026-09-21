@@ -44,7 +44,6 @@ set(extra_components_which_shouldnt_be_included
 
     # esp_pm is pulled in by esp_system due to pm_init and freertos idle hook
     # both could be moved to pm component if esp-system idle hook provided a way to register hooks
-    # esp_hw_support dependency seems like it could be removed?
     # It is also used by esp_driver_gpio, which should be removed from G1-only build.
     # IDF-10415
     esp_pm
