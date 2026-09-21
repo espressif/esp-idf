@@ -80,6 +80,8 @@ ETH_IPERF_THRESHOLDS_SPI_ETH = {
 def test_esp_eth_iperf(
     dut: Dut,
     log_performance: Callable[[str, object], None],
+    tcp_tx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
+    tcp_rx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
     udp_tx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
     udp_rx_bw_lim: int | None = NO_BANDWIDTH_LIMIT,
     spi_eth: bool | None = False,
@@ -105,8 +107,8 @@ def test_esp_eth_iperf(
     test_utility = IperfTestUtilityEth(dut, 'ethernet', pc_nic_ip, pc_iperf_log_file, test_result)
 
     # 3. run test for TCP Tx, Rx and UDP Tx, Rx
-    test_utility.run_test('tcp', 'tx', 0, NO_BANDWIDTH_LIMIT)
-    test_utility.run_test('tcp', 'rx', 0, NO_BANDWIDTH_LIMIT)
+    test_utility.run_test('tcp', 'tx', 0, tcp_tx_bw_lim)
+    test_utility.run_test('tcp', 'rx', 0, tcp_rx_bw_lim)
     test_utility.run_test('udp', 'tx', 0, udp_tx_bw_lim)
     test_utility.run_test('udp', 'rx', 0, udp_rx_bw_lim)
 
@@ -155,6 +157,7 @@ def test_esp_eth_iperf_ip101(
     [
         pytest.param('default_ip101_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
         pytest.param('default_ip101_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
+        pytest.param('psram_ip101_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
     ],
     indirect=['target'],
 )
@@ -290,4 +293,20 @@ def test_esp_eth_iperf_yt8531(
     dut: Dut,
     log_performance: Callable[[str, object], None],
 ) -> None:
-    test_esp_eth_iperf(dut, log_performance)
+    test_esp_eth_iperf(dut, log_performance, udp_rx_bw_lim=150)
+
+
+@pytest.mark.eth_yt8531
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram_yt8531_esp32s31',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_esp_eth_iperf_yt8531_psram(
+    dut: Dut,
+    log_performance: Callable[[str, object], None],
+) -> None:
+    test_esp_eth_iperf(dut, log_performance, udp_rx_bw_lim=95)

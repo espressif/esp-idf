@@ -19,9 +19,10 @@ menu "Ethernet"
             default 512
             help
                 Set the size of each buffer used by Ethernet MAC DMA.
-                On targets where internal RAM is accessed through L1 cache (ESP32-P4),
-                this size must be a multiple of the cache line size (64 bytes), e.g.
-                256, 512, 1536.
+                When the buffers are accessed through a data cache (internal RAM on
+                ESP32-P4, or PSRAM if ETH_DMA_USE_PSRAM is enabled), this size must
+                be a multiple of the data cache line size. Cache line size is
+                typically 64 bytes, hence 256, 512, 1536, for example.
 
         config ETH_DMA_RX_BUFFER_NUM
             int "Amount of Ethernet DMA Rx buffers"
@@ -39,6 +40,16 @@ menu "Ethernet"
             help
                 Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
                 Larger number of buffers could increase throughput somehow.
+
+        config ETH_DMA_USE_PSRAM
+            bool "Allocate Ethernet DMA buffers in PSRAM"
+            depends on SPIRAM && SOC_PSRAM_DMA_CAPABLE
+            default n
+            help
+                Place EMAC DMA Tx/Rx buffers in PSRAM instead of internal SRAM.
+                This reduces internal RAM usage at the cost of higher DMA access latency.
+                The DMA descriptors are always kept in internal SRAM.
+                DMA buffers must still be cache-line aligned (see ETH_DMA_BUFFER_SIZE).
 
         if ETH_DMA_RX_BUFFER_NUM > 15
             config ETH_SOFT_FLOW_CONTROL

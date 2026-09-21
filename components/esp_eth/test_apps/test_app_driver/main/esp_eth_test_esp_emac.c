@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include "esp_err.h"
 #include "esp_eth_spec.h"
 #include "time.h"
 #include "freertos/FreeRTOS.h"
@@ -422,7 +423,11 @@ TEST_CASE("internal emac erroneous frames", "[esp_emac]")
     ESP_LOGI(TAG, "Verify non-failure frame condition");
     for (i = 1; i <= TEST_FRAMES_NUM; i++) {
         test_pkt->data[0] = frame_id++;
-        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        if (esp_eth_transmit(eth_handle, test_pkt, transmit_size) == ESP_ERR_NO_MEM) {
+            // we are too fast, wait for a bit and try again
+            vTaskDelay(2);
+            TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        }
         // if we have only 10 or less Rx buffers, they can be all used pretty fast => wait to be freed prior next Tx
         if (CONFIG_ETH_DMA_RX_BUFFER_NUM <= 10 && !(i % (CONFIG_ETH_DMA_RX_BUFFER_NUM / 2))) {
             ESP_LOGI(TAG, "wait prior Tx (frame num %i)", i);
@@ -450,7 +455,11 @@ TEST_CASE("internal emac erroneous frames", "[esp_emac]")
         if (!(i % 2)) {
             TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS, &emac_tx_dbg_flag));
         }
-        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        if (esp_eth_transmit(eth_handle, test_pkt, transmit_size) == ESP_ERR_NO_MEM) {
+            // we are too fast, wait for a bit and try again
+            vTaskDelay(2);
+            TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        }
         if (!(i % 2)) {
             TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_MAC_ESP_CMD_CLEAR_TDES0_CFG_BITS, &emac_tx_dbg_flag));
         }

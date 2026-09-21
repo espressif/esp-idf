@@ -1008,6 +1008,28 @@ TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
     TEST_ASSERT_EQUAL(exp_n, n);
     TEST_ASSERT_EQUAL(exp_sequence_id, ((test_eth_ptp_msg_t *)in_buffer)->ptp_msg.ptp_hdr.sequence_id);
 
+    ESP_LOGI(TAG, "Verify read IREC walk terminates when truncated record overlays a 0/0 timestamp");
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+    ts_info->len = L2TAP_IREC_LEN(sizeof(struct timespec));
+    test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+    exp_sequence_id++;
+    ptp_msg_ext_buff.buff = &test_ptp_msg;
+    ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    TEST_ASSERT_EQUAL(sizeof(test_ptp_msg), n);
+    // 0/0 is an invalid timestamp. Reusing this IREC buffer with a truncated len makes
+    // L2TAP_IREC_NEXT land on tv_nsec==0 (a zero-length pseudo-header) and must not hang.
+    struct timespec *stale_ts = (struct timespec *)ts_info->data;
+    stale_ts->tv_sec = 0;
+    stale_ts->tv_nsec = 0;
+    ts_info->type = 0xFF;
+    ts_info->len = L2TAP_IREC_LEN(1);
+    ptp_msg_ext_buff.buff = in_buffer;
+    ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    exp_n = sizeof(test_ptp_msg) < 60 ? 60 : sizeof(test_ptp_msg);
+    TEST_ASSERT_EQUAL(exp_n, n);
+    TEST_ASSERT_EQUAL(exp_sequence_id, ((test_eth_ptp_msg_t *)in_buffer)->ptp_msg.ptp_hdr.sequence_id);
 
     ESP_LOGI(TAG, "Verify response to invalid record len for read (first we need write correctly)");
     ts_info->type = L2TAP_IREC_TIME_STAMP;

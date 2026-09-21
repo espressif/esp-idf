@@ -183,11 +183,22 @@ static esp_err_t pop_rx_queue(l2tap_context_t *l2tap_socket, void *buff, size_t 
             if (l2tap_socket->flags & L2TAP_FLAG_TS) {
                 // find the record allocated for the time stamp info
                 l2tap_irec_hdr_t *info_rec = L2TAP_IREC_FIRST(ext_buff);
-                while(info_rec != NULL) {
+                while (info_rec != NULL) {
+                    /* rec->len is the NEXT stride. A truncated/invalid record (or leftover
+                     * payload interpreted as a header) can have len < header size, */
+                    if (info_rec->len < sizeof(l2tap_irec_hdr_t)) {
+                        info_rec = NULL;
+                        break;
+                    }
                     if (info_rec->type == L2TAP_IREC_TIME_STAMP) {
                         break;
                     }
-                    info_rec = L2TAP_IREC_NEXT(ext_buff, info_rec);
+                    l2tap_irec_hdr_t *info_rec_next = L2TAP_IREC_NEXT(ext_buff, info_rec);
+                    if (info_rec_next == NULL || (uint8_t *)info_rec_next <= (uint8_t *)info_rec) {
+                        info_rec = NULL;
+                        break;
+                    }
+                    info_rec = info_rec_next;
                 }
                 if (info_rec != NULL) {
                     // check if there is enough space to store TS
