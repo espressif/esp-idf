@@ -1630,7 +1630,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                             return ESP_ERR_HTTP_EAGAIN;
                         }
                         if (client->connection_info.method != HTTP_METHOD_HEAD && client->response->data_process < client->response->content_length) {
-                            ESP_LOGE(TAG, "Incomlete data received, ret=%d, %"PRId64"/%"PRId64" bytes", ret, client->response->data_process, client->response->content_length);
+                            ESP_LOGE(TAG, "Incomplete data received, ret=%d, %"PRId64"/%"PRId64" bytes", ret, client->response->data_process, client->response->content_length);
 
                             if (ret == ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
                                 err = ESP_ERR_HTTP_READ_TIMEOUT;
