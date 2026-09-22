@@ -57,6 +57,12 @@ def main():
         type=str
     )
 
+    fragments_group.add_argument(
+        '--fragments-list-file',
+        type=argparse.FileType('r'),
+        help='File containing fragment file paths, one per line',
+    )
+
     argparser.add_argument(
         '--libraries-file',
         type=argparse.FileType('r'),
@@ -112,6 +118,8 @@ def main():
     fragment_files = []
     if args.fragments_list:
         fragment_files = args.fragments_list.split(';')
+    elif args.fragments_list_file:
+        fragment_files = [line.strip() for line in args.fragments_list_file if line.strip()]
     elif args.fragments:
         fragment_files = args.fragments
 
