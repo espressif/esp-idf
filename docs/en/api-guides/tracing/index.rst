@@ -35,6 +35,8 @@ Choosing Your Path
       - :doc:`Application Level Tracing transport <transports>`
     * - Collect source code coverage
       - :doc:`Gcov <gcov>`
+    * - Trace every function entry and exit automatically
+      - :doc:`Function tracing <function-tracing>`
     * - Integrate a third-party trace recorder
       - :doc:`Custom trace library <custom-trace-library>`
 
@@ -87,6 +89,7 @@ Detailed Guides
     transports
     sysview
     gcov
+    function-tracing
     custom-trace-library
 
 Related Documentation
@@ -105,4 +108,5 @@ Examples
 - :example:`system/tracing/sysview_tracing`: SystemView tracing example
 - :example:`system/tracing/sysview_tracing_heap_log`: Heap tracing with SystemView
 - :example:`system/tracing/gcov`: Source code coverage over JTAG
+- :example:`system/tracing/function_tracing`: Compiler-instrumented function entry/exit tracing
 - :example:`system/tracing/esp_trace_custom_library`: External trace library integration template
