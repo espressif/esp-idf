@@ -25,6 +25,7 @@
 #include "esp_ieee802154_util.h"
 #include "esp_ieee802154_timer.h"
 #include "esp_attr.h"
+#include "esp_intr_alloc.h"
 #include "esp_phy_init.h"
 
 #if CONFIG_IEEE802154_MULTI_PAN_ENABLE
@@ -664,8 +665,12 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
     case IEEE802154_RX_ABORT_BY_ED_ABORT:
     case IEEE802154_RX_ABORT_BY_ED_COEX_REJECT:
         return;
-    case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK:
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+        esp_coex_ieee802154_coex_break_notify();
+        __attribute__((fallthrough));
+#endif
+    case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
 #if CONFIG_IEEE802154_DEBUG_ASSERT_MONITOR
         // Jira TZ-1523
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
@@ -691,6 +696,26 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
         IEEE802154_ASSERT(false);
     }
     NEEDS_NEXT_OPT(true);
+}
+
+esp_err_t IRAM_ATTR ieee802154_intr_disable(void)
+{
+    esp_err_t err = esp_intr_disable(s_ieee802154_isr_handle);
+
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(IEEE802154_TAG, "Failed to disable IEEE 802.15.4 interrupt (%d)", err);
+    }
+    return err;
+}
+
+esp_err_t IRAM_ATTR ieee802154_intr_enable(void)
+{
+    esp_err_t err = esp_intr_enable(s_ieee802154_isr_handle);
+
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(IEEE802154_TAG, "Failed to enable IEEE 802.15.4 interrupt (%d)", err);
+    }
+    return err;
 }
 
 static IRAM_ATTR void isr_handle_tx_abort(ieee802154_ll_tx_abort_reason_t tx_abort_reason)
