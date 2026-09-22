@@ -142,8 +142,11 @@ extern "C" {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 // Forces bss variable into external memory. "
 #define EXT_RAM_BSS_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__)
+// Forces data into external memory BSS and maps it to coredump
+#define COREDUMP_EXTRAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.coredump", __COUNTER__)
 #else
 #define EXT_RAM_BSS_ATTR
+#define COREDUMP_EXTRAM_ATTR
 #endif
 
 // Forces data into noinit section to avoid initialization after restart.
@@ -152,9 +155,12 @@ extern "C" {
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 // Forces data into external memory noinit section to avoid initialization after restart.
 #define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram_noinit", __COUNTER__)
+// Forces data into external memory noinit section and maps it to coredump
+#define COREDUMP_EXTRAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram_noinit.coredump", __COUNTER__)
 #else
 // Place in internal noinit section
 #define EXT_RAM_NOINIT_ATTR __NOINIT_ATTR
+#define COREDUMP_EXTRAM_NOINIT_ATTR
 #endif
 
 // Forces code into DRAM instead of flash and map it to coredump

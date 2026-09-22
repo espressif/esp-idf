@@ -285,6 +285,25 @@ def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
     common_test(dut, config, expected_backtrace=None, expected_coredump=[coredump_pattern])
 
 
+@pytest.mark.psram
+@idf_parametrize('config, target', [('coredump_flash_extram_attr_esp32', 'esp32')], indirect=['config', 'target'])
+def test_panic_extram_attr(dut: PanicTestDut, config: str) -> None:
+    dut.run_test_func('test_panic_extram_attr')
+    regex_pattern = rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$'
+    dut.expect(re.compile(regex_pattern, re.MULTILINE))
+    dut.expect_backtrace()
+    dut.expect_elf_sha256()
+    dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
+
+    expect_coredump_flash_write_logs(dut, config)
+    core_elf_file = dut.process_coredump_flash()
+
+    dut.start_gdb_for_coredump(core_elf_file)
+
+    assert dut.gdb_data_eval_expr('g_extram_bss_var') == '123456'
+    assert dut.gdb_data_eval_expr('g_extram_noinit_var') == '789012'
+
+
 @pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
 def test_int_wdt(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:

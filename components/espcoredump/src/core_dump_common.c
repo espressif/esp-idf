@@ -57,6 +57,14 @@ extern int _coredump_rtc_noinit_end;
 extern int _coredump_noinit_start;
 extern int _coredump_noinit_end;
 #endif
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+extern int _coredump_extram_start;
+extern int _coredump_extram_end;
+#endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+extern int _coredump_extram_noinit_start;
+extern int _coredump_extram_noinit_end;
+#endif
 
 static void* s_exc_frame = NULL;
 static uint32_t s_coredump_sp = 0;
@@ -270,6 +278,12 @@ static const struct {
     [COREDUMP_MEMORY_NOINIT] = { &_coredump_rtc_noinit_start, &_coredump_rtc_noinit_end },
 #else
     [COREDUMP_MEMORY_NOINIT] = { &_coredump_noinit_start, &_coredump_noinit_end },
+#endif
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    [COREDUMP_MEMORY_EXTRAM] = { &_coredump_extram_start, &_coredump_extram_end },
+#endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    [COREDUMP_MEMORY_EXTRAM_NOINIT] = { &_coredump_extram_noinit_start, &_coredump_extram_noinit_end },
 #endif
 };
 

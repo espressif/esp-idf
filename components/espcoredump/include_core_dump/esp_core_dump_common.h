@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,12 @@ typedef enum {
     COREDUMP_MEMORY_RTC_FAST,
 #endif
     COREDUMP_MEMORY_NOINIT,
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    COREDUMP_MEMORY_EXTRAM,
+#endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    COREDUMP_MEMORY_EXTRAM_NOINIT,
+#endif
     COREDUMP_MEMORY_MAX,
     COREDUMP_MEMORY_START = COREDUMP_MEMORY_IRAM
 } coredump_region_t;

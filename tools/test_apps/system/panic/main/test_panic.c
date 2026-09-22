@@ -430,6 +430,16 @@ void test_capture_dram(void)
 }
 #endif
 
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY && CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+COREDUMP_EXTRAM_ATTR uint32_t g_extram_bss_var;
+COREDUMP_EXTRAM_NOINIT_ATTR uint32_t g_extram_noinit_var;
+void test_panic_extram_attr(void)
+{
+    g_extram_bss_var = 123456;
+    g_extram_noinit_var = 789012;
+    assert(0);
+}
+#endif
 
 #if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
 
