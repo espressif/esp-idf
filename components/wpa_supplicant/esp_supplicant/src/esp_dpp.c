@@ -401,6 +401,7 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
                 goto fail;
             }
             os_memcpy(entry->aa, rx_param->sa, ETH_ALEN);
+            os_memcpy(entry->spa, gWpaSm.own_addr, ETH_ALEN);
             os_memcpy(entry->pmkid, intro.pmkid, PMKID_LEN);
             os_memcpy(entry->pmk, intro.pmk, intro.pmk_len);
             entry->pmk_len = intro.pmk_len;

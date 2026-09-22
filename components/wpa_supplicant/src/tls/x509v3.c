@@ -459,7 +459,7 @@ int x509_parse_name(const u8 *buf, size_t len, struct x509_name *name,
 }
 
 
-static char * x509_name_attr_str(enum x509_name_attr_type type)
+static const char * x509_name_attr_str(enum x509_name_attr_type type)
 {
 	switch (type) {
 	case X509_NAME_ATTR_NOT_USED:
