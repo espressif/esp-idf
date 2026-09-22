@@ -61,7 +61,7 @@ Enabling one of these options will cause the corresponding VFS driver to be buil
 
         - :menuitem:`CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG`
 
-    The secondary console is the compile-time equivalent of a runtime auxiliary sink: it is a fixed, output-only destination selected through Kconfig, whereas the console I/O multiplexer described below lets the application register additional auxiliary sinks (and switch the primary) at runtime.
+    The secondary console is the compile-time equivalent of a runtime auxiliary sink described below. It is a fixed, output-only destination.
 
 Standard Streams and FreeRTOS Tasks
 -----------------------------------
@@ -196,35 +196,7 @@ The multiplexer API is declared in ``esp_stdio.h`` and is available when ``CONFI
 Example
 ^^^^^^^
 
-The following example registers a custom backend, makes it the active console, and later reverts to the previous one:
-
-.. code-block:: c
-
-    #include "esp_stdio.h"
-
-    // A VFS operations table implemented by the application.
-    extern const esp_vfs_fs_ops_t my_console_vfs;
-
-    esp_stdio_handle_t handle;
-    esp_stdio_handle_t previous_primary;
-    esp_stdio_driver_config_t config = {
-        .vfs_ops = &my_console_vfs,
-        .vfs_ctx = NULL,
-        .path = "/",
-    };
-
-    // Register the backend (added as a write-only auxiliary).
-    ESP_ERROR_CHECK(esp_stdio_register_driver(&config, &handle));
-
-    // Promote it to the active read + write primary, saving the previous one.
-    ESP_ERROR_CHECK(esp_stdio_set_primary(handle, &previous_primary));
-
-    // ... application uses the custom console for stdin/stdout/stderr ...
-
-    // Restore the previous primary, then remove the custom backend. The active
-    // primary cannot be unregistered, so the restore must come first.
-    ESP_ERROR_CHECK(esp_stdio_set_primary(previous_primary, NULL));
-    ESP_ERROR_CHECK(esp_stdio_unregister_driver(handle));
+The :example:`system/esp_stdio/runtime_registration` example shows the full flow: it registers a custom backend, makes it the active console, and later reverts to the previous one.
 
 The same re-entrancy caveat described above for logging applies here: the backend's ``write()`` implementation must not trigger logging that would recursively write to the console.
 

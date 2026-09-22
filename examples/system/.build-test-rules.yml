@@ -64,6 +64,14 @@ examples/system/esp_event/user_event_loops:
   depends_components:
     - esp_event
 
+examples/system/esp_stdio/runtime_registration:
+  enable:
+    - if: IDF_TARGET == "linux"
+      reason: the example demonstrates the esp_stdio console multiplexer runtime API and only needs to run on one target
+  depends_components:
+    - esp_stdio
+    - vfs
+
 examples/system/esp_timer:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
