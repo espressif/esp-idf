@@ -24,8 +24,22 @@ config BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
 menu "OSAL (OS abstraction layer)"
     depends on BT_ENABLED
 
+    config BT_OSAL_ENABLED
+        bool "Enable the Bluetooth OS abstraction layer"
+        default n
+        help
+            Build the Bluetooth OS abstraction layer (bt_osal): a host-agnostic
+            wrapper over the OS primitives the Bluetooth stack and the BLE
+            profiles rely on — event queues, mutexes, semaphores, callouts
+            (one-shot timers), time conversion and critical sections.
+
+            Disable to leave the OSAL sources out of the build when nothing
+            uses them. A component that relies on the OSAL should
+            "select BT_OSAL_ENABLED" in its own Kconfig.
+
     config BT_OSAL_USE_ESP_TIMER
         bool "Use esp_timer to implement the OSAL callout"
+        depends on BT_OSAL_ENABLED
         default y
         help
             Use esp_timer instead of the FreeRTOS software timer to implement the OSAL
