@@ -570,6 +570,32 @@ menu "FreeRTOS"
                 If enabled, context of port*_CRITICAL calls (ISR or Non-ISR) would be checked to be in compliance with
                 Vanilla FreeRTOS. e.g Calling port*_CRITICAL from ISR context would cause assert failure
 
+        config FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+            bool "Abort when a blacklisted task executes PIE instructions"
+            depends on SOC_CPU_HAS_PIE && !FREERTOS_SMP
+            default n
+            help
+                Enables per-task PIE blacklisting. Tagged tasks abort if they execute a PIE
+                instruction, instead of being silently pinned to a PIE-capable core.
+
+                Use vTaskSetPieBlacklisted() to tag tasks that must not use PIE. This is a
+                debug aid for finding accidental PIE use, for example from deep call stacks
+                that pull in PIE helpers.
+
+                The flag is consulted only in the coprocessor trap. PIE stays enabled while
+                its owner keeps running, so instructions issued before that task is switched
+                out do not trap. After a switch, the next PIE instruction traps and a
+                blacklisted task aborts even if it still owns the coprocessor.
+
+        config FREERTOS_DEBUG_TASK_PIE_BLACKLIST_MAX
+            int "Maximum number of PIE-blacklisted tasks"
+            depends on FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+            range 1 512
+            default 16
+            help
+                Size of the handle table that records blacklisted tasks.
+                vTaskSetPieBlacklisted() logs an error if the table is full.
+
         config FREERTOS_PORT_THREAD_SAFE_CLAIM
             bool "Enable xPortThreadSafeClaim/xPortThreadSafeDisclaim APIs"
             default y if SOC_BRANCH_PREDICTOR_SUPPORTED

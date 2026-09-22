@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded import Dut
@@ -21,6 +21,7 @@ from pytest_embedded_idf.utils import idf_parametrize
         ('freertos_options', 'esp32s2'),  # Xtensa single-core
         ('freertos_options', 'esp32c6'),  # RISC-V single-core
         ('freertos_options', 'esp32p4'),  # RISC-V dual-core
+        ('freertos_options', 'esp32s31'),  # RISC-V dual-core, PIE on core 1 only
         # Tickless idle (Test tickless idle on select targets)
         ('tickless_idle', 'esp32c61'),
         ('tickless_idle', 'esp32p4'),

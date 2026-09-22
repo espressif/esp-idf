@@ -10,7 +10,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 #include "unity.h"
+#include "unity_test_runner.h"
+#include "esp_system.h"
 #include "test_utils.h"
 
 /* PIE instructions set is currently only supported in GCC compiler */
@@ -356,5 +359,133 @@ TEST_CASE("PIE: Core 0 parses PIE instructions properly", "[freertos]")
 #endif /* CONFIG_IDF_TARGET_ESP32S31 */
 
 #endif /* CONFIG_FREERTOS_NUMBER_OF_CORES > 1 */
+
+#if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+
+TEST_CASE("PIE: Blacklist setter and getter", "[freertos]")
+{
+    BaseType_t before = xTaskGetPieBlacklisted(NULL);
+    vTaskSetPieBlacklisted(NULL, pdTRUE);
+    BaseType_t set = xTaskGetPieBlacklisted(NULL);
+    vTaskSetPieBlacklisted(NULL, pdFALSE);
+    BaseType_t cleared = xTaskGetPieBlacklisted(NULL);
+
+    TEST_ASSERT_EQUAL(pdFALSE, before);
+    TEST_ASSERT_EQUAL(pdTRUE, set);
+    TEST_ASSERT_EQUAL(pdFALSE, cleared);
+}
+
+static void pie_after_cleared_blacklist(void *arg)
+{
+    int32_t a[4] = { 0, 1, 2, 3 };
+    int32_t b[4] = { 1, 2, 3, 4 };
+    int32_t dst[4] = { 0 };
+
+    vTaskSetPieBlacklisted(NULL, pdTRUE);
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetPieBlacklisted(NULL));
+    vTaskSetPieBlacklisted(NULL, pdFALSE);
+    pie_vector_signed_add(a, b, dst);
+
+    for (int i = 0; i < 4; i++) {
+        TEST_ASSERT_EQUAL(a[i] + b[i], dst[i]);
+    }
+
+    xTaskNotifyGive((TaskHandle_t)arg);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("PIE: Cleared blacklist allows PIE use", "[freertos]")
+{
+    TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreate(pie_after_cleared_blacklist, "pie_clr", 4096,
+                                          (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, NULL));
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    vTaskDelay(10);
+}
+
+static void pie_blacklist_then_block(void *arg)
+{
+    vTaskSetPieBlacklisted(NULL, pdTRUE);
+    xTaskNotifyGive((TaskHandle_t)arg);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    vTaskDelete(NULL);
+}
+
+static void pie_notify_then_block(void *arg)
+{
+    xTaskNotifyGive((TaskHandle_t)arg);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    vTaskDelete(NULL);
+}
+
+/*
+ * Both helpers block in ulTaskNotifyTake after notifying the parent. The parent
+ * never notifies them back, so vTaskDelete(NULL) in the helpers does not run.
+ * vTaskDelete() here is what deletes them and runs the blacklist cleanup hook.
+ */
+TEST_CASE("PIE: Deleted task is removed from blacklist", "[freertos]")
+{
+    TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
+    TaskHandle_t child = NULL;
+    TaskHandle_t child2 = NULL;
+
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreate(pie_blacklist_then_block, "pie_del", 4096,
+                                          (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, &child));
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetPieBlacklisted(child));
+    vTaskDelete(child);
+    vTaskDelay(10);
+    TEST_ASSERT_EQUAL(pdFALSE, xTaskGetPieBlacklisted(child));
+
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreate(pie_notify_then_block, "pie_del2", 4096,
+                                          (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, &child2));
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    TEST_ASSERT_EQUAL(pdFALSE, xTaskGetPieBlacklisted(child2));
+    vTaskDelete(child2);
+    vTaskDelay(10);
+}
+
+static void pie_blacklisted_task_executes_pie(void)
+{
+    int32_t a[4] = { 0, 1, 2, 3 };
+    int32_t b[4] = { 1, 2, 3, 4 };
+    int32_t dst[4] = { 0 };
+
+    vTaskSetPieBlacklisted(NULL, pdTRUE);
+    pie_vector_signed_add(a, b, dst);
+    TEST_FAIL_MESSAGE("blacklisted task executed PIE without rebooting");
+}
+
+static void check_pie_blacklist_panic_reset(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+}
+
+TEST_CASE_MULTIPLE_STAGES("PIE: Blacklisted task aborts on PIE use",
+                          "[freertos][reset=SW_CPU_RESET]",
+                          pie_blacklisted_task_executes_pie,
+                          check_pie_blacklist_panic_reset);
+
+static void pie_blacklisted_owner_after_yield(void)
+{
+    int32_t a[4] = { 0, 1, 2, 3 };
+    int32_t b[4] = { 1, 2, 3, 4 };
+    int32_t dst[4] = { 0 };
+
+    pie_vector_signed_add(a, b, dst);
+    vTaskSetPieBlacklisted(NULL, pdTRUE);
+    /* A same-task yield leaves PIE enabled, so the next instruction would not trap.
+     * Blocking lets another task run and disables PIE. */
+    vTaskDelay(1);
+    pie_vector_signed_add(a, b, dst);
+    TEST_FAIL_MESSAGE("blacklisted owner used PIE after a switch without rebooting");
+}
+
+TEST_CASE_MULTIPLE_STAGES("PIE: Blacklisted owner aborts after yield",
+                          "[freertos][reset=SW_CPU_RESET]",
+                          pie_blacklisted_owner_after_yield,
+                          check_pie_blacklist_panic_reset);
+
+#endif /* CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST */
 
 #endif /* SOC_CPU_HAS_PIE */

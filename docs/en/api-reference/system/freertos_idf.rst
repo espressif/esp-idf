@@ -460,6 +460,14 @@ Misc
 
             Because of this migration, tasks must **not** use the PIE coprocessor within a critical section or ISR, as doing so will cause a runtime abort.
 
+    Accidental PIE use (for example from a deep call stack that pulls in a PIE helper) can pin a task that was not meant to run on the PIE core. Enable :menuitem:`CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST` and call :cpp:func:`vTaskSetPieBlacklisted` on tasks that must not execute PIE. The flag is consulted only inside the coprocessor trap. PIE stays enabled while its owner keeps running, so instructions issued before that task is switched out do not trap. After the task is switched out, PIE is disabled and the next PIE instruction traps. A blacklisted task aborts on that trap even if it is still the coprocessor owner, instead of being silently pinned.
+
+    .. code-block:: c
+
+        #if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+            vTaskSetPieBlacklisted(my_task, pdTRUE);
+        #endif
+
 
 .. only:: SOC_CPU_HAS_HWLOOP
 

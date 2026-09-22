@@ -104,6 +104,10 @@ list(APPEND srcs
     "esp_additions/idf_additions_event_groups.c"
     "esp_additions/idf_additions.c")
 
+if(CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST)
+    list(APPEND srcs "esp_additions/freertos_pie_blacklist.c")
+endif()
+
 # ------------------------------------------------ Set Public Includes -------------------------------------------------
 
 # Add common public include directories
