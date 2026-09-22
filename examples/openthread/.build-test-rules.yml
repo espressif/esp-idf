@@ -18,9 +18,11 @@
     - examples/openthread/*
     - examples/openthread/**/*
 
+# Sleep tests need both the sleepy device and its ot_cli leader firmware.
 .openthread_sleep_dependencies: &openthread_sleep_dependencies
-  depends_components:
+  depends_components+:
     - esp_hw_support
+    - esp_pm
 
 examples/openthread/ot_br:
   enable:
@@ -36,7 +38,7 @@ examples/openthread/ot_br:
 examples/openthread/ot_cli:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
-  <<: *openthread_dependencies
+  <<: [*openthread_dependencies, *openthread_sleep_dependencies]
 
 examples/openthread/ot_rcp:
   enable:
