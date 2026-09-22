@@ -1576,6 +1576,12 @@ config BT_SMP_ENABLE
     depends on BT_BLUEDROID_ENABLED
     default BT_CLASSIC_ENABLED || BT_BLE_SMP_ENABLE
 
+# No prompt on purpose: menuconfig cannot enable it until the feature is validated.
+config BT_SMP_CTKD_ENABLE
+    bool
+    depends on BT_SMP_ENABLE && BT_CLASSIC_ENABLED && BT_BLE_ENABLED
+    default n
+
 config BT_SMP_MAX_BONDS
     int "BT/BLE maximum bond device count"
     depends on BT_SMP_ENABLE

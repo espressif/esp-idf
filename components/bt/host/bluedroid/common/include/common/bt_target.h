@@ -617,6 +617,13 @@
 #define BLE_PRIVACY_SPT             FALSE
 #endif  /* UC_BT_SMP_ENABLE */
 
+/* CTKD: BR↔LE key derivation via SMP over BR (CID 7) and LE LK bit. */
+#if (UC_BT_SMP_CTKD_ENABLE && (CLASSIC_BT_INCLUDED == TRUE) && (BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
+#define SMP_CTKD_INCLUDED           TRUE
+#else
+#define SMP_CTKD_INCLUDED           FALSE
+#endif
+
 #if(UC_BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE)
 #define SMP_SLAVE_CON_PARAMS_UPD_ENABLE     TRUE
 #else
