@@ -222,6 +222,7 @@ static void gas_query_req_tx(struct dpp_authentication *auth)
     esp_dpp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
                               auth->curr_chan, OFFCHAN_TX_WAIT_TIME,
                               WIFI_OFFCHAN_TX_REQ);
+    wpabuf_free(buf);
 }
 
 static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
@@ -291,8 +292,12 @@ static void esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_
     if (os_memcmp(rx_param->sa, auth->peer_mac_addr, ETH_ALEN) != 0) {
         wpa_printf(MSG_DEBUG, "DPP: MAC address mismatch (expected "
                    MACSTR ") - drop", MAC2STR(auth->peer_mac_addr));
-        rc = ESP_ERR_DPP_FAILURE;
-        goto fail;
+        return;
+    }
+
+    if (auth->auth_success || !auth->waiting_auth_conf) {
+        wpa_printf(MSG_DEBUG, "DPP: Not waiting for Auth Confirm - drop");
+        return;
     }
 
     eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
@@ -331,6 +336,11 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
 
     if (!rx_param || !rx_param->action_frm) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!auth) {
+        wpa_printf(MSG_DEBUG, "DPP: No DPP Authentication in progress - drop");
+        return ESP_OK;
     }
 
     if (rx_param->vendor_data_len < 2) {
@@ -1036,6 +1046,7 @@ esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid)
                 wpabuf_free(buf);
                 return ESP_FAIL;
             }
+            wpabuf_free(buf);
         } else {
             return ESP_ERR_NO_MEM;
         }
