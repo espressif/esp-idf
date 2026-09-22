@@ -487,6 +487,22 @@ config SOC_ADC_SHARED_POWER
     bool
     default y
 
+config SOC_DAC_CHAN_NUM
+    int
+    default 2
+
+config SOC_DAC_HS_RESOLUTION
+    int
+    default 10
+
+config SOC_DAC_RESOLUTION
+    int
+    default 12
+
+config SOC_DAC_SUPPORT_BUFFER_CFG
+    bool
+    default y
+
 config SOC_CACHE_WRITEBACK_SUPPORTED
     bool
     default y

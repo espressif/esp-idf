@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -13,7 +13,7 @@ extern "C" {
 /** DAC_PAD_CFG_REG register
  *  configure dac pad register
  */
-#define DAC_PAD_CFG_REG (DR_REG_DAC_BASE + 0x0)
+#define DAC_PAD_CFG_REG (DR_REG_LP_DAC_BASE + 0x0)
 /** DAC_HS_MODE_PAD_0 : R/W; bitpos: [0]; default: 0;
  *  1 to let DAC PAD 0 enter High speed mode
  */
@@ -141,7 +141,7 @@ extern "C" {
 /** DAC_CALI_RESULT_REG register
  *  DAC CALI result register
  */
-#define DAC_CALI_RESULT_REG (DR_REG_DAC_BASE + 0x4)
+#define DAC_CALI_RESULT_REG (DR_REG_LP_DAC_BASE + 0x4)
 /** DAC_CALI_RESULT_PAD_0 : R/W; bitpos: [11:0]; default: 0;
  *  cali result register for pad 0 output
  */
@@ -160,7 +160,7 @@ extern "C" {
 /** DAC_PDMA_CFG_REG register
  *  dac cfg register
  */
-#define DAC_PDMA_CFG_REG (DR_REG_DAC_BASE + 0x8)
+#define DAC_PDMA_CFG_REG (DR_REG_LP_DAC_BASE + 0x8)
 /** DAC_PDMA_ALTER_MODE : R/W; bitpos: [0]; default: 0;
  *  1:make rotation between two pads when outputting data of ppdma input path requires
  *  reg_dac_1/0_data_sel = 1
@@ -190,7 +190,7 @@ extern "C" {
 /** DAC_PDMA_TIMER_CFG_REG register
  *  PDMA path timer register
  */
-#define DAC_PDMA_TIMER_CFG_REG (DR_REG_DAC_BASE + 0xc)
+#define DAC_PDMA_TIMER_CFG_REG (DR_REG_LP_DAC_BASE + 0xc)
 /** DAC_PDMA_TIMER_EN : R/W; bitpos: [0]; default: 0;
  *  1:enables using dac timer to reduce output frequency
  *  0:no data output
@@ -210,7 +210,7 @@ extern "C" {
 /** DAC_DATA_OUTPUT_CFG_REG register
  *  dac DATA OUTPUT cfg register
  */
-#define DAC_DATA_OUTPUT_CFG_REG (DR_REG_DAC_BASE + 0x10)
+#define DAC_DATA_OUTPUT_CFG_REG (DR_REG_LP_DAC_BASE + 0x10)
 /** DAC_PAD_0_DATA_SEL : R/W; bitpos: [0]; default: 0;
  *  1:output pdma data
  *  0:output sintx data
@@ -231,7 +231,7 @@ extern "C" {
 /** DAC_SINTX_CFG_REG register
  *  dac rstn register
  */
-#define DAC_SINTX_CFG_REG (DR_REG_DAC_BASE + 0x14)
+#define DAC_SINTX_CFG_REG (DR_REG_LP_DAC_BASE + 0x14)
 /** DAC_SW_TONE : R/W; bitpos: [0]; default: 0;
  *  1:enable software adjusting current sintx output data
  *  0:disable software adjustment
@@ -255,7 +255,7 @@ extern "C" {
 #define DAC_SCALE_1_V  0x00000003U
 #define DAC_SCALE_1_S  17
 /** DAC_SCALE_2 : R/W; bitpos: [20:19]; default: 0;
- *  software adjust angle velocity foot step for sintx LUT input
+ *  right shift scaling config for LUT output of sintx for pad 1
  */
 #define DAC_SCALE_2    0x00000003U
 #define DAC_SCALE_2_M  (DAC_SCALE_2_V << DAC_SCALE_2_S)
@@ -281,7 +281,7 @@ extern "C" {
 /** DAC_SINTX_TIMER_CFG_REG register
  *  SINTX path timer register
  */
-#define DAC_SINTX_TIMER_CFG_REG (DR_REG_DAC_BASE + 0x18)
+#define DAC_SINTX_TIMER_CFG_REG (DR_REG_LP_DAC_BASE + 0x18)
 /** DAC_SINTX_TIMER_EN : R/W; bitpos: [0]; default: 0;
  *  1:enables using dac timer to reduce output frequency
  *  0:no data output
@@ -301,7 +301,7 @@ extern "C" {
 /** DAC_SINTX_DATA_REG register
  *  dac output register for sintx path
  */
-#define DAC_SINTX_DATA_REG (DR_REG_DAC_BASE + 0x1c)
+#define DAC_SINTX_DATA_REG (DR_REG_LP_DAC_BASE + 0x1c)
 /** DAC_DC_1 : R/W; bitpos: [11:0]; default: 0;
  *  the data output for DAC PAD0 for sintx path
  */
@@ -320,7 +320,7 @@ extern "C" {
 /** DAC_CALI_REG register
  *  cali algorithm register for DAC
  */
-#define DAC_CALI_REG (DR_REG_DAC_BASE + 0x20)
+#define DAC_CALI_REG (DR_REG_LP_DAC_BASE + 0x20)
 /** DAC_CALI_OUT_PAD_0 : RO; bitpos: [0]; default: 0;
  *  cali out from DAC PAD 0
  */
@@ -339,16 +339,16 @@ extern "C" {
 /** DAC_SAMPLE_WAIT_CFG_REG register
  *  cali sample phase duration register
  */
-#define DAC_SAMPLE_WAIT_CFG_REG (DR_REG_DAC_BASE + 0x24)
+#define DAC_SAMPLE_WAIT_CFG_REG (DR_REG_LP_DAC_BASE + 0x24)
 /** DAC_WAIT_TARGET_SAMPLE_PAD_0 : R/W; bitpos: [15:0]; default: 630;
- *  sample wait target for DAC PAD 1
+ *  sample wait target for DAC PAD 0
  */
 #define DAC_WAIT_TARGET_SAMPLE_PAD_0    0x0000FFFFU
 #define DAC_WAIT_TARGET_SAMPLE_PAD_0_M  (DAC_WAIT_TARGET_SAMPLE_PAD_0_V << DAC_WAIT_TARGET_SAMPLE_PAD_0_S)
 #define DAC_WAIT_TARGET_SAMPLE_PAD_0_V  0x0000FFFFU
 #define DAC_WAIT_TARGET_SAMPLE_PAD_0_S  0
 /** DAC_WAIT_TARGET_SAMPLE_PAD_1 : R/W; bitpos: [31:16]; default: 630;
- *  sample wait target for DAC PAD 0
+ *  sample wait target for DAC PAD 1
  */
 #define DAC_WAIT_TARGET_SAMPLE_PAD_1    0x0000FFFFU
 #define DAC_WAIT_TARGET_SAMPLE_PAD_1_M  (DAC_WAIT_TARGET_SAMPLE_PAD_1_V << DAC_WAIT_TARGET_SAMPLE_PAD_1_S)
@@ -358,7 +358,7 @@ extern "C" {
 /** DAC_HOLD_WAIT_CFG_REG register
  *  cali hold phase duration register
  */
-#define DAC_HOLD_WAIT_CFG_REG (DR_REG_DAC_BASE + 0x28)
+#define DAC_HOLD_WAIT_CFG_REG (DR_REG_LP_DAC_BASE + 0x28)
 /** DAC_WAIT_TARGET_HOLD_PAD_0 : R/W; bitpos: [15:0]; default: 61;
  *  hold wait target for DAC PAD 0
  */
@@ -377,7 +377,7 @@ extern "C" {
 /** DAC_REFRESH_WAIT_CFG_REG register
  *  cali refresh phase duration register
  */
-#define DAC_REFRESH_WAIT_CFG_REG (DR_REG_DAC_BASE + 0x2c)
+#define DAC_REFRESH_WAIT_CFG_REG (DR_REG_LP_DAC_BASE + 0x2c)
 /** DAC_WAIT_TARGET_REFRESH_PAD_0 : R/W; bitpos: [15:0]; default: 8;
  *  refresh wait target for DAC PAD 0
  */
@@ -396,7 +396,7 @@ extern "C" {
 /** DAC_PDMA_INT_RAW_REG register
  *  need_des
  */
-#define DAC_PDMA_INT_RAW_REG (DR_REG_DAC_BASE + 0x30)
+#define DAC_PDMA_INT_RAW_REG (DR_REG_LP_DAC_BASE + 0x30)
 /** DAC_PDMA_EMPTY_INT_RAW : R/WTC/SS; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -408,7 +408,7 @@ extern "C" {
 /** DAC_INT_ST_REG register
  *  need_des
  */
-#define DAC_INT_ST_REG (DR_REG_DAC_BASE + 0x34)
+#define DAC_INT_ST_REG (DR_REG_LP_DAC_BASE + 0x34)
 /** DAC_PDMA_EMPTY_INT_ST : RO; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -420,7 +420,7 @@ extern "C" {
 /** DAC_INT_ENA_REG register
  *  need_des
  */
-#define DAC_INT_ENA_REG (DR_REG_DAC_BASE + 0x38)
+#define DAC_INT_ENA_REG (DR_REG_LP_DAC_BASE + 0x38)
 /** DAC_PDMA_EMPTY_INT_ENA : R/W; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -432,7 +432,7 @@ extern "C" {
 /** DAC_INT_CLR_REG register
  *  need_des
  */
-#define DAC_INT_CLR_REG (DR_REG_DAC_BASE + 0x3c)
+#define DAC_INT_CLR_REG (DR_REG_LP_DAC_BASE + 0x3c)
 /** DAC_PDMA_EMPTY_INT_CLR : WT; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -444,7 +444,7 @@ extern "C" {
 /** DAC_DATE_REG register
  *  need_des
  */
-#define DAC_DATE_REG (DR_REG_DAC_BASE + 0x3fc)
+#define DAC_DATE_REG (DR_REG_LP_DAC_BASE + 0x3fc)
 /** DAC_DATE : R/W; bitpos: [30:0]; default: 2426393;
  *  need_des
  */
