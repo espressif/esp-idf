@@ -1720,7 +1720,10 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 #if BT_SDP_BQB_INCLUDED
-    if (s_l2cap_bqb_ertm_mode_included_flag) {
+    /* The BQB precondition covers BR/EDR dynamic channels only. LE CCBs (COC,
+     * ECFC) and fixed channels, which are allocated with a NULL LCB, cannot
+     * negotiate ERTM and must keep the basic-mode defaults. */
+    if (s_l2cap_bqb_ertm_mode_included_flag && p_lcb && p_lcb->transport != BT_TRANSPORT_LE) {
         p_ccb->ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
         p_ccb->ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_ERTM;
     } else
