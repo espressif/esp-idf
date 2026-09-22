@@ -17,8 +17,14 @@
   if: '$CI_MERGE_REQUEST_LABELS =~ /auto-translate::(full|incremental)/i'
 
 .auto_translate_setup: &auto_translate_setup
-  - git clone $AUTO_TRANSLATE_REPO
+  - git clone "$AUTO_TRANSLATE_REPO"
   - pip3 install -r ./auto-translate/requirements.txt pyyaml
+  # Optional: clone ESP-Term so glossary terminology can be enforced (see translate_config.yml).
+  # Best-effort: skipped when $ESP_TERM_REPO is unset or the clone fails; translation still runs.
+  # rm -rf first: a leftover esp-term/ from a reused workspace would fail the clone
+  # and silently disable the glossary.
+  # Whole line must be quoted: unquoted text containing "WARNING: ..." is a YAML mapping.
+  - 'if [ -n "$ESP_TERM_REPO" ]; then rm -rf esp-term && git clone --depth 1 "$ESP_TERM_REPO" esp-term || echo "WARNING: glossary clone failed, continuing without glossary"; fi'
 
 .if-merge-request-pipeline: &if-merge-request-pipeline
   if: '$CI_MERGE_REQUEST_IID'
