@@ -476,12 +476,12 @@ void smp_generate_ltk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     BOOLEAN div_status;
     SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_CTKD_INCLUDED == TRUE)
     if (smp_get_br_state() == SMP_BR_STATE_BOND_PENDING) {
         smp_br_process_link_key(p_cb, NULL);
         return;
     }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif  ///SMP_CTKD_INCLUDED == TRUE
     if (p_cb->le_secure_connections_mode_is_used) {
         smp_process_secure_connection_long_term_key();
         return;
