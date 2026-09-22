@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -117,4 +117,61 @@ TEST_CASE("jpeg initialize twice test", "[jpeg]")
 
     TEST_ESP_OK(jpeg_del_encoder_engine(encoder_handle));
     TEST_ESP_OK(jpeg_del_decoder_engine(decoder_handle));
+}
+
+TEST_CASE("JPEG encode rejects undersized input/output buffers", "[jpeg]")
+{
+    jpeg_encoder_handle_t jpeg_handle = NULL;
+    jpeg_encode_engine_cfg_t encode_eng_cfg = {
+        .timeout_ms = 40,
+    };
+    jpeg_encode_cfg_t enc_config = {
+        .src_type = JPEG_ENCODE_IN_FORMAT_RGB888,
+        .sub_sample = JPEG_DOWN_SAMPLING_YUV422,
+        .image_quality = 80,
+        .width = 640,
+        .height = 480,
+    };
+    jpeg_encode_memory_alloc_cfg_t tx_mem_cfg = {
+        .buffer_direction = JPEG_ENC_ALLOC_INPUT_BUFFER,
+    };
+    jpeg_encode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_ENC_ALLOC_OUTPUT_BUFFER,
+    };
+
+    const size_t claimed_inbuf_size = 4096;
+    const size_t out_cap = 64;
+    const size_t canary_len = 256;
+    size_t rgb_file_size = (size_t)image_esp480_rgb_end - (size_t)image_esp480_rgb_start;
+
+    size_t tx_buffer_size = 0;
+    uint8_t *raw_buf = (uint8_t *)jpeg_alloc_encoder_mem(rgb_file_size, &tx_mem_cfg, &tx_buffer_size);
+    TEST_ASSERT_NOT_NULL(raw_buf);
+    memcpy(raw_buf, image_esp480_rgb_start, rgb_file_size);
+
+    size_t rx_buffer_size = 0;
+    uint8_t *out_buf = (uint8_t *)jpeg_alloc_encoder_mem(out_cap + canary_len, &rx_mem_cfg, &rx_buffer_size);
+    TEST_ASSERT_NOT_NULL(out_buf);
+    TEST_ASSERT_TRUE(rx_buffer_size >= out_cap + canary_len);
+    memset(out_buf + out_cap, 0xA5, canary_len);
+
+    TEST_ESP_OK(jpeg_new_encoder_engine(&encode_eng_cfg, &jpeg_handle));
+    uint32_t jpg_size = 0;
+
+    /* Input check runs first; a tiny inbuf_size must not reach header emit / TX DMA. */
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG,
+                 jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf, claimed_inbuf_size,
+                                      out_buf, rx_buffer_size, &jpg_size));
+
+    /* Valid input, claimed output is only 64 bytes; header emit must not write the canary. */
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG,
+                 jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf, rgb_file_size,
+                                      out_buf, out_cap, &jpg_size));
+    for (size_t i = 0; i < canary_len; i++) {
+        TEST_ASSERT_EQUAL_HEX8(0xA5, out_buf[out_cap + i]);
+    }
+
+    free(out_buf);
+    free(raw_buf);
+    TEST_ESP_OK(jpeg_del_encoder_engine(jpeg_handle));
 }
