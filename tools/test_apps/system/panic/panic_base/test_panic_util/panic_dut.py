@@ -148,6 +148,8 @@ class PanicTestDut(IdfDut):
         espcoredump_args = [
             sys.executable,
             espcoredump_script,
+            '--port',
+            self.serial.port,
             '-b115200',
             'info_corefile',
         ]
