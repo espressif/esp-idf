@@ -174,3 +174,72 @@ UART
     stderr = f;
 
 注意，日志函数（如 ``ESP_LOGE()``）会将其输出写入 ``stdout``。在自定义 VFS（或其调用的组件）实现中使用日志时，请尤为注意。例如，如果自定义 VFS 驱动的 ``write()`` 操作失败，并使用 ``ESP_LOGE()`` 记录错误，会将输出写入 ``stdout``，而这又会调用自定义 VFS 驱动程序的 ``write()`` 操作，可能导致无限循环。建议在 VFS 驱动的 ``write()`` 实现中跟踪此类情况，如果发现写入仍在进行中，则立即返回。
+
+控制台 I/O 多路复用器
+-----------------------
+
+除了手动重定向 ``stdout`` 和 ``stderr`` 外（如上文所示），ESP-IDF 还提供控制台 I/O 多路复用器，使应用程序可以注册一个或多个自定义 VFS 后端，并在运行时在这些后端之间切换，而无需自行重新指定 ``stdin``、``stdout`` 或 ``stderr`` 流。
+
+多路复用器以 ``/dev/console`` 的形式对外提供，并将后端分为两类管理：
+
+- **主控 (Primary)**：当前活跃的读写后端，所有的应用输入 (``stdin``) 和输出 (``stdout``/``stderr``) 都经过主控。主控以栈方式管理：推入新主控时上一个主控会被挂起，弹出则恢复。Kconfig 设定的默认控制台位于栈底，始终作为兜底方案保留。
+- **辅助 (Auxiliary)**：仅接收写入的后端。写入 ``stdout`` 和 ``stderr`` 的内容除了发送给主控，还会同时复制到所有已注册的辅助后端。比如，既可以将控制台输出镜像到日志文件或网络，也能保留物理接口的交互控制台。
+
+允许同时注册的后端数量（主控和辅助总数，包括 Kconfig 默认项）由 :ref:`CONFIG_ESP_STDIO_MAX_VFS_ENTRIES` 配置。
+
+API 概览
+^^^^^^^^
+
+多路复用器 API 在 ``esp_stdio.h`` 中声明，启用 ``CONFIG_VFS_SUPPORT_IO`` 配置后可用：
+
+- ``esp_stdio_register_io()`` — 将 VFS 后端注册为只写辅助后端，并返回不透明句柄。此后端会立即开始接收写入扇出。
+- ``esp_stdio_push_primary()`` — 将先前注册的句柄提升为当前活动的读写主控。当前主控被挂起到栈上。
+- ``esp_stdio_pop_primary()`` — 从栈中移除一个主控，使其恢复为辅助状态。传入 ``NULL`` 将移除当前（栈顶）主控；传入特定句柄则无论其在栈中何处都会将其移除。
+- ``esp_stdio_unregister_io()`` — 将后端从多路复用器中彻底移除。若该后端当前是活动主控，则先将其弹出。
+
+后端由 ``esp_stdio_io_config_t`` 结构体描述：
+
+.. list::
+
+    - ``vfs_ops`` — 指向 VFS 操作表的指针（不得为 ``NULL``）。
+    - ``vfs_ctx`` — 转发给每个 VFS 回调的上下文指针。
+    - ``path`` — 在驱动内部传给 ``open()`` 的路径，例如 ``"/"``。
+
+.. note::
+
+    在调用 ``esp_stdio_unregister_io()`` 移除该后端前，配置中传入的操作表、上下文及路径字符串必须保持有效。
+
+示例
+^^^^^^^
+
+以下示例注册自定义后端，将其设为活动控制台，随后再恢复先前的控制台：
+
+.. code-block:: c
+
+    #include "esp_stdio.h"
+
+    // 由应用程序实现的 VFS 操作表。
+    extern const esp_vfs_fs_ops_t my_console_vfs;
+
+    esp_stdio_handle_t handle;
+    esp_stdio_io_config_t config = {
+        .vfs_ops = &my_console_vfs,
+        .vfs_ctx = NULL,
+        .path = "/",
+    };
+
+    // 注册为只写辅助后端：输出现在会镜像到该后端。
+    ESP_ERROR_CHECK(esp_stdio_register_io(&config, &handle));
+
+    // 将其提升为当前活动的读写主控。
+    ESP_ERROR_CHECK(esp_stdio_push_primary(handle));
+
+    // ... 应用程序通过自定义控制台使用 stdin/stdout/stderr ...
+
+    // 恢复先前的主控（自定义后端恢复为辅助）。
+    ESP_ERROR_CHECK(esp_stdio_pop_primary(handle));
+
+    // 从多路复用器中彻底移除该后端。
+    ESP_ERROR_CHECK(esp_stdio_unregister_io(handle));
+
+上文关于日志的重入说明，此处同样适用。后端的 ``write()`` 实现不应触发会递归写回控制台的日志。
