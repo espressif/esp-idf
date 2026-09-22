@@ -15,9 +15,7 @@
 #include "esp_private/esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/mspi_ll.h"
-#if CONFIG_SPIRAM_ECC_ENABLE
 #include "hal/mspi_pms_ll.h"
-#endif
 #include "soc/rtc.h"
 
 #define AP_OCT_PSRAM_SYNC_READ             0x0000
@@ -389,14 +387,16 @@ static void s_mspi_ecc_show_info(void)
     uint32_t page_size = psram_ctrlr_ll_get_page_size(PSRAM_CTRLR_LL_MSPI_ID_2);
     ESP_EARLY_LOGV(TAG, "ECC page size: %d", page_size);
 }
+#endif  //#if CONFIG_SPIRAM_ECC_ENABLE
 
 /**
- * Enable error correcting code feature
+ * Configure error correcting code feature
  *
  * Can add an input parameter for selecting ECC mode if needed
  */
 static void s_configure_psram_ecc(void)
 {
+#if CONFIG_SPIRAM_ECC_ENABLE
     psram_ctrlr_ll_enable_16to18_ecc(PSRAM_CTRLR_LL_MSPI_ID_2, true);
     psram_ctrlr_ll_enable_skip_page_corner(PSRAM_CTRLR_LL_MSPI_ID_2, true);
     psram_ctrlr_ll_enable_ecc_addr_conversion(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
@@ -410,8 +410,12 @@ static void s_configure_psram_ecc(void)
 
     ESP_EARLY_LOGI(TAG, "ECC is enabled");
     s_mspi_ecc_show_info();
+#else
+    psram_ctrlr_ll_enable_16to18_ecc(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+    psram_ctrlr_ll_enable_ecc_addr_conversion(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+    mspi_ll_pms_set_region_attr(MSPI_PMS_MEM_PSRAM, 0, MSPI_PMS_MODE_TEE, MSPI_PMS_ATTR_RD | MSPI_PMS_ATTR_WR);
+#endif
 }
-#endif  //#if CONFIG_SPIRAM_ECC_ENABLE
 
 esp_err_t esp_psram_impl_enable(void)
 {
@@ -436,9 +440,7 @@ esp_err_t esp_psram_impl_enable(void)
     s_set_psram_cs_timing();
     psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_2, true);
     psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_2, 2048);
-#if CONFIG_SPIRAM_ECC_ENABLE
     s_configure_psram_ecc();
-#endif
     //enter MSPI slow mode to init PSRAM device registers
     psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_2, AP_OCT_PSRAM_MPLL_DEFAULT_FREQ_MHZ / CONFIG_SPIRAM_SPEED);
     psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_3, AP_OCT_PSRAM_MPLL_DEFAULT_FREQ_MHZ / CONFIG_SPIRAM_SPEED);
