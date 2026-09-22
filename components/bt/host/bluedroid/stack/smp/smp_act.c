@@ -176,6 +176,11 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                 p_cb->local_i_key = cb_data.io_req.init_keys;
                 p_cb->local_r_key = cb_data.io_req.resp_keys;
 
+#if (SMP_CTKD_INCLUDED == FALSE)
+                p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
+                p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
+#endif
+
                 if (!(p_cb->loc_auth_req & SMP_AUTH_BOND)) {
                     SMP_TRACE_WARNING ("Non bonding: No keys will be exchanged");
                     p_cb->local_i_key = 0;
@@ -1469,11 +1474,16 @@ void smp_check_auth_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             p_cb->local_r_key |= SMP_SEC_KEY_TYPE_ENC;
 
             /* In LE SC mode LK is derived from LTK only if both sides request it */
+#if (SMP_CTKD_INCLUDED == TRUE)
             if (!(p_cb->local_i_key & SMP_SEC_KEY_TYPE_LK) ||
                     !(p_cb->local_r_key & SMP_SEC_KEY_TYPE_LK)) {
                 p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
                 p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
             }
+#else
+            p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
+            p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
+#endif
 
             /* In LE SC mode only IRK, IAI, CSRK are exchanged with the peer.
             ** Set local_r_key on master to expect only these keys.
@@ -1552,6 +1562,7 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         /* state check to prevent re-entrant */
         if (smp_get_state() == SMP_STATE_BOND_PENDING) {
             if (p_cb->derive_lk) {
+#if (SMP_CTKD_INCLUDED == TRUE)
                 tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
                 if (p_dev_rec == NULL) {
                     SMP_TRACE_WARNING("%s device record not found, skip LK derivation", __func__);
@@ -1564,6 +1575,7 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                         return;
                     }
                 }
+#endif
                 p_cb->derive_lk = FALSE;
             }
 
@@ -2359,8 +2371,13 @@ void smp_process_secure_connection_long_term_key(void)
 *******************************************************************************/
 void smp_set_derive_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
+    UNUSED(p_data);
     SMP_TRACE_DEBUG ("%s\n", __func__);
+#if (SMP_CTKD_INCLUDED == TRUE)
     p_cb->derive_lk = TRUE;
+#else
+    p_cb->derive_lk = FALSE;
+#endif
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_LK, FALSE);
     smp_key_distribution(p_cb, NULL);
 }
@@ -2405,6 +2422,12 @@ void smp_br_process_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     tSMP_STATUS status = SMP_PAIR_FAIL_UNKNOWN;
 
     SMP_TRACE_DEBUG("%s\n", __func__);
+#if (SMP_CTKD_INCLUDED == FALSE)
+    UNUSED(p_data);
+    SMP_TRACE_WARNING("%s CTKD disabled", __func__);
+    status = SMP_XTRANS_DERIVE_NOT_ALLOW;
+    smp_sm_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
+#else
     if (!smp_calculate_long_term_key_from_link_key(p_cb)) {
         SMP_TRACE_ERROR ("%s failed\n", __FUNCTION__);
         smp_sm_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
@@ -2415,6 +2438,7 @@ void smp_br_process_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     smp_save_secure_connections_long_term_key(p_cb);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ENC, FALSE);
     smp_br_select_next_key(p_cb, NULL);
+#endif
 }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 

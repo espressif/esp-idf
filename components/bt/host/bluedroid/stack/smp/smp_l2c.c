@@ -41,11 +41,11 @@ static void smp_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN connec
                                  tBT_TRANSPORT transport);
 static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf);
 #endif  ///BLE_INCLUDED == TRUE
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_CTKD_INCLUDED == TRUE)
 static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN connected, UINT16 reason,
                                     tBT_TRANSPORT transport);
 static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif  ///SMP_CTKD_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -81,12 +81,14 @@ void smp_l2cap_if_init (void)
     L2CA_RegisterFixedChannel (L2CAP_SMP_CID, &fixed_reg);
 #endif  ///BLE_INCLUDED == TRUE
 
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_CTKD_INCLUDED == TRUE)
     fixed_reg.pL2CA_FixedConn_Cb = smp_br_connect_callback;
     fixed_reg.pL2CA_FixedData_Cb = smp_br_data_received;
 
     L2CA_RegisterFixedChannel (L2CAP_SMP_BR_CID, &fixed_reg);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#else
+    UNUSED(fixed_reg);
+#endif  ///SMP_CTKD_INCLUDED == TRUE
 }
 
 #if (BLE_INCLUDED == TRUE)
@@ -262,7 +264,7 @@ static void smp_tx_complete_callback (UINT16 cid, UINT16 num_pkt)
 **                      connected (conn = TRUE)/disconnected (conn = FALSE).
 **
 *******************************************************************************/
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_CTKD_INCLUDED == TRUE)
 static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN connected,
                                     UINT16 reason, tBT_TRANSPORT transport)
 {
@@ -368,6 +370,6 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
 
     osi_free (p_buf);
 }
-#endif  /* CLASSIC_BT_INCLUDED == TRUE */
+#endif  /* SMP_CTKD_INCLUDED == TRUE */
 
 #endif /* SMP_INCLUDED == TRUE */
