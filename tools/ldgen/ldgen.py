@@ -23,7 +23,7 @@ from pyparsing import ParseFatalException
 
 
 def _update_environment(args):
-    env = [(name, value) for (name,value) in (e.split('=',1) for e in args.env)]
+    env = [(name, value) for (name, value) in (e.split('=', 1) for e in args.env)]
     for name, value in env:
         value = ' '.join(value.split())
         os.environ[name] = value
@@ -34,71 +34,61 @@ def _update_environment(args):
 
 
 def main():
-
     argparser = argparse.ArgumentParser(description='ESP-IDF linker script generator')
 
-    argparser.add_argument(
-        '--input', '-i',
-        help='Linker template file',
-        type=argparse.FileType('r'))
+    argparser.add_argument('--input', '-i', help='Linker template file', type=argparse.FileType('r'))
 
     fragments_group = argparser.add_mutually_exclusive_group()
 
     fragments_group.add_argument(
-        '--fragments', '-f',
-        type=argparse.FileType('r'),
-        help='Input fragment files',
-        nargs='+'
+        '--fragments', '-f', type=argparse.FileType('r'), help='Input fragment files', nargs='+'
     )
 
     fragments_group.add_argument(
-        '--fragments-list',
-        help='Input fragment files as a semicolon-separated list',
-        type=str
+        '--fragments-list', help='Input fragment files as a semicolon-separated list', type=str
     )
 
-    argparser.add_argument(
-        '--libraries-file',
+    fragments_group.add_argument(
+        '--fragments-list-file',
         type=argparse.FileType('r'),
-        help='File that contains the list of libraries in the build')
-
-    argparser.add_argument(
-        '--output', '-o',
-        help='Output linker script',
-        type=str)
-
-    argparser.add_argument(
-        '--config', '-c',
-        help='Project configuration')
-
-    argparser.add_argument(
-        '--kconfig', '-k',
-        help='IDF Kconfig file')
-
-    argparser.add_argument(
-        '--check-mapping',
-        help='Perform a check if a mapping (archive, obj, symbol) exists',
-        action='store_true'
+        help='File containing fragment file paths, one per line',
     )
 
     argparser.add_argument(
-        '--check-mapping-exceptions',
-        help='Mappings exempted from check',
-        type=argparse.FileType('r')
+        '--libraries-file', type=argparse.FileType('r'), help='File that contains the list of libraries in the build'
+    )
+
+    argparser.add_argument('--output', '-o', help='Output linker script', type=str)
+
+    argparser.add_argument('--config', '-c', help='Project configuration')
+
+    argparser.add_argument('--kconfig', '-k', help='IDF Kconfig file')
+
+    argparser.add_argument(
+        '--check-mapping', help='Perform a check if a mapping (archive, obj, symbol) exists', action='store_true'
     )
 
     argparser.add_argument(
-        '--env', '-e',
-        action='append', default=[],
-        help='Environment to set when evaluating the config file', metavar='NAME=VAL')
-
-    argparser.add_argument('--env-file', type=argparse.FileType('r'),
-                           help='Optional file to load environment variables from. Contents '
-                           'should be a JSON object where each key/value pair is a variable.')
+        '--check-mapping-exceptions', help='Mappings exempted from check', type=argparse.FileType('r')
+    )
 
     argparser.add_argument(
-        '--objdump',
-        help='Path to toolchain objdump')
+        '--env',
+        '-e',
+        action='append',
+        default=[],
+        help='Environment to set when evaluating the config file',
+        metavar='NAME=VAL',
+    )
+
+    argparser.add_argument(
+        '--env-file',
+        type=argparse.FileType('r'),
+        help='Optional file to load environment variables from. Contents '
+        'should be a JSON object where each key/value pair is a variable.',
+    )
+
+    argparser.add_argument('--objdump', help='Path to toolchain objdump')
 
     args = argparser.parse_args()
 
@@ -112,6 +102,8 @@ def main():
     fragment_files = []
     if args.fragments_list:
         fragment_files = args.fragments_list.split(';')
+    elif args.fragments_list_file:
+        fragment_files = [line.strip() for line in args.fragments_list_file if line.strip()]
     elif args.fragments:
         fragment_files = args.fragments
 
@@ -145,7 +137,7 @@ def main():
                 # ParseException is raised on incorrect grammar
                 # ParseFatalException is raised on correct grammar, but inconsistent contents (ex. duplicate
                 # keys, key unsupported by fragment, unexpected number of values, etc.)
-                raise LdGenFailure('failed to parse %s\n%s' % (fragment_file, str(e)))
+                raise LdGenFailure(f'failed to parse {fragment_file}\n{e}')
             generation_model.add_fragments_from_file(fragment_file)
 
         non_contiguous_sram = sdkconfig.evaluate_expression('SOC_MEM_NON_CONTIGUOUS_SRAM')
@@ -165,10 +157,11 @@ def main():
                     if exc.errno != errno.EEXIST:
                         raise
 
-            with open(output_path, 'w', encoding='utf-8') as f:  # only create output file after generation has succeeded
+            # only create output file after generation has succeeded
+            with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(output.read())
     except LdGenFailure as e:
-        print('linker script generation failed for %s\nERROR: %s' % (input_file.name, e))
+        print(f'linker script generation failed for {input_file.name}\nERROR: {e}')
         sys.exit(1)
 
 
