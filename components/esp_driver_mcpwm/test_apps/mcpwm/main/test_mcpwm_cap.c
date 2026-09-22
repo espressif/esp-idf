@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,9 @@
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/event_groups.h"
 #include "unity.h"
 #include "soc/soc_caps.h"
-#include "esp_private/esp_clk.h"
+#include "esp_rom_sys.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
