@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -40,25 +40,37 @@ def test_base_mac_address(dut: Dut) -> None:
 
     sdkconfig = dut.app.sdkconfig
 
+    def get_expected_local_mac_string(increment: int) -> str:
+        mac = [int(value.decode('utf8'), 16) for value in mac_m]
+        mac[5] = (mac[5] + increment) & 0xFF
+        mac[0] |= 0x02
+        if mac[0] == int(mac_m[0], 16):
+            mac[0] ^= 0x04
+        return ', '.join(hex(value) for value in mac)
+
+    has_wifi = sdkconfig.get('SOC_WIFI_SUPPORTED')
+    has_wifi_ap_universal_mac = sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_WIFI_AP')
+    has_bt_mac = sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT')
+    has_four_universal_mac_addrs = sdkconfig.get('ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR')
+    has_eth_universal_mac = sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_ETH')
+
     if sdkconfig.get('ESP_WIFI_ENABLED'):
         dut.expect_exact('WIFI_STA MAC: ' + get_expected_mac_string(0, dut.target), timeout=2)
-        dut.expect_exact('SoftAP MAC: ' + get_expected_mac_string(1, dut.target))
-
-    has_bt_mac = sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT')
-    has_wifi = sdkconfig.get('SOC_WIFI_SUPPORTED')
-    bt_mac_uses_base_mac = has_bt_mac and not has_wifi
-
-    if dut.target != 'esp32s2' and not bt_mac_uses_base_mac:
-        if has_bt_mac:
-            dut.expect_exact('BT MAC: ' + get_expected_mac_string(2, dut.target))
-        if has_wifi or has_bt_mac:
-            dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(3, dut.target))
+        if has_wifi_ap_universal_mac:
+            dut.expect_exact('SoftAP MAC: ' + get_expected_mac_string(1, dut.target))
         else:
-            dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(0, dut.target))  # for esp32p4
-        dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
-    elif bt_mac_uses_base_mac:
-        dut.expect_exact('BT MAC: ' + get_expected_mac_string(0, dut.target))
-        dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
+            dut.expect_exact('SoftAP MAC: ' + get_expected_local_mac_string(0))
+
+    if has_bt_mac:
+        bt_offset = 2 if has_wifi and has_four_universal_mac_addrs else 1 if has_wifi else 0
+        dut.expect_exact('BT MAC: ' + get_expected_mac_string(bt_offset, dut.target))
+
+    if has_eth_universal_mac:
+        eth_offset = 3 if has_wifi or has_bt_mac else 0
+        dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(eth_offset, dut.target))
+    else:
+        dut.expect_exact('Ethernet MAC: ' + get_expected_local_mac_string(1))
+    dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
 
     if sdkconfig.get('SOC_IEEE802154_SUPPORTED'):
         mac_ext_m = dut.expect(r'MAC_EXT: ' + get_hex_r(2), timeout=5).groups()
