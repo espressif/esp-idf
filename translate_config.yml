@@ -17,9 +17,49 @@ compare_branch: master
 
 target_language: EN-CN
 
-trans_dict: {}
+# Project-specific term overrides. Always applied; on conflicts this map wins
+# over the ESP-Term glossary (e.g. glossary "pin" vs docs house style 管脚).
+trans_dict:
+  pin: 管脚
+  datasheet: 技术规格书
 
+# ESP-Term glossary. CI clones the repo to ./esp-term when $ESP_TERM_REPO is set.
+# Before each prompt, only terms that actually appear in that text are injected
+# (the full glossary is hundreds of entries; the prompt stays small).
+# Missing/malformed file: warning only; translation continues without glossary.
+glossary:
+  enabled: true
+  file: ./esp-term/Consolidated_Terms.yaml
+  max_terms: 200           # cap on terms injected per request (longest match first)
+  min_en_word_len: 5       # skip bare English words shorter than this (code, data, pin)
+  include_acronyms: true   # also match Acronym / Full_Form surface forms
+  include_synonyms: true   # also match Synonym surface forms
+  match_variants: true     # also match plurals/inflections (register -> registers)
+  post_process: true       # hard-replace leftover source-language terms in the output
+                           # (skips ambiguous / keep-English terms and protected RST spans)
+  log: true                # per-file hit summary + residual-term compliance scan
+
+# Deterministic RST fixes. They change the translated file (pass-through lines /
+# inserted spaces). Both on: ESP-IDF docs are Sphinx RST and these prevent
+# common build failures.
+rst_safeguards:
+  toctree_passthrough: true   # do not translate .. toctree:: (options + entry paths)
+  inline_markup_spacing: true # 参数**加粗** -> 参数 **加粗** ; strip stray RST "\ " next to Han
+
+# LLM RST format repair, after rst_safeguards. Only "risky" lines (inline markup);
+# content guard drops edits that change wording; line count is unchanged (EN/CN
+# alignment). Extra API cost and some run-to-run variability — left off for CI.
+ai_rst_postprocess:
+  enabled: false
+  max_lines: 200           # max risky lines sent to the model per file (if enabled)
+
+# Where to write translated files. "." = in-place next to the English source
+# (docs/en/... -> docs/zh_CN/...), which is what GitLab CI commits back.
 target_language_folder: ./
+
+# Verbose per-chunk logs (source, glossary hits, prompt, raw reply, post-process).
+# Useful while validating TCF; noisy in CI.
+debug: false
 
 # force_full_translate:
 #   - docs/en/api-guides/example.rst
