@@ -554,7 +554,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         @mcp.tool(
             description=(
                 'Run a serial monitor session against a flashed device, driven by a script '
-                '(runs `python -m esp_idf_monitor` in non-interactive command mode). '
+                '(runs `python -m esp_idf_monitor` in command-stream mode). '
                 'Use this to observe what a device prints and to wait for specific output. '
                 'Write the commands body from the project context or from the exact instructions '
                 'of the user; allowed commands are expect, send, sleep, reset, bootloader and exit. '

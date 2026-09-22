@@ -415,6 +415,7 @@ class RunTool:
         interactive: bool = False,
         convert_output: bool = False,
         buffer_size: int | None = None,
+        stdin: Any = None,
     ) -> None:
         self.tool_name = tool_name
         self.args = args
@@ -428,6 +429,8 @@ class RunTool:
         self.interactive = interactive
         self.convert_output = convert_output
         self.buffer_size = buffer_size or 256
+        # None inherits the parent's stdin; otherwise a file object or subprocess.DEVNULL
+        self.stdin = stdin
 
     def __call__(self) -> None:
         def quote_arg(arg: str) -> str:
@@ -464,7 +467,7 @@ class RunTool:
         if self.hints:
             process, stderr_output_file, stdout_output_file = asyncio.run(self.run_command(self.args, env_copy))
         else:
-            process = subprocess.run(self.args, env=env_copy, cwd=self.cwd)
+            process = subprocess.run(self.args, env=env_copy, cwd=self.cwd, stdin=self.stdin)
             stderr_output_file, stdout_output_file = None, None
         if process.returncode == 0:
             return
@@ -501,6 +504,7 @@ class RunTool:
                 env=env_copy,
                 limit=1024 * self.buffer_size,
                 cwd=self.cwd,
+                stdin=self.stdin,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -531,7 +535,8 @@ class RunTool:
                 # the even loop is closed and we get RuntimeError: Event loop is closed
                 # in the transport __del__ function because it's trying to use the closed
                 # even loop.
-                log.err(f'\n{self.tool_name} process terminated')
+                log.print('\n')
+                log.err(f'{self.tool_name} process terminated')
         await p.wait()  # added for avoiding None returncode
         return p, stderr_output_file, stdout_output_file
 

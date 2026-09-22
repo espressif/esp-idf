@@ -362,6 +362,124 @@ The options ``--print_filter="light_driver:D esp_image:N boot:N cpu_start:N vfs:
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
 
 
+.. _idf-monitor-command-stream:
+
+Command-Stream Mode
+===================
+
+The interactive key bindings require a terminal (TTY) attached to the input of the monitor. But when the input comes from a pipe or a file, or there is no input attached at all (for example in continuous integration jobs), the monitor automatically switches to command-stream mode. In this mode, it reads line-based commands from the redirected input.
+
+Reading from a file via ``--command-file`` is recommended over reading from a pipe when multiple ``idf.py`` commands are intended to be chained together in order to avoid influencing the standard input of other tools. Reading commands from a pipe is safe when ``idf.py monitor`` is invoked without additional commands like ``flash``. Refer to the following examples which demonstrate the recommended use cases.
+
+.. code-block:: bash
+
+    idf.py monitor --command-file commands.txt
+    idf.py flash monitor --command-file commands.txt
+
+Piping into ``idf.py monitor`` also works when stdin is not a TTY:
+
+.. code-block:: bash
+
+    printf 'reset\nexpect --timeout 10 ALL TESTS PASSED\n' | idf.py monitor
+
+Commands
+~~~~~~~~
+
+.. list-table::
+    :widths: 30 70
+    :header-rows: 1
+
+    * - Command
+      - Action
+    * - ``reset``
+      - Hard-reset the chip using the RTS line.
+    * - ``flash``
+      - Run the build system's ``flash`` target (fast reflash by default).
+    * - ``flash-all``
+      - Run the ``flash`` target with a full flash, disabling fast reflash (equivalent to ``idf.py flash -a``).
+    * - ``app-flash``
+      - Run the build system's ``app-flash`` target.
+    * - ``send <text>``
+      - Send ``<text>`` followed by the configured end-of-line sequence to the device.
+    * - ``sleep <seconds>``
+      - Pause command processing for the given duration while serial output continues (accepts floating-point values and ``inf``).
+    * - ``expect <regex>``
+      - Wait until a serial line matches the Python regular expression using ``re.search``.
+    * - ``expect --timeout <seconds> <regex>``
+      - Wait for a match for at most the given positive, finite duration. A timeout reports an error and aborts the remaining commands.
+    * - ``output``
+      - Toggle printing serial output.
+    * - ``log``
+      - Toggle saving output to a log file.
+    * - ``timestamps``
+      - Toggle prepending timestamps to serial output.
+    * - ``bootloader``
+      - Reset the chip into download (bootloader) mode.
+    * - ``exit``
+      - Quit IDF Monitor after draining pending serial output.
+
+Empty lines and lines starting with ``#`` are ignored. Each processed command is echoed to standard error, so script progress remains visible when standard output is redirected to a file.
+
+``expect`` also checks a bounded buffer of recently received lines before waiting for new output. Line endings are removed before matching, so a ``$`` anchor works with both LF and CRLF output. It can also match prompts that have no line ending.
+
+Ending a Command Stream
+~~~~~~~~~~~~~~~~~~~~~~~
+
+After at least one command has been read, reaching EOF ends the session. Therefore, a command file can end with ``exit``, a final ``expect``, or simply EOF. If standard input is empty from the start (for example, redirected from ``/dev/null`` or when Docker runs without ``-i``), IDF Monitor enters watch-only mode and continues displaying serial output until stopped externally with ``Ctrl+C`` or ``SIGTERM``.
+
+Examples
+~~~~~~~~
+
+Wait for a pattern, then exit:
+
+.. code-block:: bash
+
+    printf 'expect ALL TESTS PASSED\n' | idf.py monitor > test.log
+
+As the final command, ``expect`` makes the monitor exit after the pattern is matched. Without ``--timeout``, it waits indefinitely.
+
+Wait for a pattern for up to ten seconds:
+
+.. code-block:: bash
+
+    printf 'reset\nexpect --timeout 10 Hello world!\n' | idf.py monitor > boot.log
+
+If the pattern is not matched, subsequent commands are not executed. IDF Monitor drains pending output and flushes the log before exiting.
+
+Reset the device and capture ten seconds of boot output:
+
+.. code-block:: bash
+
+    printf 'reset\nsleep 10\n' | idf.py monitor > boot.log
+
+No ``exit`` command is needed because EOF ends a non-empty command stream.
+
+Drive a console application:
+
+.. code-block:: bash
+
+    idf.py monitor <<'EOF'
+    reset
+    expect esp>
+    send free
+    expect \d+
+    exit
+    EOF
+
+Run in watch-only mode:
+
+.. code-block:: bash
+
+    idf.py monitor < /dev/null
+
+
+.. note::
+
+    Because command-stream mode has no terminal, an interactive GDB session cannot be started from the target's GDB stub.
+
+This mode is used by the ESP-IDF MCP ``monitor device`` tool. See :ref:`mcp-monitor-device`.
+
+
 .. _configuration-file:
 
 Configuration File
@@ -428,5 +546,5 @@ The following issues are currently known:
 If you experience any other issues while using IDF Monitor, check our `GitHub repository <https://github.com/espressif/esp-idf-monitor/issues>`_ for a list of known issues and their current status. If you come across a problem that hasn't been documented yet, we encourage you to create a new issue report.
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
-.. _IDF Monitor documentation: https://github.com/espressif/esp-idf-monitor/blob/v1.5.0/README.md#documentation
+.. _IDF Monitor documentation: https://github.com/espressif/esp-idf-monitor/blob/v1.10.0/README.md#documentation
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/

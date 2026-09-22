@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import asyncio
 import os
 import pathlib
 import sys
@@ -11,6 +12,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from idf_py_actions.tools import PropertyDict  # noqa: E402
+from idf_py_actions.tools import RunTool  # noqa: E402
 from idf_py_actions.tools import get_selected_target  # noqa: E402
 
 
@@ -102,7 +104,9 @@ class TestMonitorPortDetection:
         ext = action_extensions({}, '')
         return ext['actions']['monitor']['callback']
 
-    def _call_monitor(self, args: PropertyDict, port: str | None = None, no_reset: bool = False) -> None:
+    def _call_monitor(
+        self, args: PropertyDict, port: str | None = None, no_reset: bool = False, command_file: str | None = None
+    ) -> None:
         args.port = port
         monitor_fn = self._get_monitor_fn()
 
@@ -122,6 +126,7 @@ class TestMonitorPortDetection:
             timestamp_format=None,
             force_color=False,
             disable_auto_color=False,
+            command_file=command_file,
         )
 
     def test_clean_project_autodetects_port_and_target(self, args: PropertyDict, mock_esp: Any) -> None:
@@ -170,3 +175,53 @@ class TestMonitorPortDetection:
                         self._call_monitor(args)
 
         mock_detect.assert_not_called()
+
+    def test_command_file_redirects_stdin_to_runtool(self, args: PropertyDict, tmp_path: pathlib.Path) -> None:
+        """--command-file FILE must open the file and pass it as RunTool stdin."""
+        command_file_path = tmp_path / 'monitor_commands.txt'
+        command_file_path.write_text('reset\nexpect Hello\n')
+
+        with mock.patch.dict(os.environ, {'IDF_PATH': '/idf', 'IDF_TARGET': 'esp32s3'}):
+            with mock.patch('idf_py_actions.serial_ext.get_default_serial_port', return_value='/dev/ttyUSB0'):
+                with mock.patch('idf_py_actions.serial_ext.RunTool') as mock_run:
+                    self._call_monitor(args, command_file=str(command_file_path))
+
+        assert mock_run.called
+        stdin = mock_run.call_args.kwargs.get('stdin')
+        assert stdin is not None
+        assert stdin.name == str(command_file_path)
+        # File should be closed after RunTool returns
+        assert stdin.closed
+
+
+class TestRunToolStdin:
+    def test_forwards_stdin_without_hints(self, tmp_path: pathlib.Path) -> None:
+        script_path = tmp_path / 'monitor_commands.txt'
+        script_path.write_text('exit\n')
+
+        with script_path.open('rb') as script_file:
+            tool = RunTool('test', ['command'], str(tmp_path), hints=False, stdin=script_file)
+            with mock.patch('idf_py_actions.tools.subprocess.run', return_value=mock.Mock(returncode=0)) as mock_run:
+                tool()
+
+            assert mock_run.call_args.kwargs['stdin'] is script_file
+
+    def test_forwards_stdin_with_hints(self, tmp_path: pathlib.Path) -> None:
+        script_path = tmp_path / 'monitor_commands.txt'
+        script_path.write_text('exit\n')
+        process = mock.MagicMock()
+        process.pid = 123
+        process.stdout = None
+        process.stderr = None
+        process.wait = mock.AsyncMock()
+
+        with script_path.open('rb') as script_file:
+            tool = RunTool('test', ['command'], str(tmp_path), build_dir=str(tmp_path), stdin=script_file)
+            with mock.patch(
+                'idf_py_actions.tools.asyncio.create_subprocess_exec',
+                new_callable=mock.AsyncMock,
+                return_value=process,
+            ) as mock_exec:
+                asyncio.run(tool.run_command(['command'], {}))
+
+            assert mock_exec.call_args.kwargs['stdin'] is script_file
