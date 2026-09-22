@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,7 @@ typedef struct {
                                      */
     spi_clock_source_t clock_source;///< Select SPI clock source, `SPI_CLK_SRC_DEFAULT` by default.
     uint16_t duty_cycle_pos;        ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
-    uint16_t cs_ena_pretrans;       ///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
+    uint16_t cs_ena_pretrans;       ///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). In full-duplex mode this is not compatible with the Command and Address phases; see the Known Issues section of the SPI Master documentation.
     uint8_t cs_ena_posttrans;       ///< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
     int clock_speed_hz;             ///< SPI clock speed in Hz. Derived from `clock_source`.
     int input_delay_ns;             /**< Maximum data valid time of slave. The time required between SCLK and MISO
