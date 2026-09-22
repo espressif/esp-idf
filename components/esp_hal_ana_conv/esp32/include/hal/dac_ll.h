@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*******************************************************************************
- * NOTICE
- * The ll is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
- ******************************************************************************/
-
 #pragma once
 
 #include <stdlib.h>
@@ -21,9 +15,9 @@
 #include "hal/dac_types.h"
 #include "hal/dac_types_private.h"
 
-#define SOC_DAC_DC_VIA_SINTX 0
+#define SOC_DAC_DC_VIA_SINTX           0
 #define SOC_DAC_SINTX_HAS_TIMER_TARGET 0
-#define SOC_DAC_SINTX_LUT_SIGNED 0
+#define SOC_DAC_SINTX_LUT_SIGNED       1
 
 #ifdef __cplusplus
 extern "C" {
@@ -162,14 +156,15 @@ static inline void dac_ll_cw_set_atten(dac_channel_t channel, dac_cosine_atten_t
  * Set the phase of the cosine wave generator output.
  *
  * @param channel DAC channel num.
- * @param phase Phase value. 0: 0x02 180: 0x03.
+ * @param phase Phase value.
  */
 static inline void dac_ll_cw_set_phase(dac_channel_t channel, dac_cosine_phase_t phase)
 {
+    uint8_t dac_inv = phase == DAC_COSINE_PHASE_180 ? 0x03 : 0x02;
     if (channel == DAC_CHAN_0) {
-        SENS.sar_dac_ctrl2.dac_inv1 = phase;
+        SENS.sar_dac_ctrl2.dac_inv1 = dac_inv;
     } else if (channel == DAC_CHAN_1) {
-        SENS.sar_dac_ctrl2.dac_inv2 = phase;
+        SENS.sar_dac_ctrl2.dac_inv2 = dac_inv;
     }
 }
 
