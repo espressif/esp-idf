@@ -22,7 +22,6 @@
 #include "lvgl.h"
 #include "esp_lcd_ili9881c.h"
 #include "esp_lcd_ek79007.h"
-#include "esp_efuse.h"
 
 static const char *TAG = "example";
 
@@ -316,16 +315,10 @@ void app_main(void)
     lv_display_set_flush_cb(display, example_lvgl_flush_cb);
 
 #if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
-    // If Flash Encryption/ PSRAM ECC is enabled, DMA2D requires the flush buffer address and size to be aligned.
-    // Round the LVGL invalidate area accordingly (this is an LVGL integration hook, not a panel API).
-    bool need_rounder = esp_efuse_is_flash_encryption_enabled();
-#if CONFIG_SPIRAM_ECC_ENABLE
-    need_rounder = true;
-#endif
-    if (need_rounder) {
-        ESP_LOGI(TAG, "Register event callback for LVGL flush area rounding");
-        lv_display_add_event_cb(display, example_rounder_flush_area_cb, LV_EVENT_INVALIDATE_AREA, NULL);
-    }
+    // In case flash encryption is enabled, DMA2D requires the flush buffer address and size to be aligned to 16 bytes.
+    // We need to round the flush area to the multiple of 16.
+    ESP_LOGI(TAG, "Register event callback for LVGL flush area rounding");
+    lv_display_add_event_cb(display, example_rounder_flush_area_cb, LV_EVENT_INVALIDATE_AREA, NULL);
 #endif
 
     ESP_LOGI(TAG, "Register DPI panel event callback for LVGL flush ready notification");
