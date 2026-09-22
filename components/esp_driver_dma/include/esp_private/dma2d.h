@@ -75,6 +75,8 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
  *      - ESP_ERR_INVALID_ARG: Release the 2D-DMA pool failed because of invalid argument
  *      - ESP_ERR_NOT_ALLOWED: Release the 2D-DMA pool failed because there is pending transactions in the pool,
  *                             pool can not be destroyed
+ *      - ESP_FAIL: Release the 2D-DMA pool failed because an interrupt could not be freed; pool resources remain
+ *                  allocated so the caller can retry
  */
 esp_err_t dma2d_release_pool(dma2d_pool_handle_t dma2d_pool);
 
