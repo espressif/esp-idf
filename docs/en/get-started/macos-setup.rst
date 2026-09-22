@@ -22,7 +22,7 @@ Install the required prerequisites via `Homebrew <https://brew.sh/>`_:
 
 .. note::
 
-    Python 3.10 is the minimum supported version for ESP-IDF.
+    Python 3.11 is the minimum supported version for ESP-IDF.
 
     For the Python version required by the EIM, please refer to the `EIM documentation <https://docs.espressif.com/projects/idf-im-ui/en/latest/prerequisites.html#python-version>`_.
 

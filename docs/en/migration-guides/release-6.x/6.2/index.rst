@@ -10,3 +10,4 @@ Migration from 6.1 to 6.2
     peripherals
     security
     system
+    tools
