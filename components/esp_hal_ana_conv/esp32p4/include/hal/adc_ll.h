@@ -52,7 +52,6 @@ extern "C" {
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (1)
 #define LP_ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)   (2)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (10)
-#define ADC_LL_ONESHOT_START_BY_UNIT                1
 
 /*---------------------------------------------------------------
  *                          continuous
@@ -902,9 +901,13 @@ static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
  * @note It may be block to wait conversion idle for ADC1.
  *
  * @param adc_n ADC unit.
+ * @param en    Set true to trigger one conversion.
  */
-static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n, bool en)
 {
+    if (!en) {
+        return;
+    }
     if (adc_n == ADC_UNIT_1) {
         LP_ADC.meas1_ctrl2.meas1_start_sar = 0;
         LP_ADC.meas1_ctrl2.meas1_start_sar = 1;

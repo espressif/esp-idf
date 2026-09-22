@@ -115,12 +115,12 @@ static uint32_t read_cal_channel(adc_unit_t adc_n)
     uint32_t event = (adc_n == ADC_UNIT_1) ? ADC_LL_EVENT_ADC1_ONESHOT_DONE : ADC_LL_EVENT_ADC2_ONESHOT_DONE;
     adc_oneshot_ll_clear_event(event);
 
-#if ADC_LL_ONESHOT_START_BY_UNIT
-    adc_oneshot_ll_start(adc_n);
-#else
-    adc_oneshot_ll_start(false);
+#if ADC_LL_ONESHOT_START_PULSE
+    adc_oneshot_ll_start(adc_n, false);
     esp_rom_delay_us(5);
-    adc_oneshot_ll_start(true);
+    adc_oneshot_ll_start(adc_n, true);
+#else
+    adc_oneshot_ll_start(adc_n, true);
 #endif
 
     while (!adc_oneshot_ll_get_event(event));

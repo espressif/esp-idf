@@ -64,7 +64,6 @@ extern "C" {
 #define ADC_LL_FSM_STANDBY_WAIT_DEFAULT             (100)
 #define ADC_LL_SAMPLE_CYCLE_DEFAULT                 (2)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (0)
-#define ADC_LL_ONESHOT_START_BY_UNIT                1
 
 /* DMA and continuous conversion */
 #define ADC_LL_DMA_USE_LP_AHB_GDMA                  (1)
@@ -690,9 +689,15 @@ static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
 
 /**
  * @brief Start one conversion by software trigger.
+ *
+ * @param adc_n ADC unit.
+ * @param en    Set true to trigger one conversion.
  */
-static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n, bool en)
 {
+    if (!en) {
+        return;
+    }
     if (adc_n == ADC_UNIT_1) {
         ADC.ctrl0.sar1_trigger_start = 1;
     } else {

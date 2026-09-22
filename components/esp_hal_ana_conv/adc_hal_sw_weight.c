@@ -51,7 +51,7 @@ static uint32_t adc_hal_sw_weight_sample_once(adc_unit_t adc_n)
 {
     uint32_t event = (adc_n == ADC_UNIT_1) ? ADC_LL_EVENT_ADC1_ONESHOT_DONE : ADC_LL_EVENT_ADC2_ONESHOT_DONE;
     adc_oneshot_ll_clear_event(event);
-    adc_oneshot_ll_start(adc_n);
+    adc_oneshot_ll_start(adc_n, true);
     while (!adc_oneshot_ll_get_event(event)) {
     }
     return adc_oneshot_ll_get_raw_result(adc_n) & ADC_HAL_SW_WEIGHT_RAW_MASK;
