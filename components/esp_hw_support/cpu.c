@@ -89,7 +89,7 @@ esp_err_t esp_cpu_set_breakpoint(int bp_num, const void *bp_addr)
          */
         long args[] = {true, bp_num, (long)bp_addr};
         int ret = semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_BREAKPOINT_SET, args);
-        if (ret == 0) {
+        if (ret != 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
     } else {
@@ -112,7 +112,7 @@ esp_err_t esp_cpu_clear_breakpoint(int bp_num)
         // See description in esp_cpu_set_breakpoint()
         long args[] = {false, bp_num};
         int ret = semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_BREAKPOINT_SET, args);
-        if (ret == 0) {
+        if (ret != 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
     } else {
@@ -154,7 +154,7 @@ esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, e
                        (long)((on_read ? ESP_SEMIHOSTING_WP_FLG_RD : 0) | (on_write ? ESP_SEMIHOSTING_WP_FLG_WR : 0))
                       };
         int ret = semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_WATCHPOINT_SET, args);
-        if (ret == 0) {
+        if (ret != 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
     } else {
@@ -177,7 +177,7 @@ esp_err_t esp_cpu_clear_watchpoint(int wp_num)
         // See description in esp_cpu_dbgr_is_attached()
         long args[] = {false, wp_num};
         int ret = semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_WATCHPOINT_SET, args);
-        if (ret == 0) {
+        if (ret != 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
     } else {
