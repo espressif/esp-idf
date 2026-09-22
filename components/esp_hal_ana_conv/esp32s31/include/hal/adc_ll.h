@@ -55,7 +55,6 @@ extern "C" {
 #define ADC_LL_RTC_MAX_BITWIDTH                        (17)
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
-#define ADC_LL_ONESHOT_START_BY_UNIT                   1
 
 #define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
 #define ADC_LL_SAMPLE_FREQ_THRES_HIGH                  (83333U)
@@ -691,9 +690,15 @@ static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
 
 /**
  * @brief Start one conversion by software trigger.
+ *
+ * @param adc_n ADC unit.
+ * @param en    Set true to trigger one conversion.
  */
-static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n, bool en)
 {
+    if (!en) {
+        return;
+    }
     if (adc_n == ADC_UNIT_1) {
         ADC.ctrl0.sar1_trigger_start = 1;
     } else {

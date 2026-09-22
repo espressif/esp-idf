@@ -16,7 +16,7 @@
 #include "hal/dac_ll.h"
 #endif
 
-#if !ADC_LL_ONESHOT_START_BY_UNIT
+#if ADC_LL_ONESHOT_START_PULSE
 #include "esp_rom_sys.h"
 #endif
 
@@ -94,10 +94,7 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 
 static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uint32_t *read_delay_us)
 {
-#if ADC_LL_ONESHOT_START_BY_UNIT
-    adc_oneshot_ll_start(unit);
-#else
-    (void)unit;
+#if ADC_LL_ONESHOT_START_PULSE
     /**
      * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
      * ADC digital controller (when its clock frequency is too slow). A rough estimate for this step should be at least 3 ADC digital controller
@@ -115,9 +112,9 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uin
 
     HAL_EARLY_LOGD(TAG, "delay for `onetime_start` signal captured: %"PRIu32"", sample_delay_us);
 
-    adc_oneshot_ll_start(true);
+    adc_oneshot_ll_start(unit, true);
     esp_rom_delay_us(sample_delay_us);
-    adc_oneshot_ll_start(false);
+    adc_oneshot_ll_start(unit, false);
     esp_rom_delay_us(sample_delay_us);
 
 #if ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
@@ -130,7 +127,9 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uin
     *read_delay_us = ((1000 * 1000) / sar_clk + 1) * ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL;
     HAL_EARLY_LOGD(TAG, "clk_src_freq_hz: %"PRIu32", sar_clk: %"PRIu32", read_delay_us: %"PRIu32"", clk_src_freq_hz, sar_clk, read_delay_us);
 #endif //ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
-#endif // ADC_LL_ONESHOT_START_BY_UNIT
+#else
+    adc_oneshot_ll_start(unit, true);
+#endif
 }
 
 bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
