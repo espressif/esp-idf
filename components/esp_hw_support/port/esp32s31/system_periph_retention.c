@@ -163,7 +163,7 @@ _Static_assert(ARRAY_SIZE(flash_spimem_regs_retention) == SPIMEM_FLASH_RETENTION
 
 const regdma_entries_config_t psram_spimem_regs_retention[SPIMEM_PSRAM_RETENTION_LINK_LEN] = {
     [0]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x07),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN, HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) }, // Enable PSRAM mspi core clock on restore
-    [1]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x08),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN,  HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  1, 0), .owner = ENTRY(0) | ENTRY(2) }, // Enable PSRAM mspi core clock on restore
+    [1]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x08),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN,  HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  1, 0), .owner = ENTRY(0) | ENTRY(2) }, // Enable PSRAM mspi sys clock on restore
     [2]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x09), SPI_MEM_S_CTRL_REG,              SPI_MEM_S_CTRL_REG,                  N_REGS_SPI0_S_MEM_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* spi0_mem */
     [3]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0a), SPI_MEM_S_MISC_REG,              SPI_MEM_S_MISC_REG,                  N_REGS_SPI0_S_MEM_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
     [4]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0b), SPI_MEM_S_INT_ENA_REG,           SPI_MEM_S_INT_ENA_REG,               N_REGS_SPI0_S_MEM_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
@@ -175,7 +175,7 @@ const regdma_entries_config_t psram_spimem_regs_retention[SPIMEM_PSRAM_RETENTION
     [10] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x11), SPI1_MEM_S_TIMING_CALI_REG,      SPI1_MEM_S_TIMING_CALI_REG,          N_REGS_SPI1_S_MEM_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
     [11] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x12), SPI1_MEM_S_CLOCK_GATE_REG,       SPI1_MEM_S_CLOCK_GATE_REG,           N_REGS_SPI1_S_MEM_4(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
     [12] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x13),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   0,                                   HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN_M, 0, 1), .owner = ENTRY(0) | ENTRY(2) }, // Disable PSRAM mspi core clock on backup
-    [13] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x14),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   0,                                   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  0, 1), .owner = ENTRY(0) | ENTRY(2) }, // Disable PSRAM mspi core clock on backup
+    [13] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x14),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   0,                                   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  0, 1), .owner = ENTRY(0) | ENTRY(2) }, // Disable PSRAM mspi sys clock on backup
     /* PSRAM MSPI IOMUX */
     [14] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x15), IOMUX_MSPI_PIN_PSRAM_D_PIN0_REG, IOMUX_MSPI_PIN_PSRAM_D_PIN0_REG,     N_REGS_MSPI1_IOMUX(),  0, 0), .owner = ENTRY(0) | ENTRY(2) },
 };
