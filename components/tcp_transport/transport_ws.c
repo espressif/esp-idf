@@ -1135,9 +1135,12 @@ static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char
 
     } else if (ws->frame_state.opcode == WS_OPCODE_CLOSE) {
         // handle CLOSE by the server: send a zero payload frame
-        if (buffer && payload_len > 0) {     // if some payload, print out the status code
-            uint16_t *code_network_order = (uint16_t *) buffer;
-            ESP_LOGI(TAG, "Got CLOSE frame with status code=%u", ntohs(*code_network_order));
+        // A CLOSE payload, if present, must be at least 2 bytes (the status code) per RFC 6455 5.5.1.
+        // Guard against a short (e.g. 1-byte) payload to avoid an out-of-bounds read of the uint16_t code.
+        if (buffer && payload_len >= (int)sizeof(uint16_t)) {     // if a status code is present, print it out
+            uint16_t code_network_order;
+            memcpy(&code_network_order, buffer, sizeof(code_network_order));
+            ESP_LOGI(TAG, "Got CLOSE frame with status code=%u", ntohs(code_network_order));
         }
 
         if (client_closed == false) {
