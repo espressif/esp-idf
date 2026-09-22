@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,9 @@ struct wpa_supplicant g_wpa_supp;
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
                              u8 *payload, size_t len, int8_t rssi)
 {
+    if (len < 1) {
+        return;
+    }
     if (payload[0] == WLAN_RRM_NEIGHBOR_REPORT_RESPONSE) {
         /* neighbor report parsing */
         wpas_rrm_process_neighbor_rep(wpa_s, payload + 1, len - 1);
@@ -71,6 +74,9 @@ static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 cha
         return -1;
     }
 
+    if (len < 1) {
+        return -1;
+    }
     category = *frame++;
     len--;
 #if defined(CONFIG_WNM)
@@ -154,6 +160,9 @@ static int handle_auth_frame(u8 *frame, size_t len,
                              u8 *sender, int8_t rssi, u8 channel)
 {
     if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+        if (len < 6) {
+            return -1;
+        }
         if (gWpaSm.ft_protocol) {
             if (wpa_ft_process_response(&gWpaSm, frame + 6,
                                         len - 6, 0, sender, NULL, 0) < 0) {
