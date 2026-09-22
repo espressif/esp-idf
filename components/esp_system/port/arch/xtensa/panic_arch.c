@@ -456,6 +456,8 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         }
     }
 #endif
+
+    info->addr = (void *)frame->pc;
 }
 
 uint32_t panic_get_address(const void *f)
