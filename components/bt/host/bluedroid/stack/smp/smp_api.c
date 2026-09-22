@@ -196,6 +196,11 @@ tSMP_STATUS SMP_Pair (BD_ADDR bd_addr)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 tSMP_STATUS SMP_BR_PairWith (BD_ADDR bd_addr)
 {
+#if (SMP_CTKD_INCLUDED == FALSE)
+    UNUSED(bd_addr);
+    SMP_TRACE_WARNING("%s CTKD disabled", __func__);
+    return SMP_XTRANS_DERIVE_NOT_ALLOW;
+#else
     tSMP_CB   *p_cb = &smp_cb;
     UINT8     status = SMP_PAIR_INTERNAL_ERR;
 
@@ -222,6 +227,7 @@ tSMP_STATUS SMP_BR_PairWith (BD_ADDR bd_addr)
     }
 
     return SMP_STARTED;
+#endif  ///SMP_CTKD_INCLUDED
 }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
