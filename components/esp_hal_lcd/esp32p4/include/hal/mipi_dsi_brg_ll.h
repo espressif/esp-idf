@@ -9,12 +9,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "hal/assert.h"
+#include "soc/mipi_dsi_bridge_reg.h"
 #include "soc/mipi_dsi_bridge_struct.h"
 #include "hal/mipi_dsi_types.h"
 #include "hal/lcd_types.h"
 #include "hal/config.h"
 
 #define MIPI_DSI_LL_GET_BRG(bus_id) (bus_id == 0 ? &MIPI_DSI_BRIDGE : NULL)
+
+#define MIPI_DSI_BRG_HTOTAL_MAX DSI_BRG_HTOTAL_V
 
 #define MIPI_DSI_BRG_LL_EVENT_UNDERRUN  (1 << 0)
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
@@ -212,7 +215,7 @@ static inline void mipi_dsi_brg_ll_set_horizontal_timing(dsi_brg_dev_t *dev, uin
  * @brief Set the under run discard count for the bridge controller
  *
  * @param dev Pointer to the DSI bridge controller register base address
- * @param under_run_discard_count Under run discard count
+ * @param under_run_discard_count Trigger underrun interrupt when underrun occurs and line_cnt is less than this field.
  */
 static inline void mipi_dsi_brg_ll_set_underrun_discard_count(dsi_brg_dev_t *dev, uint32_t under_run_discard_count)
 {

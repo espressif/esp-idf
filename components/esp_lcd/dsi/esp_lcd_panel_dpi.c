@@ -189,6 +189,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     ESP_RETURN_ON_FALSE(bus && panel_config && ret_panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(panel_config->virtual_channel < 4, ESP_ERR_INVALID_ARG, TAG, "invalid virtual channel %d", panel_config->virtual_channel);
     ESP_RETURN_ON_FALSE(panel_config->dpi_clock_freq_mhz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid DPI clock frequency %.2f", panel_config->dpi_clock_freq_mhz);
+    ESP_RETURN_ON_FALSE(panel_config->video_burst_type < MIPI_DSI_VIDEO_BURST_TYPE_MAX, ESP_ERR_INVALID_ARG, TAG, "invalid DPI video burst type");
 
     size_t num_fbs = panel_config->num_fbs;
     // if the user doesn't specify the number of frame buffers, then fallback to use one frame buffer
@@ -308,27 +309,32 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
         // commands are transmitted in low-power mode
         mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, true);
     }
-    // after sending a frame, the DSI device should return an ack
-    mipi_dsi_host_ll_dpi_enable_frame_ack(hal->host, true);
-    // using the burst mode because it's energy-efficient
-    mipi_dsi_host_ll_dpi_set_video_burst_type(hal->host, MIPI_DSI_LL_VIDEO_BURST_WITH_SYNC_PULSES);
-    // configure the size of the active lin period, measured in pixels
+    // Some bridge devices don't return a frame acknowledgement.
+    mipi_dsi_host_ll_dpi_enable_frame_ack(hal->host, !panel_config->flags.disable_frame_ack);
+    mipi_dsi_host_ll_dpi_set_video_burst_type(hal->host, panel_config->video_burst_type);
+    // configure the size of the active line period, measured in pixels
     mipi_dsi_host_ll_dpi_set_video_packet_pixel_num(hal->host, panel_config->video_timing.h_size);
     // disable multi-packets
     mipi_dsi_host_ll_dpi_set_trunks_num(hal->host, 0);
     // disable "null packets"
     mipi_dsi_host_ll_dpi_set_null_packet_size(hal->host, 0);
     // set horizontal and vertical timing configuration
-    mipi_dsi_hal_host_dpi_set_horizontal_timing(hal, panel_config->video_timing.hsync_pulse_width,
-                                                panel_config->video_timing.hsync_back_porch,
-                                                panel_config->video_timing.h_size,
-                                                panel_config->video_timing.hsync_front_porch);
+    ESP_GOTO_ON_FALSE(mipi_dsi_hal_host_dpi_set_horizontal_timing(hal, panel_config->video_timing.hsync_pulse_width,
+                                                                  panel_config->video_timing.hsync_back_porch,
+                                                                  panel_config->video_timing.h_size,
+                                                                  panel_config->video_timing.hsync_front_porch),
+                      ESP_ERR_INVALID_ARG, err, TAG, "invalid compensated horizontal timing");
     mipi_dsi_hal_host_dpi_set_vertical_timing(hal, panel_config->video_timing.vsync_pulse_width,
                                               panel_config->video_timing.vsync_back_porch,
                                               panel_config->video_timing.v_size,
                                               panel_config->video_timing.vsync_front_porch);
     mipi_dsi_brg_ll_set_num_pixel_bits(hal->bridge, panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel);
-    mipi_dsi_brg_ll_set_underrun_discard_count(hal->bridge, panel_config->video_timing.h_size);
+    // Report underruns for the whole frame: IRQ when underrun occurs and line_cnt < vtotal.
+    mipi_dsi_brg_ll_set_underrun_discard_count(hal->bridge,
+                                               panel_config->video_timing.vsync_pulse_width +
+                                               panel_config->video_timing.vsync_back_porch +
+                                               panel_config->video_timing.v_size +
+                                               panel_config->video_timing.vsync_front_porch);
     // set the in/out color formats in the DSI bridge
     mipi_dsi_brg_ll_set_input_color_format(hal->bridge, in_color_format);
     mipi_dsi_brg_ll_set_output_color_format(hal->bridge, out_color_format, 0);
