@@ -567,14 +567,15 @@ SPI_BUS_LOCK_ISR_ATTR static inline bool bg_exit_core(spi_bus_lock_t *lock, bool
 
     bool ret;
     uint32_t status = lock_status_fetch(lock);
-    if (lock->acquiring_dev) {
-        if (status & DEV_BG_MASK(lock->acquiring_dev)) {
+    spi_bus_lock_dev_t *acquiring_dev = (spi_bus_lock_dev_t *)lock->acquiring_dev;
+    if (acquiring_dev) {
+        if (status & DEV_BG_MASK(acquiring_dev)) {
             BUS_LOCK_DEBUG_EXECUTE_CHECK(lock->acq_dev_bg_active);
             ret = false;
         } else {
             // The request may happen any time, even after we fetched the status.
             // The value of `acq_dev_bg_active` is random.
-            resume_dev_in_isr(lock->acquiring_dev, do_yield);
+            resume_dev_in_isr(acquiring_dev, do_yield);
             ret = true;
         }
     } else {
@@ -585,10 +586,10 @@ SPI_BUS_LOCK_ISR_ATTR static inline bool bg_exit_core(spi_bus_lock_t *lock, bool
             spi_bus_lock_dev_t *desired_dev = NULL;
             bool bg_yield = schedule_core(lock, status, &desired_dev);
             // A waiting lock owner must be selected once BG is fully finished.
+            assert(desired_dev);
             BUS_LOCK_DEBUG_EXECUTE_CHECK(bg_yield);
-            BUS_LOCK_DEBUG_EXECUTE_CHECK(desired_dev);
             BUS_LOCK_DEBUG_EXECUTE_CHECK(lock->acquiring_dev == desired_dev);
-            resume_dev_in_isr(lock->acquiring_dev, do_yield);
+            resume_dev_in_isr(desired_dev, do_yield);
             ret = true;
         } else {
             ret = true;
