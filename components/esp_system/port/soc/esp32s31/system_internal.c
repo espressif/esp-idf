@@ -51,8 +51,9 @@ void esp_system_reset_modules_on_exit(void)
 
     CLEAR_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_EN);
     SET_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_FORCE_CTRL);
-    // Reset the clock source selection to an always-on source (XTAL), otherwise if the clock source
-    // is disabled, will get stuck in ROM encryption related ops.
+
+    // Reset crypto clk mux to XTAL (always-on); otherwise if the parent is gated off,
+    // next-boot ROM encryption ops can hang.
     sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_XTAL);
 }
 
