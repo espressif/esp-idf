@@ -254,7 +254,7 @@ extern "C" {
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
  * and returns without a value.
  */
-#define ESP_RETURN_VOID_ON_FALSE(a, err_code, log_tag, format, ...) do {                                   \
+#define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...) do {                                             \
         if (unlikely(!(a))) {                                                                              \
             ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
             return;                                                                                        \
