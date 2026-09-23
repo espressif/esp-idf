@@ -11,7 +11,7 @@
 #include "esp_log_config.h"
 #include "esp_log_args.h"
 #include "esp_private/log_lock.h"
-#include "esp_private/log_message.h"
+#include "esp_log_message.h"
 #include "esp_private/log_print.h"
 #include "esp_private/log_util.h"
 #include "soc/soc.h"

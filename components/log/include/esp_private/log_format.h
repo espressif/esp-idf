@@ -6,7 +6,7 @@
 
 #pragma once
 #include "esp_log_config.h"
-#include "log_message.h"
+#include "esp_log_message.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,0 +1,8 @@
+# Show metadata separately from the user format in the default example.
+CONFIG_LOG_VERSION_2=y
+# Keep saved V1 messages free of console color escape sequences.
+CONFIG_LOG_COLORS=n
+# Reserve internal flash for the three example log files.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"

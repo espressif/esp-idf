@@ -12,6 +12,7 @@ from pytest_embedded_idf.utils import idf_parametrize
         'default',
         'v1_color',
         'v2_color',
+        'v2_binary',
         'v2_no_color_no_support',
         'v2_no_timestamp',
         'v2_no_timestamp_no_support',

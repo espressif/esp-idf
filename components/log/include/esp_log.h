@@ -18,6 +18,7 @@
 #include "esp_log_timestamp.h"
 #include "esp_log_write.h"
 #include "esp_log_format.h"
+#include "esp_log_handler.h"
 #include "esp_log_args.h"
 #include "esp_log_attr.h"
 
