@@ -5,7 +5,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_qemu.dut import QemuDut
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_pytest_host(dut: QemuDut) -> None:

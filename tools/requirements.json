@@ -14,10 +14,10 @@
             "requirement_path": "tools/requirements/requirements.gdbgui.txt"
         },
         {
-            "name": "pytest",
-            "description": "Packages for CI with pytest",
+            "name": "test-specific",
+            "description": "Packages for specific test scripts",
             "optional": true,
-            "requirement_path": "tools/requirements/requirements.pytest.txt"
+            "requirement_path": "tools/requirements/requirements.test-specific.txt"
         },
         {
             "name": "ci",

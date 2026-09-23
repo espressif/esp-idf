@@ -14,9 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32s3', 'esp32c6'], indirect=['target']
-)
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3', 'esp32c6'], indirect=['target'])
 def test_wifi_connect_cases(case_tester: CaseTester) -> None:  # type: ignore
     case_tester.run_all_cases()
 
@@ -36,28 +34,28 @@ def test_wifi_connect_cases_esp32c2_xtal26m(case_tester: CaseTester) -> None:
     case_tester.run_all_cases()
 
 
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2_rev2
 @pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, config, target, baud',
     [
-        (2, 'esp32c2eco4_xtal26m', 'esp32c2', '74880'),
+        (2, 'esp32c2_rev2_xtal26m', 'esp32c2', '74880'),
     ],
     indirect=True,
 )
-def test_wifi_connect_cases_esp32c2eco4_xtal26m(case_tester: CaseTester) -> None:
+def test_wifi_connect_cases_esp32c2_rev2_xtal26m(case_tester: CaseTester) -> None:
     case_tester.run_all_cases()
 
 
 @pytest.mark.two_duts
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3_rev1
 @pytest.mark.parametrize(
     'count, config, target',
     [
-        (2, 'esp32c3eco7', 'esp32c3'),
+        (2, 'esp32c3_rev1', 'esp32c3'),
     ],
     indirect=True,
 )
-def test_wifi_connect_cases_esp32c3eco7(case_tester: CaseTester) -> None:
+def test_wifi_connect_cases_esp32c3_rev1(case_tester: CaseTester) -> None:
     case_tester.run_all_cases()

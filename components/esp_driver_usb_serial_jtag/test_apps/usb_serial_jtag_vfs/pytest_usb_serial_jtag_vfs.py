@@ -13,9 +13,10 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('test_message', ['test123456789!@#%^&*'])
 @idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
-def test_usj_vfs_release(dut: Dut, test_message: list) -> None:
+def test_usj_vfs_release(dut: Dut) -> None:
+    test_message = 'test123456789!@#%^&*'
+
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"test select read, write and timeout"')
     dut.expect_exact('select timed out', timeout=2)

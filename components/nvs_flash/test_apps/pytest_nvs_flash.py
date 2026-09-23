@@ -4,11 +4,6 @@ import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
 
-CONFIGS_NVS_ENCR_FLASH_ENC = [
-    pytest.param('nvs_encr_flash_enc_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('nvs_encr_flash_enc_esp32c3', marks=[pytest.mark.esp32c3]),
-]
-
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['default'], indirect=True)

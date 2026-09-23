@@ -17,7 +17,7 @@ def do_test_quit(dut: Dut) -> None:
 
 def do_test_help_generic(dut: Dut, registration_order: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console help command - {} registration"'.format(registration_order))
+    dut.write(f'"esp console help command - {registration_order} registration"')
 
     dut.expect_exact('esp>', timeout=5)
     dut.write('help')
@@ -50,65 +50,61 @@ def do_test_help_quit(dut: Dut) -> None:
     dut.expect(r'quit\s+Quit REPL environment\s+esp>', timeout=5)
 
 
-@idf_parametrize('config', ['defaults'], indirect=['config'])
 @idf_parametrize(
-    'target,test_on,markers',
+    'target,config,embedded_services,markers',
     [
-        ('linux', 'host', (pytest.mark.host_test,)),
-        ('esp32', 'target', (pytest.mark.generic,)),
-        ('esp32c3', 'target', (pytest.mark.generic,)),
-        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+        ('linux', 'defaults', 'idf', ()),
+        ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
     ],
-    indirect=['target'],
+    indirect=['target', 'config', 'embedded_services'],
 )
-def test_console(dut: Dut, test_on: str) -> None:
+def test_console(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests.')
     dut.write('![ignore]')
     dut.expect(r'\d{1} Tests 0 Failures 0 Ignored', timeout=120)
 
 
-@idf_parametrize('config', ['defaults'], indirect=['config'])
 @idf_parametrize(
-    'target,test_on,markers',
+    'target,config,embedded_services,markers',
     [
-        ('linux', 'host', (pytest.mark.host_test,)),
-        ('esp32', 'target', (pytest.mark.generic,)),
-        ('esp32c3', 'target', (pytest.mark.generic,)),
-        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+        ('linux', 'defaults', 'idf', ()),
+        ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
     ],
-    indirect=['target'],
+    indirect=['target', 'config', 'embedded_services'],
 )
-def test_console_repl(dut: Dut, test_on: str) -> None:
+def test_console_repl(dut: Dut) -> None:
     do_test_quit(dut)
 
 
-@idf_parametrize('config', ['defaults'], indirect=['config'])
 @idf_parametrize(
-    'target,test_on,markers',
+    'target,config,embedded_services,markers',
     [
-        ('linux', 'host', (pytest.mark.host_test,)),
-        ('esp32', 'target', (pytest.mark.generic,)),
-        ('esp32c3', 'target', (pytest.mark.generic,)),
-        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+        ('linux', 'defaults', 'idf', ()),
+        ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
     ],
-    indirect=['target'],
+    indirect=['target', 'config', 'embedded_services'],
 )
-def test_console_help_sorted_registration(dut: Dut, test_on: str) -> None:
+def test_console_help_sorted_registration(dut: Dut) -> None:
     do_test_help_generic(dut, 'sorted')
 
 
-@idf_parametrize('config', ['defaults'], indirect=['config'])
 @idf_parametrize(
-    'target,test_on,markers',
+    'target,config,embedded_services,markers',
     [
-        ('linux', 'host', (pytest.mark.host_test,)),
-        ('esp32', 'target', (pytest.mark.generic,)),
-        ('esp32c3', 'target', (pytest.mark.generic,)),
-        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+        ('linux', 'defaults', 'idf', ()),
+        ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
     ],
-    indirect=['target'],
+    indirect=['target', 'config', 'embedded_services'],
 )
-def test_console_help_reverse_registration(dut: Dut, test_on: str) -> None:
+def test_console_help_reverse_registration(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"esp console help command - reverse registration"')
 
@@ -135,28 +131,25 @@ def test_console_help_reverse_registration(dut: Dut, test_on: str) -> None:
 
 @idf_parametrize('config', ['sorted'], indirect=['config'])
 @idf_parametrize('target', ['linux'], indirect=['target'])
-@idf_parametrize('test_on,markers', [('host', (pytest.mark.host_test,))])
-def test_console_sorted_help_sorted_registration(dut: Dut, test_on: str) -> None:
+def test_console_sorted_help_sorted_registration(dut: Dut) -> None:
     do_test_help_generic(dut, 'sorted')
 
 
 @idf_parametrize('config', ['sorted'], indirect=['config'])
 @idf_parametrize('target', ['linux'], indirect=['target'])
-@idf_parametrize('test_on,markers', [('host', (pytest.mark.host_test,))])
-def test_console_sorted_help_reverse_registration(dut: Dut, test_on: str) -> None:
+def test_console_sorted_help_reverse_registration(dut: Dut) -> None:
     do_test_help_generic(dut, 'reverse')
 
 
-@idf_parametrize('config', ['defaults'], indirect=['config'])
 @idf_parametrize(
-    'target,test_on,markers',
+    'target,config,embedded_services,markers',
     [
-        ('linux', 'host', (pytest.mark.host_test,)),
-        ('esp32', 'target', (pytest.mark.generic,)),
-        ('esp32c3', 'target', (pytest.mark.generic,)),
-        ('esp32', 'qemu', (pytest.mark.host_test, pytest.mark.qemu)),
+        ('linux', 'defaults', 'idf', ()),
+        ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+        ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
     ],
-    indirect=['target'],
+    indirect=['target', 'config', 'embedded_services'],
 )
-def test_console_help_quit(dut: Dut, test_on: str) -> None:
+def test_console_help_quit(dut: Dut) -> None:
     do_test_help_quit(dut)

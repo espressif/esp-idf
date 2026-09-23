@@ -4,19 +4,6 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-CONFIGS = [
-    pytest.param('general', marks=[pytest.mark.supported_targets]),
-    pytest.param('release', marks=[pytest.mark.supported_targets]),
-    pytest.param('single_core', marks=[pytest.mark.esp32]),
-    pytest.param('freertos_compliance', marks=[pytest.mark.esp32]),
-    pytest.param('isr_dispatch_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('isr_dispatch_esp32c3', marks=[pytest.mark.esp32c3]),
-    pytest.param('cpu1_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('any_cpu_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('cpu1_esp32s3', marks=[pytest.mark.esp32s3]),
-    pytest.param('any_cpu_esp32s3', marks=[pytest.mark.esp32s3]),
-]
-
 
 @pytest.mark.generic
 @idf_parametrize(
