@@ -1276,9 +1276,7 @@ void btm_delete_stored_link_key_complete (UINT8 *p, UINT16 evt_len);
 void btm_report_device_status (tBTM_DEV_STATUS status);
 void btm_set_afh_channels_complete (UINT8 *p);
 void btm_ble_set_channels_complete (UINT8 *p);
-#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
 void btm_set_min_enc_key_size_complete(const UINT8 *p);
-#endif
 void btm_set_page_timeout_complete (const UINT8 *p);
 void btm_page_to_setup_timeout (void *p_tle);
 

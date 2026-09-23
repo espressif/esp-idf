@@ -22,6 +22,19 @@ extern "C" {
 //
 
 /**
+ * @brief Set Classic Bluetooth minimum encryption key size (OCF: 0x0182)
+ *
+ * @note The init function is `bt_stack_enableSecCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_SET_MIN_ENC_KEY_SIZE_OCF                          (0x0182)
+/**
+* @brief Set bt minimum encryption key size cmd parameters
+*/
+struct bt_hci_vs_set_min_enc_key_size {
+    uint8_t size; /*!< the minimum encryption key size */
+};
+
+/**
 * @brief This event indicates legacy authentication is completed by remote device (EVTCODE: 0xFF, SUBCODE: 0x03)
 *
 * @note The init function is `bt_stack_enableSecCtrlVsCmd(true)`
@@ -100,11 +113,6 @@ struct bt_hci_vs_legacy_rem_auth_evt {
 /**
 * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
 */
-#define ESP_BT_VS_DISCARD_PING_OCF                                  (0x0191)
-
-/**
-* @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
-*/
 #define ESP_BT_VS_LMP_DBG_ENABLE_OCF                                (0x019a)
 
 /**
@@ -116,6 +124,11 @@ struct bt_hci_vs_legacy_rem_auth_evt {
 * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
 */
 #define ESP_BT_VS_LMP_DBG_SAVE_OCF                                  (0x019c)
+
+/**
+* @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+*/
+#define ESP_BT_VS_DISCARD_PING_OCF                                  (0x019d)
 
 //
 // @brief HCI VS Events for Espressif's Internal-Use Debugging

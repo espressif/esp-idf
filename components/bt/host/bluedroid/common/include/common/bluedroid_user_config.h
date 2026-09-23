@@ -166,13 +166,11 @@
 #define UC_BT_CLASSIC_BQB_ENABLED           FALSE
 #endif
 
-//Set Encryption Key Size(BT)
-#ifdef CONFIG_BT_ENC_KEY_SIZE_CTRL_STD
-#define UC_BT_ENC_KEY_SIZE_CTRL_MODE   1
-#elif CONFIG_BT_ENC_KEY_SIZE_CTRL_VSC
-#define UC_BT_ENC_KEY_SIZE_CTRL_MODE   2
+// Vendor-specific HCI for Classic Bluetooth encryption key size
+#ifdef CONFIG_BT_CLASSIC_ENABLE_ENC_KEY_SIZE_CTRL_VSC
+#define UC_BT_CLASSIC_ENABLE_ENC_KEY_SIZE_CTRL_VSC             CONFIG_BT_CLASSIC_ENABLE_ENC_KEY_SIZE_CTRL_VSC
 #else
-#define UC_BT_ENC_KEY_SIZE_CTRL_MODE   0
+#define UC_BT_CLASSIC_ENABLE_ENC_KEY_SIZE_CTRL_VSC             FALSE
 #endif
 
 //Enable Classic Bluetooth power control vsc

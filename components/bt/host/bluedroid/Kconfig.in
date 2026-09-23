@@ -64,23 +64,43 @@ config BT_CLASSIC_ENABLE_POWER_CTRL_VSC
         Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth
 
 choice BT_ENC_KEY_SIZE_CTRL_ENABLED
-    prompt "configure encryption key size"
+    prompt "configure encryption key size (Deprecated)"
+    warning "This option is deprecated and will be removed in a future release"
     depends on BT_CLASSIC_ENABLED
     default BT_ENC_KEY_SIZE_CTRL_VSC
     help
         This chooses the support status of configuring encryption key size
+        Deprecated: This option is deprecated and will be removed in a future release.
 
     config BT_ENC_KEY_SIZE_CTRL_STD
-        depends on (BT_CONTROLLER_DISABLED || (BT_CONTROLLER_ENABLED && SOC_BT_H2C_ENC_KEY_CTRL_ENH_STD_SUPPORTED))
-        bool "Supported by standard HCI command"
+        bool "Supported by standard HCI command (Deprecated)"
+        warning "This option is deprecated and will be removed in a future release"
+        help
+            Deprecated: This option is deprecated and will be removed in a future release.
 
     config BT_ENC_KEY_SIZE_CTRL_VSC
         depends on (BT_CONTROLLER_DISABLED || (BT_CONTROLLER_ENABLED && SOC_BT_H2C_ENC_KEY_CTRL_ENH_VSC_SUPPORTED))
-        bool "Supported by Vendor-specific HCI command"
+        warning "This option is deprecated and will be removed in a future release"
+        bool "Supported by Vendor-specific HCI command (Deprecated)"
+        help
+            Deprecated: This option is deprecated and will be removed in a future release.
 
     config BT_ENC_KEY_SIZE_CTRL_NONE
-        bool "Not supported"
+        bool "Not supported (Deprecated)"
+        warning "This option is deprecated and will be removed in a future release"
+        help
+            Deprecated: This option is deprecated and will be removed in a future release.
 endchoice
+
+config BT_CLASSIC_ENABLE_ENC_KEY_SIZE_CTRL_VSC
+    bool "Supported by Vendor-specific HCI command to set min encryption key size"
+    depends on (BT_CONTROLLER_DISABLED || (BT_CONTROLLER_ENABLED && SOC_BT_H2C_ENC_KEY_CTRL_ENH_VSC_SUPPORTED))
+    default y if BT_ENC_KEY_SIZE_CTRL_VSC # for backward compatibility
+    default n if BT_CONTROLLER_DISABLED
+    default y
+    help
+        This enables vendor-specific command as a fallback
+        when the standard command is not supported.
 
 config BT_CLASSIC_BQB_ENABLED
     bool "Host Qualitifcation support for Classic Bluetooth"
