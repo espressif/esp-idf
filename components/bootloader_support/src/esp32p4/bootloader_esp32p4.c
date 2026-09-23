@@ -37,6 +37,7 @@
 #include "bootloader_soc.h"
 #include "esp_private/bootloader_flash_internal.h"
 #include "esp_efuse.h"
+#include "hal/assist_debug_ll.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/clk_tree_ll.h"
@@ -53,7 +54,8 @@ static const char *TAG = "boot.esp32p4";
 
 static void wdt_reset_cpu0_info_enable(void)
 {
-    //TODO: IDF-7688
+    /* Clock the bus monitor so DEBUG_MODULE_ACTIVE can be read during the image check. */
+    _assist_debug_ll_enable_bus_clock(true);
     REG_WRITE(ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_0_RCD_RECORDEN);
 }
 
