@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,10 +11,40 @@
 #include "hal/pau_hal.h"
 #include "hal/pau_types.h"
 #include "hal/lp_aon_ll.h"
+#include "hal/pau_etm_ll.h"
 
 void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_addr_t *link_addr)
 {
     pau_ll_set_regdma_link_addr((uint32_t)(*link_addr)[0]);
+}
+
+void IRAM_ATTR pau_hal_regdma_wait_done(pau_hal_context_t *hal)
+{
+    while (!(pau_ll_get_regdma_intr_raw_signal(hal->dev) & PAU_DONE_INT_RAW));
+}
+
+void IRAM_ATTR pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore, bool blocking)
+{
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+    pau_ll_select_regdma_entry_link(hal->dev, SOC_PM_PAU_REGDMA_LINK_IDX_PHY);
+    pau_ll_set_regdma_entry_link_backup_direction(hal->dev, backup_or_restore);
+    pau_ll_set_regdma_entry_link_backup_start_enable(hal->dev, true);
+
+    if (blocking) {
+        pau_hal_regdma_wait_done(hal);
+    }
+}
+
+bool IRAM_ATTR pau_hal_get_regdma_done_status(pau_hal_context_t *hal)
+{
+    return (pau_ll_get_regdma_intr_status(hal->dev) & 0x1);
+}
+
+void IRAM_ATTR pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal)
+{
+    pau_ll_set_regdma_entry_link_backup_start_enable(hal->dev, false);
+    pau_ll_select_regdma_entry_link(hal->dev, 0); /* restore link select to default */
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
 }
 
 void IRAM_ATTR pau_hal_start_regdma_extra_link(pau_hal_context_t *hal, bool backup_or_restore)
@@ -60,4 +90,27 @@ void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int inte
     HAL_ASSERT(count > 0 && interval > 0);
     pau_ll_set_regdma_link_wait_retry_count(count);
     pau_ll_set_regdma_link_wait_read_interval(interval);
+}
+
+void IRAM_ATTR pau_hal_set_etm_modem_link_config(pau_hal_context_t *hal)
+{
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+    pau_ll_select_regdma_etm_entry_link0(hal->dev, SOC_PM_PAU_REGDMA_LINK_IDX_PHY);
+    pau_ll_set_regdma_etm_entry_link0_backup_direction(hal->dev, false);
+}
+
+void IRAM_ATTR pau_hal_stop_etm_modem_link(pau_hal_context_t *hal)
+{
+    pau_ll_select_regdma_etm_entry_link0(hal->dev, 0); /* restore link select to default */
+    pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
+}
+
+bool IRAM_ATTR pau_hal_check_etm_task_triggered(pau_hal_context_t *hal, uint8_t index)
+{
+    return pau_etm_ll_get_regdma_task_start_status(index);
+}
+
+void IRAM_ATTR pau_hal_clear_etm_task_triggered(pau_hal_context_t *hal, uint8_t index)
+{
+    pau_etm_ll_clear_regdma_task_start_status(index);
 }

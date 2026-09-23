@@ -494,7 +494,7 @@ extern const sleep_retention_entries_config_t *r_esp_ble_mac_retention_link_get(
                                                                                 uint8_t extra);
 
 esp_err_t
-sleep_modem_ble_mac_modem_state_init(void)
+sleep_modem_ble_mac_retention_create(void)
 {
     uint8_t size;
     const sleep_retention_entries_config_t *ble_mac_modem_config =

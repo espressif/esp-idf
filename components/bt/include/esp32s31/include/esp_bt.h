@@ -112,7 +112,7 @@ typedef struct {
 #include "../../common/btdm_le.h"
 #endif /* SOC_BLE_SUPPORTED */
 
-#define BTDM_CONFIG_VERSION     0x20260911
+#define BTDM_CONFIG_VERSION     0x20260916
 #define BTDM_CONFIG_MAGIC_VALUE 0x5a5aa5a5
 
 /* Types definition
