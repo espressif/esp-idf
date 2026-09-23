@@ -20,8 +20,8 @@ extern "C" {
  * @brief Initialize the trace timestamp source.
  *
  * This function initializes the trace timestamp source based on the configured
- * source. The timestamp source can be the CPU cycle counter, esp_timer, or
- * Timer Group, depending on configuration.
+ * source. The timestamp source can be the CPU cycle counter, esp_timer,
+ * Timer Group, or systimer, depending on configuration.
  *
  * @return The timestamp frequency in Hz.
  */
@@ -31,7 +31,8 @@ uint32_t esp_trace_timestamp_init(void);
  * @brief Get the current timestamp value from the configured source for ESP trace.
  *
  * This function returns the current timestamp value, which can be sourced from
- * the CPU cycle counter, esp_timer, or Timer Group, depending on configuration.
+ * the CPU cycle counter, esp_timer, Timer Group, or systimer, depending on
+ * configuration.
  *
  * @return The current timestamp value as a 32-bit unsigned integer.
  */

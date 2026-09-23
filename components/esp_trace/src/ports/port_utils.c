@@ -25,11 +25,19 @@
 // Determine which timer to use as timestamp source
 #if CONFIG_ESP_TRACE_TS_SOURCE_CCOUNT
 #define TS_USE_CCOUNT 1
+#elif CONFIG_ESP_TRACE_TS_SOURCE_SYSTIMER
+#define TS_USE_SYSTIMER 1
 #elif CONFIG_ESP_TRACE_TS_SOURCE_ESP_TIMER
 #define TS_USE_ESP_TIMER 1
 #else
 #define TS_USE_TIMERGROUP 1
 #endif
+
+#if TS_USE_SYSTIMER
+#include "hal/systimer_ll.h"
+#include "soc/systimer_struct.h"
+#include "esp_private/systimer.h"
+#endif // TS_USE_SYSTIMER
 
 #if TS_USE_TIMERGROUP
 #include "driver/gptimer.h"
@@ -52,13 +60,17 @@ static gptimer_handle_t s_trace_gptimer;
 #define ESP_TRACE_TIMESTAMP_FREQ  (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #endif // TS_USE_CCOUNT
 
+#if TS_USE_SYSTIMER
+#define ESP_TRACE_TIMESTAMP_FREQ  ((uint32_t)systimer_us_to_ticks(1000000))
+#endif // TS_USE_SYSTIMER
+
 // System Frequency.
 #define ESP_TRACE_CPU_FREQ        (esp_clk_cpu_freq())
 
 uint32_t esp_trace_timestamp_init(void)
 {
     /* We only need to initialize something if we use Timer Group.
-     * esp_timer and ccount can be used as is.
+     * esp_timer, systimer, and ccount can be used as is.
      */
 #if TS_USE_TIMERGROUP
     // get clock source frequency
@@ -83,7 +95,12 @@ uint32_t esp_trace_timestamp_init(void)
 
 uint32_t esp_trace_timestamp_get(void)
 {
-#if TS_USE_TIMERGROUP
+#if TS_USE_SYSTIMER
+    /* Set the "update" bit and wait for acknowledgment */
+    systimer_ll_counter_snapshot(&SYSTIMER, SYSTIMER_COUNTER_ESPTIMER);
+    while (!systimer_ll_is_counter_value_valid(&SYSTIMER, SYSTIMER_COUNTER_ESPTIMER)) {}
+    return systimer_ll_get_counter_value_low(&SYSTIMER, SYSTIMER_COUNTER_ESPTIMER);
+#elif TS_USE_TIMERGROUP
     uint64_t ts = 0;
     gptimer_get_raw_count(s_trace_gptimer, &ts);
     return (uint32_t)ts; // return lower part of counter value
@@ -133,6 +150,11 @@ void esp_trace_lock_init(esp_trace_lock_t *lock)
 
 esp_err_t esp_trace_lock_take(esp_trace_lock_t *lock, uint32_t tmo_us)
 {
+    /* Skip tmo_init's esp_timer read when the lock is free. */
+    if (portTRY_ENTER_CRITICAL(&lock->mux, 0) == pdTRUE) {
+        return ESP_OK;
+    }
+
     esp_trace_tmo_t tmo;
     esp_trace_tmo_init(&tmo, tmo_us);
 
