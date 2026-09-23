@@ -413,7 +413,12 @@ static void handle_security_change_event_safe(struct bt_le_gap_app_param *param)
                                                              event.security_change.dst.val,
                                                              false);
         if (gatt_conn == NULL) {
-            LOG_ERR("GapSecChgUnknownDev");
+            /* ACL disconnected between the BTC post and this handler — the same
+             * race as GapPastUnknownSrc, and routine on a link that drops while
+             * pairing. The producer leaves conn_handle at 0, which an app would
+             * read as its own connection, so invalidate it before dispatch. */
+            LOG_WRN("GapSecChgUnknownDev");
+            event.security_change.conn_handle = BT_CONN_HANDLE_INVALID;
             goto end;
         }
 

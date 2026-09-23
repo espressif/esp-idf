@@ -1036,8 +1036,21 @@ esp_err_t esp_ble_audio_bap_broadcast_assistant_discover(uint16_t conn_handle);
  * to start scanning itself.
  *
  * @param   conn_handle Connection handle.
- * @param   start_scan  Start scanning if true. If false, the application should
- *                      enable scan itself.
+ * @param   start_scan  Deliver scan results to the `scan` callback if true.
+ *
+ * @note    The application always owns the scanner: start it first with the
+ *          host's own GAP API (esp_ble_gap_start_ext_scan / ble_gap_disc), then
+ *          call this. The BASS Remote Scan Started operation is written either
+ *          way; start_scan only decides whether the Broadcast Audio
+ *          Announcements that scanner reports are also parsed and handed to the
+ *          `scan` member of esp_ble_audio_bap_broadcast_assistant_cb_t.
+ *          Leave that member NULL when passing false. Note the callback carries
+ *          no advertising data, so filtering on anything besides the Broadcast
+ *          ID belongs in the application's scan handler.
+ *
+ * @note    start_scan is therefore redundant with that member being set, and
+ *          esp_ble_audio_bap_broadcast_assistant_scan_stop has no counterpart
+ *          to it. It is kept only for API compatibility.
  *
  * @return  ESP_OK on success, or an error code on failure.
  */
@@ -1284,24 +1297,30 @@ esp_err_t esp_ble_audio_bap_base_get_subgroup_codec_id(const esp_ble_audio_bap_b
 /**
  * @brief   Get the codec configuration data of a subgroup.
  *
+ * @note    The data points into the BASE, and stays valid only as long as it does.
+ *
  * @param   subgroup    The subgroup pointer.
  * @param   data        Pointer that will point to the resulting codec configuration data.
+ * @param   data_len    The length of the @p data (may be 0) on success.
  *
  * @return  ESP_OK on success, or an error code on failure.
  */
 esp_err_t esp_ble_audio_bap_base_get_subgroup_codec_data(const esp_ble_audio_bap_base_subgroup_t *subgroup,
-                                                         uint8_t **data);
+                                                         uint8_t **data, size_t *data_len);
 
 /**
  * @brief   Get the codec metadata of a subgroup.
  *
+ * @note    The metadata points into the BASE, and stays valid only as long as it does.
+ *
  * @param   subgroup    The subgroup pointer.
  * @param   meta        Pointer that will point to the resulting codec metadata.
+ * @param   meta_len    The length of the @p meta (may be 0) on success.
  *
  * @return  ESP_OK on success, or an error code on failure.
  */
 esp_err_t esp_ble_audio_bap_base_get_subgroup_codec_meta(const esp_ble_audio_bap_base_subgroup_t *subgroup,
-                                                         uint8_t **meta);
+                                                         uint8_t **meta, size_t *meta_len);
 
 /**
  * @brief   Store subgroup codec data in a esp_ble_audio_codec_cfg_t.

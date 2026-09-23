@@ -224,7 +224,7 @@ static void read_media_state_cb(esp_ble_conn_t *conn, int err, uint8_t state)
     }
 }
 
-static void send_cmd_cb(esp_ble_conn_t *conn, int err, const struct mpl_cmd *cmd)
+static void send_cmd_cb(esp_ble_conn_t *conn, int err, const esp_ble_audio_mpl_cmd_t *cmd)
 {
     if (err) {
         ESP_LOGE(TAG, "Send command failed, err %d, cmd %p", err, cmd);
@@ -234,7 +234,7 @@ static void send_cmd_cb(esp_ble_conn_t *conn, int err, const struct mpl_cmd *cmd
     ESP_LOGI(TAG, "Send command succeeded, cmd %p", cmd);
 }
 
-static void cmd_ntf_cb(esp_ble_conn_t *conn, int err, const struct mpl_cmd_ntf *ntf)
+static void cmd_ntf_cb(esp_ble_conn_t *conn, int err, const esp_ble_audio_mpl_cmd_ntf_t *ntf)
 {
     if (err) {
         ESP_LOGE(TAG, "Invalid command ntf received, err %d, ntf %p", err, ntf);

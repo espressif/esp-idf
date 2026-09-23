@@ -96,6 +96,8 @@ esp_err_t esp_ble_audio_gattc_disc_start(uint16_t conn_handle);
 #define ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC_PAST        BT_LE_GAP_APP_EVENT_PA_SYNC_PAST
 /*!< Audio GAP Periodic Sync Lost event */
 #define ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC_LOST        BT_LE_GAP_APP_EVENT_PA_SYNC_LOST
+/*!< Audio GAP Periodic Advertising Report event */
+#define ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC_RECV        BT_LE_GAP_APP_EVENT_PA_SYNC_RECV
 /*!< Audio GAP Connection Complete event */
 #define ESP_BLE_AUDIO_GAP_EVENT_ACL_CONNECT         BT_LE_GAP_APP_EVENT_ACL_CONNECT
 /*!< Audio GAP Disconnection Complete event */

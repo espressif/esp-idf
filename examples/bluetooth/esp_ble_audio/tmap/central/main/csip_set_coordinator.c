@@ -37,7 +37,7 @@ static uint8_t collect_members(const uint16_t *conn_handles, size_t count,
     return found;
 }
 
-static void csip_discover_cb(struct bt_conn *conn,
+static void csip_discover_cb(esp_ble_conn_t *conn,
                              const esp_ble_audio_csip_set_coordinator_set_member_t *member,
                              int err, size_t set_count)
 {
