@@ -273,6 +273,7 @@ esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_confi
 {
     esp_err_t ret = ESP_OK;
     esp_console_repl_universal_t *universal_repl = NULL;
+    bool io_driver_installed = false;
     if (!repl_config || !ret_repl) {
         ret = ESP_ERR_INVALID_ARG;
         goto _exit;
@@ -289,9 +290,6 @@ esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_confi
     fflush(stdout);
     fsync(fileno(stdout));
 
-    /* the IO related initialization will be performed within the task
-     * created to run esp_console_repl_task */
-
     /* initialize console, common part */
     ret = esp_console_common_init(repl_config->max_cmdline_length,
                                   repl_config->max_cmdline_args,
@@ -299,6 +297,15 @@ esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_confi
     if (ret != ESP_OK) {
         goto _exit;
     }
+
+    /* Must happen before esp_console_setup_prompt(): the terminal probe it runs
+     * needs a working stdin to read the reply back. Some backends (USB Serial
+     * JTAG) cannot be read from at all until their driver is installed. */
+    ret = esp_stdio_install_io_driver();
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+    io_driver_installed = true;
 
     /* setup history */
     ret = esp_console_setup_history(repl_config->history_save_path, repl_config->max_history_len, &universal_repl->repl_com);
@@ -308,11 +315,6 @@ esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_confi
 
     /* setup prompt */
     ret = esp_console_setup_prompt(repl_config->prompt, &universal_repl->repl_com);
-    if (ret != ESP_OK) {
-        goto _exit;
-    }
-
-    ret = esp_stdio_install_io_driver();
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -332,6 +334,9 @@ esp_err_t esp_console_new_repl_stdio(const esp_console_repl_config_t *repl_confi
     *ret_repl = &universal_repl->repl_com.repl_core;
     return ESP_OK;
 _exit:
+    if (io_driver_installed) {
+        esp_stdio_uninstall_io_driver();
+    }
     if (universal_repl) {
         esp_console_deinit();
         /* Only common_deinit() deletes state_mux, and the weak set_event_fd() never creates it. */
