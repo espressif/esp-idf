@@ -116,7 +116,9 @@ esp_err_t sleep_phy_link_init(void **link_context)
 
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
     phy_modem_config[8].write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
+    assert(phy_modem_config[8].write_wait.backup == (void *)I2C_ANA_MST_I2C_BURST_CONF_REG);
     phy_modem_config[24].write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
+    assert(phy_modem_config[24].write_wait.backup == (void *)I2C_ANA_MST_I2C_BURST_CONF_REG);
 
     void *link = NULL;
     for (int i = ARRAY_SIZE(phy_modem_config_template) - 1; (err == ESP_OK) && (i >= 0); i--) {
