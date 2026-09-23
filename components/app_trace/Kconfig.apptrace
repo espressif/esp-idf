@@ -47,7 +47,6 @@ menu "Application Level Tracing"
     config APPTRACE_UART_TX_GPIO
         int "UART TX on GPIO<num>"
         depends on APPTRACE_DEST_UART
-        range 0 46
         default 12
         help
             This GPIO is used for UART TX pin.
@@ -55,7 +54,6 @@ menu "Application Level Tracing"
     config APPTRACE_UART_RX_GPIO
         int "UART RX on GPIO<num>"
         depends on APPTRACE_DEST_UART
-        range 0 46
         default 13
         help
             This GPIO is used for UART RX pin.

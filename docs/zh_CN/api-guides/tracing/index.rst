@@ -35,6 +35,8 @@ ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。以较
       - :doc:`应用层跟踪传输 <transports>`
     * - 收集源代码覆盖率
       - :doc:`Gcov <gcov>`
+    * - 自动跟踪每次函数进入和退出
+      - :doc:`函数跟踪 <function-tracing>`
     * - 集成第三方跟踪记录器
       - :doc:`自定义跟踪库 <custom-trace-library>`
 
@@ -87,6 +89,7 @@ ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。以较
     transports
     sysview
     gcov
+    function-tracing
     custom-trace-library
 
 相关文档
@@ -105,4 +108,5 @@ ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。以较
 - :example:`system/tracing/sysview_tracing`：SystemView 跟踪示例
 - :example:`system/tracing/sysview_tracing_heap_log`：基于 SystemView 的堆跟踪
 - :example:`system/tracing/gcov`：通过 JTAG 获取源代码覆盖率
+- :example:`system/tracing/function_tracing`：编译器插桩的函数进入/退出跟踪
 - :example:`system/tracing/esp_trace_custom_library`：外部跟踪库集成模板
