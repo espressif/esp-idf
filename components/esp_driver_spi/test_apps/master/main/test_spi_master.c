@@ -803,6 +803,39 @@ TEST_CASE("SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)"
     TEST_ESP_OK(spi_bus_free(host));
 }
 
+#if !SOC_GDMA_SUPPORTED
+TEST_CASE("SPI DMA data error when switch between SPI2 and SPI3", "[spi]")
+{
+    spi_device_handle_t dev_handle;
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    uint8_t send[13] = "hello spi x\n";
+    uint8_t recv[16];   // esp32 dma rx need requirse 4 byte aligned length
+    spi_transaction_t trans_cfg = {
+        .length = 8 * sizeof(send),
+        .tx_buffer = send,
+        .rx_buffer = recv,
+    };
+
+    for (int periph = SPI2_HOST; periph < SPI_HOST_MAX; periph ++) {
+        printf("Test GPSPI%d\n", periph + 1);
+        TEST_ESP_OK(spi_bus_initialize(periph, &buscfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_bus_add_device(periph, &devcfg, &dev_handle));
+
+        for (uint8_t cnt = 0; cnt < 2; cnt ++) {
+            memset(recv, 0, sizeof(recv));
+            send[10] = cnt + 'A';
+            TEST_ESP_OK(spi_device_transmit(dev_handle, &trans_cfg));
+            printf("%s", recv);
+            spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, sizeof(send));
+        }
+        TEST_ESP_OK(spi_bus_remove_device(dev_handle));
+        TEST_ESP_OK(spi_bus_free(periph));
+    }
+}
+#endif
+
 DRAM_ATTR  static uint32_t data_dram[80] = {0};
 //force to place in code area.
 static const uint8_t data_drom[320 + 3] = {
