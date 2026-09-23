@@ -82,6 +82,9 @@ const u8 * wpas_mbo_get_bss_attr(struct wpa_bss *bss, enum mbo_attr_id attr)
 	if (!mbo)
 		return NULL;
 
+	if (mbo[1] < MBO_IE_HEADER - 2)
+		return NULL;
+
 	end = mbo + 2 + mbo[1];
 	mbo += MBO_IE_HEADER;
 

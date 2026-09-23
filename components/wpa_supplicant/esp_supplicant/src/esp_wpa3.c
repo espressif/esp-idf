@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -341,15 +341,15 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
             wpabuf_free(g_sae_token);
         }
         if (g_sae_data.h2e) {
+            if (len < 5) {
+                wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token length");
+                return ESP_FAIL;
+            }
             if ((buf[2] != WLAN_EID_EXTENSION) ||
                     (buf[3] == 0) ||
                     (buf[3] > len - 4) ||
                     (buf[4] != WLAN_EID_EXT_ANTI_CLOGGING_TOKEN)) {
                 wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token container header");
-                return ESP_FAIL;
-            }
-            if (len < 5) {
-                wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token length");
                 return ESP_FAIL;
             }
             g_sae_token = wpabuf_alloc_copy(buf + 5, len - 5);
