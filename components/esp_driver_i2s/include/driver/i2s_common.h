@@ -27,11 +27,11 @@ extern "C" {
     .dma_burst_size = 0, \
     .auto_clear_after_cb = false, \
     .auto_clear_before_cb = false, \
-    .dma_buffer_in_psram = false, \
     .allow_pd = false, \
     .intr_priority = 0, \
     .tx_destination = I2S_DESTINATION_DMA, \
     .rx_destination = I2S_DESTINATION_DMA, \
+    .dma_buffer_in_psram = false, \
 }
 
 #define I2S_GPIO_UNUSED         GPIO_NUM_NC         /*!< Used in i2s_gpio_config_t for signals which are not used */
