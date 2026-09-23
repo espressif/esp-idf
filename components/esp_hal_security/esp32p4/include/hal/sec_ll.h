@@ -36,6 +36,28 @@ static inline __attribute__((always_inline)) void sec_ll_crypto_clk_src_sel(soc_
     HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_clk_src_sel = reg_val;
 }
 
+/**
+ * @brief Get the selected crypto clock source.
+ *
+ * @return Currently selected clock source.
+ */
+static inline __attribute__((always_inline)) soc_module_clk_t sec_ll_crypto_get_clk_src_sel(void)
+{
+    switch (HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_clk_src_sel) {
+    case 0:
+        return SOC_MOD_CLK_XTAL;
+    case 1:
+        return SOC_MOD_CLK_RC_FAST;
+    case 2:
+        return SOC_MOD_CLK_PLL_F240M;
+    case 3:
+        return SOC_MOD_CLK_PLL_F160M;
+    default:
+        HAL_ASSERT(false);
+        return SOC_MOD_CLK_XTAL;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif
