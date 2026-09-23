@@ -87,8 +87,7 @@ TEST_CASE("401 with credentials retries with Authorization header", "[esp_http_c
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_perform(client));
     TEST_ASSERT_EQUAL(200, esp_http_client_get_status_code(client));
 
-    /* characterization: master behavior, see refactor spec
-     * With CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH enabled,
+    /* With CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH enabled,
      * esp_http_check_response() matches status 401 and calls
      * esp_http_client_add_auth() (esp_http_client.c ~L1239-1240), which
      * finds a non-NULL auth_header populated from the WWW-Authenticate
@@ -108,8 +107,7 @@ TEST_CASE("401 with credentials retries with Authorization header", "[esp_http_c
 
     char req[2048];
     TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_last_request(mock, req, sizeof(req), NULL));
-    /* characterization: master behavior, see refactor spec
-     * resp_401 has Content-Length: 0 and no "Connection: close", so
+    /* resp_401 has Content-Length: 0 and no "Connection: close", so
      * http_should_keep_alive() keeps the connection open across the retry -
      * esp_http_client.c never calls esp_http_client_close() between the two
      * requests, the same keep-alive shape as Task 7's redirect flow.
@@ -149,8 +147,7 @@ TEST_CASE("preconfigured Basic auth is sent before any 401 is seen", "[esp_http_
 
     char req[2048];
     TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_last_request(mock, req, sizeof(req), NULL));
-    /* characterization: master behavior, see refactor spec
-     * esp_http_client_prepare() (esp_http_client.c ~L800-803) calls
+    /* esp_http_client_prepare() (esp_http_client.c ~L800-803) calls
      * esp_http_client_prepare_basic_auth() whenever
      * connection_info.auth_type == HTTP_AUTH_TYPE_BASIC and a username is
      * set - both true here purely from cfg.auth_type and the URL's embedded

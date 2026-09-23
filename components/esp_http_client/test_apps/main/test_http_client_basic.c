@@ -420,7 +420,6 @@ TEST_CASE("Client handles 400 Bad Request error", "[esp_http_client][basic][p0][
  *
  * Negative scenario: Authentication required, no credentials configured.
  *
- * characterization: master behavior, see refactor spec
  * This test app's sdkconfig.ci.default sets
  * CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH=y, so esp_http_client_add_auth()
  * (esp_http_client.c ~L2132-2198) can recognize the "Basic" scheme in this
@@ -469,8 +468,7 @@ TEST_CASE("Client handles 401 Unauthorized error", "[esp_http_client][basic][p0]
     TEST_ASSERT_NOT_NULL(client);
 
     esp_err_t err = esp_http_client_perform(client);
-    /* characterization: master behavior, see refactor spec
-     * The first 401 is answered by a credential-less retry (see the file
+    /* The first 401 is answered by a credential-less retry (see the file
      * comment above). The second 401 then trips
      * esp_http_client_add_auth()'s "redirect_counter(1) >=
      * max_authorization_retries(1)" guard, which logs "reached
@@ -478,13 +476,11 @@ TEST_CASE("Client handles 401 Unauthorized error", "[esp_http_client][basic][p0]
      * esp_http_client_perform() propagates that ESP_FAIL to the caller
      * without any further retry. */
     TEST_ASSERT_EQUAL(ESP_FAIL, err);
-    /* characterization: master behavior, see refactor spec
-     * status_code is a direct field read of the last response actually
+    /* status_code is a direct field read of the last response actually
      * parsed (the second 401) - untouched by the retry-cap error path. */
     TEST_ASSERT_EQUAL(401, esp_http_client_get_status_code(client));
 
-    /* characterization: master behavior, see refactor spec
-     * Confirms the retry actually happened (2 writes: the original
+    /* Confirms the retry actually happened (2 writes: the original
      * request and the one credential-less retry) rather than the client
      * simply giving up on the first 401. As in test_http_client_auth.c,
      * this assumes one mock_write() call per request's header block,
@@ -496,8 +492,7 @@ TEST_CASE("Client handles 401 Unauthorized error", "[esp_http_client][basic][p0]
     TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_stats(mock_transport, &stats));
     TEST_ASSERT_EQUAL(2, stats.write_calls);
 
-    /* characterization: master behavior, see refactor spec
-     * The queued second 401 triggers a queue-advance on the retry's write
+    /* The queued second 401 triggers a queue-advance on the retry's write
      * (previous response fully read, a queued response is still pending -
      * see test_http_client_mock_transport.h), which resets the capture
      * buffer just before the retry is written. So this last-request capture

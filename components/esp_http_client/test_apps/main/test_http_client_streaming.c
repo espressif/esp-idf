@@ -55,20 +55,17 @@ TEST_CASE("open/write/fetch_headers/read sequence works", "[esp_http_client][str
 
     const char *body = "abcde";
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_open(client, 5));
-    // characterization: master behavior, see refactor spec
     // esp_http_client_open() (esp_http_client.c ~L1921) sets
     // state = HTTP_STATE_REQ_COMPLETE_HEADER right after writing the
     // request line and headers over the transport.
     TEST_ASSERT_EQUAL(HTTP_STATE_REQ_COMPLETE_HEADER, esp_http_client_get_state(client));
     TEST_ASSERT_EQUAL(5, esp_http_client_write(client, body, 5));
-    // characterization: master behavior, see refactor spec
     // The public esp_http_client_write() (~L1978) never touches
     // client->state - it only requires state >= REQ_COMPLETE_HEADER and
     // writes bytes directly over the transport, so the state observed
     // here is unchanged from the open() call above.
     TEST_ASSERT_EQUAL(HTTP_STATE_REQ_COMPLETE_HEADER, esp_http_client_get_state(client));
     TEST_ASSERT_EQUAL(5, esp_http_client_fetch_headers(client));
-    // characterization: master behavior, see refactor spec
     // esp_http_client_fetch_headers() (~L1667-1697) unconditionally sets
     // state = HTTP_STATE_REQ_COMPLETE_DATA on entry, then reads/parses
     // until the response header-parse loop exits, then unconditionally
@@ -80,7 +77,6 @@ TEST_CASE("open/write/fetch_headers/read sequence works", "[esp_http_client][str
 
     char buf[16] = {0};
     int rd = esp_http_client_read(client, buf, sizeof(buf));
-    // characterization: master behavior, see refactor spec
     // esp_http_client_read() (~L1435) never assigns client->state at all.
     // Also, for this canned response the single mock transport read done
     // inside fetch_headers() above already delivered the whole 43-byte
@@ -150,8 +146,7 @@ TEST_CASE("read timeout during headers returns fetch-header error", "[esp_http_c
     TEST_ASSERT_NOT_NULL(client);
 
     esp_err_t err = esp_http_client_perform(client);
-    /* characterization: master behavior, see refactor spec
-     * mock_read() under MOCK_TRANSPORT_MODE_READ_TIMEOUT returns -1/ETIMEDOUT
+    /* mock_read() under MOCK_TRANSPORT_MODE_READ_TIMEOUT returns -1/ETIMEDOUT
      * (not the ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT == 0 sentinel), so
      * esp_http_client_fetch_headers() takes its generic-failure branch
      * (returns ESP_FAIL) rather than its -ESP_ERR_HTTP_EAGAIN branch, and
