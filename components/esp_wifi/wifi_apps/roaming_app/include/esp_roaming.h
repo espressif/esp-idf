@@ -36,6 +36,7 @@ struct roam_config {
     uint8_t scan_filter_ssid[ROAM_SCAN_FILTER_SSID_LEN];
     uint8_t scan_filter_bssid[ROAM_SCAN_FILTER_BSSID_LEN];
     bool scan_filter_bssid_set;
+    uint8_t low_rssi_roam_diff;
 };
 
 void roam_init_app(void);
