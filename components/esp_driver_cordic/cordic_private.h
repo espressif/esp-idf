@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdatomic.h>
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "hal/cordic_hal.h"
@@ -26,7 +25,6 @@ extern "C" {
 #define CORDIC_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 #endif
 
-#define CORDIC_ONESHOT_CALCULATE_TIMEOUT_MS (2) // 2ms is enough for cordic one shot calculation api
 #define CORDIC_Q15_SCALE_FACTOR    (32768.0f)      // 2^15, scale factor for Q15 format conversion
 #define CORDIC_Q31_SCALE_FACTOR    (2147483648.0f) // 2^31, scale factor for Q31 format conversion
 

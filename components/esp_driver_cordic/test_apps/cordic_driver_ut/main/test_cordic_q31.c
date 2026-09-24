@@ -24,7 +24,7 @@ TEST_CASE("test cosine and sine q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COS,
@@ -76,7 +76,7 @@ TEST_CASE("test cosine and sine q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, sw_sine, hw_sine);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test phase and module q31", "[cordic]")
@@ -85,7 +85,7 @@ TEST_CASE("test phase and module q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_PHASE,
@@ -150,7 +150,7 @@ TEST_CASE("test phase and module q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, sw_module, hw_module);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test arctan q31", "[cordic]")
@@ -159,7 +159,7 @@ TEST_CASE("test arctan q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
@@ -213,7 +213,7 @@ TEST_CASE("test arctan q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, sw_arctan_normalized, hw_arctan_normalized);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test hyperbolic cosine and sine q31", "[cordic]")
@@ -222,7 +222,7 @@ TEST_CASE("test hyperbolic cosine and sine q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COSH,
@@ -279,7 +279,7 @@ TEST_CASE("test hyperbolic cosine and sine q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, sw_sinh, hw_sinh);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test arctanh q31", "[cordic]")
@@ -288,7 +288,7 @@ TEST_CASE("test arctanh q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCHTANH,
@@ -343,7 +343,7 @@ TEST_CASE("test arctanh q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.0001f, sw_arctanh_normalized, hw_arctanh_normalized);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test natural logarithm q31", "[cordic]")
@@ -352,7 +352,7 @@ TEST_CASE("test natural logarithm q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_LOGE,
@@ -416,7 +416,7 @@ TEST_CASE("test natural logarithm q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_lnx, hw_lnx);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test square root q31", "[cordic]")
@@ -425,7 +425,7 @@ TEST_CASE("test square root q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_SQUARE_ROOT,
@@ -480,7 +480,7 @@ TEST_CASE("test square root q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.00001f, sw_sqrtx, hw_sqrtx);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test arctan scale 2 q31", "[cordic]")
@@ -489,7 +489,7 @@ TEST_CASE("test arctan scale 2 q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
@@ -558,7 +558,7 @@ TEST_CASE("test arctan scale 2 q31", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_arctan_normalized, hw_arctan_normalized);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test reconfig from cos q15 to log q31", "[cordic]")
@@ -569,7 +569,7 @@ TEST_CASE("test reconfig from cos q15 to log q31", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config_cos = {
         .function = ESP_CORDIC_FUNC_COS,
@@ -678,5 +678,5 @@ TEST_CASE("test reconfig from cos q15 to log q31", "[cordic]")
         printf("\n");
     }
 
-    cordic_delete_engine(engine);
+    cordic_release_engine(engine);
 }
