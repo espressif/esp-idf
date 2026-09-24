@@ -47,8 +47,15 @@ def format_hex(value: int) -> str:
     return f'0x{value:02X}'
 
 
-def preprocess_file(path: str | Path, compiler: str, include_dirs: Iterable[str]) -> str:
+def preprocess_file(
+    path: str | Path,
+    compiler: str,
+    include_dirs: Iterable[str],
+    compiler_flags: Iterable[str] | None = None,
+) -> str:
     cmd = [compiler, '-E', '-P', '-DESP_BLOCKDEV_CHECK_CMD_OVERLAP']
+    if compiler_flags:
+        cmd.extend(compiler_flags)
     for include_dir in include_dirs:
         cmd.extend(['-I', include_dir])
     cmd.append(str(path))
@@ -246,10 +253,15 @@ def validate_reservations(reservations: Iterable[Reservation]) -> list[str]:
     return errors
 
 
-def check_files(files: Iterable[str | Path], compiler: str, include_dirs: Iterable[str]) -> list[Reservation]:
+def check_files(
+    files: Iterable[str | Path],
+    compiler: str,
+    include_dirs: Iterable[str],
+    compiler_flags: Iterable[str] | None = None,
+) -> list[Reservation]:
     reservations: list[Reservation] = []
     for file_path in files:
-        text = preprocess_file(file_path, compiler=compiler, include_dirs=include_dirs)
+        text = preprocess_file(file_path, compiler=compiler, include_dirs=include_dirs, compiler_flags=compiler_flags)
         reservations.extend(extract_reservations(text, source_file=str(file_path)))
     errors = validate_reservations(reservations)
     if errors:
@@ -267,6 +279,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--include-dir', action='append', default=[], help='Additional include directory for preprocessing (repeatable)'
     )
+    parser.add_argument(
+        '--compiler-flag',
+        action='append',
+        default=[],
+        help='Extra flag passed to the preprocessor (repeatable, e.g. -isysroot <sdk>)',
+    )
     parser.add_argument('--files', nargs='+', required=True, help='Reservation definition files to check for overlaps')
     return parser
 
@@ -275,7 +293,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
     try:
-        check_files(args.files, compiler=args.compiler, include_dirs=args.include_dir)
+        check_files(
+            args.files,
+            compiler=args.compiler,
+            include_dirs=args.include_dir,
+            compiler_flags=args.compiler_flag,
+        )
     except ReservationError as exc:
         print(str(exc), file=sys.stderr)
         return 1
