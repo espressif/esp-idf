@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -142,15 +142,19 @@ static esp_err_t init_efuse_secure(void)
 #endif
 
 #ifdef ROM_LOG_MODE
-static esp_err_t init_efuse_rom_log(void)
+static void init_efuse_rom_log(void)
 {
     // Applicable for any chips except ESP32: Permanently disable ROM startup logs
     if (ets_efuse_get_uart_print_control() != ROM_LOG_MODE) {
+        // The ROM log scheme only affects the ROM console output, so a failure to
+        // burn it must not prevent the device from booting.
         esp_err_t error = esp_efuse_set_rom_log_scheme(ROM_LOG_MODE);
-        error = (error == ESP_ERR_NOT_SUPPORTED) ? ESP_OK : error;
-        ESP_RETURN_ON_ERROR(error, TAG, "Failed to set ROM log scheme");
+        if (error == ESP_ERR_INVALID_STATE) {
+            ESP_LOGW(TAG, "ROM log scheme is already burned to a different value or write protected, ignoring");
+        } else if (error != ESP_OK && error != ESP_ERR_NOT_SUPPORTED) {
+            ESP_LOGW(TAG, "Failed to set ROM log scheme (%s), continuing boot", esp_err_to_name(error));
+        }
     }
-    return ESP_OK;
 }
 #endif // ROM_LOG_MODE
 
@@ -166,7 +170,7 @@ ESP_SYSTEM_INIT_FN(init_efuse, CORE, BIT(0), 140)
     ESP_RETURN_ON_ERROR(error, TAG, "Failed in secure eFuse init");
 
 #ifdef ROM_LOG_MODE
-    error = init_efuse_rom_log();
+    init_efuse_rom_log();
 #endif
 
     return error;
