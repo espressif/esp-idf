@@ -4929,6 +4929,14 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
 
     /* save LTK derived LK no matter what */
     if (ltk_derived_lk) {
+#if (BLE_INCLUDED == TRUE)
+        /* The key came from the LE LTK, so no BR/EDR ACL has been up yet and
+        ** btm_sec_connected() never tagged the record. Without this the record
+        ** stays LE only, and BTA routes the next BR/EDR operation (e.g. the
+        ** remote name request of a service discovery) to the LE transport.
+        */
+        p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
+#endif
         if (btm_cb.api.p_link_key_callback) {
             BTM_TRACE_DEBUG ("%s() Save LTK derived LK (key_type = %d)\n",
                              __FUNCTION__, p_dev_rec->link_key_type);
