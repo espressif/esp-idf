@@ -33,6 +33,8 @@
 #include "common/wpa_common.h"
 #include "esp_wpas_glue.h"
 
+#define BTM_QUERY_REASON_LOW_RSSI 16
+
 static struct roaming_app g_roaming_app;
 extern bool current_task_is_wifi_task(void);
 
@@ -608,8 +610,6 @@ static void roaming_app_set_disconnected_state(const wifi_event_sta_disconnected
     g_roaming_app.current_bss.btm_support = false;
     g_roaming_app.current_bss.rrm_support = false;
     g_roaming_app.current_bss.ap.rssi = -128;
-    g_roaming_app.current_bss.ap.authmode = WIFI_AUTH_OPEN;
-    memset(g_roaming_app.current_bss.ap.ssid, 0, sizeof(g_roaming_app.current_bss.ap.ssid));
 
     if (disconn) {
         memcpy(g_roaming_app.current_bss.ap.bssid, disconn->bssid, ETH_ALEN);
@@ -1442,7 +1442,8 @@ static bool trigger_network_assisted_roam(struct cand_bss *bss)
         btm_candidates = query_list;
     }
 
-    if (esp_wnm_send_bss_transition_mgmt_query(REASON_RSSI, btm_candidates, 1) < 0) {
+    if (esp_wnm_send_bss_transition_mgmt_query((enum btm_query_reason)BTM_QUERY_REASON_LOW_RSSI,
+                                               btm_candidates, 1) < 0) {
         ESP_LOGD(ROAMING_TAG, "failed to send btm query");
         os_free(query_list);
         return false;
@@ -2200,8 +2201,11 @@ void roam_init_app(void)
     ESP_LOGE(ROAMING_TAG, "No roaming method enabled. Roaming app cannot be initialized");
     return;
 #endif
+    if (g_roaming_app.app_active) {
+        ESP_LOGD(ROAMING_TAG, "Roaming app already initialized");
+        return;
+    }
     memset(&g_roaming_app, 0, sizeof(g_roaming_app));
-    g_roaming_app.app_active = true;
 #if LOW_RSSI_ROAMING_ENABLED
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
                                                &roaming_app_rssi_low_handler, NULL));
@@ -2212,6 +2216,7 @@ void roam_init_app(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
                                                &roaming_app_neighbor_report_recv_handler, NULL));
 #endif /*PERIODIC_RRM_MONITORING*/
+    g_roaming_app.app_active = true;
     ESP_LOGI(ROAMING_TAG, "Roaming app initialization done");
 }
 
@@ -2245,7 +2250,6 @@ static int roaming_app_deinit_internal(void *ctx, void *data)
 {
     (void) ctx;
     (void) data;
-    g_roaming_app.app_active = false;
     roaming_app_cancel_pending_events();
     roaming_app_stop_periodic_monitors();
     roaming_app_reset_connect_hint_state();
@@ -2287,6 +2291,7 @@ void roam_deinit_app(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
                                                  &roaming_app_neighbor_report_recv_handler));
 #endif /*PERIODIC_RRM_MONITORING*/
+    g_roaming_app.app_active = false;
 }
 
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
