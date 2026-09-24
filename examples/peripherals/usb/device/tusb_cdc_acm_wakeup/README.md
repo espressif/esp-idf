@@ -12,7 +12,7 @@ As a USB stack, a TinyUSB component is used.
 
 ## How to use example
 
-The example implements a USB CDC ACM echo device. When the host suspends the USB bus, the `tud_suspend_cb` callback configures the USB peripheral suspend state and enters light sleep. USB bus activity from the host wakes the chip and the CDC ACM echo device continues running.
+The example implements a USB CDC ACM echo device. When the host suspends the USB bus, the TinyUSB device event callback handles `TINYUSB_EVENT_SUSPENDED`, configures the USB peripheral suspend state, and enters light sleep. USB bus activity from the host wakes the chip and the CDC ACM echo device continues running.
 
 ### Hardware Required
 
