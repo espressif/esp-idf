@@ -83,6 +83,12 @@ tPORT *port_allocate_port (UINT8 dlci, BD_ADDR bd_addr)
 
             /* During the open set default state for the port connection */
             port_set_defaults (p_port);
+            if (p_port->tx.queue == NULL || p_port->rx.queue == NULL) {
+                fixed_queue_free(p_port->tx.queue, osi_free_func);
+                fixed_queue_free(p_port->rx.queue, osi_free_func);
+                memset(p_port, 0, sizeof (tPORT));
+                return (NULL);
+            }
 
             rfc_cb.rfc.last_port = yy;
             RFCOMM_TRACE_DEBUG("rfc_cb.port.port[%d]:%p allocated, last_port:%d", yy, p_port, rfc_cb.rfc.last_port);
@@ -101,7 +107,7 @@ tPORT *port_allocate_port (UINT8 dlci, BD_ADDR bd_addr)
 **
 ** Function         port_set_defaults
 **
-** Description      Set defualt port parameters
+** Description      Set default port parameters
 **
 **
 *******************************************************************************/
@@ -196,7 +202,7 @@ void port_select_mtu (tPORT *p_port)
 **
 ** Function         port_release_port
 **
-** Description      Release port infor control block.
+** Description      Release port info control block.
 **
 ** Returns          Pointer to the PORT or NULL if not found
 **
