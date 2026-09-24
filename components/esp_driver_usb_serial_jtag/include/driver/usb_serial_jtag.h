@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,6 +73,15 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
  *     - The number of bytes pushed to the TX FIFO
  */
 int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_to_wait);
+
+/**
+ * @brief Blocks until all data written using `usb_serial_jtag_write_bytes` is sent to the host, or until timeout.
+ *
+ * @param ticks_to_wait Maximum timeout in RTOS ticks
+ *
+ * @return ESP_OK when flushed, ESP_ERR_TIMEOUT on timeout.
+ */
+esp_err_t usb_serial_jtag_wait_tx_done(TickType_t ticks_to_wait);
 
 /**
  * @brief Uninstall USB-SERIAL-JTAG driver.
