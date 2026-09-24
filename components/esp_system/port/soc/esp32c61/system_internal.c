@@ -25,6 +25,7 @@
 #include "hal/wdt_hal.h"
 #endif
 #include "hal/uart_ll.h"
+#include "hal/sec_ll.h"
 #include "esp_private/cache_err_int.h"
 #include "esp_memory_utils.h"
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD && CONFIG_COMPILER_ENABLE_RISCV_ZCMP
@@ -98,6 +99,10 @@ void esp_system_reset_modules_on_exit(void)
 #endif // !CONFIG_SECURE_ENABLE_TEE
     SET_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
+
+    // Reset crypto clk mux to XTAL (always-on); otherwise if the parent is gated off,
+    // next-boot ROM encryption ops can hang.
+    sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_XTAL);
 
     // UART's sclk is controlled in the PCR register and does not reset with the UART module. The ROM missed enabling
     // it when initializing the ROM UART. If it is not turned on, it will trigger LP_WDT in the ROM.

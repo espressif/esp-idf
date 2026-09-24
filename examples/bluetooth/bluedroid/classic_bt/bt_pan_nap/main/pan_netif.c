@@ -24,7 +24,7 @@
 
 typedef struct {
     uint16_t handle;
-    uint8_t peer_mac[6];
+    esp_pan_mac_addr_t peer_mac;
     bool congested;
 } pan_link_t;
 
@@ -32,7 +32,7 @@ typedef struct {
     esp_netif_driver_base_t base;
     pan_link_t links[PAN_NETIF_MAX_LINKS];
     uint8_t num_handles;
-    uint8_t mac[6];
+    esp_pan_mac_addr_t mac;
     portMUX_TYPE lock;
 } pan_netif_glue_t;
 
@@ -42,12 +42,6 @@ static pan_netif_glue_t *s_pan_glue = NULL;
 static bool s_netif_up = false;
 static bool s_dhcps_running = false;
 static bool s_forwarding_ready = false;
-
-static void bdaddr_to_eth_mac(const uint8_t *bda, uint8_t *mac)
-{
-    memcpy(mac, bda, 6);
-    mac[0] = (mac[0] | 0x02) & 0xFE;
-}
 
 static void pan_netif_setup_forwarding(void)
 {
@@ -93,7 +87,7 @@ static bool pan_link_add(pan_netif_glue_t *glue, uint16_t handle, const uint8_t 
     for (int i = 0; i < glue->num_handles; i++) {
         if (glue->links[i].handle == handle) {
             if (peer_mac) {
-                memcpy(glue->links[i].peer_mac, peer_mac, 6);
+                memcpy(glue->links[i].peer_mac, peer_mac, ESP_PAN_MAC_ADDR_LEN);
             }
             portEXIT_CRITICAL(&glue->lock);
             return true;
@@ -106,9 +100,9 @@ static bool pan_link_add(pan_netif_glue_t *glue, uint16_t handle, const uint8_t 
         link->handle = handle;
         link->congested = false;
         if (peer_mac) {
-            memcpy(link->peer_mac, peer_mac, 6);
+            memcpy(link->peer_mac, peer_mac, ESP_PAN_MAC_ADDR_LEN);
         } else {
-            memset(link->peer_mac, 0, 6);
+            memset(link->peer_mac, 0, ESP_PAN_MAC_ADDR_LEN);
         }
     }
     portEXIT_CRITICAL(&glue->lock);
@@ -142,7 +136,7 @@ static void pan_link_learn_mac(pan_netif_glue_t *glue, uint16_t handle, const ui
     portENTER_CRITICAL(&glue->lock);
     for (int i = 0; i < glue->num_handles; i++) {
         if (glue->links[i].handle == handle) {
-            memcpy(glue->links[i].peer_mac, peer_mac, 6);
+            memcpy(glue->links[i].peer_mac, peer_mac, ESP_PAN_MAC_ADDR_LEN);
             break;
         }
     }
@@ -152,7 +146,7 @@ static void pan_link_learn_mac(pan_netif_glue_t *glue, uint16_t handle, const ui
 static uint16_t pan_link_lookup_by_mac(const pan_link_t *links, uint8_t num_handles, const uint8_t *dst_mac)
 {
     for (uint8_t i = 0; i < num_handles; i++) {
-        if (memcmp(links[i].peer_mac, dst_mac, 6) == 0) {
+        if (memcmp(links[i].peer_mac, dst_mac, ESP_PAN_MAC_ADDR_LEN) == 0) {
             return links[i].handle;
         }
     }
@@ -214,7 +208,7 @@ static esp_err_t pan_transmit(void *handle, void *data, size_t len)
                 last = ESP_ERR_NO_MEM;
                 continue;
             }
-            esp_err_t ret = pan_send_frame(links_snapshot[i].handle, frame, frame + 6, protocol,
+            esp_err_t ret = pan_send_frame(links_snapshot[i].handle, frame, frame + ESP_PAN_MAC_ADDR_LEN, protocol,
                                            payload, payload_len);
             if (ret == ESP_OK) {
                 sent_any = true;
@@ -239,7 +233,7 @@ static esp_err_t pan_transmit(void *handle, void *data, size_t len)
         /* Drop and let TCP/IP back off; keeps writing would flood BNEP xmit_q. */
         return ESP_ERR_NO_MEM;
     }
-    return pan_send_frame(out_handle, frame, frame + 6, protocol, payload, payload_len);
+    return pan_send_frame(out_handle, frame, frame + ESP_PAN_MAC_ADDR_LEN, protocol, payload, payload_len);
 }
 
 static void pan_free_rx_buffer(void *handle, void *buffer)
@@ -282,7 +276,7 @@ esp_err_t pan_netif_init(const pan_netif_cfg_t *cfg)
 
     s_pan_glue->base.post_attach = pan_post_attach;
     s_pan_glue->lock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    memcpy(s_pan_glue->mac, cfg->mac, 6);
+    memcpy(s_pan_glue->mac, cfg->mac, ESP_PAN_MAC_ADDR_LEN);
 
     pan_ip_info.ip.addr = ipaddr_addr(cfg->ip_str);
     pan_ip_info.netmask.addr = ipaddr_addr(cfg->netmask_str);
@@ -324,14 +318,14 @@ void pan_netif_set_uplink(esp_netif_t *wifi_sta_netif)
 
 void pan_netif_on_connected(uint16_t handle, const uint8_t *peer_bda)
 {
-    uint8_t peer_mac[6] = {0};
+    esp_pan_mac_addr_t peer_mac = {0};
 
     if (s_pan_glue == NULL || s_pan_netif == NULL) {
         return;
     }
 
     if (peer_bda) {
-        bdaddr_to_eth_mac(peer_bda, peer_mac);
+        memcpy(peer_mac, peer_bda, ESP_PAN_MAC_ADDR_LEN);
     }
 
     if (!pan_link_add(s_pan_glue, handle, peer_mac)) {
@@ -428,8 +422,8 @@ esp_err_t pan_netif_input(uint16_t handle, const uint8_t *dst, const uint8_t *sr
         return ESP_ERR_NO_MEM;
     }
 
-    memcpy(frame, dst, 6);
-    memcpy(frame + 6, src, 6);
+    memcpy(frame, dst, ESP_PAN_MAC_ADDR_LEN);
+    memcpy(frame + ESP_PAN_MAC_ADDR_LEN, src, ESP_PAN_MAC_ADDR_LEN);
     frame[12] = (protocol >> 8) & 0xff;
     frame[13] = protocol & 0xff;
     memcpy(frame + ETH_HEADER_LEN, payload, len);

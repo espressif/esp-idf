@@ -486,13 +486,13 @@ void * sleep_retention_find_link_by_id(int id)
 {
     void *link = NULL;
     _lock_acquire_recursive(&s_retention.lock);
-    if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY &&
-        s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
-        for (int entry = 0; (link == NULL && entry < ARRAY_SIZE(s_retention.retention.lists[s_retention.highpri].entries)); entry++) {
-            link = regdma_find_link_by_id(s_retention.context[0].lists[s_retention.highpri].entries[entry], entry, id);
-        }
-        for (int entry = 0; (link == NULL && entry < ARRAY_SIZE(s_retention.retention.lists[s_retention.highpri].entries)); entry++) {
-            link = regdma_find_link_by_id(s_retention.context[1].lists[s_retention.highpri].entries[entry], entry, id);
+    /* The linked lists of the module waiting to be attached are not joined into the retention context yet,
+     * so all priority lists of both contexts have to be searched. */
+    for (int n = 0; (link == NULL) && (n < ARRAY_SIZE(s_retention.context)); n++) {
+        for (regdma_link_priority_t priority = 0; (link == NULL) && (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES); priority++) {
+            for (int entry = 0; (link == NULL) && (entry < ARRAY_SIZE(s_retention.context[n].lists[priority].entries)); entry++) {
+                link = regdma_find_link_by_id(s_retention.context[n].lists[priority].entries[entry], entry, id);
+            }
         }
     }
     _lock_release_recursive(&s_retention.lock);

@@ -24,7 +24,7 @@
 typedef struct {
     esp_netif_driver_base_t base;
     uint16_t pan_handle;
-    uint8_t mac[6];
+    esp_pan_mac_addr_t mac;
 } pan_netif_glue_t;
 
 static esp_netif_t *s_pan_netif = NULL;
@@ -44,7 +44,7 @@ static esp_err_t pan_transmit(void *handle, void *data, size_t len)
     uint16_t protocol = ((uint16_t)frame[12] << 8) | frame[13];
     uint16_t payload_len = (uint16_t)(len - ETH_HEADER_LEN);
 
-    esp_err_t ret = esp_pan_write(glue->pan_handle, frame, frame + 6, protocol,
+    esp_err_t ret = esp_pan_write(glue->pan_handle, frame, frame + ESP_PAN_MAC_ADDR_LEN, protocol,
                                   payload_len, frame + ETH_HEADER_LEN, false);
     return (ret == ESP_OK) ? ESP_OK : ESP_FAIL;
 }
@@ -201,7 +201,7 @@ esp_err_t pan_netif_init(const uint8_t *mac)
 
     s_pan_glue->base.post_attach = pan_post_attach;
     s_pan_glue->pan_handle = ESP_PAN_INVALID_HANDLE;
-    memcpy(s_pan_glue->mac, mac, 6);
+    memcpy(s_pan_glue->mac, mac, ESP_PAN_MAC_ADDR_LEN);
 
     esp_netif_inherent_config_t base_cfg = ESP_NETIF_INHERENT_DEFAULT_ETH();
     base_cfg.if_key = "PAN_DEF";
@@ -272,8 +272,8 @@ esp_err_t pan_netif_input(const uint8_t *dst, const uint8_t *src, uint16_t proto
         return ESP_ERR_NO_MEM;
     }
 
-    memcpy(frame, dst, 6);
-    memcpy(frame + 6, src, 6);
+    memcpy(frame, dst, ESP_PAN_MAC_ADDR_LEN);
+    memcpy(frame + ESP_PAN_MAC_ADDR_LEN, src, ESP_PAN_MAC_ADDR_LEN);
     frame[12] = (protocol >> 8) & 0xff;
     frame[13] = protocol & 0xff;
     memcpy(frame + ETH_HEADER_LEN, payload, len);

@@ -37,13 +37,7 @@ static EventGroupHandle_t s_wifi_event_group;
 static esp_netif_t *s_wifi_sta_netif;
 static int s_wifi_retry;
 static bool s_wifi_uplink_ready;
-static uint8_t s_pan_mac[6];
-
-static void bdaddr_to_eth_mac(const uint8_t *bda, uint8_t *mac)
-{
-    memcpy(mac, bda, 6);
-    mac[0] = (mac[0] | 0x02) & 0xFE;
-}
+static esp_pan_mac_addr_t s_pan_mac;
 
 static void build_ipv4(char *buf, size_t len, int host_octet)
 {
@@ -289,7 +283,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_pan_register_callback(esp_pan_cb));
     ESP_ERROR_CHECK(esp_bt_gap_set_device_name(CONFIG_EXAMPLE_PAN_NAP_BT_NAME));
 
-    bdaddr_to_eth_mac(esp_bt_dev_get_address(), s_pan_mac);
+    /* BNEP uses the local BD_ADDR as the Ethernet MAC. */
+    memcpy(s_pan_mac, esp_bt_dev_get_address(), ESP_PAN_MAC_ADDR_LEN);
     setup_pan_netif();
 
     esp_pan_cfg_t pan_cfg = ESP_PAN_DEFAULT_CONFIG();

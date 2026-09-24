@@ -73,6 +73,8 @@
   - "tools/ci/check_soc_headers_leak.py"
   - "tools/ci/check_esp_memory_utils_headers.sh"
   - "tools/ci/check_blobs.sh"
+  - "components/esp_wifi/test_md5/test_md5.sh"
+  - "components/esp_coex/test_md5/test_md5.sh"
   - "tools/ci/check_public_headers.py"
   - "tools/ci/check_public_headers_exceptions.txt"
   - "tools/ci/check_register_rw_half_word.cmake"

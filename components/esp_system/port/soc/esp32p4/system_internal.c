@@ -32,6 +32,7 @@
 #include "soc/lp_clkrst_reg.h"
 #include "soc/hp_system_reg.h"
 #include "hal/uart_ll.h"
+#include "hal/sec_ll.h"
 #include "hal/gdma_ll.h"
 #include "hal/axi_dma_ll.h"
 #include "hal/dw_gdma_ll.h"
@@ -158,6 +159,10 @@ void esp_system_reset_modules_on_exit(void)
     SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_CRYPTO_SHA_CLK_EN);
     SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_CRYPTO_ECDSA_CLK_EN);
 #endif
+
+    // Reset crypto clk mux to XTAL (always-on); otherwise if the parent is gated off,
+    // next-boot ROM encryption ops can hang.
+    sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_XTAL);
 }
 
 static void IRAM_ATTR __attribute__((noinline, noreturn)) esp_restart_noos_inner(void)

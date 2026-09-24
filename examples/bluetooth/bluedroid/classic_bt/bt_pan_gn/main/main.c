@@ -25,14 +25,7 @@
 #define PAN_GN_SUBNET_BASE      "192.168.100"
 #define PAN_GN_HUB_HOST_OCTET   1
 
-static uint8_t s_local_mac[6] = {0};
-
-static void bdaddr_to_eth_mac(const uint8_t *bda, uint8_t *mac)
-{
-    /* PAN/BNEP uses BD_ADDR as the Ethernet MAC. Do not flip the U/L bit:
-     * the GN stack forwards unicast by matching dst MAC to rem_bda. */
-    memcpy(mac, bda, 6);
-}
+static esp_pan_mac_addr_t s_local_mac = {0};
 
 static void build_ipv4(char *buf, size_t len, int host_octet)
 {
@@ -198,7 +191,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_pan_register_callback(esp_pan_cb));
     ESP_ERROR_CHECK(esp_bt_gap_set_device_name(CONFIG_EXAMPLE_PAN_GN_BT_NAME));
 
-    bdaddr_to_eth_mac(esp_bt_dev_get_address(), s_local_mac);
+    /* BNEP uses the local BD_ADDR as the Ethernet MAC. */
+    memcpy(s_local_mac, esp_bt_dev_get_address(), ESP_PAN_MAC_ADDR_LEN);
     setup_pan_netif();
 
     esp_pan_cfg_t pan_cfg = ESP_PAN_DEFAULT_CONFIG();
