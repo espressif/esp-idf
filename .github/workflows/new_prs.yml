@@ -18,9 +18,9 @@ jobs:
     name: Sync PRs to Jira
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Sync PRs to Jira project
-        uses: espressif/github-actions/sync_issues_to_jira@master
+        uses: espressif/sync-jira-actions@v1
         with:
           cron_job: true
         env:
