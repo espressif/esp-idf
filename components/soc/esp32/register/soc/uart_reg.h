@@ -141,14 +141,14 @@
 #define UART_PARITY_ERR_INT_RAW_S  2
 /* UART_TXFIFO_EMPTY_INT_RAW : RO ;bitpos:[1] ;default: 1'b0 ; */
 /*description: This interrupt raw bit turns to high level when the amount of
- data in transmitter's fifo is less than ((tx_mem_cnttxfifo_cnt) .*/
+ data in transmitter's fifo is less than (tx_mem_empty_thrhd txfifo_empty_thrhd) .*/
 #define UART_TXFIFO_EMPTY_INT_RAW  (BIT(1))
 #define UART_TXFIFO_EMPTY_INT_RAW_M  (BIT(1))
 #define UART_TXFIFO_EMPTY_INT_RAW_V  0x1
 #define UART_TXFIFO_EMPTY_INT_RAW_S  1
 /* UART_RXFIFO_FULL_INT_RAW : RO ;bitpos:[0] ;default: 1'b0 ; */
 /*description: This interrupt raw bit turns to high level when receiver receives
- more data than (rx_flow_thrhd_h3 rx_flow_thrhd).*/
+ more data than (rx_mem_full_thrhd rxfifo_full_thrhd).*/
 #define UART_RXFIFO_FULL_INT_RAW  (BIT(0))
 #define UART_RXFIFO_FULL_INT_RAW_M  (BIT(0))
 #define UART_RXFIFO_FULL_INT_RAW_V  0x1
@@ -809,7 +809,7 @@
 #define UART_TXFIFO_EMPTY_THRHD_S  8
 /* UART_RXFIFO_FULL_THRHD : R/W ;bitpos:[6:0] ;default: 7'h60 ; */
 /*description: When receiver receives more data than its threshold value.receiver
- will produce rxfifo_full_int_raw interrupt.the threshold value is (rx_flow_thrhd_h3 rxfifo_full_thrhd).*/
+ will produce rxfifo_full_int_raw interrupt. the threshold value is (rx_mem_full_thrhd rxfifo_full_thrhd).*/
 #define UART_RXFIFO_FULL_THRHD  0x0000007F
 #define UART_RXFIFO_FULL_THRHD_M  ((UART_RXFIFO_FULL_THRHD_V)<<(UART_RXFIFO_FULL_THRHD_S))
 #define UART_RXFIFO_FULL_THRHD_V  0x7F
