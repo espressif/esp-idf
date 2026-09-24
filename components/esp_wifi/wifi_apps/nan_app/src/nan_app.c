@@ -1322,6 +1322,11 @@ esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int
         return ESP_FAIL;
     }
 
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN not initialised");
+        return ESP_FAIL;
+    }
+
     NAN_DATA_LOCK();
     if (*own_svc_id == 0) {
         own_svc = nan_find_own_svc_by_name(svc_name);
@@ -1372,6 +1377,11 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
     }
     if (*num_peer_records == 0) {
         ESP_LOGE(TAG, "Number of peer records provided is 0");
+        return ESP_FAIL;
+    }
+
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN not initialised");
         return ESP_FAIL;
     }
 
@@ -1440,6 +1450,11 @@ esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct n
         return ESP_FAIL;
     }
 
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN not initialised");
+        return ESP_FAIL;
+    }
+
     NAN_DATA_LOCK();
     if (svc_name) {
         struct own_svc_info *own_svc = nan_find_own_svc_by_name(svc_name);
@@ -1492,12 +1507,17 @@ esp_err_t esp_wifi_nan_usd_start(void)
 
 esp_err_t esp_wifi_nan_usd_stop(void)
 {
-    if (s_usd_in_progress) {
-        s_usd_in_progress = false;
-        esp_nan_usd_deinit();
-        ESP_LOGI(TAG, "NaN-USD Stopped");
+    if (!s_usd_in_progress) {
         return ESP_OK;
     }
+
+    if (esp_nan_usd_deinit() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to deinitialise NAN USD engine");
+        return ESP_FAIL;
+    }
+
+    s_usd_in_progress = false;
+    ESP_LOGI(TAG, "NaN-USD Stopped");
     return ESP_OK;
 }
 
