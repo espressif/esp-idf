@@ -1,6 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_driver_cordic/test_apps/cordic_test_apps:
+components/esp_driver_cordic/test_apps/cordic_driver_ut:
   disable:
     - if: SOC_CORDIC_SUPPORTED != 1
   depends_components:

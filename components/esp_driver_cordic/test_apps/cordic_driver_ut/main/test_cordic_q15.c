@@ -7,11 +7,13 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <math.h>
+#include <stdatomic.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "unity.h"
+#include "unity_test_utils.h"
 #include "soc/cordic_reg.h"
 #include "hal/cordic_types.h"
 #include "hal/cordic_ll.h"
@@ -28,24 +30,13 @@
 #define PI 3.14159265358979323846
 static uint32_t iq_pi_x = _IQ15(PI);
 
-TEST_CASE("cordic install-uninstall test", "[cordic]")
-{
-    cordic_engine_handle_t engine = NULL;
-    cordic_engine_config_t engine_config = {
-        .clock_source = CORDIC_CLK_SRC_DEFAULT,
-    };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
-    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, cordic_new_engine(&engine_config, &engine));
-    TEST_ESP_OK(cordic_delete_engine(engine));
-}
-
 TEST_CASE("test cosine and sine q15", "[cordic]")
 {
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COS,
@@ -106,7 +97,7 @@ TEST_CASE("test cosine and sine q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.01f, sw_sine, hw_sine);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test phase and module q15", "[cordic]")
@@ -115,7 +106,7 @@ TEST_CASE("test phase and module q15", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_PHASE,
@@ -181,7 +172,7 @@ TEST_CASE("test phase and module q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_module, hw_module);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test arctan q15", "[cordic]")
@@ -190,7 +181,7 @@ TEST_CASE("test arctan q15", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
@@ -245,7 +236,7 @@ TEST_CASE("test arctan q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_arctan_normalized, hw_arctan_normalized);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test hyperbolic cosine and sine q15", "[cordic]")
@@ -254,7 +245,7 @@ TEST_CASE("test hyperbolic cosine and sine q15", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COSH,
@@ -317,7 +308,7 @@ TEST_CASE("test hyperbolic cosine and sine q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_sinh, hw_sinh);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test arctanh q15", "[cordic]")
@@ -326,7 +317,7 @@ TEST_CASE("test arctanh q15", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCHTANH,
@@ -385,7 +376,7 @@ TEST_CASE("test arctanh q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_arctanh_normalized, hw_arctanh_normalized);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test natural logarithm q15", "[cordic]")
@@ -394,7 +385,7 @@ TEST_CASE("test natural logarithm q15", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_LOGE,
@@ -458,7 +449,7 @@ TEST_CASE("test natural logarithm q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_lnx, hw_lnx);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test square root q15", "[cordic]")
@@ -467,7 +458,7 @@ TEST_CASE("test square root q15", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_SQUARE_ROOT,
@@ -524,7 +515,7 @@ TEST_CASE("test square root q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_sqrtx, hw_sqrtx);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test arctan scale 2 q15", "[cordic]")
@@ -533,7 +524,7 @@ TEST_CASE("test arctan scale 2 q15", "[cordic]")
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
@@ -603,7 +594,7 @@ TEST_CASE("test arctan scale 2 q15", "[cordic]")
         TEST_ASSERT_FLOAT_WITHIN(0.001f, sw_arctan_normalized, hw_arctan_normalized);
         printf("\n");
     }
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 TEST_CASE("test cordic performance should quicker than software iqmath", "[cordic]")
@@ -612,7 +603,7 @@ TEST_CASE("test cordic performance should quicker than software iqmath", "[cordi
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &engine));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COS,
@@ -668,8 +659,111 @@ TEST_CASE("test cordic performance should quicker than software iqmath", "[cordi
     // Use the volatile variables to prevent dead code elimination
     (void)dummy_cos;
     (void)dummy_sin;
-    TEST_ESP_OK(cordic_delete_engine(engine));
+    TEST_ESP_OK(cordic_release_engine(engine));
+}
 
+/*---------------------------------------------------------------
+        CORDIC shared by concurrent users
+---------------------------------------------------------------*/
+#define CONCURRENT_TASK_NUM  (SOC_CPU_CORES_NUM)
+#define CONCURRENT_DEPTH     (16)
+
+typedef struct {
+    cordic_engine_handle_t engine;
+    esp_err_t ret;
+    atomic_bool done;
+    uint32_t arg[CONCURRENT_DEPTH];
+    uint32_t res1[CONCURRENT_DEPTH];
+    uint32_t res2[CONCURRENT_DEPTH];
+} concurrent_task_ctx_t;
+
+static atomic_uint s_concurrent_ready;
+static atomic_bool s_concurrent_go;
+
+static void concurrent_calculate_task(void *arg)
+{
+    concurrent_task_ctx_t *ctx = (concurrent_task_ctx_t *)arg;
+
+    cordic_calculate_config_t calc_config = {
+        .function = ESP_CORDIC_FUNC_COS,
+        .iq_format = ESP_CORDIC_FORMAT_Q15,
+        .iteration_count = 4,
+        .scale_exp = 0,
+    };
+    cordic_input_buffer_desc_t input_buffer = {
+        .p_data_arg1 = ctx->arg,
+        .p_data_arg2 = NULL,
+    };
+    cordic_output_buffer_desc_t output_buffer = {
+        .p_data_res1 = ctx->res1,
+        .p_data_res2 = ctx->res2,
+    };
+
+    atomic_fetch_add(&s_concurrent_ready, 1);
+    // Must yield: the task on core 0 would otherwise starve the Unity task that releases the barrier.
+    while (!atomic_load(&s_concurrent_go)) {
+        vTaskDelay(1);
+    }
+
+    ctx->ret = ESP_FAIL;
+    for (int i = 0; i < 50; i++) {
+        ctx->ret = cordic_calculate_polling(ctx->engine, &calc_config, &input_buffer, &output_buffer, CONCURRENT_DEPTH);
+        if (ctx->ret != ESP_OK) {
+            break;
+        }
+    }
+    atomic_store(&ctx->done, true);
+    // Don't self-delete: idle may not reclaim the TCB/stack before Unity's leak check.
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("cordic results stay correct when shared by multiple tasks", "[cordic]")
+{
+    cordic_engine_handle_t engine = NULL;
+    cordic_engine_config_t engine_config = {
+        .clock_source = CORDIC_CLK_SRC_DEFAULT,
+    };
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
+
+    static concurrent_task_ctx_t task_ctx[CONCURRENT_TASK_NUM] = {};
+    atomic_store(&s_concurrent_ready, 0);
+    atomic_store(&s_concurrent_go, false);
+    for (uint32_t t = 0; t < CONCURRENT_TASK_NUM; t++) {
+        task_ctx[t].engine = engine;
+        task_ctx[t].ret = ESP_FAIL;
+        atomic_store(&task_ctx[t].done, false);
+        for (int i = 0; i < CONCURRENT_DEPTH; i++) {
+            float float_value = -1.0f + (i * 2.0f / (CONCURRENT_DEPTH - 1));
+            task_ctx[t].arg[i] = cordic_convert_float_to_fixed(float_value, ESP_CORDIC_FORMAT_Q15);
+        }
+    }
+
+    TaskHandle_t task_handles[CONCURRENT_TASK_NUM] = {};
+    for (uint32_t t = 0; t < CONCURRENT_TASK_NUM; t++) {
+        xTaskCreatePinnedToCore(concurrent_calculate_task, "cordic_calc", 4096, &task_ctx[t], 5, &task_handles[t], t % configNUM_CORES);
+    }
+    while (atomic_load(&s_concurrent_ready) < CONCURRENT_TASK_NUM) {
+        vTaskDelay(1);
+    }
+    atomic_store(&s_concurrent_go, true);
+    for (uint32_t t = 0; t < CONCURRENT_TASK_NUM; t++) {
+        while (!atomic_load(&task_ctx[t].done)) {
+            vTaskDelay(1);
+        }
+        unity_utils_task_delete(task_handles[t]);
+    }
+
+    // Every task fed the same angles, so a hardware race would show up as a wrong result here.
+    for (uint32_t t = 0; t < CONCURRENT_TASK_NUM; t++) {
+        TEST_ESP_OK(task_ctx[t].ret);
+        for (int i = 0; i < CONCURRENT_DEPTH; i++) {
+            float angle_rad = cordic_convert_fixed_to_float(task_ctx[t].arg[i], ESP_CORDIC_FORMAT_Q15) * M_PI;
+            TEST_ASSERT_FLOAT_WITHIN(0.01f, cosf(angle_rad), cordic_convert_fixed_to_float(task_ctx[t].res1[i], ESP_CORDIC_FORMAT_Q15));
+            TEST_ASSERT_FLOAT_WITHIN(0.01f, sinf(angle_rad), cordic_convert_fixed_to_float(task_ctx[t].res2[i], ESP_CORDIC_FORMAT_Q15));
+        }
+    }
+
+    TEST_ESP_OK(cordic_release_engine(engine));
 }
 
 #if CONFIG_CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM
@@ -680,6 +774,7 @@ TEST_CASE("test cordic performance should quicker than software iqmath", "[cordi
 typedef struct {
     TaskHandle_t task_handle;             //Task handle
     cordic_engine_handle_t engine_handle; // engine handle
+    esp_err_t ret;
     uint32_t res1;
     uint32_t res2;
 } test_cordic_isr_ctx_t;
@@ -711,8 +806,9 @@ static bool IRAM_ATTR s_alarm_callback(gptimer_handle_t timer, const gptimer_ala
         .iteration_count = 4,
         .scale_exp = 0,
     };
+    // TEST_ESP_OK lives in flash; do not assert while the cache is down.
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    TEST_ESP_OK(cordic_calculate_polling(test_ctx->engine_handle, &calc_config, &input_buffer, &output_buffer, 1));
+    test_ctx->ret = cordic_calculate_polling(test_ctx->engine_handle, &calc_config, &input_buffer, &output_buffer, 1);
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
     test_ctx->res1 = res1;
@@ -726,12 +822,13 @@ TEST_CASE("cordic can calculation in ISR", "[cordic]")
 {
     static test_cordic_isr_ctx_t isr_test_ctx = {};
     isr_test_ctx.engine_handle = NULL;
+    isr_test_ctx.ret = ESP_FAIL;
     isr_test_ctx.task_handle = xTaskGetCurrentTaskHandle();
 
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
     };
-    TEST_ESP_OK(cordic_new_engine(&engine_config, &isr_test_ctx.engine_handle));
+    TEST_ESP_OK(cordic_acquire_engine(&engine_config, &isr_test_ctx.engine_handle));
 
     //-------------GPTimer Init & Config---------------//
     gptimer_handle_t timer = NULL;
@@ -756,12 +853,13 @@ TEST_CASE("cordic can calculation in ISR", "[cordic]")
     TEST_ESP_OK(gptimer_enable(timer));
     TEST_ESP_OK(gptimer_start(timer));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+    TEST_ESP_OK(isr_test_ctx.ret);
     esp_rom_printf(DRAM_STR("CORDIC calculation done, cos is 0x%lx, sine is 0x%lx\n"), isr_test_ctx.res1, isr_test_ctx.res2);
     TEST_ESP_OK(gptimer_stop(timer));
 
     TEST_ESP_OK(gptimer_disable(timer));
     TEST_ESP_OK(gptimer_del_timer(timer));
-    TEST_ESP_OK(cordic_delete_engine(isr_test_ctx.engine_handle));
+    TEST_ESP_OK(cordic_release_engine(isr_test_ctx.engine_handle));
 
 }
 
