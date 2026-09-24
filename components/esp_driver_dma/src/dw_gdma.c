@@ -202,10 +202,23 @@ static void channel_unregister_from_group(dw_gdma_channel_t *chan)
 static esp_err_t channel_destroy(dw_gdma_channel_t *chan)
 {
     if (chan->group) {
-        channel_unregister_from_group(chan);
+        dw_gdma_hal_context_t *hal = &chan->group->hal;
+        int chan_id = chan->chan_id;
+        dw_gdma_ll_channel_enable_intr_propagation(hal->dev, chan_id, UINT32_MAX, false);
+        dw_gdma_ll_channel_enable(hal->dev, chan_id, false);
+        dw_gdma_ll_channel_enable_intr_generation(hal->dev, chan_id, UINT32_MAX, false);
+        dw_gdma_ll_channel_clear_intr(hal->dev, chan_id, UINT32_MAX);
     }
     if (chan->intr) {
-        esp_intr_free(chan->intr);
+        esp_err_t ret = esp_intr_free(chan->intr);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "free interrupt failed");
+            return ret;
+        }
+        chan->intr = NULL;
+    }
+    if (chan->group) {
+        channel_unregister_from_group(chan);
     }
     free(chan);
     return ESP_OK;

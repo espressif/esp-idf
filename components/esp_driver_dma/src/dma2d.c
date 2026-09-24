@@ -571,10 +571,45 @@ esp_err_t dma2d_release_pool(dma2d_pool_handle_t dma2d_pool)
             s_platform.group_ref_counts[group_id]++;
             goto err;
         }
-        s_platform.groups[group_id] = NULL; // deregister from platform
-        // Disable 2D-DMA module clock
-        dma2d_ll_hw_enable(dma2d_group->hal.dev, false);
-        // Disable the bus clock for the 2D-DMA registers
+    }
+
+    if (do_deinitialize) {
+        dma2d_dev_t *dev = dma2d_group->hal.dev;
+        for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
+            dma2d_ll_rx_enable_interrupt(dev, i, UINT32_MAX, false);
+            dma2d_ll_rx_stop(dev, i);
+            dma2d_ll_rx_clear_interrupt_status(dev, i, UINT32_MAX);
+        }
+        for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
+            dma2d_ll_tx_enable_interrupt(dev, i, UINT32_MAX, false);
+            dma2d_ll_tx_stop(dev, i);
+            dma2d_ll_tx_clear_interrupt_status(dev, i, UINT32_MAX);
+        }
+
+        for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
+            if (dma2d_group->rx_chans[i]->base.intr) {
+                ret = esp_intr_free(dma2d_group->rx_chans[i]->base.intr);
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "free RX channel interrupt failed");
+                    s_platform.group_ref_counts[group_id]++;
+                    goto err;
+                }
+                dma2d_group->rx_chans[i]->base.intr = NULL;
+            }
+        }
+        for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
+            if (dma2d_group->tx_chans[i]->base.intr) {
+                ret = esp_intr_free(dma2d_group->tx_chans[i]->base.intr);
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "free TX channel interrupt failed");
+                    s_platform.group_ref_counts[group_id]++;
+                    goto err;
+                }
+                dma2d_group->tx_chans[i]->base.intr = NULL;
+            }
+        }
+
+        dma2d_ll_hw_enable(dev, false);
         PERIPH_RCC_ATOMIC() {
             dma2d_ll_enable_bus_clock(group_id, false);
         }
@@ -591,23 +626,11 @@ esp_err_t dma2d_release_pool(dma2d_pool_handle_t dma2d_pool)
             sleep_retention_module_deinit(module);
         }
 #endif
-    }
 
-    if (do_deinitialize) {
-        for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
-            if (dma2d_group->rx_chans[i]->base.intr) {
-                esp_intr_free(dma2d_group->rx_chans[i]->base.intr);
-            }
-        }
-        for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
-            if (dma2d_group->tx_chans[i]->base.intr) {
-                esp_intr_free(dma2d_group->tx_chans[i]->base.intr);
-            }
-        }
+        s_platform.groups[group_id] = NULL; // deregister from platform
         free(*(dma2d_group->tx_chans));
         free(*(dma2d_group->rx_chans));
         free(dma2d_group);
-        s_platform.groups[group_id] = NULL;
     }
 err:
     _lock_release(&s_platform.mutex);

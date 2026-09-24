@@ -947,18 +947,20 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
     int group_id = group->group_id;
     gdma_tx_channel_t *tx_chan = __containerof(dma_channel, gdma_tx_channel_t, base);
     esp_os_enter_critical(&pair->spinlock);
-    pair->tx_chan = NULL;
-    pair->occupy_code &= ~SEARCH_REQUEST_TX_CHANNEL;
+    gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX, false);
+    gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX);
     esp_os_exit_critical(&pair->spinlock);
 
     if (dma_channel->intr) {
-        esp_intr_free(dma_channel->intr);
-        esp_os_enter_critical(&pair->spinlock);
-        gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX, false); // disable all interrupt events
-        gdma_hal_clear_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_TX, UINT32_MAX); // clear all pending events
-        esp_os_exit_critical(&pair->spinlock);
+        ESP_RETURN_ON_ERROR(esp_intr_free(dma_channel->intr), TAG, "free TX channel interrupt failed");
+        dma_channel->intr = NULL;
         ESP_LOGV(TAG, "uninstall interrupt service for tx channel (%d,%d)", group_id, pair_id);
     }
+
+    esp_os_enter_critical(&pair->spinlock);
+    pair->tx_chan = NULL;
+    pair->occupy_code &= ~SEARCH_REQUEST_TX_CHANNEL;
+    esp_os_exit_critical(&pair->spinlock);
 
     free(tx_chan);
     ESP_LOGV(TAG, "del tx channel (%d,%d)", group_id, pair_id);
@@ -982,18 +984,20 @@ static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
     int group_id = group->group_id;
     gdma_rx_channel_t *rx_chan = __containerof(dma_channel, gdma_rx_channel_t, base);
     esp_os_enter_critical(&pair->spinlock);
-    pair->rx_chan = NULL;
-    pair->occupy_code &= ~SEARCH_REQUEST_RX_CHANNEL;
+    gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX, false);
+    gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX);
     esp_os_exit_critical(&pair->spinlock);
 
     if (dma_channel->intr) {
-        esp_intr_free(dma_channel->intr);
-        esp_os_enter_critical(&pair->spinlock);
-        gdma_hal_enable_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX, false); // disable all interrupt events
-        gdma_hal_clear_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, UINT32_MAX); // clear all pending events
-        esp_os_exit_critical(&pair->spinlock);
+        ESP_RETURN_ON_ERROR(esp_intr_free(dma_channel->intr), TAG, "free RX channel interrupt failed");
+        dma_channel->intr = NULL;
         ESP_LOGV(TAG, "uninstall interrupt service for rx channel (%d,%d)", group_id, pair_id);
     }
+
+    esp_os_enter_critical(&pair->spinlock);
+    pair->rx_chan = NULL;
+    pair->occupy_code &= ~SEARCH_REQUEST_RX_CHANNEL;
+    esp_os_exit_critical(&pair->spinlock);
 
     free(rx_chan);
     ESP_LOGV(TAG, "del rx channel (%d,%d)", group_id, pair_id);
