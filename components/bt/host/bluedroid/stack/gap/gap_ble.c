@@ -126,6 +126,12 @@ tGAP_CLCB *gap_clcb_alloc (BD_ADDR bda)
             memset(p_clcb, 0, sizeof(tGAP_CLCB));
             p_clcb->in_use = TRUE;
             memcpy (p_clcb->bda, bda, BD_ADDR_LEN);
+            p_clcb->pending_req_q = fixed_queue_new(QUEUE_SIZE_MAX);
+            if (p_clcb->pending_req_q == NULL) {
+                GAP_TRACE_ERROR("%s no resource for the request queue", __func__);
+                p_clcb->in_use = FALSE;
+                return NULL;
+            }
             return p_clcb;
         }
     }
@@ -154,6 +160,7 @@ void gap_ble_dealloc_clcb(tGAP_CLCB *p_clcb)
         osi_free (p_q);
     }
 
+    fixed_queue_free(p_clcb->pending_req_q, NULL);
     memset(p_clcb, 0, sizeof(tGAP_CLCB));
 }
 
@@ -786,7 +793,7 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
 
     if ((p_clcb = gap_find_clcb_by_bd_addr (peer_bda)) == NULL) {
         if ((p_clcb = gap_clcb_alloc(peer_bda)) == NULL) {
-            GAP_TRACE_ERROR("gap_ble_accept_cl_operation max connection reached");
+            GAP_TRACE_ERROR("gap_ble_accept_cl_operation clcb alloc failed (no free clcb or no memory)");
             return started;
         }
         is_new_clcb = TRUE;
