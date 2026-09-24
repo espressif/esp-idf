@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,6 +129,11 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
  *
  * @note     This API is blocking, so setting `is_async` member of `http_config` structure will
  *           result in an error.
+ *
+ * @note     Unless CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP is enabled, an unset `transport_type` in `http_config`
+ *           is set to HTTP_TRANSPORT_OVER_SSL, so an http:// URL or redirect target fails. Any other
+ *           `transport_type` than HTTP_TRANSPORT_OVER_SSL is rejected with ESP_ERR_INVALID_ARG.
+ *           A custom `transport` in `http_config` is used as is: its security is up to the application.
  *
  * @return
  *    - ESP_OK: HTTPS OTA Firmware upgrade context initialised and HTTPS connection established
