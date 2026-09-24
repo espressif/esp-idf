@@ -5,6 +5,17 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
+# Secure-boot / flash-encryption "secure features" implementations are unified into
+# shared files gated by SOC_EFUSE_* capabilities. ESP32 keeps its own per-target
+# files (Secure Boot V1 support + a distinct eFuse family).
+if(${target} STREQUAL "esp32")
+    set(secure_boot_features_src "src/esp32/secure_boot_secure_features.c")
+    set(flash_encryption_features_src "src/esp32/flash_encryption_secure_features.c")
+else()
+    set(secure_boot_features_src "src/secure_boot/secure_boot_secure_features.c")
+    set(flash_encryption_features_src "src/flash_encryption/flash_encryption_secure_features.c")
+endif()
+
 if(esp_tee_build)
     set(tee_inc_dirs "include"
                      "private_include"
@@ -18,7 +29,7 @@ if(esp_tee_build)
 
     if(CONFIG_SECURE_BOOT_V2_ENABLED)
         if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
-            list(APPEND tee_srcs "src/${IDF_TARGET}/secure_boot_secure_features.c")
+            list(APPEND tee_srcs "${secure_boot_features_src}")
         endif()
     endif()
 
@@ -114,21 +125,17 @@ if(BOOTLOADER_BUILD)
 
     if(CONFIG_SECURE_FLASH_ENC_ENABLED)
         list(APPEND srcs "src/flash_encryption/flash_encrypt.c"
-                         "src/${IDF_TARGET}/flash_encryption_secure_features.c")
+                         "${flash_encryption_features_src}")
     endif()
 
     if(CONFIG_SECURE_SIGNED_ON_BOOT)
-        if(CONFIG_SECURE_BOOT_V1_ENABLED)
-            list(APPEND srcs "src/${IDF_TARGET}/secure_boot_secure_features.c")
-        endif()
-
-        if(CONFIG_SECURE_BOOT_V2_ENABLED)
-            list(APPEND srcs "src/${IDF_TARGET}/secure_boot_secure_features.c")
+        if(CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE_BOOT_V2_ENABLED)
+            list(APPEND srcs "${secure_boot_features_src}")
         endif()
     endif()
 else()
     if(CONFIG_SOC_SECURE_BOOT_SUPPORTED)
-        list(APPEND srcs "src/${IDF_TARGET}/secure_boot_secure_features.c")
+        list(APPEND srcs "${secure_boot_features_src}")
     endif()
 
 endif()
