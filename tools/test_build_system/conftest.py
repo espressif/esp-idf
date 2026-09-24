@@ -164,7 +164,7 @@ def _session_work_dir(request: FixtureRequest) -> typing.Generator[typing.Tuple[
         clean_dir = work_dir_path
         is_temp_dir = True
 
-    log_dir = work_dir_path / 'failed_command_logs'
+    log_dir = Path(previous_log_dir).resolve() if previous_log_dir else work_dir_path / 'failed_command_logs'
     log_dir.mkdir(parents=True, exist_ok=True)
     os.environ[FAILED_COMMAND_LOG_DIR_ENV] = str(log_dir)
 
