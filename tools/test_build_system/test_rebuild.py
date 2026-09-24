@@ -184,20 +184,28 @@ def test_rebuild_ldgen_template_change(idf_py: IdfPyFunc, test_app_copy: Path) -
     skip_msg = 'Skipping linker script generation, section names unchanged'
     idf_path = Path(os.environ['IDF_PATH'])
     template = idf_path / 'components/esp_system/ld/esp32/sections.ld.in'
-    generated = Path('build/esp-idf/esp_system/ld/sections.ld')
+    generated_dir = Path('build/esp-idf/esp_system/ld')
     # An absolute symbol assignment: it is copied through to the generated
     # script and does not depend on anything else in the build.
     probe = '_ldgen_template_probe'
 
     logging.info('initial build')
     idf_py('build')
+    generated_scripts = [
+        path
+        for path in generated_dir.glob('sections.ld*')
+        if path.name == 'sections.ld' or path.name.startswith('sections.ld_')
+    ]
+    assert generated_scripts, 'no generated linker script found'
 
     logging.info('adding a symbol to the template leaves section names and fragment files unchanged')
     with open(template, 'a') as f:
         f.write(f'\n{probe} = 0x3ff00abc;\n')
     result = idf_py('build')
     assert skip_msg not in result.stdout, f'unexpected {skip_msg!r} in build output after template change'
-    assert probe in generated.read_text(), 'template change did not reach the generated linker script'
+    assert any(probe in path.read_text() for path in generated_scripts), (
+        'template change did not reach a generated linker script'
+    )
 
 
 def test_rebuild_ldgen_lf_cache(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
