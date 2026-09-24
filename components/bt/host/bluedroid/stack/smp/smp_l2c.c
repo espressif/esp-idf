@@ -294,7 +294,10 @@ static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN con
             p_cb->connect_initialized = TRUE;
             /* initialize local i/r key to be default keys */
             p_cb->local_r_key = p_cb->local_i_key =  SMP_BR_SEC_DEFAULT_KEY;
-            p_cb->loc_auth_req = p_cb->peer_auth_req = 0;
+            /* Only CT2 is meaningful in AuthReq over BR/EDR. The peer bit is
+               kept at 0 until its Pairing Request/Response is parsed. */
+            p_cb->loc_auth_req = SMP_CT2_SUPPORT_BIT;
+            p_cb->peer_auth_req = 0;
             p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
             smp_br_state_machine_event(p_cb, SMP_BR_L2CAP_CONN_EVT, NULL);
         }

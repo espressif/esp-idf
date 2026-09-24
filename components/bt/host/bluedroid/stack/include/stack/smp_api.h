@@ -145,6 +145,8 @@ typedef UINT8   tSMP_OOB_DATA_TYPE;
 #define SMP_AUTH_YN_BIT         (1 << 2)
 #define SMP_SC_SUPPORT_BIT      (1 << 3)
 #define SMP_KP_SUPPORT_BIT      (1 << 4)
+/* CT2: h7 is supported for cross transport key derivation */
+#define SMP_CT2_SUPPORT_BIT     (1 << 5)
 
 #define SMP_AUTH_MASK    (SMP_AUTH_GEN_BOND|SMP_AUTH_YN_BIT|SMP_SC_SUPPORT_BIT|SMP_KP_SUPPORT_BIT)
 
