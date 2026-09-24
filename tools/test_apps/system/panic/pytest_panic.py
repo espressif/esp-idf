@@ -28,12 +28,14 @@ TARGETS_ALL = TARGETS_XTENSA + TARGETS_RISCV
 TARGETS_DUAL_CORE = TARGETS_XTENSA_DUAL_CORE + TARGETS_RISCV_DUAL_CORE
 
 
-def configs_with_esp32s2_xfail(
-    configs: Sequence[tuple[str, str]], reason: str
+def configs_with_xfail(
+    configs: Sequence[tuple[str, str] | tuple[str, str, Any]],
+    reason: str,
+    targets: Sequence[str] = ('esp32s2',),
 ) -> list[tuple[str, str] | tuple[str, str, Any]]:
     return [
-        (config, target, pytest.mark.xfail(reason=reason, run=False)) if target == 'esp32s2' else (config, target)
-        for config, target in configs
+        (entry[0], entry[1], pytest.mark.xfail(reason=reason, run=False)) if entry[1] in targets else entry
+        for entry in configs
     ]
 
 
@@ -696,11 +698,13 @@ def test_panic_handler_crash1(dut: PanicTestDut, config: str, test_func_name: st
 #########################
 
 # Memprot-related tests are supported only on targets with PMS/PMA peripheral;
-# currently ESP32-S2, ESP32-C3, ESP32-C2, ESP32-H2, ESP32-H21, ESP32-C6, ESP32-P4, ESP32-C5 and ESP32-C61 are supported
+# currently ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C2, ESP32-H2, ESP32-H21, ESP32-C6, ESP32-P4,
+# ESP32-C5 and ESP32-C61 are supported
 CONFIGS_MEMPROT_IDRAM = list(
     zip(
         [
             'memprot_esp32s2',
+            'memprot_esp32s3',
             'memprot_esp32c3',
             'memprot_esp32c2',
             'memprot_esp32c5',
@@ -709,7 +713,7 @@ CONFIGS_MEMPROT_IDRAM = list(
             'memprot_esp32p4',
             'memprot_esp32h21',
         ],
-        ['esp32s2', 'esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
+        ['esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
 )
 
@@ -721,6 +725,7 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = list(
     zip(
         [
             'memprot_esp32s2',
+            'memprot_esp32s3',
             'memprot_esp32c3',
             'memprot_esp32c5',
             'memprot_esp32c6',
@@ -728,7 +733,7 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = list(
             'memprot_esp32p4',
             'memprot_esp32h21',
         ],
-        ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21'],
+        ['esp32s2', 'esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
 )
 
@@ -828,6 +833,13 @@ def iram_reg1_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
         dut.expect(r'Write operation at address [0-9xa-f]+ not permitted \((\S+)\)')
         dut.expect_reg_dump(0)
         dut.expect_backtrace()
+    elif dut.target == 'esp32s3':
+        dut.expect_gme('Memory protection fault')
+        dut.expect(r'  memory type: (\S+)')
+        dut.expect(r'  faulting address: [0-9xa-f]+')
+        dut.expect(r'  operation type: (\S+)')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace()
     elif dut.target == 'esp32c3':
         dut.expect_exact(r'Test error: Test function has returned')
     else:
@@ -858,6 +870,13 @@ def iram_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     if dut.target == 'esp32s2':
         dut.expect_gme('Memory protection fault')
         dut.expect(r'Write operation at address [0-9xa-f]+ not permitted \((\S+)\)')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace()
+    elif dut.target == 'esp32s3':
+        dut.expect_gme('Memory protection fault')
+        dut.expect(r'  memory type: (\S+)')
+        dut.expect(r'  faulting address: [0-9xa-f]+')
+        dut.expect(r'  operation type: (\S+)')
         dut.expect_reg_dump(0)
         dut.expect_backtrace()
     elif dut.target == 'esp32c3':
@@ -951,10 +970,10 @@ def iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-# TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
+# TODO: IDF-6820: ESP32-S2 / ESP32-S3 -> Fix incorrect panic reason: Unhandled debug exception
 @idf_parametrize(
     'config,target,markers',
-    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_IDRAM, 'Incorrect panic reason may be observed'),
+    configs_with_xfail(CONFIGS_MEMPROT_IDRAM, 'Incorrect panic reason may be observed', targets=('esp32s2', 'esp32s3')),
     indirect=['config', 'target'],
 )
 def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -976,6 +995,11 @@ def dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
         dut.expect(r'Unknown operation at address [0-9xa-f]+ not permitted \((\S+)\)')
         dut.expect_reg_dump(0)
         dut.expect_backtrace(corrupted=True)
+    elif dut.target == 'esp32s3':
+        dut.expect_gme('Cache error', core=None)
+        dut.expect_exact('MMU entry fault error')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace()
     else:
         dut.expect_gme('Instruction access fault')
         dut.expect_reg_dump(0)
@@ -989,7 +1013,7 @@ def dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @idf_parametrize(
     'config,target,markers',
-    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
+    configs_with_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
     indirect=['config', 'target'],
 )
 def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1010,6 +1034,11 @@ def dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
         dut.expect_gme('InstructionFetchError')
         dut.expect_reg_dump(0)
         dut.expect_backtrace(corrupted=True)
+    elif dut.target == 'esp32s3':
+        dut.expect_gme('Cache error', core=None)
+        dut.expect_exact('MMU entry fault error')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace(corrupted=True)
     else:
         dut.expect_gme('Instruction access fault')
         dut.expect_reg_dump(0)
@@ -1023,7 +1052,7 @@ def dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @idf_parametrize(
     'config,target,markers',
-    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
+    configs_with_xfail(CONFIGS_MEMPROT_IDRAM, 'Multiple panic reasons for the same test may surface'),
     indirect=['config', 'target'],
 )
 def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1060,6 +1089,12 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
         dut.expect(r'Read operation at address [0-9xa-f]+ not permitted \((\S+)\)')
         dut.expect_reg_dump(0)
         dut.expect_backtrace()
+    elif dut.target == 'esp32s3':
+        dut.expect(r'  memory type: (\S+)')
+        dut.expect(r'  faulting address: [0-9xa-f]+')
+        dut.expect(r'  operation type: (\S+)')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace()
     elif dut.target == 'esp32c3':
         dut.expect(r'  memory type: (\S+)')
         dut.expect(r'  faulting address: [0-9xa-f]+')
@@ -1075,7 +1110,7 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
 @idf_parametrize(
     'config,target,markers',
-    configs_with_esp32s2_xfail(CONFIGS_MEMPROT_RTC_FAST_MEM, 'Multiple panic reasons for the same test may surface'),
+    configs_with_xfail(CONFIGS_MEMPROT_RTC_FAST_MEM, 'Multiple panic reasons for the same test may surface'),
     indirect=['config', 'target'],
 )
 def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1084,6 +1119,13 @@ def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str)
     if dut.target == 'esp32s2':
         dut.expect_gme('Memory protection fault')
         dut.expect(r'Unknown operation at address [0-9xa-f]+ not permitted \((\S+)\)')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace()
+    elif dut.target == 'esp32s3':
+        dut.expect_gme('Memory protection fault')
+        dut.expect(r'  memory type: (\S+)')
+        dut.expect(r'  faulting address: [0-9xa-f]+')
+        dut.expect(r'  operation type: (\S+)')
         dut.expect_reg_dump(0)
         dut.expect_backtrace()
     elif dut.target == 'esp32c3':
