@@ -483,10 +483,7 @@ TEST(ecdsa, ecdsa_SECP384R1_export_pubkey)
 
 static void test_ecdsa_sw_key_on_curve(ecdsa_curve_t curve, uint8_t *pub_x, uint8_t *pub_y, const uint8_t *priv)
 {
-#if !CONFIG_IDF_TARGET_ESP32S31
-    // TODO: IDF-15703 re-enable TRNG-backed sign_and_verify on esp32s31 once the TRNG support update lands
     test_ecdsa_sign_and_verify(curve, sha, pub_x, pub_y, false, ECDSA_K_TYPE_TRNG, priv);
-#endif
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     test_ecdsa_sign_and_verify(curve, sha, pub_x, pub_y, false, ECDSA_K_TYPE_DETERMINISITIC, priv);
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
