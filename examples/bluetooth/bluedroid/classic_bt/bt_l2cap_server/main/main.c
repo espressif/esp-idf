@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdbool.h>
-#include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -31,11 +31,11 @@
 #define SDP_TAG                       "SDP_TAG"
 #define L2CAP_DATA_LEN                100
 #define BT_UNUSED_RFCOMM              -1
-#define BT_L2CAP_DYNMIC_PSM           0x1001
+#define BT_L2CAP_DYNAMIC_PSM           0x1001
 #define BT_UNKONWN_PROFILE_VERSION    0x0102
 
 static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
-static esp_bt_l2cap_cntl_flags_t sec_mask = ESP_BT_L2CAP_SEC_AUTHENTICATE;
+static esp_bt_l2cap_cntl_flags_t sec_mask = ESP_BT_L2CAP_SEC_AUTHENTICATE | ESP_BT_L2CAP_SEC_ENCRYPT;
 static char *sdp_service_name = "Unknown_profile";
 static const uint8_t  UUID_UNKNOWN[] = {0x00, 0x00, 0x10, 0x10, 0x00, 0x00, 0x10, 0x00,
                                             0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
@@ -132,20 +132,23 @@ static void l2cap_read_handle(void * param)
         goto done;
     }
 
-    do {
-        /* The frequency of calling this function also limits the speed at which the peer device can send data. */
-        size = read(fd, l2cap_data, L2CAP_DATA_LEN);
-        if (size < 0) {
-            break;
-        } else if (size == 0) {
-            /* There is no data, retry after 500 ms */
-            vTaskDelay(500 / portTICK_PERIOD_MS);
-        } else {
+    while (1) {
+        if (size > 0) {
             ESP_LOGI(L2CAP_TAG, "fd = %d data_len = %d", fd, size);
-            /* To avoid task watchdog */
             vTaskDelay(10 / portTICK_PERIOD_MS);
+        } else if (size == 0) {
+            ESP_LOGW(L2CAP_TAG, "Peer closed L2CAP fd=%d", fd);
+            break;
+        } else {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                vTaskDelay(50 / portTICK_PERIOD_MS);
+                continue;
+            }
+            ESP_LOGE(L2CAP_TAG, "read error on fd=%d: %s", fd, strerror(errno));
+            break;
         }
-    } while (1);
+    }
+
 done:
     if (l2cap_data) {
         free(l2cap_data);
@@ -201,7 +204,7 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
         break;
     case ESP_BT_L2CAP_CLOSE_EVT:
         ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CLOSE_EVT: status:%d", l2cap_param->close.status);
-        esp_bt_l2cap_start_srv(sec_mask, BT_L2CAP_DYNMIC_PSM); // bug, need to do fix
+        esp_bt_l2cap_start_srv(sec_mask, BT_L2CAP_DYNAMIC_PSM); // bug, need to do fix
         break;
     case ESP_BT_L2CAP_CL_INIT_EVT:
         ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CL_INIT_EVT: status:%d", l2cap_param->cl_init.status);
@@ -220,7 +223,7 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
     case ESP_BT_L2CAP_VFS_REGISTER_EVT:
         if (l2cap_param->vfs_register.status == ESP_BT_L2CAP_SUCCESS) {
             ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_VFS_REGISTER_EVT: status:%d", l2cap_param->vfs_register.status);
-            esp_bt_l2cap_start_srv(sec_mask, BT_L2CAP_DYNMIC_PSM);
+            esp_bt_l2cap_start_srv(sec_mask, BT_L2CAP_DYNAMIC_PSM);
         } else {
             ESP_LOGE(L2CAP_TAG, "ESP_BT_L2CAP_VFS_REGISTER_EVT: status:%d", l2cap_param->vfs_register.status);
         }
@@ -260,10 +263,10 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
             record.hdr.type = ESP_SDP_TYPE_RAW;
             record.hdr.uuid.len = sizeof(UUID_UNKNOWN);
             memcpy(record.hdr.uuid.uuid.uuid128, UUID_UNKNOWN, sizeof(UUID_UNKNOWN));
-            record.hdr.service_name_length = strlen(sdp_service_name) + 1;
+            record.hdr.service_name_length = strlen(sdp_service_name);
             record.hdr.service_name = sdp_service_name;
             record.hdr.rfcomm_channel_number = BT_UNUSED_RFCOMM;
-            record.hdr.l2cap_psm = BT_L2CAP_DYNMIC_PSM;
+            record.hdr.l2cap_psm = BT_L2CAP_DYNAMIC_PSM;
             record.hdr.profile_version = BT_UNKONWN_PROFILE_VERSION;
             esp_sdp_create_record((esp_bluetooth_sdp_record_t *)&record);
         }
