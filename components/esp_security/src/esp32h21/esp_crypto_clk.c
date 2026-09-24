@@ -7,6 +7,7 @@
 #include "sdkconfig.h"
 #include "esp_crypto_clk.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/sec_ll.h"
 #include "hal/clk_gate_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
 #if !NON_OS_BUILD
@@ -45,10 +46,12 @@ void esp_crypto_common_clk_enable(bool enable)
     CRYPTO_CLK_LOCK();
     if (enable) {
         if (s_crypto_common_clk_ref_cnt++ == 0) {
-            /* Parent: PLL_F96M (see esp_crypto_clk_init() sec_clk_sel). */
+            /* Parent must be present before switching the crypto mux. */
             esp_crypto_pll_f96m_enable(true);
+            sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_PLL_F96M);
         }
     } else if (s_crypto_common_clk_ref_cnt > 0 && --s_crypto_common_clk_ref_cnt == 0) {
+        sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_XTAL);
         esp_crypto_pll_f96m_enable(false);
     }
     CRYPTO_CLK_UNLOCK();
@@ -63,6 +66,7 @@ static void esp_crypto_clk_always_on(void)
     CRYPTO_CLK_LOCK();
     if (!s_crypto_clk_always_on_done) {
         esp_crypto_pll_f96m_enable(true);
+        sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_PLL_F96M);
         s_crypto_clk_always_on_done = true;
     }
     CRYPTO_CLK_UNLOCK();

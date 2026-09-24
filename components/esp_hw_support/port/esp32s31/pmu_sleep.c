@@ -361,6 +361,20 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
         mspi_ll_psram_hold_all_pins();
 #endif
         s_mpll_freq_mhz_before_sleep = rtc_clk_mpll_get_freq();
+        if (s_mpll_freq_mhz_before_sleep) {
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
+            /* MPLL is off across TOP PD; REGDMA restore needs a live PSRAM clk — switch to XTAL first (same as P4). */
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_XTAL);
+            if (!s_pmu_sleep_regdma_backup_enabled) {
+                // MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
+                // If it's a PD_TOP sleep, psram MSPI core clock will be disabled by REGDMA
+                _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+                _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+            }
+#endif
+            rtc_clk_mpll_disable();
+        }
     }
     lp_aon_hal_inform_wakeup_type(dslp);
 
@@ -401,6 +415,15 @@ bool pmu_sleep_finish(bool dslp)
         if (s_mpll_freq_mhz_before_sleep) {
             rtc_clk_mpll_enable();
             rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, false);
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
+            if (!s_pmu_sleep_regdma_backup_enabled) {
+                _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+                _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+            }
+            /* Sleep entry switched to XTAL; restore MPLL as PSRAM source after MPLL is ready. */
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_MPLL);
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_MPLL);
+#endif
         }
 #if !BOOTLOADER_BUILD && CONFIG_SPIRAM
         mspi_ll_psram_unhold_all_pins();

@@ -20,6 +20,8 @@ _Static_assert(ESP_PAN_MAX_PROTOCOL_FILTERS == BNEP_MAX_PROT_FILTERS,
                "ESP_PAN_MAX_PROTOCOL_FILTERS must match BNEP_MAX_PROT_FILTERS");
 _Static_assert(ESP_PAN_MAX_MULTICAST_FILTERS == BNEP_MAX_MULTI_FILTERS,
                "ESP_PAN_MAX_MULTICAST_FILTERS must match BNEP_MAX_MULTI_FILTERS");
+_Static_assert(ESP_PAN_MAC_ADDR_LEN == ESP_BD_ADDR_LEN,
+               "ESP_PAN_MAC_ADDR_LEN must match ESP_BD_ADDR_LEN");
 
 esp_err_t esp_pan_register_callback(esp_pan_cb_t callback)
 {
@@ -115,8 +117,8 @@ esp_err_t esp_pan_disconnect(uint16_t handle)
             ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_pan_write(uint16_t handle, const uint8_t *dst, const uint8_t *src, uint16_t protocol,
-                        uint16_t len, const uint8_t *data, bool ext)
+esp_err_t esp_pan_write(uint16_t handle, const esp_pan_mac_addr_t dst, const esp_pan_mac_addr_t src,
+                        uint16_t protocol, uint16_t len, const uint8_t *data, bool ext)
 {
     btc_msg_t msg = {0};
     btc_pan_args_t arg = {0};
@@ -133,8 +135,8 @@ esp_err_t esp_pan_write(uint16_t handle, const uint8_t *dst, const uint8_t *src,
     msg.act = BTC_PAN_ACT_WRITE;
 
     arg.write.handle = handle;
-    memcpy(arg.write.dst, dst, ESP_BD_ADDR_LEN);
-    memcpy(arg.write.src, src, ESP_BD_ADDR_LEN);
+    memcpy(arg.write.dst, dst, ESP_PAN_MAC_ADDR_LEN);
+    memcpy(arg.write.src, src, ESP_PAN_MAC_ADDR_LEN);
     arg.write.protocol = protocol;
     arg.write.len = len;
     arg.write.data = (uint8_t *)data;
@@ -165,8 +167,8 @@ esp_err_t esp_pan_set_protocol_filters(uint16_t handle, uint16_t num_filters,
 
     arg.set_pfilter.handle = handle;
     arg.set_pfilter.num_filters = num_filters;
-    arg.set_pfilter.start_array = (num_filters > 0) ? (uint16_t *)start_array : NULL;
-    arg.set_pfilter.end_array = (num_filters > 0) ? (uint16_t *)end_array : NULL;
+    arg.set_pfilter.start_array = (num_filters > 0) ? start_array : NULL;
+    arg.set_pfilter.end_array = (num_filters > 0) ? end_array : NULL;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_pan_args_t),
                                  btc_pan_arg_deep_copy, btc_pan_arg_deep_free) == BT_STATUS_SUCCESS ?
@@ -174,7 +176,8 @@ esp_err_t esp_pan_set_protocol_filters(uint16_t handle, uint16_t num_filters,
 }
 
 esp_err_t esp_pan_set_multicast_filters(uint16_t handle, uint16_t num_filters,
-                                        const esp_bd_addr_t *start_array, const esp_bd_addr_t *end_array)
+                                        const esp_pan_mac_addr_t *start_array,
+                                        const esp_pan_mac_addr_t *end_array)
 {
     btc_msg_t msg = {0};
     btc_pan_args_t arg = {0};
@@ -193,8 +196,8 @@ esp_err_t esp_pan_set_multicast_filters(uint16_t handle, uint16_t num_filters,
 
     arg.set_mfilter.handle = handle;
     arg.set_mfilter.num_filters = num_filters;
-    arg.set_mfilter.start_array = (num_filters > 0) ? (esp_bd_addr_t *)start_array : NULL;
-    arg.set_mfilter.end_array = (num_filters > 0) ? (esp_bd_addr_t *)end_array : NULL;
+    arg.set_mfilter.start_array = (num_filters > 0) ? start_array : NULL;
+    arg.set_mfilter.end_array = (num_filters > 0) ? end_array : NULL;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_pan_args_t),
                                  btc_pan_arg_deep_copy, btc_pan_arg_deep_free) == BT_STATUS_SUCCESS ?

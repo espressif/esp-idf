@@ -247,7 +247,8 @@ static void btc_pan_set_protocol_filters(btc_pan_args_t *arg)
     }
 
     bta_pan_ci_set_pfilters(arg->set_pfilter.handle, arg->set_pfilter.num_filters,
-                            arg->set_pfilter.start_array, arg->set_pfilter.end_array);
+                            (UINT16 *)arg->set_pfilter.start_array,
+                            (UINT16 *)arg->set_pfilter.end_array);
 }
 
 static void btc_pan_set_multicast_filters(btc_pan_args_t *arg)
@@ -316,41 +317,37 @@ void btc_pan_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_PAN_ACT_SET_PFILTER:
         if (src->set_pfilter.num_filters > 0) {
             size_t size = src->set_pfilter.num_filters * sizeof(uint16_t);
-            dst->set_pfilter.start_array = (uint16_t *)osi_malloc(size);
-            dst->set_pfilter.end_array = (uint16_t *)osi_malloc(size);
-            if (dst->set_pfilter.start_array && dst->set_pfilter.end_array) {
-                memcpy(dst->set_pfilter.start_array, src->set_pfilter.start_array, size);
-                memcpy(dst->set_pfilter.end_array, src->set_pfilter.end_array, size);
+            uint16_t *start_array = (uint16_t *)osi_malloc(size);
+            uint16_t *end_array = (uint16_t *)osi_malloc(size);
+            if (start_array && end_array) {
+                memcpy(start_array, src->set_pfilter.start_array, size);
+                memcpy(end_array, src->set_pfilter.end_array, size);
+                dst->set_pfilter.start_array = start_array;
+                dst->set_pfilter.end_array = end_array;
             } else {
-                if (dst->set_pfilter.start_array) {
-                    osi_free(dst->set_pfilter.start_array);
-                    dst->set_pfilter.start_array = NULL;
-                }
-                if (dst->set_pfilter.end_array) {
-                    osi_free(dst->set_pfilter.end_array);
-                    dst->set_pfilter.end_array = NULL;
-                }
+                osi_free(start_array);
+                osi_free(end_array);
+                dst->set_pfilter.start_array = NULL;
+                dst->set_pfilter.end_array = NULL;
                 dst->set_pfilter.num_filters = 0;
             }
         }
         break;
     case BTC_PAN_ACT_SET_MFILTER:
         if (src->set_mfilter.num_filters > 0) {
-            size_t size = src->set_mfilter.num_filters * sizeof(esp_bd_addr_t);
-            dst->set_mfilter.start_array = (esp_bd_addr_t *)osi_malloc(size);
-            dst->set_mfilter.end_array = (esp_bd_addr_t *)osi_malloc(size);
-            if (dst->set_mfilter.start_array && dst->set_mfilter.end_array) {
-                memcpy(dst->set_mfilter.start_array, src->set_mfilter.start_array, size);
-                memcpy(dst->set_mfilter.end_array, src->set_mfilter.end_array, size);
+            size_t size = src->set_mfilter.num_filters * sizeof(esp_pan_mac_addr_t);
+            esp_pan_mac_addr_t *start_array = (esp_pan_mac_addr_t *)osi_malloc(size);
+            esp_pan_mac_addr_t *end_array = (esp_pan_mac_addr_t *)osi_malloc(size);
+            if (start_array && end_array) {
+                memcpy(start_array, src->set_mfilter.start_array, size);
+                memcpy(end_array, src->set_mfilter.end_array, size);
+                dst->set_mfilter.start_array = start_array;
+                dst->set_mfilter.end_array = end_array;
             } else {
-                if (dst->set_mfilter.start_array) {
-                    osi_free(dst->set_mfilter.start_array);
-                    dst->set_mfilter.start_array = NULL;
-                }
-                if (dst->set_mfilter.end_array) {
-                    osi_free(dst->set_mfilter.end_array);
-                    dst->set_mfilter.end_array = NULL;
-                }
+                osi_free(start_array);
+                osi_free(end_array);
+                dst->set_mfilter.start_array = NULL;
+                dst->set_mfilter.end_array = NULL;
                 dst->set_mfilter.num_filters = 0;
             }
         }
@@ -387,21 +384,21 @@ void btc_pan_arg_deep_free(btc_msg_t *msg)
         break;
     case BTC_PAN_ACT_SET_PFILTER:
         if (arg->set_pfilter.start_array) {
-            osi_free(arg->set_pfilter.start_array);
+            osi_free((void *)arg->set_pfilter.start_array);
             arg->set_pfilter.start_array = NULL;
         }
         if (arg->set_pfilter.end_array) {
-            osi_free(arg->set_pfilter.end_array);
+            osi_free((void *)arg->set_pfilter.end_array);
             arg->set_pfilter.end_array = NULL;
         }
         break;
     case BTC_PAN_ACT_SET_MFILTER:
         if (arg->set_mfilter.start_array) {
-            osi_free(arg->set_mfilter.start_array);
+            osi_free((void *)arg->set_mfilter.start_array);
             arg->set_mfilter.start_array = NULL;
         }
         if (arg->set_mfilter.end_array) {
-            osi_free(arg->set_mfilter.end_array);
+            osi_free((void *)arg->set_mfilter.end_array);
             arg->set_mfilter.end_array = NULL;
         }
         break;
@@ -585,8 +582,8 @@ void btc_pan_co_data_ind(UINT16 handle, BD_ADDR src, BD_ADDR dst, UINT16 protoco
     esp_pan_cb_param_t param = {0};
 
     param.data_ind.handle = handle;
-    memcpy(param.data_ind.src, src, ESP_BD_ADDR_LEN);
-    memcpy(param.data_ind.dst, dst, ESP_BD_ADDR_LEN);
+    memcpy(param.data_ind.src, src, ESP_PAN_MAC_ADDR_LEN);
+    memcpy(param.data_ind.dst, dst, ESP_PAN_MAC_ADDR_LEN);
     param.data_ind.protocol = protocol;
     param.data_ind.len = len;
     param.data_ind.data = p_data;

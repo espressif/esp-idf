@@ -29,42 +29,42 @@ typedef enum {
 } btc_pan_act_t;
 
 typedef union {
-    struct init_arg {
+    struct pan_init_arg {
         esp_pan_cfg_t cfg;
     } init;
 
-    struct connect_arg {
+    struct pan_connect_arg {
         BD_ADDR bd_addr;
         esp_pan_role_t local_role;
         esp_pan_role_t peer_role;
     } connect;
 
-    struct disconnect_arg {
+    struct pan_disconnect_arg {
         uint16_t handle;
     } disconnect;
 
-    struct write_arg {
+    struct pan_write_arg {
         uint16_t handle;
-        BD_ADDR dst;
-        BD_ADDR src;
+        esp_pan_mac_addr_t dst;
+        esp_pan_mac_addr_t src;
         uint16_t protocol;
         uint16_t len;
         uint8_t *data;
         bool ext;
     } write;
 
-    struct set_pfilter_arg {
+    struct pan_set_pfilter_arg {
         uint16_t handle;
         uint16_t num_filters;
-        uint16_t *start_array;
-        uint16_t *end_array;
+        const uint16_t *start_array;
+        const uint16_t *end_array;
     } set_pfilter;
 
-    struct set_mfilter_arg {
+    struct pan_set_mfilter_arg {
         uint16_t handle;
         uint16_t num_filters;
-        esp_bd_addr_t *start_array;
-        esp_bd_addr_t *end_array;
+        const esp_pan_mac_addr_t *start_array;
+        const esp_pan_mac_addr_t *end_array;
     } set_mfilter;
 } btc_pan_args_t;
 
