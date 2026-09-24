@@ -15,9 +15,9 @@ jobs:
         (github.event.label.name == 'PR-Sync-Rebase')  ||
         (github.event.label.name == 'PR-Sync-Update')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Sync approved PRs to internal codebase
-        uses: espressif/github-actions/github_pr_to_internal_pr@master
+        uses: espressif/sync-pr-to-gitlab@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLAB_URL: ${{ secrets.GITLAB_URL }}
