@@ -1471,6 +1471,11 @@ reexecute:
 
       case s_header_value_start:
       {
+        if (UNLIKELY(!lenient && !IS_HEADER_CHAR(ch))) {
+          SET_ERRNO(HPE_INVALID_HEADER_TOKEN);
+          goto error;
+        }
+
         MARK(header_value);
 
         UPDATE_STATE(s_header_value);
@@ -1558,26 +1563,22 @@ reexecute:
           switch (h_state) {
             case h_general:
             {
-              const char* p_cr;
-              const char* p_lf;
-              size_t limit = data + len - p;
+              size_t left = data + len - p;
+              const char* pe = p + MIN(left, HTTP_MAX_HEADER_SIZE);
 
-              limit = MIN(limit, HTTP_MAX_HEADER_SIZE);
-
-              p_cr = (const char*) memchr(p, CR, limit);
-              p_lf = (const char*) memchr(p, LF, limit);
-              if (p_cr != NULL) {
-                if (p_lf != NULL && p_cr >= p_lf)
-                  p = p_lf;
-                else
-                  p = p_cr;
-              } else if (UNLIKELY(p_lf != NULL)) {
-                p = p_lf;
-              } else {
-                p = data + len;
+              for (; p != pe; p++) {
+                ch = *p;
+                if (ch == CR || ch == LF) {
+                  --p;
+                  break;
+                }
+                if (!lenient && !IS_HEADER_CHAR(ch)) {
+                  SET_ERRNO(HPE_INVALID_HEADER_TOKEN);
+                  goto error;
+                }
               }
-              --p;
-
+              if (p == data + len)
+                --p;
               break;
             }
 
