@@ -69,6 +69,7 @@ typedef struct {
     int http_status_code;
     bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
+    bool fragmented_msg_in_progress;    /*!< A data frame with FIN=0 was received, continuation frames are expected */
     esp_transport_handle_t parent;
     char *redir_host;
     char *response_header;
@@ -171,6 +172,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
 
     free(ws->redir_host);
     ws->redir_host = NULL;
+    ws->fragmented_msg_in_progress = false;
 
     if (esp_transport_connect(ws->parent, host, port, timeout_ms) < 0) {
         ESP_LOGE(TAG, "Error connecting to host %s:%d", host, port);
@@ -608,6 +610,21 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
         ESP_LOGE(TAG, "Fragmented control frame detected (opcode=0x%02X, fin=%d) - protocol violation",
                 ws->frame_state.opcode, ws->frame_state.fin);
         return -1;
+    }
+
+    // RFC 6455 Section 5.4: Continuation frames are only valid inside a fragmented message, and a new
+    // data message must not start before it completes. Control frames may be interleaved.
+    if (!(ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME)) {
+        if (ws->frame_state.opcode == WS_OPCODE_CONT && !ws->fragmented_msg_in_progress) {
+            ESP_LOGE(TAG, "Continuation frame without a fragmented message in progress - protocol violation");
+            return -1;
+        }
+        if (ws->frame_state.opcode != WS_OPCODE_CONT && ws->fragmented_msg_in_progress) {
+            ESP_LOGE(TAG, "Data frame (opcode=0x%02X) received before fragmented message completed - protocol violation",
+                     ws->frame_state.opcode);
+            return -1;
+        }
+        ws->fragmented_msg_in_progress = !ws->frame_state.fin;
     }
 
     if (payload_len == 126) {
