@@ -241,25 +241,32 @@ esp_err_t WL_Flash::init()
 esp_err_t WL_Flash::recoverPos()
 {
     esp_err_t result = ESP_OK;
-    size_t position = 0;
     ESP_LOGV(TAG, "%s start", __func__);
-    for (size_t i = 0; i < this->state.wl_part_max_sec_pos; i++) {
+    // Position records are written strictly in order (updateWL() writes record wl_dummy_sec_pos,
+    // then increments it) and the whole state section is erased on wrap-around. So the valid
+    // records always form a prefix, and the first invalid record can be found by binary search
+    // instead of a linear scan, which is very slow on large partitions.
+    size_t lo = 0;                                  // all records before lo are valid
+    size_t hi = this->state.wl_part_max_sec_pos;    // all records from hi on are invalid
+    while (lo < hi) {
+        size_t i = lo + (hi - lo) / 2;
         bool pos_bits;
-        position = i;
         result = this->partition->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
-        pos_bits = this->OkBuffSet(i);
         WL_RESULT_CHECK(result);
-        ESP_LOGV(TAG, "%s - check pos: result=0x%08" PRIx32 ", position= %" PRIu32 ", pos_bits= 0x%08" PRIx32 , __func__, (uint32_t) result, (uint32_t) position, (uint32_t) pos_bits);
-        if (pos_bits == false) {
-            break; // we have found position
+        pos_bits = this->OkBuffSet(i);
+        ESP_LOGV(TAG, "%s - check pos: result=0x%08" PRIx32 ", position= %" PRIu32 ", pos_bits= 0x%08" PRIx32 , __func__, (uint32_t) result, (uint32_t) i, (uint32_t) pos_bits);
+        if (pos_bits) {
+            lo = i + 1;
+        } else {
+            hi = i;
         }
     }
 
-    this->state.wl_dummy_sec_pos = position;
+    this->state.wl_dummy_sec_pos = lo; // first invalid record, or wl_part_max_sec_pos if all are valid
     if (this->state.wl_dummy_sec_pos == this->state.wl_part_max_sec_pos && this->state.wl_dummy_sec_pos != 0) {
         this->state.wl_dummy_sec_pos--;
     }
-    ESP_LOGD(TAG, "%s - this->state.wl_dummy_sec_pos= 0x%08" PRIx32 ", position= 0x%08" PRIx32 ", result= 0x%08" PRIx32 ", wl_part_max_sec_pos= 0x%08" PRIx32 , __func__, (uint32_t)this->state.wl_dummy_sec_pos, (uint32_t)position, (uint32_t)result, (uint32_t)this->state.wl_part_max_sec_pos);
+    ESP_LOGD(TAG, "%s - this->state.wl_dummy_sec_pos= 0x%08" PRIx32 ", position= 0x%08" PRIx32 ", result= 0x%08" PRIx32 ", wl_part_max_sec_pos= 0x%08" PRIx32 , __func__, (uint32_t)this->state.wl_dummy_sec_pos, (uint32_t)lo, (uint32_t)result, (uint32_t)this->state.wl_part_max_sec_pos);
     ESP_LOGV(TAG, "%s done", __func__);
     return result;
 }
