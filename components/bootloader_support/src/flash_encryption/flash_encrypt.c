@@ -473,7 +473,7 @@ esp_err_t esp_flash_encrypt_contents(void)
         return err;
     }
 
-    err = encrypt_and_load_partition_table(ESP_PRIMARY_PARTITION_TABLE_OFFSET, partition_table, &num_partitions);  // PART_SUBTYPE_PARTITION_TABLE_PRIMARY
+    err = encrypt_and_load_partition_table(esp_partition_table_get_offset(), partition_table, &num_partitions);  // PART_SUBTYPE_PARTITION_TABLE_PRIMARY
     if (err != ESP_OK) {
         return err;
     }
@@ -551,8 +551,9 @@ static esp_err_t encrypt_bootloader(void)
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
         /* The image length obtained from esp_image_verify_bootloader includes the sector boundary padding and the signature block lengths */
-        if (image_length > ESP_BOOTLOADER_SIZE) {
-            ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PRIMARY_PARTITION_TABLE_OFFSET);
+        const uint32_t partition_table_offset = esp_partition_table_get_offset();
+        if (image_length > partition_table_offset - ESP_PRIMARY_BOOTLOADER_OFFSET) {
+            ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%" PRIx32 ")", partition_table_offset);
             return ESP_ERR_INVALID_SIZE;
         }
 #endif // CONFIG_SECURE_BOOT_V2_ENABLED

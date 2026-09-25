@@ -156,8 +156,8 @@ menu "Partition Table"
         help
             The offset address of the partition table is, by default, 0x8000, and it starts right after
             the bootloader. This offset can be changed if more space is required for the bootloader.
-            If you change this offset, both the bootloader and the app must be compiled with the same
-            PARTITION_TABLE_OFFSET value.
+            An application reads the offset recorded by the installed bootloader, see
+            PARTITION_TABLE_OFFSET_LEGACY_BOOTLOADER.
 
             This value must be a multiple of 0x1000.
 
@@ -168,6 +168,16 @@ menu "Partition Table"
             Note: If you specify fixed offsets in the partition table CSV (i.e., the offset column is not blank),
             the first partition must start at PARTITION_TABLE_OFFSET + 0x1000, since the partition table occupies
             0x1000 bytes of flash space.
+
+    config PARTITION_TABLE_OFFSET_LEGACY_BOOTLOADER
+        hex "Offset of partition table under bootloaders that do not record it"
+        default PARTITION_TABLE_OFFSET
+        depends on !IDF_TARGET_LINUX
+        help
+            Partition table offset used by an application under a bootloader that does not record its
+            offset, i.e. one built before esp_bootloader_desc_t::partition_table_offset was added.
+
+            This value must be a multiple of 0x1000.
 
     config PARTITION_TABLE_MD5
         bool "Generate an MD5 checksum for the partition table"
