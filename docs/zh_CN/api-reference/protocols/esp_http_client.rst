@@ -225,6 +225,8 @@ ESP HTTP 客户端诊断信息
 
 在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
 
+对于 :cpp:enumerator:`HTTP_EVENT_ERROR <esp_http_client_event_id_t::HTTP_EVENT_ERROR>`，回调处理程序可以从 :cpp:member:`esp_http_client_event_t::error` 中获取失败原因，即失败调用返回的 ``esp_err_t``；该值始终属于处理程序当前接收的事件。事件循环的事件数据仍然是客户端句柄。传输层自身记录的失败信息（包含 TLS 详细信息）仍然可以通过 :cpp:func:`esp_http_client_get_and_clear_last_tls_error` 获取。
+
 TLS 协议版本
 --------------------
 
