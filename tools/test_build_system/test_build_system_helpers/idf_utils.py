@@ -42,7 +42,7 @@ _LOG_ERROR_MARKERS = (
 def _shorten_log_line(line: str, max_line_len: int = 200) -> str:
     if len(line) <= max_line_len:
         return line
-    return line[:max_line_len] + '... [{} chars omitted]'.format(len(line) - max_line_len)
+    return line[:max_line_len] + f'... [{len(line) - max_line_len} chars omitted]'
 
 
 def _failure_lines(text: Optional[str], max_lines: int = 20) -> List[str]:
@@ -75,9 +75,9 @@ def _log_process_failure(
     saved_paths = {}  # type: typing.Dict[str, Path]
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
-        prefix = '{}_{}'.format(command_name, uuid.uuid4().hex)
+        prefix = f'{command_name}_{uuid.uuid4().hex}'
         for stream_name, output in (('stdout', error.stdout), ('stderr', error.stderr)):
-            output_path = log_dir / '{}.{}.txt'.format(prefix, stream_name)
+            output_path = log_dir / f'{prefix}.{stream_name}.txt'
             output_path.write_text(output or '', encoding='utf-8')
             saved_paths[stream_name] = output_path
     except OSError as write_error:
@@ -85,10 +85,10 @@ def _log_process_failure(
 
     message = [
         'The following {} command has failed: {}'.format(command_name, ' '.join(cmd)),
-        'Working directory: {}'.format(workdir),
+        f'Working directory: {workdir}',
     ]
     for stream_name, output_path in saved_paths.items():
-        message.append('Full {}: {}'.format(stream_name, output_path))
+        message.append(f'Full {stream_name}: {output_path}')
     failure_lines = _failure_lines(error.stdout) + _failure_lines(error.stderr)
     if failure_lines:
         message.append('Failure lines:')
@@ -113,15 +113,11 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
     :param idf_path: path of the IDF copy to use
     :return: dictionary of environment variables and their values
     """
-    cmd = [
-        sys.executable,
-        os.path.join(idf_path, 'tools', 'idf_tools.py'),
-        'export',
-        '--format=key-value'
-    ]
+    cmd = [sys.executable, os.path.join(idf_path, 'tools', 'idf_tools.py'), 'export', '--format=key-value']
     keys_values = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode()
-    idf_tool_py_env = {key: os.path.expandvars(value) for key, value in
-                       [line.split('=') for line in keys_values.splitlines()]}
+    idf_tool_py_env = {
+        key: os.path.expandvars(value) for key, value in [line.split('=') for line in keys_values.splitlines()]
+    }
     env_vars = {}  # type: EnvDict
     env_vars.update(os.environ)
     env_vars.update(idf_tool_py_env)
@@ -131,13 +127,15 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
     return env_vars
 
 
-def run_idf_py(*args: str,
-               env: typing.Optional[EnvDict] = None,
-               idf_path: typing.Optional[typing.Union[str,Path]] = None,
-               workdir: typing.Optional[str] = None,
-               check: bool = True,
-               python: typing.Optional[str] = None,
-               input_str: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+def run_idf_py(
+    *args: str,
+    env: typing.Optional[EnvDict] = None,
+    idf_path: typing.Optional[typing.Union[str, Path]] = None,
+    workdir: typing.Optional[str] = None,
+    check: bool = True,
+    python: typing.Optional[str] = None,
+    input_str: typing.Optional[str] = None,
+) -> subprocess.CompletedProcess:
     """
     Run idf.py command with given arguments, raise an exception on failure
     :param args: arguments to pass to idf.py
@@ -160,26 +158,32 @@ def run_idf_py(*args: str,
     if python is None:
         python = find_python(env['PATH'])
 
-    cmd = [
-        python,
-        os.path.join(idf_path, 'tools', 'idf.py')
-    ]
+    cmd = [python, os.path.join(idf_path, 'tools', 'idf.py')]
     cmd += args  # type: ignore
     logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
     try:
         return subprocess.run(
-            cmd, env=env, cwd=workdir,
-            check=check, capture_output=True,
-            text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
+            cmd,
+            env=env,
+            cwd=workdir,
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='backslashreplace',
+            input=input_str,
+        )
     except subprocess.CalledProcessError as e:
         _log_process_failure('idf.py', cmd, workdir, e)
         raise
 
 
-def run_cmake(*cmake_args: str,
-              env: typing.Optional[EnvDict] = None,
-              check: bool = True,
-              workdir: typing.Optional[Union[Path,str]] = None) -> subprocess.CompletedProcess:
+def run_cmake(
+    *cmake_args: str,
+    env: typing.Optional[EnvDict] = None,
+    check: bool = True,
+    workdir: typing.Optional[Union[Path, str]] = None,
+) -> subprocess.CompletedProcess:
     """
     Run cmake command with given arguments, raise an exception on failure
     :param cmake_args: arguments to pass cmake
@@ -193,7 +197,7 @@ def run_cmake(*cmake_args: str,
     if workdir:
         build_dir = Path(workdir, 'build')
     else:
-        build_dir = (Path(os.getcwd()) / 'build')
+        build_dir = Path(os.getcwd()) / 'build'
 
     build_dir.mkdir(parents=True, exist_ok=True)
 
@@ -202,9 +206,15 @@ def run_cmake(*cmake_args: str,
     logging.debug('running {} in {}'.format(' '.join(cmd), build_dir))
     try:
         return subprocess.run(
-            cmd, env=env, cwd=build_dir,
-            check=check, capture_output=True,
-            text=True, encoding='utf-8', errors='backslashreplace')
+            cmd,
+            env=env,
+            cwd=build_dir,
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='backslashreplace',
+        )
     except subprocess.CalledProcessError as e:
         _log_process_failure('cmake', cmd, build_dir, e)
         raise
@@ -226,7 +236,7 @@ def file_contains(filename: Union[str, Path], what: Union[Union[str, Path], Patt
     :param filename: path to file where lookup is executed
     :param what: searched substring or regex object
     """
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, encoding='utf-8') as f:
         data = f.read()
         if isinstance(what, Pattern):
             return re.search(what, data) is not None

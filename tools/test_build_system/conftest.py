@@ -12,8 +12,8 @@ from tempfile import mkdtemp
 import pytest
 from _pytest.fixtures import FixtureRequest
 from test_build_system_helpers import EXT_IDF_PATH
-from test_build_system_helpers import EnvDict
 from test_build_system_helpers import FAILED_COMMAND_LOG_DIR_ENV
+from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import get_idf_build_env
 from test_build_system_helpers import run_idf_py
@@ -151,7 +151,9 @@ def _session_work_dir(request: FixtureRequest) -> typing.Generator[typing.Tuple[
     previous_log_dir = os.environ.get(FAILED_COMMAND_LOG_DIR_ENV)
 
     if work_dir:
-        work_dir_path = Path(work_dir).resolve() / datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')
+        work_dir_path = Path(work_dir).resolve() / datetime.datetime.now(datetime.timezone.utc).strftime(
+            '%Y-%m-%d_%H-%M-%S'
+        )
         logging.debug(f'using work directory: {work_dir_path}')
         os.makedirs(work_dir_path, exist_ok=True)
         clean_dir = None
