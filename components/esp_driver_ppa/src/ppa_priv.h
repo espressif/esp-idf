@@ -173,6 +173,7 @@ typedef struct {
     color_pixel_rgb888_data_t fg_ck_rgb_high_thres;
     color_pixel_rgb888_data_t ck_rgb_default_val;
     bool ck_reverse_bg2fg;
+    bool bypass_blend;
 
     ppa_trans_mode_t mode;
     void *user_data;
