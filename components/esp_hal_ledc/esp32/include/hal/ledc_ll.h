@@ -573,6 +573,20 @@ static inline void ledc_ll_set_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode
 }
 
 /**
+ * @brief Get whether the last duty update or fade is still in progress
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, high-speed mode or low-speed mode
+ * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
+ *
+ * @return True if duty_start has not been self-cleared yet
+ */
+static inline bool ledc_ll_get_duty_start(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
+{
+    return hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start;
+}
+
+/**
  * @brief Set output idle level
  *
  * @param hw Beginning address of the peripheral registers
