@@ -85,6 +85,8 @@ int esp_mbedtls_free_tx_buffer(mbedtls_ssl_context *ssl);
 
 int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl);
 
+void esp_mbedtls_free_bio(mbedtls_ssl_context *ssl);
+
 size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num);
 
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
