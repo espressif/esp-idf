@@ -43,18 +43,26 @@ FORCE_INLINE_ATTR bool esp_tee_ptr_in_ree(const void *p)
     return esp_tee_buf_in_ree(p, 4);
 }
 
-/* NOTE: re-points a REE string argument at a TEE-resident copy */
-FORCE_INLINE_ATTR void tee_snapshot_ree_str(const char **name, char *buf, size_t buf_len)
+/* NOTE: re-points a REE string argument at a TEE-resident copy.
+ * Validating the containing struct does not validate pointers stored inside it, so the
+ * source is range-checked here. Returns false if it is not REE-resident; callers must
+ * reject the request in that case. */
+FORCE_INLINE_ATTR bool tee_snapshot_ree_str(const char **name, char *buf, size_t buf_len)
 {
     const char *src = *name;
     if (src == NULL || buf_len == 0) {
-        return;
+        return true;
+    }
+
+    if (!esp_tee_buf_in_ree(src, buf_len)) {
+        return false;
     }
 
     memcpy(buf, src, buf_len);
     buf[buf_len - 1] = '\0';
 
     *name = buf;
+    return true;
 }
 
 #ifdef __cplusplus
