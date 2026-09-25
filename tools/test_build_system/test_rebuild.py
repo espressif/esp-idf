@@ -191,10 +191,14 @@ def test_rebuild_ldgen_template_change(idf_py: IdfPyFunc, test_app_copy: Path) -
 
     logging.info('initial build')
     idf_py('build')
+    # buildv2 writes sections.ld_<lib>; the compiler also drops
+    # sections.ld_<lib>.obj next to it, which is not text.
     generated_scripts = [
         path
         for path in generated_dir.glob('sections.ld*')
-        if path.name == 'sections.ld' or path.name.startswith('sections.ld_')
+        if path.is_file()
+        and path.suffix not in {'.obj', '.o', '.d'}
+        and (path.name == 'sections.ld' or path.name.startswith('sections.ld_'))
     ]
     assert generated_scripts, 'no generated linker script found'
 
