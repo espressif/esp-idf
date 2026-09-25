@@ -59,15 +59,19 @@ test_tools_win:
   artifacts:
     paths:
       - XUNIT_RESULT.xml
-      - test_build_system
+      - failed_command_logs
     expire_in: 2 days
     when: always
     reports:
       junit: XUNIT_RESULT.xml
   script:
+    # CI_PROJECT_DIR is relative on these runners, so record the job directory
+    # before cd and keep only failed command logs there for artifact upload.
+    - $Env:IDF_TEST_PROJECT_DIR = (Get-Location).Path
+    - $Env:IDF_TEST_FAILED_COMMAND_LOG_DIR = "$Env:IDF_TEST_PROJECT_DIR\failed_command_logs"
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml ${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml "$Env:IDF_TEST_PROJECT_DIR\XUNIT_RESULT.xml" --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 pytest_build_system_win:
   extends:
@@ -90,9 +94,11 @@ pytest_build_system_win_minimal_cmake:
         Write-Error "ERROR: Wrong CMake version! Detected: $actualVersion, but expected: $Env:MINIMAL_CMAKE_VERSION"
         exit 1
       }
+    - $Env:IDF_TEST_PROJECT_DIR = (Get-Location).Path
+    - $Env:IDF_TEST_FAILED_COMMAND_LOG_DIR = "$Env:IDF_TEST_PROJECT_DIR\failed_command_logs"
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest -k cmake --junitxml ${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest -k cmake --junitxml "$Env:IDF_TEST_PROJECT_DIR\XUNIT_RESULT.xml" --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 pytest_buildv2_system_win:
   extends:
@@ -100,11 +106,13 @@ pytest_buildv2_system_win:
     - .rules:labels:buildv2
   parallel: 2
   script:
+    - $Env:IDF_TEST_PROJECT_DIR = (Get-Location).Path
+    - $Env:IDF_TEST_FAILED_COMMAND_LOG_DIR = "$Env:IDF_TEST_PROJECT_DIR\failed_command_logs"
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - pytest
       --buildv2
       --parallel-count ${CI_NODE_TOTAL}
       --parallel-index ${CI_NODE_INDEX}
-      --junitxml ${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+      --junitxml "$Env:IDF_TEST_PROJECT_DIR\XUNIT_RESULT.xml"
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
