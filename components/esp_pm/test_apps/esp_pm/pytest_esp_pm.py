@@ -12,8 +12,11 @@ from pytest_embedded_idf.utils import idf_parametrize
 # When CONFIG_PM_ENABLE is set, the link must resolve to the strong (pm_impl.o)
 # definitions. Verified post-build via the app .map cross-reference section,
 # e.g. "esp_pm_impl_idle_hook  esp-idf/esp_pm/libesp_pm.a(pm_impl.c.obj)".
+# The init_pm startup registration in pm_impl.c must also be linked: its
+# ESP_SYSTEM_INIT_FN table entry lands in the priority-201 init section.
 _PM_HOOK_SYMBOLS = ('esp_pm_impl_idle_hook', 'esp_pm_impl_waiti')
 _PM_TICKLESS_SYMBOLS = ('esp_pm_impl_tickless_waiti',)
+_PM_INIT_SECTION = '.esysev_inits.201'
 
 
 def _map_symbol_providers(map_path: str, symbol: str) -> list[str]:
@@ -24,6 +27,36 @@ def _map_symbol_providers(map_path: str, symbol: str) -> list[str]:
             m = pat.match(line.rstrip())
             if m:
                 providers.append(m.group(1).strip())
+    return providers
+
+
+def _map_linked_section_providers(map_path: str, section: str) -> list[str]:
+    # Only look at the linked memory map, not at "Discarded input sections".
+    # A section name is followed by "<address> <size> <object>", either on the
+    # same line or, for long names, on the next one.
+    providers: list[str] = []
+    placement = re.compile(r'^\s+0x[0-9a-f]+\s+0x[0-9a-f]+\s+(\S.*)$')
+    in_memory_map = False
+    pending = False
+    with open(map_path) as f:
+        for line in f:
+            line = line.rstrip()
+            if line.startswith('Linker script and memory map'):
+                in_memory_map = True
+                continue
+            if not in_memory_map:
+                continue
+            if pending:
+                m = placement.match(line)
+                if m:
+                    providers.append(m.group(1).strip())
+                pending = False
+            fields = line.split()
+            if fields and fields[0] == section:
+                if len(fields) >= 4:
+                    providers.append(' '.join(fields[3:]))
+                else:
+                    pending = True
     return providers
 
 
@@ -42,9 +75,14 @@ def _assert_strong_pm_hooks(dut: Dut) -> None:
         assert not any('freertos_hooks' in p for p in providers), (
             f'{sym} wrongly provided by freertos_hooks.o: {providers}'
         )
+    providers = _map_linked_section_providers(map_file, _PM_INIT_SECTION)
+    assert any('pm_impl' in p for p in providers), (
+        f'init_pm registration from pm_impl.o not linked into {_PM_INIT_SECTION}: {providers}'
+    )
 
 
 @pytest.mark.generic
+@pytest.mark.require_elf
 @pytest.mark.parametrize(
     'config',
     [
@@ -100,6 +138,7 @@ def test_esp_pd_top_and_cpu_sleep(dut: Dut) -> None:
 
 # Tickless IDLE without lightsleep
 @pytest.mark.generic
+@pytest.mark.require_elf
 @pytest.mark.parametrize(
     'config',
     ['tickless_waiti'],
