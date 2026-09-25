@@ -151,6 +151,14 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
     }
 
     struct httpd_data *hd = (struct httpd_data *) handle;
+
+    /* Once shutdown has begun the server task may exit before this message is
+     * drained, so refuse the work rather than accepting it and dropping it: the
+     * caller keeps ownership of whatever `arg` points to. */
+    if (hd->hd_td.status == THREAD_STOPPING || hd->hd_td.status == THREAD_STOPPED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     struct httpd_ctrl_data msg = {
         .hc_msg = HTTPD_CTRL_WORK,
         .hc_work = work,
@@ -277,24 +285,39 @@ static int httpd_process_session(struct sock_db *session, void *context)
 /* Manage in-coming connection or data requests */
 static esp_err_t httpd_server(struct httpd_data *hd)
 {
+    /* Once shutdown has been requested, stop servicing sessions and accepting
+     * new connections and only drain the control socket. This lets work
+     * functions that were queued (possibly after the shutdown message itself)
+     * still run and free the resources they own instead of being dropped. The
+     * thread exits once the control socket has been fully drained. */
+    bool stopping = (hd->hd_td.status == THREAD_STOPPING);
+
     fd_set read_set;
     FD_ZERO(&read_set);
-    if (hd->config.lru_purge_enable || httpd_is_sess_available(hd)) {
-        /* Only listen for new connections if server has capacity to
-         * handle more (or when LRU purge is enabled, in which case
-         * older connections will be closed) */
-        FD_SET(hd->listen_fd, &read_set);
-    }
     FD_SET(hd->ctrl_fd, &read_set);
+    int maxfd = hd->ctrl_fd;
 
-    int tmp_max_fd;
-    httpd_sess_set_descriptors(hd, &read_set, &tmp_max_fd);
-    int maxfd = MAX(hd->listen_fd, tmp_max_fd);
-    tmp_max_fd = maxfd;
-    maxfd = MAX(hd->ctrl_fd, tmp_max_fd);
+    if (!stopping) {
+        if (hd->config.lru_purge_enable || httpd_is_sess_available(hd)) {
+            /* Only listen for new connections if server has capacity to
+             * handle more (or when LRU purge is enabled, in which case
+             * older connections will be closed) */
+            FD_SET(hd->listen_fd, &read_set);
+        }
+
+        int tmp_max_fd;
+        httpd_sess_set_descriptors(hd, &read_set, &tmp_max_fd);
+        maxfd = MAX(maxfd, MAX(hd->listen_fd, tmp_max_fd));
+    }
+
+    /* While running, block until there is activity. While stopping, poll
+     * without blocking so that an empty control socket reports as no activity
+     * and signals that draining is complete. */
+    struct timeval  drain_timeout = { .tv_sec = 0, .tv_usec = 0 };
+    struct timeval *timeout = stopping ? &drain_timeout : NULL;
 
     ESP_LOGD(TAG, LOG_FMT("doing select maxfd+1 = %d"), maxfd + 1);
-    int active_cnt = select(maxfd + 1, &read_set, NULL, NULL, NULL);
+    int active_cnt = select(maxfd + 1, &read_set, NULL, NULL, timeout);
     if (active_cnt < 0) {
         ESP_LOGE(TAG, LOG_FMT("error in select (%d)"), errno);
         httpd_sess_delete_invalid(hd);
@@ -305,10 +328,21 @@ static esp_err_t httpd_server(struct httpd_data *hd)
     if (FD_ISSET(hd->ctrl_fd, &read_set)) {
         ESP_LOGD(TAG, LOG_FMT("processing ctrl message"));
         httpd_process_ctrl_msg(hd);
-        if (hd->hd_td.status == THREAD_STOPPING) {
+    }
+
+    /* Re-read the status: the control message just processed may have been the
+     * shutdown request itself, in which case `stopping` is still stale. */
+    stopping = (hd->hd_td.status == THREAD_STOPPING);
+
+    /* If shutdown has been requested (now, or on an earlier iteration), keep
+     * looping to drain the control socket and only exit once it is empty, so
+     * no queued work is left unexecuted. */
+    if (stopping) {
+        if (active_cnt == 0) {
             ESP_LOGD(TAG, LOG_FMT("stopping thread"));
             return ESP_FAIL;
         }
+        return ESP_OK;
     }
 
     /* Case1: Do we have any activity on the current data
