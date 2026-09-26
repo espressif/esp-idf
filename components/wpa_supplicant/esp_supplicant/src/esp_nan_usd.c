@@ -15,29 +15,64 @@
 
 struct nan_de *g_nan_de = NULL;
 
-static void *s_nan_usd_data_lock = NULL;
-#define NAN_USD_DATA_LOCK() os_mutex_lock(s_nan_usd_data_lock)
-#define NAN_USD_DATA_UNLOCK() os_mutex_unlock(s_nan_usd_data_lock)
+/* One cached peer per service for get_peer_* (match, reply, or follow-up).
+ * Independent of nan_de pauseState (sel_peer_*), which has a ~60s lifetime.
+ * Peer cache and g_nan_de are only touched on the wifi/eloop task. */
+struct nan_usd_peer {
+    bool valid;
+    u8 own_svc_id;
+    u8 peer_svc_id;
+    u8 peer_addr[ETH_ALEN];
+    u8 peer_svc_type;
+};
 
-static bool nan_usd_try_lock_active(struct nan_de **nan_de)
+static struct nan_usd_peer s_nan_usd_peers[NAN_DE_MAX_SERVICE];
+
+static void nan_usd_clear_peer(int own_svc_id)
 {
-    if (!s_nan_usd_data_lock) {
-        return false;
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE) {
+        return;
     }
-
-    NAN_USD_DATA_LOCK();
-    if (!g_nan_de) {
-        NAN_USD_DATA_UNLOCK();
-        return false;
-    }
-
-    *nan_de = g_nan_de;
-    return true;
+    os_memset(&s_nan_usd_peers[own_svc_id - 1], 0, sizeof(s_nan_usd_peers[0]));
 }
 
-#ifdef DEBUG_PRINT
+static void nan_usd_clear_all_peers(void)
+{
+    os_memset(s_nan_usd_peers, 0, sizeof(s_nan_usd_peers));
+}
+
+static void nan_usd_save_peer(int own_svc_id, int peer_svc_id, const u8 *peer_addr,
+                              u8 peer_svc_type)
+{
+    struct nan_usd_peer *peer;
+
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE || !peer_addr) {
+        return;
+    }
+
+    /* Keep the latest match, reply, or follow-up peer. */
+    peer = &s_nan_usd_peers[own_svc_id - 1];
+    peer->valid = true;
+    peer->own_svc_id = (u8)own_svc_id;
+    peer->peer_svc_id = (u8)peer_svc_id;
+    os_memcpy(peer->peer_addr, peer_addr, ETH_ALEN);
+    peer->peer_svc_type = peer_svc_type;
+}
+
+static const struct nan_usd_peer *nan_usd_get_peer(int own_svc_id)
+{
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE) {
+        return NULL;
+    }
+    if (!s_nan_usd_peers[own_svc_id - 1].valid) {
+        return NULL;
+    }
+    return &s_nan_usd_peers[own_svc_id - 1];
+}
+
 static const char *nan_reason_txt(enum nan_de_reason reason)
 {
+#ifdef DEBUG_PRINT
     switch (reason) {
     case NAN_DE_REASON_TIMEOUT:
         return "timeout";
@@ -48,8 +83,11 @@ static const char *nan_reason_txt(enum nan_de_reason reason)
     }
 
     return "unknown";
-}
+#else
+    (void)reason;
+    return "";
 #endif /* DEBUG_PRINT */
+}
 static void nan_sta_stop_handler(void *arg, esp_event_base_t event_base,
                                  int32_t event_id, void *event_data)
 {
@@ -99,10 +137,76 @@ static int esp_nan_freq_to_chan(int freq)
     return -1;
 }
 
+enum {
+    NAN_USD_EVT_TX_DONE = 1,
+    NAN_USD_EVT_TX_WAIT_ENDED,
+    NAN_USD_EVT_LISTEN_ENDED,
+};
+
+/* Bumped on deinit so late eloop work from a prior session is dropped. */
+static uint32_t s_nan_usd_session;
+
+struct nan_usd_wifi_evt_ctx {
+    uint32_t session;
+    int type;
+    unsigned int freq;
+};
+
+struct nan_usd_rx_ctx {
+    uint32_t session;
+    u8 peer_addr[ETH_ALEN];
+    u8 a3[ETH_ALEN];
+    unsigned int freq;
+    size_t len;
+    u8 buf[];
+};
+
+static void nan_usd_wifi_evt_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_wifi_evt_ctx *ctx = user_ctx;
+
+    (void)eloop_data;
+
+    if (g_nan_de && ctx->session == s_nan_usd_session) {
+        switch (ctx->type) {
+        case NAN_USD_EVT_TX_DONE:
+            nan_de_tx_status(g_nan_de, ctx->freq, NULL);
+            break;
+        case NAN_USD_EVT_TX_WAIT_ENDED:
+            nan_de_tx_wait_ended(g_nan_de);
+            break;
+        case NAN_USD_EVT_LISTEN_ENDED:
+            nan_de_listen_ended(g_nan_de, ctx->freq);
+            break;
+        default:
+            break;
+        }
+    }
+    os_free(ctx);
+}
+
+static int nan_usd_post_wifi_evt(int type, unsigned int freq)
+{
+    struct nan_usd_wifi_evt_ctx *ctx = os_zalloc(sizeof(*ctx));
+
+    if (!ctx) {
+        return ESP_ERR_NO_MEM;
+    }
+    ctx->session = s_nan_usd_session;
+    ctx->type = type;
+    ctx->freq = freq;
+    if (eloop_register_timeout(0, 0, nan_usd_wifi_evt_internal, NULL, ctx) != 0) {
+        os_free(ctx);
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
 static void nan_de_tx_event_handler(void *arg, esp_event_base_t event_base,
                                     int32_t event_id, void *event_data)
 {
-    struct nan_de *nan_de = NULL;
+    (void)arg;
+    (void)event_base;
 
     if (event_id == WIFI_EVENT_ACTION_TX_STATUS) {
         wifi_event_action_tx_status_t *evt = (wifi_event_action_tx_status_t *)event_data;
@@ -112,17 +216,9 @@ static void nan_de_tx_event_handler(void *arg, esp_event_base_t event_base,
                 wpa_printf(MSG_ERROR, "Invalid channel received from Action Tx handler");
                 return;
             }
-            if (!nan_usd_try_lock_active(&nan_de)) {
-                return;
-            }
-            nan_de_tx_status(nan_de, freq, NULL);
-            NAN_USD_DATA_UNLOCK();
+            nan_usd_post_wifi_evt(NAN_USD_EVT_TX_DONE, freq);
         } else if (evt->status == WIFI_ACTION_TX_DURATION_COMPLETED) {
-            if (!nan_usd_try_lock_active(&nan_de)) {
-                return;
-            }
-            nan_de_tx_wait_ended(nan_de);
-            NAN_USD_DATA_UNLOCK();
+            nan_usd_post_wifi_evt(NAN_USD_EVT_TX_WAIT_ENDED, 0);
         }
     } else if (event_id == WIFI_EVENT_ROC_DONE) {
         wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
@@ -131,19 +227,33 @@ static void nan_de_tx_event_handler(void *arg, esp_event_base_t event_base,
             wpa_printf(MSG_ERROR, "Invalid channel received from ROC done handler");
             return;
         }
-        if (!nan_usd_try_lock_active(&nan_de)) {
-            return;
-        }
-        nan_de_listen_ended(nan_de, freq);
-        NAN_USD_DATA_UNLOCK();
+        nan_usd_post_wifi_evt(NAN_USD_EVT_LISTEN_ENDED, freq);
     }
+}
+
+static void nan_usd_rx_sdf_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_rx_ctx *ctx = user_ctx;
+
+    (void)eloop_data;
+
+    if (g_nan_de && ctx->session == s_nan_usd_session) {
+        nan_de_rx_sdf(g_nan_de, ctx->peer_addr, ctx->a3, ctx->freq, ctx->buf, ctx->len);
+    }
+    os_free(ctx);
 }
 
 int esp_nan_de_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel)
 {
     struct ieee80211_hdr *rx_hdr = (struct ieee80211_hdr *)hdr;
-    struct nan_de *nan_de = NULL;
+    struct nan_usd_rx_ctx *ctx;
     int freq;
+    uint8_t category;
+    uint8_t public_action;
+    uint32_t oui_value;
+    uint8_t oui_type;
+    const u8 *sdf;
+    size_t sdf_len;
 
     if (len < 6) {
         /* Frame too short for NAN-SDF frame */
@@ -156,18 +266,15 @@ int esp_nan_de_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t cha
      * WFA subtype - 1 byte
      * NAN PROTOCOL - Variable */
 
-    uint8_t category = *payload++;
-    uint8_t public_action = *payload++;
-    uint32_t oui_value = WPA_GET_BE24(payload);
-    payload += 3;
-    uint8_t oui_type = *payload++;
+    category = payload[0];
+    public_action = payload[1];
+    oui_value = WPA_GET_BE24(&payload[2]);
+    oui_type = payload[5];
 
-    if (category == WLAN_ACTION_PUBLIC &&
+    if (!(category == WLAN_ACTION_PUBLIC &&
             public_action == WLAN_PA_VENDOR_SPECIFIC &&
             oui_value == OUI_WFA &&
-            oui_type == NAN_OUI_TYPE) {
-        /* Received a valid NAN Service Discovery Frame */
-    } else {
+            oui_type == NAN_OUI_TYPE)) {
         /* Frame is not a NAN SDF frame */
         return ESP_FAIL;
     }
@@ -178,11 +285,25 @@ int esp_nan_de_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t cha
         return ESP_FAIL;
     }
 
-    if (!nan_usd_try_lock_active(&nan_de)) {
-        return ESP_FAIL;
+    sdf = payload + 6;
+    sdf_len = len - 6;
+    ctx = os_zalloc(sizeof(*ctx) + sdf_len);
+    if (!ctx) {
+        return ESP_ERR_NO_MEM;
     }
-    nan_de_rx_sdf(nan_de, rx_hdr->addr2, rx_hdr->addr3, freq, payload, len - 6);
-    NAN_USD_DATA_UNLOCK();
+    ctx->session = s_nan_usd_session;
+    os_memcpy(ctx->peer_addr, rx_hdr->addr2, ETH_ALEN);
+    os_memcpy(ctx->a3, rx_hdr->addr3, ETH_ALEN);
+    ctx->freq = freq;
+    ctx->len = sdf_len;
+    if (sdf_len) {
+        os_memcpy(ctx->buf, sdf, sdf_len);
+    }
+
+    if (eloop_register_timeout(0, 0, nan_usd_rx_sdf_internal, NULL, ctx) != 0) {
+        os_free(ctx);
+        return ESP_ERR_NO_MEM;
+    }
     return ESP_OK;
 }
 
@@ -256,9 +377,9 @@ static int esp_nan_de_listen(void *ctx, unsigned int freq, unsigned int duration
         return ESP_FAIL;
     }
 
-    NAN_USD_DATA_LOCK();
-    nan_de_listen_started(g_nan_de, freq, duration);
-    NAN_USD_DATA_UNLOCK();
+    if (g_nan_de) {
+        nan_de_listen_started(g_nan_de, freq, duration);
+    }
     os_free(req);
     return ESP_OK;
 }
@@ -268,6 +389,9 @@ static void esp_nan_de_discovery_result(void *ctx, int subscribe_id, enum nan_se
 {
     wpa_printf(MSG_INFO, "NAN_USD DISCOVERY_RESULT - subscribe_id = %d peer_publish_id = %d peer_address = "MACSTR" service_protocol_type = %d",
                subscribe_id, peer_publish_id, MAC2STR(peer_addr), srv_proto_type);
+
+    /* Cache peer for get_peer_* (subscriber path); do not touch pauseState. */
+    nan_usd_save_peer(subscribe_id, peer_publish_id, peer_addr, ESP_NAN_PUBLISH);
 
     wifi_event_nan_svc_match_t *evt = os_zalloc(sizeof(wifi_event_nan_svc_match_t) + ssi_len);
     if (evt == NULL) {
@@ -293,6 +417,9 @@ static void esp_nan_de_replied(void *ctx, int publish_id, const u8 *peer_addr,
     wpa_printf(MSG_INFO, "NAN_USD REPLIED - publish_id = %d peer_subscribe_id = %d peer_address = "MACSTR" service_protocol_type = %d",
                publish_id, peer_subscribe_id, MAC2STR(peer_addr), srv_proto_type);
 
+    /* Cache peer for get_peer_* (publisher path); do not touch pauseState. */
+    nan_usd_save_peer(publish_id, peer_subscribe_id, peer_addr, ESP_NAN_SUBSCRIBE);
+
     wifi_event_nan_replied_t *evt = os_zalloc(sizeof(wifi_event_nan_replied_t) + ssi_len);
     if (evt == NULL) {
         return;
@@ -312,19 +439,31 @@ static void esp_nan_de_publish_terminated(void *ctx, int publish_id,
                                           enum nan_de_reason reason)
 {
     wpa_printf(MSG_INFO, "NAN_USD PUBLISH_TERMINATED - publish_id = %d reason = %s", publish_id, nan_reason_txt(reason));
+    nan_usd_clear_peer(publish_id);
 }
 
 static void esp_nan_de_subscribe_terminated(void *ctx, int subscribe_id,
                                             enum nan_de_reason reason)
 {
     wpa_printf(MSG_INFO, "NAN_USD SUBSCRIBE_TERMINATED - subscribe_id = %d reason = %s", subscribe_id, nan_reason_txt(reason));
+    nan_usd_clear_peer(subscribe_id);
 }
 
 static void esp_nan_de_receive(void *ctx, int id, int peer_instance_id,
                                const u8 *ssi, size_t ssi_len,
                                const u8 *peer_addr)
 {
+    int own_type;
+
     wpa_hexdump(MSG_INFO, "NAN_RECEIVE", ssi, ssi_len);
+
+    /* Passive subscribe replies with a Follow-up, so cache the opposite role here. */
+    own_type = g_nan_de ? nan_de_get_service_type(g_nan_de, id) : -1;
+    if (own_type >= 0) {
+        u8 peer_svc_type = (own_type == 0) ? ESP_NAN_SUBSCRIBE : ESP_NAN_PUBLISH;
+
+        nan_usd_save_peer(id, peer_instance_id, peer_addr, peer_svc_type);
+    }
 
     wifi_event_nan_receive_t *evt = os_zalloc(sizeof(wifi_event_nan_receive_t) + ssi_len);
     if (evt == NULL) {
@@ -341,31 +480,59 @@ static void esp_nan_de_receive(void *ctx, int id, int peer_instance_id,
     os_free(evt);
 }
 
-esp_err_t esp_nan_usd_deinit()
+static void nan_usd_register_wifi_events(void)
+{
+    esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
+                               &nan_de_tx_event_handler, NULL);
+    esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
+                               &nan_de_tx_event_handler, NULL);
+    esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_STOP,
+                               &nan_sta_stop_handler, NULL);
+}
+
+static void nan_usd_unregister_wifi_events(void)
 {
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS, &nan_de_tx_event_handler);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE, &nan_de_tx_event_handler);
-    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP,
-                                 &nan_sta_stop_handler);
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP, &nan_sta_stop_handler);
+}
 
-    if (!s_nan_usd_data_lock) {
-        return ESP_FAIL;
-    }
+static int esp_nan_usd_deinit_internal(void *eloop_data, void *user_ctx)
+{
+    (void)eloop_data;
+    (void)user_ctx;
 
-    NAN_USD_DATA_LOCK();
+    s_nan_usd_session++;
+
     if (!g_nan_de) {
-        NAN_USD_DATA_UNLOCK();
-        return ESP_FAIL;
+        return ESP_OK;
     }
 
     nan_de_deinit(g_nan_de);
     g_nan_de = NULL;
-    NAN_USD_DATA_UNLOCK();
-
+    nan_usd_clear_all_peers();
     return ESP_OK;
 }
 
-esp_err_t esp_nan_usd_init(void)
+esp_err_t esp_nan_usd_deinit(void)
+{
+    int ret;
+
+    /*
+     * Unregister on the caller task before blocking on eloop. WIFI_EVENT
+     * handlers (e.g. STA_STOP) run on the default event task while that task
+     * holds the event-loop mutex; unregistering from eloop while that handler
+     * waits on eloop_register_timeout_blocking deadlocks.
+     */
+    nan_usd_unregister_wifi_events();
+    ret = eloop_register_timeout_blocking(esp_nan_usd_deinit_internal, NULL, NULL);
+    if (ret != ESP_OK) {
+        nan_usd_register_wifi_events();
+    }
+    return ret;
+}
+
+static int esp_nan_usd_init_internal(void *eloop_data, void *user_ctx)
 {
     struct nan_callbacks cb;
     uint8_t mac[ETH_ALEN];
@@ -375,6 +542,13 @@ esp_err_t esp_nan_usd_init(void)
     bool offload = false;
 #endif
     int max_listen = 1000; // default supplicant value; hardcoded for now
+
+    (void)eloop_data;
+    (void)user_ctx;
+
+    if (g_nan_de) {
+        return ESP_OK;
+    }
 
     os_memset(&cb, 0, sizeof(cb));
     cb.ctx = NULL;
@@ -386,27 +560,29 @@ esp_err_t esp_nan_usd_init(void)
     cb.subscribe_terminated = esp_nan_de_subscribe_terminated;
     cb.receive = esp_nan_de_receive;
 
-    if (!s_nan_usd_data_lock) {
-        s_nan_usd_data_lock = os_recursive_mutex_create();
-        if (!s_nan_usd_data_lock) {
-            ESP_LOGE("NAN-USD", "Failed to create NAN-USD data lock");
-            return  ESP_FAIL;
-        }
+    if (esp_wifi_get_mac(WIFI_IF_STA, mac) != ESP_OK) {
+        wpa_printf(MSG_ERROR, "NAN-USD: Fetching MAC of STA ifx failed");
+        return ESP_FAIL;
     }
-
-    ESP_RETURN_ON_ERROR(esp_wifi_get_mac(WIFI_IF_STA, mac), "NAN-USD", "Fetching MAC of STA ifx failed");
     g_nan_de = nan_de_init(mac, offload, false, max_listen, &cb);
     if (!g_nan_de) {
         return ESP_FAIL;
     }
-    esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
-                               &nan_de_tx_event_handler, NULL);
-    esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
-                               &nan_de_tx_event_handler, NULL);
-    esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_STOP,
-                               &nan_sta_stop_handler, NULL);
 
     return ESP_OK;
+}
+
+esp_err_t esp_nan_usd_init(void)
+{
+    int ret;
+
+    ret = eloop_register_timeout_blocking(esp_nan_usd_init_internal, NULL, NULL);
+    if (ret == ESP_OK) {
+        nan_usd_register_wifi_events();
+    } else {
+        nan_usd_unregister_wifi_events();
+    }
+    return ret;
 }
 
 int esp_nan_get_freq_list(int *freq_list, const uint8_t *chan_list, uint8_t chan_list_len)
@@ -439,9 +615,8 @@ static int esp_nan_usd_publish_internal(const char *service_name, enum nan_servi
     uint32_t channel_5ghz_bitmap;
 #endif
 
-    NAN_USD_DATA_LOCK();
     if (!g_nan_de) {
-        goto fail;
+        return -1;
     }
 
     pub_params.ttl = ttl;
@@ -449,7 +624,7 @@ static int esp_nan_usd_publish_internal(const char *service_name, enum nan_servi
         buf = wpabuf_alloc(ssi_len);
         if (!buf) {
             wpa_printf(MSG_ERROR, "Allocating memory failed for NaN-USD Publish");
-            goto fail;
+            return -1;
         }
         wpabuf_put_data(buf, ssi, ssi_len);
     }
@@ -500,71 +675,103 @@ static int esp_nan_usd_publish_internal(const char *service_name, enum nan_servi
         } else {
             wpa_printf(MSG_ERROR, "Allocating memory failed for frequency list");
             wpabuf_free(buf);
-            goto fail;
+            return -1;
         }
     }
 
     publish_id = nan_de_publish(g_nan_de, service_name, srv_proto_type,
                                 buf, NULL, &pub_params, p2p);
+    if (publish_id > 0) {
+        nan_usd_clear_peer(publish_id);
+    }
 
     wpabuf_free(buf);
     if (freq_list) {
         os_free(freq_list);
     }
-    NAN_USD_DATA_UNLOCK();
     return publish_id;
-fail:
-    NAN_USD_DATA_UNLOCK();
-    return -1;
 }
 
-int esp_nan_usd_publish(const wifi_nan_publish_cfg_t *publish_cfg)
+static int nan_usd_publish_on_eloop(void *eloop_data, void *user_ctx)
 {
+    const wifi_nan_publish_cfg_t *publish_cfg = user_ctx;
+
+    (void)eloop_data;
     return esp_nan_usd_publish_internal(publish_cfg->service_name, WIFI_SVC_PROTO_RESERVED,
                                         publish_cfg->ttl, publish_cfg->ssi,
                                         publish_cfg->ssi_len, publish_cfg->usd_publish_config.usd_default_channel,
                                         publish_cfg->usd_publish_config.usd_chan_bitmap);
 }
 
-esp_err_t esp_nan_usd_update_publish(int publish_id, uint8_t *ssi, uint16_t ssi_len)
+int esp_nan_usd_publish(const wifi_nan_publish_cfg_t *publish_cfg)
 {
+    if (!publish_cfg) {
+        return -1;
+    }
+    return eloop_register_timeout_blocking(nan_usd_publish_on_eloop, NULL, (void *)publish_cfg);
+}
+
+struct nan_usd_update_publish_ctx {
+    int publish_id;
+    uint8_t *ssi;
+    uint16_t ssi_len;
+};
+
+static int nan_usd_update_publish_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_update_publish_ctx *ctx = user_ctx;
     struct wpabuf *buf = NULL;
     esp_err_t ret;
 
-    NAN_USD_DATA_LOCK();
+    (void)eloop_data;
+
     if (!g_nan_de) {
-        goto fail;
+        return ESP_FAIL;
     }
 
-    if (ssi && ssi_len) {
-        buf = wpabuf_alloc(ssi_len);
+    if (ctx->ssi && ctx->ssi_len) {
+        buf = wpabuf_alloc(ctx->ssi_len);
         if (!buf) {
             wpa_printf(MSG_ERROR, "Allocating memory failed for NaN-USD Update Publish");
-            goto fail;
+            return ESP_FAIL;
         }
-        wpabuf_put_data(buf, ssi, ssi_len);
+        wpabuf_put_data(buf, ctx->ssi, ctx->ssi_len);
     }
 
-    ret = nan_de_update_publish(g_nan_de, publish_id, buf);
+    ret = nan_de_update_publish(g_nan_de, ctx->publish_id, buf);
     wpabuf_free(buf);
-    NAN_USD_DATA_UNLOCK();
     return ret;
-fail:
-    NAN_USD_DATA_UNLOCK();
-    return ESP_FAIL;
 }
 
-esp_err_t esp_nan_usd_cancel_publish(int publish_id)
+esp_err_t esp_nan_usd_update_publish(int publish_id, uint8_t *ssi, uint16_t ssi_len)
 {
-    NAN_USD_DATA_LOCK();
+    struct nan_usd_update_publish_ctx ctx = {
+        .publish_id = publish_id,
+        .ssi = ssi,
+        .ssi_len = ssi_len,
+    };
+
+    return eloop_register_timeout_blocking(nan_usd_update_publish_internal, NULL, &ctx);
+}
+
+static int nan_usd_cancel_publish_internal(void *eloop_data, void *user_ctx)
+{
+    int publish_id = *(int *)user_ctx;
+
+    (void)eloop_data;
+
     if (!g_nan_de) {
-        NAN_USD_DATA_UNLOCK();
         return ESP_FAIL;
     }
 
     nan_de_cancel_publish(g_nan_de, publish_id);
-    NAN_USD_DATA_UNLOCK();
+    nan_usd_clear_peer(publish_id);
     return ESP_OK;
+}
+
+esp_err_t esp_nan_usd_cancel_publish(int publish_id)
+{
+    return eloop_register_timeout_blocking(nan_usd_cancel_publish_internal, NULL, &publish_id);
 }
 
 /* Note: Our USD implementation uses the Service Protocol Type provided in SSI.
@@ -585,9 +792,8 @@ static int esp_nan_usd_subscribe_internal(const char *service_name, enum nan_ser
     uint8_t bitmap_idx_2g = 1; // BIT-0 is not used in channel bitmap
     uint16_t channel_2ghz_bitmap;
 
-    NAN_USD_DATA_LOCK();
     if (!g_nan_de) {
-        goto fail;
+        return -1;
     }
 
     sub_params.ttl = ttl;
@@ -602,7 +808,7 @@ static int esp_nan_usd_subscribe_internal(const char *service_name, enum nan_ser
         buf = wpabuf_alloc(ssi_len);
         if (!buf) {
             wpa_printf(MSG_ERROR, "Allocating memory failed for NaN-USD Subscribe");
-            goto fail;
+            return -1;
         }
         wpabuf_put_data(buf, ssi, ssi_len);
     }
@@ -627,81 +833,317 @@ static int esp_nan_usd_subscribe_internal(const char *service_name, enum nan_ser
         } else {
             wpa_printf(MSG_ERROR, "Allocating memory failed for frequency list");
             wpabuf_free(buf);
-            goto fail;
+            return -1;
         }
     }
 
     subscribe_id = nan_de_subscribe(g_nan_de, service_name, srv_proto_type, buf, NULL, &sub_params, p2p);
+    if (subscribe_id > 0) {
+        nan_usd_clear_peer(subscribe_id);
+    }
 
     wpabuf_free(buf);
     if (freq_list) {
         os_free(freq_list);
     }
-    NAN_USD_DATA_UNLOCK();
     return subscribe_id;
-fail:
-    NAN_USD_DATA_UNLOCK();
-    return -1;
 }
 
-int esp_nan_usd_subscribe(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
+static int nan_usd_subscribe_on_eloop(void *eloop_data, void *user_ctx)
 {
+    const wifi_nan_subscribe_cfg_t *subscribe_cfg = user_ctx;
+
+    (void)eloop_data;
     return esp_nan_usd_subscribe_internal(subscribe_cfg->service_name, WIFI_SVC_PROTO_RESERVED, subscribe_cfg->ttl,
                                           subscribe_cfg->usd_subscribe_config.usd_default_channel, subscribe_cfg->ssi, subscribe_cfg->ssi_len,
                                           subscribe_cfg->usd_subscribe_config.usd_chan_bitmap);
 }
 
-esp_err_t esp_nan_usd_cancel_subscribe(int subscribe_id)
+int esp_nan_usd_subscribe(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
 {
-    NAN_USD_DATA_LOCK();
+    if (!subscribe_cfg) {
+        return -1;
+    }
+    return eloop_register_timeout_blocking(nan_usd_subscribe_on_eloop, NULL, (void *)subscribe_cfg);
+}
+
+static int nan_usd_cancel_subscribe_internal(void *eloop_data, void *user_ctx)
+{
+    int subscribe_id = *(int *)user_ctx;
+
+    (void)eloop_data;
+
     if (!g_nan_de) {
-        NAN_USD_DATA_UNLOCK();
         return ESP_FAIL;
     }
 
     nan_de_cancel_subscribe(g_nan_de, subscribe_id);
-    NAN_USD_DATA_UNLOCK();
+    nan_usd_clear_peer(subscribe_id);
+    return ESP_OK;
+}
+
+esp_err_t esp_nan_usd_cancel_subscribe(int subscribe_id)
+{
+    return eloop_register_timeout_blocking(nan_usd_cancel_subscribe_internal, NULL, &subscribe_id);
+}
+
+static int nan_usd_cancel_service_internal(void *eloop_data, void *user_ctx)
+{
+    int service_id = *(int *)user_ctx;
+
+    (void)eloop_data;
+
+    if (!g_nan_de) {
+        return ESP_FAIL;
+    }
+
+    nan_de_cancel_service(g_nan_de, service_id);
+    nan_usd_clear_peer(service_id);
     return ESP_OK;
 }
 
 esp_err_t esp_nan_usd_cancel_service(int service_id)
 {
-    NAN_USD_DATA_LOCK();
-    if (!g_nan_de) {
-        NAN_USD_DATA_UNLOCK();
+    return eloop_register_timeout_blocking(nan_usd_cancel_service_internal, NULL, &service_id);
+}
+
+struct nan_usd_transmit_ctx {
+    int handle;
+    const uint8_t *ssi;
+    uint16_t ssi_len;
+    const u8 *peer_addr;
+    u8 req_instance_id;
+};
+
+static int nan_usd_transmit_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_transmit_ctx *ctx = user_ctx;
+    struct wpabuf *buf = NULL;
+    esp_err_t ret;
+
+    (void)eloop_data;
+
+    if (!g_nan_de || !ctx->peer_addr) {
         return ESP_FAIL;
     }
 
-    nan_de_cancel_service(g_nan_de, service_id);
-    NAN_USD_DATA_UNLOCK();
-    return ESP_OK;
+    if (ctx->ssi && ctx->ssi_len) {
+        buf = wpabuf_alloc(ctx->ssi_len);
+        if (!buf) {
+            wpa_printf(MSG_ERROR, "Allocating memory failed for NaN-USD transmit");
+            return ESP_FAIL;
+        }
+        wpabuf_put_data(buf, ctx->ssi, ctx->ssi_len);
+    }
+
+    ret = nan_de_transmit(g_nan_de, ctx->handle, buf, NULL, ctx->peer_addr, ctx->req_instance_id);
+    wpabuf_free(buf);
+    return ret;
 }
 
 esp_err_t esp_nan_usd_transmit(int handle, const uint8_t *ssi, uint16_t ssi_len, const u8 *peer_addr, u8 req_instance_id)
 {
-    struct wpabuf *buf = NULL;
-    esp_err_t ret;
+    struct nan_usd_transmit_ctx ctx = {
+        .handle = handle,
+        .ssi = ssi,
+        .ssi_len = ssi_len,
+        .peer_addr = peer_addr,
+        .req_instance_id = req_instance_id,
+    };
 
-    NAN_USD_DATA_LOCK();
-    if (!g_nan_de || !peer_addr) {
-        goto fail;
+    return eloop_register_timeout_blocking(nan_usd_transmit_internal, NULL, &ctx);
+}
+
+struct nan_usd_get_own_svc_ctx {
+    uint8_t *own_svc_id;
+    char *svc_name;
+    int *num_peer_records;
+};
+
+struct nan_usd_get_peer_records_ctx {
+    int *num_peer_records;
+    uint8_t own_svc_id;
+    struct nan_peer_record *peer_record;
+};
+
+struct nan_usd_get_peer_info_ctx {
+    char *svc_name;
+    uint8_t *peer_mac;
+    struct nan_peer_record *peer_info;
+};
+
+static int nan_usd_get_own_svc_info_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_get_own_svc_ctx *ctx = user_ctx;
+
+    (void)eloop_data;
+
+    if (!g_nan_de) {
+        return ESP_FAIL;
     }
 
-    if (ssi && ssi_len) {
-        buf = wpabuf_alloc(ssi_len);
-        if (!buf) {
-            wpa_printf(MSG_ERROR, "Allocating memory failed for NaN-USD transmit");
-            goto fail;
+    if (*ctx->own_svc_id == 0) {
+        for (int i = 1; i <= NAN_DE_MAX_SERVICE; i++) {
+            const char *name = nan_de_get_service_name(g_nan_de, i);
+            if (name && strcmp(name, ctx->svc_name) == 0) {
+                *ctx->own_svc_id = i;
+                break;
+            }
         }
-        wpabuf_put_data(buf, ssi, ssi_len);
+        if (*ctx->own_svc_id == 0) {
+            wpa_printf(MSG_ERROR, "NAN-USD: No record found for service name %s", ctx->svc_name);
+            return ESP_FAIL;
+        }
+    } else {
+        const char *name = nan_de_get_service_name(g_nan_de, *ctx->own_svc_id);
+        if (!name) {
+            wpa_printf(MSG_ERROR, "NAN-USD: No record found for service ID %d", *ctx->own_svc_id);
+            return ESP_FAIL;
+        }
+        strlcpy(ctx->svc_name, name, ESP_WIFI_MAX_SVC_NAME_LEN);
     }
 
-    ret = nan_de_transmit(g_nan_de, handle, buf, NULL, peer_addr, req_instance_id);
+    *ctx->num_peer_records = nan_usd_get_peer(*ctx->own_svc_id) ? 1 : 0;
+    return ESP_OK;
+}
 
-    wpabuf_free(buf);
-    NAN_USD_DATA_UNLOCK();
-    return ret;
-fail:
-    NAN_USD_DATA_UNLOCK();
+static int nan_usd_get_peer_records_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_get_peer_records_ctx *ctx = user_ctx;
+    const struct nan_usd_peer *peer;
+
+    (void)eloop_data;
+
+    if (!g_nan_de) {
+        return ESP_FAIL;
+    }
+
+    if (nan_de_get_service_type(g_nan_de, ctx->own_svc_id) < 0) {
+        *ctx->num_peer_records = 0;
+        wpa_printf(MSG_DEBUG, "NAN-USD: No service found with id %d", ctx->own_svc_id);
+        return ESP_FAIL;
+    }
+
+    peer = nan_usd_get_peer(ctx->own_svc_id);
+    if (peer) {
+        /* USD caches one peer per service. */
+        ctx->peer_record[0].peer_svc_id = peer->peer_svc_id;
+        ctx->peer_record[0].own_svc_id = ctx->own_svc_id;
+        ctx->peer_record[0].peer_svc_type = peer->peer_svc_type;
+        os_memcpy(ctx->peer_record[0].peer_nmi, peer->peer_addr, ETH_ALEN);
+        ctx->peer_record[0].ndp_id = 0;
+        os_memset(ctx->peer_record[0].peer_ndi, 0, ETH_ALEN);
+        *ctx->num_peer_records = 1;
+    } else {
+        *ctx->num_peer_records = 0;
+    }
+
+    return ESP_OK;
+}
+
+static int nan_usd_get_peer_info_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_get_peer_info_ctx *ctx = user_ctx;
+    int start = 1, end = NAN_DE_MAX_SERVICE;
+
+    (void)eloop_data;
+
+    if (!g_nan_de) {
+        return ESP_FAIL;
+    }
+
+    if (ctx->svc_name) {
+        bool found = false;
+        for (int i = 1; i <= NAN_DE_MAX_SERVICE; i++) {
+            const char *name = nan_de_get_service_name(g_nan_de, i);
+            if (name && strcmp(name, ctx->svc_name) == 0) {
+                start = i;
+                end = i;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            wpa_printf(MSG_ERROR, "NAN-USD: No record found for service name %s", ctx->svc_name);
+            return ESP_FAIL;
+        }
+    }
+
+    for (int i = start; i <= end; i++) {
+        const struct nan_usd_peer *peer;
+
+        if (nan_de_get_service_type(g_nan_de, i) < 0) {
+            continue;
+        }
+
+        peer = nan_usd_get_peer(i);
+        if (peer && os_memcmp(peer->peer_addr, ctx->peer_mac, ETH_ALEN) == 0) {
+            ctx->peer_info->peer_svc_id = peer->peer_svc_id;
+            ctx->peer_info->own_svc_id = i;
+            ctx->peer_info->peer_svc_type = peer->peer_svc_type;
+            os_memcpy(ctx->peer_info->peer_nmi, peer->peer_addr, ETH_ALEN);
+            ctx->peer_info->ndp_id = 0;
+            os_memset(ctx->peer_info->peer_ndi, 0, ETH_ALEN);
+            return ESP_OK;
+        }
+    }
+
+    wpa_printf(MSG_DEBUG, "NAN-USD: No record found for Peer "MACSTR, MAC2STR(ctx->peer_mac));
     return ESP_FAIL;
+}
+
+esp_err_t esp_nan_usd_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records)
+{
+    struct nan_usd_get_own_svc_ctx ctx;
+
+    if (!own_svc_id || !num_peer_records || !svc_name) {
+        wpa_printf(MSG_ERROR, "NAN-USD: NULL memory address for input parameters");
+        return ESP_FAIL;
+    }
+
+    ctx.own_svc_id = own_svc_id;
+    ctx.svc_name = svc_name;
+    ctx.num_peer_records = num_peer_records;
+
+    return eloop_register_timeout_blocking(nan_usd_get_own_svc_info_internal, NULL, &ctx);
+}
+
+esp_err_t esp_nan_usd_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record)
+{
+    struct nan_usd_get_peer_records_ctx ctx;
+
+    if (!peer_record || !num_peer_records) {
+        wpa_printf(MSG_ERROR, "NAN-USD: NULL memory address for input parameters");
+        return ESP_FAIL;
+    }
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE) {
+        wpa_printf(MSG_ERROR, "NAN-USD: Invalid service ID");
+        return ESP_FAIL;
+    }
+    if (*num_peer_records == 0) {
+        wpa_printf(MSG_ERROR, "NAN-USD: Number of peer records provided is 0");
+        return ESP_FAIL;
+    }
+
+    ctx.num_peer_records = num_peer_records;
+    ctx.own_svc_id = own_svc_id;
+    ctx.peer_record = peer_record;
+
+    return eloop_register_timeout_blocking(nan_usd_get_peer_records_internal, NULL, &ctx);
+}
+
+esp_err_t esp_nan_usd_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info)
+{
+    struct nan_usd_get_peer_info_ctx ctx;
+
+    if (!peer_mac || !peer_info) {
+        wpa_printf(MSG_ERROR, "NAN-USD: Invalid memory address for input parameters");
+        return ESP_FAIL;
+    }
+
+    ctx.svc_name = svc_name;
+    ctx.peer_mac = peer_mac;
+    ctx.peer_info = peer_info;
+
+    return eloop_register_timeout_blocking(nan_usd_get_peer_info_internal, NULL, &ctx);
 }
