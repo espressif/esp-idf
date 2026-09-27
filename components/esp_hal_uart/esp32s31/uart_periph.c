@@ -159,14 +159,14 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
                 .default_gpio = U3TXD_GPIO_NUM,
                 .iomux_func = U3TXD_MUX_FUNC,
                 .input = 0,
-                .signal = -1,
+                .signal = UART3_TXD_PAD_OUT_IDX,
             },
 
             [SOC_UART_PERIPH_SIGNAL_RX] = {
                 .default_gpio = U3RXD_GPIO_NUM,
                 .iomux_func = U3RXD_MUX_FUNC,
                 .input = 1,
-                .signal = -1,
+                .signal = UART3_RXD_PAD_IN_IDX,
             },
 
             [SOC_UART_PERIPH_SIGNAL_RTS] = {
