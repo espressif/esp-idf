@@ -673,8 +673,6 @@ extern int api_pcl_hci_setRssiThresh(const uint8_t *cmdbuf, uint8_t len, uint8_t
                                      uint8_t *rsplen);
 extern int api_ble_ll_hci_vs_csa_set(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
                                      uint8_t *rsplen);
-extern int api_internalTest_hci_procVsCmds(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
-                                           uint8_t *rsplen);
 extern int api_ble_log_hci_vs_cmd_proc(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
                                        uint8_t *rsplen);
 extern int api_hci_stack_setVsEventMask(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
@@ -1467,9 +1465,6 @@ hci_cmd_proc_vendor_specific_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint8_t l
         break;
     case ESP_BT_VS_ENABLE_CSA2_OCF:
         rc = api_ble_ll_hci_vs_csa_set(cmdbuf, len, rspbuf, rsplen);
-        break;
-    case ESP_BT_VS_CFG_TEST_RELATED_OCF:
-        rc = api_internalTest_hci_procVsCmds(cmdbuf, len, rspbuf, rsplen);
         break;
     case ESP_BT_VS_SET_LOG_PARAMS_OCF:
         rc = api_ble_log_hci_vs_cmd_proc(cmdbuf, len, rspbuf, rsplen);
