@@ -1306,6 +1306,7 @@ esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req)
 
     return ESP_OK;
 }
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
 esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records)
 {
