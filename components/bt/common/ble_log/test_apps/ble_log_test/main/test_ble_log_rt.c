@@ -2432,7 +2432,12 @@ TEST_CASE("BLE Log disable keeps waiter semaphore alive during deinit",
 /* lets the waiter mint and consume its own wake tokens in a tight     */
 /* loop: the writer never parks, and the publisher suspended inside    */
 /* the recycle window can never run to publish the bitmap.            */
+/* Infinite-wait semantics only (the case holds the canceller well     */
+/* past any finite budget), so the whole section compiles out of a     */
+/* bounded build.                                                      */
 /* ------------------------------------------------------------------ */
+#if !defined(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) || \
+    (CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) < 0
 static volatile bool s_spin_hook_armed;
 static SemaphoreHandle_t s_spin_writer_start;
 static SemaphoreHandle_t s_spin_writer_entered;
@@ -2601,6 +2606,7 @@ TEST_CASE("BLE Log pool waiter parks instead of self-waking on an unpublished FR
      * on self-minted tokens (canary frozen = core monopolized). */
     TEST_ASSERT_GREATER_THAN(canary_settled, canary_now);
 }
+#endif /* infinite BLE_LOG_POOL_WAIT_TIMEOUT_MS */
 
 /* ------------------------------------------------------------------ */
 /* Review blocker repro: flush drain straddle.                         */
@@ -2629,8 +2635,71 @@ void ble_log_test_acquire_after_unregister_hook(void);
 void ble_log_test_flush_drain_between_loads_hook(void);
 static void straddle_hog_task(void *arg);
 
+/* Acquire-hook instrumentation for the bounded-wait cases. Both branches
+ * run in the woken writer's own context (after its reference re-acquire
+ * and waiter unregister), so neither depends on cross-task timing.
+ *
+ * - churn: steal the freshly recycled transport (claim it and fill it)
+ *   so the woken writer loses the claim and must re-park on its
+ *   remaining budget. A round is disarmed only by a real steal, so a
+ *   spurious wake cannot burn it.
+ */
+static volatile bool s_churn_armed;
+static volatile uint32_t s_churn_hits;
+static volatile uint32_t s_churn_handle;
+static volatile bool s_churn_held;
+
+/* Deadline race: armed while no test-side recycle will happen, so the
+ * only legitimate hook trigger past the time gate is a writer's own
+ * timeout. There the hook recycles one transport: the acquire loop must
+ * return to the claim before the budget check (the timed-out writer
+ * takes that transport and succeeds), and the recycle notification must
+ * reach the other parked waiter instead of being swallowed. The time
+ * gate also keeps a stale cross-case semaphore token from burning the
+ * arm on a spurious early wake. */
+static volatile bool s_deadline_recycle_armed;
+static volatile uint32_t s_deadline_recycle_hits;
+static volatile int64_t s_deadline_start_us;
+
+
 void ble_log_test_acquire_after_unregister_hook(void)
 {
+    if (s_churn_armed) {
+        /* Hold the transport (claim without committing): it leaves the
+         * pool until the test releases it, so exactly one transport is in
+         * flight. The claim asks for a full-length frame so the test's
+         * later commit seals the transport instead of republishing it as
+         * an OPEN one with room (which the woken writer could claim). */
+        uint32_t handle = 0;
+        uint8_t *dst = ble_log_claim(BLE_LOG_SRC_ENCODE,
+                                     BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t),
+                                     &handle, false);
+        if (dst) {
+            s_churn_handle = handle;
+            s_churn_held = true;
+            s_churn_armed = false;
+            s_churn_hits++;
+        }
+        return;
+    }
+    if (s_deadline_recycle_armed) {
+        /* Only a timed-out writer reaches the gate: no test-side recycle
+         * is pending, so an earlier trigger is a spurious wake (e.g. a
+         * stale token) and must not burn the arm. Runs in the woken
+         * writer's own context after its waiter unregister: the recycle
+         * advertises a FREE shared transport and mints a notification
+         * for the remaining parked waiter. */
+        if (esp_timer_get_time() - s_deadline_start_us >=
+                (int64_t)CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS * 1000 -
+                2 * (int64_t)pdTICKS_TO_MS(1) * 1000) {
+            s_deadline_recycle_armed = false;
+            if (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                       0, 0, NULL) > 0) {
+                s_deadline_recycle_hits++;
+            }
+        }
+        return;
+    }
     if (!s_straddle_acquire_armed) {
         return;
     }
@@ -2640,6 +2709,18 @@ void ble_log_test_acquire_after_unregister_hook(void)
      * this task leaves exactly this state behind. */
     xSemaphoreGive(s_straddle_inflight);
     (void)xSemaphoreTake(s_straddle_freeze, portMAX_DELAY);
+}
+
+/* Disarms every acquire-hook arm the bounded-wait cases set. Called from
+ * tearDown: Unity aborts a failed case by longjmp, and an arm left behind
+ * would fire in the next case (its time gate, if any, was set in a dead
+ * stack frame and is long since passed). */
+void test_ble_log_disarm_case_hooks(void)
+{
+    s_churn_armed = false;
+    s_churn_held = false;
+    s_deadline_recycle_armed = false;
+    s_straddle_acquire_armed = false;
 }
 
 void ble_log_test_flush_drain_between_loads_hook(void)
@@ -2831,3 +2912,603 @@ TEST_CASE("BLE Log flush drain does not straddle an in-flight parked writer",
         TEST_ASSERT_GREATER_OR_EQUAL(950, (int)flush_ms);
     }
 }
+
+#if defined(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) && \
+    CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS >= 0
+/* Bounded-wait variant build (sdkconfig.ci.bounded_wait selects
+ * BLE_LOG_PRPH_TEST with a finite budget). The default build keeps -1 and
+ * compiles none of this. */
+
+
+#if CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS > 0
+/* Writer context and task exist only for the parking cases. */
+typedef struct {
+    SemaphoreHandle_t started;
+    SemaphoreHandle_t done;
+    bool result;
+    int64_t return_us;
+    /* A full-length payload claims a whole transport, so a second woken
+     * writer cannot join the same OPEN transport and must re-park. */
+    bool full_payload;
+} bounded_writer_ctx_t;
+
+static void bounded_write_task(void *arg)
+{
+    bounded_writer_ctx_t *ctx = arg;
+    static const uint8_t marker = 0x59;
+    static const uint8_t full[BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+    const uint8_t *payload = ctx->full_payload ? full : &marker;
+    size_t len = ctx->full_payload ? sizeof(full) : sizeof(marker);
+
+    xSemaphoreGive(ctx->started);
+    int64_t before_us = esp_timer_get_time();
+    ctx->result = ble_log_write_hex(BLE_LOG_SRC_CUSTOM, payload, len);
+    ctx->return_us = esp_timer_get_time() - before_us;
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+#endif /* nonzero budget */
+
+/* Snapshot-frame observer for bounded_read_custom_lost: keeps the last
+ * seen snapshot's CUSTOM-slot loss count. */
+static void bounded_capture_lost(const test_ble_log_frame_t *frame, void *ctx)
+{
+    uint32_t *lost = ctx;
+    if (frame->src != BLE_LOG_SRC_INTERNAL ||
+            frame->payload_len != sizeof(uint32_t) +
+                                  sizeof(ble_log_internal_snapshot_t)) {
+        return;
+    }
+    ble_log_internal_snapshot_t snapshot;
+    memcpy(&snapshot, frame->payload + sizeof(uint32_t), sizeof(snapshot));
+    if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT) {
+        *lost = snapshot.stats[BLE_LOG_SRC_CUSTOM - BLE_LOG_SRC_CORE_FIRST]
+                    .lost_frame_cnt;
+    }
+}
+
+/* Reads the CUSTOM-source lost_frame_cnt out of the next periodic
+ * snapshot frame. Periodic snapshots carry the stats without resetting
+ * them (unlike ble_log_flush, whose FLUSH snapshot is immediately
+ * followed by the interval-counter reset), so a before/after delta is a
+ * valid loss count. Waits up to one snapshot window plus margin. */
+static uint32_t bounded_read_custom_lost(void)
+{
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    uint32_t lost = UINT32_MAX;
+    /* Each read drains exactly one transport; keep reading until a
+     * snapshot frame shows up or the window budget is spent. */
+    TickType_t deadline = xTaskGetTickCount() +
+                          pdMS_TO_TICKS(BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 500);
+    do {
+        size_t len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                            pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+                                            0, NULL);
+        if (len == 0) {
+            continue;
+        }
+        test_ble_log_walk_frames(s_read_buf, len, bounded_capture_lost, &lost);
+    } while (lost == UINT32_MAX && xTaskGetTickCount() < deadline);
+    TEST_ASSERT_NOT_EQUAL_UINT32(UINT32_MAX, lost);
+    return lost;
+}
+
+/* Drain helper shared by the bounded-wait tests: seal, dispatch and read
+ * everything currently outstanding so the pool returns to all-FREE. */
+static void bounded_drain_pool(void)
+{
+    for (int round = 0; round < 2; round++) {
+        ble_log_lbm_flush_open_trans();
+        TEST_ASSERT_TRUE(ble_log_rt_drain());
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                      0, 0, NULL) > 0) {
+        }
+    }
+}
+
+#if CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS > 0
+/* The parking cases need a nonzero budget: with budget 0 there is no
+ * wait to bound and every one of them would fail by construction. */
+TEST_CASE("BLE Log bounded wait recycles a transport within the budget",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    bounded_drain_pool();
+
+    /* Hold every task-usable transport in the test peripheral. */
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    /* Static so a Unity longjmp on a failed assert cannot leave the
+     * writer task touching a dead stack frame (same reasoning as the
+     * fail-after-budget case). */
+    static bounded_writer_ctx_t ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.started = xSemaphoreCreateBinary();
+    ctx.done = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(ctx.started);
+    TEST_ASSERT_NOT_NULL(ctx.done);
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(bounded_write_task, "ble_log_bounded1",
+                                  TEST_LIFECYCLE_STACK_SIZE, &ctx,
+                                  TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_TRUE(xSemaphoreTake(ctx.started, pdMS_TO_TICKS(1000)));
+    vTaskDelay(1);
+    /* Writer is parked with no free shared transport. */
+    TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(ctx.done, 0));
+
+    /* Recycle within the budget: the parked writer must win a transport
+     * and the write must not be lost. */
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    size_t len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                        pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+                                        0, NULL);
+    TEST_ASSERT_GREATER_THAN_size_t(0, len);
+    TEST_ASSERT_TRUE(xSemaphoreTake(ctx.done, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_TRUE(ctx.result);
+
+    bounded_drain_pool();
+    vSemaphoreDelete(ctx.started);
+    vSemaphoreDelete(ctx.done);
+}
+
+TEST_CASE("BLE Log bounded wait fails and counts the loss when never recycled",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    bounded_drain_pool();
+
+    /* Loss accounting baseline: a periodic snapshot frame carries the
+     * current source stats (unlike a FLUSH snapshot, which is followed
+     * immediately by the interval-counter reset), so the delta can be
+     * read without touching the warning shadow.
+     * Read before filling: the helper drains the pool, and the writer
+     * must start against a full one. */
+    uint32_t before_lost = bounded_read_custom_lost();
+
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    /* Static so a Unity longjmp on a failed assert cannot leave the
+     * writer task touching a dead stack frame; the writer only writes
+     * ctx fields and never outlives the drain below. */
+    static bounded_writer_ctx_t ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.started = xSemaphoreCreateBinary();
+    ctx.done = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(ctx.started);
+    TEST_ASSERT_NOT_NULL(ctx.done);
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(bounded_write_task, "ble_log_bounded2",
+                                  TEST_LIFECYCLE_STACK_SIZE, &ctx,
+                                  TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_TRUE(xSemaphoreTake(ctx.started, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(ctx.done, 0));
+
+    /* Never recycle: the writer must return NULL after roughly the total
+     * budget, never much earlier (tick-phase tolerance: the deadline is
+     * checked against ticks, so the observed wait can be up to one tick
+     * shorter than the nominal budget) and not much later. */
+    TEST_ASSERT_TRUE(xSemaphoreTake(ctx.done, pdMS_TO_TICKS(
+                                       CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS +
+                                       3 * TEST_READ_TIMEOUT_MS)));
+    TEST_ASSERT_FALSE(ctx.result);
+    const int64_t budget_us =
+        (int64_t)CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS * 1000;
+    const int64_t tick_us = (int64_t)pdTICKS_TO_MS(1) * 1000;
+    TEST_ASSERT_GREATER_OR_EQUAL_INT64(budget_us - 2 * tick_us - 500,
+                                        ctx.return_us);
+    TEST_ASSERT_LESS_THAN_INT64(budget_us + 100000, ctx.return_us);
+
+    /* The failed write must be counted as exactly one CUSTOM-source
+     * loss (BLE_LOG_SRC_CORE_FIRST is BLE_LOG_SRC_CUSTOM, so the CUSTOM
+     * slot is snapshot index 0). */
+    TEST_ASSERT_EQUAL_UINT32(1, bounded_read_custom_lost() - before_lost);
+
+    bounded_drain_pool();
+    vSemaphoreDelete(ctx.started);
+    vSemaphoreDelete(ctx.done);
+}
+
+#endif /* nonzero budget */
+
+/* The ms -> tick conversion rounds up, so a sub-tick budget still waits
+ * one tick instead of degrading to an instant failure. */
+TEST_CASE("BLE Log wait budget converts milliseconds to ticks",
+          "[ble_log][lbm]")
+{
+    /* 1 ms must round up to exactly one tick at either tick rate (a
+     * floor would yield 0 at 100 Hz). */
+    TEST_ASSERT_EQUAL_UINT32(1, BLE_LOG_POOL_WAIT_TICKS_FOR(1));
+    /* 10 ms is one tick at 100 Hz and ten ticks at 1000 Hz -- the same
+     * value must not be assumed to be the same wait at both rates. */
+    TEST_ASSERT_EQUAL_UINT32(configTICK_RATE_HZ >= 1000 ? 10 : 1,
+                             BLE_LOG_POOL_WAIT_TICKS_FOR(10));
+    /* The configured budget is exactly its own conversion. */
+    TEST_ASSERT_EQUAL_UINT32(
+        BLE_LOG_POOL_WAIT_TICKS_FOR(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS),
+        BLE_LOG_POOL_WAIT_TICKS);
+}
+
+/* A yieldable caller that opts out of waiting must fail immediately on a
+ * full pool and must not touch the reserve. This is the documented
+ * no-park fast path (NOT the zero-budget branch, which is only reachable
+ * from a CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS == 0 build). */
+TEST_CASE("BLE Log no-wait claim fails immediately without parking",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    bounded_drain_pool();
+
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    /* Every shared transport is held; a wait=false claim from a yieldable
+     * task must return NULL at once and must not fall back to the
+     * single non-yield reserve. */
+    int64_t before_us = esp_timer_get_time();
+    uint32_t handle = 0;
+    uint8_t *payload = ble_log_claim(BLE_LOG_SRC_ENCODE, 1, &handle, false);
+    int64_t waited_us = esp_timer_get_time() - before_us;
+    TEST_ASSERT_NULL(payload);
+    TEST_ASSERT_LESS_THAN_INT64(5000, waited_us);
+
+    bounded_drain_pool();
+}
+
+#if CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS > 0
+/* A wakeup must not restart the budget. One writer parks on the full
+ * pool; the single transport the test recycles is stolen again by the
+ * acquire hook before that writer can claim it, so the writer is woken
+ * without gaining a transport. Its conclusion must still land at ~one
+ * budget from its own start: a wakeup that restarted the clock would put
+ * it at (wake + budget), well past the bound asserted below. */
+TEST_CASE("BLE Log bounded wait does not restart the budget on a wakeup",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    bounded_drain_pool();
+
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    static bounded_writer_ctx_t w1;
+    memset(&w1, 0, sizeof(w1));
+    w1.started = xSemaphoreCreateBinary();
+    w1.done = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(w1.started);
+    TEST_ASSERT_NOT_NULL(w1.done);
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(bounded_write_task, "ble_log_wakeup",
+                                  TEST_LIFECYCLE_STACK_SIZE, &w1,
+                                  TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_TRUE(xSemaphoreTake(w1.started, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL_UINT32(0, uxSemaphoreGetCount(w1.done));  /* parked */
+
+    /* One recycle, answered by the hook's steal. It is deliberately late
+     * in the window (about half the budget), so a wakeup that restarted
+     * the clock would be separated from a legitimate conclusion by a wide
+     * margin. */
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) / 2);
+    s_churn_hits = 0;
+    s_churn_held = false;
+    s_churn_armed = true;
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    TEST_ASSERT_GREATER_THAN_size_t(
+        0, ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                  pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+                                  0, NULL));
+    for (int i = 0; i < 10 && s_churn_hits == 0; i++) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(1, s_churn_hits,
+                                     "the woken writer was not served by the steal");
+    /* The woken writer lost the race: it is parked again, not finished. */
+    TEST_ASSERT_EQUAL_UINT32(0, uxSemaphoreGetCount(w1.done));
+
+    /* Release the stolen transport and let the writer run out its own
+     * budget (started before the wake). */
+    if (s_churn_held) {
+        ble_log_commit(s_churn_handle,
+                       BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t));
+        s_churn_held = false;
+    }
+
+    const int64_t budget_us =
+        (int64_t)CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS * 1000;
+    const int64_t tick_us = (int64_t)pdTICKS_TO_MS(1) * 1000;
+    TEST_ASSERT_TRUE(xSemaphoreTake(w1.done, pdMS_TO_TICKS(
+                                         3 * CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS)));
+    TEST_ASSERT_FALSE(w1.result);
+    TEST_ASSERT_GREATER_OR_EQUAL_INT64(budget_us - 2 * tick_us - 500,
+                                       w1.return_us);
+    TEST_ASSERT_LESS_THAN_INT64(budget_us + 2 * tick_us + 5000,
+                                w1.return_us);
+
+    bounded_drain_pool();
+    vSemaphoreDelete(w1.started);
+    vSemaphoreDelete(w1.done);
+}
+
+/* No recycle happens until the deadline: with a full pool the parked
+ * writer can only wake by timing out, so the armed hook's first trigger
+ * is exactly the timeout moment. There the hook recycles one transport.
+ * Two properties are asserted: (a) the loop must return to the claim
+ * before the budget check -- the timed-out writer re-claims the just
+ * recycled transport and succeeds at ~one budget (a loop that returns
+ * NULL straight after the timeout, swallowing the recycle, fails
+ * this); (b) the second parked waiter is woken and served while well
+ * inside its own budget -- it receives SOME notification (either the
+ * hook recycle's or w1's later publish-open; both are minted by the
+ * same code path this case exercises), not its own timeout. */
+
+TEST_CASE("BLE Log bounded wait resolves a recycle at the deadline",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    bounded_drain_pool();
+
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    static bounded_writer_ctx_t w1, w2;
+    memset(&w1, 0, sizeof(w1));
+    memset(&w2, 0, sizeof(w2));
+    w1.started = xSemaphoreCreateBinary();
+    w1.done = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(w1.started);
+    TEST_ASSERT_NOT_NULL(w1.done);
+    /* Same core as w2 below: while w1 runs in the hook and re-claims,
+     * w2 cannot execute, so w1's win of the recycled transport is
+     * deterministic even though this target has two cores. */
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreatePinnedToCore(bounded_write_task, "ble_log_deadln",
+                                              TEST_LIFECYCLE_STACK_SIZE, &w1,
+                                              TEST_LIFECYCLE_PRIO, NULL, 1));
+    TEST_ASSERT_TRUE(xSemaphoreTake(w1.started, pdMS_TO_TICKS(1000)));
+    /* w1 is parked on the full pool. Arm before the offset park of the
+     * second waiter: from here on no test-side recycle happens, so w1
+     * can only wake at its own deadline. */
+    s_deadline_recycle_hits = 0;
+    s_deadline_start_us = esp_timer_get_time();
+    s_deadline_recycle_armed = true;
+
+    /* The second waiter parks half a budget later, so the hook recycle's
+     * notification serving it is clearly distinguishable (by the timing
+     * bound) from its own timeout. */
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) / 2);
+    w2.started = xSemaphoreCreateBinary();
+    w2.done = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(w2.started);
+    TEST_ASSERT_NOT_NULL(w2.done);
+    /* The same core and one priority below w1: the running timed-out
+     * w1 re-claims the recycled transport before this waiter can run;
+     * this waiter is then served by a notification (the hook recycle's
+     * and/or w1's publish-open) instead of its own timeout. */
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreatePinnedToCore(bounded_write_task, "ble_log_deadln2",
+                                              TEST_LIFECYCLE_STACK_SIZE, &w2,
+                                              TEST_LIFECYCLE_PRIO - 1, NULL, 1));
+    TEST_ASSERT_TRUE(xSemaphoreTake(w2.started, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL_UINT32(0, uxSemaphoreGetCount(w2.done));
+
+    const int64_t budget_us =
+        (int64_t)CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS * 1000;
+    const int64_t tick_us = (int64_t)pdTICKS_TO_MS(1) * 1000;
+    TEST_ASSERT_TRUE(xSemaphoreTake(w1.done, pdMS_TO_TICKS(
+                                         3 * CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS)));
+    TEST_ASSERT_TRUE(w1.result);
+    /* Success at the deadline: not before the budget (less the tick
+     * tolerance of the FreeRTOS timeout check) and not far beyond it. */
+    TEST_ASSERT_GREATER_OR_EQUAL_INT64(budget_us - 2 * tick_us - 500,
+                                       w1.return_us);
+    TEST_ASSERT_LESS_THAN_INT64(budget_us + 3 * tick_us + 5000,
+                                w1.return_us);
+    TEST_ASSERT_EQUAL_UINT32(1, s_deadline_recycle_hits);
+
+    /* The recycled transport's notification served the parked second
+     * waiter: it concludes successfully, and well before its own
+     * deadline -- a swallowed notification parks it until then. */
+    TEST_ASSERT_TRUE(xSemaphoreTake(w2.done, pdMS_TO_TICKS(
+                                         2 * CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS)));
+    TEST_ASSERT_TRUE(w2.result);
+    TEST_ASSERT_LESS_THAN_INT64_MESSAGE(
+        budget_us - 2 * tick_us - 500,
+        w2.return_us,
+        "second waiter waited out its own budget: notification swallowed");
+
+    /* No waiter or reference leaked: deinit waits on the reference count
+     * and asserts on a leak. */
+    ble_log_deinit();
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+
+    bounded_drain_pool();
+    for (bounded_writer_ctx_t *w = &w1; ; w = &w2) {
+        vSemaphoreDelete(w->started);
+        vSemaphoreDelete(w->done);
+        if (w == &w2) {
+            break;
+        }
+    }
+}
+
+TEST_CASE("BLE Log bounded wait serves exactly one waiter per recycle",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    bounded_drain_pool();
+
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    static bounded_writer_ctx_t w1, w2;
+    memset(&w1, 0, sizeof(w1));
+    memset(&w2, 0, sizeof(w2));
+    for (bounded_writer_ctx_t *w = &w1; ; w = &w2) {
+        w->full_payload = true;
+        w->started = xSemaphoreCreateBinary();
+        w->done = xSemaphoreCreateBinary();
+        TEST_ASSERT_NOT_NULL(w->started);
+        TEST_ASSERT_NOT_NULL(w->done);
+        TEST_ASSERT_EQUAL(pdTRUE,
+                          xTaskCreate(bounded_write_task, "ble_log_one_win",
+                                      TEST_LIFECYCLE_STACK_SIZE, w,
+                                      TEST_LIFECYCLE_PRIO, NULL));
+        if (w == &w2) {
+            break;
+        }
+    }
+    TEST_ASSERT_TRUE(xSemaphoreTake(w1.started, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_TRUE(xSemaphoreTake(w2.started, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL_UINT32(0, uxSemaphoreGetCount(w1.done));
+    TEST_ASSERT_EQUAL_UINT32(0, uxSemaphoreGetCount(w2.done));
+
+    /* Recycle exactly one transport well inside the budget: one waiter
+     * must be woken and take it. */
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) / 3);
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    TEST_ASSERT_GREATER_THAN_size_t(
+        0, ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                  pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+                                  0, NULL));
+
+    const int64_t budget_us =
+        (int64_t)CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS * 1000;
+    const int64_t tick_us = (int64_t)pdTICKS_TO_MS(1) * 1000;
+    int winners = 0;
+    for (bounded_writer_ctx_t *w = &w1; ; w = &w2) {
+        TEST_ASSERT_TRUE(xSemaphoreTake(w->done, pdMS_TO_TICKS(
+                                             3 * CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS)));
+        if (w->result) {
+            winners++;
+        } else {
+            /* The loser ran out its own budget, not an extended one. */
+            TEST_ASSERT_GREATER_OR_EQUAL_INT64(budget_us - 2 * tick_us - 500,
+                                               w->return_us);
+            TEST_ASSERT_LESS_THAN_INT64(budget_us + 3 * tick_us + 20000,
+                                        w->return_us);
+        }
+        if (w == &w2) {
+            break;
+        }
+    }
+    /* The recycle notification reached exactly one parked writer. */
+    TEST_ASSERT_EQUAL_INT(1, winners);
+
+    /* No waiter or reference may be left behind: deinit waits for the
+     * runtime reference count and asserts on a leak. (A flush is not used
+     * here: its internal snapshot transport is only recycled by a
+     * concurrent reader in this app.) */
+    ble_log_deinit();
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+
+    bounded_drain_pool();
+    for (bounded_writer_ctx_t *w = &w1; ; w = &w2) {
+        vSemaphoreDelete(w->started);
+        vSemaphoreDelete(w->done);
+        if (w == &w2) {
+            break;
+        }
+    }
+}
+
+/* A writer parked on the full pool when the module is disabled: the
+ * gate release must un-park it (not wait out the budget) and leave the
+ * reference and waiter counts balanced for a subsequent re-enable. */
+TEST_CASE("BLE Log bounded wait releases a parked writer on disable",
+          "[ble_log][lbm]")
+{
+    static const uint8_t full_payload[
+        BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)] = {0};
+
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    bounded_drain_pool();
+
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, full_payload,
+                                           sizeof(full_payload)));
+    }
+
+    static bounded_writer_ctx_t ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.started = xSemaphoreCreateBinary();
+    ctx.done = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(ctx.started);
+    TEST_ASSERT_NOT_NULL(ctx.done);
+    TEST_ASSERT_EQUAL(pdTRUE,
+                      xTaskCreate(bounded_write_task, "ble_log_bdd_x",
+                                  TEST_LIFECYCLE_STACK_SIZE, &ctx,
+                                  TEST_LIFECYCLE_PRIO, NULL));
+    TEST_ASSERT_TRUE(xSemaphoreTake(ctx.started, pdMS_TO_TICKS(1000)));
+
+    TEST_ASSERT_TRUE(ble_log_enable(false));
+    /* The gate release must un-park the writer promptly. Waiting 2 s
+     * would also accept a writer that simply timed out at the budget,
+     * so assert the wait ended well inside it. */
+    TEST_ASSERT_TRUE(xSemaphoreTake(ctx.done, pdMS_TO_TICKS(2000)));
+    TEST_ASSERT_FALSE(ctx.result);
+    const int64_t budget_us =
+        (int64_t)CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS * 1000;
+    const int64_t tick_us = (int64_t)pdTICKS_TO_MS(1) * 1000;
+    TEST_ASSERT_LESS_THAN_INT64(budget_us - 2 * tick_us, ctx.return_us);
+
+    /* Reference/waiter balance: a full deinit/reinit cycle and a flush
+     * must complete without hitting their drain timeouts, which is what
+     * a leaked reference or a permanently registered waiter would do. */
+    ble_log_deinit();
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+
+    bounded_drain_pool();
+    const uint8_t marker = 0xC3;
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker, 1));
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    size_t len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                        pdMS_TO_TICKS(TEST_READ_TIMEOUT_MS),
+                                        0, NULL);
+    TEST_ASSERT_GREATER_THAN_size_t(0, len);
+
+    vSemaphoreDelete(ctx.started);
+    vSemaphoreDelete(ctx.done);
+}
+
+#endif /* nonzero budget */
+
+#endif /* finite BLE_LOG_POOL_WAIT_TIMEOUT_MS */
