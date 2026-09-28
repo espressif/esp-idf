@@ -132,6 +132,7 @@ typedef int (*http_cb) (http_parser*);
   /* RFC-2068, section 19.6.1.2 */  \
   XX(31, LINK,        LINK)         \
   XX(32, UNLINK,      UNLINK)       \
+  XX(33, QUERY,       QUERY)        /* RFC 10008 */
 
 enum http_method
   {
