@@ -162,6 +162,65 @@ void l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding)
 
 /*******************************************************************************
 **
+** Function         l2cu_return_tx_credits
+**
+** Description      Give this link's outstanding controller credits back to the
+**                  shared transmit window. The old ACL will not report Number
+**                  of Completed Packets for them. The counter is cleared so a
+**                  second call is a no-op.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cu_return_tx_credits (tL2C_LCB *p_lcb)
+{
+    if (p_lcb->sent_not_acked == 0) {
+        return;
+    }
+#if (BLE_INCLUDED == TRUE)
+    if (p_lcb->transport == BT_TRANSPORT_LE) {
+        l2cb.controller_le_xmit_window += p_lcb->sent_not_acked;
+        if (l2cb.controller_le_xmit_window > l2cb.num_lm_ble_bufs) {
+            l2cb.controller_le_xmit_window = l2cb.num_lm_ble_bufs;
+        }
+    } else
+#endif
+    {
+        l2cb.controller_xmit_window += p_lcb->sent_not_acked;
+        if (l2cb.controller_xmit_window > l2cb.num_lm_acl_bufs) {
+            l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
+        }
+    }
+    p_lcb->sent_not_acked = 0;
+}
+
+/*******************************************************************************
+**
+** Function         l2cu_flush_link_xmit_data_q
+**
+** Description      Free packets queued for this link. The queue itself is kept
+**                  so the LCB can be reused.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cu_flush_link_xmit_data_q (tL2C_LCB *p_lcb)
+{
+    BT_HDR *p_buf;
+
+    if (p_lcb->link_xmit_data_q == NULL) {
+        return;
+    }
+    while (!list_is_empty(p_lcb->link_xmit_data_q)) {
+        p_buf = list_front(p_lcb->link_xmit_data_q);
+        list_remove(p_lcb->link_xmit_data_q, p_buf);
+        p_buf->event = 0;
+        osi_free(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         l2cu_release_lcb
 **
 ** Description      Release an LCB. All timers will be stopped, channels
@@ -228,22 +287,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     }
 #endif
 
-    if (p_lcb->sent_not_acked > 0) {
-#if (BLE_INCLUDED == TRUE)
-        if (p_lcb->transport == BT_TRANSPORT_LE) {
-            l2cb.controller_le_xmit_window += p_lcb->sent_not_acked;
-            if (l2cb.controller_le_xmit_window > l2cb.num_lm_ble_bufs) {
-                l2cb.controller_le_xmit_window = l2cb.num_lm_ble_bufs;
-            }
-        } else
-#endif
-        {
-            l2cb.controller_xmit_window += p_lcb->sent_not_acked;
-            if (l2cb.controller_xmit_window > l2cb.num_lm_acl_bufs) {
-                l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
-            }
-        }
-    }
+    l2cu_return_tx_credits(p_lcb);
 
 #if (BLE_INCLUDED == TRUE)
     // Reset BLE connecting flag only if the address matches
@@ -270,14 +314,9 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 #endif
     }
 
-    /* Release any held buffers */
     if (p_lcb->link_xmit_data_q) {
-        while (!list_is_empty(p_lcb->link_xmit_data_q)) {
-            BT_HDR *p_buf = list_front(p_lcb->link_xmit_data_q);
-            list_remove(p_lcb->link_xmit_data_q, p_buf);
-            p_buf->event = 0;
-            osi_free(p_buf);
-        }
+        /* Release any held buffers */
+        l2cu_flush_link_xmit_data_q(p_lcb);
         list_free(p_lcb->link_xmit_data_q);
         p_lcb->link_xmit_data_q = NULL;
     }
