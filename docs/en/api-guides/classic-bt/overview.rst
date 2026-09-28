@@ -11,14 +11,12 @@ This document provides an architecture overview of the Bluetooth Classic stack i
 
 The Bluetooth Classic stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The figure below shows its architecture.
 
-.. only:: esp32
+.. figure:: ../../../_static/classic-bluetooth-architecture.png
+    :align: center
+    :scale: 90%
+    :alt: {IDF_TARGET_NAME} Bluetooth Classic Stack Architecture
 
-    .. figure:: ../../../_static/classic-bluetooth-architecture.png
-        :align: center
-        :scale: 90%
-        :alt: {IDF_TARGET_NAME} Bluetooth Classic Stack Architecture
-
-        {IDF_TARGET_NAME} Bluetooth Classic Stack Architecture
+    {IDF_TARGET_NAME} Bluetooth Classic Stack Architecture
 
 
 The following sections briefly describe each layer and provide quick links to the related documents and application examples.
@@ -29,8 +27,15 @@ ESP Bluetooth Controller
 
 At the bottom layer is ESP Bluetooth Controller, which encompasses various modules such as PHY, Baseband, Link Controller, Link Manager, Device Manager, and HCI. It handles hardware interface management and link management. It provides functions in the form of libraries and is accessible through APIs. This layer directly interacts with the hardware and low-level Bluetooth protocols.
 
+.. only:: SOC_ORCA_BREDR_CONTROLLER
+
+    On {IDF_TARGET_NAME}, optional features of the Orca BR/EDR Controller are selected at build time via Kconfig. See :doc:`esp-bredr-controller-kconfig`.
+
 - :doc:`API reference <../../api-reference/bluetooth/controller_vhci>`
-- :example:`Application examples <bluetooth/hci/controller_hci_uart_esp32>`
+
+.. only:: esp32
+
+    - :example:`Application examples <bluetooth/hci/controller_hci_uart_esp32>`
 
 
 Hosts

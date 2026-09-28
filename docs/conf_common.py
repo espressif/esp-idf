@@ -109,6 +109,10 @@ CLASSIC_BT_DOCS = [
     'migration-guides/release-6.x/6.2/bluetooth-classic.rst',
 ]
 
+ORCA_BREDR_CONTROLLER_DOCS = [
+    'api-guides/classic-bt/esp-bredr-controller-kconfig.rst',
+]
+
 BLUFI_DOCS = ['api-guides/ble/blufi.rst', 'api-reference/bluetooth/esp_blufi.rst']
 
 WIFI_DOCS = [
@@ -379,6 +383,7 @@ conditional_include_dict = {
     'SOC_BLUFI_SUPPORTED': BLUFI_DOCS,
     'SOC_WIFI_SUPPORTED': WIFI_DOCS,
     'SOC_BT_CLASSIC_SUPPORTED': CLASSIC_BT_DOCS,
+    'SOC_ORCA_BREDR_CONTROLLER': ORCA_BREDR_CONTROLLER_DOCS,
     'SOC_IEEE802154_SUPPORTED': IEEE802154_DOCS,
     'SOC_SUPPORT_COEXISTENCE': COEXISTENCE_DOCS,
     'SOC_PSRAM_DMA_CAPABLE': MM_SYNC_DOCS,

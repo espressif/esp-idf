@@ -11,14 +11,12 @@
 
 ESP-IDF 中的经典蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NAME} 系列芯片上实现经典蓝牙功能，详见下图。
 
-.. only:: esp32
+.. figure:: ../../../_static/classic-bluetooth-architecture.png
+    :align: center
+    :scale: 90%
+    :alt: {IDF_TARGET_NAME} 经典蓝牙协议栈架构
 
-    .. figure:: ../../../_static/classic-bluetooth-architecture.png
-        :align: center
-        :scale: 90%
-        :alt: {IDF_TARGET_NAME} 经典蓝牙协议栈架构
-
-        {IDF_TARGET_NAME} 经典蓝牙协议栈架构
+    {IDF_TARGET_NAME} 经典蓝牙协议栈架构
 
 
 以下各节简要介绍了每个层，并提供了相关文档和应用示例的快速链接。
@@ -29,8 +27,15 @@ ESP 蓝牙控制器
 
 底层为 ESP 蓝牙控制器，包含 PHY、基带、链路控制器、链路管理器、设备管理器和 HCI 等各种模块。该层管理硬件接口和链路，以库的形式提供功能，并通过 API 访问，且直接与硬件和低级别蓝牙协议交互。
 
+.. only:: SOC_ORCA_BREDR_CONTROLLER
+
+    在 {IDF_TARGET_NAME} 上，Orca BR/EDR Controller 的可选功能可通过 Kconfig 在编译期选择。详见 :doc:`esp-bredr-controller-kconfig`。
+
 - :doc:`API 参考 <../../api-reference/bluetooth/controller_vhci>`
-- :example:`应用示例 <bluetooth/hci/controller_hci_uart_esp32>`
+
+.. only:: esp32
+
+    - :example:`应用示例 <bluetooth/hci/controller_hci_uart_esp32>`
 
 
 ESP 蓝牙主机
