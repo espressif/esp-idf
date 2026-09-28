@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,10 +61,13 @@
 typedef void (*tx_func_t)(int, int);
 // read bytes function type
 typedef int (*rx_func_t)(int);
+// fsync bytes function type
+typedef int (*fsync_func_t)(int);
 
-// Basic functions for sending and receiving bytes
-static void usb_serial_jtag_tx_char(int fd, int c);
-static int usb_serial_jtag_rx_char(int fd);
+// Basic functions for sending and receiving bytes and fsync
+static void usb_serial_jtag_tx_char_no_driver(int fd, int c);
+static int usb_serial_jtag_rx_char_no_driver(int fd);
+static int usb_serial_jtag_wait_tx_done_no_driver(int fd);
 
 //If no host is listening to the CDCACM port, the TX buffer
 //will never be able to flush to the host. Instead of the Tx
@@ -95,10 +98,12 @@ typedef struct {
     esp_line_endings_t tx_mode;
     // Newline conversion mode when receiving
     esp_line_endings_t rx_mode;
-    // Functions used to write bytes to port. Default to "basic" functions.
+    // Function used to write bytes to port. Default to "basic" functions.
     tx_func_t tx_func;
-    // Functions used to read bytes from port. Default to "basic" functions.
+    // Function used to read bytes from port. Default to "basic" functions.
     rx_func_t rx_func;
+    // Function used to make sure all data is sent to the host.
+    fsync_func_t fsync_func;
     // Timestamp of last time we managed to write something to the tx buffer
     int64_t last_tx_ts;
 } usb_serial_jtag_vfs_context_t;
@@ -109,8 +114,9 @@ static usb_serial_jtag_vfs_context_t s_ctx = {
     .peek_char = NONE,
     .tx_mode = DEFAULT_TX_MODE,
     .rx_mode = DEFAULT_RX_MODE,
-    .tx_func = usb_serial_jtag_tx_char,
-    .rx_func = usb_serial_jtag_rx_char
+    .tx_func = usb_serial_jtag_tx_char_no_driver,
+    .rx_func = usb_serial_jtag_rx_char_no_driver,
+    .fsync_func = usb_serial_jtag_wait_tx_done_no_driver
 };
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
@@ -139,7 +145,7 @@ static int usb_serial_jtag_open(const char * path, int flags, int mode)
     return USJ_LOCAL_FD;
 }
 
-static void usb_serial_jtag_tx_char(int fd, int c)
+static void usb_serial_jtag_tx_char_no_driver(int fd, int c)
 {
     uint8_t cc = (uint8_t)c;
     // Try to write to the buffer as long as we still expect the buffer to have
@@ -164,7 +170,7 @@ static void usb_serial_jtag_tx_char(int fd, int c)
 
 }
 
-static int usb_serial_jtag_rx_char(int fd)
+static int usb_serial_jtag_rx_char_no_driver(int fd)
 {
     uint8_t c;
     int l = usb_serial_jtag_ll_read_rxfifo(&c, 1);
@@ -329,13 +335,12 @@ static int usb_serial_jtag_fcntl(int fd, int cmd, int arg)
     return result;
 }
 
-static int usb_serial_jtag_fsync(int fd)
+static int usb_serial_jtag_wait_tx_done_no_driver(int fd)
 {
     if (!usb_serial_jtag_is_connected()) {
         // TODO: IDF-14303
-        return -1;
+        return EIO;
     }
-    _lock_acquire_recursive(&s_ctx.write_lock);
     usb_serial_jtag_ll_txfifo_flush();
     //Wait for the host to have picked up the buffer, but honour the timeout in
     //case the host is not listening.
@@ -346,11 +351,24 @@ static int usb_serial_jtag_fsync(int fd)
             //send a 0-byte packet to indicate the end of the USB transfer, otherwise
             //those 64 bytes will get stuck in the hosts buffer.
             usb_serial_jtag_ll_txfifo_flush();
-            break;
+            return 0;
         }
     }
+    //Timeout. Host probably isn't listening.
+    return EIO;
+}
+
+static int usb_serial_jtag_fsync(int fd)
+{
+    _lock_acquire_recursive(&s_ctx.write_lock);
+    int r = s_ctx.fsync_func(fd);
     _lock_release_recursive(&s_ctx.write_lock);
-    return 0;
+    if (r == 0) {
+        return 0;
+    } else {
+        errno = r;
+        return -1;
+    }
 }
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
@@ -675,12 +693,20 @@ static void usbjtag_tx_char_via_driver(int fd, int c)
     }
 }
 
+static int usbjtag_wait_tx_done_via_driver(int fd)
+{
+    TickType_t ticks = (TX_FLUSH_TIMEOUT_US / 1000) / portTICK_PERIOD_MS;
+    esp_err_t r = usb_serial_jtag_wait_tx_done(ticks);
+    return (r == ESP_OK) ? 0 : EIO;
+}
+
 void usb_serial_jtag_vfs_use_nonblocking(void)
 {
     _lock_acquire_recursive(&s_ctx.read_lock);
     _lock_acquire_recursive(&s_ctx.write_lock);
-    s_ctx.tx_func = usb_serial_jtag_tx_char;
-    s_ctx.rx_func = usb_serial_jtag_rx_char;
+    s_ctx.tx_func = usb_serial_jtag_tx_char_no_driver;
+    s_ctx.rx_func = usb_serial_jtag_rx_char_no_driver;
+    s_ctx.fsync_func = usb_serial_jtag_wait_tx_done_no_driver;
     _lock_release_recursive(&s_ctx.write_lock);
     _lock_release_recursive(&s_ctx.read_lock);
 }
@@ -691,6 +717,7 @@ void usb_serial_jtag_vfs_use_driver(void)
     _lock_acquire_recursive(&s_ctx.write_lock);
     s_ctx.tx_func = usbjtag_tx_char_via_driver;
     s_ctx.rx_func = usbjtag_rx_char_via_driver;
+    s_ctx.fsync_func = usbjtag_wait_tx_done_via_driver;
     _lock_release_recursive(&s_ctx.write_lock);
     _lock_release_recursive(&s_ctx.read_lock);
 }
