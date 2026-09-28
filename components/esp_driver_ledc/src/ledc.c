@@ -17,6 +17,7 @@
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
+#include "driver/rtc_io.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_sleep.h"
 #include "esp_private/periph_ctrl.h"
@@ -998,11 +999,11 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 
         // 2. keep IO output during sleep
         gpio_sleep_sel_dis(gpio_num);
-#if CONFIG_IDF_TARGET_ESP32P4
-        // To workaround DIG-399, all LP IOs are held when LP_PERIPH is powered off to ensure EXT wakeup functionality
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3 || CONFIG_IDF_TARGET_ESP32S31
+        // To workaround P4 (DIG-399) & S31 (DIG-814), all LP IOs are held when LP_PERIPH is powered off to ensure EXT wakeup functionality
         // But holding LP IOs will cause LEDC signal cannot output on the pad during sleep
         // Therefore, we will force LP periph xpd in such case
-        if (GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO(gpio_num)) {
+        if (rtc_gpio_is_valid_gpio(gpio_num)) {
             esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
         }
 #endif
