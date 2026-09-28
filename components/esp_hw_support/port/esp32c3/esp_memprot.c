@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -461,6 +461,7 @@ esp_err_t esp_mprot_is_conf_locked_any(bool *locked)
         return ESP_ERR_INVALID_ARG;
     }
 
+    *locked = false;
     bool lock_on = false;
     esp_err_t res;
 
@@ -488,6 +489,7 @@ esp_err_t esp_mprot_is_intr_ena_any(bool *enabled)
         return ESP_ERR_INVALID_ARG;
     }
 
+    *enabled = false;
     bool ena_on = false;
     esp_err_t res;
 
@@ -638,6 +640,125 @@ static esp_err_t esp_mprot_set_intr_matrix(const esp_mprot_mem_t mem_type)
     return ESP_OK;
 }
 
+static void esp_mprot_assert_split_line(const esp_mprot_mem_t mem_type, const esp_mprot_split_addr_t line_type, const void *expected)
+{
+    void *actual = NULL;
+    esp_err_t err = esp_mprot_get_split_addr(mem_type, line_type, &actual, DEFAULT_CPU_NUM);
+    if (err != ESP_OK || actual != expected) {
+        esp_rom_printf("Fatal error: split line readback mismatch (mem=%d, line=%d, expected 0x%08" PRIX32 ", stored 0x%08" PRIX32 ", err=%d)\n",
+                       (int)mem_type, (int)line_type, (uint32_t)expected, (uint32_t)actual, (int)err);
+        abort();
+    }
+}
+
+static void esp_mprot_assert_pms_area(const esp_mprot_pms_area_t area_type, const uint32_t expected)
+{
+    uint32_t actual = 0;
+    esp_err_t err = esp_mprot_get_pms_area(area_type, &actual, DEFAULT_CPU_NUM);
+    if (err != ESP_OK || actual != expected) {
+        esp_rom_printf("Fatal error: PMS area readback mismatch (area=%d, expected 0x%08" PRIX32 ", stored 0x%08" PRIX32 ", err=%d)\n",
+                       (int)area_type, expected, actual, (int)err);
+        abort();
+    }
+}
+
+static void esp_mprot_assert_monitor_en(const esp_mprot_mem_t mem_type)
+{
+    bool enabled = false;
+    esp_err_t err = esp_mprot_get_monitor_en(mem_type, &enabled, DEFAULT_CPU_NUM);
+    if (err != ESP_OK || !enabled) {
+        esp_rom_printf("Fatal error: monitor not enabled after configuration (mem=%d, err=%d)\n", (int)mem_type, (int)err);
+        abort();
+    }
+}
+
+static void esp_mprot_assert_locked(const esp_mprot_mem_t mem_type)
+{
+    bool split_locked = false, pms_locked = false, monitor_locked = false;
+    esp_err_t e_split = esp_mprot_get_split_addr_lock(mem_type, &split_locked, DEFAULT_CPU_NUM);
+    esp_err_t e_pms = esp_mprot_get_pms_lock(mem_type, &pms_locked, DEFAULT_CPU_NUM);
+    esp_err_t e_mon = esp_mprot_get_monitor_lock(mem_type, &monitor_locked, DEFAULT_CPU_NUM);
+    if (e_split != ESP_OK || e_pms != ESP_OK || e_mon != ESP_OK || !split_locked || !pms_locked || !monitor_locked) {
+        esp_rom_printf("Fatal error: locks not engaged after configuration (mem=%d, split=%d, pms=%d, monitor=%d)\n",
+                       (int)mem_type, split_locked, pms_locked, monitor_locked);
+        abort();
+    }
+}
+
+/* Probe whether the PMS sensitive registers can be read back on this platform.
+ * They behave write-only in some environments - notably the QEMU ESP32-C3 model,
+ * which returns 0 for every PMS register - where a read-back would spuriously
+ * abort. A configured split line decodes to a non-NULL in-range address, so a
+ * NULL read means read-back is unsupported here. The split line is used as the
+ * probe (rather than e.g. the monitor-enable bit) so that a genuinely
+ * mis-applied permission/monitor state is still caught by the checks below
+ * instead of being masked as "unsupported". */
+static bool esp_mprot_readback_supported(const bool use_iram0, const bool use_dram0, const bool use_rtcfast)
+{
+    void *line = NULL;
+    esp_err_t err = (use_iram0 || use_dram0)
+                    ? esp_mprot_get_split_addr(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_DRAM0, &line, DEFAULT_CPU_NUM)
+                    : esp_mprot_get_split_addr(MEMPROT_TYPE_IRAM0_RTCFAST, MEMPROT_SPLIT_ADDR_MAIN, &line, DEFAULT_CPU_NUM);
+    (void)use_rtcfast;
+    return err == ESP_OK && line != NULL;
+}
+
+/* Read back every value esp_mprot_set_prot() configured and abort on any mismatch
+ * (fail closed). Skipped where the PMS registers are not read-back-able (see
+ * esp_mprot_readback_supported). Expected values mirror the C3 configuration path
+ * below - note: unlike S3, C3 sets DRAM0 area 0 to no-access. */
+static void esp_mprot_verify_prot(const esp_memp_config_t *memp_config, const void *line_addr,
+                                  const bool use_iram0, const bool use_dram0, const bool use_rtcfast)
+{
+    if (!esp_mprot_readback_supported(use_iram0, use_dram0, use_rtcfast)) {
+        return;
+    }
+    if (use_iram0 || use_dram0) {
+        const void *dram_line = (const void *)(MAP_IRAM_TO_DRAM((uint32_t)line_addr));
+        esp_mprot_assert_split_line(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_DRAM0, line_addr);
+        esp_mprot_assert_split_line(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_LINE_0, line_addr);
+        esp_mprot_assert_split_line(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_LINE_1, line_addr);
+        esp_mprot_assert_split_line(MEMPROT_TYPE_DRAM0_SRAM, MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_0, dram_line);
+        esp_mprot_assert_split_line(MEMPROT_TYPE_DRAM0_SRAM, MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_1, dram_line);
+    }
+    if (use_iram0) {
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_IRAM0_0, MEMPROT_OP_READ | MEMPROT_OP_EXEC);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_IRAM0_1, MEMPROT_OP_READ | MEMPROT_OP_EXEC);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_IRAM0_2, MEMPROT_OP_READ | MEMPROT_OP_EXEC);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_IRAM0_3, MEMPROT_OP_NONE);
+        esp_mprot_assert_monitor_en(MEMPROT_TYPE_IRAM0_SRAM);
+    }
+    if (use_dram0) {
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_DRAM0_0, MEMPROT_OP_NONE);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_DRAM0_1, MEMPROT_OP_READ | MEMPROT_OP_WRITE);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_DRAM0_2, MEMPROT_OP_READ | MEMPROT_OP_WRITE);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_DRAM0_3, MEMPROT_OP_READ | MEMPROT_OP_WRITE);
+        esp_mprot_assert_monitor_en(MEMPROT_TYPE_DRAM0_SRAM);
+    }
+    if (use_rtcfast) {
+        void *rtc_line = NULL;
+        if (esp_mprot_get_default_main_split_addr(MEMPROT_TYPE_IRAM0_RTCFAST, &rtc_line) != ESP_OK) {
+            esp_rom_printf("Fatal error: cannot resolve RTCFAST split line for readback\n");
+            abort();
+        }
+        esp_mprot_assert_split_line(MEMPROT_TYPE_IRAM0_RTCFAST, MEMPROT_SPLIT_ADDR_MAIN, rtc_line);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO, MEMPROT_OP_READ | MEMPROT_OP_EXEC);
+        esp_mprot_assert_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI, MEMPROT_OP_READ | MEMPROT_OP_WRITE);
+        esp_mprot_assert_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST);
+    }
+    if (memp_config->lock_feature) {
+        if (use_iram0) {
+            esp_mprot_assert_locked(MEMPROT_TYPE_IRAM0_SRAM);
+        }
+        if (use_dram0) {
+            esp_mprot_assert_locked(MEMPROT_TYPE_DRAM0_SRAM);
+        }
+        if (use_rtcfast) {
+            esp_mprot_assert_locked(MEMPROT_TYPE_IRAM0_RTCFAST);
+        }
+    }
+}
+
 esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
 {
     if (memp_config == NULL) {
@@ -718,7 +839,7 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
         ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI, MEMPROT_OP_READ | MEMPROT_OP_WRITE, DEFAULT_CPU_NUM))
     }
 
-    //reenable the protection
+    //re-enable the protection
     if (use_iram0) {
         ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM, DEFAULT_CPU_NUM))
         ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, true, DEFAULT_CPU_NUM))
@@ -750,6 +871,10 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
             ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, DEFAULT_CPU_NUM))
         }
     }
+
+    //read back the applied configuration and abort if the hardware does not reflect
+    //it (fail closed - never boot with weaker protection than requested)
+    esp_mprot_verify_prot(memp_config, line_addr, use_iram0, use_dram0, use_rtcfast);
 
     return ret;
 }
