@@ -70,9 +70,9 @@ static const struct nan_usd_peer *nan_usd_get_peer(int own_svc_id)
     return &s_nan_usd_peers[own_svc_id - 1];
 }
 
+#ifdef DEBUG_PRINT
 static const char *nan_reason_txt(enum nan_de_reason reason)
 {
-#ifdef DEBUG_PRINT
     switch (reason) {
     case NAN_DE_REASON_TIMEOUT:
         return "timeout";
@@ -83,11 +83,9 @@ static const char *nan_reason_txt(enum nan_de_reason reason)
     }
 
     return "unknown";
-#else
-    (void)reason;
-    return "";
-#endif /* DEBUG_PRINT */
 }
+#endif /* DEBUG_PRINT */
+
 static void nan_sta_stop_handler(void *arg, esp_event_base_t event_base,
                                  int32_t event_id, void *event_data)
 {
