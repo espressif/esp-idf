@@ -57,6 +57,13 @@ void setUp(void)
 
 void tearDown(void)
 {
+    /* Unity aborts a case by longjmp, so an armed test hook would fire in
+     * the NEXT case (its time gate was set in a dead stack frame and is
+     * long since passed). Disarm every hook the bounded-wait cases arm so
+     * a failed assert cannot leak it across cases. The hook state lives
+     * in test_ble_log_rt.c next to its cases. */
+    extern void test_ble_log_disarm_case_hooks(void);
+    test_ble_log_disarm_case_hooks();
 }
 
 void app_main(void)
