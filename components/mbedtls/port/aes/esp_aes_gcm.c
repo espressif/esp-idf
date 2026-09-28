@@ -267,6 +267,7 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
 
 
     ctx->aes_ctx.key_bytes = keybits / 8;
+    ctx->aes_ctx.ctr_inc32 = true;
 
     memcpy(ctx->aes_ctx.key, key, ctx->aes_ctx.key_bytes);
 
@@ -508,11 +509,14 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
     }
     *output_length = input_length;
 
-    if (!input) {
+    /* A zero-length payload is legal in PSA and in mbedtls, and (NULL, 0) is how a
+     * caller expresses it. GCM with an empty payload is the GMAC case: authenticate
+     * the additional data only. Reject a NULL buffer only when it is dereferenced. */
+    if (input_length > 0 && !input) {
         ESP_LOGE(TAG, "No input supplied");
         return PSA_ERROR_INVALID_ARGUMENT;
     }
-    if (!output) {
+    if (input_length > 0 && !output) {
         ESP_LOGE(TAG, "No output supplied");
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -524,7 +528,9 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if ( output > input && (size_t) ( output - input ) < input_length ) {
+    /* The length test comes first: an empty payload has no overlap to test, and the
+     * pointer arithmetic below is not defined for the NULL input it now admits. */
+    if ( input_length > 0 && output > input && (size_t) ( output - input ) < input_length ) {
         return ( PSA_ERROR_INVALID_ARGUMENT );
     }
     /* If this is the first time esp_gcm_update is getting called
@@ -551,9 +557,15 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
         esp_gcm_ghash_buffered(ctx, input, input_length);
     }
 
-    /* Output = GCTR(J0, Input): Encrypt/Decrypt the input. */
-    int ret = esp_aes_crypt_ctr(&ctx->aes_ctx, input_length, &ctx->nc_off, nonce_counter, ctx->stream_block, input, output);
-    if (ret == 0) {
+    /* Output = GCTR(J0, Input): Encrypt/Decrypt the input. An empty payload skips
+     * the call, because esp_aes_crypt_ctr() rejects a NULL input or output whatever
+     * the length is. The context needs no update either: the incremented J0 of the
+     * branch above is already in place and the data length does not change. */
+    int ret = 0;
+    if (input_length > 0) {
+        ret = esp_aes_crypt_ctr(&ctx->aes_ctx, input_length, &ctx->nc_off, nonce_counter, ctx->stream_block, input, output);
+    }
+    if (ret == 0 && input_length > 0) {
         /* ICB gets auto incremented after GCTR operation here so update the context */
         memcpy(ctx->J0, nonce_counter, AES_BLOCK_BYTES);
 

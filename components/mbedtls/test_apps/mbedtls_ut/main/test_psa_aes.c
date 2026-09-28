@@ -702,6 +702,76 @@ TEST_CASE("PSA AES-CTR multipart", "[psa-aes]")
     psa_destroy_key(key_id);
 }
 
+static void aes_ctr_crypt_in_parts(psa_key_id_t key_id, const uint8_t *nonce, const uint8_t *input,
+                                   uint8_t *output, size_t len, size_t part_size)
+{
+    psa_cipher_operation_t op = PSA_CIPHER_OPERATION_INIT;
+    size_t out_len, total_out_len = 0;
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_encrypt_setup(&op, key_id, PSA_ALG_CTR));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_set_iv(&op, nonce, 16));
+    for (size_t offset = 0; offset < len; offset += part_size) {
+        size_t this_part = len - offset < part_size ? len - offset : part_size;
+        TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_update(&op, input + offset, this_part,
+                                                        output + offset, this_part, &out_len));
+        total_out_len += out_len;
+    }
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_cipher_finish(&op, output + total_out_len,
+                                                    len - total_out_len, &out_len));
+    total_out_len += out_len;
+    TEST_ASSERT_EQUAL_size_t(len, total_out_len);
+    psa_cipher_abort(&op);
+}
+
+TEST_CASE("PSA AES-CTR counter carries past the low 32 bits", "[psa-aes]")
+{
+    const size_t SZ = 1024;
+    const size_t small_part = 64;
+
+    static const uint8_t key_128[16] = {
+        0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+        0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
+    };
+    static const uint8_t nonce[16] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0xff, 0xff, 0xff, 0xff,
+    };
+    static const uint8_t expected_first_blocks[48] = {
+        0xbd, 0xb7, 0xc0, 0xef, 0x49, 0x71, 0x79, 0x42, 0xfc, 0x68, 0xee, 0xb1, 0x76, 0x92, 0xfc, 0xf4,
+        0xee, 0xf8, 0x9e, 0x94, 0x94, 0xc1, 0x08, 0x2a, 0xb2, 0x7d, 0x4d, 0x90, 0x95, 0xfe, 0xff, 0x60,
+        0xe4, 0xc5, 0x5e, 0x02, 0x4d, 0xf3, 0xf2, 0x65, 0xe4, 0x36, 0xab, 0x97, 0x20, 0x92, 0x1b, 0xb4,
+    };
+
+    uint8_t *plaintext = heap_caps_calloc(1, SZ, INTERNAL_DMA_CAPS);
+    uint8_t *ciphertext_one_part = heap_caps_calloc(1, SZ, INTERNAL_DMA_CAPS);
+    uint8_t *ciphertext_small_parts = heap_caps_calloc(1, SZ, INTERNAL_DMA_CAPS);
+
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(ciphertext_one_part);
+    TEST_ASSERT_NOT_NULL(ciphertext_small_parts);
+
+    psa_key_id_t key_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_CTR);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_import_key(&attributes, key_128, sizeof(key_128), &key_id));
+    psa_reset_key_attributes(&attributes);
+
+    aes_ctr_crypt_in_parts(key_id, nonce, plaintext, ciphertext_one_part, SZ, SZ);
+    aes_ctr_crypt_in_parts(key_id, nonce, plaintext, ciphertext_small_parts, SZ, small_part);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_first_blocks, ciphertext_small_parts, sizeof(expected_first_blocks));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_first_blocks, ciphertext_one_part, sizeof(expected_first_blocks));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(ciphertext_small_parts, ciphertext_one_part, SZ);
+
+    psa_destroy_key(key_id);
+    free(plaintext);
+    free(ciphertext_one_part);
+    free(ciphertext_small_parts);
+}
+
 static void aes_ofb_test(unsigned int SZ)
 {
     psa_key_id_t key_id;

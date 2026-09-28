@@ -43,6 +43,7 @@ typedef struct {
     uint8_t key_bytes;
     volatile uint8_t key_in_hardware; /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
     uint8_t key[32];
+    bool ctr_inc32;
 } esp_aes_context;
 
 /**
