@@ -137,8 +137,7 @@ TEST_CASE("get_state sequence during a simple GET", "[esp_http_client][lifecycle
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_perform(client));
 
-    /* characterization: master behavior, see refactor spec
-     * exact sequence observed by the event handler, frozen as a regression
+    /* exact sequence observed by the event handler, frozen as a regression
      * baseline for the state-machine refactor. get_state() lags the event
      * that triggered it in several places: it still reports
      * REQ_COMPLETE_DATA at ON_STATUS_CODE and both ON_HEADER callbacks, and

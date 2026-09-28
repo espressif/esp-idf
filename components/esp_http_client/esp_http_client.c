@@ -1947,7 +1947,11 @@ static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client)
 
     int wret = esp_http_client_write(client, client->post_data + client->data_written_index, client->data_write_left);
     if (wret < 0) {
-        return wret;
+        /* esp_http_client_write() returns a transport-level count, not an esp_err_t. A raw
+         * negative value (for example an esp-tls error) must not be returned as esp_err_t.
+         * Nothing is logged here, because errno must stay intact for the async caller,
+         * which keys "retry later" off errno == EAGAIN. */
+        return ESP_ERR_HTTP_WRITE_DATA;
     }
     client->data_write_left -= wret;
     client->data_written_index += wret;

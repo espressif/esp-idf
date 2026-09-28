@@ -61,8 +61,7 @@ TEST_CASE("auto redirect follows 302 within one perform", "[esp_http_client][red
 
     char req[2048];
     TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_last_request(mock, req, sizeof(req), NULL));
-    /* characterization: master behavior, see refactor spec
-     * resp_302 has neither "Connection: close" nor an HTTP/1.0 status line,
+    /* resp_302 has neither "Connection: close" nor an HTTP/1.0 status line,
      * so http_should_keep_alive() keeps the connection open and
      * esp_http_client.c never closes/reconnects between the two requests
      * (observed in the QEMU transport log: a single "Mock connect
@@ -118,8 +117,7 @@ TEST_CASE("max_redirection_count stops a redirect loop", "[esp_http_client][redi
     TEST_ASSERT_NOT_NULL(client);
 
     esp_err_t err = esp_http_client_perform(client);
-    /* characterization: master behavior, see refactor spec
-     * with max_redirection_count=2, redirect_counter starts at 0 and is
+    /* with max_redirection_count=2, redirect_counter starts at 0 and is
      * checked (>= max) BEFORE each redirect is taken: 1st 302 -> counter
      * 0>=2 false, redirect, counter=1; 2nd 302 -> 1>=2 false, redirect,
      * counter=2; 3rd 302 -> 2>=2 true, esp_http_check_response() returns

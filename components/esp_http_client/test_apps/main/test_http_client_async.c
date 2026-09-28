@@ -141,14 +141,12 @@ TEST_CASE("async write would-block on header send aborts the request", "[esp_htt
 
     mock_http_transport_stats_t stats;
     mock_http_transport_get_stats(mock, &stats);
-    // characterization: master behavior, see refactor spec
     TEST_ASSERT_EQUAL(0, stats.write_calls);   /* would-blocked write is never counted as completed */
     TEST_ASSERT_EQUAL(1, stats.close_calls);   /* connection force-closed on the failed header write */
 
     char req[2048];
     size_t req_len = 0;
     TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_last_request(mock, req, sizeof(req), &req_len));
-    // characterization: master behavior, see refactor spec
     TEST_ASSERT_EQUAL(0, req_len);             /* nothing reached the wire: no body, so no duplicate either */
 
     esp_http_client_cleanup(client);

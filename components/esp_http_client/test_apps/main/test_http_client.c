@@ -570,7 +570,6 @@ TEST_CASE("HTTP client can be reused after read timeout", "[esp_http_client][err
     mock_http_transport_get_stats(mock_transport, &stats);
     /* Master does not close the connection after a fetch-header failure, so the
      * reused client never reconnects; it keeps reading on the same connection. */
-    // characterization: master behavior, see refactor spec
     TEST_ASSERT_EQUAL(0, stats.connect_calls);
     TEST_ASSERT_GREATER_THAN(0, stats.read_calls);
 
@@ -656,10 +655,12 @@ TEST_CASE("HTTP client can be reused after write failure", "[esp_http_client][er
     esp_http_client_set_post_field(client, post_data2, strlen(post_data2));
 
     /* Master leaves stale POST-body write state behind after the failed write,
-     * so the reused client fails immediately without touching the transport. */
+     * so the reused client fails immediately without touching the transport.
+     * perform() resumes at HTTP_STATE_REQ_COMPLETE_HEADER and the post data
+     * write fails, which esp_http_client_send_post_data() maps to
+     * ESP_ERR_HTTP_WRITE_DATA. */
     err = esp_http_client_perform(client);
-    // characterization: master behavior, see refactor spec
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_HTTP_WRITE_DATA, err);
     TEST_ASSERT_EQUAL(0, esp_http_client_get_status_code(client));
 
     ESP_LOGI("test", "Request 3 did not recover: %s", esp_err_to_name(err));
@@ -718,7 +719,6 @@ TEST_CASE("HTTP client can be reused after incomplete data", "[esp_http_client][
     /* Master does not reset the parser/connection state after the aborted read,
      * so the reused client fails header fetching without touching the transport. */
     err = esp_http_client_perform(client);
-    // characterization: master behavior, see refactor spec
     TEST_ASSERT_EQUAL(ESP_ERR_HTTP_FETCH_HEADER, err);
     TEST_ASSERT_EQUAL(-1, esp_http_client_get_status_code(client));
 
@@ -764,7 +764,6 @@ TEST_CASE("HTTP client survives multiple error/success cycles", "[esp_http_clien
     };
     /* Master recovers from a read timeout (cycle 1 -> 2) but not from an aborted
      * read (cycle 3), so the final cycle fails instead of succeeding. */
-    // characterization: master behavior, see refactor spec
     bool expected_success[] = {true, false, true, false, false};
 
     for (int i = 0; i < sizeof(sequence) / sizeof(sequence[0]); i++) {

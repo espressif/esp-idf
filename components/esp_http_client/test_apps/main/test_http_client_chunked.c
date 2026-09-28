@@ -85,8 +85,7 @@ TEST_CASE("chunked response decodes and reports is_chunked", "[esp_http_client][
 
     int chunk_len = 0;
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_chunk_length(client, &chunk_len));
-    /* characterization: master behavior, see refactor spec
-     * after the terminating "0\r\n\r\n" chunk has been consumed,
+    /* after the terminating "0\r\n\r\n" chunk has been consumed,
      * get_chunk_length() reports 0 - it reflects the last-seen chunk-size
      * line (the zero-length terminator), not "unknown"/-1. */
     TEST_ASSERT_EQUAL(0, chunk_len);
@@ -118,8 +117,7 @@ TEST_CASE("FIN mid-chunk surfaces an error, not success", "[esp_http_client][chu
     TEST_ASSERT_NOT_NULL(client);
 
     esp_err_t err = esp_http_client_perform(client);
-    /* characterization: master behavior, see refactor spec
-     * master returns ESP_ERR_HTTP_INCOMPLETE_DATA for a chunked body
+    /* master returns ESP_ERR_HTTP_INCOMPLETE_DATA for a chunked body
      * genuinely truncated mid-chunk (as opposed to ESP_ERR_HTTP_EAGAIN,
      * which is what a request-write-vs-read-budget race produces instead -
      * see the commit message for how those two differ). On real hardware,
