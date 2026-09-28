@@ -136,7 +136,7 @@ int conn_create(uint8_t addr_type, const uint8_t addr[6])
     esp_bd_addr_t peer_bda;
 
     /* Local copy: the Bluedroid APIs below take a non-const esp_bd_addr_t. */
-    memcpy(peer_bda, addr, sizeof(peer_bda));
+    example_addr_le_to_host(peer_bda, addr);
 
     err = esp_ble_gap_prefer_ext_connect_params_set(
               peer_bda, ESP_BLE_GAP_PHY_1M_PREF_MASK, &conn_params, NULL, NULL);
@@ -164,13 +164,15 @@ int conn_create(uint8_t addr_type, const uint8_t addr[6])
 int pairing_start(uint16_t conn_handle)
 {
     const uint8_t *addr = set_member_addr(conn_handle);
+    esp_bd_addr_t peer_bda;
 
     if (addr == NULL) {
         ESP_LOGE(TAG, "No address for handle %u; not starting security", conn_handle);
         return ESP_ERR_INVALID_STATE;
     }
 
-    return esp_ble_set_encryption((uint8_t *)addr, ESP_BLE_SEC_ENCRYPT_NO_MITM);
+    example_addr_le_to_host(peer_bda, addr);
+    return esp_ble_set_encryption(peer_bda, ESP_BLE_SEC_ENCRYPT_NO_MITM);
 }
 
 int exchange_mtu(uint16_t conn_handle)
@@ -186,6 +188,7 @@ int exchange_mtu(uint16_t conn_handle)
 void security_failed_recover(uint16_t conn_handle, uint8_t status)
 {
     const uint8_t *addr = set_member_addr(conn_handle);
+    esp_bd_addr_t peer_bda;
 
     if (addr == NULL) {
         ESP_LOGE(TAG, "Security change failed on handle %u, status %u; member already gone",
@@ -199,6 +202,7 @@ void security_failed_recover(uint16_t conn_handle, uint8_t status)
     ESP_LOGE(TAG, "Security change failed on handle %u, status %u, clearing local bond and reconnecting",
              conn_handle, status);
 
-    esp_ble_remove_bond_device((uint8_t *)addr);
-    esp_ble_gap_disconnect((uint8_t *)addr);
+    example_addr_le_to_host(peer_bda, addr);
+    esp_ble_remove_bond_device(peer_bda);
+    esp_ble_gap_disconnect(peer_bda);
 }

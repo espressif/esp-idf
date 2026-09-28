@@ -127,24 +127,8 @@ static void recv_state_updated_cb(esp_ble_conn_t *conn,
     }
 }
 
-/* recv_state->addr carries the on-air (LSB-first) order the BASS PDU used;
- * pa_sync_create() takes the active host's own order — MSB-first under
- * Bluedroid, on-air under NimBLE. */
-static void addr_le_to_host(uint8_t dst[6], const uint8_t src[6])
-{
-#if CONFIG_BT_BLUEDROID_ENABLED
-    for (size_t i = 0; i < 6; i++) {
-        dst[i] = src[5 - i];
-    }
-#else
-    memcpy(dst, src, 6);
-#endif
-}
-
-/* Likewise the address type: BASS 3.1.1.4 carries only 0x00 public (device or
- * identity) and 0x01 random (device or static identity); pa_sync_create() wants
- * the host's own enum. */
-static uint8_t addr_type_le_to_host(uint8_t type)
+/* Map BASS address types to the host's public or random type. */
+static uint8_t addr_type_bass_to_host(uint8_t type)
 {
 #if CONFIG_BT_BLUEDROID_ENABLED
     return (type == BT_ADDR_LE_PUBLIC ||
@@ -186,7 +170,7 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
      * stumble across the source in our own scan: ext_scan_recv() stops
      * creating syncs the moment req_recv_state is set, so nothing else would.
      */
-    addr_le_to_host(addr, recv_state->addr.a.val);
+    memcpy(addr, recv_state->addr.a.val, sizeof(addr));
 
 #if CONFIG_EXAMPLE_PAST
     if (past_available) {
@@ -219,7 +203,7 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
     }
 #endif /* CONFIG_EXAMPLE_SCAN_OFFLOAD */
 
-    err = pa_sync_create(addr_type_le_to_host(recv_state->addr.type), addr,
+    err = pa_sync_create(addr_type_bass_to_host(recv_state->addr.type), addr,
                          recv_state->adv_sid);
     if (err) {
         ESP_LOGE(TAG, "Failed to create PA sync, err %d", err);

@@ -108,7 +108,7 @@ int pa_sync_create(uint8_t addr_type, const uint8_t addr[6], uint8_t sid)
         .sync_timeout = PA_SYNC_TIMEOUT,
     };
 
-    memcpy(params.addr, addr, sizeof(params.addr));
+    example_addr_le_to_host(params.addr, addr);
 
     /* Fire-and-forget: sync establishment (PERIODIC_ADV_SYNC_ESTAB_EVT) is
      * air-dependent and surfaces asynchronously. */
