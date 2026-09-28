@@ -34,6 +34,25 @@ if BLE_LOG_ENABLED
             in one transport. SPI builds require a multiple of four so they
             can append peripheral-only zero padding to each logical frame.
 
+    config BLE_LOG_POOL_WAIT_TIMEOUT_MS
+        int "Total wait budget for one pool acquire (ms)"
+        depends on BLE_LOG_PRPH_USB || BLE_LOG_PRPH_TEST
+        range -1 1000
+        default 10 if BLE_LOG_PRPH_USB
+        default -1
+        help
+            Bounded total wait for a single transport acquire by an ordinary
+            yieldable task. 0 fails immediately when the pool is busy; -1
+            keeps the historical infinite wait; positive values are rounded
+            up to FreeRTOS ticks and cap the total wait across all wakeups
+            of one acquire (the budget is never reset by a wake).
+
+            Only visible for USB and test builds. Production SPI/UART
+            builds keep the infinite wait (the symbol stays undefined and
+            the code falls back to portMAX_DELAY). 10 ms is an initial
+            test value for USB builds only; the final default must be
+            measured on the target DMA path.
+
     config BLE_LOG_TASK_ID_MAX
         int "Maximum number of distinct logging tasks"
         range 2 32

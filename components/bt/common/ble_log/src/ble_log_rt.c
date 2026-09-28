@@ -23,7 +23,7 @@
 #include "driver/gpio.h"
 
 /* MACRO */
-#define TAG                                      "ble_log_rt"
+#define TAG                                      "BLE-Log"
 #define BLE_LOG_RT_DEFER_TIMEOUT_US              (1000)
 
 /* Link-layer clock sample; 0 when the controller exports no accessor. */
@@ -88,8 +88,48 @@ BLE_LOG_STATIC void ble_log_rt_defer_cb(void *arg);
 BLE_LOG_STATIC void ble_log_rt_dispatch(QueueHandle_t queue,
                                         UBaseType_t pending);
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
+BLE_LOG_STATIC void ble_log_rt_report_loss(void);
 
 /* PRIVATE FUNCTION */
+/* One loss-warning line per window, non-zero windows only. Runs on the
+ * shared ESP Timer task: a single short line, ~100 bytes at 115200 baud
+ * (~9 ms). If the measured worst-case cost ever exceeds the timer-task
+ * budget, move formatting to a low-priority diagnostic task instead of
+ * shortening the producer wait (spec constraint). */
+BLE_LOG_STATIC void ble_log_rt_report_loss(void)
+{
+    uint32_t by_source[BLE_LOG_SRC_MAX];
+    ble_log_lbm_take_loss_window(by_source);
+
+    uint32_t total = 0;
+    for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
+        total += by_source[i];
+    }
+    if (total == 0) {
+        return;
+    }
+
+    /* Fixed scratch, assembled field by field; no dynamic allocation on
+     * the timer task. Only non-zero sources appear, one src-<code>=<count>
+     * entry each (source code as the plain numeric wire ID). */
+    char line[160];
+    int pos = snprintf(line, sizeof(line), "Lost %lu frames",
+                       (unsigned long)total);
+    for (int i = 0;
+         i < BLE_LOG_SRC_MAX && pos > 0 && (size_t)pos < sizeof(line) - 1;
+         i++) {
+        if (by_source[i] == 0) {
+            continue;
+        }
+        int written = snprintf(line + pos, sizeof(line) - pos, ", src-%u=%lu",
+                               i, (unsigned long)by_source[i]);
+        if (written < 0) {
+            break;
+        }
+        pos += written;
+    }
+    ESP_LOGW(TAG, "%s", line);
+}
 /* Captures the link-layer, ESP and OS clocks at one instant. */
 void ble_log_rt_ts_sample(ble_log_ts_info_t *info, bool toggle_io)
 {
@@ -170,6 +210,8 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
         BLE_LOG_SNAPSHOT_REASON_PERIODIC |
         BLE_LOG_SNAPSHOT_REASON_TS_VALID,
         &ts_info, false);
+
+    ble_log_rt_report_loss();
 }
 
 /* INTERFACE */
@@ -264,6 +306,12 @@ void ble_log_rt_deinit(void)
     }
     if (rt_ts_timer) {
         esp_timer_stop_blocking(rt_ts_timer, portMAX_DELAY);
+        /* Tail window: the callback has exited, so the shadow state is
+         * exclusively ours. Report losses since the last periodic window
+         * before the runtime queue and peripherals go away. The shadow was
+         * zeroed at init, so an early deinit reports exactly what was lost
+         * since then. */
+        ble_log_rt_report_loss();
         esp_timer_delete(rt_ts_timer);
         rt_ts_timer = NULL;
     }
