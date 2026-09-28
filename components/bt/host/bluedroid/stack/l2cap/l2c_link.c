@@ -506,6 +506,18 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                 }
 #endif
             }
+            /* A connect was queued while this link was disconnecting. A close
+             * may have left idle_timeout at 0; restore the default before the
+             * new ACL comes up so an interim channel (SDP) closing does not
+             * drop the link. A channel kept only to retry an in-progress
+             * connect keeps the timeout it already has. LE keeps its own. */
+            if (p_lcb->p_pending_ccb != NULL
+#if (BLE_INCLUDED == TRUE)
+                    && (p_lcb->transport != BT_TRANSPORT_LE)
+#endif
+               ) {
+                p_lcb->idle_timeout = l2cb.idle_timeout;
+            }
             /* l2cu_create_conn must not release the LCB on failure */
             if (l2cu_create_conn(p_lcb, transport)) {
                 lcb_is_free = FALSE;    /* still using this lcb */
