@@ -203,6 +203,15 @@ static BOOLEAN is_connected(int idx, bt_bdaddr_t *bd_addr)
     return FALSE;
 }
 
+BOOLEAN btc_hf_ag_is_connected(bt_bdaddr_t *bd_addr)
+{
+    int idx = btc_hf_idx_by_bdaddr(bd_addr);
+    if ((idx < 0) || (idx >= BTC_HF_NUM_CB)) {
+        return FALSE;
+    }
+    return is_connected(idx, bd_addr);
+}
+
 #if (BTM_WBS_INCLUDED == TRUE)
 static esp_hf_codec_mode_t btc_hf_bta_codec_to_esp(tBTA_AG_PEER_CODEC codec)
 {

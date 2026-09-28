@@ -171,6 +171,9 @@ esp_err_t esp_hf_ag_set_codec(esp_bd_addr_t remote_bda, esp_hf_codec_mode_t mode
     if (mode > ESP_HF_CODEC_LC3) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (!btc_hf_ag_is_connected((bt_bdaddr_t *)remote_bda)) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
