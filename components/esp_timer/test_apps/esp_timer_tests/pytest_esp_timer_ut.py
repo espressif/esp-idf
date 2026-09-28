@@ -14,6 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
         ('single_core', 'esp32'),
         ('freertos_compliance', 'esp32'),
         ('isr_dispatch_esp32', 'esp32'),
+        ('delete_isr_esp32', 'esp32'),
         ('isr_dispatch_esp32c3', 'esp32c3'),
         ('cpu1_esp32', 'esp32'),
         ('any_cpu_esp32', 'esp32'),

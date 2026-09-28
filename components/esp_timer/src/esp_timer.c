@@ -76,7 +76,8 @@ static void timer_remove_inactive(esp_timer_handle_t timer);
 
 ESP_LOG_ATTR_TAG(TAG, "esp_timer");
 
-// lists of currently armed timers for two dispatch methods: ISR and TASK
+// Armed timers sorted by alarm for each dispatch method, followed by a suffix
+// of EVENT_ID_DELETE_TIMER entries ready to be freed by the timer task.
 static LIST_HEAD(esp_timer_list, esp_timer) s_timers[ESP_TIMER_MAX] = {
     [0 ...(ESP_TIMER_MAX - 1)] = LIST_HEAD_INITIALIZER(s_timers)
 };
@@ -94,6 +95,10 @@ static TaskHandle_t s_timer_task;
 static portMUX_TYPE s_timer_lock[ESP_TIMER_MAX] = {
     [0 ...(ESP_TIMER_MAX - 1)] = portMUX_INITIALIZER_UNLOCKED
 };
+
+// Accepted deletions, including callbacks still running and batches being freed.
+// Counter updates are protected by the corresponding dispatch list lock.
+static size_t s_pending_delete_count[ESP_TIMER_MAX];
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 // For ISR dispatch method, a callback function of the timer may require a context switch
@@ -218,7 +223,7 @@ static esp_err_t ESP_TIMER_IRAM_ATTR timer_init(esp_timer_handle_t timer, uint64
      * and us locking the list, resulting in us inserting the
      * timer to s_timers a second time. This will create a loop
      * in s_timers. */
-    if (timer_armed(timer)) {
+    if (timer_armed(timer) || (timer->event_id == EVENT_ID_DELETE_TIMER)) {
         err = ESP_ERR_INVALID_STATE;
     } else {
         timer->alarm = first_alarm_us;
@@ -363,31 +368,51 @@ esp_err_t esp_timer_stop_blocking(esp_timer_handle_t timer, uint32_t timeout_tic
     return ESP_OK;
 }
 
+// Called with the original dispatch list locked, after the dispatcher has
+// finished using the timer, including updating its profiling fields.
+static void ESP_TIMER_IRAM_ATTR timer_schedule_delete(esp_timer_handle_t timer)
+{
+    // Reuse the original list without scheduling an alarm. timer_insert() moves
+    // the inactive profiling entry, if any, into the ready-to-delete suffix.
+    timer->alarm = UINT64_MAX;
+    timer->period = 0;
+    timer_insert(timer, true);
+    // The task can free the timer once this dispatch list lock is released.
+}
+
 esp_err_t esp_timer_delete(esp_timer_handle_t timer)
 {
     if (timer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    int64_t alarm = esp_timer_get_time();
-    esp_err_t err;
-    timer_list_lock(ESP_TIMER_TASK);
+    esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+    esp_err_t err = ESP_OK;
+    bool notify_task = false;
+    timer_list_lock(dispatch_method);
 
-    /* Check if the timer is armed once the list is locked to avoid a data race */
-    if (timer_armed(timer)) {
+    if (timer_armed(timer) || (timer->event_id == EVENT_ID_DELETE_TIMER)) {
         err = ESP_ERR_INVALID_STATE;
     } else {
-        // A case for the timer with ESP_TIMER_ISR:
-        // This ISR timer was removed from the ISR list in esp_timer_stop() or in timer_process_alarm() -> LIST_REMOVE(it, list_entry)
-        // and here this timer will be added to another the TASK list, see below.
-        // We do this because we want to free memory of the timer in a task context instead of an isr context.
-        timer->flags &= ~FL_ISR_DISPATCH_METHOD;
+        ++s_pending_delete_count[dispatch_method];
+        // A running callback already has a local copy of the function pointer.
+        // Keep list ownership until the callback epilogue, including profiling, finishes.
         timer->event_id = EVENT_ID_DELETE_TIMER;
-        timer->alarm = alarm;
-        timer->period = 0;
-        err = timer_insert(timer, false);
+        if (!(timer->flags & FL_CALLBACK_IS_RUNNING)) {
+            timer_schedule_delete(timer);
+            notify_task = true;
+        }
     }
-    timer_list_unlock(ESP_TIMER_TASK);
+    timer_list_unlock(dispatch_method);
+
+    if (notify_task) {
+        if (xPortInIsrContext()) {
+            // Deletion is asynchronous; do not yield inside an ISR callback.
+            vTaskNotifyGiveFromISR(s_timer_task, NULL);
+        } else {
+            xTaskNotifyGive(s_timer_task);
+        }
+    }
     return err;
 }
 
@@ -402,7 +427,8 @@ static ESP_TIMER_IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer, bool
         LIST_INSERT_HEAD(&s_timers[dispatch_method], timer, list_entry);
     } else {
         LIST_FOREACH(it, &s_timers[dispatch_method], list_entry) {
-            if (timer->alarm < it->alarm) {
+            // Keep deletion records last, even if a normal timer's alarm is UINT64_MAX.
+            if (it->event_id == EVENT_ID_DELETE_TIMER || timer->alarm < it->alarm) {
                 LIST_INSERT_BEFORE(it, timer, list_entry);
                 break;
             }
@@ -468,7 +494,7 @@ static ESP_TIMER_IRAM_ATTR void timer_remove_inactive(esp_timer_handle_t timer)
 
 static ESP_TIMER_IRAM_ATTR bool timer_armed(esp_timer_handle_t timer)
 {
-    return timer->alarm > 0;
+    return timer->alarm > 0 && timer->event_id != EVENT_ID_DELETE_TIMER;
 }
 
 static ESP_TIMER_IRAM_ATTR void timer_list_lock(esp_timer_dispatch_t timer_type)
@@ -485,62 +511,102 @@ static ESP_TIMER_IRAM_ATTR void timer_list_unlock(esp_timer_dispatch_t timer_typ
 ESP_TIMER_IRAM_ATTR
 #endif
 // Keep this as a standalone symbol because ldgen maps it by name.
-static void __attribute__((noinline, noclone)) timer_process_alarm(esp_timer_dispatch_t dispatch_method)
+// Return whether the timer task needs to process newly ready deletions.
+static bool __attribute__((noinline, noclone)) timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 {
+    bool timers_to_delete = false;
     timer_list_lock(dispatch_method);
     esp_timer_handle_t it;
     while (1) {
         it = LIST_FIRST(&s_timers[dispatch_method]);
         int64_t now = esp_timer_impl_get_time();
-        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-use-after-free") // False-positive detection. TODO GCC-366
+        // Ready-to-delete entries have alarm == UINT64_MAX and never become due.
         if (it == NULL || it->alarm > now) {
             break;
         }
-        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-use-after-free")
         LIST_REMOVE(it, list_entry);
-        if (it->event_id == EVENT_ID_DELETE_TIMER) {
-            // It is handled only by ESP_TIMER_TASK (see esp_timer_delete()).
-            // All the ESP_TIMER_ISR timers which should be deleted are moved by esp_timer_delete() to the ESP_TIMER_TASK list.
-            // We want to free memory of the timer in a task context instead of an isr context.
-            free(it);
-            it = NULL;
-        } else {
-            it->flags |= FL_CALLBACK_IS_RUNNING;
-            if (it->period > 0) {
-                int skipped = (now - it->alarm) / it->period;
-                if ((it->flags & FL_SKIP_UNHANDLED_EVENTS) && (skipped > 1)) {
-                    it->alarm = now + it->period;
+        it->flags |= FL_CALLBACK_IS_RUNNING;
+        if (it->period > 0) {
+            int skipped = (now - it->alarm) / it->period;
+            if ((it->flags & FL_SKIP_UNHANDLED_EVENTS) && (skipped > 1)) {
+                it->alarm = now + it->period;
 #if WITH_PROFILING
-                    it->times_skipped += skipped;
+                it->times_skipped += skipped;
 #endif
-                } else {
-                    it->alarm += it->period;
-                }
-                timer_insert(it, true);
             } else {
-                it->alarm = 0;
-#if WITH_PROFILING
-                timer_insert_inactive(it);
-#endif
+                it->alarm += it->period;
             }
+            timer_insert(it, true);
+        } else {
+            it->alarm = 0;
 #if WITH_PROFILING
-            uint64_t callback_start = now;
+            timer_insert_inactive(it);
 #endif
-            esp_timer_cb_t callback = it->callback;
-            void* arg = it->arg;
-            timer_list_unlock(dispatch_method);
-            (*callback)(arg);
-            timer_list_lock(dispatch_method);
-            it->flags &= ~FL_CALLBACK_IS_RUNNING;
+        }
 #if WITH_PROFILING
-            it->times_triggered++;
-            it->total_callback_run_time += esp_timer_impl_get_time() - callback_start;
+        uint64_t callback_start = now;
 #endif
+        esp_timer_cb_t callback = it->callback;
+        void* arg = it->arg;
+        timer_list_unlock(dispatch_method);
+        (*callback)(arg);
+        timer_list_lock(dispatch_method);
+        it->flags &= ~FL_CALLBACK_IS_RUNNING;
+#if WITH_PROFILING
+        it->times_triggered++;
+        it->total_callback_run_time += esp_timer_impl_get_time() - callback_start;
+#endif
+        if (it->event_id == EVENT_ID_DELETE_TIMER) {
+            timer_schedule_delete(it);
+            timers_to_delete = true;
         }
     } // while(1)
     uint64_t next_alarm = (it != NULL) ? it->alarm : UINT64_MAX;
     esp_timer_impl_set_alarm_id(next_alarm, dispatch_method);
     timer_list_unlock(dispatch_method);
+    return timers_to_delete;
+}
+
+// Keep this as a standalone symbol because ldgen maps it by name.
+static void __attribute__((noinline, noclone)) timer_process_deletes(void)
+{
+    for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
+        timer_list_lock(dispatch_method);
+        if (s_pending_delete_count[dispatch_method] == 0) {
+            timer_list_unlock(dispatch_method);
+            continue;
+        }
+
+        esp_timer_handle_t timer;
+        LIST_FOREACH(timer, &s_timers[dispatch_method], list_entry) {
+            if (timer->event_id == EVENT_ID_DELETE_TIMER) {
+                break;
+            }
+        }
+        if (timer != NULL) {
+            // All remaining entries are ready for deletion. Detach the suffix
+            // in one step; removing it does not change the next hardware alarm.
+            *timer->list_entry.le_prev = NULL;
+        }
+        timer_list_unlock(dispatch_method);
+
+        size_t deleted_count = 0;
+        while (timer != NULL) {
+            // Only use forward links: the detached nodes' back-links are no longer valid.
+            esp_timer_handle_t next = LIST_NEXT(timer, list_entry);
+            free(timer);
+            timer = next;
+            ++deleted_count;
+        }
+
+        if (deleted_count != 0) {
+            // Include detached timers in the count until every free() completes,
+            // so deinit cannot stop the task in the middle of this batch.
+            timer_list_lock(dispatch_method);
+            s_pending_delete_count[dispatch_method] -= deleted_count;
+            timer_list_unlock(dispatch_method);
+        }
+    }
 }
 
 static void timer_task(void* arg)
@@ -549,6 +615,7 @@ static void timer_task(void* arg)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         // all deferred events are processed at a time
         timer_process_alarm(ESP_TIMER_TASK);
+        timer_process_deletes();
     }
 }
 
@@ -569,15 +636,16 @@ static void ESP_TIMER_IRAM_ATTR timer_alarm_handler(void* arg)
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
     uint32_t due_alarm_mask = esp_timer_impl_claim_due_alarms();
+    bool timers_to_delete = false;
 
     if (due_alarm_mask & (1U << ESP_TIMER_ISR)) {
-        timer_process_alarm(ESP_TIMER_ISR);
+        timers_to_delete = timer_process_alarm(ESP_TIMER_ISR);
     }
 
     xHigherPriorityTaskWoken = s_isr_dispatch_need_yield;
     s_isr_dispatch_need_yield = pdFALSE;
 
-    if (due_alarm_mask & (1U << ESP_TIMER_TASK)) {
+    if (due_alarm_mask & (1U << ESP_TIMER_TASK) || timers_to_delete) {
         vTaskNotifyGiveFromISR(s_timer_task, &xHigherPriorityTaskWoken);
     }
 #else
@@ -682,9 +750,9 @@ esp_err_t esp_timer_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Check if there are any active timers */
+    /* Check if there are any active timers and pending deletions, including detached batches. */
     for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
-        if (!LIST_EMPTY(&s_timers[dispatch_method])) {
+        if (!LIST_EMPTY(&s_timers[dispatch_method]) || s_pending_delete_count[dispatch_method] != 0) {
             return ESP_ERR_INVALID_STATE;
         }
     }
@@ -770,11 +838,16 @@ esp_err_t esp_timer_dump(FILE* stream)
     for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
         timer_list_lock(dispatch_method);
         LIST_FOREACH(it, &s_timers[dispatch_method], list_entry) {
+            if (it->event_id == EVENT_ID_DELETE_TIMER) {
+                break;
+            }
             ++timer_count;
         }
 #if WITH_PROFILING
         LIST_FOREACH(it, &s_inactive_timers[dispatch_method], list_entry) {
-            ++timer_count;
+            if (it->event_id != EVENT_ID_DELETE_TIMER) {
+                ++timer_count;
+            }
         }
 #endif
         timer_list_unlock(dispatch_method);
@@ -797,11 +870,16 @@ esp_err_t esp_timer_dump(FILE* stream)
     for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
         timer_list_lock(dispatch_method);
         LIST_FOREACH(it, &s_timers[dispatch_method], list_entry) {
+            if (it->event_id == EVENT_ID_DELETE_TIMER) {
+                break;
+            }
             print_timer_info(it, &pos, &buf_size);
         }
 #if WITH_PROFILING
         LIST_FOREACH(it, &s_inactive_timers[dispatch_method], list_entry) {
-            print_timer_info(it, &pos, &buf_size);
+            if (it->event_id != EVENT_ID_DELETE_TIMER) {
+                print_timer_info(it, &pos, &buf_size);
+            }
         }
 #endif
         timer_list_unlock(dispatch_method);
@@ -905,8 +983,7 @@ bool ESP_TIMER_IRAM_ATTR esp_timer_is_active(esp_timer_handle_t timer)
     timer_list_lock(dispatch_method);
     // Timer is active if it is armed or its callback is currently running
     // After esp_timer_stop() timer is disarmed, but its callback may still be running
-    bool active = (timer_armed(timer) && timer->event_id != EVENT_ID_DELETE_TIMER)
-                  || ((timer->flags & FL_CALLBACK_IS_RUNNING) != 0);
+    bool active = timer_armed(timer) || ((timer->flags & FL_CALLBACK_IS_RUNNING) != 0);
     timer_list_unlock(dispatch_method);
 
     return active;
