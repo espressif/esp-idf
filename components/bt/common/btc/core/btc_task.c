@@ -68,6 +68,9 @@
 #if BTC_PBA_CLIENT_INCLUDED
 #include "btc_pba_client.h"
 #endif
+#if BTC_OPP_INCLUDED
+#include "btc_opp.h"
+#endif
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 
@@ -172,6 +175,14 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #endif
 #if BTC_PBA_CLIENT_INCLUDED
     [BTC_PID_PBA_CLIENT]  = {btc_pba_client_call_handler,  btc_pba_client_cb_handler},
+#endif
+#if BTC_OPP_INCLUDED
+#if BTC_OPP_SERVER_INCLUDED
+    [BTC_PID_OPP_SERVER]  = {btc_opp_server_call_handler,  btc_opp_server_cb_handler},
+#endif
+#if BTC_OPP_CLIENT_INCLUDED
+    [BTC_PID_OPP_CLIENT]  = {btc_opp_client_call_handler,  btc_opp_client_cb_handler},
+#endif
 #endif
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif

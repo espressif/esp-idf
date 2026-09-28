@@ -209,6 +209,7 @@ const char *bt_hex2str(const void *buf, size_t len);
 #define AVDT_INITIAL_TRACE_LEVEL            UC_BT_LOG_AVDT_TRACE_LEVEL
 #define AVCT_INITIAL_TRACE_LEVEL            UC_BT_LOG_AVCT_TRACE_LEVEL
 #define AVRC_INITIAL_TRACE_LEVEL            UC_BT_LOG_AVRC_TRACE_LEVEL
+#define GOEPS_INITIAL_TRACE_LEVEL           UC_BT_LOG_GOEPS_TRACE_LEVEL
 #define MCA_INITIAL_TRACE_LEVEL             UC_BT_LOG_MCA_TRACE_LEVEL
 #define HIDH_INITIAL_TRACE_LEVEL            UC_BT_LOG_HIDH_TRACE_LEVEL
 #define HIDD_INITIAL_TRACE_LEVEL            UC_BT_LOG_HIDD_TRACE_LEVEL
@@ -454,6 +455,13 @@ const char *bt_hex2str(const void *buf, size_t len);
 #define GOEPC_TRACE_API(fmt, args...)        {if (goepc_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(AVRC,API)) BT_PRINT_I("BT_GOEPC", fmt, ## args);}
 #define GOEPC_TRACE_EVENT(fmt, args...)      {if (goepc_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVRC,EVENT)) BT_PRINT_D("BT_GOEPC", fmt, ## args);}
 #define GOEPC_TRACE_DEBUG(fmt, args...)      {if (goepc_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVRC,DEBUG)) BT_PRINT_D("BT_GOEPC", fmt, ## args);}
+
+/* Define tracing for GOEPS */
+#define GOEPS_TRACE_ERROR(fmt, args...)      {if (goeps_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(GOEPS, ERROR)) BT_PRINT_E("BT_GOEPS", fmt, ## args);}
+#define GOEPS_TRACE_WARNING(fmt, args...)    {if (goeps_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(GOEPS, WARNING)) BT_PRINT_W("BT_GOEPS", fmt, ## args);}
+#define GOEPS_TRACE_API(fmt, args...)        {if (goeps_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(GOEPS,API)) BT_PRINT_I("BT_GOEPS", fmt, ## args);}
+#define GOEPS_TRACE_EVENT(fmt, args...)      {if (goeps_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(GOEPS,EVENT)) BT_PRINT_D("BT_GOEPS", fmt, ## args);}
+#define GOEPS_TRACE_DEBUG(fmt, args...)      {if (goeps_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(GOEPS,DEBUG)) BT_PRINT_D("BT_GOEPS", fmt, ## args);}
 
 /* MCAP
 */
@@ -717,6 +725,13 @@ extern UINT8 btif_trace_level;
 #define GOEPC_TRACE_API(fmt, args...)
 #define GOEPC_TRACE_EVENT(fmt, args...)
 #define GOEPC_TRACE_DEBUG(fmt, args...)
+
+/* Define tracing for GOEPS */
+#define GOEPS_TRACE_ERROR(fmt, args...)
+#define GOEPS_TRACE_WARNING(fmt, args...)
+#define GOEPS_TRACE_API(fmt, args...)
+#define GOEPS_TRACE_EVENT(fmt, args...)
+#define GOEPS_TRACE_DEBUG(fmt, args...)
 
 /* MCAP
 */

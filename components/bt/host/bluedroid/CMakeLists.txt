@@ -67,6 +67,7 @@ list(APPEND bluedroid_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/api/esp_l2cap_bt_api.c"
     "${CMAKE_CURRENT_LIST_DIR}/api/esp_pbac_api.c"
     "${CMAKE_CURRENT_LIST_DIR}/api/esp_pan_api.c"
+    "${CMAKE_CURRENT_LIST_DIR}/api/esp_opp_api.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/ar/bta_ar.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/av/bta_av_aact.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/av/bta_av_act.c"
@@ -139,6 +140,13 @@ list(APPEND bluedroid_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/bta/pan/bta_pan_api.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/pan/bta_pan_ci.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/pan/bta_pan_main.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bta/opp/bta_opp_common.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bta/opp/bta_opp_server_main.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bta/opp/bta_opp_client_main.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bta/opp/bta_opp_server_api.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bta/opp/bta_opp_client_api.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bta/opp/bta_opp_server_sdp.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bta/opp/bta_opp_client_sdp.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/sdp/bta_sdp.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/sdp/bta_sdp_act.c"
     "${CMAKE_CURRENT_LIST_DIR}/bta/sdp/bta_sdp_api.c"
@@ -187,6 +195,10 @@ list(APPEND bluedroid_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/pba/btc_pba_client.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/pan/bta_pan_co.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/pan/btc_pan.c"
+    "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/opp/btc_opp.c"
+    "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/opp/btc_opp_vfs.c"
+    "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/opp/btc_opp_server.c"
+    "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/opp/btc_opp_client.c"
     "${CMAKE_CURRENT_LIST_DIR}/device/bdaddr.c"
     "${CMAKE_CURRENT_LIST_DIR}/device/controller.c"
     "${CMAKE_CURRENT_LIST_DIR}/device/interop.c"
@@ -267,6 +279,8 @@ list(APPEND bluedroid_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/stack/gatt/gatt_utils.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/goep/goepc_api.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/goep/goepc_main.c"
+    "${CMAKE_CURRENT_LIST_DIR}/stack/goep/goeps_api.c"
+    "${CMAKE_CURRENT_LIST_DIR}/stack/goep/goeps_main.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/hcic/hciblecmds.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/hcic/hcicmds.c"
     "${CMAKE_CURRENT_LIST_DIR}/stack/l2cap/l2c_api.c"
@@ -389,6 +403,7 @@ list(APPEND bluedroid_host_priv_include_dirs
     ${CMAKE_CURRENT_LIST_DIR}/bta/jv/include
     ${CMAKE_CURRENT_LIST_DIR}/bta/pba/include
     ${CMAKE_CURRENT_LIST_DIR}/bta/pan
+    ${CMAKE_CURRENT_LIST_DIR}/bta/opp/include
     ${CMAKE_CURRENT_LIST_DIR}/bta/sdp/include
     ${CMAKE_CURRENT_LIST_DIR}/bta/sys/include
     ${CMAKE_CURRENT_LIST_DIR}/device/include

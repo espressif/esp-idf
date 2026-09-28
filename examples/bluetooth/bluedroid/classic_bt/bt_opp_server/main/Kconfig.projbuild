@@ -1,0 +1,18 @@
+menu "OPP Example Configuration"
+
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local device name"
+        default "ESP_OPP_SERVER"
+        help
+            Classic Bluetooth name advertised by this OPP server.
+
+    config EXAMPLE_OPP_SRV_AUTO_ACCEPT
+        bool "Auto-accept incoming objects"
+        default y
+        help
+            If enabled, every incoming object is accepted automatically.
+            If disabled, only the first object on an OBEX connection needs
+            esp_opp_server_accept(); later objects on the same connection
+            are auto-authorized.
+
+endmenu

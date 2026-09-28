@@ -8,6 +8,7 @@
 
 #include "esp_err.h"
 #include "esp_bt_defs.h"
+#include "esp_gap_bt_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,9 +96,9 @@ typedef uint8_t esp_pan_role_mask_t;
  * 2. ESP_PAN_SEC_AUTHENTICATE
  * 3. (ESP_PAN_SEC_AUTHENTICATE | ESP_PAN_SEC_ENCRYPT)
  */
-#define ESP_PAN_SEC_NONE            0x0000    /*!< No security. */
-#define ESP_PAN_SEC_AUTHENTICATE    0x0012    /*!< Authentication required. */
-#define ESP_PAN_SEC_ENCRYPT         0x0024    /*!< Encryption required. */
+#define ESP_PAN_SEC_NONE            ESP_BT_SEC_NONE            /*!< No security. */
+#define ESP_PAN_SEC_AUTHENTICATE    ESP_BT_SEC_AUTHENTICATE    /*!< Authentication required. */
+#define ESP_PAN_SEC_ENCRYPT         ESP_BT_SEC_ENCRYPT         /*!< Encryption required. */
 typedef uint16_t esp_pan_sec_t;               /*!< PAN security type. */
 
 /**

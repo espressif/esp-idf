@@ -99,6 +99,7 @@ CLASSIC_BT_DOCS = [
     'api-reference/bluetooth/esp_spp.rst',
     'api-reference/bluetooth/esp_pan.rst',
     'api-reference/bluetooth/esp_gap_bt.rst',
+    'api-reference/bluetooth/esp_opp.rst',
     'migration-guides/release-5.x/5.0/bluetooth-classic.rst',
     'migration-guides/release-5.x/5.2/bluetooth-classic.rst',
     'migration-guides/release-5.x/5.3/bluetooth-classic.rst',

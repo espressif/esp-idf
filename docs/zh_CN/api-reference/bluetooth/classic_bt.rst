@@ -9,6 +9,7 @@
 
 - 核心协议支持 （**GAP**、**L2CAP** 和 **SDP**）
 - 串行数据通信 (**SPP**)
+- 对象推送 (**OPP**)
 - 高质量音频流传输 (**A2DP**)
 - 媒体播放控制 (**AVRCP**)
 - 免提通话支持 (**HFP**)
@@ -38,6 +39,10 @@
 - :doc:`Bluetooth SPP <esp_spp>`
 
   **串口配置文件 (SPP)：** 通过蓝牙模拟串行通信通道进行数据交换
+
+- :doc:`Bluetooth OPP <esp_opp>`
+
+  **对象推送配置文件 (OPP)：** 在蓝牙设备之间推送 vCard 等对象
 
 **音频与媒体配置文件**
 
@@ -75,6 +80,7 @@
    Bluetooth L2CAP <esp_l2cap_bt>
    Bluetooth SDP <esp_sdp>
    Bluetooth SPP <esp_spp>
+   Bluetooth OPP <esp_opp>
    Bluetooth A2DP <esp_a2dp>
    Bluetooth AVRCP <esp_avrc>
    Bluetooth HFP Define <esp_hf_defs>

@@ -9,6 +9,7 @@
 
 #include "esp_err.h"
 #include "esp_bt_defs.h"
+#include "esp_gap_bt_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,10 +36,10 @@ typedef enum {
  *     2. `ESP_BT_L2CAP_SEC_AUTHENTICATE`
  *     3. (`ESP_BT_L2CAP_SEC_ENCRYPT` | `ESP_BT_L2CAP_SEC_AUTHENTICATE`)
  */
-#define ESP_BT_L2CAP_SEC_NONE            0x0000    /*!< No security */
-#define ESP_BT_L2CAP_SEC_AUTHORIZE       0x0001    /*!< Authorization required */
-#define ESP_BT_L2CAP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required */
-#define ESP_BT_L2CAP_SEC_ENCRYPT         0x0024    /*!< Encryption required */
+#define ESP_BT_L2CAP_SEC_NONE            ESP_BT_SEC_NONE            /*!< No security */
+#define ESP_BT_L2CAP_SEC_AUTHORIZE       ESP_BT_SEC_AUTHORIZE       /*!< Authorization required */
+#define ESP_BT_L2CAP_SEC_AUTHENTICATE    ESP_BT_SEC_AUTHENTICATE    /*!< Authentication required */
+#define ESP_BT_L2CAP_SEC_ENCRYPT         ESP_BT_SEC_ENCRYPT         /*!< Encryption required */
 typedef uint32_t esp_bt_l2cap_cntl_flags_t;        /*!< L2CAP control flags type */
 
 /**

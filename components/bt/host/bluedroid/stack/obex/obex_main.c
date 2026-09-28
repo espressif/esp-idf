@@ -212,6 +212,7 @@ void obex_tl_evt_handler(UINT8 tl, tOBEX_TL_EVT evt, tOBEX_TL_MSG *msg)
             cb_msg.conn_income.svr_handle = p_scb->allocated << 8;
             cb_msg.conn_income.peer_mtu = msg->conn_income.peer_mtu;
             cb_msg.conn_income.our_mtu = msg->conn_income.our_mtu;
+            bdcpy(cb_msg.conn_income.addr, msg->conn_income.addr);
             p_ccb->callback(p_ccb->allocated, OBEX_CONN_INCOME_EVT, &cb_msg);
         }
         break;

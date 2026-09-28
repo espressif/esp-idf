@@ -208,6 +208,16 @@
 #define GOEPC_INCLUDED              TRUE
 #endif /* UC_BT_GOEPC_ENABLED */
 
+#if UC_BT_GOEPS_ENABLED
+#ifndef RFCOMM_INCLUDED
+#define RFCOMM_INCLUDED             TRUE
+#endif
+#ifndef OBEX_INCLUDED
+#define OBEX_INCLUDED               TRUE
+#endif
+#define GOEPS_INCLUDED              TRUE
+#endif /* UC_BT_GOEPS_ENABLED */
+
 #if UC_BT_PBAC_ENABLED
 #define BTC_PBA_CLIENT_INCLUDED     TRUE
 #define BTC_PBA_SUPPORTED_FEAT      UC_BT_PBAC_SUPPORTED_FEAT
@@ -223,6 +233,27 @@
 #define PAN_SUPPORTS_ROLE_PANU      TRUE
 #define PAN_SUPPORTS_ROLE_GN        TRUE
 #define PAN_SUPPORTS_ROLE_NAP       TRUE
+#endif
+
+#if UC_BT_OPP_ENABLED && (UC_BT_OPP_SERVER_ENABLED || UC_BT_OPP_CLIENT_ENABLED)
+#ifndef RFCOMM_INCLUDED
+#define RFCOMM_INCLUDED             TRUE
+#endif
+#ifndef OBEX_INCLUDED
+#define OBEX_INCLUDED               TRUE
+#endif
+#define BTC_OPP_INCLUDED            TRUE
+#define BTA_OPP_INCLUDED            TRUE
+#endif
+
+#if UC_BT_OPP_SERVER_ENABLED
+#define BTA_OPP_SERVER_INCLUDED     TRUE
+#define BTC_OPP_SERVER_INCLUDED     TRUE
+#endif
+
+#if UC_BT_OPP_CLIENT_ENABLED
+#define BTA_OPP_CLIENT_INCLUDED     TRUE
+#define BTC_OPP_CLIENT_INCLUDED     TRUE
 #endif
 
 #endif /* UC_BT_CLASSIC_ENABLED */
@@ -1354,6 +1385,16 @@
 #define BTM_PAN_SEC_SERVICE_RECORDS 0
 #endif
 
+#if BTA_OPP_SERVER_INCLUDED && BTA_OPP_CLIENT_INCLUDED
+#define BTM_OPP_SEC_SERVICE_RECORDS 4
+#elif BTA_OPP_SERVER_INCLUDED
+#define BTM_OPP_SEC_SERVICE_RECORDS 3
+#elif BTA_OPP_CLIENT_INCLUDED
+#define BTM_OPP_SEC_SERVICE_RECORDS 1
+#else
+#define BTM_OPP_SEC_SERVICE_RECORDS 0
+#endif
+
 #if BTA_AV_CA_INCLUDED
 #define BTM_AC_VA_SEC_SERVICE_RECORDS 1
 #else
@@ -1412,7 +1453,7 @@
    + BTM_AVCT_SEC_SERVICE_RECORDS + BTM_AVDT_SEC_SERVICE_RECORDS + BTM_GAP_SEC_SERVICE_RECORDS    \
    + BTM_HIDD_SEC_SERVICE_RECORDS  + BTM_GATT_SEC_SERVICE_RECORDS + BTM_PBA_SEC_SERVICE_RECORDS   \
    + BTM_HIDH_SEC_SERVICE_RECORDS + BTM_SEC_DEV_SERVICE_RECORDS + BTM_HF_SEC_SERVICE_RECORDS      \
-   + BTM_JV_SEC_SERVICE_RECORDS + BTM_PAN_SEC_SERVICE_RECORDS + BTM_AC_VA_SEC_SERVICE_RECORDS )
+   + BTM_JV_SEC_SERVICE_RECORDS + BTM_PAN_SEC_SERVICE_RECORDS + BTM_AC_VA_SEC_SERVICE_RECORDS + BTM_OPP_SEC_SERVICE_RECORDS )
 #endif
 
 /* If True, force a retrieval of remote device name for each bond in case it's changed */
@@ -2408,6 +2449,16 @@
 #define GOEPC_MAX_CONNECTION              3
 #endif
 
+/* Maximum GOEP server listener allowed */
+#ifndef GOEPS_MAX_SERVER
+#define GOEPS_MAX_SERVER                  OBEX_MAX_SERVER
+#endif
+
+/* Maximum GOEP server connection allowed */
+#ifndef GOEPS_MAX_CONNECTION
+#define GOEPS_MAX_CONNECTION              OBEX_MAX_CONNECTION
+#endif
+
 /******************************************************************************
 **
 ** BNEP
@@ -2751,6 +2802,34 @@
 */
 #ifndef GOEPC_INCLUDED
 #define GOEPC_INCLUDED            FALSE
+#endif
+
+#ifndef GOEPS_INCLUDED
+#define GOEPS_INCLUDED            FALSE
+#endif
+
+#ifndef BTC_OPP_INCLUDED
+#define BTC_OPP_INCLUDED          FALSE
+#endif
+
+#ifndef BTA_OPP_INCLUDED
+#define BTA_OPP_INCLUDED          FALSE
+#endif
+
+#ifndef BTA_OPP_SERVER_INCLUDED
+#define BTA_OPP_SERVER_INCLUDED   FALSE
+#endif
+
+#ifndef BTA_OPP_CLIENT_INCLUDED
+#define BTA_OPP_CLIENT_INCLUDED   FALSE
+#endif
+
+#ifndef BTC_OPP_SERVER_INCLUDED
+#define BTC_OPP_SERVER_INCLUDED   FALSE
+#endif
+
+#ifndef BTC_OPP_CLIENT_INCLUDED
+#define BTC_OPP_CLIENT_INCLUDED   FALSE
 #endif
 
 /*************************************************************************

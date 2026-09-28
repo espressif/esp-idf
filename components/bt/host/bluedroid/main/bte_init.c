@@ -100,6 +100,11 @@
 #include "stack/goepc_api.h"
 #endif
 
+#if (defined(GOEPS_INCLUDED) && GOEPS_INCLUDED == TRUE)
+#include "stack/goep_common.h"
+#include "stack/goeps_api.h"
+#endif
+
 //BTA Modules
 #if BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE
 #include "bta/bta_api.h"
@@ -156,6 +161,10 @@
 #include "bta_pba_client_int.h"
 #endif
 
+#if BTA_OPP_INCLUDED == TRUE
+#include "bta_opp_int.h"
+#endif
+
 #include "bta_sys_int.h"
 
 // control block for patch ram downloading
@@ -188,6 +197,12 @@ void BTE_DeinitStack(void)
     if (bta_pba_client_cb_ptr) {
         osi_free(bta_pba_client_cb_ptr);
         bta_pba_client_cb_ptr = NULL;
+    }
+#endif
+#if BTA_OPP_INCLUDED == TRUE
+    if (bta_opp_cb_ptr) {
+        osi_free(bta_opp_cb_ptr);
+        bta_opp_cb_ptr = NULL;
     }
 #endif
 #if GATTS_INCLUDED == TRUE
@@ -288,6 +303,10 @@ void BTE_DeinitStack(void)
 
 #if (defined(GOEPC_INCLUDED) && GOEPC_INCLUDED == TRUE)
     GOEPC_Deinit();
+#endif
+
+#if (defined(GOEPS_INCLUDED) && GOEPS_INCLUDED == TRUE)
+    GOEPS_Deinit();
 #endif
 
 #if (defined(OBEX_INCLUDED) && OBEX_INCLUDED == TRUE)
@@ -427,6 +446,12 @@ bt_status_t BTE_InitStack(void)
     }
 #endif
 
+#if (defined(GOEPS_INCLUDED) && GOEPS_INCLUDED == TRUE)
+    if (GOEPS_Init() != GOEP_SUCCESS) {
+        goto error_exit;
+    }
+#endif
+
     //BTA Modules
 #if (BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE)
     if ((bta_sys_cb_ptr = (tBTA_SYS_CB *)osi_malloc(sizeof(tBTA_SYS_CB))) == NULL) {
@@ -535,6 +560,12 @@ bt_status_t BTE_InitStack(void)
         goto error_exit;
     }
     memset((void *)bta_pba_client_cb_ptr, 0, sizeof(tBTA_PBA_CLIENT_CB));
+#endif
+#if BTA_OPP_INCLUDED == TRUE
+    if ((bta_opp_cb_ptr = (tBTA_OPP_CB *)osi_malloc(sizeof(tBTA_OPP_CB))) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)bta_opp_cb_ptr, 0, sizeof(tBTA_OPP_CB));
 #endif
 
 #endif // BTA_INCLUDED == TRUE

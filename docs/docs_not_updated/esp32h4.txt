@@ -82,6 +82,7 @@ api-reference/bluetooth/esp_gattc.rst
 api-reference/bluetooth/bt_le.rst
 api-reference/bluetooth/controller_vhci.rst
 api-reference/bluetooth/esp_spp.rst
+api-reference/bluetooth/esp_opp.rst
 api-reference/bluetooth/esp_sdp.rst
 api-reference/bluetooth/esp_blufi.rst
 api-reference/bluetooth/bt_common.rst

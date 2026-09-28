@@ -8,7 +8,7 @@
 
 #include "common/bt_target.h"
 
-/* GOEP Client or Server(not supported yet) API return code */
+/* GOEP Client or Server API return code */
 #define GOEP_SUCCESS                0x00        /* Operation successful */
 #define GOEP_FAILURE                0x01        /* Operation failed */
 #define GOEP_NO_RESOURCES           0x02        /* Not enough resources */
