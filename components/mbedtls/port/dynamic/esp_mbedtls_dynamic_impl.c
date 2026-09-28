@@ -569,6 +569,19 @@ void esp_mbedtls_free_bio(mbedtls_ssl_context *ssl)
     mbedtls_free(bio);
 }
 
+static void rx_log_fetch_error(int ret)
+{
+    if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
+        ESP_LOGD(TAG, "mbedtls_ssl_fetch_input reads data times out");
+    } else if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
+        ESP_LOGD(TAG, "mbedtls_ssl_fetch_input wants to read more data");
+    } else if (ret == MBEDTLS_ERR_SSL_CONN_EOF) {
+        ESP_LOGD(TAG, "mbedtls_ssl_fetch_input connection EOF");
+    } else {
+        ESP_LOGE(TAG, "mbedtls_ssl_fetch_input error=%d", -ret);
+    }
+}
+
 int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 {
     /*
@@ -604,16 +617,7 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     ssl->MBEDTLS_PRIVATE(in_len) = msg_head + 3;
 
     if ((ret = mbedtls_ssl_fetch_input(ssl, mbedtls_ssl_in_hdr_len(ssl))) != 0) {
-        if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
-            ESP_LOGD(TAG, "mbedtls_ssl_fetch_input reads data times out");
-        } else if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
-            ESP_LOGD(TAG, "mbedtls_ssl_fetch_input wants to read more data");
-        } else if (ret == MBEDTLS_ERR_SSL_CONN_EOF) {
-            ESP_LOGD(TAG, "mbedtls_ssl_fetch_input connection EOF");
-        } else {
-            ESP_LOGE(TAG, "mbedtls_ssl_fetch_input error=%d", -ret);
-        }
-
+        rx_log_fetch_error(ret);
         goto exit;
     }
 
@@ -663,27 +667,20 @@ exit:
     return ret;
 }
 
-int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
+/* True if in_buf is a record buffer that mbedtls no longer needs. */
+static bool rx_record_buffer_done(mbedtls_ssl_context *ssl)
 {
-    /*
-     * If RX buffer is set to static mode, this macro will return early
-     * and skip dynamic buffer free logic below
-     */
-    ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
+    unsigned char *in_buf = ssl->MBEDTLS_PRIVATE(in_buf);
 
-    int ret = 0;
-    unsigned char buf[16];
-    struct esp_mbedtls_ssl_buf *esp_buf;
-
-    ESP_LOGV(TAG, "--> free rx");
+    if (!in_buf || esp_mbedtls_get_buf_state(in_buf) == ESP_MBEDTLS_SSL_BUF_NO_CACHED) {
+        return false;
+    }
 
     /**
      * When have read multi messages once, can't free the input buffer directly.
      */
-    if (!ssl->MBEDTLS_PRIVATE(in_buf) || (ssl->MBEDTLS_PRIVATE(in_hslen) && (ssl->MBEDTLS_PRIVATE(in_hslen) < ssl->MBEDTLS_PRIVATE(in_msglen))) ||
-        (ssl->MBEDTLS_PRIVATE(in_buf) && (esp_mbedtls_get_buf_state(ssl->MBEDTLS_PRIVATE(in_buf)) == ESP_MBEDTLS_SSL_BUF_NO_CACHED))) {
-        ret = 0;
-        goto exit;
+    if (ssl->MBEDTLS_PRIVATE(in_hslen) && (ssl->MBEDTLS_PRIVATE(in_hslen) < ssl->MBEDTLS_PRIVATE(in_msglen))) {
+        return false;
     }
 
     /**
@@ -699,6 +696,27 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
         && !(ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(endpoint) == MBEDTLS_SSL_IS_SERVER && ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_SERVER_HELLO)
 #endif
     ) {
+        return false;
+    }
+
+    return true;
+}
+
+int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
+{
+    /*
+     * If RX buffer is set to static mode, this macro will return early
+     * and skip dynamic buffer free logic below
+     */
+    ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
+
+    int ret = 0;
+    unsigned char buf[16];
+    struct esp_mbedtls_ssl_buf *esp_buf;
+
+    ESP_LOGV(TAG, "--> free rx");
+
+    if (!rx_record_buffer_done(ssl)) {
         goto exit;
     }
 
