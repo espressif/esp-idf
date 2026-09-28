@@ -11,10 +11,13 @@
 /* INCLUDE */
 #include "ble_log_util.h"
 
+#include "freertos/task.h"
+
+/* MACRO */
+#define BLE_LOG_REF_COUNT_WAIT_TIMEOUT_MS (1000)
+
 /* VARIABLE */
-#ifndef UNIT_TEST
 BLE_LOG_DRAM_ATTR portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
-#endif /* !UNIT_TEST */
 
 /* INTERNAL INTERFACE */
 #include "esp_compiler.h"
@@ -22,9 +25,8 @@ BLE_LOG_DRAM_ATTR portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC BLE_LOG_INLINE
 uint32_t ror32(uint32_t word, uint32_t shift)
 {
-    if (unlikely(shift == 0)) {
-        return word;
-    }
+    /* The mask folds shift == 0 into a zero left-shift amount, so the
+     * expression needs no shift == 0 guard. */
     return (word >> shift) | (word << ((32 - shift) & 0x1F));
 }
 
@@ -67,4 +69,41 @@ uint32_t ble_log_fast_checksum(const uint8_t *data, size_t len)
 
     /* Step 6: Rotate the final result */
     return ror32(checksum, start_offset_shift);
+}
+
+BLE_LOG_IRAM_ATTR
+bool ble_log_ref_count_try_acquire(volatile uint32_t *ref_count,
+                                   const uint32_t *gate)
+{
+    /* The seq_cst increment/check pairs with a seq_cst gate close before the
+     * owner waits for the reference count. */
+    BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(ref_count);
+    if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(*gate)) {
+        return true;
+    }
+    BLE_LOG_REF_COUNT_RELEASE(ref_count);
+    return false;
+}
+
+bool ble_log_ref_count_wait(volatile uint32_t *ref_count, uint32_t max_ref_count)
+{
+    TickType_t start_tick = xTaskGetTickCount();
+    while (BLE_LOG_ATOMIC_LOAD_SEQ_CST(*ref_count) > max_ref_count) {
+        if ((xTaskGetTickCount() - start_tick) >=
+                pdMS_TO_TICKS(BLE_LOG_REF_COUNT_WAIT_TIMEOUT_MS)) {
+            return false;
+        }
+        vTaskDelay(1);
+    }
+    return true;
+}
+
+BLE_LOG_IRAM_ATTR
+void ble_log_atomic_update_peak(volatile uint32_t *peak, uint32_t value)
+{
+    uint32_t current = BLE_LOG_ATOMIC_LOAD_RELAXED(*peak);
+    while (value > current &&
+           !__atomic_compare_exchange_n(peak, &current, value, true,
+                                        __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
+    }
 }
