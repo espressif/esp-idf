@@ -67,12 +67,18 @@ void ble_log_deinit(void);
 bool ble_log_enable(bool enable);
 /* Blocking; call only from a caller-owned task, not an ISR or system callback. */
 void ble_log_flush(void);
-/* Waits for a shared transport in ordinary yieldable tasks. The shared ESP
- * Timer task, ISR and critical-section callers fail fast when none is available. */
+/* Waits for a shared transport in ordinary yieldable tasks; in builds
+ * with a finite CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS the wait is bounded
+ * by that budget and its exhaustion fails (counted as a loss). The shared
+ * ESP Timer task, ISR and critical-section callers fail fast when none
+ * is available. */
 bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len);
-/* Same backpressure as ble_log_write_hex(): ordinary yieldable tasks wait
- * when wait_for_transport is true; false opts out. The shared ESP Timer
- * task and non-yieldable contexts fail fast regardless of this flag. */
+/* Same backpressure as ble_log_write_hex(): wait_for_transport=true only
+ * requests waiting; the actual wait ceiling is set by the build's
+ * CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS (finite builds bound the wait and
+ * count its exhaustion as a loss; -1 builds wait indefinitely). false
+ * opts out. The shared ESP Timer task and non-yieldable contexts fail
+ * fast regardless of this flag. */
 uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
                        uint32_t *handle, bool wait_for_transport);
 void ble_log_commit(uint32_t handle, size_t actual_len);

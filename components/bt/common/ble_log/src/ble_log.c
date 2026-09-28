@@ -17,7 +17,7 @@
 #include "esp_system.h"
 
 /* VARIABLE */
-#define TAG "ble_log"
+#define TAG "BLE-Log"
 
 BLE_LOG_STATIC bool ble_log_inited = false;
 BLE_LOG_STATIC bool shutdown_handler_registered = false;

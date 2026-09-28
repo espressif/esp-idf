@@ -104,6 +104,22 @@ typedef struct {
     ble_log_source_stat_t counters;
 } __attribute__((aligned(4))) ble_log_stat_mgr_t;
 
+/* Total wait budget for one pool acquire by an ordinary yieldable task.
+ * The Kconfig symbol is only defined for USB/test builds; production
+ * SPI/UART builds keep the historical infinite wait. An undefined symbol
+ * must test as -1: a bare `#if CONFIG_X < 0` evaluates undefined X as 0
+ * and would silently produce a zero-tick budget. The conversion macro
+ * keeps the round-up rule testable (see test_ble_log_rt.c). */
+#if !defined(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) || (CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) < 0
+#define BLE_LOG_POOL_WAIT_TICKS                     portMAX_DELAY
+#else
+/* Round positive milliseconds up to ticks so 1 ms never becomes 0. */
+#define BLE_LOG_POOL_WAIT_TICKS_FOR(ms)             \
+    ((TickType_t)(((uint64_t)(ms) * configTICK_RATE_HZ + 999U) / 1000U))
+#define BLE_LOG_POOL_WAIT_TICKS                     \
+    BLE_LOG_POOL_WAIT_TICKS_FOR(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS)
+#endif
+
 #define BLE_LOG_GET_FRAME_SN(VAR)               BLE_LOG_ATOMIC_ADD_RELAXED(VAR, 1)
 
 /* Core logs and INTERNAL snapshots share one 24-bit Global SN. Core logs
@@ -237,6 +253,13 @@ void ble_log_lbm_flush_open_trans(void);
  * delivery of the dispatched buffers. */
 void ble_log_lbm_drain_open_trans(void);
 void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
+/* Loss-warning window: per-source losses accumulated since the previous
+ * call. Diff of the source-level lost_frame_cnt counters against a private
+ * shadow snapshot taken at the previous call. Not affected by concurrent
+ * mark_lost calls; a ble_log_flush() counter reset shows up as the window
+ * reporting only what was counted after the reset (flush is a
+ * user-initiated statistics reset). Task context only. */
+void ble_log_lbm_take_loss_window(uint32_t by_source[BLE_LOG_SRC_MAX]);
 /* System output: gated by the LBM lifetime, not ble_log_enable(). A false
  * wait_for_transport makes a busy dedicated transport a lossy fast path. */
 bool ble_log_internal_snapshot(uint16_t reason_flags,
@@ -251,8 +274,10 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
  * ENCODE source ID on the wire. wait_for_transport=false turns a busy pool
  * into a lossy fast path (NULL, as in a non-yieldable context) instead of
  * waiting. true requests backpressure in ordinary yieldable tasks; the
- * shared ESP Timer task and non-yieldable contexts never wait, regardless
- * of the requested policy. */
+ * actual wait ceiling is the build's CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS
+ * (finite builds bound the wait and count its exhaustion as a loss; -1
+ * builds wait indefinitely). The shared ESP Timer task and non-yieldable
+ * contexts never wait, regardless of the requested policy. */
 uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
                        uint32_t *handle, bool wait_for_transport);
 void ble_log_commit(uint32_t handle, size_t actual_len);
