@@ -1,0 +1,35 @@
+-
+    re: "Secure Boot V2 verification failed"
+    hint: "Application signature verification failed. Ensure the app was signed with the correct key matching the secure boot key in eFuses. Check the secure boot key digest to confirm."
+
+-
+    re: "No valid applications signature blocks found"
+    hint: "Application has no valid signature blocks. Rebuild with Secure Boot V2 enabled and sign with the appropriate key."
+
+-
+    re: "No application key digest matches the bootloader key digest"
+    hint: "Application and bootloader signed with different keys. Re-sign the application with the same key used for the bootloader."
+
+-
+    re: "secure boot is not enabled, and SECURE_BOOT_REQUIRE_ALREADY_ENABLED is set"
+    hint: "Secure Boot required but eFuse not burned. Disable CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED or burn the SECURE_BOOT_EN eFuse first."
+
+-
+    re: "This app is not signed, but check signature on update is enabled in config"
+    hint: "Signature check enabled but app not signed. Sign the app or disable CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT."
+
+-
+    re: "Secure boot signature verification failed"
+    hint: "Signature verification failed. Verify the correct signing key was used and the image was properly signed before flashing."
+
+-
+    re: "Magic byte correct but incorrect crc"
+    hint: "Signature block CRC invalid. Flash corruption or improper signing. Rebuild and re-flash the application."
+
+-
+    re: "Image hash failed - image is corrupt"
+    hint: "Image integrity check failed. The flash contents are corrupted. Re-flash the application."
+
+-
+    re: "bootloader image appears invalid"
+    hint: "Bootloader is corrupted or is in wrong format. If flash encryption is enabled, ensure encrypted bootloader was flashed."

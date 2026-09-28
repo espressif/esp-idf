@@ -1,0 +1,11 @@
+-
+    re: "flash encryption is not enabled, and SECURE_FLASH_REQUIRE_ALREADY_ENABLED is set"
+    hint: "Flash encryption required but not enabled in eFuses. Disable CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED or enable flash encryption first."
+
+-
+    re: "Initialization of Flash encryption key failed"
+    hint: "Failed to initialize the flash encryption key in eFuses. Possible causes: no free eFuse key blocks, blocks already used, or key generation failed."
+
+-
+    re: "Not enough free efuse key blocks"
+    hint: "Insufficient eFuse key blocks for the enabled security features. Check which features are consuming eFuse blocks or use a new chip."
