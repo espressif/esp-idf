@@ -133,6 +133,21 @@ static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
 }
 
 /**
+ * @brief Check if the bus clock is enabled for the DMA module
+ */
+__attribute__((always_inline))
+static inline bool gdma_ll_is_bus_clock_enabled(int group_id)
+{
+    if (group_id == 0) {
+        return HP_SYS_CLKRST.ahb_pdma_ctrl0.reg_ahb_pdma_sys_clk_en;
+    } else if (group_id == 1) {
+        return HP_SYS_CLKRST.axi_pdma_ctrl0.reg_axi_pdma_sys_clk_en;
+    } else { // group_id == 2, LP AHB GDMA
+        return LP_PERI_CLKRST.ahb_dma_ctrl.lp_ahb_dma_clk_en;
+    }
+}
+
+/**
  * @brief Reset the DMA module
  */
 static inline void _gdma_ll_reset_register(int group_id)
