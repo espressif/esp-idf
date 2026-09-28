@@ -27,6 +27,9 @@
 #include "esp_private/cache_err_int.h"
 #include "hal/uart_ll.h"
 #include "hal/sec_ll.h"
+#include "hal/gdma_ll.h"
+#include "hal/axi_dma_ll.h"
+#include "hal/dma2d_ll.h"
 #include "esp_memory_utils.h"
 
 extern int _bss_end;
@@ -48,6 +51,32 @@ void esp_system_reset_modules_on_exit(void)
             esp_rom_output_tx_wait_idle(i);
         }
     }
+
+    // Note: AXI bus doesn't allow an undergoing transaction to be interrupted in the middle
+    // If you want to reset a AXI master, you should make sure that the master is in IDLE first
+    if (gdma_ll_is_bus_clock_enabled(1)) {
+        for (int i = 0; i < GDMA_LL_GET(AXI_PAIRS_PER_GROUP); i++) {
+            axi_dma_ll_tx_abort(AXI_DMA_LL_GET_HW(0), i, true);
+            axi_dma_ll_rx_abort(AXI_DMA_LL_GET_HW(0), i, true);
+            while (!axi_dma_ll_tx_is_reset_avail(AXI_DMA_LL_GET_HW(0), i));
+            while (!axi_dma_ll_rx_is_reset_avail(AXI_DMA_LL_GET_HW(0), i));
+        }
+    }
+    if (dma2d_ll_is_bus_clock_enabled(0)) {
+        for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
+            dma2d_ll_rx_abort(DMA2D_LL_GET_HW(0), i, true);
+            while (!dma2d_ll_rx_is_reset_avail(DMA2D_LL_GET_HW(0), i));
+        }
+        for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
+            dma2d_ll_tx_abort(DMA2D_LL_GET_HW(0), i, true);
+            while (!dma2d_ll_tx_is_reset_avail(DMA2D_LL_GET_HW(0), i));
+        }
+    }
+
+    // DMA needs to be reset to avoid memory corruption after restart. Now only AHB supports this.
+    // For other AXI DMAs, we have already stop them above.
+    gdma_ll_reset_register(0);
+    gdma_ll_reset_register(2);
 
     CLEAR_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_EN);
     SET_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_FORCE_CTRL);
