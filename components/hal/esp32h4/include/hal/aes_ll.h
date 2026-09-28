@@ -146,14 +146,15 @@ static inline void aes_ll_set_block_mode(esp_aes_mode_t mode)
 }
 
 /**
- * @brief Set AES-CTR counter to INC32
+ * @brief Set the AES-CTR counter incrementing function
  *
  * @note Only affects AES-CTR mode
  *
+ * @param inc INC32 or INC128
  */
-static inline void aes_ll_set_inc(void)
+static inline void aes_ll_set_inc(esp_aes_inc_t inc)
 {
-    REG_WRITE(AES_INC_SEL_REG, 0);
+    REG_WRITE(AES_INC_SEL_REG, inc);
 }
 
 /**

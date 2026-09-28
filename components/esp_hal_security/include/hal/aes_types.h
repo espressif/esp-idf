@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,11 @@ typedef enum {
     ESP_AES_BLOCK_MODE_GCM,
     ESP_AES_BLOCK_MODE_MAX,
 } esp_aes_mode_t;
+
+typedef enum {
+    ESP_AES_INC_32 = 0,
+    ESP_AES_INC_128 = 1,
+} esp_aes_inc_t;
 
 /* Number of bytes in an AES block */
 #define AES_BLOCK_BYTES     (16)
