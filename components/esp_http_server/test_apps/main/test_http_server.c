@@ -763,7 +763,7 @@ TEST_CASE("Control characters in header values are rejected with 400", "[HTTP SE
             };
             mock_server_response_t *resp = mock_server_send_request(8103, &req);
             TEST_ASSERT_NOT_NULL(resp);
-            ESP_LOGI(TAG, "case %u (%s): status %d", (unsigned)i,
+            printf("case %u (%s): status %d", (unsigned)i,
                      trickle ? "trickled" : "single write", resp->status_code);
             mock_server_assert_status(resp, s_hdr_ctl_cases[i].valid ? 200 : 400);
             mock_server_response_free(resp);
