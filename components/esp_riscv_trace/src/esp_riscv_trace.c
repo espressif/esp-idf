@@ -16,6 +16,7 @@
 #include "esp_check.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/esp_sys_event_panic.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_cpu.h"
@@ -492,6 +493,15 @@ void esp_riscv_trace_snapshot_finalize(void)
 
     esp_riscv_trace_snapshot_panic_write(status, SOC_CPU_CORES_NUM);
 }
+
+#if CONFIG_ESP_RISCV_TRACE_OPENOCD
+/* Finalizes the snapshot before the panic breakpoint so OpenOCD can dump it */
+ESP_PANIC_EARLY_BREAK_HANDLER_REGISTER(esp_riscv_trace_panic_early_break, 50)
+{
+    esp_riscv_trace_snapshot_finalize();
+    return ESP_OK;
+}
+#endif
 
 esp_err_t esp_riscv_trace_get_buffer(esp_riscv_trace_core_t core_id, uint8_t **buffer,
                                      size_t *capacity, size_t *head_offset)

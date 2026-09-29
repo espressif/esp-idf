@@ -8,6 +8,8 @@ entries:
         esp_riscv_trace:snapshot_freeze_state (noflash)
         esp_riscv_trace:esp_riscv_trace_snapshot_finalize (noflash)
         esp_riscv_trace_snapshot:esp_riscv_trace_snapshot_panic_write (noflash)
+    if ESP_PANIC_HANDLER_IRAM = y && ESP_RISCV_TRACE_OPENOCD = y:
+        esp_riscv_trace:esp_riscv_trace_panic_early_break (noflash)
 
 [mapping:esp_riscv_trace_coredump]
 archive: libesp_riscv_trace.a

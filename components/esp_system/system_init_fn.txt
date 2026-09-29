@@ -120,6 +120,9 @@ SECONDARY: 120: esp_trace_early_init in components/esp_trace/src/core/esp_trace_
 # coredump doesn't have init dependencies
 SECONDARY: 130: init_coredump in components/espcoredump/src/core_dump_init.c on BIT(0)
 
+# esp_riscv_trace OpenOCD descriptor must be set before init_dbg_stubs advertises the table
+SECONDARY: 139: esp_riscv_trace_ocd_init in components/esp_riscv_trace/src/esp_riscv_trace_ocd.c on BIT(0)
+
 # esp_debug_stubs doesn't have init dependencies
 SECONDARY: 140: init_dbg_stubs in components/app_trace/debug_stubs.c on BIT(0)
 

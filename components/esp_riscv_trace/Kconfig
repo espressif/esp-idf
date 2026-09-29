@@ -9,6 +9,9 @@ menu "RISC-V Trace Encoder Configurations"
 
             When core dump is also enabled, a panic freezes the snapshot and the
             coredump writer stores an ESP_RISCV_TRACE note plus the per-core buffers.
+            With ESP_RISCV_TRACE_OPENOCD, ESP_DEBUG_OCDAWARE and a debugger attached,
+            the panic finalizes the snapshot before the debugger halts, so OpenOCD can
+            dump it.
 
     if ESP_RISCV_TRACE_ENABLE
 
@@ -24,6 +27,20 @@ menu "RISC-V Trace Encoder Configurations"
 
                 In loop mode with periodic resync (the defaults), the buffer
                 keeps the latest trace data before the panic.
+
+        config ESP_RISCV_TRACE_OPENOCD
+            bool "Enable OpenOCD trace support"
+            default n if ESP_COREDUMP_ENABLE && ESP_RISCV_TRACE_AUTOSTART
+            default y
+            select ESP_DEBUG_STUBS_ENABLE
+            help
+                Publish a trace descriptor through the debug stubs table so the
+                OpenOCD `esp riscv_trace` commands can read the trace buffers, for
+                example after a panic halt.
+
+                Disabled by default with core dump and autostart. Without a debugger
+                the core dump already stores the trace. Enable it to read the trace
+                with OpenOCD when the debugger halts at a panic.
 
         config ESP_RISCV_TRACE_BUFFER_SIZE
             int "Trace buffer size (bytes)"

@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-/* Magic "RVTS" and ABI version. */
+/* Magic "RVTS" (RISC-V trace snapshot) and ABI version. */
 #define ESP_RISCV_TRACE_SNAPSHOT_MAGIC      ((uint32_t)0x53545652)
 #define ESP_RISCV_TRACE_SNAPSHOT_ABI_MAJOR  ((uint16_t)1)
 #define ESP_RISCV_TRACE_SNAPSHOT_ABI_MINOR  ((uint16_t)0)
