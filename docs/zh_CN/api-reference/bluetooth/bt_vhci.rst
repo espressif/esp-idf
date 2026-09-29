@@ -296,10 +296,24 @@
     .. doxygendefine:: ESP_BT_VS_DTM_TX_TEST_END_OCF
     .. doxygendefine:: ESP_BT_VS_DTM_RX_TEST_END_OCF
     .. doxygendefine:: ESP_BT_VS_PCA_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_NEW_CONN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_NEW_CONN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_PAGE_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_PAGE_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_PSCAN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_PSCAN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_INQ_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_ISCAN_TX_PWR_LVL_OCF
     .. doxygendefine:: ESP_BT_VS_LMP_DBG_ENABLE_OCF
     .. doxygendefine:: ESP_BT_VS_SEND_LMP_OCF
     .. doxygendefine:: ESP_BT_VS_LMP_DBG_SAVE_OCF
     .. doxygendefine:: ESP_BT_VS_DISCARD_PING_OCF
+    .. doxygendefine:: ESP_BT_VS_RD_CONN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_CONN_TX_PWR_LVL_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_PWR_CTRL_REQ_EN_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_ENH_PWR_CTRL_REQ_EN_OCF
+    .. doxygendefine:: ESP_BT_VS_SEND_PWR_CTRL_REQ_OCF
+    .. doxygendefine:: ESP_BT_VS_SEND_ENH_PWR_CTRL_REQ_OCF
 
     乐鑫内部调试 HCI 事件
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -326,3 +340,7 @@
         .. doxygendefine:: ESP_BT_VS_LMP_RECEIVED_EVT_SUBCODE
         .. doxygendefine:: ESP_BT_VS_LMP_TX_CFM_EVT_SUBCODE
         .. doxygendefine:: ESP_BT_VS_LMP_DBG_ENTERED_EVT_SUBCODE
+        .. doxygendefine:: ESP_BT_VS_REM_PWR_REQ_EVT_SUBCODE
+        .. doxygendefine:: ESP_BT_VS_REM_PWR_RSP_EVT_SUBCODE
+        .. doxygendefine:: ESP_BT_VS_REM_ENH_PWR_REQ_EVT_SUBCODE
+        .. doxygendefine:: ESP_BT_VS_REM_ENH_PWR_RSP_EVT_SUBCODE
