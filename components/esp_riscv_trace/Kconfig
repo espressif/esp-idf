@@ -36,11 +36,19 @@ menu "RISC-V Trace Encoder Configurations"
             help
                 Publish a trace descriptor through the debug stubs table so the
                 OpenOCD `esp riscv_trace` commands can read the trace buffers, for
-                example after a panic halt.
+                example after a panic halt, and start and stop a capture.
+
+                With ESP_RISCV_TRACE_AUTOSTART only reading is available. An OpenOCD
+                capture would replace the startup capture and leave the encoder
+                stopped, so a later panic would have no trace in the core dump.
 
                 Disabled by default with core dump and autostart. Without a debugger
                 the core dump already stores the trace. Enable it to read the trace
                 with OpenOCD when the debugger halts at a panic.
+
+        config ESP_RISCV_TRACE_OPENOCD_CONTROL
+            bool
+            default y if ESP_RISCV_TRACE_OPENOCD && !ESP_RISCV_TRACE_AUTOSTART
 
         config ESP_RISCV_TRACE_BUFFER_SIZE
             int "Trace buffer size (bytes)"

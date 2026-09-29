@@ -68,6 +68,41 @@ The coredump writer adds those buffers as `PT_LOAD` segments and writes
 metadata into an `ESP_RISCV_TRACE` ELF note (type 680). The `esp-riscv-trace` tool
 reads the note and trace segments directly from the coredump ELF file.
 
+## OpenOCD
+
+With `CONFIG_ESP_RISCV_TRACE_OPENOCD` the driver publishes a trace descriptor
+through the debug stubs table. OpenOCD finds the snapshot through it and
+provides these commands. The option is on by default, except with core dump
+plus `CONFIG_ESP_RISCV_TRACE_AUTOSTART`, where the core dump already stores the
+trace.
+
+| Command | Description |
+|---|---|
+| `esp riscv_trace info` | Show the snapshot, the per-core buffers and the capture state |
+| `esp riscv_trace dump <file>` | Write the stopped buffers to an `.esptrace` file, also after a panic |
+| `esp riscv_trace start loop <file> [duration_ms] [core_mask]` | Start a loop capture on the traced cores |
+| `esp riscv_trace stop` | Stop the capture and write its file |
+
+`start` replaces a running application capture and leaves the encoder stopped
+after `stop`. The loop capture keeps periodic resynchronization on, using packet
+resync when the application disabled it, and enables auto-restart after a FIFO
+overflow. A wrapped buffer stays decodable and an overflow does not end the
+capture early.
+
+With `CONFIG_ESP_RISCV_TRACE_AUTOSTART` only `info` and `dump` are available.
+An OpenOCD capture would replace the startup capture and leave the encoder
+stopped, so a later panic would have no trace.
+
+When the application panics with a debugger attached and
+`CONFIG_ESP_DEBUG_OCDAWARE` enabled, the driver finalizes the snapshot before the
+debugger halts. `dump` then writes the last instructions before the panic, and
+`stop` writes a running OpenOCD capture without running firmware code on the
+crashed CPU.
+
+OpenOCD calls the start and stop functions on a halted target. They run from
+flash, so `start` and `stop` fail while the flash cache is disabled. After a
+panic `stop` never calls them.
+
 ## Buffer and Trace Stream Notes
 
 The trace buffer must be reachable by the trace encoder AHB master.

@@ -71,12 +71,12 @@ static void snapshot_write_end(void)
     portEXIT_CRITICAL(&s_snapshot_lock);
 }
 
-static uint16_t snapshot_memory_mode_from_hw(bool loop)
+FORCE_INLINE_ATTR uint16_t snapshot_memory_mode_from_hw(bool loop)
 {
     return loop ? ESP_RISCV_TRACE_MEMORY_MODE_LOOP : ESP_RISCV_TRACE_MEMORY_MODE_LINEAR;
 }
 
-static uint16_t snapshot_resync_mode_from_hw(uint32_t hw_mode)
+FORCE_INLINE_ATTR uint16_t snapshot_resync_mode_from_hw(uint32_t hw_mode)
 {
     switch (hw_mode) {
     case RISCV_TRACE_RESYNC_DISABLED: return ESP_RISCV_TRACE_RESYNC_MODE_DISABLED;
@@ -175,21 +175,44 @@ FORCE_INLINE_ATTR void core_desc_set_status(esp_riscv_trace_snapshot_core_desc_t
     desc->head_valid = head_valid ? 1 : 0;
 }
 
-/* Records a capture start with the encoder settings it runs with. */
-void esp_riscv_trace_snapshot_start(int core_id, const esp_riscv_trace_capture_cfg_t *cfg)
+/* Records a capture start. The mode fields describe this capture, which may differ from init. */
+FORCE_INLINE_ATTR void core_desc_set_capturing(int core_id, const esp_riscv_trace_capture_cfg_t *cfg)
 {
-    snapshot_write_begin();
-    if (s_active_capture_cores == 0) {
-        g_esp_riscv_trace_snapshot.capture_reason = ESP_RISCV_TRACE_CAPTURE_REASON_UNKNOWN;
-    }
-    s_active_capture_cores++;
-
     esp_riscv_trace_snapshot_core_desc_t *desc = &s_core_desc[core_id];
+    /* A restart of a running capture, such as an OpenOCD takeover, is counted once. */
+    if (desc->state != ESP_RISCV_TRACE_SNAPSHOT_STATE_CAPTURING) {
+        if (s_active_capture_cores == 0) {
+            g_esp_riscv_trace_snapshot.capture_reason = ESP_RISCV_TRACE_CAPTURE_REASON_UNKNOWN;
+        }
+        s_active_capture_cores++;
+    }
     desc->state = ESP_RISCV_TRACE_SNAPSHOT_STATE_CAPTURING;
     desc->memory_mode = snapshot_memory_mode_from_hw(cfg->mem_loop);
     desc->resync_mode = snapshot_resync_mode_from_hw(cfg->resync_mode);
     desc->resync_threshold = cfg->resync_threshold;
     core_desc_set_status(desc, 0, 0, 0, false);
+}
+
+FORCE_INLINE_ATTR void core_desc_set_stopped(int core_id, uint32_t fifo_status, uint32_t intr_status,
+                                             uint32_t head_offset, bool head_valid)
+{
+    esp_riscv_trace_snapshot_core_desc_t *desc = &s_core_desc[core_id];
+    bool was_capturing = (desc->state == ESP_RISCV_TRACE_SNAPSHOT_STATE_CAPTURING);
+    desc->state = ESP_RISCV_TRACE_SNAPSHOT_STATE_STOPPED;
+    core_desc_set_status(desc, fifo_status, intr_status, head_offset, head_valid);
+
+    if (was_capturing && s_active_capture_cores > 0) {
+        s_active_capture_cores--;
+    }
+    if (s_active_capture_cores == 0) {
+        g_esp_riscv_trace_snapshot.capture_reason = ESP_RISCV_TRACE_CAPTURE_REASON_EXPLICIT_STOP;
+    }
+}
+
+void esp_riscv_trace_snapshot_start(int core_id, const esp_riscv_trace_capture_cfg_t *cfg)
+{
+    snapshot_write_begin();
+    core_desc_set_capturing(core_id, cfg);
     snapshot_write_end();
 }
 
@@ -197,17 +220,30 @@ void esp_riscv_trace_snapshot_stop(int core_id, uint32_t fifo_status, uint32_t i
                                    uint32_t head_offset, bool head_valid)
 {
     snapshot_write_begin();
-    esp_riscv_trace_snapshot_core_desc_t *desc = &s_core_desc[core_id];
-    desc->state = ESP_RISCV_TRACE_SNAPSHOT_STATE_STOPPED;
-    core_desc_set_status(desc, fifo_status, intr_status, head_offset, head_valid);
-
-    if (s_active_capture_cores > 0) {
-        s_active_capture_cores--;
-    }
-    if (s_active_capture_cores == 0) {
-        g_esp_riscv_trace_snapshot.capture_reason = ESP_RISCV_TRACE_CAPTURE_REASON_EXPLICIT_STOP;
-    }
+    core_desc_set_stopped(core_id, fifo_status, intr_status, head_offset, head_valid);
     snapshot_write_end();
+}
+
+/* An odd write_seq means a normal writer was halted in the middle of an update. */
+bool esp_riscv_trace_snapshot_busy(void)
+{
+    return (g_esp_riscv_trace_snapshot.write_seq & 1u) != 0;
+}
+
+/* Every core is halted and esp_riscv_trace_snapshot_busy() was false, so no lock is taken. */
+void esp_riscv_trace_snapshot_start_nolock(int core_id, const esp_riscv_trace_capture_cfg_t *cfg)
+{
+    write_seq_begin();
+    core_desc_set_capturing(core_id, cfg);
+    write_seq_end();
+}
+
+void esp_riscv_trace_snapshot_stop_nolock(int core_id, uint32_t fifo_status, uint32_t intr_status,
+                                          uint32_t head_offset, bool head_valid)
+{
+    write_seq_begin();
+    core_desc_set_stopped(core_id, fifo_status, intr_status, head_offset, head_valid);
+    write_seq_end();
 }
 
 /*

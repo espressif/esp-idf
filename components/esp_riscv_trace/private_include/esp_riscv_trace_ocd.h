@@ -23,7 +23,7 @@ extern "C" {
 
 /* ABI 1 structure sizes. */
 #define ESP_RISCV_TRACE_OCD_HDR_SIZE        20
-#define ESP_RISCV_TRACE_OCD_CORE_SIZE       48
+#define ESP_RISCV_TRACE_OCD_CORE_SIZE       40
 
 /* Offset of ack_seq, the only word OpenOCD writes. */
 #define ESP_RISCV_TRACE_OCD_ACK_SEQ_OFFSET  32
@@ -53,8 +53,6 @@ typedef enum {
     ESP_RISCV_TRACE_OCD_ERR_HEAD_INVALID = 3,
     ESP_RISCV_TRACE_OCD_ERR_FIFO_TIMEOUT = 4,
 } esp_riscv_trace_ocd_error_t;
-
-#define ESP_RISCV_TRACE_OCD_FLAG_WRAPPED    (1u << 0)
 
 /*
  * Object graph in target memory.
@@ -91,34 +89,35 @@ typedef struct {
     uint32_t bank_seq[2];   /*!< seq when each bank last completed. 0 = never */
     uint32_t seq;           /*!< Last completed seq */
     uint32_t ack_seq;       /*!< Highest seq consumed by OpenOCD */
-    uint32_t head_offset;   /*!< Loop mode write offset at stop */
     uint8_t  mode;          /*!< esp_riscv_trace_ocd_mode_t */
     uint8_t  state;         /*!< esp_riscv_trace_ocd_state_t */
     uint8_t  error;         /*!< esp_riscv_trace_ocd_error_t */
     uint8_t  active_bank;   /*!< Bank the encoder writes now */
-    uint8_t  flags;         /*!< ESP_RISCV_TRACE_OCD_FLAG_* */
 } esp_riscv_trace_ocd_core_t;
 
 static_assert(sizeof(esp_riscv_trace_ocd_core_t) == ESP_RISCV_TRACE_OCD_CORE_SIZE,
-              "OpenOCD core entry must be 48 bytes");
+              "OpenOCD core entry must be 40 bytes");
 static_assert(offsetof(esp_riscv_trace_ocd_core_t, ack_seq) == ESP_RISCV_TRACE_OCD_ACK_SEQ_OFFSET,
               "OpenOCD writes ack_seq at offset 32");
 
-/* Root descriptor. Registered at ESP_DBG_STUB_ENTRY_RISCV_TRACE. */
+/* Descriptor header. abi_version is the layout contract with OpenOCD. */
 typedef struct {
     uint32_t magic;                                   /*!< ESP_RISCV_TRACE_OCD_MAGIC */
     uint8_t  abi_version;                             /*!< ESP_RISCV_TRACE_OCD_ABI_VERSION */
-    uint8_t  hdr_size;                                /*!< ESP_RISCV_TRACE_OCD_HDR_SIZE */
-    uint8_t  core_size;                               /*!< ESP_RISCV_TRACE_OCD_CORE_SIZE */
     uint8_t  core_count;                              /*!< Number of entries in cores[] */
     esp_riscv_trace_snapshot_desc_t *snapshot;        /*!< Snapshot root */
-    esp_err_t (*start)(int core_id, int mode);        /*!< Called by OpenOCD on a halted core */
-    esp_err_t (*stop)(int core_id);                   /*!< Called by OpenOCD on a halted core */
+    esp_err_t (*start)(uint32_t core_mask, int mode); /*!< Starts all cores in core_mask, or none */
+    esp_err_t (*stop)(uint32_t core_mask);            /*!< Stops the OpenOCD captures in core_mask */
+} esp_riscv_trace_ocd_hdr_t;
+
+static_assert(sizeof(esp_riscv_trace_ocd_hdr_t) == ESP_RISCV_TRACE_OCD_HDR_SIZE,
+              "OpenOCD descriptor header must be 20 bytes");
+
+/* Root descriptor. Registered at ESP_DBG_STUB_ENTRY_RISCV_TRACE. */
+typedef struct {
+    esp_riscv_trace_ocd_hdr_t hdr;
     esp_riscv_trace_ocd_core_t cores[SOC_CPU_CORES_NUM];
 } esp_riscv_trace_ocd_t;
-
-static_assert(offsetof(esp_riscv_trace_ocd_t, cores) == ESP_RISCV_TRACE_OCD_HDR_SIZE,
-              "OpenOCD root header must be 20 bytes");
 
 extern esp_riscv_trace_ocd_t g_esp_riscv_trace_ocd;
 
