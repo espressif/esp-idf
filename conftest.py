@@ -228,7 +228,7 @@ class OpenOCD:
         for attempt in range(1, self.MAX_RETRIES + 1):
             try:
                 self.proc = pexpect.spawn(
-                    command='openocd',
+                    command=os.getenv('OPENOCD_BIN', 'openocd'),
                     args=['-s', openocd_scripts] + debug_args.split(),
                     timeout=5,
                     encoding='utf-8',
