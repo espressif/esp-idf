@@ -96,6 +96,10 @@ static portMUX_TYPE s_timer_lock[ESP_TIMER_MAX] = {
     [0 ...(ESP_TIMER_MAX - 1)] = portMUX_INITIALIZER_UNLOCKED
 };
 
+// Callback execution is serialized within each dispatch method.
+// Completion sequences are protected by the corresponding dispatch list lock.
+static uint32_t s_callback_completed[ESP_TIMER_MAX];
+
 // Accepted deletions, including callbacks still running and batches being freed.
 // Counter updates are protected by the corresponding dispatch list lock.
 static size_t s_pending_delete_count[ESP_TIMER_MAX];
@@ -292,12 +296,12 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
     return err;
 }
 
-static inline bool is_callback_running(esp_timer_handle_t timer, esp_timer_dispatch_t dispatch_method)
+static inline bool callback_has_completed(esp_timer_dispatch_t dispatch_method, uint32_t completed_seq)
 {
     timer_list_lock(dispatch_method);
-    bool callback_running = (timer != NULL) && (timer->flags & FL_CALLBACK_IS_RUNNING) != 0;
+    bool completed = s_callback_completed[dispatch_method] != completed_seq;
     timer_list_unlock(dispatch_method);
-    return callback_running;
+    return completed;
 }
 
 esp_err_t esp_timer_stop_blocking(esp_timer_handle_t timer, uint32_t timeout_ticks)
@@ -320,6 +324,9 @@ esp_err_t esp_timer_stop_blocking(esp_timer_handle_t timer, uint32_t timeout_tic
         timer_remove(timer);
     }
 
+    // The timer may be deleted while we wait for its callback to complete,
+    // so do not access the timer structure after releasing this lock.
+    uint32_t completed_seq = s_callback_completed[dispatch_method];
     timer_list_unlock(dispatch_method);
 
     if (callback_running) {
@@ -354,7 +361,7 @@ esp_err_t esp_timer_stop_blocking(esp_timer_handle_t timer, uint32_t timeout_tic
         }
 
         TickType_t start_time = xTaskGetTickCount();
-        while (is_callback_running(timer, dispatch_method)) {
+        while (!callback_has_completed(dispatch_method, completed_seq)) {
             if (timeout_ticks != (uint32_t) portMAX_DELAY) {
                 TickType_t elapsed = xTaskGetTickCount() - start_time;
                 if (elapsed >= timeout_ticks) {
@@ -556,6 +563,8 @@ static bool __attribute__((noinline, noclone)) timer_process_alarm(esp_timer_dis
         it->times_triggered++;
         it->total_callback_run_time += esp_timer_impl_get_time() - callback_start;
 #endif
+        // Publish completion after the callback and its profiling updates.
+        ++s_callback_completed[dispatch_method];
         if (it->event_id == EVENT_ID_DELETE_TIMER) {
             timer_schedule_delete(it);
             timers_to_delete = true;
