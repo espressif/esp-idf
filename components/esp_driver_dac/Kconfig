@@ -32,6 +32,7 @@ menu "ESP-Driver:DAC Configurations"
             the hardware requires 16 bits data in continuous mode.
             By enabling this option, the driver will left shift 8 bits for the input data automatically.
             Only disable this option when you decide to do this step by yourself.
-            Note that the driver will allocate a new piece of memory to save the converted data.
+            If this option is disabled, the length parameter of the write APIs is
+            specified in bytes rather than samples.
 
 endmenu # DAC Configuration

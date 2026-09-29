@@ -41,8 +41,10 @@ DAC 外设支持以下列方式输出模拟信号：
 DAC 通道可以通过 DMA 连续转换数字信号，这种模式下有三种写入 DAC 数据的方法：
 
     1. 常规写入（同步）：一次性传输所有数据并在所有数据均已载入 DMA 缓冲区前保持阻塞状态。如果不再继续输入数据，电压将维持在最后的转换值。该模式通常用于传输音频等长信号。要连续转换数据，需要调用 :cpp:func:`dac_continuous_new_channels` 来分配连续通道句柄，调用 :cpp:func:`dac_continuous_enable` 来启用 DMA 转换，然后调用 :cpp:func:`dac_continuous_write` 来同步写入数据。示例可参考 :example:`peripherals/dac/dac_continuous/dac_audio`。
-    2. 循环写入：在数据载入 DMA 缓冲区后，缓冲区中的数据将以非阻塞的方式被循环转换。但要注意，输入的缓冲区大小受 DMA 描述符数量和 DMA 缓冲区大小的限制。该模式通常用于传输如正弦波等需要重复的短信号。为了启用循环写入，需要在启用 DAC 连续模式后调用 :cpp:func:`dac_continuous_write_cyclically`。示例可参考 :example:`peripherals/dac/dac_continuous/signal_generator`。
+    2. 循环写入：在数据载入 DMA 缓冲区后，缓冲区中的数据将以非阻塞的方式被循环转换。但要注意，输入的样本数量受 DMA 描述符数量和 DMA 缓冲区大小的限制。该模式通常用于传输如正弦波等需要重复的短信号。为了启用循环写入，需要在启用 DAC 连续模式后调用 :cpp:func:`dac_continuous_write_cyclically`。示例可参考 :example:`peripherals/dac/dac_continuous/signal_generator`。
     3. 异步写入。可根据事件回调异步传输数据。需要调用 :cpp:member:`dac_event_callbacks_t::on_convert_done` 以启用异步模式。用户在回调中可得到 :cpp:type:`dac_event_data_t`，其中包含 DMA 缓冲区的地址和长度，即允许用户直接将数据载入 DMA 缓冲区。启用异步写入前需要调用 :cpp:func:`dac_continuous_register_event_callback`、 :cpp:member:`dac_event_callbacks_t::on_convert_done` 和 :cpp:func:`dac_continuous_start_async_writing`。注意，异步写入一旦开始，回调函数将被持续触发。调用 :cpp:func:`dac_continuous_write_asynchronously` 可以在某个单独任务中或直接在回调函数中载入数据。示例可参考 :example:`peripherals/dac/dac_continuous/dac_audio`。
+
+写入 API 的长度参数按样本数计。8 位 DAC 传入 ``uint8_t`` 数组，10/12 位 DAC 传入 ``uint16_t`` 数组。:cpp:member:`dac_continuous_config_t::buf_size` 以及 :cpp:type:`dac_event_data_t` 中与 DMA 相关的字段按字节计。
 
 下图展示了连续模式驱动的生命周期，以及各 API 对应的状态转移：
 
@@ -83,7 +85,7 @@ DAC 通道可以通过 DMA 连续转换数字信号，这种模式下有三种�
 
 .. only:: esp32
 
-    在 ESP32 上，DAC 的数字控制器可以在内部连接到 I2S0，并借用其 DMA 进行连续转换。虽然 DAC 转换仅需 8 位数据，但它必须是左移的 8 位（即 16 位中的高 8 位），以满足 I2S 通信格式。默认状态下驱动程序将自动扩充数据至 16 位，如需手动扩充，请在 menuconfig 中禁用 :menuitem:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN`。
+    在 ESP32 上，DAC 的数字控制器可以在内部连接到 I2S0，并借用其 DMA 进行连续转换。虽然 DAC 转换仅需 8 位数据，但它必须是左移的 8 位（即 16 位中的高 8 位），以满足 I2S 通信格式。默认状态下驱动程序将自动扩充数据至 16 位，如需手动扩充，请在 menuconfig 中禁用 :menuitem:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN`。禁用该选项时，写入 API 的长度参数 ``cnt`` 按字节数计，而不是按样本数计。
 
     DAC 的数字控制器的时钟也来自 I2S0，有以下两种时钟源可选：
 

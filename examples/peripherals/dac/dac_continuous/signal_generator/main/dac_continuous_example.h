@@ -18,7 +18,7 @@ typedef uint16_t dac_example_sample_t;
 #error "Define packed sample type to match selected SOC and DAC channel config"
 #endif
 
-#define EXAMPLE_ARRAY_LEN     400  // Length of wave array
+#define EXAMPLE_SAMPLE_CNT     400  // number of samples in one wave
 
 typedef enum {
     DAC_SINE_WAVE,
@@ -29,7 +29,7 @@ typedef enum {
 } dac_example_wave_type_t;
 
 extern const char* wave_name[DAC_WAVE_MAX];
-extern dac_example_sample_t wave_data[DAC_WAVE_MAX][EXAMPLE_ARRAY_LEN];
+extern dac_example_sample_t wave_data[DAC_WAVE_MAX][EXAMPLE_SAMPLE_CNT];
 
 /**
  * @brief Generate wave tables for the given bit width of the configured DAC channel

@@ -32,7 +32,7 @@ In general, the DMA-based approach is recommended for most applications, unless 
 
 You can switch the output method in menuconfig under ``Example Configuration`` → ``Select DAC continuous example mode`` (DMA or Timer).
 
-Four waveform types are supported: sine, triangle, sawtooth, and square waves. The waveform data is generated at runtime and stored in the corresponding buffers. Each waveform buffer contains one complete period with 400 samples by default, which can be changed via `EXAMPLE_ARRAY_LEN`. The following relationship applies:
+Four waveform types are supported: sine, triangle, sawtooth, and square waves. The waveform data is generated at runtime and stored in the corresponding buffers. Each waveform buffer contains one complete period with 400 samples by default, which can be changed via `EXAMPLE_SAMPLE_CNT`. The following relationship applies:
 
 Output waveform frequency = DAC sample update rate / Number of samples
 
