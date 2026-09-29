@@ -12,7 +12,7 @@ log_config:
 
     BLE_HOST:
       description: "BLE Host"
-      code_path: [@HOST_CODE_PATH@]
+      code_path: [@HOST_CODE_PATH_YAML@]
       log_index_file: @HOST_LOG_INDEX_HEADER@
       script: @BLE_HOST_LOG_SCRIPT_PATH@
       tags: [@BLE_HOST_TAGS@]

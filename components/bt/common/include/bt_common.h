@@ -288,4 +288,13 @@ typedef UINT8 BD_ADDR[BD_ADDR_LEN];         /* Device address */
 void bt_hci_log_record_insights(uint8_t data_type, const uint8_t *data, uint16_t data_len);
 #endif
 
+#if CONFIG_BT_BLUEDROID_ENABLED && CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
+/*
+ * The generated Bluedroid index also owns the BTC/OSI/BLUFI TRACE macros
+ * declared by this header, including those used from common/btc and
+ * common/osi sources.
+ */
+#include "host_log_index.h"
+#endif
+
 #endif /* _BT_COMMON_H_ */
