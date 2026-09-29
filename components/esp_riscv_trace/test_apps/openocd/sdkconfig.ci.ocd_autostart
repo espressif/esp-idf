@@ -1,0 +1,3 @@
+# Autostart capture without core dump. OpenOCD can only read the trace.
+CONFIG_ESP_RISCV_TRACE_AUTOSTART=y
+CONFIG_ESP_RISCV_TRACE_OPENOCD=y
