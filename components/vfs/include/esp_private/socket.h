@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,14 +18,15 @@ extern "C" {
  *
  * This is a special-purpose function intended for registering LWIP sockets to VFS.
  *
- * @param vfs Pointer to esp_vfs_fs_ops_t. Meaning is the same as for esp_vfs_register_fs().
+ * @param vfs Pointer to esp_vfs_fs_ops_t. The caller owns this object.
+ * @param flags Must include ESP_VFS_FLAG_STATIC.
  * @param ctx Pointer to context structure. Meaning is the same as for esp_vfs_register_fs().
  * @param min_fd The smallest file descriptor this VFS will use.
  * @param max_fd Upper boundary for file descriptors this VFS will use (the biggest file descriptor plus one).
  *
  * @return  ESP_OK if successful,
  *          ESP_ERR_NO_MEM if too many VFSes are registered,
- *          ESP_ERR_INVALID_ARG if the file descriptor boundaries are incorrect.
+ *          ESP_ERR_INVALID_ARG if the fd bounds are wrong or ESP_VFS_FLAG_STATIC is missing.
  */
 esp_err_t esp_vfs_register_fd_range(const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, int min_fd, int max_fd);
 
