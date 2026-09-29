@@ -117,10 +117,14 @@ menu "RISC-V Trace Encoder Configurations"
 
         config ESP_RISCV_TRACE_AUTO_RESTART_ENABLE
             bool "Auto-restart encoder after a FIFO overflow"
-            default n
+            default y
             help
                 A FIFO overflow stops the encoder. When enabled, it restarts automatically once
-                the FIFO is empty again.
+                the FIFO is empty again and sends a sync packet, so decoding continues after the
+                lost packets.
+
+                Without it an overflow ends the capture early. In loop mode the buffer then
+                misses the instructions before a later panic.
 
         config ESP_RISCV_TRACE_AUTO_RESTART
             int
