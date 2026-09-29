@@ -71,6 +71,9 @@ esp_err_t dw_gdma_new_channel(const dw_gdma_channel_alloc_config_t *config, dw_g
 /**
  * @brief Delete DMA channel
  *
+ * @note If this function returns an error, the channel handle and its resources remain allocated
+ *       so the caller can retry the deletion.
+ *
  * @param[in] chan DMA channel handle, allocated by `dw_gdma_new_channel`
  * @return
  *      - ESP_OK: Delete DMA channel successfully
