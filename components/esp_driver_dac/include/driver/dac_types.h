@@ -24,7 +24,7 @@ extern "C" {
 /**
  * @brief DAC channel work mode in dma mode
  * @note  Only take effect when multiple channels enabled.
- * @note  Assume the data in buffer is 'A B C D E F'
+ * @note  Assume the samples in buffer are 'A B C D E F'
  *        DAC_CHANNEL_MODE_SIMUL:
  *          - channel 0: A B C D E F
  *          - channel 1: A B C D E F

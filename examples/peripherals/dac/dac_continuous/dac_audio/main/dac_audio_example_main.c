@@ -32,20 +32,20 @@ static bool IRAM_ATTR example_on_convert_done_callback(dac_continuous_handle_t h
 
 static void example_write_data_asynchronously(dac_continuous_handle_t handle, QueueHandle_t que)
 {
-    size_t data_size = sizeof(audio_table);
-    ESP_LOGI(TAG, "Audio size %d bytes, played at frequency %d Hz asynchronously", data_size, AUDIO_SAMPLE_RATE_HZ);
+    size_t num_samples = sizeof(audio_table) / sizeof(audio_table[0]);
+    ESP_LOGI(TAG, "Audio size %d samples, played at frequency %d Hz asynchronously", num_samples, AUDIO_SAMPLE_RATE_HZ);
     uint32_t cnt = 1;
     while (1) {
         printf("Play count: %"PRIu32"\n", cnt++);
         dac_event_data_t evt_data;
-        size_t byte_written = 0;
+        size_t samples_written = 0;
         /* Receive the event from callback and load the data into the DMA buffer until the whole audio loaded */
-        while (byte_written < data_size) {
+        while (samples_written < num_samples) {
             xQueueReceive(que, &evt_data, portMAX_DELAY);
-            size_t loaded_bytes = 0;
+            size_t samples_loaded = 0;
             ESP_ERROR_CHECK(dac_continuous_write_asynchronously(handle, evt_data.buf, evt_data.buf_size,
-                                                                audio_table + byte_written, data_size - byte_written, &loaded_bytes));
-            byte_written += loaded_bytes;
+                                                                audio_table + samples_written, num_samples - samples_written, &samples_loaded));
+            samples_written += samples_loaded;
         }
         /* Clear the legacy data in DMA, clear times equal to the 'dac_continuous_config_t::desc_num' */
         for (int i = 0; i < 4; i++) {
@@ -63,12 +63,12 @@ static void example_write_data_asynchronously(dac_continuous_handle_t handle, Qu
 #else
 static void example_write_data_synchronously(dac_continuous_handle_t handle)
 {
-    size_t data_size = sizeof(audio_table);
-    ESP_LOGI(TAG, "Audio size %d bytes, played at frequency %d Hz synchronously", data_size, AUDIO_SAMPLE_RATE_HZ);
+    size_t num_samples = sizeof(audio_table) / sizeof(audio_table[0]);
+    ESP_LOGI(TAG, "Audio size %d samples, played at frequency %d Hz synchronously", num_samples, AUDIO_SAMPLE_RATE_HZ);
     uint32_t cnt = 1;
     while (1) {
         printf("Play count: %"PRIu32"\n", cnt++);
-        ESP_ERROR_CHECK(dac_continuous_write(handle, audio_table, data_size, NULL, -1));
+        ESP_ERROR_CHECK(dac_continuous_write(handle, audio_table, num_samples, NULL, -1));
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
