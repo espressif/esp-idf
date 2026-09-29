@@ -71,7 +71,7 @@ Note About Addressing
             ST R2, R1, 4      // write value of R2 into the second array element,
                               // (4 byte offset), i.e., array[1]
 
-            ADD R1, R1, 2     // this increments address by 2 words (8 bytes)
+            ADD R1, R1, 2     // this increments address by 2 words (8 bytes) because R1 stores an address in 32-bit word units
             ST R2, R1, 0      // write value of R2 into the third array element,
                               // i.e., array[2]
 
@@ -157,6 +157,8 @@ The detailed description of all instructions is presented below:
 **Description**
 
   The instruction adds source register to another source register or to a 16-bit signed value and stores the result in the destination register.
+
+  This instruction performs immediate scalar arithmetic without automatic scaling (:math:`R_{dst} = R_{src1} + imm`). Because registers used for memory addressing store addresses expressed in 32-bit word units, adding an immediate value ``N`` directly advances the memory pointer by ``N`` words (``N × 4`` bytes).
 
 **Examples**::
 
