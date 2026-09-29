@@ -212,6 +212,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     ESP_RETURN_ON_FALSE(ppa_client && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ppa_client->oper_type == PPA_OPERATION_SRM, ESP_ERR_INVALID_ARG, TAG, "client is not for SRM operations");
     ESP_RETURN_ON_FALSE(config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    ESP_RETURN_ON_FALSE(config->mode != PPA_TRANS_MODE_BLOCKING || config->user_data == NULL, ESP_ERR_INVALID_ARG, TAG, "user_data must be NULL for blocking mode, `on_trans_done` callback won't be invoked upon completion");
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
     ESP_RETURN_ON_FALSE(ppa_ll_srm_is_color_mode_supported(config->in.srm_cm) &&
@@ -360,7 +361,6 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
 
         trans_elm->client = ppa_client;
         trans_elm->user_data = config->user_data;
-        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semaphore before transaction starts
 
         ret = ppa_do_operation(ppa_client, ppa_client->engine, trans_elm, config->mode);
         if (ret != ESP_OK) {
