@@ -562,10 +562,12 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
     if (next_start_trans) {
         esp_err_t ret = ppa_dma2d_enqueue(next_start_trans);
         assert(ret == ESP_OK);
+        (void)ret;
     } else {
 #if CONFIG_PM_ENABLE
         esp_err_t pm_lock_ret = esp_pm_lock_release(engine_base->pm_lock);
         assert(pm_lock_ret == ESP_OK);
+        (void)pm_lock_ret;
 #endif
     }
 
