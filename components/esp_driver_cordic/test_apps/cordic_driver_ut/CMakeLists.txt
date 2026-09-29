@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.22)
 set(COMPONENTS main)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(cordic_test)
+project(cordic_driver_ut)
 
 idf_build_get_property(elf EXECUTABLE)
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
@@ -21,7 +21,7 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
                       --rtl-dirs ${CORDIC_RTL_DIRS_JOINED}
-                      --elf-file ${CMAKE_BINARY_DIR}/cordic_test.elf
+                      --elf-file $<TARGET_FILE:${elf}>
                       find-refs
                       --from-sections=.iram0.text
                       --to-sections=.flash.text,.flash.rodata

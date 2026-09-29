@@ -136,7 +136,7 @@ CORDIC 驱动 通过 :cpp:member:`cordic_calculate_config_t::iq_format` 参数�
     value = \sum_{i=0}^{30} \frac{1}{2^{(31-i)}} \times B_i
 
 精度
-----------------
+----
 
 CORDIC 驱动通过 :cpp:member:`cordic_calculate_config_t::iteration_count` 参数来设置计算的迭代周期（精度），其支持的精度如下所示。
 
@@ -193,25 +193,30 @@ CORDIC 驱动通过 :cpp:member:`cordic_calculate_config_t::iteration_count` 参
    迭代周期越多，计算精度越高，但计算时间也会越长。当运算精度到达数据格式所能表达的精度极限时，继续增加迭代周期将不会产生更好的效果，反而会使时间变长。
 
 快速入门
-==========
+========
 
-本节将带你快速了解如何使用 CORDIC 驱动。通过实际的使用场景，展示如何创建 CORDIC 引擎并进行计算。一般的使用流程如下：
+本节将带你快速了解如何使用 CORDIC 驱动。通过实际的使用场景，展示如何获取 CORDIC 引擎并进行计算。一般的使用流程如下：
 
-创建 CORDIC 引擎
-------------------
+获取 CORDIC 引擎
+----------------
 
-首先，需要创建一个 CORDIC 引擎。以下代码展示了如何创建一个 CORDIC 引擎：
+芯片上只有一个 CORDIC 硬件模块，所有需要三角函数或双曲函数运算的中间件都必须共享它。因此 :cpp:func:`cordic_acquire_engine` 并不是单纯的构造函数：第一个调用者初始化硬件，后续的调用者只是拿到同一个引擎的又一份引用。
 
 .. code:: c
 
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,  // 选择时钟源
+        .instance_id = 0,                        // 硬件实例编号，取值范围见 CORDIC_LL_INST_NUM
     };
-    ESP_ERROR_CHECK(cordic_new_engine(&config, &engine));
+    ESP_ERROR_CHECK(cordic_acquire_engine(&config, &engine));
+
+.. note::
+
+    时钟源由第一个获取者决定，并一直生效到最后一份引用被释放。此后传入的 ``clock_source`` 会被忽略。
 
 使用 CORDIC 引擎进行计算
-----------------------------
+------------------------
 
 使用 CORDIC 引擎进行计算的流程如下：
 
@@ -248,7 +253,7 @@ CORDIC 驱动通过 :cpp:member:`cordic_calculate_config_t::iteration_count` 参
     ESP_ERROR_CHECK(cordic_calculate_polling(engine, &calc_config, &input_buffer, &output_buffer, buffer_depth));
 
 格式转换
------------
+--------
 
 CORDIC 驱动中提供了定点数与浮点数之间的转换函数，用户可以通过 :cpp:func:`cordic_convert_fixed_to_float` 和 :cpp:func:`cordic_convert_float_to_fixed` 函数实现定点数与浮点数之间的转换。
 
@@ -264,30 +269,24 @@ CORDIC 驱动中提供了定点数与浮点数之间的转换函数，用户可�
     uint32_t res2_fixed = cordic_convert_float_to_fixed(res2_float, ESP_CORDIC_FORMAT_Q15);
 
 资源回收
----------
+--------
 
-当不再需要之前安装的 CORDIC 引擎，请调用 :cpp:func:`cordic_delete_engine` 来回收资源，以释放底层硬件。
+当某个使用者不再需要 CORDIC 引擎时，调用 :cpp:func:`cordic_release_engine` 归还它的引用。只有在最后一份引用被归还后，硬件才会被反初始化，因此各使用者启动和退出的先后顺序并不重要。
 
 .. code:: c
 
-    ESP_ERROR_CHECK(cordic_delete_engine(engine));
+    ESP_ERROR_CHECK(cordic_release_engine(engine));
 
 高级功能
 ========
 
-线程安全
----------
+共享与串行化
+------------
 
-CORDIC 驱动程序的以下函数是线程安全的，可以从不同的 RTOS 任务调用，无需额外的锁保护：
+CORDIC 硬件由所有获取了引擎的使用者共享，同一时刻只允许一个计算占用它的寄存器。驱动在计算期间进入短临界区，调用方无需处理冲突，也不用额外加锁：
 
-工厂函数：
-
-- :cpp:func:`cordic_new_engine`
-- :cpp:func:`cordic_delete_engine`
-
-.. note::
-
-    请注意 :cpp:func:`cordic_calculate_polling` 函数是非线程安全的，在没有设置互斥锁保护的任务中，应避免从多个任务中调用此函数。
+- :cpp:func:`cordic_calculate_polling` 会等到可以使用硬件、算完整个批次后再返回。任务、ISR 以及双核都可以直接调用。请把一次调用的点数保持较小，因为整个批次期间调用核上的中断是关闭的。
+- :cpp:func:`cordic_acquire_engine` 和 :cpp:func:`cordic_release_engine` 内部做了引用计数，并由互斥锁保护。它们可以从不同的 RTOS 任务调用，但可能会阻塞，因此不得从 ISR 中调用。每次成功 acquire 都持有一份引用，必须恰好归还一次。
 
 Cache 安全
 -----------
