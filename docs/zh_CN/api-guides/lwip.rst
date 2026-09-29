@@ -5,6 +5,24 @@ lwIP
 
 ESP-IDF 使用开源的 `lwIP 轻量级 TCP/IP 协议栈`_，该版 lwIP (`esp-lwip`_) 相对上游项目做了修改和增补。
 
+.. _lwip-on-linux:
+
+在 Linux 上运行 lwIP
+---------------------
+
+ESP-IDF 可借助 FreeRTOS POSIX/Linux 模拟器（``linux`` 预览目标），在 Linux 主机上编译并运行真正的 ``esp-lwip`` 协议栈。此时应用程序中的套接字调用走 lwIP，而不是主机操作系统的 TCP/IP 协议栈。适合在主机上针对与芯片目标相同的协议栈开发和调试网络代码。
+
+这与同样面向 Linux、但使用主机原生套接字的示例不同。例如 :example:`protocols/sockets/tcp_client` 会用桩替换 ESP-NETIF，并调用 Linux BSD 套接字 API。这类应用在主机协议栈上验证应用逻辑，并不运行 lwIP。
+
+在 Linux 上运行真正的 lwIP：
+
+1. 设置目标：``idf.py --preview set-target linux``。
+2. 构建并运行会为 Linux 链接 lwIP 的示例，例如 :example:`protocols/sockets/udp_client`。
+
+在 :example:`protocols/sockets/udp_client` 中，``sdkconfig.defaults.linux`` 关闭了 ``EXAMPLE_CONNECT_LWIP_TAPIF``，因此 ``example_connect()`` 不会把 lwIP 接到主机网络，流量只走 lwIP 内部接口（例如回环）。打开该选项后才会接到主机 TAP 接口；此时 ``EXAMPLE_CONNECT_WAIT_FOR_IP`` 默认为打开，示例会等待 DHCP。主机 TAP 的配置见示例 README 以及 :idf_file:`examples/common_components/protocol_examples_tapif_io/README.md`。
+
+有关 Linux 目标的一般说明，请参阅 :doc:`host-apps`。
+
 支持的 API
 --------------
 
@@ -75,7 +93,7 @@ BSD 套接字的相关参考资料十分丰富，包括但不限于：
 
 - :example:`protocols/sockets/tcp_server` 演示了如何创建一个 TCP 服务器，该服务器可以接受客户端的连接请求并接收数据。
 
-- :example:`protocols/sockets/tcp_client` 演示了如何创建一个 TCP 客户端，该客户端使用预定义的 IP 地址和端口连接到服务器。
+- :example:`protocols/sockets/tcp_client` 演示了如何创建一个 TCP 客户端，该客户端使用预定义的 IP 地址和端口连接到服务器。在 ``linux`` 目标上，该示例使用主机原生套接字，而非 lwIP（参见 :ref:`lwip-on-linux`）。
 
 - :example:`protocols/sockets/tcp_transport_client` 演示了如何使用 ``tcp_transport`` 组件创建 TCP 客户端，并支持可选 SOCKS 代理。
 
@@ -85,7 +103,7 @@ BSD 套接字的相关参考资料十分丰富，包括但不限于：
 
 - :example:`protocols/sockets/udp_server` 演示了如何创建一个 UDP 服务器，该服务器可以接收客户端的连接请求和数据。
 
-- :example:`protocols/sockets/udp_client` 演示了如何创建一个 UDP 客户端，该客户端使用预定义的 IP 地址和端口连接到服务器。
+- :example:`protocols/sockets/udp_client` 演示了如何创建一个 UDP 客户端，该客户端使用预定义的 IP 地址和端口连接到服务器。在 ``linux`` 目标上，该示例运行真正的 lwIP 协议栈（可选通过 TAP 桥接到主机）；参见 :ref:`lwip-on-linux`。
 
 - :example:`protocols/sockets/udp_multicast` 演示了如何通过 BSD 风格的套接字接口使用 IPV4 和 IPV6 的 UDP 组播功能。
 

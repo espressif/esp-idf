@@ -84,6 +84,16 @@ Linux 模拟器采用 *协作式抢占*：专用调度器线程按照 ``configTI
   idf.py build
   idf.py monitor
 
+.. _host-apps-networking:
+
+Linux 目标上的网络功能
+------------------------------
+
+针对 ``linux`` 目标构建时，网络可采用两种不同方式：
+
+- **主机套接字**：应用程序使用 Linux BSD 套接字 API。ESP-NETIF 及相关组件可能替换为桩实现。参见 :example:`protocols/sockets/tcp_client`。
+- **lwIP 协议栈**：ESP-IDF 的 lwIP 协议栈会被编译，并运行在 FreeRTOS 模拟器中。套接字 API 进入 lwIP，而不是主机 TCP/IP 协议栈。可通过 TAP 接口把 lwIP 接到主机网络。参见 :ref:`lwip-on-linux` 和 :example:`protocols/sockets/udp_client`。
+
 问题排查
 ---------------
 

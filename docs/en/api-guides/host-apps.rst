@@ -84,6 +84,16 @@ To build the application on Linux, the target has to be set to ``linux`` and the
   idf.py build
   idf.py monitor
 
+.. _host-apps-networking:
+
+Networking on the Linux Target
+------------------------------
+
+When building for the ``linux`` target, networking can work in two different ways:
+
+- **Host sockets**: The application uses the Linux BSD socket API. ESP-NETIF and related components may be stubbed. See :example:`protocols/sockets/tcp_client`.
+- **lwIP stack**: The ESP-IDF lwIP stack is compiled and run under the FreeRTOS simulator. Socket APIs call into lwIP, not the host TCP/IP stack. A TAP interface can bridge lwIP to the host network. See :ref:`lwip-on-linux` and :example:`protocols/sockets/udp_client`.
+
 Troubleshooting
 ---------------
 
