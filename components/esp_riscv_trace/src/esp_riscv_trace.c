@@ -210,9 +210,6 @@ static int trace_intr_source_for_core(int core_id)
 #endif
 }
 
-/* Trace encoder interrupt handler. For now it only reports which sources fired
- * and masks them. Memory-full and FIFO-overflow handling is filled in later.
- * Runs from IRAM so it stays valid with the cache disabled. */
 static void IRAM_ATTR trace_isr(void *arg)
 {
     esp_riscv_trace_handle_t handle = (esp_riscv_trace_handle_t)arg;
@@ -222,10 +219,6 @@ static void IRAM_ATTR trace_isr(void *arg)
     if (fired == 0) {
         return;
     }
-
-    bool mem_full = (fired & RISCV_TRACE_INTR_MEM_FULL) != 0;
-    bool fifo_ov = (fired & RISCV_TRACE_INTR_FIFO_OVERFLOW) != 0;
-    ESP_EARLY_LOGD(TAG, "trace isr core %d mem_full=%d fifo_ov=%d", handle->core_id, mem_full, fifo_ov);
 
     /* Stop and panic freeze read the raw bits. Mask the sources that fired instead of clearing them. */
     riscv_trace_ll_set_intr_ena(dev, handle->intr_mask & ~fired);
@@ -351,7 +344,12 @@ static esp_err_t trace_start_locked(esp_riscv_trace_handle_t handle)
     }
     handle->state = ESP_RISCV_TRACE_STATE_STARTED;
     riscv_trace_hal_start(&handle->hal);
-    esp_riscv_trace_snapshot_start(handle->core_id);
+    esp_riscv_trace_capture_cfg_t cfg = {
+        .mem_loop = riscv_trace_hal_get_mem_loop(&handle->hal),
+        .resync_mode = riscv_trace_hal_get_resync_mode(&handle->hal),
+        .resync_threshold = riscv_trace_hal_get_resync_threshold(&handle->hal),
+    };
+    esp_riscv_trace_snapshot_start(handle->core_id, &cfg);
 
     return ret;
 }
@@ -490,9 +488,6 @@ void esp_riscv_trace_snapshot_finalize(void)
         status[core].head_offset = head_valid ? (current - base) : 0;
         status[core].fifo_status_raw = fifo_status;
         status[core].intr_status_raw = intr_status;
-        status[core].fifo_empty = (fifo_status & TRACE_FIFO_EMPTY_M) != 0;
-        status[core].memory_full = (intr_status & TRACE_MEM_FULL_INTR_RAW_M) != 0;
-        status[core].fifo_overflow = (intr_status & TRACE_FIFO_OVERFLOW_INTR_RAW_M) != 0;
     }
 
     esp_riscv_trace_snapshot_panic_write(status, SOC_CPU_CORES_NUM);
