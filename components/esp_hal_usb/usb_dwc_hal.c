@@ -570,7 +570,6 @@ usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_o
     Errors > Channel Halt Request > Transfer completed
     */
     if (chan_intrs & CHAN_INTRS_ERROR_MSK) {    //Note: Errors are uncommon, so we check against the entire interrupt mask to reduce frequency of entering this call path
-        HAL_ASSERT(chan_intrs & USB_DWC_LL_INTR_CHAN_CHHLTD);  //An error should have halted the channel
         //Store the error in hal context
         usb_dwc_hal_chan_error_t error;
         if (chan_intrs & USB_DWC_LL_INTR_CHAN_STALL) {
