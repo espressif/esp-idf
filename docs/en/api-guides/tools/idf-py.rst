@@ -118,7 +118,7 @@ Flash the Project: ``flash``
 
     idf.py flash
 
-This command automatically builds the project if necessary, and then flash it to the target. You can use ``-p`` and ``-b`` options to set serial port name and flasher baud rate, respectively.
+This command automatically builds the project if necessary, and then flash it to the target. You can use ``-p`` and ``-b`` options to set serial port name and flasher baud rate, respectively. Use ``--pick`` instead of ``-p`` to choose the serial port from a list of connected ports.
 
 .. note::
 

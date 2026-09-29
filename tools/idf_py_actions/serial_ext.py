@@ -12,7 +12,9 @@ import rich_click as click
 from click.core import ParameterSource
 from esp_pylib.cli_types import BaudRateType
 from esp_pylib.cli_types import SerialPortType
+from esp_pylib.errors import NoSerialPortFoundError
 from esp_pylib.logger import log
+from esp_pylib.serial_ports import pick_port
 from rich_click import Context
 
 from idf_py_actions.errors import FatalError
@@ -48,6 +50,14 @@ PORT = {
     'envvar': 'ESPPORT',
     'type': SerialPortType(),
     'default': None,
+}
+
+PICK = {
+    'names': ['--pick'],
+    'help': 'If --port is not set, choose the port from a list of connected ports instead of detecting it.',
+    'scope': 'global',
+    'is_flag': True,
+    'default': False,
 }
 
 
@@ -321,6 +331,12 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         RunTool('esptool', esptool_args, args.build_dir, hints=not args.no_hints, interactive=True)()
 
     def global_callback(ctx: Context, global_args: dict, tasks: PropertyDict) -> None:
+        if global_args.get('pick') and global_args.get('port') is None:
+            try:
+                global_args['port'] = pick_port()
+            except NoSerialPortFoundError as e:
+                raise FatalError(str(e))
+
         encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
         if encryption:
             for task in tasks:
@@ -660,7 +676,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             write_protect_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', write_protect_args, args.build_dir)()
 
-    BAUD_AND_PORT = [BAUD_RATE, PORT]
+    BAUD_AND_PORT = [BAUD_RATE, PORT, PICK]
     flash_options = BAUD_AND_PORT + [
         {
             'names': ['-a', '--all', 'flash_all'],
@@ -1183,6 +1199,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 'help': 'Display serial output.',
                 'options': [
                     PORT,
+                    PICK,
                     {
                         'names': ['--print-filter', '--print_filter'],
                         'help': (

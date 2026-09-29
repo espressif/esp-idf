@@ -194,6 +194,37 @@ class TestMonitorPortDetection:
         assert stdin.closed
 
 
+class TestPickPort:
+    def _call_global_callback(self, args: PropertyDict) -> None:
+        from idf_py_actions.serial_ext import action_extensions
+
+        ext = action_extensions({}, '')
+        ext['global_action_callbacks'][0](mock.MagicMock(), args, [])
+
+    def test_picked_port_is_used(self, args: PropertyDict) -> None:
+        args.pick = True
+        with mock.patch('idf_py_actions.serial_ext.pick_port', return_value='/dev/ttyUSB1'):
+            self._call_global_callback(args)
+        assert args.port == '/dev/ttyUSB1'
+
+    def test_explicit_port_is_kept(self, args: PropertyDict) -> None:
+        args.pick = True
+        args.port = '/dev/ttyUSB0'
+        with mock.patch('idf_py_actions.serial_ext.pick_port') as pick_port:
+            self._call_global_callback(args)
+        pick_port.assert_not_called()
+        assert args.port == '/dev/ttyUSB0'
+
+    def test_no_ports_found(self, args: PropertyDict) -> None:
+        from esp_pylib.errors import NoSerialPortFoundError
+        from idf_py_actions.errors import FatalError
+
+        args.pick = True
+        with mock.patch('idf_py_actions.serial_ext.pick_port', side_effect=NoSerialPortFoundError('No ports')):
+            with pytest.raises(FatalError):
+                self._call_global_callback(args)
+
+
 class TestRunToolStdin:
     def test_forwards_stdin_without_hints(self, tmp_path: pathlib.Path) -> None:
         script_path = tmp_path / 'monitor_commands.txt'
