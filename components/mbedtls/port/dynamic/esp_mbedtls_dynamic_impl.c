@@ -19,7 +19,6 @@
 #define CACHE_BUFFER_SIZE (CACHE_IV_SIZE + COUNTER_SIZE)
 
 #define TX_IDLE_BUFFER_SIZE (MBEDTLS_SSL_HEADER_LEN + CACHE_BUFFER_SIZE)
-#define RX_PEEK_BUFFER_SIZE (MBEDTLS_SSL_HEADER_LEN + 4)
 
 #define ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl) \
     do { \
@@ -586,12 +585,7 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     int buffer_len, content_len = 0;
     struct esp_mbedtls_ssl_buf *esp_buf;
     unsigned char cache_buf[16];
-    union {
-        struct esp_mbedtls_ssl_buf head;
-        unsigned char space[SSL_BUF_HEAD_OFFSET_SIZE + RX_PEEK_BUFFER_SIZE];
-    } peek;
-    unsigned char *msg_head = peek.head.buf + COUNTER_SIZE;
-    unsigned char *in_buf;
+    unsigned char msg_head[9];
     size_t in_msglen, in_left;
 
     ESP_LOGV(TAG, "--> add rx");
@@ -606,23 +600,10 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
         }
     }
 
-    /* Peek at the headers through a buffer laid out like the RX buffer, with
-     * in_buf pointing at it meanwhile: mbedtls_ssl_fetch_input() computes the
-     * room left from in_hdr - in_buf, so in_hdr must lie within in_buf. */
-    esp_mbedtls_init_ssl_buf(&peek.head, RX_PEEK_BUFFER_SIZE);
-    in_buf = ssl->MBEDTLS_PRIVATE(in_buf);
-    ssl->MBEDTLS_PRIVATE(in_buf) = peek.head.buf;
     ssl->MBEDTLS_PRIVATE(in_hdr) = msg_head;
     ssl->MBEDTLS_PRIVATE(in_len) = msg_head + 3;
 
-    ret = mbedtls_ssl_fetch_input(ssl, mbedtls_ssl_in_hdr_len(ssl));
-    if (ret == 0) {
-        esp_mbedtls_parse_record_header(ssl);
-        ret = rx_reassembly_content_len(ssl, msg_head, &content_len);
-    }
-    ssl->MBEDTLS_PRIVATE(in_buf) = in_buf;
-
-    if (ret != 0) {
+    if ((ret = mbedtls_ssl_fetch_input(ssl, mbedtls_ssl_in_hdr_len(ssl))) != 0) {
         if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
             ESP_LOGD(TAG, "mbedtls_ssl_fetch_input reads data times out");
         } else if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
@@ -636,6 +617,11 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
         goto exit;
     }
 
+    esp_mbedtls_parse_record_header(ssl);
+
+    if ((ret = rx_reassembly_content_len(ssl, msg_head, &content_len)) != 0) {
+        goto exit;
+    }
     buffer_len = tx_buffer_len(ssl, content_len);
 
     in_left = ssl->MBEDTLS_PRIVATE(in_left);
