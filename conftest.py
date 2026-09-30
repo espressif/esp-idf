@@ -188,6 +188,11 @@ class AppDownloader:
 
 
 class OpenOCD:
+    # Characters around a command echo. A log line redraws the prompt as '\n> ', the prompt after
+    # command output is '\r>'.
+    PROMPT_CHARS = ' >\x08\r'
+    CMD_PROMPT = '\r>'
+
     def __init__(self, dut: 'IdfDut'):
         self.MAX_RETRIES = 3
         self.RETRY_DELAY = 1
@@ -271,6 +276,26 @@ class OpenOCD:
             return ''
         return to_str(resp)
 
+    def write_cmd(self, cmd: str, expect: str | None = None, timeout: int = 10) -> str:
+        """Runs cmd and returns only its own output. Log lines also start with a prompt, so read past them."""
+        end = time.time() + timeout
+        out = t.cast(str, self.write(cmd, timeout=timeout))
+        if not out:
+            raise pexpect.TIMEOUT(f'No reply to "{cmd}"')
+        while True:
+            lines = out.split('\n')
+            echoes = [i for i, line in enumerate(lines) if line.strip(self.PROMPT_CHARS) == cmd]
+            reply = '\n'.join(lines[echoes[-1] + 1 :]) if echoes else ''
+            if echoes and reply.endswith(self.CMD_PROMPT):
+                break
+            if self.telnet is None or time.time() > end:
+                raise pexpect.TIMEOUT(f'No complete reply to "{cmd}":\n{out}')
+            out += self.telnet.read_until(b'>', timeout=1).decode(errors='ignore')
+        reply = reply[: -len(self.CMD_PROMPT)]
+        if expect is not None and expect not in reply:
+            raise AssertionError(f'"{expect}" not in reply to "{cmd}":\n{reply}')
+        return reply
+
     def consume_output(self, duration: float) -> None:
         if self.telnet is None:
             return
@@ -283,7 +308,7 @@ class OpenOCD:
         stopped = False
         end_before = time.time() + timeout
         while not stopped:
-            cmd_out = self.write('esp apptrace status')
+            cmd_out = self.write_cmd('esp apptrace status')
             for line in cmd_out.splitlines():
                 if line.startswith('Tracing is STOPPED.'):
                     stopped = True
@@ -296,7 +321,7 @@ class OpenOCD:
         cmd = 'esp gcov'
         if not on_the_fly:
             cmd += ' dump'
-        cmd_out = self.write(cmd)
+        cmd_out = self.write_cmd(cmd, timeout=30)
         if 'Targets connected.' not in cmd_out:
             raise pexpect.TIMEOUT('Failed to start gcov dump!')
         if 'Targets disconnected.' not in cmd_out:
