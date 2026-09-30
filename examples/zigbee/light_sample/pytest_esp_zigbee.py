@@ -28,20 +28,21 @@ def test_config_zigbee_network(dut: Tuple[Dut, Dut]) -> None:
     light = dut[0]
     switch = dut[1]
     time.sleep(3)
-    switch.expect('ESP_ZB_ON_OFF_SWITCH: Formed network successfully', timeout=30)
-    # get the switch extpanid
-    switch_node_expanid = switch.expect(r'Extended PAN ID: (([a-z0-9]{2}:?){8})', timeout=3)[1].decode()
-    switch_node_expanid = switch_node_expanid.replace(':', '')
-    # get the switch panid
-    switch_node_panid = switch.expect(r'PAN ID: 0x([a-z0-9]+:?)', timeout=2)[1].decode()
-    # new device commissioned successfully
-    switch.expect(r'New device commissioned or rejoined \(short: 0x([a-z0-9]+)[^a-z0-9]', timeout=30)[1].decode()
-    # get the light node extpanid
-    light.expect('ESP_ZB_ON_OFF_LIGHT: Joined network successfully', timeout=20)
-    light_node_expanid = light.expect(r'Extended PAN ID: (([a-z0-9]{2}:?){8})', timeout=3)[1].decode()
-    light_node_expanid = light_node_expanid.replace(':', '')
-    # get the light panid
-    light_node_panid = light.expect(r'PAN ID: 0x([a-z0-9]+:?)', timeout=2)[1].decode()
-    # make sure the light node join the network that switch node formed (same expanid)
-    if (light_node_expanid != switch_node_expanid) or (light_node_panid != switch_node_panid):
-        assert False
+    light_network = light.expect(
+        r'ON_OFF_LIGHT: Formed network successfully: PAN ID\(0x([a-fA-F0-9]+), EXT: 0x([a-fA-F0-9]+)\)',
+        timeout=30,
+    )
+    light_panid = light_network[1].decode()
+    light_extpanid = light_network[2].decode()
+
+    switch_network = switch.expect(
+        r'ON_OFF_SWITCH: Joined network successfully: PAN ID\(0x([a-fA-F0-9]+), EXT: 0x([a-fA-F0-9]+)\)',
+        timeout=30,
+    )
+    switch_panid = switch_network[1].decode()
+    switch_extpanid = switch_network[2].decode()
+
+    light.expect(r'New device commissioned or rejoined ?\(short: 0x([a-fA-F0-9]+)\)', timeout=30)
+
+    assert switch_panid == light_panid
+    assert switch_extpanid == light_extpanid
