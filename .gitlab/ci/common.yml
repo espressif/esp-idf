@@ -93,6 +93,11 @@ variables:
   # Keep the variable empty when not used.
   # CI_CLANG_DISTRO_URL could be defined as component input `ci_clang_distro_url` in common-scripts above
 
+  # Set this variable to an openocd-esp32 branch in order to run the target tests with its build
+  # instead of the OpenOCD from tools.json. Keep the variable empty when not used.
+  # The branch needs a successful openocd-esp32 pipeline, otherwise an older build is used.
+  # OPENOCD_DEV_REF could be defined as component input `openocd_dev_ref` in common-scripts above
+
   # Set this variable to specify the file name for the known failure cases.
   KNOWN_FAILURE_CASES_FILE_NAME: "master.txt"
 
