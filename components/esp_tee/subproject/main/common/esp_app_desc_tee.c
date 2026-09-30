@@ -16,8 +16,8 @@ const esp_app_desc_t __attribute__((section(".rodata_desc"))) esp_app_desc = {
     .version = PROJECT_VER,
     .project_name = PROJECT_NAME,
     .idf_ver = IDF_VER,
-#ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
-    .secure_version = CONFIG_BOOTLOADER_APP_SECURE_VERSION,
+#ifdef CONFIG_SECURE_TEE_ANTI_ROLLBACK
+    .secure_version = CONFIG_SECURE_TEE_SECURE_VERSION,
 #else
     .secure_version = 0,
 #endif

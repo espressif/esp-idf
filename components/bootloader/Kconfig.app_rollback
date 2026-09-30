@@ -86,10 +86,14 @@ menu "Application Rollback"
             9 bits for ESP32-C5, and 16 bits for other targets.
             This determines how many times the security version can be increased.
 
+            When the ESP-TEE anti-rollback feature (SECURE_TEE_ANTI_ROLLBACK) is enabled,
+            the top 3 bits of the field are reserved for the TEE secure version, which
+            reduces the size available to the app by 3 bits.
+
     config BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
         bool "Emulate operations with efuse secure version(only test)"
         default n
-        depends on BOOTLOADER_APP_ANTI_ROLLBACK
+        depends on BOOTLOADER_APP_ANTI_ROLLBACK || SECURE_TEE_ANTI_ROLLBACK
         select EFUSE_VIRTUAL
         select EFUSE_VIRTUAL_KEEP_IN_FLASH
         help

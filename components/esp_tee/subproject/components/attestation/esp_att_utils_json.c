@@ -61,6 +61,7 @@ static esp_err_t part_metadata_to_json(const esp_att_part_metadata_t *metadata, 
     json_gen_obj_set_string(&json_gen, "ver", (char *)metadata->ver);
     json_gen_obj_set_string(&json_gen, "idf_ver", (char *)metadata->idf_ver);
     json_gen_obj_set_int(&json_gen, "secure_ver", metadata->secure_ver);
+    json_gen_obj_set_int(&json_gen, "secure_ver_efuse", metadata->secure_ver_efuse);
 
     // Add "part_chip_rev" object
     json_gen_push_object(&json_gen, "part_chip_rev");

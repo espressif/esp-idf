@@ -130,6 +130,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp_fault.h"
 #include "esp_flash_partitions.h"
 #include "rom/spi_flash.h"
+#include "riscv/rv_utils.h"
 
 extern bool esp_tee_flash_check_prange_in_active_tee_part(const size_t paddr, const size_t len);
 #endif
@@ -302,6 +303,22 @@ static inline void spi1_wb_mode_restore(bool saved_state)
     (void)saved_state;
 #endif
 }
+
+static inline void cache_suspend(void)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    rv_utils_dis_branch_predictor();
+#endif
+    cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+}
+
+static inline void cache_resume(void)
+{
+    cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    rv_utils_en_branch_predictor();
+#endif
+}
 #endif
 
 uint32_t bootloader_mmap_get_free_pages(void)
@@ -354,7 +371,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if !ESP_TEE_BUILD
     cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
-    cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    cache_suspend();
 #endif
 #endif
 
@@ -393,7 +410,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if !ESP_TEE_BUILD
     cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
-    cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    cache_resume();
 #endif
 #endif
 
@@ -416,10 +433,10 @@ void bootloader_munmap(const void *mapping)
         cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
         mmu_hal_unmap_all();
 #else
-        cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+        cache_suspend();
         cache_hal_invalidate_addr(FLASH_MMAP_VADDR, current_mapped_size);
         mmu_hal_unmap_region(0, FLASH_MMAP_VADDR, current_mapped_size);
-        cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+        cache_resume();
 #endif
 #endif
         mapped = false;
@@ -490,7 +507,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #if !ESP_TEE_BUILD
             cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
-            cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+            cache_suspend();
             //---------------Invalidating entries at to-be-mapped v_addr------------------------
             cache_hal_invalidate_addr(FLASH_READ_VADDR, CONFIG_MMU_PAGE_SIZE);
 #endif
@@ -519,14 +536,14 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #if !ESP_TEE_BUILD
             cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
-            cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+            cache_resume();
 #endif
 #endif
         }
         map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));
         dest_words[word] = *map_ptr;
-        current_read_mapping = UINT32_MAX;
     }
+    current_read_mapping = UINT32_MAX;
     return ESP_OK;
 }
 

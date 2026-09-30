@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_fault.h"
+#include "esp_efuse.h"
 
 #include "esp_rom_sys.h"
 #include "esp_rom_crc.h"
@@ -15,6 +17,7 @@
 #include "hal/efuse_hal.h"
 
 #include "esp_image_format.h"
+#include "esp_app_desc.h"
 #include "bootloader_config.h"
 #include "esp_private/bootloader_flash_internal.h"
 
@@ -142,45 +145,120 @@ static esp_err_t update_tee_otadata(const esp_partition_pos_t *tee_ota_info, uin
     return write_tee_otadata(&otadata, tee_ota_info);
 }
 
-int bootloader_utility_tee_get_boot_partition(const esp_partition_pos_t *tee_ota_info)
+/* Read the TEE otadata, treating a missing or blank partition as "boot the first TEE partition" */
+static esp_err_t get_tee_boot_state(const esp_partition_pos_t *tee_ota_info, esp_tee_ota_select_entry_t *otadata)
 {
-    esp_tee_ota_select_entry_t otadata = {}, blank_otadata;
     const int default_tee_app_slot = PART_SUBTYPE_TEE_0;
 
-    esp_err_t err = get_valid_tee_otadata(tee_ota_info, &otadata);
+    esp_err_t err = get_valid_tee_otadata(tee_ota_info, otadata);
     if (err == ESP_ERR_NOT_FOUND) {
         ESP_LOGV(TAG, "otadata partition not found, booting from first partition");
-        return default_tee_app_slot;
+        otadata->boot_partition = default_tee_app_slot;
+        otadata->ota_state = ESP_TEE_OTA_IMG_UNDEFINED;
+        return ESP_OK;
     }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get valid otadata, 0x%x", err);
-        return -1;
+        return err;
     }
+
+    esp_tee_ota_select_entry_t blank_otadata;
     memset(&blank_otadata, 0xff, sizeof(esp_tee_ota_select_entry_t));
-    if (!memcmp(&blank_otadata, &otadata, sizeof(esp_tee_ota_select_entry_t))) {
+    if (!memcmp(&blank_otadata, otadata, sizeof(esp_tee_ota_select_entry_t))) {
         ESP_LOGV(TAG, "otadata partition empty, booting from first partition");
         /* NOTE: The first TEE partition will always be valid as it is flashed manually */
         if (update_tee_otadata(tee_ota_info, default_tee_app_slot, ESP_TEE_OTA_IMG_VALID) != ESP_OK) {
             ESP_LOGW(TAG, "Failed to setup TEE otadata as per the first partition!");
         }
-        return default_tee_app_slot;
+        otadata->boot_partition = default_tee_app_slot;
+        otadata->ota_state = ESP_TEE_OTA_IMG_UNDEFINED;
     }
 
-    int boot_partition = 0;
+    return ESP_OK;
+}
+
+int bootloader_utility_tee_get_boot_partition(const esp_partition_pos_t *tee_ota_info)
+{
+    esp_tee_ota_select_entry_t otadata = {};
+    if (get_tee_boot_state(tee_ota_info, &otadata) != ESP_OK) {
+        return -1;
+    }
+    return otadata.boot_partition;
+}
+
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+static bool tee_secure_version_check(uint32_t secure_version)
+{
+    bool ok = esp_efuse_check_tee_secure_version(secure_version);
+#if ESP_TEE_BUILD
+    /* NOTE: The eFuse counter may lag the running image (failed burn), so also reject images older than it */
+    ok = ok && (secure_version >= esp_app_get_description()->secure_version);
+#endif
+    return ok;
+}
+
+static bool tee_secure_version_ok(uint32_t secure_version)
+{
+    bool sec_ver = tee_secure_version_check(secure_version);
+    /* Anti FI check */
+    ESP_FAULT_ASSERT(sec_ver == tee_secure_version_check(secure_version));
+    return sec_ver;
+}
+#endif
 
 #if BOOTLOADER_BUILD
-    switch(otadata.ota_state) {
+/* Bootloader-internal (bootloader_utility.c); apps use esp_ota_get_partition_description() */
+extern esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
+
+static bool check_tee_anti_rollback(const esp_partition_pos_t *partition)
+{
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+    esp_app_desc_t app_desc = {};
+    esp_err_t err = bootloader_common_get_partition_description(partition, &app_desc);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get partition description %d", err);
+        return false;
+    }
+    return tee_secure_version_ok(app_desc.secure_version);
+#else
+    (void)partition;
+    return true;
+#endif
+}
+
+int bootloader_utility_tee_get_selected_boot_partition(const bootloader_state_t *bs)
+{
+    const esp_partition_pos_t *tee_ota_info = &bs->tee_ota_info;
+    esp_tee_ota_select_entry_t otadata = {};
+    if (get_tee_boot_state(tee_ota_info, &otadata) != ESP_OK) {
+        return -1;
+    }
+
+    int boot_partition = otadata.boot_partition;
+    if (boot_partition != PART_SUBTYPE_TEE_0 && boot_partition != PART_SUBTYPE_TEE_1) {
+        return -1;
+    }
+    const int other_partition = (boot_partition == PART_SUBTYPE_TEE_0) ? PART_SUBTYPE_TEE_1 : PART_SUBTYPE_TEE_0;
+
+    switch (otadata.ota_state) {
         case ESP_TEE_OTA_IMG_NEW:
             ESP_LOGD(TAG, "TEE otadata - Current image state: NEW");
-            boot_partition = otadata.boot_partition;
-            if (update_tee_otadata(tee_ota_info, otadata.boot_partition, ESP_TEE_OTA_IMG_PENDING_VERIFY) != ESP_OK) {
+            /* NOTE: As for apps, a new image failing anti-rollback is never selected */
+            if (!check_tee_anti_rollback(&bs->tee[boot_partition & 0x01])) {
+                ESP_LOGD(TAG, "New TEE image has a lower secure version, not selected");
+                boot_partition = other_partition;
+                if (update_tee_otadata(tee_ota_info, boot_partition, ESP_TEE_OTA_IMG_INVALID) != ESP_OK) {
+                    return -1;
+                }
+                break;
+            }
+            if (update_tee_otadata(tee_ota_info, boot_partition, ESP_TEE_OTA_IMG_PENDING_VERIFY) != ESP_OK) {
                 return -1;
             }
             break;
-        case ESP_TEE_OTA_IMG_UNDEFINED:
         case ESP_TEE_OTA_IMG_PENDING_VERIFY:
-            ESP_LOGD(TAG, "TEE otadata - Current image state: PENDING_VERIFY/UNDEFINED");
-            boot_partition = (otadata.boot_partition == PART_SUBTYPE_TEE_0) ? PART_SUBTYPE_TEE_1 : PART_SUBTYPE_TEE_0;
+            ESP_LOGD(TAG, "TEE otadata - Current image state: PENDING_VERIFY");
+            boot_partition = other_partition;
             if (update_tee_otadata(tee_ota_info, boot_partition, ESP_TEE_OTA_IMG_INVALID) != ESP_OK) {
                 return -1;
             }
@@ -189,20 +267,25 @@ int bootloader_utility_tee_get_boot_partition(const esp_partition_pos_t *tee_ota
             ESP_LOGD(TAG, "TEE otadata - Current image state: INVALID");
             bootloader_reset();
             break;
+        case ESP_TEE_OTA_IMG_UNDEFINED:
         case ESP_TEE_OTA_IMG_VALID:
-            ESP_LOGD(TAG, "TEE otadata - Current image state: VALID");
-            boot_partition = otadata.boot_partition;
-            break;
+            ESP_LOGD(TAG, "TEE otadata - Current image state: VALID/UNDEFINED");
             break;
         default:
             break;
     }
-#else
-    boot_partition = otadata.boot_partition;
-#endif
+
+    const esp_partition_pos_t *boot_part_pos = &bs->tee[boot_partition & 0x01];
+    if (!check_tee_anti_rollback(boot_part_pos)) {
+        ESP_LOGE(TAG, "TEE app secure version check failed");
+        return -1;
+    }
+    /* Anti FI check */
+    ESP_FAULT_ASSERT(check_tee_anti_rollback(boot_part_pos));
 
     return boot_partition;
 }
+#endif // BOOTLOADER_BUILD
 
 esp_err_t bootloader_utility_tee_set_boot_partition(const esp_partition_pos_t *tee_ota_info, const esp_partition_info_t *tee_try_part)
 {
@@ -218,6 +301,17 @@ esp_err_t bootloader_utility_tee_set_boot_partition(const esp_partition_pos_t *t
     if (esp_image_verify(ESP_IMAGE_VERIFY, &tee_try_part->pos, &data) != ESP_OK) {
         return ESP_ERR_IMAGE_INVALID;
     }
+
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+    /* NOTE: data.secure_version is populated from the image descriptor (SHA-covered) by esp_image_verify */
+    if (!tee_secure_version_ok(data.secure_version)) {
+        ESP_LOGE(TAG, "New TEE image secure version (%"PRIu32") is lower than the eFuse counter (%"PRIu32") or the running image",
+                 data.secure_version, esp_efuse_read_tee_secure_version());
+        return ESP_ERR_INVALID_VERSION;
+    }
+    /* Anti FI check */
+    ESP_FAULT_ASSERT(tee_secure_version_ok(data.secure_version));
+#endif
 
     return update_tee_otadata(tee_ota_info, tee_try_part->subtype, ESP_TEE_OTA_IMG_NEW);
 }

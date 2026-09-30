@@ -39,6 +39,18 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs);
 int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs);
 
 /**
+ * @brief Select the TEE partition to boot (bootloader only)
+ *
+ * Applies the TEE OTA rollback state machine and (if enabled) the anti-rollback check;
+ * a new image failing the check is rolled back without a trial boot.
+ *
+ * @param[in] bs Bootloader state (TEE partitions and TEE OTA data partition)
+ *
+ * @return Subtype of the TEE partition to boot, or -1 if an error occurred
+ */
+int bootloader_utility_tee_get_selected_boot_partition(const bootloader_state_t *bs);
+
+/**
  * @brief Load and verify the TEE image from the selected partition
  *
  * @param bs Bootloader state structure

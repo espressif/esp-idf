@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ typedef struct {
   uint32_t segment_data[ESP_IMAGE_MAX_SEGMENTS]; /* Data offsets for each segment */
   uint32_t image_len; /* Length of image on flash, in bytes */
   uint8_t image_digest[32]; /* appended SHA-256 digest */
-  uint32_t secure_version; /* secure version for anti-rollback, it is covered by sha256 (set if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y) */
+  uint32_t secure_version; /* secure version for anti-rollback, it is covered by sha256 (set if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y or CONFIG_SECURE_TEE_ANTI_ROLLBACK=y) */
   uint32_t mmu_page_size; /* Flash MMU page size per binary header */
 } esp_image_metadata_t;
 
@@ -217,6 +217,19 @@ uint32_t esp_image_bootloader_offset_get(void);
  * @param offset ota Bootloader offset
  */
 void esp_image_bootloader_offset_set(const uint32_t offset);
+
+#if CONFIG_SECURE_ENABLE_TEE
+/**
+ * @brief Set the TEE partition offset
+ *
+ * The esp_image_verify functions use the offset to distinguish between application and TEE verifications
+ * (e.g. to check the secure version against the TEE anti-rollback eFuse field).
+ * The bootloader must set the offset before loading the selected TEE partition.
+ *
+ * @param offset TEE partition offset
+ */
+void esp_image_tee_offset_set(const uint32_t offset);
+#endif
 
 typedef struct {
     uint32_t drom_addr;
