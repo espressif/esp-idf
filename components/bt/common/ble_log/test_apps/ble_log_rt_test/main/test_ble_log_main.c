@@ -59,6 +59,9 @@ void setUp(void)
 void tearDown(void)
 {
     ble_log_prph_test_set_auto_recycle_hook(NULL, NULL);
+    /* Unity aborts a failed case by longjmp, which skips the restore
+     * statement at the end of the case, so the hook is also disarmed here. */
+    test_ble_log_disarm_warning_hook();
     (void)ble_log_sync_enable(false);
 }
 
