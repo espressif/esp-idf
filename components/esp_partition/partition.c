@@ -187,16 +187,18 @@ static esp_err_t load_partitions(void)
         item->info.readonly = entry.flags & PART_FLAG_READONLY;
         item->user_registered = false;
 
+        // entry.label is uint8_t[16] from flash and may lack a NUL; item->info.label is
+        // zeroed by calloc, so strncpy keeps the API string null-terminated.
+        strncpy(item->info.label, (const char *) entry.label, sizeof(item->info.label) - 1);
+
 #if CONFIG_NVS_COMPATIBLE_PRE_V4_3_ENCRYPTION_FLAG
         if (entry.type == ESP_PARTITION_TYPE_DATA &&
                 entry.subtype == ESP_PARTITION_SUBTYPE_DATA_NVS &&
                 (entry.flags & PART_FLAG_ENCRYPTED)) {
-            ESP_LOGI(TAG, "Ignoring encrypted flag for \"%s\" partition", entry.label);
+            ESP_LOGI(TAG, "Ignoring encrypted flag for \"%s\" partition", item->info.label);
             item->info.encrypted = false;
         }
 #endif
-        // item->info.label is initialized by calloc, so resulting string will be null terminated
-        strncpy(item->info.label, (const char *) entry.label, sizeof(item->info.label) - 1);
 
         // add it to the list
         if (last == NULL) {
