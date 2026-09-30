@@ -42,6 +42,7 @@
 #include "hal/lpwdt_ll.h"
 #include "hal/assist_debug_ll.h"
 #include "hal/brownout_ll.h"
+#include "hal/riscv_trace_hal.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32h4");
 
@@ -106,6 +107,8 @@ static inline void bootloader_hardware_init(void)
     regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-12313 Remove this?
     regi2c_ctrl_ll_master_configure_clock();
 #endif
+    /* A reset leaves the trace encoders running, and they would write into RAM the app will use */
+    riscv_trace_hal_stop_all_encoders();
 }
 
 static inline void bootloader_ana_reset_config(void)

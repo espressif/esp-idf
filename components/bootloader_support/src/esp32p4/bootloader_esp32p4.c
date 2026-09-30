@@ -51,6 +51,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/brownout_ll.h"
+#include "hal/riscv_trace_hal.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32p4");
 
@@ -109,6 +110,8 @@ static inline void bootloader_hardware_init(void)
         bootloader_init_mspi_clock();
     }
 #endif
+    /* A reset leaves the trace encoders running, and they would write into RAM the app will use */
+    riscv_trace_hal_stop_all_encoders();
 }
 
 static inline void bootloader_ana_reset_config(void)

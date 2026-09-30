@@ -45,6 +45,7 @@
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/brownout_ll.h"
 #include "hal/axi_icm_ll.h"
+#include "hal/riscv_trace_hal.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32c61");
 
@@ -89,6 +90,8 @@ static inline void bootloader_hardware_init(void)
     axi_icm_ll_reset_with_core_reset(true);
     _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
     regi2c_ctrl_ll_master_configure_clock();
+    /* A reset leaves the trace encoders running, and they would write into RAM the app will use */
+    riscv_trace_hal_stop_all_encoders();
 }
 
 static inline void bootloader_ana_reset_config(void)

@@ -10,6 +10,10 @@
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "hal/riscv_trace_types.h"
+#if SOC_RISCV_TRACE_SUPPORTED
+#include "hal/riscv_trace_ll.h"
+#include "esp_attr.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -119,6 +123,23 @@ uint32_t riscv_trace_hal_get_resync_threshold(riscv_trace_hal_context_t *ctx);
 
 /** @brief Apply a filter (trace qualifier) configuration. Set before starting a capture. */
 void riscv_trace_hal_set_filter(riscv_trace_hal_context_t *ctx, const riscv_trace_hal_filter_config_t *config);
+
+#if SOC_RISCV_TRACE_SUPPORTED
+/** @brief Reset all trace encoders, which a system reset leaves running. Call it with nothing else running. */
+FORCE_INLINE_ATTR void riscv_trace_hal_stop_all_encoders(void)
+{
+    /* Nothing else runs here, so the RCC lock is not taken */
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
+    if (!riscv_trace_ll_is_bus_clock_enabled()) {
+        return;
+    }
+    /* Packets cut off by the reset are never read */
+    for (int core = 0; core < SOC_CPU_CORES_NUM; core++) {
+        riscv_trace_ll_reset_register(core);
+    }
+    riscv_trace_ll_enable_bus_clock(false);
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -36,6 +36,7 @@
 #include "soc/regi2c_mpll.h"
 #include "hal/regi2c_ctrl.h"
 #include "hal/psram_ctrlr_ll.h"
+#include "hal/riscv_trace_hal.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32s31");
 
@@ -67,6 +68,8 @@ static inline void bootloader_hardware_init(void)
        should be selected to an always-on source. */
     _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
     _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_XTAL);
+    /* A reset leaves the trace encoders running, and they would write into RAM the app will use */
+    riscv_trace_hal_stop_all_encoders();
 }
 
 void bootloader_enable_cpu_reset_info(void)

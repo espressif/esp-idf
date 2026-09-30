@@ -38,6 +38,7 @@
 #include "hal/dw_gdma_ll.h"
 #include "hal/dma2d_ll.h"
 #include "hal/efuse_hal.h"
+#include "hal/riscv_trace_hal.h"
 #include "esp_memory_utils.h"
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD && CONFIG_COMPILER_ENABLE_RISCV_ZCMP
 #include "esp_private/hw_stack_guard.h"
@@ -47,6 +48,9 @@ extern int _bss_end;
 
 void esp_system_reset_modules_on_exit(void)
 {
+    // A software reset leaves the trace encoders running, and they would write into RAM after restart
+    riscv_trace_hal_stop_all_encoders();
+
     // Flush any data left in UART FIFOs
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
         if (uart_ll_is_enabled(i)) {
