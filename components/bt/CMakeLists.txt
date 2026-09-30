@@ -128,4 +128,5 @@ if(CONFIG_BT_ENABLED)
 
     register_log_compression_dependency()
     wrap_uart_log_tx_interface()
+    register_ble_log_usb_transport(${bt_component_type})
 endif()

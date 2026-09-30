@@ -892,9 +892,15 @@ void ble_log_snapshot_stats(ble_log_source_stat_t *snapshots)
 void ble_log_lbm_take_loss_window(uint32_t by_source[BLE_LOG_SRC_MAX])
 {
     /* Read the current counters once; a concurrent mark_lost that lands
-     * after the load simply belongs to the next window. A ble_log_flush()
-     * reset makes the current value smaller than the shadow; that window
-     * then reports only post-reset losses, by the documented contract. */
+     * after the load simply belongs to the next window.
+     *
+     * A ble_log_flush() reset is not synchronized with the shadow: the
+     * counters restart at zero while loss_shadow keeps the pre-flush value,
+     * so this window reports max(0, current - shadow). Losses counted after
+     * the reset can therefore be under-reported, or dropped entirely (shadow
+     * 10, reset, 7 new losses -> 0 reported). Accepted for this delivery
+     * stage; an accurate post-flush window needs an independent
+     * producer-side counter. */
     for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
         uint32_t current =
             BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr_ctx[i].counters.lost_frame_cnt);

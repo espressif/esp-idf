@@ -1011,6 +1011,19 @@ static int loss_warning_vprintf(const char *format, va_list args)
     return n;
 }
 
+/* tearDown hook: Unity leaves a failed case by longjmp, so any assert before
+ * the case's own restore statement would leave the capture hook installed.
+ * A later case saving "the current hook" would then save the hook itself, and
+ * the non-warning forwarding would recurse into it. Idempotent: the saved
+ * pointer is cleared here, and a successful case already cleared it. */
+void test_ble_log_disarm_warning_hook(void)
+{
+    if (s_warning_orig_vprintf) {
+        (void)esp_log_set_vprintf(s_warning_orig_vprintf);
+        s_warning_orig_vprintf = NULL;
+    }
+}
+
 /* The loss warning is emitted from the periodic ESP Timer callback. Cause
  * a CUSTOM-source loss (pool full, no-wait path from the main task is not
  * available, so use an oversized record instead: rejected at entry with a
@@ -1047,9 +1060,9 @@ TEST_CASE("BLE Log loss warning reports per-window losses",
 
     /* The following loss-free window must not repeat the warning. The
      * hook stays installed for this check (restoring it earlier would
-     * freeze the capture buffer and silence the check); the restore
-     * below is the last statement before the case ends, so a failed
-     * assert can only skip it on the very last check. */
+     * freeze the capture buffer and silence the check); tearDown disarms
+     * it as well, so a failed assert anywhere in this case cannot leak
+     * it into the next one. */
     s_warning_line[0] = '\0';
     vTaskDelay(runtime_timeout_ticks(BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 200));
     TEST_ASSERT_NULL_MESSAGE(
