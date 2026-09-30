@@ -1,0 +1,17 @@
+choice ZB_GW_RCP_CHIP
+    depends on AUTO_UPDATE_RCP
+    prompt "Zigbee gateway RCP chip for auto update"
+    default ZB_GW_RCP_CHIP_ESP32H2
+    help
+        Select the RCP chip connected to the Zigbee gateway.
+
+    config ZB_GW_RCP_CHIP_ESP32H2
+        bool "ESP32-H2"
+        help
+            ESP32-H2 is the RCP chip connected to the Zigbee gateway.
+
+    config ZB_GW_RCP_CHIP_ESP32C6
+        bool "ESP32-C6"
+        help
+            ESP32-C6 is the RCP chip connected to the Zigbee gateway.
+endchoice
