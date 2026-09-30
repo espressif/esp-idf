@@ -65,6 +65,7 @@ extern "C"
 #define SPICOMMON_BUSFLAG_OCTAL         (SPICOMMON_BUSFLAG_QUAD|SPICOMMON_BUSFLAG_IO4_IO7)  ///< Check existing of MOSI/MISO/WP/HD/SPIIO4/SPIIO5/SPIIO6/SPIIO7 pins as output. Or indicates bus able to work under octal mode.
 #define SPICOMMON_BUSFLAG_NATIVE_PINS   SPICOMMON_BUSFLAG_IOMUX_PINS
 #define SPICOMMON_BUSFLAG_SLP_ALLOW_PD  (1<<9)     ///< Allow to power down the peripheral during light sleep, and auto recover then.
+#define SPICOMMON_BUSFLAG_DATA_OUT_INV  (1<<10)    ///< Invert output data signals through the GPIO matrix.
 
 /**
  * @brief SPI DMA channels
@@ -94,6 +95,8 @@ typedef spi_common_dma_t spi_dma_chan_t;
  * delay, which may cause incorrect read for >40MHz speeds.
  *
  * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t referring to these lines will be ignored and can thus safely be left uninitialized.
+ * @note Setting `SPICOMMON_BUSFLAG_DATA_OUT_INV` routes all configured bus signals through GPIO matrix and inverts data output signals, including their idle levels.
+ * @note On ESP32, `data_io_default_level` only supports 0.
  */
 typedef struct {
     union {
@@ -117,7 +120,7 @@ typedef struct {
     int data5_io_num;     ///< GPIO pin for spi data5 signal in octal mode, or -1 if not used.
     int data6_io_num;     ///< GPIO pin for spi data6 signal in octal mode, or -1 if not used.
     int data7_io_num;     ///< GPIO pin for spi data7 signal in octal mode, or -1 if not used.
-    bool data_io_default_level; ///< Output data IO default level when no transaction.
+    bool data_io_default_level; ///< Default level of output data signals when no transaction in progress.
     int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
     uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
     esp_intr_cpu_affinity_t  isr_cpu_id;    ///< Select cpu core to register SPI ISR.
