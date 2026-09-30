@@ -19,7 +19,7 @@
  * 0x10B1 sits next to USB-Serial-JTAG 0x1001, outside both ranges. */
 #define BLE_LOG_USB_VID          0x303A
 #define BLE_LOG_USB_PID          0x10B1
-#define BLE_LOG_USB_PRODUCT      "ESP-BLE-Log-Port"
+#define BLE_LOG_USB_PRODUCT      "BLE-Log-Port"
 #define BLE_LOG_USB_MANUFACTURER "Espressif Systems"
 
 typedef enum {

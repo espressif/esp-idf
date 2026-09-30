@@ -334,8 +334,10 @@ BLE Log counterparts: `CONFIG_TINYUSB_CDC_TX_BUFSIZE ==
 CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` and `CONFIG_TINYUSB_CDC_EP_BUFSIZE ==
 CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE`; `CONFIG_TINYUSB_CDC_RX_BUFSIZE` at
 least the endpoint size; mismatches are fatal build errors. The device
-enumerates as VID 0x303A PID 0x10B1 (product `ESP-BLE-Log-Port`), distinct
-from the TinyUSB/blbm bridge `0x4001`.
+enumerates as VID 0x303A PID 0x10B1, product/interface string
+`BLE-Log-Port (<target>)` (the base name is a literal prefix; the target
+is the `IDF_TARGET` the image was built for), distinct from the TinyUSB/blbm
+bridge `0x4001`.
 
 ### Buffer sizing
 

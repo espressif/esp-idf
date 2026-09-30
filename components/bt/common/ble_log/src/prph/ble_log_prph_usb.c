@@ -24,6 +24,17 @@ _Static_assert(CONFIG_BLE_LOG_POOL_TRANS_SIZE <= CONFIG_BLE_LOG_USB_CDC_TX_BUFSI
 _Static_assert(CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE >= 64,
                "Bulk MPS is 64 (Full-Speed) or 512 (High-Speed)");
 
+/* Product (and interface) string: the identity plus the target this image is
+ * built for, so a host can name the board at enumeration time, before it
+ * opens the port. BLE_LOG_USB_PRODUCT stays the exact identity and is a
+ * literal prefix of the string below. Only the target fits: the dependency
+ * renders string descriptors through a 32-byte buffer and truncates longer
+ * ones silently. */
+#define BLE_LOG_USB_PRODUCT_DESC  (BLE_LOG_USB_PRODUCT " (" CONFIG_IDF_TARGET ")")
+/* Guard the silent truncation above: the base name is not ours to shorten. */
+_Static_assert(sizeof(BLE_LOG_USB_PRODUCT_DESC) <= 32,
+               "Product string exceeds the esp_tinyusb descriptor buffer");
+
 /* VARIABLE */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool s_inited = false;
 BLE_LOG_STATIC uint32_t s_fifo_full_drops;
@@ -49,9 +60,9 @@ BLE_LOG_STATIC const tusb_desc_device_t s_dev_desc = {
 BLE_LOG_STATIC const char *s_str_desc[] = {
     (const char[]) { 0x09, 0x04 },
     BLE_LOG_USB_MANUFACTURER,
-    BLE_LOG_USB_PRODUCT,
+    BLE_LOG_USB_PRODUCT_DESC,
     CONFIG_TINYUSB_DESC_SERIAL_STRING,
-    BLE_LOG_USB_PRODUCT,
+    BLE_LOG_USB_PRODUCT_DESC,
 };
 
 /* PRIVATE FUNCTION */
