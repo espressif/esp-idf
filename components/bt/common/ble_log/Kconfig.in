@@ -197,6 +197,19 @@ if BLE_LOG_ENABLED
                 requirements.
     endchoice
 
+    if BLE_LOG_PRPH_USB
+        config BLE_LOG_USB_DISPATCH_TEST_HOOKS
+            bool "Compile the USB dispatcher test hooks"
+            default n
+            depends on !BLE_LOG_PRPH_TEST
+            help
+                Compile the weak dispatch-task injection points used by
+                the BLE Log USB test app's lifecycle mode (parks the
+                dispatcher between dequeue and send, and between the stop
+                ack and the self-suspend). Off in production builds: the
+                dispatch hot path then carries no hook checks at all.
+    endif
+
     if BLE_LOG_PRPH_SPI_MASTER_DMA || BLE_LOG_PRPH_SPI_MASTER_HD
         config BLE_LOG_PRPH_SPI_MASTER_DMA_MOSI_IO_NUM
             int "GPIO number of MOSI port for SPI master transport (-1: native SPI2 IOMUX)"

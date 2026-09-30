@@ -213,6 +213,7 @@ BLE_LOG_STATIC void ble_log_rt_dispatch(QueueHandle_t queue,
 #endif /* !CONFIG_BLE_LOG_PRPH_USB */
 
 #if CONFIG_BLE_LOG_PRPH_USB
+#if CONFIG_BLE_LOG_USB_DISPATCH_TEST_HOOKS
 /* Test-only injection point, defined by the USB test app: pauses the
  * dispatcher between dequeue and send so the teardown handshake can be
  * checked deterministically. */
@@ -221,6 +222,7 @@ extern void ble_log_test_usb_dispatch_pre_send_hook(void) __attribute__((weak));
  * dispatcher between the stop ack and its own suspend, the window in which
  * deinit must keep waiting. */
 extern void ble_log_test_usb_dispatch_post_ack_hook(void) __attribute__((weak));
+#endif /* CONFIG_BLE_LOG_USB_DISPATCH_TEST_HOOKS */
 
 /* Dedicated dispatch task for USB builds: event-driven queue drain. The
  * blocking receive is mandatory for light-sleep support (the queue read is
@@ -243,9 +245,11 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
             ble_log_lbm_recycle_trans(trans);
             continue;
         }
+#if CONFIG_BLE_LOG_USB_DISPATCH_TEST_HOOKS
         if (ble_log_test_usb_dispatch_pre_send_hook) {
             ble_log_test_usb_dispatch_pre_send_hook();
         }
+#endif /* CONFIG_BLE_LOG_USB_DISPATCH_TEST_HOOKS */
         ble_log_prph_send_trans(trans);
     }
 
@@ -255,9 +259,11 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         ble_log_lbm_recycle_trans(trans);
     }
     BLE_LOG_ATOMIC_STORE_RELEASE(rt_task_stopped, 1);
+#if CONFIG_BLE_LOG_USB_DISPATCH_TEST_HOOKS
     if (ble_log_test_usb_dispatch_post_ack_hook) {
         ble_log_test_usb_dispatch_post_ack_hook();
     }
+#endif /* CONFIG_BLE_LOG_USB_DISPATCH_TEST_HOOKS */
     vTaskSuspend(NULL);
 }
 
