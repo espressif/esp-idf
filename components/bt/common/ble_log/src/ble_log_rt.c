@@ -228,18 +228,26 @@ extern void ble_log_test_usb_dispatch_post_ack_hook(void) __attribute__((weak));
  * blocking receive is mandatory for light-sleep support (the queue read is
  * the wake source).
  *
- * The task holds no stop state of its own: deinit closes the gate and aborts
- * the blocking receive, so the pdFALSE below means "teardown", never "no
- * work". It then recycles whatever the closed gate left in the queue and
+ * The task holds no stop state of its own: deinit closes the gate and posts
+ * the stop token (see ble_log_rt_stop_task), which the receive below reads as
+ * "stop". It then recycles whatever the closed gate left in the queue and
  * publishes rt_task_stopped, so that ack covers both the transport it owned
  * and the ones still queued. It suspends instead of deleting itself: deinit
- * keeps aborting this task until the ack and the suspended state, and a task
- * handle must not outlive the TCB the idle task frees. */
+ * keeps waiting for the ack and the suspended state, and a task handle must
+ * not outlive the TCB the idle task frees. */
 BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
 {
     (void)pvParameters;
     ble_log_prph_trans_t *trans = NULL;
     while (xQueueReceive(rt_queue_handle, &trans, portMAX_DELAY) == pdTRUE) {
+        if (trans == NULL) {
+            /* The stop token deinit posted. Must precede the gate check: the
+             * recycle below dereferences the transport. */
+            ESP_LOGI(TAG,
+                     "Stop token: draining %u queued transport(s), then acking",
+                     (unsigned)uxQueueMessagesWaiting(rt_queue_handle));
+            break;
+        }
         if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(rt_inited)) {
             /* Deinit is tearing down; recycle and keep draining. */
             ble_log_lbm_recycle_trans(trans);
@@ -253,8 +261,8 @@ BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
         ble_log_prph_send_trans(trans);
     }
 
-    /* Reached only through xTaskAbortDelay with the gate already closed, so
-     * nothing here was submitted after the gate: drain and ack. */
+    /* Reached on the stop token with the gate already closed, so nothing here
+     * was submitted after the gate: drain and ack. */
     while (xQueueReceive(rt_queue_handle, &trans, 0) == pdTRUE) {
         ble_log_lbm_recycle_trans(trans);
     }
@@ -288,21 +296,28 @@ BLE_LOG_STATIC bool ble_log_rt_stopped(void)
  * deleted-task count stuck above zero. Nothing resumes a suspended task, so
  * the state is stable once observed.
  *
- * The abort poke is an edge: it lands only on a task blocked at that instant
- * (it reports pdFAIL while the dispatcher is mid-transport), so it is retried.
- * The whole wait shares the timeout the reference count wait uses. */
+ * The wake is a NULL token in the runtime queue, not an abort poke: the
+ * dispatcher can be blocked inside its dispatch call, where xTaskAbortDelay
+ * would also cancel a wait on one of TinyUSB's own mutexes. TinyUSB takes
+ * those with a forever timeout and ignores the result, so a cancelled take
+ * leaves it giving back a mutex it never acquired. The token can only be
+ * taken by the receive at the top of the loop. The whole wait shares the
+ * timeout the reference count wait uses. */
 BLE_LOG_STATIC bool ble_log_rt_stop_task(void)
 {
+    /* The reserved queue slot makes this unconditional: at most one entry per
+     * transport can be queued at once, and the gate is closed and the
+     * reference count drained before this runs. */
+    ble_log_prph_trans_t *stop_token = NULL;
+    if (xQueueSend(rt_queue_handle, &stop_token, 0) != pdTRUE) {
+        return false;
+    }
+
     TickType_t start_tick = xTaskGetTickCount();
     while (!ble_log_rt_stopped()) {
         if ((xTaskGetTickCount() - start_tick) >=
                 pdMS_TO_TICKS(BLE_LOG_RT_STOP_TIMEOUT_MS)) {
             return false;
-        }
-        (void)xTaskAbortDelay(rt_task_handle);
-        if (ble_log_rt_stopped()) {
-            /* The wake ran the task to its suspended state. */
-            break;
         }
         vTaskDelay(1);
     }
@@ -384,9 +399,11 @@ bool ble_log_rt_init(void)
     }
 #endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
 
-    /* One slot per transport: every transport the peripheral can hold fits
-     * in the queue at once. */
-    rt_queue_handle = xQueueCreate(BLE_LOG_TRANS_TOTAL_CNT,
+    /* One slot per transport, so every transport the peripheral can hold fits
+     * in the queue at once and submit never blocks or drops, plus one reserved
+     * slot for the NULL stop token deinit posts (the only non-transport entry
+     * this queue ever carries). */
+    rt_queue_handle = xQueueCreate(BLE_LOG_TRANS_TOTAL_CNT + 1,
                                    sizeof(ble_log_prph_trans_t *));
     if (!rt_queue_handle) {
         goto exit;
@@ -474,8 +491,9 @@ void ble_log_rt_deinit(void)
      *
      * Quiescence comes from the gate plus an ack, not from vTaskDelete: the
      * task sleeps in xQueueReceive, so closing the gate is not enough on its
-     * own - deinit closes it and then aborts that wait, and the task recycles
-     * what the closed gate left queued before it publishes rt_task_stopped.
+     * own - deinit closes it and then posts the stop token, and the task
+     * recycles what the closed gate left queued before it publishes
+     * rt_task_stopped.
      * The ack therefore covers the transport it owned (sent or recycled) and
      * the queued ones, which is what "no dispatch call in flight" means.
      * Deleting the task on its own cannot give that: it interrupts a send or
