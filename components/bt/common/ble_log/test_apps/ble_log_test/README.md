@@ -33,3 +33,11 @@ It compiles the bounded-wait tests (recycle-within-budget and
 fail-after-budget) on top of the default suite; the default build keeps
 the historical infinite wait (`CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS=-1`)
 and compiles none of them.
+
+The same suite at 1000 Hz (`sdkconfig.ci.bounded_tick_1000`, which carries
+the same finite budget so the variant also works on its own in CI) checks
+the tick rounding of the wait:
+
+```
+idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.bounded_tick_1000" build
+```
