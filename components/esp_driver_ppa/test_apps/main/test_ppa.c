@@ -1104,9 +1104,17 @@ TEST_CASE("ppa_srm_stress_test", "[PPA]")
     const uint32_t h = 200;
     const ppa_srm_color_mode_t in_cm = PPA_SRM_COLOR_MODE_RGB565;
     const ppa_srm_color_mode_t out_cm = PPA_SRM_COLOR_MODE_RGB565;
-    const ppa_srm_rotation_angle_t rotation = PPA_SRM_ROTATION_ANGLE_0;
-    const float scale_x = 1.0;
-    const float scale_y = 1.0;
+    const ppa_srm_rotation_angle_t rotations[] = {
+        PPA_SRM_ROTATION_ANGLE_0,
+        PPA_SRM_ROTATION_ANGLE_90,
+    };
+    const float scale_pairs[][2] = {
+        {1.0f, 1.0f},
+        {1.0f, 1.5f},
+        {1.2f, 1.0f},
+    };
+    const uint32_t out_w = 2 * w; // leave a large output buffer, since we test with >1.0 scale
+    const uint32_t out_h = 2 * h;
 
     color_space_pixel_format_t in_pixel_format = {
         .color_type_id = in_cm,
@@ -1116,7 +1124,7 @@ TEST_CASE("ppa_srm_stress_test", "[PPA]")
     };
 
     uint32_t in_buf_size = w * h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8, 64);
+    uint32_t out_buf_size = ALIGN_UP(out_w * out_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8, 64);
     uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(out_buf);
     uint8_t *in_buf = heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
@@ -1129,48 +1137,56 @@ TEST_CASE("ppa_srm_stress_test", "[PPA]")
     };
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    // Test on different sizes of the block
-    int test_iterations = 50;
-    while (test_iterations-- > 0) {
-        uint32_t block_w_initial = esp_random() % (w - 100);
-        uint32_t block_h_initial = esp_random() % (h - 100);
-        block_w_initial = (block_w_initial == 0) ? 1 : block_w_initial;
-        block_h_initial = (block_h_initial == 0) ? 1 : block_h_initial;
-        uint32_t block_w = 0;
-        uint32_t block_h = 0;
-        for (int i = 0; i < 100; i++) {
-            block_w = block_w_initial + i;
-            block_h = block_h_initial + i;
-            // printf("block_w = %ld, block_h = %ld\n", block_w, block_h);
-            ppa_srm_oper_config_t oper_config = {
-                .in.buffer = in_buf,
-                .in.pic_w = w,
-                .in.pic_h = h,
-                .in.block_w = block_w,
-                .in.block_h = block_h,
-                .in.block_offset_x = 0,
-                .in.block_offset_y = 0,
-                .in.srm_cm = in_cm,
+    for (int rot_idx = 0; rot_idx < (int)(sizeof(rotations) / sizeof(rotations[0])); rot_idx++) {
+        ppa_srm_rotation_angle_t rotation = rotations[rot_idx];
+        for (int scale_idx = 0; scale_idx < (int)(sizeof(scale_pairs) / sizeof(scale_pairs[0])); scale_idx++) {
+            const float scale_x = scale_pairs[scale_idx][0];
+            const float scale_y = scale_pairs[scale_idx][1];
+            printf("SRM stress: rot=%d scale_x=%.1f scale_y=%.1f\n", (int)rotation, scale_x, scale_y);
 
-                .out.buffer = out_buf,
-                .out.buffer_size = out_buf_size,
-                .out.pic_w = block_w,
-                .out.pic_h = block_h,
-                .out.block_offset_x = 0,
-                .out.block_offset_y = 0,
-                .out.srm_cm = out_cm,
+            // Test on different sizes of the block
+            int test_iterations = 50;
+            while (test_iterations-- > 0) {
+                uint32_t block_w_initial = esp_random() % (w - 100);
+                uint32_t block_h_initial = esp_random() % (h - 100);
+                block_w_initial = (block_w_initial == 0) ? 1 : block_w_initial;
+                block_h_initial = (block_h_initial == 0) ? 1 : block_h_initial;
+                uint32_t block_w = 0;
+                uint32_t block_h = 0;
+                for (int i = 0; i < 100; i++) {
+                    block_w = block_w_initial + i;
+                    block_h = block_h_initial + i;
+                    ppa_srm_oper_config_t oper_config = {
+                        .in.buffer = in_buf,
+                        .in.pic_w = w,
+                        .in.pic_h = h,
+                        .in.block_w = block_w,
+                        .in.block_h = block_h,
+                        .in.block_offset_x = 0,
+                        .in.block_offset_y = 0,
+                        .in.srm_cm = in_cm,
 
-                .rotation_angle = rotation,
-                .scale_x = scale_x,
-                .scale_y = scale_y,
+                        .out.buffer = out_buf,
+                        .out.buffer_size = out_buf_size,
+                        .out.pic_w = out_w,
+                        .out.pic_h = out_h,
+                        .out.block_offset_x = 0,
+                        .out.block_offset_y = 0,
+                        .out.srm_cm = out_cm,
 
-                .rgb_swap = 0,
-                .byte_swap = 0,
+                        .rotation_angle = rotation,
+                        .scale_x = scale_x,
+                        .scale_y = scale_y,
 
-                .mode = PPA_TRANS_MODE_BLOCKING,
-            };
+                        .rgb_swap = 0,
+                        .byte_swap = 0,
 
-            TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+                        .mode = PPA_TRANS_MODE_BLOCKING,
+                    };
+
+                    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+                }
+            }
         }
     }
 
