@@ -2620,6 +2620,7 @@ static volatile bool s_straddle_acquire_armed;
 static volatile bool s_straddle_flush_armed;
 static volatile int s_straddle_flush_evals;
 static volatile bool s_straddle_hog_stop;
+static volatile bool s_straddle_reader_stop;
 static volatile bool s_straddle_writer_frozen_at_return;
 static volatile bool s_straddle_writer_result;
 static volatile int64_t s_straddle_flush_us;
@@ -2675,10 +2676,21 @@ void ble_log_test_acquire_after_unregister_hook(void)
                                      BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t),
                                      &handle, false);
         if (dst) {
-            s_churn_handle = handle;
-            s_churn_held = true;
-            s_churn_armed = false;
-            s_churn_hits++;
+            if (!s_churn_armed) {
+                /* tearDown disarmed the round while this claim was in flight,
+                 * so no case will ever commit it. Release it here: a claim
+                 * nobody returns holds a lifetime reference that keeps the
+                 * pool from draining. Both sides deciding on the same flag
+                 * leaves only a store-propagation window; the helper alone
+                 * would leave the whole claim duration open. */
+                ble_log_commit(handle,
+                               BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t));
+            } else {
+                s_churn_handle = handle;
+                s_churn_held = true;
+                s_churn_armed = false;
+                s_churn_hits++;
+            }
         }
         return;
     }
@@ -2711,16 +2723,37 @@ void ble_log_test_acquire_after_unregister_hook(void)
     (void)xSemaphoreTake(s_straddle_freeze, portMAX_DELAY);
 }
 
-/* Disarms every acquire-hook arm the bounded-wait cases set. Called from
- * tearDown: Unity aborts a failed case by longjmp, and an arm left behind
- * would fire in the next case (its time gate, if any, was set in a dead
- * stack frame and is long since passed). */
+/* Disarms every hook arm the bounded-wait and repro cases set, and undoes the
+ * side effects of one that already fired. Called from tearDown: Unity aborts a
+ * failed case by longjmp, so the case's own cleanup never runs, and anything
+ * left behind would poison the rest of the run. */
 void test_ble_log_disarm_case_hooks(void)
 {
+    /* Disarm first: no new round may be taken while the state below is being
+     * released. */
     s_churn_armed = false;
-    s_churn_held = false;
     s_deadline_recycle_armed = false;
     s_straddle_acquire_armed = false;
+    s_straddle_flush_armed = false;
+    s_straddle_flush_evals = 0;
+    /* Evaluation #1's hog spins on the writer's core until this says
+     * otherwise. */
+    s_straddle_hog_stop = true;
+    /* The straddle reader only exits on this flag, and a writer parked in the
+     * acquire hook is holding a lifetime reference until it is released. */
+    s_straddle_reader_stop = true;
+    if (s_straddle_freeze) {
+        xSemaphoreGive(s_straddle_freeze);
+    }
+    /* The churn hook's claim belongs to the case it interrupted; a claim no
+     * case can commit any more must be released here, or its lifetime
+     * reference keeps the pool from draining and the next deinit trips
+     * BLE_LOG_WAIT_TIMEOUT_TICKS. */
+    if (s_churn_held) {
+        ble_log_commit(s_churn_handle,
+                       BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t));
+    }
+    s_churn_held = false;
 }
 
 void ble_log_test_flush_drain_between_loads_hook(void)
@@ -2783,8 +2816,6 @@ static void straddle_hog_task(void *arg)
     }
     vTaskDelete(NULL);
 }
-
-static volatile bool s_straddle_reader_stop;
 
 static void straddle_reader_task(void *arg)
 {
@@ -2911,6 +2942,41 @@ TEST_CASE("BLE Log flush drain does not straddle an in-flight parked writer",
     if (s_straddle_writer_frozen_at_return) {
         TEST_ASSERT_GREATER_OR_EQUAL(950, (int)flush_ms);
     }
+}
+
+/* tearDown has to release hook state that already exists, not only clear the
+ * arms: a failed case leaves by longjmp, so its own cleanup never runs. The
+ * churn hook's claim is the worst of it - nobody returns its lifetime
+ * reference, which keeps ble_log_lbm_disable() waiting until its timeout
+ * assertion trips and loses the rest of the run. Inject that state directly
+ * and let deinit prove the reference came back. */
+TEST_CASE("BLE Log tearDown releases a claim an aborted case left behind",
+          "[ble_log][lbm]")
+{
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf),
+                                  0, 0, NULL) > 0) {
+    }
+
+    /* The claim the churn hook takes, handed to tearDown instead of to the
+     * case's own commit. */
+    uint32_t handle = 0;
+    uint8_t *dst = ble_log_claim(BLE_LOG_SRC_ENCODE,
+                                 BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t),
+                                 &handle, false);
+    TEST_ASSERT_NOT_NULL(dst);
+    s_churn_handle = handle;
+    s_churn_held = true;
+
+    test_ble_log_disarm_case_hooks();
+    TEST_ASSERT_FALSE(s_churn_held);
+
+    /* Reference returned: deinit drains instead of asserting, and the module
+     * comes back up for the cases after this one. */
+    ble_log_deinit();
+    TEST_ASSERT_TRUE(ble_log_init());
 }
 
 #if defined(CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS) && \
