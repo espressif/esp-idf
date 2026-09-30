@@ -32,6 +32,7 @@ esp_err_t NVSHandleSimple::set_string(const char *key, const char* str)
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
     if (mReadOnly) return ESP_ERR_NVS_READ_ONLY;
+    if (str == nullptr) return ESP_ERR_INVALID_ARG;
 
     return mStoragePtr->writeItem(mNsIndex, nvs::ItemType::SZ, key, str, strlen(str) + 1, mPurgeAfterErase);
 }

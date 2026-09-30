@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -160,6 +160,25 @@ TEST_CASE("NVSHandleSimple CXX api read/write string", "[nvs cxx]")
     CHECK(handle->get_string("test", read_buffer, sizeof(read_buffer)) == ESP_OK);
 
     CHECK(string(read_buffer) == "test string");
+
+    nvs_flash_deinit_partition(TEST_DEFAULT_PARTITION_NAME);
+}
+
+TEST_CASE("NVSHandleSimple CXX api set_string NULL", "[nvs cxx]")
+{
+    // Negative TC: set_string must reject a NULL value instead of dereferencing it.
+
+    esp_err_t result;
+    shared_ptr<nvs::NVSHandle> handle;
+
+    REQUIRE(nvs_flash_erase_partition(TEST_DEFAULT_PARTITION_NAME) == ESP_OK);
+    REQUIRE(nvs_flash_init_partition(TEST_DEFAULT_PARTITION_NAME) == ESP_OK);
+
+    handle = nvs::open_nvs_handle_from_partition(TEST_DEFAULT_PARTITION_NAME, "test_ns", NVS_READWRITE, &result);
+    CHECK(result == ESP_OK);
+    REQUIRE(handle);
+
+    CHECK(handle->set_string("test", nullptr) == ESP_ERR_INVALID_ARG);
 
     nvs_flash_deinit_partition(TEST_DEFAULT_PARTITION_NAME);
 }

@@ -506,6 +506,9 @@ extern "C" esp_err_t nvs_commit(nvs_handle_t c_handle)
 
 extern "C" esp_err_t nvs_set_str(nvs_handle_t c_handle, const char* key, const char* value)
 {
+    if (value == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
     Lock lock;
     ESP_LOGD(TAG, "%s %s %s", __func__, key, value);
     NVSHandleSimple *handle;

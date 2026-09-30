@@ -5542,6 +5542,27 @@ TEST_CASE("nvs multiple write with same key float then double", "[nvs]")
     TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
 }
 
+TEST_CASE("nvs_set_str rejects NULL value", "[nvs]")
+{
+    // TC verifies that a NULL string is rejected instead of being dereferenced.
+    // - nvs_set_str with a NULL value returns ESP_ERR_INVALID_ARG
+    // - no entry is created for that key
+
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_null_str", NVS_READWRITE, &handle));
+
+    TEST_ESP_ERR(nvs_set_str(handle, "key", nullptr), ESP_ERR_INVALID_ARG);
+
+    size_t len = 0;
+    TEST_ESP_ERR(nvs_get_str(handle, "key", nullptr, &len), ESP_ERR_NVS_NOT_FOUND);
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
 // Add new tests above
 // This test has to be the final one
 
