@@ -21,7 +21,7 @@ def test_esp_event(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32'], indirect=['target'])
-@pytest.mark.parametrize('config', ['ext_ram'], indirect=True)
+@pytest.mark.parametrize('config', ['ext_ram', 'ext_ram_no_iram', 'psram_caps'], indirect=True)
 def test_esp_event_ext_ram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

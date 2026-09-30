@@ -36,13 +36,18 @@ menu "Event Loop Library"
             against the frequency of heap allocations: smaller values reduce static
             memory usage; larger values reduce heap allocations and fragmentation.
 
+    if ESP_EVENT_POST_FROM_ISR && FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH
+        comment "IRAM ISR posting requires FreeRTOS ISR functions in IRAM."
+        comment "Disable FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH to enable this option."
+    endif
+
     config ESP_EVENT_POST_FROM_IRAM_ISR
         bool "Support posting events from ISRs placed in IRAM"
         default y
-        depends on ESP_EVENT_POST_FROM_ISR
+        depends on ESP_EVENT_POST_FROM_ISR && !FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH
         help
-            Enable posting events from interrupt handlers placed in IRAM. Enabling this option places API functions
-            esp_event_post and esp_event_post_to in IRAM.
+            Place ISR posting APIs in IRAM and keep the event loop instance and queue in
+            internal RAM for posting events while the cache is disabled.
 
     config ESP_EVENT_LOOP_IN_EXT_RAM
         bool "Place event loop related allocations in external RAM"
@@ -50,11 +55,11 @@ menu "Event Loop Library"
         depends on SPIRAM
         depends on FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
         help
-            When this configuration is enabled, the event loop will place all of its
+            When this configuration is enabled, the event loop will try to place all of its
             event loop related allocations in external RAM.
 
-            Note that when CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR is enabled, queue related
-            allocations will still be placed in internal RAM to ensure that posting events
-            from IRAM ISR works correctly.
+            Note that when CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR is enabled, the event loop
+            instance and queue related allocations will still be placed in internal RAM to ensure
+            that posting events from IRAM ISR works correctly.
 
 endmenu
