@@ -9,3 +9,4 @@ ota_1,          app,   ota_1,       , 512K,
 otadata,        data,  ota,         , 8K,
 nvs,            data,  nvs,         , 24K,
 custom,         data,  ,            , 1M
+emul_efuse,     data,  efuse,       , 8K,

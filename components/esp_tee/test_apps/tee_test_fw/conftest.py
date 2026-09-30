@@ -3,9 +3,11 @@
 # pylint: disable=W0621  # redefined-outer-name
 import base64
 import csv
+import hashlib
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -17,6 +19,7 @@ import esptool
 import pytest
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
+from esptool.bin_image import LoadFirmwareImage
 from pytest_embedded_idf.serial import IdfSerial
 from pytest_embedded_serial_esp.serial import EspSerial
 
@@ -237,7 +240,39 @@ class TEESerial(IdfSerial):
         esptool.main(args, esp=self.esp)
 
     @EspSerial.use_esptool()
-    def copy_test_tee_img(self, partition: str, is_rollback: bool = False) -> None:
+    def flash(self, app: Any = None) -> None:
+        super().flash(app)
+        # Emulated eFuses persist across flashes: start every test from a blank state
+        if 'emul_efuse' in self.app.partition_table:
+            self.custom_erase_partition('emul_efuse')
+
+    def set_tee_img_secure_version(self, datafile: str, secure_version: int) -> None:
+        # esp_app_desc_t follows the image header and the first segment header;
+        # its second word is secure_version
+        APP_DESC_SEC_VER_OFFS = 24 + 8 + 4
+        SHA256_LEN = 32
+
+        target = self.app.sdkconfig.get('IDF_TARGET')
+        image = bytearray(Path(datafile).read_bytes())
+        assert LoadFirmwareImage(target, bytes(image)).append_digest, 'expected an image with an appended SHA-256'
+
+        offs = APP_DESC_SEC_VER_OFFS
+        old_ver, new_ver = bytes(image[offs : offs + 4]), struct.pack('<I', secure_version)
+        image[offs : offs + 4] = new_ver
+
+        # XOR checksum byte (right before the digest): flip it by the changed bytes, then redo the digest
+        checksum_pos = len(image) - SHA256_LEN - 1
+        for old_b, new_b in zip(old_ver, new_ver):
+            image[checksum_pos] ^= old_b ^ new_b
+        image[-SHA256_LEN:] = hashlib.sha256(image[:-SHA256_LEN]).digest()
+
+        patched = LoadFirmwareImage(target, bytes(image))
+        assert patched.checksum == patched.calculate_checksum(), 'checksum mismatch after patching'
+        assert patched.calc_digest == patched.stored_digest, 'digest mismatch after patching'
+        Path(datafile).write_bytes(image)
+
+    @EspSerial.use_esptool()
+    def copy_test_tee_img(self, partition: str, is_rollback: bool = False, secure_version: int | None = None) -> None:
         flash_file = os.path.join(self.app.binary_path, 'esp_tee', 'esp_tee.bin')
         encrypt = self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', False)
 
@@ -251,6 +286,12 @@ class TEESerial(IdfSerial):
                 if bin_data is not None:
                     data_file.write(bytes(bin_data))
                     data_file.flush()
+
+            # The embedded image carries secure_version 0; match the running TEE unless told otherwise
+            if secure_version is None:
+                secure_version = int(self.app.sdkconfig.get('SECURE_TEE_SECURE_VERSION', 0))
+            if secure_version != 0:
+                self.set_tee_img_secure_version(datafile, secure_version)
 
             if self.app.sdkconfig.get('SECURE_BOOT'):
                 keyfile = self.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
@@ -268,23 +309,30 @@ class TEESerial(IdfSerial):
                     ]
                 )
                 flash_file = datafile_signed
+        elif secure_version is not None:
+            # The built TEE image re-stamped with another secure version (patching a signed image is not supported)
+            assert not self.app.sdkconfig.get('SECURE_BOOT'), 'cannot re-stamp a signed TEE image'
+            datafile, datafile_signed = 'esp_tee_patched.bin', ''
+            shutil.copy(flash_file, datafile)
+            self.set_tee_img_secure_version(datafile, secure_version)
+            flash_file = datafile
 
         self.custom_write_partition(partition, flash_file, encrypt=encrypt)
 
-        if is_rollback:
+        if is_rollback or secure_version is not None:
             for file in [datafile, datafile_signed]:
-                if os.path.exists(file):
+                if file and os.path.exists(file):
                     os.remove(file)
 
     @EspSerial.use_esptool()
-    def custom_flash_w_test_tee_img_gen(self) -> None:
+    def custom_flash_w_test_tee_img_gen(self, secure_version: int | None = None) -> None:
         self.flash()
-        self.copy_test_tee_img('ota_1', False)
+        self.copy_test_tee_img('ota_1', False, secure_version)
 
     @EspSerial.use_esptool()
-    def custom_flash_w_test_tee_img_rb(self) -> None:
+    def custom_flash_w_test_tee_img_rb(self, secure_version: int | None = None) -> None:
         self.flash()
-        self.copy_test_tee_img('ota_1', True)
+        self.copy_test_tee_img('ota_1', True, secure_version)
 
     @EspSerial.use_esptool()
     def custom_flash_with_empty_sec_stg(self) -> None:

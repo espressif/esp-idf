@@ -344,14 +344,15 @@ class TeeOtaStage(Enum):
     REBOOT = 3
 
 
-def tee_ota_stage_checks(dut: IdfDut, stage: TeeOtaStage, offset: str) -> None:
+def tee_ota_stage_checks(dut: IdfDut, stage: TeeOtaStage, offset: str, running_subtype: int = 0x30) -> None:
     if stage == TeeOtaStage.PRE:
         dut.expect(f'Loaded TEE app from partition at offset {offset}', timeout=10)
         dut.expect('Current image already has been marked VALID', timeout=10)
     elif stage == TeeOtaStage.BEGIN:
+        next_subtype = 0x31 if running_subtype == 0x30 else 0x30
         dut.expect('Starting TEE OTA...', timeout=10)
-        dut.expect('Running partition - Subtype: 0x30', timeout=10)
-        dut.expect_exact(f'Next partition - Subtype: 0x31 (Offset: {offset})', timeout=10)
+        dut.expect(f'Running partition - Subtype: {running_subtype:#x}', timeout=10)
+        dut.expect_exact(f'Next partition - Subtype: {next_subtype:#x} (Offset: {offset})', timeout=10)
     elif stage == TeeOtaStage.REBOOT:
         dut.expect(f'Loaded TEE app from partition at offset {offset}', timeout=10)
         dut.expect_exact('Press ENTER to see the list of tests')
@@ -447,6 +448,91 @@ def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
     # after rollback
     dut.expect('TEE otadata - Current image state: PENDING_VERIFY', timeout=10)
     tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x10000')
+
+
+@idf_parametrize(
+    'config, target, skip_autoflash, markers',
+    CONFIG_OTA_NO_AUTOFLASH,
+    indirect=['config', 'target', 'skip_autoflash'],
+)
+def test_esp_tee_ota_anti_rollback_invalid(dut: IdfDut) -> None:
+    tee_sec_ver = dut.app.sdkconfig.get('SECURE_TEE_SECURE_VERSION')
+
+    # Flashing the dummy TEE app (secure version 0) to the non-secure app's passive partition
+    dut.serial.custom_flash_w_test_tee_img_rb(secure_version=0)
+
+    # pre-test checks (blank emulated eFuses)
+    dut.expect('TEE secure version \\(from eFuse\\) = 0', timeout=10)
+    tee_ota_stage_checks(dut, TeeOtaStage.PRE, '0x10000')
+
+    # start test
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Test TEE OTA - Anti-rollback"')
+
+    # OTA begin checks
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
+    dut.expect('TEE OTA update rejected by anti-rollback!', timeout=10)
+
+    # bootloader check: the dummy TEE app (secure version 0) in the active TEE partition is refused
+    dut.serial.copy_test_tee_img('tee_0', True, secure_version=0)
+    dut.expect(f'TEE secure version \\(from eFuse\\) = {tee_sec_ver}', timeout=10)
+    dut.expect('TEE app secure version check failed', timeout=10)
+
+    # after restoring the TEE app
+    dut.serial.copy_test_tee_img('tee_0', False)
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x10000')
+
+
+@idf_parametrize(
+    'config, target, skip_autoflash, markers',
+    CONFIG_OTA_NO_AUTOFLASH,
+    indirect=['config', 'target', 'skip_autoflash'],
+)
+def test_esp_tee_ota_anti_rollback_valid(dut: IdfDut) -> None:
+    tee_sec_ver = int(dut.app.sdkconfig.get('SECURE_TEE_SECURE_VERSION'))
+    new_sec_ver = tee_sec_ver + 1
+
+    # Flashing the TEE app re-stamped with a higher secure version to the non-secure app's passive partition
+    dut.serial.custom_flash_w_test_tee_img_gen(secure_version=new_sec_ver)
+
+    # pre-test checks (blank emulated eFuses)
+    dut.expect('TEE secure version \\(from eFuse\\) = 0', timeout=10)
+    tee_ota_stage_checks(dut, TeeOtaStage.PRE, '0x10000')
+
+    # start test
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Test TEE OTA - Valid image"')
+
+    # OTA begin checks
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
+    dut.expect('TEE OTA update successful!', timeout=10)
+
+    # after reboot 1: the counter holds the previous version while the new image is trial-booted
+    dut.expect(f'TEE secure version \\(from eFuse\\) = {tee_sec_ver}', timeout=10)
+    dut.expect('TEE otadata - Current image state: NEW', timeout=10)
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
+
+    # after reboot 2: the new image confirmed itself and advanced the counter
+    dut.serial.hard_reset()
+    dut.expect(f'TEE secure version \\(from eFuse\\) = {new_sec_ver}', timeout=10)
+    dut.expect('TEE otadata - Current image state: VALID', timeout=10)
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
+
+    # the previous secure version is now rejected by TEE OTA...
+    dut.serial.copy_test_tee_img('ota_1', True, secure_version=tee_sec_ver)
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
+    dut.write('"Test TEE OTA - Anti-rollback"')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x10000', running_subtype=0x31)
+    dut.expect('TEE OTA update rejected by anti-rollback!', timeout=10)
+
+    # ...and by the bootloader
+    dut.serial.copy_test_tee_img('tee_1', True, secure_version=tee_sec_ver)
+    dut.expect(f'TEE secure version \\(from eFuse\\) = {new_sec_ver}', timeout=10)
+    dut.expect('TEE app secure version check failed', timeout=10)
+
+    # after restoring the TEE app
+    dut.serial.copy_test_tee_img('tee_1', False, secure_version=new_sec_ver)
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
 
 
 # ---------------- TEE Secure Storage tests ----------------

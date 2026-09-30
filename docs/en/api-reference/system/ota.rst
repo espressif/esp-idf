@@ -252,6 +252,7 @@ Restrictions:
     - The number of bits in the ``secure_version`` field is limited to {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} bits. This means that only {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} times you can do an anti-rollback. You can reduce the length of this efuse field using :menuitem:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` option.
     :esp32: - Anti-rollback works only if the encoding scheme for efuse is set to ``NONE``.
     - Factory and Test partitions are not supported in anti rollback scheme and hence partition table should not have partition with SubType set to ``factory`` or ``test``.
+    :TARGET_SUPPORT_ESP_TEE: - When the :ref:`TEE anti-rollback <tee-anti-rollback>` feature is enabled, the top 3 bits of the ``secure_version`` eFuse field are reserved for the TEE secure version, reducing the bits available to the application by 3.
 
 ``security_version``:
 
