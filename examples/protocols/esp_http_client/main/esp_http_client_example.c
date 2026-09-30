@@ -651,7 +651,11 @@ static void http_perform_as_stream_reader(void)
         if (read_len <= 0) {
             ESP_LOGE(TAG, "Error read data");
         }
-        buffer[read_len] = 0;
+        /* A negative read_len is an error code, not a length: using it as an
+         * index would write before the start of the buffer. */
+        if (read_len >= 0) {
+            buffer[read_len] = 0;
+        }
         ESP_LOGD(TAG, "read_len = %d", read_len);
     }
     ESP_LOGI(TAG, "HTTP Stream reader Status = %d, content_length = %"PRId64,
