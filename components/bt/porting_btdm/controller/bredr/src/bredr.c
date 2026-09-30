@@ -128,6 +128,13 @@ extern int bredr_ctrl_feat_coex_en(void);
 extern int bredr_ctrl_feat_sam_en(void);
 extern int bredr_ctrl_feat_mws_en(void);
 
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+extern void bt_stack_enableSecCtrlVsCmd(bool en);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+extern void bt_stack_enablePwrCtrlVsCmd(bool en);
+#endif // UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+
 extern void bredr_ctrl_get_btdm_info(uint32_t *version, uint32_t *size);
 extern const char *co_orca_get_git_version_str(void);
 extern void r_orca_log_set_printf(bredr_log_printf_fn printf_fn);
@@ -950,12 +957,23 @@ void bredr_stack_deinit(void)
 
 int bredr_stack_enable(void)
 {
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+    bt_stack_enableSecCtrlVsCmd(true);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+    bt_stack_enablePwrCtrlVsCmd(true);
+#endif // UC_BR_EDR_POWER_CTRL_VSC_ENABLED
     return 0;
 }
 
 void bredr_stack_disable(void)
 {
-
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+    bt_stack_enableSecCtrlVsCmd(false);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+    bt_stack_enablePwrCtrlVsCmd(false);
+#endif // UC_BR_EDR_POWER_CTRL_VSC_ENABLED
 }
 
 int bredr_stack_reset(void)

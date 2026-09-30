@@ -252,6 +252,12 @@ extern "C" {
 #define UC_BR_EDR_LEGACY_AUTH_VENDOR_EVT (0)
 #endif
 
+#if defined(CONFIG_BT_CLASSIC_ENABLE_POWER_CTRL_VSC) && CONFIG_BT_CLASSIC_ENABLE_POWER_CTRL_VSC
+#define UC_BR_EDR_POWER_CTRL_VSC_ENABLED (1)
+#else
+#define UC_BR_EDR_POWER_CTRL_VSC_ENABLED (0)
+#endif
+
 #define UC_BR_EDR_BASIC_VENDOR (1)
 
 #ifdef __cplusplus
