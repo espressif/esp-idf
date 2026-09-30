@@ -55,10 +55,14 @@ paths:
 - USB builds drain the queue from a dedicated task that blocks on it: the 1 ms
   defer cadence caps throughput well below the USB bulk endpoint (see
   `CONFIG_BLE_LOG_PRPH_USB`). Deinit stops that task through the gate it
-  already owns: it closes `rt_inited`, aborts the task's blocking receive, and
-  the task recycles what the closed gate left queued and then acknowledges the
-  stop. Only after that ack *and* the task's own suspend is the task deleted,
-  so teardown can never abort a dispatch call in flight. The suspend is waited
+  already owns: it closes `rt_inited` and posts a NULL stop token, which that
+  one receive reads as "stop"; the queue reserves a slot for the token, so the
+  post never waits for room. The task then recycles what the closed gate left
+  queued and acknowledges the stop. A token rather than a task-abort poke,
+  because the task can be blocked inside its dispatch call, where cancelling
+  the wait would also cancel one of TinyUSB's own mutex takes. Only after that
+  ack *and* the task's own suspend is the task deleted, so teardown can never
+  abort a dispatch call in flight. The suspend is waited
   for as well because the ack arrives earlier: between the two, deleting the
   handle would hand a still-running task to the kernel's terminated-task
   cleanup, which then never frees its TCB and stack. Both waits share one

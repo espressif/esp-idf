@@ -58,9 +58,10 @@ idf.py -p <PORT> build flash monitor
 ```
 
 For a mode other than smoke, set the mode option in `sdkconfig.defaults` (or
-`sdkconfig`), for example:
+`sdkconfig`), for example through a local overlay:
 
 ```bash
+echo CONFIG_BLE_LOG_USB_TEST_PERF_MODE=y > sdkconfig.perf
 idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.perf" set-target esp32s3 build flash monitor
 ```
 
