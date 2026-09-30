@@ -269,6 +269,11 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
         s_platform.blend_engine_ref_count--;
         if (s_platform.blend_engine_ref_count == 0) {
             assert(STAILQ_EMPTY(&blending_engine->base.trans_stailq));
+            if (s_platform.flags.bg_clut_ready || s_platform.flags.fg_clut_ready) {
+                ppa_ll_disable_clut_mem(s_platform.hal.dev);
+                s_platform.flags.bg_clut_ready = 0;
+                s_platform.flags.fg_clut_ready = 0;
+            }
             // Now, time to free
             s_platform.blending = NULL;
             free(blending_engine->dma_tx_bg_desc);
@@ -588,6 +593,54 @@ esp_err_t ppa_set_rgb2gray_formula(uint8_t r_weight, uint8_t g_weight, uint8_t b
 
     _lock_acquire(&s_platform.mutex);
     ppa_ll_set_rgb2gray_coeff(s_platform.hal.dev, r_weight, g_weight, b_weight);
+    _lock_release(&s_platform.mutex);
+    return ESP_OK;
+}
+
+static void _ppa_write_clut(ppa_clut_id_t clut_id, const color_pixel_argb8888_data_t *entries, uint32_t num_entries)
+{
+    for (uint32_t i = 0; i < PPA_LL_CLUT_MAX_ENTRY_NUM; i++) {
+        // Resetting the CLUT memory does not clear the SRAM, so the entries that the caller does not provide are
+        // cleared one by one, which keeps the whole table content defined by this call alone
+        uint32_t val = (i < num_entries) ? entries[i].val : 0;
+        ppa_ll_wr_clut_data_by_mem(s_platform.hal.dev, clut_id, i, val);
+    }
+}
+
+esp_err_t ppa_set_color_lookup_table(ppa_clut_id_t clut_id, const color_pixel_argb8888_data_t *entries, uint32_t num_entries)
+{
+    ESP_RETURN_ON_FALSE(clut_id < PPA_CLUT_ID_MAX, ESP_ERR_INVALID_ARG, TAG, "invalid clut_id");
+    // An empty table means the CLUT is no longer needed and can be released
+    bool disable = (entries == NULL && num_entries == 0);
+    if (!disable) {
+        ESP_RETURN_ON_FALSE(entries, ESP_ERR_INVALID_ARG, TAG, "invalid entries");
+        ESP_RETURN_ON_FALSE(num_entries > 0 && num_entries <= PPA_LL_CLUT_MAX_ENTRY_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid num_entries");
+    }
+    ESP_RETURN_ON_FALSE(s_platform.hal.dev, ESP_ERR_INVALID_STATE, TAG, "no PPA client registered yet");
+
+    _lock_acquire(&s_platform.mutex);
+    if (disable) {
+        if (clut_id == PPA_CLUT_BLEND_BG) {
+            s_platform.flags.bg_clut_ready = 0;
+        } else {
+            s_platform.flags.fg_clut_ready = 0;
+        }
+        if (!s_platform.flags.bg_clut_ready && !s_platform.flags.fg_clut_ready) {
+            // The clock gate and the power switch are shared by both CLUT memories, so they can only be turned off once neither is in use
+            ppa_ll_disable_clut_mem(s_platform.hal.dev);
+        }
+    } else {
+        // The CLUT memory is kept clock gated and powered off until a CLUT is actually in use
+        ppa_ll_enable_clut_mem(s_platform.hal.dev);
+        // Memory mode allows random access to the entries, whereas FIFO mode can only append from where the previous write left off
+        ppa_ll_configure_clut_access_mode(s_platform.hal.dev, false);
+        _ppa_write_clut(clut_id, entries, num_entries);
+        if (clut_id == PPA_CLUT_BLEND_BG) {
+            s_platform.flags.bg_clut_ready = 1;
+        } else {
+            s_platform.flags.fg_clut_ready = 1;
+        }
+    }
     _lock_release(&s_platform.mutex);
     return ESP_OK;
 }

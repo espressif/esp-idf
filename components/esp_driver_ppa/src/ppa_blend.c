@@ -182,6 +182,10 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
     ESP_RETURN_ON_FALSE(ppa_ll_blend_is_color_mode_supported(config->in_bg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->in_fg.blend_cm) && ppa_ll_blend_is_color_mode_supported(config->out.blend_cm), ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
+    ESP_RETURN_ON_FALSE(!PPA_IS_CM_CLUT(config->in_bg.blend_cm) || ppa_client->engine->platform->flags.bg_clut_ready,
+                        ESP_ERR_INVALID_STATE, TAG, "in_bg CLUT not set, call ppa_set_color_lookup_table first");
+    ESP_RETURN_ON_FALSE(!PPA_IS_CM_CLUT(config->in_fg.blend_cm) || ppa_client->engine->platform->flags.fg_clut_ready,
+                        ESP_ERR_INVALID_STATE, TAG, "in_fg CLUT not set, call ppa_set_color_lookup_table first");
     ESP_RETURN_ON_FALSE(config->in_bg.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->in_bg.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX &&
                         config->in_fg.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->in_fg.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX &&
                         config->out.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->out.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX,
@@ -196,13 +200,11 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     } else if (PPA_IS_CM_YUV422(config->in_bg.blend_cm)) {
         ESP_RETURN_ON_FALSE(config->in_bg.pic_w % 2 == 0 && config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 input does not support odd w/offset_x");
+    } else if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
+        ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
     }
-    // TODO: Support CLUT to support L4/L8 color mode
-    // else if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
-    //     ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
-    //                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
-    // }
-    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4) { // || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4
+    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4 || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
         ESP_RETURN_ON_FALSE(config->in_fg.block_w % 2 == 0 && config->in_fg.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w and in_fg.block_offset_x must be even");
     }
