@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: CC0-1.0
+
+menu "BLE Log USB test app"
+    config BLE_LOG_USB_TEST_PERF_MODE
+        bool "Throughput test mode (back-to-back writes)"
+        default n
+        help
+            Replace the 100 ms smoke writer with a CPU-bound write loop
+            for throughput measurement. The host-side parser measures
+            the delivered MB/s, frame checksums, and SN continuity.
+
+    if BLE_LOG_USB_TEST_PERF_MODE
+        config BLE_LOG_USB_TEST_PERF_PAYLOAD_LEN
+            int "Perf payload length (bytes)"
+            range 6 620
+            default 128
+            help
+                Payload written per frame in perf mode. 6 bytes hold the
+                host-side sequence and marker; BLE Log caps a single
+                record at 640 transport bytes minus header, timestamp,
+                and checksum.
+
+        config BLE_LOG_USB_TEST_PERF_DURATION_S
+            int "Perf run duration (seconds)"
+            range 5 300
+            default 30
+    endif
+
+    config BLE_LOG_USB_TEST_LIFECYCLE_MODE
+        bool "Dispatcher teardown interleaving check"
+        default n
+        depends on !BLE_LOG_USB_TEST_PERF_MODE && !BLE_LOG_USB_TEST_RAW_PIPE_MODE
+        help
+            Deterministic regression for the USB dispatcher teardown. The
+            pre-send test hook parks the dispatch task while it owns one
+            transport and the queue is empty, then deinit runs from a second
+            task. The check fails if deinit completes (tearing down the pool
+            and the peripheral) while that dispatch call is still parked, or
+            if the parked call never finishes. Prints TEST PASS, or TEST FAIL
+            followed by an abort. No host and no USB traffic needed.
+
+    config BLE_LOG_USB_TEST_RAW_PIPE_MODE
+        bool "Raw USB pipe throughput mode (no BLE Log runtime)"
+        default n
+        depends on !BLE_LOG_USB_TEST_PERF_MODE
+        help
+            Install only the TinyUSB CDC device and stream fixed
+            640-byte blocks from a dedicated task straight into the
+            CDC TX FIFO. Isolates the USB path (no LBM pool, no
+            ESP timer dispatch) so the host can attribute the gap
+            between raw-pipe and BLE Log throughput.
+endmenu

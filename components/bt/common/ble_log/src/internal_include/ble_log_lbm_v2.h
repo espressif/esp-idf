@@ -256,9 +256,11 @@ void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
 /* Loss-warning window: per-source losses accumulated since the previous
  * call. Diff of the source-level lost_frame_cnt counters against a private
  * shadow snapshot taken at the previous call. Not affected by concurrent
- * mark_lost calls; a ble_log_flush() counter reset shows up as the window
- * reporting only what was counted after the reset (flush is a
- * user-initiated statistics reset). Task context only. */
+ * mark_lost calls. A ble_log_flush() reset is NOT synchronized with the
+ * shadow: the counters restart at zero while the shadow keeps its pre-flush
+ * value, so the window reports max(0, counter - shadow) and can under-report
+ * (or drop) losses counted after the reset. Accepted for this delivery stage.
+ * Task context only. */
 void ble_log_lbm_take_loss_window(uint32_t by_source[BLE_LOG_SRC_MAX]);
 /* System output: gated by the LBM lifetime, not ble_log_enable(). A false
  * wait_for_transport makes a busy dedicated transport a lossy fast path. */

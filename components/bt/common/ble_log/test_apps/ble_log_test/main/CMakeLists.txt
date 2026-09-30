@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 idf_component_register(
-    SRCS "test_ble_log_main.c" "test_ble_log_rt.c"
+    SRCS "test_ble_log_main.c" "test_ble_log_rt.c" "test_ble_log_usb_tx.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES unity bt esp_hw_support esp_timer
     WHOLE_ARCHIVE
