@@ -3,6 +3,7 @@
 # pylint: disable=W0621  # redefined-outer-name
 import base64
 import csv
+import importlib.util
 import os
 import re
 import shutil
@@ -290,6 +291,52 @@ class TEESerial(IdfSerial):
     def custom_flash_with_empty_sec_stg(self) -> None:
         self.flash()
         self.custom_erase_partition('secure_storage')
+
+    def get_tee_image_ref(self) -> dict[str, Any]:
+        # Reference values for the TEE claims of the attestation token, computed from the built esp_tee.bin
+        # with the host-side code hash tool (components/esp_tee/scripts/esp_tee_code_hash)
+        tool_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..',
+            '..',
+            'scripts',
+            'esp_tee_code_hash',
+            'esp_tee_code_hash.py',
+        )
+        spec = importlib.util.spec_from_file_location('esp_tee_code_hash', tool_path)
+        assert spec is not None and spec.loader is not None
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+
+        with open(os.path.join(self.app.binary_path, 'esp_tee', 'esp_tee.bin'), 'rb') as f:
+            data = f.read()
+        res = tool.compute_code_hash(data)
+        # The device computes its digest over the image without the appended digest, so it must equal that digest
+        return {
+            'version': res['info']['version'],
+            'expected_version': self.get_tee_expected_version(),
+            'digest': res['info']['digest'],
+            'code_hash': res['code_hash'],
+            'code_hash_ver': res['code_hash_ver'],
+        }
+
+    def get_tee_expected_version(self) -> str:
+        # <TEE major.minor.patch>~v<IDF major.minor.patch>, both read from the respective version.cmake
+        idf_path = Path(__file__).resolve().parents[4]
+
+        def cmake_vars(path: Path, names: list[str]) -> list[str]:
+            text = path.read_text(encoding='utf-8')
+            return [re.search(rf'^set\({name} (\d+)\)', text, re.M).group(1) for name in names]  # type: ignore
+
+        tee = cmake_vars(
+            idf_path / 'components' / 'esp_tee' / 'version.cmake',
+            ['ESP_TEE_VERSION_MAJOR', 'ESP_TEE_VERSION_MINOR', 'ESP_TEE_VERSION_PATCH'],
+        )
+        idf = cmake_vars(
+            idf_path / 'tools' / 'cmake' / 'version.cmake',
+            ['IDF_VERSION_MAJOR', 'IDF_VERSION_MINOR', 'IDF_VERSION_PATCH'],
+        )
+        return f'{tee[0]}.{tee[1]}.{tee[2]}~v{idf[0]}.{idf[1]}.{idf[2]}'
 
     KEY_DEFS_ENCRYPTION_TEST: list[str] = [
         'aes256_key0',

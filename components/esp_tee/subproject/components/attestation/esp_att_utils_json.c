@@ -86,6 +86,18 @@ static esp_err_t part_metadata_to_json(const esp_att_part_metadata_t *metadata, 
     if (metadata->type == ESP_ATT_PART_TYPE_TEE || metadata->type == ESP_ATT_PART_TYPE_APP) {
         json_gen_obj_set_bool(&json_gen, "secure_padding", metadata->part_digest.secure_padding);
     }
+
+    /* TEE-only auxiliary measurement: image digest with packaging bytes masked */
+    if (metadata->part_digest.code_hash_ver != 0) {
+        char calc_code_hash_hexstr[DIGEST_HEXSTR_LEN];
+        err = esp_att_utils_hexbuf_to_hexstr(metadata->part_digest.calc_code_hash, sizeof(metadata->part_digest.calc_code_hash),
+                                             calc_code_hash_hexstr, sizeof(calc_code_hash_hexstr));
+        if (err != ESP_OK) {
+            return err;
+        }
+        json_gen_obj_set_string(&json_gen, "calc_code_hash", calc_code_hash_hexstr);
+        json_gen_obj_set_int(&json_gen, "code_hash_ver", metadata->part_digest.code_hash_ver);
+    }
     json_gen_pop_object(&json_gen);
 
     // End the top-level JSON object
