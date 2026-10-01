@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -599,10 +599,20 @@ typedef struct {
     size_t sector_erase_count_size;
 } t_stats;
 
+/* Mirrors ceil(flash_file_size / sector) used when allocating erase-stats on Linux. */
+static size_t partition_test_emulated_sector_count(size_t flash_file_size)
+{
+    if (flash_file_size == 0) {
+        return 0;
+    }
+    return (flash_file_size + ESP_PARTITION_EMULATED_SECTOR_SIZE - 1) / ESP_PARTITION_EMULATED_SECTOR_SIZE;
+}
+
 void init_stats(t_stats *p_stats)
 {
     memset(p_stats, 0, sizeof(t_stats));
-    p_stats->sector_erase_count_size = esp_partition_get_file_mmap_ctrl_act()->flash_file_size / ESP_PARTITION_EMULATED_SECTOR_SIZE;
+    size_t flash_size = esp_partition_get_file_mmap_ctrl_act()->flash_file_size;
+    p_stats->sector_erase_count_size = partition_test_emulated_sector_count(flash_size);
     p_stats->sector_erase_count = calloc(p_stats->sector_erase_count_size, sizeof(size_t));
 }
 
@@ -857,6 +867,20 @@ TEST(partition_api, test_partition_register_external)
     TEST_ESP_OK(esp_partition_deregister_external(ota1_part));
 }
 
+TEST(partition_api, test_sector_erase_count_bounds)
+{
+    // Ensure flash mapping / stats array exist
+    const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
+
+    size_t flash_size = esp_partition_get_file_mmap_ctrl_act()->flash_file_size;
+    size_t sector_count = partition_test_emulated_sector_count(flash_size);
+
+    // Out-of-range sector index must not read past the allocated erase-stats array
+    TEST_ASSERT_EQUAL(0, esp_partition_get_sector_erase_count(sector_count));
+    TEST_ASSERT_EQUAL(0, esp_partition_get_sector_erase_count(SIZE_MAX));
+}
+
 TEST_GROUP_RUNNER(partition_api)
 {
     RUN_TEST_CASE(partition_api, test_partition_find_basic);
@@ -881,6 +905,7 @@ TEST_GROUP_RUNNER(partition_api)
     RUN_TEST_CASE(partition_api, test_partition_power_off_emulation);
     RUN_TEST_CASE(partition_api, test_partition_copy);
     RUN_TEST_CASE(partition_api, test_partition_register_external);
+    RUN_TEST_CASE(partition_api, test_sector_erase_count_bounds);
 }
 
 static void run_all_tests(void)
