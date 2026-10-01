@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import importlib.util
 import json
@@ -15,17 +15,17 @@ ROMS_JSON = os.path.join(IDF_PATH, 'tools', 'idf_py_actions', 'roms.json')  # ty
 
 
 def test_roms_validate_json() -> None:
-    with open(ROMS_JSON, 'r') as f:
+    with open(ROMS_JSON) as f:
         roms_json = json.load(f)
 
     json_schema_path = os.path.join(os.path.dirname(ROMS_JSON), 'roms_schema.json')
-    with open(json_schema_path, 'r') as f:
+    with open(json_schema_path) as f:
         schema_json = json.load(f)
     jsonschema.validate(roms_json, schema_json)
 
 
 def test_roms_check_supported_chips() -> None:
-    with open(ROMS_JSON, 'r') as f:
+    with open(ROMS_JSON) as f:
         roms_json = json.load(f)
     for chip in SUPPORTED_TARGETS:
         assert chip in roms_json, f'Have no ROM data for chip {chip}'
@@ -44,7 +44,7 @@ def test_roms_validate_build_date() -> None:
         return result
 
     rom_elfs_dir = os.getenv('ESP_ROM_ELF_DIR', '')
-    with open(ROMS_JSON, 'r') as f:
+    with open(ROMS_JSON) as f:
         roms_json = json.load(f)
 
     for chip in roms_json:
