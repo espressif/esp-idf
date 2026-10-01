@@ -39,8 +39,25 @@ void ecdsa_hal_set_efuse_key(ecdsa_curve_t curve, int efuse_blk)
 
 static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 {
+    bool use_hw_key = true;
 
-    if (conf->use_km_key == 0) {
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    if (conf->use_sw_key) {
+        HAL_ASSERT(conf->sw_key != NULL && "Software key not provided");
+        HAL_ASSERT(!conf->use_km_key && "Software key and Key Manager key are mutually exclusive");
+
+        /* The key itself can only be written during the LOAD state of the operation,
+         * so it is written by the operation functions, not here */
+        ecdsa_ll_set_key_source(ECDSA_KEY_SOURCE_SOFTWARE);
+        use_hw_key = false;
+    } else {
+        /* The hardware defaults to the software key source, so the hardware
+         * key source must be selected explicitly */
+        ecdsa_ll_set_key_source(ECDSA_KEY_SOURCE_HARDWARE);
+    }
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
+
+    if (use_hw_key && conf->use_km_key == 0) {
 
         ecdsa_hal_set_efuse_key(conf->curve, conf->efuse_key_blk);
 
@@ -50,7 +67,7 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 #endif
     }
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-    else {
+    else if (use_hw_key) {
         if (!key_mgr_ll_is_supported()) {
             HAL_ASSERT(false && "Key manager is not supported");
         }
@@ -65,6 +82,7 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
     if (conf->mode != ECDSA_MODE_EXPORT_PUBKEY) {
         ecdsa_ll_set_z_mode(conf->sha_mode);
     }
+    ecdsa_ll_set_k_type(ECDSA_K_TYPE_TRNG);
 
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     if (ecdsa_ll_is_deterministic_mode_supported()) {
@@ -83,7 +101,7 @@ bool ecdsa_hal_get_operation_result(void)
     return ecdsa_ll_get_operation_result();
 }
 
-static void ecdsa_hal_gen_signature_inner(const uint8_t *hash, uint8_t *r_out,
+static void ecdsa_hal_gen_signature_inner(ecdsa_hal_config_t *conf, const uint8_t *hash, uint8_t *r_out,
                                           uint8_t *s_out, uint16_t len)
 {
     ecdsa_ll_set_stage(ECDSA_STAGE_START_CALC);
@@ -92,8 +110,14 @@ static void ecdsa_hal_gen_signature_inner(const uint8_t *hash, uint8_t *r_out,
         ;
     }
 
-    ecdsa_ll_write_param(ECDSA_PARAM_Z, hash, len);
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    /* The key registers only accept writes while the peripheral is in the LOAD state */
+    if (conf->use_sw_key) {
+        ecdsa_ll_write_key(conf->sw_key, len);
+    }
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
 
+    ecdsa_ll_write_param(ECDSA_PARAM_Z, hash, len);
     ecdsa_ll_set_stage(ECDSA_STAGE_LOAD_DONE);
 
     while (ecdsa_ll_get_state() != ECDSA_STATE_GET) {
@@ -111,7 +135,7 @@ static void ecdsa_hal_gen_signature_inner(const uint8_t *hash, uint8_t *r_out,
 }
 
 #if HAL_CONFIG(ECDSA_GEN_SIG_CM)
-__attribute__((optimize("O0"))) static void ecdsa_hal_gen_signature_with_countermeasure(const uint8_t *hash, uint8_t *r_out,
+__attribute__((optimize("O0"))) static void ecdsa_hal_gen_signature_with_countermeasure(ecdsa_hal_config_t *conf, const uint8_t *hash, uint8_t *r_out,
                                                                                         uint8_t *s_out, uint16_t len)
 {
     uint8_t tmp_r_out[32] = {};
@@ -126,15 +150,15 @@ __attribute__((optimize("O0"))) static void ecdsa_hal_gen_signature_with_counter
     esp_fill_random(tmp_hash, 64);
     /* Dummy ecdsa signature operations prior to the actual one */
     for (int i = 0; i < dummy_op_count_prior; i++) {
-        ecdsa_hal_gen_signature_inner(tmp_hash + ((6 * i) % 32), (uint8_t *) tmp_r_out, (uint8_t *) tmp_s_out, len);
+        ecdsa_hal_gen_signature_inner(conf, tmp_hash + ((6 * i) % 32), (uint8_t *) tmp_r_out, (uint8_t *) tmp_s_out, len);
     }
 
     /* Actual ecdsa signature operation */
-    ecdsa_hal_gen_signature_inner(hash, r_out, s_out, len);
+    ecdsa_hal_gen_signature_inner(conf, hash, r_out, s_out, len);
 
     /* Dummy ecdsa signature operations after the actual one */
     for (int i = 0; i < dummy_op_count_later; i++) {
-        ecdsa_hal_gen_signature_inner(tmp_hash + ((6 * i) % 32), (uint8_t *)tmp_r_out, (uint8_t *)tmp_s_out, len);
+        ecdsa_hal_gen_signature_inner(conf, tmp_hash + ((6 * i) % 32), (uint8_t *)tmp_r_out, (uint8_t *)tmp_s_out, len);
     }
 
 }
@@ -164,15 +188,14 @@ void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *hash,
 #if HAL_CONFIG(ECDSA_GEN_SIG_CM)
 #if SOC_IS(ESP32H2)
     if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
-        ecdsa_hal_gen_signature_with_countermeasure(hash, r_out, s_out, len);
+        ecdsa_hal_gen_signature_with_countermeasure(conf, hash, r_out, s_out, len);
         return;
     }
 #endif
-    ecdsa_hal_gen_signature_with_countermeasure(hash, r_out, s_out, len);
+    ecdsa_hal_gen_signature_with_countermeasure(conf, hash, r_out, s_out, len);
 #else /* HAL_CONFIG_ECDSA_GEN_SIG_CM */
-    ecdsa_hal_gen_signature_inner(hash, r_out, s_out, len);
+    ecdsa_hal_gen_signature_inner(conf, hash, r_out, s_out, len);
 #endif /* !HAL_CONFIG_ECDSA_GEN_SIG_CM */
-
 }
 
 int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, const uint8_t *r, const uint8_t *s,
@@ -237,6 +260,13 @@ void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *
     while (ecdsa_ll_get_state() != ECDSA_STATE_LOAD) {
         ;
     }
+
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    /* The key registers only accept writes while the peripheral is in the LOAD state */
+    if (conf->use_sw_key) {
+        ecdsa_ll_write_key(conf->sw_key, len);
+    }
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
 
     ecdsa_ll_set_stage(ECDSA_STAGE_LOAD_DONE);
 

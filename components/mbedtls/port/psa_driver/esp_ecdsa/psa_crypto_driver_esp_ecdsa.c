@@ -46,11 +46,27 @@
 #endif /* SOC_MPI_SUPPORTED && SOC_ECDSA_USES_MPI */
 
 #include "psa_crypto_driver_esp_ecdsa.h"
+#include "include/psa_crypto_driver_esp_ecdsa_utilities.h"
 #include "psa_crypto_driver_esp_opaque_common.h"
 #include "psa_crypto_driver_wrappers_no_static.h"
 #include "sdkconfig.h"
 
+/* The log tag is used only by the opaque key paths below. The transparent driver
+ * keeps its own tag in psa_crypto_driver_esp_ecdsa_transparent.c. */
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 static const char *TAG = "psa_crypto_driver_esp_ecdsa";
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
+
+/* Linkage of the sign helpers shared with the transparent driver. Only that driver
+ * needs them outside this file. In any other build they stay static, so that the
+ * compiler can inline each one into its one caller and fold constant arguments,
+ * such as the max_attempts of esp_ecdsa_hw_sign(). That keeps opaque-only builds
+ * no larger than before. */
+#if defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED)
+#define ESP_ECDSA_SHARED_LINKAGE
+#else
+#define ESP_ECDSA_SHARED_LINKAGE static
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 #include "esp_tee_sec_storage.h"
@@ -244,7 +260,7 @@ static psa_status_t esp_ecdsa_get_expected_storage_size(const uint8_t *key_buffe
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM */
 
 // Helper function to get curve from mbedtls group ID
-static esp_ecdsa_curve_t psa_bits_to_ecdsa_curve(size_t key_len)
+esp_ecdsa_curve_t esp_ecdsa_bits_to_curve(size_t key_len)
 {
     switch (key_len) {
         case ECDSA_KEY_LEN_P192:
@@ -260,11 +276,12 @@ static esp_ecdsa_curve_t psa_bits_to_ecdsa_curve(size_t key_len)
     }
 }
 
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY)
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED) \
+    || defined(ESP_ECDSA_VERIFY_DRIVER_ENABLED) || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY)
 /**
  * @brief Map the driver's esp_ecdsa_curve_t enum to the HAL's ecdsa_curve_t enum.
  */
-static ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
+ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
 {
     switch (curve) {
         case ESP_ECDSA_CURVE_SECP192R1: return ECDSA_CURVE_SECP192R1;
@@ -275,7 +292,7 @@ static ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
         default: return (ecdsa_curve_t)-1;
     }
 }
-#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY) */
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED || ESP_ECDSA_VERIFY_DRIVER_ENABLED || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY) */
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 static esp_tee_sec_storage_type_t esp_ecdsa_curve_to_tee_sec_storage_type(esp_ecdsa_curve_t curve)
@@ -293,7 +310,7 @@ static esp_tee_sec_storage_type_t esp_ecdsa_curve_to_tee_sec_storage_type(esp_ec
 }
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
 
-static void change_endianess(const uint8_t *old_point, uint8_t *new_point, uint8_t len)
+void esp_ecdsa_change_endianness(const uint8_t *old_point, uint8_t *new_point, uint8_t len)
 {
     /* When the size is less than MAX_ECDSA_COMPONENT_LEN, it should be padded with 0 bytes*/
     memset(new_point, 0x0, len);
@@ -303,7 +320,7 @@ static void change_endianess(const uint8_t *old_point, uint8_t *new_point, uint8
     }
 }
 
-static psa_status_t validate_ecdsa_sha_alg(psa_algorithm_t alg, const esp_ecdsa_curve_t curve)
+psa_status_t esp_ecdsa_validate_sha_alg(psa_algorithm_t alg, const esp_ecdsa_curve_t curve)
 {
     if ((PSA_ALG_SIGN_GET_HASH(alg) != PSA_ALG_SHA_256 && (curve == ESP_ECDSA_CURVE_SECP192R1 || curve == ESP_ECDSA_CURVE_SECP256R1))
 #if SOC_ECDSA_SUPPORT_CURVE_P384
@@ -318,70 +335,7 @@ static psa_status_t validate_ecdsa_sha_alg(psa_algorithm_t alg, const esp_ecdsa_
 
 #if SOC_ECDSA_SUPPORTED
 
-static mbedtls_ecp_group_id ecdsa_curve_to_mbedtls_group(esp_ecdsa_curve_t curve)
-{
-    switch (curve) {
-        case ESP_ECDSA_CURVE_SECP256R1: return MBEDTLS_ECP_DP_SECP256R1;
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-        case ESP_ECDSA_CURVE_SECP384R1: return MBEDTLS_ECP_DP_SECP384R1;
-#endif
-        default:                        return MBEDTLS_ECP_DP_NONE;
-    }
-}
-
-static psa_status_t check_ecdsa_signature_range(const uint8_t *signature, size_t key_len,
-                                                esp_ecdsa_curve_t curve)
-{
-    mbedtls_ecp_group_id grp_id = ecdsa_curve_to_mbedtls_group(curve);
-    if (grp_id == MBEDTLS_ECP_DP_NONE) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    mbedtls_ecp_group grp;
-    mbedtls_mpi r, s;
-    mbedtls_ecp_group_init(&grp);
-    mbedtls_mpi_init(&r);
-    mbedtls_mpi_init(&s);
-
-    psa_status_t status = PSA_ERROR_INVALID_SIGNATURE;
-
-    if (mbedtls_ecp_group_load(&grp, grp_id) != 0) {
-        status = PSA_ERROR_GENERIC_ERROR;
-        goto cleanup;
-    }
-    if (mbedtls_mpi_read_binary(&r, signature, key_len) != 0 ||
-        mbedtls_mpi_read_binary(&s, signature + key_len, key_len) != 0) {
-        status = PSA_ERROR_GENERIC_ERROR;
-        goto cleanup;
-    }
-
-    /* 1 <= scalar <= n-1: that is, scalar > 0 and scalar < n. */
-    #define RANGE_OK   0x6A6A6A6AU
-    #define RANGE_FAIL 0x95959595U
-    volatile uint32_t verdict = RANGE_FAIL;
-    if (mbedtls_mpi_cmp_int(&r, 0) > 0 &&
-        mbedtls_mpi_cmp_mpi(&r, &grp.N) < 0 &&
-        mbedtls_mpi_cmp_int(&s, 0) > 0 &&
-        mbedtls_mpi_cmp_mpi(&s, &grp.N) < 0) {
-        verdict = RANGE_OK;
-    }
-    if (verdict != RANGE_OK) {
-        goto cleanup;
-    }
-    ESP_FAULT_ASSERT(verdict == RANGE_OK);
-    #undef RANGE_OK
-    #undef RANGE_FAIL
-
-    status = PSA_SUCCESS;
-
-cleanup:
-    mbedtls_mpi_free(&r);
-    mbedtls_mpi_free(&s);
-    mbedtls_ecp_group_free(&grp);
-    return status;
-}
-
-static void esp_ecdsa_acquire_hardware(void)
+void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
@@ -412,7 +366,7 @@ static void esp_ecdsa_acquire_hardware(void)
 #endif /* SOC_ECDSA_USES_MPI */
 }
 
-static void esp_ecdsa_release_hardware(void)
+void esp_ecdsa_release_hardware(void)
 {
     esp_crypto_ecdsa_enable_periph_clk(false);
 
@@ -432,207 +386,87 @@ static void esp_ecdsa_release_hardware(void)
     esp_crypto_ecdsa_lock_release();
 }
 
-psa_status_t esp_ecdsa_transparent_verify_hash_start(
-    esp_ecdsa_transparent_verify_hash_operation_t *operation,
-    const psa_key_attributes_t *attributes,
-    const uint8_t *key_buffer,
-    size_t key_buffer_size,
-    psa_algorithm_t alg,
-    const uint8_t *hash,
-    size_t hash_length,
-    const uint8_t *signature,
-    size_t signature_length)
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED)
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
+/* Pad one signature operation to a fixed time on the chip revisions that need it */
+static inline void esp_ecdsa_pad_sign_time(uint64_t start_time)
 {
-    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
-
-    // Check if the ECDSA peripheral is supported on this chip revision
-    if (!ecdsa_ll_is_supported()) {
-        ESP_LOGE(TAG, "ECDSA peripheral not supported on this chip revision");
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    if (!operation || !attributes || !key_buffer || !hash || !signature) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    // Check if ECDSA algorithm
-    if (!PSA_ALG_IS_ECDSA(alg)) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    /* HW only implements SECP_R1; reject any other ECC family up front so
-     * we never derive the curve from key_bits alone. */
-    psa_key_type_t key_type = psa_get_key_type(attributes);
-    if (!PSA_KEY_TYPE_IS_ECC(key_type) ||
-        PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    size_t key_len = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
-    esp_ecdsa_curve_t curve = psa_bits_to_ecdsa_curve(key_len);
-    if (curve == ESP_ECDSA_CURVE_MAX) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    status = validate_ecdsa_sha_alg(alg, curve);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    if ((curve == ESP_ECDSA_CURVE_SECP192R1 && hash_length != ECDSA_SHA_LEN) ||
-        (curve == ESP_ECDSA_CURVE_SECP256R1 && hash_length != ECDSA_SHA_LEN)
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-        || (curve == ESP_ECDSA_CURVE_SECP384R1 && hash_length != ECDSA_SHA_LEN_P384)
-#endif
-    ) {
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
-
-    if (signature_length != 2 * key_len) {
-        return PSA_ERROR_INVALID_SIGNATURE;
-    }
-
-    status = check_ecdsa_signature_range(signature, key_len, curve);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    const uint8_t *public_key_buffer = NULL;
-    size_t public_key_buffer_size = 0;
-    uint8_t public_key[2 * MAX_ECDSA_COMPONENT_LEN + 1];
-
-    /* The contents of key_buffer may either be the private key len bytes
-    * (private key format), or 0x04 followed by the public key len bytes (public
-    * key format). To ensure the key is in the latter format, the public key
-    * is exported. */
-    if (!PSA_KEY_TYPE_IS_PUBLIC_KEY(psa_get_key_type(attributes))) {
-        // Private key is provided, convert it to public key
-        size_t public_key_size = sizeof(public_key);
-        size_t public_key_length = 0;
-
-        status = psa_driver_wrapper_export_public_key(
-            attributes,
-            key_buffer,
-            key_buffer_size,
-            public_key,
-            public_key_size,
-            &public_key_length);
-        if (status != PSA_SUCCESS) {
-            return status;
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        uint64_t sig_time = esp_timer_get_time() - start_time;
+        if (sig_time < ECDSA_CM_FIXED_SIG_TIME) {
+            esp_rom_delay_us(ECDSA_CM_FIXED_SIG_TIME - sig_time);
         }
-        public_key_buffer = public_key;
-        public_key_buffer_size = public_key_length;
-    } else {
-        public_key_buffer = key_buffer;
-        public_key_buffer_size = key_buffer_size;
     }
-
-    if (public_key_buffer[0] != ECDSA_UNCOMPRESSED_POINT_FORMAT) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    // As PSA supports only uncompressed point format, the public key buffer size should be 2 * key_len + 1
-    if (public_key_buffer_size != 2 * key_len + 1) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Verify the public key */
-    ecc_point_t point;
-    memset(&point, 0, sizeof(ecc_point_t));
-
-    change_endianess(public_key_buffer + 1, point.x, key_len);
-    change_endianess(public_key_buffer + 1 + key_len, point.y, key_len);
-    point.len = key_len;
-
-    /* Reject the identity (point at infinity, all-zero coords) explicitly —
-     * esp_ecc_point_verify may not catch it on all peripherals. */
-    bool qx_zero = true, qy_zero = true;
-    for (size_t i = 0; i < key_len; i++) {
-        qx_zero = qx_zero && (point.x[i] == 0);
-        qy_zero = qy_zero && (point.y[i] == 0);
-    }
-    if (qx_zero && qy_zero) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (!esp_ecc_point_verify(&point)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    memset(operation, 0, sizeof(esp_ecdsa_transparent_verify_hash_operation_t));
-    operation->curve = curve;
-    operation->key_len = key_len;
-    operation->sha_len = hash_length;
-    change_endianess(hash, operation->sha, key_len);
-    change_endianess(signature, operation->r, key_len);
-    change_endianess(signature + key_len, operation->s, key_len);
-    /* The public key buffer is in the format 0x04 followed by the 2*key_len bytes public key */
-    /* The first byte is the format byte, which is ECDSA_UNCOMPRESSED_POINT_FORMAT */
-    /* The next key_len bytes are the x coordinate */
-    /* The next key_len bytes are the y coordinate */
-    change_endianess(public_key_buffer + 1, operation->qx, key_len);
-    change_endianess(public_key_buffer + 1 + key_len, operation->qy, key_len);
-
-    return PSA_SUCCESS;
 }
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM */
 
-psa_status_t esp_ecdsa_transparent_verify_hash_complete(esp_ecdsa_transparent_verify_hash_operation_t *operation)
+/* The constant-time padding and the software deterministic loop below are guarded by
+ * options that only the opaque path can enable today: the padding depends on
+ * ESP32-H2, and the only target with a software key has the hardware deterministic
+ * loop. Review both for the transparent path when a new target changes that. */
+ESP_ECDSA_SHARED_LINKAGE psa_status_t esp_ecdsa_hw_sign(ecdsa_hal_config_t *conf, const uint8_t *sha,
+                                                        uint8_t *r, uint8_t *s, uint16_t len,
+                                                        unsigned int max_attempts, uint8_t *signature)
 {
-    if (!operation) {
+#if defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED)
+    /* Exported to the transparent driver, so do not trust len from the other file:
+     * r, s, zeroes and signature are sized from MAX_ECDSA_COMPONENT_LEN. In other
+     * builds the only caller is in this file and has already validated len. */
+    if (len == 0 || len > MAX_ECDSA_COMPONENT_LEN) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
+
+    const uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
+    bool process_again = false;
+    unsigned int attempts = 0;
+
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    uint16_t deterministic_loop_number __attribute__((unused)) = 1;
+#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
     esp_ecdsa_acquire_hardware();
 
-    ecdsa_hal_config_t conf = {
-        .mode = ECDSA_MODE_SIGN_VERIFY,
-        .curve = operation->curve,
-        .sha_mode = ECDSA_Z_USER_PROVIDED,
-    };
+    do {
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+        if (conf->sign_type == ECDSA_K_TYPE_DETERMINISITIC) {
+            conf->loop_number = deterministic_loop_number++;
+        }
+#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
-    int ret = ecdsa_hal_verify_signature(&conf, operation->sha, operation->r, operation->s, operation->qx, operation->qy, operation->key_len);
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
+        uint64_t sig_time = esp_timer_get_time();
+#endif
+        ecdsa_hal_gen_signature(conf, sha, r, s, len);
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
+        esp_ecdsa_pad_sign_time(sig_time);
+#endif
+        // Retry if the operation failed or produced a zero r or s
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(r, zeroes, len)
+                        || !memcmp(s, zeroes, len);
+
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+        if (conf->sign_type == ECDSA_K_TYPE_DETERMINISITIC) {
+            process_again |= !ecdsa_hal_det_signature_k_check();
+        }
+#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
+    } while (process_again && (max_attempts == 0 || ++attempts < max_attempts));
 
     esp_ecdsa_release_hardware();
 
-    if (ret != 0) {
-        return PSA_ERROR_INVALID_SIGNATURE;
+    if (process_again) {
+        return PSA_ERROR_GENERIC_ERROR;
     }
 
-    ESP_FAULT_ASSERT(ret == 0);
+    // Convert r and s from little-endian to big-endian and copy to output
+    esp_ecdsa_change_endianness(r, signature, len);
+    esp_ecdsa_change_endianness(s, signature + len, len);
 
     return PSA_SUCCESS;
 }
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
 
-psa_status_t esp_ecdsa_transparent_verify_hash_abort(esp_ecdsa_transparent_verify_hash_operation_t *operation)
-{
-    if (operation) {
-        mbedtls_platform_zeroize(operation, sizeof(esp_ecdsa_transparent_verify_hash_operation_t));
-    }
-    return PSA_SUCCESS;
-}
-
-psa_status_t esp_ecdsa_transparent_verify_hash(
-    const psa_key_attributes_t *attributes,
-    const uint8_t *key_buffer,
-    size_t key_buffer_size,
-    psa_algorithm_t alg,
-    const uint8_t *hash,
-    size_t hash_length,
-    const uint8_t *signature,
-    size_t signature_length)
-{
-    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
-
-    esp_ecdsa_transparent_verify_hash_operation_t operation;
-
-    status = esp_ecdsa_transparent_verify_hash_start(&operation, attributes, key_buffer, key_buffer_size, alg, hash, hash_length, signature, signature_length);
-    if (status == PSA_SUCCESS) {
-        status = esp_ecdsa_transparent_verify_hash_complete(&operation);
-    }
-
-    esp_ecdsa_transparent_verify_hash_abort(&operation);
-    return status;
-}
 #endif /* SOC_ECDSA_SUPPORTED */
 
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
@@ -738,7 +572,7 @@ static psa_status_t validate_ecdsa_opaque_key_attributes(const psa_key_attribute
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
+    esp_ecdsa_curve_t expected_curve = esp_ecdsa_bits_to_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
 
     if (expected_curve == ESP_ECDSA_CURVE_MAX || expected_curve != opaque_key->curve) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -775,7 +609,7 @@ static psa_status_t validate_storage_curve(const psa_key_attributes_t *attribute
         PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
-    esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
+    esp_ecdsa_curve_t expected_curve = esp_ecdsa_bits_to_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
     if (expected_curve == ESP_ECDSA_CURVE_MAX || expected_curve != stored_curve) {
         ESP_LOGE(TAG, "Invalid curve expected");
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -792,6 +626,89 @@ static psa_status_t validate_storage_curve(const psa_key_attributes_t *attribute
 static esp_ecdsa_curve_t storage_get_curve(const uint8_t *key_buffer)
 {
     return (esp_ecdsa_curve_t)key_buffer[2];
+}
+
+/**
+ * @brief Read the eFuse block id from an eFuse-source storage struct.
+ *
+ * A volatile key keeps the user struct inline, a persistent key keeps the
+ * compact eFuse layout. This helper hides that difference.
+ */
+__attribute__((unused))
+static uint8_t storage_get_efuse_block(const uint8_t *key_buffer, bool is_persistent)
+{
+    if (!is_persistent) {
+        return ((const esp_ecdsa_volatile_key_storage_t *)key_buffer)->opaque_key.efuse_block;
+    }
+    return ((const esp_ecdsa_efuse_key_storage_t *)key_buffer)->efuse_block;
+}
+
+#if SOC_KEY_MANAGER_SUPPORTED
+/**
+ * @brief Read the Key Manager recovery info from a Key-Manager-source storage struct.
+ */
+__attribute__((unused))
+static const esp_key_mgr_key_recovery_info_t *storage_get_km_recovery_info(const uint8_t *key_buffer,
+                                                                          bool is_persistent)
+{
+    if (!is_persistent) {
+        return ((const esp_ecdsa_volatile_key_storage_t *)key_buffer)->opaque_key.key_recovery_info;
+    }
+    return &((const esp_ecdsa_km_key_storage_t *)key_buffer)->key_recovery_info;
+}
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+
+#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+/**
+ * @brief Read the TEE secure storage key id from a TEE-source storage struct.
+ */
+static const char *storage_get_tee_key_id(const uint8_t *key_buffer, bool is_persistent)
+{
+    if (!is_persistent) {
+        return ((const esp_ecdsa_volatile_key_storage_t *)key_buffer)->opaque_key.tee_key_id;
+    }
+    return (const char *)(key_buffer + sizeof(esp_ecdsa_tee_key_storage_t));
+}
+#endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
+
+/**
+ * @brief Validate a serialized opaque key buffer and read back its common fields.
+ *
+ * The sign and export-public-key entry points share this preamble. It checks the
+ * buffer size against the layout that the key_source tag names, and it validates
+ * the stored curve against the PSA key attributes.
+ *
+ * @param[in]  attributes      PSA key attributes of the opaque key
+ * @param[in]  key_buffer      Serialized storage struct held in the PSA key slot
+ * @param[in]  key_buffer_size Size of key_buffer in bytes
+ * @param[out] is_persistent   true if the key slot is persistent
+ * @param[out] curve           Curve read from the storage struct
+ *
+ * @return PSA_SUCCESS on success, a PSA error code otherwise
+ */
+static psa_status_t esp_ecdsa_open_opaque_key(const psa_key_attributes_t *attributes,
+                                              const uint8_t *key_buffer, size_t key_buffer_size,
+                                              bool *is_persistent, esp_ecdsa_curve_t *curve)
+{
+    *is_persistent = esp_opaque_key_is_persistent(attributes);
+
+    if (key_buffer_size < sizeof(esp_ecdsa_efuse_key_storage_t)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t expected_storage_size = 0;
+    psa_status_t status = esp_ecdsa_get_expected_storage_size(key_buffer, *is_persistent,
+                                                             &expected_storage_size);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    if (key_buffer_size < expected_storage_size) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    *curve = storage_get_curve(key_buffer);
+    return validate_storage_curve(attributes, *curve);
 }
 
 psa_status_t esp_ecdsa_opaque_import_key(
@@ -900,6 +817,33 @@ psa_status_t esp_ecdsa_opaque_import_key(
     return PSA_SUCCESS;
 }
 
+ESP_ECDSA_SHARED_LINKAGE psa_status_t esp_ecdsa_check_sign_request(psa_algorithm_t alg, esp_ecdsa_curve_t curve,
+                                                                   size_t hash_length)
+{
+    psa_status_t status = esp_ecdsa_validate_sha_alg(alg, curve);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    /* An eFuse can permanently disable a curve on a given chip. Reject a
+     * disabled curve on its own, not as part of the hash length check. */
+#if SOC_ECDSA_SUPPORTED
+    if ((curve == ESP_ECDSA_CURVE_SECP192R1 && !esp_efuse_is_ecdsa_p192_curve_supported())
+        || (curve == ESP_ECDSA_CURVE_SECP256R1 && !esp_efuse_is_ecdsa_p256_curve_supported())) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+#endif /* SOC_ECDSA_SUPPORTED */
+
+    /* esp_ecdsa_validate_sha_alg pinned the hash algorithm to the curve, so the
+     * expected digest length follows from the curve. PSA does not force
+     * hash_length to match the algorithm, so the length is checked here. */
+    if (hash_length != esp_ecdsa_expected_hash_len(curve)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    return PSA_SUCCESS;
+}
+
 psa_status_t esp_ecdsa_opaque_sign_hash_start(
     esp_ecdsa_opaque_sign_hash_operation_t *operation,
     const psa_key_attributes_t *attributes,
@@ -918,52 +862,20 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    bool is_persistent = esp_opaque_key_is_persistent(attributes);
-
-    if (key_buffer_size < sizeof(esp_ecdsa_efuse_key_storage_t)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    size_t expected_storage_size = 0;
-    psa_status_t status = esp_ecdsa_get_expected_storage_size(key_buffer, is_persistent, &expected_storage_size);
+    bool is_persistent = false;
+    esp_ecdsa_curve_t curve = ESP_ECDSA_CURVE_MAX;
+    psa_status_t status = esp_ecdsa_open_opaque_key(attributes, key_buffer, key_buffer_size,
+                                                   &is_persistent, &curve);
     if (status != PSA_SUCCESS) {
         return status;
     }
 
-    if (key_buffer_size < expected_storage_size) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Read curve from the storage struct and validate against attributes */
-    esp_ecdsa_curve_t curve = storage_get_curve(key_buffer);
-    status = validate_storage_curve(attributes, curve);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    status = validate_ecdsa_sha_alg(alg, curve);
+    status = esp_ecdsa_check_sign_request(alg, curve, hash_length);
     if (status != PSA_SUCCESS) {
         return status;
     }
 
     size_t component_len = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
-
-    // Validate hash length
-    if ((curve == ESP_ECDSA_CURVE_SECP192R1 && hash_length != ECDSA_SHA_LEN
-#if SOC_ECDSA_SUPPORTED
-            && esp_efuse_is_ecdsa_p192_curve_supported()
-#endif
-        ) || (curve == ESP_ECDSA_CURVE_SECP256R1 && hash_length != ECDSA_SHA_LEN
-#if SOC_ECDSA_SUPPORTED
-            && esp_efuse_is_ecdsa_p256_curve_supported()
-#endif
-        )
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-        || (curve == ESP_ECDSA_CURVE_SECP384R1 && hash_length != ECDSA_SHA_LEN_P384)
-#endif
-    ) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
 
     memset(operation, 0, sizeof(esp_ecdsa_opaque_sign_hash_operation_t));
     operation->is_persistent = is_persistent;
@@ -979,7 +891,7 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
     } else
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
     {
-        change_endianess(hash, operation->sha, component_len);
+        esp_ecdsa_change_endianness(hash, operation->sha, component_len);
     }
 
     operation->key_buffer = key_buffer;
@@ -988,6 +900,75 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
 
     return PSA_SUCCESS;
 }
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+/* Sign with an opaque key held in eFuse or in the Key Manager */
+static psa_status_t esp_ecdsa_opaque_sign_with_peripheral(esp_ecdsa_opaque_sign_hash_operation_t *operation,
+                                                          esp_ecdsa_key_source_t key_source __attribute__((unused)),
+                                                          uint8_t *signature)
+{
+    // Check if the ECDSA peripheral is supported on this chip revision
+    if (!ecdsa_ll_is_supported()) {
+        ESP_LOGE(TAG, "ECDSA peripheral not supported on this chip revision");
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    ecdsa_curve_t hal_curve = esp_ecdsa_curve_to_hal_curve(storage_get_curve(operation->key_buffer));
+    if (hal_curve == (ecdsa_curve_t)-1) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    ecdsa_sign_type_t k_type = ECDSA_K_TYPE_TRNG;
+
+    if (PSA_ALG_ECDSA_IS_DETERMINISTIC(operation->alg)) {
+#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+        if (!ecdsa_ll_is_deterministic_mode_supported()) {
+            return PSA_ERROR_NOT_SUPPORTED;
+        }
+        k_type = ECDSA_K_TYPE_DETERMINISITIC;
+#else
+        /* Without HW/SW deterministic-ECDSA support, do not silently downgrade
+         * a deterministic-alg request to randomized. */
+        return PSA_ERROR_NOT_SUPPORTED;
+#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+    }
+
+    ecdsa_hal_config_t conf = {
+        .mode = ECDSA_MODE_SIGN_GEN,
+        .curve = hal_curve,
+        .sha_mode = ECDSA_Z_USER_PROVIDED,
+        .sign_type = k_type,
+    };
+
+#if SOC_KEY_MANAGER_SUPPORTED
+    const esp_key_mgr_key_recovery_info_t *key_recovery_info = NULL;
+    if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
+        key_recovery_info = storage_get_km_recovery_info(operation->key_buffer, operation->is_persistent);
+        esp_err_t err = esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)key_recovery_info);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to activate key: 0x%x", err);
+            return PSA_ERROR_INVALID_HANDLE;
+        }
+        conf.use_km_key = 1;
+    } else
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+    {
+        conf.efuse_key_blk = storage_get_efuse_block(operation->key_buffer, operation->is_persistent);
+    }
+
+    /* No bound on the attempts: the opaque path keeps retrying until the peripheral succeeds */
+    psa_status_t status = esp_ecdsa_hw_sign(&conf, operation->sha, operation->r, operation->s,
+                                            operation->key_len, 0, signature);
+
+#if SOC_KEY_MANAGER_SUPPORTED
+    if (key_recovery_info) {
+        esp_key_mgr_deactivate_key(key_recovery_info->key_type);
+    }
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+
+    return status;
+}
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
 
 psa_status_t esp_ecdsa_opaque_sign_hash_complete(
     esp_ecdsa_opaque_sign_hash_operation_t *operation,
@@ -1013,21 +994,8 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
             ESP_LOGW(TAG, "Deterministic ECDSA unsupported for TEE keys; using randomized nonce");
         }
 
-        const char *tee_key_id = NULL;
-        uint8_t stored_curve;
-
-        if (!operation->is_persistent) {
-            const esp_ecdsa_volatile_key_storage_t *ptr_st =
-                (const esp_ecdsa_volatile_key_storage_t *)operation->key_buffer;
-            tee_key_id = ptr_st->opaque_key.tee_key_id;
-            stored_curve = ptr_st->metadata.curve;
-        } else {
-            const esp_ecdsa_tee_key_storage_t *tee_st =
-                (const esp_ecdsa_tee_key_storage_t *)operation->key_buffer;
-            tee_key_id =
-                (const char *)((const uint8_t *)tee_st + sizeof(esp_ecdsa_tee_key_storage_t));
-            stored_curve = tee_st->metadata.curve;
-        }
+        const char *tee_key_id = storage_get_tee_key_id(operation->key_buffer, operation->is_persistent);
+        esp_ecdsa_curve_t stored_curve = storage_get_curve(operation->key_buffer);
 
         esp_tee_sec_storage_type_t tee_sec_storage_type = esp_ecdsa_curve_to_tee_sec_storage_type(stored_curve);
         if (tee_sec_storage_type == (esp_tee_sec_storage_type_t) -1) {
@@ -1052,143 +1020,10 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
     {
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
-        // Check if the ECDSA peripheral is supported on this chip revision
-        if (!ecdsa_ll_is_supported()) {
-            ESP_LOGE(TAG, "ECDSA peripheral not supported on this chip revision");
-            return PSA_ERROR_NOT_SUPPORTED;
+        psa_status_t status = esp_ecdsa_opaque_sign_with_peripheral(operation, key_source, signature);
+        if (status != PSA_SUCCESS) {
+            return status;
         }
-
-        esp_ecdsa_curve_t curve = storage_get_curve(operation->key_buffer);
-
-        ecdsa_sign_type_t k_type = ECDSA_K_TYPE_TRNG;
-
-#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-        if (PSA_ALG_ECDSA_IS_DETERMINISTIC(operation->alg)) {
-            if (ecdsa_ll_is_deterministic_mode_supported()) {
-                k_type = ECDSA_K_TYPE_DETERMINISITIC;
-            } else {
-                return PSA_ERROR_NOT_SUPPORTED;
-            }
-        }
-#else
-        /* Without HW/SW deterministic-ECDSA support, do not silently downgrade
-         * a deterministic-alg request to randomized. */
-        if (PSA_ALG_ECDSA_IS_DETERMINISTIC(operation->alg)) {
-            return PSA_ERROR_NOT_SUPPORTED;
-        }
-#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
-
-        uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
-
-#if SOC_KEY_MANAGER_SUPPORTED
-        const esp_key_mgr_key_recovery_info_t *key_recovery_info = NULL;
-        if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
-            if (!operation->is_persistent) {
-                const esp_ecdsa_volatile_key_storage_t *ptr_st =
-                    (const esp_ecdsa_volatile_key_storage_t *)operation->key_buffer;
-                key_recovery_info = ptr_st->opaque_key.key_recovery_info;
-            } else {
-                const esp_ecdsa_km_key_storage_t *km_st =
-                    (const esp_ecdsa_km_key_storage_t *)operation->key_buffer;
-                key_recovery_info = &km_st->key_recovery_info;
-            }
-            esp_err_t err = esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)key_recovery_info);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to activate key: 0x%x", err);
-                return PSA_ERROR_INVALID_HANDLE;
-            }
-        }
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
-
-        // Acquire hardware
-        esp_ecdsa_acquire_hardware();
-
-        bool process_again = false;
-
-#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
-        uint16_t deterministic_loop_number __attribute__((unused)) = 1;
-#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
-
-        ecdsa_curve_t hal_curve = esp_ecdsa_curve_to_hal_curve(curve);
-        if (hal_curve == (ecdsa_curve_t)-1) {
-            esp_ecdsa_release_hardware();
-#if SOC_KEY_MANAGER_SUPPORTED
-            if (key_recovery_info) {
-                esp_key_mgr_deactivate_key(key_recovery_info->key_type);
-            }
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
-            return PSA_ERROR_INVALID_ARGUMENT;
-        }
-
-        do {
-            ecdsa_hal_config_t conf = {
-                .mode = ECDSA_MODE_SIGN_GEN,
-                .curve = hal_curve,
-                .sha_mode = ECDSA_Z_USER_PROVIDED,
-                .sign_type = k_type,
-            };
-
-#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
-            if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
-                conf.loop_number = deterministic_loop_number++;
-            }
-#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
-
-#if SOC_KEY_MANAGER_SUPPORTED
-            if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
-                conf.use_km_key = 1;
-            } else
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
-            {
-                if (!operation->is_persistent) {
-                    const esp_ecdsa_volatile_key_storage_t *ptr_st =
-                        (const esp_ecdsa_volatile_key_storage_t *)operation->key_buffer;
-                    conf.efuse_key_blk = ptr_st->opaque_key.efuse_block;
-                } else {
-                    const esp_ecdsa_efuse_key_storage_t *efuse_st =
-                        (const esp_ecdsa_efuse_key_storage_t *)operation->key_buffer;
-                    conf.efuse_key_blk = efuse_st->efuse_block;
-                }
-            }
-
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
-            uint64_t sig_time = esp_timer_get_time();
-#endif
-            // Generate signature
-            ecdsa_hal_gen_signature(&conf, operation->sha, operation->r, operation->s, component_len);
-
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
-            if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
-                sig_time = esp_timer_get_time() - sig_time;
-                if (sig_time < ECDSA_CM_FIXED_SIG_TIME) {
-                    esp_rom_delay_us(ECDSA_CM_FIXED_SIG_TIME - sig_time);
-                }
-            }
-#endif
-            // Check if we need to retry (zero signature or operation failed)
-            process_again = !ecdsa_hal_get_operation_result()
-                            || !memcmp(operation->r, zeroes, component_len)
-                            || !memcmp(operation->s, zeroes, component_len);
-
-#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
-            if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
-                process_again |= !ecdsa_hal_det_signature_k_check();
-            }
-#endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
-        } while (process_again);
-
-        esp_ecdsa_release_hardware();
-
-#if SOC_KEY_MANAGER_SUPPORTED
-        if (key_recovery_info) {
-            esp_key_mgr_deactivate_key(key_recovery_info->key_type);
-        }
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
-
-        // Convert r from little-endian to big-endian and copy to output
-        change_endianess(operation->r, signature, component_len);
-        // Convert s from little-endian to big-endian and copy to output
-        change_endianess(operation->s, signature + component_len, component_len);
 #else
         // This is an invalid operation as the hardware ECDSA signing is not supported on this chip
         // and still the key is opaque.
@@ -1251,25 +1086,10 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    bool is_persistent = esp_opaque_key_is_persistent(attributes);
-
-    if (key_buffer_size < sizeof(esp_ecdsa_efuse_key_storage_t)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    size_t expected_storage_size = 0;
-    status = esp_ecdsa_get_expected_storage_size(key_buffer, is_persistent, &expected_storage_size);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    if (key_buffer_size < expected_storage_size) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Validate stored curve against attributes */
-    esp_ecdsa_curve_t curve = storage_get_curve(key_buffer);
-    status = validate_storage_curve(attributes, curve);
+    bool is_persistent = false;
+    esp_ecdsa_curve_t curve = ESP_ECDSA_CURVE_MAX;
+    status = esp_ecdsa_open_opaque_key(attributes, key_buffer, key_buffer_size,
+                                      &is_persistent, &curve);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -1290,18 +1110,7 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
     if (key_source == ESP_ECDSA_KEY_SOURCE_TEE) {
         /* TEE key path */
-        const char *tee_key_id = NULL;
-
-        if (!is_persistent) {
-            const esp_ecdsa_volatile_key_storage_t *ptr_st =
-                (const esp_ecdsa_volatile_key_storage_t *)key_buffer;
-            tee_key_id = ptr_st->opaque_key.tee_key_id;
-        } else {
-            const esp_ecdsa_tee_key_storage_t *tee_st =
-                (const esp_ecdsa_tee_key_storage_t *)key_buffer;
-            tee_key_id =
-                (const char *)((const uint8_t *)tee_st + sizeof(esp_ecdsa_tee_key_storage_t));
-        }
+        const char *tee_key_id = storage_get_tee_key_id(key_buffer, is_persistent);
 
         esp_tee_sec_storage_type_t tee_sec_storage_type = esp_ecdsa_curve_to_tee_sec_storage_type(curve);
         if (tee_sec_storage_type == (esp_tee_sec_storage_type_t) -1) {
@@ -1350,15 +1159,7 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
 #if SOC_KEY_MANAGER_SUPPORTED
         const esp_key_mgr_key_recovery_info_t *key_recovery_info = NULL;
         if (key_source == ESP_ECDSA_KEY_SOURCE_KEY_MGR) {
-            if (!is_persistent) {
-                const esp_ecdsa_volatile_key_storage_t *ptr_st =
-                    (const esp_ecdsa_volatile_key_storage_t *)key_buffer;
-                key_recovery_info = ptr_st->opaque_key.key_recovery_info;
-            } else {
-                const esp_ecdsa_km_key_storage_t *km_st =
-                    (const esp_ecdsa_km_key_storage_t *)key_buffer;
-                key_recovery_info = &km_st->key_recovery_info;
-            }
+            key_recovery_info = storage_get_km_recovery_info(key_buffer, is_persistent);
             esp_err_t err = esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)key_recovery_info);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to activate key: 0x%x", err);
@@ -1368,15 +1169,7 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
         } else
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
         {
-            if (!is_persistent) {
-                const esp_ecdsa_volatile_key_storage_t *ptr_st =
-                    (const esp_ecdsa_volatile_key_storage_t *)key_buffer;
-                conf.efuse_key_blk = ptr_st->opaque_key.efuse_block;
-            } else {
-                const esp_ecdsa_efuse_key_storage_t *efuse_st =
-                    (const esp_ecdsa_efuse_key_storage_t *)key_buffer;
-                conf.efuse_key_blk = efuse_st->efuse_block;
-            }
+            conf.efuse_key_blk = storage_get_efuse_block(key_buffer, is_persistent);
         }
 
         esp_ecdsa_acquire_hardware();
@@ -1403,10 +1196,10 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
         data[0] = ECDSA_UNCOMPRESSED_POINT_FORMAT;
 
         // Convert qx from little-endian to big-endian and copy to output
-        change_endianess(qx, data + 1, key_len);
+        esp_ecdsa_change_endianness(qx, data + 1, key_len);
 
         // Convert qy from little-endian to big-endian and copy to output
-        change_endianess(qy, data + 1 + key_len, key_len);
+        esp_ecdsa_change_endianness(qy, data + 1 + key_len, key_len);
 #else
         // This is an invalid operation as the export public key is not supported on this chip
         // and still the key is opaque

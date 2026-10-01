@@ -242,6 +242,84 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
 psa_status_t esp_ecdsa_opaque_sign_hash_abort(
     esp_ecdsa_opaque_sign_hash_operation_t *operation);
 
+#if defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED)
+/**
+ * @brief Sign a hash with a plaintext SECP-R1 key pair using the ECDSA peripheral's
+ *        software key source
+ *
+ * Returns PSA_ERROR_NOT_SUPPORTED for any key/algorithm combination the peripheral
+ * cannot handle (or when the software key source is disabled by eFuse) so that the
+ * PSA core falls back to the builtin implementation.
+ *
+ * @param attributes        Key attributes
+ * @param key_buffer        Key buffer holding the raw private key (big endian)
+ * @param key_buffer_size   Size of key buffer
+ * @param alg               Algorithm
+ * @param hash              Hash to sign
+ * @param hash_length       Length of hash
+ * @param signature         Signature buffer
+ * @param signature_size    Size of signature buffer
+ * @param signature_length  Actual signature length
+ * @return psa_status_t
+ */
+psa_status_t esp_ecdsa_transparent_sign_hash(
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer,
+    size_t key_buffer_size,
+    psa_algorithm_t alg,
+    const uint8_t *hash,
+    size_t hash_length,
+    uint8_t *signature,
+    size_t signature_size,
+    size_t *signature_length);
+
+/**
+ * @brief Start a hash signing operation using the ESP ECDSA transparent driver
+ *
+ * @param operation         Operation context
+ * @param attributes        Key attributes
+ * @param key_buffer        Key buffer holding the raw private key (big endian)
+ * @param key_buffer_size   Size of key buffer
+ * @param alg               Algorithm
+ * @param hash              Hash to sign
+ * @param hash_length       Length of hash
+ * @return psa_status_t
+ */
+psa_status_t esp_ecdsa_transparent_sign_hash_start(
+    esp_ecdsa_transparent_sign_hash_operation_t *operation,
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer,
+    size_t key_buffer_size,
+    psa_algorithm_t alg,
+    const uint8_t *hash,
+    size_t hash_length);
+
+/**
+ * @brief Complete a hash signing operation using the ESP ECDSA transparent driver
+ *
+ * @param operation         Operation context
+ * @param signature         Signature buffer
+ * @param signature_size    Size of signature buffer
+ * @param signature_length  Actual signature length
+ * @return psa_status_t
+ */
+psa_status_t esp_ecdsa_transparent_sign_hash_complete(
+    esp_ecdsa_transparent_sign_hash_operation_t *operation,
+    uint8_t *signature, size_t signature_size,
+    size_t *signature_length);
+
+/**
+ * @brief Abort a hash signing operation using the ESP ECDSA transparent driver
+ *
+ * Zeroizes the private key copy held in the operation context.
+ *
+ * @param operation         Operation context
+ * @return psa_status_t
+ */
+psa_status_t esp_ecdsa_transparent_sign_hash_abort(
+    esp_ecdsa_transparent_sign_hash_operation_t *operation);
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
+
 #ifdef __cplusplus
 }
 #endif

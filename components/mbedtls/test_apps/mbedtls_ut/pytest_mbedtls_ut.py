@@ -127,6 +127,20 @@ def test_mbedtls_ecdsa_sign(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='efuse_key')
 
 
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_mbedtls_ecdsa_sw_key_sign(dut: Dut) -> None:
+    # Software-key ECDSA tests need no eFuse provisioning and are enabled by default
+    dut.run_all_single_board_cases(group='ecdsa_sw_key')
+
+
 @pytest.mark.nvs_encr_hmac
 @pytest.mark.parametrize(
     'config',

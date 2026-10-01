@@ -65,6 +65,17 @@ typedef enum {
 } ecdsa_ll_sha_type_t;
 
 /**
+ * @brief Source of the ECDSA private key
+ */
+typedef enum {
+    ECDSA_KEY_SOURCE_HARDWARE,  /* Key supplied by eFuse or the Key Manager peripheral */
+    ECDSA_KEY_SOURCE_SOFTWARE,  /* Key written into the ECDSA key registers by software */
+} ecdsa_ll_key_source_t;
+
+/* Total size of the ECDSA_KEY_0..ECDSA_KEY_11 register bank */
+#define ECDSA_LL_KEY_REG_BYTES 48
+
+/**
  * @brief Operation modes of SHA
  */
 typedef enum {
@@ -188,17 +199,58 @@ static inline void ecdsa_ll_set_mode(ecdsa_mode_t mode)
         break;
     case ECDSA_MODE_SIGN_GEN:
         REG_SET_FIELD(ECDSA_CONF_REG, ECDSA_WORK_MODE, 1);
-        // TODO: IDF-15656 support software key as key source
-        REG_SET_BIT(ECDSA_CONF_REG, ECDSA_USE_HARDWARE_KEY);
         break;
     case ECDSA_MODE_EXPORT_PUBKEY:
         REG_SET_FIELD(ECDSA_CONF_REG, ECDSA_WORK_MODE, 2);
-        // TODO: IDF-15656 support software key as key source
-        REG_SET_BIT(ECDSA_CONF_REG, ECDSA_USE_HARDWARE_KEY);
         break;
     default:
         HAL_ASSERT(false && "Unsupported mode");
         break;
+    }
+}
+
+/**
+ * @brief Set the source of the ECDSA private key
+ *
+ * @note The hardware default is the software key source, thus the key source
+ *       must be configured explicitly for every operation.
+ *
+ * @param source Source of the private key
+ */
+static inline void ecdsa_ll_set_key_source(ecdsa_ll_key_source_t source)
+{
+    if (source == ECDSA_KEY_SOURCE_SOFTWARE) {
+        REG_CLR_BIT(ECDSA_CONF_REG, ECDSA_USE_HARDWARE_KEY);
+    } else {
+        REG_SET_BIT(ECDSA_CONF_REG, ECDSA_USE_HARDWARE_KEY);
+    }
+}
+
+/**
+ * @brief Write the software private key into the ECDSA key registers
+ *
+ * @note The key registers only accept writes while the peripheral is in the
+ *       LOAD state (writes are silently ignored otherwise), so this must be
+ *       called between the START_CALC and LOAD_DONE stages of an operation.
+ *       The registers retain the key after the operation and only a module
+ *       reset clears them, so the peripheral must be reset after a
+ *       software-key operation to avoid leaking the key.
+ *
+ * @param key Private key in little-endian format
+ * @param len Length of the key in bytes (24, 32 or 48 depending on the curve)
+ */
+static inline void ecdsa_ll_write_key(const uint8_t *key, uint16_t len)
+{
+    HAL_ASSERT(((len % 4) == 0) && (len <= ECDSA_LL_KEY_REG_BYTES));
+    uint32_t word;
+    uint16_t i = 0;
+    for (; i < len; i += 4) {
+        memcpy(&word, key + i, 4);
+        REG_WRITE(ECDSA_KEY_0_REG + i, word);
+    }
+    /* Zero out the remaining key registers for keys shorter than P-384 */
+    for (; i < ECDSA_LL_KEY_REG_BYTES; i += 4) {
+        REG_WRITE(ECDSA_KEY_0_REG + i, 0);
     }
 }
 

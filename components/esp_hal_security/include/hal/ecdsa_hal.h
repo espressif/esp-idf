@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,13 @@ typedef struct {
     ecdsa_sha_mode_t sha_mode;      /* Source of SHA that needs to be signed */
     int efuse_key_blk;              /*!< The efuse block where ECDSA key is stored.  If two blocks are used to store the key, then the macro HAL_ECDSA_COMBINE_KEY_BLOCKS() can be used to combine them. The macro is defined in hal/ecdsa_types.h */
     bool use_km_key;                /* Use an ECDSA key from the Key Manager peripheral */
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    bool use_sw_key;                /* Use a software-supplied private key written into the ECDSA key registers.
+                                     * The key registers retain the key after the operation, so the caller must
+                                     * reset the ECDSA peripheral once done to scrub the key material (releasing
+                                     * the peripheral with esp_crypto_ecdsa_enable_periph_clk() takes care of it). */
+    const uint8_t *sw_key;          /* Private key in little-endian format, length equal to the curve component length (24/32/48 bytes). Only used when use_sw_key is set */
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
     ecdsa_sign_type_t sign_type;    /* Type of signature generation */
     uint16_t loop_number;           /* Determines the loop number value in deterministic derivation algorithm to derive K.
                                      * When using mbedtls APIs, this member of the config does not need any explicit
