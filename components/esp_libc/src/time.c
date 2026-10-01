@@ -360,6 +360,29 @@ unsigned int sleep(unsigned int seconds)
     return 0;
 }
 
+int nanosleep(const struct timespec *req, struct timespec *rem)
+{
+    /* FreeRTOS has no signals, so the sleep is never interrupted and rem is never updated */
+    (void) rem;
+
+    if (req == NULL || req->tv_sec < 0 || req->tv_nsec < 0 || req->tv_nsec >= 1000000000L) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    /* Sleep the whole seconds one at a time to avoid overflowing useconds_t */
+    for (time_t s = 0; s < req->tv_sec; s++) {
+        usleep(1000000);
+    }
+
+    /* Round the remaining nanoseconds up, so that less than the requested time is never slept */
+    useconds_t us = (req->tv_nsec + 999) / 1000;
+    if (us > 0) {
+        usleep(us);
+    }
+    return 0;
+}
+
 /* TODO IDF-11226 */
 void esp_newlib_time_init(void) __attribute__((alias("esp_libc_time_init")));
 void esp_libc_time_init(void)
