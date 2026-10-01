@@ -399,6 +399,18 @@ static bool is_path_prefix_valid(const char *path, size_t length) {
         && (path[length - 1] != '/');
 }
 
+static ssize_t find_vfs_index_for_prefix(const char *base_path, size_t base_path_len)
+{
+    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
+        const vfs_entry_t *vfs = s_vfs[i];
+        if (vfs != NULL && base_path_len == vfs->path_prefix_len &&
+                memcmp(base_path, vfs->path_prefix, base_path_len) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static esp_err_t esp_vfs_register_fs_common(
     const char *base_path,
     const esp_vfs_fs_ops_t *vfs,
@@ -426,6 +438,11 @@ static esp_err_t esp_vfs_register_fs_common(
         if (base_path_len != 0 && !is_path_prefix_valid(base_path, base_path_len)) {
             ESP_LOGE(TAG, "Invalid path prefix");
             return ESP_ERR_INVALID_ARG;
+        }
+
+        if (find_vfs_index_for_prefix(base_path, base_path_len) >= 0) {
+            ESP_LOGE(TAG, "Path prefix '%s' is already registered", base_path);
+            return ESP_ERR_INVALID_STATE;
         }
     }
 
@@ -619,18 +636,39 @@ esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t vfs_id) __attribute__((alia
 
 esp_err_t esp_vfs_unregister(const char* base_path)
 {
-    const size_t base_path_len = strlen(base_path);
-    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
-        vfs_entry_t* vfs = s_vfs[i];
-        if (vfs == NULL) {
-            continue;
-        }
-        if (base_path_len == vfs->path_prefix_len &&
-                memcmp(base_path, vfs->path_prefix, vfs->path_prefix_len) == 0) {
-            return esp_vfs_unregister_with_id(i);
-        }
+    if (base_path == NULL) {
+        ESP_LOGE(TAG, "base_path cannot be null");
+        return ESP_ERR_INVALID_ARG;
     }
-    return ESP_ERR_INVALID_STATE;
+
+    ssize_t index = find_vfs_index_for_prefix(base_path, strlen(base_path));
+    if (index < 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    return esp_vfs_unregister_with_id(index);
+}
+
+esp_err_t esp_vfs_unregister_fs_checked(const char *base_path, const esp_vfs_fs_ops_t *vfs, int flags, void *ctx)
+{
+    if (base_path == NULL || vfs == NULL) {
+        ESP_LOGE(TAG, "base_path and vfs cannot be null");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ssize_t index = find_vfs_index_for_prefix(base_path, strlen(base_path));
+    if (index < 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    const vfs_entry_t *entry = s_vfs[index];
+    if ((entry->flags & ESP_VFS_FLAG_STATIC) == 0) {
+        ESP_LOGE(TAG, "FS registered at '%s' is not static, its ops cannot be verified", base_path);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (entry->vfs != vfs || entry->flags != flags || entry->ctx != ctx) {
+        ESP_LOGE(TAG, "FS registered at '%s' does not match the given ops, flags and ctx", base_path);
+        return ESP_ERR_INVALID_ARG;
+    }
+    return esp_vfs_unregister_with_id(index);
 }
 
 #ifndef CONFIG_IDF_TARGET_LINUX

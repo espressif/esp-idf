@@ -282,7 +282,8 @@ typedef struct
  *             which should be passed to VFS functions. Otherwise, NULL.
  *
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
- *          registered.
+ *          registered, ESP_ERR_INVALID_ARG if given an invalid parameter,
+ *          ESP_ERR_INVALID_STATE if a VFS is already registered at base_path.
  */
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx);
 
@@ -308,8 +309,8 @@ esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t
  * Unregister a virtual filesystem for given path prefix
  *
  * @param base_path  file prefix previously used in esp_vfs_register call
- * @return ESP_OK if successful, ESP_ERR_INVALID_STATE if VFS for given prefix
- *         hasn't been registered
+ * @return ESP_OK if successful, ESP_ERR_INVALID_ARG if base_path is NULL,
+ *         ESP_ERR_INVALID_STATE if VFS for given prefix hasn't been registered
  */
 esp_err_t esp_vfs_unregister(const char* base_path);
 
