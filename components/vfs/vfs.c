@@ -450,15 +450,19 @@ static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, c
     return ESP_OK;
 }
 
-esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx)
+static esp_err_t esp_vfs_register_fs_ops(const char *base_path, const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, int *vfs_index)
 {
     if (vfs == NULL) {
         ESP_LOGE(TAG, "VFS is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* NULL base_path is id-only registration (no mount prefix). */
+    const char *path = base_path != NULL ? base_path : "";
+    size_t len = base_path != NULL ? strlen(base_path) : LEN_PATH_PREFIX_IGNORED;
+
     if ((flags & ESP_VFS_FLAG_STATIC)) {
-        return esp_vfs_register_fs_common(base_path, strlen(base_path), vfs, flags, ctx, NULL);
+        return esp_vfs_register_fs_common(path, len, vfs, flags, ctx, vfs_index);
     }
 
     esp_vfs_fs_ops_t *_vfs = esp_vfs_duplicate_fs_ops(vfs);
@@ -466,13 +470,23 @@ esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs
         return ESP_ERR_NO_MEM;
     }
 
-    esp_err_t ret = esp_vfs_register_fs_common(base_path, strlen(base_path), _vfs, flags, ctx, NULL);
+    esp_err_t ret = esp_vfs_register_fs_common(path, len, _vfs, flags, ctx, vfs_index);
     if (ret != ESP_OK) {
         esp_vfs_free_fs_ops(_vfs);
         return ret;
     }
 
     return ESP_OK;
+}
+
+esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx)
+{
+    if (base_path == NULL) {
+        ESP_LOGE(TAG, "base_path cannot be null");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return esp_vfs_register_fs_ops(base_path, vfs, flags, ctx, NULL);
 }
 
 esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
@@ -551,7 +565,7 @@ esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, vo
     }
 
     *vfs_id = -1;
-    return esp_vfs_register_fs_common("", LEN_PATH_PREFIX_IGNORED, vfs, flags, ctx, vfs_id);
+    return esp_vfs_register_fs_ops(NULL, vfs, flags, ctx, vfs_id);
 }
 
 esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id)
