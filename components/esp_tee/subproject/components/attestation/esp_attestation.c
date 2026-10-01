@@ -283,7 +283,13 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     sign_json = NULL;
 
     json_gen_end_object(&jstr);
-    *token_len = json_gen_str_end(&jstr);
+    int tk_len = json_gen_str_end(&jstr);
+    if (tk_len < 0 || (size_t)tk_len > token_buf_size) {
+        ESP_LOGE(TAG, "EAT buffer too small: got %luB, need %dB", token_buf_size, tk_len);
+        err = ESP_ERR_INVALID_SIZE;
+        goto exit;
+    }
+    *token_len = tk_len;
     err = ESP_OK;
 
 exit:
