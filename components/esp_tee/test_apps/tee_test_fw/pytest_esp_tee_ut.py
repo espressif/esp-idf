@@ -599,6 +599,35 @@ def test_esp_tee_attestation(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='attestation')
 
 
+@idf_parametrize(
+    'config, target, skip_autoflash, markers',
+    CONFIG_OTA_NO_AUTOFLASH,
+    indirect=['config', 'target', 'skip_autoflash'],
+)
+def test_esp_tee_attestation_code_hash(dut: IdfDut) -> None:
+    ref = dut.serial.get_tee_image_ref()
+
+    dut.serial.custom_flash_with_empty_sec_stg()
+
+    boot_ver = dut.expect(r'esp_tee_init: App version:\s+(\S+)', timeout=30)[1].decode()
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"PSA Attestation: Verify the TEE image code hash claim"')
+    tee_ver = dut.expect(r'TEE image version: (\S+)', timeout=30)[1].decode()
+    tee_digest = dut.expect(r'TEE image digest: ([0-9a-f]{64})', timeout=30)[1].decode()
+    match = dut.expect(r'TEE code hash: ([0-9a-f]{64}) \(ver (\d+)\)', timeout=30)
+    tee_code_hash, code_hash_ver = match[1].decode(), int(match[2].decode())
+    dut.expect_unity_test_output(timeout=30)
+
+    assert re.fullmatch(r'\d+\.\d+\.\d+~v\d+\.\d+\.\d+', tee_ver), tee_ver
+    assert boot_ver == tee_ver
+    assert tee_ver == ref['version']
+    assert tee_ver == ref['expected_version']
+    assert tee_digest == ref['digest']
+    assert code_hash_ver == ref['code_hash_ver']
+    assert tee_code_hash == ref['code_hash']
+    logging.info(f'TEE code hash (ver {code_hash_ver}): {tee_code_hash}')
+
+
 # ---------------- TEE Fuzzing tests ----------------
 
 

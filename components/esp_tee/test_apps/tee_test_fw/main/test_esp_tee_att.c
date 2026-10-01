@@ -16,6 +16,9 @@
 #include "psa/initial_attestation.h"
 
 #include "esp_tee.h"
+#include "esp_app_desc.h"
+#include "esp_tee_code_hash.h"
+#include "esp_tee_version.h"
 #include "secure_service_num.h"
 
 #include "esp_tee_sec_storage.h"
@@ -353,4 +356,60 @@ TEST_CASE("PSA Attestation: Test psa_initial_attestation_get_token", "[attestati
 TEST_CASE("PSA Attestation: Test psa_initial_attestation_get_token_size", "[attestation]")
 {
     TEST_ASSERT_PSA_OK(psa_initial_attestation_get_token_size_test());
+}
+
+TEST_CASE("PSA Attestation: Verify the TEE image code hash claim", "[attestation]")
+{
+    uint8_t challenge[PSA_INITIAL_ATTEST_CHALLENGE_SIZE_32];
+    uint8_t token_buffer[PSA_INITIAL_ATTEST_MAX_TOKEN_SIZE];
+    size_t token_buffer_size = 0, token_size = 0;
+
+    memset(challenge, 0x2a, sizeof(challenge));
+    memset(token_buffer, 0, sizeof(token_buffer));
+
+    TEST_ASSERT_PSA_OK(psa_initial_attest_get_token_size(sizeof(challenge), &token_buffer_size));
+    TEST_ASSERT_LESS_OR_EQUAL(sizeof(token_buffer), token_buffer_size);
+    TEST_ASSERT_PSA_OK(psa_initial_attest_get_token(challenge, sizeof(challenge), token_buffer,
+                                                    token_buffer_size, &token_size));
+    verify_attestation_token(token_buffer, token_size);
+
+    jparse_ctx_t jctx;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_parse_start(&jctx, (const char *)token_buffer, strlen((const char *)token_buffer)));
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object(&jctx, "eat"));
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object(&jctx, "sw_claims"));
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object(&jctx, "tee"));
+
+    /* The reported TEE version must be the one this tree declares (esp_tee_version.h + IDF release line) */
+    char *ver = fetch_token_string(&jctx, "ver");
+    TEST_ASSERT_EQUAL_STRING(ESP_TEE_VERSION_STR, ver);
+
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object(&jctx, "part_digest"));
+    bool digest_validated = false;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_bool(&jctx, "digest_validated", &digest_validated));
+    TEST_ASSERT_TRUE(digest_validated);
+
+    char *calc_digest = fetch_token_string(&jctx, "calc_digest");
+    TEST_ASSERT_EQUAL(2 * SHA256_DIGEST_SZ, strlen(calc_digest));
+
+    /* The code hash claim must be present and follow the definition this build knows */
+    char *calc_code_hash = fetch_token_string(&jctx, "calc_code_hash");
+    TEST_ASSERT_EQUAL(2 * SHA256_DIGEST_SZ, strlen(calc_code_hash));
+    int code_hash_ver = 0;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_int(&jctx, "code_hash_ver", &code_hash_ver));
+    TEST_ASSERT_EQUAL(ESP_TEE_IMG_CODE_HASH_VER, code_hash_ver);
+
+    json_obj_leave_object(&jctx);
+    json_obj_leave_object(&jctx);
+    json_obj_leave_object(&jctx);
+    json_obj_leave_object(&jctx);
+    json_parse_end(&jctx);
+
+    /* NOTE: Consumed by the pytest, which compares the values against the built esp_tee.bin */
+    printf("TEE image version: %s\n", ver);
+    printf("TEE image digest: %s\n", calc_digest);
+    printf("TEE code hash: %s (ver %d)\n", calc_code_hash, code_hash_ver);
+
+    free(ver);
+    free(calc_digest);
+    free(calc_code_hash);
 }

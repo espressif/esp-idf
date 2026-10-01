@@ -1,0 +1,30 @@
+# NOTE: This sdkconfig is intended solely for CI build purposes - every feature below
+# burns eFuses on real hardware - and is not intended for production use.
+CONFIG_PARTITION_TABLE_OFFSET=0xF000
+
+# Secure Boot V2
+CONFIG_SECURE_BOOT=y
+CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y
+
+# Secure download mode
+CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE=y
+
+# Bootloader and TEE log verbosity: Warning
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+CONFIG_SECURE_TEE_LOG_LEVEL_WARN=y
+
+# Flash encryption (release mode)
+CONFIG_SECURE_FLASH_ENC_ENABLED=y
+CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE=y
+CONFIG_NVS_ENCRYPTION=n
+
+# App anti-rollback
+CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP=y
+CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y
+
+# TEE anti-rollback
+CONFIG_SECURE_TEE_ANTI_ROLLBACK=y
+
+# TEE secure storage: release mode
+CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE=y
+CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID=5
