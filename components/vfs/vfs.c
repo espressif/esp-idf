@@ -459,20 +459,15 @@ static esp_err_t esp_vfs_register_fs_common(
     return ESP_OK;
 }
 
-esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx)
+static esp_err_t esp_vfs_register_fs_ops(const char *base_path, const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, int *vfs_index)
 {
     if (vfs == NULL) {
         ESP_LOGE(TAG, "VFS is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (base_path == NULL) {
-        ESP_LOGE(TAG, "base_path cannot be null");
-        return ESP_ERR_INVALID_ARG;
-    }
-
     if ((flags & ESP_VFS_FLAG_STATIC)) {
-        return esp_vfs_register_fs_common(base_path, vfs, flags, ctx, NULL);
+        return esp_vfs_register_fs_common(base_path, vfs, flags, ctx, vfs_index);
     }
 
     esp_vfs_fs_ops_t *_vfs = esp_vfs_duplicate_fs_ops(vfs);
@@ -480,13 +475,23 @@ esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs
         return ESP_ERR_NO_MEM;
     }
 
-    esp_err_t ret = esp_vfs_register_fs_common(base_path, _vfs, flags, ctx, NULL);
+    esp_err_t ret = esp_vfs_register_fs_common(base_path, _vfs, flags, ctx, vfs_index);
     if (ret != ESP_OK) {
         esp_vfs_free_fs_ops(_vfs);
         return ret;
     }
 
     return ESP_OK;
+}
+
+esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx)
+{
+    if (base_path == NULL) {
+        ESP_LOGE(TAG, "base_path cannot be null");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return esp_vfs_register_fs_ops(base_path, vfs, flags, ctx, NULL);
 }
 
 esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
@@ -556,7 +561,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_fs_ops_t *vfs, int flags, void
     }
 
     int index = 0;
-    esp_err_t ret = esp_vfs_register_fs_common(NULL, vfs, flags, ctx, &index);
+    esp_err_t ret = esp_vfs_register_fs_ops(NULL, vfs, flags, ctx, &index);
 
     if (ret == ESP_OK) {
         _lock_acquire(&s_fd_table_lock);
@@ -587,7 +592,7 @@ esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, vo
     }
 
     *vfs_id = -1;
-    return esp_vfs_register_fs_common(NULL, vfs, flags, ctx, vfs_id);
+    return esp_vfs_register_fs_ops(NULL, vfs, flags, ctx, vfs_id);
 }
 
 esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)

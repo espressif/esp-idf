@@ -372,6 +372,7 @@ esp_err_t esp_vfs_register_fs(const char *base_path, const esp_vfs_fs_ops_t *vfs
 /**
  * Analog of esp_vfs_register_with_id which accepts esp_vfs_fs_ops_t instead.
  *
+ * vfs, flags and ctx have the same meaning as for esp_vfs_register_fs().
  */
 esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, esp_vfs_id_t *id);
 
