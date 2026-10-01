@@ -21,11 +21,11 @@ C++ 标准库中的 ``std::thread``、``std::mutex``、``std::condition_variable
 RTOS 集成
 ----------------
 
-与许多使用 pthread 的操作系统不同，ESP-IDF 是一个实时操作系统，具有实时调度程序。这意味着只有当一个更高优先级的任务准备就绪、线程在 OS 同步结构（如 mutex）上发生阻塞、或者线程调用 ``sleep``、:cpp:func:`vTaskDelay`、``usleep`` 等函数时，线程才会停止运行。
+与许多使用 pthread 的操作系统不同，ESP-IDF 是一个实时操作系统，具有实时调度程序。这意味着只有当一个更高优先级的任务准备就绪、线程在 OS 同步结构（如 mutex）上发生阻塞、或者线程调用 ``sleep``、:cpp:func:`vTaskDelay`、``usleep``、``nanosleep`` 等函数时，线程才会停止运行。
 
 .. note::
 
-    如果调用 C 标准库或 C++ sleep 函数，例如在 ``unistd.h`` 中定义的 ``usleep``，那么只有当睡眠时间超过 :menuitem:`一个 FreeRTOS 滴答周期 <CONFIG_FREERTOS_HZ>` 时，任务才会阻塞并让出内核。如果时间较短，线程将处于忙等待状态，不会让步给另一个 RTOS 任务。
+    如果调用 C 标准库或 C++ sleep 函数，例如在 ``unistd.h`` 中声明的 ``usleep`` 或在 ``time.h`` 中声明的 ``nanosleep``，那么只有当睡眠时间达到或超过 :menuitem:`一个 FreeRTOS 滴答周期 <CONFIG_FREERTOS_HZ>` 时，任务才会阻塞并让出内核。如果时间较短，线程将处于忙等待状态，不会让步给另一个 RTOS 任务。
 
 .. note::
 

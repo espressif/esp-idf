@@ -21,11 +21,11 @@ If you identify a useful API that you would like to see implemented in ESP-IDF, 
 RTOS Integration
 ----------------
 
-Unlike many operating systems using POSIX Threads, ESP-IDF is a real-time operating system with a real-time scheduler. This means that a thread will only stop running if a higher priority task is ready to run, the thread blocks on an OS synchronization structure like a mutex, or the thread calls any of the functions ``sleep``, :cpp:func:`vTaskDelay`, or ``usleep``.
+Unlike many operating systems using POSIX Threads, ESP-IDF is a real-time operating system with a real-time scheduler. This means that a thread will only stop running if a higher priority task is ready to run, the thread blocks on an OS synchronization structure like a mutex, or the thread calls any of the functions ``sleep``, :cpp:func:`vTaskDelay`, ``usleep``, or ``nanosleep``.
 
 .. note::
 
-    When calling a standard libc or C++ sleep function, such as ``usleep`` defined in ``unistd.h``, the task will only block and yield the core if the sleep time is longer than :menuitem:`one FreeRTOS tick period <CONFIG_FREERTOS_HZ>`. If the time is shorter, the thread will busy-wait instead of yielding to another RTOS task.
+    When calling a standard libc or C++ sleep function, such as ``usleep`` declared in ``unistd.h`` or ``nanosleep`` declared in ``time.h``, the task will only block and yield the core if the sleep time is at least :menuitem:`one FreeRTOS tick period <CONFIG_FREERTOS_HZ>`. If the time is shorter, the thread will busy-wait instead of yielding to another RTOS task.
 
 .. note::
 
