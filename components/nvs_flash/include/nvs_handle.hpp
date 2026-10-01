@@ -96,11 +96,12 @@ public:
      * @brief      set string for given key
      *
      * @param[in]  key     Key name. Maximal length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
-     * @param[in]  value   The string to set. Maximum length (including null character) is 4000 bytes,
-     *                     if there is one complete page free for writing.
+     * @param[in]  value   The string to set. Must not be NULL. Maximum length (including null character)
+     *                     is 4000 bytes, if there is one complete page free for writing.
      *
      * @return
      *             - ESP_OK if value was set successfully
+     *             - ESP_ERR_INVALID_ARG if value is NULL
      *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is invalid
      *             - ESP_ERR_NVS_READ_ONLY if storage handle was opened as read only
      *             - ESP_ERR_NVS_KEY_TOO_LONG if key name exceeds the maximum length

@@ -326,13 +326,14 @@ esp_err_t nvs_set_double (nvs_handle_t handle, const char* key, double value);
  * @param[in]  handle  Handle obtained from nvs_open function.
  *                     Handles that were opened read only cannot be used.
  * @param[in]  key     Key name. Maximum length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
- * @param[in]  value   The value to set.
+ * @param[in]  value   The value to set. Must not be NULL.
  *                     For strings, the maximum length (including null character) is
  *                     4000 bytes, if there is one complete page free for writing.
  *                     This decreases, however, if the free space is fragmented.
  *
  * @return
  *             - ESP_OK if value was set successfully
+ *             - ESP_ERR_INVALID_ARG if value is NULL
  *             - ESP_FAIL if there is an internal error; most likely due to corrupted
  *               NVS partition (only if NVS assertion checks are disabled)
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
