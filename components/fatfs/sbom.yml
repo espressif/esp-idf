@@ -1,5 +1,6 @@
 name: 'FatFs'
-version: 'R0.16'
+version: 'r0.16'
+cpe: cpe:2.3:a:elm-chan:fatfs:{}:*:*:*:*:*:*:*
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Person: ChaN'
 description: 'Generic FAT Filesystem Module for embedded systems.'
