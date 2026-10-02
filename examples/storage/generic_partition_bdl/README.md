@@ -96,7 +96,7 @@ The card must have at least 18 MiB for the alignment gap and both partitions:
 Notes on the gaps:
 
 * **MBR padding**: the MBR is only 512 B, but the first block is reserved up to
-  the selected alignment (`align_up(MBR_SIZE, align)`). This leaves ~3.5 KiB
+  the selected alignment (`align_up(ESP_MBR_SIZE, align)`). This leaves ~3.5 KiB
   unused on SPI flash (`0x200`..`0x1000`) or ~1 MiB - 512 B on SD/eMMC
   (`0x200`..`0x100000`).
 * **Between slices**: none — LittleFS is a whole number of aligned blocks, so the
@@ -120,8 +120,9 @@ FATFS / LittleFS integration code does not depend on the storage driver.
    alignment (4 KiB on SPI flash, 1 MiB on SD/eMMC), places a fixed 1 MiB LittleFS
    slice next, then a FAT slice of 16 MiB on SD/eMMC or the remaining space on SPI flash.
 3. Builds an in-memory partition list, generates an MBR, and writes it to the
-   whole disk with `esp_ext_part_list_bdl_write()`.
-4. Reads the MBR back with `esp_ext_part_list_bdl_read()` and, for each entry,
+   whole disk with `esp_mbr_bdl_write()`.
+4. Checks the partition table format with `esp_ext_part_probe()`, reads the MBR
+   back with `esp_mbr_bdl_read()` and, for each entry,
    creates a generic-partition BDL and mounts the matching filesystem
    (formatting it on first run).
 5. Writes and reads back a small file on each filesystem, then unmounts and
@@ -167,11 +168,11 @@ I (331) example: Whole disk BDL: disk_size=2097152, read_size=1, write_size=1, e
 I (341) example: Layout: LittleFS = 1024 KiB (fixed), FAT = remainder of the disk
 I (361) example: Writing MBR partition table to the whole disk
 I (401) example: Reading MBR partition table back
-I (411) example: Mountable partition 0: type=4, address=0x00001000, size=0x00100000
+I (411) example: Mountable partition 0: slot=1, type=4, address=0x00001000, size=0x00100000
 I (421) example: Mounting LittleFS on the LittleFS partition BDL
 I (521) example: Writing '/littlefs/hello.txt'
 I (611) example: Read back from /littlefs/hello.txt: 'Hello from LittleFS over a generic-partition BDL!'
-I (621) example: Mountable partition 1: type=3, address=0x00101000, size=0x000ff000
+I (621) example: Mountable partition 1: slot=2, type=3, address=0x00101000, size=0x000ff000
 I (631) example: Mounting FATFS on the FAT partition BDL
 I (811) example: Writing '/fat/hello.txt'
 I (951) example: Read back from /fat/hello.txt: 'Hello from FATFS over a generic-partition BDL!'
@@ -184,27 +185,34 @@ I (991) example: Done
 ## Notes
 
 * An MBR holds at most **4 primary partition entries**, so this scheme supports up
-  to 4 slices; this example uses 2 (FAT + LittleFS). `esp_mbr_generate()` keeps only
-  the first 4 entries and logs a warning if the partition list is longer.
+  to 4 slices; this example uses 2 (FAT + LittleFS). `esp_mbr_generate()` returns
+  `ESP_ERR_NOT_SUPPORTED` if the partition list is longer.
 * When SPI flash is selected, the FAT partition BDL is wrapped in a wear-levelling
   BDL before FATFS is mounted. This layer handles flash erases and distributes
   writes across the partition. LittleFS is mounted directly on its partition BDL
   because it handles erase-before-write and wear levelling internally.
-* `esp_ext_part_list_bdl_write()` writes the raw MBR sector without erasing first,
-  so on flash-like devices (`erase_before_write` flag set) the example erases the
-  MBR block beforehand.
+* `esp_mbr_bdl_write()` does a read-modify-write of the first I/O unit of the
+  disk and erases it first on flash-like devices (`erase_before_write` flag set),
+  so the example does not need to erase the MBR block itself.
 * The MBR partition **type** byte drives the filesystem choice: FAT entries are
   mounted with FATFS and the LittleFS entry with LittleFS. The generator writes
   the raw MBR type bytes `0x0C` (FAT32 with LBA) and `0xC3` (LittleFS); the
   `type=` values printed on read-back (`3` for FAT32, `4` for LittleFS) are the
   `esp_ext_part_tables` enum (`esp_ext_part_type_known_t`), not the raw bytes.
+  `slot=` is the 1-based MBR table slot, i.e. the partition number a PC shows
+  (`sdX1`, `sdX2`).
+* `esp_ext_part_probe()` reports which partition table a disk carries. A GPT disk
+  also parses as an MBR (a single protective entry), so code that reads media of
+  unknown origin should probe first. The example stops if the disk is not MBR.
 * LittleFS has no standard MBR type, so `esp_ext_part_tables` uses a **custom
   `0xC3` "hack"**: `0xC3` = `0x83` (Linux-style filesystem) `| 0x40` (a flag meaning
   "the CHS field carries the LittleFS block size") `| 0x10` (hidden). Because the
   block size is smuggled into the entry's otherwise-unused CHS field, the example
   must supply it via the `extra` field together with the `ESP_EXT_PART_FLAG_EXTRA`
   flag (it passes the BDL `erase_size`, which LittleFS uses as its block size in
-  classic mode). This is a non-standard convention, not something a PC OS will
+  classic mode). The block size must be a power of two from 128 B to 1 MiB, and
+  it is required: `esp_ext_part_match_mountable()` does not match a LittleFS entry
+  without one. This is a non-standard convention, not something a PC OS will
   interpret as LittleFS.
 * The example lets `esp_ext_part_tables` place the partitions automatically:
   each entry sets `ESP_EXT_PART_FLAG_AUTO_ADDRESS` (so the generator assigns an
@@ -214,7 +222,7 @@ I (991) example: Done
   without `ESP_EXT_PART_FLAG_FILL`. The example explicitly sets `total_size`
   from the device geometry, enabling the generator's built-in overlap and
   "fits within the disk" checks. If `total_size` is left at zero,
-  `esp_ext_part_list_bdl_write()` supplies it from the device geometry instead.
+  `esp_mbr_bdl_write()` supplies it from the device geometry instead.
 * The example requests `ESP_EXT_PART_ALIGN_4KiB` for SPI flash and
   `ESP_EXT_PART_ALIGN_1MiB` for SD/eMMC when generating the MBR. Both alignments
   satisfy the underlying media's BDL erase-alignment requirement.
@@ -223,6 +231,3 @@ I (991) example: Done
   see a few `W`/`E` log lines the first time, for example
   `esp_littlefs: ... Corrupted dir pair` followed by `mount failed ... formatting`.
   Subsequent runs mount the existing filesystems directly.
-* FATFS probes the block device with an `ioctl` that the flash whole-disk BDL does
-  not implement, so a harmless `esp_blockdev/generic_partition: ... Parent device
-  does not implement ioctl` error may be logged; the mount still succeeds.
