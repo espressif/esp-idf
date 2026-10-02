@@ -2,6 +2,8 @@
 dependencies:
   idf: ">=6.0"
   # Provides MBR parsing/generation and the BDL read/write helpers.
-  espressif/esp_ext_part_tables: "^0.4.0"
+  espressif/esp_ext_part_tables:
+    version: "^1.0.0"
   # LittleFS with Block Device Layer (BDL) support (esp_vfs_littlefs_conf_t.blockdev).
-  joltwallet/littlefs: "^1.22.2"
+  joltwallet/littlefs:
+    version: "^1.22.3"
