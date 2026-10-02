@@ -168,11 +168,17 @@ static esp_err_t bd_gp_ioctl(esp_blockdev_handle_t dev_handle, const uint8_t cmd
         esp_blockdev_cmd_arg_erase_t translated_args = *erase_args;
         translated_args.start_addr = addr_parent;
 
-        ESP_RETURN_ON_FALSE(parent->ops->ioctl != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "Parent device does not implement ioctl");
+        /* A parent without ioctl simply does not support the command. This is an
+         * expected result (e.g. FatFS TRIM on SPI flash), so return it silently. */
+        if (parent->ops->ioctl == NULL) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
         return parent->ops->ioctl(parent, cmd, &translated_args);
     }
 
-    ESP_RETURN_ON_FALSE(parent->ops->ioctl != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "Parent device does not implement ioctl");
+    if (parent->ops->ioctl == NULL) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     return parent->ops->ioctl(parent, cmd, args);
 }
 
