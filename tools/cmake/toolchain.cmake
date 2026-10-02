@@ -54,7 +54,8 @@ if(_idf_toolchain_dir STREQUAL _current_toolchain_dir)
     # later when comparing @response-file paths (see toolchain_flags.cmake).
     set(_idf_toolchain_build_dir "${CMAKE_BINARY_DIR}/toolchain")
     file(MAKE_DIRECTORY "${_idf_toolchain_build_dir}")
-    file(REAL_PATH "${_idf_toolchain_build_dir}" _idf_toolchain_build_dir)
+    # get_filename_component(REALPATH): file(REAL_PATH) needs CMake >= 3.19.
+    get_filename_component(_idf_toolchain_build_dir "${_idf_toolchain_build_dir}" REALPATH)
     set(IDF_TOOLCHAIN_BUILD_DIR "${_idf_toolchain_build_dir}"
         CACHE PATH "Path to toolchain build directory containing response files and toolchain file copy" FORCE)
 
