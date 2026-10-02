@@ -3,16 +3,19 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Union
 
-from test_build_system_helpers import EnvDict, IdfPyFunc, bin_file_contains, file_contains, replace_in_file
+from test_build_system_helpers import EnvDict
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import bin_file_contains
+from test_build_system_helpers import file_contains
+from test_build_system_helpers import replace_in_file
 
 
-def get_two_header_bytes(file_path: Union[str, Path]) -> str:
-    '''
+def get_two_header_bytes(file_path: str | Path) -> str:
+    """
     get the bytes 3-4 of the given file
     https://docs.espressif.com/projects/esptool/en/latest/esp32/advanced-topics/firmware-image-format.html
-    '''
+    """
     data = b''
     with open(file_path, 'rb') as f:
         data = f.read(4)
@@ -25,18 +28,26 @@ def test_bootloader_custom_overrides_original(test_app_copy: Path, idf_py: IdfPy
     idf_path = Path(default_idf_env.get('IDF_PATH'))
     shutil.copytree(idf_path / 'components' / 'bootloader', test_app_copy / 'components' / 'bootloader')
     # Because of relative include of Kconfig, also esp_bootloader_format needs to be copied.
-    shutil.copytree(idf_path / 'components' / 'esp_bootloader_format', test_app_copy / 'components' / 'esp_bootloader_format')
+    shutil.copytree(
+        idf_path / 'components' / 'esp_bootloader_format', test_app_copy / 'components' / 'esp_bootloader_format'
+    )
     idf_py('bootloader')
-    assert file_contains(test_app_copy / 'build' / 'bootloader' / 'compile_commands.json',
-                         (test_app_copy / 'components' / 'bootloader' / 'subproject' / 'main' / 'bootloader_start.c'))
+    assert file_contains(
+        test_app_copy / 'build' / 'bootloader' / 'compile_commands.json',
+        (test_app_copy / 'components' / 'bootloader' / 'subproject' / 'main' / 'bootloader_start.c'),
+    )
 
 
-def test_bootloader_custom_ignores_extra_component(test_app_copy: Path, idf_py: IdfPyFunc, default_idf_env: EnvDict) -> None:
+def test_bootloader_custom_ignores_extra_component(
+    test_app_copy: Path, idf_py: IdfPyFunc, default_idf_env: EnvDict
+) -> None:
     logging.info('Custom bootloader can ignore extra components')
     idf_path = Path(default_idf_env.get('IDF_PATH'))
     # Import the main bootloader component that overrides the default one
-    shutil.copytree(idf_path / 'examples' / 'custom_bootloader' / 'bootloader_override' / 'bootloader_components',
-                    test_app_copy / 'bootloader_components')
+    shutil.copytree(
+        idf_path / 'examples' / 'custom_bootloader' / 'bootloader_override' / 'bootloader_components',
+        test_app_copy / 'bootloader_components',
+    )
     # Compile it normally and make sure the bootloader is overridden for now
     idf_py('bootloader')
     # Search for 'Custom bootloader message defined in the KConfig file.' in the resulting binary
@@ -46,9 +57,11 @@ def test_bootloader_custom_ignores_extra_component(test_app_copy: Path, idf_py: 
     # Clean the project
     idf_py('fullclean')
     # Ignore bootloader component and rebuild
-    replace_in_file(test_app_copy / 'CMakeLists.txt',
-                    '# placeholder_after_include_project_cmake',
-                    'set(BOOTLOADER_IGNORE_EXTRA_COMPONENT "main")')
+    replace_in_file(
+        test_app_copy / 'CMakeLists.txt',
+        '# placeholder_after_include_project_cmake',
+        'set(BOOTLOADER_IGNORE_EXTRA_COMPONENT "main")',
+    )
     idf_py('bootloader')
     # The overridden message must not be present anymore
     assert not bin_file_contains(test_app_copy / 'build' / 'bootloader' / 'bootloader.bin', default_message)

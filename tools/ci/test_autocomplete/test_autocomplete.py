@@ -12,47 +12,26 @@ Test = collections.namedtuple('Test', ['name', 'shell', 'term', 'prefix', 'patte
 IDF_PATH = os.environ['IDF_PATH']
 
 TESTS = (
-    Test('base',
-         'fish',
-         'vt100',
-         '',
-         'all.*app.*app-flash.*bootloader.*',
-         'fish'),
-    Test('base',
-         'bash',
-         'xterm-256color',
-         '',
-         'all.*app.*app-flash.*bootloader.*bootloader-flash.*build-system-targets.*clean.*',
-         'sh'),
-    Test('base',
-         'zsh',
-         '',
-         '',
-         'all.*app.*app-flash.*bootloader.*bootloader-flash.*build-system-targets.*clean.*',
-         'sh'),
+    Test('base', 'fish', 'vt100', '', 'all.*app.*app-flash.*bootloader.*', 'fish'),
+    Test(
+        'base',
+        'bash',
+        'xterm-256color',
+        '',
+        'all.*app.*app-flash.*bootloader.*bootloader-flash.*build-system-targets.*clean.*',
+        'sh',
+    ),
+    Test(
+        'base', 'zsh', '', '', 'all.*app.*app-flash.*bootloader.*bootloader-flash.*build-system-targets.*clean.*', 'sh'
+    ),
     # Tests for file autocompletion
-    Test('file',
-         'fish',
-         'vt100',
-         f'@{IDF_PATH}/README',
-         '.*README.*md.*',
-         'fish'),
-    Test('file',
-         'bash',
-         'xterm-256color',
-         f'@{IDF_PATH}/README',
-         '.*README.*md.*',
-         'sh'),
-    Test('file',
-         'zsh',
-         '',
-         f'@{IDF_PATH}/README',
-         '.*README.*md.*',
-         'sh')
+    Test('file', 'fish', 'vt100', f'@{IDF_PATH}/README', '.*README.*md.*', 'fish'),
+    Test('file', 'bash', 'xterm-256color', f'@{IDF_PATH}/README', '.*README.*md.*', 'sh'),
+    Test('file', 'zsh', '', f'@{IDF_PATH}/README', '.*README.*md.*', 'sh'),
 )
 
-# Additional positional arguments for all child.expect() calls are constant so we can rely on the order and print message
-# about which pattern was matched
+# Additional positional arguments for all child.expect() calls are constant so we can rely on the order and print
+# message about which pattern was matched
 pargs = (pexpect.EOF, pexpect.TIMEOUT)
 
 
@@ -68,7 +47,6 @@ def get_fail_msg(pproc: pexpect.spawn, msg: str, index: int) -> str:
 
 
 class UTTest(unittest.TestCase):
-
     def test_shell(self) -> None:
         env = os.environ.copy()
         for test in TESTS:
@@ -85,7 +63,9 @@ class UTTest(unittest.TestCase):
                         self.assertEqual(i, 0, get_fail_msg(pproc, 'Export was not successful!', i))
                         pproc.send(f'idf.py {test.prefix}\t\t')
                         i = pproc.expect([test.pattern, *pargs], timeout=100)
-                        self.assertEqual(i, 0, get_fail_msg(pproc, f'Autocompletion for idf.py failed in {test.shell}!', i))
+                        self.assertEqual(
+                            i, 0, get_fail_msg(pproc, f'Autocompletion for idf.py failed in {test.shell}!', i)
+                        )
 
 
 if __name__ == '__main__':

@@ -191,9 +191,7 @@ def _session_work_dir(request: FixtureRequest) -> typing.Generator[tuple[Path, b
 
     if work_dir:
         # resolve allows using relative paths with --work-dir option
-        work_dir_path = Path(work_dir).resolve() / datetime.datetime.now(datetime.timezone.utc).strftime(
-            '%Y-%m-%d_%H-%M-%S'
-        )
+        work_dir_path = Path(work_dir).resolve() / datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d_%H-%M-%S')
         logging.debug(f'using work directory: {work_dir_path}')
         os.makedirs(work_dir_path, exist_ok=True)
         clean_dir = None

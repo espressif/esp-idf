@@ -4,13 +4,13 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Optional
 
 import pytest
-from test_build_system_helpers import IdfPyFunc, file_contains
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import file_contains
 
 
-def idf_version_from_cmake() -> Optional[str]:
+def idf_version_from_cmake() -> str | None:
     version_path = os.path.join(os.environ['IDF_PATH'], 'tools/cmake/version.cmake')
     regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
     ver = {}
@@ -22,21 +22,30 @@ def idf_version_from_cmake() -> Optional[str]:
                 if m:
                     ver[m.group(1)] = m.group(2)
 
-        return '%s.%s.%s' % (ver['MAJOR'], ver['MINOR'], ver['PATCH'])
+        return '{}.{}.{}'.format(ver['MAJOR'], ver['MINOR'], ver['PATCH'])
     except (KeyError, OSError):
         pytest.fail('Cannot find ESP-IDF version in tools/cmake/version.cmake')
         return None
 
 
 def test_sdkconfig_contains_all_files(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
-    logging.info('sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET')
+    logging.info(
+        'sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET'
+    )
     (test_app_copy / 'sdkconfig').write_text('CONFIG_PARTITION_TABLE_TWO_OTA=y')
     (test_app_copy / 'sdkconfig.defaults').write_text('CONFIG_PARTITION_TABLE_OFFSET=0x10000')
     (test_app_copy / 'sdkconfig.defaults.esp32').write_text('CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y')
     idf_py('reconfigure')
-    assert all([file_contains((test_app_copy / 'sdkconfig'), x) for x in ['CONFIG_PARTITION_TABLE_TWO_OTA=y',
-                                                                          'CONFIG_PARTITION_TABLE_OFFSET=0x10000',
-                                                                          'CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y']])
+    assert all(
+        [
+            file_contains((test_app_copy / 'sdkconfig'), x)
+            for x in [
+                'CONFIG_PARTITION_TABLE_TWO_OTA=y',
+                'CONFIG_PARTITION_TABLE_OFFSET=0x10000',
+                'CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y',
+            ]
+        ]
+    )
 
 
 def test_sdkconfig_multiple_default_files(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
@@ -44,8 +53,12 @@ def test_sdkconfig_multiple_default_files(idf_py: IdfPyFunc, test_app_copy: Path
     (test_app_copy / 'sdkconfig.defaults1').write_text('CONFIG_PARTITION_TABLE_OFFSET=0x10000')
     (test_app_copy / 'sdkconfig.defaults2').write_text('CONFIG_PARTITION_TABLE_TWO_OTA=y')
     idf_py('-DSDKCONFIG_DEFAULTS=sdkconfig.defaults1;sdkconfig.defaults2', 'reconfigure')
-    assert all([file_contains((test_app_copy / 'sdkconfig'), x) for x in ['CONFIG_PARTITION_TABLE_TWO_OTA=y',
-                                                                          'CONFIG_PARTITION_TABLE_OFFSET=0x10000']])
+    assert all(
+        [
+            file_contains((test_app_copy / 'sdkconfig'), x)
+            for x in ['CONFIG_PARTITION_TABLE_TWO_OTA=y', 'CONFIG_PARTITION_TABLE_OFFSET=0x10000']
+        ]
+    )
 
 
 def test_keep_idf_init_version(idf_py: IdfPyFunc, test_app_copy: Path) -> None:

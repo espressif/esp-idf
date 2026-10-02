@@ -16,18 +16,18 @@ RE_FEATURE = re.compile(r'requirements\.([\w-]+)\.txt')
 
 
 def action_validate(req_obj: Any) -> None:  # "Any" because we are checking this in this script
-    '''
+    """
     Check that the parsed JSON object is valid according to the JSON schema provided
-    '''
-    with open(SCHEMA_PATH, 'r') as schema_file:
+    """
+    with open(SCHEMA_PATH) as schema_file:
         schema_json = json.load(schema_file)
         jsonschema.validate(req_obj, schema_json)
 
 
 def action_check_directory(req_obj: Any) -> None:  # "Any" because we are checking this in this script
-    '''
+    """
     Check that all directory items are listed in the JSON file
-    '''
+    """
     features = set(d['name'] for d in req_obj['features'])
     features_found = set()
 
@@ -38,7 +38,7 @@ def action_check_directory(req_obj: Any) -> None:  # "Any" because we are checki
                 raise RuntimeError(f'Cannot find a feature for {file_name} in {JSON_PATH}')
             features_found.add(m.group(1))
         else:
-            raise RuntimeError(f'{file_name} in {REQ_DIR} doesn\'t match the expected name')
+            raise RuntimeError(f"{file_name} in {REQ_DIR} doesn't match the expected name")
 
     features_not_found = features - features_found
 
@@ -47,7 +47,7 @@ def action_check_directory(req_obj: Any) -> None:  # "Any" because we are checki
 
 
 def main() -> None:
-    with open(JSON_PATH, 'r') as f:
+    with open(JSON_PATH) as f:
         req_obj = json.load(f)
     action_validate(req_obj)
     action_check_directory(req_obj)

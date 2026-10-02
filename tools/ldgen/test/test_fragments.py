@@ -10,14 +10,25 @@ import unittest
 from io import StringIO
 
 try:
-    from ldgen.fragments import Align, Flag, Keep, Sort, Surround, parse_fragment_file
+    from ldgen.fragments import Align
+    from ldgen.fragments import Flag
+    from ldgen.fragments import Keep
+    from ldgen.fragments import Sort
+    from ldgen.fragments import Surround
+    from ldgen.fragments import parse_fragment_file
     from ldgen.sdkconfig import SDKConfig
 except ImportError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from ldgen.fragments import Align, Flag, Keep, Sort, Surround, parse_fragment_file
+    from ldgen.fragments import Align
+    from ldgen.fragments import Flag
+    from ldgen.fragments import Keep
+    from ldgen.fragments import Sort
+    from ldgen.fragments import Surround
+    from ldgen.fragments import parse_fragment_file
     from ldgen.sdkconfig import SDKConfig
 
-from pyparsing import ParseException, ParseFatalException
+from pyparsing import ParseException
+from pyparsing import ParseFatalException
 
 
 class FragmentTest(unittest.TestCase):
@@ -51,7 +62,7 @@ class FragmentTest(unittest.TestCase):
         return f
 
     def test_basic(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     value_1
@@ -67,7 +78,7 @@ entries:
         self.assertEqual(fragment_file.fragments[0].entries, {'value_1', 'value_2', 'value_3', 'value_a'})
 
     def test_conditional(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     value_1
@@ -84,7 +95,7 @@ entries:
         self.assertEqual(fragment_file.fragments[0].name, 'test')
         self.assertEqual(fragment_file.fragments[0].entries, {'value_1', 'value_2', 'value_3', 'value_5'})
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     value_1
@@ -103,7 +114,7 @@ entries:
         self.assertEqual(fragment_file.fragments[0].name, 'test')
         self.assertEqual(fragment_file.fragments[0].entries, {'value_1', 'value_3', 'value_6'})
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     value_1
@@ -121,10 +132,11 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
 
         self.assertEqual(fragment_file.fragments[0].name, 'test')
-        self.assertEqual(fragment_file.fragments[0].entries,
-                         {'value_1', 'value_2', 'value_4', 'value_5', 'value_6', 'value_7'})
+        self.assertEqual(
+            fragment_file.fragments[0].entries, {'value_1', 'value_2', 'value_4', 'value_5', 'value_6', 'value_7'}
+        )
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     if PERFORMANCE_A = n:
@@ -134,14 +146,14 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_empty_file(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 """)
 
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         self.assertEqual(len(fragment_file.fragments), 0)
 
     def test_setting_indent(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
  value_1
@@ -154,7 +166,7 @@ entries:
         self.assertEqual(fragment_file.fragments[0].entries, {'value_1', 'value_2', 'value_3'})
 
     def test_settings_unmatch_indent(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
  value_1
@@ -165,7 +177,7 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_unsupported_key(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 key_1:
     value_a
@@ -174,14 +186,14 @@ key_1:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_empty_fragment(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 """)
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_empty_conditional(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     if PERFORMANCE_B = y:
@@ -191,7 +203,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     if PERFORMANCE_B = y:
@@ -201,7 +213,7 @@ entries:
         with self.assertRaises(ParseFatalException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     if PERFORMANCE_B = y:
@@ -214,7 +226,7 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_out_of_order_conditional(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     elif PERFORMANCE_B = y:
@@ -225,7 +237,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     else:
@@ -235,7 +247,7 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_multiple_fragments(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test1]
 entries:
     value_1
@@ -252,7 +264,7 @@ entries:
         self.assertEqual(fragment_file.fragments[1].entries, {('section', 'target')})
 
     def test_whole_conditional_fragment(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 if PERFORMANCE_B = y:
     [sections:test1]
     entries:
@@ -290,7 +302,7 @@ entries:
         self.assertEqual(fragment_file.fragments[3].entries, {'value_5'})
 
     def test_equivalent_conditional_fragment(self):
-        test_fragment1 = self.create_fragment_file(u"""
+        test_fragment1 = self.create_fragment_file("""
 if PERFORMANCE_A = y:
     [sections:test1]
     entries:
@@ -305,7 +317,7 @@ else:
         self.assertEqual(fragment_file1.fragments[0].name, 'test1')
         self.assertEqual(fragment_file1.fragments[0].entries, {'value_1'})
 
-        test_fragment2 = self.create_fragment_file(u"""
+        test_fragment2 = self.create_fragment_file("""
 [sections:test1]
 entries:
     if PERFORMANCE_A = y:
@@ -320,9 +332,8 @@ entries:
 
 
 class SectionsTest(FragmentTest):
-
     def test_basic(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     .section1
@@ -332,7 +343,7 @@ entries:
         self.assertEqual(fragment_file.fragments[0].entries, {'.section1', '.section2'})
 
     def test_duplicate_entries(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     .section1
@@ -344,14 +355,14 @@ entries:
         self.assertEqual(fragment_file.fragments[0].entries, {'.section1', '.section2', '.section3'})
 
     def test_empty_entries(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
 """)
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     if PERFORMANCE_B = y:
@@ -361,7 +372,7 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_entries_grammar(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     _valid1
@@ -369,11 +380,10 @@ entries:
     .valid3_-
 """)
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].entries,
-                         {'_valid1', 'valid2.', '.valid3_-'})
+        self.assertEqual(fragment_file.fragments[0].entries, {'_valid1', 'valid2.', '.valid3_-'})
 
         # invalid starting char
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     1invalid
@@ -381,7 +391,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     -invalid
@@ -390,16 +400,15 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
         # + notation
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     valid+
 """)
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].entries,
-                         {'valid+'})
+        self.assertEqual(fragment_file.fragments[0].entries, {'valid+'})
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [sections:test]
 entries:
     inva+lid+
@@ -409,9 +418,8 @@ entries:
 
 
 class SchemeTest(FragmentTest):
-
     def test_basic(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [scheme:test]
 entries:
     sections1 -> target1
@@ -419,12 +427,10 @@ entries:
 """)
 
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].entries,
-                         {('sections1', 'target1'),
-                          ('sections2', 'target2')})
+        self.assertEqual(fragment_file.fragments[0].entries, {('sections1', 'target1'), ('sections2', 'target2')})
 
     def test_duplicate_entries(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [scheme:test]
 entries:
     sections1 -> target1
@@ -433,19 +439,17 @@ entries:
 """)
 
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
-        self.assertEqual(fragment_file.fragments[0].entries,
-                         {('sections1', 'target1'),
-                          ('sections2', 'target2')})
+        self.assertEqual(fragment_file.fragments[0].entries, {('sections1', 'target1'), ('sections2', 'target2')})
 
     def test_empty_entries(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [scheme:test]
 entries:
 """)
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [scheme:test]
 entries:
     if PERFORMANCE_B = y:
@@ -455,7 +459,7 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_improper_grammar(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [scheme:test]
 entries:
     sections1, target1 # improper separator
@@ -466,9 +470,8 @@ entries:
 
 
 class MappingTest(FragmentTest):
-
     def test_basic(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -479,17 +482,19 @@ entries:
     * (noflash)
 """)
 
-        expected = {('obj', 'symbol', 'noflash'),
-                    ('obj', None, 'noflash'),
-                    ('obj', 'symbol_2', 'noflash'),
-                    ('obj_2', None, 'noflash'),
-                    ('*', None, 'noflash')}
+        expected = {
+            ('obj', 'symbol', 'noflash'),
+            ('obj', None, 'noflash'),
+            ('obj', 'symbol_2', 'noflash'),
+            ('obj_2', None, 'noflash'),
+            ('*', None, 'noflash'),
+        }
 
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_archive(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive:
 entries:
@@ -498,7 +503,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive:
     lib1.a
@@ -510,7 +515,7 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_archive_allowed_names(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive:
     libstdc++.a
@@ -521,7 +526,7 @@ entries:
         self.assertEqual('libstdc++.a', fragment_file.fragments[0].archive)
 
     def test_empty_entries(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive:
     lib.a
@@ -535,7 +540,7 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive:
     lib.a
@@ -546,7 +551,7 @@ entries:
             parse_fragment_file(test_fragment, self.sdkconfig)
 
     def test_duplicate_entries(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive:
     lib.a
@@ -561,7 +566,7 @@ entries:
         self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_invalid_grammar(self):
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive:
     lib.a
@@ -569,7 +574,7 @@ archive:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 entries:
     * (default)
@@ -577,7 +582,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -586,7 +591,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -595,7 +600,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -604,7 +609,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -613,7 +618,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -622,7 +627,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -631,7 +636,7 @@ entries:
         with self.assertRaises(ParseException):
             parse_fragment_file(test_fragment, self.sdkconfig)
 
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:test]
 archive: lib.a
 entries:
@@ -642,7 +647,7 @@ entries:
 
     def test_keep_flag(self):
         # Test parsing combinations and orders of flags
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -654,15 +659,14 @@ entries:
 
         fragment = fragment_file.fragments[0]
 
-        expected = [Flag('text', 'flash_text', [Keep()]),
-                    Flag('rodata', 'flash_rodata', [Keep(), Keep()])]
+        expected = [Flag('text', 'flash_text', [Keep()]), Flag('rodata', 'flash_rodata', [Keep(), Keep()])]
         actual = fragment.flags[('obj1', None, 'default')]
 
         self.assertEqual(expected, actual)
 
     def test_align_flag(self):
         # Test parsing combinations and orders of flags
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -677,17 +681,19 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [Flag('text', 'flash_text', [Align(8, True, False)]),
-                    Flag('rodata', 'flash_rodata', [Align(8, True, False)]),
-                    Flag('data', 'dram0_data', [Align(8, True, True)]),
-                    Flag('bss', 'dram0_bss', [Align(8, False, True)]),
-                    Flag('common', 'dram0_bss', [Align(8, True, True), Align(8, True, False)])]
+        expected = [
+            Flag('text', 'flash_text', [Align(8, True, False)]),
+            Flag('rodata', 'flash_rodata', [Align(8, True, False)]),
+            Flag('data', 'dram0_data', [Align(8, True, True)]),
+            Flag('bss', 'dram0_bss', [Align(8, False, True)]),
+            Flag('common', 'dram0_bss', [Align(8, True, True), Align(8, True, False)]),
+        ]
         actual = fragment.flags[('obj1', None, 'default')]
 
         self.assertEqual(expected, actual)
 
         # Wrong post, pre order
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -700,7 +706,7 @@ entries:
 
     def test_sort_flag(self):
         # Test parsing combinations and orders of flags
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -718,20 +724,22 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [Flag('text', 'flash_text', [Sort()]),
-                    Flag('text', 'flash_text', [Sort('name')]),
-                    Flag('rodata', 'flash_rodata', [Sort('alignment')]),
-                    Flag('data', 'dram0_data', [Sort('init_priority')]),
-                    Flag('bss', 'dram0_bss', [Sort('name', 'alignment')]),
-                    Flag('common', 'dram0_bss', [Sort('alignment', 'name')]),
-                    Flag('iram', 'iram0_text', [Sort('name', 'name')]),
-                    Flag('dram', 'dram0_data', [Sort('alignment', 'alignment')])]
+        expected = [
+            Flag('text', 'flash_text', [Sort()]),
+            Flag('text', 'flash_text', [Sort('name')]),
+            Flag('rodata', 'flash_rodata', [Sort('alignment')]),
+            Flag('data', 'dram0_data', [Sort('init_priority')]),
+            Flag('bss', 'dram0_bss', [Sort('name', 'alignment')]),
+            Flag('common', 'dram0_bss', [Sort('alignment', 'name')]),
+            Flag('iram', 'iram0_text', [Sort('name', 'name')]),
+            Flag('dram', 'dram0_data', [Sort('alignment', 'alignment')]),
+        ]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
 
     def test_surround_flag(self):
         # Test parsing combinations and orders of flags
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -747,7 +755,7 @@ entries:
 
     def test_flag_order(self):
         # Test that the order in which the flags are specified is retained
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -758,18 +766,26 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [Flag('text', 'flash_text', [Align(4, True, False),
-                                                Keep(),
-                                                Surround('sym1'),
-                                                Align(8, True, False),
-                                                Sort('name')]),
-                    Flag('rodata', 'flash_rodata', [Keep(),
-                                                    Align(4, True, False),
-                                                    Keep(),
-                                                    Surround('sym1'),
-                                                    Align(8, True, False),
-                                                    Align(4, True, False),
-                                                    Sort('name')])]
+        expected = [
+            Flag(
+                'text',
+                'flash_text',
+                [Align(4, True, False), Keep(), Surround('sym1'), Align(8, True, False), Sort('name')],
+            ),
+            Flag(
+                'rodata',
+                'flash_rodata',
+                [
+                    Keep(),
+                    Align(4, True, False),
+                    Keep(),
+                    Surround('sym1'),
+                    Align(8, True, False),
+                    Align(4, True, False),
+                    Sort('name'),
+                ],
+            ),
+        ]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
 
@@ -777,7 +793,7 @@ entries:
         # Not an error, generation step handles this, since
         # it that step has a more complete information
         # about all mappings.
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -788,14 +804,10 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [Flag('text', 'flash_text', [Align(4, True, False),
-                                                Keep(),
-                                                Surround('sym1'),
-                                                Sort('name')]),
-                    Flag('text', 'flash_text', [Align(4, True, False),
-                                                Keep(),
-                                                Surround('sym1'),
-                                                Sort('name')])]
+        expected = [
+            Flag('text', 'flash_text', [Align(4, True, False), Keep(), Surround('sym1'), Sort('name')]),
+            Flag('text', 'flash_text', [Align(4, True, False), Keep(), Surround('sym1'), Sort('name')]),
+        ]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
 
@@ -804,7 +816,7 @@ entries:
         # it that step has a more complete information
         # about all mappings. This can happen across multiple
         # mapping fragments.
-        test_fragment = self.create_fragment_file(u"""
+        test_fragment = self.create_fragment_file("""
 [mapping:map]
 archive: libmain.a
 entries:
@@ -816,14 +828,10 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [Flag('text', 'flash_text', [Align(4, True, False),
-                                                Keep(),
-                                                Surround('sym1'),
-                                                Sort('name')]),
-                    Flag('text', 'flash_text', [Align(4, True, False),
-                                                Keep(),
-                                                Surround('sym1'),
-                                                Sort('name')])]
+        expected = [
+            Flag('text', 'flash_text', [Align(4, True, False), Keep(), Surround('sym1'), Sort('name')]),
+            Flag('text', 'flash_text', [Align(4, True, False), Keep(), Surround('sym1'), Sort('name')]),
+        ]
         actual = fragment.flags[('obj1', None, 'default')]
         self.assertEqual(expected, actual)
 

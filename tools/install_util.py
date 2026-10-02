@@ -57,7 +57,7 @@ def action_print_help(script_extension: str) -> None:
 
     # extract the list of features from ./requirements.json
     thisdir = os.path.dirname(os.path.realpath(__file__))
-    with open(f'{thisdir}/requirements.json', 'r', encoding='utf-8') as f:
+    with open(f'{thisdir}/requirements.json', encoding='utf-8') as f:
         json_data = json.load(f)
     features = [feat['name'] for feat in json_data['features']]
 
@@ -101,7 +101,7 @@ def main() -> None:
         action_print_help(args.extension)
         sys.exit(0)
 
-    action_func = globals()['action_{}_{}'.format(args.action, args.type)]
+    action_func = globals()[f'action_{args.action}_{args.type}']
     str_to_parse = vars(args)['str-to-parse'] or ''
     action_func(' '.join(chain([str_to_parse], unknown_args)))
 

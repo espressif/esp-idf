@@ -4,12 +4,11 @@
 """
 Check patterns-build_components including all components files except 'test*/'
 """
+
 import glob
 import os
 import subprocess
 from functools import lru_cache
-from typing import List
-from typing import Set
 
 import yaml
 from idf_ci_utils import IDF_PATH
@@ -18,15 +17,15 @@ RULES_FILE = os.path.join(IDF_PATH, '.gitlab', 'ci', 'rules.yml')
 
 
 @lru_cache(1)
-def get_component_git_files() -> Set[str]:
+def get_component_git_files() -> set[str]:
     output = subprocess.check_output(['git', 'ls-files', 'components/'], cwd=IDF_PATH).decode()
-    component_git_files = set((_l.strip() for _l in output.strip().splitlines()))
+    component_git_files = set(_l.strip() for _l in output.strip().splitlines())
     assert component_git_files, 'Can not list git files'
     return component_git_files
 
 
-def get_component_files_from_patterns(patterns: List[str]) -> Set[str]:
-    files: Set[str] = set()
+def get_component_files_from_patterns(patterns: list[str]) -> set[str]:
+    files: set[str] = set()
     for pattern in patterns:
         # NOTE: version 3.11: Added the include_hidden parameter.
         # NOTE: version 3.10: Added the root_dir and dir_fd parameters.
@@ -41,7 +40,7 @@ def get_component_files_from_patterns(patterns: List[str]) -> Set[str]:
     return files
 
 
-def get_components_test_files() -> Set[str]:
+def get_components_test_files() -> set[str]:
     patterns = [
         'components/*/test/**/*',
         'components/*/test_apps/**/*',
@@ -62,12 +61,12 @@ def get_components_test_files() -> Set[str]:
     return get_component_files_from_patterns(patterns)
 
 
-def get_all_components_files() -> Set[str]:
+def get_all_components_files() -> set[str]:
     return get_component_files_from_patterns(['components/**/*'])
 
 
 def main() -> None:
-    with open(RULES_FILE, 'r') as f:
+    with open(RULES_FILE) as f:
         rules = yaml.load(f.read(), Loader=yaml.FullLoader)
         patterns_components = [p for p in rules['.patterns-build_components'] if p.startswith('components/')]
         submodules = [p for p in rules['.patterns-submodule'] if p.startswith('components/')]

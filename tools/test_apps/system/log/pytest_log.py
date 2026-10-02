@@ -176,9 +176,10 @@ def test_log(dut: Dut) -> None:
         if dut.app.sdkconfig.get('BOOTLOADER_LOG_MODE_BINARY_EN'):
             monitor_cmd += ' ' + os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.elf')
         monitor_log_path = os.path.join(dut.logdir, 'monitor.txt')
-        with open(monitor_log_path, 'w') as log, pexpect.spawn(
-            monitor_cmd, logfile=log, timeout=3, encoding='utf-8', codec_errors='ignore'
-        ) as p:
+        with (
+            open(monitor_log_path, 'w') as log,
+            pexpect.spawn(monitor_cmd, logfile=log, timeout=3, encoding='utf-8', codec_errors='ignore') as p,
+        ):
             check_output(p)
     else:
         check_output(dut)
