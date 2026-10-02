@@ -7,7 +7,7 @@ menu "RISC-V Trace Encoder Configurations"
         help
             Build the ESP RISC-V trace encoder driver and expose its runtime API.
 
-            When core dump is also enabled, a panic freezes the snapshot and the
+            A panic finalizes the snapshot. When core dump is also enabled, the
             coredump writer stores an ESP_RISCV_TRACE note plus the per-core buffers.
             With ESP_RISCV_TRACE_OPENOCD, ESP_DEBUG_OCDAWARE and a debugger attached,
             the panic finalizes the snapshot before the debugger halts, so OpenOCD can

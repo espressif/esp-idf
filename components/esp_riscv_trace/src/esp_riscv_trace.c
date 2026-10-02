@@ -508,6 +508,13 @@ void esp_riscv_trace_snapshot_finalize(void)
     esp_riscv_trace_snapshot_panic_write(status, SOC_CPU_CORES_NUM);
 }
 
+/* Records the final trace state on every panic, before the coredump and gdbstub handlers read it */
+ESP_PANIC_HANDLER_REGISTER(esp_riscv_trace_panic, 50)
+{
+    esp_riscv_trace_snapshot_finalize();
+    return ESP_OK;
+}
+
 #if CONFIG_ESP_RISCV_TRACE_OPENOCD
 /* Finalizes the snapshot before the panic breakpoint so OpenOCD can dump it */
 ESP_PANIC_EARLY_BREAK_HANDLER_REGISTER(esp_riscv_trace_panic_early_break, 50)
