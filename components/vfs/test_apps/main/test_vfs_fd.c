@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -285,8 +285,8 @@ TEST_CASE("esp_vfs_register_fd_range checks for overlap", "[vfs]")
     TEST_ESP_OK(esp_vfs_register_fs("/test", &vfs1, ESP_VFS_FLAG_DEFAULT, NULL));
     int fd = open("/test/1", 0, 0);
     TEST_ASSERT_NOT_EQUAL(-1, fd);
-    esp_vfs_fs_ops_t vfs2 = { };
-    esp_err_t err = esp_vfs_register_fd_range(&vfs2, ESP_VFS_FLAG_DEFAULT, NULL, fd, fd + 1);
+    static const esp_vfs_fs_ops_t vfs2 = { 0 };
+    esp_err_t err = esp_vfs_register_fd_range(&vfs2, ESP_VFS_FLAG_STATIC, NULL, fd, fd + 1);
     close(fd);
 
     TEST_ESP_OK(esp_vfs_unregister("/test"));

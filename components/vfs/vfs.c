@@ -95,6 +95,22 @@ static void esp_vfs_free_entry(vfs_entry_t *entry) {
     free(entry);
 }
 
+/* s_fd_table_lock is held. Detach the slot and its fds. Caller frees the entry. */
+static vfs_entry_t *vfs_take_down_locked(int vfs_id)
+{
+    vfs_entry_t *vfs = s_vfs[vfs_id];
+    s_vfs[vfs_id] = NULL;
+    for (int j = 0; j < MAX_FDS; ++j) {
+        if (s_fd_table[j].vfs_index == vfs_id) {
+            s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
+        }
+    }
+    while (s_vfs_upper_bound > 0 && s_vfs[s_vfs_upper_bound - 1] == NULL) {
+        s_vfs_upper_bound--;
+    }
+    return vfs;
+}
+
 typedef struct {
 #ifdef CONFIG_VFS_SUPPORT_DIR
     esp_vfs_dir_ops_t *dir;
@@ -533,7 +549,8 @@ esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t
 
 esp_err_t esp_vfs_register_fd_range(const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, int min_fd, int max_fd)
 {
-    if (min_fd < 0 || max_fd < 0 || min_fd > MAX_FDS || max_fd > MAX_FDS || min_fd > max_fd) {
+    if (min_fd < 0 || max_fd < 0 || min_fd > MAX_FDS || max_fd > MAX_FDS || min_fd > max_fd ||
+            !(flags & ESP_VFS_FLAG_STATIC)) {
         ESP_LOGD(TAG, "Invalid arguments: esp_vfs_register_fd_range(0x%p, 0x%p, %d, %d)", vfs, ctx, min_fd, max_fd);
         return ESP_ERR_INVALID_ARG;
     }
@@ -545,14 +562,9 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_fs_ops_t *vfs, int flags, void
         _lock_acquire(&s_fd_table_lock);
         for (int i = min_fd; i < max_fd; ++i) {
             if (s_fd_table[i].vfs_index != -1) {
-                free(s_vfs[index]);
-                s_vfs[index] = NULL;
-                for (int j = min_fd; j < i; ++j) {
-                    if (s_fd_table[j].vfs_index == index) {
-                        s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
-                    }
-                }
+                vfs_entry_t *entry = vfs_take_down_locked(index);
                 _lock_release(&s_fd_table_lock);
+                esp_vfs_free_entry(entry);
                 ESP_LOGW(TAG, "esp_vfs_register_fd_range cannot set fd %d (used by other VFS)", i);
                 return ESP_ERR_INVALID_ARG;
             }
@@ -580,28 +592,20 @@ esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, vo
 
 esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 {
-    if (vfs_id < 0 || vfs_id >= VFS_MAX_COUNT || s_vfs[vfs_id] == NULL) {
+    if (vfs_id < 0 || vfs_id >= VFS_MAX_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
-    vfs_entry_t* vfs = s_vfs[vfs_id];
-    esp_vfs_free_entry(vfs);
-    s_vfs[vfs_id] = NULL;
 
     _lock_acquire(&s_fd_table_lock);
-    // Delete all references from the FD lookup-table
-    for (int j = 0; j < MAX_FDS; ++j) {
-        if (s_fd_table[j].vfs_index == vfs_id) {
-            s_fd_table[j] = FD_TABLE_ENTRY_UNUSED;
-        }
+    if (s_vfs[vfs_id] == NULL) {
+        _lock_release(&s_fd_table_lock);
+        return ESP_ERR_INVALID_ARG;
     }
+    vfs_entry_t *vfs = vfs_take_down_locked(vfs_id);
     _lock_release(&s_fd_table_lock);
 
-    while (s_vfs_upper_bound > 0 && s_vfs[s_vfs_upper_bound - 1] == NULL) { // Move the upper bound down if we just removed the last entry
-        s_vfs_upper_bound--;
-    }
-
+    esp_vfs_free_entry(vfs);
     return ESP_OK;
-
 }
 
 #ifndef CONFIG_IDF_TARGET_LINUX
