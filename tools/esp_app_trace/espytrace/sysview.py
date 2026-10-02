@@ -246,6 +246,25 @@ def _decode_u64(reader):
     return sz, (val | (high << 32))
 
 
+def _decode_float(reader):
+    """
+    Reads and decodes 32-bit float sent as variable-length encoded raw bits.
+
+    Parameters
+    ----------
+    reader : apptrace.Reader
+        Trace reader object.
+
+    Returns
+    -------
+    tuple
+        a tuple containing number of read bytes and decoded value.
+    """
+    sz, bits = _decode_u32(reader)
+    (val,) = struct.unpack('<f', struct.pack('<I', bits))
+    return sz, val
+
+
 def _decode_str(reader):
     """
     Reads and decodes string.
@@ -544,7 +563,10 @@ class SysViewPredefinedEvent(SysViewEvent):
                 SysViewEventParamSimple('id_shift', _decode_u32),
             ],
         ),
-        SYSVIEW_EVTID_DATA_SAMPLE: ('svDataSample', []),
+        SYSVIEW_EVTID_DATA_SAMPLE: (
+            'svDataSample',
+            [SysViewEventParamSimple('data_id', _decode_u32), SysViewEventParamSimple('value', _decode_float)],
+        ),
         SYSVIEW_EVTID_NAME_RESOURCE: (
             'svNameResource',
             [SysViewEventParamSimple('res_id', _decode_u32), SysViewEventParamSimple('name', _decode_str)],
