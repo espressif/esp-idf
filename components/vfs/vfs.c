@@ -511,6 +511,11 @@ esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs
     return esp_vfs_register_fs_ops(base_path, vfs, flags, ctx, NULL);
 }
 
+esp_err_t esp_vfs_register_fs_instance(const char* base_path, esp_vfs_fs_t fs)
+{
+    return esp_vfs_register_fs(base_path, fs.ops, fs.flags | ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, fs.ctx);
+}
+
 esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
 {
     if (vfs == NULL) {
@@ -632,6 +637,11 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 
 #ifndef CONFIG_IDF_TARGET_LINUX
 esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t vfs_id) __attribute__((alias("esp_vfs_unregister_with_id")));
+#else
+esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t vfs_id)
+{
+    return esp_vfs_unregister_with_id(vfs_id);
+}
 #endif
 
 esp_err_t esp_vfs_unregister(const char* base_path)
@@ -673,6 +683,11 @@ esp_err_t esp_vfs_unregister_fs_checked(const char *base_path, const esp_vfs_fs_
 
 #ifndef CONFIG_IDF_TARGET_LINUX
 esp_err_t esp_vfs_unregister_fs(const char* base_path) __attribute__((alias("esp_vfs_unregister")));
+#else
+esp_err_t esp_vfs_unregister_fs(const char* base_path)
+{
+    return esp_vfs_unregister(base_path);
+}
 #endif
 
 esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)

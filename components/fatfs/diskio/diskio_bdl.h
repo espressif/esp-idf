@@ -10,6 +10,7 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
 #include "esp_blockdev.h"
 #include "esp_err.h"
 
@@ -44,6 +45,15 @@ extern "C" {
  *        two or exceeds FF_MAX_SS)
  */
 esp_err_t ff_diskio_register_bdl(unsigned char pdrv, esp_blockdev_handle_t bdl_handle);
+
+/**
+ * @brief Get the FatFS logical sector size ff_diskio_register_bdl() would use for a BDL device
+ *
+ * @param bdl_handle    BDL device handle
+ *
+ * @return sector size in bytes, or 0 if the geometry is incompatible with FatFS
+ */
+size_t ff_diskio_bdl_get_sector_size(esp_blockdev_handle_t bdl_handle);
 
 /**
  * @brief Get the drive number associated with a BDL handle

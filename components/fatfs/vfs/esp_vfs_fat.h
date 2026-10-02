@@ -5,7 +5,12 @@
  */
 
 #pragma once
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/lock.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
 #ifndef CONFIG_IDF_TARGET_LINUX
 #include "sd_protocol_types.h"
@@ -14,9 +19,23 @@
 #include "ff.h"
 #include "wear_levelling.h"
 #include "esp_blockdev.h"
+#include "esp_vfs.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/*
+ * Members marked with this attribute are internal to the fatfs component. They are part of
+ * the public type only so that the type is complete and can be allocated by the user
+ * (statically or dynamically); accessing them outside of fatfs produces a deprecation warning.
+ */
+#if defined(ESP_VFS_FAT_IMPL)
+#define ESP_VFS_FAT_PRIVATE
+#elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || (defined(__cplusplus) && __cplusplus >= 201402L)
+#define ESP_VFS_FAT_PRIVATE [[deprecated("internal to the fatfs component")]]
+#else
+#define ESP_VFS_FAT_PRIVATE __attribute__((deprecated("internal to the fatfs component")))
 #endif
 
 typedef enum {
@@ -158,6 +177,282 @@ typedef struct {
 
 // Compatibility definition
 typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
+
+/**
+ * @brief Open file slot of a FATFS instance
+ *
+ * An array of these is supplied to esp_vfs_fat_init(). Its length is the maximum number
+ * of files which can be open on the instance at the same time.
+ */
+typedef struct esp_vfs_fat_file {
+    /* Present so the type is complete and can be allocated. Not part of the API. */
+#ifndef __DOXYGEN__
+    struct esp_vfs_fat_file_priv {
+        FIL fil;
+        uint32_t flags;
+        uint8_t *buf;
+#ifdef CONFIG_FATFS_USE_FASTSEEK
+        DWORD clmt[CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE];
+#endif
+    } priv ESP_VFS_FAT_PRIVATE;
+#endif
+} esp_vfs_fat_file_t;
+
+/**
+ * @brief FATFS instance context
+ *
+ * Allocated by the user (statically or dynamically) and initialized with esp_vfs_fat_init(),
+ * or allocated and initialized by esp_vfs_fat_create(). All members are internal.
+ */
+typedef struct esp_vfs_fat_ctx {
+    /* Present so the type is complete and can be allocated. Not part of the API. */
+#ifndef __DOXYGEN__
+    struct esp_vfs_fat_ctx_priv {
+        FATFS fs;
+        esp_vfs_fat_file_t *files;
+        size_t max_files;
+#if FF_USE_DYN_BUFFER
+        uint8_t *heap_win;              /* Volume window allocated by the wrapper, or NULL if the caller provided sector_buffers */
+        size_t heap_sector_size;        /* Size of each window the wrapper allocates; file windows are allocated on open */
+#endif
+#if FF_USE_LFN == 3
+        void *heap_lfn_buffer;          /* LFN working buffer allocated by the wrapper, or NULL if the caller provided it */
+#endif
+        _lock_t lock;
+        esp_blockdev_handle_t bdl;
+        esp_vfs_fat_mount_config_t mount_config;
+        vfs_fat_x_ctx_flags_t state;
+        int vfs_flags;
+        uint8_t pdrv;
+        bool legacy;
+        char fat_drive[8];
+        char base_path[ESP_VFS_PATH_MAX + 1];
+        char tmp_path_buf[FILENAME_MAX + 3];
+        char tmp_path_buf2[FILENAME_MAX + 3];
+#ifdef CONFIG_VFS_SUPPORT_DIR
+        struct {
+            struct vfs_fat_dir_t *slh_first;
+        } open_dirs;
+#endif
+    } priv ESP_VFS_FAT_PRIVATE;
+#endif
+} esp_vfs_fat_ctx_t;
+
+/** Largest sector size a FATFS instance can use; an upper bound for esp_vfs_fat_get_sector_size() */
+#define ESP_VFS_FAT_MAX_SECTOR_SIZE ((size_t)FF_MAX_SS)
+
+/**
+ * Size of esp_vfs_fat_resources_t::sector_buffers for `max_files` file slots: one sector for
+ * the volume plus, unless CONFIG_FATFS_PER_FILE_CACHE is disabled, one sector per file slot.
+ * Zero without CONFIG_FATFS_USE_DYN_BUFFERS, where these buffers are part of the context and
+ * the file slots.
+ */
+#if FF_USE_DYN_BUFFER && FF_FS_TINY
+#define ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(max_files, sector_size) ((size_t)(sector_size))
+#elif FF_USE_DYN_BUFFER
+#define ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(max_files, sector_size) \
+    ((size_t)(1 + (max_files)) * (size_t)(sector_size))
+#else
+#define ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(max_files, sector_size) ((size_t)0)
+#endif
+
+/**
+ * Size of esp_vfs_fat_resources_t::lfn_buffer. Zero unless CONFIG_FATFS_LFN_HEAP is selected;
+ * with CONFIG_FATFS_LFN_STACK the buffer is on the stack and with CONFIG_FATFS_LFN_NONE there is none.
+ */
+#if FF_USE_LFN == 3
+#define ESP_VFS_FAT_LFN_BUFFER_SIZE ((size_t)FF_LFN_WORK_SIZE)
+#else
+#define ESP_VFS_FAT_LFN_BUFFER_SIZE ((size_t)0)
+#endif
+
+/**
+ * @brief Memory a FATFS instance uses besides its context
+ *
+ * Pass every buffer this configuration uses, or leave them all NULL. With NULL buffers the VFS
+ * wrapper allocates them with the capabilities selected by CONFIG_FATFS_HEAP_CAPS: the volume
+ * window and the LFN buffer for the life of the instance, and each file's sector window only
+ * while that file is open. Buffers the caller supplies stay the caller's and must remain valid
+ * until esp_vfs_fat_deinit(). A buffer whose size macro evaluates to 0 is ignored.
+ *
+ * Sector buffers are passed to the block device for reads and writes, so they must meet its
+ * requirements, e.g. be DMA-capable and suitably aligned for an SD card. The start of each
+ * sector inside `sector_buffers` keeps the alignment of `sector_buffers` for alignments up to
+ * the sector size.
+ */
+typedef struct esp_vfs_fat_resources {
+    esp_vfs_fat_file_t *files;      /*!< Open file slots; their number is the open file limit */
+    size_t max_files;               /*!< Number of elements in `files`, at least 1 */
+    void *sector_buffers;           /*!< ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(max_files, sector size) bytes, or NULL */
+    size_t sector_buffers_size;     /*!< Size of `sector_buffers` in bytes */
+    void *lfn_buffer;               /*!< ESP_VFS_FAT_LFN_BUFFER_SIZE bytes, 2-byte aligned, or NULL */
+    size_t lfn_buffer_size;         /*!< Size of `lfn_buffer` in bytes */
+} esp_vfs_fat_resources_t;
+
+/**
+ * @brief Get the sector size a FATFS instance on a block device uses
+ *
+ * Use it to size esp_vfs_fat_resources_t::sector_buffers exactly; ESP_VFS_FAT_MAX_SECTOR_SIZE
+ * is an upper bound usable in constant expressions.
+ *
+ * @param bdl_handle  block device
+ *
+ * @return sector size in bytes, or 0 if the block device geometry is not usable by FATFS
+ */
+size_t esp_vfs_fat_get_sector_size(esp_blockdev_handle_t bdl_handle);
+
+/**
+ * @brief Initialize a FATFS instance in user-provided memory
+ *
+ * Binds the block device to a FATFS drive and mounts the filesystem on it, formatting it
+ * first if mounting fails and `mount_config->format_if_mount_failed` is set. The instance is
+ * not registered with VFS; use esp_vfs_fat_get_fs() and esp_vfs_register_fs_instance() for
+ * that, or hand the descriptor to another filesystem implementation.
+ *
+ * The context holds the instance and FATFS volume locks. With all buffers in `resources`
+ * provided, initialization, formatting and opening, reading, writing, seeking and closing
+ * files do not allocate. Directory iteration, rename, truncate and the contiguous-file
+ * functions still allocate temporary objects.
+ *
+ * @param ctx           context to initialize; must stay valid until esp_vfs_fat_deinit()
+ * @param resources     file slots and buffers; see esp_vfs_fat_resources_t
+ * @param bdl_handle    block device providing the storage; owned by the caller and must
+ *                      outlive the instance
+ * @param mount_config  mount options; `max_files` is ignored in favor of `resources->max_files`
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if any of the arguments is invalid
+ *      - ESP_ERR_INVALID_SIZE if a provided buffer is too small
+ *      - ESP_ERR_INVALID_STATE if the block device is already used by another instance
+ *      - ESP_ERR_NO_MEM if all FATFS drives are in use or a buffer can not be allocated
+ *      - ESP_FAIL if the filesystem can not be mounted
+ */
+esp_err_t esp_vfs_fat_init(esp_vfs_fat_ctx_t *ctx, const esp_vfs_fat_resources_t *resources,
+                           esp_blockdev_handle_t bdl_handle, const esp_vfs_fat_mount_config_t *mount_config);
+
+/**
+ * @brief Unmount the filesystem and release the FATFS drive of an instance
+ *
+ * The instance must not be registered with VFS or used by another filesystem anymore.
+ * The memory of `ctx` and of the file slots is not freed.
+ *
+ * @param ctx  context initialized with esp_vfs_fat_init()
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if ctx is NULL
+ */
+esp_err_t esp_vfs_fat_deinit(esp_vfs_fat_ctx_t *ctx);
+
+/**
+ * @brief Allocate and initialize a FATFS instance
+ *
+ * Allocates the context together with `mount_config->max_files` file slots and calls
+ * esp_vfs_fat_init() on them.
+ *
+ * @param bdl_handle    block device providing the storage; owned by the caller and must
+ *                      outlive the instance
+ * @param mount_config  mount options
+ * @param[out] out_ctx  created instance
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if memory can not be allocated
+ *      - other errors from esp_vfs_fat_init()
+ */
+esp_err_t esp_vfs_fat_create(esp_blockdev_handle_t bdl_handle, const esp_vfs_fat_mount_config_t *mount_config,
+                             esp_vfs_fat_ctx_t **out_ctx);
+
+/**
+ * @brief Deinitialize and free an instance created with esp_vfs_fat_create()
+ *
+ * @param ctx  context returned by esp_vfs_fat_create()
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if ctx is NULL
+ */
+esp_err_t esp_vfs_fat_destroy(esp_vfs_fat_ctx_t *ctx);
+
+/**
+ * @brief Get the filesystem instance descriptor of a FATFS instance
+ *
+ * `ESP_VFS_FLAG_READONLY_FS` is set in the returned flags if the block device is read-only
+ * or the instance was initialized with `read_only` set.
+ *
+ * @param ctx  initialized context
+ *
+ * @return descriptor for esp_vfs_register_fs_instance() or for use by another filesystem
+ */
+esp_vfs_fs_t esp_vfs_fat_get_fs(esp_vfs_fat_ctx_t *ctx);
+
+/**
+ * @brief Create a FATFS instance and register it with VFS
+ *
+ * Equivalent to esp_vfs_fat_create() followed by registering the instance at `base_path`.
+ * The path-based functions (esp_vfs_fat_info() etc.) work on instances mounted this way.
+ *
+ * @param base_path     path where the filesystem is registered (e.g. "/data")
+ * @param bdl_handle    block device providing the storage; owned by the caller and must
+ *                      outlive the mount
+ * @param mount_config  mount options
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if any of the arguments is invalid
+ *      - ESP_ERR_INVALID_STATE if the block device is already used by another instance
+ *      - ESP_ERR_NO_MEM if memory can not be allocated or no free drives
+ *      - ESP_FAIL if the filesystem can not be mounted
+ *      - other errors from esp_vfs_register_fs_instance()
+ */
+esp_err_t esp_vfs_fat_mount(const char *base_path, esp_blockdev_handle_t bdl_handle,
+                            const esp_vfs_fat_mount_config_t *mount_config);
+
+/**
+ * @brief Unregister and destroy an instance mounted with esp_vfs_fat_mount()
+ *
+ * The block device is not released.
+ *
+ * @param base_path  path passed to esp_vfs_fat_mount()
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if no instance was mounted at this path with esp_vfs_fat_mount()
+ */
+esp_err_t esp_vfs_fat_unmount(const char *base_path);
+
+/**
+ * @brief Get total and free space of a FATFS instance
+ *
+ * Same as esp_vfs_fat_info(), but works for instances which are not registered with VFS.
+ *
+ * @param ctx                   initialized context
+ * @param[out] out_total_bytes  size of the file system, may be NULL
+ * @param[out] out_free_bytes   free bytes available in the file system, may be NULL
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if ctx is NULL
+ *      - ESP_FAIL on a FATFS error (saved in errno)
+ */
+esp_err_t esp_vfs_fat_ctx_info(esp_vfs_fat_ctx_t *ctx, uint64_t *out_total_bytes, uint64_t *out_free_bytes);
+
+/**
+ * @brief Create a file with contiguous space in a FATFS instance
+ *
+ * Same as esp_vfs_fat_create_contiguous_file(), with `path` relative to the root of the
+ * instance (e.g. "/ABC.TXT").
+ */
+esp_err_t esp_vfs_fat_ctx_create_contiguous_file(esp_vfs_fat_ctx_t *ctx, const char *path, uint64_t size, bool alloc_now);
+
+/**
+ * @brief Test if a file in a FATFS instance is contiguous
+ *
+ * Same as esp_vfs_fat_test_contiguous_file(), with `path` relative to the root of the
+ * instance (e.g. "/ABC.TXT").
+ */
+esp_err_t esp_vfs_fat_ctx_test_contiguous_file(esp_vfs_fat_ctx_t *ctx, const char *path, bool *is_contiguous);
 
 #ifndef CONFIG_IDF_TARGET_LINUX
 /**

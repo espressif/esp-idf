@@ -1,4 +1,4 @@
-idf_component_register(SRCS "test_fatfs_bdl.cpp"
+idf_component_register(SRCS "test_fatfs_bdl.cpp" "test_fatfs_instance.cpp"
                        REQUIRES fatfs vfs esp_blockdev esp_blockdev_util wear_levelling
                        WHOLE_ARCHIVE
                        )

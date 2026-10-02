@@ -78,6 +78,14 @@ static size_t compute_fs_sector_size(esp_blockdev_handle_t dev)
     return result;
 }
 
+size_t ff_diskio_bdl_get_sector_size(esp_blockdev_handle_t bdl_handle)
+{
+    if (bdl_handle == ESP_BLOCKDEV_HANDLE_INVALID) {
+        return 0;
+    }
+    return compute_fs_sector_size(bdl_handle);
+}
+
 /* ------------------------------------------------------------------ */
 
 typedef struct {

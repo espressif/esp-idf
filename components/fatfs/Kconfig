@@ -22,6 +22,30 @@ menu "FAT Filesystem support"
         config FATFS_LFN_STACK
             bool "Long filename buffer on stack"
     endchoice
+
+    choice FATFS_HEAP_CAPS
+        prompt "Heap capabilities for wrapper-allocated buffers"
+        depends on FATFS_USE_DYN_BUFFERS || FATFS_LFN_HEAP
+        default FATFS_HEAP_CAPS_DEFAULT
+        help
+            Used when the caller does not supply the sector windows and the long
+            filename buffer. The volume window and the long filename buffer are
+            then allocated with these capabilities for the life of the instance,
+            and each file's sector window while the file is open. Supply every buffer the
+            configuration uses, or none of them.
+
+            "Same as other FatFs allocations" follows CONFIG_FATFS_ALLOC_PREFER_EXTRAM
+            and CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS, including DMA-capable
+            placement for SDMMC. The other choices do not request DMA alignment.
+
+        config FATFS_HEAP_CAPS_DEFAULT
+            bool "Same as other FatFs allocations"
+        config FATFS_HEAP_CAPS_INTERNAL
+            bool "Internal RAM"
+        config FATFS_HEAP_CAPS_SPIRAM
+            bool "External RAM"
+            depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    endchoice
     choice FATFS_SECTOR_SIZE
         prompt "Sector size"
         default FATFS_SECTOR_4096

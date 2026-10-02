@@ -163,6 +163,9 @@ typedef struct {
 #if FF_USE_LFN
 	WCHAR*	lfnbuf;		/* Pointer to LFN working buffer */
 #endif
+#if FF_USE_LFN == 3
+	WCHAR*	lfnwork;	/* ESP-IDF: LFN working buffer of FF_LFN_WORK_SIZE bytes provided by the caller, or NULL to allocate per call */
+#endif
 #if !FF_FS_READONLY
 	DWORD	last_clst;	/* Last allocated cluster (invalid if >=n_fatent) */
 	DWORD	free_clst;	/* Number of free clusters (invalid if >=fs->n_fatent-2) */
@@ -401,6 +404,16 @@ DWORD ff_wtoupper (DWORD uni);			/* Unicode upper-case conversion */
 #if FF_USE_LFN == 3		/* Dynamic memory allocation */
 void* ff_memalloc (UINT msize);		/* Allocate memory block */
 void ff_memfree (void* mblock);		/* Free memory block */
+/* ESP-IDF: size of the LFN working buffer (FATFS.lfnwork). It holds the name, FF_MAX_LFN + 1 WCHARs,
+/  and with exFAT the directory entry block scratchpad behind it: a file and a stream extension entry
+/  plus one name entry per 15 characters, 32 bytes each. That is MAXDIRB() in ff.c, which checks that
+/  both stay equal. */
+#define FF_LFN_NAME_SIZE	((FF_MAX_LFN + 1) * 2)
+#if FF_FS_EXFAT
+#define FF_LFN_WORK_SIZE	(FF_LFN_NAME_SIZE + (FF_MAX_LFN + 44U) / 15 * 32)
+#else
+#define FF_LFN_WORK_SIZE	FF_LFN_NAME_SIZE
+#endif
 #endif
 #if FF_FS_REENTRANT		/* Sync functions */
 int ff_mutex_create (int vol);		/* Create a sync object */

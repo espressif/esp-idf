@@ -6,6 +6,14 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+        'lfn_stack',
+        'lfn_none',
+    ],
+)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_fatfs_bdl(dut: Dut) -> None:
+def test_fatfs_bdl(config: str, dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120)

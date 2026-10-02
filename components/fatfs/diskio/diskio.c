@@ -18,6 +18,7 @@
 #include "ff.h"
 
 static ff_diskio_impl_t * s_impls[FF_VOLUMES] = { NULL };
+static ff_diskio_impl_t s_impl_storage[FF_VOLUMES];
 
 #if FF_MULTI_PARTITION		/* Multiple partition configuration */
 PARTITION VolToPart[FF_VOLUMES] = {
@@ -68,20 +69,14 @@ void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl)
 {
     assert(pdrv < FF_VOLUMES);
 
-    if (s_impls[pdrv]) {
-        ff_diskio_impl_t* im = s_impls[pdrv];
-        s_impls[pdrv] = NULL;
-        free(im);
-    }
+    s_impls[pdrv] = NULL;
 
     if (!discio_impl) {
         return;
     }
 
-    ff_diskio_impl_t * impl = (ff_diskio_impl_t *)malloc(sizeof(ff_diskio_impl_t));
-    assert(impl != NULL);
-    memcpy(impl, discio_impl, sizeof(ff_diskio_impl_t));
-    s_impls[pdrv] = impl;
+    memcpy(&s_impl_storage[pdrv], discio_impl, sizeof(ff_diskio_impl_t));
+    s_impls[pdrv] = &s_impl_storage[pdrv];
 }
 
 DSTATUS ff_disk_initialize (BYTE pdrv)

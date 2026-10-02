@@ -9,7 +9,7 @@ set(srcs "diskio/diskio.c"
 
 set(include_dirs "diskio" "src")
 
-set(requires "wear_levelling" "esp_blockdev")
+set(requires "wear_levelling" "esp_blockdev" "vfs")
 
 # for linux, we do not have support for sdmmc, for real targets, add respective sources
 if(${target} STREQUAL "linux")
@@ -18,7 +18,7 @@ if(${target} STREQUAL "linux")
                   "vfs/vfs_fat_spiflash.c"
                   "vfs/vfs_fat_bdl.c")
     list(APPEND include_dirs "vfs")
-    list(APPEND priv_requires "vfs" "linux")
+    list(APPEND priv_requires "linux")
 else()
     list(APPEND srcs "port/freertos/ffsystem.c"
             "diskio/diskio_sdmmc.c"
@@ -31,7 +31,7 @@ else()
 
     list(APPEND requires "sdmmc" "esp_driver_sdmmc" "esp_driver_sdspi")
 
-    list(APPEND priv_requires "vfs" "esp_driver_gpio" "esptool_py")
+    list(APPEND priv_requires "esp_driver_gpio" "esptool_py")
 endif()
 
 idf_component_register(SRCS ${srcs}
@@ -39,3 +39,6 @@ idf_component_register(SRCS ${srcs}
                        REQUIRES ${requires}
                        PRIV_REQUIRES ${priv_requires}
                       )
+
+# Grants the fatfs sources access to the members marked ESP_VFS_FAT_PRIVATE in esp_vfs_fat.h
+target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_VFS_FAT_IMPL)

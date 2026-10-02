@@ -410,6 +410,40 @@ esp_err_t esp_vfs_unregister_fs_checked(const char *base_path, const esp_vfs_fs_
  */
 esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t id);
 
+/**
+ * @brief Filesystem instance descriptor
+ *
+ * Describes an initialized filesystem instance independently of VFS registration.
+ * Filesystem components return it by value from their instance context. It can be
+ * registered with VFS using esp_vfs_register_fs_instance(), or held by another
+ * filesystem implementation (e.g. an overlay) which calls the operations directly
+ * without the instance itself being visible in VFS.
+ *
+ * @note Only the context-aware operations (suffixed with `_p`) are used. `ops` (with all
+ *       its subcomponents) and `ctx` must stay valid for as long as the descriptor is in use.
+ */
+typedef struct esp_vfs_fs {
+    const esp_vfs_fs_ops_t *ops;    /*!< Filesystem operations, called with `ctx` as the first argument */
+    void *ctx;                      /*!< Instance context passed to the operations */
+    int flags;                      /*!< Instance properties, e.g. ESP_VFS_FLAG_READONLY_FS */
+} esp_vfs_fs_t;
+
+/**
+ * @brief Register a filesystem instance with VFS
+ *
+ * Equivalent to calling esp_vfs_register_fs() with `fs->ops`, `fs->ctx` and
+ * `fs->flags | ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC`.
+ *
+ * @param base_path  file path prefix, see esp_vfs_register_fs()
+ * @param fs         filesystem instance descriptor
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if `fs.ops` is NULL or base_path is invalid
+ *      - ESP_ERR_NO_MEM if too many filesystems are registered
+ */
+esp_err_t esp_vfs_register_fs_instance(const char *base_path, esp_vfs_fs_t fs);
+
 #if !defined(__DOXYGEN__)
   #pragma pop_macro("deprecated")
 #endif

@@ -82,6 +82,7 @@ Configuration Options
 The following configuration options are available for the FatFs component:
 
 * ``CONFIG_FATFS_LONG_FILENAMES`` - Selects how the FatFs library handles long filename (LFN) support. The available options are :menuitem:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` to disable LFN support and limit names to the `8.3 format <https://en.wikipedia.org/wiki/8.3_filename>`_ (SFN only), :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` to enable LFN support with the LFN working buffer stored on the heap (default), and :menuitem:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` to enable LFN support with the LFN working buffer stored on the stack. For details, see `FatFs filenames <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
+* ``CONFIG_FATFS_HEAP_CAPS`` - Selects the heap capabilities the VFS wrapper uses when it allocates sector windows and the long filename buffer. Shown when :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` or :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` is enabled. The caller supplies every one of those buffers, or none; the wrapper then allocates all of them and frees them with the instance. :menuitem:`CONFIG_FATFS_HEAP_CAPS_DEFAULT <CONFIG_FATFS_HEAP_CAPS_DEFAULT>` uses the same placement as other FatFs allocations, including DMA-capable memory when that is selected. :menuitem:`CONFIG_FATFS_HEAP_CAPS_INTERNAL <CONFIG_FATFS_HEAP_CAPS_INTERNAL>` uses internal RAM. :menuitem:`CONFIG_FATFS_HEAP_CAPS_SPIRAM <CONFIG_FATFS_HEAP_CAPS_SPIRAM>` prefers external RAM and falls back to internal RAM. Those two choices do not request DMA alignment.
 * :menuitem:`CONFIG_FATFS_VOLUME_COUNT` - Sets the number of logical FatFs volumes. Increasing this value can increase baseline memory usage.
 * :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - If enabled, the FatFs library prefers external RAM when allocating internal buffers. If external RAM allocation fails, it falls back to internal RAM. This can have a noticeable performance cost on hot I/O paths. Disable this option to prioritize performance; enable it to reduce internal RAM usage.
 * :menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - If enabled, the FatFs library tries to allocate heap work buffers in DMA-capable, cache-aligned memory first so SDMMC transfers avoid extra copies. This option is useful on targets that use PSRAM with SDMMC DMA (for example ESP32-P4). If this option and :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` are both enabled, the FatFs library tries DMA-capable RAM first, then external RAM, then internal RAM.
@@ -446,6 +447,62 @@ To unmount, follow these general steps:
 #. Remove the VFS registration and free the ``FATFS`` structure allocated in Step 1 of the mounting procedure by calling :cpp:func:`esp_vfs_fat_unregister_path` with the mount path.
 
 When calling low-level functions provided by the FatFs library, use paths without the mount-point prefix. For example, use ``"/hello.txt"``.
+
+.. _fatfs-instances:
+
+Use a FAT Filesystem Instance Without Mounting It
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The mount functions are built from three layers, each of which can be used directly on a :doc:`Block Device Layer <blockdev>` device:
+
+- :cpp:func:`esp_vfs_fat_init` / :cpp:func:`esp_vfs_fat_deinit` initialize a FAT filesystem instance in memory provided by the caller: an :cpp:type:`esp_vfs_fat_ctx_t` and the resources described by :cpp:type:`esp_vfs_fat_resources_t`. These can be static, on the heap, or in any other memory that outlives the instance.
+- :cpp:func:`esp_vfs_fat_create` / :cpp:func:`esp_vfs_fat_destroy` allocate that memory from the heap and then call the functions above.
+- :cpp:func:`esp_vfs_fat_mount` / :cpp:func:`esp_vfs_fat_unmount` additionally register the instance with the VFS. :cpp:func:`esp_vfs_fat_bdl_mount` / :cpp:func:`esp_vfs_fat_bdl_unmount` are equivalent.
+
+An initialized instance is usable before, or without, VFS registration. :cpp:func:`esp_vfs_fat_get_fs` returns an :cpp:type:`esp_vfs_fs_t` by value, holding the operations table, the context to pass to them, and VFS flags such as ``ESP_VFS_FLAG_READONLY_FS``. The descriptor can be registered with :cpp:func:`esp_vfs_register_fs_instance`, or kept by another filesystem that forwards calls to it. For example, an overlay filesystem can hold the descriptors of an upper and a lower FAT instance and register only itself. Such a filesystem is responsible for honoring the ``flags`` of the descriptors it holds, since the VFS enforces them only for registered entries.
+
+The resources are:
+
+- ``files``: an array of :cpp:type:`esp_vfs_fat_file_t`, one per file that may be open at the same time. Required.
+- ``sector_buffers``: the volume window and one sector buffer per file slot, :c:macro:`ESP_VFS_FAT_SECTOR_BUFFERS_SIZE` bytes. Used only if :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` is enabled; otherwise the buffers are part of the context and the file slots. The size depends on the sector size of the block device, which :cpp:func:`esp_vfs_fat_get_sector_size` returns; :c:macro:`ESP_VFS_FAT_MAX_SECTOR_SIZE` gives an upper bound for static allocation. The memory must meet the alignment and DMA requirements of the block device.
+- ``lfn_buffer``: the long file name working buffer, :c:macro:`ESP_VFS_FAT_LFN_BUFFER_SIZE` bytes, 2-byte aligned. Used only if :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` is selected.
+
+Supply every buffer this configuration uses, or leave them all NULL. With NULL buffers, the VFS wrapper allocates them using ``CONFIG_FATFS_HEAP_CAPS``: the volume window and the LFN buffer for the life of the instance, and each file's sector window only while that file is open. Buffers the caller supplies stay the caller's. The instance lock and the FatFs volume mutex are always allocated from the heap, when the instance is initialized, and freed when it is deinitialized; with caller-supplied buffers, file I/O does not use the heap. The fast seek table (see :ref:`CONFIG_FATFS_USE_FASTSEEK`) is part of each :cpp:type:`esp_vfs_fat_file_t`.
+
+.. code-block:: c
+
+    #define MAX_FILES 4
+
+    static esp_vfs_fat_ctx_t s_fat;
+    static esp_vfs_fat_file_t s_fat_files[MAX_FILES];
+    static uint8_t s_sector_buffers[ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(MAX_FILES, ESP_VFS_FAT_MAX_SECTOR_SIZE)] __attribute__((aligned(4)));
+    static uint16_t s_lfn_buffer[(ESP_VFS_FAT_LFN_BUFFER_SIZE + 1) / 2];
+
+    const esp_vfs_fat_resources_t res = {
+        .files = s_fat_files,
+        .max_files = MAX_FILES,
+        .sector_buffers = s_sector_buffers,
+        .sector_buffers_size = sizeof(s_sector_buffers),
+        .lfn_buffer = s_lfn_buffer,
+        .lfn_buffer_size = sizeof(s_lfn_buffer),
+    };
+    esp_vfs_fat_mount_config_t cfg = VFS_FAT_MOUNT_DEFAULT_CONFIG();
+    ESP_ERROR_CHECK(esp_vfs_fat_init(&s_fat, &res, bdl, &cfg));
+    ESP_ERROR_CHECK(esp_vfs_register_fs_instance("/data", esp_vfs_fat_get_fs(&s_fat)));
+    /* ... */
+    ESP_ERROR_CHECK(esp_vfs_unregister_fs("/data"));
+    ESP_ERROR_CHECK(esp_vfs_fat_deinit(&s_fat));
+
+Use :cpp:func:`esp_vfs_fat_ctx_info`, :cpp:func:`esp_vfs_fat_ctx_create_contiguous_file`, and :cpp:func:`esp_vfs_fat_ctx_test_contiguous_file` to query an instance that has no mount path.
+
+Notes:
+
+- The contents of :cpp:type:`esp_vfs_fat_ctx_t` and :cpp:type:`esp_vfs_fat_file_t` are private. The type is complete only so that it can be allocated; accessing its ``priv`` member outside the FatFs component produces a deprecation warning.
+- The instance does not take ownership of the block device. Release the device only after :cpp:func:`esp_vfs_fat_deinit`.
+- A block device can back only one instance at a time.
+- Every instance, mounted or not, uses one FatFs volume, so :ref:`CONFIG_FATFS_VOLUME_COUNT` limits the number of instances.
+- With all resources provided, initialization allocates only the instance lock and the FatFs volume mutex, and formatting, opening, reading, writing, seeking, and closing files do not allocate memory. Formatting uses the volume window as its work area. Directory iteration, rename, truncation, the contiguous file functions, and VFS registration still allocate.
+- Do not call :cpp:func:`esp_vfs_fat_deinit` while the instance is registered with the VFS or referenced by another filesystem.
 
 .. _fatfs-diskio-layer:
 
