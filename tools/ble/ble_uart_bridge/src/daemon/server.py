@@ -149,7 +149,7 @@ async def request(payload: BLEUARTRequestPayload) -> dict:
             # Wait for BLE device to respond
             try:
                 response = await asyncio.wait_for(response_future, timeout=payload.timeout)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise HTTPException(status_code=504, detail='Response timeout')
             except RuntimeError as e:
                 raise HTTPException(status_code=502, detail=str(e))

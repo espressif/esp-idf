@@ -19,7 +19,7 @@ async def has_accessible_bluetooth(timeout: float = 1.0) -> bool:
         await asyncio.wait_for(scanner.start(), timeout=timeout)
         started = True
         return True
-    except (BleakBluetoothNotAvailableError, BleakError, asyncio.TimeoutError):
+    except (TimeoutError, BleakBluetoothNotAvailableError, BleakError):
         logger.error('No available bluetooth host found on current machine!')
         return False
     finally:

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import print_function
 
 import argparse
 import struct
@@ -18,14 +17,14 @@ class ESPLogTraceParserError(RuntimeError):
         RuntimeError.__init__(self, message)
 
 
-class ESPLogTraceRecord(object):
+class ESPLogTraceRecord:
     def __init__(self, fmt_addr, log_args):
-        super(ESPLogTraceRecord, self).__init__()
+        super().__init__()
         self.fmt_addr = fmt_addr
         self.args = log_args
 
     def __repr__(self):
-        return 'fmt_addr = 0x%x, args = %d/%s' % (self.fmt_addr, len(self.args), self.args)
+        return f'fmt_addr = 0x{self.fmt_addr:x}, args = {len(self.args)}/{self.args}'
 
 
 def logtrace_parse(fname):
@@ -36,40 +35,40 @@ def logtrace_parse(fname):
     try:
         ftrc = open(fname, 'rb')
     except OSError as e:
-        raise ESPLogTraceParserError('Failed to open trace file (%s)!' % e)
+        raise ESPLogTraceParserError(f'Failed to open trace file ({e})!')
     # data_ok = True
     while True:
         # read args num and format str addr
         try:
             trc_buf = ftrc.read(ESP32_LOGTRACE_HDR_SZ)
-        except IOError as e:
-            raise ESPLogTraceParserError('Failed to read log record header (%s)!' % e)
+        except OSError as e:
+            raise ESPLogTraceParserError(f'Failed to read log record header ({e})!')
         if len(trc_buf) < ESP32_LOGTRACE_HDR_SZ:
             # print "EOF"
             if len(trc_buf) > 0:
-                print('Unprocessed %d bytes of log record header!' % len(trc_buf))
+                print(f'Unprocessed {len(trc_buf)} bytes of log record header!')
                 # data_ok = False
             break
         try:
-            nargs,fmt_addr = struct.unpack(ESP32_LOGTRACE_HDR_FMT, trc_buf)
+            nargs, fmt_addr = struct.unpack(ESP32_LOGTRACE_HDR_FMT, trc_buf)
         except struct.error as e:
-            raise ESPLogTraceParserError('Failed to unpack log record header (%s)!' % e)
+            raise ESPLogTraceParserError(f'Failed to unpack log record header ({e})!')
         # read args
-        args_sz = struct.calcsize('<%sL' % nargs)
+        args_sz = struct.calcsize(f'<{nargs}L')
         try:
             trc_buf = ftrc.read(args_sz)
-        except IOError as e:
-            raise ESPLogTraceParserError('Failed to read log record args (%s)!' % e)
+        except OSError as e:
+            raise ESPLogTraceParserError(f'Failed to read log record args ({e})!')
         if len(trc_buf) < args_sz:
             # print("EOF")
             if len(trc_buf) > 0:
-                print('Unprocessed %d bytes of log record args!' % len(trc_buf))
+                print(f'Unprocessed {len(trc_buf)} bytes of log record args!')
                 # data_ok = False
             break
         try:
-            log_args = struct.unpack('<%sL' % nargs, trc_buf)
+            log_args = struct.unpack(f'<{nargs}L', trc_buf)
         except struct.error as e:
-            raise ESPLogTraceParserError('Failed to unpack log record args (%s)!' % e)
+            raise ESPLogTraceParserError(f'Failed to unpack log record args ({e})!')
         # print(log_args)
         recs.append(ESPLogTraceRecord(fmt_addr, list(log_args)))
 
@@ -82,7 +81,7 @@ def logtrace_formated_print(recs, elfname, no_err):
     try:
         felf = elffile.ELFFile(open(elfname, 'rb'))
     except OSError as e:
-        raise ESPLogTraceParserError('Failed to open ELF file (%s)!' % e)
+        raise ESPLogTraceParserError(f'Failed to open ELF file ({e})!')
 
     for lrec in recs:
         fmt_str = apptrace.get_str_from_elf(felf, lrec.fmt_addr)
@@ -108,13 +107,12 @@ def logtrace_formated_print(recs, elfname, no_err):
             pass
         except Exception as e:
             if not no_err:
-                print('Print error (%s)' % e)
-                print('\nFmt = {%s}, args = %d/%s' % (fmt_str, len(lrec.args), lrec.args))
+                print(f'Print error ({e})')
+                print(f'\nFmt = {{{fmt_str}}}, args = {len(lrec.args)}/{lrec.args}')
     felf.stream.close()
 
 
 def main():
-
     parser = argparse.ArgumentParser(description='ESP32 Log Trace Parsing Tool')
 
     parser.add_argument('trace_file', help='Path to log trace file', type=str)
@@ -125,11 +123,11 @@ def main():
 
     # parse trace file
     try:
-        print("Parse trace file '%s'..." % args.trace_file)
+        print(f"Parse trace file '{args.trace_file}'...")
         lrecs = logtrace_parse(args.trace_file)
         print('Parsing completed.')
     except ESPLogTraceParserError as e:
-        print('Failed to parse log trace (%s)!' % e)
+        print(f'Failed to parse log trace ({e})!')
         sys.exit(2)
     # print recs
     # get format strings and print info
@@ -137,11 +135,11 @@ def main():
     try:
         logtrace_formated_print(lrecs, args.elf_file, args.no_errors)
     except ESPLogTraceParserError as e:
-        print('Failed to print log trace (%s)!' % e)
+        print(f'Failed to print log trace ({e})!')
         sys.exit(2)
     print('\n====================================================================\n')
 
-    print('Log records count: %d' % len(lrecs))
+    print(f'Log records count: {len(lrecs)}')
 
 
 if __name__ == '__main__':
