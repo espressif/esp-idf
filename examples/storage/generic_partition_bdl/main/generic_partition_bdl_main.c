@@ -131,7 +131,10 @@ static esp_err_t build_and_write_partition_table(esp_blockdev_handle_t disk)
     esp_ext_part_list_item_t partitions[EXAMPLE_PART_COUNT] = {
         /* The LittleFS MBR entry (type 0xC3) stores the filesystem block size in
          * the CHS "hack" field, passed via `.extra` + ESP_EXT_PART_FLAG_EXTRA.
-         * LittleFS in classic mode uses the BDL erase size as its block size. */
+         * It must be a power of two from 128 B to 1 MiB. LittleFS in classic mode
+         * uses the BDL erase size as its block size. The block size is required:
+         * esp_ext_part_match_mountable() does not match a LittleFS entry without
+         * one, so the partition would not be mounted below. */
         [EXAMPLE_PART_LITTLEFS] = {
             .info = {
                 .size = LITTLEFS_PARTITION_SIZE,
@@ -166,7 +169,7 @@ static esp_err_t build_and_write_partition_table(esp_blockdev_handle_t disk)
      *
      * `total_size` is the whole-disk size: the generator needs it to size the
      * SPI flash FILL (FAT) partition and to run its overlap / off-disk checks.
-     * (esp_ext_part_list_bdl_write() would auto-fill it from the device geometry
+     * (esp_mbr_bdl_write() would auto-fill it from the device geometry
      * when left 0, but the example sets it explicitly for clarity.) */
     esp_mbr_generate_extra_args_t gen_args = {
         .total_size = disk->geometry.disk_size,
@@ -183,14 +186,10 @@ static esp_err_t build_and_write_partition_table(esp_blockdev_handle_t disk)
         ESP_GOTO_ON_ERROR(esp_ext_part_list_insert(&part_list, &partitions[i]), cleanup, TAG, "insert partition entry %d", i);
     }
 
-    /* esp_ext_part_list_bdl_write() writes the raw 512-byte MBR without erasing
-     * first. On flash-like devices the target block must be erased beforehand. */
-    if (disk->device_flags.erase_before_write) {
-        ESP_GOTO_ON_ERROR(disk->ops->erase(disk, 0, disk->geometry.erase_size), cleanup, TAG, "erase MBR area");
-    }
-
-    ESP_GOTO_ON_ERROR(esp_ext_part_list_bdl_write(disk, &part_list, ESP_EXT_PART_LIST_SIGNATURE_MBR, &gen_args),
-                      cleanup, TAG, "write MBR");
+    /* esp_mbr_bdl_write() reads the first I/O unit of the disk, generates the MBR
+     * into it and writes it back, erasing first on erase-before-write devices
+     * such as SPI flash. */
+    ESP_GOTO_ON_ERROR(esp_mbr_bdl_write(disk, &part_list, &gen_args), cleanup, TAG, "write MBR");
 
 cleanup:
     esp_ext_part_list_deinit(&part_list);
@@ -256,6 +255,17 @@ void app_main(void)
     /* Step 3: read the partition table back and create a generic-partition BDL
      * for each entry, mounting the matching filesystem. */
     ESP_LOGI(TAG, "Reading MBR partition table back");
+
+    /* On a medium of unknown format, esp_ext_part_probe() tells which partition
+     * table it carries before choosing a parser. A GPT disk would also parse as
+     * an MBR (a single protective entry), so check for it explicitly. */
+    esp_ext_part_signature_type_t table_type;
+    ESP_ERROR_CHECK(esp_ext_part_probe(disk, &table_type));
+    if (table_type != ESP_EXT_PART_LIST_SIGNATURE_MBR) {
+        ESP_LOGE(TAG, "Disk does not carry an MBR partition table (format %d)", (int)table_type);
+        abort();
+    }
+
     esp_ext_part_list_t part_list = {0};
     esp_mbr_parse_extra_args_t parse_args = {
         .sector_size = ESP_EXT_PART_SECTOR_SIZE_512B,
@@ -263,10 +273,11 @@ void app_main(void)
          * we wrote). To have the parser drop non-mountable entries up front, set
          * .match = esp_ext_part_match_mountable() instead. */
     };
-    ESP_ERROR_CHECK(esp_ext_part_list_bdl_read(disk, &part_list, ESP_EXT_PART_LIST_SIGNATURE_MBR, &parse_args));
+    ESP_ERROR_CHECK(esp_mbr_bdl_read(disk, &part_list, &parse_args));
 
-    /* A LOSSY list means the parser could not represent every on-disk partition
-     * (e.g. it was filtered, or the table held more than the list can hold). */
+    /* A LOSSY list means the parser did not insert every used on-disk entry:
+     * entries were dropped by the `.match` filter, or were skipped as invalid
+     * (zero sectors, or a start at sector 0). */
     if (part_list.flags & ESP_EXT_PART_LIST_FLAG_LOSSY) {
         ESP_LOGW(TAG, "Parsed partition list is LOSSY (some entries were dropped)");
     }
@@ -290,8 +301,10 @@ void app_main(void)
     for (esp_ext_part_list_item_t *it = esp_ext_part_list_next_matching(NULL, &part_list, &mountable);
             it != NULL;
             it = esp_ext_part_list_next_matching(it, &part_list, &mountable), index++) {
-        ESP_LOGI(TAG, "Mountable partition %d: type=%u, address=0x%08llx, size=0x%08llx",
-                 index, (unsigned)it->info.type,
+        /* `slot` is the 1-based MBR table slot, i.e. the partition number a PC
+         * shows (sdX1..sdX4). */
+        ESP_LOGI(TAG, "Mountable partition %d: slot=%u, type=%u, address=0x%08llx, size=0x%08llx",
+                 index, (unsigned)it->info.slot, (unsigned)it->info.type,
                  (unsigned long long)it->info.address, (unsigned long long)it->info.size);
 
         /* FAT and LittleFS need different mount calls. */
