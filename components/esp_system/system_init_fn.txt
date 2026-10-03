@@ -132,7 +132,7 @@ SECONDARY: 160: esp_riscv_trace_early_init in components/esp_riscv_trace/src/esp
 
 # the rest of the components which are initialized from startup_funcs.c
 # [refactor-todo]: move init calls into respective components
-SECONDARY: 201: init_pm in components/esp_system/startup_funcs.c on BIT(0)
+SECONDARY: 201: init_pm in components/esp_pm/pm_impl.c on BIT(0)
 SECONDARY: 202: init_pm_flash_freq_limit in components/esp_pm/pm_c5_flash_freq_limit.c on BIT(0)
 SECONDARY: 203: init_apb_dma in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 204: init_coexist in components/esp_coex/src/coexist.c on BIT(0)

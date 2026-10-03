@@ -27,11 +27,6 @@
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 
-#if CONFIG_PM_ENABLE || CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED
-#include "esp_pm.h"
-#include "esp_private/pm_impl.h"
-#endif
-
 #include "esp_private/esp_clk.h"
 #include "esp_private/brownout.h"
 #include "esp_private/vbat.h"
@@ -113,14 +108,6 @@ ESP_SYSTEM_INIT_FN(init_xt_wdt, CORE, BIT(0), 170)
     return esp_xt_wdt_init(&cfg);
 }
 #endif // CONFIG_ESP_XT_WDT
-
-#if CONFIG_PM_ENABLE
-ESP_SYSTEM_INIT_FN(init_pm, SECONDARY, BIT(0), 201)
-{
-    esp_pm_impl_init();
-    return ESP_OK;
-}
-#endif // CONFIG_PM_ENABLE
 
 #if SOC_APB_BACKUP_DMA
 ESP_SYSTEM_INIT_FN(init_apb_dma, SECONDARY, BIT(0), 203)
