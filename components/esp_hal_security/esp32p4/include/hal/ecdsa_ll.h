@@ -22,6 +22,15 @@ extern "C" {
 #endif
 
 /**
+ * Note: SOC_ECDSA_SUPPORT_CURVE_P384 describes the silicon capability; ECDSA_LL_HAS_CURVE_P384
+ * reflects availability relative to the configured min revision.
+ */
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+// Rev 3.00+: the ECDSA peripheral supports the SECP384R1 curve
+#define ECDSA_LL_HAS_CURVE_P384    (1)
+#endif
+
+/**
  * @brief Memory blocks of ECDSA parameters
  */
 typedef enum {

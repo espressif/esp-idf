@@ -22,4 +22,5 @@ config HAL_ECDSA_ALLOW_ESP32P4_PRE_ECO5
         side-channel attacks.
 
         Note that the SECP384R1 curve is not supported by the ECDSA peripheral on these
-        revisions.
+        revisions. SECP384R1 signature verification falls back to software, and hardware
+        signing with SECP384R1 keys is rejected.
