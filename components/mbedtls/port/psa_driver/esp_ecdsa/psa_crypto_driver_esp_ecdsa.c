@@ -36,6 +36,11 @@
 #include "hal/ecdsa_ll.h"
 #endif /* SOC_ECDSA_SUPPORTED */
 
+/* On ESP32-P4 the ECDSA peripheral only supports SECP384R1 from revision v3.0 */
+#if SOC_ECDSA_SUPPORT_CURVE_P384 && (!defined(CONFIG_IDF_TARGET_ESP32P4) || ECDSA_LL_HAS_CURVE_P384)
+#define ESP_ECDSA_HW_SUPPORT_CURVE_P384 1
+#endif
+
 #if SOC_ECC_SUPPORTED
 #include "hal/ecc_ll.h"
 #include "ecc_impl.h"
@@ -251,7 +256,7 @@ static esp_ecdsa_curve_t psa_bits_to_ecdsa_curve(size_t key_len)
             return ESP_ECDSA_CURVE_SECP192R1;
         case ECDSA_KEY_LEN_P256:
             return ESP_ECDSA_CURVE_SECP256R1;
-#if SOC_ECDSA_SUPPORT_CURVE_P384
+#if ESP_ECDSA_HW_SUPPORT_CURVE_P384
         case ECDSA_KEY_LEN_P384:
             return ESP_ECDSA_CURVE_SECP384R1;
 #endif
@@ -269,7 +274,7 @@ static ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
     switch (curve) {
         case ESP_ECDSA_CURVE_SECP192R1: return ECDSA_CURVE_SECP192R1;
         case ESP_ECDSA_CURVE_SECP256R1: return ECDSA_CURVE_SECP256R1;
-#if SOC_ECDSA_SUPPORT_CURVE_P384
+#if ESP_ECDSA_HW_SUPPORT_CURVE_P384
         case ESP_ECDSA_CURVE_SECP384R1: return ECDSA_CURVE_SECP384R1;
 #endif
         default: return (ecdsa_curve_t)-1;
