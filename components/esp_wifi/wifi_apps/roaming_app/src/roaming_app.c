@@ -80,6 +80,8 @@ static bool trigger_network_assisted_roam(void);
 static void init_periodic_scan_roam_event(void);
 static void roaming_app_periodic_scan_internal_handler(void *data, void *ctx);
 #endif
+static void init_periodic_rssi_event(void);
+static void roaming_app_periodic_rssi_internal_handler(void *data, void *ctx);
 #if LOW_RSSI_ROAMING_ENABLED
 static void roaming_app_rssi_low_internal_handler(void *ctx, void *data);
 #endif
@@ -95,6 +97,7 @@ static const char *ROAMING_TAG = "ROAM";
 #define LOW_RSSI_ROAM_DIFF_MIN 1
 #define LOW_RSSI_ROAM_DIFF_MAX 99
 #define ROAMING_PENDING_TIMEOUT_USER_DATA_MAX 16
+#define CONNECTED_AP_RSSI_LOG_INTERVAL_SEC 7
 
 static void *s_pending_timeout_user_data[ROAMING_PENDING_TIMEOUT_USER_DATA_MAX];
 
@@ -619,6 +622,8 @@ static void roaming_app_stop_periodic_monitors(void)
     g_roaming_app.periodic_scan_active = false;
     eloop_cancel_timeout(roaming_app_periodic_scan_internal_handler, NULL, NULL);
 #endif
+    g_roaming_app.periodic_rssi_active = false;
+    eloop_cancel_timeout(roaming_app_periodic_rssi_internal_handler, NULL, NULL);
 }
 
 static void roaming_app_set_disconnected_state(const wifi_event_sta_disconnected_t *disconn)
@@ -801,6 +806,10 @@ static void roaming_app_apply_runtime_config(void)
         init_periodic_scan_roam_event();
     }
 #endif /*PERIODIC_SCAN_MONITORING*/
+
+    if (g_roaming_app.sta_connected) {
+        init_periodic_rssi_event();
+    }
 }
 
 static void roaming_app_invalidate_scan_cache(void)
@@ -1081,6 +1090,16 @@ static void init_periodic_scan_roam_event(void)
     g_roaming_app.periodic_scan_active = true;
 }
 #endif /*PERIODIC_SCAN_MONITORING*/
+
+static void init_periodic_rssi_event(void)
+{
+    if (eloop_register_timeout(CONNECTED_AP_RSSI_LOG_INTERVAL_SEC, 0,
+                               roaming_app_periodic_rssi_internal_handler, NULL, NULL)) {
+        ESP_LOGE(ROAMING_TAG, "Could not register periodic RSSI log event");
+        return;
+    }
+    g_roaming_app.periodic_rssi_active = true;
+}
 
 static void roaming_app_disconnected_event_handler(void *ctx, void *data)
 {
@@ -2526,6 +2545,34 @@ static void roaming_app_periodic_scan_internal_handler(void *data, void *ctx)
     }
 }
 #endif /*PERIODIC_SCAN_MONITORING*/
+
+static void roaming_app_periodic_rssi_internal_handler(void *data, void *ctx)
+{
+    (void) data;
+    (void) ctx;
+
+    if (!g_roaming_app.app_active) {
+        return;
+    }
+
+    if (g_roaming_app.periodic_rssi_active) {
+        if (g_roaming_app.sta_connected) {
+            wifi_ap_record_t ap_info = {0};
+
+            if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+                ESP_LOGI(ROAMING_TAG, "Connected AP RSSI=%d BSSID=" MACSTR " channel=%d",
+                         ap_info.rssi,
+                         MAC2STR(ap_info.bssid),
+                         ap_info.primary);
+            }
+        }
+
+        if (eloop_register_timeout(CONNECTED_AP_RSSI_LOG_INTERVAL_SEC, 0,
+                                   roaming_app_periodic_rssi_internal_handler, NULL, NULL)) {
+            ESP_LOGE(ROAMING_TAG, "Could not register periodic RSSI log event.");
+        }
+    }
+}
 static bool validate_scan_chan_list(const char* scan_chan_list)
 {
     regex_t regex;
