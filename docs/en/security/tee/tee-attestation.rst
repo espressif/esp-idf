@@ -171,6 +171,12 @@ EAT: Software Measurement
     * - Secure Padding status
       -
       - For more details, refer :ref:`here <secure_padding>`.
+    * - Digest: Code hash
+      - SHA256 of the image segments alone, leaving out the packaging metadata (image header, app descriptor, checksum and appended digest)
+      - Applicable only to the TEE; matches the host-side tool :component_file:`esp_tee/scripts/esp_tee_code_hash/esp_tee_code_hash.py`
+    * - Digest: Code hash version
+      - Version of the definition used for the code hash
+      - Applicable only to the TEE; ``0`` means the claim is absent
 
 
 Sample EAT in JSON format
@@ -201,8 +207,8 @@ Sample EAT in JSON format
       "sw_claims": {
         "tee": {
           "type": 1,
-          "ver": "v0.3.0",
-          "idf_ver": "v5.1.2-139-g07d83a7ced",
+          "ver": "1.2.0~v6.2.0",
+          "idf_ver": "v6.2-dev-3162-g9aa4f93857d",
           "secure_ver": 0,
           "secure_ver_efuse": 0,
           "part_chip_rev": {
@@ -214,13 +220,15 @@ Sample EAT in JSON format
             "calc_digest": "f732e7f285b7de7ac3167a867711eddbf17a2a05513d35e41cd1ebf2e0958b2e",
             "digest_validated": true,
             "sign_verified": true,
-            "secure_padding": true
+            "secure_padding": true,
+            "calc_code_hash": "33e9d223e4f861e9f7a9f5209ee27cd4f69894bcfcd76bd96bb90c98795a24cd",
+            "code_hash_ver": 1
           }
         },
         "app": {
           "type": 2,
           "ver": "v0.1.0",
-          "idf_ver": "v5.1.2-139-g07d83a7ced",
+          "idf_ver": "v6.2-dev-3162-g9aa4f93857d",
           "secure_ver": 0,
           "secure_ver_efuse": 0,
           "part_chip_rev": {
