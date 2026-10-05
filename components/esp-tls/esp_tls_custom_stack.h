@@ -25,7 +25,7 @@ extern "C" {
  * when registering a custom TLS stack. It allows ESP-TLS to detect incompatible
  * interface changes between ESP-IDF versions and custom stack implementations.
  */
-#define ESP_TLS_STACK_OPS_VERSION 1
+#define ESP_TLS_STACK_OPS_VERSION 2
 
 /**
  * @brief TLS stack operations vtable
@@ -321,6 +321,24 @@ typedef struct esp_tls_stack_ops {
     const int *(*get_ciphersuites_list)(void *user_ctx);
 
     /**
+     * @brief Get list of supported groups (optional)
+     *
+     * This function returns a list of IANA supported group identifiers, the named groups
+     * that the stack can use for key exchange. This is used by the
+     * esp_tls_get_supported_groups_list() API.
+     *
+     * @param user_ctx User context pointer passed to esp_tls_register_stack()
+     *
+     * @return Pointer to zero-terminated array of IANA supported group identifiers.
+     *         The array must be terminated with 0.
+     *
+     * @note The returned pointer should point to static/const data (not dynamically allocated).
+     * @note Group identifiers are IANA standard values (e.g., 0x0017 for secp256r1).
+     * @note This field can be NULL. esp_tls_get_supported_groups_list() then returns NULL.
+     */
+    const uint16_t *(*get_supported_groups_list)(void *user_ctx);
+
+    /**
      * @brief Get client session (optional, for session ticket support)
      *
      * This function retrieves the client session ticket/session data that can be reused
@@ -532,9 +550,9 @@ typedef struct esp_tls_stack_ops {
  * Compile-time check to detect structure layout changes.
  * If this assertion fails, you MUST increment ESP_TLS_STACK_OPS_VERSION.
  *
- * Field count: 1 (version) + 23 (function pointers) = 24
+ * Field count: 1 (version) + 24 (function pointers) = 25
  */
-ESP_STATIC_ASSERT(sizeof(esp_tls_stack_ops_t) == 24 * sizeof(void *), "esp_tls_stack_ops_t layout changed - update ESP_TLS_STACK_OPS_VERSION!");
+ESP_STATIC_ASSERT(sizeof(esp_tls_stack_ops_t) == 25 * sizeof(void *), "esp_tls_stack_ops_t layout changed - update ESP_TLS_STACK_OPS_VERSION!");
 
 /**
  * @brief Register a custom TLS stack implementation
@@ -578,6 +596,7 @@ ESP_STATIC_ASSERT(sizeof(esp_tls_stack_ops_t) == 24 * sizeof(void *), "esp_tls_s
  *            - server_session_init (server-side, can be NULL if server_session_create is provided)
  *            - server_session_continue_async (server-side, can be NULL if server_session_create is provided)
  *            - server_session_delete (server-side, can be NULL, conn_delete will be used)
+ *            - get_supported_groups_list (list of named groups for key exchange)
  * @param user_ctx User context pointer that will be passed to all callbacks as the first parameter.
  *                 This allows C++ implementations to avoid singletons by passing instance pointers.
  *                 Can be NULL if not needed.
@@ -695,6 +714,9 @@ void esp_tls_custom_stack_free_global_ca_store(void);
 
 /** @brief Get list of supported ciphersuites */
 const int *esp_tls_custom_stack_get_ciphersuites_list(void);
+
+/** @brief Get list of supported groups. Returns NULL if the stack does not provide the list. */
+const uint16_t *esp_tls_custom_stack_get_supported_groups_list(void);
 
 /** @brief Get client session ticket for reuse */
 void *esp_tls_custom_stack_get_client_session(esp_tls_t *tls);

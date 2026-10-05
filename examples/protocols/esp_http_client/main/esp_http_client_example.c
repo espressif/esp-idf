@@ -18,6 +18,8 @@
 #include "protocol_examples_common.h"
 #include "protocol_examples_utils.h"
 #include "esp_tls.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/ssl_ciphersuites.h"
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
 #endif
@@ -1049,8 +1051,84 @@ static void http_partial_download(void)
 }
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
+/* Log the ciphersuites and the groups that the TLS stack supports. The lists
+ * come from the modules and the curves that are enabled in menuconfig. A list
+ * that is set on a connection must be a subset of these lists.
+ */
+static void log_supported_tls_lists(void)
+{
+    const int *ciphersuites = esp_tls_get_ciphersuites_list();
+    ESP_LOGI(TAG, "Supported ciphersuites:");
+    for (size_t i = 0; ciphersuites != NULL && ciphersuites[i] != 0; i++) {
+        ESP_LOGI(TAG, "  0x%04x %s", (unsigned)ciphersuites[i],
+                 mbedtls_ssl_get_ciphersuite_name(ciphersuites[i]));
+    }
+
+    const uint16_t *groups = esp_tls_get_supported_groups_list();
+    ESP_LOGI(TAG, "Supported groups:");
+    for (size_t i = 0; groups != NULL && groups[i] != MBEDTLS_SSL_IANA_TLS_GROUP_NONE; i++) {
+        ESP_LOGI(TAG, "  0x%04x", (unsigned)groups[i]);
+    }
+}
+
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+/* Ciphersuites that this example offers. The list holds one suite for an RSA
+ * server certificate and one for an ECDSA server certificate. It adds a TLS 1.3
+ * suite when TLS 1.3 is enabled, because a TLS 1.2 only list makes a TLS 1.3
+ * handshake fail. Every listed suite must have its modules enabled in
+ * menuconfig, or the handshake ignores the suite.
+ */
+static const int s_ciphersuites_list[] = {
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+    MBEDTLS_TLS1_3_AES_128_GCM_SHA256,
+#endif
+    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+    0,
+};
+
+/* Named groups that this example offers for key exchange. A list that excludes
+ * the group of the server costs one HelloRetryRequest in TLS 1.3, and fails the
+ * handshake in TLS 1.2.
+ */
+static const uint16_t s_groups_list[] = {
+    MBEDTLS_SSL_IANA_TLS_GROUP_X25519,
+    MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1,
+    MBEDTLS_SSL_IANA_TLS_GROUP_NONE,
+};
+
+/* Restrict the ciphersuites and the groups of one connection. The restriction
+ * applies to this client only. Both arrays are static, because esp_http_client
+ * keeps the pointers and does not copy the arrays.
+ */
+static void https_with_restricted_tls_lists(void)
+{
+    esp_http_client_config_t config = {
+        .url = "https://www.howsmyssl.com/a/check",
+        .event_handler = _http_event_handler,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+        .timeout_ms = 5000,
+        .ciphersuites_list = s_ciphersuites_list,
+        .groups_list = s_groups_list,
+    };
+    ESP_LOGI(TAG, "HTTPS request with a restricted ciphersuite and group list =>");
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %"PRId64,
+                 esp_http_client_get_status_code(client),
+                 esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+}
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+
 static void http_test_task(void *pvParameters)
 {
+    log_supported_tls_lists();
     http_rest_with_url();
     http_rest_with_hostname_path();
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
@@ -1081,6 +1159,7 @@ static void http_test_task(void *pvParameters)
     http_chunked_request_async();
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     http_partial_download();
+    https_with_restricted_tls_lists();
 #endif
 
     ESP_LOGI(TAG, "Finish http example");

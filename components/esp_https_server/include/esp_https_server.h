@@ -164,6 +164,13 @@ struct httpd_ssl_config {
      *  Please check the list validity by esp_tls_get_ciphersuites_list() API.
      *  This allows per-server cipher suite configuration. */
     const int *ciphersuites_list;
+
+    /** Pointer to a zero-terminated array of IANA identifiers of TLS supported groups,
+     *  the named groups that are used for key exchange.
+     *  Please check the list validity by esp_tls_get_supported_groups_list() API.
+     *  The array is not copied. It must stay valid for the lifetime of the server.
+     *  This allows per-server group configuration. */
+    const uint16_t *groups_list;
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
@@ -242,6 +249,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .tls_handshake_timeout_ms = 0,                \
     .tls_version = ESP_TLS_VER_ANY,               \
     .ciphersuites_list = NULL,                    \
+    .groups_list = NULL,                          \
 }
 
 /**

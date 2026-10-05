@@ -304,6 +304,7 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
 
     cfg->tls_version = config->tls_version;
     cfg->ciphersuites_list = config->ciphersuites_list;
+    cfg->groups_list = config->groups_list;
 
 #if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
     cfg->cert_select_cb = config->cert_select_cb;

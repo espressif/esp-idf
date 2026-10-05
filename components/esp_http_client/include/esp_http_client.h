@@ -9,6 +9,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
+#include <stdint.h>
 #include "esp_err.h"
 #include "esp_key_config.h"
 #include <sys/socket.h>
@@ -238,6 +239,14 @@ typedef struct {
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
     const char                  **alpn_protos;       /*!< Application protocols required for HTTP2. If HTTP2/ALPN support is required, a list of protocols that should be negotiated. The format is length followed by protocol
                                                      name. For the most common cases the following is ok: const char **alpn_protos = { "h2", NULL }; - where 'h2' is the protocol name */
+    const int                   *ciphersuites_list;  /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
+                                                          The array is not copied. It must stay valid until the client is cleaned up.
+                                                          Please check the list validity by esp_tls_get_ciphersuites_list() API.
+                                                          NULL keeps the default ciphersuites. */
+    const uint16_t              *groups_list;        /*!< Pointer to a zero-terminated array of IANA identifiers of TLS supported groups,
+                                                          the named groups that are used for key exchange. The array is not copied. It must
+                                                          stay valid until the client is cleaned up. Please check the list validity by
+                                                          esp_tls_get_supported_groups_list() API. NULL keeps the default groups. */
 #endif
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     void *ds_data;                          /*!< Pointer for digital signature peripheral context, see ESP-TLS Documentation for more details */

@@ -165,6 +165,16 @@ const int *esp_tls_custom_stack_get_ciphersuites_list(void)
     return s_esp_tls_custom_stack->get_ciphersuites_list(s_esp_tls_custom_stack_user_ctx);
 }
 
+const uint16_t *esp_tls_custom_stack_get_supported_groups_list(void)
+{
+    /* This operation is optional. A stack that does not implement it reports no list. */
+    if (s_esp_tls_custom_stack == NULL || !s_esp_tls_custom_stack->get_supported_groups_list) {
+        ESP_LOGD(TAG, "No TLS stack registered or supported groups list not available.");
+        return NULL;
+    }
+    return s_esp_tls_custom_stack->get_supported_groups_list(s_esp_tls_custom_stack_user_ctx);
+}
+
 void *esp_tls_custom_stack_get_client_session(esp_tls_t *tls)
 {
     if (s_esp_tls_custom_stack == NULL || !s_esp_tls_custom_stack->get_client_session) {

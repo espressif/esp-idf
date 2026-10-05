@@ -7,6 +7,7 @@
 #define _ESP_TLS_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "esp_err.h"
 #include "esp_tls_errors.h"
 #include "esp_key_config.h"
@@ -241,8 +242,9 @@ typedef struct esp_tls_cfg {
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 
     esp_tls_addr_family_t addr_family;      /*!< The address family to use when connecting to a host. */
-    const int *ciphersuites_list;           /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
-                                                Please check the list validity by esp_tls_get_ciphersuites_list() API */
+    const int *ciphersuites_list;           /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites. */
+    const uint16_t *groups_list;            /*!< Pointer to a zero-terminated array of IANA identifiers of TLS supported groups
+                                                The array is not copied. It must stay valid for the lifetime of the connection. */
     esp_tls_proto_ver_t tls_version;        /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
 
 #if CONFIG_MBEDTLS_DYNAMIC_BUFFER
@@ -387,6 +389,12 @@ typedef struct esp_tls_cfg_server {
     const int *ciphersuites_list;               /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
                                                      Please check the list validity by esp_tls_get_ciphersuites_list() API.
                                                      This allows per-server cipher suite configuration. */
+
+    const uint16_t *groups_list;                /*!< Pointer to a zero-terminated array of IANA identifiers of TLS supported groups
+                                                     (named groups for key exchange, formerly named curves).
+                                                     The array is not copied. It must stay valid for the lifetime of the connection.
+                                                     Please check the list validity by esp_tls_get_supported_groups_list() API.
+                                                     This allows per-server group configuration. */
 } esp_tls_cfg_server_t;
 
 /**
@@ -739,12 +747,19 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void);
 /**
  * @brief Get supported TLS ciphersuites list.
  *
- * See https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-4 for the list of ciphersuites
- *
  * @return  Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
  *
  */
 const int *esp_tls_get_ciphersuites_list(void);
+
+/**
+ * @brief Get supported TLS groups list.
+ *
+ * @return  Pointer to a zero-terminated array of IANA identifiers of TLS supported groups,
+ *          or NULL if the configured TLS stack does not report the list.
+ *
+ */
+const uint16_t *esp_tls_get_supported_groups_list(void);
 
 /**
  * @brief      Initialize server side TLS/SSL connection

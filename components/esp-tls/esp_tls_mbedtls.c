@@ -758,6 +758,23 @@ void esp_mbedtls_server_session_ticket_ctx_free(esp_tls_server_session_ticket_ct
 }
 #endif
 
+/**
+ * @brief Apply a user-provided list of TLS supported groups to an mbedtls configuration.
+ *
+ * The list is owned by the caller. mbedtls keeps the pointer, it does not copy the array,
+ * so the array must stay valid for the lifetime of the connection.
+ * An empty list is treated as "not configured", because mbedtls reads a zero-terminated array.
+ */
+static void set_groups_list(mbedtls_ssl_config *conf, const uint16_t *groups_list)
+{
+    if (groups_list == NULL || groups_list[0] == MBEDTLS_SSL_IANA_TLS_GROUP_NONE) {
+        ESP_LOGD(TAG, "No custom supported groups provided - using default");
+        return;
+    }
+    ESP_LOGD(TAG, "Set the supported groups list (user-provided)");
+    mbedtls_ssl_conf_groups(conf, groups_list);
+}
+
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 {
     assert(cfg != NULL);
@@ -965,6 +982,8 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     } else {
         ESP_LOGD(TAG, "No custom cipher suites provided - using default");
     }
+    set_groups_list(&tls->conf, cfg->groups_list);
+
     return ESP_OK;
 }
 
@@ -1244,6 +1263,8 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         ESP_LOGD(TAG, "Set the ciphersuites list");
         mbedtls_ssl_conf_ciphersuites(&tls->conf, cfg->ciphersuites_list);
     }
+    set_groups_list(&tls->conf, cfg->groups_list);
+
     return ESP_OK;
 }
 
@@ -1397,6 +1418,11 @@ void esp_mbedtls_free_global_ca_store(void)
 const int *esp_mbedtls_get_ciphersuites_list(void)
 {
     return mbedtls_ssl_list_ciphersuites();
+}
+
+const uint16_t *esp_mbedtls_get_supported_groups_list(void)
+{
+    return mbedtls_ssl_get_supported_group_list();
 }
 
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
