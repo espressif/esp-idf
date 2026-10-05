@@ -155,6 +155,7 @@ struct roaming_app {
 #if PERIODIC_SCAN_MONITORING
     bool periodic_scan_active;
 #endif
+    bool periodic_rssi_active;
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     struct blacklist_entry {
         uint8_t bssid[ETH_ALEN];
