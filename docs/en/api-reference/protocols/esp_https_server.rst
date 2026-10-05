@@ -94,6 +94,22 @@ When enabled, you can set the certificate selection callback using the :cpp:memb
     };
 
 
+TLS Ciphersuites and Supported Groups
+-------------------------------------
+
+The ciphersuites and the supported groups of the server can be set in :cpp:type:`httpd_ssl_config_t`. Both lists apply to this server instance only. Please refer to the **TLS Ciphersuites** section and to the **TLS Supported Groups** section in the :doc:`/api-reference/protocols/esp_tls` for more details.
+
+The server keeps a pointer to each array. It does not copy the arrays. Each array must end with 0 and must stay valid for the lifetime of the server.
+
+.. code-block:: c
+
+    static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0};
+    static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
+
+    httpd_ssl_config_t cfg = HTTPD_SSL_CONFIG_DEFAULT();
+    cfg.ciphersuites_list = ciphersuites_list;
+    cfg.groups_list = groups_list;
+
 API Reference
 -------------
 

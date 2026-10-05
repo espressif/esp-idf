@@ -207,6 +207,20 @@ void esp_transport_ssl_set_common_name(esp_transport_handle_t t, const char *com
 void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int *ciphersuites_list);
 
 /**
+ * @brief      Set the list of supported groups for the TLS connection
+ *
+ * @note       This function stores a pointer to the data rather than making a copy.
+ *             Therefore, the data must remain valid until the connection is cleaned up.
+ *             The `groups_list` is a pointer to a zero-terminated array of IANA identifiers
+ *             of TLS supported groups, the named groups that are used for key exchange.
+ *             You can verify the validity of the list using the `esp_tls_get_supported_groups_list()` API.
+ *
+ * @param      t            SSL transport
+ * @param[in]  groups_list  A pointer to a zero-terminated array of IANA identifiers of TLS supported groups
+ */
+void esp_transport_ssl_set_groups_list(esp_transport_handle_t t, const uint16_t *groups_list);
+
+/**
  * @brief      Set the ssl context to use secure element (atecc608a) for client(device) private key and certificate
  *
  * @deprecated No longer functional; the TLS connection will fail with ESP_ERR_NOT_SUPPORTED when

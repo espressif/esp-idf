@@ -502,6 +502,12 @@ void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int
     ssl->cfg.ciphersuites_list = ciphersuites_list;
 }
 
+void esp_transport_ssl_set_groups_list(esp_transport_handle_t t, const uint16_t *groups_list)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.groups_list = groups_list;
+}
+
 /* Deprecated and non-functional; kept only for source compatibility. Setting
  * use_secure_element makes the connection fail with ESP_ERR_NOT_SUPPORTED. */
 void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)

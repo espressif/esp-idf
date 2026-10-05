@@ -143,6 +143,7 @@ To use a custom TLS stack in your project, follow these steps:
    * ``server_session_init`` - Initialize server session (server-side, can be NULL if server_session_create is provided)
    * ``server_session_continue_async`` - Continue async server handshake (server-side, can be NULL if server_session_create is provided)
    * ``server_session_delete`` - Delete server session (server-side, can be NULL, conn_delete will be used)
+   * ``get_supported_groups_list`` - Get list of supported groups (can be NULL, the list is then reported as unavailable)
 
 3. Create a static/global structure containing your function implementations:
 
@@ -422,6 +423,31 @@ You can set ``ciphersuites_list`` in the :cpp:type:`esp_tls_cfg_t` structure dur
     };
 
 ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you should call :cpp:func:`esp_tls_get_ciphersuites_list` to get ciphersuites list supported in the TLS stack and cross-check it against the supplied list.
+
+.. note::
+
+   This feature is supported only in the MbedTLS stack.
+
+TLS Supported Groups
+--------------------
+
+ESP-TLS provides the ability to set a supported groups list. The groups are the named groups that are used for key exchange, formerly named curves. The list informs the peer about the groups that are offered for the specific TLS connection, regardless of the TLS stack configuration. The list applies to the client mode and to the server mode.
+
+You can set ``groups_list`` in the :cpp:type:`esp_tls_cfg_t` structure, or in the :cpp:type:`esp_tls_cfg_server_t` structure, as follows:
+
+.. code-block:: c
+
+    /* groups_list must end with 0 and must be available in the memory scope active during the entire TLS connection */
+    static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
+    esp_tls_cfg_t cfg = {
+        .groups_list = groups_list,
+    };
+
+ESP-TLS will not check the validity of ``groups_list`` that was set, you should call :cpp:func:`esp_tls_get_supported_groups_list` to get the groups list supported in the TLS stack and cross-check it against the supplied list.
+
+.. note::
+
+   A group list that excludes the group of the peer costs one HelloRetryRequest in TLS 1.3. In TLS 1.2 the handshake fails.
 
 .. note::
 

@@ -84,6 +84,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_get_global_ca_store        esp_mbedtls_get_global_ca_store
 #define _esp_tls_free_global_ca_store       esp_mbedtls_free_global_ca_store
 #define _esp_tls_get_ciphersuites_list      esp_mbedtls_get_ciphersuites_list
+#define _esp_tls_get_supported_groups_list  esp_mbedtls_get_supported_groups_list
 #elif CONFIG_ESP_TLS_CUSTOM_STACK
 #define _esp_create_ssl_handle              esp_tls_custom_stack_create_ssl_handle
 #define _esp_tls_handshake                  esp_tls_custom_stack_handshake
@@ -106,6 +107,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_get_global_ca_store        esp_tls_custom_stack_get_global_ca_store
 #define _esp_tls_free_global_ca_store       esp_tls_custom_stack_free_global_ca_store
 #define _esp_tls_get_ciphersuites_list      esp_tls_custom_stack_get_ciphersuites_list
+#define _esp_tls_get_supported_groups_list  esp_tls_custom_stack_get_supported_groups_list
 #else
 #error "No TLS stack configured"
 #endif
@@ -691,6 +693,11 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 const int *esp_tls_get_ciphersuites_list(void)
 {
     return _esp_tls_get_ciphersuites_list();
+}
+
+const uint16_t *esp_tls_get_supported_groups_list(void)
+{
+    return _esp_tls_get_supported_groups_list();
 }
 
 esp_err_t esp_tls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)

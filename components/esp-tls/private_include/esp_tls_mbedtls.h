@@ -145,3 +145,8 @@ void esp_mbedtls_free_global_ca_store(void);
  * Internal Callback for esp_tls_get_ciphersuites_list
  */
 const int *esp_mbedtls_get_ciphersuites_list(void);
+
+/**
+ * Internal Callback for esp_tls_get_supported_groups_list
+ */
+const uint16_t *esp_mbedtls_get_supported_groups_list(void);

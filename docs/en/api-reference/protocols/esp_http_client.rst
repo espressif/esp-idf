@@ -242,6 +242,25 @@ The TLS protocol version for the HTTP client can be configured as follows:
             .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
         };
 
+TLS Ciphersuites and Supported Groups
+-------------------------------------
+
+The ciphersuites and the supported groups of the underlying TLS connection can be set in :cpp:type:`esp_http_client_config_t`. Both lists apply to this client only. Please refer to the **TLS Ciphersuites** section and to the **TLS Supported Groups** section in the :doc:`/api-reference/protocols/esp_tls` for more details.
+
+The client keeps a pointer to each array. It does not copy the arrays. Each array must end with 0 and must stay valid until :cpp:func:`esp_http_client_cleanup` is called.
+
+    .. code-block:: c
+
+        #include "esp_http_client.h"
+        static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0};
+        static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
+        esp_http_client_config_t config = {
+            .ciphersuites_list = ciphersuites_list,
+            .groups_list = groups_list,
+        };
+
+Call :cpp:func:`esp_tls_get_ciphersuites_list` and :cpp:func:`esp_tls_get_supported_groups_list` to get the lists that the TLS stack supports, and cross-check them against the supplied lists.
+
 API Reference
 -------------
 

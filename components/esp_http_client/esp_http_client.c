@@ -1016,6 +1016,14 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     if (config->common_name) {
         esp_transport_ssl_set_common_name(ssl, config->common_name);
     }
+
+    if (config->ciphersuites_list) {
+        esp_transport_ssl_set_ciphersuites_list(ssl, config->ciphersuites_list);
+    }
+
+    if (config->groups_list) {
+        esp_transport_ssl_set_groups_list(ssl, config->groups_list);
+    }
 #endif
 
     if (_set_config(client, config) != ESP_OK) {
