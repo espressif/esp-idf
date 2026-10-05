@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
+import json
 import os
 import pathlib
+import shlex
 import sys
 from typing import Any
 from unittest import mock
@@ -11,6 +13,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+import idf  # noqa: E402
+from idf_py_actions.build_file_ext import _compute_project_hash  # noqa: E402
 from idf_py_actions.tools import PropertyDict  # noqa: E402
 from idf_py_actions.tools import RunTool  # noqa: E402
 from idf_py_actions.tools import get_selected_target  # noqa: E402
@@ -192,6 +196,82 @@ class TestMonitorPortDetection:
         assert stdin.name == str(command_file_path)
         # File should be closed after RunTool returns
         assert stdin.closed
+
+
+def _make_built_project(project_dir: pathlib.Path) -> None:
+    """Create a project built for the linux target, so that the monitor needs no serial port."""
+    (project_dir / 'build').mkdir(parents=True)
+    (project_dir / 'CMakeLists.txt').write_text('')
+    project_desc = {'target': 'linux', 'app_elf': 'app.elf', 'monitor_toolprefix': '', 'config_file': ''}
+    (project_dir / 'build' / 'project_description.json').write_text(json.dumps(project_desc))
+
+
+class TestMonitorRerunCommand:
+    """Run idf.py with the monitor and check the idf.py command handed to it (-m) to re-run on a rebuild
+    or flash request: the options before the first action as given, followed by the project the monitor
+    is attached to. The monitor runs in the invocation directory, which these options are relative to.
+    """
+
+    @pytest.fixture
+    def work_dir(self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> pathlib.Path:
+        """Invocation directory with project `proj`, @file `proj/args` and `blink.c` for build-file."""
+        # init_cli() imports the extensions as top-level modules, so patch the build_file_ext it uses
+        monkeypatch.syspath_prepend(os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_py_actions'))
+        monkeypatch.setattr('build_file_ext._BUILD_FILE_CACHE_DIR', str(tmp_path))
+        monkeypatch.chdir(tmp_path)
+
+        _make_built_project(tmp_path / 'proj')
+        (tmp_path / 'proj' / 'args').write_text('-C proj\n')
+        (tmp_path / 'blink.c').write_text('')
+        _make_built_project(self._container_dir(tmp_path))
+        return tmp_path
+
+    @staticmethod
+    def _container_dir(work_dir: pathlib.Path) -> pathlib.Path:
+        return work_dir / f'blink_{_compute_project_hash(str(work_dir / "blink.c"))}'
+
+    @pytest.mark.parametrize(
+        'argv, options, project',
+        [
+            pytest.param(['-C', 'proj', 'monitor'], ['-C', 'proj'], 'proj', id='project-dir'),
+            pytest.param(['monitor', '-C', 'proj'], [], 'proj', id='project-dir-after-action'),
+            pytest.param(['flash', 'monitor', '-C', 'proj'], [], 'proj', id='project-dir-after-actions'),
+            pytest.param(['@proj/args', 'monitor'], ['@proj/args'], 'proj', id='argfile'),
+            pytest.param(['build-file', 'blink.c', 'flash', 'monitor'], [], 'container', id='build-file'),
+            pytest.param(
+                ['-B', 'out', 'build-file', 'blink.c', 'flash', 'monitor'],
+                ['-B', 'out'],
+                'container',
+                id='build-file-build-dir',
+            ),
+            pytest.param(
+                ['-C', 'proj', 'build-file', 'blink.c', 'flash', 'monitor'],
+                ['-C', 'proj'],
+                'container',
+                id='build-file-project-dir',
+            ),
+        ],
+    )
+    def test_rerun_command(self, work_dir: pathlib.Path, argv: list[str], options: list[str], project: str) -> None:
+        project_dir = work_dir / 'proj' if project == 'proj' else self._container_dir(work_dir)
+
+        with mock.patch.object(sys, 'argv', ['idf.py', *argv]):
+            with mock.patch.object(RunTool, '__call__', autospec=True) as run_tool:
+                idf.init_cli()(idf.expand_file_arguments(argv), prog_name='idf.py', standalone_mode=False)
+
+        (monitor,) = (call.args[0] for call in run_tool.call_args_list if call.args[0].tool_name == 'idf_monitor')
+        rerun_cmd = shlex.split(monitor.args[monitor.args.index('-m') + 1])
+        # A -C/-B given before the first action must not override the pinned project, so it comes last
+        assert rerun_cmd == [
+            sys.executable,
+            'idf.py',
+            *options,
+            '-C',
+            str(project_dir),
+            '-B',
+            str(project_dir / 'build'),
+        ]
+        assert monitor.cwd == str(work_dir)
 
 
 class TestRunToolStdin:
