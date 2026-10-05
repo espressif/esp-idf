@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -163,4 +163,30 @@ TEST_CASE("VFS won't create a copy when ESP_FLAG_VFS_STATIC is specified", "[esp
     esp_vfs_unregister("/buffer");
     esp_vfs_unregister("/static");
     esp_vfs_unregister("/dynamic");
+}
+
+static int s_copy_test_writes;
+
+static ssize_t copy_test_write(void *ctx, int fd, const void *data, size_t size)
+{
+    s_copy_test_writes++;
+    return size;
+}
+
+TEST_CASE("VFS registered by id creates a copy without ESP_VFS_FLAG_STATIC", "[esp_vfs_fs_ops_t]")
+{
+    esp_vfs_fs_ops_t ops = {
+        .write_p = copy_test_write,
+    };
+    esp_vfs_id_t id;
+    TEST_ESP_OK(esp_vfs_register_fs_with_id(&ops, ESP_VFS_FLAG_CONTEXT_PTR, NULL, &id));
+    memset(&ops, 0, sizeof(ops));
+
+    int fd;
+    TEST_ESP_OK(esp_vfs_register_fd_with_local_fd(id, 0, false, &fd));
+    s_copy_test_writes = 0;
+    TEST_ASSERT_EQUAL(1, write(fd, "x", 1));
+    TEST_ASSERT_EQUAL(1, s_copy_test_writes);
+
+    TEST_ESP_OK(esp_vfs_unregister_fs_with_id(id));
 }
