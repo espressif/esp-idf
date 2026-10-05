@@ -131,10 +131,13 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         old_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
+            # Run from the directory idf.py was invoked in: the idf.py command handed to the
+            # monitor to re-run (on a rebuild or flash request) is relative to it, as is any
+            # relative path in it such as -C, -B or an @file argument.
             RunTool(
                 'idf_monitor',
                 monitor_args,
-                args.project_dir,
+                os.getcwd(),
                 build_dir=args.build_dir,
                 hints=hints,
                 interactive=True,
@@ -248,7 +251,11 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             monitor_args.extend(elf_list)
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
-        monitor_args += ['-m', ' '.join(f"'{a}'" for a in idf_py)]
+        # Pin the project the monitor is attached to. These directories are already resolved,
+        # so they must come last: an earlier -C/-B would otherwise override them. The monitor
+        # appends the target (flash, app-flash, ...) after this.
+        idf_py += ['-C', args.project_dir, '-B', args.build_dir]
+        monitor_args += ['-m', shlex.join(idf_py)]
 
         _run_monitor(
             monitor_args,
