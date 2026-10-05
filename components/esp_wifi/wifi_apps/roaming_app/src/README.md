@@ -24,7 +24,7 @@ If enabled, in this method the roaming app sets a Wi-Fi Threshold (configured by
 
 Every time the threshold is reached, a new threshold needs to be set at an even lower RSSI threshold since if we fail to find a better AP the first time the RSSI threshold is reached there will be no further attempts to find better APs, leading to possible disconnection as the only avenue for finding a better AP. The offset by which the next RSSI threshold can be set is decided by “Offset by which to reset the RSSI Threshold after attempt to roam” which defaults to 5.
 
-Also please note that if the AP we connect to, upon connecting, itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI later improves above the configured threshold.
+Also please note that if the AP we connect to, upon connecting, itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI later improves above the configured threshold. The periodic connected-AP RSSI log only reports RSSI/BSSID/channel and does not change the low-RSSI trigger.
 
 2) Periodic Scan based roaming:
 
