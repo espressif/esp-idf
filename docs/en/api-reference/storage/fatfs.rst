@@ -34,6 +34,10 @@ The general mounting workflow is:
 #. Use standard file APIs (``stdio.h`` or POSIX) on paths under the mount path.
 #. Close open files and call the matching unmount helper.
 
+When automatically locating a FAT volume, the library gives a consistent, non-overlapping MBR partition table priority over a FAT boot sector at sector zero. This handles drives which retain an old whole-device FAT header after partitioning. The partition extents must fit within the sector count reported by the disk driver through ``GET_SECTOR_COUNT``. This command must return the number of logical sectors, not the last sector address; a failed capacity query is reported as a disk error. Once such a table is recognized, a failed partition mount does not fall back to the old sector-zero header. Explicit partition selection through ``VolToPart`` is unchanged.
+
+Whole-device FAT volumes remain supported. Their boot code can occupy the same bytes as MBR entries. If these bytes do not form a consistent, in-bounds table, the library continues to use the recognized sector-zero FAT boot sector. Automatic formatting remains controlled by ``format_if_mount_failed``; keep it disabled when diagnosing existing media.
+
 .. _fatfs-read-only-mount:
 
 Read-Only Mount
