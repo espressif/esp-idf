@@ -360,7 +360,8 @@ void pmu_sleep_increase_ldo_volt(void) {
     pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, 24);
 }
 
-void pmu_sleep_shutdown_dcdc(void) {
+// Called on deep-sleep entry after flash has entered deep power-down, so it must not run from flash.
+IRAM_ATTR void pmu_sleep_shutdown_dcdc(void) {
     // Keep dcdc_switch on, will be disabled by PMU when entered sleep.
     pmu_ll_set_dcdc_en(&PMU, false);
     // Decrease hp_ldo voltage.
