@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#define LP_SLEEP_I2C_ADDR           0x28
+#define LP_SLEEP_I2C_LEN            8
 #define LP_SLEEP_UART_LEN           12
 #define LP_SLEEP_PRINT              "lp-sleep-print"
 #define LP_SLEEP_UART_WAKE_SEQ      "hello"
@@ -25,6 +27,20 @@
 
 /* Bound a transaction so a missing peer still wakes HP and reports the error. */
 #define LP_SLEEP_IO_TIMEOUT_CYCLES  40000000
+
+static inline void lp_sleep_fill_i2c_write(uint8_t *buf)
+{
+    for (int i = 0; i < LP_SLEEP_I2C_LEN; i++) {
+        buf[i] = (uint8_t)(0xA0 + i);
+    }
+}
+
+static inline void lp_sleep_fill_i2c_read(uint8_t *buf)
+{
+    for (int i = 0; i < LP_SLEEP_I2C_LEN; i++) {
+        buf[i] = (uint8_t)(0x10 + (i * 3));
+    }
+}
 
 static inline void lp_sleep_fill_uart_tx(uint8_t *buf)
 {
