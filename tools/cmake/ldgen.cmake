@@ -57,11 +57,20 @@ function(__ldgen_process_template template output)
         message(STATUS "Mapping check enabled in ldgen")
     endif()
 
+    # Pass fragment paths via a file so Windows cmd quoting of a long
+    # semicolon-separated list with spaces does not leak CMake's
+    # "|| (set FAIL_LINE=...)" wrapper into ldgen argv.
+    set(ldgen_fragments_file "${build_dir}/ldgen_fragments")
+    file(GENERATE OUTPUT ${ldgen_fragments_file} CONTENT $<JOIN:${ldgen_fragment_files},\n>)
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+        "${ldgen_fragments_file}")
+
     add_custom_command(
         OUTPUT ${output}
         COMMAND ${python} "${idf_path}/tools/ldgen/ldgen.py"
         --config    "${sdkconfig}"
-        --fragments-list "${ldgen_fragment_files}"
+        --fragments-list-file "${ldgen_fragments_file}"
         --input     "${template}"
         --output    "${output}"
         --kconfig   "${root_kconfig}"
