@@ -4001,6 +4001,8 @@ static struct crypto_ec_key * dpp_parse_jwk(struct json_token *jwk,
 
 	len = wpabuf_len(x) + wpabuf_len(y);
 	a = os_zalloc(len);
+	if (!a)
+		goto fail;
 	os_memcpy(a, wpabuf_head(x), wpabuf_len(x));
 	os_memcpy(a + wpabuf_len(x), wpabuf_head(y), wpabuf_len(y));
 	pkey = crypto_ec_key_set_pub(group, a, len);
