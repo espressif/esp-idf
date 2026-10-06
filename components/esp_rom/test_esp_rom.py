@@ -56,7 +56,7 @@ def test_roms_validate_build_date() -> None:
 
 
 def test_gen_gdbinit_joins_rom_elf_dir() -> None:
-    module_path = os.path.join(os.path.dirname(ROMS_JSON), 'gen_gdbinit.py')
+    module_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gen_gdbinit.py')
     spec = importlib.util.spec_from_file_location('gen_gdbinit', module_path)
     assert spec is not None and spec.loader is not None
     gen_gdbinit = importlib.util.module_from_spec(spec)
