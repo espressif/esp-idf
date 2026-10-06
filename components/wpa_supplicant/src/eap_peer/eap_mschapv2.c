@@ -398,9 +398,11 @@ static int eap_mschapv2_failure_txt(struct eap_sm *sm,
 	}
 
 	if (pos && os_strncmp(pos, "C=", 2) == 0) {
+		const char *end;
 		int hex_len;
 		pos += 2;
-		hex_len = (char *)os_strchr(pos, ' ') - (char *)pos;
+		end = os_strchr(pos, ' ');
+		hex_len = end ? (int)(end - pos) : -1;
 		if (hex_len == PASSWD_CHANGE_CHAL_LEN * 2) {
 			if (hexstr2bin(pos, data->passwd_change_challenge,
 				       PASSWD_CHANGE_CHAL_LEN)) {
