@@ -191,6 +191,7 @@ void esp_partition_munmap(esp_partition_mmap_handle_t handle)
 
 esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sha_256)
 {
+    assert(partition != NULL);
     /* Single shared implementation lives in bootloader_common.
        Inline its body here once that API is removed. */
 #pragma GCC diagnostic push
@@ -202,6 +203,9 @@ esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sh
 
 bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_partition_t *partition_2)
 {
+    assert(partition_1 != NULL);
+    assert(partition_2 != NULL);
+
     uint8_t sha_256[2][HASH_LEN] = { 0 };
 
     if (esp_partition_get_sha256(partition_1, sha_256[0]) == ESP_OK &&
