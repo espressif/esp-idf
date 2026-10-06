@@ -27,18 +27,18 @@
 #else
 #define SRAM_LOW_START     0x4FF00000
 #if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
-#define SRAM_LOW_END       ULP_HP_MEM_START
+#define SRAM_LOW_END       (ULP_HP_MEM_START)
 #else
-#define SRAM_LOW_END       0x4FF2BBD0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_LOW_END       (0x4FF2BBD0)  /* 2nd stage bootloader iram_loader_seg start address */
 #endif
-#define SRAM_LOW_SIZE      SRAM_LOW_END - SRAM_LOW_START
+#define SRAM_LOW_SIZE      (SRAM_LOW_END - SRAM_LOW_START)
 
 /* If the cache size is less than 512KB, then there is a region of RAM
  * above the ROM-reserved region and below the start of the cache.
  */
 #define SRAM_HIGH_START    0x4FF40000
-#define SRAM_HIGH_SIZE     0x80000 - CONFIG_CACHE_L2_CACHE_SIZE
-#define SRAM_HIGH_END      SRAM_HIGH_START + SRAM_HIGH_SIZE
+#define SRAM_HIGH_SIZE     (0x80000 - CONFIG_CACHE_L2_CACHE_SIZE)
+#define SRAM_HIGH_END      (SRAM_HIGH_START + SRAM_HIGH_SIZE)
 #endif
 
 #define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 10)
