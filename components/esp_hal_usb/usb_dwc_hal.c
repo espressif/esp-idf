@@ -277,7 +277,7 @@ void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_lim
     HAL_ASSERT(hal->flags.fifo_sizes_set);
 
     const usb_dwc_hal_fifo_config_t *fifo_config = &(hal->fifo_config);
-    mps_limits->in_mps = (fifo_config->rx_fifo_lines - 2) * 4; // Two lines are reserved for status quadlets internally by USB_DWC
+    mps_limits->in_mps = (fifo_config->rx_fifo_lines - USB_DWC_HAL_RX_FIFO_STATUS_LINES) * 4;
     mps_limits->non_periodic_out_mps = fifo_config->nptx_fifo_lines * 4;
     mps_limits->periodic_out_mps = fifo_config->ptx_fifo_lines * 4;
 }
