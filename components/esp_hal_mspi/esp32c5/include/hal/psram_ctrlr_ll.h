@@ -35,6 +35,8 @@ extern "C" {
 #define PSRAM_CTRLR_LL_PMS_ATTR_WRITABLE    (1<<0)
 #define PSRAM_CTRLR_LL_PMS_ATTR_READABLE    (1<<1)
 
+#define PSRAM_CTRLR_LL_PMS_INT_SUPPORTED         1
+
 /**
  * @brief PSRAM enum for cs id.
  */
