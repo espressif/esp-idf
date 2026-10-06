@@ -34,7 +34,9 @@ components/ulp/test_apps/lp_core/lp_core_deep_sleep_tests:
   depends_components:
     - ulp
     - esp_driver_gpio
+    - esp_driver_uart
     - esp_hal_gpio
+    - esp_hal_uart
     - esp_hal_pmu
     - esp_hw_support
 
