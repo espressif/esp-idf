@@ -652,12 +652,15 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
         return -1;
     }
     if (mask) {
-        // Read and store mask
-        if (payload_len != 0 && (rlen = esp_transport_read_exact_size(ws, buffer, mask_len, timeout_ms)) <= 0) {
+        // Read the 4-byte masking key directly into the frame state. The caller's
+        // buffer must never be used as scratch here: it may be smaller than
+        // mask_len (4) and the MASK bit is attacker-controlled (servers must not
+        // mask per RFC 6455 5.1), which would otherwise cause an out-of-bounds write.
+        if (payload_len != 0 &&
+                (rlen = esp_transport_read_exact_size(ws, ws->frame_state.mask_key, mask_len, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read data(%d)", rlen);
             return rlen;
         }
-        memcpy(ws->frame_state.mask_key, buffer, mask_len);
     } else {
         memset(ws->frame_state.mask_key, 0, mask_len);
     }
