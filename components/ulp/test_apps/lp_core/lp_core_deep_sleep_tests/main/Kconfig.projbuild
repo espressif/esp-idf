@@ -1,0 +1,10 @@
+menu "LP Core Deep Sleep Test Configuration"
+
+    config TEST_LP_GPIO_SLEEP_PIN
+        int "GPIO pin wired between the two boards for LP GPIO tests"
+        default 2
+        help
+            RTC GPIO used for LP GPIO input, output, interrupt, and deep-sleep
+            wakeup. The same pin number must be wired between the two boards.
+
+endmenu
