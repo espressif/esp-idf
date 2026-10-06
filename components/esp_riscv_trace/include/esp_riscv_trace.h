@@ -144,7 +144,6 @@ typedef struct {
     uint32_t resync_threshold;                  /*!< Resync threshold. (default 128) */
     esp_riscv_trace_ahb_burst_t ahb_burst;     /*!< AHB burst type used by the trace write master. */
     uint8_t ahb_max_incr;                       /*!< Max INCR burst beats. (default 0) */
-    uint32_t intr_mask;                         /*!< Interrupt bits to enable for polling via get_intr_status() */
 } esp_riscv_trace_config_t;
 
 /**
@@ -173,7 +172,6 @@ typedef struct {
     .resync_threshold     = CONFIG_ESP_RISCV_TRACE_RESYNC_THRESHOLD,       \
     .ahb_burst            = CONFIG_ESP_RISCV_TRACE_AHB_BURST,              \
     .ahb_max_incr         = CONFIG_ESP_RISCV_TRACE_AHB_MAX_INCR,           \
-    .intr_mask            = 0,                                             \
 }
 
 /** @brief Encoder work status. */
