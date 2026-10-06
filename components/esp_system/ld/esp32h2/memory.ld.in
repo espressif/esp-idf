@@ -23,7 +23,7 @@
 #endif // CONFIG_SECURE_ENABLE_TEE
 
 #define SRAM_SEG_END       0x4083EFD0  /* 2nd stage bootloader iram_loader_seg start address */
-#define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
+#define SRAM_SEG_SIZE      (SRAM_SEG_END - SRAM_SEG_START)
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 /*
