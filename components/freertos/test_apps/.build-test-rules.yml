@@ -28,3 +28,13 @@ components/freertos/test_apps/freertos:
     - esp_hw_support # trigger on changes to cpu.c
     - xtensa
     - riscv
+components/freertos/test_apps/task_self_delete:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
+      reason: Clang -O2 on Xtensa unicore is required to exercise the self-delete yield path
+  disable:
+    - if: IDF_TOOLCHAIN == "clang" and CONFIG_NAME != "clang"
+    - if: IDF_TOOLCHAIN != "clang" and CONFIG_NAME != "default"
+  depends_components:
+    - freertos
+    - xtensa
