@@ -148,8 +148,7 @@ static bool otadata_slot_confirmed(const inventory_t *inventory)
     if (bootloader_common_read_otadata(&inventory->otadata_pos, entries) != ESP_OK) {
         return false;
     }
-    bool valid[2];
-    int active = bootloader_common_select_otadata(entries, valid, true);
+    int active = bootloader_common_get_active_otadata(entries);
     return active >= 0 && entries[active].ota_state == ESP_OTA_IMG_VALID;
 }
 
@@ -207,10 +206,12 @@ void bootloader_after_init(void)
         record.rtc_ms = 0;
         record.uptime_ms = state.last_boot_uptime_ms;
         record.reason = (uint8_t)decision.reason;
+        /* The confirmation flag is the application's report and is only written by
+         * confirm_image(). Propagating it here would make a single confirmation look like a
+         * permanently healthy image and hide later failures. */
         record.flags = (decision.safe_mode ? POLICY_RECORD_FLAG_SAFE_MODE : 0) |
                        (decision.fallback_used ? POLICY_RECORD_FLAG_FALLBACK : 0) |
-                       (decision.fallback_unavailable ? POLICY_RECORD_FLAG_NO_FALLBACK : 0) |
-                       (state.last_boot_confirmed ? POLICY_RECORD_FLAG_CONFIRMED : 0);
+                       (decision.fallback_unavailable ? POLICY_RECORD_FLAG_NO_FALLBACK : 0);
         journaled = append_record(&inventory, index, &record);
     }
 

@@ -29,8 +29,15 @@ def test_bootloader_policy(dut: Dut) -> None:
     dut.expect(BOOT_LINE)
     dut.expect(APP_LINE)
 
+    # Flashing does not erase the journal partition, so a left over confirmation from an
+    # earlier run can make the first observed boot a confirmed one. Discard it and assert on
+    # the boots after it.
+    dut.serial.hard_reset()
+    dut.expect(BOOT_LINE)
+    dut.expect(APP_LINE)
+
     hit_limit = False
-    for _ in range(MAX_ATTEMPTS + 2):
+    for _ in range(MAX_ATTEMPTS + 3):
         dut.serial.hard_reset()
         match = dut.expect(BOOT_LINE)
         before, after = int(match.group(2)), int(match.group(3))

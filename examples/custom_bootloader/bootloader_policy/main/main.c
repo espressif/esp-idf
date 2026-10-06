@@ -21,6 +21,13 @@ static const esp_partition_t *journal_partition(void)
     return esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, POLICY_JOURNAL_LABEL);
 }
 
+/* Records never straddle a sector, so a sector holds records_per_sector slots rather than
+ * size / record_size of them. Both sides have to agree on that count. */
+static uint32_t journal_slots(const esp_partition_t *partition)
+{
+    return (partition->size / POLICY_SECTOR_SIZE) * POLICY_RECORDS_PER_SECTOR;
+}
+
 static bool read_record(const esp_partition_t *partition, uint32_t index, policy_record_t *record)
 {
     uint8_t raw[POLICY_RECORD_SIZE];
@@ -32,7 +39,7 @@ static bool read_record(const esp_partition_t *partition, uint32_t index, policy
 
 static bool find_newest(const esp_partition_t *partition, uint32_t *index, policy_record_t *newest, uint32_t *count)
 {
-    uint32_t total = partition->size / POLICY_RECORD_SIZE;
+    uint32_t total = journal_slots(partition);
     bool found = false;
     *count = 0;
     for (uint32_t i = 0; i < total; i++) {
@@ -86,7 +93,7 @@ static void confirm_image(void)
     memset(&newest, 0, sizeof(newest));
     bool found = find_newest(partition, &index, &newest, &count);
 
-    uint32_t next = found ? (index + 1) % (partition->size / POLICY_RECORD_SIZE) : 0;
+    uint32_t next = found ? (index + 1) % journal_slots(partition) : 0;
     policy_record_t record;
     policy_record_init(&record);
     record.sequence = found ? newest.sequence + 1 : 1;
