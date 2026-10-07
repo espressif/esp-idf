@@ -51,7 +51,7 @@ Please note that for this to work as expected, the APs should be setup in a netw
 
 2) 802.11k assisted roaming:
 
-Enabled by “Support 802.11k assisted roaming using neighbor reports”. When selected, the station uses Neighbor Report information to scan only AP-advertised channels and look for a better AP. On success it uses a directed reconnect. If NR channels are already cached (for example from periodic RRM), the on-demand Neighbor Report Request can be skipped. Neighbor Report Request retries are configured separately from BTM retries. On 11k failure the station retries NR while attempts remain; only after retries are exhausted does it fall through to legacy (if enabled).
+Enabled by “Support 802.11k assisted roaming using neighbor reports”. When selected, the station uses Neighbor Report information to scan only AP-advertised channels and look for a better AP. On success it uses a directed reconnect. If NR channels are already cached (for example from periodic RRM) and still within the configured neighbor-report channel cache expiry window, the on-demand Neighbor Report Request can be skipped; after that window the cache is treated as stale and a fresh report is required (same idea as the scan results expiry window). Neighbor Report Request retries are configured separately from BTM retries. On 11k failure the station retries NR while attempts remain; only after retries are exhausted does it fall through to legacy (if enabled).
 
 3) Legacy Roaming approach.
 
