@@ -155,29 +155,34 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
 
     const size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
 
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(10, 15, SOC_EXTRAM_LOW, NONE);
+    // Entry 15 stays unused because v5.5.2 to v5.5.4 bootloaders lock it, so the
+    // uncached range starts at entry 16 and the uncached XIP heap uses NAPOT entry 23
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(10, 16, SOC_EXTRAM_LOW, NONE);
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, page_aligned_irom_resv_end, PMP_TOR | RW);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 18, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(14, 19, ESP_ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 17, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 18, page_aligned_irom_resv_end, PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 19, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+    PMP_RESET_AND_ENTRY_SET(14, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    const uint32_t pmpaddr23 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_HIGH));
+    PMP_RESET_AND_ENTRY_SET(23, pmpaddr23, PMP_NAPOT | RW);
 
 #elif CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, page_aligned_irom_resv_end, PMP_TOR | RW);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 18, ESP_ALIGN_UP(page_aligned_irom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 17, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 18, page_aligned_irom_resv_end, PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 19, ESP_ALIGN_UP(page_aligned_irom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 
 #elif CONFIG_SPIRAM_RODATA
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, ESP_ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 17, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 18, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 
 #else
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, ESP_ALIGN_UP(SOC_EXTRAM_LOW + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 17, ESP_ALIGN_UP(SOC_EXTRAM_LOW + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 #endif
 #endif /* CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
 
-    // ESP32-P4 V3's 24th PMP entry cannot be used as a TOR entry // DIG-752
+    // ESP32-P4 V3: a locked TOR entry 20 or 28 does not lock pmpaddr19 or pmpaddr27, and a locked
+    // TOR entry 16 or 24 also locks pmpaddr19 or pmpaddr27. Entries 16, 20, 24 and 28 only hold range starts. // DIG-752
     // 7. I_Cache / D_Cache (flash)
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(20, 24, SOC_IROM_LOW, NONE);
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(21, 25, page_aligned_irom_resv_end, PMP_TOR | RX);
@@ -211,7 +216,7 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     extern int _rtc_text_start;
     extern int _rtc_text_end;
 
-    // ESP32-P4 V3's 28th PMP entry cannot be used as a TOR entry // DIG-752
+    // Entry 28 only holds a range start // DIG-752
     PMP_RESET_AND_ENTRY_SET(28, SOC_RTC_IRAM_LOW, NONE);
     // First part of LP mem is reserved for RTC reserved mem (shared between bootloader and app)
     // as well as memory for ULP coprocessor

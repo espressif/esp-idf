@@ -22,7 +22,9 @@ extern "C" {
  *
  * Locked by shipped bootloader generations:
  *   rev < 3.0  v5.3/v5.4 : 0-2 (ROM), 13 (periph);  v5.5..v6.1 : 0-2, 15
- *   rev >= 3.0 v6.0/v6.1 : 0-3 (ROM cached+uncached), 27 (periph)
+ *   rev >= 3.0 v5.5.2..v5.5.4      : 0-2, 15 (periph; these use the rev < 3.0 layout)
+ *   rev >= 3.0 v6.0/v6.0.1         : 0-3 (ROM cached+uncached), 27 (periph)
+ *   rev >= 3.0 v5.5.5, v6.0.2, v6.0.3, v6.1 : 0-3, 27, 29 (LP periph range start)
  *   >= v6.2              : none
  */
 #define PMP_ENTRY_CPU_SUBSYSTEM         0   /* NAPOT RW, both layouts */
@@ -41,8 +43,10 @@ extern "C" {
 #define PMP_ENTRY_PERIPHERAL_REV_LESS_THAN_V3_SPIRAM_MEMPROT_EN  15  /* NAPOT RW, PSRAM layout */
 
 /* rev >= 3.0: 4..26 (SRAM/ext-RAM/flash cached+uncached aliases) and 28..31
- * (LP) are application-owned; their indices shift with the memprot config, so
- * they are programmed by plain index in cpu_region_protect.c, not named here. */
+ * (LP) are programmed by plain index in cpu_region_protect.c, not named here;
+ * their indices shift with the memprot config. Entry 15 is left unused because
+ * v5.5.2..v5.5.4 bootloaders lock it. Entry 29 is locked by v5.5.5, v6.0.2+ and
+ * v6.1 bootloaders with a value this layout does not use. */
 #define PMP_ENTRY_ROM_UNCACHED_REV_V3       3   /* NAPOT RX */
 #define PMP_ENTRY_PERIPHERAL_REV_V3     27  /* NAPOT RW */
 
