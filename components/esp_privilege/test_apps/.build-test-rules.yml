@@ -1,0 +1,13 @@
+# See .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_privilege/test_apps/privilege:
+  enable:
+    - if: SOC_RISCV_SV32_SUPPORTED == 1 and SOC_INT_CLIC_SUPPORTED == 1
+      reason: U-mode code is implemented for chips with an Sv32 MMU and a CLIC
+  depends_components:
+    - esp_privilege
+    - freertos
+    - riscv
+    - esp_system
+    - esp_hw_support
+    - esp_timer

@@ -1,0 +1,6 @@
+CONFIG_ESP_TASK_WDT_INIT=n
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+CONFIG_ESP_PRIVILEGE_MODE_USER_CODE=y
+CONFIG_FREERTOS_HZ=1000
+# U-mode code is loaded into internal SRAM at runtime, which system memory protection forbids.
+CONFIG_ESP_SYSTEM_MEMPROT=n
