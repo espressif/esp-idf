@@ -649,11 +649,16 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = list(
             'memprot_esp32c6',
             'memprot_esp32h2',
             'memprot_esp32p4',
+            'memprot_spiram_xip_esp32p4',
             'memprot_esp32h21',
             'memprot_esp32s31',
         ],
-        ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21', 'esp32s31'],
+        ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32p4', 'esp32h21', 'esp32s31'],
     )
+)
+
+CONFIGS_MEMPROT_RTC_FAST_MEM_TEXT_WRITE = list(
+    zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4'])
 )
 
 CONFIGS_MEMPROT_RTC_SLOW_MEM = list(zip(['memprot_esp32s2'], ['esp32s2']))
@@ -714,6 +719,8 @@ CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP_L2_NON_CACHE = list(
         ['esp32p4'],
     )
 )
+
+CONFIGS_MEMPROT_SPIRAM_HEAP_END = list(zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4']))
 
 CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = list(
     zip(
@@ -1034,6 +1041,15 @@ def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 
 @pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM_TEXT_WRITE, indirect=['config', 'target'])
+def test_rtc_fast_text_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_SLOW_MEM, indirect=['config', 'target'])
 def test_rtc_slow_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -1191,6 +1207,21 @@ def test_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test
 def test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     if dut.target == 'esp32p4' and not dut.app.sdkconfig.get('ESP32P4_SELECTS_REV_LESS_V3'):
         spiram_xip_drom_alignment_reg_execute_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize(
+    'config, target', CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP_L2_NON_CACHE, indirect=['config', 'target']
+)
+def test_non_cache_spiram_xip_heap_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    if dut.target == 'esp32p4' and not dut.app.sdkconfig.get('ESP32P4_SELECTS_REV_LESS_V3'):
+        dram_reg2_execute_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP_END, indirect=['config', 'target'])
+def test_spiram_heap_end_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dram_reg2_execute_violation(dut, test_func_name)
 
 
 @pytest.mark.generic
