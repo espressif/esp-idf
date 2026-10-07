@@ -284,13 +284,40 @@ int mock_write_count_pong_callback(esp_transport_handle_t t, const char *buffer,
     return len;
 }
 
+// Everything the client wrote to the parent transport, and how often it closed it
+std::string s_client_bytes_written;
+int s_close_calls = 0;
+
+int mock_write_capture_callback(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms, int num_call)
+{
+    s_client_bytes_written.append(buffer, len);
+    return len;
+}
+
+int mock_close_count_callback(esp_transport_handle_t t, int num_call)
+{
+    s_close_calls++;
+    return 0;
+}
+
+// True if the client wrote a CLOSE frame (the handshake request is ASCII, so 0x88 can only be a CLOSE header)
+bool close_frame_written()
+{
+    return s_client_bytes_written.find('\x88') != std::string::npos;
+}
+
 }
 
 TEST_CASE("WebSocket Transport Connection", "[success]")
 {
+    // CMock state is global and test cases run in random order, so start each one from clean mocks
+    Mockmock_transport_Init();
+    Mocknetdb_Init();
+    Mockesp_timer_Init();
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
+    mock_destroy_IgnoreAndReturn(ESP_OK);
     // Initialize the parent handle
     unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
     REQUIRE(parent_handle);
@@ -475,9 +502,13 @@ TEST_CASE("WebSocket Transport Connection", "[success]")
 
 TEST_CASE("WebSocket Transport Connection", "[failure]")
 {
+    Mockmock_transport_Init();
+    Mocknetdb_Init();
+    Mockesp_timer_Init();
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
+    mock_destroy_IgnoreAndReturn(ESP_OK);
     // Initialize the parent handle
     unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
     REQUIRE(parent_handle);
@@ -584,6 +615,9 @@ TEST_CASE("WebSocket Transport Connection", "[failure]")
 
 TEST_CASE("WebSocket Transport fragmented messages", "[fragmentation]")
 {
+    Mockmock_transport_Init();
+    Mocknetdb_Init();
+    Mockesp_timer_Init();
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
@@ -727,5 +761,335 @@ TEST_CASE("WebSocket Transport fragmented messages", "[fragmentation]")
 
         REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 1);
         REQUIRE(buffer[0] == 'b');
+    }
+}
+
+TEST_CASE("WebSocket Transport UTF-8 validation", "[utf8]")
+{
+    Mockmock_transport_Init();
+    Mocknetdb_Init();
+    Mockesp_timer_Init();
+    constexpr static auto timeout = 50;
+    constexpr static auto port = 8080;
+    constexpr static auto host = "localhost";
+    mock_destroy_IgnoreAndReturn(ESP_OK);
+    unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
+    REQUIRE(parent_handle);
+    esp_transport_set_func(parent_handle.get(), mock_connect, mock_read, mock_write, mock_close, mock_poll_read, mock_poll_write, mock_destroy);
+
+    unique_transport websocket_transport{esp_transport_ws_init(parent_handle.get()), esp_transport_destroy};
+    REQUIRE(websocket_transport);
+
+    esp_transport_ws_config_t ws_config = {
+        .ws_path = "/",
+        .sub_protocol = nullptr,
+        .user_agent = nullptr,
+        .headers = nullptr,
+        .header_hook = NULL,
+        .header_user_context = NULL,
+        .auth = nullptr,
+        .response_headers = nullptr,
+        .response_headers_len = 0,
+        .propagate_control_frames = false,
+    };
+    REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &ws_config) == ESP_OK);
+
+    mock_write_Stub(mock_write_capture_callback);
+    mock_read_Stub(mock_stream_read_callback);
+    mock_poll_read_Stub(mock_stream_poll_read_callback);
+    mock_poll_write_Stub(mock_poll_write_ready_callback);
+    mock_close_Stub(mock_close_count_callback);
+    mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+    s_client_bytes_written.clear();
+    s_close_calls = 0;
+
+    char buffer[16];
+
+    SECTION("Valid ASCII text is accepted") {
+        set_server_stream({
+            0x81, 0x05, 'H', 'e', 'l', 'l', 'o',            // TEXT, FIN=1
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 5);
+        REQUIRE(std::string(buffer, 5) == "Hello");
+    }
+
+    SECTION("Valid 2-, 3- and 4-byte UTF-8 is accepted") {
+        set_server_stream({
+            0x81, 0x0D,                                     // TEXT, FIN=1
+            0xC3, 0xA9,                                     // U+00E9
+            0xE2, 0x82, 0xAC,                               // U+20AC
+            0xF0, 0x9F, 0x98, 0x80,                         // U+1F600
+            0xF4, 0x8F, 0xBF, 0xBF,                         // U+10FFFF
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 13);
+    }
+
+    SECTION("Code point split across reads of the same frame is accepted") {
+        set_server_stream({
+            0x81, 0x03, 0xE2, 0x82, 0xAC,                   // TEXT, FIN=1, "€"
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, 1, timeout) == 1);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, 1, timeout) == 1);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, 1, timeout) == 1);
+    }
+
+    SECTION("Code point split across continuation frames is accepted") {
+        set_server_stream({
+            0x01, 0x01, 0xE2,                               // TEXT, FIN=0
+            0x00, 0x01, 0x82,                               // CONT, FIN=0
+            0x80, 0x01, 0xAC,                               // CONT, FIN=1
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 1);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 1);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 1);
+    }
+
+    SECTION("Control frame inside a split code point does not disturb validation") {
+        mock_write_Stub(mock_write_count_pong_callback);
+        mock_poll_write_Stub(mock_poll_write_ready_callback);
+        set_server_stream({
+            0x01, 0x01, 0xC3,                               // TEXT, FIN=0
+            0x89, 0x00,                                     // PING, FIN=1
+            0x80, 0x01, 0xA9,                               // CONT, FIN=1, completes "é"
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 1);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 1);
+    }
+
+    SECTION("Invalid sequence in a single frame is rejected") {
+        set_server_stream({
+            0x81, 0x05, 0xCE, 0xBA, 0xED, 0xA0, 0x80,       // TEXT, FIN=1, contains surrogate U+D800
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+    }
+
+    SECTION("Invalid continuation frame fails after the valid first fragment") {
+        set_server_stream({
+            0x01, 0x02, 0xCE, 0xBA,                         // TEXT, FIN=0, valid
+            0x00, 0x04, 0xF4, 0x90, 0x80, 0x80,             // CONT, FIN=0, U+110000 (out of range)
+            0x80, 0x01, 'x',                                // CONT, FIN=1
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 2);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+    }
+
+    SECTION("Invalid byte is rejected in a later read of the same frame") {
+        set_server_stream({
+            0x81, 0x05, 0xCE, 0xBA, 0xF4, 0x90, 0x80,       // TEXT, FIN=1 (last byte unread after fail)
+            0x81, 0x05, 'H', 'e', 'l', 'l', 'o',            // must not be delivered after the protocol error
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, 3, timeout) == 3);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, 1, timeout) < 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(s_close_calls == 1);
+    }
+
+    SECTION("Unread tail of a failed frame is never delivered") {
+        set_server_stream({
+            0x81, 0x05, 0xC3, 0x28, 0x81, 0x01, 0x41,       // TEXT, FIN=1; unread tail looks like TEXT "A"
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, 2, timeout) < 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+    }
+
+    SECTION("Message ending inside a code point is rejected") {
+        set_server_stream({
+            0x81, 0x01, 0xCE,                               // TEXT, FIN=1
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+    }
+
+    SECTION("Empty final frame ending inside a code point is rejected") {
+        set_server_stream({
+            0x01, 0x01, 0xCE,                               // TEXT, FIN=0
+            0x80, 0x00,                                     // CONT, FIN=1, empty
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 1);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+    }
+
+    SECTION("Invalid sequences are rejected") {
+        const std::vector<std::vector<uint8_t>> payloads = {
+            {0xC3, 0x28},                                   // invalid continuation byte
+            {0xC0, 0xAF},                                   // overlong '/'
+            {0xC1, 0xBF},                                   // overlong U+007F
+            {0xE0, 0x80, 0xAF},                             // overlong '/'
+            {0xF0, 0x80, 0x80, 0xAF},                       // overlong '/'
+            {0xED, 0xA0, 0x80},                             // surrogate U+D800
+            {0xED, 0xBF, 0xBF},                             // surrogate U+DFFF
+            {0xF4, 0x90, 0x80, 0x80},                       // U+110000
+            {0xF5, 0x80, 0x80, 0x80},                       // lead byte above U+10FFFF
+            {0x80},                                         // lone continuation byte
+            {0xFE},
+            {0xFF},
+        };
+        for (size_t i = 0; i < payloads.size(); i++) {
+            std::vector<uint8_t> frame = {0x81, static_cast<uint8_t>(payloads[i].size())};
+            frame.insert(frame.end(), payloads[i].begin(), payloads[i].end());
+            set_server_stream(frame);
+            if (i > 0) {
+                mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+            }
+            REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+            REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        }
+    }
+
+    SECTION("Binary messages are not validated") {
+        set_server_stream({
+            0x82, 0x07, 0xFF, 0xFE, 0xC0, 0xAF, 0xED, 0xA0, 0x80,  // BINARY, FIN=1
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 7);
+        REQUIRE(!close_frame_written());
+        REQUIRE(s_close_calls == 0);
+    }
+
+    SECTION("Invalid UTF-8 fails the connection: the transport is closed") {
+        set_server_stream({
+            0x81, 0x02, 0xC3, 0x28,                         // TEXT, FIN=1, invalid continuation byte
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(!close_frame_written());
+        REQUIRE(s_close_calls == 1);
+        REQUIRE(esp_transport_poll_read(websocket_transport.get(), timeout) < 0);
+        REQUIRE(esp_transport_poll_write(websocket_transport.get(), timeout) < 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(esp_transport_write(websocket_transport.get(), "x", 1, timeout) < 0);
+        REQUIRE(esp_transport_ws_send_raw(websocket_transport.get(), WS_TRANSPORT_OPCODES_TEXT, "x", 1, timeout) < 0);
+        REQUIRE(s_close_calls == 1);                        // failed only once, and writes did not touch the parent
+        REQUIRE(!close_frame_written());
+    }
+
+    SECTION("CLOSE frame with a valid UTF-8 reason is accepted") {
+        set_server_stream({
+            0x88, 0x05, 0x03, 0xE8, 0xC3, 0xA9, '!',        // CLOSE, code 1000, reason "\u00e9!"
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout);
+        REQUIRE(close_frame_written());
+        REQUIRE(static_cast<uint8_t>(s_client_bytes_written[s_client_bytes_written.size() - 6]) == 0x88);
+    }
+
+    SECTION("CLOSE frame with an invalid UTF-8 reason fails the connection") {
+        set_server_stream({
+            0x88, 0x04, 0x03, 0xE8, 0xC3, 0x28,             // CLOSE, code 1000, invalid reason
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(!close_frame_written());
+        REQUIRE(s_close_calls == 1);
+    }
+
+    SECTION("Propagated CLOSE frame with a valid UTF-8 reason is delivered") {
+        esp_transport_ws_config_t propagate = ws_config;
+        propagate.propagate_control_frames = true;
+        REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &propagate) == ESP_OK);
+        set_server_stream({
+            0x88, 0x05, 0x03, 0xE8, 0xC3, 0xA9, '!',        // CLOSE, code 1000, reason "\u00e9!"
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 5);
+        REQUIRE(s_close_calls == 0);
+    }
+
+    SECTION("Propagated CLOSE frame with an invalid UTF-8 reason fails the connection") {
+        esp_transport_ws_config_t propagate = ws_config;
+        propagate.propagate_control_frames = true;
+        REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &propagate) == ESP_OK);
+        set_server_stream({
+            0x88, 0x04, 0x03, 0xE8, 0xC3, 0x28,             // CLOSE, code 1000, invalid reason
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(!close_frame_written());
+        REQUIRE(s_close_calls == 1);
+        REQUIRE(esp_transport_write(websocket_transport.get(), "x", 1, timeout) < 0);
+    }
+
+    SECTION("CLOSE frame with a 1-byte payload fails the connection") {
+        set_server_stream({
+            0x88, 0x01, 0x03,                               // CLOSE, payload length 1
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(!close_frame_written());
+        REQUIRE(s_close_calls == 1);
+    }
+
+    SECTION("Propagated CLOSE frame with a 1-byte payload fails the connection") {
+        esp_transport_ws_config_t propagate = ws_config;
+        propagate.propagate_control_frames = true;
+        REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &propagate) == ESP_OK);
+        set_server_stream({
+            0x88, 0x01, 0x03,                               // CLOSE, payload length 1
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(!close_frame_written());
+        REQUIRE(s_close_calls == 1);
+    }
+
+    SECTION("CLOSE frame with a reason ending inside a code point fails the connection") {
+        set_server_stream({
+            0x88, 0x03, 0x03, 0xE8, 0xC3,                   // CLOSE, code 1000, truncated code point
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(!close_frame_written());
+        REQUIRE(s_close_calls == 1);
+    }
+
+    SECTION("Reconnect after a failure clears the failed state") {
+        set_server_stream({
+            0x81, 0x02, 0xC3, 0x28,                         // TEXT, FIN=1, invalid
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(s_close_calls == 1);
+
+        set_server_stream({
+            0x81, 0x02, 'o', 'k',                           // TEXT, FIN=1, valid
+        });
+        mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+        REQUIRE(esp_transport_poll_read(websocket_transport.get(), timeout) == 1);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 2);
+        REQUIRE(std::string(buffer, 2) == "ok");
     }
 }
