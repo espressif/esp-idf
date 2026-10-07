@@ -34,6 +34,7 @@
 #include "esp_wpas_glue.h"
 
 #define BTM_QUERY_REASON_LOW_RSSI 16
+#define BTM_QUERY_LIST_MAX_LEN (MAX_NEIGHBOR_LEN + 96)
 
 static struct roaming_app g_roaming_app;
 extern bool current_task_is_wifi_task(void);
@@ -43,7 +44,7 @@ extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done
 
 static int wifi_post_roam_event(struct cand_bss *bss);
 static void determine_best_ap(int8_t rssi_threshold);
-static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold);
+static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const struct cand_bss *candidate);
 static bool is_bssid_blacklisted(const uint8_t *bssid);
 static bool conduct_scan(void);
 static void roaming_app_refresh_scan_config_filters(void);
@@ -74,7 +75,7 @@ static bool roaming_app_start_rrm_channel_scan(void);
 static bool roaming_app_try_start_rrm_scan_or_defer(void);
 #endif
 #if NETWORK_ASSISTED_ROAMING_ENABLED
-static bool trigger_network_assisted_roam(void);
+static bool trigger_network_assisted_roam(const struct cand_bss *bss);
 #endif
 #if PERIODIC_SCAN_MONITORING
 static void init_periodic_scan_roam_event(void);
@@ -218,6 +219,78 @@ static const wifi_ap_record_t *roaming_app_find_scan_record(const uint8_t *bssid
 
     return NULL;
 }
+
+#if NETWORK_ASSISTED_ROAMING_ENABLED
+static uint8_t roaming_app_get_phy_type(const wifi_ap_record_t *record)
+{
+    int sec_chan = 0;
+
+    if (!record) {
+        return PHY_TYPE_UNSPECIFIED;
+    }
+
+    if (record->second == WIFI_SECOND_CHAN_ABOVE) {
+        sec_chan = 1;
+    } else if (record->second == WIFI_SECOND_CHAN_BELOW) {
+        sec_chan = -1;
+    }
+
+    if (record->phy_11ax) {
+        return PHY_TYPE_HE;
+    }
+
+    if (record->phy_11ac) {
+        return PHY_TYPE_VHT;
+    }
+
+    if (record->phy_11n || sec_chan != 0 || record->bandwidth > WIFI_BW20) {
+        return PHY_TYPE_HT;
+    }
+
+    return (record->primary > 14) ? PHY_TYPE_OFDM : PHY_TYPE_ERP;
+}
+
+static int roaming_app_build_btm_candidate(const struct cand_bss *bss, char *buf, size_t buf_len)
+{
+    const wifi_ap_record_t *record;
+    uint8_t channel;
+    int sec_chan = 0;
+    uint8_t phy_type;
+    uint8_t op_class;
+
+    if (!bss || !buf || buf_len == 0) {
+        return -1;
+    }
+
+    record = roaming_app_find_scan_record(bss->bssid);
+    channel = bss->channel;
+
+    if (record) {
+        channel = record->primary;
+        if (record->second == WIFI_SECOND_CHAN_ABOVE) {
+            sec_chan = 1;
+        } else if (record->second == WIFI_SECOND_CHAN_BELOW) {
+            sec_chan = -1;
+        }
+        phy_type = roaming_app_get_phy_type(record);
+    } else {
+        phy_type = (channel > 14) ? PHY_TYPE_OFDM : PHY_TYPE_ERP;
+    }
+
+    op_class = get_operating_class(channel, sec_chan);
+    if (op_class == 0) {
+        ESP_LOGW(ROAMING_TAG, "Could not determine operating class for " MACSTR, MAC2STR(bss->bssid));
+        return -1;
+    }
+
+    if (snprintf(buf, buf_len, " neighbor=" MACSTR ",0x0000,%u,%u,%u",
+                 MAC2STR(bss->bssid), op_class, channel, phy_type) >= (int) buf_len) {
+        return -1;
+    }
+
+    return 0;
+}
+#endif /* NETWORK_ASSISTED_ROAMING_ENABLED */
 
 static bool roaming_app_authmode_is_enterprise(wifi_auth_mode_t authmode)
 {
@@ -1529,6 +1602,8 @@ static void roaming_app_rrm_fallback_to_legacy(void)
 
     if (roaming_app_legacy_method_enabled() && g_roaming_app.sta_connected) {
         ESP_LOGD(ROAMING_TAG, "11k retries exhausted, scheduling legacy scan fallback");
+        g_roaming_app.rrm_roam_exhausted = true;
+        roaming_app_clear_rrm_channel_cache();
         eloop_cancel_timeout(roaming_app_start_legacy_scan_handler, NULL, NULL);
         if (eloop_register_timeout(0, 0, roaming_app_start_legacy_scan_handler, NULL, NULL) != 0) {
             ESP_LOGW(ROAMING_TAG, "Could not schedule legacy fallback scan");
@@ -1538,6 +1613,7 @@ static void roaming_app_rrm_fallback_to_legacy(void)
 
     ESP_LOGD(ROAMING_TAG, "11k roam finished with no enabled fallback method");
     g_roaming_app.rrm_roam_exhausted = true;
+    roaming_app_clear_rrm_channel_cache();
     roaming_app_apply_runtime_config();
 }
 
@@ -1784,7 +1860,7 @@ static void roaming_app_rssi_low_internal_handler(void *ctx, void *data)
     if (!roaming_app_get_ap_info(&g_roaming_app.current_bss.ap)) {
         g_roaming_app.current_bss.ap.rssi = event->rssi;
     }
-    roaming_app_decide_and_roam(g_roaming_app.config.low_rssi_roam_diff - 1);
+    roaming_app_decide_and_roam(g_roaming_app.config.low_rssi_roam_diff - 1, NULL);
     int32_t next_threshold = g_roaming_app.current_low_rssi_threshold -
                              g_roaming_app.config.rssi_threshold_reduction_offset;
     next_threshold = roaming_app_clamp_rssi_threshold(next_threshold);
@@ -1821,21 +1897,47 @@ static void roaming_app_rssi_low_handler(void* arg, esp_event_base_t event_base,
 #endif
 
 #if NETWORK_ASSISTED_ROAMING_ENABLED
-static bool trigger_network_assisted_roam(void)
+static bool trigger_network_assisted_roam(const struct cand_bss *bss)
 {
+    char selected_candidate[96] = {0};
+    char *query_list = NULL;
+    const char *btm_candidates = g_roaming_app.btm_neighbor_list;
+
     if (!g_roaming_app.sta_connected) {
         ESP_LOGD(ROAMING_TAG, "Skipping BTM query while disconnected");
         return false;
     }
 
+    if (bss && roaming_app_build_btm_candidate(bss, selected_candidate, sizeof(selected_candidate)) == 0) {
+        query_list = os_calloc(1, BTM_QUERY_LIST_MAX_LEN);
+        if (!query_list) {
+            ESP_LOGW(ROAMING_TAG, "Skipping BTM query due to memory allocation failure");
+            return false;
+        }
+        strlcpy(query_list, selected_candidate, BTM_QUERY_LIST_MAX_LEN);
+        if (g_roaming_app.btm_neighbor_list) {
+            size_t selected_len = strlen(query_list);
+            size_t neighbor_len = strlen(g_roaming_app.btm_neighbor_list);
+
+            if (selected_len + neighbor_len < BTM_QUERY_LIST_MAX_LEN) {
+                strlcat(query_list, g_roaming_app.btm_neighbor_list, BTM_QUERY_LIST_MAX_LEN);
+            } else {
+                ESP_LOGW(ROAMING_TAG, "Skipping cached neighbor list as explicit BTM candidate list is full");
+            }
+        }
+        btm_candidates = query_list;
+    }
+
     if (esp_wnm_send_bss_transition_mgmt_query((enum btm_query_reason)BTM_QUERY_REASON_LOW_RSSI,
-                                               g_roaming_app.btm_neighbor_list, 1) < 0) {
+                                               btm_candidates, 1) < 0) {
         ESP_LOGD(ROAMING_TAG, "failed to send btm query");
+        os_free(query_list);
         return false;
     }
     ESP_LOGD(ROAMING_TAG, "Sent BTM Query");
     roaming_app_mark_roam_attempt();
     g_roaming_app.btm_attempt++;
+    os_free(query_list);
     return true;
 }
 #endif /*NETWORK_ASSISTED_ROAMING*/
@@ -1953,10 +2055,12 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
 }
 
 /*
- * Trigger-side roam decision: prefer 11v, then 11k, then legacy.
- * Discovery scan runs only when the legacy method is selected (or used as fallback).
+ * Common roam method decision for low-RSSI and periodic (after discovery).
+ * Prefer 11v, then 11k, then legacy.
+ * If candidate is known (e.g. periodic discovery), legacy does directed reconnect
+ * without another scan. If no candidate, legacy starts a discovery scan.
  */
-static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold)
+static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const struct cand_bss *candidate)
 {
     struct timeval now;
 
@@ -1998,7 +2102,7 @@ static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold)
 #if NETWORK_ASSISTED_ROAMING_ENABLED
     if (roaming_app_btm_method_usable()) {
         ESP_LOGD(ROAMING_TAG, "Attempting 11v BTM roam");
-        if (trigger_network_assisted_roam()) {
+        if (trigger_network_assisted_roam(candidate)) {
             /* After final BTM attempt with no fallback, suppress further triggers. */
             if (!roaming_app_connected_roam_method_available()) {
                 roaming_app_apply_runtime_config();
@@ -2020,7 +2124,14 @@ static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold)
 #endif
 
     if (roaming_app_legacy_method_enabled()) {
-        ESP_LOGD(ROAMING_TAG, "Attempting legacy roam (scan required)");
+        if (candidate) {
+            ESP_LOGD(ROAMING_TAG, "Attempting legacy roam (candidate known, no scan)");
+            if (wifi_post_roam_event((struct cand_bss *)candidate)) {
+                ESP_LOGE(ROAMING_TAG, "Posting of legacy roam event failed");
+            }
+            return;
+        }
+        ESP_LOGD(ROAMING_TAG, "Attempting legacy roam (discovery scan required)");
         determine_best_ap(legacy_rssi_threshold);
         return;
     }
@@ -2343,6 +2454,17 @@ static void parse_scan_results_and_roam(void)
             g_roaming_app.rrm_roam_pending = false;
         } else
 #endif
+        if (g_roaming_app.sta_connected) {
+            /* Connected discovery (periodic or legacy-without-candidate): decide method. */
+            if (!roaming_app_can_act_on_candidate(&now, true)) {
+                os_free(best_ap);
+                return;
+            }
+            ESP_LOGI(ROAMING_TAG,"Found a better AP "MACSTR" at channel %d", MAC2STR(best_ap->bssid), best_ap->channel);
+            roaming_app_decide_and_roam(g_roaming_app.current_rssi_threshold, best_ap);
+            os_free(best_ap);
+            return;
+        }
         if (!roaming_app_can_act_on_candidate(&now, true)) {
             os_free(best_ap);
             return;
@@ -2400,6 +2522,8 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
          * periodic scans. */
         gettimeofday(&g_roaming_app.scanned_aps.time, NULL);
         print_ap_records(&g_roaming_app.scanned_aps);
+        /* Clear before parse so decide_and_roam can run after connected discovery. */
+        g_roaming_app.scan_ongoing = false;
         parse_scan_results_and_roam();
 #if RRM_ASSISTED_ROAMING_ENABLED
         if (g_roaming_app.rrm_scan_active) {
@@ -2458,10 +2582,11 @@ static void determine_best_ap(int8_t rssi_threshold)
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
             }
         } else {
-            parse_scan_results_and_roam();
+            /* Clear before parse so decide_and_roam can run after connected discovery. */
             g_roaming_app.scan_ongoing = false;
+            parse_scan_results_and_roam();
         }
-    } else if(rssi_threshold < g_roaming_app.current_rssi_threshold) {
+    } else if (rssi_threshold < g_roaming_app.current_rssi_threshold) {
         g_roaming_app.current_rssi_threshold = rssi_threshold;
     }
 }
@@ -2487,7 +2612,8 @@ static void periodic_scan_roam(struct timeval *now)
         return;
     }
 
-    roaming_app_decide_and_roam(g_roaming_app.config.scan_rssi_diff - 1);
+    /* Discovery first; decide_and_roam runs only if a better AP is found. */
+    determine_best_ap(g_roaming_app.config.scan_rssi_diff - 1);
 }
 #endif /*PERIODIC_SCAN_MONITORING*/
 
