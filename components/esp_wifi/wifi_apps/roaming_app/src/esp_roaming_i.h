@@ -50,6 +50,11 @@ extern "C" {
 #define SCAN_PREFERRED_CHAN_LIST CONFIG_ESP_WIFI_ROAMING_SCAN_CHAN_LIST
 #define DEFAULT_PREFERRED_SCAN_CHAN_LIST "None"
 #define SCAN_RESULTS_USABILITY_WINDOW CONFIG_ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW
+#ifdef CONFIG_ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW
+#define RRM_CHANNEL_CACHE_USABILITY_WINDOW CONFIG_ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW
+#else
+#define RRM_CHANNEL_CACHE_USABILITY_WINDOW 10
+#endif
 #define MAX_CANDIDATE_COUNT CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES
 
 /* Legacy roaming configuration */
@@ -171,6 +176,7 @@ struct roaming_app {
     struct cand_bss *pending_roam_bss;
     wifi_scan_channel_bitmap_t rrm_channel_bitmap;
     bool rrm_channels_valid;
+    struct timeval rrm_channels_time;
 #if RRM_ASSISTED_ROAMING_ENABLED
     uint8_t rrm_attempt;
     bool rrm_roam_pending;
