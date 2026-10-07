@@ -53,7 +53,7 @@ typedef struct esp_stdio_entry *esp_stdio_handle_t;
  * The driver is added to the multiplexer as an auxiliary: once /dev/console is
  * open, every byte written to stdout/stderr is fanned out to it in addition to
  * the primary.  To use it as the read+write primary instead, promote it with
- * esp_stdio_set_primary().
+ * esp_stdio_set_primary_driver().
  *
  * The caller is responsible for initialising the driver before calling this
  * function.  The ops table, context, and path string must remain valid until
@@ -74,13 +74,21 @@ esp_err_t esp_stdio_register_driver(const esp_stdio_driver_config_t *config,
  *
  * The driver's backend fd is closed if it was open and its pool slot is
  * released.  A driver that is currently the active primary cannot be removed:
- * promote a different driver with esp_stdio_set_primary() first.  After a
- * successful call the handle is invalid.
+ * promote a different driver with esp_stdio_set_primary_driver() first.  After
+ * a successful call the handle is invalid.
+ *
+ * @note Unregistering the Kconfig-selected boot console (the handle returned by
+ *       the very first esp_stdio_set_primary_driver() call) is a one-way
+ *       transition: its pool slot is freed and the saved handle becomes stale,
+ *       so it cannot be restored later, and the internal "user owns the
+ *       primary" state stays latched for the remaining lifetime.  Prefer
+ *       demoting the boot console (promote another driver) over unregistering
+ *       it if you may need to restore it.
  *
  * @param handle A valid handle returned by esp_stdio_register_driver().
  * @return ESP_OK on success
- *         ESP_ERR_INVALID_ARG if handle is NULL, already unregistered, or is
- *                             the active primary
+ *         ESP_ERR_INVALID_ARG if handle is NULL or already unregistered
+ *         ESP_ERR_INVALID_STATE if handle is the active primary
  */
 esp_err_t esp_stdio_unregister_driver(esp_stdio_handle_t handle);
 
@@ -104,8 +112,8 @@ esp_err_t esp_stdio_unregister_driver(esp_stdio_handle_t handle);
  * @return ESP_OK on success
  *         ESP_ERR_INVALID_ARG if handle is NULL or already unregistered
  */
-esp_err_t esp_stdio_set_primary(esp_stdio_handle_t handle,
-                                esp_stdio_handle_t *out_old_primary);
+esp_err_t esp_stdio_set_primary_driver(esp_stdio_handle_t handle,
+                                       esp_stdio_handle_t *out_old_primary);
 
 #endif // CONFIG_VFS_SUPPORT_IO
 
@@ -120,7 +128,7 @@ esp_err_t esp_stdio_set_primary(esp_stdio_handle_t handle,
  * - RX: CR (terminals send CR when Enter is pressed)
  * - TX: CRLF (move cursor to beginning of next line on newline)
  *
- * If a user has taken over the primary console with esp_stdio_set_primary(),
+ * If a user has taken over the primary console with esp_stdio_set_primary_driver(),
  * this function is a no-op (the user backend is assumed to be already
  * initialised by the caller).
  *
@@ -135,7 +143,7 @@ esp_err_t esp_stdio_install_io_driver(void);
  * streams. Call this when shutting down or when replacing the current console
  * driver with a different one.
  *
- * If a user has taken over the primary console with esp_stdio_set_primary(),
+ * If a user has taken over the primary console with esp_stdio_set_primary_driver(),
  * this function is a no-op.
  */
 void esp_stdio_uninstall_io_driver(void);

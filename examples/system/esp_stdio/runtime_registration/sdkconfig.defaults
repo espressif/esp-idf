@@ -1,0 +1,3 @@
+# Room for the boot console(s) plus this example's capture backend. Chips with a
+# secondary console (e.g. UART primary + USB-Serial-JTAG) already use two slots.
+CONFIG_ESP_STDIO_MAX_VFS_ENTRIES=3

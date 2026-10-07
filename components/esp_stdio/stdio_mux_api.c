@@ -84,8 +84,8 @@ esp_err_t esp_stdio_register_driver(const esp_stdio_driver_config_t *config,
     return ESP_OK;
 }
 
-esp_err_t esp_stdio_set_primary(esp_stdio_handle_t handle,
-                                esp_stdio_handle_t *out_old_primary)
+esp_err_t esp_stdio_set_primary_driver(esp_stdio_handle_t handle,
+                                       esp_stdio_handle_t *out_old_primary)
 {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
@@ -134,10 +134,11 @@ esp_err_t esp_stdio_unregister_driver(esp_stdio_handle_t handle)
     }
 
     /* Only auxiliaries can be removed; the active primary must first be
-     * replaced with esp_stdio_set_primary() before it can be unregistered. */
+     * replaced with esp_stdio_set_primary_driver() before it can be
+     * unregistered. */
     if (handle == s_active_primary) {
         _lock_release(&s_lock);
-        return ESP_ERR_INVALID_ARG;
+        return ESP_ERR_INVALID_STATE;
     }
 
     entry_close(handle);

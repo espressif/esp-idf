@@ -11,7 +11,7 @@
  * multiplexer:
  *
  *   - esp_stdio_register_driver()   -- add a custom VFS backend as an auxiliary
- *   - esp_stdio_set_primary()       -- promote it to the active primary and
+ *   - esp_stdio_set_primary_driver()       -- promote it to the active primary and
  *                                      later restore the previous one
  *   - esp_stdio_unregister_driver() -- remove it again
  *
@@ -161,13 +161,13 @@ void app_main(void)
      * previous primary is returned so it can be restored later; it is not
      * removed, it simply drops back to a write-only auxiliary. */
     esp_stdio_handle_t previous_primary;
-    ESP_ERROR_CHECK(esp_stdio_set_primary(capture, &previous_primary));
+    ESP_ERROR_CHECK(esp_stdio_set_primary_driver(capture, &previous_primary));
 
     console_puts(console, "[2] Written while the capture backend is the primary.\n");
 
     /* Restore the original primary. The capture backend becomes an auxiliary
      * again, so it keeps receiving the fan-out. */
-    ESP_ERROR_CHECK(esp_stdio_set_primary(previous_primary, NULL));
+    ESP_ERROR_CHECK(esp_stdio_set_primary_driver(previous_primary, NULL));
 
     console_puts(console, "[3] Written after restoring the original primary.\n");
 

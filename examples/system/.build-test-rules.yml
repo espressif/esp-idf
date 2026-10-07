@@ -67,7 +67,9 @@ examples/system/esp_event/user_event_loops:
 examples/system/esp_stdio/runtime_registration:
   enable:
     - if: IDF_TARGET == "linux"
-      reason: the example demonstrates the esp_stdio console multiplexer runtime API and only needs to run on one target
+      reason: the example demonstrates the esp_stdio console multiplexer runtime API on the host
+    - if: IDF_TARGET == "esp32c3"
+      reason: also exercise the console multiplexer runtime API on a real target
   depends_components:
     - esp_stdio
     - vfs

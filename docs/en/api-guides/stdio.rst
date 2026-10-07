@@ -184,10 +184,10 @@ In addition to redirecting ``stdout`` and ``stderr`` manually (as shown above), 
 
 The multiplexer is exposed on ``/dev/console`` and manages backends in two roles:
 
-- **Primary** — the active read and write backend. Both application input (``stdin``) and output (``stdout``/``stderr``) go through it. Exactly one backend is the primary at any time. Use :cpp:func:`esp_stdio_set_primary` to choose it; the call returns the previously active primary so the application can restore it later. The previous primary is not removed — it stays registered as a write-only auxiliary. The default console selected in Kconfig is registered automatically at boot and starts as the primary.
+- **Primary** — the active read and write backend. Both application input (``stdin``) and output (``stdout``/``stderr``) go through it. Exactly one backend is the primary at any time. Use :cpp:func:`esp_stdio_set_primary_driver` to choose it; the call returns the previously active primary so the application can restore it later. The previous primary is not removed — it stays registered as a write-only auxiliary. The default console selected in Kconfig is registered automatically at boot and starts as the primary.
 - **Auxiliary** — a write-only sink. Every byte written to ``stdout`` and ``stderr`` is fanned out to all registered auxiliaries in addition to the primary. This is useful, for example, to mirror console output to a log file or a network connection while keeping the interactive console on the physical interface.
 
-A backend is added with :cpp:func:`esp_stdio_register_driver` (initially as an auxiliary) and removed with :cpp:func:`esp_stdio_unregister_driver`. The backend currently acting as the primary cannot be unregistered; promote another one with :cpp:func:`esp_stdio_set_primary` first.
+A backend is added with :cpp:func:`esp_stdio_register_driver` (initially as an auxiliary) and removed with :cpp:func:`esp_stdio_unregister_driver`. The backend currently acting as the primary cannot be unregistered; promote another one with :cpp:func:`esp_stdio_set_primary_driver` first.
 
 The maximum number of backends that can be registered at once (the primary plus all auxiliaries, including the Kconfig default) is set by :ref:`CONFIG_ESP_STDIO_MAX_VFS_ENTRIES`.
 

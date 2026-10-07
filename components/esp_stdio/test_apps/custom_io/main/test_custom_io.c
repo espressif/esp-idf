@@ -22,7 +22,7 @@ TEST_CASE("set_primary: write routed to the primary", "[esp_stdio]")
 {
     esp_stdio_handle_t h, old;
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_register_driver(&cfg_a, &h));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(h, &old));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(h, &old));
 
     int fd = open("/dev/console", O_RDWR);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
@@ -37,7 +37,7 @@ TEST_CASE("set_primary: write routed to the primary", "[esp_stdio]")
     TEST_ASSERT_EQUAL(1, mock_a.close_count);
 
     /* Restore the previous primary, then remove the backend. */
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(old, NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(old, NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_unregister_driver(h));
 }
 
@@ -48,7 +48,7 @@ TEST_CASE("primary read path", "[esp_stdio]")
 
     esp_stdio_handle_t h, old;
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_register_driver(&cfg_a, &h));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(h, &old));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(h, &old));
 
     int fd = open("/dev/console", O_RDWR);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
@@ -59,7 +59,7 @@ TEST_CASE("primary read path", "[esp_stdio]")
     TEST_ASSERT_EQUAL(1, mock_a.read_count);
 
     close(fd);
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(old, NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(old, NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_unregister_driver(h));
 }
 
@@ -121,25 +121,35 @@ TEST_CASE("invalid arguments", "[esp_stdio]")
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_stdio_register_driver(&cfg_a, NULL));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_stdio_unregister_driver(NULL));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_stdio_set_primary(NULL, &h));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_stdio_set_primary_driver(NULL, &h));
+}
+
+TEST_CASE("set_primary on an unregistered driver is rejected", "[esp_stdio]")
+{
+    esp_stdio_handle_t h;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_register_driver(&cfg_a, &h));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_unregister_driver(h));
+
+    /* The handle is stale after unregister; promoting it must be rejected. */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_stdio_set_primary_driver(h, NULL));
 }
 
 TEST_CASE("active primary cannot be unregistered", "[esp_stdio]")
 {
     esp_stdio_handle_t h, old;
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_register_driver(&cfg_a, &h));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(h, &old));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(h, &old));
 
     int fd = open("/dev/console", O_RDWR);
     TEST_ASSERT_EQUAL(1, write(fd, "z", 1));
     TEST_ASSERT_EQUAL(1, mock_a.write_count);
 
     /* Removing the active primary is rejected. */
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_stdio_unregister_driver(h));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_stdio_unregister_driver(h));
 
     /* After restoring the previous primary, it becomes an auxiliary and can be
      * removed. */
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(old, NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(old, NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_unregister_driver(h));
 
     /* Console still works via the restored primary; the removed backend gets
@@ -153,13 +163,13 @@ TEST_CASE("install/uninstall are no-ops with user primary", "[esp_stdio]")
 {
     esp_stdio_handle_t h, old;
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_register_driver(&cfg_a, &h));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(h, &old));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(h, &old));
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_install_io_driver());
     esp_stdio_uninstall_io_driver();
     TEST_ASSERT_EQUAL(0, mock_a.open_count);  /* driver not initialised by install */
 
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(old, NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(old, NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_unregister_driver(h));
 }
 
@@ -195,8 +205,8 @@ TEST_CASE("set_primary swaps primaries and returns the old one", "[esp_stdio]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_register_driver(&cfg_a, &ha));
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_register_driver(&cfg_b, &hb));
 
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(ha, &old_default));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(hb, &old_a));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(ha, &old_default));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(hb, &old_a));
     TEST_ASSERT_EQUAL_PTR(ha, old_a);   /* set_primary returns the previous primary */
 
     int fd = open("/dev/console", O_RDWR);
@@ -215,6 +225,6 @@ TEST_CASE("set_primary swaps primaries and returns the old one", "[esp_stdio]")
     close(fd);
 
     /* Restore the boot default and drop B. */
-    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary(old_default, NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_set_primary_driver(old_default, NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_stdio_unregister_driver(hb));
 }
