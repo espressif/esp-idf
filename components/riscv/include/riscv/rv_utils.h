@@ -425,13 +425,20 @@ FORCE_INLINE_ATTR uintptr_t rv_utils_asynchronous_bus_get_error_pc(void)
 
 // --------------- Breakpoints/Watchpoints -----------------
 
+#if CONFIG_RISCV_USER_MODE_TRAPS
+/* U-mode code runs with its own virtual addresses, so ESP-IDF's triggers match M-mode only. */
+#define RV_TRIGGER_MODES    TDATA1_MACHINE
+#else /* CONFIG_RISCV_USER_MODE_TRAPS */
+#define RV_TRIGGER_MODES    (TDATA1_USER | TDATA1_MACHINE)
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
+
 FORCE_INLINE_ATTR void rv_utils_set_breakpoint(int bp_num, uint32_t bp_addr)
 {
     /* The code below sets breakpoint which will trigger `Breakpoint` exception
      * instead transferring control to debugger. */
     RV_WRITE_CSR(tselect, bp_num);
     RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
-    RV_WRITE_CSR(tdata1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
+    RV_WRITE_CSR(tdata1, RV_TRIGGER_MODES | TDATA1_EXECUTE);
     RV_WRITE_CSR(tdata2, bp_addr);
 }
 
@@ -443,8 +450,7 @@ FORCE_INLINE_ATTR void rv_utils_set_watchpoint(int wp_num,
 {
     RV_WRITE_CSR(tselect, wp_num);
     RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
-    RV_WRITE_CSR(tdata1, TDATA1_USER                   |
-                         TDATA1_MACHINE                |
+    RV_WRITE_CSR(tdata1, RV_TRIGGER_MODES              |
                          ((size == 1) ? TDATA1_MATCH_EXACT : TDATA1_MATCH_NAPOT) |
                          (on_read  ? TDATA1_LOAD  : 0) |
                          (on_write ? TDATA1_STORE : 0));
