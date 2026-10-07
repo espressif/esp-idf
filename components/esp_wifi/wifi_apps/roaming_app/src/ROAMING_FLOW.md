@@ -11,7 +11,7 @@ This document describes the runtime control flow of the advanced Wi-Fi roaming a
 - `Candidate AP`: A scanned AP that is still under consideration for roaming.
 - `BTM`: Network-assisted roaming using IEEE 802.11v BSS Transition Management.
 - `RRM / Neighbor Report`: Information about neighboring APs obtained using IEEE 802.11k.
-- `Legacy roaming`: A directed reconnect initiated by the roaming app after a discovery scan.
+- `Legacy roaming`: A directed reconnect to a known candidate, or a discovery scan then reconnect when no candidate is known yet.
 - `Blacklist`: A temporary deny-list of BSSIDs that the app should avoid.
 
 ## Initialization Preconditions
@@ -35,7 +35,11 @@ flowchart TD
     C --> D["On connection, apply roaming configuration<br/>and start enabled monitors"]
 
     D --> E{"Runtime event"}
-    E -- "Low RSSI or periodic monitor" --> Decide["decide_and_roam()<br/>Priority: 11v then 11k then legacy"]
+    E -- "Low RSSI" --> Decide["decide_and_roam()<br/>Priority: 11v then 11k then legacy"]
+    E -- "Periodic monitor" --> PerDisc["Discovery scan"]
+    PerDisc --> Better{"Better AP found?"}
+    Better -- "No" --> E
+    Better -- "Yes" --> Decide
     E -- "Periodic RRM timer" --> G["Refresh cached neighbor list / NR channels"]
     G --> E
     E -- "Disconnect event" --> H{"Reconnect allowed?"}
@@ -44,13 +48,14 @@ flowchart TD
     J -- "No" --> K["Use default reconnect path"]
     J -- "Yes" --> DiscScan["Discovery scan for recovery candidate"]
 
-    Decide -- "BTM usable" --> S["Send BTM query using cached neighbor list"]
+    Decide -- "BTM usable" --> S["Send BTM query; preferred candidate if known"]
     Decide -- "11k usable" --> S11k["NR request if needed, then NR-channel scan"]
-    Decide -- "Legacy enabled" --> LegScan["Discovery scan then directed reconnect"]
+    Decide -- "Legacy + candidate known" --> T["Directed reconnect"]
+    Decide -- "Legacy + no candidate" --> LegScan["Discovery scan then directed reconnect"]
     Decide -- "No method usable" --> U["Suppress triggers until next association"]
 
     S11k --> Found11k{"Better AP on NR channels?"}
-    Found11k -- "Yes" --> T["Directed reconnect"]
+    Found11k -- "Yes" --> T
     Found11k -- "No / 11k failed" --> Retry11k{"11k NR retries remaining?"}
     Retry11k -- "Yes" --> S11k
     Retry11k -- "No" --> LegOrStop{"Legacy enabled?"}
@@ -81,8 +86,11 @@ flowchart TD
     F --> G["On connection: read AP state,<br/>refresh scan filters, apply runtime config,<br/>and arm enabled monitors"]
 
     G --> H{"Runtime event"}
-    H -- "Low RSSI" --> Decide["Method decision: 11v / 11k / legacy"]
-    H -- "Periodic monitor timer" --> Decide
+    H -- "Low RSSI" --> Decide["decide_and_roam: 11v / 11k / legacy"]
+    H -- "Periodic monitor timer" --> PerDisc["Discovery scan"]
+    PerDisc --> Better{"Better AP found?"}
+    Better -- "Yes" --> Decide
+    Better -- "No" --> H
     H -- "Periodic RRM timer" --> J["Send neighbor report request"]
     J --> K["Update cached neighbor list and NR channels"]
     K --> H
@@ -103,9 +111,15 @@ flowchart TD
 | Blacklist handling | `ESP_WIFI_ROAMING_BSSID_BLACKLIST`, `ESP_WIFI_ROAMING_AUTO_BLACKLISTING`, `ESP_WIFI_ROAMING_MAX_CONN_FAILURES`, `ESP_WIFI_ROAMING_BLACKLIST_TIMEOUT` |
 | Runtime overrides | `roam_set_config_params()`, `scan_filter_ssid`, `scan_filter_bssid` |
 
-## 3. Legacy Discovery Scan and Candidate Selection
+## 3. Discovery Scan and Candidate Selection
 
-A full discovery scan is used for **legacy roaming** and for **disconnected blacklist recovery**. It is not required before 11v or 11k.
+A full discovery scan is used for:
+
+- **Periodic monitor** (always first; if a better AP is found, call `decide_and_roam` with that candidate)
+- **Legacy** when `decide_and_roam` selected legacy and no candidate is known yet
+- **Disconnected blacklist recovery**
+
+It is not required before 11v or 11k on the low-RSSI path. Periodic discovery supplies a candidate to BTM/legacy when those methods are chosen afterward.
 
 ```mermaid
 flowchart TD
@@ -127,7 +141,9 @@ flowchart TD
     J --> K["Compare RSSI delta with threshold"]
     K --> L{"Candidate selected?"}
 
-    L -- "Yes" --> M{"Still able to act on this candidate?"}
+    L -- "Yes" --> Conn{"Station connected?"}
+    Conn -- "Yes" --> Decide["decide_and_roam(candidate)"]
+    Conn -- "No" --> M{"Still able to act on this candidate?"}
     M -- "Yes" --> Q["Post directed-reconnect roam event"]
     M -- "No" --> O
     L -- "No" --> N{"Station connected?"}
@@ -157,7 +173,7 @@ flowchart TD
     B -- "No" --> E{"BTM enabled and supported?"}
 
     E -- "Yes" --> F{"BTM retries remaining?"}
-    F -- "Yes" --> H["Send BTM query with cached neighbor list"]
+    F -- "Yes" --> H["Send BTM query; prepend preferred candidate if known"]
     H --> I["Wait for AP or network action"]
     F -- "No" --> Rrm
     E -- "No" --> Rrm
@@ -181,7 +197,9 @@ flowchart TD
     Retry11k -- "No" --> Legacy
 
     Legacy{"Legacy roaming enabled?"}
-    Legacy -- "Yes" --> LegScan["Discovery scan then directed reconnect"]
+    Legacy -- "Yes" --> Cand{"Candidate already known?"}
+    Cand -- "Yes" --> K
+    Cand -- "No" --> LegScan["Discovery scan then directed reconnect"]
     Legacy -- "No" --> L["Suppress triggers until next association"]
     LegScan --> K
 ```
@@ -214,7 +232,9 @@ flowchart TD
 
 ## 6. Behavioral Notes
 
-- A roam trigger selects methods first (`decide_and_roam`). 11v and 11k do not run a full discovery scan up front; only legacy does.
+- `decide_and_roam()` is shared by low-RSSI and periodic (after discovery finds a better AP). Method priority is 11v → 11k → legacy.
+- Low RSSI calls `decide_and_roam` directly (no upfront discovery). Periodic always runs discovery first and only calls `decide_and_roam` when a better AP is found.
+- Legacy with a known candidate does directed reconnect without another scan. Legacy without a candidate (typical low-RSSI edge) runs a discovery scan, then reconnects.
 - A periodic RRM event does not directly trigger roaming. It refreshes the cached neighbor list used by BTM and the NR channel cache used by 11k.
 - If NR channels are already cached, 11k can skip the on-demand Neighbor Report Request and start the NR-channel scan immediately.
 - If the NR-channel scan cannot start because another scan is already running, the warm NR cache is kept and the 11k scan is deferred briefly instead of being treated as an immediate 11k failure.
