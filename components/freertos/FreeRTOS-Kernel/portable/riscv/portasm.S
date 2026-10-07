@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "soc/soc_caps.h"
 #include "riscv/rvruntime-frames.h"
+#include "riscv/encoding.h"
 #include "riscv/csr_hwlp.h"
 #include "riscv/csr_pie.h"
 #include "riscv/csr_dsp.h"
@@ -869,6 +870,17 @@ restore_stack_pointer:
     lw      a0, pxCurrentTCBs
     lw      sp, 0(a0)
 #endif /* ( configNUM_CORES > 1 ) */
+
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* The task being resumed may run in a different privilege mode than the interrupted one,
+     * so the returned mstatus must take the MPP field from the task's own frame. */
+    lw      a1, RV_STK_MSTATUS(sp)          /* a1 = mstatus saved in the frame of the task being resumed */
+    li      a2, MSTATUS_MPP                 /* a2 = MPP field mask */
+    and     a1, a1, a2                      /* a1 = MPP field of the task being resumed */
+    not     a2, a2                          /* a2 = mask of every field except MPP */
+    and     s11, s11, a2                    /* s11 = new mstatus without its MPP field */
+    or      s11, s11, a1                    /* s11 = new mstatus with the MPP field of the task being resumed */
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
 #if ( configNUM_CORES > 1 )
     /* Indicate that this CPU has completed startup */
