@@ -20,7 +20,7 @@ There are broadly two different roaming triggers you can choose from:
 
 1) Low RSSI triggered roaming :
 
-If enabled, in this method the roaming app sets a Wi-Fi Threshold (configured by “Wi-Fi RSSI threshold to trigger roaming”), which when reached by the connection to the current AP, triggers a roam method decision (11v → 11k → legacy). A full discovery scan is started only if the selected method is legacy.
+If enabled, in this method the roaming app sets a Wi-Fi Threshold (configured by “Wi-Fi RSSI threshold to trigger roaming”), which when reached by the connection to the current AP, calls the common roam method decision (`decide_and_roam`: 11v → 11k → legacy) without an upfront discovery scan. A full discovery scan is started only if legacy is selected and no candidate is already known.
 
 Every time the threshold is reached, a new threshold needs to be set at an even lower RSSI threshold since if we fail to find a better AP the first time the RSSI threshold is reached there will be no further attempts to find better APs, leading to possible disconnection as the only avenue for finding a better AP. The offset by which the next RSSI threshold can be set is decided by “Offset by which to reset the RSSI Threshold after attempt to roam” which defaults to 5.
 
@@ -28,9 +28,9 @@ Also please note that if the AP we connect to, upon connecting, itself has a wor
 
 2) Periodic Scan based roaming:
 
-Unlike Low RSSI triggered roaming, which is a bit reactive to the changing network environment, periodic monitoring (enabled by “Conduct periodic scans to check if a better AP is available”) allows for a more active approach. When the connected RSSI is below the configured threshold, it runs the same roam method decision (11v → 11k → legacy). A full discovery scan happens only for the legacy path. You can also decide the threshold after which you want to begin this monitoring with a default of -50 dBm. (Configured by “Threshold at which to begin periodic scanning for a better AP”)
+Unlike Low RSSI triggered roaming, which is a bit reactive to the changing network environment, periodic monitoring (enabled by “Conduct periodic scans to check if a better AP is available”) allows for a more active approach. When the connected RSSI is below the configured threshold, the app first runs a discovery scan. Only if a better AP is found does it call the same common `decide_and_roam` decision (11v → 11k → legacy), with that candidate available for preferred-candidate BTM and for legacy directed reconnect (no second scan). You can also decide the threshold after which you want to begin this monitoring with a default of -50 dBm. (Configured by “Threshold at which to begin periodic scanning for a better AP”)
 
-The intervals at which this periodic check will take place can also be configured through “Time intervals at which station will initiate a scan”. This defaults to 30 seconds. The RSSI difference between a candidate AP and the current AP, which can be considered as acceptable to initiate legacy roaming after a discovery scan, can also be configured as the “RSSI difference b/w current AP and a candidate AP to initiate roaming”
+The intervals at which this periodic check will take place can also be configured through “Time intervals at which station will initiate a scan”. This defaults to 30 seconds. The RSSI difference between a candidate AP and the current AP, which can be considered as acceptable to treat an AP as better after a discovery scan, can also be configured as the “RSSI difference b/w current AP and a candidate AP to initiate roaming”
 
 **Please note that at least one of the two Roaming Triggers needs to be enabled.**
 
@@ -41,7 +41,7 @@ Currently 3 methods of roaming are supported by the roaming app. (Roaming App Se
 
 Priority while connected: **802.11v BTM > 802.11k assisted > legacy**.
 
-On a roam trigger the app selects methods in that order among enabled/supported methods. **802.11v and 802.11k do not run a full discovery scan first.** Only legacy roaming runs a discovery scan before reconnecting. Fallback is only to methods that are still enabled; if none remain usable, roaming triggers are suppressed until the next association.
+Both triggers share `decide_and_roam` for method selection. Low RSSI enters that decision directly. Periodic monitoring runs a discovery scan first and only then enters `decide_and_roam` if a better AP was found. **802.11v and 802.11k do not require a full discovery scan on the low-RSSI path.** Legacy directed-reconnects when a candidate is already known; otherwise it runs a discovery scan. Fallback is only to methods that are still enabled; if none remain usable, roaming triggers are suppressed until the next association.
 
 1) Network Assisted Roaming:
 
@@ -55,7 +55,7 @@ Enabled by “Support 802.11k assisted roaming using neighbor reports”. When s
 
 3) Legacy Roaming approach.
 
-Enabled by “Support Legacy roaming approach”, this is designed for scenarios where there is no support for 802.11v/802.11k amongst the APs of the network, or after higher-priority methods have been exhausted. In this scenario the station runs a discovery scan, and upon determining a better AP forcibly disconnects and attempts to connect to that AP.
+Enabled by “Support Legacy roaming approach”, this is designed for scenarios where there is no support for 802.11v/802.11k amongst the APs of the network, or after higher-priority methods have been exhausted. If a better AP candidate is already known (for example from a periodic discovery scan), the station directed-reconnects to it without scanning again. Otherwise it runs a discovery scan, and upon determining a better AP forcibly disconnects and attempts to connect to that AP.
 
 Please note that if BTM is enabled together with 11k and/or legacy, “Retry count after which to switch to 11k/legacy roaming” controls how many BTM attempts are made before falling through. 11k has its own independent retry count for Neighbor Report Requests.
 
