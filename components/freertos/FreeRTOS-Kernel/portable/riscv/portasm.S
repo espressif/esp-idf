@@ -13,6 +13,9 @@
 #include "riscv/csr_dsp.h"
 
     .extern pxCurrentTCBs
+#if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+    .extern vPortAbortIfTaskPieBlacklisted
+#endif
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #include "esp_private/hw_stack_guard.h"
@@ -78,8 +81,16 @@ rtos_save_\name\()_coproc:
      * scheduler is started anyway */
     beqz  a0, rtos_save_\name\()_coproc_norestore
     mv    s1, a0                    /* s1 = pxCurrentTCBs */
-    /* Prepare parameters of pxPortUpdateCoprocOwner */
-    mv    a2, a0
+#if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+    /* Abort before pinning or saving context if this task is blacklisted from PIE use */
+    .if \coproc_idx == PIE_COPROC_IDX
+    mv    a1, sp
+    call  vPortAbortIfTaskPieBlacklisted
+    .endif
+#endif /* CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST */
+    /* Prepare parameters of pxPortUpdateCoprocOwner. Source the TCB from s1, which
+     * is preserved across any call made above. */
+    mv    a2, s1
     li    a1, \coproc_idx
     csrr  a0, mhartid
     call  pxPortUpdateCoprocOwner

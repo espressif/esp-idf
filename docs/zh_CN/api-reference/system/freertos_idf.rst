@@ -460,6 +460,14 @@ IDF FreeRTOS 中，特定核进入和退出临界区的过程如下：
 
             由于存在这种迁移机制，任务 **不得** 在临界区或 ISR 例程中使用 PIE 协处理器，否则将导致运行时中止。
 
+    意外使用 PIE（例如深层调用栈间接调用了 PIE 辅助函数）可能会把本不该运行在 PIE 核心上的任务固定到该核心。可启用 :menuitem:`CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST`，并对不得执行 PIE 的任务调用 :cpp:func:`vTaskSetPieBlacklisted`。该标志仅在协处理器陷入时被检查。PIE 所有者持续运行期间，PIE 保持使能，因此任务被切换出去之前执行的指令不会陷入。任务被切换出去后，PIE 会被关闭，下一次 PIE 指令会陷入。即使该任务仍是协处理器所有者，被加入黑名单的任务也会在这次陷入时中止，而不是被静默固定到 PIE 核心。
+
+    .. code-block:: c
+
+        #if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+            vTaskSetPieBlacklisted(my_task, pdTRUE);
+        #endif
+
 
 .. only:: SOC_CPU_HAS_HWLOOP
 

@@ -55,6 +55,9 @@
 #include "esp_log.h"
 #include "FreeRTOS.h"       /* This pulls in portmacro.h */
 #include "task.h"
+#if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+#include "freertos/idf_additions.h"
+#endif
 #include "portmacro.h"
 #include "port_systick.h"
 #include "esp_memory_utils.h"
@@ -792,6 +795,12 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         vPortTLSPointersDelCb( pxTCB );
     #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 
+    #if ( CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST )
+        if (pxTCB != NULL) {
+            vTaskSetPieBlacklisted((TaskHandle_t)pxTCB, pdFALSE);
+        }
+    #endif /* CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST */
+
     #if ( SOC_CPU_COPROC_NUM > 0 )
         /* Cleanup coproc save area */
         vPortCleanUpCoprocArea( pxTCB );
@@ -924,6 +933,23 @@ void vPortCoprocUsedInISR(void* frame)
     xt_unhandled_exception(frame);
 }
 
+#if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+/**
+ * @brief Abort if the given task is blacklisted from using the PIE coprocessor.
+ *
+ * Called from the PIE illegal-instruction path, so this must not trigger another
+ * exception via abort().
+ */
+void vPortAbortIfTaskPieBlacklisted(StaticTask_t *task, void *frame)
+{
+    if (task != NULL && xTaskGetPieBlacklisted((TaskHandle_t)task) != pdFALSE) {
+        g_panic_abort = true;
+        g_panic_abort_details = (char *) "ERROR: Blacklisted task executed a PIE instruction!\n";
+        xt_unhandled_exception(frame);
+    }
+}
+#endif /* CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST */
+
 #if CONFIG_IDF_TARGET_ESP32S31
 /* On the ESP32-S31, the PIE is only available on core 1, so we need to perform a few checks when core 0 uses a PIE instruction.
  * the functions here will help us with that. */
@@ -939,6 +965,9 @@ void vPortCoprocUsedInISR(void* frame)
  */
 void* vPortTaskUsedPIEOnCPU0(StaticTask_t* task, void* frame)
 {
+#if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+    vPortAbortIfTaskPieBlacklisted(task, frame);
+#endif
 #if CONFIG_FREERTOS_UNICORE
     g_panic_abort = true;
     g_panic_abort_details = (char *) "ERROR: PIE coprocessor is not supported in unicore configuration!\n";

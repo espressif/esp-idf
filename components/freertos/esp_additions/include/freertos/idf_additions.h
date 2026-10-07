@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,6 +130,37 @@
  * @return The task's core ID or tskNO_AFFINITY
  */
 BaseType_t xTaskGetCoreID( TaskHandle_t xTask );
+
+#if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
+
+/**
+ * @brief Mark a task as forbidden from using the PIE coprocessor
+ *
+ * When CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST is enabled, a blacklisted
+ * task aborts if it executes a PIE instruction instead of being silently
+ * pinned to a PIE-capable core. Use this to find accidental PIE use.
+ *
+ * The flag is consulted only inside the coprocessor trap. PIE stays enabled
+ * while its owner keeps running, so instructions issued before that task is
+ * switched out do not trap. After the task is switched out, PIE is disabled
+ * and the next PIE instruction traps. A blacklisted task aborts on that trap
+ * even if it is still the coprocessor owner.
+ *
+ * @param xTask Task to update. NULL selects the calling task.
+ * @param xBlacklisted pdTRUE to blacklist the task, pdFALSE to clear it.
+ */
+void vTaskSetPieBlacklisted( TaskHandle_t xTask,
+                             BaseType_t xBlacklisted );
+
+/**
+ * @brief Query whether a task is forbidden from using the PIE coprocessor
+ *
+ * @param xTask Task to query. NULL selects the calling task.
+ * @return pdTRUE if the task is blacklisted, pdFALSE otherwise.
+ */
+BaseType_t xTaskGetPieBlacklisted( TaskHandle_t xTask );
+
+#endif /* CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST */
 
 #if ( ( !CONFIG_FREERTOS_SMP ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
