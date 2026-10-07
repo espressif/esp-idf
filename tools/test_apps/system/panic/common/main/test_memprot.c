@@ -13,6 +13,7 @@
 #include "esp_system.h"
 #include "esp_macros.h"
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 
@@ -245,6 +246,13 @@ void test_rtc_fast_reg3_execute_violation(void)
     printf("RTC_MEM (Fast): Execute operation | Address: %p\n", test_addr);
     run_function(test_addr);
 }
+
+void test_rtc_fast_text_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)((uint32_t)(&_rtc_text_end) - 0x04);
+    printf("RTC_MEM (Fast): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
 #endif
 
 #if CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
@@ -410,6 +418,21 @@ void test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(void)
         printf("SPIRAM (DROM): Non-cacheable DROM alignment gap not added into heap\n");
     }
 }
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+void test_non_cache_spiram_xip_heap_execute_violation(void)
+{
+    extern int _rodata_reserved_end;
+    uint8_t *instr = heap_caps_malloc(SOC_MMU_PAGE_SIZE, MALLOC_CAP_SPIRAM);
+    assert(instr != NULL);
+    assert((uint32_t)instr >= ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end)));
+
+    void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR(instr);
+    memcpy(test_addr, &foo_d, 1024);
+    printf("SPIRAM (Heap): Non-cacheable Execute operation | Address: %p\n", test_addr);
+    run_function(test_addr);
+}
+#endif
 #endif
 #endif /* CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2 */
 

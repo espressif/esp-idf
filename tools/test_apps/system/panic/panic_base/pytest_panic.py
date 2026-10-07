@@ -683,6 +683,8 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = list(
     ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
 ]
 
+CONFIGS_MEMPROT_RTC_FAST_MEM_TEXT_WRITE = list(zip(['memprot_esp32p4'], ['esp32p4']))
+
 CONFIGS_MEMPROT_RTC_SLOW_MEM = list(zip(['memprot_esp32s2'], ['esp32s2']))
 
 CONFIGS_MEMPROT_FLASH_IDROM = list(
@@ -1117,6 +1119,15 @@ def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 
 @pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM_TEXT_WRITE, indirect=['config', 'target'])
+def test_rtc_fast_text_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_SLOW_MEM, indirect=['config', 'target'])
 def test_rtc_slow_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
@@ -1269,6 +1280,15 @@ def test_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test
 def test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     if dut.target == 'esp32p4' and not dut.app.sdkconfig.get('ESP32P4_SELECTS_REV_LESS_V3'):
         spiram_xip_drom_alignment_reg_execute_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize(
+    'config, target', CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP_L2_NON_CACHE, indirect=['config', 'target']
+)
+def test_non_cache_spiram_xip_heap_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    if dut.target == 'esp32p4' and not dut.app.sdkconfig.get('ESP32P4_SELECTS_REV_LESS_V3'):
+        dram_reg2_execute_violation(dut, test_func_name)
 
 
 @pytest.mark.generic

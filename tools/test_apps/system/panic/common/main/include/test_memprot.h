@@ -53,6 +53,8 @@ void test_rtc_fast_reg2_execute_violation(void);
 
 void test_rtc_fast_reg3_execute_violation(void);
 
+void test_rtc_fast_text_write_violation(void);
+
 void test_rtc_slow_reg1_execute_violation(void);
 
 void test_rtc_slow_reg2_execute_violation(void);
@@ -80,6 +82,8 @@ void test_non_cache_drom_reg_execute_violation(void);
 
 void test_non_cache_spiram_xip_irom_alignment_reg_execute_violation(void);
 void test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(void);
+
+void test_non_cache_spiram_xip_heap_execute_violation(void);
 #endif
 
 void test_invalid_memory_region_write_violation(void);
