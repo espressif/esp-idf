@@ -179,7 +179,17 @@ menu "Scan Configuration"
             Duration for which the results from the most recent scans can be used
             by the roaming app for determining the roaming candidates.
 
-
+    config ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW
+        int "Neighbor report channel cache expiry window (in seconds)"
+        depends on ESP_WIFI_ROAMING_11K_ASSISTED_ROAM || ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
+        default 10
+        range 5 20
+        help
+            Duration for which channels from the most recent Neighbor Report can be
+            reused for 802.11k channel-restricted scans without sending another
+            Neighbor Report Request. After this window expires the cache is treated
+            as stale and a fresh Neighbor Report is required. Same idea as the scan
+            results expiry window above.
 
 endmenu #"Scan Configuration"
 

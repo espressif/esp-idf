@@ -61,6 +61,7 @@ static void roaming_app_periodic_rrm_internal_handler(void *data, void *ctx);
 #if RRM_NEIGHBOR_LIST_SUPPORT
 static void roaming_app_neighbor_report_recv_internal_handler(void *ctx, void *data);
 static void roaming_app_clear_rrm_channel_cache(void);
+static bool roaming_app_rrm_channel_cache_is_valid(const struct timeval *now);
 #endif
 #if RRM_ASSISTED_ROAMING_ENABLED
 static void roaming_app_rrm_neighbor_timeout_handler(void *ctx, void *data);
@@ -208,6 +209,29 @@ static bool roaming_app_scan_cache_is_valid(const struct timeval *now)
 
     return time_diff_sec(now, &g_roaming_app.scanned_aps.time) <= SCAN_RESULTS_USABILITY_WINDOW;
 }
+
+#if RRM_NEIGHBOR_LIST_SUPPORT
+static bool roaming_app_rrm_channel_cache_is_valid(const struct timeval *now)
+{
+    struct timeval local_now;
+
+    if (!g_roaming_app.rrm_channels_valid) {
+        return false;
+    }
+
+    if (g_roaming_app.rrm_channels_time.tv_sec == 0 &&
+            g_roaming_app.rrm_channels_time.tv_usec == 0) {
+        return false;
+    }
+
+    if (!now) {
+        gettimeofday(&local_now, NULL);
+        now = &local_now;
+    }
+
+    return time_diff_sec(now, &g_roaming_app.rrm_channels_time) <= RRM_CHANNEL_CACHE_USABILITY_WINDOW;
+}
+#endif /* RRM_NEIGHBOR_LIST_SUPPORT */
 
 static const wifi_ap_record_t *roaming_app_find_scan_record(const uint8_t *bssid)
 {
@@ -587,7 +611,7 @@ static bool roaming_app_rrm_method_usable(void)
         return true;
     }
 
-    if (g_roaming_app.rrm_channels_valid) {
+    if (roaming_app_rrm_channel_cache_is_valid(NULL)) {
         return true;
     }
 
@@ -1330,6 +1354,8 @@ static void roaming_app_clear_rrm_channel_cache(void)
 {
     memset(&g_roaming_app.rrm_channel_bitmap, 0, sizeof(g_roaming_app.rrm_channel_bitmap));
     g_roaming_app.rrm_channels_valid = false;
+    g_roaming_app.rrm_channels_time.tv_sec = 0;
+    g_roaming_app.rrm_channels_time.tv_usec = 0;
 }
 
 static bool roaming_app_add_rrm_channel(wifi_scan_channel_bitmap_t *bitmap, uint8_t channel)
@@ -1456,6 +1482,7 @@ cleanup:
     } else if (local_channels_valid) {
         g_roaming_app.rrm_channel_bitmap = local_channel_bitmap;
         g_roaming_app.rrm_channels_valid = true;
+        gettimeofday(&g_roaming_app.rrm_channels_time, NULL);
     }
     return buf;
 }
@@ -1514,7 +1541,7 @@ static void roaming_app_deferred_rrm_scan_handler(void *ctx, void *data)
         return;
     }
 
-    if (!g_roaming_app.rrm_channels_valid) {
+    if (!roaming_app_rrm_channel_cache_is_valid(NULL)) {
         s_rrm_deferred_scan_tries = 0;
         roaming_app_rrm_fallback_to_legacy();
         return;
@@ -1556,7 +1583,7 @@ static bool roaming_app_try_start_rrm_scan_or_defer(void)
         return true;
     }
 
-    if (g_roaming_app.scan_ongoing && g_roaming_app.rrm_channels_valid) {
+    if (g_roaming_app.scan_ongoing && roaming_app_rrm_channel_cache_is_valid(NULL)) {
         ESP_LOGD(ROAMING_TAG, "Deferring 11k NR-channel scan; keeping warm NR cache");
         eloop_cancel_timeout(roaming_app_deferred_rrm_scan_handler, NULL, NULL);
         s_rrm_deferred_scan_tries = 0;
@@ -1619,7 +1646,7 @@ static void roaming_app_rrm_fallback_to_legacy(void)
 
 static bool roaming_app_apply_rrm_scan_channels(void)
 {
-    if (!g_roaming_app.rrm_channels_valid) {
+    if (!roaming_app_rrm_channel_cache_is_valid(NULL)) {
         return false;
     }
 
@@ -1656,7 +1683,6 @@ static bool roaming_app_start_rrm_channel_scan(void)
     }
 
     ESP_LOGI(ROAMING_TAG, "Issued 11k channel-restricted scan");
-    roaming_app_mark_roam_attempt();
     return true;
 }
 
@@ -1679,7 +1705,6 @@ static bool roaming_app_send_rrm_neighbor_request(void)
                                        roaming_app_rrm_neighbor_timeout_handler, NULL, NULL) != 0) {
                 ESP_LOGW(ROAMING_TAG, "Could not register 11k neighbor report timeout");
             }
-            roaming_app_mark_roam_attempt();
             return true;
         }
         ESP_LOGE(ROAMING_TAG, "failed to send neighbor report request for 11k roam");
@@ -1696,7 +1721,6 @@ static bool roaming_app_send_rrm_neighbor_request(void)
     }
     ESP_LOGD(ROAMING_TAG, "Sent Neighbor Report Request for 11k roam (attempt %u)",
              g_roaming_app.rrm_attempt);
-    roaming_app_mark_roam_attempt();
     return true;
 }
 
@@ -1733,13 +1757,15 @@ static bool trigger_rrm_assisted_roam(void)
         return true;
     }
 
-    if (!g_roaming_app.rrm_channels_valid &&
+    bool cache_valid = roaming_app_rrm_channel_cache_is_valid(NULL);
+
+    if (!cache_valid &&
             g_roaming_app.rrm_attempt > g_roaming_app.config.rrm_retry_cnt) {
         ESP_LOGD(ROAMING_TAG, "Not using 11k roam as neighbor request retries are exhausted");
         return false;
     }
 
-    if (g_roaming_app.rrm_channels_valid) {
+    if (cache_valid) {
         if (roaming_app_try_start_rrm_scan_or_defer()) {
             return true;
         }
@@ -1801,7 +1827,8 @@ static void roaming_app_neighbor_report_recv_internal_handler(void *ctx, void *d
 #if RRM_ASSISTED_ROAMING_ENABLED
     if (g_roaming_app.rrm_roam_pending) {
         eloop_cancel_timeout(roaming_app_rrm_neighbor_timeout_handler, NULL, NULL);
-        if (g_roaming_app.rrm_channels_valid && roaming_app_try_start_rrm_scan_or_defer()) {
+        if (roaming_app_rrm_channel_cache_is_valid(NULL) &&
+                roaming_app_try_start_rrm_scan_or_defer()) {
             goto cleanup;
         }
         ESP_LOGD(ROAMING_TAG, "Received neighbor report but could not start 11k scan");
