@@ -40,6 +40,7 @@ STRUCT_FIELD (uint32_t, 4, RV_UCTX_S8, s8)
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_S9, s9)
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_S10, s10)
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_S11, s11)
+STRUCT_FIELD (uint32_t, 4, RV_UCTX_SATP, satp)                    /* satp value used while the task runs U-mode code */
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_FAULT, fault)                  /* zero, the high word of the result of esp_privilege_call_user_code() */
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_USER_GP, user_gp)
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_USER_TP, user_tp)
@@ -86,6 +87,7 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 
 #if (defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)) && CONFIG_RISCV_USER_MODE_TRAPS
 
+#include "riscv/sv32_asm.h"
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 /* The guard macros pick the core from SOC_CPU_CORES_NUM */
 #include "soc/soc_caps.h"
@@ -146,8 +148,8 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 .endm
 
 /**
- * @brief Prepare the return to U-mode. user_sp is stored in mscratch. After the registers have been
- *        restored, rv_user_trap_exit_to_user must be used.
+ * @brief Prepare the return to U-mode. user_sp is stored in mscratch and the task's address space
+ *        (satp) is activated. After the registers have been restored, rv_user_trap_exit_to_user must be used.
  *
  * @param reg Register holding the user sp, clobbered. t1 is clobbered as well when the hardware
  *            stack guard is enabled.
@@ -158,6 +160,9 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE \reg t1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
+    lw      \reg, (\frame_size + RV_UCTX_SATP)(sp)
+    riscv_sv32_write_satp \reg
+    sfence.vma
 .endm
 
 /**

@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Entry into U-mode on the calling task, and the return to its M-mode caller */
+
 #include "sdkconfig.h"
 #include "riscv/encoding.h"
 #include "esp_private/privilege_trap.h"
-#include "esp_private/privilege_ecall.h"
+#include "esp_privilege_abi.h"
 
     .section .iram1, "ax"
 
@@ -21,7 +23,7 @@
  * @param a1 First argument passed to the entry point
  * @param a2 Second argument passed to the entry point
  * @param a3 Initial user sp, 16-byte aligned
- * @param a4 Reserved for address translation, 0
+ * @param a4 satp value while running in U-mode (0 for no translation)
  * @param a5 Reserved for a run context, 0
  * @return The low word in a0 is the user result. The high word in a1 is zero
  */
@@ -44,10 +46,13 @@ esp_privilege_call_user_code:
     sw      s9, RV_UCTX_S9(sp)
     sw      s10, RV_UCTX_S10(sp)
     sw      s11, RV_UCTX_S11(sp)
+    sw      a4, RV_UCTX_SATP(sp)
     sw      zero, RV_UCTX_FAULT(sp)
 
     /* Nothing must trap until mret. From now on, sp is the top of the M-mode stack */
     csrci   mstatus, MSTATUS_MIE
+    riscv_sv32_write_satp a4
+    sfence.vma
     fence.i
     csrw    mepc, a0
     li      t0, MSTATUS_MPP
@@ -104,6 +109,7 @@ esp_privilege_call_user_code:
     .global esp_privilege_return_to_caller
     .type esp_privilege_return_to_caller, @function
 esp_privilege_return_to_caller:
+    riscv_sv32_write_satp zero
     lw      ra, RV_UCTX_RA(sp)
     lw      gp, RV_UCTX_GP(sp)
     lw      tp, RV_UCTX_TP(sp)
