@@ -5,6 +5,7 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 #include "esp_compiler.h"
 #include "hal/log.h"
 #include "hal/twai_hal.h"
@@ -15,6 +16,8 @@
 #define TWAI_HAL_INIT_TEC    0
 #define TWAI_HAL_INIT_REC    0
 #define TWAI_HAL_INIT_EWL    96
+
+_Static_assert(sizeof(((twai_hal_context_t *)0)->tx_retry_frame) == sizeof(twai_hal_frame_t), "tx_retry_frame must hold one frame");
 
 #if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
 // context for errata workarounds
@@ -42,6 +45,7 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     hal_ctx->state_flags = 0;
     hal_ctx->clock_source_hz = config->clock_source_hz;
     hal_ctx->retry_cnt = config->retry_cnt;
+    hal_ctx->tx_fail_cnt = 0;
     hal_ctx->enable_self_test = config->enable_self_test;
     hal_ctx->enable_loopback = config->enable_loopback;
     hal_ctx->enable_listen_only = config->enable_listen_only;
@@ -202,6 +206,23 @@ void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
 #endif
 
 /* ----------------------------- Event Handling ----------------------------- */
+
+__attribute__((always_inline))
+static inline void twai_hal_start_tx(twai_hal_context_t *hal_ctx, const twai_hal_frame_t *tx_frame)
+{
+    if (tx_frame->self_reception) {
+        if (tx_frame->single_shot) {
+            twai_ll_set_cmd_self_rx_single_shot(hal_ctx->dev);
+        } else {
+            twai_ll_set_cmd_self_rx_request(hal_ctx->dev);
+        }
+    } else if (tx_frame->single_shot) {
+        twai_ll_set_cmd_tx_single_shot(hal_ctx->dev);
+    } else {
+        twai_ll_set_cmd_tx(hal_ctx->dev);
+    }
+}
+
 /**
  * Helper functions that can decode what events have been triggered based on
  * the values of the interrupt, status, TEC and REC registers. The HAL context's
@@ -254,10 +275,18 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
 #else
     if (interrupts & TWAI_LL_INTR_TI) {
 #endif
-        TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX0_DONE);
-        TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
-        if (status & TWAI_LL_STATUS_TCS) {
-            TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX0_SUCCESS);
+        //The controller can only retransmit forever or send single shot. A bounded retry_cnt sends single shot and
+        //marks a failed attempt for twai_hal_retry_tx(), completing the frame only on success or once its attempts run out.
+        if (!(status & TWAI_LL_STATUS_TCS) && !(state_flags & TWAI_HAL_STATE_FLAG_BUS_OFF) &&
+                hal_ctx->retry_cnt > 0 && hal_ctx->tx_fail_cnt < hal_ctx->retry_cnt) {
+            hal_ctx->tx_fail_cnt++;
+            TWAI_HAL_SET_BITS(state_flags, TWAI_HAL_STATE_FLAG_TX_RETRY_PENDING);
+        } else {
+            TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX0_DONE);
+            TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
+            if (status & TWAI_LL_STATUS_TCS) {
+                TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX0_SUCCESS);
+            }
         }
     }
     //Error Passive Interrupt on transition from error active to passive or vice versa
@@ -411,18 +440,10 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
 {
     //Copy frame into tx buffer
     twai_ll_set_tx_buffer(hal_ctx->dev, tx_frame);
-    //Hit the send command
-    if (tx_frame->self_reception) {
-        if (tx_frame->single_shot) {
-            twai_ll_set_cmd_self_rx_single_shot(hal_ctx->dev);
-        } else {
-            twai_ll_set_cmd_self_rx_request(hal_ctx->dev);
-        }
-    } else if (tx_frame->single_shot) {
-        twai_ll_set_cmd_tx_single_shot(hal_ctx->dev);
-    } else {
-        twai_ll_set_cmd_tx(hal_ctx->dev);
-    }
+    //Keep the frame for re-sending failed single shot attempts
+    hal_ctx->tx_fail_cnt = 0;
+    memcpy(hal_ctx->tx_retry_frame, tx_frame, sizeof(twai_hal_frame_t));
+    twai_hal_start_tx(hal_ctx, tx_frame);
     TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
 #if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     if (&hal_ctx->errata_ctx->tx_frame_save == tx_frame) {
@@ -433,6 +454,17 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
     memcpy(&hal_ctx->errata_ctx->tx_frame_save, tx_frame, sizeof(twai_hal_frame_t));
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
 #endif  //TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
+}
+
+void twai_hal_retry_tx(twai_hal_context_t *hal_ctx)
+{
+    if (!(hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_TX_RETRY_PENDING)) {
+        return;
+    }
+    TWAI_HAL_CLEAR_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_RETRY_PENDING);
+    twai_hal_frame_t *tx_frame = (twai_hal_frame_t *)hal_ctx->tx_retry_frame;
+    twai_ll_set_tx_buffer(hal_ctx->dev, tx_frame);
+    twai_hal_start_tx(hal_ctx, tx_frame);
 }
 
 uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)

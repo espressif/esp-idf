@@ -36,6 +36,7 @@ entries:
             twai_hal_v1: twai_hal_format_frame (noflash)
             twai_hal_v1: twai_hal_parse_frame (noflash)
             twai_hal_v1: twai_hal_set_tx_buffer_and_transmit (noflash)
+            twai_hal_v1: twai_hal_retry_tx (noflash)
             twai_hal_v1: twai_hal_get_rx_msg_count (noflash)
             twai_hal_v1: twai_hal_read_rx_fifo (noflash)
             twai_hal_v1: twai_hal_get_events (noflash)
