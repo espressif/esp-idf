@@ -258,7 +258,7 @@ static void wps_registrar_remove_authorized_mac(struct wps_registrar *reg,
 	wpa_printf(MSG_DEBUG, "WPS: Remove authorized MAC " MACSTR,
 		   MAC2STR(addr));
 	for (i = 0; i < WPS_MAX_AUTHORIZED_MACS; i++) {
-		if (os_memcmp(reg->authorized_macs, addr, ETH_ALEN) == 0)
+		if (os_memcmp(reg->authorized_macs[i], addr, ETH_ALEN) == 0)
 			break;
 	}
 	if (i == WPS_MAX_AUTHORIZED_MACS) {

@@ -36,6 +36,11 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     char sae_pwd_id[SAE_H2E_IDENTIFIER_LEN + 1] = {0};
     bool valid_pwd_id = false;
 
+    if (!pw) {
+        wpa_printf(MSG_ERROR, "wpa3: no password configured");
+        return ESP_FAIL;
+    }
+
     if (wpa_sta_cur_pmksa_matches_akm()) {
         wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
         *sae_msg_len = 0;

@@ -86,6 +86,9 @@ static void wifi_station_wps_success(void *data, void *user_ctx);
 static void wifi_station_wps_timeout(void *data, void *user_ctx);
 static int wps_delete_timer(void);
 static int wps_finish(void);
+static void wps_drain_wifi_rx(void);
+
+bool current_task_is_wifi_task(void);
 
 struct wps_sm *gWpsSm = NULL;
 static wifi_event_sta_wps_er_success_t s_wps_success_evt;
@@ -1392,6 +1395,29 @@ static int wps_delete_timer(void)
     return ESP_OK;
 }
 
+/* Run on Wi-Fi task so sync IPC waits for in-flight RX to finish. */
+static int wps_wifi_rx_barrier(void *arg)
+{
+    (void) arg;
+    return 0;
+}
+
+static void wps_drain_wifi_rx(void)
+{
+    wifi_ipc_config_t cfg;
+
+    /* Sync IPC to the Wi-Fi task deadlocks if we are already on it; RX is
+     * serialized on that task in that case. */
+    if (current_task_is_wifi_task()) {
+        return;
+    }
+
+    cfg.fn = wps_wifi_rx_barrier;
+    cfg.arg = NULL;
+    cfg.arg_size = 0;
+    esp_wifi_ipc_internal(&cfg, true);
+}
+
 static int wifi_station_wps_deinit(void)
 {
     struct wps_sm *sm = gWpsSm;
@@ -1403,6 +1429,8 @@ static int wifi_station_wps_deinit(void)
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPS_PR);
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPS_AR);
     esp_wifi_set_wps_cb_internal(NULL);
+    /* Wait for any in-flight wps_sm_rx_eapol to finish before freeing gWpsSm. */
+    wps_drain_wifi_rx();
 
     if (sm->dev) {
         wps_dev_deinit(sm->dev);
