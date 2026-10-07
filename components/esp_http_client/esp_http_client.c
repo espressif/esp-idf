@@ -339,6 +339,24 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
     return 0;
 }
 
+/* A response never carries a body on the wire when it answers a HEAD request,
+ * or when its status is 204 No Content or 304 Not Modified. The server can
+ * still send a Content-Length header in these cases: RFC 9110, section 8.6
+ * allows it on a 304, where the value describes the selected representation.
+ * The client must report such a response as complete, or it waits for bytes
+ * that never arrive. */
+static bool http_status_is_bodyless(esp_http_client_handle_t client)
+{
+    return client->response->status_code == HttpStatus_NoContent ||
+           client->response->status_code == HttpStatus_NotModified;
+}
+
+static bool http_response_is_bodyless(esp_http_client_handle_t client)
+{
+    return client->connection_info.method == HTTP_METHOD_HEAD ||
+           http_status_is_bodyless(client);
+}
+
 static int http_on_headers_complete(http_parser *parser)
 {
     esp_http_client_handle_t client = parser->data;
@@ -351,11 +369,11 @@ static int http_on_headers_complete(http_parser *parser)
     client->state = HTTP_STATE_RES_COMPLETE_HEADER;
     http_dispatch_event(client, HTTP_EVENT_ON_HEADERS_COMPLETE, NULL, 0);
     http_dispatch_event_to_event_loop(HTTP_EVENT_ON_HEADERS_COMPLETE, &client, sizeof(esp_http_client_handle_t));
-    if (client->connection_info.method == HTTP_METHOD_HEAD) {
+    if (http_response_is_bodyless(client)) {
         /* In a HTTP_RESPONSE parser returning '1' from on_headers_complete will tell the
            parser that it should not expect a body. This is used when receiving a response
-           to a HEAD request which may contain 'Content-Length' or 'Transfer-Encoding: chunked'
-           headers that indicate the presence of a body.*/
+           that may contain 'Content-Length' or 'Transfer-Encoding: chunked' headers
+           although no body follows.*/
         return 1;
     }
     return 0;
@@ -1403,7 +1421,7 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
         return ESP_FAIL;
     }
 
-    if (client->connection_info.method == HTTP_METHOD_HEAD) {
+    if (http_response_is_bodyless(client)) {
         return 0;
     }
 
@@ -1430,6 +1448,13 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
 
 bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
 {
+    /* No body follows the headers, so a declared Content-Length must not
+     * count as outstanding data. esp_http_client_flush_response() loops on
+     * this result, and esp_http_client_get_data() returns 0 here, so a false
+     * result would never change. */
+    if (http_response_is_bodyless(client)) {
+        return true;
+    }
     if (client->response->is_chunked) {
         if (!client->is_chunk_complete) {
             ESP_LOGD(TAG, "Chunks were not completely read");
@@ -1465,7 +1490,9 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
     int need_read = len - ridx;
     bool is_data_remain = true;
     while (need_read > 0 && is_data_remain) {
-        if (client->response->is_chunked) {
+        if (http_response_is_bodyless(client)) {
+            is_data_remain = false;
+        } else if (client->response->is_chunked) {
             is_data_remain = !client->is_chunk_complete;
         } else {
             is_data_remain = client->response->data_process < client->response->content_length;
@@ -1617,7 +1644,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                         if (client->is_async && errno == EAGAIN) {
                             return ESP_ERR_HTTP_EAGAIN;
                         }
-                        if (client->connection_info.method != HTTP_METHOD_HEAD && !client->is_chunk_complete) {
+                        if (!http_response_is_bodyless(client) && !client->is_chunk_complete) {
                             ESP_LOGE(TAG, "Incomplete chunked data received %d", ret);
 
                             // `ret` is the raw, untranslated value from esp_http_client_get_data()
@@ -1645,7 +1672,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                         if (client->is_async && errno == EAGAIN) {
                             return ESP_ERR_HTTP_EAGAIN;
                         }
-                        if (client->connection_info.method != HTTP_METHOD_HEAD && client->response->data_process < client->response->content_length) {
+                        if (!http_response_is_bodyless(client) && client->response->data_process < client->response->content_length) {
                             ESP_LOGE(TAG, "Incomlete data received, ret=%d, %"PRId64"/%"PRId64" bytes", ret, client->response->data_process, client->response->content_length);
 
                             if (ret == ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
@@ -1713,6 +1740,13 @@ int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client)
     }
     client->state = HTTP_STATE_RES_ON_DATA_START;
     ESP_LOGD(TAG, "content_length = %"PRId64, client->response->content_length);
+    /* A 204 or 304 has nothing to read, whatever its Content-Length says.
+     * Return before the check below, which would mark it as chunked. A reply
+     * to HEAD keeps the declared length for every status, 304 included:
+     * callers use it as the resource size. */
+    if (client->connection_info.method != HTTP_METHOD_HEAD && http_status_is_bodyless(client)) {
+        return 0;
+    }
     if (client->response->content_length <= 0) {
         client->response->is_chunked = true;
         return 0;
