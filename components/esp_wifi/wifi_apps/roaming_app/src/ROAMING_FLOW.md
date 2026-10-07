@@ -157,7 +157,7 @@ flowchart TD
 | --- | --- |
 | Scan timing | `ESP_WIFI_ROAMING_SCAN_MIN_SCAN_TIME`, `ESP_WIFI_ROAMING_SCAN_MAX_SCAN_TIME`, `ESP_WIFI_ROAMING_HOME_CHANNEL_DWELL_TIME` |
 | Scan filter and scope | `ESP_WIFI_ROAMING_SCAN_CHAN_LIST`, `scan_filter_ssid`, `scan_filter_bssid` |
-| Scan cache reuse | `ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW` |
+| Scan / NR channel cache reuse | `ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW`, `ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW` |
 | Blacklist filter | `ESP_WIFI_ROAMING_BSSID_BLACKLIST`, `ESP_WIFI_ROAMING_BLACKLIST_TIMEOUT`, `ESP_WIFI_ROAMING_MAX_CANDIDATES` |
 | Security policy | `wifi_config_t.sta.threshold.authmode`, `wifi_config_t.sta.owe_enabled`, `wifi_config_t.sta.pmf_cfg.required`, `wifi_config_t.sta.sae_pwe_h2e`, `wifi_config_t.sta.sae_pk_mode` |
 | Legacy RSSI delta input | `ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF`, `ESP_WIFI_ROAMING_LOW_RSSI_ROAM_DIFF` |
@@ -210,7 +210,7 @@ flowchart TD
 | --- | --- |
 | Backoff | `ESP_WIFI_ROAMING_BACKOFF_TIME` |
 | BTM path | `ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM`, `ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT` |
-| 11k path | `ESP_WIFI_ROAMING_11K_ASSISTED_ROAM`, `ESP_WIFI_ROAMING_11K_RETRY_COUNT` |
+| 11k path | `ESP_WIFI_ROAMING_11K_ASSISTED_ROAM`, `ESP_WIFI_ROAMING_11K_RETRY_COUNT`, `ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW` |
 | Legacy path | `ESP_WIFI_ROAMING_LEGACY_ROAMING` |
 | Post-roam IP behavior | `ESP_WIFI_ROAMING_IP_RENEW_SKIP` |
 
@@ -221,11 +221,11 @@ flowchart TD
 | Low RSSI roaming | `ESP_WIFI_ROAMING_LOW_RSSI_ROAMING`, `ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD`, `ESP_WIFI_ROAMING_LOW_RSSI_OFFSET` |
 | Periodic monitor roaming | `ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR`, `ESP_WIFI_ROAMING_PERIODIC_SCAN_THRESHOLD`, `ESP_WIFI_ROAMING_SCAN_MONITOR_INTERVAL`, `ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF` |
 | Network-assisted roaming | `ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM`, `ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT` |
-| 802.11k assisted roaming | `ESP_WIFI_ROAMING_11K_ASSISTED_ROAM`, `ESP_WIFI_ROAMING_11K_RETRY_COUNT` |
+| 802.11k assisted roaming | `ESP_WIFI_ROAMING_11K_ASSISTED_ROAM`, `ESP_WIFI_ROAMING_11K_RETRY_COUNT`, `ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW` |
 | Post-roam IP behavior | `ESP_WIFI_ROAMING_IP_RENEW_SKIP` |
 | Legacy roaming | `ESP_WIFI_ROAMING_LEGACY_ROAMING` |
 | Periodic RRM / neighbor reports | `ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING`, `ESP_WIFI_ROAMING_RRM_MONITOR_TIME`, `ESP_WIFI_ROAMING_RRM_MONITOR_THRESHOLD` |
-| Scan behavior | `ESP_WIFI_ROAMING_SCAN_MIN_SCAN_TIME`, `ESP_WIFI_ROAMING_SCAN_MAX_SCAN_TIME`, `ESP_WIFI_ROAMING_HOME_CHANNEL_DWELL_TIME`, `ESP_WIFI_ROAMING_SCAN_CHAN_LIST`, `ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW` |
+| Scan behavior | `ESP_WIFI_ROAMING_SCAN_MIN_SCAN_TIME`, `ESP_WIFI_ROAMING_SCAN_MAX_SCAN_TIME`, `ESP_WIFI_ROAMING_HOME_CHANNEL_DWELL_TIME`, `ESP_WIFI_ROAMING_SCAN_CHAN_LIST`, `ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW`, `ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW` |
 | Blacklist behavior | `ESP_WIFI_ROAMING_BSSID_BLACKLIST`, `ESP_WIFI_ROAMING_AUTO_BLACKLISTING`, `ESP_WIFI_ROAMING_MAX_CONN_FAILURES`, `ESP_WIFI_ROAMING_BLACKLIST_TIMEOUT`, `ESP_WIFI_ROAMING_MAX_CANDIDATES` |
 | Runtime scan filters | `roam_set_config_params()`, `scan_filter_ssid`, `scan_filter_bssid` |
 | Candidate security policy | `wifi_config_t.sta.threshold.authmode`, `wifi_config_t.sta.owe_enabled`, `wifi_config_t.sta.pmf_cfg.required`, `wifi_config_t.sta.sae_pwe_h2e`, `wifi_config_t.sta.sae_pk_mode` |
@@ -236,8 +236,8 @@ flowchart TD
 - Low RSSI calls `decide_and_roam` directly (no upfront discovery). Periodic always runs discovery first and only calls `decide_and_roam` when a better AP is found.
 - Legacy with a known candidate does directed reconnect without another scan. Legacy without a candidate (typical low-RSSI edge) runs a discovery scan, then reconnects.
 - A periodic RRM event does not directly trigger roaming. It refreshes the cached neighbor list used by BTM and the NR channel cache used by 11k.
-- If NR channels are already cached, 11k can skip the on-demand Neighbor Report Request and start the NR-channel scan immediately.
-- If the NR-channel scan cannot start because another scan is already running, the warm NR cache is kept and the 11k scan is deferred briefly instead of being treated as an immediate 11k failure.
+- If NR channels are already cached and still within `ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW`, 11k can skip the on-demand Neighbor Report Request and start the NR-channel scan immediately. After the window expires the cache is treated as stale (same idea as scan-results expiry).
+- If the NR-channel scan cannot start because another scan is already running, a still-valid NR cache is kept and the 11k scan is deferred briefly instead of being treated as an immediate 11k failure.
 - On 11k failure, NR is retried while attempts remain. Legacy fallback happens only after 11k retries are exhausted and legacy is enabled.
 - If no roam method remains usable, low RSSI and periodic triggers are suppressed until the next association.
 - While connected, candidate ranking for discovery scans uses the stronger of two values: the RSSI from the current connection and the RSSI for the same BSSID in the latest scan results.
