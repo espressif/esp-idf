@@ -78,15 +78,25 @@
 *  CIDR eliminates the traditional Class A, Class B and Class C addresses.
  */
 #define IP_CLASS_HOST_NUM(mask)            (0xffffffff & ~mask)
-#define DHCP_CHECK_SUBNET_MASK_IP(mask)                                                               \
-    do {                                                                                                  \
-        if (IS_INVALID_SUBNET_MASK(mask)) {                                                               \
-            DHCPS_LOG("dhcps: Illegal subnet mask.\n");                                                   \
-            return ERR_ARG;                                                                               \
-        }                                                                                                 \
+/* Drop a pcb allocated by dhcps_start() before returning an error. */
+#define DHCPS_ABORT_START(dhcps)                                            \
+    do {                                                                    \
+        if ((dhcps)->dhcps_pcb != NULL) {                                   \
+            udp_remove((dhcps)->dhcps_pcb);                                 \
+            (dhcps)->dhcps_pcb = NULL;                                      \
+        }                                                                   \
+        return ERR_ARG;                                                     \
     } while (0)
 
-#define DHCP_CHECK_IP_MATCH_SUBNET_MASK(mask, ip)                           \
+#define DHCP_CHECK_SUBNET_MASK_IP(dhcps, mask)                              \
+    do {                                                                    \
+        if (IS_INVALID_SUBNET_MASK(mask)) {                                 \
+            DHCPS_LOG("dhcps: Illegal subnet mask.\n");                     \
+            DHCPS_ABORT_START(dhcps);                                       \
+        }                                                                   \
+    } while (0)
+
+#define DHCP_CHECK_IP_MATCH_SUBNET_MASK(dhcps, mask, ip)                    \
     u32_t start_ip = 0;                                                     \
     u32_t end_ip = 0;                                                       \
     do {                                                                    \
@@ -94,7 +104,7 @@
         end_ip = start_ip | ~mask;                                          \
         if (ip == end_ip || ip == start_ip) {                               \
             DHCPS_LOG("dhcps: ip address and subnet mask do not match.\n"); \
-            return ERR_ARG;                                                 \
+            DHCPS_ABORT_START(dhcps);                                       \
         }                                                                   \
     } while (0)
 
@@ -787,6 +797,14 @@ static void send_nak(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     create_msg(dhcps, m);
 
     end = add_msg_type(&m->options[4], DHCPNAK);
+    /* RFC 2131: DHCPNAK MUST include the server identifier (option 54). */
+    {
+        ip4_addr_t server_id;
+        server_id.addr = dhcps->server_address.addr;
+        *end++ = DHCP_OPTION_SERVER_ID;
+        *end++ = 4;
+        end = dhcps_option_ip(end, &server_id);
+    }
     LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPNAK, &end)
     end = add_end(end);
 
@@ -1532,20 +1550,26 @@ err_t dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
     dhcps->dhcps_netif = netif;
     if (dhcps->dhcps_pcb != NULL) {
         udp_remove(dhcps->dhcps_pcb);
+        dhcps->dhcps_pcb = NULL;
     }
 
     dhcps->dhcps_pcb = udp_new();
 
-    if (dhcps->dhcps_pcb == NULL || ip4_addr_isany_val(ip)) {
+    if (dhcps->dhcps_pcb == NULL) {
         DHCPS_LOG("dhcps_start(): could not obtain pcb\n");
         return ERR_ARG;
+    }
+
+    if (ip4_addr_isany_val(ip)) {
+        DHCPS_LOG("dhcps_start(): invalid server ip\n");
+        DHCPS_ABORT_START(dhcps);
     }
 
     IP4_ADDR(&dhcps->broadcast_dhcps, 255, 255, 255, 255);
 
     dhcps->server_address.addr = ip.addr;
-    DHCP_CHECK_SUBNET_MASK_IP(htonl(dhcps->dhcps_mask.addr));
-    DHCP_CHECK_IP_MATCH_SUBNET_MASK(htonl(dhcps->dhcps_mask.addr), htonl(ip.addr));
+    DHCP_CHECK_SUBNET_MASK_IP(dhcps, htonl(dhcps->dhcps_mask.addr));
+    DHCP_CHECK_IP_MATCH_SUBNET_MASK(dhcps, htonl(dhcps->dhcps_mask.addr), htonl(ip.addr));
     dhcps_poll_set(dhcps, dhcps->server_address.addr);
 
     dhcps->client_address_plus.addr = dhcps->dhcps_poll.start_ip.addr;
