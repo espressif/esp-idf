@@ -43,6 +43,12 @@ extern "C" {
 #define SCAN_ROAM_RSSI_DIFF CONFIG_ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF
 #endif /* PERIODIC_SCAN_MONITORING */
 
+#ifdef CONFIG_ESP_WIFI_ROAMING_PERIODIC_RSSI_MONITOR
+#define CONNECTED_AP_RSSI_LOG_ENABLED CONFIG_ESP_WIFI_ROAMING_PERIODIC_RSSI_MONITOR
+#else
+#define CONNECTED_AP_RSSI_LOG_ENABLED 0
+#endif
+
 /* Scan configuration */
 #define SCAN_TIME_MIN_DURATION CONFIG_ESP_WIFI_ROAMING_SCAN_MIN_SCAN_TIME
 #define SCAN_TIME_MAX_DURATION CONFIG_ESP_WIFI_ROAMING_SCAN_MAX_SCAN_TIME
@@ -144,6 +150,7 @@ struct roaming_app {
 
 #if LOW_RSSI_ROAMING_ENABLED
     int8_t current_low_rssi_threshold;
+    bool low_rssi_suppressed;
 #endif
 #if NETWORK_ASSISTED_ROAMING_ENABLED
     uint8_t btm_attempt;
@@ -160,7 +167,9 @@ struct roaming_app {
 #if PERIODIC_SCAN_MONITORING
     bool periodic_scan_active;
 #endif
+#if CONNECTED_AP_RSSI_LOG_ENABLED
     bool periodic_rssi_active;
+#endif
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     struct blacklist_entry {
         uint8_t bssid[ETH_ALEN];
