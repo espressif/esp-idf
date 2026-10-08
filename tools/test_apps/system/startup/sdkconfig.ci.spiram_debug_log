@@ -1,0 +1,6 @@
+# The default app log level is INFO, which hides every ESP_DRAM_LOGD() call the
+# early boot stages make. DEBUG plus SPIRAM puts the MSPI/PSRAM timing-tuning
+# path on the boot critical path. CONFIG_BOOTLOADER_WDT_TIME_MS is left at its
+# default (9s) so the watchdog still catches an overlong early boot.
+CONFIG_SPIRAM=y
+CONFIG_LOG_DEFAULT_LEVEL_DEBUG=y
