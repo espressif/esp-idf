@@ -95,12 +95,13 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
     int num_partitions;
     bool ret = true;
 
-    partitions = bootloader_mmap(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
+    const uint32_t partition_table_offset = esp_partition_table_get_offset();
+    partitions = bootloader_mmap(partition_table_offset, ESP_PARTITION_TABLE_MAX_LEN);
     if (!partitions) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_MAX_LEN);
+        ESP_LOGE(TAG, "bootloader_mmap(0x%" PRIx32 ", 0x%x) failed", partition_table_offset, ESP_PARTITION_TABLE_MAX_LEN);
         return false;
     }
-    ESP_LOGD(TAG, "mapped partition table 0x%x at 0x%x", ESP_PARTITION_TABLE_OFFSET, (intptr_t)partitions);
+    ESP_LOGD(TAG, "mapped partition table 0x%" PRIx32 " at 0x%x", partition_table_offset, (intptr_t)partitions);
 
     err = esp_partition_table_verify(partitions, true, &num_partitions);
     if (err != ESP_OK) {

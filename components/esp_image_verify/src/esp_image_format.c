@@ -1006,7 +1006,7 @@ esp_err_t esp_image_verify_bootloader_data(esp_image_metadata_t *data)
     }
     const esp_partition_pos_t bootloader_part = {
         .offset = ESP_PRIMARY_BOOTLOADER_OFFSET,
-        .size = ESP_BOOTLOADER_SIZE,
+        .size = esp_partition_table_get_offset() - ESP_PRIMARY_BOOTLOADER_OFFSET,
     };
     return esp_image_verify(ESP_IMAGE_VERIFY,
                             &bootloader_part,
