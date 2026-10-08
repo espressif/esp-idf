@@ -5,12 +5,13 @@
  */
 
 #include "stdio.h"
+#include "hal/config.h"
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
 #include "hal/assert.h"
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY && !HAL_CONFIG(KEY_MGR_TEE_OWNED)
 #include "hal/key_mgr_hal.h"
 #include "hal/key_mgr_ll.h"
 #endif
@@ -26,7 +27,7 @@ uint32_t hmac_hal_configure(hmac_hal_output_t config, uint32_t key_id)
     hmac_ll_wait_idle();
     hmac_ll_config_output(config);
 
-#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY && !HAL_CONFIG(KEY_MGR_TEE_OWNED)
     if (key_id == HMAC_KEY_KM) {
         if (!key_mgr_ll_is_supported()) {
             HAL_ASSERT(false && "Key manager is not supported");
@@ -97,4 +98,10 @@ void hmac_hal_clean(void)
 {
     hmac_ll_wait_idle();
     hmac_ll_clean();
+}
+
+uint32_t hmac_hal_config_key(hmac_hal_output_t config, uint32_t key_id)
+{
+    hmac_hal_start();
+    return hmac_hal_configure(config, key_id);
 }

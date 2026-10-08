@@ -101,11 +101,11 @@ void esp_system_reset_modules_on_exit(void)
     SET_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD);
-#endif // !CONFIG_SECURE_ENABLE_TEE
     SET_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
     SET_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
+#endif // !CONFIG_SECURE_ENABLE_TEE
 
     // Reset crypto clk mux to XTAL (always-on); otherwise if the parent is gated off,
     // next-boot ROM encryption ops can hang.

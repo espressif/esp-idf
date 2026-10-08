@@ -9,6 +9,7 @@ idf_build_get_property(config_dir CONFIG_DIR)
 # -------------------------------- esp_tee.ld --------------------------------
 
 set(ld_input  "${CMAKE_CURRENT_LIST_DIR}/${target}/esp_tee.ld.in")
+set(ld_common "${CMAKE_CURRENT_LIST_DIR}/esp_tee_common.ld.in")
 set(ld_output "${CMAKE_CURRENT_BINARY_DIR}/ld/esp_tee.ld")
 
 target_linker_script(${COMPONENT_LIB} INTERFACE "${ld_output}")
@@ -26,7 +27,7 @@ add_custom_command(
     COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o ${ld_output} -I ${config_dir}
             -I "${CMAKE_CURRENT_LIST_DIR}" -I "${esp_system_dir}/ld" ${ld_input}
     MAIN_DEPENDENCY ${ld_input}
-    DEPENDS ${sdkconfig_header}
+    DEPENDS ${ld_common} ${sdkconfig_header}
     COMMENT "Generating esp_tee.ld linker script..."
     VERBATIM)
 

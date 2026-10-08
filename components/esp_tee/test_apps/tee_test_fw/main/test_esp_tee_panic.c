@@ -18,6 +18,9 @@
 #endif
 #include "soc/efuse_reg.h"
 #include "soc/pcr_reg.h"
+#if SOC_HUK_SUPPORTED
+#include "soc/huk_reg.h"
+#endif
 #include "soc/lp_analog_peri_reg.h"
 #include "soc/lp_wdt_reg.h"
 #include "soc/spi_mem_reg.h"
@@ -83,16 +86,6 @@ TEST_CASE("Test APM violation: HMAC", "[apm_violation]")
 }
 #endif
 
-#if SOC_DIG_SIGN_SUPPORTED
-TEST_CASE("Test APM violation: DS", "[apm_violation]")
-{
-    uint32_t val = UINT32_MAX;
-    val = REG_READ(DS_Z_MEM);
-    TEST_ASSERT_EQUAL(0, val);
-    TEST_FAIL_MESSAGE("APM violation should have been generated");
-}
-#endif
-
 TEST_CASE("Test APM violation: SHA PCR", "[apm_violation]")
 {
     uint32_t val = 0;
@@ -100,12 +93,48 @@ TEST_CASE("Test APM violation: SHA PCR", "[apm_violation]")
     TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
 
+#if SOC_ECDSA_SUPPORTED
+TEST_CASE("Test APM violation: ECDSA PCR", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(PCR_ECDSA_CONF_REG, val);
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
+}
+#endif
+
+#if SOC_MPI_SUPPORTED
+TEST_CASE("Test APM violation: RSA PCR", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(PCR_RSA_CONF_REG, val);
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
+}
+#endif
+
 TEST_CASE("Test APM violation: ECC PCR", "[apm_violation]")
 {
     uint32_t val = 0;
     REG_WRITE(PCR_ECC_CONF_REG, val);
     TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
+
+#if SOC_HUK_SUPPORTED
+TEST_CASE("Test APM violation: HUK", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(HUK_CLK_REG, val);
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
+}
+#endif
+
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+TEST_CASE("Test APM violation: KM PCR", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(PCR_KM_CONF_REG, val);
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
+}
+#endif
 
 // NOTE: For C6/H2, SWDT and BOD are protected using PMP, thus this test
 // generates a store access fault instead of APM violation

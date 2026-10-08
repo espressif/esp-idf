@@ -91,7 +91,10 @@ static esp_err_t part_metadata_to_json(const esp_att_part_metadata_t *metadata, 
     json_gen_end_object(&json_gen);
 
     // Finalize the JSON string generation
-    json_gen_str_end(&json_gen);
+    if (json_gen_str_end(&json_gen) > ESP_ATT_CLAIM_JSON_MAX_SZ) {
+        free(json_buf);
+        return ESP_ERR_INVALID_SIZE;
+    }
 
     *claim_json = json_buf;
     return ESP_OK;
@@ -128,6 +131,10 @@ esp_err_t esp_att_utils_header_to_json(const esp_att_token_hdr_t *tk_hdr, char *
 
     // Finalize the JSON string generation
     *len = json_gen_str_end(&json_gen);
+    if (*len > ESP_ATT_HDR_JSON_MAX_SZ) {
+        free(json_buf);
+        return ESP_ERR_INVALID_SIZE;
+    }
 
     *header_json = json_buf;
     return ESP_OK;
@@ -237,6 +244,10 @@ esp_err_t esp_att_utils_eat_data_to_json(struct esp_att_sw_claim_list *head, con
 
     // Finalize the JSON string generation
     *len = json_gen_str_end(&json_gen);
+    if (*len > ESP_ATT_EAT_JSON_MAX_SZ) {
+        free(json_buf);
+        return ESP_ERR_INVALID_SIZE;
+    }
     *eat_json = json_buf;
 
     return ESP_OK;
@@ -275,9 +286,12 @@ esp_err_t esp_att_utils_pubkey_to_json(const esp_att_ecdsa_keypair_t *keypair, c
 
     // Finalize the JSON string generation
     *len = json_gen_str_end(&json_gen);
-    *pubkey_json = json_buf;
-
     free(pubkey_hexstr);
+    if (*len > ESP_ATT_PUBKEY_JSON_MAX_SZ) {
+        free(json_buf);
+        return ESP_ERR_INVALID_SIZE;
+    }
+    *pubkey_json = json_buf;
 
     return ESP_OK;
 }
@@ -317,10 +331,13 @@ esp_err_t esp_att_utils_sign_to_json(const esp_att_ecdsa_keypair_t *keypair, con
 
     // Finalize the JSON string generation
     *len = json_gen_str_end(&json_gen);
-    *sign_json = json_buf;
-
     free(sign_r_hexstr);
     free(sign_s_hexstr);
+    if (*len > ESP_ATT_SIGN_JSON_MAX_SZ) {
+        free(json_buf);
+        return ESP_ERR_INVALID_SIZE;
+    }
+    *sign_json = json_buf;
 
     return ESP_OK;
 }

@@ -150,11 +150,8 @@ TEST_CASE("Test TEE OTA - Valid image", "[ota_valid_img]")
     uint32_t bytes_wr = copy_tee_update();
     ESP_LOGI(TAG, "Total binary data written: %lu", bytes_wr);
 
+    /* NOTE: On success, the TEE restarts the device */
     TEST_ESP_OK(esp_tee_ota_end());
-    ESP_LOGI(TAG, "TEE OTA update successful!");
-
-    ESP_LOGI(TAG, "Prepare to restart system!");
-    esp_restart();
 }
 
 TEST_CASE("Test TEE OTA - Rollback", "[ota_rollback]")
@@ -164,9 +161,6 @@ TEST_CASE("Test TEE OTA - Rollback", "[ota_rollback]")
     uint32_t bytes_wr = copy_tee_update();
     ESP_LOGI(TAG, "Total binary data written: %lu", bytes_wr);
 
+    /* NOTE: On success, the TEE restarts the device */
     TEST_ESP_OK(esp_tee_ota_end());
-
-    ESP_LOGI(TAG, "TEE OTA update successful!");
-    ESP_LOGI(TAG, "Prepare to restart system!");
-    esp_restart();
 }

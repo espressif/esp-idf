@@ -10,6 +10,9 @@
 #include "riscv/encoding.h"
 
 #include "hal/apm_hal.h"
+#include "hal/efuse_hal.h"
+#include "hal/key_mgr_ll.h"
+#include "hal/key_mgr_types.h"
 
 #include "soc/clic_reg.h"
 #include "soc/interrupts.h"
@@ -37,6 +40,28 @@ static const char *TAG = "esp_tee_secure_sys_cfg";
 
 extern uint32_t _vector_table;
 extern uint32_t _mtvt_table;
+
+/* NOTE: The ECDSA/HMAC/DS key selectors live in the Key Manager, so it stays clocked */
+static void tee_init_key_mgr(void)
+{
+    /* NOTE: With flash encryption enabled, the KM is already initialized by the ROM/bootloader */
+    if (!efuse_hal_flash_encryption_enabled()) {
+        key_mgr_ll_power_up();
+        key_mgr_ll_enable_bus_clock(true);
+        key_mgr_ll_enable_peripheral_clock(true);
+        key_mgr_ll_reset_register();
+
+        while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
+        }
+    }
+
+    key_mgr_ll_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_ll_set_key_usage(ESP_KEY_MGR_FLASH_XTS_AES_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_ll_set_key_usage(ESP_KEY_MGR_HMAC_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_ll_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+
+    ESP_LOGI(TAG, "Key Manager: Not supported with ESP-TEE - REE access disabled");
+}
 
 void esp_tee_soc_secure_sys_init(void)
 {
@@ -104,6 +129,8 @@ void esp_tee_soc_secure_sys_init(void)
     esp_tee_protect_intr_src(ETS_SHA_INTR_SOURCE);          // SHA
     esp_tee_protect_intr_src(ETS_ECC_INTR_SOURCE);          // ECC
 
+    /* Set the key usage for the ECDSA/XTS-AES/HMAC/DS peripherals to eFuse */
+    tee_init_key_mgr();
     /* Reset the protected crypto peripherals and leave their clocks disabled */
     esp_tee_soc_reset_crypto_peripherals();
 }

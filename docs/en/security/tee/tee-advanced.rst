@@ -171,7 +171,6 @@ The following peripherals are protected using the APM module and accessible only
     :SOC_SHA_SUPPORTED: - SHA accelerator
     :SOC_ECC_SUPPORTED: - ECC accelerator
     :SOC_HMAC_SUPPORTED: - Hash-Based Message Authentication Code (HMAC) module
-    :SOC_DIG_SIGN_SUPPORTED: - Digital Signature module
 
 .. note::
 
@@ -181,6 +180,7 @@ The following peripherals are protected using the APM module and accessible only
 
       :SOC_MPI_SUPPORTED: - MPI accelerator (RSA)
       :SOC_ECDSA_SUPPORTED: - ECDSA accelerator
+      :SOC_DIG_SIGN_SUPPORTED: - Digital Signature module
 
 Firmware
 ^^^^^^^^

@@ -568,5 +568,5 @@ def test_esp_tee_fuzzer(dut: IdfDut) -> None:
                 # Device crashed and rebooted — verify it was a software reset
                 device_rebooted = True
                 rst_rsn = match.group(2).decode()
-                if rst_rsn not in ('LP_SW_HPSYS', 'RTC_SW_HPSYS'):
+                if rst_rsn not in ('LP_WDT_SYS', 'RTC_WDT_SYS', 'LP_SW_HPSYS', 'RTC_SW_HPSYS'):
                     logging.warning('Unexpected reset reason: "%s" (srv_id: %d, iter: %d)', rst_rsn, srv_id, iter_idx)

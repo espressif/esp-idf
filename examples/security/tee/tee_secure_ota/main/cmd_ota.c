@@ -170,21 +170,16 @@ static void tee_ota_task(void *pvParameter)
         task_fatal_error();
     }
 
-    err = esp_tee_ota_end();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_ota_end failed (%s)!", esp_err_to_name(err));
-        http_cleanup(client);
-        xSemaphoreGive(s_ota_mgmt);
-        task_fatal_error();
-    }
-    ESP_LOGI(TAG, "esp_tee_ota_end succeeded");
-
-    /* Ending connection, freeing the semaphore */
+    /* NOTE: esp_tee_ota_end() does not return on success - the TEE restarts the device.
+     * The semaphore is released only on failure */
     http_cleanup(client);
-    xSemaphoreGive(s_ota_mgmt);
 
     ESP_LOGI(TAG, "Prepare to restart system!");
-    esp_restart();
+
+    err = esp_tee_ota_end();
+    ESP_LOGE(TAG, "esp_tee_ota_end failed (%s)!", esp_err_to_name(err));
+    xSemaphoreGive(s_ota_mgmt);
+    task_fatal_error();
     return;
 }
 

@@ -31,9 +31,10 @@ _BASE_CONFIG = {
         'SWDT/BOD': 'APM - Space exception',
         'AES': 'APM - Space exception',
         'HMAC': 'APM - Space exception',
-        'DS': 'APM - Space exception',
         'SHA PCR': 'APM - Space exception',
+        'RSA PCR': 'APM - Space exception',
         'ECC PCR': 'APM - Space exception',
+        'ECDSA PCR': 'APM - Space exception',
     },
 }
 
@@ -55,9 +56,11 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
             'SWDT/BOD': 'Store access fault',
             'AES': 'APM - Authority exception',
             'HMAC': 'APM - Authority exception',
-            'DS': 'APM - Authority exception',
             'SHA PCR': 'APM - Authority exception',
+            'RSA PCR': 'APM - Authority exception',
             'ECC PCR': 'APM - Authority exception',
+            # NOTE: ESP32-C6 has no ECDSA peripheral
+            '_remove': ['ECDSA PCR'],
         },
     },
     'esp32h2': {
@@ -73,9 +76,10 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
             'SWDT/BOD': 'Store access fault',
             'AES': 'APM - Authority exception',
             'HMAC': 'APM - Authority exception',
-            'DS': 'APM - Authority exception',
             'SHA PCR': 'APM - Authority exception',
+            'RSA PCR': 'APM - Authority exception',
             'ECC PCR': 'APM - Authority exception',
+            'ECDSA PCR': 'APM - Authority exception',
         },
     },
     'esp32c5': {
@@ -84,11 +88,17 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
             # not generate exceptions due to TEE PMA configuration
             '_remove': ['IRAM-W1'],
         },
+        # NOTE: Only ESP32-C5 has the Key Manager and the HUK peripherals
+        'apm_violation': {
+            'HUK': 'Store access fault',
+            'KM PCR': 'APM - Space exception',
+        },
     },
     'esp32c61': {
         # NOTE: ESP32-C61 does not support the following peripherals
         'apm_violation': {
-            '_remove': ['AES', 'HMAC', 'DS'],
+            # NOTE: ESP32-C61 has no AES, HMAC or MPI peripheral
+            '_remove': ['AES', 'HMAC', 'RSA PCR'],
         },
     },
 }
