@@ -478,29 +478,29 @@ typedef struct {
  * @brief Router configuration
  */
 typedef struct {
-    uint8_t ssid[32];             /**< SSID */
-    uint8_t ssid_len;             /**< length of SSID */
-    uint8_t bssid[6];             /**< BSSID, if this value is specified, users should also specify "allow_router_switch". */
-    uint8_t password[64];         /**< password */
-    bool allow_router_switch;     /**< if the BSSID is specified and this value is also set, when the router of this specified BSSID
-                                       fails to be found after "fail" (mesh_attempts_t) times, the whole network is allowed to switch
-                                       to another router with the same SSID. The new router might also be on a different channel.
-                                       The default value is false.
-                                       There is a risk that if the password is different between the new switched router and the previous
-                                       one, the mesh network could be established but the root will never connect to the new switched router. */
+    WIFI_NONSTRING_ATTR uint8_t ssid[32];     /**< SSID */
+    uint8_t ssid_len;                         /**< length of SSID */
+    uint8_t bssid[6];                         /**< BSSID, if this value is specified, users should also specify "allow_router_switch". */
+    WIFI_NONSTRING_ATTR uint8_t password[64]; /**< password */
+    bool allow_router_switch;                 /**< if the BSSID is specified and this value is also set, when the router of this specified BSSID
+                                                   fails to be found after "fail" (mesh_attempts_t) times, the whole network is allowed to switch
+                                                   to another router with the same SSID. The new router might also be on a different channel.
+                                                   The default value is false.
+                                                   There is a risk that if the password is different between the new switched router and the previous
+                                                   one, the mesh network could be established but the root will never connect to the new switched router. */
 } mesh_router_t;
 
 /**
  * @brief Mesh softAP configuration
  */
 typedef struct {
-    uint8_t password[64];              /**< mesh softAP password */
+    WIFI_NONSTRING_ATTR uint8_t password[64]; /**< mesh softAP password */
     /**
      * max number of stations allowed to connect in, default 6, max 10
      * = max_connection + nonmesh_max_connection
      */
-    uint8_t max_connection;            /**< max mesh connections */
-    uint8_t nonmesh_max_connection;    /**< max non-mesh connections */
+    uint8_t max_connection;                   /**< max mesh connections */
+    uint8_t nonmesh_max_connection;           /**< max non-mesh connections */
 } mesh_ap_cfg_t;
 
 /**
