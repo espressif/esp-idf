@@ -118,6 +118,9 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t lbm_enabled = 0;
 BLE_LOG_STATIC volatile bool flush_in_progress = false;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_pool_t g_pool;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_stat_mgr_t stat_mgr_ctx[BLE_LOG_SRC_MAX];
+/* Shadow snapshot of lost_frame_cnt for the loss warning; only the
+ * runtime task reads and writes it, so plain loads/stores suffice. */
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t loss_shadow[BLE_LOG_SRC_MAX];
 /* Global SN (core logs and snapshots) and the snapshot-only anchor count;
  * task bindings and REDIR retain independent sequences. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t g_frame_sn;
@@ -510,14 +513,31 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
         return NULL;
     }
 
+    ble_log_prph_trans_t *trans =
+        ble_log_pool_try_claim_available(frame_len, use_reserve);
+    /* The shared ESP Timer task cannot wait for its own dispatcher.
+     * Check its identity only on the yieldable, would-wait path. */
+    if (trans || !wait || !BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled) ||
+            xTaskGetCurrentTaskHandle() == esp_timer_impl_get_timer_task_handle()) {
+        return trans;
+    }
+
+    /* Bounded total wait: establish the budget once, on the first
+     * failed would-wait attempt. Fast paths and no-wait callers never
+     * touch the RTOS timeout state. -1 builds stay infinite. */
+    TickType_t remaining = BLE_LOG_POOL_WAIT_TICKS;
+    if (remaining == 0) {
+        return NULL;
+    }
+    const bool finite = remaining != portMAX_DELAY;
+    TimeOut_t timeout;
+    if (finite) {
+        vTaskSetTimeOutState(&timeout);
+    }
+
     for (;;) {
-        ble_log_prph_trans_t *trans =
-            ble_log_pool_try_claim_available(frame_len, use_reserve);
-        /* The shared ESP Timer task cannot wait for its own dispatcher.
-         * Check its identity only on the yieldable, would-wait path. */
-        if (trans || !wait || !BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled) ||
-                xTaskGetCurrentTaskHandle() == esp_timer_impl_get_timer_task_handle()) {
-            return trans;
+        if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled)) {
+            return NULL;
         }
 
         ble_log_pool_waiter_adjust(1);
@@ -532,11 +552,18 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
             ble_log_pool_waiter_adjust(-1);
             return NULL;
         }
+        /* The budget is consumed only here, right before parking, so a
+         * wakeup near the deadline cannot swallow the last recycle
+         * notification while leaving a free buffer behind. */
+        if (finite && xTaskCheckForTimeOut(&timeout, &remaining)) {
+            ble_log_pool_waiter_adjust(-1);
+            return NULL;
+        }
 
         /* A parked LL task keeps its waiter registration but releases the
          * normal writer reference so flush/deinit can close the gate. */
         BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
-        xSemaphoreTake(g_pool.sem, portMAX_DELAY);
+        (void)xSemaphoreTake(g_pool.sem, remaining);
         BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(&lbm_ref_count);
         ble_log_pool_waiter_adjust(-1);
 #if CONFIG_BLE_LOG_PRPH_TEST
@@ -548,6 +575,10 @@ ble_log_prph_trans_t *ble_log_pool_acquire(size_t log_len,
         if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled)) {
             return NULL;
         }
+        /* Wake, timeout, or xTaskAbortDelay(): all return to the loop
+         * top, which re-registers, retries the claim, and then checks
+         * the same remaining budget. The -1 build therefore keeps its
+         * current retry-forever semantics. */
     }
 }
 
@@ -776,6 +807,7 @@ bool ble_log_lbm_init(void)
     g_pool.free_bitmap = BLE_LOG_POOL_ALL_MASK;
     g_pool.open_bitmap = 0;
     BLE_LOG_MEMSET(stat_mgr_ctx, 0, sizeof(stat_mgr_ctx));
+    BLE_LOG_MEMSET(loss_shadow, 0, sizeof(loss_shadow));
     g_frame_sn = 0;
     g_anchor_count = 0;
     /* Task registry: fresh epoch (registry, sequence and its dedicated
@@ -854,6 +886,27 @@ void ble_log_snapshot_stats(ble_log_source_stat_t *snapshots)
             BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr->counters.lost_frame_cnt);
         snapshots[i].written_bytes_cnt =
             BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr->counters.written_bytes_cnt);
+    }
+}
+
+void ble_log_lbm_take_loss_window(uint32_t by_source[BLE_LOG_SRC_MAX])
+{
+    /* Read the current counters once; a concurrent mark_lost that lands
+     * after the load simply belongs to the next window.
+     *
+     * A ble_log_flush() reset is not synchronized with the shadow: the
+     * counters restart at zero while loss_shadow keeps the pre-flush value,
+     * so this window reports max(0, current - shadow). Losses counted after
+     * the reset can therefore be under-reported, or dropped entirely (shadow
+     * 10, reset, 7 new losses -> 0 reported). Accepted for this delivery
+     * stage; an accurate post-flush window needs an independent
+     * producer-side counter. */
+    for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
+        uint32_t current =
+            BLE_LOG_ATOMIC_LOAD_RELAXED(stat_mgr_ctx[i].counters.lost_frame_cnt);
+        uint32_t last = loss_shadow[i];
+        by_source[i] = current >= last ? current - last : 0;
+        loss_shadow[i] = current;
     }
 }
 

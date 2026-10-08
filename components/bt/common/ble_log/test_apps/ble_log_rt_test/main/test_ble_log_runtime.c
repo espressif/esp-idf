@@ -6,6 +6,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
+#include "esp_cpu.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -968,4 +970,188 @@ TEST_CASE("BLE Log runtime survives deinit racing submissions",
         RT_DEINIT_ROUNDS, ctx->attempts,
         "Writer task did not run during the deinit race");
     warm_up_runtime();
+}
+
+/* ------------------------------ */
+/*     Loss Warning Line          */
+/* ------------------------------ */
+#include "esp_log.h"
+
+static char s_warning_line[320];
+static vprintf_like_t s_warning_orig_vprintf;
+
+static int loss_warning_vprintf(const char *format, va_list args)
+{
+    /* The text formatter forwards the fully prefixed line
+     * ("W (time) tag: body") with the body as one %s argument. Capture
+     * only lines tagged for this module's warning and forward every
+     * other line to the original vprintf, so unrelated logs neither
+     * overwrite the captured warning nor vanish from the console.
+     * A va_list may be traversed once per va_copy. */
+    char probe[64];
+    va_list probe_args;
+    va_copy(probe_args, args);
+    int n = vsnprintf(probe, sizeof(probe), format, probe_args);
+    va_end(probe_args);
+    if (n > 0 && strstr(probe, "BLE-Log") && strstr(probe, "Lost ")) {
+        va_list line_args;
+        va_copy(line_args, args);
+        (void)vsnprintf(s_warning_line, sizeof(s_warning_line), format,
+                        line_args);
+        va_end(line_args);
+        return n;
+    }
+    if (s_warning_orig_vprintf) {
+        va_list orig_args;
+        va_copy(orig_args, args);
+        int ret = s_warning_orig_vprintf(format, orig_args);
+        va_end(orig_args);
+        return ret;
+    }
+    return n;
+}
+
+/* tearDown hook: Unity leaves a failed case by longjmp, so any assert before
+ * the case's own restore statement would leave the capture hook installed.
+ * A later case saving "the current hook" would then save the hook itself, and
+ * the non-warning forwarding would recurse into it. Idempotent: the saved
+ * pointer is cleared here, and a successful case already cleared it. */
+void test_ble_log_disarm_warning_hook(void)
+{
+    if (s_warning_orig_vprintf) {
+        (void)esp_log_set_vprintf(s_warning_orig_vprintf);
+        s_warning_orig_vprintf = NULL;
+    }
+}
+
+/* The loss warning is emitted from the periodic ESP Timer callback. Cause
+ * a CUSTOM-source loss (pool full, no-wait path from the main task is not
+ * available, so use an oversized record instead: rejected at entry with a
+ * lost-frame accounting), then wait one window and check the line. */
+TEST_CASE("BLE Log loss warning reports per-window losses",
+          "[ble_log][runtime][ignore]")
+{
+    s_warning_orig_vprintf = esp_log_set_vprintf(loss_warning_vprintf);
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+
+    /* Zero-loss windows must stay silent: one full window with no loss. */
+    s_warning_line[0] = '\0';
+    vTaskDelay(runtime_timeout_ticks(BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 200));
+    TEST_ASSERT_NULL_MESSAGE(
+        strstr(s_warning_line, "Lost "),
+        "Loss-free window printed a warning");
+
+    /* Oversized write: rejected by the pool-acquire length check and
+     * counted as a CUSTOM loss by the existing accounting. */
+    static uint8_t oversized[BLE_LOG_MAX_PAYLOAD_LEN + 64];
+    memset(oversized, 0xA5, sizeof(oversized));
+    TEST_ASSERT_FALSE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, oversized,
+                                        sizeof(oversized)));
+
+    /* Wait for the closing window boundary plus scheduling margin. */
+    s_warning_line[0] = '\0';
+    vTaskDelay(runtime_timeout_ticks(BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 200));
+    TEST_ASSERT_NOT_NULL_MESSAGE(
+        strstr(s_warning_line, "BLE-Log"),
+        "No loss warning line for the lossy window");
+    TEST_ASSERT_NOT_NULL(strstr(s_warning_line, "Lost 1 frames"));
+    TEST_ASSERT_NOT_NULL(strstr(s_warning_line, "src-1=1"));
+
+    /* The following loss-free window must not repeat the warning. The
+     * hook stays installed for this check (restoring it earlier would
+     * freeze the capture buffer and silence the check); tearDown disarms
+     * it as well, so a failed assert anywhere in this case cannot leak
+     * it into the next one. */
+    s_warning_line[0] = '\0';
+    vTaskDelay(runtime_timeout_ticks(BLE_LOG_TS_TRIGGER_TIMEOUT_MS + 200));
+    TEST_ASSERT_NULL_MESSAGE(
+        strstr(s_warning_line, "Lost "),
+        "Loss-free window still printed a warning");
+
+    TEST_ASSERT_NOT_NULL(esp_log_set_vprintf(s_warning_orig_vprintf));
+    s_warning_orig_vprintf = NULL;
+    (void)runtime_stream_is_quiet();
+}
+
+/* Deinit tail window: losses counted after the last periodic boundary
+ * but before ble_log_deinit() must still be reported -- the deinit path
+ * stops the timer, takes the final window and prints it before the
+ * runtime goes away. */
+TEST_CASE("BLE Log loss warning reports the deinit tail window",
+          "[ble_log][runtime][ignore]")
+{
+    /* The hook is installed only around the deinit itself; the loss
+     * must land in the shadow between the last periodic boundary and
+     * the deinit. Drop the hook in early so the periodic warnings of
+     * this case's own oversized writes do not assert. */
+    s_warning_orig_vprintf = esp_log_set_vprintf(loss_warning_vprintf);
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+
+    /* One loss, then deinit immediately: well before the next periodic
+     * boundary, so the only reporter left is the deinit tail window. */
+    static uint8_t oversized[BLE_LOG_MAX_PAYLOAD_LEN + 64];
+    memset(oversized, 0xA5, sizeof(oversized));
+    TEST_ASSERT_FALSE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, oversized,
+                                        sizeof(oversized)));
+
+    s_warning_line[0] = '\0';
+    ble_log_deinit();
+
+    /* Restore the console and the module BEFORE asserting: a failed
+     * assert longjmps out of the case, and leaving the hook installed or
+     * the module deinitialised would break every later case in the same
+     * boot. (The hook is installed only from just before the deinit, so
+     * the periodic warnings of this case's own lossless setup cannot
+     * overwrite the capture.) */
+    bool saw_frames = strstr(s_warning_line, "Lost 1 frames") != NULL;
+    bool saw_source = strstr(s_warning_line, "src-1=1") != NULL;
+    TEST_ASSERT_NOT_NULL(esp_log_set_vprintf(s_warning_orig_vprintf));
+    s_warning_orig_vprintf = NULL;
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+
+    TEST_ASSERT_TRUE_MESSAGE(saw_frames, "Deinit did not report the tail-window loss");
+    TEST_ASSERT_TRUE(saw_source);
+}
+
+/* Cost of the loss-recording fast path: an oversized write fails at
+ * entry validation and runs exactly one mark_lost (atomic add in IRAM,
+ * no lock, no critical section). Measures the whole failed API call
+ * and reports it; the spec requires the number on target, not a
+ * threshold -- the assert only guards against an accidental lock or
+ * critical section (which would be orders of magnitude slower). */
+TEST_CASE("BLE Log loss fast path cost", "[ble_log][runtime][ignore]")
+{
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    TEST_ASSERT_TRUE(runtime_stream_is_quiet());
+
+    static uint8_t oversized[BLE_LOG_MAX_PAYLOAD_LEN + 64];
+    memset(oversized, 0xA5, sizeof(oversized));
+
+    /* Warm up caches and branch predictors. */
+    for (int i = 0; i < 100; i++) {
+        TEST_ASSERT_FALSE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, oversized,
+                                            sizeof(oversized)));
+    }
+
+    const int rounds = 1000;
+    uint32_t start = (uint32_t)esp_cpu_get_cycle_count();
+    for (int i = 0; i < rounds; i++) {
+        TEST_ASSERT_FALSE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, oversized,
+                                            sizeof(oversized)));
+    }
+    uint32_t per_call = ((uint32_t)esp_cpu_get_cycle_count() - start) /
+                        rounds;
+    printf("mark_lost path: %u cycles per failed write\n",
+           (unsigned)per_call);
+
+    /* Upper sanity bound for the whole failed-write path (reference
+     * acquire/release, one Global SN atomic, one mark_lost atomic) at
+     * 320 MHz: 5000 cycles is ~16 us. It catches only a severe
+     * regression; an uncontended critical section would stay inside it,
+     * so the printed number is the real evidence. */
+    TEST_ASSERT_LESS_THAN_UINT32(5000, per_call);
 }

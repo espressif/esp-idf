@@ -34,6 +34,25 @@ if BLE_LOG_ENABLED
             in one transport. SPI builds require a multiple of four so they
             can append peripheral-only zero padding to each logical frame.
 
+    config BLE_LOG_POOL_WAIT_TIMEOUT_MS
+        int "Total wait budget for one pool acquire (ms)"
+        depends on BLE_LOG_PRPH_USB || BLE_LOG_PRPH_TEST
+        range -1 1000
+        default 10 if BLE_LOG_PRPH_USB
+        default -1
+        help
+            Bounded total wait for a single transport acquire by an ordinary
+            yieldable task. 0 fails immediately when the pool is busy; -1
+            keeps the historical infinite wait; positive values are rounded
+            up to FreeRTOS ticks and cap the total wait across all wakeups
+            of one acquire (the budget is never reset by a wake).
+
+            Only visible for USB and test builds. Production SPI/UART
+            builds keep the infinite wait (the symbol stays undefined and
+            the code falls back to portMAX_DELAY). 10 ms is an initial
+            test value for USB builds only; the final default must be
+            measured on the target DMA path.
+
     config BLE_LOG_TASK_ID_MAX
         int "Maximum number of distinct logging tasks"
         range 2 32
@@ -158,7 +177,38 @@ if BLE_LOG_ENABLED
             depends on SOC_UHCI_SUPPORTED
             help
                 Utilize UART DMA driver as transport
+
+        config BLE_LOG_PRPH_USB
+            bool "Utilize USB OTG device as transport (TinyUSB CDC-ACM)"
+            depends on SOC_USB_OTG_SUPPORTED
+            help
+                Copy each sealed transport into the TinyUSB CDC TX FIFO
+                and recycle immediately. A transport that does not fit is
+                dropped with a warning. The USB device starts and stops
+                with ble_log_init/deinit. Works on any target with a
+                USB OTG peripheral, Full-Speed or High-Speed.
+
+                Requires espressif/esp_tinyusb in the project manifest
+                and CONFIG_TINYUSB_CDC_ENABLED. Copy
+                idf_component_usb.template.yml from the BLE Log component
+                directory into the application's main/ directory, then
+                run idf.py reconfigure. See the "USB transport" section
+                in the BLE Log README for the full setup and buffer
+                requirements.
     endchoice
+
+    if BLE_LOG_PRPH_USB
+        config BLE_LOG_USB_DISPATCH_TEST_HOOKS
+            bool "Compile the USB dispatcher test hooks"
+            default n
+            depends on !BLE_LOG_PRPH_TEST
+            help
+                Compile the weak dispatch-task injection points used by
+                the BLE Log USB test app's lifecycle mode (parks the
+                dispatcher between dequeue and send, and between the stop
+                ack and the self-suspend). Off in production builds: the
+                dispatch hot path then carries no hook checks at all.
+    endif
 
     if BLE_LOG_PRPH_SPI_MASTER_DMA || BLE_LOG_PRPH_SPI_MASTER_HD
         config BLE_LOG_PRPH_SPI_MASTER_DMA_MOSI_IO_NUM
@@ -201,6 +251,67 @@ if BLE_LOG_ENABLED
             default 0
             help
                 GPIO number for UART TX
+    endif
+
+    if BLE_LOG_PRPH_USB
+        config BLE_LOG_RT_TASK_STACK_SIZE
+            int "BLE Log dispatch task stack size (bytes)"
+            range 1024 8192
+            default 2048 if IDF_TARGET_ARCH_XTENSA
+            default 1024
+            help
+                Stack for the dedicated runtime dispatch task. USB builds
+                drain the transport queue from this task instead of the 1 ms
+                deferred esp_timer batch, so the throughput is not capped by
+                the defer cadence. The dispatch call chain was measured at
+                roughly 2 KB on Xtensa (register-window calling convention)
+                and 1 KB on RISC-V.
+
+        config BLE_LOG_USB_CDC_TX_BUFSIZE
+            int "CDC ACM TX FIFO size (bytes)"
+            range 640 10240
+            default 2048
+            help
+                TinyUSB CDC software TX FIFO. This is the absorption
+                buffer between the BLE Log transports and the USB
+                endpoint: a sealed transport is copied here whole or
+                dropped. Must be at least BLE_LOG_POOL_TRANS_SIZE.
+                Also set CONFIG_TINYUSB_CDC_TX_BUFSIZE to this value.
+
+                Measured on ESP32-S31: 1024 costs about 5% of the
+                delivered throughput (the FIFO stalls the producer
+                sooner), while 4096 gains nothing over 2048. 2048 (three
+                transports of headroom) is the knee; only lower it to
+                trade throughput for 1 KB of RAM.
+
+        config BLE_LOG_USB_CDC_EP_BUFSIZE
+            int "CDC bulk endpoint buffer size (bytes)"
+            range 64 8192
+            default 512
+            help
+                TinyUSB CDC endpoint buffer, and the transfer length of
+                one bulk IN submission (CFG_TUD_CDC_TX_EPSIZE): each
+                submitted transfer carries at most this many bytes. Also
+                set CONFIG_TINYUSB_CDC_EP_BUFSIZE to this value and
+                CONFIG_TINYUSB_CDC_RX_BUFSIZE to at least this value
+                (TinyUSB warns if RX is smaller). Static RAM cost is
+                twice this value (one IN and one OUT endpoint buffer).
+
+                The bulk maximum packet size in the device descriptor is
+                fixed at 512 on High-Speed and 64 on Full-Speed and does
+                not follow this option, so the best value depends on the
+                target speed:
+
+                - High-Speed (e.g. ESP32-S31): keep 512, where one
+                  submission is exactly one packet. 1024 and 2048 deliver
+                  about 9% less and cost roughly 1.5 KB / 4.5 KB more RAM.
+                - Full-Speed (e.g. ESP32-S2/S3): raise it to 1024. The
+                  64-byte packet size is the worst case, 0.58 MiB/s
+                  against 1.03 MiB/s at 1024; 2048 adds only 2% for 3 KB
+                  more RAM.
+
+                See the "USB transport" section of the BLE Log README for
+                the measurement setup and the per-value numbers.
     endif
 
     menu "Settings of BLE Log Compression"

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: CC0-1.0
+#
+# Template for the USB transport (CONFIG_BLE_LOG_PRPH_USB).
+#
+# BLE Log lives inside the IDF tree, so its own manifest cannot pull the
+# espressif/esp_tinyusb managed component. Copy this file to the
+# application's main/ directory (keeping or merging any existing
+# idf_component.yml), then run `idf.py reconfigure` so the component
+# manager fetches the dependency. Without it, enabling the USB transport
+# fails the CMake configure with a fatal error.
+
+dependencies:
+  espressif/esp_tinyusb: "^2.0.0"
