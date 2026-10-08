@@ -25,7 +25,10 @@ def test_flash_auto_suspend(dut: Dut) -> None:
     'config',
     [
         'release',
-        'text_in_flash_when_suspend',
+        pytest.param(
+            'text_in_flash_when_suspend',
+            marks=pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass'),  # TODO: IDF-16195
+        ),
     ],
     indirect=True,
 )

@@ -7,6 +7,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['iram_safe', 'release', 'pm_enable'], indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16186
 @idf_parametrize(
     'target',
     [

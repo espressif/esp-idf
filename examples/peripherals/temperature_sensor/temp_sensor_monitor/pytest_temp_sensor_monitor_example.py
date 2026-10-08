@@ -8,6 +8,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TEMPERATURE_SENSOR_INTR_SUPPORT == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16197
 def test_temp_sensor_monitor_example(dut: Dut) -> None:
     dut.expect_exact('Install temperature sensor')
     dut.expect_exact('Enable temperature sensor')

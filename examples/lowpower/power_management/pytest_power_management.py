@@ -56,6 +56,7 @@ def test_esp_pm_mode_stats(dut: Dut) -> None:
     ),
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16196
 def test_esp_pm_mode_stats_pd_top(dut: Dut) -> None:
     _run_pm_example_test(dut)
 

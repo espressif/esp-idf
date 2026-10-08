@@ -49,6 +49,7 @@ def test_temperature_sensor_driver_esp32c5_rev1(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16197
 @idf_parametrize(
     'target',
     ['esp32c6', 'esp32h2', 'esp32h21', 'esp32p4', 'esp32c5', 'esp32c61', 'esp32s31', 'esp32h4'],

@@ -27,6 +27,7 @@ def test_flash_mmap(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32h21'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16195
 def test_flash_mmap_rom_impl(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=30)
 

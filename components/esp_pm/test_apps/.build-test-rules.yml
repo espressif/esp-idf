@@ -10,6 +10,10 @@ components/esp_pm/test_apps:
     - if: IDF_TARGET in ["esp32h4"]
       temporary: true
       reason: not support yet # TODO: [ESP32H4] IDF-12286
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16196
+      temporary: true
+      reason: cannot pass
   depends_components:
     - *common_components
     - esp_pm

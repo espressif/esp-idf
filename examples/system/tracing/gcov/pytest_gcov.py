@@ -176,6 +176,7 @@ def test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 
 @pytest.mark.usb_serial_jtag
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16198
 @idf_parametrize('config', ['gcov_jtag'], indirect=['config'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])

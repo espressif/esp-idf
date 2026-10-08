@@ -53,6 +53,7 @@ available_rtcio_nums = {
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16199
 @idf_parametrize(
     'target',
     soc_filtered_targets('SOC_PM_SUPPORT_EXT1_WAKEUP == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1'),
@@ -166,6 +167,7 @@ def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16199
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]

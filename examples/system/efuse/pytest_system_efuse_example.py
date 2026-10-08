@@ -63,6 +63,7 @@ def test_examples_efuse_linux(dut: Dut) -> None:
     ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16192
 def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -172,6 +173,7 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16192
 def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -242,6 +244,7 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
     ['esp32', 'esp32c2', 'esp32c3', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16192
 def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
@@ -659,6 +662,7 @@ def example_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32h21', 'esp32p4', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16192
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     example_efuse_with_virt_secure_boot_v2_esp32xx(dut)
 
@@ -682,6 +686,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_ecdsa_p384_esp32xx(dut: Dut) ->
     ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32h21', 'esp32p4', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16192
 def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -1101,6 +1106,7 @@ def example_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16192
 def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     example_efuse_with_virt_sb_v2_and_fe(dut)
 

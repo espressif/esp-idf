@@ -100,6 +100,7 @@ def fixture_create_socket_can() -> Bus:
     ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4', 'esp32h21'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16188
 def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     try:
         esp_reset_and_wait_ready(dut)
@@ -134,6 +135,7 @@ def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4', 'esp32h21'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16188
 def test_legacy_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     try:
         esp_reset_and_wait_ready(dut)

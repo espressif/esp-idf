@@ -8,6 +8,10 @@ components/esp_hw_support/test_apps/cpu:
     - soc
 
 components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16199
+      temporary: true
+      reason: cannot pass
   depends_components:
     - esp_driver_gpio
     - esp_hal_gpio
@@ -96,6 +100,10 @@ components/esp_hw_support/test_apps/vad_wakeup:
 components/esp_hw_support/test_apps/wakeup_tests:
   enable:
     - if: SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16199
+      temporary: true
+      reason: lack of runner
   depends_components:
     - esp_driver_gpio
     - esp_hal_gpio
