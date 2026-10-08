@@ -51,6 +51,16 @@ Bluedroid
 
         - ``ESP_HF_BCS_RESPONSE_EVT`` （``bcs_rep``）：字段 ``mode`` 的类型改为 ``esp_hf_codec_mode_t``。字段名 ``mode`` 未改。
 
+        - ``esp_hf_ag_init()`` 已废弃，请改用 ``esp_hf_ag_init_with_cfg()``。旧函数仍会同时注册 HFP 和 HSP，与 ``ESP_HF_AG_INIT_CONFIG_DEFAULT()`` 相同。
+
+        - 将 ``service_mask`` 设为 ``ESP_HF_AG_SERVICE_HSP`` 可只注册 HSP，设为 ``ESP_HF_AG_SERVICE_HFP`` 可只注册 HFP。掩码为 0 或包含未知位时返回 ``ESP_ERR_INVALID_ARG``。仅 HSP 的 AG 发布的是 Headset Audio Gateway（UUID ``0x1112``），对端必须是 HSP Headset。Bluedroid HF Client 和 ``hfp_hf`` 示例只查找 Hands-Free AG（UUID ``0x111F``），无法与之连接。
+
+        - ``ESP_HF_CONNECTION_STATE_EVT`` （``conn_stat``）新增 ``peer_service``。RFCOMM 打开成功时为 ``ESP_HF_AG_SERVICE_HFP`` 或 ``ESP_HF_AG_SERVICE_HSP``，SLC 连接和断开时再次上报。打开失败时为 0。两边服务都注册时，出站连接可能从 HFP 回落到 HSP，不能用初始化掩码判断实际连上的服务。
+
+        - 呼出、接听、拒接、挂断、音量控制以及音频连接和断开在 HSP 链路上仍然有效。处理这些呼叫时，协议栈仍可能提交指示器上报等仅 HFP 的结果。这些结果会被丢掉并打印 warning。振铃和 SCO 连接不受影响。
+
+        - 以下接口仅 HFP 链路有效。HSP 链路上请求会被忽略，并打印 warning：``esp_hf_ag_ciev_report()``、``esp_hf_ag_cind_response()``、``esp_hf_ag_cops_response()``、``esp_hf_ag_clcc_response()``、``esp_hf_ag_cnum_response()``。``esp_hf_ag_set_codec()`` 同样仅 HFP 有效，HSP 上 ``ESP_HF_WBS_RESPONSE_EVT`` 会报告失败。``esp_hf_ag_vra_control()`` 在 HSP 链路或对端不支持语音识别时不会发送 ``+BVRA``，并打印 warning，但仍会按请求建立或断开音频连接。
+
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_a2dp_api.h`
 
         - ``ESP_A2D_MEDIA_CTRL_ACK_EVT`` （``media_ctrl_stat``）新增 ``conn_hdl``，表示被确认的媒体控制命令所属的 A2DP 连接句柄。
@@ -88,3 +98,14 @@ Bluedroid
         esp_hf_ag_set_codec(bda, ESP_HF_CODEC_MSBC);
         if (param->bcs_rep.mode == ESP_HF_CODEC_CVSD) { /* CVSD */ }
         else if (param->bcs_rep.mode == ESP_HF_CODEC_LC3) { /* LC3-SWB */ }
+
+        // 修改前
+        esp_hf_ag_init();
+
+        // 修改后：同时注册两个服务，与废弃函数相同
+        esp_hf_ag_cfg_t cfg = ESP_HF_AG_INIT_CONFIG_DEFAULT();
+        esp_hf_ag_init_with_cfg(&cfg);
+
+        // 修改后：仅 HSP
+        cfg.service_mask = ESP_HF_AG_SERVICE_HSP;
+        esp_hf_ag_init_with_cfg(&cfg);

@@ -52,6 +52,16 @@ Bluedroid
 
         - ``ESP_HF_BCS_RESPONSE_EVT`` (``bcs_rep``): field ``mode`` is now ``esp_hf_codec_mode_t``. The field name ``mode`` is unchanged.
 
+        - ``esp_hf_ag_init()`` is deprecated. Use ``esp_hf_ag_init_with_cfg()``. The old function still registers both HFP and HSP, which is the same as ``ESP_HF_AG_INIT_CONFIG_DEFAULT()``.
+
+        - Set ``service_mask`` to ``ESP_HF_AG_SERVICE_HSP`` to register HSP only, or ``ESP_HF_AG_SERVICE_HFP`` to register HFP only. A zero mask or any unknown bit returns ``ESP_ERR_INVALID_ARG``. An HSP-only AG advertises Headset Audio Gateway (UUID ``0x1112``). The peer must be an HSP Headset. The Bluedroid HF Client and the ``hfp_hf`` example search only for Hands-Free AG (UUID ``0x111F``) and will not connect.
+
+        - ``ESP_HF_CONNECTION_STATE_EVT`` (``conn_stat``) adds ``peer_service``. It is ``ESP_HF_AG_SERVICE_HFP`` or ``ESP_HF_AG_SERVICE_HSP`` for the service that opened, and is reported again on SLC connected and disconnect. It is 0 when the open fails. When both services are registered, an outgoing connection can fall back from HFP to HSP, so the initialized mask does not identify the connected service.
+
+        - Call setup, call answer, call reject, call end, volume control, and audio connect or disconnect still apply on an HSP link. While handling those calls the stack may still submit HFP-only results such as indicator reports. Those results are dropped and a warning is logged. Ring and the SCO connection are unchanged.
+
+        - The following calls apply to an HFP link only. On an HSP link the request is ignored and a warning is logged: ``esp_hf_ag_ciev_report()``, ``esp_hf_ag_cind_response()``, ``esp_hf_ag_cops_response()``, ``esp_hf_ag_clcc_response()``, and ``esp_hf_ag_cnum_response()``. ``esp_hf_ag_set_codec()`` is also HFP only. On HSP, ``ESP_HF_WBS_RESPONSE_EVT`` reports failure. ``esp_hf_ag_vra_control()`` does not send ``+BVRA`` on an HSP link or when the peer does not support voice recognition, and a warning is logged. Audio is still connected or disconnected according to the requested state.
+
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_a2dp_api.h`
 
         - ``ESP_A2D_MEDIA_CTRL_ACK_EVT`` (``media_ctrl_stat``) now includes ``conn_hdl``, the A2DP connection handle of the command being acknowledged.
@@ -89,3 +99,14 @@ Bluedroid
         esp_hf_ag_set_codec(bda, ESP_HF_CODEC_MSBC);
         if (param->bcs_rep.mode == ESP_HF_CODEC_CVSD) { /* CVSD */ }
         else if (param->bcs_rep.mode == ESP_HF_CODEC_LC3) { /* LC3-SWB */ }
+
+        // Before
+        esp_hf_ag_init();
+
+        // After: both services, same as the deprecated function
+        esp_hf_ag_cfg_t cfg = ESP_HF_AG_INIT_CONFIG_DEFAULT();
+        esp_hf_ag_init_with_cfg(&cfg);
+
+        // After: HSP only
+        cfg.service_mask = ESP_HF_AG_SERVICE_HSP;
+        esp_hf_ag_init_with_cfg(&cfg);
