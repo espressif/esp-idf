@@ -3928,7 +3928,7 @@ static struct crypto_ec_key * dpp_parse_jwk(struct json_token *jwk,
 	const struct dpp_curve_params *curve;
 	struct wpabuf *x = NULL, *y = NULL;
 	unsigned char *a = NULL;
-	struct crypto_ec_group *group;
+	struct crypto_ec_group *group = NULL;
 	struct crypto_ec_key *pkey = NULL;
 	size_t len;
 
@@ -3996,11 +3996,10 @@ static struct crypto_ec_key * dpp_parse_jwk(struct json_token *jwk,
 	os_memcpy(a, wpabuf_head(x), wpabuf_len(x));
 	os_memcpy(a + wpabuf_len(x), wpabuf_head(y), wpabuf_len(y));
 	pkey = crypto_ec_key_set_pub(group, a, len);
-
-	crypto_ec_deinit((struct crypto_ec *)group);
 	*key_curve = curve;
 
 fail:
+	crypto_ec_deinit((struct crypto_ec *)group);
 	wpabuf_free(x);
 	wpabuf_free(y);
 	os_free(a);
