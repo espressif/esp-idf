@@ -100,7 +100,6 @@ KNOWN_MISSING = {
     'bluetooth/nimble/bleprph',
     'bluetooth/nimble/bleprph_host_only',
     'bluetooth/nimble/bleprph_wifi_coex',
-    'bluetooth/nimble/hci',
     'bluetooth/nimble/throughput_app/gatt/blecent_throughput',
     'bluetooth/nimble/throughput_app/gatt/bleprph_throughput',
     'bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent',

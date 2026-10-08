@@ -357,23 +357,14 @@ examples/bluetooth/hci/ble_adv_scan_combined:
   depends_filepatterns:
     - examples/bluetooth/hci/hci_common_component/**/*
 
-examples/bluetooth/hci/controller_hci_uart_esp32:
+examples/bluetooth/hci/controller_hci_uart:
   <<: *bt_default_depends
   enable:
     - if: IDF_TARGET == "esp32"
-  depends_components+:
-    - esp_driver_uart
-  depends_filepatterns:
-    - examples/bluetooth/hci/hci_common_component/**/*
-
-examples/bluetooth/hci/controller_hci_uart_esp32c3_and_esp32s3:
-  <<: *bt_default_depends
-  enable:
     - if: IDF_TARGET in ["esp32c3", "esp32s3"]
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1
   depends_components+:
     - esp_driver_uart
-  depends_filepatterns:
-    - examples/bluetooth/hci/hci_common_component/**/*
 
 examples/bluetooth/hci/controller_vhci_ble_adv:
   <<: *bt_default_depends
@@ -832,13 +823,6 @@ examples/bluetooth/nimble/bleprph_wifi_coex:
     - esp_wifi
     - esp_coex
     - lwip
-  depends_filepatterns:
-    - examples/bluetooth/nimble/common/**/*
-
-examples/bluetooth/nimble/hci:
-  <<: *bt_default_depends
-  disable:
-    - if: SOC_ESP_NIMBLE_CONTROLLER != 1
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 

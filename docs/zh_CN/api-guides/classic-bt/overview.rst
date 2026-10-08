@@ -32,10 +32,7 @@ ESP 蓝牙控制器
     在 {IDF_TARGET_NAME} 上，Orca BR/EDR Controller 的可选功能可通过 Kconfig 在编译期选择。详见 :doc:`esp-bredr-controller-kconfig`。
 
 - :doc:`API 参考 <../../api-reference/bluetooth/controller_vhci>`
-
-.. only:: esp32
-
-    - :example:`应用示例 <bluetooth/hci/controller_hci_uart_esp32>`
+- :example:`应用示例 <bluetooth/hci/controller_hci_uart>`
 
 
 ESP 蓝牙主机

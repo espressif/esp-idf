@@ -63,8 +63,8 @@ typedef struct {
 
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
 /* BR/EDR or dual-mode: Classic ACL packet budget (H4 type + payload). */
-#define HCI_TX_MAX_SIZE                     (1024)
-#define HCI_RX_PKT_BUDGET                   (1024 + HCI_TRANSPORT_CMD_SZ)
+#define HCI_TX_MAX_SIZE                     (1026)
+#define HCI_RX_PKT_BUDGET                   (1026 + HCI_TRANSPORT_CMD_SZ)
 #else
 /* BLE only: H4 type byte + one LE ACL payload; RX also covers a command-sized packet. */
 #define HCI_TX_MAX_SIZE                     (DEFAULT_BT_LE_ACL_BUF_SIZE + 1)

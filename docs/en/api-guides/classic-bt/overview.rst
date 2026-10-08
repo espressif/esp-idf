@@ -32,10 +32,7 @@ At the bottom layer is ESP Bluetooth Controller, which encompasses various modul
     On {IDF_TARGET_NAME}, optional features of the Orca BR/EDR Controller are selected at build time via Kconfig. See :doc:`esp-bredr-controller-kconfig`.
 
 - :doc:`API reference <../../api-reference/bluetooth/controller_vhci>`
-
-.. only:: esp32
-
-    - :example:`Application examples <bluetooth/hci/controller_hci_uart_esp32>`
+- :example:`Application examples <bluetooth/hci/controller_hci_uart>`
 
 
 Hosts

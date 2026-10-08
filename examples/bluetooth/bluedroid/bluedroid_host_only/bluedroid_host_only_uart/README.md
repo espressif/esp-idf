@@ -58,7 +58,7 @@ esp_bluedroid_attach_hci_driver(&operations);
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP development board. To connect UART to another board running a Bluetooth controller. For example, [controller_hci_uart_esp32](../../../hci/controller_hci_uart_esp32).
+This example should be able to run on any commonly available ESP development board. To connect UART to another board running a Bluetooth controller. For example, [controller_hci_uart](../../../hci/controller_hci_uart).
 
 ### Configure the project
 
