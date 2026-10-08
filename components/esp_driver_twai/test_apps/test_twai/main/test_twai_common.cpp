@@ -517,6 +517,15 @@ TEST_CASE("twai driver cache safe (loopback)", "[twai]")
 }
 #endif //CONFIG_TWAI_ISR_CACHE_SAFE
 
+static void test_twai_generate_tx_glitch(uint32_t bitrate, uint32_t offset_bits, uint32_t glitch_bits)
+{
+    uint32_t width_us = 1000000 / bitrate;
+    esp_rom_delay_us(offset_bits * width_us);
+    gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, true, false);
+    esp_rom_delay_us(glitch_bits * width_us);
+    gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, false, false);
+}
+
 TEST_CASE("twai bus off recovery (loopback)", "[twai]")
 {
     twai_node_handle_t node_hdl;
@@ -532,7 +541,7 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
-    twai_node_status_t node_status;
+    twai_node_status_t node_status = {};
     twai_frame_t tx_frame = {};
     tx_frame.buffer = (uint8_t *)"hello\n";
     tx_frame.buffer_len = 6;
@@ -543,10 +552,7 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
         TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
         if (tx_frame.header.id > 3) {    // trigger error after 3 frames
             printf("trigger bit_error now!\n");
-            esp_rom_delay_us(30 * (1000000 / node_config.bit_timing.bitrate)); // trigger error at 30 bits after frame start
-            gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, true, false);
-            esp_rom_delay_us(2 * (1000000 / node_config.bit_timing.bitrate)); // trigger error for 2 bits
-            gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, false, false);
+            test_twai_generate_tx_glitch(node_config.bit_timing.bitrate, 30, 2);
         }
         vTaskDelay(pdMS_TO_TICKS(100)); // some time for hardware report errors
         twai_node_get_info(node_hdl, &node_status, NULL);
@@ -571,6 +577,7 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     printf("node recovered! current tec %d rec %d, continue\n", node_status.tx_error_count, node_status.rx_error_count);
     TEST_ASSERT_LESS_THAN(96, node_status.tx_error_count);
     TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));
@@ -1060,4 +1067,78 @@ TEST_CASE("twai delete event group before setbits", "[twai]")
     // let twai task higher than timer task so it can run first
     TEST_ASSERT_EQUAL(pdPASS, xTaskCreate(test_driver_event_group, "twai_del", 4096, NULL, configTIMER_TASK_PRIORITY + 1, NULL));
     vTaskDelay(pdMS_TO_TICKS(500));
+}
+
+static volatile bool s_twai_rx_bad_frame;
+static const uint8_t s_twai_rx_expected_data[8] = {0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89};
+
+static IRAM_ATTR bool test_twai_repro_rx_done_cb(twai_node_handle_t handle, const twai_rx_done_event_data_t *edata, void *user_ctx)
+{
+    uint8_t data[8] = {};
+    twai_frame_t frame = {};
+    frame.buffer = data;
+    frame.buffer_len = sizeof(data);
+
+    if (twai_node_receive_from_isr(handle, &frame) == ESP_OK) {
+        ESP_EARLY_LOGI("Loopback RX", "data=%02X %02X %02X %02X %02X %02X %02X %02X",
+                       data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+        if (frame.header.id == 0x1 && !frame.header.ide &&
+                twaifd_dlc2len(frame.header.dlc) == sizeof(s_twai_rx_expected_data) &&
+                memcmp(data, s_twai_rx_expected_data, sizeof(s_twai_rx_expected_data)) != 0) {
+            s_twai_rx_bad_frame = true;
+            ESP_EARLY_LOGE("RX", "data error");
+        }
+    }
+    return false;
+}
+
+// Test for errata TWAI_LL_HAS_TX_FRAME_ISSUE
+#define TEST_FRAME_DATA_PHASE_OFFSET 68 // [56:88] is almost middle of the data phase for a ext frame
+TEST_CASE("twai tx error not leads rx data shift (loopback)", "[twai]")
+{
+    s_twai_rx_bad_frame = false;
+
+    twai_node_handle_t node_hdl = NULL;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO;
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 50000;
+    node_config.tx_queue_depth = 1;
+    node_config.flags.enable_self_test = true;
+    node_config.flags.enable_loopback = true;
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    twai_event_callbacks_t cbs = {};
+    cbs.on_rx_done = test_twai_repro_rx_done_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &cbs, NULL));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    uint8_t tx_data[7] = {0x98, 0x76, 0x54, 0x32, 0x10, 0xfe, 0xdc};
+    twai_frame_t tx_frame = {};
+    tx_frame.header.id = 0x5000;
+    tx_frame.header.ide = true;
+    tx_frame.header.dlc = sizeof(tx_data);
+    tx_frame.buffer = tx_data;
+    tx_frame.buffer_len = sizeof(tx_data);
+
+    TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 100));
+    // generate 2 bits glitch on tx data phase
+    test_twai_generate_tx_glitch(node_config.bit_timing.bitrate, TEST_FRAME_DATA_PHASE_OFFSET, 2);
+    vTaskDelay(pdMS_TO_TICKS(20));
+
+    twai_frame_t verify_frame = {};
+    verify_frame.header.id = 0x1;
+    verify_frame.header.dlc = sizeof(s_twai_rx_expected_data);
+    verify_frame.buffer = (uint8_t *)s_twai_rx_expected_data;
+    verify_frame.buffer_len = sizeof(s_twai_rx_expected_data);
+    // send 2 frames to verify the loopback RX data
+    TEST_ESP_OK(twai_node_transmit(node_hdl, &verify_frame, 100));
+    TEST_ESP_OK(twai_node_transmit(node_hdl, &verify_frame, 100));
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    TEST_ASSERT_FALSE(s_twai_rx_bad_frame);
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
 }
