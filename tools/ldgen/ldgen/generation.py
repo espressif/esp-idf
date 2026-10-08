@@ -442,7 +442,14 @@ class Generation:
     # Processed mapping, scheme and section entries
     EntityMapping = namedtuple('EntityMapping', 'entity sections_group target flags mutable')
 
-    def __init__(self, check_mappings=False, check_mapping_exceptions=None, mutable_libs=None, debug=False):
+    def __init__(
+        self,
+        check_mappings=False,
+        check_mapping_exceptions=None,
+        mutable_libs=None,
+        debug=False,
+        excluded_archives=None,
+    ):
         self.schemes = {}
         self.placements = {}
         self.mappings = {}
@@ -459,6 +466,11 @@ class Generation:
             self.mutable_libs = []
         else:
             self.mutable_libs = mutable_libs
+
+        # Archives left out of the libraries passed to ldgen on purpose (see the
+        # LDGEN_EXCLUDE_COMPONENTS build property). Entries that need their
+        # contents would be silently dropped, so they are rejected instead.
+        self.excluded_archives = excluded_archives or []
 
     def _prepare_scheme_dictionary(self):
         scheme_dictionary = collections.defaultdict(dict)
@@ -546,9 +558,16 @@ class Generation:
 
         for mapping in self.mappings.values():
             archive = mapping.archive
+            excluded = archive in self.excluded_archives
 
             for obj, symbol, scheme_name in mapping.entries:
                 entity = Entity(archive, obj, symbol)
+
+                # Object and symbol entries need the archive contents, which
+                # ldgen does not have for an excluded archive.
+                if excluded and entity.specificity.value > Entity.Specificity.ARCHIVE.value:
+                    message = f"'{entity}' is in an archive excluded from linker script generation"
+                    raise GenerationException(message, mapping)
 
                 # Check the entity exists
                 if (

@@ -88,6 +88,33 @@ function(__ldgen_get_lib_deps_of_target target out_list_var)
     set(${out_list_var} ${out_list} PARENT_SCOPE)
 endfunction()
 
+# __ldgen_exclude_components
+#
+# Remove the archives of the components listed in the LDGEN_EXCLUDE_COMPONENTS
+# build property from the libraries passed to ldgen, and return the ldgen
+# options naming their archive files. Those archives are neither scanned by
+# ldgen nor dependencies of the generated linker script, so rebuilding them does
+# not regenerate it. ldgen is told about them so that it fails on a mapping that
+# needs their contents instead of silently ignoring it.
+#
+function(__ldgen_exclude_components libraries_var options_var)
+    idf_build_get_property(exclude_components LDGEN_EXCLUDE_COMPONENTS)
+    set(libraries ${${libraries_var}})
+    set(options)
+    foreach(component ${exclude_components})
+        __component_get_target(component_target ${component})
+        if(NOT component_target)
+            message(FATAL_ERROR "LDGEN_EXCLUDE_COMPONENTS: unknown component '${component}'")
+        endif()
+        __component_get_property(lib ${component_target} COMPONENT_LIB)
+        __component_get_property(alias ${component_target} COMPONENT_ALIAS)
+        list(REMOVE_ITEM libraries ${lib} ${alias})
+        list(APPEND options "--excluded-archive" "$<TARGET_LINKER_FILE_NAME:${lib}>")
+    endforeach()
+    set(${libraries_var} ${libraries} PARENT_SCOPE)
+    set(${options_var} ${options} PARENT_SCOPE)
+endfunction()
+
 # __ldgen_get_mutable_libs
 #
 # Helper function to get the list of library file name generator expressions
@@ -148,6 +175,7 @@ function(__ldgen_create_target exe_target)
     set(ldgen_libraries)
     __ldgen_get_lib_deps_of_target(${exe_target} ldgen_libraries)
     list(REMOVE_ITEM ldgen_libraries ${exe_target})
+    __ldgen_exclude_components(ldgen_libraries ldgen_excluded_option)
     set(ldgen_deps)
     foreach(lib ${ldgen_libraries})
         if(TARGET ${lib})
@@ -237,6 +265,7 @@ function(__ldgen_create_target exe_target)
         --objdump   "${CMAKE_OBJDUMP}"
         ${ldgen_check}
         ${mutable_libs_option}
+        ${ldgen_excluded_option}
         DEPENDS     ${template} ${ldgen_fragment_files} ${ldgen_deps} ${SDKCONFIG}
         VERBATIM
     )
