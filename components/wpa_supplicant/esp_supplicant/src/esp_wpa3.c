@@ -334,6 +334,7 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
     if (status == WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ) {
         if (g_sae_token) {
             wpabuf_free(g_sae_token);
+            g_sae_token = NULL;
         }
         if (g_sae_data.h2e) {
             if (len < 5) {
