@@ -85,7 +85,20 @@ Another noteworthy issue about the sniffer is the callback :cpp:type:`wifi_promi
 
     Multiple NAN devices in the vicinity will form a NAN cluster which allows them to communicate with each other. NAN devices in a cluster synchronise their clocks and listen to each other periodically on Channel 6. Devices can advertise (Publish) or seek for (Subscribe) services within their NAN Cluster using Service Discovery protocols. Matching of services is done by service name and optionally matching filters. Once a Subscriber gets a match with a Publisher, it can either send a message (Follow-up) or establish a datapath (NDP) with the Publisher. After NDP is setup both devices will obtain an IPv6 address and can use it for communication.
 
-    Please note that NAN Datapath security is not supported i.e., the data packets will go out unencrypted. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP. NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported.
+    By default the NAN datapath is unencrypted. NAN Security (encrypted NDP) can be enabled per service using passphrase/PMK-based (NCS-SK-128) or pairing-based (NCS-PK-PASN-128) credentials. See :doc:`Wi-Fi Security <../wifi-security>` for details.
+
+    .. note::
+
+        The NAN datapath security based on shared passphrase/PMK (``WIFI_NAN_CSID_NCS_SK_128``) is available with stand-alone ESP-IDF and requires :ref:`CONFIG_ESP_WIFI_NAN_SECURITY`.
+
+        NAN Pairing (``WIFI_NAN_CSID_NCS_PK_PASN_128``) requires :ref:`CONFIG_ESP_WIFI_NAN_PAIRING` and the **Wi-Fi Aware** external component, which is **not** bundled with stand-alone ESP-IDF. Add it to your project from the `ESP Component Registry <https://components.espressif.com/components/espressif/wifi_aware/>`__ by listing it in your project's ``idf_component.yml``:
+
+        .. code-block:: yaml
+
+            dependencies:
+              espressif/wifi_aware: "*"
+
+    NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP.
 
     Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/nan_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/nan_subscriber/README.md` to setup a NAN Publisher and Subscriber.
 

@@ -1,2 +1,7 @@
 CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
 CONFIG_ESP_WIFI_NAN_SYNC_ENABLE=y
+# Enable per-service encrypted NAN datapath configuration on the
+# publish and subscribe console commands.
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+CONFIG_ESP_WIFI_MBEDTLS_CRYPTO=y
+CONFIG_ESP_WIFI_NAN_SECURITY=y
