@@ -1,0 +1,5 @@
+# Bounded-wait regression build, selected on the command line via
+# SDKCONFIG_DEFAULTS. Finite total acquire budget: large enough that a
+# parked writer is observably parked before the deadline (100 ms = 10
+# ticks at 100 Hz).
+CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS=100
