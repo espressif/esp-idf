@@ -722,7 +722,25 @@ CONFIGS_MEMPROT_FLASH_IDROM_L2_NON_CACHE = list(
     zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4'])
 )
 
-CONFIGS_MEMPROT_SPIRAM_HEAP = list(zip(['memprot_esp32p4'], ['esp32p4']))
+CONFIGS_MEMPROT_SPIRAM_HEAP = list(
+    zip(
+        [
+            'memprot_esp32c5',
+            'memprot_spiram_xip_esp32c5',
+            'memprot_esp32c61',
+            'memprot_spiram_xip_esp32c61',
+            'memprot_esp32p4',
+            'memprot_spiram_xip_esp32p4',
+            'memprot_spiram_xip_esp32s31',
+            'memprot_spiram_xip_esp32h4',
+        ],
+        ['esp32c5', 'esp32c5', 'esp32c61', 'esp32c61', 'esp32p4', 'esp32p4', 'esp32s31', 'esp32h4'],
+    )
+)
+
+CONFIGS_MEMPROT_SPIRAM_HEAP_L2_NON_CACHE = list(
+    zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4'])
+)
 
 CONFIGS_MEMPROT_SPIRAM_HEAP_END = list(zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4']))
 
@@ -1342,7 +1360,7 @@ def test_spiram_heap_end_execute_violation(dut: PanicTestDut, test_func_name: st
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP, indirect=['config', 'target'])
+@idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP_L2_NON_CACHE, indirect=['config', 'target'])
 def test_non_cache_spiram_heap_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dram_reg2_execute_violation(dut, test_func_name)
 

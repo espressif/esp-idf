@@ -462,7 +462,7 @@ void test_non_cache_spiram_xip_heap_execute_violation(void)
 #if CONFIG_SPIRAM
 void test_spiram_heap_execute_violation(void)
 {
-    uint8_t *instr = heap_caps_malloc(1024, MALLOC_CAP_SPIRAM);
+    uint8_t *instr = heap_caps_malloc(SOC_MMU_PAGE_SIZE, MALLOC_CAP_SPIRAM);
     assert(instr != NULL);
 
     printf("SPIRAM (Heap): Execute operation | Address: %p\n", instr);
@@ -495,7 +495,7 @@ void test_spiram_heap_end_execute_violation(void)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 void test_non_cache_spiram_heap_execute_violation(void)
 {
-    uint8_t *instr = heap_caps_malloc(1024, MALLOC_CAP_SPIRAM);
+    uint8_t *instr = heap_caps_malloc(SOC_MMU_PAGE_SIZE, MALLOC_CAP_SPIRAM);
     assert(instr != NULL);
 
     void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR(instr);
