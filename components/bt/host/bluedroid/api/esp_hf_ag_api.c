@@ -44,16 +44,30 @@ esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback)
 
 esp_err_t esp_hf_ag_init(void)
 {
+    esp_hf_ag_cfg_t cfg = ESP_HF_AG_INIT_CONFIG_DEFAULT();
+    return esp_hf_ag_init_with_cfg(&cfg);
+}
+
+esp_err_t esp_hf_ag_init_with_cfg(const esp_hf_ag_cfg_t *cfg)
+{
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
+    if (cfg == NULL || cfg->service_mask == 0 || (cfg->service_mask & ~ESP_HF_AG_SERVICE_MASK_ALL) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_INIT_EVT;
 
+    btc_hf_args_t arg;
+    memset(&arg, 0, sizeof(btc_hf_args_t));
+    arg.init_cfg.service_mask = cfg->service_mask;
+
     /* Switch to BTC context */
-    bt_status_t status = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
+    bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL, NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 

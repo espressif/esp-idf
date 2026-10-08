@@ -84,6 +84,24 @@ typedef struct {
     uint8_t sync_conn_num;                     /*!< Number of (e)SCO Connections */
 } esp_hf_profile_status_t;
 
+/// HF AG service bit mask
+typedef enum {
+    ESP_HF_AG_SERVICE_HFP = 0x01,              /*!< HFP AG service */
+    ESP_HF_AG_SERVICE_HSP = 0x02,              /*!< HSP AG service */
+} esp_hf_ag_service_t;
+
+#define ESP_HF_AG_SERVICE_MASK_ALL    (ESP_HF_AG_SERVICE_HFP | ESP_HF_AG_SERVICE_HSP)  /*!< All supported AG services */
+
+/// HF AG initialization configuration
+typedef struct {
+    uint8_t service_mask;                      /*!< Bit mask of services to register, combine with OR, e.g. ESP_HF_AG_SERVICE_HFP | ESP_HF_AG_SERVICE_HSP */
+} esp_hf_ag_cfg_t;
+
+#define ESP_HF_AG_INIT_CONFIG_DEFAULT()                \
+    {                                                  \
+        .service_mask = ESP_HF_AG_SERVICE_MASK_ALL,    \
+    }
+
 /// HFP AG callback parameters
 typedef union
 {
@@ -95,6 +113,7 @@ typedef union
         esp_hf_connection_state_t state;          /*!< Connection state */
         uint32_t peer_feat;                       /*!< HF supported features */
         uint32_t chld_feat;                       /*!< AG supported features on call hold and multiparty services */
+        esp_hf_ag_service_t peer_service;         /*!< Service of this link, ESP_HF_AG_SERVICE_HFP or ESP_HF_AG_SERVICE_HSP. Set when RFCOMM opens and reported again for SLC and disconnect. 0 when the open failed */
     } conn_stat;                                  /*!< AG callback param of ESP_HF_CONNECTION_STATE_EVT */
 
     /**
@@ -298,6 +317,9 @@ esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback);
  * @brief           Initialize the bluetooth HF AG module.
  *                  This function should be called after esp_bluedroid_enable() completes successfully.
  *                  ESP_HF_PROF_STATE_EVT with ESP_HF_INIT_SUCCESS will reported to the APP layer.
+ *                  Both HFP and HSP AG services are registered.
+ *
+ * @deprecated      Please use `esp_hf_ag_init_with_cfg` instead.
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
@@ -305,7 +327,27 @@ esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback);
  *                  - ESP_FAIL: others
  *
  */
+__attribute__((deprecated("esp_hf_ag_init is deprecated, please use esp_hf_ag_init_with_cfg instead")))
 esp_err_t esp_hf_ag_init(void);
+
+/**
+ *
+ * @brief           Initialize the bluetooth HF AG module with configuration.
+ *                  This function should be called after esp_bluedroid_enable() completes successfully.
+ *                  ESP_HF_PROF_STATE_EVT with ESP_HF_INIT_SUCCESS will reported to the APP layer.
+ *
+ * @param[in]       cfg: initialization configuration.
+ *                       Use ESP_HF_AG_INIT_CONFIG_DEFAULT() for both HFP and HSP.
+ *                       Set service_mask to ESP_HF_AG_SERVICE_HSP to register HSP only.
+ *
+ * @return
+ *                  - ESP_OK: if the initialization request is sent successfully
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if cfg is NULL or service_mask is invalid
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_ag_init_with_cfg(const esp_hf_ag_cfg_t *cfg);
 
 /**
  *
@@ -324,7 +366,8 @@ esp_err_t esp_hf_ag_deinit(void);
 /**
  *
  * @brief           To establish a Service Level Connection to remote bluetooth HFP client device.
- *                  This function must be called after esp_hf_ag_init() and before esp_hf_ag_deinit().
+ *                  This function must be called after esp_hf_ag_init_with_cfg()/esp_hf_ag_init()
+ *                  and before esp_hf_ag_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth HFP client device address
  *
@@ -339,7 +382,7 @@ esp_err_t esp_hf_ag_slc_connect(esp_bd_addr_t remote_bda);
 /**
  *
  * @brief           Disconnect from the remote HFP client. This function must be called
- *                  after esp_hf_ag_init() and before esp_hf_ag_deinit().
+ *                  after esp_hf_ag_init_with_cfg() and before esp_hf_ag_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
@@ -386,6 +429,8 @@ esp_err_t esp_hf_ag_audio_disconnect(esp_bd_addr_t remote_bda);
  * @brief           Set preferred codec for subsequent SCO connections with a remote HF.
  *                  Should be called after receiving ESP_HF_BAC_RESPONSE_EVT to know peer capabilities.
  *                  Result is reported via ESP_HF_WBS_RESPONSE_EVT.
+ *                  HFP only. On an HSP link the request is ignored, a warning is logged, and
+ *                  ESP_HF_WBS_RESPONSE_EVT reports failure.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_bda: remote bluetooth HFP client device address
@@ -404,6 +449,9 @@ esp_err_t esp_hf_ag_set_codec(esp_bd_addr_t remote_bda, esp_hf_codec_mode_t mode
 /**
  *
  * @brief           Response of Volume Recognition Command(AT+VRA) from HFP client.
+ *                  HFP only. On an HSP link, or when the peer does not support voice recognition,
+ *                  +BVRA is not sent and a warning is logged. Audio is still connected or
+ *                  disconnected according to the requested state.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_bda: the device address of voice recognition initiator
@@ -475,6 +523,7 @@ esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_bda, esp_hf_at_response_code_
  *
  * @brief           Send indicator report "+CIEV: <ind> <value>" to HFP Client. "CIEV" means “indicator events reporting",
  *                  and all indicator types can be sent one type at a time.
+ *                  HFP only. On an HSP link the request is ignored and a warning is logged.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -491,6 +540,7 @@ esp_err_t esp_hf_ag_ciev_report(esp_bd_addr_t remote_addr, esp_hf_ciev_report_ty
 /**
  *
  * @brief           Response to device individual indicators to HFP Client.
+ *                  HFP only. On an HSP link the request is ignored and a warning is logged.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -517,6 +567,7 @@ esp_err_t esp_hf_ag_cind_response(esp_bd_addr_t remote_addr,
 /**
  *
  * @brief           Response for AT+COPS command from HF Client.
+ *                  HFP only. On an HSP link the request is ignored and a warning is logged.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -532,6 +583,7 @@ esp_err_t esp_hf_ag_cops_response(esp_bd_addr_t remote_addr, char *name);
 /**
  *
  * @brief           Response to AT+CLCC command from HFP Client.
+ *                  HFP only. On an HSP link the request is ignored and a warning is logged.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -555,6 +607,7 @@ esp_err_t esp_hf_ag_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
 /**
  *
  * @brief           Response for AT+CNUM command from HF Client.
+ *                  HFP only. On an HSP link the request is ignored and a warning is logged.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address

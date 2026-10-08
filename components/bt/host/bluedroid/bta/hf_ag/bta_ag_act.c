@@ -712,7 +712,7 @@ void bta_ag_post_sco_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_svc_conn_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
-    tBTA_AG_CONN evt;
+    tBTA_AG_CONN evt = {0};
     UNUSED(p_data);
 
     if (!p_scb->svc_conn) {
@@ -801,6 +801,15 @@ void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 
     val.hdr.handle = handle;
     val.num = codec_type;
+
+    if (p_scb->conn_service == BTA_AG_HSP) {
+        val.hdr.status = BTA_AG_FAIL_RESOURCES;
+        APPL_TRACE_WARNING("%s: codec selection is not supported on HSP", __func__);
+        if (bta_ag_cb.p_cback) {
+            (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
+        }
+        return;
+    }
 
     /* Check if the requested codec type is valid */
     if((codec_type != BTA_AG_CODEC_NONE) &&
