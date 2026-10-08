@@ -1,0 +1,4 @@
+# 1000 Hz tick regression for the bounded wait, stacked on the bounded
+# variant. Use with sdkconfig.defaults:
+#   -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.bounded_wait;sdkconfig.ci.bounded_tick_1000"
+CONFIG_FREERTOS_HZ=1000
