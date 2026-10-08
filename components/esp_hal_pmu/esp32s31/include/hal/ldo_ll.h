@@ -11,6 +11,7 @@
 #include "hal/misc.h"
 #include "hal/pmu_types.h"
 #include "soc/pmu_struct.h"
+#include "soc/efuse_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +52,10 @@ static inline bool ldo_ll_is_valid_ldo_channel(int ldo_chan)
 /**
  * @brief Convert voltage to dref and mul value
  *
+ * @note Vref = (dref < 9)?(0.5+dref*0.05):(1+(dref-9)*0.1)
+ * @note Vout = (Vref*K+Vos)*(1+0.25*mul*C). K, Vos, C default to 1, 0, 1 on ESP32-S31.
+ *       For 1.8V, calibrated dref/mul are loaded from eFuse when available.
+ *
  * @param ldo_unit    LDO unit
  * @param voltage_mv  Voltage in mV
  * @param dref        Returned dref value
@@ -60,13 +65,10 @@ static inline bool ldo_ll_is_valid_ldo_channel(int ldo_chan)
 __attribute__((always_inline))
 static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint8_t *dref, uint8_t *mul, bool *use_rail_voltage)
 {
-    (void)ldo_unit;
     // to avoid using FPU, enlarge the constants by 1000 as fixed point
     int K_1000 = 1000;
     int Vos_1000 = 0;
     int C_1000 = 1000;
-
-    // TODO: [ESP32S31] IDF-15510 For efuse calibration.
 
     // iterate all the possible dref and mul values to find the best match
     int min_voltage_diff = 400000000;
@@ -87,6 +89,15 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
             }
         }
     }
+
+    // The mul and dref value are calibrated and saved in the eFuse, load them when available
+    if (ldo_unit == 0 && voltage_mv == 1800) {
+        if (EFUSE.rd_sys_part1_data4.spi_ldo_1v8_dref && EFUSE.rd_sys_part1_data4.spi_ldo_1v8_mul) {
+            matched_mul = EFUSE.rd_sys_part1_data4.spi_ldo_1v8_mul;
+            matched_dref = EFUSE.rd_sys_part1_data4.spi_ldo_1v8_dref;
+        }
+    }
+
     *dref = matched_dref;
     *mul = matched_mul;
     // if the expected voltage is 3.3V, use the rail voltage directly
