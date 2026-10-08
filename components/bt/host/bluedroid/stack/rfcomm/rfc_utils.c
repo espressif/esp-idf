@@ -180,6 +180,10 @@ tRFC_MCB *rfc_alloc_multiplexer_channel (BD_ADDR bd_addr, BOOLEAN is_initiator)
                                is_initiator, &rfc_cb.port.rfc_mcb[j], j);
 
             p_mcb->cmd_q = fixed_queue_new(QUEUE_SIZE_MAX);
+            if (p_mcb->cmd_q == NULL) {
+                memset(p_mcb, 0, sizeof (tRFC_MCB));
+                return (NULL);
+            }
 
             p_mcb->is_initiator = is_initiator;
 
@@ -319,7 +323,7 @@ void rfc_check_mcb_active (tRFC_MCB *p_mcb)
 {
     UINT16 i;
 
-    for (i = 0; i < RFCOMM_MAX_DLCI; i++) {
+    for (i = 0; i <= RFCOMM_MAX_DLCI; i++) {
         if (p_mcb->port_inx[i] != 0) {
             p_mcb->is_disc_initiator = FALSE;
             return;
@@ -375,11 +379,10 @@ void rfcomm_process_timeout (TIMER_LIST_ENT  *p_tle)
 void rfc_sec_check_complete (BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_data, UINT8 res)
 {
     tPORT *p_port = (tPORT *)p_ref_data;
-    UNUSED(bd_addr);
     UNUSED(transport);
 
     /* Verify that PORT is still waiting for Security to complete */
-    if (!p_port->in_use
+    if (!p_port->in_use || memcmp(p_port->bd_addr, bd_addr, BD_ADDR_LEN) != 0
             || ((p_port->rfc.state != RFC_STATE_ORIG_WAIT_SEC_CHECK)
                 && (p_port->rfc.state != RFC_STATE_TERM_WAIT_SEC_CHECK))) {
         return;
@@ -416,6 +419,7 @@ void rfc_port_closed (tPORT *p_port)
 
         /* If there are no more ports opened on this MCB release it */
         rfc_check_mcb_active (p_mcb);
+        p_port->rfc.p_mcb = NULL;
     }
 
     /* Notify port that RFC connection is gone */
@@ -436,7 +440,11 @@ void rfc_port_closed (tPORT *p_port)
 void rfc_inc_credit (tPORT *p_port, UINT8 credit)
 {
     if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
-        p_port->credit_tx += credit;
+        if (p_port->credit_tx < UINT16_MAX - credit) {
+            p_port->credit_tx += credit;
+        }else {
+            p_port->credit_tx = UINT16_MAX;
+        }
 
         RFCOMM_TRACE_EVENT ("rfc_inc_credit:%d", p_port->credit_tx);
 
