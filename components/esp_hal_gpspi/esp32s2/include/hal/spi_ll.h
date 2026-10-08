@@ -1318,6 +1318,27 @@ static inline void spi_ll_dma_reset_register(spi_host_device_t host_id)
         spi_ll_dma_reset_register(__VA_ARGS__); \
     } while(0)
 
+/**
+ * Connect DMA channel for SPI
+ *
+ * @param host_id   SPI host ID
+ * @param dma_chan  DMA channel ID
+ */
+static inline void spi_ll_dma_connect_host(spi_host_device_t host_id, int dma_chan)
+{
+    //On ESP32S2, each SPI controller has its own DMA channel. So there is no need to connect them.
+}
+
+/**
+ * Disconnect DMA channel for SPI
+ *
+ * @param host_id   SPI host ID
+ */
+static inline void spi_ll_dma_disconnect_host(spi_host_device_t host_id)
+{
+    //On ESP32S2, each SPI controller has its own DMA channel. So there is no need to disconnect them.
+}
+
 //---------------------------------------------------RX-------------------------------------------------//
 /**
  * Reset RX DMA which stores the data received from a peripheral into RAM.

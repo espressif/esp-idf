@@ -1137,6 +1137,27 @@ static inline void spi_ll_dma_reset_register(spi_host_device_t host_id)
     } while(0)
 
 /**
+ * Connect DMA channel for SPI
+ *
+ * @param host_id   SPI host ID
+ * @param dma_chan  DMA channel ID
+ */
+static inline void spi_ll_dma_connect_host(spi_host_device_t host_id, int dma_chan)
+{
+    DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host_id * 2));
+}
+
+/**
+ * Disconnect DMA channel for SPI
+ *
+ * @param host_id   SPI host ID
+ */
+static inline void spi_ll_dma_disconnect_host(spi_host_device_t host_id)
+{
+    DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, 0, (host_id * 2));
+}
+
+/**
  * Reset RX DMA which stores the data received from a peripheral into RAM.
  *
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.

@@ -15,6 +15,7 @@
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
 #include "esp_macros.h"
+#include "freertos/FreeRTOS.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -29,12 +30,9 @@
 #include "esp_private/sleep_retention.h"
 #include "hal/spi_hal.h"
 #if SOC_GDMA_SUPPORTED
-#include "hal/gdma_ll.h"
+#include "hal/gdma_ll.h" // for GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE
 #endif
-#include "freertos/FreeRTOS.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "soc/dport_reg.h"
-#endif
+
 #if CONFIG_SPIRAM
 #include "esp_private/mspi_mem_barrier.h"
 #endif
@@ -198,15 +196,6 @@ static bool claim_dma_chan(int dma_chan, uint32_t *out_actual_dma_chan)
     return ret;
 }
 
-static void connect_spi_and_dma(spi_host_device_t host, int dma_chan)
-{
-#if CONFIG_IDF_TARGET_ESP32
-    DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
-#elif CONFIG_IDF_TARGET_ESP32S2
-    //On ESP32S2, each SPI controller has its own DMA channel. So there is no need to connect them.
-#endif
-}
-
 static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t dma_burst_size, spi_dma_ctx_t *dma_ctx)
 {
     assert(is_valid_host(host_id));
@@ -248,7 +237,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
     if (!success) {
         SPI_CHECK(false, "no available dma channel", ESP_ERR_NOT_FOUND);
     }
-    connect_spi_and_dma(host_id, actual_dma_chan);
+    spi_ll_dma_connect_host(host_id, actual_dma_chan);
 
     spi_dma_enable_burst(dma_ctx->tx_dma_chan, true, true);
     spi_dma_enable_burst(dma_ctx->rx_dma_chan, true, true);
@@ -526,6 +515,7 @@ esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id)
     assert(spi_dma_chan_enabled & BIT(dma_chan));
 
     portENTER_CRITICAL(&spi_dma_spinlock);
+    spi_ll_dma_disconnect_host(host_id);
     spi_dma_chan_enabled &= ~BIT(dma_chan);
     _spicommon_dma_rcc_clock_ctrl(dma_chan, false);
     portEXIT_CRITICAL(&spi_dma_spinlock);
