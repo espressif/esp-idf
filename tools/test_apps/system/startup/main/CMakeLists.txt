@@ -1,6 +1,6 @@
 idf_component_register(SRCS "test_startup_main.c"
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES vfs)
+                       PRIV_REQUIRES vfs esp_psram)
 
 if(CONFIG_SINGLE_CORE_VARIANT)
     target_sources(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/chip_info_patch.c")

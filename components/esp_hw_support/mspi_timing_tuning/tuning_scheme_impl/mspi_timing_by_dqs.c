@@ -163,7 +163,6 @@ void mspi_timing_config_psram_set_tuning_delayline(const void *configs, uint8_t 
     assert(s_psram_best_phase != MSPI_LL_DQS_PHASE_MAX);
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_0, s_psram_best_phase);
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_1, s_psram_best_phase);
-    ESP_DRAM_LOGD(TAG, "set to best phase: %d", s_psram_best_phase);
 
     const delayline_config_t *delayline_config = &((mspi_timing_config_t *)configs)->delayline_table[id];
     for (int i = 0; i < MSPI_LL_PIN_MAX; i++) {
