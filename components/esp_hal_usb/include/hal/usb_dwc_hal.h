@@ -29,6 +29,17 @@ extern "C" {
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
 
+/**
+ * @brief Number of RX FIFO lines reserved for status quadlets
+ *
+ * The DWC_otg core pushes status entries into the RX FIFO along with received data.
+ * Per host IN transfer: 1 packet status + 1 transfer complete + 1 channel halted
+ * (GRXSTSP.PKTSTS = 0b0010 / 0b0011 / 0b0111), so the RX FIFO must fit (MPS/4) + 3 lines.
+ * The Programming Guide ch. 2.1.2.1 specifies only +2, but testing showed 2 lines are
+ * not enough (with only +2, 512-byte interrupt-IN transfers are never completed).
+ */
+#define USB_DWC_HAL_RX_FIFO_STATUS_LINES 3
+
 // ----------------------- Configs -------------------------
 
 /**
