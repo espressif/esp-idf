@@ -6,6 +6,7 @@
 
 #include "utils/includes.h"
 #include "utils/common.h"
+#include "eloop.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -26,6 +27,8 @@
 #include "esp_private/wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "esp_roaming.h"
+
+extern bool current_task_is_wifi_task(void);
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -483,18 +486,39 @@ int esp_rrm_send_neighbor_report_request(void)
     return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, neighbor_report_recvd_cb, NULL);
 }
 
+static int rrm_clear_beacon_rep_data_handler(void *eloop_data, void *user_ctx)
+{
+    (void) eloop_data;
+    (void) user_ctx;
+    wpas_clear_beacon_rep_data(&g_wpa_supp);
+    return 0;
+}
+
 esp_err_t esp_rrm_set_feature_disable_mask(uint32_t disable_mask)
 {
+    bool newly_disable_beacon;
+
     if (disable_mask & ~ESP_RRM_FEATURE_DISABLE_MASK_SUPPORTED) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    if ((disable_mask & ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT) &&
-            !(s_rrm_feature_disable_mask & ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT)) {
-        wpas_clear_beacon_rep_data(&g_wpa_supp);
+    newly_disable_beacon = (disable_mask & ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT) &&
+                           !(s_rrm_feature_disable_mask & ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT);
+
+    /* Publish first so handle_rrm_frame() rejects new beacon requests. */
+    s_rrm_feature_disable_mask = disable_mask;
+
+    if (newly_disable_beacon) {
+        if (current_task_is_wifi_task()) {
+            rrm_clear_beacon_rep_data_handler(NULL, NULL);
+        } else if (eloop_register_timeout_blocking(rrm_clear_beacon_rep_data_handler,
+                                                   NULL, NULL) < 0) {
+            /* eloop not running (pre-init / deinit): no in-flight measurement,
+             * and supplicant init clears beacon_rep_data. */
+            wpa_printf(MSG_DEBUG, "RRM: beacon report clear not dispatched (eloop down)");
+        }
     }
 
-    s_rrm_feature_disable_mask = disable_mask;
     wpa_printf(MSG_DEBUG, "RRM: feature disable mask set to 0x%08x",
                (unsigned int) disable_mask);
     return ESP_OK;
