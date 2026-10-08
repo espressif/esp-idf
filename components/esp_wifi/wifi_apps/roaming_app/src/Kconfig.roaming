@@ -105,16 +105,16 @@ menu "Roaming Methods"
             Disabled by default so existing BTM/legacy setups are unchanged unless opted in.
 
     config ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT
-        int "Retry count after which to switch to 11k/legacy roaming"
+        int "Retry count for 802.11v BTM roaming"
         depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
-        depends on ESP_WIFI_ROAMING_LEGACY_ROAMING || ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
         range 1 5
         default 2
         help
-            Retry threshold after which the station should stop using Network Assisted
-            802.11v BTM roaming and fall through to 802.11k assisted roaming (if enabled)
-            or legacy roaming (if enabled). If no lower-priority method remains usable,
-            roaming triggers are suppressed until the next association.
+            Number of 802.11v BTM query attempts per association before the station
+            stops using Network Assisted roaming. If 802.11k and/or legacy roaming
+            are also enabled, it falls through to those methods in priority order.
+            If no lower-priority method remains usable, roaming triggers are
+            suppressed until the next association.
 
     config ESP_WIFI_ROAMING_11K_RETRY_COUNT
         int "Retry count for 802.11k neighbor report requests"
@@ -267,3 +267,12 @@ menu "Blacklist Configuration"
             Maximum number of roaming candidates to consider. This also defines the size of the blacklist.
 
 endmenu # "Blacklist Configuration"
+
+config ESP_WIFI_ROAMING_PERIODIC_RSSI_MONITOR
+    bool "Log connected AP RSSI periodically"
+    default y
+    help
+        When enabled, log the connected AP's RSSI, BSSID, and channel every few
+        seconds while associated. Intended for correlating roam decisions with
+        live signal strength during development. Can be disabled to avoid
+        console noise and periodic timer wakeups in production builds.

@@ -82,8 +82,10 @@ static bool trigger_network_assisted_roam(const struct cand_bss *bss);
 static void init_periodic_scan_roam_event(void);
 static void roaming_app_periodic_scan_internal_handler(void *data, void *ctx);
 #endif
+#if CONNECTED_AP_RSSI_LOG_ENABLED
 static void init_periodic_rssi_event(void);
 static void roaming_app_periodic_rssi_internal_handler(void *data, void *ctx);
+#endif
 #if LOW_RSSI_ROAMING_ENABLED
 static void roaming_app_rssi_low_internal_handler(void *ctx, void *data);
 #endif
@@ -99,7 +101,9 @@ static const char *ROAMING_TAG = "ROAM";
 #define LOW_RSSI_ROAM_DIFF_MIN 1
 #define LOW_RSSI_ROAM_DIFF_MAX 99
 #define ROAMING_PENDING_TIMEOUT_USER_DATA_MAX 16
+#if CONNECTED_AP_RSSI_LOG_ENABLED
 #define CONNECTED_AP_RSSI_LOG_INTERVAL_SEC 7
+#endif
 
 static void *s_pending_timeout_user_data[ROAMING_PENDING_TIMEOUT_USER_DATA_MAX];
 
@@ -712,15 +716,23 @@ static void roaming_app_stop_periodic_monitors(void)
     eloop_cancel_timeout(roaming_app_periodic_rrm_internal_handler, NULL, NULL);
 #endif
 #if RRM_NEIGHBOR_LIST_SUPPORT
-    g_roaming_app.rrm_request_active = false;
+#if RRM_ASSISTED_ROAMING_ENABLED
+    /* Keep the in-flight 11k NR request alive across config re-apply. */
+    if (!g_roaming_app.rrm_roam_pending)
+#endif
+    {
+        g_roaming_app.rrm_request_active = false;
+    }
 #endif
 
 #if PERIODIC_SCAN_MONITORING
     g_roaming_app.periodic_scan_active = false;
     eloop_cancel_timeout(roaming_app_periodic_scan_internal_handler, NULL, NULL);
 #endif
+#if CONNECTED_AP_RSSI_LOG_ENABLED
     g_roaming_app.periodic_rssi_active = false;
     eloop_cancel_timeout(roaming_app_periodic_rssi_internal_handler, NULL, NULL);
+#endif
 }
 
 static void roaming_app_set_disconnected_state(const wifi_event_sta_disconnected_t *disconn)
@@ -799,8 +811,10 @@ static bool roaming_app_get_ap_info(wifi_ap_record_t *ap_info)
     /*
      * If the current rssi is below the configured rssi threshold for
      * low rssi based roaming and the current rssi threshold is below that,
-     * we should reset the rssi threshold back to the configured rssi threshold */
+     * we should reset the rssi threshold back to the configured rssi threshold.
+     * Skip while methods are exhausted; apply_runtime_config re-arms later. */
     if (g_roaming_app.config.low_rssi_roam_trigger &&
+            !g_roaming_app.low_rssi_suppressed &&
             (ap_info->rssi > g_roaming_app.config.low_rssi_threshold) &&
             (g_roaming_app.current_low_rssi_threshold < g_roaming_app.config.low_rssi_threshold)) {
         if (esp_wifi_set_rssi_threshold(g_roaming_app.config.low_rssi_threshold) == ESP_OK) {
@@ -878,6 +892,7 @@ static void roaming_app_apply_runtime_config(void)
 #if LOW_RSSI_ROAMING_ENABLED
     if (!methods_usable && g_roaming_app.config.low_rssi_roam_trigger) {
         ESP_LOGD(ROAMING_TAG, "No usable roam method; suppressing low RSSI trigger");
+        g_roaming_app.low_rssi_suppressed = true;
         if (g_roaming_app.sta_connected) {
             if (esp_wifi_set_rssi_threshold(RSSI_THRESHOLD_DISABLED) == ESP_OK) {
                 g_roaming_app.current_low_rssi_threshold = RSSI_THRESHOLD_DISABLED;
@@ -886,6 +901,7 @@ static void roaming_app_apply_runtime_config(void)
             }
         }
     } else {
+        g_roaming_app.low_rssi_suppressed = false;
         roaming_app_apply_low_rssi_config();
     }
 #endif /*LOW_RSSI_ROAMING_ENABLED*/
@@ -904,9 +920,11 @@ static void roaming_app_apply_runtime_config(void)
     }
 #endif /*PERIODIC_SCAN_MONITORING*/
 
+#if CONNECTED_AP_RSSI_LOG_ENABLED
     if (g_roaming_app.sta_connected) {
         init_periodic_rssi_event();
     }
+#endif
 }
 
 static void roaming_app_invalidate_scan_cache(void)
@@ -1188,6 +1206,7 @@ static void init_periodic_scan_roam_event(void)
 }
 #endif /*PERIODIC_SCAN_MONITORING*/
 
+#if CONNECTED_AP_RSSI_LOG_ENABLED
 static void init_periodic_rssi_event(void)
 {
     if (eloop_register_timeout(CONNECTED_AP_RSSI_LOG_INTERVAL_SEC, 0,
@@ -1197,6 +1216,7 @@ static void init_periodic_rssi_event(void)
     }
     g_roaming_app.periodic_rssi_active = true;
 }
+#endif /*CONNECTED_AP_RSSI_LOG_ENABLED*/
 
 static void roaming_app_disconnected_event_handler(void *ctx, void *data)
 {
@@ -1280,12 +1300,6 @@ static void roaming_app_connected_event_handler(void *ctx, void *data)
              g_roaming_app.current_bss.rrm_support ? " " : "not ",
              g_roaming_app.current_bss.btm_support ? " " : "not ");
     roaming_app_mark_roam_success();
-    if (!initialize_roaming_event()) {
-        roaming_app_apply_runtime_config();
-        ESP_LOGD(ROAMING_TAG, "Initialised initialise roaming events!");
-    } else {
-        ESP_LOGE(ROAMING_TAG, "Failed to Initialise roaming events");
-    }
 #if NETWORK_ASSISTED_ROAMING_ENABLED
     g_roaming_app.btm_attempt = 0;
 #endif /*NETWORK_ASSISTED_ROAMING_ENABLED*/
@@ -1294,6 +1308,12 @@ static void roaming_app_connected_event_handler(void *ctx, void *data)
     g_roaming_app.rrm_roam_exhausted = false;
     roaming_app_clear_rrm_roam_state();
 #endif /*RRM_ASSISTED_ROAMING_ENABLED*/
+    if (!initialize_roaming_event()) {
+        roaming_app_apply_runtime_config();
+        ESP_LOGD(ROAMING_TAG, "Initialised initialise roaming events!");
+    } else {
+        ESP_LOGE(ROAMING_TAG, "Failed to Initialise roaming events");
+    }
 #if LEGACY_ROAM_ENABLED
     g_roaming_app.force_roam_ongoing = false;
 #endif /*LEGACY_ROAM_ENABLED*/
@@ -1631,6 +1651,8 @@ static void roaming_app_rrm_fallback_to_legacy(void)
         ESP_LOGD(ROAMING_TAG, "11k retries exhausted, scheduling legacy scan fallback");
         g_roaming_app.rrm_roam_exhausted = true;
         roaming_app_clear_rrm_channel_cache();
+        /* Results from an NR channel-restricted scan must not satisfy legacy discovery. */
+        roaming_app_invalidate_scan_cache();
         eloop_cancel_timeout(roaming_app_start_legacy_scan_handler, NULL, NULL);
         if (eloop_register_timeout(0, 0, roaming_app_start_legacy_scan_handler, NULL, NULL) != 0) {
             ESP_LOGW(ROAMING_TAG, "Could not schedule legacy fallback scan");
@@ -1699,12 +1721,14 @@ static bool roaming_app_send_rrm_neighbor_request(void)
          */
         if (g_roaming_app.rrm_request_active) {
             ESP_LOGD(ROAMING_TAG, "NR already in flight; waiting for it for 11k roam");
-            g_roaming_app.rrm_roam_pending = true;
             eloop_cancel_timeout(roaming_app_rrm_neighbor_timeout_handler, NULL, NULL);
             if (eloop_register_timeout(RRM_NEIGHBOR_REPORT_TIMEOUT_SEC, 0,
                                        roaming_app_rrm_neighbor_timeout_handler, NULL, NULL) != 0) {
                 ESP_LOGW(ROAMING_TAG, "Could not register 11k neighbor report timeout");
+                g_roaming_app.rrm_roam_pending = false;
+                return false;
             }
+            g_roaming_app.rrm_roam_pending = true;
             return true;
         }
         ESP_LOGE(ROAMING_TAG, "failed to send neighbor report request for 11k roam");
@@ -1712,13 +1736,15 @@ static bool roaming_app_send_rrm_neighbor_request(void)
     }
 
     g_roaming_app.rrm_request_active = true;
-    g_roaming_app.rrm_roam_pending = true;
     g_roaming_app.rrm_attempt++;
     eloop_cancel_timeout(roaming_app_rrm_neighbor_timeout_handler, NULL, NULL);
     if (eloop_register_timeout(RRM_NEIGHBOR_REPORT_TIMEOUT_SEC, 0,
                                roaming_app_rrm_neighbor_timeout_handler, NULL, NULL) != 0) {
         ESP_LOGW(ROAMING_TAG, "Could not register 11k neighbor report timeout");
+        g_roaming_app.rrm_roam_pending = false;
+        return false;
     }
+    g_roaming_app.rrm_roam_pending = true;
     ESP_LOGD(ROAMING_TAG, "Sent Neighbor Report Request for 11k roam (attempt %u)",
              g_roaming_app.rrm_attempt);
     return true;
@@ -1879,7 +1905,8 @@ static void roaming_app_rssi_low_internal_handler(void *ctx, void *data)
 
     ESP_LOGI(ROAMING_TAG, "%s:bss rssi is=%ld", __func__, event->rssi);
 
-    if (!g_roaming_app.sta_connected || !g_roaming_app.config.low_rssi_roam_trigger) {
+    if (!g_roaming_app.sta_connected || !g_roaming_app.config.low_rssi_roam_trigger ||
+            g_roaming_app.low_rssi_suppressed) {
         os_free(event);
         return;
     }
@@ -2549,15 +2576,23 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
          * periodic scans. */
         gettimeofday(&g_roaming_app.scanned_aps.time, NULL);
         print_ap_records(&g_roaming_app.scanned_aps);
+#if RRM_ASSISTED_ROAMING_ENABLED
+        /* Remember whether the scan that just completed was an 11k scan; parse
+         * still needs rrm_scan_active set to run 11k completion/fallback. */
+        bool was_rrm_scan = g_roaming_app.rrm_scan_active;
+#endif
         /* Clear before parse so decide_and_roam can run after connected discovery. */
         g_roaming_app.scan_ongoing = false;
         parse_scan_results_and_roam();
 #if RRM_ASSISTED_ROAMING_ENABLED
-        if (g_roaming_app.rrm_scan_active) {
+        /* Tear down only the completed 11k scan; never touch a scan that
+         * parse_scan_results_and_roam() may have just started. */
+        if (was_rrm_scan && g_roaming_app.rrm_scan_active && !g_roaming_app.scan_ongoing) {
             roaming_app_restore_saved_scan_channels();
             g_roaming_app.rrm_scan_active = false;
         }
 #endif
+        return;
     } else {
         ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
 #if RRM_ASSISTED_ROAMING_ENABLED
@@ -2699,6 +2734,7 @@ static void roaming_app_periodic_scan_internal_handler(void *data, void *ctx)
 }
 #endif /*PERIODIC_SCAN_MONITORING*/
 
+#if CONNECTED_AP_RSSI_LOG_ENABLED
 static void roaming_app_periodic_rssi_internal_handler(void *data, void *ctx)
 {
     (void) data;
@@ -2726,6 +2762,8 @@ static void roaming_app_periodic_rssi_internal_handler(void *data, void *ctx)
         }
     }
 }
+#endif /*CONNECTED_AP_RSSI_LOG_ENABLED*/
+
 static bool validate_scan_chan_list(const char* scan_chan_list)
 {
     regex_t regex;

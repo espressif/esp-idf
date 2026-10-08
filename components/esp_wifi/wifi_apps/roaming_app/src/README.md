@@ -24,7 +24,7 @@ If enabled, in this method the roaming app sets a Wi-Fi Threshold (configured by
 
 Every time the threshold is reached, a new threshold needs to be set at an even lower RSSI threshold since if we fail to find a better AP the first time the RSSI threshold is reached there will be no further attempts to find better APs, leading to possible disconnection as the only avenue for finding a better AP. The offset by which the next RSSI threshold can be set is decided by “Offset by which to reset the RSSI Threshold after attempt to roam” which defaults to 5.
 
-Also please note that if the AP we connect to, upon connecting, itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI later improves above the configured threshold. The periodic connected-AP RSSI log only reports RSSI/BSSID/channel and does not change the low-RSSI trigger.
+Also please note that if the AP we connect to, upon connecting, itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI later improves above the configured threshold. Optional “Log connected AP RSSI periodically” (enabled by default) only reports RSSI/BSSID/channel for debugging and does not change the low-RSSI trigger.
 
 2) Periodic Scan based roaming:
 
@@ -57,7 +57,7 @@ Enabled by “Support 802.11k assisted roaming using neighbor reports”. When s
 
 Enabled by “Support Legacy roaming approach”, this is designed for scenarios where there is no support for 802.11v/802.11k amongst the APs of the network, or after higher-priority methods have been exhausted. If a better AP candidate is already known (for example from a periodic discovery scan), the station directed-reconnects to it without scanning again. Otherwise it runs a discovery scan, and upon determining a better AP forcibly disconnects and attempts to connect to that AP.
 
-Please note that if BTM is enabled together with 11k and/or legacy, “Retry count after which to switch to 11k/legacy roaming” controls how many BTM attempts are made before falling through. 11k has its own independent retry count for Neighbor Report Requests.
+“Retry count for 802.11v BTM roaming” applies whenever BTM is enabled (including BTM-only). After that many BTM attempts, the station falls through to 11k and/or legacy if those are enabled; otherwise roaming triggers are suppressed until the next association. 11k has its own independent retry count for Neighbor Report Requests.
 
 **Please note that at least one of the roaming methods needs to be selected.**
 

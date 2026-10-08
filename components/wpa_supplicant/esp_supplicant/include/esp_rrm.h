@@ -43,7 +43,9 @@ typedef void (*neighbor_rep_request_cb)(void *ctx, const uint8_t *report, size_t
   * @brief  Send Radio measurement neighbor report request to connected AP
   * @return
   *    - 0: success
-  *    - -1: AP does not support RRM
+  *    - -1: AP does not support RRM, or neighbor report has been disabled via
+  *          esp_rrm_set_feature_disable_mask(ESP_RRM_FEATURE_DISABLE_NEIGHBOR_REPORT).
+  *          The disabled check is evaluated before the not-connected check.
   *    - -2: station not connected to AP
   */
 int esp_rrm_send_neighbor_report_request(void);
