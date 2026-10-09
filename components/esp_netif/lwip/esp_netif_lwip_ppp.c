@@ -308,7 +308,7 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: PPP connection cannot be started", __func__);
         if (ppp_ctx->ppp_error_event_enabled) {
-            esp_event_post(NETIF_PPP_STATUS, NETIF_PPP_CONNECT_FAILED, esp_netif, sizeof(esp_netif), 0);
+            esp_event_post(NETIF_PPP_STATUS, NETIF_PPP_CONNECT_FAILED, &esp_netif, sizeof(esp_netif), 0);
         }
         return ESP_FAIL;
     }
