@@ -73,11 +73,11 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
         offset = -offset;
     }
 #if SOC_DAC_SINTX_LUT_SIGNED
-#error "not implemented"
-#else
     const int16_t base_offset = 0;
     /* Hardware DC register is signed: -128~127 */
     const int16_t min_offset = -128, max_offset = 127;
+#else
+#error "not implemented"
 #endif
     if (offset < min_offset || offset > max_offset) {
         /* User-facing range: phase 0° → [min-B, max-B]; phase 180° → [B-max, B-min] */
