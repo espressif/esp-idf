@@ -1279,7 +1279,6 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 			/*
 			 * Application data included in the handshake message.
 			 */
-			wpabuf_free(data->pending_phase2_req);
 			wpabuf_clear_free(data->pending_phase2_req);
 			data->pending_phase2_req = resp;
 			resp = NULL;

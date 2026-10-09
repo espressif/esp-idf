@@ -464,6 +464,10 @@ int wpas_mbo_update_non_pref_chan(struct wpa_supplicant *wpa_s,
 
 
 	chans = os_malloc(sizeof(struct wpa_mbo_non_pref_channel) * non_pref_chan->non_pref_chan_num);
+	if (!chans) {
+		wpa_printf(MSG_ERROR, "Failed to allocate memory for non_pref_chan");
+		return -1;
+	}
 	os_memcpy(chans, non_pref_chan->chan, sizeof(struct wpa_mbo_non_pref_channel) * non_pref_chan->non_pref_chan_num);
 
 update:
