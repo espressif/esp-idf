@@ -22,8 +22,8 @@ typedef volatile struct uart_dev_s {
     } fifo;
     union {
         struct {
-            uint32_t rxfifo_full:      1;           /*This interrupt raw bit turns to high level when receiver receives more data than (rx_flow_thrhd_h3 rx_flow_thrhd).*/
-            uint32_t txfifo_empty:     1;           /*This interrupt raw bit turns to high level when the amount of data in transmitter's fifo is less than ((tx_mem_cnttxfifo_cnt) .*/
+            uint32_t rxfifo_full:      1;           /*This interrupt raw bit turns to high level when receiver receives more data than (rx_mem_full_thrhd rxfifo_full_thrhd).*/
+            uint32_t txfifo_empty:     1;           /*This interrupt raw bit turns to high level when the amount of data in transmitter's fifo is less than (tx_mem_empty_thrhd txfifo_empty_thrhd).*/
             uint32_t parity_err:       1;           /*This interrupt raw bit turns to high level when receiver detects the parity error of data.*/
             uint32_t frm_err:          1;           /*This interrupt raw bit turns to high level when receiver detects data's frame error .*/
             uint32_t rxfifo_ovf:       1;           /*This interrupt raw bit turns to high level when receiver receives more data than the fifo can store.*/
@@ -188,7 +188,7 @@ typedef volatile struct uart_dev_s {
     } conf0;
     union {
         struct {
-            uint32_t rxfifo_full_thrhd:  7;         /*When receiver receives more data than its threshold value，receiver will produce rxfifo_full_int_raw interrupt.the threshold value is (rx_flow_thrhd_h3 rxfifo_full_thrhd).*/
+            uint32_t rxfifo_full_thrhd:  7;         /*When receiver receives more data than its threshold value，receiver will produce rxfifo_full_int_raw interrupt.the threshold value is (rx_mem_full_thrhd rxfifo_full_thrhd).*/
             uint32_t reserved7:          1;
             uint32_t txfifo_empty_thrhd: 7;         /*when the data amount in transmitter fifo is less than its threshold value， it will produce txfifo_empty_int_raw interrupt. the threshold value is (tx_mem_empty_thrhd txfifo_empty_thrhd)*/
             uint32_t reserved15:         1;
