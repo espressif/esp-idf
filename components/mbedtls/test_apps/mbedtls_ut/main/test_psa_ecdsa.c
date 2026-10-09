@@ -625,6 +625,10 @@ TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_ke
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
+
+    if (esp_efuse_get_key_purpose((esp_efuse_block_t)SECP256R1_EFUSE_BLOCK) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
+        TEST_IGNORE_MESSAGE("No ECDSA key burned in the SECP256R1 eFuse block; skipping hardware ECDSA test");
+    }
     test_ecdsa_sign(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, SECP256R1_EFUSE_BLOCK, NULL, NULL);
 }
 
@@ -633,6 +637,10 @@ TEST_CASE("mbedtls ECDSA signature generation on SECP384R1", "[mbedtls][efuse_ke
 {
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+    if (esp_efuse_get_key_purpose((esp_efuse_block_t)SECP384R1_EFUSE_BLOCK_HIGH) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H ||
+        esp_efuse_get_key_purpose((esp_efuse_block_t)SECP384R1_EFUSE_BLOCK_LOW) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L) {
+        TEST_IGNORE_MESSAGE("No ECDSA P384 key burned in the SECP384R1 eFuse blocks; skipping hardware ECDSA test");
     }
     uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_sign(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, efuse_key_block, NULL, NULL);
@@ -709,6 +717,9 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP256R1", "[mbe
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
+    if (esp_efuse_get_key_purpose((esp_efuse_block_t)SECP256R1_EFUSE_BLOCK) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
+        TEST_IGNORE_MESSAGE("No ECDSA key burned in the SECP256R1 eFuse block; skipping hardware ECDSA test");
+    }
     if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
@@ -721,6 +732,10 @@ TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP384R1", "[mbe
 {
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+    if (esp_efuse_get_key_purpose((esp_efuse_block_t)SECP384R1_EFUSE_BLOCK_HIGH) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H ||
+        esp_efuse_get_key_purpose((esp_efuse_block_t)SECP384R1_EFUSE_BLOCK_LOW) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L) {
+        TEST_IGNORE_MESSAGE("No ECDSA P384 key burned in the SECP384R1 eFuse blocks; skipping hardware ECDSA test");
     }
     uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_sign(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, true, efuse_key_block, NULL, NULL);
@@ -846,6 +861,9 @@ TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][efuse_key]"
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
+    if (esp_efuse_get_key_purpose((esp_efuse_block_t)SECP256R1_EFUSE_BLOCK) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
+        TEST_IGNORE_MESSAGE("No ECDSA key burned in the SECP256R1 eFuse block; skipping hardware ECDSA test");
+    }
     test_ecdsa_export_pubkey(ESP_ECDSA_CURVE_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y,  SECP256R1_EFUSE_BLOCK, NULL);
 }
 
@@ -854,6 +872,10 @@ TEST_CASE("mbedtls ECDSA export public key on SECP384R1", "[mbedtls][efuse_key]"
 {
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+    if (esp_efuse_get_key_purpose((esp_efuse_block_t)SECP384R1_EFUSE_BLOCK_HIGH) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H ||
+        esp_efuse_get_key_purpose((esp_efuse_block_t)SECP384R1_EFUSE_BLOCK_LOW) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L) {
+        TEST_IGNORE_MESSAGE("No ECDSA P384 key burned in the SECP384R1 eFuse blocks; skipping hardware ECDSA test");
     }
     uint8_t efuse_key_block = HAL_ECDSA_COMBINE_KEY_BLOCKS(SECP384R1_EFUSE_BLOCK_HIGH, SECP384R1_EFUSE_BLOCK_LOW);
     test_ecdsa_export_pubkey(ESP_ECDSA_CURVE_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, efuse_key_block, NULL);
@@ -1042,6 +1064,9 @@ TEST_CASE("mbedtls ECDSA signature generation verification, import and export er
 {
     if (!ecdsa_ll_is_supported()) {
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+    if (esp_efuse_get_key_purpose((esp_efuse_block_t)SECP256R1_EFUSE_BLOCK) != ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
+        TEST_IGNORE_MESSAGE("No ECDSA key burned in the SECP256R1 eFuse block; skipping hardware ECDSA test");
     }
     test_ecdsa_sign_verify_import_export_error_codes(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y, SECP256R1_EFUSE_BLOCK);
 }
