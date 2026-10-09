@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import importlib.util
 import json
 import os
 
@@ -14,17 +15,17 @@ ROMS_JSON = os.path.join(IDF_PATH, 'tools', 'idf_py_actions', 'roms.json')  # ty
 
 
 def test_roms_validate_json() -> None:
-    with open(ROMS_JSON, 'r') as f:
+    with open(ROMS_JSON) as f:
         roms_json = json.load(f)
 
     json_schema_path = os.path.join(os.path.dirname(ROMS_JSON), 'roms_schema.json')
-    with open(json_schema_path, 'r') as f:
+    with open(json_schema_path) as f:
         schema_json = json.load(f)
     jsonschema.validate(roms_json, schema_json)
 
 
 def test_roms_check_supported_chips() -> None:
-    with open(ROMS_JSON, 'r') as f:
+    with open(ROMS_JSON) as f:
         roms_json = json.load(f)
     for chip in SUPPORTED_TARGETS:
         assert chip in roms_json, f'Have no ROM data for chip {chip}'
@@ -43,7 +44,7 @@ def test_roms_validate_build_date() -> None:
         return result
 
     rom_elfs_dir = os.getenv('ESP_ROM_ELF_DIR', '')
-    with open(ROMS_JSON, 'r') as f:
+    with open(ROMS_JSON) as f:
         roms_json = json.load(f)
 
     for chip in roms_json:
@@ -52,3 +53,36 @@ def test_roms_validate_build_date() -> None:
             build_date_str = get_string_from_elf_by_addr(rom_file, int(k['build_date_str_addr'], base=16))
             assert len(build_date_str) == 11
             assert build_date_str == k['build_date_str']
+
+
+def test_gen_gdbinit_joins_rom_elf_dir() -> None:
+    module_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gen_gdbinit.py')
+    spec = importlib.util.spec_from_file_location('gen_gdbinit', module_path)
+    assert spec is not None and spec.loader is not None
+    gen_gdbinit = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen_gdbinit)
+
+    rom_dir = '/tmp/esp-rom-elfs/20241011'
+    old = os.environ.get('ESP_ROM_ELF_DIR')
+    os.environ['ESP_ROM_ELF_DIR'] = rom_dir
+    try:
+        out = gen_gdbinit.generate_gdbinit_rom_add_symbols('esp32c3')
+    finally:
+        if old is None:
+            os.environ.pop('ESP_ROM_ELF_DIR', None)
+        else:
+            os.environ['ESP_ROM_ELF_DIR'] = old
+
+    assert f'add-symbol-file {rom_dir}/esp32c3_rev' in out
+    assert f'add-symbol-file {rom_dir}esp32c3_rev' not in out
+
+    os.environ['ESP_ROM_ELF_DIR'] = rom_dir + '/'
+    try:
+        out_slash = gen_gdbinit.generate_gdbinit_rom_add_symbols('esp32c3')
+    finally:
+        if old is None:
+            os.environ.pop('ESP_ROM_ELF_DIR', None)
+        else:
+            os.environ['ESP_ROM_ELF_DIR'] = old
+
+    assert f'add-symbol-file {rom_dir}/esp32c3_rev' in out_slash

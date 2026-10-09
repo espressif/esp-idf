@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
+import posixpath
 import sys
 from textwrap import indent
 
@@ -20,7 +21,7 @@ ROMS_JSON = os.path.join(IDF_PATH, 'tools', 'idf_py_actions', 'roms.json')  # ty
 def get_rom_if_condition_str(date_addr: int, date_str: str) -> str:
     r = []
     for i in range(0, len(date_str), 4):
-        value = hex(int.from_bytes(bytes(date_str[i:i + 4], 'utf-8'), 'little'))
+        value = hex(int.from_bytes(bytes(date_str[i : i + 4], 'utf-8'), 'little'))
         r.append(f'(*(int*) {hex(date_addr + i)}) == {value}')
     return 'if ' + ' && '.join(r)
 
@@ -29,12 +30,13 @@ def generate_gdbinit_rom_add_symbols(target: str) -> str:
     base_ident = '  '
     rom_elfs_dir = os.getenv('ESP_ROM_ELF_DIR')
     if not rom_elfs_dir:
-        raise EnvironmentError(
-            'ESP_ROM_ELF_DIR environment variable is not defined. Please try to run IDF "install" and "export" scripts.')
+        raise OSError(
+            'ESP_ROM_ELF_DIR environment variable is not defined. Please try to run IDF "install" and "export" scripts.'
+        )
     if os.name == 'nt':
         # convert to posix-path for windows
         rom_elfs_dir = rom_elfs_dir.replace('\\', '/')
-    with open(ROMS_JSON, 'r') as f:
+    with open(ROMS_JSON) as f:
         roms = json.load(f)
     if target not in roms:
         msg_body = f'Warning: ROM ELF is not supported yet for "{target}".'  # noqa: E713
@@ -46,10 +48,11 @@ def generate_gdbinit_rom_add_symbols(target: str) -> str:
     for i, k in enumerate(roms[target], 1):
         indent_str = base_ident * i
         rom_file = f'{target}_rev{k["rev"]}_rom.elf'
+        rom_path = posixpath.join(rom_elfs_dir, rom_file)
         build_date_addr = int(k['build_date_str_addr'], base=16)
         r.append(indent(f'# if $_streq((char *) {hex(build_date_addr)}, "{k["build_date_str"]}")', indent_str))
         r.append(indent(get_rom_if_condition_str(build_date_addr, k['build_date_str']), indent_str))
-        r.append(indent(f'add-symbol-file {rom_elfs_dir}{rom_file}', indent_str + base_ident))
+        r.append(indent(f'add-symbol-file {rom_path}', indent_str + base_ident))
         r.append(indent('else', indent_str))
         if i == len(roms[target]):
             # In case no one known ROM ELF fits - print warning
