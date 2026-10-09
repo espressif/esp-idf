@@ -25,6 +25,7 @@
 #include "stack/btm_ble_api.h"
 
 #include "common/host.h"
+#include "common/addr.h"
 #include "common/app/gap.h"
 #include "common/app/gatt.h"
 
@@ -1895,6 +1896,7 @@ end:
 static void handle_gatts_connect_event(struct bt_le_gatts_connect_event *event)
 {
     struct gatt_conn *gatt_conn;
+    bt_addr_t peer_le;
 
     /* GATTS_CONNECT is broadcast to every registered GATTS app; central side
      * (MASTER role) also receives it. Central-side gatt_conn creation is
@@ -1939,13 +1941,13 @@ static void handle_gatts_connect_event(struct bt_le_gatts_connect_event *event)
     gatt_conn->peer.type = event->peer.type;
     memcpy(gatt_conn->peer.val, event->peer.val, BT_ADDR_SIZE);
 
-    /* conn->le.dst is the connect-event address verbatim — no RPA->identity resolution.
-     * A peer using an RPA makes bt_le_bond_exists()/CCC cfg miss on reconnect (fresh RPA
-     * each time). Identity / static-random / public addresses are stable. Warn to surface it. */
-    if (event->peer.type == BT_ADDR_LE_RANDOM && BT_ADDR_IS_RPA(&event->peer)) {
+    /* RPA peers cannot retain stable bond/CCC matching on reconnect. */
+    bt_le_addr_copy(peer_le.val, event->peer.val);
+
+    if (event->peer.type == BT_ADDR_LE_RANDOM && BT_ADDR_IS_RPA(&peer_le)) {
         LOG_WRN("[B]GattsConnRpaDst[%02x:%02x:%02x:%02x:%02x:%02x]",
-                event->peer.val[5], event->peer.val[4], event->peer.val[3],
-                event->peer.val[2], event->peer.val[1], event->peer.val[0]);
+                event->peer.val[0], event->peer.val[1], event->peer.val[2],
+                event->peer.val[3], event->peer.val[4], event->peer.val[5]);
     }
 
     post_acl_connect_app_event(gatt_conn);
@@ -3170,6 +3172,7 @@ static int gattc_disc_chrc_desc(struct bt_conn *conn, uint16_t conn_id,
 {
     struct bt_gatt_attr attr = {0};
     btgatt_db_element_t *db = NULL;
+    uint8_t peer_bda[BT_ADDR_SIZE];
     tBTA_GATT_UNFMT write = {0};
     tBTA_GATT_STATUS status;
     uint16_t chrc_handle;
@@ -3224,7 +3227,9 @@ static int gattc_disc_chrc_desc(struct bt_conn *conn, uint16_t conn_id,
     attr.uuid = params->uuid;
     attr.handle = db[0].attribute_handle;
 
-    status = BTA_GATTC_RegisterForNotifications(gattc_if, conn->le.dst.a.val, chrc_handle);
+    bt_le_addr_copy(peer_bda, conn->le.dst.a.val);
+
+    status = BTA_GATTC_RegisterForNotifications(gattc_if, peer_bda, chrc_handle);
     if (status != BTA_GATT_OK) {
         LOG_ERR("[B]EnableNtfFail[%u][%u]", chrc_handle, attr.handle);
 
@@ -3431,6 +3436,7 @@ int bt_le_bluedroid_gattc_write_without_rsp(struct bt_conn *conn, uint16_t handl
 
 int bt_le_bluedroid_gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)
 {
+    uint8_t peer_bda[BT_ADDR_SIZE];
     tBTA_GATT_UNFMT write = {0};
     tBTA_GATT_STATUS status;
     uint16_t chrc_handle;
@@ -3457,7 +3463,9 @@ int bt_le_bluedroid_gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscri
      * layer needs success so it removes the node from its subscription
      * list — otherwise the node is stuck forever.
      */
-    status = BTA_GATTC_DeregisterForNotifications(gattc_if, conn->le.dst.a.val, chrc_handle);
+    bt_le_addr_copy(peer_bda, conn->le.dst.a.val);
+
+    status = BTA_GATTC_DeregisterForNotifications(gattc_if, peer_bda, chrc_handle);
     if (status != BTA_GATT_OK) {
         LOG_WRN("[B]DeregNtfFail[%u][%u][%d]", chrc_handle, params->ccc_handle, status);
     }

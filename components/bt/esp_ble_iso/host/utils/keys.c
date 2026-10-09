@@ -19,6 +19,8 @@
 
 #include <../host/hci_core.h>
 
+#include "common/addr.h"
+
 #if CONFIG_BT_BLUEDROID_ENABLED
 #include "esp_gap_ble_api.h"
 #else
@@ -30,9 +32,7 @@
 
 LOG_MODULE_REGISTER(ISO_UTILS, CONFIG_BT_ISO_LOG_LEVEL);
 
-/* Query the active host's persistent bond store (the old local key_pool was never
- * populated, so bt_le_bond_exists() was always false). `id` ignored (single identity);
- * addresses stay in native host byte order. */
+/* Query the host bond store; bt_addr_le_t uses LSB-first order. */
 #if CONFIG_BT_BLUEDROID_ENABLED
 
 void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
@@ -62,7 +62,7 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
             struct bt_bond_info info = {0};
 
             info.addr.type = list[i].bd_addr_type;
-            memcpy(info.addr.a.val, list[i].bd_addr, BT_ADDR_SIZE);
+            bt_le_addr_copy(info.addr.a.val, list[i].bd_addr);
             func(&info, user_data);
         }
     } else {
@@ -75,6 +75,7 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr)
 {
     int num = esp_ble_get_bond_device_num();
+    uint8_t bda[BT_ADDR_SIZE];
     esp_ble_bond_dev_t *list;
     bool found = false;
 
@@ -110,19 +111,21 @@ bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr)
         return true;
     }
 
+    bt_le_addr_copy(bda, addr->a.val);
+
     for (int i = 0; i < num; i++) {
         /* Match the 6-byte address only: bd_addr uniquely identifies a bond,
          * and the type encodings (public/random vs *_ID/RPA) do not map 1:1
          * across the host boundary. */
-        if (memcmp(list[i].bd_addr, addr->a.val, BT_ADDR_SIZE) == 0) {
+        if (memcmp(list[i].bd_addr, bda, BT_ADDR_SIZE) == 0) {
             found = true;
             break;
         }
     }
 
     LOG_INF("[B]BondExists[%d][%02x:%02x:%02x:%02x:%02x:%02x]", found,
-            addr->a.val[0], addr->a.val[1], addr->a.val[2],
-            addr->a.val[3], addr->a.val[4], addr->a.val[5]);
+            addr->a.val[5], addr->a.val[4], addr->a.val[3],
+            addr->a.val[2], addr->a.val[1], addr->a.val[0]);
     free(list);
 
     return found;

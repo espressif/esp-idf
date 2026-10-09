@@ -184,7 +184,7 @@ int pa_set_info_transfer(uint16_t conn_handle, const uint8_t peer_addr[6],
     esp_bd_addr_t addr;
 
     (void)conn_handle;
-    memcpy(addr, peer_addr, sizeof(addr));
+    example_addr_le_to_host(addr, peer_addr);
 
     return esp_ble_gap_periodic_adv_set_info_trans(addr, service_data, ADV_HANDLE);
 }

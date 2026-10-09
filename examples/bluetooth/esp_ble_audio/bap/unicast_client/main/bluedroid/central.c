@@ -138,7 +138,7 @@ int conn_create(uint8_t addr_type, const uint8_t addr[6])
     esp_gatt_if_t gattc_if;
     esp_err_t err;
 
-    memcpy(peer_bda, addr, sizeof(peer_bda));
+    example_addr_le_to_host(peer_bda, addr);
 
     err = esp_ble_gap_prefer_ext_connect_params_set(
               peer_bda, ESP_BLE_GAP_PHY_1M_PREF_MASK, &conn_params, NULL, NULL);

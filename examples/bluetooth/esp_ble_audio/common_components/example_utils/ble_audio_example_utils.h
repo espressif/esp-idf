@@ -50,15 +50,19 @@
 #define EXAMPLE_BYTES_LIST_LE48             BT_BYTES_LIST_LE48
 #define EXAMPLE_BYTES_LIST_LE64             BT_BYTES_LIST_LE64
 
-/* bt_le_addr.val carries the host stack's native byte order: NimBLE is
- * LSB-first (BT spec wire order), Bluedroid is MSB-first (BD_ADDR). Use
- * this with "%02x:%02x:%02x:%02x:%02x:%02x" to print MSB-first regardless
- * of host. Examples can otherwise pass val[] straight to their host APIs
- * without conversion. */
+/* ISO/Audio events are LSB-first; Bluedroid APIs use MSB-first. */
+static inline void example_addr_le_to_host(uint8_t dst[6], const uint8_t src[6])
+{
+    for (size_t i = 0; i < 6; i++) {
 #if CONFIG_BT_BLUEDROID_ENABLED
-#define EXAMPLE_BT_ADDR_PRINT_ARGS(_v) \
-    (_v)[0], (_v)[1], (_v)[2], (_v)[3], (_v)[4], (_v)[5]
+        dst[i] = src[5 - i];
+#else
+        dst[i] = src[i];
+#endif
+    }
+}
 
+#if CONFIG_BT_BLUEDROID_ENABLED
 /* Fire-and-wait helper for Bluedroid GAP APIs that pair an async call with
  * a matching ESP_GAP_BLE_*_COMPLETE_EVT. The example's GAP event handler
  * is expected to xSemaphoreGive(_sem) on that COMPLETE_EVT. `TAG` and the
@@ -100,10 +104,10 @@
             return ESP_FAIL;                                            \
         }                                                               \
     } while (0)
-#else
+#endif
+
 #define EXAMPLE_BT_ADDR_PRINT_ARGS(_v) \
     (_v)[5], (_v)[4], (_v)[3], (_v)[2], (_v)[1], (_v)[0]
-#endif
 
 void example_print_codec_cfg(const char *tag, const esp_ble_audio_codec_cfg_t *codec_cfg);
 

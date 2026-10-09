@@ -64,7 +64,7 @@ int pa_sync_create(uint8_t addr_type, const uint8_t addr[6], uint8_t sid)
         .sync_timeout = PA_SYNC_TIMEOUT,
     };
 
-    memcpy(params.addr, addr, sizeof(params.addr));
+    example_addr_le_to_host(params.addr, addr);
 
     /* Fire-and-forget: sync establishment (PERIODIC_ADV_SYNC_ESTAB_EVT) is
      * air-dependent and surfaces asynchronously. */
@@ -91,7 +91,7 @@ int pa_sync_with_past(uint16_t conn_handle, uint8_t addr_type, const uint8_t add
     (void)addr_type;
     (void)addr;
 
-    memcpy(peer_addr, peer.dst, sizeof(peer_addr));
+    example_addr_le_to_host(peer_addr, peer.dst);
 
     WAIT_API(esp_ble_gap_set_periodic_adv_sync_trans_params(peer_addr, &params));
 
@@ -113,7 +113,7 @@ int pa_past_cancel(uint16_t conn_handle)
 
     (void)conn_handle;
 
-    memcpy(peer_addr, peer.dst, sizeof(peer_addr));
+    example_addr_le_to_host(peer_addr, peer.dst);
 
     WAIT_API(esp_ble_gap_set_periodic_adv_sync_trans_params(peer_addr, &params));
 

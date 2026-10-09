@@ -16,6 +16,7 @@
 #include <../host/iso_internal.h>
 
 #include "common/host.h"
+#include "common/addr.h"
 #include "common/app/gap.h"
 
 LOG_MODULE_REGISTER(ISO_AGAP, CONFIG_BT_ISO_LOG_LEVEL);
@@ -106,7 +107,7 @@ static void handle_ext_scan_recv_event_safe(struct bt_le_gap_app_param *param)
 
     event.ext_scan_recv.event_type = param->ext_scan_recv.event_type;
     event.ext_scan_recv.addr.type = param->ext_scan_recv.addr.type;
-    memcpy(event.ext_scan_recv.addr.val, param->ext_scan_recv.addr.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.ext_scan_recv.addr.val, param->ext_scan_recv.addr.val);
     event.ext_scan_recv.rssi = param->ext_scan_recv.rssi;
     event.ext_scan_recv.tx_power = param->ext_scan_recv.tx_power;
     event.ext_scan_recv.sid = param->ext_scan_recv.sid;
@@ -150,7 +151,7 @@ static void handle_pa_sync_event_safe(struct bt_le_gap_app_param *param)
     event.pa_sync.status = param->pa_sync.status;
     event.pa_sync.sync_handle = param->pa_sync.sync_handle;
     event.pa_sync.addr.type = param->pa_sync.addr.type;
-    memcpy(event.pa_sync.addr.val, param->pa_sync.addr.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.pa_sync.addr.val, param->pa_sync.addr.val);
     event.pa_sync.sid = param->pa_sync.sid;
     event.pa_sync.adv_phy = param->pa_sync.adv_phy;
     event.pa_sync.per_adv_itvl = param->pa_sync.per_adv_itvl;
@@ -194,7 +195,7 @@ static void handle_pa_sync_past_event_safe(struct bt_le_gap_app_param *param)
     event.pa_sync_past.status = param->pa_sync_past.status;
     event.pa_sync_past.sync_handle = param->pa_sync_past.sync_handle;
     event.pa_sync_past.addr.type = param->pa_sync_past.addr.type;
-    memcpy(event.pa_sync_past.addr.val, param->pa_sync_past.addr.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.pa_sync_past.addr.val, param->pa_sync_past.addr.val);
     event.pa_sync_past.sid = param->pa_sync_past.sid;
     event.pa_sync_past.adv_phy = param->pa_sync_past.adv_phy;
     event.pa_sync_past.per_adv_itvl = param->pa_sync_past.per_adv_itvl;
@@ -318,7 +319,7 @@ static void handle_acl_connect_event_safe(struct bt_le_gap_app_param *param)
     event.acl_connect.conn_handle = param->acl_connect.conn_handle;
     event.acl_connect.role = param->acl_connect.role;
     event.acl_connect.dst.type = param->acl_connect.dst.type;
-    memcpy(event.acl_connect.dst.val, param->acl_connect.dst.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.acl_connect.dst.val, param->acl_connect.dst.val);
 
     bt_le_host_lock();
 
@@ -395,7 +396,7 @@ static void handle_security_change_event_safe(struct bt_le_gap_app_param *param)
     event.security_change.sec_level = param->security_change.sec_level;
     event.security_change.bonded = param->security_change.bonded;
     event.security_change.dst.type = param->security_change.dst.type;
-    memcpy(event.security_change.dst.val, param->security_change.dst.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.security_change.dst.val, param->security_change.dst.val);
 
     encrypted = false;
 
@@ -410,7 +411,7 @@ static void handle_security_change_event_safe(struct bt_le_gap_app_param *param)
         struct gatt_conn *gatt_conn;
 
         gatt_conn = bt_le_bluedroid_find_gatt_conn_with_addr(event.security_change.dst.type,
-                                                             event.security_change.dst.val,
+                                                             param->security_change.dst.val,
                                                              false);
         if (gatt_conn == NULL) {
             /* ACL disconnected between the BTC post and this handler — the same
@@ -490,9 +491,9 @@ static void handle_identity_resolve_event_safe(struct bt_le_gap_app_param *param
 
     event.identity_resolve.conn_handle = param->identity_resolve.conn_handle;
     event.identity_resolve.rpa.type = param->identity_resolve.rpa.type;
-    memcpy(event.identity_resolve.rpa.val, param->identity_resolve.rpa.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.identity_resolve.rpa.val, param->identity_resolve.rpa.val);
     event.identity_resolve.identity.type = param->identity_resolve.identity.type;
-    memcpy(event.identity_resolve.identity.val, param->identity_resolve.identity.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.identity_resolve.identity.val, param->identity_resolve.identity.val);
 
     identity.type = event.identity_resolve.identity.type;
     memcpy(identity.a.val, event.identity_resolve.identity.val, BT_ADDR_SIZE);
@@ -518,7 +519,7 @@ static void handle_bond_delete_event_safe(struct bt_le_gap_app_param *param)
 
     event.bond_delete.id = param->bond_delete.id;
     event.bond_delete.peer.type = param->bond_delete.peer.type;
-    memcpy(event.bond_delete.peer.val, param->bond_delete.peer.val, BT_ADDR_SIZE);
+    bt_le_addr_copy(event.bond_delete.peer.val, param->bond_delete.peer.val);
 
     peer.type = event.bond_delete.peer.type;
     memcpy(peer.a.val, event.bond_delete.peer.val, sizeof(peer.a.val));

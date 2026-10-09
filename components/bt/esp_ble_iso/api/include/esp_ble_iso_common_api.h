@@ -288,7 +288,7 @@ typedef struct bt_iso_tx_cb_info            esp_ble_iso_tx_cb_info_t;
 typedef struct {
     uint8_t adv_handle; /*!< Handle for the advertising set */
     uint8_t addr_type;  /*!< Advertising address type (0=public, 1=random) */
-    uint8_t addr[6];    /*!< Advertising address */
+    uint8_t addr[6];    /*!< Advertising address, LSB-first */
     uint8_t sid;        /*!< Advertising SID */
 } esp_ble_iso_ext_adv_info_t;
 
@@ -574,13 +574,8 @@ esp_err_t esp_ble_iso_chan_send_ts(esp_ble_iso_chan_t *chan,
 /**
  * @brief   ISO GAP application event structure
  *
- * @note    Addresses carried by these events are in the **active host's own byte
- *          order**: on-air/LSB-first under NimBLE, MSB-first under Bluedroid
- *          (the order every `esp_ble_gap_*` API takes). Feeding one straight back
- *          to a host API is therefore always correct; comparing one against an
- *          address the audio layer holds, such as a Broadcast Receive State,
- *          needs a reversal under Bluedroid. See `struct bt_le_addr` in
- *          common/app/gap.h for the full convention.
+ * @note    Event address bytes are LSB-first on both hosts. Bluedroid GAP APIs
+ *          use MSB-first; address types remain host-specific.
  */
 typedef struct bt_le_gap_app_event              esp_ble_iso_gap_app_event_t;
 

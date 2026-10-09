@@ -309,15 +309,15 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
     per_adv_sync->phy = phy;
     per_adv_sync->interval = interval;
     per_adv_sync->conn_handle = conn_handle;
-    per_adv_sync->addr.type = addr_type;
-#if CONFIG_BT_BLUEDROID_ENABLED
-    /* Bluedroid delivers the advertiser address MSB-first, but the lib compares in
-     * on-air/LSB-first order (bt_addr_le_t.a.val). NimBLE already supplies on-air
-     * order, so reverse only here. */
-    sys_memcpy_swap(per_adv_sync->addr.a.val, addr, BT_ADDR_SIZE);
-#else
+    /* Normalize HCI identity types for Zephyr consumers. */
+    if (addr_type == BT_ADDR_LE_PUBLIC_ID) {
+        per_adv_sync->addr.type = BT_ADDR_LE_PUBLIC;
+    } else if (addr_type == BT_ADDR_LE_RANDOM_ID) {
+        per_adv_sync->addr.type = BT_ADDR_LE_RANDOM;
+    } else {
+        per_adv_sync->addr.type = addr_type;
+    }
     memcpy(per_adv_sync->addr.a.val, addr, BT_ADDR_SIZE);
-#endif
 
     LOG_INF("PaSyncAddr[%s]", bt_addr_le_str(&per_adv_sync->addr));
 
