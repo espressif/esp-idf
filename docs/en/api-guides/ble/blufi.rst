@@ -22,6 +22,8 @@ You can customize symmetric encryption, asymmetric encryption, and checksum supp
 
    for a modern, secure, and actively maintained solution.
 
+   BluFi application callbacks (``esp_blufi_callbacks_t::event_cb`` and the security handlers) run on ``BTC_TASK``, not on the NimBLE host task. Set :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE` under ``Component config`` > ``Bluetooth`` > ``Common Options``. :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE` does not change ``BTC_TASK``.
+
 The BluFi Flow
 ----------------
 
