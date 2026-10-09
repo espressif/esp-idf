@@ -206,6 +206,8 @@ When opening files, the FS driver receives only relative paths to files. For exa
 
 VFS does not impose any limit on total file path length, but it does limit the FS path prefix to ``ESP_VFS_PATH_MAX`` characters. Individual FS drivers may have their own filename length limitations.
 
+When the :ref:`CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT` option is enabled (it is disabled by default), a virtual read-only directory is synthesized above the registered mount points, so the mount point hierarchy can be browsed from the root (``/``) downward with ``opendir()`` / ``readdir()`` and queried with ``stat()``. Each such directory lists one entry (of type ``DT_DIR``) per next path component of the mount points below it, and can be traversed to any depth until a registered filesystem is reached.
+
 
 File Descriptors
 ----------------
