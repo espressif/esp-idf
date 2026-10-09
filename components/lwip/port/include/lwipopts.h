@@ -1219,6 +1219,51 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define CHECKSUM_CHECK_ICMP             0
 #endif
 
+/**
+ * CHECKSUM_CHECK_TCP==1: Check checksums in software for incoming TCP segments.
+ */
+#ifdef CONFIG_LWIP_CHECKSUM_CHECK_TCP
+#define CHECKSUM_CHECK_TCP              1
+#else
+#define CHECKSUM_CHECK_TCP              0
+#endif
+
+/**
+ * CHECKSUM_GEN_IP==1: Generate checksums in software for outgoing IP packets.
+ */
+#ifdef CONFIG_LWIP_CHECKSUM_GEN_IP
+#define CHECKSUM_GEN_IP                 1
+#else
+#define CHECKSUM_GEN_IP                 0
+#endif
+
+/**
+ * CHECKSUM_GEN_UDP==1: Generate checksums in software for outgoing UDP datagrams.
+ */
+#ifdef CONFIG_LWIP_CHECKSUM_GEN_UDP
+#define CHECKSUM_GEN_UDP                1
+#else
+#define CHECKSUM_GEN_UDP                0
+#endif
+
+/**
+ * CHECKSUM_GEN_TCP==1: Generate checksums in software for outgoing TCP segments.
+ */
+#ifdef CONFIG_LWIP_CHECKSUM_GEN_TCP
+#define CHECKSUM_GEN_TCP                1
+#else
+#define CHECKSUM_GEN_TCP                0
+#endif
+
+/**
+ * CHECKSUM_GEN_ICMP==1: Generate checksums in software for outgoing ICMP messages.
+ */
+#ifdef CONFIG_LWIP_CHECKSUM_GEN_ICMP
+#define CHECKSUM_GEN_ICMP               1
+#else
+#define CHECKSUM_GEN_ICMP               0
+#endif
+
 /*
    ---------------------------------------
    ---------- IPv6 options ---------------
