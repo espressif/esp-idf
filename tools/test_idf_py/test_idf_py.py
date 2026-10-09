@@ -168,6 +168,14 @@ class TestDependencyManagement(TestWithoutExtensions):
             'WARNING: Command "clean" is found in the list of commands more than once.', capturedOutput.getvalue()
         )
 
+    def test_forbid_chaining(self):
+        for args in (['--dry-run', 'build', 'mcp-server'], ['--dry-run', 'mcp-server', 'build']):
+            with self.assertRaises(idf.FatalError) as ctx:
+                idf.init_cli()(args=args, standalone_mode=False)
+            self.assertIn('not allowed to be chained with other commands', str(ctx.exception))
+            self.assertIn('Please use it as a standalone idf.py command', str(ctx.exception))
+            self.assertIn('mcp-server', str(ctx.exception))
+
 
 class TestIdfVersionSeeding(TestWithoutExtensions):
     def test_idf_version_seeded_when_unset(self):
@@ -298,6 +306,28 @@ class TestDeprecations(TestWithoutExtensions):
         self.assertIn('Warning: Option "test_3" is deprecated and will be removed in future versions.', output)
         self.assertNotIn('"test-0" is deprecated', output)
         self.assertNotIn('"test_0" is deprecated', output)
+
+
+class TestMachineReadableStdout(TestWithoutExtensions):
+    """Executing action / Done are omitted when a task owns stdout."""
+
+    def _cli(self) -> Any:
+        return idf.init_cli()
+
+    def test_uses_machine_readable_stdout_mcp_server(self):
+        from types import SimpleNamespace
+
+        task = SimpleNamespace(name='mcp-server', action_args={})
+        self.assertTrue(self._cli()._uses_machine_readable_stdout(task))
+
+    def test_uses_machine_readable_stdout_help_json(self):
+        from types import SimpleNamespace
+
+        cli = self._cli()
+        with_json = SimpleNamespace(name='help', action_args={'json_option': True})
+        without_json = SimpleNamespace(name='help', action_args={'json_option': False})
+        self.assertTrue(cli._uses_machine_readable_stdout(with_json))
+        self.assertFalse(cli._uses_machine_readable_stdout(without_json))
 
 
 class TestHelpOutput(TestWithoutExtensions):

@@ -271,6 +271,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             dependencies: list | None,
             order_dependencies: list | None,
             action_args: dict,
+            forbid_chaining: bool = False,
         ) -> None:
             self.callback = callback
             self.name = name
@@ -278,6 +279,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.order_dependencies = order_dependencies
             self.action_args = action_args
             self.aliases = aliases
+            self.forbid_chaining = forbid_chaining
 
         def __call__(self, context: Context, global_args: PropertyDict, action_args: dict | None = None) -> None:
             if action_args is None:
@@ -296,6 +298,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             dependencies: list | None = None,
             order_dependencies: list | None = None,
             hidden: bool = False,
+            forbid_chaining: bool = False,
             **kwargs: Any,
         ) -> None:
             super().__init__(name, **kwargs)
@@ -303,6 +306,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.name: str = self.name or self.callback.__name__
             self.deprecated: dict | str | bool = deprecated
             self.hidden: bool = hidden
+            self.forbid_chaining: bool = forbid_chaining
 
             if aliases is None:
                 aliases = []
@@ -342,6 +346,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                         order_dependencies=order_dependencies,
                         action_args=action_args,
                         aliases=self.aliases,
+                        forbid_chaining=self.forbid_chaining,
                     )
 
                 self.callback: Callable = wrapped_callback
@@ -592,6 +597,17 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 return result
             return super().shell_complete(ctx, incomplete)  # type: ignore
 
+        def _uses_machine_readable_stdout(self, task: Task) -> bool:
+            """True when stdout must stay free of extra idf.py output (stdio protocol or JSON dump)."""
+            # Actions that own stdout, such as MCP JSON-RPC.
+            stdio_owning_actions = frozenset({'mcp-server'})
+            # Commands that dump JSON on stdout when --json is passed.
+            # Click dest must be json_option.
+            json_stdout_actions = frozenset({'help'})
+            if task.name in stdio_owning_actions:
+                return True
+            return bool(task.action_args.get('json_option', False) and task.name in json_stdout_actions)
+
         def _print_closing_message(self, args: PropertyDict, actions: KeysView) -> None:
             # print a closing message of some kind,
             # except if any of the following actions were requested
@@ -696,6 +712,15 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     'Only first occurrence will be executed.'
                 )
 
+            # Guard user-requested chaining only; auto-injected dependencies are not counted.
+            if len(tasks) > 1:
+                for task in tasks:
+                    if task.forbid_chaining:
+                        raise FatalError(
+                            f'Command "{task.name}" is not allowed to be chained with other commands. '
+                            'Please use it as a standalone idf.py command.'
+                        )
+
             for task in tasks:
                 # Set propagated global options.
                 # These options may be set on one subcommand, but available in the list of global arguments
@@ -782,18 +807,18 @@ def init_cli(verbose_output: list | None = None) -> Any:
             # Run all tasks in the queue
             # when global_args.dry_run is true idf.py works in idle mode and skips actual task execution
             if not global_args.dry_run:
+                machine_readable_output = any(self._uses_machine_readable_stdout(t) for t in tasks_to_run.values())
                 for task in tasks_to_run.values():
                     name_with_aliases = task.name
                     if task.aliases:
                         name_with_aliases += f' (aliases: {", ".join(task.aliases)})'
 
-                    # When machine-readable json format for help is printed,
-                    # don't show info about executing action so the output is deserializable
-                    if name_with_aliases != 'help' or not task.action_args.get('json_option', False):
+                    if not self._uses_machine_readable_stdout(task):
                         print(f'Executing action: {name_with_aliases}')
                     task(ctx, global_args, task.action_args)
 
-                self._print_closing_message(global_args, tasks_to_run.keys())
+                if not machine_readable_output:
+                    self._print_closing_message(global_args, tasks_to_run.keys())
 
             return tasks_to_run
 
