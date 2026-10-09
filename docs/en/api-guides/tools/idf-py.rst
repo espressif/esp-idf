@@ -327,6 +327,10 @@ To use the MCP server with an AI assistant, configure your agent or IDE to start
 
     The MCP server requires the ``mcp`` feature to be installed. Install it using the EIM installer. See `EIM documentation > CLI Configuration - Global features <https://docs.espressif.com/projects/idf-im-ui/en/latest/cli_configuration.html#global-features-all-versions>`_ for how to install specific features.
 
+.. note::
+
+    ``mcp-server`` uses stdout for the MCP JSON-RPC transport. ``idf.py`` does not print its usual informational messages (such as ``Executing action:``) when this command is used. To keep stdout from being polluted, this command cannot be combined with other ``idf.py`` commands.
+
 Available Tools and Resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

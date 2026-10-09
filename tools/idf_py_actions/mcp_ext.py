@@ -838,6 +838,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 'callback': start_mcp_server,
                 'help': 'Start MCP (Model Context Protocol) server for AI integration',
                 'options': [],
+                'forbid_chaining': True,
             },
         }
     }
