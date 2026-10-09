@@ -56,6 +56,10 @@
     .. doxygendefine:: ESP_BT_VS_SET_LE_VENDOR_EVTS_MASK_OCF
     .. doxygendefine:: ESP_BT_VS_SET_CONST_PEER_SCA_OCF
 
+.. only:: esp32s31 or esp32h4
+
+    .. doxygendefine:: ESP_BT_VS_SET_COEX_STATUS_OCF
+
 .. only:: esp32s31
 
     .. doxygendefine:: ESP_BT_VS_SET_MIN_ENC_KEY_SIZE_OCF
