@@ -52,6 +52,7 @@ extern "C" {
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (1)
 #define LP_ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)   (2)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (10)
+#define ADC_LL_ONESHOT_START_BY_UNIT                1
 
 /*---------------------------------------------------------------
  *                          continuous

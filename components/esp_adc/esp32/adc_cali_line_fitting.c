@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -151,6 +151,8 @@ typedef struct {
     adc_cali_line_fitting_efuse_val_t efuse_val;    ///< Type of calibration value used in characterization
 } cali_chars_line_fitting_t;
 
+static esp_err_t delete_cali_ctx(void *arg);
+
 /* ------------------------- Public API ------------------------------------- */
 esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config_t *config, adc_cali_handle_t *ret_handle)
 {
@@ -160,11 +162,8 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     ESP_RETURN_ON_FALSE(config->atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC attenuation");
     ESP_RETURN_ON_FALSE(((config->bitwidth >= ADC_LL_RTC_MIN_BITWIDTH && config->bitwidth <= ADC_LL_RTC_MAX_BITWIDTH) || config->bitwidth == ADC_BITWIDTH_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "invalid bitwidth");
 
-    adc_cali_scheme_t *scheme = (adc_cali_scheme_t *)heap_caps_calloc(1, sizeof(adc_cali_scheme_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    ESP_RETURN_ON_FALSE(scheme, ESP_ERR_NO_MEM, TAG, "no mem for adc calibration scheme");
-
     cali_chars_line_fitting_t *chars = (cali_chars_line_fitting_t *)heap_caps_calloc(1, sizeof(cali_chars_line_fitting_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    ESP_GOTO_ON_FALSE(chars, ESP_ERR_NO_MEM, err, TAG, "no memory for the calibration characteristics");
+    ESP_RETURN_ON_FALSE(chars, ESP_ERR_NO_MEM, TAG, "no memory for the calibration characteristics");
 
     //Check eFuse if enabled to do so
     if (check_efuse_tp() && EFUSE_TP_ENABLED) {
@@ -198,18 +197,16 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
         chars->low_curve = NULL;
         chars->high_curve = NULL;
     }
-    scheme->raw_to_voltage = cali_raw_to_voltage;
-    scheme->ctx = chars;
-    *ret_handle = scheme;
+    ret = adc_cali_new_scheme(cali_raw_to_voltage, NULL, delete_cali_ctx, chars, ret_handle);
+    if (ret != ESP_OK) {
+        goto err;
+    }
 
     return ESP_OK;
 
 err:
     if (chars) {
         free(chars);
-    }
-    if (scheme) {
-        free(scheme);
     }
     return ret;
 }
@@ -231,18 +228,16 @@ esp_err_t adc_cali_scheme_line_fitting_check_efuse(adc_cali_line_fitting_efuse_v
 
 esp_err_t adc_cali_delete_scheme_line_fitting(adc_cali_handle_t handle)
 {
-    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-
-    free(handle->ctx);
-    handle->ctx = NULL;
-
-    free(handle);
-    handle = NULL;
-
-    return ESP_OK;
+    return adc_cali_delete_scheme(handle);
 }
 
 /* ------------------------ Interface Functions --------------------------- */
+static esp_err_t delete_cali_ctx(void *arg)
+{
+    free(arg);
+    return ESP_OK;
+}
+
 static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 {
     //pointers are checked in the upper layer

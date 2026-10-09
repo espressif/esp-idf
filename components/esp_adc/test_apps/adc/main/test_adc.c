@@ -133,6 +133,61 @@ TEST_CASE("ADC oneshot basic test", "[adc_oneshot]")
     adc_oneshot_deinit_test();
 }
 
+#if CONFIG_IDF_TARGET_ESP32S31
+TEST_CASE("ADC S31 calibrated oneshot conversion", "[adc_oneshot][adc_cali]")
+{
+    adc_oneshot_unit_handle_t handle;
+    adc_cali_handle_t cali_handle = NULL;
+    adc_oneshot_unit_init_cfg_t unit_config = {
+        .unit_id = ADC_UNIT_1,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
+    };
+    adc_oneshot_chan_cfg_t channel_config = {
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+        .atten = ADC_ATTEN_DB_0,
+    };
+
+    TEST_ESP_OK(adc_oneshot_new_unit(&unit_config, &handle));
+    TEST_ESP_OK(adc_oneshot_config_channel(handle, ADC1_TEST_CHAN1, &channel_config));
+    TEST_ASSERT_TRUE(test_adc_calibration_init(ADC_UNIT_1, ADC1_TEST_CHAN1,
+                                               ADC_ATTEN_DB_0, ADC_BITWIDTH_DEFAULT,
+                                               &cali_handle));
+
+    const int sample_count = 10;
+    int voltage_low_sum = 0;
+    int voltage_high_sum = 0;
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, false);
+    for (int i = 0; i < sample_count; i++) {
+        int raw;
+        int voltage;
+        TEST_ESP_OK(adc_oneshot_read(handle, ADC1_TEST_CHAN1, &raw));
+        TEST_ESP_OK(adc_cali_chan_raw_to_voltage(cali_handle, ADC1_TEST_CHAN1,
+                                                 raw, &voltage));
+        voltage_low_sum += voltage;
+    }
+
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, true);
+    for (int i = 0; i < sample_count; i++) {
+        int raw;
+        int voltage;
+        TEST_ESP_OK(adc_oneshot_read(handle, ADC1_TEST_CHAN1, &raw));
+        TEST_ESP_OK(adc_cali_chan_raw_to_voltage(cali_handle, ADC1_TEST_CHAN1,
+                                                 raw, &voltage));
+        voltage_high_sum += voltage;
+    }
+
+    int voltage_low = voltage_low_sum / sample_count;
+    int voltage_high = voltage_high_sum / sample_count;
+    ESP_LOGI(TAG, "average calibrated voltage from %d samples: low=%d mV, high=%d mV",
+             sample_count,
+             voltage_low, voltage_high);
+    TEST_ASSERT_GREATER_OR_EQUAL(100, voltage_high - voltage_low);
+
+    test_adc_calibration_deinit(cali_handle);
+    TEST_ESP_OK(adc_oneshot_del_unit(handle));
+}
+#endif
+
 TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_oneshot]")
 {
     //There is a hardware limitation. After ADC get DONE signal, it still need a delay to synchronize ADC raw data or it may get zero even if getting DONE signal.
@@ -223,7 +278,7 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
         //Read
         TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &raw_expected));
         if (do_calibration) {
-            TEST_ESP_OK(adc_cali_raw_to_voltage(cali_handle[i], raw_expected, &cali_expected));
+            TEST_ESP_OK(adc_cali_chan_raw_to_voltage(cali_handle[i], channel, raw_expected, &cali_expected));
         }
 
         //Print regi2c
@@ -259,7 +314,7 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
         //Read
         TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &raw_after_sleep));
         if (do_calibration) {
-            TEST_ESP_OK(adc_cali_raw_to_voltage(cali_handle[i], raw_after_sleep, &cali_after_sleep));
+            TEST_ESP_OK(adc_cali_chan_raw_to_voltage(cali_handle[i], channel, raw_after_sleep, &cali_after_sleep));
         }
 
         //Print result

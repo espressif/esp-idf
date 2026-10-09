@@ -159,6 +159,9 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
 
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+        adc_cal_sw_weight(init_config->unit_id, clk_src);
+#endif
     } else {
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
         ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)(unit->hal.clk_src)), err, TAG, "clock source enable failed");
@@ -232,6 +235,14 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
 #endif
     ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    /* Data path, not a cal step: bypass the HW weight accumulator so the
+     * result is the 17-bit comparator vector that software applies weights
+     * to. Other chips have no such mux; their conversion result is already
+     * the raw code. S31 default analog path is the accumulated code. */
+    adc_ll_weight_accumulator_bypass(handle->unit_id, true);
+    adc_ll_set_cal_done(handle->unit_id, true);
+#endif
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
     adc_hal_calibration_init(handle->unit_id);
@@ -263,6 +274,11 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
 #endif
     ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    /* Same data-path mux as adc_oneshot_read(): 17-bit comparator vector. */
+    adc_ll_weight_accumulator_bypass(handle->unit_id, true);
+    adc_ll_set_cal_done(handle->unit_id, true);
+#endif
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
     adc_hal_calibration_init(handle->unit_id);
@@ -335,7 +351,7 @@ esp_err_t adc_oneshot_get_calibrated_result(adc_oneshot_unit_handle_t handle, ad
     int raw = 0;
     ESP_RETURN_ON_ERROR(adc_oneshot_read(handle, chan, &raw), TAG, "adc oneshot read fail");
     ESP_LOGD(TAG, "raw: 0d%d", raw);
-    ESP_RETURN_ON_ERROR(adc_cali_raw_to_voltage(cali_handle, raw, cali_result), TAG, "adc calibration fail");
+    ESP_RETURN_ON_ERROR(adc_cali_chan_raw_to_voltage(cali_handle, chan, raw, cali_result), TAG, "adc calibration fail");
 
     return ESP_OK;
 }

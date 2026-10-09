@@ -12,8 +12,11 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "hal/adc_periph.h"
-#include "test_common_adc.h"
 #include "hal/adc_ll.h"
+#include "test_common_adc.h"
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+#include "hal/adc_hal_common.h"
+#endif
 
 __attribute__((unused)) static const char *TAG = "TEST_ADC";
 
@@ -134,6 +137,10 @@ void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel)
 void test_assert_adc_raw(adc_unit_t unit, adc_channel_t channel, bool level, int raw, bool dma_mode, bool loose_thresh)
 {
     TEST_ASSERT(channel < ADC_LL_CHANNEL_NUM(unit) && "invalid channel");
+
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    raw = (int)adc_hal_sw_weight_apply(unit, (uint32_t)raw);
+#endif
 
 #if defined ADC_TEST_HIGH_VAL_DMA
     int expected_value = level ? (dma_mode ? ADC_TEST_HIGH_VAL_DMA : ADC_TEST_HIGH_VAL) : ADC_TEST_LOW_VAL;

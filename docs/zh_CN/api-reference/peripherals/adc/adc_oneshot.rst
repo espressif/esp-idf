@@ -94,14 +94,27 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 配置两个 ADC 通道
 ~~~~~~~~~~~~~~~~~
 
-.. code:: c
+.. only:: not esp32s31
 
-    adc_oneshot_chan_cfg_t config = {
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,
-    };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN0, &config));
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
+    .. code:: c
+
+        adc_oneshot_chan_cfg_t config = {
+            .bitwidth = ADC_BITWIDTH_DEFAULT,
+            .atten = ADC_ATTEN_DB_12,
+        };
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN0, &config));
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
+
+.. only:: esp32s31
+
+    .. code:: c
+
+        adc_oneshot_chan_cfg_t config = {
+            .bitwidth = ADC_BITWIDTH_DEFAULT,
+            .atten = ADC_ATTEN_DB_0,
+        };
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN0, &config));
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 
 
 .. _adc-oneshot-read-conversion-result:
@@ -115,29 +128,15 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 该函数可能因参数无效而调用失败。
 
-通过该函数获取的 ADC 转换结果为原始数据。可以使用以下公式，根据 ADC 原始结果计算电压：
+通过该函数获取的是原始数据。请用校准接口转换为以 mV 为单位的电压，详见 :doc:`adc_calibration`。
 
-.. parsed-literal::
+.. only:: esp32s31
 
-    Vout = Dout * Vmax / Dmax       (1)
+    在 {IDF_TARGET_NAME} 上，:cpp:func:`adc_oneshot_read` 返回的是 17 位比较器向量。请调用 :cpp:func:`adc_cali_chan_raw_to_voltage`。偶通道为 N 端，奇通道为 P 端。
 
-其中：
+.. only:: not esp32s31
 
-.. list-table::
-    :header-rows: 1
-    :widths: 20 80
-    :align: center
-
-    * - Vout
-      - 数字输出结果，代表电压。
-    * - Dout
-      - ADC 原始数字读取结果。
-    * - Vmax
-      - 可测量的最大模拟输入电压，与 ADC 衰减相关，请参考 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`__ > ``片上传感器与模拟信号处理``。
-    * - Dmax
-      - 输出 ADC 原始数字读取结果的最大值，即 2^位宽，位宽即之前配置的 :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth`。
-
-若需进一步校准，将 ADC 原始结果转换为以 mV 为单位的电压数据，请参考校准文档 :doc:`adc_calibration`。
+    请调用 :cpp:func:`adc_cali_raw_to_voltage`。如果校准方案需要通道信息，请使用 :cpp:func:`adc_cali_chan_raw_to_voltage`。
 
 
 读取原始结果
@@ -160,8 +159,7 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 .. list::
 
     :not esp32s31: - 随机数生成器 (RNG) 以 ADC 为输入源。使用 ADC 单次转换模式驱动从 RNG 生成随机数时，随机性会减弱。
-    :SOC_ADC_DMA_SUPPORTED: - 一个 ADC 单元每次只能在一种操作模式下运行，可以是连续模式或单次模式。:cpp:func:`adc_oneshot_start` 提供了保护措施。
-    :SOC_ADC_DIFF_SUPPORTED: - 在单端模式下，如果使用 N 端通道作为输入接口，其原始数据极性是反向的。输入电压范围为 -2 V ~ 2 V 时，N 端 raw 值为 4393~0。请使用 ADC 校准 API。
+    :SOC_ADC_DMA_SUPPORTED: - 一个 ADC 单元每次只能在一种操作模式下运行，可以是连续模式或单次模式。:cpp:func:`adc_oneshot_read` 提供了保护措施。
     :esp32 or esp32s2 or esp32s3: - Wi-Fi 也使用 ADC2，:cpp:func:`adc_oneshot_read` 提供了 Wi-Fi 驱动与 ADC 单次转换模式驱动间的保护。
     :esp32c3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 单次转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :menuitem:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3`，强制使用 ADC2。
     :esp32: - ESP32-DevKitC：GPIO0 已用于自动烧录功能，不能用于 ADC 单次转换模式。

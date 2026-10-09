@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,10 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
+#include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "hal/adc_periph.h"
-#include "hal/adc_ll.h"
 
 static const char *TAG = "adc_common";
 
@@ -86,3 +88,28 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
     ANALOG_CLOCK_DISABLE();
 }
 #endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+void adc_cal_sw_weight(adc_unit_t adc_n, adc_oneshot_clk_src_t clk_src)
+{
+    if (ADC_LL_NEED_APB_PERIPH_CLAIM(adc_n)) {
+        adc_apb_periph_claim();
+    }
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src));
+#endif
+    ANALOG_CLOCK_ENABLE();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
+
+    adc_hal_sw_weight_calibrate(adc_n, clk_src);
+
+    sar_periph_ctrl_adc_oneshot_power_release();
+    ANALOG_CLOCK_DISABLE();
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    ESP_ERROR_CHECK(esp_clk_tree_release_src((soc_module_clk_t)clk_src));
+#endif
+    if (ADC_LL_NEED_APB_PERIPH_CLAIM(adc_n)) {
+        adc_apb_periph_free();
+    }
+}
+#endif // ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED

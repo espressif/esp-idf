@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,7 +96,7 @@ void app_main(void)
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN0, &adc_raw[0][0]));
         ESP_LOGI(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, adc_raw[0][0]);
         if (do_calibration1_chan0) {
-            ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc1_cali_chan0_handle, adc_raw[0][0], &voltage[0][0]));
+            ESP_ERROR_CHECK(adc_cali_chan_raw_to_voltage(adc1_cali_chan0_handle, EXAMPLE_ADC1_CHAN0, adc_raw[0][0], &voltage[0][0]));
             ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -104,7 +104,7 @@ void app_main(void)
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw[0][1]));
         ESP_LOGI(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN1, adc_raw[0][1]);
         if (do_calibration1_chan1) {
-            ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc1_cali_chan1_handle, adc_raw[0][1], &voltage[0][1]));
+            ESP_ERROR_CHECK(adc_cali_chan_raw_to_voltage(adc1_cali_chan1_handle, EXAMPLE_ADC1_CHAN1, adc_raw[0][1], &voltage[0][1]));
             ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN1, voltage[0][1]);
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -113,7 +113,7 @@ void app_main(void)
         ESP_ERROR_CHECK(adc_oneshot_read(adc2_handle, EXAMPLE_ADC2_CHAN0, &adc_raw[1][0]));
         ESP_LOGI(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_2 + 1, EXAMPLE_ADC2_CHAN0, adc_raw[1][0]);
         if (do_calibration2) {
-            ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc2_cali_handle, adc_raw[1][0], &voltage[1][0]));
+            ESP_ERROR_CHECK(adc_cali_chan_raw_to_voltage(adc2_cali_handle, EXAMPLE_ADC2_CHAN0, adc_raw[1][0], &voltage[1][0]));
             ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_2 + 1, EXAMPLE_ADC2_CHAN0, voltage[1][0]);
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -181,7 +181,7 @@ static bool example_adc_calibration_init(adc_unit_t unit, adc_channel_t channel,
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "Calibration Success");
     } else if (ret == ESP_ERR_NOT_SUPPORTED || !calibrated) {
-        ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
+        ESP_LOGW(TAG, "eFuse not burnt, skip ADC calibration");
     } else {
         ESP_LOGE(TAG, "Invalid arg or no memory");
     }
