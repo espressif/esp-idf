@@ -54,6 +54,7 @@ static void bt_app_avrc_ct_evt_hdl(uint16_t event, void *param)
         break;
     }
     case ESP_AVRC_CT_CONNECTION_STATE_EVT: {
+        bt_avrc_common_ct_set_conn_hdl(rc->conn_stat.connected ? rc->conn_stat.conn_hdl : ESP_A2D_INVALID_CONN_HDL);
         bt_avrc_md_ct_evt_hdl(event, param);
         bt_avrc_ca_ct_evt_hdl(event, param);
         if (rc->conn_stat.connected) {

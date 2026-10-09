@@ -36,6 +36,16 @@ void bt_avrc_common_tg_evt_def_hdl(uint16_t event, void *param);
 uint8_t bt_avrc_common_alloc_tl(void);
 
 /**
+ * @brief  Remember the A2DP connection handle of the current AVRCP controller peer.
+ */
+void bt_avrc_common_ct_set_conn_hdl(esp_a2d_conn_hdl_t conn_hdl);
+
+/**
+ * @brief  A2DP connection handle saved by bt_avrc_common_ct_set_conn_hdl().
+ */
+esp_a2d_conn_hdl_t bt_avrc_common_ct_get_conn_hdl(void);
+
+/**
  * @brief  AVRCP deep copy function
  *
  * @param [in] p_dest   pointer to destination data

@@ -128,7 +128,7 @@ config BT_A2DP_CODEC_AAC_ENABLED
         Currently, only the A2DP sink supports AAC codec.
 
 config BT_A2DP_SEP_NUM_MAX
-    int "Maximum number of codec SEPs registered per A2DP connection"
+    int "Maximum number of Stream End Points registered per A2DP connection"
     depends on BT_A2DP_USE_EXTERNAL_CODEC
     default 2 if BT_A2DP_CODEC_AAC_ENABLED
     default 1

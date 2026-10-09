@@ -243,20 +243,6 @@ void BTA_AvDisconnect(BD_ADDR bd_addr)
 
 /*******************************************************************************
 **
-** Function         BTA_AvStart
-**
-** Description      Start audio/video stream data transfer.
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_AvStart(void)
-{
-    BTA_AvStartByHndl(0);
-}
-
-/*******************************************************************************
-**
 ** Function         BTA_AvStartByHndl
 **
 ** Description      Start audio/video stream data transfer on a single stream.
@@ -297,22 +283,6 @@ void BTA_AvEnable_Sink(int enable)
 #else
     return;
 #endif
-}
-
-/*******************************************************************************
-**
-** Function         BTA_AvStop
-**
-** Description      Stop audio/video stream data transfer.
-**                  If suspend is TRUE, this function sends AVDT suspend signal
-**                  to the connected peer(s).
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_AvStop(BOOLEAN suspend)
-{
-    BTA_AvStopByHndl(0, suspend);
 }
 
 /*******************************************************************************

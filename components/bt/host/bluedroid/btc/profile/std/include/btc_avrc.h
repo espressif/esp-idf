@@ -50,42 +50,42 @@ typedef enum {
 #endif
 } btc_avrc_act_t;
 
-/* 'remote_bda' selects the target device, an all-zero address means the
- * currently active one so that the legacy APIs keep working. */
+/* conn_hdl selects the A2DP connection. ESP_A2D_INVALID_CONN_HDL means the
+ * currently active one, so the deprecated APIs keep working. */
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl; /* transaction label */
     uint8_t key_code;
     uint8_t key_state;
 } pt_cmd_t;
 
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t attr_mask;
 } md_cmd_t;
 
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t event_id;
     uint32_t event_parameter;
 } rn_cmd_t;
 
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t attr_id;
     uint8_t value_id;
 } ps_cmd_t;
 
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
 } get_caps_cmd_t;
 
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
 } get_play_status_cmd_t;
 
@@ -93,7 +93,7 @@ typedef struct {
 #define BTC_AVRC_MAX_VOLUME 0x7f
 
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t volume;
 } set_abs_vol_cmd_t;
@@ -203,7 +203,7 @@ extern btc_rc_cb_t *btc_rc_cb_ptr;
 #endif ///AVRC_DYNAMIC_MEMORY == FALSE
 
 typedef struct {
-    BD_ADDR remote_bda;
+    esp_a2d_conn_hdl_t conn_hdl;
     esp_avrc_rn_event_ids_t event_id;
     esp_avrc_rn_rsp_t rsp;
     esp_avrc_rn_param_t param;

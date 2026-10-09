@@ -11,7 +11,6 @@ Bluedroid
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_hf_defs.h`
 
         - 类型 ``esp_hf_wbs_config_t`` 已替换为 ``esp_hf_codec_mode_t``，新的公开类型表示协商得到的编解码（CVSD， mSBC 或 LC3-SWB），而不再是“是否开启宽带语音”的开关。``esp_hf_wbs_config_t`` 保留为 ``esp_hf_codec_mode_t`` 的废弃别名。
-
         - 枚举名已重命名，数值 0 / 1 / 2 保持不变。旧的 ``ESP_HF_WBS_*`` 名称仍作为宏别名指向新枚举：
 
             .. list-table::
@@ -51,6 +50,31 @@ Bluedroid
         - ``ESP_HF_WBS_RESPONSE_EVT`` （``wbs_rep``）：字段 ``codec`` 的类型改为 ``esp_hf_codec_mode_t``。字段名 ``codec`` 未改。新增 ``status`` 字段（``esp_bt_status_t``），用于报告请求是否成功。
 
         - ``ESP_HF_BCS_RESPONSE_EVT`` （``bcs_rep``）：字段 ``mode`` 的类型改为 ``esp_hf_codec_mode_t``。字段名 ``mode`` 未改。
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_a2dp_api.h`
+
+        - ``ESP_A2D_MEDIA_CTRL_ACK_EVT`` （``media_ctrl_stat``）新增 ``conn_hdl``，表示被确认的媒体控制命令所属的 A2DP 连接句柄。
+
+        - 断开连接和媒体控制可以按连接句柄指定目标连接。句柄来自 ``ESP_A2D_CONNECTION_STATE_EVT`` 上报的 ``conn_hdl``。原先按地址、或不带连接参数的 API 仍然保留，并标记为废弃：
+
+            .. list-table::
+               :header-rows: 1
+               :widths: 50 50
+
+               * - 废弃 API
+                 - 替代 API
+               * - ``esp_a2d_sink_disconnect()``
+                 - ``esp_a2d_sink_disconnect_by_handle()``
+               * - ``esp_a2d_source_disconnect()``
+                 - ``esp_a2d_source_disconnect_by_handle()``
+               * - ``esp_a2d_media_ctrl()``
+                 - ``esp_a2d_media_ctrl_by_handle()``
+
+        - 与当前 A2DP 连接不匹配的句柄不会生效。媒体控制会以 ``ESP_A2D_MEDIA_CTRL_ACK_FAILURE`` 应答。断开请求会被忽略。
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_avrc_api.h`
+
+        - 应用侧 AVRCP Controller 命令只能使用事务标签 ``0`` 到 ``ESP_USER_AVRC_TRANS_LABEL_MAX`` （13）。``14`` 和 ``15`` 保留给协议栈（A2DP Sink 切换活动设备时的 Play/Pause）。向发送类 API 传入 14 或 15 会返回 ``ESP_ERR_INVALID_ARG``。``ESP_AVRC_TRANS_LABEL_MAX`` 仍为 15（协议最大值）。
 
     建议替换：
 

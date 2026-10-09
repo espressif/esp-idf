@@ -27,6 +27,7 @@ typedef struct {
  ******************************/
 
 static avrc_common_cb_t s_avrc_common_cb;
+static esp_a2d_conn_hdl_t s_ct_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
 
 /********************************
  * EXTERNAL FUNCTION DEFINITIONS
@@ -42,6 +43,7 @@ void bt_avrc_common_ct_evt_def_hdl(uint16_t event, void *param)
     /* when connection state changed, this event comes */
     case ESP_AVRC_CT_CONNECTION_STATE_EVT: {
         uint8_t *bda = rc->conn_stat.remote_bda;
+        s_ct_conn_hdl = rc->conn_stat.connected ? rc->conn_stat.conn_hdl : ESP_A2D_INVALID_CONN_HDL;
         ESP_LOGI(BT_RC_CT_TAG, "AVRC conn_state event: state %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
                  rc->conn_stat.connected, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
         break;
@@ -149,7 +151,7 @@ void bt_avrc_common_tg_evt_def_hdl(uint16_t event, void *param)
 
 uint8_t bt_avrc_common_alloc_tl(void)
 {
-    if (s_avrc_common_cb.tl > ESP_AVRC_TRANS_LABEL_MAX) {
+    if (s_avrc_common_cb.tl > ESP_USER_AVRC_TRANS_LABEL_MAX) {
         s_avrc_common_cb.tl = 0;
     }
 
@@ -181,9 +183,19 @@ void bt_avrc_common_free_metadata(void *p_param)
     }
 }
 
+void bt_avrc_common_ct_set_conn_hdl(esp_a2d_conn_hdl_t conn_hdl)
+{
+    s_ct_conn_hdl = conn_hdl;
+}
+
+esp_a2d_conn_hdl_t bt_avrc_common_ct_get_conn_hdl(void)
+{
+    return s_ct_conn_hdl;
+}
+
 void bt_avrc_common_ct_get_peer_rn_cap(void)
 {
-    esp_avrc_ct_send_get_rn_capabilities_cmd(bt_avrc_common_alloc_tl());
+    esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_ct_conn_hdl, bt_avrc_common_alloc_tl());
 }
 
 void bt_avrc_common_ct_set_peer_rn_cap(uint16_t peer_rn_cap_t)
@@ -196,7 +208,7 @@ void bt_avrc_common_ct_rn_track_changed(void)
     /* register notification if peer support the event_id */
     if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_common_cb.peer_rn_cap,
                                            ESP_AVRC_RN_TRACK_CHANGE)) {
-        esp_avrc_ct_send_register_notification_cmd(bt_avrc_common_alloc_tl(), ESP_AVRC_RN_TRACK_CHANGE, 0);
+        esp_avrc_ct_send_register_notification_cmd_by_handle(s_ct_conn_hdl, bt_avrc_common_alloc_tl(), ESP_AVRC_RN_TRACK_CHANGE, 0);
     }
 }
 
@@ -205,7 +217,7 @@ void bt_avrc_common_ct_rn_play_status_changed(void)
     /* register notification if peer support the event_id */
     if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_common_cb.peer_rn_cap,
                                            ESP_AVRC_RN_PLAY_STATUS_CHANGE)) {
-        esp_avrc_ct_send_register_notification_cmd(bt_avrc_common_alloc_tl(), ESP_AVRC_RN_PLAY_STATUS_CHANGE, 0);
+        esp_avrc_ct_send_register_notification_cmd_by_handle(s_ct_conn_hdl, bt_avrc_common_alloc_tl(), ESP_AVRC_RN_PLAY_STATUS_CHANGE, 0);
     }
 }
 
@@ -214,7 +226,7 @@ void bt_avrc_common_ct_rn_play_pos_changed(void)
     /* register notification if peer support the event_id */
     if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_common_cb.peer_rn_cap,
                                            ESP_AVRC_RN_PLAY_POS_CHANGED)) {
-        esp_avrc_ct_send_register_notification_cmd(bt_avrc_common_alloc_tl(), ESP_AVRC_RN_PLAY_POS_CHANGED, 10);
+        esp_avrc_ct_send_register_notification_cmd_by_handle(s_ct_conn_hdl, bt_avrc_common_alloc_tl(), ESP_AVRC_RN_PLAY_POS_CHANGED, 10);
     }
 }
 

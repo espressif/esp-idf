@@ -11,16 +11,18 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_bt_defs.h"
+#include "esp_a2dp_api.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ESP_AVRC_TRANS_LABEL_MAX        15       /*!< max transaction label */
+#define ESP_AVRC_TRANS_LABEL_MAX        15                              /*!< protocol max transaction label (0 to 15) */
+#define ESP_USER_AVRC_TRANS_LABEL_MAX   (ESP_AVRC_TRANS_LABEL_MAX - 2)  /*!< max transaction label for *_by_handle APIs (0 to 13); 14 and 15 are reserved for stack-initiated Play/Pause */
 
-#define ESP_AVRC_CA_IMAGE_HANDLE_LEN    7        /*!< The image handle length is fixed to 7, specified by Basic Image Profile */
-#define ESP_AVRC_CA_MTU_MIN             255      /*!< Minimal MTU can be used in Cover Art OBEX connection */
-#define ESP_AVRC_CA_MTU_MAX             1691     /*!< Maximum MTU can be used in Cover Art OBEX connection */
+#define ESP_AVRC_CA_IMAGE_HANDLE_LEN    7                               /*!< The image handle length is fixed to 7, specified by Basic Image Profile */
+#define ESP_AVRC_CA_MTU_MIN             255                             /*!< Minimal MTU can be used in Cover Art OBEX connection */
+#define ESP_AVRC_CA_MTU_MAX             1691                            /*!< Maximum MTU can be used in Cover Art OBEX connection */
 
 /// AVRC feature bit mask
 typedef enum {
@@ -326,17 +328,18 @@ typedef union {
     struct avrc_ct_conn_stat_param {
         bool connected;                          /*!< whether AVRC connection is set up */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } conn_stat;                                 /*!< AVRC connection status */
 
     /**
      * @brief ESP_AVRC_CT_PASSTHROUGH_RSP_EVT
      */
     struct avrc_ct_psth_rsp_param {
-        uint8_t tl;                              /*!< transaction label, 0 to 15 */
+        uint8_t tl;                              /*!< transaction label, 0 to 15. 14 and 15 may appear for stack-initiated Play/Pause */
         uint8_t key_code;                        /*!< passthrough command code */
         uint8_t key_state;                       /*!< 0 for PRESSED, 1 for RELEASED */
         esp_avrc_rsp_t rsp_code;                 /*!< response code */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } psth_rsp;                                  /*!< passthrough command response */
 
     /**
@@ -346,7 +349,7 @@ typedef union {
         uint8_t attr_id;                         /*!< id of metadata attribute */
         uint8_t *attr_text;                      /*!< attribute itself */
         int attr_length;                         /*!< attribute character length */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } meta_rsp;                                  /*!< metadata attributes response */
 
     /**
@@ -356,7 +359,7 @@ typedef union {
         uint32_t song_length;                    /*!< total length of the playing song in milliseconds */
         uint32_t song_position;                  /*!< current position of the playing song in milliseconds elapsed */
         esp_avrc_playback_stat_t play_status;    /*!< current status of playing */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } play_status_rsp;                           /*!< get play status command response */
 
     /**
@@ -365,7 +368,7 @@ typedef union {
     struct avrc_ct_change_notify_param {
         uint8_t event_id;                        /*!< id of AVRC event notification */
         esp_avrc_rn_param_t event_parameter;     /*!< event notification parameter */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } change_ntf;                                /*!< notifications */
 
     /**
@@ -375,6 +378,7 @@ typedef union {
         uint32_t feat_mask;                      /*!< AVRC feature mask of remote device */
         uint16_t tg_feat_flag;                   /*!< feature flag of remote device as TG */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } rmt_feats;                                 /*!< AVRC features discovered from remote SDP server */
 
     /**
@@ -383,7 +387,7 @@ typedef union {
     struct avrc_ct_get_rn_caps_rsp_param {
         uint8_t cap_count;                       /*!< number of items provided in event or company_id according to cap_id used */
         esp_avrc_rn_evt_cap_mask_t evt_set;      /*!< supported event_ids represented in bit-mask */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } get_rn_caps_rsp;                           /*!< get supported event capabilities response from AVRCP target */
 
     /**
@@ -391,7 +395,7 @@ typedef union {
      */
     struct avrc_ct_set_volume_rsp_param {
         uint8_t volume;                          /*!< the volume which has actually been set, range is 0 to 0x7f, means 0% to 100% */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } set_volume_rsp;                            /*!< set absolute volume response event */
 
     /**
@@ -429,6 +433,7 @@ typedef union {
     struct avrc_tg_conn_stat_param {
         bool connected;                          /*!< whether AVRC connection is set up */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } conn_stat;                                 /*!< AVRC connection status */
 
     /**
@@ -438,6 +443,7 @@ typedef union {
         uint32_t feat_mask;                      /*!< AVRC feature mask of remote device */
         uint16_t ct_feat_flag;                   /*!< feature flag of remote device as CT */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } rmt_feats;                                 /*!< AVRC features discovered through SDP */
 
     /**
@@ -446,7 +452,7 @@ typedef union {
     struct avrc_tg_psth_cmd_param {
         uint8_t key_code;                        /*!< passthrough command code */
         uint8_t key_state;                       /*!< 0 for PRESSED, 1 for RELEASED */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } psth_cmd;                                  /*!< passthrough command */
 
     /**
@@ -454,7 +460,7 @@ typedef union {
      */
     struct avrc_tg_set_abs_vol_param {
         uint8_t volume;                          /*!< volume ranges from 0 to 127 */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } set_abs_vol;                               /*!< set absolute volume command targeted on audio sink */
 
     /**
@@ -463,7 +469,7 @@ typedef union {
     struct avrc_tg_reg_ntf_param {
         uint8_t event_id;                        /*!< event id of AVRC RegisterNotification */
         uint32_t event_parameter;                /*!< event notification parameter */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } reg_ntf;                                   /*!< register notification */
 
     /**
@@ -472,7 +478,7 @@ typedef union {
     struct avrc_tg_set_app_value_param {
         uint8_t num_val;                        /*!< attribute num */
         esp_avrc_set_app_value_param_t *p_vals; /*!< point to the id and value of player application attribute */
-        esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
     } set_app_value;                            /*!< set player application value */
 
     /**
@@ -551,7 +557,7 @@ esp_err_t esp_avrc_ct_deinit(void);
  * @brief           Send player application settings command to AVRCP target. This function should be called
  *                  after ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
  *
- * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values
+ * @param[in]       tl : transaction label, 0 to ESP_AVRC_TRANS_LABEL_MAX (15). Consecutive commands should use different values.
  *
  * @param[in]       attr_id : player application setting attribute IDs from one of esp_avrc_ps_attr_ids_t
  *
@@ -561,63 +567,65 @@ esp_err_t esp_avrc_ct_deinit(void);
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
+ *
+ * @deprecated      Please use esp_avrc_ct_send_set_player_value_cmd_by_handle() instead.
  */
-esp_err_t esp_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id);
+esp_err_t esp_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id)
+__attribute__((deprecated("Please use esp_avrc_ct_send_set_player_value_cmd_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_ct_send_set_player_value_cmd(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Send player application settings command to the AVRCP target identified by
+ *                  connection handle.
  *
- * @param[in]       remote_bda : address of the AVRCP peer to send the command to
- *
- * @param[in]       tl, attr_id, value_id : see esp_avrc_ct_send_set_player_value_cmd()
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
+ * @param[in]       attr_id, value_id : see esp_avrc_ct_send_set_player_value_cmd()
  *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid connection handle or command argument
  *                  - ESP_FAIL: others
  */
-esp_err_t esp_avrc_ct_send_set_player_value_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl, uint8_t attr_id,
-                                                   uint8_t value_id);
-
+esp_err_t esp_avrc_ct_send_set_player_value_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
+                                                          uint8_t attr_id, uint8_t value_id);
 
 /**
  * @brief           Send GetCapabilities PDU to AVRCP target to retrieve remote device's supported
  *                  notification event_ids. This function should be called after
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
  *
- * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values
+ * @param[in]       tl : transaction label, 0 to ESP_AVRC_TRANS_LABEL_MAX (15). Consecutive commands should use different values.
  *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
+ *
+ * @deprecated      Please use esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle() instead.
  */
-esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd(uint8_t tl);
+esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd(uint8_t tl)
+__attribute__((deprecated("Please use esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_ct_send_get_rn_capabilities_cmd(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Send GetCapabilities to the AVRCP target identified by connection handle.
  *
- * @param[in]       remote_bda : address of the AVRCP peer to send the command to
- *
- * @param[in]       tl : see esp_avrc_ct_send_get_rn_capabilities_cmd()
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid connection handle or transaction label
  *                  - ESP_FAIL: others
  */
-esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl);
-
+esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl);
 
 /**
  * @brief           Send register notification command to AVRCP target. This function should be called after
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
  *
- * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       tl : transaction label, 0 to ESP_AVRC_TRANS_LABEL_MAX (15). Consecutive commands should use different values.
  *
  * @param[in]       event_id : id of events, e.g. ESP_AVRC_RN_PLAY_STATUS_CHANGE, ESP_AVRC_RN_TRACK_CHANGE, etc.
  *
@@ -628,33 +636,27 @@ esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_to(esp_bd_addr_t remote_bda, 
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_ERR_NOT_SUPPORTED: if the event_id is not supported in current implementation
  *                  - ESP_FAIL: others
+ *
+ * @deprecated      Please use esp_avrc_ct_send_register_notification_cmd_by_handle() instead.
  */
-esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_id, uint32_t event_parameter);
+esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_id, uint32_t event_parameter)
+__attribute__((deprecated("Please use esp_avrc_ct_send_register_notification_cmd_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_ct_send_register_notification_cmd(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Register notification on the AVRCP target identified by connection handle.
  *
- * @param[in]       remote_bda : address of the AVRCP peer to send the command to
- *
- * @param[in]       tl, event_id, event_parameter : see esp_avrc_ct_send_register_notification_cmd()
- *
- * @return
- *                  - ESP_OK: success
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_NOT_SUPPORTED: if the event_id is not supported in current implementation
- *                  - ESP_FAIL: others
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
+ * @param[in]       event_id, event_parameter : see esp_avrc_ct_send_register_notification_cmd()
  */
-esp_err_t esp_avrc_ct_send_register_notification_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl, uint8_t event_id,
-                                                        uint32_t event_parameter);
-
+esp_err_t esp_avrc_ct_send_register_notification_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
+                                                               uint8_t event_id, uint32_t event_parameter);
 
 /**
  * @brief           Send set absolute volume command to AVRCP target. This function should be called after
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
  *
- * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values
+ * @param[in]       tl : transaction label, 0 to ESP_AVRC_TRANS_LABEL_MAX (15). Consecutive commands should use different values.
  *
  * @param[in]       volume : volume, 0 to 0x7f, means 0% to 100%
  *
@@ -663,32 +665,26 @@ esp_err_t esp_avrc_ct_send_register_notification_cmd_to(esp_bd_addr_t remote_bda
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_ERR_NOT_SUPPORTED: if the event_id is not supported in current implementation
  *                  - ESP_FAIL: others
+ *
+ * @deprecated      Please use esp_avrc_ct_send_set_absolute_volume_cmd_by_handle() instead.
  */
-esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t volume);
+esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t volume)
+__attribute__((deprecated("Please use esp_avrc_ct_send_set_absolute_volume_cmd_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_ct_send_set_absolute_volume_cmd(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Set absolute volume on the AVRCP target identified by connection handle.
  *
- * @param[in]       remote_bda : address of the AVRCP peer to send the command to
- *
- * @param[in]       tl, volume : see esp_avrc_ct_send_set_absolute_volume_cmd()
- *
- * @return
- *                  - ESP_OK: success
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_NOT_SUPPORTED: if the event_id is not supported in current implementation
- *                  - ESP_FAIL: others
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
+ * @param[in]       volume : see esp_avrc_ct_send_set_absolute_volume_cmd()
  */
-esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl, uint8_t volume);
-
+esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume);
 
 /**
  * @brief           Send metadata command to AVRCP target. This function should be called after
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
  *
- * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       tl : transaction label, 0 to ESP_AVRC_TRANS_LABEL_MAX (15). Consecutive commands should use different values.
  *
  * @param[in]       attr_mask : mask of attributes, e.g. ESP_AVRC_MD_ATTR_ID_TITLE | ESP_AVRC_MD_ATTR_ID_ARTIST.
  *
@@ -696,32 +692,26 @@ esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_to(esp_bd_addr_t remote_bda, 
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
+ *
+ * @deprecated      Please use esp_avrc_ct_send_metadata_cmd_by_handle() instead.
  */
-esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask);
+esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask)
+__attribute__((deprecated("Please use esp_avrc_ct_send_metadata_cmd_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_ct_send_metadata_cmd(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Send a metadata command to the AVRCP target identified by connection handle.
  *
- * @param[in]       remote_bda : address of the AVRCP peer to send the command to
- *
- * @param[in]       tl, attr_mask : see esp_avrc_ct_send_metadata_cmd()
- *
- * @return
- *                  - ESP_OK: success
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: others
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
+ * @param[in]       attr_mask : see esp_avrc_ct_send_metadata_cmd()
  */
-esp_err_t esp_avrc_ct_send_metadata_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl, uint8_t attr_mask);
-
-
+esp_err_t esp_avrc_ct_send_metadata_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask);
 
 /**
  * @brief           Send passthrough command to AVRCP target. This function should be called after
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
  *
- * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       tl : transaction label, 0 to ESP_AVRC_TRANS_LABEL_MAX (15). Consecutive commands should use different values.
  *
  * @param[in]       key_code : passthrough command code, e.g. ESP_AVRC_PT_CMD_PLAY, ESP_AVRC_PT_CMD_STOP, etc.
  *
@@ -732,56 +722,45 @@ esp_err_t esp_avrc_ct_send_metadata_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl,
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
+ *
+ * @deprecated      Please use esp_avrc_ct_send_passthrough_cmd_by_handle() instead.
  */
-esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state);
+esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
+__attribute__((deprecated("Please use esp_avrc_ct_send_passthrough_cmd_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_ct_send_passthrough_cmd(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Send a passthrough command to the AVRCP target identified by connection handle.
  *
- * @param[in]       remote_bda : address of the AVRCP peer to send the command to
- *
- * @param[in]       tl, key_code, key_state : see esp_avrc_ct_send_passthrough_cmd()
- *
- * @return
- *                  - ESP_OK: success
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: others
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
+ * @param[in]       key_code, key_state : see esp_avrc_ct_send_passthrough_cmd()
  */
-esp_err_t esp_avrc_ct_send_passthrough_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl, uint8_t key_code,
-                                              uint8_t key_state);
-
+esp_err_t esp_avrc_ct_send_passthrough_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code,
+                                                     uint8_t key_state);
 
 /**
  * @brief           Send get play status command to AVRCP target. This function should be called after
  *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
  *
- * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       tl : transaction label, 0 to ESP_AVRC_TRANS_LABEL_MAX (15). Consecutive commands should use different values.
  *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
+ *
+ * @deprecated      Please use esp_avrc_ct_send_get_play_status_cmd_by_handle() instead.
  */
-esp_err_t esp_avrc_ct_send_get_play_status_cmd(uint8_t tl);
+esp_err_t esp_avrc_ct_send_get_play_status_cmd(uint8_t tl)
+__attribute__((deprecated("Please use esp_avrc_ct_send_get_play_status_cmd_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_ct_send_get_play_status_cmd(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Get play status from the AVRCP target identified by connection handle.
  *
- * @param[in]       remote_bda : address of the AVRCP peer to send the command to
- *
- * @param[in]       tl : see esp_avrc_ct_send_get_play_status_cmd()
- *
- * @return
- *                  - ESP_OK: success
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: others
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  */
-esp_err_t esp_avrc_ct_send_get_play_status_cmd_to(esp_bd_addr_t remote_bda, uint8_t tl);
-
+esp_err_t esp_avrc_ct_send_get_play_status_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl);
 
 /**
  * @brief           Register application callbacks to AVRCP target module. This function should be
@@ -972,27 +951,21 @@ bool esp_avrc_rn_evt_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_rn_e
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC TG is not initialized
  *                  - ESP_ERR_INVALID_ARG: if evt_set is NULL
  *
+ *
+ * @deprecated      Please use esp_avrc_tg_send_rn_rsp_by_handle() instead.
  */
 esp_err_t esp_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_rsp_t rsp,
-                                  esp_avrc_rn_param_t *param);
+                                  esp_avrc_rn_param_t *param)
+__attribute__((deprecated("Please use esp_avrc_tg_send_rn_rsp_by_handle() instead")));
 
 /**
- * @brief           Same as esp_avrc_tg_send_rn_rsp(), but addressed at a specific device.
- *                  Needed when several AVRCP sessions are up at the same time, the version without
- *                  a target device acts on the device that is currently rendered.
+ * @brief           Send a RegisterNotification response to the controller identified by connection handle.
  *
- * @param[in]       remote_bda: address of the AVRCP peer that registered the notification
- *
+ * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       event_id, rsp, param : see esp_avrc_tg_send_rn_rsp()
- *
- * @return
- *                  - ESP_OK: success
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC TG is not initialized
- *                  - ESP_ERR_INVALID_ARG: if evt_set is NULL
- *
  */
-esp_err_t esp_avrc_tg_send_rn_rsp_to(esp_bd_addr_t remote_bda, esp_avrc_rn_event_ids_t event_id,
-                                     esp_avrc_rn_rsp_t rsp, esp_avrc_rn_param_t *param);
+esp_err_t esp_avrc_tg_send_rn_rsp_by_handle(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
+                                            esp_avrc_rn_rsp_t rsp, esp_avrc_rn_param_t *param);
 
 /**
  *

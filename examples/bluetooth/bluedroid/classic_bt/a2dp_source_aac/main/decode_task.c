@@ -53,7 +53,7 @@ typedef struct {
     uint32_t rtp_ts;
 } aac_stream_ctx_t;
 
-static esp_a2d_conn_hdl_t s_conn_hdl;
+static esp_a2d_conn_hdl_t s_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
 static uint16_t s_audio_mtu;
 static esp_a2d_mcc_t s_stream_mcc;
 static bool s_stream_mcc_valid;
@@ -472,7 +472,7 @@ void encode_task_stop(void)
     for (unsigned waited_ms = 0; waited_ms < A2DP_SRC_STREAM_STOP_WAIT_MS; waited_ms += 10) {
         if (s_stream_task_hdl == NULL) {
             ESP_LOGI(ENCODE_TASK_TAG, "stream task stopped");
-            s_conn_hdl = 0;
+            s_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
             s_audio_mtu = 0;
             return;
         }
@@ -486,7 +486,7 @@ void encode_task_stop(void)
         s_stream_run = false;
     }
 
-    s_conn_hdl = 0;
+    s_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
     s_audio_mtu = 0;
 }
 

@@ -17,6 +17,7 @@
 #ifndef __BTC_AV_H__
 #define __BTC_AV_H__
 
+#include <stdbool.h>
 #include "common/bt_target.h"
 #include "esp_a2dp_api.h"
 #include "btc/btc_task.h"
@@ -107,7 +108,13 @@ typedef union {
     // BTC_AV_SINK_API_CONNECT_EVT
     bt_bdaddr_t connect;
     // BTC_AV_SINK_API_DISCONNECT_EVT
-    bt_bdaddr_t disconn;
+    struct {
+        /* TODO: sentinel for deprecated esp_a2d_sink_disconnect(). Remove it
+         * when that API is deleted; a disconnect message must carry a real handle.
+         */
+        esp_a2d_conn_hdl_t conn_hdl;
+        bt_bdaddr_t bda;
+    } disconn;
     // BTC_AV_SINK_API_REG_DATA_CB_EVT
     esp_a2d_sink_data_cb_t data_cb;
     // BTC_AV_SINK_API_REG_AUDIO_DATA_CB_EVT
@@ -115,7 +122,7 @@ typedef union {
     // BTC_AV_SINK_API_SET_DELAY_VALUE_EVT
     uint16_t delay_value;
     // BTC_AV_SINK_API_SET_ACTIVE_DEVICE_EVT
-    bt_bdaddr_t set_active;
+    esp_a2d_conn_hdl_t set_active;
 #endif  /* BTC_AV_SINK_INCLUDED */
 #if BTC_AV_SRC_INCLUDED
     // BTC_AV_SRC_API_REG_DATA_CB_EVT
@@ -123,7 +130,13 @@ typedef union {
     // BTC_AV_SRC_API_CONNECT
     bt_bdaddr_t src_connect;
     // BTC_AV_SRC_API_DISCONNECT_EVT
-    bt_bdaddr_t src_disconn;
+    struct {
+        /* TODO: sentinel for deprecated esp_a2d_source_disconnect(). Remove it
+         * when that API is deleted; a disconnect message must carry a real handle.
+         */
+        esp_a2d_conn_hdl_t conn_hdl;
+        bt_bdaddr_t bda;
+    } src_disconn;
     // BTC_AV_SRC_API_SET_PREF_MCC_EVT
     struct {
         esp_a2d_conn_hdl_t conn_hdl;
@@ -141,7 +154,13 @@ typedef union {
         esp_a2d_mcc_t mcc;
     } reg_sep;
     // BTC_AV_API_MEDIA_CTRL_EVT
-    esp_a2d_media_ctrl_t ctrl;
+    struct {
+        esp_a2d_media_ctrl_t ctrl;
+        /* TODO: sentinel for deprecated esp_a2d_media_ctrl(). Remove it when
+         * that API is deleted; a media-control message must carry a real handle.
+         */
+        esp_a2d_conn_hdl_t conn_hdl;
+    } media_ctrl;
 } btc_av_args_t;
 
 /*******************************************************************************
@@ -197,30 +216,6 @@ btc_sm_handle_t btc_av_get_sm_handle(void);
 
 /*******************************************************************************
 **
-** Function         btc_av_stream_ready
-**
-** Description      Checks whether AV is ready for starting a stream
-**
-** Returns          None
-**
-*******************************************************************************/
-
-BOOLEAN btc_av_stream_ready(void);
-
-/*******************************************************************************
-**
-** Function         btc_av_stream_started_ready
-**
-** Description      Checks whether AV ready for media start in streaming state
-**
-** Returns          None
-**
-*******************************************************************************/
-
-BOOLEAN btc_av_stream_started_ready(void);
-
-/*******************************************************************************
-**
 ** Function         btc_dispatch_sm_event
 **
 ** Description      Send event to AV statemachine
@@ -272,13 +267,13 @@ uint8_t btc_av_get_peer_sep(void);
 **
 ** Function         btc_av_get_active_peer
 **
-** Description      Get the address of the peer selected for rendering. The
-**                  peer may still be idle after a set-active request.
+** Description      Get the connection handle of the peer selected for rendering.
+**                  The peer may still be idle after a set-active request.
 **
 ** Returns          TRUE when a peer is selected
 **
 *******************************************************************************/
-BOOLEAN btc_av_get_active_peer(BD_ADDR peer_addr);
+BOOLEAN btc_av_get_active_peer(esp_a2d_conn_hdl_t *conn_hdl);
 
 /*******************************************************************************
 **
@@ -290,7 +285,7 @@ BOOLEAN btc_av_get_active_peer(BD_ADDR peer_addr);
 ** Returns          TRUE when the peer became the active one
 **
 *******************************************************************************/
-BOOLEAN btc_av_set_active_peer(BD_ADDR peer_addr);
+BOOLEAN btc_av_set_active_peer(esp_a2d_conn_hdl_t conn_hdl);
 
 /*******************************************************************************
 **
@@ -359,12 +354,78 @@ BOOLEAN btc_av_get_sink_codec_info(uint16_t hndl, tBTC_AV_CODEC_INFO *out);
 **
 ** Function         btc_a2d_conn_handle_get
 **
-** Description      Get connection handle from btc_av_cb
+** Description      Get connection handle of the peer currently rendered, or of
+**                  any connected peer when none is selected.
 **
-** Returns          Void
+** Returns          The connection handle, or ESP_A2D_INVALID_CONN_HDL if the
+**                  control block is not allocated
 **
 *******************************************************************************/
-uint16_t btc_a2d_conn_handle_get(void);
+esp_a2d_conn_hdl_t btc_a2d_conn_handle_get(void);
+
+/*******************************************************************************
+**
+** Function         btc_a2d_conn_hdl_is_valid
+**
+** Description      TRUE when conn_hdl belongs to a peer that is not IDLE.
+**
+** Returns          true if the handle is valid
+**
+*******************************************************************************/
+bool btc_a2d_conn_hdl_is_valid(esp_a2d_conn_hdl_t conn_hdl);
+
+/*******************************************************************************
+**
+** Function         btc_a2d_conn_hdl_get_by_bda
+**
+** Description      Resolve an A2DP connection handle from a peer address.
+**                  Called on the BTC task for the deprecated
+**                  esp_a2d_sink_disconnect() and esp_a2d_source_disconnect().
+**                  Remove this function together with those two APIs.
+**
+** Returns          The connection handle, or ESP_A2D_INVALID_CONN_HDL if the
+**                  address does not match a connected peer
+**
+*******************************************************************************/
+esp_a2d_conn_hdl_t btc_a2d_conn_hdl_get_by_bda(const esp_bd_addr_t remote_bda);
+
+/*******************************************************************************
+**
+** Function         btc_a2d_conn_hdl_get_peer
+**
+** Description      Peer address of the A2DP connection identified by conn_hdl.
+**
+** Returns          true when the handle belongs to a connected peer
+**
+*******************************************************************************/
+bool btc_a2d_conn_hdl_get_peer(esp_a2d_conn_hdl_t conn_hdl, esp_bd_addr_t remote_bda);
+
+/*******************************************************************************
+**
+** Function         btc_av_conn_stream_ready
+**
+** Description      TRUE when this connection is OPENED and may be started.
+**
+*******************************************************************************/
+BOOLEAN btc_av_conn_stream_ready(esp_a2d_conn_hdl_t conn_hdl);
+
+/*******************************************************************************
+**
+** Function         btc_av_conn_stream_started_ready
+**
+** Description      TRUE when this connection is STARTED and may accept media.
+**
+*******************************************************************************/
+BOOLEAN btc_av_conn_stream_started_ready(esp_a2d_conn_hdl_t conn_hdl);
+
+/*******************************************************************************
+**
+** Function         btc_av_conn_is_connected
+**
+** Description      TRUE when this connection is not IDLE.
+**
+*******************************************************************************/
+BOOLEAN btc_av_conn_is_connected(esp_a2d_conn_hdl_t conn_hdl);
 
 /*******************************************************************************
 **

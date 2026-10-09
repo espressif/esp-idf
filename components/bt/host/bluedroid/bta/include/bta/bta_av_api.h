@@ -745,17 +745,6 @@ void BTA_AvEnable_Sink(int enable);
 
 /*******************************************************************************
 **
-** Function         BTA_AvStart
-**
-** Description      Start audio/video stream data transfer.
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_AvStart(void);
-
-/*******************************************************************************
-**
 ** Function         BTA_AvStartByHndl
 **
 ** Description      Start audio/video stream data transfer on the stream given by
@@ -765,19 +754,6 @@ void BTA_AvStart(void);
 **
 *******************************************************************************/
 void BTA_AvStartByHndl(tBTA_AV_HNDL hndl);
-
-/*******************************************************************************
-**
-** Function         BTA_AvStop
-**
-** Description      Stop audio/video stream data transfer.
-**                  If suspend is TRUE, this function sends AVDT suspend signal
-**                  to the connected peer(s).
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_AvStop(BOOLEAN suspend);
 
 /*******************************************************************************
 **

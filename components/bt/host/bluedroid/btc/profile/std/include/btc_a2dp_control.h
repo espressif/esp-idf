@@ -31,7 +31,7 @@
  ** Description      Handle the media_ctrl command
  **
  *******************************************************************************/
-void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl);
+void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl, esp_a2d_conn_hdl_t conn_hdl);
 
 
 /*******************************************************************************

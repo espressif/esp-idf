@@ -241,7 +241,7 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
     /* event was overwritten with the stream handle at enqueue time */
     UINT16  conn_hdl = p_msg->event;
 
-    if (conn_hdl == 0) {
+    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL) {
         conn_hdl = btc_a2d_conn_handle_get();
     }
 
