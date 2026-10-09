@@ -136,10 +136,13 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         # command-stream mode (it selects that mode when stdin is not a TTY).
         command_stream = open(command_file, 'rb') if command_file else None
         try:
+            # Run from the directory idf.py was invoked in: the idf.py command handed to the
+            # monitor to re-run (on a rebuild or flash request) is relative to it, as is any
+            # relative path in it such as -C, -B or an @file argument.
             RunTool(
                 'idf_monitor',
                 monitor_args,
-                args.project_dir,
+                os.getcwd(),
                 build_dir=args.build_dir,
                 hints=hints,
                 interactive=True,
