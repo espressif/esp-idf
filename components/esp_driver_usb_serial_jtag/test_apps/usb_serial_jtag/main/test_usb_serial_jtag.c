@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/param.h>
 #include "unity.h"
 #include "driver/usb_serial_jtag.h"
@@ -132,7 +133,9 @@ TEST_CASE("test rom printf work after driver installed", "[usb_serial_jtag]")
     usb_serial_jtag_vfs_use_driver();
 
     esp_rom_printf("hi, espressif1\n");
-    printf("hi, espressif2");
+    printf("hi, espressif2\n");
+    fflush(stdout);
+    fsync(fileno(stdout));
 
     usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
