@@ -10,3 +10,4 @@ Bluetooth\ :sup:`®` Classic
 
    overview
    profiles-protocols
+   :SOC_ORCA_BREDR_CONTROLLER: esp-bredr-controller-kconfig

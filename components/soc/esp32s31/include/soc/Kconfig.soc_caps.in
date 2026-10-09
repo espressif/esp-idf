@@ -1723,6 +1723,10 @@ config SOC_BT_CLASSIC_SUPPORTED
     bool
     default y
 
+config SOC_ORCA_BREDR_CONTROLLER
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
