@@ -33,9 +33,12 @@ extern "C" {
 /*---------------------------------------------------------------
                     Oneshot
 ---------------------------------------------------------------*/
+#define ADC_LL_RTC_MIN_BITWIDTH                        (9)
+#define ADC_LL_RTC_MAX_BITWIDTH                        (12)
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (1)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
+#define ADC_LL_ONESHOT_START_BY_UNIT                   1
 
 /*---------------------------------------------------------------
                     DMA

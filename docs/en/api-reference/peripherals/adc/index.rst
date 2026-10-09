@@ -14,57 +14,69 @@ This guide provides a comprehensive overview of the ADC (Analog to Digital Conve
 ADC Conversion
 ---------------
 
-ADC conversion is the process of converting an input analog voltage to a digital value. The results provided by the ADC driver APIs are raw data values that represent the analog input in digital form.
+.. only:: not esp32s31
 
-By default, the bit width of these raw ADC results is 12 bits. This means the input voltage range is divided into 4096 (2\ :sup:`12`) discrete levels, which defines the minimum detectable change in input signal.
+    ADC conversion is the process of converting an input analog voltage to a digital value. The results provided by the ADC driver APIs are raw data values that represent the analog input in digital form.
 
-The voltage ``Vdata`` corresponding to a raw ADC result ``data`` is calculated as:
+    By default, the bit width of these raw ADC results is 12 bits. This means the input voltage range is divided into 4096 (2\ :sup:`12`) discrete levels, which defines the minimum detectable change in input signal.
 
-.. math::
+    The voltage ``Vdata`` corresponding to a raw ADC result ``data`` is calculated as:
 
-    V_{data} = \frac{data}{2^{bitwidth} - 1} \times V_{ref}
+    .. math::
 
-Where:
+        V_{data} = \frac{data}{2^{bitwidth} - 1} \times V_{ref}
 
-- ``data`` is the raw ADC result.
-- ``bitwidth`` is the resolution of the ADC result (e.g., 12 bits).
-- ``Vref`` is the ADC’s reference voltage.
+    Where:
 
-By design, ``Vref`` is set to 1100 mV. However, due to manufacturing variations, the actual value may range between 1000 mV and 1200 mV depending on the chip.
+    - ``data`` is the raw ADC result.
+    - ``bitwidth`` is the resolution of the ADC result (e.g., 12 bits).
+    - ``Vref`` is the ADC’s reference voltage.
 
-To obtain calibrated and accurate voltage values, refer to the section :doc:`adc_calibration`, which explains how to use the ADC calibration driver to adjust the raw results based on the actual ``Vref`` value.
+    By design, ``Vref`` is set to 1100 mV. However, due to manufacturing variations, the actual value may range between 1000 mV and 1200 mV depending on the chip.
+
+    To obtain calibrated and accurate voltage values, refer to the section :doc:`adc_calibration`, which explains how to use the ADC calibration driver to adjust the raw results based on the actual ``Vref`` value.
+
+.. only:: esp32s31
+
+    ADC conversion is the process of converting an input analog voltage to a digital value. On ESP32-S31, use :cpp:func:`adc_cali_chan_raw_to_voltage` to convert the results from :cpp:func:`adc_oneshot_read` and :cpp:func:`adc_continuous_read` into voltage in millivolts.
 
 
 ADC Attenuation
 ---------------
 
-The ADC can measure analog voltages from 0 V to ``Vref``. To measure higher voltages, input signals can be attenuated before being passed to the ADC.
+.. only:: not esp32s31
 
-The supported attenuation levels are:
+    The ADC can measure analog voltages from 0 V to ``Vref``. To measure higher voltages, input signals can be attenuated before being passed to the ADC.
 
-- 0 dB (k≈100%)
-- 2.5 dB (k≈75%)
-- 6 dB (k≈50%)
-- 12 dB (k≈25%)
+    The supported attenuation levels are:
 
-Higher attenuation levels allow the ADC to measure higher input voltages. The voltage ``Vdata`` after applying attenuation can be calculated using:
+    - 0 dB (k≈100%)
+    - 2.5 dB (k≈75%)
+    - 6 dB (k≈50%)
+    - 12 dB (k≈25%)
 
-.. math::
+    Higher attenuation levels allow the ADC to measure higher input voltages. The voltage ``Vdata`` after applying attenuation can be calculated using:
 
-    V_{data} = \frac{V_{ref}}{k}\times{\frac{data}{2^{bitwidth} - 1}}
+    .. math::
 
-Where:
+        V_{data} = \frac{V_{ref}}{k}\times{\frac{data}{2^{bitwidth} - 1}}
 
-- ``k`` is the ratio value corresponding to the attenuation level.
-- Other variables are as defined above.
+    Where:
 
-.. only:: not esp32
+    - ``k`` is the ratio value corresponding to the attenuation level.
+    - Other variables are as defined above.
 
-    For detailed input voltage ranges associated with each attenuation setting, refer to the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Electrical Characteristics > ADC Characteristics.
+    .. only:: not esp32
 
-.. only:: esp32
+        For detailed input voltage ranges associated with each attenuation setting, refer to the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Electrical Characteristics > ADC Characteristics.
 
-    For detailed input voltage ranges associated with each attenuation setting, refer to the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Function Description > Analog Peripherals > Analog-to-Digital Converter (ADC).
+    .. only:: esp32
+
+        For detailed input voltage ranges associated with each attenuation setting, refer to the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Function Description > Analog Peripherals > Analog-to-Digital Converter (ADC).
+
+.. only:: esp32s31
+
+    ESP32-S31 supports only 0 dB attenuation. The single-ended input range is about -2 V to 2 V. For the corresponding analog IOs and electrical characteristics, refer to the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
 
 Driver Usage
 ------------

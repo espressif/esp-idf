@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "unity.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"

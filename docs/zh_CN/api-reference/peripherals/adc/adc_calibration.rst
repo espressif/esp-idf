@@ -6,7 +6,13 @@
 简介
 ----
 
-在 {IDF_TARGET_NAME} 中，模数转换器 (ADC) 比较输入的模拟电压和参考电压，以确定每一位数字输出结果。{IDF_TARGET_NAME} 设计的 ADC 参考电压为 1100 mV。然而，不同芯片的真实参考电压可能会略有变化，范围在 1000 mV 到 1200 mV 之间。本文介绍了 ADC 校准驱动程序，可以降低参考电压不同带来的影响，获取更准确的输出结果。
+.. only:: not esp32s31
+
+    在 {IDF_TARGET_NAME} 中，模数转换器 (ADC) 比较输入的模拟电压和参考电压，以确定每一位数字输出结果。{IDF_TARGET_NAME} 设计的 ADC 参考电压为 1100 mV。然而，不同芯片的真实参考电压可能会略有变化，范围在 1000 mV 到 1200 mV 之间。本文介绍了 ADC 校准驱动程序，可以降低参考电压不同带来的影响，获取更准确的输出结果。
+
+.. only:: esp32s31
+
+    本文介绍 ADC 校准驱动程序，用于将 ADC 原始结果转换为更准确的毫伏电压。创建校准方案后，请调用 :cpp:func:`adc_cali_chan_raw_to_voltage`。
 
 
 功能概述
@@ -34,7 +40,7 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 
 使用自定义 ADC 校准方案时，可以选择调整函数 :cpp:func:`adc_cali_check_scheme`，或直接跳过该步骤，调用自定义函数创建校准方案句柄。
 
-.. only:: esp32 or esp32s2 or esp32c2
+.. only:: esp32 or esp32s2 or esp32c2 or esp32s31
 
     ADC 校准线性拟合方案
     ```````````````````````````````````
@@ -44,6 +50,10 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
     - :cpp:member:`adc_cali_line_fitting_config_t::unit_id`，表示 ADC 原始结果来自哪个 ADC 单元。
     - :cpp:member:`adc_cali_line_fitting_config_t::atten`，表示 ADC 原始结果的衰减程度。
     - :cpp:member:`adc_cali_line_fitting_config_t::bitwidth`，表示 ADC 原始结果的位宽。
+
+    .. only:: esp32s31
+
+        仅支持 :c:macro:`ADC_ATTEN_DB_0`。请使用 :cpp:func:`adc_cali_chan_raw_to_voltage` 将原始结果转换为电压。每个通道固定对应差分对的一侧：偶数通道为 N 端（单端使用时极性反相），奇数通道为 P 端。若未烧录校准 eFuse，创建方案仍会成功，并使用恒等变换（``k = 1``，``b = 0``）。
 
     .. only:: esp32
 
@@ -151,7 +161,17 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 结果转换
 ^^^^^^^^^^^^^^^^^
 
-对驱动程序进行完上述配置和初始化工作后，可以调用 :cpp:func:`adc_cali_raw_to_voltage`，将原始 ADC 结果转换为校准结果，校准结果以 mV 为单位。该函数可能因参数无效而调用失败。如果函数返回 :c:macro:`ESP_ERR_INVALID_STATE`，说明校准方案尚未创建。因此你需要创建一个校准方案句柄，通过 :cpp:func:`adc_cali_check_scheme` 可以了解当前芯片支持的校准方案；你也可以提供自定义校准方案，创建对应的校准方案句柄。
+对驱动程序进行完上述配置和初始化工作后，将原始 ADC 结果转换为校准结果，校准结果以 mV 为单位。
+
+.. only:: not esp32s31
+
+    请调用 :cpp:func:`adc_cali_raw_to_voltage`。如果校准方案需要根据 ADC 通道做通道相关修正，请使用 :cpp:func:`adc_cali_chan_raw_to_voltage`。
+
+.. only:: esp32s31
+
+    原始结果是 17 位比较器向量。请调用 :cpp:func:`adc_cali_chan_raw_to_voltage`，并传入产生该原始结果的 ADC 通道。偶通道为 N 端，奇通道为 P 端。
+
+这些函数可能因参数无效而调用失败。如果返回 :c:macro:`ESP_ERR_INVALID_STATE`，说明校准方案尚未创建。因此你需要创建一个校准方案句柄，通过 :cpp:func:`adc_cali_check_scheme` 可以了解当前芯片支持的校准方案；你也可以提供自定义校准方案，创建对应的校准方案句柄。
 
 .. only:: esp32c2
 
@@ -162,10 +182,19 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 获取电压
 ~~~~~~~~~~~
 
-.. code:: c
+.. only:: not esp32s31
 
-    ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, adc_raw[0][0], &voltage[0][0]));
-    ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
+    .. code:: c
+
+        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, adc_raw[0][0], &voltage[0][0]));
+        ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
+
+.. only:: esp32s31
+
+    .. code:: c
+
+        ESP_ERROR_CHECK(adc_cali_chan_raw_to_voltage(adc_cali_handle, EXAMPLE_ADC1_CHAN0, adc_raw[0][0], &voltage[0][0]));
+        ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
 
 
 .. _adc-thread-safety:
@@ -173,7 +202,7 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 线程安全
 ^^^^^^^^^^^^^
 
-驱动程序会确保工厂函数 :cpp:func:`esp_adc_cali_new_scheme` 的线程安全，使用时，可以直接从不同的 RTOS 任务中调用此类函数，无需额外锁保护。
+驱动程序会确保工厂函数 :cpp:func:`adc_cali_create_scheme_line_fitting` 和 :cpp:func:`adc_cali_create_scheme_curve_fitting` 的线程安全，使用时，可以直接从不同的 RTOS 任务中调用此类函数，无需额外锁保护。
 
 其他以 :cpp:type:`adc_cali_handle_t` 作为第一个位置参数的函数均非线程安全，在没有设置互斥锁保护的任务中，应避免从多个任务中调用这类函数。
 

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -664,6 +664,13 @@ extern "C" {
 #define ADC_DMA_EOF_NUM_CLR_M  (ADC_DMA_EOF_NUM_CLR_V << ADC_DMA_EOF_NUM_CLR_S)
 #define ADC_DMA_EOF_NUM_CLR_V  0x00000001U
 #define ADC_DMA_EOF_NUM_CLR_S  16
+/** ADC_APB_ADC_RESET_FSM : R/W; bitpos: [30]; default: 0;
+ *  reset_apb_adc_state
+ */
+#define ADC_APB_ADC_RESET_FSM    (BIT(30))
+#define ADC_APB_ADC_RESET_FSM_M  (ADC_APB_ADC_RESET_FSM_V << ADC_APB_ADC_RESET_FSM_S)
+#define ADC_APB_ADC_RESET_FSM_V  0x00000001U
+#define ADC_APB_ADC_RESET_FSM_S  30
 /** ADC_APB_ADC_TRANS : R/W; bitpos: [31]; default: 0;
  *  enable apb_adc use spi_dma
  */

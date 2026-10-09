@@ -6,7 +6,13 @@ Analog to Digital Converter (ADC) Calibration Driver
 Introduction
 ------------
 
-In {IDF_TARGET_NAME}, the analog-to-digital converter (ADC) compares the input analog voltage to the reference, and determines each bit of the output digital result. By design, the ADC reference voltage for {IDF_TARGET_NAME} is 1100 mV. However, the true reference voltage can range from 1000 mV to 1200 mV among different chips. This guide introduces the ADC calibration driver to minimize the effect of different reference voltages, and get more accurate output results.
+.. only:: not esp32s31
+
+    In {IDF_TARGET_NAME}, the analog-to-digital converter (ADC) compares the input analog voltage to the reference, and determines each bit of the output digital result. By design, the ADC reference voltage for {IDF_TARGET_NAME} is 1100 mV. However, the true reference voltage can range from 1000 mV to 1200 mV among different chips. This guide introduces the ADC calibration driver to minimize the effect of different reference voltages, and get more accurate output results.
+
+.. only:: esp32s31
+
+    This guide introduces the ADC calibration driver to convert ADC raw results into more accurate voltage values in millivolts. After creating a calibration scheme, call :cpp:func:`adc_cali_chan_raw_to_voltage`.
 
 
 Functional Overview
@@ -34,7 +40,7 @@ The ADC calibration driver provides ADC calibration scheme(s). From the calibrat
 
 If you use your custom ADC calibration schemes, you could either modify this function :cpp:func:`adc_cali_check_scheme`, or just skip this step and call your custom creation function.
 
-.. only:: esp32 or esp32s2 or esp32c2
+.. only:: esp32 or esp32s2 or esp32c2 or esp32s31
 
     ADC Calibration Line Fitting Scheme
     ```````````````````````````````````
@@ -44,6 +50,10 @@ If you use your custom ADC calibration schemes, you could either modify this fun
     - :cpp:member:`adc_cali_line_fitting_config_t::unit_id`, the ADC that your ADC raw results are from.
     - :cpp:member:`adc_cali_line_fitting_config_t::atten`, ADC attenuation that your ADC raw results use.
     - :cpp:member:`adc_cali_line_fitting_config_t::bitwidth`, bit width of ADC raw result.
+
+    .. only:: esp32s31
+
+        Only :c:macro:`ADC_ATTEN_DB_0` is supported. Convert the raw result with :cpp:func:`adc_cali_chan_raw_to_voltage`. Each channel belongs to one side of a differential pair: even-numbered channels are N-side (polarity inverted in single-ended use), odd-numbered channels are P-side. If the calibration eFuse is not burnt, scheme creation still succeeds and applies an identity transform (``k = 1``, ``b = 0``).
 
     .. only:: esp32
 
@@ -151,7 +161,17 @@ If you use your custom ADC calibration schemes, you could either modify this fun
 Result Conversion
 ^^^^^^^^^^^^^^^^^
 
-After setting up the calibration characteristics, you can call :cpp:func:`adc_cali_raw_to_voltage` to convert the ADC raw result into calibrated result. The calibrated result is in the unit of mV. This function may fail due to an invalid argument. Especially, if this function returns :c:macro:`ESP_ERR_INVALID_STATE`, this means the calibration scheme is not created. You need to create a calibration scheme handle, use :cpp:func:`adc_cali_check_scheme` to know the supported calibration scheme. On the other hand, you could also provide a custom calibration scheme and create the handle.
+After setting up the calibration characteristics, convert the ADC raw result into a calibrated result in mV.
+
+.. only:: not esp32s31
+
+    Call :cpp:func:`adc_cali_raw_to_voltage`. If a scheme needs the ADC channel to apply channel-dependent corrections, use :cpp:func:`adc_cali_chan_raw_to_voltage`.
+
+.. only:: esp32s31
+
+    The raw result is a 17-bit comparator vector. Call :cpp:func:`adc_cali_chan_raw_to_voltage` and pass the ADC channel that produced the raw result. Even-numbered channels are N-side and odd-numbered channels are P-side.
+
+These functions may fail due to an invalid argument. Especially, if they return :c:macro:`ESP_ERR_INVALID_STATE`, this means the calibration scheme is not created. You need to create a calibration scheme handle, use :cpp:func:`adc_cali_check_scheme` to know the supported calibration scheme. On the other hand, you could also provide a custom calibration scheme and create the handle.
 
 .. only:: esp32c2
 
@@ -162,10 +182,19 @@ After setting up the calibration characteristics, you can call :cpp:func:`adc_ca
 Get Voltage
 ~~~~~~~~~~~
 
-.. code:: c
+.. only:: not esp32s31
 
-    ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, adc_raw[0][0], &voltage[0][0]));
-    ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
+    .. code:: c
+
+        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, adc_raw[0][0], &voltage[0][0]));
+        ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
+
+.. only:: esp32s31
+
+    .. code:: c
+
+        ESP_ERROR_CHECK(adc_cali_chan_raw_to_voltage(adc_cali_handle, EXAMPLE_ADC1_CHAN0, adc_raw[0][0], &voltage[0][0]));
+        ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
 
 
 .. _adc-thread-safety:
@@ -173,7 +202,7 @@ Get Voltage
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`esp_adc_cali_new_scheme` is guaranteed to be thread-safe by the driver. Therefore, you can call them from different RTOS tasks without protection by extra locks.
+The factory functions :cpp:func:`adc_cali_create_scheme_line_fitting` and :cpp:func:`adc_cali_create_scheme_curve_fitting` are guaranteed to be thread-safe by the driver. Therefore, you can call them from different RTOS tasks without protection by extra locks.
 
 Other functions that take the :cpp:type:`adc_cali_handle_t` as the first positional parameter are not thread-safe, you should avoid calling them from multiple tasks.
 

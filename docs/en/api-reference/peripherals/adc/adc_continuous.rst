@@ -289,29 +289,15 @@ Function :cpp:func:`adc_continuous_read` tries to read the expected length of co
 
 This API aims to give you a chance to read all the ADC continuous conversion results.
 
-The ADC conversion results read from the above function are raw data. To calculate the voltage based on the ADC raw results, this formula can be used:
+The conversion results from the above function are raw data. Convert them to voltage in mV with the calibration APIs. See :doc:`adc_calibration`.
 
-.. parsed-literal::
+.. only:: esp32s31
 
-    Vout = Dout * Vmax / Dmax       (1)
+    On {IDF_TARGET_NAME}, each sample's raw data is a 17-bit comparator vector. Parse the buffer with :cpp:func:`adc_continuous_parse_data`, then call :cpp:func:`adc_cali_chan_raw_to_voltage`. Even-numbered channels are N-side and odd-numbered channels are P-side.
 
-where:
+.. only:: not esp32s31
 
-.. list-table::
-    :header-rows: 1
-    :widths: 20 80
-    :align: center
-
-    * - Vout
-      - Digital output result, standing for the voltage.
-    * - Dout
-      - ADC raw digital reading result.
-    * - Vmax
-      - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `TRM <{IDF_TARGET_TRM_EN_URL}#sensor>`__.
-    * - Dmax
-      - Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where the bitwidth is the :cpp:member:`adc_digi_pattern_config_t::bit_width` configured before.
-
-To do further calibration to convert the ADC raw result to voltage in mV, please refer to :doc:`adc_calibration`.
+    Call :cpp:func:`adc_cali_raw_to_voltage`. If a scheme needs the ADC channel, use :cpp:func:`adc_cali_chan_raw_to_voltage`.
 
 Parse ADC Raw Data
 ~~~~~~~~~~~~~~~~~~~~~
@@ -389,7 +375,6 @@ Hardware Limitations
 
     - A specific ADC unit can only work under one operating mode at any one time, either continuous mode or one-shot mode. :cpp:func:`adc_continuous_start` has provided the protection.
     :not esp32s31: - Random Number Generator (RNG) uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
-    :SOC_ADC_DIFF_SUPPORTED: - In single-ended mode, if the N-side channel is used as the input interface, its raw-data polarity is inverted. For an input range of -2 V to 2 V, the N-side raw code is 4393 to 0. Please use the ADC calibration APIs.
     :esp32 or esp32s2: - ADC2 is also used by Wi-Fi. :cpp:func:`adc_continuous_start` has provided the protection between Wi-Fi driver and ADC continuous mode driver.
     :esp32: - ADC continuous mode driver uses I2S0 peripheral as hardware DMA FIFO. Therefore, if I2S0 is in use already, the :cpp:func:`adc_continuous_new_handle` will return :c:macro:`ESP_ERR_NOT_FOUND`.
     :esp32: - ESP32 DevKitC: GPIO 0 cannot be used due to external auto program circuits.

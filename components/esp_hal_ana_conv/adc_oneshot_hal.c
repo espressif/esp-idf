@@ -16,10 +16,7 @@
 #include "hal/dac_ll.h"
 #endif
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-/**
- * For chips without RTC controller, Digital controller is used to trigger an ADC single read.
- */
+#if !ADC_LL_ONESHOT_START_BY_UNIT
 #include "esp_rom_sys.h"
 #endif
 
@@ -97,7 +94,9 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 
 static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uint32_t *read_delay_us)
 {
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+#if ADC_LL_ONESHOT_START_BY_UNIT
+    adc_oneshot_ll_start(unit);
+#else
     (void)unit;
     /**
      * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
@@ -131,10 +130,7 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uin
     *read_delay_us = ((1000 * 1000) / sar_clk + 1) * ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL;
     HAL_EARLY_LOGD(TAG, "clk_src_freq_hz: %"PRIu32", sar_clk: %"PRIu32", read_delay_us: %"PRIu32"", clk_src_freq_hz, sar_clk, read_delay_us);
 #endif //ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
-
-#else
-    adc_oneshot_ll_start(unit);
-#endif // SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+#endif // ADC_LL_ONESHOT_START_BY_UNIT
 }
 
 bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
