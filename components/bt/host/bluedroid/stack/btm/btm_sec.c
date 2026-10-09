@@ -4305,10 +4305,10 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
                 if (p_dev_rec->no_smp_on_br) {
                     BTM_TRACE_DEBUG ("%s NO SM over BR/EDR\n", __func__);
                 } else {
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (SMP_CTKD_INCLUDED == TRUE)
                     BTM_TRACE_DEBUG ("%s start SM over BR/EDR\n", __func__);
                     SMP_BR_PairWith(p_dev_rec->bd_addr);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif
                 }
             }
         } else {
