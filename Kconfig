@@ -607,6 +607,17 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 This increases binary size (typically by tens of kB) but allows using
                 dynamic_cast conversion and typeid operator.
 
+        config COMPILER_CXX_STATIC_DESTRUCTORS
+            bool "Register destructors of static C++ objects"
+            default y
+            depends on IDF_TOOLCHAIN_GCC
+            help
+                Static C++ objects register their destructor with __cxa_atexit() so that exit() runs it
+                before the system aborts. An application that never calls exit() can disable this option:
+                the destructors are then never registered, which keeps the libc exit handler tables
+                (about 400 bytes of RAM) out of the image unless something calls atexit() or on_exit().
+                Destructors of thread_local objects still run.
+
         choice COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT
             prompt "C++ trivial automatic variable initialization"
             default COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED
