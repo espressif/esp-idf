@@ -20,29 +20,26 @@ ESP_LOG_ATTR_TAG(TAG, "sleep_power");
 
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND
 
-#define XTALX2_TIE_HIGH_MASK  (PMU_TIE_HIGH_XTALX2_M | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG_M)
-#define XTALX2_TIE_HIGH_ON    (PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG)
 #define BBPLL_TIE_HIGH_MASK   (PMU_TIE_HIGH_XPD_BBPLL_M | PMU_TIE_HIGH_XPD_BBPLL_I2C_M | PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_M)
 #define BBPLL_TIE_HIGH_ON     (PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C | PMU_TIE_HIGH_GLOBAL_BBPLL_ICG)
 
 typedef struct {
-    void *regdma_desc[2];
+    void *regdma_desc[1];
 } pmu_sleep_power_clock_context_t;
 
 static esp_err_t sleep_power_system_retention_init(void *arg)
 {
     const static sleep_retention_entries_config_t power_regs_retention[] = {
-        /* During the modem-to-active transition, the MODEM lock keeps the xtalx2, bbpll xpd status unchanged.
-         * Therefore, if xtalx2, bbpll is disabled in modem state, we need to set xtalx2, bbpll tie-high to enable it in active state.
+        /* During the modem-to-active transition, the MODEM lock keeps bbpll xpd status unchanged.
+         * Therefore, if bbpll is disabled in modem state, we need to set bbpll tie-high to enable it in active state.
          *
-         * XTALX2 and BBPLL write values are back-filled before sleep by pmu_sleep_power_clock_config(). */
-        [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(0),  PMU_IMM_HP_CK_POWER_REG,  XTALX2_TIE_HIGH_ON,  XTALX2_TIE_HIGH_MASK,  1,  0),  .owner = ENTRY(2) },
-        [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(1),  PMU_IMM_HP_CK_POWER_REG,  BBPLL_TIE_HIGH_ON,   BBPLL_TIE_HIGH_MASK,   1,  0),  .owner = ENTRY(2) },
+         * BBPLL write values are back-filled before sleep by pmu_sleep_power_clock_config(). */
+        [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(0),  PMU_IMM_HP_CK_POWER_REG,  BBPLL_TIE_HIGH_ON,   BBPLL_TIE_HIGH_MASK,   1,  0),  .owner = ENTRY(2) },
     };
     esp_err_t err = sleep_retention_entries_create(power_regs_retention, ARRAY_SIZE(power_regs_retention), REGDMA_LINK_PRI_POWER, SLEEP_RETENTION_MODULE_POWER);
 
     pmu_sleep_power_clock_context_t *clk = (pmu_sleep_power_clock_context_t *)arg;
-    int id_array[ARRAY_SIZE(clk->regdma_desc)] = { REGDMA_POWER_LINK(0), REGDMA_POWER_LINK(1) };
+    int id_array[ARRAY_SIZE(clk->regdma_desc)] = { REGDMA_POWER_LINK(0) };
     for (int i = 0; i < ARRAY_SIZE(id_array); i++) {
         void *head = sleep_retention_find_link_by_id(id_array[i]);
         if (head) {
@@ -172,10 +169,7 @@ void pmu_sleep_power_clock_config(void *data, const uint32_t config)
 
     pmu_sleep_power_clock_context_t *clk = (pmu_sleep_power_clock_context_t *)datap->func[PMU_SLEEP_PRIV_MODEM_LOCK_CLK_POWER];
     if (clk->regdma_desc[0]) {
-        regdma_link_set_write_wait_content(clk->regdma_desc[0], config & XTALX2_TIE_HIGH_MASK, XTALX2_TIE_HIGH_MASK);
-    }
-    if (clk->regdma_desc[1]) {
-        regdma_link_set_write_wait_content(clk->regdma_desc[1], config & BBPLL_TIE_HIGH_MASK,  BBPLL_TIE_HIGH_MASK);
+        regdma_link_set_write_wait_content(clk->regdma_desc[0], config & BBPLL_TIE_HIGH_MASK,  BBPLL_TIE_HIGH_MASK);
     }
 }
 #endif
