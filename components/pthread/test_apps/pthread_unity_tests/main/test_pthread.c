@@ -66,6 +66,27 @@ TEST_CASE("pthread create join", "[pthread]")
     }
 }
 
+static void *join_notification_worker(void *arg)
+{
+    // Keep the child alive until the parent has entered pthread_join.
+    vTaskDelay(2);
+    return arg;
+}
+
+TEST_CASE("pthread join ignores unrelated task notifications", "[pthread]")
+{
+    int token = 0;
+    pthread_t thread;
+    void *result = NULL;
+
+    TEST_ASSERT_EQUAL_INT(0, pthread_create(&thread, NULL, join_notification_worker, &token));
+    // A library may already have notified this task for an unrelated purpose.
+    xTaskNotifyGive(xTaskGetCurrentTaskHandle());
+    TEST_ASSERT_EQUAL_INT(0, pthread_join(thread, &result));
+    TEST_ASSERT_EQUAL_PTR(&token, result);
+    ulTaskNotifyTake(pdTRUE, 0);
+}
+
 static void *waiting_thread(void *arg)
 {
     TaskHandle_t *task_handle = (TaskHandle_t *)arg;
