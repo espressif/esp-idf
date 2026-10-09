@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,5 +189,49 @@ extern "C" void __wrap___cxa_throw(void)
 {
     abort();
 }
+
+// std::__throw_* build the exception object before calling __cxa_throw, so wrap them too.
+extern "C" void __wrap__ZSt16__throw_bad_castv(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt17__throw_bad_allocv(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt18__throw_bad_typeidv(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt19__throw_ios_failurePKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt19__throw_ios_failurePKci(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt19__throw_logic_errorPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt19__throw_range_errorPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt19__throw_regex_errorNSt15regex_constants10error_typeE(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt20__throw_domain_errorPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt20__throw_future_errori(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt20__throw_length_errorPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt20__throw_out_of_rangePKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt20__throw_system_errori(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt21__throw_bad_exceptionv(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt21__throw_runtime_errorPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt22__throw_overflow_errorPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt23__throw_underflow_errorPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt24__throw_invalid_argumentPKc(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt24__throw_out_of_range_fmtPKcz(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt25__throw_bad_function_callv(void)
+__attribute__((alias("__wrap___cxa_throw")));
+extern "C" void __wrap__ZSt28__throw_bad_array_new_lengthv(void)
+__attribute__((alias("__wrap___cxa_throw")));
 
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
