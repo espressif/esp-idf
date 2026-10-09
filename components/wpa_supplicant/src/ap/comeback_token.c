@@ -70,7 +70,7 @@ int check_comeback_token(const u8 *comeback_key,
 
 struct wpabuf *
 auth_build_token_req(struct os_reltime *last_comeback_key_update,
-             u8 *comeback_key, u16 comeback_idx,
+             u8 *comeback_key, u16 *comeback_idx,
              u16 *comeback_pending_idx, size_t idx_len,
              int group, const u8 *addr, int h2e)
 {
@@ -86,14 +86,14 @@ auth_build_token_req(struct os_reltime *last_comeback_key_update,
     os_get_time(&now);
     if (!os_reltime_initialized(last_comeback_key_update) ||
         os_reltime_expired(&now, last_comeback_key_update, 60) ||
-        comeback_idx == 0xffff) {
+        *comeback_idx == 0xffff) {
         if (random_get_bytes(comeback_key, COMEBACK_KEY_SIZE) < 0) {
             return NULL;
         }
         wpa_hexdump(MSG_DEBUG, "Comeback: Updated token key",
                 comeback_key, COMEBACK_KEY_SIZE);
         *last_comeback_key_update = now;
-        comeback_idx = 0;
+        *comeback_idx = 0;
         os_memset(comeback_pending_idx, 0, idx_len);
     }
 
@@ -119,8 +119,8 @@ auth_build_token_req(struct os_reltime *last_comeback_key_update,
 
     token_idx = comeback_pending_idx[p_idx];
     if (!token_idx) {
-        comeback_idx++;
-        token_idx = comeback_idx;
+        (*comeback_idx)++;
+        token_idx = *comeback_idx;
         comeback_pending_idx[p_idx] = token_idx;
     }
     WPA_PUT_BE16(idx, token_idx);

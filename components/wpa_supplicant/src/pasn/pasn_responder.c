@@ -473,7 +473,7 @@ static void handle_auth_pasn_comeback(struct pasn_data *pasn,
 	 * to be used.
 	 */
 	comeback = auth_build_token_req(&pasn->last_comeback_key_update,
-					pasn->comeback_key, pasn->comeback_idx,
+					pasn->comeback_key, &pasn->comeback_idx,
 					pasn->comeback_pending_idx,
 					sizeof(u16) * COMEBACK_PENDING_IDX_SIZE,
 					0, peer_addr, 0);
