@@ -204,6 +204,7 @@ Sample EAT in JSON format
           "ver": "v0.3.0",
           "idf_ver": "v5.1.2-139-g07d83a7ced",
           "secure_ver": 0,
+          "secure_ver_efuse": 0,
           "part_chip_rev": {
             "min": 0,
             "max": 99
@@ -221,6 +222,7 @@ Sample EAT in JSON format
           "ver": "v0.1.0",
           "idf_ver": "v5.1.2-139-g07d83a7ced",
           "secure_ver": 0,
+          "secure_ver_efuse": 0,
           "part_chip_rev": {
             "min": 0,
             "max": 99
@@ -238,6 +240,7 @@ Sample EAT in JSON format
           "ver": "",
           "idf_ver": "",
           "secure_ver": -1,
+          "secure_ver_efuse": -1,
           "part_chip_rev": {
             "min": 0,
             "max": 99

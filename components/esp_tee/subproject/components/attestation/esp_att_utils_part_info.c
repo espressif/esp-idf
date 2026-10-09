@@ -15,6 +15,9 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "hal/efuse_hal.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
+#include "soc/soc_caps.h"
 
 #include "esp_app_format.h"
 #include "esp_bootloader_desc.h"
@@ -379,6 +382,27 @@ static esp_err_t get_part_app_desc(const esp_partition_pos_t *pos, esp_app_desc_
     return ESP_OK;
 }
 
+/* 2nd stage bootloader anti-rollback counter (bits set), UINT32_MAX if unsupported or not enabled */
+static uint32_t read_btl_secure_version(void)
+{
+    size_t cnt = UINT32_MAX;
+#if SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32C5
+    const esp_efuse_desc_t *field[] = {
+        ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_HI[0],
+        ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_LO[0],
+        NULL
+    };
+#else
+    const esp_efuse_desc_t **field = ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION;
+#endif
+    if (esp_efuse_read_field_bit(ESP_EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN)) {
+        esp_efuse_read_field_cnt(field, &cnt);
+    }
+#endif
+    return cnt;
+}
+
 static esp_err_t get_part_chip_rev(const esp_partition_pos_t *pos, esp_att_part_chip_rev_t *chip_rev)
 {
     if (pos == NULL || chip_rev == NULL) {
@@ -463,6 +487,7 @@ esp_err_t esp_att_utils_get_btl_claim_data(esp_att_part_metadata_t *btl_metadata
 
     btl_metadata->type = ESP_ATT_PART_TYPE_BOOTLOADER;
     btl_metadata->secure_ver = btl_desc.secure_version;
+    btl_metadata->secure_ver_efuse = read_btl_secure_version();
 
     err = esp_att_utils_hexbuf_to_hexstr(&btl_desc.version, sizeof(btl_desc.version), btl_metadata->ver, sizeof(btl_metadata->ver));
     if (err != ESP_OK) {
@@ -512,6 +537,11 @@ esp_err_t esp_att_utils_get_app_claim_data(esp_att_part_metadata_t *app_metadata
 
     app_metadata->type = ESP_ATT_PART_TYPE_APP;
     app_metadata->secure_ver = ns_app_desc.secure_version;
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    app_metadata->secure_ver_efuse = esp_efuse_read_secure_version();
+#else
+    app_metadata->secure_ver_efuse = UINT32_MAX;
+#endif
 
     memcpy(app_metadata->ver, &ns_app_desc.version, sizeof(app_metadata->ver));
     memcpy(app_metadata->idf_ver, &ns_app_desc.idf_ver, sizeof(app_metadata->idf_ver));
@@ -558,6 +588,11 @@ esp_err_t esp_att_utils_get_tee_claim_data(esp_att_part_metadata_t *tee_metadata
 
     tee_metadata->type = ESP_ATT_PART_TYPE_TEE;
     tee_metadata->secure_ver = tee_app_desc.secure_version;
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+    tee_metadata->secure_ver_efuse = esp_efuse_read_tee_secure_version();
+#else
+    tee_metadata->secure_ver_efuse = UINT32_MAX;
+#endif
 
     memcpy(tee_metadata->ver, &tee_app_desc.version, sizeof(tee_metadata->ver));
     memcpy(tee_metadata->idf_ver, &tee_app_desc.idf_ver, sizeof(tee_metadata->idf_ver));

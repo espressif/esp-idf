@@ -412,6 +412,42 @@ bool esp_efuse_check_secure_version(uint32_t secure_version);
  */
 esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
 
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+/**
+ *  @brief Return the TEE secure_version from efuse field.
+ *
+ * The TEE secure version occupies the top 3 bits of the SECURE_VERSION eFuse field;
+ * the app secure version is limited to the remaining lower bits.
+ *
+ * @return TEE secure version from efuse field
+ */
+uint32_t esp_efuse_read_tee_secure_version(void);
+
+/**
+ *  @brief Check secure_version from the TEE image against the TEE secure_version from efuse field.
+ *
+ * @param secure_version Secure version from the TEE image.
+ * @return
+ *          - True: If version of the TEE image is equal or more then the TEE secure_version from efuse.
+ */
+bool esp_efuse_check_tee_secure_version(uint32_t secure_version);
+
+#if defined(BOOTLOADER_BUILD) || defined(ESP_TEE_BUILD)
+/**
+ *  @brief Write efuse field by the TEE secure_version value.
+ *
+ * Note: Not available to applications. This function is called as part of the TEE boot flow.
+ *
+ * @param[in] secure_version Secure version from the TEE image.
+ * @return
+ *          - ESP_OK: Successful.
+ *          - ESP_FAIL: TEE secure version cannot be set to efuse field.
+ *          - ESP_ERR_NOT_SUPPORTED: Anti rollback is not supported with the 3/4 and Repeat coding scheme.
+ */
+esp_err_t esp_efuse_update_tee_secure_version(uint32_t secure_version);
+#endif // BOOTLOADER_BUILD || ESP_TEE_BUILD
+#endif // CONFIG_SECURE_TEE_ANTI_ROLLBACK
+
 #if defined(BOOTLOADER_BUILD) && defined(CONFIG_EFUSE_VIRTUAL) && !defined(CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH)
 /**
  *  @brief Initializes eFuses API to keep eFuses in RAM.

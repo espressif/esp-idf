@@ -134,6 +134,44 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
     endmenu
 
+    config SECURE_TEE_ANTI_ROLLBACK
+        bool "Enable TEE anti-rollback support"
+        depends on SECURE_ENABLE_TEE
+        default n
+        help
+            This option prevents rollback to a previous TEE image with a lower secure version.
+
+            The bootloader refuses to load a TEE image whose secure version is lower than
+            the one recorded in eFuse, the TEE rejects such an image during a TEE OTA update,
+            and the TEE updates the eFuse counter once the running image is confirmed valid.
+
+            The TEE secure version is stored in the top 3 bits of the SECURE_VERSION eFuse
+            field, which reduces the bits available for the app secure version
+            (see BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD).
+
+    config SECURE_TEE_SEC_VER_SIZE_EFUSE_FIELD
+        int
+        depends on SECURE_TEE_ANTI_ROLLBACK
+        default 3
+        help
+            Number of top bits of the SECURE_VERSION eFuse field reserved for the TEE secure
+            version, i.e. how many times it can be increased. The bits available for the app
+            secure version (BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD) are reduced by this value.
+            Fixed, as it defines the eFuse layout shared by the bootloader, the TEE and the app.
+
+    config SECURE_TEE_SECURE_VERSION
+        int "eFuse secure version of the TEE image"
+        depends on SECURE_TEE_ANTI_ROLLBACK
+        range 0 SECURE_TEE_SEC_VER_SIZE_EFUSE_FIELD
+        default 0
+        help
+            The secure version recorded in the TEE image descriptor. It is compared with the
+            TEE secure version stored in eFuse (as the number of set bits) and must be greater
+            than or equal to it for the image to boot.
+
+            The version is worth increasing if a previous TEE image has a significant
+            vulnerability and its use is no longer acceptable.
+
     config SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
         bool "Memprot: Isolate TEE flash regions over SPI1"
         depends on SECURE_ENABLE_TEE

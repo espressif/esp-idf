@@ -552,14 +552,20 @@ void bootloader_utility_load_boot_image_from_deep_sleep(void)
 void bootloader_utility_load_tee_image(const bootloader_state_t *bs)
 {
     esp_err_t err = ESP_FAIL;
-    uint8_t tee_active_part = bootloader_utility_tee_get_boot_partition(&bs->tee_ota_info);
-    if (tee_active_part != PART_SUBTYPE_TEE_0 && tee_active_part != PART_SUBTYPE_TEE_1) {
+
+#ifdef CONFIG_SECURE_TEE_ANTI_ROLLBACK
+    ESP_LOGI(TAG, "TEE secure version (from eFuse) = %"PRIu32, esp_efuse_read_tee_secure_version());
+#endif
+
+    int tee_active_part = bootloader_utility_tee_get_selected_boot_partition(bs);
+    if (tee_active_part < 0) {
         ESP_LOGE(TAG, "Failed to find valid TEE app");
         bootloader_reset();
     }
 
-    uint8_t tee_part_idx = tee_active_part & 0x01;
-    const esp_partition_pos_t *tee_active_part_pos = &bs->tee[tee_part_idx];
+    const esp_partition_pos_t *tee_active_part_pos = &bs->tee[tee_active_part & 0x01];
+    esp_image_tee_offset_set(tee_active_part_pos->offset);
+
     err = bootloader_load_image(tee_active_part_pos, &tee_data);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to load TEE app");

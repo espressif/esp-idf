@@ -152,6 +152,43 @@ static bool is_bootloader(uint32_t offset)
            );
 }
 
+#if CONFIG_SECURE_ENABLE_TEE
+static uint32_t s_tee_partition_offset = UINT32_MAX;
+
+void esp_image_tee_offset_set(const uint32_t offset)
+{
+    s_tee_partition_offset = offset;
+}
+#endif // CONFIG_SECURE_ENABLE_TEE
+
+#if BOOTLOADER_BUILD && (CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK)
+static bool is_tee(uint32_t offset)
+{
+#if CONFIG_SECURE_ENABLE_TEE
+    return (offset == s_tee_partition_offset);
+#else
+    return false;
+#endif
+}
+
+/* Check the image secure version against the eFuse counter of its image type (TEE or app) */
+static bool check_image_secure_version(const esp_image_metadata_t *data)
+{
+    if (is_tee(data->start_addr)) {
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+        return esp_efuse_check_tee_secure_version(data->secure_version);
+#else
+        return true;
+#endif
+    }
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    return esp_efuse_check_secure_version(data->secure_version);
+#else
+    return true;
+#endif
+}
+#endif // BOOTLOADER_BUILD && (CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK)
+
 #if BOOTLOADER_BUILD && (SECURE_BOOT_CHECK_SIGNATURE == 1)
 #if CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
 static bool skip_verify(esp_image_load_mode_t mode, bool verify_sha)
@@ -288,11 +325,11 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 #endif
     }
 
-#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK
     /* For anti-rollback case, reconfirm security version of the application to prevent FI attacks */
     bool sec_ver = false;
     if (do_load) {
-        sec_ver = esp_efuse_check_secure_version(data->secure_version);
+        sec_ver = check_image_secure_version(data);
         if (!sec_ver) {
             err = ESP_FAIL;
             goto err;
@@ -300,7 +337,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     }
     /* Ensure that the security version check passes for image loading scenario */
     ESP_FAULT_ASSERT(!do_load || sec_ver == true);
-#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK
 
 #endif // BOOTLOADER_BUILD
 
@@ -708,7 +745,7 @@ err:
     return err;
 }
 
-#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK
 /* The __attribute__((optimize("O0"))) is used to disable optimizations for this function,
  * preventing the compiler from potentially optimizing data_buffer and reading data directly from src.
  * This is crucial as we want to read from Flash only once, ensuring the integrity of the data.
@@ -741,7 +778,7 @@ static size_t process_esp_app_desc_data(const uint32_t *src, bootloader_sha256_h
     ESP_FAULT_ASSERT(memcmp(&metadata->secure_version, &src[1], sizeof(uint32_t)) == 0);
     return sizeof(data_buffer);
 }
-#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK
 
 static esp_err_t process_segment_data(const process_segment_data_t *segment_data)
 {
@@ -805,7 +842,7 @@ static esp_err_t process_segment_data(const process_segment_data_t *segment_data
             return ret;
         }
 #endif  // !CONFIG_IDF_TARGET_ESP32
-#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK
         ESP_LOGD(TAG, "additional anti-rollback check 0x%"PRIx32, segment_data->data_addr);
         size_t len = process_esp_app_desc_data(src, segment_data->sha_handle,
                                                segment_data->checksum, segment_data->metadata);
@@ -816,7 +853,7 @@ static esp_err_t process_segment_data(const process_segment_data_t *segment_data
         data_len -= len;
         src += len / 4;
         // In BOOTLOADER_BUILD, for DROM (segment #0) we do not load it into dest (only map it), do_load = false.
-#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK || CONFIG_SECURE_TEE_ANTI_ROLLBACK
     }
 
     for (size_t i = 0; i < data_len; i += 4) {

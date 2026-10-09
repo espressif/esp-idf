@@ -16,6 +16,8 @@
 #include "esp_tee_flash.h"
 #include "esp_tee_sec_storage.h"
 #include "bootloader_utility_tee.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 
 #if __has_include("esp_app_desc.h")
 #define WITH_APP_IMAGE_INFO
@@ -73,7 +75,7 @@ static void tee_print_app_info(void)
     ESP_LOGI(TAG, "TEE information:");
     ESP_LOGI(TAG, "Project name:     %s", app_desc->project_name);
     ESP_LOGI(TAG, "App version:      %s", app_desc->version);
-#ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
+#ifdef CONFIG_SECURE_TEE_ANTI_ROLLBACK
     ESP_LOGI(TAG, "Secure version:   %d", app_desc->secure_version);
 #endif
     ESP_LOGI(TAG, "Compile time:     %s %s", app_desc->date, app_desc->time);
@@ -117,6 +119,42 @@ static void tee_mark_app_and_valid_cancel_rollback(void)
         return;
     }
 }
+
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+/* Re-check the running TEE image against eFuse and record its secure version once confirmed valid */
+static void tee_update_anti_rollback(void)
+{
+    const esp_app_desc_t *desc = esp_app_get_description();
+    if (!esp_efuse_check_tee_secure_version(desc->secure_version)) {
+        ESP_LOGE(TAG, "Incorrect secure version of TEE app");
+        abort();
+    }
+    ESP_FAULT_ASSERT(esp_efuse_check_tee_secure_version(desc->secure_version));
+
+    /* NOTE: A failed burn is retried at every boot; TEE OTA rejects images older than the running one meanwhile */
+    esp_err_t err = esp_efuse_update_tee_secure_version(desc->secure_version);
+    for (int i = 1; i < 3 && err != ESP_OK && !esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_SECURE_VERSION); i++) {
+        err = esp_efuse_update_tee_secure_version(desc->secure_version);
+    }
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to update the TEE secure version in eFuse (0x%08x), will retry at the next boot", err);
+    }
+}
+
+#if CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+/* Test-only: load the emulated eFuses from the emul_efuse partition */
+static void tee_init_virtual_efuse(void)
+{
+    esp_partition_info_t efuse_em_info;
+    esp_err_t err = esp_tee_flash_find_partition(PART_TYPE_DATA, PART_SUBTYPE_DATA_EFUSE_EM, NULL, &efuse_em_info);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "No eFuse emulation partition found");
+        abort();
+    }
+    esp_efuse_init_virtual_mode_in_flash(efuse_em_info.pos.offset, efuse_em_info.pos.size);
+}
+#endif
+#endif // CONFIG_SECURE_TEE_ANTI_ROLLBACK
 
 void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t ree_drom_addr, uint8_t tee_boot_part)
 {
@@ -162,6 +200,10 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     }
     ESP_FAULT_ASSERT(err == ESP_OK);
 
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK && CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    tee_init_virtual_efuse();
+#endif
+
     psa_status_t status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to initialize PSA Crypto! (0x%08x)", status);
@@ -192,6 +234,10 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
      * pass control to the non-secure app (see below).
      */
     tee_mark_app_and_valid_cancel_rollback();
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+    /* NOTE: Reached only with the running image confirmed valid (failures above abort) */
+    tee_update_anti_rollback();
+#endif
 
     /* Switch back to bootloader stack. */
     asm volatile("mv sp, %0" :: "r"(btld_sp));

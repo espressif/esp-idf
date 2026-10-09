@@ -234,6 +234,7 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
     - ``secure_version`` 字段最多有 {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} 位。也就是说，防回滚最多可以做 {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} 次。用户可以使用 :menuitem:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` 减少该 eFuse 字段的长度。
     :esp32: - 防回滚仅在 eFuse 编码机制设置为 ``NONE`` 时生效。
     - 防回滚不支持工厂和测试分区，因此分区表中不应有设置为 ``工厂`` 或 ``测试`` 的分区。
+    :TARGET_SUPPORT_ESP_TEE: - 启用 :ref:`TEE 防回滚 <tee-anti-rollback>` 功能后，``secure_version`` eFuse 字段的最高 3 位保留给 TEE 安全版本号，应用程序可用的位数相应减少 3 位。
 
 ``security_version``:
 

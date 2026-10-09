@@ -103,6 +103,7 @@ typedef struct {
     char ver[32];                            /**< Version string */
     char idf_ver[32];                        /**< ESP-IDF version string */
     uint32_t secure_ver;                     /**< Secure version number */
+    uint32_t secure_ver_efuse;               /**< Secure version recorded in eFuse (UINT32_MAX if not applicable) */
     esp_att_part_chip_rev_t part_chip_rev;   /**< Chip revision information */
     esp_att_part_digest_info_t part_digest;  /**< Digest information */
 } esp_att_part_metadata_t;

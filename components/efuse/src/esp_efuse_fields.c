@@ -35,27 +35,32 @@ ESP_LOG_ATTR_TAG(TAG, "efuse");
 #define APP_SEC_VER_SIZE_EFUSE_FIELD 4 // smallest possible size for all chips
 #endif
 
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+/* NOTE: The TEE secure version occupies the top bits of the SECURE_VERSION eFuse field (derived, not in the eFuse table) */
+#define TEE_SEC_VER_SIZE_EFUSE_FIELD CONFIG_SECURE_TEE_SEC_VER_SIZE_EFUSE_FIELD
+#else
+#define TEE_SEC_VER_SIZE_EFUSE_FIELD 0
+#endif
+
 // Reset efuse write registers
 void esp_efuse_reset(void)
 {
     esp_efuse_utility_reset();
 }
 
-uint32_t esp_efuse_read_secure_version(void)
+static uint32_t read_secure_version_impl(const esp_efuse_desc_t *field[], size_t size)
 {
     uint32_t secure_version = 0;
-    size_t field_size = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
-    size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, field_size);
-    esp_efuse_read_field_blob(ESP_EFUSE_SECURE_VERSION, &secure_version, size);
+    esp_efuse_read_field_blob(field, &secure_version, size);
     return __builtin_popcount(secure_version & ((1ULL << size) - 1));
 }
 
-bool esp_efuse_check_secure_version(uint32_t secure_version)
+static bool check_secure_version_impl(const esp_efuse_desc_t *field[], size_t size, uint32_t secure_version)
 {
-    uint32_t sec_ver_hw = esp_efuse_read_secure_version();
+    uint32_t sec_ver_hw = read_secure_version_impl(field, size);
     /* Additional copies for Anti FI check */
-    uint32_t sec_ver_hw_c1 = esp_efuse_read_secure_version();
-    uint32_t sec_ver_hw_c2 = esp_efuse_read_secure_version();
+    uint32_t sec_ver_hw_c1 = read_secure_version_impl(field, size);
+    uint32_t sec_ver_hw_c2 = read_secure_version_impl(field, size);
     ESP_FAULT_ASSERT(sec_ver_hw == sec_ver_hw_c1);
     ESP_FAULT_ASSERT(sec_ver_hw == sec_ver_hw_c2);
 
@@ -65,12 +70,10 @@ bool esp_efuse_check_secure_version(uint32_t secure_version)
     return ret_status;
 }
 
-esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
+static esp_err_t update_secure_version_impl(const esp_efuse_desc_t *field[], size_t size, uint32_t secure_version, const char *owner)
 {
-    size_t field_size = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
-    size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, field_size);
     if (size < secure_version) {
-        ESP_LOGE(TAG, "Max secure version is %u. Given %"PRIu32" version can not be written.", (unsigned)size, secure_version);
+        ESP_LOGE(TAG, "Max secure version (%s) is %u. Given %"PRIu32" version can not be written.", owner, (unsigned)size, secure_version);
         return ESP_ERR_INVALID_ARG;
     }
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(ESP_EFUSE_SECURE_VERSION_NUM_BLOCK);
@@ -78,21 +81,82 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
         ESP_LOGE(TAG, "Anti rollback is not supported with any coding scheme.");
         return ESP_ERR_NOT_SUPPORTED;
     }
-    uint32_t sec_ver_hw = esp_efuse_read_secure_version();
+    uint32_t sec_ver_hw = read_secure_version_impl(field, size);
     // If secure_version is the same as in eFuse field than it is ok just go out.
     if (sec_ver_hw < secure_version) {
-        esp_err_t err = esp_efuse_write_field_cnt(ESP_EFUSE_SECURE_VERSION, secure_version - sec_ver_hw);
-        if (err != ESP_OK || esp_efuse_read_secure_version() < secure_version) {
-            ESP_LOGE(TAG, "Failed to update secure version in eFuse");
+        esp_err_t err = esp_efuse_write_field_cnt(field, secure_version - sec_ver_hw);
+        if (err != ESP_OK || read_secure_version_impl(field, size) < secure_version) {
+            ESP_LOGE(TAG, "Failed to update secure version (%s) in eFuse", owner);
             return ESP_FAIL;
         }
-        ESP_LOGI(TAG, "Anti-rollback is set. eFuse field is updated(%"PRIu32").", secure_version);
+        ESP_LOGI(TAG, "Anti-rollback is set. eFuse field (%s) is updated(%"PRIu32").", owner, secure_version);
     } else if (sec_ver_hw > secure_version) {
-        ESP_LOGE(TAG, "Anti-rollback is not set. secure_version of app is lower that eFuse field(%"PRIu32").", sec_ver_hw);
+        ESP_LOGE(TAG, "Anti-rollback is not set. secure_version of %s is lower that eFuse field(%"PRIu32").", owner, sec_ver_hw);
         return ESP_FAIL;
     }
     return ESP_OK;
 }
+
+static size_t app_sec_ver_size(void)
+{
+    size_t field_size = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION) - TEE_SEC_VER_SIZE_EFUSE_FIELD;
+    return MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, field_size);
+}
+
+uint32_t esp_efuse_read_secure_version(void)
+{
+    return read_secure_version_impl(ESP_EFUSE_SECURE_VERSION, app_sec_ver_size());
+}
+
+bool esp_efuse_check_secure_version(uint32_t secure_version)
+{
+    return check_secure_version_impl(ESP_EFUSE_SECURE_VERSION, app_sec_ver_size(), secure_version);
+}
+
+esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
+{
+    return update_secure_version_impl(ESP_EFUSE_SECURE_VERSION, app_sec_ver_size(), secure_version, "app");
+}
+
+#if CONFIG_SECURE_TEE_ANTI_ROLLBACK
+static esp_efuse_desc_t s_tee_sec_ver_desc;
+static const esp_efuse_desc_t *s_tee_sec_ver_field[] = { &s_tee_sec_ver_desc, NULL };
+
+static const esp_efuse_desc_t **tee_sec_ver_field(void)
+{
+    if (s_tee_sec_ver_desc.bit_count == 0) {
+        const esp_efuse_desc_t *sec_ver = ESP_EFUSE_SECURE_VERSION[0];
+        assert(ESP_EFUSE_SECURE_VERSION[1] == NULL && sec_ver->bit_count > TEE_SEC_VER_SIZE_EFUSE_FIELD);
+        s_tee_sec_ver_desc = (esp_efuse_desc_t) {
+            .efuse_block = sec_ver->efuse_block,
+            .bit_start = sec_ver->bit_start + sec_ver->bit_count - TEE_SEC_VER_SIZE_EFUSE_FIELD,
+            .bit_count = TEE_SEC_VER_SIZE_EFUSE_FIELD,
+        };
+    }
+    return s_tee_sec_ver_field;
+}
+
+uint32_t esp_efuse_read_tee_secure_version(void)
+{
+    return read_secure_version_impl(tee_sec_ver_field(), TEE_SEC_VER_SIZE_EFUSE_FIELD);
+}
+
+bool esp_efuse_check_tee_secure_version(uint32_t secure_version)
+{
+    /* NOTE: A version above the field size could never be recorded, so it must not be accepted either */
+    if (secure_version > TEE_SEC_VER_SIZE_EFUSE_FIELD) {
+        return false;
+    }
+    return check_secure_version_impl(tee_sec_ver_field(), TEE_SEC_VER_SIZE_EFUSE_FIELD, secure_version);
+}
+
+#if defined(BOOTLOADER_BUILD) || defined(ESP_TEE_BUILD)
+esp_err_t esp_efuse_update_tee_secure_version(uint32_t secure_version)
+{
+    return update_secure_version_impl(tee_sec_ver_field(), TEE_SEC_VER_SIZE_EFUSE_FIELD, secure_version, "TEE");
+}
+#endif // BOOTLOADER_BUILD || ESP_TEE_BUILD
+#endif // CONFIG_SECURE_TEE_ANTI_ROLLBACK
 
 #if SOC_ECDSA_SUPPORTED
 bool esp_efuse_is_ecdsa_p192_curve_supported(void)
