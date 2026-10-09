@@ -2,6 +2,7 @@ INPUT += \
     $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt.h \
     $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
     $(PROJECT_PATH)/components/bt/include/common/btdm_le_vs.h \
+    $(PROJECT_PATH)/components/bt/include/common/btdm_common_vs.h \
     $(PROJECT_PATH)/components/bt/include/common/btdm_le.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
