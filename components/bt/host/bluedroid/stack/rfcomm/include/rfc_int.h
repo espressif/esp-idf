@@ -211,7 +211,6 @@ typedef struct {
     MX_FRAME  rx_frame;
     tL2CAP_APPL_INFO  reg_info;              /* L2CAP Registration info */
     tRFC_MCB *p_rfc_lcid_mcb[MAX_L2CAP_CHANNELS];     /* MCB based on the L2CAP's lcid */
-    BOOLEAN   peer_rx_disabled;              /* If TRUE peer sent FCOFF */
     UINT8     last_mux;                      /* Last mux allocated */
     UINT8     last_port;                     /* Last port allocated */
 } tRFCOMM_CB;
