@@ -23,8 +23,8 @@ extern "C" {
  * @brief LP Core I2C pin config parameters
  */
 typedef struct {
-    gpio_num_t sda_io_num;      /*!< GPIO pin for SDA signal. Only GPIO#6 can be used as the SDA pin. */
-    gpio_num_t scl_io_num;      /*!< GPIO pin for SCL signal. Only GPIO#7 can be used as the SCL pin. */
+    gpio_num_t sda_io_num;      /*!< GPIO pin for SDA signal. Must be a valid LP GPIO. Use LP_I2C_SDA_IO macro for the default pin for your target. */
+    gpio_num_t scl_io_num;      /*!< GPIO pin for SCL signal. Must be a valid LP GPIO. Use LP_I2C_SCL_IO macro for the default pin for your target. */
     bool sda_pullup_en;         /*!< SDA line enable internal pullup. Can be configured if external pullup is not used. */
     bool scl_pullup_en;         /*!< SCL line enable internal pullup. Can be configured if external pullup is not used. */
 } lp_core_i2c_pin_cfg_t;
