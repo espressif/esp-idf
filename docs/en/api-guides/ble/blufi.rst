@@ -18,6 +18,8 @@ You can customize symmetric encryption, asymmetric encryption, and checksum supp
 
    For new projects or when adding Wi-Fi provisioning, we recommend using the `network_provisioning`_ component, which offers a modern, secure, and actively maintained solution.
 
+   BluFi application callbacks (``esp_blufi_callbacks_t::event_cb`` and the security handlers) run on ``BTC_TASK``, not on the NimBLE host task. Set :menuitem:`CONFIG_BT_BTC_TASK_STACK_SIZE` under Component config → Bluetooth → Common Options. :menuitem:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE` does not change ``BTC_TASK``.
+
 
 Getting Started
 ---------------

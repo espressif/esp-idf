@@ -1358,6 +1358,10 @@ menu "Extra Features"
         help
             Set this option to enable blufi functionality.
 
+            BluFi callbacks run on BTC_TASK, not on the NimBLE host task.
+            Configure CONFIG_BT_BTC_TASK_STACK_SIZE under Bluetooth Common
+            Options if those callbacks overflow BTC_TASK.
+
     config BT_NIMBLE_ENC_ADV_DATA
         bool "Encrypted Advertising Data"
         help
