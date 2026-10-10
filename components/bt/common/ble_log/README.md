@@ -239,6 +239,9 @@ name for the same behavior.
 
 `ble_log_flush()` is an ordinary FreeRTOS task API. Do not call it from an ISR,
 critical section, or the shared ESP Timer task.
+The shutdown handler uses it to drain logs before a software restart. Normal
+operation, including example initialization, relies on periodic OPEN flushing;
+startup statistics continue from INIT without an extra FLUSH snapshot or reset.
 
 A public or LL record that cannot fit completely in one pool transport is
 rejected and counted as lost; BLE Log never emits a truncated record.
