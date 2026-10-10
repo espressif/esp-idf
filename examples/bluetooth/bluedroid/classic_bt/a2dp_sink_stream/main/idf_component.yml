@@ -9,3 +9,5 @@ dependencies:
     path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/a2dp_utils/a2dp_sink_int_codec_utils
   a2dp_sink_ext_codec_utils:
     path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/a2dp_utils/a2dp_sink_ext_codec_utils
+  avrcp_common_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/avrcp_utils/avrcp_common_utils

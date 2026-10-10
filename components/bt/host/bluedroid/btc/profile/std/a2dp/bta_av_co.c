@@ -2102,8 +2102,8 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTC_AV_STATUS *p_status)
                         /* Save the new configuration */
                         p_peer->p_snk = p_sink;
                         memcpy(p_peer->codec_cfg, codec_cfg, AVDT_CODEC_SIZE);
-                p_peer->cur_codec_cfg.id = bta_av_co_cb.codec_cfg.id;
-                memcpy(p_peer->cur_codec_cfg.info, codec_cfg, AVDT_CODEC_SIZE);
+                        p_peer->cur_codec_cfg.id = bta_av_co_cb.codec_cfg.id;
+                        memcpy(p_peer->cur_codec_cfg.info, codec_cfg, AVDT_CODEC_SIZE);
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
                         p_peer->cp_active = cp_active;
                         if (p_peer->cp_active) {
@@ -2227,8 +2227,8 @@ BOOLEAN bta_av_co_audio_set_pref_mcc(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *pref
                     /* Update peer configuration with the new codec config based on preferred config. */
                     p_peer->p_snk = p_sink;
                     memcpy(p_peer->codec_cfg, codec_cfg, AVDT_CODEC_SIZE);
-                p_peer->cur_codec_cfg.id = bta_av_co_cb.codec_cfg.id;
-                memcpy(p_peer->cur_codec_cfg.info, codec_cfg, AVDT_CODEC_SIZE);
+                    p_peer->cur_codec_cfg.id = bta_av_co_cb.codec_cfg.id;
+                    memcpy(p_peer->cur_codec_cfg.info, codec_cfg, AVDT_CODEC_SIZE);
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
                     p_peer->cp_active = cp_active;
                     bta_av_co_cb.cp.active = cp_active;

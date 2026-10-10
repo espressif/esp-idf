@@ -11,11 +11,14 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
+#include "esp_avrc_api.h"
 
 #include "bt_app_core_utils.h"
 #include "bredr_app_common_utils.h"
 #include "a2dp_sink_common_utils.h"
 #include "a2dp_utils_tags.h"
+#include "avrcp_utils_tags.h"
+#include "avrcp_common_utils.h"
 #if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
 #include "a2dp_sink_int_codec_utils.h"
 #else
@@ -64,6 +67,15 @@ static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len);
 /* callback function for A2DP sink undecoded audio data */
 static void bt_app_a2d_audio_data_cb(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf);
 #endif
+
+/* handler for AVRCP controller events */
+static void bt_app_avrc_ct_evt_hdl(uint16_t event, void *param);
+
+/* callback function for AVRCP controller */
+static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param);
+
+/* callback function for AVRCP target */
+static void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param);
 
 /* handler for bluetooth stack enabled events */
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
@@ -264,6 +276,80 @@ static void bt_app_a2d_audio_data_cb(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_
 }
 #endif
 
+static void bt_app_avrc_ct_evt_hdl(uint16_t event, void *param)
+{
+    esp_avrc_ct_cb_param_t *rc = (esp_avrc_ct_cb_param_t *)(param);
+
+    switch (event) {
+    case ESP_AVRC_CT_CONNECTION_STATE_EVT: {
+        bt_avrc_common_ct_evt_def_hdl(event, param);
+        if (rc->conn_stat.connected) {
+            bt_avrc_common_ct_get_peer_rn_cap();
+        } else {
+            bt_avrc_common_ct_set_peer_rn_cap(0);
+        }
+        break;
+    }
+    case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT: {
+        bt_avrc_common_ct_evt_def_hdl(event, param);
+        bt_avrc_common_ct_set_peer_rn_cap(rc->get_rn_caps_rsp.evt_set.bits);
+        bt_avrc_common_ct_rn_track_changed();
+        bt_avrc_common_ct_rn_play_status_changed();
+        bt_avrc_common_ct_rn_play_pos_changed();
+        break;
+    }
+    case ESP_AVRC_CT_CHANGE_NOTIFY_EVT: {
+        bt_avrc_common_ct_evt_def_hdl(event, param);
+        bt_avrc_common_ct_notify_evt_handler(rc->change_ntf.event_id, &rc->change_ntf.event_parameter);
+        break;
+    }
+    default:
+        bt_avrc_common_ct_evt_def_hdl(event, param);
+        break;
+    }
+}
+
+static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_AVRC_CT_CONNECTION_STATE_EVT:
+    case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
+    case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
+    case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
+    case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
+        if (!bt_app_work_dispatch(bt_app_avrc_ct_evt_hdl, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL, NULL)) {
+            ESP_LOGE(BT_RC_CT_TAG, "CT event %d dispatch failed", event);
+        }
+        break;
+    }
+    default:
+        ESP_LOGE(BT_RC_CT_TAG, "Invalid AVRC event: %d", event);
+        break;
+    }
+}
+
+static void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_AVRC_TG_CONNECTION_STATE_EVT:
+    case ESP_AVRC_TG_REMOTE_FEATURES_EVT:
+    case ESP_AVRC_TG_PASSTHROUGH_CMD_EVT:
+    case ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT:
+    case ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT:
+    case ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT:
+    case ESP_AVRC_TG_PROF_STATE_EVT: {
+        if (!bt_app_work_dispatch(bt_avrc_common_tg_evt_def_hdl, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL, NULL)) {
+            ESP_LOGE(BT_RC_TG_TAG, "TG event %d dispatch failed", event);
+        }
+        break;
+    }
+    default:
+        ESP_LOGE(BT_RC_TG_TAG, "Invalid AVRC event: %d", event);
+        break;
+    }
+}
+
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 {
     ESP_LOGD(BT_AV_TAG, "%s event: %d", __func__, event);
@@ -274,6 +360,17 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_bt_gap_set_device_name(local_device_name);
         esp_bt_dev_register_callback(bt_app_dev_cb);
         esp_bt_gap_register_callback(bt_app_gap_cb);
+
+        /* AVRCP must be initialized before A2DP, otherwise the stack
+         * enables A2DP without AVRCP and rejects the peer's AVCTP (PSM 23). */
+        esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
+        assert(esp_avrc_ct_init() == ESP_OK);
+        esp_avrc_tg_register_callback(bt_app_rc_tg_cb);
+        assert(esp_avrc_tg_init() == ESP_OK);
+
+        esp_avrc_rn_evt_cap_mask_t evt_set = {0};
+        esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_SET, &evt_set, ESP_AVRC_RN_VOLUME_CHANGE);
+        assert(esp_avrc_tg_set_rn_evt_cap(&evt_set) == ESP_OK);
 
         esp_a2d_register_callback(&bt_app_a2d_cb);
         assert(esp_a2d_sink_init() == ESP_OK);

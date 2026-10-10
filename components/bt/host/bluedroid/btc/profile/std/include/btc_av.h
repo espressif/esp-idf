@@ -88,6 +88,7 @@ typedef enum {
     BTC_AV_SINK_API_REG_AUDIO_DATA_CB_EVT,
     BTC_AV_SINK_API_SET_DELAY_VALUE_EVT,
     BTC_AV_SINK_API_GET_DELAY_VALUE_EVT,
+    BTC_AV_SINK_API_GET_ACTIVE_DEVICE_EVT,
     BTC_AV_SINK_API_SET_ACTIVE_DEVICE_EVT,
 #endif  /* BTC_AV_SINK_INCLUDED */
 #if BTC_AV_SRC_INCLUDED
@@ -268,7 +269,8 @@ uint8_t btc_av_get_peer_sep(void);
 ** Function         btc_av_get_active_peer
 **
 ** Description      Get the connection handle of the peer selected for rendering.
-**                  The peer may still be idle after a set-active request.
+**                  Same-task helper. The public API reports the result in
+**                  ESP_A2D_SNK_ACTIVE_DEVICE_EVT instead of calling this.
 **
 ** Returns          TRUE when a peer is selected
 **

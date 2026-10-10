@@ -435,7 +435,7 @@ typedef union {
      * active = false and status = ESP_BT_STATUS_SUCCESS.
      */
     struct a2d_snk_active_device_param {
-        bool active;                            /*!< false when no connected device is selected any more,
+        bool active;                            /*!< false when no connected device is selected,
                                                      in which case remote_bda and conn_hdl are meaningless.
                                                      Ignored when status is not ESP_BT_STATUS_SUCCESS */
         esp_bd_addr_t remote_bda;               /*!< selected device when the connection handle is known */
@@ -658,20 +658,17 @@ esp_err_t esp_a2d_sink_get_delay_value(void);
  * @brief           Get the device selected for rendering. When several source devices
  *                  are connected, only one of them is rendered at a time, media packets of the others
  *                  are discarded. The selected device may still be idle (connected, not streaming)
- *                  after esp_a2d_sink_set_active_device(). This API must be called after
- *                  esp_a2d_sink_init() and before esp_a2d_sink_deinit().
- *
- * @param[out]      conn_hdl: connection handle of the selected device, as reported in
- *                  ESP_A2D_CONNECTION_STATE_EVT
+ *                  after esp_a2d_sink_set_active_device(). The result is reported asynchronously in
+ *                  ESP_A2D_SNK_ACTIVE_DEVICE_EVT (param->a2d_snk_active_device). This API must be
+ *                  called after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
  *
  * @return
- *                  - ESP_OK: a device is selected and its connection handle was written to conn_hdl
- *                  - ESP_ERR_INVALID_ARG: if conn_hdl is NULL
- *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled, or no device is
- *                    selected
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_a2d_sink_get_active_device(esp_a2d_conn_hdl_t *conn_hdl);
+esp_err_t esp_a2d_sink_get_active_device(void);
 
 /**
  *

@@ -329,7 +329,7 @@ esp_err_t esp_a2d_sink_get_delay_value(void)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_a2d_sink_get_active_device(esp_a2d_conn_hdl_t *conn_hdl)
+esp_err_t esp_a2d_sink_get_active_device(void)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -339,14 +339,16 @@ esp_err_t esp_a2d_sink_get_active_device(esp_a2d_conn_hdl_t *conn_hdl)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (conn_hdl == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    bt_status_t stat;
+    btc_msg_t msg;
 
-    if (!btc_av_get_active_peer(conn_hdl)) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    return ESP_OK;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_A2DP;
+    msg.act = BTC_AV_SINK_API_GET_ACTIVE_DEVICE_EVT;
+
+    /* Switch to BTC context */
+    stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_a2d_sink_set_active_device(esp_a2d_conn_hdl_t conn_hdl)
