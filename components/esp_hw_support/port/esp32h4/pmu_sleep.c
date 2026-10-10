@@ -45,6 +45,7 @@ void pmu_sleep_enable_regdma_backup(void)
         pmu_hal_hp_set_sleep_active_backup_enable(PMU_instance()->hal);
         pmu_hal_hp_set_sleep_modem_backup_enable(PMU_instance()->hal);
         pmu_hal_hp_set_modem_active_backup_enable(PMU_instance()->hal);
+        pmu_hal_hp_set_modem_sleep_backup_enable(PMU_instance()->hal);
         s_pmu_sleep_regdma_backup_enabled = true;
     }
 }
@@ -56,6 +57,7 @@ void pmu_sleep_disable_regdma_backup(void)
         pmu_hal_hp_set_sleep_active_backup_disable(PMU_instance()->hal);
         pmu_hal_hp_set_sleep_modem_backup_disable(PMU_instance()->hal);
         pmu_hal_hp_set_modem_active_backup_disable(PMU_instance()->hal);
+        pmu_hal_hp_set_modem_sleep_backup_disable(PMU_instance()->hal);
         s_pmu_sleep_regdma_backup_enabled = false;
     }
 }

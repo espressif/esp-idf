@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,4 +79,14 @@ void pmu_hal_hp_set_modem_active_backup_enable(pmu_hal_context_t *hal)
 void pmu_hal_hp_set_modem_active_backup_disable(pmu_hal_context_t *hal)
 {
     pmu_ll_hp_set_modem_to_active_backup_disable(hal->dev);
+}
+
+void pmu_hal_hp_set_modem_sleep_backup_enable(pmu_hal_context_t *hal)
+{
+    pmu_ll_hp_set_modem_to_sleep_backup_enable(hal->dev);
+}
+
+void pmu_hal_hp_set_modem_sleep_backup_disable(pmu_hal_context_t *hal)
+{
+    pmu_ll_hp_set_modem_to_sleep_backup_disable(hal->dev);
 }

@@ -44,6 +44,10 @@ void pmu_hal_hp_set_modem_active_backup_enable(pmu_hal_context_t *hal);
 
 void pmu_hal_hp_set_modem_active_backup_disable(pmu_hal_context_t *hal);
 
+void pmu_hal_hp_set_modem_sleep_backup_enable(pmu_hal_context_t *hal);
+
+void pmu_hal_hp_set_modem_sleep_backup_disable(pmu_hal_context_t *hal);
+
 #ifdef __cplusplus
 }
 #endif
