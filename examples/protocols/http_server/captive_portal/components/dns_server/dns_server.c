@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -23,6 +23,7 @@
 
 #define OPCODE_MASK (0x7800)
 #define QR_FLAG (1 << 7)
+#define AD_FLAG (0x0020)
 #define QD_TYPE_A (0x0001)
 #define ANS_TTL_SEC (300)
 
@@ -113,12 +114,14 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
              ntohs(header->id), ntohs(header->flags), ntohs(header->qd_count));
 
     // Not a standard query
-    if ((header->flags & OPCODE_MASK) != 0) {
+    if ((ntohs(header->flags) & OPCODE_MASK) != 0) {
         return 0;
     }
 
     // Set question response flag
     header->flags |= QR_FLAG;
+    // The server does not validate DNSSEC, so it must not echo the request's AD bit
+    header->flags &= ~htons(AD_FLAG);
 
     uint16_t qd_count = ntohs(header->qd_count);
     header->an_count = htons(qd_count);
