@@ -140,7 +140,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
         return -1;
     }
 
-    // Pointer to current answer and question
+    // Answers are built after the copied request and moved behind the questions at the end
     const char *req_end = dns_reply + req_len;
     char *cur_ans_ptr = dns_reply + req_len;
     char *cur_qd_ptr = dns_reply + sizeof(dns_header_t);
@@ -199,8 +199,13 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
             an_count++;
         }
     }
+    // Move the answers over the request's authority/additional records (e.g. EDNS0 OPT), which are not echoed
+    size_t ans_len = cur_ans_ptr - req_end;
+    memmove(cur_qd_ptr, req_end, ans_len);
     header->an_count = htons(an_count);
-    return cur_ans_ptr - dns_reply;
+    header->ns_count = 0;
+    header->ar_count = 0;
+    return cur_qd_ptr + ans_len - dns_reply;
 }
 
 /*
