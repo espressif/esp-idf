@@ -275,9 +275,9 @@ void dns_server_task(void *pvParameters)
                 int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN, handle);
 
                 ESP_LOGI(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
-                if (reply_len <= 0) {
+                if (reply_len < 0) {
                     ESP_LOGE(TAG, "Failed to prepare a DNS reply");
-                } else {
+                } else if (reply_len > 0) {   // 0: a reply or not a standard query, ignored
                     int err = sendto(sock, reply, reply_len, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
                     if (err < 0) {
                         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
