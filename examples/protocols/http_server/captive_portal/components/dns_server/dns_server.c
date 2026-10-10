@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -113,7 +113,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
              ntohs(header->id), ntohs(header->flags), ntohs(header->qd_count));
 
     // Not a standard query
-    if ((header->flags & OPCODE_MASK) != 0) {
+    if ((ntohs(header->flags) & OPCODE_MASK) != 0) {
         return 0;
     }
 
