@@ -37,6 +37,7 @@ typedef union twai_ll_frame_buffer_t twai_hal_frame_t;
 #define TWAI_HAL_STATE_FLAG_ERR_PASSIVE         (1 << 3)    //TEC or REC is >= 128
 #define TWAI_HAL_STATE_FLAG_BUS_OFF             (1 << 4)    //Bus-off due to TEC >= 256
 #define TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED    (1 << 5)    //Transmit buffer is occupied
+#define TWAI_HAL_STATE_FLAG_TX_RETRY_PENDING    (1 << 6)    //A failed single shot attempt is to be re-sent by twai_hal_retry_tx()
 #define TWAI_HAL_STATE_FLAG_TX_NEED_RETRY       (1 << 7)    //TX needs to be restarted due to errata workarounds
 
 //Interrupt Events
@@ -83,6 +84,10 @@ typedef struct {
     uint8_t sja1000_filter_id_type;    // hardware don't check id type, check in software, 0:no_filter, 1: std_id_only, 2: ext_id_only
     uint8_t tx_buffer_num;
     int8_t retry_cnt;
+#if !SOC_HAS(TWAI_FD)
+    uint8_t tx_fail_cnt;                // failed single shot attempts of the frame in the TX buffer
+    uint8_t tx_retry_frame[13];         // the frame in the TX buffer, re-sent while attempts remain
+#endif
     bool enable_self_test;
     bool enable_loopback;
     bool enable_listen_only;
@@ -390,6 +395,21 @@ void twai_hal_parse_frame(twai_hal_context_t *hal_ctx, twai_hal_frame_t *frame, 
  * @param buffer_idx Hardware message buffer id to use
  */
 void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_frame_t *tx_frame, uint8_t buffer_idx);
+
+#if !SOC_HAS(TWAI_FD)
+/**
+ * @brief Re-send a failed single shot attempt, if one is pending
+ *
+ * A frame sent with a bounded retry_cnt that fails an attempt is not reported
+ * as done; twai_hal_get_events() marks it for re-sending instead. The transmit
+ * command must be the last command written in the ISR (a later command write,
+ * such as releasing an RX buffer, can clear the latched transmit request), so
+ * call this after the RX frames have been read.
+ *
+ * @param hal_ctx Context of the HAL layer
+ */
+void twai_hal_retry_tx(twai_hal_context_t *hal_ctx);
+#endif
 
 /**
  * @brief Copy a frame from the RX buffer and release

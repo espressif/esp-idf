@@ -292,6 +292,11 @@ static void _node_isr_main(void *arg)
         }
     }
 
+#if !SOC_HAS(TWAI_FD)
+    // re-send a failed attempt only now, a command written after the transmit command can clear it
+    twai_hal_retry_tx(twai_ctx->hal);
+#endif
+
     // deal TX event
     if (events & TWAI_HAL_EVENT_TX_DONE_MASK) {
         uint32_t tx_done_events = (events & TWAI_HAL_EVENT_TX_DONE_MASK) >> __builtin_ctz(TWAI_HAL_EVENT_TX0_DONE);
