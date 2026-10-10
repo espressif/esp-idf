@@ -10,3 +10,4 @@
     peripherals
     security
     system
+    tools
