@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -68,6 +68,8 @@ dns_server_handle_t start_dns_server(dns_server_config_t *config);
 
 /**
  * @brief Stops and destroys DNS server's task and structs
+ *
+ * Blocks until the server task has closed its socket and exited (up to about a second).
  * @param handle DNS server's handle to destroy
  */
 void stop_dns_server(dns_server_handle_t handle);
