@@ -11,7 +11,7 @@
 #include "dac_continuous_example.h"
 
 #define EXAMPLE_WAVE_FREQ_HZ       2000                      // Default wave frequency 2000 Hz, it can't be too low
-#define EXAMPLE_UPDATE_RATE_HZ     (EXAMPLE_ARRAY_LEN * EXAMPLE_WAVE_FREQ_HZ) // The frequency at which the DAC samples (codes) are updated
+#define EXAMPLE_UPDATE_RATE_HZ     (EXAMPLE_SAMPLE_CNT * EXAMPLE_WAVE_FREQ_HZ) // The frequency at which the DAC samples (codes) are updated
 
 static void dac_dma_write_task(void *args)
 {
@@ -21,7 +21,7 @@ static void dac_dma_write_task(void *args)
     while (1) {
         ESP_LOGI(TAG, "%s wave start", wave_name[wave_sel]);
         /* The wave in the buffer will be converted cyclically */
-        ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, wave_data[wave_sel], EXAMPLE_ARRAY_LEN, NULL));
+        ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, wave_data[wave_sel], EXAMPLE_SAMPLE_CNT, NULL));
         /* Switch wave every CONFIG_EXAMPLE_WAVE_PERIOD_SEC seconds */
         vTaskDelay(pdMS_TO_TICKS(CONFIG_EXAMPLE_WAVE_PERIOD_SEC * 1000));
         ESP_ERROR_CHECK(dac_continuous_stop_cyclically(handle));

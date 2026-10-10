@@ -54,7 +54,7 @@ You can see the following logs on the monitor:
 I (277) dac_audio: DAC audio example start
 I (277) dac_audio: --------------------------------------
 I (287) dac_audio: DAC initialized success, DAC DMA is ready
-I (297) dac_audio: Audio size 95824 bytes, played at frequency 48000 Hz synchronously
+I (297) dac_audio: Audio size 95824 samples, played at frequency 48000 Hz synchronously
 Play count: 1
 Play count: 2
 ...

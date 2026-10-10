@@ -15,11 +15,11 @@
 #define EXAMPLE_DAC_CHAN_IO  dac_periph_signal.dac_channel_io_num[DAC_CHAN_0]
 
 const char* wave_name[DAC_WAVE_MAX] = {"sine", "triangle", "sawtooth", "square"};
-dac_example_sample_t wave_data[DAC_WAVE_MAX][EXAMPLE_ARRAY_LEN];
+dac_example_sample_t wave_data[DAC_WAVE_MAX][EXAMPLE_SAMPLE_CNT];
 
 void example_generate_wave(uint8_t resolution_bits)
 {
-    const size_t N = EXAMPLE_ARRAY_LEN;
+    const size_t N = EXAMPLE_SAMPLE_CNT;
     const uint16_t max_code = (1U << resolution_bits) - 1;
 
     for (size_t i = 0; i < N; i++) {

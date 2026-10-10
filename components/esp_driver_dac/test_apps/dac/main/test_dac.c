@@ -250,9 +250,9 @@ TEST_CASE("DAC_dma_sync_write_resume_test", "[dac]")
     /* Waiting 100 ms between writes guarantees the DMA has fully drained and stopped,
      * forcing every subsequent write through the resume path. */
     for (int i = 0; i < 10; i++) {
-        size_t bytes_loaded = 0;
-        TEST_ESP_OK(dac_continuous_write(cont_handle, buf, len, &bytes_loaded, 1000));
-        TEST_ASSERT_EQUAL(len, bytes_loaded);
+        size_t loaded_cnt = 0;
+        TEST_ESP_OK(dac_continuous_write(cont_handle, buf, len, &loaded_cnt, 1000));
+        TEST_ASSERT_EQUAL(len, loaded_cnt);
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 
