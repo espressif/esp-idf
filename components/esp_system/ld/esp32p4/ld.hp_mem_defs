@@ -7,9 +7,9 @@
 /* ESP32-P4 target-specific HP memory definitions shared between HP app and LP Core linker scripts */
 
 #if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-#define SRAM_MAIN_END   0x4FF2CBD0  /* 2nd stage bootloader iram_loader_seg start address (rev < 3) */
+#define SRAM_MAIN_END   0x4FF2BBD0  /* 2nd stage bootloader iram_loader_seg start address (rev < 3) */
 #else
-#define SRAM_MAIN_END   0x4FFAEFC0  /* 2nd stage bootloader iram_loader_seg start address (rev3+) */
+#define SRAM_MAIN_END   0x4FFADFC0  /* 2nd stage bootloader iram_loader_seg start address (rev3+) */
 #endif
 
 #if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
