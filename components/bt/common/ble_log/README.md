@@ -512,6 +512,9 @@ idf.py build
 
 cd ../ble_log_usb_test
 idf.py build
+
+cd ../ble_log_usj_test
+idf.py build
 ```
 
 `ble_log_test` validates golden v8 bytes, the consolidated Internal Snapshot,
@@ -521,5 +524,7 @@ snapshot busy loss, stale claims, and enable/disable/deinit races.
 and repeated deinit races.
 `ble_log_usb_test` is the USB OTG smoke / throughput / raw-pipe app (host-side
 meters), and carries the dispatcher teardown interleaving check in
-`CONFIG_BLE_LOG_USB_TEST_LIFECYCLE_MODE`. Like the other three it is built
-manually: no BLE Log test runner exists yet.
+`CONFIG_BLE_LOG_USB_TEST_LIFECYCLE_MODE`.
+`ble_log_usj_test` is the USB Serial/JTAG smoke / throughput app (ROM identity
+0x303A:0x1001). Like the other four it is built manually: no BLE Log test
+runner exists yet.
