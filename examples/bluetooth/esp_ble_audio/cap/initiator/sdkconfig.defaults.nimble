@@ -1,6 +1,5 @@
 # NimBLE host overlay for this example.
-# Use with:
-#   idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.$IDF_TARGET;sdkconfig.defaults.nimble" build
+# Build it as described in README.md, with its own build directory and sdkconfig.
 
 CONFIG_BT_BLUEDROID_ENABLED=n
 CONFIG_BT_NIMBLE_ENABLED=y
