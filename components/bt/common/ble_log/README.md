@@ -383,6 +383,29 @@ is 64 bytes and is not configurable. The device stays the ROM USB
 Serial/JTAG identity (VID 0x303A PID 0x1001). The host opens that CDC-ACM
 port. It does not match PID 0x10B1 or the product string `BLE-Log-Port`.
 
+### First write waits for the host port open
+
+The signal is the `SET_LINE_CODE` / `DTR_CHG` / `RTS_CHG` bits of
+`USB_SERIAL_JTAG.int_raw`. The host sets them when it programs the port, and a
+chip reset clears them. A transport produced before that first open
+is dropped through the not-connected path, so it does not raise the
+FIFO-full counter.
+
+The latch proves the port was opened at least once since the chip reset,
+not that it is open now. Re-enumeration without a chip reset (unplug and
+replug, host reboot) leaves the latch set, so a commit can still land in the
+new enumeration window. Not reproduced on hardware.
+
+A second failure mode is independent of the gate.
+`EP1_CONF.SERIAL_IN_EP_DATA_FREE` can read 0 from boot and never recover. The
+driver ring then accepts transports that no interrupt drains, and the port
+stays silent until the chip is reset. Observed in 1 of 8 boots.
+
+ESP32-C3 and ESP32-S3 do not have those three interrupt bits. On those two
+targets the transport writes as soon as the SOF-based
+`usb_serial_jtag_is_connected()` reports connected, which is the behaviour
+from before the gate.
+
 On C6 the BLE Log peripheral default stays UART DMA (`SOC_UHCI_SUPPORTED`).
 USJ is opt-in. On H4, OTG TinyUSB and USJ are two choice members because
 they are two ports with two host identities.
