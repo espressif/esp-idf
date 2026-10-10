@@ -54,6 +54,11 @@ Application Examples
   * :example:`bluetooth/esp_ble_audio/cap/initiator` demonstrates how to act as a CAP Initiator for unicast and broadcast flows.
   * :example:`bluetooth/esp_ble_audio/cap/handover` demonstrates how to perform CAP handovers between unicast and broadcast flows.
 
+* **PBP (Public Broadcast Profile)**
+
+  * :example:`bluetooth/esp_ble_audio/pbp/pbk` demonstrates the PBP Public Broadcast Sink (PBK) role that discovers unencrypted high-quality public broadcasts and receives BIS data.
+  * :example:`bluetooth/esp_ble_audio/pbp/pbs` demonstrates the PBP Public Broadcast Source (PBS) role that advertises an unencrypted high-quality public broadcast and sends synthetic data over BIS.
+
 * **TMAP (Telephony and Media Audio Profile)**
 
   * :example:`bluetooth/esp_ble_audio/tmap/bmr` demonstrates the TMAP Broadcast Media Receiver (BMR) role that receives broadcast audio from a BMS.

@@ -636,6 +636,11 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
                                                   &broadcast_sink);
     if (err) {
         ESP_LOGE(TAG, "Failed to create broadcast sink, err %d", err);
+        /* The PA sync loss that follows resets the state and resumes scanning. */
+        rc = pa_sync_terminate(sync_handle);
+        if (rc) {
+            ESP_LOGE(TAG, "Failed to terminate PA sync, err %d", rc);
+        }
         return;
     }
 }

@@ -52,23 +52,23 @@ Just-Works pairing (LE Secure Connections, no MITM, no I/O capability) with bond
 
 ## Build & Flash
 
-The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS` in a separate build directory with its own `sdkconfig`, because an existing `sdkconfig` takes precedence over the defaults.
 
 ### Bluedroid host (default)
 
 ```bash
-idf.py set-target esp32h4
+idf.py --preview set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
 ### NimBLE host
 
 ```bash
-idf.py set-target esp32h4
-idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+idf.py --preview -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" set-target esp32h4
+idf.py -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" -p PORT flash monitor
 ```
 
-For `esp32s31`, replace the chip overlay accordingly.
+For `esp32s31`, replace `esp32h4` with `esp32s31` in the commands above.
 
 A coordinated set needs this example on two boards, one built for the `Left`
 ear and the other for `Right`.
