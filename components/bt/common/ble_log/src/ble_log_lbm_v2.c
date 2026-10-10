@@ -1139,7 +1139,8 @@ void ble_log_lbm_drain_open_trans(void)
      * have drained, so no lock is held for longer than one frame copy. */
     ble_log_pool_seal_open_trans();
     /* Hand the sealed buffers to the peripheral before the runtime queue
-     * is destroyed; the peripheral deinit wait completes the delivery. */
+     * is destroyed. COPY_FIFO send_trans copies into the ring. Deinit
+     * drops any bytes that have not left the ring. */
     (void)ble_log_rt_drain();
 }
 

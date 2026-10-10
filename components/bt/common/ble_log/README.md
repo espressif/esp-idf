@@ -420,8 +420,11 @@ operator has to release the port:
 
 If another caller already ran `usb_serial_jtag_driver_install`,
 `ble_log_init` returns false. That is a failed install, not a stolen
-console. CMake also `FATAL_ERROR`s when `BLE_LOG_PRPH_USB_SERIAL_JTAG` and
-`BLE_LOG_USJ_BUS_BUSY` are both set, so a leaked sdkconfig cannot link.
+console. `BLE_LOG_PRPH_USB_SERIAL_JTAG` depends on `!BLE_LOG_USJ_BUS_BUSY`,
+so menuconfig cannot enable both. If `sdkconfig.defaults` sets the USJ
+transport while the console still owns the FIFO, Kconfig turns the
+choice off. CMake still `FATAL_ERROR`s if both symbols are y. That only
+happens from a hand-edited sdkconfig that bypasses Kconfig.
 
 ### ROM dual-write on C3 and S3
 
@@ -450,6 +453,27 @@ the driver is gone. ROM paths that ignore `g_usb_print` (rare direct
 
 C5, C6, and later USJ chips do not have that `g_usb_print` leak. Channel 2
 is still uninstalled so `ets_printf` cannot use a leftover USB putc.
+
+### Teardown
+
+`ble_log_deinit` seals leftover transports and copies each one into the
+USJ TX ring, or drops it if the ring cannot hold it. It then uninstalls
+the driver. Bytes still in the ring are discarded. There is no
+`usb_serial_jtag_wait_tx_done` call. An unbounded wait can hang when SOF
+packets continue but the host is not reading the ACM port.
+
+TinyUSB CDC uses the same COPY_FIFO contract. UART DMA waits for hardware
+TX because that wait does not depend on a host reader.
+
+### Light sleep
+
+`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` depends on
+`ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED`. BLE Log USJ keeps the console on
+UART, so that option is hidden. BLE Log does not take an
+`ESP_PM_NO_LIGHT_SLEEP` lock. If the application enables automatic light
+sleep (`PM_ENABLE`), USJ output stops while the chip sleeps. Do not
+combine BLE Log USJ with automatic light sleep. Take that lock in the
+application if USJ must stay up during automatic light sleep.
 
 ### Which USB connector
 

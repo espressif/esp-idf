@@ -2,8 +2,9 @@
 
 USB Serial/JTAG smoke app for `CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG=y`.
 The device stays the ROM USB Serial/JTAG identity (VID 0x303A PID 0x1001).
-Open that CDC-ACM port. Do not open the JTAG interface. Do not scan for
-PID 0x10B1 or for the product string `BLE-Log-Port`.
+Open that CDC-ACM port for the binary log stream. Do not open the JTAG
+interface. Do not scan for PID 0x10B1 or for the product string
+`BLE-Log-Port`.
 
 The app releases the console in `sdkconfig.defaults`
 (`ESP_CONSOLE_UART_DEFAULT` and `ESP_CONSOLE_SECONDARY_NONE`). It does
@@ -21,21 +22,34 @@ path is shared `COPY_FIFO` code, not USJ-specific.
 
 ## Build, flash, run
 
+Flash may use the USJ ACM node or a UART-bridge COM port.
+
 ```bash
 cd components/bt/common/ble_log/test_apps/ble_log_usj_test
 idf.py set-target <chip>
-idf.py -p <PORT> build flash monitor
+idf.py -p <FLASH_PORT> build flash
 ```
 
-`<PORT>` is the same CDC-ACM node `idf.py monitor -p` uses on the
-onboard USB connector (`/dev/ttyACM*` on Linux, `/dev/cu*` on macOS,
-`COM*` on Windows).
+Do not run `idf.py monitor` on the USJ ACM node. That node carries binary
+BLE Log frames. The console is UART (`ESP_CONSOLE_UART_DEFAULT`).
+`ESP_LOG`, init failures, perf summaries, and loss warnings print there.
+
+On C3, C5, and C6 the onboard Type-C ACM node (`/dev/ttyACM*` on Linux)
+is the log port, not the console. UART0 is on the header pins and needs
+a USB-UART adapter if the board has no UART bridge.
+
+```bash
+idf.py -p <UART_PORT> monitor
+```
+
+`<UART_PORT>` is the UART console device. It is not the ROM USJ
+`303a:1001` ACM node.
 
 For perf mode:
 
 ```bash
 echo CONFIG_BLE_LOG_USJ_TEST_PERF_MODE=y > sdkconfig.perf
-idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.perf" set-target esp32c5 build flash monitor
+idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.perf" set-target esp32c5 build flash
 ```
 
 ## Supported targets

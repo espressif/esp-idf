@@ -85,6 +85,8 @@ void ble_log_prph_deinit(void)
     BLE_LOG_ATOMIC_STORE_RELEASE(s_inited, false);
     BLE_LOG_ATOMIC_STORE_RELEASE(s_tx_ring_drops, 0);
     BLE_LOG_ATOMIC_STORE_RELEASE(s_tx_ring_dropped_bytes, 0);
+    /* Residual TX ring bytes are dropped. COPY_FIFO deinit does not call
+     * wait_tx_done. SOF with no host reader would hang. */
 #if !CONFIG_FREERTOS_UNICORE && defined(CONFIG_ESP_IPC_ENABLE)
     if (xPortGetCoreID() != s_install_core) {
         (void)esp_ipc_call_blocking((uint32_t)s_install_core,
@@ -153,10 +155,6 @@ void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
         ble_log_usb_tx_action(connected, available, nbytes);
 
     if (ble_log_usb_tx_should_warn(action)) {
-        BLE_LOG_ATOMIC_ADD_RELAXED(s_tx_ring_drops, 1);
-        BLE_LOG_ATOMIC_ADD_RELAXED(s_tx_ring_dropped_bytes, (uint32_t)nbytes);
-    } else if (action == BLE_LOG_USB_TX_WRITE && nbytes > 0 &&
-               queued != (int)nbytes) {
         BLE_LOG_ATOMIC_ADD_RELAXED(s_tx_ring_drops, 1);
         BLE_LOG_ATOMIC_ADD_RELAXED(s_tx_ring_dropped_bytes, (uint32_t)nbytes);
     }

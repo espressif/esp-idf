@@ -79,9 +79,9 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_inited = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t rt_ref_count = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
 #if CONFIG_BLE_LOG_PRPH_COPY_FIFO
-/* USB builds drain the queue from a dedicated task: the 1 ms defer
- * cadence caps throughput at pool-depth x transport-size per millisecond
- * (~5 MiB/s), far below the USB bulk exit. Same dispatch function, same
+/* COPY_FIFO builds drain the queue from a dedicated task. The 1 ms defer
+ * cadence would cap throughput at pool-depth x transport-size per
+ * millisecond (~5 MiB/s). Same dispatch function, same
  * single-dispatcher invariant; the task blocks on the queue so idle cost
  * is zero. SPI/UART builds keep the deferred esp_timer batch below. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR TaskHandle_t rt_task_handle = NULL;
@@ -473,7 +473,7 @@ void ble_log_rt_deinit(void)
     }
 #if CONFIG_BLE_LOG_PRPH_COPY_FIFO
     /* Dispatcher teardown first: it must be quiescent before the tail report
-     * below samples the CDC FIFO-drop counters it updates, and before the
+     * below samples the TX ring drop counters it updates, and before the
      * pool and the peripheral go away.
      *
      * Quiescence comes from the gate plus an ack, not from vTaskDelete: the

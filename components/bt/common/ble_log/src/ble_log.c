@@ -86,7 +86,9 @@ void ble_log_deinit(void)
     ble_log_lbm_begin_deinit();
 
     /* Seal and dispatch residual pool and UART0 REDIR data while the runtime
-     * queue is still alive. The peripheral waits below complete delivery. */
+     * queue is still alive. UART DMA then waits for those bytes on the wire.
+     * COPY_FIFO (TinyUSB CDC, USB Serial/JTAG) copies into a software ring
+     * and drops whatever is still there at prph deinit. No wait_tx_done. */
     ble_log_lbm_drain_open_trans();
 #if BLE_LOG_UART_REDIR_ENABLED
     (void)ble_log_prph_flush();
@@ -104,13 +106,15 @@ void ble_log_deinit(void)
      *    submissions and callbacks finish before the timers and queue are
      *    deleted.
      *
-     * 3. Peripheral interface is deinitialized SECOND. It waits for DMA
-     *    operations started before runtime dispatch stopped, then destroys
-     *    the driver. No new DMA operations can start after runtime teardown.
+     * 3. Peripheral interface is deinitialized SECOND. UART DMA waits for
+     *    TX started before dispatch stopped, then destroys the driver.
+     *    COPY_FIFO uninstalls immediately. Residual software-ring bytes
+     *    are dropped. wait_tx_done is not called. SOF with no host reader
+     *    would hang an unbounded wait.
      *
-     * 4. LBM is deinitialized LAST. At this point all DMA has completed
-     *    (ensured by step 3) and all queued transports have been drained
-     *    (ensured by steps 1 and 2), so freeing the buffers is safe. */
+     * 4. LBM is deinitialized LAST. UART DMA completion is step 3.
+     *    COPY_FIFO has already recycled every transport in send_trans, so
+     *    freeing the buffers is safe even if the ring still held copies. */
     ble_log_rt_deinit();
     ble_log_prph_deinit();
     ble_log_lbm_deinit();

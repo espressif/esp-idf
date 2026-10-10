@@ -249,8 +249,8 @@ void ble_log_lbm_flush_open_trans(void);
 /* Deinit drain: seal every OPEN transport and dispatch it to the runtime
  * queue. Contract: called after ble_log_lbm_begin_deinit() (producer gate
  * closed, writers drained) and before ble_log_rt_deinit(); every transport
- * lock is then uncontended. The peripheral deinit wait completes the
- * delivery of the dispatched buffers. */
+ * lock is then uncontended. COPY_FIFO send_trans finishes delivery into
+ * the software ring. Residual ring bytes are dropped at prph deinit. */
 void ble_log_lbm_drain_open_trans(void);
 void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
 /* Loss-warning window: per-source losses accumulated since the previous
