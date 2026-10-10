@@ -11,6 +11,8 @@
 #include "sdkconfig.h"
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
+#include "soc/soc.h"
+#include "soc/usb_serial_jtag_reg.h"
 #include "driver/usb_serial_jtag.h"
 #if !CONFIG_FREERTOS_UNICORE && defined(CONFIG_ESP_IPC_ENABLE)
 #include "esp_ipc.h"
@@ -132,6 +134,45 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
     *trans = NULL;
 }
 
+/* The host must have opened the CDC console port before a transport may touch
+ * the USJ TX FIFO.
+ *
+ * usb_serial_jtag_is_connected() is SOF-based and the monitor assumes
+ * "connected" until it has seen no SOF for a few ticks, so it is already true
+ * while the bus is still enumerating. A FIFO commit armed in that window - the
+ * host has addressed the device but has not sent SET_CONFIGURATION yet - can be
+ * dropped by the configuration transition without the host ever reading it.
+ * The driver resumes TX only when the hardware reports the FIFO writable again
+ * (SERIAL_IN_EP_DATA_FREE, cleared by the commit and set again only by a host
+ * read), so that single commit leaves the TX path dead until the chip is reset:
+ * no further SERIAL_IN_EMPTY interrupt arrives, the TX ring fills up, and every
+ * later transport is lost.
+ *
+ * SET_LINE_CODING and SET_CONTROL_LINE_STATE are latched in INT_RAW, are not
+ * cleared by the driver (it only clears SOF and the two packet interrupts) and
+ * are cleared by a chip reset, so they answer "the host opened the port at
+ * least once since the reset" rather than "the port is open now". A
+ * re-enumeration without a chip reset leaves the latch set, and a commit can
+ * then land in the window of the new enumeration.
+ *
+ * The older USJ IP (C3, S3) has no line-coding or DTR/RTS interrupt, so no
+ * port-open latch can be built there and the gate falls back to the SOF check.
+ */
+static bool ble_log_usj_host_ready(void)
+{
+    if (!usb_serial_jtag_is_connected()) {
+        return false;
+    }
+#if defined(USB_SERIAL_JTAG_SET_LINE_CODE_INT_RAW)
+    const uint32_t port_open_latch = USB_SERIAL_JTAG_SET_LINE_CODE_INT_RAW |
+                                     USB_SERIAL_JTAG_DTR_CHG_INT_RAW |
+                                     USB_SERIAL_JTAG_RTS_CHG_INT_RAW;
+    return (REG_READ(USB_SERIAL_JTAG_INT_RAW_REG) & port_open_latch) != 0;
+#else
+    return true;
+#endif
+}
+
 void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     if (!trans) {
@@ -139,11 +180,11 @@ void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     }
 
     const size_t nbytes = trans->pos;
-    const bool connected = usb_serial_jtag_is_connected();
+    const bool host_ready = ble_log_usj_host_ready();
     size_t available = 0;
     int queued = 0;
 
-    if (connected && nbytes > 0) {
+    if (host_ready && nbytes > 0) {
         queued = usb_serial_jtag_write_bytes(trans->buf, nbytes,
                                              BLE_LOG_USJ_WRITE_TICKS);
         if (queued == (int)nbytes) {
@@ -152,7 +193,7 @@ void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     }
 
     const ble_log_usb_tx_action_t action =
-        ble_log_usb_tx_action(connected, available, nbytes);
+        ble_log_usb_tx_action(host_ready, available, nbytes);
 
     if (ble_log_usb_tx_should_warn(action)) {
         BLE_LOG_ATOMIC_ADD_RELAXED(s_tx_ring_drops, 1);
