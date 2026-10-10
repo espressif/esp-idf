@@ -127,7 +127,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     }
 
     // Not a standard query
-    if ((header->flags & OPCODE_MASK) != 0) {
+    if ((ntohs(header->flags) & OPCODE_MASK) != 0) {
         return 0;
     }
 
