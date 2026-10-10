@@ -233,10 +233,15 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
             if (status & TWAI_LL_STATUS_ES) {       //Just Exceeded EWL
                 TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_ERROR_WARNING);
                 TWAI_HAL_SET_BITS(state_flags, TWAI_HAL_STATE_FLAG_ERR_WARN);
-            } else if (hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_RECOVERING) {
+            } else if (state_flags & TWAI_HAL_STATE_FLAG_RECOVERING) {
                 //Previously undergoing bus recovery. Thus means bus recovery complete, hardware back to error_active
                 TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_BUS_RECOV_CPLT | TWAI_HAL_EVENT_ERROR_ACTIVE);
                 TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_RECOVERING | TWAI_HAL_STATE_FLAG_BUS_OFF);
+                if (state_flags & TWAI_HAL_STATE_FLAG_RESET_PENDING) {
+                    // busoff recover complete, now need to reset the peripheral
+                    TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_RESET_PENDING);
+                    TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
+                }
             } else {        //Just went below EWL
                 TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_BELOW_EWL);
                 TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_ERR_WARN);
@@ -250,7 +255,7 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
     //Transmit interrupt set whenever TX buffer becomes free
 #if TWAI_LL_HAS_INTR_LOST_ISSUE
     // Errata workaround: Check the transmit buffer status bit to recover any lost transmit interrupt.
-    if ((interrupts & TWAI_LL_INTR_TI || hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) && status & TWAI_LL_STATUS_TBS) {
+    if ((interrupts & TWAI_LL_INTR_TI || state_flags & TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) && status & TWAI_LL_STATUS_TBS) {
 #else
     if (interrupts & TWAI_LL_INTR_TI) {
 #endif
@@ -304,13 +309,17 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
         hal_ctx->errors.form_err = (type == TWAI_LL_ERR_FORM);
         hal_ctx->errors.stuff_err = (type == TWAI_LL_ERR_STUFF);
         hal_ctx->errors.ack_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_SLOT);
-#if TWAI_LL_HAS_RX_FRAME_ISSUE
-        //Check for errata condition (RX message has bus error at particular segments)
-        if (dir == TWAI_LL_ERR_DIR_RX &&
-                ((seg == TWAI_LL_ERR_SEG_DATA || seg == TWAI_LL_ERR_SEG_CRC_SEQ) ||
-                 (seg == TWAI_LL_ERR_SEG_ACK_DELIM && type == TWAI_LL_ERR_OTHER))) {
-            TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
-            HAL_LOGD("TWAI_HAL", "RX frame invalid detected");
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_TX_FRAME_ISSUE
+        //Check for errata condition (TX/RX message has bus error at particular segments)
+        if ((seg == TWAI_LL_ERR_SEG_DATA || seg == TWAI_LL_ERR_SEG_CRC_SEQ) || (seg == TWAI_LL_ERR_SEG_ACK_DELIM && type == TWAI_LL_ERR_OTHER)) {
+            if ((events & TWAI_HAL_EVENT_BUS_OFF) == 0) {
+                TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
+            } else {
+                // If periph reset is required together with bus off, the reset must be done after bus recovery complete
+                // because reset using same recover register, and will breaks the busoff state.
+                TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RESET_PENDING);
+            }
+            HAL_EARLY_LOGD("TWAI_HAL", "TX/RX frame invalid detected, reset %s", (events & TWAI_HAL_EVENT_BUS_OFF) == 0 ? "now" : "pending");
         }
 #endif
     }
@@ -322,7 +331,7 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
     //Check for errata condition (rx_msg_count >= corruption_threshold)
     if (events & TWAI_HAL_EVENT_RX_BUFF_FRAME && twai_ll_get_rx_msg_count(hal_ctx->dev) >= TWAI_RX_FIFO_CORRUPT_THRESH) {
         TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_NEED_PERIPH_RESET);
-        HAL_LOGD("TWAI_HAL", "RX FIFO corruption detected");
+        HAL_EARLY_LOGD("TWAI_HAL", "RX FIFO corruption detected");
     }
 #endif
 #if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
