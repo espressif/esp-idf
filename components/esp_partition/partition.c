@@ -209,8 +209,12 @@ static esp_err_t load_partitions(void)
 
 #if CONFIG_PARTITION_TABLE_MD5
     if (md5_part == NULL) {
+#if CONFIG_PARTITION_TABLE_MD5_TOLERATE_MISSING
+        ESP_LOGW(TAG, "No MD5 found in partition table");
+#else
         ESP_LOGE(TAG, "No MD5 found in partition table");
         err = ESP_ERR_NOT_FOUND;
+#endif
     } else {
         stored_md5 = md5_part + ESP_PARTITION_MD5_OFFSET;
         esp_rom_md5_final(calc_md5, &context);
