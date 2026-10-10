@@ -69,7 +69,8 @@ dns_server_handle_t start_dns_server(dns_server_config_t *config);
 /**
  * @brief Stops and destroys DNS server's task and structs
  *
- * Blocks until the server task has closed its socket and exited (up to about a second).
+ * Blocks until the server task has closed its socket and exited, which takes up to its
+ * receive timeout (RECV_TIMEOUT_SEC in dns_server.c).
  * @param handle DNS server's handle to destroy
  */
 void stop_dns_server(dns_server_handle_t handle);

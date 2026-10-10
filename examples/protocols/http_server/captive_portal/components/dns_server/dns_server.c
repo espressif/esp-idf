@@ -63,8 +63,7 @@ typedef struct __attribute__((__packed__))
 // DNS server handle
 struct dns_server_handle {
     volatile bool started;
-    TaskHandle_t task;
-    SemaphoreHandle_t exited;   // given by the task just before it deletes itself
+    SemaphoreHandle_t exited;
     int num_of_entries;
     dns_entry_pair_t entry[];
 };
@@ -88,7 +87,7 @@ static char *parse_dns_name(char *raw_name, const char *raw_end, char *parsed_na
         // (len + 1) since we are adding  a '.'
         name_len += (sub_name_len + 1);
         // The label and the length byte that follows it must lie within the packet
-        if (name_len > parsed_name_max_len || label + 1 + sub_name_len >= raw_end) {
+        if (name_len > parsed_name_max_len || sub_name_len >= raw_end - label - 1) {
             return NULL;
         }
 
@@ -108,7 +107,7 @@ static char *parse_dns_name(char *raw_name, const char *raw_end, char *parsed_na
 // Parses the DNS request and prepares a DNS response with the IP of the softAP
 static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t dns_reply_max_len, dns_server_handle_t h)
 {
-    if (req_len > dns_reply_max_len) {
+    if (req_len < sizeof(dns_header_t) || req_len > dns_reply_max_len) {
         return -1;
     }
 
@@ -120,6 +119,11 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     dns_header_t *header = (dns_header_t *)dns_reply;
     ESP_LOGD(TAG, "DNS query with header id: 0x%X, flags: 0x%X, qd_count: %d",
              ntohs(header->id), ntohs(header->flags), ntohs(header->qd_count));
+
+    // Not a query, so that a spoofed reply can't make two servers answer each other forever
+    if (header->flags & QR_FLAG) {
+        return 0;
+    }
 
     // Not a standard query
     if ((header->flags & OPCODE_MASK) != 0) {
@@ -231,18 +235,24 @@ void dns_server_task(void *pvParameters)
         int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err < 0) {
             ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+            close(sock);
+            break;
         }
         ESP_LOGI(TAG, "Socket bound, port %d", DNS_PORT);
 
         // Wake up periodically so that stop_dns_server() is noticed
         struct timeval timeout = { .tv_sec = RECV_TIMEOUT_SEC, .tv_usec = 0 };
-        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+            ESP_LOGE(TAG, "Unable to set socket receive timeout: errno %d", errno);
+            close(sock);
+            break;
+        }
 
         while (handle->started) {
             ESP_LOGD(TAG, "Waiting for data");
             struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(source_addr);
-            int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
+            int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer), 0, (struct sockaddr *)&source_addr, &socklen);
 
             // Error occurred during receiving
             if (len < 0) {
@@ -261,9 +271,6 @@ void dns_server_task(void *pvParameters)
                     inet6_ntoa_r(source_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
                 }
 
-                // Null-terminate whatever we received and treat like a string...
-                rx_buffer[len] = 0;
-
                 char reply[DNS_MAX_LEN];
                 int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN, handle);
 
@@ -280,11 +287,9 @@ void dns_server_task(void *pvParameters)
             }
         }
 
-        if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket");
-            shutdown(sock, 0);
-            close(sock);
-        }
+        ESP_LOGI(TAG, "Shutting down socket");
+        shutdown(sock, 0);
+        close(sock);
     }
     // stop_dns_server() may free the handle as soon as this is given
     xSemaphoreGive(handle->exited);
@@ -298,21 +303,25 @@ dns_server_handle_t start_dns_server(dns_server_config_t *config)
 
     handle->exited = xSemaphoreCreateBinary();
     if (handle->exited == NULL) {
-        free(handle);
         ESP_LOGE(TAG, "Failed to create dns server semaphore");
-        return NULL;
+        goto err;
     }
     handle->started = true;
     handle->num_of_entries = config->num_of_entries;
     memcpy(handle->entry, config->item, config->num_of_entries * sizeof(dns_entry_pair_t));
 
-    if (xTaskCreate(dns_server_task, "dns_server", 4096, handle, 5, &handle->task) != pdPASS) {
-        vSemaphoreDelete(handle->exited);
-        free(handle);
+    if (xTaskCreate(dns_server_task, "dns_server", 4096, handle, 5, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create dns server task");
-        return NULL;
+        goto err;
     }
     return handle;
+
+err:
+    if (handle->exited) {
+        vSemaphoreDelete(handle->exited);
+    }
+    free(handle);
+    return NULL;
 }
 
 void stop_dns_server(dns_server_handle_t handle)
