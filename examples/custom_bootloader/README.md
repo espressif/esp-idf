@@ -34,6 +34,13 @@ parts of it. Thanks to this, it will be fully customizable.
 This shall only be used if heavy changes are required and they cannot
 be done with hooks or within an application.
 
+## Boot decision policy
+
+`bootloader_policy` shows hooks used for a decision rather than for logging: the bootloader
+counts consecutive unconfirmed boots in a journal it keeps in flash, and enters safe mode
+when the budget is spent. Useful when a single rollback attempt is not enough, or when there
+is only one application partition to boot.
+
 ## Component code supported in bootloader
 
 Links to the resources of component APIs supporting bootloader code are
