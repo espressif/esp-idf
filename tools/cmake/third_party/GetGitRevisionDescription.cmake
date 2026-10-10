@@ -3,20 +3,23 @@
 # These functions force a re-configure on each git commit so that you can
 # trust the values of the variables in your build system.
 #
-#  get_git_head_revision(<refspecvar> <hashvar> <repo dir> [<additional arguments to git describe> ...])
+#  get_git_head_revision(<refspecvar> <hashvar> [<repo dir>])
 #
-# Returns the refspec and sha hash of the current head revision
+# Returns the refspec and sha hash of the current head revision. <repo dir>
+# is optional and defaults to CMAKE_CURRENT_SOURCE_DIR (the caller's directory).
 #
-#  git_describe(<var> <repo dir> [<additional arguments to git describe> ...])
+#  git_describe(<var> [<repo dir>] [<additional arguments to git describe> ...])
 #
 # Returns the results of git describe on the source tree, and adjusting
-# the output so that it tests false if an error occurs.
+# the output so that it tests false if an error occurs. <repo dir> is
+# optional and defaults to CMAKE_CURRENT_SOURCE_DIR (the caller's directory).
+# A second argument that starts with "-" is treated as a git option, not a path.
 #
-#  git_get_exact_tag(<var> <repo dir> [<additional arguments to git describe> ...])
+#  git_get_exact_tag(<var> [<repo dir>] [<additional arguments to git describe> ...])
 #
 # Returns the results of git describe --exact-match on the source tree,
 # and adjusting the output so that it tests false if there was no exact
-# matching tag.
+# matching tag. <repo dir> is optional and defaults to CMAKE_CURRENT_SOURCE_DIR.
 #
 # Requires CMake 2.6 or newer (uses the 'function' command)
 #
@@ -42,13 +45,20 @@ set(__get_git_revision_description YES)
 # to find the path to this module rather than the path to a calling list file
 get_filename_component(_gitdescmoddir ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-function(get_git_head_revision _refspecvar _hashvar _repo_dir)
+function(get_git_head_revision _refspecvar _hashvar)
+    set(_repo_dir "")
+    if(ARGC GREATER 2)
+        set(_repo_dir "${ARGV2}")
+    endif()
+    if(NOT _repo_dir)
+        set(_repo_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
     execute_process(COMMAND
         "${GIT_EXECUTABLE}"
         rev-parse
         --git-dir
         WORKING_DIRECTORY
-        ${_repo_dir}
+        "${_repo_dir}"
         RESULT_VARIABLE
         res
         OUTPUT_VARIABLE
@@ -86,7 +96,27 @@ function(get_git_head_revision _refspecvar _hashvar _repo_dir)
     set(${_hashvar} "${HEAD_HASH}" PARENT_SCOPE)
 endfunction()
 
-function(git_describe _var _repo_dir)
+function(git_describe _var)
+    # _repo_dir is optional and defaults to the caller's directory.
+    # A second argument that starts with "-" is a git option, which
+    # matches the upstream git_describe(<var> [args...]) form.
+    set(_repo_dir "")
+    set(_git_describe_args "")
+    if(ARGC GREATER 1)
+        if(NOT ARGV1 MATCHES "^-")
+            set(_repo_dir "${ARGV1}")
+            set(_argn "${ARGN}")
+            list(LENGTH _argn _argn_len)
+            if(_argn_len GREATER 1)
+                list(SUBLIST _argn 1 -1 _git_describe_args)
+            endif()
+        else()
+            set(_git_describe_args "${ARGN}")
+        endif()
+    endif()
+    if(NOT _repo_dir)
+        set(_repo_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
     if(NOT GIT_FOUND)
         find_package(Git QUIET)
     endif()
@@ -114,12 +144,12 @@ function(git_describe _var _repo_dir)
     execute_process(COMMAND
         "${GIT_EXECUTABLE}"
         "-C"
-        ${_repo_dir}
+        "${_repo_dir}"
         describe
         "--always"
         "--tags"
         "--dirty"
-        ${ARGN}
+        ${_git_describe_args}
         WORKING_DIRECTORY
         "${CMAKE_CURRENT_SOURCE_DIR}"
         RESULT_VARIABLE
@@ -138,7 +168,8 @@ function(git_describe _var _repo_dir)
     set(${_var} "${out}" PARENT_SCOPE)
 endfunction()
 
-function(git_get_exact_tag _var _repo_dir)
-    git_describe(out "${_repo_dir}" --exact-match ${ARGN})
+function(git_get_exact_tag _var)
+    # Forward ARGN first so a repo dir stays the second argument of git_describe.
+    git_describe(out ${ARGN} --exact-match)
     set(${_var} "${out}" PARENT_SCOPE)
 endfunction()
