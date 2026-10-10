@@ -52,9 +52,10 @@ paths:
   it. Each callback drains the queue depth captured at entry and schedules
   another fixed defer only for arrivals left behind, so it does not
   continuously monopolize the shared ESP Timer task.
-- USB builds drain the queue from a dedicated task that blocks on it: the 1 ms
-  defer cadence caps throughput well below the USB bulk endpoint (see
-  `CONFIG_BLE_LOG_PRPH_USB`). Deinit stops that task through the gate it
+- Copy-FIFO builds (TinyUSB CDC and USB Serial/JTAG) drain the queue from a
+  dedicated task that blocks on it: the 1 ms defer cadence caps throughput
+  well below the USB bulk endpoint (see `CONFIG_BLE_LOG_PRPH_COPY_FIFO`).
+  Deinit stops that task through the gate it
   already owns: it closes `rt_inited` and posts a NULL stop token, which that
   one receive reads as "stop"; the queue reserves a slot for the token, so the
   post never waits for room. The task then recycles what the closed gate left
@@ -305,8 +306,10 @@ still emitted.
 | `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional analyzer GPIO toggle |
 | `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting the GPIO toggle |
 | `CONFIG_BLE_LOG_PRPH_USB` | n | Use the USB OTG device as transport (see below) |
+| `CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG` | n | Use USB Serial/JTAG as transport (see USB Serial/JTAG transport) |
 | `CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` | 2048 | CDC TX FIFO size; must equal `CONFIG_TINYUSB_CDC_TX_BUFSIZE` |
 | `CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE` | 512 | CDC endpoint packet buffer. Keep 512 (the High-Speed bulk MPS) on High-Speed; on Full-Speed raise it to 1024, where the 64-byte MPS costs roughly half the achievable rate (see Buffer sizing) |
+| `CONFIG_BLE_LOG_USJ_TX_BUFSIZE` | 2048 | USB Serial/JTAG driver TX ring; must be >= `CONFIG_BLE_LOG_POOL_TRANS_SIZE` |
 
 Old multi-LBM sizing options remain hidden only so existing sdkconfig files can
 be parsed; they no longer control allocation.
@@ -370,6 +373,129 @@ Full-Speed one 64-byte packet per submission is far too slow, so raise
 `EP_BUFSIZE` to 1024; 2048 adds 2% for 3 KB. `RX_BUFSIZE` has no measured
 effect on throughput; keep it at its `EP_BUFSIZE` minimum. `TX_BUFSIZE` buys
 little below 2048 and nothing above it.
+
+## USB Serial/JTAG transport
+
+On a chip with only USB Serial/JTAG (C3, C5, C6, C61, H2, H21), or when you
+want the USJ jack instead of the USB OTG jack (H4, S3), BLE Log can copy each
+sealed transport into the USB-Serial-JTAG driver TX ring. The hardware FIFO
+is 64 bytes and is not configurable. The device stays the ROM USB
+Serial/JTAG identity (VID 0x303A PID 0x1001). The host opens that CDC-ACM
+port. It does not match PID 0x10B1 or the product string `BLE-Log-Port`.
+
+On C6 the BLE Log peripheral default stays UART DMA (`SOC_UHCI_SUPPORTED`).
+USJ is opt-in. On H4, OTG TinyUSB and USJ are two choice members because
+they are two ports with two host identities.
+
+### Console and other FIFO owners
+
+The 64-byte USJ FIFO has one software owner. BLE Log will not steal it.
+
+A default sdkconfig on a USJ chip turns on
+`CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG`, which sets
+`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED`. That secondary console already
+owns the FIFO. Hidden `CONFIG_BLE_LOG_USJ_BUS_BUSY` is then y, and the BLE
+Log USJ choice is not in the menu. The same hide applies when
+`CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG` or
+`CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG` is on, or when
+`CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` is off.
+
+The hide is one-way. BLE Log does not `select` the console off. A reverse
+`depends` from the console onto BLE Log caused a Kconfig loop, so the
+operator has to release the port:
+
+1. Console: primary `ESP_CONSOLE_UART_DEFAULT` (or `ESP_CONSOLE_NONE`),
+   secondary `ESP_CONSOLE_SECONDARY_NONE`. Keep UART as the console if you
+   still want `ESP_LOG` / REPL; `idf.py monitor` then uses the UART-bridge
+   COM port, not the USJ ACM node.
+2. esp_trace: transport not "USB Serial JTAG".
+3. OpenThread RCP: transport not "USB RCP".
+4. Leave `CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` on.
+5. `Component config -> Bluetooth -> Common Options -> Enable BT Log Async
+   Output` -> peripheral `Utilize USB Serial/JTAG as transport`.
+6. Leave `CONFIG_BLE_LOG_USJ_TX_BUFSIZE` at 2048 unless
+   `CONFIG_BLE_LOG_POOL_TRANS_SIZE` is larger than 2048.
+7. No `esp_tinyusb` manifest entry. That requirement belongs only to
+   `CONFIG_BLE_LOG_PRPH_USB`.
+
+If another caller already ran `usb_serial_jtag_driver_install`,
+`ble_log_init` returns false. That is a failed install, not a stolen
+console. CMake also `FATAL_ERROR`s when `BLE_LOG_PRPH_USB_SERIAL_JTAG` and
+`BLE_LOG_USJ_BUS_BUSY` are both set, so a leaked sdkconfig cannot link.
+
+### ROM dual-write on C3 and S3
+
+`SECONDARY_NONE` is necessary but not sufficient on C3 and S3.
+
+Those ROMs define `ESP_ROM_CONSOLE_OUTPUT_SECONDARY`: `uart_tx_one_char`
+also writes each console byte to USJ. `cpu_start` then calls
+`esp_rom_install_uart_printf()`, which forces ROM `g_usb_print` back to
+true (the `ESP_ROM_HAS_ETS_PRINTF_BUG` workaround so IDF `esp_rom_printf`
+still works after an eFuse/RTC ROM-log disable). Channel 2 of
+`ets_printf` is the ROM secondary USB putc and stays installed when the
+primary console is UART.
+
+The result: UART console characters still appear on the same CDC-ACM node
+as BLE Log, and they corrupt binary frames.
+
+A successful `ble_log_prph_init` therefore:
+
+- sets `g_usb_print = false` on `ESP_ROM_HAS_ETS_PRINTF_BUG` chips (C3, S3);
+- calls `esp_rom_install_channel_putc(2, NULL)` on every USJ target.
+
+`g_uart_print` is left true, so the UART console still prints. The mute is
+not restored on deinit: restoring it would resume stuffing the FIFO after
+the driver is gone. ROM paths that ignore `g_usb_print` (rare direct
+`usb_serial_device_tx_one_char` calls) cannot be silenced from IDF.
+
+C5, C6, and later USJ chips do not have that `g_usb_print` leak. Channel 2
+is still uninstalled so `ets_printf` cannot use a leftover USB putc.
+
+### Which USB connector
+
+The host identity is ROM USJ: `lsusb` shows `303a:1001` and Linux creates
+`/dev/ttyACM*`. Open that ACM node. Do not open the JTAG interface.
+
+`10c4:ea60` (CP210x) or `1a86:7523` (CH340) is a USB-UART bridge on UART0,
+not USJ. BLE Log USJ cannot use that port. Official ESP32-C3-DevKitM-1 /
+DevKitC-02 Type-C is USJ (GPIO18 D-, GPIO19 D+). UART0 is on the header
+pins. Third-party C3 boards often wire the only USB connector to a UART
+bridge and leave GPIO18/19 unconnected.
+
+### Resource occupancy (ESP32-C5 @ 240 MHz)
+
+Measured on `ble_log_usj_test` with `idf.py size-files` / `--archives`
+against `ble_log_usj_test.map`. Flash and static SRAM are link-map bytes.
+Heap rows are the buffers this path allocates at `ble_log_init`, not
+map `.bss`.
+
+| Item | Flash | Static SRAM | Heap at init | Notes |
+| --- | --- | --- | --- | --- |
+| `ble_log_prph_usb_serial_jtag.c` | 614 B | 9 B | 0 | USJ peripheral only. |
+| `libesp_driver_usb_serial_jtag.a` | 1949 B | 111 B | TX 2048 B + RX 128 B, plus the driver object, TX stash (64 B), mutex, idle semaphore, and USJ ISR | Pulled in because console is UART; BLE Log is the driver owner. |
+| USJ-specific subtotal | 2563 B | 120 B | ~2.2 KB rings, plus driver object / synch / ISR | Incremental cost of choosing USJ vs a dummy peripheral that does not link the driver. |
+| BLE Log COPY_FIFO (shared with TinyUSB CDC) | (in `ble_log_rt.c` / `ble_log_lbm_v2.c`) | | Dispatch task stack 1024 B (RISC-V; 2048 B on Xtensa); pool 8 x 640 B = 5120 B plus transport structs and the runtime queue | Same COPY_FIFO path as `CONFIG_BLE_LOG_PRPH_USB`. Not USJ-only. |
+
+CPU: 6.3% of one core (FreeRTOS IDLE delta) while the USJ driver was
+written at its drop-rate load on C5 @ 240 MHz. That measurement called
+`usb_serial_jtag_write_bytes` directly (`timeout` 0, whole 640-byte frame
+or none, TX ring 2048). It is not `ble_log_write_hex` occupancy. BLE Log
+uses the same write contract, so the driver portion of CPU is that figure;
+pool encode and dispatch sit on top. C6 is unmeasured. There is no DMA.
+
+### Throughput
+
+The TX ring is burst absorption. Overflow drops a whole sealed transport
+and recycles the pool buffer. The dispatcher does not block, and a larger
+ring does not increase the link rate.
+
+| Fact | Value | Label |
+| --- | --- | --- |
+| Signaling | USB 2.0 Full Speed, 12 Mbit/s | Datasheet. Not a delivered-byte rate. |
+| Hardware FIFO | 64 bytes TX and RX | `usb_serial_jtag.c` `USB_SER_JTAG_ENDP_SIZE`. |
+| FS bulk ceiling | 19 x 64 B/ms = 1.216 MB/s | USB spec inference. |
+| Driver drop rate | 750 KiB/s device, 726 KiB/s host | ESP32-C5 @ 240 MHz, n=5, 3 s, host-paced ACM reader. Same write contract as BLE Log (`write_bytes` timeout 0, whole 640-byte frame or none, TX ring 2048). The measurement called the driver directly, not `ble_log_write_hex`. CPU occupancy 6.3% (FreeRTOS IDLE delta). No DMA. C6 is unmeasured. |
+| Software ring default | 2048 bytes | Same knee as the TinyUSB CDC TX FIFO, and esp_trace's USJ minimum. |
 
 ## Validation apps
 

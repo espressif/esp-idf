@@ -36,9 +36,9 @@ if BLE_LOG_ENABLED
 
     config BLE_LOG_POOL_WAIT_TIMEOUT_MS
         int "Total wait budget for one pool acquire (ms)"
-        depends on BLE_LOG_PRPH_USB || BLE_LOG_PRPH_TEST
+        depends on BLE_LOG_PRPH_COPY_FIFO || BLE_LOG_PRPH_TEST
         range -1 1000
-        default 10 if BLE_LOG_PRPH_USB
+        default 10 if BLE_LOG_PRPH_COPY_FIFO
         default -1
         help
             Bounded total wait for a single transport acquire by an ordinary
@@ -47,11 +47,12 @@ if BLE_LOG_ENABLED
             up to FreeRTOS ticks and cap the total wait across all wakeups
             of one acquire (the budget is never reset by a wake).
 
-            Only visible for USB and test builds. Production SPI/UART
-            builds keep the infinite wait (the symbol stays undefined and
-            the code falls back to portMAX_DELAY). 10 ms is an initial
-            test value for USB builds only; the final default must be
-            measured on the target DMA path.
+            Only visible for copy-FIFO (TinyUSB / USB Serial/JTAG) and
+            test builds. Production SPI/UART builds keep the infinite
+            wait (the symbol stays undefined and the code falls back to
+            portMAX_DELAY). 10 ms is an initial test value for copy-FIFO
+            builds only; the final default must be measured on the
+            target DMA path.
 
     config BLE_LOG_TASK_ID_MAX
         int "Maximum number of distinct logging tasks"
@@ -138,6 +139,32 @@ if BLE_LOG_ENABLED
                 GPIO number for TS toggle output
     endif
 
+    config BLE_LOG_PRPH_COPY_FIFO
+        bool
+        help
+            Hidden. Selected by the TinyUSB CDC and USB Serial/JTAG
+            peripherals, which copy a sealed transport into a software
+            TX ring (or drop it) and drain the runtime queue from a
+            dedicated dispatch task.
+
+    config BLE_LOG_USJ_BUS_BUSY
+        bool
+        default y if ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        default y if ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+        default y if OPENTHREAD_RCP_USB_SERIAL_JTAG
+        default y if !USJ_ENABLE_USB_SERIAL_JTAG
+        default n
+        help
+            Hidden. The USB Serial/JTAG FIFO already has another owner
+            (primary or secondary console, esp_trace, OpenThread RCP),
+            or the USJ module is turned off. BLE Log will not steal it.
+
+    menu "USB Serial/JTAG BLE Log is hidden (port owned elsewhere)"
+        depends on SOC_USB_SERIAL_JTAG_SUPPORTED && BLE_LOG_USJ_BUS_BUSY
+        comment "Turn off USB-Serial-JTAG console (primary and secondary), esp_trace USJ, and OpenThread RCP USB."
+        comment "Leave USJ_ENABLE_USB_SERIAL_JTAG on. This menu will not flip those options."
+    endmenu
+
     choice BLE_LOG_PRPH_CHOICE
         prompt "BLE Log peripheral choice"
         default BLE_LOG_PRPH_UART_DMA if SOC_UHCI_SUPPORTED
@@ -181,6 +208,7 @@ if BLE_LOG_ENABLED
         config BLE_LOG_PRPH_USB
             bool "Utilize USB OTG device as transport (TinyUSB CDC-ACM)"
             depends on SOC_USB_OTG_SUPPORTED
+            select BLE_LOG_PRPH_COPY_FIFO
             help
                 Copy each sealed transport into the TinyUSB CDC TX FIFO
                 and recycle immediately. A transport that does not fit is
@@ -195,9 +223,22 @@ if BLE_LOG_ENABLED
                 run idf.py reconfigure. See the "USB transport" section
                 in the BLE Log README for the full setup and buffer
                 requirements.
+
+        config BLE_LOG_PRPH_USB_SERIAL_JTAG
+            bool "Utilize USB Serial/JTAG as transport"
+            depends on SOC_USB_SERIAL_JTAG_SUPPORTED && !BLE_LOG_USJ_BUS_BUSY
+            select BLE_LOG_PRPH_COPY_FIFO
+            help
+                Copy each sealed transport into the USB-Serial-JTAG driver
+                TX ring and recycle it immediately. A ring that cannot
+                hold the whole transport drops it. The hardware FIFO is
+                64 bytes and is not configurable. The device stays the
+                ROM USB Serial/JTAG identity (VID 0x303A PID 0x1001).
+                The host opens that ACM port. It does not match PID
+                0x10B1. This option does not turn the console off.
     endchoice
 
-    if BLE_LOG_PRPH_USB
+    if BLE_LOG_PRPH_COPY_FIFO
         config BLE_LOG_USB_DISPATCH_TEST_HOOKS
             bool "Compile the USB dispatcher test hooks"
             default n
@@ -253,20 +294,23 @@ if BLE_LOG_ENABLED
                 GPIO number for UART TX
     endif
 
-    if BLE_LOG_PRPH_USB
+    if BLE_LOG_PRPH_COPY_FIFO
         config BLE_LOG_RT_TASK_STACK_SIZE
             int "BLE Log dispatch task stack size (bytes)"
             range 1024 8192
             default 2048 if IDF_TARGET_ARCH_XTENSA
             default 1024
             help
-                Stack for the dedicated runtime dispatch task. USB builds
-                drain the transport queue from this task instead of the 1 ms
-                deferred esp_timer batch, so the throughput is not capped by
-                the defer cadence. The dispatch call chain was measured at
-                roughly 2 KB on Xtensa (register-window calling convention)
-                and 1 KB on RISC-V.
+                Stack for the dedicated runtime dispatch task. Copy-FIFO
+                builds (TinyUSB CDC and USB Serial/JTAG) drain the
+                transport queue from this task instead of the 1 ms
+                deferred esp_timer batch, so the throughput is not capped
+                by the defer cadence. The dispatch call chain was
+                measured at roughly 2 KB on Xtensa (register-window
+                calling convention) and 1 KB on RISC-V.
+    endif
 
+    if BLE_LOG_PRPH_USB
         config BLE_LOG_USB_CDC_TX_BUFSIZE
             int "CDC ACM TX FIFO size (bytes)"
             range 640 10240
@@ -312,6 +356,25 @@ if BLE_LOG_ENABLED
 
                 See the "USB transport" section of the BLE Log README for
                 the measurement setup and the per-value numbers.
+    endif
+
+    if BLE_LOG_PRPH_USB_SERIAL_JTAG
+        config BLE_LOG_USJ_TX_BUFSIZE
+            int "USB Serial/JTAG TX ring size (bytes)"
+            range 2048 10240
+            default 2048
+            help
+                Byte ring passed to usb_serial_jtag_driver_install as
+                tx_buffer_size. A sealed transport is copied here whole
+                or dropped. Must be >= BLE_LOG_POOL_TRANS_SIZE. Not
+                required to be a power of two (that constraint belongs
+                to esp_trace's own ring, not to this driver).
+
+                2048 is the floor: esp_trace documents that a smaller
+                USJ ring overflows easily, and the TinyUSB CDC TX FIFO
+                measured the same size as the knee (three 640-byte
+                transports). Raising it does not raise the link rate.
+                There is no EP_BUFSIZE counterpart.
     endif
 
     menu "Settings of BLE Log Compression"
