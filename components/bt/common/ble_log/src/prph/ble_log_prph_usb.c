@@ -76,7 +76,7 @@ BLE_LOG_STATIC void cdc_rx_discard(int itf, cdcacm_event_t *event)
     }
 }
 
-void ble_log_prph_take_cdc_fifo_drops(uint32_t *drops, uint32_t *bytes)
+void ble_log_prph_take_tx_ring_drops(uint32_t *drops, uint32_t *bytes)
 {
     /* The dispatch task owns the increments while the ESP Timer task (window
      * warning) and the deinit tail read them, so both fields are exchanged to
