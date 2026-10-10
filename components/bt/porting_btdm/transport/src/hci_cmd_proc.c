@@ -1468,9 +1468,6 @@ hci_cmd_proc_vendor_specific_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint8_t l
     case ESP_BT_VS_ENABLE_CSA2_OCF:
         rc = api_ble_ll_hci_vs_csa_set(cmdbuf, len, rspbuf, rsplen);
         break;
-    case ESP_BT_VS_CFG_TEST_RELATED_OCF:
-        rc = api_internalTest_hci_procVsCmds(cmdbuf, len, rspbuf, rsplen);
-        break;
     case ESP_BT_VS_SET_LOG_PARAMS_OCF:
         rc = api_ble_log_hci_vs_cmd_proc(cmdbuf, len, rspbuf, rsplen);
         break;
