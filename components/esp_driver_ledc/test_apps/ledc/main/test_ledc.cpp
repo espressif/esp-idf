@@ -385,6 +385,50 @@ TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
     fade_teardown();
 }
 
+#if !SOC_LEDC_SUPPORT_FADE_STOP
+static void fade_after_duty_update_test(ledc_mode_t speed_mode, bool thread_safe_update)
+{
+    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
+    ledc_ch_config.speed_mode = speed_mode;
+    ledc_ch_config.duty = 0;
+    ledc_timer_config_t ledc_time_config = create_default_timer_config();
+    ledc_time_config.speed_mode = speed_mode;
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+    TEST_ESP_OK(ledc_fade_func_install(0));
+
+    TEST_ESP_OK(ledc_set_duty_and_update(speed_mode, LEDC_CHANNEL_0, 4000, 0));
+    vTaskDelay(5 / portTICK_PERIOD_MS);
+    if (thread_safe_update) {
+        TEST_ESP_OK(ledc_set_duty_and_update(speed_mode, LEDC_CHANNEL_0, 0, 0));
+    } else {
+        TEST_ESP_OK(ledc_set_duty(speed_mode, LEDC_CHANNEL_0, 0));
+        TEST_ESP_OK(ledc_update_duty(speed_mode, LEDC_CHANNEL_0));
+    }
+
+    int64_t fade_start = esp_timer_get_time();
+    TEST_ESP_OK(ledc_set_fade_time_and_start(speed_mode, LEDC_CHANNEL_0, 3000, 200, LEDC_FADE_NO_WAIT));
+    TEST_ASSERT_LESS_THAN(20000, esp_timer_get_time() - fade_start);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    TEST_ASSERT_INT32_WITHIN(300, 1500, ledc_get_duty(speed_mode, LEDC_CHANNEL_0));
+    vTaskDelay(150 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL_INT32(3000, ledc_get_duty(speed_mode, LEDC_CHANNEL_0));
+
+    ledc_fade_func_uninstall();
+    ledc_ch_config.deconfigure = true;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+}
+
+TEST_CASE("LEDC fade started right after duty update", "[ledc]")
+{
+    ledc_mode_t speed_mode_list[LEDC_SPEED_MODE_MAX] = SPEED_MODE_LIST;
+    for (int i = 0; i < LEDC_SPEED_MODE_MAX; i++) {
+        fade_after_duty_update_test(speed_mode_list[i], true);
+        fade_after_duty_update_test(speed_mode_list[i], false);
+    }
+}
+#endif
+
 #if SOC_LEDC_SUPPORT_FADE_STOP
 TEST_CASE("LEDC fade stop test", "[ledc]")
 {
