@@ -454,7 +454,7 @@ examples/peripherals/mcpwm/mcpwm_capture_hc_sr04:
     - esp_hal_mcpwm
     - soc
 
-examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
+examples/peripherals/mcpwm/mcpwm_foc_open_loop:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
   depends_components:
@@ -462,7 +462,7 @@ examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
     - esp_driver_mcpwm
     - soc
   disable_test:
-    - if: IDF_TARGET != "esp32s3"
+    - if: IDF_TARGET != "esp32p4"
       temporary: true
       reason: lack of runners
 

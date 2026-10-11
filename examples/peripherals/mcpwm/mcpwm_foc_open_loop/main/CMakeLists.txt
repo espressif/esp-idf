@@ -1,0 +1,16 @@
+idf_component_register(
+    SRCS
+        "app_main.c"
+        "board_related/board_inverter.c"
+        "modulation/foc_svpwm.c"
+        "motor_foc/foc_core.c"
+    INCLUDE_DIRS
+        "."
+        "board_related"
+        "modulation"
+        "motor_foc"
+    REQUIRES
+        esp_driver_mcpwm
+    PRIV_REQUIRES
+        esp_driver_gpio
+)
