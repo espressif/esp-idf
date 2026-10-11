@@ -275,6 +275,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
     $(PROJECT_PATH)/components/esp_security/include/esp_ds.h \
     $(PROJECT_PATH)/components/esp_security/include/esp_sm3.h \
+    $(PROJECT_PATH)/components/esp_stdio/include/esp_stdio.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_debug_helpers.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
@@ -403,6 +404,7 @@ EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = \
     $(ENV_DOXYGEN_DEFINES) \
     __DOXYGEN__=1 \
+    CONFIG_VFS_SUPPORT_IO=1 \
     __attribute__(x)= \
     _Static_assert()= \
     ESP_STATIC_ASSERT()= \

@@ -50,19 +50,19 @@
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
 
-/* Pool, stack and lock — declared extern in esp_stdio_private.h so that
- * stdio_mux_api.c can access them without pulling in this object file. */
+/* Pool, primary pointers and lock — declared extern in esp_stdio_private.h so
+ * that stdio_mux_api.c can access them without pulling in this object file. */
 esp_stdio_entry_t s_entry_pool[STDIO_MAX_ENTRIES];
-esp_stdio_entry_t *s_primary_stack[STDIO_MAX_ENTRIES];
-int s_primary_index = -1;
+esp_stdio_entry_t *s_active_primary;
+esp_stdio_entry_t *s_default_primary;
 int s_open_count;
 _lock_t s_lock;
 
-/* The active primary is always the top of the stack. */
+/* The entry currently serving reads and writes. */
 static inline esp_stdio_entry_t *active_primary(void)
 {
-    assert(s_primary_index >= 0);
-    return s_primary_stack[s_primary_index];
+    assert(s_active_primary != NULL);
+    return s_active_primary;
 }
 
 /* Open the backend for an entry and store the fd.
@@ -143,8 +143,8 @@ int console_close(__attribute__((unused)) void *ctx, int fd)
         return -1;
     }
 
-    /* Route to the active backend's own fd: after a push/pop/unregister the
-     * active primary may differ from the backend that originally produced the
+    /* Route to the active backend's own fd: after an unregister the active
+     * primary may differ from the backend that originally produced the
      * caller-visible fd, and each backend validates fds in its own namespace. */
     int ret = primary->ops->close_p(primary->vfs_ctx, primary->fd >= 0 ? primary->fd : fd);
     if (ret != 0) {
@@ -362,10 +362,10 @@ esp_err_t esp_stdio_register(void)
 {
     _lock_init(&s_lock);
 
-    /* Directly initialise the system primary at pool slot 0 and push it as the
-     * immovable sentinel at stack index 0.  We bypass the public API here to
-     * avoid a link-time dependency on stdio_mux_api.c so that binaries which
-     * never call the mux API don't pay for it. */
+    /* Directly initialise the Kconfig-selected console at pool slot 0 and make
+     * it both the active and the default primary.  We bypass the public API
+     * here to avoid a link-time dependency on stdio_mux_api.c so that binaries
+     * which never call the mux API don't pay for it. */
     esp_stdio_entry_t *system_primary = &s_entry_pool[0];
     *system_primary = (esp_stdio_entry_t) {
         .vfs_ctx = NULL,
@@ -386,8 +386,8 @@ esp_err_t esp_stdio_register(void)
     system_primary->ops = esp_vfs_null_get_vfs();
 #endif
 
-    s_primary_stack[0] = system_primary;
-    s_primary_index = 0;
+    s_active_primary = system_primary;
+    s_default_primary = system_primary;
 
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
     esp_stdio_entry_t *secondary = &s_entry_pool[1];

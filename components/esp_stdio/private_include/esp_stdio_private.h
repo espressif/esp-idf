@@ -30,13 +30,18 @@ typedef struct esp_stdio_entry {
 /*
  * Shared mux state — defined in stdio_vfs.c, used by stdio_mux_api.c.
  *
- * s_primary_stack[0] is the immovable system-registered sentinel.
- * s_primary_stack[s_primary_index] is the active primary.
- * Auxiliaries are any in-use pool entries not on the stack.
+ * All registered drivers live in the single pool s_entry_pool. "Primary" is
+ * just a tag: s_active_primary points at the entry currently used for reads and
+ * writes; every other in-use entry is a write-only auxiliary. s_default_primary
+ * marks the Kconfig-selected boot console; it is the reference used to tell
+ * whether a user has taken over the primary (see esp_stdio_has_user_primary()),
+ * and is set to NULL if that console is ever unregistered. It is write-once at
+ * boot and never re-established: once NULL, esp_stdio_has_user_primary() stays
+ * latched true because s_active_primary is never NULL.
  */
 extern esp_stdio_entry_t s_entry_pool[STDIO_MAX_ENTRIES];
-extern esp_stdio_entry_t *s_primary_stack[STDIO_MAX_ENTRIES];
-extern int s_primary_index;
+extern esp_stdio_entry_t *s_active_primary;
+extern esp_stdio_entry_t *s_default_primary;
 extern int s_open_count;
 extern _lock_t s_lock;
 
@@ -45,11 +50,13 @@ void entry_open(esp_stdio_entry_t *e, int flags);
 void entry_close(esp_stdio_entry_t *e);
 
 /**
- * @brief Return true if the active primary is NOT the system-registered backend.
+ * @brief Return true if the active primary is NOT the Kconfig default backend.
  *
  * Used by stdio_port.c to decide whether to skip hardware init/deinit
- * (the caller of esp_stdio_push_primary() is responsible for their own driver
+ * (the caller that promoted its own primary is responsible for its own driver
  * lifecycle).
+ *
+ * Latches true once the boot console is unregistered (s_default_primary == NULL).
  */
 bool esp_stdio_has_user_primary(void);
 
