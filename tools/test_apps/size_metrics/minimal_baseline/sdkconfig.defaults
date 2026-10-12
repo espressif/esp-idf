@@ -1,1 +1,5 @@
 # App-specific defaults for minimal_baseline size metrics
+# In build system v1, set(COMPONENTS main) keeps vfs out of the build.
+# Build system v2 reads the vfs Kconfig anyway, and CONFIG_VFS_SUPPORT_IO
+# defaults to y, which adds vfs to the build.
+CONFIG_VFS_SUPPORT_IO=n
