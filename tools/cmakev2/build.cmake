@@ -555,23 +555,27 @@ function(idf_build_library library)
 
     idf_library_get_property(component_interfaces_linked "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
 
-    # Build -I arguments for the public include dirs of every component in the
-    # linked closure. These are appended to every linker-script preprocess so a
-    # template can #include any component header (e.g. the ULP memory layout
-    # including soc/soc.h) without the component having to know about it.
-    # INCLUDE_DIRS is stored relative to each component's COMPONENT_DIR.
-    set(component_include_flags "")
+    # Write -I arguments for the public include dirs of every component in the
+    # linked closure to a file. Every linker-script preprocess reads the file as
+    # @file so a template can #include any component header (e.g. the ULP memory
+    # layout including soc/soc.h) without the component having to know about
+    # it. On the command line, the arguments can exceed the 8191 character
+    # limit of cmd.exe on Windows. INCLUDE_DIRS is stored relative to each
+    # component's COMPONENT_DIR.
+    set(component_include_args "")
     foreach(ci IN LISTS component_interfaces_linked)
         idf_component_get_property(ci_dir "${ci}" COMPONENT_DIR)
         idf_component_get_property(ci_includes "${ci}" INCLUDE_DIRS)
         foreach(ci_include IN LISTS ci_includes)
             get_filename_component(ci_include_abs "${ci_include}" ABSOLUTE BASE_DIR "${ci_dir}")
-            # Quote the path: the preprocessor invocation splits CFLAGS with
-            # separate_arguments(UNIX_COMMAND), so unquoted paths containing
-            # spaces would fall apart.
-            string(APPEND component_include_flags " -I\"${ci_include_abs}\"")
+            # Quote the path: the preprocessor splits the file at white space,
+            # so unquoted paths containing spaces would fall apart.
+            string(APPEND component_include_args "-I\"${ci_include_abs}\"\n")
         endforeach()
     endforeach()
+    idf_build_get_property(build_dir BUILD_DIR)
+    set(component_includes_file "${build_dir}/linker_script_includes${suffix}")
+    file(GENERATE OUTPUT "${component_includes_file}" CONTENT "${component_include_args}")
 
     # Linker scripts marked MEMORY (the memory-layout base for the link) are
     # emitted as -T before the rest, so section-placement scripts from any
@@ -604,7 +608,7 @@ function(idf_build_library library)
                     idf_component_get_property(script_flags "${component_interface}"
                                                "LINKER_SCRIPT_FLAGS_${script_key}")
                     __preprocess_linker_script("${script}" "${script_out}"
-                                               "${script_flags}" "${component_include_flags}")
+                                               "${script_flags}" "${component_includes_file}")
                     # Add a custom target for the preprocessed script.
                     add_custom_target(${script_target} DEPENDS "${script_out}")
                 endif()
@@ -642,7 +646,7 @@ function(idf_build_library library)
                     idf_component_get_property(template_flags "${component_interface}"
                                                "LINKER_SCRIPT_FLAGS_${template_key}")
                     __preprocess_linker_script("${template}" "${template_out}"
-                                               "${template_flags}" "${component_include_flags}")
+                                               "${template_flags}" "${component_includes_file}")
                 endif()
                 set(template "${template_out}")
             endif()
