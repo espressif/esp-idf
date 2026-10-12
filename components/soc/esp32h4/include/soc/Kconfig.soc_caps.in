@@ -1019,10 +1019,6 @@ config SOC_EFUSE_XTS_AES_KEY_128
     bool
     default y
 
-config SOC_EFUSE_XTS_AES_KEY_256
-    bool
-    default y
-
 config SOC_HUK_MEM_NEEDS_RECHARGE
     bool
     default y
