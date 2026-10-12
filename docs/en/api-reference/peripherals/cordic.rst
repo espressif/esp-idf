@@ -195,20 +195,25 @@ The number of iterations (precision) is set via :cpp:member:`cordic_calculate_co
 Quick Start
 ===========
 
-This section shows how to create a CORDIC engine and run calculations. Typical usage flow:
+This section shows how to acquire a CORDIC engine and run calculations. Typical usage flow:
 
-Create CORDIC Engine
---------------------
+Acquire CORDIC Engine
+---------------------
 
-Create a CORDIC engine as follows:
+The chip has a single CORDIC hardware module, and every middleware that needs trigonometric or hyperbolic math has to share it. :cpp:func:`cordic_acquire_engine` is therefore not a plain constructor: the first caller initializes the hardware, and every later caller receives one more reference to the very same engine.
 
 .. code:: c
 
    cordic_engine_handle_t engine = NULL;
    cordic_engine_config_t config = {
        .clock_source = CORDIC_CLK_SRC_DEFAULT,  // Select clock source
+       .instance_id = 0,                        // Hardware instance, see CORDIC_LL_INST_NUM
    };
-   ESP_ERROR_CHECK(cordic_new_engine(&config, &engine));
+   ESP_ERROR_CHECK(cordic_acquire_engine(&config, &engine));
+
+.. note::
+
+   The clock source is decided by the first acquirer and stays in effect until the last reference is released. A later ``clock_source`` is ignored.
 
 Run CORDIC Calculation
 -----------------------
@@ -266,28 +271,22 @@ The driver provides conversion between fixed-point and floating-point via :cpp:f
 Resource Cleanup
 ----------------
 
-When the CORDIC engine is no longer needed, call :cpp:func:`cordic_delete_engine` to release the underlying hardware.
+When a user no longer needs the CORDIC engine, call :cpp:func:`cordic_release_engine` to give its reference back. The hardware is only deinitialized once the last reference is released, so the order in which the users start or stop does not matter.
 
 .. code:: c
 
-   ESP_ERROR_CHECK(cordic_delete_engine(engine));
+   ESP_ERROR_CHECK(cordic_release_engine(engine));
 
 Advanced
 ========
 
-Thread Safety
--------------
+Sharing and Serialization
+-------------------------
 
-The following CORDIC APIs are thread-safe and can be called from different RTOS tasks without extra locking:
+The CORDIC hardware is shared by everyone who acquires the engine, and only one calculation may occupy its registers at a time. The driver serializes access with a short critical section, so the caller does not have to handle contention:
 
-Factory functions:
-
-- :cpp:func:`cordic_new_engine`
-- :cpp:func:`cordic_delete_engine`
-
-.. note::
-
-   :cpp:func:`cordic_calculate_polling` is **not** thread-safe. Do not call it from multiple tasks without mutex protection.
+- :cpp:func:`cordic_calculate_polling` waits until it can use the hardware, computes the batch, and then returns. Tasks, ISRs and both cores can call it without extra locking. Keep the number of points in one call small: interrupts on the calling core are masked for the duration of the batch.
+- :cpp:func:`cordic_acquire_engine` and :cpp:func:`cordic_release_engine` are reference counted and protected by a mutex. They can be called from different RTOS tasks but may block, so they must not be called from an ISR. Each successful acquire owns one reference and must be given back exactly once.
 
 Cache Safety
 ------------

@@ -15,12 +15,13 @@
 #include "hal/cordic_types.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
+#define CORDIC_LL_GET_HW()            (&CORDIC)
+#define CORDIC_LL_PRECISION_MAX       0xF
+#define CORDIC_LL_INST_NUM            1U   /*!< Number of CORDIC hardware instances on this chip */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define CORDIC_LL_GET_HW()            (&CORDIC)
-#define CORDIC_LL_PRECISION_MAX          (0xF)
 
 /**
  * @brief CORDIC operation mode
@@ -31,7 +32,7 @@ typedef enum {
 } cordic_ll_mode_t;
 
 /**
- * @brief Enable the hardware clock for CORDIC module
+ * @brief Enable the APB bus clock for CORDIC register access
  *
  * @param enable True to enable; false to disable
  */
@@ -41,22 +42,28 @@ static inline void cordic_ll_enable_bus_clock(bool enable)
 }
 
 /**
- * @brief Enable the CORDIC module clock
+ * @brief Enable the CORDIC system and functional clocks
  *
  * @param enable True to enable; false to disable
  */
 static inline void cordic_ll_enable_clock(bool enable)
 {
+    HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_sys_clk_en = enable;
     HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_clk_en = enable;
 }
 
 /**
- * @brief Reset the CORDIC module
+ * @brief Reset the CORDIC module (APB, system clock domain, and computation core)
  */
-static inline void cordic_ll_reset_module_register(void)
+__attribute__((always_inline))
+static inline void cordic_ll_reset_module(void)
 {
     HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_apb_rst_en = 1;
     HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_apb_rst_en = 0;
+    HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_sys_rst_en = 1;
+    HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_sys_rst_en = 0;
+    HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_core_rst_en = 1;
+    HP_SYS_CLKRST.cordic_ctrl0.reg_cordic_core_rst_en = 0;
 }
 
 /**
@@ -83,146 +90,94 @@ static inline void cordic_ll_set_clock_source(cordic_clock_source_t source)
 }
 
 /**
- * @brief Set the calculation function type (e.g., cosine, sine, arctan)
+ * @brief Set the CORDIC functional clock divider
  *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param function Function type to calculate
+ * The output clock is: src / (integer + numerator / denominator).
+ * integer is programmed as (integer - 1). numerator = 0 and denominator = 0
+ * means no fractional part.
+ *
+ * @param integer     Integral divider, range [1, CORDIC_LL_CLK_DIV_INTEGER_MAX]
+ * @param numerator   Fractional numerator, range [0, CORDIC_LL_CLK_DIV_FRACT_MAX]
+ * @param denominator Fractional denominator, range [0, CORDIC_LL_CLK_DIV_FRACT_MAX]
+ */
+static inline void cordic_ll_set_clock_div(uint32_t integer, uint32_t numerator, uint32_t denominator)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.cordic_ctrl1, reg_cordic_clk_div_num, integer - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.cordic_ctrl1, reg_cordic_clk_div_numerator, numerator);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.cordic_ctrl1, reg_cordic_clk_div_denonimator, denominator);
+}
+
+/**
+ * @brief Program the calculation configuration fields of csr_cfg with one RMW
+ *
+ * @param hw        Pointer to the CORDIC hardware register structure
+ * @param function  Function type to calculate
+ * @param mode      Data transfer mode (register or DMA)
+ * @param precision Iteration count programmed into press (already decremented by the caller)
+ * @param scale     Input scale exponent
+ * @param arg_num     Number of input arguments (1 or 2)
+ * @param res_num     Number of result outputs (1 or 2)
+ * @param arg_format  IQ format of the input arguments
+ * @param res_format  IQ format of the results
  */
 __attribute__((always_inline))
-static inline void cordic_ll_set_calculate_function(cordic_dev_t *hw, cordic_func_t function)
+static inline void cordic_ll_set_calculate_config(cordic_dev_t *hw,
+                                                  cordic_func_t function,
+                                                  cordic_ll_mode_t mode,
+                                                  uint16_t precision,
+                                                  uint16_t scale,
+                                                  uint8_t arg_num,
+                                                  uint8_t res_num,
+                                                  cordic_iq_format_t arg_format,
+                                                  cordic_iq_format_t res_format)
 {
+    cordic_csr_cfg_reg_t csr;
+    csr.val = hw->csr_cfg.val;
+
     switch (function) {
     case ESP_CORDIC_FUNC_COS:
-        hw->csr_cfg.func = 0;
+        csr.func = 0;
         break;
     case ESP_CORDIC_FUNC_SIN:
-        hw->csr_cfg.func = 1;
+        csr.func = 1;
         break;
     case ESP_CORDIC_FUNC_PHASE:
-        hw->csr_cfg.func = 2;
+        csr.func = 2;
         break;
     case ESP_CORDIC_FUNC_MODULUS:
-        hw->csr_cfg.func = 3;
+        csr.func = 3;
         break;
     case ESP_CORDIC_FUNC_ARCTAN:
-        hw->csr_cfg.func = 4;
+        csr.func = 4;
         break;
     case ESP_CORDIC_FUNC_COSH:
-        hw->csr_cfg.func = 5;
+        csr.func = 5;
         break;
     case ESP_CORDIC_FUNC_SINH:
-        hw->csr_cfg.func = 6;
+        csr.func = 6;
         break;
     case ESP_CORDIC_FUNC_ARCHTANH:
-        hw->csr_cfg.func = 7;
+        csr.func = 7;
         break;
     case ESP_CORDIC_FUNC_LOGE:
-        hw->csr_cfg.func = 8;
+        csr.func = 8;
         break;
     case ESP_CORDIC_FUNC_SQUARE_ROOT:
-        hw->csr_cfg.func = 9;
+        csr.func = 9;
         break;
     default:
         HAL_ASSERT(false);
     }
-}
 
-/**
- * @brief Set the calculation mode (register mode or DMA mode)
- *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param mode Operation mode (REG_MODE or DMA_MODE)
- */
-__attribute__((always_inline))
-static inline void cordic_ll_set_calculate_mode(cordic_dev_t *hw, cordic_ll_mode_t mode)
-{
-    if (mode == CORDIC_LL_MODE_REG) {
-        hw->csr_cfg.work_mode = 0;
-    } else if (mode == CORDIC_LL_MODE_DMA) {
-        hw->csr_cfg.work_mode = 1;
-    } else {
-        HAL_ASSERT(false);
-    }
-}
-
-/**
- * @brief Set the calculation precision (iteration count)
- *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param precision Precision value (number of iterations)
- */
-__attribute__((always_inline))
-static inline void cordic_ll_set_calculate_precision(cordic_dev_t *hw, uint16_t precision)
-{
-    hw->csr_cfg.press = precision;
-}
-
-/**
- * @brief Set the input data scale factor
- *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param scale Scale factor for input data (range depends on function type)
- */
-__attribute__((always_inline))
-static inline void cordic_ll_set_calculate_scale(cordic_dev_t *hw, uint16_t scale)
-{
-    hw->csr_cfg.scale = scale;
-}
-
-/**
- * @brief Set the number of result outputs (one or two)
- *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param number Number of result outputs (ONE_NUM or TWO_NUM)
- */
-__attribute__((always_inline))
-static inline void cordic_ll_set_calculate_result_number(cordic_dev_t *hw, uint8_t number)
-{
-    hw->csr_cfg.res_num = number - 1;
-}
-
-/**
- * @brief Set the number of input arguments (one or two)
- *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param number Number of input arguments (ONE_NUM or TWO_NUM)
- */
-__attribute__((always_inline))
-static inline void cordic_ll_set_calculate_argument_number(cordic_dev_t *hw, uint8_t number)
-{
-    hw->csr_cfg.arg_num = number - 1;
-}
-
-/**
- * @brief Set the result data format size (Q15 or Q31)
- *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param size Result data format (Q15_SIZE or Q31_SIZE)
- */
-__attribute__((always_inline))
-static inline void cordic_ll_set_calculate_result_format(cordic_dev_t *hw, cordic_iq_format_t format)
-{
-    if (format == ESP_CORDIC_FORMAT_Q15) {
-        hw->csr_cfg.res_size = 0;
-    } else {
-        hw->csr_cfg.res_size = 1;
-    }
-}
-
-/**
- * @brief Set the argument data format size (Q15 or Q31)
- *
- * @param hw Pointer to the CORDIC hardware register structure
- * @param size Argument data format (Q15_SIZE or Q31_SIZE)
- */
-__attribute__((always_inline))
-static inline void cordic_ll_set_calculate_argument_format(cordic_dev_t *hw, cordic_iq_format_t format)
-{
-    if (format == ESP_CORDIC_FORMAT_Q15) {
-        hw->csr_cfg.arg_size = 0;
-    } else {
-        hw->csr_cfg.arg_size = 1;
-    }
+    csr.work_mode = mode;
+    csr.press = precision;
+    csr.scale = scale;
+    csr.arg_num = arg_num - 1;
+    csr.res_num = res_num - 1;
+    csr.res_size = (res_format == ESP_CORDIC_FORMAT_Q15) ? 0 : 1;
+    csr.arg_size = (arg_format == ESP_CORDIC_FORMAT_Q15) ? 0 : 1;
+    csr.update_flag = 0;
+    hw->csr_cfg.val = csr.val;
 }
 
 /**
