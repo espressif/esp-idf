@@ -42,6 +42,11 @@ static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
     _riscv_trace_ll_enable_bus_clock(__VA_ARGS__); \
 } while (0)
 
+static inline bool riscv_trace_ll_is_bus_clock_enabled(void)
+{
+    return HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_cpu_clk_en && HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_sys_clk_en;
+}
+
 /** @brief Assert and release the reset of the given encoder core. */
 static inline void _riscv_trace_ll_reset_register(int core)
 {

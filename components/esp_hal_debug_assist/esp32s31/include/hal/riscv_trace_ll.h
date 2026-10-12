@@ -40,6 +40,11 @@ static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
     _riscv_trace_ll_enable_bus_clock(__VA_ARGS__); \
 } while (0)
 
+static inline bool riscv_trace_ll_is_bus_clock_enabled(void)
+{
+    return HP_SYS_CLKRST.trace_ctrl0.reg_trace_cpu_clk_en && HP_SYS_CLKRST.trace_ctrl0.reg_trace_sys_clk_en;
+}
+
 static inline void _riscv_trace_ll_reset_register(int core)
 {
     if (core == 0) {

@@ -40,6 +40,11 @@ static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
     _riscv_trace_ll_enable_bus_clock(__VA_ARGS__); \
 } while (0)
 
+static inline bool riscv_trace_ll_is_bus_clock_enabled(void)
+{
+    return PCR.trace_conf.trace_clk_en && PCR.trace_conf.trace1_clk_en;
+}
+
 static inline void _riscv_trace_ll_reset_register(int core)
 {
     if (core == 0) {

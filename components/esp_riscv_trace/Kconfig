@@ -159,6 +159,8 @@ menu "RISC-V Trace Encoder Configurations"
             help
                 When the hart enters reset, report the address of the last instruction before the
                 reset. Tracing resumes with a synchronization packet afterwards.
+                A software reset and the bootloader stop the encoders, so a capture does not continue
+                into the next boot. The reset packet stays in the old buffer until the next app reuses that RAM.
 
         config ESP_RISCV_TRACE_RESET
             int
