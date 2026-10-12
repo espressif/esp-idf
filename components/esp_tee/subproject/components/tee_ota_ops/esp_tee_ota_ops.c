@@ -139,5 +139,8 @@ esp_err_t esp_tee_ota_end(void)
     }
 
     ota_handle.tee_ota_state = ESP_TEE_OTA_END;
-    return ESP_OK;
+
+    /* NOTE: The new image is now the boot target; the TEE restarts the device itself */
+    ESP_LOGI(TAG, "TEE OTA update successful! Restarting...");
+    esp_tee_system_reset();
 }
