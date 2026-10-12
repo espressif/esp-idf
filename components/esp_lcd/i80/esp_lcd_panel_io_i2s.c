@@ -504,6 +504,8 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+                        "can't send command without D/C line");
     ESP_RETURN_ON_FALSE(param_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG, "parameter bytes too long, enlarge max_transfer_bytes");
     ESP_RETURN_ON_FALSE(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE, ESP_ERR_INVALID_ARG, TAG, "format buffer too small, increase LCD_I80_IO_FORMAT_BUF_SIZE");
     size_t num_trans_inflight = next_device->num_trans_inflight;
@@ -532,26 +534,28 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     // switch to I2S 32bits mode, one WS cycle <=> one I2S FIFO
     i2s_ll_tx_set_bits_mod(bus->hal.dev, 32);
 #endif
-    i2s_lcd_prepare_cmd_buffer(trans_desc, &lcd_cmd);
-    mount_config.buffer = (void *)trans_desc->data;
-    mount_config.length = trans_desc->data_length;
-    gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
-    gpio_set_level(bus->dc_gpio_num, next_device->dc_levels.dc_cmd_level);
-    i2s_ll_tx_stop(bus->hal.dev);
-    i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
-    i2s_ll_start_out_link(bus->hal.dev);
-    // delay a while, wait for DMA data being feed to I2S FIFO
-    // in fact, this is only needed when LCD pixel clock is set too high
-    esp_rom_delay_us(1);
 #if CONFIG_PM_ENABLE
     // increase the pm lock reference count before starting a new transaction
     if (bus->pm_lock) {
         esp_pm_lock_acquire(bus->pm_lock);
     }
 #endif
-    i2s_ll_tx_start(bus->hal.dev);
-    // polling the trans done event
-    while (!(i2s_ll_get_intr_status(bus->hal.dev) & I2S_LL_EVENT_TX_EOF)) {}
+    if (lcd_cmd != -1) {
+        i2s_lcd_prepare_cmd_buffer(trans_desc, &lcd_cmd);
+        mount_config.buffer = (void *)trans_desc->data;
+        mount_config.length = trans_desc->data_length;
+        gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
+        gpio_set_level(bus->dc_gpio_num, next_device->dc_levels.dc_cmd_level);
+        i2s_ll_tx_stop(bus->hal.dev);
+        i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
+        i2s_ll_start_out_link(bus->hal.dev);
+        // delay a while, wait for DMA data being feed to I2S FIFO
+        // in fact, this is only needed when LCD pixel clock is set too high
+        esp_rom_delay_us(1);
+        i2s_ll_tx_start(bus->hal.dev);
+        // polling the trans done event
+        while (!(i2s_ll_get_intr_status(bus->hal.dev) & I2S_LL_EVENT_TX_EOF)) {}
+    }
 
     // parameter is usually short, using polling mode
     if (param && param_size) {
@@ -560,7 +564,9 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         mount_config.buffer = (void *)trans_desc->data;
         mount_config.length = trans_desc->data_length;
         gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
-        gpio_set_level(bus->dc_gpio_num, next_device->dc_levels.dc_data_level);
+        if (bus->dc_gpio_num >= 0) {
+            gpio_set_level(bus->dc_gpio_num, next_device->dc_levels.dc_data_level);
+        }
         i2s_ll_tx_stop(bus->hal.dev);
         i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
         i2s_ll_start_out_link(bus->hal.dev);
@@ -586,6 +592,8 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     size_t color_buffer_size = 0;
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+                        "can't send command without D/C line");
     bool valid_color_buffer_size = i2s_lcd_get_color_buffer_size(bus, color_size, &color_buffer_size);
     ESP_RETURN_ON_FALSE(valid_color_buffer_size && color_buffer_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
                         "color bytes too long, enlarge max_transfer_bytes");
@@ -604,41 +612,43 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         }
     };
 
-    i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
     // switch devices if necessary
     lcd_i80_switch_devices(cur_device, next_device);
     trans_desc = &next_device->trans_pool[0];
     trans_desc->i80_device = next_device;
     trans_desc->trans_done_cb = NULL; // no callback for command transfer
     bus->cur_trans = trans_desc;
+    if (lcd_cmd != -1) {
+        i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
 #if I2S_LL_GET(TRANS_SIZE_ALIGN_WORD)
-    // switch to I2S 32bits mode, one WS cycle <=> one I2S FIFO
-    i2s_ll_tx_set_bits_mod(bus->hal.dev, 32);
+        // switch to I2S 32bits mode, one WS cycle <=> one I2S FIFO
+        i2s_ll_tx_set_bits_mod(bus->hal.dev, 32);
 #endif
-    i2s_lcd_prepare_cmd_buffer(trans_desc, &lcd_cmd);
-    mount_config.buffer = (void *)trans_desc->data;
-    mount_config.length = trans_desc->data_length;
-    gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
-    gpio_set_level(bus->dc_gpio_num, next_device->dc_levels.dc_cmd_level);
-    i2s_ll_tx_stop(bus->hal.dev);
-    i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
-    i2s_ll_start_out_link(bus->hal.dev);
-    esp_rom_delay_us(1);
+        i2s_lcd_prepare_cmd_buffer(trans_desc, &lcd_cmd);
+        mount_config.buffer = (void *)trans_desc->data;
+        mount_config.length = trans_desc->data_length;
+        gdma_link_mount_buffers(bus->dma_link, 0, &mount_config, 1, NULL);
+        gpio_set_level(bus->dc_gpio_num, next_device->dc_levels.dc_cmd_level);
+        i2s_ll_tx_stop(bus->hal.dev);
+        i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
+        i2s_ll_start_out_link(bus->hal.dev);
+        esp_rom_delay_us(1);
 #if CONFIG_PM_ENABLE
-    // increase the pm lock reference count before starting a new transaction
-    if (bus->pm_lock) {
-        esp_pm_lock_acquire(bus->pm_lock);
-    }
+        // increase the pm lock reference count before starting a new transaction
+        if (bus->pm_lock) {
+            esp_pm_lock_acquire(bus->pm_lock);
+        }
 #endif
-    i2s_ll_tx_start(bus->hal.dev);
-    // polling the trans done event
-    while (!(i2s_ll_get_intr_status(bus->hal.dev) & I2S_LL_EVENT_TX_EOF)) {}
+        i2s_ll_tx_start(bus->hal.dev);
+        // polling the trans done event
+        while (!(i2s_ll_get_intr_status(bus->hal.dev) & I2S_LL_EVENT_TX_EOF)) {}
 #if CONFIG_PM_ENABLE
-    // decrease pm lock reference count
-    if (bus->pm_lock) {
-        esp_pm_lock_release(bus->pm_lock);
-    }
+        // decrease pm lock reference count
+        if (bus->pm_lock) {
+            esp_pm_lock_release(bus->pm_lock);
+        }
 #endif
+    }
     bus->cur_trans = NULL;
 
     // sending LCD color data to queue
@@ -690,7 +700,7 @@ static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_
 {
     int bus_id = bus->bus_id;
     // check validation of GPIO number
-    bool valid_gpio = (bus_config->wr_gpio_num >= 0) && (bus_config->dc_gpio_num >= 0);
+    bool valid_gpio = bus_config->wr_gpio_num >= 0;
     for (size_t i = 0; i < bus_config->bus_width; i++) {
         valid_gpio = valid_gpio && (bus_config->data_gpio_nums[i] >= 0);
     }
@@ -711,9 +721,11 @@ static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_
     // WR signal (pclk)
     gpio_func_sel(bus_config->wr_gpio_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(bus_config->wr_gpio_num, soc_lcd_i2s_signals[bus_id].wr_sig, true, false);
-    // DC signal is controlled by software, set as general purpose IO
-    gpio_func_sel(bus_config->dc_gpio_num, PIN_FUNC_GPIO);
-    gpio_output_enable(bus_config->dc_gpio_num);
+    // DC signal is optional for data-only transfers
+    if (bus_config->dc_gpio_num >= 0) {
+        gpio_func_sel(bus_config->dc_gpio_num, PIN_FUNC_GPIO);
+        gpio_output_enable(bus_config->dc_gpio_num);
+    }
     return ESP_OK;
 }
 
@@ -810,7 +822,9 @@ static IRAM_ATTR void i2s_lcd_default_isr_handler(void *args)
                 // switch devices if necessary
                 lcd_i80_switch_devices(cur_device, next_device);
                 bus->cur_trans = trans_desc;
-                gpio_set_level(bus->dc_gpio_num, trans_desc->flags.dc_level);
+                if (bus->dc_gpio_num >= 0) {
+                    gpio_set_level(bus->dc_gpio_num, trans_desc->flags.dc_level);
+                }
                 // mount data to DMA links
                 gdma_buffer_mount_config_t mount_config = {
                     .buffer = (void *)trans_desc->data,
