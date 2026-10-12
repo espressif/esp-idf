@@ -95,16 +95,16 @@ When using different GPIO pins this is not required and `SD power supply comes f
 
 ### Pin assignments for ESP32-S31
 
-On ESP32-S31, SDMMC peripheral is connected to specific GPIO pins using the IO MUX. GPIO pins cannot be customized. Please see the table below for the pin connections.
+On ESP32-S31, SDMMC peripheral is connected to specific GPIO pins using the IO MUX. GPIO pins cannot be customized. These pins are on the internal SD IO power domain, so external pull-up resistors are not required. Please see the table below for the pin connections.
 
 ESP32-S31 pin | SD card pin | Notes
 --------------|-------------|------------
-GPIO24        | CLK         | 10k pullup
-GPIO25        | CMD         | 10k pullup
-GPIO20        | D0          | 10k pullup
-GPIO21        | D1          | not used in 1-line SD mode; 10k pullup in 4-line mode
-GPIO22        | D2          | not used in 1-line SD mode; 10k pullup in 4-line mode
-GPIO23        | D3          | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
+GPIO24        | CLK         | external pull-up not required
+GPIO25        | CMD         | external pull-up not required
+GPIO20        | D0          | external pull-up not required
+GPIO21        | D1          | not used in 1-line SD mode; external pull-up not required
+GPIO22        | D2          | not used in 1-line SD mode; external pull-up not required
+GPIO23        | D3          | not used in 1-line SD mode; external pull-up not required
 
 ### 4-line and 1-line SD modes
 
