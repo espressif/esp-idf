@@ -29,6 +29,13 @@ typedef enum {
     ESP_RISCV_TRACE_STATE_STOPPED = 2, /*!< Stopped. Buffer synced and readable */
 } esp_riscv_trace_state_t;
 
+/* Encoder settings that describe a capture. */
+typedef struct {
+    bool mem_loop;
+    uint32_t resync_mode;
+    uint32_t resync_threshold;
+} esp_riscv_trace_capture_cfg_t;
+
 struct esp_riscv_trace_context_t {
     riscv_trace_hal_context_t hal;
     _lock_t lock;
@@ -44,7 +51,7 @@ struct esp_riscv_trace_context_t {
 /* Snapshot writes. */
 void esp_riscv_trace_snapshot_early_init(int core_id);
 void esp_riscv_trace_snapshot_write_core_desc(int core_id, const esp_riscv_trace_handle_t handle);
-void esp_riscv_trace_snapshot_start(int core_id);
+void esp_riscv_trace_snapshot_start(int core_id, const esp_riscv_trace_capture_cfg_t *cfg);
 void esp_riscv_trace_snapshot_stop(int core_id, uint32_t fifo_status, uint32_t intr_status,
                                    uint32_t head_offset, bool head_valid);
 
@@ -56,9 +63,6 @@ typedef struct {
     uint32_t head_offset;
     uint32_t fifo_status_raw;
     uint32_t intr_status_raw;
-    bool fifo_empty;
-    bool memory_full;
-    bool fifo_overflow;
 } esp_riscv_trace_snapshot_panic_core_t;
 
 void esp_riscv_trace_snapshot_panic_write(const esp_riscv_trace_snapshot_panic_core_t *cores, int count);

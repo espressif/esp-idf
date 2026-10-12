@@ -6,9 +6,9 @@ set(ldfragments)
 
 if(CONFIG_ESP_RISCV_TRACE_ENABLE)
     list(APPEND srcs "src/esp_riscv_trace.c" "src/esp_riscv_trace_snapshot.c")
+    list(APPEND ldfragments "linker.lf")
     if(CONFIG_ESP_COREDUMP_ENABLE)
         list(APPEND srcs "src/esp_riscv_trace_coredump.c")
-        list(APPEND ldfragments "linker.lf")
     endif()
 endif()
 

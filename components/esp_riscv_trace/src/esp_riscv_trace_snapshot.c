@@ -8,8 +8,10 @@
 
 #include <string.h>
 #include "freertos/FreeRTOS.h"
+#include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "hal/riscv_trace_hal.h"
+#include "hal/riscv_trace_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_app_desc.h"
 #include "esp_riscv_trace.h"
@@ -43,18 +45,29 @@ static uint8_t s_active_capture_cores;
 /*
  * Writers set an odd write_seq before updates and an even one afterward.
  * Hardware fences keep descriptor stores inside that interval.
+ * Setting bit 0 instead of incrementing also keeps it odd over a writer interrupted by a panic.
  */
+FORCE_INLINE_ATTR void write_seq_begin(void)
+{
+    g_esp_riscv_trace_snapshot.write_seq |= 1u;
+    __asm__ __volatile__("fence w, w" ::: "memory");
+}
+
+FORCE_INLINE_ATTR void write_seq_end(void)
+{
+    __asm__ __volatile__("fence w, w" ::: "memory");
+    g_esp_riscv_trace_snapshot.write_seq++;
+}
+
 static void snapshot_write_begin(void)
 {
     portENTER_CRITICAL(&s_snapshot_lock);
-    g_esp_riscv_trace_snapshot.write_seq++;
-    __asm__ __volatile__("fence rw, rw" ::: "memory");
+    write_seq_begin();
 }
 
 static void snapshot_write_end(void)
 {
-    __asm__ __volatile__("fence rw, rw" ::: "memory");
-    g_esp_riscv_trace_snapshot.write_seq++;
+    write_seq_end();
     portEXIT_CRITICAL(&s_snapshot_lock);
 }
 
@@ -149,7 +162,21 @@ void esp_riscv_trace_snapshot_write_core_desc(int core_id, const esp_riscv_trace
     snapshot_write_end();
 }
 
-void esp_riscv_trace_snapshot_start(int core_id)
+/* Records the encoder status read after a stop or a panic freeze. */
+FORCE_INLINE_ATTR void core_desc_set_status(esp_riscv_trace_snapshot_core_desc_t *desc, uint32_t fifo_status,
+                                            uint32_t intr_status, uint32_t head_offset, bool head_valid)
+{
+    desc->fifo_status_raw = fifo_status;
+    desc->intr_status_raw = intr_status;
+    desc->fifo_empty = (fifo_status & TRACE_FIFO_EMPTY_M) ? 1 : 0;
+    desc->memory_full = (intr_status & TRACE_MEM_FULL_INTR_RAW_M) ? 1 : 0;
+    desc->fifo_overflow = (intr_status & TRACE_FIFO_OVERFLOW_INTR_RAW_M) ? 1 : 0;
+    desc->head_offset = head_valid ? head_offset : 0;
+    desc->head_valid = head_valid ? 1 : 0;
+}
+
+/* Records a capture start with the encoder settings it runs with. */
+void esp_riscv_trace_snapshot_start(int core_id, const esp_riscv_trace_capture_cfg_t *cfg)
 {
     snapshot_write_begin();
     if (s_active_capture_cores == 0) {
@@ -159,13 +186,10 @@ void esp_riscv_trace_snapshot_start(int core_id)
 
     esp_riscv_trace_snapshot_core_desc_t *desc = &s_core_desc[core_id];
     desc->state = ESP_RISCV_TRACE_SNAPSHOT_STATE_CAPTURING;
-    desc->head_offset = 0;
-    desc->head_valid = 0;
-    desc->fifo_status_raw = 0;
-    desc->intr_status_raw = 0;
-    desc->fifo_empty = 0;
-    desc->memory_full = 0;
-    desc->fifo_overflow = 0;
+    desc->memory_mode = snapshot_memory_mode_from_hw(cfg->mem_loop);
+    desc->resync_mode = snapshot_resync_mode_from_hw(cfg->resync_mode);
+    desc->resync_threshold = cfg->resync_threshold;
+    core_desc_set_status(desc, 0, 0, 0, false);
     snapshot_write_end();
 }
 
@@ -175,13 +199,7 @@ void esp_riscv_trace_snapshot_stop(int core_id, uint32_t fifo_status, uint32_t i
     snapshot_write_begin();
     esp_riscv_trace_snapshot_core_desc_t *desc = &s_core_desc[core_id];
     desc->state = ESP_RISCV_TRACE_SNAPSHOT_STATE_STOPPED;
-    desc->fifo_status_raw = fifo_status;
-    desc->intr_status_raw = intr_status;
-    desc->fifo_empty = riscv_trace_hal_fifo_is_empty(fifo_status) ? 1 : 0;
-    desc->memory_full = riscv_trace_hal_memory_is_full(intr_status) ? 1 : 0;
-    desc->fifo_overflow = riscv_trace_hal_fifo_is_overflowed(intr_status) ? 1 : 0;
-    desc->head_offset = head_valid ? head_offset : 0;
-    desc->head_valid = head_valid ? 1 : 0;
+    core_desc_set_status(desc, fifo_status, intr_status, head_offset, head_valid);
 
     if (s_active_capture_cores > 0) {
         s_active_capture_cores--;
@@ -196,24 +214,11 @@ void esp_riscv_trace_snapshot_stop(int core_id, uint32_t fifo_status, uint32_t i
  * The panic handler has already stalled the other cores
  * (esp_cpu_stall), so this core is the sole writer. Taking s_snapshot_lock
  * could deadlock against a stalled core that still holds it, so update
- * lock-free. Force write_seq odd (not ++) to discard any interrupted
- * normal writer, then close it even.
+ * lock-free.
  */
-static void panic_write_begin(void)
-{
-    g_esp_riscv_trace_snapshot.write_seq |= 1u;
-    __asm__ __volatile__("fence rw, rw" ::: "memory");
-}
-
-static void panic_write_end(void)
-{
-    __asm__ __volatile__("fence rw, rw" ::: "memory");
-    g_esp_riscv_trace_snapshot.write_seq++;
-}
-
 void esp_riscv_trace_snapshot_panic_write(const esp_riscv_trace_snapshot_panic_core_t *cores, int count)
 {
-    panic_write_begin();
+    write_seq_begin();
 
     bool any_capturing = false;
     for (int core_id = 0; core_id < count; core_id++) {
@@ -225,13 +230,7 @@ void esp_riscv_trace_snapshot_panic_write(const esp_riscv_trace_snapshot_panic_c
 
         esp_riscv_trace_snapshot_core_desc_t *desc = &s_core_desc[core_id];
         desc->state = cs->state;
-        desc->fifo_status_raw = cs->fifo_status_raw;
-        desc->intr_status_raw = cs->intr_status_raw;
-        desc->fifo_empty = cs->fifo_empty ? 1 : 0;
-        desc->memory_full = cs->memory_full ? 1 : 0;
-        desc->fifo_overflow = cs->fifo_overflow ? 1 : 0;
-        desc->head_offset = cs->head_valid ? cs->head_offset : 0;
-        desc->head_valid = cs->head_valid ? 1 : 0;
+        core_desc_set_status(desc, cs->fifo_status_raw, cs->intr_status_raw, cs->head_offset, cs->head_valid);
 
         if (cs->capturing) {
             any_capturing = true;
@@ -242,5 +241,5 @@ void esp_riscv_trace_snapshot_panic_write(const esp_riscv_trace_snapshot_panic_c
         g_esp_riscv_trace_snapshot.capture_reason = ESP_RISCV_TRACE_CAPTURE_REASON_PANIC;
     }
 
-    panic_write_end();
+    write_seq_end();
 }
