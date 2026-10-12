@@ -114,8 +114,8 @@ int mschapv2_verify_auth_response(const u8 *auth_response,
 	    buf[0] != 'S' || buf[1] != '=' ||
 	    hexstr2bin((char *) (buf + 2), recv_response,
 		       MSCHAPV2_AUTH_RESPONSE_LEN) ||
-	    os_memcmp(auth_response, recv_response,
-		      MSCHAPV2_AUTH_RESPONSE_LEN) != 0)
+	    os_memcmp_const(auth_response, recv_response,
+			    MSCHAPV2_AUTH_RESPONSE_LEN) != 0)
 		return -1;
 	return 0;
 }
