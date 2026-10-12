@@ -48,3 +48,12 @@
    :SOC_BLE_MESH_SUPPORTED: ../esp-ble-mesh/ble-mesh-index
    :SOC_BLUFI_SUPPORTED: blufi
    :SOC_BLE_AUDIO_SUPPORTED: ../esp-ble-audio/ble-audio-index
+
+**********
+蓝牙工具
+**********
+
+.. toctree::
+   :maxdepth: 1
+
+   BLE 日志调试工具 <ble-log-console>

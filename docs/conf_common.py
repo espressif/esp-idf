@@ -35,6 +35,7 @@ BT_DOCS = [
 
 BLE_DOCS = [
     'api-guides/ble/index.rst',
+    'api-guides/ble/ble-log-console.rst',
     'api-guides/ble/overview.rst',
     'api-guides/ble/ble-feature-support-status.rst',
     'api-guides/ble/host-feature-support-status.rst',
