@@ -439,9 +439,13 @@ static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
  * @note It may be block to wait conversion idle for ADC1.
  *
  * @param adc_n ADC unit.
+ * @param en    Set true to trigger one conversion.
  */
-static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n, bool en)
 {
+    if (!en) {
+        return;
+    }
     if (adc_n == ADC_UNIT_1) {
         while (HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_slave_addr1, meas_status) != 0) {}
         SENS.sar_meas_start1.meas1_start_sar = 0;

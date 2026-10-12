@@ -13,6 +13,8 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_adc/adc_continuous.h"
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
 
 #define EXAMPLE_ADC_UNIT                    ADC_UNIT_1
 #define EXAMPLE_ADC_CONV_MODE               ADC_CONV_SINGLE_UNIT_1
@@ -33,6 +35,55 @@ static adc_channel_t channel[2] = {ADC_CHANNEL_2, ADC_CHANNEL_3};
 
 static TaskHandle_t s_task_handle;
 static const char *TAG = "EXAMPLE";
+
+static bool example_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle)
+{
+    adc_cali_handle_t handle = NULL;
+    esp_err_t ret = ESP_FAIL;
+    bool calibrated = false;
+
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+    if (!calibrated) {
+        ESP_LOGI(TAG, "calibration scheme version is %s", "Curve Fitting");
+        adc_cali_curve_fitting_config_t cali_config = {
+            .unit_id = unit,
+            .chan = channel,
+            .atten = atten,
+            .bitwidth = ADC_BITWIDTH_DEFAULT,
+        };
+        ret = adc_cali_create_scheme_curve_fitting(&cali_config, &handle);
+        if (ret == ESP_OK) {
+            calibrated = true;
+        }
+    }
+#endif
+
+#if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+    if (!calibrated) {
+        ESP_LOGI(TAG, "calibration scheme version is %s", "Line Fitting");
+        adc_cali_line_fitting_config_t cali_config = {
+            .unit_id = unit,
+            .atten = atten,
+            .bitwidth = ADC_BITWIDTH_DEFAULT,
+        };
+        ret = adc_cali_create_scheme_line_fitting(&cali_config, &handle);
+        if (ret == ESP_OK) {
+            calibrated = true;
+        }
+    }
+#endif
+
+    *out_handle = handle;
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Calibration Success");
+    } else if (ret == ESP_ERR_NOT_SUPPORTED || !calibrated) {
+        ESP_LOGW(TAG, "eFuse not burnt, skip ADC calibration");
+    } else {
+        ESP_LOGE(TAG, "Invalid arg or no memory");
+    }
+
+    return calibrated;
+}
 
 static bool IRAM_ATTR s_conv_done_cb(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data)
 {
@@ -85,8 +136,17 @@ void app_main(void)
 
     s_task_handle = xTaskGetCurrentTaskHandle();
 
+    uint8_t channel_num = sizeof(channel) / sizeof(adc_channel_t);
+
     adc_continuous_handle_t handle = NULL;
-    continuous_adc_init(channel, sizeof(channel) / sizeof(adc_channel_t), &handle);
+    continuous_adc_init(channel, channel_num, &handle);
+
+    //-------------ADC Calibration Init---------------//
+    adc_cali_handle_t cali_handle[sizeof(channel) / sizeof(adc_channel_t)] = {NULL};
+    bool do_calibration[sizeof(channel) / sizeof(adc_channel_t)] = {false};
+    for (int i = 0; i < channel_num; i++) {
+        do_calibration[i] = example_adc_calibration_init(EXAMPLE_ADC_UNIT, channel[i], EXAMPLE_ADC_ATTEN, &cali_handle[i]);
+    }
 
     adc_continuous_evt_cbs_t cbs = {
         .on_conv_done = s_conv_done_cb,
@@ -118,10 +178,27 @@ void app_main(void)
                 if (parse_ret == ESP_OK) {
                     for (int i = 0; i < num_parsed_samples; i++) {
                         if (parsed_data[i].valid) {
-                            ESP_LOGI(TAG, "ADC%d, Channel: %d, Value: %"PRIu32,
-                                     parsed_data[i].unit + 1,
-                                     parsed_data[i].channel,
-                                     parsed_data[i].raw_data);
+                            int voltage = 0;
+                            int cali_idx = -1;
+                            for (int k = 0; k < channel_num; k++) {
+                                if (channel[k] == parsed_data[i].channel) {
+                                    cali_idx = k;
+                                    break;
+                                }
+                            }
+                            if (cali_idx >= 0 && do_calibration[cali_idx]) {
+                                ESP_ERROR_CHECK(adc_cali_chan_raw_to_voltage(cali_handle[cali_idx], parsed_data[i].channel, parsed_data[i].raw_data, &voltage));
+                                ESP_LOGI(TAG, "ADC%d, Channel: %d, Raw: %"PRIu32", Voltage: %d mV",
+                                         parsed_data[i].unit + 1,
+                                         parsed_data[i].channel,
+                                         parsed_data[i].raw_data,
+                                         voltage);
+                            } else {
+                                ESP_LOGI(TAG, "ADC%d, Channel: %d, Raw: %"PRIu32,
+                                         parsed_data[i].unit + 1,
+                                         parsed_data[i].channel,
+                                         parsed_data[i].raw_data);
+                            }
                         } else {
                             ESP_LOGW(TAG, "Invalid data [ADC%d_Ch%d_%"PRIu32"]",
                                      parsed_data[i].unit + 1,
@@ -145,7 +222,4 @@ void app_main(void)
             }
         }
     }
-
-    ESP_ERROR_CHECK(adc_continuous_stop(handle));
-    ESP_ERROR_CHECK(adc_continuous_deinit(handle));
 }

@@ -34,6 +34,9 @@ if(CONFIG_SOC_ADC_SUPPORTED)
     if(CONFIG_SOC_ADC_DMA_SUPPORTED)
         list(APPEND srcs "adc_hal.c")
     endif()
+    if(${target} STREQUAL "esp32s31")
+        list(APPEND srcs "adc_hal_sw_weight.c")
+    endif()
 endif()
 
 # DAC related source files

@@ -76,13 +76,13 @@ esp_err_t adc_oneshot_config_channel(adc_oneshot_unit_handle_t handle, adc_chann
  *
  * @note This API is thread-safe. For more details, see ADC programming guide
  * @note This API should NOT be called in an ISR context
- * @note Raw ADC codes are intended for further processing. To obtain a voltage in mV, it is recommended to use
- *       :cpp:func:`adc_cali_raw_to_voltage` instead of interpreting the raw value directly.
- *       :cpp:func:`adc_oneshot_get_calibrated_result` is a convenience function that does both.
- * @note On targets with :c:macro:`SOC_ADC_DIFF_SUPPORTED`, N-side channels can be used in single-ended mode,
- *       but their raw data polarity is inverted. For an input range of -2 V to 2 V, the N-side raw code is
- *       4393 to 0. Use the ADC calibration APIs to convert the raw result to voltage instead of interpreting the raw
- *       code directly.
+ * @note Raw ADC codes are intended for further processing. To obtain a voltage in mV, use
+ *       :cpp:func:`adc_cali_raw_to_voltage`, or :cpp:func:`adc_cali_chan_raw_to_voltage`
+ *       when the scheme needs the channel. :cpp:func:`adc_oneshot_get_calibrated_result`
+ *       does both the read and the channel-aware conversion.
+ * @note On targets with :c:macro:`SOC_ADC_DIFF_SUPPORTED`, the raw result is a 17-bit
+ *       comparator vector, not a monotonic code. Even-numbered channels are N-side and
+ *       odd-numbered channels are P-side. Convert it with :cpp:func:`adc_cali_chan_raw_to_voltage`.
  *
  * @param[in] handle    ADC handle
  * @param[in] chan      ADC channel
@@ -150,7 +150,7 @@ esp_err_t adc_oneshot_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, i
  *
  * @return
  *        - ESP_OK
- *        Other return errors from adc_oneshot_read() and adc_cali_raw_to_voltage()
+ *        Other return errors from adc_oneshot_read() and adc_cali_chan_raw_to_voltage()
  */
 esp_err_t adc_oneshot_get_calibrated_result(adc_oneshot_unit_handle_t handle, adc_cali_handle_t cali_handle, adc_channel_t chan, int *cali_result);
 

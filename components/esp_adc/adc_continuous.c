@@ -249,6 +249,12 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
 
     adc_apb_periph_claim();
 
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
+        adc_cal_sw_weight((adc_unit_t)i, ADC_DIGI_CLK_SRC_DEFAULT);
+    }
+#endif
+
     return ret;
 
 cleanup:
@@ -328,6 +334,15 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 #endif
     adc_hal_digi_init(&handle->hal);
     adc_hal_digi_controller_config(&handle->hal, &handle->hal_digi_ctrlr_cfg);
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    // ADC power release and reset will clear the calibration done flag, need to set it back to true.
+    if (handle->use_adc1) {
+        adc_ll_set_cal_done(ADC_UNIT_1, true);
+    }
+    if (handle->use_adc2) {
+        adc_ll_set_cal_done(ADC_UNIT_2, true);
+    }
+#endif
     adc_hal_digi_enable(false);
 
     adc_dma_stop(handle->adc_dma);
@@ -344,6 +359,18 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 
     adc_dma_start(handle->adc_dma, handle->hal.rx_desc);
     adc_hal_digi_connect(true);
+
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    /* Data path, not a cal step: bypass the HW weight accumulator so DMA
+     * samples are the 17-bit comparator vector. */
+    if (handle->use_adc1) {
+        adc_ll_weight_accumulator_bypass(ADC_UNIT_1, true);
+    }
+    if (handle->use_adc2) {
+        adc_ll_weight_accumulator_bypass(ADC_UNIT_2, true);
+    }
+#endif
+
     adc_hal_digi_enable(true);
 
 #if ADC_LL_DEFAULT_CONV_LIMIT_EN

@@ -14,6 +14,9 @@
 #include "esp_heap_caps.h"
 #include "hal/adc_periph.h"
 #include "hal/adc_ll.h"
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+#include "hal/adc_hal_common.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_adc/adc_oneshot.h"
@@ -35,10 +38,9 @@ static int s_adc_count_size;
 static int *s_p_adc_count;
 static int s_adc_offset = -1;
 
-#ifndef ADC_LL_RAW_DATA_WEIGHTED_SUM
 #define ADC_TEST_RAW_BUCKET_SIZE(bitwidth)  (1 << (bitwidth))
-#else
-#define ADC_TEST_RAW_BUCKET_SIZE(bitwidth)  (ADC_TEST_HIGH_VAL + 1)
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+#define ADC_TEST_WEIGHTED_CODE_HIST_SIZE    16384
 #endif
 
 static int s_insert_point(uint32_t value)
@@ -223,7 +225,11 @@ static float test_adc_continuous_std(adc_atten_t atten, bool filter_en, int filt
         ESP_LOGI("TEST_ADC", "Test with atten: %d, no filter", atten);
     }
 
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    s_reset_array(ADC_TEST_WEIGHTED_CODE_HIST_SIZE);
+#else
     s_reset_array(ADC_TEST_RAW_BUCKET_SIZE(SOC_ADC_DIGI_MAX_BITWIDTH));
+#endif
     TEST_ESP_OK(adc_continuous_start(handle));
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -239,7 +245,11 @@ static float test_adc_continuous_std(adc_atten_t atten, bool filter_en, int filt
     adc_digi_output_data_t *p = (void*)result;
     for (int i = 0; i < ADC_TEST_CNT; i++) {
         TEST_ASSERT_EQUAL(TEST_STD_ADC1_CHANNEL0, EXAMPLE_ADC_GET_CHANNEL(p[i]));
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+        s_insert_point(adc_hal_sw_weight_apply(ADC_UNIT_1, EXAMPLE_ADC_GET_DATA(p[i])));
+#else
         s_insert_point(EXAMPLE_ADC_GET_DATA(p[i]));
+#endif
     }
     float std = s_print_summary(print_figure);
 
@@ -391,7 +401,7 @@ TEST_CASE("ADC continuous sample frequency test", "[adc_continuous][performance]
 
 #endif  //#if SOC_ADC_DMA_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32 ||  SOC_ADC_CALIBRATION_V1_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32 || SOC_ADC_CALIBRATION_V1_SUPPORTED || ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
 /*---------------------------------------------------------------
         ADC Oneshot Average / STD_Deviation Test
 ---------------------------------------------------------------*/
@@ -427,26 +437,42 @@ static float test_adc_oneshot_std(adc_atten_t atten, bool is_performance_test)
     TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, channel, &config));
     ESP_LOGI("TEST_ADC", "Test with atten: %d", atten);
 
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    s_reset_array(ADC_TEST_WEIGHTED_CODE_HIST_SIZE);
+#else
     s_reset_array(ADC_TEST_RAW_BUCKET_SIZE(ADC_LL_RTC_MAX_BITWIDTH));
+#endif
 
     if (is_performance_test) {
         test_adc_set_io_middle(ADC_UNIT_1, TEST_STD_ADC1_CHANNEL0);
     }
 
     float std;
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+    int last_raw = 0;
+#endif
     while (1) {
         for (int i = 0; i < s_adc_count_size; i++) {
             TEST_ESP_OK(adc_oneshot_read(adc1_handle, channel, &raw));
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+            last_raw = raw;
+            s_insert_point(adc_hal_sw_weight_apply(ADC_UNIT_1, (uint32_t)raw));
+#else
             s_insert_point(raw);
+#endif
         }
         std = s_print_summary(print_figure);
         break;
     }
 
     if (do_calibration) {
-        uint32_t raw = s_get_average();
         int voltage_mv = 0;
-        TEST_ESP_OK(adc_cali_raw_to_voltage(cali_handle, raw, &voltage_mv));
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+        TEST_ESP_OK(adc_cali_chan_raw_to_voltage(cali_handle, channel, last_raw, &voltage_mv));
+#else
+        uint32_t avg_raw = s_get_average();
+        TEST_ESP_OK(adc_cali_chan_raw_to_voltage(cali_handle, channel, avg_raw, &voltage_mv));
+#endif
         printf("Voltage = %d mV\n", voltage_mv);
     }
 
@@ -493,13 +519,13 @@ TEST_CASE("ADC1 oneshot std_deviation performance", "[adc_oneshot][performance]"
 
 #define TIMES_PER_ATTEN                 10
 
-static IRAM_ATTR NOINLINE_ATTR uint32_t get_cali_time_in_ccount(adc_cali_handle_t cali_handle, int adc_raw)
+static IRAM_ATTR NOINLINE_ATTR uint32_t get_cali_time_in_ccount(adc_cali_handle_t cali_handle, adc_channel_t channel, int adc_raw)
 {
     uint32_t time;
     int voltage = 0;
     RECORD_TIME_PREPARE();
     RECORD_TIME_START();
-    adc_cali_raw_to_voltage(cali_handle, adc_raw, &voltage);
+    adc_cali_chan_raw_to_voltage(cali_handle, channel, adc_raw, &voltage);
     RECORD_TIME_END(&time);
 
     return time;
@@ -545,7 +571,7 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
 
             for (int j = 0; j < TIMES_PER_ATTEN; j++) {
                 TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &adc_raw));
-                adc_time_record[i][j] = get_cali_time_in_ccount(cali_handle[i], adc_raw);
+                adc_time_record[i][j] = get_cali_time_in_ccount(cali_handle[i], channel, adc_raw);
                 IDF_LOG_PERFORMANCE("ADC1 Cali time", "%d us", (int)GET_US_BY_CCOUNT(adc_time_record[i][j]));
             }
         }
@@ -572,4 +598,4 @@ TEST_CASE("ADC2 Calibration Speed", "[adc][manual]")
 }
 #endif  //#if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
 
-#endif  //#if CONFIG_IDF_TARGET_ESP32 ||  SOC_ADC_CALIBRATION_V1_SUPPORTED
+#endif  //#if CONFIG_IDF_TARGET_ESP32 || SOC_ADC_CALIBRATION_V1_SUPPORTED || ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED

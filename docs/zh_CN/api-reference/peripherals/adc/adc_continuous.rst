@@ -289,29 +289,15 @@ ADC 连续转换模式驱动使用内部缓冲池保存转换结果，缓冲池�
 
 此 API 提供了一个读取所有 ADC 连续转换结果的机会。
 
-从上述函数读取的 ADC 转换结果为原始数据。要根据 ADC 原始结果计算电压，可以使用以下公式：
+从上述函数读取的是原始数据。请用校准接口转换为以 mV 为单位的电压，详见 :doc:`adc_calibration`。
 
-.. parsed-literal::
+.. only:: esp32s31
 
-    Vout = Dout * Vmax / Dmax       (1)
+    在 {IDF_TARGET_NAME} 上，每个采样结果中的原始数据为 17 位比较器向量。请先用 :cpp:func:`adc_continuous_parse_data` 解析，再调用 :cpp:func:`adc_cali_chan_raw_to_voltage`。偶通道为 N 端，奇通道为 P 端。
 
-其中：
+.. only:: not esp32s31
 
-.. list-table::
-    :header-rows: 1
-    :widths: 20 80
-    :align: center
-
-    * - Vout
-      - 数据输出结果，代表电压。
-    * - Dout
-      - ADC 原始数据读取结果。
-    * - Vmax
-      - 可测量的最大模拟输入电压，与 ADC 衰减相关，请参考 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}#sensor>`__ 中的片上传感器与模拟信号处理章节。
-    * - Dmax
-      - 输出 ADC 原始数据读取结果的最大值，即 2^位宽，位宽即之前配置的 :cpp:member:`adc_digi_pattern_config_t::bit_width`。
-
-若需进一步校准，将 ADC 原始结果转换为以 mV 为单位的电压数据，请参考 :doc:`adc_calibration`。
+    请调用 :cpp:func:`adc_cali_raw_to_voltage`。如果校准方案需要通道信息，请使用 :cpp:func:`adc_cali_chan_raw_to_voltage`。
 
 解析 ADC 原始数据
 ~~~~~~~~~~~~~~~~~~~~~
@@ -389,7 +375,6 @@ ADC 连续转换模式读取的原始数据需要进一步解析才能获得可�
 
     - 一个 ADC 单元一次只能运行一种操作模式，即连续模式或单次模式。:cpp:func:`adc_continuous_start` 提供了保护措施。
     :not esp32s31: - 随机数生成器 (RNG) 以 ADC 为输入源。使用 ADC 连续转换模式驱动从 RNG 生成随机数时，随机性会减弱。
-    :SOC_ADC_DIFF_SUPPORTED: - 在单端模式下，如果使用 N 端通道作为输入接口，其原始数据极性是反向的。输入电压范围为 -2 V ~ 2 V 时，N 端 raw 值为 4393~0。请使用 ADC 校准 API。
     :esp32 or esp32s2: - Wi-Fi 也使用 ADC2，:cpp:func:`adc_continuous_start` 提供了 Wi-Fi 驱动和 ADC 连续转换模式驱动之间的保护。
     :esp32: - ADC 连续转换模式驱动使用 I2S0 外设作为硬件 DMA FIFO。因此，如果 I2S0 已在使用中，:cpp:func:`adc_continuous_new_handle` 将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
     :esp32: - ESP32 DevKitC：由于存在外部自动烧录电路，GPIO 0 不能用于 ADC 连续转换模式。

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include "hal/adc_types.h"
 #include "hal/adc_types_private.h"
 #include "soc/soc_caps.h"
@@ -94,6 +95,32 @@ void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param);
 uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool internal_gnd);
 
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
+
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+/**
+ * @return true if this unit already has a software-weight table.
+ */
+bool adc_hal_sw_weight_is_calibrated(adc_unit_t adc_n);
+
+/**
+ * Sample internal calibration muxes in oneshot mode and compute weights.
+ * Subsequent calls on an already-calibrated unit only restore `cal_done`.
+ */
+void adc_hal_sw_weight_calibrate(adc_unit_t adc_n, adc_oneshot_clk_src_t clk_src);
+
+/**
+ * Apply the calibrated software weights to a raw conversion result.
+ *
+ * @param adc_n ADC index number
+ * @param raw Raw conversion result
+ *
+ * @return Weighted ADC code
+ */
+uint32_t adc_hal_sw_weight_apply(adc_unit_t adc_n, uint32_t raw);
+
+int32_t adc_hal_sw_weight_get(adc_unit_t adc_n, int bit_from_msb);
+
+#endif // ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
 
 /*---------------------------------------------------------------
                     I2C SAR ADC register backup/restore

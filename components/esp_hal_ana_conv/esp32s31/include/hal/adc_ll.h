@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 
+#include "esp_rom_sys.h"
 #include "soc/adc_struct.h"
 #include "soc/adc_reg.h"
 #include "soc/clk_tree_defs.h"
@@ -24,52 +25,48 @@ extern "C" {
 /*---------------------------------------------------------------
  *                            common
  *-------------------------------------------------------------*/
+/* Interrupt events */
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE              BIT(31)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE              BIT(30)
 
-#define ADC_LL_FORCE_XPD_SAR_FSM                    0  // Use FSM to control power
-#define ADC_LL_FORCE_XPD_SAR_PD                     2  // Force power down
-#define ADC_LL_FORCE_XPD_SAR_PU                     3  // Force power up
-
+/* Unit and channel */
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (1)
 #define ADC_LL_UNIT2_CHANNEL_SUBSTRATION            (0)
 #define ADC_LL_MAX_CHANNEL_NUM                      (8)
 #define ADC_LL_CHANNEL_NUM(unit_id)                 (8)
-
-#define ADC_LL_DMA_USE_LP_AHB_GDMA                  1
-
-#define ADC_LL_DIGI_SAMPLE_FREQ_DYNAMIC_CLK_DIV     1
-#define ADC_LL_RAW_DATA_WEIGHTED_SUM                (1)
-
-/*---------------------------------------------------------------
- *                            oneshot
- *-------------------------------------------------------------*/
-#define ADC_LL_RTC_MIN_BITWIDTH                     (17)
-#define ADC_LL_RTC_MAX_BITWIDTH                     (17)
-#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)      (0)
-#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (0)
-
-/*---------------------------------------------------------------
- *                          continuous
- *-------------------------------------------------------------*/
-#define ADC_LL_SAMPLE_FREQ_THRES_HIGH               (83333U)
-#define ADC_LL_SAMPLE_FREQ_THRES_LOW                (611U)
 #define ADC_LL_DIG_SUPPORTED_UNIT(UNIT)             (1)
 #define ADC_LL_DIGI_CONTROLLER_NUM                  (2)
 
-#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT             (1)
+/* Power (XPD) control */
+#define ADC_LL_FORCE_XPD_SAR_FSM                    0  // Use FSM to control power
+#define ADC_LL_FORCE_XPD_SAR_PD                     2  // Force power down
+#define ADC_LL_FORCE_XPD_SAR_PU                     3  // Force power up
+#define ADC_LL_POWER_MANAGE_SUPPORTED               1
 
+/* Bit width and data format */
+#define ADC_LL_RTC_MIN_BITWIDTH                     (17)
+#define ADC_LL_RTC_MAX_BITWIDTH                     (17)
+#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)      (0)
+#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM) (0)
+
+/* Clock */
+#define ADC_LL_DIGI_SAMPLE_FREQ_DYNAMIC_CLK_DIV     (1)
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT             (1)
+#define ADC_LL_SAMPLE_FREQ_THRES_HIGH               (83333U)
+#define ADC_LL_SAMPLE_FREQ_THRES_LOW                (611U)
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT                 4
 #define ADC_LL_CLKM_DIV_B_DEFAULT                   1
 #define ADC_LL_CLKM_DIV_A_DEFAULT                   0
 
-#define ADC_LL_POWER_MANAGE_SUPPORTED               1
-
-#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM) (0)
+/* FSM and sampling timing */
 #define ADC_LL_FSM_RSTB_WAIT_DEFAULT                (8)
 #define ADC_LL_FSM_START_WAIT_DEFAULT               (5)
 #define ADC_LL_FSM_STANDBY_WAIT_DEFAULT             (100)
 #define ADC_LL_SAMPLE_CYCLE_DEFAULT                 (2)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (0)
+
+/* DMA and continuous conversion */
+#define ADC_LL_DMA_USE_LP_AHB_GDMA                  (1)
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN                (0)
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM               (255)
 #define ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER         (0)
@@ -77,12 +74,15 @@ extern "C" {
 /*---------------------------------------------------------------
  *                          calibration
  *-------------------------------------------------------------*/
-#define ADC_LL_ZERO_DIFF_CODE                       (2198)
+/* HAL provides software-weight calibration of the raw comparator vector. */
+#define ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED      1
+#define ADC_LL_REF_SEL_IN_DEFAULT                   (1)
 
+/* PWDET controller capacitor tuning default */
 #define ADC_LL_PWDET_CCT_DEFAULT                    (4)
 
 typedef enum {
-    ADC_LL_CTRL_DIG   = 0,    ///< S31 uses unified digital controller
+    ADC_LL_CTRL_DIG   = 0,    ///< Unified digital controller
 } adc_ll_controller_t;
 
 typedef enum {
@@ -104,7 +104,7 @@ typedef enum {
 
 /**
  * @brief Set SAR ADC module clock division factor.
- *        S31 clock is controlled through LP_PERI_CLKRST divider.
+ *        Unused on this target; see adc_ll_digi_controller_clk_div().
  */
 __attribute__((always_inline))
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
@@ -114,8 +114,7 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
 
 /**
  * @brief Set ADC digital controller clock division factor.
- *        S31 uses LP_PERI_CLKRST.adc_ctrl.lp_adc_div_num for clock division.
- *        Division factor = lp_adc_div_num + 1
+ *        The integer divider is (div_num + 1). Fractional divisors are unused.
  */
 __attribute__((always_inline))
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
@@ -181,6 +180,77 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
     REGI2C_WRITE_MASK(I2C_SARADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
     REGI2C_WRITE_MASK(I2C_SARADC, ADC_SAR2_SAMPLE_CYCLE_ADDR, sample_cycle);
+}
+
+/**
+ * @brief Select the SAR internal reference.
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ref_sel_in(adc_unit_t adc_n, uint32_t sel)
+{
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR1, ADC_SARADC_REF_SEL_IN_ADDR, sel);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR2, ADC_SARADC_REF_SEL_IN_ADDR, sel);
+    }
+}
+
+/**
+ * @brief Configure the hardware weight accumulator bypass.
+ * @param adc_n ADC unit.
+ * @param bypass True to output the raw 17-bit comparator vector; false (default)
+ *               to output the weighted ADC code by default hardware weight accumulator(0 to 4393).
+ */
+__attribute__((always_inline))
+static inline void adc_ll_weight_accumulator_bypass(adc_unit_t adc_n, bool bypass)
+{
+    adc_ll_set_ref_sel_in(adc_n, ADC_LL_REF_SEL_IN_DEFAULT);
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR1, ADC_SARADC_EN_RAW_DATA_ADDR, bypass);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR2, ADC_SARADC_EN_RAW_DATA_ADDR, bypass);
+    }
+}
+
+/**
+ * Mark the software-weight calibration window as active or complete.
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_cal_done(adc_unit_t adc_n, bool done)
+{
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR1, ADC_SARADC_CAL_DONE_ADDR, done);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR2, ADC_SARADC_CAL_DONE_ADDR, done);
+    }
+}
+
+/**
+ * Select the calibration polarity used while collecting raw data.
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_pol_sel(adc_unit_t adc_n, bool pol)
+{
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR1, ADC_SARADC_POL_SEL_ADDR, pol);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR2, ADC_SARADC_POL_SEL_ADDR, pol);
+    }
+}
+
+/**
+ * Program the bit-selection masks used by the software-weight calibration flow.
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_cal_sel(adc_unit_t adc_n, uint8_t cal_sel, uint8_t cal_sel_1)
+{
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR1, ADC_SARADC_CAL_SEL_ADDR, cal_sel);
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR1, ADC_SARADC_CAL_SEL_1_ADDR, cal_sel_1);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR2, ADC_SARADC_CAL_SEL_ADDR, cal_sel);
+        REGI2C_WRITE_MASK(I2C_SARADC_SAR2, ADC_SARADC_CAL_SEL_1_ADDR, cal_sel_1);
+    }
 }
 
 /**
@@ -284,7 +354,7 @@ static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
         HAL_ASSERT(false && "bad convert mode");
         break;
     }
-    /* Update pattern index after each completed conversion; single-ended uses model bit 0 in each entry. */
+    /* Advance the pattern pointer after each completed conversion. */
     ADC.ctrl0.sar1_patt_type = 0;
     ADC.ctrl1.sar2_patt_type = 0;
     ADC.ctrl0.sar1_clk_pos_sel = 1;
@@ -445,6 +515,8 @@ static inline void adc_ll_digi_dma_disable(void)
 __attribute__((always_inline))
 static inline void adc_ll_digi_reset(void)
 {
+    ADC.dma_conf.apb_adc_reset_fsm = 1;
+    ADC.dma_conf.apb_adc_reset_fsm = 0;
     ADC.dma_conf.dma_eof_num_clr = 1;
     ADC.dma_conf.dma_eof_num_clr = 0;
 }
@@ -495,19 +567,35 @@ static inline void _adc_ll_reset_register(void)
 
 /**
  * @brief Enable ADC reference generator.
+ *
+ * Skip if the generator is already in the idle-on state.
  */
 __attribute__((always_inline))
 static inline void adc_ll_enable_refgen(void)
 {
-    ADC.ref_control.rtc_xpd_refgen = 1;
+    if (ADC.ref_control.rtc_xpd_refgen && ADC.ref_control.rtc_ref_delay &&
+            !ADC.ref_control.rtc_pre_charge) {
+        return;
+    }
+
+    ADC.ref_control.rtc_xpd_refgen = 0;
     ADC.ref_control.rtc_pre_charge = 1;
+    ADC.ref_control.rtc_ref_delay = 0;
+    esp_rom_delay_us(2);
+
+    ADC.ref_control.rtc_pre_charge = 0;
+    ADC.ref_control.rtc_xpd_refgen = 1;
+    ADC.ref_control.rtc_ref_delay = 0;
+    esp_rom_delay_us(600);
+
+    ADC.ref_control.rtc_xpd_refgen = 1;
+    ADC.ref_control.rtc_pre_charge = 0;
     ADC.ref_control.rtc_ref_delay = 1;
+    esp_rom_delay_us(2);
 }
 
 /**
  * @brief Set ADC power management.
- *        S31 uses ADC_XPD_SAR1_FORCE / ADC_XPD_SAR2_FORCE directly.
- *        0x=auto(FSM), 10=force off, 11=force on
  */
 __attribute__((always_inline))
 static inline void adc_ll_set_power_manage(adc_unit_t adc_n, adc_ll_power_t manage)
@@ -525,7 +613,7 @@ static inline void adc_ll_set_power_manage(adc_unit_t adc_n, adc_ll_power_t mana
 
 /**
  * @brief Set ADC module controller.
- *        S31 has a unified controller, this is a no-op.
+ *        This target uses a unified digital controller; this is a no-op.
  */
 __attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
@@ -601,13 +689,43 @@ static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
 
 /**
  * @brief Start one conversion by software trigger.
+ *
+ * @param adc_n ADC unit.
+ * @param en    Set true to trigger one conversion.
  */
-static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n, bool en)
 {
+    if (!en) {
+        return;
+    }
     if (adc_n == ADC_UNIT_1) {
         ADC.ctrl0.sar1_trigger_start = 1;
     } else {
         ADC.ctrl1.sar2_trigger_start = 1;
+    }
+}
+
+/**
+ * @brief Stop software-triggered conversions.
+ */
+static inline void adc_oneshot_ll_stop(adc_unit_t adc_n)
+{
+    if (adc_n == ADC_UNIT_1) {
+        ADC.ctrl0.sar1_trigger_stop = 1;
+    } else {
+        ADC.ctrl1.sar2_trigger_stop = 1;
+    }
+}
+
+/**
+ * @brief Enable or disable SAR continue mode.
+ */
+static inline void adc_ll_set_continue_mode(adc_unit_t adc_n, bool enable)
+{
+    if (adc_n == ADC_UNIT_1) {
+        ADC.ctrl0.sar1_continue_mode_en = enable;
+    } else {
+        ADC.ctrl1.sar2_continue_mode_en = enable;
     }
 }
 
@@ -639,8 +757,7 @@ static inline bool adc_oneshot_ll_get_event(uint32_t event)
 
 /**
  * @brief Get the converted value for each ADCn.
- *        S31 output: 22-bit [21:17]=channel, [16:0]=17-bit data.
- *        Returns the 17-bit data portion.
+ *        Returns the lower 17 bits of the conversion result.
  */
 static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
 {
@@ -675,16 +792,9 @@ static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
  */
 static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
 {
-    ADC.ctrl2.timer_en = 0;
-    adc_ll_enable_refgen();
-
-    if (adc_n == ADC_UNIT_1) {
-        ADC.ctrl0.sar1_continue_mode_en = 0;
-        ADC.ctrl0.sar1_trigger_stop = 1;
-    } else {
-        ADC.ctrl1.sar2_continue_mode_en = 0;
-        ADC.ctrl1.sar2_trigger_stop = 1;
-    }
+    adc_ll_digi_trigger_disable();
+    adc_ll_set_continue_mode(adc_n, false);
+    adc_oneshot_ll_stop(adc_n);
 }
 
 /**
