@@ -65,10 +65,10 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
   # Docker images
-  ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2:1"
-  ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-docs:1"
-  TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-target-test:1"
-  PRE_COMMIT_ENV_IMAGE: "${CI_REGISTRY}/ci/images/pre-commit-idf-v6.2:1"
+  ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2:2"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-docs:2"
+  TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-target-test:2"
+  PRE_COMMIT_ENV_IMAGE: "${CI_REGISTRY}/ci/images/pre-commit-idf-v6.2:2"
 
   # Set this variable to the branch of idf-constraints repo in order to test a custom Python constraint file. The
   # branch name must be without the remote part ("origin/"). Keep the variable empty in order to use the constraint

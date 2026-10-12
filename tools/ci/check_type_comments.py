@@ -23,7 +23,7 @@ def types_valid_ignored_rules(file_name: str) -> bool:
     """
     Run Mypy check with rules for ignore list on the given file, return TRUE if Mypy check passes
     """
-    mypy_exit_code = subprocess.call(f'mypy {file_name} --python-version 3.10 --allow-untyped-defs', shell=True)
+    mypy_exit_code = subprocess.call(f'mypy {file_name} --python-version 3.11 --allow-untyped-defs', shell=True)
     return not bool(mypy_exit_code)
 
 

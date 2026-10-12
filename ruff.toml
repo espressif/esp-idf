@@ -1,5 +1,5 @@
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [format]
     quote-style = "single"
