@@ -23,7 +23,7 @@
 
   .. note::
 
-    Python 3.10 是 ESP-IDF 支持的最低版本。
+    Python 3.11 是 ESP-IDF 支持的最低版本。
 
     EIM 所需的 Python 版本，请参考 `EIM 文档 <https://docs.espressif.com/projects/idf-im-ui/en/latest/prerequisites.html#python-version>`_。
 

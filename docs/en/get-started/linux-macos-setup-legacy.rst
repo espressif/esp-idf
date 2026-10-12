@@ -101,9 +101,9 @@ Then you need to install Apple Rosetta 2 by running
 Installing Python 3
 ~~~~~~~~~~~~~~~~~~~
 
-Ensure that you have Python 3.10 or newer installed, as this is the minimum version supported by ESP-IDF.
+Ensure that you have Python 3.11 or newer installed, as this is the minimum version supported by ESP-IDF.
 
-Note that most of the recent versions of macOS include Python 3.9 (or older) by default, which is no longer supported. You will need to install Python 3.10 or later.
+Note that most of the recent versions of macOS include Python 3.9 (or older) by default, which is no longer supported. You will need to install Python 3.11 or later.
 
 To install supported Python 3 on macOS:
 

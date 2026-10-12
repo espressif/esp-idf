@@ -20,7 +20,7 @@
 
 .. note::
 
-    ESP-IDF  要求 Python 版本至少为 3.10。
+    ESP-IDF  要求 Python 版本至少为 3.11。
 
     EIM 所需的 Python 版本，请参考 `EIM 文档 <https://docs.espressif.com/projects/idf-im-ui/en/latest/prerequisites.html#python-version>`_。
 

@@ -101,9 +101,9 @@ Apple M1 用户
 安装 Python 3
 ~~~~~~~~~~~~~~
 
-请确保已安装 Python 3.10 或更高版本。Python 3.10 为 ESP-IDF 支持的最低版本。
+请确保已安装 Python 3.11 或更高版本。Python 3.11 为 ESP-IDF 支持的最低版本。
 
-请注意，大多数新版 macOS 默认仅包含 Python 3.9（或更低版本），这些版本已不再受支持，请安装 Python 3.10 或更高版本。
+请注意，大多数新版 macOS 默认仅包含 Python 3.9（或更低版本），这些版本已不再受支持，请安装 Python 3.11 或更高版本。
 
 请根据以下步骤在 macOS 中安装受支持的 Python 3：
 
