@@ -33,7 +33,7 @@ typedef struct {
     dac_cosine_clk_src_t        clk_src;        /*!< The clock source of the cosine wave generator.
                                                      Set to 0 to use `DAC_COSINE_CLK_SRC_DEFAULT`. */
     dac_cosine_atten_t          atten;          /*!< The attenuation of cosine wave amplitude */
-    dac_cosine_phase_t          phase;          /*!< The phase of cosine wave, can only support DAC_COSINE_PHASE_0 or DAC_COSINE_PHASE_180, default as 0 while setting an unsupported phase */
+    dac_cosine_phase_t          phase;          /*!< The phase of cosine wave, DAC_COSINE_PHASE_0 or DAC_COSINE_PHASE_180 */
     int8_t                      offset;         /*!< The DC offset of cosine wave */
     struct {
         bool                    force_set_freq: 1; /*!< Force to set the cosine wave frequency */

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -194,7 +194,7 @@ typedef union {
          */
         uint32_t scale_1:2;
         /** scale_2 : R/W; bitpos: [20:19]; default: 0;
-         *  software adjust angle velocity foot step for sintx LUT input
+         *  right shift scaling config for LUT output of sintx for pad 1
          */
         uint32_t scale_2:2;
         /** inv_1 : R/W; bitpos: [22:21]; default: 0;
@@ -273,11 +273,11 @@ typedef union {
 typedef union {
     struct {
         /** wait_target_sample_pad_0 : R/W; bitpos: [15:0]; default: 630;
-         *  sample wait target for DAC PAD 1
+         *  sample wait target for DAC PAD 0
          */
         uint32_t wait_target_sample_pad_0:16;
         /** wait_target_sample_pad_1 : R/W; bitpos: [31:16]; default: 630;
-         *  sample wait target for DAC PAD 0
+         *  sample wait target for DAC PAD 1
          */
         uint32_t wait_target_sample_pad_1:16;
     };
@@ -413,6 +413,7 @@ typedef struct {
     volatile dac_date_reg_t date;
 } dac_dev_t;
 
+extern dac_dev_t LP_DAC;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(dac_dev_t) == 0x400, "Invalid size of dac_dev_t structure");

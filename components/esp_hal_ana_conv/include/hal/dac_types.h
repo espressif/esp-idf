@@ -56,12 +56,10 @@ typedef enum {
 
 /**
  * @brief Set the phase of the cosine wave generator output.
- * @note  Only 0 or 180 are supported,
- *        it will be set to 0 as default if configured to an unsupported phase.
  */
 typedef enum {
-    DAC_COSINE_PHASE_0   = 0x02,   /*!< Phase shift +0° */
-    DAC_COSINE_PHASE_180 = 0x03, /*!< Phase shift +180° */
+    DAC_COSINE_PHASE_0   = 0x02,  /*!< Phase shift +0° */
+    DAC_COSINE_PHASE_180 = 0x03,  /*!< Phase shift +180° */
 } dac_cosine_phase_t;
 
 #endif // SOC_DAC_SUPPORTED
