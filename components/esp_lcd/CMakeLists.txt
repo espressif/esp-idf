@@ -11,7 +11,11 @@ if(NOT ${target} STREQUAL "linux")
                      "src/esp_lcd_panel_io.c"
                      "src/esp_lcd_panel_ssd1306.c"
                      "src/esp_lcd_panel_st7789.c")
-    list(APPEND priv_requires "esp_mm" "esp_psram" "esp_pm" "esp_driver_i2s" "esp_driver_dma")
+    list(APPEND priv_requires "esp_mm" "esp_psram" "esp_pm" "esp_driver_dma")
+    if(${target} STREQUAL "esp32" OR ${target} STREQUAL "esp32s2")
+        # These are the only targets with I2S-I80 LCD support.
+        list(APPEND priv_requires "esp_driver_i2s")
+    endif()
     list(APPEND public_requires "esp_driver_gpio" "esp_driver_i2c" "esp_driver_spi" "esp_driver_parlio")
 endif()
 
