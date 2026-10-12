@@ -16,7 +16,7 @@
 #include "esp_netif.h"
 #include "protocol_examples_common.h"
 #include "esp_http_client.h"
-#include "cJSON.h"
+#include "json_parser.h"
 #include "driver/i2c_slave.h"
 
 static const char *TAG = "example";
@@ -80,32 +80,30 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     case HTTP_EVENT_ON_FINISH:
         if (context->json_buffer != NULL) {
             // Process received data
-            cJSON *root = cJSON_Parse(context->json_buffer);
-            cJSON *stars = cJSON_GetObjectItem(root, "stargazers_count");
-
-            if (stars != NULL) {
-                star_count = stars->valueint;
-                printf("Star count: %d\n", star_count);
-                memcpy(context->tmp_buffer_stars, &star_count, sizeof(int));
+            jparse_ctx_t jctx;
+            if (json_parse_start(&jctx, context->json_buffer, context->json_size) == OS_SUCCESS) {
+                if (json_obj_get_int(&jctx, "stargazers_count", &star_count) == OS_SUCCESS) {
+                    printf("Star count: %d\n", star_count);
+                    memcpy(context->tmp_buffer_stars, &star_count, sizeof(int));
+                }
+                if (json_obj_get_int(&jctx, "forks_count", &forks_count) == OS_SUCCESS) {
+                    printf("Forks count: %d\n", forks_count);
+                    memcpy(context->tmp_buffer_forks, &forks_count, sizeof(int));
+                }
+                if (json_obj_get_int(&jctx, "open_issues_count", &open_issues_count) == OS_SUCCESS) {
+                    printf("issue count: %d\n", open_issues_count);
+                    memcpy(context->tmp_buffer_open_issues, &open_issues_count, sizeof(int));
+                }
+                char *description = (char *)context->tmp_buffer_descriptions;
+                if (json_obj_get_string(&jctx, "description", description, sizeof(context->tmp_buffer_descriptions)) == OS_SUCCESS) {
+                    printf("the description is: %s\n", description);
+                } else {
+                    ESP_LOGW(TAG, "No description, or it does not fit %u bytes", (unsigned)sizeof(context->tmp_buffer_descriptions));
+                }
+                json_parse_end(&jctx);
+            } else {
+                ESP_LOGE(TAG, "Response is not a JSON object");
             }
-            cJSON *forks = cJSON_GetObjectItem(root, "forks_count");
-            if (forks != NULL) {
-                forks_count = forks->valueint;
-                printf("Forks count: %d\n", forks_count);
-                memcpy(context->tmp_buffer_forks, &forks_count, sizeof(int));
-            }
-            cJSON *open_issues = cJSON_GetObjectItem(root, "open_issues_count");
-            if (open_issues != NULL) {
-                open_issues_count = open_issues->valueint;
-                printf("issue count: %d\n", open_issues_count);
-                memcpy(context->tmp_buffer_open_issues, &open_issues_count, sizeof(int));
-            }
-            cJSON *descriptions = cJSON_GetObjectItem(root, "description");
-            if (descriptions != NULL) {
-                printf("the description is: %s\n", descriptions->valuestring);
-                memcpy(context->tmp_buffer_descriptions, descriptions->valuestring, strlen(descriptions->valuestring));
-            }
-            cJSON_Delete(root);
             free(context->json_buffer);
             context->json_buffer = NULL;
             context->json_size = 0;

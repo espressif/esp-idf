@@ -12,7 +12,8 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_vfs.h"
-#include "cJSON.h"
+#include "json_parser.h"
+#include "json_generator.h"
 
 static const char *TAG = "esp-rest";
 
@@ -121,12 +122,21 @@ static esp_err_t light_brightness_post_handler(httpd_req_t *req)
     }
     buf[total_len] = '\0';
 
-    cJSON *root = cJSON_Parse(buf);
-    int red = cJSON_GetObjectItem(root, "red")->valueint;
-    int green = cJSON_GetObjectItem(root, "green")->valueint;
-    int blue = cJSON_GetObjectItem(root, "blue")->valueint;
+    jparse_ctx_t jctx;
+    if (json_parse_start(&jctx, buf, total_len) != OS_SUCCESS) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Body is not a JSON object");
+        return ESP_FAIL;
+    }
+    int red, green, blue;
+    bool ok = json_obj_get_int(&jctx, "red", &red) == OS_SUCCESS &&
+              json_obj_get_int(&jctx, "green", &green) == OS_SUCCESS &&
+              json_obj_get_int(&jctx, "blue", &blue) == OS_SUCCESS;
+    json_parse_end(&jctx);
+    if (!ok) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "red, green and blue must be integers");
+        return ESP_FAIL;
+    }
     ESP_LOGI(TAG, "Light control: red = %d, green = %d, blue = %d", red, green, blue);
-    cJSON_Delete(root);
     httpd_resp_sendstr(req, "Post control value successfully");
     return ESP_OK;
 }
@@ -135,16 +145,21 @@ static esp_err_t light_brightness_post_handler(httpd_req_t *req)
 static esp_err_t system_info_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, "application/json");
-    cJSON *root = cJSON_CreateObject();
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
-    cJSON_AddStringToObject(root, "chip", CONFIG_IDF_TARGET);
-    cJSON_AddStringToObject(root, "idf_version", IDF_VER);
-    cJSON_AddNumberToObject(root, "cores", chip_info.cores);
-    const char *sys_info = cJSON_Print(root);
-    httpd_resp_sendstr(req, sys_info);
-    free((void *)sys_info);
-    cJSON_Delete(root);
+    char *buf = ((rest_server_context_t *)(req->user_ctx))->scratch;
+    json_gen_str_t jstr;
+    json_gen_str_start(&jstr, buf, SCRATCH_BUFSIZE, NULL, NULL);
+    json_gen_start_object(&jstr);
+    json_gen_obj_set_string(&jstr, "chip", CONFIG_IDF_TARGET);
+    json_gen_obj_set_string(&jstr, "idf_version", IDF_VER);
+    json_gen_obj_set_int(&jstr, "cores", chip_info.cores);
+    json_gen_end_object(&jstr);
+    if (json_gen_str_end(&jstr) < 0) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to generate system info");
+        return ESP_FAIL;
+    }
+    httpd_resp_sendstr(req, buf);
     return ESP_OK;
 }
 
@@ -152,13 +167,18 @@ static esp_err_t system_info_get_handler(httpd_req_t *req)
 static esp_err_t temperature_data_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, "application/json");
-    cJSON *root = cJSON_CreateObject();
+    char *buf = ((rest_server_context_t *)(req->user_ctx))->scratch;
+    json_gen_str_t jstr;
+    json_gen_str_start(&jstr, buf, SCRATCH_BUFSIZE, NULL, NULL);
+    json_gen_start_object(&jstr);
     // Note: we're simulating temperature data with a random number for demonstration purposes
-    cJSON_AddNumberToObject(root, "raw", esp_random() % 20);
-    const char *sys_info = cJSON_Print(root);
-    httpd_resp_sendstr(req, sys_info);
-    free((void *)sys_info);
-    cJSON_Delete(root);
+    json_gen_obj_set_int(&jstr, "raw", esp_random() % 20);
+    json_gen_end_object(&jstr);
+    if (json_gen_str_end(&jstr) < 0) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to generate temperature data");
+        return ESP_FAIL;
+    }
+    httpd_resp_sendstr(req, buf);
     return ESP_OK;
 }
 
