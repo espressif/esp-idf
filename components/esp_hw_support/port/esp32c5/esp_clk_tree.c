@@ -84,32 +84,36 @@ static bool esp_clk_tree_initialized = false;
 void esp_clk_tree_initialize(void)
 {
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if ((rst_reason == RESET_REASON_CPU0_MWDT0) || (rst_reason == RESET_REASON_CPU0_MWDT1)          \
-            || (rst_reason == RESET_REASON_CPU0_SW) || (rst_reason == RESET_REASON_CPU0_RTC_WDT)    \
-            || (rst_reason == RESET_REASON_CPU0_JTAG) || (rst_reason == RESET_REASON_CPU0_LOCKUP)) {
-        esp_clk_tree_initialized = true;
-        return;
-    }
-
-    soc_cpu_clk_src_t current_cpu_clk_src = clk_ll_cpu_get_src();
-
-    if (current_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160M) {
-        s_pll_src_cg_ref_cnt[SOC_MOD_CLK_PLL_F160M] = 1;
-        _clk_gate_ll_ref_240m_clk_en(false);
-    } else if (current_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F240M) {
-        s_pll_src_cg_ref_cnt[SOC_MOD_CLK_PLL_F240M] = 1;
-        _clk_gate_ll_ref_160m_clk_en(false);
-    }
-    _clk_gate_ll_ref_120m_clk_en(false);
-    _clk_gate_ll_ref_80m_clk_en(false);
-    _clk_gate_ll_ref_60m_clk_en(false);
+    soc_cpu_clk_src_t cpu_src = clk_ll_cpu_get_src();
+    bool cpu_reset = (rst_reason == RESET_REASON_CPU0_MWDT0) || (rst_reason == RESET_REASON_CPU0_MWDT1) \
+                     || (rst_reason == RESET_REASON_CPU0_SW) || (rst_reason == RESET_REASON_CPU0_RTC_WDT) \
+                     || (rst_reason == RESET_REASON_CPU0_JTAG) || (rst_reason == RESET_REASON_CPU0_LOCKUP);
+    if (!cpu_reset) {
+        /* Cold boot only: gate clocks the CPU is not using. */
+        if (cpu_src == SOC_CPU_CLK_SRC_PLL_F160M) {
+            _clk_gate_ll_ref_240m_clk_en(false);
+        } else if (cpu_src == SOC_CPU_CLK_SRC_PLL_F240M) {
+            _clk_gate_ll_ref_160m_clk_en(false);
+        }
+        _clk_gate_ll_ref_120m_clk_en(false);
+        _clk_gate_ll_ref_80m_clk_en(false);
+        _clk_gate_ll_ref_60m_clk_en(false);
 #if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
-    _clk_gate_ll_ref_48m_clk_en(false);
+        _clk_gate_ll_ref_48m_clk_en(false);
 #endif
-    _clk_gate_ll_ref_40m_clk_en(false);
-    _clk_gate_ll_ref_20m_clk_en(false);
-    _clk_gate_ll_ref_12m_clk_en(false);
+        _clk_gate_ll_ref_40m_clk_en(false);
+        _clk_gate_ll_ref_20m_clk_en(false);
+        _clk_gate_ll_ref_12m_clk_en(false);
+    }
+
     esp_clk_tree_initialized = true;
+    /* Always count the CPU clock, including after a CPU-only reset. Same as S31:
+     * a later release must not gate the source the CPU is running from. */
+    if (cpu_src == SOC_CPU_CLK_SRC_PLL_F160M) {
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F160M);
+    } else if (cpu_src == SOC_CPU_CLK_SRC_PLL_F240M) {
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F240M);
+    }
 }
 
 bool esp_clk_tree_port_is_power_on(soc_root_clk_circuit_t clk_circuit)
