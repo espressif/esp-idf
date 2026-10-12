@@ -578,7 +578,12 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
     if (cmdinfo->data) {
         bool needs_sync = esp_cache_get_line_size_by_addr(cmdinfo->data) > 0;
         if (needs_sync) {
-            ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            esp_err_t sync_ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            if (ret == ESP_OK) {
+                ret = sync_ret;
+            } else if (sync_ret != ESP_OK) {
+                ESP_LOGE(TAG, "cache sync failed: 0x%x", sync_ret);
+            }
             if (ret != ESP_OK) {
                 goto out;
             }
