@@ -143,6 +143,20 @@ int __wrap_esp_aes_crypt_ecb(esp_aes_context *ctx,
     return err;
 }
 
+int __wrap_esp_aes_crypt_ecb_blocks(esp_aes_context *ctx,
+                                    int mode,
+                                    size_t length,
+                                    const unsigned char *input,
+                                    unsigned char *output)
+{
+    esp_crypto_sha_aes_lock_acquire();
+    esp_err_t err = esp_tee_service_call(6, SS_ESP_AES_CRYPT_ECB_BLOCKS,
+                                         (uint32_t)ctx, (uint32_t)mode, length,
+                                         (uint32_t)input, (uint32_t)output);
+    esp_crypto_sha_aes_lock_release();
+    return err;
+}
+
 int __wrap_esp_aes_crypt_ofb(esp_aes_context *ctx,
                              size_t length,
                              size_t *iv_off,

@@ -11,6 +11,9 @@ CONFIG_PARTITION_TABLE_TWO_OTA_TEE=y
 # TEE: Flash operations' limitation
 CONFIG_FREERTOS_UNICORE=y
 
+# Increasing the TEE IRAM size to accommodate the newly added secure service APIs
+CONFIG_SECURE_TEE_IRAM_SIZE=0x9000
+
 # TEE: OTA-related
 CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
 CONFIG_EXAMPLE_SKIP_COMMON_NAME_CHECK=y

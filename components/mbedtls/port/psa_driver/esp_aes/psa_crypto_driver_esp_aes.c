@@ -188,18 +188,20 @@ static psa_status_t esp_aes_ecb_update(
         }
     }
 
-    while (input_length >= esp_aes_driver_ctx->block_length) {
-        /* Run all full blocks we have, one by one */
-        status = mbedtls_to_psa_error(esp_aes_crypt_ecb(ctx, esp_aes_driver_ctx->mode, input, output));
+    size_t full_block_length = input_length - (input_length % esp_aes_driver_ctx->block_length);
+
+    if (full_block_length > 0) {
+        status = mbedtls_to_psa_error(esp_aes_crypt_ecb_blocks(ctx, esp_aes_driver_ctx->mode, full_block_length, input, output));
+
         if (status != PSA_SUCCESS) {
             goto exit;
         }
 
-        input_length -= esp_aes_driver_ctx->block_length;
-        input += esp_aes_driver_ctx->block_length;
+        input_length -= full_block_length;
+        input += full_block_length;
 
-        output += esp_aes_driver_ctx->block_length;
-        *output_length += esp_aes_driver_ctx->block_length;
+        output += full_block_length;
+        *output_length += full_block_length;
     }
 
     if (input_length > 0) {
