@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <stdatomic.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "dac_priv_common.h"
@@ -20,6 +21,7 @@
 #include "esp_private/gdma_link.h"
 #include "esp_check.h"
 #include "esp_log.h"
+#include "esp_attr.h"
 #include "dac_priv_dma.h"
 
 #if CONFIG_PM_ENABLE
@@ -481,68 +483,129 @@ esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle)
     return ESP_OK;
 }
 
-/* Buffer expanding coefficient, the input buffer will expand to twice length while enabled AUTO_16_BIT */
-#if CONFIG_DAC_DMA_AUTO_16BIT_ALIGN
-#define DAC_16BIT_ALIGN_COEFF   2
+//////////////////////////////////// Data loading ////////////////////////////////////
+
+#define DAC_SAMPLE_TYPE_U8   1
+#define DAC_SAMPLE_TYPE_U16  2
+
+/**
+ * The caller has already aligned each sample to 16 bits.
+ * Each sample then occupies 2 bytes in the input buffer, and the length
+ * arguments of the write APIs are in bytes rather than samples.
+ */
+#if SOC_DAC_DMA_16BIT_ALIGN && !CONFIG_DAC_DMA_AUTO_16BIT_ALIGN
+#define DAC_MANUAL_16BIT_ALIGN  1
 #else
-#define DAC_16BIT_ALIGN_COEFF   1
+#define DAC_MANUAL_16BIT_ALIGN  0
 #endif
 
 /**
- * @brief Load data into the DMA descriptor
- *
- * @param auto_balance Whether to balance the data between the last two descriptors. If disabled, we will load as much data as possible.
- * @return Loaded data length. The remaining data length is (data_len - return_value)
- *
- * @note if CONFIG_DAC_DMA_AUTO_16BIT_ALIGN is enabled, data_len can be odd, otherwise it must be even
+ * @brief The type logically suited for storing DAC samples.
  */
-size_t dac_load_data_into_desc(dac_continuous_handle_t handle, int index, const uint8_t *data, size_t data_len, bool auto_balance)
+FORCE_INLINE_ATTR uint8_t s_dac_sample_type(dac_continuous_handle_t handle)
 {
-    /* Calculate the length of the data to be loaded */
-    size_t buf_size = handle->cfg.buf_size;  // must be even
-    size_t need_len = data_len * DAC_16BIT_ALIGN_COEFF;  // must be even
-    size_t load_len;  // must be even
-    if (need_len <= buf_size) {
-        load_len = need_len;
-    } else if (auto_balance && need_len < buf_size * 2) {
-        /**
-         * The remaining data can fit into two descriptors, so we load half in this round,
-         * and the next round will naturally fall into the branch above.
-         */
-        load_len = need_len / 2;
-        load_len += load_len & 1U;  // make it even
-    } else {
-        load_len = buf_size;
-    }
-
-    uint8_t *buf = handle->bufs[index];
-#if CONFIG_DAC_DMA_AUTO_16BIT_ALIGN
-    /* Load the data to the high 8 bit in the 16-bit width slot */
-    for (size_t i = 0; i < load_len; i += 2) {
-        buf[i + 1] = data[i / 2] + handle->cfg.offset;
-    }
+    // TODO: get the bitwidth from the channel configuration (dac_priv_chan_cfg_get_bitwidth()), then infer the type
+    (void)handle;
+#if SOC_IS(ESP32) || SOC_IS(ESP32S2)
+    return DAC_SAMPLE_TYPE_U8;
+#elif SOC_IS(ESP32S31)
+    return DAC_SAMPLE_TYPE_U16;
 #else
-    /* Load the data into the DMA buffer */
-    for (size_t i = 0; i < load_len; i++) {
-        buf[i] = data[i] + handle->cfg.offset;
-    }
+#error "Unsupported SOC"
 #endif
+}
 
-    gdma_link_set_length(handle->link, index, load_len);
-    gdma_link_set_owner(handle->link, index, GDMA_LLI_OWNER_DMA);
+/**
+ * @brief The actual number of bytes occupied by each sample in the DMA buffer.
+ */
+FORCE_INLINE_ATTR size_t s_dac_dma_bytes_per_sample(dac_continuous_handle_t handle)
+{
+#if SOC_DAC_DMA_16BIT_ALIGN
+    (void)handle;
+    return 2;
+#else
+    return s_dac_sample_type(handle);
+#endif
+}
 
-    return load_len / DAC_16BIT_ALIGN_COEFF;
+/**
+ * @brief The actual number of bytes occupied by each sample in the input data.
+ */
+FORCE_INLINE_ATTR size_t s_dac_input_bytes_per_sample(dac_continuous_handle_t handle)
+{
+#if DAC_MANUAL_16BIT_ALIGN
+    (void)handle;
+    return 2;
+#else
+    return s_dac_sample_type(handle);
+#endif
+}
+
+/**
+ * @brief Load samples into the DMA descriptor
+ *
+ * @param desc_index Index of the DMA descriptor to load data into.
+ * @param cnt Number of samples.
+ * @param auto_balance Whether to balance the data between the last two descriptors. If disabled, we will load as much data as possible.
+ * @return Loaded sample count. The remaining sample count is (cnt - return_value)
+ */
+size_t dac_load_data_into_desc(dac_continuous_handle_t handle, int desc_index, const void *data, size_t cnt, bool auto_balance)
+{
+    const size_t dma_bps = s_dac_dma_bytes_per_sample(handle);
+    const size_t sample_per_buf = handle->cfg.buf_size / dma_bps;
+    size_t load_cnt;
+    if (cnt <= sample_per_buf) {
+        load_cnt = cnt;  // load all
+    } else if (auto_balance && cnt < sample_per_buf * 2) {
+        /**
+         * The remaining samples can fit into two descriptors.
+         * Load about half now so the next round takes the rest.
+         */
+        load_cnt = (cnt + 1) / 2;
+    } else {
+        load_cnt = sample_per_buf;  // load as much as possible
+    }
+
+    if (s_dac_sample_type(handle) == DAC_SAMPLE_TYPE_U8) {
+        const uint8_t *src = data;
+        uint8_t *dst = handle->bufs[desc_index];
+        for (size_t i = 0; i < load_cnt; i++) {
+#if DAC_MANUAL_16BIT_ALIGN
+            uint8_t code = src[i * 2 + 1];
+#else
+            uint8_t code = src[i];
+#endif
+            code += handle->cfg.offset;
+#if SOC_DAC_DMA_16BIT_ALIGN
+            dst[i * 2 + 1] = code;
+#else
+            dst[i] = code;
+#endif
+        }
+    } else {  // DAC_SAMPLE_TYPE_U16
+        const uint16_t *src = data;
+        uint16_t *dst = (uint16_t *)handle->bufs[desc_index];
+        for (size_t i = 0; i < load_cnt; i++) {
+            dst[i] = src[i] + handle->cfg.offset;
+        }
+    }
+
+    gdma_link_set_length(handle->link, desc_index, load_cnt * dma_bps);
+    gdma_link_set_owner(handle->link, desc_index, GDMA_LLI_OWNER_DMA);
+
+    return load_cnt;
 }
 
 esp_err_t dac_continuous_write_asynchronously(dac_continuous_handle_t handle, uint8_t *dma_buf, size_t dma_buf_len,
-                                              const uint8_t *data, size_t data_len, size_t *bytes_loaded)
+                                              const void *data, size_t cnt, size_t *loaded_cnt)
 {
     DAC_NULL_POINTER_CHECK_ISR(handle);
     DAC_NULL_POINTER_CHECK_ISR(dma_buf);
     DAC_NULL_POINTER_CHECK_ISR(data);
-    ESP_RETURN_ON_FALSE_ISR(data_len > 0, ESP_ERR_INVALID_ARG, TAG, "data_len must be > 0");
-#if !CONFIG_DAC_DMA_AUTO_16BIT_ALIGN
-    ESP_RETURN_ON_FALSE_ISR(data_len % 2 == 0, ESP_ERR_INVALID_ARG, TAG, "data_len must be even when AUTO_16BIT_ALIGN is disabled");
+    ESP_RETURN_ON_FALSE_ISR(cnt > 0, ESP_ERR_INVALID_ARG, TAG, "cnt must be > 0");
+#if DAC_MANUAL_16BIT_ALIGN
+    ESP_RETURN_ON_FALSE_ISR(cnt % 2 == 0, ESP_ERR_INVALID_ARG, TAG, "cnt must be even when AUTO_16BIT_ALIGN is disabled");
+    cnt /= 2;   // Make cnt represent the actual number of samples.
 #endif
 
     /* FSM: ASYNC -> WAIT */
@@ -571,9 +634,13 @@ esp_err_t dac_continuous_write_asynchronously(dac_continuous_handle_t handle, ui
     ESP_GOTO_ON_FALSE_ISR(index < handle->cfg.desc_num, ESP_ERR_NOT_FOUND, clean_up, TAG, "Corresponding DMA descriptor not found");
 
     /* Load data into DMA buffer. We disable the auto balance here because the total length is actually uncertain. */
-    size_t loaded_len = dac_load_data_into_desc(handle, index, data, data_len, false);
-    if (bytes_loaded) {
-        *bytes_loaded = loaded_len;
+    size_t loaded = dac_load_data_into_desc(handle, index, data, cnt, false);
+    if (loaded_cnt) {
+#if DAC_MANUAL_16BIT_ALIGN
+        *loaded_cnt = loaded * 2;    // Convert to a byte count for compatibility with the legacy semantics.
+#else
+        *loaded_cnt = loaded;
+#endif
     }
 
 clean_up:
@@ -584,15 +651,16 @@ clean_up:
 
 //////////////////////////////////// Cyclic writing ////////////////////////////////////
 
-esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, const uint8_t *buf, size_t buf_size, size_t *bytes_loaded)
+esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, const void *data, size_t cnt, size_t *loaded_cnt)
 {
     DAC_NULL_POINTER_CHECK(handle);
-    DAC_NULL_POINTER_CHECK(buf);
-    ESP_RETURN_ON_FALSE(buf_size > 0, ESP_ERR_INVALID_ARG, TAG, "buf_size must be > 0");
-#if !CONFIG_DAC_DMA_AUTO_16BIT_ALIGN
-    ESP_RETURN_ON_FALSE(buf_size % 2 == 0, ESP_ERR_INVALID_ARG, TAG, "buf_size must be even when AUTO_16BIT_ALIGN is disabled");
+    DAC_NULL_POINTER_CHECK(data);
+    ESP_RETURN_ON_FALSE(cnt > 0, ESP_ERR_INVALID_ARG, TAG, "cnt must be > 0");
+#if DAC_MANUAL_16BIT_ALIGN
+    ESP_RETURN_ON_FALSE(cnt % 2 == 0, ESP_ERR_INVALID_ARG, TAG, "cnt must be even when AUTO_16BIT_ALIGN is disabled");
+    cnt /= 2;   // Make cnt represent the actual number of samples.
 #endif
-    ESP_RETURN_ON_FALSE(buf_size * DAC_16BIT_ALIGN_COEFF <= handle->cfg.buf_size * handle->cfg.desc_num,
+    ESP_RETURN_ON_FALSE(cnt <= (handle->cfg.buf_size / s_dac_dma_bytes_per_sample(handle)) * handle->cfg.desc_num,
                         ESP_ERR_INVALID_ARG, TAG, "Data size exceeds the total DMA buffer size");
 
     esp_err_t ret = ESP_OK;
@@ -616,15 +684,16 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, const 
     ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&s_dac_cont_fsm, &expected_fsm, DAC_CONT_FSM_WAIT),
                       ESP_ERR_INVALID_STATE, err, TAG, "DAC continuous is running/not enabled");
 
-    size_t remain_size = buf_size;
+    size_t remain = cnt;
+    const uint8_t *src = data;
     uint32_t index = 0;
-    for (; index < handle->cfg.desc_num && remain_size > 0; index++) {
-        size_t loaded_len = dac_load_data_into_desc(handle, index, buf, remain_size, true);
-        remain_size -= loaded_len;
-        buf += loaded_len;
+    for (; index < handle->cfg.desc_num && remain > 0; index++) {
+        size_t loaded = dac_load_data_into_desc(handle, index, src, remain, true);
+        remain -= loaded;
+        src += loaded * s_dac_input_bytes_per_sample(handle);
     }
     /* All data should be loaded */
-    assert(remain_size == 0);
+    assert(remain == 0);
 
     /* Link the used descriptors as a ring: 0 -> 1 -> ... -> (index-1) -> 0 */
     for (int k = 0; k < index - 1; k++) {
@@ -639,8 +708,12 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, const 
     /* FSM: WAIT -> CYCLIC */
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_CYCLIC);
 
-    if (bytes_loaded) {
-        *bytes_loaded = buf_size;
+    if (loaded_cnt) {
+#if DAC_MANUAL_16BIT_ALIGN
+        *loaded_cnt = cnt * 2;    // Convert to a byte count for compatibility with the legacy semantics.
+#else
+        *loaded_cnt = cnt;
+#endif
     }
 
 err:
@@ -669,19 +742,21 @@ esp_err_t dac_continuous_stop_cyclically(dac_continuous_handle_t handle)
 
 //////////////////////////////////// Synchronous writing ////////////////////////////////////
 
-esp_err_t dac_continuous_write(dac_continuous_handle_t handle, const uint8_t *buf, size_t buf_size, size_t *bytes_loaded, int timeout_ms)
+esp_err_t dac_continuous_write(dac_continuous_handle_t handle, const void *data, size_t cnt, size_t *loaded_cnt, int timeout_ms)
 {
     DAC_NULL_POINTER_CHECK(handle);
-    DAC_NULL_POINTER_CHECK(buf);
-    ESP_RETURN_ON_FALSE(buf_size > 0, ESP_ERR_INVALID_ARG, TAG, "buf_size must be > 0");
-#if !CONFIG_DAC_DMA_AUTO_16BIT_ALIGN
-    ESP_RETURN_ON_FALSE(buf_size % 2 == 0, ESP_ERR_INVALID_ARG, TAG, "buf_size must be even when AUTO_16BIT_ALIGN is disabled");
+    DAC_NULL_POINTER_CHECK(data);
+    ESP_RETURN_ON_FALSE(cnt > 0, ESP_ERR_INVALID_ARG, TAG, "cnt must be > 0");
+#if DAC_MANUAL_16BIT_ALIGN
+    ESP_RETURN_ON_FALSE(cnt % 2 == 0, ESP_ERR_INVALID_ARG, TAG, "cnt must be even when AUTO_16BIT_ALIGN is disabled");
+    cnt /= 2;   // Make cnt represent the actual number of samples.
 #endif
 
     esp_err_t ret = ESP_OK;
 
     TickType_t timeout_tick = timeout_ms < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    size_t remain_size = buf_size;
+    const uint8_t *src = data;
+    size_t remain = cnt;
 
     /* Serialize with the other writing APIs */
     ESP_RETURN_ON_FALSE(xSemaphoreTake(handle->mutex, timeout_tick) == pdTRUE,
@@ -710,9 +785,9 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, const uint8_t *bu
         handle->used_desc_num = handle->cfg.desc_num;
 
         /* Load one descriptor and start the DMA */
-        size_t loaded_len = dac_load_data_into_desc(handle, 0, buf, remain_size, true);
-        remain_size -= loaded_len;
-        buf += loaded_len;
+        size_t loaded = dac_load_data_into_desc(handle, 0, src, remain, true);
+        remain -= loaded;
+        src += loaded * s_dac_input_bytes_per_sample(handle);
         gdma_link_concat(handle->link, 0, NULL, 0);
 #if SOC_IS(ESP32)
         /* It is safe to operate without the lock here because the DMA is not running yet. */
@@ -729,15 +804,15 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, const uint8_t *bu
                           ESP_ERR_INVALID_STATE, err, TAG, "CAS failed: SYNC -> SYNC_WAIT");
 
 skip_cas:
-        while (remain_size > 0) {
+        while (remain > 0) {
             int index;
             if (xQueueReceive(handle->free_desc_queue, &index, timeout_tick) != pdTRUE) {
                 ret = ESP_ERR_TIMEOUT;
                 break;
             }
-            size_t loaded_len = dac_load_data_into_desc(handle, index, buf, remain_size, true);
-            remain_size -= loaded_len;
-            buf += loaded_len;
+            size_t loaded = dac_load_data_into_desc(handle, index, src, remain, true);
+            remain -= loaded;
+            src += loaded * s_dac_input_bytes_per_sample(handle);
             /**
              * link: (index-1) -> index -> NULL
              * NOTE: gdma_link_concat() can normalize the index to be between 0 and desc_num - 1.
@@ -773,8 +848,12 @@ skip_cas:
     atomic_store(&s_dac_cont_fsm, DAC_CONT_FSM_SYNC);
 err:
     xSemaphoreGive(handle->mutex);
-    if (bytes_loaded) {
-        *bytes_loaded = buf_size - remain_size;
+    if (loaded_cnt) {
+#if DAC_MANUAL_16BIT_ALIGN
+        *loaded_cnt = (cnt - remain) * 2;    // Convert to a byte count for compatibility with the legacy semantics.
+#else
+        *loaded_cnt = cnt - remain;
+#endif
     }
     return ret;
 }

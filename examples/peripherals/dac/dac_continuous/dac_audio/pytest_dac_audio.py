@@ -9,7 +9,7 @@ def dac_example_expect(dut: Dut, mode: str) -> None:
     dut.expect('dac_audio: DAC audio example start', timeout=10)
     dut.expect('dac_audio: --------------------------------------', timeout=5)
     dut.expect('dac_audio: DAC initialized success, DAC DMA is ready', timeout=5)
-    dut.expect('dac_audio: Audio size 95824 bytes, played at frequency 48000 Hz ' + mode, timeout=5)
+    dut.expect('dac_audio: Audio size 95824 samples, played at frequency 48000 Hz ' + mode, timeout=5)
     dut.expect('Play count: 2', timeout=10)
 
 

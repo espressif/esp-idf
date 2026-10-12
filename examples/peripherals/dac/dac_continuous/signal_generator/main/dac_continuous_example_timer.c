@@ -11,7 +11,7 @@
 
 #define EXAMPLE_TIMER_RESOLUTION    1000000                 // 1MHz, 1 tick = 1us
 #define EXAMPLE_WAVE_FREQ_HZ        50                      // Default wave frequency 50 Hz, it can't be too high
-#define EXAMPLE_UPDATE_RATE_HZ      (EXAMPLE_ARRAY_LEN * EXAMPLE_WAVE_FREQ_HZ) // The frequency at which the DAC samples (codes) are updated
+#define EXAMPLE_UPDATE_RATE_HZ      (EXAMPLE_SAMPLE_CNT * EXAMPLE_WAVE_FREQ_HZ) // The frequency at which the DAC samples (codes) are updated
 #define EXAMPLE_TIMER_ALARM_COUNT   (EXAMPLE_TIMER_RESOLUTION / EXAMPLE_UPDATE_RATE_HZ)    // The count value that trigger the timer alarm callback
 
 /* Timer interrupt service routine */
@@ -32,7 +32,7 @@ static bool IRAM_ATTR on_timer_alarm_cb(gptimer_handle_t timer, const gptimer_al
 
     point_cnt++;
     if (point_cnt < EXAMPLE_UPDATE_RATE_HZ * CONFIG_EXAMPLE_WAVE_PERIOD_SEC) {
-        index = (index + 1) % EXAMPLE_ARRAY_LEN;
+        index = (index + 1) % EXAMPLE_SAMPLE_CNT;
     } else {
         point_cnt = 0;
         index = 0;
