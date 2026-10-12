@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import copy
 import json
@@ -175,7 +175,7 @@ def _read_init_seq(reader):
     SysViewTraceParseError
         If sync sequence is broken.
     """
-    SYNC_SEQ_FMT = '<%dB' % SYSVIEW_SYNC_LEN
+    SYNC_SEQ_FMT = f'<{SYSVIEW_SYNC_LEN}B'
     sync_bytes = struct.unpack(SYNC_SEQ_FMT, reader.read(struct.calcsize(SYNC_SEQ_FMT)))
     for b in sync_bytes:
         if b != 0:
@@ -246,6 +246,25 @@ def _decode_u64(reader):
     return sz, (val | (high << 32))
 
 
+def _decode_float(reader):
+    """
+    Reads and decodes 32-bit float sent as variable-length encoded raw bits.
+
+    Parameters
+    ----------
+    reader : apptrace.Reader
+        Trace reader object.
+
+    Returns
+    -------
+    tuple
+        a tuple containing number of read bytes and decoded value.
+    """
+    sz, bits = _decode_u32(reader)
+    (val,) = struct.unpack('<f', struct.pack('<I', bits))
+    return sz, val
+
+
 def _decode_str(reader):
     """
     Reads and decodes string.
@@ -266,7 +285,7 @@ def _decode_str(reader):
     if sz == 0xFF:
         buf = struct.unpack('<2B', reader.read(2))
         sz = (buf[0] << 8) | buf[1]
-    (val,) = struct.unpack('<%ds' % sz, reader.read(sz))
+    (val,) = struct.unpack(f'<{sz}s', reader.read(sz))
     val = val.decode('utf-8')
     if sz < 0xFF:
         return (sz + 1, val)  # one extra byte for length
@@ -353,7 +372,7 @@ class SysViewEvent(apptrace.TraceEvent):
             if event has unknown or invalid format.
         """
         if self.id not in events_fmt_map:
-            raise SysViewTraceParseError('Unknown event ID %d!' % self.id)
+            raise SysViewTraceParseError(f'Unknown event ID {self.id}!')
         self.name = events_fmt_map[self.id][0]
         evt_params_templates = events_fmt_map[self.id][1]
         params_len = 0
@@ -364,9 +383,7 @@ class SysViewEvent(apptrace.TraceEvent):
                 sz, param_val = event_param.decode(reader, self.plen - params_len)
             except Exception as e:
                 raise SysViewTraceParseError(
-                    'Failed to decode event {}({:d}) {:d} param @ 0x{:x}! {}'.format(
-                        self.name, self.id, self.plen, cur_pos, e
-                    )
+                    f'Failed to decode event {self.name}({self.id:d}) {self.plen:d} param @ 0x{cur_pos:x}! {e}'
                 )
             event_param.idx = i
             event_param.value = param_val
@@ -374,20 +391,16 @@ class SysViewEvent(apptrace.TraceEvent):
             params_len += sz
         if self.id >= SYSVIEW_EVENT_ID_PREDEF_LEN_MAX and self.plen != params_len:
             raise SysViewTraceParseError(
-                'Invalid event {}({:d}) payload len {:d}! Must be {:d}.'.format(
-                    self.name, self.id, self.plen, params_len
-                )
+                f'Invalid event {self.name}({self.id:d}) payload len {self.plen:d}! Must be {params_len:d}.'
             )
 
     def __str__(self):
         params = ''
         for param in sorted(self.params.values(), key=lambda x: x.idx):
-            params += '{}, '.format(param)
+            params += f'{param}, '
         if len(params):
             params = params[:-2]  # remove trailing ', '
-        return '{:.9f} - core[{:d}].{}({:d}), plen {:d}: [{}]'.format(
-            self.ts, self.core_id, self.name, self.id, self.plen, params
-        )
+        return f'{self.ts:.9f} - core[{self.core_id:d}].{self.name}({self.id:d}), plen {self.plen:d}: [{params}]'
 
 
 class SysViewEventParam:
@@ -431,7 +444,7 @@ class SysViewEventParam:
         pass
 
     def __str__(self):
-        return '{}: {}'.format(self.name, self.value)
+        return f'{self.name}: {self.value}'
 
     def to_jsonable(self):
         return {self.name: self.value}
@@ -550,7 +563,10 @@ class SysViewPredefinedEvent(SysViewEvent):
                 SysViewEventParamSimple('id_shift', _decode_u32),
             ],
         ),
-        SYSVIEW_EVTID_DATA_SAMPLE: ('svDataSample', []),
+        SYSVIEW_EVTID_DATA_SAMPLE: (
+            'svDataSample',
+            [SysViewEventParamSimple('data_id', _decode_u32), SysViewEventParamSimple('value', _decode_float)],
+        ),
         SYSVIEW_EVTID_NAME_RESOURCE: (
             'svNameResource',
             [SysViewEventParamSimple('res_id', _decode_u32), SysViewEventParamSimple('name', _decode_str)],
@@ -984,7 +1000,7 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
         if len(self.root_proc.ctx_stack[core_id]):
             return self.root_proc.ctx_stack[core_id][-1]
         if self._get_prev_context(core_id):
-            return SysViewEventContext(None, False, 'IDLE%d' % core_id)
+            return SysViewEventContext(None, False, f'IDLE{core_id}')
         return None
 
     def _get_prev_context(self, core_id):
@@ -1059,18 +1075,18 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
             if SYSVIEW_EVTID_TASK_START_EXEC or SYSVIEW_EVTID_TASK_STOP_READY is received for unknown task.
         """
         if event.core_id not in self.traces:
-            raise SysViewTraceParseError('Event for unknown core %d' % event.core_id)
+            raise SysViewTraceParseError(f'Event for unknown core {event.core_id}')
         else:
             trace = self.traces[event.core_id]
         if event.id == SYSVIEW_EVTID_ISR_ENTER:
             if event.params['irq_num'].value not in trace.irqs_info:
-                raise SysViewTraceParseError('Enter unknown ISR %d' % event.params['irq_num'].value)
+                raise SysViewTraceParseError(f'Enter unknown ISR {event.params["irq_num"].value}')
             if len(self.ctx_stack[event.core_id]):
                 self.prev_ctx[event.core_id] = self.ctx_stack[event.core_id][-1]
             else:
                 # the 1st context switching event after trace start is SYSVIEW_EVTID_ISR_ENTER,
                 # so we have been in IDLE context
-                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, 'IDLE%d' % event.core_id)
+                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, f'IDLE{event.core_id}')
             # put new ISR context on top of the stack (the last in the list)
             self.ctx_stack[event.core_id].append(
                 SysViewEventContext(event.params['irq_num'].value, True, trace.irqs_info[event.params['irq_num'].value])
@@ -1083,17 +1099,17 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
                 # the 1st context switching event after trace start is SYSVIEW_EVTID_ISR_EXIT,
                 # so we have been in ISR context,
                 # but we do not know which one because SYSVIEW_EVTID_ISR_EXIT do not include the IRQ number
-                self.prev_ctx[event.core_id] = SysViewEventContext(None, True, 'IRQ_oncore%d' % event.core_id)
+                self.prev_ctx[event.core_id] = SysViewEventContext(None, True, f'IRQ_oncore{event.core_id}')
         elif event.id == SYSVIEW_EVTID_TASK_START_EXEC:
             if event.params['tid'].value not in trace.tasks_info:
-                raise SysViewTraceParseError('Start exec unknown task 0x%x' % event.params['tid'].value)
+                raise SysViewTraceParseError(f'Start exec unknown task 0x{event.params["tid"].value:x}')
             if len(self.ctx_stack[event.core_id]):
                 # return to the previous context (the last in the list)
                 self.prev_ctx[event.core_id] = self.ctx_stack[event.core_id][-1]
             else:
                 # the 1st context switching event after trace start is SYSVIEW_EVTID_TASK_START_EXEC,
                 # so we have been in IDLE context
-                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, 'IDLE%d' % event.core_id)
+                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, f'IDLE{event.core_id}')
             # only one task at a time in context stack (can be interrupted by a bunch of ISRs)
             self.ctx_stack[event.core_id] = [
                 SysViewEventContext(event.params['tid'].value, False, trace.tasks_info[event.params['tid'].value])
@@ -1109,7 +1125,7 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
                     break
         elif event.id == SYSVIEW_EVTID_TASK_STOP_READY:
             if event.params['tid'].value not in trace.tasks_info:
-                raise SysViewTraceParseError('Stop ready unknown task 0x%x' % event.params['tid'].value)
+                raise SysViewTraceParseError(f'Stop ready unknown task 0x{event.params["tid"].value:x}')
             if len(self.ctx_stack[event.core_id]):
                 if (
                     not self.ctx_stack[event.core_id][-1].irq
@@ -1282,7 +1298,7 @@ class SysViewTraceDataJsonEncoder(json.JSONEncoder):
             blk_addr = '0x{:x}'.format(obj.params['addr'].value)
             callers = []
             for addr in obj.params['callers'].value:
-                callers.append('0x{:x}'.format(addr))
+                callers.append(f'0x{addr:x}')
             return {
                 'ctx_name': obj.ctx_name,
                 'in_irq': obj.in_irq,
@@ -1424,7 +1440,7 @@ class SysViewLogTraceEvent(apptrace.LogTraceEvent):
         string
             formatted log message
         """
-        return '[{:.9f}] LOG: {}'.format(self.ts, self.msg)
+        return f'[{self.ts:.9f}] LOG: {self.msg}'
 
 
 class SysViewLogTraceDataParser(SysViewTraceDataParser):
