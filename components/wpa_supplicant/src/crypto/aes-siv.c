@@ -201,7 +201,7 @@ int aes_siv_decrypt(const u8 *key, size_t key_len,
 	ret = aes_s2v(k1, key_len, num_elem + 1, _addr, _len, check);
 	if (ret)
 		return ret;
-	if (os_memcmp(check, iv_crypt, AES_BLOCK_SIZE) == 0)
+	if (os_memcmp_const(check, iv_crypt, AES_BLOCK_SIZE) == 0)
 		return 0;
 
 	return -1;
