@@ -43,9 +43,9 @@ def send_file_via_uart(port: str, baud_rate: int, file_path: str, packet_size: i
     ],
     indirect=True,
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # IDF-16462
 @idf_parametrize('target', soc_filtered_targets('SOC_UHCI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-10703, IDF-16200')
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner # TODO: IDFCI-11113')
 def test_uart_dma_ota(dut: Dut) -> None:
     dut.expect_exact('uhci-example: OTA process started')
     # We OTA the same binary to another partition and switch to there.
