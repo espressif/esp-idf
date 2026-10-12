@@ -515,6 +515,10 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
                             ESP_FAIL, TAG, "recycle inflight transactions failed");
         next_device->num_trans_inflight--;
     }
+    // Keep the synthetic EOF event active so it can kick off the next queued color transaction
+    if (lcd_cmd == -1 && (!param || param_size == 0)) {
+        return ESP_OK;
+    }
 
     gdma_buffer_mount_config_t mount_config = {
         .flags = {

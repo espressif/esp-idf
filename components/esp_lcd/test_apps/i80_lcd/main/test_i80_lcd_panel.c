@@ -85,6 +85,7 @@ TEST_CASE("lcd_i80_data_only_device without D/C line", "[lcd]")
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
 
     uint8_t data[] = { 0x01, 0x02, 0x03, 0x04 };
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, -1, NULL, 0));
     TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, data, sizeof(data)));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE,
                       esp_lcd_panel_io_tx_color(io_handle, 0x2C, data, sizeof(data)));
