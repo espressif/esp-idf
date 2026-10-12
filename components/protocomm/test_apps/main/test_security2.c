@@ -462,4 +462,93 @@ TEST_CASE("security2 sec1 payload with sec_ver=2 cross-scheme type confusion hea
     TEST_ASSERT_EQUAL(ESP_OK, test_sec1_payload_with_sec2_version());
 }
 
+/*
+ * Send command0 with a client public key of the given length on a new
+ * session. Returns ESP_OK if the device accepted it (successful response 0).
+ */
+static esp_err_t cmd0_with_client_pubkey_len(size_t pubkey_len)
+{
+    protocomm_t *pc = protocomm_new();
+    if (!pc) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    protocomm_security2_params_t sv = {
+        .salt         = sec2_salt,
+        .salt_len     = sizeof(sec2_salt),
+        .verifier     = sec2_verifier,
+        .verifier_len = sizeof(sec2_verifier),
+    };
+
+    esp_err_t ret = protocomm_set_security(pc, "test-sec", &protocomm_security2, &sv);
+    if (ret == ESP_OK) {
+        ret = protocomm_open_session(pc, 100);
+    }
+    if (ret != ESP_OK) {
+        protocomm_delete(pc);
+        return ret;
+    }
+
+    /* Any non-zero value below N is a valid client public key */
+    uint8_t client_pubkey[SEC2_PUBLIC_KEY_LEN + 1];
+    memset(client_pubkey, 0xAB, sizeof(client_pubkey));
+
+    S2SessionCmd0 cmd0 = S2_SESSION_CMD0__INIT;
+    cmd0.client_username.data = (uint8_t *)"wifiprov";
+    cmd0.client_username.len  = strlen("wifiprov");
+    cmd0.client_pubkey.data   = client_pubkey;
+    cmd0.client_pubkey.len    = pubkey_len;
+
+    Sec2Payload payload = SEC2_PAYLOAD__INIT;
+    payload.msg          = SEC2_MSG_TYPE__S2Session_Command0;
+    payload.payload_case = SEC2_PAYLOAD__PAYLOAD_SC0;
+    payload.sc0          = &cmd0;
+
+    SessionData req = SESSION_DATA__INIT;
+    req.sec_ver    = (SecSchemeVersion)protocomm_security2.ver;
+    req.proto_case = SESSION_DATA__PROTO_SEC2;
+    req.sec2       = &payload;
+
+    size_t packed_len = session_data__get_packed_size(&req);
+    uint8_t *packed = malloc(packed_len);
+    if (!packed) {
+        protocomm_delete(pc);
+        return ESP_ERR_NO_MEM;
+    }
+    session_data__pack(&req, packed);
+
+    uint8_t *outbuf = NULL;
+    ssize_t  outlen = 0;
+    ret = protocomm_req_handle(pc, "test-sec", 100, packed, (ssize_t)packed_len, &outbuf, &outlen);
+    free(packed);
+
+    if (ret == ESP_OK) {
+        SessionData *resp = session_data__unpack(NULL, outlen, outbuf);
+        if (!resp || resp->proto_case != SESSION_DATA__PROTO_SEC2 || !resp->sec2 ||
+            resp->sec2->payload_case != SEC2_PAYLOAD__PAYLOAD_SR0 || !resp->sec2->sr0 ||
+            resp->sec2->sr0->status != STATUS__Success) {
+            ret = ESP_FAIL;
+        }
+        session_data__free_unpacked(resp, NULL);
+    }
+    free(outbuf);
+    protocomm_close_session(pc, 100);
+    protocomm_delete(pc);
+    return ret;
+}
+
+/*
+ * The client public key is a big-endian value modulo N. Clients encode it
+ * minimally, so it is shorter than 384 bytes when its leading byte(s) are zero
+ * (about 1 in 256 handshakes), and such keys must be accepted.
+ */
+TEST_CASE("security2 cmd0 accepts a minimally encoded client public key", "[PROTOCOMM_SEC2]")
+{
+    TEST_ASSERT_EQUAL(ESP_OK, cmd0_with_client_pubkey_len(SEC2_PUBLIC_KEY_LEN));
+    TEST_ASSERT_EQUAL(ESP_OK, cmd0_with_client_pubkey_len(SEC2_PUBLIC_KEY_LEN - 1));
+    TEST_ASSERT_EQUAL(ESP_OK, cmd0_with_client_pubkey_len(1));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, cmd0_with_client_pubkey_len(0));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, cmd0_with_client_pubkey_len(SEC2_PUBLIC_KEY_LEN + 1));
+}
+
 #endif /* CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2 */
