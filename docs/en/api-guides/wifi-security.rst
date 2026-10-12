@@ -211,19 +211,19 @@ To get the MAC address, please use API :cpp:func:`esp_wifi_get_mac`.
     Introduction
     ++++++++++++
 
-    Wi-Fi Aware\ :sup:`TM` (NAN, Neighbor Awareness Networking) lets devices discover services and set up a NAN Data Path (NDP) without an AP. By default an NDP carries data in the clear, like an open Wi-Fi network. NAN Security protects the NDP by deriving a pairwise key (ND-PMK) between the Publisher and Subscriber during the NDP handshake and encrypting the subsequent unicast data frames.
+    Wi-Fi Aware\ :sup:`TM` (NAN, Neighbor Awareness Networking) lets devices discover services and set up a NAN Data Path (NDP) without an AP. By default, an NDP carries data in the clear, like an open Wi-Fi network. NAN Security protects the NDP by deriving a pairwise key (ND-PMK) between the Publisher and Subscriber during the NDP handshake and encrypting the subsequent unicast data frames.
 
-    {IDF_TARGET_NAME} supports two NAN Security mechanisms, both producing an encrypted NDP but provisioning the key material differently:
+    {IDF_TARGET_NAME} supports two NAN Security mechanisms. Both produce an encrypted NDP, but they provision the key material differently:
 
     - **Passphrase/PMK-based (NCS-SK-128)** — both peers share a passphrase (or a raw 32-byte PMK) out of band. The stack derives the ND-PMK from it. This is the equivalent of a WPA2/WPA3-Personal pre-shared key, but for NAN.
-    - **Pairing-based (NCS-PK-PASN-128)** — peers do not share a secret up front. They run the NAN Pairing protocol (based on PASN) to negotiate an NPK/NIK, optionally authenticated by a bootstrapping method (PIN code, ...). Cached NPK/NIK can be reused for subsequent NDPs.
+    - **Pairing-based (NCS-PK-PASN-128)** — peers do not share a secret up front. They run the NAN Pairing protocol (based on PASN) to negotiate an NPK/NIK, optionally authenticated by a bootstrapping method (for example, a PIN code). Cached NPK/NIK can be reused for subsequent NDPs.
 
     Passphrase/PMK-based Security (NCS-SK-128)
     ++++++++++++++++++++++++++++++++++++++++++++
 
     This is the simplest NAN Security mode and is available with stand-alone ESP-IDF (no external component required). Both peers provision the same secret — either a passphrase or a raw 32-byte PMK — on the matching Publish/Subscribe service. The stack derives the ND-PMK and ND-PMKID per credential and advertises the SCID list on air; the subscriber matches the publisher's SCID list against its locally-provisioned credentials.
 
-    Security is configured per service through :cpp:type:`wifi_nan_publish_cfg_t` / :cpp:type:`wifi_nan_subscribe_cfg_t`:
+    Security is configured per service through :cpp:type:`wifi_nan_publish_cfg_t`/:cpp:type:`wifi_nan_subscribe_cfg_t`:
 
     - Set ``security_reqd = 1`` to mark the service as secured.
     - Point ``security_cfg`` to a :cpp:type:`wifi_nan_discovery_security_params_t` populated with one or more :cpp:type:`wifi_nan_credential_t` entries (passphrase or PMK, each bound to a cipher suite ID via ``csid``).
@@ -233,7 +233,7 @@ To get the MAC address, please use API :cpp:func:`esp_wifi_get_mac`.
 
     .. warning::
 
-      Group-management frame protection (BIP, IGTKSA/BIGTKSA) is **device-global**, not per-service. It must be enabled through :cpp:type:`wifi_nan_sync_config_t`.``group_mgmt_prot`` when starting NAN with :cpp:func:`esp_wifi_nan_sync_start`. IGTK/BIGTK installation, CSIA capability construction, and NDP negotiation all gate on that device-global value, so an application that only sets the per-service ``group_mgmt_prot`` bit in :cpp:type:`wifi_nan_discovery_security_params_t` will silently run without group-management frame protection. The per-service ``group_mgmt_prot`` bit is therefore reserved and has no independent effect.
+      Group-management frame protection (BIP, IGTKSA/BIGTKSA) is **device-global**, not per-service. It must be enabled through the ``group_mgmt_prot`` field of :cpp:type:`wifi_nan_sync_config_t` when starting NAN with :cpp:func:`esp_wifi_nan_sync_start`. IGTK/BIGTK installation, CSIA capability construction, and NDP negotiation all depend on that device-global value, so an application that only sets the per-service ``group_mgmt_prot`` bit in :cpp:type:`wifi_nan_discovery_security_params_t` will silently run without group-management frame protection. The per-service ``group_mgmt_prot`` bit is therefore reserved and has no independent effect.
 
     .. note::
 
@@ -244,7 +244,7 @@ To get the MAC address, please use API :cpp:func:`esp_wifi_get_mac`.
 
     NAN Pairing lets two devices establish a long-term trust relationship (NPK/NIK) without a pre-shared secret, using a bootstrapping method such as a PIN code. The negotiated NPK/NIK can be cached (and persisted to NVS) so that subsequent NDPs are secured without repeating the pairing handshake.
 
-    Pairing is configured per service through the ``pairing`` field of :cpp:type:`wifi_nan_publish_cfg_t` / :cpp:type:`wifi_nan_subscribe_cfg_t`, which points to a :cpp:type:`wifi_nan_pairing_cfg_t` (pairing setup/verification enablement, NPK/NIK caching, bootstrapping methods bitmap, comeback delay).
+    Pairing is configured per service through the ``pairing`` field of :cpp:type:`wifi_nan_publish_cfg_t`/:cpp:type:`wifi_nan_subscribe_cfg_t`, which points to a :cpp:type:`wifi_nan_pairing_cfg_t` (pairing setup/verification enablement, NPK/NIK caching, bootstrapping methods bitmap, comeback delay).
 
     .. note::
 
@@ -254,4 +254,3 @@ To get the MAC address, please use API :cpp:func:`esp_wifi_get_mac`.
     +++++++++++++++++++
 
     - :example:`wifi/wifi_aware/nan_console` exposes NAN Security through the ``publish`` and ``subscribe`` console commands. Supplying ``-p``/``--passphrase`` or ``-k``/``--pmk`` makes that service secured; an open service needs no security arguments. See the example README for the full command reference.
-
