@@ -635,14 +635,14 @@ static bool esp_aes_gcm_input_support_hw_accel(size_t length, const unsigned cha
 
     if (aad_len > ESP_AES_GCM_AAD_MAX_BYTES) {
         support_hw_accel = false;
-    } else if (!esp_ptr_dma_capable(aad) && aad_len > 0) {
-        /* aad in non internal DMA memory */
+    } else if (!esp_aes_gcm_buffer_dma_capable(aad, aad_len, false) && aad_len > 0) {
+        /* aad in memory the DMA cannot reach */
         support_hw_accel = false;
-    } else if (!esp_ptr_dma_capable(input) && length > 0) {
-        /* input in non internal DMA memory */
+    } else if (!esp_aes_gcm_buffer_dma_capable(input, length, false) && length > 0) {
+        /* input in memory the DMA cannot reach */
         support_hw_accel = false;
-    } else if (!esp_ptr_dma_capable(output) && length > 0) {
-        /* output in non internal DMA memory */
+    } else if (!esp_aes_gcm_buffer_dma_capable(output, length, true) && length > 0) {
+        /* output in memory the DMA cannot reach, or that this port cannot align */
         support_hw_accel = false;
     } else if (length == 0) {
         support_hw_accel = false;

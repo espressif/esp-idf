@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,22 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
  * @return int      -1 on error
  */
 int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, const unsigned char *aad_desc, size_t aad_len);
+
+#if CONFIG_MBEDTLS_HARDWARE_GCM
+/**
+ * @brief           Check whether esp_aes_process_dma_gcm() can operate on a given buffer
+ *
+ * @note            AES-GCM runs as a single DMA transaction, so a buffer that the DMA cannot
+ *                  reach, or that this port cannot align, has no chunked fallback. Such buffers
+ *                  are rejected here and the caller uses the software GHASH path instead.
+ *
+ * @param p         Buffer to check
+ * @param len       Length of the buffer
+ * @param is_output true for the buffer the DMA writes into, which may carry extra alignment rules
+ * @return bool     true if the hardware GCM path can use this buffer
+ */
+bool esp_aes_gcm_buffer_dma_capable(const void *p, size_t len, bool is_output);
+#endif
 #endif
 
 #ifdef __cplusplus

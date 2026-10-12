@@ -17,6 +17,16 @@
 #include "sys/param.h"
 #include "crypto_performance.h"
 
+/* PSRAM where it exists, without MALLOC_CAP_DMA so the unaligned cases stay exercised */
+#if CONFIG_SPIRAM
+#define TEST_GCM_BUF_CAPS       (MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM)
+/* The hardware GCM path only accepts a cache line aligned output, which MALLOC_CAP_DMA guarantees */
+#define TEST_GCM_HW_BUF_CAPS    (MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA)
+#else
+#define TEST_GCM_BUF_CAPS       (MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL)
+#define TEST_GCM_HW_BUF_CAPS    (MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL)
+#endif
+
 #if CONFIG_MBEDTLS_HARDWARE_AES
 /*
     Python example code for generating test vectors
@@ -82,9 +92,9 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
     memset(key, 0x56, 16);
 
     // allocate internal memory
-    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, TEST_GCM_BUF_CAPS);
+    uint8_t *plaintext = heap_caps_malloc(SZ, TEST_GCM_BUF_CAPS);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, TEST_GCM_BUF_CAPS);
 
     TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
@@ -247,11 +257,11 @@ TEST_CASE("mbedtls GCM unaligned multipart matches one-shot", "[aes-gcm]")
     uint8_t nonce[12], key[16], tag[16];
     size_t tag_len;
 
-    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *aad = heap_caps_malloc(AAD_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *ref = heap_caps_malloc(SZ + 16, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *ct = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    uint8_t *dec = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, TEST_GCM_BUF_CAPS);
+    uint8_t *aad = heap_caps_malloc(AAD_SZ, TEST_GCM_BUF_CAPS);
+    uint8_t *ref = heap_caps_malloc(SZ + 16, TEST_GCM_BUF_CAPS);
+    uint8_t *ct = heap_caps_malloc(SZ, TEST_GCM_BUF_CAPS);
+    uint8_t *dec = heap_caps_malloc(SZ, TEST_GCM_BUF_CAPS);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(aad);
     TEST_ASSERT_NOT_NULL(ref);
@@ -339,7 +349,7 @@ static void aes_gcm_test(aes_gcm_test_cfg_t *cfg, aes_gcm_test_expected_res_t *r
     uint8_t iv_buf[16] = {};
 
     uint8_t *ciphertext = heap_caps_malloc(cfg->plaintext_length, cfg->output_caps);
-    uint8_t *output = heap_caps_malloc(cfg->plaintext_length, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *output = heap_caps_malloc(cfg->plaintext_length, TEST_GCM_BUF_CAPS);
 
     if (cfg->plaintext_length != 0) {
         TEST_ASSERT_NOT_NULL(ciphertext);
@@ -493,7 +503,7 @@ TEST_CASE("mbedtls AES GCM", "[aes-gcm]")
     };
 
     aes_gcm_test_cfg_t cfg = {
-        .output_caps = MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL,
+        .output_caps = TEST_GCM_BUF_CAPS,
         .iv = iv,
         .iv_length = sizeof(iv),
         .key = key,
@@ -508,7 +518,7 @@ TEST_CASE("mbedtls AES GCM", "[aes-gcm]")
 
     for (int i = 0; i < sizeof(length) / sizeof(length[0]); i++) {
         printf("Test AES-GCM with plaintext length = %d\n", length[i]);
-        uint8_t *input = heap_caps_malloc(length[i], MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        uint8_t *input = heap_caps_malloc(length[i], TEST_GCM_BUF_CAPS);
         TEST_ASSERT(input != NULL || length[i] == 0);
         memset(input, 0x36, length[i]);
 
@@ -528,7 +538,7 @@ TEST_CASE("mbedtls AES GCM - Different add messages", "[aes-gcm]")
     const unsigned CALL_SZ = 160;
     uint8_t iv[16];
     uint8_t key[16];
-    uint8_t *input = heap_caps_malloc(CALL_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *input = heap_caps_malloc(CALL_SZ, TEST_GCM_BUF_CAPS);
     TEST_ASSERT_NOT_NULL(input);
 
     memset(input, 0x67, CALL_SZ);
@@ -572,7 +582,7 @@ TEST_CASE("mbedtls AES GCM - Different add messages", "[aes-gcm]")
     aes_gcm_test_cfg_t cfg = {
         .plaintext = input,
         .plaintext_length = CALL_SZ,
-        .output_caps = MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL,
+        .output_caps = TEST_GCM_BUF_CAPS,
         .iv = iv,
         .iv_length = sizeof(iv),
         .key = key,
@@ -586,7 +596,7 @@ TEST_CASE("mbedtls AES GCM - Different add messages", "[aes-gcm]")
 
     for (int i = 0; i < sizeof(add_len) / sizeof(add_len[0]); i++) {
         printf("Test AES-GCM with add length = %d\n", add_len[i]);
-        uint8_t *add = heap_caps_malloc(add_len[i], MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+        uint8_t *add = heap_caps_malloc(add_len[i], TEST_GCM_BUF_CAPS);
         TEST_ASSERT(add != NULL || add_len[i] == 0);
         memset(add, 0x12, add_len[i]);
 
@@ -761,6 +771,111 @@ TEST_CASE("mbedtls AES GCM performance, one-shot", "[aes-gcm]")
     TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_GCM_CRYPT_TAG_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
+
+#if CONFIG_MBEDTLS_HARDWARE_GCM
+
+/* Encrypt then decrypt one configuration, and check it round-trips and matches a reference run
+   made entirely in internal memory. cfg_caps places the buffers, offset shifts them inside the
+   allocation so the ragged-start cases get covered, in_place aliases input onto output. */
+static void aes_gcm_one_shot_case(uint32_t cfg_caps, size_t offset, size_t len, size_t aad_len,
+                                  bool in_place, uint32_t aad_caps)
+{
+    psa_key_id_t key_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    uint8_t key[16], nonce[12];
+    size_t olen = 0, ref_olen = 0;
+
+    memset(key, 0x44, sizeof(key));
+    memset(nonce, 0xEE, sizeof(nonce));
+
+    /* +16 for the tag the one-shot API appends to the ciphertext */
+    uint8_t *buf = heap_caps_malloc(offset + len + 16, cfg_caps);
+    uint8_t *src = heap_caps_malloc(offset + len, cfg_caps);
+    uint8_t *aad = aad_len ? heap_caps_malloc(aad_len, aad_caps) : NULL;
+    uint8_t *ref = heap_caps_malloc(len + 16, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    uint8_t *ref_pt = heap_caps_malloc(len ? len : 1, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(buf);
+    TEST_ASSERT_NOT_NULL(src);
+    TEST_ASSERT_NOT_NULL(ref);
+    TEST_ASSERT_NOT_NULL(ref_pt);
+    if (aad_len) {
+        TEST_ASSERT_NOT_NULL(aad);
+        for (size_t i = 0; i < aad_len; i++) {
+            aad[i] = (uint8_t)(0x76 + i);
+        }
+    }
+
+    uint8_t *out = buf + offset;
+    uint8_t *in = in_place ? out : src + offset;
+    for (size_t i = 0; i < len; i++) {
+        in[i] = (uint8_t)(0xAA + i);
+        ref_pt[i] = in[i];
+    }
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_crypto_init());
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_GCM);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, psa_import_key(&attributes, key, sizeof(key), &key_id));
+
+    /* Reference: same inputs, internal memory only, so it never takes the external memory path */
+    TEST_ASSERT_EQUAL(PSA_SUCCESS,
+                      psa_aead_encrypt(key_id, PSA_ALG_GCM, nonce, sizeof(nonce), aad, aad_len,
+                                       ref_pt, len, ref, len + 16, &ref_olen));
+
+    TEST_ASSERT_EQUAL(PSA_SUCCESS,
+                      psa_aead_encrypt(key_id, PSA_ALG_GCM, nonce, sizeof(nonce), aad, aad_len,
+                                       in, len, out, len + 16, &olen));
+    TEST_ASSERT_EQUAL(ref_olen, olen);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(ref, out, len + 16);
+
+    /* And back again, in place over the ciphertext the call above produced */
+    TEST_ASSERT_EQUAL(PSA_SUCCESS,
+                      psa_aead_decrypt(key_id, PSA_ALG_GCM, nonce, sizeof(nonce), aad, aad_len,
+                                       out, olen, out, len ? len : 1, &olen));
+    TEST_ASSERT_EQUAL(len, olen);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(ref_pt, out, len);
+
+    psa_destroy_key(key_id);
+    free(ref_pt);
+    free(ref);
+    free(aad);
+    free(src);
+    free(buf);
+}
+
+TEST_CASE("mbedtls AES GCM one-shot buffer placement", "[aes-gcm]")
+{
+    /* 16, 80 and 1400 leave a ragged trailing cache line; 64 and 4096 do not */
+    /* 4080 is the largest single descriptor, 4096 splits once and 8192 twice, so a split point
+       that drifts off the 16 byte MSPI boundary is caught wherever in the chain it happens */
+    const size_t lengths[] = {1, 15, 16, 17, 63, 64, 65, 80, 1400, 4080, 4096, 8192};
+    /* 0 is cache line aligned, the rest are the ragged-start cases the gate has to reject */
+    const size_t offsets[] = {0, 4, 16};
+
+    for (size_t i = 0; i < sizeof(lengths) / sizeof(lengths[0]); i++) {
+        for (size_t o = 0; o < sizeof(offsets) / sizeof(offsets[0]); o++) {
+            for (int in_place = 0; in_place <= 1; in_place++) {
+                aes_gcm_one_shot_case(TEST_GCM_HW_BUF_CAPS, offsets[o], lengths[i], 16,
+                                      in_place, TEST_GCM_BUF_CAPS);
+            }
+        }
+    }
+}
+
+TEST_CASE("mbedtls AES GCM one-shot aad lengths", "[aes-gcm]")
+{
+    const size_t aad_lengths[] = {0, 1, 15, 16, 17, 4080};
+
+    for (size_t i = 0; i < sizeof(aad_lengths) / sizeof(aad_lengths[0]); i++) {
+        aes_gcm_one_shot_case(TEST_GCM_HW_BUF_CAPS, 0, 1400, aad_lengths[i], false, TEST_GCM_BUF_CAPS);
+        aes_gcm_one_shot_case(TEST_GCM_HW_BUF_CAPS, 0, 1400, aad_lengths[i], false,
+                              MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    }
+}
+
+#endif /* CONFIG_MBEDTLS_HARDWARE_GCM */
 
 TEST_CASE("mbedtls AES GCM - Combine different IV/Key/Plaintext/AAD lengths", "[aes-gcm]")
 {
@@ -1011,7 +1126,7 @@ TEST_CASE("mbedtls AES GCM - Combine different IV/Key/Plaintext/AAD lengths", "[
     };
 
     aes_gcm_test_cfg_t cfg = {
-        .output_caps = MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL,
+        .output_caps = TEST_GCM_BUF_CAPS,
         .tag_len = 16
     };
 
@@ -1030,7 +1145,7 @@ TEST_CASE("mbedtls AES GCM - Combine different IV/Key/Plaintext/AAD lengths", "[
 
             for (int i_len = 0; i_len < sizeof(length) / sizeof(length[0]); i_len++) {
                 printf("Test AES-GCM with plaintext length = %d\n", length[i_len]);
-                uint8_t *input = heap_caps_malloc(length[i_len], MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+                uint8_t *input = heap_caps_malloc(length[i_len], TEST_GCM_BUF_CAPS);
                 TEST_ASSERT(input != NULL || length[i_len] == 0);
                 memset(input, INPUT_BYTES_VALUE, length[i_len]);
                 cfg.plaintext = input;
@@ -1041,7 +1156,7 @@ TEST_CASE("mbedtls AES GCM - Combine different IV/Key/Plaintext/AAD lengths", "[
                 for (int i_add = 0; i_add < sizeof(add_len) / sizeof(add_len[0]); i_add++) {
 
                     printf("Test AES-GCM with add length = %d\n", add_len[i_add]);
-                    uint8_t *add = heap_caps_malloc(add_len[i_add], MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+                    uint8_t *add = heap_caps_malloc(add_len[i_add], TEST_GCM_BUF_CAPS);
                     TEST_ASSERT(add != NULL || add_len[i_add] == 0);
                     memset(add, ADD_BYTES_VALUE, add_len[i_add]);
 
@@ -1070,7 +1185,7 @@ TEST_CASE("mbedtls AES GCM - Different Authentication Tag lengths", "[aes-gcm]")
     uint8_t iv[16];
     uint8_t key[16];
     uint8_t aad[16];
-    uint8_t *input = heap_caps_malloc(CALL_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *input = heap_caps_malloc(CALL_SZ, TEST_GCM_BUF_CAPS);
     TEST_ASSERT_NOT_NULL(input);
 
     memset(input, 0x67, CALL_SZ);
@@ -1093,7 +1208,7 @@ TEST_CASE("mbedtls AES GCM - Different Authentication Tag lengths", "[aes-gcm]")
     aes_gcm_test_cfg_t cfg = {
         .plaintext = input,
         .plaintext_length = CALL_SZ,
-        .output_caps = MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL,
+        .output_caps = TEST_GCM_BUF_CAPS,
         .add_buf = aad,
         .add_length = sizeof(aad),
         .iv = iv,

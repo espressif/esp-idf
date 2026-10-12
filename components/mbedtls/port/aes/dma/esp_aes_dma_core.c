@@ -89,6 +89,74 @@ static bool s_check_dma_capable(const void *p)
     return is_capable;
 }
 
+#if SOC_AES_SUPPORT_GCM && CONFIG_MBEDTLS_HARDWARE_GCM
+
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+/* is_output marks the buffer the DMA writes into, which carries the extra alignment rule below */
+static bool s_gcm_ext_mem_usable(const void *p, size_t len, bool is_output)
+{
+#if SOC_AES_CRYPTO_DMA
+    /* The Crypto DMA in-channel stalls silently when a receive descriptor list crosses from
+       external to internal RAM, which the trailing bounce below does. esp_aes_process_dma()
+       works around it by splitting the transfer in two, which GCM cannot do. */
+    return false;
+#else
+    if (!esp_ptr_dma_ext_capable(p)) {
+        return false;
+    }
+
+    /* MSPI encryption and PSRAM ECC constrain the address and size, and GCM cannot be re-chunked */
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    /* This variant splits both ends of the buffer, so keep all of it under the constraint */
+    (void)is_output;
+    if (!esp_mspi_buffer_alignment_satisfied(p, len)) {
+        return false;
+    }
+#else
+    /* Only whole blocks are moved in place; the trailing bytes go through internal memory and the CPU */
+    size_t dma_bytes = len - (len % AES_BLOCK_BYTES);
+
+    if (is_output) {
+        size_t cache_line_size = esp_cache_get_line_size_by_addr(p);
+        if (cache_line_size > AES_BLOCK_BYTES) {
+            /* Only the trailing partial cache line is bounced, so the output must start on one */
+            if (((uintptr_t)p & (cache_line_size - 1)) != 0) {
+                return false;
+            }
+            dma_bytes &= ~(cache_line_size - 1);
+        }
+    }
+
+    /* Shorter than one block is bounced whole, so the DMA never reaches this buffer */
+    if ((dma_bytes > 0) && !esp_mspi_buffer_alignment_satisfied(p, dma_bytes)) {
+        return false;
+    }
+#endif
+
+    return true;
+#endif /* SOC_AES_CRYPTO_DMA */
+}
+#endif /* CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE */
+
+bool esp_aes_gcm_buffer_dma_capable(const void *p, size_t len, bool is_output)
+{
+    if (p == NULL || len == 0) {
+        return false;
+    }
+
+    if (esp_ptr_dma_capable(p)) {
+        return true;
+    }
+
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+    return s_gcm_ext_mem_usable(p, len, is_output);
+#else
+    (void)is_output;
+    return false;
+#endif
+}
+#endif /* SOC_AES_SUPPORT_GCM && CONFIG_MBEDTLS_HARDWARE_GCM */
+
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
 #if !ESP_TEE_BUILD
 static IRAM_ATTR void esp_aes_complete_isr(void *arg)
@@ -1268,6 +1336,26 @@ cleanup:
 
 #if CONFIG_MBEDTLS_HARDWARE_GCM
 
+/* Data cache line size, and so the largest output bounce needed. ESP32-S2 has no integer
+   line size option, only the ESP32S2_DATA_CACHE_LINE_SIZE choice */
+#if defined(CONFIG_CACHE_L1_DCACHE_LINE_SIZE)
+#define AES_GCM_OUT_BOUNCE_BYTES CONFIG_CACHE_L1_DCACHE_LINE_SIZE
+#elif CONFIG_ESP32S2_DATA_CACHE_LINE_16B
+#define AES_GCM_OUT_BOUNCE_BYTES 16
+#else
+#define AES_GCM_OUT_BOUNCE_BYTES 32
+#endif
+
+/* Static because the DMA reads and writes these directly and a task stack may live in external
+   memory; serialised by the AES hardware lock, which the caller holds across the whole operation */
+static DRAM_ATTR crypto_dma_desc_t s_gcm_aad_desc[2];
+static DRAM_ATTR crypto_dma_desc_t s_gcm_stream_in_desc;
+static DRAM_ATTR crypto_dma_desc_t s_gcm_stream_out_desc;
+static DRAM_ATTR uint8_t s_gcm_stream_in_aad[AES_BLOCK_BYTES];
+static DRAM_ATTR uint8_t s_gcm_stream_in[AES_BLOCK_BYTES];
+static DRAM_ATTR uint8_t s_gcm_stream_out[AES_GCM_OUT_BOUNCE_BYTES];
+static DRAM_ATTR uint32_t s_gcm_len_buf[4];
+
 /* Encrypt/decrypt with AES-GCM the input using DMA
  * The function esp_aes_process_dma_gcm zeroises the output buffer in the case of following conditions:
  * 1. If key is not written in the hardware
@@ -1277,18 +1365,18 @@ cleanup:
  */
 int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, const unsigned char *aad, size_t aad_len)
 {
-    crypto_dma_desc_t aad_desc[2] = {};
+    crypto_dma_desc_t *aad_desc = s_gcm_aad_desc;
     crypto_dma_desc_t *aad_head_desc = NULL;
     crypto_dma_desc_t *in_desc_head = NULL, *out_desc_head = NULL, *len_desc = NULL;
     crypto_dma_desc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
-    crypto_dma_desc_t stream_in_desc, stream_out_desc;
     crypto_dma_desc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
 
-    uint8_t stream_in_aad[AES_BLOCK_BYTES] = {};
+    uint8_t *stream_in_aad = s_gcm_stream_in_aad;
     unsigned stream_bytes_aad = aad_len % AES_BLOCK_BYTES;     // bytes which aren't in a full block
     unsigned block_bytes_aad = aad_len - stream_bytes_aad;     // bytes which are in a full block
 
-    assert(esp_ptr_dma_capable(stream_in_aad));
+    memset(s_gcm_aad_desc, 0, sizeof(s_gcm_aad_desc));
+    memset(s_gcm_stream_in_aad, 0, sizeof(s_gcm_stream_in_aad));
 
     if (block_bytes_aad > 0) {
         aad_desc[0].dw0.length = block_bytes_aad;
@@ -1314,11 +1402,32 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     }
 
     size_t crypto_dma_desc_num = 0;
-    uint32_t len_buf[4] = {};
-    uint8_t stream_in[16] = {};
-    uint8_t stream_out[16] = {};
+    uint32_t *len_buf = s_gcm_len_buf;
+    uint8_t *stream_in = s_gcm_stream_in;
+    uint8_t *stream_out = s_gcm_stream_out;
     unsigned stream_bytes = len % AES_BLOCK_BYTES; // bytes which aren't in a full block
     unsigned block_bytes = len - stream_bytes;     // bytes which are in a full block
+
+    memset(s_gcm_len_buf, 0, sizeof(s_gcm_len_buf));
+    memset(s_gcm_stream_in, 0, sizeof(s_gcm_stream_in));
+    memset(s_gcm_stream_out, 0, sizeof(s_gcm_stream_out));
+
+    /* The DMA reaches external memory over MSPI, bypassing the data cache, so it must only write
+       whole cache lines. block_bytes is a multiple of AES_BLOCK_BYTES, so the ragged trailing line
+       is at most cache_line - AES_BLOCK_BYTES and always fits beside the padded final block in one
+       bounce. The output start was already checked by esp_aes_gcm_buffer_dma_capable(). */
+    unsigned out_body_bytes = block_bytes;
+    unsigned out_tail_bytes = 0;
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+    /* Internal memory is not behind a cache here, so this reports 0 and the split does not happen */
+    size_t out_line_size = esp_cache_get_line_size_by_addr(output);
+    if (out_line_size > AES_BLOCK_BYTES) {
+        out_body_bytes = block_bytes & ~(out_line_size - 1);
+        out_tail_bytes = block_bytes - out_body_bytes;
+    }
+#endif
+    unsigned stream_out_bytes = out_tail_bytes + ((stream_bytes > 0) ? AES_BLOCK_BYTES : 0);
+    assert(stream_out_bytes <= AES_GCM_OUT_BOUNCE_BYTES);
 
     unsigned blocks = (block_bytes / AES_BLOCK_BYTES) + ((stream_bytes > 0) ? 1 : 0);
 
@@ -1335,8 +1444,10 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
 
-    /* Set up dma descriptors for input and output */
-    crypto_dma_desc_num = dma_desc_get_required_num(block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED);
+    /* 16B aligned: the 4B limit of 4092 is not a multiple of AES_BLOCK_BYTES, so a split would
+       leave the next descriptor 12 bytes off and break the MSPI alignment PSRAM ECC requires.
+       The count and the links below have to use the same limit or the descriptors overrun. */
+    crypto_dma_desc_num = dma_desc_get_required_num(block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED);
 
     /* Allocate both in and out descriptors to save a malloc/free per function call, add 1 for length descriptor */
     block_desc = heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, (crypto_dma_desc_num * 2) + 1, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA);
@@ -1355,39 +1466,77 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     }
 
     if (block_bytes > 0) {
-        dma_desc_setup_link(block_in_desc, input, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 0);
-        dma_desc_setup_link(block_out_desc, output, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 0);
-
+        dma_desc_setup_link(block_in_desc, input, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, 0);
         dma_desc_append(&in_desc_head, block_in_desc);
+    }
+
+    /* The input and output chains are independent byte streams and only their totals have to
+       match, so the output may be split at the cache line while the input stays whole */
+    if (out_body_bytes > 0) {
+        dma_desc_setup_link(block_out_desc, output, out_body_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, 0);
         dma_desc_append(&out_desc_head, block_out_desc);
 
-        out_desc_tail = &block_out_desc[crypto_dma_desc_num - 1];
+        out_desc_tail = &block_out_desc[dma_desc_get_required_num(out_body_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED) - 1];
     }
 
     /* Any leftover bytes which are appended as an additional DMA list */
     if (stream_bytes > 0) {
         memcpy(stream_in, input + block_bytes, stream_bytes);
 
-        dma_desc_setup_link(&stream_in_desc, stream_in, AES_BLOCK_BYTES, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 0);
-        dma_desc_setup_link(&stream_out_desc, stream_out, AES_BLOCK_BYTES, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 0);
+        memset(&s_gcm_stream_in_desc, 0, sizeof(crypto_dma_desc_t));
+        dma_desc_setup_link(&s_gcm_stream_in_desc, stream_in, AES_BLOCK_BYTES, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 0);
+        dma_desc_append(&in_desc_head, &s_gcm_stream_in_desc);
+    }
 
-        dma_desc_append(&in_desc_head, &stream_in_desc);
-        dma_desc_append(&out_desc_head, &stream_out_desc);
+    /* Carries the ragged trailing cache line of the output, the padded final block, or both */
+    if (stream_out_bytes > 0) {
+        memset(&s_gcm_stream_out_desc, 0, sizeof(crypto_dma_desc_t));
+        dma_desc_setup_link(&s_gcm_stream_out_desc, stream_out, stream_out_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 0);
+        dma_desc_append(&out_desc_head, &s_gcm_stream_out_desc);
 
-        out_desc_tail = &stream_out_desc;
+        out_desc_tail = &s_gcm_stream_out_desc;
     }
 
 
     len_buf[1] = __builtin_bswap32(aad_len * 8);
     len_buf[3] = __builtin_bswap32(len * 8);
 
-    len_desc->dw0.length = sizeof(len_buf);
-    len_desc->dw0.size = sizeof(len_buf);
+    len_desc->dw0.length = sizeof(s_gcm_len_buf);
+    len_desc->dw0.size = sizeof(s_gcm_len_buf);
     len_desc->dw0.owner = 1;
     len_desc->dw0.suc_eof = 1;
     len_desc->buffer = (uint8_t *)len_buf;
 
     dma_desc_append(&in_desc_head, len_desc);
+
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+    /* Push any dirty plaintext down to the die, since the DMA reads it over MSPI, not the cache */
+    if ((block_bytes_aad > 0) && esp_ptr_external_ram(aad)) {
+        if (esp_cache_msync((void *)aad, block_bytes_aad, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
+            ESP_LOGE(TAG, "Cache sync failed for the aad in external RAM");
+            ret = -1;
+            goto cleanup;
+        }
+    }
+
+    if ((block_bytes > 0) && esp_ptr_external_ram(input)) {
+        if (esp_cache_msync((void *)input, block_bytes, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
+            ESP_LOGE(TAG, "Cache sync failed for the input in external RAM");
+            ret = -1;
+            goto cleanup;
+        }
+    }
+
+    /* Drop dirty lines over the body so a later eviction cannot write stale data over the result.
+       Must come after the writeback above, which for an in-place operation is the same memory. */
+    if ((out_body_bytes > 0) && esp_ptr_external_ram(output)) {
+        if (esp_cache_msync((void *)output, out_body_bytes, ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+            ESP_LOGE(TAG, "Cache sync failed for the output in external RAM");
+            ret = -1;
+            goto cleanup;
+        }
+    }
+#endif
 
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     /* Only use interrupt for long AES operations */
@@ -1425,8 +1574,13 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
     aes_hal_transform_dma_finish();
 
+    /* Writing these back through the CPU is what keeps the DMA off the partial cache lines */
+    if (out_tail_bytes > 0) {
+        memcpy(output + out_body_bytes, stream_out, out_tail_bytes);
+    }
+
     if (stream_bytes > 0) {
-        memcpy(output + block_bytes, stream_out, stream_bytes);
+        memcpy(output + block_bytes, stream_out + out_tail_bytes, stream_bytes);
     }
 
 cleanup:
@@ -1435,10 +1589,10 @@ cleanup:
     }
     /* stream_in/stream_out held the trailing plaintext/ciphertext block and
      * stream_in_aad the trailing AAD block for the DMA transfer. Scrub them so
-     * the data does not linger in stack RAM. */
-    mbedtls_platform_zeroize(stream_in, sizeof(stream_in));
-    mbedtls_platform_zeroize(stream_out, sizeof(stream_out));
-    mbedtls_platform_zeroize(stream_in_aad, sizeof(stream_in_aad));
+     * the data does not linger in RAM. */
+    mbedtls_platform_zeroize(s_gcm_stream_in, sizeof(s_gcm_stream_in));
+    mbedtls_platform_zeroize(s_gcm_stream_out, sizeof(s_gcm_stream_out));
+    mbedtls_platform_zeroize(s_gcm_stream_in_aad, sizeof(s_gcm_stream_in_aad));
     free(block_desc);
     return ret;
 }
