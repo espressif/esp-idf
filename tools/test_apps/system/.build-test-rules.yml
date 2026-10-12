@@ -208,6 +208,8 @@ tools/test_apps/system/rtc_mem_reserve:
 tools/test_apps/system/startup:
   disable:
     - if: CONFIG_NAME == "main_task_cpu1" and IDF_TARGET not in ["esp32", "esp32s3"]
+    - if: CONFIG_NAME == "spiram_debug_log" and SOC_SPIRAM_SUPPORTED != 1
+      reason: Test requires a target with PSRAM support
 
 tools/test_apps/system/test_api_check:
   disable:
