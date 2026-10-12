@@ -484,6 +484,7 @@
 // USB OTG Caps
 #define SOC_USB_OTG_PERIPH_NUM          (2U)
 #define SOC_USB_FSLS_PHY_NUM            (1U)
+#define SOC_USB_OTG_PSRAM_DMA_CAPABLE   (1)                 /*!< USB OTG Peripheral's internal DMA can access PSRAM */
 
 // USB PHY Caps
 #define SOC_USB_UTMI_PHY_NUM            (1U)
