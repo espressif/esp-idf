@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table d75d0e39a18319b5287c3790c42a8d06
+// md5_digest_table 867471c229acc732f65a1a5d7dfb25ff
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -369,6 +369,62 @@ static const esp_efuse_desc_t WR_DIS_SPI_LDO_1V8_DREF[] = {
 
 static const esp_efuse_desc_t WR_DIS_SPI_LDO_1V8_MUL[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of SPI_LDO_1V8_MUL,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_WEIGHT_BIT16[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_WEIGHT_BIT16,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_WEIGHT_BIT15[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_WEIGHT_BIT15,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_WEIGHT_BIT14[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_WEIGHT_BIT14,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_WEIGHT_BIT13[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_WEIGHT_BIT13,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_WEIGHT_BIT12[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_WEIGHT_BIT12,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_WEIGHT_BIT11[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_WEIGHT_BIT11,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_WEIGHT_BIT10[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_WEIGHT_BIT10,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC2_WEIGHT_BIT16[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC2_WEIGHT_BIT16,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC2_WEIGHT_BIT15[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC2_WEIGHT_BIT15,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC2_WEIGHT_BIT14[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC2_WEIGHT_BIT14,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC2_WEIGHT_BIT13[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC2_WEIGHT_BIT13,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC2_WEIGHT_BIT12[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC2_WEIGHT_BIT12,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC2_WEIGHT_BIT11[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC2_WEIGHT_BIT11,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC2_WEIGHT_BIT10[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC2_WEIGHT_BIT10,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
@@ -921,6 +977,62 @@ static const esp_efuse_desc_t SPI_LDO_1V8_MUL[] = {
     {EFUSE_BLK2, 142, 3}, 	 // [] SPI LDO 1.8 V multiplier,
 };
 
+static const esp_efuse_desc_t ADC1_WEIGHT_BIT16[] = {
+    {EFUSE_BLK2, 145, 10}, 	 // [] ADC1 bit 16 weight (BIT16*10 - 20480),
+};
+
+static const esp_efuse_desc_t ADC1_WEIGHT_BIT15[] = {
+    {EFUSE_BLK2, 155, 9}, 	 // [] ADC1 bit 15 weight (BIT15*10 - 10240),
+};
+
+static const esp_efuse_desc_t ADC1_WEIGHT_BIT14[] = {
+    {EFUSE_BLK2, 164, 8}, 	 // [] ADC1 bit 14 weight (BIT14*10 - 5120),
+};
+
+static const esp_efuse_desc_t ADC1_WEIGHT_BIT13[] = {
+    {EFUSE_BLK2, 172, 8}, 	 // [] ADC1 bit 13 weight (BIT13*10 - 2560),
+};
+
+static const esp_efuse_desc_t ADC1_WEIGHT_BIT12[] = {
+    {EFUSE_BLK2, 180, 8}, 	 // [] ADC1 bit 12 weight (BIT12*10 - 2560),
+};
+
+static const esp_efuse_desc_t ADC1_WEIGHT_BIT11[] = {
+    {EFUSE_BLK2, 188, 6}, 	 // [] ADC1 bit 11 weight (BIT11*10 - 1280),
+};
+
+static const esp_efuse_desc_t ADC1_WEIGHT_BIT10[] = {
+    {EFUSE_BLK2, 194, 5}, 	 // [] ADC1 bit 10 weight (BIT10*10 - 640),
+};
+
+static const esp_efuse_desc_t ADC2_WEIGHT_BIT16[] = {
+    {EFUSE_BLK2, 199, 10}, 	 // [] ADC2 bit 16 weight (BIT16*10 - 20480),
+};
+
+static const esp_efuse_desc_t ADC2_WEIGHT_BIT15[] = {
+    {EFUSE_BLK2, 209, 9}, 	 // [] ADC2 bit 15 weight (BIT15*10 - 10240),
+};
+
+static const esp_efuse_desc_t ADC2_WEIGHT_BIT14[] = {
+    {EFUSE_BLK2, 218, 8}, 	 // [] ADC2 bit 14 weight (BIT14*10 - 5120),
+};
+
+static const esp_efuse_desc_t ADC2_WEIGHT_BIT13[] = {
+    {EFUSE_BLK2, 226, 8}, 	 // [] ADC2 bit 13 weight (BIT13*10 - 2560),
+};
+
+static const esp_efuse_desc_t ADC2_WEIGHT_BIT12[] = {
+    {EFUSE_BLK2, 234, 8}, 	 // [] ADC2 bit 12 weight (BIT12*10 - 2560),
+};
+
+static const esp_efuse_desc_t ADC2_WEIGHT_BIT11[] = {
+    {EFUSE_BLK2, 242, 6}, 	 // [] ADC2 bit 11 weight (BIT11*10 - 1280),
+};
+
+static const esp_efuse_desc_t ADC2_WEIGHT_BIT10[] = {
+    {EFUSE_BLK2, 248, 5}, 	 // [] ADC2 bit 10 weight (BIT10*10 - 640),
+};
+
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK3, 0, 256}, 	 // [BLOCK_USR_DATA] User data,
 };
@@ -1447,6 +1559,76 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V8_DREF[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V8_MUL[] = {
     &WR_DIS_SPI_LDO_1V8_MUL[0],    		// [] wr_dis of SPI_LDO_1V8_MUL
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT16[] = {
+    &WR_DIS_ADC1_WEIGHT_BIT16[0],    		// [] wr_dis of ADC1_WEIGHT_BIT16
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT15[] = {
+    &WR_DIS_ADC1_WEIGHT_BIT15[0],    		// [] wr_dis of ADC1_WEIGHT_BIT15
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT14[] = {
+    &WR_DIS_ADC1_WEIGHT_BIT14[0],    		// [] wr_dis of ADC1_WEIGHT_BIT14
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT13[] = {
+    &WR_DIS_ADC1_WEIGHT_BIT13[0],    		// [] wr_dis of ADC1_WEIGHT_BIT13
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT12[] = {
+    &WR_DIS_ADC1_WEIGHT_BIT12[0],    		// [] wr_dis of ADC1_WEIGHT_BIT12
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT11[] = {
+    &WR_DIS_ADC1_WEIGHT_BIT11[0],    		// [] wr_dis of ADC1_WEIGHT_BIT11
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT10[] = {
+    &WR_DIS_ADC1_WEIGHT_BIT10[0],    		// [] wr_dis of ADC1_WEIGHT_BIT10
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT16[] = {
+    &WR_DIS_ADC2_WEIGHT_BIT16[0],    		// [] wr_dis of ADC2_WEIGHT_BIT16
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT15[] = {
+    &WR_DIS_ADC2_WEIGHT_BIT15[0],    		// [] wr_dis of ADC2_WEIGHT_BIT15
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT14[] = {
+    &WR_DIS_ADC2_WEIGHT_BIT14[0],    		// [] wr_dis of ADC2_WEIGHT_BIT14
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT13[] = {
+    &WR_DIS_ADC2_WEIGHT_BIT13[0],    		// [] wr_dis of ADC2_WEIGHT_BIT13
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT12[] = {
+    &WR_DIS_ADC2_WEIGHT_BIT12[0],    		// [] wr_dis of ADC2_WEIGHT_BIT12
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT11[] = {
+    &WR_DIS_ADC2_WEIGHT_BIT11[0],    		// [] wr_dis of ADC2_WEIGHT_BIT11
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT10[] = {
+    &WR_DIS_ADC2_WEIGHT_BIT10[0],    		// [] wr_dis of ADC2_WEIGHT_BIT10
     NULL
 };
 
@@ -2133,6 +2315,76 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V8_DREF[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V8_MUL[] = {
     &SPI_LDO_1V8_MUL[0],    		// [] SPI LDO 1.8 V multiplier
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT16[] = {
+    &ADC1_WEIGHT_BIT16[0],    		// [] ADC1 bit 16 weight (BIT16*10 - 20480)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT15[] = {
+    &ADC1_WEIGHT_BIT15[0],    		// [] ADC1 bit 15 weight (BIT15*10 - 10240)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT14[] = {
+    &ADC1_WEIGHT_BIT14[0],    		// [] ADC1 bit 14 weight (BIT14*10 - 5120)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT13[] = {
+    &ADC1_WEIGHT_BIT13[0],    		// [] ADC1 bit 13 weight (BIT13*10 - 2560)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT12[] = {
+    &ADC1_WEIGHT_BIT12[0],    		// [] ADC1 bit 12 weight (BIT12*10 - 2560)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT11[] = {
+    &ADC1_WEIGHT_BIT11[0],    		// [] ADC1 bit 11 weight (BIT11*10 - 1280)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT10[] = {
+    &ADC1_WEIGHT_BIT10[0],    		// [] ADC1 bit 10 weight (BIT10*10 - 640)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT16[] = {
+    &ADC2_WEIGHT_BIT16[0],    		// [] ADC2 bit 16 weight (BIT16*10 - 20480)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT15[] = {
+    &ADC2_WEIGHT_BIT15[0],    		// [] ADC2 bit 15 weight (BIT15*10 - 10240)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT14[] = {
+    &ADC2_WEIGHT_BIT14[0],    		// [] ADC2 bit 14 weight (BIT14*10 - 5120)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT13[] = {
+    &ADC2_WEIGHT_BIT13[0],    		// [] ADC2 bit 13 weight (BIT13*10 - 2560)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT12[] = {
+    &ADC2_WEIGHT_BIT12[0],    		// [] ADC2 bit 12 weight (BIT12*10 - 2560)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT11[] = {
+    &ADC2_WEIGHT_BIT11[0],    		// [] ADC2 bit 11 weight (BIT11*10 - 1280)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT10[] = {
+    &ADC2_WEIGHT_BIT10[0],    		// [] ADC2 bit 10 weight (BIT10*10 - 640)
     NULL
 };
 
