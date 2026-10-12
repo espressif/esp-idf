@@ -89,7 +89,7 @@ def fixture_create_socket_can() -> Bus:
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='no runner')  # TODO: IDFCI-11110, IDF-16188
 def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     try:
         dut.expect_exact('Press ENTER to see the list of tests')
@@ -113,7 +113,7 @@ def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='no runner')  # TODO: IDFCI-11110, IDF-16188
 def test_driver_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     try:
         dut.expect_exact('Press ENTER to see the list of tests')

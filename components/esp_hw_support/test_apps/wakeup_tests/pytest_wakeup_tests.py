@@ -19,6 +19,7 @@ available_gpio_nums = {
     'esp32c3': [0, 1, 2, 3, 4, 5, 6, 7, 10, 18, 19],
     'esp32c6': [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23],
     'esp32h2': [0, 1, 2, 3, 4, 5, 10, 11, 12, 22, 25, 26, 27],
+    'esp32h21': [0, 1, 2, 3, 4, 5, 10, 11, 12, 22, 25],
     'esp32p4': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
     + [18, 19, 20, 21, 22, 23, 39, 40, 41, 42, 43, 45, 46, 47, 48]
     + [28, 29, 30, 31, 32, 33, 36, 49, 50, 51, 52, 53, 54],
@@ -40,6 +41,7 @@ available_rtcio_nums = {
     'esp32c3': [0, 1, 2, 3, 4, 5],
     'esp32c6': [0, 1, 2, 3, 4, 5, 6, 7],
     'esp32h2': [7, 8, 9, 10, 11, 12, 13, 14],
+    'esp32h21': [5, 6, 7, 8, 9, 10, 11],
     'esp32p4': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     'esp32c5': [0, 1, 2, 3, 4, 5, 6],
     'esp32c61': [0, 1, 2, 3, 4, 5, 6],
@@ -51,6 +53,7 @@ available_rtcio_nums = {
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16199
 @idf_parametrize(
     'target',
     soc_filtered_targets('SOC_PM_SUPPORT_EXT1_WAKEUP == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1'),
@@ -164,6 +167,7 @@ def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16199
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]

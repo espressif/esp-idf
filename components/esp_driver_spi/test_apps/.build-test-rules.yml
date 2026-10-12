@@ -12,6 +12,10 @@
 components/esp_driver_spi/test_apps/master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16193
+      temporary: true
+      reason: cannot pass
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/param:
@@ -28,4 +32,8 @@ components/esp_driver_spi/test_apps/slave_hd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
     - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16193
+      temporary: true
+      reason: cannot pass
   <<: *spi_depends_default

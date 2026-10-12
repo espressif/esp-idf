@@ -11,7 +11,7 @@ CUR_DIR = Path(__file__).parent.resolve()
 
 
 # Case 1: BLE power save test
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path',
@@ -25,7 +25,7 @@ CUR_DIR = Path(__file__).parent.resolve()
 )
 @idf_parametrize(
     'target',
-    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4'],
+    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4', 'esp32h21'],
     indirect=['target'],
 )
 def test_power_save_conn(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -136,7 +136,7 @@ CTE_PERIODIC_ADV_SYNC_APP_PATH = (
     f'{str(CUR_DIR / "ble_cte" / "ble_periodic_adv_with_cte")}|'
     f'{str(CUR_DIR / "ble_cte" / "ble_periodic_sync_with_cte")}'
 )
-NIMBLE_CTE_TARGETS = ['esp32h2', 'esp32c5', 'esp32c61', 'esp32s31', 'esp32h4']
+NIMBLE_CTE_TARGETS = ['esp32h2', 'esp32c5', 'esp32c61', 'esp32s31', 'esp32h4', 'esp32h21']
 
 
 def _run_nimble_periodic_adv_sync_with_cte_func(dut: tuple[IdfDut, IdfDut]) -> None:
@@ -185,7 +185,7 @@ def _run_nimble_periodic_adv_sync_with_cte_func(dut: tuple[IdfDut, IdfDut]) -> N
 
 # Case 4: nimble periodic adv/sync with CTE test
 # EXAMPLE_CI_ID=25
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -215,6 +215,7 @@ NIMBLE_CTS_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -285,7 +286,7 @@ def _run_nimble_cts_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 5: nimble CTS peripheral/central test
 # EXAMPLE_CI_ID=26
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -337,6 +338,7 @@ NIMBLE_HTP_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -409,7 +411,7 @@ def _run_nimble_htp_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 7: nimble HTP peripheral/central test
 # EXAMPLE_CI_ID=27
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -461,6 +463,7 @@ NIMBLE_SPP_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -531,7 +534,7 @@ def _run_nimble_spp_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 9: nimble SPP server/client test
 # EXAMPLE_CI_ID=28
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -658,7 +661,7 @@ def _run_nimble_multi_conn_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 11: NimBLE multi-conn peripheral and central
 # EXAMPLE_CI_ID=29
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDFCI-11112
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -687,6 +690,7 @@ NIMBLE_PHY_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -772,7 +776,7 @@ def _run_nimble_phy_prph_cent_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 12: NimBLE PHY peripheral/central test
 # EXAMPLE_CI_ID=30
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -888,8 +892,7 @@ def _run_nimble_pawr_adv_conn_sync_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 14: NimBLE PAwR advertiser_conn / synchronizer_conn test
 # EXAMPLE_CI_ID=31
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -971,8 +974,7 @@ def _run_nimble_pawr_adv_sync_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 15: NimBLE PAwR advertiser / synchronizer test
 # EXAMPLE_CI_ID=32
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -1047,8 +1049,7 @@ def _run_nimble_proximity_sensor_prph_cent(dut: tuple[IdfDut, IdfDut]) -> None:
     assert 'disconnect' not in str(prph_output).lower()
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='ble bugs # TODO: BLEQABR25-2508')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
@@ -1069,8 +1070,7 @@ BLE_PROXIMITY_SENSOR_V4_CONFIGS = ['name_v4', 'conn_with_scan_v4']
 
 
 # Case 17: NimBLE proximity sensor peripheral / central for V4
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='ble bugs # TODO: BLEQABR25-2508')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
@@ -1190,8 +1190,7 @@ def _run_nimble_periodic_adv_sync_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 20: NimBLE periodic advertiser / synchronizer test
 # EXAMPLE_CI_ID=38
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -1243,6 +1242,7 @@ NIMBLE_BLECENT_BLEPRPH_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -1349,7 +1349,7 @@ def _run_nimble_blecent_bleprph_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 22: NimBLE bleprph / blecent test
 # EXAMPLE_CI_ID=39
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -1405,7 +1405,6 @@ NIMBLE_MULTI_ADV_TARGETS = [
 
 # Case 24: NimBLE multi-adv single-DUT smoke test
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -1582,8 +1581,7 @@ def _run_nimble_gatt_throughput_func(dut: tuple[IdfDut, IdfDut], throughput_mode
 
 
 # Case 26: NimBLE GATT throughput read/write/notify (EXAMPLE_CI_ID=40)
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='ble bugs # TODO: BLEQABR25-2509')
 @pytest.mark.two_duts
 @pytest.mark.parametrize('throughput_mode', ['read', 'write', 'notify'])
@@ -1634,6 +1632,7 @@ NIMBLE_L2CAP_COC_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -1705,7 +1704,7 @@ def _run_nimble_l2cap_coc_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 # Case 28: NimBLE L2CAP COC peripheral/central test
 # EXAMPLE_CI_ID=41
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -1860,8 +1859,7 @@ def _run_nimble_l2cap_coc_throughput_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 30: NimBLE L2CAP COC throughput (EXAMPLE_CI_ID=42)
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',

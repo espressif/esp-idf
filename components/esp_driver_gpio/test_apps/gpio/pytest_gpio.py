@@ -21,7 +21,9 @@ def test_gpio(dut: IdfDut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @idf_parametrize(
-    'target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'], indirect=['target']
+    'target',
+    ['esp32', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32p4', 'esp32c5'],
+    indirect=['target'],
 )
 def test_rtc_io(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='rtcio')

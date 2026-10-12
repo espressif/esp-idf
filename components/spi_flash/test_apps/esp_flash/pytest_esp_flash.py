@@ -30,7 +30,9 @@ def test_esp_flash(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32s3', 'esp32c3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32c5', 'esp32c61'], indirect=['target']
+    'target',
+    ['esp32s3', 'esp32c3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32h21', 'esp32c5', 'esp32c61'],
+    indirect=['target'],
 )
 def test_esp_flash_rom(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='esp_flash')

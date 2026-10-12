@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import time
@@ -17,7 +17,9 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2'], indirect=['target']
+    'target',
+    ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32h21'],
+    indirect=['target'],
 )
 def test_deep_sleep_wake_stub(config: str, dut: Dut) -> None:
     if config == 'default':
@@ -29,5 +31,5 @@ def test_deep_sleep_wake_stub(config: str, dut: Dut) -> None:
         dut.expect_exact('wake stub: going to deep sleep', timeout=15)
 
         sleep_time = time.time() - start_sleep
-        logging.info('Host measured sleep time at {:.2f}s'.format(sleep_time))
+        logging.info(f'Host measured sleep time at {sleep_time:.2f}s')
         assert 8 < sleep_time < 12  # note: high tolerance as measuring time on the host may have some timing skew

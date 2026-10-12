@@ -1,6 +1,6 @@
 components/vfs/test_apps:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32s3", "esp32p4", "esp32h4"]
+    - if: IDF_TARGET not in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32h21", "esp32s3", "esp32p4", "esp32h4"]
       temporary: true
       reason: test on selected targets is enough
 

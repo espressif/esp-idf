@@ -697,6 +697,10 @@ examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
 examples/peripherals/temperature_sensor/temp_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16197
+      temporary: true
+      reason: cannot pass
   depends_components:
     - esp_hal_ana_conv
     - esp_driver_tsens
@@ -705,6 +709,10 @@ examples/peripherals/temperature_sensor/temp_sensor:
 examples/peripherals/temperature_sensor/temp_sensor_monitor:
   disable:
     - if: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16197
+      temporary: true
+      reason: cannot pass
   depends_components:
     - esp_hal_ana_conv
     - esp_driver_tsens
@@ -780,7 +788,7 @@ examples/peripherals/twai/twai_network/twai_listen_only:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s31","esp32h4"]
+    - if: IDF_TARGET in ["esp32s31", "esp32h4", "esp32h21"] # TODO: IDFCI-11110, IDF-16188
       temporary: true
       reason: no runner
   depends_components:
@@ -792,7 +800,7 @@ examples/peripherals/twai/twai_network/twai_sender:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s31","esp32h4"]
+    - if: IDF_TARGET in ["esp32s31", "esp32h4", "esp32h21"] # TODO: IDFCI-11110, IDF-16188
       temporary: true
       reason: no runner
   depends_components:
@@ -824,7 +832,7 @@ examples/peripherals/uart/uart_dma_ota:
     - if: IDF_TARGET in ["esp32s31"]
       temporary: true
       reason: Lack runners
-    - if: IDF_TARGET in ["esp32h4"] # TODO: IDFCI-10703
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-10703, IDF-16200
       temporary: true
       reason: lack of usj runner
   depends_components:

@@ -19,6 +19,7 @@ BLE50_THROUGHPUT_TARGETS = [
     'esp32c61',
     'esp32h4',
     'esp32s31',
+    'esp32h21',
 ]
 
 
@@ -172,7 +173,7 @@ def _run_ble50_notify_throughput_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 1: ble50 gatt write throughput (EXAMPLE_CI_ID=24)
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -213,7 +214,7 @@ def test_c2_26mhz_xtal_ble50_write_throughput(app_path: str, dut: tuple[IdfDut, 
 
 
 # Case 3: ble50 gatt notify throughput (EXAMPLE_CI_ID=23)
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',

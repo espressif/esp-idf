@@ -67,6 +67,10 @@ tools/test_apps/system/eh_frame:
       reason: Only relevant for riscv targets
 
 tools/test_apps/system/esp_intr_dump:
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16194
+      temporary: true
+      reason: cannot pass
 
 tools/test_apps/system/flash_auto_suspend_iram_reduction:
   disable:
@@ -90,7 +94,7 @@ tools/test_apps/system/g1_components_cmakev2:
 
 tools/test_apps/system/gdb:
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32s31", "esp32h4"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32s31", "esp32h4", "esp32h21"]
       temporary: true
       reason: not supported yet # TODO: IDF-13142
 
@@ -166,9 +170,6 @@ tools/test_apps/system/panic/coredump:
     - if: CONFIG_NAME in ["coredump_flash_extram_stack_bss", "coredump_flash_extram_stack_heap"] and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "coredump_flash_extram_stack_bss_xip" and SOC_SPIRAM_XIP_SUPPORTED != 1
     - if: CONFIG_NAME == "coredump_flash_riscv_trace" and SOC_RISCV_TRACE_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32h21"]
-      temporary: true
-      reason: IDF-11543
   depends_components:
     - espcoredump
     - esp_riscv_trace

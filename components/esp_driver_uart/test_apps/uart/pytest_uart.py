@@ -16,6 +16,7 @@ input_argv = {
     'esp32c5': ['uart', 'lp_uart'],
     'esp32c61': ['uart'],
     'esp32h4': ['uart'],
+    'esp32h21': ['uart'],
     'esp32s31': ['uart', 'lp_uart'],
 }
 
@@ -125,6 +126,7 @@ def test_uart_single_dev_psram(case_tester) -> None:  # type: ignore
 # ESP32 only supports uart wakeup if signal routes through IOMUX
 # ESP32S3 multi device runner has no psram IDF-12837,
 @pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s3'], reason='no multi-dev runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16200
 @pytest.mark.generic_multi_device
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 @pytest.mark.parametrize(

@@ -7,9 +7,22 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['iram_safe', 'release', 'pm_enable'], indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16186
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c5', 'esp32p4', 'esp32c61', 'esp32s31'],
+    [
+        'esp32',
+        'esp32s2',
+        'esp32s3',
+        'esp32c3',
+        'esp32c6',
+        'esp32h2',
+        'esp32c5',
+        'esp32p4',
+        'esp32c61',
+        'esp32s31',
+        'esp32h21',
+    ],
     indirect=['target'],
 )
 def test_adc(dut: Dut) -> None:

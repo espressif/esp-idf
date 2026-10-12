@@ -28,7 +28,7 @@ examples/bluetooth/bluedroid/ble:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -61,7 +61,7 @@ examples/bluetooth/bluedroid/ble/ble_throughput:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -72,12 +72,28 @@ examples/bluetooth/bluedroid/ble/ble_throughput:
   depends_filepatterns:
     - examples/bluetooth/bluedroid/ble/ble_throughput/pytest_ble_throughput_test.py
 
+examples/bluetooth/bluedroid/ble/gatt_client:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_components+:
+    - esp_console
+    - esp_driver_gpio
+    - esp_driver_i2s
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble/pytest_ble_test.py
+
 examples/bluetooth/bluedroid/ble_50:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_50_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -94,7 +110,7 @@ examples/bluetooth/bluedroid/ble_50/ble50_throughput:
   disable:
     - if: SOC_BLE_50_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -105,7 +121,7 @@ examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_central:
   enable:
     - if: SOC_BLE_SUBRATE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2377
@@ -119,7 +135,7 @@ examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_peripheral:
   enable:
     - if: SOC_BLE_SUBRATE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2377
@@ -133,7 +149,7 @@ examples/bluetooth/bluedroid/ble_50/ble_connection_central_with_cte:
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -144,7 +160,7 @@ examples/bluetooth/bluedroid/ble_50/ble_connection_peripheral_with_cte:
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -155,7 +171,7 @@ examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser:
   enable:
     - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -177,7 +193,7 @@ examples/bluetooth/bluedroid/ble_50/ble_pawr_synchronizer:
   enable:
     - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -188,7 +204,7 @@ examples/bluetooth/bluedroid/ble_50/ble_periodic_adv_with_cte:
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -199,7 +215,7 @@ examples/bluetooth/bluedroid/ble_50/ble_periodic_sync_with_cte:
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -210,7 +226,7 @@ examples/bluetooth/bluedroid/ble_50/ble_power_control_central:
   enable:
     - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2374
@@ -224,7 +240,7 @@ examples/bluetooth/bluedroid/ble_50/ble_power_control_peripheral:
   enable:
     - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2374
@@ -411,7 +427,7 @@ examples/bluetooth/nimble/ble_cte/ble_periodic_adv_with_cte:
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -423,7 +439,7 @@ examples/bluetooth/nimble/ble_cte/ble_periodic_sync_with_cte:
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -435,7 +451,7 @@ examples/bluetooth/nimble/ble_cts/cts_cent:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -447,7 +463,7 @@ examples/bluetooth/nimble/ble_cts/cts_prph:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -468,7 +484,7 @@ examples/bluetooth/nimble/ble_htp/htp_cent:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -480,7 +496,7 @@ examples/bluetooth/nimble/ble_htp/htp_prph:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -492,7 +508,7 @@ examples/bluetooth/nimble/ble_l2cap_coc/coc_blecent:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -504,7 +520,7 @@ examples/bluetooth/nimble/ble_l2cap_coc/coc_bleprph:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -519,9 +535,6 @@ examples/bluetooth/nimble/ble_multi_adv:
       reason: the other targets are not tested yet
   disable_test:
     - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -542,10 +555,7 @@ examples/bluetooth/nimble/ble_multi_conn/ble_multi_conn_cent:
   enable:
     - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -557,10 +567,7 @@ examples/bluetooth/nimble/ble_multi_conn/ble_multi_conn_prph:
   enable:
     - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -577,10 +584,7 @@ examples/bluetooth/nimble/ble_pawr_adv/ble_pawr_adv:
   enable:
     - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -592,10 +596,7 @@ examples/bluetooth/nimble/ble_pawr_adv/ble_pawr_sync:
   enable:
     - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -612,10 +613,7 @@ examples/bluetooth/nimble/ble_pawr_adv_conn/ble_pawr_adv_conn:
   enable:
     - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -627,10 +625,7 @@ examples/bluetooth/nimble/ble_pawr_adv_conn/ble_pawr_sync_conn:
   enable:
     - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -642,10 +637,7 @@ examples/bluetooth/nimble/ble_periodic_adv:
   enable:
     - if: SOC_BLE_SUPPORTED == 1 and SOC_BLE_50_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -657,10 +649,7 @@ examples/bluetooth/nimble/ble_periodic_sync:
   enable:
     - if: SOC_BLE_SUPPORTED == 1 and SOC_BLE_50_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -681,7 +670,7 @@ examples/bluetooth/nimble/ble_phy/phy_cent:
   enable:
     - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -693,7 +682,7 @@ examples/bluetooth/nimble/ble_phy/phy_prph:
   enable:
     - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -711,10 +700,7 @@ examples/bluetooth/nimble/ble_proximity_sensor/proximity_sensor_cent:
     - if: IDF_TARGET != "esp32c2" and CONFIG_NAME in ["esp32c2_xtal26m", "esp32c2_xtal26m_conn_with_scan", "esp32c2_xtal26m_name_v4", "esp32c2_xtal26m_conn_with_scan_v4"]
       reason: esp32c2_xtal26m* configs are for ESP32-C2 26MHz only
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2508
@@ -735,10 +721,7 @@ examples/bluetooth/nimble/ble_proximity_sensor/proximity_sensor_prph:
     - if: IDF_TARGET != "esp32c2" and CONFIG_NAME in ["esp32c2_xtal26m", "esp32c2_xtal26m_conn_with_scan", "esp32c2_xtal26m_name_v4", "esp32c2_xtal26m_conn_with_scan_v4"]
       reason: esp32c2_xtal26m* configs are for ESP32-C2 26MHz only
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2508
@@ -753,7 +736,7 @@ examples/bluetooth/nimble/ble_spp/spp_client:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -765,7 +748,7 @@ examples/bluetooth/nimble/ble_spp/spp_server:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -777,7 +760,7 @@ examples/bluetooth/nimble/blecent:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -804,7 +787,7 @@ examples/bluetooth/nimble/bleprph:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_filepatterns:
@@ -831,12 +814,12 @@ examples/bluetooth/nimble/power_save:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: light sleep not supported yet
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
-      temporary: true
-      reason: lack of runner
   depends_components+:
     - esp_coex
     - esp_pm
@@ -859,10 +842,7 @@ examples/bluetooth/nimble/throughput_app/gatt/blecent_throughput:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2509
@@ -882,10 +862,7 @@ examples/bluetooth/nimble/throughput_app/gatt/bleprph_throughput:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2509
@@ -901,10 +878,7 @@ examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_cent:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32c2" # TODO: BLEQABR25-2507
@@ -920,10 +894,7 @@ examples/bluetooth/nimble/throughput_app/l2cap_coc/l2cap_coc_prph:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runner
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
     - if: IDF_TARGET == "esp32c2" # TODO: BLEQABR25-2507

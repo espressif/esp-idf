@@ -10,6 +10,7 @@ INST_UNIT = {
     'esp32c6': 'l1-cache-ibus',
     'esp32c61': 'l1-cache-ibus',
     'esp32h2': 'l1-cache-ibus',
+    'esp32h21': 'l1-cache-ibus',
     'esp32h4': 'l1-cache-inst-core0',
     'esp32p4': 'l1-icache-core0',
     'esp32s31': 'l1-cache-inst-core0',
@@ -19,6 +20,7 @@ DATA_UNIT = {
     'esp32c6': 'l1-cache-dbus',
     'esp32c61': 'l1-cache-dbus',
     'esp32h2': 'l1-cache-dbus',
+    'esp32h21': 'l1-cache-dbus',
     'esp32h4': 'l1-cache-data-core0',
     'esp32p4': 'l1-dcache-core0',
     'esp32s31': 'l1-cache-data-core0',
@@ -65,7 +67,7 @@ def check_phase(dut: Dut, workload: str, nonzero: dict) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('config', ['default'], indirect=['config'])
-@idf_parametrize('target', ['esp32c6', 'esp32h2'], indirect=['target'])
+@idf_parametrize('target', ['esp32c6', 'esp32h2', 'esp32h21'], indirect=['target'])
 def test_cache_counters(dut: Dut) -> None:
     # No PSRAM: only the flash workload runs. Its code is fetched from flash as
     # well, so the instruction unit counts accesses too.

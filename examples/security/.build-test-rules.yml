@@ -11,7 +11,7 @@ examples/security/flash_encryption:
     - if: CONFIG_NAME == "key_mgr"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2", "esp32c5", "esp32c61", "esp32s31"]
+    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32h21", "esp32c2", "esp32c5", "esp32c61", "esp32s31"] # TODO: IDF-16203
       temporary: true
       reason: lack of runners
   depends_components:

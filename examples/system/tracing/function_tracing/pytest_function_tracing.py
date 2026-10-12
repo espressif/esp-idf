@@ -147,6 +147,7 @@ def test_function_tracing_jtag(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDu
 
 
 @pytest.mark.usb_serial_jtag
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16198
 @idf_parametrize('config', ['jtag'], indirect=['config'])
 @idf_parametrize(
     'target',

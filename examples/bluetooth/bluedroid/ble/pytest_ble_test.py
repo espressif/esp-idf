@@ -17,7 +17,7 @@ GATT_APP_PATH = f'{str(CUR_DIR / "gatt_server")}|{str(CUR_DIR / "gatt_client")}'
 GATT_CI_CONFIGS = ['name', 'smp_off|smp_off', 'min_bin|min_bin', 'log_off|log_off']
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -26,7 +26,7 @@ GATT_CI_CONFIGS = ['name', 'smp_off|smp_off', 'min_bin|min_bin', 'log_off|log_of
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_gatt_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -115,7 +115,7 @@ GATT_SECURITY_APP_PATH = f'{str(CUR_DIR / "gatt_security_server")}|{str(CUR_DIR 
 GATT_SECURITY_CI_CONFIGS = ['name', 'min_bin|min_bin', 'log_off|log_off']
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -124,7 +124,7 @@ GATT_SECURITY_CI_CONFIGS = ['name', 'min_bin|min_bin', 'log_off|log_off']
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_gatt_security_func(app_path: str, dut: tuple[IdfDut, IdfDut], target: tuple) -> None:
@@ -240,7 +240,7 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: tuple[IdfDut, IdfD
 
 
 # Case 5: ble ibeacon test
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -256,7 +256,7 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: tuple[IdfDut, IdfD
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_ble_ibeacon_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -320,7 +320,7 @@ def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: tuple[IdfDut, IdfDut]) ->
 
 # Case 7: gatt client and gatt server config test
 # EXAMPLE_CI_ID=4
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -336,7 +336,7 @@ def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: tuple[IdfDut, IdfDut]) ->
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_gatt_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -425,7 +425,7 @@ def test_c2_26mhz_xtal_gatt_config_func(app_path: str, dut: tuple[IdfDut, IdfDut
 @pytest.mark.parametrize('config, app_path', [('init_deinit', f'{str(CUR_DIR / "gatt_client")}')], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4', 'esp32s31'],
+    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4', 'esp32h21', 'esp32s31'],
     indirect=['target'],
 )
 def test_bluedroid_host_init_deinit(dut: Dut) -> None:
@@ -490,7 +490,7 @@ def _run_ble_spp_func(dut: tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 10: ble spp client and ble spp server test
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -506,7 +506,7 @@ def _run_ble_spp_func(dut: tuple[IdfDut, IdfDut]) -> None:
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32c5', 'esp32s31', 'esp32h4'],
+    ['esp32', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32c5', 'esp32s31', 'esp32h4', 'esp32h21'],
     indirect=['target'],
 )
 def test_ble_spp_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:

@@ -6,7 +6,17 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize('config', ['release', 'iram_safe'], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        pytest.param(
+            'release',
+            marks=pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass'),  # TODO: IDF-16193
+        ),
+        'iram_safe',
+    ],
+    indirect=True,
+)
 @idf_parametrize(
     'target',
     soc_filtered_targets('SOC_GPSPI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'),
@@ -51,6 +61,7 @@ def test_spi_slave_flash_encryption(case_tester) -> None:  # type: ignore
 
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count, config', [(2, 'release'), (2, 'iram_safe')], indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16193
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_slave_multi_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_multi_dev_cases(reset=True, timeout=30)

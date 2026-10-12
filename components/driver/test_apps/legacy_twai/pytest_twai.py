@@ -28,7 +28,9 @@ print(f'CAN_PORT={can_env}')
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
+    'target',
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4', 'esp32h21'],
+    indirect=['target'],
 )
 def test_legacy_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
@@ -94,8 +96,11 @@ def fixture_create_socket_can() -> Bus:
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
+    'target',
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4', 'esp32h21'],
+    indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16188
 def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     try:
         esp_reset_and_wait_ready(dut)
@@ -126,8 +131,11 @@ def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
+    'target',
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4', 'esp32h21'],
+    indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runner')  # TODO: IDF-16188
 def test_legacy_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     try:
         esp_reset_and_wait_ready(dut)
