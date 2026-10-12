@@ -63,7 +63,8 @@ FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
  */
 FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(uint32_t intr_num)
 {
-    REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
+    REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, BIT(intr_num));
+    REG_CLR_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, BIT(intr_num));
 }
 
 /**
