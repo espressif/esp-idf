@@ -659,7 +659,7 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
 
     for (uint8_t i = 0; i < 2; i++) {
         uint32_t max_alignment = unit->int_mem_align > unit->ext_mem_align ? unit->int_mem_align : unit->ext_mem_align;
-        unit->stash_buf[i] = heap_caps_aligned_calloc(max_alignment, 2, max_alignment, PARLIO_MEM_ALLOC_CAPS | MALLOC_CAP_DMA);
+        unit->stash_buf[i] = heap_caps_aligned_calloc(max_alignment, 2, max_alignment, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         ESP_GOTO_ON_FALSE(unit->stash_buf[i], ESP_ERR_NO_MEM, err, TAG, "no memory for stash buffer");
     }
 

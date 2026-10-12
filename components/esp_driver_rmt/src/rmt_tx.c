@@ -61,7 +61,7 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
     int_alignment = MAX(int_alignment, sizeof(rmt_symbol_word_t));
     // the memory returned by `heap_caps_aligned_calloc` also meets the cache alignment requirement (both address and size)
     rmt_symbol_word_t *dma_mem_base = heap_caps_aligned_calloc(int_alignment, sizeof(rmt_symbol_word_t), config->mem_block_symbols,
-                                                               RMT_MEM_ALLOC_CAPS | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+                                                               MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(dma_mem_base, ESP_ERR_NO_MEM, TAG, "no mem for tx DMA buffer");
     tx_channel->dma_mem_base = dma_mem_base;
     uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);

@@ -132,9 +132,9 @@ esp_err_t jpeg_new_encoder_engine(const jpeg_encode_engine_cfg_t *enc_eng_cfg, j
     uint32_t alignment = cache_line_size;
     size_t dma_desc_mem_size = ESP_ALIGN_UP(sizeof(dma2d_descriptor_t), cache_line_size);
 
-    encoder_engine->rxlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
+    encoder_engine->rxlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, JPEG_DMA_DESC_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(encoder_engine->rxlink, ESP_ERR_NO_MEM, err, TAG, "no memory for jpeg encoder rxlink");
-    encoder_engine->txlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
+    encoder_engine->txlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, JPEG_DMA_DESC_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(encoder_engine->txlink, ESP_ERR_NO_MEM, err, TAG, "no memory for jpeg encoder txlink");
     encoder_engine->dma_desc_size = dma_desc_mem_size;
 
