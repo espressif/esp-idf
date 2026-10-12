@@ -108,7 +108,9 @@ FORCE_INLINE_ATTR void rv_utils_tee_intr_edge_ack(int intr_num)
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
 
     REG_SET_BIT(PLIC_MXINT_CLEAR_REG, BIT(intr_num));
+    REG_CLR_BIT(PLIC_MXINT_CLEAR_REG, BIT(intr_num));
     REG_SET_BIT(PLIC_UXINT_CLEAR_REG, BIT(intr_num));
+    REG_CLR_BIT(PLIC_UXINT_CLEAR_REG, BIT(intr_num));
 }
 
 #ifdef __cplusplus
