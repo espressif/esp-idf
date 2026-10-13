@@ -6,26 +6,26 @@ from pathlib import Path
 from pathlib import WindowsPath
 
 
-def append_to_file(filename: t.Union[str, Path], what: str) -> None:
+def append_to_file(filename: str | Path, what: str) -> None:
     with open(filename, 'a', encoding='utf-8') as f:
         f.write(what)
 
 
-def replace_in_file(filename: t.Union[str, Path], search: str, replace: str) -> None:
-    with open(filename, 'r', encoding='utf-8') as f:
+def replace_in_file(filename: str | Path, search: str, replace: str) -> None:
+    with open(filename, encoding='utf-8') as f:
         data = f.read()
     result = data.replace(search, replace)
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(result)
 
 
-def file_contains(filename: t.Union[str, Path], what: t.Union[t.Union[str, Path], t.Pattern]) -> bool:
+def file_contains(filename: str | Path, what: str | Path | t.Pattern) -> bool:
     """
     Returns true if file contains required object
     :param filename: path to file where lookup is executed
     :param what: searched substring or regex object
     """
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, encoding='utf-8') as f:
         data = f.read()
         if isinstance(what, t.Pattern):
             return re.search(what, data) is not None
@@ -39,7 +39,7 @@ def file_contains(filename: t.Union[str, Path], what: t.Union[t.Union[str, Path]
             return what_str in data
 
 
-def bin_file_contains(filename: t.Union[str, Path], what: bytearray) -> bool:
+def bin_file_contains(filename: str | Path, what: bytearray) -> bool:
     """
     Returns true if the binary file contains the given string
     :param filename: path to file where lookup is executed
@@ -50,7 +50,7 @@ def bin_file_contains(filename: t.Union[str, Path], what: bytearray) -> bool:
         return data.find(what) != -1
 
 
-def bin_files_differ(filename1: t.Union[str, Path], filename2: t.Union[str, Path]) -> bool:
+def bin_files_differ(filename1: str | Path, filename2: str | Path) -> bool:
     """
     Checks if two binary files are different
     :param filename1: path to first file

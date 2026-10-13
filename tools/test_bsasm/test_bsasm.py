@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
@@ -12,8 +11,6 @@ import subprocess
 import tempfile
 import unittest
 from typing import Any
-from typing import List
-from typing import Tuple
 from typing import TypedDict
 
 
@@ -28,7 +25,7 @@ class DecompInstOp(TypedDict, total=False):
 
 
 class DecompInst(TypedDict, total=False):
-    mux_val: List[int]
+    mux_val: list[int]
     opcode: DecompInstOp
     read_in: int
     wr_out: int
@@ -48,8 +45,8 @@ class UnpackedBinary(TypedDict, total=False):
     trailing_bits: int
     eof_on: int
     padding: int
-    inst: List[DecompInst]
-    lut: List[int]
+    inst: list[DecompInst]
+    lut: list[int]
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -57,11 +54,11 @@ bsasm_path = os.path.join(current_dir, '..', 'bsasm.py')
 
 
 class TestAssembler(unittest.TestCase):
-    def bit_from_inst(self, data: Tuple[int, int], off: int) -> int:
+    def bit_from_inst(self, data: tuple[int, int], off: int) -> int:
         return data[off // 8] & (1 << (off & 0x7))
 
     # returns a field from a list of bytes. Starts at bit off, field is of size length.
-    def bits_from_inst(self, data: Tuple[int, int], off: int, length: int) -> int:
+    def bits_from_inst(self, data: tuple[int, int], off: int, length: int) -> int:
         ret = 0
         for i in range(0, length):
             if self.bit_from_inst(data, off + i) != 0:
@@ -69,7 +66,7 @@ class TestAssembler(unittest.TestCase):
         return ret
 
     # returns a decomposed instruction
-    def decode_inst(self, data: Tuple[int, int]) -> DecompInst:
+    def decode_inst(self, data: tuple[int, int]) -> DecompInst:
         ret: DecompInst = {}
         mux_val = []
         for i in range(0, 32):
@@ -140,18 +137,16 @@ class TestAssembler(unittest.TestCase):
                 inst.append(self.decode_inst(struct.unpack_from('B' * 36, data, off)))
                 off += 36
             unpacked['inst'] = inst
-            unpacked['lut'] = list(
-                struct.unpack_from('<' + 'L' * unpacked['lut_size_words'], data, off)
-            )
+            unpacked['lut'] = list(struct.unpack_from('<' + 'L' * unpacked['lut_size_words'], data, off))
             return unpacked
 
     def compare(self, out: Any, js: Any, base: str) -> None:
         self.assertEqual(type(out), type(js), ' Diverging types between json and decoded obj: ' + base)
-        if type(js) == dict:
+        if type(js) is dict:
             for k in js:
                 self.assertTrue(k in out, ' Key not found in decoded output: ' + base + '.' + k)
                 self.compare(out[k], js[k], base + '.' + k)
-        elif type(js) == list:
+        elif type(js) is list:
             for k in range(0, len(js)):
                 self.compare(out[k], js[k], f'{base}[{k}]')
         else:
@@ -188,7 +183,7 @@ class TestAssembler(unittest.TestCase):
             if not should_fail:
                 self.assertEqual(p.returncode, 0)
             else:
-                print('Note: THE TEST EXPECTED BSASM TO ERROR OUT. If there\'s error text above, that is expected.')
+                print("Note: THE TEST EXPECTED BSASM TO ERROR OUT. If there's error text above, that is expected.")
                 self.assertNotEqual(p.returncode, 0)
 
             if not should_fail:
@@ -197,7 +192,8 @@ class TestAssembler(unittest.TestCase):
                 try:
                     with open(jsfn) as out_desc_f:
                         out_desc = json.load(out_desc_f)
-                    # We were able to open the JSON file. See if the keys in it match up with the ones in the decoded fields.
+                    # We were able to open the JSON file. See if the keys in it match up with the ones in the decoded
+                    # fields.
                     self.compare(b, out_desc, '')
                 except FileNotFoundError:
                     print(f'File not found: {jsfn}. Printing out decoded contents instead.')

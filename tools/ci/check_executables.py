@@ -6,7 +6,7 @@
 import argparse
 import os
 import sys
-from typing import Iterable, List
+from collections.abc import Iterable
 
 try:
     from idf_ci_utils import is_executable
@@ -16,7 +16,7 @@ except ImportError:
     from idf_ci_utils import is_executable
 
 
-def _strip_each_item(iterable: Iterable) -> List:
+def _strip_each_item(iterable: Iterable) -> list:
     res = []
     for item in iterable:
         if item:
@@ -33,30 +33,34 @@ def check_executable_list() -> int:
     ret = 0
     for index, fn in enumerate(known_executables):
         if not os.path.exists(os.path.join(IDF_PATH, fn)):
-            print('{}:{} {} not exists. Please remove it manually'.format(EXECUTABLE_LIST_FN, index + 1, fn))
+            print(f'{EXECUTABLE_LIST_FN}:{index + 1} {fn} not exists. Please remove it manually')
             ret = 1
     return ret
 
 
-def check_executables(files: List) -> int:
+def check_executables(files: list) -> int:
     ret = 0
     for fn in files:
         fn_executable = is_executable(fn)
         fn_in_list = fn in known_executables
         if fn_executable and not fn_in_list:
-            print('"{}" is not in {}'.format(fn, EXECUTABLE_LIST_FN))
+            print(f'"{fn}" is not in {EXECUTABLE_LIST_FN}')
             ret = 1
         if not fn_executable and fn_in_list:
-            print('"{}" is not executable but is in {}'.format(fn, EXECUTABLE_LIST_FN))
+            print(f'"{fn}" is not executable but is in {EXECUTABLE_LIST_FN}')
             ret = 1
     return ret
 
 
 def check() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--action', choices=['executables', 'list'], required=True,
-                        help='if "executables", pass all your executables to see if it\'s in the list.'
-                             'if "list", check if all items on your list exist')
+    parser.add_argument(
+        '--action',
+        choices=['executables', 'list'],
+        required=True,
+        help='if "executables", pass all your executables to see if it\'s in the list.'
+        'if "list", check if all items on your list exist',
+    )
     parser.add_argument('filenames', nargs='*', help='Filenames to check.')
     args = parser.parse_args()
 

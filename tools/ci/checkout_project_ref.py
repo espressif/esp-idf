@@ -10,12 +10,11 @@ import json
 import os
 import re
 import subprocess
-from typing import List, Tuple
 
 IDF_GIT_DESCRIBE_PATTERN = re.compile(r'^v(\d)\.(\d)')
 
 
-def _idf_version_from_cmake() -> Tuple[int, int]:
+def _idf_version_from_cmake() -> tuple[int, int]:
     version_path = os.path.join(os.environ['IDF_PATH'], 'tools/cmake/version.cmake')
     regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
     try:
@@ -46,7 +45,7 @@ def get_customized_project_revision(proj_name: str) -> str:
     return revision
 
 
-def target_branch_candidates(proj_name: str) -> List:
+def target_branch_candidates(proj_name: str) -> list:
     """
     :return: a list of target branch candidates, from highest priority to lowest priority.
     """
@@ -64,22 +63,19 @@ def target_branch_candidates(proj_name: str) -> List:
     # branch name read from IDF
     major_revision, minor_revision = _idf_version_from_cmake()
     # release branch
-    candidates.append('release/v{}.{}'.format(major_revision, minor_revision))
+    candidates.append(f'release/v{major_revision}.{minor_revision}')
     # branch to match all major branches, like v3.x or v3
-    candidates.append('release/v{}.x'.format(major_revision))
-    candidates.append('release/v{}'.format(major_revision))
+    candidates.append(f'release/v{major_revision}.x')
+    candidates.append(f'release/v{major_revision}')
 
     return [c for c in candidates if c]  # filter out null value
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('project',
-                        help='the name of project')
-    parser.add_argument('project_relative_path',
-                        help='relative path of project to IDF repository directory')
-    parser.add_argument('--customized_only', action='store_true',
-                        help='Only to find customized revision')
+    parser.add_argument('project', help='the name of project')
+    parser.add_argument('project_relative_path', help='relative path of project to IDF repository directory')
+    parser.add_argument('--customized_only', action='store_true', help='Only to find customized revision')
 
     args = parser.parse_args()
 
@@ -96,13 +92,17 @@ if __name__ == '__main__':
     for candidate in candidate_branches:
         # check if the branch, tag or commit exists
         try:
-            subprocess.check_call(['git', 'cat-file', '-t', 'origin/{}'.format(candidate)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.check_call(
+                ['git', 'cat-file', '-t', f'origin/{candidate}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             ref_to_use = candidate
             break
         except subprocess.CalledProcessError:
             try:
                 # For customized commits
-                subprocess.check_call(['git', 'cat-file', '-t', candidate], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.check_call(
+                    ['git', 'cat-file', '-t', candidate], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 ref_to_use = candidate
                 break
             except subprocess.CalledProcessError:
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     if ref_to_use:
         try:
             subprocess.check_call(['git', 'checkout', '-f', ref_to_use], stdout=subprocess.PIPE)  # not print the stdout
-            print('CI using ref {} for project {}'.format(ref_to_use, args.project))
+            print(f'CI using ref {ref_to_use} for project {args.project}')
         except subprocess.CalledProcessError:
             pass
     else:

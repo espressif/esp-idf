@@ -24,7 +24,7 @@ class FlashBootloader(IdfSerial):
         bootloader_path = os.path.join(binary_path, 'bootloader', 'bootloader.bin')
         logging.info(bootloader_path)
         offs = int(self.app.sdkconfig.get('BOOTLOADER_OFFSET_IN_FLASH', 0))
-        logging.info('bootloader offset is {0}'.format(hex(offs)))
+        logging.info(f'bootloader offset is {hex(offs)}')
         prev_flash_files = self.app.flash_files
         flash_files = []
         flash_files.append(

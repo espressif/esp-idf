@@ -21,11 +21,11 @@ def getreq(conn, path, verbose=False):
     resp = conn.getresponse()
     data = resp.read()
     if verbose:
-        logging.info('GET : {}'.format(path))
-        logging.info('Status : {}'.format(resp.status))
-        logging.info('Reason : {}'.format(resp.reason))
-        logging.info('Data length  : {}'.format(len(data)))
-        logging.info('Data content : {}'.format(data))
+        logging.info(f'GET : {path}')
+        logging.info(f'Status : {resp.status}')
+        logging.info(f'Reason : {resp.reason}')
+        logging.info(f'Data length  : {len(data)}')
+        logging.info(f'Data content : {data}')
     return data
 
 
@@ -34,11 +34,11 @@ def postreq(conn, path, data, verbose=False):
     resp = conn.getresponse()
     data = resp.read()
     if verbose:
-        logging.info('POST : {}'.format(data))
-        logging.info('Status : {}'.format(resp.status))
-        logging.info('Reason : {}'.format(resp.reason))
-        logging.info('Data length  : {}'.format(len(data)))
-        logging.info('Data content : {}'.format(data))
+        logging.info(f'POST : {data}')
+        logging.info(f'Status : {resp.status}')
+        logging.info(f'Reason : {resp.reason}')
+        logging.info(f'Data length  : {len(data)}')
+        logging.info(f'Data content : {data}')
     return data
 
 
@@ -47,26 +47,26 @@ def putreq(conn, path, body, verbose=False):
     resp = conn.getresponse()
     data = resp.read()
     if verbose:
-        logging.info('PUT : {} {}'.format(path, body))
-        logging.info('Status : {}'.format(resp.status))
-        logging.info('Reason : {}'.format(resp.reason))
-        logging.info('Data length  : {}'.format(len(data)))
-        logging.info('Data content : {}'.format(data))
+        logging.info(f'PUT : {path} {body}')
+        logging.info(f'Status : {resp.status}')
+        logging.info(f'Reason : {resp.reason}')
+        logging.info(f'Data length  : {len(data)}')
+        logging.info(f'Data content : {data}')
     return data
 
 
 if __name__ == '__main__':
     # Configure argument parser
     parser = argparse.ArgumentParser(description='Run HTTPd Test')
-    parser.add_argument('IP',   metavar='IP',      type=str, help='Server IP')
-    parser.add_argument('port', metavar='port',    type=str, help='Server port')
-    parser.add_argument('N',    metavar='integer', type=int, help='Integer to sum upto')
+    parser.add_argument('IP', metavar='IP', type=str, help='Server IP')
+    parser.add_argument('port', metavar='port', type=str, help='Server port')
+    parser.add_argument('N', metavar='integer', type=int, help='Integer to sum upto')
     args = vars(parser.parse_args())
 
     # Get arguments
-    ip   = args['IP']
+    ip = args['IP']
     port = args['port']
-    N    = args['N']
+    N = args['N']
 
     # Establish HTTP connection
     logging.info('Connecting to => ' + ip + ':' + port)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     putreq(conn, '/adder', str(0))
 
     # Sum numbers from 1 to specified value(N)
-    logging.info('Summing numbers from 1 to {}'.format(N))
+    logging.info(f'Summing numbers from 1 to {N}')
     for i in range(1, N + 1):
         postreq(conn, '/adder', str(i))
 
