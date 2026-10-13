@@ -164,7 +164,9 @@ PRE_SCHEDULER:  90: check_cache_lock_bug in components/esp_system/startup_funcs.
 
 # Initialize the interrupt watchdog globally, then enable it on each core.
 PRE_SCHEDULER: 100: init_int_wdt in components/esp_system/int_wdt.c on BIT(0)
+PRE_SCHEDULER: 100: init_int_wdt in components/esp_system/port/soc/linux/wdt_simulator.c on BIT(0)
 PRE_SCHEDULER: 110: init_int_wdt_cpu in components/esp_system/int_wdt.c on ESP_SYSTEM_INIT_ALL_CORES
+PRE_SCHEDULER: 110: init_int_wdt_cpu in components/esp_system/port/soc/linux/wdt_simulator.c on ESP_SYSTEM_INIT_ALL_CORES
 
 # Cross-core interrupts must be available before each core starts its scheduler.
 PRE_SCHEDULER: 120: init_crosscore_interrupt in components/esp_system/crosscore_int.c on ESP_SYSTEM_INIT_ALL_CORES

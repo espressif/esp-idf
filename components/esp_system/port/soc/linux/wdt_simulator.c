@@ -29,6 +29,8 @@
 #include "esp_system.h"
 #include "esp_freertos_hooks.h"
 #include "esp_private/esp_int_wdt.h"
+#include "esp_private/esp_sys_event_app_init.h"
+#include "esp_private/freertos_linux_backtrace.h"
 
 #if CONFIG_ESP_INT_WDT
 static pthread_mutex_t s_int_wdt_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -90,4 +92,20 @@ void esp_int_wdt_init(void)
 void esp_int_wdt_cpu_init(void)
 {
     /* Per-CPU enable is a no-op on the single-core Linux simulator. */
+}
+
+ESP_PRE_SCHEDULER_HANDLER_REGISTER(init_int_wdt, 100)
+{
+    (void)user_arg;
+    (void)ctx;
+    esp_int_wdt_init();
+    return ESP_OK;
+}
+
+ESP_PRE_SCHEDULER_HANDLER_REGISTER_PER_CPU(init_int_wdt_cpu, 110)
+{
+    (void)user_arg;
+    (void)ctx;
+    esp_int_wdt_cpu_init();
+    return ESP_OK;
 }

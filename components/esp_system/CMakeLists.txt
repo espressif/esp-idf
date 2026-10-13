@@ -23,6 +23,19 @@ if(${target} STREQUAL "linux")
                         INCLUDE_DIRS "include"
                         PRIV_REQUIRES ${linux_priv_requires})
 
+    if(CONFIG_ESP_INT_WDT)
+        # Force-link wdt_simulator.o so its PRE_SCHEDULER registration is pulled
+        # in from the component archive (mirrors the non-Linux branch).
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_int_wdt_init")
+    endif()
+
+    if(CONFIG_ESP_TASK_WDT_INIT)
+        # Force-link task_wdt.o so its PRE_APP_MAIN registration (init_task_wdt)
+        # is pulled in from the component archive. This also transitively links
+        # the esp_timer backend that the task WDT relies on.
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_task_wdt_init")
+    endif()
+
     # Add custom ld file (used to place system init functions).
     # Mach-O (Apple) does not support linker scripts; section bounds are resolved
     # at runtime via getsectiondata() so no -T flag is needed there.
