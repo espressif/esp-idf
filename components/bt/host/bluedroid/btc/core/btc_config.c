@@ -204,6 +204,20 @@ bool btc_config_set_str(const char *section, const char *key, const char *value)
     return true;
 }
 
+static inline int hex_digit_value(char c)
+{
+    if ((c >= '0') && (c <= '9')) {
+        return c - '0';
+    }
+    if ((c >= 'a') && (c <= 'f')) {
+        return c - 'a' + 10;
+    }
+    if ((c >= 'A') && (c <= 'F')) {
+        return c - 'A' + 10;
+    }
+    return -1;
+}
+
 bool btc_config_get_bin(const char *section, const char *key, uint8_t *value, size_t *length)
 {
     assert(config != NULL);
@@ -229,9 +243,7 @@ bool btc_config_get_bin(const char *section, const char *key, uint8_t *value, si
         }
 
     for (*length = 0; *value_str; value_str += 2, *length += 1) {
-        unsigned int val;
-        sscanf(value_str, "%02x", &val);
-        value[*length] = (uint8_t)(val);
+        value[*length] = (uint8_t)((hex_digit_value(value_str[0]) << 4) | hex_digit_value(value_str[1]));
     }
 
     return true;
