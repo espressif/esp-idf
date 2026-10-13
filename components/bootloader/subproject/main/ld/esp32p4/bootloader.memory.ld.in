@@ -52,6 +52,7 @@ MEMORY
  * 1. Check what the new value of bootloader_iram_loader_seg start is.
  * 2. Update the value in this assert.
  * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32p4/memory.ld.in to the same value.
+ * 4. Update SRAM_MAIN_END in components/esp_system/ld/esp32p4/ld.hp_mem_defs to the same value.
  */
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define BOOTLOADER_IRAM_LOADER_SEG_START_EXPECTED 0x4FFADFC0
