@@ -440,8 +440,12 @@ int esp_http_client_get_post_field(esp_http_client_handle_t client, char **data)
  * @param[in]  key     The header key
  * @param[in]  value   The header value
  *
+ * @note       A key or value that contains CR or LF is refused, because it would end
+ *             the header line early and let the rest be read as another header.
+ *
  * @return
  *  - ESP_OK
+ *  - ESP_ERR_INVALID_ARG: client or key is NULL, or the key or value contains CR or LF
  *  - ESP_FAIL
  */
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value);

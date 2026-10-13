@@ -439,9 +439,23 @@ static int http_on_chunk_header(http_parser *parser)
     return 0;
 }
 
+/* A CR or LF in a header key or value ends the header line early, so the rest
+ * is read as a header of the sender's choosing, or by an intermediary as a
+ * second request. Both halves can carry data the firmware did not author: a
+ * value from provisioning or a cloud response, and on the Digest path a realm
+ * and nonce chosen by the server. So they are checked, not trusted. */
+static bool http_field_is_single_line(const char *field)
+{
+    return field == NULL || strpbrk(field, "\r\n") == NULL;
+}
+
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value)
 {
     if (client == NULL || client->request == NULL || client->request->headers == NULL || key == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!http_field_is_single_line(key) || !http_field_is_single_line(value)) {
+        ESP_LOGE(TAG, "Header key or value contains CR or LF, refusing to set it");
         return ESP_ERR_INVALID_ARG;
     }
 
