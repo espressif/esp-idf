@@ -629,6 +629,15 @@ esp_err_t esp_http_client_set_event_handler(esp_http_client_handle_t client, htt
 static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     esp_err_t ret = ESP_OK;
+    /* path and query go into the request line verbatim and host into the Host
+     * header, so a CR or LF in any of them would split that line. A URL is
+     * already checked by the URL parser; these fields are not. Checked before
+     * any field is copied. */
+    if (!http_field_is_single_line(config->host) || !http_field_is_single_line(config->path) ||
+            !http_field_is_single_line(config->query)) {
+        ESP_LOGE(TAG, "host, path or query contains CR or LF");
+        return ESP_ERR_INVALID_ARG;
+    }
     client->connection_info.method = config->method;
     client->connection_info.port = config->port;
     client->connection_info.auth_type = config->auth_type;
