@@ -67,7 +67,8 @@ NOINLINE_ATTR IRAM_ATTR static void esp_cpu_configure_invalid_regions(void)
     PMA_ENTRY_SET_TOR(5, SOC_IRAM_HIGH, PMA_NONE);
     PMA_ENTRY_SET_TOR(6, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
 
-    // 5. I_Cache / D_Cache (flash)
+    // 5. I_Cache / D_Cache (flash): a valid region, but it must be configured here as well, since
+    //    the cacheable attribute can only be set through PMA.
     PMA_ENTRY_SET_TOR(7, SOC_DROM_HIGH, PMA_TOR | PMA_RX);
 
     // 6. Gap between D_Cache & LP_RAM
