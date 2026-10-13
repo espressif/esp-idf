@@ -81,6 +81,7 @@ void test_drom_reg_execute_violation(void);
 void test_non_cache_irom_reg_write_violation(void);
 void test_non_cache_drom_reg_write_violation(void);
 void test_non_cache_drom_reg_execute_violation(void);
+void test_non_cache_irom_reg_execute_violation(void);
 
 void test_non_cache_spiram_xip_irom_alignment_reg_execute_violation(void);
 void test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(void);
