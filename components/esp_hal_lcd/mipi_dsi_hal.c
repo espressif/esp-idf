@@ -273,12 +273,13 @@ bool mipi_dsi_hal_host_dpi_set_horizontal_timing(mipi_dsi_hal_context_t *hal, ui
                  compensated_hfp, compensated_htotal);
     }
 
-    float dpi2lane_clk_ratio = hal->lane_bit_rate_mbps / hal->expect_dpi_clock_freq_mhz / 8.0f;
+    // Scale host periods with the real pixel clock and the same compensated line length as the bridge.
+    float dpi2lane_clk_ratio = hal->lane_bit_rate_mbps / hal->real_dpi_clock_freq_mhz / 8.0f;
     uint32_t host_hsw = (uint32_t)roundf(hsw * dpi2lane_clk_ratio);
     uint32_t host_hbp = (uint32_t)roundf(hbp * dpi2lane_clk_ratio);
     uint32_t host_act = (uint32_t)roundf(active_width * dpi2lane_clk_ratio);
-    uint32_t host_hfp = (uint32_t)roundf(hfp * dpi2lane_clk_ratio);
-    uint32_t host_htotal = (uint32_t)roundf(htotal * dpi2lane_clk_ratio);
+    uint32_t host_hfp = (uint32_t)roundf(compensated_hfp * dpi2lane_clk_ratio);
+    uint32_t host_htotal = (uint32_t)roundf(compensated_htotal * dpi2lane_clk_ratio);
     int host_compensation = (int)host_htotal - (int)(host_hsw + host_hbp + host_act + host_hfp);
     mipi_dsi_host_ll_dpi_set_horizontal_timing(hal->host, host_hsw, host_hbp, host_act + host_compensation, host_hfp);
     HAL_LOGD(TAG, "host video timing: hsw=%" PRIu32 ", hbp=%" PRIu32 ", act=%" PRIu32 ", hfp=%" PRIu32,
