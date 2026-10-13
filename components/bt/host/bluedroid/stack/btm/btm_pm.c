@@ -304,6 +304,34 @@ tBTM_STATUS BTM_ReadPowerMode (BD_ADDR remote_bda, tBTM_PM_MODE *p_mode)
     return BTM_SUCCESS;
 }
 
+#if (BTM_SSR_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         btm_pm_snd_ssr_disable
+**
+** Description      Sniff, with STORED masked off: Maximum_Latency = current
+**                  interval (subrate 1 for that interval only). Any other mode
+**                  uses 2, which stays below a later sniff interval. Zero is
+**                  not encodable (spec range 0x0002-0xFFFE).
+**
+** Returns          TRUE if the HCI command is issued
+**
+*******************************************************************************/
+static BOOLEAN btm_pm_snd_ssr_disable(tACL_CONN *p_acl_cb)
+{
+    tBTM_PM_MCB *p_cb = p_acl_cb->p_pm_mode_db;
+    UINT8 st = p_cb->state & ~BTM_PM_STORED_MASK;
+    UINT16 lat = HCI_SSR_MAX_LAT_MIN;
+
+    if (BTM_PM_STS_SNIFF == st && p_cb->interval >= HCI_SSR_MAX_LAT_MIN) {
+        lat = (p_cb->interval > HCI_SSR_MAX_LAT_MAX) ? HCI_SSR_MAX_LAT_MAX : p_cb->interval;
+    }
+
+    return btsnd_hcic_sniff_sub_rate(p_acl_cb->hci_handle, lat,
+                                     HCI_SSR_MIN_TO_MIN, HCI_SSR_MIN_TO_MIN);
+}
+#endif  // BTM_SSR_INCLUDED
+
 /*******************************************************************************
 **
 ** Function         BTM_SetSsrParams
@@ -312,9 +340,15 @@ tBTM_STATUS BTM_ReadPowerMode (BD_ADDR remote_bda, tBTM_PM_MODE *p_mode)
 **                  connection if it is in ACTIVE mode.
 **
 ** Input Param      remote_bda - device address of desired ACL connection
-**                  max_lat    - maximum latency (in 0.625ms)(0-0xFFFE)
-**                  min_rmt_to - minimum remote timeout
-**                  min_loc_to - minimum local timeout
+**                  max_lat    - maximum latency (in 0.625ms)(0x0002-0xFFFE);
+**                               0 disables subrating.
+**                               ACTIVE, with no mode command queued on this
+**                               link: send latency 2 and clear the flag.
+**                               SNIFF: send the current interval, keep the flag.
+**                               Any other state: store until the next
+**                               ACTIVE or SNIFF.
+**                  min_rmt_to - minimum remote timeout (0x0000-0xFFFE)
+**                  min_loc_to - minimum local timeout (0x0000-0xFFFE)
 **
 **
 ** Returns          BTM_SUCCESS if the HCI command is issued successful,
@@ -338,15 +372,59 @@ tBTM_STATUS BTM_SetSsrParams (BD_ADDR remote_bda, UINT16 max_lat,
         return BTM_NO_RESOURCES;
     }
 
-    if (BTM_PM_STS_ACTIVE == p_cb->state ||
-            BTM_PM_STS_SNIFF == p_cb->state) {
-        if (btsnd_hcic_sniff_sub_rate(p_acl_cb->hci_handle, max_lat,
-                                      min_rmt_to, min_loc_to)) {
+    /* max_lat 0: overwrite controller-held SSR so a later sniff cannot keep HID params. */
+    if (max_lat == 0) {
+        /* link base state; STORED mask only means a PM mode request is queued */
+        UINT8 st = p_cb->state & ~BTM_PM_STORED_MASK;
+
+        p_cb->max_lat = 0;
+        p_cb->min_rmt_to = 0;
+        p_cb->min_loc_to = 0;
+        p_cb->ssr_disable_pending = TRUE;
+
+        if (BTM_PM_STS_SNIFF == st ||
+                (BTM_PM_STS_ACTIVE == st &&
+                 btm_cb.pm_pend_link_hdl != p_acl_cb->hci_handle)) {
+            if (btm_pm_snd_ssr_disable(p_acl_cb)) {
+                if (BTM_PM_STS_ACTIVE == st) {
+                    p_cb->ssr_disable_pending = FALSE;
+                }
+                return BTM_SUCCESS;
+            }
+            /* keep pending and retry on the next mode change */
+            return BTM_NO_RESOURCES;
+        }
+
+        /* Includes sniff already queued on this link: latency 2 would be
+         * rejected once that sniff starts. Replay from the mode change. */
+        BTM_TRACE_DEBUG("%s: SSR disable stored, state 0x%x", __func__, p_cb->state);
+        return BTM_CMD_STORED;
+    }
+
+    if (max_lat < HCI_SSR_MAX_LAT_MIN) {
+        max_lat = HCI_SSR_MAX_LAT_MIN;
+    } else if (max_lat > HCI_SSR_MAX_LAT_MAX) {
+        max_lat = HCI_SSR_MAX_LAT_MAX;
+    }
+    if (min_rmt_to > HCI_SSR_MIN_TO_MAX) {
+        min_rmt_to = HCI_SSR_MIN_TO_MAX;
+    }
+    if (min_loc_to > HCI_SSR_MIN_TO_MAX) {
+        min_loc_to = HCI_SSR_MIN_TO_MAX;
+    }
+
+    /* last request wins */
+    p_cb->ssr_disable_pending = FALSE;
+
+    if (BTM_PM_STS_ACTIVE == (p_cb->state & ~BTM_PM_STORED_MASK) ||
+            BTM_PM_STS_SNIFF == (p_cb->state & ~BTM_PM_STORED_MASK)) {
+        if (btsnd_hcic_sniff_sub_rate(p_acl_cb->hci_handle, max_lat, min_rmt_to, min_loc_to)) {
             return BTM_SUCCESS;
         } else {
             return BTM_NO_RESOURCES;
         }
     }
+
     p_cb->max_lat       = max_lat;
     p_cb->min_rmt_to    = min_rmt_to;
     p_cb->min_loc_to    = min_loc_to;
@@ -816,6 +894,19 @@ void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode, U
             l2c_link_check_send_pkts(p_lcb, NULL, NULL);
         }
     }
+
+#if (BTM_SSR_INCLUDED == TRUE)
+    /* ACTIVE: latency 2 sticks for every later interval, so drop the flag.
+     * SNIFF: this interval only; send again on the next entry. */
+    if (p_cb->ssr_disable_pending &&
+            (p_cb->state == BTM_PM_ST_ACTIVE || p_cb->state == BTM_PM_ST_SNIFF) &&
+            btm_pm_snd_ssr_disable(p)) {
+        BTM_TRACE_DEBUG("%s: replayed SSR disable", __func__);
+        if (p_cb->state == BTM_PM_ST_ACTIVE) {
+            p_cb->ssr_disable_pending = FALSE;
+        }
+    }
+#endif  // BTM_SSR_INCLUDED
 
     /* notify registered parties */
     for (i = 0; i <= BTM_MAX_PM_RECORDS; i++) {
