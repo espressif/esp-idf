@@ -1588,7 +1588,10 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         }
         res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
-        HTTP_PARSER_RETURN_ON_ERROR(TAG, client->parser, ESP_FAIL);
+        if (HTTP_PARSER_ERRNO(client->parser) != HPE_OK) {
+            ESP_LOGE(TAG, "HTTP parser error: %s", http_errno_description(HTTP_PARSER_ERRNO(client->parser)));
+            goto parse_error;
+        }
         ridx += res_buffer->raw_len;
         need_read -= res_buffer->raw_len;
 
@@ -1597,6 +1600,14 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
     }
 
     return ridx;
+
+parse_error:
+    /* output_ptr points into the caller's buffer, which is only valid for this
+     * call, and raw_len counts the bytes copied into it. Drop both so a reused
+     * handle neither writes to that buffer nor reads from a NULL raw_data. */
+    res_buffer->output_ptr = NULL;
+    res_buffer->raw_len = 0;
+    return ESP_FAIL;
 }
 
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
