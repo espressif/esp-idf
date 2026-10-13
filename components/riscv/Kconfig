@@ -1,0 +1,5 @@
+config RISCV_USER_MODE_TRAPS
+    bool
+    help
+        Builds the trap entry and return paths for code that runs in RISC-V user mode (U-mode), and
+        the call context they use. Selected by the component that runs U-mode code.

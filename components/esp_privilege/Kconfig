@@ -13,6 +13,7 @@ menu "Privilege Execution"
 
         config ESP_PRIVILEGE_MODE_USER_CODE
             bool "ESP-IDF in M-mode, runs U-mode code"
+            select RISCV_USER_MODE_TRAPS
             depends on SOC_RISCV_SV32_SUPPORTED && SOC_INT_CLIC_SUPPORTED
             depends on !SECURE_ENABLE_TEE && !ESP_SYSTEM_MEMPROT
             help
