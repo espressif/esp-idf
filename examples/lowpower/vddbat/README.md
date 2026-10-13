@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-H4 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-H21 | ESP32-H4 |
+| ----------------- | --------- | -------- |
 
 # VDDBAT Under-voltage Protection Example
 
@@ -14,12 +14,12 @@ Deep sleep is the application's choice; the driver only reports the under-voltag
 
 ### Hardware Required
 
-An ESP32-H4 board powered from a single lithium cell on VDDBAT.
+An ESP32-H4 or ESP32-H21 board powered from a single lithium cell on VDDBAT.
 
 ### Configure the project
 
 ```
-idf.py set-target esp32h4
+idf.py set-target <chip_name>
 idf.py menuconfig
 ```
 

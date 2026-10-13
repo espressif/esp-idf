@@ -15,12 +15,14 @@
 #include "esp_bit_defs.h"
 #include "soc/lp_analog_peri_struct.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 #include "hal/regi2c_ctrl.h"
 #include "hal/psdet_types.h"
 #include "soc/regi2c_brownout.h"
 
 #define BROWNOUT_DETECTOR_LL_INTERRUPT_MASK   (BIT(31))
-#define BROWNOUT_DETECTOR_LL_FIB_ENABLE       (BIT(1))
+#define BROWNOUT_DETECTOR_LL_FIB_ENABLE       (BIT(25))
+#define BROWNOUT_DETECTOR_LL_THRESHOLD_VAL    (7)
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,6 +96,22 @@ static inline void brownout_ll_bod_enable(bool bod_enable)
 static inline void brownout_ll_set_intr_wait_cycles(uint8_t cycle)
 {
     LP_ANA_PERI.ana_bod_mode0_cntl.ana_bod_mode0_intr_wait = cycle;
+}
+
+/**
+ * @brief Enable analog BOD as a brownout reset source
+ *
+ * @param enable true: route analog BOD to the reset path. false: ignore it.
+ */
+static inline void brownout_ll_enable_bod_source(bool enable)
+{
+    uint32_t source_ena = HAL_FORCE_READ_U32_REG_FIELD(LP_ANA_PERI.ana_vdd_source_cntl, ana_bod_source_ena);
+    if (enable) {
+        source_ena |= BIT(0);
+    } else {
+        source_ena &= ~BIT(0);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.ana_vdd_source_cntl, ana_bod_source_ena, source_ena);
 }
 
 /**
