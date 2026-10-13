@@ -4141,9 +4141,15 @@ tBTM_STATUS BTM_ReadPowerMode (BD_ADDR remote_bda,
 **                  connection if it is in ACTIVE mode.
 **
 ** Input Param      remote_bda - device address of desired ACL connection
-**                  max_lat    - maximum latency (in 0.625ms)(0-0xFFFE)
-**                  min_rmt_to - minimum remote timeout
-**                  min_loc_to - minimum local timeout
+**                  max_lat    - maximum latency (in 0.625ms)(0x0002-0xFFFE);
+**                               0 disables subrating.
+**                               ACTIVE, with no mode command queued on this
+**                               link: send latency 2 and clear the flag.
+**                               SNIFF: send the current interval, keep the flag.
+**                               Any other state: store until the next
+**                               ACTIVE or SNIFF.
+**                  min_rmt_to - minimum remote timeout (0x0000-0xFFFE)
+**                  min_loc_to - minimum local timeout (0x0000-0xFFFE)
 **
 **
 ** Returns          BTM_SUCCESS if the HCI command is issued successful,
