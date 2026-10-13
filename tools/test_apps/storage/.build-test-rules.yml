@@ -39,12 +39,11 @@ tools/test_apps/storage/sdmmc_console:
     - esp_driver_sdspi
 
 tools/test_apps/storage/std_filesystem:
+  # Clang has C++ exception issues on Xtensa and getrandom linking issues on RISC-V.
+  supported_toolchains: [gcc]
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3"]
       reason: one Xtensa and one RISC-V chip should be enough
-  disable:
-    - if: IDF_TOOLCHAIN == "clang"
-      reason: Issue with C++ exceptions on Xtensa, issue with getrandom linking on RISC-V
   depends_components:
     - *common_components
     - vfs

@@ -151,7 +151,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps>=2.16.1,<3
+          - idf-build-apps>=3.1,<4
       - id: check-build-test-rules-depends-components
         name: Check if all depends_components in .build-test-rules.yml files are existing components
         entry: tools/ci/check_build_test_rules.py check-depends-components
@@ -160,7 +160,7 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps>=2.16.1,<3
+          - idf-build-apps>=3.1,<4
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -258,7 +258,7 @@ repos:
       - id: check-kconfig-files
       - id: check-deprecated-kconfig-options
   - repo: https://github.com/espressif/idf-ci
-    rev: v1.1.0
+    rev: v1.4.1
     hooks:
       - id: check-tests-missing-config
         files: 'pytest_.*\.py$|sdkconfig(\..*)?$|\.idf_build_apps\.toml$|\.idf_ci\.toml$'
