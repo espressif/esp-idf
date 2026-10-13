@@ -91,19 +91,21 @@ I2S 通信模式
 模式概览
 ^^^^^^^^
 
-=========  ========  ==========  ==========  ===========  ==========  ========  ===========
-芯片       I2S 标准  PCM-to-PDM  PDM-to-PCM      PDM         TDM      ADC/DAC   LCD/摄像头
-=========  ========  ==========  ==========  ===========  ==========  ========  ===========
-ESP32      I2S 0/1     I2S 0       I2S 0       I2S 0/1        无        I2S 0      I2S 0
-ESP32-S2    I2S 0        无         无           无           无         无        I2S 0
-ESP32-S3   I2S 0/1     I2S 0       I2S 0       I2S 0/1      I2S 0/1      无         无
-ESP32-P4   I2S 0~2     I2S 0       I2S 0       I2S 0~2      I2S 0~2      无         无
-others      I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
-=========  ========  ==========  ==========  ===========  ==========  ========  ===========
+{IDF_TARGET_NAME} 的 I2S 支持以下通信模式：
 
-.. note::
+.. list::
 
-    如需使用 PDM 模式，请注意不是所有 I2S 端口都支持原始 PDM 格式与 PCM 格式之间的转换，因为有些端口在 TX 方向上没有 PCM-to-PDM 数据格式转换器，或在 RX 方向上没有 PDM-to-PCM 数据格式转换器。因此，这些没有硬件格式转换器的端口只能读写原始 PDM 格式的数据。如果需要在这些端口上处理 PCM 格式的数据，则需额外采用一个软件滤波器来实现 PDM 格式和 PCM 格式之间的转换。
+    - **STD 标准模式**：所有 I2S 端口均支持。
+    :SOC_I2S_SUPPORTS_TDM: - **TDM 模式**：所有 I2S 端口均支持。
+    :SOC_I2S_SUPPORTS_PDM: - **PDM 模式**：所有 I2S 端口均支持收发原始 PDM 数据。
+    :SOC_I2S_SUPPORTS_PCM2PDM: - **PCM-to-PDM**：仅 I2S0 的 TX 方向支持将 PCM 数据转换为 PDM 后发送。
+    :SOC_I2S_SUPPORTS_PDM2PCM: - **PDM-to-PCM**：仅 I2S0 的 RX 方向支持将收到的 PDM 数据转换为 PCM。
+
+.. only:: SOC_I2S_SUPPORTS_PDM and not SOC_I2S_SUPPORTS_PDM2PCM
+
+    .. note::
+
+        当前芯片的 RX 方向没有 PDM-to-PCM 硬件转换器，只能读取原始 PDM 数据。如需得到 PCM 数据，需要在软件中完成转换。
 
 标准模式
 ^^^^^^^^
@@ -224,20 +226,6 @@ others      I2S 0      I2S 0        无          I2S 0        I2S 0       无   
     - **PCM 长帧同步**：数据有一个位的位移，同时 WS 信号将在每一帧持续一个声道的宽度。例如，如果启用了四个声道，那么 WS 的占空比将是 25%，如果启用了五个声道，则为 20%。
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
-
-.. only:: esp32 or esp32s2
-
-    LCD/摄像头模式
-    ^^^^^^^^^^^^^^^
-
-    LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd/i80_lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_CN_URL}#camlcdctrl>`__]。
-
-.. only:: esp32
-
-    ADC/DAC 模式
-    ^^^^^^^^^^^^^
-
-    仅 ESP32 支持在 I2S0 上运行 ADC 和 DAC 模式。实际上，ADC 和 DAC 模式是 LCD/摄像头模式的两个子模式。I2S0 可以直接路由到内部模数转换器 (ADC) 和数模转换器 (DAC)，也即 ADC 和 DAC 外设可以通过 I2S0 的 DMA 连续读取或写入数据。由于 ADC 和 DAC 并非通信模式，因此并没有在 I2S 驱动中实现。
 
 功能概览
 --------
