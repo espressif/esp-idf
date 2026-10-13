@@ -201,6 +201,7 @@ void app_main(void)
     HANDLE_TEST(test_name, test_non_cache_irom_reg_write_violation);
     HANDLE_TEST(test_name, test_non_cache_drom_reg_write_violation);
     HANDLE_TEST(test_name, test_non_cache_drom_reg_execute_violation);
+    HANDLE_TEST(test_name, test_non_cache_irom_reg_execute_violation);
     HANDLE_TEST(test_name, test_non_cache_irom_mask_reg_write_violation);
 #endif
 

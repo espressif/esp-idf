@@ -378,6 +378,17 @@ void test_non_cache_drom_reg_execute_violation(void)
     run_function(test_addr);
 }
 
+static void __attribute__((noinline)) flash_func(void)
+{
+}
+
+void test_non_cache_irom_reg_execute_violation(void)
+{
+    void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR((void *)flash_func);
+    printf("Flash (IROM): Non-cacheable Execute operation | Address: %p\n", test_addr);
+    run_function(test_addr);
+}
+
 void test_non_cache_irom_mask_reg_write_violation(void)
 {
     uint32_t *test_addr = (uint32_t *)CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_MASK_LOW + 0x04);

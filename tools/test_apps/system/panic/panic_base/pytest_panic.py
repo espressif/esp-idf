@@ -1291,6 +1291,15 @@ def test_non_cache_drom_reg_execute_violation(dut: PanicTestDut, test_func_name:
         drom_reg_execute_violation(dut, test_func_name)
 
 
+@pytest.mark.generic
+@idf_parametrize('config, target', [('memprot_esp32p4', 'esp32p4')], indirect=['config', 'target'])
+def test_non_cache_irom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Instruction access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
 def spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     match = dut.expect(r'(IROM alignment gap not added into heap|Instruction access fault)')
