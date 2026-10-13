@@ -47,6 +47,10 @@ else()
     if(CONFIG_SOC_RISCV_SV32_SUPPORTED)
         list(APPEND srcs "sv32.c" "sv32_as.c")
     endif()
+
+    if(CONFIG_RISCV_USER_MODE_TRAPS)
+        list(APPEND srcs "privilege_trap.c")
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"

@@ -64,6 +64,23 @@ static inline RvUserCallCtx *rv_user_call_ctx_from_frame(const void *frame)
 {
     return (RvUserCallCtx *)((uintptr_t)frame + RV_STK_FRMSZ);
 }
+
+/**
+ * @brief Handler of an ECALL from U-mode
+ *
+ * @param frame Trap frame saved by the exception entry code
+ * @return true if the handler took the ECALL, false to let the panic handler take it
+ */
+typedef bool (*rv_user_ecall_handler_t)(void *frame);
+
+/**
+ * @brief Set the handler that the exception entry code calls for an ECALL from U-mode
+ *
+ * Until a handler is set, an ECALL from U-mode reaches the panic handler.
+ *
+ * @param ecall Handler of ECALLs, or NULL
+ */
+void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 #endif /* !(defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)) */
 #endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
