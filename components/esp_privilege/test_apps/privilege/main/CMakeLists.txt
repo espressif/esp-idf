@@ -1,4 +1,5 @@
 idf_component_register(SRCS "test_app_main.c"
+                            "test_privilege.c"
                             "privilege_test_fixture.c"
                             "privilege_code.c"
                        PRIV_INCLUDE_DIRS "../../../private_include"
