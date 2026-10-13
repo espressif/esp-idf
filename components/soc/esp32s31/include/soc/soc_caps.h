@@ -133,6 +133,7 @@
 #define SOC_USB_OTG_PERIPH_NUM          (1U)
 #define SOC_USB_FSLS_PHY_NUM            (0U)
 #define SOC_USB_UTMI_PHY_NUM            (1U)
+#define SOC_USB_OTG_PSRAM_DMA_CAPABLE   (1)                 /*!< USB OTG Peripheral's internal DMA can access PSRAM */
 #define SOC_PM_SUPPORT_USB_WAKEUP        1
 
 #define SOC_PHY_SUPPORTED                1
