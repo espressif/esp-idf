@@ -134,6 +134,12 @@ extern "C" {
 #define RTC_VBAT_UNDER_VOLT_TRIG_EN            0
 #endif //SOC_VBAT_SUPPORTED
 
+#if SOC_VDDBAT_PROTECT_SUPPORTED
+#define RTC_VDDBAT_RECOVER_TRIG_EN             PMU_VDDBAT_RECOVER_WAKEUP_EN   //!< VDDBAT voltage recover wakeup
+#else
+#define RTC_VDDBAT_RECOVER_TRIG_EN             0
+#endif //SOC_VDDBAT_PROTECT_SUPPORTED
+
 #define RTC_XTAL32K_DEAD_TRIG_EN    0 // TODO
 #define RTC_BROWNOUT_DET_TRIG_EN    0 // TODO
 
@@ -157,6 +163,7 @@ extern "C" {
                                RTC_USB_TRIG_EN          | \
                                RTC_LP_VAD_TRIG_EN       | \
                                RTC_VBAT_UNDER_VOLT_TRIG_EN | \
+                               RTC_VDDBAT_RECOVER_TRIG_EN  | \
                                RTC_BROWNOUT_DET_TRIG_EN)
 
 

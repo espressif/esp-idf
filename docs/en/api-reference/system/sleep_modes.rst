@@ -721,6 +721,7 @@ Application Examples
     :SOC_PM_SUPPORT_USB_WAKEUP: - :example:`peripherals/usb/device/tusb_cdc_acm_wakeup` demonstrates the usage of USB 2.0 wakeup from Light-sleep.
     :SOC_TOUCH_SENSOR_SUPPORTED and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP: - :example:`peripherals/touch_sensor/touch_sens_sleep` demonstrates the usage of Light-sleep and Deep-sleep wakeup triggered by the touch sensor.
     :SOC_VBAT_SUPPORTED: - :example:`lowpower/vbat` demonstrates the use of backup battery power (VBAT) during Deep-sleep, allowing the RTC timer to keep running after the main power is removed.
+    :SOC_VDDBAT_PROTECT_SUPPORTED: - :example:`lowpower/vddbat` demonstrates an application entering Deep-sleep from the VDDBAT under-voltage callback and waking up once the battery recovers.
 
 API Reference
 -------------

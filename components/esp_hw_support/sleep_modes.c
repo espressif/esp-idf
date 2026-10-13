@@ -1869,6 +1869,10 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT, RTC_VBAT_UNDER_VOLT_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_VBAT_UNDER_VOLT_TRIG_EN;
 #endif
+#if SOC_VDDBAT_PROTECT_SUPPORTED
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_VDDBAT_UP_VOLT, RTC_VDDBAT_RECOVER_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_VDDBAT_RECOVER_TRIG_EN;
+#endif
 #if SOC_PM_SUPPORT_USB_WAKEUP
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_USB, RTC_USB_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_USB_TRIG_EN;
@@ -1994,6 +1998,14 @@ esp_err_t esp_sleep_enable_vad_wakeup(void)
 esp_err_t esp_sleep_enable_vbat_under_volt_wakeup(void)
 {
     s_config.wakeup_triggers |= RTC_VBAT_UNDER_VOLT_TRIG_EN;
+    return ESP_OK;
+}
+#endif
+
+#if SOC_VDDBAT_PROTECT_SUPPORTED
+esp_err_t esp_sleep_enable_vddbat_recover_wakeup(void)
+{
+    s_config.wakeup_triggers |= RTC_VDDBAT_RECOVER_TRIG_EN;
     return ESP_OK;
 }
 #endif
@@ -2591,6 +2603,10 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_VBAT_UNDER_VOLT_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT;
 #endif
+#if SOC_VDDBAT_PROTECT_SUPPORTED
+    } else if (wakeup_cause & RTC_VDDBAT_RECOVER_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_VDDBAT_UP_VOLT;
+#endif
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -2701,6 +2717,11 @@ uint32_t esp_sleep_get_wakeup_causes(void)
 #if SOC_VBAT_SUPPORTED
     if (wakeup_cause_raw & RTC_VBAT_UNDER_VOLT_TRIG_EN) {
         wakeup_cause |= BIT(ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT);
+    }
+#endif
+#if SOC_VDDBAT_PROTECT_SUPPORTED
+    if (wakeup_cause_raw & RTC_VDDBAT_RECOVER_TRIG_EN) {
+        wakeup_cause |= BIT(ESP_SLEEP_WAKEUP_VDDBAT_UP_VOLT);
     }
 #endif
 #if SOC_PM_SUPPORT_USB_WAKEUP

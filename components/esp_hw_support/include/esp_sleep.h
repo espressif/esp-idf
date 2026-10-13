@@ -138,6 +138,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_VAD,               //!< Wakeup caused by VAD
     ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT,   //!< Wakeup caused by VDD_BAT under voltage.
     ESP_SLEEP_WAKEUP_USB,               //!< Wakeup caused by USB HS (light sleep only)
+    ESP_SLEEP_WAKEUP_VDDBAT_UP_VOLT,    //!< Wakeup caused by VDDBAT rising above the voltage threshold
 } esp_sleep_source_t;
 
 /**
@@ -233,6 +234,19 @@ esp_err_t esp_sleep_enable_vad_wakeup(void);
  *      - ESP_OK on success
  */
 esp_err_t esp_sleep_enable_vbat_under_volt_wakeup(void);
+#endif
+
+#if SOC_VDDBAT_PROTECT_SUPPORTED
+/**
+ * Wakeup chip when VDDBAT recovers above the VDDBAT_VGOOD threshold.
+ *
+ * The application calls this after an under-voltage callback, then requests deep sleep.
+ * The chip wakes once VDDBAT rises back above the threshold.
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_enable_vddbat_recover_wakeup(void);
 #endif
 
 #if SOC_TOUCH_SENSOR_SUPPORTED

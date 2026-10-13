@@ -163,6 +163,10 @@ if(NOT non_os_build)
         list(APPEND srcs "power_supply/vbat.c")
     endif()
 
+    if(CONFIG_ESP_VDDBAT_UNDER_VOLT_PROTECT)
+        list(APPEND srcs "power_supply/vddbat_protect.c")
+    endif()
+
 else()
     if(ESP_TEE_BUILD)
         list(APPEND srcs "esp_clk.c" "hw_random.c")
