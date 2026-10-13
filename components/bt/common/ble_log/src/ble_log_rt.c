@@ -78,10 +78,10 @@ BLE_LOG_STATIC uint32_t ble_log_rt_lc_ts_get(void)
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_inited = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t rt_ref_count = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
-#if CONFIG_BLE_LOG_PRPH_USB
-/* USB builds drain the queue from a dedicated task: the 1 ms defer
- * cadence caps throughput at pool-depth x transport-size per millisecond
- * (~5 MiB/s), far below the USB bulk exit. Same dispatch function, same
+#if CONFIG_BLE_LOG_PRPH_COPY_FIFO
+/* COPY_FIFO builds drain the queue from a dedicated task. The 1 ms defer
+ * cadence would cap throughput at pool-depth x transport-size per
+ * millisecond (~5 MiB/s). Same dispatch function, same
  * single-dispatcher invariant; the task blocks on the queue so idle cost
  * is zero. SPI/UART builds keep the deferred esp_timer batch below. */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR TaskHandle_t rt_task_handle = NULL;
@@ -101,7 +101,7 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_io_toggle_enabled = false;
 #endif
 
 /* PRIVATE FUNCTION DECLARATION */
-#if !CONFIG_BLE_LOG_PRPH_USB
+#if !CONFIG_BLE_LOG_PRPH_COPY_FIFO
 BLE_LOG_STATIC void ble_log_rt_defer_cb(void *arg);
 BLE_LOG_STATIC void ble_log_rt_dispatch(QueueHandle_t queue,
                                         UBaseType_t pending);
@@ -112,15 +112,6 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
 BLE_LOG_STATIC void ble_log_rt_report_loss(void);
 
 /* PRIVATE FUNCTION */
-/* One loss-warning line per window (plus one CDC FIFO line on USB
- * builds), non-zero windows only. The first line reports frames the
- * runtime could not write into a BLE Log buffer (pool exhausted or
- * claimed from a non-yieldable context); the CDC line reports sealed
- * transports the USB FIFO could not accept. Runs on the
- * shared ESP Timer task: a single short line, ~100 bytes at 115200 baud
- * (~9 ms). If the measured worst-case cost ever exceeds the timer-task
- * budget, move formatting to a low-priority diagnostic task instead of
- * shortening the producer wait (spec constraint). */
 BLE_LOG_STATIC void ble_log_rt_report_loss(void)
 {
     uint32_t by_source[BLE_LOG_SRC_MAX];
@@ -130,15 +121,15 @@ BLE_LOG_STATIC void ble_log_rt_report_loss(void)
     for (int i = 0; i < BLE_LOG_SRC_MAX; i++) {
         total += by_source[i];
     }
-#if CONFIG_BLE_LOG_PRPH_USB
-    uint32_t cdc_drops = 0;
-    uint32_t cdc_dropped_bytes = 0;
-    ble_log_prph_take_cdc_fifo_drops(&cdc_drops, &cdc_dropped_bytes);
+#if CONFIG_BLE_LOG_PRPH_COPY_FIFO
+    uint32_t tx_ring_drops = 0;
+    uint32_t tx_ring_dropped_bytes = 0;
+    ble_log_prph_take_tx_ring_drops(&tx_ring_drops, &tx_ring_dropped_bytes);
 #else
-    const uint32_t cdc_drops = 0;
-    const uint32_t cdc_dropped_bytes = 0;
+    const uint32_t tx_ring_drops = 0;
+    const uint32_t tx_ring_dropped_bytes = 0;
 #endif
-    if (total == 0 && cdc_drops == 0 && cdc_dropped_bytes == 0) {
+    if (total == 0 && tx_ring_drops == 0 && tx_ring_dropped_bytes == 0) {
         return;
     }
 
@@ -165,16 +156,12 @@ BLE_LOG_STATIC void ble_log_rt_report_loss(void)
         }
         ESP_LOGW(TAG, "%s", line);
     }
-    /* Byte-only guard: the two CDC counters are taken independently, so a
-     * producer can land a byte increment after the reporter took the count
-     * - that window then holds bytes with no transports and must still
-     * print, or the increment is silently cleared by the take above. */
-    if (cdc_drops != 0 || cdc_dropped_bytes != 0) {
+    if (tx_ring_drops != 0 || tx_ring_dropped_bytes != 0) {
         ESP_LOGW(TAG,
-                 "Lost %lu transport(s), %lu byte(s): CDC TX FIFO full "
+                 "Lost %lu transport(s), %lu byte(s): TX ring full "
                  "after USB output (frames already sealed, not written)",
-                 (unsigned long)cdc_drops,
-                 (unsigned long)cdc_dropped_bytes);
+                 (unsigned long)tx_ring_drops,
+                 (unsigned long)tx_ring_dropped_bytes);
     }
 }
 /* Captures the link-layer, ESP and OS clocks at one instant. */
@@ -197,7 +184,7 @@ void ble_log_rt_ts_sample(ble_log_ts_info_t *info, bool toggle_io)
     BLE_LOG_EXIT_CRITICAL();
 }
 
-#if !CONFIG_BLE_LOG_PRPH_USB
+#if !CONFIG_BLE_LOG_PRPH_COPY_FIFO
 /* Dispatch only the queue depth observed at callback entry. A backend may
  * recycle synchronously on queue-full while another core immediately refills
  * the runtime queue; an unbounded loop here could starve every other callback
@@ -210,9 +197,9 @@ BLE_LOG_STATIC void ble_log_rt_dispatch(QueueHandle_t queue,
         ble_log_prph_send_trans(trans);
     }
 }
-#endif /* !CONFIG_BLE_LOG_PRPH_USB */
+#endif /* !CONFIG_BLE_LOG_PRPH_COPY_FIFO */
 
-#if CONFIG_BLE_LOG_PRPH_USB
+#if CONFIG_BLE_LOG_PRPH_COPY_FIFO
 #if CONFIG_BLE_LOG_USB_DISPATCH_TEST_HOOKS
 /* Test-only injection point, defined by the USB test app: pauses the
  * dispatcher between dequeue and send so the teardown handshake can be
@@ -348,7 +335,7 @@ BLE_LOG_STATIC void ble_log_rt_defer_cb(void *arg)
         BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
     }
 }
-#endif /* CONFIG_BLE_LOG_PRPH_USB */
+#endif /* CONFIG_BLE_LOG_PRPH_COPY_FIFO */
 
 BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
 {
@@ -409,7 +396,7 @@ bool ble_log_rt_init(void)
         goto exit;
     }
 
-#if CONFIG_BLE_LOG_PRPH_USB
+#if CONFIG_BLE_LOG_PRPH_COPY_FIFO
     /* Queue must be initialized before creating the task. The priority
      * matches the esp_timer task so dispatch keeps the scheduling position
      * of the deferred-callback design it replaces. */
@@ -430,7 +417,7 @@ bool ble_log_rt_init(void)
     if (esp_timer_create(&defer_timer_args, &rt_defer_timer) != ESP_OK) {
         goto exit;
     }
-#endif /* CONFIG_BLE_LOG_PRPH_USB */
+#endif /* CONFIG_BLE_LOG_PRPH_COPY_FIFO */
 
     /* Create the system-periodic path here; the top-level init starts it only
      * after queuing INIT, then it runs through deinit. Runtime sync control
@@ -484,9 +471,9 @@ void ble_log_rt_deinit(void)
         ESP_LOGE(TAG, "Timed out waiting for BLE Log runtime references");
         BLE_LOG_ASSERT(false);
     }
-#if CONFIG_BLE_LOG_PRPH_USB
+#if CONFIG_BLE_LOG_PRPH_COPY_FIFO
     /* Dispatcher teardown first: it must be quiescent before the tail report
-     * below samples the CDC FIFO-drop counters it updates, and before the
+     * below samples the TX ring drop counters it updates, and before the
      * pool and the peripheral go away.
      *
      * Quiescence comes from the gate plus an ack, not from vTaskDelete: the
@@ -514,7 +501,7 @@ void ble_log_rt_deinit(void)
         esp_timer_delete(rt_defer_timer);
         rt_defer_timer = NULL;
     }
-#endif /* CONFIG_BLE_LOG_PRPH_USB */
+#endif /* CONFIG_BLE_LOG_PRPH_COPY_FIFO */
 
     if (rt_ts_timer) {
         esp_timer_stop_blocking(rt_ts_timer, portMAX_DELAY);
@@ -551,7 +538,7 @@ bool ble_log_rt_drain(void)
     if (!ble_log_ref_count_try_acquire(&rt_ref_count, &rt_inited)) {
         return false;
     }
-#if CONFIG_BLE_LOG_PRPH_USB
+#if CONFIG_BLE_LOG_PRPH_COPY_FIFO
     if (!rt_task_handle || !rt_queue_handle) {
         goto exit;
     }
@@ -583,7 +570,7 @@ bool ble_log_rt_drain(void)
         ble_log_rt_dispatch(queue, uxQueueMessagesWaiting(queue));
     }
     drained = true;
-#endif /* CONFIG_BLE_LOG_PRPH_USB */
+#endif /* CONFIG_BLE_LOG_PRPH_COPY_FIFO */
 
 exit:
     BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
@@ -610,10 +597,7 @@ BLE_LOG_IRAM_ATTR void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans)
         goto fail;
     }
 
-#if CONFIG_BLE_LOG_PRPH_USB
-    /* The dispatch task blocks on the queue; the send above is the wake. */
-#else
-    /* An active timer keeps the deadline anchored to the first submission. */
+#if !CONFIG_BLE_LOG_PRPH_COPY_FIFO
     (void)esp_timer_start_once(rt_defer_timer, BLE_LOG_RT_DEFER_TIMEOUT_US);
 #endif
     BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);

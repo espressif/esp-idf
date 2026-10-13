@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: CC0-1.0
+
+menu "BLE Log USJ test app"
+    config BLE_LOG_USJ_TEST_PERF_MODE
+        bool "Throughput test mode (back-to-back writes)"
+        default n
+        help
+            Replace the 100 ms smoke writer with a CPU-bound write loop
+            for throughput measurement. The host-side parser measures
+            the delivered KiB/s, frame checksums, and SN continuity.
+
+    if BLE_LOG_USJ_TEST_PERF_MODE
+        config BLE_LOG_USJ_TEST_PERF_PAYLOAD_LEN
+            int "Perf payload length (bytes)"
+            range 6 620
+            default 128
+            help
+                Payload written per frame in perf mode. 6 bytes hold the
+                host-side sequence and marker; BLE Log caps a single
+                record at 640 transport bytes minus header, timestamp,
+                and checksum.
+
+        config BLE_LOG_USJ_TEST_PERF_DURATION_S
+            int "Perf run duration (seconds)"
+            range 5 300
+            default 30
+    endif
+endmenu

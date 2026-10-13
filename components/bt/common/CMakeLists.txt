@@ -147,6 +147,36 @@ function(register_ble_log_usb_transport component_type)
     endif()
 endfunction()
 
+function(register_ble_log_usj_transport component_type)
+    if(NOT CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG)
+        return()
+    endif()
+    if(CONFIG_BLE_LOG_USJ_BUS_BUSY)
+        message(FATAL_ERROR
+            "BLE_LOG_PRPH_USB_SERIAL_JTAG is set while BLE_LOG_USJ_BUS_BUSY "
+            "is set. Console ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED="
+            "${CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED}, esp_trace "
+            "ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG="
+            "${CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG}, OpenThread RCP "
+            "OPENTHREAD_RCP_USB_SERIAL_JTAG="
+            "${CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG}, "
+            "USJ_ENABLE_USB_SERIAL_JTAG="
+            "${CONFIG_USJ_ENABLE_USB_SERIAL_JTAG}.")
+    endif()
+    if(CONFIG_BLE_LOG_POOL_TRANS_SIZE GREATER CONFIG_BLE_LOG_USJ_TX_BUFSIZE)
+        message(FATAL_ERROR
+            "CONFIG_BLE_LOG_POOL_TRANS_SIZE "
+            "(${CONFIG_BLE_LOG_POOL_TRANS_SIZE}) must be <= "
+            "CONFIG_BLE_LOG_USJ_TX_BUFSIZE "
+            "(${CONFIG_BLE_LOG_USJ_TX_BUFSIZE})")
+    endif()
+    if(component_type STREQUAL "LIBRARY")
+        idf_component_optional_requires(PRIVATE esp_driver_usb_serial_jtag)
+    else()
+        idf_component_optional_requires(INTERFACE esp_driver_usb_serial_jtag)
+    endif()
+endfunction()
+
 set(bt_common_srcs "" PARENT_SCOPE)
 set(bt_common_include_dirs "" PARENT_SCOPE)
 set(bt_common_priv_include_dirs "" PARENT_SCOPE)
@@ -262,6 +292,10 @@ if(CONFIG_BLE_LOG_ENABLED)
     elseif(CONFIG_BLE_LOG_PRPH_USB)
         list(APPEND bt_common_srcs
             "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/prph/ble_log_prph_usb.c"
+        )
+    elseif(CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG)
+        list(APPEND bt_common_srcs
+            "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/prph/ble_log_prph_usb_serial_jtag.c"
         )
     endif()
 endif()
