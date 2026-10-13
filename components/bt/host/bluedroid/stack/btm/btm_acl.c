@@ -2897,6 +2897,15 @@ void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mo
 #endif
 
     if (link_type == HCI_LINK_TYPE_ACL) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
+        /* Our page failed, but the device connected to us meanwhile (both sides paged at once):
+         * the link is up, so this only ends the page. */
+        if (status != HCI_SUCCESS && BTM_ACL_IS_CONNECTED(bda)) {
+            BTM_TRACE_WARNING("failed page (0x%x) to a connected device\n", status);
+            btm_acl_resubmit_page();
+            return;
+        }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #if SMP_INCLUDED == TRUE
         btm_sec_connected (bda, handle, status, enc_mode);
 #endif  /* SMP_INCLUDED == TRUE */
