@@ -207,6 +207,17 @@ ESP-IDF provides special commands to retrieve and analyze core dumps:
 
 ``idf.py coredump-info --help`` and ``idf.py coredump-debug --help`` commands can be used to get more details on usage. For example, they can save the coredump into a file and avoid the need to read it from flash every time these commands are run.
 
+``idf.py coredump-info`` can also print variables from the core dump:
+
+* ``--print-var`` prints a variable or expression. Use it once per value, for example ``--print-var g_batt.mv --print-var "/x g_state.flags"``. The GDB format letter, such as ``/x``, is optional.
+* ``--print-all-vars`` prints all variables placed in the core dump with a ``COREDUMP_*_ATTR`` attribute, in hex.
+
+The values are printed in the ``USER VARIABLES`` section, one ``name = value`` line each. A value that is not in the core dump is printed as ``<not in core dump>``. To place a variable in the core dump, see :ref:`core_dump_dumping_variables`.
+
+.. code-block:: bash
+
+    idf.py coredump-info --print-all-vars --print-var g_batt.mv --print-var "/x g_state.flags"
+
 For advanced users who want to pass additional arguments or use custom ELF files, it is possible to use the `esp-coredump <https://github.com/espressif/esp-coredump>`_ tool directly. For more information, use in ESP-IDF environment:
 
 .. code-block:: bash
@@ -221,6 +232,8 @@ It is a possible that at the moment of a crash, some tasks and/or the crashed ta
 
 To overcome this issue, the `ROM ELF <https://github.com/espressif/esp-rom-elfs/releases>`_ provided by Espressif is loaded automatically by ESP-IDF monitor based on the target and its revision. More details about ROM ELFs can be found in `esp-rom-elfs <https://github.com/espressif/esp-rom-elfs/blob/master/README.md>`_.
 
+
+.. _core_dump_dumping_variables:
 
 Dumping Variables on Demand
 ---------------------------

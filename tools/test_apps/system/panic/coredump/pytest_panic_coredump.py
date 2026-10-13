@@ -280,29 +280,31 @@ def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> No
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
-    core_elf_file = None
+    # --print-all-vars prints the tagged variables in hex, --print-var prints any expression.
+    # esp-coredump reads the values without the program ELF, so they must come from the core dump.
+    print_var_args = ['--print-all-vars']
+    for expr in ['g_data_var', '/x g_bss_var', 'g_heap_ptr', 'g_noinit_buffer', 'no_such_symbol']:
+        print_var_args += ['--print-var', expr]
+    print_var_expected: list[str | re.Pattern] = [
+        'g_cd_iram = 0x4243',
+        'g_cd_dram = 0x4344',
+        'g_noinit_var = 0xcafebabe',
+        'g_data_var = 43',
+        '/x g_bss_var = 0x37',
+        # GDB adds <symbol+offset> when the heap block is in the range of a symbol
+        re.compile(r'^g_heap_ptr = 0x[0-9a-f]+ (<[^>]+> )?"Coredump Test"$', re.MULTILINE),
+        'g_noinit_buffer = "NOINIT_TEST_STRING',
+        'no_such_symbol = <error: No symbol "no_such_symbol" in current context.>',
+    ]
+    if dut.target in soc_filtered_targets('SOC_RTC_MEM_SUPPORTED == 1'):
+        print_var_expected += ['g_rtc_data_var = 0x55aa', 'g_rtc_fast_var = 0xaabbccdd']
+
     if 'flash' in config:
         expect_coredump_flash_write_logs(dut, config)
-        core_elf_file = dut.process_coredump_flash()
-    elif 'uart' in config:
+        dut.process_coredump_flash(print_var_expected, print_var_args)
+    else:
         coredump_base64 = expect_coredump_uart_write_logs(dut)
-        core_elf_file = dut.process_coredump_uart(coredump_base64)
-    assert core_elf_file is not None
-
-    dut.start_gdb_for_coredump(core_elf_file)
-
-    assert dut.gdb_data_eval_expr('g_data_var') == '43'
-    assert dut.gdb_data_eval_expr('g_bss_var') == '55'
-    assert re.search(r'0x[0-9a-fA-F]+ "Coredump Test"', dut.gdb_data_eval_expr('g_heap_ptr'))
-    assert int(dut.gdb_data_eval_expr('g_cd_iram')) == 0x4243
-    assert int(dut.gdb_data_eval_expr('g_cd_dram')) == 0x4344
-    assert int(dut.gdb_data_eval_expr('g_noinit_var')) == 0xCAFEBABE
-    buffer_value = str(dut.gdb_data_eval_expr('g_noinit_buffer'))
-    assert 'NOINIT_TEST_STRING' in buffer_value
-
-    if dut.target in soc_filtered_targets('SOC_RTC_MEM_SUPPORTED == 1'):
-        assert int(dut.gdb_data_eval_expr('g_rtc_data_var')) == 0x55AA
-        assert int(dut.gdb_data_eval_expr('g_rtc_fast_var')) == 0xAABBCCDD
+        dut.process_coredump_uart(coredump_base64, print_var_expected, print_var_args)
 
 
 def _test_coredump_summary(dut: PanicTestDut, flash_encrypted: bool, coredump_encrypted: bool) -> None:

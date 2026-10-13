@@ -107,6 +107,8 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         core: str | None = None,
         chip_rev: str | None = None,
         save_core: str | None = None,
+        print_vars: list[str] | None = None,
+        print_all_vars: bool = False,
     ) -> CoreDump:
         ensure_build_directory(args, ctx.info_name)
         project_desc = get_project_desc(args, ctx)
@@ -150,6 +152,12 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
         if save_core:
             espcoredump_kwargs['save_core'] = save_core
+
+        if print_vars:
+            espcoredump_kwargs['print_vars'] = print_vars
+
+        if print_all_vars:
+            espcoredump_kwargs['print_all_vars'] = print_all_vars
 
         espcoredump_kwargs['prog'] = prog
 
@@ -483,9 +491,18 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         core: str | None = None,
         chip_rev: str | None = None,
         save_core: str | None = None,
+        print_var: tuple[str, ...] = (),
+        print_all_vars: bool = False,
     ) -> None:
         espcoredump = _get_espcoredump_instance(
-            ctx=ctx, args=args, gdb_timeout_sec=gdb_timeout_sec, core=core, chip_rev=chip_rev, save_core=save_core
+            ctx=ctx,
+            args=args,
+            gdb_timeout_sec=gdb_timeout_sec,
+            core=core,
+            chip_rev=chip_rev,
+            save_core=save_core,
+            print_vars=list(print_var),
+            print_all_vars=print_all_vars,
         )
 
         espcoredump.info_corefile()
@@ -525,6 +542,19 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         'default': 3,
         'help': 'Overwrite the default internal delay for gdb responses',
     }
+    print_var_opts = [
+        {
+            'names': ['--print-var'],
+            'multiple': True,
+            'help': 'Print a variable or expression as "[/fmt] EXPR", for example "/x g_state.flags". Can be repeated.',
+        },
+        {
+            'names': ['--print-all-vars'],
+            'is_flag': True,
+            'default': False,
+            'help': 'Print all variables tagged with a COREDUMP_*_ATTR attribute.',
+        },
+    ]
     fail_if_openocd_failed = {
         'names': ['--require-openocd', '--require_openocd'],
         'help': 'Fail this target if openocd (this targets dependency) failed.\n',
@@ -617,7 +647,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 'callback': coredump_info,
                 'help': 'Print crashed task’s registers, callstack, list of available tasks in the system, '
                 'memory regions and contents of memory stored in core dump (TCBs and stacks)',
-                'options': coredump_base + [PORT, BAUD_RATE, gdb_timeout_sec_opt],  # type: ignore
+                'options': coredump_base + [PORT, BAUD_RATE, gdb_timeout_sec_opt] + print_var_opts,  # type: ignore
                 'order_dependencies': ['all', 'flash'],
             },
             'coredump-debug': {
