@@ -24,8 +24,8 @@ extern "C" {
  */
 typedef struct {
     uint32_t bits_per_pixel;                                 /*!< Bits per pixel, by default it's 0, embedded data and standard data type will be supported */
-    uint32_t data_type_min;                                  /*!< Data type, by default it's 0, embedded data and standard data type will be supported */
-    uint32_t data_type_max;                                  /*!< Data type, by default it's 0, embedded data and standard data type will be supported */
+    uint32_t data_type_min;                                  /*!< Minimum custom data type value, by default it's 0 to support standard data types */
+    uint32_t data_type_max;                                  /*!< Maximum custom data type value, by default it's 0 to support standard data types */
 } esp_cam_ctlr_csi_data_type_t;
 
 /**
