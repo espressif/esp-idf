@@ -40,6 +40,15 @@ idf_component_register(SRCS ${srcs}
 if(CONFIG_VFS_SUPPORT_IO)
     # The public header esp_stdio.h includes VFS types when VFS is enabled.
     # Make sure vfs include dirs are available on all targets.
+    if(IDF_BUILD_V2)
+        # In build system v2 the configuration of a component is available
+        # even if the component is not in the build. CONFIG_VFS_SUPPORT_IO
+        # alone does not mean that vfs is in the build, so add it here.
+        # idf_component_optional_requires only links a component which is
+        # already in the build, in the DEFERRED mode that
+        # idf_project_default() sets.
+        idf_component_include(vfs)
+    endif()
     idf_component_optional_requires(PUBLIC vfs)
 endif()
 

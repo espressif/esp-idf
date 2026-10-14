@@ -1228,7 +1228,7 @@ function(__linker_script_key path output)
 endfunction()
 
 #[[
-    __preprocess_linker_script(<script_in> <script_out> <flags> <component_includes>)
+    __preprocess_linker_script(<script_in> <script_out> <flags> <includes_file>)
 
     *script_in[in]*
 
@@ -1246,16 +1246,17 @@ endfunction()
         include heuristic; any other value, including an empty string, replaces
         that whole set, so a caller can drop ``-C``.
 
-    *component_includes[in]*
+    *includes_file[in]*
 
-        Pre-built ``-I`` arguments for the linked component graph, always
-        appended so a template can include any component header.
+        File with ``-I`` arguments for the linked component graph. It is
+        always passed to the preprocessor as ``@<includes_file>``, so a template
+        can include any component header.
 
     Run the C preprocessor on ``script_in`` and store the result in
     ``script_out``. The preprocessor always receives ``-I<config_dir>`` so
-    ``sdkconfig.h`` resolves, plus ``component_includes``.
+    ``sdkconfig.h`` resolves, plus the arguments in ``includes_file``.
 #]]
-function(__preprocess_linker_script script_in script_out flags component_includes)
+function(__preprocess_linker_script script_in script_out flags includes_file)
     idf_build_get_property(sdkconfig_header __SDKCONFIG_HEADER)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(config_dir CONFIG_DIR)
@@ -1291,8 +1292,9 @@ function(__preprocess_linker_script script_in script_out flags component_include
     # -MD -MF -MT makes the C preprocessor record every file it reads (the
     # template plus everything it #includes, transitively) into a depfile, so
     # the output is regenerated when any of them changes. MAIN_DEPENDENCY and
-    # DEPENDS only cover the top-level script and sdkconfig; the depfile closes
-    # the gap for includes the build system cannot enumerate up front.
+    # DEPENDS only cover the top-level script, sdkconfig and the includes file;
+    # the depfile closes the gap for includes the build system cannot enumerate
+    # up front.
     set(depfile "${script_out}.d")
     set(depfile_flags "-MD -MF \"${depfile}\" -MT \"${script_out}\"")
 
@@ -1302,10 +1304,10 @@ function(__preprocess_linker_script script_in script_out flags component_include
             "-DCC=${CMAKE_C_COMPILER}"
             "-DSOURCE=${script_in}"
             "-DTARGET=${script_out}"
-            "-DCFLAGS=-I\"${config_dir}\" ${depfile_flags} ${base_flags} ${component_includes}"
+            "-DCFLAGS=-I\"${config_dir}\" ${depfile_flags} ${base_flags} @\"${includes_file}\""
             -P "${linker_script_generator}"
         MAIN_DEPENDENCY "${script_in}"
-        DEPENDS "${sdkconfig_header}"
+        DEPENDS "${sdkconfig_header}" "${includes_file}"
         DEPFILE "${depfile}"
         COMMENT "Preprocessing linker script ${script_in} -> ${script_out}"
         VERBATIM)
