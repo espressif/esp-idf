@@ -761,6 +761,15 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio
     io_config->slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
 }
 
+/**
+ * @brief Clear all GPIO dedicated control signals
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_clear_dedicated_ctrl(void)
+{
+    // no dedicated ctrl pad
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -769,6 +769,15 @@ static inline bool gpio_ll_hp_periph_powerdown_sleep_wakeup_is_enabled(gpio_dev_
     return GET_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - gpio_num));
 }
 
+/**
+ * @brief Clear all GPIO dedicated control signals
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_clear_dedicated_ctrl(void)
+{
+    // no dedicated ctrl pad
+}
+
 #ifdef __cplusplus
 }
 #endif
