@@ -19,6 +19,7 @@
 #include "lwip/dns.h"
 #include "lwip/opt.h"
 #include "openthread/instance.h"
+#include "openthread/nat64.h"
 #include "openthread/netdata.h"
 
 #define TAG "OT_DNS64"
@@ -101,6 +102,26 @@ esp_err_t esp_openthread_get_nat64_prefix(ip6_addr_t *nat64_prefix)
     }
 }
 
+static void synthesize_ip6_address(ip_addr_t *addr)
+{
+    if (addr->type != IPADDR_TYPE_V4) {
+        return;
+    }
+
+    otIp4Address ip4_addr;
+    otIp6Address ip6_addr;
+    memcpy(ip4_addr.mFields.m8, &addr->u_addr.ip4.addr, sizeof(ip4_addr.mFields.m8));
+    // DNS callbacks run in the lwIP context. Protect access to the OpenThread instance.
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+    otError error = otNat64SynthesizeIp6Address(esp_openthread_get_instance(), &ip4_addr, &ip6_addr);
+    esp_openthread_task_switching_lock_release();
+    if (error == OT_ERROR_NONE) {
+        addr->type = IPADDR_TYPE_V6;
+        memcpy(addr->u_addr.ip6.addr, ip6_addr.mFields.m8, sizeof(addr->u_addr.ip6.addr));
+        addr->u_addr.ip6.zone = IP6_NO_ZONE;
+    }
+}
+
 static void dns_found_handler(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
 {
     dns_resolve_entry_t *resolve_entry = (dns_resolve_entry_t *)callback_arg;
@@ -110,13 +131,7 @@ static void dns_found_handler(const char *name, const ip_addr_t *ipaddr, void *c
             resolve_entry->is_using = false;
         } else if (lwip_strnicmp(name, resolve_entry->name, sizeof(resolve_entry->name)) == 0) {
             ip_addr_t ipaddr_copy = *ipaddr;
-            ip6_addr_t nat64_prefix;
-            if (ipaddr_copy.type == IPADDR_TYPE_V4 && esp_openthread_get_nat64_prefix(&nat64_prefix) == ESP_OK) {
-                ipaddr_copy.type = IPADDR_TYPE_V6;
-                memcpy(ipaddr_copy.u_addr.ip6.addr, nat64_prefix.addr, sizeof(nat64_prefix.addr));
-                ipaddr_copy.u_addr.ip6.addr[3] = ipaddr->u_addr.ip4.addr;
-                ipaddr_copy.u_addr.ip6.zone = IP6_NO_ZONE;
-            }
+            synthesize_ip6_address(&ipaddr_copy);
             resolve_entry->found(name, &ipaddr_copy, resolve_entry->callback_arg);
             resolve_entry->is_using = false;
         }
@@ -163,15 +178,8 @@ int lwip_hook_dns_external_resolve(const char *name, ip_addr_t *addr, dns_found_
         // If dns query is not enqueued, mark the entry not being used.
         entry->is_using = false;
     }
-    if (*err == ERR_OK && addr->type == IPADDR_TYPE_V4) {
-        ip4_addr_t addr_copy = addr->u_addr.ip4;
-        ip6_addr_t nat64_prefix;
-        if (esp_openthread_get_nat64_prefix(&nat64_prefix) == ESP_OK) {
-            addr->type = IPADDR_TYPE_V6;
-            memcpy(addr->u_addr.ip6.addr, nat64_prefix.addr, sizeof(nat64_prefix.addr));
-            addr->u_addr.ip6.addr[3] = addr_copy.addr;
-            addr->u_addr.ip6.zone = IP6_NO_ZONE;
-        }
+    if (*err == ERR_OK) {
+        synthesize_ip6_address(addr);
     }
     return 1;
 }
