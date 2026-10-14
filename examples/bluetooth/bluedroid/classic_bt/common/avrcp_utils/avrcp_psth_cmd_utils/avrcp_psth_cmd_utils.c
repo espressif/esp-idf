@@ -83,6 +83,16 @@ void bt_avrc_psth_cmd_ct_evt_hdl(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_pa
                  param->rmt_feats.feat_mask, param->rmt_feats.tg_feat_flag);
         break;
     }
+    case ESP_AVRC_CT_PROF_STATE_EVT: {
+        if (ESP_AVRC_INIT_SUCCESS == param->avrc_ct_init_stat.state) {
+            ESP_LOGI(RC_PSTH_SRV_TAG, "AVRCP CT STATE: Init Complete");
+        } else if (ESP_AVRC_DEINIT_SUCCESS == param->avrc_ct_init_stat.state) {
+            ESP_LOGI(RC_PSTH_SRV_TAG, "AVRCP CT STATE: Deinit Complete");
+        } else {
+            ESP_LOGE(RC_PSTH_SRV_TAG, "AVRCP CT STATE error: %d", param->avrc_ct_init_stat.state);
+        }
+        break;
+    }
     default: {
         ESP_LOGI(RC_PSTH_SRV_TAG, "%s unhandled event: %d", __func__, event);
         break;
