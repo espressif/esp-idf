@@ -855,6 +855,10 @@ config SOC_PCNT_SUPPORT_STEP_NOTIFY
     bool
     default y
 
+config SOC_RISCV_SV32_SUPPORTED
+    bool
+    default y
+
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y

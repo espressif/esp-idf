@@ -320,6 +320,7 @@
 #define SOC_PCNT_SUPPORT_STEP_NOTIFY          1
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_RISCV_SV32_SUPPORTED               (1) /*!< CPU supports RISC-V Sv32 address translation */
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
 #define SOC_MMU_PERIPH_NUM                    (2U)
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (2U)
