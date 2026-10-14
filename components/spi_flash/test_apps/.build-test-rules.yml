@@ -12,6 +12,8 @@ components/spi_flash/test_apps/esp_flash:
     - esp_driver_spi
     - esptool_py # Some flash related kconfigs are listed here.
     - esp_hal_mspi
+  disable:
+    - if: IDF_TARGET not in ["esp32p4", "esp32c5", "esp32c61", "esp32s31"] and CONFIG_NAME in ["32m_120m_qio_map", "32m_120m_dio_map", "32m_120m_qio", "32m_120m_dio"]
 
 components/spi_flash/test_apps/esp_flash_blockdev:
   disable_test:
