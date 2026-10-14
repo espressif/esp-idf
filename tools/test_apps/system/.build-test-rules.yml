@@ -66,12 +66,6 @@ tools/test_apps/system/eh_frame:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "linux"]
       reason: Only relevant for riscv targets
 
-tools/test_apps/system/esp_intr_dump:
-  disable_test:
-    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16194
-      temporary: true
-      reason: cannot pass
-
 tools/test_apps/system/flash_auto_suspend_iram_reduction:
   disable:
     - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2"
