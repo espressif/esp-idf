@@ -594,25 +594,21 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     free(data);
 }
 
-TEST_CASE("uart in one-wire mode", "[uart]")
+static void uart_one_wire_test(uart_port_t uart_num, int io_num, soc_module_clk_t source_clk)
 {
-    uart_port_param_t port_param = {};
-    TEST_ASSERT(port_select(&port_param));
-    port_param.tx_pin_num = port_param.rx_pin_num; // let tx and rx use the same pin
-
-    uart_port_t uart_num = port_param.port_num;
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .source_clk = port_param.default_src_clk,
+        .source_clk = source_clk,
     };
 
     TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
-    esp_err_t err = uart_set_pin(uart_num, port_param.tx_pin_num, port_param.rx_pin_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    // Same pin for TX and RX forces the GPIO-matrix path
+    esp_err_t err = uart_set_pin(uart_num, io_num, io_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     if (uart_num < SOC_UART_HP_NUM) {
         TEST_ESP_OK(err);
 #if SOC_UART_LP_NUM > 0
@@ -645,6 +641,23 @@ TEST_CASE("uart in one-wire mode", "[uart]")
     }
 
     TEST_ESP_OK(uart_driver_delete(uart_num));
+}
+
+TEST_CASE("uart in one-wire mode", "[uart]")
+{
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+
+    if (port_param.port_num < SOC_UART_HP_NUM) {
+        // Test all HP UART ports that can use the GPIO matrix, except the console UART.
+        for (uart_port_t uart_num = UART_NUM_0; uart_num < SOC_UART_HP_NUM; uart_num++) {
+            if (uart_num != CONFIG_CONSOLE_UART_NUM) {
+                uart_one_wire_test(uart_num, port_param.rx_pin_num, port_param.default_src_clk);
+            }
+        }
+    } else {
+        uart_one_wire_test(port_param.port_num, port_param.rx_pin_num, port_param.default_src_clk);
+    }
 }
 
 // XON/XOFF software flow control characters (must match the ones the driver programs into the hardware)
