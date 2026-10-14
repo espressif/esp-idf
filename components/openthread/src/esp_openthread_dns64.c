@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@ esp_err_t esp_openthread_get_dnsserver_addr_with_type(ip6_addr_t *dnsserver_addr
     ESP_RETURN_ON_FALSE(dns_type < ESP_NETIF_DNS_MAX, ESP_ERR_INVALID_ARG, TAG, "Invalid DNS type");
     ESP_RETURN_ON_FALSE(dnsserver_addr, ESP_ERR_INVALID_ARG, TAG, "dnsserver_addr cannot be NULL");
     esp_netif_t *openthread_netif = esp_openthread_get_netif();
-    ESP_RETURN_ON_FALSE(openthread_netif, ESP_ERR_ESP_NETIF_IF_NOT_READY, TAG, "openthread netif is not initializd");
+    ESP_RETURN_ON_FALSE(openthread_netif, ESP_ERR_ESP_NETIF_IF_NOT_READY, TAG, "openthread netif is not initialized");
     esp_netif_dns_info_t dns;
     ESP_RETURN_ON_ERROR(esp_netif_get_dns_info(openthread_netif, dns_type, &dns), TAG, "Failed to get dns info");
     if (dns.ip.type == ESP_IPADDR_TYPE_V6) {
@@ -64,7 +64,7 @@ esp_err_t esp_openthread_set_dnsserver_addr_with_type(const ip6_addr_t dnsserver
     ESP_RETURN_ON_FALSE(dns_type < ESP_NETIF_DNS_MAX, ESP_ERR_INVALID_ARG, TAG, "Invalid DNS type");
     ESP_RETURN_ON_FALSE(!ip6_addr_isany(&dnsserver_addr), ESP_ERR_INVALID_ARG, TAG, "dnsserver_addr cannot be any");
     esp_netif_t *openthread_netif = esp_openthread_get_netif();
-    ESP_RETURN_ON_FALSE(openthread_netif, ESP_ERR_ESP_NETIF_IF_NOT_READY, TAG, "openthread netif is not initializd");
+    ESP_RETURN_ON_FALSE(openthread_netif, ESP_ERR_ESP_NETIF_IF_NOT_READY, TAG, "openthread netif is not initialized");
     esp_netif_dns_info_t dns;
     dns.ip.type = ESP_IPADDR_TYPE_V6;
     dns.ip.u_addr.ip6.zone = dnsserver_addr.zone;
@@ -138,6 +138,11 @@ int lwip_hook_dns_external_resolve(const char *name, ip_addr_t *addr, dns_found_
 {
     if (addrtype == LWIP_DNS_ADDRTYPE_IPV4 || esp_netif_get_default_netif() != esp_openthread_get_netif()) {
         // If the DNS address type is IPv4 or the openthread netif is not the default netif, skip this hook.
+        return 0;
+    }
+    // Leave IPv6 literals to lwIP's own parsing; they do not need NAT64 synthesis.
+    ip6_addr_t ip6_literal;
+    if (ip6addr_aton(name, &ip6_literal)) {
         return 0;
     }
     dns_resolve_entry_t *entry = find_free_dns_resolve_entry();
