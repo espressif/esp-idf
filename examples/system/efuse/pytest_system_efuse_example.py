@@ -8,6 +8,9 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_qemu.dut import QemuDut
 
+# Virtual eFuse load messages occur in both the bootloader and the application.
+# Match bootloader results first so an app message cannot skip the bootloader checks.
+
 
 def basic_efuse_example(dut: Dut) -> None:
     dut.expect(r'example: Coding Scheme (3/4)|(NONE)|(REPEAT)|(RS \(Reed-Solomon coding\))', timeout=20)
@@ -100,7 +103,6 @@ def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
     dut.expect('Flash encryption completed', timeout=90)
     dut.expect('Resetting with flash encryption enabled...')
 
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Checking flash encryption...')
     if dut.app.target == 'esp32':
         dut.expect_exact('flash encryption is enabled (3 plaintext flashes left)', timeout=3)
@@ -150,7 +152,6 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     dut.expect('Flash encryption completed', timeout=90)
     dut.expect('Resetting with flash encryption enabled...')
 
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Checking flash encryption...')
     dut.expect_exact('flash encryption is enabled (1 plaintext flashes left)')
 
@@ -198,7 +199,6 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
 
     print(' - Start app (flash partition_table and app)')
     dut.serial.write_flash_no_enc()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Checking flash encryption...')
     dut.expect('Using pre-loaded flash encryption key in efuse')
     if dut.app.target == 'esp32':
@@ -218,7 +218,6 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
     dut.expect('Flash encryption completed', timeout=90)
     dut.expect('Resetting with flash encryption enabled...')
 
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Checking flash encryption...')
     if dut.app.target == 'esp32':
         dut.expect_exact('flash encryption is enabled (3 plaintext flashes left)')
@@ -281,7 +280,6 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
     dut.expect('Flash encryption completed')
     dut.expect('Resetting with flash encryption enabled...')
 
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Checking flash encryption...')
     dut.expect_exact('flash encryption is enabled (0 plaintext flashes left)', timeout=5)
     dut.expect('Flash encryption mode is RELEASE')
@@ -335,7 +333,6 @@ def test_examples_efuse_with_virt_secure_boot_v1(dut: Dut) -> None:
     dut.expect('example: Done')
 
     dut.serial.hard_reset()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v1: bootloader secure boot is already enabled. No need to generate digest. continuing..')
     dut.expect('boot: Checking secure boot...')
@@ -374,7 +371,6 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
 
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
-    dut.expect('Loading virtual efuse blocks from flash')
 
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v1: Using pre-loaded secure boot key in EFUSE block 2')
@@ -394,7 +390,6 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
     dut.serial.hard_reset()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v1: bootloader secure boot is already enabled. No need to generate digest. continuing..')
     dut.expect('Checking secure boot...')
@@ -459,7 +454,6 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('example: Done')
 
     dut.serial.hard_reset()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
     dut.expect('secure_boot_v2: Signature verified successfully!')
@@ -484,7 +478,6 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
 
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
-    dut.expect('Loading virtual efuse blocks from flash')
 
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
@@ -513,7 +506,6 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('example: Done')
 
     dut.serial.hard_reset()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
     dut.expect('secure_boot_v2: Signature verified successfully!')
@@ -552,7 +544,6 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
 
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
-    dut.expect('Loading virtual efuse blocks from flash')
 
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
@@ -581,7 +572,6 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
     dut.serial.hard_reset()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
     dut.expect('secure_boot_v2: Signature verified successfully!')
@@ -644,7 +634,6 @@ def example_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     dut.expect('example: Done')
 
     dut.serial.hard_reset()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect(f'secure_boot_v2: Verifying with {signed_scheme}...')
     dut.expect('secure_boot_v2: Signature verified successfully!')
@@ -718,7 +707,6 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
 
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
-    dut.expect('Loading virtual efuse blocks from flash')
 
     dut.expect('Verifying image signature...')
     if dut.app.sdkconfig.get('SECURE_SIGNED_APPS_ECDSA_V2_SCHEME'):
@@ -747,7 +735,6 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
     dut.expect('example: Done')
 
     dut.serial.hard_reset()
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect(f'secure_boot_v2: Verifying with {signed_scheme}...')
     dut.expect('secure_boot_v2: Signature verified successfully!')
@@ -900,7 +887,6 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('flash_encrypt: Flash encryption completed', timeout=90)
     dut.expect('Resetting with flash encryption enabled...')
 
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
     dut.expect('secure_boot_v2: Signature verified successfully!')
@@ -1082,7 +1068,6 @@ def example_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('flash_encrypt: Flash encryption completed', timeout=90)
     dut.expect('Resetting with flash encryption enabled...')
 
-    dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect(f'secure_boot_v2: Verifying with {signed_scheme}...')
     dut.expect('secure_boot_v2: Signature verified successfully!')
