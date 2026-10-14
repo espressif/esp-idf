@@ -190,8 +190,6 @@ static inline int _key_mgr_ll_get_efuse_key_bit(const esp_key_mgr_key_type_t key
         return KEY_MGR_EFUSE_KEY_FLASH_BIT;
     case ESP_KEY_MGR_HMAC_KEY:
         return KEY_MGR_EFUSE_KEY_HMAC_BIT;
-    case ESP_KEY_MGR_DS_KEY:
-        return KEY_MGR_EFUSE_KEY_DS_BIT;
     case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
         return KEY_MGR_EFUSE_KEY_PSRAM_BIT;
     default:
@@ -315,9 +313,6 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
 
     case ESP_KEY_MGR_HMAC_KEY:
         return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_HMAC_VLD);
-
-    case ESP_KEY_MGR_DS_KEY:
-        return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_DS_VLD);
 
     case ESP_KEY_MGR_PSRAM_XTS_AES_KEY:
         switch (key_len) {
