@@ -249,11 +249,11 @@ config SOC_ADC_DIGI_MONITOR_NUM
 
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int
-    default 2
+    default 2000000
 
 config SOC_ADC_SAMPLE_FREQ_THRES_LOW
     int
-    default 20
+    default 20000
 
 config SOC_ADC_RTC_MIN_BITWIDTH
     int
