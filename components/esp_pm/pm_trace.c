@@ -45,6 +45,13 @@ static const int DRAM_ATTR s_trace_io[portNUM_PROCESSORS][ESP_PM_TRACE_TYPE_MAX]
     {BIT(2),  BIT(4),  BIT(6),  BIT(7),  BIT(8),  BIT(10)}, // Core 0
 #elif CONFIG_IDF_TARGET_ESP32C5
     {BIT(2),  BIT(4),  BIT(6),  BIT(7),  BIT(8),  BIT(23)}, // Core 0
+#elif CONFIG_IDF_TARGET_ESP32H21
+    {BIT(5),  BIT(6),  BIT(7),  BIT(8),  BIT(9),  BIT(13)}, // Core 0
+#elif CONFIG_IDF_TARGET_ESP32H4
+    {BIT(2),  BIT(4),  BIT(13), BIT(14), BIT(21), BIT(22)}, // Core 0
+#if portNUM_PROCESSORS > 1
+    {BIT(3),  BIT(5),  BIT(13), BIT(14), BIT(25), BIT(22)}, // Core 1
+#endif
 #else
     {BIT(2),  BIT(4),  BIT(6),  BIT(7),  BIT(8),  BIT(18)}, // Core 0
 #if portNUM_PROCESSORS > 1
