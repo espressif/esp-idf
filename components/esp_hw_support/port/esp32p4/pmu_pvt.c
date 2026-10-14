@@ -123,12 +123,10 @@ void pvt_func_enable(bool enable)
 
         if (enable) {
             SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL24_REG, HP_SYS_CLKRST_REG_PVT_CLK_EN);
-            SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);                        // Start calibration @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PVT_CLK_CFG_REG, PVT_MONITOR_CLK_PVT_EN);                                    // Once enable cannot be closed
             SET_PERI_REG_MASK(PVT_COMB_PD_SITE3_UNIT0_VT1_CONF1_REG, PVT_MONITOR_EN_VT1_PD_SITE3_UNIT0);   // Enable pvt clk
             esp_rom_delay_us(10);
             CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL);            // Hand over control of dbias to pvt
-            CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);                      // Must clear @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PVT_DBIAS_TIMER_REG, PVT_TIMER_EN);                                          // Enable auto dbias
             esp_rom_delay_us(50);
         } else {
@@ -142,6 +140,12 @@ void pvt_func_enable(bool enable)
     } else {
         ESP_HW_LOGD(TAG, "blk_version is less than 2, pvt function not supported in efuse.");
     }
+}
+
+void pvt_dig_dbias_init(void)
+{
+    SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // Start calibration @HP_CALI_DBIAS_DEFAULT
+    CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);   // Must clear @HP_CALI_DBIAS_DEFAULT
 }
 
 #endif

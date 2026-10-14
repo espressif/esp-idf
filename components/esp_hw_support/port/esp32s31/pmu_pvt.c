@@ -119,12 +119,10 @@ FORCE_INLINE_ATTR void pvt_func_enable(bool enable)
 {
     if (enable) {
         SET_PERI_REG_MASK(HP_SYS_CLKRST_PVT0_CTRL0_REG, HP_SYS_CLKRST_REG_PVT0_CLK_EN);
-        SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // start calibration @HP_CALI_DBIAS_DEFAULT
         SET_PERI_REG_MASK(PVT_CLK_CFG_REG, PVT_MONITOR_CLK_PVT_EN);                // once enable cannot be closed
         SET_PERI_REG_MASK(PVT_COMB_PD_SITE2_UNIT0_VT1_CONF1_REG, PVT_MONITOR_EN_VT1_PD_SITE2_UNIT0); // enable pvt clk
         esp_rom_delay_us(10);
         CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL); // hand over control of dbias to pvt
-        CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // must clear @HP_CALI_DBIAS_DEFAULT
         SET_PERI_REG_MASK(PVT_DBIAS_TIMER_REG, PVT_TIMER_EN);   // enable auto dbias
         esp_rom_delay_us(50);
     } else {
@@ -153,6 +151,12 @@ FORCE_INLINE_ATTR void charge_pump_enable(bool enable)
     } else {
         CLEAR_PERI_REG_MASK(PVT_PMUP_DRV_CFG_REG, PVT_PUMP_EN); //disable charge pump
     }
+}
+
+void pvt_dig_dbias_init(void)
+{
+    SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // Start calibration @HP_CALI_DBIAS_DEFAULT
+    CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);   // Must clear @HP_CALI_DBIAS_DEFAULT
 }
 
 void pvt_auto_dbias_enable(bool enable)

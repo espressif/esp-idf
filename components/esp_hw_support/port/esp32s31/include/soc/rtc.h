@@ -87,6 +87,11 @@ set pvt default param
 #define PVT_DELAY_NUM_PUMP      134
 
 /**
+ * @brief Initialize PVT dig dbias
+ */
+void pvt_dig_dbias_init(void);
+
+/**
  * @brief Enable or disable auto dbias functions
  *
  * @param enable  true to enable, false to disable
