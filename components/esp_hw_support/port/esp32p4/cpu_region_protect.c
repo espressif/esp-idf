@@ -139,24 +139,24 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
     __attribute__((unused)) const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
 
+    PMP_ENTRY_CFG_RESET(10);
     PMP_ENTRY_CFG_RESET(11);
     PMP_ENTRY_CFG_RESET(12);
     PMP_ENTRY_CFG_RESET(13);
     PMP_ENTRY_CFG_RESET(14);
-    PMP_ENTRY_CFG_RESET(15);
     PMP_ENTRY_CFG_RESET(16);
     PMP_ENTRY_CFG_RESET(17);
     PMP_ENTRY_CFG_RESET(18);
     PMP_ENTRY_CFG_RESET(19);
-    PMP_ENTRY_CFG_RESET(23);
+    PMP_ENTRY_CFG_RESET(22);
 
     // 6. I_EXTRAM / D_EXTRAM (SPIRAM)
 #if CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
 
     const size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
 
-    // Entry 15 stays unused because v5.5.2 to v5.5.4 bootloaders lock it, so the
-    // uncached range starts at entry 16 and the uncached XIP heap uses NAPOT entry 23
+    // Entry 15 holds the peripheral range because v5.4.4 and v5.5.2 to v5.5.4 bootloaders lock it, so the
+    // uncached range starts at entry 16 and the uncached XIP heap uses NAPOT entry 20
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(10, 16, SOC_EXTRAM_LOW, NONE);
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
@@ -164,8 +164,9 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 18, page_aligned_irom_resv_end, PMP_TOR | RW);
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 19, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
     PMP_RESET_AND_ENTRY_SET(14, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
-    const uint32_t pmpaddr23 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_HIGH));
-    PMP_RESET_AND_ENTRY_SET(23, pmpaddr23, PMP_NAPOT | RW);
+    // Entry 20 cannot be used as a TOR entry (DIG-752), so a NAPOT entry covers the uncached PSRAM window
+    const uint32_t pmpaddr20 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_HIGH));
+    PMP_RESET_AND_ENTRY_SET(20, pmpaddr20, PMP_NAPOT | RW);
 
 #elif CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 17, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
@@ -182,13 +183,22 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
 #endif /* CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
 
     // ESP32-P4 V3: a locked TOR entry 20 or 28 does not lock pmpaddr19 or pmpaddr27, and a locked
-    // TOR entry 16 or 24 also locks pmpaddr19 or pmpaddr27. Entries 16, 20, 24 and 28 only hold range starts. // DIG-752
+    // TOR entry 16 or 24 also locks pmpaddr19 or pmpaddr27. Entries 16, 20, 24 and 28 only hold range starts or NAPOT ranges. // DIG-752
     // 7. I_Cache / D_Cache (flash)
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(20, 24, SOC_IROM_LOW, NONE);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(21, 25, page_aligned_irom_resv_end, PMP_TOR | RX);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(22, 26, page_aligned_drom_resv_end, PMP_TOR | R);
-
+#if CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION && CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
+    // With PSRAM XIP the application code and rodata are in PSRAM, so one NAPOT entry
+    // covers the flash window.
+    const uint32_t pmpaddr21 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
+    PMP_RESET_AND_ENTRY_SET(21, pmpaddr21, PMP_NAPOT | RX);
 #else
+    PMP_RESET_AND_ENTRY_SET(20, SOC_IROM_LOW, NONE);
+    PMP_RESET_AND_ENTRY_SET(21, page_aligned_irom_resv_end, PMP_TOR | RX);
+    PMP_RESET_AND_ENTRY_SET(22, page_aligned_drom_resv_end, PMP_TOR | R);
+#endif
+    const uint32_t pmpaddr23 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_HIGH));
+    PMP_RESET_AND_ENTRY_SET(23, pmpaddr23, PMP_NAPOT | R);
+
+#else // CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
 #if CONFIG_SPIRAM
     const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH);
     PMP_RESET_AND_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | RWX);
@@ -207,35 +217,40 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
 #endif
 
     // 8. Peripheral addresses
-    const uint32_t pmpaddr27 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_RESET_AND_ENTRY_SET(PMP_ENTRY_PERIPHERAL_REV_V3, pmpaddr27, PMP_NAPOT | RW);
+    // Shipped bootloaders lock this range in entry 15 (v5.4.4 and v5.5.2 to v5.5.4) or in entry 27 (v5.5.5,
+    // v6.0 and v6.1; see pmp_layout.h). Both entries get it, so the layout is the same with every bootloader.
+    const uint32_t pmpaddr_periph = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_RESET_AND_ENTRY_SET(PMP_ENTRY_PERIPHERAL_COMPAT_REV_V3, pmpaddr_periph, PMP_NAPOT | RW);
+    PMP_RESET_AND_ENTRY_SET(PMP_ENTRY_PERIPHERAL_REV_V3, pmpaddr_periph, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 
     // 9. LP memory and LP peripherals
+    // Entry 27 holds the peripheral range, so LP RAM uses entry 28.
+    const uint32_t pmpaddr28 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
+    _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
     extern int _rtc_text_start;
     extern int _rtc_text_end;
 
-    // Entry 28 only holds a range start // DIG-752
-    PMP_RESET_AND_ENTRY_SET(28, SOC_RTC_IRAM_LOW, NONE);
+    PMP_RESET_AND_ENTRY_SET(24, SOC_RTC_IRAM_LOW, NONE);
     // First part of LP mem is reserved for RTC reserved mem (shared between bootloader and app)
     // as well as memory for ULP coprocessor
 #if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
-    PMP_RESET_AND_ENTRY_SET(29, (int)&_rtc_text_start, PMP_TOR | RWX);
+    PMP_RESET_AND_ENTRY_SET(25, (int)&_rtc_text_start, PMP_TOR | RWX);
 #else
-    PMP_RESET_AND_ENTRY_SET(29, (int)&_rtc_text_start, PMP_TOR | RW);
+    PMP_RESET_AND_ENTRY_SET(25, (int)&_rtc_text_start, PMP_TOR | RW);
 #endif
-    PMP_RESET_AND_ENTRY_SET(30, (int)&_rtc_text_end, PMP_TOR | RX);
-    // LP peripherals are contiguous with LP memory; this entry covers both with R/W
-    PMP_RESET_AND_ENTRY_SET(31, SOC_LP_PERIPH_HIGH, PMP_TOR | RW);
+    PMP_RESET_AND_ENTRY_SET(26, (int)&_rtc_text_end, PMP_TOR | RX);
+    // Entries 24-26 take priority over entry 28 for the reserved range and the RTC code. Entry 28
+    // covers the rest of LP RAM as RW; without it, that part has no entry and is executable.
+    PMP_RESET_AND_ENTRY_SET(28, pmpaddr28, PMP_NAPOT | RW);
 #else
-    const uint32_t pmpaddr28 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
     PMP_RESET_AND_ENTRY_SET(28, pmpaddr28, PMP_NAPOT | RWX);
-    _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
-
-    PMP_RESET_AND_ENTRY_SET(29, SOC_LP_PERIPH_LOW, NONE);
-    PMP_RESET_AND_ENTRY_SET(30, SOC_LP_PERIPH_HIGH, PMP_TOR | RW);
 #endif
+
+    PMP_RESET_AND_ENTRY_SET(PMP_ENTRY_LP_PERIPH_START_REV_V3, SOC_LP_PERIPH_LOW, NONE);
+    PMP_RESET_AND_ENTRY_SET(30, SOC_LP_PERIPH_HIGH, PMP_TOR | RW);
+    PMP_ENTRY_CFG_RESET(31);
 }
 #else
 // Default rev < 3.0 layout: flash 6-8, LP-RAM 9-12, peripheral 13. Used on a
@@ -409,8 +424,8 @@ static void esp_cpu_configure_region_protection_rev_less_than_v3(void)
 
     /* The flash, LP memory and peripheral entries have two layouts. The PSRAM
      * layout needs all 16 entries and only fits when the bootloader left entry 13
-     * free; a v5.3/v5.4 bootloader locks the peripheral there, so fall back to the
-     * default layout (no PSRAM protection) on those devices. */
+     * free; v5.3.0 to v5.3.3 and v5.4.0 to v5.4.1 bootloaders lock the peripheral
+     * there, so fall back to the default layout (no PSRAM protection) on those devices. */
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
     if (!(PMP_ENTRY_CFG_READ(PMP_ENTRY_PERIPHERAL_REV_LESS_THAN_V3) & PMP_L)) {
         esp_cpu_configure_region_protection_rev_less_than_v3_psram();
