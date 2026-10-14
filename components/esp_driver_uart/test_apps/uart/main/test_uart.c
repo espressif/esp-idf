@@ -177,10 +177,18 @@ TEST_CASE("test uart get baud-rate", "[uart]")
 
     uart_config(uart_num, UART_BAUD_115200, port_param.default_src_clk);
 
+    soc_module_clk_t restart_clk = port_param.default_src_clk;
+    for (size_t i = 0; i < clk_srcs_num; i++) {
+        if (clk_srcs[i] != SOC_MOD_CLK_RC_FAST) {
+            restart_clk = clk_srcs[i];
+            break;
+        }
+    }
+
     const uint32_t test_baudrate_vals[] = {UART_BAUD_11520, UART_BAUD_115200};
     for (size_t i = 0; i < sizeof(test_baudrate_vals) / sizeof(test_baudrate_vals[0]); i++) {
         for (size_t j = 0; j < clk_srcs_num; j++) {
-            uart_config_t uart_config = {
+            uart_config_t config = {
                 .baud_rate = test_baudrate_vals[i],
                 .source_clk = clk_srcs[j],
                 .data_bits = UART_DATA_8_BITS,
@@ -188,15 +196,27 @@ TEST_CASE("test uart get baud-rate", "[uart]")
                 .stop_bits = UART_STOP_BITS_1,
                 .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
             };
-            TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+            TEST_ESP_OK(uart_param_config(uart_num, &config));
 
             uint32_t actual_baudrate = 0;
             uart_get_baudrate(uart_num, &actual_baudrate);
             TEST_ASSERT_UINT32_WITHIN(test_baudrate_vals[i] * TOLERANCE, test_baudrate_vals[i], actual_baudrate);
+
+            if (clk_srcs[j] == SOC_MOD_CLK_RC_FAST) {
+                TEST_ESP_OK(uart_driver_delete(uart_num));
+                uart_config(uart_num, UART_BAUD_115200, restart_clk);
+
+                const uint8_t tx_data = 0x55;
+                uint8_t rx_data = 0;
+                TEST_ASSERT_EQUAL(1, uart_write_bytes(uart_num, &tx_data, sizeof(tx_data)));
+                TEST_ESP_OK(uart_wait_tx_done(uart_num, pdMS_TO_TICKS(100)));
+                TEST_ASSERT_EQUAL(1, uart_read_bytes(uart_num, &rx_data, sizeof(rx_data), pdMS_TO_TICKS(100)));
+                TEST_ASSERT_EQUAL_HEX8(tx_data, rx_data);
+            }
         }
     }
 
-    uart_driver_delete(uart_num);
+    TEST_ESP_OK(uart_driver_delete(uart_num));
 }
 
 TEST_CASE("test uart tx data with break", "[uart]")
