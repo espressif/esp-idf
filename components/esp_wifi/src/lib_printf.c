@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,8 +26,15 @@
 static int lib_printf(const char* tag, const char* format, va_list arg)
 {
     char temp[VPRINTF_STACK_BUFFER_SIZE];
-    int len = vsnprintf(temp, sizeof(temp) - 1, format, arg);
-    temp[sizeof(temp) - 1] = 0;
+    /* vsnprintf() appends a terminating '\0' when the size argument is greater than 0.
+     * len returns the length required for the complete formatted output, which may exceed sizeof(temp). */
+    int len = vsnprintf(temp, sizeof(temp), format, arg);
+    if (len < 0) {
+        len = 0;
+    }
+    if ((size_t)len >= sizeof(temp)) {
+        len = sizeof(temp) - 1;
+    }
     int i;
     for (i = len - 1; i >= 0; --i) {
         if (temp[i] != '\n' && temp[i] != '\r' && temp[i] != ' ') {
@@ -35,10 +42,9 @@ static int lib_printf(const char* tag, const char* format, va_list arg)
         }
         temp[i] = 0;
     }
-    if (i > 0) {
+    if (i >= 0) {
         ESP_LOGI(tag, "%s", temp);
     }
-    va_end(arg);
     return len;
 }
 
