@@ -128,6 +128,38 @@ def test_mixed_native_and_register_components(idf_py: IdfPyFunc) -> None:
 
 
 @pytest.mark.usefixtures('test_app_copy')
+def test_legacy_component_compile_functions(idf_py: IdfPyFunc) -> None:
+    """component_compile_options() and component_compile_definitions() apply to COMPONENT_LIB."""
+    logging.info('Testing legacy component_compile_options and component_compile_definitions')
+
+    comp_dir = Path('components/legacy_flags_comp')
+    comp_dir.mkdir(parents=True, exist_ok=True)
+    (comp_dir / 'CMakeLists.txt').write_text(
+        'idf_component_register(SRCS "legacy_flags.c")\n'
+        'component_compile_options(-DLEGACY_OPTION_FLAG=1)\n'
+        'component_compile_definitions(LEGACY_DEFINITION_FLAG=1)\n'
+    )
+    (comp_dir / 'legacy_flags.c').write_text(
+        '#if !defined(LEGACY_OPTION_FLAG)\n'
+        '#error "component_compile_options() did not reach the component"\n'
+        '#endif\n'
+        '#if !defined(LEGACY_DEFINITION_FLAG)\n'
+        '#error "component_compile_definitions() did not reach the component"\n'
+        '#endif\n'
+        'void legacy_flags_func(void) {}\n'
+    )
+
+    replace_in_file(
+        'main/CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'REQUIRES legacy_flags_comp\n    # placeholder_inside_idf_component_register',
+    )
+
+    idf_py('build')
+    assert Path('build/build_test_app.elf').exists()
+
+
+@pytest.mark.usefixtures('test_app_copy')
 def test_fetchcontent_available_in_component(idf_py: IdfPyFunc) -> None:
     """FetchContent is available in a v2 component: declare a dependency, make it available, and link it."""
     logging.info('Testing FetchContent available in v2 component with real usage')
