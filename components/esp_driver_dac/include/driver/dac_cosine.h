@@ -23,6 +23,7 @@ typedef struct dac_cosine_s     *dac_cosine_handle_t;   /*!< DAC cosine wave cha
  */
 typedef struct {
     dac_channel_t               chan_id;        /*!< The cosine wave channel id */
+    dac_channel_config_t        chan_cfg;       /*!< Channel (analog pad) configuration. */
     uint32_t                    freq_hz;        /*!< The frequency of cosine wave, unit: Hz.
                                                 *   The cosine wave generator is driven by RTC_FAST clock which is divide from RC_FAST,
                                                 *   With the default RTC clock, the minimum frequency of cosine wave is about 130 Hz,

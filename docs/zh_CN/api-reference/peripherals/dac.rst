@@ -33,7 +33,7 @@ DAC 外设支持以下列方式输出模拟信号：
 电压直接输出（单次/直接模式）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-在这种模式下，DAC 通道每次调用 :cpp:func:`dac_oneshot_output_voltage` （可在 ISR 中调用）时都可以将一个 8 位数字转换为模拟值。直至下一次转换开始前，DAC 通道上都将维持该模拟电压。开始转换电压前，需要首先调用 :cpp:func:`dac_oneshot_new_channel` 来启用该 DAC 通道。
+在这种模式下，DAC 通道每次调用 :cpp:func:`dac_oneshot_output_code` （可在 ISR 中调用）时都可以将数字码转换为模拟输出。直至下一次转换开始前，DAC 通道上都将维持该模拟输出。开始转换前，需要首先调用 :cpp:func:`dac_oneshot_new_channel` 来启用该 DAC 通道。
 
 连续波输出（连续/DMA 模式）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -134,7 +134,7 @@ IRAM 安全
 线程安全
 ^^^^^^^^
 
-驱动程序可保证所有公共 DAC API 的线程安全，用户可以从不同的 RTOS 任务中调用这些 API，而不需要额外的锁来保护。注意，DAC 驱动使用 mutex 锁来保证线程安全，因此不允许在 ISR 中使用除了 :cpp:func:`dac_oneshot_output_voltage` 之外的 API。
+驱动程序可保证所有公共 DAC API 的线程安全，用户可以从不同的 RTOS 任务中调用这些 API，而不需要额外的锁来保护。注意，DAC 驱动使用 mutex 锁来保证线程安全，因此不允许在 ISR 中使用除了 :cpp:func:`dac_oneshot_output_code` 之外的 API。
 
 Kconfig 选项
 ^^^^^^^^^^^^^

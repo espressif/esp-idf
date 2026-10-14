@@ -209,17 +209,22 @@ static inline void dac_ll_pad_enable_buffer(dac_channel_t channel, bool enable)
 }
 
 /**
- * @brief Select the output swing range of the analog buffer (only valid when the buffer is enabled).
+ * @brief Select the input code range supported by the DAC analog buffer.
  *
- * @param channel     DAC channel num
- * @param full_range  true: full-scale swing; false: reduced swing range.
+ * @note Only applicable in low-speed mode with the analog buffer enabled.
+ * @note Full-code-range mode reduces the output voltage swing
+ *
+ * @param channel DAC channel num
+ * @param full_code_range true: support input codes 0 to 4095 with reduced output voltage swing;
+ *                        false: use input codes 248 to 3848 for linear operation with wider output
+ *                        voltage swing. Codes outside this range may cause output saturation.
  */
-static inline void dac_ll_pad_set_buffer_range(dac_channel_t channel, bool full_range)
+static inline void dac_ll_pad_set_buffer_code_range(dac_channel_t channel, bool full_code_range)
 {
     if (channel == DAC_CHAN_0) {
-        LP_DAC.pad_cfg.dbuf_range_ls_pad_0 = full_range;
+        LP_DAC.pad_cfg.dbuf_range_ls_pad_0 = full_code_range;
     } else if (channel == DAC_CHAN_1) {
-        LP_DAC.pad_cfg.dbuf_range_ls_pad_1 = full_range;
+        LP_DAC.pad_cfg.dbuf_range_ls_pad_1 = full_code_range;
     }
 }
 

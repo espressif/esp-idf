@@ -33,7 +33,7 @@ The DAC on {IDF_TARGET_NAME} has two channels. The channels have separate softwa
 Direct Voltage Output (One-shot/Direct Mode)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The DAC channels in the group can convert an 8-bit digital value into the analog when :cpp:func:`dac_oneshot_output_voltage` is called (it can be called in ISR). The analog voltage is kept on the DAC channel until the next conversion starts. To start the voltage conversion, the DAC channels need to be enabled first through registering by :cpp:func:`dac_oneshot_new_channel`.
+The DAC channels in the group can convert a digital code into an analog output when :cpp:func:`dac_oneshot_output_code` is called (it can be called in ISR). The analog output is kept on the DAC channel until the next conversion starts. To start the conversion, the DAC channels need to be enabled first through registering by :cpp:func:`dac_oneshot_new_channel`.
 
 Continuous Wave Output (Continuous/DMA Mode)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -134,7 +134,7 @@ This allows the interrupt to run while the cache is disabled but comes at the co
 Thread Safety
 ^^^^^^^^^^^^^
 
-All the public DAC APIs are guaranteed to be thread safe by the driver, which means users can call them from different RTOS tasks without protection by extra locks. Notice that the DAC driver uses mutex lock to ensure the thread safety, thus the APIs except :cpp:func:`dac_oneshot_output_voltage` are not allowed to be used in ISR.
+All the public DAC APIs are guaranteed to be thread safe by the driver, which means users can call them from different RTOS tasks without protection by extra locks. Notice that the DAC driver uses mutex lock to ensure the thread safety, thus the APIs except :cpp:func:`dac_oneshot_output_code` are not allowed to be used in ISR.
 
 Kconfig Options
 ^^^^^^^^^^^^^^^

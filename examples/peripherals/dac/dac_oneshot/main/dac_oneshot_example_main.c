@@ -16,7 +16,7 @@ static void dac_output_task(void *args)
     const uint16_t full_scale = 1U << dac_oneshot_get_bitwidth(handle);
     uint16_t val = 0;
     while (1) {
-        ESP_ERROR_CHECK(dac_oneshot_output_voltage(handle, val));
+        ESP_ERROR_CHECK(dac_oneshot_output_code(handle, val));
         printf("%s = %u\n", pcTaskGetName(NULL), val);
         val = (val + full_scale / 8) % full_scale;
         vTaskDelay(pdMS_TO_TICKS(500));

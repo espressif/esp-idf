@@ -13,12 +13,14 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #endif
 #include "freertos/FreeRTOS.h"
+#include "driver/dac_types.h"
 #include "hal/dac_types.h"
 #include "hal/dac_types_private.h"
 #include "hal/dac_ll.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
 
 #ifdef __cplusplus
@@ -63,6 +65,32 @@ extern portMUX_TYPE dac_priv_spinlock;
 #define DAC_MAX(a, b) ((a) > (b) ? (a) : (b))
 #define DAC_CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
+static inline bool dac_priv_is_valid_channel_config(const dac_channel_config_t *cfg)
+{
+    bool valid_output = cfg->output_mode == DAC_CHANNEL_OUTPUT_VOLTAGE;
+    bool valid_buffer = cfg->buffer_mode == DAC_CHANNEL_BUFFER_FULL_SWING;
+#if SOC_DAC_HS_RESOLUTION
+    valid_output |= cfg->output_mode == DAC_CHANNEL_OUTPUT_CURRENT;
+#endif
+#if SOC_DAC_SUPPORT_BUFFER_CFG
+    valid_buffer |= cfg->buffer_mode == DAC_CHANNEL_BUFFER_REDUCED_SWING || cfg->buffer_mode == DAC_CHANNEL_BUFFER_BYPASS;
+#endif
+    return valid_output && valid_buffer;
+}
+
+/**
+ * @brief Get the DAC code bit width from a channel (analog pad) configuration
+ */
+FORCE_INLINE_ATTR uint8_t dac_priv_chan_cfg_get_bitwidth(const dac_channel_config_t *cfg)
+{
+#if SOC_DAC_HS_RESOLUTION
+    return (cfg->output_mode == DAC_CHANNEL_OUTPUT_CURRENT) ? SOC_DAC_HS_RESOLUTION : SOC_DAC_RESOLUTION;
+#else
+    (void)cfg;
+    return SOC_DAC_RESOLUTION;
+#endif
+}
+
 /**
  * @brief Register dac channel in the driver, in case a same channel is reused by different modes
  *
@@ -89,13 +117,14 @@ esp_err_t dac_priv_channel_deregister(dac_channel_t chan_id);
  * @brief Enable the DAC channel and turn on its power
  *
  * @param chan_id       DAC channel id
+ * @param chan_cfg      Channel (analog pad) configuration
  * @param source        Channel data source
  * @return
  *      - ESP_ERR_INVALID_STATE The channel has not been registered or already enabled
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
  *      - ESP_OK                Enable the channel success
  */
-esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_data_source_t source);
+esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_channel_config_t chan_cfg, dac_data_source_t source);
 
 /**
  * @brief Disable the DAC channel and turn off its power
