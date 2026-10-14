@@ -41,6 +41,7 @@ System API
     system_time
     :esp32: himem
     ulp
+    :SOC_VDDBAT_PROTECT_SUPPORTED: vddbat_protect
     wdts
 
 

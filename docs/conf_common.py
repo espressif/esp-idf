@@ -145,6 +145,8 @@ MM_SYNC_DOCS = ['api-reference/system/mm_sync.rst']
 
 CACHE_CNT_DOCS = ['api-reference/system/cache_cnt.rst']
 
+VDDBAT_PROTECT_DOCS = ['api-reference/system/vddbat_protect.rst']
+
 CAMERA_DOCS = ['api-reference/peripherals/camera_driver.rst']
 
 BITSCRAMBLER_DOCS = ['api-reference/peripherals/bitscrambler.rst']
@@ -392,6 +394,7 @@ conditional_include_dict = {
     'SOC_PSRAM_DMA_CAPABLE': MM_SYNC_DOCS,
     'SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE': MM_SYNC_DOCS,
     'SOC_CACHE_CNT_SUPPORTED': CACHE_CNT_DOCS,
+    'SOC_VDDBAT_PROTECT_SUPPORTED': VDDBAT_PROTECT_DOCS,
     'SOC_CLK_TREE_SUPPORTED': CLK_TREE_DOCS,
     'SOC_UART_SUPPORTED': UART_DOCS,
     'SOC_UHCI_SUPPORTED': UHCI_DOCS,
