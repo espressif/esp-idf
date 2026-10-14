@@ -58,10 +58,35 @@ static bool i3c_master_bus_occupied(i3c_master_bus_num_t bus_num)
 // Forward declaration for DMA transaction handler
 static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, i3c_transaction_desc_t *trans);
 
+// RX FIFO level counts 32-bit words. Copy only the remaining user read length.
+static void read_rx_fifo_into_buffer(i3c_master_bus_handle_t i3c_master)
+{
+    size_t fifo_bytes = (size_t)i3c_master_ll_get_rx_fifo_full_count(i3c_master->hal.dev) * 4;
+    size_t copy_size = MIN(fifo_bytes, i3c_master->read_buffer_left_size);
+
+    if (copy_size == 0 || i3c_master->read_fifo_buffer_pointer == NULL) {
+        return;
+    }
+
+    i3c_master_ll_read_rx_port(i3c_master->hal.dev, i3c_master->read_fifo_buffer_pointer, copy_size);
+    i3c_master->read_buffer_left_size -= copy_size;
+    i3c_master->read_fifo_buffer_pointer += copy_size;
+}
+
 static esp_err_t do_fifo_transaction_handler(i3c_master_bus_handle_t bus_handle, i3c_transaction_desc_t *trans)
 {
     bus_handle->cur_trans = trans;
-    bus_handle->read_buffer_left_size = trans->read_buffer ? trans->command_table[0].cmd_h.regular.dl : 0;
+    // Combined write+read stores the read length on a later command, not command 0.
+    size_t read_size = 0;
+    if (trans->read_buffer) {
+        for (size_t i = 0; i < trans->command_table_num; i++) {
+            if (trans->command_table[i].cmd_l.regular.rnw == I3C_MASTER_LL_TRANSFER_DIR_READ) {
+                read_size = trans->command_table[i].cmd_h.regular.dl;
+                break;
+            }
+        }
+    }
+    bus_handle->read_buffer_left_size = read_size;
     bus_handle->read_fifo_buffer_pointer = trans->read_buffer;
 
     size_t actual_write_size = 0;
@@ -141,11 +166,7 @@ static bool handle_transfer_complete_int(i3c_master_bus_handle_t i3c_master)
 
     if (i3c_master->use_dma_transaction == false) {
         portENTER_CRITICAL_SAFE(&i3c_master->spinlock);
-        size_t rx_fifo_content = i3c_master_ll_get_rx_fifo_full_count(i3c_master->hal.dev) * 4;
-        i3c_master_ll_read_rx_port(i3c_master->hal.dev, i3c_master->read_fifo_buffer_pointer, rx_fifo_content);
-
-        i3c_master->read_buffer_left_size -= rx_fifo_content;
-        i3c_master->read_fifo_buffer_pointer += rx_fifo_content;
+        read_rx_fifo_into_buffer(i3c_master);
         portEXIT_CRITICAL_SAFE(&i3c_master->spinlock);
     }
 
@@ -231,11 +252,7 @@ static void handle_rx_data_buf_threshold_int(i3c_master_bus_handle_t i3c_master)
 {
     if (i3c_master->use_dma_transaction == false) {
         portENTER_CRITICAL_SAFE(&i3c_master->spinlock);
-        size_t rx_fifo_content = i3c_master_ll_get_rx_fifo_full_count(i3c_master->hal.dev) * 4;
-        i3c_master_ll_read_rx_port(i3c_master->hal.dev, i3c_master->read_fifo_buffer_pointer, rx_fifo_content);
-
-        i3c_master->read_buffer_left_size -= rx_fifo_content;
-        i3c_master->read_fifo_buffer_pointer += rx_fifo_content;
+        read_rx_fifo_into_buffer(i3c_master);
         portEXIT_CRITICAL_SAFE(&i3c_master->spinlock);
     }
 }
