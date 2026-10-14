@@ -657,9 +657,7 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = list(
     )
 )
 
-CONFIGS_MEMPROT_RTC_FAST_MEM_TEXT_WRITE = list(
-    zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4'])
-)
+CONFIGS_MEMPROT_RTC_FAST_MEM_P4 = list(zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4']))
 
 CONFIGS_MEMPROT_RTC_SLOW_MEM = list(zip(['memprot_esp32s2'], ['esp32s2']))
 
@@ -671,14 +669,23 @@ CONFIGS_MEMPROT_FLASH_IDROM = list(
             'memprot_esp32c61',
             'memprot_esp32h2',
             'memprot_esp32p4',
+            'memprot_spiram_xip_esp32p4',
             'memprot_esp32h21',
             'memprot_esp32s31',
         ],
-        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21', 'esp32s31'],
+        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32p4', 'esp32h21', 'esp32s31'],
     )
 )
 
-CONFIGS_MEMPROT_FLASH_IDROM_L2_NON_CACHE = list(zip(['memprot_esp32p4'], ['esp32p4']))
+CONFIGS_MEMPROT_FLASH_IDROM_L2_NON_CACHE = list(
+    zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4'])
+)
+
+CONFIGS_MEMPROT_SPIRAM_HEAP = list(zip(['memprot_esp32p4'], ['esp32p4']))
+
+CONFIGS_MEMPROT_SPIRAM_HEAP_END = list(zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4']))
+
+CONFIGS_MEMPROT_CORE1 = list(zip(['memprot_esp32p4'], ['esp32p4']))
 
 CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP = list(
     zip(
@@ -719,8 +726,6 @@ CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP_L2_NON_CACHE = list(
         ['esp32p4'],
     )
 )
-
-CONFIGS_MEMPROT_SPIRAM_HEAP_END = list(zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4']))
 
 CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = list(
     zip(
@@ -1041,11 +1046,21 @@ def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM_TEXT_WRITE, indirect=['config', 'target'])
+@idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM_P4, indirect=['config', 'target'])
 def test_rtc_fast_text_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Store access fault')
     dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM_P4, indirect=['config', 'target'])
+def test_rtc_fast_reserved_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    match = dut.expect(r'(No reserved area before \.text|Instruction access fault)')
+    if match.group(1) == b'Instruction access fault':
+        dut.expect_reg_dump(0)
     dut.expect_cpu_reset()
 
 
@@ -1104,6 +1119,13 @@ def irom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> Non
 @idf_parametrize('config, target', CONFIGS_MEMPROT_FLASH_IDROM, indirect=['config', 'target'])
 def test_irom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     irom_mask_reg_write_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_FLASH_IDROM_L2_NON_CACHE, indirect=['config', 'target'])
+def test_non_cache_irom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    if dut.target == 'esp32p4' and not dut.app.sdkconfig.get('ESP32P4_SELECTS_REV_LESS_V3'):
+        irom_mask_reg_write_violation(dut, test_func_name)
 
 
 def drom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
@@ -1219,9 +1241,52 @@ def test_non_cache_spiram_xip_heap_execute_violation(dut: PanicTestDut, test_fun
 
 
 @pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP, indirect=['config', 'target'])
+def test_spiram_heap_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dram_reg2_execute_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
 @idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP_END, indirect=['config', 'target'])
 def test_spiram_heap_end_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dram_reg2_execute_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP, indirect=['config', 'target'])
+def test_non_cache_spiram_heap_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dram_reg2_execute_violation(dut, test_func_name)
+
+
+def memprot_core1_violation(dut: PanicTestDut, test_func_name: str, reason: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_exact(f"Guru Meditation Error: Core  1 panic'ed ({reason})")
+    dut.expect_reg_dump(1)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_CORE1, indirect=['config', 'target'])
+def test_iram_reg3_write_violation_core1(dut: PanicTestDut, test_func_name: str) -> None:
+    memprot_core1_violation(dut, test_func_name, 'Store access fault')
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_CORE1, indirect=['config', 'target'])
+def test_dram_reg2_execute_violation_core1(dut: PanicTestDut, test_func_name: str) -> None:
+    memprot_core1_violation(dut, test_func_name, 'Instruction access fault')
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_CORE1, indirect=['config', 'target'])
+def test_drom_reg_write_violation_core1(dut: PanicTestDut, test_func_name: str) -> None:
+    memprot_core1_violation(dut, test_func_name, 'Store access fault')
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_CORE1, indirect=['config', 'target'])
+def test_rtc_fast_text_write_violation_core1(dut: PanicTestDut, test_func_name: str) -> None:
+    memprot_core1_violation(dut, test_func_name, 'Store access fault')
 
 
 @pytest.mark.generic
