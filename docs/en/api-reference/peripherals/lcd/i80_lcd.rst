@@ -7,7 +7,7 @@ I80 Interfaced LCD
 
     - :cpp:member:`esp_lcd_i80_bus_config_t::clk_src` sets the clock source of the I80 bus. Note, the default clock source may be different between ESP targets.
     - :cpp:member:`esp_lcd_i80_bus_config_t::wr_gpio_num` sets the GPIO number of the pixel clock (also referred as ``WR`` in some LCD spec)
-    - :cpp:member:`esp_lcd_i80_bus_config_t::dc_gpio_num` sets the GPIO number of the data or command select pin (also referred as ``RS`` in some LCD spec)
+    - :cpp:member:`esp_lcd_i80_bus_config_t::dc_gpio_num` sets the GPIO number of the data or command select pin (also referred as ``RS`` in some LCD spec). Set it to ``-1`` when the device has no D/C line and only receives data.
     - :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` sets the bit width of the data bus (only support ``8`` or ``16``)
     - :cpp:member:`esp_lcd_i80_bus_config_t::data_gpio_nums` is the array of the GPIO number of the data bus. The number of GPIOs should be equal to the :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` value.
     - :cpp:member:`esp_lcd_i80_bus_config_t::max_transfer_bytes` sets the maximum number of bytes that can be transferred in one transaction.

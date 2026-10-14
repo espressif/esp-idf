@@ -7,7 +7,7 @@ I80 接口的 LCD
 
     - :cpp:member:`esp_lcd_i80_bus_config_t::clk_src` 设置 I80 总线的时钟源。请注意，不同的 ESP 芯片可能有不同的默认时钟源。
     - :cpp:member:`esp_lcd_i80_bus_config_t::wr_gpio_num` 设置像素时钟的 GPIO 编号（在某些 LCD 规格书中也被称为 ``WR``）
-    - :cpp:member:`esp_lcd_i80_bus_config_t::dc_gpio_num` 设置数据或命令选择管脚的 GPIO 编号（在某些 LCD 规格书中也被称为 ``RS``）
+    - :cpp:member:`esp_lcd_i80_bus_config_t::dc_gpio_num` 设置数据或命令选择管脚的 GPIO 编号（在某些 LCD 规格书中也被称为 ``RS``）。设备没有 D/C 线、只接收数据时，将该值设为 ``-1``。
     - :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` 设置数据总线的位宽（仅支持 ``8`` 位或 ``16`` 位）
     - :cpp:member:`esp_lcd_i80_bus_config_t::data_gpio_nums` 是数据总线的 GPIO 编号数组。GPIO 的数量应与 :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` 的值等同。
     - :cpp:member:`esp_lcd_i80_bus_config_t::max_transfer_bytes` 设置单次传输的最大字节数。

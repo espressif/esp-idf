@@ -507,8 +507,10 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG,
                         "can't send command without D/C line");
+    ESP_RETURN_ON_FALSE(lcd_cmd != -1 || (param && param_size > 0), ESP_ERR_INVALID_ARG, TAG,
+                        "neither command nor parameter to send");
     ESP_RETURN_ON_FALSE(param_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
                         "parameter bytes too long, enlarge max_transfer_bytes");
     ESP_RETURN_ON_FALSE(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE, ESP_ERR_INVALID_ARG, TAG,
@@ -584,7 +586,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG,
                         "can't send command without D/C line");
     ESP_RETURN_ON_FALSE(color_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
                         "color bytes too long, enlarge max_transfer_bytes");

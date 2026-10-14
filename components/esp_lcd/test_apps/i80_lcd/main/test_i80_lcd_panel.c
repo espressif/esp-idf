@@ -11,7 +11,6 @@
 #include "unity.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
-#include "esp_lcd_nt35510.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_commands.h"
 #include "soc/soc_caps.h"
@@ -85,11 +84,13 @@ TEST_CASE("lcd_i80_data_only_device without D/C line", "[lcd]")
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
 
     uint8_t data[] = { 0x01, 0x02, 0x03, 0x04 };
-    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, -1, NULL, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      esp_lcd_panel_io_tx_param(io_handle, -1, NULL, 0));
     TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, data, sizeof(data)));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE,
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, -1, data, sizeof(data)));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
                       esp_lcd_panel_io_tx_color(io_handle, 0x2C, data, sizeof(data)));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE,
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
                       esp_lcd_panel_io_tx_param(io_handle, 0x2A, NULL, 0));
 
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
@@ -492,8 +493,6 @@ TEST_CASE("lcd_panel_with_i80_interface (st7789, 8bits)", "[lcd]")
 #undef TEST_IMG_SIZE
 }
 
-// TODO: support the test on I2S LCD (IDF-7202)
-#if !SOC_HAS(I2S_I80_LCD)
 TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
 {
     int x_start = 100;
@@ -501,7 +500,7 @@ TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
     int x_end = 200;
     int y_end = 200;
     size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
-    void *color_data = malloc(color_size);
+    void *color_data = heap_caps_malloc(color_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(color_data);
     uint8_t color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
@@ -566,19 +565,20 @@ TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
     printf("set the flush window for only once\r\n");
-    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_CASET, (uint8_t[]) {
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_CASET, (uint8_t[]) {
         (x_start >> 8) & 0xFF,
         x_start & 0xFF,
         ((x_end - 1) >> 8) & 0xFF,
         (x_end - 1) & 0xFF,
-    }, 4);
-    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RASET, (uint8_t[]) {
+    }, 4));
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RASET, (uint8_t[]) {
         (y_start >> 8) & 0xFF,
         y_start & 0xFF,
         ((y_end - 1) >> 8) & 0xFF,
         (y_end - 1) & 0xFF,
-    }, 4);
-    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RAMWR, NULL, 0);
+    }, 4));
+    // RAMWR has no parameter; the following color transfers carry pixels only
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RAMWR, NULL, 0));
 
     printf("send colors to the fixed region in multiple steps\r\n");
     const int steps = 10;
@@ -599,4 +599,3 @@ TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
     free(color_data);
 }
-#endif

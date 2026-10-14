@@ -1,2 +1,0 @@
-dependencies:
-  espressif/esp_lcd_nt35510: "^1.0.0"

@@ -171,7 +171,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_select_std_slot(bus->hal.dev, I2S_STD_SLOT_BOTH, true); // copy mono
     bus->bus_width = bus_config->bus_width;
     i2s_ll_tx_enable_right_first(bus->hal.dev, true);
-#if SOC_MODULE_SUPPORT(I2S, DMA_EQUAL)
+#if I2S_LL_SUPPORT(DMA_EQUAL)
     i2s_ll_tx_enable_dma_equal(bus->hal.dev, true);
 #endif
     // enable trans done interrupt
@@ -504,8 +504,10 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG,
                         "can't send command without D/C line");
+    ESP_RETURN_ON_FALSE(lcd_cmd != -1 || (param && param_size > 0), ESP_ERR_INVALID_ARG, TAG,
+                        "neither command nor parameter to send");
     ESP_RETURN_ON_FALSE(param_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG, "parameter bytes too long, enlarge max_transfer_bytes");
     ESP_RETURN_ON_FALSE(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE, ESP_ERR_INVALID_ARG, TAG, "format buffer too small, increase LCD_I80_IO_FORMAT_BUF_SIZE");
     size_t num_trans_inflight = next_device->num_trans_inflight;
@@ -514,10 +516,6 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         ESP_RETURN_ON_FALSE(xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
                             ESP_FAIL, TAG, "recycle inflight transactions failed");
         next_device->num_trans_inflight--;
-    }
-    // Keep the synthetic EOF event active so it can kick off the next queued color transaction
-    if (lcd_cmd == -1 && (!param || param_size == 0)) {
-        return ESP_OK;
     }
 
     gdma_buffer_mount_config_t mount_config = {
@@ -596,7 +594,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     size_t color_buffer_size = 0;
-    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG,
                         "can't send command without D/C line");
     bool valid_color_buffer_size = i2s_lcd_get_color_buffer_size(bus, color_size, &color_buffer_size);
     ESP_RETURN_ON_FALSE(valid_color_buffer_size && color_buffer_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
