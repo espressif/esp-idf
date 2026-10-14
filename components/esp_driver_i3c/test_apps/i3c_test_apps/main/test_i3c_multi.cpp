@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -775,3 +775,113 @@ static void i3c_master_get_ibi_test(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I3C master IBI test", "[i3c][test_env=generic_multi_device][ignore][timeout=150]", i3c_master_get_ibi_test, i3c_slave_trigger_ibi_test);
+
+/* Lengths that are not a whole FIFO word, plus one that spans two words. */
+static const size_t s_i3c_short_read_lens[] = {1, 2, 3, 5};
+static const uint8_t s_i3c_reg_addr[2] = {0x12, 0x34};
+
+static void i3c_short_read_signal(char *buf, size_t buf_len, const char *kind, size_t read_len)
+{
+    snprintf(buf, buf_len, "short read %s %u", kind, (unsigned)read_len);
+}
+
+static void i3c_i2c_master_short_read_test(void)
+{
+    i3c_master_bus_config_t i3c_mst_config = {
+        .sda_io_num = I3C_MASTER_SDA_IO,
+        .scl_io_num = I3C_MASTER_SCL_IO,
+        .clock_source = I3C_MASTER_CLK_SRC_DEFAULT,
+        .trans_queue_depth = 1,
+        .intr_priority = 0,
+        .i3c_scl_freq_hz_od = 600 * 1000,
+        .i3c_scl_freq_hz_pp = 2 * 1000 * 1000,
+        .i3c_scl_pp_duty_cycle = 0.5,
+        .i3c_scl_od_duty_cycle = 0.5,
+        .i3c_sda_od_hold_time_ns = 25,
+        .i3c_sda_pp_hold_time_ns = 0,
+        .entdaa_device_num = 5,
+        .internal_pullup_resistor_val = I3C_MASTER_INTERNAL_PULLUP_RESISTOR_0_3K,
+        .flags = {
+            .enable_async_trans = 0,
+            .ibi_rstart_trans_en = 0,
+            .ibi_silent_sir_rejected = 0,
+            .ibi_no_auto_disable = 0,
+        }
+    };
+    i3c_master_bus_handle_t bus_handle;
+    TEST_ESP_OK(i3c_new_master_bus(&i3c_mst_config, &bus_handle));
+
+    i3c_device_i2c_config_t dev_cfg = {
+        .device_address = TEST_STATIC_ADDRESS,
+        .scl_freq_hz = 100 * 1000
+    };
+    i3c_master_i2c_device_handle_t dev;
+    TEST_ESP_OK(i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg, &dev));
+
+    unity_wait_for_signal("i3c slave init finish");
+
+    for (size_t n = 0; n < sizeof(s_i3c_short_read_lens) / sizeof(s_i3c_short_read_lens[0]); n++) {
+        size_t read_len = s_i3c_short_read_lens[n];
+        char req[32];
+        char ready[32];
+        char done[32];
+        i3c_short_read_signal(req, sizeof(req), "req", read_len);
+        i3c_short_read_signal(ready, sizeof(ready), "ready", read_len);
+        i3c_short_read_signal(done, sizeof(done), "done", read_len);
+
+        unity_send_signal(req);
+        unity_wait_for_signal(ready);
+
+        /* Write length is 2. A read limit taken from command 0 would exceed a 1-byte buffer. */
+        uint8_t buf[16];
+        memset(buf, 0xA5, sizeof(buf));
+        TEST_ESP_OK(i3c_master_i2c_device_transmit_receive(dev, s_i3c_reg_addr, sizeof(s_i3c_reg_addr), buf, read_len, -1));
+
+        for (size_t i = 0; i < read_len; i++) {
+            TEST_ASSERT_EQUAL_HEX8(0x10 + i, buf[i]);
+        }
+        for (size_t i = read_len; i < sizeof(buf); i++) {
+            TEST_ASSERT_EQUAL_HEX8(0xA5, buf[i]);
+        }
+
+        unity_send_signal(done);
+    }
+
+    TEST_ESP_OK(i3c_master_bus_rm_i2c_device(dev));
+    TEST_ESP_OK(i3c_del_master_bus(bus_handle));
+}
+
+static void i3c_i2c_slave_short_read_test(void)
+{
+    i3c_slave_init();
+    unity_send_signal("i3c slave init finish");
+
+    for (size_t n = 0; n < sizeof(s_i3c_short_read_lens) / sizeof(s_i3c_short_read_lens[0]); n++) {
+        size_t read_len = s_i3c_short_read_lens[n];
+        char req[32];
+        char ready[32];
+        char done[32];
+        i3c_short_read_signal(req, sizeof(req), "req", read_len);
+        i3c_short_read_signal(ready, sizeof(ready), "ready", read_len);
+        i3c_short_read_signal(done, sizeof(done), "done", read_len);
+
+        unity_wait_for_signal(req);
+
+        uint8_t tx[8];
+        TEST_ASSERT_LESS_OR_EQUAL(sizeof(tx), read_len);
+        for (size_t i = 0; i < read_len; i++) {
+            tx[i] = 0x10 + i;
+        }
+        i3c_slave_ll_write_data(&I3C_SLV, tx, read_len);
+        unity_send_signal(ready);
+
+        unity_wait_for_signal(done);
+
+        uint8_t rx[sizeof(s_i3c_reg_addr)] = {0};
+        TEST_ASSERT_EQUAL_UINT32(sizeof(rx), i3c_slave_ll_get_read_data_length(&I3C_SLV));
+        i3c_slave_ll_read_data(&I3C_SLV, rx, sizeof(rx));
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(s_i3c_reg_addr, rx, sizeof(rx));
+    }
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I3C-I2C master short read does not overflow buffer in fifo mode", "[i3c][test_env=generic_multi_device][timeout=150]", i3c_i2c_master_short_read_test, i3c_i2c_slave_short_read_test);
