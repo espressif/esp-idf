@@ -54,10 +54,18 @@ size_t fixed_pkt_queue_capacity(fixed_pkt_queue_t *queue);
 // If enqueue failed, it will return false, otherwise return true
 bool fixed_pkt_queue_enqueue(fixed_pkt_queue_t *queue, pkt_linked_item_t *linked_pkt, uint32_t timeout);
 
+// Same as fixed_pkt_queue_enqueue, and on success writes the new queue length to |out_len| (may be NULL).
+bool fixed_pkt_queue_enqueue_and_len(fixed_pkt_queue_t *queue, pkt_linked_item_t *linked_pkt,
+                                     uint32_t timeout, size_t *out_len);
+
 // Dequeues the next element from |queue|. If the queue is currently empty,
 // this function will block the caller until an item is enqueued or immediately return or wait for timeout according to the parameter timeout.
 // If dequeue failed, it will return NULL, otherwise return a point.
 pkt_linked_item_t *fixed_pkt_queue_dequeue(fixed_pkt_queue_t *queue, uint32_t timeout);
+
+// Same as fixed_pkt_queue_dequeue, and writes the remaining queue length to |out_len| (may be NULL).
+// On empty/timeout with timeout 0, |out_len| is set to 0.
+pkt_linked_item_t *fixed_pkt_queue_dequeue_and_len(fixed_pkt_queue_t *queue, uint32_t timeout, size_t *out_len);
 
 // Returns the first element from |queue|, if present, without dequeuing it.
 // This function will never block the caller. Returns NULL if there are no

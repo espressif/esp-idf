@@ -38,6 +38,10 @@
 #include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "hci/hci_layer.h"
+#include "stack/c2h_credit.h"
+#endif
 
 #if BT_SDP_BQB_INCLUDED
 extern BOOLEAN l2cap_bqb_ertm_mode_included_flag;
@@ -186,6 +190,14 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 
     L2CAP_TRACE_DEBUG("%s handle=%u bda="MACSTR"",
         __func__, p_lcb->handle, MAC2STR(p_lcb->remote_bd_addr));
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    if (p_lcb->handle != HCI_INVALID_HANDLE) {
+        /* Partial ACL reassembly lives on the HCI thread; post a flush there. */
+        hci_drop_inbound_acl_reassembly(p_lcb->handle);
+        btu_c2h_credit_flush_and_purge(p_lcb->handle);
+    }
+#endif
 
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
@@ -2363,6 +2375,12 @@ void l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 *******************************************************************************/
 void l2cu_device_reset (void)
 {
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    /* Controller is resetting; discard stale credits and do not flush them. */
+    btu_c2h_credit_set_enabled(FALSE);
+    btu_c2h_credit_reset();
+#endif
+
     list_node_t *p_node = NULL;
     tL2C_LCB    *p_lcb  = NULL;
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
@@ -2373,6 +2391,11 @@ void l2cu_device_reset (void)
     }
 #if (BLE_INCLUDED == TRUE)
     l2cb.is_ble_connecting = FALSE;
+#endif
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    /* Re-evaluate pause from current ACL queue before accepting new credits. */
+    btu_c2h_credit_pause_if_congested();
+    btu_c2h_credit_set_enabled(TRUE);
 #endif
 }
 

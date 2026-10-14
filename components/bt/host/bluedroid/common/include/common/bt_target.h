@@ -1778,7 +1778,7 @@
 
 /* If host flow control enabled, this is the number of buffers the controller can have unacknowledged. */
 #ifndef L2CAP_HOST_FC_ACL_BUFS
-#define L2CAP_HOST_FC_ACL_BUFS      20
+#define L2CAP_HOST_FC_ACL_BUFS      100
 #endif
 
 /* This is set to enable L2CAP to  take the ACL link out of park mode when ACL data is to be sent. */
