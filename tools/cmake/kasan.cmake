@@ -19,7 +19,7 @@
 #     MMIO accesses (outside the shadow window, so each check is a no-op but
 #     still pays the indirect call into __asan_load* / __asan_store*).
 #   - spi_flash: runs with the flash cache disabled.
-#   - esp_hw_support: RTC/PMU register access, runs with MSPI bus held.
+#   - esp_hw_support / esp_sleep: RTC/PMU register access, runs with MSPI bus held.
 #   - bootloader_support: runs before kasan_init_shadow().
 #   - freertos: scheduler / ISR plumbing is too hot to instrument.
 #   - heap: walks its own TLSF metadata living inside the (poisoned) pool;
@@ -31,6 +31,7 @@ function(kasan_filter_excluded_components var)
         hal soc esp_rom
         spi_flash
         esp_hw_support
+        esp_sleep
         bootloader_support
         freertos
         heap)

@@ -19,7 +19,7 @@
 #include "esp_private/esp_pau.h"
 #include "esp_private/sleep_retention.h"
 #include "sdkconfig.h"
-#include "esp_pmu.h"
+#include "esp_private/esp_pmu.h"
 
 #if SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG
 #include "esp_private/sleep_clock_icg.h"

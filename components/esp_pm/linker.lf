@@ -13,8 +13,8 @@ entries:
         if FREERTOS_USE_TICKLESS_IDLE = y:
             pm_impl:vApplicationSleep (noflash)
 
-[mapping:esp_hw_support_pm]
-archive: libesp_hw_support.a
+[mapping:esp_sleep_pm]
+archive: libesp_sleep.a
 entries:
     if PM_SLP_IRAM_OPT = y:
         if SOC_LIGHT_SLEEP_SUPPORTED = y:
@@ -36,6 +36,13 @@ entries:
                 sleep_cpu:sleep_enable_cpu_retention (noflash)
             if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || (ESP32P4_SELECTS_REV_LESS_V3 = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y):
                 sleep_cpu:cpu_domain_pd_allowed (noflash)
+        if SOC_TEMP_SENSOR_SUPPORTED = y && SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION = y && SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN = n:
+            sleep_modes:esp_sleep_pd_config (noflash)
+
+[mapping:esp_hw_support_pm]
+archive: libesp_hw_support.a
+entries:
+    if PM_SLP_IRAM_OPT = y:
         esp_clk:esp_clk_slowclk_cal_set (noflash)
         esp_clk:esp_clk_slowclk_cal_get (noflash)
         esp_clk:esp_rtc_get_time_us (noflash)
@@ -52,8 +59,6 @@ entries:
             sar_tsens_ctrl:temperature_sensor_power_acquire (noflash)
             sar_tsens_ctrl:temperature_sensor_power_release (noflash)
             sar_tsens_ctrl:temp_sensor_get_raw_value (noflash)
-            if (SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION = y) && (SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN = n):
-                sleep_modes:esp_sleep_pd_config (noflash)
         sar_periph_ctrl_common:regi2c_saradc_enable (noflash)
         sar_periph_ctrl_common:regi2c_saradc_disable (noflash)
         if SOC_ADC_SUPPORTED = y:

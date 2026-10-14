@@ -8,4 +8,5 @@ components/esp_driver_parlio/test_apps/parlio:
     - esp_driver_dma
     - esp_hal_parlio
     - esp_hw_support
+    - esp_sleep
     - soc

@@ -769,6 +769,7 @@ examples/peripherals/touch_sensor/touch_sens_sleep:
     - esp_driver_touch_sens
     - esp_hal_touch_sens
     - esp_hw_support
+    - esp_sleep
     - soc
 
 examples/peripherals/twai/cybergear:

@@ -7,4 +7,5 @@ components/esp_driver_pcnt/test_apps/pulse_cnt:
     - esp_driver_pcnt
     - esp_hal_pcnt
     - esp_hw_support
+    - esp_sleep
     - soc

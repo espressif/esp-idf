@@ -8,4 +8,5 @@ components/esp_driver_ppa/test_apps:
     - esp_driver_dma
     - esp_hal_ppa
     - esp_hw_support
+    - esp_sleep
     - soc

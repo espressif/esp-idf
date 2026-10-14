@@ -10,6 +10,7 @@ components/esp_driver_i2s/test_apps/i2s:
     - esp_driver_dma
     - esp_hal_i2s
     - esp_hw_support
+    - esp_sleep
     - soc
 
 components/esp_driver_i2s/test_apps/i2s_multi_dev:

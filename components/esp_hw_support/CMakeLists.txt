@@ -8,7 +8,8 @@ if(${target} STREQUAL "linux")
     idf_component_register(SRCS "port/linux/esp_random.c"
                                  "port/linux/chip_info.c"
                                  "port/linux/cpu.c"
-                           INCLUDE_DIRS "include/linux" "include" "etm/include")
+                           INCLUDE_DIRS "include/linux" "include" "etm/include"
+                           REQUIRES esp_sleep)
     return()
 endif()
 
@@ -34,11 +35,14 @@ if(__ULP_BUILDV2)
     # ulp/ulp_riscv/include/ulp_riscv.h and
     # ulp/lp_core/lp_core/lp_core_ubsan.c.
     idf_component_register(INCLUDE_DIRS ${public_include_dirs}
-                           REQUIRES esp_common esp_hal_gpio hal soc)
+                           REQUIRES esp_common esp_hal_gpio hal soc esp_sleep)
     return()
 endif()
 
-set(requires esp_hal_gpio esp_hal_usb esp_hal_pmu esp_hal_regi2c esp_hal_uart esp_hal_debug_assist esp_hal_cache)
+# esp_sleep is a public requirement for backward compatibility, as esp_hw_support is a common requirement
+# and sleep APIs (esp_sleep.h etc.) used to be provided by esp_hw_support
+set(requires esp_sleep
+             esp_hal_gpio esp_hal_usb esp_hal_pmu esp_hal_regi2c esp_hal_uart esp_hal_debug_assist esp_hal_cache)
 set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
                   esp_mspi
                   bootloader_support
@@ -47,7 +51,7 @@ set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.
                   esp_hal_clock
                   esp_hal_security
                   esp_hal_systimer
-                  esp_hal_ana_conv      # sleep process requires backup/restore some ADC, TSENS registers
+                  esp_hal_ana_conv
                   )
 
 set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
@@ -86,34 +90,13 @@ if(NOT non_os_build)
     if(CONFIG_SOC_ISP_SHARE_CSI_BRG)
         list(APPEND srcs "mipi_csi_share_hw_ctrl.c")
     endif()
-    if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "sleep_retention.c")
-    endif()
     if(CONFIG_SOC_PMU_SUPPORTED)
         list(APPEND srcs "pmu_share_hw.c")
     endif()
-    if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
-        list(APPEND srcs "sleep_modem.c"
-                         "sleep_cache.c"
-                         "sleep_modes.c"
-                         "sleep_uart.c"
-                         "sleep_console.c"
-                         "sleep_mspi.c"
-                         "sleep_usb.c"
-                         "sleep_gpio.c"
-                         "sleep_event.c"
-            )
-        if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
-            list(APPEND srcs "sleep_system_peripheral.c")
-            list(APPEND srcs "port/${target}/peripheral_domain_pd.c"
-                         "port/${target}/system_periph_retention.c")
-        endif()
-    endif()
 
     # [refactor-todo]
-    list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
+    list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by esp_clock_output and debug_probe)
                               esp_timer
-                              esp_hal_touch_sens # for touch sensor wakeup (introduced in sleep_modes.c)
                               esp_mm
                               esp_hal_mspi
                               esp_hal_uart
@@ -140,15 +123,6 @@ if(NOT non_os_build)
         if(CONFIG_SOC_PAU_SUPPORTED)
             list(APPEND srcs "port/${target}/etm_retention.c")
         endif()
-    endif()
-
-    if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "port/pau_regdma.c"
-                         "port/regdma_link.c")
-    endif()
-
-    if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED AND CONFIG_ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB)
-        list(APPEND srcs "sleep_wake_stub.c")
     endif()
 
     if(CONFIG_SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX OR CONFIG_SOC_GPIO_CLOCKOUT_BY_IO_MUX)
@@ -192,16 +166,7 @@ idf_define_esp_err_codes(HEADERS include/esp_memprot_err.h)
 
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
-add_subdirectory(lowpower)
 add_subdirectory(modem)
-
-if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_sleep_gpio_include")
-endif()
-
-if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u sleep_system_peripheral_dummy")
-endif()
 
 if(NOT non_os_build)
     if(CONFIG_SPIRAM)
@@ -216,11 +181,3 @@ endif()
 
 # Required in `adc_share_hw_ctrl.h`
 idf_component_optional_requires(PUBLIC esp_hal_ana_conv)
-
-if(CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
-    set_source_files_properties(
-        sleep_retention.c
-        PROPERTIES COMPILE_FLAGS
-        -Wno-analyzer-null-dereference
-    )
-endif()

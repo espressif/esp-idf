@@ -18,6 +18,13 @@ The legacy ``port_start_app_hook`` is deprecated and will be removed in ESP-IDF 
         return ESP_OK;
     }
 
+Sleep
+-----
+
+The sleep and low-power code (``esp_sleep.h``, light and deep sleep, sleep retention, etc.) has been moved out of the ``esp_hw_support`` component into a new ``esp_sleep`` component. The APIs are unchanged, and ``esp_hw_support`` lists ``esp_sleep`` as a public dependency, so existing projects do not need to be updated. New components using sleep APIs should add ``esp_sleep`` to their ``REQUIRES`` or ``PRIV_REQUIRES``.
+
+The sleep Kconfig options (``CONFIG_ESP_SLEEP_*``) keep their names, but the menu moved from *Component config* > *Hardware Settings* > *Sleep Config* to *Component config* > *Sleep Config*.
+
 OTA Updates
 -----------
 

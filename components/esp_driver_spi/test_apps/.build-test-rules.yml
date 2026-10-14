@@ -5,6 +5,7 @@
     - esp_driver_gpio
     - esp_hal_spi
     - esp_hw_support
+    - esp_sleep
     - soc
   depends_filepatterns:
     - components/driver/test_apps/components/test_driver_utils/**/*

@@ -8,6 +8,7 @@ components/esp_driver_dma/test_apps/dma:
     - esp_driver_dma
     - esp_hal_dma
     - esp_hw_support
+    - esp_sleep
     - soc
 
 components/esp_driver_dma/test_apps/dma2d:

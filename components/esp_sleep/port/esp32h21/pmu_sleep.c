@@ -22,7 +22,7 @@
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
 #include "soc/regi2c_bias.h"
-#include "regi2c_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #if !SOC_APM_SUPPORTED
 #include "hal/apm_hal.h"
 #endif

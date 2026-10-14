@@ -23,4 +23,5 @@ components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/sdio:
     - esp_driver_sdio
     - esp_hal_sd
     - esp_hw_support
+    - esp_sleep
     - soc
