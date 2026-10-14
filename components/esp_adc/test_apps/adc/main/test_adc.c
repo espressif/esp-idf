@@ -38,8 +38,11 @@ static const char *TAG_CH[2][10] = {{"ADC1_CH2", "ADC1_CH3"}, {"ADC2_CH0"}};
 /*---------------------------------------------------------------
         ADC Oneshot High / Low test
 ---------------------------------------------------------------*/
-//ESP32C3 ADC2 oneshot mode is not supported anymore
-#define ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2    ((SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3)
+// ESP32C3 ADC2 oneshot mode is not supported anymore.
+// ESP32P4 ADC2 pins(49–52) are externally pulled up on the core board with ESP32C6.
+#define ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2    ((SOC_ADC_PERIPH_NUM >= 2) && \
+                                                !CONFIG_IDF_TARGET_ESP32C3 && \
+                                                !CONFIG_IDF_TARGET_ESP32P4)
 
 TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
 {
