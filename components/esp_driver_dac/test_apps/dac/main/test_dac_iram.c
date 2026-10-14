@@ -24,7 +24,7 @@ typedef struct {
 static void IRAM_ATTR test_dac_direct_set_safety(void *usr_ctx)
 {
     dac_oneshot_handle_t handle = (dac_oneshot_handle_t)usr_ctx;
-    dac_oneshot_output_voltage(handle, 128);
+    dac_oneshot_output_code(handle, 128);
 }
 
 static void IRAM_ATTR test_dac_dma_iram_safety(void *usr_ctx)

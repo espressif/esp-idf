@@ -12,7 +12,7 @@ entries:
             dac_dma: dac_priv_dma_trans_start (noflash)
 
     if DAC_CTRL_FUNC_IN_IRAM = y:
-        dac_oneshot: dac_oneshot_output_voltage (noflash)
+        dac_oneshot: dac_oneshot_output_code (noflash)
         dac_continuous: dac_load_data_into_desc (noflash)
         dac_continuous: dac_continuous_write_asynchronously (noflash)
 

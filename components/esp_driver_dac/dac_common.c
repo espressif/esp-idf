@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 
 #include "dac_priv_common.h"
 #include "freertos/FreeRTOS.h"
@@ -62,15 +63,29 @@ esp_err_t dac_priv_channel_deregister(dac_channel_t chan_id)
     }
 }
 
-esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_data_source_t source)
+esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_channel_config_t chan_cfg, dac_data_source_t source)
 {
     ESP_RETURN_ON_FALSE(IS_VALID_DAC_CHANNEL(chan_id), ESP_ERR_INVALID_ARG, TAG, "channel id is invalid");
+
+#if SOC_DAC_HS_RESOLUTION && SOC_DAC_SUPPORT_BUFFER_CFG
+    const bool high_speed = chan_cfg.output_mode == DAC_CHANNEL_OUTPUT_CURRENT;
+    const bool buffered = !high_speed && (chan_cfg.buffer_mode != DAC_CHANNEL_BUFFER_BYPASS);
+    /* Reduced voltage swing supports the full input code range without clipping at the ends. */
+    const bool full_code_range = buffered && (chan_cfg.buffer_mode == DAC_CHANNEL_BUFFER_REDUCED_SWING);
+#else
+    (void)chan_cfg;  // ignore chan_cfg
+#endif
 
     dac_channel_fsm_t expected_fsm = DAC_CHAN_FSM_REGISTERED;
     if (atomic_compare_exchange_strong(&s_dac_chan_fsm[chan_id], &expected_fsm, DAC_CHAN_FSM_WAIT)) {
         gpio_num_t gpio_num = (gpio_num_t)dac_periph_signal.dac_channel_io_num[chan_id];
         gpio_config_as_analog(gpio_num);
         DAC_ENTER_CRITICAL();
+#if SOC_DAC_HS_RESOLUTION && SOC_DAC_SUPPORT_BUFFER_CFG
+        dac_ll_pad_enable_high_speed(chan_id, high_speed);
+        dac_ll_pad_enable_buffer(chan_id, buffered);
+        dac_ll_pad_set_buffer_code_range(chan_id, full_code_range);
+#endif
         dac_ll_pad_set_data_source(chan_id, source);
         dac_ll_sync_by_adc(false);
         dac_ll_pad_power_on(chan_id);

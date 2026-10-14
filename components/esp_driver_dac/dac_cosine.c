@@ -41,6 +41,7 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     DAC_NULL_POINTER_CHECK(cos_cfg);
     DAC_NULL_POINTER_CHECK(ret_handle);
     ESP_RETURN_ON_FALSE(IS_VALID_DAC_CHANNEL(cos_cfg->chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid dac channel id");
+    ESP_RETURN_ON_FALSE(dac_priv_is_valid_channel_config(&cos_cfg->chan_cfg), ESP_ERR_INVALID_ARG, TAG, "invalid DAC channel configuration");
     ESP_RETURN_ON_FALSE(cos_cfg->freq_hz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid cosine wave frequency");
 
     dac_cosine_clk_src_t clk_src = cos_cfg->clk_src ? : DAC_COSINE_CLK_SRC_DEFAULT;
@@ -134,7 +135,7 @@ esp_err_t dac_cosine_start(dac_cosine_handle_t handle)
 
     esp_err_t ret = ESP_OK;
     /* The generator is already running; starting only powers on the pad so the wave reaches the output. */
-    ESP_GOTO_ON_ERROR(dac_priv_channel_enable(handle->cfg.chan_id, DAC_DATA_SOURCE_COSINE), err,
+    ESP_GOTO_ON_ERROR(dac_priv_channel_enable(handle->cfg.chan_id, handle->cfg.chan_cfg, DAC_DATA_SOURCE_COSINE), err,
                       TAG, "enable dac channel %d failed", handle->cfg.chan_id);
 
     atomic_store(&handle->fsm, DAC_COS_FSM_ENABLED);
@@ -170,5 +171,5 @@ uint8_t dac_cosine_get_bitwidth(dac_cosine_handle_t handle)
         return 0;
     }
 
-    return SOC_DAC_RESOLUTION;
+    return dac_priv_chan_cfg_get_bitwidth(&handle->cfg.chan_cfg);
 }

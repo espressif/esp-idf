@@ -23,6 +23,7 @@ typedef struct dac_continuous_s      *dac_continuous_handle_t;    /*!< DAC conti
  */
 typedef struct {
     dac_channel_mask_t          chan_mask;      /*!< DAC channels' mask for selecting which channels are used */
+    dac_channel_config_t        chan_cfg;       /*!< Channel (analog pad) configuration. Applies to every channel selected by `chan_mask`. */
     uint32_t                    desc_num;       /*!< The number of DMA descriptor, at least 2 descriptors are required
                                                  *   The number of descriptors is directly proportional to the max data buffer size while converting in cyclic output
                                                  *   but only need to ensure it is greater than '1' in acyclic output
