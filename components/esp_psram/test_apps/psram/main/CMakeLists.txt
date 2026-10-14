@@ -16,4 +16,5 @@ endif()
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity esp_psram spi_flash esp_partition esp_driver_spi esp_driver_gptimer
+                                     esp_hal_cache
                        WHOLE_ARCHIVE)
