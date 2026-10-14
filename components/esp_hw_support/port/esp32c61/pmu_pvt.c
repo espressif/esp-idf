@@ -125,7 +125,6 @@ void IRAM_ATTR pvt_func_enable(bool enable)
             if (pvt_enable_flag == true) {
                 return;
             }
-            SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // start calibration @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
             SET_PERI_REG_MASK(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_SITE2_CLK_EN);
             SET_PERI_REG_MASK(PVT_CLK_CFG_REG, PVT_MONITOR_CLK_PVT_EN);                // once enable cannot be closed
@@ -184,6 +183,12 @@ void IRAM_ATTR charge_pump_enable(bool enable)
             pvt_pump_enable_flag = false;
         }
     }
+}
+
+void pvt_dig_dbias_init(void)
+{
+    SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);     // Start calibration @HP_CALI_DBIAS_DEFAULT
+    CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);   // Must clear @HP_CALI_DBIAS_DEFAULT
 }
 
 #endif

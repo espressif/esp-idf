@@ -251,9 +251,16 @@ void pmu_init(void)
 #endif
 
 #if CONFIG_ESP_ENABLE_PVT
-    /*setup pvt function*/
+    /* Setup pvt function */
     uint32_t blk_version = efuse_hal_blk_version();
+    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     if (blk_version >= 1) {
+        if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)   \
+            || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
+            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH)) {
+            /* Only initial pvt dig dbias when power on or reset rtc module */
+            pvt_dig_dbias_init();
+        }
         pvt_auto_dbias_enable(true);
         esp_rom_delay_us(1000);
     }

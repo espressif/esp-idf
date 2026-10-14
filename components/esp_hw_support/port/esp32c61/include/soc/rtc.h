@@ -82,6 +82,11 @@ set pvt default param
 #define PVT_DELAY_NUM_PUMP      132
 
 /**
+ * @brief Initialize PVT dig dbias
+ */
+void pvt_dig_dbias_init(void);
+
+/**
  * @brief Initialize PVT related parameters
  */
 void pvt_auto_dbias_init(void);
