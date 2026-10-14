@@ -173,6 +173,7 @@ void app_main(void)
     /* TODO: IDF-6820: ESP32-S2-> Fix multiple panic reasons in different runs */
     HANDLE_TEST(test_name, test_rtc_fast_reg3_execute_violation);
     HANDLE_TEST(test_name, test_rtc_fast_text_write_violation);
+    HANDLE_TEST(test_name, test_rtc_fast_reserved_execute_violation);
 #endif
 
 #if SOC_DCACHE_SUPPORTED
@@ -200,6 +201,7 @@ void app_main(void)
     HANDLE_TEST(test_name, test_non_cache_irom_reg_write_violation);
     HANDLE_TEST(test_name, test_non_cache_drom_reg_write_violation);
     HANDLE_TEST(test_name, test_non_cache_drom_reg_execute_violation);
+    HANDLE_TEST(test_name, test_non_cache_irom_mask_reg_write_violation);
 #endif
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && SOC_MMU_DI_VADDR_SHARED
@@ -221,7 +223,22 @@ void app_main(void)
 #endif
 
 #if CONFIG_SPIRAM
+    HANDLE_TEST(test_name, test_spiram_heap_execute_violation);
     HANDLE_TEST(test_name, test_spiram_heap_end_execute_violation);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    HANDLE_TEST(test_name, test_non_cache_spiram_heap_execute_violation);
+#endif
+#endif
+
+#if !CONFIG_FREERTOS_UNICORE
+    HANDLE_TEST(test_name, test_iram_reg3_write_violation_core1);
+    HANDLE_TEST(test_name, test_dram_reg2_execute_violation_core1);
+#if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED
+    HANDLE_TEST(test_name, test_rtc_fast_text_write_violation_core1);
+#endif
+#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+    HANDLE_TEST(test_name, test_drom_reg_write_violation_core1);
+#endif
 #endif
 
 #ifdef CONFIG_SOC_CPU_HAS_PMA
