@@ -32,6 +32,9 @@ examples/network/simple_sniffer:
 examples/network/sta2eth:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16156)'
   depends_components:
     - esp_eth
     - esp_wifi
