@@ -794,9 +794,6 @@ examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s31"]
-      temporary: true
-      reason: Lack runners
     - if: IDF_TARGET in ["esp32h4"] # TODO: IDFCI-10703
       temporary: true
       reason: lack of usj runner
