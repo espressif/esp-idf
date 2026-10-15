@@ -1228,9 +1228,12 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         }
 
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+#if SOC_ECDSA_SUPPORT_CURVE_P384
         if (tls->ecdsa_curve == ESP_TLS_ECDSA_CURVE_SECP384R1) {
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS1_3_AES_256_GCM_SHA384;
-        } else {
+        } else
+#endif
+        {
             ecdsa_peripheral_supported_ciphersuites[ciphersuite_count++] = MBEDTLS_TLS1_3_AES_128_GCM_SHA256;
         }
 #endif
