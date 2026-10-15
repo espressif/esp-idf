@@ -9,6 +9,7 @@ import pexpect
 import pytest
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
@@ -27,7 +28,7 @@ def _test_examples_sysview_tracing(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     gdb_logfile = os.path.join(dut.logdir, 'gdb.txt')
     gdbinit_orig = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gdbinit')
     gdbinit = os.path.join(dut.logdir, 'gdbinit')
-    with open(gdbinit_orig, 'r') as f_r, open(gdbinit, 'w') as f_w:
+    with open(gdbinit_orig) as f_r, open(gdbinit, 'w') as f_w:
         for line in f_r:
             if line.startswith('mon esp sysview start'):
                 f_w.write(f'mon esp sysview start {trace_files}\n')
@@ -61,6 +62,6 @@ def test_examples_sysview_tracing(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 
 @pytest.mark.usb_serial_jtag
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32p4'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_examples_sysview_tracing_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_examples_sysview_tracing(openocd_dut, dut)

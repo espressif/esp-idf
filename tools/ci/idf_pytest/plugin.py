@@ -185,7 +185,8 @@ class IdfLocalPlugin:
                 if rev_marker in case.all_markers:
                     break
             else:
-                item.add_marker('rev_default')
+                # ESP32-P4's default build supports revisions below 3.0.
+                item.add_marker('esp32p4_rev1' if 'esp32p4' in case.targets else 'rev_default')
 
             if 'host_test' in case.all_markers:
                 item.add_marker('skip_app_downloader')  # host_test jobs will build the apps itself
