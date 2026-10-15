@@ -90,6 +90,7 @@ static void stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
     char name[24];
 
     snprintf(name, sizeof(name), "SNK #%d", stream_index(stream));
+    rx_metrics.last_sdu = data;
     rx_metrics.last_sdu_len = len;
     example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, name);
 }

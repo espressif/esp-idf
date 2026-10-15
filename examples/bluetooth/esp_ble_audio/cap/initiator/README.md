@@ -31,6 +31,36 @@ Under **Example: CAP Initiator** -> **CAP Initiator mode**:
 * **Unicast** (`EXAMPLE_UNICAST`, default) — scan for a CAP Acceptor and set up unicast streams as BAP Unicast Client. Mutually exclusive with Broadcast.
 * **Broadcast** (`EXAMPLE_BROADCAST`) — act as a CAP Broadcast Source; start extended + periodic advertising and a BIG so Broadcast Sinks can sync. Mutually exclusive with Unicast.
 
+Under **Example: Common Audio Utilities**, enable **Synchronize multi-stream TX with
+timestamps** (`CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP`, disabled by default) to give the
+SDUs of all transmitting streams of the unicast group or BIG the same timestamps, so that the SDUs of
+one frame (e.g. the left and right audio) go in one event:
+
+- One TX scheduler for the unicast group or BIG sends one frame per SDU interval: one SDU on
+  each started stream, all with the same timestamp.
+- At the start only the first stream sends, without timestamps, and reads
+  **LE Read ISO TX Sync** (`esp_ble_audio_bap_stream_get_tx_sync()`) after each
+  send until it finds the SDU at the start of an event; the timestamps go on from
+  that event's anchor. The read is a blocking HCI command of about 2.5 ms, so it
+  comes after the send.
+- A stream started later joins at the next frame, with the same timestamp.
+- The best lead (how long before its reference time an SDU is handled) of every
+  50 SDUs follows the clock difference between the timer and the controller:
+  below 200 us the scheduler adds one frame, above two SDU intervals more it
+  skips one. A stall lowers only some SDUs and changes nothing; a best lead
+  below minus one SDU interval is a stall or a backlog, and no frame is added.
+
+In this mode the first 4 bytes of each SDU carry its timestamp (0 without one),
+and unframed data is required. With the option disabled, the same scheduler sends
+one SDU per stream per interval without timestamps. Logs on anomalies:
+
+```
+I CAP_INI: [SNK #<n>] TX: <N> packets, <k> late
+W CAP_INI: [SNK #<n>] Send failed, err <e>
+E CAP_INI: [SNK #<n>] Timestamp TX start failed, err <e>
+W AUDIO_TX_SYNC: Framed data is not supported yet
+```
+
 ### Security & Pairing
 
 Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, inherited from `../../common_components/example_init/ble_audio_example_init.c`. Change pairing or IO-cap there.
@@ -61,7 +91,7 @@ For `esp32s31`, replace the chip overlay accordingly.
 
 1. `app_main` initializes NVS, the Bluetooth controller (`bluetooth_init`) and the LE Audio common layer (`esp_ble_audio_common_init`); GAP/GATT callbacks are registered only in unicast mode.
 2. The selected sub-mode initializes itself: `cap_initiator_unicast_init` registers CAP and BAP unicast-client callbacks, or `cap_initiator_broadcast_init` registers the broadcast stream ops.
-3. `cap_initiator_tx_init` initializes the TX scheduler slot(s); `esp_ble_audio_common_start` starts the audio stack and the GAP device name is set per build-time mode (`CAP Initiator` for unicast, `CAP Broadcast Source` for broadcast).
+3. `cap_initiator_tx_init` initializes the TX slots and one TX scheduler for the group; `esp_ble_audio_common_start` starts the audio stack and the GAP device name is set per build-time mode (`CAP Initiator` for unicast, `CAP Broadcast Source` for broadcast).
 4. **Unicast**: `cap_initiator_unicast_start` begins extended scanning. On a connectable advertising report containing CAS service data, it cancels scanning and calls `ble_gap_connect`.
 5. **Unicast**: After ACL connect the initiator starts pairing, then on `SECURITY_CHANGE` exchanges MTU; on MTU change it starts GATT service discovery. Once both MTU and discovery are done, it calls `esp_ble_audio_cap_initiator_unicast_discover` (CAS), then BAP `discover` for SINK and SOURCE.
 6. **Unicast**: It creates an ad-hoc unicast group with the LC3 16_2_1 QoS, then starts unicast audio. Stream callbacks log configured / qos_set / enabled / started; on start the sink (TX) stream is registered with the TX module.

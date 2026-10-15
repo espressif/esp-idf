@@ -83,8 +83,8 @@ I CIS_PER: Incoming CIS request from handle <h>
 I CIS_PER: [CIS #0] Connected
 I CIS_PER: Incoming CIS request from handle <h>
 I CIS_PER: [CIS #1] Connected
-I CIS_PER: [CIS #0] RX: <count> packets
-I CIS_PER: [CIS #1] RX: <count> packets
+I CIS_PER: [CIS #0] RX: <count> packets, valid <v> (empty <e>), error <x>, lost <l>
+I CIS_PER: [CIS #1] RX: <count> packets, valid <v> (empty <e>), error <x>, lost <l>
 ```
 
 A `No channels available` error on a request means more CIS were offered than `CIS_COUNT` provides for.

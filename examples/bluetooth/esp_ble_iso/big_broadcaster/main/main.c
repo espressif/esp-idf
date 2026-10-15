@@ -45,12 +45,20 @@ static size_t connected_bis_count;
 static struct iso_chan_tx {
     int chan_idx;
     uint16_t seq_num;
+    example_iso_tx_count_t tx_count;
     uint8_t data[BIS_SDU_SIZE];
-    example_iso_tx_scheduler_t scheduler;
 } chan_tx[BIS_ISO_CHAN_COUNT];
 
-static void iso_chan_send(int chan_idx);
+/* One scheduler for the BIG: each tick sends one SDU on every BIS. */
+static example_iso_tx_scheduler_t tx_scheduler;
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+static example_iso_tx_sync_t tx_sync;
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+
 static int bis_chan_index_get(const esp_ble_iso_chan_t *chan);
+#if !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+static int iso_chan_send(int chan_idx);
+#endif /* !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 
 static void iso_connected_cb(esp_ble_iso_chan_t *chan)
 {
@@ -69,6 +77,16 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         return;
     }
 
+    chan_tx[chan_idx].tx_count = (example_iso_tx_count_t){0};
+
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    /* Sends from the first tick, once the whole BIG is connected. */
+    err = example_iso_tx_sync_start(&tx_sync, chan, BIG_SDU_INTERVAL_US);
+    if (err) {
+        ESP_LOGE(TAG, "[BIS #%d] Timestamp TX start failed, err %d", chan_idx, err);
+    }
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+
     connected_bis_count++;
 
     if (connected_bis_count < BIS_ISO_CHAN_COUNT) {
@@ -77,21 +95,24 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         return;
     }
 
-    ESP_LOGI(TAG, "All %u BIS channels connected, starting TX", BIS_ISO_CHAN_COUNT);
+    ESP_LOGI(TAG, "All %u BIS channels connected, starting TX %s timestamps", BIS_ISO_CHAN_COUNT,
+             IS_ENABLED(CONFIG_EXAMPLE_ISO_TX_TIMESTAMP) ? "with" : "without");
+
+    example_iso_tx_scheduler_reset(&tx_scheduler);
 
     /* Note: esp timer is not accurate enough */
+    err = example_iso_tx_scheduler_start(&tx_scheduler, BIG_SDU_INTERVAL_US);
+    if (err) {
+        ESP_LOGE(TAG, "Scheduler start failed, err %d", err);
+        return;
+    }
+
+#if !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
     for (size_t i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
         chan_tx[i].seq_num = 0;
-        example_iso_tx_scheduler_reset(&chan_tx[i].scheduler);
-
-        err = example_iso_tx_scheduler_start(&chan_tx[i].scheduler, BIG_SDU_INTERVAL_US);
-        if (err) {
-            ESP_LOGE(TAG, "[BIS #%zu] Scheduler start failed, err %d", i, err);
-            continue;
-        }
-
         iso_chan_send((int)i);
     }
+#endif /* !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 }
 
 static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
@@ -103,16 +124,18 @@ static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
         connected_bis_count--;
     }
 
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    example_iso_tx_sync_stop(&tx_sync, chan);
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+
     if (connected_bis_count == 0) {
         esp_err_t err;
 
         ESP_LOGI(TAG, "All BIS channels disconnected, TX stopped");
 
-        for (size_t i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
-            err = example_iso_tx_scheduler_stop(&chan_tx[i].scheduler);
-            if (err) {
-                ESP_LOGE(TAG, "[BIS #%zu] Scheduler stop failed, err %d", i, err);
-            }
+        err = example_iso_tx_scheduler_stop(&tx_scheduler);
+        if (err) {
+            ESP_LOGE(TAG, "Scheduler stop failed, err %d", err);
         }
 
         out_big = NULL;
@@ -130,8 +153,8 @@ static void iso_sent_cb(esp_ble_iso_chan_t *chan, void *user_data)
     }
 
     snprintf(name, sizeof(name), "BIS #%d", chan_idx);
-    example_iso_tx_scheduler_on_sent(&chan_tx[chan_idx].scheduler,
-                                     user_data, TAG, name);
+    example_iso_tx_scheduler_on_sent(&tx_scheduler, user_data, &chan_tx[chan_idx].tx_count,
+                                     TAG, name);
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -210,17 +233,18 @@ static void big_create(void)
     }
 }
 
-static void iso_chan_send(int chan_idx)
+#if !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+static int iso_chan_send(int chan_idx)
 {
     int err;
 
     if (chan_idx < 0 || chan_idx >= BIS_ISO_CHAN_COUNT) {
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
 
     if (bis_iso_chan[chan_idx].iso == NULL) {
         ESP_LOGW(TAG, "[BIS #%d] No channel to transmit", chan_idx);
-        return;
+        return ESP_ERR_INVALID_STATE;
     }
 
     memset(chan_tx[chan_idx].data,
@@ -233,21 +257,51 @@ static void iso_chan_send(int chan_idx)
                                 chan_tx[chan_idx].seq_num);
     if (err) {
         ESP_LOGD(TAG, "[BIS #%d] send failed, err %d", chan_idx, err);
-        return;
+        return err;
     }
 
     chan_tx[chan_idx].seq_num++;
+
+    return 0;
 }
+#else /* !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+static int tx_send_cb(esp_ble_iso_chan_t *chan, uint16_t seq_num,
+                      uint32_t timestamp, bool ts_valid)
+{
+    struct iso_chan_tx *tx = &chan_tx[bis_chan_index_get(chan)];
+    int err;
+
+    memset(tx->data, (uint8_t)seq_num, sizeof(tx->data));
+    /* The timestamp, 0 without one, tells the receiver which SDUs of the
+     * channels belong together, e.g. the left and right audio of one frame.
+     */
+    if (!ts_valid) {
+        timestamp = 0;
+    }
+    memcpy(tx->data, &timestamp, sizeof(timestamp));
+
+    if (ts_valid) {
+        err = esp_ble_iso_chan_send_ts(chan, tx->data, sizeof(tx->data), seq_num, timestamp);
+    } else {
+        err = esp_ble_iso_chan_send(chan, tx->data, sizeof(tx->data), seq_num);
+    }
+    if (err) {
+        ESP_LOGW(TAG, "[BIS #%d] Send failed, err %d", tx->chan_idx, err);
+    }
+
+    return err;
+}
+#endif /* !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 
 static void tx_scheduler_cb(void *arg)
 {
-    struct iso_chan_tx *tx = arg;
-
-    if (tx == NULL) {
-        return;
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    example_iso_tx_sync_send_next(&tx_sync);
+#else /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+    for (size_t i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
+        iso_chan_send((int)i);
     }
-
-    iso_chan_send(tx->chan_idx);
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 }
 
 static void build_ext_adv_data(void)
@@ -295,13 +349,15 @@ void app_main(void)
 
     for (size_t i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
         chan_tx[i].chan_idx = (int)i;
-        err = example_iso_tx_scheduler_init(&chan_tx[i].scheduler,
-                                            tx_scheduler_cb,
-                                            &chan_tx[i]);
-        if (err) {
-            ESP_LOGE(TAG, "[BIS #%zu] Scheduler init failed, err %d", i, err);
-            return;
-        }
+    }
+
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    tx_sync.send = tx_send_cb;
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+    err = example_iso_tx_scheduler_init(&tx_scheduler, tx_scheduler_cb, NULL);
+    if (err) {
+        ESP_LOGE(TAG, "Scheduler init failed, err %d", err);
+        return;
     }
 
     build_ext_adv_data();

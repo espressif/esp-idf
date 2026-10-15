@@ -110,6 +110,7 @@ static void iso_recv_cb(esp_ble_iso_chan_t *chan,
     }
 
     snprintf(name, sizeof(name), "BIS #%d", chan_idx);
+    rx_metrics[chan_idx].last_sdu = data;
     rx_metrics[chan_idx].last_sdu_len = len;
     example_iso_rx_metrics_on_recv(info, &rx_metrics[chan_idx], TAG, name);
 }

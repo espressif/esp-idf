@@ -11,7 +11,7 @@ This example implements a **BAP Unicast Client** on top of the selected BLE host
 
 Once the peer is reachable, the client uses the BAP unicast client API (`esp_ble_audio_bap_unicast_client_discover`, `esp_ble_audio_bap_stream_config`, `esp_ble_audio_bap_unicast_group_create`, `esp_ble_audio_bap_stream_qos`, `esp_ble_audio_bap_stream_enable`, `esp_ble_audio_bap_stream_connect`, `esp_ble_audio_bap_stream_start`) to discover sink and source ASEs, configure each with the LC3 `16_2_1` unicast preset, build a unicast group, set QoS, enable, and ISO-connect the streams. Source (TX-from-server) streams are started by this client; sink (TX-to-server) streams are started by the server.
 
-The TX path in `stream_tx.c` registers each newly started sink stream with `example_audio_tx_scheduler` and feeds it SDU-sized buffers driven by `esp_ble_audio_bap_stream_send`. The PACS callbacks (`pac_record`, `endpoint`, `location`, `available_contexts`) print the discovered peer capabilities.
+The TX path in `stream_tx.c` registers each newly started sink stream with one `example_audio_tx_scheduler` for the unicast group, which sends one SDU-sized buffer on every registered stream per SDU interval via `esp_ble_audio_bap_stream_send` (or `esp_ble_audio_bap_stream_send_ts` in timestamp mode). The PACS callbacks (`pac_record`, `endpoint`, `location`, `available_contexts`) print the discovered peer capabilities.
 
 ## Requirements
 
@@ -26,7 +26,37 @@ Open menuconfig:
 idf.py menuconfig
 ```
 
-No build-time options — runtime defaults are baked into source.
+Apart from the option below, runtime defaults are baked into source.
+
+Under **Example: Common Audio Utilities**, enable **Synchronize multi-stream TX with
+timestamps** (`CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP`, disabled by default) to give the
+SDUs of all sink streams of the unicast group the same timestamps, so that the SDUs of
+one frame (e.g. the left and right audio) go in one event:
+
+- One TX scheduler for the unicast group sends one frame per SDU interval: one SDU on
+  each started stream, all with the same timestamp.
+- At the start only the first stream sends, without timestamps, and reads
+  **LE Read ISO TX Sync** (`esp_ble_audio_bap_stream_get_tx_sync()`) after each
+  send until it finds the SDU at the start of an event; the timestamps go on from
+  that event's anchor. The read is a blocking HCI command of about 2.5 ms, so it
+  comes after the send.
+- A stream started later joins at the next frame, with the same timestamp.
+- The best lead (how long before its reference time an SDU is handled) of every
+  50 SDUs follows the clock difference between the timer and the controller:
+  below 200 us the scheduler adds one frame, above two SDU intervals more it
+  skips one. A stall lowers only some SDUs and changes nothing; a best lead
+  below minus one SDU interval is a stall or a backlog, and no frame is added.
+
+In this mode the first 4 bytes of each SDU carry its timestamp (0 without one),
+and unframed data is required. With the option disabled, the same scheduler sends
+one SDU per stream per interval without timestamps. Logs on anomalies:
+
+```
+I BAP_UCL: [SNK #<n>] TX: <N> packets, <k> late
+W BAP_UCL: [SNK #<n>] Send failed, err <e>
+E BAP_UCL: [SNK #<n>] Timestamp TX start failed, err <e>
+W AUDIO_TX_SYNC: Framed data is not supported yet
+```
 
 ### Security & Pairing
 

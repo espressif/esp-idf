@@ -132,8 +132,10 @@ typedef void (*example_audio_tx_send_cb_t)(void *ctx);
 
 typedef struct {
     struct k_work_delayable timer;
-    size_t drift;
-    uint32_t count;
+    int32_t drift;                  /* Frames to add (> 0) or skip (< 0) at the next tick */
+    uint32_t period_us;
+    int32_t lead_cnt;               /* SDUs in the lead window; < 0 while skipping one */
+    int32_t lead_max;               /* Best lead in the window */
     /* Called periodically in ISO task context to transmit data */
     example_audio_tx_send_cb_t cb;
     void *arg;
@@ -145,6 +147,7 @@ typedef struct {
     uint32_t error_count;
     uint32_t lost_count;
     uint32_t null_sdu_count;
+    const uint8_t *last_sdu;
     uint16_t last_sdu_len;
 } example_audio_rx_metrics_t;
 
@@ -159,10 +162,58 @@ int example_audio_tx_scheduler_start(example_audio_tx_scheduler_t *scheduler,
 
 int example_audio_tx_scheduler_stop(example_audio_tx_scheduler_t *scheduler);
 
+/* TX counts of one stream, as the scheduler may serve several. */
+typedef struct {
+    uint32_t sdus;
+    uint32_t late;      /* Late SDUs since the last TX log */
+} example_audio_tx_count_t;
+
 void example_audio_tx_scheduler_on_sent(example_audio_tx_scheduler_t *scheduler,
                                         const esp_ble_iso_tx_cb_info_t *info,
+                                        example_audio_tx_count_t *count,
                                         const char *tag,
                                         const char *obj_name);
+
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+/* Send one SDU with the given seq, and with the timestamp if ts_valid. */
+typedef int (*example_audio_tx_sync_send_cb_t)(esp_ble_audio_bap_stream_t *stream,
+                                               uint16_t seq_num, uint32_t timestamp,
+                                               bool ts_valid);
+
+/* One stream of a timestamped group; each has its own seq numbers. */
+typedef struct {
+    esp_ble_audio_bap_stream_t *stream; /* NULL while stopped */
+    uint16_t seq_num;                   /* Next SDU */
+} example_audio_tx_sync_stream_t;
+
+/**
+ * @brief Timestamped TX state of one group (a BIG or CIG).
+ *
+ * Each call sends one frame: one SDU on each started stream, all with the
+ * same timestamp, so the SDUs of one frame (e.g. left and right audio) go in
+ * one event. Until LE Read ISO TX Sync shows an SDU at the start of an event,
+ * only the first stream started sends, without timestamps.
+ */
+typedef struct {
+    example_audio_tx_sync_send_cb_t send;
+    example_audio_tx_sync_stream_t streams[CONFIG_BT_ISO_MAX_CHAN];
+    example_audio_tx_sync_stream_t *lead;   /* Before sync, the stream sending */
+    uint32_t iso_interval_us;               /* Whole multiple of sdu_interval_us */
+    uint32_t sdu_interval_us;
+    uint32_t timestamp;                     /* Next frame; before sync, the last tx_time_stamp read */
+    uint16_t anchor_seq;                    /* Before sync, the first SDU seen at that tx_time_stamp */
+    bool synced;
+    bool framed;                            /* Not supported yet: TX stops */
+} example_audio_tx_sync_t;
+
+/* Add a started stream of the group; it sends from the next frame on, once synced. */
+int example_audio_tx_sync_start(example_audio_tx_sync_t *tx, esp_ble_audio_bap_stream_t *stream);
+
+void example_audio_tx_sync_stop(example_audio_tx_sync_t *tx, esp_ble_audio_bap_stream_t *stream);
+
+/* Call once per SDU interval. */
+void example_audio_tx_sync_send_next(example_audio_tx_sync_t *tx);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 
 void example_audio_rx_metrics_reset(example_audio_rx_metrics_t *metrics);
 

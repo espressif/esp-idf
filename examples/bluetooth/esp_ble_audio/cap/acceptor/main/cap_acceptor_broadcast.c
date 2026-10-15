@@ -466,6 +466,8 @@ static void broadcast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
         return;
     }
 
+    rx_metrics[idx].last_sdu = data;
+
     rx_metrics[idx].last_sdu_len = len;
     snprintf(obj_name, sizeof(obj_name), "SNK #%u", idx);
     example_audio_rx_metrics_on_recv(info, &rx_metrics[idx], TAG, obj_name);

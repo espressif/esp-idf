@@ -93,8 +93,8 @@ I (xxx) BIG_SNC: [BIS #1] Connected
 Steady-state (logged every `LOG_INTERVAL_PACKETS` SDUs by the shared RX helper):
 
 ```
-I (xxx) BIG_SNC: [BIS #0] RX: <N> packets
-I (xxx) BIG_SNC: [BIS #1] RX: <N> packets
+I (xxx) BIG_SNC: [BIS #0] RX: <N> packets, valid <v> (empty <e>), error <x>, lost <l>
+I (xxx) BIG_SNC: [BIS #1] RX: <N> packets, valid <v> (empty <e>), error <x>, lost <l>
 ```
 
 Teardown / re-sync (broadcaster disappears or restarts; reason `0x08` is the typical timeout, `0x3D` is the rare MIC-fail race documented in source):

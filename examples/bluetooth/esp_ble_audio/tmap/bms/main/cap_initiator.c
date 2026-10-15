@@ -37,6 +37,7 @@ ESP_BLE_AUDIO_BAP_LC3_BROADCAST_PRESET_48_2_1_DEFINE(broadcast_preset_48_2_1,
 
 static example_audio_tx_scheduler_t tx_scheduler;
 static uint16_t tx_seq_num;
+static example_audio_tx_count_t tx_count;
 static uint8_t *iso_data;
 
 static void broadcast_audio_tx(void)
@@ -89,6 +90,7 @@ static void broadcast_started_cb(esp_ble_audio_bap_stream_t *stream)
 
     tx_seq_num = 0;
     example_audio_tx_scheduler_reset(&tx_scheduler);
+    tx_count = (example_audio_tx_count_t){0};
 
     /* Note: esp timer is not accurate enough */
     err = example_audio_tx_scheduler_start(&tx_scheduler, stream->qos->interval);
@@ -136,7 +138,7 @@ static void broadcast_disconnected_cb(esp_ble_audio_bap_stream_t *stream, uint8_
 
 static void broadcast_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
 {
-    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, TAG, "SRC #0");
+    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, &tx_count, TAG, "SRC #0");
 }
 
 static esp_ble_audio_bap_stream_ops_t broadcast_stream_ops = {
