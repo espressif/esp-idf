@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table d75d0e39a18319b5287c3790c42a8d06
+// md5_digest_table 867471c229acc732f65a1a5d7dfb25ff
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -112,6 +112,20 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP_CALIBRATION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V8_DREF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V8_MUL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT16[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT15[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT14[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT13[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT12[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT11[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_WEIGHT_BIT10[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT16[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT15[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT14[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT13[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT12[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT11[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_WEIGHT_BIT10[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
@@ -268,6 +282,20 @@ extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIBRATION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V8_DREF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V8_MUL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT16[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT15[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT14[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT13[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT12[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT11[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_WEIGHT_BIT10[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT16[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT15[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT14[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT13[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT12[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT11[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_WEIGHT_BIT10[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 #define ESP_EFUSE_BLOCK_USR_DATA ESP_EFUSE_USER_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
