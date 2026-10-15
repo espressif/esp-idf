@@ -192,7 +192,7 @@ typedef union {
     struct {
         /** mspi_fast_div_num : R/W; bitpos: [7:0]; default: 0;
          *  Set as one within (0,1,2) to generate div1(default)/div2/div4 of low-speed
-         *  clock-source to drive clk_mspi_fast. Only avaiable whe the clck-source is a
+         *  clock-source to drive clk_mspi_fast. Only available when the clck-source is a
          *  low-speed clock-source such as XTAL/FOSC.
          */
         uint32_t mspi_fast_div_num:8;
@@ -1067,8 +1067,7 @@ typedef union {
         uint32_t pvt_monitor_func_clk_div_num:4;
         uint32_t reserved_4:16;
         /** pvt_monitor_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0: XTAL, 1(default): 160MHz drived by SPLL
-         *  divided by 3.
+         *  set this field to select clock-source. 0: XTAL, 1(default): 96MHz PLL.
          */
         uint32_t pvt_monitor_func_clk_sel:1;
         uint32_t reserved_21:1;
@@ -1574,7 +1573,7 @@ typedef union {
     struct {
         /** cpu_div_num : R/W; bitpos: [7:0]; default: 0;
          *  Set this field to generate clk_cpu drived by clk_hproot. The clk_cpu is
-         *  div1(default)/div2/div4 of clk_hproot. This field is only avaliable for low-speed
+         *  div1(default)/div2/div4 of clk_hproot. This field is only available for low-speed
          *  clock-source such as XTAL/FOSC, and should be used together with PCR_AHB_DIV_NUM.
          */
         uint32_t cpu_div_num:8;
@@ -1590,7 +1589,7 @@ typedef union {
     struct {
         /** ahb_div_num : R/W; bitpos: [7:0]; default: 0;
          *  Set this field to generate clk_ahb drived by clk_hproot. The clk_ahb is
-         *  div1(default)/div2/div4/div8 of clk_hproot. This field is only avaliable for
+         *  div1(default)/div2/div4/div8 of clk_hproot. This field is only available for
          *  low-speed clock-source such as XTAL/FOSC, and should be used together with
          *  PCR_CPU_DIV_NUM.
          */
@@ -1632,32 +1631,32 @@ typedef union {
     struct {
         /** pll_240m_clk_en : R/W; bitpos: [0]; default: 1;
          *  This field is used to open 96 MHz clock (SPLL) drived from SPLL. 0: close, 1:
-         *  open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_240m_clk_en:1;
         /** pll_160m_clk_en : R/W; bitpos: [1]; default: 1;
          *  This field is used to open 64 MHz clock (div3 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_160m_clk_en:1;
         /** pll_120m_clk_en : R/W; bitpos: [2]; default: 1;
          *  This field is used to open 48 MHz clock (div4 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_120m_clk_en:1;
         /** pll_80m_clk_en : R/W; bitpos: [3]; default: 1;
          *  This field is used to open 32 MHz clock (div6  of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_80m_clk_en:1;
         /** pll_48m_clk_en : R/W; bitpos: [4]; default: 1;
          *  This field is used to open 16 MHz clock (div10 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_48m_clk_en:1;
         /** pll_40m_clk_en : R/W; bitpos: [5]; default: 1;
          *  This field is used to open 8 MHz clock (div12 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_40m_clk_en:1;
         uint32_t reserved_6:26;

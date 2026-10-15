@@ -229,7 +229,7 @@ extern "C" {
 #define PCR_MSPI_CLK_CONF_REG (DR_REG_PCR_BASE + 0x1c)
 /** PCR_MSPI_FAST_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  Set as one within (0,1,2) to generate div1(default)/div2/div4 of low-speed
- *  clock-source to drive clk_mspi_fast. Only avaiable whe the clck-source is a
+ *  clock-source to drive clk_mspi_fast. Only available when the clck-source is a
  *  low-speed clock-source such as XTAL/FOSC.
  */
 #define PCR_MSPI_FAST_DIV_NUM    0x000000FFU
@@ -1331,8 +1331,7 @@ extern "C" {
 #define PCR_PVT_MONITOR_FUNC_CLK_DIV_NUM_V  0x0000000FU
 #define PCR_PVT_MONITOR_FUNC_CLK_DIV_NUM_S  0
 /** PCR_PVT_MONITOR_FUNC_CLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0: XTAL, 1(default): 160MHz drived by SPLL
- *  divided by 3.
+ *  set this field to select clock-source. 0: XTAL, 1(default): 96MHz PLL.
  */
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL    (BIT(20))
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL_M  (PCR_PVT_MONITOR_FUNC_CLK_SEL_V << PCR_PVT_MONITOR_FUNC_CLK_SEL_S)
@@ -1905,7 +1904,7 @@ extern "C" {
 #define PCR_CPU_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x114)
 /** PCR_CPU_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  Set this field to generate clk_cpu drived by clk_hproot. The clk_cpu is
- *  div1(default)/div2/div4 of clk_hproot. This field is only avaliable for low-speed
+ *  div1(default)/div2/div4 of clk_hproot. This field is only available for low-speed
  *  clock-source such as XTAL/FOSC, and should be used together with PCR_AHB_DIV_NUM.
  */
 #define PCR_CPU_DIV_NUM    0x000000FFU
@@ -1919,7 +1918,7 @@ extern "C" {
 #define PCR_AHB_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x118)
 /** PCR_AHB_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  Set this field to generate clk_ahb drived by clk_hproot. The clk_ahb is
- *  div1(default)/div2/div4/div8 of clk_hproot. This field is only avaliable for
+ *  div1(default)/div2/div4/div8 of clk_hproot. This field is only available for
  *  low-speed clock-source such as XTAL/FOSC, and should be used together with
  *  PCR_CPU_DIV_NUM.
  */
@@ -1979,7 +1978,7 @@ extern "C" {
 #define PCR_PLL_DIV_CLK_EN_REG (DR_REG_PCR_BASE + 0x124)
 /** PCR_PLL_240M_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  This field is used to open 96 MHz clock (SPLL) drived from SPLL. 0: close, 1:
- *  open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_240M_CLK_EN    (BIT(0))
 #define PCR_PLL_240M_CLK_EN_M  (PCR_PLL_240M_CLK_EN_V << PCR_PLL_240M_CLK_EN_S)
@@ -1987,7 +1986,7 @@ extern "C" {
 #define PCR_PLL_240M_CLK_EN_S  0
 /** PCR_PLL_160M_CLK_EN : R/W; bitpos: [1]; default: 1;
  *  This field is used to open 64 MHz clock (div3 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_160M_CLK_EN    (BIT(1))
 #define PCR_PLL_160M_CLK_EN_M  (PCR_PLL_160M_CLK_EN_V << PCR_PLL_160M_CLK_EN_S)
@@ -1995,7 +1994,7 @@ extern "C" {
 #define PCR_PLL_160M_CLK_EN_S  1
 /** PCR_PLL_120M_CLK_EN : R/W; bitpos: [2]; default: 1;
  *  This field is used to open 48 MHz clock (div4 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_120M_CLK_EN    (BIT(2))
 #define PCR_PLL_120M_CLK_EN_M  (PCR_PLL_120M_CLK_EN_V << PCR_PLL_120M_CLK_EN_S)
@@ -2003,7 +2002,7 @@ extern "C" {
 #define PCR_PLL_120M_CLK_EN_S  2
 /** PCR_PLL_80M_CLK_EN : R/W; bitpos: [3]; default: 1;
  *  This field is used to open 32 MHz clock (div6  of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_80M_CLK_EN    (BIT(3))
 #define PCR_PLL_80M_CLK_EN_M  (PCR_PLL_80M_CLK_EN_V << PCR_PLL_80M_CLK_EN_S)
@@ -2011,7 +2010,7 @@ extern "C" {
 #define PCR_PLL_80M_CLK_EN_S  3
 /** PCR_PLL_48M_CLK_EN : R/W; bitpos: [4]; default: 1;
  *  This field is used to open 16 MHz clock (div10 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_48M_CLK_EN    (BIT(4))
 #define PCR_PLL_48M_CLK_EN_M  (PCR_PLL_48M_CLK_EN_V << PCR_PLL_48M_CLK_EN_S)
@@ -2019,7 +2018,7 @@ extern "C" {
 #define PCR_PLL_48M_CLK_EN_S  4
 /** PCR_PLL_40M_CLK_EN : R/W; bitpos: [5]; default: 1;
  *  This field is used to open 8 MHz clock (div12 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_40M_CLK_EN    (BIT(5))
 #define PCR_PLL_40M_CLK_EN_M  (PCR_PLL_40M_CLK_EN_V << PCR_PLL_40M_CLK_EN_S)
