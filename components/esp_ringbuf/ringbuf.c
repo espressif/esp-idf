@@ -1023,6 +1023,8 @@ RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
     if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
         //No-split/allow-split buffer sizes must be aligned for the item header and large enough to avoid underflowing xMaxItemSize
         configASSERT(rbCHECK_ALIGNED(xBufferSize));
+        //The first item header is placed at the start of the storage
+        configASSERT(rbCHECK_ALIGNED(pucRingbufferStorage));
         if (!rbCHECK_ALIGNED(xBufferSize) || xBufferSize < rbHEADER_SIZE * 2) {
             return NULL;
         }

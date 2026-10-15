@@ -17,8 +17,8 @@
 #define BUFFER_SIZE                 4 * (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE))     //Aligned size
 
 #define CONT_DATA_LEN                   continuous_test_string_len()
-//32-bit aligned size that guarantees a wrap around at some point
-#define CONT_DATA_TEST_BUFF_LEN         (((CONT_DATA_LEN/2) + 0x03) & ~0x3)
+//Aligned size that guarantees a wrap around at some point
+#define CONT_DATA_TEST_BUFF_LEN         ITEM_SPACE(CONT_DATA_LEN/2)
 
 typedef struct {
     RingbufHandle_t buffer;

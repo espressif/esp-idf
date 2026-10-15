@@ -23,16 +23,17 @@ typedef void * RingbufHandle_t;
 typedef enum {
     /**
      * No-split buffers will only store an item in contiguous memory and will
-     * never split an item. Each item requires an 8 byte overhead for a header
-     * and will always internally occupy a size of space aligned to that header
-     * (32-bit on 32-bit targets).
+     * never split an item. Each item requires a header (8 bytes on 32-bit
+     * targets) and will always internally occupy a size of space aligned to
+     * that header (32-bit on 32-bit targets).
      */
     RINGBUF_TYPE_NOSPLIT = 0,
     /**
      * Allow-split buffers will split an item into two parts if necessary in
-     * order to store it. Each item requires an 8 byte overhead for a header,
-     * splitting incurs an extra header. Each item will always internally occupy
-     * a size of space aligned to that header (32-bit on 32-bit targets).
+     * order to store it. Each item requires a header (8 bytes on 32-bit
+     * targets), splitting incurs an extra header. Each item will always
+     * internally occupy a size of space aligned to that header (32-bit on
+     * 32-bit targets).
      */
     RINGBUF_TYPE_ALLOWSPLIT,
     /**

@@ -1051,7 +1051,8 @@ TEST_CASE("Test ringbuffer 0 item size", "[esp_ringbuf][linux]")
 
 /* ------------------------------------------- Test item alignment ---------------------------------------------
  * Item headers hold a size_t, so items of any length must leave the next header aligned for it, including where
- * size_t is wider than 32 bits (e.g. the Linux target on a 64-bit host).
+ * size_t is wider than 32 bits (e.g. the Linux target on a 64-bit host). This also holds for both parts of a split
+ * item and for the item that follows it.
  */
 TEST_CASE("Test ring buffer items of any length stay aligned", "[esp_ringbuf][linux]")
 {
@@ -1076,6 +1077,8 @@ TEST_CASE("Test ring buffer items of any length stay aligned", "[esp_ringbuf][li
 
             TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(allow_split_rb, large_item, xLength, 0));
             TEST_ASSERT_EQUAL(pdTRUE, xRingbufferReceiveSplit(allow_split_rb, &pvItem1, &pvItem2, &xItemSize1, &xItemSize2, 0));
+            TEST_ASSERT_NOT_EQUAL(NULL, pvItem1);
+            TEST_ASSERT_EQUAL(xLength, xItemSize1 + (pvItem2 != NULL ? xItemSize2 : 0));
             TEST_ASSERT_EQUAL(0, (uintptr_t)pvItem1 % _Alignof(size_t));
             vRingbufferReturnItem(allow_split_rb, pvItem1);
             if (pvItem2 != NULL) {
@@ -1088,6 +1091,46 @@ TEST_CASE("Test ring buffer items of any length stay aligned", "[esp_ringbuf][li
     //Cleanup
     vRingbufferDelete(no_split_rb);
     vRingbufferDelete(allow_split_rb);
+
+    //Place each item so that it is split at the end of an allow-split buffer, followed by another item
+    static const uint8_t pad_item[BUFFER_SIZE];
+    for (size_t xLength = ITEM_ALIGN + 1; xLength <= LARGE_ITEM_SIZE; xLength++) {
+        RingbufHandle_t rb = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_ALLOWSPLIT);
+        TEST_ASSERT_NOT_EQUAL(NULL, rb);
+        void *pvItem1;
+        void *pvItem2;
+        size_t xItemSize1;
+        size_t xItemSize2;
+
+        //Leave room for one header and ITEM_ALIGN bytes of data before the end of the buffer
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, pad_item, BUFFER_SIZE - 2 * ITEM_HDR_SIZE - ITEM_ALIGN, 0));
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferReceiveSplit(rb, &pvItem1, &pvItem2, &xItemSize1, &xItemSize2, 0));
+        TEST_ASSERT_EQUAL(NULL, pvItem2);
+        vRingbufferReturnItem(rb, pvItem1);
+
+        //An item longer than ITEM_ALIGN does not fit there, so it is split
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, large_item, xLength, 0));
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, large_item, 1, 0));
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferReceiveSplit(rb, &pvItem1, &pvItem2, &xItemSize1, &xItemSize2, 0));
+        TEST_ASSERT_NOT_EQUAL(NULL, pvItem1);
+        TEST_ASSERT_NOT_EQUAL(NULL, pvItem2);
+        TEST_ASSERT_EQUAL(ITEM_ALIGN, xItemSize1);
+        TEST_ASSERT_EQUAL(xLength - ITEM_ALIGN, xItemSize2);
+        TEST_ASSERT_EQUAL(0, (uintptr_t)pvItem1 % _Alignof(size_t));
+        TEST_ASSERT_EQUAL(0, (uintptr_t)pvItem2 % _Alignof(size_t));
+        vRingbufferReturnItem(rb, pvItem1);
+        vRingbufferReturnItem(rb, pvItem2);
+
+        //The next item follows the second part of the split item
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferReceiveSplit(rb, &pvItem1, &pvItem2, &xItemSize1, &xItemSize2, 0));
+        TEST_ASSERT_NOT_EQUAL(NULL, pvItem1);
+        TEST_ASSERT_EQUAL(NULL, pvItem2);
+        TEST_ASSERT_EQUAL(1, xItemSize1);
+        TEST_ASSERT_EQUAL(0, (uintptr_t)pvItem1 % _Alignof(size_t));
+        vRingbufferReturnItem(rb, pvItem1);
+
+        vRingbufferDelete(rb);
+    }
 }
 
 /* ---------------------------- Test no-split ring buffer SendAquire and SendComplete ---------------------------
