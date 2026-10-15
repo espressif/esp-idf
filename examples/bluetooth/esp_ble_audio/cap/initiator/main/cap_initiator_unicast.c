@@ -204,6 +204,7 @@ static void unicast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
 
     snprintf(name, sizeof(name), "%s #%d",
              stream_dir_str(stream), stream_index(stream));
+    rx_metrics.last_sdu = data;
     rx_metrics.last_sdu_len = len;
     example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, name);
 }

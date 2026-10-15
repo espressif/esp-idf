@@ -59,8 +59,8 @@ static size_t discover_pending;
 
 /* Per stream: a shared sequence number jumps by the stream count. */
 struct sink_tx {
-    example_audio_tx_scheduler_t scheduler;
     uint16_t                     seq_num;
+    example_audio_tx_count_t     tx_count;
     uint8_t                     *data;
     uint8_t                      index;
     bool                         running;
@@ -68,10 +68,22 @@ struct sink_tx {
 
 static struct sink_tx sink_tx[TMAP_CEN_CIS_COUNT];
 
+/* One scheduler for the CIG, running while any sink stream sends: each tick
+ * sends one SDU on every sink stream.
+ */
+static example_audio_tx_scheduler_t tx_scheduler;
+static size_t tx_stream_count;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+static example_audio_tx_sync_t tx_sync;
+#if CONFIG_BT_CSIP_SET_COORDINATOR
+static uint32_t synced_ts;  /* Timestamp of frame 1, the first both streams send; 0 before */
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
+#else /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+static void unicast_audio_tx(struct sink_tx *tx);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
 /* Only CIS #0 is bidirectional, so one RX metrics block is enough. */
 static example_audio_rx_metrics_t rx_metrics;
-
-static void unicast_audio_tx(struct sink_tx *tx);
 
 static void peer_discovery_done(void);
 
@@ -386,19 +398,43 @@ static void unicast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
     ESP_LOGI(TAG, "[SNK #%u] Streaming, interval %u, length %u",
              tx->index, stream->qos->interval, stream->qos->sdu);
 
-    tx->seq_num = 0;
-    example_audio_tx_scheduler_reset(&tx->scheduler);
-
-    /* Note: esp timer is not accurate enough */
-    err = example_audio_tx_scheduler_start(&tx->scheduler, stream->qos->interval);
-    if (err) {
-        ESP_LOGE(TAG, "[SNK #%u] Failed to start tx scheduler, err %d", tx->index, err);
+    if (tx->running) {
         return;
     }
 
-    tx->running = true;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    err = example_audio_tx_sync_start(&tx_sync, stream);
+    if (err) {
+        ESP_LOGE(TAG, "[SNK #%u] Timestamp TX start failed, err %d", tx->index, err);
+        return;
+    }
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 
+    if (tx_stream_count == 0) {
+        example_audio_tx_scheduler_reset(&tx_scheduler);
+
+        /* Note: esp timer is not accurate enough */
+        err = example_audio_tx_scheduler_start(&tx_scheduler, stream->qos->interval);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to start tx scheduler, err %d", err);
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+            example_audio_tx_sync_stop(&tx_sync, stream);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+            return;
+        }
+    }
+
+    ESP_LOGI(TAG, "[SNK #%u] Starting TX %s timestamps", tx->index,
+             IS_ENABLED(CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP) ? "with" : "without");
+
+    tx->running = true;
+    tx->tx_count = (example_audio_tx_count_t){0};
+    tx_stream_count++;
+
+#if !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    tx->seq_num = 0;
     unicast_audio_tx(tx);
+#endif /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 }
 
 static void unicast_stream_metadata_updated_cb(esp_ble_audio_bap_stream_t *stream)
@@ -425,12 +461,18 @@ static void sink_tx_stop(esp_ble_audio_bap_stream_t *stream)
         return;
     }
 
-    err = example_audio_tx_scheduler_stop(&tx->scheduler);
-    if (err) {
-        ESP_LOGE(TAG, "[SNK #%u] Failed to stop tx scheduler, err %d", tx->index, err);
-    }
-
     tx->running = false;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    example_audio_tx_sync_stop(&tx_sync, stream);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
+    /* The other sink stream keeps sending. */
+    if (--tx_stream_count == 0) {
+        err = example_audio_tx_scheduler_stop(&tx_scheduler);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to stop tx scheduler, err %d", err);
+        }
+    }
 
     if (tx->data != NULL) {
         free(tx->data);
@@ -460,6 +502,7 @@ static void unicast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
 
     snprintf(name, sizeof(name), "%s #%d",
              stream_dir_str(stream), stream_index(stream));
+    rx_metrics.last_sdu = data;
     rx_metrics.last_sdu_len = len;
     example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, name);
 }
@@ -476,7 +519,7 @@ static void unicast_stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *use
 
     snprintf(name, sizeof(name), "%s #%d",
              stream_dir_str(stream), stream_index(stream));
-    example_audio_tx_scheduler_on_sent(&tx->scheduler, user_data, TAG, name);
+    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, &tx->tx_count, TAG, name);
 }
 
 static void unicast_stream_connected_cb(esp_ble_audio_bap_stream_t *stream)
@@ -985,22 +1028,55 @@ static void endpoint_cb(esp_ble_conn_t *conn,
     ESP_LOGI(TAG, "[%s] Spare endpoint on handle %u", dir_str(dir), conn->handle);
 }
 
-static esp_ble_audio_bap_unicast_client_cb_t unicast_client_cbs = {
-    .location           = location_cb,
-    .available_contexts = available_contexts_cb,
-    .config             = config_cb,
-    .qos                = qos_cb,
-    .enable             = enable_cb,
-    .start              = start_cb,
-    .stop               = stop_cb,
-    .disable            = disable_cb,
-    .metadata           = metadata_cb,
-    .release            = release_cb,
-    .pac_record         = pac_record_cb,
-    .endpoint           = endpoint_cb,
-    .discover           = discover_cb,
-};
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+static int tx_send_cb(esp_ble_audio_bap_stream_t *stream, uint16_t seq_num,
+                      uint32_t timestamp, bool ts_valid)
+{
+    esp_ble_audio_cap_stream_t *cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t,
+                                                          bap_stream);
+    struct sink_tx *tx = sink_tx_of(stream);
+#if CONFIG_BT_CSIP_SET_COORDINATOR
+    uint32_t frame;
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
+    esp_err_t err;
 
+    memset(tx->data, (uint8_t)seq_num, stream->qos->sdu);
+    /* The timestamp, 0 without one, tells the receiver which SDUs of the
+     * streams belong together, e.g. the left and right audio of one frame.
+     */
+    if (!ts_valid) {
+        timestamp = 0;
+    }
+    memcpy(tx->data, &timestamp, MIN(sizeof(timestamp), stream->qos->sdu));
+#if CONFIG_BT_CSIP_SET_COORDINATOR
+    /* Then the frame number while both streams send with it, from 1 again after a
+     * member rejoins, else 0: unlike counting received SDUs, it does not shift when
+     * one member misses an SDU, so both print the same frames.
+     */
+    if (!ts_valid || tx_stream_count < TMAP_CEN_CIS_COUNT) {
+        synced_ts = 0;
+    } else if (synced_ts == 0) {
+        synced_ts = timestamp;
+    }
+    frame = synced_ts ? (timestamp - synced_ts) / stream->qos->interval + 1 : 0;
+    if (stream->qos->sdu >= sizeof(timestamp) + sizeof(frame)) {
+        memcpy(tx->data + sizeof(timestamp), &frame, sizeof(frame));
+    }
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
+
+    if (ts_valid) {
+        err = esp_ble_audio_cap_stream_send_ts(cap_stream, tx->data, stream->qos->sdu,
+                                               seq_num, timestamp);
+    } else {
+        err = esp_ble_audio_cap_stream_send(cap_stream, tx->data, stream->qos->sdu, seq_num);
+    }
+    if (err) {
+        ESP_LOGW(TAG, "[SNK #%u] Send failed, err %d", tx->index, err);
+    }
+
+    return err;
+}
+#else /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 static void unicast_audio_tx(struct sink_tx *tx)
 {
     esp_ble_audio_bap_ep_info_t ep_info = {0};
@@ -1047,12 +1123,36 @@ static void unicast_audio_tx(struct sink_tx *tx)
 
     tx->seq_num++;
 }
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 
-/* Each stream has its own timer, so this only ever feeds its own stream. */
 static void tx_scheduler_cb(void *arg)
 {
-    unicast_audio_tx(arg);
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    example_audio_tx_sync_send_next(&tx_sync);
+#else /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+    for (size_t i = 0; i < ARRAY_SIZE(sink_tx); i++) {
+        if (sink_tx[i].running) {
+            unicast_audio_tx(&sink_tx[i]);
+        }
+    }
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 }
+
+static esp_ble_audio_bap_unicast_client_cb_t unicast_client_cbs = {
+    .location           = location_cb,
+    .available_contexts = available_contexts_cb,
+    .config             = config_cb,
+    .qos                = qos_cb,
+    .enable             = enable_cb,
+    .start              = start_cb,
+    .stop               = stop_cb,
+    .disable            = disable_cb,
+    .metadata           = metadata_cb,
+    .release            = release_cb,
+    .pac_record         = pac_record_cb,
+    .endpoint           = endpoint_cb,
+    .discover           = discover_cb,
+};
 
 int cap_initiator_init(void)
 {
@@ -1075,16 +1175,16 @@ int cap_initiator_init(void)
     for (size_t i = 0; i < ARRAY_SIZE(unicast_sink_streams); i++) {
         esp_ble_audio_cap_stream_ops_register(&unicast_sink_streams[i], &unicast_stream_ops);
 
-        /* Own timer per stream, fed with its own context. */
         sink_tx[i].index = (uint8_t)i;
+    }
 
-        err = example_audio_tx_scheduler_init(&sink_tx[i].scheduler,
-                                              tx_scheduler_cb,
-                                              &sink_tx[i]);
-        if (err) {
-            ESP_LOGE(TAG, "Failed to init tx scheduler[%zu], err %d", i, err);
-            return err;
-        }
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    tx_sync.send = tx_send_cb;
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+    err = example_audio_tx_scheduler_init(&tx_scheduler, tx_scheduler_cb, NULL);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to init tx scheduler, err %d", err);
+        return err;
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(unicast_source_streams); i++) {

@@ -436,6 +436,7 @@ static void stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
         size_t idx = sink_stream - sink_streams;
 
         snprintf(name, sizeof(name), "SNK #%zu", idx);
+        sink_stream->rx_metrics.last_sdu = data;
         sink_stream->rx_metrics.last_sdu_len = len;
         example_audio_rx_metrics_on_recv(info, &sink_stream->rx_metrics,
                                          TAG, name);

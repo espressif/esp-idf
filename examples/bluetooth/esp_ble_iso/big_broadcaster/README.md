@@ -9,7 +9,7 @@
 
 This example demonstrates a raw BLE Isochronous Broadcaster — it creates a Broadcast Isochronous Group (BIG) directly at the ISO transport layer over either the NimBLE or Bluedroid host (selected at build time via Kconfig), without any BLE Audio profile (BAP/CAP) on top.
 
-The device acts as the **broadcaster**: it starts extended + periodic advertising, creates a BIG carrying two BIS streams, sets up an HCI input data path on each BIS, and then transmits SDUs on a fixed 10 ms cadence using a software TX scheduler. The peer (`big_receiver`) discovers the broadcaster by name, syncs to the periodic advertising train, decodes BIGInfo, and joins the BIS sub-events.
+The device acts as the **broadcaster**: it starts extended + periodic advertising, creates a BIG carrying two BIS streams, sets up an HCI input data path on each BIS, and then transmits one SDU on each BIS on a fixed 10 ms cadence using one software TX scheduler for the BIG. The peer (`big_receiver`) discovers the broadcaster by name, syncs to the periodic advertising train, decodes BIGInfo, and joins the BIS sub-events.
 
 The audio data on the wire is **application-supplied dummy payload** (each SDU is filled with the byte value of its sequence number). The coding format is `ESP_BLE_ISO_CODING_FORMAT_TRANSPARENT`, so no LC3 / LE-Audio framing is involved.
 
@@ -24,7 +24,35 @@ The audio data on the wire is **application-supplied dummy payload** (each SDU i
 idf.py menuconfig
 ```
 
-No build-time options — runtime defaults are baked into source.
+Under **Example: Common ISO Utilities**, enable **Synchronize multi-channel TX with
+timestamps** (`CONFIG_EXAMPLE_ISO_TX_TIMESTAMP`, disabled by default) to give
+the SDUs of both BIS the same timestamps, based on the controller clock:
+
+- Once both BIS are connected, one BIS sends SDUs without timestamps, one per
+  SDU interval, which the controller places by sequence number. After each,
+  **LE Read ISO TX Sync** (`esp_ble_iso_chan_get_tx_sync()`) gives the BIG
+  anchor point of the last SDU sent; reading after sending keeps this blocking
+  HCI command (about 2.5 ms) from delaying the SDU. The first of as many SDUs at
+  one anchor point as fit in an ISO interval starts its event, so its reference
+  time is that anchor point; the timestamps go on from it.
+- From then on each tick of the BIG's TX scheduler sends one frame: one SDU on
+  each BIS with `esp_ble_iso_chan_send_ts()` and the same timestamp, one SDU
+  interval after the last frame's. All BIS of a BIG share one anchor, so equal
+  timestamps put their SDUs in the same event. Each BIS has its own sequence
+  numbers; the other BIS starts from 0. The best lead (how long before its
+  reference time an SDU is handled, from the sent callback) of every 50 SDUs
+  follows the clock difference between the timer and the controller: below
+  200 us the scheduler adds one frame, above two SDU intervals more it skips one.
+  A stall lowers only some SDUs, and the ticks then catch up, so it changes
+  nothing; a best lead below minus one SDU interval is a stall or a backlog,
+  and no frame is added for it.
+
+In this mode the first 4 bytes of each SDU carry its timestamp (0 without one),
+so the receiver can tell which SDUs of the BIS belong to one frame, e.g. the left
+and right audio.
+
+This mode requires unframed data. TX stops when the BIG ends. The timestamp
+aligns the SDUs, but each BIS still uses its own sub-events on air.
 
 Notable hard-coded parameters in `main/main.c`:
 
@@ -66,13 +94,13 @@ For `esp32s31`, replace the chip overlay accordingly.
 ## Example Flow
 
 1. NVS, the selected BLE host (NimBLE or Bluedroid), and the ISO common layer are initialised.
-2. A TX scheduler is initialised for each of the two BIS channels.
+2. One TX scheduler is initialised for the BIG.
 3. Extended advertising parameters / data and periodic advertising parameters / data are configured for handle 0 (non-connectable, non-scannable, primary 1M / secondary 2M).
 4. Periodic advertising and extended advertising are started.
 5. `esp_ble_iso_big_ext_adv_add()` ties the adv handle to the BIG, then `esp_ble_iso_big_create()` issues the HCI `LE Create BIG` with two BIS, encryption on, and broadcast code `"1234"`.
 6. As each BIS becomes ready, the connected callback installs an HCI input data path (`ESP_BLE_ISO_DATA_PATH_DIR_INPUT`, transparent coding).
-7. Once both BIS are connected, the per-channel TX schedulers start firing every 10 ms, calling `esp_ble_iso_chan_send()` with a 120-byte dummy SDU and an incrementing sequence number.
-8. On disconnect of all BIS the schedulers are stopped and the BIG handle is cleared.
+7. Once both BIS are connected, the TX scheduler starts firing every 10 ms, calling `esp_ble_iso_chan_send()` on each BIS with a 120-byte dummy SDU and its incrementing sequence number. In timestamp mode, SDUs without timestamps on one BIS and LE Read ISO TX Sync start the timing instead; each tick then sends `esp_ble_iso_chan_send_ts()` with the same timestamp on both BIS.
+8. On disconnect of all BIS the scheduler is stopped and the BIG handle is cleared.
 
 ## Expected Log
 
@@ -90,7 +118,7 @@ BIS bring-up (first BIS, then second, then TX start):
 I (xxx) BIG_BRD: [BIS #0] Connected
 I (xxx) BIG_BRD: Waiting for remaining BIS channels (1/2)
 I (xxx) BIG_BRD: [BIS #1] Connected
-I (xxx) BIG_BRD: All 2 BIS channels connected, starting TX
+I (xxx) BIG_BRD: All 2 BIS channels connected, starting TX without timestamps
 ```
 
 Steady-state (logged every `LOG_INTERVAL_PACKETS` SDUs by the shared TX helper):
@@ -107,6 +135,31 @@ I (xxx) BIG_BRD: [BIS #0] Disconnected, reason 0x<rr>
 I (xxx) BIG_BRD: [BIS #1] Disconnected, reason 0x<rr>
 I (xxx) BIG_BRD: All BIS channels disconnected, TX stopped
 ```
+
+In both modes, a TX log of a BIS that had late SDUs since its last one:
+
+```
+I (xxx) BIG_BRD: [BIS #<n>] TX: <N> packets, <k> late
+```
+
+A late SDU missed its event and was dropped, e.g. after a stall of the ISO task.
+
+Timestamp mode, while running (TX goes on):
+
+```
+W (xxx) BIG_BRD: [BIS #<n>] Send failed, err <e>
+```
+
+That SDU is dropped.
+
+Timestamp mode, at start:
+
+```
+W (xxx) ISO_TX_SYNC: Framed data is not supported yet
+E (xxx) BIG_BRD: [BIS #<n>] Timestamp TX start failed, err <e>
+```
+
+The first keeps timestamp TX from starting on every BIS; the second keeps that BIS from sending.
 
 ## Peer Pairing
 

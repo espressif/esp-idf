@@ -433,6 +433,10 @@ struct iso_tx_sdu_node {
 };
 
 static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t iso_tx_sdu_list;
+#if !ISO_STD_FLOW_CTRL
+/* SDUs that waited in iso_tx_sdu_list for a controller buffer */
+static BT_ISO_EXT_RAM_BSS_ATTR uint32_t iso_tx_queued_cnt;
+#endif /* !ISO_STD_FLOW_CTRL */
 
 static int iso_tx_sdu_insert(struct bt_iso_chan *chan, const uint8_t *sdu, uint16_t sdu_len)
 {
@@ -578,12 +582,17 @@ static int iso_tx_now(struct bt_iso_chan *chan, const uint8_t *sdu,
      */
     if (sys_slist_is_empty(&iso_tx_sdu_list) == false ||
             r_ble_ll_iso_free_buf_num_get(chan->iso->handle) == 0) {
-        /* LOG_INF("IsoFlowCtrl!"); */
         err = iso_tx_sdu_insert(chan, pkt, 4 + data_total_len);
         if (err) {
             free(pkt);
+            return err;
         }
-        return err;
+
+        /* Report the first one and then every ISO_DROP_REPORT_STEP. */
+        if (iso_tx_queued_cnt++ % ISO_DROP_REPORT_STEP == 0) {
+            LOG_WRN("IsoFlowCtrl[queued=%u]", iso_tx_queued_cnt);
+        }
+        return 0;
     }
 #endif /* ISO_STD_FLOW_CTRL */
 
@@ -735,6 +744,7 @@ static void iso_tx_comp_cb(uint16_t conn_handle, void *info, size_t size)
      */
 
     BT_LE_ASSERT(size == sizeof(struct bt_iso_tx_cb_info));
+    BT_LE_ASSERT(((struct bt_iso_tx_cb_info *)info)->version == BT_ISO_TX_CB_INFO_VERSION);
 
     evt = bt_le_int_calloc(1, sizeof(*evt));
     if (evt == NULL) {

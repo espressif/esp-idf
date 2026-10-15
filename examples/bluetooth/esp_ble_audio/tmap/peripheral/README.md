@@ -133,7 +133,7 @@ TMAP_PER: [SNK #0] Enable request (meta_len <n>)
 TMAP_PER: [SNK #0] Stream enabled
 TMAP_PER: [SNK #0] Start request
 TMAP_PER: [SNK #0] Stream started
-TMAP_PER: [SNK #0] RX: <count> packets
+TMAP_PER: [SNK #0] RX: <count> packets, valid <v> (empty <e>), error <x>, lost <l>
 TMAP_PER: [SRC #0] Stream started
 TMAP_PER: [SRC #0] TX: <count> packets
 TMAP_PER: [SNK #0] Stop request
@@ -143,6 +143,18 @@ TMAP_PER: [SNK #0] Release request
 ```
 
 Each ASE keeps its own counters, so `[SNK #0]` and `[SNK #1]` advance independently rather than sharing one total.
+
+As a `Duo headset` (set member) with **Check on RX that timestamped SDUs share
+events** (`CONFIG_EXAMPLE_AUDIO_RX_ALIGN_CHECK`, disabled by default) enabled, the central numbers its frames (4 bytes after the timestamp)
+while both members' CIS send with timestamps, from 1 again after a member rejoins,
+and 0 while only one sends. Besides the `RX` line, each member prints the
+timestamp of every frame numbered a multiple of 6000; both members should print
+the same timestamp for the same frame. A member that missed that SDU skips the
+line.
+
+```
+TMAP_PER: [SNK #0] Synced frame <n>: timestamp <ts> us
+```
 
 VCP / call control / disconnect:
 

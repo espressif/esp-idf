@@ -9,7 +9,7 @@
 
 This example takes the **TMAP Call Gateway (CG)** and **Unicast Media Sender (UMS)** roles, registered together via `esp_ble_audio_tmap_register(ESP_BLE_AUDIO_TMAP_ROLE_CG | ESP_BLE_AUDIO_TMAP_ROLE_UMS)`. It scans for connectable extended advertising that carries TMAS service data with the **UMR** role bit set, connects, pairs, exchanges MTU, and then drives TMAP, CSIP and VCP discovery before bringing up unicast audio.
 
-The example uses the ESP-BLE-AUDIO library pieces for: CAP initiator with the BAP Unicast Client (LC3 preset 48_2_1, MEDIA context), CSIP Set Coordinator, VCP Volume Controller, MCP server backed by the media proxy player, and CCP server registering a single GTBS bearer (`Generic TBS`, UCI `un000`, `tel,wechat` URI schemes, 5G technology). Each transmitting stream runs its own TX scheduler in the ISO task, feeding dummy ISO SDUs filled with that stream's sequence number. Device name is set to `TMAP Central`.
+The example uses the ESP-BLE-AUDIO library pieces for: CAP initiator with the BAP Unicast Client (LC3 preset 48_2_1, MEDIA context), CSIP Set Coordinator, VCP Volume Controller, MCP server backed by the media proxy player, and CCP server registering a single GTBS bearer (`Generic TBS`, UCI `un000`, `tel,wechat` URI schemes, 5G technology). One TX scheduler for the CIG runs in the ISO task and feeds every transmitting stream dummy ISO SDUs filled with that stream's sequence number (in timestamp mode the first 4 bytes carry the SDU's timestamp). Device name is set to `TMAP Central`.
 
 ## Topology
 
@@ -77,6 +77,57 @@ Under **Example: TMAP Central (CG & UMS)** → **Unicast topology**, pick one �
 * **1 peripheral, 1 CIS (TX+RX)** (`EXAMPLE_TMAP_CEN_TOPO_1P_1CIS`) — peripheral: `Single headset` + `Mono`.
 * **1 peripheral, 2 CISes (TX+RX, TX)** (`EXAMPLE_TMAP_CEN_TOPO_1P_2CIS`, **default**) — peripheral: `Single headset` + `Stereo`, which is also its default. It must expose two sink ASEs (`CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT`, 2 in its `sdkconfig.defaults`).
 * **2 peripherals (coordinated set), 2 CISes (TX+RX, TX)** (`EXAMPLE_TMAP_CEN_TOPO_2P_2CIS`) — selects `BT_CSIP_SET_COORDINATOR`. Peripheral: `Duo headset` on both boards, one `Left` and one `Right`; their ranks default from that and must stay distinct. Rank picks which member gets the bidirectional CIS, the location picks the channel.
+
+Under **Example: Common Audio Utilities**, enable **Synchronize multi-stream TX with
+timestamps** (`CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP`, disabled by default) to give the
+SDUs of all sink streams of the CIG the same timestamps, so that the SDUs of
+one frame (e.g. the left and right audio) go in one event:
+
+- One TX scheduler for the CIG sends one frame per SDU interval: one SDU on
+  each started stream, all with the same timestamp.
+- At the start only the first stream sends, without timestamps, and reads
+  **LE Read ISO TX Sync** (`esp_ble_audio_bap_stream_get_tx_sync()`) after each
+  send until it finds the SDU at the start of an event; the timestamps go on from
+  that event's anchor. The read is a blocking HCI command of about 2.5 ms, so it
+  comes after the send.
+- A stream started later joins at the next frame, with the same timestamp.
+- The best lead (how long before its reference time an SDU is handled) of every
+  50 SDUs follows the clock difference between the timer and the controller:
+  below 200 us the scheduler adds one frame, above two SDU intervals more it
+  skips one. A stall lowers only some SDUs and changes nothing; a best lead
+  below minus one SDU interval is a stall or a backlog, and no frame is added.
+
+In this mode the first 4 bytes of each SDU carry its timestamp (0 without one),
+and unframed data is required. With the option disabled, the same scheduler sends
+one SDU per stream per interval without timestamps. Logs on anomalies:
+
+```
+I TMAP_CEN: [SNK #<n>] TX: <N> packets, <k> late
+W TMAP_CEN: [SNK #<n>] Send failed, err <e>
+E TMAP_CEN: [SNK #<n>] Timestamp TX start failed, err <e>
+W AUDIO_TX_SYNC: Framed data is not supported yet
+```
+
+In the `2P_2CIS` topology each member gets one CIS, so no receiver sees both
+and the receivers' alignment check has nothing to compare. The two members print
+the same frames instead (central with this option and `BT_CSIP_SET_COORDINATOR`,
+both peripherals as `Duo headset` with **Check on RX that timestamped SDUs share
+events**, `CONFIG_EXAMPLE_AUDIO_RX_ALIGN_CHECK`, disabled by default):
+
+- After the timestamp come 4 bytes of frame number: 1 for the first frame both CIS
+  send with timestamps, counting up from there, and 0 while only one sends.
+- Each member prints the timestamp of every frame numbered a multiple of 6000
+  (`Synced frame <n>: timestamp <ts> us`); both should print the same timestamp
+  for the same frame. A member that missed that very SDU skips the line.
+- If a member leaves (e.g. it disconnects), the frame number is 0 until it is
+  back; the CIG stays up, so the returning CIS joins at the next frame on the same
+  timestamps, and the frames count from 1 again.
+
+Counting received SDUs instead does not work: an SDU one member misses, e.g. the
+first of a joining CIS sent late and flushed (it arrives as an empty SDU, not as
+lost), shifts its count by one frame. The timestamp and the frame number are
+both written by the central, so this shows that both members get the same frames,
+not where the controller placed them on air.
 
 ### Security & Pairing
 
@@ -186,7 +237,7 @@ TMAP_CEN: [SNK #1] Stream started
 TMAP_CEN: [SNK #1] Streaming, interval <i>, length <l>
 TMAP_CEN: [SNK #0] TX: <count> packets
 TMAP_CEN: [SNK #1] TX: <count> packets
-TMAP_CEN: [SRC #0] RX: <count> packets
+TMAP_CEN: [SRC #0] RX: <count> packets, valid <v> (empty <e>), error <x>, lost <l>
 ```
 
 Call control / disconnect:
@@ -223,3 +274,4 @@ Run [tmap_peripheral](../peripheral/) on one or two boards, matching the topolog
 4. The rank 1 board gets the bidirectional CIS and transmits back; the rank 2 board gets a transmit-only CIS. Which channel each renders comes from its **Earbud Location**, so a rank/ear mismatch shows up in the `renders front left` / `renders front right` log rather than silently sending the wrong channel.
 5. Once both streams are up and both members' VCS state is read, the volume demo starts: every 5 minutes one CAP commander procedure moves both boards to the same volume, and the mute steps at the end of the cycle mute and unmute them together. Both boards log the same value within one tick — that is the point of routing it through the commander instead of writing each VCS separately.
 6. Losing either board leaves the other one streaming: its CIS is untouched, and the central just rescans for the missing one and re-enters it into the slot it left. The surviving earbud logs nothing at all — no `Disable request`, no `ISO disconnected` — while the central logs `Lost a member; 1 still streaming` and later `[SNK #n] Already streaming, left alone`.
+7. With `CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP` on the central and `CONFIG_EXAMPLE_AUDIO_RX_ALIGN_CHECK` on both peripherals, compare the two boards' `Synced frame <n>: timestamp <ts> us` logs: the same frame should show the same timestamp, also after a board rejoined.

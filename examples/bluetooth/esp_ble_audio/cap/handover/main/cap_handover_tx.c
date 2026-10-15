@@ -16,6 +16,17 @@
 /* The same stream objects move between unicast and broadcast, so one slot each. */
 static struct tx_stream tx_streams[SINK_STREAM_COUNT];
 
+/* One scheduler for the unicast group or broadcast source, running while any
+ * stream sends: each tick sends one SDU on every stream. A handover unregisters
+ * every stream before the other group starts, so the timestamps start again on
+ * its anchors.
+ */
+static example_audio_tx_scheduler_t tx_scheduler;
+static size_t tx_stream_count;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+static example_audio_tx_sync_t tx_sync;
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
 static const char *cap_stream_tx_label(const esp_ble_audio_cap_stream_t *cap_stream)
 {
     esp_ble_audio_bap_ep_info_t ep_info = {0};
@@ -31,6 +42,7 @@ static const char *cap_stream_tx_label(const esp_ble_audio_cap_stream_t *cap_str
     return (ep_info.dir == ESP_BLE_AUDIO_DIR_SINK) ? "SNK" : "SRC";
 }
 
+#if !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
 static bool tx_stream_is_streaming(const struct tx_stream *tx_stream)
 {
     esp_ble_audio_bap_ep_info_t ep_info = {0};
@@ -96,6 +108,46 @@ static void cap_handover_tx_send(struct tx_stream *tx_stream)
 
     tx_stream->seq_num++;
 }
+#else /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+static int tx_send_cb(esp_ble_audio_bap_stream_t *stream, uint16_t seq_num,
+                      uint32_t timestamp, bool ts_valid)
+{
+    esp_ble_audio_cap_stream_t *cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t,
+                                                          bap_stream);
+    struct tx_stream *tx_stream = NULL;
+    int err;
+
+    for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
+        if (tx_streams[i].stream == cap_stream) {
+            tx_stream = &tx_streams[i];
+            break;
+        }
+    }
+
+    memset(tx_stream->data, (uint8_t)seq_num, stream->qos->sdu);
+    /* The timestamp, 0 without one, tells the receiver which SDUs of the
+     * streams belong together, e.g. the left and right audio of one frame.
+     */
+    if (!ts_valid) {
+        timestamp = 0;
+    }
+    memcpy(tx_stream->data, &timestamp, MIN(sizeof(timestamp), stream->qos->sdu));
+
+    if (ts_valid) {
+        err = esp_ble_audio_cap_stream_send_ts(cap_stream, tx_stream->data, stream->qos->sdu,
+                                               seq_num, timestamp);
+    } else {
+        err = esp_ble_audio_cap_stream_send(cap_stream, tx_stream->data, stream->qos->sdu,
+                                            seq_num);
+    }
+    if (err) {
+        ESP_LOGW(TAG, "[%s #%d] Send failed, err %d", cap_stream_tx_label(cap_stream),
+                 (int)(tx_stream - tx_streams), err);
+    }
+
+    return err;
+}
+#endif /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 
 void cap_handover_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_data)
 {
@@ -105,7 +157,8 @@ void cap_handover_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_
 
             snprintf(name, sizeof(name), "%s #%zu",
                      cap_stream_tx_label(tx_streams[i].stream), i);
-            example_audio_tx_scheduler_on_sent(&tx_streams[i].scheduler, user_data, TAG, name);
+            example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, &tx_streams[i].tx_count,
+                                               TAG, name);
             break;
         }
     }
@@ -113,9 +166,13 @@ void cap_handover_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_
 
 static void tx_scheduler_cb(void *arg)
 {
-    struct tx_stream *tx_stream = arg;
-
-    cap_handover_tx_send(tx_stream);
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    example_audio_tx_sync_send_next(&tx_sync);
+#else /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+    for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
+        cap_handover_tx_send(&tx_streams[i]);
+    }
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 }
 
 int cap_handover_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, bool is_broadcast)
@@ -144,26 +201,43 @@ int cap_handover_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, bool
                 }
             }
 
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+            err = example_audio_tx_sync_start(&tx_sync, &cap_stream->bap_stream);
+            if (err) {
+                ESP_LOGE(TAG, "[%s #%zu] Timestamp TX start failed, err %d", label, i, err);
+                return err;
+            }
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
+            if (tx_stream_count == 0) {
+                example_audio_tx_scheduler_reset(&tx_scheduler);
+
+                /* Note: esp timer is not accurate enough */
+                err = example_audio_tx_scheduler_start(&tx_scheduler,
+                                                       cap_stream->bap_stream.qos->interval);
+                if (err) {
+                    ESP_LOGE(TAG, "Scheduler start failed, err %d", err);
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+                    example_audio_tx_sync_stop(&tx_sync, &cap_stream->bap_stream);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+                    return err;
+                }
+            }
+
             tx_streams[i].stream = cap_stream;
             tx_streams[i].is_broadcast = is_broadcast;
             tx_streams[i].seq_num = 0;
-            example_audio_tx_scheduler_reset(&tx_streams[i].scheduler);
+            tx_streams[i].tx_count = (example_audio_tx_count_t){0};
+            tx_stream_count++;
 
-            err = example_audio_tx_scheduler_start(&tx_streams[i].scheduler, cap_stream->bap_stream.qos->interval);
-            if (err) {
-                ESP_LOGE(TAG, "[%s #%zu] Scheduler start failed, err %d",
-                         label, i, err);
-                tx_streams[i].stream = NULL;
-                tx_streams[i].is_broadcast = false;
-                return err;
-            }
-
-            ESP_LOGI(TAG, "[%s #%zu] Started (SDU %u, interval %u us)",
-                     label, i,
+            ESP_LOGI(TAG, "[%s #%zu] Started TX %s timestamps (SDU %u, interval %u us)",
+                     label, i, IS_ENABLED(CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP) ? "with" : "without",
                      cap_stream->bap_stream.qos->sdu,
                      cap_stream->bap_stream.qos->interval);
 
+#if !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
             cap_handover_tx_send(&tx_streams[i]);
+#endif /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
             return 0;
         }
     }
@@ -185,11 +259,16 @@ int cap_handover_tx_unregister_stream(esp_ble_audio_cap_stream_t *cap_stream)
         if (tx_streams[i].stream == cap_stream) {
             const char *label = cap_stream_tx_label(tx_streams[i].stream);
 
-            err = example_audio_tx_scheduler_stop(&tx_streams[i].scheduler);
-            if (err) {
-                ESP_LOGE(TAG, "[%s #%zu] Scheduler stop failed, err %d",
-                         label, i, err);
-                return err;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+            example_audio_tx_sync_stop(&tx_sync, &cap_stream->bap_stream);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
+            /* The other streams keep sending. */
+            if (--tx_stream_count == 0) {
+                err = example_audio_tx_scheduler_stop(&tx_scheduler);
+                if (err) {
+                    ESP_LOGE(TAG, "Scheduler stop failed, err %d", err);
+                }
             }
 
             tx_streams[i].stream = NULL;
@@ -213,13 +292,12 @@ void cap_handover_tx_init(void)
 
     memset(tx_streams, 0, sizeof(tx_streams));
 
-    for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
-        err = example_audio_tx_scheduler_init(&tx_streams[i].scheduler,
-                                              tx_scheduler_cb,
-                                              &tx_streams[i]);
-        if (err) {
-            ESP_LOGE(TAG, "Failed to initialize tx scheduler[%zu], err %d", i, err);
-            return;
-        }
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    tx_sync.send = tx_send_cb;
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
+    err = example_audio_tx_scheduler_init(&tx_scheduler, tx_scheduler_cb, NULL);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to initialize tx scheduler, err %d", err);
     }
 }

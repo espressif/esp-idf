@@ -78,6 +78,7 @@ static void iso_recv_cb(esp_ble_iso_chan_t *chan,
 {
     struct cis_ctx *ctx = ctx_by_chan(chan);
 
+    ctx->rx_metrics.last_sdu = data;
     ctx->rx_metrics.last_sdu_len = len;
     example_iso_rx_metrics_on_recv(info, &ctx->rx_metrics, TAG, ctx->name);
 }

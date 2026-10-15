@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: Common ISO Utilities"
+
+    config EXAMPLE_ISO_TX_TIMESTAMP
+        bool "Synchronize multi-channel TX with timestamps"
+        depends on BT_ISO_BROADCASTER || BT_ISO_CENTRAL
+        default n
+        help
+            Give the SDUs of all channels of a BIG or CIG the same timestamps,
+            based on the controller clock. Each SDU is timestamped with its SDU
+            reference time (R0, R1, ...: the CIG reference point or BIG anchor
+            point of its event plus k SDU intervals):
+
+              Host                               Controller
+                |  every SDU interval, one SDU (CH1): |
+                |  SDU 0, 1, ... without timestamp    |
+                |------------------------------------>|  on air at R0, R1..
+                |  after each, LE Read ISO TX Sync    |
+                |<----------------------------------->|  seq, its event's A
+                |  ... until SDU j starts an event:   |
+                |  Rj = A, Rn = Rj + (n - j)I         |
+                |                                     |
+                |  every SDU interval, one frame:     |
+                |  SDU at Rn on CH1, CH2, ...         |
+                |------------------------------------>|  one event for all
+                |  CH3 ready: joins at the next frame |
+                |                                     |
+                |  per SDU: handled at, its ref. time |
+                |<------------------------------------|
+                |  best lead of 50 SDUs < 200 us:     |
+                |  one more frame at the next tick    |
+                |------------------------------------>|
+
+            The controller places SDUs without timestamps by sequence number.
+            TX Sync gives only the reference point A of an event, shared by its
+            SDUs, so the first channel reads it after each SDU until SDUs
+            ISO interval / SDU interval - 1 apart show the same A: the first of
+            them starts the event and its reference time is A. The read is a
+            blocking HCI command (about 2.5 ms), so it comes after the send,
+            not to delay it. One TX scheduler for the group then sends one
+            frame per SDU interval, one SDU with the same timestamp on each
+            channel. The best lead (how long before its reference time an SDU
+            is handled) of every 50 SDUs follows the clock difference between
+            the timer and the controller: below 200 us one frame is added, above
+            two SDU intervals more one is skipped. A stall lowers only some
+            SDUs, and the ticks then catch up, so it changes nothing; a best
+            lead below minus one SDU interval is a stall or a backlog, and no
+            frame is added for it. A channel ready later joins at the next
+            frame, so it is as early as the others. TX Sync is not read again:
+            the controller places SDUs by their timestamps, on anchors of its
+            own clock.
+
+            Supported on BIG broadcaster and CIS central with unframed data.
+
+    config EXAMPLE_ISO_RX_ALIGN_CHECK
+        bool "Check on RX that timestamped SDUs share events"
+        depends on BT_ISO_SYNC_RECEIVER || BT_ISO_PERIPHERAL
+        default n
+        help
+            For debugging the receiving side of a BIG or CIG whose TX side uses
+            "Synchronize multi-channel TX with timestamps", which puts each
+            SDU's timestamp, i.e. its frame, in its first 4 bytes. SDUs of one
+            SDU reference time share the RX timestamp, so they must be of one
+            frame; each SDU is compared with the one before. RX timestamps up to
+            100 us apart count as one: each CIS anchor is estimated on its own.
+
+            Every 6000 compared: "RX group: total, aligned, misaligned". The
+            first misaligned SDUs are logged.
+
+endmenu
