@@ -1,6 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp-tls/test_apps:
-  disable:
-    - if: IDF_TARGET not in ["esp32c3"]
+  enable:
+    - if: IDF_TARGET == "esp32c3" and CONFIG_NAME != "ecdsa_tls13"
       reason: Testing on one target is enough
+    - if: IDF_TARGET in ["esp32h2"] and CONFIG_NAME == "ecdsa_tls13"
+      reason: Build-only check of ECDSA peripheral with TLS 1.3 on a target without P384 support
+  disable_test:
+    - if: IDF_TARGET == "esp32h2"
+      reason: Build-only check, no test cases for this configuration
