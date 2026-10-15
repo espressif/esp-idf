@@ -31,6 +31,7 @@ static inline trace_dev_t *riscv_trace_ll_get_hw(int core)
  *--------------------------------------------------------------------------*/
 
 /** @brief Enable or disable the common TRACE CPU and system clocks. */
+__attribute__((always_inline))
 static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_cpu_clk_en = enable;
@@ -42,12 +43,14 @@ static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
     _riscv_trace_ll_enable_bus_clock(__VA_ARGS__); \
 } while (0)
 
+__attribute__((always_inline))
 static inline bool riscv_trace_ll_is_bus_clock_enabled(void)
 {
     return HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_cpu_clk_en && HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_sys_clk_en;
 }
 
 /** @brief Assert and release the reset of the given encoder core. */
+__attribute__((always_inline))
 static inline void _riscv_trace_ll_reset_register(int core)
 {
     if (core == 0) {
