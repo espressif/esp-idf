@@ -4664,7 +4664,8 @@ TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
     #define blob_data_len 64
     uint8_t blob_data[blob_data_len] = {0};
     uint8_t blob_buf[blob_data_len] = {0};
-    size_t blob_read_size;
+    size_t blob_read_size = sizeof(blob_buf);
+    memset(blob_data, 0x11, sizeof(blob_data));
 
     // first write is i32
     TEST_ESP_OK(nvs_set_i32(handle_1, key_name, (int32_t)12345678));
@@ -4680,7 +4681,11 @@ TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
 
     TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    str_len = sizeof(str_buf);
     TEST_ESP_OK(nvs_get_str(handle_1, key_name, str_buf, &str_len));
+    CHECK(str_len == sizeof(str_data));
+    CHECK(memcmp(str_buf, str_data, sizeof(str_data)) == 0);
+    blob_read_size = sizeof(blob_buf);
     TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
 
     // third write is blob
@@ -4688,15 +4693,21 @@ TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
 
     TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    str_len = sizeof(str_buf);
     TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    blob_read_size = sizeof(blob_buf);
     TEST_ESP_OK(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size));
+    CHECK(blob_read_size == sizeof(blob_data));
+    CHECK(memcmp(blob_buf, blob_data, sizeof(blob_data)) == 0);
 
     // fourth write is i8
     TEST_ESP_OK(nvs_set_i8(handle_1, key_name, (int8_t)12));
 
     TEST_ESP_OK(nvs_get_i8(handle_1, key_name, &v8));
     TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+    str_len = sizeof(str_buf);
     TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    blob_read_size = sizeof(blob_buf);
     TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
 
     nvs_close(handle_1);
