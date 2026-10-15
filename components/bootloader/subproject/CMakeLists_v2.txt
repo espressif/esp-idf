@@ -100,6 +100,12 @@ idf_build_set_property(SET_COMPILER_LTO NO)
 # runtime, so it must never be instrumented regardless of the application's
 # CONFIG_COMPILER_KASAN option.
 idf_build_set_property(SET_COMPILER_KASAN NO)
+# esp_psram is an application-only component. Build system v2 collects Kconfig
+# from every discovered component. Without this exclusion the application's
+# SPIRAM options would reach the bootloader's sdkconfig.h and change how shared
+# sources are built for the bootloader. Build system v1 never had esp_psram in
+# the bootloader's COMPONENTS list.
+idf_build_set_property(EXCLUDE_COMPONENTS esp_psram APPEND)
 
 # Perform internal IDF project initialisation
 idf_project_init()
