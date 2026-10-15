@@ -144,6 +144,11 @@
 
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+// A light sleep at least this long lets the chip cool down from the preceding active period,
+// so a calibration right after it measures the RTC_SLOW oscillator at its sleep temperature
+#define RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US   (50 * 1000)
+#endif
 #define FAST_CLK_SRC_CAL_CYCLES     (2048)  /* ~ 127.4 us */
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -279,6 +284,12 @@ void esp_sleep_set_sleep_context(esp_sleep_context_t *sleep_ctx)
 #endif
 
 static uint32_t s_lightsleep_cnt = 0;
+
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+// RTC_SLOW period calibrated right after the last long enough light sleep. The next light sleep
+// uses it instead of a calibration at sleep entry, where the chip is still warm. 0: none yet.
+static uint32_t s_rtc_clk_cal_period_after_wakeup = 0;
+#endif
 
 #if SOC_RTCIO_PIN_COUNT > 0
 _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
@@ -796,7 +807,15 @@ static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
 #endif
     {
-        s_config.rtc_clk_cal_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+        // Prefer the period calibrated after the previous wakeup (see esp_light_sleep_start)
+        if (!is_dslp && s_rtc_clk_cal_period_after_wakeup != 0) {
+            s_config.rtc_clk_cal_period = s_rtc_clk_cal_period_after_wakeup;
+        } else
+#endif
+        {
+            s_config.rtc_clk_cal_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
+        }
         esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
     }
 #endif
@@ -1749,6 +1768,14 @@ esp_err_t esp_light_sleep_start(void)
             esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
         }
         esp_set_time_from_rtc();
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+        // The chip is still at its sleep temperature here. Calibrate for the next light sleep,
+        // if that one is due for a calibration (see sleep_low_power_clock_calibration).
+        if (rtc_time_diff >= RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US
+                && s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) {
+            s_rtc_clk_cal_period_after_wakeup = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
+        }
+#endif
     } else {
 #if !CONFIG_FREERTOS_UNICORE && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
         esp_sleep_cpu_skip_retention();
