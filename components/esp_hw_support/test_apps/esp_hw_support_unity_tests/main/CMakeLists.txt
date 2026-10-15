@@ -28,10 +28,20 @@ if(CONFIG_SOC_ETM_SUPPORTED)
     list(APPEND srcs "test_etm_core.c")
 endif()
 
+if(CONFIG_SOC_PMU_PVT_SUPPORTED)
+    list(APPEND srcs "test_pvt.c")
+endif()
+
+set(priv_requires unity esp_driver_gpio esp_driver_gptimer esp_driver_uart
+                  test_utils spi_flash esp_timer esp_hal_wdt)
+
+if(CONFIG_SOC_PMU_PVT_SUPPORTED)
+    list(APPEND priv_requires esp_hal_pmu esp_pm)
+endif()
+
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS "../include"
-                       PRIV_REQUIRES unity esp_driver_gpio esp_driver_gptimer esp_driver_uart
-                                     test_utils spi_flash esp_timer esp_hal_wdt
+                       PRIV_REQUIRES ${priv_requires}
                        WHOLE_ARCHIVE)
