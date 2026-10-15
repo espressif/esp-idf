@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 4d334deda739743601735f09078a9fd5
+// md5_digest_table e65c1156e3e1e4fd761e482a5cddd0da
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -21,34 +21,6 @@ static const esp_efuse_desc_t WR_DIS[] = {
 
 static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
     {EFUSE_BLK0, 0, 1}, 	 // [] wr_dis of RD_DIS,
-};
-
-static const esp_efuse_desc_t WR_DIS_KM_DISABLE_DEPLOY_MODE[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of KM_DISABLE_DEPLOY_MODE,
-};
-
-static const esp_efuse_desc_t WR_DIS_KM_RND_SWITCH_CYCLE[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of KM_RND_SWITCH_CYCLE,
-};
-
-static const esp_efuse_desc_t WR_DIS_KM_DEPLOY_ONLY_ONCE[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of KM_DEPLOY_ONLY_ONCE,
-};
-
-static const esp_efuse_desc_t WR_DIS_FORCE_USE_KEY_MANAGER_KEY[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of FORCE_USE_KEY_MANAGER_KEY,
-};
-
-static const esp_efuse_desc_t WR_DIS_FORCE_DISABLE_SW_INIT_KEY[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of FORCE_DISABLE_SW_INIT_KEY,
-};
-
-static const esp_efuse_desc_t WR_DIS_KM_XTS_KEY_LENGTH_256[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of KM_XTS_KEY_LENGTH_256,
-};
-
-static const esp_efuse_desc_t WR_DIS_LOCK_KM_KEY[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of LOCK_KM_KEY,
 };
 
 static const esp_efuse_desc_t WR_DIS_DIS_USB_JTAG[] = {
@@ -79,12 +51,8 @@ static const esp_efuse_desc_t WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_DOWNLOAD_MANUAL_ENCRYPT,
 };
 
-static const esp_efuse_desc_t WR_DIS_PVT_GLITCH_EN[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PVT_GLITCH_EN,
-};
-
-static const esp_efuse_desc_t WR_DIS_PVT_GLITCH_MODE[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PVT_GLITCH_MODE,
+static const esp_efuse_desc_t WR_DIS_DIS_CORE1[] = {
+    {EFUSE_BLK0, 3, 1}, 	 // [] wr_dis of DIS_CORE1,
 };
 
 static const esp_efuse_desc_t WR_DIS_SPI_BOOT_CRYPT_CNT[] = {
@@ -155,6 +123,34 @@ static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     {EFUSE_BLK0, 16, 1}, 	 // [] wr_dis of SECURE_BOOT_AGGRESSIVE_REVOKE,
 };
 
+static const esp_efuse_desc_t WR_DIS_KM_DISABLE_DEPLOY_MODE[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of KM_DISABLE_DEPLOY_MODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_KM_RND_SWITCH_CYCLE[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of KM_RND_SWITCH_CYCLE,
+};
+
+static const esp_efuse_desc_t WR_DIS_KM_DEPLOY_ONLY_ONCE[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of KM_DEPLOY_ONLY_ONCE,
+};
+
+static const esp_efuse_desc_t WR_DIS_FORCE_USE_KEY_MANAGER_KEY[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of FORCE_USE_KEY_MANAGER_KEY,
+};
+
+static const esp_efuse_desc_t WR_DIS_FORCE_DISABLE_SW_INIT_KEY[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of FORCE_DISABLE_SW_INIT_KEY,
+};
+
+static const esp_efuse_desc_t WR_DIS_KM_XTS_KEY_LENGTH_256[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of KM_XTS_KEY_LENGTH_256,
+};
+
+static const esp_efuse_desc_t WR_DIS_LOCK_KM_KEY[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of LOCK_KM_KEY,
+};
+
 static const esp_efuse_desc_t WR_DIS_FLASH_TPUW[] = {
     {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of FLASH_TPUW,
 };
@@ -207,32 +203,12 @@ static const esp_efuse_desc_t WR_DIS_MAC_EXT[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of MAC_EXT,
 };
 
-static const esp_efuse_desc_t WR_DIS_PVT_LIMIT[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PVT_LIMIT,
-};
-
-static const esp_efuse_desc_t WR_DIS_PVT_CELL_SELECT[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PVT_CELL_SELECT,
-};
-
-static const esp_efuse_desc_t WR_DIS_PVT_PUMP_LIMIT[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PVT_PUMP_LIMIT,
-};
-
-static const esp_efuse_desc_t WR_DIS_PUMP_DRV[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PUMP_DRV,
-};
-
 static const esp_efuse_desc_t WR_DIS_WDT_DELAY_SEL[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WDT_DELAY_SEL,
 };
 
 static const esp_efuse_desc_t WR_DIS_HYS_EN_PAD[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of HYS_EN_PAD,
-};
-
-static const esp_efuse_desc_t WR_DIS_PVT_GLITCH_CHARGE_RESET[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PVT_GLITCH_CHARGE_RESET,
 };
 
 static const esp_efuse_desc_t WR_DIS_VDD_SPI_LDO_ADJUST[] = {
@@ -291,8 +267,8 @@ static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PKG_VERSION,
 };
 
-static const esp_efuse_desc_t WR_DIS_PVT_DBIAS[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PVT_DBIAS,
+static const esp_efuse_desc_t WR_DIS_PVT_DRVB[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PVT_DRVB,
 };
 
 static const esp_efuse_desc_t WR_DIS_ADJUST_1V2[] = {
@@ -443,6 +419,18 @@ static const esp_efuse_desc_t WR_DIS_BLOCK_SYS_DATA2[] = {
     {EFUSE_BLK0, 29, 1}, 	 // [WR_DIS.SYS_DATA_PART2] wr_dis of BLOCK_SYS_DATA2,
 };
 
+static const esp_efuse_desc_t WR_DIS_RXIQ_VERSION[] = {
+    {EFUSE_BLK0, 29, 1}, 	 // [] wr_dis of RXIQ_VERSION,
+};
+
+static const esp_efuse_desc_t WR_DIS_RXIQ_0[] = {
+    {EFUSE_BLK0, 29, 1}, 	 // [] wr_dis of RXIQ_0,
+};
+
+static const esp_efuse_desc_t WR_DIS_RXIQ_1[] = {
+    {EFUSE_BLK0, 29, 1}, 	 // [] wr_dis of RXIQ_1,
+};
+
 static const esp_efuse_desc_t WR_DIS_USB_EXCHG_PINS[] = {
     {EFUSE_BLK0, 30, 1}, 	 // [] wr_dis of USB_EXCHG_PINS,
 };
@@ -460,7 +448,7 @@ static const esp_efuse_desc_t WR_DIS_SOFT_DIS_JTAG[] = {
 };
 
 static const esp_efuse_desc_t RD_DIS[] = {
-    {EFUSE_BLK0, 32, 7}, 	 // [] Disable reading from BlOCK4-10,
+    {EFUSE_BLK0, 32, 7}, 	 // [] Disable reading from BLOCK4-10,
 };
 
 static const esp_efuse_desc_t RD_DIS_BLOCK_KEY0[] = {
@@ -491,6 +479,18 @@ static const esp_efuse_desc_t RD_DIS_BLOCK_SYS_DATA2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // [RD_DIS.SYS_DATA_PART2] rd_dis of BLOCK_SYS_DATA2,
 };
 
+static const esp_efuse_desc_t RD_DIS_RXIQ_VERSION[] = {
+    {EFUSE_BLK0, 38, 1}, 	 // [] rd_dis of RXIQ_VERSION,
+};
+
+static const esp_efuse_desc_t RD_DIS_RXIQ_0[] = {
+    {EFUSE_BLK0, 38, 1}, 	 // [] rd_dis of RXIQ_0,
+};
+
+static const esp_efuse_desc_t RD_DIS_RXIQ_1[] = {
+    {EFUSE_BLK0, 38, 1}, 	 // [] rd_dis of RXIQ_1,
+};
+
 static const esp_efuse_desc_t DIS_USB_JTAG[] = {
     {EFUSE_BLK0, 39, 1}, 	 // [] Represents whether the function of usb switch to jtag is disabled or enabled. 1: disabled 0: enabled,
 };
@@ -519,20 +519,12 @@ static const esp_efuse_desc_t DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     {EFUSE_BLK0, 46, 1}, 	 // [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode). 1: disabled 0: enabled,
 };
 
-static const esp_efuse_desc_t PVT_GLITCH_EN[] = {
-    {EFUSE_BLK0, 50, 1}, 	 // [] Represents whether to enable PVT power glitch monitor function.1:Enable. 0:Disable,
-};
-
-static const esp_efuse_desc_t PVT_GLITCH_MODE[] = {
-    {EFUSE_BLK0, 52, 2}, 	 // [] Use to configure glitch mode,
-};
-
 static const esp_efuse_desc_t DIS_CORE1[] = {
-    {EFUSE_BLK0, 54, 1}, 	 // [] Represents whether the CPU-Core1 is disabled.  1: Disabled.  0: Not disable,
+    {EFUSE_BLK0, 54, 1}, 	 // [] Represents whether the CPU-Core1 is disabled. 1: Disabled. 0: Not disable,
 };
 
 static const esp_efuse_desc_t SPI_BOOT_CRYPT_CNT[] = {
-    {EFUSE_BLK0, 55, 3}, 	 // [] Enables flash encryption when 1 or 3 bits are set and disables otherwise {0: "Disable"; 1: "Enable"; 3: "Disable"; 7: "Enable"},
+    {EFUSE_BLK0, 55, 3}, 	 // [] Enables flash encryption when 1 or 3 bits are set and disabled otherwise {0: "Disable"; 1: "Enable"; 3: "Disable"; 7: "Enable"},
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_KEY_REVOKE0[] = {
@@ -580,11 +572,11 @@ static const esp_efuse_desc_t XTS_DPA_PSEUDO_LEVEL[] = {
 };
 
 static const esp_efuse_desc_t XTS_DPA_CLK_ENABLE[] = {
-    {EFUSE_BLK0, 98, 1}, 	 // [] Represents whether xts-aes anti-dpa attack clock is enabled. 1. Enable. 0: Disable.,
+    {EFUSE_BLK0, 98, 1}, 	 // [] Represents whether xts-aes anti-dpa attack clock is enabled. 1. Enable. 0: Disable,
 };
 
 static const esp_efuse_desc_t ECC_FORCE_CONST_TIME[] = {
-    {EFUSE_BLK0, 99, 1}, 	 // [] Represents whether to force ecc to use const-time calculation mode.  1: Enable.  0: Disable,
+    {EFUSE_BLK0, 99, 1}, 	 // [] Represents whether to force ecc to use const-time calculation mode. 1: Enable. 0: Disable,
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_SHA384_EN[] = {
@@ -600,31 +592,31 @@ static const esp_efuse_desc_t SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
 };
 
 static const esp_efuse_desc_t KM_DISABLE_DEPLOY_MODE[] = {
-    {EFUSE_BLK0, 103, 5}, 	 // [] Represents whether the new key deployment of key manager is disabled. Bit0: Represents whether the new ECDSA key deployment is disabled0: Enabled1: DisabledBit1: Represents whether the new XTS-AES (flash and PSRAM) key deployment is disabled0: Enabled1: DisabledBit2: Represents whether the new HMAC key deployment is disabled0: Enabled1: DisabledBit3: Represents whether the new DS key deployment is disabled0: Enabled1: Disabled,
+    {EFUSE_BLK0, 103, 5}, 	 // [] Represents whether the new key deployment of key manager is disabled. Bit0: Represents whether the new ECDSA key deployment is disabled 0: Enabled 1: Disabled Bit1: Represents whether the new XTS-AES (flash and PSRAM) key deployment is disabled 0: Enabled 1: Disabled Bit2: Represents whether the new HMAC key deployment is disabled 0: Enabled 1: Disabled Bit3: Represents whether the new DS key deployment is disabled 0: Enabled 1: Disabled,
 };
 
 static const esp_efuse_desc_t KM_RND_SWITCH_CYCLE[] = {
-    {EFUSE_BLK0, 108, 2}, 	 // [] Represents the cycle at which the Key Manager switches random numbers.0: Controlled by the \hyperref[fielddesc:KEYMNGRNDSWITCHCYCLE]{KEYMNG\_RND\_SWITCH\_CYCLE} register. For more information; please refer to Chapter \ref{mod:keymng} \textit{\nameref{mod:keymng}}1: 8 Key Manager clock cycles2: 16 Key Manager clock cycles3: 32 Key Manager clock cycles,
+    {EFUSE_BLK0, 108, 2}, 	 // [] Represents the cycle at which the Key Manager switches random numbers. 0: Controlled by the KEYMNG_RND_SWITCH_CYCLE register. For more information; please refer to Chapter 1: 8 Key Manager clock cycles 2: 16 Key Manager clock cycles 3: 32 Key Manager clock cycles,
 };
 
 static const esp_efuse_desc_t KM_DEPLOY_ONLY_ONCE[] = {
-    {EFUSE_BLK0, 110, 5}, 	 // [] Represents whether the corresponding key can be deployed only once.Bit0: Represents whether the ECDSA key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only onceBit1: Represents whether the XTS-AES (flash and PSRAM) key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only onceBit2: Represents whether the HMAC key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only onceBit3: Represents whether the DS key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only once,
+    {EFUSE_BLK0, 110, 5}, 	 // [] Represents whether the corresponding key can be deployed only once. Bit0: Represents whether the ECDSA key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once Bit1: Represents whether the XTS-AES (flash and PSRAM) key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once Bit2: Represents whether the HMAC key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once Bit3: Represents whether the DS key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once,
 };
 
 static const esp_efuse_desc_t FORCE_USE_KEY_MANAGER_KEY[] = {
-    {EFUSE_BLK0, 115, 5}, 	 // [] Represents whether the corresponding key must come from Key Manager. Bit0: Represents whether the ECDSA key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key ManagerBit1: Represents whether the XTS-AES (flash and PSRAM) key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key ManagerBit2: Represents whether the HMAC key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key ManagerBit3: Represents whether the DS key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key Manager,
+    {EFUSE_BLK0, 115, 5}, 	 // [] Represents whether the corresponding key must come from Key Manager. Bit0: Represents whether the ECDSA key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager Bit1: Represents whether the XTS-AES (flash and PSRAM) key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager Bit2: Represents whether the HMAC key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager Bit3: Represents whether the DS key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager,
 };
 
 static const esp_efuse_desc_t FORCE_DISABLE_SW_INIT_KEY[] = {
-    {EFUSE_BLK0, 120, 1}, 	 // [] Represents whether to disable the use of the initialization key written by software and instead force use efuse\_init\_key.0: Enable1: Disable,
+    {EFUSE_BLK0, 120, 1}, 	 // [] Represents whether to disable the use of the initialization key written by software and instead force use efuse_init_key. 0: Enable 1: Disable,
 };
 
 static const esp_efuse_desc_t KM_XTS_KEY_LENGTH_256[] = {
-    {EFUSE_BLK0, 121, 1}, 	 // [] Represents which key flash encryption uses.0: XTS-AES-256 key1: XTS-AES-128 key,
+    {EFUSE_BLK0, 121, 1}, 	 // [] Represents which key flash encryption uses. 0: XTS-AES-256 key 1: XTS-AES-128 key,
 };
 
 static const esp_efuse_desc_t LOCK_KM_KEY[] = {
-    {EFUSE_BLK0, 122, 1}, 	 // [] Represents whether the keys in the Key Manager are locked after deployment.0: Not locked1: Locked,
+    {EFUSE_BLK0, 122, 1}, 	 // [] Represents whether the keys in the Key Manager are locked after deployment. 0: Not locked 1: Locked,
 };
 
 static const esp_efuse_desc_t FLASH_TPUW[] = {
@@ -664,11 +656,11 @@ static const esp_efuse_desc_t SECURE_VERSION[] = {
 };
 
 static const esp_efuse_desc_t HUK_GEN_STATE[] = {
-    {EFUSE_BLK0, 151, 5}, 	 // [] Represents whether the HUK generate mode is valid.Odd count of bits with a value of 1: InvalidEven count of bits with a value of 1: Valid,
+    {EFUSE_BLK0, 151, 5}, 	 // [] Represents whether the HUK generate mode is valid. Odd count of bits with a value of 1: Invalid Even count of bits with a value of 1: Valid,
 };
 
 static const esp_efuse_desc_t FLASH_LDO_EFUSE_SEL[] = {
-    {EFUSE_BLK0, 156, 1}, 	 // [] Represents whether to select efuse control flash ldo default voltage.  1 : efuse 0 : strapping,
+    {EFUSE_BLK0, 156, 1}, 	 // [] Represents whether to select efuse control flash ldo default voltage. 1 : efuse 0 : strapping,
 };
 
 static const esp_efuse_desc_t USB_EXCHG_PINS[] = {
@@ -680,7 +672,7 @@ static const esp_efuse_desc_t USB_OTG_FS_EXCHG_PINS[] = {
 };
 
 static const esp_efuse_desc_t USB_PHY_SEL[] = {
-    {EFUSE_BLK0, 170, 1}, 	 // [] Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY.  1: exchanged.  0: not exchanged,
+    {EFUSE_BLK0, 170, 1}, 	 // [] Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY. 1: exchanged. 0: not exchanged,
 };
 
 static const esp_efuse_desc_t SOFT_DIS_JTAG[] = {
@@ -688,7 +680,7 @@ static const esp_efuse_desc_t SOFT_DIS_JTAG[] = {
 };
 
 static const esp_efuse_desc_t IO_LDO_ADJUST[] = {
-    {EFUSE_BLK0, 174, 8}, 	 // [] Represents configuration of IO LDO mode and voltage.,
+    {EFUSE_BLK0, 174, 8}, 	 // [] Represents configuration of IO LDO mode and voltage,
 };
 
 static const esp_efuse_desc_t IO_LDO_1P8[] = {
@@ -709,24 +701,8 @@ static const esp_efuse_desc_t MAC[] = {
 };
 
 static const esp_efuse_desc_t MAC_EXT[] = {
-    {EFUSE_BLK1, 56, 8}, 	 // [] Stores the extended bits of MAC address,
-    {EFUSE_BLK1, 48, 8}, 	 // [] Stores the extended bits of MAC address,
-};
-
-static const esp_efuse_desc_t PVT_LIMIT[] = {
-    {EFUSE_BLK1, 64, 16}, 	 // [] Power glitch monitor threthold,
-};
-
-static const esp_efuse_desc_t PVT_CELL_SELECT[] = {
-    {EFUSE_BLK1, 80, 7}, 	 // [] Power glitch monitor PVT cell select,
-};
-
-static const esp_efuse_desc_t PVT_PUMP_LIMIT[] = {
-    {EFUSE_BLK1, 87, 8}, 	 // [] Use to configure voltage monitor limit for charge pump,
-};
-
-static const esp_efuse_desc_t PUMP_DRV[] = {
-    {EFUSE_BLK1, 96, 4}, 	 // [] Use to configure charge pump voltage gain,
+    {EFUSE_BLK1, 56, 8}, 	 // [] Represents the extended bits of MAC address,
+    {EFUSE_BLK1, 48, 8}, 	 // [] Represents the extended bits of MAC address,
 };
 
 static const esp_efuse_desc_t WDT_DELAY_SEL[] = {
@@ -737,16 +713,12 @@ static const esp_efuse_desc_t HYS_EN_PAD[] = {
     {EFUSE_BLK1, 102, 1}, 	 // [] Represents whether the hysteresis function of corresponding PAD is enabled. 1: enabled 0:disabled,
 };
 
-static const esp_efuse_desc_t PVT_GLITCH_CHARGE_RESET[] = {
-    {EFUSE_BLK1, 103, 1}, 	 // [] Represents whether to trigger reset or charge pump when PVT power glitch happened.1:Trigger charge pump. 0:Trigger reset,
-};
-
 static const esp_efuse_desc_t VDD_SPI_LDO_ADJUST[] = {
-    {EFUSE_BLK1, 105, 8}, 	 // [] Represents configuration of FLASH LDO mode and voltage.,
+    {EFUSE_BLK1, 105, 8}, 	 // [] Represents configuration of FLASH LDO mode and voltage,
 };
 
 static const esp_efuse_desc_t FLASH_LDO_POWER_SEL[] = {
-    {EFUSE_BLK1, 113, 1}, 	 // [] Represents which flash ldo be select: 1: FLASH LDO 1P2 0 : FLASH LDO 1P8,
+    {EFUSE_BLK1, 113, 1}, 	 // [] Selects the flash LDO voltage. 0: 1.2 V; 1: 1.8 V,
 };
 
 static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
@@ -797,8 +769,8 @@ static const esp_efuse_desc_t PKG_VERSION[] = {
     {EFUSE_BLK1, 140, 3}, 	 // [] Package version,
 };
 
-static const esp_efuse_desc_t PVT_DBIAS[] = {
-    {EFUSE_BLK1, 143, 5}, 	 // [] PVT DBIAS,
+static const esp_efuse_desc_t PVT_DRVB[] = {
+    {EFUSE_BLK1, 143, 5}, 	 // [] PVT DRVB,
 };
 
 static const esp_efuse_desc_t ADJUST_1V2[] = {
@@ -941,8 +913,16 @@ static const esp_efuse_desc_t KEY5[] = {
     {EFUSE_BLK9, 0, 256}, 	 // [BLOCK_KEY5] Key5 or user data,
 };
 
-static const esp_efuse_desc_t SYS_DATA_PART2[] = {
-    {EFUSE_BLK10, 0, 256}, 	 // [BLOCK_SYS_DATA2] System data part 2 (reserved),
+static const esp_efuse_desc_t RXIQ_VERSION[] = {
+    {EFUSE_BLK10, 0, 3}, 	 // [] Stores RF Calibration data. RXIQ version,
+};
+
+static const esp_efuse_desc_t RXIQ_0[] = {
+    {EFUSE_BLK10, 3, 7}, 	 // [] Stores RF Calibration data. RXIQ data 0,
+};
+
+static const esp_efuse_desc_t RXIQ_1[] = {
+    {EFUSE_BLK10, 10, 7}, 	 // [] Stores RF Calibration data. RXIQ data 1,
 };
 
 
@@ -956,41 +936,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
     &WR_DIS_RD_DIS[0],    		// [] wr_dis of RD_DIS
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_DISABLE_DEPLOY_MODE[] = {
-    &WR_DIS_KM_DISABLE_DEPLOY_MODE[0],    		// [] wr_dis of KM_DISABLE_DEPLOY_MODE
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_RND_SWITCH_CYCLE[] = {
-    &WR_DIS_KM_RND_SWITCH_CYCLE[0],    		// [] wr_dis of KM_RND_SWITCH_CYCLE
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_DEPLOY_ONLY_ONCE[] = {
-    &WR_DIS_KM_DEPLOY_ONLY_ONCE[0],    		// [] wr_dis of KM_DEPLOY_ONLY_ONCE
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_USE_KEY_MANAGER_KEY[] = {
-    &WR_DIS_FORCE_USE_KEY_MANAGER_KEY[0],    		// [] wr_dis of FORCE_USE_KEY_MANAGER_KEY
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_DISABLE_SW_INIT_KEY[] = {
-    &WR_DIS_FORCE_DISABLE_SW_INIT_KEY[0],    		// [] wr_dis of FORCE_DISABLE_SW_INIT_KEY
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_XTS_KEY_LENGTH_256[] = {
-    &WR_DIS_KM_XTS_KEY_LENGTH_256[0],    		// [] wr_dis of KM_XTS_KEY_LENGTH_256
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LOCK_KM_KEY[] = {
-    &WR_DIS_LOCK_KM_KEY[0],    		// [] wr_dis of LOCK_KM_KEY
     NULL
 };
 
@@ -1029,13 +974,8 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_GLITCH_EN[] = {
-    &WR_DIS_PVT_GLITCH_EN[0],    		// [] wr_dis of PVT_GLITCH_EN
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_GLITCH_MODE[] = {
-    &WR_DIS_PVT_GLITCH_MODE[0],    		// [] wr_dis of PVT_GLITCH_MODE
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_CORE1[] = {
+    &WR_DIS_DIS_CORE1[0],    		// [] wr_dis of DIS_CORE1
     NULL
 };
 
@@ -1124,6 +1064,41 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_DISABLE_DEPLOY_MODE[] = {
+    &WR_DIS_KM_DISABLE_DEPLOY_MODE[0],    		// [] wr_dis of KM_DISABLE_DEPLOY_MODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_RND_SWITCH_CYCLE[] = {
+    &WR_DIS_KM_RND_SWITCH_CYCLE[0],    		// [] wr_dis of KM_RND_SWITCH_CYCLE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_DEPLOY_ONLY_ONCE[] = {
+    &WR_DIS_KM_DEPLOY_ONLY_ONCE[0],    		// [] wr_dis of KM_DEPLOY_ONLY_ONCE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_USE_KEY_MANAGER_KEY[] = {
+    &WR_DIS_FORCE_USE_KEY_MANAGER_KEY[0],    		// [] wr_dis of FORCE_USE_KEY_MANAGER_KEY
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_DISABLE_SW_INIT_KEY[] = {
+    &WR_DIS_FORCE_DISABLE_SW_INIT_KEY[0],    		// [] wr_dis of FORCE_DISABLE_SW_INIT_KEY
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_XTS_KEY_LENGTH_256[] = {
+    &WR_DIS_KM_XTS_KEY_LENGTH_256[0],    		// [] wr_dis of KM_XTS_KEY_LENGTH_256
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LOCK_KM_KEY[] = {
+    &WR_DIS_LOCK_KM_KEY[0],    		// [] wr_dis of LOCK_KM_KEY
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TPUW[] = {
     &WR_DIS_FLASH_TPUW[0],    		// [] wr_dis of FLASH_TPUW
     NULL
@@ -1189,26 +1164,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_LIMIT[] = {
-    &WR_DIS_PVT_LIMIT[0],    		// [] wr_dis of PVT_LIMIT
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_CELL_SELECT[] = {
-    &WR_DIS_PVT_CELL_SELECT[0],    		// [] wr_dis of PVT_CELL_SELECT
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_PUMP_LIMIT[] = {
-    &WR_DIS_PVT_PUMP_LIMIT[0],    		// [] wr_dis of PVT_PUMP_LIMIT
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PUMP_DRV[] = {
-    &WR_DIS_PUMP_DRV[0],    		// [] wr_dis of PUMP_DRV
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WDT_DELAY_SEL[] = {
     &WR_DIS_WDT_DELAY_SEL[0],    		// [] wr_dis of WDT_DELAY_SEL
     NULL
@@ -1216,11 +1171,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WDT_DELAY_SEL[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_HYS_EN_PAD[] = {
     &WR_DIS_HYS_EN_PAD[0],    		// [] wr_dis of HYS_EN_PAD
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_GLITCH_CHARGE_RESET[] = {
-    &WR_DIS_PVT_GLITCH_CHARGE_RESET[0],    		// [] wr_dis of PVT_GLITCH_CHARGE_RESET
     NULL
 };
 
@@ -1294,8 +1244,8 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_DBIAS[] = {
-    &WR_DIS_PVT_DBIAS[0],    		// [] wr_dis of PVT_DBIAS
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_DRVB[] = {
+    &WR_DIS_PVT_DRVB[0],    		// [] wr_dis of PVT_DRVB
     NULL
 };
 
@@ -1484,6 +1434,21 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_VERSION[] = {
+    &WR_DIS_RXIQ_VERSION[0],    		// [] wr_dis of RXIQ_VERSION
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_0[] = {
+    &WR_DIS_RXIQ_0[0],    		// [] wr_dis of RXIQ_0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_1[] = {
+    &WR_DIS_RXIQ_1[0],    		// [] wr_dis of RXIQ_1
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_EXCHG_PINS[] = {
     &WR_DIS_USB_EXCHG_PINS[0],    		// [] wr_dis of USB_EXCHG_PINS
     NULL
@@ -1505,7 +1470,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SOFT_DIS_JTAG[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_RD_DIS[] = {
-    &RD_DIS[0],    		// [] Disable reading from BlOCK4-10
+    &RD_DIS[0],    		// [] Disable reading from BLOCK4-10
     NULL
 };
 
@@ -1544,6 +1509,21 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_SYS_DATA2[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_RXIQ_VERSION[] = {
+    &RD_DIS_RXIQ_VERSION[0],    		// [] rd_dis of RXIQ_VERSION
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_RXIQ_0[] = {
+    &RD_DIS_RXIQ_0[0],    		// [] rd_dis of RXIQ_0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_RXIQ_1[] = {
+    &RD_DIS_RXIQ_1[0],    		// [] rd_dis of RXIQ_1
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[] = {
     &DIS_USB_JTAG[0],    		// [] Represents whether the function of usb switch to jtag is disabled or enabled. 1: disabled 0: enabled
     NULL
@@ -1579,23 +1559,13 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_PVT_GLITCH_EN[] = {
-    &PVT_GLITCH_EN[0],    		// [] Represents whether to enable PVT power glitch monitor function.1:Enable. 0:Disable
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PVT_GLITCH_MODE[] = {
-    &PVT_GLITCH_MODE[0],    		// [] Use to configure glitch mode
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_DIS_CORE1[] = {
-    &DIS_CORE1[0],    		// [] Represents whether the CPU-Core1 is disabled.  1: Disabled.  0: Not disable
+    &DIS_CORE1[0],    		// [] Represents whether the CPU-Core1 is disabled. 1: Disabled. 0: Not disable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SPI_BOOT_CRYPT_CNT[] = {
-    &SPI_BOOT_CRYPT_CNT[0],    		// [] Enables flash encryption when 1 or 3 bits are set and disables otherwise {0: "Disable"; 1: "Enable"; 3: "Disable"; 7: "Enable"}
+    &SPI_BOOT_CRYPT_CNT[0],    		// [] Enables flash encryption when 1 or 3 bits are set and disabled otherwise {0: "Disable"; 1: "Enable"; 3: "Disable"; 7: "Enable"}
     NULL
 };
 
@@ -1655,12 +1625,12 @@ const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_CLK_ENABLE[] = {
-    &XTS_DPA_CLK_ENABLE[0],    		// [] Represents whether xts-aes anti-dpa attack clock is enabled. 1. Enable. 0: Disable.
+    &XTS_DPA_CLK_ENABLE[0],    		// [] Represents whether xts-aes anti-dpa attack clock is enabled. 1. Enable. 0: Disable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[] = {
-    &ECC_FORCE_CONST_TIME[0],    		// [] Represents whether to force ecc to use const-time calculation mode.  1: Enable.  0: Disable
+    &ECC_FORCE_CONST_TIME[0],    		// [] Represents whether to force ecc to use const-time calculation mode. 1: Enable. 0: Disable
     NULL
 };
 
@@ -1680,37 +1650,37 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_KM_DISABLE_DEPLOY_MODE[] = {
-    &KM_DISABLE_DEPLOY_MODE[0],    		// [] Represents whether the new key deployment of key manager is disabled. Bit0: Represents whether the new ECDSA key deployment is disabled0: Enabled1: DisabledBit1: Represents whether the new XTS-AES (flash and PSRAM) key deployment is disabled0: Enabled1: DisabledBit2: Represents whether the new HMAC key deployment is disabled0: Enabled1: DisabledBit3: Represents whether the new DS key deployment is disabled0: Enabled1: Disabled
+    &KM_DISABLE_DEPLOY_MODE[0],    		// [] Represents whether the new key deployment of key manager is disabled. Bit0: Represents whether the new ECDSA key deployment is disabled 0: Enabled 1: Disabled Bit1: Represents whether the new XTS-AES (flash and PSRAM) key deployment is disabled 0: Enabled 1: Disabled Bit2: Represents whether the new HMAC key deployment is disabled 0: Enabled 1: Disabled Bit3: Represents whether the new DS key deployment is disabled 0: Enabled 1: Disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_KM_RND_SWITCH_CYCLE[] = {
-    &KM_RND_SWITCH_CYCLE[0],    		// [] Represents the cycle at which the Key Manager switches random numbers.0: Controlled by the \hyperref[fielddesc:KEYMNGRNDSWITCHCYCLE]{KEYMNG\_RND\_SWITCH\_CYCLE} register. For more information; please refer to Chapter \ref{mod:keymng} \textit{\nameref{mod:keymng}}1: 8 Key Manager clock cycles2: 16 Key Manager clock cycles3: 32 Key Manager clock cycles
+    &KM_RND_SWITCH_CYCLE[0],    		// [] Represents the cycle at which the Key Manager switches random numbers. 0: Controlled by the KEYMNG_RND_SWITCH_CYCLE register. For more information; please refer to Chapter 1: 8 Key Manager clock cycles 2: 16 Key Manager clock cycles 3: 32 Key Manager clock cycles
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_KM_DEPLOY_ONLY_ONCE[] = {
-    &KM_DEPLOY_ONLY_ONCE[0],    		// [] Represents whether the corresponding key can be deployed only once.Bit0: Represents whether the ECDSA key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only onceBit1: Represents whether the XTS-AES (flash and PSRAM) key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only onceBit2: Represents whether the HMAC key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only onceBit3: Represents whether the DS key can be deployed only once0: The key can be deployed multiple times1: The key can be deployed only once
+    &KM_DEPLOY_ONLY_ONCE[0],    		// [] Represents whether the corresponding key can be deployed only once. Bit0: Represents whether the ECDSA key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once Bit1: Represents whether the XTS-AES (flash and PSRAM) key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once Bit2: Represents whether the HMAC key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once Bit3: Represents whether the DS key can be deployed only once 0: The key can be deployed multiple times 1: The key can be deployed only once
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY[] = {
-    &FORCE_USE_KEY_MANAGER_KEY[0],    		// [] Represents whether the corresponding key must come from Key Manager. Bit0: Represents whether the ECDSA key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key ManagerBit1: Represents whether the XTS-AES (flash and PSRAM) key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key ManagerBit2: Represents whether the HMAC key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key ManagerBit3: Represents whether the DS key must come from Key Manager.0: The key does not need to come from Key Manager1: The key must come from Key Manager
+    &FORCE_USE_KEY_MANAGER_KEY[0],    		// [] Represents whether the corresponding key must come from Key Manager. Bit0: Represents whether the ECDSA key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager Bit1: Represents whether the XTS-AES (flash and PSRAM) key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager Bit2: Represents whether the HMAC key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager Bit3: Represents whether the DS key must come from Key Manager. 0: The key does not need to come from Key Manager 1: The key must come from Key Manager
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FORCE_DISABLE_SW_INIT_KEY[] = {
-    &FORCE_DISABLE_SW_INIT_KEY[0],    		// [] Represents whether to disable the use of the initialization key written by software and instead force use efuse\_init\_key.0: Enable1: Disable
+    &FORCE_DISABLE_SW_INIT_KEY[0],    		// [] Represents whether to disable the use of the initialization key written by software and instead force use efuse_init_key. 0: Enable 1: Disable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_KM_XTS_KEY_LENGTH_256[] = {
-    &KM_XTS_KEY_LENGTH_256[0],    		// [] Represents which key flash encryption uses.0: XTS-AES-256 key1: XTS-AES-128 key
+    &KM_XTS_KEY_LENGTH_256[0],    		// [] Represents which key flash encryption uses. 0: XTS-AES-256 key 1: XTS-AES-128 key
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_LOCK_KM_KEY[] = {
-    &LOCK_KM_KEY[0],    		// [] Represents whether the keys in the Key Manager are locked after deployment.0: Not locked1: Locked
+    &LOCK_KM_KEY[0],    		// [] Represents whether the keys in the Key Manager are locked after deployment. 0: Not locked 1: Locked
     NULL
 };
 
@@ -1760,12 +1730,12 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_HUK_GEN_STATE[] = {
-    &HUK_GEN_STATE[0],    		// [] Represents whether the HUK generate mode is valid.Odd count of bits with a value of 1: InvalidEven count of bits with a value of 1: Valid
+    &HUK_GEN_STATE[0],    		// [] Represents whether the HUK generate mode is valid. Odd count of bits with a value of 1: Invalid Even count of bits with a value of 1: Valid
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FLASH_LDO_EFUSE_SEL[] = {
-    &FLASH_LDO_EFUSE_SEL[0],    		// [] Represents whether to select efuse control flash ldo default voltage.  1 : efuse 0 : strapping
+    &FLASH_LDO_EFUSE_SEL[0],    		// [] Represents whether to select efuse control flash ldo default voltage. 1 : efuse 0 : strapping
     NULL
 };
 
@@ -1780,7 +1750,7 @@ const esp_efuse_desc_t* ESP_EFUSE_USB_OTG_FS_EXCHG_PINS[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[] = {
-    &USB_PHY_SEL[0],    		// [] Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY.  1: exchanged.  0: not exchanged
+    &USB_PHY_SEL[0],    		// [] Represents whether to exchange the USB_SERIAL_JTAG PHY with USB_OTG_FS PHY. 1: exchanged. 0: not exchanged
     NULL
 };
 
@@ -1790,7 +1760,7 @@ const esp_efuse_desc_t* ESP_EFUSE_SOFT_DIS_JTAG[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_IO_LDO_ADJUST[] = {
-    &IO_LDO_ADJUST[0],    		// [] Represents configuration of IO LDO mode and voltage.
+    &IO_LDO_ADJUST[0],    		// [] Represents configuration of IO LDO mode and voltage
     NULL
 };
 
@@ -1815,28 +1785,8 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
-    &MAC_EXT[0],    		// [] Stores the extended bits of MAC address
-    &MAC_EXT[1],    		// [] Stores the extended bits of MAC address
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PVT_LIMIT[] = {
-    &PVT_LIMIT[0],    		// [] Power glitch monitor threthold
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PVT_CELL_SELECT[] = {
-    &PVT_CELL_SELECT[0],    		// [] Power glitch monitor PVT cell select
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PVT_PUMP_LIMIT[] = {
-    &PVT_PUMP_LIMIT[0],    		// [] Use to configure voltage monitor limit for charge pump
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PUMP_DRV[] = {
-    &PUMP_DRV[0],    		// [] Use to configure charge pump voltage gain
+    &MAC_EXT[0],    		// [] Represents the extended bits of MAC address
+    &MAC_EXT[1],    		// [] Represents the extended bits of MAC address
     NULL
 };
 
@@ -1850,18 +1800,13 @@ const esp_efuse_desc_t* ESP_EFUSE_HYS_EN_PAD[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_PVT_GLITCH_CHARGE_RESET[] = {
-    &PVT_GLITCH_CHARGE_RESET[0],    		// [] Represents whether to trigger reset or charge pump when PVT power glitch happened.1:Trigger charge pump. 0:Trigger reset
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_LDO_ADJUST[] = {
-    &VDD_SPI_LDO_ADJUST[0],    		// [] Represents configuration of FLASH LDO mode and voltage.
+    &VDD_SPI_LDO_ADJUST[0],    		// [] Represents configuration of FLASH LDO mode and voltage
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FLASH_LDO_POWER_SEL[] = {
-    &FLASH_LDO_POWER_SEL[0],    		// [] Represents which flash ldo be select: 1: FLASH LDO 1P2 0 : FLASH LDO 1P8
+    &FLASH_LDO_POWER_SEL[0],    		// [] Selects the flash LDO voltage. 0: 1.2 V; 1: 1.8 V
     NULL
 };
 
@@ -1925,8 +1870,8 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_PVT_DBIAS[] = {
-    &PVT_DBIAS[0],    		// [] PVT DBIAS
+const esp_efuse_desc_t* ESP_EFUSE_PVT_DRVB[] = {
+    &PVT_DRVB[0],    		// [] PVT DRVB
     NULL
 };
 
@@ -2105,7 +2050,17 @@ const esp_efuse_desc_t* ESP_EFUSE_KEY5[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART2[] = {
-    &SYS_DATA_PART2[0],    		// [BLOCK_SYS_DATA2] System data part 2 (reserved)
+const esp_efuse_desc_t* ESP_EFUSE_RXIQ_VERSION[] = {
+    &RXIQ_VERSION[0],    		// [] Stores RF Calibration data. RXIQ version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RXIQ_0[] = {
+    &RXIQ_0[0],    		// [] Stores RF Calibration data. RXIQ data 0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RXIQ_1[] = {
+    &RXIQ_1[0],    		// [] Stores RF Calibration data. RXIQ data 1
     NULL
 };
