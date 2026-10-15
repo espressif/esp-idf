@@ -8,6 +8,8 @@ components/esp_hw_support/test_apps/cpu:
     - soc
 
 components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable:
+    - if: CONFIG_NAME == "pvt" and SOC_PMU_PVT_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET == "esp32h21" # TODO: IDF-16199
       temporary: true
@@ -17,6 +19,7 @@ components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
     - esp_hal_gpio
     - esp_hal_wdt
     - esp_hw_support
+    - esp_pm
     - soc
     - xtensa
 

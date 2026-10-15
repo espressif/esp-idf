@@ -1476,7 +1476,7 @@ extern "C" {
 /** PCR_PVT_MONITOR_FUNC_CLK_SEL : R/W; bitpos: [20]; default: 1;
  *  Configures the clock source of PVT MONITOR.
  *  0: XTAL_CLK
- *  1(default): PLL_F160M_CLK
+ *  1(default): PLL_F96M_CLK
  */
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL    (BIT(20))
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL_M  (PCR_PVT_MONITOR_FUNC_CLK_SEL_V << PCR_PVT_MONITOR_FUNC_CLK_SEL_S)

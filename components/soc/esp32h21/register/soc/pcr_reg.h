@@ -1330,8 +1330,7 @@ extern "C" {
 #define PCR_PVT_MONITOR_FUNC_CLK_DIV_NUM_V  0x0000000FU
 #define PCR_PVT_MONITOR_FUNC_CLK_DIV_NUM_S  0
 /** PCR_PVT_MONITOR_FUNC_CLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0: XTAL, 1(default): 160MHz driven by SPLL
- *  divided by 3.
+ *  set this field to select clock-source. 0: XTAL, 1(default): 96MHz PLL.
  */
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL    (BIT(20))
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL_M  (PCR_PVT_MONITOR_FUNC_CLK_SEL_V << PCR_PVT_MONITOR_FUNC_CLK_SEL_S)
