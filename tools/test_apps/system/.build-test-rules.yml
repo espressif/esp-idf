@@ -94,7 +94,7 @@ tools/test_apps/system/g1_components_cmakev2:
 
 tools/test_apps/system/gdb:
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32s31", "esp32h4", "esp32h21"]
+    - if: IDF_TARGET in ["esp32p4", "esp32h4", "esp32h21"]
       temporary: true
       reason: not supported yet # TODO: IDF-13142
 
@@ -103,10 +103,6 @@ tools/test_apps/system/gdb_loadable_elf:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
-  disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: target esp32c6, esp32h2 is not supported yet
 
 tools/test_apps/system/gdbstub_runtime:
   disable_test:

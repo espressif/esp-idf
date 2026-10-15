@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.usb_serial_jtag
@@ -13,10 +14,8 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize(
-    'target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4', 'esp32c5'], indirect=['target']
-)
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_usj_vfs_select(dut: Dut) -> None:
     test_message = 'test123456789!@#%^&*'
 
@@ -36,10 +35,8 @@ def test_usj_vfs_select(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize(
-    'target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4', 'esp32c5'], indirect=['target']
-)
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_usj_vfs_read_return(dut: Dut) -> None:
     test_message = '!(@*#&(!*@&#((SDasdkjhad\nce'
 
@@ -58,8 +55,8 @@ def test_usj_vfs_read_return(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 def test_usj_vfs_read_blocking(dut: Dut) -> None:
     test_message = 'testdata'
 

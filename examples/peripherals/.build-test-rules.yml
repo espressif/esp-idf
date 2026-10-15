@@ -835,12 +835,9 @@ examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"] # TODO ESPTOOL-1406, IDF-16462
       temporary: true
-      reason: Lack runners
-    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-10703, IDF-16200
-      temporary: true
-      reason: lack of usj runner
+      reason: cannot pass
   depends_components:
     - esp_driver_uart
     - esp_driver_dma
