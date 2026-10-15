@@ -5,3 +5,5 @@ CONFIG_COMPILER_OPTIMIZATION_NONE=y
 CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT=y
 # place non-ISR FreeRTOS functions in Flash
 CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
+# use large app partition, the app size exceeds 1MB with optimization disabled
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
