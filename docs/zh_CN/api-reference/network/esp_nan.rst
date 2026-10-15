@@ -22,6 +22,19 @@ Wi-Fi Aware\ :sup:`TM`，也可称为 NAN (Neighbor Awareness Networking) 协议
 
 - :example:`wifi/wifi_aware/usd_subscriber` 演示了如何使用轻量级 NAN 非同步服务发现 (NAN-USD) 协议发现附近设备发布的服务并与之交互。示例讲解了如何启用 USD 发现、订阅服务、处理后续消息交换，以及在会话结束后终止发现。
 
+NAN 安全
+--------
+
+默认情况下，NAN 数据路径 (NDP) 以明文传输数据。NAN 安全在 NDP 握手期间为发布方与订阅方派生出成对密钥 (ND-PMK)，并据此加密该 NDP。NAN 安全支持两种机制：
+
+- **基于密码短语/PMK (NCS-SK-128)**：双方通过带外方式共享密码短语或原始的 32 字节 PMK。该机制可在独立 ESP-IDF 中使用，需要配置选项 :ref:`CONFIG_ESP_WIFI_NAN_SECURITY`。请参阅 :doc:`/api-guides/wifi-security`。
+- **基于配对 (NCS-PK-PASN-128)**：双方运行 NAN 配对协议 (PASN) 协商 NPK/NIK，并可选用引导方法（例如 PIN 码）进行认证。需要配置选项 :ref:`CONFIG_ESP_WIFI_NAN_PAIRING`，以及 **Wi-Fi Aware** 外部组件（``espressif/wifi_aware``），该组件不随独立 ESP-IDF 提供。请从 `ESP 组件注册表 <https://components.espressif.com/components/espressif/wifi_aware/>`__ 将其添加到工程：
+
+  .. code-block:: yaml
+
+      dependencies:
+        espressif/wifi_aware: "*"
+
 API 参考
 -------------
 
