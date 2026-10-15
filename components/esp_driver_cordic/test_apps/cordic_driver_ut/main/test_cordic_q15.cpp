@@ -35,13 +35,14 @@ TEST_CASE("test cosine and sine q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COS,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 8,
         .scale_exp = 0,
     };
 
@@ -105,13 +106,14 @@ TEST_CASE("test phase and module q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_PHASE,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 12,
         .scale_exp = 0,
     };
 
@@ -180,13 +182,14 @@ TEST_CASE("test arctan q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 12,
         .scale_exp = 0,
     };
 
@@ -244,13 +247,14 @@ TEST_CASE("test hyperbolic cosine and sine q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COSH,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 1,
     };
 
@@ -316,13 +320,14 @@ TEST_CASE("test arctanh q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCHTANH,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 1,
     };
 
@@ -384,13 +389,14 @@ TEST_CASE("test natural logarithm q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_LOGE,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 1,
     };
 
@@ -457,13 +463,14 @@ TEST_CASE("test square root q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_SQUARE_ROOT,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 8,
         .scale_exp = 0,
     };
 
@@ -523,13 +530,14 @@ TEST_CASE("test arctan scale 2 q15", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 2,  // Scale = 2: hardware input is (x) * 2^(-2) = x / 4
     };
 
@@ -602,6 +610,7 @@ TEST_CASE("test cordic performance should quicker than software iqmath", "[cordi
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
@@ -687,7 +696,7 @@ static void concurrent_calculate_task(void *arg)
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COS,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 8,
         .scale_exp = 0,
     };
     cordic_input_buffer_desc_t input_buffer = {
@@ -722,6 +731,7 @@ TEST_CASE("cordic results stay correct when shared by multiple tasks", "[cordic]
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
@@ -827,15 +837,21 @@ TEST_CASE("cordic can calculation in ISR", "[cordic]")
 
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &isr_test_ctx.engine_handle));
 
     //-------------GPTimer Init & Config---------------//
     gptimer_handle_t timer = NULL;
     gptimer_config_t timer_config = {
-        .resolution_hz = 1 * 1000 * 1000,
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = 1 * 1000 * 1000,
+        .intr_priority = 0,
+        .flags = {
+            .intr_shared = 0,
+            .allow_pd = 0,
+        },
     };
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &timer));
 
@@ -843,8 +859,11 @@ TEST_CASE("cordic can calculation in ISR", "[cordic]")
         .on_alarm = s_alarm_callback,
     };
     gptimer_alarm_config_t alarm_config = {
-        .reload_count = 0,
         .alarm_count = 100000, // 100ms
+        .reload_count = 0,
+        .flags = {
+            .auto_reload_on_alarm = 0,
+        },
     };
     TEST_ESP_OK(gptimer_set_alarm_action(timer, &alarm_config));
     TEST_ESP_OK(gptimer_register_event_callbacks(timer, &cbs, &isr_test_ctx));

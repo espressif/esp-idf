@@ -138,7 +138,7 @@ Input and output data format is selected via :cpp:member:`cordic_calculate_confi
 Precision
 ---------
 
-The number of iterations (precision) is set via :cpp:member:`cordic_calculate_config_t::iteration_count`. Supported values are given below.
+The number of iterations (precision) is set via :cpp:member:`cordic_calculate_config_t::iteration_count`. Legal values are 4, 8, 12, 16, 20 and 24. Square root accepts only 4, 8 and 12. Any other value makes the calculation return ``ESP_ERR_INVALID_ARG``. Supported values and their residuals are given below.
 
 **Phase, Modulus, Arctan functions**
 
@@ -225,7 +225,7 @@ Use the engine to perform a calculation:
    cordic_calculate_config_t calc_config = {
        .function = ESP_CORDIC_FUNC_COS,           // Select function
        .iq_format = ESP_CORDIC_FORMAT_Q15,        // Input/output data format
-       .iteration_count = 4,                     // Iteration count (precision)
+       .iteration_count = 4,                     // 4, 8, 12, 16, 20 or 24 iterations
        .scale_exp = 0,                            // Input scale exponent n (effective scale 2^n)
    };
 

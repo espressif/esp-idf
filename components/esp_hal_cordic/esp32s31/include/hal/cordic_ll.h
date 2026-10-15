@@ -185,8 +185,6 @@ static inline void cordic_ll_set_calculate_config(cordic_dev_t *hw,
     }
 
     csr.work_mode = mode;
-    // CORDIC_PRES 0..5 selects 4, 8, 12, 16, 20, 24 iterations. Sqrt stops at 2.
-    HAL_ASSERT(cordic_ll_iteration_count_valid(function, precision));
     csr.press = (precision / CORDIC_LL_ITERATION_MIN) - 1;
     csr.scale = scale;
     csr.arg_num = arg_num - 1;

@@ -23,13 +23,14 @@ TEST_CASE("test cosine and sine q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COS,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 0,
     };
 
@@ -84,13 +85,14 @@ TEST_CASE("test phase and module q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_PHASE,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 0,
     };
 
@@ -158,13 +160,14 @@ TEST_CASE("test arctan q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 0,
     };
 
@@ -221,13 +224,14 @@ TEST_CASE("test hyperbolic cosine and sine q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COSH,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 20,
         .scale_exp = 1,
     };
 
@@ -287,13 +291,14 @@ TEST_CASE("test arctanh q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCHTANH,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 20,
         .scale_exp = 1,
     };
 
@@ -351,13 +356,14 @@ TEST_CASE("test natural logarithm q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_LOGE,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 1,
     };
 
@@ -424,13 +430,14 @@ TEST_CASE("test square root q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_SQUARE_ROOT,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 12,
         .scale_exp = 0,
     };
 
@@ -488,13 +495,14 @@ TEST_CASE("test arctan scale 2 q31", "[cordic]")
     cordic_engine_handle_t engine = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_ARCTAN,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 2,  // Scale = 2: hardware input is (x) * 2^(-2) = x / 4
     };
 
@@ -568,13 +576,14 @@ TEST_CASE("test reconfig from cos q15 to log q31", "[cordic]")
     // Step 1: Create engine with COS function and Q15 format
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
     cordic_calculate_config_t calc_config_cos = {
         .function = ESP_CORDIC_FUNC_COS,
         .iq_format = ESP_CORDIC_FORMAT_Q15,
-        .iteration_count = 4,
+        .iteration_count = 8,
         .scale_exp = 0,
     };
 
@@ -621,7 +630,7 @@ TEST_CASE("test reconfig from cos q15 to log q31", "[cordic]")
     cordic_calculate_config_t calc_config_log = {
         .function = ESP_CORDIC_FUNC_LOGE,
         .iq_format = ESP_CORDIC_FORMAT_Q31,
-        .iteration_count = 4,
+        .iteration_count = 16,
         .scale_exp = 1,
     };
 

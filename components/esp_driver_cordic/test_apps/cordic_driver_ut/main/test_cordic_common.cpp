@@ -13,6 +13,7 @@ TEST_CASE("cordic acquire-release test", "[cordic]")
     cordic_engine_handle_t engine2 = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
     TEST_ESP_OK(cordic_acquire_engine(&engine_config, &engine));
 
@@ -39,6 +40,7 @@ TEST_CASE("new/delete must not mix with acquire/release", "[cordic]")
     cordic_engine_handle_t other = NULL;
     cordic_engine_config_t engine_config = {
         .clock_source = CORDIC_CLK_SRC_DEFAULT,
+        .instance_id = 0,
     };
 
 #pragma GCC diagnostic push
