@@ -28,7 +28,7 @@ typedef struct {
 typedef struct {
     cordic_func_t function;            /*!< CORDIC calculation function type (e.g., cosine, sine, arctan) */
     cordic_iq_format_t iq_format;      /*!< IQ data format */
-    uint16_t iteration_count;          /*!< Internal CORDIC iteration count */
+    uint16_t iteration_count;          /*!< Iterations: 4, 8, 12, 16, 20 or 24. Square root allows only 4, 8 or 12 */
     uint16_t scale_exp;                /*!< Input scaling exponent n, effective scaling is 2^n (range depends on function type) */
 } cordic_calculate_config_t;
 
