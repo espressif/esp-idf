@@ -14,6 +14,10 @@ components/esp_hw_support/test_apps/dma2d:
     - if: SOC_DMA2D_SUPPORTED != 1
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
+components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable:
+    - if: CONFIG_NAME == "pvt" and SOC_PMU_PVT_SUPPORTED != 1
+
 
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
