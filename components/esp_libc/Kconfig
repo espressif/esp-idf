@@ -54,6 +54,22 @@ menu "LibC"
             Enable this option to include be able to call the lock API from
             code that runs while cache is disabled, e.g. IRAM interrupts.
 
+    config LIBC_LIBGCC_IN_IRAM
+        bool "Place all libgcc functions in IRAM"
+        depends on !ESP_ROM_HAS_LIBGCC
+        default n
+        help
+            On targets whose ROM does not provide libgcc, 64-bit integer helpers
+            (shifts, multiply, divide, and similar) are always placed in IRAM.
+            The compiler emits those calls for uint64_t arithmetic, including
+            from IRAM interrupts and other code that runs while the flash cache
+            is disabled.
+
+            Enable this option to also place the remaining libgcc functions in
+            IRAM, including software double-precision helpers. Leave it disabled
+            to keep those functions in flash and reduce IRAM use. The same
+            choice applies to compiler-rt builtins when building with Clang.
+
     choice LIBC_STDOUT_LINE_ENDING
         prompt "Line ending for console output"
         default LIBC_STDOUT_LINE_ENDING_CRLF
