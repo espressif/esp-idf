@@ -19,6 +19,60 @@
 
 static bool s_btc_pan_init = false;
 static esp_pan_cfg_t s_btc_pan_cfg;
+static uint16_t s_btc_pan_conn_hdl[BTA_PAN_NUM_CONN];
+
+static void btc_pan_conn_reset(void)
+{
+    for (int i = 0; i < BTA_PAN_NUM_CONN; i++) {
+        s_btc_pan_conn_hdl[i] = ESP_PAN_INVALID_HANDLE;
+    }
+}
+
+static void btc_pan_conn_add(uint16_t handle)
+{
+    int free_idx = -1;
+
+    if (handle == ESP_PAN_INVALID_HANDLE) {
+        return;
+    }
+
+    for (int i = 0; i < BTA_PAN_NUM_CONN; i++) {
+        if (s_btc_pan_conn_hdl[i] == handle) {
+            return;
+        }
+        if (free_idx < 0 && s_btc_pan_conn_hdl[i] == ESP_PAN_INVALID_HANDLE) {
+            free_idx = i;
+        }
+    }
+
+    if (free_idx >= 0) {
+        s_btc_pan_conn_hdl[free_idx] = handle;
+    } else {
+        BTC_TRACE_ERROR("%s: no free slot for handle 0x%x", __func__, handle);
+    }
+}
+
+static void btc_pan_conn_remove(uint16_t handle)
+{
+    for (int i = 0; i < BTA_PAN_NUM_CONN; i++) {
+        if (s_btc_pan_conn_hdl[i] == handle) {
+            s_btc_pan_conn_hdl[i] = ESP_PAN_INVALID_HANDLE;
+            return;
+        }
+    }
+}
+
+static uint8_t btc_pan_conn_num(void)
+{
+    uint8_t num = 0;
+
+    for (int i = 0; i < BTA_PAN_NUM_CONN; i++) {
+        if (s_btc_pan_conn_hdl[i] != ESP_PAN_INVALID_HANDLE) {
+            num++;
+        }
+    }
+    return num;
+}
 
 static esp_pan_status_t btc_pan_status_from_bta(tBTA_PAN_STATUS status)
 {
@@ -164,6 +218,7 @@ static void btc_pan_init(const esp_pan_cfg_t *cfg)
     }
 
     btc_pan_store_cfg(cfg);
+    btc_pan_conn_reset();
     s_btc_pan_init = true;
     BTA_PanEnable(bte_pan_evt);
 }
@@ -180,6 +235,7 @@ static void btc_pan_deinit(void)
 
     s_btc_pan_init = false;
     BTA_PanDisable();
+    btc_pan_conn_reset();
     btc_pan_free_cfg_strings();
     memset(&s_btc_pan_cfg, 0, sizeof(s_btc_pan_cfg));
 
@@ -484,6 +540,14 @@ void btc_pan_cb_deep_free(btc_msg_t *msg)
     }
 }
 
+void btc_pan_get_profile_status(esp_pan_profile_status_t *param)
+{
+    param->pan_inited = s_btc_pan_init;
+    if (s_btc_pan_init) {
+        param->conn_num = btc_pan_conn_num();
+    }
+}
+
 void btc_pan_call_handler(btc_msg_t *msg)
 {
     btc_pan_args_t *arg = (btc_pan_args_t *)msg->arg;
@@ -552,9 +616,13 @@ void btc_pan_cb_handler(btc_msg_t *msg)
         param.open.local_role = (esp_pan_role_t)p_data->open.local_role;
         param.open.peer_role = (esp_pan_role_t)p_data->open.peer_role;
         memcpy(param.open.remote_bda, p_data->open.bd_addr, ESP_BD_ADDR_LEN);
+        if (s_btc_pan_init && param.open.status == ESP_PAN_SUCCESS) {
+            btc_pan_conn_add(param.open.handle);
+        }
         btc_pan_cb_to_app(ESP_PAN_OPEN_EVT, &param);
         break;
     case BTA_PAN_CLOSE_EVT:
+        btc_pan_conn_remove(p_data->close.handle);
         param.close.handle = p_data->close.handle;
         btc_pan_cb_to_app(ESP_PAN_CLOSE_EVT, &param);
         break;

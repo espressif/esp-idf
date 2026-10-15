@@ -143,6 +143,14 @@ typedef struct {
 }
 
 /**
+ * @brief PAN profile status parameters
+ */
+typedef struct {
+    bool pan_inited;                      /*!< PAN initialization */
+    uint8_t conn_num;                     /*!< Number of connections */
+} esp_pan_profile_status_t;
+
+/**
  * @brief PAN callback function events.
  */
 typedef enum {
@@ -421,6 +429,17 @@ esp_err_t esp_pan_set_protocol_filters(uint16_t handle, uint16_t num_filters,
 esp_err_t esp_pan_set_multicast_filters(uint16_t handle, uint16_t num_filters,
                                         const esp_pan_mac_addr_t *start_array,
                                         const esp_pan_mac_addr_t *end_array);
+
+/**
+ * @brief       This function is used to get the status of PAN
+ *
+ * @param[out]  profile_status - PAN status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_pan_get_profile_status(esp_pan_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

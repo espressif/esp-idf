@@ -70,6 +70,7 @@ typedef union {
 
 void btc_pan_call_handler(btc_msg_t *msg);
 void btc_pan_cb_handler(btc_msg_t *msg);
+void btc_pan_get_profile_status(esp_pan_profile_status_t *param);
 void btc_pan_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_pan_arg_deep_free(btc_msg_t *msg);
 void btc_pan_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
