@@ -27,6 +27,7 @@
 #include "test_common.h"
 #include "esp_attr.h"
 #include "esp_timer.h"
+#include "esp_task_wdt.h"
 #include "sdkconfig.h"
 
 #define BUF_SIZE         (100)
@@ -513,6 +514,88 @@ TEST_CASE("uart tx ring buffer free space test", "[uart]")
 
         TEST_ESP_OK(uart_driver_delete(uart_num));
         free(rd_data);
+        free(wr_data);
+    }
+}
+
+typedef struct {
+    uart_port_t uart_num;
+    const uint8_t *data;
+    size_t len;
+    volatile bool done;
+} uart_blocked_write_param_t;
+
+static void uart_blocked_write_task(void *arg)
+{
+    uart_blocked_write_param_t *param = (uart_blocked_write_param_t *)arg;
+    uart_write_bytes(param->uart_num, param->data, param->len);
+    param->done = true;
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("uart write blocks when tx ring buffer is full", "[uart]")
+{
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+    // This is a test on the driver API, no need to test for both HP/LP uart port, call port_select() to be compatible with pytest
+    // Let's only test on HP UART
+    if (port_param.port_num < SOC_UART_HP_NUM) {
+        uart_port_t uart_num = port_param.port_num;
+        const int tx_ring_size = 1024 * 2;
+        const int write_len = tx_ring_size + 512; // one write that cannot fit without waiting
+        uint8_t *wr_data = (uint8_t *)malloc(write_len);
+        TEST_ASSERT_NOT_NULL(wr_data);
+        uart_config_t uart_config = {
+            .baud_rate = 2000000,
+            .data_bits = UART_DATA_8_BITS,
+            .parity = UART_PARITY_DISABLE,
+            .stop_bits = UART_STOP_BITS_1,
+            .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+            .rx_flow_ctrl_thresh = port_param.rx_flow_ctrl_thresh,
+            .source_clk = port_param.default_src_clk,
+        };
+        uart_wait_tx_idle_polling(uart_num);
+        TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+        TEST_ESP_OK(uart_driver_install(uart_num, 256, tx_ring_size, 20, NULL, 0));
+        // Let CTS be high, so that transmission is blocked, the TX ISR cannot drain
+        // The write then fills the ring and must wait in the data-chunk loop (free_size == 0),
+        // not only on the descriptor xRingbufferSend.
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_CTS].signal, false);
+
+        uart_blocked_write_param_t write_param = {
+            .uart_num = uart_num,
+            .data = wr_data,
+            .len = write_len,
+            .done = false,
+        };
+        TaskHandle_t writer = NULL;
+        const BaseType_t core = xPortGetCoreID();
+        // Watch this core's idle task. A polling writer starves idle and trips the TWDT;
+        // a blocked writer lets idle run so the delay below is safe.
+        esp_task_wdt_config_t twdt_config = {
+            .timeout_ms = 2000,
+            .idle_core_mask = (uint32_t)(1 << core),
+            .trigger_panic = true,
+        };
+        TEST_ESP_OK(esp_task_wdt_init(&twdt_config));
+        // Lower priority than this test task, same core: after we yield, polling would leave
+        // the writer eReady (undesired); blocking on tx_space_sem leaves it eBlocked (desired).
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(uart_blocked_write_task, "uart_tx_block", 4096,
+                                                          &write_param, 2, &writer, core));
+        vTaskDelay(pdMS_TO_TICKS(3500));
+        TEST_ASSERT_FALSE(write_param.done);
+        TEST_ASSERT_EQUAL(eBlocked, eTaskGetState(writer));
+        TEST_ESP_OK(esp_task_wdt_deinit());
+
+        // Let CTS be low, so that transmission is unblocked
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_CTS].signal, false);
+        for (int i = 0; i < 50 && !write_param.done; i++) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        TEST_ASSERT_TRUE(write_param.done);
+        uart_wait_tx_done(uart_num, portMAX_DELAY);
+
+        TEST_ESP_OK(uart_driver_delete(uart_num));
         free(wr_data);
     }
 }
