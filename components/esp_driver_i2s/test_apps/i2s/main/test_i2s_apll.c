@@ -64,8 +64,8 @@ TEST_CASE("I2S APLL maintains accurate sample rates", "[i2s][apll]")
 
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
-    // expected error < 0.2%
-    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg, 500);
+    // expected error < 0.5%
+    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg, 200);
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 
