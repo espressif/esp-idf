@@ -1,0 +1,83 @@
+menu "Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    menu "Inverter Configuration"
+
+        config EXAMPLE_INVERTER_MODULATION_FREQ_HZ
+            int "Inverter modulation frequency (Hz)"
+            range 1000 200000
+            default 10000
+            help
+                Set the inverter modulation frequency.
+                The FOC control loop runs once per inverter modulation cycle.
+                This value must divide the MCPWM timer resolution evenly.
+
+        config EXAMPLE_INVERTER_GATE_EN_GPIO
+            int "Gate driver enable GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 22
+
+        config EXAMPLE_INVERTER_PWM_UH_GPIO
+            int "U-phase high-side PWM GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 33
+
+        config EXAMPLE_INVERTER_PWM_UL_GPIO
+            int "U-phase low-side PWM GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 32
+
+        config EXAMPLE_INVERTER_PWM_VH_GPIO
+            int "V-phase high-side PWM GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 23
+
+        config EXAMPLE_INVERTER_PWM_VL_GPIO
+            int "V-phase low-side PWM GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 21
+
+        config EXAMPLE_INVERTER_PWM_WH_GPIO
+            int "W-phase high-side PWM GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 20
+
+        config EXAMPLE_INVERTER_PWM_WL_GPIO
+            int "W-phase low-side PWM GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 6
+
+    endmenu
+
+    menu "FOC Control Configuration"
+
+        config EXAMPLE_FOC_OPENLOOP_ALIGN_DURATION_MS
+            int "Rotor alignment duration (ms)"
+            range 1 50000
+            default 1000
+
+        config EXAMPLE_FOC_OPENLOOP_TARGET_ELEC_FREQ_HZ
+            int "Open-loop target electrical frequency (Hz)"
+            range 1 500
+            default 25
+
+        config EXAMPLE_FOC_OPENLOOP_RAMP_UP_DIVISIONS
+            int "Nominal open-loop ramp divisions"
+            range 1 100000
+            default 20000
+            help
+                Set the nominal number of divisions for the linear open-loop ramp.
+                Actual number of control cycles required may exceed this value.
+
+        config EXAMPLE_FOC_OPENLOOP_UD_REF_PERCENT
+            int "Open-loop d-axis voltage reference (%)"
+            range 0 100
+            default 40
+            help
+                Set the normalized d-axis voltage reference as a percentage.
+                100% corresponds to Udc / sqrt(3).
+
+    endmenu
+
+endmenu

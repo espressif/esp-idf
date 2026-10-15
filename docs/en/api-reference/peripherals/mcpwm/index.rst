@@ -216,7 +216,7 @@ Application examples
     - :example:`peripherals/mcpwm/mcpwm_bldc_hall_control` — BLDC commutation using Hall-sensor feedback.
     - :example:`peripherals/mcpwm/mcpwm_capture_hc_sr04` — pulse width measurement with an HC-SR04.
     - :example:`peripherals/mcpwm/mcpwm_sync` — GPIO, timer, and software synchronization.
-    - :example:`peripherals/mcpwm/mcpwm_foc_svpwm_open_loop` — three complementary PWM pairs for open-loop FOC.
+    - :example:`peripherals/mcpwm/mcpwm_foc_open_loop` — open-loop FOC with rotor alignment and frequency ramp-up.
 
 API Reference
 =============
