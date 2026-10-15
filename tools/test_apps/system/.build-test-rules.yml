@@ -47,10 +47,6 @@ tools/test_apps/system/gdb_loadable_elf:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
-  disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: target esp32c6, esp32h2 is not supported yet
 
 tools/test_apps/system/longjmp_test:
   enable:
