@@ -156,6 +156,11 @@ HCI 名称与 Opcode 遵循 Bluetooth Core Specification。表中标准命令以
      - | ACL、Page、Page Scan、Inquiry Scan 的默认发射功率 (dBm)。
        | 芯片实际支持的发射功率范围可通过函数 :cpp:func:`esp_bredr_tx_power_range_get` 获取；超出该范围的配置会被拒绝。
        | ACL 链路功率可随对端 LMP 功率控制请求调整。ACL 初始功率继承自 ``TX_PWR_PAGE`` (Central) 或 ``TX_PWR_PSCAN`` (Peripheral)，建议将二者配置在 ACL 最小/最大范围内。
+   * - :ref:`CONFIG_BT_CTRL_BR_EDR_DYNAMIC_TX_PWR_EN`
+     - | 动态修改默认 ACL 发射功率，接口为 :cpp:func:`esp_bredr_acl_dft_tx_power_range_set` 与 :cpp:func:`esp_bredr_acl_dft_tx_power_range_get`，参数单位为 dBm。
+       | 可用范围通过 :cpp:func:`esp_bredr_tx_power_range_get` 获取，传入超出该范围的值会被拒绝。
+       | 与 :ref:`CONFIG_BT_CLASSIC_ENABLE_POWER_CTRL_VSC` 互斥，后者使能时本选项不可选。
+       | 调用 :cpp:func:`esp_bredr_acl_dft_tx_power_range_set` 之后，``HCI_Reset`` 不会把默认 ACL 发射功率恢复为之前的值，仍保留该 API 设置的范围。
    * - :ref:`CONFIG_BT_CTRL_BR_EDR_TX_PWR_APB`
      - APB 默认发射功率。需使能 :ref:`CONFIG_BT_CTRL_BR_EDR_APB_EN`。
    * - | :ref:`CONFIG_BT_CTRL_BR_EDR_TX_PWR_CPB`

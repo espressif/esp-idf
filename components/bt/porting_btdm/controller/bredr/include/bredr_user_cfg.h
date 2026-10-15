@@ -258,6 +258,12 @@ extern "C" {
 #define UC_BR_EDR_POWER_CTRL_VSC_ENABLED (0)
 #endif
 
+#if defined(CONFIG_BT_CTRL_BR_EDR_DYNAMIC_TX_PWR_EN) && CONFIG_BT_CTRL_BR_EDR_DYNAMIC_TX_PWR_EN
+#define UC_BR_EDR_DYNAMIC_TX_PWR_EN (1)
+#else
+#define UC_BR_EDR_DYNAMIC_TX_PWR_EN (0)
+#endif
+
 #define UC_BR_EDR_BASIC_VENDOR (1)
 
 #ifdef __cplusplus
