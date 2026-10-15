@@ -77,6 +77,16 @@ include(ExternalProject)
 .. cmakev2:variable:: IDF_BUILD_VER_TAG
 
     The build system version tag, ``v2`` for v2.
+
+.. cmakev2:variable:: IDF_COMPONENT_SCOPE_ISOLATION
+
+    Set to ``NO`` to disable the scope isolation of components. The isolation
+    hides the variables and directory properties of the requiring component
+    from a component. The default is ``YES``. It is read
+    as a CMake variable, for example set with
+    ``idf.py -DIDF_COMPONENT_SCOPE_ISOLATION=NO``, or as an environment
+    variable. It exists to diagnose a problem with the isolation. It will be
+    removed once the isolation is established.
 #]]
 
 #[[
@@ -369,6 +379,22 @@ function(__init_toolchain)
 
     set(CMAKE_TOOLCHAIN_FILE "${toolchain_file}" PARENT_SCOPE)
     idf_build_set_property(IDF_TOOLCHAIN_FILE "${toolchain_file}")
+endfunction()
+
+#[[
+    __init_isolation()
+
+    Resolve the IDF_COMPONENT_SCOPE_ISOLATION setting into the
+    __COMPONENT_SCOPE_ISOLATION build property. The isolation is described at
+    __idf_component_add_subdirectory() in component.cmake. It can be disabled
+    to diagnose a problem, for example with
+    idf.py -DIDF_COMPONENT_SCOPE_ISOLATION=NO.
+#]]
+function(__init_isolation)
+    __get_default_value(VARIABLE IDF_COMPONENT_SCOPE_ISOLATION
+                        DEFAULT YES
+                        OUTPUT isolation)
+    idf_build_set_property(__COMPONENT_SCOPE_ISOLATION "${isolation}")
 endfunction()
 
 #[[
@@ -831,6 +857,9 @@ __init_toolchain()
 
 # Set up the compiler launcher chain (esp-idf-configdep, ccache) if requested.
 __init_compiler_launchers()
+
+# Resolve the IDF_COMPONENT_SCOPE_ISOLATION setting.
+__init_isolation()
 
 #[[
 

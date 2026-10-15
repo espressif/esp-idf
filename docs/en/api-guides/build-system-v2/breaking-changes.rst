@@ -101,22 +101,6 @@ In v2 the option is visible even when ``vfs`` is not in the build, so the condit
 
     This change applies not only to a component's ``CMakeLists.txt`` but also to its source files. The component's code can no longer assume that another component's functionality is available simply because its Kconfig variables are set. For example, if ``CONFIG_VFS_SUPPORT_IO`` is set and the component's code depends on the functionality of the ``vfs`` component, it cannot merely check ``CONFIG_VFS_SUPPORT_IO`` in the source code. It must ensure that the ``vfs`` component is included in the build and that the component declares a dependency on ``vfs`` in its ``CMakeLists.txt``.
 
-.. _cmakev2-recursive-evaluation:
-
-Recursive Evaluation of Components
-==================================
-
-In v1, the components participating in the build are collected in the ``BUILD_COMPONENTS`` build property during the early evaluation phase, prior to their evaluation with ``add_subdirectory``. This means v1 is aware of all components participating in the build and their dependencies before CMake evaluates them, which allows v1 to evaluate components non-recursively and within a relatively predictable environment with minimal variables set. In contrast, v2 does not perform early component evaluation, and components are added based on the requirements observed during their evaluation. This means a component can be evaluated recursively within the scope of another component's variables if it is a dependency of that component. In other words, if component A requires component B, then when B is evaluated it can access the variables of A. It is therefore important to ensure that all variables used by a component are properly initialized before use. A typical problem involves CMake lists and the ``APPEND`` operation.
-
-.. code-block:: cmake
-
-    # Wrong
-    list(APPEND srcs main.c)
-
-    # Correct
-    set(srcs)
-    list(APPEND srcs main.c)
-
 .. _cmakev2-project-include-order:
 
 The ``project_include.cmake`` Files are Included in a Non-Specific Order

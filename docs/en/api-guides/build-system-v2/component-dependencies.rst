@@ -47,7 +47,7 @@ A component that uses :cmakev2:ref:`idf_component_register` builds its ``PRIV_RE
 
     idf_component_register(SRCS main.c PRIV_REQUIRES ${reqs})
 
-Initialize the list with ``set(reqs)`` before appending to it, so it does not inherit a value from an enclosing component's scope; see :ref:`cmakev2-recursive-evaluation`.
+Make sure every variable is initialized before use, as ``set(reqs)`` does in the example. See :ref:`cmakev2-component-scope`.
 
 Using ``idf_component_include``
 -------------------------------
