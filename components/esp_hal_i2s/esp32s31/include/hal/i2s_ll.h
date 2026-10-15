@@ -47,7 +47,6 @@ extern "C" {
 
 #define I2S_LL_XTAL_CLK_FREQ           (40 * 1000000)   // XTAL_CLK: 40MHz
 #define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_XTAL_CLK_FREQ
-#define I2S_LL_DEFAULT_CLK_SRC         I2S_CLK_SRC_XTAL
 #define I2S_LL_SUPPORT_XTAL            1    // Support XTAL as I2S clock source
 /* ESP32S31 hardware provides 4 GDMA trigger channels per I2S instance. */
 #define I2S_LL_SUPPORT_GDMA_RECOMB     1
