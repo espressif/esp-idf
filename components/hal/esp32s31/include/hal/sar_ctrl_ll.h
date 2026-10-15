@@ -39,9 +39,6 @@ typedef enum {
 /**
  * Set SAR power mode
  *
- * S31 uses xpd_sar1_force / xpd_sar2_force in ADC ctrl registers:
- *   0 = FSM (auto), 2 = force power down, 3 = force power up
- *
  * @param mode  See `sar_ctrl_ll_power_t`
  */
 __attribute__((always_inline))
@@ -60,8 +57,8 @@ static inline void sar_ctrl_ll_set_power_mode(sar_ctrl_ll_power_t mode)
 }
 
 /**
- * @brief Set SAR power mode when controlled by PWDET
- *        S31 does not have separate PWDET power control, use unified SAR power mode.
+ * @brief Set SAR power mode when controlled by PWDET.
+ *        No separate PWDET power control; use the unified SAR power mode.
  */
 static inline void sar_ctrl_ll_set_power_mode_from_pwdet(sar_ctrl_ll_power_t mode)
 {
@@ -69,8 +66,8 @@ static inline void sar_ctrl_ll_set_power_mode_from_pwdet(sar_ctrl_ll_power_t mod
 }
 
 /**
- * @brief Set SAR power ctrl source
- *        S31 does not have PWDET-based SAR power mux, no-op.
+ * @brief Set SAR power ctrl source.
+ *        No PWDET-based SAR power mux; this is a no-op.
  */
 static inline void sar_ctrl_ll_force_power_ctrl_from_pwdet(bool force)
 {

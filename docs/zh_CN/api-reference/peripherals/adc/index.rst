@@ -13,58 +13,70 @@
 ADC 转换
 ----------
 
-ADC 转换是将输入的模拟电压转换为数字值的过程。ADC 驱动 API 提供的原始转换结果是以数字形式反映模拟输入信号。
+.. only:: not esp32s31
 
-默认情况下，ADC 原始转换结果的位宽为 12 位，这意味着输入电压范围被划分为 4096 (2\ :sup:`12`) 个离散电平，由此定义了输入信号的最小可检测变化量。
+    ADC 转换是将输入的模拟电压转换为数字值的过程。ADC 驱动 API 提供的原始转换结果是以数字形式反映模拟输入信号。
 
-根据原始值 ``data`` 计算对应电压值 ``Vdata`` 的公式如下：
+    默认情况下，ADC 原始转换结果的位宽为 12 位，这意味着输入电压范围被划分为 4096 (2\ :sup:`12`) 个离散电平，由此定义了输入信号的最小可检测变化量。
 
-.. math::
+    根据原始值 ``data`` 计算对应电压值 ``Vdata`` 的公式如下：
 
-    V_{data} = \frac{data}{2^{bitwidth} - 1} \times V_{ref}
+    .. math::
 
-其中：
+        V_{data} = \frac{data}{2^{bitwidth} - 1} \times V_{ref}
 
-- ``data`` 是 ADC 原始数据
-- ``bitwidth`` 是 ADC 原始数据的分辨率（如 12 位）
-- ``Vref`` 是 ADC 参考电压
+    其中：
+
+    - ``data`` 是 ADC 原始数据
+    - ``bitwidth`` 是 ADC 原始数据的分辨率（如 12 位）
+    - ``Vref`` 是 ADC 参考电压
 
 
-设计上，``Vref`` 出厂设定为 1100 mV，但由于制造差异，实际值可能在 1000 mV 到 1200 mV 之间波动。
+    设计上，``Vref`` 出厂设定为 1100 mV，但由于制造差异，实际值可能在 1000 mV 到 1200 mV 之间波动。
 
-请参阅 :doc:`adc_calibration` 了解如何利用 ADC 校准驱动以得到校准后的准确电压值。
+    请参阅 :doc:`adc_calibration` 了解如何利用 ADC 校准驱动以得到校准后的准确电压值。
+
+.. only:: esp32s31
+
+    ADC 转换是将输入的模拟电压转换为数字值的过程。在 ESP32-S31 上，请使用 :cpp:func:`adc_cali_chan_raw_to_voltage`，将 :cpp:func:`adc_oneshot_read` 和 :cpp:func:`adc_continuous_read` 的结果转换为以毫伏为单位的电压。
 
 
 ADC 衰减
 ----------
 
-ADC 可以测量 0 V 到 ``Vref`` 范围内的模拟电压。如需测量更高电压，可以在输入 ADC 之前对输入电压进行衰减。
+.. only:: not esp32s31
 
-支持的衰减等级包括：
+    ADC 可以测量 0 V 到 ``Vref`` 范围内的模拟电压。如需测量更高电压，可以在输入 ADC 之前对输入电压进行衰减。
 
-- 0 dB (k≈100%)
-- 2.5 dB (k≈75%)
-- 6 dB (k≈50%)
-- 12 dB (k≈25%)
+    支持的衰减等级包括：
 
-衰减等级越高，ADC 可测量的输入电压范围越大。应用衰减后的电压 ``Vdata`` 计算公式为：
+    - 0 dB (k≈100%)
+    - 2.5 dB (k≈75%)
+    - 6 dB (k≈50%)
+    - 12 dB (k≈25%)
 
-.. math::
+    衰减等级越高，ADC 可测量的输入电压范围越大。应用衰减后的电压 ``Vdata`` 计算公式为：
 
-    V_{data} = \frac{V_{ref}}{k}\times{\frac{data}{2^{bitwidth} - 1}}
+    .. math::
 
-其中：
+        V_{data} = \frac{V_{ref}}{k}\times{\frac{data}{2^{bitwidth} - 1}}
 
-- ``k``：衰减参数对应的比例值
-- 其他变量定义同上
+    其中：
 
-.. only:: not esp32
+    - ``k``：衰减参数对应的比例值
+    - 其他变量定义同上
 
-    各衰减配置对应的可测量输入电压范围，请参考 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`__ > 电气特性 > ADC 特性。
+    .. only:: not esp32
 
-.. only:: esp32
+        各衰减配置对应的可测量输入电压范围，请参考 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`__ > 电气特性 > ADC 特性。
 
-    各衰减配置对应的可测量输入电压范围，请参考 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`__ > 模拟外设 > 模/数转换器 (ADC)。
+    .. only:: esp32
+
+        各衰减配置对应的可测量输入电压范围，请参考 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`__ > 模拟外设 > 模/数转换器 (ADC)。
+
+.. only:: esp32s31
+
+    ESP32-S31 仅支持 0 dB 衰减。单端输入范围约为 -2 V 到 2 V。对应的模拟 IO 和电气特性请参阅 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`__。
 
 驱动使用
 ------------

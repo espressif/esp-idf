@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,9 @@
 #include "esp_err.h"
 #include "hal/adc_types.h"
 #include "soc/soc_caps.h"
+#if SOC_ADC_SUPPORTED
+#include "hal/adc_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,6 +71,20 @@ typedef struct adc_oneshot_unit_ctx_t *adc_oneshot_unit_handle_t;
  *        - ESP_ERR_INVALID_STATE: Invalid state, the ADC result is invalid
  */
 esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t chan, int *out_raw);
+
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+/**
+ * @brief Run software-weight calibration for one ADC unit
+ *
+ * Claims the APB SARADC clock if needed, enables the conversion clock and analog
+ * power, samples the internal calibration muxes, computes weights, then restores
+ * the ADC mux/trigger and releases those resources.
+ *
+ * Subsequent calls on an already-calibrated unit skip sampling and only restore
+ * the working-mode flags.
+ */
+void adc_cal_sw_weight(adc_unit_t adc_n, adc_oneshot_clk_src_t clk_src);
+#endif
 
 #ifdef __cplusplus
 }

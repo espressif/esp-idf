@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,5 +12,4 @@
  * @brief Supported calibration schemes
  */
 
-//TODO: [ESP32H31]
-// #define ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED    1
+#define ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED      1

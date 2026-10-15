@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -51,7 +51,7 @@ static bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_att
             calibrated = true;
         }
     }
-#endif //ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+#endif
 
     *out_handle = handle;
     if (ret != ESP_OK) {
@@ -87,7 +87,7 @@ static float get_pin_voltage(int i, adc_oneshot_unit_handle_t adc_handle, bool d
 
     ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, i, &val));
     if (do_calibration) {
-        ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali_handle, val, &voltage));
+        ESP_ERROR_CHECK(adc_cali_chan_raw_to_voltage(adc_cali_handle, i, val, &voltage));
     }
 
     return (float)voltage/1000;

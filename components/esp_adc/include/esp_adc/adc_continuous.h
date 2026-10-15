@@ -161,13 +161,12 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle);
 /**
  * @brief Read bytes from ADC under continuous mode.
  *
- * @note Raw ADC codes are intended for further processing. To obtain a voltage in mV, it is recommended to use
- *       :cpp:func:`adc_cali_raw_to_voltage` instead of interpreting the raw value directly.
- *
- * @note On targets with :c:macro:`SOC_ADC_DIFF_SUPPORTED`, N-side channels can be used in single-ended mode,
- *       but their raw data polarity is inverted. For an input range of -2 V to 2 V, the N-side raw code is
- *       4393 to 0. Use the ADC calibration APIs to convert the raw result to voltage instead of interpreting the raw
- *       code directly.
+ * @note Raw ADC codes are intended for further processing. To obtain a voltage in mV, parse
+ *       the buffer first, then use :cpp:func:`adc_cali_raw_to_voltage`, or
+ *       :cpp:func:`adc_cali_chan_raw_to_voltage` when the scheme needs the channel.
+ * @note On targets with :c:macro:`SOC_ADC_DIFF_SUPPORTED`, each sample's data field is a
+ *       17-bit comparator vector, not a monotonic code. Even-numbered channels are N-side
+ *       and odd-numbered channels are P-side. Convert with :cpp:func:`adc_cali_chan_raw_to_voltage`.
  *
  * @param[in]  handle              ADC continuous mode driver handle
  * @param[out] buf                 Conversion result buffer to read from ADC. Suggest convert to `adc_digi_output_data_t` for `ADC Conversion Results`.

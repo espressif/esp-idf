@@ -14,7 +14,7 @@ int32_t ulp_riscv_adc_read_channel(adc_unit_t adc_n, int channel)
     adc_oneshot_ll_enable(adc_n);
     adc_oneshot_ll_set_channel(adc_n, channel);
 
-    adc_oneshot_ll_start(adc_n);
+    adc_oneshot_ll_start(adc_n, true);
     while (adc_oneshot_ll_get_event(event) != true) {
         ;
     }
