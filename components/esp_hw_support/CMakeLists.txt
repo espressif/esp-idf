@@ -17,7 +17,8 @@ if(${target} STREQUAL "esp32c6")
     list(APPEND priv_requires hal)
 endif()
 
-set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
+set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c"
+         "mspi/esp_mspi_align/esp_mspi_align.c")
 if(NOT non_os_build)
     list(APPEND srcs "esp_clk.c"
                      "clk_ctrl_os.c"
@@ -173,6 +174,7 @@ endif()
 set(public_include_dirs "include" "include/soc"
                         "ldo/include" "debug_probe/include" "etm/include"
                         "mspi_timing_tuning/include" "mspi_timing_tuning/tuning_scheme_impl/include"
+                        "mspi/esp_mspi_align/include"
                         "power_supply/include" "modem/include")
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")

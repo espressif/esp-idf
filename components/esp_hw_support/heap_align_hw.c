@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "hal/gdma_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_efuse.h"
+#include "esp_private/esp_mspi_align.h"
 #endif
 
 #if CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH
@@ -83,8 +84,10 @@ HEAP_IRAM_ATTR void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t 
 #endif
 
 #if SOC_HAS(GDMA) && (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH)
-    if ((caps & MALLOC_CAP_DMA) && esp_efuse_is_flash_encryption_enabled()) {
-        alignment = (alignment > SOC_MEMSPI_ENCRYPTION_ALIGNMENT) ? alignment : SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+    // CPU access to PSRAM always via cache, so alignment to MSPI alignment is needed when DMA is enabled and PSRAM is enabled.
+    if ((caps & MALLOC_CAP_DMA) && (caps & MALLOC_CAP_SPIRAM)) {
+        size_t mspi_align = esp_mspi_get_alignment(NULL);
+        alignment = (alignment > mspi_align) ? alignment : mspi_align;
     }
 #endif
 

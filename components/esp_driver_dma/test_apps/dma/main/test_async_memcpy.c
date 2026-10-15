@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,7 @@
 #include "freertos/semphr.h"
 #include "ccomp_timer.h"
 #include "esp_async_memcpy.h"
-#include "hal/efuse_hal.h"
-#include "esp_efuse.h"
+#include "gdma_test_utils.h"
 
 #if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
@@ -164,7 +163,7 @@ static void test_memory_copy_blocking(async_memcpy_handle_t driver)
         for (int off = 0; off < 4; off++) {
             test_context.buffer_size = test_buffer_size[i];
             test_context.seed = i;
-            if (!esp_efuse_is_flash_encryption_enabled()) {
+            if (!gdma_test_mspi_strict_alignment_required()) {
                 test_context.src_offset = off;
                 test_context.dst_offset = off;
             }
@@ -244,8 +243,8 @@ TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
     };
     [[maybe_unused]] async_memcpy_handle_t driver = NULL;
 
-    if (esp_efuse_is_flash_encryption_enabled()) {
-        TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
+    if (gdma_test_mspi_strict_alignment_required()) {
+        TEST_PASS_MESSAGE("MSPI strict alignment required (Flash Encryption / PSRAM ECC), skip this test");
     }
 
 #if SOC_CP_DMA_SUPPORTED

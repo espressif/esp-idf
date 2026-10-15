@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,15 @@
 
 #include <stdbool.h>
 #include "esp_private/gdma.h"
+#include "esp_private/esp_mspi_align.h"
+
+/**
+ * @brief Whether MSPI strict alignment is required (Flash Encryption and/or PSRAM ECC)
+ */
+static inline bool gdma_test_mspi_strict_alignment_required(void)
+{
+    return esp_mspi_get_alignment(NULL) > 1;
+}
 
 #ifdef __cplusplus
 extern "C" {

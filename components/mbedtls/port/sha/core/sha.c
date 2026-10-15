@@ -44,9 +44,9 @@
 #include "esp_sha_dma_priv.h"
 #include "sdkconfig.h"
 
-#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
-#include "hal/efuse_hal.h"
-#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
+#ifdef SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+#include "esp_private/esp_mspi_align.h"
+#endif /* SOC_MEMSPI_ENCRYPTION_ALIGNMENT */
 
 #if SOC_SHA_CRYPTO_DMA
 #include "hal/crypto_dma_ll.h"
@@ -155,7 +155,7 @@ static DRAM_ATTR crypto_dma_desc_t s_dma_descr_buf;
 static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, uint32_t ilen,
                                      const void *buf, uint32_t buf_len, bool is_first_block);
 
-#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
+#ifdef SOC_MEMSPI_ENCRYPTION_ALIGNMENT
 static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *input, uint32_t ilen,
                                         const void *buf, uint32_t buf_len, bool is_first_block,
                                         bool realloc_input, bool realloc_buf)
@@ -171,7 +171,7 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
 
     if (realloc_input) {
         heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(input) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        input_copy = heap_caps_aligned_alloc(SOC_GDMA_EXT_MEM_ENC_ALIGNMENT, ilen, heap_caps);
+        input_copy = heap_caps_aligned_alloc(esp_mspi_get_alignment(input), ilen, heap_caps);
         if (input_copy == NULL) {
             ESP_LOGE(TAG, "Failed to allocate aligned SPIRAM memory");
             return ret;
@@ -184,7 +184,7 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
 
     if (realloc_buf) {
         heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(buf) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        buf_copy = heap_caps_aligned_alloc(SOC_GDMA_EXT_MEM_ENC_ALIGNMENT, buf_len, heap_caps);
+        buf_copy = heap_caps_aligned_alloc(esp_mspi_get_alignment(buf), buf_len, heap_caps);
         if (buf_copy == NULL) {
             ESP_LOGE(TAG, "Failed to allocate aligned internal memory");
             if (input_copy) {
@@ -213,7 +213,7 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
 
     return ret;
 }
-#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_MEMSPI_ENCRYPTION_ALIGNMENT */
 
 /* Performs SHA on multiple blocks at a time */
 static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, uint32_t ilen,
@@ -232,28 +232,27 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
     memset(&s_dma_descr_input, 0, sizeof(crypto_dma_desc_t));
     memset(&s_dma_descr_buf, 0, sizeof(crypto_dma_desc_t));
 
-/* When SHA-DMA operations are carried out using external memory with external memory encryption enabled,
-   we need to make sure that the addresses and the sizes of the buffers on which the DMA operates are 16 byte-aligned. */
-#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
-    if (efuse_hal_flash_encryption_enabled()) {
-        if (esp_ptr_external_ram(input) || esp_ptr_external_ram(buf) || esp_ptr_in_drom(input) || esp_ptr_in_drom(buf)) {
-            bool input_needs_realloc = false;
-            bool buf_needs_realloc = false;
+/* When SHA-DMA operations are carried out using external memory with MSPI strict alignment enabled,
+   we need to make sure that the addresses and the sizes of the buffers on which the DMA operates are aligned. */
+#ifdef SOC_MEMSPI_ENCRYPTION_ALIGNMENT
+    if (esp_ptr_external_ram(input) || esp_ptr_external_ram(buf) || esp_ptr_in_drom(input) || esp_ptr_in_drom(buf)) {
+        bool input_needs_realloc = false;
+        bool buf_needs_realloc = false;
 
-            if (ilen && ((intptr_t)(input) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
-                input_needs_realloc = true;
-            }
+        /* Skip when length is zero: buffer is unused and ptr may be NULL. */
+        if (ilen && !esp_mspi_buffer_alignment_satisfied(input, ilen)) {
+            input_needs_realloc = true;
+        }
 
-            if (buf_len && ((intptr_t)(buf) & (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
-                buf_needs_realloc = true;
-            }
+        if (buf_len && !esp_mspi_buffer_alignment_satisfied(buf, buf_len)) {
+            buf_needs_realloc = true;
+        }
 
-            if (input_needs_realloc || buf_needs_realloc) {
-                return esp_sha_dma_process_ext(sha_type, input, ilen, buf, buf_len, is_first_block, input_needs_realloc, buf_needs_realloc);
-            }
+        if (input_needs_realloc || buf_needs_realloc) {
+            return esp_sha_dma_process_ext(sha_type, input, ilen, buf, buf_len, is_first_block, input_needs_realloc, buf_needs_realloc);
         }
     }
-#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
+#endif /* SOC_MEMSPI_ENCRYPTION_ALIGNMENT */
 
     /* DMA descriptor for Memory to DMA-SHA transfer */
     if (ilen) {
