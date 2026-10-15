@@ -1,5 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable:
+    - if: CONFIG_NAME == "pvt" and SOC_PMU_PVT_SUPPORTED != 1
+
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"
