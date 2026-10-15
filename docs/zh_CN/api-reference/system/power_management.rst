@@ -115,9 +115,11 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
   - SPI master
   - I2C
-  :SOC_I2S_HW_VERSION_1 or not SOC_I2S_SUPPORTS_APLL: - I2S
-  :not SOC_I2S_HW_VERSION_1 and SOC_I2S_SUPPORTS_APLL: - I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
   - SDMMC
+
+.. only:: SOC_I2S_SUPPORTED
+
+    I2S 驱动在调用 :cpp:func:`i2s_channel_enable` 至 :cpp:func:`i2s_channel_disable` 期间持有电源管理锁。锁类型取决于芯片和所选时钟源。
 
 启用以下驱动程序时，将占用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 
@@ -132,7 +134,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
     :SOC_PCNT_SUPPORTED: - **PCNT**：从调用 :cpp:func:`pcnt_unit_enable` 至 :cpp:func:`pcnt_unit_disable` 期间。
     :SOC_SDM_SUPPORTED: - **Sigma-delta**：从调用 :cpp:func:`sdm_channel_enable` 至 :cpp:func:`sdm_channel_disable` 期间。
-    :SOC_MCPWM_SUPPORTED: - **MCPWM**: 从调用 :cpp:func:`mcpwm_timer_enable` 至 :cpp:func:`mcpwm_timer_disable` 期间，以及调用 :cpp:func:`mcpwm_capture_timer_enable` 至 :cpp:func:`mcpwm_capture_timer_disable` 期间。
+    :SOC_MCPWM_SUPPORTED: - **MCPWM**：从调用 :cpp:func:`mcpwm_timer_enable` 至 :cpp:func:`mcpwm_timer_disable` 期间，以及调用 :cpp:func:`mcpwm_capture_timer_enable` 至 :cpp:func:`mcpwm_capture_timer_disable` 期间。
 
 以下外设驱动程序无法感知动态调频，应用程序需自己获取/释放管理锁：
 
