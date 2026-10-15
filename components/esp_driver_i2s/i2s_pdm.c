@@ -236,15 +236,8 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     i2s_ll_tx_enable_pdm(handle->controller->hal.dev, pdm_tx_cfg->slot_cfg.data_fmt == I2S_PDM_DATA_FMT_PCM);
 
 #ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
-#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
-    if (pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
-        /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
-         * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
-        pm_type = ESP_PM_NO_LIGHT_SLEEP;
-    }
-#endif // SOC_I2S_SUPPORTS_APLL
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
+    esp_pm_lock_type_t pm_type = i2s_select_pm_lock_type(false, pdm_tx_cfg->clk_cfg.clk_src);
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
 #endif
 
     /* Initialization finished, mark state as ready */
@@ -287,14 +280,7 @@ esp_err_t i2s_channel_reconfig_pdm_tx_clock(i2s_chan_handle_t handle, const i2s_
     // Create/Re-create power management lock
     if (old_clk_src != clk_cfg->clk_src) {
         ESP_GOTO_ON_ERROR(esp_pm_lock_delete(handle->pm_lock), err, TAG, "I2S delete old pm lock failed");
-        esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
-#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
-        if (clk_cfg->clk_src == I2S_CLK_SRC_APLL) {
-            /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
-             * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
-            pm_type = ESP_PM_NO_LIGHT_SLEEP;
-        }
-#endif // SOC_I2S_SUPPORTS_APLL
+        esp_pm_lock_type_t pm_type = i2s_select_pm_lock_type(false, clk_cfg->clk_src);
         ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
     }
 #endif //CONFIG_PM_ENABLE
@@ -582,15 +568,8 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
     i2s_ll_rx_enable_pdm(handle->controller->hal.dev, pdm_rx_cfg->slot_cfg.data_fmt == I2S_PDM_DATA_FMT_PCM);
 
 #ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
-#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
-    if (pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
-        /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
-         * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
-        pm_type = ESP_PM_NO_LIGHT_SLEEP;
-    }
-#endif // SOC_I2S_SUPPORTS_APLL
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
+    esp_pm_lock_type_t pm_type = i2s_select_pm_lock_type(false, pdm_rx_cfg->clk_cfg.clk_src);
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
 #endif
 
     /* Initialization finished, mark state as ready */
@@ -633,14 +612,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_clock(i2s_chan_handle_t handle, const i2s_
     // Create/Re-create power management lock
     if (old_clk_src != clk_cfg->clk_src) {
         ESP_GOTO_ON_ERROR(esp_pm_lock_delete(handle->pm_lock), err, TAG, "I2S delete old pm lock failed");
-        esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
-#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
-        if (clk_cfg->clk_src == I2S_CLK_SRC_APLL) {
-            /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
-             * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
-            pm_type = ESP_PM_NO_LIGHT_SLEEP;
-        }
-#endif // SOC_I2S_SUPPORTS_APLL
+        esp_pm_lock_type_t pm_type = i2s_select_pm_lock_type(false, clk_cfg->clk_src);
         ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
     }
 #endif //CONFIG_PM_ENABLE

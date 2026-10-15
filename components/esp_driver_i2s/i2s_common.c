@@ -705,6 +705,31 @@ static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
 }
 #endif
 
+#if CONFIG_PM_ENABLE
+esp_pm_lock_type_t i2s_select_pm_lock_type(bool dma_buf_in_psram, i2s_clock_src_t clk_src)
+{
+    if (dma_buf_in_psram) {
+        /* Keep the CPU at its maximum frequency to ensure PSRAM availability and
+         * sufficient DMA bandwidth during DFS. */
+        return ESP_PM_CPU_FREQ_MAX;
+    }
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (clk_src == I2S_CLK_SRC_DEFAULT) {
+        clk_src = I2S_LL_DEFAULT_CLK_SRC;
+    }
+#endif
+    if (i2s_clk_src_requires_apb_lock(clk_src)) {
+        /* Keep APB fixed for target-specific clock sources that cannot tolerate
+         * APB frequency scaling. An APB frequency change can cause timing issues
+         * because the DMA and I2S operate in different clock domains. */
+        return ESP_PM_APB_FREQ_MAX;
+    }
+    /* DFS-safe clock sources only require the peripheral and its source clock
+     * to remain active while the channel is enabled. */
+    return ESP_PM_NO_LIGHT_SLEEP;
+}
+#endif
+
 uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
 {
     uint32_t clk_freq = 0;

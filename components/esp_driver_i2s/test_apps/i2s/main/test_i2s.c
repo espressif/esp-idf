@@ -12,6 +12,9 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
 #include "driver/gpio.h"
 #include "hal/dma_types.h"
 #include "esp_private/gpio.h"
@@ -890,7 +893,12 @@ TEST_CASE("I2S_loopback_test", "[i2s]")
     TEST_ESP_OK(i2s_channel_enable(tx_handle));
     TEST_ESP_OK(i2s_channel_enable(rx_handle));
 
+    /* Loopback data may remain valid if TX and RX clocks pause together, so this does not prove waveform continuity. */
     i2s_read_write_test(tx_handle, rx_handle);
+#if CONFIG_PM_ENABLE
+    printf("PM locks while I2S is enabled\n");
+    TEST_ESP_OK(esp_pm_dump_locks(stdout));
+#endif
 
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
     TEST_ESP_OK(i2s_channel_disable(rx_handle));
