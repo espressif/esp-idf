@@ -1053,6 +1053,8 @@ macro(project project_name)
         target_link_options(${project_elf} PRIVATE "-Wl,--defsym=IDF_TARGET_${idf_target}=0")
         # Enable map file output
         target_link_options(${project_elf} PRIVATE "-Wl,--Map=${mapfile}")
+        # Declare the map file as a link output so size targets can depend on it
+        add_custom_command(OUTPUT "${mapfile}" DEPENDS ${project_elf})
         if(CONFIG_COMPILER_USE_LLD)
             if(CMAKE_C_COMPILER_ID MATCHES "Clang")
                 # The last --ld-path on the link line takes precedence over the
