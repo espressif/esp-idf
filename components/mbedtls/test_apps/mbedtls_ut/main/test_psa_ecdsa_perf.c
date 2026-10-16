@@ -136,9 +136,8 @@ static void run_ecdsa_perf(size_t bits, bool deterministic)
     int64_t sw_us = time_sign(&ctx, mbedtls_psa_ecdsa_sign_hash, sw_sig);
     log_result(deterministic ? "deterministic sign" : "sign", bits, hw_us, sw_us);
 
-    /* Deterministic signatures are not compared byte for byte: on P-384 the
-     * peripheral derives the nonce with a variant of RFC 6979.
-     * Each implementation must accept the signature of the other one. */
+    /* Each implementation must accept the signature of the other one. The
+     * RFC 6979 known-answer tests check deterministic signatures byte for byte. */
     TEST_ASSERT_EQUAL(PSA_SUCCESS, mbedtls_psa_ecdsa_verify_hash(&ctx.pub_attr, ctx.pub, 2 * ctx.len + 1,
                                                                  ctx.alg, ctx.hash, ctx.len,
                                                                  hw_sig, 2 * ctx.len));
@@ -164,7 +163,11 @@ static void run_ecdsa_perf_on_curve(size_t bits)
 
     run_ecdsa_perf(bits, false);
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
-    run_ecdsa_perf(bits, true);
+    /* The driver signs deterministic requests on P-256 only. On P-384 they
+     * fall back to the software implementation, so there is nothing to compare. */
+    if (bits == 256) {
+        run_ecdsa_perf(bits, true);
+    }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 }
 
