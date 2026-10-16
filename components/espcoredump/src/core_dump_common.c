@@ -329,6 +329,7 @@ void esp_core_dump_write(panic_info_t *info)
     return;
 #endif
 
+    esp_core_dump_uptime_capture();
     s_exc_frame = (void *)info->frame;
     esp_core_dump_print_write_start();
 

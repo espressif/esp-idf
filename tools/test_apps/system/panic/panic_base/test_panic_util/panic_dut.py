@@ -28,6 +28,7 @@ class PanicTestDut(IdfDut):
     COREDUMP_UART_START = r'================= CORE DUMP START ================='
     COREDUMP_UART_END = r'================= CORE DUMP END ================='
     COREDUMP_CHECKSUM = r"Coredump checksum='([a-fA-F0-9]+)'"
+    COREDUMP_UPTIME = re.compile(r'Uptime: \d+ us \(\d+\.\d{3} s\)')
     REBOOT = r'.*Rebooting\.\.\.'
     CPU_RESET = (
         r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|'
@@ -206,8 +207,7 @@ class PanicTestDut(IdfDut):
         self._call_espcoredump(
             ['-c', coredump_file.name, '-s', coredump_elf_file] + (extra_args or []), output_file_name
         )
-        if expected:
-            self.expect_coredump(output_file_name, expected)
+        self.expect_coredump(output_file_name, (expected or []) + [self.COREDUMP_UPTIME])
         return coredump_elf_file
 
     def process_coredump_flash(
@@ -219,8 +219,7 @@ class PanicTestDut(IdfDut):
         logging.info('Writing flash binary core dump to %s', coredump_file_name)
         output_file_name = os.path.join(self.logdir, 'coredump_flash_result.txt')
         self._call_espcoredump(['-s', coredump_file_name] + (extra_args or []), output_file_name)
-        if expected:
-            self.expect_coredump(output_file_name, expected)
+        self.expect_coredump(output_file_name, (expected or []) + [self.COREDUMP_UPTIME])
         return coredump_file_name
 
     def gdb_write(self, command: str) -> Any:

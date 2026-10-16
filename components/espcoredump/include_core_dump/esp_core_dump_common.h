@@ -109,6 +109,11 @@ bool esp_core_dump_in_isr_context(void);
 uint32_t esp_core_dump_get_user_ram_size(void);
 
 /**
+ * @brief Reads the uptime for the ESP_UPTIME note. Call it before any delay in the write.
+ */
+void esp_core_dump_uptime_capture(void);
+
+/**
  * @brief Prints write start info string according to destination.
  */
 void esp_core_dump_print_write_start(void);

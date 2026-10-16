@@ -57,6 +57,8 @@ Setting this option to 0 bytes will cause the core dump routines to run from the
 
     By default, core dumps typically save CPU registers, tasks data and summary of the panic reason. When the :menuitem:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` option is selected, ``.bss`` and ``.data`` sections and ``heap`` data will also be part of the dump.
 
+    Core dumps also save the uptime, which ``idf.py coredump-info`` prints in the ``Uptime`` line. It is the value of :cpp:func:`esp_timer_get_time` at the start of ``esp_core_dump_write()``, and it counts from ``esp_timer_early_init()`` in the application startup. It does not include the time spent in the bootloader and in the startup code before ``esp_timer_early_init()``, so it is lower than the log timestamps, which count from the chip reset.
+
     For a better debugging experience, it is recommended to dump these sections. However, this will result in a larger coredump file. The required additional storage space may vary based on the amount of DRAM the application uses.
 
     .. only:: SOC_SPIRAM_SUPPORTED
@@ -129,6 +131,7 @@ If :menuitem:`CONFIG_ESP_COREDUMP_DECODE` is set to automatically decode the UAR
     Crashed task handle: 0x3ffafba0, name: 'main', GDB name: 'process 1073413024'
     Crashed task is not in the interrupt context
     Panic reason: abort() was called at PC 0x400d66b9 on core 0
+    Uptime: 5123456 us (5.123 s)
 
     ================== CURRENT THREAD REGISTERS ===================
     exccause       0x1d (StoreProhibitedCause)

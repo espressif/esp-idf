@@ -57,6 +57,8 @@
 
     核心转储默认保存 CPU 寄存器、任务数据和崩溃原因。选择 :menuitem:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` 选项后，``.bss`` 段和 ``.data`` 段以及 ``heap`` 数据也将保存到转储中。
 
+    核心转储还会保存系统运行时间，``idf.py coredump-info`` 会在 ``Uptime`` 行中打印该时间。该值为 ``esp_core_dump_write()`` 开始时 :cpp:func:`esp_timer_get_time` 的返回值，从应用程序启动过程中的 ``esp_timer_early_init()`` 开始计时。该值不包括引导加载程序以及 ``esp_timer_early_init()`` 之前的启动代码所用的时间，因此会小于从芯片复位开始计时的日志时间戳。
+
     推荐将上面提到的几个数据段都保存到核心转储中，以方便调试。但这会导致核心转储文件变大，具体所需的额外存储空间取决于应用程序使用的 DRAM 大小。
 
     .. only:: SOC_SPIRAM_SUPPORTED
@@ -129,6 +131,7 @@
     Crashed task handle: 0x3ffafba0, name: 'main', GDB name: 'process 1073413024'
     Crashed task is not in the interrupt context
     Panic reason: abort() was called at PC 0x400d66b9 on core 0
+    Uptime: 5123456 us (5.123 s)
 
     ================== CURRENT THREAD REGISTERS ===================
     exccause       0x1d (StoreProhibitedCause)
