@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,6 +11,8 @@
 #include "esp_system.h"
 #include "esp_check.h"
 #include "esp_netif.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -25,6 +27,7 @@
 #define QR_FLAG (1 << 7)
 #define QD_TYPE_A (0x0001)
 #define ANS_TTL_SEC (300)
+#define RECV_TIMEOUT_SEC (1)
 
 static const char *TAG = "example_dns_redirect_server";
 
@@ -40,7 +43,8 @@ typedef struct __attribute__((__packed__))
 } dns_header_t;
 
 // DNS Question Packet
-typedef struct {
+typedef struct __attribute__((__packed__))
+{
     uint16_t type;
     uint16_t class;
 } dns_question_t;
@@ -58,8 +62,8 @@ typedef struct __attribute__((__packed__))
 
 // DNS server handle
 struct dns_server_handle {
-    bool started;
-    TaskHandle_t task;
+    volatile bool started;
+    SemaphoreHandle_t exited;
     int num_of_entries;
     dns_entry_pair_t entry[];
 };
@@ -68,18 +72,22 @@ struct dns_server_handle {
     Parse the name from the packet from the DNS name format to a regular .-seperated name
     returns the pointer to the next part of the packet
 */
-static char *parse_dns_name(char *raw_name, char *parsed_name, size_t parsed_name_max_len)
+static char *parse_dns_name(char *raw_name, const char *raw_end, char *parsed_name, size_t parsed_name_max_len)
 {
 
     char *label = raw_name;
     char *name_itr = parsed_name;
-    int name_len = 0;
+    size_t name_len = 0;
 
     do {
-        int sub_name_len = *label;
+        if (label >= raw_end) {
+            return NULL;
+        }
+        uint8_t sub_name_len = *label;
         // (len + 1) since we are adding  a '.'
         name_len += (sub_name_len + 1);
-        if (name_len > parsed_name_max_len) {
+        // The label and the length byte that follows it must lie within the packet
+        if (name_len > parsed_name_max_len || sub_name_len >= raw_end - label - 1) {
             return NULL;
         }
 
@@ -99,7 +107,7 @@ static char *parse_dns_name(char *raw_name, char *parsed_name, size_t parsed_nam
 // Parses the DNS request and prepares a DNS response with the IP of the softAP
 static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t dns_reply_max_len, dns_server_handle_t h)
 {
-    if (req_len > dns_reply_max_len) {
+    if (req_len < sizeof(dns_header_t) || req_len > dns_reply_max_len) {
         return -1;
     }
 
@@ -112,6 +120,11 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     ESP_LOGD(TAG, "DNS query with header id: 0x%X, flags: 0x%X, qd_count: %d",
              ntohs(header->id), ntohs(header->flags), ntohs(header->qd_count));
 
+    // Not a query, so that a spoofed reply can't make two servers answer each other forever
+    if (header->flags & QR_FLAG) {
+        return 0;
+    }
+
     // Not a standard query
     if ((header->flags & OPCODE_MASK) != 0) {
         return 0;
@@ -121,29 +134,32 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     header->flags |= QR_FLAG;
 
     uint16_t qd_count = ntohs(header->qd_count);
-    header->an_count = htons(qd_count);
 
-    int reply_len = qd_count * sizeof(dns_answer_t) + req_len;
-    if (reply_len > dns_reply_max_len) {
+    // Worst case: every question gets an answer
+    if (qd_count * sizeof(dns_answer_t) + req_len > dns_reply_max_len) {
         return -1;
     }
 
-    // Pointer to current answer and question
+    // Answers are built after the copied request and moved behind the questions at the end
+    const char *req_end = dns_reply + req_len;
     char *cur_ans_ptr = dns_reply + req_len;
     char *cur_qd_ptr = dns_reply + sizeof(dns_header_t);
+    uint16_t an_count = 0;
     char name[128];
 
     // Respond to all questions based on configured rules
     for (int qd_i = 0; qd_i < qd_count; qd_i++) {
-        char *name_end_ptr = parse_dns_name(cur_qd_ptr, name, sizeof(name));
-        if (name_end_ptr == NULL) {
-            ESP_LOGE(TAG, "Failed to parse DNS question: %s", cur_qd_ptr);
+        char *name_end_ptr = parse_dns_name(cur_qd_ptr, req_end, name, sizeof(name));
+        if (name_end_ptr == NULL || name_end_ptr + sizeof(dns_question_t) > req_end) {
+            ESP_LOGE(TAG, "Failed to parse DNS question %d", qd_i);
             return -1;
         }
 
         dns_question_t *question = (dns_question_t *)(name_end_ptr);
         uint16_t qd_type = ntohs(question->type);
         uint16_t qd_class = ntohs(question->class);
+        char *qd_ptr = cur_qd_ptr;
+        cur_qd_ptr = name_end_ptr + sizeof(dns_question_t);
 
         ESP_LOGD(TAG, "Received type: %d | Class: %d | Question for: %s", qd_type, qd_class, name);
 
@@ -169,7 +185,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
             }
             dns_answer_t *answer = (dns_answer_t *)cur_ans_ptr;
 
-            answer->ptr_offset = htons(0xC000 | (cur_qd_ptr - dns_reply));
+            answer->ptr_offset = htons(0xC000 | (qd_ptr - dns_reply));
             answer->type = htons(qd_type);
             answer->class = htons(qd_class);
             answer->ttl = htonl(ANS_TTL_SEC);
@@ -178,9 +194,18 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
 
             answer->addr_len = htons(sizeof(ip.addr));
             answer->ip_addr = ip.addr;
+
+            cur_ans_ptr += sizeof(dns_answer_t);
+            an_count++;
         }
     }
-    return reply_len;
+    // Move the answers over the request's authority/additional records (e.g. EDNS0 OPT), which are not echoed
+    size_t ans_len = cur_ans_ptr - req_end;
+    memmove(cur_qd_ptr, req_end, ans_len);
+    header->an_count = htons(an_count);
+    header->ns_count = 0;
+    header->ar_count = 0;
+    return cur_qd_ptr + ans_len - dns_reply;
 }
 
 /*
@@ -215,19 +240,31 @@ void dns_server_task(void *pvParameters)
         int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err < 0) {
             ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+            close(sock);
+            break;
         }
         ESP_LOGI(TAG, "Socket bound, port %d", DNS_PORT);
 
+        // Wake up periodically so that stop_dns_server() is noticed
+        struct timeval timeout = { .tv_sec = RECV_TIMEOUT_SEC, .tv_usec = 0 };
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+            ESP_LOGE(TAG, "Unable to set socket receive timeout: errno %d", errno);
+            close(sock);
+            break;
+        }
+
         while (handle->started) {
-            ESP_LOGI(TAG, "Waiting for data");
+            ESP_LOGD(TAG, "Waiting for data");
             struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(source_addr);
-            int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
+            int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer), 0, (struct sockaddr *)&source_addr, &socklen);
 
             // Error occurred during receiving
             if (len < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    continue;
+                }
                 ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-                close(sock);
                 break;
             }
             // Data received
@@ -239,16 +276,13 @@ void dns_server_task(void *pvParameters)
                     inet6_ntoa_r(source_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
                 }
 
-                // Null-terminate whatever we received and treat like a string...
-                rx_buffer[len] = 0;
-
                 char reply[DNS_MAX_LEN];
                 int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN, handle);
 
                 ESP_LOGI(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
-                if (reply_len <= 0) {
+                if (reply_len < 0) {
                     ESP_LOGE(TAG, "Failed to prepare a DNS reply");
-                } else {
+                } else if (reply_len > 0) {   // 0: a reply or not a standard query, ignored
                     int err = sendto(sock, reply, reply_len, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
                     if (err < 0) {
                         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
@@ -258,12 +292,12 @@ void dns_server_task(void *pvParameters)
             }
         }
 
-        if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket");
-            shutdown(sock, 0);
-            close(sock);
-        }
+        ESP_LOGI(TAG, "Shutting down socket");
+        shutdown(sock, 0);
+        close(sock);
     }
+    // stop_dns_server() may free the handle as soon as this is given
+    xSemaphoreGive(handle->exited);
     vTaskDelete(NULL);
 }
 
@@ -272,19 +306,36 @@ dns_server_handle_t start_dns_server(dns_server_config_t *config)
     dns_server_handle_t handle = calloc(1, sizeof(struct dns_server_handle) + config->num_of_entries * sizeof(dns_entry_pair_t));
     ESP_RETURN_ON_FALSE(handle, NULL, TAG, "Failed to allocate dns server handle");
 
+    handle->exited = xSemaphoreCreateBinary();
+    if (handle->exited == NULL) {
+        ESP_LOGE(TAG, "Failed to create dns server semaphore");
+        goto err;
+    }
     handle->started = true;
     handle->num_of_entries = config->num_of_entries;
     memcpy(handle->entry, config->item, config->num_of_entries * sizeof(dns_entry_pair_t));
 
-    xTaskCreate(dns_server_task, "dns_server", 4096, handle, 5, &handle->task);
+    if (xTaskCreate(dns_server_task, "dns_server", 4096, handle, 5, NULL) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create dns server task");
+        goto err;
+    }
     return handle;
+
+err:
+    if (handle->exited) {
+        vSemaphoreDelete(handle->exited);
+    }
+    free(handle);
+    return NULL;
 }
 
 void stop_dns_server(dns_server_handle_t handle)
 {
     if (handle) {
+        // Let the task leave recvfrom() and close its socket instead of deleting it from here
         handle->started = false;
-        vTaskDelete(handle->task);
+        xSemaphoreTake(handle->exited, portMAX_DELAY);
+        vSemaphoreDelete(handle->exited);
         free(handle);
     }
 }
