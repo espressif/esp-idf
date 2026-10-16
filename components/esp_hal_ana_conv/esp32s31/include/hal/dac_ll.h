@@ -17,9 +17,10 @@
 
 #if SOC_DAC_SUPPORTED
 
-#define SOC_DAC_DC_VIA_SINTX           1
-#define SOC_DAC_SINTX_HAS_TIMER_TARGET 1
-#define SOC_DAC_SINTX_LUT_SIGNED       0
+#define DAC_LL_DC_VIA_SINTX           1
+#define DAC_LL_SINTX_HAS_TIMER_TARGET 1
+#define DAC_LL_SINTX_LUT_SIGNED       0
+#define DAC_LL_SINTX_PHASE_ACC_RANGE  65536
 
 #ifdef __cplusplus
 extern "C" {
