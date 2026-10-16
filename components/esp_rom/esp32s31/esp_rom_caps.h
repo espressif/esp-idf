@@ -33,3 +33,4 @@
 #define ESP_ROM_BOOTLOADER_OFFSET_FLASH     (0x2000) // Bootloader offset in flash determined by the ROM bootloader
 #define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, need map parameter
 #define ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP (1) // ROM supports the secure boot fast wakeup feature
+#define ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB  (1) // ROM supports the HP core to jump to the RTC memory to execute stub code after waking up from deepsleep.
