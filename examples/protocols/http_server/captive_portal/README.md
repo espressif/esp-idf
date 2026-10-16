@@ -57,51 +57,34 @@ I (753) example: Starting server on port: '80'
 I (753) example: Registering URI handlers
 I (763) example_dns_redirect_server: Socket created
 I (763) example_dns_redirect_server: Socket bound, port 53
-I (773) example_dns_redirect_server: Waiting for data
 I (1873) wifi:new:<1,1>, old:<1,1>, ap:<1,1>, sta:<255,255>, prof:1
 I (1873) wifi:station: e8:84:a5:18:8f:80 join, AID=1, bgn, 40U
 I (2203) example: station e8:84:a5:18:8f:80 join, AID=1
 I (2833) example_dns_redirect_server: Received 50 bytes from 192.168.4.2 | DNS reply with len: 66
-I (2843) example_dns_redirect_server: Waiting for data
 I (3043) example_dns_redirect_server: Received 39 bytes from 192.168.4.2 | DNS reply with len: 55
-I (3043) example_dns_redirect_server: Waiting for data
 I (3043) example_dns_redirect_server: Received 42 bytes from 192.168.4.2 | DNS reply with len: 58
-I (3053) example_dns_redirect_server: Waiting for data
 W (3203) wifi:<ba-add>idx:4 (ifx:1, e8:84:a5:18:8f:80), tid:0, ssn:9, winSize:64
 I (3533) example: Redirecting to root
 I (5693) example_dns_redirect_server: Received 37 bytes from 192.168.4.2 | DNS reply with len: 53
-I (5693) example_dns_redirect_server: Waiting for data
 I (5783) example_dns_redirect_server: Received 46 bytes from 192.168.4.2 | DNS reply with len: 62
-I (5783) example_dns_redirect_server: Waiting for data
 I (6303) example_dns_redirect_server: Received 41 bytes from 192.168.4.2 | DNS reply with len: 57
-I (6303) example_dns_redirect_server: Waiting for data
 I (6303) example_dns_redirect_server: Received 41 bytes from 192.168.4.2 | DNS reply with len: 57
-I (6313) example_dns_redirect_server: Waiting for data
 I (6593) example: Redirecting to root
 I (9623) example: Redirecting to root
 I (12913) example: Redirecting to root
 I (13263) example_dns_redirect_server: Received 34 bytes from 192.168.4.2 | DNS reply with len: 50
-I (13273) example_dns_redirect_server: Waiting for data
 I (13273) example_dns_redirect_server: Received 34 bytes from 192.168.4.2 | DNS reply with len: 50
-I (13283) example_dns_redirect_server: Waiting for data
 I (16303) example_dns_redirect_server: Received 32 bytes from 192.168.4.2 | DNS reply with len: 48
-I (16303) example_dns_redirect_server: Waiting for data
 I (18073) example: Redirecting to root
 I (18273) example_dns_redirect_server: Received 34 bytes from 192.168.4.2 | DNS reply with len: 50
-I (18273) example_dns_redirect_server: Waiting for data
 I (18273) example_dns_redirect_server: Received 34 bytes from 192.168.4.2 | DNS reply with len: 50
-I (18283) example_dns_redirect_server: Waiting for data
 I (20683) example_dns_redirect_server: Received 42 bytes from 192.168.4.2 | DNS reply with len: 58
-I (20683) example_dns_redirect_server: Waiting for data
 I (20753) example: Redirecting to root
 I (21323) example: Redirecting to root
 I (22683) example_dns_redirect_server: Received 48 bytes from 192.168.4.2 | DNS reply with len: 64
-I (22693) example_dns_redirect_server: Waiting for data
 I (23443) example_dns_redirect_server: Received 48 bytes from 192.168.4.2 | DNS reply with len: 64
-I (23453) example_dns_redirect_server: Waiting for data
 I (23473) example: Serve root
 I (23503) example_dns_redirect_server: Received 48 bytes from 192.168.4.2 | DNS reply with len: 64
-I (23513) example_dns_redirect_server: Waiting for data
 ```
 
 ### `tcpdump` Output for DHCP Option 114
