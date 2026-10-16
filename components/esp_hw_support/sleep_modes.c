@@ -285,12 +285,6 @@ void esp_sleep_set_sleep_context(esp_sleep_context_t *sleep_ctx)
 
 static uint32_t s_lightsleep_cnt = 0;
 
-#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
-// RTC_SLOW period calibrated right after the last long enough light sleep. The next light sleep
-// uses it instead of a calibration at sleep entry, where the chip is still warm. 0: none yet.
-static uint32_t s_rtc_clk_cal_period_after_wakeup = 0;
-#endif
-
 #if SOC_RTCIO_PIN_COUNT > 0
 _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
 #endif
@@ -807,13 +801,12 @@ static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
 #endif
     {
+        bool clk_cal_before_sleep = true;
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
-        // Prefer the period calibrated after the previous wakeup (see esp_light_sleep_start)
-        if (!is_dslp && s_rtc_clk_cal_period_after_wakeup != 0) {
-            s_config.rtc_clk_cal_period = s_rtc_clk_cal_period_after_wakeup;
-        } else
+        /* An invalid value 0 means too short light sleep or no sleep at all */
+        clk_cal_before_sleep = (s_config.rtc_clk_cal_period == 0);
 #endif
-        {
+        if (clk_cal_before_sleep) {
             s_config.rtc_clk_cal_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
         }
         esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
@@ -1769,11 +1762,9 @@ esp_err_t esp_light_sleep_start(void)
         }
         esp_set_time_from_rtc();
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
-        // The chip is still at its sleep temperature here. Calibrate for the next light sleep,
-        // if that one is due for a calibration (see sleep_low_power_clock_calibration).
-        if (rtc_time_diff >= RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US
-                && s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) {
-            s_rtc_clk_cal_period_after_wakeup = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
+        if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) {
+            /* We use the invalid value 0 to indicate that calibration is required before the next sleep */
+            s_config.rtc_clk_cal_period = (rtc_time_diff >= RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US) ? rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES) : 0;
         }
 #endif
     } else {
