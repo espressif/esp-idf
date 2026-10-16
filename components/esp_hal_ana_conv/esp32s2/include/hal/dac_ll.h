@@ -17,6 +17,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/apb_saradc_reg.h"
 
+#define DAC_LL_SHARED_HS_LS_CLK       0
 #define DAC_LL_DC_VIA_SINTX           0
 #define DAC_LL_SINTX_HAS_TIMER_TARGET 0
 #define DAC_LL_SINTX_LUT_SIGNED       1

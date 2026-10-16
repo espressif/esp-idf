@@ -14,6 +14,10 @@
 #include "hal/dac_periph.h"
 #include "hal/dac_types.h"
 #include "hal/dac_ll.h"
+#if DAC_LL_SHARED_HS_LS_CLK
+#include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
+#endif
 #include "esp_private/gpio.h"
 #include "esp_check.h"
 #include "esp_log.h"
@@ -114,6 +118,179 @@ esp_err_t dac_priv_channel_disable(dac_channel_t chan_id)
         return ESP_ERR_INVALID_STATE;
     }
 }
+
+#if DAC_LL_SHARED_HS_LS_CLK
+/*---------------------------------------------------------------
+                  DAC HS/LS clock management
+---------------------------------------------------------------*/
+/**
+ * Frequency relationships:
+ * DAC_HS_CLK = clock source / hs_div
+ * DAC_LS_CLK = DAC_HS_CLK / ls_div
+ */
+
+/* Limits must be in descending order of frequency by constraint enum value:
+ * s_dac_clk_get_ls_limit_unlocked() uses the last active constraint as the strictest limit.
+ */
+static const uint32_t s_dac_ls_clk_max_freq_hz[DAC_LS_CLK_CONSTRAINT_COUNT] = {
+    [DAC_LS_CLK_CONSTRAINT_DEFAULT]     = 1000000,  // 1MHz
+    [DAC_LS_CLK_CONSTRAINT_CALIBRATION] = 500000,   // 500kHz
+    [DAC_LS_CLK_CONSTRAINT_SAMPLE_HOLD] = 50000,    // 50kHz
+};
+
+typedef struct {
+    soc_module_clk_t source;
+    uint32_t source_freq_hz;
+    uint32_t hs_div;
+    uint32_t ls_div;
+    uint32_t ref_cnt;   // ref_cnt = sum of constraint_ref_cnt
+    uint32_t constraint_ref_cnt[DAC_LS_CLK_CONSTRAINT_COUNT];
+} dac_clk_state_t;
+
+static dac_clk_state_t s_dac_clk;
+
+/* The caller must hold the DAC spinlock. */
+static inline uint32_t s_dac_clk_get_ls_limit_unlocked(void)
+{
+    uint32_t limit = s_dac_ls_clk_max_freq_hz[DAC_LS_CLK_CONSTRAINT_DEFAULT];
+    for (int i = 0; i < DAC_LS_CLK_CONSTRAINT_COUNT; i++) {
+        if (s_dac_clk.constraint_ref_cnt[i]) {
+            limit = s_dac_ls_clk_max_freq_hz[i];
+        }
+    }
+    return limit;
+}
+
+esp_err_t dac_priv_clk_acquire(soc_module_clk_t source, dac_ls_clk_constraint_t constraint)
+{
+    ESP_RETURN_ON_FALSE(IS_VALID_DAC_CLK_SRC(source, SOC_DAC_DIGI_CLKS), ESP_ERR_INVALID_ARG, TAG, "invalid DAC clock source");
+    ESP_RETURN_ON_FALSE((unsigned)constraint < DAC_LS_CLK_CONSTRAINT_COUNT, ESP_ERR_INVALID_ARG, TAG, "invalid DAC LS clock constraint");
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(source, NULL), TAG, "acquire DAC clock source failed");
+    esp_err_t ret = ESP_OK;
+    uint32_t source_freq_hz = 0;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(source, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &source_freq_hz),
+                      err_source, TAG, "get DAC clock source frequency failed");
+
+    bool keep_source_ref = false;
+    DAC_ENTER_CRITICAL();
+    if (s_dac_clk.ref_cnt == 0) {
+        // first user
+        uint32_t ls_limit = s_dac_ls_clk_max_freq_hz[constraint];
+        uint32_t hs_div = 1;
+        uint32_t ls_div = DAC_DIV_CEIL(source_freq_hz, ls_limit);
+        if (ls_div < DAC_LL_CLK_LS_DIV_MIN || ls_div > DAC_LL_CLK_LS_DIV_MAX ||
+                hs_div < DAC_LL_CLK_HS_DIV_MIN || hs_div > DAC_LL_CLK_HS_DIV_MAX) {
+            ret = ESP_ERR_NOT_SUPPORTED;
+        } else {
+            dac_ll_clk_set_source(source);
+            dac_ll_clk_set_hs_div(hs_div);
+            dac_ll_clk_enable(true);
+            // Note: Access to the register containing ls_div requires the HS clock.
+            dac_ll_clk_set_ls_div(ls_div);
+            s_dac_clk.source = source;
+            s_dac_clk.source_freq_hz = source_freq_hz;
+            s_dac_clk.hs_div = hs_div;
+            s_dac_clk.ls_div = ls_div;
+            s_dac_clk.ref_cnt++;
+            s_dac_clk.constraint_ref_cnt[constraint]++;
+            keep_source_ref = true;
+        }
+    } else if (s_dac_clk.source != source) {
+        // conflict
+        ret = ESP_ERR_INVALID_STATE;
+    } else {
+        // existing users share the same clock source
+        uint32_t limit = s_dac_ls_clk_max_freq_hz[constraint];
+        if (limit < (s_dac_clk.source_freq_hz / s_dac_clk.hs_div / s_dac_clk.ls_div)) {
+            // stricter constraints
+            uint32_t ls_div = DAC_DIV_CEIL(s_dac_clk.source_freq_hz, limit);
+            if (ls_div < DAC_LL_CLK_LS_DIV_MIN || ls_div > DAC_LL_CLK_LS_DIV_MAX) {
+                ret = ESP_ERR_NOT_SUPPORTED;
+            } else {
+                dac_ll_clk_set_ls_div(ls_div);
+                s_dac_clk.ls_div = ls_div;
+                s_dac_clk.ref_cnt++;
+                s_dac_clk.constraint_ref_cnt[constraint]++;
+            }
+        } else {
+            s_dac_clk.ref_cnt++;
+            s_dac_clk.constraint_ref_cnt[constraint]++;
+        }
+    }
+    DAC_EXIT_CRITICAL();
+
+    /* The manager retains only the first user's upstream-clock reference. */
+    if (!keep_source_ref) {
+err_source:
+        esp_clk_tree_release_src(source);
+    }
+    return ret;
+}
+
+esp_err_t dac_priv_clk_get_hs_freq_hz(uint32_t *freq_hz)
+{
+    esp_err_t ret = ESP_OK;
+    DAC_ENTER_CRITICAL();
+    if (s_dac_clk.ref_cnt) {
+        if (freq_hz) {
+            *freq_hz = DAC_DIV_ROUND(s_dac_clk.source_freq_hz, s_dac_clk.hs_div);
+        }
+    } else {
+        ret = ESP_ERR_INVALID_STATE;
+    }
+    DAC_EXIT_CRITICAL();
+    return ret;
+}
+
+esp_err_t dac_priv_clk_get_ls_freq_hz(uint32_t *freq_hz)
+{
+    esp_err_t ret = ESP_OK;
+    DAC_ENTER_CRITICAL();
+    if (s_dac_clk.ref_cnt) {
+        if (freq_hz) {
+            *freq_hz = DAC_DIV_ROUND(s_dac_clk.source_freq_hz, s_dac_clk.hs_div * s_dac_clk.ls_div);
+        }
+    } else {
+        ret = ESP_ERR_INVALID_STATE;
+    }
+    DAC_EXIT_CRITICAL();
+    return ret;
+}
+
+esp_err_t dac_priv_clk_release(dac_ls_clk_constraint_t constraint)
+{
+    ESP_RETURN_ON_FALSE((unsigned)constraint < DAC_LS_CLK_CONSTRAINT_COUNT, ESP_ERR_INVALID_ARG, TAG, "invalid DAC LS clock constraint");
+
+    esp_err_t ret = ESP_OK;
+    soc_module_clk_t to_release = SOC_MOD_CLK_INVALID;
+    DAC_ENTER_CRITICAL();
+    if (s_dac_clk.constraint_ref_cnt[constraint] == 0) {
+        ret = ESP_ERR_INVALID_STATE;
+    } else {
+        s_dac_clk.constraint_ref_cnt[constraint]--;
+        if (--s_dac_clk.ref_cnt == 0) {
+            dac_ll_clk_enable(false);
+            to_release = s_dac_clk.source;
+            s_dac_clk = (dac_clk_state_t) {};
+        } else {
+            uint32_t limit = s_dac_clk_get_ls_limit_unlocked();
+            uint32_t ls_div = DAC_DIV_CEIL(s_dac_clk.source_freq_hz, limit);
+            if (s_dac_clk.ls_div != ls_div) {
+                dac_ll_clk_set_ls_div(ls_div);
+                s_dac_clk.ls_div = ls_div;
+            }
+        }
+    }
+    DAC_EXIT_CRITICAL();
+
+    if (to_release != SOC_MOD_CLK_INVALID) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_release_src(to_release), TAG, "release DAC clock source failed");
+    }
+    return ret;
+}
+
+#endif // DAC_LL_SHARED_HS_LS_CLK
 
 /*---------------------------------------------------------------
                 Cosine (Sintx) generator management
