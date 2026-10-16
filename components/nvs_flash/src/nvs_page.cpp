@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "nvs_page.hpp"
+#include <algorithm>
 #include <inttypes.h>
 #include <esp_rom_crc.h>
 #include <cstdio>
@@ -685,20 +686,22 @@ esp_err_t Page::mLoadEntryTable()
         // however, if power failed after some data was written into the entry.
         // but before the entry state table was altered, the entry locacted via
         // entry state table may actually be half-written.
-        // this is easy to check by reading EntryHeader (i.e. first word)
+        // a cut write can leave the first word erased and later ones
+        // programmed, so every word of the entry is checked
         while (mNextFreeEntry < ENTRY_COUNT) {
             uint32_t entryAddress;
             err = getEntryAddress(mNextFreeEntry, &entryAddress);
             if (err != ESP_OK) {
                 return err;
             }
-            uint32_t header;
-            auto rc = mPartition->read_raw(entryAddress, &header, sizeof(header));
+            const size_t WORD_COUNT = ENTRY_SIZE / sizeof(uint32_t);
+            uint32_t words[WORD_COUNT];
+            auto rc = mPartition->read_raw(entryAddress, words, sizeof(words));
             if (rc != ESP_OK) {
                 mState = PageState::INVALID;
                 return rc;
             }
-            if (header != 0xffffffff) {
+            if (std::any_of(words, words + WORD_COUNT, [](uint32_t val) -> bool { return val != 0xffffffff; })) {
                 auto oldState = state;
                 rc = mEntryTable.get(mNextFreeEntry, &oldState);
                 if (rc != ESP_OK) {
