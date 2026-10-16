@@ -36,6 +36,37 @@ idf.py set-target <target>
 idf.py menuconfig
 ```
 
+### CTE Antenna Switching
+
+This example can initialize antenna switching GPIOs in the same way as the NimBLE
+CTE examples. On a target that supports CTE:
+
+1. Enable **Enable Bluetooth LE Direction Finding (AoA/AoD)**
+   (`CONFIG_BT_LE_CTE_FEATURE_ENABLED`) under the controller's **Enable BLE 5 feature** menu.
+   On ESP32-H2, first disable **Enable BLE SM feature**
+   (`CONFIG_BT_LE_SECURITY_ENABLE`), since CTE does not support encrypted communication.
+2. Under **Example Configuration**, enable **Use GPIOs for CTE antenna switching**.
+3. Set the number of GPIO bits (1–4) and their pin numbers to match your antenna
+   switch wiring. Bit 0 is the least significant bit; N GPIO bits encode up to
+   2^N antenna selections. The defaults are GPIO 0 and GPIO 1, not a board-specific
+   pin assignment. Choose valid output GPIOs that do not overlap the HCI UART, log
+   UART, flash, or other board peripherals.
+
+The GPIOs are configured as outputs with pull-ups, then connected to the controller's
+`CTE_ANTx` signals (`ANT_SELx` on targets using those signal names). Initialization
+runs after controller initialization and before controller enable. If GPIO
+configuration fails, the controller is deinitialized and startup stops.
+
+GPIO routing is implemented in `main/ble_cte_antenna.c`. The
+`ble_cte_antenna_init()` interface takes the board-specific GPIO array and bit count
+from `main/main.c` and does not depend on the example's Kconfig options.
+
+Enable this example option only when the local device needs antenna switching,
+such as AoA reception or AoD transmission. AoA transmission does not require it.
+The option is disabled by default and does not require the console REPL. It only
+initializes GPIOs: the external host must configure CTE operations and the antenna
+switching pattern through HCI commands.
+
 ### Build and Flash
 
 ```
@@ -90,14 +121,14 @@ After startup, HCI messages can be exchanged over the configured HCI UART.
 
 ## Console Commands
 
-The console REPL on the log UART is optional (`CONFIG_ENABLE_HCI_CONSOLE`, default off). The Bluetooth controller still runs without it. Extra command groups can be enabled separately.
+The console REPL on the log UART is optional (`CONFIG_EXAMPLE_HCI_CONSOLE`, default off). The Bluetooth controller still runs without it. Extra command groups can be enabled separately.
 
 To enable the REPL, run `idf.py menuconfig` and select **Example Configuration → Enable HCI console REPL**.
 
 | Group | Commands | Enabled by |
 |-------|----------|------------|
-| Common (BLE and BR/EDR) | `reconfig_hci_uart_pin -t <tx> -r <rx>` | `CONFIG_ENABLE_HCI_CONSOLE` |
-| BLE DTM | `set_ble_tx_power -i <index>`, `get_ble_tx_power`, `get_ble_rx_rssi` | `CONFIG_ENABLE_BLE_DTM_CONFIGURATION_COMMAND` |
+| Common (BLE and BR/EDR) | `reconfig_hci_uart_pin -t <tx> -r <rx>` | `CONFIG_EXAMPLE_HCI_CONSOLE` |
+| BLE DTM | `set_ble_tx_power -i <index>`, `get_ble_tx_power`, `get_ble_rx_rssi` | `CONFIG_EXAMPLE_BLE_DTM_CONFIGURATION_COMMAND` |
 
 The common group is available on every target whose HCI UART pins can be changed at runtime. The BLE DTM group targets direct test mode: on ESP32-C3/S3 enabling it also configures the HCI UART without hardware flow control, so only TX/RX have to be wired.
 

@@ -11,7 +11,7 @@
 #include "argtable3/argtable3.h"
 
 #include "hci_common.h"
-#if CONFIG_ENABLE_BLE_DTM_CONFIGURATION_COMMAND
+#if CONFIG_EXAMPLE_BLE_DTM_CONFIGURATION_COMMAND
 #include "ble_dtm_config.h"
 #endif
 
@@ -120,7 +120,7 @@ esp_err_t hci_console_init(void)
     repl_config.max_cmdline_length = 256;
 
     hci_common_register_commands();
-#if CONFIG_ENABLE_BLE_DTM_CONFIGURATION_COMMAND
+#if CONFIG_EXAMPLE_BLE_DTM_CONFIGURATION_COMMAND
     ble_dtm_config_register_commands();
 #endif
 

@@ -45,4 +45,4 @@
 
         HCI UART 传输层没有变化，仅示例位置发生了改变。新示例仅启动蓝牙控制器，不依赖 NimBLE 主机，因此放在 ``examples/bluetooth/hci/`` 而不是 ``examples/bluetooth/nimble/`` 目录下。
 
-        被移除示例中的 DTM 配置命令现由新示例的控制台提供，通过 ``CONFIG_ENABLE_BLE_DTM_CONFIGURATION_COMMAND`` 启用。
+        被移除示例中的 DTM 配置命令现由新示例的控制台提供，通过 ``CONFIG_EXAMPLE_BLE_DTM_CONFIGURATION_COMMAND`` 启用。
