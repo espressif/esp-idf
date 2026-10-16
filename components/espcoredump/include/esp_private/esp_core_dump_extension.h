@@ -18,7 +18,8 @@ extern "C" {
  * coredump. A data-owning component registers a write callback with
  * ESP_COREDUMP_REGISTER_EXTRA(); the coredump writer walks that list on every
  * ELF pass. Each callback must add the same segments and notes in the same
- * order on every pass, and must not allocate.
+ * order on every pass, add its segments before its notes, and must not
+ * allocate. The notes of each callback go in their own PT_NOTE segment.
  */
 
 /** @brief Opaque coredump attachment sink handed to extra-write callbacks. */
@@ -34,13 +35,14 @@ typedef struct core_dump_sink_s core_dump_sink_t;
  * @param size       Segment byte count. Must be a multiple of 4 (the ELF writer
  *                   reads a 4-byte-aligned length).
  * @param out_index  Receives the zero-based program-header index, or NULL.
- * @return ESP_OK, or an error that makes the coredump writer abort the attachment.
+ * @return ESP_OK, ESP_ERR_INVALID_STATE if the callback already added a note,
+ *         or another error that makes the coredump writer abort the attachment.
  */
 esp_err_t esp_core_dump_sink_add_segment(core_dump_sink_t *sink, uint32_t vaddr,
                                          const void *data, uint32_t size, uint32_t *out_index);
 
 /**
- * @brief Add one ELF note to the shared attachment PT_NOTE segment.
+ * @brief Add one ELF note to the PT_NOTE segment of this callback.
  *
  * @param sink       Sink passed to the callback.
  * @param name       Note name (a terminating null is added and counted).

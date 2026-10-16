@@ -87,7 +87,7 @@ typedef struct _core_dump_elf_t {
 struct core_dump_sink_s {
     core_dump_elf_t *self;
     int seg_total;   /* provider PT_LOAD contribution for the current pass */
-    int note_bytes;  /* accumulated provider note-description bytes */
+    int note_bytes;  /* note bytes of the current provider */
     esp_err_t err;   /* first failure, if any */
 };
 
@@ -785,6 +785,11 @@ esp_err_t esp_core_dump_sink_add_segment(core_dump_sink_t *sink, uint32_t vaddr,
         sink->err = ESP_ERR_INVALID_SIZE;
         return sink->err;
     }
+    if (sink->note_bytes > 0) {
+        /* The notes are written after the segments of the same provider */
+        sink->err = ESP_ERR_INVALID_STATE;
+        return sink->err;
+    }
     uint32_t index = sink->self->phdr_index;
     int ret = elf_add_segment(sink->self, PT_LOAD, vaddr, (void *)data, size);
     if (ret <= 0) {
@@ -827,30 +832,32 @@ bool esp_core_dump_sink_is_data_stage(const core_dump_sink_t *sink)
 extern const esp_core_dump_extra_cb_t _esp_coredump_extra_array_start __attribute__((weak));
 extern const esp_core_dump_extra_cb_t _esp_coredump_extra_array_end __attribute__((weak));
 
-/* Provider PT_LOAD segments first, then all provider notes wrapped in one
- * trailing PT_NOTE segment. This ordering keeps every note's segment index
- * stable and matches the segment/note byte order across passes. */
+/* Each provider gets its own PT_NOTE segment after its PT_LOAD segments, so
+ * the data is written in the same order as the program headers when more
+ * than one provider is linked. Segment indices stay the same across passes. */
 static int elf_write_extra_providers(core_dump_elf_t *self)
 {
-    core_dump_sink_t sink = { .self = self, .seg_total = 0, .note_bytes = 0, .err = ESP_OK };
+    int total = 0;
 
     const esp_core_dump_extra_cb_t *start = &_esp_coredump_extra_array_start;
     const esp_core_dump_extra_cb_t *end = &_esp_coredump_extra_array_end;
-    if (start != NULL && end != NULL) {
-        for (const esp_core_dump_extra_cb_t *it = start; it < end; ++it) {
-            if (*it != NULL) {
-                (*it)(&sink);
-                ELF_CHECK_ERR((sink.err == ESP_OK), ELF_PROC_ERR_OTHER,
-                              "coredump attachment failed (%d)", sink.err);
-            }
-        }
+    if (start == NULL || end == NULL) {
+        return 0;
     }
-
-    int total = sink.seg_total;
-    if (sink.note_bytes > 0) {
-        int ret = elf_process_note_segment(self, sink.note_bytes);
-        ELF_CHECK_ERR((ret > 0), ret, "attachment note segment processing failure, returned (%d).", ret);
-        total += ret;
+    for (const esp_core_dump_extra_cb_t *it = start; it < end; ++it) {
+        if (*it == NULL) {
+            continue;
+        }
+        core_dump_sink_t sink = { .self = self, .seg_total = 0, .note_bytes = 0, .err = ESP_OK };
+        (*it)(&sink);
+        ELF_CHECK_ERR((sink.err == ESP_OK), ELF_PROC_ERR_OTHER,
+                      "coredump attachment failed (%d)", sink.err);
+        total += sink.seg_total;
+        if (sink.note_bytes > 0) {
+            int ret = elf_process_note_segment(self, sink.note_bytes);
+            ELF_CHECK_ERR((ret > 0), ret, "attachment note segment processing failure, returned (%d).", ret);
+            total += ret;
+        }
     }
     return total;
 }
