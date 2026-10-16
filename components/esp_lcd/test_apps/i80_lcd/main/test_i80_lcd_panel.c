@@ -52,6 +52,50 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
 }
 #endif // SOC_HAS(I2S_I80_LCD)
 
+TEST_CASE("lcd_i80_data_only_device without D/C line", "[lcd]")
+{
+    esp_lcd_i80_bus_handle_t i80_bus = NULL;
+    esp_lcd_i80_bus_config_t bus_config = {
+        .dc_gpio_num = -1,
+        .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
+        .data_gpio_nums = {
+            TEST_LCD_DATA0_GPIO,
+            TEST_LCD_DATA1_GPIO,
+            TEST_LCD_DATA2_GPIO,
+            TEST_LCD_DATA3_GPIO,
+            TEST_LCD_DATA4_GPIO,
+            TEST_LCD_DATA5_GPIO,
+            TEST_LCD_DATA6_GPIO,
+            TEST_LCD_DATA7_GPIO,
+        },
+        .bus_width = 8,
+        .max_transfer_bytes = 20,
+    };
+    TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
+
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    esp_lcd_panel_io_i80_config_t io_config = {
+        .cs_gpio_num = TEST_LCD_CS_GPIO,
+        .pclk_hz = 5000000,
+        .trans_queue_depth = 1,
+        .lcd_cmd_bits = 8,
+        .lcd_param_bits = 8,
+    };
+    TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
+
+    uint8_t data[] = { 0x01, 0x02, 0x03, 0x04 };
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, -1, NULL, 0));
+    TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, data, sizeof(data)));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE,
+                      esp_lcd_panel_io_tx_color(io_handle, 0x2C, data, sizeof(data)));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE,
+                      esp_lcd_panel_io_tx_param(io_handle, 0x2A, NULL, 0));
+
+    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
+    TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
+}
+
 #if SOC_LCDCAM_I80_LCD_SUPPORTED
 #include "hal/lcd_ll.h"
 
