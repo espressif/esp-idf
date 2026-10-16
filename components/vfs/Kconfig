@@ -98,10 +98,11 @@ menu "Virtual file system"
         depends on VFS_SUPPORT_IO
 
         config VFS_SEMIHOSTFS_MAX_MOUNT_POINTS
-            int "Host FS: Maximum number of the host filesystem mount points"
+            int "Host FS: Maximum number of the host filesystem mount points (DEPRECATED)"
             default 1
             help
-                Define maximum number of host filesystem mount points.
+                This option is deprecated and has no effect. The number of semihosting mount points
+                is now only limited by the total number of VFS entries.
     endmenu
 
     config VFS_INITIALIZE_DEV_NULL

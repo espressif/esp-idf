@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,17 +18,21 @@ extern "C" {
  * @param base_path VFS path to mount host directory
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if esp_vfs_semihost_register was already called for specified VFS path
- *      - ESP_ERR_NO_MEM if there are no slots to register new mount point
+ *      - ESP_ERR_INVALID_ARG if base_path is NULL or not a valid VFS path prefix
+ *      - ESP_ERR_INVALID_STATE if a VFS is already registered at base_path
+ *      - ESP_ERR_NOT_SUPPORTED if no debugger is attached
+ *      - ESP_ERR_NO_MEM if there are no free VFS slots
  */
 esp_err_t esp_vfs_semihost_register(const char* base_path);
 
 /**
  * @brief Un-register semihosting driver from VFS
  *
+ * @param base_path VFS path previously passed to esp_vfs_semihost_register
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if semihosting driver is not registered in VFS at that path
+ *      - ESP_ERR_INVALID_ARG if base_path is NULL, or the VFS at base_path is not the semihosting driver
+ *      - ESP_ERR_INVALID_STATE if no VFS is registered at base_path
  */
 esp_err_t esp_vfs_semihost_unregister(const char* base_path);
 
