@@ -16,7 +16,7 @@ public:
     ~WL_Ext_Perf() override;
 
     esp_err_t config(WL_Config_s *cfg, Flash_Access *partition) override;
-    esp_err_t init() override;
+    esp_err_t init(bool allow_formatting) override;
 
     size_t get_flash_size() override;
     size_t get_sector_size() override;
