@@ -41,6 +41,9 @@ static esp_err_t wifi_sta_receive(void *buffer, uint16_t len, void *eb)
     esp_netif_receive_t cb = s_wifi_rxcbs[WIFI_IF_STA];
 
     if (netif == NULL || cb == NULL) {
+        if (eb) {
+            esp_wifi_internal_free_rx_buffer(eb);
+        }
         return ESP_ERR_INVALID_STATE;
     }
     return cb(netif, buffer, len, eb);
@@ -53,6 +56,9 @@ static esp_err_t wifi_ap_receive(void *buffer, uint16_t len, void *eb)
     esp_netif_receive_t cb = s_wifi_rxcbs[WIFI_IF_AP];
 
     if (netif == NULL || cb == NULL) {
+        if (eb) {
+            esp_wifi_internal_free_rx_buffer(eb);
+        }
         return ESP_ERR_INVALID_STATE;
     }
     return cb(netif, buffer, len, eb);
@@ -66,6 +72,9 @@ static esp_err_t wifi_nan_receive(void *buffer, uint16_t len, void *eb)
     esp_netif_receive_t cb = s_wifi_rxcbs[WIFI_IF_NAN];
 
     if (netif == NULL || cb == NULL) {
+        if (eb) {
+            esp_wifi_internal_free_rx_buffer(eb);
+        }
         return ESP_ERR_INVALID_STATE;
     }
     return cb(netif, buffer, len, eb);
