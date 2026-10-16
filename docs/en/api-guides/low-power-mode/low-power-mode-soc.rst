@@ -367,10 +367,10 @@ Recommended Configuration
      - 3
 
    * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
-     - OFF
+     - ON
 
    * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
-     - OFF
+     - ON
 
    * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - Internal 150 kHz OSC
@@ -402,7 +402,7 @@ Recommended Configuration
   .. note::
       Configurations not mentioned in the above table are set to default.
 
-.. only:: esp32c5 or esp32c61
+.. only:: esp32s31
 
   .. list-table::
    :header-rows: 1
@@ -427,10 +427,124 @@ Recommended Configuration
      - ON
 
    * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - ON
+
+   * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
+     - Internal 136 kHz OSC
+
+   * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - Power down MAC and baseband (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - Power down CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - Power down flash in light sleep (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
      - OFF
+
+   * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - OFF
+
+   * - ``max_freq_mhz``
+     - The maximum CPU frequency supported by {IDF_TARGET_NAME}
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      Configurations not mentioned in the above table are set to default.
+
+.. only:: esp32c5
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - Configuration Name
+     - Configuration Status
+
+   * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
+     - ON
+
+   * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - ON
 
    * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
      - Internal 150 kHz OSC
+
+   * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - Power down MAC and baseband (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - Power down CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - ON
+
+   * - ``max_freq_mhz``
+     - The maximum CPU frequency supported by {IDF_TARGET_NAME}
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      Configurations not mentioned in the above table are set to default.
+
+  .. note::
+      On {IDF_TARGET_NAME}, SPI flash need remains powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
+
+.. only:: esp32c61
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - Configuration Name
+     - Configuration Status
+
+   * - Enable power management component (:menuitem:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - Enable RTOS Tickless IDLE mode (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - Minimum IDLE Tick count before entering sleep mode (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - Put light sleep related codes in IRAM (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
+     - ON
+
+   * - Put RTOS IDLE related codes in IRAM (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - ON
+
+   * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
+     - Internal 136 kHz OSC
 
    * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
