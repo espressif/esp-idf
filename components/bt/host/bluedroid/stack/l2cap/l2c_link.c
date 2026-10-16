@@ -1006,22 +1006,17 @@ void l2c_link_process_num_bufs (UINT16 num_lm_acl_bufs)
 **
 ** Function         l2c_link_pkts_rcvd
 **
-** Description      This function is called from the HCI transport when it is time
-**                  tto send a "Host ready for packets" command. This is only when
-**                  host to controller flow control is used. If fills in the arrays
-**                  of numbers of packets and handles.
+** Description      Legacy L2CAP entry for Host_Number_Of_Completed_Packets.
+**                  C2H credits are owned by c2h_credit; this stub returns 0.
 **
 ** Returns          count of number of entries filled in
 **
 *******************************************************************************/
 UINT8 l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles)
 {
-    UINT8       num_found = 0;
-
     UNUSED(num_pkts);
     UNUSED(handles);
-
-    return (num_found);
+    return (0);
 }
 
 #if (CLASSIC_BT_INCLUDED == TRUE)

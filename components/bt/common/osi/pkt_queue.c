@@ -78,9 +78,12 @@ void pkt_queue_destroy(struct pkt_queue *queue, pkt_queue_free_cb free_cb)
     osi_free(queue);
 }
 
-pkt_linked_item_t *pkt_queue_dequeue(struct pkt_queue *queue)
+pkt_linked_item_t *pkt_queue_dequeue_and_len(struct pkt_queue *queue, size_t *out_len)
 {
-    if (queue == NULL || queue->length == 0) {
+    if (queue == NULL) {
+        if (out_len != NULL) {
+            *out_len = 0;
+        }
         return NULL;
     }
 
@@ -95,12 +98,20 @@ pkt_linked_item_t *pkt_queue_dequeue(struct pkt_queue *queue)
             queue->length--;
         }
     }
+    if (out_len != NULL) {
+        *out_len = queue->length;
+    }
     osi_mutex_unlock(&queue->lock);
 
     return item;
 }
 
-bool pkt_queue_enqueue(struct pkt_queue *queue, pkt_linked_item_t *item)
+pkt_linked_item_t *pkt_queue_dequeue(struct pkt_queue *queue)
+{
+    return pkt_queue_dequeue_and_len(queue, NULL);
+}
+
+bool pkt_queue_enqueue_and_len(struct pkt_queue *queue, pkt_linked_item_t *item, size_t *out_len)
 {
     if (queue == NULL || item == NULL) {
         return false;
@@ -111,9 +122,17 @@ bool pkt_queue_enqueue(struct pkt_queue *queue, pkt_linked_item_t *item)
     header = &queue->header;
     STAILQ_INSERT_TAIL(header, item, next);
     queue->length++;
+    if (out_len != NULL) {
+        *out_len = queue->length;
+    }
     osi_mutex_unlock(&queue->lock);
 
     return true;
+}
+
+bool pkt_queue_enqueue(struct pkt_queue *queue, pkt_linked_item_t *item)
+{
+    return pkt_queue_enqueue_and_len(queue, item, NULL);
 }
 
 size_t pkt_queue_length(const struct pkt_queue *queue)
