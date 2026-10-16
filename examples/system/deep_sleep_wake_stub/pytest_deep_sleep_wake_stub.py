@@ -6,6 +6,7 @@ import time
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -17,7 +18,9 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2'], indirect=['target']
+    'target',
+    soc_filtered_targets('ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB == 1'),
+    indirect=['target'],
 )
 def test_deep_sleep_wake_stub(config: str, dut: Dut) -> None:
     if config == 'default':
@@ -29,5 +32,5 @@ def test_deep_sleep_wake_stub(config: str, dut: Dut) -> None:
         dut.expect_exact('wake stub: going to deep sleep', timeout=15)
 
         sleep_time = time.time() - start_sleep
-        logging.info('Host measured sleep time at {:.2f}s'.format(sleep_time))
+        logging.info(f'Host measured sleep time at {sleep_time:.2f}s')
         assert 8 < sleep_time < 12  # note: high tolerance as measuring time on the host may have some timing skew
