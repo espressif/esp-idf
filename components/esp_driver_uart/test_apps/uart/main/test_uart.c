@@ -21,6 +21,7 @@
 #endif
 #include "hal/uart_ll.h"
 #include "hal/uart_periph.h"
+#include "soc/gpio_sig_map.h"
 #include "soc/uart_pins.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
@@ -33,6 +34,14 @@
 #define UART_BAUD_11520  (11520)
 #define UART_BAUD_115200 (115200)
 #define TOLERANCE        (0.02)    //baud rate error tolerance 2%.
+
+#if CONFIG_IDF_TARGET_ESP32S31
+TEST_CASE("test ESP32-S31 UART3 GPIO matrix signals", "[uart]")
+{
+    TEST_ASSERT_EQUAL(UART3_TXD_PAD_OUT_IDX, uart_periph_signal[UART_NUM_3].pins[SOC_UART_PERIPH_SIGNAL_TX].signal);
+    TEST_ASSERT_EQUAL(UART3_RXD_PAD_IN_IDX, uart_periph_signal[UART_NUM_3].pins[SOC_UART_PERIPH_SIGNAL_RX].signal);
+}
+#endif
 
 bool port_select(uart_port_param_t *port_param)
 {
