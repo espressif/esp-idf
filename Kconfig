@@ -554,15 +554,43 @@ mainmenu "Espressif IoT Development Framework Configuration"
             default 1 if COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
             default 2 if COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
 
-        config COMPILER_OPTIMIZATION_CHECKS_SILENT
-            bool "Disable messages in ESP_RETURN_ON_* and ESP_EXIT_ON_* macros"
-            default n
+        choice COMPILER_OPTIMIZATION_CHECK_LEVEL
+            prompt "Check macro messages"
+            default COMPILER_OPTIMIZATION_CHECKS_ENABLE
             help
-                If enabled, the error messages will be discarded in following check macros:
-                - ESP_RETURN_ON_ERROR
-                - ESP_EXIT_ON_ERROR
-                - ESP_RETURN_ON_FALSE
-                - ESP_EXIT_ON_FALSE
+                What the ESP_RETURN_ON_*, ESP_RETURN_VOID_ON_* and ESP_GOTO_ON_* check macros print when a
+                check fails:
+
+                - Enabled. The check's message, with its function and line number. This is the default.
+
+                - Address only, to save code size. The error code and the address of the check, which
+                  addr2line or idf.py monitor resolves to its file and line.
+
+                - Silent, to save the most code size. Nothing.
+
+            config COMPILER_OPTIMIZATION_CHECKS_ENABLE
+                prompt "Enabled"
+                bool
+                help
+                    A failed check prints its message, with its function and line number.
+
+            config COMPILER_OPTIMIZATION_CHECKS_ADDRESS_ONLY
+                prompt "Address only (saves code size)"
+                bool
+                help
+                    A failed check prints the error code and the address of the check instead of its
+                    message. Running addr2line on that address with the application ELF, or reading the
+                    log through idf.py monitor, gives the file and line of the check. Values that the
+                    message would have printed are not reported. The messages are left out of the binary,
+                    and each check costs a few bytes for the call that reports it.
+
+            config COMPILER_OPTIMIZATION_CHECKS_SILENT
+                prompt "Silent (saves more code size)"
+                bool
+                help
+                    A failed check prints nothing. The messages are left out of the binary.
+
+        endchoice # checks
 
         menuconfig COMPILER_HIDE_PATHS_MACROS
             bool "Replace ESP-IDF and project paths in binaries"
