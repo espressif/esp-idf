@@ -156,6 +156,75 @@ esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_channel_config_t ch
  */
 esp_err_t dac_priv_channel_disable(dac_channel_t chan_id);
 
+#if DAC_LL_SHARED_HS_LS_CLK
+/*---------------------------------------------------------------
+                  DAC HS/LS clock management
+---------------------------------------------------------------*/
+
+/**
+ * @brief LS clock frequency constraint held by a DAC clock user
+ */
+typedef enum {
+    DAC_LS_CLK_CONSTRAINT_DEFAULT,       /*!< LS clock constraints under default conditions */
+    DAC_LS_CLK_CONSTRAINT_CALIBRATION,   /*!< LS clock constraints during calibration */
+    DAC_LS_CLK_CONSTRAINT_SAMPLE_HOLD,   /*!< LS clock constraints in sample-hold mode */
+    DAC_LS_CLK_CONSTRAINT_COUNT,
+} dac_ls_clk_constraint_t;
+
+/**
+ * @brief Acquire the shared DAC clocks and one LS clock constraint reference
+ *
+ * @note The first user selects the clock source. Further users must request the same source.
+ * @note HS is undivided and LS is dynamically adjusted to satisfy the most restrictive constraint.
+ * @note Sample-hold timing must be configured after acquiring its clock constraint. The LS frequency
+ *       remains fixed while sample-hold references exist, since no other constraint is stricter.
+ *
+ * @param[in] source Requested clock source
+ * @param[in] constraint LS frequency constraint to acquire
+ * @return
+ *      - ESP_ERR_INVALID_ARG   Invalid source or constraint
+ *      - ESP_ERR_INVALID_STATE Conflicting source
+ *      - ESP_ERR_NOT_SUPPORTED Required divider is outside the hardware range
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_acquire(soc_module_clk_t source, dac_ls_clk_constraint_t constraint);
+
+/**
+ * @brief Get the configured DAC HS clock frequency in Hz
+ *
+ * @param[out] freq_hz Actual HS clock frequency
+ * @return
+ *      - ESP_ERR_INVALID_STATE No clock reference is held
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_get_hs_freq_hz(uint32_t *freq_hz);
+
+/**
+ * @brief Get the configured DAC LS clock frequency in Hz
+ *
+ * @param[out] freq_hz Actual LS clock frequency
+ * @return
+ *      - ESP_ERR_INVALID_STATE No clock reference is held
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_get_ls_freq_hz(uint32_t *freq_hz);
+
+/**
+ * @brief Release one DAC clock reference with its matching LS constraint
+ *
+ * @note The last release disables the DAC clocks and releases the source clock. Otherwise, LS is
+ *       updated to satisfy the remaining constraints.
+ *
+ * @param[in] constraint Constraint used for the corresponding successful acquire
+ * @return
+ *      - ESP_ERR_INVALID_ARG   Invalid constraint
+ *      - ESP_ERR_INVALID_STATE No reference exists for this constraint
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_release(dac_ls_clk_constraint_t constraint);
+
+#endif // DAC_LL_SHARED_HS_LS_CLK
+
 /*---------------------------------------------------------------
                 Cosine generator (Sintx) management
 ---------------------------------------------------------------*/
