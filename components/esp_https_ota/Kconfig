@@ -18,6 +18,10 @@ menu "ESP HTTPS OTA"
             - Non-encrypted communication channel with server
             - Accepting firmware upgrade image from server with fake identity
 
+            When this option is disabled, the HTTP client is pinned to HTTPS: an http:// URL or
+            redirect target fails, and any transport_type other than HTTP_TRANSPORT_OVER_SSL (or unset)
+            is rejected.
+
     config ESP_HTTPS_OTA_EVENT_POST_TIMEOUT
         int "Time in millisecond to wait for posting event"
         default 2000
