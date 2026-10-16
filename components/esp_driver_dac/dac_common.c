@@ -126,128 +126,87 @@ esp_err_t dac_priv_channel_disable(dac_channel_t chan_id)
  * frequency.
  */
 
-typedef enum {
-    DAC_SINTX_MODE_TONE = 0,    /* cosine wave output */
-#if SOC_DAC_DC_VIA_SINTX
-    DAC_SINTX_MODE_DC,          /* direct (DC) software output */
-#endif
-} dac_sintx_mode_t;
-
 typedef struct {
     dac_sintx_mode_t mode;
-    uint32_t ref_cnt;
-    uint32_t freq;
+    uint32_t declared_ref_cnt;
+    uint32_t running_ref_cnt;
 } dac_sintx_state_t;
 
 static dac_sintx_state_t s_dac_sintx_state;
 
-typedef struct {
-#if SOC_DAC_SINTX_HAS_TIMER_TARGET
-    uint32_t timer_target;
-#endif
-    uint32_t fstep;
-} dac_sintx_freq_hw_t;
-
-/* Due to frequency aliasing, fstep values above the Nyquist limit (2^16)/2, are effectively invalid */
-#define DAC_SINTX_FSTEP_MAX     0x8000
-
-/**
- * @brief Compute Sintx hardware frequency parameters from the requested tone frequency.
- */
-static __attribute__((const)) dac_sintx_freq_hw_t dac_priv_sintx_calc_freq(uint32_t freq_hz, uint32_t clk_freq_hz)
+esp_err_t dac_priv_sintx_acquire(dac_sintx_mode_t mode)
 {
-#if SOC_DAC_SINTX_HAS_TIMER_TARGET
-#error "Not implemented"
-#else
-    /* freq = clk * fstep / 2^16 */
-    uint64_t fstep = DAC_DIV_ROUND((uint64_t)freq_hz << 16, clk_freq_hz);
-    return (dac_sintx_freq_hw_t) {
-        .fstep = DAC_CLAMP(fstep, 1, DAC_SINTX_FSTEP_MAX),
-    };
-#endif
-}
-
-static inline void dac_priv_sintx_apply_freq(dac_sintx_freq_hw_t hw)
-{
-#if SOC_DAC_SINTX_HAS_TIMER_TARGET
-    dac_ll_cw_set_timer_target(hw.timer_target);
-#endif
-    dac_ll_cw_set_fstep(hw.fstep);
-}
-
-esp_err_t dac_priv_sintx_acquire_tone(uint32_t freq_hz, uint32_t clk_freq_hz, bool force_set_freq)
-{
-    dac_sintx_freq_hw_t hw_freq = dac_priv_sintx_calc_freq(freq_hz, clk_freq_hz);
-
     esp_err_t ret = ESP_OK;
     DAC_ENTER_CRITICAL();
-    if (s_dac_sintx_state.ref_cnt == 0) {
-        // We are the first user. Lock the generator in tone mode and start the generator.
-        s_dac_sintx_state.ref_cnt = 1;
-        s_dac_sintx_state.mode = DAC_SINTX_MODE_TONE;
-        s_dac_sintx_state.freq = freq_hz;
-
-        dac_priv_sintx_apply_freq(hw_freq);
-        dac_ll_cw_enable_tone();
-    } else if (s_dac_sintx_state.mode != DAC_SINTX_MODE_TONE) {
+    if (s_dac_sintx_state.declared_ref_cnt == 0) {
+        // We are the first user. Declare the generator mode without starting it.
+        s_dac_sintx_state.declared_ref_cnt = 1;
+        s_dac_sintx_state.mode = mode;
+    } else if (s_dac_sintx_state.mode != mode) {
         // The generator is busy in other mode. Conflict.
         ret = ESP_ERR_INVALID_STATE;
-    } else if (s_dac_sintx_state.freq == freq_hz) {
-        // Other users already requested the same frequency. Just ride it.
-        s_dac_sintx_state.ref_cnt++;
-    } else if (force_set_freq) {
-        // Re-program the frequency.
-        s_dac_sintx_state.ref_cnt++;
-        s_dac_sintx_state.freq = freq_hz;
-
-        dac_ll_cw_disable();
-        dac_priv_sintx_apply_freq(hw_freq);
-        dac_ll_cw_enable_tone();
     } else {
-        // Other users already requested a different frequency. Conflict.
-        ret = ESP_ERR_INVALID_STATE;
+        s_dac_sintx_state.declared_ref_cnt++;
     }
     DAC_EXIT_CRITICAL();
     return ret;
 }
 
-#if SOC_DAC_DC_VIA_SINTX
-esp_err_t dac_priv_sintx_acquire_dc(void)
+esp_err_t dac_priv_sintx_start(void)
 {
     esp_err_t ret = ESP_OK;
     DAC_ENTER_CRITICAL();
-    if (s_dac_sintx_state.ref_cnt == 0) {
-        // We are the first user. Lock the generator in DC mode and start the generator.
-        s_dac_sintx_state.ref_cnt = 1;
-        s_dac_sintx_state.mode = DAC_SINTX_MODE_DC;
-        dac_ll_cw_enable_dc();
-    } else if (s_dac_sintx_state.mode == DAC_SINTX_MODE_DC) {
-        // Other users already requested the DC mode. Just ride it.
-        s_dac_sintx_state.ref_cnt++;
+    if (s_dac_sintx_state.declared_ref_cnt > s_dac_sintx_state.running_ref_cnt) {
+        if (s_dac_sintx_state.running_ref_cnt == 0) {
+#if DAC_LL_DC_VIA_SINTX
+            if (s_dac_sintx_state.mode == DAC_SINTX_MODE_DC) {
+                dac_ll_cw_enable_dc();
+            } else
+#endif
+            {
+                dac_ll_cw_enable_tone();
+            }
+        }
+        s_dac_sintx_state.running_ref_cnt++;
     } else {
-        // Other users already requested the cosine mode. Conflict.
         ret = ESP_ERR_INVALID_STATE;
     }
     DAC_EXIT_CRITICAL();
     return ret;
 }
-#endif // SOC_DAC_DC_VIA_SINTX
+
+esp_err_t dac_priv_sintx_stop(void)
+{
+    esp_err_t ret = ESP_OK;
+    DAC_ENTER_CRITICAL();
+    if (s_dac_sintx_state.running_ref_cnt == 0) {
+        ret = ESP_ERR_INVALID_STATE;
+    } else if (--s_dac_sintx_state.running_ref_cnt == 0) {
+        dac_ll_cw_disable();
+    }
+    DAC_EXIT_CRITICAL();
+    return ret;
+}
 
 esp_err_t dac_priv_sintx_release(void)
 {
     esp_err_t ret = ESP_OK;
     DAC_ENTER_CRITICAL();
-    if (s_dac_sintx_state.ref_cnt > 0) {
-        s_dac_sintx_state.ref_cnt--;
-        if (s_dac_sintx_state.ref_cnt == 0) {
-            // We are the last user. Stop the generator.
-            dac_ll_cw_disable();
-        }
+    if (s_dac_sintx_state.declared_ref_cnt > s_dac_sintx_state.running_ref_cnt) {
+        s_dac_sintx_state.declared_ref_cnt--;
     } else {
         ret = ESP_ERR_INVALID_STATE;
     }
     DAC_EXIT_CRITICAL();
     return ret;
+}
+
+void dac_priv_sintx_set_freq_unlocked(dac_sintx_freq_hw_t freq_hw)
+{
+#if DAC_LL_SINTX_HAS_TIMER_TARGET
+    dac_ll_cw_set_timer_target(freq_hw.timer_target);
+#endif
+    dac_ll_cw_set_fstep(freq_hw.fstep);
 }
 
 #if CONFIG_DAC_ENABLE_DEBUG_LOG

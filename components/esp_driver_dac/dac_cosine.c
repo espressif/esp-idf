@@ -24,15 +24,23 @@ struct dac_cosine_s {
     _Atomic dac_cosine_fsm_t  fsm;        /*!< FSM state */
 };
 
-static bool dac_cosine_clk_src_is_supported(dac_cosine_clk_src_t clk_src)
+static uint32_t s_cosine_freq_hz;
+static uint32_t s_cosine_freq_ref_cnt;
+
+/* Due to frequency aliasing, fstep values above the Nyquist limit (half the phase accumulator range) are invalid. */
+#define DAC_SINTX_FSTEP_LIMIT  (DAC_LL_SINTX_PHASE_ACC_RANGE / 2)
+
+static __attribute__((const)) dac_sintx_freq_hw_t s_dac_cosine_calc_freq(uint32_t clk_freq_hz, uint32_t cw_freq_hz)
 {
-    const dac_cosine_clk_src_t supported[] = SOC_DAC_COSINE_CLKS;
-    for (size_t i = 0; i < sizeof(supported) / sizeof(supported[0]); i++) {
-        if (clk_src == supported[i]) {
-            return true;
-        }
-    }
-    return false;
+#if DAC_LL_SINTX_HAS_TIMER_TARGET
+#error "Not implemented"
+#else
+    /* freq = clk * fstep / DAC_LL_SINTX_PHASE_ACC_RANGE */
+    uint64_t fstep = DAC_DIV_ROUND((uint64_t)cw_freq_hz * DAC_LL_SINTX_PHASE_ACC_RANGE, clk_freq_hz);
+    return (dac_sintx_freq_hw_t) {
+        .fstep = DAC_CLAMP(fstep, 1, DAC_SINTX_FSTEP_LIMIT),
+    };
+#endif
 }
 
 esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_handle_t *ret_handle)
@@ -45,7 +53,7 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     ESP_RETURN_ON_FALSE(cos_cfg->freq_hz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid cosine wave frequency");
 
     dac_cosine_clk_src_t clk_src = cos_cfg->clk_src ? : DAC_COSINE_CLK_SRC_DEFAULT;
-    ESP_RETURN_ON_FALSE(dac_cosine_clk_src_is_supported(clk_src), ESP_ERR_INVALID_ARG, TAG, "invalid DAC cosine clock source");
+    ESP_RETURN_ON_FALSE(IS_VALID_DAC_CLK_SRC(clk_src, SOC_DAC_COSINE_CLKS), ESP_ERR_INVALID_ARG, TAG, "invalid DAC cosine clock source");
 
     esp_err_t ret = ESP_OK;
 
@@ -62,18 +70,40 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)handle->cfg.clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq),
                       err_clk, TAG, "get clock frequency failed");
 
+    /* Acquire the analog channel */
     ESP_GOTO_ON_ERROR(dac_priv_channel_register(cos_cfg->chan_id), err_clk, TAG, "register dac channel %d failed", cos_cfg->chan_id);
 
-    /* Claim the shared cosine wave generator in tone mode and program the wave frequency (this also
-     * starts the generator). Rejected if the direct-output path is in use or a different frequency
-     * is already set. */
-    ESP_GOTO_ON_ERROR(dac_priv_sintx_acquire_tone(cos_cfg->freq_hz, clk_freq, cos_cfg->flags.force_set_freq), err_dereg, TAG, "acquire cosine wave generator failed");
+    /* Claim the shared generator and its frequency configuration. */
+    ESP_GOTO_ON_ERROR(dac_priv_sintx_acquire(DAC_SINTX_MODE_TONE), err_chan, TAG, "SINTX is occupied by another mode");
 
+    dac_sintx_freq_hw_t freq_hw = s_dac_cosine_calc_freq(clk_freq, cos_cfg->freq_hz);
+    DAC_ENTER_CRITICAL();
+    if (s_cosine_freq_ref_cnt == 0) {
+        // first user
+        s_cosine_freq_ref_cnt = 1;
+        s_cosine_freq_hz = cos_cfg->freq_hz;
+        dac_priv_sintx_set_freq_unlocked(freq_hw);
+    } else if (s_cosine_freq_hz == cos_cfg->freq_hz) {
+        // same frequency
+        s_cosine_freq_ref_cnt++;
+    } else if (cos_cfg->flags.force_set_freq) {
+        // force set
+        s_cosine_freq_ref_cnt++;
+        s_cosine_freq_hz = cos_cfg->freq_hz;
+        dac_priv_sintx_set_freq_unlocked(freq_hw);
+    } else {
+        // conflict, and force_set_freq is not set.
+        ret = ESP_ERR_INVALID_STATE;
+    }
+    DAC_EXIT_CRITICAL();
+    ESP_GOTO_ON_ERROR(ret, err_sintx, TAG, "frequency conflict");
+
+    /* Configure the per-channel post-processing pipeline. */
     int16_t offset = cos_cfg->offset;
     if (cos_cfg->phase == DAC_COSINE_PHASE_180) {
         offset = -offset;
     }
-#if SOC_DAC_SINTX_LUT_SIGNED
+#if DAC_LL_SINTX_LUT_SIGNED
     const int16_t base_offset = 0;
     /* Hardware DC register is signed: -128~127 */
     const int16_t min_offset = -128, max_offset = 127;
@@ -89,7 +119,6 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
         offset = (offset < min_offset) ? min_offset : max_offset;
     }
 
-    /* Set the per-channel cosine wave parameters. */
     DAC_ENTER_CRITICAL();
     dac_ll_cw_set_atten(handle->cfg.chan_id, handle->cfg.atten);
     dac_ll_cw_set_phase(handle->cfg.chan_id, handle->cfg.phase);
@@ -99,7 +128,9 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     *ret_handle = handle;
     return ESP_OK;
 
-err_dereg:
+err_sintx:
+    dac_priv_sintx_release();
+err_chan:
     dac_priv_channel_deregister(cos_cfg->chan_id);
 err_clk:
     esp_clk_tree_release_src((soc_module_clk_t)handle->cfg.clk_src);
@@ -116,9 +147,12 @@ esp_err_t dac_cosine_del_channel(dac_cosine_handle_t handle)
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&handle->fsm, &expected_fsm, DAC_COS_FSM_WAIT),
                         ESP_ERR_INVALID_STATE, TAG, "dac cosine is running");
 
+    DAC_ENTER_CRITICAL();
+    s_cosine_freq_ref_cnt--;
+    DAC_EXIT_CRITICAL();
+    ESP_RETURN_ON_ERROR(dac_priv_sintx_release(), TAG, "release dac sintx generator failed");
     ESP_RETURN_ON_ERROR(dac_priv_channel_deregister(handle->cfg.chan_id), TAG,
                         "deregister dac channel %d failed", handle->cfg.chan_id);
-    ESP_RETURN_ON_ERROR(dac_priv_sintx_release(), TAG, "release dac sintx generator failed");
     ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)handle->cfg.clk_src), TAG, "disable clock failed");
     free(handle);
 
@@ -134,12 +168,14 @@ esp_err_t dac_cosine_start(dac_cosine_handle_t handle)
                         ESP_ERR_INVALID_STATE, TAG, "dac cosine already started");
 
     esp_err_t ret = ESP_OK;
-    /* The generator is already running; starting only powers on the pad so the wave reaches the output. */
-    ESP_GOTO_ON_ERROR(dac_priv_channel_enable(handle->cfg.chan_id, handle->cfg.chan_cfg, DAC_DATA_SOURCE_COSINE), err,
+    ESP_GOTO_ON_ERROR(dac_priv_sintx_start(), err, TAG, "start dac sintx generator failed");
+    ESP_GOTO_ON_ERROR(dac_priv_channel_enable(handle->cfg.chan_id, handle->cfg.chan_cfg, DAC_DATA_SOURCE_COSINE), err_sintx,
                       TAG, "enable dac channel %d failed", handle->cfg.chan_id);
 
     atomic_store(&handle->fsm, DAC_COS_FSM_ENABLED);
     return ESP_OK;
+err_sintx:
+    dac_priv_sintx_stop();
 err:
     atomic_store(&handle->fsm, DAC_COS_FSM_REGISTERED);
     return ret;
@@ -154,12 +190,14 @@ esp_err_t dac_cosine_stop(dac_cosine_handle_t handle)
                         ESP_ERR_INVALID_STATE, TAG, "dac cosine already stopped");
 
     esp_err_t ret = ESP_OK;
-    /* Power off the pad; the generator keeps running */
     ESP_GOTO_ON_ERROR(dac_priv_channel_disable(handle->cfg.chan_id), err,
                       TAG, "disable dac channel %d failed", handle->cfg.chan_id);
+    ESP_GOTO_ON_ERROR(dac_priv_sintx_stop(), err_reenable, TAG, "stop dac sintx generator failed");
 
     atomic_store(&handle->fsm, DAC_COS_FSM_REGISTERED);
     return ESP_OK;
+err_reenable:
+    dac_priv_channel_enable(handle->cfg.chan_id, handle->cfg.chan_cfg, DAC_DATA_SOURCE_COSINE);
 err:
     atomic_store(&handle->fsm, DAC_COS_FSM_ENABLED);
     return ret;
