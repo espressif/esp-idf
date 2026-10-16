@@ -22,6 +22,15 @@ extern "C" {
 #endif
 
 /**
+ * Note: SOC_ECDSA_SUPPORT_CURVE_P384 describes the silicon capability; ECDSA_LL_HAS_CURVE_P384
+ * reflects availability relative to the configured min revision.
+ */
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+// Rev 3.00+: the ECDSA peripheral supports the SECP384R1 curve
+#define ECDSA_LL_HAS_CURVE_P384    (1)
+#endif
+
+/**
  * @brief Memory blocks of ECDSA parameters
  */
 typedef enum {
@@ -223,9 +232,16 @@ static inline void ecdsa_ll_set_curve(ecdsa_curve_t curve)
     switch (curve) {
     case ECDSA_CURVE_SECP192R1:
     case ECDSA_CURVE_SECP256R1:
-    case ECDSA_CURVE_SECP384R1:
     case ECDSA_CURVE_SM2:
         REG_SET_FIELD(ECDSA_CONF_REG, ECDSA_ECC_CURVE, curve);
+        break;
+    case ECDSA_CURVE_SECP384R1:
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300
+        // The register layout of revisions < v3.0 has no curve select value for SECP384R1
+        HAL_ASSERT(false && "SECP384R1 is not supported on ESP32-P4 revisions < v3.0");
+#else
+        REG_SET_FIELD(ECDSA_CONF_REG, ECDSA_ECC_CURVE, curve);
+#endif
         break;
     default:
         HAL_ASSERT(false && "Unsupported curve");
@@ -510,11 +526,16 @@ static inline bool ecdsa_ll_is_mpi_required(void)
 
 /**
  * @brief Check if the ECDSA peripheral is supported on this chip revision
- * For ESP32-P4, ECDSA is only supported on eco5+ (major 3, minor 0+)
+ * For ESP32-P4, ECDSA is only supported on eco5+ (major 3, minor 0+),
+ * unless CONFIG_HAL_ECDSA_ALLOW_ESP32P4_PRE_ECO5 is enabled
  */
 static inline bool ecdsa_ll_is_supported(void)
 {
+#if HAL_CONFIG(ECDSA_ALLOW_ESP32P4_PRE_ECO5)
+    return true;
+#else
     return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300);
+#endif
 }
 
 #ifdef __cplusplus
