@@ -374,7 +374,7 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
 
     ehdr = (struct eap_hdr *)wpabuf_head(reqData);
     plen = be_to_host16(ehdr->length);
-    if (plen > wpabuf_len(reqData)) {
+    if (plen > wpabuf_len(reqData) || plen < sizeof(*ehdr) + 1) {
         return ESP_FAIL;
     }
 
