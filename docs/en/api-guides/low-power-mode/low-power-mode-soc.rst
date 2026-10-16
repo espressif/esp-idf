@@ -402,7 +402,7 @@ Recommended Configuration
   .. note::
       Configurations not mentioned in the above table are set to default.
 
-.. only:: esp32c5
+.. only:: esp32c5 or esp32c61
 
   .. list-table::
    :header-rows: 1

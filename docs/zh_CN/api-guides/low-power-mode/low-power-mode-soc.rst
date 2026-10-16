@@ -402,7 +402,7 @@ Light-sleep 模式配置
   .. note::
       上表中不涉及的配置均是默认。
 
-.. only:: esp32c5
+.. only:: esp32c5 or esp32c61
 
   .. list-table::
    :header-rows: 1
