@@ -28,7 +28,8 @@ typedef struct {
     twai_timing_basic_config_t data_timing; /**< Optional, timing configuration for FD data stage */
     uint32_t timestamp_resolution_hz;       /**< Timebase frequency (in Hz), used for RX frame timestamps and scheduled TX trigger times, set 0 to disable the timestamp feature */
     int8_t fail_retry_cnt;                  /**< Hardware retry limit if failed, range [-1:15], -1 for re-trans forever */
-    uint32_t tx_queue_depth;                /**< Depth of the transmit queue */
+    uint32_t tx_queue_depth;                /**< Depth of the transmit queue, set 0 to send without a queue, so that only one frame is
+                                                 accepted at a time and `twai_node_transmit` blocks until the hardware is free */
     int intr_priority;                      /**< Interrupt priority, [0:3] */
     struct {
         uint32_t enable_self_test: 1;       /**< Transmission does not require acknowledgment. Use this mode for self testing */
