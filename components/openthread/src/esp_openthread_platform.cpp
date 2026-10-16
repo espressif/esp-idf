@@ -71,6 +71,49 @@ esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func u
     return ESP_OK;
 }
 
+void esp_openthread_fd_set(esp_openthread_mainloop_context_t *mainloop, int fd, int events)
+{
+    if (mainloop == NULL || fd < 0 || events == 0) {
+        return;
+    }
+    if (events & ESP_OPENTHREAD_MAINLOOP_FD_READ) {
+        FD_SET(fd, &mainloop->read_fds);
+    }
+    if (events & ESP_OPENTHREAD_MAINLOOP_FD_WRITE) {
+        FD_SET(fd, &mainloop->write_fds);
+    }
+    if (events & ESP_OPENTHREAD_MAINLOOP_FD_ERROR) {
+        FD_SET(fd, &mainloop->error_fds);
+    }
+}
+
+bool esp_openthread_fd_isset(const esp_openthread_mainloop_context_t *mainloop, int fd, int events)
+{
+    if (mainloop == NULL || fd < 0 || events == 0) {
+        return false;
+    }
+    if ((events & ESP_OPENTHREAD_MAINLOOP_FD_READ) && FD_ISSET(fd, &mainloop->read_fds)) {
+        return true;
+    }
+    if ((events & ESP_OPENTHREAD_MAINLOOP_FD_WRITE) && FD_ISSET(fd, &mainloop->write_fds)) {
+        return true;
+    }
+    if ((events & ESP_OPENTHREAD_MAINLOOP_FD_ERROR) && FD_ISSET(fd, &mainloop->error_fds)) {
+        return true;
+    }
+    return false;
+}
+
+void esp_openthread_mainloop_update_fd(esp_openthread_mainloop_context_t *mainloop, int fd)
+{
+    if (mainloop == NULL || fd < 0) {
+        return;
+    }
+    if (fd > mainloop->max_fd) {
+        mainloop->max_fd = fd;
+    }
+}
+
 void esp_openthread_platform_workflow_unregister(const char *name)
 {
     if (name == NULL) {
