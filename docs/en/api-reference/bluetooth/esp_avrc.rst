@@ -15,6 +15,8 @@ Application Examples
 
 - :example:`bluetooth/bluedroid/classic_bt/avrcp_ct_cover_art` demonstrates how to implement Audio/Video Remote Control Profile to get and display cover art image.
 
+- :example:`bluetooth/bluedroid/classic_bt/avrcp_ct_passthrough_cmd` demonstrates how to implement Audio/Video Remote Control Profile to use passthrough commands.
+
 API Reference
 -------------
 
