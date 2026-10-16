@@ -92,6 +92,8 @@ After startup, HCI messages can be exchanged over the configured HCI UART.
 
 The console REPL on the log UART is optional (`CONFIG_ENABLE_HCI_CONSOLE`, default off). The Bluetooth controller still runs without it. Extra command groups can be enabled separately.
 
+To enable the REPL, run `idf.py menuconfig` and select **Example Configuration → Enable HCI console REPL**.
+
 | Group | Commands | Enabled by |
 |-------|----------|------------|
 | Common (BLE and BR/EDR) | `reconfig_hci_uart_pin -t <tx> -r <rx>` | `CONFIG_ENABLE_HCI_CONSOLE` |
