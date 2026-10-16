@@ -332,7 +332,7 @@ esp_err_t esp_eth_stop(esp_eth_handle_t hdl)
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_START;
     ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_STOP),
                       ESP_ERR_INVALID_STATE, err, TAG, "driver not started yet");
-    ESP_GOTO_ON_ERROR(esp_timer_stop(eth_driver->check_link_timer), err, TAG, "stop link timer failed");
+    ESP_GOTO_ON_ERROR(esp_timer_stop_blocking(eth_driver->check_link_timer, portMAX_DELAY), err, TAG, "stop link timer failed");
 
     eth_link_t expected_link = ETH_LINK_UP;
     if (atomic_compare_exchange_strong(&eth_driver->link, &expected_link, ETH_LINK_DOWN)){
