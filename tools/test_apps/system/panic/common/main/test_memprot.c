@@ -13,6 +13,9 @@
 #include "esp_system.h"
 #include "esp_macros.h"
 #include "esp_log.h"
+#include "esp_heap_caps.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 
@@ -245,6 +248,27 @@ void test_rtc_fast_reg3_execute_violation(void)
     printf("RTC_MEM (Fast): Execute operation | Address: %p\n", test_addr);
     run_function(test_addr);
 }
+
+void test_rtc_fast_text_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)((uint32_t)(&_rtc_text_end) - 0x04);
+    printf("RTC_MEM (Fast): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+void test_rtc_fast_reserved_execute_violation(void)
+{
+    extern int _rtc_text_start;
+    if ((uint32_t)(&_rtc_text_start) > SOC_RTC_IRAM_LOW) {
+        const uint32_t ret_insn = 0x00008067;
+        uint32_t *test_addr = (uint32_t *)((uint32_t)(&_rtc_text_start) - 0x04);
+        *test_addr = ret_insn;
+        printf("RTC_MEM (Fast): Execute operation | Address: %p\n", test_addr);
+        run_function((void *)test_addr);
+    } else {
+        printf("RTC_MEM (Fast): No reserved area before .text\n");
+    }
+}
 #endif
 
 #if CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
@@ -353,6 +377,24 @@ void test_non_cache_drom_reg_execute_violation(void)
     printf("Flash (DROM): Non-cacheable Execute operation | Address: %p\n", test_addr);
     run_function(test_addr);
 }
+
+static void __attribute__((noinline)) flash_func(void)
+{
+}
+
+void test_non_cache_irom_reg_execute_violation(void)
+{
+    void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR((void *)flash_func);
+    printf("Flash (IROM): Non-cacheable Execute operation | Address: %p\n", test_addr);
+    run_function(test_addr);
+}
+
+void test_non_cache_irom_mask_reg_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_IROM_MASK_LOW + 0x04);
+    printf("ROM (IROM Mask): Non-cacheable Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
 #endif
 
 // Check if the memory alignment gaps added to the heap are correctly configured
@@ -410,8 +452,71 @@ void test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(void)
         printf("SPIRAM (DROM): Non-cacheable DROM alignment gap not added into heap\n");
     }
 }
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+void test_non_cache_spiram_xip_heap_execute_violation(void)
+{
+    extern int _rodata_reserved_end;
+    uint8_t *instr = heap_caps_malloc(SOC_MMU_PAGE_SIZE, MALLOC_CAP_SPIRAM);
+    assert(instr != NULL);
+    assert((uint32_t)instr >= ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end)));
+
+    void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR(instr);
+    memcpy(test_addr, &foo_d, 1024);
+    printf("SPIRAM (Heap): Non-cacheable Execute operation | Address: %p\n", test_addr);
+    run_function(test_addr);
+}
+#endif
 #endif
 #endif /* CONFIG_SPIRAM_RODATA && !CONFIG_IDF_TARGET_ESP32S2 */
+
+#if CONFIG_SPIRAM
+void test_spiram_heap_execute_violation(void)
+{
+    uint8_t *instr = heap_caps_malloc(SOC_MMU_PAGE_SIZE, MALLOC_CAP_SPIRAM);
+    assert(instr != NULL);
+
+    printf("SPIRAM (Heap): Execute operation | Address: %p\n", instr);
+
+    memcpy(instr, &foo_d, 1024);
+    void *test_addr = instr;
+    run_function(test_addr);
+}
+
+void test_spiram_heap_end_execute_violation(void)
+{
+    uintptr_t end = 0;
+    size_t size;
+    while ((size = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM)) >= 1024) {
+        uint8_t *block = heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+        assert(block != NULL);
+        if ((uintptr_t)block + size > end) {
+            end = (uintptr_t)block + size;
+        }
+    }
+    assert(end != 0);
+
+    void *test_addr = (void *)((end - 1024) & ~3);
+    printf("SPIRAM (Heap end): Execute operation | Address: %p\n", test_addr);
+
+    memcpy(test_addr, &foo_d, 1024);
+    run_function(test_addr);
+}
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+void test_non_cache_spiram_heap_execute_violation(void)
+{
+    uint8_t *instr = heap_caps_malloc(SOC_MMU_PAGE_SIZE, MALLOC_CAP_SPIRAM);
+    assert(instr != NULL);
+
+    void *test_addr = (void *)CACHE_LL_L2MEM_NON_CACHE_ADDR(instr);
+    printf("SPIRAM (Heap): Non-cacheable Execute operation | Address: %p\n", test_addr);
+
+    memcpy(test_addr, &foo_d, 1024);
+    run_function(test_addr);
+}
+#endif
+#endif /* CONFIG_SPIRAM */
 
 #ifdef CONFIG_SOC_CPU_HAS_PMA
 void test_invalid_memory_region_write_violation(void)
@@ -429,3 +534,47 @@ void test_invalid_memory_region_execute_violation(void)
     run_function(test_addr);
 }
 #endif
+
+#if !CONFIG_FREERTOS_UNICORE
+static void (*s_core1_test)(void);
+static TaskHandle_t s_core1_waiter;
+
+static void core1_test_task(void *arg)
+{
+    s_core1_test();
+    xTaskNotifyGive(s_core1_waiter);
+    vTaskDelete(NULL);
+}
+
+static void run_on_core1(void (*test)(void))
+{
+    s_core1_test = test;
+    s_core1_waiter = xTaskGetCurrentTaskHandle();
+    xTaskCreatePinnedToCore(core1_test_task, "memprot_core1", 4096, NULL, 5, NULL, 1);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+}
+
+void test_iram_reg3_write_violation_core1(void)
+{
+    run_on_core1(test_iram_reg3_write_violation);
+}
+
+void test_dram_reg2_execute_violation_core1(void)
+{
+    run_on_core1(test_dram_reg2_execute_violation);
+}
+
+#if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED
+void test_rtc_fast_text_write_violation_core1(void)
+{
+    run_on_core1(test_rtc_fast_text_write_violation);
+}
+#endif
+
+#if CONFIG_ESP_SYSTEM_MEMPROT
+void test_drom_reg_write_violation_core1(void)
+{
+    run_on_core1(test_drom_reg_write_violation);
+}
+#endif
+#endif /* !CONFIG_FREERTOS_UNICORE */
