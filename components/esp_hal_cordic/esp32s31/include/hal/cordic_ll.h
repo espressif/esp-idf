@@ -16,7 +16,9 @@
 #include "soc/hp_sys_clkrst_struct.h"
 
 #define CORDIC_LL_GET_HW()            (&CORDIC)
-#define CORDIC_LL_PRECISION_MAX       0xF
+#define CORDIC_LL_ITERATION_MIN       4    /*!< Smallest iteration count. CORDIC_PRES steps by 4 */
+#define CORDIC_LL_ITERATION_MAX       24   /*!< Largest iteration count (CORDIC_PRES = 5) */
+#define CORDIC_LL_SQRT_ITERATION_MAX  12   /*!< Square root only supports CORDIC_PRES 0..2 */
 #define CORDIC_LL_INST_NUM            1U   /*!< Number of CORDIC hardware instances on this chip */
 
 #ifdef __cplusplus
@@ -108,12 +110,25 @@ static inline void cordic_ll_set_clock_div(uint32_t integer, uint32_t numerator,
 }
 
 /**
+ * @brief Iteration count is legal for this function
+ *
+ * Counts are 4, 8, 12, 16, 20, 24. Square root stops at 12.
+ */
+static inline bool cordic_ll_iteration_count_valid(cordic_func_t function, uint16_t iteration_count)
+{
+    uint16_t max_iter = (function == ESP_CORDIC_FUNC_SQUARE_ROOT) ? CORDIC_LL_SQRT_ITERATION_MAX : CORDIC_LL_ITERATION_MAX;
+    return iteration_count >= CORDIC_LL_ITERATION_MIN &&
+           iteration_count <= max_iter &&
+           (iteration_count % CORDIC_LL_ITERATION_MIN) == 0;
+}
+
+/**
  * @brief Program the calculation configuration fields of csr_cfg with one RMW
  *
  * @param hw        Pointer to the CORDIC hardware register structure
  * @param function  Function type to calculate
  * @param mode      Data transfer mode (register or DMA)
- * @param precision Iteration count programmed into press (already decremented by the caller)
+ * @param precision Iteration count. Mapped to CORDIC_PRES: 4, 8, 12, 16, 20, 24
  * @param scale     Input scale exponent
  * @param arg_num     Number of input arguments (1 or 2)
  * @param res_num     Number of result outputs (1 or 2)
@@ -170,7 +185,7 @@ static inline void cordic_ll_set_calculate_config(cordic_dev_t *hw,
     }
 
     csr.work_mode = mode;
-    csr.press = precision;
+    csr.press = (precision / CORDIC_LL_ITERATION_MIN) - 1;
     csr.scale = scale;
     csr.arg_num = arg_num - 1;
     csr.res_num = res_num - 1;
