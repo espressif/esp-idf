@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,11 @@ typedef struct {
     void (* _timer_arm_us)(void *ptimer, uint32_t us, bool repeat);
     int (* _debug_matrix_init)(int event, int signal, bool rev);
     int (* _xtal_freq_get)(void);
+#if CONFIG_IDF_TARGET_ESP32C6
+    // this function is only used on esp32c6
+    int (* _ieee802154_intr_disable)(void);
+    int (* _ieee802154_intr_enable)(void);
+#endif
     int32_t _magic;
 } coex_adapter_funcs_t;
 
