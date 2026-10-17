@@ -803,8 +803,8 @@ static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     {
         bool clk_cal_before_sleep = true;
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
-        /* An invalid value 0 means too short light sleep or no sleep at all */
-        clk_cal_before_sleep = (s_config.rtc_clk_cal_period == 0);
+        /* Deep sleep always calibrates; an invalid value 0 means too short light sleep or no sleep at all */
+        clk_cal_before_sleep = is_dslp || (s_config.rtc_clk_cal_period == 0);
 #endif
         if (clk_cal_before_sleep) {
             s_config.rtc_clk_cal_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
