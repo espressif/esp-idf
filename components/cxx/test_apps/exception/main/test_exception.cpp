@@ -1,8 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include "unity.h"
 #include "unity_test_utils.h"
@@ -202,6 +204,83 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions]")
     // expect abort() due to lack of memory for new exception
     TEST_ASSERT_TRUE(0 == 1);
 #endif
+}
+
+static int s_frames_unwound;
+
+struct FrameGuard {
+    ~FrameGuard()
+    {
+        s_frames_unwound++;
+    }
+};
+
+static __attribute__((noinline)) void throw_from_depth(int depth)
+{
+    FrameGuard guard;
+    if (depth == 0) {
+        throw 42;
+    }
+    throw_from_depth(depth - 1);
+}
+
+TEST_CASE("c++ exception unwinds several frames", "[cxx] [exceptions]")
+{
+    s_frames_unwound = 0;
+    int thrown_value = 0;
+    try {
+        throw_from_depth(5);
+    } catch (int e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(42, thrown_value);
+    TEST_ASSERT_EQUAL(6, s_frames_unwound);
+}
+
+/* libgcc's struct dwarf_eh_bases (unwind-dw2-fde.h) */
+struct dwarf_eh_bases {
+    void *tbase;
+    void *dbase;
+    void *func;
+};
+
+extern "C" const void *_Unwind_Find_FDE(void *pc, dwarf_eh_bases *bases);
+extern "C" const uint8_t __eh_frame_hdr_start[];
+extern "C" const uint8_t __eh_frame[];
+
+struct EhFrameHdr {
+    uint8_t version;
+    uint8_t eh_frame_ptr_enc;
+    uint8_t fde_count_enc;
+    uint8_t table_enc;
+    int32_t eh_frame_ptr;
+    uint32_t fde_count;
+};
+
+struct EhFrameHdrEntry {
+    int32_t initial_location;
+    int32_t fde;
+};
+
+TEST_CASE("c++ exceptions find each FDE listed in .eh_frame_hdr", "[cxx] [exceptions]")
+{
+    const EhFrameHdr *hdr = (const EhFrameHdr *)__eh_frame_hdr_start;
+    TEST_ASSERT_EQUAL(1, hdr->version);
+    TEST_ASSERT_GREATER_THAN(0, hdr->fde_count);
+
+    /* libgcc only searches the table if it describes the .eh_frame registered at startup */
+    const uint8_t *eh_frame = __eh_frame_hdr_start + offsetof(EhFrameHdr, eh_frame_ptr) + hdr->eh_frame_ptr;
+    TEST_ASSERT_EQUAL_PTR(__eh_frame, eh_frame);
+
+    /* The table is sorted by initial location, relative to the start of .eh_frame_hdr */
+    const EhFrameHdrEntry *table = (const EhFrameHdrEntry *)(hdr + 1);
+    uintptr_t base = (uintptr_t)hdr;
+    for (uint32_t i = 0; i < hdr->fde_count; i++) {
+        dwarf_eh_bases bases = {};
+        uintptr_t pc = base + table[i].initial_location;
+        TEST_ASSERT_EQUAL_PTR(base + table[i].fde, _Unwind_Find_FDE((void *)pc, &bases));
+        TEST_ASSERT_EQUAL_PTR(pc, bases.func);
+    }
 }
 
 extern "C" void app_main(void)
