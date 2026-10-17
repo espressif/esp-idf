@@ -460,7 +460,7 @@ esp_err_t esp_cam_ctlr_dvp_deinit(int ctlr_id)
         cam_ll_enable_clk(ctlr_id, false);
     };
 
-    PERIPH_RCC_ACQUIRE_ATOMIC(cam_periph_signals.buses[ctlr_id].module, ref_count) {
+    PERIPH_RCC_RELEASE_ATOMIC(cam_periph_signals.buses[ctlr_id].module, ref_count) {
         if (ref_count == 0) {
             cam_ll_reset_register(ctlr_id);
             cam_ll_enable_bus_clock(ctlr_id, false);
