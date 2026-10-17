@@ -1748,6 +1748,10 @@ esp_err_t esp_light_sleep_start(void)
     // light sleep wakeup flag only makes sense after a successful light sleep
     s_light_sleep_wakeup = (err == ESP_OK);
 
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+    uint32_t rtc_clk_cal_period_after_wakeup = s_config.rtc_clk_cal_period;
+#endif
+
     // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
 
@@ -1764,7 +1768,7 @@ esp_err_t esp_light_sleep_start(void)
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
         if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) {
             /* We use the invalid value 0 to indicate that calibration is required before the next sleep */
-            s_config.rtc_clk_cal_period = (rtc_time_diff >= RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US) ? rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES) : 0;
+            rtc_clk_cal_period_after_wakeup = (rtc_time_diff >= RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US) ? rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES) : 0;
         }
 #endif
     } else {
@@ -1779,6 +1783,11 @@ esp_err_t esp_light_sleep_start(void)
     // for the PSRAM to resume until here, in order to reuse the time overhead
     // of the wake-up process as much as possible.
     esp_psram_impl_resume_from_halfsleep_mode(s_config.rtc_clk_cal_period);
+#endif
+
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+    /* Store the new period only after the wakeup path above no longer needs a valid one */
+    s_config.rtc_clk_cal_period = rtc_clk_cal_period_after_wakeup;
 #endif
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
