@@ -987,7 +987,6 @@ static void wifi_prov_mgr_event_handler_internal(
          * run the event handler with disconnection reason as data */
         if (prov_ctx->wifi_state == WIFI_PROV_STA_DISCONNECTED) {
             prov_ctx->prov_state = WIFI_PROV_STATE_FAIL;
-            wifi_prov_sta_fail_reason_t reason = prov_ctx->wifi_disconnect_reason;
             wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
             ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
 
@@ -1014,6 +1013,7 @@ static void wifi_prov_mgr_event_handler_internal(
             }
             if (prov_ctx->wifi_state == WIFI_PROV_STA_DISCONNECTED) {
                 /* Execute user registered callback handler */
+                wifi_prov_sta_fail_reason_t reason = prov_ctx->wifi_disconnect_reason;
                 execute_event_cb(WIFI_PROV_CRED_FAIL, (void *)&reason, sizeof(reason));
             }
         }
