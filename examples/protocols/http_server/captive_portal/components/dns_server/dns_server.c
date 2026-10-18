@@ -13,6 +13,7 @@
 #include "esp_netif.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -108,7 +109,11 @@ static char *parse_dns_name(char *raw_name, const char *raw_end, char *parsed_na
 // Parses the DNS request and prepares a DNS response with the IP of the softAP
 static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t dns_reply_max_len, dns_server_handle_t h)
 {
-    if (req_len < sizeof(dns_header_t) || req_len > dns_reply_max_len) {
+    // Too short to be a DNS message, ignore
+    if (req_len < sizeof(dns_header_t)) {
+        return 0;
+    }
+    if (req_len > dns_reply_max_len) {
         return -1;
     }
 
@@ -154,7 +159,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     for (int qd_i = 0; qd_i < qd_count; qd_i++) {
         char *name_end_ptr = parse_dns_name(cur_qd_ptr, req_end, name, sizeof(name));
         if (name_end_ptr == NULL || name_end_ptr + sizeof(dns_question_t) > req_end) {
-            ESP_LOGE(TAG, "Failed to parse DNS question %d", qd_i);
+            ESP_LOGW(TAG, "Failed to parse DNS question %d", qd_i);
             return -1;
         }
 
@@ -268,6 +273,8 @@ void dns_server_task(void *pvParameters)
                     continue;
                 }
                 ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
+                // Don't spin re-creating the socket if the error persists
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 break;
             }
             // Data received
@@ -282,14 +289,13 @@ void dns_server_task(void *pvParameters)
                 char reply[DNS_MAX_LEN];
                 int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN, handle);
 
-                ESP_LOGI(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
+                ESP_LOGD(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
                 if (reply_len < 0) {
-                    ESP_LOGE(TAG, "Failed to prepare a DNS reply");
+                    ESP_LOGW(TAG, "Failed to prepare a DNS reply");
                 } else if (reply_len > 0) {   // 0: a reply or not a standard query, ignored
                     int err = sendto(sock, reply, reply_len, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
                     if (err < 0) {
-                        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-                        break;
+                        ESP_LOGW(TAG, "Error occurred during sending: errno %d", errno);
                     }
                 }
             }
@@ -299,7 +305,8 @@ void dns_server_task(void *pvParameters)
         shutdown(sock, 0);
         close(sock);
     }
-    // stop_dns_server() may free the handle as soon as this is given
+    // The task is gone even if it gave up by itself; stop_dns_server() may free the handle as soon as this is given
+    handle->started = false;
     xSemaphoreGive(handle->exited);
     vTaskDelete(NULL);
 }
