@@ -25,7 +25,7 @@
 #define DNS_MAX_LEN (256)
 
 #define OPCODE_MASK (0x7800)
-#define QR_FLAG (1 << 7)
+#define QR_FLAG (0x8000)
 #define AD_FLAG (0x0020)
 #define QD_TYPE_A (0x0001)
 #define ANS_TTL_SEC (300)
@@ -127,7 +127,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
              ntohs(header->id), ntohs(header->flags), ntohs(header->qd_count));
 
     // Not a query, so that a spoofed reply can't make two servers answer each other forever
-    if (header->flags & QR_FLAG) {
+    if (ntohs(header->flags) & QR_FLAG) {
         return 0;
     }
 
@@ -137,7 +137,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     }
 
     // Set question response flag
-    header->flags |= QR_FLAG;
+    header->flags |= htons(QR_FLAG);
     // The server does not validate DNSSEC, so it must not echo the request's AD bit
     header->flags &= ~htons(AD_FLAG);
 
@@ -159,7 +159,7 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     for (int qd_i = 0; qd_i < qd_count; qd_i++) {
         char *name_end_ptr = parse_dns_name(cur_qd_ptr, req_end, name, sizeof(name));
         if (name_end_ptr == NULL || name_end_ptr + sizeof(dns_question_t) > req_end) {
-            ESP_LOGW(TAG, "Failed to parse DNS question %d", qd_i);
+            ESP_LOGD(TAG, "Failed to parse DNS question %d", qd_i);
             return -1;
         }
 
@@ -274,7 +274,7 @@ void dns_server_task(void *pvParameters)
                 }
                 ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
                 // Don't spin re-creating the socket if the error persists
-                vTaskDelay(pdMS_TO_TICKS(1000));
+                vTaskDelay(pdMS_TO_TICKS(RECV_TIMEOUT_SEC * 1000));
                 break;
             }
             // Data received
@@ -292,7 +292,7 @@ void dns_server_task(void *pvParameters)
                 ESP_LOGD(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
                 if (reply_len < 0) {
                     ESP_LOGW(TAG, "Failed to prepare a DNS reply");
-                } else if (reply_len > 0) {   // 0: a reply or not a standard query, ignored
+                } else if (reply_len > 0) {   // 0: too short, a reply, or not a standard query; ignored
                     int err = sendto(sock, reply, reply_len, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
                     if (err < 0) {
                         ESP_LOGW(TAG, "Error occurred during sending: errno %d", errno);
