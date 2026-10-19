@@ -1079,6 +1079,12 @@ static inline void emac_ll_gpio_init(void *ext_regs, uint32_t gpio_num)
     (void)gpio_num;
 }
 
+static inline void emac_ll_gpio_deinit(void *ext_regs, uint32_t gpio_num)
+{
+    (void)ext_regs;
+    (void)gpio_num;
+}
+
 #ifdef __cplusplus
 }
 #endif
