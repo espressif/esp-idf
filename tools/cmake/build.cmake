@@ -182,9 +182,7 @@ function(__build_set_default_build_specifications)
     unset(c_compile_options)
     unset(cxx_compile_options)
 
-    list(APPEND compile_definitions "_GLIBCXX_USE_POSIX_SEMAPHORE"  # These two lines enable libstd++ to use
-                                    "_GLIBCXX_HAVE_POSIX_SEMAPHORE" # posix-semaphores from components/pthread
-                                    "_GNU_SOURCE")
+    list(APPEND compile_definitions "_GNU_SOURCE")
 
     list(APPEND compile_options     "-ffunction-sections"
                                     "-fdata-sections"
@@ -211,8 +209,8 @@ function(__build_set_default_build_specifications)
     if(NOT IDF_TARGET STREQUAL "linux")
         # Building for chip targets: we use a known version of the toolchain.
         # Use latest supported versions.
-        # For Linux target -std settings, refer to the __linux_build_set_lang_version
-        # function, which must be called after project().
+        # For Linux target -std settings, refer to the linux component's
+        # CMakeLists.txt, which checks the host compiler support.
         # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
         # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
         list(APPEND c_compile_options   "-std=gnu23")
@@ -223,54 +221,6 @@ function(__build_set_default_build_specifications)
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
     idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
     idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
-endfunction()
-
-function(__linux_build_set_lang_version)
-    # This must be called after the project() function when languages are
-    # enabled in CMake. Refer to
-    # https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#languages
-    # for more information. We use language-specific functions such as
-    # check_c_compiler_flag here. Remember, we cannot use enable_language()
-    # because it must not be invoked before the first call to project().
-    # Refer to policy CMP0165 for more details.
-    if(NOT IDF_TARGET STREQUAL "linux")
-        return()
-    endif()
-
-    # Building for Linux target, fall back to an older version of the standard
-    # if the preferred one is not supported by the compiler.
-    set(preferred_c_versions gnu23 gnu17 gnu11 gnu99)
-    set(ver_found FALSE)
-    foreach(c_version ${preferred_c_versions})
-        check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
-        if(ver_${c_version}_supported)
-            set(c_std ${c_version})
-            set(ver_found TRUE)
-            break()
-        endif()
-    endforeach()
-    if(NOT ver_found)
-        message(FATAL_ERROR "Failed to set C language standard to one of the supported versions: "
-                            "${preferred_c_versions}. Please upgrade the host compiler.")
-    endif()
-
-    set(preferred_cxx_versions gnu++26 gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
-    set(ver_found FALSE)
-    foreach(cxx_version ${preferred_cxx_versions})
-        check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
-        if(ver_${cxx_version}_supported)
-            set(cxx_std ${cxx_version})
-            set(ver_found TRUE)
-            break()
-        endif()
-    endforeach()
-    if(NOT ver_found)
-        message(FATAL_ERROR "Failed to set C++ language standard to one of the supported versions: "
-                            "${preferred_cxx_versions}. Please upgrade the host compiler.")
-    endif()
-
-    idf_build_set_property(C_COMPILE_OPTIONS "-std=${c_std}" APPEND)
-    idf_build_set_property(CXX_COMPILE_OPTIONS "-std=${cxx_std}" APPEND)
 endfunction()
 
 #

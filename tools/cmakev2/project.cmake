@@ -117,9 +117,7 @@ function(__init_project_configuration)
     endif()
     idf_build_set_property(LINKER_TYPE "${linker_type}")
 
-    list(APPEND compile_definitions "_GLIBCXX_USE_POSIX_SEMAPHORE"  # These two lines enable libstd++ to use
-                                    "_GLIBCXX_HAVE_POSIX_SEMAPHORE" # posix-semaphores from components/pthread
-                                    "_GNU_SOURCE")
+    list(APPEND compile_definitions "_GNU_SOURCE")
 
     list(APPEND compile_definitions "ESP_PLATFORM")
     list(APPEND compile_definitions "IDF_VER=\"${idf_ver}\"")
@@ -150,61 +148,6 @@ function(__init_project_configuration)
         list(APPEND compile_options "-Werror=all")
     else()
         list(APPEND compile_options "-Werror")
-    endif()
-
-    if(IDF_TARGET STREQUAL "linux")
-        # Building for Linux target, fall back to an older version of the standard
-        # if the preferred one is not supported by the compiler.
-        if(c_enabled)
-            set(preferred_c_versions gnu23 gnu17 gnu11 gnu99)
-            set(ver_found FALSE)
-            foreach(c_version ${preferred_c_versions})
-                check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
-                if(ver_${c_version}_supported)
-                    set(c_std ${c_version})
-                    set(ver_found TRUE)
-                    break()
-                endif()
-            endforeach()
-            if(NOT ver_found)
-                idf_die("Failed to set C language standard to one of the supported versions: "
-                        "${preferred_c_versions}. Please upgrade the host compiler.")
-            endif()
-
-            list(APPEND c_compile_options "-std=${c_std}")
-        endif()
-
-        if(cxx_enabled)
-            set(preferred_cxx_versions gnu++26 gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
-            set(ver_found FALSE)
-            foreach(cxx_version ${preferred_cxx_versions})
-                check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
-                if(ver_${cxx_version}_supported)
-                    set(cxx_std ${cxx_version})
-                    set(ver_found TRUE)
-                    break()
-                endif()
-            endforeach()
-            if(NOT ver_found)
-                idf_die("Failed to set C++ language standard to one of the supported versions: "
-                        "${preferred_cxx_versions}. Please upgrade the host compiler.")
-            endif()
-
-            list(APPEND cxx_compile_options "-std=${cxx_std}")
-        endif()
-    else()
-        # Building for chip targets: we use a known version of the toolchain.
-        # Use latest supported versions.
-        # For Linux target -std settings, refer to the __linux_build_set_lang_version
-        # function, which must be called after project().
-        # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
-        # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
-        if(c_enabled)
-            list(APPEND c_compile_options "-std=gnu23")
-        endif()
-        if(cxx_enabled)
-            list(APPEND cxx_compile_options "-std=gnu++26")
-        endif()
     endif()
 
     # Subprojects that handle their own compiler optimization flags can set the
@@ -256,6 +199,19 @@ function(__init_project_configuration)
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")
         list(APPEND c_compile_options "-Wno-old-style-declaration")
+    endif()
+
+    # Building for chip targets: we use a known version of the toolchain.
+    # Use latest supported versions by default. For Linux target -std settings,
+    # refer to the linux component's CMakeLists.txt, which checks the host
+    # compiler support.
+    # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
+    # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
+    if(c_enabled)
+        list(APPEND c_compile_options "-std=gnu23")
+    endif()
+    if(cxx_enabled)
+        list(APPEND cxx_compile_options "-std=gnu++26")
     endif()
 
     if(c_enabled)
@@ -422,18 +378,6 @@ function(__init_project_configuration)
         endif()
     endif()
 
-    if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
-      list(APPEND compile_options "-fasynchronous-unwind-tables")
-      list(APPEND link_options "-Wl,--eh-frame-hdr")
-    endif()
-
-    if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
-        list(APPEND compile_options "-fno-omit-frame-pointer")
-        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-            list(APPEND compile_options "-mno-omit-leaf-frame-pointer")
-        endif()
-    endif()
-
     # A subproject that must not use LTO (for example the bootloader) opts out by
     # setting the SET_COMPILER_LTO build property to NO, the same way it uses
     # SET_COMPILER_OPTIMIZATION; an unset property means LTO is allowed.
@@ -455,46 +399,7 @@ function(__init_project_configuration)
         list(APPEND compile_options "-fno-lto")
     endif()
 
-    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        # Not all versions of the MacOS linker support the -warn_commons flag.
-        # ld version 1053.12 (and above) have been tested to support it.
-        # Hence, we extract the version string from the linker output
-        # before including the flag.
-
-        # Get the ld version, capturing both stdout and stderr
-        execute_process(
-            COMMAND ${CMAKE_LINKER} -v
-            OUTPUT_VARIABLE LD_VERSION_OUTPUT
-            ERROR_VARIABLE LD_VERSION_ERROR
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_STRIP_TRAILING_WHITESPACE
-        )
-
-        # Combine stdout and stderr
-        set(LD_VERSION_OUTPUT "${LD_VERSION_OUTPUT}\n${LD_VERSION_ERROR}")
-
-        # Extract the version string
-        string(REGEX MATCH "PROJECT:(ld|dyld)-([0-9]+)\\.([0-9]+)" LD_VERSION_MATCH "${LD_VERSION_OUTPUT}")
-        set(LD_VERSION_MAJOR_MINOR "${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
-
-        idf_msg("Linker Version: ${LD_VERSION_MAJOR_MINOR}")
-
-        # Compare the version with 1053.12
-        if(LD_VERSION_MAJOR_MINOR VERSION_GREATER_EQUAL "1053.12")
-            list(APPEND link_options "-Wl,-warn_commons")
-        endif()
-
-        list(APPEND link_options "-Wl,-dead_strip")
-    else()
-        list(APPEND link_options "-Wl,--gc-sections")
-        list(APPEND link_options "-Wl,--warn-common")
-    endif()
-
-    # SMP FreeRTOS user provided minimal idle hook. This allows the user to provide
-    # their own copy of vApplicationPassiveIdleHook()
-    if(CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK)
-        list(APPEND link_options "-Wl,--wrap=vApplicationPassiveIdleHook")
-    endif()
+    list(APPEND link_options "-Wl,--gc-sections" "-Wl,--warn-common")
 
     # Placing jump tables in flash would cause issues with code that required
     # to be placed in IRAM

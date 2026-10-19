@@ -48,6 +48,30 @@ def test_build_alternative_directories(idf_py: IdfPyFunc, func_work_dir: Path, t
 
 
 @pytest.mark.usefixtures('test_app_copy')
+def test_late_build_property_mutations(idf_py: IdfPyFunc) -> None:
+    compile_option = 'IDF_LATE_COMPILE_OPTION_DEMO=1'
+    c_compile_option = 'IDF_LATE_C_COMPILE_OPTION_DEMO=1'
+    link_option = '-Wl,--defsym=IDF_LATE_LINK_OPTION_DEMO=1'
+
+    append_to_file(
+        Path('main') / 'CMakeLists.txt',
+        '\n'
+        f'idf_build_set_property(COMPILE_OPTIONS "-D{compile_option}" APPEND)\n'
+        f'idf_build_set_property(C_COMPILE_OPTIONS "-D{c_compile_option}" APPEND)\n'
+        f'idf_build_set_property(LINK_OPTIONS "{link_option}" APPEND)\n',
+    )
+
+    idf_py('reconfigure')
+    ninja = Path('build') / 'build.ninja'
+    ninja_contents = ninja.read_text()
+
+    assert compile_option in ninja_contents
+    assert c_compile_option in ninja_contents
+
+    assert link_option in ninja_contents
+
+
+@pytest.mark.usefixtures('test_app_copy')
 def test_build_cmake_ninja() -> None:
     logging.info('Can build with Ninja (no idf.py)')
     run_cmake_and_build('-G', 'Ninja', '..')
