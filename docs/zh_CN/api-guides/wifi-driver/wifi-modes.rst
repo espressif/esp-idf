@@ -83,9 +83,22 @@ Wi-Fi Sniffer 模式可以通过 :cpp:func:`esp_wifi_set_promiscuous()` 使能�
 
     Wi-Fi Aware\ :sup:`TM` 或 NAN，即 Neighbor Awareness Networking (邻居感知网络，下文简称 NAN) 协议可以让 Wi-Fi 设备发现附近的其他设备。NAN 使用设备间直接通信，无需通过互联网或 AP 连接。
 
-    多个邻近的 NAN 设备组成一个 NAN 集群，集群中的设备可相互通信。同一集群中的 NAN 设备会同步时钟，并定期在信道 6 上互相监听。NAN 设备还可通过服务发现协议，在所处集群内提供（发布）或获取（订阅）服务。通过服务名称和匹配过滤器（可选），可以完成服务匹配。当订阅设备匹配到发布设备时，就可以发送信息（跟进）或与发布设备建立数据通路 (NDP)。NDP 建立后，订阅设备和发布设备都会获得一个 IPv6 地址用于通信。
+    多个邻近的 NAN 设备组成一个 NAN 集群，集群中的设备可相互通信。同一集群中的 NAN 设备会同步时钟，并定期在信道 6 上互相监听。NAN 设备还可通过服务发现协议，在所处集群内提供（发布）或获取（订阅）服务。通过服务名称和匹配过滤器（可选），可以完成服务匹配。当订阅设备匹配到发布设备时，就可以发送信息（跟进）或与发布设备建立数据路径 (NDP)。NDP 建立后，订阅设备和发布设备都会获得一个 IPv6 地址用于通信。
 
-    注意，数据包发送是不加密的，无法保证 NDP 的安全性。NAN 为发现 (Discovery) 和数据通路单独的接口，该接口与 STA 和 AP 所用的接口不同。NAN 以独立模式运行，不支持与 STA 或 AP 接口共存。
+    默认情况下，NAN 数据路径不加密。可以为每个服务单独启用 NAN 安全（加密 NDP），使用基于密码短语/PMK 的凭据 (NCS-SK-128)，或基于配对的凭据 (NCS-PK-PASN-128)。详情请参阅 :doc:`Wi-Fi 安全性 <../wifi-security>`。
+
+    .. note::
+
+        基于密码短语或 PMK 的 NAN 安全 (``WIFI_NAN_CSID_NCS_SK_128``) 可在独立 ESP-IDF 中使用，需要配置选项 :ref:`CONFIG_ESP_WIFI_NAN_SECURITY`。
+
+        NAN 配对 (``WIFI_NAN_CSID_NCS_PK_PASN_128``) 需要配置选项 :ref:`CONFIG_ESP_WIFI_NAN_PAIRING`，以及 **Wi-Fi Aware** 外部组件。该组件 **不** 随独立 ESP-IDF 提供。请在工程的 ``idf_component.yml`` 中声明依赖，从 `ESP 组件注册表 <https://components.espressif.com/components/espressif/wifi_aware/>`__ 将其添加到工程：
+
+        .. code-block:: yaml
+
+            dependencies:
+              espressif/wifi_aware: "*"
+
+    NAN 以独立模式运行，不支持与 STA 或 AP 接口共存。NAN 为发现 (Discovery) 和数据路径使用单独的接口，该接口与 STA 和 AP 所用的接口不同。
 
     要了解如何设置 NAN 发布设备和订阅设备，请参考 ESP-IDF 示例：:idf_file:`examples/wifi/wifi_aware/nan_publisher/README.md` 和 :idf_file:`examples/wifi/wifi_aware/nan_subscriber/README.md`。
 

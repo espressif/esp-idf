@@ -201,3 +201,56 @@ MAC 地址用于设备连接 Wi-Fi 网络。由于 MAC 地址具有唯一且静�
 
 
 要获取 MAC 地址，请使用 API :cpp:func:`esp_wifi_get_mac`。
+
+
+.. only:: SOC_WIFI_NAN_SUPPORT
+
+    NAN（Wi-Fi Aware\ :sup:`TM`）安全
+    -------------------------------------
+
+    简介
+    ++++
+
+    Wi-Fi Aware\ :sup:`TM` （NAN，Neighbor Awareness Networking，邻居感知网络）让设备无需 AP 即可发现服务并建立 NAN 数据路径 (NDP)。默认情况下，NDP 以明文传输数据，与开放式 Wi-Fi 网络类似。NAN 安全在 NDP 握手期间为发布方与订阅方派生出成对密钥 (ND-PMK)，并加密随后的单播数据帧，从而保护 NDP。
+
+    {IDF_TARGET_NAME} 支持两种 NAN 安全机制。两者都会建立加密的 NDP，但密钥材料的配置方式不同：
+
+    - **基于密码短语/PMK (NCS-SK-128)** —— 双方通过带外方式共享密码短语（或原始的 32 字节 PMK）。协议栈据此派生 ND-PMK。这相当于 WPA2/WPA3-Personal 的预共享密钥，只是用于 NAN。
+    - **基于配对 (NCS-PK-PASN-128)** —— 双方事先不共享密钥，而是运行基于 PASN 的 NAN 配对协议来协商 NPK/NIK，协商时可以选择用引导方法（例如 PIN 码）进行认证。缓存的 NPK/NIK 可供后续 NDP 复用。
+
+    基于密码短语/PMK 的安全 (NCS-SK-128)
+    ++++++++++++++++++++++++++++++++++++++++++++
+
+    这是最简单的 NAN 安全模式，可在独立 ESP-IDF 中使用（无需外部组件）。双方在相互匹配的发布/订阅服务上配置同一密钥，可以是密码短语，也可以是原始的 32 字节 PMK。协议栈为每条凭据派生 ND-PMK 和 ND-PMKID，并在空口通告 SCID 列表；订阅方将发布方的 SCID 列表与本地已配置的凭据进行匹配。
+
+    安全按服务配置，相关字段位于 :cpp:type:`wifi_nan_publish_cfg_t`/:cpp:type:`wifi_nan_subscribe_cfg_t`：
+
+    - 将 ``security_reqd`` 设为 ``1``，将该服务标记为需要安全。
+    - 将 ``security_cfg`` 指向 :cpp:type:`wifi_nan_discovery_security_params_t`，并在其中填入一条或多条 :cpp:type:`wifi_nan_credential_t` （密码短语或 PMK，每条凭据通过 ``csid`` 绑定一个密码套件 ID）。
+    - 也可启用 ``group_data_prot`` （ND-GTK 组地址数据保护）。
+
+    单个服务最多可附加 :c:macro:`ESP_WIFI_NAN_MAX_CREDS_PER_SVC` 条凭据，因此同一服务可以使用不同的密码短语或 PMK，与多个对端共享。双方必须在对应服务上至少配置一条相互匹配的凭据，否则 NDP 协商会失败。
+
+    .. warning::
+
+      组管理帧保护 (BIP, IGTKSA/BIGTKSA) 是 **设备全局** 设置，而不是按服务设置。调用 :cpp:func:`esp_wifi_nan_sync_start` 启动 NAN 时，必须通过 :cpp:type:`wifi_nan_sync_config_t` 的 ``group_mgmt_prot`` 启用组管理帧保护。IGTK/BIGTK 的安装、CSIA 能力信息的构造以及 NDP 协商都取决于这一设备全局值。因此，如果应用程序只设置 :cpp:type:`wifi_nan_discovery_security_params_t` 中按服务的 ``group_mgmt_prot`` 位，设备会在未启用组管理帧保护的情况下继续运行，且不会提示错误。按服务的 ``group_mgmt_prot`` 位是保留位，本身不起作用。
+
+    .. note::
+
+      目前仅支持 ``WIFI_NAN_CSID_NCS_SK_128``。NAN 安全需要配置选项 :ref:`CONFIG_ESP_WIFI_NAN_SECURITY` 和 :ref:`CONFIG_ESP_WIFI_MBEDTLS_CRYPTO`。
+
+    基于配对的安全 (NCS-PK-PASN-128)
+    +++++++++++++++++++++++++++++++++++++++++
+
+    NAN 配对让两台设备在没有预共享密钥的情况下，借助 PIN 码等引导方法建立长期信任关系 (NPK/NIK)。协商得到的 NPK/NIK 可以缓存（并持久保存到 NVS），这样后续 NDP 无需重复配对握手即可受到保护。
+
+    配对按服务配置：:cpp:type:`wifi_nan_publish_cfg_t`/:cpp:type:`wifi_nan_subscribe_cfg_t` 的 ``pairing`` 字段指向 :cpp:type:`wifi_nan_pairing_cfg_t`，其中包括是否启用配对建立、是否启用配对验证、NPK/NIK 缓存、引导方法位图以及 comeback 延时。
+
+    .. note::
+
+      NAN 配对 (``WIFI_NAN_CSID_NCS_PK_PASN_128``) 需要配置选项 :ref:`CONFIG_ESP_WIFI_NAN_PAIRING`，以及 **Wi-Fi Aware** 外部组件 (``espressif/wifi_aware``)；它 **不能** 在独立 ESP-IDF 中使用。关于如何将该组件添加到工程中，请参阅 :doc:`/api-guides/wifi-driver/wifi-modes`。
+
+    应用示例
+    ++++++++
+
+    - :example:`wifi/wifi_aware/nan_console` 通过 ``publish`` 和 ``subscribe`` 控制台命令配置 NAN 安全。指定 ``-p``/``--passphrase`` 或 ``-k``/``--pmk`` 可使该服务启用安全；开放服务无需安全参数。完整命令说明请参阅该示例的 README。
