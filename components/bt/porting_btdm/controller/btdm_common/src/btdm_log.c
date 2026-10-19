@@ -50,13 +50,14 @@ typedef enum {
  * External Functions
  ***************************************************************************************************
  */
+void esp_panic_handler_feed_wdts(void);
+
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 void r_btdm_sched_list_details_dump(void);
 void api_base_ll_dumpDebugStatus(void);
 void api_sched_txn_dumpListDetails(void);
 void r_ble_phy_hw_state_dump(uint8_t);
 void esp_ble_controller_log_dump_all(bool);
-void esp_panic_handler_feed_wdts(void);
 void r_ble_log_async_output_dump_all(bool output);
 
 int r_ble_log_init_async(interface_func_t interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
@@ -450,6 +451,7 @@ wr_btdm_log_raw_export(uint16_t p0, uint8_t * addr, uint32_t len)
     esp_rom_printf("ID: 0x%04x, params: ", p0);
     for (int i = 0; i < len; i++) {
         esp_rom_printf("0x%02x, ", addr[i]);
+        esp_panic_handler_feed_wdts();
     }
     esp_rom_printf("\n");
 }
