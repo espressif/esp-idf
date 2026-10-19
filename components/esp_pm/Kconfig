@@ -148,27 +148,19 @@ menu "Power Management"
     config PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
         bool "Calibrate the internal RTC_SLOW oscillator after light sleep wakeup"
         default n
-        depends on PM_ENABLE && !ESP_SYSTEM_RTC_EXT_XTAL && !(IDF_TARGET_ESP32S2 && RTC_CLK_SRC_INT_RC)
+        depends on PM_ENABLE && !ESP_SYSTEM_RTC_EXT_XTAL && !ESP_SYSTEM_RTC_EXT_OSC
+        depends on !(IDF_TARGET_ESP32S2 && RTC_CLK_SRC_INT_RC)
         help
-            By default, the RTC_SLOW clock is calibrated on the way into light sleep, while the chip is still
-            warm from the active period. The internal RC oscillator speeds up as the chip cools down during the
-            sleep, so the sleep is converted to time with a period that is too long, and esp_timer and the RTC
-            time run fast. On ESP32-C6 the error is several hundred ppm, and it grows with the active time
-            before each sleep.
+            By default, RTC_SLOW is calibrated at light sleep entry, while the chip is still warm. The internal
+            oscillator frequency changes as the chip cools during sleep, so esp_timer and RTC time drift from
+            real time. On ESP32-C6 they run faster than the firmware expects and wakeups happen earlier than
+            they should: the clock error can be 300-800 ppm, depending on the active time before each sleep,
+            so a 60 s sleep ends about 18-48 ms early.
 
-            If this option is enabled, the RTC_SLOW clock is calibrated right after waking up from a light sleep
-            of at least 50 ms, while the chip is still at its sleep temperature, and that value is used for the
-            next light sleep instead of a calibration at sleep entry. The number of calibrations stays the same
-            (one per light sleep, following PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL); it moves from sleep entry to
-            wakeup.
-
-            If the light sleeps are too short for the chip to cool down after long active periods, the clock
-            may run slightly slow instead.
-
-            The calibration after wakeup makes the wakeup path longer by its duration (10 RC_SLOW cycles, about
-            75 us on ESP32-C6). Timer wakeups stay on time, because this time is measured and subtracted from the
-            next sleep, but GPIO, UART and other wakeups are handled about 75 us later. In exchange, the sleep is
-            converted to time with a much more accurate period.
+            If enabled, the calibration is done right after waking up from a light sleep of at least 50 ms, at
+            the sleep temperature, and is used for the next sleep. The number of calibrations does not change.
+            Non-timer wakeups (GPIO, UART, ...) are handled 10 RTC_SLOW cycles later (about 70-300 us,
+            depending on the clock source).
 
     config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         bool "Power down CPU in light sleep"
