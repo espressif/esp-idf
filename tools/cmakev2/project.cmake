@@ -165,6 +165,9 @@ function(__init_project_configuration)
             endif()
             if(CMAKE_C_COMPILER_ID MATCHES "GNU")
                 list(APPEND compile_options "-freorder-blocks")
+                if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+                    list(APPEND compile_options "-mno-target-align")
+                endif()
             endif()
         elseif(CONFIG_COMPILER_OPTIMIZATION_DEBUG)
             list(APPEND compile_options "-Og")
@@ -289,6 +292,9 @@ function(__init_project_configuration)
             # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
             list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
         endif()
+        # warning: initializer overrides prior initialization of this subobject
+        # in esp32c61 pmu_param.c when static unions are initialized (e.g. in pmu_hp_system_analog_param_default)
+        list(APPEND compile_options "-Wno-initializer-overrides")
     endif()
     # More warnings may exist in unit tests and example projects.
 
@@ -302,6 +308,10 @@ function(__init_project_configuration)
 
     if(CONFIG_COMPILER_NO_MERGE_CONSTANTS)
         list(APPEND compile_options "-fno-merge-constants")
+    endif()
+
+    if(CONFIG_COMPILER_ENABLE_TEXT_SECTION_LITERALS)
+        list(APPEND compile_options "-mtext-section-literals")
     endif()
 
     if(CONFIG_COMPILER_STACK_CHECK_MODE_NORM)
@@ -343,6 +353,14 @@ function(__init_project_configuration)
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0)
         list(APPEND c_compile_options "-fzero-init-padding-bits=all" "-fno-malloc-dce")
+    endif()
+
+    if(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR)
+        list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr")
+        list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr")
+    elseif(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD)
+        list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold))")
+        list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold))")
     endif()
 
     if(CONFIG_COMPILER_DISABLE_GCC12_WARNINGS)
