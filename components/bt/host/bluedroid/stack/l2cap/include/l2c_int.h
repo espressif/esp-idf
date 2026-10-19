@@ -643,7 +643,7 @@ void l2c_free(void);
 
 extern void     l2c_process_timeout (TIMER_LIST_ENT *p_tle);
 extern UINT8    l2c_data_write (UINT16 cid, BT_HDR *p_data, UINT16 flag);
-extern void     l2c_rcv_acl_data (BT_HDR *p_msg);
+extern BOOLEAN  l2c_rcv_acl_data (BT_HDR *p_msg, UINT16 *p_credit_handle);
 extern void     l2c_process_held_packets (BOOLEAN timed_out);
 
 /* Functions provided by l2c_utils.c

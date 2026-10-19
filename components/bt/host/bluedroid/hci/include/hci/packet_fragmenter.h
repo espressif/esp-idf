@@ -26,6 +26,9 @@
 typedef void (*transmit_finished_cb)(BT_HDR *packet, bool all_fragments_sent);
 typedef void (*packet_reassembled_cb)(BT_HDR *packet);
 typedef void (*packet_fragmented_cb)(BT_HDR *packet, bool send_transmit_finished);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+typedef void (*packet_c2h_credit_cb)(uint16_t handle, uint16_t num);
+#endif
 
 typedef struct {
     // Called for every packet fragment.
@@ -37,6 +40,12 @@ typedef struct {
     // Called when the fragmenter finishes sending all requested fragments,
     // but the packet has not been entirely sent.
     transmit_finished_cb transmit_finished;
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    // Called when an inbound ACL fragment is absorbed or dropped without
+    // being delivered via reassembled.
+    packet_c2h_credit_cb c2h_credit;
+#endif
 } packet_fragmenter_callbacks_t;
 
 typedef struct packet_fragmenter_t {
@@ -55,8 +64,16 @@ typedef struct packet_fragmenter_t {
     // holds onto it until all fragments arrive, at which point the reassembled callback is called
     // with the reassembled data.
     void (*reassemble_and_dispatch)(BT_HDR *packet);
+
+    // Drop any in-progress inbound ACL reassembly for |handle| and return its
+    // C2H START credit. Must run on the HCI thread; no-op if none is held.
+    void (*flush_reassembly)(uint16_t handle);
 } packet_fragmenter_t;
 
 const packet_fragmenter_t *packet_fragmenter_get_interface(void);
+
+#if defined(BT_BLUEDROID_UNIT_TEST)
+const packet_fragmenter_t *packet_fragmenter_get_test_interface(void);
+#endif
 
 #endif /* _PACKET_FRAGMENTER_H_ */
