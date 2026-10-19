@@ -7,7 +7,8 @@
 /**
  * @file test_http_client_streaming.c
  * @brief P0 Critical Tests: open/write/fetch_headers/read streaming path, partial
- *        transport writes, and read timeout during header fetch
+ *        transport writes, read timeout during header fetch, and the error code
+ *        that HTTP_EVENT_ERROR carries on the read paths
  *
  * This file characterizes:
  * - The manual streaming sequence (open -> write -> fetch_headers -> read) works
@@ -16,6 +17,9 @@
  *   full request body once the client has finished writing it out.
  * - A read timeout while waiting for response headers surfaces as an error from
  *   esp_http_client_perform() (exact code pinned per characterization rules).
+ * - esp_http_client_event_t::error hands the handler the same esp_err_t that the
+ *   failing call returns, for a failed header read, a body cut short, and a
+ *   failed read on the streaming path.
  */
 
 #include <string.h>
@@ -37,6 +41,34 @@ static const char *resp_200 =
     "Content-Length: 5\r\n"
     "\r\n"
     "hello";
+
+/* Byte count of the status line plus the headers plus the empty line of resp_200. */
+#define RESP_200_HEADER_LEN 38
+
+static esp_err_t s_event_error;
+static int s_error_events;
+
+/* Records what HTTP_EVENT_ERROR carried, for the error-code cases below. */
+static esp_err_t error_event_handler(esp_http_client_event_t *evt)
+{
+    if (evt->event_id == HTTP_EVENT_ERROR) {
+        s_error_events++;
+        s_event_error = evt->error;
+    }
+    return ESP_OK;
+}
+
+static esp_http_client_handle_t make_error_client(esp_transport_handle_t mock)
+{
+    s_event_error = ESP_OK;
+    s_error_events = 0;
+    esp_http_client_config_t cfg = {
+        .url = "http://test-server.local/",
+        .transport = mock,
+        .event_handler = error_event_handler,
+    };
+    return esp_http_client_init(&cfg);
+}
 
 TEST_CASE("open/write/fetch_headers/read sequence works", "[esp_http_client][streaming][p0]")
 {
@@ -152,6 +184,84 @@ TEST_CASE("read timeout during headers returns fetch-header error", "[esp_http_c
      * (returns ESP_FAIL) rather than its -ESP_ERR_HTTP_EAGAIN branch, and
      * esp_http_client_perform() surfaces that as ESP_ERR_HTTP_FETCH_HEADER. */
     TEST_ASSERT_EQUAL(ESP_ERR_HTTP_FETCH_HEADER, err);
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+TEST_CASE("HTTP_EVENT_ERROR carries the code of a failed header read", "[esp_http_client][streaming][p0][negative]")
+{
+    mock_http_transport_config_t mc = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mc.mode = MOCK_TRANSPORT_MODE_READ_TIMEOUT;
+    esp_transport_handle_t mock = mock_http_transport_create(&mc);
+    TEST_ASSERT_NOT_NULL(mock);
+    esp_http_client_handle_t client = make_error_client(mock);
+    TEST_ASSERT_NOT_NULL(client);
+
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_FETCH_HEADER, esp_http_client_perform(client));
+    TEST_ASSERT_EQUAL(1, s_error_events);
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_FETCH_HEADER, s_event_error);
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+TEST_CASE("HTTP_EVENT_ERROR carries the code of a body cut short", "[esp_http_client][streaming][p0][negative]")
+{
+    mock_http_transport_config_t mc = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mc.mode = MOCK_TRANSPORT_MODE_INCOMPLETE_READ;
+    mc.response_data = resp_200;
+    mc.read_bytes_before_error = RESP_200_HEADER_LEN + 2;
+    esp_transport_handle_t mock = mock_http_transport_create(&mc);
+    TEST_ASSERT_NOT_NULL(mock);
+    esp_http_client_handle_t client = make_error_client(mock);
+    TEST_ASSERT_NOT_NULL(client);
+
+    /* The mock ends the body with a 0 read; the client maps that result,
+     * ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT, to ESP_ERR_HTTP_READ_TIMEOUT. A real
+     * transport ends a cut body with -1 or -2, so the literal here follows the
+     * mock and must be revisited when the mock adopts the real convention. */
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_READ_TIMEOUT, esp_http_client_perform(client));
+    TEST_ASSERT_EQUAL(1, s_error_events);
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_READ_TIMEOUT, s_event_error);
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+/* esp_http_client_read() classifies a failed body read on its own, apart from
+ * esp_http_client_perform(). This mock inverts the esp_tcp_transport_err_t
+ * convention: it reports a read timeout as -1, the FIN sentinel, and a closed
+ * connection as 0, the timeout sentinel. tcp_read() and ssl_read() do the
+ * opposite. The row therefore lands on the FIN arm of the classification and
+ * pins ESP_ERR_HTTP_CONNECTION_CLOSED. The mock never returns
+ * ERR_TCP_TRANSPORT_CONNECTION_FAILED (-2), so the ESP_ERR_HTTP_INCOMPLETE_DATA
+ * arm stays uncovered until a mock with the real convention is in this tree. */
+TEST_CASE("HTTP_EVENT_ERROR carries the code of a failed streaming read", "[esp_http_client][streaming][p0][negative]")
+{
+    mock_http_transport_config_t mc = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mc.mode = MOCK_TRANSPORT_MODE_INCOMPLETE_READ;
+    mc.response_data = resp_200;
+    mc.read_bytes_before_error = RESP_200_HEADER_LEN;
+    esp_transport_handle_t mock = mock_http_transport_create(&mc);
+    TEST_ASSERT_NOT_NULL(mock);
+    esp_http_client_handle_t client = make_error_client(mock);
+    TEST_ASSERT_NOT_NULL(client);
+
+    /* The read budget stops the first read at the end of the headers, so the
+     * client holds no buffered body byte when the body read starts. */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_open(client, 0));
+    TEST_ASSERT_EQUAL(5, esp_http_client_fetch_headers(client));
+    TEST_ASSERT_EQUAL(0, s_error_events);
+
+    mc.mode = MOCK_TRANSPORT_MODE_READ_TIMEOUT;
+    mc.response_data = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_set_config(mock, &mc));
+
+    char buf[16];
+    TEST_ASSERT_EQUAL(-1, esp_http_client_read(client, buf, sizeof(buf)));
+    TEST_ASSERT_EQUAL(1, s_error_events);
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_CONNECTION_CLOSED, s_event_error);
 
     esp_http_client_cleanup(client);
     mock_http_transport_destroy(mock);

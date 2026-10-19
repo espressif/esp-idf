@@ -106,11 +106,17 @@ static const char *response_503_unavailable =
  * Helper Functions
  * ============================================ */
 
+/* Last HTTP_EVENT_ERROR seen by basic_event_handler(), for the error-code case. */
+static esp_err_t s_event_error;
+static int s_error_events;
+
 static esp_err_t basic_event_handler(esp_http_client_event_t *evt)
 {
     switch (evt->event_id) {
     case HTTP_EVENT_ERROR:
         ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
+        s_error_events++;
+        s_event_error = evt->error;
         break;
     case HTTP_EVENT_ON_CONNECTED:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_CONNECTED");
@@ -690,6 +696,40 @@ TEST_CASE("Client handles connection failure", "[esp_http_client][basic][p0][neg
     TEST_ASSERT_EQUAL(200, esp_http_client_get_status_code(client));
 
     ESP_LOGI(TAG, "OK: Connection failure handled, retry successful");
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock_transport);
+}
+
+/**
+ * Test: HTTP_EVENT_ERROR names the cause of a failed connect
+ *
+ * The handler must read the same esp_err_t that esp_http_client_perform()
+ * returns, instead of guessing the cause from the transport error handle.
+ */
+TEST_CASE("HTTP_EVENT_ERROR carries the code of a failed connect", "[esp_http_client][basic][p0][negative]")
+{
+    mock_http_transport_config_t mock_config = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mock_config.mode = MOCK_TRANSPORT_MODE_CONNECT_FAIL;
+
+    esp_transport_handle_t mock_transport = mock_http_transport_create(&mock_config);
+    TEST_ASSERT_NOT_NULL(mock_transport);
+
+    esp_http_client_config_t config = {
+        .url = "http://unreachable-server.local/api/test",
+        .event_handler = basic_event_handler,
+        .transport = mock_transport,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    s_event_error = ESP_OK;
+    s_error_events = 0;
+
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_CONNECT, esp_http_client_perform(client));
+    TEST_ASSERT_EQUAL(1, s_error_events);
+    TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_CONNECT, s_event_error);
 
     esp_http_client_cleanup(client);
     mock_http_transport_destroy(mock_transport);
