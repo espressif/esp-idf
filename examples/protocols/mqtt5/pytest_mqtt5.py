@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -24,7 +24,8 @@ def test_examples_protocol_mqtt5(dut: Dut) -> None:
     bin_size = os.path.getsize(binary_file)
     logging.info('mqtt5_bin_size : {}KB'.format(bin_size // 1024))
     # check if connected or not
-    dut.expect_exact('MQTT_EVENT_CONNECTED', timeout=30)
+    dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)
+    dut.expect_exact('MQTT_EVENT_CONNECTED', timeout=60)
     # check log
     res = dut.expect(r'sent publish successful, msg_id=(\d+)[^\d]')
     msgid_pub1 = res.group(1).decode('utf8')
