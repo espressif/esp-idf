@@ -391,13 +391,11 @@ menu "GAP"
             Defines maximum number of CCC descriptors to save
 
     config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
-        bool "Override TinyCrypt with mbedTLS for crypto computations"
-        default n if CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT
+        bool
+        default y if BT_SMP_CRYPTO_STACK_MBEDTLS
+        default n
         depends on BT_NIMBLE_ENABLED
         select MBEDTLS_CMAC_C
-        help
-            Enable this option to choose mbedTLS instead of TinyCrypt for crypto
-            computations.
 
     config BT_NIMBLE_HS_STOP_TIMEOUT_MS
         int "BLE host stop timeout in msec"
