@@ -4637,9 +4637,14 @@ TEST_CASE("nvs multiple write with same key but different types", "[nvs]")
 }
 
 #ifndef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
-// Following test case is not valid for new behavior not leading to multiple active values under the same key
+// Following test case not valid for new behavior not leading to multiple active values under the same key
 TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
 {
+    // Test case sequentially stores data under the same key and verifies, that only recent data type used is retrieved
+    // Attempts to retrieve different data types under the same key shall fail with ESP_ERR_NVS_NOT_FOUND
+    // Variable length data types allow to read the length of the data stored if it is present under the key by supplying NULL buffer and pointer to the length
+    // If value is not present under the key, the value of buffer length may not be modified by the function call
+
     // Erase the partition before testing
     TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
 
@@ -4654,50 +4659,110 @@ TEST_CASE("nvs multiple write with same key blob and string involved", "[nvs]")
     int32_t v32;
     int8_t v8;
 
-    // string
+    // String
     #define str_data_len 64
+    #define probe_str_len str_data_len/2
     const char str_data[] = "string data";
     char str_buf[str_data_len] = {0};
-    size_t str_len = str_data_len;
+    size_t str_len = 0;
 
-    // blob
+    // Blob
     #define blob_data_len 64
+    #define probe_blob_data_len blob_data_len/2
     uint8_t blob_data[blob_data_len] = {0};
     uint8_t blob_buf[blob_data_len] = {0};
-    size_t blob_read_size;
+    size_t blob_read_size = 0;
+    memset(blob_data, 0x11, sizeof(blob_data));
 
-    // first write is i32
+    // First write is i32
     TEST_ESP_OK(nvs_set_i32(handle_1, key_name, (int32_t)12345678));
 
     TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_OK(nvs_get_i32(handle_1, key_name, &v32));
+
+    // Variable length datatypes validation
+    // ESP_ERR_NVS_NOT_FOUND doesn't touch the value of string's length parameter
+    str_len = probe_str_len;
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, NULL, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(str_len == probe_str_len);
+    str_len = sizeof(str_buf);
     TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(str_len == sizeof(str_buf));
+    // ESP_ERR_NVS_NOT_FOUND doesn't touch the value of blob's length parameter
+    blob_read_size = probe_blob_data_len;
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, NULL, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(blob_read_size == probe_blob_data_len);
+    blob_read_size = sizeof(blob_buf);
     TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(blob_read_size == sizeof(blob_buf));
 
-
-    // second write is string
+    // Second write is string
     TEST_ESP_OK(nvs_set_str(handle_1, key_name, str_data));
 
     TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
-    TEST_ESP_OK(nvs_get_str(handle_1, key_name, str_buf, &str_len));
-    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
 
-    // third write is blob
+    // Variable length datatypes validation
+    // ESP_OK when searching the string populates the length
+    str_len = 0;
+    TEST_ESP_OK(nvs_get_str(handle_1, key_name, NULL, &str_len));
+    CHECK(str_len == sizeof(str_data));
+    str_len = sizeof(str_buf);
+    TEST_ESP_OK(nvs_get_str(handle_1, key_name, str_buf, &str_len));
+    CHECK(str_len == sizeof(str_data));
+    CHECK(memcmp(str_buf, str_data, sizeof(str_data)) == 0);
+    // ESP_ERR_NVS_NOT_FOUND doesn't touch the value of blob's length parameter
+    blob_read_size = probe_blob_data_len;
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, NULL, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(blob_read_size == probe_blob_data_len);
+    blob_read_size = sizeof(blob_buf);
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(blob_read_size == sizeof(blob_buf));
+
+    // Third write is blob
     TEST_ESP_OK(nvs_set_blob(handle_1, key_name, blob_data, blob_data_len));
 
     TEST_ESP_ERR(nvs_get_i8(handle_1, key_name, &v8), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+
+    // Variable length datatypes validation
+    // ESP_ERR_NVS_NOT_FOUND doesn't touch the value of string's length parameter
+    str_len = probe_str_len;
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, NULL, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(str_len == probe_str_len);
+    str_len = sizeof(str_buf);
     TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(str_len == sizeof(str_buf));
+    // ESP_OK when searching the blob populates the length
+    blob_read_size = 0;
+    TEST_ESP_OK(nvs_get_blob(handle_1, key_name, NULL, &blob_read_size));
+    CHECK(blob_read_size == sizeof(blob_data));
+    blob_read_size = sizeof(blob_buf);
     TEST_ESP_OK(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size));
+    CHECK(blob_read_size == sizeof(blob_data));
+    CHECK(memcmp(blob_buf, blob_data, sizeof(blob_data)) == 0);
 
     // fourth write is i8
     TEST_ESP_OK(nvs_set_i8(handle_1, key_name, (int8_t)12));
 
     TEST_ESP_OK(nvs_get_i8(handle_1, key_name, &v8));
     TEST_ESP_ERR(nvs_get_i32(handle_1, key_name, &v32), ESP_ERR_NVS_NOT_FOUND);
+
+    // Variable length datatypes validation
+    // ESP_ERR_NVS_NOT_FOUND doesn't touch the value of string's length parameter
+    str_len = probe_str_len;
+    TEST_ESP_ERR(nvs_get_str(handle_1, key_name, NULL, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(str_len == probe_str_len);
+    str_len = sizeof(str_buf);
     TEST_ESP_ERR(nvs_get_str(handle_1, key_name, str_buf, &str_len), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(str_len == sizeof(str_buf));
+    // ESP_ERR_NVS_NOT_FOUND doesn't touch the value of blob's length parameter
+    blob_read_size = probe_blob_data_len;
+    TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, NULL, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(blob_read_size == probe_blob_data_len);
+    blob_read_size = sizeof(blob_buf);
     TEST_ESP_ERR(nvs_get_blob(handle_1, key_name, blob_buf, &blob_read_size), ESP_ERR_NVS_NOT_FOUND);
+    CHECK(blob_read_size == sizeof(blob_buf));
 
     nvs_close(handle_1);
 
