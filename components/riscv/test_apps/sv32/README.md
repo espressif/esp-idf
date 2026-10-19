@@ -5,7 +5,9 @@
 
 This focused ESP32-S31 Unity application checks the trusted RISC-V Sv32
 primitives: entry and `satp` encodings, Sv32/Bare CSR transitions, local
-invalidation, and one translated load/store path. Page-fault, permission,
+invalidation, and translated loads and stores through hand-built tables and
+through an address space of `riscv/sv32_as.h`. `test_sv32_as.c` checks the
+tables of address spaces by reading them back in software. Page-fault, permission,
 mapping-policy and multicore coverage belongs in the upper layers that consume
 these architectural helpers.
 

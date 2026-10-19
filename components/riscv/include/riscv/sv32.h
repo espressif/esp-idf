@@ -159,6 +159,31 @@ static inline void riscv_sv32_pte_clear(riscv_sv32_pte_t *pte)
     *pte = 0;
 }
 
+/** Returns true if the 4 KiB page or page table at a physical address can be read. */
+typedef bool (*riscv_sv32_paddr_check_t)(uint32_t paddr);
+
+/**
+ * Translate a virtual address through the page tables of a satp value.
+ *
+ * For M-mode code, such as the panic handler, that reads U-mode memory through page tables it
+ * cannot trust: a corrupt table must give a failed translation, not a fault.
+ *
+ * Every page table and the page are checked with paddr_ok before they are read. Sv32 maps 4 KiB
+ * pages with a leaf at level 0 and 4 MiB megapages with a leaf at level 1; only 4 KiB pages are
+ * translated, the only size riscv/sv32_as.h makes, and a leaf at level 1 is treated as unmapped,
+ * as is the reserved encoding of W without R. Takes no locks. In IRAM, so that it works with the
+ * flash cache disabled.
+ *
+ * @param satp satp value whose page tables are walked. Its mode must be Sv32.
+ * @param vaddr Virtual address
+ * @param permissions PTE bits the leaf PTE must have, for example RISCV_SV32_PTE_U | RISCV_SV32_PTE_R
+ * @param paddr_ok Check of the physical addresses below 4 GiB that the walk reads
+ * @param[out] paddr Physical address of vaddr
+ * @return true if vaddr is mapped with the permissions and every check passed
+ */
+bool riscv_sv32_translate_checked(uint32_t satp, uint32_t vaddr, uint32_t permissions,
+                                  riscv_sv32_paddr_check_t paddr_ok, uint32_t *paddr);
+
 /** Read the raw RV32 satp CSR. */
 uint32_t riscv_sv32_read_satp(void);
 

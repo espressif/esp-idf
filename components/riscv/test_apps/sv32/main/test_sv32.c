@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "riscv/sv32.h"
+#include "riscv/sv32_as.h"
 #include "riscv/encoding.h"
 #include "soc/soc.h"
 #include "unity.h"
@@ -17,6 +18,7 @@
 #define TEST_VADDR                 UINT32_C(0x60001000)
 #define TEST_WORD_OFFSET           UINT32_C(0x40)
 #define TEST_MSTATUS_MPP_S         (PRV_S << 11)
+#define TEST_MSTATUS_MPP_U         (PRV_U << 11)
 
 static riscv_sv32_table_t s_root;
 static riscv_sv32_table_t s_level;
@@ -68,22 +70,22 @@ static uint32_t read_mstatus_for_test(void)
 }
 
 /*
- * Perform one S-mode data access through the Sv32 root while staying in M-mode.
+ * Perform one data access through an Sv32 root while staying in M-mode, translated as the
+ * mode in mpp (an mstatus.MPP value).
  *
  * With mstatus.MPRV set only loads and stores are translated, so the CSR write,
  * the access and the restore must be a single asm statement with no compiler
  * generated memory accesses in between. Interrupts stay masked for the window.
  * An unexpected page fault goes to the regular panic handler and fails the test.
  */
-static void translated_access(bool store, uint32_t *value)
+static void translated_access(riscv_sv32_paddr_t root, uint32_t vaddr, uint32_t mpp, bool store,
+                              uint32_t *value)
 {
-    const uint32_t vaddr = TEST_VADDR + TEST_WORD_OFFSET;
-
     portENTER_CRITICAL(&s_access_lock);
     const uint32_t saved = read_mstatus_for_test();
     const uint32_t access = (saved & ~(MSTATUS_MIE | MSTATUS_MPP | MSTATUS_SUM | MSTATUS_MXR)) |
-                            MSTATUS_MPRV | TEST_MSTATUS_MPP_S;
-    riscv_sv32_activate(object_paddr(&s_root));
+                            MSTATUS_MPRV | mpp;
+    riscv_sv32_activate(root);
     if (store) {
         __asm__ volatile ("csrw mstatus, %[access]\n"
                           "sw   %[value], 0(%[vaddr])\n"
@@ -196,10 +198,37 @@ TEST_CASE("RISC-V Sv32 translates a load and store", "[riscv][sv32][hardware]")
     *word = UINT32_C(0x13579bdf);
 
     uint32_t value = 0;
-    translated_access(false, &value);
+    translated_access(object_paddr(&s_root), TEST_VADDR + TEST_WORD_OFFSET, TEST_MSTATUS_MPP_S, false, &value);
     TEST_ASSERT_EQUAL_HEX32(UINT32_C(0x13579bdf), value);
 
     value = UINT32_C(0xa55a3cc3);
-    translated_access(true, &value);
+    translated_access(object_paddr(&s_root), TEST_VADDR + TEST_WORD_OFFSET, TEST_MSTATUS_MPP_S, true, &value);
     TEST_ASSERT_EQUAL_HEX32(UINT32_C(0xa55a3cc3), *word);
+}
+
+TEST_CASE("RISC-V Sv32 address space translates U-mode loads and stores", "[riscv][sv32][hardware]")
+{
+    memset(s_backing_page, 0, sizeof(s_backing_page));
+    assert_supported_page(&s_root);
+    assert_supported_page(&s_level);
+    assert_supported_page(s_backing_page);
+    riscv_sv32_as_t *as = riscv_sv32_as_init(&s_root);
+    TEST_ASSERT_NOT_NULL(as);
+    riscv_sv32_table_t *const tables[] = { &s_level };
+    TEST_ASSERT_EQUAL(1, riscv_sv32_as_count_tables_needed(as, TEST_VADDR, RISCV_SV32_PAGE_SIZE));
+    TEST_ASSERT_EQUAL(ESP_OK, riscv_sv32_as_map(as, TEST_VADDR, object_paddr(s_backing_page),
+                                                RISCV_SV32_PAGE_SIZE, RISCV_SV32_PTE_R, tables, 1));
+    const uint32_t vaddr = TEST_VADDR + TEST_WORD_OFFSET;
+
+    *backing_word() = UINT32_C(0x2468ace0);
+    uint32_t value = 0;
+    translated_access(object_paddr(&s_root), vaddr, TEST_MSTATUS_MPP_U, false, &value);
+    TEST_ASSERT_EQUAL_HEX32(UINT32_C(0x2468ace0), value);
+
+    /* riscv_sv32_activate() flushes the TLB of this core, so the store sees the new permission */
+    TEST_ASSERT_EQUAL(ESP_OK, riscv_sv32_as_protect(as, TEST_VADDR, RISCV_SV32_PAGE_SIZE,
+                                                    RISCV_SV32_PTE_R | RISCV_SV32_PTE_W));
+    value = UINT32_C(0x5aa5c33c);
+    translated_access(object_paddr(&s_root), vaddr, TEST_MSTATUS_MPP_U, true, &value);
+    TEST_ASSERT_EQUAL_HEX32(UINT32_C(0x5aa5c33c), *backing_word());
 }

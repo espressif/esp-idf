@@ -87,3 +87,40 @@ void riscv_sv32_invalidate_vaddr_asid(uint32_t vaddr, uint32_t asid)
     assert(asid <= RISCV_SV32_ASID_MAX);
     __asm__ volatile ("sfence.vma %0, %1" :: "r" (vaddr), "r" (asid) : "memory");
 }
+
+static bool paddr_readable(riscv_sv32_paddr_t paddr, riscv_sv32_paddr_check_t paddr_ok)
+{
+    return paddr <= UINT32_MAX - (RISCV_SV32_PAGE_SIZE - 1U) && paddr_ok((uint32_t)paddr) &&
+           paddr_ok((uint32_t)paddr + RISCV_SV32_PAGE_SIZE - 1U);
+}
+
+bool riscv_sv32_translate_checked(uint32_t satp, uint32_t vaddr, uint32_t permissions,
+                                  riscv_sv32_paddr_check_t paddr_ok, uint32_t *paddr)
+{
+    if ((satp & SATP32_MODE) == 0) {
+        return false;
+    }
+    riscv_sv32_paddr_t table = (riscv_sv32_paddr_t)(satp & SATP32_PPN) << RISCV_SV32_PAGE_SHIFT;
+    if (!paddr_readable(table, paddr_ok)) {
+        return false;
+    }
+    riscv_sv32_pte_t pte = ((const riscv_sv32_pte_t *)(uintptr_t)table)[RISCV_SV32_VPN1(vaddr)];
+    if (!riscv_sv32_pte_is_table(pte)) {
+        return false;
+    }
+    table = riscv_sv32_pte_get_paddr_base(pte);
+    if (!paddr_readable(table, paddr_ok)) {
+        return false;
+    }
+    pte = ((const riscv_sv32_pte_t *)(uintptr_t)table)[RISCV_SV32_VPN0(vaddr)];
+    if (!riscv_sv32_pte_is_leaf(pte) || (pte & permissions) != permissions ||
+            (pte & (RISCV_SV32_PTE_R | RISCV_SV32_PTE_W)) == RISCV_SV32_PTE_W) {
+        return false;
+    }
+    const riscv_sv32_paddr_t page = riscv_sv32_pte_get_paddr_base(pte);
+    if (!paddr_readable(page, paddr_ok)) {
+        return false;
+    }
+    *paddr = (uint32_t)page | (vaddr & (RISCV_SV32_PAGE_SIZE - 1U));
+    return true;
+}
