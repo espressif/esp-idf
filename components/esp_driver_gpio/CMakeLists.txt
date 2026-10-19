@@ -31,7 +31,20 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       PRIV_REQUIRES esp_pm
                        REQUIRES esp_hal_gpio
                        LDFRAGMENTS "linker.lf"
                       )
+
+# Only the glitch filter drivers use esp_pm, to hold a PM lock while enabled.
+if(CONFIG_PM_ENABLE AND
+   (CONFIG_SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER OR CONFIG_SOC_GPIO_FLEX_GLITCH_FILTER_NUM GREATER 0))
+    if(IDF_BUILD_V2)
+        idf_component_include(esp_pm)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_pm)
+    else()
+        # V1 cannot add a requirement conditionally, because requirements are
+        # resolved before Kconfig is available. Linking the already-present
+        # component is enough: a central component keeps esp_pm in the build.
+        idf_component_optional_requires(PRIVATE esp_pm)
+    endif()
+endif()

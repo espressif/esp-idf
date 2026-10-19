@@ -35,7 +35,11 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
     set(priv_requires soc esp_hw_support)
     if(NOT BOOTLOADER_BUILD)
         # esp_mspi provides esp_mspi_align, used by the AES and SHA DMA ports
-        list(APPEND priv_requires esp_pm esp_driver_dma esp_mspi)
+        list(APPEND priv_requires esp_driver_dma esp_mspi)
+        if(NOT IDF_BUILD_V2)
+            # V1 resolves requirements before Kconfig is available.
+            list(APPEND priv_requires esp_pm)
+        endif()
         set(requires esp_security esp_hal_security)
     endif()
 endif()
@@ -69,6 +73,10 @@ idf_component_register(SRCS "${mbedtls_srcs}"
     PRIV_REQUIRES "${priv_requires}"
     REQUIRES "${requires}"
     )
+
+if(IDF_BUILD_V2 AND CONFIG_PM_ENABLE)
+    idf_component_include(esp_pm)
+endif()
 
 # Add MBEDTLS_MAJOR_VERSION definition to the component library
 target_compile_definitions(${COMPONENT_LIB} INTERFACE MBEDTLS_MAJOR_VERSION=4)

@@ -67,6 +67,12 @@ if(NOT non_os_build AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         # will be replaced with MMU requirements
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
+    if(IDF_BUILD_V2 AND CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ)
+        # esp_pm implements the callbacks that limit the CPU frequency during
+        # encrypted flash writes, whether or not PM is enabled.
+        idf_component_include(esp_pm)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_pm)
+    endif()
     # Force linking init_flash ESP_SYSTEM_INIT_FN to ensure it's not discarded by linker
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_flash_spi_init_include_func")
 endif()
