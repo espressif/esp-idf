@@ -1212,8 +1212,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
         emac_ll_enable_bus_clock(0, true);
         emac_ll_reset_register(0);
     }
-    /* initialize hal layer driver */
-    emac_hal_init(&emac->hal);
+    /* set hal layer context */
+    emac->hal = emac_hal_get_context();
 
     /* alloc interrupt */
     int isr_flags = 0;

@@ -533,8 +533,7 @@ TEST_CASE("internal emac address filter", "[esp_emac]")
     bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
 
-    emac_hal_context_t emac_hal;
-    emac_hal_init(&emac_hal);
+    emac_hal_context_t emac_hal = emac_hal_get_context();
 
     // Test destination address filter functions
     uint8_t test_mac_addr1[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
