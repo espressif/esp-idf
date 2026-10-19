@@ -454,9 +454,23 @@ static int http_on_chunk_header(http_parser *parser)
     return 0;
 }
 
+/* A CR or LF in a header key or value ends the header line early, so the rest
+ * is read as a header of the sender's choosing, or by an intermediary as a
+ * second request. Both halves can carry data the firmware did not author: a
+ * value from provisioning or a cloud response, and on the Digest path a realm
+ * and nonce chosen by the server. So they are checked, not trusted. */
+static bool http_field_is_single_line(const char *field)
+{
+    return field == NULL || strpbrk(field, "\r\n") == NULL;
+}
+
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value)
 {
     if (client == NULL || client->request == NULL || client->request->headers == NULL || key == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!http_field_is_single_line(key) || !http_field_is_single_line(value)) {
+        ESP_LOGE(TAG, "Header key or value contains CR or LF, refusing to set it");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -630,6 +644,15 @@ esp_err_t esp_http_client_set_event_handler(esp_http_client_handle_t client, htt
 static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     esp_err_t ret = ESP_OK;
+    /* path and query go into the request line verbatim and host into the Host
+     * header, so a CR or LF in any of them would split that line. A URL is
+     * already checked by the URL parser; these fields are not. Checked before
+     * any field is copied. */
+    if (!http_field_is_single_line(config->host) || !http_field_is_single_line(config->path) ||
+            !http_field_is_single_line(config->query)) {
+        ESP_LOGE(TAG, "host, path or query contains CR or LF");
+        return ESP_ERR_INVALID_ARG;
+    }
     client->connection_info.method = config->method;
     client->connection_info.port = config->port;
     client->connection_info.auth_type = config->auth_type;

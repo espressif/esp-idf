@@ -187,13 +187,13 @@ typedef enum {
  */
 typedef struct {
     const char                  *url;                /*!< HTTP URL, the information on the URL is most important, it overrides the other fields below, if any */
-    const char                  *host;               /*!< Domain or IP as string */
+    const char                  *host;               /*!< Domain or IP as string. Must not contain CR or LF */
     int                         port;                /*!< Port to connect, default depend on esp_http_client_transport_t (80 or 443) */
     const char                  *username;           /*!< Using for Http authentication */
     const char                  *password;           /*!< Using for Http authentication */
     esp_http_client_auth_type_t auth_type;           /*!< Http authentication type, see `esp_http_client_auth_type_t` */
-    const char                  *path;               /*!< HTTP Path, if not set, default is `/` */
-    const char                  *query;              /*!< HTTP query */
+    const char                  *path;               /*!< HTTP Path, if not set, default is `/`. Must not contain CR or LF */
+    const char                  *query;              /*!< HTTP query. Must not contain CR or LF */
     union {
         const char              *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
         const char              *cert_der;           /*!< SSL server certification, DER format as binary, if the client requires to verify server */
@@ -448,8 +448,12 @@ int esp_http_client_get_post_field(esp_http_client_handle_t client, char **data)
  * @param[in]  key     The header key
  * @param[in]  value   The header value
  *
+ * @note       A key or value that contains CR or LF is refused, because it would end
+ *             the header line early and let the rest be read as another header.
+ *
  * @return
  *  - ESP_OK
+ *  - ESP_ERR_INVALID_ARG: client or key is NULL, or the key or value contains CR or LF
  *  - ESP_FAIL
  */
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value);
