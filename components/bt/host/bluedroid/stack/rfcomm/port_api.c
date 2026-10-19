@@ -106,7 +106,7 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
                              tPORT_MGMT_CALLBACK *p_mgmt_cb)
 {
     tPORT      *p_port;
-    int        i;
+    int        i, ret;
     UINT8      dlci;
     tRFC_MCB   *p_mcb = port_find_mcb (bd_addr);
     UINT16     rfcomm_mtu;
@@ -219,7 +219,11 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
     }
 
     /* Open will be continued after security checks are passed */
-    return port_open_continue (p_port);
+    if ((ret = port_open_continue (p_port)) != ((PORT_SUCCESS))) {
+        *p_handle = 0;
+    }
+
+    return ret;
 }
 
 
@@ -245,7 +249,7 @@ int RFCOMM_RemoveConnection (UINT16 handle)
     }
     p_port = &rfc_cb.port.port[handle - 1];
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED || p_port->state == PORT_STATE_CLOSING)) {
         RFCOMM_TRACE_EVENT ("RFCOMM_RemoveConnection() Not opened:%d", handle);
         return (PORT_SUCCESS);
     }
@@ -282,8 +286,14 @@ int RFCOMM_RemoveServer (UINT16 handle)
     /* Do not report any events to the client any more. */
     p_port->p_mgmt_callback = NULL;
 
-    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
+    if (!p_port->in_use || p_port->state == PORT_STATE_CLOSING) {
         RFCOMM_TRACE_EVENT ("RFCOMM_RemoveServer() Not opened:%d", handle);
+        return (PORT_SUCCESS);
+    }
+
+    if (p_port->state == PORT_STATE_CLOSED) {
+        p_port->keep_port_handle = FALSE;
+        port_start_close (p_port);
         return (PORT_SUCCESS);
     }
 
@@ -537,12 +547,16 @@ BOOLEAN PORT_IsOpening (BD_ADDR bd_addr)
             for (yy = 0; yy < MAX_RFC_PORTS; yy++, p_port++) {
                 if (p_port->rfc.p_mcb == p_mcb) {
                     found_port = TRUE;
-                    break;
+                    /* Any DLC still below OPENED means this mux is still opening */
+                    if (p_port->rfc.state < RFC_STATE_OPENED) {
+                        memcpy (bd_addr, rfc_cb.port.rfc_mcb[xx].bd_addr, BD_ADDR_LEN);
+                        return TRUE;
+                    }
                 }
             }
 
-            if ((!found_port) || (p_port->rfc.state < RFC_STATE_OPENED)) {
-                /* Port is not established yet. */
+            /* Mux is up but no DLC is bound yet (typical incoming path). */
+            if (!found_port) {
                 memcpy (bd_addr, rfc_cb.port.rfc_mcb[xx].bd_addr, BD_ADDR_LEN);
                 return TRUE;
             }
@@ -1414,8 +1428,10 @@ static int port_write (tPORT *p_port, BT_HDR *p_buf)
                             p_port->rfc.state,
                             p_port->port_ctrl);
 
+        osi_mutex_global_lock();
         fixed_queue_enqueue(p_port->tx.queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         p_port->tx.queue_size += p_buf->len;
+        osi_mutex_global_unlock();
 
         return (PORT_CMD_PENDING);
     } else {
@@ -1528,7 +1544,9 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
     }
     int available = 0;
     available = len;
-    if (available == 0) {
+    if (available < 0) {
+        return (PORT_UNKNOWN_ERROR);
+    } else if (available == 0) {
         return PORT_SUCCESS;
     }
     /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len */
@@ -1828,7 +1846,36 @@ bt_status_t RFCOMM_Init (void)
 void RFCOMM_Deinit(void)
 {
 #if RFC_DYNAMIC_MEMORY == TRUE
-    if (rfc_cb_ptr){
+    if (rfc_cb_ptr) {
+#endif
+        int i;
+        tPORT *p_port;
+        tRFC_MCB *p_mcb;
+        for (i = 0; i < MAX_RFC_PORTS; i++) {
+            p_port = &rfc_cb.port.port[i];
+            if (p_port->in_use) {
+                rfc_port_timer_free(p_port);
+                if (p_port->tx.queue) {
+                    fixed_queue_free(p_port->tx.queue, osi_free_func);
+                    p_port->tx.queue = NULL;
+                }
+                if (p_port->rx.queue) {
+                    fixed_queue_free(p_port->rx.queue, osi_free_func);
+                    p_port->rx.queue = NULL;
+                }
+            }
+        }
+        for (i = 0; i < MAX_BD_CONNECTIONS; i++) {
+            p_mcb = &rfc_cb.port.rfc_mcb[i];
+            if (p_mcb->state != RFC_MX_STATE_IDLE) {
+                rfc_timer_free(p_mcb);
+                if (p_mcb->cmd_q) {
+                    fixed_queue_free(p_mcb->cmd_q, osi_free_func);
+                    p_mcb->cmd_q = NULL;
+                }
+            }
+        }
+#if RFC_DYNAMIC_MEMORY == TRUE
         osi_free(rfc_cb_ptr);
         rfc_cb_ptr = NULL;
     }

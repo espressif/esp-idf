@@ -108,6 +108,7 @@ void RFCOMM_ConnectInd (BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 id)
         if ((p_mcb->is_initiator) && (p_mcb->state == RFC_MX_STATE_WAIT_CONN_CNF)) {
             p_mcb->pending_lcid = lcid;
             p_mcb->pending_id   = id;
+            rfc_save_lcid_mcb(p_mcb, lcid);
 
             /* wait random timeout (2 - 12) to resolve collision */
             /* if peer gives up then local device rejects incoming connection and continues as initiator */
@@ -282,6 +283,12 @@ void RFCOMM_DisconnectInd (UINT16 lcid, BOOLEAN is_conf_needed)
         RFCOMM_TRACE_WARNING ("RFCOMM_DisconnectInd LCID:0x%x", lcid);
         return;
     }
+    if (p_mcb->pending_lcid == lcid) {
+        rfc_save_lcid_mcb(NULL, lcid);
+        p_mcb->pending_lcid = 0;
+        p_mcb->pending_id = 0;
+        return;
+    }
 
     rfc_mx_sm_execute (p_mcb, RFC_MX_EVENT_DISC_IND, NULL);
 }
@@ -407,7 +414,7 @@ tRFC_MCB *rfc_find_lcid_mcb (UINT16 lcid)
         return (NULL);
     } else {
         if ((p_mcb = rfc_cb.rfc.p_rfc_lcid_mcb[lcid - L2CAP_BASE_APPL_CID]) != NULL) {
-            if (p_mcb->lcid != lcid) {
+            if (p_mcb->lcid != lcid && p_mcb->pending_lcid != lcid) {
                 RFCOMM_TRACE_WARNING ("rfc_find_lcid_mcb LCID reused LCID:0x%x current:0x%x", lcid, p_mcb->lcid);
                 return (NULL);
             }
