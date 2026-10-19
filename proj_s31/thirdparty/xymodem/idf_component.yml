@@ -1,0 +1,11 @@
+dependencies:
+  idf: '>=5.3'
+description: XMODEM and YMODEM protocol layer
+documentation: https://espressif.github.io/idf-extra-components/latest/xymodem/index.html
+issues: https://github.com/espressif/idf-extra-components/issues
+repository: git://github.com/espressif/idf-extra-components.git
+repository_info:
+  commit_sha: 8cd8f476e8314393b8349d6d2908eef60204c154
+  path: xymodem
+url: https://github.com/espressif/idf-extra-components/tree/master/xymodem
+version: 0.1.1

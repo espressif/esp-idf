@@ -22,6 +22,17 @@ if(CONFIG_FTP_SERVER_SUPPORT)
     list(APPEND COMMON_SRCS "common/ftp_server/cmd_ftpsrv.c")
 endif()
 
+if(CONFIG_OTA_SUPPORT)
+    list(APPEND COMMON_SRCS "common/ota/ota.c")
+    list(APPEND COMMON_SRCS "common/ota/cmd_ota.c")
+    if(CONFIG_XMODEM_OTA_SUPPORT)
+        list(APPEND COMMON_SRCS "common/ota/ota_xmodem.c")
+    endif()
+    if(CONFIG_HTTPS_OTA_SUPPORT)
+        list(APPEND COMMON_SRCS "common/ota/ota_https.c")
+    endif()
+endif()
+
 set(COMMON_INCLUDE_DIRS
     "common"
     "common/filemgr"
@@ -31,3 +42,7 @@ set(COMMON_INCLUDE_DIRS
     "common/osal"
     "common/sntp"
 )
+
+if(CONFIG_OTA_SUPPORT)
+    list(APPEND COMMON_INCLUDE_DIRS "common/ota")
+endif()

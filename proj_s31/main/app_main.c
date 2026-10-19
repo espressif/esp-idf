@@ -31,6 +31,9 @@
 #if CONFIG_BSP_AUDIO_ENABLE
 #include "bsp_audiomgr.h"
 #endif
+#if CONFIG_OTA_SUPPORT
+#include "ota.h"
+#endif
 
 static const char *TAG = "eth_example";
 
@@ -163,6 +166,10 @@ void app_main(void)
 
     // Init File Manager
     ESP_ERROR_CHECK(app_filemgr_mount());
+
+#if CONFIG_OTA_SUPPORT && CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    ESP_ERROR_CHECK(ota_mark_valid());
+#endif
 
     // Init Command Manager
     ESP_ERROR_CHECK(cmdmgr_init());

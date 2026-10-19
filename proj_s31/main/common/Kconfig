@@ -6,12 +6,72 @@ menu "common"
 
 if COMMON_ENABLE
 
-config FTP_SERVER_SUPPORT
-    bool "Enable FTP server support"
-    default n
-    help
-        Enable FTP server support
+    config FTP_SERVER_SUPPORT
+        bool "Enable FTP server support"
+        default n
+        help
+            Enable FTP server support
+    
+    menu "OTA"
+    config OTA_SUPPORT
+        bool "Enable OTA support"
+        default y
+        help
+            Enable OTA support
+        
+        if OTA_SUPPORT
+            menu "HTTPS OTA"
+            config HTTPS_OTA_SUPPORT
+                bool "Enable HTTPS OTA support"
+                default y
+                help
+                    Enable HTTPS OTA support
 
+                if HTTPS_OTA_SUPPORT
+                    config HTTPS_OTA_SERVER_IP
+                        string "HTTPS OTA server IP"
+                        default "192.168.1.100"
+                        help
+                            HTTPS OTA server IP
+                endif
+            endmenu
+
+            menu "XMODEM OTA"
+            config XMODEM_OTA_SUPPORT
+                bool "Enable XMODEM OTA support"
+                default y
+                help
+                    Enable XMODEM OTA support
+                
+                if XMODEM_OTA_SUPPORT
+                    config XMODEM_OTA_UART_PORT
+                        int "XMODEM OTA UART port"
+                        default 1
+                        help
+                            XMODEM OTA UART port
+
+                    config XMODEM_OTA_UART_BAUD_RATE
+                        int "XMODEM OTA UART baud rate"
+                        default 115200
+                        help
+                            XMODEM OTA UART baud rate
+
+                    config XMODEM_OTA_UART_RX_PIN
+                        int "XMODEM OTA UART RX pin"
+                        default 48
+                        help
+                            XMODEM OTA UART RX pin
+
+                    config XMODEM_OTA_UART_TX_PIN
+                        int "XMODEM OTA UART TX pin"
+                        default 47
+                        help
+                            XMODEM OTA UART TX pin
+                endif
+            endmenu
+        endif
+    endmenu
 endif
+
 
 endmenu

@@ -1,10 +1,14 @@
 #include "esp_err.h"
 #include "esp_console.h"
+#include "sdkconfig.h"
 #include "iperf_cmd.h"
 #include "cmd_system.h"
 #include "cmd_nvs.h"
 #include "cmd_filemgr.h"
 #include "cmdmgr.h"
+#if CONFIG_OTA_SUPPORT
+#include "cmd_ota.h"
+#endif
 
 #define APP_FILEMGR_HISTORY_PATH "/mnt/history.txt"
 
@@ -27,6 +31,9 @@ esp_err_t cmdmgr_init(void)
     register_system_common();
     register_nvs();
     register_filemgr();
+#if CONFIG_OTA_SUPPORT
+    register_ota();
+#endif
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));

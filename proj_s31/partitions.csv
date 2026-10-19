@@ -1,6 +1,9 @@
 # Name,   Type, SubType, Offset,  Size, Flags
 # Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
+# 16MB flash: factory replaced by dual OTA slots (4MB each); storage fills to end.
 nvs,      data, nvs,     0x9000,  0x6000,
-phy_init, data, phy,     0xf000,  0x1000,
-factory,  app,  factory, 0x10000, 2M,
-storage,  data, littlefs,     ,        12M,
+otadata,  data, ota,     0xf000,  0x2000,
+phy_init, data, phy,     0x11000, 0x1000,
+ota_0,    app,  ota_0,   0x20000, 4M,
+ota_1,    app,  ota_1,        , 4M,
+storage,  data, littlefs,     , -16M,

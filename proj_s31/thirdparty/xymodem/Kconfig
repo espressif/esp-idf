@@ -1,0 +1,8 @@
+menu "X/YMODEM"
+    config XYMODEM_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Whether to enable the debug log messages for X/YMODEM component.
+
+endmenu
