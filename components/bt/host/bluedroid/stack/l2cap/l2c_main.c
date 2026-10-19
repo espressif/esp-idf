@@ -36,6 +36,9 @@
 #include "l2c_int.h"
 #include "stack/l2cdefs.h"
 //#include "osi/include/log.h"
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "stack/c2h_credit.h"
+#endif
 
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -134,12 +137,14 @@ void l2cap_bqb_bad_cmd_len_rej_ctrl(BOOLEAN enable)
 ** Function         l2c_rcv_acl_data
 **
 ** Description      This function is called from the HCI Interface when an ACL
-**                  data packet is received.
+**                  data packet is received. Does not account C2H credit; the
+**                  caller coalesces and flushes (BTU ACL batch or SIG path).
 **
-** Returns          void
+** Returns          TRUE if the caller should account one C2H credit for
+**                  *p_credit_handle (HCI handle, flags stripped).
 **
 *******************************************************************************/
-void l2c_rcv_acl_data (BT_HDR *p_msg)
+BOOLEAN l2c_rcv_acl_data (BT_HDR *p_msg, UINT16 *p_credit_handle)
 {
     UINT8       *p = (UINT8 *)(p_msg + 1) + p_msg->offset;
     UINT16      handle, hci_len;
@@ -149,6 +154,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     UINT16      l2cap_len, rcv_cid;
 #if (!CONFIG_BT_STACK_NO_LOG)
     UINT16      psm;
+#endif
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    BOOLEAN     credit_on_exit = TRUE;
 #endif
 
     /* Extract the handle */
@@ -177,25 +185,33 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
                                      "  cid:%d opcode:%d cur count:%d", handle, p_msg->layer_specific,
                                      rcv_cid, cmd_code, list_length(l2cb.rcv_pending_q));
                 p_msg->layer_specific = 2;
-                list_append(l2cb.rcv_pending_q, p_msg);
+                if (!list_append(l2cb.rcv_pending_q, p_msg)) {
+                    L2CAP_TRACE_ERROR ("L2CAP - failed to queue held ACL for handle:%d", handle);
+                    osi_free (p_msg);
+                    goto l2c_rcv_acl_exit;
+                }
 
                 if (list_length(l2cb.rcv_pending_q) == 1) {
                     btu_start_timer (&l2cb.rcv_hold_tle, BTU_TTYPE_L2CAP_HOLD, BT_1SEC_TIMEOUT);
                 }
 
-                return;
+                /* Buffer is held; return credit only after it is finally processed. */
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+                credit_on_exit = FALSE;
+#endif
+                goto l2c_rcv_acl_exit;
             } else {
                 L2CAP_TRACE_ERROR ("L2CAP - rcvd ACL for unknown handle:%d ls:%d cid:%d"
                                    " opcode:%d cur count:%d", handle, p_msg->layer_specific, rcv_cid,
                                    cmd_code, list_length(l2cb.rcv_pending_q));
             }
             osi_free (p_msg);
-            return;
+            goto l2c_rcv_acl_exit;
         }
     } else {
         L2CAP_TRACE_WARNING ("L2CAP - expected pkt start or complete, got: %d", pkt_type);
         osi_free (p_msg);
-        return;
+        goto l2c_rcv_acl_exit;
     }
 
     /* Extract the length and update the buffer header */
@@ -220,7 +236,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
         if ((p_ccb = l2cu_find_ccb_by_cid (p_lcb, rcv_cid)) == NULL) {
             L2CAP_TRACE_WARNING ("L2CAP - unknown CID: 0x%04x", rcv_cid);
             osi_free (p_msg);
-            return;
+            goto l2c_rcv_acl_exit;
         }
     }
 
@@ -230,7 +246,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     } else {
         L2CAP_TRACE_WARNING ("L2CAP - got incorrect hci header" );
         osi_free (p_msg);
-        return;
+        goto l2c_rcv_acl_exit;
     }
 
     if (l2cap_len != p_msg->len) {
@@ -238,7 +254,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
                              l2cap_len, p_msg->len);
 
         osi_free (p_msg);
-        return;
+        goto l2c_rcv_acl_exit;
     }
 
     /* Send the data through the channel state machine */
@@ -315,7 +331,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
             /* LE CoC data plane only; BR/EDR dynamic channels use l2c_csm / l2c_fcr below */
             if (p_lcb->transport == BT_TRANSPORT_LE && l2c_ble_le_coc_is_chan(p_ccb)) {
                 l2c_ble_le_coc_data_ind(p_ccb, p_msg);
-                return;
+                goto l2c_rcv_acl_exit;
             }
 #endif
             if (p_lcb->transport == BT_TRANSPORT_LE) {
@@ -344,6 +360,18 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
             }
         }
     }
+
+l2c_rcv_acl_exit:
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    if (credit_on_exit && p_credit_handle != NULL) {
+        *p_credit_handle = handle;
+        return TRUE;
+    }
+#else
+    UNUSED(handle);
+    UNUSED(p_credit_handle);
+#endif
+    return FALSE;
 }
 
 /*******************************************************************************
@@ -1002,9 +1030,22 @@ void l2c_process_held_packets(BOOLEAN timed_out)
         if (!timed_out || (!p_buf->layer_specific) || (--p_buf->layer_specific == 0)) {
             list_remove(l2cb.rcv_pending_q, p_buf);
             p_buf->layer_specific = 0xFFFF;
-            l2c_rcv_acl_data(p_buf);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+            {
+                UINT16 credit_handle;
+                if (l2c_rcv_acl_data(p_buf, &credit_handle)) {
+                    btu_c2h_credit_add(credit_handle, 1);
+                }
+            }
+#else
+            l2c_rcv_acl_data(p_buf, NULL);
+#endif
         }
     }
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    btu_c2h_credit_flush();
+#endif
 
     /* If anyone still in the queue, restart the timeout */
     if (!list_is_empty(l2cb.rcv_pending_q)) {

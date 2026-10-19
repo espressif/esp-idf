@@ -43,11 +43,25 @@ struct pkt_queue *pkt_queue_create(void);
 bool pkt_queue_enqueue(struct pkt_queue *queue, pkt_linked_item_t *item);
 
 /*
+ * brief: enqueue one item and return the new FIFO length
+ * param out_len: optional; on success receives the length after enqueue
+ * return: true on success, false when arguments are invalid
+ */
+bool pkt_queue_enqueue_and_len(struct pkt_queue *queue, pkt_linked_item_t *item, size_t *out_len);
+
+/*
  * brief: dequeue one item for the FIFO
  * param queue: pkt_queue instance created using pkt_queue_create
  * return: pointer of type pkt_linked_item_t dequeued, NULL if the queue is empty or upon exception
  */
 pkt_linked_item_t *pkt_queue_dequeue(struct pkt_queue *queue);
+
+/*
+ * brief: dequeue one item and return the remaining FIFO length
+ * param out_len: optional; receives the length after dequeue (0 if empty/failed)
+ * return: dequeued item, or NULL if empty / invalid
+ */
+pkt_linked_item_t *pkt_queue_dequeue_and_len(struct pkt_queue *queue, size_t *out_len);
 
 /*
  * brief: get the pointer of the first item from the FIFO but not get it dequeued

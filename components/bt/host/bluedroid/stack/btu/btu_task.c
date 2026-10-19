@@ -30,9 +30,13 @@
 #include "stack/btu.h"
 #include "osi/hash_map.h"
 #include "osi/pkt_queue.h"
+#include "osi/fixed_pkt_queue.h"
 #include "stack/hcimsgs.h"
 #include "l2c_int.h"
 #include "osi/osi.h"
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "stack/c2h_credit.h"
+#endif
 #if (defined(SDP_INCLUDED) && SDP_INCLUDED == TRUE)
 #include "sdpint.h"
 #endif
@@ -137,6 +141,14 @@ static void btu_acl_pkt_linked_free(pkt_linked_item_t *linked_pkt)
         BT_HDR *packet = NULL;
         memcpy(&packet, linked_pkt->data, sizeof(packet));
         if (packet != NULL) {
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+            /* Need the 2-byte HCI handle; full 4-byte preamble is not required to return credit. */
+            if (packet->len >= 2) {
+                uint8_t *stream = packet->data + packet->offset;
+                uint16_t handle = (uint16_t)stream[0] | (((uint16_t)stream[1]) << 8);
+                btu_c2h_credit_post(handle & HCI_DATA_HANDLE_MASK, 1);
+            }
+#endif
             osi_free(packet);
         }
         osi_free(linked_pkt);
@@ -161,7 +173,17 @@ static void btu_hci_msg_process(void *param)
       }
     case BT_EVT_TO_BTU_HCI_ACL:
         /* All Acl Data goes to L2CAP */
-        l2c_rcv_acl_data (p_msg);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+        {
+            UINT16 credit_handle;
+            if (l2c_rcv_acl_data(p_msg, &credit_handle)) {
+                btu_c2h_credit_add(credit_handle, 1);
+            }
+            btu_c2h_credit_flush();
+        }
+#else
+        l2c_rcv_acl_data(p_msg, NULL);
+#endif
         break;
 
     case BT_EVT_TO_BTU_L2C_SEG_XMIT:
@@ -232,21 +254,46 @@ static bool btu_hci_acl_data_ready(uint32_t timeout)
     return status;
 }
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+static UINT8 btu_acl_credit_coalesce(UINT16 *handles, UINT16 *num_pkts, UINT8 n,
+                                     UINT8 cap, UINT16 handle)
+{
+    UINT8 i;
+
+    for (i = 0; i < n; i++) {
+        if (handles[i] == handle) {
+            UINT32 sum = (UINT32)num_pkts[i] + 1;
+            num_pkts[i] = (sum > 0xFFFF) ? 0xFFFF : (UINT16)sum;
+            return n;
+        }
+    }
+    if (n < cap) {
+        handles[n] = handle;
+        num_pkts[n] = 1;
+        return (UINT8)(n + 1);
+    }
+    btu_c2h_credit_add(handle, 1);
+    return n;
+}
+#endif
+
 static void btu_hci_acl_data_handler(void *param)
 {
     UNUSED(param);
-    struct pkt_queue *acl_pkt_queue = btu_cb.acl_pkt_queue;
+    fixed_pkt_queue_t *acl_pkt_queue = btu_cb.acl_pkt_queue;
+    size_t pending = 0;
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    UINT16 credit_handles[BTU_ACL_CREDIT_COALESCE_CAP];
+    UINT16 credit_num_pkts[BTU_ACL_CREDIT_COALESCE_CAP];
+    UINT8 credit_ents = 0;
+#endif
+
     if (acl_pkt_queue == NULL || btu_cb.acl_closing) {
         return;
     }
 
-    size_t pkts_to_process = pkt_queue_length(acl_pkt_queue);
-    if (pkts_to_process > BTU_ACL_QUEUE_BATCH_SIZE) {
-        pkts_to_process = BTU_ACL_QUEUE_BATCH_SIZE;
-    }
-
-    for (size_t i = 0; i < pkts_to_process; i++) {
-        pkt_linked_item_t *linked_pkt = pkt_queue_dequeue(acl_pkt_queue);
+    for (size_t i = 0; i < BTU_ACL_QUEUE_BATCH_SIZE; i++) {
+        pkt_linked_item_t *linked_pkt = fixed_pkt_queue_dequeue_and_len(acl_pkt_queue, 0, &pending);
         if (linked_pkt == NULL) {
             break;
         }
@@ -257,11 +304,31 @@ static void btu_hci_acl_data_handler(void *param)
             osi_free(linked_pkt);
             continue;
         }
-        l2c_rcv_acl_data(packet);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+        {
+            UINT16 credit_handle;
+            if (l2c_rcv_acl_data(packet, &credit_handle)) {
+                credit_ents = btu_acl_credit_coalesce(credit_handles, credit_num_pkts, credit_ents,
+                                                      BTU_ACL_CREDIT_COALESCE_CAP, credit_handle);
+            }
+        }
+#else
+        l2c_rcv_acl_data(packet, NULL);
+#endif
         osi_free(linked_pkt);
     }
 
-    size_t pending = pkt_queue_length(acl_pkt_queue);
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    if (credit_ents > 0) {
+        btu_c2h_credit_add_n(credit_ents, credit_handles, credit_num_pkts);
+    }
+
+    if (pending <= BTU_ACL_QUEUE_LOW_WATER) {
+        btu_cb.acl_c2h_congested = FALSE;
+    }
+    /* Direct flush on BTU; no-op while still paused above low water. */
+    btu_c2h_credit_flush();
+#endif
     if (pending != 0) {
         // Re-post from BTU thread itself must stay non-blocking to avoid deadlock on a full queue.
         btu_hci_acl_data_ready(0);
@@ -341,7 +408,7 @@ bool btu_acl_queue_init(void)
     btu_cb.acl_closing = FALSE;
 
     do {
-        btu_cb.acl_pkt_queue = pkt_queue_create();
+        btu_cb.acl_pkt_queue = fixed_pkt_queue_new(BTU_ACL_QUEUE_CAPACITY);
         if (btu_cb.acl_pkt_queue == NULL) {
             break;
         }
@@ -354,6 +421,9 @@ bool btu_acl_queue_init(void)
         if (!osi_event_bind(btu_cb.acl_data_ready, btu_thread, 0)) {
             break;
         }
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+        btu_cb.acl_c2h_congested = FALSE;
+#endif
         status = true;
     } while (0);
 
@@ -364,7 +434,7 @@ bool btu_acl_queue_init(void)
         }
 
         if (btu_cb.acl_pkt_queue != NULL) {
-            pkt_queue_destroy(btu_cb.acl_pkt_queue, NULL);
+            fixed_pkt_queue_free(btu_cb.acl_pkt_queue, NULL);
             btu_cb.acl_pkt_queue = NULL;
         }
 
@@ -400,8 +470,12 @@ void btu_acl_queue_deinit(void)
 
     btu_cb.acl_closing = TRUE;
 
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    btu_cb.acl_c2h_congested = FALSE;
+#endif
+
     if (btu_cb.acl_pkt_queue != NULL) {
-        pkt_queue_destroy(btu_cb.acl_pkt_queue, btu_acl_pkt_linked_free);
+        fixed_pkt_queue_free(btu_cb.acl_pkt_queue, btu_acl_pkt_linked_free);
         btu_cb.acl_pkt_queue = NULL;
     }
 }
@@ -415,12 +489,6 @@ bool btu_hci_acl_data_post(BT_HDR *packet)
             break;
         }
 
-        size_t acl_q_len = pkt_queue_length(btu_cb.acl_pkt_queue);
-        if (acl_q_len >= BTU_ACL_QUEUE_HIGH_WATERMARK) {
-            HCI_TRACE_WARNING("ACL queue high watermark (len=%u)", (unsigned)acl_q_len);
-            break;
-        }
-
         pkt_linked_item_t *linked_pkt = (pkt_linked_item_t *)osi_malloc(BT_PKT_LINKED_HDR_SIZE + sizeof(packet));
         if (linked_pkt == NULL) {
             HCI_TRACE_WARNING("ACL queue malloc pkt failed");
@@ -428,7 +496,19 @@ bool btu_hci_acl_data_post(BT_HDR *packet)
         }
 
         memcpy(linked_pkt->data, &packet, sizeof(packet));
-        pkt_queue_enqueue(btu_cb.acl_pkt_queue, linked_pkt);
+        size_t qlen = 0;
+        if (!fixed_pkt_queue_enqueue_and_len(btu_cb.acl_pkt_queue, linked_pkt,
+                                             BTU_ACL_QUEUE_ENQUEUE_TIMEOUT_MS, &qlen)) {
+            HCI_TRACE_WARNING("ACL queue enqueue timeout");
+            osi_free(linked_pkt);
+            break;
+        }
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+        if (qlen >= BTU_ACL_QUEUE_HIGH_WATER) {
+            btu_cb.acl_c2h_congested = TRUE;
+        }
+#endif
 
         btu_hci_acl_data_ready(OSI_THREAD_MAX_TIMEOUT);
         status = true;
@@ -436,6 +516,29 @@ bool btu_hci_acl_data_post(BT_HDR *packet)
 
     return status;
 }
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+BOOLEAN btu_c2h_acl_is_congested(void)
+{
+#if (BTU_DYNAMIC_MEMORY == TRUE)
+    if (btu_cb_ptr == NULL) {
+        return FALSE;
+    }
+#endif
+    return btu_cb.acl_c2h_congested;
+}
+
+void btu_c2h_credit_pause_if_congested(void)
+{
+    if (btu_cb.acl_pkt_queue == NULL || btu_cb.acl_closing) {
+        return;
+    }
+
+    if (fixed_pkt_queue_length(btu_cb.acl_pkt_queue) >= BTU_ACL_QUEUE_HIGH_WATER) {
+        btu_cb.acl_c2h_congested = TRUE;
+    }
+}
+#endif
 
 void btu_task_start_up(void *param)
 {
