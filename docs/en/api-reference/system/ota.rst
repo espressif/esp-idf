@@ -128,32 +128,17 @@ The application-controlled confirmation process works as follows:
 Automatic OTA Confirmation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Automatic confirmation is the default confirmation mode. Use it when reaching ``app_main``
-is sufficient to consider an OTA update valid. Select application-controlled confirmation
-instead when the application must confirm the update at an application-defined checkpoint.
+Automatic confirmation is the default confirmation mode. Use it when reaching ``app_main`` is sufficient to consider an OTA update valid. Select application-controlled confirmation instead when the application must confirm the update at an application-defined checkpoint.
 
-In this mode, ESP-IDF calls :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` near the end
-of system startup, after IDF component initialization has completed and immediately before
-calling ``app_main``. Reaching this point is treated as a successful first boot. If startup
-fails before this point, the application remains unconfirmed and the bootloader selects the
-previously working application on the next boot.
+In this mode, ESP-IDF calls :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` near the end of system startup, after IDF component initialization has completed and immediately before calling ``app_main``. Reaching this point is treated as a successful first boot. If startup fails before this point, the application remains unconfirmed and the bootloader selects the previously working application on the next boot.
 
-Automatic confirmation does not validate application-specific initialization or
-diagnostics performed in ``app_main``. It also changes the OTA state to
-``ESP_OTA_IMG_VALID`` before application code runs. Consequently,
-:cpp:func:`esp_ota_get_state_partition` cannot be used from application code to determine
-whether this is the first boot of the new application. Select
-application-controlled confirmation to detect the first boot by checking for
-``ESP_OTA_IMG_PENDING_VERIFY``, perform self-tests, and then call
-:cpp:func:`esp_ota_mark_app_valid_cancel_rollback` or
-:cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`. Alternatively, the application
-can maintain its own persistent marker for the last application image it ran.
+Automatic confirmation does not validate application-specific initialization or diagnostics performed in ``app_main``. It also changes the OTA state to ``ESP_OTA_IMG_VALID`` before application code runs. Consequently, :cpp:func:`esp_ota_get_state_partition` cannot be used from application code to determine whether this is the first boot of the new application.
+
+Select application-controlled confirmation to detect the first boot by checking for ``ESP_OTA_IMG_PENDING_VERIFY``, perform self-tests, and then call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` or :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`. Alternatively, the application can maintain its own persistent marker for the last application image it ran.
 
 .. note::
 
-  Automatic confirmation is unavailable with anti-rollback. Applications using
-  anti-rollback must confirm the new version explicitly at an application-defined
-  checkpoint.
+    Automatic confirmation is unavailable with anti-rollback. Applications using anti-rollback must confirm the new version explicitly at an application-defined checkpoint.
 
 Unexpected Reset
 ^^^^^^^^^^^^^^^^
@@ -251,12 +236,12 @@ Restrictions:
 
     - The number of bits in the ``secure_version`` field is limited to {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} bits. This means that only {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} times you can do an anti-rollback. You can reduce the length of this efuse field using :menuitem:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` option.
     :esp32: - Anti-rollback works only if the encoding scheme for efuse is set to ``NONE``.
-    - Factory and Test partitions are not supported in anti rollback scheme and hence partition table should not have partition with SubType set to ``factory`` or ``test``.
+    - Factory and Test partitions are not supported in the anti-rollback scheme. Therefore, the partition table should not contain a partition with SubType set to ``factory`` or ``test``.
     :TARGET_SUPPORT_ESP_TEE: - When the :ref:`TEE anti-rollback <tee-anti-rollback>` feature is enabled, the top 3 bits of the ``secure_version`` eFuse field are reserved for the TEE secure version, reducing the bits available to the application by 3.
 
 ``security_version``:
 
-- In application image it is stored in ``esp_app_desc`` structure. The number is set :menuitem:`CONFIG_BOOTLOADER_APP_SECURE_VERSION`.
+- In the application image, it is stored in the ``esp_app_desc`` structure. The number is set using :menuitem:`CONFIG_BOOTLOADER_APP_SECURE_VERSION`.
 
 .. only:: esp32
 

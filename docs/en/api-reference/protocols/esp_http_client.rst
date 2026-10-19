@@ -226,7 +226,7 @@ Expected data types for different HTTP Client events in the event loop are as fo
     - HTTP_EVENT_DISCONNECTED       : ``esp_http_client_handle_t``
     - HTTP_EVENT_REDIRECT           : ``esp_http_client_redirect_event_data_t``
 
-The :cpp:type:`esp_http_client_handle_t` received along with the event data will be valid until :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` is not received. This handle has been sent primarily to differentiate between different client connections and must not be used for any other purpose, as it may change based on client connection state.
+The :cpp:type:`esp_http_client_handle_t` received along with the event data will be valid until :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` is received. This handle has been sent primarily to differentiate between different client connections and must not be used for any other purpose, as it may change based on client connection state.
 
 TLS Protocol Version
 --------------------
@@ -235,12 +235,12 @@ TLS protocol version to be used for the underlying TLS connection can be set in 
 
 The TLS protocol version for the HTTP client can be configured as follows:
 
-    .. code-block:: c
+.. code-block:: c
 
-        #include "esp_http_client.h"
-        esp_http_client_config_t config = {
-            .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
-        };
+    #include "esp_http_client.h"
+    esp_http_client_config_t config = {
+        .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
+    };
 
 TLS Ciphersuites and Supported Groups
 -------------------------------------
@@ -249,15 +249,15 @@ The ciphersuites and the supported groups of the underlying TLS connection can b
 
 The client keeps a pointer to each array. It does not copy the arrays. Each array must end with 0 and must stay valid until :cpp:func:`esp_http_client_cleanup` is called.
 
-    .. code-block:: c
+.. code-block:: c
 
-        #include "esp_http_client.h"
-        static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0};
-        static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
-        esp_http_client_config_t config = {
-            .ciphersuites_list = ciphersuites_list,
-            .groups_list = groups_list,
-        };
+    #include "esp_http_client.h"
+    static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0};
+    static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
+    esp_http_client_config_t config = {
+        .ciphersuites_list = ciphersuites_list,
+        .groups_list = groups_list,
+    };
 
 Call :cpp:func:`esp_tls_get_ciphersuites_list` and :cpp:func:`esp_tls_get_supported_groups_list` to get the lists that the TLS stack supports, and cross-check them against the supplied lists.
 

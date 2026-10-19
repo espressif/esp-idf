@@ -401,6 +401,102 @@ LP 内核调试特性
 #. OpenOCD 的 flash 支持被禁用。LP 内核应用程序完全在 RAM 中运行，且 GDB 可以为其使用软件断点，因而该限制无关紧要。但若想在 HP 内核运行的代码中调用的 flash 函数（例如 `app_main`）上设置断点，则需要通过 ``hb`` 和 ``thb`` GDB 命令显式请求设置硬件断点。
 #. 由于主程序和 ULP 程序被链接为独立的二进制文件，它们可能会拥有相同名称的全局符号（如函数或变量）。若通过函数名称设置断点，则 GDB 将为所有同名函数设置断点。在调试 LP 内核时，OpenOCD 不支持 flash，因此如果上述函数位于 flash 中，可能会引发问题。此时建议通过源代码行号或函数的内存地址来设置断点。
 
+使用自定义链接器脚本
+--------------------
+
+默认的 LP 内核链接器脚本由三个部分组成：**base**、**layout** 和 **checks**。构建时，这三个部分会拼接在一起，并由 C 预处理器处理。这种拆分方式在 ESP-IDF 与 LP 内核应用程序之间定义了稳定接口：ESP-IDF 负责与启动相关的关键约束，LP 内核应用程序负责内存映射和段放置，两者可以独立演进。
+
+- **base** 部分：定义 ``ENTRY``、中断向量表、HP/LP 共享内存段、默认栈顶 (``__stack_top``)、可用窗口边界以及下文所列的段边界宏。此部分不会被替换。
+- **layout** 部分：声明窗口内的内存区域和段放置。它通过组合宏来工作，不会重新实现启动代码。LP 内核应用程序可以替换此部分。
+- **checks** 部分：提供默认的 ``__stack_size`` （在 layout 标记 ``_lp_data_end`` 后，计算为 ``_lp_data_end`` 与 ``__stack_top`` 之间的空闲空间），并提供链接阶段的 ``ASSERT`` 语句，用于验证以下各项：复位向量放置正确、镜像适配预留内存，以及栈位于其边界内。验证失败时，构建会给出明确消息，而不是难以理解的链接器错误。
+
+自定义 layout 仅使用以下内容：
+
+- ``LP_CORE_USER_MEMORY_REGION_START``/``LP_CORE_USER_MEMORY_REGION_END``：空闲 LP-RAM 窗口的边界。只能在此窗口内声明区域和放置段。
+- ``LP_CORE_TEXT_START(region)``：首先组合到以 ``LP_CORE_USER_MEMORY_REGION_START`` 开始的区域中，在启动偏移处放置复位向量和早期处理程序。
+- ``LP_CORE_TEXT_END()``：在最后一个可执行段之后组合。
+- ``LP_CORE_DATA_START()``/``LP_CORE_DATA_END()``：组合在可写数据的前后。``LP_CORE_DATA_END()`` 标记可写数据的末尾 (``_lp_data_end``)，base 使用该标记计算栈大小并检查其边界，因此 layout 必须组合此宏（或自行赋值 ``_lp_data_end``）。
+
+这些宏会根据配置处理 layout，因此无论当前配置如何，layout 都以相同方式组合宏。向量表和 HP/LP 共享内存段由 base 提供，自定义 layout 不应声明或放置这些内容。layout 还可以使用栈窗口：``__stack_top`` 在 base 中默认为窗口顶部；确定 ``_lp_data_end`` 后，``__stack_size`` 在 checks 中默认为 ``_lp_data_end`` 与 ``__stack_top`` 之间的全部空闲空间。两者都是弱默认值，因此，如果 layout 需要在窗口顶部预留空间（例如栈保护区），可以覆盖其中任意一个。
+
+要使用 LP 内核应用程序自己的 layout，请将 ``LINKER_LAYOUT`` 选项传递给 ``ulp_embed_binary`` （或 ``ulp_add_project``）：
+
+.. code-block:: cmake
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}"
+                     LINKER_LAYOUT "${CMAKE_CURRENT_LIST_DIR}/ulp/custom_layout.ld")
+
+最小自定义 layout 会在窗口上声明一个区域，并组合段边界宏：
+
+.. code-block:: none
+
+    PROVIDE(_my_marker = 0xCAFEBABE);
+
+    MEMORY
+    {
+        lp_ram(RWX) : ORIGIN = LP_CORE_USER_MEMORY_REGION_START, LENGTH = LP_CORE_USER_MEMORY_REGION_END - LP_CORE_USER_MEMORY_REGION_START
+    }
+
+    SECTIONS
+    {
+        LP_CORE_TEXT_START(lp_ram)                    /* LP 内核复位向量位于启动偏移处 */
+        .text   ALIGN(4) : { *(.text) *(.text*) } > lp_ram
+        .rodata ALIGN(4) : { *(.rodata) *(.rodata*) } > lp_ram
+        LP_CORE_TEXT_END()
+        LP_CORE_DATA_START()
+        .data   ALIGN(4) : { *(.data) *(.data*) *(.sdata) *(.sdata*) } > lp_ram
+        .bss    ALIGN(4) : { *(.bss) *(.bss*) *(.sbss) *(.sbss*) } > lp_ram
+        LP_CORE_DATA_END()
+    }
+
+共享内存和栈窗口来自 base，因此 layout 不声明这些内容，只需使用 ``LP_CORE_DATA_END()`` 标记其数据末尾。
+
+如需完全控制 LP RAM，例如将 LP RAM 重新划分为多个区域，并把代码或数据固定在特定地址，LP 内核应用程序可以声明自己的区域映射。每个地址都从两个窗口符号派生，同时仍需组合段边界宏。示例如下：
+
+.. code-block:: none
+
+    PROVIDE(_my_marker = 0xCAFEBABE);
+    _fixed_addr = LP_CORE_USER_MEMORY_REGION_START + 0x1780;
+
+    MEMORY
+    {
+        text(RWX) :         ORIGIN = LP_CORE_USER_MEMORY_REGION_START, LENGTH = _fixed_addr - LP_CORE_USER_MEMORY_REGION_START
+        fixed_region(RWX) : ORIGIN = _fixed_addr, LENGTH = 0x100
+        data(RW) :          ORIGIN = _fixed_addr + 0x100, LENGTH = LP_CORE_USER_MEMORY_REGION_END - (_fixed_addr + 0x100)
+    }
+
+    SECTIONS
+    {
+        LP_CORE_TEXT_START(text)                     /* LP 内核复位向量放置在应用程序的 text 区域 */
+
+        .text   ALIGN(4) : { *(.text) *(.text*) } > text
+        .rodata ALIGN(4) : { *(.rodata) *(.rodata*) } > text
+        LP_CORE_TEXT_END()
+
+        . = ORIGIN(fixed_region);                    /* 跳转到不连续的固定地址 */
+        .fixed_region ALIGN(4) : { KEEP(*(.fixed_region .fixed_region.*)) } > fixed_region
+
+        . = ORIGIN(data);
+        LP_CORE_DATA_START()
+        .data ALIGN(4) : { *(.data) *(.data*) *(.sdata) *(.sdata*) } > data
+        .bss  ALIGN(4) : { *(.bss) *(.bss*) *(.sbss) *(.sbss*) } > data
+        LP_CORE_DATA_END()
+    }
+
+layout 也可以接管栈，例如在可加载镜像之外保留栈溢出保护区。为此，可使用标记结束数据，并显式设置栈窗口：
+
+.. code-block:: none
+
+    .stack_guard (NOLOAD) : { . += 0x8; _guard = .; . += 0x4; } > lp_ram
+    LP_CORE_DATA_END()                               /* 标记 _lp_data_end */
+    __stack_top  = ORIGIN(lp_ram) + LENGTH(lp_ram);  /* 栈从区域顶部开始…… */
+    __stack_size = __stack_top - _lp_data_end;       /* ……并在剩余空间中向下增长 */
+
+随后，checks 会确认栈既不会伸入下方的数据，也不会侵入上方的共享区域。
+
+链接阶段的检查会使格式错误的 layout 构建失败，并给出明确消息，例如复位向量放置错误、镜像超出预留内存或栈与数据重叠。配置阶段还会拒绝不存在的 ``LINKER_LAYOUT`` 路径。``LINKER_LAYOUT`` 选项仅支持 LP-core ULP 类型，FSM 和经典 RISC-V ULP 类型会拒绝该选项。
+
+
 应用示例
 --------
 

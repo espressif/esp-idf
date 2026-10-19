@@ -196,7 +196,7 @@ Example
 
    #include "esp_blockdev.h"
 
-   /* Reserve system commands 0x0A..0x14 for nand_flash */
+   /* Reserve system commands 0x0A – 0x14 for nand_flash */
    ESP_BLOCKDEV_RESERVE_CMD_RANGE(nand_flash,
        ESP_BLOCKDEV_CMD_SYSTEM_BASE + 10,
        ESP_BLOCKDEV_CMD_SYSTEM_BASE + 20);
@@ -207,7 +207,7 @@ Example
 Registering Definition Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each component that owns ioctl definitions must register the file(s) containing reservation macros with the build system. This is done in the component's ``CMakeLists.txt``:
+Each component that owns ioctl definitions must register one or more files containing reservation macros with the build system. This is done in the component's ``CMakeLists.txt``:
 
 .. code-block:: cmake
 
@@ -223,7 +223,7 @@ When an overlap or invalid range is detected, the build fails with a diagnostic 
 
 .. note::
 
-   Adjacent ranges are valid. For example ``0x10..0x1F`` and ``0x20..0x2F`` do **not** overlap.
+   Adjacent ranges are valid. For example ``0x10 – 0x1F`` and ``0x20 – 0x2F`` do **not** overlap.
 
 .. _blockdev-apis:
 
