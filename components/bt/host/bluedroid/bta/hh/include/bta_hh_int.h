@@ -356,6 +356,7 @@ extern void bta_hh_add_device_to_list(tBTA_HH_DEV_CB *p_cb, UINT8 handle,
 extern void bta_hh_update_di_info(tBTA_HH_DEV_CB *p_cb, UINT16 vendor_id, UINT16 product_id,
                                   UINT16 version, UINT8 flag);
 extern void bta_hh_cleanup_disable(tBTA_HH_STATUS status);
+extern void bta_hh_free_disc_db(void);
 
 extern UINT8 bta_hh_dev_handle_to_cb_idx(UINT8 dev_handle);
 
