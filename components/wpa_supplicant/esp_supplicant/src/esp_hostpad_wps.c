@@ -27,6 +27,8 @@
 #include "ap/ap_config.h"
 #include "ap/wps_hostapd.h"
 #include "utils/eloop.h"
+#include "eapol_auth/eapol_auth_sm.h"
+#include "eapol_auth/eapol_auth_sm_i.h"
 
 extern struct wps_sm *gWpsSm;
 extern void *s_wps_api_lock;
@@ -115,14 +117,25 @@ _out:
 int wifi_ap_wps_deinit(void)
 {
     struct wps_sm *sm = gWpsSm;
+    struct hostapd_data *hapd;
 
     if (gWpsSm == NULL) {
         return ESP_FAIL;
     }
 
-    hostapd_deinit_wps(hostapd_get_hapd_data());
+    hapd = hostapd_get_hapd_data();
+    hostapd_deinit_wps(hapd);
+    /* allocated by ieee802_1x_init() from hostapd_init_wps() on every esp_wifi_ap_wps_enable() */
+    if (hapd && hapd->eapol_auth) {
+        os_free((void *) hapd->eapol_auth->conf.eap_cfg);
+        eapol_auth_deinit(hapd->eapol_auth);
+        hapd->eapol_auth = NULL;
+    }
     if (sm->wps) {
         sm->wps->registrar = 0;
+        /* allocated by hostapd_wps_config_ap(), unknown to wps_deinit() */
+        bin_clear_free(sm->wps->use_cred, sizeof(*sm->wps->use_cred));
+        sm->wps->use_cred = NULL;
         wps_deinit(sm->wps);
         sm->wps = NULL;
     }
@@ -224,7 +237,14 @@ int esp_wifi_ap_wps_enable(const esp_wps_config_t *config)
 
 int wifi_ap_wps_disable_internal(void)
 {
+    static bool s_disabling;
     enum wps_owner owner = wps_get_owner();
+    int ret = ESP_FAIL;
+
+    /* eap_wsc_reset() re-enters here while the outer wifi_ap_wps_disable_internal() tears down stations */
+    if (s_disabling) {
+        return ESP_OK;
+    }
 
     if (owner == WPS_OWNER_NONE) {
         wpa_printf(MSG_DEBUG, "wps disable: already disabled");
@@ -235,6 +255,7 @@ int wifi_ap_wps_disable_internal(void)
     }
 
     wpa_printf(MSG_INFO, "wifi_wps_disable");
+    s_disabling = true;
     if (wps_set_type(WPS_TYPE_DISABLE) != ESP_OK) {
         goto _err;
     }
@@ -248,11 +269,14 @@ int wifi_ap_wps_disable_internal(void)
     }
 
     wps_set_owner(WPS_OWNER_NONE);
-    return ESP_OK;
+    ret = ESP_OK;
+    goto _out;
 
 _err:
     wpa_printf(MSG_ERROR, "wps disable: failed to disable wps");
-    return ESP_FAIL;
+_out:
+    s_disabling = false;
+    return ret;
 }
 
 int esp_wifi_ap_wps_disable(void)
