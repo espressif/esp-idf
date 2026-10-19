@@ -311,6 +311,9 @@ esp_err_t esp_timer_stop_blocking(esp_timer_handle_t timer, uint32_t timeout_tic
  * The timer must be stopped before deleting. A one-shot timer which has expired
  * does not need to be stopped.
  *
+ * This function does not wait for callback completion and can be called from the
+ * timer's callback. After a successful call, the handle must not be used again.
+ *
  * @param timer timer handle created using esp_timer_create()
  * @return
  *      - ESP_OK on success
