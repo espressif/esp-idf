@@ -574,7 +574,12 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
     esp_event_loop_instance_t* loop;
     esp_err_t err = ESP_ERR_NO_MEM; // most likely error
 
+#if CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
+    // ISR posting accesses the loop instance even when the cache is disabled.
+    loop = heap_caps_calloc(1, sizeof(*loop), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+#else
     loop = esp_event_calloc(1, sizeof(*loop));
+#endif
     if (loop == NULL) {
         ESP_LOGE(TAG, "alloc for event loop failed");
         return err;

@@ -935,8 +935,26 @@ TEST_CASE("can post events from interrupt handler", "[event][intr]")
 
 #endif // CONFIG_ESP_EVENT_POST_FROM_ISR
 
+#if CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
+TEST_CASE("event loop ISR state is allocated in internal RAM", "[event][intr]")
+{
+    esp_event_loop_handle_t loop;
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+
+    loop_args.task_name = NULL;
+    TEST_ESP_OK(esp_event_loop_create(&loop_args, &loop));
+
+    esp_event_loop_instance_t* loop_inst = (esp_event_loop_instance_t*) loop;
+    TEST_ASSERT_TRUE(esp_ptr_internal(loop_inst));
+    TEST_ASSERT_TRUE(esp_ptr_internal(loop_inst->queue));
+
+    TEST_ESP_OK(esp_event_loop_delete(loop));
+    vTaskDelay(pdMS_TO_TICKS(TEST_CONFIG_TEARDOWN_WAIT));
+}
+#endif // CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
+
 #if CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM && CONFIG_SPIRAM
-TEST_CASE("event loop structures are allocated in external RAM", "[event][ext_ram]")
+TEST_CASE("event loop allocations respect external RAM configuration", "[event][ext_ram]")
 {
     esp_event_loop_handle_t loop;
     esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
@@ -946,14 +964,14 @@ TEST_CASE("event loop structures are allocated in external RAM", "[event][ext_ra
 
     esp_event_loop_instance_t* loop_inst = (esp_event_loop_instance_t*) loop;
 
-    // Verify that the loop structure itself is in external RAM
+    // ISR posting needs both the loop instance and its queue in internal RAM.
+#if CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
+    TEST_ASSERT_TRUE(esp_ptr_internal(loop_inst));
+    TEST_ASSERT_TRUE(esp_ptr_internal(loop_inst->queue));
+#else
     TEST_ASSERT_TRUE(esp_ptr_external_ram(loop_inst));
-
-    // Verify that the queue handle is valid
-    // Note: With xQueueCreateWithCaps(MALLOC_CAP_SPIRAM), the queue internals (buffer and storage)
-    // are allocated in external RAM, but we cannot directly access them for verification.
-    // The queue is only created with SPIRAM when CONFIG_ESP_EVENT_POST_FROM_ISR is disabled.
-    TEST_ASSERT_NOT_NULL(loop_inst->queue);
+    TEST_ASSERT_TRUE(esp_ptr_external_ram(loop_inst->queue));
+#endif
 
     // Verify that the task handle is valid
     // The task stack is allocated in external RAM via xTaskCreatePinnedToCoreWithCaps
@@ -981,7 +999,7 @@ TEST_CASE("event loop structures are allocated in external RAM", "[event][ext_ra
 
     TEST_ASSERT_EQUAL(1, handler_called);
 
-    // Post again to verify the queue (with internal structures in external RAM) is working correctly
+    // Post again to verify the queue is working correctly.
     TEST_ESP_OK(esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
 
     vTaskDelay(pdMS_TO_TICKS(100));
