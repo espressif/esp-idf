@@ -9,6 +9,7 @@ entries:
         i3c_master: handle_transfer_complete_int (noflash)
         i3c_master: handle_rx_data_buf_threshold_int (noflash)
         i3c_master: handle_ibi_status_thld_int (noflash)
+        i3c_master: read_rx_fifo_into_buffer (noflash)
 
 [mapping:i3c_driver_gdma]
 archive: libesp_driver_dma.a
