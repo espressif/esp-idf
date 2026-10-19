@@ -38,7 +38,6 @@ def test_esp_system_stdio_no_output_uart(dut: Dut) -> None:
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 def test_esp_system_stdio_only_serial_jtag(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     _expect_app_main_banner(dut)
@@ -57,7 +56,6 @@ def test_esp_system_stdio_only_serial_jtag(dut: Dut) -> None:
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 def test_esp_system_stdio_only_serial_jtag_no_vfs(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     _expect_app_main_banner(dut)
@@ -69,7 +67,6 @@ def test_esp_system_stdio_only_serial_jtag_no_vfs(dut: Dut) -> None:
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 def test_esp_system_stdio_secondary_serial_jtag(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     _expect_app_main_banner(dut)

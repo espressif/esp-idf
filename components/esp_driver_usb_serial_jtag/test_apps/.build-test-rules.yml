@@ -3,10 +3,6 @@
 components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32h21" # TODO ESPTOOL-1406
-      temporary: true
-      reason: cannot pass
   depends_components:
     - vfs
     - esp_driver_gpio
@@ -18,10 +14,6 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag:
 components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag_vfs:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32h21" # TODO ESPTOOL-1406
-      temporary: true
-      reason: cannot pass
   depends_components:
     - vfs
     - esp_driver_usb_serial_jtag
