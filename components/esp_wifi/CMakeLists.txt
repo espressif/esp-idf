@@ -78,9 +78,13 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES esp_event esp_phy esp_netif
                     PRIV_REQUIRES esp_pm esp_timer nvs_flash efuse
                                   wpa_supplicant hal lwip esp_coex
-                    PRIV_INCLUDE_DIRS ../wpa_supplicant/src/ ../wpa_supplicant/esp_supplicant/src/
-                                  wifi_apps/roaming_app/include wifi_apps/roaming_app/src
+                    PRIV_INCLUDE_DIRS wifi_apps/roaming_app/include wifi_apps/roaming_app/src
                     LDFRAGMENTS "${ldfragments}")
+
+idf_component_get_property(wpa_supplicant_dir wpa_supplicant COMPONENT_DIR)
+target_include_directories(${COMPONENT_LIB} BEFORE PRIVATE
+    "${wpa_supplicant_dir}/src"
+    "${wpa_supplicant_dir}/esp_supplicant/src")
 
 if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
