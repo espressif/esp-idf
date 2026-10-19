@@ -3,16 +3,38 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
-    idf_component_register(SRCS "esp_system.c"
-                        "esp_err.c"
-                        "esp_sys_event.c"
-                        "port/soc/linux/reset_reason.c"
-                        "port/soc/linux/system_internal.c"
-                        "port/esp_system_linux.c"
-                        "freertos_hooks.c"
-                        "startup.c"
+    set(linux_srcs "esp_system.c"
+                   "esp_err.c"
+                   "esp_sys_event.c"
+                   "port/soc/linux/reset_reason.c"
+                   "port/soc/linux/system_internal.c"
+                   "port/soc/linux/wdt_simulator.c"
+                   "port/esp_system_linux.c"
+                   "freertos_hooks.c"
+                   "startup.c")
+    set(linux_priv_requires spi_flash esp_timer esp_mspi)
+
+    if(CONFIG_ESP_TASK_WDT_EN)
+        list(APPEND linux_srcs "task_wdt/task_wdt.c"
+                               "task_wdt/task_wdt_impl_esp_timer.c")
+    endif()
+
+    idf_component_register(SRCS ${linux_srcs}
                         INCLUDE_DIRS "include"
-                        PRIV_REQUIRES esp_mspi)
+                        PRIV_REQUIRES ${linux_priv_requires})
+
+    if(CONFIG_ESP_INT_WDT)
+        # Force-link wdt_simulator.o so its PRE_SCHEDULER registration is pulled
+        # in from the component archive (mirrors the non-Linux branch).
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_int_wdt_init")
+    endif()
+
+    if(CONFIG_ESP_TASK_WDT_INIT)
+        # Force-link task_wdt.o so its PRE_APP_MAIN registration (init_task_wdt)
+        # is pulled in from the component archive. This also transitively links
+        # the esp_timer backend that the task WDT relies on.
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_task_wdt_init")
+    endif()
 
     # Add custom ld file (used to place system init functions).
     # Mach-O (Apple) does not support linker scripts; section bounds are resolved

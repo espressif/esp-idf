@@ -271,7 +271,8 @@ menu "ESP System Settings"
     config ESP_INT_WDT
         bool "Interrupt watchdog"
         depends on SOC_WDT_SUPPORTED
-        default y
+        default y if !IDF_TARGET_LINUX
+        default n if IDF_TARGET_LINUX
         help
             This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
             either because a task turned off interrupts and did not turn them on for a long time, or because an
@@ -297,7 +298,8 @@ menu "ESP System Settings"
     config ESP_TASK_WDT_EN
         bool "Enable Task Watchdog Timer"
         depends on SOC_WDT_SUPPORTED
-        default y
+        default y if !IDF_TARGET_LINUX
+        default n if IDF_TARGET_LINUX
         help
             The Task Watchdog Timer can be used to make sure individual tasks are still
             running. Enabling this option will enable the Task Watchdog Timer. It can be
@@ -306,11 +308,11 @@ menu "ESP System Settings"
 
     config ESP_TASK_WDT_USE_ESP_TIMER
         # Software implementation of Task Watchdog, handy for targets with only a single
-        # Timer Group, such as the ESP32-C2
+        # Timer Group, such as the ESP32-C2, or without hardware watchdog like Linux
         bool
         depends on ESP_TASK_WDT_EN
-        default y if IDF_TARGET_ESP32C2
-        default n if !IDF_TARGET_ESP32C2
+        default y if IDF_TARGET_ESP32C2 || IDF_TARGET_LINUX
+        default n if !IDF_TARGET_ESP32C2 && !IDF_TARGET_LINUX
         select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 
     config ESP_TASK_WDT_INIT

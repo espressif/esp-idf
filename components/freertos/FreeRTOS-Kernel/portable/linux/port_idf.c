@@ -15,7 +15,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "esp_log.h"
+#include "esp_private/freertos_linux_backtrace.h"
 #include "utils/linux_port_utils.h"
 
 #define BACKTRACE_PC_ARRAY_SIZE 20
@@ -53,13 +53,15 @@ void linux_port_setup_backtrace_signal(void)
     sigaction(SIGUSR1, &sa, NULL);
 }
 
-void linux_port_print_backtrace(void)
+static void linux_port_print_backtrace(void)
 {
     pthread_kill(linux_port_get_scheduled_task_pthread(), SIGUSR1);
 }
 
-ESP_LOG_ATTR_TAG(LINUX_TAG, "port_idf_linux");
-ESP_LOG_ATTR_TAG(MAIN_TAG, "main_task");
+void freertos_linux_print_backtrace(void)
+{
+    linux_port_print_backtrace();
+}
 
 #if (defined(__APPLE__) && defined(__MACH__))
 typedef sig_t sighandler_t;
@@ -100,23 +102,13 @@ static void abort_handler(int sig)
 #endif // CONFIG_COMPILER_OPTIMIZATION_DEBUG
 
 /*-----------------------------------------------------------
-* Main FreeRTOS task
-*-----------------------------------------------------------*/
-extern void app_main(void);
-static void main_task(void *args)
-{
-    (void)args;
-    ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
-
-    ESP_LOGI(MAIN_TAG, "Calling app_main()");
-
-    app_main();
-
-    ESP_LOGI(MAIN_TAG, "Returned from app_main()");
-    vTaskDelete(NULL);
-}
-
-void esp_startup_start_app(void)
+ * Port-specific application startup hook
+ *
+ * Called by the common startup code (app_startup.c) right before the
+ * scheduler is started. Used here to perform Linux-specific setup:
+ * unbuffered stdout and, in debug builds, crash signal handlers.
+ *-----------------------------------------------------------*/
+void port_start_app_hook(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -134,16 +126,6 @@ void esp_startup_start_app(void)
         abort();
     }
 #endif
-
-    // Create main_task using FreeRTOS API
-    ESP_LOGI(LINUX_TAG, "Starting main task.");
-    assert(xTaskCreate(&main_task, "main", ESP_TASK_MAIN_STACK, NULL, ESP_TASK_MAIN_PRIO, NULL) == pdTRUE);
-
-    ESP_LOGI(LINUX_TAG, "Starting scheduler task.");
-    vTaskStartScheduler();
-
-    // Should never reach here
-    assert(false);
 }
 
 /*-----------------------------------------------------------
@@ -153,6 +135,10 @@ void esp_startup_start_app(void)
 void vApplicationIdleHook(void)
 {
 }
+#else
+#if CONFIG_ESP_TASK_WDT_EN
+#error The task watchdog needs CONFIG_FREERTOS_USE_IDLE_HOOK enabled.
+#endif
 #endif
 
 #if (configUSE_TICK_HOOK > 0)
@@ -162,6 +148,9 @@ void vApplicationTickHook(void)
     esp_vApplicationTickHook();
 }
 #else
+#if CONFIG_ESP_INT_WDT
+#error The interrupt watchdog needs CONFIG_FREERTOS_USE_TICK_HOOK enabled.
+#endif
 #endif
 
 /*-----------------------------------------------------------
