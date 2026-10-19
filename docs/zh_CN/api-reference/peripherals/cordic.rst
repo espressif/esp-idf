@@ -138,7 +138,7 @@ CORDIC 驱动 通过 :cpp:member:`cordic_calculate_config_t::iq_format` 参数�
 精度
 ----
 
-CORDIC 驱动通过 :cpp:member:`cordic_calculate_config_t::iteration_count` 参数来设置计算的迭代周期（精度），其支持的精度如下所示。
+CORDIC 驱动通过 :cpp:member:`cordic_calculate_config_t::iteration_count` 设置迭代次数。合法取值为 4、8、12、16、20、24。开方只允许 4、8、12。其他取值会使本次计算返回 ``ESP_ERR_INVALID_ARG``。各档位的残差如下所示。
 
 **Phase, Modulus, arctan 函数**
 
@@ -225,7 +225,7 @@ CORDIC 驱动通过 :cpp:member:`cordic_calculate_config_t::iteration_count` 参
     cordic_calculate_config_t calc_config = {
         .function = ESP_CORDIC_FUNC_COS,           // 选择计算的函数
         .iq_format = ESP_CORDIC_FORMAT_Q15,       // 选择输入和输出数据的格式
-        .iteration_count = 4,                     // 选择计算的迭代周期（精度）
+        .iteration_count = 4,                     // 迭代次数：4、8、12、16、20 或 24
         .scale_exp = 0,                           // 输入缩放指数 n，有效缩放为 2^n
     };
 
