@@ -133,7 +133,8 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd)
     }
     if (ESP_OK != httpd_sess_new(hd, new_fd)) {
         ESP_LOGE(TAG, LOG_FMT("session creation failed"));
-        goto exit;
+        // Once we pass the fd to a new session, it is responsible for closing it
+        return ESP_FAIL;
     }
     ESP_LOGD(TAG, LOG_FMT("complete"));
     hd->http_server_state = HTTP_SERVER_EVENT_ON_CONNECTED;
