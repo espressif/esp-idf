@@ -22,7 +22,7 @@ By default, two SoCs are required to run this example:
 * Another IEEE 802.15.4 SoC (ESP32-H2) loaded with [ot_cli](../ot_cli) example.
 
 Connect the two SoCs via UART, below is an example setup with ESP32 DevKitC and ESP32-H2 DevKitC:
-![thread_br](image/thread-border-router-esp32-esp32h2.jpg)
+![thread_br](image/thread-border-router-esp32-esp32h2.webp)
 
 ESP32 pin | ESP32-H2 pin
 ----------|-------------
