@@ -51,9 +51,6 @@ bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
 
 void setUp(void)
 {
-    /* Preserve the external test-system contract: every test starts with the
-     * optional sync IO disabled and low. Periodic snapshots remain active. */
-    (void)ble_log_sync_enable(false);
 }
 
 void tearDown(void)
@@ -62,7 +59,6 @@ void tearDown(void)
     /* Unity aborts a failed case by longjmp, which skips the restore
      * statement at the end of the case, so the hook is also disarmed here. */
     test_ble_log_disarm_warning_hook();
-    (void)ble_log_sync_enable(false);
 }
 
 void app_main(void)

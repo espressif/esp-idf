@@ -53,7 +53,7 @@ bool ble_log_init(void)
      * opening the public producer gate, so it starts the receiver epoch.
      * INIT/FLUSH samples never toggle sync IO. */
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info, false);
+    ble_log_rt_ts_sample(&ts_info);
     if (!ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_INIT, &ts_info, true) ||
             !ble_log_rt_start_periodic() || !ble_log_enable(true)) {
         goto exit;

@@ -87,9 +87,10 @@ void ble_log_dump_to_console(void);
 void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
                           uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
 #endif /* CONFIG_BLE_LOG_LL_ENABLED */
-/* Task-context only. Controls the optional TS sync IO toggle, which starts
- * disabled and low; this is a lifecycle-checked no-op when the toggle is not
- * built. Periodic Internal Snapshots remain active in either state. */
+/* Task-context compatibility no-op; enable is ignored. Returns false when the
+ * runtime is not initialized. CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED alone
+ * controls sync output, active from BLE Log initialization until deinit,
+ * independently of ble_log_enable(). */
 bool ble_log_ts_sync_io_toggle_enable(bool enable);
 /* Backward-compatible name for ble_log_ts_sync_io_toggle_enable(). */
 bool ble_log_sync_enable(bool enable);

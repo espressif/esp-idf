@@ -264,6 +264,9 @@ void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
 void ble_log_lbm_take_loss_window(uint32_t by_source[BLE_LOG_SRC_MAX]);
 /* System output: gated by the LBM lifetime, not ble_log_enable(). A false
  * wait_for_transport makes a busy dedicated transport a lossy fast path. */
+/* NULL ts_info requests a periodic sample after acquiring the transport and
+ * allocating its ID; busy attempts produce no marker. Explicit INIT/FLUSH
+ * samples keep their caller-provided timestamps and never emit a marker. */
 bool ble_log_internal_snapshot(uint16_t reason_flags,
                                const ble_log_ts_info_t *ts_info,
                                bool wait_for_transport);
