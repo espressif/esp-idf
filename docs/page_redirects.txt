@@ -89,6 +89,7 @@ api-guides/ulp-risc-v                           api-reference/system/ulp-risc-v
 api-guides/console                              api-reference/system/console
 api-guides/event-handling                       api-reference/system/esp_event
 api-guides/wifi                                 api-guides/wifi-driver/index
+api-guides/openthread                           api-guides/openthread/index
 
 api-reference/network/tcpip_adapter             migration-guides/tcpip-adapter
 api-reference/system/system                     api-reference/system/misc_system_api
