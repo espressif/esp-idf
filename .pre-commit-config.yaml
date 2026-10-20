@@ -95,7 +95,7 @@ repos:
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
         additional_dependencies:
-          - 'mypy'
+          - 'mypy<1.17' # 1.17 dropped --python-version 3.8 used by check_type_comments.py
           - 'mypy-extensions'
           - 'types-setuptools'
           - 'types-PyYAML'
