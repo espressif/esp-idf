@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -230,6 +230,26 @@ void btc_a2dp_source_set_tx_flush(BOOLEAN enable);
  **
  *******************************************************************************/
 void btc_a2dp_source_encoder_update(void);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_audio_stats_reset
+ **
+ ** Description      Post a reset of the audio packet counters onto the media
+ **                  command path. Handled on the BTC task.
+ **
+ *******************************************************************************/
+void btc_a2dp_source_audio_stats_reset(esp_a2d_conn_hdl_t conn_hdl);
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_audio_stats_stop
+ **
+ ** Description      Post a stop of the audio packet counters onto the media
+ **                  command path. Handled on the BTC task.
+ **
+ *******************************************************************************/
+void btc_a2dp_source_audio_stats_stop(esp_a2d_conn_hdl_t conn_hdl);
 
 /*****************************************************************************
 **
