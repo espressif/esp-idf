@@ -75,6 +75,12 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                 set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-lp-core-riscv.cmake)
         endif()
 
+        # Only components/ulp/cmake/CMakeLists.txt reads CCACHE_ENABLE.
+        # Custom projects from ulp_add_project() bring their own CMakeLists.
+        if(project_path STREQUAL "${idf_path}/components/ulp/cmake")
+            list(APPEND extra_cmake_args -DCCACHE_ENABLE=${CCACHE_ENABLE})
+        endif()
+
         externalproject_add(${app_name}
                 SOURCE_DIR ${project_path}
                 BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
