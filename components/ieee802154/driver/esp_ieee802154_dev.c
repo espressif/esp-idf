@@ -666,9 +666,11 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
     case IEEE802154_RX_ABORT_BY_ED_COEX_REJECT:
         return;
     case IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK:
+#if !CONFIG_IEEE802154_TEST
 #if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
         esp_coex_ieee802154_coex_break_notify();
         __attribute__((fallthrough));
+#endif
 #endif
     case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
 #if CONFIG_IEEE802154_DEBUG_ASSERT_MONITOR
@@ -754,8 +756,10 @@ static IRAM_ATTR void isr_handle_tx_abort(ieee802154_ll_tx_abort_reason_t tx_abo
         NEEDS_NEXT_OPT(true);
         break;
     case IEEE802154_TX_ABORT_BY_TX_COEX_BREAK:
+#if !CONFIG_IEEE802154_TEST
 #if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
         esp_coex_ieee802154_coex_break_notify();
+#endif
 #endif
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA);
         IEEE802154_TX_BREAK_COEX_NUMS_UPDATE();
