@@ -86,6 +86,9 @@ typedef enum {
     BTC_AV_SRC_API_REG_DATA_CB_EVT,
 #endif  /* BTC_AV_SRC_INCLUDED */
     BTC_AV_API_MEDIA_CTRL_EVT,
+#if BTC_A2DP_AUDIO_STATS
+    BTC_AV_API_AUDIO_STATS_GET_EVT,
+#endif
 } btc_av_act_t;
 
 /* btc_av_args_t */
@@ -124,6 +127,10 @@ typedef union {
     } reg_sep;
     // BTC_AV_API_MEDIA_CTRL_EVT
     esp_a2d_media_ctrl_t ctrl;
+#if BTC_A2DP_AUDIO_STATS
+    // BTC_AV_API_AUDIO_STATS_GET_EVT
+    esp_a2d_conn_hdl_t audio_stats_conn_hdl;
+#endif
 } btc_av_args_t;
 
 /*******************************************************************************
