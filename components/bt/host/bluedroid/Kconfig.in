@@ -159,6 +159,15 @@ config BT_A2DP_SINK_MAX_CONN
         Note this requires CONFIG_BT_ACL_CONNECTIONS and the controller BR/EDR ACL
         connection number to be at least 2.
 
+config BT_A2DP_AUDIO_STATS
+    bool "A2DP audio glitch statistics"
+    depends on BT_A2DP_ENABLE
+    default n
+    help
+        Count A2DP audio glitches, packet totals, and lost packets, and expose
+        them through esp_a2d_get_audio_stats(). This is for testing. Leave it
+        disabled in production.
+
 config BT_AVRCP_ENABLED
     bool
     depends on BT_A2DP_ENABLE

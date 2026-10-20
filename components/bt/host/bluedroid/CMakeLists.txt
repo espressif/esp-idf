@@ -333,6 +333,11 @@ list(APPEND bluedroid_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/../../common/btc/profile/esp/blufi/bluedroid_host/esp_blufi.c"
 )
 
+if(CONFIG_BT_A2DP_AUDIO_STATS)
+    list(APPEND bluedroid_host_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_audio_stats.c")
+endif()
+
 if(CONFIG_BT_BLE_FEAT_ISO_EN)
     list(APPEND bluedroid_host_srcs
         "${CMAKE_CURRENT_LIST_DIR}/stack/btm/btm_ble_iso.c"
