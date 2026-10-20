@@ -115,7 +115,7 @@ check_esp_err_codes:
   script:
     - cd ${IDF_PATH}
     - python tools/err_codes_extract.py --search-dirs components/ --output /tmp/err_codes.csv --validate
-    - python tools/err_codes_to_rst.py --csv /tmp/err_codes.csv --output /tmp/esp_err_defs.inc
+    - python tools/gen_esp_err_to_name.py --rst_output /tmp/esp_err_defs.inc
     - echo "Extracted $(wc -l < /tmp/err_codes.csv) error codes"
 
 check_esp_system:
