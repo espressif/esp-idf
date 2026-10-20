@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,40 +79,6 @@ static inline void mipi_dsi_ll_enable_dpi_clock(int group_id, bool enable)
 #define mipi_dsi_ll_enable_dpi_clock(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         mipi_dsi_ll_enable_dpi_clock(__VA_ARGS__); \
-    } while(0)
-
-/**
- * @brief Set the clock source for the DSI DPI interface
- *
- * @param group_id Group ID
- * @param source Clock source
- */
-static inline void mipi_dsi_ll_set_dpi_clock_source(int group_id, mipi_dsi_dpi_clock_source_t source)
-{
-    (void)group_id;
-    switch (source) {
-    case MIPI_DSI_DPI_CLK_SRC_XTAL:
-        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 0;
-        break;
-    case MIPI_DSI_DPI_CLK_SRC_PLL_F240M:
-        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 1;
-        break;
-    case MIPI_DSI_DPI_CLK_SRC_PLL_F160M:
-        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 2;
-        break;
-    case MIPI_DSI_DPI_CLK_SRC_APLL:
-        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 3;
-        break;
-    default:
-        abort();
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_set_dpi_clock_source(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        mipi_dsi_ll_set_dpi_clock_source(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -210,6 +176,40 @@ static inline void mipi_dsi_ll_enable_phy_pllref_clock(int group_id, bool enable
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 
 /**
+ * @brief Set the clock source for the DSI DPI interface
+ *
+ * @param group_id Group ID
+ * @param source Clock source
+ */
+static inline void mipi_dsi_ll_set_dpi_clock_source(int group_id, mipi_dsi_dpi_clock_source_t source)
+{
+    (void)group_id;
+    switch (source) {
+    case MIPI_DSI_DPI_CLK_SRC_XTAL:
+        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 0;
+        break;
+    case MIPI_DSI_DPI_CLK_SRC_PLL_F240M:
+        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 1;
+        break;
+    case MIPI_DSI_DPI_CLK_SRC_PLL_F160M:
+        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 2;
+        break;
+    case MIPI_DSI_DPI_CLK_SRC_APLL:
+        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 3;
+        break;
+    default:
+        abort();
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mipi_dsi_ll_set_dpi_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_set_dpi_clock_source(__VA_ARGS__); \
+    } while(0)
+
+/**
  * @brief Set the clock source for the DSI PHY PLL reference clock
  *
  * @param group_id Group ID
@@ -266,6 +266,37 @@ static inline void _mipi_dsi_ll_set_phy_pll_ref_clock_div(int group_id, uint32_t
     } while (0)
 
 #else
+
+/**
+ * @brief Set the clock source for the DSI DPI interface
+ *
+ * @param group_id Group ID
+ * @param source Clock source
+ */
+static inline void mipi_dsi_ll_set_dpi_clock_source(int group_id, mipi_dsi_dpi_clock_source_t source)
+{
+    (void)group_id;
+    switch (source) {
+    case MIPI_DSI_DPI_CLK_SRC_XTAL:
+        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 0;
+        break;
+    case MIPI_DSI_DPI_CLK_SRC_PLL_F240M:
+        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 1;
+        break;
+    case MIPI_DSI_DPI_CLK_SRC_PLL_F160M:
+        HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 2;
+        break;
+    default:
+        abort();
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mipi_dsi_ll_set_dpi_clock_source(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        mipi_dsi_ll_set_dpi_clock_source(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Set the clock source for the DSI PHY PLL reference clock
