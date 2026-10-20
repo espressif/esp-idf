@@ -188,6 +188,24 @@ menu "Security (SMP)"
             help
                 Enable this flag to make bonding persistent across device reboots
 
+        choice BT_NIMBLE_STORE_OVERFLOW_POLICY
+            prompt "Bond store overflow eviction policy"
+            default BT_NIMBLE_STORE_OVERFLOW_RR
+            help
+                Select which bond is removed when the bond store is full.
+
+            config BT_NIMBLE_STORE_OVERFLOW_RR
+                bool "Round-robin (oldest bond)"
+                help
+                    Remove the bond which was stored first.
+
+            config BT_NIMBLE_STORE_OVERFLOW_LFU
+                bool "Least recently used"
+                help
+                    Remove the least recently used bond. A bond is considered
+                    used when encryption succeeds with the bonded peer.
+        endchoice
+
         config BT_NIMBLE_MAX_BONDS
             int "Maximum number of bonds to save across reboots"
             default 3
@@ -764,6 +782,16 @@ menu "BLE 5.x Features"
                 default n
                 help
                     This enables controller PAwR (Periodic Advertisement with Response).
+
+            config BT_NIMBLE_DBAF
+                bool "Enable BLE Decision-Based Advertising Filtering (DBAF)"
+                depends on ((BT_CONTROLLER_ENABLED && SOC_BLE_DBAF_SUPPORTED) || BT_CONTROLLER_DISABLED) # NOERROR
+                default n
+                help
+                    Enable Decision-Based Advertising Filtering (Bluetooth Core 6.0).
+                    Supports LE Set Decision Data and LE Set Decision Instructions HCI
+                    commands, plus Use Decision PDUs advertising properties and
+                    decision scanning / initiator filter policies.
         endif
 
         config BT_NIMBLE_EXT_SCAN
@@ -1319,6 +1347,10 @@ menu "Extra Features"
         default n
         help
             Set this option to enable blufi functionality.
+
+            BluFi callbacks run on BTC_TASK, not on the NimBLE host task.
+            Configure CONFIG_BT_BTC_TASK_STACK_SIZE under Bluetooth Common
+            Options if those callbacks overflow BTC_TASK.
 
     config BT_NIMBLE_ENC_ADV_DATA
         bool "Encrypted Advertising Data"

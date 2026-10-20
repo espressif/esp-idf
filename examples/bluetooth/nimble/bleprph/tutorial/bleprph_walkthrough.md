@@ -159,6 +159,11 @@ ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
 ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 ```
 
+The bond eviction policy used when the store is full is selected in `Component
+config > Bluetooth > NimBLE Options > Security (SMP)`. Round-robin removes the
+oldest bond, while least recently used preserves bonds which have been used
+more recently.
+
 ## Security Manager Configuration
 Security Manager (sm_ members) is configurable at runtime to simplify security testing. Defaults for those are configured by selecting proper options via menuconfig for example configurations.
 
