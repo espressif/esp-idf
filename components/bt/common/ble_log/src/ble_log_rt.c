@@ -11,6 +11,7 @@
 /* INCLUDE */
 #include "ble_log.h"
 #include "ble_log_rt.h"
+#include "ble_log_sync.h"
 #include "ble_log_lbm_v2.h"
 #include "ble_log_task_registry.h"
 #include "ble_log_util.h"
@@ -93,12 +94,6 @@ BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_task_stopped = 0;
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR esp_timer_handle_t rt_defer_timer = NULL;
 #endif
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR esp_timer_handle_t rt_ts_timer = NULL;
-/* Toggle IO phase; stays false when the toggle IO is compiled out. */
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_io_level = false;
-#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-/* Runtime IO control is independent from the always-on periodic snapshot. */
-BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_io_toggle_enabled = false;
-#endif
 
 /* PRIVATE FUNCTION DECLARATION */
 #if !CONFIG_BLE_LOG_PRPH_COPY_FIFO
@@ -164,24 +159,33 @@ BLE_LOG_STATIC void ble_log_rt_report_loss(void)
                  (unsigned long)tx_ring_dropped_bytes);
     }
 }
-/* Captures the link-layer, ESP and OS clocks at one instant. */
-void ble_log_rt_ts_sample(ble_log_ts_info_t *info, bool toggle_io)
+/* Captures the link-layer, ESP and OS clocks in one short sampling window. */
+void ble_log_rt_ts_sample(ble_log_ts_info_t *info)
 {
     info->int_src_code = BLE_LOG_INT_SRC_TS;
     BLE_LOG_ENTER_CRITICAL();
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    /* The critical section keeps the optional IO edge and clock samples
-     * adjacent, and serializes runtime IO control with the phase update. */
-    if (toggle_io && rt_ts_io_toggle_enabled) {
-        rt_ts_io_level = !rt_ts_io_level;
-        gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, rt_ts_io_level);
-    }
-#endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
-    info->io_level = rt_ts_io_level;
+    info->io_level = gpio_get_level(CONFIG_BLE_LOG_SYNC_IO_NUM);
+#else
+    info->io_level = 0;
+#endif
     info->lc_ts = ble_log_rt_lc_ts_get();
     info->esp_ts = esp_timer_get_time();
     info->os_ts = pdTICKS_TO_MS(xTaskGetTickCountFromISR());
     BLE_LOG_EXIT_CRITICAL();
+}
+
+void ble_log_rt_ts_sample_anchor(ble_log_ts_info_t *info, uint32_t anchor_count)
+{
+#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
+    /* Keep the GPIO T0 sample even if the UART label fails. */
+    if (ble_log_sync_send(anchor_count, info)) {
+        return;
+    }
+#else
+    (void)anchor_count;
+#endif
+    ble_log_rt_ts_sample(info);
 }
 
 #if !CONFIG_BLE_LOG_PRPH_COPY_FIFO
@@ -344,9 +348,6 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
         return;
     }
 
-    ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info, true);
-
     /* Unified periodic output: best-effort flush of partially-filled OPEN
      * transports ahead of the periodic snapshot, so parked frames do not
      * wait for the next capacity seal. The task-id binding broadcast
@@ -359,7 +360,7 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg)
     (void)ble_log_internal_snapshot(
         BLE_LOG_SNAPSHOT_REASON_PERIODIC |
         BLE_LOG_SNAPSHOT_REASON_TS_VALID,
-        &ts_info, false);
+        NULL, false);
 
     ble_log_rt_report_loss();
 }
@@ -371,20 +372,11 @@ bool ble_log_rt_init(void)
         return true;
     }
 
-    /* Configure the analyzer toggle IO */
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    gpio_config_t sync_io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = BIT64(CONFIG_BLE_LOG_SYNC_IO_NUM),
-    };
-    /* Program the output latch before enabling the driver to avoid a stale
-     * high level or a high glitch after deinit/reinit. */
-    if (gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 0) != ESP_OK ||
-            gpio_config(&sync_io_conf) != ESP_OK) {
+    if (!ble_log_sync_init()) {
         goto exit;
     }
-#endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
+#endif
 
     /* One slot per transport, so every transport the peripheral can hold fits
      * in the queue at once and submit never blocks or drops, plus one reserved
@@ -420,12 +412,7 @@ bool ble_log_rt_init(void)
 #endif /* CONFIG_BLE_LOG_PRPH_COPY_FIFO */
 
     /* Create the system-periodic path here; the top-level init starts it only
-     * after queuing INIT, then it runs through deinit. Runtime sync control
-     * affects only the optional analyzer IO toggle. */
-    rt_ts_io_level = false;
-#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    rt_ts_io_toggle_enabled = false;
-#endif
+     * after queuing INIT, then it runs through deinit. */
     esp_timer_create_args_t ts_timer_args = {
         .callback = ble_log_rt_ts_trigger,
         .arg = NULL,
@@ -524,12 +511,9 @@ void ble_log_rt_deinit(void)
         rt_queue_handle = NULL;
     }
 
-    /* Release the toggle IO */
-    rt_ts_io_level = false;
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    rt_ts_io_toggle_enabled = false;
-    gpio_reset_pin(CONFIG_BLE_LOG_SYNC_IO_NUM);
-#endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
+    ble_log_sync_deinit();
+#endif
 }
 
 bool ble_log_rt_drain(void)
@@ -614,21 +598,7 @@ bool ble_log_ts_sync_io_toggle_enable(bool enable)
         return false;
     }
 
-#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    /* Restart the analyzer phase from low. When disabling an already-low IO,
-     * drive it high first so the external analyzer still sees a final
-     * falling edge. The periodic snapshot remains active in either state. */
-    BLE_LOG_ENTER_CRITICAL();
-    rt_ts_io_toggle_enabled = enable;
-    if (!enable && !rt_ts_io_level) {
-        gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 1);
-    }
-    rt_ts_io_level = false;
-    gpio_set_level(CONFIG_BLE_LOG_SYNC_IO_NUM, 0);
-    BLE_LOG_EXIT_CRITICAL();
-#else
     (void)enable;
-#endif /* CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED */
 
     BLE_LOG_REF_COUNT_RELEASE(&rt_ref_count);
     return true;

@@ -977,6 +977,9 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
                                const ble_log_ts_info_t *ts_info,
                                bool wait_for_transport)
 {
+    if (ts_info == NULL && !(reason_flags & BLE_LOG_SNAPSHOT_REASON_PERIODIC)) {
+        return false;
+    }
 #if CONFIG_BLE_LOG_PRPH_TEST
     if ((reason_flags & BLE_LOG_SNAPSHOT_REASON_INIT) &&
             ble_log_test_init_snapshot_before_acquire_hook) {
@@ -992,10 +995,6 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
         goto failed;
     }
 
-    /* The caller sampled the clocks (with or without a sync IO toggle)
-     * before any dedicated-buffer drain or wait; the frame timestamp is
-     * that sample's esp_ts. */
-    uint32_t timestamp = ts_info->esp_ts;
     TickType_t start_tick = xTaskGetTickCount();
     for (;;) {
         if (BLE_LOG_CAS_ACQUIRE(&internal_trans->atomic_lock)) {
@@ -1015,6 +1014,17 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
         vTaskDelay(1);
     }
 
+    /* Serialize ID allocation before the periodic sample/marker, so a
+     * concurrent FLUSH cannot change the ID transmitted on the sync pin. */
+    uint32_t frame_sn = BLE_LOG_GET_GLOBAL_SN();
+    uint32_t anchor_count = BLE_LOG_GET_ANCHOR_COUNT();
+    ble_log_ts_info_t periodic_sample;
+    if (ts_info == NULL) {
+        ble_log_rt_ts_sample_anchor(&periodic_sample, anchor_count);
+        ts_info = &periodic_sample;
+    }
+    uint32_t timestamp = ts_info->esp_ts;
+
     internal_snapshot.reason_flags = reason_flags;
     internal_snapshot.ts.io_level = ts_info->io_level;
     internal_snapshot.ts.lc_ts = ts_info->lc_ts;
@@ -1028,12 +1038,6 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
         (uint8_t)BLE_LOG_ATOMIC_LOAD_RELAXED(g_pool.inflight_peak);
     ble_log_snapshot_stats(internal_snapshot.stats);
 
-    /* Only a snapshot that acquired its transport consumes a Global SN.
-     * Busy snapshots are not in the core loss statistics; their gaps belong
-     * exclusively to anchor_count. The transport lock serializes successful
-     * snapshots, so no extra critical section is needed for these counters. */
-    uint32_t frame_sn = BLE_LOG_GET_GLOBAL_SN();
-    uint32_t anchor_count = BLE_LOG_GET_ANCHOR_COUNT();
     for (unsigned i = 0; i < sizeof(internal_snapshot.anchor_count); i++) {
         internal_snapshot.anchor_count[i] = (uint8_t)(anchor_count >> (8U * i));
     }
@@ -1247,7 +1251,7 @@ void ble_log_flush(void)
     /* One-shot FLUSH snapshot: sample after the pool drained so the clocks
      * reflect the flush completion; no sync IO toggle (periodic flow only). */
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info, false);
+    ble_log_rt_ts_sample(&ts_info);
     if (!ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_FLUSH, &ts_info, true)) {
         goto restore;
     }

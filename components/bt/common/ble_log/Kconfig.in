@@ -122,21 +122,32 @@ if BLE_LOG_ENABLED
             suppresses HCI records from both capture paths.
 
     config BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-        bool "Toggle a GPIO on every BLE Log TS sync sample"
+        bool "Output snapshot counts on the BLE Log TS sync GPIO"
+        depends on SOC_UART_SUPPORTED && SOC_UART_HP_NUM > 1
         default n
         help
             Every periodic Internal Snapshot samples the link-layer, ESP and
             OS clocks regardless of this option. Enable this option to build
-            the GPIO toggle used by external logic analyzers. It starts
-            disabled and low; ble_log_ts_sync_io_toggle_enable controls its
-            edges without stopping periodic snapshots.
+            seven-byte 1 Mbaud UART 8N1 labels containing snapshot count
+            and ESP time for external logic analyzers.
+            UART1 is reserved for labels and must not be used by the console,
+            BLE Log transport or application. No DMA is used.
+            Output starts automatically with BLE Log initialization and stops
+            at deinitialization, independently of log enable commands.
+            Legacy sync enable APIs are no-ops. The pin idles high.
+            UART TX inversion produces a falling edge and clocks are sampled
+            in the same critical section. Afterwards, normal TX polarity is
+            restored before the label is sent via the public UART API.
+            A low BREAK of at least 12 us and high separator of at least 2 us
+            are ensured with short delays outside the critical section.
 
     if BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
         config BLE_LOG_SYNC_IO_NUM
-            int "GPIO number for Timestamp Synchronization (TS) toggle output"
+            int "GPIO number for Timestamp Synchronization (TS) output"
             default 0
             help
-                GPIO number for TS toggle output
+                GPIO number for TS snapshot count output
+                Requires an output-capable GPIO.
     endif
 
     config BLE_LOG_PRPH_COPY_FIFO
