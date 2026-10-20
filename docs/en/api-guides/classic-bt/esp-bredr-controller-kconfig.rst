@@ -156,6 +156,11 @@ These options configure controller capacity and RF defaults. They do not enable 
      - | Default TX power levels (dBm) for ACL, Page, Page Scan, and Inquiry Scan.
        | The actual chip-supported TX power range can be obtained with the function :cpp:func:`esp_bredr_tx_power_range_get`. Values outside that range are rejected.
        | ACL link power can be adjusted on peer LMP power-control requests. The initial ACL power is taken from ``TX_PWR_PAGE`` (Central) or ``TX_PWR_PSCAN`` (Peripheral); keep those within the ACL min/max range when possible.
+   * - :ref:`CONFIG_BT_CTRL_BR_EDR_DYNAMIC_TX_PWR_EN`
+     - | Dynamically modifies the default ACL TX power through :cpp:func:`esp_bredr_acl_dft_tx_power_range_set` and :cpp:func:`esp_bredr_acl_dft_tx_power_range_get`. Values are in dBm.
+       | Obtain the supported range with :cpp:func:`esp_bredr_tx_power_range_get`. Values outside that range are rejected.
+       | Mutually exclusive with :ref:`CONFIG_BT_CLASSIC_ENABLE_POWER_CTRL_VSC`; this option is hidden when that one is enabled.
+       | After :cpp:func:`esp_bredr_acl_dft_tx_power_range_set` is called, ``HCI_Reset`` does not restore the previous default ACL TX power range. The range set by this API is retained.
    * - :ref:`CONFIG_BT_CTRL_BR_EDR_TX_PWR_APB`
      - Default TX power for APB. Available when :ref:`CONFIG_BT_CTRL_BR_EDR_APB_EN` is enabled.
    * - | :ref:`CONFIG_BT_CTRL_BR_EDR_TX_PWR_CPB`
