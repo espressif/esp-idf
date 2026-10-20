@@ -51,6 +51,12 @@
 #define UC_BT_A2DP_USE_EXTERNAL_CODEC       FALSE
 #endif
 
+#ifdef CONFIG_BT_A2DP_AUDIO_STATS
+#define UC_BT_A2DP_AUDIO_STATS              CONFIG_BT_A2DP_AUDIO_STATS
+#else
+#define UC_BT_A2DP_AUDIO_STATS              FALSE
+#endif
+
 //AVRCP
 #ifdef CONFIG_BT_AVRCP_ENABLED
 #define UC_BT_AVRCP_ENABLED                 TRUE

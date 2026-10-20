@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -549,5 +549,34 @@ esp_err_t esp_a2d_source_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_au
 }
 
 #endif /* BTC_AV_SRC_INCLUDED */
+
+esp_err_t esp_a2d_get_audio_stats(esp_a2d_conn_hdl_t conn_hdl)
+{
+#if BTC_A2DP_AUDIO_STATS
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (conn_hdl == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg = {0};
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_A2DP;
+    msg.act = BTC_AV_API_AUDIO_STATS_GET_EVT;
+
+    btc_av_args_t arg = {0};
+    arg.audio_stats_conn_hdl = conn_hdl;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+#else
+    (void)conn_hdl;
+    LOG_WARN("A2DP audio stats are disabled. Enable CONFIG_BT_A2DP_AUDIO_STATS first");
+    return ESP_ERR_NOT_SUPPORTED;
+#endif /* BTC_A2DP_AUDIO_STATS */
+}
 
 #endif /* #if BTC_AV_INCLUDED */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -238,6 +238,7 @@ typedef enum {
     ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
     ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
     ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
+    ESP_A2D_AUDIO_STATS_EVT,                   /*!< audio packet counters are ready. Reported only when CONFIG_BT_A2DP_AUDIO_STATS is enabled */
 } esp_a2d_cb_event_t;
 
 /**
@@ -250,6 +251,35 @@ typedef struct {
     uint16_t    data_len;                       /*!< audio data len */
     uint8_t    *data;                           /*!< pointer to audio data start */
 } esp_a2d_audio_buff_t;                         /*!< struct to store audio data */
+
+#ifdef CONFIG_BT_A2DP_AUDIO_STATS
+/**
+ * @brief A2DP audio packet counters for one stream.
+ *
+ * Cleared when the audio state becomes ESP_A2D_AUDIO_STATE_STARTED.
+ * esp_a2d_get_audio_stats() does not clear them. The counters are reported
+ * in ESP_A2D_AUDIO_STATS_EVT. After streaming stops, they stay readable
+ * until the next STARTED. The packet fields are counts. The application
+ * times the playback when it needs a duration.
+ *
+ * handled_pkts counts packets the host stack has handled.
+ *
+ * Source: packets placed on the TX queue. This includes packets later
+ * dropped, packets not yet taken by BTU, and packets discarded by a suspend
+ * or stop flush. lost_pkts is included in handled_pkts, so the loss rate is
+ * lost_pkts / handled_pkts.
+ *
+ * Sink: media packets received at BTC. Sequence gaps are only in lost_pkts,
+ * so the loss rate is lost_pkts / (handled_pkts + lost_pkts).
+ */
+typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;  /*!< Connection handle of this stream. */
+    uint32_t handled_pkts;        /*!< Packets handled by the host stack (source: queued for TX, sink: received at BTC). See the note above. */
+    uint32_t lost_pkts;           /*!< Source: packets dropped from the TX queue. Sink: packets missing from the sequence. */
+    uint32_t lost_pkts_burst_max; /*!< Largest number of packets lost in a single event. */
+    uint32_t glitch_count;        /*!< Number of glitches. One internal source queue drop or one sink forward sequence gap counts as one. */
+} esp_a2d_audio_stats_t;
+#endif /* CONFIG_BT_A2DP_AUDIO_STATS */
 
 /**
  * @brief A2DP state callback parameters
@@ -335,6 +365,17 @@ typedef union {
     struct a2d_report_delay_stat_param {
         uint16_t delay_value;                  /*!< delay report value */
     } a2d_report_delay_value_stat;             /*!< A2DP source received sink report value status */
+
+#ifdef CONFIG_BT_A2DP_AUDIO_STATS
+    /**
+     * @brief ESP_A2D_AUDIO_STATS_EVT
+     */
+    struct a2d_audio_stats_param {
+        esp_err_t status;                      /*!< ESP_OK, ESP_ERR_INVALID_ARG when conn_hdl has no counters,
+                                                    or ESP_ERR_NOT_SUPPORTED for an external-codec source */
+        esp_a2d_audio_stats_t stats;           /*!< packet counters. Valid when status is ESP_OK */
+    } audio_stats;                             /*!< A2DP audio packet counters */
+#endif
 
 } esp_a2d_cb_param_t;
 
@@ -636,6 +677,27 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda);
  *
  */
 esp_err_t esp_a2d_source_disconnect(esp_bd_addr_t remote_bda);
+
+/**
+ * @brief           Request A2DP audio packet counters for one source or sink stream.
+ *                  This call does not clear the counters. The result is reported in
+ *                  ESP_A2D_AUDIO_STATS_EVT from the BTC task.
+ *
+ * @note            Counting is performed only when CONFIG_BT_A2DP_AUDIO_STATS is enabled.
+ *                  An external-codec source is not counted: the callback status is
+ *                  ESP_ERR_NOT_SUPPORTED. After streaming stops or the link closes, the
+ *                  counters remain available until the next ESP_A2D_AUDIO_STATE_STARTED.
+ *
+ * @param[in]       conn_hdl: connection handle reported by the A2DP connection or audio-state callback
+ *
+ * @return
+ *                  - ESP_OK: request is sent. The callback carries the counters or an error status
+ *                  - ESP_ERR_INVALID_STATE: Bluetooth stack is not enabled
+ *                  - ESP_ERR_INVALID_ARG: conn_hdl is 0
+ *                  - ESP_ERR_NOT_SUPPORTED: CONFIG_BT_A2DP_AUDIO_STATS is disabled
+ *                  - ESP_FAIL: request could not be sent
+ */
+esp_err_t esp_a2d_get_audio_stats(esp_a2d_conn_hdl_t conn_hdl);
 
 #ifdef __cplusplus
 }
