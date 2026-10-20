@@ -23,7 +23,9 @@
 #include "esp_hw_log.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "soc/rtc.h"
-#include "hal/efuse_hal.h"
+#include "soc/reset_reasons.h"
+#include "esp_rom_sys.h"
+#include "esp_private/ocode_init.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
@@ -241,6 +243,12 @@ void pmu_init(void)
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
     pmu_power_domain_force_default(PMU_instance());
+
+#if !CONFIG_IDF_ENV_FPGA
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+        esp_ocode_calib_init();
+    }
+#endif
 
 #if CONFIG_ESP_ENABLE_PVT
     /*setup pvt function*/
