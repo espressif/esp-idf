@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,7 @@ void setUp(void)
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 
-#if SOC_WDT_SUPPORTED
+#if CONFIG_ESP_TASK_WDT_EN
     esp_task_wdt_add(NULL);
     esp_task_wdt_reset();
 #endif
@@ -38,7 +38,7 @@ void setUp(void)
 
 void tearDown(void)
 {
-#if SOC_WDT_SUPPORTED
+#if CONFIG_ESP_TASK_WDT_EN
     esp_task_wdt_reset();
     esp_task_wdt_delete(NULL);
 #endif
@@ -53,7 +53,7 @@ void tearDown(void)
 
 void app_main(void)
 {
-#if SOC_WDT_SUPPORTED
+#if CONFIG_ESP_TASK_WDT_EN
     // Configure the task watchdog timer to catch any tests that hang
     esp_task_wdt_config_t config = {
         .timeout_ms = 25 * 1000, // 25 seconds, smaller than the default pytest timeout
@@ -62,7 +62,7 @@ void app_main(void)
     };
 
     esp_task_wdt_init(&config);
-#endif // SOC_WDT_SUPPORTED
+#endif // CONFIG_ESP_TASK_WDT_EN
 
     // Raise priority to main task as some tests depend on the test task being at priority UNITY_FREERTOS_PRIORITY
     vTaskPrioritySet(NULL, UNITY_FREERTOS_PRIORITY);
