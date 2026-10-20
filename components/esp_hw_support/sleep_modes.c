@@ -145,9 +145,9 @@
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
-// A light sleep at least this long lets the chip cool down from the preceding active period,
+// A light sleep longer than this lets the chip cool down from the preceding active period,
 // so a calibration right after it measures the RTC_SLOW oscillator at its sleep temperature
-#define RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US   (50 * 1000)
+#define RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US   (CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP_MIN_SLP_MS * 1000)
 #endif
 #define FAST_CLK_SRC_CAL_CYCLES     (2048)  /* ~ 127.4 us */
 
@@ -1768,7 +1768,7 @@ esp_err_t esp_light_sleep_start(void)
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
         if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) {
             /* We use the invalid value 0 to indicate that calibration is required before the next sleep */
-            rtc_clk_cal_period_after_wakeup = (rtc_time_diff >= RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US) ? rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES) : 0;
+            rtc_clk_cal_period_after_wakeup = (rtc_time_diff > RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US) ? rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES) : 0;
         }
 #endif
     } else {

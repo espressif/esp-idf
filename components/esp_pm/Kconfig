@@ -157,10 +157,26 @@ menu "Power Management"
             they should: the clock error can be 300-800 ppm, depending on the active time before each sleep,
             so a 60 s sleep ends about 18-48 ms early.
 
-            If enabled, the calibration is done right after waking up from a light sleep of at least 50 ms, at
-            the sleep temperature, and is used for the next sleep. The number of calibrations does not change.
+            If enabled, the calibration is done right after waking up from a light sleep, at the sleep
+            temperature, and is used for the next sleep. The number of calibrations does not change.
             Non-timer wakeups (GPIO, UART, ...) are handled 10 RTC_SLOW cycles later (about 70-300 us,
             depending on the clock source).
+
+    config PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP_MIN_SLP_MS
+        int "Minimum light sleep duration (ms) for the calibration after wakeup"
+        default 50
+        range 0 10000
+        depends on PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+        help
+            The RTC_SLOW oscillator is calibrated after wakeup only if the light sleep lasted longer than this.
+            After a shorter sleep the chip has not cooled down from the preceding active period yet, so the
+            calibration is done at the next light sleep entry instead, as without
+            PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP.
+
+            The time the chip needs to reach its sleep temperature depends on the SoC, the light sleep
+            configuration (power domains, CPU and peripheral state), the package, the board and the ambient
+            conditions. Increase this value if the RTC time still runs fast; set it to 0 to calibrate after
+            every light sleep wakeup.
 
     config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         bool "Power down CPU in light sleep"
