@@ -1182,7 +1182,7 @@ static enum wps_process_res wps_process_m4(struct wps_data *wps,
 	if (wps_parse_msg(decrypted, eattr) < 0 ||
 	    wps_process_key_wrap_auth(wps, decrypted, eattr->key_wrap_auth) ||
 	    wps_process_r_snonce1(wps, eattr->r_snonce1)) {
-		wpabuf_free(decrypted);
+		wpabuf_clear_free(decrypted);
 		wps->state = SEND_WSC_NACK;
 		res = WPS_CONTINUE;
 		goto _out;
@@ -1252,7 +1252,7 @@ static enum wps_process_res wps_process_m6(struct wps_data *wps,
 	if (wps_parse_msg(decrypted, eattr) < 0 ||
 	    wps_process_key_wrap_auth(wps, decrypted, eattr->key_wrap_auth) ||
 	    wps_process_r_snonce2(wps, eattr->r_snonce2)) {
-		wpabuf_free(decrypted);
+		wpabuf_clear_free(decrypted);
 		wps->state = SEND_WSC_NACK;
 		res = WPS_CONTINUE;
 		goto _out;
@@ -1344,12 +1344,12 @@ static enum wps_process_res wps_process_m8(struct wps_data *wps,
 			      eattr->num_cred, attr->version2 != NULL) ||
 	    wps_process_ap_settings_e(wps, eattr, decrypted,
 				      attr->version2 != NULL)) {
-		wpabuf_free(decrypted);
+		wpabuf_clear_free(decrypted);
 		wps->state = SEND_WSC_NACK;
 		res = WPS_CONTINUE;
 		goto _out;
 	}
-	wpabuf_free(decrypted);
+	wpabuf_clear_free(decrypted);
 
 	wps->state = WPS_MSG_DONE;
 	res = WPS_CONTINUE;
