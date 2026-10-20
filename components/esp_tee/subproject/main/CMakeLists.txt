@@ -67,8 +67,23 @@ list(APPEND srcs "common/esp_app_desc_tee.c")
 # Newlib syscalls stub implementation
 list(APPEND srcs "common/syscall_stubs.c")
 
+# cmakev2 links only the declared dependencies. cmakev1 appends every component
+# of the build to a main component that declares none (tools/cmake/project.cmake,
+# "Special treatment for 'main' component"). Keep that behaviour in cmakev1 so
+# that custom secure service components depending on main keep building.
+set(deps)
+if(IDF_BUILD_V2)
+    set(deps REQUIRES esp_tee
+             PRIV_REQUIRES bootloader_support efuse esp_app_format
+                           esp_hal_mspi esp_hal_pmu esp_hal_uart esp_hal_wdt
+                           esp_hal_security esp_security esp_system mbedtls nvs_flash
+                           esp_stdio attestation tee_flash_mgr tee_ota_ops tee_sec_storage
+                           ${CUSTOM_SECURE_SERVICE_COMPONENT})
+endif()
+
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS ${include})
+                       INCLUDE_DIRS ${include}
+                       ${deps})
 
 # NOTE: The ESP32-H2 and C61 ROM does not have sprintf/snprintf implementation,
 # thus newlib-nano implementation from the toolchain has been used.

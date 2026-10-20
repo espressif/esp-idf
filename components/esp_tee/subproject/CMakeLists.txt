@@ -19,6 +19,11 @@ if(NOT IDF_TARGET)
         "in by the parent build process.")
 endif()
 
+if(IDF_BUILD_V2)
+    include(CMakeLists_v2.txt)
+    return()
+endif()
+
 set(COMPONENTS esp_tee bootloader esptool_py partition_table main ${CUSTOM_SECURE_SERVICE_COMPONENT})
 list(APPEND EXTRA_COMPONENT_DIRS ${CUSTOM_SECURE_SERVICE_COMPONENT_DIR})
 set(ESP_TEE_BUILD 1)
@@ -32,12 +37,6 @@ list(APPEND COMPONENTS bootloader_support esp_image_verify efuse esp_hal_mspi es
 list(APPEND COMPONENTS attestation tee_flash_mgr tee_ota_ops tee_sec_storage)
 
 include_directories("${SECURE_SERVICE_HEADERS_DIR}")
-
-# The TEE subproject is not yet ported to build system v2.
-# Explicitly clear the IDF_BUILD_V2 environment variable so that
-# tools/cmake/project.cmake does not activate the cmakev2 shim when
-# the parent build was invoked with IDF_BUILD_V2=1.
-unset(ENV{IDF_BUILD_V2})
 
 include("${IDF_PATH}/tools/cmake/project.cmake")
 set(common_req esp_common esp_hw_support esp_rom freertos hal log esp_libc soc spi_flash)

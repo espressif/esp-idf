@@ -1,0 +1,206 @@
+cmake_minimum_required(VERSION 3.22)
+
+# ---------------------------------------------------------------------------
+# ESP-TEE subproject CMakeLists (cmakev2 build system)
+#
+# This file drives the build of the ESP-TEE firmware as a standalone CMake
+# sub-project that is invoked by the top-level build when TEE is enabled
+# (CONFIG_SECURE_ENABLE_TEE=y).
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Custom secure service components
+#
+# Users may supply custom secure service components by setting
+# CUSTOM_SECURE_SERVICE_COMPONENT_DIR.  If set, it is appended to
+# EXTRA_COMPONENT_DIRS so that the IDF component discovery logic can find
+# them.
+# ---------------------------------------------------------------------------
+if(CUSTOM_SECURE_SERVICE_COMPONENT_DIR)
+    list(APPEND EXTRA_COMPONENT_DIRS ${CUSTOM_SECURE_SERVICE_COMPONENT_DIR})
+endif()
+
+# ---------------------------------------------------------------------------
+# Include the cmakev2 IDF build framework
+# ---------------------------------------------------------------------------
+include("${IDF_PATH}/tools/cmakev2/idf.cmake")
+
+# main/CMakeLists.txt passes PROJECT_VER to common/esp_app_desc_tee.c, which
+# stores it in the TEE application descriptor. Pass the version to project() so
+# that PROJECT_VER is 1.0.0, the same value as in the cmakev1 build.
+project(esp_tee
+        VERSION ${ESP_TEE_VERSION_MAJOR}.${ESP_TEE_VERSION_MINOR}.${ESP_TEE_VERSION_PATCH}
+        LANGUAGES C CXX ASM)
+
+# ---------------------------------------------------------------------------
+# TEE-specific build properties set before project initialization
+# ---------------------------------------------------------------------------
+set(ESP_TEE_BUILD 1)
+set(NON_OS_BUILD 1)
+idf_build_set_property(ESP_TEE_BUILD "${ESP_TEE_BUILD}")
+idf_build_set_property(NON_OS_BUILD "${NON_OS_BUILD}")
+# The TEE subproject has a different set of components and hence different
+# Kconfig files.  Do not regenerate the main project's sdkconfig.
+idf_build_set_property(GENERATE_SDKCONFIG 0)
+# Treat the TEE subproject's own components (main/, components/) as IDF
+# components (priority 0) instead of project components (priority 3). A custom
+# secure service component found through EXTRA_COMPONENT_DIRS (priority 2) then
+# replaces a built-in component of the same name. In cmakev1 the extra
+# component directory is added after main/ but before components/
+# (tools/cmake/project.cmake, __project_init), so there it can only replace
+# main.
+idf_build_set_property(PROJECT_COMPONENTS_SOURCE "idf_components")
+# Allow lazy optional component requirements evaluation for
+# `idf_component_optional_requires`.  The TEE uses a single ESP-IDF library,
+# and since it includes `esp_common`, this ensures that not all components
+# listed in `esp_common` as optional requirements are pulled into the build.
+idf_build_set_property(IDF_COMPONENT_OPTIONAL_REQUIRES_MODE DEFERRED)
+# The TEE always builds with size optimization (see below), not with the
+# app-level CONFIG_COMPILER_OPTIMIZATION_* flags.
+idf_build_set_property(SET_COMPILER_OPTIMIZATION NO)
+# The TEE linker script (main/ld/<target>/esp_tee.ld.in) places sections by
+# object file name, which LTO does not preserve. Do not compile or link the TEE
+# with LTO, whatever the application's CONFIG_COMPILER_LTO_* options are. The
+# cmakev1 build excludes ESP_TEE_BUILD from LTO in the top-level CMakeLists.txt.
+idf_build_set_property(SET_COMPILER_LTO NO)
+# The TEE does not build the KASAN runtime (components/esp_system/kasan.c is
+# compiled for the application only). Do not instrument it, whatever the
+# application's CONFIG_COMPILER_KASAN option is.
+idf_build_set_property(SET_COMPILER_KASAN NO)
+# esp_psram is an application-only component. Without this exclusion the
+# application's CONFIG_SPIRAM reaches the TEE's configuration. esp_system then
+# includes esp_psram in the TEE build, and the build fails. The cmakev1 TEE
+# build does not include esp_psram.
+idf_build_set_property(EXCLUDE_COMPONENTS esp_psram APPEND)
+
+# Perform internal IDF project initialisation
+idf_project_init()
+
+# ---------------------------------------------------------------------------
+# Common component requirements
+# ---------------------------------------------------------------------------
+idf_build_get_property(idf_target_arch IDF_TARGET_ARCH)
+set(common_req esp_common esp_hw_support esp_rom freertos hal log esp_libc soc spi_flash
+               ${idf_target_arch})
+idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
+
+# ---------------------------------------------------------------------------
+# Secure service headers directory
+# ---------------------------------------------------------------------------
+if(SECURE_SERVICE_HEADERS_DIR)
+    include_directories("${SECURE_SERVICE_HEADERS_DIR}")
+endif()
+
+# ---------------------------------------------------------------------------
+# Compiler options and defines specific for TEE
+#
+# The TEE always builds with size optimization (-Os, or -Oz with Clang),
+# whatever CONFIG_COMPILER_OPTIMIZATION_* is set to. The cmakev1 build does the
+# same in the ESP_TEE_BUILD branch of the top-level CMakeLists.txt. The TEE
+# partition is 256 KB in the default partition tables
+# (components/partition_table/partitions_singleapp_tee.csv).
+# ---------------------------------------------------------------------------
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    idf_build_set_property(COMPILE_OPTIONS "-Oz" APPEND)
+else()
+    idf_build_set_property(COMPILE_OPTIONS "-Os" APPEND)
+    idf_build_set_property(COMPILE_OPTIONS "-freorder-blocks" APPEND)
+endif()
+
+idf_build_set_property(COMPILE_DEFINITIONS "ESP_TEE_BUILD=1" APPEND)
+idf_build_set_property(COMPILE_DEFINITIONS "NON_OS_BUILD=1" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
+
+# Record component dependencies. idf_build_generate_depgraph() below writes
+# them to <build>/component_deps.dot, as the cmakev1 build does.
+idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
+
+# ---------------------------------------------------------------------------
+# Build the TEE ELF
+# ---------------------------------------------------------------------------
+idf_build_executable(esp_tee_elf
+                     NAME esp_tee
+                     COMPONENTS main
+                     MAPFILE_TARGET esp_tee_mapfile)
+idf_build_generate_depgraph(esp_tee_elf)
+
+# ---------------------------------------------------------------------------
+# Binary generation
+#
+# Guard: if binary generation is disabled or esptool_py is not part of the
+# build, there is no binary to produce, so we stop here.
+# ---------------------------------------------------------------------------
+if(NOT CONFIG_APP_BUILD_GENERATE_BINARIES OR NOT TARGET idf::esptool_py)
+    return()
+
+# ---------------------------------------------------------------------------
+# No secure boot
+#
+# Convert the ELF directly to a flat binary. idf_check_tee_size() checks that
+# the binary fits the TEE partition. idf_build_generate_metadata() writes
+# project_description.json to the TEE build directory, as the cmakev1 build
+# does. The parent build does not read it.
+# ---------------------------------------------------------------------------
+elseif(NOT CONFIG_SECURE_BOOT_V2_ENABLED)
+    idf_build_binary(esp_tee_elf
+                     OUTPUT_FILE "${CMAKE_BINARY_DIR}/esp_tee.bin"
+                     TARGET esp_tee_bin
+                     ALL)
+    idf_check_tee_size(esp_tee_bin)
+    idf_build_generate_metadata(EXECUTABLE esp_tee_elf)
+
+# ---------------------------------------------------------------------------
+# Secure Boot V2
+#
+# The TEE ELF is first converted to an unsigned flat binary. With
+# CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES it is then signed into esp_tee.bin.
+# Without it the unsigned binary is esp_tee.bin and the user signs it before
+# flashing. The parent build flashes esp_tee/esp_tee.bin in both cases
+# (components/esp_tee/CMakeLists.txt, esptool_py_flash_target_image).
+# ---------------------------------------------------------------------------
+elseif(CONFIG_SECURE_BOOT_V2_ENABLED)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # When signing during build, produce the raw binary as
+        # esp_tee-unsigned.bin and then sign it into esp_tee.bin.
+        set(esp_tee_unsigned_bin "esp_tee-unsigned.bin")
+    else()
+        # Without build-time signing, produce the binary directly as
+        # esp_tee.bin, the same name as in the cmakev1 build.
+        set(esp_tee_unsigned_bin "esp_tee.bin")
+    endif()
+
+    idf_build_binary(esp_tee_elf
+                     OUTPUT_FILE "${CMAKE_BINARY_DIR}/${esp_tee_unsigned_bin}"
+                     TARGET esp_tee_unsigned_bin
+                     ALL)
+    idf_check_tee_size(esp_tee_unsigned_bin)
+
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
+    string(REPLACE ";" " " espsecurepy "${espsecure_py_cmd}")
+
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        if(NOT EXISTS "${SECURE_BOOT_SIGNING_KEY}")
+            idf_die(
+                "Secure Boot Signing Key Not found."
+                "\nGenerate the Secure Boot V2 RSA-PSS 3072 Key."
+                "\nTo generate one, you can use this command:"
+                "\n\t${espsecurepy} generate-signing-key --version 2 your_key.pem"
+            )
+        endif()
+
+        # Sign the unsigned binary with the configured signing key and
+        # write the signed image to esp_tee.bin.
+        idf_sign_binary(esp_tee_unsigned_bin
+                        OUTPUT_FILE "${CMAKE_BINARY_DIR}/esp_tee.bin"
+                        TARGET esp_tee_signed_bin
+                        KEYFILE "${SECURE_BOOT_SIGNING_KEY}"
+                        ALL)
+        idf_check_tee_size(esp_tee_signed_bin)
+    else()
+        idf_target_post_build_msg(esp_tee_unsigned_bin
+            "TEE generated but not signed"
+        )
+    endif()
+
+    idf_build_generate_metadata(EXECUTABLE esp_tee_elf)
+endif()
