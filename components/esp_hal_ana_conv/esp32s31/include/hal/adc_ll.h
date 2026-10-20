@@ -8,6 +8,7 @@
 #include <stdbool.h>
 
 #include "esp_rom_sys.h"
+#include "soc/soc.h"
 #include "soc/adc_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/lp_peri_clkrst_struct.h"
