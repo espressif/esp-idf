@@ -90,7 +90,7 @@ repos:
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
         additional_dependencies:
-          - 'mypy'
+          - 'mypy<1.17'
           - 'mypy-extensions'
           - 'types-setuptools'
           - 'types-PyYAML'
