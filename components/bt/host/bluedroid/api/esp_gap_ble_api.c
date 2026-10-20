@@ -901,7 +901,7 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr)
 int esp_ble_get_bond_device_num(void)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_FAIL;
+        return -1;
     }
 
     return btc_storage_get_num_ble_bond_devices();
