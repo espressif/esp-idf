@@ -18,7 +18,15 @@ cmake_minimum_required(VERSION 3.22)
 #   idf_build_set_property(...)
 #   project(my_app C CXX ASM)
 #   idf_project_default()
-if($ENV{IDF_BUILD_V2})
+# A subproject such as the bootloader or the TEE gets the choice of its parent
+# project as -DIDF_BUILD_V2. Use it when it is defined, so that the subproject
+# follows its parent and not the environment of a later build command.
+if(DEFINED IDF_BUILD_V2)
+    set(__idf_build_v2_shim "${IDF_BUILD_V2}")
+else()
+    set(__idf_build_v2_shim "$ENV{IDF_BUILD_V2}")
+endif()
+if(__idf_build_v2_shim)
     message(STATUS "IDF Build System V2 (cmakev2) activated via IDF_BUILD_V2 shim")
 
     # Include the Build system v2 (cmakev2) entry point. This sets up all
