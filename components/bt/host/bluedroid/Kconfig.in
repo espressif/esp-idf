@@ -144,6 +144,15 @@ config BT_A2DP_SEP_NUM_MAX
         The maximum number of Stream End Points (SEPs) that can be registered for A2DP.
         The default value is 2. If you need to register more SEPs, you can increase this value.
 
+config BT_A2DP_AUDIO_STATS
+    bool "A2DP audio glitch statistics"
+    depends on BT_A2DP_ENABLE
+    default n
+    help
+        Count A2DP audio glitches, packet totals, and lost packets, and expose
+        them through esp_a2d_get_audio_stats(). This is for testing. Leave it
+        disabled in production.
+
 config BT_AVRCP_ENABLED
     bool
     depends on BT_A2DP_ENABLE
