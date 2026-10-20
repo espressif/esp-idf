@@ -308,4 +308,77 @@ TEST_CASE("Test DPP responder p256 production timing", "[wpa_dpp][performance]")
     dpp_global_deinit(dpp);
     dpp_test_clear_overrides();
 }
+/*
+ * Run request, response and confirm with the responder told the initiator's
+ * bootstrapping key, so both sides derive L for mutual authentication.
+ */
+static void dpp_test_mutual_exchange(struct dpp_bootstrap_info *responder_bi,
+                                     struct dpp_bootstrap_info *initiator_bi)
+{
+    struct dpp_authentication *initiator_auth, *responder_auth;
+    struct wpabuf *conf;
+    const u8 *frame;
+    size_t len;
+
+    TEST_ASSERT_NOT_NULL(responder_bi);
+    TEST_ASSERT_NOT_NULL(initiator_bi);
+    initiator_auth = dpp_auth_init(NULL, responder_bi, initiator_bi,
+                                   DPP_CAPAB_CONFIGURATOR, 2412, NULL, 0);
+    TEST_ASSERT_NOT_NULL(initiator_auth);
+    TEST_ASSERT_NOT_NULL(initiator_auth->req_msg);
+
+    frame = wpabuf_head_u8(initiator_auth->req_msg) + 2;
+    len = wpabuf_len(initiator_auth->req_msg) - 2;
+    responder_auth = dpp_auth_req_rx(NULL, DPP_CAPAB_ENROLLEE, 0, initiator_bi,
+                                     responder_bi, 2412, frame,
+                                     frame + DPP_HDR_LEN, len - DPP_HDR_LEN);
+    TEST_ASSERT_NOT_NULL(responder_auth);
+    TEST_ASSERT_TRUE(responder_auth->own_bi && responder_auth->peer_bi);
+    TEST_ASSERT_NOT_NULL_MESSAGE(responder_auth->resp_msg,
+                                 "responder failed to derive L");
+
+    frame = wpabuf_head_u8(responder_auth->resp_msg) + 2;
+    len = wpabuf_len(responder_auth->resp_msg) - 2;
+    conf = dpp_auth_resp_rx(initiator_auth, frame, frame + DPP_HDR_LEN,
+                            len - DPP_HDR_LEN);
+    TEST_ASSERT_NOT_NULL(conf);
+    TEST_ASSERT_EQUAL_INT(1, initiator_auth->auth_success);
+
+    frame = wpabuf_head_u8(conf) + 2;
+    len = wpabuf_len(conf) - 2;
+    TEST_ASSERT_EQUAL_INT(0, dpp_auth_conf_rx(responder_auth, frame,
+                                              frame + DPP_HDR_LEN,
+                                              len - DPP_HDR_LEN));
+    /*
+     * Both sides mix L.x into ke (dpp_derive_bk_ke()) and success wipes it,
+     * so success on both proves ((bR + pR) mod q) * BI == bI * (BR + PR).
+     */
+    TEST_ASSERT_EQUAL_INT(1, responder_auth->auth_success);
+
+    wpabuf_free(conf);
+    dpp_auth_deinit(responder_auth);
+    dpp_auth_deinit(initiator_auth);
+}
+
+TEST_CASE("Test DPP mutual authentication p256", "[wpa_dpp]")
+{
+    struct dpp_global_config dpp_conf;
+    struct dpp_global *dpp;
+    int responder_id, initiator_id;
+
+    set_leak_threshold(dpp_test_leak_threshold());
+    os_memset(&dpp_conf, 0, sizeof(dpp_conf));
+    dpp = dpp_global_init(&dpp_conf);
+    TEST_ASSERT_NOT_NULL(dpp);
+
+    responder_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
+    TEST_ASSERT(responder_id > 0);
+    initiator_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
+    TEST_ASSERT(initiator_id > 0);
+
+    dpp_test_clear_overrides();
+    dpp_test_mutual_exchange(dpp_bootstrap_get_id(dpp, responder_id),
+                             dpp_bootstrap_get_id(dpp, initiator_id));
+    dpp_global_deinit(dpp);
+}
 #endif
