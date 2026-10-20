@@ -208,9 +208,9 @@ elseif(CONFIG_COMPILER_STACK_CHECK_MODE_ALL)
 endif()
 
 if(CONFIG_COMPILER_KASAN)
-    # Only instrument the app build; the bootloader runs before kasan_init_shadow()
-    # is called and does not have the KASAN runtime.
-    if(NOT BOOTLOADER_BUILD)
+    # Only instrument the app build. The bootloader and the TEE run before
+    # kasan_init_shadow() is called and do not have the KASAN runtime.
+    if(NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
         list(APPEND c_compile_options "-fsanitize=kernel-address")
         list(APPEND cxx_compile_options "-fsanitize=kernel-address")
         if(NOT CONFIG_KASAN_STACK)
@@ -390,7 +390,7 @@ endif()
 # Apply the exclusion after add_subdirectory() so every target already exists.
 # The exclusion set itself is defined in tools/cmake/kasan.cmake and shared with
 # the Build system v2, which applies it in idf_build_library().
-if(CONFIG_COMPILER_KASAN AND NOT BOOTLOADER_BUILD)
+if(CONFIG_COMPILER_KASAN AND NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
     include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/kasan.cmake")
     idf_build_get_property(__kasan_all_components BUILD_COMPONENTS)
     kasan_filter_excluded_components(__kasan_excluded_components ${__kasan_all_components})
