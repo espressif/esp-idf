@@ -177,7 +177,7 @@ The TWAI driver supports creating a 64-bit timestamp for each successfully recei
 
 The node time inherits from the system time, i.e. the time starts from the power-on of the chip, and is not affected by the stop/restart/BUS_OFF state during the node's lifetime.
 
-.. only:: SOC_TWAI_FD_SUPPORTED
+.. only:: SOC_TWAI_SUPPORT_FD
 
     Scheduled Transmission
     ----------------------
@@ -209,6 +209,8 @@ Stopping and Deleting the Node
 ------------------------------
 
 When the TWAI node is no longer needed, you should call :cpp:func:`twai_node_delete` to release software and hardware resources. Make sure the TWAI controller is stopped before deleting the node.
+
+Note: Due to the design of the driver, please do not call the delete function in the FreeRTOS timer task.
 
 Advanced Features
 =================
