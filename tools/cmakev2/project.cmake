@@ -603,6 +603,21 @@ function(__init_project_flash_targets)
     endif()
 endfunction()
 
+#[[
+    __check_project_languages()
+
+    Stop with an error if the ASM language is not enabled. CMake does not
+    compile assembly sources when ASM is not enabled, and it prints no
+    warning. The build then fails at link time with undefined references.
+#]]
+function(__check_project_languages)
+    get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(NOT ASM IN_LIST enabled_languages)
+        idf_die("The ASM language is not enabled. Add ASM to the project() call, "
+                "for example: project(<name> C CXX ASM)")
+    endif()
+endfunction()
+
 #[[api
 .. cmakev2:macro:: idf_project_init
 
@@ -629,6 +644,9 @@ macro(idf_project_init)
     if(NOT project_initialized)
         # Ensure this function is executed only once throughout the entire
         # project.
+
+        # Stop early if the project() call did not enable ASM.
+        __check_project_languages()
 
         # The IDF_TOOLCHAIN variable is established as a CMake cache variable
         # during the toolchain initialization process in

@@ -82,6 +82,20 @@ def test_project_init_requires_cmake_project(idf_py: IdfPyFunc) -> None:
 
 
 @pytest.mark.usefixtures('test_app_copy')
+def test_project_init_requires_asm(idf_py: IdfPyFunc) -> None:
+    """idf_project_init() should fail when project() does not enable the ASM language."""
+    logging.info('Testing idf_project_init fails without ASM in project()')
+
+    replace_in_file('CMakeLists.txt', 'project(build_test_app C CXX ASM)', 'project(build_test_app C CXX)')
+
+    result = idf_py('reconfigure', check=False)
+
+    assert result.returncode != 0, 'reconfigure must fail when project() does not enable ASM'
+    combined = (result.stdout or '') + (result.stderr or '')
+    assert 'The ASM language is not enabled' in combined, 'Error output must state that ASM is not enabled'
+
+
+@pytest.mark.usefixtures('test_app_copy')
 def test_build_generate_flasher_args(idf_py: IdfPyFunc) -> None:
     """idf_build_generate_flasher_args() generates flasher_args.json with correct content."""
     logging.info('Testing idf_build_generate_flasher_args flasher_args.json generation')
