@@ -564,6 +564,7 @@ static inline void ledc_ll_set_sig_out_en(ledc_dev_t *hw, ledc_mode_t speed_mode
  *
  * @return True if duty_start has been self-cleared
  */
+__attribute__((always_inline))
 static inline bool ledc_ll_is_duty_update_done(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
     return !hw->channel_group[speed_mode].channel[channel_num].conf1.duty_start;
