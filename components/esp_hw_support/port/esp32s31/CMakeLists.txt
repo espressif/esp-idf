@@ -12,6 +12,7 @@ if(NOT BOOTLOADER_BUILD)
                      "pmu_param.c"
                      "pmu_init.c"
                      "pmu_sleep.c"
+                     "ocode_init.c"
         )
 endif()
 
