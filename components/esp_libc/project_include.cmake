@@ -1,6 +1,7 @@
 if(CONFIG_IDF_TOOLCHAIN_GCC)
     idf_toolchain_remove_flags(COMPILE_OPTIONS "-mdisable-hardware-atomics"
-                                               "-specs=picolibc.specs"
+                                               # bare name or previous absolute path
+                                               "-specs=.*picolibc.specs"
                                                "-D__STDC_WANT_LIB_EXT1__=0"
                                                "--specs=nano.specs")
     if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
@@ -8,10 +9,8 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
     endif()
 
     if(CONFIG_LIBC_PICOLIBC)
-        idf_toolchain_add_flags(COMPILE_OPTIONS "-specs=picolibc.specs")
-        if(LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
-            idf_toolchain_add_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
-        endif()
+        __idf_gcc_specs_option(picolibc_specs_option picolibc.specs)
+        idf_toolchain_add_flags(COMPILE_OPTIONS "${picolibc_specs_option}")
     endif()
 
     if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
