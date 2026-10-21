@@ -801,8 +801,7 @@ static void test_master_loop(const void *arg1, void *arg2)
         for (int j = 0; j < test_cfg->test_size; j ++) {
             //wait for both master and slave end
             ESP_LOGI(MASTER_TAG, "=> test%d", j);
-            //send master tx data
-            vTaskDelay(20);
+            vTaskDelay(50 / portTICK_PERIOD_MS);
 
             spi_transaction_t *t = &context->master_trans[j];
             TEST_ESP_OK(spi_device_transmit(spi, t));

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,8 +99,6 @@ typedef struct {
     /* Configured by driver at initialization, don't touch */
     spi_dev_t     *hw;                  ///< Beginning address of the peripheral registers.
     bool  dma_enabled;                  ///< Whether the DMA is enabled, do not update after initialization
-    /* Internal parameters, don't touch */
-    spi_hal_trans_config_t trans_config; ///< Transaction configuration
 } spi_hal_context_t;
 
 /**
@@ -151,6 +149,7 @@ typedef struct {
     int rx_bitlen;                      ///< RX length, in bits
     /* DONE State */
     int cs_hold;                        ///< Hold time of CS inactive edge after the last SPI clock
+    spi_line_mode_t line_mode;          ///< SPI line mode of this transaction
 } spi_hal_seg_config_t;
 
 /**
@@ -259,8 +258,10 @@ void spi_hal_push_tx_buffer(const spi_hal_context_t *hal, const spi_hal_trans_co
  * Post transaction operations, mainly fetch data from the buffer.
  *
  * @param hal       Context of the HAL layer.
+ * @param rx_buffer Buffer to hold the receive data.
+ * @param bitlen    Length of the receive data in bits.
  */
-void spi_hal_fetch_result(const spi_hal_context_t *hal);
+void spi_hal_get_result(const spi_hal_context_t *hal, uint8_t *rx_buffer, size_t bitlen);
 
 /*----------------------------------------------------------
  * Utils

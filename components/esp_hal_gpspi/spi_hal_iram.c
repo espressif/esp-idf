@@ -183,13 +183,15 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
     // enable tx data wait only when tx is used, otherwise rx only trans will hang on start
     spi_ll_master_enable_fd_wait_dma_tx_data(hw, trans->send_buffer && trans->tx_bitlen);
 #endif
+
+    // Set half duplex mode based on real transaction mode
+    bool reg_half_duplex = dev->half_duplex || !(trans->send_buffer && trans->rcv_buffer);
+    spi_ll_set_half_duplex(hw, reg_half_duplex);
+
     spi_ll_set_mosi_bitlen(hw, trans->tx_bitlen);
-    if (dev->half_duplex) {
-        spi_ll_set_miso_bitlen(hw, trans->rx_bitlen);
-    } else {
-        //rxlength is not used in full-duplex mode
-        spi_ll_set_miso_bitlen(hw, trans->tx_bitlen);
-    }
+    //rxlength is not used in full-duplex mode
+    //got length follow user config dev->half_duplex not reg_half_duplex
+    spi_ll_set_miso_bitlen(hw, dev->half_duplex ? trans->rx_bitlen : trans->tx_bitlen);
 
     //Configure bit sizes, load addr and command
     int cmdlen = trans->cmd_bits;
@@ -210,9 +212,6 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
 
     //Configure keep active CS
     spi_ll_master_keep_cs(hw, trans->cs_keep_active);
-
-    //Save the transaction attributes for internal usage.
-    memcpy(&hal->trans_config, trans, sizeof(spi_hal_trans_config_t));
 }
 
 void spi_hal_enable_data_line(spi_dev_t *hw, bool mosi_ena, bool miso_ena)
@@ -266,13 +265,11 @@ void spi_hal_push_tx_buffer(const spi_hal_context_t *hal, const spi_hal_trans_co
     //No need to setup anything for RX, we'll copy the result out of the work registers directly later.
 }
 
-void spi_hal_fetch_result(const spi_hal_context_t *hal)
+void spi_hal_get_result(const spi_hal_context_t *hal, uint8_t *rx_buffer, size_t bitlen)
 {
-    const spi_hal_trans_config_t *trans = &hal->trans_config;
-
-    if (trans->rcv_buffer) {
+    if (rx_buffer) {
         //Need to copy from SPI regs to result buffer.
-        spi_ll_read_buffer(hal->hw, trans->rcv_buffer, trans->rx_bitlen);
+        spi_ll_read_buffer(hal->hw, rx_buffer, bitlen);
     }
 }
 
@@ -294,7 +291,7 @@ void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_co
 {
     spi_ll_sct_full_reg_t *sct_cfg = (spi_ll_sct_full_reg_t *)conf_buffer;
 
-    spi_sct_ll_set_line_mode(sct_cfg, hal->trans_config.line_mode);
+    spi_sct_ll_set_line_mode(sct_cfg, config->line_mode);
     spi_sct_ll_set_cs_setup(sct_cfg, config->cs_setup);
     spi_sct_ll_set_cs_hold(sct_cfg, config->cs_hold);
     spi_sct_ll_set_command(sct_cfg, config->cmd, config->cmd_bits, dev->tx_lsbfirst);

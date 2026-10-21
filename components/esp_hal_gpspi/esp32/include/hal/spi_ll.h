@@ -872,7 +872,9 @@ static inline void spi_ll_master_set_cs_setup(spi_dev_t *hw, uint8_t setup)
  */
 static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    hw->miso_dlen.usr_miso_dbitlen = bitlen - 1;
+    if (bitlen) {
+        hw->miso_dlen.usr_miso_dbitlen = bitlen - 1;
+    }
 }
 
 /**
@@ -883,7 +885,9 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_set_mosi_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    hw->mosi_dlen.usr_mosi_dbitlen = bitlen - 1;
+    if (bitlen) {
+        hw->mosi_dlen.usr_mosi_dbitlen = bitlen - 1;
+    }
 }
 
 /**
