@@ -360,7 +360,6 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
 
         trans_elm->client = ppa_client;
         trans_elm->user_data = config->user_data;
-        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semaphore before transaction starts
 
         ret = ppa_do_operation(ppa_client, ppa_client->engine, trans_elm, config->mode);
         if (ret != ESP_OK) {
