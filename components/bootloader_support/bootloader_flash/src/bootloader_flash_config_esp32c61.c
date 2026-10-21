@@ -246,6 +246,10 @@ esp_err_t bootloader_init_spi_flash(void)
     bootloader_enable_qio_mode();
 #endif
 
+#if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
+    bootloader_flash_32bits_address_map_enable(bootloader_flash_get_spi_mode());
+#endif
+
     print_flash_info(&bootloader_image_hdr);
 
     cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
@@ -313,6 +317,10 @@ void bootloader_flash_hardware_init(void)
 
     bootloader_spi_flash_resume();
     bootloader_flash_unlock();
+
+#if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
+    bootloader_flash_32bits_address_map_enable(bootloader_flash_get_spi_mode());
+#endif
 
     cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
     update_flash_config(&hdr);
