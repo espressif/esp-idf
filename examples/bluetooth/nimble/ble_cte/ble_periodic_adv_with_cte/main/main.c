@@ -38,8 +38,8 @@ static void start_periodic_adv_cte(uint8_t own_addr_type)
     assert(rc == 0);
 
     ESP_LOGI(TAG, "Device Address: ");
-    ESP_LOGI(TAG, "%02x:%02x:%02x:%02x:%02x:%02x",
-                   addr.val[5], addr.val[4], addr.val[3], addr.val[2], addr.val[1], addr.val[0]);
+    ESP_LOGI(TAG, "Bluetooth MAC: %02x:%02x:%02x:%02x:%02x:%02x",
+             addr.val[5], addr.val[4], addr.val[3], addr.val[2], addr.val[1], addr.val[0]);
 
     /* Configure extended advertising parameters */
     struct ble_gap_ext_adv_params ext_adv_params = {
