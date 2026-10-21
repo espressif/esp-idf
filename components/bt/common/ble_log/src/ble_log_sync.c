@@ -29,18 +29,24 @@ static bool s_gpio_owned;
 bool ble_log_sync_init(void)
 {
     if (!GPIO_IS_VALID_OUTPUT_GPIO(SYNC_GPIO)) {
-        ESP_LOGE(TAG, "Invalid sync GPIO");
+        ESP_LOGE(TAG, "Invalid sync output GPIO %d; check CONFIG_BLE_LOG_SYNC_IO_NUM", SYNC_GPIO);
         return false;
     }
-    if (CONFIG_ESP_CONSOLE_UART_NUM == SYNC_UART || uart_is_driver_installed(SYNC_UART)) {
-        ESP_LOGE(TAG, "UART1 is already in use");
+    if (CONFIG_ESP_CONSOLE_UART_NUM == SYNC_UART) {
+        ESP_LOGE(TAG, "UART1 is used by console; select another console UART to enable sync");
         return false;
     }
 #if CONFIG_BLE_LOG_PRPH_UART_DMA && CONFIG_BLE_LOG_PRPH_UART_DMA_PORT == 1
-    ESP_LOGE(TAG, "UART1 is used by the BLE Log transport");
+    ESP_LOGE(TAG, "UART1 is used by BLE Log transport; change CONFIG_BLE_LOG_PRPH_UART_DMA_PORT to enable sync");
     return false;
 #endif
-    if (uart_driver_install(SYNC_UART, 256, 0, 0, NULL, 0) != ESP_OK) {
+    if (uart_is_driver_installed(SYNC_UART)) {
+        ESP_LOGE(TAG, "UART1 driver is already installed; reserve UART1 for sync or disable sync output");
+        return false;
+    }
+    esp_err_t ret = uart_driver_install(SYNC_UART, 256, 0, 0, NULL, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "UART1 driver installation failed: %s", esp_err_to_name(ret));
         return false;
     }
     s_uart_installed = true;
@@ -56,15 +62,29 @@ bool ble_log_sync_init(void)
         .source_clk = UART_SCLK_REF_TICK,
 #endif
     };
-    if (uart_param_config(SYNC_UART, &config) != ESP_OK ||
-            uart_set_pin(SYNC_UART, SYNC_GPIO, -1, -1, -1) != ESP_OK) {
+    if ((ret = uart_param_config(SYNC_UART, &config)) != ESP_OK) {
+        ESP_LOGE(TAG, "UART1 configuration failed: %s", esp_err_to_name(ret));
+        goto failed;
+    }
+    if ((ret = uart_set_pin(SYNC_UART, SYNC_GPIO, -1, -1, -1)) != ESP_OK) {
+        ESP_LOGE(TAG, "UART1 sync GPIO %d routing failed: %s", SYNC_GPIO, esp_err_to_name(ret));
         goto failed;
     }
     s_gpio_owned = true;
-    if (uart_disable_rx_intr(SYNC_UART) != ESP_OK ||
-            uart_set_tx_idle_num(SYNC_UART, SYNC_IDLE_BITS) != ESP_OK ||
-            uart_set_line_inverse(SYNC_UART, 0) != ESP_OK ||
-            gpio_input_enable(SYNC_GPIO) != ESP_OK) {
+    if ((ret = uart_disable_rx_intr(SYNC_UART)) != ESP_OK) {
+        ESP_LOGE(TAG, "UART1 RX interrupt disable failed: %s", esp_err_to_name(ret));
+        goto failed;
+    }
+    if ((ret = uart_set_tx_idle_num(SYNC_UART, SYNC_IDLE_BITS)) != ESP_OK) {
+        ESP_LOGE(TAG, "UART1 idle configuration failed: %s", esp_err_to_name(ret));
+        goto failed;
+    }
+    if ((ret = uart_set_line_inverse(SYNC_UART, 0)) != ESP_OK) {
+        ESP_LOGE(TAG, "UART1 TX polarity configuration failed: %s", esp_err_to_name(ret));
+        goto failed;
+    }
+    if ((ret = gpio_input_enable(SYNC_GPIO)) != ESP_OK) {
+        ESP_LOGE(TAG, "Sync GPIO %d input enable failed: %s", SYNC_GPIO, esp_err_to_name(ret));
         goto failed;
     }
     s_initial_idle_until = esp_timer_get_time() + SYNC_IDLE_US;
@@ -73,6 +93,11 @@ bool ble_log_sync_init(void)
 failed:
     ble_log_sync_deinit();
     return false;
+}
+
+int ble_log_sync_get_level(void)
+{
+    return s_gpio_owned ? gpio_get_level(SYNC_GPIO) : 0;
 }
 
 bool ble_log_sync_send(uint32_t anchor_count, ble_log_ts_info_t *info)

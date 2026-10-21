@@ -19,6 +19,8 @@ extern "C" {
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
 bool ble_log_sync_init(void);
 void ble_log_sync_deinit(void);
+/* Return zero without accessing the pin when sync initialization failed. */
+int ble_log_sync_get_level(void);
 /* True means UART TX inversion produced falling T0 and info was sampled in the
  * same critical section, even if the following UART label fails. False leaves info alone.
  * Outside the critical section, complete a >=12 us BREAK and >=2 us high

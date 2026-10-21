@@ -16,6 +16,7 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
+#include "driver/uart.h"
 #include "esp_cpu.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -564,6 +565,35 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
     TEST_ASSERT_GREATER_THAN_UINT32_MESSAGE(
         0, ts_count,
         "Periodic ESP timer did not emit a timestamp frame");
+}
+
+TEST_CASE("BLE Log keeps logging and sampling when sync UART is occupied",
+          "[ble_log][runtime][timestamp]")
+{
+#if !CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED || CONFIG_ESP_CONSOLE_UART_NUM == 1
+    TEST_IGNORE_MESSAGE("Requires sync enabled and UART1 available for the test");
+#else
+    ble_log_deinit();
+    TEST_ASSERT_EQUAL(ESP_OK, uart_driver_install(UART_NUM_1, 256, 0, 0, NULL, 0));
+    bool initialized = ble_log_init();
+    uint32_t seq = 0;
+    uint8_t io_level = 255;
+    bool logged = initialized && write_runtime_marker(0x42000, NULL) &&
+                  read_runtime_marker(&seq, NULL, NULL);
+    bool sampled = initialized && read_periodic_snapshot(&io_level);
+    ble_log_deinit();
+    bool preserved = uart_is_driver_installed(UART_NUM_1);
+    if (preserved) {
+        TEST_ASSERT_EQUAL(ESP_OK, uart_driver_delete(UART_NUM_1));
+    }
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(initialized);
+    TEST_ASSERT_TRUE(logged);
+    TEST_ASSERT_EQUAL_UINT32(0x42000, seq);
+    TEST_ASSERT_TRUE(sampled);
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+    TEST_ASSERT_TRUE_MESSAGE(preserved, "Sync cleanup deleted another user's UART driver");
+#endif
 }
 
 TEST_CASE("BLE Log compatibility sync APIs leave periodic snapshots running",

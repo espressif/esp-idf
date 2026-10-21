@@ -235,6 +235,14 @@ initialization and stops at deinitialization, independently of
 `ble_log_enable()`. UART1 is reserved for sync and must not be used by the
 console, log transport or application. UART0 remains available to the console.
 
+If sync initialization fails, BLE Log continues logging and producing periodic
+clock snapshots without external markers (`io_level` is zero). A `BLE-Log-Sync`
+error identifies the cause: an invalid GPIO, UART1 occupied by the console,
+log transport or an installed driver, or a failed driver/GPIO operation with
+its error code. A `BLE-Log` warning confirms that external sync is unavailable.
+Free UART1 or correct the reported configuration/resource error, then
+deinitialize and initialize BLE Log again to retry sync initialization.
+
 `ble_log_ts_sync_io_toggle_enable()` and its compatibility name
 `ble_log_sync_enable()` ignore their argument and return whether BLE Log is
 initialized; they do not start or stop sync output.

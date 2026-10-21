@@ -22,7 +22,6 @@
 #if CONFIG_BLE_LOG_LL_ENABLED
 #include "esp_bt.h"
 #endif
-#include "driver/gpio.h"
 
 /* MACRO */
 #define TAG                                      "BLE-Log"
@@ -165,7 +164,7 @@ void ble_log_rt_ts_sample(ble_log_ts_info_t *info)
     info->int_src_code = BLE_LOG_INT_SRC_TS;
     BLE_LOG_ENTER_CRITICAL();
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    info->io_level = gpio_get_level(CONFIG_BLE_LOG_SYNC_IO_NUM);
+    info->io_level = ble_log_sync_get_level();
 #else
     info->io_level = 0;
 #endif
@@ -374,7 +373,7 @@ bool ble_log_rt_init(void)
 
 #if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
     if (!ble_log_sync_init()) {
-        goto exit;
+        ESP_LOGW(TAG, "External time sync unavailable; continuing BLE Log without sync output (see BLE-Log-Sync error)");
     }
 #endif
 
