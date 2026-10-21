@@ -6,5 +6,7 @@ menu "LP Core Deep Sleep Test Configuration"
         help
             RTC GPIO used for LP GPIO input, output, interrupt, and deep-sleep
             wakeup. The same pin number must be wired between the two boards.
+            On ESP32-C5 this is also the default LP I2C SDA pin, so the I2C and
+            GPIO cases run one at a time with the wire left connected.
 
 endmenu

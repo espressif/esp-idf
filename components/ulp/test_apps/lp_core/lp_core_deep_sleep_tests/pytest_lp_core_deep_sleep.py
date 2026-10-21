@@ -20,6 +20,21 @@ LP_RUNNING_DELAY_S = 0.8
 @idf_parametrize(
     'target',
     soc_filtered_targets(
+        '(SOC_LP_CORE_SUPPORTED == 1) and (SOC_LP_I2C_SUPPORTED == 1) and '
+        '(SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_TIMER_SUPPORTED == 1)'
+    ),
+    indirect=['target'],
+)
+def test_lp_i2c_during_deep_sleep(case_tester: CaseTester) -> None:
+    TwoBoardSleep(case_tester, 'lp_i2c_sleep').run_retained('I2C_PEER_ARMED', 'I2C_PEER_OK')
+
+
+@pytest.mark.generic_multi_device
+@pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize('config', ['defaults'], indirect=True)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
         '(SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1) and '
         '(SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_TIMER_SUPPORTED == 1)'
     ),
