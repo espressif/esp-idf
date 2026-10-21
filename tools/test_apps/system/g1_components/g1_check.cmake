@@ -66,16 +66,15 @@ set(extra_components_which_shouldnt_be_included
 
     # spi_flash is pulled in by bootloader_support (non-bootloader build).
     spi_flash
+
+    # esp_partition registers the partition protection callbacks that spi_flash
+    # requires for writes and erases of the main flash. partition_table is
+    # pulled in by esp_partition.
+    esp_partition
+    partition_table
 )
 
 if(NOT IDF_BUILD_V2)
-    # V1 includes esp_partition through efuse, and partition_table through
-    # esp_partition. In V2 these leave the linked closure when virtual efuses
-    # in flash are disabled. esptool_py still includes partition_table as a
-    # private requirement, but config-only components do not propagate private
-    # requirements into the V2 linked closure checked below.
-    list(APPEND extra_components_which_shouldnt_be_included esp_partition partition_table)
-
     # esp_usb_cdc_rom_console is used by the panic handler. Under build system v1
     # requirements are resolved before Kconfig, so esp_system has to depend on it
     # unconditionally. Build system v2 only pulls it in when the console is set to

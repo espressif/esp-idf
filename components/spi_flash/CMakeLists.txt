@@ -73,6 +73,12 @@ if(NOT non_os_build AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         idf_component_include(esp_pm)
         target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_pm)
     endif()
+    if(IDF_BUILD_V2)
+        # esp_partition registers the partition protection callbacks that the
+        # main flash write and erase paths require.
+        idf_component_include(esp_partition)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_partition)
+    endif()
     # Force linking init_flash ESP_SYSTEM_INIT_FN to ensure it's not discarded by linker
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_flash_spi_init_include_func")
 endif()
