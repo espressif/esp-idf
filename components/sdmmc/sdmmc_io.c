@@ -377,6 +377,15 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
 
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        if (!host_is_spi(card) && datalen > 0) {
+            // abort the transfer of this function in case the card is still in a data state,
+            // fails with a response timeout if the card has already left it
+            uint8_t abort_func = func & SD_ARG_CMD53_FUNC_MASK;
+            esp_err_t err_abort = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CTL, SD_ARG_CMD52_WRITE, &abort_func);
+            if (err_abort != ESP_OK) {
+                ESP_LOGE(TAG, "%s: I/O abort returned 0x%x", __func__, err_abort);
+            }
+        }
         return err;
     }
 
