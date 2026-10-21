@@ -211,6 +211,46 @@ menu "Scheduling Priority Level Config"
         default 1 if BT_LE_SYNC_SCHED_PRIO_MID_LEVEL
         default 2 if BT_LE_SYNC_SCHED_PRIO_HIGH_LEVEL
         default 1
+
+    choice BT_LE_PAWR_SCHED_PRIO_LEVEL
+        prompt "The Periodic Advertising with Response scheduling priority level"
+        default BT_LE_PAWR_SCHED_PRIO_MID_LEVEL
+        help
+            The PAWR scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_PAWR_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_PAWR_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_PAWR_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_PAWR_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_PAWR_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_PAWR_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_PAWR_SCHED_PRIO_HIGH_LEVEL
+        default 1
+
+    choice BT_LE_SWR_SCHED_PRIO_LEVEL
+        prompt "The Sync with Response scheduling priority level"
+        default BT_LE_SWR_SCHED_PRIO_MID_LEVEL
+        help
+            The SWR scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_SWR_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_SWR_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_SWR_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_SWR_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_SWR_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_SWR_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_SWR_SCHED_PRIO_HIGH_LEVEL
+        default 1
 endmenu
 
 menuconfig BT_LE_50_FEATURE_SUPPORT

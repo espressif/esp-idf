@@ -322,7 +322,9 @@ extern "C" {
 #endif // CONFIG_BT_LE_CTRL_FAST_CONN_DATA_TX_EN
 
 #define UC_BT_CTRL_LE_SCHED_PRIO_LVL_CFG                                                           \
-    ((CONFIG_BT_LE_DFT_SYNC_SCHED_PRIO_LEVEL << 4) |                                               \
+    ((CONFIG_BT_LE_DFT_SWR_SCHED_PRIO_LEVEL << 8) |                                               \
+     (CONFIG_BT_LE_DFT_PAWR_SCHED_PRIO_LEVEL << 6) |                                               \
+     (CONFIG_BT_LE_DFT_SYNC_SCHED_PRIO_LEVEL << 4) |                                               \
      (CONFIG_BT_LE_DFT_PERIODIC_ADV_SCHED_PRIO_LEVEL << 2) |                                       \
      (CONFIG_BT_LE_DFT_ADV_SCHED_PRIO_LEVEL))
 
