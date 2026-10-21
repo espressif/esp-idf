@@ -143,7 +143,7 @@ The main function calls `ble_spp_uart_init`, which is responsible for initializi
 static void ble_spp_uart_init(void)
 {
     uart_config_t uart_config = {
-        .baud_rate = 115200,
+        .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -219,7 +219,7 @@ void ble_client_uart_task(void *pvParameters)
         //Waiting for UART event.
         if (xQueueReceive(spp_common_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
             switch (event.type) {
-            //Event of UART receving data
+            //Event of UART receiving data
             case UART_DATA:
                 if (event.size) {
 
