@@ -312,6 +312,11 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
     else if (p_lcb->link_state == LST_DISCONNECTING) {
         L2CAP_TRACE_DEBUG ("L2CAP API - link disconnecting: RETRY LATER");
 
+        /* This LCB is being reused for a new connection. A close still in
+         * progress may have forced idle_timeout to 0; put back the default
+         * so the ACL stays up across the SDP-to-RFCOMM gap. */
+        p_lcb->idle_timeout = l2cb.idle_timeout;
+
         /* Save ccb so it can be started after disconnect is finished */
         p_lcb->p_pending_ccb = p_ccb;
     }
