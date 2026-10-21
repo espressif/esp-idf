@@ -1067,6 +1067,24 @@ static esp_err_t sd_host_reset(sd_host_sdmmc_ctlr_t *ctlr)
     return ESP_OK;
 }
 
+esp_err_t sd_host_slot_reset_after_error(sd_host_sdmmc_slot_t *slot)
+{
+    ESP_RETURN_ON_FALSE(slot, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    sd_host_sdmmc_ctlr_t *ctlr = slot->ctlr;
+
+    sdmmc_ll_stop_dma(ctlr->hal.dev);
+    ESP_RETURN_ON_ERROR(sd_host_reset(ctlr), TAG, "controller reset timed out");
+
+    // SDIO interrupt status is consumed by sd_host_slot_sdmmc_io_int_wait, keep it
+    sdmmc_ll_clear_interrupt(ctlr->hal.dev, ~(uint32_t)(SDMMC_INTMASK_IO_SLOT0 | SDMMC_INTMASK_IO_SLOT1));
+    sdmmc_ll_clear_idsts_interrupt(ctlr->hal.dev, 0xffffffff);
+    xQueueReset(ctlr->event_queue);
+
+    // After a controller reset, the CIU has to reload the clock settings
+    ESP_RETURN_ON_ERROR(sd_host_slot_clock_update_command(slot, false), TAG, "clock update after reset failed");
+    return ESP_OK;
+}
+
 /*---------------------------------------------------------------
                     Static: Clock
 ---------------------------------------------------------------*/

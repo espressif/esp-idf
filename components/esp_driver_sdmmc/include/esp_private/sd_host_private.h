@@ -200,6 +200,22 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
  */
 esp_err_t sd_host_slot_start_command(sd_host_sdmmc_slot_t *slot, sdmmc_hw_cmd_t cmd, uint32_t arg);
 
+/**
+ * @brief Bring the controller back to a clean state after a failed or aborted transaction
+ *
+ * Stops and resets the internal DMA controller, resets the controller, FIFO and DMA interface,
+ * discards pending interrupts and events, and reloads the clock settings into the CIU.
+ * This doesn't change the state of the card.
+ *
+ * @param[in] slot       SD Host Slot handle
+ *
+ * @return
+ *        - ESP_OK:              On success
+ *        - ESP_ERR_INVALID_ARG: Invalid arguments
+ *        - ESP_ERR_TIMEOUT:     Controller reset or clock update didn't complete
+ */
+esp_err_t sd_host_slot_reset_after_error(sd_host_sdmmc_slot_t *slot);
+
 /*---------------------------------------------------------------
                 Configuration APIs
 ---------------------------------------------------------------*/

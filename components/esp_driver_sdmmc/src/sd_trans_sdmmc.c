@@ -553,6 +553,13 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
     // write command into hardware, this also sends the command to the card
     ret = sd_host_slot_start_command(slot_ctx, hw_cmd, cmdinfo->arg);
     if (ret != ESP_OK) {
+        // the command didn't reach the card, but DMA may be armed or the controller may be stuck
+        if (cmdinfo->data || ret == ESP_ERR_TIMEOUT) {
+            esp_err_t reset_ret = sd_host_slot_reset_after_error(slot_ctx);
+            if (reset_ret != ESP_OK) {
+                ESP_LOGE(TAG, "controller reset after failed command start failed (0x%x)", reset_ret);
+            }
+        }
         goto out;
     }
     // process events until transfer is complete
@@ -566,6 +573,14 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
         ret = handle_event(slot_ctx, cmdinfo, &state, &unhandled_events);
         if (ret != ESP_OK) {
             break;
+        }
+    }
+    if (ret != ESP_OK || (cmdinfo->data && cmdinfo->error != ESP_OK)) {
+        // the controller can be left in the middle of a data transfer (DMA, FIFO and CIU state machines).
+        // Bringing the card out of the data state is done by the protocol layer.
+        esp_err_t reset_ret = sd_host_slot_reset_after_error(slot_ctx);
+        if (reset_ret != ESP_OK) {
+            ESP_LOGE(TAG, "controller reset after failed transaction failed (0x%x)", reset_ret);
         }
     }
     if (ret == ESP_OK && (cmdinfo->flags & SCF_WAIT_BUSY)) {
