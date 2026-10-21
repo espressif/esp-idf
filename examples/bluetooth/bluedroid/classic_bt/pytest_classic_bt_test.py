@@ -244,3 +244,50 @@ def test_bt_a2dp_stream_aac(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     sink_dut.expect_exact('A2DP audio stream configuration, codec type: 2', timeout=30)
     sink_dut.expect_exact(f'A2DP connection state: Connected, [{source_dut_mac}]', timeout=30)
     sink_dut.expect_exact('A2DP audio state: Started', timeout=60)
+
+
+# case 9: OPP
+@pytest.mark.two_duts
+@pytest.mark.parametrize(
+    'count, app_path, target, erase_all, config',
+    [
+        (
+            2,
+            f'{str(CUR_DIR / "bt_opp_server")}|{str(CUR_DIR / "bt_opp_client")}',
+            'esp32|esp32',
+            'y',
+            'test',
+        ),
+    ],
+    indirect=True,
+)
+def test_bt_opp(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
+    server = dut[0]
+    client = dut[1]
+
+    server.expect_exact('ESP_OPP_SERVER_INIT_EVT status:0', timeout=30)
+    server.expect_exact('ESP_OPP_SERVER_START_EVT status:0', timeout=30)
+    client.expect_exact('ESP_OPP_CLIENT_INIT_EVT status:0', timeout=30)
+    client.expect_exact('Discovering peer name:', timeout=30)
+    client.expect_exact('Connecting to ', timeout=60)
+    client.expect(r'ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:\d+ state:2 disc_rsn:0', timeout=30)
+    client.expect(r'ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:\d+ state:1 disc_rsn:0', timeout=30)
+    server.expect(r'ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:\d+ state:2 disc_rsn:0', timeout=60)
+    server.expect(r'ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:\d+ state:1 disc_rsn:0', timeout=30)
+
+    for index in range(1, 4):
+        client.expect_exact(f'Sending object[{index}/3]', timeout=30)
+        client.expect(r'ESP_OPP_CLIENT_TRANSFER_COMPLETE_EVT handle:\d+ status:0', timeout=30)
+        server.expect_exact(f'name:esp_opp_{index}.vcf', timeout=30)
+        server.expect(
+            r'(?s)(?:'
+            r'ESP_OPP_SERVER_TRANSFER_COMPLETE_EVT handle:\d+ status:0(?:(?!name:esp_opp_\d+\.vcf).)*?RX done'
+            r'|'
+            r'RX done(?:(?!name:esp_opp_\d+\.vcf).)*?ESP_OPP_SERVER_TRANSFER_COMPLETE_EVT handle:\d+ status:0'
+            r')',
+            timeout=30,
+        )
+
+    client.expect(r'ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:\d+ state:3 disc_rsn:0', timeout=30)
+    client.expect(r'ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:\d+ state:0 disc_rsn:0', timeout=30)
+    server.expect(r'ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:\d+ state:0 disc_rsn:0', timeout=30)
