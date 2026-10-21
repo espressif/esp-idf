@@ -18,7 +18,7 @@
 
 #define PEER_ADDR_VAL_SIZE      6
 
-static const char *tag = "NimBLE_SPP_BLE_CENT";
+static const char *tag = "NimBLE_SPP_CLIENT";
 static int ble_spp_client_gap_event(struct ble_gap_event *event, void *arg);
 QueueHandle_t spp_common_uart_queue = NULL;
 void ble_store_config_init(void);

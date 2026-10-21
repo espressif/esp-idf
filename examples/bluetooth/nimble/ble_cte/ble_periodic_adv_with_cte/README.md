@@ -53,7 +53,7 @@ There is this console output when periodic_adv is started:
 I (...) CTE_ADV_EXAMPLE: DIRECTION_FINDING Example Periodic Adv AOA Mode
 I (...) CTE_ADV_EXAMPLE: BLE Host Task Started
 I (...) CTE_ADV_EXAMPLE: Device Address:
-I (...) CTE_ADV_EXAMPLE: xx:xx:xx:xx:xx:xx
+I (...) CTE_ADV_EXAMPLE: Bluetooth MAC: xx:xx:xx:xx:xx:xx
 I (...) NimBLE: GAP procedure initiated: extended advertise; instance=0
 
 I (...) CTE_ADV_EXAMPLE: Instance 0 started (periodic)
