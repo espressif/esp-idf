@@ -35,6 +35,8 @@
  */
 #define SLOW_CLK_CAL_CYCLES     CONFIG_RTC_CLK_CAL_CYCLES
 
+#define RTC_XTAL_CAL_RETRY 3
+
 #define MHZ (1000000)
 
 /* Indicates that this 32k oscillator gets input from external oscillator, rather
@@ -154,7 +156,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     /* number of times to repeat external clock calibration
      * before giving up and switching to the internal RC
      */
-    int retry_ext_clk = 3;
+    int retry_ext_clk = RTC_XTAL_CAL_RETRY;
 
     soc_rtc_slow_clk_src_t old_rtc_slow_clk_src = rtc_clk_slow_src_get();
     do {

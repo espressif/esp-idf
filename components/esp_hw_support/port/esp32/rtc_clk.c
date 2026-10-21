@@ -132,26 +132,26 @@ void rtc_clk_32k_disable_external(void)
 void rtc_clk_32k_bootstrap(uint32_t cycle)
 {
     if (cycle){
-        esp_rom_gpio_pad_select_gpio(XTAL32K_P_GPIO_NUM);
-        esp_rom_gpio_pad_select_gpio(XTAL32K_N_GPIO_NUM);
-        gpio_ll_output_enable(&GPIO, XTAL32K_P_GPIO_NUM);
-        gpio_ll_output_enable(&GPIO, XTAL32K_N_GPIO_NUM);
-        gpio_ll_set_level(&GPIO, XTAL32K_P_GPIO_NUM, 1);
-        gpio_ll_set_level(&GPIO, XTAL32K_N_GPIO_NUM, 0);
+        esp_rom_gpio_pad_select_gpio(SOC_XTAL32K_P_GPIO_NUM);
+        esp_rom_gpio_pad_select_gpio(SOC_XTAL32K_N_GPIO_NUM);
+        gpio_ll_output_enable(&GPIO, SOC_XTAL32K_P_GPIO_NUM);
+        gpio_ll_output_enable(&GPIO, SOC_XTAL32K_N_GPIO_NUM);
+        gpio_ll_set_level(&GPIO, SOC_XTAL32K_P_GPIO_NUM, 1);
+        gpio_ll_set_level(&GPIO, SOC_XTAL32K_N_GPIO_NUM, 0);
 
         const uint32_t delay_us = (1000000 / SOC_CLK_XTAL32K_FREQ_APPROX / 2);
         while (cycle) {
-            gpio_ll_set_level(&GPIO, XTAL32K_P_GPIO_NUM, 1);
-            gpio_ll_set_level(&GPIO, XTAL32K_N_GPIO_NUM, 0);
+            gpio_ll_set_level(&GPIO, SOC_XTAL32K_P_GPIO_NUM, 1);
+            gpio_ll_set_level(&GPIO, SOC_XTAL32K_N_GPIO_NUM, 0);
             esp_rom_delay_us(delay_us);
-            gpio_ll_set_level(&GPIO, XTAL32K_N_GPIO_NUM, 1);
-            gpio_ll_set_level(&GPIO, XTAL32K_P_GPIO_NUM, 0);
+            gpio_ll_set_level(&GPIO, SOC_XTAL32K_N_GPIO_NUM, 1);
+            gpio_ll_set_level(&GPIO, SOC_XTAL32K_P_GPIO_NUM, 0);
             esp_rom_delay_us(delay_us);
             cycle--;
         }
         // disable pins
-        gpio_ll_output_disable(&GPIO, XTAL32K_P_GPIO_NUM);
-        gpio_ll_output_disable(&GPIO, XTAL32K_N_GPIO_NUM);
+        gpio_ll_output_disable(&GPIO, SOC_XTAL32K_P_GPIO_NUM);
+        gpio_ll_output_disable(&GPIO, SOC_XTAL32K_N_GPIO_NUM);
     }
 
     clk_ll_xtal32k_disable();

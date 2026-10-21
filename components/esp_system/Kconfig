@@ -95,7 +95,7 @@ menu "ESP System Settings"
         int "Bootstrap cycles for external 32kHz crystal"
         depends on ESP_SYSTEM_RTC_EXT_XTAL
         default 5 if IDF_TARGET_ESP32
-        default 0
+        default 8
         range 0 32768
         help
             To reduce the startup time of an external RTC crystal,

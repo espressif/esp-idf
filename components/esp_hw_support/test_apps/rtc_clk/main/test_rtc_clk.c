@@ -190,8 +190,8 @@ extern void rtc_clk_select_rtc_slow_clk(void);
 
 void stop_rtc_external_quartz(void){
 #if CONFIG_IDF_TARGET_ESP32
-    const uint8_t pin_xtal32k_p = XTAL32K_P_GPIO_NUM;
-    const uint8_t pin_xtal32k_n = XTAL32K_N_GPIO_NUM;
+    const uint8_t pin_xtal32k_p = SOC_XTAL32K_P_GPIO_NUM;
+    const uint8_t pin_xtal32k_n = SOC_XTAL32K_N_GPIO_NUM;
 
     rtc_clk_32k_enable(false);
 

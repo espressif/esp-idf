@@ -36,6 +36,10 @@ extern "C" {
  *    XTAL32K_CLK can also be calibrated to get its exact frequency.
  */
 
+/* The pin number to connect the external 32kHz crystal clock (XTAL32K_CLK) */
+#define SOC_XTAL32K_P_GPIO_NUM              32
+#define SOC_XTAL32K_N_GPIO_NUM              33
+
 /* With the default value of CK8M_DFREQ = 172, RC_FAST clock frequency is 8.5 MHz +/- 7% */
 #define SOC_CLK_RC_FAST_FREQ_APPROX         8500000                             /*!< Approximate RC_FAST_CLK frequency in Hz */
 /* With the default value of DCAP, range is +/- 5% */

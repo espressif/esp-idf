@@ -43,8 +43,12 @@ extern "C" {
  *    OSC_SLOW_CLK can also be calibrated to get its exact frequency.
  */
 
+/* The pin number to connect the external 32kHz crystal clock (XTAL32K_CLK) */
+#define SOC_XTAL32K_P_GPIO_NUM              13
+#define SOC_XTAL32K_N_GPIO_NUM              14
+
 /* The pin number to connect the external slow clock (OSC_SLOW_CLK), XTAL_32K_P */
-#define SOC_EXT_OSC_SLOW_GPIO_NUM           13
+#define SOC_EXT_OSC_SLOW_GPIO_NUM           SOC_XTAL32K_P_GPIO_NUM
 
 /* With the default value of CK8M_DFREQ = 860, RC_FAST clock frequency is 8.5 MHz +/- 7% */
 #define SOC_CLK_RC_FAST_FREQ_APPROX         8500000                             /*!< Approximate RC_FAST_CLK frequency in Hz */
