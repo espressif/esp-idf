@@ -204,4 +204,19 @@ esp_err_t esp_pan_set_multicast_filters(uint16_t handle, uint16_t num_filters,
             ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_pan_get_profile_status(esp_pan_profile_status_t *profile_status)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (profile_status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(profile_status, 0, sizeof(esp_pan_profile_status_t));
+    btc_pan_get_profile_status(profile_status);
+
+    return ESP_OK;
+}
+
 #endif /* BTC_PAN_INCLUDED */
