@@ -61,6 +61,8 @@ typedef enum {
 } while (0)
 
 /* INTERFACE */
+/* Success means logging is initialized; optional external sync may be unavailable.
+ * Sync initialization failures are reported on the console and do not stop logging. */
 bool ble_log_init(void);
 void ble_log_deinit(void);
 /* Controls public producers only; periodic system output remains active. */
@@ -89,7 +91,7 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
 #endif /* CONFIG_BLE_LOG_LL_ENABLED */
 /* Task-context compatibility no-op; enable is ignored. Returns false when the
  * runtime is not initialized. CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED alone
- * controls sync output, active from BLE Log initialization until deinit,
+ * controls sync output, active after successful sync initialization until deinit,
  * independently of ble_log_enable(). */
 bool ble_log_ts_sync_io_toggle_enable(bool enable);
 /* Backward-compatible name for ble_log_ts_sync_io_toggle_enable(). */
