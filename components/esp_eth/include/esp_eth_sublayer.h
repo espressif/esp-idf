@@ -20,6 +20,7 @@ extern "C" {
 
 typedef struct esp_eth_sublayer_s *esp_eth_sublayer_handle_t;
 typedef struct esp_eth_sublayer_vlan_s *esp_eth_sublayer_vlan_handle_t;
+typedef struct esp_eth_sublayer_vlan_s *esp_eth_sublayer_default_if_handle_t;
 #if CONFIG_ETH_SUBLAYER_SWITCH_SUPPORT
 typedef struct esp_eth_sublayer_switch_s *esp_eth_sublayer_switch_handle_t;
 #endif
@@ -352,6 +353,44 @@ esp_eth_handle_t esp_eth_sublayer_get_eth_handle(esp_eth_sublayer_handle_t subla
  * @return Ethernet driver handle
  */
 esp_eth_handle_t esp_eth_sublayer_vlan_get_eth_handle(esp_eth_sublayer_vlan_handle_t vlan);
+
+/**
+ * @brief Create a default (untagged, non-VLAN) Ethernet sublayer interface for an Ethernet driver.
+ *
+ * Convenience wrapper that creates a sublayer with default configuration and adds
+ * a single untagged interface entry. Attach the returned handle to esp_netif with
+ * esp_netif_attach(esp_netif, default_if).
+ *
+ * @warning Management of the Ethernet-Netif sublayer is not thread-safe for performance reasons.
+ *          Configure it only from a single task/context (for example during initialization).
+ *
+ * @param eth_handle Underlying Ethernet driver handle
+ * @param[out] default_if Location to store the created default interface handle
+ * @return ESP_OK on success
+ */
+esp_err_t esp_eth_sublayer_default_if_new(esp_eth_handle_t eth_handle,
+                                          esp_eth_sublayer_default_if_handle_t *default_if);
+
+/**
+ * @brief Delete a default Ethernet sublayer interface and its underlying sublayer.
+ *
+ * Caller must detach and destroy the esp_netif instance before calling this.
+ *
+ * @param default_if Default interface handle returned by esp_eth_sublayer_default_if_new
+ * @return ESP_OK on success
+ */
+esp_err_t esp_eth_sublayer_default_if_del(esp_eth_sublayer_default_if_handle_t default_if);
+
+/**
+ * @brief Get the underlying Ethernet driver handle from the default interface.
+ *
+ * @param default_if Default interface handle
+ * @return Ethernet driver handle
+ */
+static inline esp_eth_handle_t esp_eth_sublayer_default_if_get_eth_handle(esp_eth_sublayer_default_if_handle_t default_if)
+{
+    return esp_eth_sublayer_vlan_get_eth_handle(default_if);
+}
 
 #ifdef __cplusplus
 }

@@ -244,6 +244,31 @@ esp_err_t esp_eth_sublayer_vlan_del(esp_eth_sublayer_handle_t sublayer, esp_eth_
     return ret;
 }
 
+esp_err_t esp_eth_sublayer_default_if_new(esp_eth_handle_t eth_handle,
+                                          esp_eth_sublayer_default_if_handle_t *default_if)
+{
+    ESP_RETURN_ON_FALSE(eth_handle && default_if, ESP_ERR_INVALID_ARG, TAG, "invalid arg");
+
+    esp_eth_sublayer_config_t sub_config = ESP_ETH_SUBLAYER_CONFIG_DEFAULT();
+    sub_config.eth_handle = eth_handle;
+
+    esp_eth_sublayer_handle_t sublayer = NULL;
+    ESP_RETURN_ON_ERROR(esp_eth_sublayer_new(&sub_config, &sublayer), TAG, "failed to create sublayer");
+
+    esp_err_t ret = esp_eth_sublayer_vlan_add(sublayer, ESP_ETH_SUBLAYER_UNTAGGED_VID, default_if);
+    if (ret != ESP_OK) {
+        esp_eth_sublayer_del(sublayer);
+        return ret;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_sublayer_default_if_del(esp_eth_sublayer_default_if_handle_t default_if)
+{
+    ESP_RETURN_ON_FALSE(default_if, ESP_ERR_INVALID_ARG, TAG, "default_if can't be null");
+    return esp_eth_sublayer_del(default_if->parent);
+}
+
 #if CONFIG_ETH_SUBLAYER_IODRIVER_PROVIDER
 static esp_err_t eth_vlan_get_ll_driver(void *h, void **ll_driver)
 {
