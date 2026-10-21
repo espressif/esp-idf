@@ -52,9 +52,10 @@ extern "C" {
 #define PSRAM_CTRLR_LL_EVENT_AXI_WADDR_ERR       (1<<9)
 #define PSRAM_CTRLR_LL_EVENT_RX_TRANS_OVF        (1<<26)
 #define PSRAM_CTRLR_LL_EVENT_TX_TRANS_UDF        (1<<27)
+// TX underflow (TX_TRANS_UDF) may currently be a false alarm on ESP32-S31.
+// Keep this interrupt disabled until the hardware behavior is confirmed.
 #define PSRAM_CTRLR_LL_EVENT_MASK                (PSRAM_CTRLR_LL_EVENT_ECC_ERR | PSRAM_CTRLR_LL_EVENT_PMS_REJECT | PSRAM_CTRLR_LL_EVENT_AXI_RADDR_ERR | \
-                                                 PSRAM_CTRLR_LL_EVENT_AXI_WR_FLASH_ERR | PSRAM_CTRLR_LL_EVENT_AXI_WADDR_ERR | PSRAM_CTRLR_LL_EVENT_RX_TRANS_OVF | \
-                                                 PSRAM_CTRLR_LL_EVENT_TX_TRANS_UDF)
+                                                 PSRAM_CTRLR_LL_EVENT_AXI_WR_FLASH_ERR | PSRAM_CTRLR_LL_EVENT_AXI_WADDR_ERR | PSRAM_CTRLR_LL_EVENT_RX_TRANS_OVF)
 
 #define PSRAM_CTRLR_LL_INTR_EVENT_SUPPORTED      1
 #define PSRAM_CTRLR_LL_DEDICATED_LDO             1
