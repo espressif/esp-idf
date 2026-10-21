@@ -22,6 +22,36 @@
 extern "C" {
 #endif
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys4.active_hp_dbias;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys4.active_lp_dbias;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_lslp_dbg(void)
+{
+    return EFUSE.rd_mac_sys4.lslp_hp_dbg;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_lslp_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys4.lslp_hp_dbias;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_dslp_dbg(void)
+{
+    return (EFUSE.rd_mac_sys5.dslp_lp_dbg_1 << 2) | EFUSE.rd_mac_sys4.dslp_lp_dbg;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_dslp_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys5.dslp_lp_dbias;
+}
+
 FORCE_INLINE_ATTR int32_t pmu_ll_get_dbias_vol_gap(void)
 {
     return EFUSE.rd_mac_sys5.lp_hp_dbias_vol_gap;
