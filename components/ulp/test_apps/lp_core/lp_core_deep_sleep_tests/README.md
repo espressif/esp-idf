@@ -3,27 +3,28 @@
 
 # LP Core Deep Sleep Tests
 
-Multi-device tests for LP-GPIO while the HP core is in deep sleep.
+Multi-device tests for LP-UART and LP-GPIO while the HP core is in deep sleep.
 
 The LP core is stalled across sleep entry, so each case arms an LP wakeup source and does the work in LP `main()` after HP is asleep:
 
-- **LP timer** (about 500 ms) for GPIO input/output and GPIO interrupt
+- **LP timer** (about 500 ms) for transfers that must happen during sleep: UART TX/RX/print/FIFO, GPIO input/output, GPIO interrupt
+- **LP UART character sequence** (`he**o`, stimulus `hello`) to wake the LP core from deep sleep
 - **LP IO falling edge** to wake the LP core from deep sleep
 
-The input/output case runs a second sleep cycle without calling `rtc_gpio_init` again.
+Each transfer case runs a second sleep cycle without calling `lp_core_uart_init` or `rtc_gpio_init` again, and checks that the programmed register value is unchanged.
 
 DUT 0 is the sleeper. DUT 1 is the peer. Both boards run this app.
 
 ## Hardware setup
 
-Connect the same GPIO number on both boards, plus a common ground.
+Connect the same GPIO number on both boards, plus a common ground. UART TX/RX is crossed in software, so the cable itself is straight (GPIO5 to GPIO5, not TX to RX).
 
-| Target | LP GPIO |
-| ------ | ------- |
-| ESP32-C5 | GPIO2 |
-| ESP32-C6 | GPIO2 |
-| ESP32-P4 | GPIO2 |
-| ESP32-S31 | GPIO2 |
+| Target | LP UART (straight wires) | LP GPIO |
+| ------ | ------------------------ | ------- |
+| ESP32-C5 | GPIO4, GPIO5 | GPIO2 |
+| ESP32-C6 | GPIO4, GPIO5 | GPIO2 |
+| ESP32-P4 | GPIO14, GPIO15 | GPIO2 |
+| ESP32-S31 | GPIO6, GPIO7 | GPIO2 |
 
 The edge-wakeup case is built only when `SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED` is set. That macro is not declared for ESP32-S31.
 
