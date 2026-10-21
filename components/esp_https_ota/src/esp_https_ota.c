@@ -606,19 +606,17 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     ESP_LOGI(TAG, "Writing to <%s> partition at offset 0x%" PRIx32,
         https_ota_handle->partition.staging->label, https_ota_handle->partition.staging->address);
 
-    if (ota_config->partition.final == NULL) {
+    if (ota_config->partition.final == NULL || ota_config->partition.final == ota_config->partition.staging) {
         https_ota_handle->partition.final = https_ota_handle->partition.staging;
     } else {
-        if (ota_config->partition.staging != ota_config->partition.final) {
-            const esp_partition_t *final = esp_partition_verify(ota_config->partition.final);
-            if (final == NULL) {
-                ESP_LOGE(TAG, "Given final partition not found");
-                err = ESP_FAIL;
-                goto http_cleanup;
-            }
-            https_ota_handle->partition.final = final;
-            https_ota_handle->partition.finalize_with_copy = ota_config->partition.finalize_with_copy;
+        const esp_partition_t *final = esp_partition_verify(ota_config->partition.final);
+        if (final == NULL) {
+            ESP_LOGE(TAG, "Given final partition not found");
+            err = ESP_FAIL;
+            goto http_cleanup;
         }
+        https_ota_handle->partition.final = final;
+        https_ota_handle->partition.finalize_with_copy = ota_config->partition.finalize_with_copy;
     }
 
     const int alloc_size = MAX(ota_config->http_config->buffer_size, DEFAULT_OTA_BUF_SIZE);
