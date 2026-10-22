@@ -649,6 +649,10 @@ examples/peripherals/twai/twai_utils:
 examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"]
+      temporary: true
+      reason: No runners.
   depends_components:
     - esp_driver_uart
     - esp_driver_dma
