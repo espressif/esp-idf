@@ -1,7 +1,7 @@
 ## IDF Component Manager Manifest File
 dependencies:
   espressif/esp_tinyusb:
-    version: "^2.0.1~1"
+    version: "~3.0.0"
   espressif/esp_wifi_remote:
     version: "~1.6.0"
     rules:

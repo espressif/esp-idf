@@ -38,7 +38,7 @@ Point to point connection method creates a simple IP tunnel to the counterpart d
 > [!Note]
 > Note that if you choose USB device, you have to manually add a dependency on `esp_tinyusb` component. This step is necessary to keep the `protocol_example_connect` component simple and dependency free. Please run this command from your project location to add the dependency:
 > ```bash
-> idf.py add-dependency espressif/esp_tinyusb^1
+> idf.py add-dependency espressif/esp_tinyusb~3.0.0
 > ```
 
 #### Setup a PPP server
