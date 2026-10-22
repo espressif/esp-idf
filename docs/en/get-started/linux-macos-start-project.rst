@@ -64,6 +64,7 @@ Copy the project :example:`get-started/hello_world` to ``~/esp`` directory:
 
 .. code-block:: bash
 
+    mkdir -p ~/esp
     cd ~/esp
     cp -r $IDF_PATH/examples/get-started/hello_world .
 
