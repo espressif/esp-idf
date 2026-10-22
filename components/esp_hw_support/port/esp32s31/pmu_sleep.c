@@ -21,6 +21,7 @@
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/ldo_ll.h"
 #include "hal/lp_aon_hal.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
@@ -387,6 +388,13 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
     pmu_ll_hp_clear_reject_intr_status(&PMU);
     pmu_ll_hp_clear_reject_cause(&PMU);
 
+#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
+    // Disable PSRAM chip power supply
+    if (dslp) {
+        ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), false);
+    }
+#endif
+
     /* Start entry into sleep mode */
     pmu_ll_hp_set_sleep_enable(&PMU);
 
@@ -394,6 +402,13 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
         !pmu_ll_hp_is_sleep_reject(&PMU)) {
         ;
     }
+
+#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
+    if (dslp) {
+        // Enable PSRAM chip power supply after deepsleep request rejected
+        ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), true);
+    }
+#endif
     return pmu_sleep_finish(dslp);
 }
 
