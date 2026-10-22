@@ -97,8 +97,8 @@ typedef volatile struct esp_ieee802154_s {
         struct {
             uint32_t cca_threshold:        8;
             uint32_t reserved8: 3;
-            uint32_t ed_sample_rate: 2;
-            uint32_t ed_sample_mode: 1;
+            uint32_t ed_sample_mode: 2;
+            uint32_t ed_pwr_sel_mode: 1;
             uint32_t cca_mode:  2;
             uint32_t ed_rss: 8;
             uint32_t cca_busy: 1;
