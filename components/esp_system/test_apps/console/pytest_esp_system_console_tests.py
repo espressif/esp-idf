@@ -4,6 +4,7 @@ import pexpect
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 def not_expect(dut: Dut, output_regex: str) -> None:
@@ -27,7 +28,7 @@ def test_esp_system_console_no_output_uart(dut: Dut) -> None:
 @idf_parametrize('config', ['serial_jtag_only', 'serial_jtag_only_no_vfs', 'console_no_vfs'], indirect=['config'])
 @idf_parametrize('flash_port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['flash_port'])
 @idf_parametrize('port', ['/dev/serial_ports/ttyACM-esp32'], indirect=['port'])
-@idf_parametrize('target', ['esp32c2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s3'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_esp_system_console_only_serial_jtag(dut: Dut) -> None:
     dut.expect('2nd stage bootloader')
     dut.expect('Hello World')
