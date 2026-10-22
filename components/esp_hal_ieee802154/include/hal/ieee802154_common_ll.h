@@ -168,7 +168,7 @@ typedef enum {
 typedef enum {
     IEEE802154_ED_SAMPLE_MAX = 0x00,
     IEEE802154_ED_SAMPLE_AVG = 0x01,
-} ieee802154_ll_ed_sample_mode_t;
+} ieee802154_ll_ed_pwr_sel_mode_t;
 
 #define IEEE802154_RX_STATUS_RECEIVE_SFD 0x1
 
@@ -354,14 +354,9 @@ static inline void ieee802154_ll_set_cca_threshold(int8_t cca_threshold)
     IEEE802154.ed_cfg.cca_threshold = cca_threshold;
 }
 
-static inline void ieee802154_ll_set_ed_sample_rate(ieee802154_ll_ed_sample_dur_t ed_sample_rate)
+static inline void ieee802154_ll_set_ed_pwr_sel_mode(ieee802154_ll_ed_pwr_sel_mode_t ed_pwr_sel_mode)
 {
-    IEEE802154.ed_cfg.ed_sample_rate = ed_sample_rate;
-}
-
-static inline void ieee802154_ll_set_ed_sample_mode(ieee802154_ll_ed_sample_mode_t ed_sample_mode)
-{
-    IEEE802154.ed_cfg.ed_sample_mode = ed_sample_mode;
+    IEEE802154.ed_cfg.ed_pwr_sel_mode = ed_pwr_sel_mode;
 }
 
 static inline void ieee802154_ll_set_ed_duration(uint16_t duration)
