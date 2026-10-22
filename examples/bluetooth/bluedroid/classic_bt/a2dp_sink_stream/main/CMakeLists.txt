@@ -6,5 +6,5 @@ endif()
 
 idf_component_register(SRCS "main.c"
                     PRIV_REQUIRES bt bt_app_core_utils bredr_app_common_utils a2dp_sink_common_utils
-                    PRIV_REQUIRES ${EXTRA_COMPONENTS}
+                    PRIV_REQUIRES ${EXTRA_COMPONENTS} avrcp_common_utils
                     INCLUDE_DIRS ".")

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -34,6 +35,19 @@
 #define BT_A2DP_DECODE_TASK_PRIO      (tskIDLE_PRIORITY + 5)
 #endif
 
+#ifdef CONFIG_BT_A2DP_SINK_MAX_CONN
+#define BT_APP_A2D_MAX_PEERS          CONFIG_BT_A2DP_SINK_MAX_CONN
+#else
+#define BT_APP_A2D_MAX_PEERS          1
+#endif
+
+typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
+    esp_bd_addr_t bda;
+    esp_a2d_mcc_t mcc;
+    bool mcc_valid;
+} bt_app_a2d_peer_t;
+
 static QueueHandle_t s_a2dp_raw_q;
 static TaskHandle_t s_a2dp_dec_task;
 static SemaphoreHandle_t s_a2dp_raw_mux;
@@ -41,6 +55,12 @@ static bool s_a2dp_raw_started;
 static uint32_t s_a2dp_raw_pkt_cnt;
 static esp_audio_dec_handle_t s_dec_hdl;
 static bool s_dec_opened;
+
+/* Connected sources and the one currently being rendered. The stack drops
+ * media of every other connection; this example keeps one decoder/I2S path. */
+static bt_app_a2d_peer_t s_a2d_peers[BT_APP_A2D_MAX_PEERS];
+static int s_a2d_peer_num;
+static esp_a2d_conn_hdl_t s_a2d_active_hdl;
 
 /* device name */
 static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
@@ -225,6 +245,65 @@ static esp_audio_err_t bt_app_audio_decoder_apply_mcc(const esp_a2d_mcc_t *mcc)
     return ESP_AUDIO_ERR_OK;
 }
 
+static int bt_app_a2d_peer_find_by_bda(const esp_bd_addr_t bda)
+{
+    for (int i = 0; i < s_a2d_peer_num; i++) {
+        if (memcmp(s_a2d_peers[i].bda, bda, sizeof(esp_bd_addr_t)) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int bt_app_a2d_peer_find_by_hdl(esp_a2d_conn_hdl_t conn_hdl)
+{
+    if (conn_hdl == 0) {
+        return -1;
+    }
+    for (int i = 0; i < s_a2d_peer_num; i++) {
+        if (s_a2d_peers[i].conn_hdl == conn_hdl) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static bt_app_a2d_peer_t *bt_app_a2d_peer_get_or_add(esp_a2d_conn_hdl_t conn_hdl, const esp_bd_addr_t bda)
+{
+    int idx = bt_app_a2d_peer_find_by_hdl(conn_hdl);
+
+    if (idx < 0) {
+        idx = bt_app_a2d_peer_find_by_bda(bda);
+    }
+    if (idx < 0) {
+        if (s_a2d_peer_num >= BT_APP_A2D_MAX_PEERS) {
+            return NULL;
+        }
+        idx = s_a2d_peer_num++;
+        memset(&s_a2d_peers[idx], 0, sizeof(bt_app_a2d_peer_t));
+    }
+    s_a2d_peers[idx].conn_hdl = conn_hdl;
+    memcpy(s_a2d_peers[idx].bda, bda, sizeof(esp_bd_addr_t));
+    return &s_a2d_peers[idx];
+}
+
+static void bt_app_a2d_peer_remove(const esp_bd_addr_t bda)
+{
+    int idx = bt_app_a2d_peer_find_by_bda(bda);
+
+    if (idx < 0) {
+        return;
+    }
+    if (s_a2d_peers[idx].conn_hdl == s_a2d_active_hdl) {
+        s_a2d_active_hdl = 0;
+    }
+    s_a2d_peer_num--;
+    if (idx != s_a2d_peer_num) {
+        s_a2d_peers[idx] = s_a2d_peers[s_a2d_peer_num];
+    }
+    memset(&s_a2d_peers[s_a2d_peer_num], 0, sizeof(bt_app_a2d_peer_t));
+}
+
 static void bt_app_a2d_raw_audio_task(void *arg)
 {
     esp_a2d_audio_buff_t *audio_buf;
@@ -281,7 +360,7 @@ static void bt_app_a2d_raw_audio_task(void *arg)
     }
 }
 
-void bt_a2d_sink_ext_codec_postproc_start(void)
+static void bt_a2d_sink_ext_codec_postproc_start(void)
 {
     if (s_a2dp_raw_mux == NULL) {
         s_a2dp_raw_mux = xSemaphoreCreateMutex();
@@ -317,16 +396,11 @@ void bt_a2d_sink_ext_codec_postproc_start(void)
     ESP_LOGI(BT_AV_TAG, "A2DP raw postproc (queue %d) started", BT_A2DP_RAW_Q_DEPTH);
 }
 
-void bt_a2d_sink_ext_codec_postproc_flush(void)
+/* Caller must hold s_a2dp_raw_mux. Leaves the decode task suspended. */
+static void bt_a2d_sink_ext_codec_flush_queue_locked(void)
 {
     esp_a2d_audio_buff_t *audio_buf;
 
-    if (s_a2dp_raw_mux == NULL) {
-        return;
-    }
-    if (xSemaphoreTake(s_a2dp_raw_mux, portMAX_DELAY) != pdTRUE) {
-        return;
-    }
     if (s_a2dp_dec_task != NULL) {
         vTaskSuspend(s_a2dp_dec_task);
     }
@@ -335,11 +409,63 @@ void bt_a2d_sink_ext_codec_postproc_flush(void)
             esp_a2d_audio_buff_free(audio_buf);
         }
     }
+}
+
+static void bt_a2d_sink_ext_codec_postproc_flush_ex(bool close_decoder)
+{
+    if (s_a2dp_raw_mux == NULL) {
+        if (close_decoder) {
+            bt_app_audio_decoder_close();
+        }
+        return;
+    }
+    if (xSemaphoreTake(s_a2dp_raw_mux, portMAX_DELAY) != pdTRUE) {
+        return;
+    }
+    bt_a2d_sink_ext_codec_flush_queue_locked();
+    if (close_decoder) {
+        bt_app_audio_decoder_close();
+    }
     if (s_a2dp_dec_task != NULL) {
         vTaskResume(s_a2dp_dec_task);
     }
-    bt_app_audio_decoder_close();
     xSemaphoreGive(s_a2dp_raw_mux);
+}
+
+static void bt_a2d_sink_ext_codec_postproc_flush(void)
+{
+    bt_a2d_sink_ext_codec_postproc_flush_ex(true);
+}
+
+/* Rebuild the shared decoder/I2S for the stream being rendered. The decode
+ * task stays suspended across flush and decoder replace so it cannot consume
+ * old frames with the new decoder (or the reverse).
+ * codec_info_update() stops I2S; pass restart_i2s=true when the output should
+ * keep running (active switch / reconfig). Leave it false on the first
+ * AUDIO_CFG so CONNECTED can start I2S as usual. */
+static void bt_app_render_apply(const esp_a2d_mcc_t *mcc, bool restart_i2s)
+{
+    if (mcc == NULL) {
+        return;
+    }
+    if (s_a2dp_raw_mux != NULL && xSemaphoreTake(s_a2dp_raw_mux, portMAX_DELAY) == pdTRUE) {
+        bt_a2d_sink_ext_codec_flush_queue_locked();
+        bt_app_audio_decoder_apply_mcc(mcc);
+        audio_sink_srv_codec_info_update((esp_a2d_mcc_t *)mcc);
+        if (restart_i2s) {
+            audio_sink_srv_start();
+        }
+        if (s_a2dp_dec_task != NULL) {
+            vTaskResume(s_a2dp_dec_task);
+        }
+        xSemaphoreGive(s_a2dp_raw_mux);
+    } else {
+        bt_app_audio_decoder_apply_mcc(mcc);
+        audio_sink_srv_codec_info_update((esp_a2d_mcc_t *)mcc);
+        if (restart_i2s) {
+            audio_sink_srv_start();
+        }
+    }
 }
 
 static void bt_app_register_a2dp_sink_seps(void)
@@ -402,6 +528,13 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     bredr_app_gap_evt_def_hdl(event, param);
 }
 
+static void bt_app_a2d_restore_discoverable_if_slot_free(void)
+{
+    if (s_a2d_peer_num < BT_APP_A2D_MAX_PEERS) {
+        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+    }
+}
+
 static void bt_app_a2d_hdl(uint16_t event, void *param)
 {
     esp_a2d_cb_param_t *a2d = (esp_a2d_cb_param_t *)param;
@@ -425,26 +558,113 @@ static void bt_app_a2d_hdl(uint16_t event, void *param)
         bt_a2d_evt_def_hdl(event, param);
         break;
     }
-    case ESP_A2D_CONNECTION_STATE_EVT: {
-        if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
-            bt_a2d_sink_ext_codec_postproc_flush();
+    case ESP_A2D_SNK_ACTIVE_DEVICE_EVT: {
+        uint8_t *bda = a2d->a2d_snk_active_device.remote_bda;
+
+        if (a2d->a2d_snk_active_device.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGW(BT_AV_TAG, "A2DP set active failed, status %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
+                     a2d->a2d_snk_active_device.status,
+                     bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            break;
         }
-        bt_a2d_evt_int_codec_hdl(event, param);
+        if (a2d->a2d_snk_active_device.active) {
+            int idx;
+
+            s_a2d_active_hdl = a2d->a2d_snk_active_device.conn_hdl;
+            ESP_LOGI(BT_AV_TAG, "A2DP rendering [%02x:%02x:%02x:%02x:%02x:%02x], other sources suspended",
+                     bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            idx = bt_app_a2d_peer_find_by_hdl(s_a2d_active_hdl);
+            if (idx < 0) {
+                idx = bt_app_a2d_peer_find_by_bda(bda);
+            }
+            if (idx >= 0 && s_a2d_peers[idx].mcc_valid) {
+                bt_app_render_apply(&s_a2d_peers[idx].mcc, true);
+            }
+        } else {
+            ESP_LOGI(BT_AV_TAG, "A2DP no source is being rendered");
+            s_a2d_active_hdl = 0;
+            /* Another source may still be connected. Do not close the decoder
+             * so a later AUDIO_CFG from that peer cannot steal I2S; SNK_ACTIVE
+             * will apply the right MCC when playback resumes. */
+            bt_a2d_sink_ext_codec_postproc_flush_ex(s_a2d_peer_num == 0);
+        }
+        break;
+    }
+    case ESP_A2D_CONNECTION_STATE_EVT: {
+        if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED) {
+            bt_app_a2d_peer_get_or_add(a2d->conn_stat.conn_hdl, a2d->conn_stat.remote_bda);
+            bt_a2d_evt_int_codec_hdl(event, param);
+            bt_app_a2d_restore_discoverable_if_slot_free();
+        } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
+            int idx = bt_app_a2d_peer_find_by_bda(a2d->conn_stat.remote_bda);
+            bool was_active = (a2d->conn_stat.conn_hdl != 0 &&
+                               a2d->conn_stat.conn_hdl == s_a2d_active_hdl);
+            uint8_t *bda = a2d->conn_stat.remote_bda;
+
+            if (!was_active && idx >= 0 && s_a2d_peers[idx].conn_hdl == s_a2d_active_hdl) {
+                was_active = true;
+            }
+            bt_app_a2d_peer_remove(a2d->conn_stat.remote_bda);
+            if (s_a2d_peer_num > 0) {
+                /* another source is still connected, leave its audio path alone */
+                if (was_active) {
+                    bt_a2d_sink_ext_codec_postproc_flush_ex(true);
+                }
+                ESP_LOGI(BT_AV_TAG, "A2DP connection state: Disconnected, [%02x:%02x:%02x:%02x:%02x:%02x]",
+                         bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+                esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+                break;
+            }
+            bt_a2d_sink_ext_codec_postproc_flush();
+            bt_a2d_evt_int_codec_hdl(event, param);
+        } else {
+            bt_a2d_evt_int_codec_hdl(event, param);
+        }
         break;
     }
     case ESP_A2D_AUDIO_STATE_EVT: {
         if (a2d->audio_stat.state == ESP_A2D_AUDIO_STATE_STARTED) {
             bt_a2d_sink_ext_codec_postproc_start();
+            /* Pause/resume does not send AUDIO_CFG again; reopen the decoder
+             * if a previous flush closed it. */
+            if (!s_dec_opened) {
+                int idx = bt_app_a2d_peer_find_by_hdl(a2d->audio_stat.conn_hdl);
+                if (idx < 0) {
+                    idx = bt_app_a2d_peer_find_by_bda(a2d->audio_stat.remote_bda);
+                }
+                if (idx >= 0 && s_a2d_peers[idx].mcc_valid &&
+                    (s_a2d_active_hdl == 0 || s_a2d_peers[idx].conn_hdl == s_a2d_active_hdl)) {
+                    bt_app_render_apply(&s_a2d_peers[idx].mcc, true);
+                }
+            }
         } else if (a2d->audio_stat.state == ESP_A2D_AUDIO_STATE_SUSPEND) {
-            bt_a2d_sink_ext_codec_postproc_flush();
+            /* A displaced peer's suspend must not wipe the stream now playing. */
+            if (s_a2d_active_hdl == 0 || a2d->audio_stat.conn_hdl == s_a2d_active_hdl) {
+                bt_a2d_sink_ext_codec_postproc_flush_ex(false);
+            }
         }
         bt_a2d_evt_int_codec_hdl(event, param);
         break;
     }
-    case ESP_A2D_AUDIO_CFG_EVT:
-        bt_app_audio_decoder_apply_mcc(&a2d->audio_cfg.mcc);
-        bt_a2d_evt_int_codec_hdl(event, param);
+    case ESP_A2D_AUDIO_CFG_EVT: {
+        bt_app_a2d_peer_t *peer = bt_app_a2d_peer_get_or_add(a2d->audio_cfg.conn_hdl,
+                                                            a2d->audio_cfg.remote_bda);
+        bool apply = (a2d->audio_cfg.conn_hdl == s_a2d_active_hdl) ||
+                     (s_a2d_active_hdl == 0 && s_a2d_peer_num <= 1);
+
+        if (peer != NULL) {
+            peer->mcc = a2d->audio_cfg.mcc;
+            peer->mcc_valid = true;
+        }
+        /* Second phone's AUDIO_CFG must not tear down the playing decoder/I2S. */
+        if (apply) {
+            bt_app_render_apply(&a2d->audio_cfg.mcc, s_a2d_active_hdl != 0);
+        } else {
+            ESP_LOGI(BT_AV_TAG, "A2DP audio cfg cached for conn %u, codec %d (not rendered)",
+                     (unsigned)a2d->audio_cfg.conn_hdl, a2d->audio_cfg.mcc.type);
+        }
         break;
+    }
     case ESP_A2D_SEP_REG_STATE_EVT: {
         bt_a2d_evt_ext_codec_hdl(event, param);
         break;
@@ -465,7 +685,8 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
     case ESP_A2D_AUDIO_CFG_EVT:
-    case ESP_A2D_SEP_REG_STATE_EVT: {
+    case ESP_A2D_SEP_REG_STATE_EVT:
+    case ESP_A2D_SNK_ACTIVE_DEVICE_EVT: {
         bt_app_work_dispatch(bt_app_a2d_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
         break;
     }
@@ -477,12 +698,15 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 
 static void bt_app_a2d_audio_data_cb(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf)
 {
-    (void)conn_hdl;
-
     if (audio_buf == NULL || audio_buf->data == NULL || audio_buf->data_len == 0) {
         if (audio_buf != NULL) {
             esp_a2d_audio_buff_free(audio_buf);
         }
+        return;
+    }
+
+    if (s_a2d_active_hdl != 0 && conn_hdl != s_a2d_active_hdl) {
+        esp_a2d_audio_buff_free(audio_buf);
         return;
     }
 

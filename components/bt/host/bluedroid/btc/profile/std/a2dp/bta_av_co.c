@@ -158,6 +158,10 @@ static UINT8 bta_av_co_audio_media_supports_config(UINT8 codec_type, const UINT8
 static UINT8 bta_av_co_audio_sink_supports_config(UINT8 codec_type, const UINT8 *p_codec_cfg);
 static BOOLEAN bta_av_co_audio_peer_src_supports_codec(tBTA_AV_CO_PEER *p_peer, UINT8 *p_src_index);
 static BOOLEAN bta_av_co_audio_src_supports_pref_cfg(void);
+static BOOLEAN bta_av_co_any_other_peer_configured(const tBTA_AV_CO_PEER *p_except);
+#if (BTC_AV_EXT_CODEC == TRUE)
+static void bta_av_co_audio_select_seid_if_unshared(UINT8 index);
+#endif
 
 
 /*******************************************************************************
@@ -243,6 +247,41 @@ static tBTA_AV_CO_PEER *bta_av_co_get_peer(tBTA_AV_HNDL hndl)
 
     return &bta_av_co_cb.peers[index];
 }
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_any_other_peer_configured
+ **
+ ** Description      TRUE when another sink already has a negotiated codec.
+ **                  Used so a second phone's SetConfig cannot rewrite the
+ **                  shared codec_cfg / cur_seid that the first stream still
+ **                  needs for parse and fallback.
+ **
+ *******************************************************************************/
+static BOOLEAN bta_av_co_any_other_peer_configured(const tBTA_AV_CO_PEER *p_except)
+{
+    int i;
+
+    for (i = 0; i < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); i++) {
+        if (&bta_av_co_cb.peers[i] == p_except) {
+            continue;
+        }
+        if (bta_av_co_cb.peers[i].cur_codec_cfg.id != BTC_AV_CODEC_NONE) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+#if (BTC_AV_EXT_CODEC == TRUE)
+static void bta_av_co_audio_select_seid_if_unshared(UINT8 index)
+{
+    if (!bta_av_co_any_other_peer_configured(NULL)) {
+        bta_av_co_cb.cur_seid = index;
+        bta_av_co_audio_codec_reset();
+    }
+}
+#endif
 
 #if (BTC_AV_SRC_INCLUDED == TRUE)
 static void bta_av_co_fill_sep_mcc_from_sup_snk(const tBTA_AV_CO_SINK *p_snk, esp_a2d_sep_mcc_t *p_out)
@@ -353,13 +392,21 @@ BOOLEAN bta_av_co_audio_init(UINT8 seid, UINT8 *p_codec_type, UINT8 *p_codec_inf
     *p_num_protect = 0;
     *p_protect_info = 0;
 
-    /* reset remote preference through setconfig */
-    bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
-    /* reset local preferred media codec configuration */
-    bta_av_co_cb.codec_pref_cfg.id = BTC_AV_CODEC_NONE;
+    /* Registering another SEP must not wipe a stream that is already
+     * negotiated. That used to clear the first phone's codec when the
+     * second SEP (or second SCB) was created. */
+    if (!bta_av_co_any_other_peer_configured(NULL)) {
+        /* reset remote preference through setconfig */
+        bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
+        /* reset local preferred media codec configuration */
+        bta_av_co_cb.codec_pref_cfg.id = BTC_AV_CODEC_NONE;
 #if (BTC_AV_EXT_CODEC == TRUE)
-    bta_av_co_cb.cur_seid = 0;
+        bta_av_co_cb.cur_seid = 0;
 #endif
+        for (int i = 0; i < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); i++) {
+            bta_av_co_cb.peers[i].cur_codec_cfg.id = BTC_AV_CODEC_NONE;
+        }
+    }
 
     if (tsep == AVDT_TSEP_SRC) {
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
@@ -861,6 +908,8 @@ UINT8 bta_av_audio_sink_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
                 /* get preferred config from the caps supported by both peer src and local sink */
                 bta_av_build_src_cfg(pref_cfg, isect_caps);
                 memcpy(p_peer->codec_cfg, pref_cfg, AVDT_CODEC_SIZE);
+                p_peer->cur_codec_cfg.id = p_src->codec_type;
+                memcpy(p_peer->cur_codec_cfg.info, pref_cfg, AVDT_CODEC_SIZE);
 
                 APPL_TRACE_DEBUG("sink_getconfig  p_codec_info[%x:%x:%x:%x:%x:%x:%x:%x]",
                                  p_peer->codec_cfg[1], p_peer->codec_cfg[2], p_peer->codec_cfg[3],
@@ -997,6 +1046,8 @@ UINT8 bta_av_co_audio_getconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
                 /* Save the new configuration */
                 p_peer->p_snk = p_sink;
                 memcpy(p_peer->codec_cfg, codec_cfg, AVDT_CODEC_SIZE);
+                p_peer->cur_codec_cfg.id = p_sink->codec_type;
+                memcpy(p_peer->cur_codec_cfg.info, codec_cfg, AVDT_CODEC_SIZE);
 
                 /* By default, no content protection */
                 *p_num_protect = 0;
@@ -1119,11 +1170,16 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
         }
         /* Check if codec configuration is supported */
         if (codec_cfg_status == A2D_SUCCESS) {
+            BOOLEAN update_shared = !bta_av_co_any_other_peer_configured(p_peer);
 
-            /* Check if the configuration matches the current codec config */
-            switch (bta_av_co_cb.codec_cfg.id) {
-            case BTC_AV_CODEC_SBC:
-                if ((codec_type != BTA_AV_CODEC_SBC) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg.info, 5)) {
+            /* Branch on the incoming codec, not the shared codec_cfg.id.
+             * The shared id is the last SEP registered / last SetConfig and
+             * would mis-label an AAC peer as SBC (or the reverse) when two
+             * phones use different codecs. */
+            switch (codec_type) {
+            case BTA_AV_CODEC_SBC:
+                if ((p_peer->cur_codec_cfg.id != BTC_AV_CODEC_SBC) ||
+                        memcmp(p_codec_info, p_peer->cur_codec_cfg.info, 5)) {
                     recfg_needed = TRUE;
                 } else if ((num_protect == 1) && (!bta_av_co_cb.cp.active)) {
                     recfg_needed = TRUE;
@@ -1135,36 +1191,53 @@ void bta_av_co_audio_setconfig(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type,
                                  p_codec_info[BTA_AV_CO_SBC_MIN_BITPOOL_OFF],
                                  p_codec_info[BTA_AV_CO_SBC_MAX_BITPOOL_OFF] );
 
-                bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_SBC;
-                memcpy(bta_av_co_cb.codec_cfg_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
-                if (AVDT_TSEP_SNK == t_local_sep) {
-                    /* If Peer is SRC, and our cfg subset matches with what is requested by peer, then
-                                         just accept what peer wants */
-                    memcpy(bta_av_co_cb.codec_cfg.info, p_codec_info, AVDT_CODEC_SIZE);
+                p_peer->cur_codec_cfg.id = BTC_AV_CODEC_SBC;
+                memcpy(p_peer->cur_codec_cfg.info, p_codec_info, AVDT_CODEC_SIZE);
+                if (update_shared) {
+                    bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_SBC;
+                    memcpy(bta_av_co_cb.codec_cfg_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
+                    if (AVDT_TSEP_SNK == t_local_sep) {
+                        /* If Peer is SRC, and our cfg subset matches with what is requested by peer, then
+                                             just accept what peer wants */
+                        bta_av_co_cb.codec_cfg.id = BTC_AV_CODEC_SBC;
+                        memcpy(bta_av_co_cb.codec_cfg.info, p_codec_info, AVDT_CODEC_SIZE);
+                        recfg_needed = FALSE;
+                    }
+                } else if (AVDT_TSEP_SNK == t_local_sep) {
                     recfg_needed = FALSE;
+                    APPL_TRACE_DEBUG("bta_av_co_audio_setconfig keep shared codec, peer codec %d", codec_type);
                 }
                 break;
 #if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
-            case BTC_AV_CODEC_M24:
-                if ((codec_type != BTA_AV_CODEC_M24) || memcmp(p_codec_info, bta_av_co_cb.codec_cfg.info, 9)) {
+            case BTA_AV_CODEC_M24:
+                if ((p_peer->cur_codec_cfg.id != BTC_AV_CODEC_M24) ||
+                        memcmp(p_codec_info, p_peer->cur_codec_cfg.info, 9)) {
                     recfg_needed = TRUE;
                 } else if ((num_protect == 1) && (!bta_av_co_cb.cp.active)) {
                     recfg_needed = TRUE;
                 }
 
-                bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_M24;
-                memcpy(bta_av_co_cb.codec_cfg_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
-                if (AVDT_TSEP_SNK == t_local_sep) {
-                    /* If Peer is SRC, and our cfg subset matches with what is requested by peer, then
-                                         just accept what peer wants */
-                    memcpy(bta_av_co_cb.codec_cfg.info, p_codec_info, AVDT_CODEC_SIZE);
+                p_peer->cur_codec_cfg.id = BTC_AV_CODEC_M24;
+                memcpy(p_peer->cur_codec_cfg.info, p_codec_info, AVDT_CODEC_SIZE);
+                if (update_shared) {
+                    bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_M24;
+                    memcpy(bta_av_co_cb.codec_cfg_setconfig.info, p_codec_info, AVDT_CODEC_SIZE);
+                    if (AVDT_TSEP_SNK == t_local_sep) {
+                        /* If Peer is SRC, and our cfg subset matches with what is requested by peer, then
+                                             just accept what peer wants */
+                        bta_av_co_cb.codec_cfg.id = BTC_AV_CODEC_M24;
+                        memcpy(bta_av_co_cb.codec_cfg.info, p_codec_info, AVDT_CODEC_SIZE);
+                        recfg_needed = FALSE;
+                    }
+                } else if (AVDT_TSEP_SNK == t_local_sep) {
                     recfg_needed = FALSE;
+                    APPL_TRACE_DEBUG("bta_av_co_audio_setconfig keep shared codec, peer codec %d", codec_type);
                 }
                 break;
 #endif
 
             default:
-                APPL_TRACE_ERROR("bta_av_co_audio_setconfig unsupported cid %d", bta_av_co_cb.codec_cfg.id);
+                APPL_TRACE_ERROR("bta_av_co_audio_setconfig unsupported cid %d", codec_type);
                 recfg_needed = TRUE;
                 break;
             }
@@ -1251,17 +1324,31 @@ void bta_av_co_audio_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 m
     if (p_peer) {
         /* Mark the peer closed and clean the peer info */
         memset(p_peer, 0, sizeof(*p_peer));
+        p_peer->cur_codec_cfg.id = BTC_AV_CODEC_NONE;
     } else {
         APPL_TRACE_ERROR("bta_av_co_audio_close could not find peer entry");
     }
 
-    /* reset remote preference through setconfig */
-    bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
-    /* reset local preferred media codec configuration */
-    bta_av_co_cb.codec_pref_cfg.id = BTC_AV_CODEC_NONE;
+    if (!bta_av_co_any_other_peer_configured(NULL)) {
+        /* reset remote preference through setconfig */
+        bta_av_co_cb.codec_cfg_setconfig.id = BTC_AV_CODEC_NONE;
+        /* reset local preferred media codec configuration */
+        bta_av_co_cb.codec_pref_cfg.id = BTC_AV_CODEC_NONE;
 #if (BTC_AV_EXT_CODEC == TRUE)
-    bta_av_co_cb.cur_seid = 0;
+        bta_av_co_cb.cur_seid = 0;
 #endif
+    } else {
+        int i;
+
+        /* Keep the shared fallback in sync with the remaining stream */
+        for (i = 0; i < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); i++) {
+            if (bta_av_co_cb.peers[i].cur_codec_cfg.id != BTC_AV_CODEC_NONE) {
+                bta_av_co_cb.codec_cfg = bta_av_co_cb.peers[i].cur_codec_cfg;
+                bta_av_co_cb.codec_cfg_setconfig = bta_av_co_cb.peers[i].cur_codec_cfg;
+                break;
+            }
+        }
+    }
 }
 
 /*******************************************************************************
@@ -1814,8 +1901,7 @@ static UINT8 bta_av_co_audio_sink_supports_config(UINT8 codec_type, const UINT8 
             if (bta_av_co_cb.codec_caps[index].id == BTA_AV_CODEC_SBC) {
                 status = bta_av_sbc_cfg_in_external_codec_cap((UINT8 *)p_codec_cfg, (UINT8 *)bta_av_co_cb.codec_caps[index].info);
                 if (status == A2D_SUCCESS) {
-                    bta_av_co_cb.cur_seid = index;
-                    bta_av_co_audio_codec_reset();
+                    bta_av_co_audio_select_seid_if_unshared(index);
                     return status;
                 }
             }
@@ -1830,8 +1916,7 @@ static UINT8 bta_av_co_audio_sink_supports_config(UINT8 codec_type, const UINT8 
             if (bta_av_co_cb.codec_caps[index].id == BTA_AV_CODEC_M24) {
                 status = bta_av_m24_cfg_in_external_codec_cap((UINT8 *)p_codec_cfg, (UINT8 *)bta_av_co_cb.codec_caps[index].info);
                 if (status == A2D_SUCCESS) {
-                    bta_av_co_cb.cur_seid = index;
-                    bta_av_co_audio_codec_reset();
+                    bta_av_co_audio_select_seid_if_unshared(index);
                     return status;
                 }
             }
@@ -1876,8 +1961,7 @@ static UINT8 bta_av_co_audio_media_supports_config(UINT8 codec_type, const UINT8
             if (bta_av_co_cb.codec_caps[index].id == BTA_AV_CODEC_SBC) {
                 status = bta_av_sbc_cfg_in_external_codec_cap((UINT8 *)p_codec_cfg, (UINT8 *)bta_av_co_cb.codec_caps[index].info);
                 if (status == A2D_SUCCESS) {
-                    bta_av_co_cb.cur_seid = index;
-                    bta_av_co_audio_codec_reset();
+                    bta_av_co_audio_select_seid_if_unshared(index);
                     break;
                 }
             }
@@ -1892,8 +1976,7 @@ static UINT8 bta_av_co_audio_media_supports_config(UINT8 codec_type, const UINT8
             if (bta_av_co_cb.codec_caps[index].id == BTA_AV_CODEC_M24) {
                 status = bta_av_m24_cfg_in_external_codec_cap((UINT8 *)p_codec_cfg, (UINT8 *)bta_av_co_cb.codec_caps[index].info);
                 if (status == A2D_SUCCESS) {
-                    bta_av_co_cb.cur_seid = index;
-                    bta_av_co_audio_codec_reset();
+                    bta_av_co_audio_select_seid_if_unshared(index);
                     break;
                 }
             }
@@ -2019,6 +2102,8 @@ BOOLEAN bta_av_co_audio_codec_supported(tBTC_AV_STATUS *p_status)
                         /* Save the new configuration */
                         p_peer->p_snk = p_sink;
                         memcpy(p_peer->codec_cfg, codec_cfg, AVDT_CODEC_SIZE);
+                        p_peer->cur_codec_cfg.id = bta_av_co_cb.codec_cfg.id;
+                        memcpy(p_peer->cur_codec_cfg.info, codec_cfg, AVDT_CODEC_SIZE);
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
                         p_peer->cp_active = cp_active;
                         if (p_peer->cp_active) {
@@ -2142,6 +2227,8 @@ BOOLEAN bta_av_co_audio_set_pref_mcc(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *pref
                     /* Update peer configuration with the new codec config based on preferred config. */
                     p_peer->p_snk = p_sink;
                     memcpy(p_peer->codec_cfg, codec_cfg, AVDT_CODEC_SIZE);
+                    p_peer->cur_codec_cfg.id = bta_av_co_cb.codec_cfg.id;
+                    memcpy(p_peer->cur_codec_cfg.info, codec_cfg, AVDT_CODEC_SIZE);
 #if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
                     p_peer->cp_active = cp_active;
                     bta_av_co_cb.cp.active = cp_active;
@@ -2667,6 +2754,33 @@ void bta_av_co_get_cur_codec_info(tBTC_AV_CODEC_INFO *cur_codec_info)
     memcpy(cur_codec_info->info, bta_av_co_cb.codec_cfg.info, AVDT_CODEC_SIZE);
 
     /* Protect access to bta_av_co_cb.codec_cfg */
+    osi_mutex_global_unlock();
+}
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_get_codec_info_by_hndl
+ **
+ ** Description      Get the codec info a single connection was configured with
+ **
+ *******************************************************************************/
+void bta_av_co_get_codec_info_by_hndl(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *cur_codec_info)
+{
+    tBTA_AV_CO_PEER *p_peer = bta_av_co_get_peer(hndl);
+
+    /* Protect access to the codec configuration */
+    osi_mutex_global_lock();
+
+    if (p_peer != NULL && p_peer->cur_codec_cfg.id != BTC_AV_CODEC_NONE) {
+        *cur_codec_info = p_peer->cur_codec_cfg;
+    } else {
+        /* Do not fall back to the shared codec_cfg: another connection's
+         * SetConfig may have replaced it (AAC stream parsed as SBC). */
+        cur_codec_info->id = BTC_AV_CODEC_NONE;
+        memset(cur_codec_info->info, 0, AVDT_CODEC_SIZE);
+    }
+
+    /* Protect access to the codec configuration */
     osi_mutex_global_unlock();
 }
 

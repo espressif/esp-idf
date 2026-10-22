@@ -2546,9 +2546,23 @@
 #define AVDT_NUM_LINKS              2
 #endif
 
-/* Number of simultaneous stream endpoints. */
+/* Number of A2DP sink connections that can be established at the same time. */
+#ifndef BTA_AV_NUM_SNK_CONN
+#define BTA_AV_NUM_SNK_CONN         UC_BT_A2DP_SINK_MAX_CONN
+#endif
+
+/* Number of stream endpoints registered per BTA AV stream control block. This is
+ * the number of codecs the local device exposes on a single stream, it must not be
+ * confused with AVDT_NUM_SEPS which sizes the AVDTP-wide stream endpoint pool. */
+#ifndef BTA_AV_SEPS_PER_STRS
+#define BTA_AV_SEPS_PER_STRS        UC_BT_A2DP_SEP_NUM_MAX
+#endif
+
+/* Number of simultaneous stream endpoints. Every BTA AV stream control block
+ * creates its own set of AVDTP stream endpoints, so the pool must hold the
+ * endpoints of all simultaneous connections. */
 #ifndef AVDT_NUM_SEPS
-#define AVDT_NUM_SEPS               UC_BT_A2DP_SEP_NUM_MAX
+#define AVDT_NUM_SEPS               (BTA_AV_SEPS_PER_STRS * BTA_AV_NUM_SNK_CONN)
 #endif
 
 /* Maximum number of peer SEPs accepted in AVDTP Discover results. */
@@ -2571,9 +2585,11 @@
 
 /* Number of transport channels setup by AVDT for all media streams
  * AVDT_NUM_CHANNELS * Number of simultaneous streams.
+ * At most one stream is open per link, so the number of simultaneous streams is
+ * bounded by AVDT_NUM_LINKS.
  */
 #ifndef AVDT_NUM_TC_TBL
-#define AVDT_NUM_TC_TBL             6
+#define AVDT_NUM_TC_TBL             (AVDT_NUM_LINKS * AVDT_NUM_CHANNELS)
 #endif
 
 /* Maximum size in bytes of the codec capabilities information element. */
@@ -2863,9 +2879,17 @@
 #define AVCT_NUM_LINKS              2
 #endif
 
-/* Number of simultaneous AVCTP connections. */
+/* Number of simultaneous AVCTP connection control blocks (CCBs).
+ *
+ * BTA AV keeps a global ACP listener from A2DP registration, then allocates
+ * another ACP CCB when each AVDT signaling channel comes up, and may still
+ * open an INT CCB after AVRCP SDP. Dual-sink therefore needs:
+ *   1 global ACP + N per-link ACP + N INT
+ * The old (AVCT_NUM_LINKS + 2) pool is 4, which is enough for one peer but
+ * overflows on the second ("Out of ccbs"). Size for that worst case plus a
+ * spare slot. */
 #ifndef AVCT_NUM_CONN
-#define AVCT_NUM_CONN               3
+#define AVCT_NUM_CONN               (AVCT_NUM_LINKS * 2 + 2)
 #endif
 
 /******************************************************************************

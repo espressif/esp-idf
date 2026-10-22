@@ -50,34 +50,42 @@ typedef enum {
 #endif
 } btc_avrc_act_t;
 
+/* conn_hdl selects the A2DP connection. ESP_A2D_INVALID_CONN_HDL means the
+ * currently active one, so the deprecated APIs keep working. */
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl; /* transaction label */
     uint8_t key_code;
     uint8_t key_state;
 } pt_cmd_t;
 
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t attr_mask;
 } md_cmd_t;
 
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t event_id;
     uint32_t event_parameter;
 } rn_cmd_t;
 
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t attr_id;
     uint8_t value_id;
 } ps_cmd_t;
 
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
 } get_caps_cmd_t;
 
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
 } get_play_status_cmd_t;
 
@@ -85,6 +93,7 @@ typedef struct {
 #define BTC_AVRC_MAX_VOLUME 0x7f
 
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t volume;
 } set_abs_vol_cmd_t;
@@ -155,6 +164,16 @@ typedef enum {
         } \
     } while (0)
 
+/* Number of AVRCP sessions that can be handled at the same time, one per A2DP
+ * connection. */
+#ifndef BTC_RC_MAX_CONN
+#if BTC_AV_SINK_INCLUDED
+#define BTC_RC_MAX_CONN                 BTA_AV_NUM_SNK_CONN
+#else
+#define BTC_RC_MAX_CONN                 1
+#endif
+#endif
+
 /*****************************************************************************
 **  Local type definitions
 ******************************************************************************/
@@ -181,10 +200,10 @@ typedef struct {
 ******************************************************************************/
 #if AVRC_DYNAMIC_MEMORY == TRUE
 extern btc_rc_cb_t *btc_rc_cb_ptr;
-#define btc_rc_cb (*btc_rc_cb_ptr)
 #endif ///AVRC_DYNAMIC_MEMORY == FALSE
 
 typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
     esp_avrc_rn_event_ids_t event_id;
     esp_avrc_rn_rsp_t rsp;
     esp_avrc_rn_param_t param;
@@ -200,6 +219,58 @@ typedef union {
 void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data);
 
 BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
+
+/*******************************************************************************
+**
+** Function         btc_rc_get_peer_by_handle
+**
+** Description      Get the address of the peer an AVRCP handle belongs to. Used
+**                  to attribute an AVRCP message to an A2DP connection.
+**
+** Returns          TRUE when the handle belongs to a connected peer
+**
+*******************************************************************************/
+BOOLEAN btc_rc_get_peer_by_handle(UINT8 rc_handle, BD_ADDR peer_addr);
+
+/*******************************************************************************
+**
+** Function         btc_rc_pause_peer
+**
+** Description      Ask a connected AVRCP target (typically a phone acting as
+**                  player) to pause playback. Used when another A2DP source
+**                  takes over the rendered stream. No-op when CT is disabled or
+**                  the peer has no AVRCP CT session.
+**
+** Returns          TRUE when the passthrough commands were sent
+**
+*******************************************************************************/
+BOOLEAN btc_rc_pause_peer(const BD_ADDR peer_addr);
+
+/*******************************************************************************
+**
+** Function         btc_rc_play_peer
+**
+** Description      Ask a connected AVRCP target to start playback. Used when
+**                  the application selects a connected but idle A2DP source as
+**                  the rendered device. No-op when CT is disabled or the peer
+**                  has no AVRCP CT session.
+**
+** Returns          TRUE when the passthrough commands were sent
+**
+*******************************************************************************/
+BOOLEAN btc_rc_play_peer(const BD_ADDR peer_addr);
+
+/*******************************************************************************
+**
+** Function         btc_rc_close_peer
+**
+** Description      Close the AVRCP session of a peer. BTA_AvCloseRc takes the
+**                  RCB index, not the A2DP stream handle.
+**
+** Returns          TRUE when a close was issued
+**
+*******************************************************************************/
+BOOLEAN btc_rc_close_peer(const BD_ADDR peer_addr);
 
 /*******************************************************************************
 **  BTC AVRC API

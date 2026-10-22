@@ -108,6 +108,7 @@ static void bt_app_av_state_disconnecting_hdlr(uint16_t event, void *param);
  ********************************/
 
 static esp_bd_addr_t s_peer_bda = {0};                        /* Bluetooth Device Address of peer device*/
+static esp_a2d_conn_hdl_t s_a2d_conn_hdl = ESP_A2D_INVALID_CONN_HDL;  /* A2DP connection handle of peer device*/
 static uint8_t s_peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];  /* Bluetooth Device Name of peer device*/
 static int s_a2d_state = APP_AV_STATE_IDLE;                   /* A2DP global state */
 static int s_media_state = APP_AV_MEDIA_STATE_IDLE;           /* sub states of APP_AV_STATE_CONNECTED */
@@ -520,7 +521,9 @@ static void bt_app_av_state_connecting_hdlr(uint16_t event, void *param)
             ESP_LOGI(BT_AV_TAG, "a2dp connected");
             s_a2d_state =  APP_AV_STATE_CONNECTED;
             s_media_state = APP_AV_MEDIA_STATE_IDLE;
+            s_a2d_conn_hdl = a2d->conn_stat.conn_hdl;
         } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
+            s_a2d_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
             s_a2d_state =  APP_AV_STATE_UNCONNECTED;
         }
         break;
@@ -558,13 +561,13 @@ static void bt_app_av_media_proc(uint16_t event, void *param)
     case APP_AV_MEDIA_STATE_IDLE: {
         if (event == BT_APP_HEART_BEAT_EVT) {
             ESP_LOGI(BT_AV_TAG, "a2dp media ready checking ...");
-            esp_a2d_media_ctrl(ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY);
+            esp_a2d_media_ctrl_by_handle(s_a2d_conn_hdl, ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY);
         } else if (event == ESP_A2D_MEDIA_CTRL_ACK_EVT) {
             a2d = (esp_a2d_cb_param_t *)(param);
             if (a2d->media_ctrl_stat.cmd == ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY &&
                     a2d->media_ctrl_stat.status == ESP_A2D_MEDIA_CTRL_ACK_SUCCESS) {
                 ESP_LOGI(BT_AV_TAG, "a2dp media ready, starting ...");
-                esp_a2d_media_ctrl(ESP_A2D_MEDIA_CTRL_START);
+                esp_a2d_media_ctrl_by_handle(s_a2d_conn_hdl, ESP_A2D_MEDIA_CTRL_START);
                 s_media_state = APP_AV_MEDIA_STATE_STARTING;
             }
         }
@@ -591,7 +594,7 @@ static void bt_app_av_media_proc(uint16_t event, void *param)
             /* stop media after 10 heart beat intervals */
             if (++s_intv_cnt >= 10) {
                 ESP_LOGI(BT_AV_TAG, "a2dp media suspending...");
-                esp_a2d_media_ctrl(ESP_A2D_MEDIA_CTRL_SUSPEND);
+                esp_a2d_media_ctrl_by_handle(s_a2d_conn_hdl, ESP_A2D_MEDIA_CTRL_SUSPEND);
                 s_media_state = APP_AV_MEDIA_STATE_STOPPING;
                 s_intv_cnt = 0;
             }
@@ -605,11 +608,11 @@ static void bt_app_av_media_proc(uint16_t event, void *param)
                     a2d->media_ctrl_stat.status == ESP_A2D_MEDIA_CTRL_ACK_SUCCESS) {
                 ESP_LOGI(BT_AV_TAG, "a2dp media suspend successfully, disconnecting...");
                 s_media_state = APP_AV_MEDIA_STATE_IDLE;
-                esp_a2d_source_disconnect(s_peer_bda);
+                esp_a2d_source_disconnect_by_handle(s_a2d_conn_hdl);
                 s_a2d_state = APP_AV_STATE_DISCONNECTING;
             } else {
                 ESP_LOGI(BT_AV_TAG, "a2dp media suspending...");
-                esp_a2d_media_ctrl(ESP_A2D_MEDIA_CTRL_SUSPEND);
+                esp_a2d_media_ctrl_by_handle(s_a2d_conn_hdl, ESP_A2D_MEDIA_CTRL_SUSPEND);
             }
         }
         break;
@@ -630,6 +633,7 @@ static void bt_app_av_state_connected_hdlr(uint16_t event, void *param)
         a2d = (esp_a2d_cb_param_t *)(param);
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             ESP_LOGI(BT_AV_TAG, "a2dp disconnected");
+            s_a2d_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
             s_a2d_state = APP_AV_STATE_UNCONNECTED;
         }
         break;
@@ -695,6 +699,7 @@ static void bt_app_av_state_disconnecting_hdlr(uint16_t event, void *param)
         a2d = (esp_a2d_cb_param_t *)(param);
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             ESP_LOGI(BT_AV_TAG, "a2dp disconnected");
+            s_a2d_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
             s_a2d_state =  APP_AV_STATE_UNCONNECTED;
         }
         break;
@@ -741,7 +746,7 @@ static void bt_av_volume_changed(void)
 {
     if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_peer_rn_cap,
                                            ESP_AVRC_RN_VOLUME_CHANGE)) {
-        esp_avrc_ct_send_register_notification_cmd(APP_RC_CT_TL_RN_VOLUME_CHANGE, ESP_AVRC_RN_VOLUME_CHANGE, 0);
+        esp_avrc_ct_send_register_notification_cmd_by_handle(s_a2d_conn_hdl, APP_RC_CT_TL_RN_VOLUME_CHANGE, ESP_AVRC_RN_VOLUME_CHANGE, 0);
     }
 }
 
@@ -752,7 +757,7 @@ void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *event_param
     case ESP_AVRC_RN_VOLUME_CHANGE: {
         ESP_LOGI(BT_RC_CT_TAG, "Volume changed: %d", event_parameter->volume);
         ESP_LOGI(BT_RC_CT_TAG, "Set absolute volume: volume %d", event_parameter->volume + 5);
-        esp_avrc_ct_send_set_absolute_volume_cmd(APP_RC_CT_TL_RN_VOLUME_CHANGE, event_parameter->volume + 5);
+        esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(s_a2d_conn_hdl, APP_RC_CT_TL_RN_VOLUME_CHANGE, event_parameter->volume + 5);
         bt_av_volume_changed();
         break;
     }
@@ -776,7 +781,7 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
                  rc->conn_stat.connected, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
 
         if (rc->conn_stat.connected) {
-            esp_avrc_ct_send_get_rn_capabilities_cmd(APP_RC_CT_TL_GET_CAPS);
+            esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_a2d_conn_hdl, APP_RC_CT_TL_GET_CAPS);
         } else {
             s_avrc_peer_rn_cap.bits = 0;
         }

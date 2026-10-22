@@ -238,8 +238,19 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
     UINT16  num_frames = 0;
     UINT32  timestamp;
     tBTC_AV_CODEC_INFO cur_codec_info;
+    /* event was overwritten with the stream handle at enqueue time */
+    UINT16  conn_hdl = p_msg->event;
 
-    bta_av_co_get_cur_codec_info(&cur_codec_info);
+    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL) {
+        conn_hdl = btc_a2d_conn_handle_get();
+    }
+
+    /* MEDIA_CFG on this connection is the negotiated stream codec. Do not use
+     * bta_av_co_get_codec_info_by_hndl() first: that falls back to the shared
+     * codec_cfg, which the last SetConfig (e.g. a second phone's SBC) overwrites. */
+    if (!btc_av_get_sink_codec_info(conn_hdl, &cur_codec_info)) {
+        bta_av_co_get_codec_info_by_hndl(conn_hdl, &cur_codec_info);
+    }
 
     if (a2dp_sink_local_param.btc_aa_snk_cb.rx_flush) {
         osi_free(p_msg);
@@ -331,9 +342,9 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
         return;
     }
 
-    APPL_TRACE_DEBUG("codec 0x%02x, frames %d, frame_len %d", cur_codec_info.id, num_frames, (int)frame_len);
+    APPL_TRACE_DEBUG("parse hndl 0x%x codec 0x%02x, frames %d, frame_len %d",
+                     conn_hdl, cur_codec_info.id, num_frames, (int)frame_len);
 
-    UINT16 conn_hdl = btc_a2d_conn_handle_get();
     btc_a2d_audio_data_cb_to_app(conn_hdl, (uint8_t *)p_msg, frame_ptr, frame_len, num_frames, timestamp);
     /* dont free p_msg here */
 }

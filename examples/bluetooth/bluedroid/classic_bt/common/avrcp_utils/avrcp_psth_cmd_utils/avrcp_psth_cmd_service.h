@@ -13,6 +13,7 @@
 /**
  * @brief  send a passthrough command
  *
+ * @param[in] conn_hdl  A2DP connection handle of the AVRCP peer
  * @param[in] key_code  Passthrough command code (ESP_AVRC_PT_CMD_*)
  * @param[in] key_state Passthrough command state (ESP_AVRC_PT_CMD_STATE_PRESSED or ESP_AVRC_PT_CMD_STATE_RELEASED)
  *
@@ -22,6 +23,7 @@
  * - ESP_ERR_INVALID_STATE: if Bluetooth is not enabled
  * - ESP_FAIL: otherwise
  */
-esp_err_t avrc_psth_cmd_srv_send_cmd(esp_avrc_pt_cmd_t key_code, esp_avrc_pt_cmd_state_t key_state);
+esp_err_t avrc_psth_cmd_srv_send_cmd(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_pt_cmd_t key_code,
+                                     esp_avrc_pt_cmd_state_t key_state);
 
 #endif /* __AVRCP_PSTH_CMD_SERVICE_H__ */

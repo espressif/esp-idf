@@ -168,7 +168,7 @@ list(APPEND bluedroid_host_srcs
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_control.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_sink.c"
-    "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_sink_ext_coedc.c"
+    "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_sink_ext_codec.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_latm_raw.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_source.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/a2dp/btc_a2dp_source_ext_codec.c"

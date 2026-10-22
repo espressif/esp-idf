@@ -833,7 +833,7 @@ static void bta_av_api_reg_sep(tBTA_AV_DATA *p_data)
                 if (AVDT_CreateStream(&p_scb->seps[index].av_handle, &cs) == AVDT_SUCCESS) {
                     p_scb->seps[index].codec_type = codec_type;
                     p_scb->seps[index].tsep = cs.tsep;
-                    p_scb->seps[index].p_app_data_cback = p_data->api_reg_sep.p_data_cback;
+                    p_scb->seps[index].p_app_data_cback = p_data->api_reg_sep.p_data_cback[p_scb->hdi];
                     sep_reg.reg_state = BTA_AV_SUCCESS;
                 } else {
                     APPL_TRACE_WARNING("%s fail to create sep", __FUNCTION__);
@@ -917,7 +917,9 @@ static void bta_av_rpc_conn(tBTA_AV_DATA *p_data)
 **
 ** Function         bta_av_api_to_ssm
 **
-** Description      forward the API request to stream state machine
+** Description      forward the API request to stream state machine. When
+**                  hdr.layer_specific carries a stream handle, only that stream
+**                  is addressed, otherwise the request goes to every stream.
 **
 **
 ** Returns          void
@@ -927,8 +929,13 @@ static void bta_av_api_to_ssm(tBTA_AV_DATA *p_data)
 {
     int xx;
     UINT16 event = p_data->hdr.event - BTA_AV_FIRST_A2S_API_EVT + BTA_AV_FIRST_A2S_SSM_EVT;
+    tBTA_AV_HNDL hndl = (tBTA_AV_HNDL)p_data->hdr.layer_specific;
 
     for (xx = 0; xx < BTA_AV_NUM_STRS; xx++) {
+        if (hndl != 0 &&
+                (bta_av_cb.p_scb[xx] == NULL || bta_av_cb.p_scb[xx]->hndl != hndl)) {
+            continue;
+        }
         bta_av_ssm_execute(bta_av_cb.p_scb[xx], event, p_data);
     }
 }
@@ -949,7 +956,7 @@ BOOLEAN bta_av_chk_start(tBTA_AV_SCB *p_scb)
     tBTA_AV_SCB *p_scbi;
     int i;
 
-    if (p_scb->chnl == BTA_AV_CHNL_AUDIO) {
+    if (p_scb->chnl == BTA_AV_CHNL_AUDIO && BTA_AV_LOCAL_IS_SRC(p_scb)) {
         if ((bta_av_cb.audio_open_cnt >= 2) &&
                 ((0 == (p_scb->role & BTA_AV_ROLE_AD_ACP)) ||       /* Outgoing connection or   */
                  (bta_av_cb.features & BTA_AV_FEAT_ACP_START))) {   /* auto-starting option     */

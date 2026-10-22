@@ -91,13 +91,16 @@ typedef UINT8 tBTA_AV_HNDL;
 
 
 
-/* maximum number of streams created: 1 for audio, 1 for video */
+/* maximum number of streams created: either 1 audio + 1 video, or 2 audio
+ * streams when A2DP sink multi-connection is enabled */
 #ifndef BTA_AV_NUM_STRS
 #define BTA_AV_NUM_STRS         2
 #endif
 
+/* number of stream endpoints registered on a single stream control block, i.e.
+ * the number of codecs exposed per connection */
 #ifndef BTA_AV_MAX_SEPS
-#define BTA_AV_MAX_SEPS         AVDT_NUM_SEPS
+#define BTA_AV_MAX_SEPS         BTA_AV_SEPS_PER_STRS
 #endif
 
 #ifndef BTA_AV_MAX_A2DP_MTU
@@ -677,7 +680,10 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name,
                     tBTA_AV_CO_FUNCTS *bta_av_cos, tBTA_AVRC_CO_FUNCTS *bta_avrc_cos,
                     UINT8 tsep);
 
-void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 idx, UINT8 tsep, tBTA_AV_CODEC codec_type, UINT8 *p_codec_info, tBTA_AV_DATA_CBACK *p_data_cback);
+/* 'pp_data_cback' holds one media callback per stream, indexed by stream index,
+ * so that the upper layer can tell which connection a media packet arrived on. */
+void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 idx, UINT8 tsep, tBTA_AV_CODEC codec_type,
+                  UINT8 *p_codec_info, tBTA_AV_DATA_CBACK * const *pp_data_cback);
 
 /*******************************************************************************
 **
@@ -739,27 +745,29 @@ void BTA_AvEnable_Sink(int enable);
 
 /*******************************************************************************
 **
-** Function         BTA_AvStart
+** Function         BTA_AvStartByHndl
 **
-** Description      Start audio/video stream data transfer.
+** Description      Start audio/video stream data transfer on the stream given by
+**                  handle. A handle of 0 addresses every registered stream.
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AvStart(void);
+void BTA_AvStartByHndl(tBTA_AV_HNDL hndl);
 
 /*******************************************************************************
 **
-** Function         BTA_AvStop
+** Function         BTA_AvStopByHndl
 **
-** Description      Stop audio/video stream data transfer.
+** Description      Stop audio/video stream data transfer on the stream given by
+**                  handle. A handle of 0 addresses every registered stream.
 **                  If suspend is TRUE, this function sends AVDT suspend signal
-**                  to the connected peer(s).
+**                  to the connected peer.
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AvStop(BOOLEAN suspend);
+void BTA_AvStopByHndl(tBTA_AV_HNDL hndl, BOOLEAN suspend);
 
 /*******************************************************************************
 **

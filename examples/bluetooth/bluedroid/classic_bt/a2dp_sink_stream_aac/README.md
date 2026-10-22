@@ -57,7 +57,7 @@ idf.py menuconfig
 
 * Choose external I2S codec or internal DAC for audio output, and configure the output PINs under A2DP Sink Internal Codec Example Configuration.
 
-### Stream Endpoint (SEP) registration
+### Stream Endpoint (SEP) registration (one source device)
 
 This example registers codec capabilities with `esp_a2d_sink_register_stream_endpoint()` after A2DP sink init and before connecting. A2DP requires **at least one SBC SEP**; using AAC therefore needs `ESP_A2D_MAX_SEPS >= 2`. Capabilities that do not meet A2DP Profile (SNK) fail with `ESP_A2D_SEP_REG_UNSUPPORTED` in `ESP_A2D_SEP_REG_STATE_EVT`. Overwriting the last SBC SEP fails with `ESP_A2D_SEP_REG_SBC_REQUIRED`.
 
@@ -81,6 +81,25 @@ This example registers codec capabilities with `esp_a2d_sink_register_stream_end
 | Sampling frequency | 44.1 kHz and 48 kHz |
 | Channels | 1 and 2 |
 | VBR | Supported |
+
+### Dual A2DP sink (two source devices)
+
+This example can keep two A2DP sources connected at the same time, with the same last-started-wins speaker behavior as `a2dp_sink_stream`. The stack discards media from the inactive source; the application keeps **one** decoder and **one** I2S/DAC path and reconfigures them when `ESP_A2D_SNK_ACTIVE_DEVICE_EVT` reports a new active device. AAC and SBC may be used on different phones; takeover closes and reopens the shared decoder and updates the I2S clock.
+
+Enable dual connection in menuconfig:
+
+* `Component config` → `Bluetooth` → `Bluedroid Options` → `Maximum number of simultaneous A2DP sink connections` = 2 (`CONFIG_BT_A2DP_SINK_MAX_CONN=2`)
+* Host ACL connections (`CONFIG_BT_ACL_CONNECTIONS`) and controller BR/EDR ACL max connections must be at least 2 (the ESP32 / ESP32-S31 defaults already are)
+
+This example already sets `CONFIG_BT_A2DP_SEP_NUM_MAX=2` (AAC + SBC). The stack sizes the AVDTP SEP pool as `SEP_NUM_MAX * SINK_MAX_CONN`, so two connections with both codecs are covered without raising `SEP_NUM_MAX`.
+
+Leave `CONFIG_BT_A2DP_SINK_MAX_CONN` at 1 (the default) for single-phone AAC/SBC playback.
+
+With `MAX_CONN=2`:
+
+* Phone B can connect while phone A is playing. B's `ESP_A2D_AUDIO_CFG_EVT` is cached and does not interrupt A's decoder or I2S clock.
+* Starting playback on B switches rendering to B. A is suspended by the stack and stays connected; pause/play on A later takes over without reconnecting.
+* Disconnecting one phone while the other is still connected leaves the audio path running.
 
 ### Build and Flash
 
@@ -110,6 +129,12 @@ I (122697) BT_AV: Undecoded audio package count: 100
 I (124697) BT_AV: Undecoded audio package count: 200
 I (126697) BT_AV: Undecoded audio package count: 300
 I (128697) BT_AV: Undecoded audio package count: 400
+```
+
+With `CONFIG_BT_A2DP_SINK_MAX_CONN=2`, a second phone can connect while the first is playing. Starting music on the second phone logs which source is rendered:
+
+```
+I (140000) BT_AV: A2DP rendering [aa:bb:cc:dd:ee:ff], other sources suspended
 ```
 
 

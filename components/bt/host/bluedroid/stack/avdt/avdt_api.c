@@ -230,6 +230,16 @@ void AVDT_SINK_Deactivate(void)
     }
 }
 
+void AVDT_SetSepInUse(UINT8 handle, BOOLEAN in_use)
+{
+    tAVDT_SCB *p_scb = avdt_scb_by_hdl(handle);
+
+    if (p_scb != NULL) {
+        AVDT_TRACE_DEBUG("AVDT_SetSepInUse hdl=%d in_use=%d", handle, in_use);
+        p_scb->in_use = in_use;
+    }
+}
+
 void AVDT_AbortReq(UINT8 handle)
 {
     AVDT_TRACE_ERROR("%s\n", __func__);

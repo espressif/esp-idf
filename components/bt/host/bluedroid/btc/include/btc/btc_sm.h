@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,9 @@
 typedef UINT32 btc_sm_state_t;
 typedef UINT32 btc_sm_event_t;
 typedef void *btc_sm_handle_t;
-typedef BOOLEAN (* btc_sm_handler_t)(btc_sm_event_t event, void *data);
+/* 'user_data' is the context given to btc_sm_init(), it lets several state
+ * machines share one handler table while each keeps its own control block. */
+typedef BOOLEAN (* btc_sm_handler_t)(btc_sm_event_t event, void *data, void *user_data);
 
 
 /*****************************************************************************
@@ -49,12 +51,13 @@ typedef BOOLEAN (* btc_sm_handler_t)(btc_sm_event_t event, void *data);
 **              The caller should ensure that the table and the corresponding
 **              states match. The location that 'p_handlers' points to shall
 **              be available until the btc_sm_shutdown API is invoked.
+**              'user_data' is passed unchanged to every handler invocation.
 **
 ** Returns      Returns a pointer to the initialized state machine handle.
 **
 ******************************************************************************/
 btc_sm_handle_t btc_sm_init(const btc_sm_handler_t *p_handlers,
-                            btc_sm_state_t initial_state);
+                            btc_sm_state_t initial_state, void *user_data);
 
 /*****************************************************************************
 **

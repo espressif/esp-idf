@@ -544,10 +544,10 @@ static bt_status_t btc_init_mem(void) {
 #endif
 
 #if BTC_AV_INCLUDED == TRUE && AVRC_DYNAMIC_MEMORY == TRUE
-    if ((btc_rc_cb_ptr = (btc_rc_cb_t *)osi_malloc(sizeof(btc_rc_cb_t))) == NULL) {
+    if ((btc_rc_cb_ptr = (btc_rc_cb_t *)osi_malloc(sizeof(btc_rc_cb_t) * BTC_RC_MAX_CONN)) == NULL) {
         goto error_exit;
     }
-    memset((void *)btc_rc_cb_ptr, 0, sizeof(btc_rc_cb_t));
+    memset((void *)btc_rc_cb_ptr, 0, sizeof(btc_rc_cb_t) * BTC_RC_MAX_CONN);
     if ((bta_av_co_cb_ptr = (tBTA_AV_CO_CB *)osi_malloc(sizeof(tBTA_AV_CO_CB))) == NULL) {
         goto error_exit;
     }
