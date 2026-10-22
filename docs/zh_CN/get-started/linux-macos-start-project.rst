@@ -64,6 +64,7 @@ ESP-IDF 安装完成后，EIM 命令行界面会打印一条命令提示，该�
 
 .. code-block:: bash
 
+    mkdir -p ~/esp
     cd ~/esp
     cp -r $IDF_PATH/examples/get-started/hello_world .
 
