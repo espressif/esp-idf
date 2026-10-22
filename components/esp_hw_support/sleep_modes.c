@@ -144,11 +144,6 @@
 
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
-#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
-// A light sleep longer than this lets the chip cool down from the preceding active period,
-// so a calibration right after it measures the RTC_SLOW oscillator at its sleep temperature
-#define RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US   (CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP_MIN_SLP_MS * 1000)
-#endif
 #define FAST_CLK_SRC_CAL_CYCLES     (2048)  /* ~ 127.4 us */
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -803,7 +798,7 @@ static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     {
         bool clk_cal_before_sleep = true;
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
-        /* Deep sleep always calibrates; an invalid value 0 means too short light sleep or no sleep at all */
+        /* Deep sleep always calibrates; an invalid value 0 means no calibration since boot or deep sleep wakeup */
         clk_cal_before_sleep = is_dslp || (s_config.rtc_clk_cal_period == 0);
 #endif
         if (clk_cal_before_sleep) {
@@ -1767,8 +1762,7 @@ esp_err_t esp_light_sleep_start(void)
         esp_set_time_from_rtc();
 #if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
         if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) {
-            /* We use the invalid value 0 to indicate that calibration is required before the next sleep */
-            rtc_clk_cal_period_after_wakeup = (rtc_time_diff > RTC_CLK_CAL_AFTER_WAKEUP_MIN_SLEEP_US) ? rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES) : 0;
+            rtc_clk_cal_period_after_wakeup = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
         }
 #endif
     } else {
