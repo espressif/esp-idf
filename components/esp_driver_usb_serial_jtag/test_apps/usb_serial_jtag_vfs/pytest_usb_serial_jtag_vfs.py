@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.usb_serial_jtag
@@ -13,7 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_usj_vfs_release(dut: Dut) -> None:
     test_message = 'test123456789!@#%^&*'
 
