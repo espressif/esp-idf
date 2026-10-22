@@ -1002,6 +1002,10 @@ static inline usb_dwc_host_chan_regs_t *usb_dwc_ll_chan_get_regs(usb_dwc_dev_t *
 #define USB_DWC_LL_QTD_STATUS_BUFFER       0x3     //AHB error occurred.
 #define USB_DWC_LL_QTD_STATUS_NOT_EXECUTED 0x4     //QTD as never processed
 
+// Per the DWC_otg programming guide Section 6 (Scatter/Gather qTD structure), the non-isochronous
+// descriptor's "Total bytes to transfer" field is a 17-bit value (0 to 128K-1 bytes).
+#define USB_DWC_LL_QTD_NON_ISO_MAX_XFER_SIZE ((1U << 17) - 1)
+
 /**
  * @brief Set a QTD for a non isochronous IN transfer
  *
