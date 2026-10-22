@@ -168,6 +168,7 @@ externalproject_add(bootloader
                 -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
                 -DIGNORE_EXTRA_COMPONENT=${BOOTLOADER_IGNORE_EXTRA_COMPONENT}
                 -DIDF_BUILD_V2=${IDF_BUILD_V2}
+                -DCCACHE_ENABLE=${CCACHE_ENABLE}
                 ${sign_key_arg} ${ver_key_arg}
                 ${extra_cmake_args}
     INSTALL_COMMAND ""

@@ -87,6 +87,7 @@ externalproject_add(esp_tee
                 -DSECURE_SERVICE_HEADERS_DIR=${secure_service_headers_dir}
                 -DPARTITION_TABLE_BIN_PATH=${partition_table_bin}
                 -DIDF_BUILD_V2=${IDF_BUILD_V2}
+                -DCCACHE_ENABLE=${CCACHE_ENABLE}
                 ${extra_cmake_args} ${sign_key_arg}
     INSTALL_COMMAND ""
     BUILD_ALWAYS 1  # no easy way around this...
