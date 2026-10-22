@@ -18,7 +18,7 @@ extern "C" {
  * Local Defined Macros
  ***************************************************************************************************
  */
-#define BLE_CONFIG_VERSION 0x20260810
+#define BLE_CONFIG_VERSION 0x20261021
 #define BLE_CONFIG_MAGIC 0x5A5AA5A5
 
 #if defined(CONFIG_BT_LE_ISO_SUPPORT)
@@ -298,7 +298,7 @@ typedef struct {
     int8_t ch39_txpwr;   /*!< BLE transmit power (in dBm) used for BLE advertising on channel 39. */
     uint8_t adv_rsv_cnt; /*!< BLE adv state machine reserve count number */
     uint8_t conn_rsv_cnt;       /*!< BLE conn state machine reserve count number */
-    uint8_t priority_level_cfg; /*!< The option for priority level configuration */
+    uint16_t priority_level_cfg; /*!< The option for priority level configuration */
     uint8_t
         slv_fst_rx_lat_en; /*!< The option for enabling slave fast PDU reception during latency. */
     uint8_t dl_itvl_phy_sync_en;   /*!< The option for automatically initiate the data length update
