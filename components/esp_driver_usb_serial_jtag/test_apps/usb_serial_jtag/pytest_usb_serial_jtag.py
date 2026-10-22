@@ -14,7 +14,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_usb_serial_jtag_dev(dut: Dut) -> None:  # type: ignore
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -37,7 +36,6 @@ def test_usb_serial_jtag_dev(dut: Dut) -> None:  # type: ignore
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_usb_serial_jtag_rom_dev(dut: Dut) -> None:  # type: ignore
     dut.expect_exact('Press ENTER to see the list of tests')

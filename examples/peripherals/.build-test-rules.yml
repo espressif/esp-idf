@@ -835,7 +835,7 @@ examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"] # TODO ESPTOOL-1406, IDF-16462
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # IDF-16462
       temporary: true
       reason: cannot pass
   depends_components:

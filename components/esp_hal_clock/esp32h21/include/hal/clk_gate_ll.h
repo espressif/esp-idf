@@ -159,8 +159,12 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
             PCR.mspi_conf.mspi_pll_clk_en = 0;
         }
 
-        PCR.spi2_conf.spi2_clk_en = 0;
-        PCR.spi2_clkm_conf.spi2_clkm_en = 0;
+        /**
+         * On this chip version of H21, close this clock will also stop USJ due to ROM bug.
+         * So we keep it always enabled.
+         */
+        // PCR.spi2_conf.spi2_clk_en = 0;
+        // PCR.spi2_clkm_conf.spi2_clkm_en = 0;
         PCR.tsens_clk_conf.tsens_clk_en = 0;
 
         PCR.uhci_conf.uhci_clk_en = 0;

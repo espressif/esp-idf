@@ -14,7 +14,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_usj_vfs_select(dut: Dut) -> None:
     test_message = 'test123456789!@#%^&*'
@@ -35,7 +34,6 @@ def test_usj_vfs_select(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 def test_usj_vfs_read_return(dut: Dut) -> None:
     test_message = '!(@*#&(!*@&#((SDasdkjhad\nce'
@@ -56,7 +54,6 @@ def test_usj_vfs_read_return(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # ESPTOOL-1406
 def test_usj_vfs_read_blocking(dut: Dut) -> None:
     test_message = 'testdata'
 
