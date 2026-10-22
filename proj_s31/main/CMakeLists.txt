@@ -7,7 +7,7 @@ set(MAIN_PRIV_REQUIRES
     littlefs esp_netif esp_driver_gptimer console nvs_flash spi_flash
     esp_driver_uart esp_driver_gpio esp_wifi esp_timer esp_http_client
     esp_driver_i2c esp_driver_i2s esp_codec_dev esp_eth ethernet_init xymodem
-    app_update
+    app_update mbedtls
 )
 
 if(CONFIG_APP_INIT_ETHERNET)

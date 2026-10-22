@@ -20,6 +20,7 @@
 #include "bsp_timer.h"
 #include "osal.h"
 #include "common_sntp.h"
+#include "psa/crypto.h"
 #if CONFIG_APP_INIT_ETHERNET
 #include "esp_eth.h"
 #include "ethernet_init.h"
@@ -157,6 +158,9 @@ void app_main(void)
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
+
+    // Init PSA Crypto
+    ESP_ERROR_CHECK(psa_crypto_init());
 
     // Init Timer
     ESP_ERROR_CHECK(bsp_timer_init());

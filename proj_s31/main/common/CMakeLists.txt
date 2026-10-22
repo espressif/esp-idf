@@ -33,6 +33,10 @@ if(CONFIG_OTA_SUPPORT)
     endif()
 endif()
 
+if(1)
+    list(APPEND COMMON_SRCS "common/mesh/mesh_packet.c")
+endif()
+
 set(COMMON_INCLUDE_DIRS
     "common"
     "common/filemgr"
@@ -45,4 +49,8 @@ set(COMMON_INCLUDE_DIRS
 
 if(CONFIG_OTA_SUPPORT)
     list(APPEND COMMON_INCLUDE_DIRS "common/ota")
+endif()
+
+if(1)
+    list(APPEND COMMON_INCLUDE_DIRS "common/mesh")
 endif()
