@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,18 @@ typedef spi_flash_hal_context_t memspi_host_inst_t;
  * @return always return ESP_OK
  */
 esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg);
+
+/**
+ * Initialize the memory SPI host for the main flash on SPI1.
+ *
+ * Same as ``memspi_host_init_pointers`` with ``cfg->host_id == SPI1_HOST``, but doesn't link the GPSPI host driver.
+ *
+ * @param host Pointer to the host structure, must be in internal memory.
+ * @param cfg Pointer to configuration structure
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG if host is not in internal memory
+ */
+esp_err_t memspi_host_init_spi1_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg);
 
 /**
  * Initialize the memory SPI host for ESP32-C5 dynamic configuration.
