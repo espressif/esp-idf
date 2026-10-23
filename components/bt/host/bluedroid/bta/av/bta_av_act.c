@@ -549,7 +549,7 @@ void bta_av_rc_opened(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
         rc_open.sdp_disc_done = FALSE;
         bta_av_rc_disc(disc);
     }
-    (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
+    bta_av_safe_cback(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
 
 }
 
@@ -975,7 +975,7 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
     /* call callback */
     if (evt != 0) {
         av.remote_cmd.rc_handle = p_data->rc_msg.handle;
-        (*p_cb->p_cback)(evt, &av);
+        bta_av_safe_cback(evt, &av);
     }
 }
 
@@ -1481,7 +1481,7 @@ void bta_av_sig_timer(tBTA_AV_DATA *p_data)
             if (!p_lcb->conn_msk) {
                 bta_sys_start_timer(&p_cb->sig_tmr, BTA_AV_SIG_TIMER_EVT, BTA_AV_SIG_TIME_VAL);
                 bdcpy(pend.bd_addr, p_lcb->addr);
-                (*p_cb->p_cback)(BTA_AV_PENDING_EVT, (tBTA_AV *) &pend);
+                bta_av_safe_cback(BTA_AV_PENDING_EVT, (tBTA_AV *) &pend);
             }
         }
     }
@@ -1799,9 +1799,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
                         rc_open.peer_tg_features = 0;
                         rc_open.sdp_disc_done = FALSE;
                         rc_open.status = BTA_AV_FAIL_SDP;
-                        if (p_cb->p_cback) {
-                            (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
-                        }
+                        bta_av_safe_cback(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
                     }
                 }
 #if (BT_USE_TRACES == TRUE || BT_TRACE_APPL == TRUE)
@@ -1819,9 +1817,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
                 rc_open.peer_tg_features = 0;
                 rc_open.sdp_disc_done = FALSE;
                 rc_open.status = BTA_AV_FAIL_SDP;
-                if (p_cb->p_cback) {
-                    (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
-                }
+                bta_av_safe_cback(BTA_AV_RC_OPEN_EVT, (tBTA_AV *) &rc_open);
             }
         }
     } else {
@@ -1835,9 +1831,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
         rc_feat.peer_features = peer_features;
         rc_feat.peer_ct_features = peer_ct_features;
         rc_feat.peer_tg_features = peer_tg_features;
-        if (p_cb->p_cback) {
-            (*p_cb->p_cback)(BTA_AV_RC_FEAT_EVT, (tBTA_AV *) &rc_feat);
-        }
+        bta_av_safe_cback(BTA_AV_RC_FEAT_EVT, (tBTA_AV *) &rc_feat);
     }
 }
 
@@ -1932,7 +1926,7 @@ void bta_av_rc_closed(tBTA_AV_DATA *p_data)
         rc_close.rc_handle = p_msg->handle;
         bdcpy(rc_close.peer_addr, p_msg->peer_addr);
     }
-    (*p_cb->p_cback)(BTA_AV_RC_CLOSE_EVT, (tBTA_AV *) &rc_close);
+    bta_av_safe_cback(BTA_AV_RC_CLOSE_EVT, (tBTA_AV *) &rc_close);
 }
 
 /*******************************************************************************
@@ -2090,9 +2084,18 @@ void bta_av_dereg_comp(tBTA_AV_DATA *p_data)
 #endif
 
         if (p_cb->disabling) {
+            tBTA_AV_CBACK *p_cback = p_cb->p_cback;
+
             bta_sys_deregister(BTA_ID_AV);
             p_cb->disabling     = FALSE;
-            bta_av_cb.features  = 0;
+            p_cb->features      = 0;
+            /* detach the upper layer before notifying it: BTA_AV_DISABLE_EVT is the
+             * last event, after which the upper layer may free its control block */
+            p_cb->p_cback       = NULL;
+            if (p_cback) {
+                /* No payload. bte_av_callback forwards NULL with length 0. */
+                p_cback(BTA_AV_DISABLE_EVT, NULL);
+            }
         }
 
         /* Clear the Capturing/Rendering service class bit */

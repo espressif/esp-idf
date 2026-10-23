@@ -700,6 +700,8 @@ extern void bta_av_stream_data_cback(UINT8 handle, BT_HDR *p_pkt, UINT32 time_st
 **  Function prototypes
 *****************************************************************************/
 /* utility functions */
+extern void bta_av_safe_cback(tBTA_AV_EVT event, tBTA_AV *p_data);
+extern BOOLEAN bta_av_cback_registered(void);
 extern tBTA_AV_SCB *bta_av_hndl_to_scb(UINT16 handle);
 extern BOOLEAN bta_av_chk_start(tBTA_AV_SCB *p_scb);
 extern void bta_av_restore_switch (void);
