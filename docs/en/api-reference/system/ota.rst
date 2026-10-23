@@ -57,7 +57,7 @@ If the application resets, crashes, or loses power before the selected confirmat
 
 The following code shows application-controlled confirmation (:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP <CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP>`). On the first boot after an OTA update, the application observes the ``ESP_OTA_IMG_PENDING_VERIFY`` state and performs diagnostics. If the diagnostics are successful, the application should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` to confirm its operability. If the diagnostics fail, the application should call :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` to roll back to the previous working application.
 
-If the application is not able to boot or execute this code due to an abort/reboot/power loss error, the bootloader marks this application as ``ESP_OTA_IMG_INVALID`` in the next booting attempt and rolls back to the previous working application.
+If the application is not able to boot or execute this code due to an abort/reboot/power loss error, the bootloader marks this application as ``ESP_OTA_IMG_ABORTED`` in the next booting attempt and rolls back to the previous working application.
 
 .. code:: c
 
@@ -122,6 +122,21 @@ The application-controlled confirmation process works as follows:
 * If the self-test has completed successfully, then you must call the function :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` because the application is awaiting confirmation of operability (``ESP_OTA_IMG_PENDING_VERIFY`` state).
 * If the self-test fails, then call :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` function to roll back to the previous working application, while the invalid application is set ``ESP_OTA_IMG_INVALID`` state.
 * If the application has not been confirmed, the state remains ``ESP_OTA_IMG_PENDING_VERIFY``, and the next boot it will be changed to ``ESP_OTA_IMG_ABORTED``, which prevents re-boot of this application. There will be a rollback to the previous working application.
+
+Call :cpp:func:`esp_ota_mark_app_invalid_rollback` when the running application must set ``ESP_OTA_IMG_INVALID`` and continue executing, for example to log the failure or stop peripherals, before it calls :cpp:func:`esp_restart`. The bootloader selects the previous working application on that next boot. :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` calls :cpp:func:`esp_ota_mark_app_invalid_rollback` and, if that succeeds, :cpp:func:`esp_restart`.
+
+The following diagram shows how the OTA image state changes during application-controlled confirmation:
+
+.. mermaid::
+
+    flowchart TD
+        SET["esp_ota_set_boot_partition()"] -->|"Application rollback enabled"| NEW["ESP_OTA_IMG_NEW"]
+        NEW -->|"First boot: bootloader selects this image and writes PENDING_VERIFY"| PEND["ESP_OTA_IMG_PENDING_VERIFY"]
+        PEND -->|"esp_ota_mark_app_valid_cancel_rollback()"| VALID["ESP_OTA_IMG_VALID<br/>Later boots select this image"]
+        PEND -->|"esp_ota_mark_app_invalid_rollback()<br/>or esp_ota_mark_app_invalid_rollback_and_reboot()"| INV["ESP_OTA_IMG_INVALID"]
+        PEND -->|"Reset, crash, or power loss before confirmation"| ABRT["ESP_OTA_IMG_ABORTED<br/>Written by the bootloader on the next boot"]
+        INV -->|"Next boot: bootloader does not select this image"| PREV["Previous working application boots"]
+        ABRT -->|"Bootloader does not select this image"| PREV
 
 .. _ota_auto_confirm:
 
@@ -195,7 +210,7 @@ A Typical Anti-rollback Scheme Is
 - To make it bootable, run the function :cpp:func:`esp_ota_set_boot_partition`. If the security version of the new application is smaller than the version in the chip, the new application will be erased. Update to new firmware is not possible.
 - Reboot.
 - In the bootloader, an application with a security version greater than or equal to the version in the chip will be selected. If otadata is in the initial state, and one firmware was loaded via a serial channel, whose secure version is higher than the chip, then the secure version of efuse will be immediately updated in the bootloader.
-- New application booted. Then the application should perform diagnostics of the operation and if it is completed successfully, you should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function to mark the running application with the ``ESP_OTA_IMG_VALID`` state and update the secure version on chip. Note that if the :cpp:func:`esp_ota_mark_app_invalid_rollback` or :cpp:func:`esp_ota_mark_app_invalid_rollback_with_reboot` function is called a rollback may not happen as the device may not have any bootable apps. It will then return ``ESP_ERR_OTA_ROLLBACK_FAILED`` error and stay in the ``ESP_OTA_IMG_PENDING_VERIFY`` state.
+- New application booted. Then the application should perform diagnostics of the operation and if it is completed successfully, you should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function to mark the running application with the ``ESP_OTA_IMG_VALID`` state and update the secure version on chip. Note that if the :cpp:func:`esp_ota_mark_app_invalid_rollback` or :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` function is called a rollback may not happen as the device may not have any bootable apps. It will then return ``ESP_ERR_OTA_ROLLBACK_FAILED`` error and stay in the ``ESP_OTA_IMG_PENDING_VERIFY`` state.
 - The next update of app is possible if a running app is in the ``ESP_OTA_IMG_VALID`` state.
 
 Recommendation:
@@ -403,11 +418,6 @@ Application Examples
 
 - :example:`system/ota/otatool` demonstrates how to use the OTA tool to perform operations such as reading, writing, and erasing OTA partitions, switching boot partitions, and switching to factory partition. For more information, please refer to :example_file:`system/ota/otatool/README.md`.
 
-API Reference
--------------
-
-.. include-build-file:: inc/esp_ota_ops.inc
-
 Debugging OTA Failure
 ---------------------
 
@@ -418,3 +428,8 @@ Debugging OTA Failure
     :figclass: align-center
 
     How to Debug When OTA Fails (click to enlarge)
+
+API Reference
+-------------
+
+.. include-build-file:: inc/esp_ota_ops.inc
