@@ -1,7 +1,7 @@
 set(srcs)
 set(public_include "include")
 set(requires esp_hal_cordic)
-set(priv_requires)
+set(priv_requires esp_hw_support)
 
 if(CONFIG_SOC_CORDIC_SUPPORTED)
     list(APPEND srcs "cordic.c")

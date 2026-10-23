@@ -22,6 +22,7 @@
 #include "soc/cordic_reg.h"
 #include "soc/soc.h"
 #include "hal/cordic_periph.h"
+#include "esp_private/esp_clk_tree_common.h"
 
 ESP_LOG_ATTR_TAG(TAG, "cordic");
 
@@ -48,10 +49,15 @@ static bool cordic_engine_occupied(void)
 // Caller must hold s_cordic_platform.mutex;
 static esp_err_t cordic_internal_new_engine(const cordic_engine_config_t *cordic_cfg, cordic_engine_handle_t *ret_engine)
 {
+    esp_err_t ret = ESP_OK;
     cordic_clock_source_t clk_src = cordic_cfg->clock_source ? cordic_cfg->clock_source : CORDIC_CLK_SRC_DEFAULT;
 
     cordic_engine_handle_t engine = (cordic_engine_handle_t)heap_caps_calloc(1, sizeof(cordic_engine_t), CORDIC_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(engine, ESP_ERR_NO_MEM, TAG, "no memory for cordic engine");
+
+    // Hold the functional clock via clk_tree.
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "clock source enable failed");
+    engine->clk_src = clk_src;
 
     cordic_hal_init(&engine->hal);
     cordic_ll_enable_bus_clock(true);
@@ -63,17 +69,27 @@ static esp_err_t cordic_internal_new_engine(const cordic_engine_config_t *cordic
     s_cordic_platform.engine_handle = engine;
     *ret_engine = engine;
     return ESP_OK;
+
+err:
+    heap_caps_free(engine);
+    return ret;
 }
 
 // Tears the hardware down and frees the engine. Does not touch the reference count.
 // Caller must hold s_cordic_platform.mutex;
 static void cordic_internal_del_engine(cordic_engine_handle_t engine)
 {
+    cordic_clock_source_t clk_src = engine->clk_src;
+
     cordic_ll_enable_clock(false);
     cordic_ll_enable_bus_clock(false);
     cordic_hal_deinit(&engine->hal);
     s_cordic_platform.engine_handle = NULL;
     heap_caps_free(engine);
+
+    if (clk_src) {
+        esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    }
 }
 
 // Deprecated exclusive create. Pairs with cordic_delete_engine(). Mutually exclusive with
