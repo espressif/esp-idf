@@ -2932,8 +2932,12 @@ TEST_CASE("writing the identical content does not write or erase", "[nvs]")
     CHECK(NVSPartitionTestHelper::get_read_ops()  != 0);
 
     // Test writing a multi-page blob, then changing it
+    // The content must not be uniform: with every byte equal, each chunk's data is identical to the
+    // start of the blob, which would hide a chunk being compared against the wrong part of it.
     uint8_t blob[nvs::Page::CHUNK_MAX_SIZE * 3] = {0};
-    memset(blob, 1, sizeof(blob));
+    for (size_t i = 0; i < sizeof(blob); ++i) {
+        blob[i] = static_cast<uint8_t>(i * 31 + (i >> 8));
+    }
     nvs_set_blob(misc_handle, "test_blob", blob, sizeof(blob));
     NVSPartitionTestHelper::clear_stats();
     nvs_set_blob(misc_handle, "test_blob", blob, sizeof(blob));
