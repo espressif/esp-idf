@@ -9,7 +9,7 @@ This example creates GATT server demonstrating standard Proximity Sensor profile
 
 It advertises support for the Link Loss service (0x1803) as primary service UUID.
 
-The `ble_prox_prph_task` start alerting to application as soon as a write command is received from central regarding exceeding path loss. The alert stops when path loss is below low_threshold value.
+The Alert Level characteristic (UUID 0x2A06) of the Immediate Alert service carries an alert level: `0` = No Alert, `1` = Mild Alert, `2` = High Alert. The central derives that level from the path loss it calculates and writes it to the peripheral, which logs every write as `Alert level = <level>`. `ble_prox_prph_task` keeps alerting the application for as long as the level is non-zero, and stops once the central writes `0`.
  
 It uses ESP32's Bluetooth controller and NimBLE stack based BLE host
 
@@ -58,29 +58,13 @@ I (446) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_
 I (456) NimBLE: 
 
 I (456) main_task: Returned from app_main()
-I (4546) NimBLE: connection established; status=0
+I (611) NimBLE: connection established; status=0
 
-I (3576) NimBLE: Path loss = -112
-I (8576) NimBLE: Path loss = -112
-I (13626) NimBLE: Path loss = -120
-I (18626) NimBLE: Path loss = -53
-I (18626) NimBLE: Path loss exceeded threshold, starting alert for device with conn_handle 1
-I (19406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (20406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (21406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (22406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (23406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (23676) NimBLE: Path loss = -90
-I (24406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (25406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (26406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (27406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (28406) NimBLE: Path loss increased for device connected with conn_handle 1
-I (28676) NimBLE: Path loss = -119
-I (28676) NimBLE: Path loss lower than threshold, stopping alert for device with conn_handle 1
-I (33676) NimBLE: Path loss = -119
-I (38726) NimBLE: Path loss = -119
-I (43726) NimBLE: Path loss = -119
+I (4461) NimBLE: Alert level = 0
+I (5461) NimBLE: Alert level = 0
+I (7511) NimBLE: Alert level = 0
+I (8511) NimBLE: Alert level = 0
+I (9511) NimBLE: Alert level = 0
 
 ```
 
