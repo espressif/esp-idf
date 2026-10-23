@@ -233,7 +233,7 @@ config SOC_PMU_SUPPORTED
 
 config SOC_PMU_PVT_SUPPORTED
     bool
-    default y
+    default n
 
 config SOC_RTC_TIMER_SUPPORTED
     bool
