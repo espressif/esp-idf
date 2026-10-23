@@ -1,9 +1,11 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import socket
-from io import TextIOWrapper
+import sys
+from pathlib import Path
 from typing import Any
+from typing import TextIO
 
 from vcd_dumper import VCDDumper
 
@@ -14,7 +16,7 @@ def _get_local_host_ip() -> Any:
     return s.getsockname()[0]
 
 
-def _tcp_server(port:int, chan_num:int, vcd_out_io:TextIOWrapper) -> None:
+def _tcp_server(port: int, chan_num: int, vcd_out_io: TextIO | None) -> None:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     host = _get_local_host_ip()
@@ -35,7 +37,7 @@ def _tcp_server(port:int, chan_num:int, vcd_out_io:TextIOWrapper) -> None:
             if temp == b'':
                 break
             print(f'Data received {len(temp)} bytes')
-    except socket.timeout:
+    except TimeoutError:
         print('Done!')
     finally:
         print(f'Received {len(recv_data)} bytes in total')
@@ -53,13 +55,24 @@ def tcp_server_main() -> None:
     parser = argparse.ArgumentParser(description='Dump raw data to VCD format')
     parser.add_argument('-n', '--chan-num', type=int, help='The channel number that probed')
     parser.add_argument('-p', '--port', type=int, help='The TCP port', default=8888)
-    parser.add_argument('-o', '--output-file', type=argparse.FileType('w'), help='The output vcd file name (optional)', default=None)
+    parser.add_argument('-o', '--output-file', type=Path, help='The output vcd file name (optional)', default=None)
 
     # Parse args
     args = parser.parse_args()
+    if (
+        args.output_file is not None
+        and str(args.output_file) != '-'
+        and args.output_file.exists()
+        and not args.output_file.is_file()
+    ):
+        parser.error(f'argument -o/--output-file: {args.output_file} is not a file')
     chan_num = args.chan_num
     port = args.port
-    vcd_out_io = args.output_file
+    # the output file is closed by VCDDumper.close_vcd_file
+    # '-' means standard output
+    vcd_out_io = None
+    if args.output_file is not None:
+        vcd_out_io = sys.stdout if str(args.output_file) == '-' else open(args.output_file, 'w', encoding='utf-8')
     if chan_num <= 0:
         raise ValueError('Invalid channel number')
 
