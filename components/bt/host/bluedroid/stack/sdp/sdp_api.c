@@ -123,8 +123,18 @@ BOOLEAN SDP_CancelServiceSearch (tSDP_DISCOVERY_DB *p_db)
         return (FALSE);
     }
 
-    sdp_disconnect (p_ccb, SDP_CANCEL);
+    /*
+     * sdp_disconnect() invokes the discovery callback synchronously while the
+     * L2CAP connection is still being established. The callback can release
+     * the discovery DB and call this function again. Mark the CCB before the
+     * callback so that the nested cancellation is a no-op.
+     */
+    if (p_ccb->disc_state == SDP_DISC_WAIT_CANCEL) {
+        return (TRUE);
+    }
+
     p_ccb->disc_state = SDP_DISC_WAIT_CANCEL;
+    sdp_disconnect (p_ccb, SDP_CANCEL);
     return (TRUE);
 #endif
     return (FALSE);
