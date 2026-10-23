@@ -422,7 +422,18 @@ otError otPlatGetInfraIfLinkLayerAddress(otInstance *aInstance, uint32_t aIfInde
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to get LL address, error: Invalid If index");
         return OT_ERROR_FAILED;
     } else {
-        esp_netif_get_mac(backbone_netif, aInfraIfLinkLayerAddress->mAddress);
+        esp_err_t error = esp_netif_get_mac(backbone_netif, aInfraIfLinkLayerAddress->mAddress);
+
+        if (error == ESP_ERR_NOT_SUPPORTED) {
+            ESP_LOGD(OT_PLAT_LOG_TAG, "Backbone has no link-layer address, omitting SLLAO");
+            return OT_ERROR_FAILED;
+        }
+
+        if (error != ESP_OK) {
+            ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to get LL address, error: %s", esp_err_to_name(error));
+            return OT_ERROR_FAILED;
+        }
+
         aInfraIfLinkLayerAddress->mLength = 6;
         return OT_ERROR_NONE;
     }
