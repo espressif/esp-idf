@@ -17,7 +17,7 @@ BR/EDR 控制器功能配置
 
 .. note::
 
-   使用 ESP-Bluedroid 且使能 HFP 时，若 :ref:`CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN` 为 ``0``，系统会将实际 SCO/eSCO 连接数设为 ``1``。详见 :component_file:`bt/porting_btdm/controller/bredr/include/bredr_user_cfg.h`。
+    使用 ESP-Bluedroid 且使能 HFP 时，:ref:`CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN` 将使用 ``1`` 作为默认值，范围将限定为  ``1`` 到 ``3``，这是因为 HFP 需求至少一路 SCO/eSCO 连接。
 
 在 BR/EDR 已使能（``BR/EDR Only`` 或 ``Dual Mode``）时，Inquiry、ACL 建链、配对、加密、Sniff、角色切换、Scan/Page、AFH、EIR 及信息查询等标准命令无需下方可选功能选项即可使用。
 
