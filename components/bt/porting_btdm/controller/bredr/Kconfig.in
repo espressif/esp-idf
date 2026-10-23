@@ -326,6 +326,16 @@ menu "TX Power Level settings"
         range -24 20
         help
             BR/EDR transmission power level for Synchronization Train.
+
+    config BT_CTRL_BR_EDR_DYNAMIC_TX_PWR_EN
+        bool "Enable BR/EDR dynamic TX power configuration API"
+        depends on !BT_CLASSIC_ENABLE_POWER_CTRL_VSC
+        default n
+        help
+            Enable BR/EDR dynamic TX power configuration APIs
+            (esp_bredr_acl_dft_tx_power_range_set and
+            esp_bredr_acl_dft_tx_power_range_get).
+            The APIs take power values in dBm. The chip-supported range is reported by esp_bredr_tx_power_range_get.
 endmenu
 
 menu "BR/EDR Vendor Specific HCI Commands and Events"

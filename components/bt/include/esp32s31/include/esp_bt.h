@@ -253,6 +253,53 @@ esp_err_t esp_bt_controller_disable(void);
  *      - ESP_ERR_NOT_SUPPORTED: not supported
  */
 esp_err_t esp_bredr_tx_power_range_get(int8_t *min_power, int8_t *max_power);
+
+#if UC_BR_EDR_DYNAMIC_TX_PWR_EN
+/**
+ * @brief  Set the default BR/EDR ACL TX power range, in dBm
+ *
+ * Configures the default ACL TX power range inherited by subsequently created ACL connections.
+ * Existing connections are not affected.
+ *
+ * @note
+ *      1. Please call this function after `esp_bt_controller_init()` or `esp_bt_controller_enable()`.
+ *      2. This API requires `BT_CTRL_BR_EDR_DYNAMIC_TX_PWR_EN` to be enabled in menuconfig.
+ *         That option is not available when `BT_CLASSIC_ENABLE_POWER_CTRL_VSC` is enabled.
+ *      3. The chip-supported range is reported by `esp_bredr_tx_power_range_get()`. `min_power` and
+ *         `max_power` must satisfy `min_power <= max_power` and fall within that range.
+ *      4. `HCI_Reset` does not restore the previous default ACL TX power range. The range set by
+ *         this API is retained.
+ *
+ * @param[in]  min_power The minimum default ACL TX power, in dBm
+ * @param[in]  max_power The maximum default ACL TX power, in dBm
+ *
+ * @return
+ *      - ESP_OK: Success
+ *      - ESP_ERR_INVALID_ARG: Invalid argument (e.g. min > max or outside the supported range)
+ *      - ESP_ERR_INVALID_STATE: Controller is neither initialized nor enabled
+ *      - ESP_FAIL: Configure failed
+ */
+esp_err_t esp_bredr_acl_dft_tx_power_range_set(int8_t min_power, int8_t max_power);
+
+/**
+ * @brief  Get the current default BR/EDR ACL TX power range, in dBm
+ *
+ * @note
+ *      1. This API requires `BT_CTRL_BR_EDR_DYNAMIC_TX_PWR_EN` to be enabled in menuconfig.
+ *         That option is not available when `BT_CLASSIC_ENABLE_POWER_CTRL_VSC` is enabled.
+ *      2. The chip-supported range can be obtained with `esp_bredr_tx_power_range_get()`.
+ *
+ * @param[out]  min_power Pointer to store the minimum power in dBm; cannot be NULL
+ * @param[out]  max_power Pointer to store the maximum power in dBm; cannot be NULL
+ *
+ * @return
+ *      - ESP_OK: Success
+ *      - ESP_ERR_INVALID_ARG: Invalid argument (NULL pointer)
+ *      - ESP_ERR_INVALID_STATE: Controller is neither initialized nor enabled
+ *      - ESP_FAIL: Read failed
+ */
+esp_err_t esp_bredr_acl_dft_tx_power_range_get(int8_t *min_power, int8_t *max_power);
+#endif // UC_BR_EDR_DYNAMIC_TX_PWR_EN
 #endif // (UC_BT_CTRL_BR_EDR_IS_ENABLE)
 
 /** @brief esp_vhci_host_callback
