@@ -7,8 +7,11 @@
 import argparse
 import os
 import re
+import sys
 import textwrap
 import typing
+from contextlib import nullcontext
+from pathlib import Path
 
 UTIL = os.path.basename(__file__)
 
@@ -141,9 +144,7 @@ def main() -> None:
     )
 
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument(
-        '-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=argparse.FileType('r')
-    )
+    parser.add_argument('-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=Path)
     parser.add_argument(
         '-o', '--outputfile', required=True, help='destination .h and .ld files name prefix', metavar='OUTFILE'
     )
@@ -158,8 +159,23 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    with open(args.outputfile + '.h', 'w') as f_h, open(args.outputfile + '.ld', 'w') as f_ld:
-        gen_ld_h_from_sym(args.symfile, f_ld, f_h, int(args.base_addr, 0), args.prefix, args.target)
+    # '-' means standard input
+    symfile_ctx: typing.ContextManager[typing.TextIO]
+    if str(args.symfile) == '-':
+        symfile_ctx = nullcontext(sys.stdin)
+    else:
+        if not args.symfile.exists():
+            parser.error(f'argument -s/--symfile: {args.symfile} does not exist')
+        elif not args.symfile.is_file():
+            parser.error(f'argument -s/--symfile: {args.symfile} is not a file')
+        symfile_ctx = open(args.symfile)
+
+    with (
+        symfile_ctx as f_sym,
+        open(args.outputfile + '.h', 'w') as f_h,
+        open(args.outputfile + '.ld', 'w') as f_ld,
+    ):
+        gen_ld_h_from_sym(f_sym, f_ld, f_h, int(args.base_addr, 0), args.prefix, args.target)
 
 
 if __name__ == '__main__':
