@@ -157,7 +157,7 @@ ble_prox_cent_read_write_subscribe(const struct peer *peer)
     }
 
     /* Alert Level: 0=No Alert, 1=Mild Alert, 2=High Alert (BLE SIG LLS spec) */
-    static const uint8_t alert_level = 1;
+    static const uint8_t alert_level = BLE_SVC_PROX_ALERT_MILD;
     rc = ble_gattc_write_flat(peer->conn_handle, chr->chr.val_handle,
                               &alert_level, sizeof(alert_level),
                               ble_prox_cent_on_write, NULL);
@@ -732,16 +732,16 @@ ble_prox_cent_path_loss_task(void *pvParameters)
 
                 if ((conn_peer[i].val_handle != 0) &&
                         (path_loss > high_threshold || path_loss < low_threshold)) {
-
-                    if (path_loss < low_threshold) {
-                        path_loss = 0;
-                    }
-
 #if MYNEWT_VAL(BLE_GATTC)
-                    /* Alert Level is a single-octet characteristic (UUID 0x2A06). */
-                    uint8_t path_loss_val = (uint8_t)path_loss;
+                    /* Alert Level is a single-octet characteristic (UUID 0x2A06).
+                     * The peer rejects any value outside 0..2, so send the alert
+                     * level the path loss maps to, not the path loss itself.
+                     */
+                    uint8_t alert_level = (path_loss > high_threshold) ?
+                                          BLE_SVC_PROX_ALERT_HIGH :
+                                          BLE_SVC_PROX_ALERT_NONE;
                     rc = ble_gattc_write_no_rsp_flat(i, conn_peer[i].val_handle,
-                                                     &path_loss_val, sizeof(path_loss_val));
+                                                     &alert_level, sizeof(alert_level));
                     if (rc != 0) {
                         MODLOG_DFLT(ERROR, "Error: Failed to write characteristic; rc=%d\n",
                                     rc);
