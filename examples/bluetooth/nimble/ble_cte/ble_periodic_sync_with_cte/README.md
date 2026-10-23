@@ -11,7 +11,7 @@ It uses the Bluetooth controller and the Bluetooth LE host based on the NimBLE s
 
 This example aims to understand how to enable CTE reception in BLE periodic synchronization advertisements and how to obtain CTE IQ reports.
 
-To test this demonstration, use the specified extended advertisement named "Periodic ADV with CTE" as the periodic advertiser.
+To test this demonstration, use the specified extended advertisement named "CTE_Periodic_Adv" as the periodic advertiser.
 
 
 ## How to Use Example
