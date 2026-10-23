@@ -4,10 +4,8 @@ api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
 api-guides/lwip.rst
 api-guides/wifi.rst
-api-guides/usb-otg-console.rst
 api-guides/esp-wifi-mesh.rst
 api-guides/inc/external-ram-esp32-notes.rst
-api-guides/dfu.rst
 api-guides/wifi-security.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/network/esp_eth.rst
