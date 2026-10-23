@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "soc/soc_caps.h"
 #include "hal/touch_sens_hal.h"
 #include "driver/touch_sens_types.h"
+#include "driver/touch_version_types.h"
 #include "esp_memory_utils.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
@@ -30,6 +31,7 @@ extern "C" {
 /* Helper macros */
 #define TOUCH_NULL_POINTER_CHECK(p)     ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
 #define TOUCH_NULL_POINTER_CHECK_ISR(p) ESP_RETURN_ON_FALSE_ISR((p), ESP_ERR_INVALID_ARG, TAG, "input parameter '"#p"' is NULL")
+#define TOUCH_IS_CHAN_ID_VALID(id)      (((uint32_t)(id) - TOUCH_MIN_CHAN_ID) < TOUCH_TOTAL_CHAN_NUM)
 #define FOR_EACH_TOUCH_CHANNEL(i)       for (int i = 0; i < TOUCH_TOTAL_CHAN_NUM; i++)
 #define TOUCH_IRAM_CHECK(cb)            (!(cb) || esp_ptr_in_iram(cb))
 
@@ -86,6 +88,9 @@ extern portMUX_TYPE g_touch_spinlock;
 struct touch_sensor_s {
     touch_channel_handle_t  ch[SOC_TOUCH_SENSOR_NUM];   /*!< Touch sensor channel handles, will be NULL if the channel is not registered */
     uint32_t                chan_mask;                  /*!< Enabled channel mask, corresponding bit will be set if the channel is registered */
+#if SOC_TOUCH_SENSOR_VERSION > 1
+    uint32_t                active_status_mask;         /*!< Last active-channel mask */
+#endif
     uint32_t                src_freq_hz;                /*!< Source clock frequency */
     uint32_t                interval_freq_hz;           /*!< Frequency of the interval clock */
     intr_handle_t           intr_handle;                /*!< Interrupt handle */
@@ -171,6 +176,22 @@ void touch_priv_enable_module(bool enable);
  * @param[in] arg       The input argument
  */
 void touch_priv_default_intr_handler(void *arg);
+
+#if SOC_TOUCH_SENSOR_VERSION > 1
+/**
+ * @brief Invoke a per-channel callback for each channel set in `chan_mask`
+ *
+ * @param[in] sens_handle   Touch sensor controller handle
+ * @param[in] data          Event data. `chan` and `chan_id` are filled for each channel.
+ *                          `status_mask` is left unchanged.
+ * @param[in] chan_mask     Channels to report. Bit n is channel n.
+ * @param[in] cb            Active or inactive callback.
+ * @return Whether a callback woke a higher priority task
+ */
+bool touch_priv_invoke_state_callbacks(touch_sensor_handle_t sens_handle, touch_base_event_data_t *data,
+                                       uint32_t chan_mask,
+                                       bool (*cb)(touch_sensor_handle_t, const touch_base_event_data_t *, void *));
+#endif
 
 /**
  * @brief Touch sensor controller configuration interface
