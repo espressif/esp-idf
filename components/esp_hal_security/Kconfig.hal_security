@@ -7,3 +7,20 @@ config HAL_ECDSA_GEN_SIG_CM
         This countermeasure masks the real ECDSA sign operation
         under dummy sign operations to add randomness in the generated power signature.
         This countermeasure is only necessary for ESP32-H2 < v1.2.
+
+config HAL_ECDSA_ALLOW_ESP32P4_PRE_ECO5
+    bool "Allow ECDSA peripheral on ESP32-P4 revisions before v3.0 (insecure)"
+    depends on IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
+    default n
+    help
+        By default the ESP32-P4 hardware ECDSA peripheral is disabled on chip revisions
+        before v3.0 (eco5), because those revisions are vulnerable to a side-channel
+        attack that can extract the private key.
+
+        Enable this option to use the hardware ECDSA peripheral on these revisions anyway.
+        Only do so if the application does not need ECDSA keys to resist physical or
+        side-channel attacks.
+
+        Note that the SECP384R1 curve is not supported by the ECDSA peripheral on these
+        revisions. SECP384R1 signature verification falls back to software, and hardware
+        signing with SECP384R1 keys is rejected.

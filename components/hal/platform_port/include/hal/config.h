@@ -50,6 +50,12 @@ extern "C" {
 #define HAL_CONFIG_ECDSA_GEN_SIG_CM CONFIG_HAL_ECDSA_GEN_SIG_CM
 
 /**
+ * @brief Enable this to allow the ECDSA peripheral on ESP32-P4 revisions before v3.0,
+ *        despite their known side-channel vulnerability.
+ */
+#define HAL_CONFIG_ECDSA_ALLOW_ESP32P4_PRE_ECO5 CONFIG_HAL_ECDSA_ALLOW_ESP32P4_PRE_ECO5
+
+/**
  * @brief The minimum supported chip revision.
  */
 #define HAL_CONFIG_CHIP_SUPPORT_MIN_REV CONFIG_ESP_REV_MIN_FULL
