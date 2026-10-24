@@ -341,6 +341,7 @@ bool esp_wifi_ap_is_sta_sae_reauth_node(uint8_t *mac);
 uint8_t* esp_wifi_sta_get_sae_identifier_internal(void);
 bool esp_wifi_eb_tx_status_success_internal(void *eb);
 uint8_t* esp_wifi_sta_get_ie(u8 *bssid, uint8_t elem_id);
+uint8_t esp_wifi_sta_get_bss_channel_internal(uint8_t *bssid);
 esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 void esp_wifi_enable_sae_pk_only_mode_internal(void);
 uint8_t esp_wifi_ap_get_transition_disable_internal(void);
