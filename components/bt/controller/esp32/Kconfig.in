@@ -243,13 +243,60 @@ menu "HCI UART(H4) Options"
         help
             Uart number for HCI. The available uart is UART1 and UART2.
 
-    config BTDM_CTRL_HCI_UART_BAUDRATE
-        int "UART Baudrate for HCI"
+    choice BTDM_CTRL_HCI_UART_BAUDRATE_CHOICE
+        prompt "UART Baudrate for HCI"
         depends on BTDM_CTRL_HCI_MODE_UART_H4
-        range 115200 921600
-        default 921600
+        default BTDM_CTRL_HCI_UART_BAUDRATE_921600
         help
-            UART Baudrate for HCI. Please use standard baudrate.
+            UART Baudrate for HCI.
+
+        config BTDM_CTRL_HCI_UART_BAUDRATE_115200
+            bool "115200 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_230400
+            bool "230400 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_460800
+            bool "460800 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_500000
+            bool "500000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_576000
+            bool "576000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_921600
+            bool "921600 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_1000000
+            bool "1000000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_1152000
+            bool "1152000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_1500000
+            bool "1500000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_2000000
+            bool "2000000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_2500000
+            bool "2500000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_3000000
+            bool "3000000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_3500000
+            bool "3500000 bps"
+        config BTDM_CTRL_HCI_UART_BAUDRATE_4000000
+            bool "4000000 bps"
+    endchoice
+
+    config BTDM_CTRL_HCI_UART_BAUDRATE
+        int
+        depends on BTDM_CTRL_HCI_MODE_UART_H4
+        default 115200 if BTDM_CTRL_HCI_UART_BAUDRATE_115200
+        default 230400 if BTDM_CTRL_HCI_UART_BAUDRATE_230400
+        default 460800 if BTDM_CTRL_HCI_UART_BAUDRATE_460800
+        default 500000 if BTDM_CTRL_HCI_UART_BAUDRATE_500000
+        default 576000 if BTDM_CTRL_HCI_UART_BAUDRATE_576000
+        default 921600 if BTDM_CTRL_HCI_UART_BAUDRATE_921600
+        default 1000000 if BTDM_CTRL_HCI_UART_BAUDRATE_1000000
+        default 1152000 if BTDM_CTRL_HCI_UART_BAUDRATE_1152000
+        default 1500000 if BTDM_CTRL_HCI_UART_BAUDRATE_1500000
+        default 2000000 if BTDM_CTRL_HCI_UART_BAUDRATE_2000000
+        default 2500000 if BTDM_CTRL_HCI_UART_BAUDRATE_2500000
+        default 3000000 if BTDM_CTRL_HCI_UART_BAUDRATE_3000000
+        default 3500000 if BTDM_CTRL_HCI_UART_BAUDRATE_3500000
+        default 4000000 if BTDM_CTRL_HCI_UART_BAUDRATE_4000000
 
     config BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
         bool "Enable UART flow control"
