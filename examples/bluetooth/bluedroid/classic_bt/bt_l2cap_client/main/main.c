@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <inttypes.h>
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -49,7 +48,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param);
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 {
     if (bda == NULL || str == NULL || size < 18) {
-        return NULL;
+        return "";
     }
 
     sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
@@ -101,7 +100,7 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
     esp_bt_uuid_t uuid = {0};
 
     /* handle the discovery results */
-    ESP_LOGI(L2CAP_TAG, "Scanned device: %s", bda2str(param->disc_res.bda, bda_str, 18));
+    ESP_LOGI(L2CAP_TAG, "Scanned device: %s", bda2str(param->disc_res.bda, bda_str, sizeof(bda_str)));
     for (int i = 0; i < param->disc_res.num_prop; i++) {
         p = param->disc_res.prop + i;
         switch (p->type) {
@@ -126,7 +125,11 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
     if (eir) {
         get_name_from_eir(eir, peer_bdname, NULL);
         if (strcmp((char *)peer_bdname, remote_device_name) == 0) {
-            ESP_LOGI(L2CAP_TAG, "Found a target device, address %s, name %s", bda_str, peer_bdname);
+            if (strlen((char *)peer_bdname) > 0) {
+                ESP_LOGI(L2CAP_TAG, "Found a target device, address %s, name %s", bda_str, peer_bdname);
+            } else {
+                ESP_LOGI(L2CAP_TAG, "Found a target device, address %s, name [unknown]", bda_str);
+            }
             ESP_LOGI(L2CAP_TAG, "Cancel device discovery ...");
             esp_bt_gap_cancel_discovery();
 
@@ -216,7 +219,8 @@ static void l2cap_write_handle(void * param)
     l2cap_data = malloc(L2CAP_DATA_LEN);
     if (!l2cap_data) {
         ESP_LOGE(L2CAP_TAG, "malloc l2cap_data failed, fd:%d", fd);
-        goto done;
+        l2cap_wr_task_shut_down();
+        return;
     }
 
     for (i = 0; i < L2CAP_DATA_LEN; ++i) {
@@ -233,13 +237,13 @@ static void l2cap_write_handle(void * param)
             break;
         } else if (size == 0) {
             /*write fail due to ringbuf is full, retry after 500 ms*/
-            vTaskDelay(500 / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(500));
         } else {
             ESP_LOGI(L2CAP_TAG, "fd = %d  data_len = %d", fd, size);
-            vTaskDelay(50 / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(50));
         }
     } while (1);
-done:
+
     if (l2cap_data) {
         free(l2cap_data);
     }
