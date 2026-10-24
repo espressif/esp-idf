@@ -66,6 +66,31 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down);
 void mspi_timing_flash_tuning(void);
 
 /**
+ * @brief Select the psram sampling mode that the timing tuning applies to
+ *
+ * The core clock is shared with the flash and is settled before the psram chip is probed, but the
+ * tuning itself has to drive the chip in the line mode it was actually found in. Callers that build
+ * in more than one psram line mode must call this after probing and before `mspi_timing_psram_tuning`.
+ *
+ * @param is_dtr  true for a DTR sampled chip (octal / hex), false for an STR sampled one (quad)
+ */
+void mspi_timing_psram_set_dtr_mode(bool is_dtr);
+
+/**
+ * @brief Get the psram sampling mode selected by `mspi_timing_psram_set_dtr_mode`
+ *
+ * @return true if the psram is sampled in DTR mode
+ */
+bool mspi_timing_psram_is_dtr_mode(void);
+
+/**
+ * @brief Whether the psram sampling mode selected by `mspi_timing_psram_set_dtr_mode` needs tuning
+ *
+ * @return true if `mspi_timing_psram_tuning` will do any work
+ */
+bool mspi_timing_psram_needs_tuning(void);
+
+/**
  * @brief Tune MSPI psram timing to make it work under high frequency
  */
 void mspi_timing_psram_tuning(void);

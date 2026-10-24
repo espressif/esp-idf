@@ -1,18 +1,18 @@
 set(srcs)
 
-if(CONFIG_SPIRAM_MODE_QUAD)
+if(CONFIG_SPIRAM_MODE_QUAD_SUPPORTED)
     if(NOT ${target} STREQUAL "esp32" AND NOT ${target} STREQUAL "esp32s2")
         list(APPEND srcs "esp_psram_impl_ap_quad.c")
     endif()
 endif()
 
-if(CONFIG_SPIRAM_MODE_OCT)
+if(CONFIG_SPIRAM_MODE_OCT_SUPPORTED)
     if(NOT ${target} STREQUAL "esp32s3")
         list(APPEND srcs "esp_psram_impl_ap_oct.c")
     endif()
 endif()
 
-if(CONFIG_SPIRAM_MODE_HEX)
+if(CONFIG_SPIRAM_MODE_HEX_SUPPORTED)
     list(APPEND srcs "esp_psram_impl_ap_hex.c")
 endif()
 
