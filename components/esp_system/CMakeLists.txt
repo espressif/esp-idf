@@ -276,7 +276,7 @@ if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
 endif()
 
-if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME OR (CONFIG_COMPILER_CXX_EXCEPTIONS AND NOT CONFIG_IDF_TARGET_LINUX))
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--eh-frame-hdr")
 endif()
 
