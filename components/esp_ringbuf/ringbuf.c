@@ -16,11 +16,6 @@
 
 // ------------------------------------------------- Macros and Types --------------------------------------------------
 
-//32-bit alignment macros
-#define rbALIGN_MASK (0x03)
-#define rbALIGN_SIZE( xSize )       ( ( xSize + rbALIGN_MASK ) & ~rbALIGN_MASK )
-#define rbCHECK_ALIGNED( pvPtr )    ( ( ( UBaseType_t ) ( pvPtr ) & rbALIGN_MASK ) == 0 )
-
 //Ring buffer flags
 #define rbALLOW_SPLIT_FLAG          ( ( UBaseType_t ) 1 )   //The ring buffer allows items to be split
 #define rbBYTE_BUFFER_FLAG          ( ( UBaseType_t ) 2 )   //The ring buffer is a byte buffer
@@ -35,10 +30,16 @@
 #define rbITEM_WRITTEN_FLAG         ( ( UBaseType_t ) 8 )   //Item has been written to by the application, thus can be read
 
 typedef struct {
-    //This size of this structure must be 32-bit aligned
     size_t xItemLen;
     UBaseType_t uxItemFlags;
 } ItemHeader_t;
+
+//Item alignment: every item and its header start aligned for ItemHeader_t. That is 32-bit on the
+//32-bit targets, and wider where size_t is (e.g. the 64-bit linux target), so headers are never
+//accessed misaligned.
+#define rbALIGN_MASK                ( _Alignof( ItemHeader_t ) - 1 )
+#define rbALIGN_SIZE( xSize )       ( ( xSize + rbALIGN_MASK ) & ~rbALIGN_MASK )
+#define rbCHECK_ALIGNED( pvPtr )    ( ( ( uintptr_t ) ( pvPtr ) & rbALIGN_MASK ) == 0 )
 
 #define rbHEADER_SIZE     sizeof(ItemHeader_t)
 typedef struct RingbufferDefinition Ringbuffer_t;
@@ -1020,7 +1021,7 @@ RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
         return NULL;
     }
     if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
-        //No-split/allow-split buffer sizes must be 32-bit aligned and large enough to avoid underflowing xMaxItemSize
+        //No-split/allow-split buffer sizes must be aligned for the item header and large enough to avoid underflowing xMaxItemSize
         configASSERT(rbCHECK_ALIGNED(xBufferSize));
         if (!rbCHECK_ALIGNED(xBufferSize) || xBufferSize < rbHEADER_SIZE * 2) {
             return NULL;

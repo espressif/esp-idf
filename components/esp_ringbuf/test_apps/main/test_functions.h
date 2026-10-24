@@ -11,7 +11,10 @@
 #define SMALL_ITEM_SIZE             8
 #define ITEM_HDR_SIZE               (sizeof(size_t) + sizeof(UBaseType_t))
 #define MEDIUM_ITEM_SIZE            ((3 * SMALL_ITEM_SIZE) >> 1)  //12 bytes
-#define BUFFER_SIZE                 4 * (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE)     //4Byte aligned size
+//Items occupy their size rounded up to the alignment of their header (32-bit on 32-bit targets)
+#define ITEM_ALIGN                  (sizeof(size_t) > sizeof(UBaseType_t) ? sizeof(size_t) : sizeof(UBaseType_t))
+#define ITEM_SPACE(size)            ((((size) + ITEM_ALIGN - 1) / ITEM_ALIGN) * ITEM_ALIGN)
+#define BUFFER_SIZE                 4 * (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE))     //Aligned size
 
 #define CONT_DATA_LEN                   continuous_test_string_len()
 //32-bit aligned size that guarantees a wrap around at some point
