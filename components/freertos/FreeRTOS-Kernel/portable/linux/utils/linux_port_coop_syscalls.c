@@ -647,11 +647,20 @@ int nanosleep(const struct timespec *req, struct timespec *rem)
     if (!linux_port_in_freertos_task()) {
         return real_nanosleep(req, rem);
     }
-    long ms = req->tv_sec * 1000 + (req->tv_nsec + 999999) / 1000000;
-    if (ms <= 0) {
-        ms = 1;
+    if (req->tv_sec < 0 || req->tv_nsec < 0 || req->tv_nsec >= 1000000000) {
+        errno = EINVAL;
+        return -1;
     }
-    vTaskDelay(ms);
+    if (req->tv_sec == 0 && req->tv_nsec == 0) {
+        taskYIELD();
+    } else {
+        /* Whole ticks, rounded up, plus one for the tick already under way, so the sleep is
+         * never shorter than asked. */
+        uint64_t ticks = (uint64_t)req->tv_sec * configTICK_RATE_HZ
+                         + ((uint64_t)req->tv_nsec * configTICK_RATE_HZ + 999999999) / 1000000000
+                         + 1;
+        vTaskDelay(ticks < portMAX_DELAY ? (TickType_t)ticks : portMAX_DELAY);
+    }
     if (rem) {
         rem->tv_sec = 0;
         rem->tv_nsec = 0;
@@ -661,14 +670,21 @@ int nanosleep(const struct timespec *req, struct timespec *rem)
 
 unsigned int sleep(unsigned int seconds)
 {
-    linux_coop_yield(seconds * 1000);
-    return 0;
+    struct timespec req = { .tv_sec = seconds };
+    struct timespec rem = { 0 };
+    if (nanosleep(&req, &rem) == 0) {
+        return 0;
+    }
+    return rem.tv_sec + (rem.tv_nsec > 0);
 }
 
 int usleep(useconds_t usec)
 {
-    linux_coop_yield(usec / 1000);
-    return 0;
+    struct timespec req = {
+        .tv_sec = usec / 1000000,
+        .tv_nsec = (long)(usec % 1000000) * 1000,
+    };
+    return nanosleep(&req, NULL);
 }
 
 int freertos_linux_coop_socket(int domain, int type, int protocol)
