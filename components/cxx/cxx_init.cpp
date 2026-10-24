@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,17 @@ extern "C" size_t __cxx_eh_arena_size_get(void)
     return 0;
 #endif
 }
+
+#if CONFIG_IDF_TOOLCHAIN_GCC && !CONFIG_COMPILER_CXX_STATIC_DESTRUCTORS
+/**
+ * Replaces the libc __cxa_atexit() so static destructors are not registered.
+ * Destructors of thread_local objects are registered by __cxa_thread_atexit() instead.
+ */
+extern "C" int __cxa_atexit(void (*)(void *), void *, void *)
+{
+    return 0;
+}
+#endif
 
 extern "C" void __esp_idf_pthread_rwlock_lazy_allocation(void)
 {
