@@ -38,6 +38,7 @@ typedef void (*cordic_get_result_func_t)(cordic_hal_context_t *hal, cordic_outpu
 
 struct cordic_engine_t {
     cordic_hal_context_t hal;                      // HAL context
+    cordic_clock_source_t clk_src;                 // Resolved functional clock source held via clk_tree
 };
 
 #ifdef __cplusplus
