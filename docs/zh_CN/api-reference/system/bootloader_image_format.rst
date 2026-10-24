@@ -68,6 +68,7 @@
  * ``version``：引导加载程序版本，参见 :menuitem:`CONFIG_BOOTLOADER_PROJECT_VER`
  * ``idf_ver``：IDF 版本。[#f1]_
  * ``date`` 和 ``time``：编译日期和时间
+ * ``partition_table_offset``：分区表偏移量（未记录时为 0），请参阅 :ref:`CONFIG_PARTITION_TABLE_OFFSET`
  * ``reserved2``：保留供 IDF 未来使用
 
 .. [#f1] 最大长度为 32 个字符，包括空终止符。

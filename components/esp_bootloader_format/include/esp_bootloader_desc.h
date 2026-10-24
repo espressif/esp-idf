@@ -29,7 +29,8 @@ typedef struct {
     uint32_t version;           /*!< Bootloader version */
     char idf_ver[32];           /*!< Version IDF */
     char date_time[24];         /*!< Compile date and time*/
-    uint8_t reserved2[16];      /*!< reserved for IDF */
+    uint32_t partition_table_offset; /*!< Partition table offset, 0 if not recorded */
+    uint8_t reserved2[12];      /*!< reserved for IDF */
 } esp_bootloader_desc_t;
 
 /** @cond */
