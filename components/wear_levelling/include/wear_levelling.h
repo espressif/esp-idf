@@ -36,6 +36,39 @@ typedef int32_t wl_handle_t;
 esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle);
 
 /**
+* @brief Mount WL for defined partition, but never write to flash
+*
+* Like wl_mount(), but it only mounts a partition that already holds a valid,
+* up-to-date WL instance and performs no writes. If the partition needs any
+* formatting, recovery, or version upgrade, it returns ESP_ERR_NOT_FOUND and
+* leaves the flash untouched. In that case wl_mount() can be used to recover
+* or (re)create the instance.
+*
+* @param partition that will be used for access
+* @param out_handle handle of the WL instance
+*
+* @return
+*       - ESP_OK, if a valid WL instance was found and mounted;
+*       - ESP_ERR_NOT_FOUND, if no valid up-to-date WL instance is present;
+*       - ESP_ERR_INVALID_ARG, if the arguments for WL configuration are not valid;
+*       - ESP_ERR_NO_MEM, if the WL allocation fails because of insufficient memory;
+*/
+esp_err_t wl_mount_no_format(const esp_partition_t *partition, wl_handle_t *out_handle);
+
+/**
+* @brief Check whether a partition holds a valid WL instance, without writing to flash
+*
+* @param partition that will be probed
+*
+* @return
+*       - ESP_OK, if a valid up-to-date WL instance is present on the partition;
+*       - ESP_ERR_NOT_FOUND, if no valid up-to-date WL instance is present;
+*       - ESP_ERR_INVALID_ARG, if the arguments for WL configuration are not valid;
+*       - ESP_ERR_NO_MEM, if the WL allocation fails because of insufficient memory;
+*/
+esp_err_t wl_probe(const esp_partition_t *partition);
+
+/**
 * @brief Unmount WL for defined partition
 *
 * @param handle WL partition handle
