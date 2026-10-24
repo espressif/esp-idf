@@ -627,6 +627,111 @@ uint32_t emac_hal_get_ts_resolution(emac_hal_context_t *hal)
 }
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
+#if SOC_IS(ESP32P4)
+bool IRAM_ATTR emac_hal_rx_needs_recovery(emac_hal_context_t *hal)
+{
+    return hal->ptp_regs->timestamp_ctrl.en_timestamp && hal->ptp_regs->timestamp_ctrl.en_ts4all &&
+           hal->dma_regs->dmastatus.recv_ovflow && hal->dma_regs->dmastatus.recv_proc_state == 3;
+}
+
+esp_err_t emac_hal_recover_rx(emac_hal_context_t *hal, uint32_t timeout_us, int64_t (*get_time_us)(void))
+{
+    if (hal->mac_regs->gmacconfig.rx || hal->mac_regs->gmacconfig.tx ||
+            hal->dma_regs->dmaoperation_mode.start_stop_rx || hal->dma_regs->dmaoperation_mode.start_stop_transmission_command ||
+            hal->ptp_regs->timestamp_ctrl.ts_initialize || hal->ptp_regs->timestamp_ctrl.ts_update ||
+            hal->ptp_regs->timestamp_ctrl.addend_reg_update || emac_hal_is_mii_busy(hal)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Save configuration only; status and command registers must not be replayed. */
+    volatile uint32_t *regs[] = {
+        &hal->mac_regs->gmacconfig.val,
+        &hal->mac_regs->gmacff.val,
+        &hal->mac_regs->emacgmiiaddr.val,
+        &hal->mac_regs->emacaddr0high.val,
+        &hal->mac_regs->emacaddr0low,
+        &hal->dma_regs->dmabusmode.val,
+        &hal->dma_regs->dmarintwdtimer.val,
+        &hal->ptp_regs->sub_sec_incre.val,
+        &hal->ptp_regs->timestamp_addend.val,
+        &hal->ptp_regs->tgt_seconds.val,
+        &hal->ptp_regs->tgt_nanosec.val,
+    };
+    uint32_t values[sizeof(regs) / sizeof(regs[0])];
+    for (unsigned i = 0; i < sizeof(regs) / sizeof(regs[0]); i++) {
+        values[i] = *regs[i];
+    }
+    uint32_t addr_high[EMAC_LL_MAX_MAC_ADDR_NUM];
+    uint32_t addr_low[EMAC_LL_MAX_MAC_ADDR_NUM];
+    for (unsigned i = 0; i < EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        addr_high[i] = hal->mac_regs->emacaddr[i].emacaddrhigh.val;
+        addr_low[i] = hal->mac_regs->emacaddr[i].emacaddrlow;
+    }
+    uint32_t ts_ctrl = hal->ptp_regs->timestamp_ctrl.val;
+    uint32_t dma_op_mode = hal->dma_regs->dmaoperation_mode.val & ~(1U << 20);
+    uint32_t flow_ctrl = hal->mac_regs->gmacfc.val & ~1U;
+    uint32_t int_mask = hal->mac_regs->emacintmask.val;
+    uint32_t pps_ctrl = hal->ptp_regs->pps_ctrl.val;
+    uint32_t seconds, seconds_after, seconds_high, nanoseconds;
+    int64_t start_us = get_time_us();
+    do {
+        seconds_high = hal->ptp_regs->sys_seconds_high.val;
+        emac_hal_ptp_get_sys_time(hal, &seconds, &nanoseconds);
+        seconds_after = emac_ll_get_ts_seconds_val(hal->ptp_regs);
+    } while (seconds != seconds_after || seconds_high != hal->ptp_regs->sys_seconds_high.val);
+
+    emac_hal_reset(hal);
+    while (!emac_hal_is_reset_done(hal)) {
+        if (get_time_us() - start_us >= timeout_us) {
+            return ESP_ERR_TIMEOUT;
+        }
+        esp_rom_delay_us(1);
+    }
+    emac_ll_disable_corresponding_emac_intr(hal->mac_regs, 0xFFFFFFFF);
+    for (unsigned i = 0; i < sizeof(regs) / sizeof(regs[0]); i++) {
+        *regs[i] = values[i];
+    }
+    for (unsigned i = 0; i < EMAC_LL_MAX_MAC_ADDR_NUM; i++) {
+        hal->mac_regs->emacaddr[i].emacaddrhigh.val = addr_high[i];
+        hal->mac_regs->emacaddr[i].emacaddrlow = addr_low[i];
+    }
+    hal->dma_regs->dmaoperation_mode.val = dma_op_mode;
+    hal->mac_regs->gmacfc.val = flow_ctrl;
+    hal->ptp_regs->timestamp_ctrl.val = ts_ctrl & ~(1U << 4);
+    if (!hal->ptp_regs->timestamp_ctrl.en_timestamp) {
+        hal->ptp_regs->pps_ctrl.val = pps_ctrl;
+        hal->ptp_regs->timestamp_ctrl.val = ts_ctrl;
+        hal->mac_regs->emacintmask.val = int_mask;
+        return ESP_OK;
+    }
+    if (emac_ll_get_ts_update_method(hal->ptp_regs) == ETH_PTP_UPDATE_METHOD_FINE) {
+        emac_ll_ts_addend_do_update(hal->ptp_regs);
+    }
+    uint32_t to = 0;
+    while (!emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
+        if (to++ >= EMAC_PTP_INIT_TIMEOUT_US) {
+            return ESP_ERR_TIMEOUT;
+        }
+        esp_rom_delay_us(1);
+    }
+    uint64_t time_ns = (uint64_t)nanoseconds + (get_time_us() - start_us) * 1000;
+    uint64_t time_s = (uint64_t)seconds + time_ns / 1000000000;
+    emac_hal_ptp_set_sys_time(hal, time_s, time_ns % 1000000000);
+    to = 0;
+    while (!emac_ll_is_ts_init_done(hal->ptp_regs)) {
+        if (to++ >= EMAC_PTP_INIT_TIMEOUT_US) {
+            return ESP_ERR_TIMEOUT;
+        }
+        esp_rom_delay_us(1);
+    }
+    hal->ptp_regs->sys_seconds_high.val = (seconds_high + (time_s >> 32)) & 0xFFFF;
+    hal->ptp_regs->pps_ctrl.val = pps_ctrl;
+    hal->ptp_regs->timestamp_ctrl.val = ts_ctrl;
+    hal->mac_regs->emacintmask.val = int_mask;
+    return ESP_OK;
+}
+#endif
+
 void emac_hal_start(emac_hal_context_t *hal)
 {
     /* Enable Ethernet MAC and DMA Interrupt */

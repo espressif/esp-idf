@@ -9,6 +9,7 @@
 #include <sys/cdefs.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include <stdatomic.h>
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_attr.h"
@@ -33,6 +34,7 @@
 #include "hal/emac_clk.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
+#include "esp_timer.h"
 #include "esp_private/eth_mac_esp_dma.h"
 #include "esp_private/eth_mac_esp_gpio.h"
 
@@ -111,12 +113,17 @@ typedef struct {
     esp_pm_lock_handle_t pm_lock;
 #endif
     eth_mac_dma_burst_len_t dma_burst_len;
+#if CONFIG_IDF_TARGET_ESP32P4
+    atomic_bool rx_recovery_pending;
+    bool rx_recovery_failed;
+#endif
 
     // ---- Chip specifics ----
 #ifdef CONFIG_IDF_TARGET_ESP32
     esp_clock_output_mapping_handle_t rmii_clk_hdl; // we use the esp_clock_output driver to output a pre-configured APLL clock as the RMII reference clock
 #endif
 #ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+    atomic_flag ptp_lock;
     ts_target_exceed_cb_from_isr_t ts_target_exceed_cb_from_isr;
 #endif
 } emac_esp32_t;
@@ -210,6 +217,7 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
     ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
     emac_hal_set_phy_data(&emac->hal, reg_value);
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, true);
@@ -222,16 +230,17 @@ static esp_err_t emac_esp32_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr,
         to += 100;
     } while (busy && to < PHY_OPERATION_TIMEOUT_US);
     ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
-    return ESP_OK;
 err:
+    emac_esp32_unlock_multi_reg(emac);
     return ret;
 }
 
 static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value)
 {
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, err, TAG, "can't set reg_value to null");
+    ESP_RETURN_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, TAG, "can't set reg_value to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
     ESP_GOTO_ON_FALSE(!emac_hal_is_mii_busy(&emac->hal), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
     emac_hal_set_phy_cmd(&emac->hal, phy_addr, phy_reg, false);
     /* polling the busy flag */
@@ -245,8 +254,8 @@ static esp_err_t emac_esp32_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, 
     ESP_GOTO_ON_FALSE(!busy, ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
     /* Store value */
     *reg_value = emac_hal_get_phy_data(&emac->hal);
-    return ESP_OK;
 err:
+    emac_esp32_unlock_multi_reg(emac);
     return ret;
 }
 
@@ -357,7 +366,9 @@ static esp_err_t emac_esp32_set_addr(esp_eth_mac_t *mac, uint8_t *addr)
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
     emac_hal_set_address(&emac->hal, addr);
+    emac_esp32_unlock_multi_reg(emac);
     return ESP_OK;
 err:
     return ret;
@@ -368,7 +379,9 @@ static esp_err_t emac_esp32_get_addr(esp_eth_mac_t *mac, uint8_t *addr)
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
     emac_hal_get_address(&emac->hal, addr);
+    emac_esp32_unlock_multi_reg(emac);
     return ESP_OK;
 err:
     return ret;
@@ -401,11 +414,11 @@ static esp_err_t emac_esp32_set_link(esp_eth_mac_t *mac, eth_link_t link)
     esp_err_t ret = ESP_OK;
     switch (link) {
     case ETH_LINK_UP:
-        emac_esp32_start(mac);
+        ESP_GOTO_ON_ERROR(emac_esp32_start(mac), err, TAG, "start failed");
         ESP_LOGD(TAG, "emac started");
         break;
     case ETH_LINK_DOWN:
-        emac_esp32_stop(mac);
+        ESP_GOTO_ON_ERROR(emac_esp32_stop(mac), err, TAG, "stop failed");
         ESP_LOGD(TAG, "emac stopped");
         break;
     default:
@@ -477,14 +490,18 @@ static esp_err_t emac_esp32_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
 static esp_err_t emac_esp32_set_promiscuous(esp_eth_mac_t *mac, bool enable)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
     emac_hal_set_promiscuous(&emac->hal, enable);
+    emac_esp32_unlock_multi_reg(emac);
     return ESP_OK;
 }
 
 static esp_err_t emac_esp32_set_all_multicast(esp_eth_mac_t *mac, bool enable)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
     emac_hal_pass_all_multicast_enable(&emac->hal, enable);
+    emac_esp32_unlock_multi_reg(emac);
     return ESP_OK;
 }
 
@@ -714,6 +731,10 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
 #if EMAC_USE_RETENTION_LINK
     emac_create_retention_module(emac);
 #endif // EMAC_USE_RETENTION_LINK
+#if CONFIG_IDF_TARGET_ESP32P4
+    atomic_store(&emac->rx_recovery_pending, false);
+    emac->rx_recovery_failed = false;
+#endif
     return ESP_OK;
 
 err:
@@ -739,6 +760,22 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+#if CONFIG_IDF_TARGET_ESP32P4
+    ESP_RETURN_ON_FALSE(!emac->rx_recovery_failed, ESP_ERR_INVALID_STATE, TAG, "RX recovery failed, reinstall driver");
+    if (atomic_load(&emac->rx_recovery_pending)) {
+        ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
+        if (atomic_flag_test_and_set(&emac->ptp_lock)) {
+            emac_esp32_unlock_multi_reg(emac);
+            return ESP_ERR_INVALID_STATE;
+        }
+        esp_err_t ret = emac_hal_recover_rx(&emac->hal, emac->sw_reset_timeout_ms * 1000, esp_timer_get_time);
+        emac->rx_recovery_failed = ret == ESP_ERR_TIMEOUT;
+        atomic_flag_clear(&emac->ptp_lock);
+        emac_esp32_unlock_multi_reg(emac);
+        ESP_RETURN_ON_ERROR(ret, TAG, "RX recovery failed");
+        atomic_store(&emac->rx_recovery_pending, false);
+    }
+#endif
     /* reset descriptor chain */
     emac_esp_dma_reset(emac->emac_dma_hndl);
 #if EMAC_USE_RETENTION_LINK
@@ -753,6 +790,11 @@ static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_err_t ret = ESP_OK;
     int32_t to = 0;
+#if CONFIG_IDF_TARGET_ESP32P4
+    if (emac_hal_rx_needs_recovery(&emac->hal)) {
+        atomic_store(&emac->rx_recovery_pending, true);
+    }
+#endif
 #if EMAC_USE_RETENTION_LINK
     emac_esp_disable_emac_start_on_wakeup(emac);
 #endif // EMAC_USE_RETENTION_LINK
@@ -783,8 +825,13 @@ IRAM_ATTR void emac_isr_default_handler(void *args)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)args;
     uint32_t intr_stat = emac_hal_get_intr_status(hal);
-    emac_hal_clear_corresponding_intr(hal, intr_stat);
     emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
+#if CONFIG_IDF_TARGET_ESP32P4
+    if ((intr_stat & EMAC_LL_DMA_RECEIVE_OVERFLOW_INTR) && emac_hal_rx_needs_recovery(hal)) {
+        atomic_store(&emac->rx_recovery_pending, true);
+    }
+#endif
+    emac_hal_clear_corresponding_intr(hal, intr_stat);
     bool high_task_woken = false;
 
 #if SOC_EMAC_IEEE1588V2_SUPPORTED && EMAC_LL_CONFIG_ENABLE_MAC_INTR_MASK & EMAC_LL_MAC_INTR_TIME_STAMP_ENABLE
@@ -876,6 +923,13 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
         emac = calloc(1, sizeof(emac_esp32_t));
     }
     ESP_GOTO_ON_FALSE(emac, ESP_ERR_NO_MEM, err, TAG, "no mem for esp emac object");
+
+#if CONFIG_IDF_TARGET_ESP32P4
+    atomic_init(&emac->rx_recovery_pending, false);
+#endif
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+    atomic_flag_clear(&emac->ptp_lock);
+#endif
 
     /* alloc PM lock */
 #ifdef CONFIG_PM_ENABLE
@@ -1075,6 +1129,7 @@ esp_err_t esp_eth_mac_ptp_enable(esp_eth_mac_t *mac, const eth_mac_ptp_config_t 
 {
     ESP_RETURN_ON_FALSE(mac && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
     PERIPH_RCC_ATOMIC() {
         emac_hal_clock_enable_ptp(&emac->hal, config->clk_src, true);
     }
@@ -1084,8 +1139,12 @@ esp_err_t esp_eth_mac_ptp_enable(esp_eth_mac_t *mac, const eth_mac_ptp_config_t 
         .ptp_clk_src_period_ns = config->clk_src_period_ns,
         .ptp_req_accuracy_ns = config->required_accuracy_ns
     };
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_start(&emac->hal, &ptp_config), TAG, "failed to start PTP module");
-    emac_esp_dma_ts_enable(emac->emac_dma_hndl, true);
+    esp_err_t ret = emac_hal_ptp_start(&emac->hal, &ptp_config);
+    if (ret == ESP_OK) {
+        emac_esp_dma_ts_enable(emac->emac_dma_hndl, true);
+    }
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to start PTP module");
     return ESP_OK;
 }
 
@@ -1093,11 +1152,16 @@ esp_err_t esp_eth_mac_ptp_disable(esp_eth_mac_t *mac)
 {
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_stop(&emac->hal), TAG, "failed to stop PTP module");
-    emac_esp_dma_ts_enable(emac->emac_dma_hndl, false);
-    PERIPH_RCC_ATOMIC() {
-        emac_hal_clock_enable_ptp(&emac->hal, 0, false);
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_ptp_stop(&emac->hal);
+    if (ret == ESP_OK) {
+        emac_esp_dma_ts_enable(emac->emac_dma_hndl, false);
+        PERIPH_RCC_ATOMIC() {
+            emac_hal_clock_enable_ptp(&emac->hal, 0, false);
+        }
     }
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to stop PTP module");
     return ESP_OK;
 }
 
@@ -1105,7 +1169,10 @@ esp_err_t esp_eth_mac_set_ptp_time(esp_eth_mac_t *mac, const eth_mac_time_t *tim
 {
     ESP_RETURN_ON_FALSE(mac && time, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_set_sys_time(&emac->hal, time->seconds, time->nanoseconds), TAG, "failed to set PTP time");
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_ptp_set_sys_time(&emac->hal, time->seconds, time->nanoseconds);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to set PTP time");
     return ESP_OK;
 }
 
@@ -1113,7 +1180,10 @@ esp_err_t esp_eth_mac_get_ptp_time(esp_eth_mac_t *mac, eth_mac_time_t *time)
 {
     ESP_RETURN_ON_FALSE(mac && time, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_get_sys_time(&emac->hal, &time->seconds, &time->nanoseconds), TAG, "failed to get PTP time");
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_ptp_get_sys_time(&emac->hal, &time->seconds, &time->nanoseconds);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to get PTP time");
     return ESP_OK;
 }
 
@@ -1121,7 +1191,10 @@ esp_err_t esp_eth_mac_adj_ptp_freq(esp_eth_mac_t *mac, double scale_factor)
 {
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_adj_freq_factor(&emac->hal, scale_factor), TAG, "failed to adjust PTP time base by scale factor");
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_adj_freq_factor(&emac->hal, scale_factor);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to adjust PTP time base by scale factor");
     return ESP_OK;
 }
 
@@ -1129,7 +1202,10 @@ esp_err_t esp_eth_mac_adj_ptp_time(esp_eth_mac_t *mac, int32_t adj_ppb)
 {
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_adj_inc(&emac->hal, adj_ppb), TAG, "failed to adjust PTP time base");
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_ptp_adj_inc(&emac->hal, adj_ppb);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to adjust PTP time base");
     return ESP_OK;
 }
 
@@ -1137,7 +1213,10 @@ esp_err_t esp_eth_mac_adj_ptp_freq_ppb(esp_eth_mac_t *mac, int32_t adj_ppb)
 {
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_adj_freq(&emac->hal, adj_ppb), TAG, "failed to adjust PTP frequency");
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_ptp_adj_freq(&emac->hal, adj_ppb);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to adjust PTP frequency");
     return ESP_OK;
 }
 
@@ -1145,7 +1224,10 @@ esp_err_t esp_eth_mac_set_target_time(esp_eth_mac_t *mac, const eth_mac_time_t *
 {
     ESP_RETURN_ON_FALSE(mac && target, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_set_target_time(&emac->hal, target->seconds, target->nanoseconds), TAG,
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_ptp_set_target_time(&emac->hal, target->seconds, target->nanoseconds);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG,
                         "failed to set PTP target time");
     return ESP_OK;
 }
@@ -1162,7 +1244,10 @@ esp_err_t esp_eth_mac_enable_ts4all(esp_eth_mac_t *mac, bool enable)
 {
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_ptp_enable_ts4all(&emac->hal, enable), TAG, "failed to enable timestamping for all frames");
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_ptp_enable_ts4all(&emac->hal, enable);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to enable timestamping for all frames");
     return ESP_OK;
 }
 
@@ -1178,7 +1263,10 @@ esp_err_t esp_eth_mac_set_pps_out_freq(esp_eth_mac_t *mac, uint32_t freq_hz)
 {
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    ESP_RETURN_ON_ERROR(emac_hal_set_pps0_out_freq(&emac->hal, freq_hz), TAG, "failed to set PPS0 output frequency");
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), ESP_ERR_INVALID_STATE, TAG, "PTP is busy");
+    esp_err_t ret = emac_hal_set_pps0_out_freq(&emac->hal, freq_hz);
+    atomic_flag_clear(&emac->ptp_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "failed to set PPS0 output frequency");
     return ESP_OK;
 }
 
@@ -1186,7 +1274,10 @@ uint32_t esp_eth_mac_get_ts_resolution(esp_eth_mac_t *mac)
 {
     ESP_RETURN_ON_FALSE(mac, ESP_ERR_INVALID_ARG, TAG, "invalid argument, can't be NULL");
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    return emac_hal_get_ts_resolution(&emac->hal);
+    ESP_RETURN_ON_FALSE(!atomic_flag_test_and_set(&emac->ptp_lock), 0, TAG, "PTP is busy");
+    uint32_t resolution = emac_hal_get_ts_resolution(&emac->hal);
+    atomic_flag_clear(&emac->ptp_lock);
+    return resolution;
 }
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
