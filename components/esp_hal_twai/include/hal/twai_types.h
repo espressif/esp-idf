@@ -132,11 +132,11 @@ typedef struct {
     uint32_t id;                    /**< message arbitration identification */
     uint16_t dlc;                   /**< message data length code */
     struct {
-        uint32_t ide: 1;            /**< Extended Frame Format (29bit ID) */
-        uint32_t rtr: 1;            /**< Message is a Remote Frame */
-        uint32_t fdf: 1;            /**< Message is FD format, allow max 64 byte of data */
-        uint32_t brs: 1;            /**< Transmit message with Bit Rate Shift. */
-        uint32_t esi: 1;            /**< Transmit side error indicator for received frame */
+        uint16_t ide: 1;            /**< Extended Frame Format (29bit ID) */
+        uint16_t rtr: 1;            /**< Message is a Remote Frame */
+        uint16_t fdf: 1;            /**< Message is FD format, allow max 64 byte of data */
+        uint16_t brs: 1;            /**< Transmit message with Bit Rate Shift. */
+        uint16_t esi: 1;            /**< Transmit side error indicator for received frame */
     };
     union {
         uint64_t timestamp;         /**< Timestamp for received message */
