@@ -167,7 +167,11 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     ppa_ll_blend_set_ck_default_rgb(platform->hal.dev, (blend_trans_desc->bg_ck_en && blend_trans_desc->fg_ck_en) ? &blend_trans_desc->ck_rgb_default_val : &rgb888_min);
     ppa_ll_blend_enable_ck_fg_bg_reverse(platform->hal.dev, blend_trans_desc->ck_reverse_bg2fg);
 
-    ppa_ll_blend_start(platform->hal.dev, PPA_LL_BLEND_TRANS_MODE_BLEND);
+    ppa_ll_blend_start(
+        platform->hal.dev,
+        blend_trans_desc->bypass_blend
+            ? PPA_LL_BLEND_TRANS_MODE_BYPASS_BLEND
+            : PPA_LL_BLEND_TRANS_MODE_BLEND);
 
     // No need to yield
     return false;
