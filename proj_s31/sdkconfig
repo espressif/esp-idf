@@ -3984,29 +3984,6 @@ CONFIG_CJSON_CIRCULAR_LIMIT=10000
 # end of cJSON
 
 #
-# esp-modem
-#
-# default:
-CONFIG_ESP_MODEM_CMUX_DEFRAGMENT_PAYLOAD=y
-# default:
-# CONFIG_ESP_MODEM_USE_INFLATABLE_BUFFER_IF_NEEDED is not set
-# default:
-CONFIG_ESP_MODEM_CMUX_DELAY_AFTER_DLCI_SETUP=0
-# default:
-# CONFIG_ESP_MODEM_CMUX_USE_SHORT_PAYLOADS_ONLY is not set
-# default:
-# CONFIG_ESP_MODEM_ADD_CUSTOM_MODULE is not set
-# default:
-CONFIG_ESP_MODEM_C_API_STR_MAX=128
-# default:
-# CONFIG_ESP_MODEM_URC_HANDLER is not set
-# default:
-# CONFIG_ESP_MODEM_PPP_ESCAPE_BEFORE_EXIT is not set
-# default:
-# CONFIG_ESP_MODEM_ADD_DEBUG_LOGS is not set
-# end of esp-modem
-
-#
 # Iperf
 #
 # default:
