@@ -346,6 +346,8 @@ entries:
         #   - vPortSetStackWatchpoint
         # - vPortCoprocUsedInISR is directly called from RISC-V assembly code with a direct branch instruction which
         #   may be too far when placed in Flash. Hence, it is always placed in internal RAM
+        # - pxPortGetCoprocArea is called by rtos_int_enter to save the HWLP context of the interrupted task, so it
+        #   must be in internal RAM for interrupts that run while the cache is disabled.
         # --------------------------------------------------------------------------------------------------------------
         if IDF_TARGET_ARCH_RISCV = y:
             port:xPortStartScheduler (default)
@@ -357,7 +359,6 @@ entries:
                 port:pxRetrieveCoprocSaveAreaFromStackPointer (default)
                 port:uxInitialiseCoprocSaveArea (default)
                 port:vPortCleanUpCoprocArea (default)
-                port:pxPortGetCoprocArea (default)
                 port:pxPortUpdateCoprocOwner (default)
                 if FREERTOS_UNICORE = n:
                     port:vPortTaskPinToCore (default)
