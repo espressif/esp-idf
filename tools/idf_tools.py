@@ -2857,8 +2857,9 @@ def action_install_python_env(args):  # type: ignore
     else:
         virtualenv_options = []
         info(f'Creating a new Python environment in {idf_python_env_path}')
-        try:
-            environ_idf_python_env_path = os.environ['IDF_PYTHON_ENV_PATH']
+        environ_idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
+        # An empty value selects the default path in get_python_env_path(), so the checks below are skipped as well
+        if environ_idf_python_env_path:
             correct_env_path = environ_idf_python_env_path.endswith(
                 PYTHON_VENV_DIR_TEMPLATE.format(idf_version, PYTHON_VER_MAJOR_MINOR)
             )
@@ -2878,16 +2879,14 @@ def action_install_python_env(args):  # type: ignore
                 PYTHON_VENV_DIR_TEMPLATE.format(r'\d+\.\d+', r'\d+\.\d+'), environ_idf_python_env_path
             ):
                 virtualenv_options.append('--clear')  # delete environment if already exists
-            elif os.listdir(environ_idf_python_env_path):  # show the message only if the directory is not empty
+            # The directory may not exist yet (first install or after --reinstall); venv creates it with its parents
+            elif os.path.isdir(environ_idf_python_env_path) and os.listdir(environ_idf_python_env_path):
                 info(
                     f'IDF_PYTHON_ENV_PATH is set to {environ_idf_python_env_path}, '
                     'but it does not appear to be an ESP-IDF Python virtual environment directory. '
                     'Existing data in this folder will be preserved to prevent unintentional data loss.'
                 )
 
-        except KeyError:
-            # if IDF_PYTHON_ENV_PATH not defined then the above checks can be skipped
-            pass
         subprocess.check_call(
             [sys.executable, '-m', 'venv', *virtualenv_options, idf_python_env_path],
             stdout=sys.stdout,
@@ -2896,10 +2895,10 @@ def action_install_python_env(args):  # type: ignore
         try:
             with open(os.path.join(idf_python_env_path, VENV_VER_FILE), 'w', encoding='utf-8') as f:
                 f.write(idf_version)
-        except OSError:
+        except OSError as e:
             warn(
                 'The following issue occurred while generating the '
-                'ESP-IDF version file in the Python environment: {e}. '
+                f'ESP-IDF version file in the Python environment: {e}. '
                 '(Diagnostic information. It can be ignored.)'
             )
 

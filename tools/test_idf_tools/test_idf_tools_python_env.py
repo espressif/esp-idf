@@ -251,6 +251,22 @@ class TestCustomPythonPathInstall(BasePythonInstall):
         output = self.run_idf_tools(['check-python-dependencies'])
         self.assertIn(self.CUSTOM_PYTHON_DIR, output)
 
+    def test_nonexistent_dir(self):  # type: () -> None
+        # A name not matching the default template, with a missing parent, is created by venv
+        env_dir = os.path.join(self.CUSTOM_PYTHON_DIR, 'parent', 'custom_env')
+        os.environ['IDF_PYTHON_ENV_PATH'] = env_dir
+
+        output = self.run_idf_tools(['install-python-env'])
+        self.assertIn(env_dir, output)
+        self.assertNotIn('Traceback', output)
+
+        # --reinstall removes the directory before the venv is created again
+        output = self.run_idf_tools(['install-python-env', '--reinstall'])
+        self.assertNotIn('Traceback', output)
+
+        output = self.run_idf_tools(['check-python-dependencies'])
+        self.assertIn(REQ_SATISFIED, output)
+
 
 class TestCheckPythonDependencies(BasePythonInstall):
     """
