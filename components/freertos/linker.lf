@@ -150,6 +150,8 @@ entries:
         #   - vPortSetStackWatchpoint is called from vTaskSwitchContext, which is in IRAM.
         # - vPortCoprocUsedInISR is directly called from RISC-V assembly code with a direct branch instruction which
         #   may be too far when placed in Flash. Hence, it is always placed in internal RAM
+        # - pxPortGetCoprocArea is called by rtos_int_enter to save the HWLP context of the interrupted task, so it
+        #   must be in IRAM for interrupts that run while the cache is disabled.
         # - The following functions are called from an ISR context, thus are placed in IRAM unless ISR functions are
         #   placed into flash.
         #   - xPortInIsrContext
@@ -166,6 +168,8 @@ entries:
             port:vPortYieldOtherCore (noflash_text)
             port:vPortSetStackWatchpoint (noflash_text)
             port:vPortCoprocUsedInISR (noflash_text)
+            if SOC_CPU_COPROC_NUM > 0:
+                port:pxPortGetCoprocArea (noflash_text)
             if FREERTOS_UNICORE = n:
                 port:xPortEnterCriticalTimeout (noflash_text)
                 port:vPortExitCriticalMultiCore (noflash_text)
