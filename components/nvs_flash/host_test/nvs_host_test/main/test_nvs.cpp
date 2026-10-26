@@ -5719,6 +5719,7 @@ TEST_CASE("nvs_set_str rejects NULL value", "[nvs]")
     TEST_ESP_ERR(nvs_get_str(handle, "key", nullptr, &len), ESP_ERR_NVS_NOT_FOUND);
 
     nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
 }
 TEST_CASE("init recovers from power loss during page freeing when no free page is left", "[nvs][readonly]")
 {

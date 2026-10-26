@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,21 @@
 #include "nvs_constants.h"                  // for NVS_CONST_PAGE_SIZE
 #include "esp_log.h"                        // for ESP_LOGE
 #include "nvs.h"                            // for ESP_ERR_NVS_NOT_FOUND
+#include "nvs_flash.h"                      // for nvs_flash_deinit_partition
 
 #define TAG "NVSPartitionTestHelper"
+
+// Drop Storage that still maps this partition. The helper then rewrites the
+// flash directly, and a later nvs_flash_init_partition() must read that image.
+// Leaving the old Storage in place makes init a no-op, so the next read-write
+// open programs the new image through the previous page map.
+static void release_nvs_storage(const char *part_name)
+{
+    esp_err_t err = nvs_flash_deinit_partition(part_name);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_INITIALIZED) {
+        CHECK(err == ESP_OK);
+    }
+}
 
 // Initialize the static variable(s) of NVSPartitionTestHelper
 int NVSPartitionTestHelper::s_instance_count = 0;
@@ -40,6 +53,7 @@ NVSPartitionTestHelper::NVSPartitionTestHelper(const char *part_name, const bool
 
     if(erase_partition)
     {
+        release_nvs_storage(part_name);
         // erase the partition before testing
         CHECK(erase_range(0, get_size()) == ESP_OK);
     }
@@ -142,6 +156,8 @@ esp_err_t NVSPartitionTestHelper::randomize_partition(const char *part_name, con
 // Erase the whole partition
 esp_err_t NVSPartitionTestHelper::erase_partition(const char *part_name)
 {
+    release_nvs_storage(part_name);
+
     // Find the partition by name
     const esp_partition_t *part = esp_partition_find_first(
         ESP_PARTITION_TYPE_DATA,
@@ -217,6 +233,7 @@ esp_err_t NVSPartitionTestHelper::load_from_file(const char *part_name, const ch
         return ESP_ERR_INVALID_SIZE;
     }
 
+    release_nvs_storage(part_name);
     esp_err_t ret = esp_partition_erase_range(part, 0, part->size);
     if (ret != ESP_OK) {
         free(p_buff);
@@ -338,6 +355,7 @@ NVSPartitionTestHelper::NVSPartitionTestHelper(const char *part_name, const bool
 
     if(erase_partition)
     {
+        release_nvs_storage(part_name);
         // erase the partition before testing
         CHECK(erase_range(0, get_size()) == ESP_OK);
     }
@@ -474,6 +492,8 @@ esp_err_t NVSPartitionTestHelper::randomize_partition(const char *part_name, con
 // Erase the whole partition
 esp_err_t NVSPartitionTestHelper::erase_partition(const char *part_name)
 {
+    release_nvs_storage(part_name);
+
     // get the BDL handle for the partition
     esp_blockdev_handle_t bdl_handle;
 
