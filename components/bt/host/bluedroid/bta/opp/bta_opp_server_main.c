@@ -558,7 +558,7 @@ static void bta_opp_server_goep_cback(UINT16 conn_handle, UINT8 event, tGOEPS_MS
 static void bta_opp_server_act_opened(tBTA_OPP_CCB *p_ccb, tBTA_OPP_SERVER_DATA *p_data)
 {
     UNUSED(p_data);
-    bta_opp_report_conn(p_ccb, TRUE, BTA_OPP_OK);
+    bta_opp_report_conn(p_ccb, BTA_OPP_CONN_OPEN_EVT, BTA_OPP_OK);
 }
 
 static void bta_opp_server_act_req_connect(tBTA_OPP_CCB *p_ccb, tBTA_OPP_SERVER_DATA *p_data)
@@ -701,7 +701,7 @@ static void bta_opp_server_act_closed(tBTA_OPP_CCB *p_ccb, tBTA_OPP_SERVER_DATA 
         bta_opp_report_complete(p_ccb, BTA_OPP_ABORTED);
         status = BTA_OPP_ABORTED;
     }
-    bta_opp_report_conn(p_ccb, FALSE, status);
+    bta_opp_report_conn(p_ccb, BTA_OPP_CONN_CLOSE_EVT, status);
     /* free_ccb runs server cleanup (accept timer / hold_put). */
     bta_opp_free_ccb(p_ccb);
 }
@@ -745,7 +745,7 @@ static void bta_opp_server_api_stop(tBTA_OPP_SERVER_DATA *p_data)
 
     for (int i = 0; i < BTA_OPP_MAX_CONNECTION; i++) {
         if (bta_opp_cb.ccb[i].allocated && bta_opp_cb.ccb[i].role == BTA_OPP_ROLE_SERVER) {
-            bta_opp_close_connection(&bta_opp_cb.ccb[i], BTA_OPP_FAIL, TRUE);
+            bta_opp_close_connection(&bta_opp_cb.ccb[i], BTA_OPP_OK, TRUE);
         }
     }
 
@@ -904,6 +904,7 @@ static void bta_opp_server_handle_conn_income(tBTA_OPP_SERVER_DATA *p_data)
     p_ccb->max_rx = p_data->goep.our_mtu;
     bdcpy(p_ccb->bd_addr, p_data->goep.bd_addr);
     /* state remains BTA_OPP_SERVER_CONNECTING_ST until the OBEX session is opened */
+    bta_opp_report_conn(p_ccb, BTA_OPP_CONN_OPENING_EVT, BTA_OPP_OK);
 }
 
 BOOLEAN bta_opp_server_hdl_event(BT_HDR *p_msg)

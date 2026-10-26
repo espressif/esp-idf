@@ -30,7 +30,7 @@ enum {
     BTA_OPP_CLIENT_ACT_DISCONNECT,
     BTA_OPP_CLIENT_ACT_OPEN_OBJECT,
     BTA_OPP_CLIENT_ACT_SEND_BUSY,
-    BTA_OPP_CLIENT_ACT_CLOSE_FAIL,
+    BTA_OPP_CLIENT_ACT_CLOSE_LOCAL,
     BTA_OPP_CLIENT_ACT_CLOSE_ABORT,
     BTA_OPP_CLIENT_ACT_DO_OPEN,
     BTA_OPP_CLIENT_ACT_SEND_CONNECT,
@@ -51,7 +51,7 @@ static void bta_opp_client_act_connect(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA
 static void bta_opp_client_act_disconnect(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
 static void bta_opp_client_act_open_object(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
 static void bta_opp_client_act_send_busy(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
-static void bta_opp_client_act_close_fail(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
+static void bta_opp_client_act_close_local(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
 static void bta_opp_client_act_close_abort(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
 static void bta_opp_client_act_do_open(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
 static void bta_opp_client_act_send_connect(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data);
@@ -72,7 +72,7 @@ static const tBTA_OPP_CLIENT_ACTION bta_opp_client_action[] = {
     bta_opp_client_act_disconnect,      /* BTA_OPP_CLIENT_ACT_DISCONNECT */
     bta_opp_client_act_open_object,     /* BTA_OPP_CLIENT_ACT_OPEN_OBJECT */
     bta_opp_client_act_send_busy,       /* BTA_OPP_CLIENT_ACT_SEND_BUSY */
-    bta_opp_client_act_close_fail,      /* BTA_OPP_CLIENT_ACT_CLOSE_FAIL */
+    bta_opp_client_act_close_local,     /* BTA_OPP_CLIENT_ACT_CLOSE_LOCAL */
     bta_opp_client_act_close_abort,     /* BTA_OPP_CLIENT_ACT_CLOSE_ABORT */
     bta_opp_client_act_do_open,         /* BTA_OPP_CLIENT_ACT_DO_OPEN */
     bta_opp_client_act_send_connect,    /* BTA_OPP_CLIENT_ACT_SEND_CONNECT */
@@ -111,7 +111,7 @@ static const UINT8 bta_opp_client_st_init[][BTA_OPP_CLIENT_NUM_COLS] = {
 
 static const UINT8 bta_opp_client_st_opening[][BTA_OPP_CLIENT_NUM_COLS] = {
     /* CONNECT */       {BTA_OPP_CLIENT_IGNORE,           BTA_OPP_CLIENT_OPENING_ST},
-    /* DISCONNECT */    {BTA_OPP_CLIENT_ACT_CLOSE_FAIL,   BTA_OPP_CLIENT_INIT_ST},
+    /* DISCONNECT */    {BTA_OPP_CLIENT_ACT_CLOSE_LOCAL,  BTA_OPP_CLIENT_INIT_ST},
     /* OPEN_OBJECT */   {BTA_OPP_CLIENT_ACT_SEND_BUSY,    BTA_OPP_CLIENT_OPENING_ST},
     /* CANCEL */        {BTA_OPP_CLIENT_ACT_CLOSE_ABORT,  BTA_OPP_CLIENT_INIT_ST},
     /* DISC_RES */      {BTA_OPP_CLIENT_ACT_DO_OPEN,      BTA_OPP_CLIENT_OPENING_ST},
@@ -124,7 +124,7 @@ static const UINT8 bta_opp_client_st_opening[][BTA_OPP_CLIENT_NUM_COLS] = {
 
 static const UINT8 bta_opp_client_st_connecting[][BTA_OPP_CLIENT_NUM_COLS] = {
     /* CONNECT */       {BTA_OPP_CLIENT_IGNORE,           BTA_OPP_CLIENT_CONNECTING_ST},
-    /* DISCONNECT */    {BTA_OPP_CLIENT_ACT_CLOSE_FAIL,   BTA_OPP_CLIENT_INIT_ST},
+    /* DISCONNECT */    {BTA_OPP_CLIENT_ACT_CLOSE_LOCAL,  BTA_OPP_CLIENT_INIT_ST},
     /* OPEN_OBJECT */   {BTA_OPP_CLIENT_ACT_SEND_BUSY,    BTA_OPP_CLIENT_CONNECTING_ST},
     /* CANCEL */        {BTA_OPP_CLIENT_ACT_CLOSE_ABORT,  BTA_OPP_CLIENT_INIT_ST},
     /* DISC_RES */      {BTA_OPP_CLIENT_IGNORE,           BTA_OPP_CLIENT_CONNECTING_ST},
@@ -560,9 +560,10 @@ static void bta_opp_client_act_connect(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA
     p_ccb->max_tx = (param->mtu >= OPP_MIN_MTU) ? param->mtu : OPP_DEFAULT_MTU;
     p_ccb->max_rx = p_ccb->max_tx;
     bdcpy(p_ccb->bd_addr, param->bd_addr);
+    bta_opp_report_conn(p_ccb, BTA_OPP_CONN_OPENING_EVT, BTA_OPP_OK);
 
     if (!bta_opp_client_do_disc(p_ccb)) {
-        bta_opp_report_conn(p_ccb, FALSE, BTA_OPP_SDP_FAIL);
+        bta_opp_report_conn(p_ccb, BTA_OPP_CONN_CLOSE_EVT, BTA_OPP_SDP_FAIL);
         bta_opp_free_ccb(p_ccb);
     }
 }
@@ -573,7 +574,9 @@ static void bta_opp_client_act_disconnect(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_D
 
     if (!send_disconnect_request(p_ccb)) {
         bta_opp_close_connection(p_ccb, BTA_OPP_OBEX_FAIL, TRUE);
+        return;
     }
+    bta_opp_report_conn(p_ccb, BTA_OPP_CONN_CLOSING_EVT, BTA_OPP_OK);
 }
 
 static void bta_opp_client_act_open_object(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data)
@@ -621,10 +624,10 @@ static void bta_opp_client_act_tx_ready(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DAT
     }
 }
 
-static void bta_opp_client_act_close_fail(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data)
+static void bta_opp_client_act_close_local(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data)
 {
     UNUSED(p_data);
-    bta_opp_close_connection(p_ccb, BTA_OPP_FAIL, TRUE);
+    bta_opp_close_connection(p_ccb, BTA_OPP_OK, TRUE);
 }
 
 static void bta_opp_client_act_close_abort(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data)
@@ -697,7 +700,7 @@ static void bta_opp_client_act_connect_rsp(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_
         p_ccb->max_tx = info.max_packet_length;
     }
     p_ccb->state = BTA_OPP_CLIENT_CONNECTED_ST;
-    bta_opp_report_conn(p_ccb, TRUE, BTA_OPP_OK);
+    bta_opp_report_conn(p_ccb, BTA_OPP_CONN_OPEN_EVT, BTA_OPP_OK);
 }
 
 static void bta_opp_client_act_put_rsp(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data)
@@ -762,9 +765,9 @@ static void bta_opp_client_act_free_rsp(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DAT
 
 static void bta_opp_client_act_closed(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA *p_data)
 {
-    /* Unexpected transport close (connect/idle): FAIL, aligned with CLOSE_FAIL.
+    /* Unexpected GOEP close (connect/idle): OBEX/GOEP transport failure.
      * Local disconnect completing via GOEP_CLOSE: hdl_event sets goep.final. */
-    tBTA_OPP_STATUS status = (p_data != NULL && p_data->goep.final) ? BTA_OPP_OK : BTA_OPP_FAIL;
+    tBTA_OPP_STATUS status = (p_data != NULL && p_data->goep.final) ? BTA_OPP_OK : BTA_OPP_OBEX_FAIL;
 
     bta_opp_client_stop_rsp_timer(p_ccb);
     p_ccb->goep_handle = 0;
@@ -774,7 +777,7 @@ static void bta_opp_client_act_closed(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA 
         free_client_transfer_state(p_ccb);
         status = BTA_OPP_ABORTED;
     }
-    bta_opp_report_conn(p_ccb, FALSE, status);
+    bta_opp_report_conn(p_ccb, BTA_OPP_CONN_CLOSE_EVT, status);
     bta_opp_free_ccb(p_ccb);
 }
 
@@ -801,7 +804,7 @@ static void bta_opp_client_api_disable(tBTA_OPP_CLIENT_DATA *p_data)
 
     for (int i = 0; i < BTA_OPP_MAX_CONNECTION; i++) {
         if (bta_opp_cb.ccb[i].allocated && bta_opp_cb.ccb[i].role == BTA_OPP_ROLE_CLIENT) {
-            bta_opp_close_connection(&bta_opp_cb.ccb[i], BTA_OPP_FAIL, TRUE);
+            bta_opp_close_connection(&bta_opp_cb.ccb[i], BTA_OPP_OK, TRUE);
         }
     }
 

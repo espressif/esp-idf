@@ -22,16 +22,18 @@
 /* OPP callback events */
 #define BTA_OPP_SERVER_START_EVT        2           /* OPP server started listening */
 #define BTA_OPP_SERVER_STOP_EVT         3           /* OPP server stopped listening */
-#define BTA_OPP_CONN_OPEN_EVT           4           /* OPP connection opened */
-#define BTA_OPP_CONN_CLOSE_EVT          5           /* OPP connection closed */
-#define BTA_OPP_INCOMING_OBJECT_EVT     6           /* peer started pushing an object */
-#define BTA_OPP_DATA_EVT                7           /* incoming object body data */
-#define BTA_OPP_PROGRESS_EVT            8           /* object transfer progress */
-#define BTA_OPP_TRANSFER_COMPLETE_EVT   9           /* object transfer finished */
-#define BTA_OPP_SERVER_ENABLE_EVT       10          /* OPP server enabled */
-#define BTA_OPP_SERVER_DISABLE_EVT      11          /* OPP server disabled */
-#define BTA_OPP_CLIENT_ENABLE_EVT       12          /* OPP client enabled */
-#define BTA_OPP_CLIENT_DISABLE_EVT      13          /* OPP client disabled */
+#define BTA_OPP_CONN_OPENING_EVT        4           /* OPP connection attempt started */
+#define BTA_OPP_CONN_OPEN_EVT           5           /* OPP connection opened */
+#define BTA_OPP_CONN_CLOSING_EVT        6           /* local OBEX DISCONNECT sent, waiting to finish */
+#define BTA_OPP_CONN_CLOSE_EVT          7           /* OPP connection closed */
+#define BTA_OPP_INCOMING_OBJECT_EVT     8           /* peer started pushing an object */
+#define BTA_OPP_DATA_EVT                9           /* incoming object body data */
+#define BTA_OPP_PROGRESS_EVT            10          /* object transfer progress */
+#define BTA_OPP_TRANSFER_COMPLETE_EVT   11          /* object transfer finished */
+#define BTA_OPP_SERVER_ENABLE_EVT       12          /* OPP server enabled */
+#define BTA_OPP_SERVER_DISABLE_EVT      13          /* OPP server disabled */
+#define BTA_OPP_CLIENT_ENABLE_EVT       14          /* OPP client enabled */
+#define BTA_OPP_CLIENT_DISABLE_EVT      15          /* OPP client disabled */
 
 typedef enum {
     BTA_OPP_OK = 0,                                 /* operation success */
@@ -57,12 +59,13 @@ typedef struct {
     UINT8 scn;                                      /* RFCOMM server channel */
 } tBTA_OPP_SERVER;
 
-/* data associated with BTA_OPP_CONN_OPEN_EVT / BTA_OPP_CONN_CLOSE_EVT */
+/* data associated with BTA_OPP_CONN_OPENING_EVT / BTA_OPP_CONN_OPEN_EVT /
+ * BTA_OPP_CONN_CLOSING_EVT / BTA_OPP_CONN_CLOSE_EVT */
 typedef struct {
     UINT16 handle;                                  /* connection handle */
     tBTA_OPP_ROLE role;                             /* local role */
-    tBTA_OPP_STATUS status;                         /* operation status */
-    BOOLEAN connected;                              /* TRUE on open, FALSE on close */
+    tBTA_OPP_STATUS status;                         /* operation status; meaningful on CLOSE */
+    BOOLEAN connected;                              /* TRUE on open, FALSE otherwise */
     BD_ADDR bd_addr;                                /* peer BD address */
 } tBTA_OPP_CONN;
 
@@ -103,7 +106,7 @@ typedef struct {
 /* union of data associated with OPP callback */
 typedef union {
     tBTA_OPP_SERVER server;                         /* SERVER_START_EVT, SERVER_STOP_EVT */
-    tBTA_OPP_CONN conn;                             /* CONN_OPEN_EVT, CONN_CLOSE_EVT */
+    tBTA_OPP_CONN conn;                             /* CONN_OPEN/CLOSE/OPENING/CLOSING */
     tBTA_OPP_OBJECT object;                         /* INCOMING_OBJECT_EVT */
     tBTA_OPP_DATA data;                             /* DATA_EVT */
     tBTA_OPP_PROGRESS progress;                     /* PROGRESS_EVT */
@@ -274,9 +277,10 @@ void BTA_OppClientDisable(void);
 **
 ** Function         BTA_OppClientConnect
 **
-** Description      Connect to a peer OPP server. When the connection is
-**                  opened the callback function will be called with a
-**                  BTA_OPP_CONN_OPEN_EVT.
+** Description      Connect to a peer OPP server. The callback is called with
+**                  BTA_OPP_CONN_OPENING_EVT when the attempt starts, then
+**                  BTA_OPP_CONN_OPEN_EVT on success or BTA_OPP_CONN_CLOSE_EVT
+**                  on failure.
 **
 ** Returns          void
 **
@@ -287,9 +291,11 @@ void BTA_OppClientConnect(tBTA_OPP_CONNECT_PARAM *param);
 **
 ** Function         BTA_OppClientDisconnect
 **
-** Description      Disconnect an OPP client connection. When the connection
-**                  is closed the callback function will be called with a
-**                  BTA_OPP_CONN_CLOSE_EVT.
+** Description      Disconnect an OPP client connection. When the OBEX
+**                  DISCONNECT request is sent, the callback is called with
+**                  BTA_OPP_CONN_CLOSING_EVT, then BTA_OPP_CONN_CLOSE_EVT
+**                  when the session is gone. If the request cannot be sent,
+**                  only BTA_OPP_CONN_CLOSE_EVT is reported.
 **
 ** Returns          void
 **

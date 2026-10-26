@@ -71,13 +71,14 @@ I (xxx) OPP_SERVER: ESP_OPP_SERVER_START_EVT status:0 scn:1
 When a client connects and pushes an object:
 
 ```
-I (xxx) OPP_SERVER: ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:1 state:1 status:0 bda:xx:xx:xx:xx:xx:xx
+I (xxx) OPP_SERVER: ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:1 state:2 disc_rsn:0 bda:xx:xx:xx:xx:xx:xx
+I (xxx) OPP_SERVER: ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:1 state:1 disc_rsn:0 bda:xx:xx:xx:xx:xx:xx
 I (xxx) OPP_SERVER: ESP_OPP_SERVER_INCOMING_OBJECT_EVT handle:1 name:esp_opp_1.vcf type:text/x-vcard len:76 fd:3 needs_accept:0
 I (xxx) OPP_SERVER: RX done fd=3 total=76
 I (xxx) OPP_SERVER: ESP_OPP_SERVER_TRANSFER_COMPLETE_EVT handle:1 status:0 transferred:76
 ```
 
-When the client disconnects, `ESP_OPP_SERVER_CONNECTION_STATE_EVT` reports a disconnected state.
+`state:2` is `ESP_OPP_CONNECTING`. `state:1` is `ESP_OPP_CONNECTED`. When the client disconnects, the same event reports `ESP_OPP_DISCONNECTED` (`state:0`) and sets `disc_rsn`. The server does not report `ESP_OPP_DISCONNECTING`. `disc_rsn` is meaningful only on `ESP_OPP_DISCONNECTED`.
 
 ## Troubleshooting
 
