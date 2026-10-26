@@ -68,6 +68,18 @@ typedef union {
     } set_mfilter;
 } btc_pan_args_t;
 
+typedef struct {
+    bool inited;
+    esp_pan_cfg_t cfg;
+    uint16_t conn_hdl[BTA_PAN_NUM_CONN];
+} btc_pan_local_param_t;
+
+#if PAN_DYNAMIC_MEMORY == TRUE
+extern btc_pan_local_param_t *btc_pan_local_param_ptr;
+#define btc_pan_local_param (*btc_pan_local_param_ptr)
+#endif
+
+void btc_pan_free_cfg_strings(void);
 void btc_pan_call_handler(btc_msg_t *msg);
 void btc_pan_cb_handler(btc_msg_t *msg);
 void btc_pan_get_profile_status(esp_pan_profile_status_t *param);

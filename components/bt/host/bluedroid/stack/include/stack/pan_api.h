@@ -435,10 +435,22 @@ extern UINT8 PAN_SetTraceLevel(UINT8 new_level);
  *                  before accessing any other APIs to initialize the control
  *                  block.
  *
+ * Returns          status
+ *
+ ******************************************************************************/
+extern bt_status_t PAN_Init(void);
+
+/*******************************************************************************
+ *
+ * Function         PAN_Deinit
+ *
+ * Description      This function is called to deinitialize the control block
+ *                  for this layer.
+ *
  * Returns          void
  *
  ******************************************************************************/
-extern void PAN_Init(void);
+extern void PAN_Deinit(void);
 
 #ifdef __cplusplus
 }

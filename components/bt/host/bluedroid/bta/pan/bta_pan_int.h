@@ -181,7 +181,12 @@ typedef struct {
  ****************************************************************************/
 
 /* PAN control block */
+#if BTA_DYNAMIC_MEMORY == FALSE
 extern tBTA_PAN_CB bta_pan_cb;
+#else
+extern tBTA_PAN_CB *bta_pan_cb_ptr;
+#define bta_pan_cb (*bta_pan_cb_ptr)
+#endif
 
 /*****************************************************************************
  *  Function prototypes

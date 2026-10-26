@@ -44,17 +44,45 @@ extern fixed_queue_t* btu_general_alarm_queue;
  *                  before accessing any other APIs to initialize the control
  *                  block.
  *
- * Returns          void
+ * Returns          status
  *
  ******************************************************************************/
-void BNEP_Init(void)
+bt_status_t BNEP_Init(void)
 {
+#if BNEP_DYNAMIC_MEMORY == TRUE
+    bnep_cb_ptr = (tBNEP_CB *)osi_malloc(sizeof(tBNEP_CB));
+    if (!bnep_cb_ptr) {
+        return BT_STATUS_NOMEM;
+    }
+#endif
+
     memset(&bnep_cb, 0, sizeof(tBNEP_CB));
 
 #if defined(BNEP_INITIAL_TRACE_LEVEL)
     bnep_cb.trace_level = BNEP_INITIAL_TRACE_LEVEL;
 #else
     bnep_cb.trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
+#endif
+    return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+ *
+ * Function         BNEP_Deinit
+ *
+ * Description      This function is called to deinitialize the control block
+ *                  for this layer.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BNEP_Deinit(void)
+{
+#if BNEP_DYNAMIC_MEMORY == TRUE
+    if (bnep_cb_ptr) {
+        osi_free(bnep_cb_ptr);
+        bnep_cb_ptr = NULL;
+    }
 #endif
 }
 
