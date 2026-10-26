@@ -17,14 +17,24 @@ def test_rtc_clk(case_tester: CaseTester) -> None:
         case_tester.run_normal_case(case=case)
 
 
+# esp32s3 xtal32k runner uses USJ port
 @pytest.mark.xtal32k
-@idf_parametrize('target', ['esp32'], indirect=['target'])
+@idf_parametrize(
+    'config,target',
+    [('usj' if t == 'esp32s3' else 'default', t) for t in soc_filtered_targets('SOC_CLK_XTAL32K_SUPPORTED == 1')],
+    indirect=['config', 'target'],
+)
 def test_rtc_xtal32k(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(attributes={'test_env': 'xtal32k'})
 
 
-@pytest.mark.no32kXtal
-@idf_parametrize('target', ['esp32'], indirect=['target'])
+@pytest.mark.generic  # usually generic runner has no 32k xtal attached
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_CLK_XTAL32K_SUPPORTED == 1 and IDF_TARGET not in ["esp32h2"]'),
+    indirect=['target'],
+)
+# all esp32h2 runners has the 32k xtal attached, cannot perform this test, so skip
 def test_rtc_no_xtal32k(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(attributes={'test_env': 'noXtal32k'})
 
