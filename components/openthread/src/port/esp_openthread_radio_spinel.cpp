@@ -244,6 +244,16 @@ esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthrea
 void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop)
 {
     s_spinel_interface.GetSpinelInterface().UpdateFdSet((void *)mainloop);
+
+    const uint64_t deadline = s_radio.GetNextRadioOperationDeadline();
+    const uint64_t now = otPlatTimeGet();
+    const uint64_t remaining = (deadline > now) ? deadline - now : 0;
+    const uint64_t timeout = static_cast<uint64_t>(mainloop->timeout.tv_sec) * US_PER_S + mainloop->timeout.tv_usec;
+
+    if (remaining < timeout) {
+        mainloop->timeout.tv_sec = remaining / US_PER_S;
+        mainloop->timeout.tv_usec = remaining % US_PER_S;
+    }
 }
 
 void esp_openthread_handle_netif_state_change(bool state)

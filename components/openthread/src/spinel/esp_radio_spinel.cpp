@@ -437,7 +437,7 @@ __attribute__((weak)) uint32_t esp_radio_spinel_extern_get_frame_counter(esp_rad
 namespace ot {
 namespace Spinel {
 
-otError RadioSpinel::VendorHandleValueIs(spinel_prop_key_t aPropKey)
+otError RadioSpinel::VendorHandleValueIs(spinel_prop_key_t aPropKey, const uint8_t *, uint16_t)
 {
     otError error = OT_ERROR_NONE;
 
