@@ -135,6 +135,18 @@ def corrupt_sig_block(sig_block, seed=0, corrupt_sig=True, corrupt_crc=False, si
     return result
 
 
+def get_secure_boot_key(dut: Dut) -> str:
+    """The signing key, as a path that does not depend on the working directory.
+
+    CONFIG_SECURE_BOOT_SIGNING_KEY is evaluated relative to the project
+    directory, and pytest does not necessarily run from there.
+    """
+    key = str(dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY'))
+    if os.path.isabs(key):
+        return key
+    return os.path.join(str(dut.app.app_path), key)
+
+
 def dut_start_secure_app(dut: Dut) -> None:
     dut.serial.erase_app_header()
     dut.serial.reset_efuses()
@@ -200,7 +212,7 @@ def _examples_security_secure_boot_key_combo(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     efuse_secure_boot_key_digests = dut.app.sdkconfig.get('SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS')
-    secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
+    secure_boot_key = get_secure_boot_key(dut)
     for index in range(efuse_secure_boot_key_digests):
         for block in range(EFUSE_KEY_BLOCKS):
             dut.serial.reset_efuses()
@@ -238,7 +250,7 @@ def _examples_security_secure_boot_key_revoke(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     efuse_secure_boot_key_digests = dut.app.sdkconfig.get('SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS')
-    secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
+    secure_boot_key = get_secure_boot_key(dut)
 
     for index in range(efuse_secure_boot_key_digests):
         dut.serial.reset_efuses()
@@ -303,7 +315,7 @@ def _examples_security_secure_boot_corrupt_bl_sig(dut: Dut, signature_type: int)
     signature_type_size = get_signature_type_size(signature_type)
     seeds = range(0, signature_type_size)
     max_seed = max(seeds)
-    secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
+    secure_boot_key = get_secure_boot_key(dut)
 
     for seed in seeds:
         print(f'Case {seed} / {max_seed}')
@@ -357,7 +369,7 @@ def _examples_security_secure_boot_corrupt_app_sig(dut: Dut, signature_type: int
     signature_size = get_signature_type_size(signature_type)
     seeds = range(0, signature_size)
     max_seed = max(seeds)
-    secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
+    secure_boot_key = get_secure_boot_key(dut)
 
     for seed in seeds:
         print(f'Case {seed} / {max_seed}')
