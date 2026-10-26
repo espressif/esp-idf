@@ -238,6 +238,12 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_dbias(pmu_dev_t *hw, pmu_hp_mode_
     hw->hp_sys[mode].regulator0.dbias = dbias;
 }
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_regulator_hp_dbias_voltage(pmu_dev_t *hw, pmu_hp_mode_t mode)
+{
+    HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
+    return hw->hp_sys[mode].regulator0.hp_dbias_vol;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_driver_bar(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t drv_b)
 {
     hw->hp_sys[mode].regulator1.drv_b = drv_b;

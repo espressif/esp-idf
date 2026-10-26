@@ -325,6 +325,12 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_hp_dbias_voltage(pmu_dev_t *hw, p
     hw->hp_sys[mode].regulator0.hp_dbias_vol = hp_dbias_vol;
 }
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_regulator_hp_dbias_voltage(pmu_dev_t *hw, pmu_hp_mode_t mode)
+{
+    HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
+    return hw->hp_sys[mode].regulator0.hp_dbias_vol;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_sleep_memory_xpd(pmu_dev_t *hw, pmu_hp_mode_t mode, bool slp_xpd)
 {
     hw->hp_sys[mode].regulator0.slp_mem_xpd = slp_xpd;
