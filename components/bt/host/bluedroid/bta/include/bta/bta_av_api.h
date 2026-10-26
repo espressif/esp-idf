@@ -259,8 +259,12 @@ typedef UINT8 tBTA_AV_ERR;
  * to handle the new signalling/configuration. */
 #define BTA_AV_INCOMING_CFG_EVT 25
 
+/* AV disabled: all the streams have been deregistered and no further callback
+ * will be issued, so the upper layer can safely release its control block */
+#define BTA_AV_DISABLE_EVT      26
+
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          26
+#define BTA_AV_MAX_EVT          27
 
 
 /* function types for call-out functions */

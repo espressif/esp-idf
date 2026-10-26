@@ -204,6 +204,81 @@ tBTA_AV_CB  *bta_av_cb_ptr;
 
 /*******************************************************************************
 **
+** Function         bta_av_cback_registered
+**
+** Description      Check whether events may still be reported to the upper
+**                  layer. The callback is detached right before
+**                  BTA_AV_DISABLE_EVT is sent, which is the very last event:
+**                  the upper layer is then free to release its control block.
+**
+** Returns          TRUE if the upper layer callback can be invoked
+**
+*******************************************************************************/
+BOOLEAN bta_av_cback_registered(void)
+{
+    return (bta_av_cb.p_cback != NULL) ? TRUE : FALSE;
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_free_dropped_cback_data
+**
+** Description      Release callback payloads whose ownership would otherwise
+**                  move to the upper layer. btc_av_event_deep_copy only
+**                  duplicates BTA_AV_META_MSG_EVT, and those source pointers
+**                  alias the BTU message freed after the caller returns, so
+**                  they must not be freed here. BTA_AV_CA_DATA_EVT hands p_hdr
+**                  to the upper layer, which frees it after delivery.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_av_free_dropped_cback_data(tBTA_AV_EVT event, tBTA_AV *p_data)
+{
+    if (p_data == NULL) {
+        return;
+    }
+
+    switch (event) {
+#if BTA_AV_CA_INCLUDED
+    case BTA_AV_CA_DATA_EVT:
+        if (p_data->ca_data.p_hdr != NULL) {
+            osi_free(p_data->ca_data.p_hdr);
+            p_data->ca_data.p_hdr = NULL;
+            p_data->ca_data.p_data = NULL;
+        }
+        break;
+#endif
+    default:
+        break;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_safe_cback
+**
+** Description      Report an event to the upper layer, dropping it once AV has
+**                  been disabled and the upper layer has detached.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_av_safe_cback(tBTA_AV_EVT event, tBTA_AV *p_data)
+{
+    tBTA_AV_CBACK *p_cback = bta_av_cb.p_cback;
+
+    if (p_cback == NULL) {
+        APPL_TRACE_WARNING("%s: drop event %d, AV is disabled", __func__, event);
+        bta_av_free_dropped_cback_data(event, p_data);
+        return;
+    }
+
+    p_cback(event, p_data);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_av_timer_cback
 **
 ** Description      forward the event to stream state machine
@@ -272,7 +347,7 @@ static void bta_av_api_enable(tBTA_AV_DATA *p_data)
     }
 
     /* call callback with enable event */
-    (*bta_av_cb.p_cback)(BTA_AV_ENABLE_EVT, (tBTA_AV *)&enable);
+    bta_av_safe_cback(BTA_AV_ENABLE_EVT, (tBTA_AV *)&enable);
 }
 
 /*******************************************************************************
@@ -518,7 +593,7 @@ static void bta_av_api_get_delay_value(tBTA_AV_DATA *p_data)
     delay.delay_value = AVDT_GetDelayValue();
 
     /* call callback with get delay value event */
-    (*bta_av_cb.p_cback)(BTA_AV_GET_DELAY_VALUE_EVT, (tBTA_AV *)&delay);
+    bta_av_safe_cback(BTA_AV_GET_DELAY_VALUE_EVT, (tBTA_AV *)&delay);
 }
 #endif
 /*******************************************************************************
@@ -746,11 +821,8 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     } while (0);
 
     /* call callback with register event */
-    if (bta_av_cb.p_cback != NULL) {
-        (*bta_av_cb.p_cback)(BTA_AV_REGISTER_EVT, (tBTA_AV *)&av_reg);
-    }
+    bta_av_safe_cback(BTA_AV_REGISTER_EVT, (tBTA_AV *)&av_reg);
 }
-
 /*******************************************************************************
 **
 ** Function         bta_av_api_deregister

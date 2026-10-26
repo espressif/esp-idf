@@ -331,9 +331,21 @@ esp_err_t esp_a2d_sink_init(void);
 
 /**
  *
- * @brief           De-initialize for A2DP sink module. This function
- *                  should be called only after esp_bluedroid_enable() completes successfully,
- *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will reported to APP layer.
+ * @brief           De-initialize the A2DP sink module. Call this only after
+ *                  esp_bluedroid_enable() and esp_a2d_sink_init() have completed
+ *                  successfully. The stack must stay enabled until
+ *                  ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS is reported.
+ *
+ * @note            ESP_OK means the deinitialization request was queued. The
+ *                  completion event is reported only when the A2DP sink is
+ *                  initialized while that request is handled. If it is not,
+ *                  no ESP_A2D_PROF_STATE_EVT is reported. Disabling the stack
+ *                  before the event arrives drops that completion.
+ *                  If an A2DP connection exists, ESP_A2D_CONNECTION_STATE_EVT
+ *                  with ESP_A2D_CONNECTION_STATE_DISCONNECTED is not guaranteed.
+ *                  Protocol-stack resources are released before
+ *                  ESP_A2D_DEINIT_SUCCESS is reported, and a disconnection
+ *                  event is not reported after that completion event.
  *
  * @return
  *                  - ESP_OK: if the deinitialization request is sent successfully
@@ -447,12 +459,24 @@ esp_err_t esp_a2d_source_init(void);
 
 /**
  *
- * @brief           De-initialize for A2DP source module. This function
- *                  should be called only after esp_bluedroid_enable() completes successfully,
- *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will reported to APP layer.
+ * @brief           De-initialize the A2DP source module. Call this only after
+ *                  esp_bluedroid_enable() and esp_a2d_source_init() have completed
+ *                  successfully. The stack must stay enabled until
+ *                  ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS is reported.
+ *
+ * @note            ESP_OK means the deinitialization request was queued. The
+ *                  completion event is reported only when the A2DP source is
+ *                  initialized while that request is handled. If it is not,
+ *                  no ESP_A2D_PROF_STATE_EVT is reported. Disabling the stack
+ *                  before the event arrives drops that completion.
+ *                  If an A2DP connection exists, ESP_A2D_CONNECTION_STATE_EVT
+ *                  with ESP_A2D_CONNECTION_STATE_DISCONNECTED is not guaranteed.
+ *                  Protocol-stack resources are released before
+ *                  ESP_A2D_DEINIT_SUCCESS is reported, and a disconnection
+ *                  event is not reported after that completion event.
  *
  * @return
- *                  - ESP_OK: success
+ *                  - ESP_OK: if the deinitialization request is sent successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
