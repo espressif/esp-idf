@@ -105,11 +105,14 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
 
     mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
 
-#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
-    tls->esp_tls_dyn_buf_strategy = ((esp_tls_cfg_t *)cfg)->esp_tls_dyn_buf_strategy;
-#endif
-
     if (tls->role == ESP_TLS_CLIENT) {
+#if CONFIG_MBEDTLS_DYNAMIC_BUFFER
+        /* esp_tls_dyn_buf_strategy is a client-only field. Reading it from a
+         * server configuration (esp_tls_cfg_server_t) would access memory past
+         * the end of that object. tls is calloc'd, so the server path keeps a
+         * defined default of 0 (strategy disabled). */
+        tls->esp_tls_dyn_buf_strategy = ((esp_tls_cfg_t *)cfg)->esp_tls_dyn_buf_strategy;
+#endif
         esp_ret = set_client_config(hostname, hostlen, (esp_tls_cfg_t *)cfg, tls);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set client configurations, returned [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
