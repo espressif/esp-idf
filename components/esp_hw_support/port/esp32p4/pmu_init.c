@@ -99,8 +99,7 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     pmu_ll_hp_set_dcm_mode                    (ctx->hal->dev, mode, anlg->bias.dcm_mode);
     pmu_ll_hp_set_dcm_vset                    (ctx->hal->dev, mode, anlg->bias.dcm_vset);
     pmu_ll_hp_set_dbg_atten                   (ctx->hal->dev, mode, anlg->bias.dbg_atten);
-    pmu_ll_hp_set_current_power_off           (ctx->hal->dev, mode, anlg->bias.pd_cur);
-    pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, mode, anlg->bias.bias_sleep);
+    pmu_ll_hp_set_pd_cur_bias_sleep           (ctx->hal->dev, mode, anlg->bias.pd_cur, anlg->bias.bias_sleep);
     pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, mode, anlg->regulator0.slp_mem_xpd);
     pmu_ll_hp_set_regulator_sleep_logic_xpd   (ctx->hal->dev, mode, anlg->regulator0.slp_logic_xpd);
     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300) && (mode == PMU_MODE_HP_SLEEP)) {
@@ -130,10 +129,11 @@ void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, pmu_lp_system_pa
 
     /* Default configuration of lp-system analog sub-system in active and
      * sleep modes */
-    pmu_ll_lp_set_bias_xpd             (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.xpd_bias);
-    pmu_ll_lp_set_dbg_atten            (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.dbg_atten);
-    pmu_ll_lp_set_current_power_off    (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.pd_cur);
-    pmu_ll_lp_set_bias_sleep_enable    (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.bias_sleep);
+    if (mode == PMU_MODE_LP_SLEEP) {
+        pmu_ll_lp_set_bias_xpd             (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.xpd_bias);
+        pmu_ll_lp_set_dbg_atten            (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.dbg_atten);
+        pmu_ll_lp_set_pd_cur_bias_sleep    (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.pd_cur, anlg->bias.bias_sleep);
+    }
     pmu_ll_lp_set_regulator_slp_xpd    (ctx->hal->dev, mode, anlg->regulator0.slp_xpd);
     pmu_ll_lp_set_regulator_sleep_dbias(ctx->hal->dev, mode, anlg->regulator0.slp_dbias);
     pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, mode, anlg->regulator1.drv_b);
