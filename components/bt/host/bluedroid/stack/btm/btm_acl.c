@@ -2883,6 +2883,41 @@ void btm_acl_free(void)
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         btm_acl_drop_failed_page
+**
+** Description      Drop a failed BR/EDR page (Connection Complete or Create
+**                  Connection status) to a device whose link is still up, as
+**                  when both sides page each other at once, and end the page.
+**
+** Returns          TRUE if the page was dropped, so the failure must not go
+**                  further
+**
+*******************************************************************************/
+BOOLEAN btm_acl_drop_failed_page(BD_ADDR bda, UINT8 status)
+{
+    tL2C_LCB *p_lcb;
+
+    if (status == HCI_SUCCESS) {
+        return FALSE;
+    }
+
+    /* A link being disconnected is up until its Disconnection Complete */
+    p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_BR_EDR);
+    if (p_lcb == NULL ||
+            (p_lcb->link_state != LST_CONNECTED && p_lcb->link_state != LST_DISCONNECTING)) {
+        return FALSE;
+    }
+
+    BTM_TRACE_WARNING("dropping failed page to " MACSTR " (0x%x), its link is up\n",
+                      MAC2STR(bda), status);
+    btm_acl_resubmit_page();
+    return TRUE;
+}
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_acl_connected
@@ -2898,11 +2933,7 @@ void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mo
 
     if (link_type == HCI_LINK_TYPE_ACL) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
-        /* Our page failed, but the device connected to us meanwhile (both sides paged at once):
-         * the link is up, so this only ends the page. */
-        if (status != HCI_SUCCESS && BTM_ACL_IS_CONNECTED(bda)) {
-            BTM_TRACE_WARNING("failed page (0x%x) to a connected device\n", status);
-            btm_acl_resubmit_page();
+        if (btm_acl_drop_failed_page(bda, status)) {
             return;
         }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
