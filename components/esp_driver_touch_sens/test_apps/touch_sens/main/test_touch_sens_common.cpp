@@ -410,6 +410,17 @@ TEST_CASE("touch_sens_light_sleep_wakeup_test", "[touch]")
      *       cases, this test does not currently verify invocation of the inactive callback.
      */
 
+    /**
+     * Verify that the peripheral still works properly after waking up from sleep.
+     */
+    vTaskDelay(pdMS_TO_TICKS(100));  // Wait for ULP release
+    int active_count_before = cb_data.active_count;
+    test_touch_simulate_touch(chan_ids[0], true);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    int active_count_after = cb_data.active_count;
+    test_touch_simulate_touch(chan_ids[0], false);
+    TEST_ASSERT_GREATER_THAN(active_count_before, active_count_after);
+
     TEST_ESP_OK(touch_sensor_stop_continuous_scanning(touch));
     TEST_ESP_OK(touch_sensor_disable(touch));
     TEST_ESP_OK(touch_sensor_config_sleep_wakeup(touch, NULL));
