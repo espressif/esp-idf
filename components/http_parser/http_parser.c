@@ -1471,6 +1471,11 @@ reexecute:
 
       case s_header_value_start:
       {
+        if (UNLIKELY(!lenient && !IS_HEADER_CHAR(ch))) {
+          SET_ERRNO(HPE_INVALID_HEADER_TOKEN);
+          goto error;
+        }
+
         MARK(header_value);
 
         UPDATE_STATE(s_header_value);
@@ -1558,26 +1563,22 @@ reexecute:
           switch (h_state) {
             case h_general:
             {
-              const char* p_cr;
-              const char* p_lf;
-              size_t limit = data + len - p;
+              size_t left = data + len - p;
+              const char* pe = p + MIN(left, HTTP_MAX_HEADER_SIZE);
 
-              limit = MIN(limit, HTTP_MAX_HEADER_SIZE);
-
-              p_cr = (const char*) memchr(p, CR, limit);
-              p_lf = (const char*) memchr(p, LF, limit);
-              if (p_cr != NULL) {
-                if (p_lf != NULL && p_cr >= p_lf)
-                  p = p_lf;
-                else
-                  p = p_cr;
-              } else if (UNLIKELY(p_lf != NULL)) {
-                p = p_lf;
-              } else {
-                p = data + len;
+              for (; p != pe; p++) {
+                ch = *p;
+                if (ch == CR || ch == LF) {
+                  --p;
+                  break;
+                }
+                if (!lenient && !IS_HEADER_CHAR(ch)) {
+                  SET_ERRNO(HPE_INVALID_HEADER_TOKEN);
+                  goto error;
+                }
               }
-              --p;
-
+              if (p == data + len)
+                --p;
               break;
             }
 
@@ -1826,7 +1827,7 @@ reexecute:
         /* Here we call the headers_complete callback. This is somewhat
          * different than other callbacks because if the user returns 1, we
          * will interpret that as saying that this message has no body. This
-         * is needed for the annoying case of recieving a response to a HEAD
+         * is needed for the annoying case of receiving a response to a HEAD
          * request.
          *
          * We'd like to use CALLBACK_NOTIFY_NOADVANCE() here but we cannot, so
@@ -1912,7 +1913,7 @@ reexecute:
             && parser->content_length != ULLONG_MAX);
 
         /* The difference between advancing content_length and p is because
-         * the latter will automaticaly advance on the next loop iteration.
+         * the latter will automatically advance on the next loop iteration.
          * Further, if content_length ends up at 0, we want to see the last
          * byte again for our message complete callback.
          */
@@ -2384,7 +2385,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
       case s_dead:
         return 1;
 
-      /* Skip delimeters */
+      /* Skip delimiters */
       case s_req_schema_slash:
       case s_req_schema_slash_slash:
       case s_req_server_start:
