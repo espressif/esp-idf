@@ -1547,9 +1547,9 @@ def _find_usable_locale() -> str | None:
 if __name__ == '__main__':
     try:
         if 'MSYSTEM' in os.environ:
-            log.warn(
-                'MSys/Mingw is no longer supported. Please follow the getting started guide of the '
-                'documentation in order to set up a suitable environment, or continue at your own risk.'
+            log.die(
+                'MSys/Mingw is not supported. Please follow the getting started guide of the '
+                'documentation to set up a supported environment'
             )
         elif os.name == 'posix' and not _valid_unicode_config():
             # Trying to find best Unicode locale available on the system and restart python with
