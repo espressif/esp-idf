@@ -48,6 +48,8 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG   Invalid clock source, frequency, or `cbs` is NULL
  *      - ESP_ERR_NOT_FOUND     The DMA peripheral has been occupied
  *      - ESP_ERR_NO_MEM        No memory for the DMA peripheral struct
+ *      - ESP_ERR_INVALID_STATE The shared DAC clock is in use with another source
+ *      - ESP_ERR_NOT_SUPPORTED Requested frequency is outside the DMA timer range
  */
 esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq_hz, bool is_alternate,
                             const dac_dma_event_callbacks_t *cbs, void *ctx);
