@@ -583,6 +583,18 @@ esp_err_t WL_Flash::write(size_t dest_addr, const void *src, size_t size)
         return ESP_OK;
     }
     ESP_LOGD(TAG, "%s - dest_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) dest_addr, (uint32_t) size);
+    // Logical WL pages are not physically contiguous (dummy sector), so an
+    // unaligned request crossing a page boundary must write its head separately.
+    size_t head = this->cfg.wl_page_size - (dest_addr % this->cfg.wl_page_size);
+    // Peel only if unaligned and crossing the boundary; strict '>' keeps size >= 1 below.
+    if (head < this->cfg.wl_page_size && size > head) {
+        size_t virt_addr_head = this->calcAddr(dest_addr);
+        result = this->partition->write(this->cfg.wl_partition_start_addr + virt_addr_head, src, head);
+        WL_RESULT_CHECK(result);
+        dest_addr += head;
+        src = &((const uint8_t *)src)[head];
+        size -= head;
+    }
     uint32_t count = (size - 1) / this->cfg.wl_page_size;
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(dest_addr + i * this->cfg.wl_page_size);
@@ -606,6 +618,17 @@ esp_err_t WL_Flash::read(size_t src_addr, void *dest, size_t size)
         return ESP_OK;
     }
     ESP_LOGD(TAG, "%s - src_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) src_addr, (uint32_t) size);
+    // Same unaligned-head split as write().
+    size_t head = this->cfg.wl_page_size - (src_addr % this->cfg.wl_page_size);
+    // Peel only if unaligned and crossing the boundary; strict '>' keeps size >= 1 below.
+    if (head < this->cfg.wl_page_size && size > head) {
+        size_t virt_addr_head = this->calcAddr(src_addr);
+        result = this->partition->read(this->cfg.wl_partition_start_addr + virt_addr_head, dest, head);
+        WL_RESULT_CHECK(result);
+        src_addr += head;
+        dest = &((uint8_t *)dest)[head];
+        size -= head;
+    }
     uint32_t count = (size - 1) / this->cfg.wl_page_size;
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(src_addr + i * this->cfg.wl_page_size);
