@@ -48,6 +48,19 @@
 
 #define BTM_SEC_MAX_COLLISION_DELAY     (5000)
 
+#if BT_CLASSIC_BQB_INCLUDED
+/* GAP/DM/BON/BV-01-C only. Default off.
+ * Flag on keeps the bond and the LE ACL for either Kconfig value.
+ * Flag off: =n keeps the bond and drops the LE ACL; =y, as Central,
+ * drops the local LE keys and keeps the link. */
+static BOOLEAN s_btm_bqb_keep_acl_on_key_missing_flag = FALSE;
+
+void btm_bqb_keep_acl_on_key_missing_ctrl(BOOLEAN enable)
+{
+    s_btm_bqb_keep_acl_on_key_missing_flag = enable;
+}
+#endif /* BT_CLASSIC_BQB_INCLUDED */
+
 #ifdef APPL_AUTH_WRITE_EXCEPTION
 BOOLEAN (APPL_AUTH_WRITE_EXCEPTION)(BD_ADDR bd_addr);
 #endif
@@ -4267,14 +4280,33 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
         /* The peer answered our LL_ENC_REQ saying it no longer holds the LTK. Forget our
            copy and keep the link up so the application can pair again right away. This is
            unauthenticated, an impersonator can report the same error to strip the stored
-           security level, which is why the option defaults to disabled. */
-        if (disconnect && status == HCI_ERR_KEY_MISSING && p_acl->link_role == BTM_ROLE_MASTER) {
+           security level, which is why the option defaults to disabled.
+           The BQB flag below keeps the bond for GAP/DM/BON/BV-01-C, so skip this. */
+        if (disconnect && status == HCI_ERR_KEY_MISSING && p_acl->link_role == BTM_ROLE_MASTER
+#if BT_CLASSIC_BQB_INCLUDED
+                && !s_btm_bqb_keep_acl_on_key_missing_flag
+#endif
+                ) {
             BTM_TRACE_WARNING("%s peer reports no LTK, dropping the local LE keys\n", __func__);
             p_dev_rec->sec_flags &= ~(BTM_SEC_LE_LINK_KEY_KNOWN);
             p_dev_rec->ble.key_type = BTM_LE_KEY_NONE;
             disconnect = FALSE;
         }
 #endif  ///BLE_SMP_UNBOND_ON_KEY_MISSING == TRUE
+
+#if BT_CLASSIC_BQB_INCLUDED
+        /* GAP/DM/BON/BV-01-C: the upper tester still disconnects this LE ACL,
+         * and the stored bond stays. This overrides both Kconfig values:
+         * =n would drop the link and keep the keys; =y, as Central, would
+         * drop the local LE keys and keep the link. Flag off follows the
+         * Kconfig. Other encryption failures still disconnect. */
+        if (disconnect && status == HCI_ERR_KEY_MISSING
+                && s_btm_bqb_keep_acl_on_key_missing_flag) {
+            BTM_TRACE_WARNING("%s peer reports no LTK, keeping the bond and the link\n",
+                              __func__);
+            disconnect = FALSE;
+        }
+#endif /* BT_CLASSIC_BQB_INCLUDED */
 
         btm_ble_link_encrypted(pseudo_addr, encr_enable);
 

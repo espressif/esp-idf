@@ -4511,6 +4511,10 @@ tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels);
 *******************************************************************************/
 void BTM_PktStatNumsGet(UINT16 sync_conn_handle, tBTM_SCO_PKT_STAT_NUMS *pkt_nums);
 
+#if (BT_CLASSIC_BQB_INCLUDED == TRUE)
+void btm_bqb_keep_acl_on_key_missing_ctrl(BOOLEAN enable);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
