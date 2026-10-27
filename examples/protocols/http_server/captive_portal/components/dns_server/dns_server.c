@@ -22,7 +22,7 @@
 #define DNS_MAX_LEN (256)
 
 #define OPCODE_MASK (0x7800)
-#define QR_FLAG (1 << 7)
+#define QR_FLAG (0x8000)
 #define QD_TYPE_A (0x0001)
 #define ANS_TTL_SEC (300)
 
@@ -104,6 +104,10 @@ static char *parse_dns_name(char *raw_name, const char *raw_end, char *parsed_na
 // Parses the DNS request and prepares a DNS response with the IP of the softAP
 static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t dns_reply_max_len, dns_server_handle_t h)
 {
+    // Too short to be a DNS message, ignore
+    if (req_len < sizeof(dns_header_t)) {
+        return 0;
+    }
     if (req_len > dns_reply_max_len) {
         return -1;
     }
@@ -117,13 +121,18 @@ static int parse_dns_request(char *req, size_t req_len, char *dns_reply, size_t 
     ESP_LOGD(TAG, "DNS query with header id: 0x%X, flags: 0x%X, qd_count: %d",
              ntohs(header->id), ntohs(header->flags), ntohs(header->qd_count));
 
+    // Not a query, so that a spoofed reply can't make two servers answer each other forever
+    if (ntohs(header->flags) & QR_FLAG) {
+        return 0;
+    }
+
     // Not a standard query
     if ((header->flags & OPCODE_MASK) != 0) {
         return 0;
     }
 
     // Set question response flag
-    header->flags |= QR_FLAG;
+    header->flags |= htons(QR_FLAG);
 
     uint16_t qd_count = ntohs(header->qd_count);
 
@@ -255,9 +264,9 @@ void dns_server_task(void *pvParameters)
                 int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN, handle);
 
                 ESP_LOGI(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
-                if (reply_len <= 0) {
-                    ESP_LOGE(TAG, "Failed to prepare a DNS reply");
-                } else {
+                if (reply_len < 0) {
+                    ESP_LOGW(TAG, "Failed to prepare a DNS reply");
+                } else if (reply_len > 0) {   // 0: too short, a reply, or not a standard query; ignored
                     int err = sendto(sock, reply, reply_len, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
                     if (err < 0) {
                         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
