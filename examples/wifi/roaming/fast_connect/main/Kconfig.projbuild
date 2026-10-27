@@ -1,0 +1,31 @@
+menu "Example Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "Wi-Fi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "Wi-Fi Password"
+        default "mypassword"
+        help
+            Wi-Fi password (WPA or WPA2) for the example to use.
+
+    config EXAMPLE_BUSY_AFTER_IP_MS
+        int "Report the application busy for this long after each IP address (ms)"
+        range 0 60000
+        default 0
+        help
+            After each IP address, report a reply outstanding to the roaming app with
+            esp_wifi_roaming_set_app_hold() for this long, then report nothing outstanding.
+            The check after the connection waits for it. 0 never reports.
+
+    config EXAMPLE_RESTART_INTERVAL
+        int "Restart this long after each boot's IP address (s)"
+        range 0 3600
+        default 0
+        help
+            Restart this many seconds after the boot's first IP address, so that boot to IP can be
+            measured over many boots, with the AP remembered. 0 never restarts.
+endmenu

@@ -73,6 +73,76 @@ menu "Roaming triggers"
             to trigger a roaming attempt.
 endmenu #"Roaming triggers"
 
+menu "Fast connect"
+    config ESP_WIFI_ROAMING_FAST_CONNECT
+        bool "Remember the AP and connect to it directly next time"
+        default n
+        help
+            Remember the BSSID and channel of the AP each connection ends on, as a connect hint in the
+            station configuration (bssid_set, bssid and channel, with WIFI_FAST_SCAN and
+            WIFI_CONNECT_AP_BY_SIGNAL). The next connection, after a reboot or a lost link, then tries that
+            AP alone instead of scanning every channel first. If that connection fails, for any reason but
+            the station's own disconnect or a roam, the hint is cleared on the Wi-Fi task before the
+            disconnection event is posted, so the next connection attempt, whoever starts it, scans every
+            channel and connects to the strongest AP, and the AP that connection ends on is remembered
+            instead. Nothing is written when the AP connected to is the one already remembered.
+
+            With this option the roaming app owns scan_method, sort_method, bssid_set, bssid and channel of
+            the station configuration, and the supplicant leaves the hint in place when BTM or MBO is
+            enabled. The hint is saved with the rest of the station configuration (in NVS, unless the
+            application chose WIFI_STORAGE_RAM): an application that sets a new station configuration at
+            every boot replaces it, and so scans every channel at every boot, as without this option.
+
+            Turning fast connect off at run time (roam_config.fast_connect) clears the hint. Turning this
+            option off in a later firmware leaves the last hint in the saved station configuration, with
+            nothing to clear it after a failure: such a firmware should clear bssid_set once.
+
+    config ESP_WIFI_ROAMING_JOIN_CHECK
+        bool "Scan once after each connection for a much stronger AP"
+        default y if ESP_WIFI_ROAMING_FAST_CONNECT
+        default n
+        help
+            Once a connection has its IP address, scan once and roam to a candidate AP at least
+            ESP_WIFI_ROAMING_JOIN_CHECK_RSSI_DIFF dB stronger than the AP connected to. A connection
+            that joins a remembered AP, or the first AP heard, can then still end on the strongest.
+            The scan waits for the roaming backoff time after the connection and for the application,
+            which can ask it to wait while it has replies outstanding (esp_wifi_roaming_set_app_hold()).
+            No check follows a connection the roaming app made itself to roam.
+
+    config ESP_WIFI_ROAMING_JOIN_CHECK_RSSI_DIFF
+        int "RSSI difference b/w current AP and candidate AP for the check after a connection"
+        depends on ESP_WIFI_ROAMING_JOIN_CHECK
+        range 1 99
+        default 15
+        help
+            Minimum RSSI improvement (in dB) required of a candidate AP before the check after a
+            connection roams to it. The current AP's RSSI is the stronger of the connection's and the
+            scan's, as for the other triggers.
+
+    config ESP_WIFI_ROAMING_JOIN_CHECK_SETTLE_MAX_TIME
+        int "Longest wait (in seconds) for the application before the check scan"
+        depends on ESP_WIFI_ROAMING_JOIN_CHECK
+        range 0 600
+        default 60
+        help
+            The check scan waits while the application reports a reply outstanding or that it is still
+            settling after the connection, and then for 500 ms in which it reports neither. It waits at
+            most this long after the connection's IP address, and then scans anyway: a scan keeps the
+            connection, it only delays traffic while the radio is off channel.
+
+    config ESP_WIFI_ROAMING_JOIN_CHECK_ROAM_WAIT_MAX_TIME
+        int "Longest wait (in seconds) for the application before a roam the check chose"
+        depends on ESP_WIFI_ROAMING_JOIN_CHECK
+        range 1 120
+        default 15
+        help
+            A roam the check chose is never made while the application reports a reply outstanding, or,
+            within ESP_WIFI_ROAMING_JOIN_CHECK_SETTLE_MAX_TIME of the IP address, that it is still
+            settling. If the application does not report 500 ms of quiet within this time, the roam is
+            given up until the next connection: a roam drops the connection briefly, and whatever the
+            application waits on would be lost.
+endmenu #"Fast connect"
+
 menu "Roaming Methods"
     config ESP_WIFI_ROAMING_LEGACY_ROAMING
         bool "Support Legacy roaming approach"
