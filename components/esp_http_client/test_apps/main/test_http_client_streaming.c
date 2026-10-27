@@ -20,8 +20,11 @@
  * - esp_http_client_event_t::error hands the handler the same esp_err_t that the
  *   failing call returns, for a failed header read, a body cut short, and a
  *   failed read on the streaming path.
+ * - A parser error inside read() fails the call and leaves no state behind
+ *   that a later read() or a reused handle would act on.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include "esp_http_client.h"
 #include "unity.h"
@@ -262,6 +265,123 @@ TEST_CASE("HTTP_EVENT_ERROR carries the code of a failed streaming read", "[esp_
     TEST_ASSERT_EQUAL(-1, esp_http_client_read(client, buf, sizeof(buf)));
     TEST_ASSERT_EQUAL(1, s_error_events);
     TEST_ASSERT_EQUAL_HEX32(ESP_ERR_HTTP_CONNECTION_CLOSED, s_event_error);
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+/*
+ * Parser error inside esp_http_client_read().
+ *
+ * With buffer_size 128, fetch_headers() reads the 47-byte head plus the first
+ * 77 body bytes, which are cached. read() serves those, then reads the rest
+ * itself: 23 more body bytes decode into the caller's buffer, and the bad
+ * chunk size "ZZ" stops the parser. At that point the client holds a pointer
+ * into the caller's buffer and a count of the bytes copied into it.
+ *
+ * Padding after "ZZ" keeps bytes on the wire past that first read(), so a
+ * later read() reaches the parser instead of the mock's EOF, which reads as a
+ * transport timeout.
+ */
+#define BAD_CHUNK_BODY_LEN 100
+#define BAD_CHUNK_TAIL_PAD 128
+#define BAD_CHUNK_READ_LEN 256
+#define BAD_CHUNK_SENTINEL 0xA5
+
+static char s_bad_chunk_resp[320];
+
+static const char *bad_chunk_response(void)
+{
+    char *p = s_bad_chunk_resp;
+    p += sprintf(p, "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n%x\r\n", BAD_CHUNK_BODY_LEN);
+    memset(p, 'a', BAD_CHUNK_BODY_LEN);
+    p += BAD_CHUNK_BODY_LEN;
+    p += sprintf(p, "\r\nZZ\r\n");
+    memset(p, 'x', BAD_CHUNK_TAIL_PAD);
+    p[BAD_CHUNK_TAIL_PAD] = '\0';
+    return s_bad_chunk_resp;
+}
+
+/* Opens a GET on `mock` and runs read() into `buf` until the parser error. */
+static esp_http_client_handle_t read_until_parser_error(esp_transport_handle_t mock, char *buf, int *read_ret)
+{
+    esp_http_client_config_t cfg = {
+        .url = "http://test-server.local/bad-chunk",
+        .buffer_size = 128,
+        .transport = mock,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&cfg);
+    TEST_ASSERT_NOT_NULL(client);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_open(client, 0));
+    TEST_ASSERT_EQUAL(0, esp_http_client_fetch_headers(client));
+    *read_ret = esp_http_client_read(client, buf, BAD_CHUNK_READ_LEN);
+    return client;
+}
+
+static esp_transport_handle_t bad_chunk_mock_create(void)
+{
+    mock_http_transport_config_t mc = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mc.response_data = bad_chunk_response();
+    esp_transport_handle_t mock = mock_http_transport_create(&mc);
+    TEST_ASSERT_NOT_NULL(mock);
+    return mock;
+}
+
+TEST_CASE("read returns ESP_FAIL on a parser error even after copying body bytes", "[esp_http_client][streaming][p0][negative]")
+{
+    /* static: on a broken client this buffer may be written after the call */
+    static char buf[BAD_CHUNK_READ_LEN];
+    esp_transport_handle_t mock = bad_chunk_mock_create();
+    int ret = 0;
+    esp_http_client_handle_t client = read_until_parser_error(mock, buf, &ret);
+
+    /* 100 body bytes reached buf before the error; none of them may be
+     * reported as valid data from a response that turned out malformed. */
+    TEST_ASSERT_EQUAL(ESP_FAIL, ret);
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+TEST_CASE("read after a parser error in read does not use stale state", "[esp_http_client][streaming][p0][negative]")
+{
+    static char buf[BAD_CHUNK_READ_LEN];
+    esp_transport_handle_t mock = bad_chunk_mock_create();
+    int ret = 0;
+    esp_http_client_handle_t client = read_until_parser_error(mock, buf, &ret);
+    TEST_ASSERT_EQUAL(ESP_FAIL, ret);
+
+    /* A stale byte count with no cache behind it makes this copy from NULL.
+     * Without it, the parser's error is sticky, so this read fails too. */
+    char again[BAD_CHUNK_READ_LEN];
+    TEST_ASSERT_EQUAL(ESP_FAIL, esp_http_client_read(client, again, sizeof(again)));
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+TEST_CASE("reuse after a parser error in read does not write to the old buffer", "[esp_http_client][streaming][p0][negative]")
+{
+    /* static so that a stale write lands somewhere harmless and observable */
+    static char old_buf[BAD_CHUNK_READ_LEN];
+    esp_transport_handle_t mock = bad_chunk_mock_create();
+    int ret = 0;
+    esp_http_client_handle_t client = read_until_parser_error(mock, old_buf, &ret);
+    TEST_ASSERT_EQUAL(ESP_FAIL, ret);
+    memset(old_buf, BAD_CHUNK_SENTINEL, sizeof(old_buf));
+
+    /* Second request on the same handle; its body arrives with its head, so
+     * fetch_headers() decodes it while the first read()'s pointer is live. */
+    mock_http_transport_set_response(mock, resp_200, 0);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_close(client));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_open(client, 0));
+    TEST_ASSERT_EQUAL(5, esp_http_client_fetch_headers(client));
+
+    TEST_ASSERT_EACH_EQUAL_UINT8(BAD_CHUNK_SENTINEL, old_buf, sizeof(old_buf));
+
+    char buf[16] = {0};
+    TEST_ASSERT_EQUAL(5, esp_http_client_read(client, buf, sizeof(buf)));
+    TEST_ASSERT_EQUAL_STRING("hello", buf);
 
     esp_http_client_cleanup(client);
     mock_http_transport_destroy(mock);
