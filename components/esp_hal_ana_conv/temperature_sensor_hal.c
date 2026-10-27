@@ -13,6 +13,10 @@
 
 __attribute__((unused)) static const char *TAG_TSENS = "temperature_sensor_hal";
 
+#ifndef TEMPERATURE_SENSOR_LL_OFFSET_SCALE
+#define TEMPERATURE_SENSOR_LL_OFFSET_SCALE 1
+#endif
+
 #define INT_NOT_USED 999999
 
 // HAL layer maintains its own copies of these variables to avoid changing existing logic
@@ -37,7 +41,7 @@ void temperature_sensor_hal_i2c_saradc_reg_restore(void)
 int temperature_sensor_hal_get_raw_value(void)
 {
     int raw_value = temperature_sensor_ll_get_raw_value();
-    return (TEMPERATURE_SENSOR_LL_ADC_FACTOR_INT * raw_value - TEMPERATURE_SENSOR_LL_DAC_FACTOR_INT * temperature_sensor_attributes[s_hal_tsens_idx].offset - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR_INT) / TEMPERATURE_SENSOR_LL_DENOMINATOR;
+    return (TEMPERATURE_SENSOR_LL_ADC_FACTOR_INT * raw_value - TEMPERATURE_SENSOR_LL_DAC_FACTOR_INT * temperature_sensor_attributes[s_hal_tsens_idx].offset / TEMPERATURE_SENSOR_LL_OFFSET_SCALE - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR_INT) / TEMPERATURE_SENSOR_LL_DENOMINATOR;
 }
 
 int16_t temperature_sensor_hal_get_degree(bool *range_changed)
