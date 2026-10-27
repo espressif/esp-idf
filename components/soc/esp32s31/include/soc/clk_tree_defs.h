@@ -497,9 +497,7 @@ typedef enum {
 
 ////////////////////////////////////////////////////DAC/////////////////////////////////////////////////////////////////
 /**
- * @note ESP32-S31 has a single DAC functional clock shared by the DMA (continuous) path
- *       and the Sintx (cosine) path. The two source enums below are kept separate to
- *       match the existing DAC driver APIs.
+ * @note ESP32-S31 has a single DAC functional clock shared by all data path (DMA/sintx/oneshot)
  */
 
 /**
@@ -513,7 +511,7 @@ typedef enum {
  */
 typedef enum {
     DAC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-    DAC_DIGI_CLK_SRC_LP_FAST = SOC_MOD_CLK_RTC_FAST,    /*!< Select LP_FAST as the source clock */
+    DAC_DIGI_CLK_SRC_RTC_FAST = SOC_MOD_CLK_RTC_FAST,    /*!< Select RTC_FAST as the source clock */
     DAC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default source clock */
 } soc_periph_dac_digi_clk_src_t;
 
@@ -529,9 +527,23 @@ typedef enum {
  */
 typedef enum {
     DAC_COSINE_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
-    DAC_COSINE_CLK_SRC_LP_FAST = SOC_MOD_CLK_RTC_FAST,  /*!< Select LP_FAST as the source clock */
+    DAC_COSINE_CLK_SRC_RTC_FAST = SOC_MOD_CLK_RTC_FAST,  /*!< Select RTC_FAST as the source clock */
     DAC_COSINE_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default source clock */
 } soc_periph_dac_cosine_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of DAC oneshot output
+ */
+#define SOC_DAC_ONESHOT_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RTC_FAST}
+
+/**
+ * @brief DAC oneshot clock source
+ */
+typedef enum {
+    DAC_ONESHOT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
+    DAC_ONESHOT_CLK_SRC_RTC_FAST = SOC_MOD_CLK_RTC_FAST,  /*!< Select RTC_FAST as the source clock */
+    DAC_ONESHOT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default source clock */
+} soc_periph_dac_oneshot_clk_src_t;
 
 //////////////////////////////////////////////////TWAI//////////////////////////////////////////////////////////////////
 
