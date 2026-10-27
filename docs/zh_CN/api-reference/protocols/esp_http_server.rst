@@ -139,22 +139,48 @@ WebSocket 握手后回调
     httpd_register_uri_handler(server, &ws);
 
 
+WebSocket 消息分片
+^^^^^^^^^^^^^^^^^^
+
+服务器不支持 `RFC 6455 第 5.4 节 <https://tools.ietf.org/html/rfc6455#section-5.4>`_ 所定义的 WebSocket 消息分片。需要接收或发送分片的应用程序必须自行遵循以下规则。
+
+接收时，服务器会将每个帧单独传递给处理程序，不会合并同一消息的各个分片。如果一条 TEXT 消息分为三个片段，处理程序会收到三个独立的帧。可使用 :cpp:type:`httpd_ws_frame_t` 的 ``final`` 和 ``fragmented`` 字段识别分片，并在应用程序中合并有效载荷。
+
+服务器不会验证分片顺序。即使没有待继续的消息，服务器也会接受 CONTINUE 帧；在一条分片消息尚未结束时，也会接受新的 TEXT 或 BINARY 帧。根据 RFC 6455，这两种情况下都应使用状态码 1002 关闭连接。
+
+:menuitem:`CONFIG_HTTPD_WS_STRICTER_RFC6455` 仅验证完整且未分片的 TEXT 帧是否为有效的 UTF-8，不会验证以分片形式到达的 TEXT 消息。要对此类消息实施 `RFC 6455 第 8.1 节 <https://tools.ietf.org/html/rfc6455#section-8.1>`_ 的要求，请合并各分片，并对结果调用 :cpp:func:`httpd_ws_validate_utf8`。
+
+发送时，服务器不会自动对消息进行分片。要发送分片，请设置 ``fragmented`` 选项，并使用 ``final`` 选项标记最后一个分片。
+
+
 WebSocket 控制帧处理程序
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-默认情况下，服务器会自动回复 WebSocket 控制帧——收到 PING 帧时回复 PONG 帧，收到 CLOSE 帧时回复 CLOSE 帧——应用程序不会参与该过程。若将 :cpp:type:`httpd_uri_t` 中的 ``handle_ws_control_frames`` 设置为 true，则会禁用该行为，控制帧将交由数据处理程序处理，此时应用程序需要自行接收控制帧并发送协议回复。
+默认情况下，服务器会自动回复 WebSocket 控制帧。收到 PING 帧时回复 PONG 帧，收到 CLOSE 帧时回复 CLOSE 帧，应用程序不会参与该过程。
 
-``ws_control_handler`` 回调提供了一种折中方案：设置该回调（且 ``handle_ws_control_frames`` 为 true）后，控制帧（PING、PONG、CLOSE）将交由该专用处理程序处理，而不再传递给数据处理程序；服务器仍会自行接收帧体，并在回调返回后自动发送协议回复。该机制适用于观测心跳（跟踪 PONG 响应）或记录连接关闭原因，而无需重新实现回复逻辑。
+在 :cpp:type:`httpd_uri_t` 中将 ``handle_ws_control_frames`` 设置为 true 可关闭自动回复。此后控制帧会传递给数据处理程序，该处理程序必须接收每个帧并自行发送协议回复。
 
-传递给该回调的帧为只读，且由服务器持有，仅在回调调用期间有效，因此回调中不得释放或保留该帧。如果回调返回错误，服务器仍会发送协议回复，然后关闭连接。
+``ws_control_handler`` 回调可避免将控制帧传递给数据处理程序。请将该回调与 ``handle_ws_control_frames`` 一同设置。此后控制帧（PING、PONG、CLOSE）会传递给该专用处理程序，数据处理程序只会接收数据帧。
+
+服务器会为处理程序接收帧体，因此无需分配内存，也无需调用 :cpp:func:`httpd_ws_recv_frame`。服务器不会回复，处理程序负责发送协议回复。收到 PING 时，应回复有效载荷相同的 PONG；收到 CLOSE 时，应回复 CLOSE；收到 PONG 时无需回复。要发送回复，请覆盖 ``frame->type``，并将该帧传递给 :cpp:func:`httpd_ws_send_frame`。
+
+帧及其有效载荷均归服务器所有，且仅在回调期间有效。处理程序不得释放或保留它们，也不得将 ``frame->len`` 增大到超过接收长度，因为有效载荷缓冲区只能容纳一个控制帧。如果处理程序返回错误，服务器不会发送回复，并会关闭连接。
 
 .. code-block:: c
 
-    static esp_err_t ws_control_frame_handler(httpd_req_t *req, const httpd_ws_frame_t *frame)
+    static esp_err_t ws_control_frame_handler(httpd_req_t *req, httpd_ws_frame_t *frame)
     {
-        // 在此处观测 PING/PONG/CLOSE 帧（例如心跳跟踪、日志记录）
-        // 回调返回后，服务器会自行发送协议回复
-        return ESP_OK;
+        switch (frame->type) {
+        case HTTPD_WS_TYPE_PING:
+            frame->type = HTTPD_WS_TYPE_PONG;   // 复用该帧发送回复
+            return httpd_ws_send_frame(req, frame);
+        case HTTPD_WS_TYPE_CLOSE:
+            frame->len = 0;                     // 空 CLOSE 帧是有效回复
+            frame->payload = NULL;
+            return httpd_ws_send_frame(req, frame);
+        default:
+            return ESP_OK;                      // PONG 无需回复
+        }
     }
 
     // 注册带有专用控制帧处理程序的 WebSocket URI 处理程序

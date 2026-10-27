@@ -155,6 +155,76 @@
 
 实现方应包含覆盖对齐检查、由标志驱动的行为（只读、先擦后写、NAND 风格写）以及错误在堆叠设备间正确透传等测试。封装较低层句柄的中间件还必须验证句柄生命周期管理在整个协议栈中保持一致。
 
+.. _blockdev-ioctl-management:
+
+Ioctl 命令管理
+--------------
+
+ioctl 命令空间 (``0x00`` ~ ``0xFF``) 由 ESP-IDF 项目中的所有组件共享。为了防止集成时出现无提示的冲突，块设备层提供了构建时重叠检查器，用于验证整个组件树中的命令预留。
+
+命令范围
+^^^^^^^^
+
+=============  ====================================  ==============================
+范围           基址宏                                用途
+=============  ====================================  ==============================
+``0x00~0x7F``  ``ESP_BLOCKDEV_CMD_SYSTEM_BASE``       ESP-IDF 系统命令
+``0x80~0xFF``  ``ESP_BLOCKDEV_CMD_USER_BASE``         用户/组件扩展
+=============  ====================================  ==============================
+
+预留宏
+^^^^^^
+
+组件使用以下宏（定义于 ``esp_blockdev.h``）声明其 ioctl 命令分配：
+
+.. code-block:: c
+
+   // 预留一段闭区间命令值
+   ESP_BLOCKDEV_RESERVE_CMD_RANGE(component, start, end);
+
+   // 仅预留一个命令值（start == end 的简写）
+   ESP_BLOCKDEV_RESERVE_CMD(component, start);
+
+``start`` 和 ``end`` 均包含在预留范围内，并且必须满足：
+
+* ``0 <= start <= end <= 255``
+
+示例
+""""
+
+.. code-block:: c
+
+   #include "esp_blockdev.h"
+
+   /* 为 nand_flash 预留系统命令 0x0A ~ 0x14 */
+   ESP_BLOCKDEV_RESERVE_CMD_RANGE(nand_flash,
+       ESP_BLOCKDEV_CMD_SYSTEM_BASE + 10,
+       ESP_BLOCKDEV_CMD_SYSTEM_BASE + 20);
+
+   /* 为 sdcard 预留一个用户命令 */
+   ESP_BLOCKDEV_RESERVE_CMD(sdcard, ESP_BLOCKDEV_CMD_USER_BASE + 1);
+
+注册定义文件
+^^^^^^^^^^^^
+
+每个拥有 ioctl 定义的组件都必须向构建系统注册包含预留宏的文件。此操作在组件的 ``CMakeLists.txt`` 中完成：
+
+.. code-block:: cmake
+
+   idf_build_set_property(
+       ESP_BLOCKDEV_IOCTL_DEF_FILES
+       "${CMAKE_CURRENT_LIST_DIR}/include/my_ioctl_defs.h"
+       APPEND
+   )
+
+``esp_blockdev`` 组件会注册自己的头文件，因此核心命令（``ESP_BLOCKDEV_CMD_MARK_DELETED``、``ESP_BLOCKDEV_CMD_ERASE_CONTENTS``）始终会接受检查。
+
+检测到重叠或无效范围时，构建会失败，并在诊断信息中显示冲突的组件名称、十六进制范围和源文件路径。
+
+.. note::
+
+   相邻范围是有效的。例如，``0x10 ~ 0x1F`` 和 ``0x20 ~ 0x2F`` **不** 重叠。
+
 .. _blockdev-apis:
 
 应用示例

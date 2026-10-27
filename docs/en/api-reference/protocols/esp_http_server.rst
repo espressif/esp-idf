@@ -142,7 +142,7 @@ To use the WebSocket post-handshake callback, you must enable :menuitem:`CONFIG_
 WebSocket Message Fragmentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The server does not support fragmented WebSocket messages, as `RFC 6455, section 5.4 <https://tools.ietf.org/html/rfc6455#section-5.4>`_ defines them. An application that must accept or send fragments must apply the rules below itself.
+The server does not support fragmented WebSocket messages, as `RFC 6455, section 5.4 <https://tools.ietf.org/html/rfc6455#section-5.4>`_ defines them. An application that needs to accept or send fragments must apply the rules below itself.
 
 On receive, the server passes each frame to the handler on its own. It does not join the fragments of one message. A handler that gets a TEXT message in three fragments sees three separate frames. Use the ``final`` and ``fragmented`` fields of :cpp:type:`httpd_ws_frame_t` to detect a fragment, and join the payloads in the application.
 

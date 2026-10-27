@@ -83,7 +83,7 @@ SNI 是 TLS 协议的一个扩展，它能让客户端在 TLS 握手过程中，
 ESP-TLS 服务器证书选择回调
 ----------------------------------
 
-使用 MbedTLS 协议栈时，ESP-TLS 组件支持设置服务器证书选择回调函数。此时，在服务器握手期间可选择使用哪个服务器证书，该回调可获取客户端发送的 "Client Hello" 消息中提供的 TLS 扩展（ALPN、SPI 等），并基于此选择传输哪个服务器证书给客户端。要启用此功能，请在 ESP-TLS menuconfig 中启用 :menuitem:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK`。
+使用 MbedTLS 协议栈时，ESP-TLS 组件支持设置服务器证书选择回调函数。此时，在服务器握手期间可选择使用哪个服务器证书，该回调可获取客户端发送的 "Client Hello" 消息中提供的 TLS 扩展（ALPN、SNI 等），并基于此选择传输哪个服务器证书给客户端。要启用此功能，请在 ESP-TLS menuconfig 中启用 :menuitem:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK`。
 
 证书选择回调可在结构体 :cpp:type:`esp_tls_cfg_t` 中配置，具体如下：
 
@@ -143,6 +143,7 @@ ESP-TLS 组件支持通过 :cpp:func:`esp_tls_register_stack` API 注册自定�
    * ``server_session_init`` - 初始化服务器会话（服务器端，如果提供了 server_session_create，该接口可以为 NULL）
    * ``server_session_continue_async`` - 继续服务器端的异步握手（服务器端，如果提供了 server_session_create，该接口可以为 NULL）
    * ``server_session_delete`` - 删除服务器会话（服务器端，该接口可以为 NULL，此时将使用 ``conn_delete`` 进行清理）
+   * ``get_supported_groups_list`` - 获取支持组列表（该接口可以为 NULL，此时支持组列表将报告为不可用）
 
 3. 创建一个包含函数实现的静态/全局结构体：
 
@@ -415,7 +416,7 @@ ESP-TLS 支持在客户端模式下设置加密套件列表，TLS 密码套件�
 
 .. code-block:: c
 
-    /* 加密套件列表必须以 0 结尾，并且在整个 TLS 连接期间，加密套件的内存地址空间有效 */
+    /* 加密套件列表必须以 0 结尾，并且在整个 TLS 连接期间其所在内存必须一直有效 */
     static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, 0};
     esp_tls_cfg_t cfg = {
         .ciphersuites_list = ciphersuites_list,
@@ -425,7 +426,32 @@ ESP-TLS 不会检查 ``ciphersuites_list`` 的有效性，因此需调用 :cpp:f
 
 .. note::
 
-   此功能仅在 MbedTLS 协议栈中有效。
+    此功能仅在 MbedTLS 协议栈中有效。
+
+TLS 支持组
+----------
+
+ESP-TLS 支持设置支持组列表。支持组是用于密钥交换的命名组，以前称为曲线。无论 TLS 协议栈如何配置，该列表都会告知对端当前 TLS 连接提供的组。此列表适用于客户端模式和服务器模式。
+
+可以按如下方式在 :cpp:type:`esp_tls_cfg_t` 或 :cpp:type:`esp_tls_cfg_server_t` 结构体中设置 ``groups_list``：
+
+.. code-block:: c
+
+    /* 支持组列表必须以 0 结尾，并且在整个 TLS 连接期间其所在内存必须一直有效 */
+    static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
+    esp_tls_cfg_t cfg = {
+        .groups_list = groups_list,
+    };
+
+ESP-TLS 不会检查所设置的 ``groups_list`` 是否有效，因此应调用 :cpp:func:`esp_tls_get_supported_groups_list` 获取 TLS 协议栈支持的组列表，并与所提供的列表进行核对。
+
+.. note::
+
+    如果配置的列表中不包含对端最初选择的组，TLS 1.3 会额外进行一次 HelloRetryRequest，TLS 1.2 则会握手失败。
+
+.. note::
+
+    此功能仅在 MbedTLS 协议栈中有效。
 
 TLS 协议版本
 --------------------
@@ -434,7 +460,7 @@ ESP-TLS 能够为 TLS 连接设置相应的 TLS 协议版本，指定版本将�
 
 .. note::
 
-   目前，仅在 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈时支持此功能。
+    目前，仅在 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈时支持此功能。
 
 要在 ESP-TLS 中设置 TLS 协议版本，请设置 :cpp:member:`esp_tls_cfg_t::tls_version`，从 :cpp:type:`esp_tls_proto_ver_t` 中选择所需版本。如未指定协议版本字段，将默认根据服务器要求建立 TLS 连接。
 
