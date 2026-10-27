@@ -17,6 +17,7 @@
 #include <esp_openthread_radio.h>
 #include <esp_openthread_state.h>
 
+#include <openthread/nat64.h>
 #include <openthread/thread.h>
 
 #define TAG "OT_STATE"
@@ -59,8 +60,12 @@ static void handle_ot_netdata_change(void)
 {
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
     ip6_addr_t dns_server_addr = *IP6_ADDR_ANY6;
-    if (esp_openthread_get_nat64_prefix(&dns_server_addr) == ESP_OK) {
-        dns_server_addr.addr[3] = ipaddr_addr(CONFIG_OPENTHREAD_DNS_SERVER_ADDR);
+    otIp4Address ip4_addr;
+    otIp6Address ip6_addr;
+    // The state change callback already holds the OpenThread task switching lock.
+    if (otIp4AddressFromString(CONFIG_OPENTHREAD_DNS_SERVER_ADDR, &ip4_addr) == OT_ERROR_NONE &&
+        otNat64SynthesizeIp6Address(esp_openthread_get_instance(), &ip4_addr, &ip6_addr) == OT_ERROR_NONE) {
+        memcpy(dns_server_addr.addr, ip6_addr.mFields.m8, sizeof(dns_server_addr.addr));
         ip6_addr_t current_dns_server_addr = *IP6_ADDR_ANY6;
         esp_openthread_task_switching_lock_release();
         esp_openthread_get_dnsserver_addr(&current_dns_server_addr);
