@@ -1058,6 +1058,146 @@ menu "Services"
         help
             Enable/Disable notifications on BAS Battery Level Characteristic
 
+    config BT_NIMBLE_SVC_BAS_PRES_FMT
+        depends on BT_NIMBLE_BAS_SERVICE
+        bool "Battery Level Presentation Format descriptor"
+        default n
+        help
+            Add a Characteristic Presentation Format descriptor to the Battery Level
+            characteristic. Mandatory when more than one Battery Service instance is exposed.
+
+    config BT_NIMBLE_SVC_BAS_PRES_FMT_DESCRIPTION
+        depends on BT_NIMBLE_BAS_SERVICE
+        hex "Battery Service Description (GATT Namespace Descriptor)"
+        default 0x0106
+        range 0x0000 0xFFFF
+        help
+            Description field of the Presentation Format descriptor and the Identifier field
+            of Battery Level Status. 0x0106 is "main".
+
+    menuconfig BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        depends on BT_NIMBLE_BAS_SERVICE
+        bool "Battery Level Status"
+        default n
+        help
+            Enable the BAS Battery Level Status characteristic. Required by the other
+            BAS v1.1 characteristics except Manufacturer Name and Model Number.
+
+    config BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS_INDICATE
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Battery Level Status INDICATE property"
+        default n
+        help
+            Add the Indicate property to Battery Level Status
+
+    config BT_NIMBLE_SVC_BAS_EST_SERVICE_DATE
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Estimated Service Date"
+        default n
+        help
+            Enable the BAS Estimated Service Date characteristic
+
+    config BT_NIMBLE_SVC_BAS_EST_SERVICE_DATE_INDICATE
+        depends on BT_NIMBLE_SVC_BAS_EST_SERVICE_DATE
+        bool "Estimated Service Date INDICATE property"
+        default n
+        help
+            Add the Indicate property to Estimated Service Date
+
+    config BT_NIMBLE_SVC_BAS_CRITICAL_STATUS
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Battery Critical Status"
+        default n
+        help
+            Enable the BAS Battery Critical Status characteristic
+
+    config BT_NIMBLE_SVC_BAS_ENERGY_STATUS
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Battery Energy Status"
+        default n
+        help
+            Enable the BAS Battery Energy Status characteristic
+
+    config BT_NIMBLE_SVC_BAS_ENERGY_STATUS_INDICATE
+        depends on BT_NIMBLE_SVC_BAS_ENERGY_STATUS
+        bool "Battery Energy Status INDICATE property"
+        default n
+        help
+            Add the Indicate property to Battery Energy Status
+
+    config BT_NIMBLE_SVC_BAS_TIME_STATUS
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Battery Time Status"
+        default n
+        help
+            Enable the BAS Battery Time Status characteristic
+
+    config BT_NIMBLE_SVC_BAS_TIME_STATUS_INDICATE
+        depends on BT_NIMBLE_SVC_BAS_TIME_STATUS
+        bool "Battery Time Status INDICATE property"
+        default n
+        help
+            Add the Indicate property to Battery Time Status
+
+    config BT_NIMBLE_SVC_BAS_HEALTH_STATUS
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Battery Health Status"
+        default n
+        help
+            Enable the BAS Battery Health Status characteristic
+
+    config BT_NIMBLE_SVC_BAS_HEALTH_STATUS_INDICATE
+        depends on BT_NIMBLE_SVC_BAS_HEALTH_STATUS
+        bool "Battery Health Status INDICATE property"
+        default n
+        help
+            Add the Indicate property to Battery Health Status
+
+    config BT_NIMBLE_SVC_BAS_HEALTH_INFO
+        depends on BT_NIMBLE_SVC_BAS_HEALTH_STATUS
+        bool "Battery Health Information"
+        default n
+        help
+            Enable the BAS Battery Health Information characteristic
+
+    config BT_NIMBLE_SVC_BAS_BATTERY_INFO
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Battery Information"
+        default n
+        help
+            Enable the BAS Battery Information characteristic
+
+    config BT_NIMBLE_SVC_BAS_SERIAL_NUMBER
+        depends on BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_STATUS
+        bool "Serial Number String"
+        default n
+        help
+            Enable the BAS Serial Number String characteristic
+
+    config BT_NIMBLE_SVC_BAS_MANUFACTURER_NAME
+        depends on BT_NIMBLE_BAS_SERVICE
+        bool "Manufacturer Name String"
+        default n
+        help
+            Enable the BAS Manufacturer Name String characteristic
+
+    config BT_NIMBLE_SVC_BAS_MODEL_NUMBER
+        depends on BT_NIMBLE_BAS_SERVICE
+        bool "Model Number String"
+        default n
+        help
+            Enable the BAS Model Number String characteristic
+
+    config BT_NIMBLE_SVC_BAS_STR_MAX_LEN
+        depends on BT_NIMBLE_SVC_BAS_MANUFACTURER_NAME || \
+            BT_NIMBLE_SVC_BAS_MODEL_NUMBER || \
+            BT_NIMBLE_SVC_BAS_SERIAL_NUMBER
+        int "Maximum length of BAS string characteristics"
+        default 32
+        range 1 255
+        help
+            Maximum length of the Manufacturer Name, Model Number and Serial Number strings
+
     menuconfig BT_NIMBLE_DIS_SERVICE
         bool "Device Information Service"
         default y
