@@ -21,6 +21,9 @@ It covers:
 - successful logical-byte counts for public, claim/commit, and LL writes, plus FLUSH reset;
 - enable, disable, parked-writer, and deinit races.
 
+Run `python3 host/test_dump.py` on the host to check that console dumps include
+the dedicated snapshot buffer, including after its transport has been recycled.
+
 Variant build for the bounded pool-acquire wait
 (`sdkconfig.ci.bounded_wait`, requires `CONFIG_BLE_LOG_PRPH_TEST=y`
 from the base defaults):
