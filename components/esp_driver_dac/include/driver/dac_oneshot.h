@@ -24,6 +24,7 @@ typedef struct dac_oneshot_s    *dac_oneshot_handle_t;  /*!< DAC oneshot channel
 typedef struct {
     dac_channel_t               chan_id;    /*!< DAC channel id */
     dac_channel_config_t        chan_cfg;   /*!< Channel (analog pad) configuration. */
+    dac_oneshot_clk_src_t        clk_src;    /*!< Functional clock source. Zero selects DAC_ONESHOT_CLK_SRC_DEFAULT. */
 } dac_oneshot_config_t;
 
 /**
@@ -34,7 +35,7 @@ typedef struct {
  * @param[out] ret_handle    The returned oneshot channel handle
  * @return
  *      - ESP_ERR_INVALID_ARG  The input parameter is invalid
- *      - ESP_ERR_INVALID_STATE The DAC channel has been registered already
+ *      - ESP_ERR_INVALID_STATE The DAC channel is occupied, or shared resource conflict
  *      - ESP_ERR_NO_MEM        No memory for the DAC oneshot channel resources
  *      - ESP_OK                Allocate the new DAC oneshot channel success
  */
