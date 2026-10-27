@@ -378,7 +378,7 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
         .peri_pd_en     = 0,    \
     }, \
     .clk_power = {              \
-        .xpd_xtal32k    = 0,    \
+        .xpd_xtal32k    = 1,    \
         .xpd_rc32k      = 0,    \
         .xpd_fosc       = 1,    \
         .pd_osc         = 0     \
