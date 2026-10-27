@@ -18,6 +18,8 @@
 #include "hal/adc_ll.h"
 #include "esp_adc/adc_continuous.h"
 #include "esp_adc/adc_filter.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 
 const __attribute__((unused)) static char *TAG = "TEST_ADC";
 
@@ -206,6 +208,89 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
     free(result);
 }
+
+/**
+ * Verify ADC continuous mode on targets that access internal RAM through L1 cache,
+ * especially when `conv_frame_size` is not a multiple of the cache-line size.
+ * Test different frame sizes and check that the frame length and channel IDs read
+ * from the DMA data stream through the public API are as expected. ADC sample
+ * values are intentionally not checked.
+ */
+#if CONFIG_IDF_TARGET_ESP32P4
+TEST_CASE("ADC continuous cache alignment check on ESP32-P4", "[adc_continuous]")
+{
+    uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    printf("Internal memory cache line size: %" PRIu32 " bytes\n", cache_line_size);
+
+    static const uint32_t conv_num[] = {
+        2,      /* 8 bytes, original regression */
+        3,      /* 12 bytes, not a multiple of pattern_num */
+        16,     /* 64 bytes, exactly one cache line */
+        30,     /* 120 bytes, larger than one cache line and unaligned */
+        500,    /* 2000 bytes, large non-cache-line multiple */
+        1024,   /* 4096 bytes, one frame uses two DMA descriptors */
+    };
+
+    adc_digi_pattern_config_t patterns[2] = {
+        {
+            .atten = TEST_ADC_DRIVER_DEFAULT_ATTEN,
+            .channel = ADC_CHANNEL_5,
+            .unit = ADC_UNIT_1,
+            .bit_width = SOC_ADC_DIGI_MAX_BITWIDTH,
+        },
+        {
+            .atten = TEST_ADC_DRIVER_DEFAULT_ATTEN,
+            .channel = ADC_CHANNEL_4,
+            .unit = ADC_UNIT_2,
+            .bit_width = SOC_ADC_DIGI_MAX_BITWIDTH,
+        },
+    };
+
+    adc_continuous_config_t config = {
+        .pattern_num = 2,
+        .adc_pattern = patterns,
+        .sample_freq_hz = 20 * 1000,
+        .conv_mode = ADC_CONV_BOTH_UNIT,
+    };
+
+    for (size_t idx = 0; idx < sizeof(conv_num) / sizeof(conv_num[0]); idx++) {
+        uint32_t conv_frame_size = conv_num[idx] * SOC_ADC_DIGI_DATA_BYTES_PER_CONV;
+        printf("Testing ADC conversion logical frame size: %" PRIu32 " bytes\n", conv_frame_size);
+
+        adc_continuous_handle_t handle = NULL;
+        adc_continuous_handle_cfg_t handle_config = {
+            .max_store_buf_size = conv_frame_size * 4, /* store recent 4 frames */
+            .conv_frame_size = conv_frame_size,
+        };
+
+        TEST_ESP_OK(adc_continuous_new_handle(&handle_config, &handle));
+        TEST_ESP_OK(adc_continuous_config(handle, &config));
+
+        uint8_t *result = malloc(conv_frame_size);
+        TEST_ASSERT_NOT_NULL(result);
+
+        TEST_ESP_OK(adc_continuous_start(handle));
+
+        for (uint8_t times = 0; times < 10; times++) {
+            uint32_t out_length = 0;
+            TEST_ESP_OK(adc_continuous_read(handle, result, conv_frame_size, &out_length, 1000));
+
+            TEST_ASSERT_EQUAL_UINT32(conv_frame_size, out_length);
+            for (int i = 0; i < out_length; i += SOC_ADC_DIGI_RESULT_BYTES) {
+                adc_digi_output_data_t *p = (void*)&result[i];
+                uint32_t chan_num = ADC_DRIVER_TEST_GET_CHANNEL(p);
+                /* ESP32-P4 encodes ADC2 logical channel N as N + ADC_LL_UNIT2_CHANNEL_SUBSTRATION in raw DMA data. */
+                TEST_ASSERT(chan_num == patterns[0].channel ||
+                            chan_num == patterns[1].channel + ADC_LL_UNIT2_CHANNEL_SUBSTRATION);
+            }
+        }
+
+        TEST_ESP_OK(adc_continuous_stop(handle));
+        TEST_ESP_OK(adc_continuous_deinit(handle));
+        free(result);
+    }
+}
+#endif
 
 #define ADC_FLUSH_TEST_SIZE    64
 
