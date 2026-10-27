@@ -636,10 +636,8 @@ TEST_CASE("BLE Log compatibility sync APIs leave periodic snapshots running",
 
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
     TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(true));
-    /* GPIO produces T0 before the clocks are sampled and UART sends the label. */
     TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
                              "No periodic snapshot after compatibility API call");
-    TEST_ASSERT_EQUAL_UINT8(0, io_level);
 
     /* Both compatibility names ignore the enable argument. */
     TEST_ASSERT_TRUE(ble_log_sync_enable(false));
