@@ -1336,9 +1336,11 @@ static BOOLEAN btc_a2d_is_deinit_ongoing(void)
 
 static void btc_a2d_drop_queued_connect(void)
 {
-    uint16_t uuid = (btc_av_cb.service_id == BTA_A2DP_SINK_SERVICE_ID) ?
-                    UUID_SERVCLASS_AUDIO_SINK : UUID_SERVCLASS_AUDIO_SOURCE;
-    btc_queue_remove_uuid(uuid);
+    /* Sink and source each enqueue under their own UUID. service_id only names
+     * the active role, so a connect issued through the other API would survive
+     * a single-UUID removal and stay busy at the head of the shared queue. */
+    btc_queue_remove_uuid(UUID_SERVCLASS_AUDIO_SINK);
+    btc_queue_remove_uuid(UUID_SERVCLASS_AUDIO_SOURCE);
 }
 
 /* Abort any in-progress AVDT/AVCTP link and ask BTA to disable immediately.
