@@ -19,6 +19,61 @@ static void *s_nan_usd_data_lock = NULL;
 #define NAN_USD_DATA_LOCK() os_mutex_lock(s_nan_usd_data_lock)
 #define NAN_USD_DATA_UNLOCK() os_mutex_unlock(s_nan_usd_data_lock)
 
+/* Latest discovered/replied peer kept for get_peer_* APIs (one slot per service).
+ * Independent of nan_de pauseState (sel_peer_*), which has a ~60s lifetime. */
+struct nan_usd_peer {
+    bool valid;
+    u8 own_svc_id;
+    u8 peer_svc_id;
+    u8 peer_addr[ETH_ALEN];
+    u8 peer_svc_type;
+};
+
+static struct nan_usd_peer s_nan_usd_peers[NAN_DE_MAX_SERVICE];
+
+static void nan_usd_clear_peer(int own_svc_id)
+{
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE) {
+        return;
+    }
+    os_memset(&s_nan_usd_peers[own_svc_id - 1], 0, sizeof(s_nan_usd_peers[0]));
+}
+
+static void nan_usd_clear_all_peers(void)
+{
+    os_memset(s_nan_usd_peers, 0, sizeof(s_nan_usd_peers));
+}
+
+static void nan_usd_save_peer(int own_svc_id, int peer_svc_id, const u8 *peer_addr,
+                              u8 peer_svc_type)
+{
+    struct nan_usd_peer *peer;
+
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE || !peer_addr) {
+        return;
+    }
+
+    /* Overwrite with the latest match/reply so get_peer_* stay in sync with
+     * WIFI_EVENT_NAN_SVC_MATCH / WIFI_EVENT_NAN_REPLIED (one peer per service). */
+    peer = &s_nan_usd_peers[own_svc_id - 1];
+    peer->valid = true;
+    peer->own_svc_id = (u8)own_svc_id;
+    peer->peer_svc_id = (u8)peer_svc_id;
+    os_memcpy(peer->peer_addr, peer_addr, ETH_ALEN);
+    peer->peer_svc_type = peer_svc_type;
+}
+
+static const struct nan_usd_peer *nan_usd_get_peer(int own_svc_id)
+{
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE) {
+        return NULL;
+    }
+    if (!s_nan_usd_peers[own_svc_id - 1].valid) {
+        return NULL;
+    }
+    return &s_nan_usd_peers[own_svc_id - 1];
+}
+
 static bool nan_usd_try_lock_active(struct nan_de **nan_de)
 {
     if (!s_nan_usd_data_lock) {
@@ -269,6 +324,9 @@ static void esp_nan_de_discovery_result(void *ctx, int subscribe_id, enum nan_se
     wpa_printf(MSG_INFO, "NAN_USD DISCOVERY_RESULT - subscribe_id = %d peer_publish_id = %d peer_address = "MACSTR" service_protocol_type = %d",
                subscribe_id, peer_publish_id, MAC2STR(peer_addr), srv_proto_type);
 
+    /* Cache peer for get_peer_* (subscriber path); do not touch pauseState. */
+    nan_usd_save_peer(subscribe_id, peer_publish_id, peer_addr, ESP_NAN_PUBLISH);
+
     wifi_event_nan_svc_match_t *evt = os_zalloc(sizeof(wifi_event_nan_svc_match_t) + ssi_len);
     if (evt == NULL) {
         return;
@@ -293,6 +351,9 @@ static void esp_nan_de_replied(void *ctx, int publish_id, const u8 *peer_addr,
     wpa_printf(MSG_INFO, "NAN_USD REPLIED - publish_id = %d peer_subscribe_id = %d peer_address = "MACSTR" service_protocol_type = %d",
                publish_id, peer_subscribe_id, MAC2STR(peer_addr), srv_proto_type);
 
+    /* Cache peer for get_peer_* (publisher path); do not touch pauseState. */
+    nan_usd_save_peer(publish_id, peer_subscribe_id, peer_addr, ESP_NAN_SUBSCRIBE);
+
     wifi_event_nan_replied_t *evt = os_zalloc(sizeof(wifi_event_nan_replied_t) + ssi_len);
     if (evt == NULL) {
         return;
@@ -312,12 +373,22 @@ static void esp_nan_de_publish_terminated(void *ctx, int publish_id,
                                           enum nan_de_reason reason)
 {
     wpa_printf(MSG_INFO, "NAN_USD PUBLISH_TERMINATED - publish_id = %d reason = %s", publish_id, nan_reason_txt(reason));
+    if (s_nan_usd_data_lock) {
+        NAN_USD_DATA_LOCK();
+        nan_usd_clear_peer(publish_id);
+        NAN_USD_DATA_UNLOCK();
+    }
 }
 
 static void esp_nan_de_subscribe_terminated(void *ctx, int subscribe_id,
                                             enum nan_de_reason reason)
 {
     wpa_printf(MSG_INFO, "NAN_USD SUBSCRIBE_TERMINATED - subscribe_id = %d reason = %s", subscribe_id, nan_reason_txt(reason));
+    if (s_nan_usd_data_lock) {
+        NAN_USD_DATA_LOCK();
+        nan_usd_clear_peer(subscribe_id);
+        NAN_USD_DATA_UNLOCK();
+    }
 }
 
 static void esp_nan_de_receive(void *ctx, int id, int peer_instance_id,
@@ -360,6 +431,7 @@ esp_err_t esp_nan_usd_deinit()
 
     nan_de_deinit(g_nan_de);
     g_nan_de = NULL;
+    nan_usd_clear_all_peers();
     NAN_USD_DATA_UNLOCK();
 
     return ESP_OK;
@@ -506,6 +578,9 @@ static int esp_nan_usd_publish_internal(const char *service_name, enum nan_servi
 
     publish_id = nan_de_publish(g_nan_de, service_name, srv_proto_type,
                                 buf, NULL, &pub_params, p2p);
+    if (publish_id > 0) {
+        nan_usd_clear_peer(publish_id);
+    }
 
     wpabuf_free(buf);
     if (freq_list) {
@@ -563,6 +638,7 @@ esp_err_t esp_nan_usd_cancel_publish(int publish_id)
     }
 
     nan_de_cancel_publish(g_nan_de, publish_id);
+    nan_usd_clear_peer(publish_id);
     NAN_USD_DATA_UNLOCK();
     return ESP_OK;
 }
@@ -632,6 +708,9 @@ static int esp_nan_usd_subscribe_internal(const char *service_name, enum nan_ser
     }
 
     subscribe_id = nan_de_subscribe(g_nan_de, service_name, srv_proto_type, buf, NULL, &sub_params, p2p);
+    if (subscribe_id > 0) {
+        nan_usd_clear_peer(subscribe_id);
+    }
 
     wpabuf_free(buf);
     if (freq_list) {
@@ -660,6 +739,7 @@ esp_err_t esp_nan_usd_cancel_subscribe(int subscribe_id)
     }
 
     nan_de_cancel_subscribe(g_nan_de, subscribe_id);
+    nan_usd_clear_peer(subscribe_id);
     NAN_USD_DATA_UNLOCK();
     return ESP_OK;
 }
@@ -673,6 +753,7 @@ esp_err_t esp_nan_usd_cancel_service(int service_id)
     }
 
     nan_de_cancel_service(g_nan_de, service_id);
+    nan_usd_clear_peer(service_id);
     NAN_USD_DATA_UNLOCK();
     return ESP_OK;
 }
@@ -704,4 +785,212 @@ esp_err_t esp_nan_usd_transmit(int handle, const uint8_t *ssi, uint16_t ssi_len,
 fail:
     NAN_USD_DATA_UNLOCK();
     return ESP_FAIL;
+}
+
+/* get_* APIs run on eloop (wifi task) so they serialize with nan_de_timer.
+ * Lock is still taken vs publish/cancel/tx on the app/event tasks until those
+ * paths are also moved to eloop. */
+struct nan_usd_get_own_svc_ctx {
+    uint8_t *own_svc_id;
+    char *svc_name;
+    int *num_peer_records;
+};
+
+struct nan_usd_get_peer_records_ctx {
+    int *num_peer_records;
+    uint8_t own_svc_id;
+    struct nan_peer_record *peer_record;
+};
+
+struct nan_usd_get_peer_info_ctx {
+    char *svc_name;
+    uint8_t *peer_mac;
+    struct nan_peer_record *peer_info;
+};
+
+static int nan_usd_get_own_svc_info_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_get_own_svc_ctx *ctx = user_ctx;
+    struct nan_de *nan_de;
+
+    (void)eloop_data;
+
+    if (!nan_usd_try_lock_active(&nan_de)) {
+        return ESP_FAIL;
+    }
+
+    if (*ctx->own_svc_id == 0) {
+        for (int i = 1; i <= NAN_DE_MAX_SERVICE; i++) {
+            const char *name = nan_de_get_service_name(nan_de, i);
+            if (name && strcmp(name, ctx->svc_name) == 0) {
+                *ctx->own_svc_id = i;
+                break;
+            }
+        }
+        if (*ctx->own_svc_id == 0) {
+            wpa_printf(MSG_ERROR, "NAN-USD: No record found for service name %s", ctx->svc_name);
+            NAN_USD_DATA_UNLOCK();
+            return ESP_FAIL;
+        }
+    } else {
+        const char *name = nan_de_get_service_name(nan_de, *ctx->own_svc_id);
+        if (!name) {
+            wpa_printf(MSG_ERROR, "NAN-USD: No record found for service ID %d", *ctx->own_svc_id);
+            NAN_USD_DATA_UNLOCK();
+            return ESP_FAIL;
+        }
+        strlcpy(ctx->svc_name, name, ESP_WIFI_MAX_SVC_NAME_LEN);
+    }
+
+    *ctx->num_peer_records = nan_usd_get_peer(*ctx->own_svc_id) ? 1 : 0;
+    NAN_USD_DATA_UNLOCK();
+    return ESP_OK;
+}
+
+static int nan_usd_get_peer_records_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_get_peer_records_ctx *ctx = user_ctx;
+    struct nan_de *nan_de;
+    const struct nan_usd_peer *peer;
+
+    (void)eloop_data;
+
+    if (!nan_usd_try_lock_active(&nan_de)) {
+        return ESP_FAIL;
+    }
+
+    if (nan_de_get_service_type(nan_de, ctx->own_svc_id) < 0) {
+        *ctx->num_peer_records = 0;
+        wpa_printf(MSG_DEBUG, "NAN-USD: No service found with id %d", ctx->own_svc_id);
+        NAN_USD_DATA_UNLOCK();
+        return ESP_FAIL;
+    }
+
+    peer = nan_usd_get_peer(ctx->own_svc_id);
+    if (peer) {
+        /* Index [0] only: USD caches one peer per service (latest match/reply). */
+        ctx->peer_record[0].peer_svc_id = peer->peer_svc_id;
+        ctx->peer_record[0].own_svc_id = ctx->own_svc_id;
+        ctx->peer_record[0].peer_svc_type = peer->peer_svc_type;
+        os_memcpy(ctx->peer_record[0].peer_nmi, peer->peer_addr, ETH_ALEN);
+        ctx->peer_record[0].ndp_id = 0;
+        os_memset(ctx->peer_record[0].peer_ndi, 0, ETH_ALEN);
+        *ctx->num_peer_records = 1;
+    } else {
+        *ctx->num_peer_records = 0;
+    }
+
+    NAN_USD_DATA_UNLOCK();
+    return ESP_OK;
+}
+
+static int nan_usd_get_peer_info_internal(void *eloop_data, void *user_ctx)
+{
+    struct nan_usd_get_peer_info_ctx *ctx = user_ctx;
+    struct nan_de *nan_de;
+    int start = 1, end = NAN_DE_MAX_SERVICE;
+
+    (void)eloop_data;
+
+    if (!nan_usd_try_lock_active(&nan_de)) {
+        return ESP_FAIL;
+    }
+
+    if (ctx->svc_name) {
+        bool found = false;
+        for (int i = 1; i <= NAN_DE_MAX_SERVICE; i++) {
+            const char *name = nan_de_get_service_name(nan_de, i);
+            if (name && strcmp(name, ctx->svc_name) == 0) {
+                start = i;
+                end = i;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            wpa_printf(MSG_ERROR, "NAN-USD: No record found for service name %s", ctx->svc_name);
+            NAN_USD_DATA_UNLOCK();
+            return ESP_FAIL;
+        }
+    }
+
+    for (int i = start; i <= end; i++) {
+        const struct nan_usd_peer *peer;
+
+        if (nan_de_get_service_type(nan_de, i) < 0) {
+            continue;
+        }
+
+        peer = nan_usd_get_peer(i);
+        if (peer && os_memcmp(peer->peer_addr, ctx->peer_mac, ETH_ALEN) == 0) {
+            ctx->peer_info->peer_svc_id = peer->peer_svc_id;
+            ctx->peer_info->own_svc_id = i;
+            ctx->peer_info->peer_svc_type = peer->peer_svc_type;
+            os_memcpy(ctx->peer_info->peer_nmi, peer->peer_addr, ETH_ALEN);
+            ctx->peer_info->ndp_id = 0;
+            os_memset(ctx->peer_info->peer_ndi, 0, ETH_ALEN);
+            NAN_USD_DATA_UNLOCK();
+            return ESP_OK;
+        }
+    }
+
+    wpa_printf(MSG_DEBUG, "NAN-USD: No record found for Peer "MACSTR, MAC2STR(ctx->peer_mac));
+    NAN_USD_DATA_UNLOCK();
+    return ESP_FAIL;
+}
+
+esp_err_t esp_nan_usd_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records)
+{
+    struct nan_usd_get_own_svc_ctx ctx;
+
+    if (!own_svc_id || !num_peer_records || !svc_name) {
+        wpa_printf(MSG_ERROR, "NAN-USD: NULL memory address for input parameters");
+        return ESP_FAIL;
+    }
+
+    ctx.own_svc_id = own_svc_id;
+    ctx.svc_name = svc_name;
+    ctx.num_peer_records = num_peer_records;
+
+    return eloop_register_timeout_blocking(nan_usd_get_own_svc_info_internal, NULL, &ctx);
+}
+
+esp_err_t esp_nan_usd_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record)
+{
+    struct nan_usd_get_peer_records_ctx ctx;
+
+    if (!peer_record || !num_peer_records) {
+        wpa_printf(MSG_ERROR, "NAN-USD: NULL memory address for input parameters");
+        return ESP_FAIL;
+    }
+    if (own_svc_id < 1 || own_svc_id > NAN_DE_MAX_SERVICE) {
+        wpa_printf(MSG_ERROR, "NAN-USD: Invalid service ID");
+        return ESP_FAIL;
+    }
+    if (*num_peer_records == 0) {
+        wpa_printf(MSG_ERROR, "NAN-USD: Number of peer records provided is 0");
+        return ESP_FAIL;
+    }
+
+    ctx.num_peer_records = num_peer_records;
+    ctx.own_svc_id = own_svc_id;
+    ctx.peer_record = peer_record;
+
+    return eloop_register_timeout_blocking(nan_usd_get_peer_records_internal, NULL, &ctx);
+}
+
+esp_err_t esp_nan_usd_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info)
+{
+    struct nan_usd_get_peer_info_ctx ctx;
+
+    if (!peer_mac || !peer_info) {
+        wpa_printf(MSG_ERROR, "NAN-USD: Invalid memory address for input parameters");
+        return ESP_FAIL;
+    }
+
+    ctx.svc_name = svc_name;
+    ctx.peer_mac = peer_mac;
+    ctx.peer_info = peer_info;
+
+    return eloop_register_timeout_blocking(nan_usd_get_peer_info_internal, NULL, &ctx);
 }

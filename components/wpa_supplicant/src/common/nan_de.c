@@ -1348,6 +1348,34 @@ const u8 * nan_de_get_service_id(struct nan_de *de, int id)
 }
 
 
+#ifdef ESP_SUPPLICANT
+const char * nan_de_get_service_name(struct nan_de *de, int id)
+{
+	struct nan_de_service *srv;
+
+	if (id < 1 || id > NAN_DE_MAX_SERVICE)
+		return NULL;
+	srv = de->service[id - 1];
+	if (!srv)
+		return NULL;
+	return srv->service_name;
+}
+
+
+int nan_de_get_service_type(struct nan_de *de, int id)
+{
+	struct nan_de_service *srv;
+
+	if (id < 1 || id > NAN_DE_MAX_SERVICE)
+		return -1;
+	srv = de->service[id - 1];
+	if (!srv)
+		return -1;
+	return srv->type;
+}
+#endif /* ESP_SUPPLICANT */
+
+
 int nan_de_publish(struct nan_de *de, const char *service_name,
 		   enum nan_service_protocol_type srv_proto_type,
 		   const struct wpabuf *ssi, const struct wpabuf *elems,
