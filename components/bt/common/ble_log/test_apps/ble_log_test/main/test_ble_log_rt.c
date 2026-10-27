@@ -21,6 +21,7 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
+#include "ble_log_sync.h"
 #include "ble_log_task_registry.h"
 #include "test_ble_log_main.h"
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
@@ -2100,7 +2101,7 @@ TEST_CASE("BLE Log periodic snapshot ignores producer gate and fails fast when b
           "[ble_log][lbm]")
 {
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info);
+    ble_log_sync_sample(&ts_info);
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
     ble_log_lbm_flush_open_trans();

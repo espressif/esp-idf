@@ -12,6 +12,7 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_task_registry.h"
 #include "ble_log_rt.h"
+#include "ble_log_sync.h"
 
 #include "esp_timer.h"
 #include "esp_chip_info.h"
@@ -1020,7 +1021,7 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
     uint32_t anchor_count = BLE_LOG_GET_ANCHOR_COUNT();
     ble_log_ts_info_t periodic_sample;
     if (ts_info == NULL) {
-        ble_log_rt_ts_sample_anchor(&periodic_sample, anchor_count);
+        ble_log_sync_sample_anchor(&periodic_sample, anchor_count);
         ts_info = &periodic_sample;
     }
     uint32_t timestamp = ts_info->esp_ts;
@@ -1251,7 +1252,7 @@ void ble_log_flush(void)
     /* One-shot FLUSH snapshot: sample after the pool drained so the clocks
      * reflect the flush completion; no sync IO toggle (periodic flow only). */
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info);
+    ble_log_sync_sample(&ts_info);
     if (!ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_FLUSH, &ts_info, true)) {
         goto restore;
     }

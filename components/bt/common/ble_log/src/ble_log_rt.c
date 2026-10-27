@@ -19,9 +19,6 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_task.h" /* ESP_TASK_TIMER_PRIO for the USB dispatch task */
-#if CONFIG_BLE_LOG_LL_ENABLED
-#include "esp_bt.h"
-#endif
 
 /* MACRO */
 #define TAG                                      "BLE-Log"
@@ -29,50 +26,6 @@
 /* Bounded wait for the USB dispatcher stop handshake (ack plus suspended
  * state), matching the runtime reference-count wait budget. */
 #define BLE_LOG_RT_STOP_TIMEOUT_MS               (1000)
-
-/* Link-layer clock sample; 0 when the controller exports no accessor. */
-#if CONFIG_BLE_LOG_LL_ENABLED
-#if CONFIG_BT_DUAL_MODE_ARCH
-/* Temporary fallback until the dual-mode controller libraries export the
- * link-layer timer accessor. A strong library definition overrides it. */
-uint32_t r_sched_timer_getCurrentTimeU32(void) __attribute__((weak));
-uint32_t r_sched_timer_getCurrentTimeU32(void)
-{
-    return 0;
-}
-#define BLE_LOG_GET_LC_TS r_sched_timer_getCurrentTimeU32()
-/* ESP BLE Controller Gen 2 */
-#elif defined(CONFIG_IDF_TARGET_ESP32H2) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32C5) ||\
-    defined(CONFIG_IDF_TARGET_ESP32C61) || defined(CONFIG_IDF_TARGET_ESP32H21)
-extern uint32_t r_ble_lll_timer_current_tick_get(void);
-#define BLE_LOG_GET_LC_TS r_ble_lll_timer_current_tick_get()
-/* ESP BLE Controller Gen 1 */
-#elif defined(CONFIG_IDF_TARGET_ESP32C2)
-extern uint32_t r_os_cputime_get32(void);
-#define BLE_LOG_GET_LC_TS r_os_cputime_get32()
-/* Legacy BLE Controller */
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
-extern uint32_t lld_read_clock_us(void);
-#define BLE_LOG_GET_LC_TS lld_read_clock_us()
-#else /* Other targets */
-#define BLE_LOG_GET_LC_TS 0
-#endif /* BLE targets */
-#else /* !CONFIG_BLE_LOG_LL_ENABLED */
-#define BLE_LOG_GET_LC_TS 0
-#endif /* CONFIG_BLE_LOG_LL_ENABLED */
-
-BLE_LOG_STATIC uint32_t ble_log_rt_lc_ts_get(void)
-{
-#if CONFIG_BLE_LOG_LL_ENABLED
-    /* Legacy accessors dereference controller state. INIT is emitted before
-     * controller initialization completes, and standalone users may keep the
-     * controller idle for the entire BLE Log epoch. */
-    if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
-        return 0;
-    }
-#endif
-    return BLE_LOG_GET_LC_TS;
-}
 
 /* VARIABLE */
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t rt_inited = 0;
@@ -158,35 +111,6 @@ BLE_LOG_STATIC void ble_log_rt_report_loss(void)
                  (unsigned long)tx_ring_dropped_bytes);
     }
 }
-/* Captures the link-layer, ESP and OS clocks in one short sampling window. */
-void ble_log_rt_ts_sample(ble_log_ts_info_t *info)
-{
-    info->int_src_code = BLE_LOG_INT_SRC_TS;
-    BLE_LOG_ENTER_CRITICAL();
-#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    info->io_level = ble_log_sync_get_level();
-#else
-    info->io_level = 0;
-#endif
-    info->lc_ts = ble_log_rt_lc_ts_get();
-    info->esp_ts = esp_timer_get_time();
-    info->os_ts = pdTICKS_TO_MS(xTaskGetTickCountFromISR());
-    BLE_LOG_EXIT_CRITICAL();
-}
-
-void ble_log_rt_ts_sample_anchor(ble_log_ts_info_t *info, uint32_t anchor_count)
-{
-#if CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-    /* Keep the GPIO T0 sample even if the UART label fails. */
-    if (ble_log_sync_send(anchor_count, info)) {
-        return;
-    }
-#else
-    (void)anchor_count;
-#endif
-    ble_log_rt_ts_sample(info);
-}
-
 #if !CONFIG_BLE_LOG_PRPH_COPY_FIFO
 /* Dispatch only the queue depth observed at callback entry. A backend may
  * recycle synchronously on queue-full while another core immediately refills

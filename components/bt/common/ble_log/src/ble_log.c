@@ -10,6 +10,7 @@
 /* INCLUDE */
 #include "ble_log.h"
 #include "ble_log_rt.h"
+#include "ble_log_sync.h"
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph.h"
 #include "ble_log_util.h"
@@ -53,7 +54,7 @@ bool ble_log_init(void)
      * opening the public producer gate, so it starts the receiver epoch.
      * INIT/FLUSH samples never toggle sync IO. */
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info);
+    ble_log_sync_sample(&ts_info);
     if (!ble_log_internal_snapshot(BLE_LOG_SNAPSHOT_REASON_INIT, &ts_info, true) ||
             !ble_log_rt_start_periodic() || !ble_log_enable(true)) {
         goto exit;
