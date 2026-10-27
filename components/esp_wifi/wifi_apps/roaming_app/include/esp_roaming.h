@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,8 @@ struct roam_config {
     uint8_t scan_filter_bssid[ROAM_SCAN_FILTER_BSSID_LEN];
     bool scan_filter_bssid_set;
     uint8_t low_rssi_roam_diff;
+    uint8_t rrm_retry_cnt;
+    bool rrm_roaming_enabled;
 };
 
 void roam_init_app(void);

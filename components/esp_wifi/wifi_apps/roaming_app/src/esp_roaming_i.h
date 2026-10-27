@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,12 @@ extern "C" {
 #define SCAN_ROAM_RSSI_DIFF CONFIG_ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF
 #endif /* PERIODIC_SCAN_MONITORING */
 
+#ifdef CONFIG_ESP_WIFI_ROAMING_PERIODIC_RSSI_MONITOR
+#define CONNECTED_AP_RSSI_LOG_ENABLED CONFIG_ESP_WIFI_ROAMING_PERIODIC_RSSI_MONITOR
+#else
+#define CONNECTED_AP_RSSI_LOG_ENABLED 0
+#endif
+
 /* Scan configuration */
 #define SCAN_TIME_MIN_DURATION CONFIG_ESP_WIFI_ROAMING_SCAN_MIN_SCAN_TIME
 #define SCAN_TIME_MAX_DURATION CONFIG_ESP_WIFI_ROAMING_SCAN_MAX_SCAN_TIME
@@ -50,6 +56,11 @@ extern "C" {
 #define SCAN_PREFERRED_CHAN_LIST CONFIG_ESP_WIFI_ROAMING_SCAN_CHAN_LIST
 #define DEFAULT_PREFERRED_SCAN_CHAN_LIST "None"
 #define SCAN_RESULTS_USABILITY_WINDOW CONFIG_ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW
+#ifdef CONFIG_ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW
+#define RRM_CHANNEL_CACHE_USABILITY_WINDOW CONFIG_ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW
+#else
+#define RRM_CHANNEL_CACHE_USABILITY_WINDOW 10
+#endif
 #define MAX_CANDIDATE_COUNT CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES
 
 /* Legacy roaming configuration */
@@ -72,6 +83,21 @@ extern "C" {
 #define NETWORK_ASSISTED_ROAMING_ENABLED 0
 #endif
 
+/* 802.11k assisted roaming */
+#ifdef CONFIG_ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+#define RRM_ASSISTED_ROAMING_ENABLED CONFIG_ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+#else
+#define RRM_ASSISTED_ROAMING_ENABLED 0
+#endif
+
+#ifdef CONFIG_ESP_WIFI_ROAMING_11K_RETRY_COUNT
+#define RRM_ROAM_RETRY_COUNT CONFIG_ESP_WIFI_ROAMING_11K_RETRY_COUNT
+#else
+#define RRM_ROAM_RETRY_COUNT 0
+#endif
+
+#define RRM_NEIGHBOR_REPORT_TIMEOUT_SEC 1
+
 /* Periodic RRM configuration */
 #ifdef CONFIG_ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
 #define PERIODIC_RRM_MONITORING CONFIG_ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
@@ -85,6 +111,9 @@ extern "C" {
 #define RRM_MONITOR_TIME 232
 #define RRM_MONITOR_RSSI_THRESHOLD -100
 #endif /*PERIODIC_RRM_MONITORING*/
+
+/* Neighbor report list/event support for periodic RRM and/or 11k roam */
+#define RRM_NEIGHBOR_LIST_SUPPORT (PERIODIC_RRM_MONITORING || RRM_ASSISTED_ROAMING_ENABLED)
 
 #define MAX_SCAN_CHAN_LIST_COUNT 14
 
@@ -121,8 +150,9 @@ struct roaming_app {
 
 #if LOW_RSSI_ROAMING_ENABLED
     int8_t current_low_rssi_threshold;
+    bool low_rssi_suppressed;
 #endif
-#if LEGACY_ROAM_ENABLED && NETWORK_ASSISTED_ROAMING_ENABLED
+#if NETWORK_ASSISTED_ROAMING_ENABLED
     uint8_t btm_attempt;
 #endif
 #if LEGACY_ROAM_ENABLED
@@ -130,10 +160,15 @@ struct roaming_app {
 #endif
 #if PERIODIC_RRM_MONITORING
     bool periodic_rrm_active;
+#endif
+#if RRM_NEIGHBOR_LIST_SUPPORT
     bool rrm_request_active;
 #endif
 #if PERIODIC_SCAN_MONITORING
     bool periodic_scan_active;
+#endif
+#if CONNECTED_AP_RSSI_LOG_ENABLED
+    bool periodic_rssi_active;
 #endif
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     struct blacklist_entry {
@@ -148,6 +183,17 @@ struct roaming_app {
 #endif
     bool allow_reconnect;
     struct cand_bss *pending_roam_bss;
+    wifi_scan_channel_bitmap_t rrm_channel_bitmap;
+    bool rrm_channels_valid;
+    struct timeval rrm_channels_time;
+#if RRM_ASSISTED_ROAMING_ENABLED
+    uint8_t rrm_attempt;
+    bool rrm_roam_pending;
+    bool rrm_scan_active;
+    bool rrm_roam_exhausted;
+    wifi_scan_channel_bitmap_t saved_scan_channel_bitmap;
+    uint8_t saved_scan_channel;
+#endif
 };
 
 #ifdef __cplusplus
