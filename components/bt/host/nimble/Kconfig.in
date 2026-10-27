@@ -291,11 +291,11 @@ endmenu #SMP
 menu "GAP"
     config BT_NIMBLE_RPA_TIMEOUT
         int "RPA timeout in seconds"
-        range 1 41400
+        range 1 3600
         depends on BT_NIMBLE_ENABLED
         default 900
         help
-            Time interval between RPA address change.
+            Time interval between RPA address changes, up to one hour.
 
     config BT_NIMBLE_WHITELIST_SIZE
         int "BLE white list size"
@@ -747,7 +747,7 @@ menu "BLE 5.x Features"
 
             config BT_NIMBLE_EXT_ADV_MAX_SIZE
                 int "Maximum length of the advertising data."
-                range 0 1650
+                range 31 1650
                 default 1650 if BT_NIMBLE_EXT_ADV
                 default 0
                 depends on BT_NIMBLE_EXT_ADV
