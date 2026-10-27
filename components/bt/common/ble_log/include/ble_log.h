@@ -65,7 +65,9 @@ typedef enum {
  * Sync initialization failures are reported on the console and do not stop logging. */
 bool ble_log_init(void);
 void ble_log_deinit(void);
-/* Controls public producers only; periodic system output remains active. */
+/* Controls public producers only. Disabling does not stop buffered-data flushing,
+ * periodic snapshots, task-binding broadcasts, or configured external sync output.
+ * Clock samples and diagnostic statistics remain available until deinit. */
 bool ble_log_enable(bool enable);
 /* Blocking; call only from a caller-owned task, not an ISR or system callback. */
 void ble_log_flush(void);
