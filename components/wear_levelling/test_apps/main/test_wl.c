@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 #include "unity.h"
@@ -320,12 +321,248 @@ TEST(wear_levelling, version_update)
 }
 #endif // CONFIG_WL_SECTOR_SIZE_4096
 
+/*
+ * Unaligned access across WL page boundaries (GH #19145).
+ *
+ * Logical WL pages are not physically contiguous: the dummy sector sits
+ * between them, and after a full dummy sector pass logical page 0 maps to the
+ * last data page. Each test runs on a small fake partition, so a full dummy
+ * sector pass takes few moves. The host test also checks the dummy sector
+ * position on flash; here the tests rely on flush() moving it exactly once.
+ */
+
+#define WL_TEST_PAGE                4096
+#define WL_TEST_PART_PAGES          10      // 6 data pages, 4 usable in safe mode
+// Layout of wl_state_t (private_include/WL_State.h) and wl_config_t
+// (private_include/WL_Config.h), which are C++-only headers.
+#define WL_TEST_STATE_SIZE          64
+#define WL_TEST_CFG_RECORD_SIZE     20      // offsetof(wl_config_t, wl_pos_update_record_size)
+#define WL_TEST_RECORD_DATA_SIZE    16      // WL_Flash::fillOkBuff() writes 4 x uint32_t per record
+
+typedef struct {
+    wl_handle_t handle;
+} wl_test_dev_t;
+
+static void wl_test_dev_open(wl_test_dev_t *dev, const esp_partition_t *partition)
+{
+    TEST_ESP_OK(wl_mount(partition, &dev->handle));
+}
+
+static void wl_test_dev_close(wl_test_dev_t *dev)
+{
+    TEST_ESP_OK(wl_unmount(dev->handle));
+}
+
+static esp_err_t wl_test_dev_erase(wl_test_dev_t *dev, size_t addr, size_t size)
+{
+    return wl_erase_range(dev->handle, addr, size);
+}
+
+// Move the dummy sector one position. wl_unmount() calls WL_Flash::flush(),
+// which moves it exactly once.
+static void wl_test_dev_move_dummy(wl_test_dev_t *dev, const esp_partition_t *partition)
+{
+    TEST_ESP_OK(wl_unmount(dev->handle));
+    TEST_ESP_OK(wl_mount(partition, &dev->handle));
+}
+
+static esp_err_t wl_test_dev_write(wl_test_dev_t *dev, size_t addr, const void *src, size_t size)
+{
+    return wl_write(dev->handle, addr, src, size);
+}
+
+static esp_err_t wl_test_dev_read(wl_test_dev_t *dev, size_t addr, void *dst, size_t size)
+{
+    return wl_read(dev->handle, addr, dst, size);
+}
+
+// Position record size, read from the wl_config_t that WL stores in the
+// last sector of the partition. Valid once the partition has been mounted.
+static size_t wl_test_pos_record_size(const esp_partition_t *partition)
+{
+    uint32_t record_size;
+    TEST_ESP_OK(esp_partition_read(partition, partition->size - partition->erase_size + WL_TEST_CFG_RECORD_SIZE,
+                                   &record_size, sizeof(record_size)));
+    TEST_ASSERT_GREATER_OR_EQUAL(WL_TEST_RECORD_DATA_SIZE, record_size);
+    return record_size;
+}
+
+// Offset of the first WL state copy, mirroring WL_Flash::config() for a
+// partition-relative start address of 0 and a one-sector wl_config_t.
+static size_t wl_test_state1_addr(const esp_partition_t *partition)
+{
+    const size_t sector = partition->erase_size;
+    size_t state_size = WL_TEST_STATE_SIZE + (partition->size / sector) * wl_test_pos_record_size(partition);
+    state_size = (state_size + sector - 1) / sector * sector;
+    return partition->size - 2 * state_size - sector;
+}
+
+static void wl_test_fake_partition(esp_partition_t *fake)
+{
+    memcpy(fake, get_test_data_partition(), sizeof(*fake));
+    TEST_ASSERT_EQUAL(WL_TEST_PAGE, fake->erase_size);
+    fake->size = WL_TEST_PART_PAGES * WL_TEST_PAGE;
+}
+
+static void wl_test_fill_pattern(uint8_t *buf, size_t size)
+{
+    // Unique byte per position, so data landing at a wrong offset is detected.
+    for (size_t i = 0; i < size; i++) {
+        buf[i] = (uint8_t)(i * 7 + 1);
+    }
+}
+
+typedef struct {
+    size_t offset;
+    size_t size;
+} wl_test_access_t;
+
+static void test_unaligned_across_page_boundary(void)
+{
+    const size_t page = WL_TEST_PAGE;
+    const size_t region = 4 * page;
+    // Only the edge cases are kept here; the host test covers byte-granular
+    // crossings and the full table.
+    const wl_test_access_t cases[] = {
+        { page / 2,     page / 2 },         // unaligned, ends on page boundary
+        { page - 16,    32 },               // crosses boundary
+        { page - 16,    page + 32 },        // crosses two boundaries
+    };
+    const size_t case_count = sizeof(cases) / sizeof(cases[0]);
+
+    esp_partition_t partition;
+    wl_test_fake_partition(&partition);
+    uint8_t *write_buf = malloc(region);
+    uint8_t *read_buf = malloc(region);
+    uint8_t *expected = malloc(region);
+    TEST_ASSERT_NOT_NULL(write_buf);
+    TEST_ASSERT_NOT_NULL(read_buf);
+    TEST_ASSERT_NOT_NULL(expected);
+    wl_test_fill_pattern(write_buf, region);
+
+    for (size_t c = 0; c < case_count; c++) {
+        const size_t offset = cases[c].offset;
+        const size_t size = cases[c].size;
+        printf("offset=0x%zx size=0x%zx\n", offset, size);
+
+        // Fresh WL state: dummy sector at physical page 0.
+        TEST_ESP_OK(esp_partition_erase_range(&partition, 0, partition.size));
+        wl_test_dev_t dev;
+        wl_test_dev_open(&dev, &partition);
+        TEST_ASSERT_GREATER_OR_EQUAL(region, wl_size(dev.handle));
+
+        // Move the dummy sector to physical page 1, between logical pages 0 and 1.
+        wl_test_dev_move_dummy(&dev, &partition);
+
+        // Unaligned write, then aligned read of the whole region. Only
+        // [offset, offset + size) may change; the rest stays erased.
+        TEST_ESP_OK(wl_test_dev_write(&dev, offset, write_buf, size));
+        TEST_ESP_OK(wl_test_dev_read(&dev, 0, read_buf, region));
+        memset(expected, 0xFF, region);
+        memcpy(expected + offset, write_buf, size);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, read_buf, region);
+
+        // Unaligned read of the same range must return exactly what was
+        // written and nothing past size.
+        memset(read_buf, 0, region);
+        TEST_ESP_OK(wl_test_dev_read(&dev, offset, read_buf, size));
+        memset(expected, 0, region);
+        memcpy(expected, write_buf, size);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, read_buf, region);
+
+        wl_test_dev_close(&dev);
+    }
+
+    free(write_buf);
+    free(read_buf);
+    free(expected);
+}
+
+static void test_unaligned_write_after_dummy_wrap(void)
+{
+    const size_t page = WL_TEST_PAGE;
+    const size_t region = 2 * page;
+    const size_t offset = page / 2;
+    const size_t size = page;
+
+    esp_partition_t partition;
+    wl_test_fake_partition(&partition);
+    uint8_t *write_buf = malloc(size);
+    uint8_t *read_buf = malloc(region);
+    uint8_t *expected = malloc(region);
+    TEST_ASSERT_NOT_NULL(write_buf);
+    TEST_ASSERT_NOT_NULL(read_buf);
+    TEST_ASSERT_NOT_NULL(expected);
+    wl_test_fill_pattern(write_buf, size);
+
+    TEST_ESP_OK(esp_partition_erase_range(&partition, 0, partition.size));
+    wl_test_dev_t dev;
+    wl_test_dev_open(&dev, &partition);
+
+    // WL metadata (both state copies and config), known once mounted. It
+    // starts right after the dummy sector positions.
+    const size_t meta_addr = wl_test_state1_addr(&partition);
+    const size_t meta_size = partition.size - meta_addr;
+    uint8_t *meta_before = malloc(meta_size);
+    uint8_t *meta_after = malloc(meta_size);
+    TEST_ASSERT_NOT_NULL(meta_before);
+    TEST_ASSERT_NOT_NULL(meta_after);
+
+    // Complete one full dummy sector pass, one move per position. Logical
+    // page 0 then maps to the last data page, directly below the WL state.
+    for (size_t i = 0; i < meta_addr / page; i++) {
+        wl_test_dev_move_dummy(&dev, &partition);
+    }
+
+    // WL metadata (both state copies and config) must not change.
+    TEST_ESP_OK(esp_partition_read(&partition, meta_addr, meta_before, meta_size));
+    TEST_ESP_OK(wl_test_dev_write(&dev, offset, write_buf, size));
+    TEST_ESP_OK(esp_partition_read(&partition, meta_addr, meta_after, meta_size));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(meta_before, meta_after, meta_size);
+
+    memset(expected, 0xFF, region);
+    memcpy(expected + offset, write_buf, size);
+    TEST_ESP_OK(wl_test_dev_read(&dev, 0, read_buf, region));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, read_buf, region);
+
+    // Unaligned read across the same boundary must not read from the WL state.
+    memset(read_buf, 0, size);
+    TEST_ESP_OK(wl_test_dev_read(&dev, offset, read_buf, size));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(write_buf, read_buf, size);
+
+    // The volume must still mount, keep the data and accept erases.
+    wl_test_dev_close(&dev);
+    wl_test_dev_open(&dev, &partition);
+    TEST_ESP_OK(wl_test_dev_read(&dev, 0, read_buf, region));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, read_buf, region);
+    TEST_ESP_OK(wl_test_dev_erase(&dev, 0, region));
+    wl_test_dev_close(&dev);
+
+    free(write_buf);
+    free(read_buf);
+    free(expected);
+    free(meta_before);
+    free(meta_after);
+}
+
+TEST(wear_levelling, unaligned_access_across_page_boundary)
+{
+    test_unaligned_across_page_boundary();
+}
+
+TEST(wear_levelling, unaligned_write_after_dummy_wrap)
+{
+    test_unaligned_write_after_dummy_wrap();
+}
+
 TEST_GROUP_RUNNER(wear_levelling)
 {
     RUN_TEST_CASE(wear_levelling, wl_unmount_doesnt_leak_memory)
     RUN_TEST_CASE(wear_levelling, wl_mount_checks_partition_params)
     RUN_TEST_CASE(wear_levelling, multiple_tasks_single_handle)
     RUN_TEST_CASE(wear_levelling, write_doesnt_touch_other_sectors)
+    RUN_TEST_CASE(wear_levelling, unaligned_access_across_page_boundary)
+    RUN_TEST_CASE(wear_levelling, unaligned_write_after_dummy_wrap)
 
 #if CONFIG_WL_SECTOR_SIZE_4096
     RUN_TEST_CASE(wear_levelling, version_update)
