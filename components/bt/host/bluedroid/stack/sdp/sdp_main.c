@@ -107,11 +107,36 @@ void sdp_bqb_inact_timeout_ctrl(BOOLEAN enable)
     s_sdp_bqb_inact_timeout_flag = enable;
 }
 
+/* Local ConfigReq options while the ERTM flag is set. */
+static void sdp_bqb_fill_ertm_cfg(tL2CAP_CFG_INFO *cfg)
+{
+    cfg->fcr_present = TRUE;
+    cfg->fcr.mode = L2CAP_FCR_ERTM_MODE;
+    cfg->fcr.tx_win_sz = 8;
+    cfg->fcr.max_transmit = 0xff;
+    cfg->fcr.rtrans_tout = 2000;
+    cfg->fcr.mon_tout = 12000;
+    cfg->fcr.mps = 672;
+}
+
+/* Applied on the BTU task. Flag off forces Basic on this copy. */
+static void sdp_bqb_prepare_cfg(tL2CAP_CFG_INFO *cfg)
+{
+    if (s_l2cap_bqb_ertm_mode_included_flag) {
+        sdp_bqb_fill_ertm_cfg(cfg);
+        return;
+    }
+    memset(&cfg->fcr, 0, sizeof(cfg->fcr));
+    cfg->fcr_present = FALSE;
+    cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
+}
+
 /*******************************************************************************
 **
 ** Function     l2cap_bqb_ertm_mode_included_ctrl
 **
-** Description  Control the L2CAP flow control and retransmissions mode for SDP BQB test
+** Description  Enable ERTM on the next SDP connection. Only the flag is stored
+**              here. sdp_init and the connect paths apply it on the BTU task.
 **
 ** Returns      void
 **
@@ -310,15 +335,7 @@ void sdp_init (void)
     sdp_cb.l2cap_my_cfg.flush_to_present  = TRUE;
     sdp_cb.l2cap_my_cfg.flush_to          = SDP_FLUSH_TO;
 #if BT_SDP_BQB_INCLUDED
-    if (s_l2cap_bqb_ertm_mode_included_flag) {
-        sdp_cb.l2cap_my_cfg.fcr_present         = TRUE;
-        sdp_cb.l2cap_my_cfg.fcr.mode            = L2CAP_FCR_ERTM_MODE;
-        sdp_cb.l2cap_my_cfg.fcr.tx_win_sz       = 8;
-        sdp_cb.l2cap_my_cfg.fcr.max_transmit    = 0xff;
-        sdp_cb.l2cap_my_cfg.fcr.rtrans_tout     = 2000;
-        sdp_cb.l2cap_my_cfg.fcr.mon_tout        = 12000;
-        sdp_cb.l2cap_my_cfg.fcr.mps             = 672;
-    }
+    sdp_bqb_prepare_cfg(&sdp_cb.l2cap_my_cfg);
 #endif /* BT_SDP_BQB_INCLUDED */
     sdp_cb.max_attr_list_size             = SDP_MTU_SIZE - 16;
     sdp_cb.max_recs_per_search            = SDP_MAX_DISC_SERVER_RECS;
@@ -437,6 +454,12 @@ static void sdp_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 psm, UIN
     {
         tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
 
+#if BT_SDP_BQB_INCLUDED
+        /* L2CAP/ERM/BV-03-C: the flag can be set after sdp_init. PTS rejects
+         * a Basic fallback (result 1). */
+        sdp_bqb_prepare_cfg(&cfg);
+#endif /* BT_SDP_BQB_INCLUDED */
+
         if (cfg.fcr_present) {
             SDP_TRACE_DEBUG("sdp_connect_ind:  mode %u, txwinsz %u, max_trans %u, rtrans_tout %u, mon_tout %u, mps %u\n",
                             cfg.fcr.mode, cfg.fcr.tx_win_sz, cfg.fcr.max_transmit,
@@ -445,10 +468,20 @@ static void sdp_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 psm, UIN
 
         if ((!L2CA_ConfigReq (l2cap_cid, &cfg)) && cfg.fcr_present
                 && cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-            /* FCR not desired; try again in basic mode */
-            cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-            cfg.fcr_present = FALSE;
-            L2CA_ConfigReq (l2cap_cid, &cfg);
+#if BT_SDP_BQB_INCLUDED
+            if (s_l2cap_bqb_ertm_mode_included_flag) {
+                /* Sending the same options again cannot succeed, and the
+                 * incompatible-mode path has already disconnected. */
+                SDP_TRACE_WARNING ("SDP - ERTM ConfigReq failed, CID 0x%x\n", l2cap_cid);
+                return;
+            } else
+#endif /* BT_SDP_BQB_INCLUDED */
+            {
+                /* FCR not desired; try again in basic mode */
+                cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
+                cfg.fcr_present = FALSE;
+                L2CA_ConfigReq (l2cap_cid, &cfg);
+            }
         }
     }
 
@@ -489,6 +522,12 @@ static void sdp_connect_cfm (UINT16 l2cap_cid, UINT16 result)
 
         cfg = sdp_cb.l2cap_my_cfg;
 
+#if BT_SDP_BQB_INCLUDED
+        /* Same ERTM request as the acceptor. A failed ConfigReq must not
+         * fall back to Basic when the flag is set. */
+        sdp_bqb_prepare_cfg(&cfg);
+#endif /* BT_SDP_BQB_INCLUDED */
+
         if (cfg.fcr_present) {
             SDP_TRACE_DEBUG("sdp_connect_cfm:  mode %u, txwinsz %u, max_trans %u, rtrans_tout %u, mon_tout %u, mps %u\n",
                             cfg.fcr.mode, cfg.fcr.tx_win_sz, cfg.fcr.max_transmit,
@@ -497,10 +536,18 @@ static void sdp_connect_cfm (UINT16 l2cap_cid, UINT16 result)
 
         if ((!L2CA_ConfigReq (l2cap_cid, &cfg)) && cfg.fcr_present
                 && cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-            /* FCR not desired; try again in basic mode */
-            cfg.fcr_present = FALSE;
-            cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-            L2CA_ConfigReq (l2cap_cid, &cfg);
+#if BT_SDP_BQB_INCLUDED
+            if (s_l2cap_bqb_ertm_mode_included_flag) {
+                SDP_TRACE_WARNING ("SDP - ERTM ConfigReq failed, CID 0x%x\n", l2cap_cid);
+                return;
+            } else
+#endif /* BT_SDP_BQB_INCLUDED */
+            {
+                /* FCR not desired; try again in basic mode */
+                cfg.fcr_present = FALSE;
+                cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
+                L2CA_ConfigReq (l2cap_cid, &cfg);
+            }
         }
 
         SDP_TRACE_EVENT ("SDP - got conn cnf, sent cfg req, CID: 0x%x\n", p_ccb->connection_id);
@@ -575,15 +622,26 @@ static void sdp_config_ind (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     if (p_cfg->fcr_present) {
         /* Reject the window size if it is bigger than we want it to be */
         if (p_cfg->fcr.mode != L2CAP_FCR_BASIC_MODE) {
-            if (sdp_cb.l2cap_my_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE
-                    && p_cfg->fcr.tx_win_sz > sdp_cb.l2cap_my_cfg.fcr.tx_win_sz) {
-                p_cfg->fcr.tx_win_sz = sdp_cb.l2cap_my_cfg.fcr.tx_win_sz;
+            BOOLEAN want_ertm = (sdp_cb.l2cap_my_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE);
+            UINT8 max_tx_win = sdp_cb.l2cap_my_cfg.fcr.tx_win_sz;
+#if BT_SDP_BQB_INCLUDED
+            /* Flag on keeps ERTM and caps the window at the value we request.
+             * Flag off asks for Basic, including a cfg stored while the flag was on. */
+            if (s_l2cap_bqb_ertm_mode_included_flag) {
+                want_ertm = TRUE;
+                max_tx_win = 8;
+            } else {
+                want_ertm = FALSE;
+            }
+#endif /* BT_SDP_BQB_INCLUDED */
+            if (want_ertm && p_cfg->fcr.tx_win_sz > max_tx_win) {
+                p_cfg->fcr.tx_win_sz = max_tx_win;
                 p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
                 SDP_TRACE_DEBUG("sdp_config_ind(CONFIG) -> Please try again with SMALLER TX WINDOW\n");
             }
 
-            /* Reject if locally we want basic and they don't */
-            if (sdp_cb.l2cap_my_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
+            /* Reject if locally we want basic and they don't. */
+            if (!want_ertm) {
                 /* Ask for a new setup */
                 p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
                 p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
@@ -656,7 +714,7 @@ static void sdp_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
                 /* Start inactivity timer */
             {
 #if BT_SDP_BQB_INCLUDED
-                /* Change the timeout from 30s to 90s for BQB test */
+                /* PTS leaves this channel idle longer than SDP_INACT_TIMEOUT. */
                 if (s_sdp_bqb_inact_timeout_flag) {
                     btu_start_timer(&p_ccb->timer_entry, BTU_TTYPE_SDP, SDP_BQB_INACT_TIMEOUT);
                 } else
@@ -667,6 +725,12 @@ static void sdp_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
             }
         }
     } else {
+#if BT_SDP_BQB_INCLUDED
+        /* Peer rejected ERTM. Do not retry in Basic while the flag is set. */
+        if (s_l2cap_bqb_ertm_mode_included_flag && p_cfg->fcr_present) {
+            SDP_TRACE_WARNING("SDP - peer rejected ERTM, CID 0x%x\n", l2cap_cid);
+        } else
+#endif
         /* If peer has rejected FCR and suggested basic then try basic */
         if (p_cfg->fcr_present) {
             tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
@@ -700,6 +764,12 @@ static void sdp_disconnect_ind (UINT16 l2cap_cid, BOOLEAN ack_needed)
     /* Find CCB based on CID */
     if ((p_ccb = sdpu_find_ccb_by_cid (l2cap_cid)) == NULL) {
         SDP_TRACE_WARNING ("SDP - Rcvd L2CAP disc, unknown CID: 0x%x\n", l2cap_cid);
+        /* The SDP CCB may already have been released by the inactivity
+         * timeout. L2CAP still waits for Disconnect Response; without it
+         * the request is left unanswered (L2CAP/ERM/BV-02-C, L2CAP/ERM/BV-19-C). */
+        if (ack_needed) {
+            L2CA_DisconnectRsp (l2cap_cid);
+        }
         return;
     }
 

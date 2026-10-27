@@ -70,6 +70,8 @@ static UINT8         *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db,
  * sequence, so it is covered as well. */
 #define SDP_MAX_REQ_LEN     (5 + (2 + SDP_MAX_UUID_FILTERS * (1 + LEN_UUID_128)) + 2 \
                              + (3 + SDP_MAX_ATTR_FILTERS * 3) + (1 + SDP_MAX_CONTINUATION_LEN))
+/* prepare_I_frame writes L2CAP_FCS_LEN after an SDU that already fills this buffer. */
+#define SDP_REQ_BUF_SIZE    (sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN + L2CAP_FCS_LEN)
 
 
 /*******************************************************************************
@@ -132,7 +134,7 @@ static void sdp_snd_service_search_req(tCONN_CB *p_ccb, UINT8 cont_len, UINT8 *p
     UINT16          param_len;
 
     /* Get a buffer to send the packet to L2CAP */
-    if ((p_cmd = (BT_HDR *) osi_malloc(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN)) == NULL) {
+    if ((p_cmd = (BT_HDR *) osi_malloc(SDP_REQ_BUF_SIZE)) == NULL) {
         sdp_disconnect (p_ccb, SDP_NO_RESOURCES);
         return;
     }
@@ -536,7 +538,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_
 
     /* Now, ask for the next handle. Reuse the buffer we just got. */
     if (p_ccb->cur_handle < p_ccb->num_handles) {
-        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN);
+        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(SDP_REQ_BUF_SIZE);
         UINT8   *p;
 
         if (!p_msg) {
@@ -685,7 +687,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UI
 #endif
     /* If continuation request (or first time request) */
     if ((cont_request_needed) || (!p_reply)) {
-        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN);
+        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(SDP_REQ_BUF_SIZE);
         UINT8   *p;
 
         if (!p_msg) {
