@@ -36,6 +36,7 @@ static bool s_ot_mainloop_running = false;
 static SemaphoreHandle_t s_ot_syn_semaphore = NULL;
 static TaskHandle_t s_ot_task_handle = NULL;
 
+#if CONFIG_OPENTHREAD_AUTO_START_DATASET_FIELDS || CONFIG_OPENTHREAD_AUTO_START_DATASET_TLVS
 static int hex_digit_to_int(char hex)
 {
     if ('A' <= hex && hex <= 'F') {
@@ -69,6 +70,23 @@ static size_t hex_string_to_binary(const char *hex_string, uint8_t *buf, size_t 
 
     return buf_size;
 }
+#endif
+
+#if CONFIG_OPENTHREAD_AUTO_START_DATASET_TLVS
+static esp_err_t dataset_tlvs_from_hex(const char *hex_string, otOperationalDatasetTlvs *dataset_tlvs)
+{
+    size_t num_char = strlen(hex_string);
+    size_t tlv_length = num_char / 2;
+
+    if (num_char == 0 || (num_char % 2) != 0 || tlv_length > OT_OPERATIONAL_DATASET_MAX_LENGTH ||
+        hex_string_to_binary(hex_string, dataset_tlvs->mTlvs, tlv_length) != tlv_length) {
+        return ESP_FAIL;
+    }
+
+    dataset_tlvs->mLength = (uint8_t)tlv_length;
+    return ESP_OK;
+}
+#endif
 
 esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
 {
@@ -103,13 +121,17 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
         ESP_RETURN_ON_FALSE(otDatasetSetActiveTlvs(instance, datasetTlvs) == OT_ERROR_NONE, ESP_FAIL, OT_PLAT_LOG_TAG,
                             "Failed to set OpenThread active dataset");
     } else {
-        otOperationalDataset dataset;
+#if CONFIG_OPENTHREAD_AUTO_START_DATASET_TLVS
+        otOperationalDatasetTlvs configured_dataset = {};
+
+        ESP_RETURN_ON_ERROR(dataset_tlvs_from_hex(CONFIG_OPENTHREAD_ACTIVE_DATASET_TLV, &configured_dataset),
+                            OT_PLAT_LOG_TAG, "Invalid OpenThread dataset TLV");
+        ESP_RETURN_ON_FALSE(otDatasetSetActiveTlvs(instance, &configured_dataset) == OT_ERROR_NONE, ESP_FAIL,
+                            OT_PLAT_LOG_TAG, "Failed to set OpenThread active dataset");
+#elif CONFIG_OPENTHREAD_AUTO_START_DATASET_FIELDS
+        otOperationalDataset dataset = {};
         size_t len = 0;
-#if CONFIG_OPENTHREAD_FTD
-        otDatasetCreateNewNetwork(instance, &dataset);
-#else
-        memset(&dataset, 0, sizeof(otOperationalDataset));
-#endif
+
         // Active timestamp
         dataset.mActiveTimestamp.mSeconds = 1;
         dataset.mActiveTimestamp.mTicks = 0;
@@ -158,6 +180,16 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
 
         ESP_RETURN_ON_FALSE(otDatasetSetActive(instance, &dataset) == OT_ERROR_NONE, ESP_FAIL, OT_PLAT_LOG_TAG,
                             "Failed to set OpenThread active dataset");
+#elif CONFIG_OPENTHREAD_AUTO_START_DATASET_RANDOM
+        otOperationalDataset dataset;
+        ESP_RETURN_ON_FALSE(otDatasetCreateNewNetwork(instance, &dataset) == OT_ERROR_NONE, ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "Failed to create random OpenThread dataset");
+        ESP_RETURN_ON_FALSE(otDatasetSetActive(instance, &dataset) == OT_ERROR_NONE, ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "Failed to set OpenThread active dataset");
+        ESP_LOGI(OT_PLAT_LOG_TAG, "Created new random Thread dataset");
+#else
+#error "Invalid OpenThread auto-start dataset mode"
+#endif
     }
 
     ESP_RETURN_ON_FALSE(otIp6SetEnabled(instance, true) == OT_ERROR_NONE, ESP_FAIL, OT_PLAT_LOG_TAG,

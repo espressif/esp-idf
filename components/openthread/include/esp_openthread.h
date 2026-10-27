@@ -37,12 +37,20 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *init_confi
 /**
  * @brief   Starts the Thread protocol operation and attaches to a Thread network.
  *
- * @param[in]  datasetTlvs    The operational dataset (TLV encoded), if it's NULL, the function will generate the dataset
- *                            based on the configurations from kconfig.
+ * When @p datasetTlvs is not NULL, that dataset is set as the active dataset.
+ * When @p datasetTlvs is NULL, a dataset stored in settings is not restored. The active
+ * dataset follows the "Auto-start dataset configuration" menuconfig choice and replaces
+ * the saved Active Dataset: individual fields (network name, channel, PAN ID, and keys),
+ * one hexadecimal TLV string, or a newly generated random dataset (FTD only).
+ * In random mode each NULL call creates a new dataset. To keep that network across reboot,
+ * read it with @c otDatasetGetActiveTlvs() and pass it here.
+ *
+ * @param[in]  datasetTlvs    The operational dataset (TLV encoded), or NULL to use the
+ *                            configured dataset mode above.
  *
  * @return
  *      - ESP_OK on success
- *      - ESP_FAIL on failures
+ *      - ESP_FAIL on other failures
  *
  */
 esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs);
