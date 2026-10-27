@@ -10,10 +10,12 @@
 #include <string.h>
 
 /* Only platform dependencies are faked; compile the production sender below. */
-#define __BLE_LOG_LBM_V2_H__
 #define CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED 1
 #define CONFIG_BLE_LOG_SYNC_IO_NUM 0
 #define CONFIG_ESP_CONSOLE_UART_NUM 0
+#define CONFIG_BLE_LOG_POOL_TRANS_CNT 8
+#define CONFIG_BLE_LOG_POOL_NON_YIELD_RESERVE_CNT 1
+#define CONFIG_BLE_LOG_POOL_TRANS_SIZE 640
 #define ESP_OK 0
 #define ESP_FAIL (-1)
 #define ESP_LOGE(tag, ...) record_error(__VA_ARGS__)
@@ -27,7 +29,6 @@
 #define UART_HW_FLOWCTRL_DISABLE 0
 #define UART_SCLK_XTAL 1
 #define UART_SCLK_REF_TICK 2
-typedef struct { uint32_t esp_ts, lc_ts, os_ts; uint8_t io_level; } ble_log_ts_info_t;
 typedef struct { int baud_rate, data_bits, parity, stop_bits, flow_ctrl, source_clk; } uart_config_t;
 typedef int esp_err_t;
 
@@ -107,7 +108,7 @@ static void ble_log_rt_ts_sample(ble_log_ts_info_t *info)
     assert(critical_depth > 0 && input_enabled && pin_connected && inverted && !transmitting && level == 0);
     int outer_depth = critical_depth;
     BLE_LOG_ENTER_CRITICAL();
-    *info = (ble_log_ts_info_t) { .esp_ts = now, .lc_ts = now + 1, .os_ts = now / 1000, .io_level = level };
+    *info = (ble_log_ts_info_t) { .int_src_code = BLE_LOG_INT_SRC_TS, .esp_ts = now, .lc_ts = now + 1, .os_ts = now / 1000, .io_level = level };
     sampled_at = now;
     now += sample_delay;
     samples++;
