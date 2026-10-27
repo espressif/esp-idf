@@ -23,6 +23,17 @@ from err_codes_extract import extract_all  # noqa: E402
 from err_codes_extract import search_headers  # noqa: E402
 
 
+def format_code_value(value: int) -> str:
+    """Format one error code so both hex and decimal forms are searchable.
+
+    Positive codes keep the header hex form and add the signed decimal that
+    ``%d`` prints. Negative codes and zero stay in the signed decimal form.
+    """
+    if value > 0:
+        return f'**(0x{value:x}, {value:d})**'
+    return f'({value:d})'
+
+
 def generate_rst_output(idf_path: str, fout: TextIO) -> None:
     """
     Generate RST output using the composable error code extraction system
@@ -34,18 +45,14 @@ def generate_rst_output(idf_path: str, fout: TextIO) -> None:
     err_codes = extract_all(headers, idf_path)
     entries = [(ec.name, ec.value, ec.comment) for ec in err_codes if ec.value is not None]
 
-    # Sort: negative values first (ascending), then non-negative (ascending)
+    # Sort by value, then name, so the page order is stable.
     entries.sort(key=lambda e: (e[1], e[0]))
 
     for name, value, comment in entries:
-        fout.write(f':c:macro:`{name}` ')
-        if value > 0:
-            fout.write(f'**(0x{value:x})**')
-        else:
-            fout.write(f'({value:d})')
+        line = f':c:macro:`{name}` {format_code_value(value)}'
         if comment:
-            fout.write(f': {comment}')
-        fout.write('\n\n')
+            line += f': {comment}'
+        fout.write(f'{line}\n\n')
 
 
 def main() -> None:
