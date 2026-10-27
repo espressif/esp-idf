@@ -18,6 +18,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "pmu_param.h"
 #include "hal/clk_gate_ll.h"
+#include "hal/modem_clock_ll.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/lp_aon_hal.h"
@@ -435,8 +436,8 @@ bool pmu_sleep_finish(bool dslp)
         esp_psram_impl_exit_halfsleep_mode();
 #endif
 #endif
-        const bool modem_pll_clk_enabled = clk_gate_ll_modem_pll_clk_is_enabled();
-        assert(modem_pll_clk_enabled == clk_gate_ll_modem_clk_source_is_pll());
+        const bool modem_pll_clk_enabled = modem_clock_ll_pll_clk_is_enabled();
+        assert(modem_pll_clk_enabled == modem_clock_ll_source_is_pll());
         if (!modem_pll_clk_enabled) { // wake up from non-modem clock retention
             /* Workaround for issue WIFI-7620
              * The BA bitmap and start sequence number are updated in the read-only
@@ -445,8 +446,8 @@ bool pmu_sleep_finish(bool dslp)
             if (!ref_160_enabled) {
                 _clk_gate_ll_ref_160m_clk_en(true);
             }
-            _clk_gate_ll_modem_pll_source_cg_en(true);
-            _clk_gate_ll_modem_pll_source_cg_en(false);
+            _modem_clock_ll_enable_pll_clock_source(true);
+            _modem_clock_ll_enable_pll_clock_source(false);
             if (!ref_160_enabled) {
                 _clk_gate_ll_ref_160m_clk_en(false);
             }
