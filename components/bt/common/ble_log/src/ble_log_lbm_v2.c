@@ -1421,8 +1421,10 @@ void ble_log_dump_to_console(void)
 
     BLE_LOG_ENTER_CRITICAL();
     BLE_LOG_CONSOLE("[BLE_LOG_DUMP_START:\n");
-    for (int id = 0; id < BLE_LOG_POOL_TRANS_CNT; id++) {
-        ble_log_prph_trans_t *trans = g_pool.trans[id];
+    /* Include the last snapshot even after recycle resets its pos to zero. */
+    for (int id = 0; id <= BLE_LOG_POOL_TRANS_CNT; id++) {
+        ble_log_prph_trans_t *trans = id == BLE_LOG_POOL_TRANS_CNT ?
+                                     internal_trans : g_pool.trans[id];
         BLE_LOG_FEED_WDT();
         for (int k = 0; k < trans->size; k++) {
             BLE_LOG_CONSOLE("%02x ", trans->buf[k]);
