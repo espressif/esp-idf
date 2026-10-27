@@ -29,6 +29,7 @@
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/modem_lpcon_ll.h"
+#include "hal/modem_clock_ll.h"
 #include "soc/reset_reasons.h"
 #include "hal/assist_debug_ll.h"
 #include "esp_rom_sys.h"
@@ -51,6 +52,10 @@ static inline void bootloader_hardware_init(void)
     gpio_ll_func_sel(&GPIO, 41, PIN_FUNC_GPIO);
 
     modem_lpcon_ll_enable_bus_clock(true);
+    /* SW_CPU_RESET retains modem_conf; ungate bus/root clock and clear reset. */
+    _modem_clock_ll_ungate();
+    /* BBPLL may be disabled, reset clock selection to XTAL. */
+    _modem_clock_ll_enable_pll_clock_source(false);
 
 #if !CONFIG_IDF_ENV_FPGA
     /* Enable analog i2c master clock */

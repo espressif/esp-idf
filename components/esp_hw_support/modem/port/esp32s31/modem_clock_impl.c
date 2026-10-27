@@ -11,6 +11,8 @@
 #include "soc/soc_caps.h"
 #include "modem/modem_clock_impl.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+#include "hal/modem_clock_ll.h"
 
 /* Clock dependency definitions */
 #define WIFI_CLOCK_DEPS                     ( MODEM_CLOCKS( WIFI_MAC, WIFI_APB, WIFI_BB, WIFI_BB_44M, COEXIST, WIFI_BB_80X1, SOC_PLL_SOURCE_CG ) )
@@ -214,10 +216,13 @@ static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, boo
 #if SOC_MODEM_CLOCK_SOC_PLL_SOURCE_CG_SUPPORTED
 static void IRAM_ATTR modem_clock_soc_pll_source_cg_configure(modem_clock_context_t *ctx, bool enable)
 {
+    (void)ctx;
     if (enable) {
         ESP_ERROR_CHECK(esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F160M));
     }
-    modem_clock_hal_enable_soc_pll_source_cg(ctx->hal, enable);
+    PERIPH_RCC_ATOMIC() {
+        modem_clock_ll_enable_pll_clock_source(enable);
+    }
     if (!enable) {
         ESP_ERROR_CHECK(esp_clk_tree_release_src(SOC_MOD_CLK_PLL_F160M));
     }
@@ -263,7 +268,9 @@ static esp_err_t IRAM_ATTR modem_clock_coex_check_enable(modem_clock_context_t *
 #if SOC_MODEM_CLOCK_SOC_PLL_SOURCE_CG_SUPPORTED
 static esp_err_t IRAM_ATTR modem_clock_soc_pll_source_cg_check_enable(modem_clock_context_t *ctx)
 {
-    return modem_clock_hal_soc_pll_source_cg_is_enabled(ctx->hal) ? ESP_OK : ESP_FAIL;
+    (void)ctx;
+    return (modem_clock_ll_pll_clk_is_enabled() &&
+            modem_clock_ll_source_is_pll()) ? ESP_OK : ESP_FAIL;
 }
 #endif
 
