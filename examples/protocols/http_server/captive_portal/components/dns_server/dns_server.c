@@ -289,7 +289,7 @@ void dns_server_task(void *pvParameters)
                 char reply[DNS_MAX_LEN];
                 int reply_len = parse_dns_request(rx_buffer, len, reply, DNS_MAX_LEN, handle);
 
-                ESP_LOGI(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
+                ESP_LOGD(TAG, "Received %d bytes from %s | DNS reply with len: %d", len, addr_str, reply_len);
                 if (reply_len < 0) {
                     ESP_LOGW(TAG, "Failed to prepare a DNS reply");
                 } else if (reply_len > 0) {   // 0: too short, a reply, or not a standard query; ignored
