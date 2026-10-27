@@ -87,6 +87,15 @@ static void flush_reassembly(uint16_t handle)
     osi_free(partial_packet);
 }
 
+/* hash_map_free does not release values when data_free_fn is NULL. */
+static bool free_partial_packet(hash_map_entry_t *hash_entry, void *context)
+{
+    (void)context;
+    osi_free(hash_entry->data);
+    hash_entry->data = NULL;
+    return true;
+}
+
 static void init(const packet_fragmenter_callbacks_t *result_callbacks)
 {
     current_fragment_packet = NULL;
@@ -97,6 +106,7 @@ static void init(const packet_fragmenter_callbacks_t *result_callbacks)
 static void cleanup(void)
 {
     if (partial_packets) {
+        hash_map_foreach(partial_packets, free_partial_packet, NULL);
         hash_map_free(partial_packets);
         partial_packets = NULL;
     }
