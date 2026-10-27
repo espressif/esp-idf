@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-"""Compile the real sync sender with deterministic peripheral/time fakes."""
+"""Compile sync sampling and sending with deterministic peripheral/time fakes."""
 
 import pathlib
 import subprocess
@@ -12,10 +12,10 @@ SRC = HERE.parents[2] / 'src'
 STUBS = (
     'sdkconfig.h',
     'soc/soc_caps.h',
-    'ble_log_rt.h',
     'esp_bit_defs.h',
     'freertos/FreeRTOS.h',
-    'freertos/semphr.h',
+    'freertos/task.h',
+    'esp_bt.h',
     'esp_heap_caps.h',
     'esp_rom_serial_output.h',
     'driver/gpio.h',
@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='ble-log-sync-test-') as directory:
         path = temp / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
-    for xtal in (1, 0):
+    for sync, xtal, ll in ((1, 1, 1), (1, 0, 1), (0, 0, 1), (0, 0, 0)):
         binary = temp / 'sync_test'
         subprocess.run(
             [
@@ -45,12 +45,12 @@ with tempfile.TemporaryDirectory(prefix='ble-log-sync-test-') as directory:
                 '-fno-sanitize-recover=undefined',
                 '-g',
                 f'-DSOC_UART_SUPPORT_XTAL_CLK={xtal}',
+                f'-DCONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED={sync}',
+                f'-DCONFIG_BLE_LOG_LL_ENABLED={ll}',
                 '-I',
                 str(temp),
                 '-I',
                 str(SRC / 'internal_include'),
-                '-I',
-                str(SRC.parent / 'include'),
                 str(HERE / 'test_sync.c'),
                 '-o',
                 str(binary),
@@ -59,4 +59,4 @@ with tempfile.TemporaryDirectory(prefix='ble-log-sync-test-') as directory:
             timeout=30,
         )
         subprocess.run([str(binary)], check=True, timeout=10)
-        print(f'PASS: UART_XTAL={xtal}', flush=True)
+        print(f'PASS: SYNC={sync}, UART_XTAL={xtal}, LL={ll}', flush=True)

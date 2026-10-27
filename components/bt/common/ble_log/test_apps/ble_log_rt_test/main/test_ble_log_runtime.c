@@ -16,6 +16,7 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
+#include "ble_log_sync.h"
 #include "driver/uart.h"
 #include "esp_cpu.h"
 #include "esp_timer.h"
@@ -889,7 +890,7 @@ TEST_CASE("BLE Log LBM inflight peak stays bounded under bursts",
 
     /* Snapshot the retained peak through the dedicated Internal transport. */
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info);
+    ble_log_sync_sample(&ts_info);
     TEST_ASSERT_TRUE(ble_log_internal_snapshot(
         BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, true));
     TEST_ASSERT_TRUE(ble_log_rt_drain());

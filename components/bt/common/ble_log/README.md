@@ -29,6 +29,10 @@ writers retain reserve access and fail-fast behavior.
 The Internal Snapshot and UART0 redirection transports are not members of the
 bitmap pool.
 
+`ble_log_sync` owns clock sampling and optional external markers. Runtime
+schedules periodic work; LBM allocates snapshot IDs and transports, then uses
+the sync sampling result to assemble each snapshot.
+
 Periodic flushing scans the whole bounded pool, not just OPEN bitmap hints:
 writers temporarily remove their hints while writing or holding a claim. A
 failed try-lock leaves `pending_seal`; the next claim seals the old buffer
