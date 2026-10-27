@@ -25,17 +25,15 @@ typedef struct {
     dac_channel_t               chan_id;        /*!< The cosine wave channel id */
     dac_channel_config_t        chan_cfg;       /*!< Channel (analog pad) configuration. */
     uint32_t                    freq_hz;        /*!< The frequency of cosine wave, unit: Hz.
-                                                *   The cosine wave generator is driven by RTC_FAST clock which is divide from RC_FAST,
-                                                *   With the default RTC clock, the minimum frequency of cosine wave is about 130 Hz,
-                                                *   Although it can support up to several MHz frequency theoretically,
-                                                *   the waveform will distort at high frequency due to the hardware limitation.
-                                                *   Typically not suggest to set the frequency higher than 200 KHz
+                                                *   The achievable range and resolution depend on the target and clock source.
                                                 */
     dac_cosine_clk_src_t        clk_src;        /*!< The clock source of the cosine wave generator.
                                                      Set to 0 to use `DAC_COSINE_CLK_SRC_DEFAULT`. */
     dac_cosine_atten_t          atten;          /*!< The attenuation of cosine wave amplitude */
     dac_cosine_phase_t          phase;          /*!< The phase of cosine wave, DAC_COSINE_PHASE_0 or DAC_COSINE_PHASE_180 */
-    int8_t                      offset;         /*!< The DC offset of cosine wave */
+    int16_t                     offset;         /*!< The DC offset of cosine wave, in DAC code units.
+                                                 *   Offsets outside the hardware-supported range are saturated.
+                                                 */
     struct {
         bool                    force_set_freq: 1; /*!< Force to set the cosine wave frequency */
     } flags;                                    /*!< Flags of cosine mode */

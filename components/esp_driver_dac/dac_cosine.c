@@ -9,7 +9,6 @@
 #include "dac_priv_common.h"
 #include "driver/dac_cosine.h"
 #include "hal/dac_ll.h"
-#include "esp_private/esp_clk_tree_common.h"
 #include "esp_check.h"
 #include "esp_log.h"
 
@@ -33,7 +32,56 @@ static uint32_t s_cosine_freq_ref_cnt;
 static __attribute__((const)) dac_sintx_freq_hw_t s_dac_cosine_calc_freq(uint32_t clk_freq_hz, uint32_t cw_freq_hz)
 {
 #if DAC_LL_SINTX_HAS_TIMER_TARGET
-#error "Not implemented"
+    /**
+     * clk_freq_hz is DAC_HS_CLK
+     * freq = (hs_clk / max(timer_target, 1)) * (fstep / DAC_LL_SINTX_PHASE_ACC_RANGE)
+     *
+     * @note Since the upper 8 bits of the phase accumulator are used to index the LUT,
+     *       we prefer fstep values no greater than 256 to avoid skipping LUT entries.
+     */
+    const uint64_t clk = clk_freq_hz, cw = cw_freq_hz;
+    dac_sintx_freq_hw_t best = {.timer_target = 1, .fstep = 1};
+
+    /* Return true if config A yields a smaller absolute frequency error than B. */
+    bool better_sintx_config(dac_sintx_freq_hw_t a, dac_sintx_freq_hw_t b) {
+        uint64_t a_diff = DAC_ABS_DIFF(clk * a.fstep, cw * DAC_LL_SINTX_PHASE_ACC_RANGE * a.timer_target);
+        uint64_t b_diff = DAC_ABS_DIFF(clk * b.fstep, cw * DAC_LL_SINTX_PHASE_ACC_RANGE * b.timer_target);
+        return a_diff * b.timer_target < b_diff * a.timer_target;
+    }
+
+    /**
+     * The ideal relationship between `fstep` and `timer_target` is linear, but both parameters are subject to integer quantization.
+     * fstep / timer_target = (cw * DAC_LL_SINTX_PHASE_ACC_RANGE) / clk = k
+     */
+    if (cw * DAC_LL_SINTX_PHASE_ACC_RANGE < clk) {
+        // fstep / timer_target = k < 1, we iterate fstep from 1 to 256
+        for (uint64_t s = 1; s <= 256; s++) {
+            uint32_t tt_floor = DAC_CLAMP(clk * s / (cw * DAC_LL_SINTX_PHASE_ACC_RANGE), 1, DAC_SINTX_TIMER_TARGET_V);
+            uint32_t tt_ceil = DAC_CLAMP(tt_floor + 1, 1, DAC_SINTX_TIMER_TARGET_V);
+            dac_sintx_freq_hw_t candidate = {.timer_target = tt_floor, .fstep = s};
+            if (better_sintx_config(candidate, best)) {
+                best = candidate;
+            }
+            candidate.timer_target = tt_ceil;
+            if (better_sintx_config(candidate, best)) {
+                best = candidate;
+            }
+        }
+    } else {
+        // fstep / timer_target = k >= 1, we iterate timer_target from 1 until fstep > 256
+        for (uint64_t tt = 1; ; tt++) {
+            uint32_t s = DAC_CLAMP(DAC_DIV_ROUND(cw * tt * DAC_LL_SINTX_PHASE_ACC_RANGE, clk), 1, DAC_SINTX_FSTEP_LIMIT);
+            if (tt > 1 && s > 256) {
+                break;
+            }
+            dac_sintx_freq_hw_t candidate = {.timer_target = tt, .fstep = s};
+            if (better_sintx_config(candidate, best)) {
+                best = candidate;
+            }
+        }
+    }
+
+    return best;
 #else
     /* freq = clk * fstep / DAC_LL_SINTX_PHASE_ACC_RANGE */
     uint64_t fstep = DAC_DIV_ROUND((uint64_t)cw_freq_hz * DAC_LL_SINTX_PHASE_ACC_RANGE, clk_freq_hz);
@@ -51,6 +99,8 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     ESP_RETURN_ON_FALSE(IS_VALID_DAC_CHANNEL(cos_cfg->chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid dac channel id");
     ESP_RETURN_ON_FALSE(dac_priv_is_valid_channel_config(&cos_cfg->chan_cfg), ESP_ERR_INVALID_ARG, TAG, "invalid DAC channel configuration");
     ESP_RETURN_ON_FALSE(cos_cfg->freq_hz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid cosine wave frequency");
+    ESP_RETURN_ON_FALSE(cos_cfg->atten < DAC_COSINE_ATTEN_MAX && (cos_cfg->phase == DAC_COSINE_PHASE_0 || cos_cfg->phase == DAC_COSINE_PHASE_180),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid cosine post-processing parameter");
 
     dac_cosine_clk_src_t clk_src = cos_cfg->clk_src ? : DAC_COSINE_CLK_SRC_DEFAULT;
     ESP_RETURN_ON_FALSE(IS_VALID_DAC_CLK_SRC(clk_src, SOC_DAC_COSINE_CLKS), ESP_ERR_INVALID_ARG, TAG, "invalid DAC cosine clock source");
@@ -66,9 +116,8 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
 
     /* Acquire the generator clock and resolve its frequency */
     uint32_t clk_freq = 0;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)handle->cfg.clk_src, NULL), err_handle, TAG, "enable clock failed");
-    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)handle->cfg.clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq),
-                      err_clk, TAG, "get clock frequency failed");
+    ESP_GOTO_ON_ERROR(dac_priv_clk_acquire_unified((soc_module_clk_t)clk_src, DAC_LS_CLK_CONSTRAINT_DEFAULT, &clk_freq),
+                      err_handle, TAG, "acquire DAC clock failed");
 
     /* Acquire the analog channel */
     ESP_GOTO_ON_ERROR(dac_priv_channel_register(cos_cfg->chan_id), err_clk, TAG, "register dac channel %d failed", cos_cfg->chan_id);
@@ -99,19 +148,31 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     ESP_GOTO_ON_ERROR(ret, err_sintx, TAG, "frequency conflict");
 
     /* Configure the per-channel post-processing pipeline. */
-    int16_t offset = cos_cfg->offset;
+    int32_t offset = cos_cfg->offset;
     if (cos_cfg->phase == DAC_COSINE_PHASE_180) {
         offset = -offset;
     }
 #if DAC_LL_SINTX_LUT_SIGNED
     const int16_t base_offset = 0;
-    /* Hardware DC register is signed: -128~127 */
-    const int16_t min_offset = -128, max_offset = 127;
+    /* Hardware DC register is signed */
+    const uint8_t bitwidth = dac_priv_chan_cfg_get_bitwidth(&cos_cfg->chan_cfg);
+    const int16_t min_offset = -(1 << (bitwidth - 1)), max_offset = (1 << (bitwidth - 1)) - 1;
 #else
-#error "not implemented"
+    const int16_t full_scale = 1 << dac_priv_chan_cfg_get_bitwidth(&cos_cfg->chan_cfg);
+    /**
+     * Shift the attenuated waveform to the center line:
+     * - 0 dB attenuation: no shift required
+     * - 6 dB attenuation: shift by 1/2 − 1/4 = 4/16 full scale
+     * - 12 dB attenuation: shift by 1/2 − 1/8 = 6/16 full scale
+     * - 18 dB attenuation: shift by 1/2 − 1/16 = 7/16 full scale
+     */
+    const int16_t base_offset = (full_scale / 16) * (8 - (8 >> cos_cfg->atten));
+    /* Hardware DC register is unsigned */
+    const int16_t min_offset = 0, max_offset = full_scale - 1;
 #endif
+    offset += base_offset;
     if (offset < min_offset || offset > max_offset) {
-        /* User-facing range: phase 0° → [min-B, max-B]; phase 180° → [B-max, B-min] */
+        /* User-facing range: phase 0° → [min-base, max-base]; phase 180° → [base-max, base-min] */
         const int16_t min_user = (cos_cfg->phase == DAC_COSINE_PHASE_0) ? (min_offset - base_offset) : (base_offset - max_offset);
         const int16_t max_user = min_user + (max_offset - min_offset);
         ESP_LOGW(TAG, "DAC cosine DC offset %d out of range [%d, %d], saturating",
@@ -133,7 +194,7 @@ err_sintx:
 err_chan:
     dac_priv_channel_deregister(cos_cfg->chan_id);
 err_clk:
-    esp_clk_tree_release_src((soc_module_clk_t)handle->cfg.clk_src);
+    dac_priv_clk_release_unified((soc_module_clk_t)clk_src, DAC_LS_CLK_CONSTRAINT_DEFAULT);
 err_handle:
     free(handle);
     return ret;
@@ -153,7 +214,8 @@ esp_err_t dac_cosine_del_channel(dac_cosine_handle_t handle)
     ESP_RETURN_ON_ERROR(dac_priv_sintx_release(), TAG, "release dac sintx generator failed");
     ESP_RETURN_ON_ERROR(dac_priv_channel_deregister(handle->cfg.chan_id), TAG,
                         "deregister dac channel %d failed", handle->cfg.chan_id);
-    ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)handle->cfg.clk_src), TAG, "disable clock failed");
+    ESP_RETURN_ON_ERROR(dac_priv_clk_release_unified((soc_module_clk_t)handle->cfg.clk_src, DAC_LS_CLK_CONSTRAINT_DEFAULT),
+                        TAG, "release DAC clock failed");
     free(handle);
 
     return ESP_OK;

@@ -52,6 +52,7 @@ typedef enum {
     DAC_COSINE_ATTEN_DB_6       = 0x1,      /*!< 1/2 amplitude of the DAC cosine wave */
     DAC_COSINE_ATTEN_DB_12      = 0x2,      /*!< 1/4 amplitude of the DAC cosine wave */
     DAC_COSINE_ATTEN_DB_18      = 0x3,      /*!< 1/8 amplitude of the DAC cosine wave */
+    DAC_COSINE_ATTEN_MAX,                   /*!< For parameter validation */
 } dac_cosine_atten_t;
 
 /**
