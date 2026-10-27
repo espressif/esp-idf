@@ -11,6 +11,9 @@
 #include "esp_system.h"
 #include "esp_check.h"
 #include "esp_netif.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/task.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -26,6 +29,7 @@
 #define AD_FLAG (0x0020)
 #define QD_TYPE_A (0x0001)
 #define ANS_TTL_SEC (300)
+#define RECV_TIMEOUT_SEC (1)
 
 static const char *TAG = "example_dns_redirect_server";
 
@@ -60,8 +64,8 @@ typedef struct __attribute__((__packed__))
 
 // DNS server handle
 struct dns_server_handle {
-    bool started;
-    TaskHandle_t task;
+    volatile bool started;
+    SemaphoreHandle_t exited;
     int num_of_entries;
     dns_entry_pair_t entry[];
 };
@@ -244,19 +248,33 @@ void dns_server_task(void *pvParameters)
         int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err < 0) {
             ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+            close(sock);
+            break;
         }
         ESP_LOGI(TAG, "Socket bound, port %d", DNS_PORT);
 
+        // Wake up periodically so that stop_dns_server() is noticed
+        struct timeval timeout = { .tv_sec = RECV_TIMEOUT_SEC, .tv_usec = 0 };
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+            ESP_LOGE(TAG, "Unable to set socket receive timeout: errno %d", errno);
+            close(sock);
+            break;
+        }
+
         while (handle->started) {
-            ESP_LOGI(TAG, "Waiting for data");
+            ESP_LOGD(TAG, "Waiting for data");
             struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(source_addr);
             int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer), 0, (struct sockaddr *)&source_addr, &socklen);
 
             // Error occurred during receiving
             if (len < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    continue;
+                }
                 ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-                close(sock);
+                // Don't spin re-creating the socket if the error persists
+                vTaskDelay(pdMS_TO_TICKS(RECV_TIMEOUT_SEC * 1000));
                 break;
             }
             // Data received
@@ -277,19 +295,19 @@ void dns_server_task(void *pvParameters)
                 } else if (reply_len > 0) {   // 0: too short, a reply, or not a standard query; ignored
                     int err = sendto(sock, reply, reply_len, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
                     if (err < 0) {
-                        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-                        break;
+                        ESP_LOGW(TAG, "Error occurred during sending: errno %d", errno);
                     }
                 }
             }
         }
 
-        if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket");
-            shutdown(sock, 0);
-            close(sock);
-        }
+        ESP_LOGI(TAG, "Shutting down socket");
+        shutdown(sock, 0);
+        close(sock);
     }
+    // The task is gone even if it gave up by itself; stop_dns_server() may free the handle as soon as this is given
+    handle->started = false;
+    xSemaphoreGive(handle->exited);
     vTaskDelete(NULL);
 }
 
@@ -298,19 +316,36 @@ dns_server_handle_t start_dns_server(dns_server_config_t *config)
     dns_server_handle_t handle = calloc(1, sizeof(struct dns_server_handle) + config->num_of_entries * sizeof(dns_entry_pair_t));
     ESP_RETURN_ON_FALSE(handle, NULL, TAG, "Failed to allocate dns server handle");
 
+    handle->exited = xSemaphoreCreateBinary();
+    if (handle->exited == NULL) {
+        ESP_LOGE(TAG, "Failed to create dns server semaphore");
+        goto err;
+    }
     handle->started = true;
     handle->num_of_entries = config->num_of_entries;
     memcpy(handle->entry, config->item, config->num_of_entries * sizeof(dns_entry_pair_t));
 
-    xTaskCreate(dns_server_task, "dns_server", 4096, handle, 5, &handle->task);
+    if (xTaskCreate(dns_server_task, "dns_server", 4096, handle, 5, NULL) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create dns server task");
+        goto err;
+    }
     return handle;
+
+err:
+    if (handle->exited) {
+        vSemaphoreDelete(handle->exited);
+    }
+    free(handle);
+    return NULL;
 }
 
 void stop_dns_server(dns_server_handle_t handle)
 {
     if (handle) {
+        // Let the task leave recvfrom() and close its socket instead of deleting it from here
         handle->started = false;
-        vTaskDelete(handle->task);
+        xSemaphoreTake(handle->exited, portMAX_DELAY);
+        vSemaphoreDelete(handle->exited);
         free(handle);
     }
 }
