@@ -557,7 +557,7 @@ esp_err_t esp_flash_init_default_chip(void)
     #endif
 
     //the host is already initialized, only do init for the data and load it to the host
-    esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);
+    esp_err_t err = memspi_host_init_spi1_pointers(&esp_flash_default_host, &cfg);
     if (err != ESP_OK) {
         return err;
     }
