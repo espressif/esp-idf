@@ -15,6 +15,9 @@
  * - A connection that drops mid-chunk (FIN before the chunked stream is
  *   terminated) surfaces as an error from esp_http_client_perform(), not a
  *   silent ESP_OK.
+ * - Chunked framing is known when the headers complete, before any body
+ *   event, for any spelling the parser accepts as chunked, and not for a
+ *   value that only starts like it.
  */
 
 #include <string.h>
@@ -131,6 +134,68 @@ TEST_CASE("FIN mid-chunk surfaces an error, not success", "[esp_http_client][chu
 
     esp_http_client_cleanup(client);
     mock_http_transport_destroy(mock);
+}
+
+/* What esp_http_client_is_chunked_response() reported when the headers
+ * completed: -1 if that event never fired, else 0 or 1. */
+static int s_chunked_at_headers;
+
+static esp_err_t chunked_at_headers_handler(esp_http_client_event_t *evt)
+{
+    if (evt->event_id == HTTP_EVENT_ON_HEADERS_COMPLETE) {
+        s_chunked_at_headers = esp_http_client_is_chunked_response(evt->client);
+    }
+    return ESP_OK;
+}
+
+typedef struct {
+    const char *resp;
+    int chunked;
+} chunked_at_headers_case_t;
+
+#define CH_STATUS       "HTTP/1.1 200 OK\r\n"
+#define CH_CHUNKED_BODY "\r\n5\r\nhello\r\n0\r\n\r\n"
+
+static const chunked_at_headers_case_t s_chunked_at_headers_cases[] = {
+    { CH_STATUS "Transfer-Encoding: chunked\r\n" CH_CHUNKED_BODY, 1 },
+    /* Transfer codings are case-insensitive (RFC 9112, section 7). */
+    { CH_STATUS "Transfer-Encoding: Chunked\r\n" CH_CHUNKED_BODY, 1 },
+    /* Whitespace after a field value is not part of it (RFC 9110, section 5.5). */
+    { CH_STATUS "Transfer-Encoding: chunked  \r\n" CH_CHUNKED_BODY, 1 },
+    /* A prefix of "chunked" is not chunked: this body is framed by its length. */
+    { CH_STATUS "Transfer-Encoding: c\r\nContent-Length: 5\r\n\r\nhello", 0 },
+};
+
+static void run_chunked_at_headers_case(const chunked_at_headers_case_t *tc)
+{
+    mock_http_transport_config_t mc = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mc.response_data = tc->resp;
+    esp_transport_handle_t mock = mock_http_transport_create(&mc);
+    TEST_ASSERT_NOT_NULL(mock);
+
+    s_chunked_at_headers = -1;
+    esp_http_client_config_t cfg = {
+        .url = "http://test-server.local/stream",
+        .event_handler = chunked_at_headers_handler,
+        .transport = mock,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&cfg);
+    TEST_ASSERT_NOT_NULL(client);
+
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, esp_http_client_perform(client), tc->resp);
+    TEST_ASSERT_EQUAL_MESSAGE(tc->chunked, s_chunked_at_headers, tc->resp);
+
+    esp_http_client_cleanup(client);
+    mock_http_transport_destroy(mock);
+}
+
+TEST_CASE("chunked framing is known before the body begins", "[esp_http_client][chunked][p0]")
+{
+    /* ON_HEADERS_COMPLETE fires before the first body byte is handed out, so
+     * the value seen there is what every ON_DATA handler works with. */
+    for (size_t i = 0; i < sizeof(s_chunked_at_headers_cases) / sizeof(s_chunked_at_headers_cases[0]); i++) {
+        run_chunked_at_headers_case(&s_chunked_at_headers_cases[i]);
+    }
 }
 
 #endif // CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
