@@ -560,6 +560,8 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *            so call any one to free the memory once the scan is done.
   * @attention The values of maximum active scan time and passive scan time per channel are limited to 1500 milliseconds.
   *            Values above 1500ms may cause station to disconnect from AP and are not recommended.
+  * @attention A scan in progress is cancelled when a CSA is received or initiated and when the
+  *            channel switch takes effect.
   *
   * @param     config  configuration settings for scanning, if set to NULL default settings will be used
   *                    of which default values are show_hidden:false, scan_type:active, scan_time.active.min:0,
@@ -1856,6 +1858,11 @@ esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
   *               while the station is in CONNECTING state.
   * @attention 2. When PMF is enabled, broadcast action frames must be non-robust.
   * @attention 3. wait_time_ms must be greater than 0. If wait_time_ms is 0, the API returns ESP_ERR_WIFI_ARG.
+  * @attention 4. The API returns ESP_FAIL while a CSA is pending. An ongoing operation is cancelled
+  *               when a CSA is received or initiated.
+  * @attention 5. For a connected STA the beacon timeout is suspended during the operation and
+  *               restarted when it ends, so a lost AP is detected only inactive_time (default 6 s)
+  *               after it completes.
   *
   * @param    req   action tx request structure containing relevant fields
   *
@@ -1864,7 +1871,7 @@ esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
   *    - ESP_ERR_NO_MEM: failed to allocate memory
   *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
   *    - ESP_ERR_WIFI_ARG: the <channel, sec_channel> pair is invalid or destination MAC address is all zeros, or wait_time_ms is 0
-  *    - ESP_FAIL: failed to send frame or STA is in CONNECTING state
+  *    - ESP_FAIL: failed to send frame, STA is in CONNECTING state, or a CSA is pending
   */
 esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
 
@@ -1875,6 +1882,11 @@ esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
   * @attention 2. The API returns ESP_FAIL when called for STA interface (req->ifx == WIFI_IF_STA)
   *               while the station is in CONNECTING state.
   * @attention 3. wait_time_ms must be greater than 0 for WIFI_ROC_REQ only.
+  * @attention 4. The API returns ESP_FAIL while a CSA is pending. An ongoing operation is cancelled
+  *               when a CSA is received or initiated.
+  * @attention 5. For a connected STA the beacon timeout is suspended during the operation and
+  *               restarted when it ends, so a lost AP is detected only inactive_time (default 6 s)
+  *               after it completes.
   *
   * @param    req  roc request structure containing relevant fields
   *
@@ -1883,7 +1895,7 @@ esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
   *    - ESP_ERR_NO_MEM: failed to allocate memory
   *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
   *    - ESP_ERR_WIFI_ARG: the <channel, sec_channel> pair is invalid, allow_broadcast is true in AP+STA mode, or wait_time_ms is 0 for WIFI_ROC_REQ
-  *    - ESP_FAIL: failed to perform roc operation or STA is in CONNECTING state
+  *    - ESP_FAIL: failed to perform roc operation, STA is in CONNECTING state, or a CSA is pending
   */
 esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
 
