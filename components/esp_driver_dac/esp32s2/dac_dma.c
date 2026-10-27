@@ -25,7 +25,7 @@
 #include "soc/lldesc.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
-#include "../dac_priv_dma.h"
+#include "dac_priv_dma.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_clk_tree.h"
 #include "esp_log.h"

@@ -21,6 +21,8 @@ if(CONFIG_SOC_DAC_SUPPORTED)
         list(APPEND srcs "esp32/dac_dma.c")
     elseif(${target} STREQUAL "esp32s2")
         list(APPEND srcs "esp32s2/dac_dma.c")
+    else()
+        list(APPEND srcs "generic/dac_dma.c")
     endif()
 
 endif()

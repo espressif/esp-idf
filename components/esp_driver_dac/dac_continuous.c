@@ -22,6 +22,7 @@
 #include "esp_check.h"
 #include "esp_log.h"
 #include "esp_attr.h"
+#include "esp_memory_utils.h"
 #include "dac_priv_dma.h"
 
 #if CONFIG_PM_ENABLE
@@ -121,6 +122,7 @@ static esp_err_t s_dac_alloc_dma_desc(dac_continuous_handle_t handle)
             .length = buf_size,
             .buffer_alignment = 4,
             .flags = {
+                .mark_eof = true,   // ESP32-S31 TEOF interrupt depends on this flag
                 .mark_final = GDMA_FINAL_LINK_TO_DEFAULT,
             },
         };
@@ -246,7 +248,11 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
 
     /* Create PM lock */
 #if CONFIG_PM_ENABLE
+#if DAC_LL_SHARED_HS_LS_CLK
+    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#else
     esp_pm_lock_type_t pm_lock_type = handle->cfg.clk_src == DAC_DIGI_CLK_SRC_APLL ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_APB_FREQ_MAX;
+#endif
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, "dac_driver", &handle->pm_lock), err_free, TAG, "Failed to create DAC pm lock");
 #endif
 

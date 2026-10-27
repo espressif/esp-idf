@@ -24,29 +24,14 @@ typedef struct dac_continuous_s      *dac_continuous_handle_t;    /*!< DAC conti
 typedef struct {
     dac_channel_mask_t          chan_mask;      /*!< DAC channels' mask for selecting which channels are used */
     dac_channel_config_t        chan_cfg;       /*!< Channel (analog pad) configuration. Applies to every channel selected by `chan_mask`. */
-    uint32_t                    desc_num;       /*!< The number of DMA descriptor, at least 2 descriptors are required
-                                                 *   The number of descriptors is directly proportional to the max data buffer size while converting in cyclic output
-                                                 *   but only need to ensure it is greater than '1' in acyclic output
-                                                 *   Typically, suggest to set the number bigger than 5, in case the DMA stopped while sending a short buffer
+    uint32_t                    desc_num;       /*!< Number of DMA descriptors used internally. Must be at least 2. */
+    size_t                      buf_size;       /*!< Size of the buffer associated with each DMA descriptor, in bytes. Must be a multiple of 4 between 32 and 4092 (inclusive).
+                                                 *   The total buffer size is `desc_num * buf_size`, which determines the maximum number of samples allowed in cyclic mode.
                                                  */
-    size_t                      buf_size;       /*!< The DMA buffer size in bytes, should be within 32~4092 bytes. Each DMA buffer will be attached to a DMA descriptor,
-                                                 *   i.e. the number of DMA buffer will be equal to the DMA descriptor number
-                                                 *   The DMA buffer size is not allowed to be greater than 4092 bytes
-                                                 *   The total DMA buffer size equal to `desc_num * buf_size`
-                                                 *   Typically, suggest to set the size to the multiple of 4
-                                                 */
-    uint32_t                    freq_hz;        /*!< The frequency of DAC conversion in continuous mode, unit: Hz
-                                                 *   The supported range is related to the target and the clock source.
-                                                 *   For the clock `DAC_DIGI_CLK_SRC_DEFAULT`: the range is 19.6 KHz to several MHz on ESP32
-                                                 *   and 77 Hz to several MHz on ESP32-S2.
-                                                 *   For the clock `DAC_DIGI_CLK_SRC_APLL`: the range is 648 Hz to several MHz on ESP32
-                                                 *   and 6 Hz to several MHz on ESP32-S2.
-                                                 *   Typically not suggest to set the frequency higher than 2 MHz, otherwise the severe distortion will appear
-                                                 */
-    int8_t                      offset;         /*!< The offset of the DAC digital data. Range -128~127 */
-    dac_continuous_digi_clk_src_t    clk_src;   /*!< The clock source of digital controller, which can affect the range of supported frequency.
-                                                     Set to 0 to use `DAC_DIGI_CLK_SRC_DEFAULT`.*/
-    dac_continuous_channel_mode_t    chan_mode;      /*!< The channel mode of continuous mode, only take effect when multiple channels enabled, depends converting the buffer alternately or simultaneously */
+    uint32_t                    freq_hz;        /*!< The frequency of DAC conversion in continuous mode, unit: Hz. The supported range is related to the target and the clock source. */
+    int16_t                     offset;         /*!< The offset added to each sample, in DAC code units. */
+    dac_continuous_digi_clk_src_t  clk_src;     /*!< The clock source of digital controller, which can affect the range of supported frequency. 0 selects `DAC_DIGI_CLK_SRC_DEFAULT`.*/
+    dac_continuous_channel_mode_t  chan_mode;   /*!< Select whether samples are sent to both channels simultaneously or alternately. Only valid when both channels are enabled. */
 } dac_continuous_config_t;
 
 /**
