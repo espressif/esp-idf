@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,13 @@ static uint32_t s_do_load_from_flash(uint32_t flash_paddr_start, uint32_t size, 
         mapped_size += CONFIG_MMU_PAGE_SIZE;
         target_vaddr_start += CONFIG_MMU_PAGE_SIZE;
     }
+
+    mmu_hal_unmap_region(MMU_LL_FLASH_MMU_ID, flash_end_page_vaddr, CONFIG_MMU_PAGE_SIZE);
+    cache_hal_invalidate_addr(flash_end_page_vaddr, CONFIG_MMU_PAGE_SIZE);
+#if !CONFIG_SPIRAM_BOOT_INIT
+    mmu_hal_unmap_region(MMU_LL_PSRAM_MMU_ID, psram_second_last_page_vaddr, CONFIG_MMU_PAGE_SIZE);
+    cache_hal_invalidate_addr(psram_second_last_page_vaddr, CONFIG_MMU_PAGE_SIZE);
+#endif /* !CONFIG_SPIRAM_BOOT_INIT */
 
     ESP_EARLY_LOGV(TAG, "mapped_size: 0x%"PRIx32, mapped_size);
     assert(mapped_size == ESP_ALIGN_UP(size, CONFIG_MMU_PAGE_SIZE));
