@@ -141,10 +141,6 @@ void IRAM_ATTR esp_mspi_pin_init(void)
 {
 #if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     bool octal_mspi_required = spi_flash_is_octal_mode_enabled();
-#if CONFIG_SPIRAM_MODE_OCT
-    octal_mspi_required |= true;
-#endif
-
     if (octal_mspi_required) {
         esp_rom_opiflash_pin_config();
         mspi_timing_set_pin_drive_strength();
