@@ -946,6 +946,12 @@
 #define BT_DEFAULT_BUFFER_SIZE          (4096 + 16)
 #endif
 
+/* Largest L2CAP information payload the HCI fragmenter will reassemble.
+ * LE CoC receive MPS must not be advertised above this: a larger K-frame is
+ * dropped before credit accounting. */
+#define L2CAP_MAX_RX_PAYLOAD \
+    (BT_DEFAULT_BUFFER_SIZE - L2CAP_PKT_OVERHEAD - HCI_ACL_PREAMBLE_SIZE - BT_HDR_SIZE)
+
 #ifndef BT_SMALL_BUFFER_SIZE
 #define BT_SMALL_BUFFER_SIZE            660
 #endif
