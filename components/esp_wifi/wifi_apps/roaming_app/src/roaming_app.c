@@ -32,6 +32,8 @@
 #include "common/ieee802_11_defs.h"
 #include "common/wpa_common.h"
 #include "esp_wpas_glue.h"
+#include "esp_timer.h"
+#include "esp_netif_types.h"
 
 #define BTM_QUERY_REASON_LOW_RSSI 16
 
@@ -66,6 +68,14 @@ static void roaming_app_rssi_low_internal_handler(void *ctx, void *data);
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
 static void roaming_app_blacklist_add_handler(void *ctx, void *data);
 static void roaming_app_blacklist_remove_handler(void *ctx, void *data);
+#endif
+#if JOIN_CHECK_ENABLED
+static bool roaming_app_roam_backoff_active(const struct timeval *now, uint8_t margin_sec);
+static void roaming_app_join_check_reset(void);
+static void roaming_app_join_check_poll(void *ctx, void *data);
+static void roaming_app_join_check_roam_poll(void *ctx, void *data);
+static void roaming_app_join_check_hold_roam(const struct cand_bss *bss);
+static void roaming_app_got_ip_internal_handler(void *ctx, void *data);
 #endif
 
 static const char *ROAMING_TAG = "ROAM";
@@ -151,6 +161,8 @@ static inline long time_diff_sec(const struct timeval *a, const struct timeval *
     return (a->tv_sec - b->tv_sec);
 }
 
+#if LOW_RSSI_ROAMING_ENABLED
+/* Only the low RSSI trigger sets thresholds: unused, and a build warning, without it. */
 static int32_t roaming_app_clamp_rssi_threshold(int threshold)
 {
     if (threshold < RSSI_THRESHOLD_DISABLED) {
@@ -163,6 +175,7 @@ static int32_t roaming_app_clamp_rssi_threshold(int threshold)
 
     return threshold;
 }
+#endif /*LOW_RSSI_ROAMING_ENABLED*/
 
 static uint8_t roaming_app_clamp_low_rssi_roam_diff(uint8_t diff)
 {
@@ -197,6 +210,8 @@ static const wifi_ap_record_t *roaming_app_find_scan_record(const uint8_t *bssid
     return NULL;
 }
 
+#if NETWORK_ASSISTED_ROAMING_ENABLED
+/* Only BTM queries use these two: unused, and build warnings, without network assisted roaming. */
 static uint8_t roaming_app_get_phy_type(const wifi_ap_record_t *record)
 {
     int sec_chan = 0;
@@ -225,6 +240,7 @@ static uint8_t roaming_app_get_phy_type(const wifi_ap_record_t *record)
 
     return (record->primary > 14) ? PHY_TYPE_OFDM : PHY_TYPE_ERP;
 }
+#endif /*NETWORK_ASSISTED_ROAMING_ENABLED*/
 
 static bool roaming_app_authmode_is_enterprise(wifi_auth_mode_t authmode)
 {
@@ -399,6 +415,7 @@ static const u8 *roaming_app_get_rsnxe_ie(const uint8_t *bssid)
     return rsnxe;
 }
 
+#if NETWORK_ASSISTED_ROAMING_ENABLED
 static int roaming_app_build_btm_candidate(const struct cand_bss *bss, char *buf, size_t buf_len)
 {
     const wifi_ap_record_t *record;
@@ -439,6 +456,7 @@ static int roaming_app_build_btm_candidate(const struct cand_bss *bss, char *buf
 
     return 0;
 }
+#endif /*NETWORK_ASSISTED_ROAMING_ENABLED*/
 
 static void roaming_app_set_scan_filter_bssid(const uint8_t *bssid, bool enabled)
 {
@@ -506,6 +524,361 @@ static void roaming_app_reset_connect_hint_state(void)
         g_roaming_app.connect_hint_active = false;
     }
 }
+
+/*
+ * Fast connect, and the check after a connection.
+ *
+ * A station on WIFI_ALL_CHANNEL_SCAN scans every channel before every connection, which takes much of
+ * the time from boot to an IP address, and one on the default WIFI_FAST_SCAN connects to the first AP
+ * that answers, not the strongest, and can stay on a weak one for good. Fast connect remembers the AP a
+ * connection ends on as the station configuration's connect hint, so the next connection tries that AP
+ * alone, and clears the hint once a connection through it fails. The check after a connection scans
+ * once and roams only to an AP at least join_check_rssi_diff dB stronger, after the backoff time and once the
+ * application reports nothing outstanding, because a roam right after the IP address can cut off an
+ * exchange the application has just started, such as a controller's session handshake.
+ * README.md and ROAMING_FLOW.md, "Fast connect", have the flow and the configuration.
+ */
+#if FAST_CONNECT_ENABLED
+/* Set and read only on the Wi-Fi task, by roam_fast_connect_sta_connected() and
+ * roam_fast_connect_sta_disconnected(): a connection since the last disconnection. */
+static bool s_fast_connect_linked;
+
+static bool roaming_app_fast_connect_active(void)
+{
+    return g_roaming_app.app_active && g_roaming_app.config.fast_connect;
+}
+
+/* Fast connect's record: a fast scan that stops at one BSSID, strongest first. */
+static bool roaming_app_fast_connect_is_record(const wifi_sta_config_t *sta)
+{
+    return sta->ssid[0] != '\0' && sta->scan_method == WIFI_FAST_SCAN &&
+           sta->sort_method == WIFI_CONNECT_AP_BY_SIGNAL && sta->bssid_set && !is_zero_ether_addr(sta->bssid);
+}
+
+bool roam_fast_connect_owns_connect_hint(void)
+{
+    return roaming_app_fast_connect_active();
+}
+
+/* At a connection (Wi-Fi task): remember the AP connected to, unless it is the one remembered. */
+static void roaming_app_fast_connect_remember(const wifi_ap_record_t *ap)
+{
+    wifi_config_t wifi_cfg = {0};
+    esp_err_t err;
+
+    if (is_zero_ether_addr(ap->bssid) || ap->primary == 0) {
+        ESP_LOGW(ROAMING_TAG, "fast connect: nothing remembered: no BSSID or channel for this connection");
+        return;
+    }
+
+    err = esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGW(ROAMING_TAG, "fast connect: nothing remembered: failed to read sta config: %s", esp_err_to_name(err));
+        return;
+    }
+
+    if (roaming_app_fast_connect_is_record(&wifi_cfg.sta) &&
+            os_memcmp(wifi_cfg.sta.bssid, ap->bssid, ETH_ALEN) == 0 && wifi_cfg.sta.channel == ap->primary) {
+        ESP_LOGI(ROAMING_TAG, "fast connect: connected to the remembered AP " MACSTR " on channel %d",
+                 MAC2STR(ap->bssid), ap->primary);
+        return;
+    }
+
+    wifi_cfg.sta.scan_method = WIFI_FAST_SCAN;
+    wifi_cfg.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+    wifi_cfg.sta.bssid_set = true;
+    os_memcpy(wifi_cfg.sta.bssid, ap->bssid, ETH_ALEN);
+    wifi_cfg.sta.channel = ap->primary;
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(ROAMING_TAG, "fast connect: failed to remember " MACSTR ": %s", MAC2STR(ap->bssid), esp_err_to_name(err));
+        return;
+    }
+    ESP_LOGI(ROAMING_TAG, "fast connect: remembered " MACSTR " on channel %d", MAC2STR(ap->bssid), ap->primary);
+}
+
+/* The supplicant's connection callback (Wi-Fi task): this attempt reached the AP. */
+void roam_fast_connect_sta_connected(void)
+{
+    s_fast_connect_linked = true;
+    ESP_LOGD(ROAMING_TAG, "fast connect: connected");
+}
+
+/*
+ * The supplicant's disconnection callback (Wi-Fi task). The driver calls it before it posts
+ * WIFI_EVENT_STA_DISCONNECTED, so the record is cleared before any handler of that event, whatever it is
+ * registered for, can call esp_wifi_connect() again; an esp_wifi_set_config() from such a handler would
+ * fail while the station is connecting. A connection through the remembered AP failed, for any reason but
+ * the station's own disconnect or a roam, so clear the record before the next attempt.
+ */
+void roam_fast_connect_sta_disconnected(uint8_t reason)
+{
+    bool was_linked = s_fast_connect_linked;
+    wifi_config_t wifi_cfg = {0};
+    uint8_t bssid[ETH_ALEN];
+    uint8_t channel;
+    esp_err_t err;
+
+    s_fast_connect_linked = false;
+    ESP_LOGD(ROAMING_TAG, "fast connect: disconnected (reason %d, connected before: %d)", reason, was_linked);
+    if (was_linked || !roaming_app_fast_connect_active() ||
+            reason == WIFI_REASON_ASSOC_LEAVE || reason == WIFI_REASON_ROAMING) {
+        return;
+    }
+
+    if (esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK || !roaming_app_fast_connect_is_record(&wifi_cfg.sta)) {
+        return;
+    }
+
+    os_memcpy(bssid, wifi_cfg.sta.bssid, ETH_ALEN);
+    channel = wifi_cfg.sta.channel;
+    wifi_cfg.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+    wifi_cfg.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+    wifi_cfg.sta.bssid_set = false;
+    os_memset(wifi_cfg.sta.bssid, 0, ETH_ALEN);
+    wifi_cfg.sta.channel = 0;
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(ROAMING_TAG, "fast connect: failed to forget " MACSTR ": %s; the next attempt tries it alone again",
+                 MAC2STR(bssid), esp_err_to_name(err));
+        return;
+    }
+    ESP_LOGW(ROAMING_TAG, "fast connect: the remembered AP " MACSTR " on channel %d failed the connection (reason %d): "
+             "every channel, strongest first, from the next attempt", MAC2STR(bssid), channel, reason);
+}
+#else
+bool roam_fast_connect_owns_connect_hint(void)
+{
+    return false;
+}
+
+void roam_fast_connect_sta_connected(void)
+{
+}
+
+void roam_fast_connect_sta_disconnected(uint8_t reason)
+{
+}
+#endif /* FAST_CONNECT_ENABLED */
+
+#if JOIN_CHECK_ENABLED
+static long roaming_app_ms_since(int64_t since_us, int64_t now_us)
+{
+    return (long)((now_us - since_us) / 1000);
+}
+
+static void roaming_app_join_check_free_candidate(void)
+{
+    eloop_cancel_timeout(roaming_app_join_check_roam_poll, NULL, NULL);
+    if (g_roaming_app.join_check_cand) {
+        os_free(g_roaming_app.join_check_cand);
+        g_roaming_app.join_check_cand = NULL;
+    }
+}
+
+/* The connection has changed or gone, or the app stops: nothing waits any more. */
+static void roaming_app_join_check_reset(void)
+{
+    eloop_cancel_timeout(roaming_app_join_check_poll, NULL, NULL);
+    roaming_app_join_check_free_candidate();
+    g_roaming_app.ip_seen = false;
+    g_roaming_app.join_check_pending = false;
+    g_roaming_app.join_check_scanning = false;
+    g_roaming_app.join_check_backoff_logged = false;
+    os_memset(&g_roaming_app.join_check_scan_step, 0, sizeof(g_roaming_app.join_check_scan_step));
+    os_memset(&g_roaming_app.join_check_roam_step, 0, sizeof(g_roaming_app.join_check_roam_step));
+}
+
+/* Wait while the application is busy, then for JOIN_CHECK_QUIET_MS of quiet. */
+static bool roaming_app_join_check_quiet(struct join_check_step *step, int64_t now_us, bool busy)
+{
+    if (busy) {
+        step->quiet = false;
+        return false;
+    }
+    if (!step->quiet) {
+        step->quiet = true;
+        step->quiet_since_us = now_us;
+    }
+    return roaming_app_ms_since(step->quiet_since_us, now_us) >= JOIN_CHECK_QUIET_MS;
+}
+
+/* Said once per step: the application kept it waiting. */
+static void roaming_app_join_check_log_busy(struct join_check_step *step, const char *what, long since_ip_ms)
+{
+    if (step->waited) {
+        return;
+    }
+    step->waited = true;
+    ESP_LOGI(ROAMING_TAG, "join check: %s deferred %ld ms after the IP address: the application is busy "
+             "(awaiting_reply=%d settling=%d)", what, since_ip_ms,
+             g_roaming_app.app_hold.awaiting_reply, g_roaming_app.app_hold.settling);
+}
+
+/* A connection's first IP address (Wi-Fi task): the check is due, unless the roaming app made it. */
+static void roaming_app_got_ip_internal_handler(void *ctx, void *data)
+{
+    if (!g_roaming_app.app_active || !g_roaming_app.sta_connected || g_roaming_app.ip_seen) {
+        return; /* not a new connection: an address renewed or changed on the same link */
+    }
+    g_roaming_app.ip_seen = true;
+    g_roaming_app.ip_time_us = esp_timer_get_time();
+    if (!g_roaming_app.config.join_check) {
+        g_roaming_app.join_check_skip_next = false;
+        return;
+    }
+    if (g_roaming_app.join_check_skip_next) {
+        /* The scan that chose this roam is seconds old, and a check after its failure would choose the AP
+         * that just failed, again and again. */
+        g_roaming_app.join_check_skip_next = false;
+        ESP_LOGI(ROAMING_TAG, "join check: skipped: the roaming app made this connection itself");
+        return;
+    }
+    g_roaming_app.join_check_pending = true;
+    if (eloop_register_timeout(0, 0, roaming_app_join_check_poll, NULL, NULL)) {
+        g_roaming_app.join_check_pending = false;
+        ESP_LOGE(ROAMING_TAG, "join check: could not schedule it");
+    }
+}
+
+static void roaming_app_got_ip_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    if (!g_roaming_app.app_active) {
+        return;
+    }
+    if (eloop_register_timeout(0, 0, roaming_app_got_ip_internal_handler, NULL, NULL)) {
+        ESP_LOGW(ROAMING_TAG, "Could not schedule got IP handler");
+    }
+}
+
+/* The check is due (Wi-Fi task): wait for the backoff time and for the application, then scan. */
+static void roaming_app_join_check_poll(void *ctx, void *data)
+{
+    struct timeval now;
+    int64_t now_us = esp_timer_get_time();
+    long since_ip_ms;
+    bool busy;
+    bool go;
+    bool bound = false;
+
+    if (!g_roaming_app.app_active || !g_roaming_app.join_check_pending) {
+        return;
+    }
+    if (!g_roaming_app.sta_connected) {
+        g_roaming_app.join_check_pending = false;
+        return;
+    }
+
+    since_ip_ms = roaming_app_ms_since(g_roaming_app.ip_time_us, now_us);
+    gettimeofday(&now, NULL);
+    if (roaming_app_roam_backoff_active(&now, 0)) {
+        if (!g_roaming_app.join_check_backoff_logged) {
+            g_roaming_app.join_check_backoff_logged = true;
+            ESP_LOGI(ROAMING_TAG, "join check: waiting for the roam backoff time (%d s after the connection)",
+                     g_roaming_app.config.backoff_time);
+        }
+        goto again;
+    }
+
+    busy = g_roaming_app.app_hold.awaiting_reply || g_roaming_app.app_hold.settling;
+    if (since_ip_ms >= JOIN_CHECK_SETTLE_MAX_MS) {
+        go = true;
+        bound = busy;
+    } else {
+        go = roaming_app_join_check_quiet(&g_roaming_app.join_check_scan_step, now_us, busy);
+    }
+    if (!go) {
+        if (busy) {
+            roaming_app_join_check_log_busy(&g_roaming_app.join_check_scan_step, "scan", since_ip_ms);
+        }
+        goto again;
+    }
+
+    g_roaming_app.join_check_pending = false;
+    if (bound) {
+        ESP_LOGW(ROAMING_TAG, "join check: scanning %ld ms after the IP address with the application still busy "
+                 "(awaiting_reply=%d settling=%d)", since_ip_ms,
+                 g_roaming_app.app_hold.awaiting_reply, g_roaming_app.app_hold.settling);
+    } else {
+        ESP_LOGI(ROAMING_TAG, "join check: scanning %ld ms after the IP address", since_ip_ms);
+    }
+    g_roaming_app.join_check_scanning = true;
+    determine_best_ap(g_roaming_app.config.join_check_rssi_diff - 1);
+    if (!g_roaming_app.scan_ongoing) {
+        /* Decided at once from recent scan results, or not run at all: nothing is pending. */
+        g_roaming_app.join_check_scanning = false;
+    }
+    return;
+
+again:
+    if (eloop_register_timeout(0, JOIN_CHECK_POLL_US, roaming_app_join_check_poll, NULL, NULL)) {
+        g_roaming_app.join_check_pending = false;
+        ESP_LOGE(ROAMING_TAG, "join check: could not schedule it");
+    }
+}
+
+/* The check chose a roam (Wi-Fi task): hold a copy of it until the application is quiet. */
+static void roaming_app_join_check_hold_roam(const struct cand_bss *bss)
+{
+    roaming_app_join_check_free_candidate();
+    g_roaming_app.join_check_cand = os_zalloc(sizeof(*g_roaming_app.join_check_cand));
+    if (!g_roaming_app.join_check_cand) {
+        ESP_LOGE(ROAMING_TAG, "join check: cannot allocate the candidate: no roam");
+        return;
+    }
+    os_memcpy(g_roaming_app.join_check_cand, bss, sizeof(*g_roaming_app.join_check_cand));
+    g_roaming_app.join_check_roam_since_us = esp_timer_get_time();
+    os_memset(&g_roaming_app.join_check_roam_step, 0, sizeof(g_roaming_app.join_check_roam_step));
+    roaming_app_join_check_roam_poll(NULL, NULL);
+}
+
+/* Never roam while the application waits on a reply, or, within the settle time, while it is still
+ * settling; give the roam up if it is not quiet within the roam wait. */
+static void roaming_app_join_check_roam_poll(void *ctx, void *data)
+{
+    struct cand_bss *cand = g_roaming_app.join_check_cand;
+    int64_t now_us = esp_timer_get_time();
+    long waited_ms;
+    long since_ip_ms;
+    bool busy;
+
+    if (!cand) {
+        return;
+    }
+    if (!g_roaming_app.app_active || !g_roaming_app.sta_connected) {
+        roaming_app_join_check_free_candidate();
+        return;
+    }
+
+    waited_ms = roaming_app_ms_since(g_roaming_app.join_check_roam_since_us, now_us);
+    since_ip_ms = roaming_app_ms_since(g_roaming_app.ip_time_us, now_us);
+    busy = g_roaming_app.app_hold.awaiting_reply ||
+           (g_roaming_app.app_hold.settling && since_ip_ms < JOIN_CHECK_SETTLE_MAX_MS);
+    if (!roaming_app_join_check_quiet(&g_roaming_app.join_check_roam_step, now_us, busy)) {
+        if (waited_ms >= JOIN_CHECK_ROAM_WAIT_MAX_MS) {
+            ESP_LOGW(ROAMING_TAG, "join check: roam to " MACSTR " given up after %ld ms: the application did not go "
+                     "quiet; staying until the next connection", MAC2STR(cand->bssid), waited_ms);
+            roaming_app_join_check_free_candidate();
+            return;
+        }
+        if (busy) {
+            roaming_app_join_check_log_busy(&g_roaming_app.join_check_roam_step, "roam", since_ip_ms);
+        }
+        if (eloop_register_timeout(0, JOIN_CHECK_POLL_US, roaming_app_join_check_roam_poll, NULL, NULL)) {
+            ESP_LOGE(ROAMING_TAG, "join check: could not schedule the roam: no roam");
+            roaming_app_join_check_free_candidate();
+        }
+        return;
+    }
+
+    ESP_LOGI(ROAMING_TAG, "join check: roaming to " MACSTR " on channel %d, %ld ms after the scan chose it",
+             MAC2STR(cand->bssid), cand->channel, waited_ms);
+    if (wifi_post_roam_event(cand)) {
+        ESP_LOGE(ROAMING_TAG, "Posting of roaming event failed");
+    }
+    roaming_app_join_check_free_candidate();
+}
+#endif /* JOIN_CHECK_ENABLED */
 
 static void roaming_app_mark_roam_attempt(void)
 {
@@ -1048,6 +1421,14 @@ static void roaming_app_disconnected_event_handler(void *ctx, void *data)
 
     wifi_event_sta_disconnected_t *disconn = data;
     roaming_app_stop_periodic_monitors();
+#if JOIN_CHECK_ENABLED
+    roaming_app_join_check_reset();
+    if (g_roaming_app.sta_connected && disconn->reason != WIFI_REASON_ROAMING) {
+        /* A connection the station made has ended without a roam: a skip that its IP address never used (a
+         * roam that kept its address) must not fall on the next, unrelated connection. */
+        g_roaming_app.join_check_skip_next = false;
+    }
+#endif
     roaming_app_set_disconnected_state(disconn);
 
     ESP_LOGD(ROAMING_TAG, "station got disconnected reason=%d, rssi =%d", disconn->reason, disconn->rssi);
@@ -1097,13 +1478,29 @@ static void roaming_app_connected_event_handler(void *ctx, void *data)
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     eloop_cancel_timeout(roaming_app_blacklist_recovery_internal_handler, NULL, NULL);
 #endif
-    roaming_app_reset_connect_hint_state();
+#if JOIN_CHECK_ENABLED
+    roaming_app_join_check_reset();
+#endif
+#if FAST_CONNECT_ENABLED
+    if (g_roaming_app.config.fast_connect) {
+        /* Fast connect's record, written below, replaces any hint the roaming app set to roam. */
+        g_roaming_app.connect_hint_active = false;
+    } else
+#endif
+    {
+        roaming_app_reset_connect_hint_state();
+    }
     memset(&g_roaming_app.current_bss.ap, 0, sizeof(g_roaming_app.current_bss.ap));
     g_roaming_app.current_bss.ap.rssi = -128;
     ap_info_available = roaming_app_get_ap_info(&g_roaming_app.current_bss.ap);
     if (!ap_info_available) {
         ESP_LOGW(ROAMING_TAG, "Skipping AP info-dependent connected handling");
     }
+#if FAST_CONNECT_ENABLED
+    if (ap_info_available && g_roaming_app.config.fast_connect) {
+        roaming_app_fast_connect_remember(&g_roaming_app.current_bss.ap);
+    }
+#endif
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     if (ap_info_available) {
         roaming_app_reset_auto_blacklist_failures(g_roaming_app.current_bss.ap.bssid);
@@ -1500,6 +1897,9 @@ static bool trigger_targeted_reconnect(struct cand_bss *bss, bool disconnect_fir
     }
 
     esp_wifi_roaming_set_current_bssid(bss->bssid);
+#if JOIN_CHECK_ENABLED
+    g_roaming_app.join_check_skip_next = true;
+#endif
     if (disconnect_first) {
         ESP_LOGI(ROAMING_TAG, "Disconnecting and connecting to " MACSTR " on account of better RSSI", MAC2STR(bss->bssid));
     } else {
@@ -1844,6 +2244,11 @@ static void parse_scan_results_and_roam(void)
     int16_t rssi_diff = 0;
     uint8_t i;
     int8_t best_ap_index = -1;
+#if JOIN_CHECK_ENABLED
+    bool join_check = g_roaming_app.join_check_scanning;
+
+    g_roaming_app.join_check_scanning = false;
+#endif
 
     gettimeofday(&now, NULL);
 
@@ -1883,12 +2288,27 @@ static void parse_scan_results_and_roam(void)
             return;
         }
         ESP_LOGI(ROAMING_TAG,"Found a better AP "MACSTR" at channel %d", MAC2STR(best_ap->bssid), best_ap->channel);
+#if JOIN_CHECK_ENABLED
+        if (join_check) {
+            ESP_LOGI(ROAMING_TAG, "join check: candidate %d dB stronger than the current AP (%d dBm), need %d: roam",
+                     best_rssi_diff, current_rssi_baseline, rssi_threshold + 1);
+            roaming_app_join_check_hold_roam(best_ap);
+            os_free(best_ap);
+            return;
+        }
+#endif
         if (wifi_post_roam_event(best_ap)) {
             ESP_LOGE(ROAMING_TAG, "Posting of roaming event failed");
         }
         os_free(best_ap);
     } else {
         ESP_LOGI(ROAMING_TAG, "Could not find a better AP with the threshold set to %d", g_roaming_app.current_rssi_threshold + 1);
+#if JOIN_CHECK_ENABLED
+        if (join_check) {
+            ESP_LOGI(ROAMING_TAG, "join check: no AP %d dB stronger than the current AP (%d dBm): stay",
+                     rssi_threshold + 1, current_rssi_baseline);
+        }
+#endif
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
         roaming_app_retry_blacklist_recovery_if_needed();
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
@@ -1907,6 +2327,9 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
             g_roaming_app.scanned_aps.current_count = 0;
             ESP_LOGW(ROAMING_TAG, "Failed to fetch scan results: %s", esp_err_to_name(err));
             g_roaming_app.scan_ongoing = false;
+#if JOIN_CHECK_ENABLED
+            g_roaming_app.join_check_scanning = false;
+#endif
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
             roaming_app_retry_blacklist_recovery_if_needed();
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
@@ -1917,6 +2340,9 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
         parse_scan_results_and_roam();
     } else {
         ESP_LOGD(ROAMING_TAG, "Scan Done with error %d ", status);
+#if JOIN_CHECK_ENABLED
+        g_roaming_app.join_check_scanning = false;
+#endif
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
         roaming_app_retry_blacklist_recovery_if_needed();
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
@@ -2151,6 +2577,12 @@ static esp_err_t init_config_params(void)
     g_roaming_app.config.rrm_monitor_time = RRM_MONITOR_TIME;
     g_roaming_app.config.rrm_monitor_rssi_threshold = RRM_MONITOR_RSSI_THRESHOLD;
 
+    g_roaming_app.config.fast_connect = FAST_CONNECT_ENABLED;
+    g_roaming_app.config.join_check = JOIN_CHECK_ENABLED;
+#if JOIN_CHECK_ENABLED
+    g_roaming_app.config.join_check_rssi_diff = JOIN_CHECK_RSSI_DIFF;
+#endif
+
     ESP_LOGD(ROAMING_TAG, "Roaming app config :");
 
     ESP_LOGD(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d low_rssi_roam_diff=%d",
@@ -2173,6 +2605,10 @@ static esp_err_t init_config_params(void)
                         g_roaming_app.config.rrm_monitor_time,
                         g_roaming_app.config.rrm_monitor_rssi_threshold);
 
+    ESP_LOGD(ROAMING_TAG, "fast_connect=%d join_check=%d join_check_rssi_diff=%d",
+                        g_roaming_app.config.fast_connect, g_roaming_app.config.join_check,
+                        g_roaming_app.config.join_check_rssi_diff);
+
     return ESP_OK;
 }
 
@@ -2192,7 +2628,7 @@ static esp_err_t init_scan_config(void)
 
 void roam_init_app(void)
 {
-#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING
+#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING && !JOIN_CHECK_ENABLED && !FAST_CONNECT_ENABLED
     ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be initialized");
     return;
 #endif
@@ -2216,6 +2652,10 @@ void roam_init_app(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
                                                &roaming_app_neighbor_report_recv_handler, NULL));
 #endif /*PERIODIC_RRM_MONITORING*/
+#if JOIN_CHECK_ENABLED
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
+                                               &roaming_app_got_ip_handler, NULL));
+#endif /*JOIN_CHECK_ENABLED*/
     g_roaming_app.app_active = true;
     ESP_LOGI(ROAMING_TAG, "Roaming app initialization done");
 }
@@ -2232,6 +2672,10 @@ static void roaming_app_cancel_pending_events(void)
     }
     eloop_cancel_timeout(enable_reconnect, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(disable_reconnect, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
+#if JOIN_CHECK_ENABLED
+    eloop_cancel_timeout(roaming_app_got_ip_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
+    roaming_app_join_check_reset();
+#endif /*JOIN_CHECK_ENABLED*/
 #if LOW_RSSI_ROAMING_ENABLED
     eloop_cancel_timeout(roaming_app_rssi_low_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
 #endif /*LOW_RSSI_ROAMING_ENABLED*/
@@ -2264,7 +2708,7 @@ static int roaming_app_deinit_internal(void *ctx, void *data)
 
 void roam_deinit_app(void)
 {
-#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING
+#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING && !JOIN_CHECK_ENABLED && !FAST_CONNECT_ENABLED
     ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be de-initialized");
     return;
 #endif
@@ -2291,6 +2735,10 @@ void roam_deinit_app(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
                                                  &roaming_app_neighbor_report_recv_handler));
 #endif /*PERIODIC_RRM_MONITORING*/
+#if JOIN_CHECK_ENABLED
+    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP,
+                                                 &roaming_app_got_ip_handler));
+#endif /*JOIN_CHECK_ENABLED*/
     g_roaming_app.app_active = false;
 }
 
@@ -2436,9 +2884,40 @@ static int update_config_params(void *data)
                               next_scan_filter_bssid,
                               sizeof(next_scan_filter_bssid)) != 0);
 
+#if FAST_CONNECT_ENABLED
+    if (g_roaming_app.config.fast_connect && !config->fast_connect) {
+        wifi_config_t wifi_cfg = {0};
+
+        /* Fast connect stops: nothing would clear its record after a failure any more, and the station would
+         * stay pinned to that one AP. */
+        if (esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) == ESP_OK && roaming_app_fast_connect_is_record(&wifi_cfg.sta)) {
+            uint8_t bssid[ETH_ALEN];
+
+            os_memcpy(bssid, wifi_cfg.sta.bssid, ETH_ALEN);
+            wifi_cfg.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+            wifi_cfg.sta.bssid_set = false;
+            os_memset(wifi_cfg.sta.bssid, 0, ETH_ALEN);
+            wifi_cfg.sta.channel = 0;
+            if (esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) == ESP_OK) {
+                ESP_LOGI(ROAMING_TAG, "fast connect: turned off: forgot " MACSTR, MAC2STR(bssid));
+            } else {
+                ESP_LOGE(ROAMING_TAG, "fast connect: turned off: failed to forget " MACSTR, MAC2STR(bssid));
+            }
+        }
+    }
+#endif
     g_roaming_app.config = *config;
     g_roaming_app.config.low_rssi_roam_diff =
         roaming_app_clamp_low_rssi_roam_diff(g_roaming_app.config.low_rssi_roam_diff);
+    /* The same 1 to 99 dB bounds as the low RSSI difference. */
+    g_roaming_app.config.join_check_rssi_diff =
+        roaming_app_clamp_low_rssi_roam_diff(g_roaming_app.config.join_check_rssi_diff);
+#if !FAST_CONNECT_ENABLED
+    g_roaming_app.config.fast_connect = false;
+#endif
+#if !JOIN_CHECK_ENABLED
+    g_roaming_app.config.join_check = false;
+#endif
     memset(g_roaming_app.config.scan_filter_ssid, 0, sizeof(g_roaming_app.config.scan_filter_ssid));
     memset(g_roaming_app.config.scan_filter_bssid, 0, sizeof(g_roaming_app.config.scan_filter_bssid));
     g_roaming_app.config.scan_filter_bssid_set = false;
@@ -2484,6 +2963,10 @@ static int update_config_params(void *data)
                         g_roaming_app.config.rrm_monitor_time,
                         g_roaming_app.config.rrm_monitor_rssi_threshold);
 
+    ESP_LOGI(ROAMING_TAG, "fast_connect=%d join_check=%d join_check_rssi_diff=%d",
+                        g_roaming_app.config.fast_connect, g_roaming_app.config.join_check,
+                        g_roaming_app.config.join_check_rssi_diff);
+
     return ESP_OK;
 }
 
@@ -2528,3 +3011,30 @@ esp_err_t roam_set_config_params(struct roam_config *config)
 
     return esp_wifi_ipc_internal(&cfg, false);
 }
+
+#if JOIN_CHECK_ENABLED
+static int roaming_app_set_app_hold_internal(void *data)
+{
+    const wifi_roaming_app_hold_t *hold = data;
+
+    g_roaming_app.app_hold = *hold;
+    return ESP_OK;
+}
+
+esp_err_t esp_wifi_roaming_set_app_hold(const wifi_roaming_app_hold_t *hold)
+{
+    wifi_ipc_config_t cfg;
+    wifi_roaming_app_hold_t hold_copy;
+
+    if (!hold) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    hold_copy = *hold;
+    cfg.fn = roaming_app_set_app_hold_internal;
+    cfg.arg = &hold_copy;
+    cfg.arg_size = sizeof(hold_copy);
+
+    return esp_wifi_ipc_internal(&cfg, false);
+}
+#endif /* JOIN_CHECK_ENABLED */

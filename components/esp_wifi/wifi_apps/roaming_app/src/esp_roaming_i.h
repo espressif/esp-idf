@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,6 +86,28 @@ extern "C" {
 #define RRM_MONITOR_RSSI_THRESHOLD -100
 #endif /*PERIODIC_RRM_MONITORING*/
 
+/* Fast connect: remember the AP, connect to it directly, fall back to every channel */
+#ifdef CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT
+#define FAST_CONNECT_ENABLED CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT
+#else
+#define FAST_CONNECT_ENABLED 0
+#endif
+
+/* The check after a connection: one scan, a roam only to a much stronger AP */
+#ifdef CONFIG_ESP_WIFI_ROAMING_JOIN_CHECK
+#define JOIN_CHECK_ENABLED CONFIG_ESP_WIFI_ROAMING_JOIN_CHECK
+#define JOIN_CHECK_RSSI_DIFF CONFIG_ESP_WIFI_ROAMING_JOIN_CHECK_RSSI_DIFF
+#define JOIN_CHECK_SETTLE_MAX_MS (CONFIG_ESP_WIFI_ROAMING_JOIN_CHECK_SETTLE_MAX_TIME * 1000LL)
+#define JOIN_CHECK_ROAM_WAIT_MAX_MS (CONFIG_ESP_WIFI_ROAMING_JOIN_CHECK_ROAM_WAIT_MAX_TIME * 1000LL)
+/* The application must report nothing outstanding for this long before the check scans or roams: a
+ * protocol stack can be between two messages for a moment. */
+#define JOIN_CHECK_QUIET_MS 500
+/* How often a waiting check looks at the application's last report again. */
+#define JOIN_CHECK_POLL_US 250000
+#else
+#define JOIN_CHECK_ENABLED 0
+#endif
+
 #define MAX_SCAN_CHAN_LIST_COUNT 14
 
 #define MAX_NEIGHBOR_LEN 512
@@ -148,6 +170,22 @@ struct roaming_app {
 #endif
     bool allow_reconnect;
     struct cand_bss *pending_roam_bss;
+#if JOIN_CHECK_ENABLED
+    struct join_check_step {
+        bool quiet;              /* the application has reported nothing outstanding since quiet_since_us */
+        bool waited;             /* this step has waited for a busy application, and said so once */
+        int64_t quiet_since_us;
+    } join_check_scan_step, join_check_roam_step;
+    wifi_roaming_app_hold_t app_hold;    /* the application's last report (esp_wifi_roaming_set_app_hold()) */
+    bool ip_seen;                /* this connection has had its IP address: a later one is not a new connection */
+    bool join_check_skip_next;   /* the roaming app is reconnecting itself to roam: no check after it */
+    bool join_check_pending;     /* the check waits for the backoff time or for the application */
+    bool join_check_backoff_logged;
+    bool join_check_scanning;    /* the check's scan is out: a candidate it finds waits for the application */
+    int64_t ip_time_us;          /* this connection's IP address, esp_timer_get_time() */
+    int64_t join_check_roam_since_us;
+    struct cand_bss *join_check_cand; /* the roam the check chose, waiting for the application */
+#endif
 };
 
 #ifdef __cplusplus

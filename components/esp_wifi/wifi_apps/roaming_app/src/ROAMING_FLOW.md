@@ -18,7 +18,7 @@ This document describes the runtime control flow of the advanced Wi-Fi roaming a
 
 The roaming app starts only if both of the following are true:
 
-- At least one roaming trigger is enabled.
+- At least one roaming trigger is enabled: low RSSI, periodic scan, fast connect or the check after a connection.
 - At least one roaming method is enabled.
 
 If either condition is not satisfied, `roam_init_app()` returns without starting roaming support.
@@ -174,11 +174,52 @@ flowchart TD
 | Legacy path | `ESP_WIFI_ROAMING_LEGACY_ROAMING` |
 | Post-roam IP behavior | `ESP_WIFI_ROAMING_IP_RENEW_SKIP` |
 
-## 5. Configuration Summary by Functional Area
+## 5. Fast Connect and the Check After a Connection
+
+Fast connect keeps a record of the AP each connection ends on as the station configuration's connect hint, so the next connection tries that AP alone; the check after a connection scans once and roams only to a much stronger AP, after the backoff time and once the application is quiet.
+
+```mermaid
+flowchart TD
+    A["Connection attempt"] --> B{"Hint is fast connect's record?"}
+    B -- "Yes" --> C["Driver tries the remembered AP alone"]
+    B -- "No" --> D["Driver scans every channel, strongest first"]
+    C --> E{"Connected?"}
+    D --> E
+    E -- "No, record in use<br/>(not own leave, not roam)" --> F["Clear the record on the Wi-Fi task,<br/>before the disconnection event is posted"]
+    F --> A
+    E -- "Yes" --> G["Remember this AP as the record<br/>(no write if it is the one remembered)"]
+    G --> H{"First IP address of this connection?"}
+    H -- "No" --> X["Nothing more"]
+    H -- "Yes" --> I{"Check enabled, and not the roaming app's own reconnect?"}
+    I -- "No" --> X
+    I -- "Yes" --> J["Wait for the backoff time after the connection"]
+    J --> K{"Application busy?<br/>(esp_wifi_roaming_set_app_hold)"}
+    K -- "Yes, within the settle time" --> K
+    K -- "No, for 500 ms, or the settle time passed" --> L["determine_best_ap(join check difference)"]
+    L --> M{"Candidate stronger by the difference?"}
+    M -- "No" --> N["Stay"]
+    M -- "Yes" --> O{"Reply outstanding, or settling within the settle time?"}
+    O -- "Yes, within the roam wait" --> O
+    O -- "Yes, roam wait passed" --> P["Give the roam up until the next connection"]
+    O -- "No, for 500 ms" --> Q["Post roam event: BTM or directed reconnect"]
+```
+
+### Configuration used in this stage
+
+| Area | Configuration |
+| --- | --- |
+| The record | `ESP_WIFI_ROAMING_FAST_CONNECT`, `roam_config.fast_connect`; owns `wifi_config_t.sta.scan_method`, `sort_method`, `bssid_set`, `bssid`, `channel` |
+| The check | `ESP_WIFI_ROAMING_JOIN_CHECK`, `ESP_WIFI_ROAMING_JOIN_CHECK_RSSI_DIFF`, `roam_config.join_check`, `roam_config.join_check_rssi_diff` |
+| Waiting for the application | `ESP_WIFI_ROAMING_JOIN_CHECK_SETTLE_MAX_TIME`, `ESP_WIFI_ROAMING_JOIN_CHECK_ROAM_WAIT_MAX_TIME`, `esp_wifi_roaming_set_app_hold()` |
+| Shared with the other triggers | `ESP_WIFI_ROAMING_BACKOFF_TIME`, scan configuration, blacklist, security policy, roaming methods |
+
+## 6. Configuration Summary by Functional Area
 
 | Functional area | Configuration |
 | --- | --- |
 | Low RSSI roaming | `ESP_WIFI_ROAMING_LOW_RSSI_ROAMING`, `ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD`, `ESP_WIFI_ROAMING_LOW_RSSI_OFFSET` |
+| Fast connect | `ESP_WIFI_ROAMING_FAST_CONNECT` |
+| Check after a connection | `ESP_WIFI_ROAMING_JOIN_CHECK`, `ESP_WIFI_ROAMING_JOIN_CHECK_RSSI_DIFF`, `ESP_WIFI_ROAMING_JOIN_CHECK_SETTLE_MAX_TIME`, `ESP_WIFI_ROAMING_JOIN_CHECK_ROAM_WAIT_MAX_TIME` |
 | Periodic scan roaming | `ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR`, `ESP_WIFI_ROAMING_PERIODIC_SCAN_THRESHOLD`, `ESP_WIFI_ROAMING_SCAN_MONITOR_INTERVAL`, `ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF` |
 | Network-assisted roaming | `ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM`, `ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT` |
 | Post-roam IP behavior | `ESP_WIFI_ROAMING_IP_RENEW_SKIP` |
@@ -189,7 +230,7 @@ flowchart TD
 | Runtime scan filters | `roam_set_config_params()`, `scan_filter_ssid`, `scan_filter_bssid` |
 | Candidate security policy | `wifi_config_t.sta.threshold.authmode`, `wifi_config_t.sta.owe_enabled`, `wifi_config_t.sta.pmf_cfg.required`, `wifi_config_t.sta.sae_pwe_h2e`, `wifi_config_t.sta.sae_pk_mode` |
 
-## 6. Behavioral Notes
+## 7. Behavioral Notes
 
 - A periodic RRM event does not directly trigger roaming. Its purpose is to refresh the cached neighbor list used by the BTM path.
 - While connected, candidate ranking uses the stronger of two values: the RSSI from the current connection and the RSSI for the same BSSID in the latest scan results.
@@ -199,3 +240,6 @@ flowchart TD
 - A BTM query is asynchronous. After the query is sent, the app waits for AP or network action. It does not immediately force legacy roaming in the same step.
 - The reconnect paths start a connection attempt. Final success or failure is reported later through the normal Wi-Fi connection and disconnection events.
 - If the station is already disconnected, the app can still reconnect to a selected AP even when legacy roaming is disabled.
+- Fast connect clears its record in the supplicant's disconnection callback, on the Wi-Fi task, before the driver posts `WIFI_EVENT_STA_DISCONNECTED`. So the next attempt scans every channel whoever starts it: the app's own reconnect, or an application's handler for that event, `ESP_EVENT_ANY_ID` included. Turning `roam_config.fast_connect` off at run time clears the record too.
+- The check after a connection shares `determine_best_ap()` with the other triggers. If another trigger's scan is running, the check takes its result, with the smaller of the two differences. Only a candidate the check found waits for the application; the low RSSI and periodic scan triggers roam as before.
+- A connection that the roaming app made itself, by its directed reconnect, gets no check, nor does the connection that follows if that reconnect fails.

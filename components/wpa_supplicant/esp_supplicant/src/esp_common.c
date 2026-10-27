@@ -104,6 +104,14 @@ static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
         return;
     }
 
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    /* The roaming app's fast connect keeps its record of the AP as this hint, sets it to each AP connected
+     * to, and clears it itself after a connection through it fails (CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT). */
+    if (roam_fast_connect_owns_connect_hint()) {
+        return;
+    }
+#endif
+
     config = os_zalloc(sizeof(wifi_config_t));
 
     if (!config) {
@@ -339,6 +347,9 @@ void esp_supplicant_common_deinit(void)
 
 void supplicant_sta_conn_handler(uint8_t *bssid)
 {
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_fast_connect_sta_connected();
+#endif
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
     u8 *ie;
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
@@ -373,6 +384,10 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 
 void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    /* Before WIFI_EVENT_STA_DISCONNECTED is posted, so before any handler of it can connect again. */
+    roam_fast_connect_sta_disconnected(reason_code);
+#endif
 #if defined(CONFIG_IEEE80211KV)
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
 

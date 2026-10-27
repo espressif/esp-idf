@@ -1,0 +1,6 @@
+CONFIG_ESP_WIFI_ENABLE_ROAMING_APP=y
+CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT=y
+CONFIG_ESP_WIFI_ROAMING_JOIN_CHECK=y
+# Fast connect and the check after each connection only: no scans while connected otherwise
+# CONFIG_ESP_WIFI_ROAMING_LOW_RSSI_ROAMING is not set
+# CONFIG_ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR is not set

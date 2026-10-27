@@ -32,7 +32,26 @@ Unlike Low RSSI triggered roaming, which is a bit reactive to the changing netwo
 
 The intervals at which this periodic scan will take place can also be configured through “Time intervals at which station will initiate a scan”. This defaults to 30 seconds. The RSSI difference between a candidate AP and the current AP, which can be considered as acceptable to initiate roaming, can also be configured as the “RSSI difference b/w current AP and a candidate AP to initiate roaming”
 
-**Please note that at least one of the two Roaming Triggers needs to be enabled.**
+**Please note that at least one of the two Roaming Triggers, fast connect or the check after a connection needs to be enabled.**
+
+
+**Fast connect and the check after a connection (Roaming App Settings --> Fast connect)**
+
+These two settings shorten every connection and make it end on a strong AP, without scanning while connected.
+
+1) Fast connect:
+
+If enabled (“Remember the AP and connect to it directly next time”), the roaming app remembers the AP each connection ends on: its BSSID and channel become the station configuration's connect hint (`bssid_set`, `bssid` and `channel`, with `WIFI_FAST_SCAN` and `WIFI_CONNECT_AP_BY_SIGNAL`), saved with the rest of the station configuration. The next connection, after a reboot or a lost link, then tries that AP alone instead of scanning every channel first. If that connection fails, for any reason but the station's own disconnect or a roam, the roaming app clears the hint on the Wi-Fi task, before the disconnection event is posted, so the next attempt, whoever starts it, scans every channel and connects to the strongest AP; that AP is remembered in turn. Turning `roam_config.fast_connect` off at run time clears the hint too. Nothing is written when the AP connected to is the one already remembered.
+
+A remembered AP that is gone costs one connection attempt before the fallback.
+
+With fast connect, the roaming app owns `scan_method`, `sort_method`, `bssid_set`, `bssid` and `channel` of the station configuration, and the supplicant leaves the hint in place when BTM or MBO is enabled (see Notes, 2). An application should set the station configuration only when the network changes: one that sets it at every boot replaces the record and scans every channel at every boot. A new network is best saved with `WIFI_ALL_CHANNEL_SCAN` and `WIFI_CONNECT_AP_BY_SIGNAL`.
+
+2) The check after a connection:
+
+If enabled (“Scan once after each connection for a much stronger AP”, on by default with fast connect), the roaming app scans once after each connection has its IP address, and roams to a candidate at least “RSSI difference b/w current AP and candidate AP for the check after a connection” (15 dB by default, the same default as the periodic scan's) stronger than the AP connected to, by the configured roaming methods. A connection that joined a remembered or the first AP heard can so still end on the strongest. The scan waits for the backoff time after the connection, and for the application: right after an IP address, an application reconnects what it had, and a roam drops the connection briefly, losing any reply due in that time. The application reports what it has outstanding with `esp_wifi_roaming_set_app_hold()` (`esp_wifi_roaming.h`): a reply outstanding, or that it is still settling. The scan waits while either is reported, and then for 500 ms with neither, at most “Longest wait (in seconds) for the application before the check scan” (60 by default) after the IP address. A roam the check chose waits while a reply is outstanding (and, within those 60 s, while the application is settling), then for 500 ms of quiet, and is given up until the next connection after “Longest wait (in seconds) for the application before a roam the check chose” (15 by default). An application that never reports is waited for only the 500 ms quiet time, before the scan and before a roam. No check follows a connection the roaming app made itself to roam.
+
+Fast connect and the check count as roaming triggers, so they can be used alone: turn off “Use Low RSSI to trigger roaming” and “Conduct periodic scans to check if a better AP is available” for a station that scans while connected only once per connection.
 
 
 **Roaming Methods**
@@ -88,7 +107,7 @@ The roaming logic also honors AP-advertised transition disable policy while sele
 
 1) Advanced roaming support is disabled by default.
 
-2) When enabling the advanced roaming support, it is expected that the BSSID to connect to is not specifically set by the application. This would defeat the purpose of roaming between different APs of the network. The roaming app may temporarily set BSSID/channel hints for a directed reconnect, but these hints are cleared again so normal roaming can continue.
+2) When enabling the advanced roaming support, it is expected that the BSSID to connect to is not specifically set by the application. This would defeat the purpose of roaming between different APs of the network. The roaming app may temporarily set BSSID/channel hints for a directed reconnect, but these hints are cleared again so normal roaming can continue. With fast connect, the roaming app keeps a hint on purpose, as its record of the AP connected to: it changes the hint at each connection, clears it after a connection through it fails, and asks the supplicant not to clear it when BTM or MBO is enabled.
 
 3) For roaming to work as expected, the APs between which the station is expected to roam must have the same or compatible authmode. These include :
 

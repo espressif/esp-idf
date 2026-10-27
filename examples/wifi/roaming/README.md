@@ -3,13 +3,14 @@
 
 # Wi-Fi Roaming Examples
 
-This directory contains 2 example ESP-IDF projects that demonstrate the Wi-Fi Roaming capabilities. These are intended to demonstrate the Wi-Fi roaming functionality, and to provide code that you can copy and use in your own projects.
+This directory contains 3 example ESP-IDF projects that demonstrate the Wi-Fi Roaming capabilities. These are intended to demonstrate the Wi-Fi roaming functionality, and to provide code that you can copy and use in your own projects.
 
 # Example Layout
 
 * `roaming_11kvr` demonstrates the use of API's that implement IEEE 802.11kvr mechanisms.
 * `roaming_app` implements Espressif's roaming app that optimally combines legacy roaming and 802.11kv based
    roaming for effective roaming.
+* `fast_connect` shows the roaming app's fast connect and its check after a connection.
 
 # More
 

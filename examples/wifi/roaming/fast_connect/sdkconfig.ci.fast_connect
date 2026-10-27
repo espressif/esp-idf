@@ -1,0 +1,2 @@
+# The example's defaults, with a busy application after each IP address
+CONFIG_EXAMPLE_BUSY_AFTER_IP_MS=3000

@@ -295,6 +295,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_crypto_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_default.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_netif.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_roaming.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_types_generic.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi.h \
