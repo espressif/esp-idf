@@ -22,6 +22,7 @@
 #include "hci/hci_internals.h"
 #include "hci/hci_layer.h"
 #include "hci/packet_fragmenter.h"
+#include "stack/l2cdefs.h"
 
 #include "osi/hash_map.h"
 #include "osi/hash_functions.h"
@@ -36,11 +37,17 @@
 #define HANDLE_MASK 0x0FFF
 #define START_PACKET_BOUNDARY 2
 #define CONTINUATION_PACKET_BOUNDARY 1
-#define L2CAP_HEADER_SIZE       4
 #define L2CAP_LENGTH_SIZE       2
 
 // TODO(zachoverflow): find good value for this
 #define NUMBER_OF_BUCKETS 42
+
+/* The L2CAP length cap is only tighter than a uint16 wrap while the pool
+ * stays inside that range and still covers the fixed headers. */
+_Static_assert(BT_DEFAULT_BUFFER_SIZE < UINT16_MAX,
+               "BT_DEFAULT_BUFFER_SIZE must be below UINT16_MAX");
+_Static_assert(BT_DEFAULT_BUFFER_SIZE > L2CAP_PKT_OVERHEAD + HCI_ACL_PREAMBLE_SIZE + BT_HDR_SIZE,
+               "BT_DEFAULT_BUFFER_SIZE must cover ACL reassembly headers");
 
 // Our interface and callbacks
 static const packet_fragmenter_t interface;
@@ -233,8 +240,8 @@ static void reassemble_and_dispatch(BT_HDR *packet)
              * Vol 3 Part A 3.1 (B-frame payload is 0..65535 octets); do not drop
              * it. The downstream length math handles l2cap_length == 0 correctly
              * (full_length == header-only == 8). */
-            /* Check for integer overflow in length calculation */
-            if (l2cap_length > (UINT16_MAX - L2CAP_HEADER_SIZE - HCI_ACL_PREAMBLE_SIZE)) {
+            /* Reject a peer length whose reassembled buffer (PDU + BT_HDR) would exceed the host pool. */
+            if (l2cap_length > L2CAP_MAX_RX_PAYLOAD) {
                 HCI_TRACE_ERROR("L2CAP length too large: %u", l2cap_length);
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
                 fragmenter_c2h_credit(handle, 1);
@@ -243,7 +250,7 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 return;
             }
 
-            uint16_t full_length = l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
+            uint16_t full_length = l2cap_length + L2CAP_PKT_OVERHEAD + HCI_ACL_PREAMBLE_SIZE;
             if (full_length <= packet->len) {
                 if (full_length < packet->len) {
                     HCI_TRACE_WARNING("%s found l2cap full length %d less than the hci length %d.\n", __func__, l2cap_length, packet->len);
