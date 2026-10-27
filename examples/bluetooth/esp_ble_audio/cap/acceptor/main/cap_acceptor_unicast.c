@@ -33,6 +33,7 @@ static example_audio_rx_metrics_t rx_metrics[ACCEPTOR_SINK_STREAM_COUNT];
 
 static example_audio_tx_scheduler_t tx_scheduler;
 static uint16_t tx_seq_num;
+static example_audio_tx_count_t tx_count;
 static uint8_t *iso_data;
 /* Source stream currently driven by the TX pump. Set when a source stream starts
  * and cleared when it stops: stream_alloc() hands out *free* streams, so it can
@@ -350,6 +351,7 @@ static void unicast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
         tx_cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
         tx_seq_num = 0;
         example_audio_tx_scheduler_reset(&tx_scheduler);
+        tx_count = (example_audio_tx_count_t){0};
 
         err = example_audio_tx_scheduler_start(&tx_scheduler, stream->qos->interval);
         if (err) {
@@ -457,6 +459,7 @@ static void unicast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
     }
 
     snprintf(name, sizeof(name), "%s #%d", stream_dir_str(stream), idx);
+    rx_metrics[idx].last_sdu = data;
     rx_metrics[idx].last_sdu_len = len;
     example_audio_rx_metrics_on_recv(info, &rx_metrics[idx], TAG, name);
 }
@@ -467,7 +470,7 @@ static void unicast_stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *use
 
     snprintf(name, sizeof(name), "%s #%d",
              stream_dir_str(stream), stream_index(stream));
-    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, TAG, name);
+    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, &tx_count, TAG, name);
 }
 
 static esp_ble_audio_bap_stream_ops_t unicast_stream_ops = {

@@ -57,6 +57,7 @@ static struct audio_source {
     esp_ble_audio_bap_stream_t  *stream;
     example_audio_tx_scheduler_t scheduler;
     uint16_t                     seq_num;
+    example_audio_tx_count_t     tx_count;
     uint8_t                     *data;
     uint8_t                      index;
     bool                         running;
@@ -475,6 +476,7 @@ static void stream_started(esp_ble_audio_bap_stream_t *stream)
 
     src->seq_num = 0;
     example_audio_tx_scheduler_reset(&src->scheduler);
+    src->tx_count = (example_audio_tx_count_t){0};
 
     /* Note: esp timer is not accurate enough */
     err = example_audio_tx_scheduler_start(&src->scheduler, stream->qos->interval);
@@ -540,7 +542,7 @@ static void stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_data)
     }
 
     snprintf(name, sizeof(name), "SRC #%u", src->index);
-    example_audio_tx_scheduler_on_sent(&src->scheduler, user_data, TAG, name);
+    example_audio_tx_scheduler_on_sent(&src->scheduler, user_data, &src->tx_count, TAG, name);
 }
 
 static void unicast_server_tx(struct audio_source *src)
@@ -591,6 +593,29 @@ static void tx_scheduler_cb(void *arg)
     unicast_server_tx(arg);
 }
 
+#if CONFIG_EXAMPLE_AUDIO_RX_ALIGN_CHECK && CONFIG_BT_CSIP_SET_MEMBER
+/* Each member of the set gets one stream, so the receivers' alignment check has
+ * nothing to compare. The central sends the timestamp, then the frame number
+ * while both streams send (0 otherwise): both members print the same frames.
+ */
+static void synced_frame_log(const esp_ble_iso_recv_info_t *info, const uint8_t *data,
+                             uint16_t len, const char *name)
+{
+    uint32_t frame;
+    uint32_t ts;
+
+    if (!(info->flags & ESP_BLE_ISO_FLAGS_VALID) || len < sizeof(ts) + sizeof(frame)) {
+        return;
+    }
+
+    memcpy(&frame, data + sizeof(ts), sizeof(frame));
+    if (frame != 0 && frame % 6000 == 0) {
+        memcpy(&ts, data, sizeof(ts));
+        ESP_LOGI(TAG, "[%s] Synced frame %u: timestamp %u us", name, frame, ts);
+    }
+}
+#endif /* CONFIG_EXAMPLE_AUDIO_RX_ALIGN_CHECK && CONFIG_BT_CSIP_SET_MEMBER */
+
 static void stream_recv(esp_ble_audio_bap_stream_t *stream,
                         const esp_ble_iso_recv_info_t *info,
                         const uint8_t *data, uint16_t len)
@@ -604,9 +629,13 @@ static void stream_recv(esp_ble_audio_bap_stream_t *stream,
             char name[24];
 
             snprintf(name, sizeof(name), "SNK #%zu", i);
+            sink_stream->rx_metrics.last_sdu = data;
             sink_stream->rx_metrics.last_sdu_len = len;
             example_audio_rx_metrics_on_recv(info, &sink_stream->rx_metrics,
                                              TAG, name);
+#if CONFIG_EXAMPLE_AUDIO_RX_ALIGN_CHECK && CONFIG_BT_CSIP_SET_MEMBER
+            synced_frame_log(info, data, len, name);
+#endif /* CONFIG_EXAMPLE_AUDIO_RX_ALIGN_CHECK && CONFIG_BT_CSIP_SET_MEMBER */
             break;
         }
     }
