@@ -226,8 +226,13 @@ bool ble_log_ts_sync_io_toggle_enable(bool enable);
 bool ble_log_sync_enable(bool enable);  /* compatibility shim */
 ```
 
-`ble_log_enable()` gates public producers only. Periodic system output remains
-active while that gate is closed.
+`ble_log_enable(false)` stops new public log writes, but does not stop periodic
+system output. Buffered logs continue to be flushed so partially filled buffers
+do not retain old data indefinitely. Periodic snapshots and task-binding
+broadcasts also continue, keeping clock samples, diagnostic statistics and task
+mappings available while business logging is paused. External sync markers,
+when configured and available, follow the periodic snapshots and remain active
+until deinitialization.
 
 When `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` is enabled, set
 `CONFIG_BLE_LOG_SYNC_IO_NUM` to the sync output GPIO. Output starts at BLE Log
