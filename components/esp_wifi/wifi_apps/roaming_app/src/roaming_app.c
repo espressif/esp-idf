@@ -151,6 +151,8 @@ static inline long time_diff_sec(const struct timeval *a, const struct timeval *
     return (a->tv_sec - b->tv_sec);
 }
 
+#if LOW_RSSI_ROAMING_ENABLED
+/* Only the low RSSI trigger sets thresholds: unused, and a build warning, without it. */
 static int32_t roaming_app_clamp_rssi_threshold(int threshold)
 {
     if (threshold < RSSI_THRESHOLD_DISABLED) {
@@ -163,6 +165,7 @@ static int32_t roaming_app_clamp_rssi_threshold(int threshold)
 
     return threshold;
 }
+#endif /*LOW_RSSI_ROAMING_ENABLED*/
 
 static uint8_t roaming_app_clamp_low_rssi_roam_diff(uint8_t diff)
 {
@@ -197,6 +200,8 @@ static const wifi_ap_record_t *roaming_app_find_scan_record(const uint8_t *bssid
     return NULL;
 }
 
+#if NETWORK_ASSISTED_ROAMING_ENABLED
+/* Only BTM queries use these two: unused, and build warnings, without network assisted roaming. */
 static uint8_t roaming_app_get_phy_type(const wifi_ap_record_t *record)
 {
     int sec_chan = 0;
@@ -225,6 +230,7 @@ static uint8_t roaming_app_get_phy_type(const wifi_ap_record_t *record)
 
     return (record->primary > 14) ? PHY_TYPE_OFDM : PHY_TYPE_ERP;
 }
+#endif /*NETWORK_ASSISTED_ROAMING_ENABLED*/
 
 static bool roaming_app_authmode_is_enterprise(wifi_auth_mode_t authmode)
 {
@@ -399,6 +405,7 @@ static const u8 *roaming_app_get_rsnxe_ie(const uint8_t *bssid)
     return rsnxe;
 }
 
+#if NETWORK_ASSISTED_ROAMING_ENABLED
 static int roaming_app_build_btm_candidate(const struct cand_bss *bss, char *buf, size_t buf_len)
 {
     const wifi_ap_record_t *record;
@@ -439,6 +446,7 @@ static int roaming_app_build_btm_candidate(const struct cand_bss *bss, char *buf
 
     return 0;
 }
+#endif /*NETWORK_ASSISTED_ROAMING_ENABLED*/
 
 static void roaming_app_set_scan_filter_bssid(const uint8_t *bssid, bool enabled)
 {
