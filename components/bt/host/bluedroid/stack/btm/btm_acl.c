@@ -1677,6 +1677,10 @@ void btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role)
         if (new_role == BTM_ROLE_MASTER) {
             BTM_SetLinkSuperTout (p->remote_addr, p->link_super_tout);
         }
+        /* Max slots go back to 1 after a role switch: re-apply the packet types,
+         * or the link stays on 1-slot packets */
+        btm_set_packet_types (p, p->pkt_types_mask ? p->pkt_types_mask
+                                                   : btm_cb.btm_acl_pkt_types_supported);
     } else {
         /* so the BTM_BL_ROLE_CHG_EVT uses the old role */
         new_role = p->link_role;
