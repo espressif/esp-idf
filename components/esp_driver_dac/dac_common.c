@@ -14,10 +14,8 @@
 #include "hal/dac_periph.h"
 #include "hal/dac_types.h"
 #include "hal/dac_ll.h"
-#if DAC_LL_SHARED_HS_LS_CLK
 #include "esp_clk_tree.h"
 #include "esp_private/esp_clk_tree_common.h"
-#endif
 #include "esp_private/gpio.h"
 #include "esp_check.h"
 #include "esp_log.h"
@@ -293,6 +291,39 @@ esp_err_t dac_priv_clk_release(dac_ls_clk_constraint_t constraint)
 }
 
 #endif // DAC_LL_SHARED_HS_LS_CLK
+
+esp_err_t dac_priv_clk_acquire_unified(soc_module_clk_t source, dac_ls_clk_constraint_t constraint, uint32_t *freq_hz)
+{
+#if DAC_LL_SHARED_HS_LS_CLK
+    esp_err_t ret = dac_priv_clk_acquire(source, constraint);
+#else
+    esp_err_t ret = esp_clk_tree_enable_src(source, true);
+#endif
+    if (ret != ESP_OK || freq_hz == NULL) {
+        return ret;
+    }
+
+#if DAC_LL_SHARED_HS_LS_CLK
+    ret = dac_priv_clk_get_hs_freq_hz(freq_hz);
+#else
+    ret = esp_clk_tree_src_get_freq_hz(source, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, freq_hz);
+#endif
+    if (ret != ESP_OK) {
+        dac_priv_clk_release_unified(source, constraint);
+    }
+    return ret;
+}
+
+esp_err_t dac_priv_clk_release_unified(soc_module_clk_t source, dac_ls_clk_constraint_t constraint)
+{
+#if DAC_LL_SHARED_HS_LS_CLK
+    (void)source;
+    return dac_priv_clk_release(constraint);
+#else
+    (void)constraint;
+    return esp_clk_tree_enable_src(source, false);
+#endif
+}
 
 /*---------------------------------------------------------------
                 Cosine (Sintx) generator management
