@@ -130,7 +130,11 @@ const tBTA_PAN_ST_TBL bta_pan_st_tbl[] = {bta_pan_st_idle, bta_pan_st_open,
  ****************************************************************************/
 
 /* PAN control block */
+#if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_PAN_CB bta_pan_cb;
+#else
+tBTA_PAN_CB *bta_pan_cb_ptr;
+#endif
 
 /*******************************************************************************
  *

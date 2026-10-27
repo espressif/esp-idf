@@ -140,6 +140,10 @@
 #include "bta_hh_int.h"
 #endif
 
+#if BTA_PAN_INCLUDED == TRUE
+#include "bta_pan_int.h"
+#endif
+
 #if BTA_HD_INCLUDED==TRUE
 #include "bta_hd_int.h"
 #endif
@@ -221,6 +225,12 @@ void BTE_DeinitStack(void)
     if (bta_hd_cb_ptr){
         osi_free(bta_hd_cb_ptr);
         bta_hd_cb_ptr = NULL;
+    }
+#endif
+#if BTA_PAN_INCLUDED == TRUE
+    if (bta_pan_cb_ptr){
+        osi_free(bta_pan_cb_ptr);
+        bta_pan_cb_ptr = NULL;
     }
 #endif
 #if BTA_HH_INCLUDED==TRUE
@@ -347,6 +357,14 @@ void BTE_DeinitStack(void)
     A2D_Deinit();
 #endif
 
+#if (defined(PAN_INCLUDED) && PAN_INCLUDED == TRUE)
+    PAN_Deinit();
+#endif
+
+#if (defined(BNEP_INCLUDED) && BNEP_INCLUDED == TRUE)
+    BNEP_Deinit();
+#endif
+
 #if (defined(RFCOMM_INCLUDED) && RFCOMM_INCLUDED == TRUE)
     RFCOMM_Deinit();
 #endif
@@ -378,10 +396,14 @@ bt_status_t BTE_InitStack(void)
 
     //BNEP and its profiles
 #if (defined(BNEP_INCLUDED) && BNEP_INCLUDED == TRUE)
-    BNEP_Init();
+    if (BNEP_Init() != BT_STATUS_SUCCESS) {
+        goto error_exit;
+    }
 
 #if (defined(PAN_INCLUDED) && PAN_INCLUDED == TRUE)
-    PAN_Init();
+    if (PAN_Init() != BT_STATUS_SUCCESS) {
+        goto error_exit;
+    }
 #endif  // PAN
 #endif  // BNEP Included
 
@@ -536,6 +558,12 @@ bt_status_t BTE_InitStack(void)
         goto error_exit;
     }
     memset((void *)bta_hh_cb_ptr, 0, sizeof(tBTA_HH_CB));
+#endif
+#if BTA_PAN_INCLUDED == TRUE
+    if ((bta_pan_cb_ptr = (tBTA_PAN_CB *)osi_malloc(sizeof(tBTA_PAN_CB))) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)bta_pan_cb_ptr, 0, sizeof(tBTA_PAN_CB));
 #endif
 #if BTA_HD_INCLUDED==TRUE
     if ((bta_hd_cb_ptr = (tBTA_HD_CB *)osi_malloc(sizeof(tBTA_HD_CB))) == NULL) {
