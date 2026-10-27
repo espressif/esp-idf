@@ -551,8 +551,8 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
         }
         map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));
         dest_words[word] = *map_ptr;
-        current_read_mapping = UINT32_MAX;
     }
+    current_read_mapping = UINT32_MAX;
     return ESP_OK;
 }
 
