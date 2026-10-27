@@ -31,7 +31,8 @@ bool ble_log_rt_drain(void);
 void ble_log_rt_submit_trans(ble_log_prph_trans_t *trans);
 
 /* Samples LC/ESP/OS clocks without emitting a label (INIT/FLUSH).
- * io_level reports the physical pin, or zero if sync output is not built. */
+ * io_level reports the sampled pin level, or zero when sync is unavailable;
+ * it does not indicate whether a complete external marker was emitted. */
 void ble_log_rt_ts_sample(ble_log_ts_info_t *info);
 /* Called after the dedicated snapshot transport and its actual ID are owned. */
 void ble_log_rt_ts_sample_anchor(ble_log_ts_info_t *info, uint32_t anchor_count);

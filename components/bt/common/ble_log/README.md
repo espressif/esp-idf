@@ -243,6 +243,10 @@ its error code. A `BLE-Log` warning confirms that external sync is unavailable.
 Free UART1 or correct the reported configuration/resource error, then
 deinitialize and initialize BLE Log again to retry sync initialization.
 
+`io_level` records the sampled pin level, or zero when sync is unavailable.
+Sampling after falling T0 also records zero; this field does not indicate
+whether a complete external marker was emitted.
+
 `ble_log_ts_sync_io_toggle_enable()` and its compatibility name
 `ble_log_sync_enable()` ignore their argument and return whether BLE Log is
 initialized; they do not start or stop sync output.
