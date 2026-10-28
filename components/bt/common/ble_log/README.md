@@ -29,6 +29,10 @@ writers retain reserve access and fail-fast behavior.
 The Internal Snapshot and UART0 redirection transports are not members of the
 bitmap pool.
 
+`ble_log_sync` owns clock sampling and optional external markers. Runtime
+schedules periodic work; LBM allocates snapshot IDs and transports, then uses
+the sync sampling result to assemble each snapshot.
+
 Periodic flushing scans the whole bounded pool, not just OPEN bitmap hints:
 writers temporarily remove their hints while writing or holding a claim. A
 failed try-lock leaves `pending_seal`; the next claim seals the old buffer
@@ -226,19 +230,93 @@ bool ble_log_ts_sync_io_toggle_enable(bool enable);
 bool ble_log_sync_enable(bool enable);  /* compatibility shim */
 ```
 
-`ble_log_enable()` gates public producers only. Periodic system output remains
-active while that gate is closed.
+`ble_log_enable(false)` stops new public log writes, but does not stop periodic
+system output. Buffered logs continue to be flushed so partially filled buffers
+do not retain old data indefinitely. Periodic snapshots and task-binding
+broadcasts also continue, keeping clock samples, diagnostic statistics and task
+mappings available while business logging is paused. External sync markers,
+when configured and available, follow the periodic snapshots and remain active
+until deinitialization.
 
-`ble_log_ts_sync_io_toggle_enable()` controls only the optional external
-analyzer GPIO, which starts disabled and low. Disabling it leaves the IO low
-after a final falling edge;
-periodic clock sampling, OPEN transport flushing, and Internal Snapshots
-continue. When the GPIO feature is not built, the call remains a
-lifecycle-checked no-op. `ble_log_sync_enable()` is the backward-compatible
-name for the same behavior.
+When `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` is enabled, set
+`CONFIG_BLE_LOG_SYNC_IO_NUM` to the sync output GPIO. Output starts at BLE Log
+initialization and stops at deinitialization, independently of
+`ble_log_enable()`. UART1 is reserved for sync and must not be used by the
+console, log transport or application. UART0 remains available to the console.
+
+If sync initialization fails, BLE Log continues logging and producing periodic
+clock snapshots without external markers (`io_level` is zero). A `BLE-Log-Sync`
+error identifies the cause: an invalid GPIO, UART1 occupied by the console,
+log transport or an installed driver, or a failed driver/GPIO operation with
+its error code. A `BLE-Log` warning confirms that external sync is unavailable.
+Free UART1 or correct the reported configuration/resource error, then
+deinitialize and initialize BLE Log again to retry sync initialization.
+
+`io_level` records the sampled pin level, or zero when sync is unavailable.
+Sampling after falling T0 also records zero; this field does not indicate
+whether a complete external marker was emitted.
+
+`ble_log_ts_sync_io_toggle_enable()` and its compatibility name
+`ble_log_sync_enable()` ignore their argument and return whether BLE Log is
+initialized; they do not start or stop sync output.
+
+### Sync wire format
+
+The pin idles high. Each marker consists of a GPIO falling edge (T0), a low
+BREAK, a high separator, and seven non-inverted UART bytes at **1 Mbaud, 8N1**:
+
+```text
+high >= 64 us | GPIO falling T0 | high >= 2 us | 7 UART bytes | high idle
+             | low >= 12 us    | separator    | 70 us total  |
+             | BREAK + sample |              | count + ESP  |
+```
+
+UART1 drives the pin throughout. TX inversion produces T0, followed by LC,
+ESP and OS clock sampling in the same critical section. Normal TX polarity
+is restored outside that section before sending the label. T0 is the start
+of BREAK, not the first UART payload start bit. BREAK and separator durations
+may be extended by scheduling.
+
+| Byte offsets | Value | Encoding |
+| --- | --- | --- |
+| 0..2 | Snapshot `anchor_count` | 24-bit little-endian |
+| 3..6 | The same snapshot's raw `esp_ts` | 32-bit little-endian, microseconds |
+
+Count `0x123456` and ESP time `0x78563412` produce `56 34 12 12 34 56 78`.
+There is no header or CRC. The snapshot payload layout is unchanged.
+
+Only periodic snapshots emit markers, after acquiring their transport and
+count. INIT and FLUSH do not. A skipped marker leaves ordinary sampling intact;
+a failed label send after T0 preserves the original sample.
+
+### Decoding and channel matching
+
+- Find high idle >=64 us followed by falling T0, continuous low BREAK >=12 us,
+  and high separator >=2 us. Decode exactly seven consecutive 8N1 bytes at
+  1 Mbaud, checking start/stop bits and byte spacing. Emit
+  `(T0, count24, esp_ts32)`.
+- Discard incomplete or malformed groups and isolated BREAKs. Do not join them
+  to a later marker's payload. A separator >=64 us is ambiguous and must not
+  be paired without additional evidence. A capture starting inside a group
+  waits for the next complete marker; a reset pulse alone is not a label.
+- Match `(count24, esp_ts32)` against periodic snapshots to associate a channel
+  with a device's log. Confirm with multiple matches, then use the full
+  snapshot clocks for synchronization. Compare raw 32-bit ESP time, which
+  wraps every 2^32 us, rather than an unwrapped timestamp. If more than one
+  device or restart period matches, retain the ambiguity until further
+  records resolve it.
+
+For a generic UART decoder, select 1 Mbaud, 8N1, no inversion. BREAK may appear
+as a framing error or an extra zero byte; it is not part of the seven-byte
+payload.
+
+### Flush and record writes
 
 `ble_log_flush()` is an ordinary FreeRTOS task API. Do not call it from an ISR,
 critical section, or the shared ESP Timer task.
+The shutdown handler uses it to drain logs before a software restart. Normal
+operation, including example initialization, relies on periodic OPEN flushing;
+startup statistics continue from INIT without an extra FLUSH snapshot or reset.
 
 A public or LL record that cannot fit completely in one pool transport is
 rejected and counted as lost; BLE Log never emits a truncated record.
@@ -303,8 +381,8 @@ still emitted.
 | `CONFIG_BLE_LOG_LL_ENABLED` | target dependent | Controller LL logging |
 | `CONFIG_BLE_LOG_HCI_LOG_ENABLED` | y | HCI capture from Host or Controller, selected by transport |
 | `CONFIG_BLE_LOG_TASK_ID_MAX` | 16 | Task-id registry size, range 2..32; 16 bytes of RAM per entry |
-| `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional analyzer GPIO toggle |
-| `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting the GPIO toggle |
+| `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional UART1 sync label output |
+| `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting sync label output |
 | `CONFIG_BLE_LOG_PRPH_USB` | n | Use the USB OTG device as transport (see below) |
 | `CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG` | n | Use USB Serial/JTAG as transport (see USB Serial/JTAG transport) |
 | `CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` | 2048 | CDC TX FIFO size; must equal `CONFIG_TINYUSB_CDC_TX_BUFSIZE` |

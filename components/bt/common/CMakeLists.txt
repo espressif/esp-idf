@@ -255,6 +255,7 @@ if(CONFIG_BLE_LOG_ENABLED)
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_lbm_v2.c"
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_redir.c"
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_rt.c"
+        "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_sync.c"
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_task_registry.c"
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log_util.c"
     )
