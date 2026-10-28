@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,10 +37,18 @@ void sar_periph_ctrl_init(void)
     //Add other periph power control initialisation here
 }
 
+/**
+ * This gets incremented when s_sar_power_acquire() is called,
+ * and decremented when s_sar_power_release() is called.
+ * PWDET and REG_I2C are powered down when the value reaches zero.
+ * Should be modified within critical section.
+ */
+static int s_sar_power_on_cnt;
+
 void sar_periph_ctrl_power_enable(void)
 {
     esp_os_enter_critical_safe(&rtc_spinlock);
-    sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_FSM);
+    sar_ctrl_ll_set_power_mode(s_sar_power_on_cnt > 0 ? SAR_CTRL_LL_POWER_ON : SAR_CTRL_LL_POWER_FSM);
     esp_os_exit_critical_safe(&rtc_spinlock);
 }
 
@@ -50,14 +58,6 @@ void sar_periph_ctrl_power_disable(void)
     sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_OFF);
     esp_os_exit_critical_safe(&rtc_spinlock);
 }
-
-/**
- * This gets incremented when s_sar_power_acquire() is called,
- * and decremented when s_sar_power_release() is called.
- * PWDET and REG_I2C are powered down when the value reaches zero.
- * Should be modified within critical section.
- */
-static int s_sar_power_on_cnt;
 
 static void s_sar_power_acquire(void)
 {
