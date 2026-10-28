@@ -71,10 +71,11 @@ void aes_hal_mode_init(esp_aes_mode_t mode)
 {
     /* Set the algorithm mode CBC, CFB ... */
     aes_ll_set_block_mode(mode);
-    /* Presently hard-coding the INC function to 32 bit */
-    if (mode == ESP_AES_BLOCK_MODE_CTR) {
-        aes_ll_set_inc();
-    }
+}
+
+void aes_hal_set_inc(esp_aes_inc_t inc)
+{
+    aes_ll_set_inc(inc);
 }
 
 void aes_hal_set_iv(const uint8_t *iv)

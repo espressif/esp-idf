@@ -723,6 +723,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
             ctx->key_in_hardware = aes_hal_setkey(ctx->key, ctx->key_bytes, ESP_AES_DECRYPT);
 
             aes_hal_mode_init(ESP_AES_BLOCK_MODE_CTR);
+            aes_hal_set_inc(ctx->ctr_inc32 ? ESP_AES_INC_32 : ESP_AES_INC_128);
             aes_hal_set_iv(nonce_counter);
 
             ret = esp_aes_process_dma(ctx, input, output, length, stream_block);
@@ -747,6 +748,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
         ctx->key_in_hardware = aes_hal_setkey(ctx->key, ctx->key_bytes, ESP_AES_ENCRYPT);
 
         int c, i;
+        int inc_end = ctx->ctr_inc32 ? AES_BLOCK_BYTES - 4 : 0;
         while (length--) {
             if (n == 0) {
                 ret = esp_aes_block(ctx, nonce_counter, stream_block);
@@ -755,7 +757,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
                     return ret;
                 }
 
-                for (i = 16; i > 0; i--) {
+                for (i = AES_BLOCK_BYTES; i > inc_end; i--) {
                     if (++nonce_counter[i - 1] != 0) {
                         break;
                     }

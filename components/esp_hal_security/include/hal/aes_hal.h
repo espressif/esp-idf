@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,13 @@ void aes_hal_enable_pseudo_rounds(bool enable, uint8_t base, uint8_t increment, 
  * @param mode mode of operation, e.g. CTR or CBC
  */
 void aes_hal_mode_init(esp_aes_mode_t mode);
+
+/**
+ * @brief Sets the counter incrementing function for AES-CTR
+ *
+ * @param inc INC32 or INC128
+ */
+void aes_hal_set_inc(esp_aes_inc_t inc);
 
 /**
  * @brief Sets the initialization vector for the transform
