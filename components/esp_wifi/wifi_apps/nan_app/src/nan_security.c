@@ -2181,8 +2181,20 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
     if (ndl == NULL && peer_nmi != NULL) {
         ndl = nan_ndl_claim_for_pub_peer(pub_id, peer_nmi, ndp_id);
     }
-    if (ndl == NULL) {
+    /* M1 must not reuse an unrelated established NDL on the same publish:
+     * with no free slot it would overwrite that NDL's ANonce/replay counter.
+     * M2/M3/M4 still fall back to recover their own established NDL. */
+    if (ndl == NULL && msg_type != 1) {
         ndl = nan_find_ndl_by_pub_id(pub_id);
+    }
+
+    /* Only update a pre-claim (ndp_id == 0) or the matching request. An
+     * established NDP with a different ndp_id is a duplicate request; the
+     * indication callback rejects it, so don't overwrite its security state. */
+    if (ndl && ndl->ndp_id != 0 && ndp_id != ndl->ndp_id) {
+        ESP_LOGW(TAG, "NDP Key Desc: ignoring msg %d for active NDP id %d (incoming ndp_id=%d, pub=%d)",
+                 msg_type, ndl->ndp_id, ndp_id, pub_id);
+        return;
     }
 
     if (ndl) {
@@ -2314,13 +2326,9 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
             forced_memzero(plain, sizeof(plain));   /* scrub decrypted group keys */
         }
     } else if (msg_type == 1) {
-        /* M1 received but NDL not created yet — store as pending */
-        s_pending_m1.valid = true;
-        s_pending_m1.pub_id = pub_id;
-        memcpy(s_pending_m1.anonce, key_nonce, NAN_NONCE_LEN);
-        memcpy(s_pending_m1.rx_replay_counter, replay_counter, NAN_REPLAY_COUNTER_LEN);
-        memcpy(s_pending_m1.key_rsc, key_rsc, NAN_KEY_RSC_LEN);
-        ESP_LOGI(TAG, "NDP Key Desc: M1 stored as pending for pub_id=%d", pub_id);
+        /* No free slot: drop the M1. Don't cache it as pending — a stale
+         * entry would later install the wrong ANonce on a new NDP. */
+        ESP_LOGW(TAG, "NDP Key Desc: dropping M1 for pub_id=%d (no free NDL slot)", pub_id);
     } else {
         ESP_LOGI(TAG, "NDP Key Desc: no matching NDL (ndp_id=%d, pub_id=%d), key desc not applied",
                  ndp_id, pub_id);
