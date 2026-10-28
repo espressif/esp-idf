@@ -34,8 +34,8 @@ CPU 0 interrupt status:
  31     *      *    Free
 CPU 1 interrupt status:
  Int  Level  Type   Status
-  0     ?      ?    Used: CPU_FROM_CPU_1
-  1     ?      ?    Used: SYSTIMER_TARGET1
+  0     1    Level  Used: CPU_FROM_CPU_1
+  1     1    Level  Used: SYSTIMER_TARGET1
   2     *      *    Free
   3     *      *    Free
   4     *      *    Free

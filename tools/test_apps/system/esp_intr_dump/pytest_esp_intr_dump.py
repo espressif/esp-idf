@@ -45,7 +45,6 @@ def test_esp_intr_dump_shared(dut: Dut) -> None:
     dut.expect_exact(PROMPT)
 
 
-# TODO: IDF-9512, Update the expected output of dual core RISC-V chips when the issue is resolved
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_esp_intr_dump_expected_output(dut: Dut) -> None:
