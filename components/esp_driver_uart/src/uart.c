@@ -232,7 +232,7 @@ static esp_err_t uart_acquire_residual_sclk(uart_port_t uart_num)
     // Keep the residual source active until the caller switches to its target source
     ESP_RETURN_ON_FALSE(current_sclk != -1, ESP_ERR_INVALID_STATE, UART_TAG,
                         "invalid residual source clock");
-    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(current_sclk), UART_TAG,
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(current_sclk, NULL), UART_TAG,
                         "failed to acquire residual source clock");
     uart_context[uart_num].sclk_sel = current_sclk;
     return ESP_OK;
@@ -243,7 +243,7 @@ static esp_err_t uart_switch_sclk(uart_port_t uart_num, soc_module_clk_t target_
 {
     // A baud rate of -1 requests only a source clock switch
     esp_err_t ret;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(target_sclk), UART_TAG,
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(target_sclk, NULL), UART_TAG,
                         "failed to acquire target source clock");
 
     soc_module_clk_t old_sclk;

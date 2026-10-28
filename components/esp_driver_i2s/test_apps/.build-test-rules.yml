@@ -6,7 +6,7 @@ components/esp_driver_i2s/test_apps/i2s:
     - if: CONFIG_NAME == "flash_enc" and SOC_FLASH_ENC_SUPPORTED != 1
   depends_components:
     - esp_driver_i2s
-    - esp_driver_pcnt
+    - esp_driver_uart
     - esp_driver_dma
     - esp_hal_i2s
     - esp_hw_support

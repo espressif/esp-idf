@@ -125,6 +125,7 @@ extern "C" {
     .ext_clk_freq_hz = 0, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .bclk_div = 8, \
+    .flags = {}, \
 }
 
 /**
@@ -165,6 +166,9 @@ typedef struct {
                                                  */
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of MCLK to the sample rate, only take effect for master role */
     uint32_t                bclk_div;           /*!< The division from MCLK to BCLK, only take effect for slave role, it shouldn't be smaller than 8. Increase this field when data sent by slave lag behind */
+    struct {
+        uint32_t            clk_src_adjustable : 1; /*!< Set to enable clock source frequency adjustment. Only supported for `I2S_CLK_SRC_APLL` for now */
+    } flags;                                    /*!< I2S clock configuration flags */
 } i2s_tdm_clk_config_t;
 
 /**

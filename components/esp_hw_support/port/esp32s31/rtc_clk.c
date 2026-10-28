@@ -352,7 +352,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
         bool need_configure = false;
         if (!s_is_cpll_acquired) {
             need_configure = !esp_clk_tree_is_power_on(SOC_ROOT_CIRCUIT_CLK_CPLL);
-            esp_clk_tree_acquire_src(SOC_MOD_CLK_CPLL);
+            esp_clk_tree_acquire_src(SOC_MOD_CLK_CPLL, NULL);
             s_is_cpll_acquired = true;
         }
         if (need_configure || (s_cur_cpll_freq != (int)new_src_freq_mhz)) {
@@ -360,7 +360,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
         }
     } else if (new_src == SOC_CPU_CLK_SRC_PLL_F240M) {
         if (!s_is_pll_f240m_acquired) {
-            esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F240M);
+            esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F240M, NULL);
             s_is_pll_f240m_acquired = true;
         }
         s_cur_bbpll_freq = CLK_LL_PLL_480M_FREQ_MHZ;

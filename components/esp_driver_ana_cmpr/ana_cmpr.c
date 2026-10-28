@@ -330,7 +330,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
 
     // Set clock source (use default if not specified in config)
     soc_module_clk_t clk_src = config->clk_src ? config->clk_src : ANA_CMPR_CLK_SRC_DEFAULT;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src), err, TAG, "enable clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src, NULL), err, TAG, "enable clock source failed");
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
     analog_cmpr_ll_set_clk_src(unit_id, clk_src);
     // Set clock divider to 1

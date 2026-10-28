@@ -241,7 +241,7 @@ esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "tsens not in init state");
 
-    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(tsens->clk_src), TAG, "clock source enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(tsens->clk_src, NULL), TAG, "clock source enable failed");
 
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     temperature_sensor_ll_wakeup_enable(true);

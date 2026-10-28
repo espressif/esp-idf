@@ -821,50 +821,101 @@ err:
 }
 
 #if SOC_I2S_SUPPORTS_APLL
-static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
+/**
+ * @brief Resolve the usable APLL frequency, configuring it when the acquired access mode permits
+ */
+static esp_err_t i2s_resolve_apll_freq(i2s_chan_handle_t handle, uint32_t mclk_freq_hz,
+                                       bool clk_src_adjustable, i2s_apll_operation_t *operation,
+                                       uint32_t *real_freq_hz)
 {
-    /* Calculate the expected APLL  */
-    int mclk_div = (int)((CLK_LL_APLL_MIN_HZ / mclk_freq_hz) + 1);
+    ESP_RETURN_ON_FALSE(mclk_freq_hz, ESP_ERR_INVALID_ARG, TAG, "invalid MCLK frequency");
+
+    uint32_t mclk_div = CLK_LL_APLL_MIN_HZ / mclk_freq_hz + 1;
     /* apll_freq = mclk * div
         * when div = 1, hardware will still divide 2
         * when div = 0, the final mclk will be unpredictable
         * So the div here should be at least 2 */
     mclk_div = mclk_div < 2 ? 2 : mclk_div;
-    uint32_t expt_freq = mclk_freq_hz * mclk_div;
-    if (expt_freq > CLK_LL_APLL_MAX_HZ) {
-        ESP_LOGE(TAG, "The required APLL frequency exceed its maximum value");
-        return 0;
+    uint64_t expected_freq_hz = (uint64_t)mclk_freq_hz * mclk_div;
+    ESP_RETURN_ON_FALSE(expected_freq_hz <= CLK_LL_APLL_MAX_HZ, ESP_ERR_INVALID_ARG, TAG,
+                        "required APLL frequency exceeds its maximum value");
+    operation->active = true;
+    operation->adjustable = clk_src_adjustable;
+
+    bool apll_in_use = handle->state != I2S_CHAN_STATE_REGISTER &&
+                       handle->clk_src == I2S_CLK_SRC_APLL;
+    if (apll_in_use) {
+        ESP_RETURN_ON_FALSE(handle->apll_adjustable == clk_src_adjustable,
+                            ESP_ERR_INVALID_STATE, TAG, "can't change active APLL access mode");
+        if (!handle->apll_adjustable) {
+            *real_freq_hz = handle->sclk_hz;
+            operation->frequency_hz = *real_freq_hz;
+            return ESP_OK;
+        }
+    } else {
+        esp_clk_tree_apll_info_t apll_info = {};
+        ESP_RETURN_ON_ERROR(esp_clk_tree_apll_get_info(&apll_info), TAG, "failed to get APLL information");
+        if (apll_info.config_valid) {
+            *real_freq_hz = apll_info.frequency_hz;
+            operation->frequency_hz = *real_freq_hz;
+            return ESP_OK;
+        }
     }
-    uint32_t real_freq = 0;
-    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
-    if (ret == ESP_ERR_INVALID_ARG) {
-        ESP_LOGE(TAG, "set APLL freq failed due to invalid argument");
-        return 0;
+
+    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expected_freq_hz, real_freq_hz);
+    if (ret == ESP_OK && apll_in_use && *real_freq_hz != handle->sclk_hz) {
+        operation->frequency_changed = true;
     }
-    if (ret == ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "APLL is occupied already, it is working at %"PRIu32" Hz while the expected frequency is %"PRIu32" Hz", real_freq, expt_freq);
-        ESP_LOGW(TAG, "Trying to work at %"PRIu32" Hz...", real_freq);
+    if (ret == ESP_OK) {
+        operation->frequency_hz = *real_freq_hz;
     }
-    ESP_LOGD(TAG, "APLL expected frequency is %"PRIu32" Hz, real frequency is %"PRIu32" Hz", expt_freq, real_freq);
-    return real_freq;
+    ESP_LOGD(TAG, "APLL expected frequency is %"PRIu64" Hz, real frequency is %"PRIu32" Hz",
+             expected_freq_hz, *real_freq_hz);
+    return ret;
 }
 #endif
 
-uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
+esp_err_t i2s_resolve_source_clk_freq(i2s_chan_handle_t handle, i2s_clock_src_t clk_src,
+                                      bool clk_src_adjustable, uint32_t mclk_freq_hz,
+                                      i2s_apll_operation_t *operation, uint32_t *clk_freq_hz)
 {
-    uint32_t clk_freq = 0;
+    ESP_RETURN_ON_FALSE(handle && operation && clk_freq_hz,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 #if SOC_I2S_SUPPORTS_APLL
     if (clk_src == I2S_CLK_SRC_APLL) {
-        return i2s_set_get_apll_freq(mclk_freq_hz);
+        return i2s_resolve_apll_freq(handle, mclk_freq_hz, clk_src_adjustable, operation, clk_freq_hz);
     }
 #endif
+    if (clk_src_adjustable) {
+        ESP_LOGW(TAG, "adjustable clock source is only supported for APLL; ignoring");
+    }
 #ifdef I2S_LL_DEFAULT_CLK_SRC
     if (clk_src == I2S_CLK_SRC_DEFAULT) {
         clk_src = I2S_LL_DEFAULT_CLK_SRC;
     }
 #endif
-    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq);
-    return clk_freq;
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, clk_freq_hz);
+    ESP_RETURN_ON_FALSE(*clk_freq_hz, ESP_ERR_INVALID_STATE, TAG, "clock source has no configured frequency");
+    return ESP_OK;
+}
+
+void i2s_apll_operation_finish(i2s_chan_handle_t handle, i2s_apll_operation_t *operation, bool success)
+{
+#if SOC_I2S_SUPPORTS_APLL
+    if (operation->active && (success || operation->frequency_changed)) {
+        handle->apll_adjustable = operation->adjustable;
+        handle->sclk_hz = operation->frequency_hz;
+        if (!success) {
+            ESP_LOGW(TAG, "APLL frequency changed to %"PRIu32" Hz, but I2S clock configuration failed; "
+                     "reconfigure the I2S clock",
+                     operation->frequency_hz);
+        }
+    }
+#else
+    (void)handle;
+    (void)success;
+#endif
+    *operation = (i2s_apll_operation_t) {};
 }
 
 #if SOC_GDMA_SUPPORTED
@@ -1874,6 +1925,8 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
         xSemaphoreTake(handle->mutex, portMAX_DELAY);
         goto result;
     }
+    ESP_RETURN_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG,
+                        "I2S channel must be disabled before tuning the rate");
     ESP_RETURN_ON_FALSE(tune_cfg->max_delta_mclk >= tune_cfg->min_delta_mclk, ESP_ERR_INVALID_ARG, TAG, "invalid range");
 
     uint32_t new_mclk = 0;
@@ -1899,16 +1952,18 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
         new_mclk = handle->origin_mclk_hz + tune_cfg->min_delta_mclk;
     }
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    uint32_t new_sclk_hz = handle->sclk_hz;
+    i2s_apll_operation_t apll_operation = {};
 #if SOC_I2S_SUPPORTS_APLL
     if (handle->clk_src == I2S_CLK_SRC_APLL) {
-        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src(SOC_MOD_CLK_APLL), err, TAG, "APLL disable failed");
-        handle->sclk_hz = i2s_set_get_apll_freq(new_mclk);
-        ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL), err, TAG, "APLL enable failed");
+        ESP_GOTO_ON_ERROR(i2s_resolve_source_clk_freq(handle, I2S_CLK_SRC_APLL, handle->apll_adjustable, new_mclk,
+                                                      &apll_operation, &new_sclk_hz),
+                          err, TAG, "APLL frequency update failed");
     }
 #endif
     /* Calculate the new divider */
     hal_utils_clk_div_t mclk_div = {};
-    i2s_hal_calc_mclk_precise_division(handle->sclk_hz, new_mclk, &mclk_div);
+    i2s_hal_calc_mclk_precise_division(new_sclk_hz, new_mclk, &mclk_div);
     /* mclk_div = sclk / mclk >= 2 */
     if (mclk_div.integer < 2) {
         ret = ESP_ERR_INVALID_ARG;
@@ -1929,7 +1984,13 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
         }
     }
     /* Save the current mclk frequency */
-    handle->curr_mclk_hz = (uint32_t)(((uint64_t)handle->sclk_hz * mclk_div.denominator) /
+    handle->sclk_hz = new_sclk_hz;
+#if SOC_I2S_SUPPORTS_APLL
+    if (handle->clk_src == I2S_CLK_SRC_APLL) {
+        i2s_apll_operation_finish(handle, &apll_operation, true);
+    }
+#endif
+    handle->curr_mclk_hz = (uint32_t)(((uint64_t)new_sclk_hz * mclk_div.denominator) /
                                       (mclk_div.integer * mclk_div.denominator + mclk_div.numerator));
 result:
     /* Assign the information if needed */
@@ -1954,6 +2015,7 @@ result:
     return ret;
 
 err:
+    i2s_apll_operation_finish(handle, &apll_operation, false);
     xSemaphoreGive(handle->mutex);
     return ret;
 }

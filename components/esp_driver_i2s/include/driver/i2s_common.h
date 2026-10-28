@@ -182,7 +182,8 @@ esp_err_t i2s_channel_get_info(i2s_chan_handle_t handle, i2s_chan_info_t *chan_i
 
 /**
  * @brief Enable the I2S channel
- * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
+ * @note  Tuning the rate is only allowed when the channel state is READY (i.e., channel has been initialized, but not started).
+ *        Passing NULL for `tune_cfg` only queries the current clock information and is also allowed while the channel is running.
  *        the channel will enter RUNNING state once it is enabled successfully.
  * @note  Enable the channel can start the I2S communication on hardware. It will start outputting BCLK and WS signal.
  *        For MCLK signal, it will start to output when initialization is finished
@@ -304,6 +305,7 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
  * @return
  *      - ESP_OK                 Tune the clock successfully
  *      - ESP_ERR_INVALID_ARG    Tune the clock failed because of the invalid argument like NULL pointer or out of range
+ *      - ESP_ERR_INVALID_STATE  Tune the clock failed because the channel is not in READY state
  *      - ESP_ERR_NOT_SUPPORTED  Tune the clock failed because this function does not support to tune the external clock source
  */
 esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_config_t *tune_cfg, i2s_tuning_info_t *tune_info);

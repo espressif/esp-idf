@@ -60,9 +60,20 @@ I2S 时钟
     :SOC_I2S_SUPPORTS_PLL_F120M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`：120 MHz PLL 时钟。
     :SOC_I2S_SUPPORTS_PLL_F96M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`：96 MHz PLL 时钟。
     :SOC_I2S_SUPPORTS_PLL_F240M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`：240 MHz PLL 时钟。
-    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`：音频 PLL 时钟。其频率可根据采样率进行配置，在高采样率应用中精度更高。但如果 APLL 已经被 EMAC 或其他通道占用，则无法更改 APLL 频率，驱动程序将尝试在原有 APLL 频率下工作。如果原有 APLL 频率无法满足 I2S 的需求，时钟配置将失败。
+    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`：音频 PLL 时钟。其频率可根据采样率进行配置，在高采样率应用中精度更高。I2S 可以固定共享或独占可调的方式使用 APLL。
     :SOC_I2S_SUPPORTS_RC_FAST: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_RC_FAST`：RC_FAST 时钟源。
     :SOC_I2S_SUPPORTS_EXTERNAL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_EXTERNAL`：外部时钟源。
+
+.. only:: SOC_I2S_SUPPORTS_APLL
+
+    APLL 使用方式
+    ^^^^^^^^^^^^^
+
+    选择 :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL` 后，可以通过位于 STD、TDM、PDM TX 和 PDM RX 时钟配置结构体中的 ``flags.clk_src_adjustable`` 选择 APLL 的使用方式：
+
+    - ``false`` （默认）：以固定模式使用 APLL，允许多个外设共享。首次使用且 APLL 尚未配置时，I2S 会根据采样率设置合适的 APLL 频率；APLL 已配置时，I2S 沿用现有频率并调整自身分频器。如果现有频率无法产生有效的 I2S 时钟，配置将失败。
+    - ``true`` ：以可调模式独占 APLL。I2S 可以在重新配置时钟或调用 :cpp:func:`i2s_channel_tune_rate` 时调整 APLL 频率，以获得更精细的时钟分频；其他外设无法同时申请 APLL。由于双工通道分别申请 APLL，不能让两个通道同时使用可调模式。
+
 
 时钟术语
 ^^^^^^^^

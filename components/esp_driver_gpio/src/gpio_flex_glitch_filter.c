@@ -152,7 +152,7 @@ esp_err_t gpio_new_flex_glitch_filter(const gpio_flex_glitch_filter_config_t *co
     int filter_id = filter->filter_id;
 
     soc_module_clk_t clk_src = config->clk_src ? config->clk_src : GLITCH_FILTER_CLK_SRC_DEFAULT;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src), err, TAG, "enable IOMUX clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src, NULL), err, TAG, "enable IOMUX clock source failed");
     filter->clk_src = clk_src;
     ESP_GOTO_ON_ERROR(io_mux_acquire_clock_source(clk_src), err, TAG, "acquire IOMUX clock source failed");
     filter->io_mux_clk_acquired = true;

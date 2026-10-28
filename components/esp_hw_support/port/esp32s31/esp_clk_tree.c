@@ -404,17 +404,17 @@ void esp_clk_tree_initialize(void)
     s_clk_tree_initialized = true;
 #if CONFIG_USJ_ENABLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
     /* Bootloader / USJ may keep BBPLL 480M on; declare a permanent hold. */
-    esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL, NULL);
 #endif
 #if CONFIG_ESP_ENABLE_PVT
-    esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL, NULL);
 #endif
     /* Flash + CPU: sync clk_tree refs with HW already selected at boot. */
-    esp_clk_tree_acquire_src((soc_module_clk_t)flash_clk_src);
+    esp_clk_tree_acquire_src((soc_module_clk_t)flash_clk_src, NULL);
     if (cpu_src == SOC_CPU_CLK_SRC_CPLL) {
-        esp_clk_tree_acquire_src(SOC_MOD_CLK_CPLL);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_CPLL, NULL);
     } else if (cpu_src == SOC_CPU_CLK_SRC_PLL_F240M) {
-        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F240M);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F240M, NULL);
     }
 }
 
@@ -539,7 +539,8 @@ FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gat
     return ESP_OK;
 }
 
-esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire,
+                                  const esp_clk_tree_src_config_t *config)
 {
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID || clk_src == SOC_MOD_CLK_XTAL) {
         /* Not managed by esp_clk_tree*/
@@ -555,11 +556,10 @@ esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
     switch (clk_src) {
     case SOC_MOD_CLK_APLL:
         if (acquire) {
-            esp_clk_tree_apll_acquire();
+            return esp_clk_tree_apll_acquire(config);
         } else {
-            esp_clk_tree_apll_release();
+            return esp_clk_tree_apll_release();
         }
-        return ESP_OK;
     case SOC_MOD_CLK_MPLL:
         if (acquire) {
             return esp_clk_tree_mpll_acquire();

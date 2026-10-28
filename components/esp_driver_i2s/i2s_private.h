@@ -220,6 +220,9 @@ struct i2s_channel_obj_t {
     uint32_t                total_slot;     /*!< Total slot number */
     i2s_destination_t       destination;    /*!< Data path destination (DMA memory path vs Bluetooth controller where supported) */
     i2s_clock_src_t         clk_src;        /*!< Clock source */
+#if SOC_I2S_SUPPORTS_APLL
+    bool                    apll_adjustable; /*!< Whether the current APLL acquisition is adjustable */
+#endif
     uint32_t                sclk_hz;        /*!< Source clock frequency */
     uint32_t                origin_mclk_hz; /*!< Original mclk frequency */
     uint32_t                curr_mclk_hz;   /*!< Current mclk frequency */
@@ -358,15 +361,35 @@ esp_err_t i2s_alloc_dma_resources(i2s_chan_handle_t handle, uint32_t bufsize);
  */
 uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uint32_t dma_frame_num);
 
+typedef struct {
+    bool active;
+    bool frequency_changed;
+    bool adjustable;
+    uint32_t frequency_hz;
+} i2s_apll_operation_t;
+
 /**
- * @brief Get the frequency of the source clock
+ * @brief Resolve the frequency of an acquired source clock, configuring APLL when selected and permitted
  *
+ * @param handle        I2S channel handle
  * @param clk_src       clock source
+ * @param clk_src_adjustable Whether the clock source frequency can be adjusted
  * @param mclk_freq_hz  Expected mclk frequency in Hz
+ * @param operation     APLL side effects to finish after validating the I2S divider
+ * @param clk_freq_hz   Actual source clock frequency
  * @return
- *      - Actual source clock frequency
+ *      - ESP_OK: Source clock frequency obtained
+ *      - ESP_ERR_INVALID_ARG: Invalid source clock frequency
+ *      - ESP_ERR_INVALID_STATE: APLL resource conflict or access mode change
  */
-uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz);
+esp_err_t i2s_resolve_source_clk_freq(i2s_chan_handle_t handle, i2s_clock_src_t clk_src,
+                                      bool clk_src_adjustable, uint32_t mclk_freq_hz,
+                                      i2s_apll_operation_t *operation, uint32_t *clk_freq_hz);
+
+/**
+ * @brief Finish an APLL operation after validating and applying an I2S clock configuration
+ */
+void i2s_apll_operation_finish(i2s_chan_handle_t handle, i2s_apll_operation_t *operation, bool success);
 
 /**
  * @brief Check gpio validity and attach to corresponding signal

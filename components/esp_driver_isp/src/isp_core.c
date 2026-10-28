@@ -128,7 +128,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     if (out_clk_freq_hz != proc_config->clk_hz) {
         ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32"Hz", out_clk_freq_hz);
     }
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL), err, TAG, "clock source enable failed");
     PERIPH_RCC_ATOMIC() {
         isp_ll_select_clk_source(clk_src);
         isp_ll_set_clock_div(&clk_div);

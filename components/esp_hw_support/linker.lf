@@ -21,8 +21,8 @@ entries:
         if SOC_CLK_MPLL_SUPPORTED = y:
             esp_clk_tree_common:esp_clk_tree_mpll_release (noflash)
         if SOC_CLK_APLL_SUPPORTED = y:
-            esp_clk_tree_common:esp_clk_tree_apll_acquire (noflash)
-            esp_clk_tree_common:esp_clk_tree_apll_release (noflash)
+            esp_clk_tree_apll:esp_clk_tree_apll_acquire (noflash)
+            esp_clk_tree_apll:esp_clk_tree_apll_release (noflash)
         rtc_clk (noflash)
     if IDF_TARGET_ESP32 = y:
         rtc_clk:rtc_clk_cpu_freq_to_pll_mhz (noflash)

@@ -206,15 +206,15 @@ void esp_clk_tree_initialize(void)
     s_clk_tree_initialized = true;
 #if CONFIG_USJ_ENABLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
     /* Bootloader / USJ may keep PLL_F48M on; declare a permanent hold. */
-    esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F48M);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F48M, NULL);
 #endif
     /* Flash + CPU: sync clk_tree refs with HW already selected at boot.
      * Flash uses gated F64M; CPU holds the ungated XTAL_X2 / PLL root, not the F64M / F96M gates. */
-    esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2_F64M);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2_F64M, NULL);
     if (cpu_src == SOC_CPU_CLK_SRC_PLL) {
-        esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL, NULL);
     } else if (cpu_src == SOC_CPU_CLK_SRC_XTAL_X2) {
-        esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2, NULL);
     }
 }
 
@@ -317,8 +317,10 @@ FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gat
     return ESP_OK;
 }
 
-esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire,
+                                  const esp_clk_tree_src_config_t *config)
 {
+    (void)config;
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID || clk_src == SOC_MOD_CLK_XTAL) {
         /* Not managed by esp_clk_tree */
         return ESP_OK;

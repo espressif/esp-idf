@@ -779,7 +779,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 #endif //CONFIG_PM_ENABLE
 
     // Set clock source, enable bus clock and reset controller
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(node->curr_clk_src), err, TAG, "enable clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(node->curr_clk_src, NULL), err, TAG, "enable clock source failed");
     ESP_LOGD(TAG, "set clock source to %d, freq: %ld Hz", node->curr_clk_src, node->src_freq_hz);
     _twai_rcc_clock_sel(node->ctrlr_id, node->curr_clk_src);
     _twai_rcc_clock_ctrl(ctrlr_id, true);
