@@ -45,7 +45,8 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_mode,
                                tBTA_DM_PM_REQ pm_req);
 static void bta_dm_pm_timer_cback(void *p_tle);
-static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status, UINT16 value, UINT8 hci_status);
+static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status, UINT16 value, UINT8 hci_status,
+                                const tBTM_SSR_PARAMS *p_ssr);
 static BOOLEAN bta_dm_pm_park(BD_ADDR peer_addr);
 static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index);
 static BOOLEAN bta_dm_pm_is_sco_active (void);
@@ -841,7 +842,8 @@ void bta_dm_pm_active(BD_ADDR peer_addr)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status, UINT16 value, UINT8 hci_status)
+static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status, UINT16 value, UINT8 hci_status,
+                                const tBTM_SSR_PARAMS *p_ssr)
 {
     tBTA_DM_PM_BTM_STATUS  *p_buf;
 
@@ -851,6 +853,17 @@ static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status, UINT16 v
         p_buf->value = value;
         p_buf->hci_status = hci_status;
         bdcpy(p_buf->bd_addr, bd_addr);
+        if ((status == BTM_PM_STS_SSR) && (p_ssr != NULL)) {
+            p_buf->max_tx_lat = p_ssr->max_tx_lat;
+            p_buf->max_rx_lat = p_ssr->max_rx_lat;
+            p_buf->min_remote_to = p_ssr->min_remote_to;
+            p_buf->min_local_to = p_ssr->min_local_to;
+        } else {
+            p_buf->max_tx_lat = 0;
+            p_buf->max_rx_lat = 0;
+            p_buf->min_remote_to = 0;
+            p_buf->min_local_to = 0;
+        }
         bta_sys_sendmsg(p_buf);
     }
 }
@@ -1009,6 +1022,18 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
             bdcpy(conn.mode_chg.bd_addr, p_data->pm_status.bd_addr);
             bta_dm_cb.p_sec_cback(BTA_DM_PM_MODE_CHG_EVT, (tBTA_DM_SEC *)&conn);
         }
+#if (BTM_SSR_INCLUDED == TRUE)
+        else if (p_data->pm_status.status == BTM_PM_STS_SSR) {
+            tBTA_DM_SEC conn;
+            bdcpy(conn.ssr.bd_addr, p_data->pm_status.bd_addr);
+            conn.ssr.hci_status = p_data->pm_status.hci_status;
+            conn.ssr.max_tx_lat = p_data->pm_status.max_tx_lat;
+            conn.ssr.max_rx_lat = p_data->pm_status.max_rx_lat;
+            conn.ssr.min_remote_to = p_data->pm_status.min_remote_to;
+            conn.ssr.min_local_to = p_data->pm_status.min_local_to;
+            bta_dm_cb.p_sec_cback(BTA_DM_PM_SSR_EVT, &conn);
+        }
+#endif
     }
 }
 
