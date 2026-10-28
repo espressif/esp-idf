@@ -96,6 +96,7 @@ struct peer_config {
     uint16_t conn_handle;
     uint8_t dst[6];
 
+    bool sec_done;
     bool disc_completed;
     bool mtu_exchanged;
 };

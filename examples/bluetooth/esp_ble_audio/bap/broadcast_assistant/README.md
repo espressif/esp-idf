@@ -95,7 +95,7 @@ For `esp32s31`, replace `esp32h4` with `esp32s31` in the commands above.
 
 1. `app_main` initializes NVS, `bluetooth_init()`, `app_host_init()`, then `esp_ble_audio_common_init(&info)` with both `gap_cb` and `gatt_cb`. `esp_ble_audio_bap_broadcast_assistant_register_cb(&assistant_cbs)` registers the BASS client callbacks before `esp_ble_audio_common_start(NULL)`.
 2. `scan_restart(SCAN_MODE_SINK)` starts a passive extended scan. `sink_data_cb` accepts a connectable advertiser whose 16-bit UUID list contains BASS and whose name matches `TARGET_SINK_NAME`.
-3. On a hit the scanner is stopped first (NimBLE rejects `ble_gap_connect` during discovery) and `conn_create()` runs. `acl_connect` → `pairing_start()` → `security_change` → `exchange_mtu()` → `gatt_mtu_change` → `esp_ble_audio_gattc_disc_start()` → `gattc_disc_cmpl`. MTU-updated and discovery-complete can arrive in either order, so both set a flag and the second one calls `bass_discover()`.
+3. On a hit the scanner is stopped first (NimBLE rejects `ble_gap_connect` during discovery) and `conn_create()` runs. `acl_connect` → `pairing_start()` → `security_change` → `exchange_mtu()` → `gatt_mtu_change` → `esp_ble_audio_gattc_disc_start()` → `gattc_disc_cmpl`. Security, MTU-updated and discovery-complete can arrive in any order (a cached peer database completes discovery before a bonded link is re-encrypted), so each sets a flag and the last one calls `bass_discover()`.
 4. `assistant_discover_cb` reports the receive state count; `read_next_recv_state()` walks every index through `esp_ble_audio_bap_broadcast_assistant_read_recv_state()`. A `NULL` state is an empty slot, not an error.
 5. Once all states are read, `esp_ble_audio_bap_broadcast_assistant_scan_start(conn, false)` sends the BASS *Remote Scan Started* opcode. `start_scan` is `false` on purpose: the example drives its own extended scanner, and letting the library start one too would have the two fight over the controller.
 6. `scan_restart(SCAN_MODE_SOURCE)` re-arms the scanner. `source_data_cb` matches the Broadcast Audio Announcement service data (24-bit Broadcast ID) plus `TARGET_SOURCE_NAME`. The advertiser address, SID, Broadcast ID and the **real** periodic interval are cached from the scan report.
@@ -167,6 +167,7 @@ Three things keep the single scanner from being contended:
 | Variable | Set by | Cleared by |
 | --- | --- | --- |
 | `conn_handle` | `acl_connect` | `acl_disconnect` |
+| `sec_done` | `security_change` (success) | `acl_disconnect` |
 | `mtu_exchanged` | `gatt_mtu_change` (MTU ≥ `ESP_BLE_AUDIO_ATT_MTU_MIN`) | `acl_disconnect` |
 | `disc_completed` | `gattc_disc_cmpl` | `acl_disconnect` |
 | `recv_states_synced` | `read_next_recv_state` once the last index is read | `assistant_discover_cb`; `acl_disconnect` |
@@ -200,7 +201,7 @@ Three things keep the single scanner from being contended:
 | `PA_SYNC_RECV` | Ignored unless `sync_handle` matches and `base_received` is clear. |
 | Receive State with `pa_sync_state == INFO_REQ` | `send_past()` transfers the local sync handle over the ACL. Warns instead if the sync has since been lost. |
 | `PA_SYNC_LOST` | Source-side state only. Re-scans for a source if the delegator link is still up; otherwise `acl_disconnect` has already re-armed the sink scan. |
-| `GATT_MTU_CHANGE` / `GATTC_DISC_CMPL` | Either order. Each sets its flag and the second one calls `bass_discover()`. An MTU below `ESP_BLE_AUDIO_ATT_MTU_MIN` warns and stops the chain. |
+| `SECURITY_CHANGE` / `GATT_MTU_CHANGE` / `GATTC_DISC_CMPL` | Any order. Each sets its flag and the last one calls `bass_discover()`. An MTU below `ESP_BLE_AUDIO_ATT_MTU_MIN` warns and stops the chain. |
 
 ## Expected Log
 
