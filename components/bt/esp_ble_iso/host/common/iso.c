@@ -588,7 +588,16 @@ static int iso_tx_now(struct bt_iso_chan *chan, const uint8_t *sdu,
             return err;
         }
 
-        /* Report the first one and then every ISO_DROP_REPORT_STEP. */
+        /* Report the first one and then every ISO_DROP_REPORT_STEP.
+         *
+         * WARNING:
+         * The count is cumulative, not the list depth. The list is drained
+         * only on TX complete, as controller buffers free up, so a backlog
+         * left by one stall of the iso task (e.g. INFO logs written to a slow
+         * UART) never clears while SDUs arrive at the drain rate: every later
+         * SDU queues, the count climbs at the SDU rate and the extra latency
+         * stays. Look at what stalled the iso task, not the controller.
+         */
         if (iso_tx_queued_cnt++ % ISO_DROP_REPORT_STEP == 0) {
             LOG_WRN("IsoFlowCtrl[queued=%u]", iso_tx_queued_cnt);
         }
