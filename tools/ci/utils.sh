@@ -104,7 +104,7 @@ function run_cmd() {
 }
 
 function pytest_for_ut() {
-  pytest_args="-c NUL -p no:idf-ci -p no:pytest_embedded"
+  pytest_args="-c /dev/null --rootdir . --confcutdir . -p no:idf-ci -p no:pytest_embedded"
 
   if [ -n "${CI_JOB_ID-}" ]; then
     if [ -z "${KNOWN_FAILURE_CASES_FILE_NAME-}" ]; then
