@@ -1398,6 +1398,10 @@ static void clean_up(void)
 
     BTC_TRACE_DEBUG("%s\n", __FUNCTION__);
 
+    /* BTA detaches its callback before this runs, so a late RC close is
+     * dropped and would leave btc_rc_cb.rc_connected set. */
+    btc_rc_drop_connection();
+
     if (btc_av_cb.service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
 #if BTC_AV_SRC_INCLUDED
         btc_a2dp_source_shutdown();
