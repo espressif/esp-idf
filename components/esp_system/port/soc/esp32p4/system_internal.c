@@ -34,7 +34,6 @@
 #include "hal/uart_ll.h"
 #include "hal/sec_ll.h"
 #include "hal/gdma_ll.h"
-#include "hal/axi_dma_ll.h"
 #include "hal/dw_gdma_ll.h"
 #include "hal/dma2d_ll.h"
 #include "hal/efuse_hal.h"

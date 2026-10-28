@@ -6,8 +6,8 @@
 
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
+#include "hal/log.h"
 #include "hal/gdma_hal_ahb.h"
-#include "hal/ahb_dma_ll.h"
 #include "hal/gdma_ll.h"
 
 static gdma_hal_priv_data_t gdma_ahb_hal_priv_data = {
@@ -295,14 +295,18 @@ void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 #if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
     hal->set_weight = gdma_ahb_hal_set_weight;
     if (config->flags.enable_weighted_arbitration) {
-        ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, true);
-        // always enable weighted arbitration optimize
-        for (int i = 0; i < GDMA_LL_GET(AHB_PAIRS_PER_GROUP); i++) {
-            ahb_dma_ll_tx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
-            ahb_dma_ll_rx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
+        if (ahb_dma_ll_is_weighted_arb_supported(hal->ahb_dma_dev)) {
+            ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, true);
+            // always enable weighted arbitration optimize
+            for (int i = 0; i < GDMA_LL_AHB_PAIRS_PER_GROUP; i++) {
+                ahb_dma_ll_tx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
+                ahb_dma_ll_rx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
+            }
+            // set timeout to default value, to ensure that all channels within each time period can almost consume all the tokens
+            ahb_dma_ll_set_weighted_arb_timeout(hal->ahb_dma_dev, AHB_DMA_LL_DEFAULT_WEIGHTED_ARBITRATION_TIMEOUT);
+        } else {
+            HAL_LOGE("ahb_dma_hal", "Weighted arbitration is not supported");
         }
-        // set timeout to 2000 AHB bus cycles, to ensure that all channels within each time period can almost consume all the tokens
-        ahb_dma_ll_set_weighted_arb_timeout(hal->ahb_dma_dev, 2000);
     } else {
         ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, false);
     }
@@ -351,6 +355,25 @@ void gdma_lp_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *conf
     hal->set_burst_size = gdma_ahb_hal_set_burst_size;
 #endif // GDMA_LL_GET(AHB_BURST_SIZE_ADJUSTABLE)
     hal->is_tx_link_switch_event_supported = gdma_ahb_hal_is_tx_link_switch_event_supported;
+#if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+    hal->set_weight = gdma_ahb_hal_set_weight;
+    if (config->flags.enable_weighted_arbitration) {
+        if (ahb_dma_ll_is_weighted_arb_supported(hal->ahb_dma_dev)) {
+            ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, true);
+            // always enable weighted arbitration optimize
+            for (int i = 0; i < GDMA_LL_LP_AHB_PAIRS_PER_GROUP; i++) {
+                ahb_dma_ll_tx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
+                ahb_dma_ll_rx_enable_weighted_arb_opt(hal->ahb_dma_dev, i, true);
+            }
+            // set timeout to default value, to ensure that all channels within each time period can almost consume all the tokens
+            ahb_dma_ll_set_weighted_arb_timeout(hal->ahb_dma_dev, AHB_DMA_LL_DEFAULT_WEIGHTED_ARBITRATION_TIMEOUT);
+        } else {
+            HAL_LOGE("lp_ahb_dma_hal", "Weighted arbitration is not supported");
+        }
+    } else {
+        ahb_dma_ll_enable_weighted_arb(hal->ahb_dma_dev, false);
+    }
+#endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
     // LP AHB GDMA has a different memory range
     lp_ahb_dma_ll_set_default_memory_range(hal->ahb_dma_dev);
 }
