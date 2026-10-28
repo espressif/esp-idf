@@ -890,6 +890,18 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
         }
     }
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak");
+    // Guard: skip duplicate netif_add if this lwip netif is already in the lwIP list.
+    // Fixes hosted-WiFi (esp_wifi_remote) double-add: attach post_attach adds it, then
+    // esp_netif_start() calls esp_netif_lwip_add() again -> lwIP "netif already added" assert.
+    {
+        struct netif *nif;
+        NETIF_FOREACH(nif) {
+            if (nif == esp_netif->lwip_netif) {
+                ESP_LOGW(TAG, "lwip netif %p already added, skip duplicate add", esp_netif->lwip_netif);
+                return ESP_OK;
+            }
+        }
+    }
 
     if (esp_netif->flags & ESP_NETIF_FLAG_IS_PPP) {
 #if CONFIG_PPP_SUPPORT
