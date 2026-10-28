@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -495,6 +495,13 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
 #endif
     case ESP_BT_GAP_MODE_CHG_EVT:
         ESP_LOGI(TAG, "BT GAP MODE_CHG_EVT mode:%d", param->mode_chg.mode);
+        break;
+    case ESP_BT_GAP_SNIFF_SUBRATING_EVT:
+        ESP_LOGI(TAG, "BT GAP SNIFF_SUBRATING_EVT stat:%d tx:%"PRIu16" rx:%"PRIu16
+                 " rmt_to:%"PRIu16" loc_to:%"PRIu16,
+                 param->sniff_subrating.stat,
+                 param->sniff_subrating.max_tx_latency, param->sniff_subrating.max_rx_latency,
+                 param->sniff_subrating.min_remote_timeout, param->sniff_subrating.min_local_timeout);
         break;
     case ESP_BT_GAP_PIN_REQ_EVT: {
         ESP_LOGI(TAG, "BT GAP PIN_REQ_EVT min_16_digit:%d", param->pin_req.min_16_digit);

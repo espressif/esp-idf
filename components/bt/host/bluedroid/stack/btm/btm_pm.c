@@ -465,7 +465,7 @@ void btm_pm_reset(void)
         p_acl_cb = btm_handle_to_acl(btm_cb.pm_pend_link_hdl);
         if (p_acl_cb != NULL) {
             /* safe to use remote_addr */
-            (*cb)(p_acl_cb->remote_addr, BTM_PM_STS_ERROR, BTM_DEV_RESET, 0);
+            (*cb)(p_acl_cb->remote_addr, BTM_PM_STS_ERROR, BTM_DEV_RESET, 0, NULL);
         }
     }
 
@@ -834,7 +834,7 @@ void btm_pm_proc_cmd_status(UINT8 status)
     /* notify the caller is appropriate */
     if ( (btm_cb.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
             (btm_cb.pm_reg_db[btm_cb.pm_pend_id].mask & BTM_PM_REG_NOTIF) ) {
-        (*btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback)(p_acl_cb->remote_addr, pm_status, 0, status);
+        (*btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback)(p_acl_cb->remote_addr, pm_status, 0, status, NULL);
     }
 
     /* no pending cmd now */
@@ -934,7 +934,7 @@ void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode, U
     /* notify registered parties */
     for (i = 0; i < BTM_MAX_PM_RECORDS; i++) {
         if (btm_cb.pm_reg_db[i].mask & BTM_PM_REG_NOTIF) {
-            (*btm_cb.pm_reg_db[i].cback)( p->remote_addr, mode, interval, hci_status);
+            (*btm_cb.pm_reg_db[i].cback)( p->remote_addr, mode, interval, hci_status, NULL);
         }
     }
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -957,20 +957,20 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len)
 {
     UINT8       status;
     UINT16      handle;
-    UINT16      max_rx_lat;
     int         xx;
     tBTM_PM_MCB *p_cb;
     tACL_CONN   *p_acl = NULL;
+    tBTM_SSR_PARAMS ssr;
     UINT16      use_ssr = TRUE;
     UNUSED(evt_len);
 
     STREAM_TO_UINT8 (status, p);
-
     STREAM_TO_UINT16 (handle, p);
-    /* get the index to acl_db */
+    STREAM_TO_UINT16 (ssr.max_tx_lat, p);
+    STREAM_TO_UINT16 (ssr.max_rx_lat, p);
+    STREAM_TO_UINT16 (ssr.min_remote_to, p);
+    STREAM_TO_UINT16 (ssr.min_local_to, p);
 
-    p += 2;
-    STREAM_TO_UINT16 (max_rx_lat, p);
     p_acl = btm_handle_to_acl(handle);
     if (!p_acl) {
         return;
@@ -979,7 +979,7 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len)
     if (!p_cb) {
         return;
     }
-    if (p_cb->interval == max_rx_lat) {
+    if (p_cb->interval == ssr.max_rx_lat) {
         /* using legacy sniff */
         use_ssr = FALSE;
     }
@@ -987,7 +987,7 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len)
     /* notify registered parties */
     for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
         if (btm_cb.pm_reg_db[xx].mask & BTM_PM_REG_NOTIF) {
-            (*btm_cb.pm_reg_db[xx].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status);
+            (*btm_cb.pm_reg_db[xx].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status, &ssr);
         }
     }
 }
