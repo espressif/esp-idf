@@ -39,6 +39,8 @@ struct roam_config {
     uint8_t low_rssi_roam_diff;
     uint8_t rrm_retry_cnt;
     bool rrm_roaming_enabled;
+    /** Seconds before restoring default low RSSI threshold; 0 disables (max 255). */
+    uint8_t low_rssi_threshold_reset_sec;
 };
 
 void roam_init_app(void);
