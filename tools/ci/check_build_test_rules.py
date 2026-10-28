@@ -4,13 +4,17 @@
 import argparse
 import os
 import re
+import subprocess
 import sys
+import tomllib
 from collections import defaultdict
 from pathlib import Path
 
 from idf_build_apps import App
 from idf_build_apps import find_apps
 from idf_build_apps.constants import SUPPORTED_TARGETS
+from idf_build_apps.manifest.manifest import Manifest
+from idf_build_apps.manifest.manifest import SwitchClause
 from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
 from rich.console import Console
@@ -19,6 +23,9 @@ from rich.table import Table
 # | Supported Target | ... |
 # | ---------------- | --- |
 SUPPORTED_TARGETS_TABLE_REGEX = re.compile(r'^\|\s*Supported Targets.+$\n^\|(?:\s*|-).+$\n?', re.MULTILINE)
+
+# same as idf-ci default `component_mapping_regexes`
+COMPONENT_MAPPING_REGEX = re.compile(r'/(?:common_)?components/(.+?)/')
 
 USUAL_TO_FORMAL = {
     'esp32': 'ESP32',
@@ -293,6 +300,69 @@ def check_test_scripts(
     sys.exit(exit_code)
 
 
+def get_mappable_components() -> set[str]:
+    """
+    Component names that idf-ci can derive from a modified file path, mirroring its default
+    `component_mapping_regexes` and `component_mapping_exclude_regexes`.
+    """
+    output = subprocess.check_output(['git', 'ls-files'], cwd=IDF_PATH, text=True)
+    components = set()
+    for file in output.splitlines():
+        file = '/' + file
+        if '/test_apps/' in file:
+            continue
+        match = COMPONENT_MAPPING_REGEX.search(file)
+        if match:
+            components.add(match.group(1))
+
+    return components
+
+
+def check_depends_components() -> None:
+    """
+    A `depends_components` entry that no modified file can map to never triggers the app, and the
+    app silently loses coverage. Typical causes are typos and renamed/split components.
+    """
+    known_components = get_mappable_components()
+    with open(os.path.join(IDF_PATH, '.idf_build_apps.toml'), 'rb') as f:
+        common_components = tomllib.load(f)['common_components']
+    manifest_files = subprocess.check_output(
+        ['git', 'ls-files', '*.build-test-rules.yml'], cwd=IDF_PATH, text=True
+    ).splitlines()
+
+    exit_code = 0
+    for component in sorted(set(common_components) - known_components):
+        print(f'.idf_build_apps.toml: unknown component "{component}" in common_components')
+        exit_code = 1
+
+    for manifest_file in sorted(manifest_files):
+        manifest = Manifest.from_file(
+            os.path.join(IDF_PATH, manifest_file), root_path=IDF_PATH, common_components=common_components
+        )
+        # rules often share an anchor, so report each unknown component once per manifest file
+        unknown: dict[str, list[str]] = defaultdict(list)
+        for rule in manifest.rules:
+            depends_components = rule.depends_components
+            if isinstance(depends_components, SwitchClause):
+                depends_components = [
+                    c for content in depends_components.contents for c in content
+                ] + depends_components.default_clause
+
+            for component in set(depends_components) - known_components:
+                unknown[component].append(idf_relpath(rule.folder))
+
+        for component, folders in sorted(unknown.items()):
+            print(f'{manifest_file}: unknown component "{component}", used by: {", ".join(sorted(folders))}')
+            exit_code = 1
+
+    if exit_code != 0:
+        print('')
+        print('"depends_components" entries must match a component directory in this repository.')
+        print('Managed components and misspelled names never match a modified file, so they never trigger the app.')
+
+    sys.exit(exit_code)
+
+
 if __name__ == '__main__':
     if 'CI_JOB_ID' not in os.environ:
         os.environ['CI_JOB_ID'] = 'fake'  # this is a CI script
@@ -305,7 +375,12 @@ if __name__ == '__main__':
 
     test_parser = action.add_parser('check-test-scripts')
     test_parser.add_argument('paths', nargs='+', help='check under paths')
+
+    action.add_parser('check-depends-components')
     arg = parser.parse_args()
+
+    if arg.action == 'check-depends-components':
+        check_depends_components()
 
     check_dirs = set()
 

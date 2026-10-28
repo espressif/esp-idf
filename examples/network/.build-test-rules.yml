@@ -36,8 +36,7 @@ examples/network/sta2eth:
     - esp_eth
     - esp_wifi
     - protocomm
-    - esp_tinyusb
-    - http-server
+    - esp_http_server
 
 examples/network/vlan_support:
   disable_test:

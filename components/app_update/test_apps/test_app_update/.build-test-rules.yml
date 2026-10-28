@@ -19,4 +19,4 @@ components/app_update/test_apps:
   depends_components:
     - app_update
     - bootloader_support
-    - esp_partitions
+    - esp_partition
