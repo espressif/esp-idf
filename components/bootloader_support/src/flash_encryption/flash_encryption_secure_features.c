@@ -139,6 +139,10 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY
 esp_err_t esp_flash_encryption_use_efuse_key(void)
 {
+    // Enable the Key Manager peripheral clock. Unlike the one-shot crypto users
+    // (HMAC/DS/ECDSA), we intentionally do NOT disable it again: the flash XTS-AES
+    // peripheral relies on the Key Manager to source the flash encryption key, so the
+    // clock must remain enabled for all subsequent encrypted-flash access throughout boot.
     esp_crypto_key_mgr_enable_periph_clk(true);
 
     // Force Key Manager to use eFuse key for XTS-AES operation

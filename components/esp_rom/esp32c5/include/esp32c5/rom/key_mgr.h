@@ -18,7 +18,6 @@
 extern "C" {
 #endif
 
-// store huk info, occupy 96 words
 struct huk_info {
 // store huk info, occupy 165 words
 #define HUK_INFO_LEN 660

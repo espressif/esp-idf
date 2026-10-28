@@ -22,6 +22,8 @@
 #include "hal/huk_types.h"
 #include "soc/huk_reg.h"
 #include "soc/soc_caps.h"
+#include "soc/pmu_reg.h"
+#include "esp_rom_sys.h"    // HUK memory recharge workaround
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,6 +114,20 @@ static inline esp_huk_state_t huk_ll_get_state(void)
 static inline esp_huk_gen_status_t huk_ll_get_gen_status(void)
 {
     return (esp_huk_gen_status_t) REG_GET_FIELD(HUK_STATUS_REG, HUK_STATUS);
+}
+
+static inline void __attribute__((always_inline)) huk_ll_recharge_huk_memory(void)
+{
+    /* Power down: isolate the PUF memory, switch it off and discharge it */
+    REG_SET_BIT(PMU_PUF_MEM_CTRL_REG, PMU_PUF_MEM_ISO);
+    REG_CLR_BIT(PMU_PUF_MEM_CTRL_REG, PMU_PUF_MEM_PSW);
+    REG_SET_BIT(PMU_PUF_MEM_CTRL_REG, PMU_PUF_MEM_DISCHARGE);
+    esp_rom_delay_us(100000);
+
+    /* Power up: stop discharging, switch the PUF memory back on and remove isolation */
+    REG_CLR_BIT(PMU_PUF_MEM_CTRL_REG, PMU_PUF_MEM_DISCHARGE);
+    REG_SET_BIT(PMU_PUF_MEM_CTRL_REG, PMU_PUF_MEM_PSW);
+    REG_CLR_BIT(PMU_PUF_MEM_CTRL_REG, PMU_PUF_MEM_ISO);
 }
 
 /**

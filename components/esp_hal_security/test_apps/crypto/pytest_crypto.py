@@ -114,7 +114,7 @@ def test_crypto_long_aes_operations(dut: Dut) -> None:
     # as tests for efuses burning security peripherals would be run
     timeout = 600 if os.environ.get('IDF_ENV_FPGA') else 60
 
-    dut.expect('Tests finished', timeout=timeout)
+    dut.expect_unity_test_output(timeout=timeout)
 
 
 @pytest.mark.generic

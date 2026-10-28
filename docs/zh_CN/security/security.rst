@@ -108,7 +108,13 @@ flash 加密最佳实践
 
     {IDF_TARGET_NAME} 中的密钥管理器外设提供硬件辅助的 **密钥部署和恢复** 功能，适用于加密密钥。密钥通过每块芯片独有的硬件唯一密钥 (HUK) 进行加密绑定，确保密钥内容不会暴露给软件可访问的内存。
 
-    密钥管理器支持以下加密外设的密钥管理：:doc:`ECDSA <../api-reference/peripherals/ecdsa>`、:doc:`HMAC <../api-reference/peripherals/hmac>`、:doc:`数字签名 (DS) <../api-reference/peripherals/ds>` 以及 flash 加密。
+    .. only:: SOC_DIG_SIGN_SUPPORTED
+
+        密钥管理器支持以下加密外设的密钥管理：:doc:`ECDSA <../api-reference/peripherals/ecdsa>`、:doc:`HMAC <../api-reference/peripherals/hmac>`、:doc:`数字签名 (DS) <../api-reference/peripherals/ds>` 以及 flash 加密。
+
+    .. only:: not SOC_DIG_SIGN_SUPPORTED
+
+        密钥管理器支持以下加密外设的密钥管理：:doc:`ECDSA <../api-reference/peripherals/ecdsa>`、:doc:`HMAC <../api-reference/peripherals/hmac>` 以及 flash 加密。
 
     详情请参阅 :doc:`../api-reference/peripherals/key_manager`。
 

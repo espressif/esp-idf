@@ -72,6 +72,75 @@
 
 ------
 
+.. first_boot_enc_km
+
+.. code-block:: none
+
+    ESP-ROM:esp32h4-20250829
+    Build:Aug 29 2025
+    rst:0x1 (POWERON),boot:0x3f (SPI_FAST_FLASH_BOOT)
+    SPI mode:DIO, clock div:1
+    load:0x408565d0,len:0x2a80
+    load:0x4084c650,len:0x171c
+    load:0x4084f350,len:0x4744
+    entry 0x4084c65c
+    I (25) boot: ESP-IDF v6.1-dev-5046-g616f87549f6-dirt 2nd stage bootloader
+    I (25) boot: compile time May 22 2026 11:45:28
+    I (25) boot: Multicore bootloader
+    I (28) boot: chip revision: v0.1
+    I (30) boot: efuse block revision: v0.0
+    I (34) boot.esp32h4: SPI Speed      : 48MHz
+    I (37) boot.esp32h4: SPI Mode       : DIO
+    I (41) boot.esp32h4: SPI Flash Size : 4MB
+    I (45) boot: Enabling RNG early entropy source...
+    I (57) boot: Partition Table:
+    I (60) boot: ## Label            Usage          Type ST Offset   Length
+    I (66) boot:  0 nvs              WiFi data        01 02 0000e000 00006000
+    I (73) boot:  1 storage          Unknown data     01 ff 00014000 00001000
+    I (79) boot:  2 factory          factory app      00 00 00020000 00100000
+    I (86) boot:  3 nvs_key          NVS keys         01 04 00120000 00001000
+    I (92) boot:  4 custom_nvs       WiFi data        01 02 00121000 00006000
+    I (99) boot:  5 fat_encrypted    Unknown data     01 81 00127000 00096000
+    I (105) boot:  6 fat_not_encr     Unknown data     01 81 001bd000 00096000
+    I (112) boot: End of partition table
+    I (115) esp_image: segment 0: paddr=00020020 vaddr=42030020 size=09c38h ( 39992) map
+    I (140) esp_image: segment 1: paddr=00029c60 vaddr=40810000 size=063b8h ( 25528) load
+    I (148) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=229c8h (141768) map
+    I (181) esp_image: segment 3: paddr=000529f0 vaddr=408163b8 size=03ab4h ( 15028) load
+    I (187) esp_image: segment 4: paddr=000564ac vaddr=40819e70 size=02600h (  9728) load
+    I (194) boot: Loaded app from partition at offset 0x20000
+    I (194) boot: Checking flash encryption...
+    I (195) efuse: Batch mode of writing fields is enabled
+    I (200) flash_encrypt: Deploying new flash encryption key using Key Manager
+    I (232) flash_encrypt: Disable UART bootloader cache...
+    I (236) efuse: BURN BLOCK0
+    I (241) efuse: BURN BLOCK0 - OK (all write block bits are set)
+    I (244) efuse: Batch mode. Prepared fields are committed
+    I (250) esp_image: segment 0: paddr=00002020 vaddr=408565d0 size=02a80h ( 10880)
+    I (258) esp_image: segment 1: paddr=00004aa8 vaddr=4084c650 size=0171ch (  5916)
+    I (265) esp_image: segment 2: paddr=000061cc vaddr=4084f350 size=04744h ( 18244)
+    I (573) flash_encrypt: bootloader encrypted successfully
+    I (608) flash_encrypt: partition table encrypted and loaded successfully
+    I (609) flash_encrypt: Encrypting partition 1 at offset 0x14000 (length 0x1000)...
+    I (646) flash_encrypt: Done encrypting
+    I (647) esp_image: segment 0: paddr=00020020 vaddr=42030020 size=09c38h ( 39992) map
+    I (657) esp_image: segment 1: paddr=00029c60 vaddr=40810000 size=063b8h ( 25528)
+    I (665) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=229c8h (141768) map
+    I (698) esp_image: segment 3: paddr=000529f0 vaddr=408163b8 size=03ab4h ( 15028)
+    I (703) esp_image: segment 4: paddr=000564ac vaddr=40819e70 size=02600h (  9728)
+    I (707) flash_encrypt: Encrypting partition 2 at offset 0x20000 (length 0x38ad0)...
+    I (2612) flash_encrypt: Done encrypting
+    I (2612) flash_encrypt: Encrypting partition 3 at offset 0x120000 (length 0x1000)...
+    I (2644) flash_encrypt: Done encrypting
+    I (2644) flash_encrypt: Encrypting partition 5 at offset 0x127000 (length 0x96000)...
+    I (5465) flash_encrypt: Done encrypting
+    I (5466) efuse: BURN BLOCK0
+    I (5469) efuse: BURN BLOCK0 - OK (all write block bits are set)
+    I (5470) flash_encrypt: Flash encryption completed
+    I (5470) boot: Resetting with flash encryption enabled...
+
+------
+
 .. already_en_enc
 
 .. code-block:: none
@@ -152,5 +221,78 @@
     I (1260) example: 0x4081e830   d5 d7 0b fe af d2 cb 9a  3f e7 50 9f e7 b5 98 fc  |........?.P.....|
     I (4170) main_task: Returned from app_main()
 
+------
+
+.. already_en_enc_km
+
+.. code-block:: none
+
+    ESP-ROM:esp32h4-20250829
+    Build:Aug 29 2025
+    rst:0x1 (POWERON),boot:0x3f (SPI_FAST_FLASH_BOOT)
+    use sector0 for km info
+    use KM derived key
+    SPI mode:DIO, clock div:1
+    load:0x408565d0,len:0x2a80
+    load:0x4084c650,len:0x171c
+    load:0x4084f350,len:0x4744
+    entry 0x4084c65c
+    I (28) boot: ESP-IDF v6.1-dev-5046-g616f87549f6-dirt 2nd stage bootloader
+    I (29) boot: compile time May 22 2026 11:49:26
+    I (29) boot: Multicore bootloader
+    I (32) boot: chip revision: v0.1
+    I (34) boot: efuse block revision: v0.0
+    I (37) boot.esp32h4: SPI Speed      : 48MHz
+    I (41) boot.esp32h4: SPI Mode       : DIO
+    I (45) boot.esp32h4: SPI Flash Size : 4MB
+    I (49) boot: Enabling RNG early entropy source...
+    I (61) boot: Partition Table:
+    I (63) boot: ## Label            Usage          Type ST Offset   Length
+    I (70) boot:  0 nvs              WiFi data        01 02 0000e000 00006000
+    I (76) boot:  1 storage          Unknown data     01 ff 00014000 00001000
+    I (83) boot:  2 factory          factory app      00 00 00020000 00100000
+    I (89) boot:  3 nvs_key          NVS keys         01 04 00120000 00001000
+    I (96) boot:  4 custom_nvs       WiFi data        01 02 00121000 00006000
+    I (102) boot:  5 fat_encrypted    Unknown data     01 81 00127000 00096000
+    I (109) boot:  6 fat_not_encr     Unknown data     01 81 001bd000 00096000
+    I (116) boot: End of partition table
+    I (119) esp_image: segment 0: paddr=00020020 vaddr=42030020 size=09c38h ( 39992) map
+    I (145) esp_image: segment 1: paddr=00029c60 vaddr=40810000 size=063b8h ( 25528) load
+    I (153) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=229c8h (141768) map
+    I (191) esp_image: segment 3: paddr=000529f0 vaddr=408163b8 size=03ab4h ( 15028) load
+    I (197) esp_image: segment 4: paddr=000564ac vaddr=40819e70 size=02600h (  9728) load
+    I (204) boot: Loaded app from partition at offset 0x20000
+    I (205) boot: Checking flash encryption...
+    I (205) flash_encrypt: flash encryption is enabled (1 plaintext flashes left)
+    I (211) boot: Disabling RNG early entropy source...
+    I (236) cpu_start: Multicore app
+    I (239) cpu_start: GPIO 23 and 24 are used as console UART I/O pins
+    I (239) cpu_start: Pro cpu start user code
+    I (240) cpu_start: cpu freq: 96000000 Hz
+    I (241) app_init: Application information:
+    I (245) app_init: Project name:     flash_encryption
+    I (250) app_init: App version:      v6.1-dev-5046-g616f87549f6-dirt
+    I (256) app_init: Compile time:     May 22 2026 11:49:31
+    I (261) app_init: ELF file SHA256:  658fe75d6...
+    I (265) app_init: ESP-IDF:          v6.1-dev-5046-g616f87549f6-dirt
+    I (271) efuse_init: Min chip rev:     v0.0
+    I (275) efuse_init: Max chip rev:     v0.99
+    I (279) efuse_init: Chip rev:         v0.1
+    I (283) heap_init: Initializing. RAM available for dynamic allocation:
+    I (289) heap_init: At 4081DDA0 len 0003D5B0 (245 KiB): RAM
+    I (294) heap_init: At 4085B350 len 00004B58 (18 KiB): RAM
+    I (300) spi_flash: detected chip: generic
+    I (303) spi_flash: flash io: dio
+    W (318) flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)
+    I (325) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+    I (331) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+    I (338) sleep_clock: Modem Power, Clock and Reset sleep retention initialization
+    I (345) main_task: Started on CPU0
+    I (345) main_task: Calling app_main()
+
+    Example to check Flash Encryption status
+    This is esp32h4 chip with 2 CPU core(s), WiFi/BLE, silicon revision v0.1, 4MB external flash
+    FLASH_CRYPT_CNT eFuse value is 1
+    Flash encryption feature is enabled in DEVELOPMENT mode
 
 ------
