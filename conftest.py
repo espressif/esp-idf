@@ -87,7 +87,7 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
     filtered_params = {}
     for k, v in params.items():
-        if k not in request.session._fixturemanager._arg2fixturedefs:  # type: ignore
+        if request.session._fixturemanager.getfixturedefs(k, request.node) is None:  # type: ignore
             filtered_params[k] = v  # not fixture ones
 
     return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu, params=filtered_params)  # type: ignore
