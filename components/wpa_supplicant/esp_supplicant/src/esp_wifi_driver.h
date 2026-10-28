@@ -345,7 +345,7 @@ uint8_t esp_wifi_sta_get_bss_channel_internal(uint8_t *bssid);
 esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 
 /**
- * Connect using a scan AP record , skipping the scan.
+ * Connect using a scan AP record, skipping the scan.
  *
  * The IEs are looked up by ap_info->bssid in the driver's scan cache, which is
  * filled only while fast roaming is enabled. ap_info need only remain valid
@@ -353,6 +353,7 @@ esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
  *
  * Returns ESP_ERR_WIFI_CONN if the STA is connected or connecting; disconnect first.
  * Returns ESP_ERR_NOT_FOUND if the BSS is not in the scan cache; scan again.
+ * Returns ESP_ERR_NOT_SUPPORTED for the open side of an OWE transition pair; use esp_wifi_connect().
  */
 esp_err_t esp_wifi_sta_connect_bss_internal(const wifi_ap_record_t *ap_info);
 

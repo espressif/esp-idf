@@ -43,14 +43,15 @@ typedef void (* scan_done_cb_t)(void *arg, ETS_STATUS status);
 extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
 
 static int wifi_post_roam_event(struct cand_bss *bss);
-static void determine_best_ap(int8_t rssi_threshold);
-static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const struct cand_bss *candidate);
+static bool determine_best_ap(int8_t rssi_threshold);
+static bool roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const struct cand_bss *candidate);
 static bool is_bssid_blacklisted(const uint8_t *bssid);
 static bool conduct_scan(void);
 static void roaming_app_refresh_scan_config_filters(void);
 static void roaming_app_apply_runtime_config(void);
 static void roaming_app_invalidate_scan_cache(void);
 static void roaming_app_disable_fast_roaming(void);
+static void roaming_app_clear_pending_roam_bss(bool disable_fr);
 static esp_err_t roaming_app_run_blocking(eloop_blocking_timeout_handler handler, void *user_ctx);
 static void roaming_app_connected_event_handler(void *ctx, void *data);
 static void roaming_app_disconnected_event_handler(void *ctx, void *data);
@@ -1000,6 +1001,23 @@ static void roaming_app_disable_fast_roaming(void)
 {
     esp_wifi_set_fast_roaming_internal(false);
     roaming_app_invalidate_scan_cache();
+}
+
+/* Clear pending deferred roam; optionally disable fast roaming. */
+static void roaming_app_clear_pending_roam_bss(bool disable_fr)
+{
+    if (!g_roaming_app.pending_roam_bss) {
+        return;
+    }
+
+    eloop_cancel_timeout(roaming_app_trigger_roam_internal_handler, NULL, g_roaming_app.pending_roam_bss);
+    roaming_app_untrack_timeout_user_data(g_roaming_app.pending_roam_bss);
+    os_free(g_roaming_app.pending_roam_bss);
+    g_roaming_app.pending_roam_bss = NULL;
+
+    if (disable_fr) {
+        roaming_app_disable_fast_roaming();
+    }
 }
 
 static esp_err_t roaming_app_run_blocking(eloop_blocking_timeout_handler handler, void *user_ctx)
@@ -2088,10 +2106,6 @@ static bool trigger_targeted_reconnect(struct cand_bss *bss, bool disconnect_fir
     }
 
     ap_record = roaming_app_find_scan_record(bss->bssid);
-    if (!ap_record) {
-        ESP_LOGW(ROAMING_TAG, "No scan record for targeted reconnect to " MACSTR, MAC2STR(bss->bssid));
-        return false;
-    }
 
     if (disconnect_first) {
         err = esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
@@ -2112,7 +2126,24 @@ static bool trigger_targeted_reconnect(struct cand_bss *bss, bool disconnect_fir
     }
     g_roaming_app.connect_hint_active = true;
 
-    err = esp_wifi_sta_connect_bss_internal(ap_record);
+    if (ap_record) {
+        err = esp_wifi_sta_connect_bss_internal(ap_record);
+        if (err == ESP_ERR_NOT_FOUND) {
+            ESP_LOGI(ROAMING_TAG, "No cached IEs for " MACSTR ", using normal connect", MAC2STR(bss->bssid));
+            err = esp_wifi_connect();
+        } else if (err == ESP_ERR_NOT_SUPPORTED) {
+            /* Open half of an OWE transition pair. Drop the pinned BSSID and
+             * channel so esp_wifi_connect() can scan for the OWE BSS. */
+            ESP_LOGI(ROAMING_TAG, "OWE transition open BSS " MACSTR ", scan and connect", MAC2STR(bss->bssid));
+            roaming_app_reset_connect_hint_state();
+            if (!g_roaming_app.connect_hint_active) {
+                err = esp_wifi_connect();
+            }
+        }
+    } else {
+        ESP_LOGI(ROAMING_TAG, "No AP record for " MACSTR ", using normal connect", MAC2STR(bss->bssid));
+        err = esp_wifi_connect();
+    }
     if (err != ESP_OK) {
         ESP_LOGW(ROAMING_TAG, "failed to start targeted reconnect to " MACSTR ": %s",
                  MAC2STR(bss->bssid), esp_err_to_name(err));
@@ -2152,12 +2183,8 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
     gettimeofday(&now, NULL);
     ESP_LOGD(ROAMING_TAG, "Processing directed roam to " MACSTR, MAC2STR(bss->bssid));
 
-    if (g_roaming_app.pending_roam_bss) {
-        eloop_cancel_timeout(roaming_app_trigger_roam_internal_handler, NULL, g_roaming_app.pending_roam_bss);
-        roaming_app_untrack_timeout_user_data(g_roaming_app.pending_roam_bss);
-        os_free(g_roaming_app.pending_roam_bss);
-        g_roaming_app.pending_roam_bss = NULL;
-    }
+    /* Drop older pending roam; keep FR for this attempt. */
+    roaming_app_clear_pending_roam_bss(false);
 
     if (g_roaming_app.sta_connected && roaming_app_roam_backoff_active(&now, 0)) {
         const struct timeval *anchor = roaming_app_get_backoff_anchor();
@@ -2170,8 +2197,10 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
                                                         roaming_app_trigger_roam_internal_handler, NULL, (void *)bss)) {
             ESP_LOGE(ROAMING_TAG, "Could not register roaming event.");
             os_free(bss);
+            roaming_app_disable_fast_roaming();
             return;
         }
+        /* Keep FR on so deferred bypass-scan connect can use the IE cache. */
         g_roaming_app.pending_roam_bss = bss;
         return;
     }
@@ -2200,47 +2229,65 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
     os_free(bss);
 }
 
+/* True while a deferred bypass-scan connect, or a scan still filling the IE cache, needs fast roaming. */
+static bool roaming_app_fast_roaming_still_needed(void)
+{
+    if (g_roaming_app.pending_roam_bss || g_roaming_app.scan_ongoing) {
+        return true;
+    }
+#if RRM_ASSISTED_ROAMING_ENABLED
+    if (g_roaming_app.rrm_scan_active) {
+        return true;
+    }
+#endif
+    return false;
+}
+
 /*
  * Common roam method decision for low-RSSI and periodic (after discovery).
  * Prefer 11v, then 11k, then legacy.
  * If candidate is known (e.g. periodic discovery), legacy does directed reconnect
  * without another scan. If no candidate, legacy starts a discovery scan.
+ *
+ * Returns true when fast roaming must stay enabled: a bypass-scan connect was
+ * queued, or a scan that still needs the IE cache is in progress. A successful
+ * BTM query and the other no-handoff paths return false so the caller clears it.
  */
-static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const struct cand_bss *candidate)
+static bool roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const struct cand_bss *candidate)
 {
     struct timeval now;
 
     if (!g_roaming_app.app_active || !g_roaming_app.sta_connected) {
-        return;
+        return false;
     }
 
     if (!roaming_app_config_has_roam_method()) {
         ESP_LOGD(ROAMING_TAG, "Skipping roam decision; no roam methods enabled");
         roaming_app_apply_runtime_config();
-        return;
+        return roaming_app_fast_roaming_still_needed();
     }
 
     gettimeofday(&now, NULL);
     if (roaming_app_roam_backoff_active(&now, 0)) {
         ESP_LOGD(ROAMING_TAG, "Skipping roam decision during roam backoff window");
-        return;
+        return roaming_app_fast_roaming_still_needed();
     }
 
     if (!roaming_app_connected_roam_method_available()) {
         ESP_LOGD(ROAMING_TAG, "Skipping roam decision; no roam method currently available");
         roaming_app_apply_runtime_config();
-        return;
+        return roaming_app_fast_roaming_still_needed();
     }
 
 #if RRM_ASSISTED_ROAMING_ENABLED
     if (g_roaming_app.rrm_roam_pending || g_roaming_app.rrm_scan_active) {
         ESP_LOGD(ROAMING_TAG, "Skipping roam decision; 11k roam already in progress");
-        return;
+        return roaming_app_fast_roaming_still_needed();
     }
 #endif
     if (g_roaming_app.scan_ongoing) {
         ESP_LOGD(ROAMING_TAG, "Skipping roam decision; scan already ongoing");
-        return;
+        return true;
     }
 
     g_roaming_app.current_rssi_threshold = legacy_rssi_threshold;
@@ -2249,11 +2296,11 @@ static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const stru
     if (roaming_app_btm_method_usable()) {
         ESP_LOGD(ROAMING_TAG, "Attempting 11v BTM roam");
         if (trigger_network_assisted_roam(candidate)) {
-            /* After final BTM attempt with no fallback, suppress further triggers. */
+            /* BTM uses esp_wifi_connect() later. Do not keep the IE cache for this query. */
             if (!roaming_app_connected_roam_method_available()) {
                 roaming_app_apply_runtime_config();
             }
-            return;
+            return roaming_app_fast_roaming_still_needed();
         }
         ESP_LOGD(ROAMING_TAG, "11v BTM roam failed to start, trying next method");
     }
@@ -2263,7 +2310,9 @@ static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const stru
     if (roaming_app_rrm_method_usable()) {
         ESP_LOGD(ROAMING_TAG, "Attempting 11k assisted roam");
         if (trigger_rrm_assisted_roam()) {
-            return;
+            /* Keep fast roaming only if this started (or joined) a scan that fills the IE cache.
+             * A neighbor-report request alone does not. */
+            return roaming_app_fast_roaming_still_needed();
         }
         ESP_LOGD(ROAMING_TAG, "11k assisted roam failed to start, trying next method");
     }
@@ -2274,16 +2323,17 @@ static void roaming_app_decide_and_roam(int8_t legacy_rssi_threshold, const stru
             ESP_LOGD(ROAMING_TAG, "Attempting legacy roam (candidate known, no scan)");
             if (wifi_post_roam_event((struct cand_bss *)candidate)) {
                 ESP_LOGE(ROAMING_TAG, "Posting of legacy roam event failed");
+                return roaming_app_fast_roaming_still_needed();
             }
-            return;
+            return true;
         }
         ESP_LOGD(ROAMING_TAG, "Attempting legacy roam (discovery scan required)");
-        determine_best_ap(legacy_rssi_threshold);
-        return;
+        return determine_best_ap(legacy_rssi_threshold);
     }
 
     ESP_LOGD(ROAMING_TAG, "No applicable roam method available for this trigger");
     roaming_app_apply_runtime_config();
+    return roaming_app_fast_roaming_still_needed();
 }
 
 static void roaming_app_trigger_roam_internal_handler(void *ctx, void *data)
@@ -2547,7 +2597,8 @@ static bool is_bssid_blacklisted(const uint8_t *bssid)
     return false;
 }
 
-/* Returns true if wifi_post_roam_event() succeeded — fast roam stays enabled until roaming connects or callers clear it. */
+/* Returns true when fast roaming must stay enabled: a bypass-scan connect was queued,
+ * or a scan that still needs the IE cache is in progress. Callers clear it otherwise. */
 static bool parse_scan_results_and_roam(void)
 {
     struct timeval now;
@@ -2608,10 +2659,9 @@ static bool parse_scan_results_and_roam(void)
                 return false;
             }
             ESP_LOGI(ROAMING_TAG,"Found a better AP "MACSTR" at channel %d", MAC2STR(best_ap->bssid), best_ap->channel);
-            roaming_app_decide_and_roam(g_roaming_app.current_rssi_threshold, best_ap);
+            bool keep_fast_roaming = roaming_app_decide_and_roam(g_roaming_app.current_rssi_threshold, best_ap);
             os_free(best_ap);
-            /* decide_and_roam may start BTM/11k/legacy handoff; keep fast roaming enabled. */
-            return true;
+            return keep_fast_roaming;
         }
         if (!roaming_app_can_act_on_candidate(&now, true)) {
             os_free(best_ap);
@@ -2650,7 +2700,7 @@ static bool parse_scan_results_and_roam(void)
 
 static void scan_done_event_handler(void *arg, ETS_STATUS status)
 {
-    bool roam_event_posted = false;
+    bool keep_fast_roaming = false;
 
     if (status == ETS_OK) {
         esp_err_t err;
@@ -2687,7 +2737,7 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
 #endif
         /* Clear before parse so decide_and_roam can run after connected discovery. */
         g_roaming_app.scan_ongoing = false;
-        roam_event_posted = parse_scan_results_and_roam();
+        keep_fast_roaming = parse_scan_results_and_roam();
 #if RRM_ASSISTED_ROAMING_ENABLED
         /* Tear down only the completed 11k scan; never touch a scan that
          * parse_scan_results_and_roam() may have just started. */
@@ -2696,7 +2746,7 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
             g_roaming_app.rrm_scan_active = false;
         }
 #endif
-        if (!roam_event_posted) {
+        if (!keep_fast_roaming) {
             roaming_app_disable_fast_roaming();
         }
         return;
@@ -2730,17 +2780,18 @@ static bool conduct_scan(void)
     return true;
 }
 
-static void determine_best_ap(int8_t rssi_threshold)
+/* True when a scan that fills the IE cache was started, or a bypass-scan connect was queued. */
+static bool determine_best_ap(int8_t rssi_threshold)
 {
     struct timeval now;
 
     if (!g_roaming_app.app_active) {
-        return;
+        return false;
     }
 
     gettimeofday(&now, NULL);
     if (!roaming_app_can_act_on_candidate(&now, true)) {
-        return;
+        return roaming_app_fast_roaming_still_needed();
     }
 
     /* If the scan results are recent enough or a scan is already ongoing we should not trigger a new scan */
@@ -2753,20 +2804,24 @@ static void determine_best_ap(int8_t rssi_threshold)
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
                 roaming_app_retry_blacklist_recovery_if_needed();
 #endif /*CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST*/
+                return false;
             }
+            return true;
         } else {
             /* Clear before parse so decide_and_roam can run after connected discovery. */
             esp_wifi_set_fast_roaming_internal(true);
             g_roaming_app.scan_ongoing = false;
-            bool roam_event_posted = parse_scan_results_and_roam();
+            bool keep_fast_roaming = parse_scan_results_and_roam();
 
-            if (!roam_event_posted) {
+            if (!keep_fast_roaming) {
                 roaming_app_disable_fast_roaming();
             }
+            return keep_fast_roaming;
         }
     } else if (rssi_threshold < g_roaming_app.current_rssi_threshold) {
         g_roaming_app.current_rssi_threshold = rssi_threshold;
     }
+    return roaming_app_fast_roaming_still_needed();
 }
 #if PERIODIC_SCAN_MONITORING
 static void periodic_scan_roam(struct timeval *now)
@@ -3065,11 +3120,7 @@ static void roaming_app_cancel_pending_events(void)
     eloop_cancel_timeout(roaming_app_connected_event_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(roaming_app_disconnected_event_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(roaming_app_trigger_roam_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
-    if (g_roaming_app.pending_roam_bss) {
-        roaming_app_untrack_timeout_user_data(g_roaming_app.pending_roam_bss);
-        os_free(g_roaming_app.pending_roam_bss);
-        g_roaming_app.pending_roam_bss = NULL;
-    }
+    roaming_app_clear_pending_roam_bss(true);
     eloop_cancel_timeout(enable_reconnect, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(disable_reconnect, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
 #if LOW_RSSI_ROAMING_ENABLED
