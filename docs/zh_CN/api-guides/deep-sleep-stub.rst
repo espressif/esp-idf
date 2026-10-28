@@ -147,7 +147,7 @@ Deep-sleep 唤醒存根
 
 启用 Kconfig 选项 :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 可以减少唤醒时间。更多信息请参阅 :doc:`从 Deep-sleep 模式快速启动 <bootloader>`。
 
-上述所有函数在 :component_file:`esp_hw_support/include/esp_sleep.h` 中声明。
+上述所有函数在 :component_file:`esp_sleep/include/esp_sleep.h` 中声明。
 
 应用示例
 ---------------

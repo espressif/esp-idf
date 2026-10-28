@@ -17,6 +17,7 @@ components/esp_lcd/test_apps/i80_lcd:
     - esp_driver_i2s
     - esp_hal_lcd
     - esp_hw_support
+    - esp_sleep
     - soc
   disable:
     - if: SOC_LCD_I80_SUPPORTED != 1

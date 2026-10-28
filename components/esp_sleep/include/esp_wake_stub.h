@@ -59,7 +59,7 @@ void esp_wake_stub_set_wakeup_time(uint64_t time_in_us);
  *
  * This should be called from the wake stub code.
  *
- * @return wakeup casue value
+ * @return wakeup cause value
  */
 uint32_t esp_wake_stub_get_wakeup_cause(void);
 

@@ -8,4 +8,5 @@ components/esp_driver_tsens/test_apps/temperature_sensor:
     - esp_hal_ana_conv
     - esp_phy
     - esp_hw_support
+    - esp_sleep
     - soc

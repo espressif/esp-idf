@@ -24,6 +24,7 @@ components/mbedtls/test_apps/mbedtls_ut:
     - esp_hal_dma
     - esp_mm
     - esp_hw_support
+    - esp_sleep
 
 components/mbedtls/test_apps/persistent_storage_format:
   disable:

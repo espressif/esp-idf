@@ -7,4 +7,5 @@ components/esp_driver_ledc/test_apps/ledc:
     - esp_driver_ledc
     - esp_hal_ledc
     - esp_hw_support
+    - esp_sleep
     - soc

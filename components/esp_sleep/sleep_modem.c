@@ -23,7 +23,7 @@
 #include "esp_private/esp_pmu.h"
 #endif
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-#include "esp_pau.h"
+#include "esp_private/esp_pau.h"
 #endif
 
 ESP_LOG_ATTR_TAG(TAG, "sleep_modem");

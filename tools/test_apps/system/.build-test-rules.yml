@@ -9,6 +9,7 @@
   depends_components:
     - ulp
     - esp_hw_support
+    - esp_sleep
     - esp_hal_pmu
 
 

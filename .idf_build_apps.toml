@@ -53,6 +53,7 @@ common_components = [
     'esp_common',
     'esp_hw_support',
     'esp_rom',
+    'esp_sleep',
     'esp_system',
     'esp_timer',
     'freertos',

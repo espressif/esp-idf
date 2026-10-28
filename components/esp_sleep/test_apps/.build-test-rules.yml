@@ -1,0 +1,47 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_sleep/test_apps/rtc_power_modes:
+  enable:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c2", "esp32c3"]
+      temporary: true
+      reason: the other targets are not tested yet
+  depends_components:
+    - esp_driver_ledc
+    - esp_hw_support
+    - esp_sleep
+    - soc
+
+components/esp_sleep/test_apps/sleep_retention:
+  enable:
+    - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and CONFIG_NAME != "xip_psram"
+    - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and (SOC_SPIRAM_XIP_SUPPORTED == 1 and CONFIG_NAME == "xip_psram")
+  depends_components:
+    - esp_hw_support
+    - esp_sleep
+    - esp_mm
+    - esp_psram
+    - soc
+
+components/esp_sleep/test_apps/vad_wakeup:
+  depends_components:
+    - esp_hw_support
+    - esp_sleep
+    - esp_driver_i2s
+    - ulp
+    - soc
+  disable:
+    - if: SOC_LP_VAD_SUPPORTED != 1
+
+components/esp_sleep/test_apps/wakeup_tests:
+  enable:
+    - if: SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h21" # TODO: IDF-16199
+      temporary: true
+      reason: lack of runner
+  depends_components:
+    - esp_driver_gpio
+    - esp_hal_gpio
+    - esp_hw_support
+    - esp_sleep
+    - soc

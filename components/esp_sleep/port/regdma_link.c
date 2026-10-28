@@ -15,7 +15,7 @@
 
 #include "esp_heap_caps.h"
 #include "esp_log.h"
-#include "esp_regdma.h"
+#include "esp_private/esp_regdma.h"
 #include "esp_compiler.h"
 
 

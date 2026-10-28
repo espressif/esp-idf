@@ -6,7 +6,7 @@
 
 #include "esp_check.h"
 #include "esp_macros.h"
-#include "esp_pmu.h"
+#include "esp_private/esp_pmu.h"
 
 #include "soc/pmu_reg.h"
 

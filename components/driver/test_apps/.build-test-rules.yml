@@ -24,6 +24,7 @@ components/driver/test_apps/legacy_twai:
     - soc
     - esp_hal_twai
     - esp_hw_support
+    - esp_sleep
 
 components/driver/test_apps/touch_element:
   disable:
@@ -55,3 +56,4 @@ components/driver/test_apps/touch_sensor_v2:
     - soc
     - esp_hal_touch_sens
     - esp_hw_support
+    - esp_sleep

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_pmu.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_check.h"
 #include "soc/hp_sys_clkrst_reg.h"
 #include "esp_private/sleep_retention.h"
