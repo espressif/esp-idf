@@ -39,10 +39,14 @@ endif
 
 config BT_CTRL_BR_EDR_MAX_SYNC_CONN
     int "BR/EDR Max Synchronous(SCO/eSCO) Connections"
+    default 1 if BT_BLUEDROID_ENABLED && BT_HFP_ENABLE
     default 0
+    range 1 3 if BT_BLUEDROID_ENABLED && BT_HFP_ENABLE
     range 0 3
     help
         BR/EDR Synchronize maximum connections of bluetooth controller.
+        Bluedroid HFP requires at least one synchronous connection, so the minimum is 1
+        when BT_HFP_ENABLE is set.
 
 if BT_CTRL_BR_EDR_MAX_SYNC_CONN != 0
 

@@ -13,13 +13,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BT_BLUEDROID_ENABLED) && (CONFIG_BT_BLUEDROID_ENABLED) && (CONFIG_BT_HFP_ENABLE) && \
-    defined(CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN) && (CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN == 0)
-
-#pragma message ("BT: forcing BR/EDR max sync conn eff to 1 (Bluedroid HFP requires SCO/eSCO)")
-#define UC_BR_EDR_CTRL_MAX_SYNC_CONN (1)
-
-#elif defined(CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN)
+#if defined(CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN)
 
 #define UC_BR_EDR_CTRL_MAX_SYNC_CONN (CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN)
 
