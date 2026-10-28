@@ -199,6 +199,10 @@ typedef union {
 
 void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data);
 
+/* A2DP deinit can drop BTA_AV_RC_CLOSE_EVT after the AV callback is detached.
+ * Report disconnect and clear the connection fields. CT/TG init state stays. */
+void btc_rc_drop_connection(void);
+
 BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
 
 /*******************************************************************************
