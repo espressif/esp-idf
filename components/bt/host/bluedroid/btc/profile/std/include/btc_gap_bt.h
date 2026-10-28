@@ -43,6 +43,7 @@ typedef enum {
     BTC_GAP_BT_SET_ACL_PKT_TYPES_EVT,
     BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT,
     BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT,
+    BTC_GAP_BT_SSR_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {

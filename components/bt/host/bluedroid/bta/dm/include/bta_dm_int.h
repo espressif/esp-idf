@@ -733,6 +733,10 @@ typedef struct {
     tBTM_PM_STATUS  status;
     UINT16          value;
     UINT8           hci_status;
+    UINT16          max_tx_lat;
+    UINT16          max_rx_lat;
+    UINT16          min_remote_to;
+    UINT16          min_local_to;
 
 } tBTA_DM_PM_BTM_STATUS;
 

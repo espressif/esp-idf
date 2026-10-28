@@ -1988,8 +1988,16 @@ typedef struct {
 /*************************************
 **  Power Manager Callback Functions
 **************************************/
+typedef struct {
+    UINT16 max_tx_lat;
+    UINT16 max_rx_lat;
+    UINT16 min_remote_to;
+    UINT16 min_local_to;
+} tBTM_SSR_PARAMS;
+
 typedef void (tBTM_PM_STATUS_CBACK) (BD_ADDR p_bda, tBTM_PM_STATUS status,
-                                     UINT16 value, UINT8 hci_status);
+                                     UINT16 value, UINT8 hci_status,
+                                     const tBTM_SSR_PARAMS *p_ssr);
 
 
 /************************
