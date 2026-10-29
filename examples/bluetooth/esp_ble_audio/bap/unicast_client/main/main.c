@@ -25,6 +25,7 @@
 #define ASCS_RSP_CONNECT        (0b11)
 
 static uint16_t default_conn_handle = CONN_HANDLE_INIT;
+static bool sec_done;
 static bool disc_completed;
 static bool mtu_exchanged;
 
@@ -1214,6 +1215,7 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     default_conn_handle = CONN_HANDLE_INIT;
+    sec_done = false;
     disc_completed = false;
     mtu_exchanged = false;
 
@@ -1245,6 +1247,16 @@ static void security_change(esp_ble_audio_gap_app_event_t *event)
              event->security_change.conn_handle,
              event->security_change.sec_level,
              event->security_change.bonded);
+
+    /* A cached peer DB completes discovery before a bonded link is re-encrypted,
+     * so profile discovery also waits for encryption. */
+    if (!sec_done) {
+        sec_done = true;
+
+        if (mtu_exchanged && disc_completed) {
+            (void)discover_sinks();
+        }
+    }
 
     err = exchange_mtu(event->security_change.conn_handle);
     if (err) {
@@ -1300,7 +1312,7 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
      */
     mtu_exchanged = true;
 
-    if (disc_completed) {
+    if (sec_done && disc_completed) {
         (void)discover_sinks();
     }
 }
@@ -1321,7 +1333,7 @@ static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
      */
     disc_completed = true;
 
-    if (mtu_exchanged) {
+    if (sec_done && mtu_exchanged) {
         (void)discover_sinks();
     }
 }

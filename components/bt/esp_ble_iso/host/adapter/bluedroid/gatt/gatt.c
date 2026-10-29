@@ -563,6 +563,33 @@ static void gattc_disc_cmpl_event_handler(tBTA_GATTC_DIS_CMPL *disc_cmpl)
     }
 }
 
+/* A peer DB already cached at open (e.g. loaded from NVS with
+ * CONFIG_BT_GATTC_CACHE_NVS_FLASH) is not discovered again, so BTA never
+ * sends DIS_SRVC_CMPL; report the completion the app waits for here. */
+static void gattc_open_cached_disc_cmpl(tBTA_GATTC_OPEN *open)
+{
+    tBTA_GATTC_DIS_CMPL disc_cmpl = {
+        .conn_id = open->conn_id,
+        .status = BTA_GATT_OK,
+    };
+    tBTA_GATTC_CLCB *p_clcb;
+
+    if (open->status != BTA_GATT_OK) {
+        return;
+    }
+
+    p_clcb = bta_gattc_find_clcb_by_conn_id(open->conn_id);
+    if (p_clcb == NULL || p_clcb->p_srcb == NULL ||
+            p_clcb->p_srcb->state != BTA_GATTC_SERV_IDLE ||
+            p_clcb->p_srcb->p_srvc_cache == NULL) {
+        return;
+    }
+
+    LOG_INF("[B]GattcDbCached[0x%04x]", open->conn_id);
+
+    gattc_disc_cmpl_event_handler(&disc_cmpl);
+}
+
 static void gattc_read_chrc_event_handler(tBTA_GATTC_READ *read)
 {
     struct bt_le_gatt_event_param *qev;
@@ -1194,6 +1221,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         }
 
         gattc_open_event_handler(&p_data->open);
+
+        gattc_open_cached_disc_cmpl(&p_data->open);
         break;
 
     case BTA_GATTC_CLOSE_EVT:

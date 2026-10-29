@@ -13,12 +13,13 @@
 
 #include "tmap_central.h"
 
-/* MTU exchange and service discovery complete independently, so both are tracked.
- * set_discovered is per member rather than a count, so a member that keeps its
- * link while another one is replaced does not have to be discovered again. */
+/* Encryption, MTU exchange and service discovery complete independently, so all
+ * are tracked. set_discovered is per member rather than a count, so a member that
+ * keeps its link while another one is replaced does not have to be discovered again. */
 struct set_member {
     uint16_t handle;
     uint8_t  dst[6];
+    bool     sec_done;
     bool     mtu_exchanged;
     bool     disc_completed;
     bool     set_discovered;
@@ -26,6 +27,8 @@ struct set_member {
 
 static struct set_member members[TMAP_CEN_PEER_COUNT];
 static size_t member_count;
+
+static void member_discover_profiles(struct set_member *member);
 
 /* One connect at a time. members[] only learns a peer at acl_connect, and
  * ext_scan_stop() does not discard reports already queued for us, so without
@@ -342,6 +345,7 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
 
 static void security_change(esp_ble_iso_gap_app_event_t *event)
 {
+    struct set_member *member;
     int err;
 
     if (event->security_change.status) {
@@ -354,6 +358,12 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
              event->security_change.conn_handle,
              event->security_change.sec_level,
              event->security_change.bonded);
+
+    member = member_by_handle(event->security_change.conn_handle);
+    if (member && !member->sec_done) {
+        member->sec_done = true;
+        member_discover_profiles(member);
+    }
 
     err = exchange_mtu(event->security_change.conn_handle);
     if (err) {
@@ -382,12 +392,14 @@ static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
     }
 }
 
-/* MTU exchange and service discovery complete in either order. */
+/* Encryption, MTU exchange and service discovery complete in any order. Wait for
+ * encryption too: a cached peer DB completes discovery at once, before a bonded
+ * link is re-encrypted, and the profiles then read encrypted characteristics. */
 static void member_discover_profiles(struct set_member *member)
 {
     esp_err_t err;
 
-    if (!member->mtu_exchanged || !member->disc_completed) {
+    if (!member->sec_done || !member->mtu_exchanged || !member->disc_completed) {
         return;
     }
 

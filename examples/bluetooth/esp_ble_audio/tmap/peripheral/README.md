@@ -81,7 +81,7 @@ ear and the other for `Right`.
 2. If `BT_CSIP_SET_MEMBER` is on, the CSIP set member registers via the CAP acceptor, generates an RSI, and is plumbed into `start_info.csis_insts[0]`.
 3. VCP volume renderer, BAP unicast server (PACS, ASCS callbacks, stream ops), CCP call control (TBS client), and MCP controller (MCC) are initialized.
 4. The audio stack starts, device name is set, and extended advertising starts on handle 0.
-5. On ACL connect the connection handle is stored; on MTU change GATT service discovery starts; on discovery complete `tmap_discover_tmas` runs.
+5. On ACL connect the connection handle is stored; on MTU change GATT service discovery starts; `tmap_discover_tmas` runs once both discovery and security complete, in either order (a cached peer database completes discovery before a bonded link is re-encrypted).
 6. TMAP discovery records whether the peer is CG and/or UMS, then `ccp_discover_tbs` triggers TBS discovery.
 7. After GTBS is discovered the TBS URI list is read; `read_uri_schemes_string_cb` saves the first URI and chains into `mcp_discover_mcs`.
 8. MCS discovery walks player name → track title → duration → position → playback speed → seeking speed → playing order → orders supported → media state → opcodes → CCID.

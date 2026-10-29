@@ -48,11 +48,14 @@ enum scan_mode {
 static enum scan_mode scan_mode;
 
 static uint16_t conn_handle = CONN_HANDLE_INIT;
+static bool sec_done;
 static bool mtu_exchanged;
 static bool disc_completed;
 static uint8_t recv_state_count;
 static uint8_t recv_state_read_idx;
 static bool recv_states_synced;
+
+static void bass_discover(void);
 
 /* Source address is LSB-first. */
 static uint8_t src_addr_type;
@@ -759,6 +762,7 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     conn_handle = CONN_HANDLE_INIT;
+    sec_done = false;
     mtu_exchanged = false;
     disc_completed = false;
     recv_state_count = 0;
@@ -796,6 +800,16 @@ static void security_change(esp_ble_audio_gap_app_event_t *event)
              event->security_change.conn_handle,
              event->security_change.sec_level,
              event->security_change.bonded);
+
+    /* A cached peer DB completes discovery before a bonded link is re-encrypted,
+     * so profile discovery also waits for encryption. */
+    if (!sec_done) {
+        sec_done = true;
+
+        if (mtu_exchanged && disc_completed) {
+            bass_discover();
+        }
+    }
 
     err = exchange_mtu(event->security_change.conn_handle);
     if (err) {
@@ -926,7 +940,7 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
      */
     mtu_exchanged = true;
 
-    if (disc_completed) {
+    if (sec_done && disc_completed) {
         bass_discover();
     }
 }
@@ -947,7 +961,7 @@ static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
      */
     disc_completed = true;
 
-    if (mtu_exchanged) {
+    if (sec_done && mtu_exchanged) {
         bass_discover();
     }
 }

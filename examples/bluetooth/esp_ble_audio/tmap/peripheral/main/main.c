@@ -84,6 +84,12 @@ static uint8_t ext_adv_data[ADV_DATA_LEN];
 
 static uint16_t default_conn_handle = CONN_HANDLE_INIT;
 
+/* Encryption and service discovery complete in either order; profile discovery
+ * waits for both, since a cached peer DB completes discovery at once, before a
+ * bonded link is re-encrypted, and the profiles write encrypted CCCDs. */
+static bool sec_done;
+static bool disc_done;
+
 uint16_t default_conn_handle_get(void)
 {
     return default_conn_handle;
@@ -136,6 +142,15 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
 
     default_conn_handle = event->acl_connect.conn_handle;
+    sec_done = false;
+    disc_done = false;
+}
+
+static void profiles_discover(void)
+{
+    if (sec_done && disc_done) {
+        tmap_discover_tmas();
+    }
 }
 
 static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
@@ -161,6 +176,14 @@ static void security_change(esp_ble_audio_gap_app_event_t *event)
              event->security_change.conn_handle,
              event->security_change.sec_level,
              event->security_change.bonded);
+
+    if (sec_done) {
+        return;
+    }
+
+    sec_done = true;
+
+    profiles_discover();
 }
 
 static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
@@ -217,7 +240,9 @@ static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
         return;
     }
 
-    tmap_discover_tmas();
+    disc_done = true;
+
+    profiles_discover();
 }
 
 static void iso_gatt_app_cb(esp_ble_audio_gatt_app_event_t *event)
