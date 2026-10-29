@@ -746,6 +746,14 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
 
     if (atomic_load(&i2c_master->status) == I2C_STATUS_READ) {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
+        // The receive FIFO can fire after a transaction has already been torn down
+        // (e.g. a timed-out or aborted read), leaving the operation's data pointer
+        // NULL. Reading into a NULL buffer faults, so flag the transfer as timed
+        // out and bail instead of dereferencing it.
+        if (i2c_operation->data == NULL) {
+            atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+            return;
+        }
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->rx_cnt);
         /* rx_cnt bytes have just been read, increment the number of bytes used from the buffer */
@@ -766,6 +774,12 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
 #if !SOC_I2C_STOP_INDEPENDENT
     else {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
+        // Same guard as the independent-stop path above: a late RX interrupt on a
+        // torn-down read can leave data NULL; skip the FIFO read to avoid a fault.
+        if (i2c_operation->data == NULL) {
+            atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+            return;
+        }
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->read_len_static);
         // If the read command only contain nack marker, no read it for the second time.
