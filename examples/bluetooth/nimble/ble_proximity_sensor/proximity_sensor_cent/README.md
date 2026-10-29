@@ -17,9 +17,9 @@ It performs following GATT operations against the specified peer:
 
 * After the write operation is completed, reads the tx power level characteristic.
 
-* It continuously calculated the path loss. If the path loss exceeds high threshold, it writes to alert level characteristic of immediate alert service of peripheral to start alerting.
+* It continuously calculates the path loss. If the path loss exceeds the high threshold, it writes `2` (High Alert) to the alert level characteristic of the peripheral's immediate alert service to start alerting. Path loss between the two thresholds is not written at all, so the peripheral logs nothing for those samples.
 
-* If the path loss drops below the low threshold, it writes to alert level characteristic of immediate alert service of peripheral to stop alerting.
+* If the path loss drops below the low threshold, it writes `0` (No Alert) to the same characteristic to stop alerting.
 
 If the peer does not support a required service, characteristic, or descriptor, then the peer lied when it claimed support for the Link Loss service! When this happens, or if a GATT procedure fails, this function immediately terminates the connection.
 
@@ -124,85 +124,30 @@ I (3707) NimBLE: Read on tx power level char completed; status=0 conn_handle=1
 I (3707) NimBLE:  attr_handle=11 value=
 I (3707) NimBLE: 0x80
 
-I (5427) NimBLE: Connection handle : 1
-I (5427) NimBLE: Current RSSI = -16
-I (5427) NimBLE: path loss = -112 pwr lvl = -128 rssi = -16
-I (5427) NimBLE: GATT procedure initiated: write no rsp; 
-I (5427) NimBLE: att_handle=7 len=4
+I (4442) NimBLE: Connection handle : 1
+I (4442) NimBLE: Current RSSI = -21
+I (4442) NimBLE: path loss = -107 pwr lvl = -128 rssi = -21
+I (4442) NimBLE: GATT procedure initiated: write no rsp; 
+I (4442) NimBLE: att_handle=7 len=1
 
-I (5437) NimBLE: Write to alert level characteristis done
+I (4452) NimBLE: Write to alert level characteristis done
+I (5452) NimBLE: Connection handle : 1
+I (5452) NimBLE: Current RSSI = -26
+I (5452) NimBLE: path loss = -102 pwr lvl = -128 rssi = -26
+I (5452) NimBLE: GATT procedure initiated: write no rsp; 
+I (5452) NimBLE: att_handle=7 len=1
 
-I (10447) NimBLE: Connection handle : 1
-I (10447) NimBLE: Current RSSI = -16
-I (10447) NimBLE: path loss = -112 pwr lvl = -128 rssi = -16
-I (10447) NimBLE: GATT procedure initiated: write no rsp; 
-I (10457) NimBLE: att_handle=7 len=4
+I (5462) NimBLE: Write to alert level characteristis done
+I (6462) NimBLE: Connection handle : 1
+I (6462) NimBLE: Current RSSI = -28
+I (6462) NimBLE: path loss = -100 pwr lvl = -128 rssi = -28
+I (7462) NimBLE: Connection handle : 1
+I (7462) NimBLE: Current RSSI = -23
+I (7462) NimBLE: path loss = -105 pwr lvl = -128 rssi = -23
+I (7462) NimBLE: GATT procedure initiated: write no rsp; 
+I (7462) NimBLE: att_handle=7 len=1
 
-I (10457) NimBLE: Write to alert level characteristis done
-
-I (15467) NimBLE: Connection handle : 1
-I (15467) NimBLE: Current RSSI = -8
-I (15467) NimBLE: path loss = -120 pwr lvl = -128 rssi = -8
-I (15467) NimBLE: GATT procedure initiated: write no rsp; 
-I (15477) NimBLE: att_handle=7 len=4
-
-I (15477) NimBLE: Write to alert level characteristis done
-
-I (20487) NimBLE: Connection handle : 1
-I (20487) NimBLE: Current RSSI = -75
-I (20487) NimBLE: path loss = -53 pwr lvl = -128 rssi = -75
-I (20487) NimBLE: GATT procedure initiated: write no rsp; 
-I (20497) NimBLE: att_handle=7 len=4
-
-I (20497) NimBLE: Write to alert level characteristis done
-
-I (25507) NimBLE: Connection handle : 1
-I (25507) NimBLE: Current RSSI = -38
-I (25507) NimBLE: path loss = -90 pwr lvl = -128 rssi = -38
-I (25507) NimBLE: GATT procedure initiated: write no rsp; 
-I (25517) NimBLE: att_handle=7 len=4
-
-I (25517) NimBLE: Write to alert level characteristis done
-
-I (30527) NimBLE: Connection handle : 1
-I (30527) NimBLE: Current RSSI = -9
-I (30527) NimBLE: path loss = -119 pwr lvl = -128 rssi = -9
-I (30527) NimBLE: GATT procedure initiated: write no rsp; 
-I (30537) NimBLE: att_handle=7 len=4
-
-I (30537) NimBLE: Write to alert level characteristis done
-
-I (35547) NimBLE: Connection handle : 1
-I (35547) NimBLE: Current RSSI = -9
-I (35547) NimBLE: path loss = -119 pwr lvl = -128 rssi = -9
-I (35547) NimBLE: GATT procedure initiated: write no rsp; 
-I (35557) NimBLE: att_handle=7 len=4
-
-I (35557) NimBLE: Write to alert level characteristis done
-
-I (40567) NimBLE: Connection handle : 1
-I (40567) NimBLE: Current RSSI = -9
-I (40567) NimBLE: path loss = -119 pwr lvl = -128 rssi = -9
-I (40567) NimBLE: GATT procedure initiated: write no rsp; 
-I (40577) NimBLE: att_handle=7 len=4
-
-I (40577) NimBLE: Write to alert level characteristis done
-
-I (45587) NimBLE: Connection handle : 1
-I (45587) NimBLE: Current RSSI = -9
-I (45587) NimBLE: path loss = -119 pwr lvl = -128 rssi = -9
-I (45587) NimBLE: GATT procedure initiated: write no rsp; 
-I (45597) NimBLE: att_handle=7 len=4
-
-I (45597) NimBLE: Write to alert level characteristis done
-
-I (50607) NimBLE: Connection handle : 1
-I (50607) NimBLE: Current RSSI = -9
-I (50607) NimBLE: path loss = -119 pwr lvl = -128 rssi = -9
-I (50607) NimBLE: GATT procedure initiated: write no rsp; 
-I (50617) NimBLE: att_handle=7 len=4
-
-I (50617) NimBLE: Write to alert level characteristis done
+I (7472) NimBLE: Write to alert level characteristis done
 
 I (8957) NimBLE: GAP procedure initiated: discovery; 
 I (8967) NimBLE: own_addr_type=0 filter_policy=0 passive=1 limited=0 filter_duplicates=1 
