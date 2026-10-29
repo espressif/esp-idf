@@ -71,6 +71,8 @@ static const touch_sensor_filter_config_t s_filter_cfg = TOUCH_SENSOR_DEFAULT_FI
 typedef struct {
     int active_count;
     int inactive_count;
+    uint32_t active_chan_mask;
+    uint32_t inactive_chan_mask;
 #if SOC_TOUCH_SENSOR_VERSION == 1
     int hw_active_count;
 #endif
@@ -95,6 +97,7 @@ static bool TEST_TCH_IRAM_ATTR s_test_touch_on_active_callback(touch_sensor_hand
 {
     ESP_EARLY_LOGI("touch_callback", "[CH %d] active", (int)event->chan_id);
     test_touch_cb_data_t *cb_data = (test_touch_cb_data_t *)user_ctx;
+    cb_data->active_chan_mask |= BIT(event->chan_id);
     cb_data->active_count++;
     return false;
 }
@@ -103,6 +106,7 @@ static bool TEST_TCH_IRAM_ATTR s_test_touch_on_inactive_callback(touch_sensor_ha
 {
     ESP_EARLY_LOGI("touch_callback", "[CH %d] inactive", (int)event->chan_id);
     test_touch_cb_data_t *cb_data = (test_touch_cb_data_t *)user_ctx;
+    cb_data->inactive_chan_mask |= BIT(event->chan_id);
     cb_data->inactive_count++;
     return false;
 }
@@ -405,10 +409,16 @@ TEST_CASE("touch_sens_light_sleep_wakeup_test", "[touch]")
     TEST_ASSERT_EQUAL(1, cb_data.active_count);
 #endif
     /**
-     * @note The inactive callback is not triggered consistently after wake-up, and the root cause
-     *       is not yet clear. Since manual touch testing on real hardware behaves normally in most
-     *       cases, this test does not currently verify invocation of the inactive callback.
+     * The active callback must report the touched channel.
      */
+    TEST_ASSERT_EQUAL_HEX32(BIT(TEST_TOUCH_WAKEUP_CHANNEL), cb_data.active_chan_mask);
+    for (int cnt = 0; cb_data.inactive_count != cb_data.active_count; cnt++) {
+        if (cnt > 100) {
+            TEST_FAIL_MESSAGE("timeout waiting for inactive callback");
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    TEST_ASSERT_EQUAL_HEX32(BIT(TEST_TOUCH_WAKEUP_CHANNEL), cb_data.inactive_chan_mask);
 
     /**
      * Verify that the peripheral still works properly after waking up from sleep.
