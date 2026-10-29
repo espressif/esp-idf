@@ -50,6 +50,7 @@ typedef struct {
     intr_handle_t intr_hdl;
     intr_handle_t timer_intr_hdl;
     twai_frame_queue_t tx_queue;
+    SemaphoreHandle_t idle_sem;
     EventGroupHandle_t event_group;
     twai_clock_source_t curr_clk_src;
     uint32_t src_freq_hz;
@@ -258,7 +259,15 @@ static void _node_isr_main(void *arg)
         }
         // node recover from busoff, restart remain tx transaction
         if ((e_data.old_sta == TWAI_ERROR_BUS_OFF) && (e_data.new_sta == TWAI_ERROR_ACTIVE)) {
-            if (_node_start_tx_batch_from_isr(twai_ctx, &do_yield)) {
+            if (twai_ctx->idle_sem) {
+                // permit mode: the frame in flight (if any) is lost, hand its permit back
+                memset(twai_ctx->p_curr_tx, 0, sizeof(twai_ctx->p_curr_tx));
+                if (atomic_exchange(&twai_ctx->hw_busy, false)) {
+                    BaseType_t sem_yield = pdFALSE;
+                    xSemaphoreGiveFromISR(twai_ctx->idle_sem, &sem_yield);
+                    do_yield |= sem_yield;
+                }
+            } else if (_node_start_tx_batch_from_isr(twai_ctx, &do_yield)) {
                 atomic_store(&twai_ctx->hw_busy, true);
             } else {
                 _node_mark_tx_idle(twai_ctx);
@@ -299,19 +308,28 @@ static void _node_isr_main(void *arg)
             uint32_t slot_event = tx_done_events & -tx_done_events; // get the lowest event bit
             uint8_t tx_idx = __builtin_ctz(slot_event) / 2;
             assert((tx_idx < twai_ctx->tx_slot_num) && twai_ctx->p_curr_tx[tx_idx]);
+            const twai_frame_t *done_frame = twai_ctx->p_curr_tx[tx_idx];
+            twai_ctx->p_curr_tx[tx_idx] = NULL;
+            if (twai_ctx->idle_sem) {
+                // permit mode: the node is fully idle again before the permit is handed back,
+                // so a transmit from inside `on_tx_done` can take it and start the next frame at once
+                atomic_store(&twai_ctx->hw_busy, false);
+                BaseType_t sem_yield = pdFALSE;
+                xSemaphoreGiveFromISR(twai_ctx->idle_sem, &sem_yield);
+                do_yield |= sem_yield;
+            }
             if (twai_ctx->cbs.on_tx_done) {
                 twai_tx_done_event_data_t tx_ev = {
                     .is_tx_success = (events & TWAI_HAL_EVENT_TX_SUCC_SLOT(tx_idx)),  // find 'on_error_cb' if not success
-                    .done_tx_frame = twai_ctx->p_curr_tx[tx_idx],
+                    .done_tx_frame = done_frame,
                 };
                 do_yield |= twai_ctx->cbs.on_tx_done(&twai_ctx->api_base, &tx_ev, twai_ctx->user_data);
             }
-            twai_ctx->p_curr_tx[tx_idx] = NULL;
             tx_done_events &= ~slot_event;
         }
 
         // start a new TX batch only when all hardware TX buffers from this batch are done
-        if (_node_is_tx_all_done(twai_ctx) && (atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF)) {
+        if (!twai_ctx->idle_sem && _node_is_tx_all_done(twai_ctx) && (atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF)) {
             if (!_node_start_tx_batch_from_isr(twai_ctx, &do_yield)) {
                 _node_mark_tx_idle(twai_ctx);
                 xEventGroupSetBitsFromISR(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT, &do_yield);
@@ -369,6 +387,9 @@ static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
         esp_intr_free(twai_ctx->timer_intr_hdl);
     }
     twai_frame_queue_del(twai_ctx->tx_queue);
+    if (twai_ctx->idle_sem) {
+        vSemaphoreDeleteWithCaps(twai_ctx->idle_sem);
+    }
     if (twai_ctx->event_group) {
         // xEventGroupSetBitsFromISR is not done immediately, need flush it before deleting
         _node_flush_pended_set_bits();
@@ -594,7 +615,8 @@ static esp_err_t _node_get_status(twai_node_handle_t node, twai_node_status_t *s
         status_ret->state = atomic_load(&twai_ctx->state);
         status_ret->tx_error_count = twai_hal_get_tec(twai_ctx->hal);
         status_ret->rx_error_count = twai_hal_get_rec(twai_ctx->hal);
-        status_ret->tx_queue_remaining = twai_frame_queue_get_free_space(twai_ctx->tx_queue);
+        // in permit mode the permit itself is the only free slot
+        status_ret->tx_queue_remaining = twai_ctx->idle_sem ? uxSemaphoreGetCount(twai_ctx->idle_sem) : twai_frame_queue_get_free_space(twai_ctx->tx_queue);
     }
     if (record_ret) {
         *record_ret = twai_ctx->history;
@@ -618,6 +640,26 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     ESP_RETURN_ON_FALSE_ISR((!frame->header.brs) || (twai_ctx->valid_fd_timing), ESP_ERR_INVALID_ARG, TAG, "brs can't be used without config data_timing");
     ESP_RETURN_ON_FALSE_ISR(!twai_ctx->hal->enable_listen_only, ESP_ERR_NOT_SUPPORTED, TAG, "node is config as listen only");
     ESP_RETURN_ON_FALSE_ISR(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
+
+    if (twai_ctx->idle_sem) {
+        // permit mode: take the single TX permit, then go straight to the hardware.
+        // Nothing is ever held in the driver, so a frame not yet transmitted is still the caller's to drop.
+        BaseType_t yield_required = pdFALSE;
+        BaseType_t taken;
+        if (xPortInIsrContext()) {
+            taken = xSemaphoreTakeFromISR(twai_ctx->idle_sem, &yield_required);
+        } else {
+            taken = xSemaphoreTake(twai_ctx->idle_sem, (timeout == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout));
+        }
+        ESP_RETURN_ON_FALSE_ISR(taken == pdTRUE, ESP_ERR_TIMEOUT, TAG, "tx busy");
+        atomic_store(&twai_ctx->hw_busy, true);
+        twai_ctx->p_curr_tx[0] = frame;
+        _node_start_trans(twai_ctx, 0);
+        if (yield_required) {
+            portYIELD_FROM_ISR();
+        }
+        return ESP_OK;
+    }
 
     xEventGroupClearBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT); //going to send, clear the idle event
     bool false_var = false;
@@ -647,6 +689,13 @@ static esp_err_t _node_wait_tx_all_done(twai_node_handle_t node, int timeout)
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     TickType_t ticks_to_wait = (timeout == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
+
+    if (twai_ctx->idle_sem) {
+        // permit mode: holding the permit means nothing is in flight, give it straight back
+        ESP_RETURN_ON_FALSE(xSemaphoreTake(twai_ctx->idle_sem, ticks_to_wait) == pdTRUE, ESP_ERR_TIMEOUT, TAG, "wait tx timeout");
+        xSemaphoreGive(twai_ctx->idle_sem);
+        return ESP_OK;
+    }
 
     // either hw_busy or tx_queue is not empty, means tx is not finished
     // otherwise, hardware is idle, return immediately
@@ -687,7 +736,6 @@ static esp_err_t _node_create_sleep_retention_cb(void *obj)
 esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twai_node_handle_t *node_ret)
 {
     esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE((node_config->tx_queue_depth > 0) || node_config->flags.enable_listen_only, ESP_ERR_INVALID_ARG, TAG, "tx_queue_depth at least 1");
     ESP_RETURN_ON_FALSE(!node_config->intr_priority || (BIT(node_config->intr_priority) & ESP_INTR_FLAG_LOWMED), ESP_ERR_INVALID_ARG, TAG, "Invalid intr_priority level");
 #if !SOC_TWAI_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(!node_config->flags.sleep_allow_pd, ESP_ERR_NOT_SUPPORTED, TAG, "sleep retention is not supported on this target");
@@ -713,7 +761,14 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     // state is in bus_off before enabled
     atomic_store(&node->state, TWAI_ERROR_BUS_OFF);
     if (!node_config->flags.enable_listen_only) {
-        ESP_GOTO_ON_ERROR(twai_frame_queue_new(&node->tx_queue, node_config->tx_queue_depth, TWAI_MALLOC_CAPS), err, TAG, "no_mem");
+        if (node_config->tx_queue_depth) {
+            ESP_GOTO_ON_ERROR(twai_frame_queue_new(&node->tx_queue, node_config->tx_queue_depth, TWAI_MALLOC_CAPS), err, TAG, "no_mem");
+        } else {
+            // no queue: a single TX permit lets one frame at a time go directly to the hardware
+            node->idle_sem = xSemaphoreCreateBinaryWithCaps(TWAI_MALLOC_CAPS);
+            ESP_GOTO_ON_FALSE(node->idle_sem, ESP_ERR_NO_MEM, err, TAG, "no_mem");
+            xSemaphoreGive(node->idle_sem);
+        }
     }
     node->event_group = xEventGroupCreateWithCaps(TWAI_MALLOC_CAPS);
     ESP_GOTO_ON_FALSE(node->event_group, ESP_ERR_NO_MEM, err, TAG, "no_mem");
