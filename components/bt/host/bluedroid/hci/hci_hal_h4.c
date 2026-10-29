@@ -127,7 +127,7 @@ static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thr
     hci_hal_env.adv_credits_to_release = 0;
     hci_hal_env.cmd_buf_in_use = false;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
-    hci_hal_env.adv_flow_monitor = osi_alarm_new("adv_fc_mon", hci_adv_flow_monitor, NULL, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
+    hci_hal_env.adv_flow_monitor = osi_alarm_new("adv_fc_mon", hci_adv_flow_monitor, NULL, NULL);
     assert (hci_hal_env.adv_flow_monitor != NULL);
 #endif
 #endif // #if (BLE_42_SCAN_EN == TRUE)

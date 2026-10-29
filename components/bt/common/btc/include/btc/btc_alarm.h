@@ -13,10 +13,11 @@
 
 /* btc_alarm_args_t */
 typedef struct {
-    osi_alarm_callback_t cb;
-    void *cb_data;
+    osi_alarm_t *alarm;
+    uint8_t generation;
 } btc_alarm_args_t;
 
+void alarm_invoke(osi_alarm_t *alarm, uint8_t generation);
 void btc_alarm_handler(btc_msg_t *msg);
 
 #endif /* __BTC_ALARM_H__ */

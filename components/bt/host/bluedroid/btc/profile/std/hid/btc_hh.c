@@ -351,7 +351,7 @@ void btc_hh_start_vup_timer(BD_ADDR bd_addr)
         osi_alarm_free(p_dev->vup_timer);
         p_dev->vup_timer = NULL;
     }
-    if ((p_dev->vup_timer = osi_alarm_new("btc_hh.vup_timer", btc_hh_timer_timeout, p_dev, BTC_TIMEOUT_VUP_MS)) ==
+    if ((p_dev->vup_timer = osi_alarm_new("btc_hh.vup_timer", btc_hh_timer_timeout, p_dev, NULL)) ==
         NULL) {
         BTC_TRACE_ERROR("%s unable to malloc vup_timer!", __func__);
     }

@@ -713,7 +713,7 @@ bool hci_c2h_credit_init(void)
     hci_unlock();
 
     if (s_hci->send_alarm == NULL) {
-        s_hci->send_alarm = osi_alarm_new("c2h_send", hci_send_alarm_cb, NULL, 0);
+        s_hci->send_alarm = osi_alarm_new("c2h_send", hci_send_alarm_cb, NULL, hci_get_current_thread());
         if (s_hci->send_alarm == NULL) {
             HCI_TRACE_ERROR("c2h credit send_alarm create failed");
             hci_c2h_credit_deinit();
