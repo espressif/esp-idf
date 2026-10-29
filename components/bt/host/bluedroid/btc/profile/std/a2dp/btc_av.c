@@ -1935,17 +1935,21 @@ bt_status_t btc_a2d_src_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_aud
     BT_HDR *p_buf = (BT_HDR *)audio_buf;
     assert(audio_buf->data - (UINT8 *)(p_buf + 1) >= BTC_AUDIO_BUFF_OFFSET);
     /* since p_buf and audio_buf point to the same memory, backup those value before modify p_buf */
-    uint16_t number_frame = audio_buf->number_frame;
-    uint16_t data_len = audio_buf->data_len;
-    uint32_t timestamp = audio_buf->timestamp;
+    uint16_t saved_number_frame = audio_buf->number_frame;
+    uint32_t saved_timestamp = audio_buf->timestamp;
+    uint16_t saved_data_len = audio_buf->data_len;
     p_buf->offset = audio_buf->data - (UINT8 *)(p_buf + 1);
-    p_buf->layer_specific = number_frame;
-    p_buf->len = data_len;
-    *((UINT32 *) (p_buf + 1)) = timestamp;
+    p_buf->layer_specific = saved_number_frame;
+    p_buf->len = saved_data_len;
+    *((UINT32 *) (p_buf + 1)) = saved_timestamp;
 
     if (btc_a2dp_source_enqueue_audio_frame(p_buf)) {
         return BT_STATUS_SUCCESS;
     }
+
+    audio_buf->number_frame = saved_number_frame;
+    audio_buf->timestamp = saved_timestamp;
+    audio_buf->data_len = saved_data_len;
 #endif
     return BT_STATUS_FAIL;
 }
