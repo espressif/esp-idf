@@ -50,6 +50,7 @@ esp_err_t esp_lcd_panel_io_rx_param(esp_lcd_panel_io_handle_t io, int lcd_cmd, v
  * @param[in] param_size Size of `param` in memory, in bytes, set to zero if no parameter is needed for the command
  * @return
  *          - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *          - ESP_ERR_INVALID_STATE if a command is requested without a D/C line
  *          - ESP_OK                on success
  */
 esp_err_t esp_lcd_panel_io_tx_param(esp_lcd_panel_io_handle_t io, int lcd_cmd, const void *param, size_t param_size);
@@ -68,6 +69,7 @@ esp_err_t esp_lcd_panel_io_tx_param(esp_lcd_panel_io_handle_t io, int lcd_cmd, c
  * @param[in] color_size Size of `color` in memory, in bytes
  * @return
  *          - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *          - ESP_ERR_INVALID_STATE if a command is requested without a D/C line
  *          - ESP_OK                on success
  */
 esp_err_t esp_lcd_panel_io_tx_color(esp_lcd_panel_io_handle_t io, int lcd_cmd, const void *color, size_t color_size);
