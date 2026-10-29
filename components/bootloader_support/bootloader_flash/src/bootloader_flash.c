@@ -357,6 +357,11 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
         return NULL;
     }
 
+    /* Log before the cache is stopped. ESP-TEE suspends the cache instead of
+     * disabling it, and a cache miss cannot be refilled in that window.
+     */
+    ESP_EARLY_LOGD(TAG, "rodata starts from paddr=0x%08" PRIx32 ", size=0x%" PRIx32 ", will be mapped to vaddr=0x%08" PRIx32, src_paddr, size, (uint32_t)FLASH_MMAP_VADDR);
+
     //-------------stop cache to do the MMU mapping--------------
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
@@ -376,11 +381,9 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #endif
 
     //---------------Do mapping------------------------
-    ESP_EARLY_LOGD(TAG, "rodata starts from paddr=0x%08" PRIx32 ", size=0x%" PRIx32 ", will be mapped to vaddr=0x%08" PRIx32, src_paddr, size, (uint32_t)FLASH_MMAP_VADDR);
 #if CONFIG_IDF_TARGET_ESP32
     uint32_t count = GET_REQUIRED_MMU_PAGES(size, src_paddr);
     int e = cache_flash_mmu_set(0, 0, FLASH_MMAP_VADDR, src_paddr_aligned, 64, count);
-    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)FLASH_MMAP_VADDR, count * CONFIG_MMU_PAGE_SIZE);
     if (e != 0) {
         ESP_EARLY_LOGE(TAG, "cache_flash_mmu_set failed: %d", e);
         Cache_Read_Enable(0);
@@ -392,7 +395,6 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
      * See above comments (note 1) about IDF-4710
      */
     mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_MMAP_VADDR, src_paddr_aligned, size_after_paddr_aligned, &actual_mapped_len);
-    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)FLASH_MMAP_VADDR, actual_mapped_len);
 #endif
 
     /**
@@ -412,6 +414,12 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #else
     cache_resume();
 #endif
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)FLASH_MMAP_VADDR, count * CONFIG_MMU_PAGE_SIZE);
+#else
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)FLASH_MMAP_VADDR, actual_mapped_len);
 #endif
 
     mapped = true;
@@ -498,6 +506,8 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 
         /* Move the 64KB mmu mapping window to fit map_at */
         if (map_at != current_read_mapping) {
+            /* Same constraint as bootloader_mmap(): log before stopping the cache. */
+            ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08" PRIx32 " (was 0x%08" PRIx32 ")", map_at, current_read_mapping);
 
             //----------Stop cache for mapping----------------
 #if CONFIG_IDF_TARGET_ESP32
@@ -514,7 +524,6 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #endif
 
             //---------------Do mapping------------------------
-            ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08" PRIx32 " (was 0x%08" PRIx32 ")", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
             //Should never fail if we only map a CONFIG_MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
             // Return value unused if asserts are disabled
