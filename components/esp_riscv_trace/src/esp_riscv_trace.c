@@ -16,6 +16,7 @@
 #include "esp_check.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/esp_sys_event_panic.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_cpu.h"
@@ -87,12 +88,37 @@ static esp_err_t clear_trace_buffer(esp_riscv_trace_handle_t handle)
                              ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
 }
 
-static esp_riscv_trace_handle_t handle_from_core(esp_riscv_trace_core_t core_id)
+esp_riscv_trace_handle_t esp_riscv_trace_get_handle(int core_id)
 {
-    if ((int)core_id < 0 || (int)core_id >= SOC_CPU_CORES_NUM) {
+    if (core_id < 0 || core_id >= SOC_CPU_CORES_NUM) {
         return NULL;
     }
     return s_handle[core_id];
+}
+
+#define ENCODER_LOCK_ERR_FMT "core %d is in an OpenOCD capture"
+
+static void encoder_unlock(esp_riscv_trace_handle_t handle)
+{
+    /* Stores made under the lock must not move past busy. */
+    __asm__ __volatile__("" ::: "memory");
+    handle->busy = false;
+    _lock_release(&handle->lock);
+}
+
+/* Takes the lock and sets busy, so an OpenOCD stub halted in between backs off.
+ * Refuses while an OpenOCD capture runs. busy is set before the capture state is read,
+ * which closes the race with the stubs. */
+static esp_err_t encoder_lock(esp_riscv_trace_handle_t handle)
+{
+    _lock_acquire(&handle->lock);
+    handle->busy = true;
+    __asm__ __volatile__("" ::: "memory");
+    if (esp_riscv_trace_ocd_capture_active(handle->core_id)) {
+        encoder_unlock(handle);
+        return ESP_ERR_INVALID_STATE;
+    }
+    return ESP_OK;
 }
 
 static bool is_valid_address_mode(esp_riscv_trace_address_mode_t mode)
@@ -330,7 +356,8 @@ err_alloc:
     return ret;
 }
 
-static esp_err_t trace_start_locked(esp_riscv_trace_handle_t handle)
+/* Called with handle->lock held, from the public API only. Not safe from the OpenOCD stubs or the panic path. */
+static esp_err_t encoder_start(esp_riscv_trace_handle_t handle)
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE_ISR(handle->state == ESP_RISCV_TRACE_STATE_CREATED ||
@@ -354,7 +381,8 @@ static esp_err_t trace_start_locked(esp_riscv_trace_handle_t handle)
     return ret;
 }
 
-static esp_err_t trace_stop_locked(esp_riscv_trace_handle_t handle, uint32_t timeout_us)
+/* Called with handle->lock held, from the public API only. Not safe from the OpenOCD stubs or the panic path. */
+static esp_err_t encoder_stop(esp_riscv_trace_handle_t handle, uint32_t timeout_us)
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(handle->state == ESP_RISCV_TRACE_STATE_STARTED, ESP_ERR_INVALID_STATE, TAG,
@@ -381,11 +409,10 @@ static esp_err_t trace_stop_locked(esp_riscv_trace_handle_t handle, uint32_t tim
 
     uint32_t fifo_status = riscv_trace_hal_read_fifo_status(&handle->hal);
     uint32_t intr_status = riscv_trace_hal_read_intr_raw(&handle->hal);
-    uint32_t base = (uint32_t)handle->buffer;
-    uint32_t current = riscv_trace_hal_get_current_addr(&handle->hal);
-    bool head_valid = (current >= base) && (current <= base + handle->buffer_size);
-    esp_riscv_trace_snapshot_stop(handle->core_id, fifo_status, intr_status,
-                                  head_valid ? (current - base) : 0, head_valid);
+    uint32_t head_offset;
+    bool head_valid = esp_riscv_trace_head_offset(handle, riscv_trace_hal_get_current_addr(&handle->hal),
+                                                  &head_offset);
+    esp_riscv_trace_snapshot_stop(handle->core_id, fifo_status, intr_status, head_offset, head_valid);
 
     return ret;
 }
@@ -393,27 +420,27 @@ static esp_err_t trace_stop_locked(esp_riscv_trace_handle_t handle, uint32_t tim
 esp_err_t esp_riscv_trace_start(esp_riscv_trace_core_t core_id)
 {
     esp_err_t ret;
-    esp_riscv_trace_handle_t handle = handle_from_core(core_id);
+    esp_riscv_trace_handle_t handle = esp_riscv_trace_get_handle((int)core_id);
 
     ESP_RETURN_ON_FALSE_ISR(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized",
                             (int)core_id);
 
-    _lock_acquire(&handle->lock);
-    ret = trace_start_locked(handle);
-    _lock_release(&handle->lock);
+    ESP_RETURN_ON_ERROR(encoder_lock(handle), TAG, ENCODER_LOCK_ERR_FMT, (int)core_id);
+    ret = encoder_start(handle);
+    encoder_unlock(handle);
     return ret;
 }
 
 esp_err_t esp_riscv_trace_stop(esp_riscv_trace_core_t core_id, uint32_t timeout_us)
 {
     esp_err_t ret;
-    esp_riscv_trace_handle_t handle = handle_from_core(core_id);
+    esp_riscv_trace_handle_t handle = esp_riscv_trace_get_handle((int)core_id);
 
     ESP_RETURN_ON_FALSE(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized", (int)core_id);
 
-    _lock_acquire(&handle->lock);
-    ret = trace_stop_locked(handle, timeout_us);
-    _lock_release(&handle->lock);
+    ESP_RETURN_ON_ERROR(encoder_lock(handle), TAG, ENCODER_LOCK_ERR_FMT, (int)core_id);
+    ret = encoder_stop(handle, timeout_us);
+    encoder_unlock(handle);
     return ret;
 }
 
@@ -425,9 +452,6 @@ static uint16_t IRAM_ATTR snapshot_freeze_state(esp_riscv_trace_state_t state)
     default:                            return ESP_RISCV_TRACE_SNAPSHOT_STATE_READY;
     }
 }
-
-#define ESP_RISCV_TRACE_PANIC_FLUSH_TIMEOUT_US 2000
-#define ESP_RISCV_TRACE_PANIC_FLUSH_STEP_US    10
 
 void esp_panic_handler_inst_trace_stop(void)
 {
@@ -465,27 +489,18 @@ void esp_riscv_trace_snapshot_finalize(void)
             continue;
         }
 
-        void *dev = handle->hal.dev;
-        uint32_t waited_us = 0;
+        trace_dev_t *dev = handle->hal.dev;
+        esp_riscv_trace_wait_fifo_empty(dev);
         uint32_t fifo_status = riscv_trace_ll_get_fifo_status(dev);
-        while ((fifo_status & TRACE_FIFO_EMPTY_M) == 0) {
-            if (waited_us >= ESP_RISCV_TRACE_PANIC_FLUSH_TIMEOUT_US) {
-                break;
-            }
-            esp_rom_delay_us(ESP_RISCV_TRACE_PANIC_FLUSH_STEP_US);
-            waited_us += ESP_RISCV_TRACE_PANIC_FLUSH_STEP_US;
-            fifo_status = riscv_trace_ll_get_fifo_status(dev);
-        }
-        uint32_t base = (uint32_t)handle->buffer;
-        uint32_t current = riscv_trace_ll_get_mem_current_addr(dev);
         uint32_t intr_status = riscv_trace_ll_get_intr_raw(dev);
-        bool head_valid = (current >= base) && (current <= base + handle->buffer_size);
+        uint32_t head_offset;
+        bool head_valid = esp_riscv_trace_head_offset(handle, riscv_trace_ll_get_mem_current_addr(dev), &head_offset);
 
         status[core].present = true;
         status[core].capturing = (handle->state == ESP_RISCV_TRACE_STATE_STARTED);
         status[core].state = snapshot_freeze_state(handle->state);
         status[core].head_valid = head_valid;
-        status[core].head_offset = head_valid ? (current - base) : 0;
+        status[core].head_offset = head_offset;
         status[core].fifo_status_raw = fifo_status;
         status[core].intr_status_raw = intr_status;
     }
@@ -493,41 +508,57 @@ void esp_riscv_trace_snapshot_finalize(void)
     esp_riscv_trace_snapshot_panic_write(status, SOC_CPU_CORES_NUM);
 }
 
+/* Records the final trace state on every panic, before the coredump and gdbstub handlers read it */
+ESP_PANIC_HANDLER_REGISTER(esp_riscv_trace_panic, 50)
+{
+    esp_riscv_trace_snapshot_finalize();
+    return ESP_OK;
+}
+
+#if CONFIG_ESP_RISCV_TRACE_OPENOCD
+/* Finalizes the snapshot before the panic breakpoint so OpenOCD can dump it */
+ESP_PANIC_EARLY_BREAK_HANDLER_REGISTER(esp_riscv_trace_panic_early_break, 50)
+{
+    esp_riscv_trace_snapshot_finalize();
+    return ESP_OK;
+}
+#endif
+
 esp_err_t esp_riscv_trace_get_buffer(esp_riscv_trace_core_t core_id, uint8_t **buffer,
                                      size_t *capacity, size_t *head_offset)
 {
     esp_err_t ret = ESP_OK;
-    uint32_t base = 0;
     uint32_t current = 0;
-    esp_riscv_trace_handle_t handle = handle_from_core(core_id);
+    uint32_t offset = 0;
+    esp_riscv_trace_handle_t handle = esp_riscv_trace_get_handle((int)core_id);
 
     ESP_RETURN_ON_FALSE(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized", (int)core_id);
     ESP_RETURN_ON_FALSE(buffer != NULL && capacity != NULL && head_offset != NULL,
                         ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
-    _lock_acquire(&handle->lock);
+    ESP_RETURN_ON_ERROR(encoder_lock(handle), TAG, ENCODER_LOCK_ERR_FMT, (int)core_id);
     ESP_GOTO_ON_FALSE(handle->state != ESP_RISCV_TRACE_STATE_STARTED, ESP_ERR_INVALID_STATE, out, TAG,
                       "buffer not coherent while started");
 
-    base = (uint32_t)handle->buffer;
     current = riscv_trace_hal_get_current_addr(&handle->hal);
-    ESP_GOTO_ON_FALSE(current >= base && current <= base + handle->buffer_size,
+    ESP_GOTO_ON_FALSE(esp_riscv_trace_head_offset(handle, current, &offset),
                       ESP_ERR_INVALID_STATE, out, TAG, "trace write pointer 0x%08x out of buffer range",
                       (unsigned)current);
 
     *buffer = handle->buffer;
     *capacity = handle->buffer_size;
-    *head_offset = current - base;
+    *head_offset = offset;
 
 out:
-    _lock_release(&handle->lock);
+    encoder_unlock(handle);
     return ret;
 }
 
+/* Read-only, so it is allowed while OpenOCD owns the encoder. */
 esp_err_t esp_riscv_trace_get_status(esp_riscv_trace_core_t core_id, esp_riscv_trace_status_t *status)
 {
     esp_err_t ret = ESP_OK;
-    esp_riscv_trace_handle_t handle = handle_from_core(core_id);
+    esp_riscv_trace_handle_t handle = esp_riscv_trace_get_handle((int)core_id);
 
     ESP_RETURN_ON_FALSE(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized", (int)core_id);
     ESP_RETURN_ON_FALSE(status != NULL, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -549,7 +580,7 @@ esp_err_t esp_riscv_trace_get_status(esp_riscv_trace_core_t core_id, esp_riscv_t
 esp_err_t esp_riscv_trace_set_filter(esp_riscv_trace_core_t core_id, const esp_riscv_trace_filter_config_t *config)
 {
     esp_err_t ret = ESP_OK;
-    esp_riscv_trace_handle_t handle = handle_from_core(core_id);
+    esp_riscv_trace_handle_t handle = esp_riscv_trace_get_handle((int)core_id);
 
     ESP_RETURN_ON_FALSE(handle != NULL, ESP_ERR_INVALID_STATE, TAG, "core %d trace not initialized", (int)core_id);
     ESP_RETURN_ON_ERROR(validate_filter_config(config), TAG, "invalid filter configuration");
@@ -585,12 +616,12 @@ esp_err_t esp_riscv_trace_set_filter(esp_riscv_trace_core_t core_id, const esp_r
             hal_filter.interrupt_itype2 = config->interrupt_itype2;
         }
     }
-    _lock_acquire(&handle->lock);
+    ESP_RETURN_ON_ERROR(encoder_lock(handle), TAG, ENCODER_LOCK_ERR_FMT, (int)core_id);
     ESP_GOTO_ON_FALSE(handle->state != ESP_RISCV_TRACE_STATE_STARTED, ESP_ERR_INVALID_STATE, out, TAG,
                       "filter must be set while the core is not running");
     riscv_trace_hal_set_filter(&handle->hal, &hal_filter);
 out:
-    _lock_release(&handle->lock);
+    encoder_unlock(handle);
     return ret;
 }
 #else

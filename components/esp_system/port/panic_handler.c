@@ -151,7 +151,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
 #if CONFIG_ESP_RISCV_TRACE_ENABLE
     /* Stop the instruction trace as early as possible so the capture ends at the
        crash rather than inside the panic handler. This only stops the encoders.
-       The FIFO flush and snapshot run later at coredump time. */
+       The FIFO flush and snapshot run later, at the debugger break or in the panic event handler. */
     if (esp_panic_handler_inst_trace_stop) {
         esp_panic_handler_inst_trace_stop();
     }

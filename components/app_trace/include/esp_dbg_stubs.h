@@ -24,6 +24,7 @@ typedef enum {
     ESP_DBG_STUB_ENTRY_GCOV ///< GCOV entry
     = ESP_DBG_STUB_ENTRY_FIRST,
     ESP_DBG_STUB_ENTRY_CAPABILITIES,
+    ESP_DBG_STUB_ENTRY_RISCV_TRACE, ///< RISC-V trace encoder
     ESP_DBG_STUB_ENTRY_MAX
 } esp_dbg_stub_id_t;
 

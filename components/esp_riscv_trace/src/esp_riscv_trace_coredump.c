@@ -153,9 +153,6 @@ static bool validate_snapshot_for_coredump(const esp_riscv_trace_snapshot_desc_t
 
 static void esp_riscv_trace_coredump_write(core_dump_sink_t *sink)
 {
-    /* Flush the encoder FIFOs and finalize the snapshot before reading it. */
-    esp_riscv_trace_snapshot_finalize();
-
     const esp_riscv_trace_snapshot_desc_t *snap = &g_esp_riscv_trace_snapshot;
 
     uint16_t core_count;
