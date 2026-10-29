@@ -1436,9 +1436,10 @@ void smp_check_auth_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         /* The new pairing has been authenticated and the link is now encrypted with the
            freshly generated key, so the previous bond can be dropped. Doing it here rather
            than when the Pairing Request is exchanged keeps the old key in place for a
-           pairing that never completes. */
+           pairing that never completes. Encryption with an existing bond must retain
+           its keys. */
         tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(p_cb->pairing_bda);
-        if (p_dev_rec) {
+        if (p_dev_rec && (p_cb->flags & SMP_PAIR_FLAG_ENC_AFTER_PAIR)) {
             if (p_dev_rec->ble.key_type & (BTM_LE_KEY_PENC | BTM_LE_KEY_LENC)) {
                 SMP_TRACE_DEBUG("LE replace bond after enc, BDA:0x%02X%02X%02X%02X%02X%02X",
                                 p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],

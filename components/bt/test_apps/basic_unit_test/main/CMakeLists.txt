@@ -1,6 +1,7 @@
 idf_component_register(SRCS "test_bt_main.c"
                             "test_bt_common.c"
                             "test_smp.c"
+                            "test_smp_bond_reuse.c"
                             "test_tinycrypt_ecc.c"
                             "test_osal.c"
                             "test_osi_event.c"
@@ -21,3 +22,10 @@ target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/host/bluedroid/dev
 target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/common/include)
 target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/common/btc/include)
 target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/common/tinycrypt/include)
+
+# Isolate the SMP action from peer lookup, key deletion and subsequent state transitions.
+target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/host/bluedroid/stack/btm/include)
+target_link_options(${COMPONENT_LIB} INTERFACE
+                    "-Wl,--wrap=btm_find_dev"
+                    "-Wl,--wrap=btm_sec_clear_ble_keys"
+                    "-Wl,--wrap=smp_sm_event")
