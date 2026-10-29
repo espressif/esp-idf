@@ -30,7 +30,7 @@ API 指南
    linker-script-generation
    lwip
    memory-types
-   openthread
+   openthread/index
    partition-tables
    performance/index
    reproducible-builds
