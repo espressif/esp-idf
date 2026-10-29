@@ -12,6 +12,7 @@
 #include "esp_err.h"
 #include "esp_hidh_api.h"
 #include <string.h>
+#include <stdint.h>
 
 #if (defined BTC_HH_INCLUDED && BTC_HH_INCLUDED == TRUE)
 
@@ -223,7 +224,7 @@ esp_err_t esp_bt_hid_host_get_report(esp_bd_addr_t bd_addr, esp_hidh_report_type
     btc_msg_t msg = {0};
     btc_hidh_args_t arg = {0};
 
-    if (bd_addr == NULL) {
+    if (bd_addr == NULL || buffer_size < 0 || buffer_size > UINT16_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -244,7 +245,7 @@ esp_err_t esp_bt_hid_host_set_report(esp_bd_addr_t bd_addr, esp_hidh_report_type
                                      size_t len)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    if ((bd_addr == NULL) || (report == NULL) || (len == 0)) {
+    if ((bd_addr == NULL) || (report == NULL) || (len == 0) || (len > UINT16_MAX)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -268,7 +269,7 @@ esp_err_t esp_bt_hid_host_set_report(esp_bd_addr_t bd_addr, esp_hidh_report_type
 esp_err_t esp_bt_hid_host_send_data(esp_bd_addr_t bd_addr, uint8_t *data, size_t len)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    if ((bd_addr == NULL) || (data == NULL) || (len == 0)) {
+    if ((bd_addr == NULL) || (data == NULL) || (len == 0) || (len > UINT16_MAX)) {
         return ESP_ERR_INVALID_ARG;
     }
 
