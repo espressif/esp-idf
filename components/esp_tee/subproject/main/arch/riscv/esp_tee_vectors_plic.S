@@ -23,7 +23,6 @@
     .equ RTNVAL, 0xc0de
     .equ ECALL_U_MODE, 0x8
     .equ ECALL_M_MODE, 0xb
-    .equ MSTATUS_MPP_SHIFT, 11
     /* NOTE: INTWDT timeout and Cache error interrupts trigger the panic
      * handler before reset, so they don’t need to be delegated. */
     .equ TEE_INTR_DELEG_MASK, ~((1U << TEE_SECURE_INUM) | (1U << ETS_INT_WDT_INUM) | (1U << ETS_CACHEERR_INUM))

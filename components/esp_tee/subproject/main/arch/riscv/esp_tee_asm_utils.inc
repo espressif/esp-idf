@@ -23,6 +23,7 @@
 .equ CONTEXT_SIZE, (SAVE_REGS * 4)
 .equ MAGIC, 0x1f
 .equ NS_INT_RTN_MAGIC, (MAGIC << 12)
+.equ MSTATUS_MPP_S, 11
 
 /* Macro which first allocates space on the stack to save general
  * purpose registers, and then save them. GP register is excluded.
@@ -260,8 +261,8 @@
 .if \chk_priv
     /* Skip validation unless the previous privilege (mstatus.MPP) was U-mode */
     csrr    \tx, mstatus
-    srli    \tx, \tx, MSTATUS_MPP_SHIFT
-    andi    \tx, \tx, (MSTATUS_MPP >> MSTATUS_MPP_SHIFT)
+    srli    \tx, \tx, MSTATUS_MPP_S
+    andi    \tx, \tx, (MSTATUS_MPP >> MSTATUS_MPP_S)
     bnez    \tx, 1f
 .endif
     li      \tx, (SOC_S_DRAM_END + \framesz)
