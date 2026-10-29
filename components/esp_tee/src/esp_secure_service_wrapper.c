@@ -336,7 +336,7 @@ void __wrap_esp_crypto_mpi_enable_periph_clk(bool enable)
     esp_tee_service_call(2, SS_ESP_CRYPTO_MPI_ENABLE_PERIPH_CLK, enable);
 }
 
-/* ---------------------------------------------- ECC ------------------------------------------------- */
+/* ---------------------------------------------- ECC/ECDSA ------------------------------------------------- */
 
 #define P256_LEN        (256/8)
 #define P192_LEN        (192/8)
@@ -367,6 +367,11 @@ int __wrap_esp_ecc_point_verify(const ecc_point_t *point)
 void __wrap_esp_crypto_ecc_enable_periph_clk(bool enable)
 {
     esp_tee_service_call(2, SS_ESP_CRYPTO_ECC_ENABLE_PERIPH_CLK, enable);
+}
+
+void __wrap_esp_crypto_ecdsa_enable_periph_clk(bool enable)
+{
+    esp_tee_service_call(2, SS_ESP_CRYPTO_ECDSA_ENABLE_PERIPH_CLK, enable);
 }
 #endif
 

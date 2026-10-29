@@ -282,8 +282,9 @@ __attribute__((weak)) void esp_perip_clk_init(void)
          * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
         periph_ll_disable_clk_set_rst(PERIPH_ASSIST_DEBUG_MODULE);
 #endif
-        periph_ll_disable_clk_set_rst(PERIPH_RSA_MODULE);
 #if !CONFIG_SECURE_ENABLE_TEE
+        periph_ll_disable_clk_set_rst(PERIPH_RSA_MODULE);
+        periph_ll_disable_clk_set_rst(PERIPH_ECDSA_MODULE);
         // NOTE: [ESP-TEE] The TEE is responsible for the AES and SHA peripherals
         periph_ll_disable_clk_set_rst(PERIPH_AES_MODULE);
         periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
@@ -291,7 +292,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         periph_ll_disable_clk_set_rst(PERIPH_HMAC_MODULE);
         periph_ll_disable_clk_set_rst(PERIPH_DS_MODULE);
 #endif
-        periph_ll_disable_clk_set_rst(PERIPH_ECDSA_MODULE);
 
         // TODO: Replace with hal implementation
         REG_CLR_BIT(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
