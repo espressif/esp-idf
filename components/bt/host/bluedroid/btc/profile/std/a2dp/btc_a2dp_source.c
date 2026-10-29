@@ -1670,7 +1670,7 @@ static void btc_a2dp_source_aa_start_tx(void)
 
     assert(a2dp_source_local_param.btc_aa_src_cb.media_alarm == NULL);
 
-    a2dp_source_local_param.btc_aa_src_cb.media_alarm = osi_alarm_new("aaTx", btc_a2dp_source_alarm_cb, NULL, BTC_MEDIA_TIME_TICK_MS);
+    a2dp_source_local_param.btc_aa_src_cb.media_alarm = osi_alarm_new("aaTx", btc_a2dp_source_alarm_cb, NULL, NULL);
 
     if (!a2dp_source_local_param.btc_aa_src_cb.media_alarm) {
         BTC_TRACE_ERROR("%s unable to allocate media alarm.", __func__);

@@ -326,18 +326,9 @@ static void btc_msg_ctx_free_func(void *context)
     osi_free(ctx);
 }
 
-/**
- * transfer an message to another module in the different task.
- * @param  msg       message
- * @param  arg       parameter
- * @param  arg_len   length of parameter
- * @param  copy_func deep copy function
- * @param  free_func deep free function
- * @return           BT_STATUS_SUCCESS: success
- *                   others: fail
- */
-bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
-                                    btc_arg_deep_free_t free_func)
+static bt_status_t btc_transfer_context_internal(btc_msg_t *msg, void *arg, int arg_len,
+                                                 btc_arg_deep_copy_t copy_func, btc_arg_deep_free_t free_func,
+                                                 uint32_t timeout)
 {
     struct btc_msg_ctx* ctx;
 
@@ -378,12 +369,24 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     }
 
     if (osi_thread_post(btc_thread, btc_thread_handler, ctx, (osi_thread_free_cb_t)btc_msg_ctx_free_func, 0,
-                        OSI_THREAD_MAX_TIMEOUT) == false) {
+                        timeout) == false) {
         btc_msg_ctx_free_func(ctx);
         return BT_STATUS_BUSY;
     }
 
     return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
+                                    btc_arg_deep_free_t free_func)
+{
+    return btc_transfer_context_internal(msg, arg, arg_len, copy_func, free_func, OSI_THREAD_MAX_TIMEOUT);
+}
+
+bt_status_t btc_transfer_context_nb(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
+                                    btc_arg_deep_free_t free_func)
+{
+    return btc_transfer_context_internal(msg, arg, arg_len, copy_func, free_func, 0);
 }
 
 /**
