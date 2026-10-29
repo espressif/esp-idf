@@ -39,13 +39,14 @@ extern "C" {
 #define ESP_ATT_EAT_DEV_ID_SZ       (32)
 #define ESP_ATT_EAT_UEID_MAC_SZ     (6)   /* eFuse MAC */
 #define ESP_ATT_EAT_UEID_OPT_ID_SZ  (16)  /* eFuse OPTIONAL_UNIQUE_ID */
-#define ESP_ATT_CLAIM_JSON_MAX_SZ   (448)
-#define ESP_ATT_EAT_JSON_MAX_SZ     (1600)
+#define ESP_ATT_CLAIM_JSON_MAX_SZ   (576)
+#define ESP_ATT_EAT_JSON_MAX_SZ     (1728)
 
 #define ESP_ATT_PUBKEY_JSON_MAX_SZ  (128)
 #define ESP_ATT_SIGN_JSON_MAX_SZ    (192)
 
-#define ESP_ATT_TK_MIN_SIZE         (ESP_ATT_HDR_JSON_MAX_SZ + ESP_ATT_EAT_JSON_MAX_SZ + ESP_ATT_PUBKEY_JSON_MAX_SZ + ESP_ATT_SIGN_JSON_MAX_SZ)
+#define ESP_ATT_TK_FRAMING_SZ       (64)  /* {"header":..,"eat":..,"public_key":..,"sign":..} */
+#define ESP_ATT_TK_MIN_SIZE         (ESP_ATT_HDR_JSON_MAX_SZ + ESP_ATT_EAT_JSON_MAX_SZ + ESP_ATT_PUBKEY_JSON_MAX_SZ + ESP_ATT_SIGN_JSON_MAX_SZ + ESP_ATT_TK_FRAMING_SZ)
 #if ESP_ATT_TK_MIN_SIZE > PSA_INITIAL_ATTEST_MAX_TOKEN_SIZE
 #error "Attestation token size may exceed the bounds set by the PSA interface"
 #endif
@@ -85,6 +86,8 @@ typedef struct {
     bool digest_validated;               /**< Flag indicating if digest is validated */
     bool sign_verified;                  /**< Flag indicating if signature is verified */
     bool secure_padding;                 /**< Flag indicating if secure padding is present */
+    uint8_t calc_code_hash[MAX_DIGEST_SZ]; /**< Calculated code hash (TEE only; packaging bytes masked) */
+    uint8_t code_hash_ver;             /**< Mask-definition version of the code hash (0 = not present) */
 } esp_att_part_digest_info_t;
 
 /**

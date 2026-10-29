@@ -75,7 +75,7 @@ Anti-Rollback
 
 Anti-rollback prevents booting a TEE image whose secure version is lower than the one recorded in the eFuse of the chip. It is independent of the :ref:`application anti-rollback <anti-rollback>` feature: the TEE and the application keep separate secure versions and separate eFuse counters, so the TEE can raise its rollback floor without a coordinated application release.
 
-Enable :menuitem:`CONFIG_SECURE_TEE_ANTI_ROLLBACK` and set the secure version of the TEE image with :menuitem:`CONFIG_SECURE_TEE_SECURE_VERSION`. The version is stored in the ``esp_app_desc`` structure of the TEE image and is covered by the image hash and, if enabled, the Secure Boot signature.
+Enable :menuitem:`CONFIG_SECURE_TEE_ANTI_ROLLBACK` and set the secure version of the TEE image with :menuitem:`CONFIG_SECURE_TEE_SECURE_VERSION`. The version is stored in the ``esp_app_desc`` structure of the TEE image and is covered by the image hash and, if enabled, the Secure Boot signature. It is distinct from the TEE firmware version string described in :ref:`tee-versioning`.
 
 The TEE secure version is stored in the top 3 bits of the ``SECURE_VERSION`` eFuse field, as the number of bits set. Consequently, it can be increased at most 3 times, and the bits available to the application secure version are reduced by 3 (see :menuitem:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD`). No changes to the eFuse table are required.
 

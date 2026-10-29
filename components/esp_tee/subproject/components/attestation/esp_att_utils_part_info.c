@@ -26,8 +26,9 @@
 
 #if ESP_TEE_BUILD
 #include "esp_flash_partitions.h"
-#include "bootloader_utility_tee.h"
 #include "esp_tee_flash.h"
+#include "esp_tee_code_hash.h"
+
 #else
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
@@ -95,9 +96,34 @@ static esp_err_t read_partition(uint32_t offset, void *buf, size_t size)
     return (esp_err_t)esp_tee_flash_read(offset, buf, size, true);
 }
 
-esp_err_t get_flash_contents_sha256(uint32_t flash_offset, uint32_t len, uint8_t *digest, size_t digest_len)
+/* Byte ranges [start, end) hashed for the code hash: the image segments without the app descriptor */
+typedef struct {
+    uint32_t start[2];
+    uint32_t end[2];
+} code_hash_ranges_t;
+
+/* Hash image bytes [offset, offset + len) within the code hash ranges */
+static psa_status_t hash_update_code(psa_hash_operation_t *hash_op, const uint8_t *data, uint32_t offset,
+                                     uint32_t len, const code_hash_ranges_t *ranges)
 {
-    if (digest == NULL) {
+    psa_status_t status = PSA_SUCCESS;
+
+    for (size_t i = 0; i < 2 && status == PSA_SUCCESS; i++) {
+        uint32_t lo = MAX(ranges->start[i], offset);
+        uint32_t hi = MIN(ranges->end[i], offset + len);
+        if (lo < hi) {
+            status = hash_update_chunked(hash_op, data + (lo - offset), hi - lo);
+        }
+    }
+
+    return status;
+}
+
+/* SHA256 of the flash range; with `code_hash`, the same pass also hashes its code view (see hash_update_code) */
+static esp_err_t get_flash_contents_digests(uint32_t flash_offset, uint32_t len, uint8_t *digest,
+                                            uint8_t *code_hash, const code_hash_ranges_t *ranges, size_t digest_len)
+{
+    if (digest == NULL || len == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -105,36 +131,72 @@ esp_err_t get_flash_contents_sha256(uint32_t flash_offset, uint32_t len, uint8_t
     uint32_t partial_image_len = mmu_free_pages_count * CONFIG_MMU_PAGE_SIZE;
 
     psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_hash_operation_t code_hash_op = PSA_HASH_OPERATION_INIT;
     psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+    if (status == PSA_SUCCESS && code_hash != NULL) {
+        status = psa_hash_setup(&code_hash_op, PSA_ALG_SHA_256);
+    }
     if (status != PSA_SUCCESS) {
-        return ESP_FAIL;
+        goto fail;
     }
 
-    while (len > 0) {
-        uint32_t mmap_len = MIN(len, partial_image_len);
-        const void *image = esp_tee_flash_mmap(flash_offset, mmap_len);
+    for (uint32_t offset = 0; offset < len;) {
+        uint32_t mmap_len = MIN(len - offset, partial_image_len);
+        const uint8_t *image = esp_tee_flash_mmap(flash_offset + offset, mmap_len);
         if (image == NULL) {
-            psa_hash_abort(&hash_op);
-            return ESP_FAIL;
+            goto fail;
         }
         status = hash_update_chunked(&hash_op, image, mmap_len);
+        if (status == PSA_SUCCESS && code_hash != NULL) {
+            status = hash_update_code(&code_hash_op, image, offset, mmap_len, ranges);
+        }
         esp_tee_flash_munmap(image);
         if (status != PSA_SUCCESS) {
-            psa_hash_abort(&hash_op);
-            return ESP_FAIL;
+            goto fail;
         }
-
-        flash_offset += mmap_len;
-        len -= mmap_len;
+        offset += mmap_len;
     }
 
     size_t digest_size = 0;
     status = psa_hash_finish(&hash_op, digest, digest_len, &digest_size);
+    if (status == PSA_SUCCESS && code_hash != NULL) {
+        status = psa_hash_finish(&code_hash_op, code_hash, digest_len, &digest_size);
+    }
     if (status != PSA_SUCCESS) {
-        psa_hash_abort(&hash_op);
-        return ESP_FAIL;
+        goto fail;
     }
 
+    return ESP_OK;
+
+fail:
+    psa_hash_abort(&hash_op);
+    psa_hash_abort(&code_hash_op);
+    return ESP_FAIL;
+}
+
+esp_err_t get_flash_contents_sha256(uint32_t flash_offset, uint32_t len, uint8_t *digest, size_t digest_len)
+{
+    return get_flash_contents_digests(flash_offset, len, digest, NULL, NULL, digest_len);
+}
+
+/* Code hash ranges from the image metadata (see esp_image_get_metadata) */
+static esp_err_t get_code_hash_ranges(const esp_partition_pos_t *pos, const esp_image_metadata_t *metadata,
+                                      code_hash_ranges_t *ranges)
+{
+    const uint8_t n = metadata->image.segment_count;
+    uint32_t magic = 0;
+
+    if (n == 0 || metadata->segments[0].data_len < sizeof(esp_app_desc_t)
+            || read_partition(metadata->segment_data[0], &magic, sizeof(magic)) != ESP_OK
+            || magic != ESP_APP_DESC_MAGIC_WORD) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    const uint32_t desc_start = metadata->segment_data[0] - pos->offset;
+    ranges->start[0] = sizeof(esp_image_header_t);
+    ranges->end[0] = desc_start;
+    ranges->start[1] = desc_start + sizeof(esp_app_desc_t);
+    ranges->end[1] = metadata->segment_data[n - 1] - pos->offset + metadata->segments[n - 1].data_len;
     return ESP_OK;
 }
 
@@ -155,18 +217,16 @@ static esp_err_t get_active_app_part_pos(esp_partition_pos_t *pos)
 
 static esp_err_t get_active_tee_part_pos(esp_partition_pos_t *pos)
 {
-    uint8_t tee_active_part = bootloader_utility_tee_get_boot_partition(NULL);
-    if (tee_active_part > PART_SUBTYPE_TEE_1) {
+    if (pos == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_partition_info_t *running_tee = esp_tee_flash_get_running_tee_partition();
+    if (running_tee->magic != ESP_PARTITION_MAGIC) {
         return ESP_ERR_NOT_FOUND;
     }
 
-    esp_partition_info_t part_info = {};
-    esp_err_t err = esp_tee_flash_find_partition(PART_TYPE_APP, tee_active_part, NULL, &part_info);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    memcpy(pos, &part_info.pos, sizeof(esp_partition_pos_t));
+    memcpy(pos, &running_tee->pos, sizeof(esp_partition_pos_t));
     return ESP_OK;
 }
 
@@ -283,7 +343,8 @@ static esp_err_t get_active_part_pos(esp_att_part_type_t part_type, esp_partitio
     return ESP_OK;
 }
 
-static esp_err_t get_part_digest(const esp_partition_pos_t *pos, esp_att_part_digest_info_t *part_digest)
+static esp_err_t get_part_digest(const esp_partition_pos_t *pos, esp_att_part_digest_info_t *part_digest,
+                                 bool with_code_hash)
 {
     if (pos == NULL || part_digest == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -310,7 +371,24 @@ static esp_err_t get_part_digest(const esp_partition_pos_t *pos, esp_att_part_di
         return ESP_ERR_NO_MEM;
     }
 
+#if ESP_TEE_BUILD
+    /* NOTE: The code hash assumes the app descriptor leads the first segment */
+    code_hash_ranges_t ranges = {};
+    if (with_code_hash && get_code_hash_ranges(pos, &metadata, &ranges) != ESP_OK) {
+        ESP_LOGW(TAG, "App descriptor not found, skipping the code hash");
+        with_code_hash = false;
+    }
+    /* Image digest and (optionally) the code hash in a single pass over the image */
+    err = get_flash_contents_digests(pos->offset, image_len, digest,
+                                     with_code_hash ? part_digest->calc_code_hash : NULL,
+                                     with_code_hash ? &ranges : NULL, digest_len);
+    if (err == ESP_OK && with_code_hash) {
+        part_digest->code_hash_ver = ESP_TEE_IMG_CODE_HASH_VER;
+    }
+#else
+    (void)with_code_hash;
     err = get_flash_contents_sha256(pos->offset, image_len, digest, digest_len);
+#endif
     if (err != ESP_OK) {
         goto exit;
     }
@@ -462,7 +540,7 @@ esp_err_t esp_att_utils_get_btl_claim_data(esp_att_part_metadata_t *btl_metadata
     }
 
     esp_att_part_digest_info_t btl_digest = {};
-    err = get_part_digest(&btl_pos, &btl_digest);
+    err = get_part_digest(&btl_pos, &btl_digest, false);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get bootloader image digest!");
         return err;
@@ -512,7 +590,7 @@ esp_err_t esp_att_utils_get_app_claim_data(esp_att_part_metadata_t *app_metadata
     }
 
     esp_att_part_digest_info_t app_digest = {};
-    err = get_part_digest(&app_pos, &app_digest);
+    err = get_part_digest(&app_pos, &app_digest, false);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get app image digest!");
         return err;
@@ -563,7 +641,7 @@ esp_err_t esp_att_utils_get_tee_claim_data(esp_att_part_metadata_t *tee_metadata
     }
 
     esp_att_part_digest_info_t tee_digest = {};
-    err = get_part_digest(&tee_pos, &tee_digest);
+    err = get_part_digest(&tee_pos, &tee_digest, true);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get TEE image digest!");
         return err;

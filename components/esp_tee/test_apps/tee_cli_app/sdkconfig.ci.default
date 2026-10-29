@@ -1,3 +1,1 @@
-# Increasing TEE IRAM size
-# 38KB
-CONFIG_SECURE_TEE_IRAM_SIZE=0x9800
+# Default configuration
