@@ -22,7 +22,7 @@ def test_dac_continuous_output(dut: Dut, mode: str) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s31'], indirect=['target'])
 def test_dac_continuous_example(dut: Dut) -> None:
     sdkconfig = dut.app.sdkconfig
     if sdkconfig['EXAMPLE_DAC_CONTINUOUS_BY_DMA']:

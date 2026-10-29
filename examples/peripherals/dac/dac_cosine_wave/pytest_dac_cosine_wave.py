@@ -6,6 +6,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s31'], indirect=['target'])
 def test_dac_cosine_wave_example(dut: Dut) -> None:
     dut.expect_exact('DAC cosine wave started', timeout=10)

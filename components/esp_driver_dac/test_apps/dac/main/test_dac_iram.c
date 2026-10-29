@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,9 @@
 #include "esp_heap_caps.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "dac_test_utils.h"
 
-#define BUF_SIZE    2000
+#define SAMPLE_COUNT    2000
 
 typedef struct {
     int     cnt;
@@ -23,21 +24,13 @@ typedef struct {
 
 static void IRAM_ATTR test_dac_direct_set_safety(void *usr_ctx)
 {
-    dac_oneshot_handle_t handle = (dac_oneshot_handle_t)usr_ctx;
+    dac_oneshot_handle_t handle = usr_ctx;
     dac_oneshot_output_code(handle, 128);
-}
-
-static void IRAM_ATTR test_dac_dma_iram_safety(void *usr_ctx)
-{
-    uint8_t *data = (uint8_t *)usr_ctx;
-    for (int i = 0; i < BUF_SIZE; i++) {
-        data[i] = i % 128 + 1;
-    }
 }
 
 static void IRAM_ATTR test_dac_dma_intr_iram_safety(void *usr_ctx)
 {
-    test_dac_intr_data_t *data = (test_dac_intr_data_t *)usr_ctx;
+    test_dac_intr_data_t *data = usr_ctx;
     data->cnt = 0;
     esp_rom_delay_us(100 * 1000);
     data->result = data->cnt > 0;
@@ -45,7 +38,9 @@ static void IRAM_ATTR test_dac_dma_intr_iram_safety(void *usr_ctx)
 
 static bool IRAM_ATTR test_dac_on_convert_done_cb(dac_continuous_handle_t handle, const dac_event_data_t *event, void *user_data)
 {
-    test_dac_intr_data_t *data = (test_dac_intr_data_t *)user_data;
+    (void)handle;
+    (void)event;
+    test_dac_intr_data_t *data = user_data;
     data->cnt++;
     return false;
 }
@@ -66,16 +61,8 @@ TEST_CASE("DAC_IRAM_safe_test", "[dac]")
     dac_continuous_config_t cont_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_ALL,
         .desc_num = 8,
-        .buf_size = 2048,
+        .buf_size = 512,
         .freq_hz = 40000,
-        /* Assume the data in buffer is 'A B C D E F'
-         * DAC_CHANNEL_MODE_SIMUL:
-         *      - channel 0: A B C D E F
-         *      - channel 1: A B C D E F
-         * DAC_CHANNEL_MODE_ALTER:
-         *      - channel 0: A C E
-         *      - channel 1: B D F
-         */
         .chan_mode = DAC_CHANNEL_MODE_SIMUL,
     };
     /* Allocate continuous channel */
@@ -94,13 +81,13 @@ TEST_CASE("DAC_IRAM_safe_test", "[dac]")
     TEST_ESP_OK(dac_continuous_enable(cont_handle));
 
     /* Real data in internal memory */
-    uint8_t *data = (uint8_t *)heap_caps_calloc(1, BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    dac_test_sample_t *data = heap_caps_calloc(SAMPLE_COUNT, sizeof(dac_test_sample_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT(data);
-    for (int i = 0; i < BUF_SIZE; i++) {
-        data[i] = i % 256;
+    const int16_t full_scale = 1 << dac_continuous_get_bitwidth(cont_handle);
+    for (int i = 0; i < SAMPLE_COUNT; i++) {
+        data[i] = i % full_scale;
     }
-    dac_continuous_write_cyclically(cont_handle, data, BUF_SIZE, NULL);
-    unity_utils_run_cache_disable_stub(test_dac_dma_iram_safety, data);
+    TEST_ESP_OK(dac_continuous_write_cyclically(cont_handle, data, SAMPLE_COUNT, NULL));
     unity_utils_run_cache_disable_stub(test_dac_dma_intr_iram_safety, &intr_data);
     TEST_ASSERT(intr_data.result);
 
