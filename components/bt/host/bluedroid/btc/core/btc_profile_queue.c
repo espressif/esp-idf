@@ -59,6 +59,36 @@ static void queue_int_advance(void)
     }
 }
 
+static void queue_int_remove_uuid(uint16_t uuid)
+{
+    if (!connect_queue || list_is_empty(connect_queue)) {
+        return;
+    }
+
+    for (const list_node_t *node = list_begin(connect_queue); node != list_end(connect_queue); node = list_next(node)) {
+        connect_node_t *p_node = (connect_node_t *)list_node(node);
+        if (p_node->uuid == uuid) {
+            list_remove(connect_queue, p_node);
+            return;
+        }
+    }
+}
+
+static void queue_int_advance_busy_connect(const connect_node_t *p_param)
+{
+    connect_node_t *p_head;
+
+    if (!connect_queue || list_is_empty(connect_queue)) {
+        return;
+    }
+
+    p_head = list_front(connect_queue);
+    if (p_head->busy && p_head->uuid == p_param->uuid &&
+            memcmp(&p_head->bda, &p_param->bda, sizeof(bt_bdaddr_t)) == 0) {
+        list_remove(connect_queue, p_head);
+    }
+}
+
 void btc_profile_queue_handler(btc_msg_t *msg)
 {
     btc_prf_que_args_t *arg = (btc_prf_que_args_t *)(msg->arg);
@@ -72,6 +102,14 @@ void btc_profile_queue_handler(btc_msg_t *msg)
 
     case BTC_PRF_QUE_ADVANCE:
         queue_int_advance();
+        break;
+
+    case BTC_PRF_QUE_REMOVE_UUID:
+        queue_int_remove_uuid(arg->uuid);
+        break;
+
+    case BTC_PRF_QUE_ADVANCE_BUSY_CONNECT:
+        queue_int_advance_busy_connect(&arg->connect_node);
         break;
     }
 
@@ -125,6 +163,57 @@ void btc_queue_advance(void)
     msg.act = BTC_PRF_QUE_ADVANCE;
 
     btc_transfer_context(&msg, NULL, 0, NULL, NULL);
+}
+
+/*******************************************************************************
+**
+** Function         btc_queue_remove_uuid
+**
+** Description      Drop the pending connect request that matches `uuid`, if any.
+**                  Other profiles in the queue are left untouched.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btc_queue_remove_uuid(uint16_t uuid)
+{
+    btc_msg_t msg;
+    btc_prf_que_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PRF_QUE;
+    msg.act = BTC_PRF_QUE_REMOVE_UUID;
+
+    memset(&arg, 0, sizeof(btc_prf_que_args_t));
+    arg.uuid = uuid;
+
+    btc_transfer_context(&msg, &arg, sizeof(btc_prf_que_args_t), NULL, NULL);
+}
+
+/*******************************************************************************
+**
+** Function         btc_queue_advance_busy_connect
+**
+** Description      Retire the queued connect only when it is the active head
+**                  and belongs to the specified peer and profile.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btc_queue_advance_busy_connect(uint16_t uuid, const bt_bdaddr_t *bda)
+{
+    btc_msg_t msg;
+    btc_prf_que_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PRF_QUE;
+    msg.act = BTC_PRF_QUE_ADVANCE_BUSY_CONNECT;
+
+    memset(&arg, 0, sizeof(btc_prf_que_args_t));
+    memcpy(&arg.connect_node.bda, bda, sizeof(bt_bdaddr_t));
+    arg.connect_node.uuid = uuid;
+
+    btc_transfer_context(&msg, &arg, sizeof(btc_prf_que_args_t), NULL, NULL);
 }
 
 // This function dispatches the next pending connect request. It is called from

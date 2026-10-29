@@ -71,12 +71,14 @@ static BOOLEAN get_peer_bd_addr(tBTA_AV_RCB *p_rcb, BD_ADDR out_addr)
 static void report_data_event(BT_HDR *pkt, UINT8 *p_data, UINT16 data_len, BOOLEAN final)
 {
     tBTA_AV_CA_DATA ca_data;
+
+    /* bta_av_safe_cback frees p_hdr when the upper layer callback is already gone. */
     ca_data.status = BT_STATUS_SUCCESS;
     ca_data.final = final;
     ca_data.data_len = data_len;
     ca_data.p_data = p_data;
     ca_data.p_hdr = pkt;
-    (*bta_av_cb.p_cback)(BTA_AV_CA_DATA_EVT, (tBTA_AV *) &ca_data);
+    bta_av_safe_cback(BTA_AV_CA_DATA_EVT, (tBTA_AV *) &ca_data);
 }
 
 static void report_error_data_event(UINT16 status)
@@ -87,7 +89,7 @@ static void report_error_data_event(UINT16 status)
     ca_data.data_len = 0;
     ca_data.p_data = NULL;
     ca_data.p_hdr = NULL;
-    (*bta_av_cb.p_cback)(BTA_AV_CA_DATA_EVT, (tBTA_AV *) &ca_data);
+    bta_av_safe_cback(BTA_AV_CA_DATA_EVT, (tBTA_AV *) &ca_data);
 }
 
 static void build_and_send_connect_req(tBTA_AV_RCB *p_rcb)
@@ -414,7 +416,7 @@ void bta_av_ca_response_final(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
             tBTA_AV_CA_STATUS ca_status;
             ca_status.connected = TRUE;
             ca_status.reason = BT_STATUS_SUCCESS;
-            (*bta_av_cb.p_cback)(BTA_AV_CA_STATUS_EVT, (tBTA_AV *) &ca_status);
+            bta_av_safe_cback(BTA_AV_CA_STATUS_EVT, (tBTA_AV *) &ca_status);
             /* done, free response packet */
             osi_free(p_data->ca_response.pkt);
         }
@@ -502,7 +504,7 @@ void bta_av_ca_goep_disconnect(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
     tBTA_AV_CA_STATUS ca_status;
     ca_status.connected = FALSE;
     ca_status.reason = p_data->ca_disconnect.reason;
-    (*bta_av_cb.p_cback)(BTA_AV_CA_STATUS_EVT, (tBTA_AV *) &ca_status);
+    bta_av_safe_cback(BTA_AV_CA_STATUS_EVT, (tBTA_AV *) &ca_status);
 }
 
 void bta_av_ca_force_disconnect(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
@@ -519,7 +521,7 @@ void bta_av_ca_force_disconnect(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
     ca_status.connected = FALSE;
     /* force disconnect by upper, set reason to success */
     ca_status.reason = BT_STATUS_SUCCESS;
-    (*bta_av_cb.p_cback)(BTA_AV_CA_STATUS_EVT, (tBTA_AV *) &ca_status);
+    bta_av_safe_cback(BTA_AV_CA_STATUS_EVT, (tBTA_AV *) &ca_status);
 }
 
 void bta_av_ca_reset(tBTA_AV_RCB *p_rcb)

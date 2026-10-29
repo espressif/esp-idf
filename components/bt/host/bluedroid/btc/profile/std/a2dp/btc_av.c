@@ -148,6 +148,7 @@ typedef struct {
 typedef struct {
     int service_id;
     int active_idx;
+    BOOLEAN disabling;      /* TRUE once BTA has been asked to disable AV */
 #if (BTC_AV_EXT_CODEC == TRUE)
 #if A2D_DYNAMIC_MEMORY == FALSE
     tBTC_AV_CODEC_INFO codec_caps[BTA_AV_MAX_SEPS];
@@ -167,9 +168,11 @@ typedef struct {
 #if A2D_DYNAMIC_MEMORY == FALSE
 static btc_av_cb_t btc_av_cb_inst[BTC_AV_MAX_CONN] = {0};
 #define btc_av_cb_arr   btc_av_cb_inst
+#define btc_av_cb_allocated()   (TRUE)
 #else
 static btc_av_cb_t *btc_av_cb_ptr = NULL;
 #define btc_av_cb_arr   btc_av_cb_ptr
+#define btc_av_cb_allocated()   (btc_av_cb_ptr != NULL)
 #endif ///A2D_DYNAMIC_MEMORY == FALSE
 
 static btc_av_common_t btc_av_common = {
@@ -182,10 +185,26 @@ static btc_av_common_t btc_av_common = {
 /* shorthand for the source role, which never uses more than one connection */
 #define btc_av_cb           (*btc_av_cb_first())
 
+/* The control block may be released at any time by the deinit procedure, while BTA
+ * and the application can still push events in. Dereferencing it is only safe once
+ * both the block itself and its state machine are there. */
+#define btc_av_is_alive()   (btc_av_cb_allocated() && (btc_av_cb_first()->sm_handle != NULL))
+
 /* both interface and media task needs to be ready to alloc incoming request */
 #define CHECK_BTAV_INIT() do \
 { \
-    assert (btc_av_cb_arr != NULL && btc_av_cb_first()->sm_handle != NULL); \
+    if (!btc_av_is_alive()) { \
+        BTC_TRACE_WARNING("%s: A2DP is not initialized\n", __FUNCTION__); \
+        return; \
+    } \
+} while (0)
+
+#define CHECK_BTAV_INIT_STATUS() do \
+{ \
+    if (!btc_av_is_alive()) { \
+        BTC_TRACE_WARNING("%s: A2DP is not initialized\n", __FUNCTION__); \
+        return BT_STATUS_NOT_READY; \
+    } \
 } while (0)
 
 
@@ -209,8 +228,13 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *data, vo
 static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *data, void *user_data);
 static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *data, void *user_data);
 static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *data, void *user_data);
-static void clean_up(int service_id);
-static BOOLEAN btc_a2d_deinit_if_ongoing(void);
+static void clean_up(void);
+static BOOLEAN btc_a2d_is_deinit_ongoing(void);
+static void btc_a2d_drop_queued_connect(void);
+static void btc_a2d_advance_queued_connect(btc_av_cb_t *p_cb);
+#if BTC_AV_SINK_INCLUDED || BTC_AV_SRC_INCLUDED
+static void btc_a2d_request_teardown(UINT8 rc_peer_sep);
+#endif
 
 #if BTC_AV_SRC_INCLUDED
 static bt_status_t btc_a2d_src_init(void);
@@ -292,6 +316,7 @@ UNUSED_ATTR static const char *dump_av_sm_event_name(btc_av_sm_event_t event)
         CASE_RETURN_STR(BTA_AV_META_MSG_EVT)
         CASE_RETURN_STR(BTA_AV_REJECT_EVT)
         CASE_RETURN_STR(BTA_AV_RC_FEAT_EVT)
+        CASE_RETURN_STR(BTA_AV_DISABLE_EVT)
         CASE_RETURN_STR(BTC_SM_ENTER_EVT)
         CASE_RETURN_STR(BTC_SM_EXIT_EVT)
         CASE_RETURN_STR(BTC_AV_CONNECT_REQ_EVT)
@@ -870,25 +895,31 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data, voi
 
     switch (event) {
     case BTC_SM_ENTER_EVT:
-        if (btc_a2d_deinit_if_ongoing() == FALSE) {
-            /* clear the peer_bda */
-            memset(&p_cb->peer_bda, 0, sizeof(bt_bdaddr_t));
-            p_cb->flags = 0;
-            p_cb->edr = 0;
+        /* clear the peer_bda */
+        memset(&p_cb->peer_bda, 0, sizeof(bt_bdaddr_t));
+        p_cb->flags = 0;
+        p_cb->edr = 0;
 #if BTC_AV_SINK_INCLUDED
-            p_cb->codec_info_valid = FALSE;
-            p_cb->displace_ms = 0;
+        p_cb->codec_info_valid = FALSE;
+        p_cb->displace_ms = 0;
 #endif
-            /* the media path is shared, only tear it down when this connection
-             * owned it, otherwise the other connection keeps playing */
-            if (btc_av_common.active_idx == BTC_AV_IDX_INVALID ||
-                    btc_av_common.active_idx == (int)p_cb->idx) {
-                btc_a2dp_on_idle();
-            }
+        /* Deinit posts BTA_AvClose before BTA_AvDisable, so CLOSE lands here
+         * while BTA is still deregistering and may read bta_av_co_cb.
+         * btc_a2dp_on_idle() reinitializes that block. The media path is
+         * shared: only tear it down when this connection owned it. */
+        if (!btc_a2d_is_deinit_ongoing() &&
+                (btc_av_common.active_idx == BTC_AV_IDX_INVALID ||
+                 btc_av_common.active_idx == (int)p_cb->idx)) {
+            btc_a2dp_on_idle();
         }
         break;
 
     case BTC_SM_EXIT_EVT:
+        break;
+
+    case BTA_AV_DISABLE_EVT:
+        /* Releases every state machine. Nothing after the switch uses them. */
+        clean_up();
         break;
 
     case BTA_AV_ENABLE_EVT:
@@ -907,6 +938,15 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data, voi
 
     case BTA_AV_PENDING_EVT:
     case BTC_AV_CONNECT_REQ_EVT: {
+        if (btc_a2d_is_deinit_ongoing()) {
+            BTC_TRACE_WARNING("%s: drop connect request while deinit is ongoing", __func__);
+            if (event == BTC_AV_CONNECT_REQ_EVT) {
+                btc_a2d_drop_queued_connect();
+            } else {
+                BTA_AvDisconnect(((tBTA_AV *)p_data)->pend.bd_addr);
+            }
+            break;
+        }
         if (event == BTC_AV_CONNECT_REQ_EVT) {
             memcpy(&p_cb->peer_bda, &((btc_av_connect_req_t *)p_data)->target_bda,
                    sizeof(bt_bdaddr_t));
@@ -933,12 +973,17 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data, voi
     } break;
 
     case BTA_AV_INCOMING_CFG_EVT: {
-        /* Upper layer notification that incoming CONFIG_IND was received while stream SSM was in INIT
-         * and BTA force-switched to INCOMING. BTC should move to OPENING so upcoming CONFIG/OPEN/START
-         * can be handled in the correct state, but MUST NOT call BTA_AvOpen() here to avoid
-         * restarting discovery/open procedure while config is already in progress. */
-        bdcpy(p_cb->peer_bda.address, ((tBTA_AV *)p_data)->incoming.bd_addr);
-        btc_sm_change_state(p_cb->sm_handle, BTC_AV_STATE_OPENING);
+        if (btc_a2d_is_deinit_ongoing()) {
+            BTC_TRACE_WARNING("%s: drop incoming config while deinit is ongoing", __func__);
+            BTA_AvDisconnect(((tBTA_AV *)p_data)->incoming.bd_addr);
+        } else {
+            /* Upper layer notification that incoming CONFIG_IND was received while stream SSM was in INIT
+             * and BTA force-switched to INCOMING. BTC should move to OPENING so upcoming CONFIG/OPEN/START
+             * can be handled in the correct state, but MUST NOT call BTA_AvOpen() here to avoid
+             * restarting discovery/open procedure while config is already in progress. */
+            bdcpy(p_cb->peer_bda.address, ((tBTA_AV *)p_data)->incoming.bd_addr);
+            btc_sm_change_state(p_cb->sm_handle, BTC_AV_STATE_OPENING);
+        }
         break;
     }
 
@@ -1046,11 +1091,27 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data, 
     case BTC_SM_EXIT_EVT:
         break;
 
+    case BTA_AV_DISABLE_EVT:
+        /* Releases every state machine. Nothing after the switch uses them. */
+        clean_up();
+        break;
+
     case BTA_AV_REJECT_EVT:
         BTC_TRACE_WARNING(" Received  BTA_AV_REJECT_EVT \n");
         btc_report_connection_state(p_cb, ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(p_cb->peer_bda), 0, 0);
         btc_sm_change_state(p_cb->sm_handle, BTC_AV_STATE_IDLE);
         break;
+
+    case BTA_AV_CLOSE_EVT: {
+        /* The link went down before the stream was opened, otherwise the state
+         * machine would stay in opening and never reach idle again. */
+        tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
+        btc_report_connection_state(p_cb, ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(p_cb->peer_bda), 0,
+                                    close->disc_rsn);
+        btc_a2d_advance_queued_connect(p_cb);
+        btc_sm_change_state(p_cb->sm_handle, BTC_AV_STATE_IDLE);
+        break;
+    }
 
     case BTA_AV_OPEN_EVT: {
         tBTA_AV *p_bta_data = (tBTA_AV *)p_data;
@@ -1075,10 +1136,13 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data, 
         }
         /* inform the application of the event */
         btc_report_connection_state(p_cb, conn_stat, &(p_cb->peer_bda), mtu, 0);
+        /* An incoming OPEN is not queued. Only retire the queue head when it
+         * is the active outgoing request for this exact peer and profile. */
+        btc_a2d_advance_queued_connect(p_cb);
         /* change state to open/idle based on the status */
         btc_sm_change_state(p_cb->sm_handle, av_state);
 
-        if (p_bta_data->open.status == BTA_AV_SUCCESS && !btc_a2d_deinit_if_ongoing()) {
+        if (p_bta_data->open.status == BTA_AV_SUCCESS && !btc_a2d_is_deinit_ongoing()) {
             if (p_cb->peer_sep == AVDT_TSEP_SRC) {
                 /* Bring up AVRCP connection too if AVRC Initialized */
                 if(g_av_with_rc) {
@@ -1121,8 +1185,6 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data, 
                 }
             }
         }
-        btc_queue_advance();
-
     } break;
 
     case BTC_AV_CONFIG_EVT: {
@@ -1138,13 +1200,21 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data, 
         /* This control block is already busy opening a link to this very device.
          * Requests targeting another device are routed to a free control block
          * before they reach the state machine. */
+        if (btc_a2d_is_deinit_ongoing()) {
+            btc_a2d_drop_queued_connect();
+            break;
+        }
         BTC_TRACE_DEBUG("Same device moved to Opening state, ignore Connect Req\n");
-        btc_queue_advance();
+        btc_a2d_advance_queued_connect(p_cb);
         break;
     }
 
     case BTA_AV_PENDING_EVT:
-        BTC_TRACE_DEBUG("Same device moved to Opening state, ignore Pending Req\n");
+        if (btc_a2d_is_deinit_ongoing()) {
+            BTA_AvDisconnect(((tBTA_AV *)p_data)->pend.bd_addr);
+        } else {
+            BTC_TRACE_DEBUG("Same device moved to Opening state, ignore Pending Req\n");
+        }
         break;
 
     CHECK_RC_EVENT(event, p_data);
@@ -1232,6 +1302,11 @@ static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *p_data, 
     case BTC_SM_EXIT_EVT:
         break;
 
+    case BTA_AV_DISABLE_EVT:
+        /* Releases every state machine. Nothing after the switch uses them. */
+        clean_up();
+        break;
+
     case BTA_AV_CLOSE_EVT: {
         tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnecting */
@@ -1302,6 +1377,11 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data, v
 
     case BTC_SM_EXIT_EVT:
         p_cb->flags &= ~BTC_AV_FLAG_PENDING_START;
+        break;
+
+    case BTA_AV_DISABLE_EVT:
+        /* Releases every state machine. Nothing after the switch uses them. */
+        clean_up();
         break;
 
     case BTC_AV_START_STREAM_REQ_EVT:
@@ -1464,6 +1544,10 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data, v
     case BTC_AV_CONNECT_REQ_EVT: {
         /* requests for another device are routed to a free control block before
          * they reach the state machine, so this can only be the same device */
+        if (btc_a2d_is_deinit_ongoing()) {
+            btc_a2d_drop_queued_connect();
+            break;
+        }
         BTC_TRACE_DEBUG("Ignore BTC_AVCONNECT_REQ_EVT for same device\n");
         btc_queue_advance();
         break;
@@ -1542,6 +1626,11 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data, 
         /* restore the a2dp consumer task priority when stop audio playing. */
         // adjust_priority_a2dp(FALSE);
 
+        break;
+
+    case BTA_AV_DISABLE_EVT:
+        /* Releases every state machine. Nothing after the switch uses them. */
+        clean_up();
         break;
 
     case BTC_AV_START_STREAM_REQ_EVT:
@@ -1858,6 +1947,7 @@ static bt_status_t btc_av_init(int service_id)
             g_a2dp_on_deinit = true;
             g_a2dp_source_ongoing_deinit = false;
             g_a2dp_sink_ongoing_deinit = false;
+            btc_av_common.disabling = FALSE;
             goto av_init_fail;
         }
 
@@ -1883,6 +1973,7 @@ static bt_status_t btc_av_init(int service_id)
         g_a2dp_on_deinit = false;
         g_a2dp_source_ongoing_deinit = false;
         g_a2dp_sink_ongoing_deinit = false;
+        btc_av_common.disabling = FALSE;
 
         esp_a2d_cb_param_t param;
         memset(&param, 0, sizeof(esp_a2d_cb_param_t));
@@ -1925,20 +2016,84 @@ static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid)
     return BT_STATUS_SUCCESS;
 }
 
+static BOOLEAN btc_a2d_is_deinit_ongoing(void)
+{
+    return (g_a2dp_sink_ongoing_deinit || g_a2dp_source_ongoing_deinit);
+}
+
+static void btc_a2d_drop_queued_connect(void)
+{
+    uint16_t uuid = (btc_av_common.service_id == BTA_A2DP_SINK_SERVICE_ID) ?
+                    UUID_SERVCLASS_AUDIO_SINK : UUID_SERVCLASS_AUDIO_SOURCE;
+    btc_queue_remove_uuid(uuid);
+}
+
+static void btc_a2d_advance_queued_connect(btc_av_cb_t *p_cb)
+{
+    uint16_t uuid = (btc_av_common.service_id == BTA_A2DP_SINK_SERVICE_ID) ?
+                    UUID_SERVCLASS_AUDIO_SINK : UUID_SERVCLASS_AUDIO_SOURCE;
+
+    btc_queue_advance_busy_connect(uuid, &p_cb->peer_bda);
+}
+
+#if BTC_AV_SINK_INCLUDED || BTC_AV_SRC_INCLUDED
+/* Abort any in-progress AVDT/AVCTP link and ask BTA to disable immediately.
+ * Do not wait for IDLE: BTA_AvDisable already closes remaining streams, and
+ * waiting for CLOSE_EVT can stall deinit if the peer never answers. Nothing is
+ * released here, because BTA may still be holding references to this module and
+ * can keep reporting events until it answers with BTA_AV_DISABLE_EVT. */
+static void btc_a2d_request_teardown(UINT8 rc_peer_sep)
+{
+    bt_bdaddr_t zero_bda;
+
+    if (btc_av_common.disabling) {
+        return;
+    }
+
+    memset(&zero_bda, 0, sizeof(zero_bda));
+    for (UINT8 i = 0; i < BTC_AV_MAX_CONN; i++) {
+        btc_av_cb_t *p_cb = btc_av_cb_idx(i);
+        btc_sm_state_t state;
+
+        if (p_cb->sm_handle == NULL) {
+            continue;
+        }
+        state = btc_sm_get_state(p_cb->sm_handle);
+        if (state == BTC_AV_STATE_IDLE) {
+            continue;
+        }
+        if (state != BTC_AV_STATE_CLOSING) {
+            BTA_AvClose(p_cb->bta_handle);
+            if (p_cb->peer_sep == rc_peer_sep) {
+                btc_av_close_rc_if_needed(p_cb);
+            }
+        }
+        if (memcmp(&p_cb->peer_bda, &zero_bda, sizeof(bt_bdaddr_t)) != 0) {
+            BTA_AvDisconnect(p_cb->peer_bda.address);
+        }
+    }
+
+    btc_av_common.disabling = TRUE;
+    btc_dm_disable_service(btc_av_common.service_id);
+}
+#endif /* BTC_AV_SINK_INCLUDED || BTC_AV_SRC_INCLUDED */
+
 /*******************************************************************************
 **
 ** Function         clean_up
 **
-** Description      Shuts down the AV interface and does the cleanup
+** Description      Second half of the shutdown, run on BTA_AV_DISABLE_EVT. BTA
+**                  has detached from us at that point, so no callback can reach
+**                  the control block anymore and everything can be released.
 **
 ** Returns          None
 **
 *******************************************************************************/
-static void clean_up(int service_id)
+static void clean_up(void)
 {
     BTC_TRACE_DEBUG("%s\n", __FUNCTION__);
 
-    if (service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
+    if (btc_av_common.service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
 #if BTC_AV_SRC_INCLUDED
         btc_a2dp_source_shutdown();
         for (UINT8 i = 0; i < BTC_AV_MAX_CONN; i++) {
@@ -1948,14 +2103,18 @@ static void clean_up(int service_id)
             }
         }
 #endif /* BTC_AV_SRC_INCLUDED */
-        btc_dm_disable_service(BTA_A2DP_SOURCE_SERVICE_ID);
     }
 
-    if (service_id == BTA_A2DP_SINK_SERVICE_ID) {
+    if (btc_av_common.service_id == BTA_A2DP_SINK_SERVICE_ID) {
 #if BTC_AV_SINK_INCLUDED
         btc_a2dp_sink_shutdown();
 #endif /* BTC_AV_SINK_INCLUDED */
-        btc_dm_disable_service(BTA_A2DP_SINK_SERVICE_ID);
+    }
+
+    /* Drop only this profile's pending connect request, leave HFP/etc. in the queue */
+    if (btc_av_common.service_id == BTA_A2DP_SINK_SERVICE_ID ||
+            btc_av_common.service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
+        btc_a2d_drop_queued_connect();
     }
 
     /* Also shut down the AV state machines */
@@ -1964,7 +2123,10 @@ static void clean_up(int service_id)
             btc_sm_shutdown(btc_av_cb_idx(i)->sm_handle);
             btc_av_cb_idx(i)->sm_handle = NULL;
         }
+        btc_av_cb_idx(i)->bta_handle = 0;
     }
+    /* the common block is static, so it has to be left ready for the next init */
+    btc_av_common.disabling = FALSE;
     btc_av_common.active_idx = BTC_AV_IDX_INVALID;
     btc_av_common.service_id = 0;
 #if (BTC_AV_EXT_CODEC == TRUE)
@@ -2123,11 +2285,18 @@ static void bte_av_callback(tBTA_AV_EVT event, tBTA_AV *p_data)
 {
     bt_status_t stat;
     btc_msg_t msg;
+    int arg_len = (int)sizeof(tBTA_AV);
+
+    /* DISABLE has no payload. btc_transfer_context accepts NULL only with length 0. */
+    if (event == BTA_AV_DISABLE_EVT) {
+        p_data = NULL;
+        arg_len = 0;
+    }
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_A2DP;
     msg.act = (uint8_t) event;
-    stat = btc_transfer_context(&msg, p_data, sizeof(tBTA_AV),
+    stat = btc_transfer_context(&msg, p_data, arg_len,
                                     btc_av_event_deep_copy, btc_av_event_free_data);
 
     if (stat) {
@@ -2154,14 +2323,14 @@ static void bte_av_media_sink_cback_impl(UINT8 idx, tBTA_AV_EVT event, tBTA_AV_M
     UINT8 que_len;
     tA2D_STATUS a2d_status;
 
-#if A2D_DYNAMIC_MEMORY == TRUE
-    if (btc_av_cb_arr == NULL) {
+    /* Runs in the BTA context, where the control block may already be gone */
+    if (!btc_av_is_alive()) {
         if (event == BTA_AV_MEDIA_DATA_EVT) {
             osi_free(p_data);
         }
+        BTC_TRACE_WARNING("%s : A2DP is not initialized, event %u\n", __func__, event);
         return;
     }
-#endif
     p_cb = btc_av_cb_idx(idx);
 
     if (event == BTA_AV_MEDIA_DATA_EVT) { /* Switch to BTC_MEDIA context */
@@ -2277,6 +2446,12 @@ static tBTA_AV_DATA_CBACK * const btc_av_sink_data_cbacks[BTA_AV_NUM_STRS] = {
 static void bte_av_media_source_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 {
     tA2D_STATUS a2d_status;
+
+    /* Runs in the BTA context, where the control block may already be gone */
+    if (!btc_av_is_alive()) {
+        BTC_TRACE_WARNING("%s : A2DP is not initialized, event %u\n", __func__, event);
+        return;
+    }
 
     if (event == BTA_AV_MEDIA_CFG_EVT) {
         UINT8 *p_codec = (UINT8 *)p_data;
@@ -2425,7 +2600,7 @@ static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
     tBTC_AV_CODEC_INFO *codec_caps;
 
     param.a2d_sep_reg_stat.seid = seid;
-    if (btc_av_cb_first()->sm_handle == NULL ||
+    if (!btc_av_is_alive() ||
             btc_sm_get_state(btc_av_cb_first()->sm_handle) != BTC_AV_STATE_IDLE) {
         param.a2d_sep_reg_stat.reg_state = ESP_A2D_SEP_REG_INVALID_STATE;
         btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
@@ -2549,6 +2724,9 @@ bt_status_t btc_av_execute_service(BOOLEAN b_enable, UINT8 tsep)
                            &bta_av_a2d_cos, g_av_with_rc ? &bta_avrc_cos : NULL, tsep);
         }
     } else {
+        if (!btc_av_cb_allocated()) {
+            return BT_STATUS_FAIL;
+        }
         for (UINT8 i = 0; i < BTC_AV_MAX_CONN; i++) {
             if (btc_av_cb_idx(i)->bta_handle != 0) {
                 BTA_AvDeregister(btc_av_cb_idx(i)->bta_handle);
@@ -2966,7 +3144,10 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
 #endif
 #endif /* BTC_AV_SRC_INCLUDED */
     case BTC_AV_API_MEDIA_CTRL_EVT: {
-        esp_a2d_conn_hdl_t conn_hdl = arg->media_ctrl.conn_hdl;
+        esp_a2d_conn_hdl_t conn_hdl;
+
+        CHECK_BTAV_INIT();
+        conn_hdl = arg->media_ctrl.conn_hdl;
         /* TODO: sentinel for deprecated esp_a2d_media_ctrl(). Remove this
          * branch when that API is deleted; the message must already carry a
          * real handle.
@@ -2979,7 +3160,14 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
     }
     case BTC_AV_CONNECT_REQ_EVT: {
         btc_av_connect_req_t *connect_req = (btc_av_connect_req_t *)msg->arg;
-        btc_av_cb_t *p_cb = btc_av_acquire_cb(&connect_req->target_bda);
+        btc_av_cb_t *p_cb;
+
+        CHECK_BTAV_INIT();
+        if (btc_a2d_is_deinit_ongoing()) {
+            btc_a2d_drop_queued_connect();
+            break;
+        }
+        p_cb = btc_av_acquire_cb(&connect_req->target_bda);
         if (p_cb == NULL) {
             BTC_TRACE_WARNING("all a2dp connections are in use");
             btc_report_connection_state(NULL, ESP_A2D_CONNECTION_STATE_DISCONNECTED,
@@ -2996,6 +3184,7 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
         esp_a2d_conn_hdl_t conn_hdl = ESP_A2D_INVALID_CONN_HDL;
         btc_av_cb_t *p_cb;
 
+        CHECK_BTAV_INIT();
         memcpy(&conn_hdl, msg->arg, sizeof(conn_hdl));
         p_cb = btc_av_find_cb_by_hndl(conn_hdl);
         if (p_cb == NULL || p_cb->sm_handle == NULL) {
@@ -3035,6 +3224,11 @@ static btc_av_cb_t *btc_av_route_cb_event(uint8_t act, tBTA_AV *p_data)
 #endif
 
     switch (act) {
+    case BTA_AV_DISABLE_EVT:
+        /* no payload; any live state machine can release the profile */
+        p_cb = btc_av_cb_first();
+        return (p_cb->sm_handle != NULL) ? p_cb : NULL;
+
     case BTC_AV_CONFIG_EVT:
         /* posted by the media callback, which knows the stream it belongs to */
         return btc_av_find_cb_by_hndl(((btc_av_args_t *)p_data)->config.hndl);
@@ -3202,7 +3396,7 @@ static bt_status_t btc_a2d_sink_init(void)
 static bt_status_t btc_a2d_sink_connect(bt_bdaddr_t *remote_bda)
 {
     BTC_TRACE_DEBUG("%s\n", __FUNCTION__);
-    CHECK_BTAV_INIT();
+    CHECK_BTAV_INIT_STATUS();
 
     return btc_queue_connect(UUID_SERVCLASS_AUDIO_SINK, remote_bda, connect_int);
 }
@@ -3227,29 +3421,10 @@ static void btc_a2d_sink_get_delay_value(void)
 
 static void btc_a2d_sink_deinit(void)
 {
-    // Cleanup will only occur when the state is IDLE.
-    // If connected, it will first disconnect and then wait for the state to change to IDLE before performing cleanup.
-    // If in any other state, it will wait for the process to complete and then call btc_a2d_sink_deinit again.
+    CHECK_BTAV_INIT();
+
     g_a2dp_sink_ongoing_deinit = true;
-    if (btc_av_is_connected()) {
-        for (UINT8 i = 0; i < BTC_AV_MAX_CONN; i++) {
-            btc_av_cb_t *p_cb = btc_av_cb_idx(i);
-            if (p_cb->sm_handle == NULL) {
-                continue;
-            }
-            btc_sm_state_t state = btc_sm_get_state(p_cb->sm_handle);
-            if (state != BTC_AV_STATE_OPENED && state != BTC_AV_STATE_STARTED) {
-                continue;
-            }
-            BTA_AvClose(p_cb->bta_handle);
-            if (p_cb->peer_sep == AVDT_TSEP_SRC) {
-                btc_av_close_rc_if_needed(p_cb);
-            }
-        }
-    } else if (btc_sm_get_state(btc_av_cb_first()->sm_handle) == BTC_AV_STATE_IDLE) {
-        /* Only clean up when idle */
-        clean_up(BTA_A2DP_SINK_SERVICE_ID);
-    }
+    btc_a2d_request_teardown(AVDT_TSEP_SRC);
 }
 
 #endif /* BTC_AV_SINK_INCLUDED */
@@ -3274,19 +3449,10 @@ static bt_status_t btc_a2d_src_init(void)
 
 static void btc_a2d_src_deinit(void)
 {
-    // Cleanup will only occur when the state is IDLE.
-    // If connected, it will first disconnect and then wait for the state to change to IDLE before performing cleanup.
-    // If in any other state, it will wait for the process to complete and then call btc_a2d_src_deinit again.
+    CHECK_BTAV_INIT();
+
     g_a2dp_source_ongoing_deinit = true;
-    btc_av_cb_t *p_cb = btc_av_any_connected_cb();
-    if (p_cb != NULL) {
-        BTA_AvClose(p_cb->bta_handle);
-        if (p_cb->peer_sep == AVDT_TSEP_SNK) {
-            btc_av_close_rc_if_needed(p_cb);
-        }
-    } else if (btc_sm_get_state(btc_av_cb_first()->sm_handle) == BTC_AV_STATE_IDLE) {
-        clean_up(BTA_A2DP_SOURCE_SERVICE_ID);
-    }
+    btc_a2d_request_teardown(AVDT_TSEP_SNK);
 }
 
 static void btc_a2d_src_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_mcc_t *pref_mcc)
@@ -3391,7 +3557,7 @@ set_pref_mcc:
 static bt_status_t btc_a2d_src_connect(bt_bdaddr_t *remote_bda)
 {
     BTC_TRACE_DEBUG("%s\n", __FUNCTION__);
-    CHECK_BTAV_INIT();
+    CHECK_BTAV_INIT_STATUS();
 
     return btc_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, remote_bda, connect_int);
 }
@@ -3464,23 +3630,6 @@ bt_status_t btc_a2d_src_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_aud
 }
 
 #endif /* BTC_AV_SRC_INCLUDED */
-
-static BOOLEAN btc_a2d_deinit_if_ongoing(void)
-{
-#if BTC_AV_SRC_INCLUDED
-    if (g_a2dp_source_ongoing_deinit) {
-        btc_a2d_src_deinit();
-        return TRUE;
-    }
-#endif
-#if BTC_AV_SINK_INCLUDED
-    if (g_a2dp_sink_ongoing_deinit) {
-        btc_a2d_sink_deinit();
-        return TRUE;
-    }
-#endif
-    return FALSE;
-}
 
 esp_a2d_conn_hdl_t btc_a2d_conn_handle_get(void)
 {

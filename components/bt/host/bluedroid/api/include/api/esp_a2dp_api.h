@@ -565,6 +565,13 @@ esp_err_t esp_a2d_sink_register_stream_endpoint(uint8_t seid, const esp_a2d_mcc_
  *                  should be called only after esp_bluedroid_enable() completes successfully,
  *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will reported to APP layer.
  *
+ * @note            If an A2DP connection exists when this function is called, reporting of
+ *                  ESP_A2D_CONNECTION_STATE_EVT with ESP_A2D_CONNECTION_STATE_DISCONNECTED is not
+ *                  guaranteed. When this function returns ESP_OK, ESP_A2D_PROF_STATE_EVT with
+ *                  ESP_A2D_DEINIT_SUCCESS is reported.
+ *                  After that deinitialization event is reported, the protocol stack resources are released,
+ *                  and the disconnection event will not be reported afterwards.
+ *
  * @return
  *                  - ESP_OK: if the deinitialization request is sent successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -812,6 +819,13 @@ esp_err_t esp_a2d_source_register_stream_endpoint(uint8_t seid, const esp_a2d_mc
  * @brief           De-initialize for A2DP source module. This function
  *                  should be called only after esp_bluedroid_enable() completes successfully,
  *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will reported to APP layer.
+ *
+ * @note            If an A2DP connection exists when this function is called, reporting of
+ *                  ESP_A2D_CONNECTION_STATE_EVT with ESP_A2D_CONNECTION_STATE_DISCONNECTED is not
+ *                  guaranteed. When this function returns ESP_OK, ESP_A2D_PROF_STATE_EVT with
+ *                  ESP_A2D_DEINIT_SUCCESS is reported.
+ *                  After that deinitialization event is reported, the protocol stack resources are released,
+ *                  and the disconnection event will not be reported afterwards.
  *
  * @return
  *                  - ESP_OK: success
