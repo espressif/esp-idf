@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -957,7 +957,7 @@ extern "C" {
 #define I2C_COMD0_REG (DR_REG_I2C_BASE + 0x58)
 /** I2C_COMMAND0 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 0. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
@@ -982,7 +982,7 @@ extern "C" {
 #define I2C_COMD1_REG (DR_REG_I2C_BASE + 0x5c)
 /** I2C_COMMAND1 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 1. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
@@ -1007,7 +1007,7 @@ extern "C" {
 #define I2C_COMD2_REG (DR_REG_I2C_BASE + 0x60)
 /** I2C_COMMAND2 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 2. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
@@ -1032,7 +1032,7 @@ extern "C" {
 #define I2C_COMD3_REG (DR_REG_I2C_BASE + 0x64)
 /** I2C_COMMAND3 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 3. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
@@ -1057,7 +1057,7 @@ extern "C" {
 #define I2C_COMD4_REG (DR_REG_I2C_BASE + 0x68)
 /** I2C_COMMAND4 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 4. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
@@ -1082,7 +1082,7 @@ extern "C" {
 #define I2C_COMD5_REG (DR_REG_I2C_BASE + 0x6c)
 /** I2C_COMMAND5 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 5. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
@@ -1106,7 +1106,7 @@ extern "C" {
 #define I2C_COMD6_REG (DR_REG_I2C_BASE + 0x70)
 /** I2C_COMMAND6 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 6. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
@@ -1130,7 +1130,7 @@ extern "C" {
 #define I2C_COMD7_REG (DR_REG_I2C_BASE + 0x74)
 /** I2C_COMMAND7 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 7. It consists of three parts:
- *  op_code is the command, 0: RSTART, 1: WRITE, 2: READ, 3: STOP, 4: END.
+ *  op_code is the command, 6: RSTART, 1: WRITE, 3: READ, 2: STOP, 4: END.
  *  Byte_num represents the number of bytes that need to be sent or received.
  *  ack_check_en, ack_exp and ack are used to control the ACK bit. See I2C cmd
  *  structure for more
