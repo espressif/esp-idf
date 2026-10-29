@@ -253,12 +253,14 @@ endif()
 idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}"
                             "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}" "${usd_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
-                    PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
-                                      ../esp_wifi/wifi_apps/roaming_app/include
-                                      ../esp_wifi/wifi_apps/roaming_app/src
+                    PRIV_INCLUDE_DIRS src src/utils src/common esp_supplicant/src src/crypto
                                       esp_supplicant/include/esp_private
                     LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
+
+idf_component_get_property(esp_wifi_dir esp_wifi COMPONENT_DIR)
+target_include_directories(${COMPONENT_LIB} BEFORE PRIVATE
+    "${esp_wifi_dir}/wifi_apps/roaming_app/include")
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     __ets__
