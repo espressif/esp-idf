@@ -12,41 +12,65 @@ esp_err_t esp_ble_audio_ccp_call_control_server_register_bearer(
     const esp_ble_audio_tbs_register_param_t *param,
     esp_ble_audio_ccp_call_control_server_bearer_t **bearer)
 {
-    esp_err_t err;
+    esp_ble_audio_tbs_register_param_t reg_param;
+    esp_err_t ret = ESP_OK;
+    int err;
 
     if (param == NULL || bearer == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* The lib only reads optional_opcodes; keep apps that still set the old field working */
+    reg_param = *param;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    reg_param.optional_opcodes |= param->supported_features;
+#pragma GCC diagnostic pop
+
     BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
-    err = bt_ccp_call_control_server_register_bearer(param, bearer);
-
-    bt_le_host_unlock();
-
+    err = bt_ccp_call_control_server_register_bearer(&reg_param, bearer);
     if (err) {
         /* Map Zephyr error codes to ESP-IDF error codes */
         switch (err) {
         case -EINVAL:
-            return ESP_ERR_INVALID_ARG;
+            ret = ESP_ERR_INVALID_ARG;
+            break;
         case -ENOMEM:
-            return ESP_ERR_NO_MEM;
+            ret = ESP_ERR_NO_MEM;
+            break;
         case -EALREADY:
-            return ESP_ERR_INVALID_STATE;
         case -EAGAIN:
-            return ESP_ERR_INVALID_STATE;
+            ret = ESP_ERR_INVALID_STATE;
+            break;
         default:
-            return ESP_FAIL;
+            ret = ESP_FAIL;
+            break;
         }
+        goto end;
     }
 
-    return ESP_OK;
+#if BLE_AUDIO_SVC_DEFERRED_ADD
+    /* Same as esp_ble_audio_tbs_register_bearer(): the host has not added this service yet */
+    if (param->gtbs ? bt_le_gtbs_init() : bt_le_tbs_init()) {
+        bt_ccp_call_control_server_unregister_bearer(*bearer);
+        *bearer = NULL;
+        ret = ESP_FAIL;
+        goto end;
+    }
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
+
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_ccp_call_control_server_unregister_bearer(
     esp_ble_audio_ccp_call_control_server_bearer_t *bearer)
 {
-    esp_err_t err;
+    esp_err_t ret = ESP_OK;
+    int tbs_index;
+    int err;
 
     if (bearer == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -54,15 +78,28 @@ esp_err_t esp_ble_audio_ccp_call_control_server_unregister_bearer(
 
     BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
+    /* Read before unregistering, which invalidates it */
+    tbs_index = lib_ccp_call_control_server_tbs_index_get(bearer);
+
     err = bt_ccp_call_control_server_unregister_bearer(bearer);
-
-    bt_le_host_unlock();
-
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
-    return ESP_OK;
+#if BLE_AUDIO_SVC_DEFERRED_ADD
+    if (tbs_index == ESP_BLE_AUDIO_TBS_GTBS_INDEX) {
+        if (bt_le_gtbs_deinit()) {
+            ret = ESP_FAIL;
+        }
+    } else if (bt_le_tbs_deinit((uint8_t)tbs_index)) {
+        ret = ESP_FAIL;
+    }
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
+
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_ccp_call_control_server_set_bearer_provider_name(
@@ -212,7 +249,7 @@ esp_err_t esp_ble_audio_ccp_call_control_client_get_bearers(
 {
     esp_err_t err;
 
-    if (client == NULL || bearers == NULL) {
+    if (client == NULL || bearers == NULL || bearers->tbs_bearers == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 

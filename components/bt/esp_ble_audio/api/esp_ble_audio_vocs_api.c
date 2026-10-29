@@ -220,6 +220,33 @@ esp_ble_audio_vocs_t *esp_ble_audio_vocs_client_free_instance_get(void)
     return inst;
 }
 
+esp_err_t esp_ble_audio_vocs_client_free_instance(esp_ble_audio_vocs_t *inst)
+{
+    int err;
+
+    if (inst == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_vocs_client_free_instance(inst);
+
+    bt_le_host_unlock();
+
+    switch (err) {
+    case 0:
+        return ESP_OK;
+    case -EINVAL:
+        return ESP_ERR_INVALID_ARG;
+    case -EALREADY:
+    case -EBUSY:
+        return ESP_ERR_INVALID_STATE;
+    default:
+        return ESP_FAIL;
+    }
+}
+
 esp_err_t esp_ble_audio_vocs_discover(uint16_t conn_handle,
                                       esp_ble_audio_vocs_t *inst,
                                       const esp_ble_audio_vocs_discover_param_t *param)

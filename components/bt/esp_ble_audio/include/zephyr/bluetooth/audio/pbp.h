@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_H_
 
 /**
  * @brief Public Broadcast Profile (PBP)
@@ -31,6 +31,7 @@
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
@@ -51,11 +52,11 @@ extern "C" {
 /** Public Broadcast Announcement features */
 enum bt_pbp_announcement_feature {
     /** Broadcast Streams encryption status */
-    BT_PBP_ANNOUNCEMENT_FEATURE_ENCRYPTION = BIT(0),
+    BT_PBP_ANNOUNCEMENT_FEATURE_ENCRYPTION = BIT(0U),
     /** Standard Quality Public Broadcast Audio configuration */
-    BT_PBP_ANNOUNCEMENT_FEATURE_STANDARD_QUALITY = BIT(1),
+    BT_PBP_ANNOUNCEMENT_FEATURE_STANDARD_QUALITY = BIT(1U),
     /** High Quality Public Broadcast Audio configuration */
-    BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY = BIT(2),
+    BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY = BIT(2U),
 };
 
 /**
@@ -100,4 +101,4 @@ int bt_pbp_parse_announcement(struct bt_data *data, enum bt_pbp_announcement_fea
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_H_ */

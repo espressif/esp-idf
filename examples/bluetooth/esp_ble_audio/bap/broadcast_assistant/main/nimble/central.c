@@ -170,9 +170,11 @@ int pa_sync_terminate(uint16_t sync_handle)
     return ble_gap_periodic_adv_sync_terminate(sync_handle);
 }
 
+#if CONFIG_EXAMPLE_PAST
 int pa_past_transfer(uint16_t conn_handle, uint16_t sync_handle, uint8_t src_id)
 {
     /* Source_ID in the high octet of the service data. */
     return ble_gap_periodic_adv_sync_transfer(sync_handle, conn_handle,
                                               (uint16_t)src_id << 8);
 }
+#endif /* CONFIG_EXAMPLE_PAST */

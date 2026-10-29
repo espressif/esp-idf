@@ -30,6 +30,7 @@
 #include "bluedroid/hci.h"
 
 #include "common/host.h"
+#include "common/addr.h"
 #include "common/app/gap.h"
 
 LOG_MODULE_REGISTER(ISO_BGAP, CONFIG_BT_ISO_LOG_LEVEL);
@@ -430,4 +431,22 @@ int bt_le_bluedroid_gap_init(void)
     BTM_BleGapRegisterCallback(gap_app_cb);
 
     return 0;
+}
+
+uint32_t bt_le_bluedroid_gap_conn_interval_us_get(const bt_addr_le_t *dst)
+{
+    esp_gap_conn_params_t params;
+    esp_bd_addr_t bda;
+    esp_err_t err;
+
+    /* Zephyr address is LSB-first, Bluedroid's MSB-first */
+    bt_le_addr_copy(bda, dst->a.val);
+
+    err = esp_ble_get_current_conn_params(bda, &params);
+    if (err != ESP_OK) {
+        LOG_WRN("[B]ConnItvlNoConn[%d]", err);
+        return 0;
+    }
+
+    return BT_CONN_INTERVAL_TO_US(params.interval);
 }

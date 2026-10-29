@@ -5,12 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Internal helper macros backing UTIL_LISTIFY().
+ */
+
+#ifndef ZEPHYR_INCLUDE_SYS_UTIL_LISTIFY_H_
+#define ZEPHYR_INCLUDE_SYS_UTIL_LISTIFY_H_
+
 #ifndef ZEPHYR_INCLUDE_SYS_UTIL_LOOPS_H_
 #error "This header should not be used directly, please include util_loops.h instead"
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_LOOPS_H_ */
 
-#ifndef ZEPHYR_INCLUDE_SYS_UTIL_LISTIFY_H_
-#define ZEPHYR_INCLUDE_SYS_UTIL_LISTIFY_H_
 
 #define Z_UTIL_LISTIFY_0(F, sep, ...)
 

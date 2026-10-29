@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_H_
 
 /**
  * @brief Basic Audio Profile (BAP) LC3 Presets
@@ -223,7 +223,7 @@ struct bt_bap_lc3_preset {
               BT_BAP_QOS_CFG_UNFRAMED(10000u, 120u, 5u, 20u, 40000u))
 
 /**
- * @brief Helper to declare LC3 Unicast 8_5_1 codec configuration
+ * @brief Helper to declare LC3 Unicast 48_5_1 codec configuration
  *
  * @param _loc             Audio channel location bitfield (@ref bt_audio_location)
  * @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
@@ -838,4 +838,4 @@ struct bt_bap_lc3_preset {
 #endif
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_H_ */

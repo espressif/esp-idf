@@ -20,7 +20,7 @@
 
 #include "common/audio_attr.h"
 
-#include "../../../lib/include/audio.h"
+#include "../../../lib/include/lib_exports.h"
 
 LOG_MODULE_REGISTER(LEA_MICS, CONFIG_BT_ISO_LOG_LEVEL);
 

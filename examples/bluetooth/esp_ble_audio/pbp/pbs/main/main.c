@@ -93,6 +93,7 @@ static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SRC #0] Stream started");
 
     if (stream->qos == NULL || stream->qos->sdu == 0) {
@@ -282,6 +283,7 @@ static int broadcast_start(void)
     uint8_t per_len = 0;
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Starting high quality announcement, Broadcast ID 0x%06lx",
              (unsigned long)LOCAL_BROADCAST_ID);
 
@@ -371,6 +373,7 @@ static int pbp_source_init(void)
         return err;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "PBP broadcast source initialized");
 
     return 0;

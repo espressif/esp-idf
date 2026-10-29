@@ -125,4 +125,9 @@ struct bt_hci_cmd_state_set {
 
 uint8_t bt_get_phy(uint8_t hci_phy);
 
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr);
+#endif /* BLE_AUDIO_LIB_BUILD */

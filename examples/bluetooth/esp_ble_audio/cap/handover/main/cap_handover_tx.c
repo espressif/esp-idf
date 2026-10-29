@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdatomic.h>
 
 #include "cap_handover.h"
 
@@ -17,12 +18,18 @@
 static struct tx_stream tx_streams[SINK_STREAM_COUNT];
 
 /* One scheduler for the unicast group or broadcast source, running while any
- * stream sends: each tick sends one SDU on every stream. A handover unregisters
- * every stream before the other group starts, so the timestamps start again on
- * its anchors.
+ * stream sends: each tick sends one SDU on every stream. A handover pauses it,
+ * and the old group's streams unregister from their stopped callbacks.
  */
 static example_audio_tx_scheduler_t tx_scheduler;
 static size_t tx_stream_count;
+
+/* Set by the handover on the esp_timer task, which may run on another core than
+ * the iso_task (CONFIG_BT_*_PINNED_TO_CORE). Only this flag is shared: the TX
+ * state below changes only on the iso_task or under the host lock, as the tick.
+ */
+static atomic_bool tx_paused;
+
 #if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
 static example_audio_tx_sync_t tx_sync;
 #endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
@@ -75,6 +82,10 @@ static void cap_handover_tx_send(struct tx_stream *tx_stream)
     int err;
 
     if (tx_stream == NULL || tx_stream->stream == NULL) {
+        return;
+    }
+
+    if (atomic_load_explicit(&tx_paused, memory_order_acquire)) {
         return;
     }
 
@@ -166,6 +177,11 @@ void cap_handover_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_
 
 static void tx_scheduler_cb(void *arg)
 {
+    /* Also here: the timestamped branch sends through tx_send_cb(). */
+    if (atomic_load_explicit(&tx_paused, memory_order_acquire)) {
+        return;
+    }
+
 #if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
     example_audio_tx_sync_send_next(&tx_sync);
 #else /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
@@ -286,10 +302,26 @@ int cap_handover_tx_unregister_stream(esp_ble_audio_cap_stream_t *cap_stream)
     return -ENODATA;
 }
 
+void cap_handover_tx_pause(void)
+{
+    atomic_store_explicit(&tx_paused, true, memory_order_release);
+}
+
+void cap_handover_tx_resume(void)
+{
+    atomic_store_explicit(&tx_paused, false, memory_order_release);
+
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    /* The paused ticks did not advance the timestamp: re-anchor on the next one. */
+    tx_sync.synced = false;
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+}
+
 void cap_handover_tx_init(void)
 {
     int err;
 
+    atomic_init(&tx_paused, false);
     memset(tx_streams, 0, sizeof(tx_streams));
 
 #if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP

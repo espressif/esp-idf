@@ -147,6 +147,15 @@ esp_err_t esp_ble_audio_vocs_client_cb_register(esp_ble_audio_vocs_t *inst,
 esp_ble_audio_vocs_t *esp_ble_audio_vocs_client_free_instance_get(void);
 
 /**
+ * @brief   Free an instance received from esp_ble_audio_vocs_client_free_instance_get().
+ *
+ * @param   inst    Pointer to the Volume Offset Control Service client instance.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_vocs_client_free_instance(esp_ble_audio_vocs_t *inst);
+
+/**
  * @brief   Discover a Volume Offset Control Service.
  *
  * Attempts to discover a Volume Offset Control Service on a server given the @p param.

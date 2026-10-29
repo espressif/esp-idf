@@ -38,7 +38,12 @@ extern "C" {
  *  @return Zero on success or error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_rand(void *buf, size_t len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief AES encrypt little-endian data.
  *
@@ -52,8 +57,10 @@ int bt_rand(void *buf, size_t len);
  *
  *  @return Zero on success or error code otherwise.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
                   uint8_t enc_data[16]);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 #ifdef __cplusplus
 }

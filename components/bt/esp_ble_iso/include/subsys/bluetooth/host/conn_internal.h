@@ -114,7 +114,12 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
  */
 #define BT_CONN_INDEX_INVALID 0xff
 
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 struct bt_conn *bt_conn_lookup_index(uint8_t index);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /* Set connection object in certain state and perform action related to state */
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);

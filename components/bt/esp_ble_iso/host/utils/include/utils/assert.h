@@ -12,10 +12,14 @@
 extern "C" {
 #endif
 
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would
+ * rewrite the prototype. */
+#ifndef BLE_AUDIO_LIB_BUILD
 /* Also registered as lib_ext_funcs._assert, so tag/info stay free-form for the
  * lib's own call sites; BT_LE_ASSERT() passes the stringified condition. */
 void bt_le_assert(const char *tag, size_t info,
                   const char *file, int line, const char *func) __attribute__((noreturn));
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /* Use instead of assert(): CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE sets
  * -DNDEBUG, which turns every assert() into a no-op and lets execution fall

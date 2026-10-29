@@ -12,7 +12,6 @@
 #include <zephyr/types.h>
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -111,6 +110,8 @@ struct bt_otc_internal_instance_t {
     int metadata_err;
     uint32_t rcvd_size;
     uint32_t sent_size;
+    /* A data read is in flight, see oacp_read_failed() */
+    bool reading;
 };
 
 /* The profile clients that uses the OTS are responsible for discovery and
@@ -133,6 +134,8 @@ static int read_attr(struct bt_conn *conn,
                      struct bt_otc_internal_instance_t *inst,
                      uint16_t handle, bt_gatt_read_func_t cb);
 static void oacp_clr_cur_inst(struct bt_otc_internal_instance_t *inst);
+static void oacp_read_failed(struct bt_otc_internal_instance_t *inst, struct bt_conn *conn,
+                             int err);
 
 /* L2CAP callbacks */
 static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -216,6 +219,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
         int err;
 
         LOG_DBG("OtsCliRecvWholeObj[%u]", rcv_size);
+        cur_inst->reading = false;
         err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
         if (err < 0) {
             LOG_WRN("OtsCliL2capDiscErr[%d]", err);
@@ -227,6 +231,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
         int err;
 
         LOG_DBG("OtsCliRecvStopped[%u]", rcv_size);
+        cur_inst->reading = false;
         err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
 
         if (err < 0) {
@@ -245,9 +250,10 @@ static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
     struct bt_otc_internal_instance_t *inst =
         CONTAINER_OF(l2cap_ctx, struct bt_otc_internal_instance_t, l2cap_ctx);
 
-    ARG_UNUSED(conn);
-
     LOG_DBG("OtsCliL2capClosed");
+
+    /* Closed before the whole object arrived */
+    oacp_read_failed(inst, conn, -ECONNABORTED);
 
     /* Only release if this channel belonged to the active transfer. */
     oacp_clr_cur_inst(inst);
@@ -409,6 +415,23 @@ static void oacp_clr_cur_inst(struct bt_otc_internal_instance_t *inst)
     }
 }
 
+/* Upstream ends a failed read silently; report it once so the user can release its state */
+static void oacp_read_failed(struct bt_otc_internal_instance_t *inst, struct bt_conn *conn,
+                             int err)
+{
+    if (!inst->reading) {
+        return;
+    }
+
+    inst->reading = false;
+
+    LOG_WRN("OtsCliObjDataRdFail[%d]", err);
+
+    if (inst->otc_inst->cb != NULL && inst->otc_inst->cb->obj_data_read_failed != NULL) {
+        inst->otc_inst->cb->obj_data_read_failed(inst->otc_inst, conn, err);
+    }
+}
+
 static void oacp_ind_handler(struct bt_conn *conn,
                              struct bt_otc_internal_instance_t *inst,
                              const void *data, uint16_t length)
@@ -445,15 +468,22 @@ static void oacp_ind_handler(struct bt_conn *conn,
         }
 
         if (req_opcode == BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC) {
-            if (net_buf.len == sizeof(checksum)) {
-                checksum = net_buf_simple_pull_le32(&net_buf);
-                LOG_DBG("OtsCliObjChecksum[%08x]", checksum);
+            if (result_code == BT_GATT_OTS_OACP_RES_SUCCESS &&
+                    net_buf.len != sizeof(checksum)) {
+                LOG_WRN("OtsCliInvChecksumLen[%u]", net_buf.len);
+            } else {
+                if (result_code == BT_GATT_OTS_OACP_RES_SUCCESS) {
+                    checksum = net_buf_simple_pull_le32(&net_buf);
+                    LOG_DBG("OtsCliObjChecksum[%08x]", checksum);
+                } else {
+                    /* The checksum is omitted in error responses */
+                    checksum = 0U;
+                }
+
                 if (otc_inst->cb && otc_inst->cb->obj_checksum_calculated) {
                     otc_inst->cb->obj_checksum_calculated(
                         otc_inst, conn, result_code, checksum);
                 }
-            } else {
-                LOG_WRN("OtsCliInvChecksumLen[%u]", net_buf.len);
             }
             /* Checksum never uses L2CAP; always release cur_inst. */
             oacp_clr_cur_inst(inst);
@@ -462,6 +492,9 @@ static void oacp_ind_handler(struct bt_conn *conn,
                    result_code != BT_GATT_OTS_OACP_RES_SUCCESS) {
             /* Read/Write SUCCESS still waits on L2CAP (rx/tx_done/closed). */
             LOG_DBG("OtsCliOacpFailClr[%02x][%02x]", req_opcode, result_code);
+            if (req_opcode == BT_GATT_OTS_OACP_PROC_READ) {
+                oacp_read_failed(inst, conn, -EIO);
+            }
             oacp_clr_cur_inst(inst);
             (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
         }
@@ -747,7 +780,7 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
                             struct bt_conn *conn,
                             uint64_t obj_id)
 {
-    CHECKIF(!BT_OTS_VALID_OBJ_ID(obj_id)) {
+    if (!BT_OTS_VALID_OBJ_ID(obj_id)) {
         LOG_WRN("OtsCliInvObjId[%016llx]", obj_id);
 
         return -EINVAL;
@@ -1304,6 +1337,7 @@ static void write_oacp_cp_cb(struct bt_conn *conn, uint8_t err,
     if (err) {
         LOG_WRN("OtsCliOacpWrFail[%02x]", err);
         inst->busy = false;
+        oacp_read_failed(inst, conn, err);
         oacp_clr_cur_inst(inst);
         /* oacp_read may already have connected L2CAP before the GATT write. */
         (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
@@ -1364,6 +1398,9 @@ static int oacp_read(struct bt_conn *conn,
      * transfer?
      */
 
+    /* A read cut short by a disconnect may have left the flag set */
+    inst->reading = false;
+
     l2cap = &inst->l2cap_ctx;
     err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
     if (err) {
@@ -1397,6 +1434,7 @@ static int oacp_read(struct bt_conn *conn,
 
     if (!err) {
         inst->busy = true;
+        inst->reading = true;
         cur_inst = inst;
     } else {
         (void)bt_gatt_ots_l2cap_disconnect(l2cap);
@@ -1546,17 +1584,17 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 {
     struct bt_otc_internal_instance_t *inst;
 
-    CHECKIF(!conn) {
+    if (!conn) {
         LOG_WRN("OtsCliInvConn");
         return -ENOTCONN;
     }
 
-    CHECKIF(!otc_inst) {
+    if (!otc_inst) {
         LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
 
-    CHECKIF((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
+    if ((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
             (mode != BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE)) {
         LOG_ERR("OtsCliInvWrObjMode[%d]", mode);
         return -EINVAL;
@@ -1565,33 +1603,33 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
     /* OTS_v10.pdf Table 3.9: Object Action Control Point Procedure Requirements
      *  Offset and Length field are UINT32 Length
      */
-    CHECKIF(len > UINT32_MAX) {
+    if (len > UINT32_MAX) {
         LOG_ERR("OtsCliLenExceedsUint32[%zu]", len);
         return -EINVAL;
     }
 
-    CHECKIF(len == 0) {
+    if (len == 0) {
         LOG_ERR("OtsCliLenZero");
         return -EINVAL;
     }
 
-    CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
+    if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
         LOG_ERR("OtsCliOftExceedsUint32[%ld]", offset);
         return -EINVAL;
     }
 
-    CHECKIF(offset > otc_inst->cur_object.size.cur) {
+    if (offset > otc_inst->cur_object.size.cur) {
         LOG_ERR("OtsCliOftExceedsCurSize[%ld][%u]", offset, otc_inst->cur_object.size.cur);
         return -EINVAL;
     }
 
-    CHECKIF((offset < otc_inst->cur_object.size.cur) &&
+    if ((offset < otc_inst->cur_object.size.cur) &&
             !BT_OTS_OBJ_GET_PROP_PATCH(otc_inst->cur_object.props)) {
         LOG_ERR("OtsCliPatchNotSupp");
         return -EACCES;
     }
 
-    CHECKIF(((uint64_t)len + (uint64_t)offset > otc_inst->cur_object.size.alloc) &&
+    if (((uint64_t)len + (uint64_t)offset > otc_inst->cur_object.size.alloc) &&
             !BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
         LOG_ERR("OtsCliAppendNotSupp[%zu][%u]", (len + offset), otc_inst->cur_object.size.alloc);
         return -EINVAL;
@@ -1613,12 +1651,12 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 {
     struct bt_otc_internal_instance_t *inst;
 
-    CHECKIF(!conn) {
+    if (!conn) {
         LOG_WRN("OtsCliInvConn");
         return -ENOTCONN;
     }
 
-    CHECKIF(!otc_inst) {
+    if (!otc_inst) {
         LOG_ERR("OtsCliInvInst");
         return -EINVAL;
     }
@@ -1626,22 +1664,22 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
     /* OTS_v10.pdf Table 3.9: Object Action Control Point Procedure Requirements
      *  Offset and Length field are UINT32 Length
      */
-    CHECKIF(len > UINT32_MAX) {
+    if (len > UINT32_MAX) {
         LOG_WRN("OtsCliLenExceedsUint32[%zu]", len);
         return -EINVAL;
     }
 
-    CHECKIF(len == 0) {
+    if (len == 0) {
         LOG_WRN("OtsCliLenZero");
         return -EINVAL;
     }
 
-    CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
+    if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
         LOG_WRN("OtsCliOftExceedsUint32[%ld]", offset);
         return -EINVAL;
     }
 
-    CHECKIF((len + offset) > otc_inst->cur_object.size.cur) {
+    if ((len + offset) > otc_inst->cur_object.size.cur) {
         LOG_WRN("OtsCliOftLenExceedSize[%ld][%zu][%u]", offset, len, otc_inst->cur_object.size.cur);
         return -EINVAL;
     }

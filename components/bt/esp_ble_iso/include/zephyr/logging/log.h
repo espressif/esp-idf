@@ -8,6 +8,10 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_H_
 
+/* The lib logs through idf_ext_funcs (see its idf_port/include/utils.h); this
+ * file needs sdkconfig.h and esp_log.h. */
+#ifndef BLE_AUDIO_LIB_BUILD
+
 #include <stdio.h>
 #include <assert.h>
 
@@ -125,5 +129,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 #endif /* ZEPHYR_INCLUDE_LOGGING_LOG_H_ */

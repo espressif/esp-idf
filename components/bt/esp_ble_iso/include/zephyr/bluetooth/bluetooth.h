@@ -36,6 +36,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/data.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +60,13 @@ extern "C" {
  * @{
  */
 
+/**
+ * Identity handle referring to the first identity address. This is a convenience macro for
+ * specifying the default identity address. This helps make the code more readable, especially when
+ * only one identity address is supported.
+ */
+#define BT_ID_DEFAULT 0
+
 /** Opaque type representing an advertiser. */
 struct bt_le_ext_adv;
 
@@ -70,39 +78,6 @@ struct bt_conn;
 
 /* Don't require everyone to include iso.h */
 struct bt_iso_biginfo;
-
-/**
- * @brief Bluetooth data.
- *
- * @details Description of different AD Types that can be encoded into advertising data. Used to
- * form arrays that are passed to the @ref bt_le_adv_start function. The @ref BT_DATA define can
- * be used as a helpter to declare the elements of an @ref bt_data array.
- */
-struct bt_data {
-    /** Type of scan response data or advertisement data. */
-    uint8_t type;
-    /** Length of scan response data or advertisement data. */
-    uint8_t data_len;
-    /** Pointer to Scan response or advertisement data. */
-    const uint8_t *data;
-};
-
-/**
- * @brief Helper to declare elements of bt_data arrays
- *
- * This macro is mainly for creating an array of struct bt_data
- * elements which is then passed to e.g. @ref bt_le_adv_start function.
- *
- * @param _type Type of advertising data field
- * @param _data Pointer to the data field payload
- * @param _data_len Number of octets behind the _data pointer
- */
-#define BT_DATA(_type, _data, _data_len) \
-    { \
-        .type = (_type), \
-        .data_len = (_data_len), \
-        .data = (const uint8_t *)(_data), \
-    }
 
 /**
  * @brief Parameters for starting an extended advertising session.
@@ -392,8 +367,13 @@ struct bt_le_per_adv_sync_info {
  *
  * @return Zero on success or (negative) error code on failure.
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
                                 struct bt_le_per_adv_sync_info *info);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Look up an existing periodic advertising sync object by advertiser address.
@@ -403,8 +383,10 @@ int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
  *
  * @return Periodic advertising sync object or NULL if not found.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *adv_addr,
                                                           uint8_t sid);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Look up a local extended advertising set by advertiser address.
@@ -430,7 +412,9 @@ struct bt_le_ext_adv *bt_le_ext_adv_lookup_addr(const bt_addr_le_t *adv_addr, ui
  * @retval 0 Success.
  * @retval -EEXIST if @p cb was already registered.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Unregister periodic advertising sync callbacks.
@@ -443,7 +427,9 @@ int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
  * @retval 0 Success.
  * @retval -ENOENT if @p cb was not registered.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_le_per_adv_sync_cb_unregister(struct bt_le_per_adv_sync_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** LE scan parameters */
 struct bt_le_scan_param {
@@ -615,7 +601,9 @@ int bt_le_scan_stop(void);
  * @retval 0 Success.
  * @retval -EEXIST if @p cb was already registered.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Unregister scanner packet callbacks.
@@ -624,7 +612,9 @@ int bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
  *
  * @param cb Callback struct. Must point to memory that remains valid.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** Information about a bond with a remote device. */
 struct bt_bond_info {
@@ -640,9 +630,11 @@ struct bt_bond_info {
  * @param func       Function to call for each bond.
  * @param user_data  Data to pass to the callback function.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
                                               void *user_data),
                      void *user_data);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @}

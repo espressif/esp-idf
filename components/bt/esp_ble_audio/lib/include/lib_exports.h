@@ -4,8 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef LIB_AUDIO_H_
-#define LIB_AUDIO_H_
+/* Functions the prebuilt BLE Audio lib exports to IDF: each module's init, deinit and
+ * service getters, the table setters, and the lib_xxx implementations IDF puts in
+ * lib_int_funcs (see lib_abi.h). */
+
+#ifndef LIB_EXPORTS_H_
+#define LIB_EXPORTS_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -20,14 +24,14 @@ struct lib_ext_cfgs;
 struct lib_ext_funcs;
 struct lib_int_funcs;
 
-extern int lib_audio_ext_structs_check(const uint16_t *ext_structs, size_t size_structs);
-extern int lib_audio_ext_cfgs_set(const struct lib_ext_cfgs *ext_cfgs, size_t size_cfgs);
-extern int lib_audio_ext_funcs_set(const struct lib_ext_funcs *ext_funcs, size_t size_funcs);
-extern int lib_audio_int_funcs_set(const struct lib_int_funcs *funcs, size_t size_funcs);
+extern int lib_audio_ext_cfgs_set(const struct lib_ext_cfgs *ext_cfgs);
+extern int lib_audio_ext_funcs_set(const struct lib_ext_funcs *ext_funcs);
+extern int lib_audio_int_funcs_set(const struct lib_int_funcs *funcs);
 extern const char *lib_audio_commit_get(void);
 
 struct bt_aics;
 struct bt_gatt_service;
+struct bt_ccp_call_control_server_bearer;
 
 extern struct bt_aics *lib_aics_insts_get(void);
 extern void *lib_aics_svc_get(struct bt_aics *aics);
@@ -85,6 +89,7 @@ extern int lib_ccp_call_control_client_init(void);
 extern int lib_ccp_call_control_client_deinit(void);
 extern int lib_ccp_call_control_server_init(void);
 extern int lib_ccp_call_control_server_deinit(void);
+extern int lib_ccp_call_control_server_tbs_index_get(const struct bt_ccp_call_control_server_bearer *bearer);
 
 extern int lib_codec_init(void);
 extern int lib_codec_deinit(void);
@@ -178,8 +183,10 @@ enum bt_cap_common_proc_type;
 struct bt_cap_stream;
 struct bt_cap_broadcast_source;
 struct bt_cap_common_proc;
+struct bt_cap_common_client;
 
 struct bt_ots;
+struct bt_ots_cb;
 struct bt_ots_client;
 
 struct bt_micp_mic_dev_register_param;
@@ -247,10 +254,22 @@ extern bool lib_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8
                                          uint8_t ccid_cnt);
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
 
-#if CONFIG_BT_CAP_INITIATOR_UNICAST
+#if CONFIG_BT_CSIP_SET_COORDINATOR && (CONFIG_BT_CAP_INITIATOR_UNICAST || CONFIG_BT_CAP_COMMANDER)
+extern void lib_cap_common_discover_csis(struct bt_conn *conn,
+                                         struct bt_cap_common_client *client);
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR && (CONFIG_BT_CAP_INITIATOR_UNICAST || CONFIG_BT_CAP_COMMANDER) */
+
+#if CONFIG_BT_CAP_COMMANDER
+extern void lib_cap_commander_proc_complete(struct bt_cap_common_proc *active_proc);
+#endif /* CONFIG_BT_CAP_COMMANDER */
+
+#if CONFIG_BT_CAP_SUBPROC_SUPPORT
 extern void lib_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
 extern bool lib_cap_common_proc_is_type(enum bt_cap_common_proc_type proc_type);
 extern bool lib_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type);
+#endif /* CONFIG_BT_CAP_SUBPROC_SUPPORT */
+
+#if CONFIG_BT_CAP_INITIATOR_UNICAST
 extern void lib_cap_initiator_cp_cb(struct bt_cap_stream *cap_stream,
                                     enum bt_bap_ascs_rsp_code rsp_code,
                                     enum bt_bap_ascs_reason reason);
@@ -263,24 +282,24 @@ extern void lib_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 extern void lib_cap_initiator_disabled(struct bt_cap_stream *cap_stream);
 extern void lib_cap_initiator_stopped(struct bt_cap_stream *cap_stream);
 extern void lib_cap_initiator_released(struct bt_cap_stream *cap_stream);
+extern void lib_cap_initiator_unicast_audio_proc_complete(struct bt_cap_common_proc *active_proc);
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 #if CONFIG_BT_CAP_HANDOVER
-extern bool lib_cap_common_handover_is_active(void);
+extern bool lib_cap_common_active_proc_is_handover(void);
 extern bool lib_cap_handover_is_handover_broadcast_source(const  struct bt_cap_broadcast_source *cap_broadcast_source);
 extern void lib_cap_handover_complete(struct bt_cap_common_proc *active_proc);
 extern void lib_cap_handover_unicast_proc_complete(struct bt_cap_common_proc *active_proc);
 extern void lib_cap_handover_broadcast_source_stopped(uint8_t reason);
 extern void lib_cap_handover_unicast_to_broadcast_reception_start(void);
 extern int lib_cap_handover_broadcast_reception_stopped(struct bt_cap_common_proc *active_proc);
-extern void lib_cap_handover_receive_state_updated(const struct bt_conn *conn,
-                                                   const struct bt_bap_scan_delegator_recv_state *state);
+extern void lib_cap_handover_commander_proc_complete(struct bt_cap_common_proc *active_proc);
 #endif /* CONFIG_BT_CAP_HANDOVER */
 
 #if CONFIG_BT_CAP && CONFIG_BT_BAP_UNICAST
-extern void lib_cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
-                                         const struct bt_bap_qos_cfg_pref *pref);
-extern void lib_cap_stream_qos_set_cb(struct bt_bap_stream *bap_stream);
+extern void lib_cap_stream_codec_configured_cb(struct bt_bap_stream *bap_stream,
+                                               const struct bt_bap_qos_cfg_pref *pref);
+extern void lib_cap_stream_qos_configured_cb(struct bt_bap_stream *bap_stream);
 extern void lib_cap_stream_enabled_cb(struct bt_bap_stream *bap_stream);
 extern void lib_cap_stream_metadata_updated_cb(struct bt_bap_stream *bap_stream);
 extern void lib_cap_stream_disabled_cb(struct bt_bap_stream *bap_stream);
@@ -307,6 +326,8 @@ extern int lib_mcc_on_icon_content(struct bt_ots_client *otc_inst,
 extern void lib_mcc_on_object_metadata(struct bt_ots_client *otc_inst,
                                        struct bt_conn *conn, int err,
                                        uint8_t metadata_read);
+extern void lib_mcc_on_obj_data_read_failed(struct bt_ots_client *otc_inst,
+                                            struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_MCC_OTS */
 
 #if CONFIG_BT_MCS && CONFIG_BT_OTS
@@ -328,7 +349,11 @@ extern void lib_mcs_chrc_search_control_point_init(void);
 extern void lib_mcs_chrc_search_results_obj_id_init(void);
 #endif /* CONFIG_BT_MCS && CONFIG_BT_OTS */
 
-#if CONFIG_BT_MPL_OBJECTS
+#if CONFIG_BT_MPL && CONFIG_BT_MCS
+extern int lib_mcs_svc_init(struct bt_ots_cb *ots_cbs);
+#endif /* CONFIG_BT_MPL && CONFIG_BT_MCS */
+
+#if CONFIG_BT_MCS && CONFIG_BT_OTS
 extern uint64_t lib_media_proxy_sctrl_get_icon_id(void);
 extern uint64_t lib_media_proxy_sctrl_get_track_segments_id(void);
 extern uint64_t lib_media_proxy_sctrl_get_current_track_id(void);
@@ -346,7 +371,7 @@ extern void lib_media_proxy_pl_parent_group_id_cb(uint64_t id);
 extern void lib_media_proxy_pl_current_group_id_cb(uint64_t id);
 extern void lib_media_proxy_pl_search_cb(uint8_t result_code);
 extern void lib_media_proxy_pl_search_results_id_cb(uint64_t id);
-#endif /* CONFIG_BT_MPL_OBJECTS */
+#endif /* CONFIG_BT_MCS && CONFIG_BT_OTS */
 
 #if CONFIG_BT_MICP_MIC_CTLR_AICS
 extern uint8_t lib_micp_discover_include_func(struct bt_conn *conn,
@@ -392,11 +417,11 @@ extern struct bt_tbs_instance *lib_tbs_client_get_by_index(const struct bt_conn 
 #endif /* CONFIG_BT_TBS_CLIENT */
 
 #if CONFIG_BT_VCP_VOL_CTLR_AICS
-extern void lib_vcp_vol_ctlr_aics_init(void);
+extern int lib_vcp_vol_ctlr_aics_init(void);
 #endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
 
 #if CONFIG_BT_VCP_VOL_CTLR_VOCS
-extern void lib_vcp_vol_ctlr_vocs_init(void);
+extern int lib_vcp_vol_ctlr_vocs_init(void);
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 
 #if CONFIG_BT_VCP_VOL_CTLR_AICS || CONFIG_BT_VCP_VOL_CTLR_VOCS
@@ -429,4 +454,4 @@ extern int lib_vocs_client_description_set(struct bt_vocs_client *inst, const ch
 }
 #endif
 
-#endif /* LIB_AUDIO_H_ */
+#endif /* LIB_EXPORTS_H_ */

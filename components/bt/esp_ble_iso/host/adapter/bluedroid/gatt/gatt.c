@@ -2469,6 +2469,8 @@ static void handle_gatts_notify_tx_event(struct bt_le_gatts_notify_tx_event *eve
     gatts_list_node_free(n);
 }
 
+static void handle_gattc_discover_event(struct bt_le_gattc_discover_event *event);
+
 void bt_le_bluedroid_gatt_handle_event(uint8_t *data, size_t data_len)
 {
     struct bt_le_gatt_event_param *param;
@@ -2496,6 +2498,10 @@ void bt_le_bluedroid_gatt_handle_event(uint8_t *data, size_t data_len)
 
     case BT_LE_GATTC_DISC_CMPL_EVENT:
         handle_gattc_disc_cmpl_event(&param->gattc_disc_cmpl);
+        break;
+
+    case BT_LE_GATTC_DISCOVER_EVENT:
+        handle_gattc_discover_event(&param->gattc_discover);
         break;
 
     case BT_LE_GATTC_READ_CHRC_EVENT:
@@ -2800,7 +2806,7 @@ static int gatts_indicate_enqueue(struct bt_conn *conn,
     gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(conn->handle);
     if (gatt_conn == NULL) {
         LOG_ERR("[B]GattsIndNoConnInfo[%u]", conn->handle);
-        return -ENODEV;
+        return -ENOTCONN;
     }
 
     n = gatts_list_node_alloc(params, attr, value_handle);
@@ -2859,7 +2865,7 @@ int bt_le_bluedroid_gatts_indicate(struct bt_conn *conn, struct bt_gatt_indicate
 
         rc = gatts_indicate_enqueue(&conns[i], params, attr, value_handle);
         if (rc) {
-            /* Per-conn failure (e.g. -ENODEV for a torn-down conn) — skip
+            /* Per-conn failure (e.g. -ENOTCONN for a torn-down conn) — skip
              * and keep delivering to remaining conns. Partial-success
              * semantics, same as NimBLE NRP broadcast and the sibling
              * gatts_notify broadcast path above. */
@@ -2878,7 +2884,7 @@ int bt_le_bluedroid_gattc_disc_start(uint16_t conn_handle)
     gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(conn_handle);
     if (gatt_conn == NULL) {
         LOG_ERR("[B]NoConnInfo[%u]", conn_handle);
-        return -ENODEV;
+        return -ENOTCONN;
     }
 
     /* Central path: BTA_GATTC already opened + cached the peer DB inside
@@ -3285,6 +3291,79 @@ end:
     return err;
 }
 
+static int gattc_post_disc_event(uint16_t conn_handle, struct bt_gatt_discover_params *params,
+                                 uint8_t type)
+{
+    struct bt_le_gatt_event_param *qev;
+    int err;
+
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
+    BT_LE_ASSERT(qev);
+
+    qev->type = BT_LE_GATTC_DISCOVER_EVENT;
+
+    qev->gattc_discover.type = type;
+    qev->gattc_discover.conn_handle = conn_handle;
+    qev->gattc_discover.uuid = (params->uuid ? BT_UUID_16(params->uuid)->val : 0x0000);
+    qev->gattc_discover.params = params;
+
+    err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
+    if (err) {
+        ISO_POST_FAIL_LOG(err, "[B]GattcDiscPostFail[%d][%u]", err, type);
+        free(qev);
+        return err;
+    }
+
+    return 0;
+}
+
+/* Caller bt_le_bluedroid_gatt_handle_event already holds host_lock. Like NimBLE's
+ * handle_gattc_db_disc_event_safe, a link that went down meanwhile gets no callback;
+ * the profiles reset their discovery state on disconnect. */
+static void handle_gattc_discover_event(struct bt_le_gattc_discover_event *event)
+{
+    struct gatt_conn *gatt_conn;
+    struct bt_conn *conn;
+    uint16_t conn_id;
+
+    LOG_DBG("[B]GattcHdlDiscEvt[%u][%u]", event->conn_handle, event->type);
+
+    conn = bt_le_acl_conn_find(event->conn_handle);
+    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
+        LOG_INF("[B]GattcDiscNotConn[%u][%u]", event->conn_handle, BT_CONN_STATE_GET(conn));
+        return;
+    }
+
+    gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(event->conn_handle);
+    if (gatt_conn == NULL) {
+        LOG_WRN("[B]GattcDiscNoConnInfo[%u]", event->conn_handle);
+        return;
+    }
+
+    BT_LE_ASSERT(event->params);
+
+    conn_id = to_gattc_conn_id(gatt_conn->conn_id);
+
+    switch (event->type) {
+    case GATTC_DISC_TYPE_SVC_BY_UUID:
+        (void)gattc_disc_primary_svc(conn, conn_id, event->params);
+        break;
+
+    case GATTC_DISC_TYPE_INC_SVCS:
+        (void)gattc_disc_included_svc(conn, conn_id, event->params);
+        break;
+
+    case GATTC_DISC_TYPE_CHRS_BY_UUID:
+    case GATTC_DISC_TYPE_ALL_CHRS:
+        (void)gattc_disc_chrc(conn, conn_id, event->params);
+        break;
+
+    default:
+        BT_LE_ASSERT(0);
+        break;
+    }
+}
+
 int bt_le_bluedroid_gattc_discover(struct bt_conn *conn, struct bt_gatt_discover_params *params)
 {
     struct gatt_conn *gatt_conn;
@@ -3294,7 +3373,7 @@ int bt_le_bluedroid_gattc_discover(struct bt_conn *conn, struct bt_gatt_discover
     gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(conn->handle);
     if (gatt_conn == NULL) {
         LOG_ERR("[B]NoConnInfo[%u]", conn->handle);
-        return -ENODEV;
+        return -ENOTCONN;
     }
 
     /* Reject non-16-bit caller UUIDs up front — sibling disc helpers all
@@ -3308,17 +3387,29 @@ int bt_le_bluedroid_gattc_discover(struct bt_conn *conn, struct bt_gatt_discover
         return -ENOTSUP;
     }
 
+    /* The service / include / characteristic lookups read the local GATTC cache.
+     * Post them to iso_task so params->func runs after bt_gatt_discover() returns,
+     * as on Zephyr and NimBLE; calling back inline nests every follow-up discovery
+     * on the caller's stack. */
     switch (params->type) {
     case BT_GATT_DISCOVER_PRIMARY:
-        return gattc_disc_primary_svc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
+        if (params->uuid == NULL) {
+            LOG_ERR("[B]DiscAllPrimarySvcsNotSupp");
+            return -ENOTSUP;
+        }
+
+        return gattc_post_disc_event(conn->handle, params, GATTC_DISC_TYPE_SVC_BY_UUID);
 
     case BT_GATT_DISCOVER_INCLUDE:
-        return gattc_disc_included_svc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
+        return gattc_post_disc_event(conn->handle, params, GATTC_DISC_TYPE_INC_SVCS);
 
     case BT_GATT_DISCOVER_CHARACTERISTIC:
-        return gattc_disc_chrc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
+        return gattc_post_disc_event(conn->handle, params,
+                                     params->uuid ? GATTC_DISC_TYPE_CHRS_BY_UUID :
+                                     GATTC_DISC_TYPE_ALL_CHRS);
 
     case BT_GATT_DISCOVER_DESCRIPTOR:
+        /* Synchronous, as on NimBLE: only bt_gatt_subscribe()'s CCC lookup uses it. */
         return gattc_disc_chrc_desc(conn, to_gattc_conn_id(gatt_conn->conn_id), params);
 
     default:
@@ -3339,7 +3430,7 @@ int bt_le_bluedroid_gattc_read(struct bt_conn *conn, struct bt_gatt_read_params 
     gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(conn->handle);
     if (gatt_conn == NULL) {
         LOG_ERR("[B]NoConnInfo[%u]", conn->handle);
-        return -ENODEV;
+        return -ENOTCONN;
     }
 
     /* BTA cannot emit ATT Read Blob: bta_gattc_read hardcodes GATT_READ_BY_HANDLE
@@ -3407,7 +3498,7 @@ int bt_le_bluedroid_gattc_write(struct bt_conn *conn, struct bt_gatt_write_param
     gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(conn->handle);
     if (gatt_conn == NULL) {
         LOG_ERR("[B]NoConnInfo[%u]", conn->handle);
-        return -ENODEV;
+        return -ENOTCONN;
     }
 
     op = gattc_list_node_alloc(GATTC_OP_WRITE, params);
@@ -3447,7 +3538,7 @@ int bt_le_bluedroid_gattc_write_without_rsp(struct bt_conn *conn, uint16_t handl
     gatt_conn = bt_le_bluedroid_find_gatt_conn_with_handle(conn->handle);
     if (gatt_conn == NULL) {
         LOG_ERR("[B]NoConnInfo[%u]", conn->handle);
-        return -ENODEV;
+        return -ENOTCONN;
     }
 
     conn_id = to_gattc_conn_id(gatt_conn->conn_id);

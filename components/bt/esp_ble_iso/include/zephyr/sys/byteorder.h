@@ -18,7 +18,17 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#if HAS_BUILTIN(__builtin_bswap16)
+#define BSWAP_16(x) ((uint16_t) __builtin_bswap16(x))
+#else
+
 #define BSWAP_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+#endif
+
+#if HAS_BUILTIN(__builtin_bswap32)
+#define BSWAP_24(x) ((uint32_t) __builtin_bswap32(x) >> 8)
+#define BSWAP_32(x) ((uint32_t) __builtin_bswap32(x))
+#else
 #define BSWAP_24(x) ((uint32_t) ((((x) >> 16) & 0xff) | \
                    (((x)) & 0xff00) | \
                    (((x) & 0xff) << 16)))
@@ -26,6 +36,13 @@
                    (((x) >> 8) & 0xff00) | \
                    (((x) & 0xff00) << 8) | \
                    (((x) & 0xff) << 24)))
+#endif
+
+#if HAS_BUILTIN(__builtin_bswap64)
+#define BSWAP_40(x) ((uint64_t) __builtin_bswap64(x) >> 24)
+#define BSWAP_48(x) ((uint64_t) __builtin_bswap64(x) >> 16)
+#define BSWAP_64(x) ((uint64_t) __builtin_bswap64(x))
+#else
 #define BSWAP_40(x) ((uint64_t) ((((x) >> 32) & 0xff) | \
                    (((x) >> 16) & 0xff00) | \
                    (((x)) & 0xff0000) | \
@@ -45,6 +62,7 @@
                    (((x) & 0xff0000) << 24) | \
                    (((x) & 0xff00) << 40) | \
                    (((x) & 0xff) << 56)))
+#endif
 
 /** @def sys_le16_to_cpu
  *  @brief Convert 16-bit integer from little-endian to host endianness.

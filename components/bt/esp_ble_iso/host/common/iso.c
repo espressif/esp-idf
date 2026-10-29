@@ -497,6 +497,33 @@ static void iso_tx_sdu_clear(uint16_t handle, bool is_big)
     }
 }
 
+void bt_le_iso_tx_sdu_flush(struct bt_iso_chan *chan)
+{
+    struct iso_tx_sdu_node *sdu_node;
+    struct iso_tx_sdu_node *sdu_tmp;
+    sys_snode_t *prev;
+
+    prev = NULL;
+
+    SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&iso_tx_sdu_list, sdu_node, sdu_tmp, node) {
+        if (sdu_node->chan != chan) {
+            prev = &sdu_node->node;
+            continue;
+        }
+
+        LOG_INF("IsoTxSduFlush[%u]", sdu_node->sdu_len);
+
+        sys_slist_remove(&iso_tx_sdu_list, prev, &sdu_node->node);
+
+        free((void *)sdu_node->sdu);
+        free(sdu_node);
+
+        if (chan->ops && chan->ops->send_failed) {
+            chan->ops->send_failed(chan, -ESHUTDOWN);
+        }
+    }
+}
+
 static int validate_iso_send(struct bt_iso_chan *chan, struct net_buf *buf)
 {
     if (chan == NULL || buf == NULL ||
@@ -510,8 +537,10 @@ static int validate_iso_send(struct bt_iso_chan *chan, struct net_buf *buf)
         return -ENOTCONN;
     }
 
-    if (chan->state != BT_ISO_STATE_CONNECTED) {
-        LOG_ERR("IsoSendChanNotConn[%u]", chan->iso->handle);
+    if (chan->iso->state != BT_CONN_CONNECTED ||
+            chan->state != BT_ISO_STATE_CONNECTED) {
+        LOG_ERR("IsoSendChanNotConn[%u][%u][%u]",
+                chan->iso->handle, chan->iso->state, chan->state);
         return -ENOTCONN;
     }
 
@@ -713,6 +742,11 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
              * needs to be freed here.
              */
             LOG_WRN("IsoTxCompFail[%d]", err);
+
+            /* bt_iso_chan_send() already returned 0 for this queued SDU */
+            if (sdu_node->chan->ops && sdu_node->chan->ops->send_failed) {
+                sdu_node->chan->ops->send_failed(sdu_node->chan, -EIO);
+            }
         }
 
         free(sdu_node);

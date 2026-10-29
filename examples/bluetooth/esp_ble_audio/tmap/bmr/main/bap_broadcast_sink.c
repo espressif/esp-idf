@@ -67,6 +67,7 @@ static int stream_index(const esp_ble_audio_bap_stream_t *stream)
 
 static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SNK #%d] Stream started", stream_index(stream));
 
     example_audio_rx_metrics_reset(&rx_metrics);
@@ -128,6 +129,7 @@ static void syncable_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
 {
     int err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "BASE received, creating broadcast sink");
 
     err = esp_ble_audio_bap_broadcast_sink_sync(broadcast_sink,
@@ -241,6 +243,7 @@ void bap_broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event)
     if (broadcast_id != ESP_BLE_AUDIO_BAP_INVALID_BROADCAST_ID &&
             tmap_bms_found &&
             pa_syncing == false) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Found TMAP BMS, starting PA sync (broadcast ID 0x%06lx)",
                  broadcast_id);
 

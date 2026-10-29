@@ -9,6 +9,10 @@ config BT_CAP
     bool # hidden
     default y if BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
 
+config BT_CAP_SUBPROC_SUPPORT
+    bool # hidden
+    default y if BT_CAP_INITIATOR_UNICAST || (BT_BAP_BROADCAST_ASSISTANT && BT_CAP_COMMANDER)
+
 config BT_CAP_ACCEPTOR
     bool "Common Audio Profile Acceptor Role Support"
     depends on BT_BAP_UNICAST_SERVER || (BT_BAP_BROADCAST_SINK && BT_BAP_SCAN_DELEGATOR)
@@ -21,6 +25,8 @@ config BT_CAP_ACCEPTOR_SET_MEMBER
     bool "Common Audio Profile Acceptor Role Set Member support"
     depends on BT_CAP_ACCEPTOR
     depends on BT_CSIP_SET_MEMBER
+    depends on BT_CSIP_SET_MEMBER_SIZE_SUPPORT
+    depends on BT_CSIP_SET_MEMBER_RANK_SUPPORT
     help
         Enabling this will allow a CAP acceptor to be a set member.
         Enabling this will require a manual register of the CAS service.

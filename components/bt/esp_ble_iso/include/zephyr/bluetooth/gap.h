@@ -12,6 +12,7 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_GAP_H_
 
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -209,6 +210,27 @@ enum bt_gap_adv_prop {
  */
 #define BT_GAP_PER_ADV_INTERVAL_TO_MS(_interval)                                                   \
     (BT_GAP_PER_ADV_INTERVAL_TO_US(_interval) / 1000U)
+
+/**
+ * @brief Convert milliseconds to periodic advertising sync timeout units (10 ms)
+ *
+ * Value range of @p _timeout is 100 to 163840
+ *
+ * @note If @p _timeout is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT(4005) will become 4000 milliseconds
+ */
+#define BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT(_timeout) ((uint16_t)((_timeout) / 10U))
+
+/**
+ * @brief Convert microseconds to periodic advertising sync timeout units (10 ms)
+ *
+ * Value range of @p _timeout is 100000 to 163840000
+ *
+ * @note If @p _timeout is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(4005000) will become 4000000 microseconds
+ */
+#define BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(_timeout)                                                \
+    (BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT((_timeout) / USEC_PER_MSEC))
 
 /** @brief Peripheral sleep clock accuracy (SCA) in ppm (parts per million) */
 enum bt_gap_sca {

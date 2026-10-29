@@ -6,6 +6,10 @@
 
 #pragma once
 
+/* The lib maps CONFIG_* to its runtime values in its idf_port/include/config,
+ * which its utils.h pulls in first; this file needs sdkconfig.h. */
+#ifndef BLE_AUDIO_LIB_BUILD
+
 #include "sdkconfig.h"
 
 #include <zephyr/sys/check.h>
@@ -89,3 +93,5 @@ _Static_assert(CONFIG_BT_ISO_MAX_CHAN == 0, "Too large ISO channels");
 #endif /* CONFIG_BT_ISO_UNICAST && CONFIG_BT_ISO_BROADCAST */
 
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
+#endif /* BLE_AUDIO_LIB_BUILD */

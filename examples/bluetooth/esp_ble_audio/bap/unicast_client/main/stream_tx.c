@@ -208,6 +208,7 @@ int stream_tx_register(esp_ble_audio_bap_stream_t *stream)
     tx_stream->tx_count = (example_audio_tx_count_t){0};
     tx_stream_count++;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SNK #%d] Started TX %s timestamps (SDU %u, interval %u us)",
              (int)(tx_stream - tx_streams),
              IS_ENABLED(CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP) ? "with" : "without",

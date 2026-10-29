@@ -23,15 +23,32 @@
 
 LOG_MODULE_REGISTER(ISO_TIMER, CONFIG_BT_ISO_LOG_LEVEL);
 
+/* Generation tokens are unique across all works, so a timer event still queued on
+ * iso_task never matches a later arming, even after the work is reset (deinit or a
+ * memset by its owner) and initialized again. Never 0: that is the value of a reset
+ * work, and an event carrying it is dropped. */
+static uint32_t timer_gen;
+
+static uint32_t timer_gen_next(void)
+{
+    uint32_t gen = __atomic_add_fetch(&timer_gen, 1U, __ATOMIC_RELAXED);
+
+    if (gen == 0U) {
+        gen = __atomic_add_fetch(&timer_gen, 1U, __ATOMIC_RELAXED);
+    }
+
+    return gen;
+}
+
 static void iso_timer_cb(void *arg)
 {
     struct k_work *work = arg;
     int err;
 
     BT_LE_ASSERT(work);
-    BT_LE_ASSERT(work->timer);
-    BT_LE_ASSERT(work->handler);
 
+    /* No timer/handler asserts: a deinit on the other core may clear the work while this
+     * callback runs; the generation check on iso_task drops the stale event. */
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_TIMER_EVENT, work, work->gen);
     if (err) {
         ISO_POST_FAIL_LOG(err, "TimerCbPostFail[%d]", err);
@@ -125,7 +142,7 @@ void k_work_deinit_delayable(struct k_work_delayable *dwork)
         return;
     }
 
-    dwork->work.gen++;
+    dwork->work.gen = timer_gen_next();
 
     /* esp_timer_delete rejects a running timer */
     esp_timer_stop(dwork->work.timer);
@@ -149,7 +166,7 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork)
     }
 
     esp_timer_stop(dwork->work.timer);
-    dwork->work.gen++;
+    dwork->work.gen = timer_gen_next();
 
     return 0;
 }
@@ -168,7 +185,7 @@ bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 
     esp_timer_stop(dwork->work.timer);
 
-    dwork->work.gen++;
+    dwork->work.gen = timer_gen_next();
 
     /* TODO: check the return result */
     return false;
@@ -187,7 +204,7 @@ int k_work_schedule(struct k_work_delayable *dwork, k_timeout_t ms)
 
     esp_timer_stop(dwork->work.timer);
 
-    dwork->work.gen++;
+    dwork->work.gen = timer_gen_next();
 
     dwork->work.timeout_us = esp_timer_get_time() + (int64_t)ms * 1000;
 
@@ -218,7 +235,7 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t ms)
 
     esp_timer_stop(dwork->work.timer);
 
-    dwork->work.gen++;
+    dwork->work.gen = timer_gen_next();
 
     dwork->work.timeout_us = esp_timer_get_time() + (int64_t)ms * 1000;
 
@@ -250,7 +267,7 @@ int k_work_schedule_periodic_us(struct k_work_delayable *dwork, uint64_t period_
 
     esp_timer_stop(dwork->work.timer);
 
-    dwork->work.gen++;
+    dwork->work.gen = timer_gen_next();
 
     err = esp_timer_start_periodic(dwork->work.timer, period_us);
     if (err) {
@@ -300,8 +317,9 @@ void bt_le_timer_handle_event(void *arg, size_t gen)
     struct k_work *work = arg;
 
     bt_le_host_lock();
-    /* Drop the event if the work was re-armed or cancelled after it fired */
-    if ((uint32_t)gen == work->gen) {
+    /* Drop the event if the work was re-armed or cancelled after it fired, or if the
+     * callback read gen after a reset (0, which no arming uses) */
+    if ((uint32_t)gen != 0U && (uint32_t)gen == work->gen) {
         k_work_submit(work);
     }
     bt_le_host_unlock();

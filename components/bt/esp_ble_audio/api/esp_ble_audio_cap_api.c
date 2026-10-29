@@ -17,12 +17,15 @@ esp_err_t esp_ble_audio_cap_acceptor_register(const esp_ble_audio_csip_set_membe
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Same checks as esp_ble_audio_csip_set_member_register(); SET_MEMBER implies SIZE and RANK */
+#if CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT
     if (param->lockable && param->rank == 0) {
         /* Rank cannot be 0 if service is lockable */
         return ESP_ERR_INVALID_ARG;
     }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
-    if (param->rank > param->set_size) {
+    if (param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
         /* Invalid rank (shall be less than or equal to set_size */
         return ESP_ERR_INVALID_ARG;
     }
@@ -620,6 +623,23 @@ esp_err_t esp_ble_audio_cap_handover_broadcast_to_unicast(
     BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
     err = bt_cap_handover_broadcast_to_unicast(param);
+
+    bt_le_host_unlock();
+
+    if (err) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_audio_cap_handover_cancel(void)
+{
+    int err;
+
+    BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
+
+    err = bt_cap_handover_cancel();
 
     bt_le_host_unlock();
 

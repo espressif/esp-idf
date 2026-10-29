@@ -82,9 +82,14 @@ void bt_conn_unref(struct bt_conn *conn);
  * @param func  Function to call for each connection.
  * @param data  Data to pass to the callback function.
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 void bt_conn_foreach(enum bt_conn_type type,
                      void (*func)(struct bt_conn *conn, void *data),
                      void *data);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Get destination (peer) address of a connection.
  *
@@ -92,7 +97,9 @@ void bt_conn_foreach(enum bt_conn_type type,
  *
  *  @return Destination address if @p conn is a valid @ref BT_CONN_TYPE_LE connection
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Get array index of a connection
  *
@@ -104,7 +111,9 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
  *  @return Index of the connection object.
  *          The range of the returned value is 0..CONFIG_BT_MAX_CONN-1
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint8_t bt_conn_index(const struct bt_conn *conn);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** LE Connection Info Structure */
 struct bt_conn_le_info {
@@ -205,7 +214,9 @@ struct bt_conn_info {
  *
  *  @return Zero on success or (negative) error code on failure.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
@@ -364,7 +375,9 @@ struct bt_conn_cb {
  * @retval 0 Success.
  * @retval -EEXIST if @p cb was already registered.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_conn_cb_register(struct bt_conn_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Unregister connection callbacks.
@@ -377,7 +390,9 @@ int bt_conn_cb_register(struct bt_conn_cb *cb);
  * @retval -EINVAL If @p cb is NULL
  * @retval -ENOENT if @p cb was not registered
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_conn_cb_unregister(struct bt_conn_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  *  @brief Register a callback structure for connection events.
@@ -425,7 +440,9 @@ struct bt_conn_auth_info_cb {
  *
  *  @return Zero on success or negative error code otherwise
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Unregister authentication information callbacks.
  *
@@ -435,7 +452,9 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb);
  *
  *  @return Zero on success or negative error code otherwise
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 #ifdef __cplusplus
 }

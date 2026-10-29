@@ -44,17 +44,17 @@ extern "C" {
  * @{
  */
 /** No index */
-#define BT_HAS_PRESET_INDEX_NONE 0x00
+#define BT_HAS_PRESET_INDEX_NONE 0x00U
 /** First preset index */
-#define BT_HAS_PRESET_INDEX_FIRST 0x01
+#define BT_HAS_PRESET_INDEX_FIRST 0x01U
 /** Last preset index */
-#define BT_HAS_PRESET_INDEX_LAST 0xFF
+#define BT_HAS_PRESET_INDEX_LAST 0xFFU
 /** @} */
 
 /** Preset name minimum length */
-#define BT_HAS_PRESET_NAME_MIN 1
+#define BT_HAS_PRESET_NAME_MIN 1U
 /** Preset name maximum length */
-#define BT_HAS_PRESET_NAME_MAX 40
+#define BT_HAS_PRESET_NAME_MAX 40U
 
 /**
  * @struct bt_has
@@ -87,16 +87,16 @@ enum bt_has_properties {
     BT_HAS_PROP_NONE = 0,
 
     /** Preset name can be written by the client */
-    BT_HAS_PROP_WRITABLE = BIT(0),
+    BT_HAS_PROP_WRITABLE = BIT(0U),
 
     /** Preset availability */
-    BT_HAS_PROP_AVAILABLE = BIT(1),
+    BT_HAS_PROP_AVAILABLE = BIT(1U),
 };
 
 /** Hearing Aid device capabilities */
 enum bt_has_capabilities {
     /** Indicate support for presets */
-    BT_HAS_PRESET_SUPPORT = BIT(0),
+    BT_HAS_PRESET_SUPPORT = BIT(0U),
 };
 
 /** @brief Structure for registering features of a Hearing Access Service instance. */

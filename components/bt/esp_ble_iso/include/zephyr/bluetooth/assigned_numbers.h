@@ -22,6 +22,7 @@
  */
 
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -724,6 +725,29 @@ extern "C" {
  * @{
  */
 
+/** Enum for valid bearer technology values */
+enum __packed bt_bearer_tech {
+    /** 3G */
+    BT_BEARER_TECH_3G = 0x01,
+    /** 4G */
+    BT_BEARER_TECH_4G = 0x02,
+    /** Long-term evolution (LTE) */
+    BT_BEARER_TECH_LTE = 0x03,
+    /** Wifi */
+    BT_BEARER_TECH_WIFI = 0x04,
+    /** 5G */
+    BT_BEARER_TECH_5G = 0x05,
+    /** Global System for Mobile Communications (GSM) */
+    BT_BEARER_TECH_GSM = 0x06,
+    /** Code-Division Multiple Access (CDMA) */
+    BT_BEARER_TECH_CDMA = 0x07,
+    /** 2G */
+    BT_BEARER_TECH_2G = 0x08,
+    /** Wideband Code-Division Multiple Access (WCDMA) */
+    BT_BEARER_TECH_WCDMA = 0x09,
+    /* Values 0x0A to 0xFF are reserved for future use */
+};
+
 /**
  * @brief Codec capability types
  *
@@ -867,10 +891,14 @@ enum bt_audio_codec_cap_chan_count {
 /** Maximum supported channel counts */
 #define BT_AUDIO_CODEC_CAP_CHAN_COUNT_MAX 8
 
-/** The minimum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
-#define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4
-/** The maximum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
-#define BT_AUDIO_BROADCAST_NAME_LEN_MAX          128
+/** The minimum size in octets of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4U
+/** The maximum size in octets of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MAX          128U
+/** The minimum amount of characters of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_CHAR_MIN         4U
+/** The maximum amount of characters of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_CHAR_MAX         32U
 
 /**
  * @brief Codec configuration types
