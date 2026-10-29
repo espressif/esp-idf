@@ -127,3 +127,13 @@ To launch an OpenThread border router on an ESP chip, you need to connect an RCP
 Calling :cpp:func:`esp_openthread_border_router_init` during the initialization launches all the border routing functionalities.
 
 You may refer to the :example:`openthread/ot_br` example and the README for further border router details.
+
+Thread Certification
+--------------------
+
+For information about Thread certification by inheritance, refer to :doc:`Thread Certification <ot-certification>`.
+
+.. toctree::
+    :maxdepth: 1
+
+    ot-certification
