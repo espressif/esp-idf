@@ -746,6 +746,17 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
 
     if (atomic_load(&i2c_master->status) == I2C_STATUS_READ) {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
+        // The receive FIFO can fire after a read has already been torn down (a
+        // timed-out or aborted transfer), leaving the operation's data pointer
+        // NULL. Reading into it would fault. Flag the transfer timed out and
+        // skip the FIFO read. Both status and event must be set so the waiter
+        // and the async dispatcher see the timeout even if MST_COMPLETE already
+        // queued I2C_EVENT_DONE.
+        if (i2c_operation->data == NULL) {
+            atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+            i2c_master->event = I2C_EVENT_TIMEOUT;
+            return;
+        }
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->rx_cnt);
         /* rx_cnt bytes have just been read, increment the number of bytes used from the buffer */
@@ -766,11 +777,24 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
 #if !SOC_I2C_STOP_INDEPENDENT
     else {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
+        // Same torn-down-read case as the independent-stop path above: data may
+        // be NULL here. Skip only the FIFO reads to avoid the fault, but still
+        // run the read-complete cleanup below (clearing contains_read) so this
+        // branch is not re-entered on every later END_DETECT/MST_COMPLETE. Set
+        // both status and event so the timeout is observed even if MST_COMPLETE
+        // already queued I2C_EVENT_DONE.
+        bool rx_valid = (i2c_operation->data != NULL);
+        if (!rx_valid) {
+            atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+            i2c_master->event = I2C_EVENT_TIMEOUT;
+        }
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
-        i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->read_len_static);
-        // If the read command only contain nack marker, no read it for the second time.
-        if (i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data && i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].hw_cmd.ack_val == I2C_NACK_VAL) {
-            i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+        if (rx_valid) {
+            i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->read_len_static);
+            // If the read command only contain nack marker, no read it for the second time.
+            if (i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data && i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].hw_cmd.ack_val == I2C_NACK_VAL) {
+                i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+            }
         }
         i2c_master->w_r_size = i2c_master->read_len_static + 1;
         i2c_master->read_len_static = 0;
