@@ -720,7 +720,11 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
 
 esp_err_t IRAM_ATTR ieee802154_intr_disable(void)
 {
-    esp_err_t err = esp_intr_disable(s_ieee802154_isr_handle);
+    esp_err_t err = ESP_OK;
+    if (s_ieee802154_isr_handle == NULL) {
+        return err;
+    }
+    err = esp_intr_disable(s_ieee802154_isr_handle);
 
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(IEEE802154_TAG, "Failed to disable IEEE 802.15.4 interrupt (%d)", err);
@@ -730,7 +734,11 @@ esp_err_t IRAM_ATTR ieee802154_intr_disable(void)
 
 esp_err_t IRAM_ATTR ieee802154_intr_enable(void)
 {
-    esp_err_t err = esp_intr_enable(s_ieee802154_isr_handle);
+    esp_err_t err = ESP_OK;
+    if (s_ieee802154_isr_handle == NULL) {
+        return err;
+    }
+    err = esp_intr_enable(s_ieee802154_isr_handle);
 
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(IEEE802154_TAG, "Failed to enable IEEE 802.15.4 interrupt (%d)", err);
