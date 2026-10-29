@@ -231,11 +231,8 @@ struct nan_paired_peer {
 struct nan_ndi_sec_sa {
     bool     valid;
     uint8_t  peer_ndi[MACADDR_LEN];
-    uint8_t  local_ndi[MACADDR_LEN];
     uint8_t  csid;
     int      pairing_akmp;   /* 0 if not from pairing */
-    uint8_t  tk[NAN_ND_TK_MAX_LEN];
-    uint8_t  tk_len;
 };
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
@@ -518,6 +515,11 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                                 uint8_t pub_id,
                                 const uint8_t *peer_nmi,
                                 const uint8_t *peer_ndi);
+
+/* Drop pending CSIA/SCIA captured for a request being rejected (no
+ * publish, duplicate NDP, or peer limit). Call before returning from the
+ * NDP indication callback without consuming the pending state. */
+void nan_security_discard_pending(void);
 
 /* PMK / PMKID derivation entry point used by the publish path. Derives from
  * (service_name, sec_cfg) (passphrase or PMK) and writes the result into

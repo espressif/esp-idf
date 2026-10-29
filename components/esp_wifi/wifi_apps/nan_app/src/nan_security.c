@@ -43,15 +43,6 @@ static const char *TAG = "nan_sec";
  * callback fires. Consumed by nan_security_apply_pending().
  *-----------------------------------------------------------------------*/
 
-/* Pending M1 (ANonce + replay counter) */
-static struct {
-    bool valid;
-    uint8_t pub_id;
-    uint8_t anonce[NAN_NONCE_LEN];
-    uint8_t rx_replay_counter[NAN_REPLAY_COUNTER_LEN];
-    uint8_t key_rsc[NAN_KEY_RSC_LEN];
-} s_pending_m1;
-
 /* Pending PMKID and CSID from CSIA/SCIA. csid_bitmap accumulates every
  * spec-valid CSID advertised in the CSIA (a publisher may list more than
  * one cipher suite). */
@@ -1421,7 +1412,7 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
             if (memcmp(pmkid, peer_sec->pmkids[i], ESP_WIFI_NAN_NDP_PMKID_LEN) == 0) {
                 ESP_LOGD(TAG, "ND-PMKID match: svc='%s' cred[%u] vs peer SCID[%u], publisher "MACSTR,
                          own_svc->svc_name, c, i, MAC2STR(publisher_nmi));
-                ESP_LOG_BUFFER_HEXDUMP(TAG, pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_INFO);
+                ESP_LOG_BUFFER_HEXDUMP(TAG, pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_DEBUG);
                 /* Remember which local cred matched, so the initiator NDP-req
                  * path (nan_security_populate_initiator_ndl) derives M1's
                  * pair-PMKID from the right credential. */
@@ -2190,8 +2181,14 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
 
     /* Only update a pre-claim (ndp_id == 0) or the matching request. An
      * established NDP with a different ndp_id is a duplicate request; the
-     * indication callback rejects it, so don't overwrite its security state. */
-    if (ndl && ndl->ndp_id != 0 && ndp_id != ndl->ndp_id) {
+     * indication callback rejects it, so don't overwrite its security state.
+     * M1 is always a new request, so reject it whenever it resolves to an
+     * established NDP (covers an unknown incoming id too). M2/M3/M4 may
+     * legitimately arrive with ndp_id == 0 (id/peer not yet known), in which
+     * case the fallback above is the only way to recover their NDL — only
+     * reject those when the incoming id is known and differs. */
+    if (ndl && ndl->ndp_id != 0 && ndp_id != ndl->ndp_id &&
+            (msg_type == 1 || ndp_id != 0)) {
         ESP_LOGW(TAG, "NDP Key Desc: ignoring msg %d for active NDP id %d (incoming ndp_id=%d, pub=%d)",
                  msg_type, ndl->ndp_id, ndp_id, pub_id);
         return;
@@ -2326,8 +2323,7 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
             forced_memzero(plain, sizeof(plain));   /* scrub decrypted group keys */
         }
     } else if (msg_type == 1) {
-        /* No free slot: drop the M1. Don't cache it as pending — a stale
-         * entry would later install the wrong ANonce on a new NDP. */
+        /* No free slot: drop the M1. */
         ESP_LOGW(TAG, "NDP Key Desc: dropping M1 for pub_id=%d (no free NDL slot)", pub_id);
     } else {
         ESP_LOGI(TAG, "NDP Key Desc: no matching NDL (ndp_id=%d, pub_id=%d), key desc not applied",
@@ -2495,16 +2491,16 @@ void nan_security_apply_pending(struct ndl_info *ndl,
 
         memset(&s_pending_scia, 0, sizeof(s_pending_scia));
     }
+}
 
-    if (s_pending_m1.valid && s_pending_m1.pub_id == pub_id && ndl) {
-        memcpy(ndl->anonce, s_pending_m1.anonce, NAN_NONCE_LEN);
-        memcpy(ndl->rx_replay_counter, s_pending_m1.rx_replay_counter, NAN_REPLAY_COUNTER_LEN);
-        ndl->rx_replay_counter_set = 1;
-        memcpy(ndl->key_rsc, s_pending_m1.key_rsc, NAN_KEY_RSC_LEN);
-        ndl->handshake_state = NAN_HANDSHAKE_M1_RCVD;
-        ESP_LOGD(TAG, "NDP Indication: applied pending M1 to NDL");
-        s_pending_m1.valid = false;
-    }
+/* Drop pending CSIA/SCIA captured for a request that is being rejected
+ * (no publish, duplicate NDP, or peer limit). The pending cache is keyed
+ * on pub_id only, so a stale entry would otherwise be applied to the next
+ * indication on the same publish — even an open NDP — forcing it encrypted
+ * and then failing it. */
+void nan_security_discard_pending(void)
+{
+    memset(&s_pending_scia, 0, sizeof(s_pending_scia));
 }
 
 /* Replay counter helper (used by M3 initiator builder). */
@@ -3100,11 +3096,8 @@ void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, const uint8_t *local_ndi,
     memset(sa, 0, sizeof(*sa));
     sa->valid = true;
     memcpy(sa->peer_ndi, peer_ndi, MACADDR_LEN);
-    memcpy(sa->local_ndi, local_ndi, MACADDR_LEN);
     sa->csid = csid;
     sa->pairing_akmp = pairing_akmp;
-    memcpy(sa->tk, tk, tk_len);
-    sa->tk_len = tk_len;
 
     ESP_LOGD(TAG, "SEC: Committed SA csid=%u akmp=0x%x strength=%d peer_ndi=" MACSTR,
              csid, pairing_akmp, nan_sec_get_strength(csid, pairing_akmp),
@@ -3121,7 +3114,6 @@ void nan_sec_ndp_clear_sa(const uint8_t *peer_ndi)
     if (peer_ndi && memcmp(sa->peer_ndi, peer_ndi, MACADDR_LEN) != 0) {
         return;
     }
-    forced_memzero(sa->tk, sizeof(sa->tk));
     memset(sa, 0, sizeof(*sa));
 }
 

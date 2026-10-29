@@ -1194,6 +1194,9 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
     struct own_svc_info *p_own_svc = nan_find_own_svc(pub_id);
 
     if (!p_own_svc) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_security_discard_pending();
+#endif
         NAN_DATA_UNLOCK();
         ESP_LOGE(TAG, "No Publish found with id %d", pub_id);
         return;
@@ -1207,12 +1210,18 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
      * re-stamp or wipe the live datapath. */
     struct ndl_info *preclaimed = nan_find_ndl_by_pub_id_and_peer(pub_id, peer_nmi);
     if (preclaimed && preclaimed->ndp_id != 0 && preclaimed->ndp_id != ndp_id) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_security_discard_pending();
+#endif
         NAN_DATA_UNLOCK();
         ESP_LOGE(TAG, "NDP Req from "MACSTR" duplicates active NDP id %d on pub %d",
                  MAC2STR(peer_nmi), preclaimed->ndp_id, pub_id);
         return;
     }
     if (!preclaimed && ndl_limit_reached()) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_security_discard_pending();
+#endif
         NAN_DATA_UNLOCK();
         ESP_LOGE(TAG, "NDP limit reached");
         return;
@@ -1942,6 +1951,14 @@ void esp_nan_action_stop(void)
     nan_reset_service(0, true);
     s_nan_ctx.state &= ~NAN_STARTED_BIT;
     s_nan_ctx.state |= NAN_STOPPED_BIT;
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    /* Clear the §7.4 SA cache under the lock: nan_sec_ndp_commit_keys()
+     * (confirm callback on the wifi task) writes the same object and also
+     * needs NAN_DATA_LOCK, so wiping it unlocked can leave a half-written SA
+     * that nan_sec_ndp_clear_sa(peer_ndi) never matches again. Running it
+     * here is safe — it does not call into the wifi library. */
+    nan_sec_ndp_clear_sa(NULL);
+#endif
     NAN_DATA_UNLOCK();
 
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_NAN_SECURITY)
@@ -1956,7 +1973,6 @@ void esp_nan_action_stop(void)
      * keys instead of re-installing a stale key with IPN/BIPN=0 (which would
      * reset the blob's replay counter) — see nan_security_reset_own_group_keys. */
     nan_security_reset_own_group_keys();
-    nan_sec_ndp_clear_sa(NULL);
 #endif
 
     esp_nan_internal_register_callbacks(NULL);
