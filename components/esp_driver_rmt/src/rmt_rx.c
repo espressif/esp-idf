@@ -619,6 +619,7 @@ bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     size_t mem_have = trans_desc->buffer_size - trans_desc->copy_dest_off;
     size_t copy_size = mem_want;
     if (mem_want > mem_have) {
+        copy_size = mem_have;
         if (trans_desc->flags.en_partial_rx) { // check partial receive is enabled or not
             // notify the user to process the received symbols if the buffer is going to be full
             if (trans_desc->received_symbol_num) {
@@ -639,7 +640,6 @@ bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
                 // even user process the partial received data, the remain buffer may still be insufficient
                 if (mem_want > mem_have) {
                     ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
-                    copy_size = mem_have;
                 }
             }
         } else {
@@ -703,6 +703,7 @@ bool rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
     size_t mem_have = trans_desc->buffer_size - trans_desc->copy_dest_off;
     size_t copy_size = mem_want;
     if (mem_want > mem_have) {
+        copy_size = mem_have;
         if (trans_desc->flags.en_partial_rx) {
             // notify the user to process the received symbols if the buffer is going to be full
             if (trans_desc->received_symbol_num) {
@@ -724,7 +725,6 @@ bool rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
                 // even user process the partial received data, the remain buffer size still insufficient
                 if (mem_want > mem_have) {
                     ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
-                    copy_size = mem_have;
                 }
             }
         } else {
