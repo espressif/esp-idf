@@ -124,7 +124,7 @@ def main() -> None:
         args.output_file,
     ]
     if args.chunk_size:
-        cmd.extend(['--chunk-size', args.chunk_size])
+        cmd.extend(['--chunk-size', str(args.chunk_size)])
 
     if args.md5_disable:
         cmd.append('--md5-disable')

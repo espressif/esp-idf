@@ -6,7 +6,6 @@
 Generate Kconfig.soc_caps.in with defines from soc_caps.h
 """
 
-import argparse
 import inspect
 import io
 import os
@@ -17,6 +16,8 @@ from pathlib import Path
 from string import Template
 
 import pyparsing
+import rich_click as click
+from esp_pylib.cli_options import OptionEatAll
 from esp_pylib.excepthook import install_exception_reporting
 from esp_pylib.logger import Verbosity
 from esp_pylib.logger import log
@@ -36,6 +37,7 @@ from pyparsing import alphas
 from pyparsing import hexnums
 from pyparsing import nums
 from pyparsing import rest_of_line
+from rich.markup import escape
 
 pyparsing.usePackrat = True
 
@@ -120,11 +122,11 @@ class KconfigWriter:
         # Check if file was updated and print diff for users
         diff = unified_diff(old_content, new_content, fromfile=str(self.kconfig_path), n=2)
         for line in diff:
-            print(line, end='')
+            log.print(escape(line), end='')
             file_needs_update = True
 
         if file_needs_update:
-            print('\n' + f'Updating file: {self.kconfig_path}')
+            log.print(f'\nUpdating file: {escape(str(self.kconfig_path))}')
             with open(self.kconfig_path, 'w', encoding='utf-8') as f:
                 f.writelines(new_content)
 
@@ -247,30 +249,35 @@ def get_defines(header_path):  # type: (Path) -> list[str]
     return defines
 
 
-if __name__ == '__main__':
-    install_exception_reporting()
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('-d', '--dir', help='SoC caps folder paths, support wildcards', nargs='+', default=[])
-    parser.add_argument('-n', '--filename', nargs='?', default='*caps.h', help='SoC caps filename, support wildcards')
-    parser.add_argument(
-        '-v',
-        '--verbose',
-        action='count',
-        help='Increase the logging level of the script. Can be specified multiple times.',
-    )
-    parser.add_argument('--always-write', help='Always generate new output files', action='store_true')
-    args = parser.parse_args()
-
-    if args.verbose:
+@click.command(context_settings={'help_option_names': ['-h', '--help']}, help=__doc__)
+@click.option(
+    '-d',
+    '--dir',
+    'dirs',
+    multiple=True,
+    type=str,
+    cls=OptionEatAll,
+    help='SoC caps folder paths, support wildcards',
+)
+@click.option('-n', '--filename', default='*caps.h', help='SoC caps filename, support wildcards')
+@click.option(
+    '-v',
+    '--verbose',
+    count=True,
+    help='Increase the logging level of the script. Can be specified multiple times.',
+)
+@click.option('--always-write', is_flag=True, help='Always generate new output files')
+def main(dirs, filename, verbose, always_write):  # type: (tuple[str, ...], str, int, bool) -> None
+    if verbose:
         log.set_verbosity(Verbosity.VERBOSE)
     else:
         log.set_verbosity(Verbosity.NORMAL)
 
     files_updated = []
     writers = []  # type: typing.List[typing.Optional[KconfigWriter]]
-    for caps_dir in args.dir:
+    for caps_dir in dirs:
         soc_caps_dirs = Path().glob(caps_dir)
-        new_writers = [generate_defines(d, args.filename, args.always_write) for d in soc_caps_dirs if path.isdir(d)]
+        new_writers = [generate_defines(d, filename, always_write) for d in soc_caps_dirs if path.isdir(d)]
         writers.extend(new_writers)
 
     configs = dict()  # type: typing.Dict[str, str] # key: config name, value: config_type
@@ -308,3 +315,8 @@ if __name__ == '__main__':
     log.print(f'Updated {sum(files_updated)} files')
 
     sys.exit(all(files_updated))
+
+
+if __name__ == '__main__':
+    install_exception_reporting()
+    main()

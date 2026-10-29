@@ -3263,7 +3263,14 @@ def action_gen_doc(args):  # type: ignore
     """
     Prints basic documentation and information about every tool from tool_info.
     """
-    f = args.output
+    if args.output and args.output != '-':
+        with open(args.output, 'w', encoding='utf-8') as f:
+            write_gen_doc(args, f)
+    else:
+        write_gen_doc(args, sys.stdout)
+
+
+def write_gen_doc(args, f):  # type: ignore
     tools_info = load_tools_info()
 
     def print_out(text: str) -> None:
@@ -3551,7 +3558,7 @@ def main(argv: list[str]) -> None:
         subparsers.add_parser('validate', help='Validate tools.json against schema file')
 
         gen_doc = subparsers.add_parser('gen-doc', help='Write the list of tools as a documentation page')
-        gen_doc.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout, help='Output file name')
+        gen_doc.add_argument('--output', help='Output file name (default: standard output)')
         gen_doc.add_argument(
             '--heading-underline-char', help='Character to use when generating RST sections', default='~'
         )

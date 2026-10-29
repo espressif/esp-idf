@@ -14,7 +14,10 @@ import csv
 import fnmatch
 import os
 import re
-import sys
+
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import log
+from rich.markup import escape
 
 # Directories to exclude from recursive search
 EXCLUDE_SEARCH_DIRS = {'test_apps', 'unit-test-app', 'CMock', 'test'}
@@ -162,7 +165,7 @@ def extract_from_file(filepath: str, rel_path: str) -> list[ErrCode]:
                     )
                 )
     except UnicodeDecodeError:
-        print(f'Warning: Cannot decode {filepath}, skipping', file=sys.stderr)
+        log.warn(f'Cannot decode {escape(filepath)}, skipping')
 
     return results
 
@@ -200,7 +203,7 @@ def resolve_error_codes(err_codes: list[ErrCode]) -> list[ErrCode]:
         unresolved = still_unresolved
 
     for ec in unresolved:
-        print(f'Warning: Cannot resolve {ec.name} (depends on {ec.base_name}) in {ec.file}', file=sys.stderr)
+        log.warn(f'Cannot resolve {escape(ec.name)} (depends on {escape(ec.base_name)}) in {escape(ec.file)}')
 
     return [ec for ec in err_codes if ec.value is not None]
 
@@ -354,8 +357,7 @@ def main() -> None:
         headers.extend(search_headers(args.search_dirs, base_path))
 
     if not headers:
-        print('Error: No header files specified. Use --headers or --search-dirs.', file=sys.stderr)
-        sys.exit(1)
+        log.die('No header files specified. Use --headers or --search-dirs.')
 
     context_headers = list(args.context_headers) if args.context_headers else None
 
@@ -365,13 +367,14 @@ def main() -> None:
     if args.validate:
         validation_errors = validate_error_codes(err_codes)
         if validation_errors:
-            print(f'\nValidation FAILED with {len(validation_errors)} error(s):', file=sys.stderr)
-            for err in validation_errors:
-                print(f'  ERROR: {err}', file=sys.stderr)
-            sys.exit(1)
+            log.die(
+                f'Validation FAILED with {len(validation_errors)} error(s):\n'
+                + '\n'.join(f'  {escape(err)}' for err in validation_errors)
+            )
         else:
-            print('Validation passed: no duplicate values or conflicting definitions.')
+            log.print('Validation passed: no duplicate values or conflicting definitions.')
 
 
 if __name__ == '__main__':
+    install_exception_reporting()
     main()
