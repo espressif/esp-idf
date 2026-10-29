@@ -64,6 +64,7 @@ typedef enum {
  * @brief SD/MMC Host clock timing delay lines
  */
 typedef enum {
+    SDMMC_DELAY_LINE_DISABLED = 0,  /*!< Delay line disabled */
     SDMMC_DELAY_LINE_0 = 1,         /*!< Delay line 0 */
     SDMMC_DELAY_LINE_1,             /*!< Delay line 1 */
     SDMMC_DELAY_LINE_2,             /*!< Delay line 2 */
