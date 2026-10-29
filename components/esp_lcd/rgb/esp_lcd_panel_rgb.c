@@ -1329,6 +1329,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
             .buffer = rgb_panel->bounce_buffer[0] + restart_skip_bytes,
             .buffer_alignment = buffer_alignment,
             .length = MIN(LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rgb_panel->bb_size) - restart_skip_bytes,
+            .flags.mark_eof = true, // like every other bounce buffer: the ISR refills a buffer on its EOF
         };
         ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_restart_link, 0, &restart_buffer_mount_cfg, 1, NULL),
                             TAG, "mount DMA restart buffer failed");
