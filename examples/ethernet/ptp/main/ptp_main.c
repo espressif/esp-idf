@@ -61,15 +61,10 @@ void init_ethernet_and_netif(void)
 
 #if CONFIG_ETH_SUBLAYER_SUPPORT
         ESP_LOGI(TAG, "Using Ethernet sublayer");
-        esp_eth_sublayer_config_t sub_config = {
-            .eth_handle = eth_handles[i],
-        };
-        esp_eth_sublayer_handle_t eth_sublayer = NULL;
-        ESP_ERROR_CHECK(esp_eth_sublayer_new(&sub_config, &eth_sublayer));
-        esp_eth_sublayer_vlan_handle_t eth_netif_untag = NULL;
-        ESP_ERROR_CHECK(esp_eth_sublayer_vlan_add(eth_sublayer, ESP_ETH_SUBLAYER_UNTAGGED_VID, &eth_netif_untag));
+        esp_eth_sublayer_default_if_handle_t eth_default_if = NULL;
+        ESP_ERROR_CHECK(esp_eth_sublayer_default_if_new(eth_handles[i], &eth_default_if));
         // attach Ethernet driver to TCP/IP stack
-        ESP_ERROR_CHECK(esp_netif_attach(eth_netif, eth_netif_untag));
+        ESP_ERROR_CHECK(esp_netif_attach(eth_netif, eth_default_if));
 #else
         // attach Ethernet driver to TCP/IP stack
         ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handles[i])));
@@ -142,7 +137,7 @@ void app_main(void)
 #if CONFIG_EXAMPLE_PTP_PULSE_EMAC_PPS
     esp_netif_iodriver_handle netif_iodriver = esp_netif_get_io_driver(esp_netif_get_handle_from_ifkey(ETH_IF_KEY));
 #if CONFIG_ETH_SUBLAYER_SUPPORT
-    esp_eth_handle_t eth_handle = esp_eth_sublayer_vlan_get_eth_handle(netif_iodriver);
+    esp_eth_handle_t eth_handle = esp_eth_sublayer_default_if_get_eth_handle(netif_iodriver);
 #else
     esp_eth_handle_t eth_handle = (esp_eth_handle_t)netif_iodriver;
 #endif

@@ -268,6 +268,21 @@ esp_err_t tx_hook(esp_eth_handle_t eth, esp_eth_sublayer_tx_bufs_t *tx_bufs, voi
 
 ## Minimal Usage
 
+### Single Untagged Interface (No VLANs)
+
+```c
+esp_eth_sublayer_default_if_handle_t default_if = NULL;
+ESP_ERROR_CHECK(esp_eth_sublayer_default_if_new(eth_handle, &default_if));
+
+esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
+esp_netif_t *netif = esp_netif_new(&netif_cfg);
+ESP_ERROR_CHECK(esp_netif_attach(netif, default_if));
+
+esp_eth_start(eth_handle);
+```
+
+### Multiple VLAN Interfaces
+
 ```c
 // 1. Create sublayer for an existing Ethernet driver handle
 esp_eth_sublayer_config_t sub_cfg = { .eth_handle = eth_handle };
