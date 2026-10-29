@@ -391,112 +391,119 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
 {
     ESP_LOGV(TAG, "%s: path=\"%s\", flags=%x, mode=%x", __func__, path, flags, mode);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    _lock_acquire(&fat_ctx->lock);
-    prepend_drive_to_path(fat_ctx, &path, NULL);
-    int fd = get_next_fd(fat_ctx);
-    if (fd < 0) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGE(TAG, "open: no free file descriptors");
-        errno = ENFILE;
-        return -1;
-    }
+    int fd = -1;
+    int ret = -1;
 
-    FRESULT res = f_open(&fat_ctx->files[fd], path, fat_mode_conv(flags));
-    if (res != FR_OK) {
-        file_cleanup(fat_ctx, fd);
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        return -1;
-    }
+    _lock_acquire(&fat_ctx->lock);
+    do {
+        prepend_drive_to_path(fat_ctx, &path, NULL);
+        fd = get_next_fd(fat_ctx);
+        if (fd < 0) {
+            ESP_LOGE(TAG, "open: no free file descriptors");
+            errno = ENFILE;
+            break;
+        }
+
+        FRESULT res = f_open(&fat_ctx->files[fd], path, fat_mode_conv(flags));
+        if (res != FR_OK) {
+            file_cleanup(fat_ctx, fd);
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            fd = -1;
+            break;
+        }
 
 #ifdef CONFIG_FATFS_USE_FASTSEEK
-    FIL* file = &fat_ctx->files[fd];
-    //fast-seek is only allowed in read mode, since file cannot be expanded
-    //to use it.
-    if(!(fat_mode_conv(flags) & (FA_WRITE))) {
-        DWORD *clmt_mem =  ff_memalloc(sizeof(DWORD) * CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE);
-        if (clmt_mem == NULL) {
-            f_close(file);
-            file_cleanup(fat_ctx, fd);
-            _lock_release(&fat_ctx->lock);
-            ESP_LOGE(TAG, "open: Failed to pre-allocate CLMT buffer for fast-seek");
-            errno = ENOMEM;
-            return -1;
-        }
+        FIL* file = &fat_ctx->files[fd];
+        //fast-seek is only allowed in read mode, since file cannot be expanded
+        //to use it.
+        if (!(fat_mode_conv(flags) & (FA_WRITE))) {
+            DWORD *clmt_mem = ff_memalloc(sizeof(DWORD) * CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE);
+            if (clmt_mem == NULL) {
+                f_close(file);
+                file_cleanup(fat_ctx, fd);
+                ESP_LOGE(TAG, "open: Failed to pre-allocate CLMT buffer for fast-seek");
+                errno = ENOMEM;
+                fd = -1;
+                break;
+            }
 
-        file->cltbl = clmt_mem;
-        file->cltbl[0] = CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE;
-        res = f_lseek(file, CREATE_LINKMAP);
-        ESP_LOGD(TAG, "%s: fast-seek has: %s",
-                __func__,
-                (res == FR_OK) ? "activated" : "failed");
-        if(res != FR_OK) {
-            ESP_LOGW(TAG, "%s: fast-seek not activated reason code: %d",
-                    __func__, res);
-            //If linkmap creation fails, fallback to the non fast seek.
-            ff_memfree(file->cltbl);
+            file->cltbl = clmt_mem;
+            file->cltbl[0] = CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE;
+            res = f_lseek(file, CREATE_LINKMAP);
+            ESP_LOGD(TAG, "%s: fast-seek has: %s",
+                    __func__,
+                    (res == FR_OK) ? "activated" : "failed");
+            if (res != FR_OK) {
+                ESP_LOGW(TAG, "%s: fast-seek not activated reason code: %d",
+                        __func__, res);
+                //If linkmap creation fails, fallback to the non fast seek.
+                ff_memfree(file->cltbl);
+                file->cltbl = NULL;
+            }
+        } else {
             file->cltbl = NULL;
         }
-    } else {
-        file->cltbl = NULL;
-    }
 #endif
 
-    // O_APPEND need to be stored because it is not compatible with FA_OPEN_APPEND:
-    //  - FA_OPEN_APPEND means to jump to the end of file only after open()
-    //  - O_APPEND means to jump to the end only before each write()
-    // Other VFS drivers handles O_APPEND well (to the best of my knowledge),
-    // therefore this flag is stored here (at this VFS level) in order to save
-    // memory.
-    fat_ctx->flags[fd] = (flags & (O_APPEND | O_ACCMODE));
+        // O_APPEND need to be stored because it is not compatible with FA_OPEN_APPEND:
+        //  - FA_OPEN_APPEND means to jump to the end of file only after open()
+        //  - O_APPEND means to jump to the end only before each write()
+        // Other VFS drivers handles O_APPEND well (to the best of my knowledge),
+        // therefore this flag is stored here (at this VFS level) in order to save
+        // memory.
+        fat_ctx->flags[fd] = (flags & (O_APPEND | O_ACCMODE));
+        ret = fd;
+    } while (0);
     _lock_release(&fat_ctx->lock);
-    return fd;
+    return ret;
 }
 
 static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
-    FRESULT res;
-    _lock_acquire(&fat_ctx->lock);
-    if (fat_ctx->flags[fd] & O_APPEND) {
-        if ((res = f_lseek(file, f_size(file))) != FR_OK) {
-            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-            errno = fresult_to_errno(res);
-            _lock_release(&fat_ctx->lock);
-            return -1;
-        }
-    }
+    FRESULT res = FR_OK;
     UINT written = 0;
-    res = f_write(file, data, size, &written);
-    if (((written == 0) && (size != 0)) && (res == 0)) {
-        errno = ENOSPC;
-        _lock_release(&fat_ctx->lock);
-        return -1;
-    }
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        if (written == 0) {
-            _lock_release(&fat_ctx->lock);
-            return -1;
-        }
-    }
+    ssize_t ret = -1;
 
-#if CONFIG_FATFS_IMMEDIATE_FSYNC
-    if (written > 0) {
-        res = f_sync(file);
+    _lock_acquire(&fat_ctx->lock);
+    do {
+        if (fat_ctx->flags[fd] & O_APPEND) {
+            res = f_lseek(file, f_size(file));
+            if (res != FR_OK) {
+                ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+                errno = fresult_to_errno(res);
+                break;
+            }
+        }
+        res = f_write(file, data, size, &written);
+        if (((written == 0) && (size != 0)) && (res == 0)) {
+            errno = ENOSPC;
+            break;
+        }
         if (res != FR_OK) {
             ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
-            _lock_release(&fat_ctx->lock);
-            return -1;
+            if (written == 0) {
+                break;
+            }
         }
-     }
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+        if (written > 0) {
+            res = f_sync(file);
+            if (res != FR_OK) {
+                ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+                errno = fresult_to_errno(res);
+                break;
+            }
+        }
 #endif
+        ret = written;
+    } while (0);
     _lock_release(&fat_ctx->lock);
-    return written;
+    return ret;
 }
 
 static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size)
@@ -504,6 +511,7 @@ static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
     UINT read = 0;
+
     _lock_acquire(&fat_ctx->lock);
     FRESULT res = f_read(file, dst, size, &read);
     if (res != FR_OK) {
@@ -526,34 +534,34 @@ static ssize_t vfs_fat_pread(void *ctx, int fd, void *dst, size_t size, off_t of
     FIL *file = &fat_ctx->files[fd];
     const off_t prev_pos = f_tell(file);
 
-    FRESULT f_res = f_lseek(file, offset);
-
-    if (f_res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
-        errno = fresult_to_errno(f_res);
-        goto pread_release;
-    }
-
-    UINT read = 0;
-    f_res = f_read(file, dst, size, &read);
-    if (f_res == FR_OK) {
-        ret = read;
-    } else {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
-        errno = fresult_to_errno(f_res);
-        // No return yet - need to restore previous position
-    }
-
-    f_res = f_lseek(file, prev_pos);
-    if (f_res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
-        if (ret >= 0) {
+    do {
+        FRESULT f_res = f_lseek(file, offset);
+        if (f_res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
             errno = fresult_to_errno(f_res);
-        } // else f_read failed so errno shouldn't be overwritten
-        ret = -1; // in case the read was successful but the seek wasn't
-    }
+            break;
+        }
 
-pread_release:
+        UINT read = 0;
+        f_res = f_read(file, dst, size, &read);
+        if (f_res == FR_OK) {
+            ret = read;
+        } else {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+            errno = fresult_to_errno(f_res);
+            // No return yet - need to restore previous position
+        }
+
+        f_res = f_lseek(file, prev_pos);
+        if (f_res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+            if (ret >= 0) {
+                errno = fresult_to_errno(f_res);
+            } // else f_read failed so errno shouldn't be overwritten
+            ret = -1; // in case the read was successful but the seek wasn't
+        }
+    } while (0);
+
     _lock_release(&fat_ctx->lock);
     return ret;
 }
@@ -566,55 +574,56 @@ static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, o
     FIL *file = &fat_ctx->files[fd];
     const off_t prev_pos = f_tell(file);
 
-    FRESULT f_res = f_lseek(file, offset);
-
-    if (f_res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
-        errno = fresult_to_errno(f_res);
-        goto pwrite_release;
-    }
-
-    UINT wr = 0;
-    f_res = f_write(file, src, size, &wr);
-    if (((wr == 0) && (size != 0)) && (f_res == 0)) {
-        errno = ENOSPC;
-        ret = -1;
-        FRESULT seek_res = f_lseek(file, prev_pos);
-        if (seek_res != FR_OK) {
-            ESP_LOGE(TAG, "%s: f_lseek restore after ENOSPC write failed (fresult=%d)", __func__, seek_res);
-        }
-        goto pwrite_release;
-    }
-    if (f_res == FR_OK) {
-        ret = wr;
-    } else {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
-        errno = fresult_to_errno(f_res);
-        // No return yet - need to restore previous position
-    }
-
-    f_res = f_lseek(file, prev_pos);
-    if (f_res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
-        if (ret >= 0) {
+    do {
+        FRESULT f_res = f_lseek(file, offset);
+        if (f_res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
             errno = fresult_to_errno(f_res);
-        } // else f_write failed so errno shouldn't be overwritten
-        ret = -1; // in case the write was successful but the seek wasn't
-    }
+            break;
+        }
+
+        UINT wr = 0;
+        f_res = f_write(file, src, size, &wr);
+        if (((wr == 0) && (size != 0)) && (f_res == 0)) {
+            errno = ENOSPC;
+            ret = -1;
+            FRESULT seek_res = f_lseek(file, prev_pos);
+            if (seek_res != FR_OK) {
+                ESP_LOGE(TAG, "%s: f_lseek restore after ENOSPC write failed (fresult=%d)", __func__, seek_res);
+            }
+            break;
+        }
+        if (f_res == FR_OK) {
+            ret = wr;
+        } else {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+            errno = fresult_to_errno(f_res);
+            // No return yet - need to restore previous position
+        }
+
+        f_res = f_lseek(file, prev_pos);
+        if (f_res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+            if (ret >= 0) {
+                errno = fresult_to_errno(f_res);
+            } // else f_write failed so errno shouldn't be overwritten
+            ret = -1; // in case the write was successful but the seek wasn't
+        }
 
 #if CONFIG_FATFS_IMMEDIATE_FSYNC
-    if (wr > 0) {
-        FRESULT f_res2 = f_sync(file); // We need new result to check whether we can overwrite errno
-        if (f_res2 != FR_OK) {
-            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res2);
-            if (f_res == FR_OK)
-                errno = fresult_to_errno(f_res2);
-            ret = -1;
+        if (wr > 0) {
+            FRESULT f_res2 = f_sync(file); // We need new result to check whether we can overwrite errno
+            if (f_res2 != FR_OK) {
+                ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res2);
+                if (f_res == FR_OK) {
+                    errno = fresult_to_errno(f_res2);
+                }
+                ret = -1;
+            }
         }
-    }
 #endif
+    } while (0);
 
-pwrite_release:
     _lock_release(&fat_ctx->lock);
     return ret;
 }
@@ -662,36 +671,39 @@ static off_t vfs_fat_lseek(void* ctx, int fd, off_t offset, int mode)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
+    off_t ret = -1;
+
     _lock_acquire(&fat_ctx->lock);
-    off_t new_pos;
-    if (mode == SEEK_SET) {
-        new_pos = offset;
-    } else if (mode == SEEK_CUR) {
-        off_t cur_pos = f_tell(file);
-        new_pos = cur_pos + offset;
-    } else if (mode == SEEK_END) {
-        off_t size = f_size(file);
-        new_pos = size + offset;
-    } else {
-        errno = EINVAL;
-        _lock_release(&fat_ctx->lock);
-        return -1;
-    }
+    do {
+        off_t new_pos;
+        if (mode == SEEK_SET) {
+            new_pos = offset;
+        } else if (mode == SEEK_CUR) {
+            off_t cur_pos = f_tell(file);
+            new_pos = cur_pos + offset;
+        } else if (mode == SEEK_END) {
+            off_t size = f_size(file);
+            new_pos = size + offset;
+        } else {
+            errno = EINVAL;
+            break;
+        }
 
 #if FF_FS_EXFAT
-    ESP_LOGD(TAG, "%s: offset=%ld, filesize:=%" PRIu64, __func__, new_pos, f_size(file));
+        ESP_LOGD(TAG, "%s: offset=%ld, filesize:=%" PRIu64, __func__, new_pos, f_size(file));
 #else
-    ESP_LOGD(TAG, "%s: offset=%ld, filesize:=%" PRIu32, __func__, new_pos, f_size(file));
+        ESP_LOGD(TAG, "%s: offset=%ld, filesize:=%" PRIu32, __func__, new_pos, f_size(file));
 #endif
-    FRESULT res = f_lseek(file, new_pos);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        _lock_release(&fat_ctx->lock);
-        return -1;
-    }
+        FRESULT res = f_lseek(file, new_pos);
+        if (res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            break;
+        }
+        ret = new_pos;
+    } while (0);
     _lock_release(&fat_ctx->lock);
-    return new_pos;
+    return ret;
 }
 
 static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
@@ -858,25 +870,34 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
     }
 
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    FILINFO info;
+    FRESULT res = FR_OK;
+    int ret = -1;
+    bool use_cache = false;
 
     _lock_acquire(&fat_ctx->lock);
-    if (vfs_fat_consume_stat_cache(fat_ctx, path, st)) {
-        _lock_release(&fat_ctx->lock);
-        return 0;
-    }
+    do {
+        if (vfs_fat_consume_stat_cache(fat_ctx, path, st)) {
+            use_cache = true;
+            ret = 0;
+            break;
+        }
 
-    prepend_drive_to_path(fat_ctx, &path, NULL);
-    FILINFO info;
-    FRESULT res = f_stat(path, &info);
+        prepend_drive_to_path(fat_ctx, &path, NULL);
+        res = f_stat(path, &info);
+        if (res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            break;
+        }
+        ret = 0;
+    } while (0);
     _lock_release(&fat_ctx->lock);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        return -1;
-    }
 
-    update_stat_struct(st, &info);
-    return 0;
+    if (ret == 0 && !use_cache) {
+        update_stat_struct(st, &info);
+    }
+    return ret;
 }
 
 static int vfs_fat_unlink(void* ctx, const char *path)
@@ -895,23 +916,59 @@ static int vfs_fat_unlink(void* ctx, const char *path)
     return 0;
 }
 
+/* Copy whole file from src into dst. Callers open src at offset 0. */
+static FRESULT vfs_fat_copy_contents(FIL *src, FIL *dst, void *buf, size_t buf_size)
+{
+    size_t size_left = f_size(src);
+
+    while (size_left > 0) {
+        UINT will_copy = (UINT) ((size_left < buf_size) ? size_left : buf_size);
+        UINT read = 0;
+        FRESULT res = f_read(src, buf, will_copy, &read);
+        if (res != FR_OK) {
+            return res;
+        }
+        if (read != will_copy) {
+            return FR_DISK_ERR;
+        }
+
+        UINT written = 0;
+        res = f_write(dst, buf, will_copy, &written);
+        if (res != FR_OK) {
+            return res;
+        }
+        if (written != will_copy) {
+            return FR_DISK_ERR;
+        }
+
+        size_left -= will_copy;
+    }
+
+    return FR_OK;
+}
+
 static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    _lock_acquire(&fat_ctx->lock);
-    prepend_drive_to_path(fat_ctx, &n1, &n2);
-
     FRESULT res = FR_OK;
     int ret = 0;
+    bool opened_old = false;
+    bool opened_new = false;
+    bool lock_held = true;
+    FIL* pf1 = NULL;
+    FIL* pf2 = NULL;
+    void* buf = NULL;
 
-    FIL* pf1 = (FIL*) ff_memalloc(sizeof(FIL));
-    FIL* pf2 = (FIL*) ff_memalloc(sizeof(FIL));
+    _lock_acquire(&fat_ctx->lock);
+
+    prepend_drive_to_path(fat_ctx, &n1, &n2);
 
     const size_t copy_buf_size = fat_ctx->fs.csize;
-    void* buf = ff_memalloc(copy_buf_size);
+    pf1 = (FIL*) ff_memalloc(sizeof(FIL));
+    pf2 = (FIL*) ff_memalloc(sizeof(FIL));
+    buf = ff_memalloc(copy_buf_size);
     if (buf == NULL || pf1 == NULL || pf2 == NULL) {
         ESP_LOGD(TAG, "alloc failed, pf1=%p, pf2=%p, buf=%p", pf1, pf2, buf);
-        _lock_release(&fat_ctx->lock);
         errno = ENOMEM;
         ret = -1;
         goto cleanup;
@@ -922,53 +979,33 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
 
     res = f_open(pf1, n1, FA_READ | FA_OPEN_EXISTING);
     if (res != FR_OK) {
-        _lock_release(&fat_ctx->lock);
         goto cleanup;
     }
+    opened_old = true;
 
     res = f_open(pf2, n2, FA_WRITE | FA_CREATE_NEW);
-
 #if !CONFIG_FATFS_LINK_LOCK
     _lock_release(&fat_ctx->lock);
+    lock_held = false;
 #endif
-
     if (res != FR_OK) {
-        goto close_old;
+        goto cleanup;
     }
+    opened_new = true;
 
-    size_t size_left = f_size(pf1);
-    while (size_left > 0) {
-        UINT will_copy = (size_left < copy_buf_size) ? size_left : copy_buf_size;
-        UINT read = 0;
-        res = f_read(pf1, buf, will_copy, &read);
-        if (res != FR_OK) {
-            goto close_both;
-        } else if (read != will_copy) {
-            res = FR_DISK_ERR;
-            goto close_both;
-        }
-        UINT written = 0;
-        res = f_write(pf2, buf, will_copy, &written);
-        if (res != FR_OK) {
-            goto close_both;
-        } else if (written != will_copy) {
-            res = FR_DISK_ERR;
-            goto close_both;
-        }
-        size_left -= will_copy;
-    }
-
-close_both:
-    f_close(pf2);
-
-close_old:
-    f_close(pf1);
-
-#if CONFIG_FATFS_LINK_LOCK
-    _lock_release(&fat_ctx->lock);
-#endif
+    res = vfs_fat_copy_contents(pf1, pf2, buf, copy_buf_size);
 
 cleanup:
+    if (opened_new) {
+        f_close(pf2);
+    }
+    if (opened_old) {
+        f_close(pf1);
+    }
+    if (lock_held) {
+        _lock_release(&fat_ctx->lock);
+    }
+
     free(buf);
     free(pf2);
     free(pf1);
@@ -1151,28 +1188,32 @@ static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 static DIR* vfs_fat_opendir(void* ctx, const char* name)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    vfs_fat_dir_t* fat_dir = NULL;
+    DIR* ret = NULL;
 
     _lock_acquire(&fat_ctx->lock);
-    vfs_fat_dir_t* fat_dir = vfs_fat_dir_alloc(name);
-    if (!fat_dir) {
-        _lock_release(&fat_ctx->lock);
-        errno = ENOMEM;
-        return NULL;
-    }
+    do {
+        fat_dir = vfs_fat_dir_alloc(name);
+        if (!fat_dir) {
+            errno = ENOMEM;
+            break;
+        }
 
-    prepend_drive_to_path(fat_ctx, &name, NULL);
-    FRESULT res = f_opendir(&fat_dir->ffdir, name);
-    if (res != FR_OK) {
-        _lock_release(&fat_ctx->lock);
-        free(fat_dir);
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        return NULL;
-    }
+        prepend_drive_to_path(fat_ctx, &name, NULL);
+        FRESULT res = f_opendir(&fat_dir->ffdir, name);
+        if (res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            free(fat_dir);
+            fat_dir = NULL;
+            break;
+        }
 
-    SLIST_INSERT_HEAD(&fat_ctx->open_dirs, fat_dir, open_dirs_entry);
+        SLIST_INSERT_HEAD(&fat_ctx->open_dirs, fat_dir, open_dirs_entry);
+        ret = (DIR*) fat_dir;
+    } while (0);
     _lock_release(&fat_ctx->lock);
-    return (DIR*) fat_dir;
+    return ret;
 }
 
 static int vfs_fat_closedir(void* ctx, DIR* pdir)
@@ -1262,26 +1303,28 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     vfs_fat_dir_t* fat_dir = (vfs_fat_dir_t*) pdir;
     FRESULT res;
+
     _lock_acquire(&fat_ctx->lock);
-    if (offset < fat_dir->offset) {
-        res = f_rewinddir(&fat_dir->ffdir);
-        if (res != FR_OK) {
-            ESP_LOGD(TAG, "%s: rewinddir fresult=%d", __func__, res);
-            errno = fresult_to_errno(res);
-            goto seekdir_done;
+    do {
+        if (offset < fat_dir->offset) {
+            res = f_rewinddir(&fat_dir->ffdir);
+            if (res != FR_OK) {
+                ESP_LOGD(TAG, "%s: rewinddir fresult=%d", __func__, res);
+                errno = fresult_to_errno(res);
+                break;
+            }
+            fat_dir->offset = 0;
         }
-        fat_dir->offset = 0;
-    }
-    while (fat_dir->offset < offset) {
-        res = f_readdir(&fat_dir->ffdir, &fat_dir->filinfo);
-        if (res != FR_OK) {
-            ESP_LOGD(TAG, "%s: f_readdir fresult=%d", __func__, res);
-            errno = fresult_to_errno(res);
-            goto seekdir_done;
+        while (fat_dir->offset < offset) {
+            res = f_readdir(&fat_dir->ffdir, &fat_dir->filinfo);
+            if (res != FR_OK) {
+                ESP_LOGD(TAG, "%s: f_readdir fresult=%d", __func__, res);
+                errno = fresult_to_errno(res);
+                break;
+            }
+            fat_dir->offset++;
         }
-        fat_dir->offset++;
-    }
-seekdir_done:
+    } while (0);
     _lock_release(&fat_ctx->lock);
 }
 
@@ -1367,7 +1410,7 @@ static FRESULT f_write_zero_mem(FIL* fp, FSIZE_t data_size, FSIZE_t buf_size, UI
         for (; i < (data_size - buf_size); i += buf_size) { // write chunks of buf_size
             res = f_write(fp, buf, (UINT) buf_size, &bw);
             if (res != FR_OK) {
-                goto out;
+                goto cleanup;
             }
             if (bytes_written != NULL) {
                 *bytes_written += bw;
@@ -1382,223 +1425,166 @@ static FRESULT f_write_zero_mem(FIL* fp, FSIZE_t data_size, FSIZE_t buf_size, UI
         }
     }
 
-out:
+cleanup:
     ff_memfree(buf);
     return res;
 }
 
+/**
+ * Resize an already-open FIL to `length` (extend with zeros or truncate).
+ * Caller must hold fat_ctx->lock. Sets errno on failure.
+ */
+static int vfs_fat_resize_file(FIL *file, off_t length, const char *func_name)
+{
+    FRESULT res = FR_OK;
+    int ret = 0;
+    bool map_fresult_to_errno = true;
+    FSIZE_t seek_ptr_pos = (FSIZE_t) f_tell(file); // current seek pointer position
+    FSIZE_t sz = (FSIZE_t) f_size(file); // current file size (end of file position)
+
+    do {
+        res = f_lseek(file, length);
+        if (res != FR_OK) {
+            ret = -1;
+            break;
+        }
+        if (f_tell(file) != length) {
+            /* Requested size does not fit FSIZE_t, or FatFs did not reach `length`. */
+            errno = EFBIG;
+            map_fresult_to_errno = false;
+            ret = -1;
+            break;
+        }
+
+        if (sz < length) {
+            res = f_lseek(file, sz); // go to the previous end of file
+            if (res != FR_OK) {
+                ret = -1;
+                break;
+            }
+
+            FSIZE_t new_free_space = ((FSIZE_t) length) - sz;
+            UINT written;
+
+            if (new_free_space > UINT32_MAX) {
+                ESP_LOGE(TAG, "%s: Cannot extend the file more than 4GB at once", func_name);
+                errno = EFBIG;
+                map_fresult_to_errno = false;
+                ret = -1;
+                break;
+            }
+
+            FSIZE_t buf_size_limit = F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT;
+            FSIZE_t buf_size = new_free_space < buf_size_limit ? new_free_space : buf_size_limit;
+            res = f_write_zero_mem(file, new_free_space, buf_size, &written);
+            if (res != FR_OK) {
+                ret = -1;
+                break;
+            }
+            if (written != (UINT) new_free_space) {
+                res = FR_DISK_ERR;
+                ret = -1;
+                break;
+            }
+
+            res = f_lseek(file, seek_ptr_pos); // return to the original position
+            if (res != FR_OK) {
+                ret = -1;
+                break;
+            }
+        } else {
+            res = f_truncate(file);
+            if (res != FR_OK) {
+                ret = -1;
+                break;
+            }
+        }
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+        res = f_sync(file);
+        if (res != FR_OK) {
+            ret = -1;
+            break;
+        }
+#endif
+    } while (0);
+
+    if (ret != 0 && map_fresult_to_errno) {
+        ESP_LOGD(TAG, "%s: fresult=%d", func_name, res);
+        errno = fresult_to_errno(res);
+    }
+
+    return ret;
+}
+
 static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
 {
-    FRESULT res;
+    FRESULT res = FR_OK;
     FIL* file = NULL;
-
+    bool file_opened = false;
     int ret = 0;
-
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
 
     if (length < 0) {
         errno = EINVAL;
-        ret = -1;
-        goto out;
+        return -1;
     }
 
     _lock_acquire(&fat_ctx->lock);
-    vfs_fat_invalidate_stat_cache(fat_ctx, path);
-    prepend_drive_to_path(fat_ctx, &path, NULL);
+    do {
+        vfs_fat_invalidate_stat_cache(fat_ctx, path);
+        prepend_drive_to_path(fat_ctx, &path, NULL);
 
-    file = (FIL*) ff_memalloc(sizeof(FIL));
-    if (file == NULL) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "truncate alloc failed");
-        errno = ENOMEM;
-        ret = -1;
-        goto out;
-    }
-    memset(file, 0, sizeof(*file));
-
-    res = f_open(file, path, FA_WRITE);
-
-    if (res != FR_OK) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto out;
-    }
-
-    FSIZE_t seek_ptr_pos = (FSIZE_t) f_tell(file); // current seek pointer position
-    FSIZE_t sz = (FSIZE_t) f_size(file); // current file size (end of file position)
-
-    res = f_lseek(file, length);
-    if (res != FR_OK || f_tell(file) != length) {
-        goto lseek_or_write_fail;
-    }
-
-    if (sz < length) {
-        res = f_lseek(file, sz); // go to the previous end of file
-        if (res != FR_OK) {
-            goto lseek_or_write_fail;
-        }
-
-        FSIZE_t new_free_space = ((FSIZE_t) length) - sz;
-        UINT written;
-
-        if (new_free_space > UINT32_MAX) {
-            _lock_release(&fat_ctx->lock);
-            ESP_LOGE(TAG, "%s: Cannot extend the file more than 4GB at once", __func__);
+        file = (FIL*) ff_memalloc(sizeof(FIL));
+        if (file == NULL) {
+            ESP_LOGD(TAG, "truncate alloc failed");
+            errno = ENOMEM;
             ret = -1;
-            goto close;
+            break;
         }
+        memset(file, 0, sizeof(*file));
 
-        FSIZE_t buf_size_limit = F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT;
-        FSIZE_t buf_size = new_free_space < buf_size_limit ? new_free_space : buf_size_limit;
-        res = f_write_zero_mem(file, new_free_space, buf_size, &written);
-
+        res = f_open(file, path, FA_WRITE);
         if (res != FR_OK) {
-            goto lseek_or_write_fail;
-        } else if (written != (UINT) new_free_space) {
-            res = FR_DISK_ERR;
-            goto lseek_or_write_fail;
-        }
-
-        res = f_lseek(file, seek_ptr_pos); // return to the original position
-        if (res != FR_OK) {
-            goto lseek_or_write_fail;
-        }
-    } else {
-        res = f_truncate(file);
-
-        if (res != FR_OK) {
-            _lock_release(&fat_ctx->lock);
             ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
             ret = -1;
-            goto close;
+            break;
+        }
+        file_opened = true;
+
+        ret = vfs_fat_resize_file(file, length, __func__);
+    } while (0);
+    _lock_release(&fat_ctx->lock);
+
+    if (file_opened) {
+        res = f_close(file);
+        if (res != FR_OK) {
+            ESP_LOGE(TAG, "closing file opened for truncate failed");
+            // Overwrite previous errors, since not being able to close
+            // an opened file is a more critical issue.
+            errno = fresult_to_errno(res);
+            ret = -1;
         }
     }
 
-#if CONFIG_FATFS_IMMEDIATE_FSYNC
-    res = f_sync(file);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-    }
-#endif
-
-    _lock_release(&fat_ctx->lock);
-
-close:
-    res = f_close(file);
-
-    if (res != FR_OK) {
-        ESP_LOGE(TAG, "closing file opened for truncate failed");
-        // Overwrite previous errors, since not being able to close
-        // an opened file is a more critical issue.
-        errno = fresult_to_errno(res);
-        ret = -1;
-    }
-
-out:
     free(file);
     return ret;
-
-lseek_or_write_fail:
-    _lock_release(&fat_ctx->lock);
-    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-    errno = fresult_to_errno(res);
-    ret = -1;
-    goto close;
 }
 
 static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
 {
-    FRESULT res;
-    FIL* file = NULL;
-
-    int ret = 0;
-
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
 
     if (length < 0) {
         errno = EINVAL;
-        ret = -1;
-        return ret;
+        return -1;
     }
 
     _lock_acquire(&fat_ctx->lock);
-    file = &fat_ctx->files[fd];
-    if (file == NULL) {
-        ESP_LOGD(TAG, "ftruncate NULL file pointer");
-        errno = EINVAL;
-        ret = -1;
-        goto out;
-    }
-
-    FSIZE_t seek_ptr_pos = (FSIZE_t) f_tell(file); // current seek pointer position
-    FSIZE_t sz = (FSIZE_t) f_size(file); // current file size (end of file position)
-
-    res = f_lseek(file, length);
-    if (res != FR_OK || f_tell(file) != length) {
-        goto fail;
-    }
-
-    if (sz < length) {
-        res = f_lseek(file, sz); // go to the previous end of file
-        if (res != FR_OK) {
-            goto fail;
-        }
-
-        FSIZE_t new_free_space = ((FSIZE_t) length) - sz;
-        UINT written;
-
-        if (new_free_space > UINT32_MAX) {
-            ESP_LOGE(TAG, "%s: Cannot extend the file more than 4GB at once", __func__);
-            ret = -1;
-            goto out;
-        }
-
-        FSIZE_t buf_size_limit = F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT;
-        FSIZE_t buf_size = new_free_space < buf_size_limit ? new_free_space : buf_size_limit;
-        res = f_write_zero_mem(file, new_free_space, buf_size, &written);
-
-        if (res != FR_OK) {
-            goto fail;
-        } else if (written != (UINT) new_free_space) {
-            res = FR_DISK_ERR;
-            goto fail;
-        }
-
-        res = f_lseek(file, seek_ptr_pos); // return to the original position
-        if (res != FR_OK) {
-            goto fail;
-        }
-    } else {
-        res = f_truncate(file);
-
-        if (res != FR_OK) {
-            goto fail;
-        }
-    }
-
-#if CONFIG_FATFS_IMMEDIATE_FSYNC
-    res = f_sync(file);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-    }
-#endif
-
-out:
+    int ret = vfs_fat_resize_file(&fat_ctx->files[fd], length, __func__);
     _lock_release(&fat_ctx->lock);
     return ret;
-
-fail:
-    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-    errno = fresult_to_errno(res);
-    ret = -1;
-    goto out;
 }
 
 static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *times)
@@ -1666,46 +1652,51 @@ esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* 
         return ESP_ERR_INVALID_STATE;
     }
     vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
+    FIL* file = NULL;
+    FRESULT res = FR_OK;
+    esp_err_t ret = ESP_OK;
 
     _lock_acquire(&fat_ctx->lock);
-    const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
-    prepend_drive_to_path(fat_ctx, &file_path, NULL);
+    do {
+        const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
+        prepend_drive_to_path(fat_ctx, &file_path, NULL);
 
-    FIL* file = (FIL*) ff_memalloc(sizeof(FIL));
-    if (file == NULL) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "esp_vfs_fat_create_contiguous_file alloc failed");
-        errno = ENOMEM;
-        return -1;
-    }
-    memset(file, 0, sizeof(*file));
+        file = (FIL*) ff_memalloc(sizeof(FIL));
+        if (file == NULL) {
+            ESP_LOGD(TAG, "esp_vfs_fat_create_contiguous_file alloc failed");
+            errno = ENOMEM;
+            ret = ESP_ERR_NO_MEM;
+            break;
+        }
+        memset(file, 0, sizeof(*file));
 
-    FRESULT res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
-    if (res != FR_OK) {
-        goto fail;
-    }
+        res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
+        if (res != FR_OK) {
+            ret = ESP_FAIL;
+            break;
+        }
 
-    res = f_expand(file, size, alloc_now ? 1 : 0);
-    if (res != FR_OK) {
-        f_close(file);
-        goto fail;
-    }
+        res = f_expand(file, size, alloc_now ? 1 : 0);
+        if (res != FR_OK) {
+            f_close(file);
+            ret = ESP_FAIL;
+            break;
+        }
 
-    res = f_close(file);
-    if (res != FR_OK) {
-        goto fail;
-    }
-
+        res = f_close(file);
+        if (res != FR_OK) {
+            ret = ESP_FAIL;
+            break;
+        }
+    } while (0);
     _lock_release(&fat_ctx->lock);
-    free(file);
 
-    return 0;
-fail:
-    _lock_release(&fat_ctx->lock);
     free(file);
-    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-    errno = fresult_to_errno(res);
-    return -1;
+    if (ret == ESP_FAIL && res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+    }
+    return ret;
 }
 
 static FRESULT test_contiguous_file( // From FATFS examples
@@ -1752,46 +1743,51 @@ esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* fu
         return ESP_ERR_INVALID_STATE;
     }
     vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
+    FIL* file = NULL;
+    FRESULT res = FR_OK;
+    esp_err_t ret = ESP_OK;
 
     _lock_acquire(&fat_ctx->lock);
-    const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
-    prepend_drive_to_path(fat_ctx, &file_path, NULL);
+    do {
+        const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
+        prepend_drive_to_path(fat_ctx, &file_path, NULL);
 
-    FIL* file = (FIL*) ff_memalloc(sizeof(FIL));
-    if (file == NULL) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "esp_vfs_fat_test_contiguous_file alloc failed");
-        errno = ENOMEM;
-        return -1;
-    }
-    memset(file, 0, sizeof(*file));
+        file = (FIL*) ff_memalloc(sizeof(FIL));
+        if (file == NULL) {
+            ESP_LOGD(TAG, "esp_vfs_fat_test_contiguous_file alloc failed");
+            errno = ENOMEM;
+            ret = ESP_ERR_NO_MEM;
+            break;
+        }
+        memset(file, 0, sizeof(*file));
 
-    FRESULT res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
-    if (res != FR_OK) {
-        goto fail;
-    }
+        res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
+        if (res != FR_OK) {
+            ret = ESP_FAIL;
+            break;
+        }
 
-    res = test_contiguous_file(file, (int*) is_contiguous);
-    if (res != FR_OK) {
-        f_close(file);
-        goto fail;
-    }
+        res = test_contiguous_file(file, (int*) is_contiguous);
+        if (res != FR_OK) {
+            f_close(file);
+            ret = ESP_FAIL;
+            break;
+        }
 
-    res = f_close(file);
-    if (res != FR_OK) {
-        goto fail;
-    }
-
+        res = f_close(file);
+        if (res != FR_OK) {
+            ret = ESP_FAIL;
+            break;
+        }
+    } while (0);
     _lock_release(&fat_ctx->lock);
-    free(file);
 
-    return 0;
-fail:
-    _lock_release(&fat_ctx->lock);
     free(file);
-    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-    errno = fresult_to_errno(res);
-    return -1;
+    if (ret == ESP_FAIL && res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+    }
+    return ret;
 }
 
 esp_err_t esp_vfs_fat_format_drive(uint8_t ldrv, const esp_vfs_fat_mount_config_t* mount_config)

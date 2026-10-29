@@ -485,6 +485,7 @@ esp_err_t esp_vfs_fat_info(const char* base_path, uint64_t* out_total_bytes, uin
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if invalid arguments (e.g. any of arguments are NULL or size lower or equal to 0)
  *      - ESP_ERR_INVALID_STATE if partition not found
+ *      - ESP_ERR_NO_MEM if memory allocation failed
  *      - ESP_FAIL if another FRESULT error (saved in errno)
  */
 esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* full_path, uint64_t size, bool alloc_now);
@@ -499,6 +500,7 @@ esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* 
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if invalid arguments (e.g. any of arguments are NULL)
  *      - ESP_ERR_INVALID_STATE if partition not found
+ *      - ESP_ERR_NO_MEM if memory allocation failed
  *      - ESP_FAIL if another FRESULT error (saved in errno)
  */
 esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* full_path, bool* is_contiguous);
