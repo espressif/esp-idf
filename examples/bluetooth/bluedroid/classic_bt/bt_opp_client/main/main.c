@@ -254,10 +254,10 @@ static void bt_app_opp_client_evt_hdl(uint16_t event, void *param)
         ESP_LOGI(OPP_TAG, "ESP_OPP_CLIENT_DEINIT_EVT status:%d", opp_param->deinit.status);
         break;
     case ESP_OPP_CLIENT_CONNECTION_STATE_EVT:
-        ESP_LOGI(OPP_TAG, "ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:%d state:%d status:%d bda:%s",
-                 opp_param->conn.handle, opp_param->conn.state, opp_param->conn.status,
+        ESP_LOGI(OPP_TAG, "ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:%d state:%d disc_rsn:%d bda:%s",
+                 opp_param->conn.handle, opp_param->conn.state, opp_param->conn.disc_rsn,
                  bda2str(opp_param->conn.bd_addr, bda_str, sizeof(bda_str)));
-        if (opp_param->conn.state == ESP_OPP_CONNECTED && opp_param->conn.status == ESP_BT_STATUS_SUCCESS) {
+        if (opp_param->conn.state == ESP_OPP_CONNECTED) {
             s_client_handle = opp_param->conn.handle;
             s_sample_object_index = 0;
             send_next_sample_object();

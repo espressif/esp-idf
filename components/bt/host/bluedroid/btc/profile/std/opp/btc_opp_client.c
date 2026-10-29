@@ -173,14 +173,16 @@ void btc_opp_client_cb_handler(btc_msg_t *msg)
         param.deinit.status = ESP_BT_STATUS_SUCCESS;
         btc_opp_client_callback_to_app(ESP_OPP_CLIENT_DEINIT_EVT, &param);
         break;
+    case BTA_OPP_CONN_OPENING_EVT:
     case BTA_OPP_CONN_OPEN_EVT:
+    case BTA_OPP_CONN_CLOSING_EVT:
     case BTA_OPP_CONN_CLOSE_EVT:
-        if (!bta_data->conn.connected) {
+        if (msg->act == BTA_OPP_CONN_CLOSE_EVT) {
             btc_opp_vfs_on_conn_close(bta_data->conn.handle);
+            param.conn.disc_rsn = btc_opp_status_from_bta(bta_data->conn.status);
         }
         param.conn.handle = bta_data->conn.handle;
-        param.conn.state = bta_data->conn.connected ? ESP_OPP_CONNECTED : ESP_OPP_DISCONNECTED;
-        param.conn.status = btc_opp_status_from_bta(bta_data->conn.status);
+        param.conn.state = btc_opp_conn_state_from_event(msg->act);
         memcpy(param.conn.bd_addr, bta_data->conn.bd_addr, sizeof(esp_bd_addr_t));
         btc_opp_client_callback_to_app(ESP_OPP_CLIENT_CONNECTION_STATE_EVT, &param);
         break;

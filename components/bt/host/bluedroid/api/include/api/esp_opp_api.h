@@ -79,6 +79,8 @@ typedef enum {
 typedef enum {
     ESP_OPP_DISCONNECTED,                   /*!< Connection closed */
     ESP_OPP_CONNECTED,                      /*!< Connection established */
+    ESP_OPP_CONNECTING,                     /*!< Connecting remote device */
+    ESP_OPP_DISCONNECTING,                  /*!< Disconnecting remote device */
 } esp_opp_connection_state_t;
 
 /**
@@ -175,7 +177,7 @@ typedef union {
     struct opp_server_conn_evt_param {
         esp_opp_conn_hdl_t handle;          /*!< Connection handle */
         esp_opp_connection_state_t state;   /*!< Connection state */
-        esp_bt_status_t status;            /*!< status */
+        esp_bt_status_t disc_rsn;           /*!< Reason of disconnection for "DISCONNECTED" */
         esp_bd_addr_t bd_addr;              /*!< Peer Bluetooth device address */
     } conn;                                 /*!< OPP server callback param of ESP_OPP_SERVER_CONNECTION_STATE_EVT */
 
@@ -245,7 +247,7 @@ typedef union {
     struct opp_client_conn_evt_param {
         esp_opp_conn_hdl_t handle;          /*!< Connection handle */
         esp_opp_connection_state_t state;   /*!< Connection state */
-        esp_bt_status_t status;            /*!< status */
+        esp_bt_status_t disc_rsn;           /*!< Reason of disconnection for "DISCONNECTED" */
         esp_bd_addr_t bd_addr;              /*!< Peer Bluetooth device address */
     } conn;                                 /*!< OPP client callback param of ESP_OPP_CLIENT_CONNECTION_STATE_EVT */
 
@@ -349,8 +351,9 @@ esp_err_t esp_opp_server_deinit(void);
  * @brief This function creates an OPP server and starts listening for inbound connections.
  *
  * When the server is started successfully, the callback is called with ESP_OPP_SERVER_START_EVT.
- * When an inbound connection is established or released, the callback is called with
- * ESP_OPP_SERVER_CONNECTION_STATE_EVT.
+ * An inbound connection reports ESP_OPP_SERVER_CONNECTION_STATE_EVT with ESP_OPP_CONNECTING
+ * when the GOEP channel is accepted, ESP_OPP_CONNECTED when the session is up, and
+ * ESP_OPP_DISCONNECTED when it is released.
  * This function should be called after esp_opp_server_init() completes successfully.
  *
  * @param[in] cfg: OPP server configuration.
@@ -450,8 +453,9 @@ esp_err_t esp_opp_client_deinit(void);
 /**
  * @brief This function connects OPP client to a remote OPP server.
  *
- * When the connection is established or failed, the callback is called with
- * ESP_OPP_CLIENT_CONNECTION_STATE_EVT.
+ * The callback is called with ESP_OPP_CLIENT_CONNECTION_STATE_EVT: ESP_OPP_CONNECTING
+ * when the attempt starts, then ESP_OPP_CONNECTED on success or ESP_OPP_DISCONNECTED
+ * on failure.
  * This function should be called after esp_opp_client_init() completes successfully.
  *
  * @param[in] param: Connect parameters including peer address and security.
@@ -465,8 +469,9 @@ esp_err_t esp_opp_client_connect(const esp_opp_client_connect_param_t *param);
 /**
  * @brief This function disconnects the OPP client from the remote OPP server.
  *
- * When the operation is completed, the callback function will be called with
- * ESP_OPP_CLIENT_CONNECTION_STATE_EVT.
+ * When the OBEX DISCONNECT request is sent, the callback reports ESP_OPP_DISCONNECTING.
+ * When the session is gone, it reports ESP_OPP_DISCONNECTED with disc_rsn. If the
+ * request cannot be sent, only ESP_OPP_DISCONNECTED is reported.
  * This function should be called after a successful connection.
  *
  * @param[in] handle: Connection handle from ESP_OPP_CLIENT_CONNECTION_STATE_EVT.

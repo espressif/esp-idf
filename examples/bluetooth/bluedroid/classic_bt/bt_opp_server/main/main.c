@@ -170,8 +170,8 @@ static void bt_app_opp_server_evt_hdl(uint16_t event, void *param)
         ESP_LOGI(OPP_TAG, "ESP_OPP_SERVER_STOP_EVT status:%d", opp_param->stop.status);
         break;
     case ESP_OPP_SERVER_CONNECTION_STATE_EVT:
-        ESP_LOGI(OPP_TAG, "ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:%d state:%d status:%d bda:%s",
-                 opp_param->conn.handle, opp_param->conn.state, opp_param->conn.status,
+        ESP_LOGI(OPP_TAG, "ESP_OPP_SERVER_CONNECTION_STATE_EVT handle:%d state:%d disc_rsn:%d bda:%s",
+                 opp_param->conn.handle, opp_param->conn.state, opp_param->conn.disc_rsn,
                  bda2str(opp_param->conn.bd_addr, bda_str, sizeof(bda_str)));
         break;
     case ESP_OPP_SERVER_INCOMING_OBJECT_EVT:

@@ -74,9 +74,12 @@ When the target is found and the connection succeeds:
 
 ```
 I (xxx) OPP_CLIENT: Connecting to ESP_OPP_SERVER (xx:xx:xx:xx:xx:xx)
-I (xxx) OPP_CLIENT: ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:1 state:1 status:0 bda:xx:xx:xx:xx:xx:xx
+I (xxx) OPP_CLIENT: ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:1 state:2 disc_rsn:0 bda:xx:xx:xx:xx:xx:xx
+I (xxx) OPP_CLIENT: ESP_OPP_CLIENT_CONNECTION_STATE_EVT handle:1 state:1 disc_rsn:0 bda:xx:xx:xx:xx:xx:xx
 I (xxx) OPP_CLIENT: Sending object[1/3] name:esp_opp_1.vcf len:76
 ```
+
+`state:2` is `ESP_OPP_CONNECTING`. `state:1` is `ESP_OPP_CONNECTED`. `disc_rsn` is 0 outside `ESP_OPP_DISCONNECTED` and is only meaningful on that state.
 
 Each successful push is reported as:
 
@@ -84,7 +87,7 @@ Each successful push is reported as:
 I (xxx) OPP_CLIENT: ESP_OPP_CLIENT_TRANSFER_COMPLETE_EVT handle:1 status:0 transferred:76
 ```
 
-After the last object, the client disconnects and reports `ESP_OPP_CLIENT_CONNECTION_STATE_EVT` with a disconnected state.
+After the last object, the client sends OBEX DISCONNECT and reports `ESP_OPP_DISCONNECTING` (`state:3`), then `ESP_OPP_DISCONNECTED` (`state:0`) with `disc_rsn`. A connect failure goes from `ESP_OPP_CONNECTING` to `ESP_OPP_DISCONNECTED` and does not report `ESP_OPP_DISCONNECTING`.
 
 ## Troubleshooting
 

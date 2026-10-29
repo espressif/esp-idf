@@ -39,6 +39,21 @@ esp_bt_status_t btc_opp_status_from_bta(tBTA_OPP_STATUS status)
     }
 }
 
+/* Map a BTA connection event onto the public OPP connection state. */
+esp_opp_connection_state_t btc_opp_conn_state_from_event(uint16_t event)
+{
+    switch (event) {
+    case BTA_OPP_CONN_OPENING_EVT:
+        return ESP_OPP_CONNECTING;
+    case BTA_OPP_CONN_OPEN_EVT:
+        return ESP_OPP_CONNECTED;
+    case BTA_OPP_CONN_CLOSING_EVT:
+        return ESP_OPP_DISCONNECTING;
+    default:
+        return ESP_OPP_DISCONNECTED;
+    }
+}
+
 /* Route a BTA event to the client or server BTC profile id. Shared connection
  * events (conn/progress/complete) are dispatched by role so that each role's
  * handler only ever sees its own transfers. */
@@ -137,6 +152,8 @@ void bte_opp_evt(tBTA_OPP_EVT event, tBTA_OPP *p_data)
 #endif
     case BTA_OPP_CONN_OPEN_EVT:
     case BTA_OPP_CONN_CLOSE_EVT:
+    case BTA_OPP_CONN_OPENING_EVT:
+    case BTA_OPP_CONN_CLOSING_EVT:
         pid = btc_opp_role_to_pid(p_data->conn.role);
         param_len = sizeof(tBTA_OPP);
         break;

@@ -145,16 +145,18 @@ void bta_opp_pm_busy(tBTA_OPP_CCB *p_ccb)
     bta_sys_busy(bta_opp_sys_id(p_ccb), p_ccb->allocated, p_ccb->bd_addr);
 }
 
-void bta_opp_report_conn(tBTA_OPP_CCB *p_ccb, BOOLEAN connected, tBTA_OPP_STATUS status)
+void bta_opp_report_conn(tBTA_OPP_CCB *p_ccb, UINT8 event, tBTA_OPP_STATUS status)
 {
     if (p_ccb == NULL) {
         return;
     }
 
-    if (connected) {
+    if (event == BTA_OPP_CONN_OPEN_EVT) {
         bta_opp_pm_conn_open(p_ccb);
-    } else {
+    } else if (event == BTA_OPP_CONN_CLOSE_EVT) {
         bta_opp_pm_conn_close(p_ccb);
+    } else if (event != BTA_OPP_CONN_OPENING_EVT && event != BTA_OPP_CONN_CLOSING_EVT) {
+        return;
     }
 
     if (bta_opp_cb.p_cback == NULL) {
@@ -166,9 +168,9 @@ void bta_opp_report_conn(tBTA_OPP_CCB *p_ccb, BOOLEAN connected, tBTA_OPP_STATUS
     data.conn.handle = p_ccb->handle;
     data.conn.role = p_ccb->role;
     data.conn.status = status;
-    data.conn.connected = connected;
+    data.conn.connected = (event == BTA_OPP_CONN_OPEN_EVT);
     bdcpy(data.conn.bd_addr, p_ccb->bd_addr);
-    bta_opp_cb.p_cback(connected ? BTA_OPP_CONN_OPEN_EVT : BTA_OPP_CONN_CLOSE_EVT, &data);
+    bta_opp_cb.p_cback(event, &data);
 }
 
 void bta_opp_report_complete(tBTA_OPP_CCB *p_ccb, tBTA_OPP_STATUS status)
@@ -225,7 +227,7 @@ void bta_opp_close_connection(tBTA_OPP_CCB *p_ccb, tBTA_OPP_STATUS status, BOOLE
     }
 
     if (report) {
-        bta_opp_report_conn(p_ccb, FALSE, status);
+        bta_opp_report_conn(p_ccb, BTA_OPP_CONN_CLOSE_EVT, status);
     }
     bta_opp_pm_conn_close(p_ccb);
     bta_opp_free_ccb(p_ccb);

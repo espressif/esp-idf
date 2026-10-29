@@ -96,7 +96,7 @@ tBTA_OPP_CCB *bta_opp_find_ccb_by_goep_handle(UINT8 role, UINT16 goep_handle);
 void bta_opp_free_ccb(tBTA_OPP_CCB *p_ccb);
 UINT8 bta_opp_get_conn_num(void);
 
-void bta_opp_report_conn(tBTA_OPP_CCB *p_ccb, BOOLEAN connected, tBTA_OPP_STATUS status);
+void bta_opp_report_conn(tBTA_OPP_CCB *p_ccb, UINT8 event, tBTA_OPP_STATUS status);
 void bta_opp_report_complete(tBTA_OPP_CCB *p_ccb, tBTA_OPP_STATUS status);
 void bta_opp_report_progress(tBTA_OPP_CCB *p_ccb);
 void bta_opp_close_connection(tBTA_OPP_CCB *p_ccb, tBTA_OPP_STATUS status, BOOLEAN report);

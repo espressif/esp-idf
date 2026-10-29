@@ -59,6 +59,8 @@ typedef union {
 } btc_opp_args_t;
 
 esp_bt_status_t btc_opp_status_from_bta(tBTA_OPP_STATUS status);
+esp_opp_connection_state_t btc_opp_conn_state_from_event(uint16_t event);
+
 void bte_opp_evt(tBTA_OPP_EVT event, tBTA_OPP *p_data);
 void btc_opp_arg_deep_copy(btc_msg_t *msg, void *dst, void *src);
 void btc_opp_arg_deep_free(btc_msg_t *msg);
