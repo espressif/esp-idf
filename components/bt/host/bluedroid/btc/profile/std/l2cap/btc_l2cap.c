@@ -975,7 +975,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 memcpy(p_arg, &p_data->l2c_close, sizeof(tBTA_JV_L2CAP_CLOSE));
                 slot->alarm_arg = (void *)p_arg;
                 if ((slot->close_alarm =
-                            osi_alarm_new("slot", close_timeout_handler, (void *)slot, VFS_CLOSE_TIMEOUT)) == NULL) {
+                            osi_alarm_new("slot", close_timeout_handler, (void *)slot, NULL)) == NULL) {
                     osi_free(p_arg);
                     slot->alarm_arg = NULL;
                     param.close.status = ESP_BT_L2CAP_NO_RESOURCE;
