@@ -31,5 +31,5 @@ endif()
 
 message(STATUS "Checking dac registers are not read-write by half-word")
 include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
-check_register_rw_half_word(SOC_MODULES "rtc_io" "sens" "apb_saradc"
+check_register_rw_half_word(SOC_MODULES "dac" "lp_peri_clkrst" "rtc_io" "sens" "apb_saradc"
                             HAL_MODULES "dac")

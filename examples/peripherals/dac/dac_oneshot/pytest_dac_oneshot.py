@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s31'], indirect=['target'])
 def test_dac_oneshot_example(dut: Dut) -> None:
     dut.expect_exact('DAC oneshot example started', timeout=10)
     dut.expect_exact('dac_chan0 = 0', timeout=10)
