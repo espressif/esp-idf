@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,12 +23,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define MCOUNTEREN_CSR    0x306
-#define MTVT_CSR          0x307
-#define MINTSTATUS_CSR    0xFB1
-#define MINTTHRESH_CSR    0x347
-#define UINTTHRESH_CSR    0x047
 
 FORCE_INLINE_ATTR void rv_utils_tee_intr_global_enable(void)
 {
