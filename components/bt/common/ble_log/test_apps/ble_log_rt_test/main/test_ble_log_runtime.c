@@ -148,6 +148,9 @@ static void observe_periodic_snapshot(const test_ble_log_frame_t *frame,
                         BLE_LOG_SNAPSHOT_REASON_TS_VALID;
     if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT &&
             (snapshot.reason_flags & expected) == expected) {
+        uint32_t timestamp;
+        memcpy(&timestamp, frame->payload, sizeof(timestamp));
+        TEST_ASSERT_EQUAL_UINT32(timestamp, snapshot.ts.esp_ts);
         observer->found = true;
         observer->io_level = snapshot.ts.io_level;
     }
