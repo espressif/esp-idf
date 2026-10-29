@@ -199,8 +199,13 @@ typedef UINT8 tSMP_KEYS;
                                   SMP_SEC_KEY_TYPE_CSRK)
 
 /* default security key distribution value */
+#if (SMP_CTKD_INCLUDED == TRUE)
 #define SMP_SEC_DEFAULT_KEY      (SMP_SEC_KEY_TYPE_ENC | SMP_SEC_KEY_TYPE_ID | \
                                   SMP_SEC_KEY_TYPE_CSRK | SMP_SEC_KEY_TYPE_LK)
+#else
+#define SMP_SEC_DEFAULT_KEY      (SMP_SEC_KEY_TYPE_ENC | SMP_SEC_KEY_TYPE_ID | \
+                                  SMP_SEC_KEY_TYPE_CSRK)
+#endif
 
 #define SMP_SC_KEY_STARTED      0   /* passkey entry started */
 #define SMP_SC_KEY_ENTERED      1   /* passkey digit entered */
