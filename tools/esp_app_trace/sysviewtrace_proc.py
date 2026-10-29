@@ -8,18 +8,22 @@
 # script prints report for every type of trace data stream which was found.
 #
 
-import argparse
 import json
-import logging
 import os.path
 import signal
 import sys
 import tempfile
-import traceback
 from urllib.parse import urlparse
 
 import espytrace.apptrace as apptrace
 import espytrace.sysview as sysview
+import rich_click as click
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import Verbosity
+from esp_pylib.logger import log
+from rich.markup import escape
+
+VERBOSITY_LEVELS = [Verbosity.SILENT, Verbosity.SILENT, Verbosity.NORMAL, Verbosity.VERBOSE, Verbosity.VERBOSE]
 
 
 def is_segger_multicore_format(file_path):
@@ -38,7 +42,7 @@ def is_segger_multicore_format(file_path):
                 ):
                     return True
     except Exception as e:
-        logging.error('Error checking SEGGER multicore file format:', e)
+        log.err(escape(f'Error checking SEGGER multicore file format: {e}'))
     return False
 
 
@@ -56,7 +60,7 @@ def split_segger_multicore_file(file_path):
                     core1_offset = int(line.strip().split()[-1])
 
             if core1_offset is None:
-                logging.error('Failed to parse core1 offset')
+                log.err('Failed to parse core1 offset')
                 return None, None
 
             # Read the entire file
@@ -66,7 +70,7 @@ def split_segger_multicore_file(file_path):
             # Find first 10 sync bytes start offset
             sync_start = data.find(b'\x00' * 10)
             if sync_start == -1:
-                logging.error('Sync bytes not found')
+                log.err('Sync bytes not found')
                 return None, None
 
             core0_offset = sync_start
@@ -99,167 +103,154 @@ def split_segger_multicore_file(file_path):
             return core0_file.name, core1_file.name
 
     except Exception as e:
-        logging.error('Failed to process files:', e)
+        log.err(escape(f'Failed to process files: {e}'))
         return None, None
 
 
-def main():
-    verbosity_levels = [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
-
-    parser = argparse.ArgumentParser(description='ESP32 SEGGER SystemView Trace Parsing Tool')
-
-    parser.add_argument(
-        'trace_sources', help='Trace data sources. Format: [file://]/path/to/file.', nargs='+', type=str
-    )
-    parser.add_argument('--elf-file', '-b', help='Path to program ELF file.', type=str, default='')
-    parser.add_argument('--tmo', '-w', help='Data wait timeout in sec. -1: infinite, 0: no wait', type=int, default=0)
-    parser.add_argument('--dump-events', '-d', help='Dump all events.', action='store_true')
-    parser.add_argument(
-        '--print-events',
-        '-p',
-        help='Print events of selected types. By default only reports are printed',
-        action='store_true',
-    )
-    parser.add_argument(
-        '--include-events',
-        '-i',
-        help='Events types to be included into report.',
-        type=str,
-        choices=['heap', 'log', 'func', 'all'],
-        default='all',
-    )
-    parser.add_argument('--toolchain', '-t', help='Toolchain prefix.', type=str, default='xtensa-esp32-elf-')
-    parser.add_argument(
-        '--events-map',
-        '-e',
-        help='Events map file.',
-        type=str,
-        default=os.path.join(os.path.dirname(__file__), 'SYSVIEW_FreeRTOS.txt'),
-    )
-    parser.add_argument('--to-json', '-j', help='Print JSON.', action='store_true', default=False)
-    parser.add_argument(
-        '--verbose',
-        '-v',
-        help='Verbosity level. Default 1',
-        choices=range(0, len(verbosity_levels)),
-        type=int,
-        default=1,
-    )
-    args = parser.parse_args()
-
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help=(
+        'ESP32 SEGGER SystemView Trace Parsing Tool\n\n'
+        'TRACE_SOURCES: Trace data sources. Format: [file://]/path/to/file.'
+    ),
+)
+@click.argument('trace_sources', nargs=-1, required=True)
+@click.option('--elf-file', '-b', default='', help='Path to program ELF file.')
+@click.option('--tmo', '-w', type=int, default=0, help='Data wait timeout in sec. -1: infinite, 0: no wait')
+@click.option('--dump-events', '-d', is_flag=True, help='Dump all events.')
+@click.option(
+    '--print-events',
+    '-p',
+    is_flag=True,
+    help='Print events of selected types. By default only reports are printed',
+)
+@click.option(
+    '--include-events',
+    '-i',
+    type=click.Choice(['heap', 'log', 'func', 'all']),
+    default='all',
+    help='Events types to be included into report.',
+)
+@click.option('--toolchain', '-t', default='xtensa-esp32-elf-', help='Toolchain prefix.')
+@click.option(
+    '--events-map',
+    '-e',
+    default=os.path.join(os.path.dirname(__file__), 'SYSVIEW_FreeRTOS.txt'),
+    help='Events map file.',
+)
+@click.option('--to-json', '-j', is_flag=True, default=False, help='Print JSON.')
+@click.option(
+    '--verbose',
+    '-v',
+    type=click.IntRange(0, len(VERBOSITY_LEVELS) - 1),
+    default=1,
+    help='Verbosity level. Default 1',
+)
+def main(
+    trace_sources, elf_file, tmo, dump_events, print_events, include_events, toolchain, events_map, to_json, verbose
+):
     def sig_int_handler(signum, frame):
         reader.cleanup()
 
     signal.signal(signal.SIGINT, sig_int_handler)
 
-    include_events = {'heap': False, 'log': False, 'func': False}
-    if args.include_events == 'all':
-        for k in include_events:
-            include_events[k] = True
-    elif args.include_events == 'heap':
-        include_events['heap'] = True
-    elif args.include_events == 'log':
-        include_events['log'] = True
-    elif args.include_events == 'func':
-        include_events['func'] = True
+    selected_events = {'heap': False, 'log': False, 'func': False}
+    if include_events == 'all':
+        for k in selected_events:
+            selected_events[k] = True
+    else:
+        selected_events[include_events] = True
 
-    logging.basicConfig(level=verbosity_levels[args.verbose], format='[%(levelname)s] %(message)s')
+    log.set_verbosity(VERBOSITY_LEVELS[verbose])
+    if to_json:
+        log.set_info_stream(sys.stderr)
 
+    trace_sources = list(trace_sources)
     temp_files = []
     # Only check for SEGGER format if there's exactly one trace source
-    if len(args.trace_sources) == 1:
-        trace_source = args.trace_sources[0]
+    if len(trace_sources) == 1:
+        trace_source = trace_sources[0]
         if is_segger_multicore_format(trace_source):
             core0_file, core1_file = split_segger_multicore_file(trace_source)
             if core0_file and core1_file:
                 temp_files.extend([core0_file, core1_file])
-                args.trace_sources = temp_files
+                trace_sources = temp_files
             else:
-                sys.exit(2)
+                log.die('Failed to split SEGGER multicore trace file', exit_code=2)
 
     # parse trace files
     parsers = []
-    for i, trace_source in enumerate(args.trace_sources):
+    for i, trace_source in enumerate(trace_sources):
         try:
             parser = sysview.SysViewMultiTraceDataParser(print_events=False, core_id=i)
-            if include_events['heap']:
+            if selected_events['heap']:
                 parser.add_stream_parser(
                     sysview.SysViewTraceDataParser.STREAMID_HEAP,
                     sysview.SysViewHeapTraceDataParser(print_events=False, core_id=i),
                 )
-            if include_events['log']:
+            if selected_events['log']:
                 parser.add_stream_parser(
                     sysview.SysViewTraceDataParser.STREAMID_LOG,
                     sysview.SysViewLogTraceDataParser(print_events=False, core_id=i),
                 )
-            if include_events['func']:
+            if selected_events['func']:
                 parser.add_stream_parser(
                     sysview.SysViewTraceDataParser.STREAMID_FUNC,
                     sysview.SysViewFunctionTraceDataParser(print_events=False, core_id=i),
                 )
             parsers.append(parser)
         except Exception as e:
-            logging.error('Failed to create data parser (%s)!', e)
-            traceback.print_exc()
-            sys.exit(2)
-        reader = apptrace.reader_create(trace_source, args.tmo)
+            log.die(escape(f'Failed to create data parser ({e})!'), exit_code=2)
+        reader = apptrace.reader_create(trace_source, tmo)
         if not reader:
-            logging.error('Failed to create trace reader!')
-            sys.exit(2)
+            log.die('Failed to create trace reader!', exit_code=2)
         try:
-            # logging.info("Parse trace from '{}'...".format(trace_source))
-            logging.info("Parse trace from '%s'...", trace_source)
-            sysview.parse_trace(reader, parser, args.events_map)
-            logging.info('Parsing completed.')
+            log.debug(escape(f"Parse trace from '{trace_source}'..."))
+            sysview.parse_trace(reader, parser, events_map)
+            log.debug('Parsing completed.')
         except (apptrace.ReaderTimeoutError, apptrace.ReaderShutdownRequest) as e:
-            logging.info('Stop parsing trace. (%s)', e)
+            log.debug(escape(f'Stop parsing trace. ({e})'))
         except Exception as e:
-            logging.error('Failed to parse trace (%s)!', e)
             parser.cleanup()
-            traceback.print_exc()
-            sys.exit(2)
+            log.die(escape(f'Failed to parse trace ({e})!'), exit_code=2)
         finally:
             reader.cleanup()
 
     # merge and process traces
     try:
         proc = sysview.SysViewMultiStreamTraceDataProcessor(
-            traces=parsers, print_events=args.dump_events, keep_all_events=True if args.to_json else False
+            traces=parsers, print_events=dump_events, keep_all_events=True if to_json else False
         )
-        if include_events['heap']:
+        if selected_events['heap']:
             proc.add_stream_processor(
                 sysview.SysViewTraceDataParser.STREAMID_HEAP,
                 sysview.SysViewHeapTraceDataProcessor(
-                    args.toolchain, args.elf_file, root_proc=proc, print_heap_events=args.print_events
+                    toolchain, elf_file, root_proc=proc, print_heap_events=print_events
                 ),
             )
-        if include_events['log']:
+        if selected_events['log']:
             proc.add_stream_processor(
                 sysview.SysViewTraceDataParser.STREAMID_LOG,
-                sysview.SysViewLogTraceDataProcessor(root_proc=proc, print_log_events=args.print_events),
+                sysview.SysViewLogTraceDataProcessor(root_proc=proc, print_log_events=print_events),
             )
-        if include_events['func']:
+        if selected_events['func']:
             proc.add_stream_processor(
                 sysview.SysViewTraceDataParser.STREAMID_FUNC,
                 sysview.SysViewFunctionTraceDataProcessor(
-                    args.toolchain, args.elf_file, root_proc=proc, print_func_events=args.print_events
+                    toolchain, elf_file, root_proc=proc, print_func_events=print_events
                 ),
             )
     except Exception as e:
-        logging.error('Failed to create data processor (%s)!', e)
-        traceback.print_exc()
-        sys.exit(2)
+        log.die(escape(f'Failed to create data processor ({e})!'), exit_code=2)
 
     try:
-        logging.info("Process events from '%s'...", args.trace_sources)
+        log.debug(escape(f"Process events from '{trace_sources}'..."))
         proc.merge_and_process()
-        logging.info('Processing completed.')
+        log.debug('Processing completed.')
     except Exception as e:
-        logging.error('Failed to process trace (%s)!', e)
-        traceback.print_exc()
-        sys.exit(2)
+        log.die(escape(f'Failed to process trace ({e})!'), exit_code=2)
     finally:
-        if args.to_json:
+        if to_json:
             print(
                 json.dumps(
                     proc, cls=sysview.SysViewTraceDataJsonEncoder, indent=4, separators=(',', ': '), sort_keys=True
@@ -273,8 +264,9 @@ def main():
             try:
                 os.remove(file)
             except Exception as e:
-                logging.warning('Failed to remove temporary file %s: %s', file, e)
+                log.warn(escape(f'Failed to remove temporary file {file}: {e}'))
 
 
 if __name__ == '__main__':
+    install_exception_reporting()
     main()

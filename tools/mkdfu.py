@@ -9,7 +9,6 @@
 # as a separate file. In addition to that, a special index file, 'dfuinfo0.dat', is created.
 # This file must be the first one in the archive. It contains binary structures describing each
 # subsequent file (for example, where the file needs to be flashed/loaded).
-import argparse
 import hashlib
 import json
 import os
@@ -24,6 +23,8 @@ except ImportError:
     # Only used for type annotations
     pass
 
+import rich_click as click
+from esp_pylib.cli_types import AnyIntType
 from esp_pylib.constants import ESPRESSIF_VID
 from esp_pylib.excepthook import install_exception_reporting
 from esp_pylib.logger import log
@@ -138,8 +139,8 @@ def flash_size_bytes(size):  # type: (str) -> int
     """
     try:
         return int(size.rstrip('MB'), 10) * 1024 * 1024
-    except ValueError:
-        raise argparse.ArgumentTypeError(f'Unknown size {size}')
+    except ValueError as e:
+        raise ValueError(f'Unknown size {size}') from e
 
 
 class EspDfuWriter:
@@ -242,86 +243,116 @@ def action_write(args):  # type: (typing.Mapping[str, typing.Any]) -> None
     log.note(f'Adding flash chip parameters file with flash_size = {args["flash_size"]}')
     writer.add_flash_params_file(args['flash_size'])
     for addr, f in args['files']:
-        log.note(f'Adding {escape(str(f))} at {addr:#x}')
+        log.note(escape(f'Adding {f} at {addr:#x}'))
         writer.add_file(addr, f)
     writer.finish()
-    log.note(f'"{escape(args["output_file"].name)}" has been written. You may proceed with DFU flashing.')
+    log.note(escape(f'"{args["output_file"].name}" has been written. You may proceed with DFU flashing.'))
     if args['part_size'] % (4 * 1024) != 0:
         log.warn('Partition size of DFU is not multiple of 4k (4096). You might get unexpected behavior.')
 
 
-def main():  # type: () -> None
-    install_exception_reporting()
-    parser = argparse.ArgumentParser()
+class HexIntType(click.ParamType):
+    """Parse a hexadecimal integer, with or without the 0x prefix."""
 
-    # Provision to add "info" command
-    subparsers = parser.add_subparsers(dest='command')
-    write_parser = subparsers.add_parser('write')
-    write_parser.add_argument(
-        '-o',
-        '--output-file',
-        help='Filename for storing the output DFU image',
-        required=True,
-        type=argparse.FileType('wb'),
-    )
-    write_parser.add_argument(
-        '--pid', required=True, type=lambda h: int(h, 16), help='Hexa-decimal product indentificator'
-    )
-    write_parser.add_argument(
-        '--json', help='Optional file for loading "flash_files" dictionary with <address> <file> items'
-    )
-    write_parser.add_argument(
-        '--part-size',
-        default=os.environ.get('ESP_DFU_PART_SIZE', 512 * 1024),
-        type=lambda x: int(x, 0),
-        help='Larger files are split-up into smaller partitions of this size',
-    )
-    write_parser.add_argument('files', metavar='<address> <file>', help='Add <file> at <address>', nargs='*')
-    write_parser.add_argument(
-        '-fs',
-        '--flash-size',
-        help='SPI Flash size in MegaBytes (1MB, 2MB, 4MB, 8MB, 16MB, 32MB, 64MB, 128MB)',
-        choices=['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB'],
-        default='2MB',
-    )
+    name = 'hex'
 
-    args = parser.parse_args()
+    def convert(self, value: str | int, param: click.Parameter | None, ctx: click.Context | None) -> int:
+        if isinstance(value, int):
+            return value
+        try:
+            return int(value, 16)
+        except ValueError:
+            raise click.BadParameter(f'{value!r} is not a valid hexadecimal integer.', ctx, param)
 
-    def check_file(file_name):  # type: (str) -> str
+
+@click.group(context_settings={'help_option_names': ['-h', '--help']})
+def cli() -> None:
+    """Create ESP32-S* ROM DFU archives."""
+
+
+@cli.command('write')
+@click.option(
+    '-o',
+    '--output-file',
+    help='Filename for storing the output DFU image',
+    required=True,
+    type=click.File('wb'),
+)
+@click.option(
+    '--pid',
+    required=True,
+    type=HexIntType(),
+    help='Hexa-decimal product indentificator',
+)
+@click.option(
+    '--json', 'json_path', help='Optional file for loading "flash_files" dictionary with <address> <file> items'
+)
+@click.option(
+    '--part-size',
+    default=os.environ.get('ESP_DFU_PART_SIZE', str(512 * 1024)),
+    type=AnyIntType(),
+    help='Larger files are split-up into smaller partitions of this size',
+)
+@click.option(
+    '-fs',
+    '--flash-size',
+    help='SPI Flash size in MegaBytes (1MB, 2MB, 4MB, 8MB, 16MB, 32MB, 64MB, 128MB)',
+    type=click.Choice(['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']),
+    default='2MB',
+)
+@click.argument('files', metavar='<address> <file>', nargs=-1)
+def write_cmd(
+    output_file: typing.BinaryIO,
+    pid: int,
+    json_path: str | None,
+    part_size: int,
+    flash_size: str,
+    files: tuple[str, ...],
+) -> None:
+    def check_file(file_name: str) -> str:
         if not os.path.isfile(file_name):
             raise RuntimeError(f'{file_name} is not a regular file!')
         return file_name
 
-    files = []
-    if args.files:
-        files += [(int(addr, 0), check_file(f_name)) for addr, f_name in zip(args.files[::2], args.files[1::2])]
+    file_list = []
+    if files:
+        if len(files) % 2 != 0:
+            raise click.UsageError('files must be specified as pairs of <address> <file>')
+        file_list += [(int(addr, 0), check_file(f_name)) for addr, f_name in zip(files[::2], files[1::2])]
 
-    if args.json:
-        json_dir = os.path.dirname(os.path.abspath(args.json))
+    if json_path:
+        json_dir = os.path.dirname(os.path.abspath(json_path))
 
-        def process_json_file(path):  # type: (str) -> str
+        def process_json_file(path: str) -> str:
             """
             The input path is relative to json_dir. This function makes it relative to the current working
             directory.
             """
             return check_file(os.path.relpath(os.path.join(json_dir, path), start=os.curdir))
 
-        with open(args.json, encoding='utf-8') as f:
-            files += [(int(addr, 0), process_json_file(f_name)) for addr, f_name in json.load(f)['flash_files'].items()]
+        with open(json_path, encoding='utf-8') as f:
+            file_list += [
+                (int(addr, 0), process_json_file(f_name)) for addr, f_name in json.load(f)['flash_files'].items()
+            ]
 
-    files = sorted(
-        [(addr, f_name) for addr, f_name in dict(files).items()], key=lambda x: x[0]
+    file_list = sorted(
+        [(addr, f_name) for addr, f_name in dict(file_list).items()], key=lambda x: x[0]
     )  # remove possible duplicates and sort based on the address
 
-    cmd_args = {
-        'output_file': args.output_file,
-        'files': files,
-        'pid': args.pid,
-        'part_size': args.part_size,
-        'flash_size': args.flash_size,
-    }
+    action_write(
+        {
+            'output_file': output_file,
+            'files': file_list,
+            'pid': pid,
+            'part_size': part_size,
+            'flash_size': flash_size,
+        }
+    )
 
-    {'write': action_write}[args.command](cmd_args)
+
+def main():  # type: () -> None
+    install_exception_reporting()
+    cli()
 
 
 if __name__ == '__main__':

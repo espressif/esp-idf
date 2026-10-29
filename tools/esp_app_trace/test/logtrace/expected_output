@@ -1,6 +1,6 @@
-Parse trace file 'adc_log.trc'...
-Unprocessed 7 bytes of log record args!
-Parsing completed.
+NOTE: Parse trace file 'adc_log.trc'...
+WARNING: Unprocessed 7 bytes of log record args!
+NOTE: Parsing completed.
 ====================================================================
 [0;32mI (75854) example: Sample:1, Value:0[0m
 [0;32mI (75854) example: Sample:2, Value:0[0m
