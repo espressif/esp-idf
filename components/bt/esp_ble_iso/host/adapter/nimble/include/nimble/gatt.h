@@ -97,6 +97,8 @@ int bt_le_nimble_gattc_db_auto_disc(uint16_t conn_handle);
 
 void bt_le_nimble_gattc_db_remove(uint16_t conn_handle);
 
+void bt_le_nimble_gattc_db_ccc_disabled(uint16_t conn_handle, uint16_t ccc_handle);
+
 void bt_le_nimble_gattc_db_init(void);
 
 void bt_le_nimble_gattc_db_deinit(void);

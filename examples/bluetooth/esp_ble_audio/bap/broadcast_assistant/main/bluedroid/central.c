@@ -205,6 +205,7 @@ int pa_sync_terminate(uint16_t sync_handle)
     return esp_ble_gap_periodic_adv_sync_terminate(sync_handle);
 }
 
+#if CONFIG_EXAMPLE_PAST
 int pa_past_transfer(uint16_t conn_handle, uint16_t sync_handle, uint8_t src_id)
 {
     (void)conn_handle;
@@ -214,3 +215,4 @@ int pa_past_transfer(uint16_t conn_handle, uint16_t sync_handle, uint8_t src_id)
     return esp_ble_gap_periodic_adv_sync_trans(peer_bda, (uint16_t)src_id << 8,
                                                sync_handle);
 }
+#endif /* CONFIG_EXAMPLE_PAST */

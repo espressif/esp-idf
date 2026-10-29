@@ -73,6 +73,7 @@ static void broadcast_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SRC #0] Stream started");
 
     if (stream->qos == NULL || stream->qos->sdu == 0) {
@@ -249,6 +250,7 @@ int cap_initiator_setup(void)
     create_param.packing = ESP_BLE_ISO_PACKING_SEQUENTIAL;
     create_param.encryption = false;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Creating broadcast source");
 
     err = esp_ble_audio_cap_initiator_broadcast_audio_create(&create_param, &broadcast_source);
@@ -398,6 +400,7 @@ int cap_initiator_init(void)
         return err;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "CAP initiator initialized");
 
     return 0;

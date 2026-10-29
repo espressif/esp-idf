@@ -136,6 +136,7 @@ void bt_le_nimble_gap_post_event(void *param)
         qev->pa_sync.adv_ca = ev->periodic_sync.adv_clk_accuracy;
         break;
 
+#if MYNEWT_VAL(BLE_PERIODIC_ADV_SYNC_TRANSFER)
     case BLE_GAP_EVENT_PERIODIC_TRANSFER:
     case BLE_GAP_EVENT_PERIODIC_TRANSFER_V2:
         /* Both events share the same periodic_transfer union field; V2 only
@@ -153,6 +154,7 @@ void bt_le_nimble_gap_post_event(void *param)
         qev->pa_sync_past.adv_ca = ev->periodic_transfer.adv_clk_accuracy;
         qev->pa_sync_past.conn_handle = ev->periodic_transfer.conn_handle;
         break;
+#endif /* MYNEWT_VAL(BLE_PERIODIC_ADV_SYNC_TRANSFER) */
 
     case BLE_GAP_EVENT_PERIODIC_SYNC_LOST:
         qev->type = BT_LE_GAP_APP_PARAM_PA_SYNC_LOST;
@@ -272,4 +274,18 @@ void bt_le_nimble_gap_post_event(void *param)
 
 free:
     bt_le_gap_event_free(qev);
+}
+
+uint32_t bt_le_nimble_gap_conn_interval_us_get(uint16_t conn_handle)
+{
+    struct ble_gap_conn_desc desc;
+    int rc;
+
+    rc = ble_gap_conn_find(conn_handle, &desc);
+    if (rc) {
+        LOG_WRN("[N]ConnItvlNoConn[%u][%d]", conn_handle, rc);
+        return 0;
+    }
+
+    return BT_CONN_INTERVAL_TO_US(desc.conn_itvl);
 }

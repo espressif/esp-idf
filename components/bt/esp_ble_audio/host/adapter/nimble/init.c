@@ -22,7 +22,7 @@
 #include "common/init.h"
 #include "common/audio_attr.h"
 
-#include "../../../lib/include/audio.h"
+#include "../../../lib/include/lib_exports.h"
 
 LOG_MODULE_REGISTER(LEA_NINIT, CONFIG_BT_ISO_LOG_LEVEL);
 
@@ -104,11 +104,12 @@ LOG_MODULE_REGISTER(LEA_NINIT, CONFIG_BT_ISO_LOG_LEVEL);
 #define HAS_FEATURES_CCCD_COUNT                 0
 #endif /* CONFIG_BT_HAS_FEATURES_NOTIFIABLE */
 
-#if CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE
+/* The Control Point is indicatable, so it has a CCCD whenever it exists */
+#if CONFIG_BT_HAS_PRESET_SUPPORT
 #define HAS_PRESET_CONTROL_POINT_CCCD_COUNT     1
-#else /* CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE */
+#else /* CONFIG_BT_HAS_PRESET_SUPPORT */
 #define HAS_PRESET_CONTROL_POINT_CCCD_COUNT     0
-#endif /* CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE */
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 #if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
 #define HAS_ACTIVE_PRESET_INDEX_CCCD_COUNT      1

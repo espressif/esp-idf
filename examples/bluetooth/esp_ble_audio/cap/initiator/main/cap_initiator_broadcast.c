@@ -48,6 +48,7 @@ static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
     esp_ble_audio_cap_stream_t *cap_stream;
     int err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SRC #%d] Stream started", broadcast_stream_index(stream));
 
     cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
@@ -182,6 +183,7 @@ int cap_initiator_broadcast_start(void)
     uint8_t per_len = 0;
     int err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Creating broadcast source");
 
     for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
@@ -256,6 +258,7 @@ int cap_initiator_broadcast_init(void)
         esp_ble_audio_cap_stream_ops_register(&broadcast_streams[i], &broadcast_stream_ops);
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "CAP initiator broadcast initialized");
 
     return 0;

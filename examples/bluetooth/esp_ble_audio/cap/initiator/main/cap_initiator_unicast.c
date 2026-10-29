@@ -216,8 +216,8 @@ static void unicast_stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *use
 }
 
 static esp_ble_audio_bap_stream_ops_t unicast_stream_ops = {
-    .configured       = unicast_stream_configured_cb,
-    .qos_set          = unicast_stream_qos_set_cb,
+    .codec_configured = unicast_stream_configured_cb,
+    .qos_configured   = unicast_stream_qos_set_cb,
     .enabled          = unicast_stream_enabled_cb,
     .started          = unicast_stream_started_cb,
     .metadata_updated = unicast_stream_metadata_updated_cb,
@@ -497,6 +497,7 @@ static void unicast_start_complete_cb(int err, esp_ble_conn_t *conn)
     if (err) {
         ESP_LOGE(TAG, "Unicast start completed, err %d", err);
     } else {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Unicast start completed");
     }
 }
@@ -532,6 +533,7 @@ static bool check_and_connect(uint8_t type, const uint8_t *data,
         return true;    /* Continue parsing to next AD data type */
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Found CAS in peer adv data!");
 
     /* Stop scanning before connect — NimBLE rejects ble_gap_connect while
@@ -580,6 +582,7 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->acl_connect.conn_handle, event->acl_connect.role,
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
@@ -622,6 +625,7 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
              event->security_change.conn_handle, event->security_change.sec_level,
              event->security_change.bonded);

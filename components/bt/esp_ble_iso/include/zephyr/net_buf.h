@@ -138,6 +138,10 @@ struct net_buf_simple {
  * @param buf Buffer to initialize.
  * @param reserve_head Headroom to reserve.
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline void net_buf_simple_init(struct net_buf_simple *buf,
                                        size_t reserve_head)
 {
@@ -148,6 +152,7 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
     buf->data = buf->__buf + reserve_head;
     buf->len = 0;
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Initialize a net_buf_simple object with data.
@@ -158,8 +163,10 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
  * @param data External data pointer
  * @param size Amount of data the pointed data buffer if able to fit.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void net_buf_simple_init_with_data(struct net_buf_simple *buf,
                                    void *data, size_t size);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Reset buffer
@@ -168,11 +175,13 @@ void net_buf_simple_init_with_data(struct net_buf_simple *buf,
  *
  * @param buf Buffer to reset.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline void net_buf_simple_reset(struct net_buf_simple *buf)
 {
     buf->len  = 0;
     buf->data = buf->__buf;
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * Clone buffer state, using the same data buffer.
@@ -184,8 +193,10 @@ static inline void net_buf_simple_reset(struct net_buf_simple *buf)
  * @param original Buffer to clone.
  * @param clone The new clone.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void net_buf_simple_clone(const struct net_buf_simple *original,
                           struct net_buf_simple *clone);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Prepare data to be added at the end of the buffer
@@ -198,7 +209,9 @@ void net_buf_simple_clone(const struct net_buf_simple *original,
  *
  * @return The original tail of the buffer.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void *net_buf_simple_add(struct net_buf_simple *buf, size_t len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Copy given number of bytes from memory to the end of the buffer
@@ -212,8 +225,10 @@ void *net_buf_simple_add(struct net_buf_simple *buf, size_t len);
  *
  * @return The original tail of the buffer.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
                              size_t len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Add (8-bit) byte at the end of the buffer
@@ -226,7 +241,9 @@ void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
  *
  * @return Pointer to the value added
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Add 16-bit value at the end of the buffer
@@ -238,7 +255,9 @@ uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val);
  * @param buf Buffer to update.
  * @param val 16-bit value to be added.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void net_buf_simple_add_le16(struct net_buf_simple *buf, uint16_t val);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Add 16-bit value at the end of the buffer
@@ -262,7 +281,9 @@ void net_buf_simple_add_be16(struct net_buf_simple *buf, uint16_t val);
  * @param buf Buffer to update.
  * @param val 24-bit value to be added.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void net_buf_simple_add_le24(struct net_buf_simple *buf, uint32_t val);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Add 24-bit value at the end of the buffer
@@ -286,7 +307,9 @@ void net_buf_simple_add_be24(struct net_buf_simple *buf, uint32_t val);
  * @param buf Buffer to update.
  * @param val 32-bit value to be added.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void net_buf_simple_add_le32(struct net_buf_simple *buf, uint32_t val);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Add 32-bit value at the end of the buffer
@@ -310,7 +333,9 @@ void net_buf_simple_add_be32(struct net_buf_simple *buf, uint32_t val);
  * @param buf Buffer to update.
  * @param val 48-bit value to be added.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void net_buf_simple_add_le48(struct net_buf_simple *buf, uint64_t val);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Add 48-bit value at the end of the buffer
@@ -334,7 +359,9 @@ void net_buf_simple_add_be48(struct net_buf_simple *buf, uint64_t val);
  * @param buf Buffer to update.
  * @param val 64-bit value to be added.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void net_buf_simple_add_le64(struct net_buf_simple *buf, uint64_t val);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Add 64-bit value at the end of the buffer
@@ -492,7 +519,9 @@ void net_buf_simple_push_be64(struct net_buf_simple *buf, uint64_t val);
  *
  * @return New beginning of the buffer data.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove data from the beginning of the buffer.
@@ -505,7 +534,9 @@ void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len);
  *
  * @return Pointer to the old location of the buffer data.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove a 8-bit value from the beginning of the buffer
@@ -517,7 +548,9 @@ void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len);
  *
  * @return The 8-bit removed value
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove and convert 16 bits from the beginning of the buffer.
@@ -529,7 +562,9 @@ uint8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
  *
  * @return 16-bit value converted from little endian to host endian.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint16_t net_buf_simple_pull_le16(struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove and convert 16 bits from the beginning of the buffer.
@@ -553,7 +588,9 @@ uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
  *
  * @return 24-bit value converted from little endian to host endian.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint32_t net_buf_simple_pull_le24(struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove and convert 24 bits from the beginning of the buffer.
@@ -577,7 +614,9 @@ uint32_t net_buf_simple_pull_be24(struct net_buf_simple *buf);
  *
  * @return 32-bit value converted from little endian to host endian.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint32_t net_buf_simple_pull_le32(struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove and convert 32 bits from the beginning of the buffer.
@@ -601,7 +640,9 @@ uint32_t net_buf_simple_pull_be32(struct net_buf_simple *buf);
  *
  * @return 48-bit value converted from little endian to host endian.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint64_t net_buf_simple_pull_le48(struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove and convert 48 bits from the beginning of the buffer.
@@ -625,7 +666,9 @@ uint64_t net_buf_simple_pull_be48(struct net_buf_simple *buf);
  *
  * @return 64-bit value converted from little endian to host endian.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint64_t net_buf_simple_pull_le64(struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Remove and convert 64 bits from the beginning of the buffer.
@@ -662,7 +705,9 @@ static inline uint8_t *net_buf_simple_tail(struct net_buf_simple *buf)
  *
  * @return Number of bytes available in the beginning of the buffer.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 size_t net_buf_simple_headroom(const struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Check buffer tailroom.
@@ -673,7 +718,9 @@ size_t net_buf_simple_headroom(const struct net_buf_simple *buf);
  *
  * @return Number of bytes available at the end of the buffer.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 size_t net_buf_simple_tailroom(struct net_buf_simple *buf);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Parsing state of a buffer.
@@ -697,12 +744,14 @@ struct net_buf_simple_state {
  * @param buf Buffer from which the state should be saved.
  * @param state Storage for the state.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline void net_buf_simple_save(struct net_buf_simple *buf,
                                        struct net_buf_simple_state *state)
 {
     state->offset = net_buf_simple_headroom(buf);
     state->len = buf->len;
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Restore the parsing state of a buffer.
@@ -713,12 +762,14 @@ static inline void net_buf_simple_save(struct net_buf_simple *buf,
  * @param buf Buffer to which the state should be restored.
  * @param state Stored state.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline void net_buf_simple_restore(struct net_buf_simple *buf,
                                           struct net_buf_simple_state *state)
 {
     buf->data = buf->__buf + state->offset;
     buf->len = state->len;
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Initialize buffer with the given headroom.
@@ -1057,10 +1108,12 @@ struct net_buf *net_buf_ref(struct net_buf *buf);
  *
  *  @return Pointer to the user data of the buffer.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline void *net_buf_user_data(struct net_buf *buf)
 {
     return (void *)buf->user_data;
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  *  @def net_buf_add
@@ -1743,6 +1796,7 @@ static inline struct net_buf *net_buf_skip(struct net_buf *buf, size_t len)
  *
  * @return Number of bytes in the buffer and its fragments.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline size_t net_buf_frags_len(struct net_buf *buf)
 {
     size_t bytes = 0;
@@ -1754,6 +1808,7 @@ static inline size_t net_buf_frags_len(struct net_buf *buf)
 
     return bytes;
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @}

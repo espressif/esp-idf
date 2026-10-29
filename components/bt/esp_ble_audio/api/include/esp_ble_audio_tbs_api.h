@@ -21,6 +21,8 @@
 #include "common/init.h"
 #include "common/host.h"
 
+#include "esp_ble_audio_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -97,11 +99,18 @@ extern "C" {
 #define ESP_BLE_AUDIO_TBS_RESULT_CODE_INVALID_URI               BT_TBS_RESULT_CODE_INVALID_URI
 
 /*!< Local Hold and Local Retrieve Call Control Point Opcodes supported */
-#define ESP_BLE_AUDIO_TBS_FEATURE_HOLD                          BT_TBS_FEATURE_HOLD
+#define ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_HOLD                  BT_TBS_OPTIONAL_OPCODE_HOLD
 /*!< Join Call Control Point Opcode supported */
-#define ESP_BLE_AUDIO_TBS_FEATURE_JOIN                          BT_TBS_FEATURE_JOIN
+#define ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_JOIN                  BT_TBS_OPTIONAL_OPCODE_JOIN
 /*!< All Control Point Opcodes supported */
-#define ESP_BLE_AUDIO_TBS_FEATURE_ALL                           BT_TBS_FEATURE_ALL
+#define ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_ALL                   BT_TBS_OPTIONAL_OPCODE_ALL
+
+/*!< Deprecated, use ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_HOLD */
+#define ESP_BLE_AUDIO_TBS_FEATURE_HOLD                          ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_HOLD
+/*!< Deprecated, use ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_JOIN */
+#define ESP_BLE_AUDIO_TBS_FEATURE_JOIN                          ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_JOIN
+/*!< Deprecated, use ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_ALL */
+#define ESP_BLE_AUDIO_TBS_FEATURE_ALL                           ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_ALL
 
 /*!< No service */
 #define ESP_BLE_AUDIO_TBS_SIGNAL_STRENGTH_NO_SERVICE            BT_TBS_SIGNAL_STRENGTH_NO_SERVICE
@@ -110,24 +119,24 @@ extern "C" {
 /*!< Signal strength is unknown  */
 #define ESP_BLE_AUDIO_TBS_SIGNAL_STRENGTH_UNKNOWN               BT_TBS_SIGNAL_STRENGTH_UNKNOWN
 
-/*!< 3G */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_3G                         BT_TBS_TECHNOLOGY_3G
-/*!< 4G */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_4G                         BT_TBS_TECHNOLOGY_4G
-/*!< Long-term evolution (LTE) */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_LTE                        BT_TBS_TECHNOLOGY_LTE
-/*!< Wifi */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_WIFI                       BT_TBS_TECHNOLOGY_WIFI
-/*!< 5G */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_5G                         BT_TBS_TECHNOLOGY_5G
-/*!< Global System for Mobile Communications (GSM) */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_GSM                        BT_TBS_TECHNOLOGY_GSM
-/*!< Code-Division Multiple Access (CDMA) */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_CDMA                       BT_TBS_TECHNOLOGY_CDMA
-/*!< 2G */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_2G                         BT_TBS_TECHNOLOGY_2G
-/*!< Wideband Code-Division Multiple Access (WCDMA) */
-#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_WCDMA                      BT_TBS_TECHNOLOGY_WCDMA
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_3G */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_3G                         ESP_BLE_AUDIO_BEARER_TECH_3G
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_4G */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_4G                         ESP_BLE_AUDIO_BEARER_TECH_4G
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_LTE */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_LTE                        ESP_BLE_AUDIO_BEARER_TECH_LTE
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_WIFI */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_WIFI                       ESP_BLE_AUDIO_BEARER_TECH_WIFI
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_5G */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_5G                         ESP_BLE_AUDIO_BEARER_TECH_5G
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_GSM */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_GSM                        ESP_BLE_AUDIO_BEARER_TECH_GSM
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_CDMA */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_CDMA                       ESP_BLE_AUDIO_BEARER_TECH_CDMA
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_2G */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_2G                         ESP_BLE_AUDIO_BEARER_TECH_2G
+/*!< Deprecated, use ESP_BLE_AUDIO_BEARER_TECH_WCDMA */
+#define ESP_BLE_AUDIO_TBS_TECHNOLOGY_WCDMA                      ESP_BLE_AUDIO_BEARER_TECH_WCDMA
 
 /*!< Inband ringtone enabled */
 #define ESP_BLE_AUDIO_TBS_STATUS_FLAG_INBAND_RINGTONE           BT_TBS_STATUS_FLAG_INBAND_RINGTONE

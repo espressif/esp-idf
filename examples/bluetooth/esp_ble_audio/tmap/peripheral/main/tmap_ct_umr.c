@@ -59,6 +59,7 @@ int tmap_ct_umr_init(void)
         return err;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "TMAP CT UMR initialized");
 
     return 0;

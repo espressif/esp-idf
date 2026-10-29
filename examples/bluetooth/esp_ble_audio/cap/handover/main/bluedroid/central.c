@@ -188,3 +188,9 @@ void security_failed_recover(uint16_t conn_handle, uint8_t status)
     esp_ble_remove_bond_device(peer_bda);
     esp_ble_gap_disconnect(peer_bda);
 }
+
+int conn_disconnect(uint16_t conn_handle)
+{
+    (void)conn_handle;
+    return esp_ble_gap_disconnect(peer_bda);
+}

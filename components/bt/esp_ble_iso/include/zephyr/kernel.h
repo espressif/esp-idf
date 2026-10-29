@@ -11,16 +11,23 @@
 #include <stdint.h>
 #include <errno.h>
 
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/logging/log.h>
 
+#include <zephyr/toolchain.h>
+
+/* The lib build is FreeRTOS-free: it gets only the types and macros, and reaches
+ * the implementations below through idf_ext_funcs.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
-#include "toolchain.h"
 
 #include "utils/assert.h"
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,12 +35,14 @@ extern "C" {
 
 /* Mutex */
 
-#define K_MUTEX_FOREVER     portMAX_DELAY
-#define K_MUTEX_SHORT       (5000 / portTICK_PERIOD_MS)
+#define K_MUTEX_FOREVER     UINT32_MAX  /* portMAX_DELAY */
 
 struct k_mutex {
-    SemaphoreHandle_t handle;
+    void *handle;   /* SemaphoreHandle_t */
 };
+
+#ifndef BLE_AUDIO_LIB_BUILD
+#define K_MUTEX_SHORT       (5000 / portTICK_PERIOD_MS)
 
 static inline void k_mutex_create(struct k_mutex *mutex)
 {
@@ -211,6 +220,7 @@ static inline void k_sem_reset(struct k_sem *sem)
  * so a wedged consumer can't freeze an external producer (esp_timer / host
  * task) and stall the ISO data path. */
 #define K_QUEUE_SHORT       (1000 / portTICK_PERIOD_MS)
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /* Timer */
 
@@ -219,8 +229,7 @@ typedef uint32_t k_timeout_t;
 #define K_NO_WAIT       0
 #define K_FOREVER       (-1)
 
-#define MSEC_PER_SEC    1000
-#define K_USEC(t)       (t)
+#define K_USEC(t)       (((t) + 999U) / 1000U)   /* timeouts are in ms here, as in the lib */
 #define K_MSEC(ms)      (ms)
 #define K_SECONDS(s)    K_MSEC((s) * MSEC_PER_SEC)
 #define K_MINUTES(m)    K_SECONDS((m) * 60)
@@ -239,8 +248,8 @@ struct k_work {
     k_work_handler_t handler;
     int64_t timeout_us;
     void *user_data;
-    uint32_t gen;   /* Bumped on (re)schedule/cancel/deinit so a timer event
-                     * queued before the change is skipped (see timer.c). */
+    uint32_t gen;   /* New unique token on (re)schedule/cancel/deinit so a timer
+                     * event queued before the change is skipped (see timer.c). */
 };
 
 struct k_work_sync {
@@ -263,35 +272,61 @@ struct k_work_delayable {
 
 #define K_TIMEOUT_EQ(a, b) ((a) == (b))
 
+/* Ticks are milliseconds in this port */
+#define k_ticks_to_ms_floor32(t)    (t)
+
 typedef void (*k_work_handler_t)(struct k_work *work);
 
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 int k_work_submit(struct k_work *work);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
+#ifndef BLE_AUDIO_LIB_BUILD
 bool k_work_is_pending(struct k_work *work);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 void k_work_init(struct k_work *work, k_work_handler_t handler);
 
+#ifndef BLE_AUDIO_LIB_BUILD
 struct k_work_delayable *k_work_delayable_from_work(struct k_work *work);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
+#ifndef BLE_AUDIO_LIB_BUILD
 void k_work_init_delayable(struct k_work_delayable *dwork,
                            k_work_handler_t handler);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
+#ifndef BLE_AUDIO_LIB_BUILD
 void k_work_deinit_delayable(struct k_work_delayable *dwork);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
+#ifndef BLE_AUDIO_LIB_BUILD
 int k_work_cancel_delayable(struct k_work_delayable *dwork);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
+#ifndef BLE_AUDIO_LIB_BUILD
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
                                   struct k_work_sync *sync);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
+#ifndef BLE_AUDIO_LIB_BUILD
 int k_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
+#ifndef BLE_AUDIO_LIB_BUILD
 int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 int k_work_schedule_periodic(struct k_work_delayable *dwork, k_timeout_t period_ms);
 
 int k_work_schedule_periodic_us(struct k_work_delayable *dwork, uint64_t period_us);
 
+#ifndef BLE_AUDIO_LIB_BUILD
 k_timeout_t k_work_delayable_remaining_get(struct k_work_delayable *dwork);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /* Slist */
 

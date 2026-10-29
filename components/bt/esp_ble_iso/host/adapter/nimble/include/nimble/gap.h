@@ -19,6 +19,8 @@ extern "C" {
 
 void bt_le_nimble_gap_post_event(void *param);
 
+uint32_t bt_le_nimble_gap_conn_interval_us_get(uint16_t conn_handle);
+
 #ifdef __cplusplus
 }
 #endif

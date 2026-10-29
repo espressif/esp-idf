@@ -746,6 +746,19 @@ struct bt_iso_chan_ops {
      * @param chan The channel which has sent data.
      */
     void (*sent)(struct bt_iso_chan *chan, void *user_data);
+
+    /**
+     * @brief Channel send failed callback
+     *
+     * This callback will be called for each SDU that bt_iso_chan_send() accepted but that
+     * was then dropped while queued in the Host: @p chan disconnected (-ESHUTDOWN), or the
+     * controller refused the SDU when it was taken from the queue (-EIO). SDUs already
+     * given to the controller are not reported.
+     *
+     * @param chan The channel for which the send operation failed.
+     * @param err The reason for the send failure.
+     */
+    void (*send_failed)(struct bt_iso_chan *chan, int err);
 };
 
 /** @brief ISO Accept Info Structure */
@@ -1261,6 +1274,17 @@ struct bt_iso_big_cb {
 int bt_iso_big_register_cb(struct bt_iso_big_cb *cb);
 
 /**
+ * @brief Unregisters callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -ENOENT if @p cb is not registered
+ */
+int bt_iso_big_unregister_cb(struct bt_iso_big_cb *cb);
+
+/**
  * @brief Creates a BIG as a broadcaster
  *
  * @param[in] padv      Pointer to the periodic advertising object the BIGInfo shall be sent on.
@@ -1297,6 +1321,14 @@ int bt_iso_big_terminate(struct bt_iso_big *big);
  */
 int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
                     struct bt_iso_big **out_big);
+
+/**
+ * @brief Returns a string representation of an ISO channel state
+ *
+ * @param state The state of the channel
+ * @return A string representation, or "unknown" if unknown state.
+ */
+const char *bt_iso_chan_state_str(enum bt_iso_state state);
 
 #ifdef __cplusplus
 }

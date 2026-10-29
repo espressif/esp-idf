@@ -13,6 +13,8 @@
 /**
  * @brief UUIDs
  * @defgroup bt_uuid UUIDs
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
@@ -1468,7 +1470,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HRS_BODY_SENSOR_VAL 0x2a38
 /**
- *  @brief HRS Characteristic Control Point
+ *  @brief HRS Characteristic Body Sensor Location
  */
 #define BT_UUID_HRS_BODY_SENSOR \
     BT_UUID_DECLARE_16(BT_UUID_HRS_BODY_SENSOR_VAL)
@@ -5111,11 +5113,11 @@ struct bt_uuid_128 {
     BT_UUID_DECLARE_16(BT_UUID_UDI_FOR_MEDICAL_DEVICES_VAL)
 
 /**
- *  @brief Gaming Service UUID value
+ *  @brief Gaming Audio Service UUID value
  */
 #define BT_UUID_GMAS_VAL 0x1858
 /**
- *  @brief Common Audio Service
+ *  @brief Gaming Audio Service
  */
 #define BT_UUID_GMAS     BT_UUID_DECLARE_16(BT_UUID_GMAS_VAL)
 
@@ -5163,6 +5165,24 @@ struct bt_uuid_128 {
  *  @brief Gaming Audio Profile Broadcast Game Receiver Features
  */
 #define BT_UUID_GMAP_BGR_FEAT     BT_UUID_DECLARE_16(BT_UUID_GMAP_BGR_FEAT_VAL)
+
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Mode UUID value
+ */
+#define BT_UUID_HIDS_SCI_MODE_VAL 0x2C39
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Mode
+ */
+#define BT_UUID_HIDS_SCI_MODE BT_UUID_DECLARE_16(BT_UUID_HIDS_SCI_MODE_VAL)
+
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Information UUID value
+ */
+#define BT_UUID_HIDS_SCI_INFO_VAL 0x2C3A
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Information
+ */
+#define BT_UUID_HIDS_SCI_INFO BT_UUID_DECLARE_16(BT_UUID_HIDS_SCI_INFO_VAL)
 
 /*
  * Protocol UUIDs
@@ -5230,7 +5250,12 @@ struct bt_uuid_128 {
  *
  *  @return negative value if @a u1 < @a u2, 0 if @a u1 == @a u2, else positive
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Create a bt_uuid from a little-endian data buffer.
  *
@@ -5244,7 +5269,9 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  *
  *  @return true if the data was valid and the UUID was successfully created.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Convert Bluetooth UUID to string.
  *
@@ -5255,7 +5282,9 @@ bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len)
  *  @param str pointer where to put converted string
  *  @param len length of str
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 #ifdef __cplusplus
 }

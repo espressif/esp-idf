@@ -8,7 +8,7 @@
 
 config BT_BAP_UNICAST
     bool
-    default y if BT_BAP_UNICAST_SERVER || BT_BAP_UNICAST_CLIENT
+    default y if BT_BAP_UNICAST_SERVER || BT_BAP_UNICAST_CLIENT || BT_ASCS
 
 config BT_BAP_UNICAST_SERVER
     bool "Bluetooth Unicast Audio Server Support"
@@ -30,17 +30,23 @@ config BT_BAP_UNICAST_CLIENT
 config BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE
     int "Codec Specific Configuration Data Size"
     default 19
-    range 0 255
+    range 19 219 if BT_ASCS
+    range 19 255
     help
         Number of octets to support for Codec Specific Configuration data.
         The default value 19 matches the required fields for the LC3 codec.
+        With BT_ASCS enabled the maximum is 219, as the ASE state has to fit
+        the 247-octet ATT MTU.
 
 config BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE
     int "Codec Specific Configuration Metadata Size"
     default 20
+    range 0 224 if BT_ASCS
     range 0 255
     help
         Number of octets to support for Codec Specific Configuration metadata.
+        With BT_ASCS enabled the maximum is 224, as the ASE state has to fit
+        the 247-octet ATT MTU.
 
 config BT_BAP_BASS_MAX_SUBGROUPS
     int "Maximum number of subgroups supported for the BASS receive states"

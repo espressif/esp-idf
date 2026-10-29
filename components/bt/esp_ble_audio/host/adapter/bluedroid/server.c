@@ -289,9 +289,15 @@ void bt_le_bluedroid_audio_gatts_init(void)
 
 int bt_le_bluedroid_svc_deinit(struct bt_gatt_service *svc)
 {
-    if (svc == NULL || svc->attrs == NULL) {
+    if (svc == NULL) {
         LOG_ERR("[B]SvcDeinitNoSvc");
         return -EINVAL;
+    }
+
+    /* The lib clears attrs on unregister (CSIP set member), after the host service went */
+    if (svc->attrs == NULL) {
+        LOG_DBG("[B]SvcDeinitUnreg");
+        return 0;
     }
 
     if (svc->attrs[0].handle == 0) {

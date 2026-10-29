@@ -649,55 +649,11 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_content_ctrl_id(esp_ble_audio_media
 #endif /* CONFIG_BT_MCTL_LOCAL_PLAYER_LOCAL_CONTROL || CONFIG_BT_MCTL_REMOTE_PLAYER_CONTROL */
 
 #if CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL
-static bool pl_calls_is_valid(const esp_ble_audio_media_proxy_pl_calls_t *pl_calls)
-{
-    if (pl_calls == NULL) {
-        return false;
-    }
-
-    if (pl_calls->get_player_name == NULL ||
-            pl_calls->get_icon_url == NULL ||
-            pl_calls->get_track_title == NULL ||
-            pl_calls->get_track_duration == NULL ||
-            pl_calls->get_track_position == NULL ||
-            pl_calls->set_track_position == NULL ||
-            pl_calls->get_playback_speed == NULL ||
-            pl_calls->set_playback_speed == NULL ||
-            pl_calls->get_seeking_speed == NULL ||
-            pl_calls->get_playing_order == NULL ||
-            pl_calls->set_playing_order == NULL ||
-            pl_calls->get_playing_orders_supported == NULL ||
-            pl_calls->get_media_state == NULL ||
-            pl_calls->send_command == NULL ||
-            pl_calls->get_commands_supported == NULL ||
-            pl_calls->get_content_ctrl_id == NULL) {
-        return false;
-    }
-
-#if CONFIG_BT_MPL_OBJECTS
-    if (pl_calls->get_icon_id == NULL ||
-            pl_calls->get_track_segments_id == NULL ||
-            pl_calls->get_current_track_id == NULL ||
-            pl_calls->set_current_track_id == NULL ||
-            pl_calls->get_next_track_id == NULL ||
-            pl_calls->set_next_track_id == NULL ||
-            pl_calls->get_parent_group_id == NULL ||
-            pl_calls->get_current_group_id == NULL ||
-            pl_calls->set_current_group_id == NULL ||
-            pl_calls->send_search == NULL ||
-            pl_calls->get_search_results_id == NULL) {
-        return false;
-    }
-#endif /* CONFIG_BT_MPL_OBJECTS */
-
-    return true;
-}
-
 esp_err_t esp_ble_audio_media_proxy_pl_register(esp_ble_audio_media_proxy_pl_calls_t *pl_calls)
 {
     int err;
 
-    if (pl_calls_is_valid(pl_calls) == false) {
+    if (pl_calls == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -713,7 +669,10 @@ esp_err_t esp_ble_audio_media_proxy_pl_register(esp_ble_audio_media_proxy_pl_cal
 
     return ESP_OK;
 }
+#endif /* CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL */
 
+/* Implemented by the MPL sample player */
+#if CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL && CONFIG_BT_MPL
 esp_err_t esp_ble_audio_media_proxy_pl_init(void)
 {
     esp_err_t ret = ESP_OK;
@@ -784,7 +743,7 @@ esp_err_t esp_ble_audio_media_proxy_pl_set_track_title(char *title)
 
     return ESP_OK;
 }
-#endif /* CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL */
+#endif /* CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL && CONFIG_BT_MPL */
 
 #if CONFIG_BT_MCS && CONFIG_BT_OTS
 struct bt_ots *esp_ble_audio_mcs_get_ots(void)

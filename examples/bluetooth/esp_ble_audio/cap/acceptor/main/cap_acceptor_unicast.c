@@ -317,6 +317,7 @@ static void unicast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
     esp_ble_audio_bap_ep_info_t ep_info = {0};
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[%s #%d] Stream started",
              stream_dir_str(stream), stream_index(stream));
 
@@ -474,8 +475,8 @@ static void unicast_stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *use
 }
 
 static esp_ble_audio_bap_stream_ops_t unicast_stream_ops = {
-    .configured       = unicast_stream_configured_cb,
-    .qos_set          = unicast_stream_qos_set_cb,
+    .codec_configured = unicast_stream_configured_cb,
+    .qos_configured   = unicast_stream_qos_set_cb,
     .enabled          = unicast_stream_enabled_cb,
     .started          = unicast_stream_started_cb,
     .metadata_updated = unicast_stream_metadata_updated_cb,
@@ -588,6 +589,7 @@ int cap_acceptor_unicast_init(struct peer_config *peer)
         return -1;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "CAP acceptor unicast initialized");
 
     return 0;

@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
@@ -40,35 +41,35 @@ extern "C" {
 /** A characteristic value has changed while a Read Long Value Characteristic sub-procedure is in
  * progress
  */
-#define BT_TBS_ERR_VAL_CHANGED 0x80
+#define BT_TBS_ERR_VAL_CHANGED 0x80U
 
 /**
  * @name Call States
  * @{
  */
 /** A remote party is calling (incoming call). */
-#define BT_TBS_CALL_STATE_INCOMING                      0x00
+#define BT_TBS_CALL_STATE_INCOMING                      0x00U
 /**
  * The process to call the remote party has started on the server, but the remote party is not
  * being alerted (outgoing call).
  */
-#define BT_TBS_CALL_STATE_DIALING                       0x01
+#define BT_TBS_CALL_STATE_DIALING                       0x01U
 /** A remote party is being alerted (outgoing call). */
-#define BT_TBS_CALL_STATE_ALERTING                      0x02
+#define BT_TBS_CALL_STATE_ALERTING                      0x02U
 /** The call is in an active conversation. */
-#define BT_TBS_CALL_STATE_ACTIVE                        0x03
+#define BT_TBS_CALL_STATE_ACTIVE                        0x03U
 /**
  * The call is connected but held locally. Locally Held implies that either the server or the
  * client can affect the state.
  */
-#define BT_TBS_CALL_STATE_LOCALLY_HELD                  0x04
+#define BT_TBS_CALL_STATE_LOCALLY_HELD                  0x04U
 /**
  *The call is connected but held remotely. Remotely Held means that the state is controlled by the
  * remote party of a call.
  */
-#define BT_TBS_CALL_STATE_REMOTELY_HELD                 0x05
+#define BT_TBS_CALL_STATE_REMOTELY_HELD                 0x05U
 /** The call is connected but held both locally and remotely. */
-#define BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD     0x06
+#define BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD     0x06U
 /** @} */
 
 /**
@@ -76,25 +77,25 @@ extern "C" {
  * @{
  */
 /** The URI value used to originate a call was formed improperly. */
-#define BT_TBS_REASON_BAD_REMOTE_URI                    0x00
+#define BT_TBS_REASON_BAD_REMOTE_URI                    0x00U
 /** The call failed. */
-#define BT_TBS_REASON_CALL_FAILED                       0x01
+#define BT_TBS_REASON_CALL_FAILED                       0x01U
 /** The remote party ended the call. */
-#define BT_TBS_REASON_REMOTE_ENDED_CALL                 0x02
+#define BT_TBS_REASON_REMOTE_ENDED_CALL                 0x02U
 /** The call ended from the server. */
-#define BT_TBS_REASON_SERVER_ENDED_CALL                 0x03
+#define BT_TBS_REASON_SERVER_ENDED_CALL                 0x03U
 /** The line was busy. */
-#define BT_TBS_REASON_LINE_BUSY                         0x04
+#define BT_TBS_REASON_LINE_BUSY                         0x04U
 /** Network congestion. */
-#define BT_TBS_REASON_NETWORK_CONGESTED                 0x05
+#define BT_TBS_REASON_NETWORK_CONGESTED                 0x05U
 /** The client terminated the call. */
-#define BT_TBS_REASON_CLIENT_TERMINATED                 0x06
+#define BT_TBS_REASON_CLIENT_TERMINATED                 0x06U
 /** No service. */
-#define BT_TBS_REASON_NO_SERVICE                        0x07
+#define BT_TBS_REASON_NO_SERVICE                        0x07U
 /** No answer. */
-#define BT_TBS_REASON_NO_ANSWER                         0x08
+#define BT_TBS_REASON_NO_ANSWER                         0x08U
 /** Unspecified. */
-#define BT_TBS_REASON_UNSPECIFIED                       0x09
+#define BT_TBS_REASON_UNSPECIFIED                       0x09U
 /** @} */
 
 /**
@@ -102,37 +103,37 @@ extern "C" {
  * @{
  */
 /** The opcode write was successful. */
-#define BT_TBS_RESULT_CODE_SUCCESS                0x00
+#define BT_TBS_RESULT_CODE_SUCCESS                0x00U
 /** An invalid opcode was used for the Call Control Point write. */
-#define BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED   0x01
+#define BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED   0x01U
 /** The requested operation cannot be completed. */
-#define BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE 0x02
+#define BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE 0x02U
 /** The Call Index used for the Call Control Point write is invalid. */
-#define BT_TBS_RESULT_CODE_INVALID_CALL_INDEX     0x03
+#define BT_TBS_RESULT_CODE_INVALID_CALL_INDEX     0x03U
 /**
  * The opcode written to the Call Control Point was received when the current Call State for the
  * Call Index was not in the expected state.
  */
-#define BT_TBS_RESULT_CODE_STATE_MISMATCH         0x04
+#define BT_TBS_RESULT_CODE_STATE_MISMATCH         0x04U
 /** Lack of internal resources to complete the requested action. */
-#define BT_TBS_RESULT_CODE_OUT_OF_RESOURCES       0x05
+#define BT_TBS_RESULT_CODE_OUT_OF_RESOURCES       0x05U
 /** The Outgoing URI is incorrect or invalid when an Originate opcode is sent. */
-#define BT_TBS_RESULT_CODE_INVALID_URI            0x06
+#define BT_TBS_RESULT_CODE_INVALID_URI            0x06U
 /** @} */
 
 /**
- * @name Optional feature bits
+ * @name Optional opcodes bits
  *
- * Optional features that can be supported. See bt_tbs_client_read_optional_opcodes() on how to
+ * Optional opcodes that can be supported. See bt_tbs_client_read_optional_opcodes() on how to
  * read these from a remote device
  * @{
  */
 /** Local Hold and Local Retrieve Call Control Point Opcodes supported */
-#define BT_TBS_FEATURE_HOLD BIT(0)
+#define BT_TBS_OPTIONAL_OPCODE_HOLD BIT(0U)
 /** Join Call Control Point Opcode supported */
-#define BT_TBS_FEATURE_JOIN BIT(1)
+#define BT_TBS_OPTIONAL_OPCODE_JOIN BIT(1U)
 /** All Control Point Opcodes supported */
-#define BT_TBS_FEATURE_ALL  (BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN)
+#define BT_TBS_OPTIONAL_OPCODE_ALL  (BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN)
 /** @} */
 
 /**
@@ -140,35 +141,11 @@ extern "C" {
  * @{
  */
 /** No service */
-#define BT_TBS_SIGNAL_STRENGTH_NO_SERVICE               0
+#define BT_TBS_SIGNAL_STRENGTH_NO_SERVICE               0U
 /** Maximum signal strength */
-#define BT_TBS_SIGNAL_STRENGTH_MAX                      100
+#define BT_TBS_SIGNAL_STRENGTH_MAX                      100U
 /** Signal strength is unknown  */
-#define BT_TBS_SIGNAL_STRENGTH_UNKNOWN                  255
-/** @} */
-
-/**
- * @name Bearer Technology
- * @{
- */
-/** 3G */
-#define BT_TBS_TECHNOLOGY_3G                       0x01
-/** 4G */
-#define BT_TBS_TECHNOLOGY_4G                       0x02
-/** Long-term evolution (LTE) */
-#define BT_TBS_TECHNOLOGY_LTE                      0x03
-/** Wifi */
-#define BT_TBS_TECHNOLOGY_WIFI                     0x04
-/** 5G */
-#define BT_TBS_TECHNOLOGY_5G                       0x05
-/** Global System for Mobile Communications (GSM) */
-#define BT_TBS_TECHNOLOGY_GSM                      0x06
-/** Code-Division Multiple Access (CDMA) */
-#define BT_TBS_TECHNOLOGY_CDMA                     0x07
-/** 2G */
-#define BT_TBS_TECHNOLOGY_2G                       0x08
-/** Wideband Code-Division Multiple Access (WCDMA) */
-#define BT_TBS_TECHNOLOGY_WCDMA                    0x09
+#define BT_TBS_SIGNAL_STRENGTH_UNKNOWN                  255U
 /** @} */
 
 /**
@@ -176,9 +153,9 @@ extern "C" {
  * @{
  */
 /** Inband ringtone enabled */
-#define BT_TBS_STATUS_FLAG_INBAND_RINGTONE BIT(0)
+#define BT_TBS_STATUS_FLAG_INBAND_RINGTONE BIT(0U)
 /** Server is in silent mod */
-#define BT_TBS_STATUS_FLAG_SILENT_MOD      BIT(1)
+#define BT_TBS_STATUS_FLAG_SILENT_MOD      BIT(1U)
 /** @} */
 
 /**
@@ -186,11 +163,11 @@ extern "C" {
  * @{
  */
 /** If set, call is outgoing else incoming */
-#define BT_TBS_CALL_FLAG_OUTGOING            BIT(0)
+#define BT_TBS_CALL_FLAG_OUTGOING            BIT(0U)
 /** If set call is withheld, else not withheld */
-#define BT_TBS_CALL_FLAG_WITHHELD            BIT(1)
+#define BT_TBS_CALL_FLAG_WITHHELD            BIT(1U)
 /** If set call is withheld by network, else provided by network */
-#define BT_TBS_CALL_FLAG_WITHHELD_BY_NETWORK BIT(2)
+#define BT_TBS_CALL_FLAG_WITHHELD_BY_NETWORK BIT(2U)
 /** @} */
 
 /**
@@ -199,14 +176,14 @@ extern "C" {
  * whenever the client should perform on action on the GTBS instance of the
  * server, rather than any of the specific Telephone Bearer Service instances.
  */
-#define BT_TBS_GTBS_INDEX                               0xFF
+#define BT_TBS_GTBS_INDEX                               0xFFU
 
 /** Maximum size of bearer uniform caller identifier (UCI)
  *
  * Includes the NULL terminator.
  * Allowed values are defined by Bluetooth Assigned Numbers.
  */
-#define BT_TBS_MAX_UCI_SIZE 6
+#define BT_TBS_MAX_UCI_SIZE 6U
 
 /**
  * @struct bt_tbs_instance
@@ -477,7 +454,7 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name);
  * @return int           BT_TBS_RESULT_CODE_* if positive or 0,
  *                       errno value if negative.
  */
-int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology);
+int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_bearer_tech new_technology);
 
 /**
  * @brief Update the signal strength reported by the server.
@@ -540,6 +517,9 @@ struct bt_tbs_register_param {
      */
     char *uri_schemes_supported;
 
+    /** @brief The technology of the bearer */
+    enum bt_bearer_tech technology;
+
     /**
      * @brief Whether this bearer shall be registered as a Generic Telephone Bearer server
      *
@@ -556,18 +536,19 @@ struct bt_tbs_register_param {
     bool authorization_required;
 
     /**
-     * @brief The technology of the bearer
+     * @brief The optional supported opcodes of the bearer
      *
-     * See the BT_TBS_TECHNOLOGY_* values.
+     * See the BT_TBS_OPTIONAL_OPCODE_* values.
      */
-    uint8_t technology;
+    uint16_t optional_opcodes;
 
     /**
-     * @brief The optional supported features of the bearer
+     * @deprecated Use optional_opcodes.
      *
-     * See the BT_TBS_FEATURE_* values.
+     * Kept so applications written before Zephyr v4.5.0 still build; the esp_ble_audio
+     * API merges it into optional_opcodes.
      */
-    uint8_t supported_features;
+    uint8_t supported_features __attribute__((deprecated("Use optional_opcodes")));
 };
 
 /**
@@ -768,8 +749,16 @@ struct bt_tbs_client_cb {
     bt_tbs_client_read_string_cb         bearer_provider_name;
     /** Bearer UCI has been read */
     bt_tbs_client_read_string_cb         bearer_uci;
-    /** Bearer technology has been read */
-    bt_tbs_client_read_value_cb          technology;
+    /**
+     * @brief Bearer technology has been read.
+     *
+     * @param conn The connection used in the function.
+     * @param err Error value. BT_TBS_CLIENT_RESULT_CODE_* or GATT error.
+     * @param inst_index The index of the TBS instance that was updated.
+     * @param tech The technology read. The value may be outside the values of the enum.
+     */
+    void (*technology)(struct bt_conn *conn, int err, uint8_t inst_index,
+                       enum bt_bearer_tech tech);
     /** Bearer URI list has been read */
     bt_tbs_client_read_string_cb         uri_list;
     /** Bearer signal strength has been read */

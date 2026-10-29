@@ -113,7 +113,7 @@ esp_err_t esp_ble_audio_bap_unicast_server_unregister_cb(const esp_ble_audio_bap
 
 esp_err_t esp_ble_audio_bap_unicast_server_config_ase_with_dir(uint16_t conn_handle,
                                                                esp_ble_audio_bap_stream_t *stream,
-                                                               esp_ble_audio_codec_cfg_t *codec_cfg,
+                                                               const esp_ble_audio_codec_cfg_t *codec_cfg,
                                                                const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref,
                                                                esp_ble_audio_dir_t dir)
 {
@@ -145,7 +145,7 @@ unlock:
 
 esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
                                                       esp_ble_audio_bap_stream_t *stream,
-                                                      esp_ble_audio_codec_cfg_t *codec_cfg,
+                                                      const esp_ble_audio_codec_cfg_t *codec_cfg,
                                                       const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref)
 {
     /* Direction-agnostic: dir 0 lets the library pick the first free ASE. */
@@ -318,7 +318,7 @@ unlock:
 esp_err_t esp_ble_audio_bap_stream_config(uint16_t conn_handle,
                                           esp_ble_audio_bap_stream_t *stream,
                                           esp_ble_audio_bap_ep_t *ep,
-                                          esp_ble_audio_codec_cfg_t *codec_cfg)
+                                          const esp_ble_audio_codec_cfg_t *codec_cfg)
 {
     esp_err_t ret = ESP_OK;
     void *conn;
@@ -443,7 +443,7 @@ esp_err_t esp_ble_audio_bap_stream_stop(esp_ble_audio_bap_stream_t *stream)
 
 #if CONFIG_BT_BAP_UNICAST
 esp_err_t esp_ble_audio_bap_stream_reconfig(esp_ble_audio_bap_stream_t *stream,
-                                            esp_ble_audio_codec_cfg_t *codec_cfg)
+                                            const esp_ble_audio_codec_cfg_t *codec_cfg)
 {
     int err;
 
@@ -1022,6 +1022,7 @@ esp_err_t esp_ble_audio_bap_scan_delegator_mod_src(const esp_ble_audio_bap_scan_
 
     if (param == NULL ||
             param->broadcast_id > ESP_BLE_AUDIO_BROADCAST_ID_MAX ||
+            param->encrypt_state > ESP_BLE_AUDIO_BAP_BIG_ENC_STATE_BAD_CODE ||
             param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS ||
             (param->num_subgroups > 0 && param->subgroups == NULL)) {
         return ESP_ERR_INVALID_ARG;

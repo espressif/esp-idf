@@ -28,17 +28,25 @@
 #include "common/host.h"
 #include "common/audio_attr.h"
 
-#include "../../../lib/include/audio.h"
+#include "../../../lib/include/lib_exports.h"
 
 LOG_MODULE_REGISTER(LEA_HAS, CONFIG_BT_ISO_LOG_LEVEL);
 
 static const ble_uuid16_t has_uuid_features = BLE_UUID16_INIT(BT_UUID_HAS_HEARING_AID_FEATURES_VAL);
+#if CONFIG_BT_HAS_PRESET_SUPPORT
 static const ble_uuid16_t has_uuid_control_point = BLE_UUID16_INIT(BT_UUID_HAS_PRESET_CONTROL_POINT_VAL);
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
+#if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
 static const ble_uuid16_t has_uuid_preset_index = BLE_UUID16_INIT(BT_UUID_HAS_ACTIVE_PRESET_INDEX_VAL);
+#endif /* CONFIG_BT_HAS_ACTIVE_PRESET_INDEX */
 
 static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t has_features_handle;
+#if CONFIG_BT_HAS_PRESET_SUPPORT
 static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t has_control_point_handle;
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
+#if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
 static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t has_preset_index_handle;
+#endif /* CONFIG_BT_HAS_ACTIVE_PRESET_INDEX */
 
 static struct ble_gatt_svc_def gatt_svc_has[] = {
     {
@@ -70,6 +78,7 @@ static void has_svc_add_features_chr(struct ble_gatt_chr_def *chr)
     LOG_DBG("[N]HasSvcAddFeatChr[%04x]", chr->flags);
 }
 
+#if CONFIG_BT_HAS_PRESET_SUPPORT
 static void has_svc_add_control_point_chr(struct ble_gatt_chr_def *chr)
 {
     chr->uuid = &has_uuid_control_point.u;
@@ -87,6 +96,7 @@ static void has_svc_add_control_point_chr(struct ble_gatt_chr_def *chr)
 
     LOG_DBG("[N]HasSvcAddControlPointChr[%04x]", chr->flags);
 }
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 #if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
 static void has_svc_add_preset_index_chr(struct ble_gatt_chr_def *chr)
@@ -130,9 +140,15 @@ int bt_le_nimble_has_attr_handle_set(void)
 #if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
     BT_LE_ASSERT(has_preset_index_handle >= 2);
     end_handle = has_preset_index_handle + 1; /* cccd attr handle */
-#else
+#elif CONFIG_BT_HAS_PRESET_SUPPORT
     BT_LE_ASSERT(has_control_point_handle >= 2);
     end_handle = has_control_point_handle + 1; /* cccd attr handle */
+#elif CONFIG_BT_HAS_FEATURES_NOTIFIABLE
+    BT_LE_ASSERT(has_features_handle >= 2);
+    end_handle = has_features_handle + 1; /* cccd attr handle */
+#else
+    BT_LE_ASSERT(has_features_handle >= 2);
+    end_handle = has_features_handle;
 #endif
 
     LOG_DBG("[N]HasAttrHdlSet[%u][%u][%u]",
@@ -201,13 +217,17 @@ int bt_le_nimble_has_init(void)
 {
     bool has_added = false;
     uint8_t chr_count;
+    uint8_t chr_idx = 0;
     int rc;
 
-    /* An additional characteristic consist of all 0s indicating end of characteristics */
+    /* Features, the optional Preset Control Point and Active Preset Index, and an
+     * all-0 entry ending the characteristics; the lib table has the same set. */
+    chr_count = 1 + 1;
+#if CONFIG_BT_HAS_PRESET_SUPPORT
+    chr_count += 1;
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 #if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
-    chr_count = 1 + 1 + 1 + 1;
-#else /* CONFIG_BT_HAS_ACTIVE_PRESET_INDEX */
-    chr_count = 1 + 1 + 1;
+    chr_count += 1;
 #endif /* CONFIG_BT_HAS_ACTIVE_PRESET_INDEX */
 
     LOG_DBG("[N]HasInit[%u]", chr_count);
@@ -215,12 +235,14 @@ int bt_le_nimble_has_init(void)
     gatt_svc_has->characteristics = bt_le_ext_calloc(chr_count, sizeof(struct ble_gatt_chr_def));
     BT_LE_ASSERT(gatt_svc_has->characteristics);
 
-    has_svc_add_features_chr((void *)(gatt_svc_has->characteristics + 0));
+    has_svc_add_features_chr((void *)(gatt_svc_has->characteristics + chr_idx++));
 
-    has_svc_add_control_point_chr((void *)(gatt_svc_has->characteristics + 1));
+#if CONFIG_BT_HAS_PRESET_SUPPORT
+    has_svc_add_control_point_chr((void *)(gatt_svc_has->characteristics + chr_idx++));
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 #if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
-    has_svc_add_preset_index_chr((void *)(gatt_svc_has->characteristics + 2));
+    has_svc_add_preset_index_chr((void *)(gatt_svc_has->characteristics + chr_idx++));
 #endif /* CONFIG_BT_HAS_ACTIVE_PRESET_INDEX */
 
     rc = ble_gatts_count_cfg(gatt_svc_has);

@@ -10,7 +10,6 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/crc.h>
 

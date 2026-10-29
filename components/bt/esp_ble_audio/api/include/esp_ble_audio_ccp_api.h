@@ -158,7 +158,9 @@ esp_err_t esp_ble_audio_ccp_call_control_client_unregister_cb(
  *
  * @param   client  The client to get the bearers of.
  * @param   bearers The bearers struct that will be populated
- *                  with the bearers of @p client.
+ *                  with the bearers of @p client. @p bearers->tbs_bearers
+ *                  must point to an array of
+ *                  CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT entries.
 
  * @return  ESP_OK on success, or an error code on failure.
  */

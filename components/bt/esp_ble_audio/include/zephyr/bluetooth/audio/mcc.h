@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_H_
 
 /**
  * @brief Bluetooth Media Control Client (MCC) interface
@@ -206,7 +206,7 @@ typedef void (*bt_mcc_read_current_track_obj_id_cb)(struct bt_conn *conn, int er
 typedef void (*bt_mcc_set_current_track_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
- * @brief Callback function for bt_mcc_read_next_track_obj_id_obj()
+ * @brief Callback function for bt_mcc_read_next_track_obj_id()
  *
  * Called when the next track object ID is read or notified
  *
@@ -958,4 +958,4 @@ struct bt_ots_client *bt_mcc_otc_inst(struct bt_conn *conn);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_H_ */

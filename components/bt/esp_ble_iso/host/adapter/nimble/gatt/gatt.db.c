@@ -1418,7 +1418,52 @@ end:
 
     params->func(conn, found, params);
 
+    /* Discovery writes each CCC once and bt_gatt_subscribe() does not write it, so a
+     * CCC that an unsubscribe on this link turned off is written again here
+     * (Bluedroid writes the CCC on every subscribe). A write that fails clears
+     * cccd_write again (gatt.nrp.c); bt_gatt_subscribe() has already called subscribe(). */
+    if (found != NULL && achrc->cccd_write == 0) {
+        int err = bt_le_nimble_gattc_write_ccc(conn, sub_params);
+
+        if (err) {
+            LOG_WRN("[N]GattcDbCccReEnableFail[%u][%d]", sub_params->ccc_handle, err);
+        } else {
+            achrc->cccd_write = 1;
+        }
+    }
+
     return rc;
+}
+
+void bt_le_nimble_gattc_db_ccc_disabled(uint16_t conn_handle, uint16_t ccc_handle)
+{
+    struct gattc_db_inc_svc *ainc_svc;
+    struct gattc_db_chrc *achrc;
+    struct gattc_db_svc *asvc;
+    struct gattc_db *adb;
+
+    adb = gattc_db_find(conn_handle);
+    if (adb == NULL) {
+        return;
+    }
+
+    SYS_SLIST_FOR_EACH_CONTAINER(&adb->svc_list, asvc, node) {
+        SYS_SLIST_FOR_EACH_CONTAINER(&asvc->inc_svc_list, ainc_svc, node) {
+            SYS_SLIST_FOR_EACH_CONTAINER(&ainc_svc->chrc_list, achrc, node) {
+                if (achrc->cccd.handle == ccc_handle) {
+                    achrc->cccd_write = 0;
+                    return;
+                }
+            }
+        }
+
+        SYS_SLIST_FOR_EACH_CONTAINER(&asvc->chrc_list, achrc, node) {
+            if (achrc->cccd.handle == ccc_handle) {
+                achrc->cccd_write = 0;
+                return;
+            }
+        }
+    }
 }
 
 int bt_le_nimble_gattc_db_disc_all_dscs(struct bt_conn *conn,

@@ -80,6 +80,12 @@ static uint8_t code_attempts;
 static int16_t known_src_id = -1;
 static uint32_t known_broadcast_id;
 
+/* An Add or Modify Source written and the delegator not yet synced or failed.
+ * "Not synced" in between is it still working on the request (BASS 3.1.1.4),
+ * whether it comes before the write response or after; a Modify sent on it is
+ * refused while any write is in flight (BapBaModSrcInstBusy). */
+static bool src_sync_pending;
+
 /* A SyncInfo the delegator asked for while we held no sync, -1 for none. The
  * only request that has to outlive the hunt for the source. */
 static int16_t past_pending_src_id = -1;
@@ -253,6 +259,9 @@ static int add_source(void)
         return -EIO;
     }
 
+    src_sync_pending = true;
+
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Add Source sent: id 0x%06lx sid %u pa_interval %u subgroups %u",
              (unsigned long)src_broadcast_id, src_sid, src_pa_interval,
              subgroup_count);
@@ -278,6 +287,8 @@ static int modify_source(uint8_t src_id)
         ESP_LOGE(TAG, "Failed to modify source, err %d", err);
         return -EIO;
     }
+
+    src_sync_pending = true;
 
     ESP_LOGI(TAG, "Modify Source sent: src_id %u pa_interval %u subgroups %u",
              src_id, src_pa_interval, subgroup_count);
@@ -348,6 +359,7 @@ static bool base_store_cb(uint8_t type, const uint8_t *data,
         return false;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "BASE received (%u subgroup(s))", base_subgroup_count);
 
     subgroup_count = 0;
@@ -406,6 +418,7 @@ static void assistant_discover_cb(esp_ble_conn_t *conn, int err,
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "BASS discovered, %u receive state(s)", state_count);
 
     recv_state_count = state_count;
@@ -454,6 +467,7 @@ static void send_past(uint8_t src_id)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "SyncInfo transferred for src_id %u", src_id);
 }
 #endif /* CONFIG_EXAMPLE_PAST */
@@ -482,6 +496,7 @@ static void delegator_state_changed(const esp_ble_audio_bap_scan_delegator_recv_
 #if CONFIG_EXAMPLE_PAST
         request_past(state->src_id);
 #else
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGW(TAG, "Sink wants SyncInfo but PAST is not built in");
 #endif /* CONFIG_EXAMPLE_PAST */
         return;
@@ -489,6 +504,14 @@ static void delegator_state_changed(const esp_ble_audio_bap_scan_delegator_recv_
     case ESP_BLE_AUDIO_BAP_PA_STATE_NOT_SYNCED:
     case ESP_BLE_AUDIO_BAP_PA_STATE_FAILED:
     case ESP_BLE_AUDIO_BAP_PA_STATE_NO_PAST:
+        /* The delegator still taking our request, not a sync that lapsed. */
+        if (src_sync_pending &&
+                state->pa_sync_state == ESP_BLE_AUDIO_BAP_PA_STATE_NOT_SYNCED) {
+            return;
+        }
+
+        src_sync_pending = false;
+
         /* Not on the source — whether it never got there or the broadcast
          * stopped and its sync lapsed, the answer is the same. */
         drive_delegator();
@@ -498,9 +521,12 @@ static void delegator_state_changed(const esp_ble_audio_bap_scan_delegator_recv_
         break;
     }
 
+    src_sync_pending = false;
+
     /* Synced. Only the broadcast code is ours to supply; whether a BIS is up
      * yet is between the delegator and the air. */
     if (state->encrypt_state == ESP_BLE_AUDIO_BAP_BIG_ENC_STATE_BAD_CODE) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGW(TAG, "Sink rejected the broadcast code");
     }
 
@@ -528,6 +554,7 @@ static void assistant_recv_state_cb(esp_ble_conn_t *conn, int err,
                  state->pa_sync_state, state->encrypt_state);
 
         for (uint8_t i = 0; i < state->num_subgroups && state->subgroups; i++) {
+            /* Needed by internal regression tests: do not change this log. */
             ESP_LOGI(TAG, "  subgroup %u bis_sync 0x%08lx",
                      i, (unsigned long)state->subgroups[i].bis_sync);
         }
@@ -580,9 +607,11 @@ static void assistant_add_src_cb(esp_ble_conn_t *conn, int err)
         /* The BASE is still good, so a retry would write the same rejected
          * request; wait for the delegator's state to change instead. */
         ESP_LOGE(TAG, "Add Source failed, err %d", err);
+        src_sync_pending = false;
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Add Source OK");
 
     rc = esp_ble_audio_bap_broadcast_assistant_scan_stop(conn_handle);
@@ -596,6 +625,10 @@ static void assistant_mod_src_cb(esp_ble_conn_t *conn, int err)
     (void)conn;
 
     ESP_LOGI(TAG, "Modify Source: %s", err ? "failed" : "ok");
+
+    if (err) {
+        src_sync_pending = false;
+    }
 }
 
 static void assistant_broadcast_code_cb(esp_ble_conn_t *conn, int err)
@@ -654,6 +687,7 @@ static void ext_scan_recv_sink(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Broadcast sink found: %02x:%02x:%02x:%02x:%02x:%02x",
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->ext_scan_recv.addr.val));
 
@@ -768,6 +802,7 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
     recv_state_count = 0;
     recv_state_read_idx = 0;
     recv_states_synced = false;
+    src_sync_pending = false;
 
     if (sync_handle != PA_SYNC_HANDLE_INIT) {
         pa_sync_terminate(sync_handle);
@@ -796,6 +831,7 @@ static void security_change(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
              event->security_change.conn_handle,
              event->security_change.sec_level,
@@ -831,6 +867,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
     sync_handle = event->pa_sync.sync_handle;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "PA synced: sync_handle %u, waiting for BASE", sync_handle);
 
 #if CONFIG_EXAMPLE_PAST

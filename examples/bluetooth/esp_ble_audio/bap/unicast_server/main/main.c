@@ -280,6 +280,7 @@ static int enable_cb(esp_ble_audio_bap_stream_t *stream,
         return err;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[%s #%d] Enable request: %lu Hz, %lu us, %u block(s)/SDU",
              stream_dir_str(stream), stream_index(stream),
              freq_hz, frame_dur_us, frame_blocks);
@@ -400,6 +401,7 @@ static void stream_enabled_cb(esp_ble_audio_bap_stream_t *stream)
 
 static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[%s #%d] Stream started",
              stream_dir_str(stream), stream_index(stream));
 
@@ -516,6 +518,7 @@ static int set_pacs_available_contexts(void)
         }
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "PACS: locations and contexts set");
 
     return 0;
@@ -561,6 +564,7 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->acl_connect.conn_handle, event->acl_connect.role,
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
@@ -583,6 +587,7 @@ static void security_change(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
              event->security_change.conn_handle,
              event->security_change.sec_level,

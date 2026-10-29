@@ -276,6 +276,15 @@ esp_err_t esp_ble_audio_aics_discover(uint16_t conn_handle, esp_ble_audio_aics_t
 esp_ble_audio_aics_t *esp_ble_audio_aics_client_free_instance_get(void);
 
 /**
+ * @brief   Free an instance received from esp_ble_audio_aics_client_free_instance_get().
+ *
+ * @param   inst    The instance pointer.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_aics_client_free_instance(esp_ble_audio_aics_t *inst);
+
+/**
  * @brief   Registers the callbacks for the Audio Input Control Service client.
  *
  * @param   inst    The instance pointer.

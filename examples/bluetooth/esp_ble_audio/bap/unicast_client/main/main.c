@@ -60,7 +60,7 @@ static size_t configured_sink_stream_count;
 static size_t configured_source_stream_count;
 #define configured_stream_count (configured_sink_stream_count + configured_source_stream_count)
 
-/* Number of streams that have entered codec-configured (ops.configured).
+/* Number of streams that have entered codec-configured (ops.codec_configured).
  * CP config ACK can arrive while the EP is still idle; QoS must wait for this.
  */
 static size_t codec_configured_count;
@@ -379,6 +379,7 @@ static int create_group(void)
         return err;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Unicast group created (%zu pair(s))", params_count);
 
     return 0;
@@ -403,7 +404,7 @@ static void try_create_group_and_qos(void)
     int err;
 
     /* Wait until every successful Config CP has a matching ASE state
-     * notification (ops.configured → EP codec-configured). Calling
+     * notification (ops.codec_configured → EP codec-configured). Calling
      * qos from config_cb alone races the last stream still in idle.
      */
     if (!all_config_acked || unicast_group != NULL) {
@@ -869,8 +870,8 @@ static void stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
 }
 
 static esp_ble_audio_bap_stream_ops_t stream_ops = {
-    .configured       = stream_configured_cb,
-    .qos_set          = stream_qos_set_cb,
+    .codec_configured = stream_configured_cb,
+    .qos_configured   = stream_qos_set_cb,
     .enabled          = stream_enabled_cb,
     .started          = stream_started_cb,
     .metadata_updated = stream_metadata_updated_cb,
@@ -936,7 +937,7 @@ static void qos_cb(esp_ble_audio_bap_stream_t *stream,
 {
     log_rsp("QoS", stream, rsp_code, reason);
 
-    /* Mark failure from CP reject. Success waits for ops.qos_set (ASE
+    /* Mark failure from CP reject. Success waits for ops.qos_configured (ASE
      * qos-configured) — enabling on CP ACK alone races codec-configured.
      */
     if (rsp_code != ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS) {
@@ -1049,6 +1050,7 @@ static void discover_cb(esp_ble_conn_t *conn, int err, esp_ble_audio_dir_t dir)
         if (err) {
             ESP_LOGE(TAG, "[SNK] Discovery failed, err %d", err);
         } else {
+            /* Needed by internal regression tests: do not change this log. */
             ESP_LOGI(TAG, "[SNK] Discovery complete");
 
             discover_sources();
@@ -1162,6 +1164,7 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Unicast server found: type %u contexts 0x%08x",
              adv.announcement_type, adv.audio_contexts);
 
@@ -1196,6 +1199,7 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->acl_connect.conn_handle, event->acl_connect.role,
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
@@ -1243,6 +1247,7 @@ static void security_change(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
              event->security_change.conn_handle,
              event->security_change.sec_level,

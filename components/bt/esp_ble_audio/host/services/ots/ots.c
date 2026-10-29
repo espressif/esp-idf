@@ -18,8 +18,6 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#include <zephyr/sys/check.h>
-
 #include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
@@ -437,7 +435,7 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
     int err;
     struct bt_gatt_ots_object *obj;
 
-    CHECKIF(!BT_OTS_VALID_OBJ_ID(id)) {
+    if (!BT_OTS_VALID_OBJ_ID(id)) {
         LOG_WRN("OtsInvObjId[%016llx]", id);
 
         return -EINVAL;

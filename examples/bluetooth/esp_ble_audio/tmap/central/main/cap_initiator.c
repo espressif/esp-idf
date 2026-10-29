@@ -537,8 +537,8 @@ static void unicast_stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, u
 }
 
 static esp_ble_audio_bap_stream_ops_t unicast_stream_ops = {
-    .configured       = unicast_stream_configured_cb,
-    .qos_set          = unicast_stream_qos_set_cb,
+    .codec_configured = unicast_stream_configured_cb,
+    .qos_configured   = unicast_stream_qos_set_cb,
     .enabled          = unicast_stream_enabled_cb,
     .started          = unicast_stream_started_cb,
     .metadata_updated = unicast_stream_metadata_updated_cb,
@@ -590,6 +590,7 @@ static void unicast_start_complete_cb(int err, esp_ble_conn_t *conn)
     if (err) {
         ESP_LOGE(TAG, "Unicast start completed, err %d", err);
     } else {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Unicast start completed");
     }
 
@@ -680,6 +681,7 @@ static int unicast_group_create(void)
         return err;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Created unicast group: %u CIS", (unsigned)ARRAY_SIZE(pair_params));
 
     return 0;

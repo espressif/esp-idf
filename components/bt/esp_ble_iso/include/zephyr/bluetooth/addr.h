@@ -114,30 +114,39 @@ static inline int bt_addr_le_cmp(const bt_addr_le_t *a, const bt_addr_le_t *b)
  *  @retval #true if the two addresses are equal
  *  @retval #false otherwise
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline bool bt_addr_le_eq(const bt_addr_le_t *a, const bt_addr_le_t *b)
 {
     return bt_addr_le_cmp(a, b) == 0;
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Copy Bluetooth device address.
  *
  *  @param dst Bluetooth device address destination buffer.
  *  @param src Bluetooth device address source buffer.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline void bt_addr_copy(bt_addr_t *dst, const bt_addr_t *src)
 {
     memcpy(dst, src, sizeof(*dst));
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Copy Bluetooth LE device address.
  *
  *  @param dst Bluetooth LE device address destination buffer.
  *  @param src Bluetooth LE device address source buffer.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 {
     memcpy(dst, src, sizeof(*dst));
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** Check if a Bluetooth LE random address is resolvable private address. */
 #define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
@@ -233,6 +242,7 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
  *
  *  @return Number of successfully formatted bytes from binary address.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
                                     size_t len)
 {
@@ -260,6 +270,7 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
                     addr->a.val[5], addr->a.val[4], addr->a.val[3],
                     addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @}

@@ -345,6 +345,7 @@ static void check_sync_broadcast(void)
         streams[i] = &broadcast_sink.cap_streams[i].bap_stream;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Syncing to broadcast %p with bitfield 0x%08X (%u streams)",
              broadcast_sink.sink, sync_bitfield, stream_count);
 
@@ -374,6 +375,7 @@ static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
     uint8_t idx = broadcast_stream_idx(stream);
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SNK #%u] Stream started", idx);
 
     if (idx < ARRAY_SIZE(rx_metrics)) {
@@ -486,6 +488,7 @@ static void base_recv_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
     memcpy(broadcast_sink.received_base, base, base_size);
 
     if (!flag_test_and_set(FLAG_BASE_RECEIVED)) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "BASE received");
 
         check_sync_broadcast();
@@ -802,6 +805,7 @@ void broadcast_pa_synced(esp_ble_audio_gap_app_event_t *event)
              broadcast_sink.recv_state->addr.type == addr_type &&
              memcmp(broadcast_sink.recv_state->addr.a.val, addr, sizeof(addr)) == 0 &&
              broadcast_sink.recv_state->adv_sid == event->pa_sync.sid)) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "PA sync %u synced for broadcast sink", event->pa_sync.sync_handle);
 
         if (broadcast_sink.sync_handle == PA_SYNC_HANDLE_INIT) {
@@ -981,6 +985,7 @@ int cap_acceptor_broadcast_init(void)
         cbs_registered = true;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "CAP acceptor broadcast initialized");
 
     return 0;

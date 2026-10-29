@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MICP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_MICP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_H_
 
 /**
  * @brief Microphone Control Profile (MICP)
@@ -35,11 +35,17 @@ extern "C" {
 #endif
 
 /**
+ * Defines the maximum number of Microphone Control Service instances for the
+ * Microphone Control Profile Microphone Device
+ */
+#define BT_MICP_MIC_DEV_AICS_CNT CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT
+
+/**
  * @name Application error codes
  * @{
  */
 /** Mute/unmute commands are disabled. */
-#define BT_MICP_ERR_MUTE_DISABLED                  0x80
+#define BT_MICP_ERR_MUTE_DISABLED                  0x80U
 /** @} */
 
 /**
@@ -47,11 +53,11 @@ extern "C" {
  * @{
  */
 /** The microphone state is unmuted */
-#define BT_MICP_MUTE_UNMUTED                       0x00
+#define BT_MICP_MUTE_UNMUTED                       0x00U
 /** The microphone state is muted */
-#define BT_MICP_MUTE_MUTED                         0x01
+#define BT_MICP_MUTE_MUTED                         0x01U
 /** The microphone state is disabled and cannot be muted or unmuted */
-#define BT_MICP_MUTE_DISABLED                      0x02
+#define BT_MICP_MUTE_DISABLED                      0x02U
 /** @} */
 
 /**
@@ -245,10 +251,10 @@ int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
                               struct bt_conn **conn);
 
 /**
- * @brief Get the volume controller from a connection pointer
+ * @brief Get the Microphone Controller from a connection pointer
  *
- * Get the Volume Control Profile Volume Controller pointer from a connection pointer.
- * Only volume controllers that have been initiated via bt_micp_mic_ctlr_discover() can be
+ * Get the Microphone Control Profile Microphone Controller pointer from a connection pointer.
+ * Only microphone controllers that have been initiated via bt_micp_mic_ctlr_discover() can be
  * retrieved.
  *
  * @param conn     Connection pointer.
@@ -319,4 +325,4 @@ int bt_micp_mic_ctlr_cb_register(struct bt_micp_mic_ctlr_cb *cb);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MICP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_H_ */

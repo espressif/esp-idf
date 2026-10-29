@@ -50,6 +50,7 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
     int chan_idx = bis_chan_index_get(chan);
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[BIS #%d] Connected", chan_idx);
 
     /* New BIS session — reset RX counters so milestones reflect
@@ -203,6 +204,7 @@ static void pa_sync(esp_ble_iso_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "PA synced: handle %u sid %u phy %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->pa_sync.sync_handle, event->pa_sync.sid, event->pa_sync.adv_phy,
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->pa_sync.addr.val));

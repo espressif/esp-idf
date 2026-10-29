@@ -444,6 +444,7 @@ static void stream_started(esp_ble_audio_bap_stream_t *stream)
     struct audio_source *src;
     int err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[%s #%d] Stream started",
              stream_dir_str(stream), stream_index(stream));
 

@@ -30,7 +30,7 @@
 #include "common/host.h"
 #include "common/audio_attr.h"
 
-#include "../../../lib/include/audio.h"
+#include "../../../lib/include/lib_exports.h"
 
 LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
 
