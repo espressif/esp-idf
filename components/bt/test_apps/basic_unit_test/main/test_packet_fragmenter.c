@@ -24,6 +24,7 @@
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 
 #include "hci/hci_internals.h"
+#include "stack/l2cdefs.h"
 #include "hci/hci_layer.h"
 #include "hci/packet_fragmenter.h"
 #include "osi/allocator.h"
@@ -209,6 +210,76 @@ TEST_CASE("fragmenter unknown continuation returns credit", "[packet_fragmenter]
     s_frag->reassemble_and_dispatch(cont);
     TEST_ASSERT_EQUAL_UINT32(1, s_credit_total);
     TEST_ASSERT_EQUAL_UINT16(TEST_HANDLE, s_credit_last_handle);
+
+    frag_end();
+}
+
+TEST_CASE("fragmenter oversized START is dropped and returns credit", "[packet_fragmenter]")
+{
+    /* 60000 passes the uint16 overflow guard and is rejected by the pool cap. */
+    uint8_t start_payload[2] = {0x60, 0xEA};
+    BT_HDR *start;
+
+    frag_begin();
+
+    start = make_acl(TEST_HANDLE | START_FLAG, start_payload, sizeof(start_payload));
+    s_frag->reassemble_and_dispatch(start);
+    TEST_ASSERT_EQUAL_UINT32(1, s_credit_total);
+    TEST_ASSERT_EQUAL_UINT16(TEST_HANDLE, s_credit_last_handle);
+    TEST_ASSERT_EQUAL_UINT32(0, s_reassembled_count);
+
+    /* Nothing was pinned, so flush does not return another credit. */
+    s_frag->flush_reassembly(TEST_HANDLE);
+    TEST_ASSERT_EQUAL_UINT32(1, s_credit_total);
+
+    frag_end();
+}
+
+TEST_CASE("fragmenter START at reassembly cap is held until flush", "[packet_fragmenter]")
+{
+    /* full_length + sizeof(BT_HDR) == BT_DEFAULT_BUFFER_SIZE is still accepted. */
+    uint16_t l2cap_length = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR)
+                            - HCI_ACL_PREAMBLE_SIZE - L2CAP_PKT_OVERHEAD;
+    uint8_t start_payload[2];
+    BT_HDR *start;
+
+    start_payload[0] = (uint8_t)(l2cap_length & 0xFF);
+    start_payload[1] = (uint8_t)(l2cap_length >> 8);
+
+    frag_begin();
+
+    start = make_acl(TEST_HANDLE | START_FLAG, start_payload, sizeof(start_payload));
+    s_frag->reassemble_and_dispatch(start);
+    TEST_ASSERT_EQUAL_UINT32(0, s_credit_total);
+    TEST_ASSERT_EQUAL_UINT32(0, s_reassembled_count);
+
+    s_frag->flush_reassembly(TEST_HANDLE);
+    TEST_ASSERT_EQUAL_UINT32(1, s_credit_total);
+
+    frag_end();
+}
+
+TEST_CASE("fragmenter cleanup drops outstanding partial", "[packet_fragmenter]")
+{
+    uint8_t start_payload[8] = {20, 0, 0x40, 0x00, 1, 2, 3, 4};
+    uint8_t cont_payload[4] = {1, 2, 3, 4};
+    BT_HDR *start;
+    BT_HDR *cont;
+
+    frag_begin();
+
+    start = make_acl(TEST_HANDLE | START_FLAG, start_payload, sizeof(start_payload));
+    s_frag->reassemble_and_dispatch(start);
+    TEST_ASSERT_EQUAL_UINT32(0, s_credit_total);
+
+    s_frag->cleanup();
+    s_frag->init(&s_cbs);
+
+    cont = make_acl(TEST_HANDLE | CONT_FLAG, cont_payload, sizeof(cont_payload));
+    s_frag->reassemble_and_dispatch(cont);
+    /* Partial was released with the map, so this continuation is unknown. */
+    TEST_ASSERT_EQUAL_UINT32(1, s_credit_total);
+    TEST_ASSERT_EQUAL_UINT32(0, s_reassembled_count);
 
     frag_end();
 }

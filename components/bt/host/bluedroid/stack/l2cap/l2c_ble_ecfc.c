@@ -792,6 +792,9 @@ BOOLEAN L2CA_LEEcocReconfig(UINT16 lcids[], UINT8 num, UINT16 new_mtu, UINT16 ne
     UINT8 sig_id;
     int i;
 
+    /* Clamp before the wire check so we never advertise an MPS the HCI fragmenter will drop. */
+    new_mps = L2CAP_LE_CLAMP_MPS(new_mps);
+
     L2C_BLE_ECFC_TRACE_DEBUG("LEEcocReconfig num=%u new_mtu=%u new_mps=%u", num, new_mtu, new_mps);
 
     if (lcids == NULL || num == 0 || num > BLE_MAX_L2CAP_CLIENTS ||
