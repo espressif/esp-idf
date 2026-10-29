@@ -92,15 +92,41 @@ menu "Roaming Methods"
             Note that this moves the responsibility to the AP's network, and hence isn't
             guaranteed to cause the station to attempt to roam each time.
 
+    config ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+        bool "Support 802.11k assisted roaming using neighbor reports"
+        depends on ESP_WIFI_RRM_SUPPORT
+        default n
+        help
+            Use 802.11k Neighbor Report information to scan only AP-advertised
+            channels and look for a better AP, then roam with a directed reconnect.
+            Triggered roam method priority is 802.11v BTM > 802.11k > legacy.
+            11v and 11k do not run a full discovery scan first; only legacy does.
+            Enable periodic RRM monitoring to keep the neighbor channel cache warm.
+            Disabled by default so existing BTM/legacy setups are unchanged unless opted in.
+
     config ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT
-        int "Retry count after which to switch to legacy roaming"
+        int "Retry count for 802.11v BTM roaming"
         depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
-        depends on ESP_WIFI_ROAMING_LEGACY_ROAMING
         range 1 5
         default 2
         help
-            Retry threshold after which the station should stop using Network Assisted
-            roaming methods and start using legacy roaming instead.
+            Number of 802.11v BTM query attempts per association before the station
+            stops using Network Assisted roaming. If 802.11k and/or legacy roaming
+            are also enabled, it falls through to those methods in priority order.
+            If no lower-priority method remains usable, roaming triggers are
+            suppressed until the next association.
+
+    config ESP_WIFI_ROAMING_11K_RETRY_COUNT
+        int "Retry count for 802.11k neighbor report requests"
+        depends on ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
+        range 1 5
+        default 2
+        help
+            Number of Neighbor Report Request retries for the standalone 802.11k
+            roaming path. Independent of the 802.11v BTM retry count. On 11k failure,
+            the station retries NR while attempts remain. After retries are exhausted,
+            it falls back to legacy roaming if enabled; otherwise triggers are suppressed
+            until the next association.
 
     config ESP_WIFI_ROAMING_IP_RENEW_SKIP
         bool "Skip IP renew after roaming"
@@ -153,7 +179,17 @@ menu "Scan Configuration"
             Duration for which the results from the most recent scans can be used
             by the roaming app for determining the roaming candidates.
 
-
+    config ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW
+        int "Neighbor report channel cache expiry window (in seconds)"
+        depends on ESP_WIFI_ROAMING_11K_ASSISTED_ROAM || ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
+        default 10
+        range 5 20
+        help
+            Duration for which channels from the most recent Neighbor Report can be
+            reused for 802.11k channel-restricted scans without sending another
+            Neighbor Report Request. After this window expires the cache is treated
+            as stale and a fresh Neighbor Report is required. Same idea as the scan
+            results expiry window above.
 
 endmenu #"Scan Configuration"
 
@@ -168,10 +204,12 @@ config ESP_WIFI_ROAMING_BACKOFF_TIME
 config ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
     bool "Send periodic neighbor report request to AP for internal list updation"
     depends on ESP_WIFI_RRM_SUPPORT
+    depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM || ESP_WIFI_ROAMING_11K_ASSISTED_ROAM
     default n
     help
-        This option will enable station to keep sending RRM neighbor list request to AP and
-        update its internal list.
+        Keep sending RRM neighbor list requests to the AP and update the internal
+        neighbor list / channel cache. Useful for 802.11v BTM candidate lists and for
+        warming the 802.11k NR channel cache so roam triggers can skip an on-demand NR.
 
 config ESP_WIFI_ROAMING_RRM_MONITOR_TIME
     int "Time interval (in seconds) between neighbor report requests to an AP"
@@ -229,3 +267,12 @@ menu "Blacklist Configuration"
             Maximum number of roaming candidates to consider. This also defines the size of the blacklist.
 
 endmenu # "Blacklist Configuration"
+
+config ESP_WIFI_ROAMING_PERIODIC_RSSI_MONITOR
+    bool "Log connected AP RSSI periodically"
+    default y
+    help
+        When enabled, log the connected AP's RSSI, BSSID, and channel every few
+        seconds while associated. Intended for correlating roam decisions with
+        live signal strength during development. Can be disabled to avoid
+        console noise and periodic timer wakeups in production builds.
