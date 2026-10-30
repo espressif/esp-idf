@@ -107,6 +107,18 @@ examples/storage/semihost_vfs:
       temporary: true
       reason: lack of runners
 
+examples/storage/spi_nand_flash/littlefs:
+  depends_components:
+    - esp_blockdev
+    - vfs
+    - esp_driver_spi
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s3"]
+      temporary: true
+      reason: needs SPI NAND flash runner
+
 examples/storage/spiffs:
   depends_components:
     - spiffs

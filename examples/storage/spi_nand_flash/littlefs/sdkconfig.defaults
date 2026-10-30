@@ -1,0 +1,6 @@
+# NAND BDL Kconfig needs IDF 6.0+; LittleFS blockdev mount also needs IDF 6.0+.
+CONFIG_NAND_FLASH_ENABLE_BDL=y
+# Must be >= NAND page size exposed by the wear-leveling BDL (typically 2048 or 4096).
+CONFIG_LITTLEFS_CACHE_SIZE=4096
+# Long format/mount on large NAND is less likely to hit the task watchdog.
+CONFIG_ESP_TASK_WDT_EN=n

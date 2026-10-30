@@ -1,0 +1,4 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/spi_nand_flash: "*"
+  joltwallet/littlefs: ">=1.21.0"
