@@ -6,6 +6,7 @@
 
 #include "sdkconfig.h"
 #include <math.h>
+#include <string.h>
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,6 +15,8 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_system.h"
+#include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
 #include "test_utils.h"
 
 /* PIE instructions set is currently only supported in GCC compiler */
@@ -36,6 +39,20 @@ void pie_vector_signed_add(const int32_t a[4], const int32_t b[4], int32_t dst[4
  * @param dst Destination to store the result
  */
 void pie_vector_xor(const int32_t a[4], const int32_t b[4], int32_t dst[4]);
+
+/**
+ * @brief Loads the eight Q registers (q0..q7) from the given buffer.
+ *
+ * @param src 16-byte aligned buffer of 32 words
+ */
+void pie_load_q_regs(const uint32_t src[32]);
+
+/**
+ * @brief Stores the eight Q registers (q0..q7) into the given buffer.
+ *
+ * @param dst 16-byte aligned buffer of 32 words
+ */
+void pie_store_q_regs(uint32_t dst[32]);
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 
@@ -359,6 +376,108 @@ TEST_CASE("PIE: Core 0 parses PIE instructions properly", "[freertos]")
 #endif /* CONFIG_IDF_TARGET_ESP32S31 */
 
 #endif /* CONFIG_FREERTOS_NUMBER_OF_CORES > 1 */
+
+#if CONFIG_SPIRAM && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+
+/*
+Test PIE context switch with the task stacks in PSRAM
+
+Purpose:
+    - Test that the PIE context of a task whose stack is in PSRAM is properly saved and restored. The coprocessor
+      save area is carved from the task's stack, so the kernel saves and restores the PIE registers to and from
+      PSRAM. The test verifies q0..q7.
+Procedure:
+    - Create two tasks with their stacks in PSRAM, pinned to the same core
+    - The tasks take turns: each loads a unique pattern into q0..q7, then blocks while the other task uses the PIE,
+      which forces the kernel to save the first task's Q registers into its save area in PSRAM
+    - When a task resumes, it reads q0..q7 back and compares them to the pattern it loaded
+Expected:
+    - The Q registers of each task survive every context switch
+*/
+
+#define TEST_PSRAM_STACK_NUM_ITERS      20
+
+#if CONFIG_IDF_TARGET_ESP32S31
+#define TEST_PIE_CORE   1   // Only core 1 has the PIE on the ESP32-S31
+#else
+#define TEST_PIE_CORE   0
+#endif
+
+typedef struct {
+    uint32_t id;
+    TaskHandle_t main;
+    TaskHandle_t other;
+    bool stack_in_psram;
+    /* Q registers of the last iteration, or of the first mismatch. Checked by the main task since asserts must not
+     * fail in a helper task */
+    bool mismatch;
+    uint32_t expected[32];
+    uint32_t actual[32];
+} pie_psram_params_t;
+
+static void pie_psram_stack_task(void *arg)
+{
+    pie_psram_params_t *param = (pie_psram_params_t *) arg;
+    uint32_t expected[32] __attribute__((aligned(16))) = { 0 };
+    uint32_t actual[32] __attribute__((aligned(16)));
+
+    // The PIE save area is carved from the same stack as these locals
+    param->stack_in_psram = esp_ptr_external_ram(expected);
+
+    for (int iter = 0; iter < TEST_PSRAM_STACK_NUM_ITERS; iter++) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        for (int i = 0; i < 32; i++) {
+            expected[i] = (param->id << 24) | (iter << 8) | i;
+        }
+        pie_load_q_regs(expected);
+
+        // The other task uses the PIE now, so the kernel saves our Q registers to our stack in PSRAM
+        xTaskNotifyGive(param->other);
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        pie_store_q_regs(actual);
+        if (!param->mismatch) {
+            memcpy(param->expected, expected, sizeof(expected));
+            memcpy(param->actual, actual, sizeof(actual));
+            param->mismatch = (memcmp(expected, actual, sizeof(expected)) != 0);
+        }
+        xTaskNotifyGive(param->other);
+    }
+
+    xTaskNotifyGive(param->main);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("PIE: Context switch between tasks with stacks in PSRAM", "[freertos]")
+{
+    pie_psram_params_t params[2] = {
+        { .id = 1, .main = xTaskGetCurrentTaskHandle() },
+        { .id = 2, .main = xTaskGetCurrentTaskHandle() },
+    };
+    TaskHandle_t tasks[2];
+
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCoreWithCaps(pie_psram_stack_task, "pie_psram", 4096, &params[i],
+                                                                  UNITY_FREERTOS_PRIORITY + 1, &tasks[i], TEST_PIE_CORE,
+                                                                  MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+    }
+    params[0].other = tasks[1];
+    params[1].other = tasks[0];
+
+    // Start the first task, the tasks then take turns
+    xTaskNotifyGive(tasks[0]);
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(5000)));
+    }
+
+    for (int i = 0; i < 2; i++) {
+        vTaskDeleteWithCaps(tasks[i]);
+        TEST_ASSERT_TRUE(params[i].stack_in_psram);
+        TEST_ASSERT_EQUAL_HEX32_ARRAY(params[i].expected, params[i].actual, 32);
+    }
+}
+
+#endif /* CONFIG_SPIRAM && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM */
 
 #if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
 

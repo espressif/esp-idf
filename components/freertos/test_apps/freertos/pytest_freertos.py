@@ -29,6 +29,8 @@ from pytest_embedded_idf.utils import idf_parametrize
         # PSRAM (Test PSRAM on select targets)
         ('psram', 'esp32s3'),
         ('psram', 'esp32c5'),
+        ('psram', 'esp32p4'),  # PIE coprocessor context saved to PSRAM stacks
+        ('psram', 'esp32s31'),  # PIE on core 1 only
         # Single-core mode (Test single-core mode on dual-core targets)
         ('single_core', 'esp32'),
         ('single_core', 'esp32p4'),

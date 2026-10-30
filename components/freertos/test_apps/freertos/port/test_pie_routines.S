@@ -66,4 +66,43 @@ pie_vector_xor:
     .size  pie_vector_xor, .-pie_vector_xor
 
 
+/**
+ * @brief Loads the eight Q registers (q0..q7) from a 128-byte, 16-byte aligned buffer.
+ *
+ * @param a0 Source buffer
+ */
+    .type pie_load_q_regs, @function
+    .global pie_load_q_regs
+pie_load_q_regs:
+    esp.vld.128.ip  q0, a0, 16
+    esp.vld.128.ip  q1, a0, 16
+    esp.vld.128.ip  q2, a0, 16
+    esp.vld.128.ip  q3, a0, 16
+    esp.vld.128.ip  q4, a0, 16
+    esp.vld.128.ip  q5, a0, 16
+    esp.vld.128.ip  q6, a0, 16
+    esp.vld.128.ip  q7, a0, 16
+    ret
+    .size  pie_load_q_regs, .-pie_load_q_regs
+
+
+/**
+ * @brief Stores the eight Q registers (q0..q7) to a 128-byte, 16-byte aligned buffer.
+ *
+ * @param a0 Destination buffer
+ */
+    .type pie_store_q_regs, @function
+    .global pie_store_q_regs
+pie_store_q_regs:
+    esp.vst.128.ip  q0, a0, 16
+    esp.vst.128.ip  q1, a0, 16
+    esp.vst.128.ip  q2, a0, 16
+    esp.vst.128.ip  q3, a0, 16
+    esp.vst.128.ip  q4, a0, 16
+    esp.vst.128.ip  q5, a0, 16
+    esp.vst.128.ip  q6, a0, 16
+    esp.vst.128.ip  q7, a0, 16
+    ret
+    .size  pie_store_q_regs, .-pie_store_q_regs
+
 #endif /* SOC_CPU_HAS_PIE */
