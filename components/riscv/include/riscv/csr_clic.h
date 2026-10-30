@@ -33,6 +33,7 @@
  */
 #define MTVT_CSR    0x307
 #define UTVT_CSR    0x007
+#define MSCRATCHCSW_CSR 0x348
 
 #if INTTHRESH_STANDARD
 

@@ -376,6 +376,10 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer,
     #endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
     frame->gp = (UBaseType_t)&__global_pointer$;
     frame->tp = (UBaseType_t)threadptr_reg_init;
+    /* Tasks start in machine mode */
+    #if CONFIG_RISCV_USER_MODE_TRAPS
+        frame->mstatus = MSTATUS_MPP;
+    #endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
     return uxStackPointer;
 }

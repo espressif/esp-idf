@@ -11,10 +11,21 @@
 #include "sdkconfig.h"
 #include "esp_private/vectors_const.h"
 #include "esp_private/panic_reason.h"
+#include "esp_private/privilege_trap.h"
+#include "riscv/encoding.h"
 
     .equ SAVE_REGS, 32
     .equ CONTEXT_SIZE, (SAVE_REGS * 4)
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* The interrupt frame also holds mstatus, so that each task is resumed in its own privilege mode */
+    .equ INTR_CONTEXT_SIZE, RV_STK_FRMSZ
+#else /* CONFIG_RISCV_USER_MODE_TRAPS */
+    .equ INTR_CONTEXT_SIZE, CONTEXT_SIZE
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     .equ EXC_ILLEGAL_INSTRUCTION, 0x2
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    .equ EXC_ECALL_FROM_U_MODE, 0x8
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     .equ panic_from_exception, xt_unhandled_exception
     .equ panic_from_isr, panicHandler
     .equ CSR_UINTSTATUS, 0xCB1
@@ -227,6 +238,9 @@ rtos_save_fpu_coproc:
     .type _panic_handler, @function
     .global _panic_handler
 _panic_handler:
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    rv_user_trap_enter
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     /* Allocate space on the stack and store general purpose registers */
     save_general_regs RV_STK_FRMSZ
 
@@ -236,7 +250,11 @@ _panic_handler:
     sw    gp, RV_STK_GP(sp)
 
     /* Same goes for the SP value before trapping */
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    rv_user_trap_restore_m_context t0, RV_STK_FRMSZ /* sp at the time of the trap */
+#else /* CONFIG_RISCV_USER_MODE_TRAPS */
     addi  t0, sp, RV_STK_FRMSZ /* restore sp with the value when trap happened */
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
     /* Save CSRs */
     sw    t0, RV_STK_SP(sp)
@@ -368,6 +386,13 @@ _panic_handler_not_coproc:
     li    t0, 3
     beq   a1, t0, _call_gdbstub_handler
 #endif
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    li    t0, EXC_ECALL_FROM_U_MODE
+    beq   a1, t0, _call_privilege_ecall_handler
+_privilege_ecall_not_handled:
+    mv    a0, sp
+    lw    a1, RV_STK_MCAUSE(sp)
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     call  panic_from_exception
     /* We arrive here if the exception handler has returned. */
     j     _return_from_exception
@@ -377,6 +402,16 @@ _call_gdbstub_handler:
     call  gdbstub_handle_debug_int
     j     _return_from_exception
 #endif
+
+#if CONFIG_RISCV_USER_MODE_TRAPS
+_call_privilege_ecall_handler:
+    /* Set with rv_user_trap_set_handlers() */
+    lw    t0, rv_user_trap_ecall_handler
+    beqz  t0, _privilege_ecall_not_handled
+    jalr  t0
+    beqz  a0, _privilege_ecall_not_handled
+    j     _return_from_exception
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
 _call_panic_handler:
     /* Remove highest bit from mcause (a1) register and save it in the structure */
@@ -412,9 +447,28 @@ _return_from_exception:
     /* MTVEC and SP are assumed to be unmodified.
      * MSTATUS, MHARTID, MTVAL are read-only and not restored.
      */
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* Only the MPP field of the saved mstatus is restored, as it may have been changed by the
+     * handler to redirect the task to another privilege mode. The other fields may have been
+     * changed on purpose (e.g. coprocessors being enabled) */
+    lw    t0, RV_STK_MSTATUS(sp)
+    li    t1, MSTATUS_MPP
+    and   t0, t0, t1
+    csrc  mstatus, t1
+    csrs  mstatus, t0
+    rv_user_branch_if_user t0, _return_from_exception_to_user
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     lw gp,  RV_STK_GP(sp)
     restore_general_regs RV_STK_FRMSZ
     mret
+#if CONFIG_RISCV_USER_MODE_TRAPS
+_return_from_exception_to_user:
+    lw    t0, RV_STK_SP(sp)
+    rv_user_trap_set_user_sp t0, RV_STK_FRMSZ
+    lw    gp, RV_STK_GP(sp)
+    restore_general_regs RV_STK_FRMSZ
+    rv_user_trap_exit_to_user
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     .size  _panic_handler, .-_panic_handler
 
 
@@ -428,10 +482,17 @@ _return_from_exception:
     .type _interrupt_handler, @function
 _interrupt_handler:
 _tee_interrupt_handler:
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    rv_user_trap_enter
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     /* Start by saving the general purpose registers and the PC value before
      * the interrupt happened. */
-    save_general_regs
+    save_general_regs INTR_CONTEXT_SIZE
     save_xepc
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    csrr    t0, mstatus
+    sw      t0, RV_STK_MSTATUS(sp)
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
     /* Though it is not necessary we save GP and SP here.
      * SP is necessary to help GDB to properly unwind
@@ -440,7 +501,11 @@ _tee_interrupt_handler:
     /* As gp register is not saved by the macro, save it here */
     sw      gp, RV_STK_GP(sp)
     /* Same goes for the SP value before trapping */
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    rv_user_trap_restore_m_context a0, INTR_CONTEXT_SIZE /* sp at the time of the interrupt */
+#else /* CONFIG_RISCV_USER_MODE_TRAPS */
     addi    a0, sp, CONTEXT_SIZE /* restore sp with the value when interrupt happened */
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
     /* Save SP former value */
     sw      a0, RV_STK_SP(sp)
@@ -558,7 +623,19 @@ _skip_thresh_reset:
     mintthresh_csr_restore s5
 
     restore_xepc
-    restore_general_regs
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    rv_user_branch_if_user t0, _interrupt_return_to_user
+    lw      gp, RV_STK_GP(sp)
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
+    restore_general_regs INTR_CONTEXT_SIZE
     /* exit, this will also re-enable the interrupts */
     xret
+#if CONFIG_RISCV_USER_MODE_TRAPS
+_interrupt_return_to_user:
+    lw      t0, RV_STK_SP(sp)
+    rv_user_trap_set_user_sp t0, INTR_CONTEXT_SIZE
+    lw      gp, RV_STK_GP(sp)
+    restore_general_regs INTR_CONTEXT_SIZE
+    rv_user_trap_exit_to_user
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     .size  _interrupt_handler, .-_interrupt_handler

@@ -1,0 +1,32 @@
+menu "Privilege Execution"
+
+    choice ESP_PRIVILEGE_MODE
+        prompt "Privilege modes (EXPERIMENTAL)"
+        depends on IDF_TARGET_ARCH_RISCV && IDF_EXPERIMENTAL_FEATURES
+        default ESP_PRIVILEGE_MODE_DISABLED
+        help
+            Selects which code runs in RISC-V user mode (U-mode). This feature is experimental,
+            so the choice needs IDF_EXPERIMENTAL_FEATURES.
+
+        config ESP_PRIVILEGE_MODE_DISABLED
+            bool "Disabled"
+
+        config ESP_PRIVILEGE_MODE_USER_CODE
+            bool "ESP-IDF in M-mode, runs U-mode code"
+            select RISCV_USER_MODE_TRAPS
+            depends on SOC_RISCV_SV32_SUPPORTED && SOC_INT_CLIC_SUPPORTED
+            depends on !SECURE_ENABLE_TEE && !ESP_SYSTEM_MEMPROT
+            help
+                A task can call a function that runs in RISC-V user mode (U-mode). When the function
+                returns, the task continues in machine mode (M-mode). The task, ESP-IDF and FreeRTOS
+                run in M-mode, and the task is scheduled normally while the function runs.
+
+                Not available together with the following.
+
+                - ESP-TEE, because ESP-TEE runs ESP-IDF in U-mode and this option needs ESP-IDF
+                  in M-mode.
+                - System memory protection (ESP_SYSTEM_MEMPROT), because it leaves no memory
+                  that is both writable, to load U-mode code, and executable.
+    endchoice
+
+endmenu
