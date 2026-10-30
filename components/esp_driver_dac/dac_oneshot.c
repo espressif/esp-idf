@@ -21,6 +21,7 @@ esp_err_t dac_oneshot_new_channel(const dac_oneshot_config_t *oneshot_cfg, dac_o
     DAC_NULL_POINTER_CHECK(oneshot_cfg);
     DAC_NULL_POINTER_CHECK(ret_handle);
     ESP_RETURN_ON_FALSE(IS_VALID_DAC_CHANNEL(oneshot_cfg->chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid dac channel id");
+    ESP_RETURN_ON_FALSE(dac_priv_is_valid_channel_config(&oneshot_cfg->chan_cfg), ESP_ERR_INVALID_ARG, TAG, "invalid DAC channel configuration");
 
     esp_err_t ret = ESP_OK;
     /* Resources allocation */
@@ -30,7 +31,7 @@ esp_err_t dac_oneshot_new_channel(const dac_oneshot_config_t *oneshot_cfg, dac_o
 
     /* Register and enable the dac channel */
     ESP_GOTO_ON_ERROR(dac_priv_channel_register(oneshot_cfg->chan_id), err2, TAG, "register dac channel %d failed", oneshot_cfg->chan_id);
-    ESP_GOTO_ON_ERROR(dac_priv_channel_enable(oneshot_cfg->chan_id, DAC_DATA_SOURCE_DIRECT), err1, TAG, "enable dac channel %d failed", oneshot_cfg->chan_id);
+    ESP_GOTO_ON_ERROR(dac_priv_channel_enable(oneshot_cfg->chan_id, oneshot_cfg->chan_cfg, DAC_DATA_SOURCE_DIRECT), err1, TAG, "enable dac channel %d failed", oneshot_cfg->chan_id);
 
     *ret_handle = handle;
     return ret;
@@ -56,13 +57,17 @@ esp_err_t dac_oneshot_del_channel(dac_oneshot_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint8_t digi_value)
+esp_err_t dac_oneshot_output_code(dac_oneshot_handle_t handle, uint16_t digi_value)
 {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* Set the voltage by the digital value */
+    if (digi_value >= (1U << dac_priv_chan_cfg_get_bitwidth(&handle->cfg.chan_cfg))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Set the analog output by the digital value */
     DAC_ENTER_CRITICAL_SAFE();
     dac_ll_pad_set_output_code(handle->cfg.chan_id, digi_value);
     DAC_EXIT_CRITICAL_SAFE();
@@ -70,11 +75,14 @@ esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint8_t digi_v
     return ESP_OK;
 }
 
+esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint16_t digi_value)
+__attribute__((alias("dac_oneshot_output_code")));
+
 uint8_t dac_oneshot_get_bitwidth(dac_oneshot_handle_t handle)
 {
     if (!handle) {
         return 0;
     }
 
-    return SOC_DAC_RESOLUTION;
+    return dac_priv_chan_cfg_get_bitwidth(&handle->cfg.chan_cfg);
 }

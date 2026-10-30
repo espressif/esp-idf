@@ -203,6 +203,7 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
     DAC_NULL_POINTER_CHECK(cont_cfg);
     DAC_NULL_POINTER_CHECK(ret_handle);
     ESP_RETURN_ON_FALSE(IS_VALID_DAC_CHANNEL_MASK(cont_cfg->chan_mask) && cont_cfg->chan_mask, ESP_ERR_INVALID_ARG, TAG, "invalid dac channel mask");
+    ESP_RETURN_ON_FALSE(dac_priv_is_valid_channel_config(&cont_cfg->chan_cfg), ESP_ERR_INVALID_ARG, TAG, "invalid DAC channel configuration");
     ESP_RETURN_ON_FALSE(cont_cfg->chan_mode != DAC_CHANNEL_MODE_ALTER || cont_cfg->chan_mask == DAC_CHANNEL_MASK_ALL,
                         ESP_ERR_INVALID_ARG, TAG, "alternate mode requires both DAC channels enabled");
     ESP_RETURN_ON_FALSE(cont_cfg->desc_num > 1, ESP_ERR_INVALID_ARG, TAG, "at least two DMA descriptor needed");
@@ -378,7 +379,7 @@ esp_err_t dac_continuous_enable(dac_continuous_handle_t handle)
 #endif
 
     DAC_CHANNEL_MASK_FOREACH(chan, handle->cfg.chan_mask) {
-        dac_priv_channel_enable(chan, DAC_DATA_SOURCE_DMA);
+        dac_priv_channel_enable(chan, handle->cfg.chan_cfg, DAC_DATA_SOURCE_DMA);
     }
     dac_priv_dma_enable();
 
@@ -504,15 +505,7 @@ esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle)
  */
 FORCE_INLINE_ATTR uint8_t s_dac_sample_type(dac_continuous_handle_t handle)
 {
-    // TODO: get the bitwidth from the channel configuration (dac_priv_chan_cfg_get_bitwidth()), then infer the type
-    (void)handle;
-#if SOC_IS(ESP32) || SOC_IS(ESP32S2)
-    return DAC_SAMPLE_TYPE_U8;
-#elif SOC_IS(ESP32S31)
-    return DAC_SAMPLE_TYPE_U16;
-#else
-#error "Unsupported SOC"
-#endif
+    return dac_priv_chan_cfg_get_bitwidth(&handle->cfg.chan_cfg) > 8 ? DAC_SAMPLE_TYPE_U16 : DAC_SAMPLE_TYPE_U8;
 }
 
 /**
@@ -890,5 +883,5 @@ uint8_t dac_continuous_get_bitwidth(dac_continuous_handle_t handle)
         return 0;
     }
 
-    return SOC_DAC_RESOLUTION;
+    return dac_priv_chan_cfg_get_bitwidth(&handle->cfg.chan_cfg);
 }

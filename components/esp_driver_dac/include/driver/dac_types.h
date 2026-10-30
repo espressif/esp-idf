@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,43 @@ extern "C" {
 #endif
 
 #if SOC_DAC_SUPPORTED
+
+/**
+ * @brief DAC channel output mode
+ */
+typedef enum {
+    DAC_CHANNEL_OUTPUT_VOLTAGE = 0,       /*!< Voltage-output (Low-speed) DAC. Default. */
+#if SOC_DAC_HS_RESOLUTION
+    DAC_CHANNEL_OUTPUT_CURRENT,          /*!< Current-output (High-speed) DAC. Requires a small resistance load. */
+#endif
+} dac_channel_output_mode_t;
+
+/**
+ * @brief DAC analog buffer mode (voltage-output mode only).
+ */
+typedef enum {
+    DAC_CHANNEL_BUFFER_FULL_SWING = 0, /*!< Analog buffer enabled, using a wider output voltage swing.
+                                            But linearity may degrade near the limits, and saturation or
+                                            clipping may occur. */
+#if SOC_DAC_SUPPORT_BUFFER_CFG
+    DAC_CHANNEL_BUFFER_REDUCED_SWING,  /*!< Analog buffer enabled, using a reduced output voltage swing to
+                                            support linear operation over the full input code range.  */
+    DAC_CHANNEL_BUFFER_BYPASS,         /*!< Analog buffer bypassed. Requires a very high-impedance load, but
+                                            draws less current. */
+#endif
+} dac_channel_buffer_mode_t;
+
+/**
+ * @brief DAC channel (analog pad) configuration
+ *
+ * @note  ESP32 and ESP32-S2 only support the default configuration (voltage-output/low-speed DAC, full-swing buffer), i.e. zero-initialized values.
+ *        ESP32-S31 supports configurable output and buffer modes.
+ */
+typedef struct {
+    dac_channel_output_mode_t   output_mode;   /*!< Output mode: voltage-output or current-output */
+    dac_channel_buffer_mode_t   buffer_mode;   /*!< Analog buffer mode */
+} dac_channel_config_t;
+
 /**
  * @brief DAC channel work mode in dma mode
  * @note  Only take effect when multiple channels enabled.
