@@ -18,7 +18,7 @@ extern "C" {
  ***************************************************************************************************
  */
 #define ESP_BREDR_CTRL_CONFIG_MAGIC_VAL    (0x5A5AA5A5)
-#define ESP_BREDR_CTRL_CONFIG_VERSION      (0x20260722)
+#define ESP_BREDR_CTRL_CONFIG_VERSION      (0x20261019)
 
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
 #define _BT_CTRL_BREDR_INIT_CONFIG_DEFAULT()                                                       \
@@ -63,6 +63,7 @@ extern "C" {
         .dynamic_sync_tx_buf_nb = UC_BR_EDR_DYNAMIC_SYNC_TX_BUF_NB,                                \
         .static_sync_rx_buf_nb = UC_BR_EDR_STATIC_SYNC_RX_BUF_NB,                                  \
         .sync_rx_buf_nb_per_link = UC_BR_EDR_SYNC_RX_BUF_NB_PER_LINK,                              \
+        .rs_max_slot_restore_en = UC_BR_EDR_RS_MAX_SLOT_RESTORE_EN,                                \
         .bredr_magic = ESP_BREDR_CTRL_CONFIG_MAGIC_VAL,                                            \
     }
 #else
@@ -156,6 +157,7 @@ typedef struct {
     uint8_t dynamic_sync_tx_buf_nb;       /*!< dynamic sync tx buffers(allocated during sync connection establishment) */
     uint8_t static_sync_rx_buf_nb;        /*!< total number of static sync rx buffers */
     uint8_t sync_rx_buf_nb_per_link;      /*!< sync rx buffers per link (static + dynamic combined) */
+    uint8_t rs_max_slot_restore_en : 1;   /*!< Enable the restoration of max slots after role switch  */
     uint32_t bredr_magic;                 /*!< Magic number */
 } esp_bt_ctrl_bredr_config_t;
 
