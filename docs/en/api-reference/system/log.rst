@@ -687,6 +687,54 @@ General-purpose macros (**ESP_LOGx**) ensure thread safety by acquiring locks du
 
 Logs are first written to a memory buffer before being sent to the UART, ensuring thread-safe operations across different tasks. Avoid logging from constrained environments unless necessary to maintain reliable log output.
 
+Custom Message Handling
+-----------------------
+
+Use :cpp:func:`esp_log_set_handler` to inspect, encode, redirect, or suppress ordinary logs in V1 and V2. It installs one application-wide callback and a caller-owned context. Level filtering runs before the callback.
+
+For example, an application can save warnings and errors for later diagnosis while keeping normal console output:
+
+.. code-block:: c
+
+    static bool handle_log(esp_log_msg_t *message, void *ctx)
+    {
+        esp_log_level_t level = message->config.opts.log_level;
+        if (level == ESP_LOG_WARN || level == ESP_LOG_ERROR) {
+            save_diagnostic(message, ctx);
+        }
+        return true;
+    }
+
+Here, ``save_diagnostic()`` is application code that encodes and saves the message; ``ctx`` holds its output state. Install the callback during initialization, after that state is ready:
+
+.. code-block:: c
+
+    ESP_ERROR_CHECK(esp_log_set_handler(handle_log, diagnostics_ctx, NULL));
+
+- Return ``true`` to continue with standard output after your processing.
+- Return ``false`` to finish without standard output, whether you saved the message yourself or discarded it.
+- Pass NULL as the callback to restore standard output.
+
+See :example:`system/log/log_handler` for a complete example: warnings and errors are copied to a file, sensor messages to another file, and a separate component consumes its own audit messages. Formatting, file setup, and teardown are shown there.
+
+Combining Handlers
+^^^^^^^^^^^^^^^^^^
+
+Installing another callback replaces the active one. To extend existing behavior, pass a pointer to an ``esp_log_handler_t`` field in the new context as ``previous``. The library fills it before the new callback can run. Your callback can consume selected messages by returning ``false``, or explicitly call the saved function with its saved context and return its result. If no previous function exists, return ``true`` for standard output.
+
+This creates an application-owned chain: the last installed wrapper runs first. Returning ``true`` alone does not call the previous handler. Remove wrappers in reverse order by restoring their saved pairs.
+
+Message Data and Lifetime
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The tag and level are directly available in :cpp:type:`esp_log_msg_t`; no console line parsing is needed. In V1, standard macros include the prefix and newline in the format and arguments. In V2 text mode, metadata is separate; check ``timestamp_valid`` before using the timestamp. In binary mode, the format may be an ELF-only address and must not be treated as a readable printf string.
+
+Messages and their data are borrowed for the callback. Use ``va_copy()`` when reading arguments that another handler or standard output will also need. For asynchronous output, encode or copy the required data before returning.
+
+Install from normal task context. Callbacks run synchronously in the logging task and may run concurrently in different tasks. **Replacement does not wait for old calls:** keep contexts and output resources alive until all calls using them have finished, including calls through saved handlers. Coordinate chain changes between components.
+
+Early, DRAM, bootloader, and recursively emitted logs bypass the handler and use standard output. Log V2 also detects constrained contexts and bypasses the handler. Log V1 performs no runtime context check: use ordinary logs only in normal execution contexts. Recursive bypass affects only the current task; output functions must not recursively log. Standard text output still uses :cpp:func:`esp_log_set_vprintf`; binary output keeps its existing path.
+
 Application Example
 -------------------
 
@@ -705,3 +753,6 @@ API Reference
 .. include-build-file:: inc/esp_log_timestamp.inc
 .. include-build-file:: inc/esp_log_color.inc
 .. include-build-file:: inc/esp_log_write.inc
+
+.. include-build-file:: inc/esp_log_message.inc
+.. include-build-file:: inc/esp_log_handler.inc

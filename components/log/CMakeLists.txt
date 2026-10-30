@@ -44,7 +44,9 @@ set(priv_requires hal)
 if(NOT non_os_build)
     list(APPEND priv_requires soc esp_hw_support)
 
-    list(APPEND srcs "src/os/log_write.c")
+    list(APPEND srcs "src/os/log_write.c"
+                     "src/log_handler.c"
+                     "src/log_handler_default.c")
 
     list(APPEND srcs "src/log_level/log_level.c"
                      "src/log_level/tag_log_level/tag_log_level.c")

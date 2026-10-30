@@ -16,7 +16,7 @@
 #include "esp_private/log_lock.h"
 #include "esp_private/log_util.h"
 #include "esp_private/log_print.h"
-#include "esp_private/log_message.h"
+#include "esp_log_message.h"
 #include "sdkconfig.h"
 
 static __attribute__((unused)) const char s_lvl_name[ESP_LOG_MAX] = {
