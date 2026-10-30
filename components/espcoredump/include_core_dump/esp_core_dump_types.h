@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,9 +89,8 @@ extern "C" {
 typedef uint32_t core_dump_crc_t;
 
 #if CONFIG_IDF_TARGET_ESP32
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-#include "mbedtls/private/sha256.h"
-typedef mbedtls_sha256_context sha256_ctx_t;
+#include "psa_crypto_driver_esp_sha_contexts.h"
+typedef esp_sha256_context sha256_ctx_t;
 #else
 #include "hal/sha_types.h"  /* SHA_CTX */
 typedef SHA_CTX sha256_ctx_t;

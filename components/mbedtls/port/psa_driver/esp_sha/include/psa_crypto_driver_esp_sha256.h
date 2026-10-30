@@ -7,7 +7,6 @@
 
 #pragma once
 
-#if defined(ESP_SHA_DRIVER_ENABLED)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -42,4 +41,3 @@ psa_status_t esp_sha256_driver_finish(
 psa_status_t esp_sha256_driver_abort(esp_sha256_context *ctx);
 
 psa_status_t esp_sha256_driver_clone(const esp_sha256_context *source_ctx, esp_sha256_context *target_ctx);
-#endif /* ESP_SHA_DRIVER_ENABLED */
