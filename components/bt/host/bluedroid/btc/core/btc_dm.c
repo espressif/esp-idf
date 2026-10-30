@@ -685,6 +685,37 @@ static void btc_dm_pm_mode_chg_evt(tBTA_DM_MODE_CHG *p_mode_chg)
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
 }
+
+static void btc_dm_pm_ssr_evt(tBTA_DM_SSR *p_ssr)
+{
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t *msg;
+
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_SSR_EVT;
+    memset(&param, 0, sizeof(param));
+    memcpy(param.sniff_subrating.bda, p_ssr->bd_addr, ESP_BD_ADDR_LEN);
+    param.sniff_subrating.stat = btc_hci_to_esp_status(p_ssr->hci_status);
+    param.sniff_subrating.max_tx_latency = p_ssr->max_tx_lat;
+    param.sniff_subrating.max_rx_latency = p_ssr->max_rx_lat;
+    param.sniff_subrating.min_remote_timeout = p_ssr->min_remote_to;
+    param.sniff_subrating.min_local_timeout = p_ssr->min_local_to;
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
+
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
+    }
+}
 #endif /// BTC_DM_PM_INCLUDED == TRUE
 
 tBTA_SERVICE_MASK btc_get_enabled_services_mask(void)
@@ -1110,6 +1141,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_PM_MODE_CHG_EVT:
         BTC_TRACE_DEBUG("BTA_DM_PM_MODE_CHG_EVT mode:%d", p_data->mode_chg.mode);
         btc_dm_pm_mode_chg_evt(&p_data->mode_chg);
+        break;
+    case BTA_DM_PM_SSR_EVT:
+        BTC_TRACE_DEBUG("BTA_DM_PM_SSR_EVT");
+        btc_dm_pm_ssr_evt(&p_data->ssr);
         break;
 #endif /// BTA_DM_PM_INCLUDED == TRUE
 
