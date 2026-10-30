@@ -272,7 +272,7 @@ TEST_CASE("c2h_credit empty flush does not wake BTU", "[c2h_credit]")
 
     s_block = xSemaphoreCreateCounting(8, 0);
     TEST_ASSERT_NOT_NULL(s_block);
-    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, 0, 0));
+    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, NULL, 0, 0));
     vTaskDelay(pdMS_TO_TICKS(20));
 
     depth = osi_thread_queue_wait_size(btu_thread, 0);
@@ -339,7 +339,7 @@ TEST_CASE("c2h_credit add coalesces without posting ready event", "[c2h_credit]"
 
     s_block = xSemaphoreCreateCounting(8, 0);
     TEST_ASSERT_NOT_NULL(s_block);
-    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, 0, 0));
+    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, NULL, 0, 0));
     vTaskDelay(pdMS_TO_TICKS(20));
 
     depth = osi_thread_queue_wait_size(btu_thread, 0);
@@ -520,11 +520,11 @@ TEST_CASE("c2h_credit flush handoff works while BTU queue is busy", "[c2h_credit
     s_block = xSemaphoreCreateCounting(8, 0);
     TEST_ASSERT_NOT_NULL(s_block);
 
-    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, 0, 0));
+    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, NULL, 0, 0));
     vTaskDelay(pdMS_TO_TICKS(20));
-    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, 0, 0));
-    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, 0, 0));
-    TEST_ASSERT_FALSE(osi_thread_post(btu_thread, dummy_block, NULL, 0, 0));
+    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, NULL, 0, 0));
+    TEST_ASSERT_TRUE(osi_thread_post(btu_thread, dummy_block, NULL, NULL, 0, 0));
+    TEST_ASSERT_FALSE(osi_thread_post(btu_thread, dummy_block, NULL, NULL, 0, 0));
 
     /* Send path is on HCI — a full BTU queue must not block credit handoff. */
     TEST_ASSERT_FALSE(hci_c2h_credit_flush_alarm_is_active());

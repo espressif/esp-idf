@@ -26,6 +26,10 @@ typedef struct osi_thread osi_thread_t;
 
 typedef void (*osi_thread_func_t)(void *context);
 
+/* Reclaim a context owned by a work queue when osi_thread_free drains it
+ * without running the handler. NULL keeps the old leak-by-discard behavior. */
+typedef void (*osi_thread_free_cb_t)(void *context);
+
 typedef enum {
     OSI_THREAD_CORE_0 = 0,
     OSI_THREAD_CORE_1,
@@ -78,11 +82,16 @@ void osi_thread_listener_unregister(struct osi_thread_listener_node *node);
  * param thread: point of thread handler
  * param func: callback function that called by target thread
  * param context: argument of callback function
+ * param free_cb: called on the context when osi_thread_free drains the
+ *                undelivered work item during teardown. NULL means the
+ *                context is not queue-owned. Not called on a normal
+ *                dispatch; the handler keeps owning the context there.
  * param queue_idx: the queue which the msg send to
  * param timeout: post timeout, OSI_THREAD_MAX_TIMEOUT means blocking forever, 0 means never blocking, others means block millisecond
  * return : if post successfully, return true, otherwise return false
  */
-bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context, int queue_idx, uint32_t timeout);
+bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context,
+                     osi_thread_free_cb_t free_cb, int queue_idx, uint32_t timeout);
 
 /*
  * brief: Set the priority of thread
