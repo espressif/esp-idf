@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,11 @@ soc_reset_reason_t esp_rom_get_reset_reason(int cpu_no)
     return RESET_REASON_CHIP_POWER_ON;
 }
 
+/* macOS already has this in components/linux/assert_func.c. Defining it here as well
+ * makes ld warn about a duplicate ___assert_func, and the macOS test build treats
+ * that warning as a failure.
+ */
+#if !defined(__APPLE__)
 void __assert_func(const char *file, int line, const char *func, const char *failedexpr)
 {
     esp_rom_printf("assertion \"%s\" failed: file \"%s\", line %d%s%s\n",
@@ -52,3 +57,4 @@ void __assert_func(const char *file, int line, const char *func, const char *fai
                    func ? ", function: " : "", func ? func : "");
     while (1) {}
 }
+#endif

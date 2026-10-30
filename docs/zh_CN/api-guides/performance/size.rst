@@ -89,7 +89,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :menuitem:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以节约大概 260 字节的 IRAM、264 字节的 DRAM、以及 1 KB 的 flash，同时还可以加快日志记录的速度。
     - 将 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 设置为 ``Silent``，可以避免为所有可能失败的断言编译专门的断言字符串和源文件名。尽管如此，仍可以通过查看断言失败时的内存地址以在代码中找到失败断言。
     - 除 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 外，还可以通过设置 :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 单独禁用或静默 HAL 组件的断言。即使将 :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 设置为 full-assertion 级别，ESP-IDF 在引导加载程序中也会把 HAL 断言级别降为 silent，以减小引导加载程序的大小。
-    - 设置 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 会移除针对 ESP-IDF 内部错误检查宏的特定错误消息。错误消息移除后，通过阅读日志输出来调试某些错误条件可能变得更加困难。
+    - 将 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECK_LEVEL` 设置为 ``Address only`` 或 ``Silent``，可移除 ESP-IDF 错误检查宏的错误信息。在 ``Address only`` 下，失败的检查仍会打印其地址，该地址可解析为检查所在的文件和行。在 ``Silent`` 下，通过阅读日志输出来调试某些错误条件可能变得更加困难。
     :esp32: - 如果二进制文件只需要在某些特定的 ESP32 版本上运行，将 :menuitem:`CONFIG_ESP32_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。如果设置 ESP32 最低版本为 3，并且启用 PSRAM，将大幅减小二进制文件的大小。
     :esp32c3: - 如果二进制文件只需要在某些特定的 ESP32-C3 版本上运行，将 :menuitem:`CONFIG_ESP32C3_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。由于某些功能已经移至 ROM 代码中，如果设置 ESP32-C3 最低版本为 3 并且使用 Wi-Fi 功能，将明显减小二进制文件的大小。
     - 不要启用 :menuitem:`CONFIG_COMPILER_CXX_EXCEPTIONS` 或 :menuitem:`CONFIG_COMPILER_CXX_RTTI`，也不要将 :menuitem:`CONFIG_COMPILER_STACK_CHECK_MODE` 设置为 Overall。这些选项已默认禁用，启用这些选项会大幅增加二进制文件的大小。

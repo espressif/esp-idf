@@ -122,7 +122,7 @@ ESP-IDF 提供了一组宏来处理可恢复的错误，定义在 ``esp_check.h`
 
 - **ESP_RETURN_ON_ERROR_CLEANUP**：检测到错误时，在执行清理代码后从函数返回。该宏尤其适用于在返回错误码之前需要释放资源的情况。该宏会对返回 :cpp:type:`esp_err_t` 的表达式进行求值；若结果不为 :c:macro:`ESP_OK`，则会先执行可变参数提供的清理代码（例如释放资源或记录日志），然后从当前函数返回该错误码。
 
-这些宏的默认行为可通过 Kconfig 进行配置：如果启用了 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 选项，错误信息将不会被包含在应用程序二进制文件中，也不会被打印出来。
+这些宏在检查失败时打印的内容由 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECK_LEVEL` 设置。``Address only`` 和 ``Silent`` 不会把错误信息编进应用程序二进制文件。在 ``Address only`` 下，失败的检查仍会打印该检查的地址，``idf.py monitor`` 或 ``addr2line`` 可将该地址解析为检查所在的文件和行；失败的 ``*_ON_ERROR`` 检查还会打印错误码。原有选项 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 仍会强制使用 ``Silent``，包括其他 Kconfig 选项 select 它的情况。
 
 .. _check_macros_examples:
 
