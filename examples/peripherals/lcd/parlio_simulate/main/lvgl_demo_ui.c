@@ -110,7 +110,7 @@ static void start_animation(lv_obj_t *scr)
     lv_timer_create(anim_timer_cb, 20, &my_tim_ctx);
 }
 
-void example_lvgl_demo_ui(lv_disp_t *disp)
+void example_lvgl_demo_ui(lv_display_t *disp)
 {
     lv_obj_t *scr = lv_display_get_screen_active(disp);
     // Create image
