@@ -167,7 +167,6 @@
 #define SOC_INT_HW_NESTED_SUPPORTED     1       // Support for hardware interrupts nesting
 #define SOC_BRANCH_PREDICTOR_SUPPORTED  1
 #define SOC_CPU_HAS_FPU                 1
-#define SOC_CPU_HAS_FPU_EXT_ILL_BUG     0       // EXT_ILL CSR doesn't support FLW/FSW
 #define SOC_CPU_HAS_DSP                 1
 #define SOC_CPU_COPROC_NUM              2
 
