@@ -647,6 +647,7 @@ bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
             copy_size = mem_have;
         }
     }
+    copy_size = (mem_want < mem_have) ? mem_want : mem_have;
 
     portENTER_CRITICAL_ISR(&channel->spinlock);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
@@ -732,6 +733,7 @@ bool rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
             copy_size = mem_have;
         }
     }
+    copy_size = (mem_want < mem_have) ? mem_want : mem_have;
 
     portENTER_CRITICAL_ISR(&channel->spinlock);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
