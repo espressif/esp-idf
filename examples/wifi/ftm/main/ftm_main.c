@@ -564,11 +564,13 @@ static int wifi_cmd_ftm(int argc, char **argv)
     if (ret == ESP_OK && !ftm_args.ssid->count) {
         memcpy(ftmi_cfg.resp_mac, ap_info.bssid, ETH_ALEN);
         ftmi_cfg.channel = ap_info.primary;
+        ftmi_cfg.secondary_chan = ap_info.second;
     } else if (ftm_args.ssid->count == 1) {
         ap_record = find_ftm_responder_ap(ftm_args.ssid->sval[0]);
         if (ap_record) {
             memcpy(ftmi_cfg.resp_mac, ap_record->bssid, 6);
             ftmi_cfg.channel = ap_record->primary;
+            ftmi_cfg.secondary_chan = ap_record->second;
         } else {
             return 0;
         }
