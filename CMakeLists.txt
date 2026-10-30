@@ -173,7 +173,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-Wno-c2x-extensions")
     # warning on xMPU_SETTINGS for esp32s2 has size 0 for C and 1 for C++
     list(APPEND compile_options "-Wno-extern-c-compat")
-    if(NOT (CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"))
+    if(NOT (CONFIG_IDF_TARGET_LINUX AND CMAKE_SYSTEM_NAME STREQUAL "Darwin"))
         # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
         list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
     endif()

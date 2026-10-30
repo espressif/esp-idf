@@ -107,8 +107,8 @@ function(__init_project_configuration)
     # options correctly. Currently, LINKER_TYPE is used to set the appropriate
     # linker options for linking the entire archive, which differs between the
     # GNU and Apple linkers when building on the host.
-    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
+    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        # Compiling for macOS, so the linker is Darwin LD.
         # Note, when adding support for Clang and LLD based toolchain this check will
         # need to be modified.
         set(linker_type "Darwin")
@@ -290,7 +290,7 @@ function(__init_project_configuration)
         list(APPEND compile_options "-Wno-c2x-extensions")
         # warning on xMPU_SETTINGS for esp32s2 has size 0 for C and 1 for C++
         list(APPEND compile_options "-Wno-extern-c-compat")
-        if(NOT (CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"))
+        if(NOT (CONFIG_IDF_TARGET_LINUX AND CMAKE_SYSTEM_NAME STREQUAL "Darwin"))
             # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
             list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
         endif()

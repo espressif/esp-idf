@@ -20,6 +20,7 @@
     "monitor_baud" :      "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
     "monitor_toolprefix": "${_CMAKE_TOOLCHAIN_PREFIX}",
     "c_compiler":         "${CMAKE_C_COMPILER}",
+    "cross_compiling":    ${PROJECT_CROSS_COMPILING},
     "config_environment" : {
         "COMPONENT_KCONFIGS" : "${COMPONENT_KCONFIGS}",
         "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"

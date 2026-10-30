@@ -1064,6 +1064,11 @@ function(idf_build_generate_metadata)
     idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
     __get_openocd_options(debug_arguments_openocd)
 
+    set(PROJECT_CROSS_COMPILING false)
+    if(CMAKE_CROSSCOMPILING)
+        set(PROJECT_CROSS_COMPILING true)
+    endif()
+
     if(NOT DEFINED ARG_OUTPUT_FILE)
         set(ARG_OUTPUT_FILE "${BUILD_DIR}/project_description.json")
     endif()

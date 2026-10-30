@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_LIST_DIR}/toolchain_flags.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/linux_toolchain.cmake)
 #
 # Get target from single sdkconfig file
 #
@@ -124,6 +125,21 @@ endmacro()
 # Used by the project CMake file to set the toolchain before project() call.
 #
 macro(__target_set_toolchain)
+    # For the linux target, a user-provided toolchain file (e.g. for cross-compiling)
+    # takes precedence over ESP-IDF's toolchain-linux.cmake.
+    __get_linux_custom_toolchain_file("${IDF_TARGET}" "${CMAKE_TOOLCHAIN_FILE}" custom_toolchain_file)
+    if(custom_toolchain_file)
+        message(STATUS "Using custom toolchain file: ${custom_toolchain_file}")
+        set(CMAKE_TOOLCHAIN_FILE "${custom_toolchain_file}")
+    else()
+        __target_set_idf_toolchain()
+    endif()
+endmacro()
+
+#
+# Set CMAKE_TOOLCHAIN_FILE to ESP-IDF's toolchain file for the selected target.
+#
+macro(__target_set_idf_toolchain)
     idf_build_get_property(idf_path IDF_PATH)
 
     # See if Clang toolchain should be used

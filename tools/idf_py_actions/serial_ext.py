@@ -213,6 +213,12 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         idf_monitor = os.path.join(os.environ['IDF_PATH'], 'tools/idf_monitor.py')
         monitor_args = [PYTHON, idf_monitor]
 
+        if project_desc['target'] == 'linux' and project_desc.get('cross_compiling'):
+            raise FatalError(
+                'The application was cross-compiled for the linux target with a custom toolchain file '
+                'and cannot be run on this machine. Run it on the target system instead.'
+            )
+
         if project_desc['target'] != 'linux':
             if no_reset and args.port is None:
                 raise FatalError(
