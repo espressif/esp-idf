@@ -12,6 +12,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "osi/semaphore.h"
+#include "osi/slist.h"
 #include "esp_task.h"
 #include "bt_common.h"
 
@@ -48,6 +49,29 @@ osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priorit
  * param thread: point of thread handler
  */
 void osi_thread_free(osi_thread_t *thread);
+
+/* Lifecycle points inside osi_thread_free(). */
+typedef enum {
+    OSI_THREAD_EVT_PRE_STOP,
+    OSI_THREAD_EVT_STOPPED,
+    OSI_THREAD_EVT_PRE_FREE,
+} osi_thread_evt_t;
+
+/* Must not register, unregister, or call osi_thread_free(). Publish holds the
+ * listener lock across the callback. */
+typedef void (*osi_thread_listener_t)(osi_thread_t *thread, osi_thread_evt_t evt);
+
+/* Caller-owned. Fill |listener| and keep the node alive until unregister. */
+struct osi_thread_listener_node {
+    slist_node_t node;
+    osi_thread_listener_t listener;
+};
+
+/* Link |node|. The thread does not allocate it. false on NULL, a NULL
+ * listener, an already-linked node, or when the listener list is not initialized. */
+bool osi_thread_listener_register(struct osi_thread_listener_node *node);
+/* Unlink |node| without freeing it. Must not be called from a listener. */
+void osi_thread_listener_unregister(struct osi_thread_listener_node *node);
 
 /*
  * brief: Post an msg to a thread and told the thread call the function
