@@ -1292,7 +1292,7 @@ menu "Services"
         config BT_NIMBLE_SVC_GAP_APPEARANCE
             hex "External appearance of the device"
             depends on BT_NIMBLE_ENABLED
-            default 0
+            default 0x0
             help
                 Standard BLE GAP Appearance value in HEX format e.g. 0x02C0
 
