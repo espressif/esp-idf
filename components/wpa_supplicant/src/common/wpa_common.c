@@ -1768,6 +1768,13 @@ static int wpa_parse_generic(const u8 *pos, const u8 *end,
 		return 0;
 	}
 
+	if (left >= 2 && selector == RSN_KEY_DATA_KEYID) {
+		ie->key_id = p;
+		ie->key_id_len = left;
+		wpa_hexdump(MSG_DEBUG, "WPA: KeyID in EAPOL-Key", pos, dlen);
+		return 0;
+	}
+
 	if (left >= ETH_ALEN && selector == RSN_KEY_DATA_MAC_ADDR) {
 		ie->mac_addr = p;
 		wpa_printf(MSG_DEBUG, "WPA: MAC Address in EAPOL-Key: " MACSTR,

@@ -277,6 +277,15 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         capab |= WPA_CAPABILITY_SPP_REQUIRED;
     }
 
+    /* Extended Key ID for Individually Addressed Frames: advertise only
+     * for RSN with CCMP/GCMP pairwise ciphers (not for TKIP or FT, whose
+     * key installation paths do not support a second PTK slot). */
+    if ((pairwise_cipher & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP |
+                WPA_CIPHER_GCMP_256)) &&
+            !wpa_key_mgmt_ft(key_mgmt)) {
+        capab |= WPA_CAPABILITY_EXT_KEY_ID_FOR_UNICAST;
+    }
+
     WPA_PUT_LE16(pos, capab);
     pos += 2;
 
