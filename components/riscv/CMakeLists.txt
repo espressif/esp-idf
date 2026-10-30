@@ -45,7 +45,7 @@ else()
     endif()
 
     if(CONFIG_SOC_RISCV_SV32_SUPPORTED)
-        list(APPEND srcs "sv32.c")
+        list(APPEND srcs "sv32.c" "sv32_as.c")
     endif()
 endif()
 
