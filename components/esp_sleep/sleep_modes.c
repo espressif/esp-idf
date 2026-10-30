@@ -796,7 +796,14 @@ static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
 #endif
     {
-        s_config.rtc_clk_cal_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
+        bool clk_cal_before_sleep = true;
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+        /* Deep sleep always calibrates; an invalid value 0 means no calibration since boot or deep sleep wakeup */
+        clk_cal_before_sleep = is_dslp || (s_config.rtc_clk_cal_period == 0);
+#endif
+        if (clk_cal_before_sleep) {
+            s_config.rtc_clk_cal_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
+        }
         esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
     }
 #endif
@@ -1736,6 +1743,10 @@ esp_err_t esp_light_sleep_start(void)
     // light sleep wakeup flag only makes sense after a successful light sleep
     s_light_sleep_wakeup = (err == ESP_OK);
 
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+    uint32_t rtc_clk_cal_period_after_wakeup = s_config.rtc_clk_cal_period;
+#endif
+
     // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
 
@@ -1749,6 +1760,11 @@ esp_err_t esp_light_sleep_start(void)
             esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
         }
         esp_set_time_from_rtc();
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+        if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) {
+            rtc_clk_cal_period_after_wakeup = rtc_clk_cal(CLK_CAL_RTC_SLOW, RTC_CLK_SRC_CAL_CYCLES);
+        }
+#endif
     } else {
 #if !CONFIG_FREERTOS_UNICORE && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
         esp_sleep_cpu_skip_retention();
@@ -1761,6 +1777,11 @@ esp_err_t esp_light_sleep_start(void)
     // for the PSRAM to resume until here, in order to reuse the time overhead
     // of the wake-up process as much as possible.
     esp_psram_impl_resume_from_halfsleep_mode(s_config.rtc_clk_cal_period);
+#endif
+
+#if CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+    /* Store the new period only after the wakeup path above no longer needs a valid one */
+    s_config.rtc_clk_cal_period = rtc_clk_cal_period_after_wakeup;
 #endif
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
