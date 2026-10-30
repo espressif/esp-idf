@@ -67,6 +67,13 @@ const char *c_connection_state_str[] = {
     "DISCONNECTING",
 };
 
+// esp_hf_ag_service_t
+const char *c_peer_service_str[] = {
+    "NONE",
+    "HFP",
+    "HSP",
+};
+
 // esp_hf_audio_state_t
 const char *c_audio_state_str[] = {
     [ESP_HF_AUDIO_STATE_DISCONNECTED]      = "disconnected",
@@ -845,8 +852,9 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
     switch (event) {
         case ESP_HF_CONNECTION_STATE_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "--connection state %s, peer feats 0x%"PRIx32", chld_feats 0x%"PRIx32,
+            ESP_LOGI(BT_HF_TAG, "--connection state %s, service %s, peer feats 0x%"PRIx32", chld_feats 0x%"PRIx32,
                     c_connection_state_str[param->conn_stat.state],
+                    c_peer_service_str[param->conn_stat.peer_service],
                     param->conn_stat.peer_feat,
                     param->conn_stat.chld_feat);
             memcpy(hf_peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);

@@ -1404,7 +1404,8 @@ void bta_ag_hsp_result(tBTA_AG_SCB *p_scb, tBTA_AG_API_RESULT *p_result)
             break;
         }
         default:
-            break; /* ignore all others */
+            APPL_TRACE_WARNING("HSP ignores HFP-only result %d", p_result->result);
+            break;
     }
 }
 

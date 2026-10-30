@@ -61,7 +61,8 @@ static void bt_hf_hdl_stack_evt(uint16_t event, void *p_param)
             esp_hf_ag_register_callback(bt_app_hf_cb);
 
             // init and register for HFP_AG functions
-            esp_hf_ag_init();
+            esp_hf_ag_cfg_t cfg = ESP_HF_AG_INIT_CONFIG_DEFAULT();
+            esp_hf_ag_init_with_cfg(&cfg);
 
             /*
             * Set default parameters for Legacy Pairing

@@ -197,6 +197,11 @@ typedef union
         esp_hf_codec_mode_t   mode;
     } set_codec;
 
+    // BTC_HF_INIT_EVT
+    struct init_cfg {
+        uint8_t service_mask;
+    } init_cfg;
+
 } btc_hf_args_t;
 
 /************************************************************************************
@@ -225,11 +230,13 @@ typedef struct
     int                                num_held;
     esp_hf_call_status_t               call_state;
     esp_hf_call_setup_status_t         call_setup_state;
+    uint8_t                            peer_service; /* esp_hf_ag_service_t, 0 if none */
 } btc_hf_cb_t;
 
 typedef struct
 {
     bool                               initialized;
+    tBTA_SERVICE_MASK                  services;
     int                                hf_idx;
     btc_hf_cb_t                       *btc_hf_cb;
     esp_hf_incoming_data_cb_t          btc_hf_incoming_data_cb;
