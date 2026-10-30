@@ -69,6 +69,12 @@
 #define UC_BT_A2DP_SINK_MAX_CONN            1
 #endif
 
+#ifdef CONFIG_BT_A2DP_AUDIO_STATS
+#define UC_BT_A2DP_AUDIO_STATS              CONFIG_BT_A2DP_AUDIO_STATS
+#else
+#define UC_BT_A2DP_AUDIO_STATS              FALSE
+#endif
+
 //AVRCP
 #ifdef CONFIG_BT_AVRCP_ENABLED
 #define UC_BT_AVRCP_ENABLED                 TRUE

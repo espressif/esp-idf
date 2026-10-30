@@ -276,10 +276,16 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
             APPL_TRACE_WARNING("Sequence numbers error, recv:0x%x, expect:0x%x, recount:0x%x",
                                 p_msg->layer_specific, a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num,
                                 a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount);
+            /* Only a forward gap counts as loss; a backward jump or repeat does not. */
+            int16_t gap = (int16_t)(p_msg->layer_specific - a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num);
+            if (gap > 0) {
+                btc_a2dp_audio_stats_on_lost(conn_hdl, (uint16_t)gap);
+            }
         }
     }
     a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num  = p_msg->layer_specific + 1;
     a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount = false;
+    btc_a2dp_audio_stats_on_handled(conn_hdl);
 
     memcpy(&timestamp, (UINT8 *)(p_msg + 1), sizeof(UINT32));
 
