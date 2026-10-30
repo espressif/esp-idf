@@ -179,7 +179,7 @@ void hci_drop_inbound_acl_reassembly(uint16_t handle)
     }
 
     /* BTU must not touch partial_packets; run flush_reassembly on HCI thread. */
-    if (!osi_thread_post(hci_host_thread, flush_reassembly_work, (void *)(uintptr_t)handle,
+    if (!osi_thread_post(hci_host_thread, flush_reassembly_work, (void *)(uintptr_t)handle, NULL,
                          HCI_DOWNSTREAM_DATA_QUEUE_IDX, OSI_THREAD_MAX_TIMEOUT)) {
         HCI_TRACE_WARNING("%s post flush_reassembly failed handle=0x%x", __func__, handle);
         assert(0);

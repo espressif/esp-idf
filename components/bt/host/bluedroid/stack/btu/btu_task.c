@@ -358,12 +358,20 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
 {
     bool status = false;
 
+    /* Worker gone: fail instead of asserting so callers release their
+     * param (e.g. bta_sys_sendmsg). */
+    if (btu_thread == NULL) {
+        return false;
+    }
+
     switch (sig) {
         case SIG_BTU_START_UP:
-            status = osi_thread_post(btu_thread, btu_task_start_up, param, 0, timeout);
+            status = osi_thread_post(btu_thread, btu_task_start_up, param, NULL, 0, timeout);
             break;
         case SIG_BTU_HCI_MSG:
-            status = osi_thread_post(btu_thread, btu_hci_msg_process, param, 0, timeout);
+            /* param is a heap BT_HDR; reclaim it if teardown drains the work. */
+            status = osi_thread_post(btu_thread, btu_hci_msg_process, param,
+                                     (osi_thread_free_cb_t)osi_free_func, 0, timeout);
             break;
         case SIG_BTU_HCI_ADV_RPT_MSG:
 #if BLE_INCLUDED == TRUE
@@ -381,18 +389,20 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
             break;
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
         case SIG_BTU_BTA_MSG:
-            status = osi_thread_post(btu_thread, bta_sys_event, param, 0, timeout);
+            /* param is a heap BT_HDR; same owner hand-off as SIG_BTU_HCI_MSG. */
+            status = osi_thread_post(btu_thread, bta_sys_event, param,
+                                     (osi_thread_free_cb_t)osi_free_func, 0, timeout);
             break;
         case SIG_BTU_BTA_ALARM:
-            status = osi_thread_post(btu_thread, btu_bta_alarm_process, param, 0, timeout);
+            status = osi_thread_post(btu_thread, btu_bta_alarm_process, param, NULL, 0, timeout);
             break;
 #endif
         case SIG_BTU_GENERAL_ALARM:
         case SIG_BTU_ONESHOT_ALARM:
-            status = osi_thread_post(btu_thread, btu_general_alarm_process, param, 0, timeout);
+            status = osi_thread_post(btu_thread, btu_general_alarm_process, param, NULL, 0, timeout);
             break;
         case SIG_BTU_L2CAP_ALARM:
-            status = osi_thread_post(btu_thread, btu_l2cap_alarm_process, param, 0, timeout);
+            status = osi_thread_post(btu_thread, btu_l2cap_alarm_process, param, NULL, 0, timeout);
             break;
         default:
             break;

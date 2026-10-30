@@ -32,6 +32,9 @@
 struct work_item {
     osi_thread_func_t func;
     void *context;
+    /* Called when the drain discards an undelivered item; NULL means the
+     * context is not queue-owned. */
+    osi_thread_free_cb_t free_cb;
 };
 
 struct work_queue {
@@ -460,16 +463,20 @@ void osi_thread_free(osi_thread_t *thread)
      *    arbitrary handler (e.g. btu_hci_msg_process, bta_sys_event, alarm
      *    handlers). Running such a handler here would dispatch into
      *    protocol-stack state (L2CAP/BTA/...) that may already have been freed
-     *    by the caller before osi_thread_free() (e.g. BTU_ShutDown() calls
-     *    btu_task_shut_down() first), turning the drain into a use-after-free.
-     *    These items are therefore discarded, matching the pre-existing
-     *    behavior where a destroyed queue silently dropped its contents. */
+     *    by the caller before osi_thread_free() (btc_deinit() runs
+     *    btc_gap_ble_deinit() and btc_deinit_mem() first), turning the drain
+     *    into a use-after-free.
+     *    These items are therefore discarded, except those posted with a
+     *    free_cb, which reclaims the owned context. */
     for (int i = 0; i < thread->work_queue_num; i++) {
         struct work_item item;
         while (thread->work_queues[i] &&
                osi_thead_work_queue_get(thread->work_queues[i], &item) == true) {
             if (item.func == osi_thread_generic_event_handler) {
                 osi_thread_generic_event_drain(item.context);
+            } else if (item.free_cb != NULL) {
+                /* Owned item: reclaim the context instead of leaking it. */
+                item.free_cb(item.context);
             }
         }
     }
@@ -510,8 +517,11 @@ void osi_thread_free(osi_thread_t *thread)
     osi_free(thread);
 }
 
-bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context, int queue_idx, uint32_t timeout)
+bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context,
+                     osi_thread_free_cb_t free_cb, int queue_idx, uint32_t timeout)
 {
+    struct work_item item;
+
     assert(thread != NULL);
     assert(func != NULL);
 
@@ -519,10 +529,9 @@ bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context
         return false;
     }
 
-    struct work_item item;
-
     item.func = func;
     item.context = context;
+    item.free_cb = free_cb;
 
     if (osi_thead_work_queue_put(thread->work_queues[queue_idx], &item, timeout) == false) {
         return false;
@@ -877,7 +886,7 @@ bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
     queue_idx = core->queue_idx;
     osi_mutex_unlock(&core->lock);
 
-    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, queue_idx, timeout);
+    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, NULL, queue_idx, timeout);
 
     osi_mutex_lock(&core->lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!ret) {
@@ -918,7 +927,7 @@ bool osi_dynamic_event_post(struct osi_dynamic_event *event, uint32_t timeout)
     queue_idx = core->queue_idx;
     osi_mutex_unlock(&core->lock);
 
-    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, queue_idx, timeout);
+    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, NULL, queue_idx, timeout);
 
     osi_mutex_lock(&core->lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!ret) {
