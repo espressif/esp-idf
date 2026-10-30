@@ -37,9 +37,6 @@
 #include "stack/btu.h"
 #include "osi/allocator.h"
 
-#if BT_SDP_BQB_INCLUDED
-extern BOOLEAN s_l2cap_bqb_ertm_mode_included_flag;
-#endif /* BT_SDP_BQB_INCLUDED */
 
 #if (L2CAP_COC_INCLUDED == TRUE)
 
@@ -1189,7 +1186,7 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
     p_fcrb->next_seq_expected = (tx_seq + 1) & L2CAP_FCR_SEQ_MODULO;
 
 #if BT_SDP_BQB_INCLUDED
-    if (s_l2cap_bqb_ertm_mode_included_flag) {
+    if (l2cap_bqb_ertm_mode_included_get()) {
         if (p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {
             if (p_fcrb->local_busy) {
                 l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_RNR, 0);
@@ -2059,7 +2056,7 @@ UINT8 l2c_fcr_process_peer_cfg_req(tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
     /* A CCB allocated before the flag was set still has Basic as its
      * preferred mode. L2CAP/ERM/BV-03-C then answers an ERTM request
      * with result 0x0001 and an all-zero Basic option. */
-    if (s_l2cap_bqb_ertm_mode_included_flag && p_ccb->p_lcb->transport != BT_TRANSPORT_LE) {
+    if (l2cap_bqb_ertm_mode_included_get() && p_ccb->p_lcb->transport != BT_TRANSPORT_LE) {
         p_ccb->ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
         p_ccb->ertm_info.allowed_modes |= L2CAP_FCR_CHAN_OPT_ERTM;
     }

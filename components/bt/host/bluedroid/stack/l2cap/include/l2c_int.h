@@ -968,6 +968,14 @@ extern UINT32 CalConnectParamTimeout(tL2C_LCB *p_lcb);
 #endif
 extern void l2cu_process_fixed_disc_cback (tL2C_LCB *p_lcb);
 
+#if (BT_CLASSIC_BQB_INCLUDED == TRUE)
+BOOLEAN l2cap_bqb_cfg_hint_rej_get(void);
+BOOLEAN l2cap_bqb_hide_fixed_chnl_get(void);
+#endif
+#if (BT_SDP_BQB_INCLUDED == TRUE)
+BOOLEAN l2cap_bqb_ertm_mode_included_get(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
