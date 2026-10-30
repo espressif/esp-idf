@@ -465,31 +465,31 @@ wr_btdm_assert(const char *file, int line, int p0, int p1)
 }
 
 void IRAM_ATTR
-wr_btdm_compressed_assert_x0(uint32_t cond, uint32_t id)
+wr_btdm_compressed_assert_x0(uint32_t id)
 {
-    if (!cond) {
-        btdm_log_exception_dump();
-        esp_rom_printf("bt assertion id:%d\n", id);
+    btdm_log_exception_dump();
+    esp_rom_printf("bt assertion id:%d\n", id);
+    while(1) {
         assert(0);
     }
 }
 
 void IRAM_ATTR
-wr_btdm_compressed_assert_x1(uint32_t cond, uint32_t id, uint32_t p1)
+wr_btdm_compressed_assert_x1(uint32_t id, uint32_t p1)
 {
-    if (!cond) {
-        btdm_log_exception_dump();
-        esp_rom_printf("bt assertion id:%d, params: 0x%x\n", id, p1);
+    btdm_log_exception_dump();
+    esp_rom_printf("bt assertion id:%d, params: 0x%x\n", id, p1);
+    while(1) {
         assert(0);
     }
 }
 
 void IRAM_ATTR
-wr_btdm_compressed_assert_x2(uint32_t cond, uint32_t id, uint32_t p1, uint32_t p2)
+wr_btdm_compressed_assert_x2(uint32_t id, uint32_t p1, uint32_t p2)
 {
-    if (!cond) {
-        btdm_log_exception_dump();
-        esp_rom_printf("bt assertion id:%d, params: 0x%x, 0x%x\n", id, p1, p2);
+    btdm_log_exception_dump();
+    esp_rom_printf("bt assertion id:%d, params: 0x%x, 0x%x\n", id, p1, p2);
+    while(1) {
         assert(0);
     }
 }
