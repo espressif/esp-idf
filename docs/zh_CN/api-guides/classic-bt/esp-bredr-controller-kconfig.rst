@@ -145,6 +145,9 @@ HCI 名称与 Opcode 遵循 Bluetooth Core Specification。表中标准命令以
        | ``SYNC_RX_BUF_NB_PER_LINK`` 为每条链路的平均 RX buffer 数目（静态 + 动态）。若静态 RX buffer 少于 ``SYNC_RX_BUF_NB_PER_LINK`` × 当前 sync 链路数，则会随链路增减动态扩缩 RX pool。设为 ``0`` 可禁用动态 sync RX buffer。
    * - ``CONFIG_BT_CTRL_BR_EDR_SCO_DATA_PATH_HCI``
      - SCO/eSCO 默认数据通路。目前仅支持 HCI；PCM/I2S 路由尚不可用。
+   * - :ref:`CONFIG_BT_CTRL_BR_EDR_RS_MAX_SLOT_RESTORE_EN`
+     - | 在 role switch 之后，将 TX max slots 和 RX max slots 恢复为切换前的值。默认使能。
+       | Bluetooth Core Specification 要求 role switch 后重置 max slots，再由双方重新协商，因此控制器主动恢复属于非标行为。蓝牙认证时需关闭。使能 :ref:`CONFIG_BT_CLASSIC_BQB_ENABLED` 时，本选项默认关闭。
    * - | :ref:`CONFIG_BT_CTRL_BR_EDR_TX_CCA_ENABLED`
        | + :ref:`CONFIG_BT_CTRL_BR_EDR_CCA_RSSI_THRESH`
      - TX Clear Channel Assessment。使能后，若检测到的信号强度高于 CCA 阈值（单位：-1 dBm），控制器可取消本次发送。无独立 HCI 命令。

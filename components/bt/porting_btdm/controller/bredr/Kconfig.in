@@ -154,6 +154,20 @@ config BT_CTRL_BR_EDR_TEST_MODE_EN
     help
         Enable BR/EDR test mode
 
+config BT_CTRL_BR_EDR_RS_MAX_SLOT_RESTORE_EN
+    bool "Restore TX/RX max slots after role switch"
+    default n if BT_CLASSIC_BQB_ENABLED
+    default y
+    help
+        Enable the controller to restore TX max slots and RX max slots
+        to the values used before a role switch.
+
+        The Bluetooth Core Specification resets max slots on role switch
+        and expects them to be renegotiated. Restoring them in the
+        controller is not specified. Disable this option for Bluetooth
+        qualification. It defaults to disabled when Host qualification
+        support for Classic Bluetooth (BT_CLASSIC_BQB_ENABLED) is enabled.
+
 config BT_CTRL_BR_EDR_APB_EN
     bool "Enable BR/EDR Active Peripheral Broadcast"
     default n
