@@ -112,10 +112,33 @@ function(_add_flags_to_files files flags)
         endforeach()
 
         foreach(flag ${flags})
-            # Skip flags that contain IDF_TOOLCHAIN_BUILD_DIR substring
-            # to avoid recursion
-            string(FIND "${flag}" "${IDF_TOOLCHAIN_BUILD_DIR}" found_pos)
-            if(found_pos EQUAL -1)
+            # Skip @response-file refs into IDF_TOOLCHAIN_BUILD_DIR (avoid recursion).
+            # IDF emits @"path", but @path and @'path' are also acceptable.
+            set(_skip_flag FALSE)
+            if(flag MATCHES "^@")
+                # Drop leading @ so remaining token is a path (possibly quoted).
+                string(SUBSTRING "${flag}" 1 -1 _resp_path)
+                # Unwrap "..." / '...' (shell rules); leave bare paths unchanged.
+                separate_arguments(_resp_path UNIX_COMMAND "${_resp_path}")
+                # Paranoid: flag already should use IDF_TOOLCHAIN_BUILD_DIR spelling.
+                # get_filename_component(REALPATH): file(REAL_PATH) needs CMake >= 3.19.
+                # Prefix compare: cmake_path(IS_PREFIX) needs CMake >= 3.20.
+                get_filename_component(_resp_path "${_resp_path}" REALPATH)
+                string(LENGTH "${IDF_TOOLCHAIN_BUILD_DIR}" _prefix_len)
+                string(SUBSTRING "${_resp_path}" 0 "${_prefix_len}" _path_prefix)
+                if(_path_prefix STREQUAL "${IDF_TOOLCHAIN_BUILD_DIR}")
+                    string(LENGTH "${_resp_path}" _resp_len)
+                    if(_resp_len EQUAL _prefix_len)
+                        set(_skip_flag TRUE)
+                    else()
+                        string(SUBSTRING "${_resp_path}" "${_prefix_len}" 1 _path_sep)
+                        if(_path_sep STREQUAL "/")
+                            set(_skip_flag TRUE)
+                        endif()
+                    endif()
+                endif()
+            endif()
+            if(NOT _skip_flag)
                 file(APPEND "${file_path}" "${flag}\n")
             endif()
         endforeach()
